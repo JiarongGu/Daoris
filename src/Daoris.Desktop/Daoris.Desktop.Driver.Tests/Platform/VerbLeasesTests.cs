@@ -74,6 +74,21 @@ public sealed class VerbLeasesTests
     [InlineData("driver helpers engine --mode on")]
     [InlineData("driver handover engine --mode on")]
     [InlineData("driver commits engine --mode ask")]
+    // The family's last verbs (PUSH1f2b): a landing's cycle, a work cycle, the brainstorm policy set or cleared, and a workflow's writes.
+    [InlineData("driver landing engine merge --cycle cycle.json")]
+    [InlineData("driver landing engine merge --no-cycle")]
+    [InlineData("driver work-cycle engine quest cycle.json")]
+    [InlineData("driver work-cycle --workspace shop ask --clear")]
+    [InlineData("driver brainstorms --mode off")]
+    [InlineData("driver brainstorms --workspace work --pass-minutes 5")]
+    [InlineData("driver brainstorms --clear")]
+    [InlineData("driver workflow new docs --from merge-after-accept")]
+    [InlineData("driver workflow edit docs remove look")]
+    [InlineData("driver workflow apply docs next.json")]
+    [InlineData("driver workflow import carried.json")]
+    [InlineData("driver workflow use docs --repository engine")]
+    [InlineData("driver workflow use web-verify --repository engine --landed")]
+    [InlineData("driver workflow kind work docs --label Documentation")]
     [InlineData("a-verb-nobody-classed")]
     public void A_mutation_holds_the_lease(string words) => Assert.True(VerbLeases.Holds(words.Split(' ')), words);
 
@@ -134,8 +149,18 @@ public sealed class VerbLeasesTests
     [InlineData("driver list")]
     [InlineData("driver --help")]
     [InlineData("driver frobnicate engine")]
-    [InlineData("driver workflow list")]
     [InlineData("driver landing engine merge --plan")]
+    // The family's last reads (PUSH1f2b): the brainstorm policy said, and a workflow shown, listed, exported or planned.
+    [InlineData("driver brainstorms")]
+    [InlineData("driver brainstorms --workspace work")]
+    [InlineData("driver workflow")]
+    [InlineData("driver workflow list")]
+    [InlineData("driver workflow show docs@2")]
+    [InlineData("driver workflow show --repository engine --kind docs")]
+    [InlineData("driver workflow export docs --to carried.json")]
+    [InlineData("driver workflow new docs --from merge-after-accept --plan")]
+    [InlineData("driver workflow use docs --workspace work --plan")]
+    [InlineData("driver workflow frobnicate")]
     public void A_read_or_another_writers_verb_holds_none(string words) => Assert.False(VerbLeases.Holds(words.Split(' ')), words);
 
     [Fact]
@@ -166,6 +191,8 @@ public sealed class VerbLeasesTests
     [InlineData("heavy engine build=x", "daoris-driver heavy")]
     [InlineData("driver drive engine", "daoris-driver driver drive")]
     [InlineData("driver retry 12 --at 2", "daoris-driver driver retry")]
+    [InlineData("driver workflow new docs --from merge-after-accept", "daoris-driver driver workflow")]
+    [InlineData("driver work-cycle engine quest cycle.json", "daoris-driver driver work-cycle")]
     public void A_lease_names_the_verb_and_never_its_arguments(string words, string named) =>
         Assert.Equal(named, VerbLeases.Name(words.Split(' ')));
 }

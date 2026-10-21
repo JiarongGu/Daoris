@@ -28,8 +28,14 @@ public sealed record DriverChoicesWorld
     public Func<DriverConfig, CancellationToken, Task<IReadOnlyList<Consideration>>> Verdicts { get; init; } =
         (_, _) => throw new DriverException("this command was handed no way to read them");
 
-    /// <summary>The moment a standing answer is set.</summary>
+    /// <summary>The moment a standing answer is set, and a workflow's version saved.</summary>
     public Func<DateTimeOffset> Now { get; init; } = () => DateTimeOffset.UtcNow;
+
+    /// <summary>
+    /// The folder the terminal is in (PUSH1f2b): where a file a verb names by a relative path is read and written, a cycle's, a
+    /// workflow's to apply or import, and an export's.
+    /// </summary>
+    public string Folder { get; init; } = Directory.GetCurrentDirectory();
 }
 
 /// <summary>
@@ -110,21 +116,27 @@ public static class ChoiceRoutes
         ("driver adapter <name>", null, "alone: no route sets the working agent; the window names it from the roster"),
         ("driver retry <quest> --at <n>", null, "alone: RETRY_QUEST marks at the failures its verdict counts, never at a number the person gives"),
         ("driver retry <quest> --session <id>", null, "alone: RETRY_QUEST releases the stop its verdict names, never a session the person names"),
+        ("driver landing … --cycle <file>|--no-cycle", null, "alone: SET_LANDING has no field for the cycle, and keeps the one the rule holds"),
+        ("driver work-cycle", null, "alone: no route sets a quest's or an ask's cycle of work"),
+        ("driver brainstorms", null, "alone: no route sets the brainstorm policy"),
+        ("driver workflow new|edit|apply|import|use|kind", null,
+            "alone: no route writes a named workflow or chooses one; the window's WORKFLOW_LANDED reads the tip from its own registry"),
     ];
 }
 
 /// <summary>
-/// <c>daoris-driver driver</c> (PUSH1f2a, D194, the alone-path design §1.2): the driver's standing choices from a terminal, the words
-/// <c>daoris driver …</c> hands this program. Each change is its route through <see cref="InstanceDoor.PressAsync"/> where the running
-/// Daoris answers, confirmed in its window; else the choice's own operation, on the terminal's word (D50), refused from a session's
-/// terminal (D194 point 5); and alone, holding nothing and sending nothing, on a file <c>DAORIS_DRIVER_CONFIG</c> names. Its words are
-/// one function per verb on both paths, today's text kept (<c>fixtures/driver-choices-text.json</c>).
+/// <c>daoris-driver driver</c> (PUSH1f2a, PUSH1f2b, D194, the alone-path design §1.2): the driver family from a terminal, the words
+/// <c>daoris driver …</c> hands this program, every one of them since PUSH1f2b. Each change is its route through
+/// <see cref="InstanceDoor.PressAsync"/> where the running Daoris answers, confirmed in its window; else the choice's own operation, on
+/// the terminal's word (D50), refused from a session's terminal (D194 point 5); and alone, holding nothing and sending nothing, on a
+/// file <c>DAORIS_DRIVER_CONFIG</c> names. A change no route takes acts alone even beside a running Daoris (<see cref="ChoiceRoutes"/>):
+/// a landing's cycle, <c>work-cycle</c>, <c>brainstorms</c> and the workflows' writes (<see cref="DriverWorkflowsCommand"/>). Its words
+/// are one function per verb on both paths, today's text kept (<c>fixtures/driver-choices-text.json</c>,
+/// <c>fixtures/driver-workflows-text.json</c>).
 /// </summary>
 /// <remarks>
 /// <para>Exit codes are the CLI's, case by case: 0 said or set · 1 the person's refusal in the window, its two minutes' end, or a
 /// session's terminal · 2 the usage, a refusal of the words, the operation or the route.</para>
-/// <para>The workflows, <c>work-cycle</c>, <c>brainstorms</c> and a landing's <c>--cycle</c> are still <c>daoris driver</c>'s own
-/// (PUSH1f2b): the CLI keeps them, and this program says its usage for them.</para>
 /// </remarks>
 public static class DriverChoicesCommand
 {
@@ -132,7 +144,8 @@ public static class DriverChoicesCommand
     public static IReadOnlyList<string> Verbs { get; } =
     [
         "list", "drive", "undrive", "hold", "resume", "trees", "notify", "cap", "strikes", "retry", "timeout", "cooloff", "adapter", "helper",
-        "intake", "line", "landing", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits",
+        "intake", "line", "landing", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits", "work-cycle",
+        "brainstorms", "workflow",
     ];
 
     public const string Usage =
@@ -146,6 +159,8 @@ public static class DriverChoicesCommand
                daoris-driver driver line <repository>|--workspace <name> <branch>|--clear
                daoris-driver driver landing <repository>|--workspace <name> merge|branch <pattern>|--clear
                       [--tidy] [--plugin <id>] [--auto-accept|--no-auto-accept] [--key <shape>|--no-key] [--squash|--no-squash]
+                      [--cycle <file>|--no-cycle]
+               daoris-driver driver work-cycle <repository>|--workspace <name> quest|ask <file>|--clear
                daoris-driver driver across <repository>|--workspace <name> read on|off|--clear
                daoris-driver driver across <repository> write-to <other> [--clear]
                daoris-driver driver standing <repository> "…"|--clear
@@ -158,7 +173,17 @@ public static class DriverChoicesCommand
                daoris-driver driver handover <repository>|--workspace <name> --mode ask|on|off | --clear
                daoris-driver driver commits <repository>|--workspace <name> [--mode as-you-go|ask|at-end]
                       [--convention "…"|--no-convention] | --clear
-        `daoris driver …` runs these; the workflows, work-cycle, brainstorms and a landing's --cycle are still `daoris driver …`'s own.
+               daoris-driver driver brainstorms [--workspace <name>] [--mode ask|off] [--agents <a,b>] [--pass-minutes <n>]
+                      [--synthesis-minutes <n>] [--challenge-minutes <n>] [--request-minutes <n>] | --clear
+               daoris-driver driver workflow list · show <id>[@<version>] · show --repository <name>|--workspace <name> [--kind <kind>]
+               daoris-driver driver workflow new <id> --from <preset>|current:<repository>|<id>[@<version>]
+                      [--with-opinion] [--with-look] [--name "…"]
+               daoris-driver driver workflow edit <id> [--base <version>] <change>… · apply <id> <file> [--base <version>]
+               daoris-driver driver workflow export <id> [--to <file>] · import <file>
+               daoris-driver driver workflow use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]
+               daoris-driver driver workflow kind <workspace> <kind> --label "…" [--paths <path,…>] | --drop
+                      (a workflow's writes say their change, and with --plan save nothing)
+        `daoris driver …` runs these.
         """;
 
     /// <summary>The marker a shell Daoris started carries (D194 point 5): its session's record id.</summary>
@@ -174,14 +199,26 @@ public static class DriverChoicesCommand
 
     private const string Prefix = "daoris";
 
-    /// <summary>Whether the words change the home: a verb this program has that is not <c>list</c>, and no plan or usage asked.</summary>
+    /// <summary>
+    /// Whether the words change the home: a verb this program has that is not <c>list</c>, and no plan or usage asked; <c>brainstorms</c>
+    /// only where it sets or clears, and a workflow's only where it writes (PUSH1f2b).
+    /// </summary>
     public static bool Changes(IReadOnlyList<string> args)
     {
         if (args.Any(arg => arg is "--help" or "-h" or "--plan")) return false;
         var verb = args.Count > 0 ? args[0] : "list";
-        return verb != "list" && Verbs.Contains(verb, StringComparer.Ordinal)
-            && !(verb == "landing" && args.Any(arg => arg is "--cycle" or "--no-cycle"));
+        return verb switch
+        {
+            "list" => false,
+            "workflow" => DriverWorkflowsCommand.Changes([.. args.Skip(1)]),
+            "brainstorms" => args.Any(arg => arg is "--clear" or "--mode" or "--agents" || MinuteFlags.Any(each => each.Flag == arg)),
+            _ => Verbs.Contains(verb, StringComparer.Ordinal),
+        };
     }
+
+    /// <summary>The brainstorm policy's minutes, each by its flag and its name in the rule.</summary>
+    private static readonly (string Flag, string Name)[] MinuteFlags =
+        [("--pass-minutes", "pass"), ("--synthesis-minutes", "synthesis"), ("--challenge-minutes", "challenge"), ("--request-minutes", "request")];
 
     /// <summary>
     /// The verb's run: a read said, a change pressed (its route where the instance answers, its operation alone), or its usage.
@@ -216,10 +253,13 @@ public static class DriverChoicesCommand
         }
 
         if (verb == "list") return List(before, world);
+        if (verb == "workflow") return await WorkflowAsync(args, before, world, ct).ConfigureAwait(false);
 
         ChoicePress press;
         try
         {
+            // `brainstorms` naming no change says the policy, a read that holds nothing and asks no confirmation (BRAINSTORM1b).
+            if (verb == "brainstorms" && !Changes(args)) return BrainstormsSaid(args, before, world);
             press = Plan(args, before, world);
         }
         catch (ChoiceWords refused)
@@ -260,6 +300,40 @@ public static class DriverChoicesCommand
         if (press.Route is null || DriverConfig.Overridden(world.Instance.Environment)) return await Alone().ConfigureAwait(false);
         return await InstanceDoor.PressAsync(press.Route, press.Payload, Alone, answer => press.Words(press.Fields(answer)), world.Instance, ct)
             .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// <c>workflow …</c> (PUSH1f2b): a read said, and a write acted on the terminal's word, since no route takes one (D171's PUSH1f note),
+    /// refused from a session's terminal before anything is read (D194 point 5). <see cref="DriverWorkflowsCommand"/> is the verb.
+    /// </summary>
+    private static async Task<int> WorkflowAsync(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world, CancellationToken ct)
+    {
+        var error = world.Instance.Error;
+        if (DriverWorkflowsCommand.Changes([.. args.Skip(1)]) && world.Instance.Environment(SessionVariable) is { Length: > 0 })
+        {
+            await error.WriteLineAsync($"{Prefix}: {SessionsTerminal}").ConfigureAwait(false);
+            return 1;
+        }
+
+        try
+        {
+            return await DriverWorkflowsCommand.RunAsync(args, before, world, ct).ConfigureAwait(false);
+        }
+        catch (ChoiceWords refused)
+        {
+            await error.WriteLineAsync($"{Prefix}: {refused.Message}").ConfigureAwait(false);
+            return refused.Exit;
+        }
+        catch (DriverConfigUnreadableException unreadable)
+        {
+            await error.WriteLineAsync($"{Prefix}: {unreadable.Message}").ConfigureAwait(false);
+            return 2;
+        }
+        catch (DriverException refused)
+        {
+            await error.WriteLineAsync($"{Prefix}: {refused.Message} ({ChoiceCodes.Of(refused)})").ConfigureAwait(false);
+            return 2;
+        }
     }
 
     /// <summary>
@@ -650,6 +724,92 @@ public static class DriverChoicesCommand
             case "commits":
                 return Commits(args, before, world);
 
+            // A quest's or an ask's cycle of work (FABRIC-GRAPH1c; the fabric events design §D7's `workCycles`): a whole graph for one kind,
+            // for a repository or with `--workspace` for each repository there naming none of that kind, judged as `WithWorkCycle` judges
+            // it. A branch's cycle is its landing rule's (`landing … --cycle`). No route sets it, so it acts alone.
+            case "work-cycle":
+            {
+                var workspace = FlagValue(args, "--workspace");
+                var clear = args.Contains("--clear");
+                var words = Operands(args, ["--workspace"]).Skip(1).ToList();
+                var owner = workspace;
+                if (owner is null && words.Count > 0)
+                {
+                    owner = words[0];
+                    words.RemoveAt(0);
+                }
+
+                var kind = words.ElementAtOrDefault(0);
+                var file = words.ElementAtOrDefault(1);
+                if (string.IsNullOrEmpty(owner) || string.IsNullOrEmpty(kind) || clear == (file is not null))
+                {
+                    throw new ChoiceWords("`driver work-cycle` needs <repository>|--workspace <name>, then quest|ask, then <file>|--clear — e.g. "
+                        + "`daoris driver work-cycle aurora-engine quest cycle.json`, a whole graph its work of that kind follows to its end.");
+                }
+
+                if (kind == WorkUnitKind.Branch)
+                {
+                    throw new ChoiceWords("a branch's cycle is its landing rule's `cycle`, so that a repository's landing and its end move together (D164); "
+                        + "no kind has two homes. `daoris driver landing <repository> … --cycle <file>` sets it.");
+                }
+
+                if (!NodeGraphHomes.WorkCycleKinds.Contains(kind))
+                {
+                    throw new ChoiceWords($"`{kind}` is no kind of work with a cycle of its own here — "
+                        + $"{string.Join(" or ", NodeGraphHomes.WorkCycleKinds.Select(each => $"`{each}`"))}.");
+                }
+
+                string? cycle = null;
+                if (file is not null)
+                {
+                    cycle = CycleFile(world, file);
+                    if (NodeGraphs.Read(cycle).Problems.FirstOrDefault() is { } first)
+                    {
+                        throw new ChoiceWords($"the cycle in `{file}` does not hold: {first.Words} Nothing was written.");
+                    }
+                }
+
+                return Change(null, null,
+                    config => workspace is not null ? config.WithWorkspaceWorkCycle(workspace, kind, cycle) : config.WithWorkCycle(owner, kind, cycle), () =>
+                    {
+                        var unit = kind == WorkUnitKind.Ask ? "an ask" : $"a {kind}";
+                        var where = workspace is not null ? $"each repository of the workspace `{workspace}` that names none of its own" : $"`{owner}`";
+                        Say(cycle is not null
+                            ? $"daoris: {unit} in {where} follows its cycle: {CycleSaid(cycle, "")}."
+                            : $"daoris: {unit} in {where} takes {(workspace is not null ? "none" : "its workspace's cycle")} again{(workspace is not null ? "" : ", else none")}.");
+                        Say($"  Written to {path} — the driver re-reads it every tick, so nothing restarts.");
+                        return 0;
+                    });
+            }
+
+            // The brainstorm policy (BRAINSTORM1b, D176 point 9): this machine's, or with `--workspace` for the questions about a workspace's
+            // repositories. `--mode`, `--agents` and the minutes set what they name over the rule set there; `--clear`. No route sets it.
+            case "brainstorms":
+            {
+                var (workspace, clear, set) = BrainstormsAsked(args);
+                var edit = new BrainstormEdit { Workspace = workspace, Set = set, Clear = clear };
+                var after = Judged(() => BrainstormRules.Apply(before, edit));
+                return Change(null, null, config => BrainstormRules.Apply(config, edit), () =>
+                {
+                    if (workspace is null)
+                    {
+                        Say(after.Brainstorms is { } machine
+                            ? $"daoris: brainstorms on this machine: {BrainstormRules.Listed(machine)}."
+                            : $"daoris: this machine's brainstorms take the default again: {BrainstormRules.Listed(BrainstormRule.Default)}.");
+                    }
+                    else
+                    {
+                        var key = FindName(after.WorkspaceBrainstorms.Keys, workspace) ?? FindName(before.WorkspaceBrainstorms.Keys, workspace) ?? workspace;
+                        Say(AtName(after.WorkspaceBrainstorms, key) is { } rule
+                            ? $"daoris: brainstorms for questions about repositories in the workspace `{key}`: {BrainstormRules.Listed(rule)}."
+                            : $"daoris: questions about repositories in the workspace `{key}` take this machine's brainstorms rule again.");
+                    }
+
+                    Say($"  Written to {path}.");
+                    return 0;
+                });
+            }
+
             default:
                 throw new ChoiceWords($"`{verb}` is not a standing choice this program changes.");
         }
@@ -919,18 +1079,14 @@ public static class DriverChoicesCommand
 
     /// <summary>
     /// <c>landing</c> (WSR1, D87, D100, LAND2a, PROCESS1b): a rule replaced whole, or cleared; its plugin asked by the operation
-    /// (<see cref="StandingChoices.Landing"/>). A cycle the rule holds is kept and said, judged under the rule as it now stands.
+    /// (<see cref="StandingChoices.Landing"/>). A cycle the rule holds is kept and said, judged under the rule as it now stands;
+    /// <c>--cycle &lt;file&gt;</c> sets one, judged after this rule's landing as <see cref="DriverConfig.WithLandingCycle"/> judges it, and
+    /// <c>--no-cycle</c> takes it (FABRIC-GRAPH1c): no route takes either, so the rule and its cycle are written alone (PUSH1f2b).
     /// </summary>
     private static ChoicePress Landing(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
     {
         var path = world.ConfigPath;
         void Say(string line) => world.Instance.Out.WriteLine(line);
-        if (args.Any(arg => arg is "--cycle" or "--no-cycle"))
-        {
-            throw new ChoiceWords("a landing's cycle is set by `daoris driver landing … --cycle <file>` and taken by `--no-cycle`, which "
-                + "`daoris driver` keeps until its workflows are this program's (PUSH1f2b); nothing was written.");
-        }
-
         var workspace = FlagValue(args, "--workspace");
         var clear = args.Contains("--clear");
         var words = Operands(args, ["--workspace", "--plugin", "--key", "--cycle"]).Skip(1).ToList();
@@ -986,6 +1142,32 @@ public static class DriverChoicesCommand
         var rule = clear ? null : new LandingRule(form!, pattern, args.Contains("--tidy"), plugin, autoAccept, key, squash);
         if (rule is not null && LandingRules.Problem(rule) is { } problem) throw new ChoiceWords(problem);
 
+        // The work's cycle after the landing (FABRIC-GRAPH1c): set, taken, or with neither flag kept as the rule holds it.
+        var cycleAt = IndexOf(args, "--cycle");
+        var cycleFile = cycleAt == -1 ? null : args.ElementAtOrDefault(cycleAt + 1);
+        if (cycleAt != -1 && (cycleFile is null || cycleFile.StartsWith("--", StringComparison.Ordinal)))
+        {
+            throw new ChoiceWords("`--cycle` needs the file holding the cycle's JSON — `--cycle <file>`, a graph fragment after the landing.");
+        }
+
+        var noCycle = args.Contains("--no-cycle");
+        if (cycleFile is not null && noCycle) throw new ChoiceWords("a rule sets its cycle or takes it away — say `--cycle <file>` or `--no-cycle`, not both.");
+        if (rule is null && (cycleFile is not null || noCycle))
+        {
+            throw new ChoiceWords("`--clear` takes the rule and its cycle with it — a cycle rides its rule (D164). Nothing was written.");
+        }
+
+        string? cycle = null;
+        if (cycleFile is not null)
+        {
+            cycle = CycleFile(world, cycleFile);
+            var source = workspace is not null ? LandingSource.Workspace : LandingSource.Repository;
+            if (NodeGraphHomes.OfLanding(rule! with { Cycle = cycle }, source).Problems.FirstOrDefault() is { } first)
+            {
+                throw new ChoiceWords($"the cycle in `{cycleFile}` does not hold: {first.Words} Nothing was written.");
+            }
+        }
+
         var held = workspace is not null ? AtName(before.WorkspaceLandings, workspace) : AtName(before.Landings, name);
         var payload = Scoped(workspace, name);
         if (rule is not null)
@@ -1002,10 +1184,17 @@ public static class DriverChoicesCommand
         }
 
         var home = DriverConfig.HomeOf(path);
-        return new("landing", ChoiceRoutes.Landing, payload, _ =>
+        // SET_LANDING has no field for the cycle and keeps the one the rule holds, as this verb does with neither flag; a cycle set or taken
+        // is this verb's alone (D171's PUSH1f note).
+        var cycled = cycleFile is not null || noCycle;
+        return new("landing", cycled ? null : ChoiceRoutes.Landing, cycled ? null : payload, _ =>
         {
-            StandingChoices.Write(path, config => StandingChoices.Landing(config, workspace is null ? name : null, workspace, rule,
-                PluginCatalog.Load(home, AdapterSet.Built().Names)));
+            StandingChoices.Write(path, config =>
+            {
+                var landed = StandingChoices.Landing(config, workspace is null ? name : null, workspace, rule, PluginCatalog.Load(home, AdapterSet.Built().Names));
+                if (!cycled) return landed;
+                return workspace is not null ? landed.WithWorkspaceLandingCycle(workspace, cycle) : landed.WithLandingCycle(name, cycle);
+            });
             return Task.FromResult<object?>(null);
         }, _ => null, _ =>
         {
@@ -1058,11 +1247,20 @@ public static class DriverChoicesCommand
                 Say("  The branch holds the session's own commits — a repository's own rule replaces its workspace's whole, the squash with it.");
             }
 
-            // The cycle the rule holds is kept, judged under the rule as it now stands (FABRIC-GRAPH1's choice 3).
-            if (rule is not null && held?.Cycle is { } cycle)
+            // The cycle: set, taken, or kept and judged under the rule as it now stands, since a form that changed under a cycle keeps it
+            // and the driver says one that does not hold (FABRIC-GRAPH1's choice 3).
+            if (cycle is not null)
             {
-                var first = NodeGraphHomes.OfLanding(rule with { Cycle = cycle }, LandingSource.Repository).Problems.FirstOrDefault();
-                Say(first is null ? $"  Its cycle is kept: {CycleSaid(cycle)}." : $"  Its cycle is kept as written, and does not hold under this rule: {first.Words}");
+                Say($"  After the landing, its cycle: {CycleSaid(cycle)}.");
+            }
+            else if (noCycle)
+            {
+                Say("  Its cycle is cleared: the work ends when the line holds it.");
+            }
+            else if (rule is not null && held?.Cycle is { } kept)
+            {
+                var first = NodeGraphHomes.OfLanding(rule with { Cycle = kept }, LandingSource.Repository).Problems.FirstOrDefault();
+                Say(first is null ? $"  Its cycle is kept: {CycleSaid(kept)}." : $"  Its cycle is kept as written, and does not hold under this rule: {first.Words}");
             }
 
             if (rule is not null && workspace is not null)
@@ -1678,13 +1876,92 @@ public static class DriverChoicesCommand
         return string.Join("; ", parts);
     }
 
-    /// <summary>A cycle's size and end, as a door says it: `1 node and 1 wire, ending at `qa``; a fragment's end is the line where it names none.</summary>
-    private static string CycleSaid(string cycle)
+    /// <summary>
+    /// A cycle's size and end, as a door says it: `1 node and 1 wire, ending at `qa``; a fragment's end is the line where it names none,
+    /// and a work cycle's (<paramref name="end"/> empty) none.
+    /// </summary>
+    private static string CycleSaid(string cycle, string end = NodeKinds.Line)
     {
         var parts = NodeGraphs.Parts(cycle, out _);
         var nodes = parts?.Nodes.Count ?? 0;
         var wires = parts?.Wires.Count ?? 0;
-        return $"{nodes} node{(nodes == 1 ? "" : "s")} and {wires} wire{(wires == 1 ? "" : "s")}, ending at `{parts?.End ?? NodeKinds.Line}`";
+        return $"{nodes} node{(nodes == 1 ? "" : "s")} and {wires} wire{(wires == 1 ? "" : "s")}, ending at `{parts?.End ?? end}`";
+    }
+
+    /// <summary>
+    /// A cycle's file, read for a door that sets it (FABRIC-GRAPH1c): its JSON as <c>driver.json</c> keeps it, compact, every value as
+    /// written, or the refusal naming the file. A path is the terminal's, from the folder it was run in.
+    /// </summary>
+    private static string CycleFile(DriverChoicesWorld world, string file)
+    {
+        var path = Path.IsPathFullyQualified(file) ? file : Path.GetFullPath(Path.Combine(world.Folder, file));
+        if (!File.Exists(path)) throw new ChoiceWords($"there is no file `{file}`. Nothing was written.");
+        try
+        {
+            return NodeGraphHomes.Compact(File.ReadAllText(path));
+        }
+        catch (JsonException)
+        {
+            throw new ChoiceWords($"`{file}` is not readable JSON. Nothing was written.");
+        }
+    }
+
+    /// <summary>
+    /// <c>brainstorms</c>' words read (BRAINSTORM1b): its workspace, whether it clears, and the set it names, each part only where it was
+    /// said, as the screen and Ask Daoris send it. A minute given as anything but digits is handed on as written, to be refused in the
+    /// rule's words; a repository named is refused here.
+    /// </summary>
+    private static (string? Workspace, bool Clear, BrainstormSet? Set) BrainstormsAsked(IReadOnlyList<string> args)
+    {
+        const string usage = "`driver brainstorms` takes [--workspace <name>], then --mode ask|off, --agents <adapter,adapter>, --pass-minutes, "
+            + "--synthesis-minutes, --challenge-minutes and --request-minutes <n>, or --clear — e.g. "
+            + "`daoris driver brainstorms --agents claude-code,codex-acp --pass-minutes 10`.";
+        string[] valued = ["--workspace", "--mode", "--agents", .. MinuteFlags.Select(each => each.Flag)];
+        for (var at = 1; at < args.Count; at++)
+        {
+            var token = args[at];
+            if (valued.Contains(token)) at++;
+            else if (token.StartsWith("--", StringComparison.Ordinal) && token != "--clear")
+            {
+                throw new ChoiceWords($"`{token}` is not a flag `driver brainstorms` takes — {usage}");
+            }
+            else if (!token.StartsWith("--", StringComparison.Ordinal))
+            {
+                throw new ChoiceWords($"a brainstorms rule is set for this machine or for a workspace — never for one repository. {usage}");
+            }
+        }
+
+        var minutes = new Dictionary<string, object?>(StringComparer.Ordinal);
+        foreach (var (flag, name) in MinuteFlags)
+        {
+            if (FlagValue(args, flag) is { } value)
+            {
+                minutes[name] = value.All(char.IsAsciiDigit) ? double.Parse(value, CultureInfo.InvariantCulture) : value;
+            }
+        }
+
+        var set = new BrainstormSet
+        {
+            Mode = FlagValue(args, "--mode"),
+            Agents = FlagValue(args, "--agents")?.Split(',').Select(each => (string?)each.Trim()).ToList(),
+            Minutes = minutes.Count > 0 ? minutes : null,
+        };
+        return (FlagValue(args, "--workspace"), args.Contains("--clear"), set.Names ? set : null);
+    }
+
+    /// <summary><c>brainstorms</c> naming no change: this machine's rule and each workspace's, said.</summary>
+    private static int BrainstormsSaid(IReadOnlyList<string> args, DriverConfig choices, DriverChoicesWorld world)
+    {
+        BrainstormsAsked(args);
+        var said = world.Instance.Out;
+        said.WriteLine($"daoris: brainstorms on this machine: {BrainstormRules.Listed(choices.Brainstorms ?? BrainstormRule.Default)}"
+            + $"{(choices.Brainstorms is null ? " (the default)" : "")}.");
+        foreach (var (name, rule) in choices.WorkspaceBrainstorms)
+        {
+            said.WriteLine($"  for questions about repositories in the workspace `{name}`: {BrainstormRules.Listed(rule)}.");
+        }
+
+        return 0;
     }
 
     /// <summary>Whether this machine's Daoris manages a toolchain for an agent's name: the CLI's <c>TOOLCHAINS</c>, the gate stubs aside.</summary>

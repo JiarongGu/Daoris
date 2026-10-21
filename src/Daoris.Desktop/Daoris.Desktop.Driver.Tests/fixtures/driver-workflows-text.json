@@ -1814,6 +1814,7 @@
     },
     {
       "name": "workflow apply, a graph with letters in an option",
+      "changed": "The CLI refused a graph whose option holds letters its digest could not write as the driver does; the driver writes and digests the person's words as written, so the version is saved (D194 point 6).",
       "argv": [
         "workflow",
         "apply",
@@ -1825,12 +1826,17 @@
         "data/workflows/docs.json": "{\n  \"id\": \"docs\",\n  \"name\": \"Docs\",\n  \"versions\": [\n    {\n      \"version\": 1,\n      \"at\": \"2026-10-09T09:12:34Z\",\n      \"door\": \"terminal\",\n      \"steps\": [\n        {\n          \"id\": \"work\",\n          \"kind\": \"work\"\n        },\n        {\n          \"id\": \"landing\",\n          \"kind\": \"landing\",\n          \"form\": \"merge\",\n          \"accept\": \"you\"\n        }\n      ]\n    }\n  ]\n}\n",
         "letters.json": "{ \"schemaVersion\": 2, \"entries\": [\"qa\"], \"end\": \"close\", \"nodes\": [\n  { \"id\": \"qa\", \"kind\": \"human\", \"version\": 1, \"reach\": \"pressed\", \"options\": { \"brief\": \"Vérifier\", \"weight\": 1.0, \"order\": { \"2\": \"b\", \"1\": \"a\" } } },\n  { \"id\": \"landing\", \"kind\": \"handed\", \"version\": 1, \"reach\": \"observed\" },\n  { \"id\": \"close\", \"kind\": \"quest.close\", \"version\": 1, \"reach\": \"performed\" } ],\n  \"wires\": [ { \"id\": \"a\", \"kind\": \"after\", \"from\": \"qa\", \"to\": \"landing\" }, { \"id\": \"b\", \"kind\": \"after\", \"from\": \"landing\", \"to\": \"close\" } ] }"
       },
-      "exit": 1,
-      "out": [],
-      "err": [
-        "daoris: v2: its graph does not hold here: node `qa`'s option `brief` holds a value this build cannot write as the driver does (a character outside ASCII and Chinese, a key written twice, or a number read with no record of its text); the driver reads it."
+      "exit": 0,
+      "out": [
+        "daoris: `docs` v1 → v2 — Docs: a graph (schema 2) of 3 nodes and 2 wires, ending at `close`, digest gph-cf0139b139b60137df41878407c77e96, which this build reads and does not run yet.",
+        "  Written to <home>/data/workflows/docs.json.",
+        "  A choice names a workflow (`daoris driver workflow use <id> --repository <name>|--workspace <name> [--kind <kind>]`), and work binds its newest version at its first start; every gate then reads that version."
       ],
-      "after": null
+      "err": [],
+      "after": null,
+      "written": {
+        "data/workflows/docs.json": "{\n  \"id\": \"docs\",\n  \"name\": \"Docs\",\n  \"versions\": [\n    {\n      \"version\": 1,\n      \"at\": \"2026-10-09T09:12:34Z\",\n      \"door\": \"terminal\",\n      \"steps\": [\n        {\n          \"id\": \"work\",\n          \"kind\": \"work\"\n        },\n        {\n          \"id\": \"landing\",\n          \"kind\": \"landing\",\n          \"form\": \"merge\",\n          \"accept\": \"you\"\n        }\n      ]\n    },\n    {\n      \"version\": 2,\n      \"at\": \"2026-10-09T09:12:34Z\",\n      \"door\": \"terminal\",\n      \"schema\": 2,\n      \"graph\": {\n        \"schemaVersion\": 2,\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"close\",\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\",\n            \"options\": {\n              \"brief\": \"Vérifier\",\n              \"weight\": 1.0,\n              \"order\": {\n                \"1\": \"a\",\n                \"2\": \"b\"\n              }\n            }\n          },\n          {\n            \"id\": \"landing\",\n            \"kind\": \"handed\",\n            \"version\": 1,\n            \"reach\": \"observed\"\n          },\n          {\n            \"id\": \"close\",\n            \"kind\": \"quest.close\",\n            \"version\": 1,\n            \"reach\": \"performed\"\n          }\n        ],\n        \"wires\": [\n          {\n            \"id\": \"a\",\n            \"kind\": \"after\",\n            \"from\": \"qa\",\n            \"to\": \"landing\"\n          },\n          {\n            \"id\": \"b\",\n            \"kind\": \"after\",\n            \"from\": \"landing\",\n            \"to\": \"close\"\n          }\n        ]\n      }\n    }\n  ]\n}\n"
+      }
     },
     {
       "name": "workflow import, versions that are graphs",
@@ -4401,6 +4407,7 @@
     },
     {
       "name": "landing --cycle, a number by its own text",
+      "changed": "The CLI refused a cycle it could not write back into driver.json as read, since JavaScript writes a number by its own text and orders the keys that are numbers; the driver keeps every value as written (`NodeGraphHomes.Compact`), so the cycle is set as the window would set it (D194 point 6).",
       "argv": [
         "landing",
         "engine",
@@ -4412,15 +4419,18 @@
       "files": {
         "cycle.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\",\"options\":{\"weight\":1.0}}],\"wires\":[{\"id\":\"a\",\"kind\":\"after\",\"from\":\"line\",\"to\":\"qa\"}],\"end\":\"qa\"}"
       },
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: the cycle in `cycle.json` holds a value this build would write differently than the driver reads it: a number by other text than JavaScript's, a key that is a number, or a key written twice. Write it as JavaScript writes it. Nothing was written."
+      "exit": 0,
+      "out": [
+        "daoris: work in `engine` is merged into the line when you accept it, in the repository's own checkout.",
+        "  After the landing, its cycle: 1 node and 1 wire, ending at `qa`.",
+        "  Written to <config> — the review reads it at each press, so nothing restarts."
       ],
-      "after": "{\"landings\":{\"engine\":{\"form\":\"merge\"}}}"
+      "err": [],
+      "after": "{\n  \"landings\": {\n    \"engine\": {\n      \"form\": \"merge\",\n      \"cycle\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\",\n            \"options\": {\n              \"weight\": 1.0\n            }\n          }\n        ],\n        \"wires\": [\n          {\n            \"id\": \"a\",\n            \"kind\": \"after\",\n            \"from\": \"line\",\n            \"to\": \"qa\"\n          }\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n"
     },
     {
       "name": "landing --cycle, keys that are numbers out of their order",
+      "changed": "The CLI refused a cycle it could not write back into driver.json as read, since JavaScript writes a number by its own text and orders the keys that are numbers; the driver keeps every value as written (`NodeGraphHomes.Compact`), so the cycle is set as the window would set it (D194 point 6).",
       "argv": [
         "landing",
         "engine",
@@ -4432,12 +4442,14 @@
       "files": {
         "cycle.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\",\"options\":{\"order\":{\"2\":\"b\",\"1\":\"a\"}}}],\"wires\":[{\"id\":\"a\",\"kind\":\"after\",\"from\":\"line\",\"to\":\"qa\"}],\"end\":\"qa\"}"
       },
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: the cycle in `cycle.json` holds a value this build would write differently than the driver reads it: a number by other text than JavaScript's, a key that is a number, or a key written twice. Write it as JavaScript writes it. Nothing was written."
+      "exit": 0,
+      "out": [
+        "daoris: work in `engine` is merged into the line when you accept it, in the repository's own checkout.",
+        "  After the landing, its cycle: 1 node and 1 wire, ending at `qa`.",
+        "  Written to <config> — the review reads it at each press, so nothing restarts."
       ],
-      "after": "{\"landings\":{\"engine\":{\"form\":\"merge\"}}}"
+      "err": [],
+      "after": "{\n  \"landings\": {\n    \"engine\": {\n      \"form\": \"merge\",\n      \"cycle\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\",\n            \"options\": {\n              \"order\": {\n                \"2\": \"b\",\n                \"1\": \"a\"\n              }\n            }\n          }\n        ],\n        \"wires\": [\n          {\n            \"id\": \"a\",\n            \"kind\": \"after\",\n            \"from\": \"line\",\n            \"to\": \"qa\"\n          }\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n"
     },
     {
       "name": "landing --clear --cycle",

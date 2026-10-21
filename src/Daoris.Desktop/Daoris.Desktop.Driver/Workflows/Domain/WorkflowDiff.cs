@@ -225,8 +225,11 @@ public static class WorkflowDiff
         _ => null,
     };
 
-    /// <summary>A field's value as a diff says it: absence as declared, a switch, text and names in backticks, a group by its size.</summary>
-    private static string Rendered(object? value) => value switch
+    /// <summary>
+    /// A field's value as a diff says it: absence as declared, a switch, text and names in backticks, a group by its size. <c>daoris
+    /// driver workflow show</c> says a step's fields in the same words (<see cref="WorkflowWords.NamedStepSaid"/>).
+    /// </summary>
+    internal static string Rendered(object? value) => value switch
     {
         null => "as declared",
         bool flag => flag ? "true" : "false",

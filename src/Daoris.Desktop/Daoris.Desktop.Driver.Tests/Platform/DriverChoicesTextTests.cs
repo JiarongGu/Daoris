@@ -23,12 +23,16 @@ public sealed partial class DriverChoicesTextTests
         return names;
     }
 
+    /// <summary>Every verb the command answers is in this table, or in PUSH1f2b's of the family's last verbs (<c>DriverWorkflowsTextTests</c>).</summary>
     [Fact]
     public void The_table_holds_every_verb_the_command_answers()
     {
         var rows = Read.Value.GetProperty("rows").EnumerateArray().ToList();
         Assert.True(rows.Count >= 100, $"only {rows.Count} rows, so this proves little");
-        var verbs = rows.Select(row => row.GetProperty("argv").EnumerateArray().Select(each => each.GetString()).FirstOrDefault() ?? "list")
+        var later = JsonDocument.Parse(File.ReadAllText(Path.Combine(
+            WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "driver-workflows-text.json"))).RootElement;
+        var verbs = rows.Concat(later.GetProperty("rows").EnumerateArray())
+            .Select(row => row.GetProperty("argv").EnumerateArray().Select(each => each.GetString()).FirstOrDefault() ?? "list")
             .ToHashSet(StringComparer.Ordinal);
         Assert.All(DriverChoicesCommand.Verbs, verb => Assert.Contains(verb, verbs));
     }

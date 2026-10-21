@@ -115,10 +115,8 @@ public sealed class DriverChoicesCommandTests : IDisposable
     }
 
     [Theory]
-    [InlineData("workflow list")]
-    [InlineData("work-cycle engine quest cycle.json")]
-    [InlineData("brainstorms")]
     [InlineData("frobnicate")]
+    [InlineData("workflows list")]
     public async Task A_verb_it_does_not_have_is_its_usage_and_does_nothing(string words)
     {
         var exit = await DriverChoicesCommand.RunAsync(words.Split(' '), World(), CancellationToken.None);
@@ -128,16 +126,100 @@ public sealed class DriverChoicesCommandTests : IDisposable
         Assert.False(File.Exists(Config));
     }
 
-    [Theory]
-    [InlineData("landing engine merge --cycle cycle.json")]
-    [InlineData("landing engine merge --no-cycle")]
-    public async Task A_landing_cycle_is_the_CLIs_and_is_refused_here(string words)
+    /// <summary>
+    /// PUSH1f2b: the family's last verbs are this program's, and the CLI hands it every word. Each the CLI said once is a verb here,
+    /// and its usage names each of them.
+    /// </summary>
+    [Fact]
+    public void The_family_is_this_programs_whole_and_its_usage_names_each_verb()
     {
-        var exit = await DriverChoicesCommand.RunAsync(words.Split(' '), World(), CancellationToken.None);
+        Assert.Equal(
+            ["list", "drive", "undrive", "hold", "resume", "trees", "notify", "cap", "strikes", "retry", "timeout", "cooloff", "adapter", "helper",
+                "intake", "line", "landing", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits", "work-cycle",
+                "brainstorms", "workflow"],
+            DriverChoicesCommand.Verbs);
+        Assert.All(DriverChoicesCommand.Verbs, verb =>
+            Assert.Matches($"(?<![\\w-]){System.Text.RegularExpressions.Regex.Escape(verb)}(?![\\w-])", DriverChoicesCommand.Usage));
+        Assert.Contains("--cycle <file>|--no-cycle", DriverChoicesCommand.Usage, StringComparison.Ordinal);
+        Assert.All(DriverWorkflowsCommand.Verbs, verb => Assert.Contains(verb, DriverChoicesCommand.Usage, StringComparison.Ordinal));
+        Assert.DoesNotContain("still", DriverChoicesCommand.Usage, StringComparison.Ordinal);
+    }
 
-        Assert.Equal(2, exit);
-        Assert.Contains("`daoris driver landing … --cycle", _error.ToString(), StringComparison.Ordinal);
+    /// <summary>
+    /// A change no route takes acts here on the terminal's word (D171's PUSH1f note, kept by D194 point 5), refused from a session's
+    /// terminal before anything is read or written: a landing's cycle, a work cycle, the brainstorm policy and a workflow's write.
+    /// </summary>
+    [Theory]
+    [InlineData("landing engine merge --no-cycle")]
+    [InlineData("work-cycle engine quest --clear")]
+    [InlineData("brainstorms --mode off")]
+    [InlineData("workflow new docs --from merge-after-accept")]
+    [InlineData("workflow kind work docs --label Documentation")]
+    public async Task A_change_no_route_takes_from_a_sessions_terminal_is_refused_and_nothing_is_written(string words)
+    {
+        var exit = await DriverChoicesCommand.RunAsync(words.Split(' '), World(("DAORIS_SESSION_ID", "s1a2b3c4")), CancellationToken.None);
+
+        Assert.Equal(1, exit);
+        Assert.Equal(Refused, _error.ToString().TrimEnd());
+        Assert.Equal("", _out.ToString());
         Assert.False(File.Exists(Config));
+        Assert.False(Directory.Exists(WorkflowStore.FolderOf(_home)));
+    }
+
+    /// <summary>A read, and a workflow's write with <c>--plan</c>, are said from a session's terminal: they change nothing.</summary>
+    [Theory]
+    [InlineData("brainstorms")]
+    [InlineData("workflow list")]
+    [InlineData("workflow new docs --from merge-after-accept --plan")]
+    public async Task A_read_and_a_plan_from_a_sessions_terminal_are_said(string words)
+    {
+        var exit = await DriverChoicesCommand.RunAsync(words.Split(' '), World(("DAORIS_SESSION_ID", "s1a2b3c4")), CancellationToken.None);
+
+        Assert.Equal(0, exit);
+        Assert.StartsWith("daoris: ", _out.ToString(), StringComparison.Ordinal);
+        Assert.Equal("", _error.ToString());
+        Assert.False(File.Exists(Config));
+        Assert.False(Directory.Exists(WorkflowStore.FolderOf(_home)));
+    }
+
+    /// <summary>
+    /// Beside the running Daoris a change no route takes is written here, with nothing sent (PUSH1f2b, D194 point 5): a landing's cycle,
+    /// whose rule SET_LANDING would take, sends nothing, since the route has no field for the cycle.
+    /// </summary>
+    [Theory]
+    [InlineData("landing engine merge --no-cycle")]
+    [InlineData("brainstorms --mode off")]
+    [InlineData("workflow kind work docs --label Documentation")]
+    public async Task Beside_the_running_Daoris_a_change_no_route_takes_is_written_here_and_nothing_is_sent(string words)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        await using var running = new InstanceTestHome();
+        var standIn = running.Serve();
+        var instance = running.World("daoris");
+        var config = DaorisHome.Entry(running.Home, HomeEntry.DriverConfig);
+        var world = new DriverChoicesWorld
+        {
+            Instance = new InstanceWorld
+            {
+                Home = running.Home,
+                Environment = _ => null,
+                BaseDirectory = instance.BaseDirectory,
+                Status = instance.Status,
+                Out = running.Out,
+                Error = running.Error,
+                Verb = "daoris",
+                Answer = instance.Answer,
+                Wait = instance.Wait,
+            },
+            ConfigPath = config,
+        };
+
+        var exit = await DriverChoicesCommand.RunAsync(words.Split(' '), world, CancellationToken.None);
+
+        Assert.Equal(0, exit);
+        Assert.True(File.Exists(config), running.Error.ToString());
+        Assert.Empty(standIn.Presses);
+        Assert.Equal(0, standIn.Connections);
     }
 
     [Fact]
