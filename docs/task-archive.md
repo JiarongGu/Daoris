@@ -19298,3 +19298,15 @@ TypeScript §4 lists left the CLI (1,091 `test(` lines before, 953 after), the s
 driver's fixtures with their readers and merge rows, and the twins rows lost the CLI's column. §5's Process proofs through the CLI and
 the host on a stub agent (`AgentSignInProcessTests`); a Ctrl+C through the processes stays in-process. Verbs' shapes unchanged for
 D197. Detail: D194's PUSH1f2e note. On Opus.
+## KEEP1f — below the floor, Daoris frees what it can make again and says the rest (2026-10-22, D195)
+
+> - [ ] **KEEP1f — below the floor, Daoris frees what it can make again and says the rest** (driver, modules, web-settings, web-shell; after KEEP1d and KEEP1e; D195, the cleanup design §9). Below a floor read per volume: the slims, unused downloads but `never`, the browser's caches once a stretch; the rest said in *What needs you*. Proof: as §9 names it.
+
+**Outcome** 2026-10-22: built. `driver.json`'s `keep.floor` (a size, a share or `off`; the smaller of 10% and 20 GB by default),
+set by `SET_KEEP`, `daoris driver keep floor`, Ask Daoris's `keep` door and the *Free space* row's *Change…*. Each entry's volume
+read by its identity (`SpaceVolumes`); below a volume's floor, the look's Keeping pass runs at most hourly the slims due, unused
+downloads but `never`, and the browser's caches once a stretch (`SpaceFloor`, door `floor`); still below, `space.low` once and a
+`space` row in *What needs you* whose door opens the *Disk space* card, until `space.ok` at the margin. The card says the floor, the
+warn ink below it, what Daoris freed early and a kind's own volume. Proof: `SpaceFloorTests`, `AttentionStateSliceTests`,
+`DriverChoicesBothWaysTests`' floor rows, `attention.test.ts` and `WiringDomain.test.tsx` in English and 中文, the card's stories. No
+installed window has fallen below a floor. Detail: D195's KEEP1f note. On Opus.

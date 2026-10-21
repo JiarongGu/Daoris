@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- Daoris now keeps a free-space floor: when a disk it writes to falls below it, Daoris frees early what it can make again (the
+  package folders of trees set aside, downloaded versions nothing uses unless you keep them until you remove them, and its browser's
+  cache once while it is closed) and, if that is not enough, says so in *What needs you* with how much it freed and what *Free up
+  space…* could free. By default the floor is the smaller of 10% of the disk and 20 GB; set a size, a share or none on the *Disk
+  space* card's *Free space* row, or with `daoris driver keep floor <n>GB|<n>%|off|default`. The card says the floor, shows the
+  free space in the warn colour below it, and names the disk a kind is on where it is not Daoris's own. In English and 中文.
 - You may now set an age for finished work's records: on the *Disk space* card's *Conversations and records* row (*Change…*), with
   `daoris driver keep history <days>|never|default`, or through Ask Daoris's proposal you apply. Between 30 and 3,650 days; by default
   none, and nothing clears your history by itself, as before. With an age set, once a day each workspace's finished work whose last
