@@ -75,10 +75,15 @@ public static class WorkflowProcesses
         {
             // FABRIC-PIPELINE1b3 (D192's FABRIC-PIPELINE1b2 note, point 5): a graph version is held from the steps' gates as before, and its
             // `claimed` node's options are its sessions' (the pipeline design §3.1), read from the version as its file holds it, as GraphRuns
-            // reads it, never decoded, and only where it is the version its run bound.
+            // reads it, never decoded, and only where it is the version its run bound. FABRIC-CUTOVER1e: its graph is carried beside, which the
+            // run's view draws from the run's record.
             var unrun = held with { Problem = $"`{binding.Workflow}` v{number} cannot be read here: {version.Unrun}" };
             return version is { Graph: { } graph, Digest: { } identity } && string.Equals(identity, binding.Digest, StringComparison.Ordinal)
-                ? unrun with { Claimed = graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Claimed)?.Options ?? new Dictionary<string, string>() }
+                ? unrun with
+                {
+                    Claimed = graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Claimed)?.Options ?? new Dictionary<string, string>(),
+                    Graph = graph,
+                }
                 : unrun;
         }
         if (binding.Digest is { } digest && !string.Equals(digest, version.Digest, StringComparison.Ordinal))

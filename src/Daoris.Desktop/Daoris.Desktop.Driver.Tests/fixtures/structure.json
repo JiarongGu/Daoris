@@ -353,6 +353,7 @@
     "WorkflowBindingLookTests.cs": "Loop",
     "WorkflowCurrentTests.cs": "Workflows",
     "WorkflowGateTests.cs": "Workflows",
+    "WorkflowGraphRunTests.cs": "Workflows",
     "WorkflowKeepCommandTests.cs": "Workflows",
     "WorkflowNamedTests.cs": "Workflows",
     "WorkflowPortsTests.cs": "Workflows",

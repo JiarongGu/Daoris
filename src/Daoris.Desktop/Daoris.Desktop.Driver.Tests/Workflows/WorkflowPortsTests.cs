@@ -188,6 +188,55 @@ public sealed class WorkflowPortsTests
     }
 
     /// <summary>
+    /// FABRIC-CUTOVER1e: a run bound to a graph version is read from its record through the port, never written, and drawn from it whatever its
+    /// gates still hold: its nodes as its steps, no problem, its branch named by this machine's session branches, read once.
+    /// </summary>
+    [Fact]
+    public async Task A_run_bound_to_a_graph_version_is_drawn_from_its_record_read_through_the_port()
+    {
+        var home = Path.Combine(Path.GetTempPath(), "daoris-graph-run-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            RunHome.Bind(home, "q1", RunHome.SaveGraph(home, """
+                {"schemaVersion":2,"entries":["claimed"],"end":"handed",
+                 "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+                 "wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"}]}
+                """), At);
+            using var service = new ServiceClient("http://stand-in", null, new HttpClient(new StandInService()));
+            var sources = new WorkflowRunSources(service, home, DriverConfig.Empty, [], _ => "aurora");
+            var unit = RunUnits.IdOf("q1");
+            var records = new MemoryRecords();
+            records.Records[unit] = new NodeRecord(unit)
+            {
+                Statuses = new Dictionary<string, NodeStatus>
+                {
+                    ["handed"] = new(unit, "handed", NodeStates.Active)
+                    {
+                        Attempt = 1, Binding = new NodeAcceptance(unit, "abcdef0123456789", "gph", "handed", 1, 1) { Subject = "unit-b" },
+                    },
+                },
+            };
+            records.Grown.Add(new GrownBranch("engine", "aurora", "daoris/q1-work", "main", "base", null, At) { Unit = "unit-b" });
+            var before = Directory.GetFiles(home, "*", SearchOption.AllDirectories).Length;
+
+            var read = await WorkflowRunReader.ReadAsync(new WorkflowRunAsk(Quest: "q1"), sources, records);
+
+            var run = Assert.Single(read.Runs);
+            Assert.Null(run.Problem);
+            // The run's branch is its newest session's, by its tree's name; the landing names the branch its binding observes.
+            Assert.Equal(("q1", "daoris/no-such-tree"), (run.Graph!.Run, run.Graph.Branch));
+            Assert.Equal([("claimed", WorkflowRunStates.NotReached), ("handed", WorkflowRunStates.Working)], run.Steps.Select(step => (step.Step.Id, step.State)));
+            Assert.Equal("Observed on `daoris/q1-work` at `abcdef01`.", WorkflowRunWords.Said(run.Steps[1]));
+            Assert.Equal(1, records.BranchesRead);
+            Assert.Equal(before, Directory.GetFiles(home, "*", SearchOption.AllDirectories).Length);
+        }
+        finally
+        {
+            try { Directory.Delete(home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+
+    /// <summary>
     /// A run is bound at its first start through the ports: the chain's first quest names it, a named workflow's newest version is
     /// kept and said, a later quest of the same run binds nothing, and a service that does not answer binds nothing and says why.
     /// </summary>
@@ -383,6 +432,21 @@ public sealed class WorkflowPortsTests
         {
             Asked.Add(tree);
             return false;
+        }
+
+        /// <summary>The node records by unit; a unit bound to null is a file that does not read, and one not here is a record not written yet.</summary>
+        public Dictionary<string, NodeRecord?> Records { get; } = new(StringComparer.Ordinal);
+
+        public List<GrownBranch> Grown { get; } = [];
+
+        public int BranchesRead { get; private set; }
+
+        public NodeRecord? Record(string unit) => Records.TryGetValue(unit, out var record) ? record : new NodeRecord(unit);
+
+        public IReadOnlyList<GrownBranch> Branches()
+        {
+            BranchesRead++;
+            return Grown;
         }
     }
 
