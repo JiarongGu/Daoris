@@ -279,8 +279,8 @@ ten-second wait (`RecordLock.cs:23`; Fable F3.1). Its handle is the lock, let go
 holder writes `{ pid, since, door }` to a sibling file it owns, `locks/keeping.holder`, as the keep lock writes its own
 (`KeepLock.cs:78`), and removes it at the run's end, so a refusal names the holder and the card can say a terminal's run is under
 way; a holder's file whose process is gone is a run a crash cut short (§3.3). It is tried, never waited for: the pass skips; a
-press while a run is under way in the same process joins it, and from another process is refused, naming the holder. A pass removes for at most 60 seconds, hearing a stop between paths and
-never inside one path's delete; a path whose removal failed for the same reason as at its last try is tried again the next day, not
+press while a run is under way in the same process joins it, and from another process is refused, naming the holder. A pass
+removes for at most 60 seconds, hearing a stop between paths and never inside one path's delete; a path whose removal failed for the same reason as at its last try is tried again the next day, not
 each pass, and said once. The daily downloads' rule lists the versions without measuring each (`DownloadClearing.cs:143-147, 160`
 measure every one) and measures only those it removes.
 
@@ -393,17 +393,18 @@ CACHECLEAR1's act from KEEP1b: judged the same way, moved aside first, so one re
   `SET_KEEP` waiting on one is never refused at the keep lock's ten seconds (`KeepLock.cs:35`; F2.3). A pin's writer looks again
   under its lock that the version's folder is there, refusing a pin of one gone meanwhile, where today the next start would fall
   back to `PATH` and say so (`HarnessSettings.cs:496-498`).
-- **The guard binds only the writers that take the lock** (F2.2). Today both writers of `driver.json` take it
-  (`DriverConfig.cs:891`, `driverconfig.ts:882`), and both of `tools.json` since KEEPALL1c (`Tools.cs:431-432`, `tools.ts:423-424`).
-  The harness file's two take it on their keeping path, but each still writes wiring built in memory whole and unlocked
-  (`HarnessSettings.cs:188-190`, `toolchain.ts:509`), the CLI's writer a second one until PUSH1f2e retires it. So KEEP1b comes after
-  every writer of the three files is under the keep lock: after PUSH1f2e, whose `HarnessSettings.Change` takes every writer of the
-  harness file through the lock, and after PUSH1f2c, which reshapes `TOOLS_DELETE` and the download's staging and publication that
-  KEEP1b's act takes over (the alone-path design §1.4, §5). A KEEP1b built before them carries the whole-layout write under the lock
-  itself, on both sides, with a proof that a whole-layout write waits.
+- **The guard binds only the writers that take the lock** (F2.2). Both writers of `driver.json` take it (`DriverConfig.cs:891`,
+  `driverconfig.ts:882`). Both of `tools.json` took it with KEEPALL1c, and since PUSH1f2c (merged at `7f3d80593`) the file has one
+  writer, the driver's, holding the lock from its read to its write (`Tools.cs:372, 392, 451-452`). The harness file's two take it on
+  their keeping path, but each still writes wiring built in memory whole and unlocked (`HarnessSettings.cs:188-190`,
+  `toolchain.ts:509`), the CLI's writer a second one until PUSH1f2e retires it. So KEEP1b comes after every writer of the three files
+  is under the keep lock: after PUSH1f2e, whose `HarnessSettings.Change` takes every writer of the harness file through the lock (the
+  alone-path design §1.4, §5). PUSH1f2c, the other row the steward's check named, is built; it reshaped `TOOLS_DELETE` and the
+  download's staging and publication, which KEEP1b's act takes over as they now stand. A KEEP1b built before PUSH1f2e carries the
+  whole-layout write under the lock itself, on both sides, with a proof that a whole-layout write waits.
 - **What a running session may still run is the binary it resolved** (F2.5): at its start the roster resolves the agent's managed
-  binary (`HarnessSelection`, `HarnessRoster.cs:1083, 1137-1143`), two for an ACP session, its adapter and the `claude` it is told to use, and
-  the start records them on the session record, a machine-only field (`session-record-fields.md`). A version holding a binary a
+  binary (`HarnessSelection`, `HarnessRoster.cs:1083, 1137-1143`), two for an ACP session, its adapter and the `claude` it is
+  told to use, and the start records them on the session record, a machine-only field (`session-record-fields.md`). A version holding a binary a
   running session resolved is kept. A record older than that field keeps the start-time rule: kept while a session that started
   before the version was first found unused runs (§2.3).
 
@@ -849,8 +850,9 @@ locked writer, the manifest and the run lock are KEEP1a's. A rule runs before an
 slim and the downloads' rule (1a, 1b) come before the card (1c) and the person's rules (1d); the floor (1f) comes after every act it
 runs (1a, 1b, and the browser's caches in 1e); history's age (1g) brings its choice and its clear in one row. Renumbered from round 1:
 its 1a stays 1a, its 1f is 1b, 1b is 1c, 1c is 1d, 1d is 1e, 1e is 1f, 1h is 1g (the owner's note names it KEEP1h), and its 1g, an
-opinion's packet with its quest's clear, is dropped (§7). **Round 3** (Fable F2.2, F5): KEEP1b comes after PUSH1f2c and PUSH1f2e,
-once every writer of the use files takes the keep lock, or carries the harness file's whole-layout write under it itself (§3.5);
+opinion's packet with its quest's clear, is dropped (§7). **Round 3** (Fable F2.2, F5): KEEP1b comes after PUSH1f2e (PUSH1f2c, also
+named, is merged), once every writer of the use files takes the keep lock, or carries the harness file's whole-layout write under it
+itself (§3.5);
 KEEP1a2, `obj/` on evidence, follows KEEP1a and a week of its measurement.
 
 - **KEEP1a — a tree set aside drops its package folders once it has settled** (driver; the service's and the CLI's home tables).
@@ -881,10 +883,10 @@ KEEP1a2, `obj/` on evidence, follows KEEP1a and a week of its measurement.
   after its move. Where that bears it out, a second producer rule beside §5's, written from what the week showed, with every guard of
   §5 (the judgement before the move, the manifest, the hour, nothing written since, containment, no link); `bin/` never (§7). Proof:
   the measurement in D195's note; then KEEP1a's `Process` class gaining an `obj/` the rule takes, one it keeps, and `bin/` kept.
-- **KEEP1b — unused downloads go by their rule** (driver, the service's session record; the web's Downloads row; after PUSH1f2c and
-  PUSH1f2e, §3.5). §2.1's `downloads` at its default, seven days: the pass's `unused` in `keeping.json`, cleared by a pass that finds
-  the version used (§2.3); the daily removal through CACHECLEAR1's act, listing without measuring every version; the act judging under
-  the keep locks of the harness file the roster reads, `tools.json` and `driver.json` at the loop's path, held per version from the
+- **KEEP1b — unused downloads go by their rule** (driver, the service's session record; the web's Downloads row; after PUSH1f2e,
+  PUSH1f2c being merged, §3.5). §2.1's `downloads` at its default, seven days: the pass's `unused` in `keeping.json`, cleared by a
+  pass that finds the version used (§2.3); the daily removal through CACHECLEAR1's act, listing without measuring every version;
+  the act judging under the keep locks of the harness file the roster reads, `tools.json` and `driver.json` at the loop's path, held per version from the
   judgement to the rename; the binaries each session's start resolved, recorded on its record, keeping a version a running session
   resolved, and a record without them kept by its start; a pin's writer looking again under its lock; `TOOLS_DELETE` through the same
   act; the Downloads row (`WiringDownloads`) saying each version's date by the rule. Proof: `DownloadClearingTests` rows, each seen
@@ -945,8 +947,8 @@ Fable's read touched them, at `2cdc2e8c2`; none was run.
 **What it rests on** (round 3). Two of Fable's findings were blocking, and the design is safe only with both taken. **F2.1**: a
 version's first-unused time is the start of its current unused stretch, cleared by a pass that finds it used (§2.3); kept once and
 never reset, the start-time keep for a running session did not hold. **F2.2**: the downloads' judgement under the use files' locks
-binds only writers that take them, so KEEP1b waits for every writer of the three files to take the keep lock, PUSH1f2c and PUSH1f2e,
-or carries the harness file's whole-layout write under it itself (§3.5, §9). Neither is proved until KEEP1b's rows.
+binds only writers that take them, so KEEP1b waits for every writer of the three files to take the keep lock, PUSH1f2e (PUSH1f2c is
+merged), or carries the harness file's whole-layout write under it itself (§3.5, §9). Neither is proved until KEEP1b's rows.
 
 **The residuals, exactly.** At the slim: a pure-JavaScript program that outlived its session, holds nothing in the folder open and
 writes nothing there fails at its next lazy `require`; a program with a native addon loaded or its working folder in the tree
@@ -1037,7 +1039,7 @@ what it did not.
 | F1.3 | (N) Name the exact residual: a pure-JavaScript program that outlived its session, holds nothing open and writes nothing, failing at its next lazy `require`; one with a loaded addon or its working folder in the tree already refuses the move | `TreeSetAside.cs:219-225` (`busy`) | holds, taken | §5 step 1; §10 *The residuals, exactly* |
 | F1.5 | (N) The judgement adds a `git status --ignored` walk inside the repository's hold, beside `NestedRepositories`' own: judge before the hold in `SweepPlanAsync` and check again inside it, or at least share one walk | `AutoTidies.cs:270, 286`, `TreeSweeps.cs:30, 152`, `TreeSetAside.cs:92, 118` | holds, taken whole: git's status read before the hold, the check inside it by the last look's own reads, one walk shared | §5 *The judgement*; KEEP1a |
 | F2.1 | (B) The downloads' first-unused time is recorded once and never reset: found unused at T0, pinned at T1, started on at T2 and unpinned at T3, the version reads at T4 as unused since T0 and is renamed under a live session, which an npm-layout agent does not refuse. A pass that finds it used clears its entry | `HarnessSettings.cs:509-516` | holds, taken | §2.1, §2.3, §7, §10; KEEP1b's proof gains the sequence |
-| F2.2 | (B) The keep-lock guard binds only the writers that take the lock: `DriverConfig.Save` and `JsonKeeping.Save` take it; `HarnessSettings.Save` only on its keeping path, writing a whole layout unlocked otherwise; `tools.json`'s writer none, D194 deferring it to PUSH1f2c and 2e; the CLI's `writeHarnessSettings` a second writer until PUSH1f2e. KEEP1b after every writer of the three files is under the lock, naming PUSH1f2c and 2e, or carrying it itself with a proof that a whole-layout write waits | `DriverConfig.cs:891`, `JsonKeeping.cs:71`, `HarnessSettings.cs:188-190`, `toolchain.ts:508-510`, `Tools.cs:431-432`, `tools.ts:423-424` | holds, taken; in part for `tools.json`, whose two writers took the lock with KEEPALL1c after D194's read. The harness file's whole-layout write is unlocked on both sides. PUSH1f2c stays named: it reshapes `TOOLS_DELETE` and the download's staging, which KEEP1b's act takes over | §3.5 *The guard binds only the writers that take the lock*; §7; §9's order and KEEP1b; §10 |
+| F2.2 | (B) The keep-lock guard binds only the writers that take the lock: `DriverConfig.Save` and `JsonKeeping.Save` take it; `HarnessSettings.Save` only on its keeping path, writing a whole layout unlocked otherwise; `tools.json`'s writer none, D194 deferring it to PUSH1f2c and 2e; the CLI's `writeHarnessSettings` a second writer until PUSH1f2e. KEEP1b after every writer of the three files is under the lock, naming PUSH1f2c and 2e, or carrying it itself with a proof that a whole-layout write waits | `DriverConfig.cs:891`, `JsonKeeping.cs:71`, `HarnessSettings.cs:188-190`, `toolchain.ts:508-510`, `Tools.cs:431-432`, `tools.ts:423-424` | holds, taken; in part for `tools.json`, whose two writers took the lock with KEEPALL1c after D194's read. The harness file's whole-layout write is unlocked on both sides. PUSH1f2c stays named: it reshapes `TOOLS_DELETE` and the download's staging, which KEEP1b's act takes over; merged since (`7f3d80593`), `tools.json`'s one writer holding the lock from its read to its write (`Tools.cs:372, 392, 451-452`) | §3.5 *The guard binds only the writers that take the lock*; §7; §9's order and KEEP1b; §10 |
 | F2.3 | (N) Hold the three locks per version, from the judgement to the rename only, never across the removal, so a person's pin or `SET_KEEP` is not refused after the keep lock's ten seconds | `KeepLock.cs:35`, `RecordLock.cs:23` | holds, taken | §3.5, §6.8, §7; KEEP1b's proof |
 | F2.4 | (N) Lock the harness file the roster reads, `HarnessSettings.ResolvePath(home)`, which `DAORIS_HARNESS_CONFIG` may name elsewhere, not `harnesses.json` by name | `HarnessSettings.cs:88, 104` | holds, taken; `driver.json` likewise at the path the loop resolves (`DownloadClearing.cs:45-51`) | §3.5; KEEP1b's proof |
 | F2.5 | (N) Judge whether a session may still run a version by the binary it resolved, recorded on its session record (an ACP session resolves two); keep the start-time rule for older records | `HarnessRoster.cs:1083, 1134-1143` | holds, taken | §3.5, §6.1, §7, §8; KEEP1b, with the service's session record |
@@ -1048,9 +1050,9 @@ what it did not.
 | F5 | (N) `obj/` may join the slim later, on evidence: measured apart in §10's week, then a second producer rule in a row of its own after KEEP1a; `bin/` never, since a program run from it writes beside itself | round 2's §7 and §11 | holds, taken | §7; §9's KEEP1a2; §10 |
 
 **The choices this round made**, where two shapes remained: the judgement both made before the hold and checked inside it, rather
-than one of the two (F1.5); KEEP1b after PUSH1f2c and PUSH1f2e rather than carrying their locks, the harness file's whole-layout
-write carried only by a KEEP1b built first (F2.2); a session's resolved binaries on its record rather than a lease on the version,
-its start kept for older records (F2.5); and the run lock's holder file naming its door, so the card tells a terminal's run under way
+than one of the two (F1.5); KEEP1b after PUSH1f2e (and PUSH1f2c, merged since) rather than carrying their locks, the harness file's
+whole-layout write carried only by a KEEP1b built first (F2.2); a session's resolved binaries on its record rather than a lease on
+the version, its start kept for older records (F2.5); and the run lock's holder file naming its door, so the card tells a terminal's run under way
 from one a crash cut short (F3.1, F3.3).
 
 **Settled.** The steward checked each take against this revision: first-unused reset by a pass that finds the version used; KEEP1b
