@@ -1,5 +1,5 @@
 {
-  "about": "One table of the English a run says (WORKFLOW1c5, D157, .claude/knowledge/twins.md). The driver's WorkflowRunWords.cs says it in a terminal, the page's workflow/runSaid.ts and the workflow.run.* catalogue say it on the page; WorkflowRunSaidTwinTests.cs and workflow/runSaid.test.ts each read every row. A row is a step's kind, state (working where omitted), detail and the facts its words use; said is the sentence, null where the state's word says it all. A name from a record is in backticks. The terminal's own words (the head line, the marks, this session, the presses under a step) and the step titles, which the page words by Current's own step, stay out.",
+  "about": "One table of the English a run says (WORKFLOW1c5, D157, .claude/knowledge/twins.md). The driver's WorkflowRunWords.cs says it in a terminal, the page's workflow/runSaid.ts and the workflow.run.* catalogue say it on the page; WorkflowRunSaidTwinTests.cs and workflow/runSaid.test.ts each read every row. A row is a step's kind, state (working where omitted), detail and the facts its words use; said is the sentence, null where the state's word says it all. A row with a node is a graph run's node (FABRIC-CUTOVER1e): its own kind, its detail its record's state, on the subject it observes; graph is what a graph run says above its nodes, line for line. A name from a record is in backticks. The terminal's own words (the head line, the marks, this session, the presses under a step) and the step titles, which the page words by Current's own step, stay out.",
   "states": {
     "not-reached": "not reached",
     "working": "working",
@@ -116,11 +116,61 @@
     { "kind": "pull-request", "detail": "no-branch", "said": "Not opened: the work landed into its line." },
     { "kind": "pull-request", "detail": "nothing", "said": "Not opened: there was nothing to land." },
 
+    { "node": "claimed", "kind": "work", "state": "not-reached", "detail": "blocked", "said": null },
+    { "node": "claimed", "kind": "work", "detail": "ready", "said": "Ready: nothing before it holds it." },
+    { "node": "opinion", "kind": "opinion", "state": "cannot-start", "detail": "not-begun", "said": "Not begun: this build does not ask a graph run's second opinion yet." },
+    { "node": "look", "kind": "look", "state": "cannot-start", "detail": "not-begun", "said": "Not begun: this build does not set up your look on a graph run yet." },
+    { "node": "acme.deploy/deploy", "kind": "acme.deploy/deploy", "state": "cannot-start", "detail": "not-begun", "said": "Not started: this build starts no plugin's step on a graph run yet." },
+    { "node": "go-ahead", "kind": "go-ahead", "state": "waiting-on-you", "detail": "active", "words": "deploy the release", "said": "Waits for your go-ahead: deploy the release" },
+    { "node": "go-ahead", "kind": "go-ahead", "state": "waiting-on-you", "detail": "active", "said": "Waits for your go-ahead." },
+    { "node": "human", "kind": "human", "state": "waiting-on-you", "detail": "active", "said": "Waits for your task." },
+    { "node": "claimed", "kind": "work", "detail": "active", "on": "quest", "quest": "q2", "said": "Observed on quest #q2." },
+    { "node": "handed", "kind": "landing", "detail": "active", "on": "branch", "branch": "daoris/q2-work", "commit": "1111111111111111111111111111111111111111", "said": "Observed on `daoris/q2-work` at `11111111`." },
+    { "node": "handed", "kind": "landing", "detail": "active", "on": "branch", "branch": "daoris/q2-work", "said": "Observed on `daoris/q2-work`." },
+    { "node": "acme.deploy/deployed", "kind": "acme.deploy/deployed", "detail": "active", "on": "landing", "branch": "release/q2", "commit": "2222222222222222222222222222222222222222", "said": "Observed on its landing on `release/q2` at `22222222`." },
+    { "node": "acme.deploy/deployed", "kind": "acme.deploy/deployed", "detail": "active", "on": "landing", "branch": "release/q2", "said": "Observed on its landing on `release/q2`." },
+    { "node": "all", "kind": "all", "detail": "active", "said": "Under way." },
+    { "node": "claimed", "kind": "work", "state": "done", "detail": "reached", "on": "quest", "quest": "q2", "said": "Reached on quest #q2." },
+    { "node": "go-ahead", "kind": "go-ahead", "state": "done", "detail": "reached", "said": "Reached." },
+    { "node": "go-ahead", "kind": "go-ahead", "state": "skipped", "detail": "skipped", "code": "person", "words": "nobody raises it for this work", "said": "Passed over for this work, by you." },
+    { "node": "opinion", "kind": "opinion", "state": "skipped", "detail": "skipped", "code": "opinion", "said": "Passed over for this work by its record." },
+    { "node": "handed", "kind": "landing", "state": "failed", "detail": "failed", "code": "refused", "said": "Failed: `refused`." },
+    { "node": "handed", "kind": "landing", "state": "failed", "detail": "failed", "said": "Failed." },
+    { "node": "go-ahead", "kind": "go-ahead", "state": "stopped", "detail": "rejected", "said": "You refused it." },
+    { "node": "claimed", "kind": "work", "state": "stopped", "detail": "stopped", "said": "You stopped it." },
+    { "node": "acme.deploy/deploy", "kind": "acme.deploy/deploy", "state": "not-known", "detail": "unknown", "said": "Its outcome could not be established yet; Daoris asks after it before it starts anything new." },
+    { "node": "handed", "kind": "landing", "detail": "invalidated", "said": "What it rested on moved, so Daoris judges it again at its next look." },
+    { "node": "handed", "kind": "landing", "detail": "later", "said": "Shown as recorded: working, later." },
+
     { "kind": "work", "detail": "later", "said": "Shown as recorded: working, later." },
     { "kind": "work", "detail": "", "said": "Shown as recorded: working, —." },
     { "kind": "work", "state": "paused", "detail": "queued", "said": "Shown as recorded: paused, queued." },
     { "kind": "landing", "state": "not-reached", "detail": "", "said": null },
     { "kind": "landing", "state": "cannot-start", "detail": "refused", "words": "its tree is locked", "said": "Cannot start: its tree is locked" },
     { "kind": "landing", "state": "cannot-start", "detail": "refused", "code": "exists", "said": "Cannot land automatically: the branch it would make already stands." }
+  ],
+  "graph": [
+    { "quest": "q2", "branch": "daoris/q2-work", "said": [
+      "Daoris has not judged its graph yet: its next look does.",
+      "Its graph observes quest #q2, its newest work here, and `daoris/q2-work`, the branch its newest session worked.",
+      "Its branches are its graph's, not the landing rule's: a push, a pull request or a deploy happens for this work only where its graph holds one.",
+      "Every landing door still holds this run: this build judges its graph and lands nothing for it yet."
+    ] },
+    { "judged": true, "quest": "q2", "said": [
+      "Its graph observes quest #q2, its newest work here; no session of it has worked a branch here yet.",
+      "Its branches are its graph's, not the landing rule's: a push, a pull request or a deploy happens for this work only where its graph holds one.",
+      "Every landing door still holds this run: this build judges its graph and lands nothing for it yet."
+    ] },
+    { "unread": true, "said": [
+      "Its node record does not read, so nothing on it is judged or started until a person mends it.",
+      "Its branches are its graph's, not the landing rule's: a push, a pull request or a deploy happens for this work only where its graph holds one.",
+      "Every landing door still holds this run: this build judges its graph and lands nothing for it yet."
+    ] },
+    { "judged": true, "ended": "q2", "quest": "q2", "branch": "daoris/q2-work", "said": [
+      "It ended at quest #q2: nothing of its graph moves again until its chain comes back here.",
+      "Its graph observes quest #q2, its newest work here, and `daoris/q2-work`, the branch its newest session worked.",
+      "Its branches are its graph's, not the landing rule's: a push, a pull request or a deploy happens for this work only where its graph holds one.",
+      "Every landing door still holds this run: this build judges its graph and lands nothing for it yet."
+    ] }
   ]
 }

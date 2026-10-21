@@ -52,9 +52,26 @@ public sealed class WorkflowRunSaidTwinTests
             GoAhead = Number(row, "goAhead"),
             Words = Text(row, "words"),
             Code = Text(row, "code"),
+            Node = Text(row, "node"),
+            On = Text(row, "on"),
         };
 
         Assert.Equal(Text(row, "said"), WorkflowRunWords.Said(step));
+    }
+
+    /// <summary>FABRIC-CUTOVER1e: what a graph run says above its nodes, line for line, as the table's <c>graph</c> rows have it.</summary>
+    [Fact]
+    public void A_graph_run_says_its_lines_in_the_tables_words()
+    {
+        static bool Flag(JsonElement row, string name) => row.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.True;
+        foreach (var row in Table().GetProperty("graph").EnumerateArray())
+        {
+            var graph = new WorkflowGraphRun("q2", ["claimed"], "handed", [])
+            {
+                Quest = Text(row, "quest"), Branch = Text(row, "branch"), Judged = Flag(row, "judged"), Unread = Flag(row, "unread"), Ended = Text(row, "ended"),
+            };
+            Assert.Equal(row.GetProperty("said").EnumerateArray().Select(line => line.GetString()), WorkflowRunWords.GraphSaid(graph));
+        }
     }
 
     [Fact]
@@ -78,6 +95,9 @@ public sealed class WorkflowRunSaidTwinTests
         var worded = WorkflowRunWords.Details.SelectMany(each => each.Value.Select(detail => $"{each.Key}.{detail}"));
 
         Assert.Empty(worded.Where(key => !rows.Contains(key)));
+        // FABRIC-CUTOVER1e: each detail a graph run's node is said by has a row with a node.
+        var nodes = table.GetProperty("rows").EnumerateArray().Where(row => Text(row, "node") is not null).Select(row => Text(row, "detail")).ToHashSet(StringComparer.Ordinal);
+        Assert.Empty(WorkflowGraphDetails.All.Where(detail => !nodes.Contains(detail)));
         foreach (var state in typeof(WorkflowRunStates).GetFields().Where(field => field.IsLiteral && field.FieldType == typeof(string)).Select(field => (string)field.GetValue(null)!))
         {
             Assert.True(table.GetProperty("states").TryGetProperty(state, out _), state);
