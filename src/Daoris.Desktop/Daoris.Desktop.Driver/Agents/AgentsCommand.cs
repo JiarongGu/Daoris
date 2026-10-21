@@ -78,6 +78,12 @@ public static class AgentRoutes
     /// <summary><c>agent settings &lt;agent&gt; model|effort …</c>: an account's own model and effort.</summary>
     public static InstanceRoute Settings { get; } = Person("SET_AGENT_SETTINGS");
 
+    /// <summary><c>agent unpin</c> and <c>agent profile add|remove|default|rename|join</c>: the Agents place's own actions (PUSH1f2e2).</summary>
+    public static InstanceRoute Harness { get; } = Person("HARNESS_ACTION");
+
+    /// <summary><c>agent profile order|ready</c>: the Accounts place's order and <i>Try now</i> (PUSH1f2e2).</summary>
+    public static InstanceRoute Account { get; } = Person("ACCOUNT_USE");
+
     /// <summary>
     /// Each verb that changes a home, in the verb's words: the route it sends while Daoris runs, or null with why it acts alone, and which
     /// home it writes.
@@ -89,6 +95,10 @@ public static class AgentRoutes
         ("agent settings <agent> model|effort …", Settings, "an account's own model and effort, in the tool's own settings file", AgentHome.Wiring),
         ("agent trust <agent> <folder> --yes", null,
             "alone: the window's TRUST_FOLDER grants only a folder a hold names, and this names any folder", AgentHome.Wiring),
+        ("agent profile add|remove|default|rename|join", Harness, "the Accounts place's `profile-*` actions", AgentHome.Wiring),
+        ("agent unpin <agent>", Harness, "the machine's pin taken back", AgentHome.Wiring),
+        ("agent profile order|ready", Account, "the Accounts place's order and *Try now*", AgentHome.Wiring),
+        ("agent unpin <agent> --workspace <name>", null, "alone: HARNESS_ACTION's unpin names no workspace", AgentHome.Wiring),
     ];
 
     /// <summary>The home a verb of this program's writes: its row's, by its first word.</summary>
@@ -98,7 +108,8 @@ public static class AgentRoutes
 
 /// <summary>
 /// <c>daoris-driver agent</c> (PUSH1f2d, D194, the alone-path design §1.2): the agents' rules, trust and settings from a terminal, the words
-/// <c>daoris agent rules|trust|settings …</c> hands this program; the rest of the family is the CLI's until PUSH1f2e. Each change a route
+/// <c>daoris agent rules|trust|settings …</c> hands this program, what an agent runs as, and its pin taken back and its accounts
+/// (PUSH1f2e1, PUSH1f2e2, <see cref="AgentAccountsCommand"/>); the rest of the family is the CLI's until the rest of PUSH1f2e. Each change a route
 /// takes is its route through <see cref="InstanceDoor.PressAsync"/> where the running Daoris answers, confirmed in its window; else its
 /// operation, on the terminal's word (D50), refused from a session's terminal (D194 point 5). The rules and their proposals are
 /// <c>DAORIS_HOME</c>'s whatever <c>DAORIS_HARNESS_CONFIG</c> names, so they keep the door on that home; an account's settings and a
@@ -113,7 +124,10 @@ public static class AgentRoutes
 public static class AgentsCommand
 {
     /// <summary>The verbs this program has, each the CLI hands on (the CLI's allow-list is held to it).</summary>
-    public static IReadOnlyList<string> Verbs { get; } = ["rules", "trust", "settings", "which"];
+    public static IReadOnlyList<string> Verbs { get; } = ["rules", "trust", "settings", "which", "unpin", "profile"];
+
+    /// <summary>The <c>profile</c> verbs this program has, each the CLI hands on; <c>profile use</c> is still the CLI's (PUSH1f2e2).</summary>
+    public static IReadOnlyList<string> ProfileVerbs => AgentAccountsCommand.ProfileVerbs;
 
     public const string Usage =
         """
@@ -122,7 +136,12 @@ public static class AgentsCommand
                daoris-driver agent trust <agent> <folder> [--profile <account>] [--yes | --dry-run]
                daoris-driver agent settings <agent> [--account <account>] [model <name>|unset] [effort <level>|unset [--for <model>]]
                daoris-driver agent which <agent> [--workspace <name>] [--json]
-        `daoris agent rules|trust|settings|which …` runs these; the family's other verbs are still `daoris agent`'s own.
+               daoris-driver agent unpin <agent> [--workspace <name>]
+               daoris-driver agent profile [list] · add|remove <agent> <profile> · default <agent> <profile>|--clear [--workspace <name>]
+               daoris-driver agent profile order <agent> <profile>…|--clear [--workspace <name>] · ready <agent> <profile>|--own
+               daoris-driver agent profile rename <agent> <account> <name> · join <agent> <account> [<workspace>…] [--machine]
+        `daoris agent rules|trust|settings|which|unpin …` and `daoris agent profile …` but `use` run these; the family's other verbs
+        are still `daoris agent`'s own.
         """;
 
     private const string Prefix = "daoris";
@@ -133,7 +152,7 @@ public static class AgentsCommand
     private static readonly HashSet<string> Answers = new(StringComparer.Ordinal) { "accept", "decline" };
 
     /// <summary>The flags that take a value, as the CLI's agent family read them: a flag's value is no operand.</summary>
-    private static readonly HashSet<string> Valued = new(StringComparer.Ordinal)
+    internal static readonly HashSet<string> Valued = new(StringComparer.Ordinal)
     {
         "--profile", "--workspace", "--account", "--for", "--keep", "--switch", "--curve", "--early", "--near", "--name", "--join",
     };
@@ -150,6 +169,8 @@ public static class AgentsCommand
             "rules" => args.Count > 1 && (RuleEdits.Contains(args[1]) || Answers.Contains(args[1])),
             "settings" => Operands(args, Valued).Count > 2,
             "trust" => args.Contains("--yes") && !args.Contains("--dry-run"),
+            "unpin" => true,
+            "profile" => args.Count > 1 && AgentAccountsCommand.ProfileChanges(args[1]),
             _ => false,
         };
     }
@@ -225,6 +246,8 @@ public static class AgentsCommand
                 : Rules([.. args.Skip(1)], world, out exit),
             "trust" => Trust(args, world, out exit),
             "which" => Which(args, world, out exit),
+            "unpin" => AgentAccountsCommand.Unpin(args, world),
+            "profile" => AgentAccountsCommand.Profile(args, world, out exit),
             _ => Settings(args, world, out exit),
         };
     }
@@ -532,7 +555,7 @@ public static class AgentsCommand
     // ——— the wiring's verbs: trust and settings
 
     /// <summary>The wiring file the agent family reads: the one <c>DAORIS_HARNESS_CONFIG</c> names, else the home's.</summary>
-    private static string WiringPath(AgentsWorld world) =>
+    internal static string WiringPath(AgentsWorld world) =>
         world.Instance.Environment(HarnessSettings.PathVariable) is { Length: > 0 } named
             ? named
             : world.Instance.Home is { } home
@@ -544,15 +567,15 @@ public static class AgentsCommand
     /// it is read from. An agent is a door this machine runs that names a real program, or an agent a door runs as with no door here
     /// (<see cref="AdapterSet.Holder"/>, <c>codex</c>): the stubs name none (D46 §8), as the CLI's <c>TOOLCHAINS</c> named them.
     /// </summary>
-    private static (string Name, HarnessToolchain Toolchain, string? SettingsFile, HarnessRoster Roster) Agent(
-        IReadOnlyList<string> args, string verb, string shape, AgentsWorld world, string path)
+    internal static (string Name, HarnessToolchain Toolchain, string? SettingsFile, HarnessRoster Roster) Agent(
+        IReadOnlyList<string> args, string verb, string shape, AgentsWorld world, string path, int at = 1)
     {
         var set = world.Adapters(HarnessSettings.HomeOf(path));
         var roster = new HarnessRoster(set, path);
         bool Door(string each) => set.Names.Contains(each, StringComparer.OrdinalIgnoreCase);
         HarnessToolchain? Of(string each) => Door(each) ? set.Resolve(each).Toolchain : set.Holder(each);
-        var named = set.Reserved.Where(each => Of(each) is { Binary.Count: > 0 }).ToList();
-        var name = Operand(args, 1) ?? throw new AgentWords($"`agent {verb}` needs {shape} — e.g. `daoris agent {verb} claude-code`");
+        var named = Named(set);
+        var name = Operand(args, at) ?? throw new AgentWords($"`agent {verb}` needs {shape} — e.g. `daoris agent {verb} claude-code`");
         if (!named.Contains(name, StringComparer.Ordinal) || Of(name) is not { } toolchain)
         {
             // Never a silent fallback: a machine that installed another agent than the person named is the same failure as a
@@ -564,8 +587,18 @@ public static class AgentsCommand
         return (name, toolchain, Door(name) ? roster.AccountToolchain(name)?.SettingsFile : toolchain.SettingsFile, roster);
     }
 
+    /// <summary>The agents a verb may name, in the roster's order: each door that names a real program, and each agent a door runs as.</summary>
+    internal static IReadOnlyList<string> Named(AgentsWorld world, string path) => Named(world.Adapters(HarnessSettings.HomeOf(path)));
+
+    private static List<string> Named(AdapterSet set)
+    {
+        bool Door(string each) => set.Names.Contains(each, StringComparer.OrdinalIgnoreCase);
+        HarnessToolchain? Of(string each) => Door(each) ? set.Resolve(each).Toolchain : set.Holder(each);
+        return [.. set.Reserved.Where(each => Of(each) is { Binary.Count: > 0 })];
+    }
+
     /// <summary>An account by its id or its name (ACCT2): its id, or what was given where it names none, for the verb to refuse.</summary>
-    private static string AccountNamed(string home, string owner, string given) =>
+    internal static string AccountNamed(string home, string owner, string given) =>
         AccountNames.Resolve(HarnessSettings.Profiles(home, owner), AccountNames.Of(home, owner), given) ?? given.Trim();
 
     /// <summary>
@@ -825,7 +858,7 @@ public static class AgentsCommand
     }
 
     /// <summary>The value after a flag, refusing a flag with nothing after it, as the CLI's <c>flagValue</c>.</summary>
-    private static string? FlagValue(IReadOnlyList<string> args, string flag)
+    internal static string? FlagValue(IReadOnlyList<string> args, string flag)
     {
         var at = args.ToList().IndexOf(flag);
         if (at < 0) return null;
@@ -836,7 +869,7 @@ public static class AgentsCommand
     }
 
     /// <summary>Every word that is neither a flag nor the value of one, as the CLI's <c>operands</c>.</summary>
-    private static List<string> Operands(IReadOnlyList<string> args, IReadOnlySet<string> valued)
+    internal static List<string> Operands(IReadOnlyList<string> args, IReadOnlySet<string> valued)
     {
         var found = new List<string>();
         for (var at = 0; at < args.Count; at++)
@@ -848,13 +881,13 @@ public static class AgentsCommand
         return found;
     }
 
-    private static string? Operand(IReadOnlyList<string> args, int index)
+    internal static string? Operand(IReadOnlyList<string> args, int index)
     {
         var found = Operands(args, Valued);
         return index < found.Count ? found[index] : null;
     }
 
-    private static string? Text(JsonElement element, string name) =>
+    internal static string? Text(JsonElement element, string name) =>
         element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
             ? value.GetString()
             : null;

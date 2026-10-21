@@ -2018,6 +2018,1578 @@
       ],
       "after": {},
       "changed": "New in PUSH1f2e (the alone-path design §4): the TypeScript had no such verb; the real-run tools imported its resolution."
+    },
+    {
+      "name": "unpin, the machine's pin",
+      "argv": [
+        "unpin",
+        "claude-code"
+      ],
+      "folders": [],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"versions\": {\n    \"claude-code\": \"2.1.0\",\n    \"codex\": \"0.40.0\"\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code` runs from PATH again on this machine.",
+        "  Nothing was deleted — the managed install stays where it is, and re-pinning that",
+        "  version needs no download."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"versions\": {\n    \"codex\": \"0.40.0\"\n  }\n}\n"
+      }
+    },
+    {
+      "name": "unpin, a workspace's pin",
+      "argv": [
+        "unpin",
+        "claude-code",
+        "--workspace",
+        "aurora"
+      ],
+      "folders": [],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"workspaceVersions\": {\n    \"aurora\": {\n      \"claude-code\": \"2.1.0\"\n    }\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: the `aurora` workspace no longer pins `claude-code` on this machine.",
+        "  Nothing was deleted — the managed install stays where it is, and re-pinning that",
+        "  version needs no download."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"workspaceVersions\": {}\n}\n"
+      }
+    },
+    {
+      "name": "unpin, a workspace's pin by another spelling",
+      "argv": [
+        "unpin",
+        "claude-code",
+        "--workspace",
+        "AURORA"
+      ],
+      "folders": [],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"workspaceVersions\": {\n    \"aurora\": {\n      \"claude-code\": \"2.1.0\",\n      \"codex\": \"0.40.0\"\n    }\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: the `AURORA` workspace no longer pins `claude-code` on this machine.",
+        "  Nothing was deleted — the managed install stays where it is, and re-pinning that",
+        "  version needs no download."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"workspaceVersions\": {\n    \"aurora\": {\n      \"codex\": \"0.40.0\"\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "unpin, nothing pinned",
+      "argv": [
+        "unpin",
+        "codex"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: `codex` runs from PATH again on this machine.",
+        "  Nothing was deleted — the managed install stays where it is, and re-pinning that",
+        "  version needs no download."
+      ],
+      "err": [],
+      "after": {}
+    },
+    {
+      "name": "unpin, a named wiring file",
+      "argv": [
+        "unpin",
+        "claude-code"
+      ],
+      "harness": true,
+      "folders": [],
+      "before": {
+        "other/data/harnesses.json": "{\n  \"versions\": {\n    \"claude-code\": \"2.1.0\"\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code` runs from PATH again on this machine.",
+        "  Nothing was deleted — the managed install stays where it is, and re-pinning that",
+        "  version needs no download."
+      ],
+      "err": [],
+      "after": {
+        "other/data/harnesses.json": "{\n  \"versions\": {}\n}\n"
+      }
+    },
+    {
+      "name": "unpin, no agent",
+      "argv": [
+        "unpin"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `agent unpin` needs <agent> — e.g. `daoris agent unpin claude-code`"
+      ],
+      "after": {}
+    },
+    {
+      "name": "unpin, an unknown agent",
+      "argv": [
+        "unpin",
+        "nobody"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: unknown agent 'nobody' — one of: claude-code, claude-code-acp, codex, codex-acp, dsh. An agent is added deliberately, never guessed."
+      ],
+      "after": {}
+    },
+    {
+      "name": "unpin, no home",
+      "argv": [
+        "unpin",
+        "claude-code"
+      ],
+      "home": false,
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: no Daoris home: set DAORIS_HOME to the application's data folder (the `data` directory beside Daoris.exe), or name the file's own variable. Daoris keeps nothing under the user profile. (wanted: data/harnesses.json)"
+      ],
+      "after": {}
+    },
+    {
+      "name": "profile, the bare word",
+      "argv": [
+        "profile"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/",
+        "daoris/profiles/agents/codex/work/"
+      ],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "  claude-code    account-1, account-2",
+        "  claude-code-acp (none)",
+        "  codex          work",
+        "  codex-acp      (none)",
+        "  dsh            (none)"
+      ],
+      "err": [],
+      "after": {}
+    },
+    {
+      "name": "profile list, none",
+      "argv": [
+        "profile",
+        "list"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "  claude-code    (none)",
+        "  claude-code-acp (none)",
+        "  codex          (none)",
+        "  codex-acp      (none)",
+        "  dsh            (none)"
+      ],
+      "err": [],
+      "after": {}
+    },
+    {
+      "name": "profile list, a file that is no account",
+      "argv": [
+        "profile",
+        "list"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/profiles/agents/claude-code/stray.txt": "x"
+      },
+      "exit": 0,
+      "out": [
+        "  claude-code    account-1, account-2",
+        "  claude-code-acp (none)",
+        "  codex          (none)",
+        "  codex-acp      (none)",
+        "  dsh            (none)"
+      ],
+      "err": [],
+      "after": {
+        "daoris/profiles/agents/claude-code/stray.txt": "x"
+      }
+    },
+    {
+      "name": "profile add",
+      "argv": [
+        "profile",
+        "add",
+        "claude-code",
+        "work"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code` profile `work` — <root>/daoris/profiles/agents/claude-code/work",
+        "  It is empty until you log into it: `daoris agent login claude-code --profile work`."
+      ],
+      "err": [],
+      "after": {}
+    },
+    {
+      "name": "profile add, one that exists",
+      "argv": [
+        "profile",
+        "add",
+        "claude-code",
+        "account-1"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code` profile `account-1` already exists — <root>/daoris/profiles/agents/claude-code/account-1",
+        "  It is empty until you log into it: `daoris agent login claude-code --profile account-1`."
+      ],
+      "err": [],
+      "after": {}
+    },
+    {
+      "name": "profile add, a door's",
+      "argv": [
+        "profile",
+        "add",
+        "claude-code-acp",
+        "work"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code-acp` runs as `claude-code`'s accounts — this is one of them.",
+        "daoris: `claude-code` profile `work` — <root>/daoris/profiles/agents/claude-code/work",
+        "  It is empty until you log into it: `daoris agent login claude-code --profile work`."
+      ],
+      "err": [],
+      "after": {}
+    },
+    {
+      "name": "profile add, no account",
+      "argv": [
+        "profile",
+        "add",
+        "claude-code"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `agent profile add` needs <agent> <profile> — e.g. `daoris agent profile add claude-code`"
+      ],
+      "after": {}
+    },
+    {
+      "name": "profile add, no agent",
+      "argv": [
+        "profile",
+        "add"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `agent profile add` needs an agent — one of: claude-code, claude-code-acp, codex, codex-acp, dsh"
+      ],
+      "after": {}
+    },
+    {
+      "name": "profile add, a name that is a path",
+      "argv": [
+        "profile",
+        "add",
+        "claude-code",
+        "../x"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `../x` is not a usable profile name — letters, digits, dashes and dots. It becomes a directory Daoris owns the location of, so it may not point anywhere else."
+      ],
+      "after": {}
+    },
+    {
+      "name": "profile remove, its default and order with it",
+      "argv": [
+        "profile",
+        "remove",
+        "claude-code",
+        "account-1"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"account-1\"\n  },\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"workspaces\": {\n    \"work\": {\n      \"claude-code\": \"account-1\"\n    }\n  }\n}\n",
+        "daoris/profiles/agents/claude-code/account-1/settings.json": "{}"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: removed the `claude-code` account `account-1` — the directory and the sign-in in it are gone: <root>/daoris/profiles/agents/claude-code/account-1",
+        "  It is no longer a default for `claude-code` anywhere on this machine: no default and no order names it."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {},\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-2\"\n    ]\n  },\n  \"workspaces\": {}\n}\n"
+      }
+    },
+    {
+      "name": "profile remove, none of that name",
+      "argv": [
+        "profile",
+        "remove",
+        "claude-code",
+        "nobody"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code` has no account `nobody` on this machine — there was nothing to remove.",
+        "  It is no longer a default for `claude-code` anywhere on this machine: no default and no order names it."
+      ],
+      "err": [],
+      "after": {}
+    },
+    {
+      "name": "profile remove, by its name",
+      "argv": [
+        "profile",
+        "remove",
+        "claude-code",
+        "seat"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"account-1\": {\n      \"name\": \"seat\"\n    }\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: removed the `claude-code` account `account-1` — the directory and the sign-in in it are gone: <root>/daoris/profiles/agents/claude-code/account-1",
+        "  It is no longer a default for `claude-code` anywhere on this machine: no default and no order names it."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/accounts.json": "{}\n"
+      }
+    },
+    {
+      "name": "profile remove, a door's",
+      "argv": [
+        "profile",
+        "remove",
+        "claude-code-acp",
+        "account-2"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code-acp` runs as `claude-code`'s accounts — this is one of them.",
+        "daoris: removed the `claude-code` account `account-2` — the directory and the sign-in in it are gone: <root>/daoris/profiles/agents/claude-code/account-2",
+        "  It is no longer a default for `claude-code` anywhere on this machine: no default and no order names it."
+      ],
+      "err": [],
+      "after": {}
+    },
+    {
+      "name": "profile default",
+      "argv": [
+        "profile",
+        "default",
+        "claude-code",
+        "account-1"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: this machine runs `claude-code` as `account-1` by default.",
+        "  Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"account-1\"\n  },\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {}\n}\n"
+      }
+    },
+    {
+      "name": "profile default, a workspace's",
+      "argv": [
+        "profile",
+        "default",
+        "claude-code",
+        "account-2",
+        "--workspace",
+        "aurora"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"account-1\"\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: sessions in `aurora` run `claude-code` as `account-2`.",
+        "  Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"account-1\"\n  },\n  \"workspaces\": {\n    \"aurora\": {\n      \"claude-code\": \"account-2\"\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile default, by its name",
+      "argv": [
+        "profile",
+        "default",
+        "claude-code",
+        "Seat"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"account-2\": {\n      \"name\": \"seat\"\n    }\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: this machine runs `claude-code` as `account-2` by default.",
+        "  Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"account-2\": {\n      \"name\": \"seat\"\n    }\n  }\n}\n",
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"account-2\"\n  },\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {}\n}\n"
+      }
+    },
+    {
+      "name": "profile default, a typo",
+      "argv": [
+        "profile",
+        "default",
+        "claude-code",
+        "typo"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `claude-code` has no profile `typo` on this machine — `daoris agent profile add claude-code typo` creates it. Profiles that exist: account-1, account-2"
+      ],
+      "after": {}
+    },
+    {
+      "name": "profile default, none here",
+      "argv": [
+        "profile",
+        "default",
+        "claude-code",
+        "typo"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `claude-code` has no profile `typo` on this machine — `daoris agent profile add claude-code typo` creates it. Profiles that exist: (none)"
+      ],
+      "after": {}
+    },
+    {
+      "name": "profile default, outside its list",
+      "argv": [
+        "profile",
+        "default",
+        "claude-code",
+        "account-3"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/",
+        "daoris/profiles/agents/claude-code/account-3/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `claude-code`'s list on this machine is account-1, then account-2, and `account-3` is not in it — the list is every account its starts may run on, and the default is where they begin within it. `daoris agent profile order claude-code account-1 account-2 account-3` adds it, or make one of the list the default."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile default, outside a workspace's list",
+      "argv": [
+        "profile",
+        "default",
+        "claude-code",
+        "account-1",
+        "--workspace",
+        "work"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-2\"\n      ]\n    }\n  }\n}\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `claude-code`'s list in `work` is account-2, and `account-1` is not in it — the list is every account its starts may run on, and the default is where they begin within it. `daoris agent profile order claude-code account-2 account-1 --workspace work` adds it, or make one of the list the default."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-2\"\n      ]\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile default --clear",
+      "argv": [
+        "profile",
+        "default",
+        "claude-code",
+        "--clear"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"account-1\"\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: this machine names no default for `claude-code` now: Daoris takes its accounts in turn.",
+        "  No account was deleted. Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {}\n}\n"
+      }
+    },
+    {
+      "name": "profile default --clear, a workspace's, the machine's beneath",
+      "argv": [
+        "profile",
+        "default",
+        "claude-code",
+        "--clear",
+        "--workspace",
+        "aurora"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"account-1\"\n  },\n  \"workspaces\": {\n    \"aurora\": {\n      \"claude-code\": \"account-2\"\n    }\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `aurora` names no account for `claude-code` now: its sessions run as the machine's default, `account-1`.",
+        "  No account was deleted. Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"account-1\"\n  },\n  \"workspaces\": {}\n}\n"
+      }
+    },
+    {
+      "name": "profile default --clear, a workspace's, none beneath",
+      "argv": [
+        "profile",
+        "default",
+        "claude-code",
+        "--clear",
+        "--workspace",
+        "aurora"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"workspaces\": {\n    \"aurora\": {\n      \"claude-code\": \"account-2\"\n    }\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `aurora` names no account for `claude-code` now: its sessions take Daoris's accounts in turn.",
+        "  No account was deleted. Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"workspaces\": {}\n}\n"
+      }
+    },
+    {
+      "name": "profile default --clear, a door's",
+      "argv": [
+        "profile",
+        "default",
+        "claude-code-acp",
+        "--clear"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"account-1\"\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code-acp` runs as `claude-code`'s accounts — this is one of them.",
+        "daoris: this machine names no default for `claude-code` now: Daoris takes its accounts in turn.",
+        "  No account was deleted. Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {}\n}\n"
+      }
+    },
+    {
+      "name": "profile default --clear naming an account",
+      "argv": [
+        "profile",
+        "default",
+        "claude-code",
+        "account-1",
+        "--clear"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `--clear` names no account — `daoris agent profile default claude-code --clear` clears the default, and `daoris agent profile default claude-code account-1` sets it."
+      ],
+      "after": {}
+    },
+    {
+      "name": "profile default, no account",
+      "argv": [
+        "profile",
+        "default",
+        "claude-code"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `agent profile default` needs <agent> <profile>|--clear [--workspace <name>] — e.g. `daoris agent profile default claude-code`"
+      ],
+      "after": {}
+    },
+    {
+      "name": "profile default, a named wiring file",
+      "argv": [
+        "profile",
+        "default",
+        "claude-code",
+        "work"
+      ],
+      "harness": true,
+      "folders": [
+        "other/profiles/agents/claude-code/work/"
+      ],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: this machine runs `claude-code` as `work` by default.",
+        "  Written to <root>/other/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "other/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"work\"\n  },\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {}\n}\n"
+      }
+    },
+    {
+      "name": "profile order",
+      "argv": [
+        "profile",
+        "order",
+        "claude-code",
+        "account-2",
+        "account-1"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: on this machine, `claude-code`'s rotation is account-2, then account-1.",
+        "  An account not in it is never rotated into, and work resolved to it never moves (D125 §3.1).",
+        "  Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {},\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {},\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-2\",\n      \"account-1\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile order, a workspace's",
+      "argv": [
+        "profile",
+        "order",
+        "claude-code",
+        "account-2",
+        "--workspace",
+        "work"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: in `work`, `claude-code`'s rotation is account-2.",
+        "  An account not in it is never rotated into, and work resolved to it never moves (D125 §3.1).",
+        "  Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {},\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {},\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-2\"\n      ]\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile order, by names",
+      "argv": [
+        "profile",
+        "order",
+        "claude-code",
+        "account-2",
+        "YOU@work.example",
+        "--workspace",
+        "work"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"account-1\": {\n      \"name\": \"you@work.example\"\n    }\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: in `work`, `claude-code`'s rotation is account-2, then account-1.",
+        "  An account not in it is never rotated into, and work resolved to it never moves (D125 §3.1).",
+        "  Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"account-1\": {\n      \"name\": \"you@work.example\"\n    }\n  }\n}\n",
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {},\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {},\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-2\",\n        \"account-1\"\n      ]\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile order, an unknown account",
+      "argv": [
+        "profile",
+        "order",
+        "claude-code",
+        "account-1",
+        "account-9"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `claude-code` has no account `account-9` on this machine, so an order cannot name it — accounts there: account-1, account-2."
+      ],
+      "after": {}
+    },
+    {
+      "name": "profile order, one twice",
+      "argv": [
+        "profile",
+        "order",
+        "claude-code",
+        "account-1",
+        "account-1"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `account-1` is named twice — an order names each account once, in the order rotation tries them."
+      ],
+      "after": {}
+    },
+    {
+      "name": "profile order, none",
+      "argv": [
+        "profile",
+        "order",
+        "claude-code"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `agent profile order` needs the accounts, in order, or --clear — e.g. `daoris agent profile order claude-code account-1 account-2`."
+      ],
+      "after": {}
+    },
+    {
+      "name": "profile order, leaving out its default",
+      "argv": [
+        "profile",
+        "order",
+        "claude-code",
+        "account-2"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"account-1\"\n  }\n}\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: this machine's default for `claude-code` is `account-1`, and this list does not hold it — the list is every account its starts may run on, and the default is where they begin within it. Name it in the list (`daoris agent profile order claude-code account-2 account-1`), or first make one of the list the default (`daoris agent profile default claude-code account-2`)."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"account-1\"\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile order, leaving out a workspace's default",
+      "argv": [
+        "profile",
+        "order",
+        "claude-code",
+        "account-2",
+        "--workspace",
+        "work"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"workspaces\": {\n    \"work\": {\n      \"claude-code\": \"account-1\"\n    }\n  }\n}\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `work`'s default for `claude-code` is `account-1`, and this list does not hold it — the list is every account its starts may run on, and the default is where they begin within it. Name it in the list (`daoris agent profile order claude-code account-2 account-1 --workspace work`), or first make one of the list the default (`daoris agent profile default claude-code account-2 --workspace work`)."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"workspaces\": {\n    \"work\": {\n      \"claude-code\": \"account-1\"\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile order, leaving out its kept account",
+      "argv": [
+        "profile",
+        "order",
+        "claude-code",
+        "account-1",
+        "account-3"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/",
+        "daoris/profiles/agents/claude-code/account-3/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\",\n      \"account-3\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"keep\": \"account-2\"\n    }\n  }\n}\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `account-2` is kept for conversations on this machine, and this list does not hold it — the kept account is one of the list. Name it in the list (`daoris agent profile order claude-code account-1 account-3 account-2`), or first keep none (`daoris agent profile use claude-code --no-keep`)."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\",\n      \"account-3\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"keep\": \"account-2\"\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile order, its kept account alone",
+      "argv": [
+        "profile",
+        "order",
+        "claude-code",
+        "account-2"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"keep\": \"account-2\"\n    }\n  }\n}\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `account-2` is kept for conversations, and this list holds no other account, so driven work would have none — name another account in it, or first keep none (`daoris agent profile use claude-code --no-keep`)."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"keep\": \"account-2\"\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile order --clear",
+      "argv": [
+        "profile",
+        "order",
+        "claude-code",
+        "--clear"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-2\"\n      ]\n    }\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code` has no order on this machine now.",
+        "  A workspace's own still applies there: work.",
+        "  No account was deleted. Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-2\"\n      ]\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile order --clear, none anywhere",
+      "argv": [
+        "profile",
+        "order",
+        "claude-code",
+        "--clear"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code` has no order on this machine now.",
+        "  No account was deleted. Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {}
+    },
+    {
+      "name": "profile order --clear, a workspace's, the machine's beneath",
+      "argv": [
+        "profile",
+        "order",
+        "claude-code",
+        "--clear",
+        "--workspace",
+        "work"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-2\"\n      ]\n    }\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `work` names no order for `claude-code` now: the machine's applies there, account-1, then account-2.",
+        "  No account was deleted. Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile order --clear, a workspace's, none beneath",
+      "argv": [
+        "profile",
+        "order",
+        "claude-code",
+        "--clear",
+        "--workspace",
+        "work"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-2\"\n      ]\n    }\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `work` names no order for `claude-code` now, and neither does this machine.",
+        "  No account was deleted. Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{}\n"
+      }
+    },
+    {
+      "name": "profile order --clear naming accounts",
+      "argv": [
+        "profile",
+        "order",
+        "claude-code",
+        "account-1",
+        "--clear"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `--clear` names no account — `daoris agent profile order claude-code --clear` clears the order, and `daoris agent profile order claude-code account-1` sets it."
+      ],
+      "after": {}
+    },
+    {
+      "name": "profile ready",
+      "argv": [
+        "profile",
+        "ready",
+        "claude-code",
+        "account-1"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/cooling.json": "{\n  \"claude-code\": {\n    \"account-1\": {\n      \"until\": \"2999-01-01T00:00:00Z\",\n      \"stated\": true\n    },\n    \"account-2\": {\n      \"until\": \"2999-01-01T00:00:00Z\",\n      \"stated\": true\n    }\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: the `claude-code` account `account-1` is offered again: no start waits on its limit now.",
+        "  If the limit still holds, the agent refuses the next start at once, and the account cools again until",
+        "  the time it names."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/cooling.json": "{\n  \"claude-code\": {\n    \"account-2\": {\n      \"until\": \"2999-01-01T00:00:00Z\",\n      \"stated\": true\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile ready, not cooling",
+      "argv": [
+        "profile",
+        "ready",
+        "claude-code",
+        "account-1"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/cooling.json": "{\n  \"claude-code\": {\n    \"account-2\": {\n      \"until\": \"2999-01-01T00:00:00Z\",\n      \"stated\": true\n    }\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: the `claude-code` account `account-1` is not cooling, so nothing changed — cooling now: account-2."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/cooling.json": "{\n  \"claude-code\": {\n    \"account-2\": {\n      \"until\": \"2999-01-01T00:00:00Z\",\n      \"stated\": true\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile ready, none cooling",
+      "argv": [
+        "profile",
+        "ready",
+        "claude-code",
+        "account-1"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: the `claude-code` account `account-1` is not cooling, so nothing changed — no account of `claude-code` is cooling."
+      ],
+      "err": [],
+      "after": {}
+    },
+    {
+      "name": "profile ready --own",
+      "argv": [
+        "profile",
+        "ready",
+        "claude-code",
+        "--own"
+      ],
+      "folders": [],
+      "before": {
+        "daoris/data/cooling.json": "{\n  \"claude-code\": {\n    \"\": {\n      \"until\": \"2999-01-01T00:00:00Z\",\n      \"stated\": false\n    },\n    \"account-1\": {\n      \"until\": \"2999-01-01T00:00:00Z\",\n      \"stated\": true\n    }\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code`'s own sign-in is offered again: no start waits on its limit now.",
+        "  If the limit still holds, the agent refuses the next start at once, and the account cools again until",
+        "  the time it names."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/cooling.json": "{\n  \"claude-code\": {\n    \"account-1\": {\n      \"until\": \"2999-01-01T00:00:00Z\",\n      \"stated\": true\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile ready, a door's",
+      "argv": [
+        "profile",
+        "ready",
+        "claude-code-acp",
+        "account-1"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/cooling.json": "{\n  \"claude-code\": {\n    \"account-1\": {\n      \"until\": \"2999-01-01T00:00:00Z\",\n      \"stated\": true\n    }\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code-acp` runs as `claude-code`'s accounts — this is one of them.",
+        "daoris: the `claude-code` account `account-1` is offered again: no start waits on its limit now.",
+        "  If the limit still holds, the agent refuses the next start at once, and the account cools again until",
+        "  the time it names."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/cooling.json": "{}\n"
+      }
+    },
+    {
+      "name": "profile ready, by its name",
+      "argv": [
+        "profile",
+        "ready",
+        "claude-code",
+        "you@work.example"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"account-1\": {\n      \"name\": \"you@work.example\"\n    }\n  }\n}\n",
+        "daoris/data/cooling.json": "{\n  \"claude-code\": {\n    \"account-1\": {\n      \"until\": \"2999-01-01T00:00:00Z\",\n      \"stated\": true\n    }\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: the `claude-code` account `account-1` is offered again: no start waits on its limit now.",
+        "  If the limit still holds, the agent refuses the next start at once, and the account cools again until",
+        "  the time it names."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"account-1\": {\n      \"name\": \"you@work.example\"\n    }\n  }\n}\n",
+        "daoris/data/cooling.json": "{}\n"
+      }
+    },
+    {
+      "name": "profile ready, no account",
+      "argv": [
+        "profile",
+        "ready",
+        "claude-code"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `agent profile ready` needs <agent> <profile>|--own — e.g. `daoris agent profile ready claude-code account-1`, or `--own` for the tool's own sign-in."
+      ],
+      "after": {}
+    },
+    {
+      "name": "profile ready, an account and --own",
+      "argv": [
+        "profile",
+        "ready",
+        "claude-code",
+        "account-1",
+        "--own"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `--own` names no account — `daoris agent profile ready claude-code --own` is the tool's own sign-in, and `daoris agent profile ready claude-code account-1` is that account."
+      ],
+      "after": {}
+    },
+    {
+      "name": "profile rename",
+      "argv": [
+        "profile",
+        "rename",
+        "claude-code",
+        "account-1",
+        "you@work.example"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"account-1\"\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code`'s account `account-1` is called `you@work.example` now.",
+        "  Its id stays, so every list, default, reading and record that names it still does.",
+        "  Written to <root>/daoris/data/accounts.json — machine-local, tracked by nothing."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"account-1\": {\n      \"name\": \"you@work.example\"\n    }\n  }\n}\n",
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"account-1\"\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile rename, its own id gives it none",
+      "argv": [
+        "profile",
+        "rename",
+        "claude-code",
+        "you@work.example",
+        "account-1"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"account-1\": {\n      \"name\": \"you@work.example\"\n    }\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code`'s account `account-1` has no name of yours now: it reads as its id.",
+        "  Its id stays, so every list, default, reading and record that names it still does.",
+        "  Written to <root>/daoris/data/accounts.json — machine-local, tracked by nothing."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/accounts.json": "{}\n"
+      }
+    },
+    {
+      "name": "profile rename, another's id",
+      "argv": [
+        "profile",
+        "rename",
+        "claude-code",
+        "account-2",
+        "Account-1"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `Account-1` already names `account-1` — each `claude-code` account has a name of its own, and an id is one — give it a name of your own."
+      ],
+      "after": {}
+    },
+    {
+      "name": "profile rename, another's name",
+      "argv": [
+        "profile",
+        "rename",
+        "claude-code",
+        "account-2",
+        "SEAT"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"account-1\": {\n      \"name\": \"seat\"\n    }\n  }\n}\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `SEAT` already names `account-1` — each `claude-code` account has a name of its own, and an id is one — give it a name of your own."
+      ],
+      "after": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"account-1\": {\n      \"name\": \"seat\"\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile rename, none of that id",
+      "argv": [
+        "profile",
+        "rename",
+        "claude-code",
+        "account-9",
+        "seat"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `claude-code` has no account `account-9` on this machine — accounts there: account-1, account-2."
+      ],
+      "after": {}
+    },
+    {
+      "name": "profile rename, no name",
+      "argv": [
+        "profile",
+        "rename",
+        "claude-code",
+        "account-1"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `agent profile rename` needs <agent> <account> <name> — e.g. `daoris agent profile rename claude-code account-1 work`; naming it `account-1` gives it none."
+      ],
+      "after": {}
+    },
+    {
+      "name": "profile join",
+      "argv": [
+        "profile",
+        "join",
+        "claude-code",
+        "account-2",
+        "work",
+        "--machine"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\n  \"workspaces\": {\n    \"work\": {\n      \"claude-code\": \"account-1\"\n    }\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code`'s account `account-2` is in this machine's list, `work`'s list.",
+        "  `account-2` runs work in this machine's list, `work`'s list.",
+        "  Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"workspaces\": {\n    \"work\": {\n      \"claude-code\": \"account-1\"\n    }\n  },\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-2\"\n    ]\n  },\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-1\",\n        \"account-2\"\n      ]\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile join, by its name",
+      "argv": [
+        "profile",
+        "join",
+        "claude-code",
+        "seat",
+        "--machine"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"account-2\": {\n      \"name\": \"seat\"\n    }\n  }\n}\n",
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\"\n    ]\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code`'s account `seat` is in this machine's list.",
+        "  `seat` runs work in this machine's list.",
+        "  Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"account-2\": {\n      \"name\": \"seat\"\n    }\n  }\n}\n",
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "profile join, a workspace that takes the machine's",
+      "argv": [
+        "profile",
+        "join",
+        "claude-code",
+        "account-2",
+        "forge"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `forge` names no `claude-code` account or list of its own, so its starts take this machine's list — join this machine's list, or give `forge` a list of its own first (`daoris agent profile order claude-code <account>… --workspace forge`)."
+      ],
+      "after": {}
+    },
+    {
+      "name": "profile join, none of that id",
+      "argv": [
+        "profile",
+        "join",
+        "claude-code",
+        "account-9",
+        "work"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `claude-code` has no account `account-9` on this machine — accounts that exist: account-1, account-2"
+      ],
+      "after": {}
+    },
+    {
+      "name": "profile join, no list",
+      "argv": [
+        "profile",
+        "join",
+        "claude-code",
+        "account-2"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1/",
+        "daoris/profiles/agents/claude-code/account-2/"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `agent profile join` needs the lists — a workspace's name, or `--machine` for this machine's: e.g. `daoris agent profile join claude-code account-2 work`."
+      ],
+      "after": {}
+    },
+    {
+      "name": "profile, an unknown verb",
+      "argv": [
+        "profile",
+        "frobnicate"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: unknown agent profile verb 'frobnicate' — one of: list, add, remove, default, order, ready, use, rename, join"
+      ],
+      "after": {}
     }
   ]
 }
