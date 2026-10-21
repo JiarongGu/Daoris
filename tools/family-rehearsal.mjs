@@ -3772,8 +3772,9 @@ check(
 );
 
 // D50, from a terminal: the same directories and the same file, through the real CLI. A machine with
-// no screen sets all of this up the same way the desktop's roster does.
-const cliHarness = (args) => run(`node "${cliBin}" agent ${args}`, scratch, HARNESS_ENV);
+// no screen sets all of this up the same way the desktop's roster does. PUSH1f2e2: `agent profile …` is the driver's program's, which
+// refuses a person's change from a session's terminal, so these run as the person.
+const cliHarness = (args) => run(`node "${cliBin}" agent ${args}`, scratch, { ...HARNESS_ENV, ...PERSON });
 const added = cliHarness('profile add claude-code work');
 check(
   '`daoris agent profile add` creates the directory and says it is empty until you log in',
