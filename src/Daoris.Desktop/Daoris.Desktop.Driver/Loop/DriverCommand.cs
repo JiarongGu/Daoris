@@ -186,6 +186,11 @@ public static class DriverCommand
               the programs Daoris runs beside its agents, the words `daoris tool …` hands this program (D194):
               a change goes to the running Daoris's window to confirm where one runs; a download fetches holding
               nothing and is published under the home's lease, waited for; `tool --help` says each verb's words.
+          agent rules [list | allow|ask|deny|remove <rule> | default <id> on|off | proposals | accept|decline <id>]
+                | trust <agent> <folder> [--yes] | settings <agent> [model|effort …]
+              the agents' rules, trust and settings, the words `daoris agent rules|trust|settings …` hands this
+              program (D194): a change a route takes goes to the running Daoris's window to confirm where one runs,
+              and is written here where none does; `agent --help` says each verb's words.
           trees [list | remove <path|session|branch> [--repository <name>] [--force]
                 | clean [--workspace <name>] [--yes] | land <session> [--plan] [--branch <name>]
                 | land --entry <id> | --ask <id> [--leave-out <session>]... [--plan]

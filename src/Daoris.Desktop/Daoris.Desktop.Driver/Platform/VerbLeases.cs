@@ -13,7 +13,9 @@ namespace Daoris.Driver;
 /// <c>trees</c>, <c>trees list</c>, <c>trees state</c>, <c>work state</c>, <c>work held</c> naming no word), <c>plugins show</c> and <c>activity</c>, <c>sync status</c>,
 /// <c>help list</c>, <c>help mode</c> naming no mode, <c>access</c> and <c>heavy</c> naming no change, <c>opinion show</c>, an <c>update</c> that only asks where it stands, any <c>--plan</c>, and asking for
 /// the usage; the driver's standing choices' <c>list</c> (PUSH1f2a), and any of them on a file <c>DAORIS_DRIVER_CONFIG</c> names
-/// (<see cref="HoldsHere"/>); the tools' <c>list</c>, <c>path</c> and a bare <c>locations</c> (PUSH1f2c).</item>
+/// (<see cref="HoldsHere"/>); the tools' <c>list</c>, <c>path</c> and a bare <c>locations</c> (PUSH1f2c); the agents' <c>rules</c> and
+/// <c>rules proposals</c>, a <c>settings</c> naming no change, a <c>trust</c> asked or dry-run, and an agent's settings or trust on a file
+/// <c>DAORIS_HARNESS_CONFIG</c> names (PUSH1f2d).</item>
 /// <item><b>A long verb</b> (PUSH1f2c, the alone-path design §1.4): <c>tool download</c>, <c>update</c> and <c>use … managed</c> hold
 /// nothing while they fetch, and take the lease themselves to publish, waited for.</item>
 /// <item><b>The service's own doors</b>, whose one writer is the service already (§7.1): <c>quest delete</c>, <c>accept</c>,
@@ -76,6 +78,9 @@ public static class VerbLeases
             // The tools `daoris tool …` hands on (PUSH1f2c): a way set to the system's or a file, a delete, a location's change and a
             // look hold it from the top; a read and the long verbs none, a download taking it itself to publish (the alone-path design §1.4).
             "tool" => ToolsCommand.Changes([.. args.Skip(1)]),
+            // The agents' rules, trust and settings `daoris agent …` hands on (PUSH1f2d): a rule's edit, a proposal's answer, a setting's
+            // change and a trust granted hold it from the top; a read, a question and a dry run none.
+            "agent" => AgentsCommand.Changes([.. args.Skip(1)]),
             "update" => args.Skip(1).Any(arg => arg is "--when-idle" or "--now" or "--cancel"),
             _ => true,
         };
@@ -83,15 +88,18 @@ public static class VerbLeases
 
     /// <summary>
     /// <see cref="Holds"/> on this terminal's variables: a file <c>DAORIS_DRIVER_CONFIG</c> names is no instance's (D194 point 2, the
-    /// alone-path design §1.2), so the driver family acting on it holds nothing, as it sends nothing.
+    /// alone-path design §1.2), so the driver family acting on it holds nothing, as it sends nothing; and a file
+    /// <c>DAORIS_HARNESS_CONFIG</c> names is no instance's either, so an agent's settings and trust on its home hold nothing, while the
+    /// rules, <c>DAORIS_HOME</c>'s whatever it names, hold that home (PUSH1f2d).
     /// </summary>
     public static bool HoldsHere(IReadOnlyList<string> args, Func<string, string?> environment) =>
-        Holds(args) && !(args[0] == "driver" && DriverConfig.Overridden(environment));
+        Holds(args) && !(args[0] == "driver" && DriverConfig.Overridden(environment))
+        && !(args[0] == "agent" && AgentsCommand.Isolated([.. args.Skip(1)], environment));
 
     /// <summary>The words a lease names a verb by: its verb, and its sub-verb where it has one; never an argument.</summary>
     public static string Name(IReadOnlyList<string> args) =>
         args.Count > 1 && IsWord(args[1]) && (SubVerbs.Contains(args[1]) || (args[0] == "driver" && DriverChoicesCommand.Verbs.Contains(args[1]))
-            || (args[0] == "tool" && ToolsCommand.Verbs.Contains(args[1])))
+            || (args[0] == "tool" && ToolsCommand.Verbs.Contains(args[1])) || (args[0] == "agent" && AgentsCommand.Verbs.Contains(args[1])))
             ? $"daoris-driver {args[0]} {args[1]}"
             : $"daoris-driver {(args.Count > 0 ? args[0] : "")}".TrimEnd();
 

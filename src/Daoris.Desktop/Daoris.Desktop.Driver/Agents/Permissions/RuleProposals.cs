@@ -72,8 +72,8 @@ public sealed record RuleProposal(
 /// one that denies or guards widens.</para>
 ///
 /// <para><b>THE FILE is the contract</b>: one file per proposal under <c>&lt;home&gt;/proposals/</c>, written
-/// by the connector (the service's <c>RuleProposalBox</c>) and settled here and by the CLI's
-/// <c>ruleproposals.ts</c>. Settling rewrites only <c>state</c> and <c>settled</c>; everything the
+/// by the connector (the service's <c>RuleProposalBox</c>) and settled here alone, the window's and
+/// <c>daoris agent rules accept|decline</c>'s answer among it (PUSH1f2d). Settling rewrites only <c>state</c> and <c>settled</c>; everything the
 /// session wrote is kept.</para>
 /// </remarks>
 public static class RuleProposals
@@ -216,6 +216,25 @@ public static class RuleProposals
     /// <exception cref="DriverException">No such proposal, one already settled, or one the rules cannot take.</exception>
     public static RuleProposal Answer(string home, string id, bool accept, string? note, DateTimeOffset at)
     {
+        var proposal = Open(home, id);
+        var path = PathOf(home, id.Trim().TrimStart('#'));
+        if (accept)
+        {
+            PermissionRules.Save(home, Apply(PermissionRules.Load(home), proposal.Change));
+        }
+
+        var state = accept ? ProposalState.Accepted : ProposalState.Declined;
+        Mark(path, state, "the person", string.IsNullOrWhiteSpace(note) ? null : note.Trim(), at);
+        return proposal with { State = state, Settled = at, SettledBy = "the person", Note = note };
+    }
+
+    /// <summary>
+    /// A proposal not yet settled, read from its file: what the person answers, and what <c>daoris agent rules accept|decline</c> says
+    /// before it sends anything (PUSH1f2d).
+    /// </summary>
+    /// <exception cref="DriverException">No proposal by that id (a path is no id), or one already settled, which is history.</exception>
+    public static RuleProposal Open(string home, string id)
+    {
         var key = id.Trim().TrimStart('#');
         var path = PathOf(home, key);
         // An id names a file in the folder, and a path is not an id.
@@ -226,14 +245,7 @@ public static class RuleProposals
             throw new DriverException($"proposal `#{key}` was already {proposal.State.ToString().ToLowerInvariant()} — it is history now.");
         }
 
-        if (accept)
-        {
-            PermissionRules.Save(home, Apply(PermissionRules.Load(home), proposal.Change));
-        }
-
-        var state = accept ? ProposalState.Accepted : ProposalState.Declined;
-        Mark(path, state, "the person", string.IsNullOrWhiteSpace(note) ? null : note.Trim(), at);
-        return proposal with { State = state, Settled = at, SettledBy = "the person", Note = note };
+        return proposal;
     }
 
     /// <summary>The change in a line — the rule is the harness's own words, quoted.</summary>

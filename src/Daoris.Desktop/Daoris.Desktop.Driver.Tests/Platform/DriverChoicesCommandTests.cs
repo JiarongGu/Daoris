@@ -320,13 +320,14 @@ public sealed class DriverChoicesCommandTests : IDisposable
         var program = File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "Program.cs"))
             .ReplaceLineEndings("\n");
         var closing = program.IndexOf("using var closing = new CancellationTokenSource();", StringComparison.Ordinal);
-        // PUSH1f2c: `tool` is routed beside `driver`, under the same one handler.
-        var family = program.IndexOf("if (args is [\"driver\" or \"tool\", ..])", StringComparison.Ordinal);
+        // PUSH1f2c: `tool` is routed beside `driver`, under the same one handler; PUSH1f2d: and `agent`.
+        var family = program.IndexOf("if (args is [\"driver\" or \"tool\" or \"agent\", ..])", StringComparison.Ordinal);
         var tools = program.IndexOf("ToolsConsole.RunAsync(args[1..], log, closing.Token)", StringComparison.Ordinal);
+        var agents = program.IndexOf("AgentsConsole.RunAsync(args[1..], closing.Token)", StringComparison.Ordinal);
         var handed = program.IndexOf("DriverChoicesConsole.RunAsync(args[1..], closing.Token)", StringComparison.Ordinal);
-        Assert.True(closing > 0 && family > closing && tools > family && handed > family,
+        Assert.True(closing > 0 && family > closing && tools > family && agents > family && handed > family,
             "the families are routed after `closing` is made, and handed its token");
-        var between = program[family..Math.Min(tools, handed)];
+        var between = program[family..new[] { tools, agents, handed }.Min()];
         Assert.Contains("Console.CancelKeyPress += (_, press) =>", between, StringComparison.Ordinal);
         Assert.Contains("press.Cancel = true;", between, StringComparison.Ordinal);
         Assert.Contains("closing.Cancel();", between, StringComparison.Ordinal);

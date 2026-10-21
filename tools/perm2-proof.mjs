@@ -139,7 +139,8 @@ async function drivenRun() {
   if (!joined) return;
 
   // What an empty home hands every session: the commit, and nothing that allows a tag. Read through the
-  // CLI's own door over the driver's home, so this is the file the driver composes from.
+  // CLI's own door over the driver's home, so this is the file the driver composes from. `daoris agent rules` is the driver's program's
+  // since PUSH1f2d, so a checkout's CLI runs the build the caller's DAORIS_DRIVER_PROGRAM names, as a contributor's terminal sets it.
   const rules = capture(`node "${cliBin}" agent rules`, repoRoot, { env: { DAORIS_HOME: scratch } });
   check('an empty home allows the commit and nothing that allows a tag',
     rules.code === 0 && /Bash\(git commit:\*\)/.test(rules.out) && !/git tag/.test(rules.out),

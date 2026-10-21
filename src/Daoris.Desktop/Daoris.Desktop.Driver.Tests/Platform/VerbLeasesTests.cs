@@ -96,6 +96,17 @@ public sealed class VerbLeasesTests
     [InlineData("tool locations add https://lists.example/r.json")]
     [InlineData("tool locations remove https://lists.example/r.json")]
     [InlineData("tool look")]
+    // The agents' rules, trust and settings `daoris agent …` hands on (PUSH1f2d): each change, held from the top.
+    [InlineData("agent rules allow WebFetch")]
+    [InlineData("agent rules deny Bash(rm:*) --workspace work")]
+    [InlineData("agent rules ask Edit(/docs/**) --repository engine")]
+    [InlineData("agent rules remove WebFetch")]
+    [InlineData("agent rules default no-push off")]
+    [InlineData("agent rules accept p0000007")]
+    [InlineData("agent rules decline p0000007 --note no")]
+    [InlineData("agent settings claude-code --account work model opus")]
+    [InlineData("agent settings claude-code effort low --for claude-opus-5")]
+    [InlineData("agent trust claude-code D:/work/engine --yes")]
     [InlineData("a-verb-nobody-classed")]
     public void A_mutation_holds_the_lease(string words) => Assert.True(VerbLeases.Holds(words.Split(' ')), words);
 
@@ -179,6 +190,19 @@ public sealed class VerbLeasesTests
     [InlineData("tool use gh managed 2.62.0")]
     [InlineData("tool download gh")]
     [InlineData("tool update gh")]
+    // The agents' rules, proposals and settings read, a trust asked or dry-run, and the usage (PUSH1f2d).
+    [InlineData("agent")]
+    [InlineData("agent rules")]
+    [InlineData("agent rules list")]
+    [InlineData("agent rules list --workspace work")]
+    [InlineData("agent rules proposals")]
+    [InlineData("agent settings claude-code")]
+    [InlineData("agent settings claude-code --account work")]
+    [InlineData("agent trust claude-code D:/work/engine")]
+    [InlineData("agent trust claude-code D:/work/engine --yes --dry-run")]
+    [InlineData("agent --help")]
+    [InlineData("agent rules allow WebFetch --help")]
+    [InlineData("agent frobnicate")]
     public void A_read_or_another_writers_verb_holds_none(string words) => Assert.False(VerbLeases.Holds(words.Split(' ')), words);
 
     [Fact]
@@ -198,6 +222,23 @@ public sealed class VerbLeasesTests
         Assert.True(VerbLeases.HoldsHere(["trees", "land", "s-1"], name => name == DriverConfig.PathVariable ? "X:/daoris/elsewhere/driver.json" : null));
     }
 
+    /// <summary>
+    /// A file `DAORIS_HARNESS_CONFIG` names is no instance's (PUSH1f2d, the alone-path design §1.2): an account's settings and a trust on
+    /// its home act alone, holding nothing; the rules and their proposals are `DAORIS_HOME`'s whatever it names, so they hold that home.
+    /// </summary>
+    [Fact]
+    public void An_agent_setting_on_a_named_wiring_file_holds_nothing_and_the_rules_hold_the_home()
+    {
+        static string? Named(string name) => name == HarnessSettings.PathVariable ? "X:/daoris/elsewhere/harnesses.json" : null;
+        Assert.False(VerbLeases.HoldsHere(["agent", "settings", "claude-code", "--account", "work", "model", "opus"], Named));
+        Assert.False(VerbLeases.HoldsHere(["agent", "trust", "claude-code", "D:/work/engine", "--yes"], Named));
+        Assert.True(VerbLeases.HoldsHere(["agent", "rules", "accept", "p0000007"], Named));
+        Assert.True(VerbLeases.HoldsHere(["agent", "rules", "allow", "WebFetch"], Named));
+        Assert.True(VerbLeases.HoldsHere(["agent", "settings", "claude-code", "--account", "work", "model", "opus"], _ => null));
+        // A named wiring file isolates only what it names: the driver family's choices are not its.
+        Assert.True(VerbLeases.HoldsHere(["driver", "drive", "engine"], Named));
+    }
+
     /// <summary>A lease names a verb by its own words, never an argument: a session, a branch or a path stays out of it.</summary>
     [Theory]
     [InlineData("trees land s-1", "daoris-driver trees land")]
@@ -213,6 +254,9 @@ public sealed class VerbLeasesTests
     [InlineData("driver work-cycle engine quest cycle.json", "daoris-driver driver work-cycle")]
     [InlineData("tool use git system", "daoris-driver tool use")]
     [InlineData("tool look", "daoris-driver tool look")]
+    [InlineData("agent rules accept p0000007", "daoris-driver agent rules")]
+    [InlineData("agent settings claude-code model opus", "daoris-driver agent settings")]
+    [InlineData("agent trust claude-code D:/work/engine --yes", "daoris-driver agent trust")]
     public void A_lease_names_the_verb_and_never_its_arguments(string words, string named) =>
         Assert.Equal(named, VerbLeases.Name(words.Split(' ')));
 }

@@ -199,7 +199,8 @@ test("the CLI's own tree keeps its structure", () => {
     .filter((entry) => entry.isFile())
     .map((entry) => relative(testsFolder, join(entry.parentPath, entry.name)).split('\\').join('/'));
 
-  assert.ok(sources.length >= 80, `the gate read only ${sources.length} sources: its walk no longer reaches the sources' tree`);
+  // A floor for the walk, not a size the CLI keeps: the management families leave it row by row (D194), 76 sources after PUSH1f2d.
+  assert.ok(sources.length >= 60, `the gate read only ${sources.length} sources: its walk no longer reaches the sources' tree`);
   assert.ok(tests.length >= 100, `the gate read only ${tests.length} tests: its walk no longer reaches the tests' tree`);
   assert.deepEqual(checkStructure(map, sources, tests), [], "each breaks the CLI's structure (the code-structure design §5)");
 });
