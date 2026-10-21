@@ -131,7 +131,8 @@ public sealed record GovernedUnit(
 }
 
 /// <summary>What one pass did (FABRIC-RUN1), for the look's report, the machine log and the tests.</summary>
-/// <param name="Armed">Whether a graph naming a plugin's performed node governs anything; false, the pass read and wrote nothing.</param>
+/// <param name="Armed">Whether a graph naming a plugin's node, a closure graph or a run bound to a graph version arms the runtime; false, the pass
+/// read and wrote nothing.</param>
 /// <param name="Evaluated">The units evaluated, by id.</param>
 /// <param name="Said">What the pass says that no performed result does: a refused evaluation, a record that does not read.</param>
 public sealed record NodeRuntimePass(bool Armed, IReadOnlyList<WorkPerformed> Performed, IReadOnlyList<string> Evaluated, IReadOnlyList<string> Said)
@@ -194,6 +195,10 @@ public static class NodeRuns
 /// too, and so does a closure graph this home keeps (<see cref="ClosureGraphs"/>), so a close in flight is reconciled and a bound quest closed
 /// whatever the choices say since. A quest is bound at its take, in the take's own write (<see cref="ClosureBinding.AtStartAsync"/>), never
 /// here; a bound quest is closed by the graph it was bound to.</para>
+/// <para><b>Runs bound to graph versions</b> (FABRIC-CUTOVER1c; D190 points 1 to 3): such a run arms it too (<see cref="GraphRuns"/>), and is
+/// governed on its own record, <c>run:&lt;run&gt;</c>, each node observing the subject its kind names (<see cref="RunScope"/>), while Current's
+/// graphs govern none of its quests and branches (<see cref="RunOwners"/>). Its opinion and look are not begun and its performed nodes not started,
+/// since its landing doors do not read its record; its end is kept there, and its chain coming back here arms it again (<see cref="Return"/>).</para>
 /// </remarks>
 public sealed class NodeRuntime(
     NodeRecordFiles records, IWorkRuntimePort port, Func<DateTimeOffset> clock, Func<bool>? holdsLease = null, IQuestClosePort? closes = null)
@@ -322,8 +327,9 @@ public sealed class NodeRuntime(
     /// <param name="kept">The closure graph this home keeps under a digest (<see cref="ClosureGraphs.Read"/>), or null where it keeps none.</param>
     /// <param name="versionOf">
     /// The named version a quest unit's run is bound to (<see cref="NodeRuntimeLook.Bound"/>), or null where none: FABRIC-RUN1c, a quest bound
-    /// to one is governed by it alone (§E7, one governs a run, by its binding), whose engine is D157's run until the cutover (FABRIC-CUTOVER1),
-    /// so Current's graph never governs it beside that engine. An unreadable binding holds it the same way: its run cannot start (D157 §5.2).
+    /// to one is governed by it alone (§E7, one governs a run, by its binding): a steps version's by D157's run, a graph version's on the run's
+    /// own record (<paramref name="runs"/>, FABRIC-CUTOVER1c), so Current's graph never governs it beside either. An unreadable binding holds it
+    /// the same way: its run cannot start (D157 §5.2).
     /// </param>
     /// <param name="runs">
     /// The runs bound to graph versions (FABRIC-CUTOVER1c; D190 points 1 to 3, the cutover design §2.3): each is governed on its own record,
