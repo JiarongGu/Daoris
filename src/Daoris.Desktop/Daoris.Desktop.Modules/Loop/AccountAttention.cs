@@ -73,7 +73,7 @@ internal static class AccountAttention
             whose["readFirst"] = readFirst;
             if (held.NoAccount) whose["noAccount"] = true;
 
-            rows.Add(new JsonObject
+            var row = new JsonObject
             {
                 ["kind"] = "account-wait",
                 ["id"] = held.Key,
@@ -82,11 +82,15 @@ internal static class AccountAttention
                 ["wholeWorkspace"] = !inOne && !string.IsNullOrEmpty(held.Workspace),
                 ["holding"] = new JsonObject { ["quests"] = Strings(held.Quests), ["asks"] = Strings(held.Asks) },
                 ["account"] = whose,
-            });
+            };
+            // The starts it holds are their workspace's where they share one, for the window's scope (NEEDSSCOPE1); held across
+            // workspaces, or where none is known, it is the machine's account's wait, and every window shows it.
+            if (!string.IsNullOrEmpty(held.Workspace)) row["workspace"] = held.Workspace;
+            rows.Add(row);
         }
 
         // A signed-out account a list or a default holds, which no waiting start names; never the tool's own sign-in, which holds no
-        // work (D175 point 1, OWNSPACE1b-A).
+        // work (D175 point 1, OWNSPACE1b-A). No workspace, deliberately (NEEDSSCOPE1): an account is the machine's, whichever lists hold it.
         foreach (var tool in tools.Where(tool => tool.Present))
         {
             var use = AgentOf(facts.Use, tool.Name);
