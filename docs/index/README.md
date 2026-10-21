@@ -54,9 +54,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/quests/QuestPage.tsx` | 56 | 1028 |
 | `src/Daoris.Web/src/quests/QuestsView.test.tsx` | 75 | 1464 |
 | `src/Daoris.Web/src/work/WorkFrame.conversation.test.tsx` | 60 | 1168 |
-| `src/Daoris.Web/src/work/WorkFrame.landed.test.tsx` | 104 | 1815 |
+| `src/Daoris.Web/src/work/WorkFrame.landed.test.tsx` | 106 | 1850 |
 | `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 82 | 1564 |
-| `src/Daoris.Web/src/work/WorkFrame.tsx` | 135 | 2390 |
+| `src/Daoris.Web/src/work/WorkFrame.tsx` | 136 | 2392 |
 | `src/Daoris.Web/src/work/WorkFrame.words.test.tsx` | 48 | 888 |
 | `src/Daoris.Web/src/work/attention/AttentionBand.test.tsx` | 41 | 682 |
 | `src/Daoris.Web/src/work/attention/attention.test.ts` | 40 | 680 |
@@ -179,7 +179,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/HelpRoutes.cs` | 76 | 1290 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/LinesRoutes.cs` | 63 | 1016 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/SessionsRoutes.cs` | 53 | 859 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/TreesRoutes.cs` | 62 | 1064 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/TreesRoutes.cs` | 63 | 1076 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverLoop.cs` | 72 | 1286 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/SessionWords.cs` | 53 | 1089 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/InstancePipe.cs` | 48 | 1053 |
@@ -288,4 +288,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-21-alone-path-design.md` | 74 | 545 |
 | `docs/2026-10-21-cleanup-design.md` | 91 | 908 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
-| `src/Daoris.Desktop/README.md` | 138 | 720 |
+| `src/Daoris.Desktop/README.md` | 139 | 720 |

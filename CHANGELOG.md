@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- Where you accept a session's work and its push is held back because its quest was taken back or submitted again while the press
+  waited, the review no longer reads it as an ordinary landing. It says the push was held back and no plugin was told, that the
+  branch stands, and that you hand it off from the review once you have looked at the quest. Accept… on a session's page says
+  the same. In English and 中文.
 - A session that moved to another agent now reads as one session on its page. Its *Parts* say which agent each part was handed
   over or moved from, and why, such as *moved on from part 2 on codex: its own conversation was lost*. Each part's row says what it
   spent, in tokens over its turns, or that its turns did not report them. Where a line of work ran on more than one agent, the
