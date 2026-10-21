@@ -16,8 +16,9 @@ D188 and the message-urgency design §1, §2, §8; D185 and the UI/UX design §2
 (*Overview*); the UX6 design §6 and D150's UX6c note; the frame model §1 and §3c; the dock design's view table; D126's NOTIFY1b note;
 D171's MAINWINDOWS3 notes; `.claude/knowledge/person-waits.md`, `bridge-presses.md` (rows 7, 9, 11), `translation-parity.md` and
 `compatible-builds.md`; the glossary; and for round 2, Codex's read and D195's reads (the cleanup design §11) as the shape to follow.
-Every statement about today was read from the code at `7c2bce824` for round 1 and again at `e4cc6913b` for round 2 (none of the
-files it cites changed between), and names its file and line; none was run, and the owner's install was not looked at.
+Every statement about today was read from the code at `7c2bce824` for round 1 and again at `5e6843642` for round 2 (three of the
+files it cites moved between, and their lines are cited as they stand now), and names its file and line; none was run, and the
+owner's install was not looked at.
 
 ## 0. The case, and what the design rests on
 
@@ -92,13 +93,13 @@ it is answered. Nothing below lays a scrim or traps the focus; the drawers that 
 | **A session's question** (a park, `awaiting-person`) | The session's head and foot (`waits.ts:151-153`); a `parked` row, its line the agent's question, two lines (`AttentionRow.tsx:406-416`) | as a row | `SESSION_ATTENTION` `Parked`: a toast in the error tone in every window (`ShellSignals.tsx:143-158`), a warning balloon behind (`SessionBalloon.cs:23-43`), its headline the driver's English (`Attention.cs:63-65`) | no |
 | A go-ahead, a helper's ask, a held tool call, an answer the answers-alone bound holds | The session's head and foot (`waits.ts:157-175`), the ask's page for a go-ahead; each a row with its acts (`attention.ts:41-67`) | as rows | none: no `AttentionKind` raises them (`Attention.cs:10-37`). A held call is refused by itself at its bound (PERMUNTIL1) | no |
 | **An agent's ask to hand its session over** (MIXAGENT1c) | The session's head and foot alone (`waits.ts:34`, `:180`; `WaitStrip.tsx:268-271`; `HandOverAgentAsk.tsx:47-57`) | **not counted**: no row (`NeedsAPerson.cs` has no such kind) | the look's English line, toasted (`DriverHandOvers.cs:181`) | no |
-| **Session and ask channel messages** (D167, D188) | The ask's page (`AskPage.tsx:529`), where reading moves the person's mark; the session's channel panel (`AttendedSession.tsx:305`), which shows the part about its line of work and moves no mark (`ChannelSection.tsx:52-54`); an ask row's *N unread* (`AskRow.tsx:100`) and the rail's heading by ask (`SessionList.tsx:219-224`), each the service's count of every item past the mark, Daoris's lines among them (`Channel.cs:974-982`), read per ask (`asks.ts:44-62`) | in no badge | never, at any level | no |
+| **Session and ask channel messages** (D167, D188) | The ask's page (`AskPage.tsx:529`), where reading moves the person's mark; the session's channel panel (`AttendedSession.tsx:307`), which shows the part about its line of work and moves no mark (`ChannelSection.tsx:52-54`); an ask row's *N unread* (`AskRow.tsx:100`) and the rail's heading by ask (`SessionList.tsx:219-224`), each the service's count of every item past the mark, Daoris's lines among them (`Channel.cs:974-982`), read per ask (`asks.ts:44-62`) | in no badge | never, at any level | no |
 | **Work done and failed, and an answer** | `SESSION_ATTENTION` `Ended` (a session ended without the person asking), `Answered` (a conversation answered the person's words), `QuestParked`, `Waiting` (`Attention.cs:10-37`); *Ready for you* rows for work to review | `QuestParked` and `Waiting` as rows; an ending and an answer **nowhere** | a toast in every window, except an answer to the conversation a visible window attends (`ShellSignals.tsx:149-153`); a balloon behind | no; once the toast closes nothing lists what ended, and Sessions shows the record's state |
-| **The look's lines** (the tick's `events`) | The driver's English log lines, toasted when they change (`ShellSignals.tsx:53-63`) and printed by a headless host (`Driver.Host/Program.cs:886`), written to no machine log (§5.1) | — | as toasts | no |
+| **The look's lines** (the tick's `events`) | The driver's English log lines, toasted when they change (`ShellSignals.tsx:53-63`) and printed by a headless host (`Driver.Host/Program.cs:887`), written to no machine log (§5.1) | — | as toasts | no |
 | **Toasts** (`notify`) | One corner per window, 26rem, at most three (`signals.ts:316`), seven seconds, two lines and the rest in a tip, text only with no door (`ui.tsx:1730-1805`): a refusal whose place has gone (R3), an outcome, a query's error (`useErrorNotify`), and the three rows above | — | — | covers the corner while it shows |
 | The strip's chips | The review chip while a set-up waits (`ReviewChip.tsx:33-48`), the browser's door | — | — | no |
 | The activity and status bars | Sessions' count with its waiting dot (SESSBADGE1), Agents' signed-out accounts; the status bar's sessions working | — | — | no |
-| **Outside the window** | One tray icon over the first main window, quiet while any window of Daoris is in front (`SessionNotifier.cs:43-163`); its headlines and default lines English, from .NET, and a park's question as the session wrote it; the notify switch silences the look's (`DriverLoop.cs:781-790`, `:919-932`) and not a press's; a headless host prints `!  {line}` (`Driver.Host/Program.cs:834`) | the taskbar's count, one window's (above) | — | no |
+| **Outside the window** | One tray icon over the first main window, quiet while any window of Daoris is in front (`SessionNotifier.cs:43-163`); its headlines and default lines English, from .NET, and a park's question as the session wrote it; the notify switch silences the look's (`DriverLoop.cs:781-790`, `:919-932`) and not a press's; a headless host prints `!  {line}` (`Driver.Host/Program.cs:835`) | the taskbar's count, one window's (above) | — | no |
 
 ### 1.1 What cuts across
 
@@ -244,9 +245,9 @@ message; *Ready for you* keeps its five and its door into Sessions; a group's he
 - **The record `data/notices.json`** (2e), machine-local and never on a wire to a shared host:
   - **Its shape**: `{ "schemaVersion": 1, "notices": { "<id>": { … } } }`, the notices an object keyed by id, each as the partition
     holds it, its workspace with it. An object, not an array: `JsonKeeping` merges an object key by key and keeps a key it did not
-    write, but writes an array whole (`JsonKeeping.cs:29-31`), so a field a later build wrote inside a notice is kept only in a map.
+    write, but writes an array whole (`JsonKeeping.cs:30-32`), so a field a later build wrote inside a notice is kept only in a map.
   - **Its writers**: the driver library's `Notices`, in any process on the home, each write held under the file's keep lock from
-    its read to its rename (`KeepLock.Take`, then `SaveHolding`, the one hold `tools.json`'s writers keep, `JsonKeeping.cs:75-79`),
+    its read to its rename (`KeepLock.Take`, then `SaveHolding`, the one hold `tools.json`'s writers keep, `JsonKeeping.cs:76-80`),
     which serializes writers within a process and across processes. Not the lease holder alone: the desktop's page and
     conversations work before it holds the lease (`DriverLoop.cs:672-681`, `:728-733`), so the page's reads and dismissals and a
     conversation's answer (`:1025`) are written by the desktop's process whoever drives; a session's ending by the watch of the
@@ -466,7 +467,7 @@ point 3 lets a snapshot be coalesced, skipped to or read again whole, `D182.md:2
 ### 5.1 The look's lines, classed
 
 A tick's report is a log (D62): its lines are toasted today (`ShellSignals.tsx:61-62`), printed by a headless host
-(`Driver.Host/Program.cs:886`), and written to no machine log, whose look line is its timing (`DriverWatch.cs:842-851`). 2g first
+(`Driver.Host/Program.cs:887`), and written to no machine log, whose look line is its timing (`DriverWatch.cs:842-851`). 2g first
 writes each line as a declared machine-log event, then stops toasting them, each going where its class says:
 
 | Class | What the line says | Where it goes | The look's own lines |
@@ -725,7 +726,7 @@ then the look's lines (2g), which need 2e's notices and 2d's row; the terminal l
 
 ## 10. What this document's gate does not cover
 
-Documents only; nothing is built. The statements about today were read from the code at `7c2bce824` and again at `e4cc6913b`, and
+Documents only; nothing is built. The statements about today were read from the code at `7c2bce824` and again at `5e6843642`, and
 none was run; the window was not looked at, and the band's height for five presses is counted from its lines, not measured. Not
 shown by any test: that a row of *What needs you* with its acts (an account's sign-in steps under it above all) reads at the side
 bar's 300 px; that the kit's engine runs `IntersectionObserver` in a window behind others as Chromium documents; that `FlashWindowEx`
@@ -738,15 +739,15 @@ confirmation runs out unseen.
 
 ## 11. The reads (D191)
 
-**Codex, 2026-10-21, on round 1.** Every finding was checked against the code at `e4cc6913b` before it was taken (D160's step 9;
-the files round 1 cited unchanged since `7c2bce824`). All hold; 4.1 and 5.8 are taken in part, said in the verdict. (B) marks what
+**Codex, 2026-10-21, on round 1.** Every finding was checked against the code at `5e6843642` before it was taken (D160's step 9;
+where a file moved since the read, *Checked at* gives its lines as they stand now). All hold; 4.1 and 5.8 are taken in part, said in the verdict. (B) marks what
 the read called blocking, (N) what it did not. A finding names a row as round 1 named it; *Taken in* names this round's row (§9
 renumbered them: round 1's 2c is 2b, its 2d is 2c, its 2g is 2d, its 2h is 2g, its 2i is 2h, and its 2b joined 2a). The steward's
 own findings from the check follow (S).
 
 | # | Finding | Checked at | Verdict | Taken in |
 |---|---|---|---|---|
-| 1.1 | (N) D196's "nothing an agent says reaches the person outside the ask" forgets the session's channel panel the inventory names | `D196.md:14`, `AttendedSession.tsx:305` | holds | D196 point 1 and §1.1 point 7: not announced, nor counted outside the ask; read on its page, its row and in part the panel |
+| 1.1 | (N) D196's "nothing an agent says reaches the person outside the ask" forgets the session's channel panel the inventory names | `D196.md:14`, `AttendedSession.tsx:307` | holds | D196 point 1 and §1.1 point 7: not announced, nor counted outside the ask; read on its page, its row and in part the panel |
 | 1.2 | (N) The inventory reads as though an answer were toasted over its conversation, which the page keeps off | `ShellSignals.tsx:149-153` | holds: the row meant the exception and said it backwards | §1's row |
 | 1.3 | (B) A session's channel panel moves no mark, by design, since it shows part of a channel | `ChannelSection.tsx:52-54` | holds | §2.4: the panel leaves the item; the ask's page and *Mark read* read it; 2f's proof |
 | 2.1 | (N) Moving the card adds no bypass while the pipe's binding and the card's `source:id` stay; never rebuild a request from its sentence | `InstancePipe.cs:545-548`, `:635-638`, `PipeCensus.cs:243-247`, `Confirmations.tsx:85` | holds | §3.2 *Why it stays safe*, §3.5 |
@@ -755,13 +756,13 @@ own findings from the check follow (S).
 | 2.4 | (B) The service's confirmations lose their one exposure: two minutes from the ask, no row, no word that one is shown | `PersonConfirmations.cs:117-121`, `AttentionStateSlice.cs:256-257`, `person.ts:74-95` | holds | §3.3, §3.4: counted in the bell and the taskbar, toasted once in the focused window, its time left from the first moment, its two minutes kept as the service counts them and why (S2); 2a; §10 |
 | 2.5 | (B) A Confirm is taken past the bound when the timer fires late: only the timer's end reads the clock | `PipeConfirmations.cs:191-192`, `:271-283` | holds, and for a word that the card is shown too (S1) | §3.4 *No answer after its time*; 2a's proof on a held clock |
 | 3.1 | (B) The lease holder cannot receive every write: the desktop's page and chats work before it holds the lease, and its pipe after | `DriverLoop.cs:672-681`, `:728-737`, `:1025` | holds | §2.5: any process writes under the keep lock from read to rename, and each reads again at a home watch's change; 2e |
-| 3.2 | (B) `JsonKeeping` writes an array whole, and its lock covers the reread and the rename only | `JsonKeeping.cs:29-31`, `:68-73`, `:79-126` | holds | §2.5: the notices a map keyed by id; one hold from read to rename (`SaveHolding`'s shape); 2e's proof |
+| 3.2 | (B) `JsonKeeping` writes an array whole, and its lock covers the reread and the rename only | `JsonKeeping.cs:30-32`, `:69-74`, `:80-127` | holds | §2.5: the notices a map keyed by id; one hold from read to rename (`SaveHolding`'s shape); 2e's proof |
 | 3.3 | (B) A workspace read again from the sessions is lost with its session, and an item with none reads as every window's | `bridge/attention.ts:91` | holds | §2.4, §2.5: stored on the notice at its making |
 | 3.4 | (B) The service refuses a mark on an ask its local store does not hold, so a teammate's ask cannot be marked | `Channel.cs:1061-1063`, `ChannelSection.tsx:56-58` | holds | §2.4 and 2f: the service keeps the person's mark on an ask its mirror holds, in the service lane with its tests |
 | 3.5 | (B) Two unread models; and an `Answered` notice has no mark to settle it | `Channel.cs:974-982` | holds | §2.4: one model, the service's count; an answer a notice read by *Open*, *Mark read* or its conversation read in front; 2f |
 | 3.6 | (N) Pruning at each write leaves old notices shown on a quiet machine; say restart, the filter and the cap | round 1's §2.5 | holds | §2.5 *Its age and its count*; 2e's proof |
 | 4.1 | (B) One `announce` field cannot say each message once across D182's coalesced and resynced snapshots; give arrivals identities, pending announcements and an acknowledgement | `D182.md:24-27` | holds; taken in part | §5 *Arrivals and snapshots*: an arrival is an event with its identity, said once per run by the host and once by the focused window; no pending queue and no acknowledgement, since an arrival missed is counted in the view and saying it later says old news (§7) |
-| 4.2 | (B) The look's lines reach no machine log, so removing their toasts loses them from the window | `ShellSignals.tsx:61-62`, `DriverWatch.cs:842-851`, `Driver.Host/Program.cs:886` | holds | §5.1; 2g: a declared `look.said` event first, the confirmation's codes-only event kept |
+| 4.2 | (B) The look's lines reach no machine log, so removing their toasts loses them from the window | `ShellSignals.tsx:61-62`, `DriverWatch.cs:842-851`, `Driver.Host/Program.cs:887` | holds | §5.1; 2g: a declared `look.said` event first, the confirmation's codes-only event kept |
 | 4.3 | (N) The asks' counts still read every channel per ask; move them onto the projection | `asks.ts:44-62`, `pushed-slices.md:23-25` | holds | §2.5's `messages`; 2f |
 | 4.4 | (N) R1 stacks below 32rem, under the side bar's 300 px; translate end states; the switch over every new producer, never over recording | `ui-ux-design.md:168-169` | holds | §4, §6 (R1, a key per state), §5's switch; 2c |
 | 5.1 | (B) NOTIFY2a: the findings above, and a bell always opening the right side bar where the view may stand in the panel | `placements.ts:23-29` | holds | §2.1: the bell shows the view where it stands; 2a carries 2.2 to 2.5 |
