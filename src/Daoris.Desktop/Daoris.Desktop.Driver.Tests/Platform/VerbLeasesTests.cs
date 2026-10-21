@@ -223,6 +223,9 @@ public sealed class VerbLeasesTests
     [InlineData("agent profile use claude-code order --help")]
     [InlineData("agent profile order claude-code account-1 --help")]
     [InlineData("agent which claude-code-acp --workspace work --json")]
+    // This machine's agents and their accounts, read, by its word and by none (PUSH1f2e4).
+    [InlineData("agent list")]
+    [InlineData("agent list --help")]
     [InlineData("agent --help")]
     [InlineData("agent rules allow WebFetch --help")]
     [InlineData("agent frobnicate")]
@@ -282,6 +285,7 @@ public sealed class VerbLeasesTests
     [InlineData("agent trust claude-code D:/work/engine --yes", "daoris-driver agent trust")]
     [InlineData("agent unpin claude-code", "daoris-driver agent unpin")]
     [InlineData("agent profile order claude-code account-1", "daoris-driver agent profile")]
+    [InlineData("agent list", "daoris-driver agent list")]
     public void A_lease_names_the_verb_and_never_its_arguments(string words, string named) =>
         Assert.Equal(named, VerbLeases.Name(words.Split(' ')));
 }

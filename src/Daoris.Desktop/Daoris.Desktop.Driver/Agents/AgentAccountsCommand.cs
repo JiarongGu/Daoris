@@ -853,9 +853,11 @@ internal static class AgentAccountsCommand
     /// its door's or a door onto it (AGT7), carries the frame's words (<c>Windows</c>) or asks its own server (<c>Usage</c>), as
     /// <c>codex-acp</c> asks for <c>codex</c>'s. The CLI's <c>windows</c>.
     /// </summary>
-    private static bool Says(Context at, string owner)
+    private static bool Says(Context at, string owner) => Says(at.World.Adapters(at.Home), owner);
+
+    /// <summary><see cref="Says(Context, string)"/> over the agents a home runs: <c>agent list</c>'s too (PUSH1f2e4).</summary>
+    internal static bool Says(AdapterSet set, string owner)
     {
-        var set = at.World.Adapters(at.Home);
         IEnumerable<HarnessToolchain?> theirs = [set.Holder(owner), .. set.Names
             .Select(name => (Name: name, Toolchain: set.Resolve(name).Toolchain))
             .Where(each => each.Toolchain is { } toolchain && string.Equals(toolchain.Owner(each.Name), owner, StringComparison.OrdinalIgnoreCase))
@@ -867,9 +869,10 @@ internal static class AgentAccountsCommand
     /// How a scope's list is used, in the terminal's words (TOOL6a; D130 §3.2, §6, §16.6): each setting's label and value, and a note
     /// for each thing the person should know: a default outside the list, a kept account that leaves driven work none, and every value
     /// or setting this build does not know, said rather than dropped. <i>Switch accounts</i> says what passes an account at a start
-    /// (D165 point 2, the switch design §3), only where the agent says how much of each window is used.
+    /// (D165 point 2, the switch design §3), only where the agent says how much of each window is used. <c>agent list</c> says it
+    /// beneath each list too.
     /// </summary>
-    private static (List<(string Label, string Value)> Rows, List<string> Notes) UseLines(
+    internal static (List<(string Label, string Value)> Rows, List<string> Notes) UseLines(
         RotationScope scope, string product, bool says, Func<string, string> shown)
     {
         var use = scope.Use;
@@ -928,7 +931,7 @@ internal static class AgentAccountsCommand
     /// agent says how much of each window is used, the curve's steps (D165 point 2, the switch design §3). Prose about
     /// <see cref="AccountRotation.Order"/>: this reads no session record, so it names the steps rather than the account they would choose.
     /// </summary>
-    private static (string Row, string? Note) NextStartLines(RotationScope scope, bool says, bool anySaid, Func<string, string> shown)
+    internal static (string Row, string? Note) NextStartLines(RotationScope scope, bool says, bool anySaid, Func<string, string> shown)
     {
         if (scope.List.Count == 1) return ($"`{shown(scope.List[0])}`, the one account this list holds", null);
 
@@ -955,7 +958,7 @@ internal static class AgentAccountsCommand
     }
 
     /// <summary>The line a cooling account is given (D125 §2.4): until when, how long that is, why, and how to try it now.</summary>
-    private static string CoolingLine(CoolingEntry entry, DateTimeOffset now, TimeZoneInfo zone)
+    internal static string CoolingLine(CoolingEntry entry, DateTimeOffset now, TimeZoneInfo zone)
     {
         var ready = $"`daoris agent profile ready {entry.Agent} {(entry.Account is null ? "--own" : ShellWord.Of(entry.Account, ShellWord.Account))}`";
         return $"cooling until {CoolingWords.When(entry.Until, zone)}, in {Span(entry.Until - now)} — {CoolingWords.Why(entry)}; {ready} tries it now";
@@ -973,9 +976,10 @@ internal static class AgentAccountsCommand
     /// <summary>
     /// What an account last said, as one line a person reads (TOOL6c, D130 §3.2, §9): how long ago, its own word where it gave one,
     /// credits, each window's use and reset in the machine's zone, and its tightest window over the scope's curve with the curve's value
-    /// there now, as the start's line says it (SWITCH1b-iii). Its pace warning is said in its own words, never as near (USAGEREAD3a).
+    /// there now, as the start's line says it (SWITCH1b-iii), where a scope's <paramref name="use"/> is given (<c>agent list</c> gives
+    /// none). Its pace warning is said in its own words, never as near (USAGEREAD3a).
     /// </summary>
-    private static string SaidLine(AccountSaid said, DateTimeOffset now, TimeZoneInfo zone, RotationUse use)
+    internal static string SaidLine(AccountSaid said, DateTimeOffset now, TimeZoneInfo zone, RotationUse? use)
     {
         var parts = new List<string>();
         if (said.Windows.FirstOrDefault(each => each.Standing == AccountReadings.RefusedWord) is { } reached)
@@ -998,7 +1002,7 @@ internal static class AgentAccountsCommand
             parts.Add($"{RotationWords.Percent(used)} of its {each.Window} limit used{own}, resetting {CoolingWords.When(each.Reset, zone)}");
         }
 
-        if (UsageCurves.TightestSaid(use, said, now) is { Room: < 0 } over)
+        if (use is not null && UsageCurves.TightestSaid(use, said, now) is { Room: < 0 } over)
         {
             parts.Add($"over its {over.Window.Window} curve's {UsageCurves.Points(over.Curve)}%");
         }

@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The port keeps today's text (PUSH1f2d, D194 point 6, the alone-path design §3): each case of <c>daoris agent rules|trust|settings</c>,
+/// The port keeps today's text (PUSH1f2d, D194 point 6, the alone-path design §3): each case of <c>daoris agent [list]|rules|trust|settings|…</c>,
 /// as the CLI's TypeScript verb said it before it retired (<c>fixtures/agents-text.json</c>), said again by <see cref="AgentsCommand"/>
 /// acting alone on a root of its own: the same lines on each stream, the same exit, and every file under the root after it the same. A
 /// row the port changes on purpose says why under <c>changed</c>.
@@ -16,11 +16,36 @@ public sealed partial class AgentsTextTests
     private static readonly Lazy<JsonElement> Read = new(() => JsonDocument.Parse(File.ReadAllText(Path.Combine(
         WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "agents-text.json"))).RootElement.Clone());
 
-    public static TheoryData<string> Names()
+    public static TheoryData<string> Names() => Rows(standIn: false);
+
+    /// <summary>The rows whose agent is a stand-in program asked as a start runs it (<c>windows</c>, PUSH1f2e4's <c>list</c>), or the rest.</summary>
+    private static TheoryData<string> Rows(bool standIn)
     {
         var names = new TheoryData<string>();
-        foreach (var row in Read.Value.GetProperty("rows").EnumerateArray()) names.Add(row.GetProperty("name").GetString()!);
+        foreach (var row in Read.Value.GetProperty("rows").EnumerateArray())
+        {
+            if ((row.TryGetProperty("windows", out var windows) && windows.GetBoolean()) == standIn) names.Add(row.GetProperty("name").GetString()!);
+        }
+
         return names;
+    }
+
+    /// <summary>
+    /// The rows that start a stand-in agent, a <c>claude.cmd</c> in the managed layout (PUSH1f2e4): real processes, so the suite's
+    /// Process half runs them, and on Windows alone, which runs a <c>.cmd</c>.
+    /// </summary>
+    [Trait(Category.Name, Category.Process)]
+    public sealed class StandIns
+    {
+        public static TheoryData<string> Names() => Rows(standIn: true);
+
+        [Theory]
+        [MemberData(nameof(Names))]
+        public async Task Each_case_says_today_s_text_and_writes_the_same_files(string name)
+        {
+            if (!OperatingSystem.IsWindows()) return;
+            await Said(name);
+        }
     }
 
     [Fact]
@@ -28,7 +53,9 @@ public sealed partial class AgentsTextTests
     {
         var rows = Read.Value.GetProperty("rows").EnumerateArray().ToList();
         Assert.True(rows.Count >= 60, $"only {rows.Count} rows, so this proves little");
-        var verbs = rows.Select(row => row.GetProperty("argv").EnumerateArray().Select(each => each.GetString()).First()).ToHashSet(StringComparer.Ordinal);
+        // No words are `list` (PUSH1f2e4).
+        var verbs = rows.Select(row => row.GetProperty("argv").EnumerateArray().Select(each => each.GetString()).FirstOrDefault() ?? "list")
+            .ToHashSet(StringComparer.Ordinal);
         Assert.All(AgentsCommand.Verbs, verb => Assert.Contains(verb, verbs));
     }
 
@@ -48,7 +75,9 @@ public sealed partial class AgentsTextTests
 
     [Theory]
     [MemberData(nameof(Names))]
-    public async Task Each_case_says_today_s_text_and_writes_the_same_files(string name)
+    public Task Each_case_says_today_s_text_and_writes_the_same_files(string name) => Said(name);
+
+    private static async Task Said(string name)
     {
         var row = Read.Value.GetProperty("rows").EnumerateArray().First(each => each.GetProperty("name").GetString() == name);
         var root = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "agents-text", Guid.NewGuid().ToString("N")[..8]);
@@ -83,7 +112,7 @@ public sealed partial class AgentsTextTests
                 },
                 Folder = root,
                 UserHome = Path.Combine(root, "user"),
-                Adapters = _ => AdapterSet.Built(),
+                // The build's agents and those the home's plugins declare, as the window's roster reads them (`list`'s plugin rows).
                 Zone = TimeZoneInfo.FindSystemTimeZoneById("America/New_York"),
             };
             // A row run at a moment of its own (PUSH1f2e3: a cool-off's end and a reading's age) is said at that moment.

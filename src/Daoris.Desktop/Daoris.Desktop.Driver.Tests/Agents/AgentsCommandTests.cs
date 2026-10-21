@@ -174,6 +174,34 @@ public sealed class AgentsCommandTests : IDisposable
     }
 
     /// <summary>
+    /// <c>list</c>, by its word and by none (PUSH1f2e4), is a read: said from a session's terminal, and nothing written. Every agent is
+    /// pinned to a version nothing installed, so no tool is asked and no reading kept.
+    /// </summary>
+    [Theory]
+    [InlineData("list")]
+    [InlineData("")]
+    public async Task The_list_is_said_from_a_marked_terminal_and_writes_nothing(string words)
+    {
+        Account(Home);
+        var wiring = DaorisHome.Entry(Home, HomeEntry.Harnesses);
+        Directory.CreateDirectory(Path.GetDirectoryName(wiring)!);
+        File.WriteAllText(wiring, """
+            { "versions": { "claude-code": "0.0.0-none", "claude-code-acp": "0.0.0-none", "codex": "0.0.0-none", "codex-acp": "0.0.0-none", "dsh": "0.0.0-none" },
+              "rotation": { "claude-code": ["work"] } }
+            """);
+        var written = Snapshot();
+
+        var exit = await AgentsCommand.RunAsync(words.Length == 0 ? [] : words.Split(' '), World(Marker), CancellationToken.None);
+
+        Assert.Equal(0, exit);
+        Assert.Equal("", _error.ToString());
+        Assert.StartsWith($"daoris: {wiring}", _out.ToString(), StringComparison.Ordinal);
+        Assert.Contains("work             unknown", _out.ToString(), StringComparison.Ordinal);
+        Assert.Equal(written, Snapshot());
+        Assert.False(VerbLeases.Holds(["agent", .. words.Length == 0 ? Array.Empty<string>() : words.Split(' ')]));
+    }
+
+    /// <summary>
     /// <c>rules accept</c> with <c>DAORIS_HARNESS_CONFIG</c> set takes the door on <c>DAORIS_HOME</c> (the alone-path design §1.2): the
     /// proposals are that home's whatever the variable names, so beside the running Daoris the press is its route, confirmed in its
     /// window, and this process writes nothing. Naming a wiring file no longer makes it alone.

@@ -40,6 +40,8 @@ public static class CodexAccounts
         Binary: ["codex"],
         VersionArguments: ["--version"],
         ProfileVariable: "CODEX_HOME",
+        // Its own installer, the CLI's entry's, which `agent list` names where Codex is absent (PUSH1f2e4); no door runs it here.
+        Install: ["npm", "install", "-g", "@openai/codex"],
         LoginArguments: ["login"],
         LoginCheck: new LoginQuestion(["login", "status"], LoggedIn: @"(?m)^\s*logged in", LoggedOut: @"(?m)^\s*not logged in"),
         DeviceLoginArguments: ["login", "--device-auth"],

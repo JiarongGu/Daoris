@@ -113,7 +113,8 @@ public static class AgentRoutes
 /// <summary>
 /// <c>daoris-driver agent</c> (PUSH1f2d, D194, the alone-path design §1.2): the agents' rules, trust and settings from a terminal, the words
 /// <c>daoris agent rules|trust|settings …</c> hands this program, what an agent runs as, and its pin taken back and its accounts
-/// (PUSH1f2e1, PUSH1f2e2, PUSH1f2e3, <see cref="AgentAccountsCommand"/>); the rest of the family is the CLI's until the rest of PUSH1f2e. Each change a route
+/// (PUSH1f2e1, PUSH1f2e2, PUSH1f2e3, <see cref="AgentAccountsCommand"/>), and the list of this machine's agents, its bare word too (PUSH1f2e4,
+/// <see cref="AgentListCommand"/>); the rest of the family is the CLI's until the rest of PUSH1f2e. Each change a route
 /// takes is its route through <see cref="InstanceDoor.PressAsync"/> where the running Daoris answers, confirmed in its window; else its
 /// operation, on the terminal's word (D50), refused from a session's terminal (D194 point 5). The rules and their proposals are
 /// <c>DAORIS_HOME</c>'s whatever <c>DAORIS_HARNESS_CONFIG</c> names, so they keep the door on that home; an account's settings and a
@@ -128,14 +129,15 @@ public static class AgentRoutes
 public static class AgentsCommand
 {
     /// <summary>The verbs this program has, each the CLI hands on (the CLI's allow-list is held to it).</summary>
-    public static IReadOnlyList<string> Verbs { get; } = ["rules", "trust", "settings", "which", "unpin", "profile"];
+    public static IReadOnlyList<string> Verbs { get; } = ["list", "rules", "trust", "settings", "which", "unpin", "profile"];
 
     /// <summary>The <c>profile</c> verbs this program has, each the CLI hands on: every one (PUSH1f2e2, <c>use</c> PUSH1f2e3).</summary>
     public static IReadOnlyList<string> ProfileVerbs => AgentAccountsCommand.ProfileVerbs;
 
     public const string Usage =
         """
-        usage: daoris-driver agent rules [list] · allow|ask|deny|remove <rule> [--workspace <name> | --repository <name>]
+        usage: daoris-driver agent [list]
+               daoris-driver agent rules [list] · allow|ask|deny|remove <rule> [--workspace <name> | --repository <name>]
                daoris-driver agent rules default <id> on|off · proposals · accept|decline <id> [--note "…"]
                daoris-driver agent trust <agent> <folder> [--profile <account>] [--yes | --dry-run]
                daoris-driver agent settings <agent> [--account <account>] [model <name>|unset] [effort <level>|unset [--for <model>]]
@@ -146,7 +148,7 @@ public static class AgentsCommand
                daoris-driver agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off]
                      [--curve <window>=<elapsed>:<used>,…]… [--no-curve] [--workspace <name>] · use <agent> --clear [--workspace <name>]
                daoris-driver agent profile rename <agent> <account> <name> · join <agent> <account> [<workspace>…] [--machine]
-        `daoris agent rules|trust|settings|which|unpin|profile …` run these; the family's other verbs are still `daoris agent`'s own.
+        `daoris agent [list]|rules|trust|settings|which|unpin|profile …` run these; the family's other verbs are still `daoris agent`'s own.
         """;
 
     private const string Prefix = "daoris";
@@ -188,8 +190,11 @@ public static class AgentsCommand
         args.Count > 0 && AgentRoutes.Verbs.Any(row => row.Verb.Split(' ')[1] == args[0] && row.Home == AgentHome.Wiring)
         && environment(HarnessSettings.PathVariable) is { Length: > 0 };
 
-    /// <summary>The verbs that only read, changing no home, so the verb table has no row for them: <c>which</c>.</summary>
-    public static IReadOnlyList<string> Reads { get; } = ["which"];
+    /// <summary>
+    /// The verbs that only read, changing no home, so the verb table has no row for them: <c>list</c> (PUSH1f2e4), whose only write is the
+    /// readings <c>reads.json</c> keeps of each account it asked, as a probe's are, and <c>which</c>.
+    /// </summary>
+    public static IReadOnlyList<string> Reads { get; } = ["list", "which"];
 
     /// <summary>The verb's run: a read said, a change pressed (its route where the instance answers, its operation alone), or its usage.</summary>
     public static async Task<int> RunAsync(IReadOnlyList<string> args, AgentsWorld world, CancellationToken ct)
@@ -201,18 +206,20 @@ public static class AgentsCommand
             return 0;
         }
 
-        var verb = args.Count > 0 ? args[0] : "";
+        // None named is `list`, as `daoris agent` alone always was (PUSH1f2e4).
+        var verb = args.Count > 0 ? args[0] : "list";
         if (!Verbs.Contains(verb, StringComparer.Ordinal))
         {
-            await error.WriteLineAsync(verb.Length == 0
-                ? "daoris-driver agent: name a verb of this program's."
-                : $"daoris-driver agent: `{verb}` is not a verb of this program's.").ConfigureAwait(false);
+            await error.WriteLineAsync($"daoris-driver agent: `{verb}` is not a verb of this program's.").ConfigureAwait(false);
             await error.WriteLineAsync(Usage).ConfigureAwait(false);
             return 2;
         }
 
         try
         {
+            // A read that asks each agent, said here: no press, no lease, and from a session's terminal too.
+            if (verb == "list") return await AgentListCommand.RunAsync(world, ct).ConfigureAwait(false);
+
             // A person's grant from a session's terminal is refused before a word of it is said (D194 point 5): no route takes it.
             if (verb == "trust" && Changes(args) && world.Instance.Environment(DriverChoicesCommand.SessionVariable) is { Length: > 0 })
             {
