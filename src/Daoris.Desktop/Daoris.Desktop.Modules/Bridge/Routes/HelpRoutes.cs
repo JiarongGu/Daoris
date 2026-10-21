@@ -802,7 +802,7 @@ public sealed class HelpRoutes(DriverContext context)
 
         // SET_AGENT_SETTINGS's own write.
         public AgentSettingsRead SetAgentSettings(string harness, string account, AgentSettingEdit? model, AgentSettingEdit? effort) =>
-            AgentsRoutes.WriteAgentSettings(_loop, harness, account, () => (model, effort, null)).Read;
+            AccountSettings.Write(_loop.Harnesses, harness, account, () => (model, effort, null)).Read;
 
         // `daoris plugin add`'s copy, the driver's twin (PLUG9); the loop is asked to look, and it starts
         // what the plugin runs at that look, as it does any plugin. Nothing runs here.

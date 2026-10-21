@@ -1,0 +1,1969 @@
+{
+  "note": "PUSH1f2d (D194, the alone-path design §3): what `daoris agent rules|trust|settings` said for each case its tests held, run once through the CLI's TypeScript verb before it retired, alone, on a root of its own (`<root>`): DAORIS_HOME `<root>/home` (none where `home` is false), the agent's own home `<root>/user`, a folder to trust under `<root>/work`, and with `harness` DAORIS_HARNESS_CONFIG naming `<root>/other/data/harnesses.json`. Each row: the words after `agent` (`<root>` where a whole path goes), the folders made empty before it, every file under the root before it and after it, the exit, and the lines said on the standard output and on the error stream. A path is spelled with `/`; a proposal's settling moment is `<at>`. The TypeScript said a refusal through its dispatcher, `daoris: ` and the sentence; the driver's command says it on the error stream, as every host verb does. `AgentsTextTests` reads it row for row. A sentence the port changes on purpose is a row changed here, with its reason under `changed`.",
+  "rows": [
+    {
+      "name": "rules, the bare word, an empty home",
+      "argv": [
+        "rules"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "What an agent Daoris starts may do on this machine — <root>/home/data/permissions.json",
+        "  Claude Code's own permission rules. Sessions on other agents are handed none of these.",
+        "",
+        "Defaults",
+        "  connector  on   allow  mcp__daoris-knowledge__registry, mcp__daoris-knowledge__knowledge_search, mcp__daoris-knowledge__knowledge_get, mcp__daoris-knowledge__knowledge_repositories, mcp__daoris-knowledge__knowledge_convergence, mcp__daoris-knowledge__quest_list, mcp__daoris-knowledge__quest_respond, mcp__daoris-knowledge__quest_publish, mcp__daoris-knowledge__permission_propose, mcp__daoris-knowledge__go_ahead_ask, mcp__daoris-knowledge__review_serve, mcp__daoris-knowledge__review_ready, mcp__daoris-knowledge__opinion_give, mcp__daoris-knowledge__opinion_answer, mcp__daoris-knowledge__helper_ask, mcp__daoris-knowledge__helper_answer, mcp__daoris-knowledge__channel_post, mcp__daoris-knowledge__channel_read, mcp__daoris-knowledge__handover_propose, mcp__daoris-knowledge__line_read",
+        "  commit     on   allow  Bash(cd:*), Bash(git add:*), Bash(git commit:*), Bash(git mv:*)",
+        "  no-push    on   deny  Bash(git push), Bash(git push:*), Bash(git -* push), Bash(git -* push *)",
+        "  tree-guard on   deny  a hook on Edit|Write|MultiEdit|NotebookEdit"
+      ],
+      "err": [],
+      "after": {}
+    },
+    {
+      "name": "rules list, an empty home",
+      "argv": [
+        "rules",
+        "list"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "What an agent Daoris starts may do on this machine — <root>/home/data/permissions.json",
+        "  Claude Code's own permission rules. Sessions on other agents are handed none of these.",
+        "",
+        "Defaults",
+        "  connector  on   allow  mcp__daoris-knowledge__registry, mcp__daoris-knowledge__knowledge_search, mcp__daoris-knowledge__knowledge_get, mcp__daoris-knowledge__knowledge_repositories, mcp__daoris-knowledge__knowledge_convergence, mcp__daoris-knowledge__quest_list, mcp__daoris-knowledge__quest_respond, mcp__daoris-knowledge__quest_publish, mcp__daoris-knowledge__permission_propose, mcp__daoris-knowledge__go_ahead_ask, mcp__daoris-knowledge__review_serve, mcp__daoris-knowledge__review_ready, mcp__daoris-knowledge__opinion_give, mcp__daoris-knowledge__opinion_answer, mcp__daoris-knowledge__helper_ask, mcp__daoris-knowledge__helper_answer, mcp__daoris-knowledge__channel_post, mcp__daoris-knowledge__channel_read, mcp__daoris-knowledge__handover_propose, mcp__daoris-knowledge__line_read",
+        "  commit     on   allow  Bash(cd:*), Bash(git add:*), Bash(git commit:*), Bash(git mv:*)",
+        "  no-push    on   deny  Bash(git push), Bash(git push:*), Bash(git -* push), Bash(git -* push *)",
+        "  tree-guard on   deny  a hook on Edit|Write|MultiEdit|NotebookEdit"
+      ],
+      "err": [],
+      "after": {}
+    },
+    {
+      "name": "rules list, every scope and a default off",
+      "argv": [
+        "rules",
+        "list"
+      ],
+      "folders": [],
+      "before": {
+        "home/data/permissions.json": "{\n  \"machine\": {\n    \"allow\": [\n      \"Bash(npm run test:*)\"\n    ],\n    \"deny\": [\n      \"WebFetch\"\n    ]\n  },\n  \"workspaces\": {\n    \"default\": {\n      \"deny\": [\n        \"Bash(rm -rf:*)\"\n      ]\n    }\n  },\n  \"repositories\": {\n    \"engine\": {\n      \"ask\": [\n        \"Edit(/docs/**)\"\n      ]\n    }\n  },\n  \"defaultsOff\": [\n    \"no-push\"\n  ]\n}"
+      },
+      "exit": 0,
+      "out": [
+        "What an agent Daoris starts may do on this machine — <root>/home/data/permissions.json",
+        "  Claude Code's own permission rules. Sessions on other agents are handed none of these.",
+        "",
+        "Defaults",
+        "  connector  on   allow  mcp__daoris-knowledge__registry, mcp__daoris-knowledge__knowledge_search, mcp__daoris-knowledge__knowledge_get, mcp__daoris-knowledge__knowledge_repositories, mcp__daoris-knowledge__knowledge_convergence, mcp__daoris-knowledge__quest_list, mcp__daoris-knowledge__quest_respond, mcp__daoris-knowledge__quest_publish, mcp__daoris-knowledge__permission_propose, mcp__daoris-knowledge__go_ahead_ask, mcp__daoris-knowledge__review_serve, mcp__daoris-knowledge__review_ready, mcp__daoris-knowledge__opinion_give, mcp__daoris-knowledge__opinion_answer, mcp__daoris-knowledge__helper_ask, mcp__daoris-knowledge__helper_answer, mcp__daoris-knowledge__channel_post, mcp__daoris-knowledge__channel_read, mcp__daoris-knowledge__handover_propose, mcp__daoris-knowledge__line_read",
+        "  commit     on   allow  Bash(cd:*), Bash(git add:*), Bash(git commit:*), Bash(git mv:*)",
+        "  no-push    off  deny  Bash(git push), Bash(git push:*), Bash(git -* push), Bash(git -* push *)",
+        "  tree-guard on   deny  a hook on Edit|Write|MultiEdit|NotebookEdit",
+        "",
+        "This machine",
+        "  allow  Bash(npm run test:*)",
+        "  deny   WebFetch",
+        "",
+        "workspace `default`",
+        "  deny   Bash(rm -rf:*)",
+        "",
+        "repository `engine`",
+        "  ask    Edit(/docs/**)"
+      ],
+      "err": [],
+      "after": {
+        "home/data/permissions.json": "{\n  \"machine\": {\n    \"allow\": [\n      \"Bash(npm run test:*)\"\n    ],\n    \"deny\": [\n      \"WebFetch\"\n    ]\n  },\n  \"workspaces\": {\n    \"default\": {\n      \"deny\": [\n        \"Bash(rm -rf:*)\"\n      ]\n    }\n  },\n  \"repositories\": {\n    \"engine\": {\n      \"ask\": [\n        \"Edit(/docs/**)\"\n      ]\n    }\n  },\n  \"defaultsOff\": [\n    \"no-push\"\n  ]\n}"
+      }
+    },
+    {
+      "name": "rules list, a file that is not JSON",
+      "argv": [
+        "rules",
+        "list"
+      ],
+      "folders": [],
+      "before": {
+        "home/data/permissions.json": "{ not json"
+      },
+      "exit": 0,
+      "out": [
+        "What an agent Daoris starts may do on this machine — <root>/home/data/permissions.json",
+        "  Claude Code's own permission rules. Sessions on other agents are handed none of these.",
+        "  ⚠ permissions.json could not be read (<why>), so no rule of it applies. The defaults still do.",
+        "",
+        "Defaults",
+        "  connector  on   allow  mcp__daoris-knowledge__registry, mcp__daoris-knowledge__knowledge_search, mcp__daoris-knowledge__knowledge_get, mcp__daoris-knowledge__knowledge_repositories, mcp__daoris-knowledge__knowledge_convergence, mcp__daoris-knowledge__quest_list, mcp__daoris-knowledge__quest_respond, mcp__daoris-knowledge__quest_publish, mcp__daoris-knowledge__permission_propose, mcp__daoris-knowledge__go_ahead_ask, mcp__daoris-knowledge__review_serve, mcp__daoris-knowledge__review_ready, mcp__daoris-knowledge__opinion_give, mcp__daoris-knowledge__opinion_answer, mcp__daoris-knowledge__helper_ask, mcp__daoris-knowledge__helper_answer, mcp__daoris-knowledge__channel_post, mcp__daoris-knowledge__channel_read, mcp__daoris-knowledge__handover_propose, mcp__daoris-knowledge__line_read",
+        "  commit     on   allow  Bash(cd:*), Bash(git add:*), Bash(git commit:*), Bash(git mv:*)",
+        "  no-push    on   deny  Bash(git push), Bash(git push:*), Bash(git -* push), Bash(git -* push *)",
+        "  tree-guard on   deny  a hook on Edit|Write|MultiEdit|NotebookEdit"
+      ],
+      "err": [],
+      "after": {
+        "home/data/permissions.json": "{ not json"
+      },
+      "changed": "The rules are read by the driver's PermissionRules, the one reading the window's RULES and every session's spawn make, so a file that does not read is said in its words."
+    },
+    {
+      "name": "rules list, no home",
+      "argv": [
+        "rules",
+        "list"
+      ],
+      "home": false,
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: no Daoris home: set DAORIS_HOME to the application's data folder (the `data` directory beside Daoris.exe), or name the file's own variable. Daoris keeps nothing under the user profile. (wanted: data/permissions.json)"
+      ],
+      "after": {},
+      "changed": "The rules and their proposals are DAORIS_HOME's whatever DAORIS_HARNESS_CONFIG names (the alone-path design §1.2), so a home that is not named is refused naming their own file, data/permissions.json; the TypeScript resolved the wiring file first and named that."
+    },
+    {
+      "name": "rules allow, the machine",
+      "argv": [
+        "rules",
+        "allow",
+        "Bash(npm run test:*)"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: `Bash(npm run test:*)` is now allowed for every session on this machine.",
+        "  Sessions started from now on are handed it; one already running keeps what it began with."
+      ],
+      "err": [],
+      "after": {
+        "home/data/permissions.json": "{\n  \"machine\": {\n    \"allow\": [\n      \"Bash(npm run test:*)\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "rules deny, a workspace",
+      "argv": [
+        "rules",
+        "deny",
+        "Bash(rm -rf:*)",
+        "--workspace",
+        "default"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: `Bash(rm -rf:*)` is now denied for workspace `default`.",
+        "  Sessions started from now on are handed it; one already running keeps what it began with."
+      ],
+      "err": [],
+      "after": {
+        "home/data/permissions.json": "{\n  \"workspaces\": {\n    \"default\": {\n      \"deny\": [\n        \"Bash(rm -rf:*)\"\n      ]\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "rules ask, a repository",
+      "argv": [
+        "rules",
+        "ask",
+        "Edit(/docs/**)",
+        "--repository",
+        "engine"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: `Edit(/docs/**)` is now asked for for repository `engine`.",
+        "  Sessions started from now on are handed it; one already running keeps what it began with.",
+        "  An ask is a refusal for anything Daoris starts — nobody is there to answer it."
+      ],
+      "err": [],
+      "after": {
+        "home/data/permissions.json": "{\n  \"repositories\": {\n    \"engine\": {\n      \"ask\": [\n        \"Edit(/docs/**)\"\n      ]\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "rules allow, a rule denied moves to allow, keeping a newer build's key",
+      "argv": [
+        "rules",
+        "allow",
+        "WebFetch"
+      ],
+      "folders": [],
+      "before": {
+        "home/data/permissions.json": "{\n  \"future\": {\n    \"kept\": 1\n  },\n  \"machine\": {\n    \"deny\": [\n      \"WebFetch\"\n    ]\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `WebFetch` is now allowed for every session on this machine.",
+        "  Sessions started from now on are handed it; one already running keeps what it began with."
+      ],
+      "err": [],
+      "after": {
+        "home/data/permissions.json": "{\n  \"future\": {\n    \"kept\": 1\n  },\n  \"machine\": {\n    \"allow\": [\n      \"WebFetch\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "rules allow, a workspace in another case is the one held",
+      "argv": [
+        "rules",
+        "allow",
+        "WebFetch",
+        "--workspace",
+        "DEFAULT"
+      ],
+      "folders": [],
+      "before": {
+        "home/data/permissions.json": "{\"workspaces\":{\"default\":{\"deny\":[\"Bash(make:*)\"]}}}"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `WebFetch` is now allowed for workspace `DEFAULT`.",
+        "  Sessions started from now on are handed it; one already running keeps what it began with."
+      ],
+      "err": [],
+      "after": {
+        "home/data/permissions.json": "{\n  \"workspaces\": {\n    \"default\": {\n      \"allow\": [\n        \"WebFetch\"\n      ],\n      \"deny\": [\n        \"Bash(make:*)\"\n      ]\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "rules remove, the scope emptied",
+      "argv": [
+        "rules",
+        "remove",
+        "WebFetch",
+        "--repository",
+        "engine"
+      ],
+      "folders": [],
+      "before": {
+        "home/data/permissions.json": "{\"repositories\":{\"engine\":{\"allow\":[\"WebFetch\"]}}}"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `WebFetch` is no longer one of the rules for repository `engine`."
+      ],
+      "err": [],
+      "after": {
+        "home/data/permissions.json": "{}\n"
+      }
+    },
+    {
+      "name": "rules remove, a rule not held",
+      "argv": [
+        "rules",
+        "remove",
+        "WebFetch"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: `WebFetch` is no longer one of the rules for every session on this machine."
+      ],
+      "err": [],
+      "after": {}
+    },
+    {
+      "name": "rules default, switched off",
+      "argv": [
+        "rules",
+        "default",
+        "no-push",
+        "off"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: the default `no-push` is off on this machine."
+      ],
+      "err": [],
+      "after": {
+        "home/data/permissions.json": "{\n  \"defaultsOff\": [\n    \"no-push\"\n  ]\n}\n"
+      }
+    },
+    {
+      "name": "rules default, switched on again",
+      "argv": [
+        "rules",
+        "default",
+        "no-push",
+        "on"
+      ],
+      "folders": [],
+      "before": {
+        "home/data/permissions.json": "{\"defaultsOff\":[\"no-push\"]}"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: the default `no-push` is on on this machine."
+      ],
+      "err": [],
+      "after": {
+        "home/data/permissions.json": "{}\n"
+      }
+    },
+    {
+      "name": "rules default, the tree guard off",
+      "argv": [
+        "rules",
+        "default",
+        "tree-guard",
+        "off"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: the default `tree-guard` is off on this machine."
+      ],
+      "err": [],
+      "after": {
+        "home/data/permissions.json": "{\n  \"defaultsOff\": [\n    \"tree-guard\"\n  ]\n}\n"
+      }
+    },
+    {
+      "name": "rules default, one nobody shipped",
+      "argv": [
+        "rules",
+        "default",
+        "frobnicate",
+        "off"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: no default `frobnicate` — Daoris ships `connector`, `commit`, `no-push`, `tree-guard`."
+      ],
+      "after": {}
+    },
+    {
+      "name": "rules default, neither on nor off",
+      "argv": [
+        "rules",
+        "default",
+        "no-push",
+        "maybe"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: say whether the default `no-push` is on or off: `daoris agent rules default no-push on|off`."
+      ],
+      "after": {}
+    },
+    {
+      "name": "rules default, no id",
+      "argv": [
+        "rules",
+        "default"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `daoris agent rules default` needs a <id>."
+      ],
+      "after": {}
+    },
+    {
+      "name": "rules allow, not a rule",
+      "argv": [
+        "rules",
+        "allow",
+        "rm -rf /"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `rm -rf /` is not a permission rule — one is a tool name with an optional specifier in parentheses, like `Bash(npm run test:*)`, `Edit(/src/**)` or `mcp__daoris-knowledge__quest_list`."
+      ],
+      "after": {}
+    },
+    {
+      "name": "rules allow, no rule",
+      "argv": [
+        "rules",
+        "allow"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `daoris agent rules allow` needs a <rule>."
+      ],
+      "after": {}
+    },
+    {
+      "name": "rules deny, two scopes",
+      "argv": [
+        "rules",
+        "deny",
+        "WebFetch",
+        "--workspace",
+        "a",
+        "--repository",
+        "b"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: a rule reaches one scope — name a workspace with `--workspace` or a repository with `--repository`, not both."
+      ],
+      "after": {}
+    },
+    {
+      "name": "rules, a verb it does not have",
+      "argv": [
+        "rules",
+        "frobnicate"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: unknown rules verb 'frobnicate' — one of: list, allow, ask, deny, remove, default, proposals, accept, decline"
+      ],
+      "after": {}
+    },
+    {
+      "name": "rules allow, a file that is not JSON",
+      "argv": [
+        "rules",
+        "allow",
+        "WebFetch"
+      ],
+      "folders": [],
+      "before": {
+        "home/data/permissions.json": "{ not json"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: permissions.json could not be read, so this edit was not written — it would have replaced every rule in the file with this one change. Fix the file or remove it, then make the change again. (DRIVER_REFUSED)"
+      ],
+      "after": {
+        "home/data/permissions.json": "{ not json"
+      },
+      "changed": "The rules are read by the driver's PermissionRules, the one reading the window's RULES and every session's spawn make, so a file that does not read is said in its words. The operation's refusal (D194 point 6): said as the window's route says it, one line with its code on both paths; the TypeScript alone said it with no code."
+    },
+    {
+      "name": "rules allow, no home",
+      "argv": [
+        "rules",
+        "allow",
+        "WebFetch"
+      ],
+      "home": false,
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: no Daoris home: set DAORIS_HOME to the application's data folder (the `data` directory beside Daoris.exe), or name the file's own variable. Daoris keeps nothing under the user profile. (wanted: data/permissions.json)"
+      ],
+      "after": {},
+      "changed": "The rules and their proposals are DAORIS_HOME's whatever DAORIS_HARNESS_CONFIG names (the alone-path design §1.2), so a home that is not named is refused naming their own file, data/permissions.json; the TypeScript resolved the wiring file first and named that."
+    },
+    {
+      "name": "rules allow, a named wiring file writes the home's rules",
+      "argv": [
+        "rules",
+        "allow",
+        "WebFetch"
+      ],
+      "harness": true,
+      "folders": [
+        "other/data/"
+      ],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: `WebFetch` is now allowed for every session on this machine.",
+        "  Sessions started from now on are handed it; one already running keeps what it began with."
+      ],
+      "err": [],
+      "after": {
+        "home/data/permissions.json": "{\n  \"machine\": {\n    \"allow\": [\n      \"WebFetch\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "name": "rules proposals, none",
+      "argv": [
+        "rules",
+        "proposals"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "Agents' proposals to change these rules — <root>/home/data/proposals",
+        "  A narrowing applies at the driver's next tick; a widening waits for your yes.",
+        "",
+        "No agent has proposed a change."
+      ],
+      "err": [],
+      "after": {}
+    },
+    {
+      "name": "rules proposals, each with its state, author and reason",
+      "argv": [
+        "rules",
+        "proposals"
+      ],
+      "folders": [],
+      "before": {
+        "home/data/proposals/notes.json": "{\"hello\": \"not a proposal\"}",
+        "home/data/proposals/p0000001.json": "{\n  \"id\": \"p0000001\",\n  \"proposed\": \"2026-09-24T10:00:00.0000000+00:00\",\n  \"by\": {\n    \"session\": \"i9n8t7k6\",\n    \"ask\": \"a1b2c3\",\n    \"folder\": \"C:/somewhere/engine\"\n  },\n  \"change\": {\n    \"action\": \"add\",\n    \"scope\": \"machine\",\n    \"name\": null,\n    \"list\": \"allow\",\n    \"rule\": \"WebFetch\",\n    \"default\": null,\n    \"on\": null\n  },\n  \"why\": \"The tests need it.\",\n  \"state\": \"waiting\"\n}\n",
+        "home/data/proposals/p0000002.json": "{\n  \"id\": \"p0000002\",\n  \"proposed\": \"2026-09-23T10:00:00.0000000+00:00\",\n  \"by\": {\n    \"session\": null,\n    \"ask\": null,\n    \"folder\": \"C:/somewhere/engine\"\n  },\n  \"change\": {\n    \"action\": \"remove\",\n    \"scope\": \"workspace\",\n    \"name\": \"default\",\n    \"list\": null,\n    \"rule\": \"Bash(make:*)\",\n    \"default\": null,\n    \"on\": null\n  },\n  \"why\": \"The tests need it.\",\n  \"state\": \"applied\"\n}\n",
+        "home/data/proposals/p0000003.json": "{\n  \"id\": \"p0000003\",\n  \"proposed\": \"2026-09-22T10:00:00.0000000+00:00\",\n  \"by\": {\n    \"session\": \"s9z8y7x6\",\n    \"ask\": null,\n    \"folder\": \"C:/somewhere/engine\"\n  },\n  \"change\": {\n    \"action\": \"default\",\n    \"scope\": \"machine\",\n    \"name\": null,\n    \"list\": null,\n    \"rule\": null,\n    \"default\": \"tree-guard\",\n    \"on\": false\n  },\n  \"why\": \"The tests need it.\",\n  \"state\": \"declined\",\n  \"settled\": {\n    \"at\": \"<at>\",\n    \"by\": \"the person\",\n    \"note\": \"Keep it on.\"\n  }\n}"
+      },
+      "exit": 0,
+      "out": [
+        "Agents' proposals to change these rules — <root>/home/data/proposals",
+        "  A narrowing applies at the driver's next tick; a widening waits for your yes.",
+        "",
+        "#p0000001  waiting   allow `WebFetch` for every session on this machine",
+        "  from session i9n8t7k6 (ask #a1b2c3), 2026-09-24T10:00:00.0000000+00:00",
+        "  why: The tests need it.",
+        "",
+        "#p0000002  applied   remove `Bash(make:*)` from workspace `default`",
+        "  from a session the driver did not start, 2026-09-23T10:00:00.0000000+00:00",
+        "  why: The tests need it.",
+        "",
+        "#p0000003  declined  switch the default `tree-guard` off",
+        "  from session s9z8y7x6, 2026-09-22T10:00:00.0000000+00:00",
+        "  why: The tests need it.",
+        "  declined by the person: Keep it on.",
+        "",
+        "1 waits for an answer: `daoris agent rules accept <id>` or `daoris agent rules decline <id> [--note \"…\"]`."
+      ],
+      "err": [],
+      "after": {
+        "home/data/proposals/notes.json": "{\"hello\": \"not a proposal\"}",
+        "home/data/proposals/p0000001.json": "{\n  \"id\": \"p0000001\",\n  \"proposed\": \"2026-09-24T10:00:00.0000000+00:00\",\n  \"by\": {\n    \"session\": \"i9n8t7k6\",\n    \"ask\": \"a1b2c3\",\n    \"folder\": \"C:/somewhere/engine\"\n  },\n  \"change\": {\n    \"action\": \"add\",\n    \"scope\": \"machine\",\n    \"name\": null,\n    \"list\": \"allow\",\n    \"rule\": \"WebFetch\",\n    \"default\": null,\n    \"on\": null\n  },\n  \"why\": \"The tests need it.\",\n  \"state\": \"waiting\"\n}\n",
+        "home/data/proposals/p0000002.json": "{\n  \"id\": \"p0000002\",\n  \"proposed\": \"2026-09-23T10:00:00.0000000+00:00\",\n  \"by\": {\n    \"session\": null,\n    \"ask\": null,\n    \"folder\": \"C:/somewhere/engine\"\n  },\n  \"change\": {\n    \"action\": \"remove\",\n    \"scope\": \"workspace\",\n    \"name\": \"default\",\n    \"list\": null,\n    \"rule\": \"Bash(make:*)\",\n    \"default\": null,\n    \"on\": null\n  },\n  \"why\": \"The tests need it.\",\n  \"state\": \"applied\"\n}\n",
+        "home/data/proposals/p0000003.json": "{\n  \"id\": \"p0000003\",\n  \"proposed\": \"2026-09-22T10:00:00.0000000+00:00\",\n  \"by\": {\n    \"session\": \"s9z8y7x6\",\n    \"ask\": null,\n    \"folder\": \"C:/somewhere/engine\"\n  },\n  \"change\": {\n    \"action\": \"default\",\n    \"scope\": \"machine\",\n    \"name\": null,\n    \"list\": null,\n    \"rule\": null,\n    \"default\": \"tree-guard\",\n    \"on\": false\n  },\n  \"why\": \"The tests need it.\",\n  \"state\": \"declined\",\n  \"settled\": {\n    \"at\": \"<at>\",\n    \"by\": \"the person\",\n    \"note\": \"Keep it on.\"\n  }\n}"
+      }
+    },
+    {
+      "name": "rules proposals, one settled only",
+      "argv": [
+        "rules",
+        "proposals"
+      ],
+      "folders": [],
+      "before": {
+        "home/data/proposals/p0000004.json": "{\n  \"id\": \"p0000004\",\n  \"proposed\": \"2026-09-24T10:00:00.0000000+00:00\",\n  \"by\": {\n    \"session\": \"s1a2b3c4\",\n    \"ask\": null,\n    \"folder\": \"C:/somewhere/engine\"\n  },\n  \"change\": {\n    \"action\": \"add\",\n    \"scope\": \"machine\",\n    \"name\": null,\n    \"list\": \"deny\",\n    \"rule\": \"Bash(rm:*)\",\n    \"default\": null,\n    \"on\": null\n  },\n  \"why\": \"The tests need it.\",\n  \"state\": \"applied\"\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "Agents' proposals to change these rules — <root>/home/data/proposals",
+        "  A narrowing applies at the driver's next tick; a widening waits for your yes.",
+        "",
+        "#p0000004  applied   deny `Bash(rm:*)` for every session on this machine",
+        "  from session s1a2b3c4, 2026-09-24T10:00:00.0000000+00:00",
+        "  why: The tests need it."
+      ],
+      "err": [],
+      "after": {
+        "home/data/proposals/p0000004.json": "{\n  \"id\": \"p0000004\",\n  \"proposed\": \"2026-09-24T10:00:00.0000000+00:00\",\n  \"by\": {\n    \"session\": \"s1a2b3c4\",\n    \"ask\": null,\n    \"folder\": \"C:/somewhere/engine\"\n  },\n  \"change\": {\n    \"action\": \"add\",\n    \"scope\": \"machine\",\n    \"name\": null,\n    \"list\": \"deny\",\n    \"rule\": \"Bash(rm:*)\",\n    \"default\": null,\n    \"on\": null\n  },\n  \"why\": \"The tests need it.\",\n  \"state\": \"applied\"\n}\n"
+      }
+    },
+    {
+      "name": "rules accept, a waiting widening",
+      "argv": [
+        "rules",
+        "accept",
+        "p0000007"
+      ],
+      "folders": [],
+      "before": {
+        "home/data/proposals/p0000007.json": "{\n  \"id\": \"p0000007\",\n  \"proposed\": \"2026-09-24T10:00:00.0000000+00:00\",\n  \"by\": {\n    \"session\": \"s1a2b3c4\",\n    \"ask\": null,\n    \"folder\": \"C:/somewhere/engine\"\n  },\n  \"change\": {\n    \"action\": \"add\",\n    \"scope\": \"workspace\",\n    \"name\": \"default\",\n    \"list\": \"allow\",\n    \"rule\": \"WebFetch\",\n    \"default\": null,\n    \"on\": null\n  },\n  \"why\": \"The tests need it.\",\n  \"state\": \"waiting\"\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: accepted #p0000007 — allow `WebFetch` for workspace `default` is now in the rules.",
+        "  Sessions started from now on are handed it; one already running keeps what it began with."
+      ],
+      "err": [],
+      "after": {
+        "home/data/permissions.json": "{\n  \"workspaces\": {\n    \"default\": {\n      \"allow\": [\n        \"WebFetch\"\n      ]\n    }\n  }\n}\n",
+        "home/data/proposals/p0000007.json": "{\n  \"id\": \"p0000007\",\n  \"proposed\": \"2026-09-24T10:00:00.0000000+00:00\",\n  \"by\": {\n    \"session\": \"s1a2b3c4\",\n    \"ask\": null,\n    \"folder\": \"C:/somewhere/engine\"\n  },\n  \"change\": {\n    \"action\": \"add\",\n    \"scope\": \"workspace\",\n    \"name\": \"default\",\n    \"list\": \"allow\",\n    \"rule\": \"WebFetch\",\n    \"default\": null,\n    \"on\": null\n  },\n  \"why\": \"The tests need it.\",\n  \"state\": \"accepted\",\n  \"settled\": {\n    \"at\": \"<at>\",\n    \"by\": \"the person\",\n    \"note\": null\n  }\n}\n"
+      }
+    },
+    {
+      "name": "rules accept, by its id with a hash",
+      "argv": [
+        "rules",
+        "accept",
+        "#p0000007"
+      ],
+      "folders": [],
+      "before": {
+        "home/data/proposals/p0000007.json": "{\n  \"id\": \"p0000007\",\n  \"proposed\": \"2026-09-24T10:00:00.0000000+00:00\",\n  \"by\": {\n    \"session\": \"s1a2b3c4\",\n    \"ask\": null,\n    \"folder\": \"C:/somewhere/engine\"\n  },\n  \"change\": {\n    \"action\": \"add\",\n    \"scope\": \"machine\",\n    \"name\": null,\n    \"list\": \"ask\",\n    \"rule\": \"Bash(curl:*)\",\n    \"default\": null,\n    \"on\": null\n  },\n  \"why\": \"The tests need it.\",\n  \"state\": \"proposed\"\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: accepted #p0000007 — ask `Bash(curl:*)` for every session on this machine is now in the rules.",
+        "  Sessions started from now on are handed it; one already running keeps what it began with."
+      ],
+      "err": [],
+      "after": {
+        "home/data/permissions.json": "{\n  \"machine\": {\n    \"ask\": [\n      \"Bash(curl:*)\"\n    ]\n  }\n}\n",
+        "home/data/proposals/p0000007.json": "{\n  \"id\": \"p0000007\",\n  \"proposed\": \"2026-09-24T10:00:00.0000000+00:00\",\n  \"by\": {\n    \"session\": \"s1a2b3c4\",\n    \"ask\": null,\n    \"folder\": \"C:/somewhere/engine\"\n  },\n  \"change\": {\n    \"action\": \"add\",\n    \"scope\": \"machine\",\n    \"name\": null,\n    \"list\": \"ask\",\n    \"rule\": \"Bash(curl:*)\",\n    \"default\": null,\n    \"on\": null\n  },\n  \"why\": \"The tests need it.\",\n  \"state\": \"accepted\",\n  \"settled\": {\n    \"at\": \"<at>\",\n    \"by\": \"the person\",\n    \"note\": null\n  }\n}\n"
+      }
+    },
+    {
+      "name": "rules accept, a default before the driver saw it",
+      "argv": [
+        "rules",
+        "accept",
+        "p0000009"
+      ],
+      "folders": [],
+      "before": {
+        "home/data/proposals/p0000009.json": "{\n  \"id\": \"p0000009\",\n  \"proposed\": \"2026-09-24T10:00:00.0000000+00:00\",\n  \"by\": {\n    \"session\": \"s1a2b3c4\",\n    \"ask\": null,\n    \"folder\": \"C:/somewhere/engine\"\n  },\n  \"change\": {\n    \"action\": \"default\",\n    \"scope\": \"machine\",\n    \"name\": null,\n    \"list\": null,\n    \"rule\": null,\n    \"default\": \"tree-guard\",\n    \"on\": false\n  },\n  \"why\": \"The tests need it.\",\n  \"state\": \"proposed\"\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: accepted #p0000009 — switch the default `tree-guard` off is now in the rules.",
+        "  Sessions started from now on are handed it; one already running keeps what it began with."
+      ],
+      "err": [],
+      "after": {
+        "home/data/permissions.json": "{\n  \"defaultsOff\": [\n    \"tree-guard\"\n  ]\n}\n",
+        "home/data/proposals/p0000009.json": "{\n  \"id\": \"p0000009\",\n  \"proposed\": \"2026-09-24T10:00:00.0000000+00:00\",\n  \"by\": {\n    \"session\": \"s1a2b3c4\",\n    \"ask\": null,\n    \"folder\": \"C:/somewhere/engine\"\n  },\n  \"change\": {\n    \"action\": \"default\",\n    \"scope\": \"machine\",\n    \"name\": null,\n    \"list\": null,\n    \"rule\": null,\n    \"default\": \"tree-guard\",\n    \"on\": false\n  },\n  \"why\": \"The tests need it.\",\n  \"state\": \"accepted\",\n  \"settled\": {\n    \"at\": \"<at>\",\n    \"by\": \"the person\",\n    \"note\": null\n  }\n}\n"
+      }
+    },
+    {
+      "name": "rules accept, a removal",
+      "argv": [
+        "rules",
+        "accept",
+        "p0000010"
+      ],
+      "folders": [],
+      "before": {
+        "home/data/permissions.json": "{\"repositories\":{\"engine\":{\"allow\":[\"WebFetch\",\"Bash(make:*)\"]}}}",
+        "home/data/proposals/p0000010.json": "{\n  \"id\": \"p0000010\",\n  \"proposed\": \"2026-09-24T10:00:00.0000000+00:00\",\n  \"by\": {\n    \"session\": \"s1a2b3c4\",\n    \"ask\": null,\n    \"folder\": \"C:/somewhere/engine\"\n  },\n  \"change\": {\n    \"action\": \"remove\",\n    \"scope\": \"repository\",\n    \"name\": \"engine\",\n    \"list\": null,\n    \"rule\": \"WebFetch\",\n    \"default\": null,\n    \"on\": null\n  },\n  \"why\": \"The tests need it.\",\n  \"state\": \"waiting\"\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: accepted #p0000010 — remove `WebFetch` from repository `engine` is now in the rules.",
+        "  Sessions started from now on are handed it; one already running keeps what it began with."
+      ],
+      "err": [],
+      "after": {
+        "home/data/permissions.json": "{\n  \"repositories\": {\n    \"engine\": {\n      \"allow\": [\n        \"Bash(make:*)\"\n      ]\n    }\n  }\n}\n",
+        "home/data/proposals/p0000010.json": "{\n  \"id\": \"p0000010\",\n  \"proposed\": \"2026-09-24T10:00:00.0000000+00:00\",\n  \"by\": {\n    \"session\": \"s1a2b3c4\",\n    \"ask\": null,\n    \"folder\": \"C:/somewhere/engine\"\n  },\n  \"change\": {\n    \"action\": \"remove\",\n    \"scope\": \"repository\",\n    \"name\": \"engine\",\n    \"list\": null,\n    \"rule\": \"WebFetch\",\n    \"default\": null,\n    \"on\": null\n  },\n  \"why\": \"The tests need it.\",\n  \"state\": \"accepted\",\n  \"settled\": {\n    \"at\": \"<at>\",\n    \"by\": \"the person\",\n    \"note\": null\n  }\n}\n"
+      }
+    },
+    {
+      "name": "rules decline, with a note",
+      "argv": [
+        "rules",
+        "decline",
+        "#p0000008",
+        "--note",
+        "Not from a session."
+      ],
+      "folders": [],
+      "before": {
+        "home/data/proposals/p0000008.json": "{\n  \"id\": \"p0000008\",\n  \"proposed\": \"2026-09-24T10:00:00.0000000+00:00\",\n  \"by\": {\n    \"session\": \"s1a2b3c4\",\n    \"ask\": null,\n    \"folder\": \"C:/somewhere/engine\"\n  },\n  \"change\": {\n    \"action\": \"add\",\n    \"scope\": \"machine\",\n    \"name\": null,\n    \"list\": \"allow\",\n    \"rule\": \"Bash(curl:*)\",\n    \"default\": null,\n    \"on\": null\n  },\n  \"why\": \"The tests need it.\",\n  \"state\": \"waiting\"\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: declined #p0000008 — the rules are as they were."
+      ],
+      "err": [],
+      "after": {
+        "home/data/proposals/p0000008.json": "{\n  \"id\": \"p0000008\",\n  \"proposed\": \"2026-09-24T10:00:00.0000000+00:00\",\n  \"by\": {\n    \"session\": \"s1a2b3c4\",\n    \"ask\": null,\n    \"folder\": \"C:/somewhere/engine\"\n  },\n  \"change\": {\n    \"action\": \"add\",\n    \"scope\": \"machine\",\n    \"name\": null,\n    \"list\": \"allow\",\n    \"rule\": \"Bash(curl:*)\",\n    \"default\": null,\n    \"on\": null\n  },\n  \"why\": \"The tests need it.\",\n  \"state\": \"declined\",\n  \"settled\": {\n    \"at\": \"<at>\",\n    \"by\": \"the person\",\n    \"note\": \"Not from a session.\"\n  }\n}\n"
+      }
+    },
+    {
+      "name": "rules decline, the note before the id",
+      "argv": [
+        "rules",
+        "decline",
+        "--note",
+        "No.",
+        "p0000008"
+      ],
+      "folders": [],
+      "before": {
+        "home/data/proposals/p0000008.json": "{\n  \"id\": \"p0000008\",\n  \"proposed\": \"2026-09-24T10:00:00.0000000+00:00\",\n  \"by\": {\n    \"session\": \"s1a2b3c4\",\n    \"ask\": null,\n    \"folder\": \"C:/somewhere/engine\"\n  },\n  \"change\": {\n    \"action\": \"add\",\n    \"scope\": \"machine\",\n    \"name\": null,\n    \"list\": \"allow\",\n    \"rule\": \"Bash(curl:*)\",\n    \"default\": null,\n    \"on\": null\n  },\n  \"why\": \"The tests need it.\",\n  \"state\": \"waiting\"\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: declined #p0000008 — the rules are as they were."
+      ],
+      "err": [],
+      "after": {
+        "home/data/proposals/p0000008.json": "{\n  \"id\": \"p0000008\",\n  \"proposed\": \"2026-09-24T10:00:00.0000000+00:00\",\n  \"by\": {\n    \"session\": \"s1a2b3c4\",\n    \"ask\": null,\n    \"folder\": \"C:/somewhere/engine\"\n  },\n  \"change\": {\n    \"action\": \"add\",\n    \"scope\": \"machine\",\n    \"name\": null,\n    \"list\": \"allow\",\n    \"rule\": \"Bash(curl:*)\",\n    \"default\": null,\n    \"on\": null\n  },\n  \"why\": \"The tests need it.\",\n  \"state\": \"declined\",\n  \"settled\": {\n    \"at\": \"<at>\",\n    \"by\": \"the person\",\n    \"note\": \"No.\"\n  }\n}\n"
+      }
+    },
+    {
+      "name": "rules accept, one already applied",
+      "argv": [
+        "rules",
+        "accept",
+        "p0000001"
+      ],
+      "folders": [],
+      "before": {
+        "home/data/proposals/p0000001.json": "{\n  \"id\": \"p0000001\",\n  \"proposed\": \"2026-09-24T10:00:00.0000000+00:00\",\n  \"by\": {\n    \"session\": \"s1a2b3c4\",\n    \"ask\": null,\n    \"folder\": \"C:/somewhere/engine\"\n  },\n  \"change\": {\n    \"action\": \"add\",\n    \"scope\": \"machine\",\n    \"name\": null,\n    \"list\": \"deny\",\n    \"rule\": \"Bash(rm:*)\",\n    \"default\": null,\n    \"on\": null\n  },\n  \"why\": \"The tests need it.\",\n  \"state\": \"applied\"\n}\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: proposal `#p0000001` was already applied — it is history now."
+      ],
+      "after": {
+        "home/data/proposals/p0000001.json": "{\n  \"id\": \"p0000001\",\n  \"proposed\": \"2026-09-24T10:00:00.0000000+00:00\",\n  \"by\": {\n    \"session\": \"s1a2b3c4\",\n    \"ask\": null,\n    \"folder\": \"C:/somewhere/engine\"\n  },\n  \"change\": {\n    \"action\": \"add\",\n    \"scope\": \"machine\",\n    \"name\": null,\n    \"list\": \"deny\",\n    \"rule\": \"Bash(rm:*)\",\n    \"default\": null,\n    \"on\": null\n  },\n  \"why\": \"The tests need it.\",\n  \"state\": \"applied\"\n}\n"
+      }
+    },
+    {
+      "name": "rules decline, no proposal by that id",
+      "argv": [
+        "rules",
+        "decline",
+        "nope1234"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: no proposal `#nope1234` on this machine — `daoris agent rules proposals` lists them."
+      ],
+      "after": {}
+    },
+    {
+      "name": "rules accept, a path is no id",
+      "argv": [
+        "rules",
+        "accept",
+        "../permissions"
+      ],
+      "folders": [],
+      "before": {
+        "home/data/permissions.json": "{\"id\":\"x\",\"change\":{\"action\":\"add\"}}"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: no proposal `#../permissions` on this machine — `daoris agent rules proposals` lists them."
+      ],
+      "after": {
+        "home/data/permissions.json": "{\"id\":\"x\",\"change\":{\"action\":\"add\"}}"
+      }
+    },
+    {
+      "name": "rules accept, no id",
+      "argv": [
+        "rules",
+        "accept"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `daoris agent rules accept` needs the proposal's id — `daoris agent rules proposals` lists them."
+      ],
+      "after": {}
+    },
+    {
+      "name": "rules accept, a yes the rules cannot take",
+      "argv": [
+        "rules",
+        "accept",
+        "p0000003"
+      ],
+      "folders": [],
+      "before": {
+        "home/data/proposals/p0000003.json": "{\n  \"id\": \"p0000003\",\n  \"proposed\": \"2026-09-24T10:00:00.0000000+00:00\",\n  \"by\": {\n    \"session\": \"s1a2b3c4\",\n    \"ask\": null,\n    \"folder\": \"C:/somewhere/engine\"\n  },\n  \"change\": {\n    \"action\": \"add\",\n    \"scope\": \"machine\",\n    \"name\": null,\n    \"list\": \"deny\",\n    \"rule\": \"rm -rf everything\",\n    \"default\": null,\n    \"on\": null\n  },\n  \"why\": \"The tests need it.\",\n  \"state\": \"waiting\"\n}\n"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `rm -rf everything` is not a permission rule — one is a tool name with an optional specifier in parentheses, like `Bash(npm run test:*)`, `Edit(/src/**)` or `mcp__daoris-knowledge__quest_list`. (DRIVER_REFUSED)"
+      ],
+      "after": {
+        "home/data/proposals/p0000003.json": "{\n  \"id\": \"p0000003\",\n  \"proposed\": \"2026-09-24T10:00:00.0000000+00:00\",\n  \"by\": {\n    \"session\": \"s1a2b3c4\",\n    \"ask\": null,\n    \"folder\": \"C:/somewhere/engine\"\n  },\n  \"change\": {\n    \"action\": \"add\",\n    \"scope\": \"machine\",\n    \"name\": null,\n    \"list\": \"deny\",\n    \"rule\": \"rm -rf everything\",\n    \"default\": null,\n    \"on\": null\n  },\n  \"why\": \"The tests need it.\",\n  \"state\": \"waiting\"\n}\n"
+      },
+      "changed": "The operation's refusal (D194 point 6): said as the window's route says it, one line with its code on both paths; the TypeScript alone said it with no code."
+    },
+    {
+      "name": "rules proposals, no home",
+      "argv": [
+        "rules",
+        "proposals"
+      ],
+      "home": false,
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: no Daoris home: set DAORIS_HOME to the application's data folder (the `data` directory beside Daoris.exe), or name the file's own variable. Daoris keeps nothing under the user profile. (wanted: data/proposals)"
+      ],
+      "after": {},
+      "changed": "The rules and their proposals are DAORIS_HOME's whatever DAORIS_HARNESS_CONFIG names (the alone-path design §1.2), so a home that is not named is refused naming their own file, data/proposals; the TypeScript resolved the wiring file first and named that."
+    },
+    {
+      "name": "rules accept, a named wiring file answers the home's proposal",
+      "argv": [
+        "rules",
+        "accept",
+        "p0000007"
+      ],
+      "harness": true,
+      "folders": [
+        "other/data/"
+      ],
+      "before": {
+        "home/data/proposals/p0000007.json": "{\n  \"id\": \"p0000007\",\n  \"proposed\": \"2026-09-24T10:00:00.0000000+00:00\",\n  \"by\": {\n    \"session\": \"s1a2b3c4\",\n    \"ask\": null,\n    \"folder\": \"C:/somewhere/engine\"\n  },\n  \"change\": {\n    \"action\": \"add\",\n    \"scope\": \"machine\",\n    \"name\": null,\n    \"list\": \"allow\",\n    \"rule\": \"WebFetch\",\n    \"default\": null,\n    \"on\": null\n  },\n  \"why\": \"The tests need it.\",\n  \"state\": \"waiting\"\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: accepted #p0000007 — allow `WebFetch` for every session on this machine is now in the rules.",
+        "  Sessions started from now on are handed it; one already running keeps what it began with."
+      ],
+      "err": [],
+      "after": {
+        "home/data/permissions.json": "{\n  \"machine\": {\n    \"allow\": [\n      \"WebFetch\"\n    ]\n  }\n}\n",
+        "home/data/proposals/p0000007.json": "{\n  \"id\": \"p0000007\",\n  \"proposed\": \"2026-09-24T10:00:00.0000000+00:00\",\n  \"by\": {\n    \"session\": \"s1a2b3c4\",\n    \"ask\": null,\n    \"folder\": \"C:/somewhere/engine\"\n  },\n  \"change\": {\n    \"action\": \"add\",\n    \"scope\": \"machine\",\n    \"name\": null,\n    \"list\": \"allow\",\n    \"rule\": \"WebFetch\",\n    \"default\": null,\n    \"on\": null\n  },\n  \"why\": \"The tests need it.\",\n  \"state\": \"accepted\",\n  \"settled\": {\n    \"at\": \"<at>\",\n    \"by\": \"the person\",\n    \"note\": null\n  }\n}\n"
+      }
+    },
+    {
+      "name": "trust, the question for an account",
+      "argv": [
+        "trust",
+        "claude-code",
+        "<root>/work/engine",
+        "--profile",
+        "work"
+      ],
+      "folders": [
+        "home/profiles/agents/claude-code/work/",
+        "work/engine/"
+      ],
+      "before": {},
+      "exit": 1,
+      "out": [
+        "daoris: trusting `<root>/work/engine` for `claude-code`, as the account `work` — in its own file:",
+        "  <root>/home/profiles/agents/claude-code/work/.claude.json",
+        "  This is what the agent asks the first time it runs in a folder. Once it is granted, the",
+        "  folder's own settings and `permissions.allow` apply there, and the agent stops asking.",
+        "  Daoris writes that one flag and nothing else in the file.",
+        "  Not granted: this is the question. Run it again with --yes to grant it."
+      ],
+      "err": [],
+      "after": {}
+    },
+    {
+      "name": "trust, a dry run",
+      "argv": [
+        "trust",
+        "claude-code",
+        "<root>/work/engine",
+        "--profile",
+        "work",
+        "--dry-run"
+      ],
+      "folders": [
+        "home/profiles/agents/claude-code/work/",
+        "work/engine/"
+      ],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: trusting `<root>/work/engine` for `claude-code`, as the account `work` — in its own file:",
+        "  <root>/home/profiles/agents/claude-code/work/.claude.json",
+        "  This is what the agent asks the first time it runs in a folder. Once it is granted, the",
+        "  folder's own settings and `permissions.allow` apply there, and the agent stops asking.",
+        "  Daoris writes that one flag and nothing else in the file."
+      ],
+      "err": [],
+      "after": {}
+    },
+    {
+      "name": "trust, granted in an account",
+      "argv": [
+        "trust",
+        "claude-code",
+        "<root>/work/engine",
+        "--profile",
+        "work",
+        "--yes"
+      ],
+      "folders": [
+        "home/profiles/agents/claude-code/work/",
+        "work/engine/"
+      ],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: trusting `<root>/work/engine` for `claude-code`, as the account `work` — in its own file:",
+        "  <root>/home/profiles/agents/claude-code/work/.claude.json",
+        "  This is what the agent asks the first time it runs in a folder. Once it is granted, the",
+        "  folder's own settings and `permissions.allow` apply there, and the agent stops asking.",
+        "  Daoris writes that one flag and nothing else in the file.",
+        "  Granted."
+      ],
+      "err": [],
+      "after": {
+        "home/profiles/agents/claude-code/work/.claude.json": "{\n  \"projects\": {\n    \"<root>/work/engine\": {\n      \"hasTrustDialogAccepted\": true\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "trust, granted in the agent's own home",
+      "argv": [
+        "trust",
+        "claude-code",
+        "<root>/work/engine",
+        "--yes"
+      ],
+      "folders": [
+        "home/profiles/agents/claude-code/work/",
+        "work/engine/"
+      ],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: trusting `<root>/work/engine` for `claude-code`, as its own account — in its own file:",
+        "  <root>/user/.claude.json",
+        "  This is what the agent asks the first time it runs in a folder. Once it is granted, the",
+        "  folder's own settings and `permissions.allow` apply there, and the agent stops asking.",
+        "  Daoris writes that one flag and nothing else in the file.",
+        "  Granted."
+      ],
+      "err": [],
+      "after": {
+        "user/.claude.json": "{\n  \"projects\": {\n    \"<root>/work/engine\": {\n      \"hasTrustDialogAccepted\": true\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "trust, the machine's default account",
+      "argv": [
+        "trust",
+        "claude-code",
+        "<root>/work/engine",
+        "--yes"
+      ],
+      "folders": [
+        "home/profiles/agents/claude-code/work/",
+        "work/engine/"
+      ],
+      "before": {
+        "home/data/harnesses.json": "{\"defaults\":{\"claude-code\":\"work\"}}"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: trusting `<root>/work/engine` for `claude-code`, as the account `work` — in its own file:",
+        "  <root>/home/profiles/agents/claude-code/work/.claude.json",
+        "  This is what the agent asks the first time it runs in a folder. Once it is granted, the",
+        "  folder's own settings and `permissions.allow` apply there, and the agent stops asking.",
+        "  Daoris writes that one flag and nothing else in the file.",
+        "  Granted."
+      ],
+      "err": [],
+      "after": {
+        "home/data/harnesses.json": "{\"defaults\":{\"claude-code\":\"work\"}}",
+        "home/profiles/agents/claude-code/work/.claude.json": "{\n  \"projects\": {\n    \"<root>/work/engine\": {\n      \"hasTrustDialogAccepted\": true\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "trust, a door in its owner's account",
+      "argv": [
+        "trust",
+        "claude-code-acp",
+        "<root>/work/engine",
+        "--profile",
+        "work",
+        "--yes"
+      ],
+      "folders": [
+        "home/profiles/agents/claude-code/work/",
+        "work/engine/"
+      ],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code-acp` runs as `claude-code`'s accounts — this is one of them.",
+        "daoris: trusting `<root>/work/engine` for `claude-code`, as the account `work` — in its own file:",
+        "  <root>/home/profiles/agents/claude-code/work/.claude.json",
+        "  This is what the agent asks the first time it runs in a folder. Once it is granted, the",
+        "  folder's own settings and `permissions.allow` apply there, and the agent stops asking.",
+        "  Daoris writes that one flag and nothing else in the file.",
+        "  Granted."
+      ],
+      "err": [],
+      "after": {
+        "home/profiles/agents/claude-code/work/.claude.json": "{\n  \"projects\": {\n    \"<root>/work/engine\": {\n      \"hasTrustDialogAccepted\": true\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "trust, already granted",
+      "argv": [
+        "trust",
+        "claude-code",
+        "<root>/work/engine",
+        "--profile",
+        "work",
+        "--yes"
+      ],
+      "folders": [
+        "work/engine/"
+      ],
+      "before": {
+        "home/profiles/agents/claude-code/work/.claude.json": "{\n  \"numStartups\": 4,\n  \"projects\": {\n    \"<root>/work/engine\": {\n      \"hasTrustDialogAccepted\": true\n    }\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: trusting `<root>/work/engine` for `claude-code`, as the account `work` — in its own file:",
+        "  <root>/home/profiles/agents/claude-code/work/.claude.json",
+        "  This is what the agent asks the first time it runs in a folder. Once it is granted, the",
+        "  folder's own settings and `permissions.allow` apply there, and the agent stops asking.",
+        "  Daoris writes that one flag and nothing else in the file.",
+        "  Already trusted, so nothing was written."
+      ],
+      "err": [],
+      "after": {
+        "home/profiles/agents/claude-code/work/.claude.json": "{\n  \"numStartups\": 4,\n  \"projects\": {\n    \"<root>/work/engine\": {\n      \"hasTrustDialogAccepted\": true\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "trust, one flag moves under the key the agent wrote",
+      "argv": [
+        "trust",
+        "claude-code",
+        "<root>/work/engine/",
+        "--profile",
+        "work",
+        "--yes"
+      ],
+      "folders": [
+        "work/engine/"
+      ],
+      "before": {
+        "home/profiles/agents/claude-code/work/.claude.json": "{\n  \"numStartups\": 4,\n  \"projects\": {\n    \"<root>/work/engine\": {\n      \"allowedTools\": [],\n      \"hasTrustDialogAccepted\": false\n    }\n  }\n}"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: trusting `<root>/work/engine` for `claude-code`, as the account `work` — in its own file:",
+        "  <root>/home/profiles/agents/claude-code/work/.claude.json",
+        "  This is what the agent asks the first time it runs in a folder. Once it is granted, the",
+        "  folder's own settings and `permissions.allow` apply there, and the agent stops asking.",
+        "  Daoris writes that one flag and nothing else in the file.",
+        "  Granted."
+      ],
+      "err": [],
+      "after": {
+        "home/profiles/agents/claude-code/work/.claude.json": "{\n  \"numStartups\": 4,\n  \"projects\": {\n    \"<root>/work/engine\": {\n      \"allowedTools\": [],\n      \"hasTrustDialogAccepted\": true\n    }\n  }\n}"
+      }
+    },
+    {
+      "name": "trust, a file it cannot read",
+      "argv": [
+        "trust",
+        "claude-code",
+        "<root>/work/engine",
+        "--profile",
+        "work",
+        "--yes"
+      ],
+      "folders": [
+        "work/engine/"
+      ],
+      "before": {
+        "home/profiles/agents/claude-code/work/.claude.json": "{ not json"
+      },
+      "exit": 2,
+      "out": [
+        "daoris: trusting `<root>/work/engine` for `claude-code`, as the account `work` — in its own file:",
+        "  <root>/home/profiles/agents/claude-code/work/.claude.json",
+        "  This is what the agent asks the first time it runs in a folder. Once it is granted, the",
+        "  folder's own settings and `permissions.allow` apply there, and the agent stops asking.",
+        "  Daoris writes that one flag and nothing else in the file."
+      ],
+      "err": [
+        "daoris: `<root>/home/profiles/agents/claude-code/work/.claude.json` is not a file this build can read, so nothing was written to it — accept the trust prompt by running `claude` in that folder instead. (DRIVER_REFUSED)"
+      ],
+      "after": {
+        "home/profiles/agents/claude-code/work/.claude.json": "{ not json"
+      },
+      "changed": "The operation's refusal (D194 point 6): said as the window's route says it, one line with its code on both paths; the TypeScript alone said it with no code."
+    },
+    {
+      "name": "trust, an agent with no trust question",
+      "argv": [
+        "trust",
+        "codex",
+        "<root>/work/engine",
+        "--yes"
+      ],
+      "folders": [
+        "work/engine/"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `codex` has no trust question Daoris knows of, so there is nothing to grant: its own permissions apply as they are."
+      ],
+      "after": {}
+    },
+    {
+      "name": "trust, no folder there",
+      "argv": [
+        "trust",
+        "claude-code",
+        "<root>/work/nowhere",
+        "--yes"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: no folder at `<root>/work/nowhere` — trust is granted to a folder a session would run in."
+      ],
+      "after": {}
+    },
+    {
+      "name": "trust, no folder named",
+      "argv": [
+        "trust",
+        "claude-code"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `agent trust` needs <agent> <folder> — e.g. `daoris agent trust claude-code`"
+      ],
+      "after": {}
+    },
+    {
+      "name": "trust, no agent named",
+      "argv": [
+        "trust"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `agent trust` needs <agent> — e.g. `daoris agent trust claude-code`"
+      ],
+      "after": {}
+    },
+    {
+      "name": "trust, an account that is not there",
+      "argv": [
+        "trust",
+        "claude-code",
+        "<root>/work/engine",
+        "--profile",
+        "play",
+        "--yes"
+      ],
+      "folders": [
+        "home/profiles/agents/claude-code/work/",
+        "work/engine/"
+      ],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: trusting `<root>/work/engine` for `claude-code`, as the account `play` — in its own file:",
+        "  <root>/home/profiles/agents/claude-code/play/.claude.json",
+        "  This is what the agent asks the first time it runs in a folder. Once it is granted, the",
+        "  folder's own settings and `permissions.allow` apply there, and the agent stops asking.",
+        "  Daoris writes that one flag and nothing else in the file.",
+        "  Granted."
+      ],
+      "err": [],
+      "after": {
+        "home/profiles/agents/claude-code/play/.claude.json": "{\n  \"projects\": {\n    \"<root>/work/engine\": {\n      \"hasTrustDialogAccepted\": true\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "trust, an agent it does not know",
+      "argv": [
+        "trust",
+        "frobnicate",
+        "<root>/work/engine",
+        "--yes"
+      ],
+      "folders": [
+        "work/engine/"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: unknown agent 'frobnicate' — one of: claude-code, claude-code-acp, codex, codex-acp, dsh. An agent is added deliberately, never guessed."
+      ],
+      "after": {}
+    },
+    {
+      "name": "trust, an account by its name",
+      "argv": [
+        "trust",
+        "claude-code",
+        "<root>/work/engine",
+        "--profile",
+        "Work account",
+        "--yes"
+      ],
+      "folders": [
+        "home/profiles/agents/claude-code/work/",
+        "work/engine/"
+      ],
+      "before": {
+        "home/data/accounts.json": "{\"claude-code\":{\"work\":{\"name\":\"Work account\"}}}"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: trusting `<root>/work/engine` for `claude-code`, as the account `work` — in its own file:",
+        "  <root>/home/profiles/agents/claude-code/work/.claude.json",
+        "  This is what the agent asks the first time it runs in a folder. Once it is granted, the",
+        "  folder's own settings and `permissions.allow` apply there, and the agent stops asking.",
+        "  Daoris writes that one flag and nothing else in the file.",
+        "  Granted."
+      ],
+      "err": [],
+      "after": {
+        "home/data/accounts.json": "{\"claude-code\":{\"work\":{\"name\":\"Work account\"}}}",
+        "home/profiles/agents/claude-code/work/.claude.json": "{\n  \"projects\": {\n    \"<root>/work/engine\": {\n      \"hasTrustDialogAccepted\": true\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "settings, read",
+      "argv": [
+        "settings",
+        "claude-code",
+        "--account",
+        "work"
+      ],
+      "folders": [],
+      "before": {
+        "home/profiles/agents/claude-code/work/settings.json": "{\"model\":\"opus\",\"modelSettings\":{\"claude-opus-5\":{\"effortLevel\":\"xhigh\"}}}"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code` account `work` — read from the tool's own settings:",
+        "  <root>/home/profiles/agents/claude-code/work/settings.json",
+        "  model    opus",
+        "  effort   the tool's own default",
+        "  per model — the tool reads these first, for that model:",
+        "    claude-opus-5            xhigh",
+        "  A session reads these when it starts. A repository's own .claude/settings.json and the",
+        "  ANTHROPIC_MODEL variable take precedence over an account's model."
+      ],
+      "err": [],
+      "after": {
+        "home/profiles/agents/claude-code/work/settings.json": "{\"model\":\"opus\",\"modelSettings\":{\"claude-opus-5\":{\"effortLevel\":\"xhigh\"}}}"
+      }
+    },
+    {
+      "name": "settings, read with no file",
+      "argv": [
+        "settings",
+        "claude-code",
+        "--account",
+        "work"
+      ],
+      "folders": [
+        "home/profiles/agents/claude-code/work/"
+      ],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code` account `work` — read from the tool's own settings:",
+        "  <root>/home/profiles/agents/claude-code/work/settings.json",
+        "  model    the tool's own default",
+        "  effort   the tool's own default",
+        "  A session reads these when it starts. A repository's own .claude/settings.json and the",
+        "  ANTHROPIC_MODEL variable take precedence over an account's model."
+      ],
+      "err": [],
+      "after": {}
+    },
+    {
+      "name": "settings, read with --profile",
+      "argv": [
+        "settings",
+        "claude-code",
+        "--profile",
+        "work"
+      ],
+      "folders": [
+        "home/profiles/agents/claude-code/work/"
+      ],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code` account `work` — read from the tool's own settings:",
+        "  <root>/home/profiles/agents/claude-code/work/settings.json",
+        "  model    the tool's own default",
+        "  effort   the tool's own default",
+        "  A session reads these when it starts. A repository's own .claude/settings.json and the",
+        "  ANTHROPIC_MODEL variable take precedence over an account's model."
+      ],
+      "err": [],
+      "after": {}
+    },
+    {
+      "name": "settings, read a file that is not JSON",
+      "argv": [
+        "settings",
+        "claude-code",
+        "--account",
+        "work"
+      ],
+      "folders": [],
+      "before": {
+        "home/profiles/agents/claude-code/work/settings.json": "{ not json"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `<root>/home/profiles/agents/claude-code/work/settings.json` could not be read (<why>) — fix it, or change the setting with the tool itself."
+      ],
+      "after": {
+        "home/profiles/agents/claude-code/work/settings.json": "{ not json"
+      }
+    },
+    {
+      "name": "settings, read a file that is no object",
+      "argv": [
+        "settings",
+        "claude-code",
+        "--account",
+        "work"
+      ],
+      "folders": [],
+      "before": {
+        "home/profiles/agents/claude-code/work/settings.json": "[1, 2]"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `<root>/home/profiles/agents/claude-code/work/settings.json` is not a JSON object — fix it, or change the setting with the tool itself."
+      ],
+      "after": {
+        "home/profiles/agents/claude-code/work/settings.json": "[1, 2]"
+      }
+    },
+    {
+      "name": "settings, model and effort written",
+      "argv": [
+        "settings",
+        "claude-code",
+        "--account",
+        "work",
+        "model",
+        "sonnet",
+        "effort",
+        "xhigh"
+      ],
+      "folders": [],
+      "before": {
+        "home/profiles/agents/claude-code/work/settings.json": "{\"theme\":\"dark\"}"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code` account `work` — written to the tool's own settings:",
+        "  <root>/home/profiles/agents/claude-code/work/settings.json",
+        "  model    sonnet",
+        "  effort   xhigh",
+        "  A session reads these when it starts. A repository's own .claude/settings.json and the",
+        "  ANTHROPIC_MODEL variable take precedence over an account's model."
+      ],
+      "err": [],
+      "after": {
+        "home/profiles/agents/claude-code/work/settings.json": "{\n  \"theme\": \"dark\",\n  \"model\": \"sonnet\",\n  \"effortLevel\": \"xhigh\"\n}"
+      }
+    },
+    {
+      "name": "settings, an effort for a model",
+      "argv": [
+        "settings",
+        "claude-code",
+        "--account",
+        "work",
+        "effort",
+        "low",
+        "--for",
+        "claude-opus-5"
+      ],
+      "folders": [],
+      "before": {
+        "home/profiles/agents/claude-code/work/settings.json": "{\n  \"model\": \"opus\"\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code` account `work` — written to the tool's own settings:",
+        "  <root>/home/profiles/agents/claude-code/work/settings.json",
+        "  model    opus",
+        "  effort   the tool's own default",
+        "  per model — the tool reads these first, for that model:",
+        "    claude-opus-5            low",
+        "  A session reads these when it starts. A repository's own .claude/settings.json and the",
+        "  ANTHROPIC_MODEL variable take precedence over an account's model."
+      ],
+      "err": [],
+      "after": {
+        "home/profiles/agents/claude-code/work/settings.json": "{\n  \"model\": \"opus\",\n  \"modelSettings\": {\n    \"claude-opus-5\": {\n      \"effortLevel\": \"low\"\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "settings, a model cleared",
+      "argv": [
+        "settings",
+        "claude-code",
+        "--account",
+        "work",
+        "model",
+        "unset"
+      ],
+      "folders": [],
+      "before": {
+        "home/profiles/agents/claude-code/work/settings.json": "{\n  \"model\": \"opus\",\n  \"modelSettings\": {\n    \"claude-opus-5\": {\n      \"effortLevel\": \"low\"\n    }\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code` account `work` — written to the tool's own settings:",
+        "  <root>/home/profiles/agents/claude-code/work/settings.json",
+        "  model    the tool's own default",
+        "  effort   the tool's own default",
+        "  per model — the tool reads these first, for that model:",
+        "    claude-opus-5            low",
+        "  A session reads these when it starts. A repository's own .claude/settings.json and the",
+        "  ANTHROPIC_MODEL variable take precedence over an account's model."
+      ],
+      "err": [],
+      "after": {
+        "home/profiles/agents/claude-code/work/settings.json": "{\n  \"modelSettings\": {\n    \"claude-opus-5\": {\n      \"effortLevel\": \"low\"\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "name": "settings, a model's effort cleared empties modelSettings",
+      "argv": [
+        "settings",
+        "claude-code",
+        "--account",
+        "work",
+        "effort",
+        "unset",
+        "--for",
+        "claude-opus-5"
+      ],
+      "folders": [],
+      "before": {
+        "home/profiles/agents/claude-code/work/settings.json": "{\n  \"model\": \"opus\",\n  \"modelSettings\": {\n    \"claude-opus-5\": {\n      \"effortLevel\": \"low\"\n    }\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code` account `work` — written to the tool's own settings:",
+        "  <root>/home/profiles/agents/claude-code/work/settings.json",
+        "  model    opus",
+        "  effort   the tool's own default",
+        "  A session reads these when it starts. A repository's own .claude/settings.json and the",
+        "  ANTHROPIC_MODEL variable take precedence over an account's model."
+      ],
+      "err": [],
+      "after": {
+        "home/profiles/agents/claude-code/work/settings.json": "{\n  \"model\": \"opus\"\n}\n"
+      }
+    },
+    {
+      "name": "settings, a new file",
+      "argv": [
+        "settings",
+        "claude-code",
+        "--account",
+        "work",
+        "model",
+        "sonnet"
+      ],
+      "folders": [
+        "home/profiles/agents/claude-code/work/"
+      ],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code` account `work` — written to the tool's own settings:",
+        "  <root>/home/profiles/agents/claude-code/work/settings.json",
+        "  model    sonnet",
+        "  effort   the tool's own default",
+        "  A session reads these when it starts. A repository's own .claude/settings.json and the",
+        "  ANTHROPIC_MODEL variable take precedence over an account's model."
+      ],
+      "err": [],
+      "after": {
+        "home/profiles/agents/claude-code/work/settings.json": "{\n  \"model\": \"sonnet\"\n}\n"
+      }
+    },
+    {
+      "name": "settings, a write that changes nothing",
+      "argv": [
+        "settings",
+        "claude-code",
+        "--account",
+        "work",
+        "model",
+        "sonnet"
+      ],
+      "folders": [],
+      "before": {
+        "home/profiles/agents/claude-code/work/settings.json": "{\n    \"model\": \"sonnet\"\n}"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code` account `work` — written to the tool's own settings:",
+        "  <root>/home/profiles/agents/claude-code/work/settings.json",
+        "  model    sonnet",
+        "  effort   the tool's own default",
+        "  A session reads these when it starts. A repository's own .claude/settings.json and the",
+        "  ANTHROPIC_MODEL variable take precedence over an account's model."
+      ],
+      "err": [],
+      "after": {
+        "home/profiles/agents/claude-code/work/settings.json": "{\n  \"model\": \"sonnet\"\n}"
+      }
+    },
+    {
+      "name": "settings, the machine's default account",
+      "argv": [
+        "settings",
+        "claude-code",
+        "model",
+        "haiku"
+      ],
+      "folders": [
+        "home/profiles/agents/claude-code/work/"
+      ],
+      "before": {
+        "home/data/harnesses.json": "{\"defaults\":{\"claude-code\":\"work\"}}"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code` account `work` — written to the tool's own settings:",
+        "  <root>/home/profiles/agents/claude-code/work/settings.json",
+        "  model    haiku",
+        "  effort   the tool's own default",
+        "  A session reads these when it starts. A repository's own .claude/settings.json and the",
+        "  ANTHROPIC_MODEL variable take precedence over an account's model."
+      ],
+      "err": [],
+      "after": {
+        "home/data/harnesses.json": "{\"defaults\":{\"claude-code\":\"work\"}}",
+        "home/profiles/agents/claude-code/work/settings.json": "{\n  \"model\": \"haiku\"\n}\n"
+      }
+    },
+    {
+      "name": "settings, no account anywhere",
+      "argv": [
+        "settings",
+        "claude-code",
+        "model",
+        "opus"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `claude-code` has no Daoris account named here — Daoris never works in the tool's own configuration home. Name one of Daoris's accounts with `--account <name>` (`daoris agent list` shows them), sign in to one with `daoris agent login claude-code --new`, or set the model with the tool itself."
+      ],
+      "after": {}
+    },
+    {
+      "name": "settings, read with no account anywhere",
+      "argv": [
+        "settings",
+        "claude-code"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `claude-code` has no Daoris account named here — Daoris never works in the tool's own configuration home. Name one of Daoris's accounts with `--account <name>` (`daoris agent list` shows them), sign in to one with `daoris agent login claude-code --new`, or set the model with the tool itself."
+      ],
+      "after": {}
+    },
+    {
+      "name": "settings, an account that is not there",
+      "argv": [
+        "settings",
+        "claude-code",
+        "--account",
+        "play",
+        "model",
+        "opus"
+      ],
+      "folders": [
+        "home/profiles/agents/claude-code/work/"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `claude-code` has no account `play` on this machine — accounts that exist: work"
+      ],
+      "after": {}
+    },
+    {
+      "name": "settings, a door in its owner's account",
+      "argv": [
+        "settings",
+        "claude-code-acp",
+        "--account",
+        "work",
+        "effort",
+        "medium"
+      ],
+      "folders": [
+        "home/profiles/agents/claude-code/work/"
+      ],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code-acp` runs as `claude-code`'s accounts — this is one of them.",
+        "daoris: `claude-code` account `work` — written to the tool's own settings:",
+        "  <root>/home/profiles/agents/claude-code/work/settings.json",
+        "  model    the tool's own default",
+        "  effort   medium",
+        "  A session reads these when it starts. A repository's own .claude/settings.json and the",
+        "  ANTHROPIC_MODEL variable take precedence over an account's model."
+      ],
+      "err": [],
+      "after": {
+        "home/profiles/agents/claude-code/work/settings.json": "{\n  \"effortLevel\": \"medium\"\n}\n"
+      }
+    },
+    {
+      "name": "settings, a tool whose settings Daoris does not know",
+      "argv": [
+        "settings",
+        "codex"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: `codex` keeps its settings in files of its own that Daoris does not know the shape of, so Daoris offers none — set its model with the tool itself."
+      ],
+      "err": [],
+      "after": {}
+    },
+    {
+      "name": "settings, a change to a tool whose settings Daoris does not know",
+      "argv": [
+        "settings",
+        "dsh",
+        "model",
+        "x"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `dsh` keeps its settings in files of its own that Daoris does not know the shape of, so Daoris offers none — set its model with the tool itself."
+      ],
+      "after": {}
+    },
+    {
+      "name": "settings, a setting it does not change",
+      "argv": [
+        "settings",
+        "claude-code",
+        "--account",
+        "work",
+        "theme",
+        "dark"
+      ],
+      "folders": [
+        "home/profiles/agents/claude-code/work/"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `theme` is not a setting Daoris changes — the two are model and effort."
+      ],
+      "after": {}
+    },
+    {
+      "name": "settings, a setting with no value",
+      "argv": [
+        "settings",
+        "claude-code",
+        "--account",
+        "work",
+        "model"
+      ],
+      "folders": [
+        "home/profiles/agents/claude-code/work/"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `model` needs a value — e.g. `model opus`, or `model unset`."
+      ],
+      "after": {}
+    },
+    {
+      "name": "settings, --for with a model",
+      "argv": [
+        "settings",
+        "claude-code",
+        "--account",
+        "work",
+        "model",
+        "opus",
+        "--for",
+        "claude-opus-5"
+      ],
+      "folders": [
+        "home/profiles/agents/claude-code/work/"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: --for names the model an effort is for; a model has no model of its own."
+      ],
+      "after": {}
+    },
+    {
+      "name": "settings, max refused",
+      "argv": [
+        "settings",
+        "claude-code",
+        "--account",
+        "work",
+        "effort",
+        "max"
+      ],
+      "folders": [
+        "home/profiles/agents/claude-code/work/"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `max` is an effort the tool keeps for one session only — its settings never hold it, so it cannot be an account's default. Choose it for one conversation instead, or one of low, medium, high, xhigh."
+      ],
+      "after": {}
+    },
+    {
+      "name": "settings, an effort the settings do not keep",
+      "argv": [
+        "settings",
+        "claude-code",
+        "--account",
+        "work",
+        "effort",
+        "huge"
+      ],
+      "folders": [
+        "home/profiles/agents/claude-code/work/"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `huge` is not an effort the tool's settings keep — one of low, medium, high, xhigh."
+      ],
+      "after": {}
+    },
+    {
+      "name": "settings, a model of two words",
+      "argv": [
+        "settings",
+        "claude-code",
+        "--account",
+        "work",
+        "model",
+        "two words"
+      ],
+      "folders": [
+        "home/profiles/agents/claude-code/work/"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `two words` is not a model name the tool could read — one word, such as sonnet, opus, haiku or a full model id."
+      ],
+      "after": {}
+    },
+    {
+      "name": "settings, a write to a file that is not JSON",
+      "argv": [
+        "settings",
+        "claude-code",
+        "--account",
+        "work",
+        "model",
+        "opus"
+      ],
+      "folders": [],
+      "before": {
+        "home/profiles/agents/claude-code/work/settings.json": "{ not json"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `<root>/home/profiles/agents/claude-code/work/settings.json` could not be read (<why>), so nothing was written to it — fix it, or change the setting with the tool itself. (DRIVER_REFUSED)"
+      ],
+      "after": {
+        "home/profiles/agents/claude-code/work/settings.json": "{ not json"
+      },
+      "changed": "The operation's refusal (D194 point 6): said as the window's route says it, one line with its code on both paths; the TypeScript alone said it with no code."
+    },
+    {
+      "name": "settings, a modelSettings that is no object",
+      "argv": [
+        "settings",
+        "claude-code",
+        "--account",
+        "work",
+        "effort",
+        "low",
+        "--for",
+        "claude-opus-5"
+      ],
+      "folders": [],
+      "before": {
+        "home/profiles/agents/claude-code/work/settings.json": "{\"modelSettings\": 3}"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: its `modelSettings` in `<root>/home/profiles/agents/claude-code/work/settings.json` is not an object, so nothing was written to it — fix it, or change the setting with the tool itself. (DRIVER_REFUSED)"
+      ],
+      "after": {
+        "home/profiles/agents/claude-code/work/settings.json": "{\"modelSettings\": 3}"
+      },
+      "changed": "The operation's refusal (D194 point 6): said as the window's route says it, one line with its code on both paths; the TypeScript alone said it with no code."
+    },
+    {
+      "name": "settings, no agent named",
+      "argv": [
+        "settings"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `agent settings` needs <agent> — e.g. `daoris agent settings claude-code`"
+      ],
+      "after": {}
+    },
+    {
+      "name": "settings, an agent it does not know",
+      "argv": [
+        "settings",
+        "frobnicate"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: unknown agent 'frobnicate' — one of: claude-code, claude-code-acp, codex, codex-acp, dsh. An agent is added deliberately, never guessed."
+      ],
+      "after": {}
+    },
+    {
+      "name": "settings, an account by its name",
+      "argv": [
+        "settings",
+        "claude-code",
+        "--account",
+        "Work account",
+        "effort",
+        "high"
+      ],
+      "folders": [
+        "home/profiles/agents/claude-code/work/"
+      ],
+      "before": {
+        "home/data/accounts.json": "{\"claude-code\":{\"work\":{\"name\":\"Work account\"}}}"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code` account `work` — written to the tool's own settings:",
+        "  <root>/home/profiles/agents/claude-code/work/settings.json",
+        "  model    the tool's own default",
+        "  effort   high",
+        "  A session reads these when it starts. A repository's own .claude/settings.json and the",
+        "  ANTHROPIC_MODEL variable take precedence over an account's model."
+      ],
+      "err": [],
+      "after": {
+        "home/data/accounts.json": "{\"claude-code\":{\"work\":{\"name\":\"Work account\"}}}",
+        "home/profiles/agents/claude-code/work/settings.json": "{\n  \"effortLevel\": \"high\"\n}\n"
+      }
+    },
+    {
+      "name": "settings, a named wiring file's own home",
+      "argv": [
+        "settings",
+        "claude-code",
+        "--account",
+        "work",
+        "model",
+        "opus"
+      ],
+      "harness": true,
+      "folders": [
+        "other/profiles/agents/claude-code/work/",
+        "home/profiles/agents/claude-code/work/"
+      ],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code` account `work` — written to the tool's own settings:",
+        "  <root>/other/profiles/agents/claude-code/work/settings.json",
+        "  model    opus",
+        "  effort   the tool's own default",
+        "  A session reads these when it starts. A repository's own .claude/settings.json and the",
+        "  ANTHROPIC_MODEL variable take precedence over an account's model."
+      ],
+      "err": [],
+      "after": {
+        "other/profiles/agents/claude-code/work/settings.json": "{\n  \"model\": \"opus\"\n}\n"
+      }
+    }
+  ]
+}
