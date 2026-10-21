@@ -435,7 +435,8 @@ daoris-driver space free [--kind <id>]... [--early <group>]... [--yes]
     and with --early, that group too. Exit 0 done or listed, 1 something named was kept, 2 could not.
 ```
 
-  With a Daoris running, `space free --yes` is its client (`InstancePipe`, D194); alone, it acts under the home's lease. `--json`
+  With a Daoris running, `space free --yes` is its client (`InstanceDoor.PressAsync`, D194 point 2); alone, it acts under the
+  home's lease. `--json`
   prints `SYSTEM_SPACE`'s answer field for field, so the twins share one test table.
 - **Ask Daoris**: `SET_KEEP` through the `setting` kind's door; *Free up space…* `Exempt`, in CACHECLEAR1's words: a discard that
   stays the person's own press, listed first, nothing in use removed. *The machine now* says the free space and the floor.
