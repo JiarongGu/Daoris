@@ -1,4 +1,6 @@
-import type { DownloadedVersion, DownloadsListing, SystemWiring, WiringFile, WiringFolder, WiringVariable } from '../../data/wiring';
+import type {
+  DownloadedVersion, DownloadsListing, SpaceKind, SystemSpace, SystemWiring, WiringFile, WiringFolder, WiringVariable,
+} from '../../data/wiring';
 
 // What the wiring reads back, for the stories and the tests of This Daoris (WIRING1c): neutral paths by convention, like the
 // driver's fixtures, so a tracked file carries no machine path.
@@ -199,3 +201,65 @@ export const DOWNLOADS: DownloadsListing = {
     downloaded('tool', 'gh', '2.62.0', { keeps: 'used', by: ['tools.json'] }),
   ],
 };
+
+const GB = 1024 ** 3;
+
+/** One kind of the Disk space card (KEEP1c), counted at the fixtures' moment, its rule another's unless said. */
+export const spaceKind = (id: string, extra: Partial<SpaceKind> = {}): SpaceKind => ({
+  id, entries: [], bytes: 0.2 * GB, files: 1_200, measured: MEASURED, partial: false, partialWhy: null, counting: false, volume: null,
+  rule: { kind: 'own', days: null, whole: null, default: true, whose: 'each' }, settable: false, next: null, nextWhy: null, last: null, lastWhy: null,
+  ...extra,
+});
+
+/** The Disk space card as an install's read answers it: every kind counted, each rule that runs with its next and last. */
+export const SPACE: SystemSpace = {
+  schema: 1,
+  volume: { path: HOME, free: 143.5 * GB, total: 1024 * GB, floor: null, below: false },
+  volumeWhy: null,
+  kinds: [
+    spaceKind('set-aside', {
+      entries: ['trees'], bytes: 37.4 * GB, files: 370_000,
+      rule: { kind: 'days', days: 14, whole: false, default: true, whose: null },
+      next: { at: '2026-10-29T09:00:00.000+00:00', count: 3, bytes: 0.6 * GB },
+      last: { at: '2026-10-16T08:10:00.000+00:00', door: 'look', removed: { count: 2, bytes: 1.1 * GB }, kept: {} },
+    }),
+    spaceKind('downloads', {
+      entries: ['toolchain', 'tool-versions'], bytes: 1.4 * GB,
+      rule: { kind: 'days', days: 7, whole: null, default: true, whose: null },
+      next: { at: '2026-10-28T09:00:00.000+00:00', count: 1, bytes: null },
+      last: { at: '2026-10-11T08:10:00.000+00:00', door: 'look', removed: { count: 1, bytes: 0.3 * GB }, kept: {} },
+    }),
+    spaceKind('browser-cache', { entries: ['browser-engine'], bytes: 0.7 * GB, rule: { kind: 'own', days: null, whole: null, default: true, whose: 'browser' } }),
+    spaceKind('logs', {
+      entries: ['logs'], bytes: 11 * 1024 ** 2, rule: { kind: 'days', days: 30, whole: null, default: true, whose: null },
+      next: { at: '2026-10-31T00:00:00.000+00:00', count: 2, bytes: 400_000 },
+    }),
+    spaceKind('history', { entries: ['sessions', 'workflows'], bytes: 62 * 1024 ** 2, rule: { kind: 'press', days: null, whole: null, default: true, whose: null } }),
+    spaceKind('trees', { entries: ['trees'], bytes: 2.1 * GB, rule: { kind: 'proof', days: null, whole: null, default: true, whose: null } }),
+    spaceKind('sign-ins', { bytes: 0.7 * GB, rule: { kind: 'own', days: null, whole: null, default: true, whose: 'agents' } }),
+    spaceKind('left-over', { bytes: 282 * 1024 ** 2, rule: { kind: 'own', days: null, whole: null, default: true, whose: 'person' } }),
+    spaceKind('rest', { bytes: 1.0 * GB }),
+  ],
+  run: null,
+  held: null,
+};
+
+/** The first answer after a start: nothing counted yet, the rules and their next all the same. */
+export const SPACE_UNCOUNTED: SystemSpace = {
+  ...SPACE,
+  kinds: SPACE.kinds.map((kind) => ({ ...kind, bytes: null, files: null, measured: null, next: kind.next && { ...kind.next, bytes: null } })),
+};
+
+/** A count under way: the set-aside folders counting, the downloads waiting their turn, a count that stopped short, a record unread. */
+export const SPACE_COUNTING: SystemSpace = {
+  ...SPACE,
+  kinds: SPACE.kinds.map((kind) => (
+    kind.id === 'set-aside' ? { ...kind, counting: true }
+      : kind.id === 'downloads' ? { ...kind, bytes: null, files: null, measured: null, counting: true, last: null, lastWhy: 'unreadable' }
+        : kind.id === 'trees' ? { ...kind, partial: true, partialWhy: 'budget' }
+          : kind)),
+  held: { pid: 4242, since: '2026-10-16T10:40:00.000+00:00', door: 'terminal', gone: false },
+};
+
+/** A run a crash cut short, said beside the card's rows until the next run ends. */
+export const SPACE_STOPPED: SystemSpace = { ...SPACE, held: { pid: 4242, since: '2026-10-16T03:00:00.000+00:00', door: 'look', gone: true } };

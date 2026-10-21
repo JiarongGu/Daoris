@@ -62,6 +62,14 @@ export function clockOf(iso: string, now: Date = new Date(), language?: string):
 }
 
 /**
+ * A day something happens on, as a person reads a date ahead (KEEP1c's *next*): its month and day in this machine's zone and the
+ * reader's language: `Oct 29`, `10月29日`.
+ */
+export function dayOf(iso: string, language?: string): string {
+  return new Date(iso).toLocaleDateString(locale(language), { month: 'short', day: 'numeric' });
+}
+
+/**
  * Items joined the way the reader's language joins a list (LANG1b, the language design §4): `#a1, #b2, and #c3`,
  * `#a1、#b2和#c3`. `language` is the page's unless a caller words in another (a story's or a test's fixed language).
  * `'or'` joins alternatives rather than a sum (FLOWCHART1b): `when it fails, or you stop it`, `当它失败或你停止它时`.
@@ -70,12 +78,14 @@ export function list(items: readonly string[], language?: string, joined: 'and' 
   return new Intl.ListFormat(locale(language), { type: joined === 'or' ? 'disjunction' : 'conjunction' }).format(items);
 }
 
-/** A file's size, in the unit a person reads it in: 812 B · 2.4 KB · 3.1 MB. */
+/** A file's size, in the unit a person reads it in: 812 B · 2.4 KB · 3.1 MB · 37.4 GB (KEEP1c: a disk's, which MB made 38,298 MB). */
 export function size(bytes: number): string {
   if (bytes < 1024) return `${bytes.toLocaleString(locale())} B`;
   const kb = bytes / 1024;
   if (kb < 1024) return `${kb.toLocaleString(locale(), { maximumFractionDigits: 1 })} KB`;
-  return `${(kb / 1024).toLocaleString(locale(), { maximumFractionDigits: 1 })} MB`;
+  const mb = kb / 1024;
+  if (mb < 1024) return `${mb.toLocaleString(locale(), { maximumFractionDigits: 1 })} MB`;
+  return `${(mb / 1024).toLocaleString(locale(), { maximumFractionDigits: 1 })} GB`;
 }
 
 /**

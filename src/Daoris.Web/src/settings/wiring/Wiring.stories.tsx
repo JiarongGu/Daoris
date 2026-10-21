@@ -13,11 +13,14 @@ import { WiringKnowledge } from './WiringKnowledge';
 import { WiringLogs } from './WiringLogs';
 import { WiringLoop } from './WiringLoop';
 import { WiringService } from './WiringService';
+import { WiringSpace } from './WiringSpace';
 import { WiringTerminal } from './WiringTerminal';
 import { WiringToolHome } from './WiringToolHome';
 import { WiringVariablesCard } from './WiringVariables';
 import { WiringVersions } from './WiringVersions';
-import { DEVELOPMENT, DOWNLOADS, MEASURING, WIRED } from './wiringFixtures';
+import {
+  DEVELOPMENT, DOWNLOADS, MEASURING, SPACE, SPACE_COUNTING, SPACE_STOPPED, SPACE_UNCOUNTED, WIRED,
+} from './wiringFixtures';
 
 // Settings → This Daoris's cards (WIRING1c, the this-Daoris design §3.1-3.3, §7), in the shape `SYSTEM_WIRING` answers: an
 // install with every size counted, a walk under way, a development run with the account naming another home and a service
@@ -268,13 +271,73 @@ export const ToolHomeNarrow: Story = { render: () => <WiringToolHome toolHome={W
 /** A shell older than the page: one line, and Driver's home row is its fallback. */
 export const Older: Story = { render: () => <WiringOlder /> };
 
+// KEEP1c (the cleanup design §4.1, §4.2): the Disk space card, each kind with its size, rule, next and last clean, in every state
+// but the editors and the floor's (KEEP1d, KEEP1f), at the three widths in English and 中文.
+const space = (props: Partial<Parameters<typeof WiringSpace>[0]> = {}) => (
+  <WiringSpace space={SPACE} onCount={() => {}} onDownloads={() => {}} {...props} />
+);
+
+/** Every kind counted, each rule that runs with its next and last; light. */
+export const SpaceCounted: Story = { render: () => space(), decorators: inTheme('light') };
+
+/** The same, in dark. */
+export const SpaceCountedDark: Story = { render: () => space(), decorators: inTheme('dark') };
+
+/** The same at the half width. */
+export const SpaceHalf: Story = { render: () => space(), decorators: [storyWidths.half] };
+
+/** The same at the 400 px floor: each value under its words. */
+export const SpaceNarrow: Story = { render: () => space(), decorators: narrow };
+
+/** In 中文, wide. */
+export const SpaceChinese: Story = { render: () => space(), decorators: [chinese] };
+
+/** In 中文 at the half width. */
+export const SpaceChineseHalf: Story = { render: () => space(), decorators: [storyWidths.half, chinese] };
+
+/** In 中文 at the floor. */
+export const SpaceChineseNarrow: Story = { render: () => space(), decorators: [...narrow, chinese] };
+
+/** After a start: no kind counted yet, each with its Count. */
+export const SpaceUncounted: Story = { render: () => space({ space: SPACE_UNCOUNTED }) };
+
+/** A count under way and one that stopped short, a record that does not read, and a terminal's run under way. */
+export const SpaceCounting: Story = { render: () => space({ space: SPACE_COUNTING }) };
+
+/** The same in 中文 at the floor. */
+export const SpaceCountingChineseNarrow: Story = { render: () => space({ space: SPACE_COUNTING }), decorators: [...narrow, chinese] };
+
+/** A run a crash cut short, said until the next run ends. */
+export const SpaceStopped: Story = { render: () => space({ space: SPACE_STOPPED }) };
+
+/** The Downloads row's list, opened from this card's row. */
+export const SpaceDownloads: Story = {
+  render: () => space({ downloads: <WiringDownloads listing={DOWNLOADS} onClear={() => {}} onClose={() => {}} /> }),
+};
+
+/** The first load: skeleton rows in the card's place. */
+export const SpaceLoading: Story = { render: () => space({ space: undefined }) };
+
+/** A shell older than the page: the card says it answers no disk space. */
+export const SpaceOlder: Story = { render: () => space({ space: undefined, older: true }) };
+
+/** A shell older than the page, in 中文. */
+export const SpaceOlderChinese: Story = { render: () => space({ space: undefined, older: true }), decorators: [chinese] };
+
 // The whole domain, as `WiringDomain` composes it, in the domain's own container (R1, R6): at the three widths the frame
 // gives, in English and 中文, light and dark. `measured/settings.spec.ts` reads each row's value box against the track.
 
 const DOORS = { driver: none, tools: none, ai: none, logs: none, file: none };
 const thisDaoris = () => (
   <CardStack>
-    <WiringCards wiring={WIRED} update={UPDATE} onMeasure={none} onOpenLogFolder={none} doors={DOORS} />
+    <WiringCards
+      wiring={WIRED}
+      update={UPDATE}
+      onMeasure={none}
+      onOpenLogFolder={none}
+      doors={DOORS}
+      space={<WiringSpace space={SPACE} onCount={none} onDownloads={none} />}
+    />
   </CardStack>
 );
 

@@ -16,7 +16,7 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import { keys } from '../data/queries';
-import { useSystemWiring, wiringAgainIn, type SystemWiring } from './system';
+import { useSystemSpace, useSystemWiring, wiringAgainIn, type SystemWiring } from './system';
 
 const wrapper = (client: QueryClient) => ({ children }: { children: ReactNode }) => (
   <QueryClientProvider client={client}>{children}</QueryClientProvider>
@@ -115,5 +115,23 @@ describe('the system domain', () => {
     });
     await waitFor(() => expect(result.current.query.data?.measuring).toBe(false));
     vi.useRealTimers();
+  });
+
+  // KEEP1c (the cleanup design §4.4): the Disk space card's read, under `['system', 'space']`, counting only what the page asks.
+  it('reads the disk space under its key asking no count, and counts the kinds asked or every kind', async () => {
+    const space = { schema: 1, volume: null, volumeWhy: 'unreadable', kinds: [], run: null, held: null };
+    invoke.mockImplementation(async () => space);
+    const client = fresh();
+
+    const { result } = renderHook(() => useSystemSpace(), { wrapper: wrapper(client) });
+
+    await waitFor(() => expect(result.current.query.data?.schema).toBe(1));
+    expect(keys.systemSpace).toEqual(['system', 'space']);
+    expect(invoke.mock.calls[0][1]).toBe('SYSTEM_SPACE');
+    expect(invoke.mock.calls[0][2]?.payload).toBeUndefined();
+
+    await act(async () => { await result.current.count(['logs']); });
+    await act(async () => { await result.current.count(); });
+    expect(invoke.mock.calls.slice(1).map((call) => call[2]?.payload)).toEqual([{ measure: ['logs'] }, { measure: true }]);
   });
 });

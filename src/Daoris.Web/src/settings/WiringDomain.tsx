@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  type DownloadCleared, refusedNoRoute, useClearDownloads, useOpenLogFolder, useSystemDownloads, useSystemWiring, useUpdateState,
+  type DownloadCleared, refusedNoRoute, useClearDownloads, useOpenLogFolder, useSystemDownloads, useSystemSpace, useSystemWiring,
+  useUpdateState,
 } from '../bridge/shell';
 import { failure, useErrorNotify } from '../design/ui';
 import type { StarterDoor } from '../help/starters';
@@ -10,6 +11,7 @@ import type { SettingsDomainProps } from './domains';
 import { WiringCards } from './wiring/WiringCards';
 import { WiringDownloads } from './wiring/WiringDownloads';
 import { WiringOlder } from './wiring/WiringHead';
+import { WiringSpace } from './wiring/WiringSpace';
 
 /** Where each file's door goes: the read names the place by a word, and the page knows its door (§3.4). */
 const FILE_DOORS: Record<string, StarterDoor> = {
@@ -45,9 +47,15 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   const openLogs = useOpenLogFolder();
   const [busy, setBusy] = useState(false);
   // CACHECLEAR1: the Downloads row's list, read once the person opens it, and the one press after it (D88's shape).
-  const [downloadsOpen, setDownloadsOpen] = useState(false);
+  // KEEP1c: which row opened it, the Folders card's or the Disk space card's, so the list is drawn under the row that was pressed.
+  const [downloadsOpen, setDownloadsOpen] = useState<false | 'folders' | 'space'>(false);
   const [cleared, setCleared] = useState<DownloadCleared[] | null>(null);
-  const downloads = useSystemDownloads(downloadsOpen);
+  const downloads = useSystemDownloads(downloadsOpen !== false);
+  // KEEP1c: the Disk space card's read; its sizes are counted only when the person asks, or by the look once a day.
+  const space = useSystemSpace();
+  const [counting, setCounting] = useState(false);
+  const spaceOlder = space.query.isError && refusedNoRoute(space.query.error);
+  useErrorNotify(spaceOlder ? null : space.query.error, notify);
   const clearDownloads = useClearDownloads();
   useErrorNotify(downloads.error, notify);
   const asked = useRef(false);
@@ -58,6 +66,11 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   const ask = () => {
     setBusy(true);
     measure().catch(failure(notify)).finally(() => setBusy(false));
+  };
+
+  const count = (kinds?: string[]) => {
+    setCounting(true);
+    space.count(kinds).catch(failure(notify)).finally(() => setCounting(false));
   };
 
   const answered = query.data !== undefined;
@@ -72,6 +85,18 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   if (older) return <WiringOlder />;
   if (!query.data) return <DomainLoading rows={6} />;
   const wiring = query.data;
+  const list = (
+    <WiringDownloads
+      listing={downloads.data}
+      busy={clearDownloads.isPending}
+      cleared={cleared}
+      onClear={(rows) => clearDownloads.mutate(rows, {
+        onSuccess: (answer) => setCleared(answer.cleared),
+        onError: failure(notify),
+      })}
+      onClose={() => { setDownloadsOpen(false); setCleared(null); }}
+    />
+  );
 
   return (
     <WiringCards
@@ -79,19 +104,19 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
       update={update.data}
       busy={busy}
       onMeasure={ask}
-      onDownloads={() => { setCleared(null); setDownloadsOpen(true); }}
-      downloads={downloadsOpen ? (
-        <WiringDownloads
-          listing={downloads.data}
-          busy={clearDownloads.isPending}
-          cleared={cleared}
-          onClear={(rows) => clearDownloads.mutate(rows, {
-            onSuccess: (answer) => setCleared(answer.cleared),
-            onError: failure(notify),
-          })}
-          onClose={() => { setDownloadsOpen(false); setCleared(null); }}
+      onDownloads={() => { setCleared(null); setDownloadsOpen('folders'); }}
+      downloads={downloadsOpen === 'folders' ? list : undefined}
+      space={(
+        <WiringSpace
+          // An answer with no kinds is no disk space this page reads: drawn as still on its way, never as a card of nothing.
+          space={Array.isArray(space.query.data?.kinds) ? space.query.data : undefined}
+          older={spaceOlder}
+          busy={counting}
+          onCount={count}
+          onDownloads={() => { setCleared(null); setDownloadsOpen('space'); }}
+          downloads={downloadsOpen === 'space' ? list : undefined}
         />
-      ) : undefined}
+      )}
       onOpenLogFolder={() => openLogs.mutate(undefined, {
         onSuccess: (answer) => {
           if (!answer.opened && answer.folder) notify(t('settings.logs.notOpened', { folder: answer.folder }));
