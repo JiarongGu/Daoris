@@ -53,5 +53,16 @@
   "notifications.done.look.lost-to-reopen": "A session was stopped: your reopen of the work it grew from took its quest",
   "notifications.done.look.meeting-cut": "A meeting was cut short: the driver running it stopped",
   "notifications.done.look.brainstorm-cut": "A brainstorm was cut short: the driver running it stopped",
-  "notifications.done.look.swept": "A session left running when Daoris last stopped was ended"
+  "notifications.done.look.swept": "A session left running when Daoris last stopped was ended",
+  "notifications.nothingUnread": "Nothing unread.",
+  "notifications.markRead": "Mark read",
+  "notifications.group.messages": "Messages",
+  "notifications.messages.unread": "{{count}} unread",
+  "notifications.messages.markAll": "Mark all read",
+  "notifications.messages.ask": "Ask #{{id}}",
+  "notifications.messages.teammate": "A teammate",
+  "notifications.messages.answered": "A conversation in {{repository}} answered you",
+  "notifications.messages.answeredNamed": "{{conversation}} answered you",
+  "notifications.messages.answeredHelp": "Ask Daoris answered you",
+  "notifications.messages.toast": "{{who}}, urgent, to everyone: {{line}}"
 }

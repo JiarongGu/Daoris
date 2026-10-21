@@ -38,7 +38,8 @@ public sealed class ChannelHostTests(LocalHost host) : IClassFixture<LocalHost>
         var read = await host.GetAsync($"/api/asks/{ask}/channel");
         Assert.Equal(200, read.Status);
         Assert.Equal(["line:published", "message:"], Codes(read.Json.GetProperty("items")));
-        Assert.Equal(2, read.Json.GetProperty("unread").GetInt32());
+        // NOTIFY2g: the person's count passes over their own post and Daoris's line.
+        Assert.Equal(0, read.Json.GetProperty("unread").GetInt32());
         var line = read.Json.GetProperty("items")[0];
         Assert.Equal($"ask #{ask}", line.GetProperty("from").GetString());
         Assert.Equal("Keeper", line.GetProperty("to").GetString());
@@ -53,20 +54,22 @@ public sealed class ChannelHostTests(LocalHost host) : IClassFixture<LocalHost>
     {
         var ask = await AskedAsync("Channel the second report through the bridge.");
         await host.PostAsync($"/api/asks/{ask}/channel", new { text = "one" });
+        // An agent's message, a teammate's: the person's count is it alone (NOTIFY2g), never their own post nor Daoris's line.
+        await host.Composed.Messages.MirrorAsync(Teammates("r-" + ask, ask, "agent words", DateTimeOffset.UtcNow));
 
-        Assert.Equal(2, (await host.GetAsync($"/api/asks/{ask}/channel")).Json.GetProperty("unread").GetInt32());
-        Assert.Equal(2, (await host.GetAsync($"/api/asks/{ask}/channel")).Json.GetProperty("unread").GetInt32());
+        Assert.Equal(1, (await host.GetAsync($"/api/asks/{ask}/channel")).Json.GetProperty("unread").GetInt32());
+        Assert.Equal(1, (await host.GetAsync($"/api/asks/{ask}/channel")).Json.GetProperty("unread").GetInt32());
 
         var marked = await host.PostAsync($"/api/asks/{ask}/channel/read", new { });
         Assert.Equal(200, marked.Status);
         Assert.Equal(0, marked.Json.GetProperty("unread").GetInt32());
-        Assert.Equal(2, marked.Json.GetProperty("items").GetArrayLength());
+        Assert.Equal(3, marked.Json.GetProperty("items").GetArrayLength());
         Assert.Equal("person", marked.Json.GetProperty("entry").GetString());
         Assert.Equal(0, (await host.GetAsync($"/api/asks/{ask}/channel")).Json.GetProperty("unread").GetInt32());
 
-        // A reader that is not the person keeps its own mark, under the key it names; `through` moves it to a moment.
+        // A reader that is not the person keeps its own mark, under the key it names, and counts every item; `through` moves it to a moment.
         var keeper = $"ask:{ask}/Keeper";
-        Assert.Equal(2, (await host.GetAsync($"/api/asks/{ask}/channel?entry={Uri.EscapeDataString(keeper)}")).Json.GetProperty("unread").GetInt32());
+        Assert.Equal(3, (await host.GetAsync($"/api/asks/{ask}/channel?entry={Uri.EscapeDataString(keeper)}")).Json.GetProperty("unread").GetInt32());
         var through = DateTimeOffset.UtcNow.AddDays(1);
         var moved = await host.PostAsync($"/api/asks/{ask}/channel/read", new { entry = keeper, through });
         Assert.Equal(0, moved.Json.GetProperty("unread").GetInt32());
@@ -112,6 +115,30 @@ public sealed class ChannelHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal("teammate-key", items[0].GetProperty("origin").GetString());
         Assert.Equal(2, read.Json.GetProperty("unread").GetInt32());
         Assert.Equal(404, (await host.GetAsync("/api/asks/9a8b7d/channel")).Status);
+    }
+
+    /// <summary>
+    /// 🔴 NOTIFY2g (D196 point 6; the notification design §2.4): the person's read mark is kept on a teammate's ask, the same door as
+    /// a local ask's, so its count falls to none; a session's entry there is not found, and so is an ask nowhere.
+    /// </summary>
+    [Fact]
+    public async Task The_persons_mark_is_kept_on_a_teammates_ask_and_an_ask_nowhere_is_not_found()
+    {
+        var now = DateTimeOffset.UtcNow;
+        await host.Composed.Messages.MirrorAsync(Teammates("k1", "5d4c3b", "first", now));
+        await host.Composed.Messages.MirrorAsync(Teammates("k2", "5d4c3b", "second", now.AddMinutes(1)));
+        Assert.Equal(2, (await host.GetAsync("/api/asks/5d4c3b/channel")).Json.GetProperty("unread").GetInt32());
+
+        var marked = await host.PostAsync("/api/asks/5d4c3b/channel/read", new { });
+
+        Assert.Equal(200, marked.Status);
+        Assert.Equal((0, 2), (marked.Json.GetProperty("unread").GetInt32(), marked.Json.GetProperty("items").GetArrayLength()));
+        Assert.Equal(0, (await host.GetAsync("/api/asks/5d4c3b/channel")).Json.GetProperty("unread").GetInt32());
+        var listed = (await host.GetAsync("/api/channel/elsewhere")).Json.GetProperty("asks").EnumerateArray()
+            .Single(a => a.GetProperty("id").GetString() == "5d4c3b");
+        Assert.Equal(0, listed.GetProperty("unread").GetInt32());
+        Assert.Equal(404, (await host.PostAsync("/api/asks/5d4c3b/channel/read", new { entry = "ask:5d4c3b/Keeper" })).Status);
+        Assert.Equal(404, (await host.PostAsync("/api/asks/5d4c3d/channel/read", new { })).Status);
     }
 
     /// <summary>🔴 Posting to a teammate's ask is refused with its own code, not as an unknown ask: the read is all this machine does there.</summary>

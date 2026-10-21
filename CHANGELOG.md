@@ -8,6 +8,14 @@ with the version and date at release.
 - `daoris-driver trees land <session>` whose work conflicts with what the line changed now asks the session itself to rebase in its
   own tree, as an automatic landing does, and says so; run it again once the session has. Where the session cannot be reached, it
   says why and prints the words to pass on.
+- *Notifications* now has *Messages*: each ask with something new since you last read it, a teammate's ask among them. Each shows
+  how many, the newest message's first line and who wrote it. Each conversation that answered you is listed there too. *Open* goes
+  to the ask's channel or the conversation, *Mark read* reads it, and *Mark all read* reads them all. An agent's or a teammate's
+  urgent message to everyone shows a toast once, in the window you are looking at. An ordinary message, or one to a single
+  repository, is only counted. Nothing an agent says ever reaches the desktop's notifications. The unread counts on an ask's row and
+  on the rail no longer include your own posts or Daoris's lines. Reading a teammate's ask now clears it. Answers are kept with
+  notifications switched off too. Overview's summary has a *Messages* line, and the bell shows a dot while anything there is
+  unread. In English and 中文.
 - The driver's own report lines no longer pop up as English messages in the window. What is news among them now waits in
   *Notifications* → *Done and failed* in the window's language: a session that could not be handed over to another agent, or an
   agent's ask to hand one over that was dropped, refused or could not be carried out; a quest handed to another agent that went back

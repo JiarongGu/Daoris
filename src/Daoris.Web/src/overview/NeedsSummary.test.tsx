@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AttentionRead } from '../bridge/attention';
-import type { Notice } from '../bridge/notices';
+import type { AskMessages, Notice } from '../bridge/notices';
 import i18n from '../locales/i18n';
 import type { Confirmation } from '../person/Confirmations';
 import type { PushedAttention } from '../work/attention/attention';
@@ -109,6 +109,36 @@ describe("Overview's summary of what needs you", () => {
     rerender(<NeedsSummary attention={{ ...KNOWN, rows: [] }} presses={[]} notices={notices} onNotifications={onNotifications} />);
     expect(within(screen.getByRole('region', { name: '等你处理' })).getAllByRole('button').map((line) => line.textContent))
       .toEqual(['完成与出错21 条未读']);
+  });
+
+  it('says Messages before Done and failed, its items and how many are unread, a door to its group (NOTIFY2g)', async () => {
+    const onNotifications = vi.fn();
+    const messages: AskMessages[] = [
+      { ask: 'a1', workspace: 'default', teammate: false, unread: 3 },
+      { ask: '7e6f51', workspace: 'default', teammate: true, unread: 1 },
+      { ask: 'a2', workspace: 'default', teammate: false, unread: 0 },
+    ];
+    const answered: Notice[] = [
+      { id: 'answered-c1', kind: 'answered', at: ago(2), read: false, session: 'c1', repository: 'game' },
+      { id: 'answered-c2', kind: 'answered', at: ago(9), read: true, session: 'c2', repository: 'game' },
+    ];
+    const notices: Notice[] = [{ id: 'ended-s1', kind: 'ended', at: ago(5), read: false, repository: 'Engine', state: 'failed' }];
+    const { rerender } = render(
+      <NeedsSummary attention={{ ...KNOWN, rows: [] }} presses={[]} messages={messages} answered={answered} notices={notices} onNotifications={onNotifications} />);
+
+    const lines = () => within(screen.getByRole('region', { name: /What needs you|等你处理/ })).getAllByRole('button');
+    expect(lines().map((line) => line.textContent)).toEqual(['Messages35 unread', 'Done and failed11 unread']);
+    vi.useRealTimers();
+    await userEvent.click(lines()[0]!);
+    expect(onNotifications).toHaveBeenLastCalledWith('messages');
+
+    // Nothing unread: no line, and with nothing waiting either, today's one line.
+    rerender(<NeedsSummary attention={{ ...KNOWN, rows: [] }} presses={[]} messages={[messages[2]!]} answered={[answered[1]!]} onNotifications={onNotifications} />);
+    expect(screen.getByRole('region', { name: 'What needs you' })).toHaveTextContent('Nothing needs you');
+
+    await i18n.changeLanguage('zh');
+    rerender(<NeedsSummary attention={{ ...KNOWN, rows: [] }} presses={[]} messages={messages} answered={answered} onNotifications={onNotifications} />);
+    expect(lines().map((line) => line.textContent)).toEqual(['消息35 条未读']);
   });
 
   it("says in a plain browser that it is the app's", () => {

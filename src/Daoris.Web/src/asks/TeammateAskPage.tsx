@@ -15,9 +15,15 @@ import { ChannelSection } from './ChannelSection';
  *
  * @remarks
  * A molecule over `ChannelSection`: the channel arrives as the shell answered it (null while it is read). The unread count is
- * against the person's local mark, and no mark moves from here: the host holds no record to mark it on.
+ * against the person's mark, which the service keeps on a teammate's ask its mirror holds (NOTIFY2g): reading the page moves it
+ * through the newest item once (`onRead`), as an ask's own page does, so its item leaves *Messages*. Absent, no mark moves.
  */
-export function TeammateAskPage({ ask, channel }: { ask: ElsewhereAsk; channel: Channel | null }) {
+export function TeammateAskPage({ ask, channel, onRead }: {
+  ask: ElsewhereAsk;
+  channel: Channel | null;
+  /** The person's mark moved through the newest item shown (`CHANNEL_MARK`), once what was unread is on the page. */
+  onRead?: (through: string) => void;
+}) {
   const { t } = useTranslation();
   const head = (
     <PageHead
@@ -42,7 +48,7 @@ export function TeammateAskPage({ ask, channel }: { ask: ElsewhereAsk; channel: 
         <dd className="m-0">{stamp(ask.latest)} · {ago(ask.latest)}</dd>
       </dl>
       <PageSection title={t('asks.channel.title')}>
-        <ChannelSection channel={channel} readOnly onPost={() => {}} />
+        <ChannelSection channel={channel} readOnly onPost={() => {}} onRead={onRead} />
       </PageSection>
     </ViewMain>
   );

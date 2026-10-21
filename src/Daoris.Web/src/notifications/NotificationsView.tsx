@@ -6,13 +6,17 @@ import {
   type Confirmation, type ConfirmationAnswer, confirmationAnchor, Confirmations, PressArea, type PressNames,
 } from '../person/Confirmations';
 import { NothingNeedsYou } from '../work/attention/AttentionList';
-import type { Notice } from '../bridge/notices';
+import type { AskMessages, Notice } from '../bridge/notices';
 import { DoneAndFailed } from './DoneAndFailed';
+import { type MessageNames, Messages, messagesCount } from './Messages';
 
-/** A group of *Notifications* a door can name (§2.2): the presses waiting for confirmation, *What needs you*, and *Done and failed*. */
-export type NotificationsGroup = 'presses' | 'needs' | 'done';
+/**
+ * A group of *Notifications* a door can name (§2.2): the presses waiting for confirmation, *What needs you*, *Messages* and *Done
+ * and failed*.
+ */
+export type NotificationsGroup = 'presses' | 'needs' | 'messages' | 'done';
 
-const GROUPS: readonly NotificationsGroup[] = ['presses', 'needs', 'done'];
+const GROUPS: readonly NotificationsGroup[] = ['presses', 'needs', 'messages', 'done'];
 
 /** What a door asked *Notifications* to show: a group, or a press's card; counted, so the same ask twice is two. */
 export type NotificationsAt = { group?: NotificationsGroup; press?: string; n: number };
@@ -39,7 +43,9 @@ function foldedHere(): Set<NotificationsGroup> {
  * doors, its `confirmation` row drawn as its card above. Each is headed by its name and its count and folds by its head, the fold
  * this window's own; a group holding nothing is not drawn, and with nothing in any, *Nothing needs you* and the sessions working.
  * Then *Done and failed* (NOTIFY2f): what ended, failed or went unanswered, newest first, each read once it is shown here in a
- * window in front (`DoneAndFailed`). *Messages* joins with the rows that produce it (2g).
+ * window in front (`DoneAndFailed`). Between them *Messages* (NOTIFY2g): each ask with anything past the person's mark and each
+ * conversation's answer unread, headed by how many are unread, none read by being listed (`Messages`). With nothing waiting and
+ * nothing unread, *Nothing unread* under *Nothing needs you*.
  *
  * **Its scroll area is the presses' area** (§3.4): a card is *shown* when its decision region is in view here, which a folded group,
  * a tab not shown or a closed region never are, since none of them draws the card.
@@ -49,6 +55,7 @@ function foldedHere(): Set<NotificationsGroup> {
  */
 export function NotificationsView({
   presses, needs, working, attention, onAnswer, notify, onShown, names, at = null, onVisible, notices = [], onRead, onOpenNotice, onDismiss,
+  messages = [], answered = [], messageNames, onOpenAsk, onMarkAsk, onOpenAnswer,
 }: {
   presses: Confirmation[];
   /** How many rows *What needs you* holds but the presses' own; null while not judged, which draws the band's own skeleton. */
@@ -72,6 +79,18 @@ export function NotificationsView({
   /** A notice's door: its session's page. */
   onOpenNotice?: (notice: Notice) => void;
   onDismiss?: (notice: Notice) => void;
+  /** *Messages*' asks, the window's entries as the shell pushes them (NOTIFY2g); one with nothing unread is not listed. */
+  messages?: readonly AskMessages[];
+  /** *Messages*' answers, the window's `answered` notices; one read is not listed. Read through `onRead`. */
+  answered?: readonly Notice[];
+  /** What names an ask or a conversation in *Messages*. */
+  messageNames?: MessageNames;
+  /** An ask's door: its channel on its page. */
+  onOpenAsk?: (entry: AskMessages) => void;
+  /** An ask's *Mark read*: its mark moved through its newest message. */
+  onMarkAsk?: (entry: AskMessages) => void;
+  /** An answer's door: its conversation. */
+  onOpenAnswer?: (notice: Notice) => void;
 }) {
   const { t } = useTranslation();
   const area = useRef<HTMLDivElement>(null);
@@ -114,6 +133,7 @@ export function NotificationsView({
   // Nothing waiting on the person: said above what ended, which is no wait.
   const nothing = presses.length === 0 && needs === 0;
   const unread = notices.filter((notice) => !notice.read).length;
+  const said = messagesCount(messages, answered);
   return (
     <div ref={area} data-notifications="" className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
       <PressArea.Provider value={area}>
@@ -128,8 +148,22 @@ export function NotificationsView({
           </Group>
         )}
         {nothing && <NothingNeedsYou working={working} />}
+        {nothing && said.items === 0 && unread === 0 && <p className="m-0 text-small text-ink-faint">{t('notifications.nothingUnread')}</p>}
+        {said.items > 0 && (
+          <Group id="messages" title={t('notifications.group.messages')} count={said.unread} folded={folded.has('messages')} onFold={fold}>
+            <Messages
+              asks={messages}
+              answered={answered}
+              names={messageNames}
+              onOpenAsk={onOpenAsk ?? (() => {})}
+              onMarkAsk={onMarkAsk ?? (() => {})}
+              onOpenAnswer={onOpenAnswer}
+              onRead={onRead ?? (() => {})}
+            />
+          </Group>
+        )}
         {notices.length > 0 && (
-          <Group id="done" title={t('notifications.done.title')} count={unread > 0 ? unread : null}folded={folded.has('done')} onFold={fold}>
+          <Group id="done" title={t('notifications.done.title')} count={unread > 0 ? unread : null} folded={folded.has('done')} onFold={fold}>
             <DoneAndFailed notices={notices} onRead={onRead ?? (() => {})} onOpen={onOpenNotice} onDismiss={onDismiss ?? (() => {})} />
           </Group>
         )}

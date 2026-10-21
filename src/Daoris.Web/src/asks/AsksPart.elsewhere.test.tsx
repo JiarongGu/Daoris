@@ -57,7 +57,10 @@ describe('a teammate’s ask in the shell', () => {
     expect(within(page).queryByRole('textbox')).toBeNull();
     expect(within(page).queryByRole('region', { name: 'Proposal' })).toBeNull();
     expect(within(page).getByText(/held on their machine/)).toBeInTheDocument();
-    // Its mark is not moved: the host reads it and holds no record to mark it on.
-    expect(invoke.mock.calls.some(([, type]) => type === 'CHANNEL_MARK')).toBe(false);
+    // NOTIFY2g: the service keeps the person's mark on a teammate's ask its mirror holds, so reading its page moves it through the
+    // newest, and its item leaves Messages (it moved no mark before, the host holding no record to mark it on).
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'CHANNEL_MARK', {
+      payload: { ask: '7e6f51', through: '2026-10-15T09:05:00Z' },
+    }));
   });
 });

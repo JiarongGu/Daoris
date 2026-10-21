@@ -118,7 +118,10 @@ public sealed record ChannelLine(string Code, string Quest, string Name, string 
 /// <summary>An ask's channel as one entry reads it.</summary>
 /// <param name="Messages">The messages in the read, oldest first.</param>
 /// <param name="Lines">Daoris's lines in the read, oldest first.</param>
-/// <param name="Unread">How many of the channel's items are after this entry's mark, counted before a read moved it.</param>
+/// <param name="Unread">
+/// How many of the channel's items are after this entry's mark, counted before a read moved it. The person's (NOTIFY2g) counts only
+/// what an agent or a teammate wrote: never their own posts on this machine, nor Daoris's lines.
+/// </param>
 /// <param name="Mark">The moment the entry had read up to before this read moved it; null when it never has.</param>
 public sealed record ChannelRead(
     IReadOnlyList<ChannelMessage> Messages, IReadOnlyList<ChannelLine> Lines, int Unread, DateTimeOffset? Mark = null)
@@ -210,7 +213,7 @@ public sealed record ChannelReceipt(string Repository, string State);
 /// <param name="Origins">The machines its messages came from, ordered; empty where only this machine's own are kept.</param>
 /// <param name="Latest">The moment of its newest message.</param>
 /// <param name="Messages">How many of its messages are kept.</param>
-/// <param name="Unread">How many are after the person's local mark.</param>
+/// <param name="Unread">How many an agent or a teammate wrote after the person's local mark (NOTIFY2g), never the person's own.</param>
 public sealed record ElsewhereAsk(string Id, string Workspace, IReadOnlyList<string> Origins, DateTimeOffset Latest, int Messages, int Unread);
 
 /// <summary>What a post did.</summary>
@@ -641,18 +644,19 @@ public sealed class ChannelStore
 
     /// <summary>
     /// Every ask the kept messages name, each with its circle and the moments of its messages by origin (SESSONE2h): what a list of the
-    /// asks held elsewhere is made of. The messages' words are not read.
+    /// asks held elsewhere is made of, and whether a person wrote each (NOTIFY2g: no session did). The messages' words are not read.
     /// </summary>
-    public Task<IReadOnlyList<(string Ask, string Workspace, string? Origin, DateTimeOffset At)>> NamedAsksAsync(CancellationToken ct = default) =>
-        _db.RunAsync<IReadOnlyList<(string Ask, string Workspace, string? Origin, DateTimeOffset At)>>(async () =>
+    public Task<IReadOnlyList<(string Ask, string Workspace, string? Origin, DateTimeOffset At, bool ByPerson)>> NamedAsksAsync(CancellationToken ct = default) =>
+        _db.RunAsync<IReadOnlyList<(string Ask, string Workspace, string? Origin, DateTimeOffset At, bool ByPerson)>>(async () =>
         {
             await using var command = _db.Command();
-            command.CommandText = "SELECT ask, workspace, origin, at FROM channel ORDER BY seq";
-            var read = new List<(string Ask, string Workspace, string? Origin, DateTimeOffset At)>();
+            command.CommandText = "SELECT ask, workspace, origin, at, session IS NULL FROM channel ORDER BY seq";
+            var read = new List<(string Ask, string Workspace, string? Origin, DateTimeOffset At, bool ByPerson)>();
             await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
             while (await reader.ReadAsync(ct).ConfigureAwait(false))
             {
-                read.Add((reader.GetString(0), reader.GetString(1), reader.IsDBNull(2) ? null : reader.GetString(2), Moments.ReadRequired(reader.GetString(3))));
+                read.Add((reader.GetString(0), reader.GetString(1), reader.IsDBNull(2) ? null : reader.GetString(2),
+                    Moments.ReadRequired(reader.GetString(3)), reader.GetInt64(4) != 0));
             }
 
             return read;
@@ -767,7 +771,8 @@ public sealed class ChannelDesk(
     /// What the channel holds for <paramref name="entry"/>: every message and line of it, or those after <paramref name="since"/>. The
     /// unread count is against the entry's mark. <paramref name="moveMark"/> moves the mark to the newest item, as a session's read does.
     /// Null when this machine holds no such ask and has mirrored no message of one. An ask held elsewhere (SESSONE2g) reads from the
-    /// messages the sync mirrored, read-only: no mark moves and Daoris's lines, which come from this machine's quests, are not in it.
+    /// messages the sync mirrored: this read moves no mark there (the person's moves at <see cref="MarkReadAsync"/>, NOTIFY2g), and
+    /// Daoris's lines, which come from this machine's quests, are not in it. The person's count is <see cref="Counts"/>'s.
     /// </summary>
     public async Task<ChannelRead?> ReadAsync(
         string askId, string entry, DateTimeOffset? since, bool moveMark, CancellationToken ct = default)
@@ -784,13 +789,13 @@ public sealed class ChannelDesk(
         var mark = await store.MarkAsync(id, entry, ct).ConfigureAwait(false);
         return new ChannelRead(
             [.. mirrored.Where(m => since is null || m.At > since).OrderBy(m => m.At)], [],
-            mirrored.Count(m => mark is null || m.At > mark), mark);
+            mirrored.Count(m => Counts(m, entry) && (mark is null || m.At > mark)), mark);
     }
 
     /// <summary>
     /// The asks the mirrored messages name that this machine does not hold (SESSONE2h), newest message first. No ask record is here, so a
-    /// title is not: the messages carry their circle, the machines they came from, and when. Unread is against the person's local mark;
-    /// each is readable at <see cref="ReadAsync"/> by its id.
+    /// title is not: the messages carry their circle, the machines they came from, and when. Unread is against the person's local mark,
+    /// counted as <see cref="Counts"/> counts the person's (NOTIFY2g); each is readable at <see cref="ReadAsync"/> by its id.
     /// </summary>
     public async Task<IReadOnlyList<ElsewhereAsk>> ElsewhereAsync(CancellationToken ct = default)
     {
@@ -804,11 +809,20 @@ public sealed class ChannelDesk(
             listed.Add(new ElsewhereAsk(
                 group.Key, group.First().Workspace,
                 [.. group.Select(row => row.Origin).OfType<string>().Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)],
-                group.Max(row => row.At), group.Count(), group.Count(row => mark is null || row.At > mark)));
+                group.Max(row => row.At), group.Count(),
+                group.Count(row => (!row.ByPerson || row.Origin is not null) && (mark is null || row.At > mark))));
         }
 
         return [.. listed.OrderByDescending(ask => ask.Latest)];
     }
+
+    /// <summary>
+    /// Whether a message counts toward an entry's unread (NOTIFY2g, D196 point 6; the notification design §2.4): for the person, only
+    /// what an agent or a teammate wrote, never their own post on this machine; for a session's entry, every message. Daoris's lines
+    /// count for a session's entry alone.
+    /// </summary>
+    private static bool Counts(ChannelMessage message, string entry) =>
+        entry != PersonEntry || !message.ByPerson || message.Origin is not null;
 
     private async Task<bool> IsMirroredAsync(string askId, CancellationToken ct) =>
         (await store.OfAsync(askId.TrimStart('#'), ct).ConfigureAwait(false)).Count > 0;
@@ -978,7 +992,9 @@ public sealed class ChannelDesk(
         var lines = await LinesAsync(ask, ct).ConfigureAwait(false);
 
         var newest = messages.Select(m => m.At).Concat(lines.Select(l => l.At)).DefaultIfEmpty().Max();
-        var unread = messages.Count(m => mark is null || m.At > mark) + lines.Count(l => mark is null || l.At > mark);
+        // NOTIFY2g: the person's count passes over their own posts and Daoris's lines; the mark still moves through every item.
+        var unread = messages.Count(m => Counts(m, entry) && (mark is null || m.At > mark))
+                     + (entry == PersonEntry ? 0 : lines.Count(l => mark is null || l.At > mark));
         if (moveMark && (messages.Count > 0 || lines.Count > 0)) await store.MoveMarkAsync(ask.Id, entry, newest, ct).ConfigureAwait(false);
 
         var read = new ChannelRead(
@@ -1058,9 +1074,24 @@ public sealed class ChannelDesk(
     /// Move an entry's mark to <paramref name="through"/>, or to the newest item when none is given (the driver moves a part's mark when
     /// the part starts, to the moment it handed the channel over), and answer the channel as it then reads. Null when no such ask.
     /// </summary>
+    /// <remarks>
+    /// NOTIFY2g (D196 point 6; the notification design §2.4): the person's mark is kept on a teammate's ask too, one this machine holds
+    /// no record of and whose messages the sync mirrored, moved to <paramref name="through"/> or to the newest mirrored message. The
+    /// person's entry alone: a session's entry there is null, as an ask nowhere is. The mark is this machine's, never on the sync wire.
+    /// </remarks>
     public async Task<ChannelRead?> MarkReadAsync(string askId, string entry, DateTimeOffset? through, CancellationToken ct = default)
     {
-        if (await asks.FindAsync(askId, ct).ConfigureAwait(false) is not { } ask) return null;
+        if (await asks.FindAsync(askId, ct).ConfigureAwait(false) is not { } ask)
+        {
+            if (entry != PersonEntry) return null;
+            var id = askId.TrimStart('#');
+            var mirrored = await store.OfAsync(id, ct).ConfigureAwait(false);
+            if (mirrored.Count == 0) return null;
+
+            await store.MoveMarkAsync(id, entry, through ?? mirrored.Max(m => m.At), ct).ConfigureAwait(false);
+            return await ReadAsync(id, entry, since: null, moveMark: false, ct).ConfigureAwait(false);
+        }
+
         if (through is { } moment) await store.MoveMarkAsync(ask.Id, entry, moment, ct).ConfigureAwait(false);
         else await ReadOfAsync(ask, entry, from: null, moveMark: true, ct).ConfigureAwait(false);
 

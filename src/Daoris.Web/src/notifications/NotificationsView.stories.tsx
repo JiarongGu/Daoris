@@ -1,7 +1,7 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { chinese } from '../design/storyLanguage';
 import { InTheme } from '../plugins/storyIcons';
-import type { Notice } from '../bridge/notices';
+import type { AskMessages, Notice } from '../bridge/notices';
 import type { Confirmation, PressNames } from '../person/Confirmations';
 import { NotificationsView } from './NotificationsView';
 
@@ -89,6 +89,43 @@ export const DoneAndFailedDark: Story = { args: { notices: NOTICES }, decorators
 export const DoneAndFailedWide: Story = { args: { notices: NOTICES }, decorators: [sideAt(696)] };
 /** Nothing waits on the person, and what ended is listed under the line that says so. */
 export const OnlyDoneAndFailed: Story = { args: { presses: [], needs: 0, notices: NOTICES } };
+
+/**
+ * *Messages* (NOTIFY2g): an ask this machine holds with an agent's urgent line, a teammate's ask, and a conversation's answer, each
+ * unread; an ask with nothing unread is not listed. What an agent wrote is shown as written, in English here in either language.
+ */
+const MESSAGES: AskMessages[] = [
+  {
+    ask: '9a8b7c', workspace: 'default', teammate: false, unread: 3,
+    newest: {
+      id: 'm3', at: new Date(Date.now() - 4 * 60_000).toISOString(), who: 'agent', repository: 'db', level: 'urgent', toEveryone: true,
+      line: 'The totals column moved to the ledger table: stop before you land anything that reads it.',
+    },
+  },
+  {
+    ask: '7e6f51', workspace: 'default', teammate: true, unread: 1,
+    newest: {
+      id: 'm9', at: new Date(Date.now() - 40 * 60_000).toISOString(), who: 'teammate', level: 'ordinary', toEveryone: true,
+      line: 'I took the export half; the import is yours.',
+    },
+  },
+  { ask: '5e4f3d', workspace: 'default', teammate: false, unread: 0 },
+];
+const ANSWERED: Notice[] = [
+  { id: 'answered-c1', kind: 'answered', at: new Date(Date.now() - 60_000).toISOString(), read: false, session: 'c1', repository: 'game' },
+];
+const MESSAGE_NAMES = { ask: (id: string) => (id === '9a8b7c' ? 'Export the feed as CSV for the finance team' : null) };
+const WITH_MESSAGES = { messages: MESSAGES, answered: ANSWERED, messageNames: MESSAGE_NAMES, notices: NOTICES };
+export const Messages: Story = { args: WITH_MESSAGES };
+export const MessagesChinese: Story = { args: WITH_MESSAGES, decorators: [chinese] };
+export const MessagesDark: Story = { args: WITH_MESSAGES, decorators: [dark] };
+export const MessagesWide: Story = { args: WITH_MESSAGES, decorators: [sideAt(696)] };
+export const MessagesWideChinese: Story = { args: WITH_MESSAGES, decorators: [sideAt(696), chinese] };
+/** Nothing waits on the person, and only messages are unread. */
+export const OnlyMessages: Story = { args: { presses: [], needs: 0, messages: MESSAGES, answered: ANSWERED, messageNames: MESSAGE_NAMES } };
+/** Nothing waits and nothing is unread: *Nothing needs you*, then *Nothing unread*. */
+export const NothingUnread: Story = { args: { presses: [], needs: 0, messages: [MESSAGES[2]!] } };
+export const NothingUnreadChinese: Story = { args: { presses: [], needs: 0, messages: [MESSAGES[2]!] }, decorators: [chinese] };
 
 /** Nothing in any group: *Nothing needs you* and the sessions working. */
 export const Nothing: Story = { args: { presses: [], needs: 0 } };

@@ -53,5 +53,16 @@
   "notifications.done.look.lost-to-reopen": "一个会话已停止：你重新打开它所源自的工作，收回了它的委托",
   "notifications.done.look.meeting-cut": "一次会议被中断：运行它的驱动已停止",
   "notifications.done.look.brainstorm-cut": "一次头脑风暴被中断：运行它的驱动已停止",
-  "notifications.done.look.swept": "Daoris 上次停止时留下运行的一个会话已结束"
+  "notifications.done.look.swept": "Daoris 上次停止时留下运行的一个会话已结束",
+  "notifications.nothingUnread": "没有未读内容。",
+  "notifications.markRead": "标为已读",
+  "notifications.group.messages": "消息",
+  "notifications.messages.unread": "{{count}} 条未读",
+  "notifications.messages.markAll": "全部标为已读",
+  "notifications.messages.ask": "需求 #{{id}}",
+  "notifications.messages.teammate": "一位队友",
+  "notifications.messages.answered": "{{repository}} 的一个对话回复了你",
+  "notifications.messages.answeredNamed": "{{conversation}}回复了你",
+  "notifications.messages.answeredHelp": "问道衍回复了你",
+  "notifications.messages.toast": "{{who}}（紧急，致所有人）：{{line}}"
 }

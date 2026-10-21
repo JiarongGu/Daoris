@@ -51,6 +51,31 @@ public sealed class NoticesTests : IDisposable
         Assert.False(File.Exists(KeepLock.PathOf(PathOf)));
     }
 
+    /// <summary>
+    /// NOTIFY2g (§2.4): a conversation's answer is one notice per conversation, its workspace with it; a later answer renews it unread at
+    /// its moment, and an older or the same one changes nothing.
+    /// </summary>
+    [Fact]
+    public void A_conversation_s_answer_is_one_notice_renewed_unread_by_each_later_answer()
+    {
+        var answered = Notices.Of(new AttentionEvent(AttentionKind.Answered, "c1", "Engine") { Workspace = "games" }, Now.AddMinutes(-5))!;
+        Assert.Equal(new Notice("answered-c1", Notices.Answered, Now.AddMinutes(-5), Workspace: "games", Session: "c1", Repository: "Engine"), answered);
+
+        Assert.Null(Notices.Renew(_home, answered, Now));
+        Assert.Null(Notices.MarkRead(_home, ["answered-c1"], Now));
+        Assert.True(Assert.Single(Notices.Read(_home, Now)!).Read);
+
+        var stamp = File.GetLastWriteTimeUtc(PathOf);
+        Assert.Null(Notices.Renew(_home, answered, Now));
+        Assert.True(Assert.Single(Notices.Read(_home, Now)!).Read);
+        Assert.Equal(stamp, File.GetLastWriteTimeUtc(PathOf));
+
+        Assert.Null(Notices.Renew(_home, answered with { At = Now.AddMinutes(-1) }, Now));
+        var renewed = Assert.Single(Notices.Read(_home, Now)!);
+        Assert.Equal((Now.AddMinutes(-1), false, "games"), (renewed.At, renewed.Read, renewed.Workspace));
+        Assert.Equal("answered", Written()["notices"]!["answered-c1"]!["kind"]!.GetValue<string>());
+    }
+
     /// <summary>§2.4: read moves only the notices named; dismiss removes them; an id not held is nothing.</summary>
     [Fact]
     public void A_read_moves_the_notices_named_and_a_dismiss_removes_them()

@@ -63,6 +63,9 @@ const SERVICE = {
 
 let waiting: unknown[] = [];
 let service: unknown[] = [];
+// The `notices` slice's messages partition (NOTIFY2g), keyed by ask; none where the shell pushes no notices.
+let messages: Record<string, unknown> | null = null;
+const NEWEST = { id: 'm2', at: base.updated, who: 'agent', repository: 'db', line: 'Stop before you land.', level: 'urgent', toEveryone: true };
 // Whether the shell tells what waits at the service (NOTIFY2j); an older one answers none of it, and the page polls.
 let tells = true;
 let keyed = false;
@@ -93,6 +96,15 @@ function start(rows: PushedAttention[] = ROWS) {
           { partition: 'rows', seq: 1, status: 'ready', data: Object.fromEntries(rows.map((row) => [`${row.kind}:${row.id}`, row])) },
           { partition: 'sessions', seq: 1, status: 'ready', data: {} },
           { partition: 'working', seq: 1, status: 'ready', data: {} },
+        ],
+      };
+    }
+    if (module === 'DAORIS.DRIVER' && type === 'STATE_SLICE' && request?.payload?.slice === 'notices' && messages) {
+      return {
+        slice: 'notices', epoch: 'e1', status: 'ready',
+        partitions: [
+          { partition: 'news', seq: 1, status: 'ready', data: {} },
+          { partition: 'messages', seq: 1, status: 'ready', data: messages },
         ],
       };
     }
@@ -128,6 +140,7 @@ describe('Notifications, in the window', () => {
     service = [];
     tells = true;
     keyed = false;
+    messages = null;
     focused = vi.spyOn(document, 'hasFocus').mockReturnValue(false);
   });
   afterEach(async () => {
@@ -259,6 +272,33 @@ describe('Notifications, in the window', () => {
     await screen.findByRole('tab', { name: 'Notifications', selected: true });
     await userEvent.click(bell());
     await screen.findByRole('tab', { name: 'Ask Daoris', selected: true });
+  });
+
+  /**
+   * NOTIFY2g (§2.1, §5): an ask with anything unread wears the bell's dot and is listed in Messages; an urgent message to everyone is
+   * said once by a toast in the focused window, whose Open goes to the ask's page.
+   */
+  it("wears the dot for an unread message, lists it in Messages, and says an urgent one once with a door to its ask", async () => {
+    focused.mockReturnValue(true);
+    waiting = [];
+    messages = { a1: { ask: 'a1', workspace: 'default', teammate: false, unread: 2, newest: NEWEST } };
+    start([]);
+
+    await waitFor(() => expect(bell()).toHaveAccessibleName('Notifications: something unread'));
+    const said = { ...NEWEST, ask: 'a1', workspace: 'default', teammate: false };
+    act(() => { handlers.get('DAORIS.MESSAGE')!(said); });
+    act(() => { handlers.get('DAORIS.MESSAGE')!(said); });
+    const toast = await screen.findByText('db, urgent, to everyone: Stop before you land.');
+    expect(screen.getAllByText('db, urgent, to everyone: Stop before you land.')).toHaveLength(1);
+
+    await userEvent.click(bell());
+    const group = await screen.findByRole('region', { name: 'Messages' });
+    expect(group).toHaveTextContent('2 unread');
+    expect(group).toHaveTextContent('Stop before you land.');
+
+    await userEvent.click(within(toast.closest('li')!).getByRole('button', { name: 'Open' }));
+    await waitFor(() => expect(within(screen.getByRole('navigation', { name: 'Views' })).getByRole('button', { name: 'Quests' }))
+      .toHaveAttribute('aria-current', 'page'));
   });
 
   it('is said in Chinese', async () => {
