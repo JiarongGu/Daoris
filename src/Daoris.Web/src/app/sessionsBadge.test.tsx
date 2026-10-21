@@ -97,9 +97,11 @@ const WORKING = { 'session:w0rk1ng0': { workspace: 'default' } };
 /**
  * The window over a shell that pushes who needs the person (PUSH1d4): its snapshot answers `STATE_SLICE` for the attention slice,
  * every other slice keeping its pull. `rows` are the band's, `counted` what waits on the person in Sessions, `working` the sessions
- * the driver runs (SESSBADGE1), each as .NET judged them.
+ * the driver runs (SESSBADGE1), each as .NET judged them; `scope` the workspace the window holds, null for every one.
  */
-function start(rows: PushedAttention[], counted: Record<string, unknown> = COUNTED, working: Record<string, unknown> = WORKING) {
+function start(
+  rows: PushedAttention[], counted: Record<string, unknown> = COUNTED, working: Record<string, unknown> = WORKING, scope: string | null = null,
+) {
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
   invoke.mockImplementation(async (module: string, type: string, request?: { payload?: Record<string, unknown> }) => {
     if (module === 'DAORIS.REMOTES') return { path: 'remotes.json', fromEnvironment: false, remotes: [] };
@@ -123,7 +125,7 @@ function start(rows: PushedAttention[], counted: Record<string, unknown> = COUNT
   return render(
     <QueryClientProvider client={client}>
       <Tooltip.Provider>
-        <WorkspaceScopeProvider initial={null}>
+        <WorkspaceScopeProvider initial={scope}>
           <App />
         </WorkspaceScopeProvider>
       </Tooltip.Provider>
@@ -407,5 +409,68 @@ describe("The taskbar's count", () => {
 
     await waitFor(() => expect(within(bell()).getByText('3')).toBeInTheDocument());
     expect(badges()).toEqual([]);
+  });
+});
+
+/**
+ * NEEDSSCOPE1: two windows on one home, each on its own workspace, and one window's bell and taskbar counted three sessions the other's
+ * list placed to review. Each row of a session, a quest or an ask carries its workspace (`AttentionStateSliceTests` holds which), so a
+ * window on one workspace neither counts nor lists another's, on the bell, the taskbar or Sessions' badge; the machine's rows carry
+ * none and are counted and listed in every window, and a window on every workspace counts them all.
+ */
+describe('A window on one workspace', () => {
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+  });
+
+  const proposal: RuleProposal = {
+    id: 'p0000002', state: 'waiting', action: 'add', scope: 'machine', list: 'allow', rule: 'WebFetch',
+    why: 'The docs it needs are on the web.', proposed: '2026-10-01T11:00:00Z',
+  };
+  const elsewhere: Consideration = { ...PARKED, quest: 'q9' };
+  /** This workspace's two parks, another workspace's work to review and parked quest, and a rule for the whole machine. */
+  const ROWS: PushedAttention[] = [
+    ...PARKS,
+    {
+      kind: 'review', id: 'r3v13w00', since: null, workspace: 'other', where: 'engine',
+      placed: { session: 'r3v13w00', group: 'review', shown: 'completed', archived: false, teammate: false },
+    },
+    { kind: 'parked-quest', id: 'q9', since: elsewhere.since!, workspace: 'other', where: 'engine', sitting: elsewhere },
+    { kind: 'rule', id: proposal.id, since: proposal.proposed, detail: proposal.why, proposal },
+  ];
+  const WAITING = { ...COUNTED, 'quest:q9': { kind: 'parked-quest', workspace: 'other' } };
+
+  it('counts and lists its own workspace’s rows and the machine’s, never another workspace’s', async () => {
+    start(ROWS, WAITING, WORKING, 'default');
+
+    // The two parks and the machine's rule, on the bell and the taskbar; Sessions marks its own park alone.
+    await waitFor(() => expect(within(bell()).getByText('3')).toBeInTheDocument());
+    await waitFor(() => expect(badges().at(-1)).toEqual(
+      ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 3, description: '3 waiting on you', order: expect.any(Number) } }]));
+    expect(sessionsButton()).toHaveAccessibleDescription('1 active · 1 waiting on you');
+
+    await openNotifications();
+    await screen.findByText('an agent asks to do more');
+    expect(screen.getAllByText('parked at a checkpoint')).toHaveLength(2);
+    expect(screen.queryByRole('group', { name: 'Ready for you' })).toBeNull();
+    expect(screen.queryByText('parked after failed sessions')).toBeNull();
+  });
+
+  it('counts and lists every workspace’s rows where it holds every workspace', async () => {
+    start(ROWS, WAITING, WORKING, null);
+
+    await waitFor(() => expect(within(bell()).getByText('5')).toBeInTheDocument());
+    await waitFor(() => expect(badges().at(-1)).toEqual(
+      ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 5, description: '5 waiting on you', order: expect.any(Number) } }]));
+    expect(sessionsButton()).toHaveAccessibleDescription('1 active · 2 waiting on you');
+
+    await openNotifications();
+    expect(await screen.findByRole('group', { name: 'Ready for you' })).toBeInTheDocument();
+    expect(screen.getByText('parked after failed sessions')).toBeInTheDocument();
+    expect(screen.getByText('an agent asks to do more')).toBeInTheDocument();
   });
 });

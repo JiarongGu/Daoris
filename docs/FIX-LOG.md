@@ -5,6 +5,27 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-21 — A window on one workspace counted another workspace's sessions to review (NEEDSSCOPE1)
+
+- **Symptom:** on the install, two windows on one home, each scoped to its own workspace. One window's title bar and taskbar
+  (`nav.waiting`) said three things waited on the person; they were another workspace's sessions placed *To review*, and that
+  window's *What needs you* listed none of them.
+- **Root cause:** `NeedsAPerson` gave a row a `workspace` only where it was judged from the service's sessions, quests or asks (an
+  intake, a proposal, a go-ahead, a departure, a set-up, a park, an unanswerable quest). A row reached through the driver's own lists or
+  the groups slice was built without one, though each is one session's, quest's or ask's: a review, an opinion, a parked quest, a
+  helper's ask, a held call, a held answer, a unit's clean-up, a held attempt, an unreadable node record, a partial close; and the
+  Sessions badge's parked quest. `useAttention` keeps a row with no workspace in every window, which is right for the machine's rows
+  alone, so every window counted those rows whatever its scope. Why that window's list showed none of the three was not found in the
+  code: the bell, the taskbar's count, *Notifications*' band and Overview's summary all read the same scoped rows. The taskbar's count
+  is the first main window's alone until NOTIFY2c, whichever window is in front.
+- **Fix:** each of those rows carries its record's workspace, from the record in hand (a unit's by its quest, its ask or its session);
+  a rule carries the workspace its change reaches, a folder's trust and an account's wait the one their holds share. A terminal's
+  press, a machine rule, an account, a unit no record owns, and a row whose record is not in hand carry none, each with its reason, so
+  every window shows them. The page's counts and lists read one `needsListed`.
+- **Verification:** `AttentionStateSliceTests`: the review, parked-quest, helper, permission, answer and folder shapes, the badge's parked
+  quest and the new scope case red before (7 failed), green after with the machine case (90 and `AccountAttentionSliceTests`' 36). Web:
+  `needsListed`'s case red before; `sessionsBadge.test.tsx`'s window on one workspace counts and lists its own and the machine's rows on
+  the bell, the taskbar and Sessions' badge and never another's, and a window on every workspace counts them all.
 ## 2026-10-21 — Three censuses on `main` broken by merges that passed their own gates (GENREGEN1, FABRIC-CLOSE1d3, LANDBACKLOG1)
 
 - **Symptom:** the full set on `main` failed `NoConsoleWindowTests` and `EveryChildIsHandedTheToolsTests` (driver),

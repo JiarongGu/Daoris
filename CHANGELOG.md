@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- With two windows open on different workspaces, a window's *Notifications* bell, its taskbar count and Sessions' mark no longer
+  count another workspace's work: sessions to review, second opinions, a helper's ask, a held tool call or answer, a quest parked on
+  its failed sessions, a work's clean-up. Each counts and lists its own workspace's, and what is the whole machine's in both.
 - A terminal's request for your confirmation no longer lies across the top of every page. The title bar has a bell, *Notifications*
   (通知): pressed, it opens a view in the right side bar (or the panel, where you move it) with each request waiting for your
   confirmation, then *What needs you*. A request says in plain words what it asks: the session by its name, repository and short id,

@@ -19041,6 +19041,14 @@ row proves the driver's half. A `channel` wake runs the local plan, whose `chann
 waits, so a message is heard without the poll; no second reader was added. Proof: `DriverWatchTopicsTests`' new case (the person's
 message kept on a parked part's record with `pollSeconds` at 60, no nudge, no remote sync), over the stand-in ledger's new channel
 doors. Detail: D173's FABRIC-EVENT3c note. On Opus.
+
+## NEEDSSCOPE1 — a window counts only its own workspace's waits (2026-10-21)
+
+> - [ ] **NEEDSSCOPE1 — a window counts only its own workspace's waits** (modules, web; found 2026-10-21 with two windows on one home). A window on one workspace counted another workspace's sessions to review on its bell and taskbar while its list showed none: `NeedsAPerson` builds the review, opinion, permission, answer, helper, parked-quest and work rows without a workspace (`src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/NeedsAPerson.cs:183-327`), and the page keeps a row with none in every window. Proof: each row of a session, quest or ask carries its record's workspace and the machine's rows none; a window on another workspace neither counts nor lists it. Building.
+
+**Outcome** 2026-10-21: built. Every session's, quest's or ask's row of `NeedsAPerson` (the driver's own lists' too) and the Sessions badge's
+parked quest carry their record's workspace; the machine's carry none, each with its reason; the page's counts and lists read one
+`needsListed`. Detail: FIX-LOG's NEEDSSCOPE1 entry. On Opus.
 ## PUSH1f2d — the agents' rules, trust and settings (2026-10-21, D194)
 
 > - [ ] **PUSH1f2d — the agents' rules, trust and settings** (cli, driver, modules; after 2a; D194, the alone-path design §5). Read its row in §5 and the sections it names; build it end to end (D187), the family's TypeScript leaving as §4 says. Proof: as §5 names it.

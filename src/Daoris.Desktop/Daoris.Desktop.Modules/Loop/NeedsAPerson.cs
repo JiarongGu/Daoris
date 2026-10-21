@@ -80,14 +80,22 @@ public sealed record AttentionFacts
 /// <para><b>No row starts anything to find out</b> (design §6.3): every input is a record a slice already holds or the look already
 /// kept. A row whose wait no record says has a <c>since</c> of null, never the clock's now, which would move at every judgement.</para>
 ///
-/// <para><b>The scope a window reads</b>: a row judged from the service's sessions, quests or asks carries its record's
-/// <c>workspace</c>, by which a window scoped to one circle filters, as its lists were; a row from the driver's own lists carries none,
-/// and every window shows it, as before.</para>
+/// <para><b>The scope a window reads</b> (NEEDSSCOPE1): a row that is a session's, a quest's or an ask's carries that record's
+/// <c>workspace</c>, however its wait reached the judge, the service's records or the driver's own lists (a review, an opinion, a
+/// helper's ask, a held call, a held answer, a unit's clean-up), by which a window scoped to one circle filters, as its lists were. Only
+/// what is the machine's carries none, and every window shows it: a terminal's press, a rule for the whole machine, a folder or an
+/// account whose holds span workspaces, a unit no record owns; and a row whose record is not in hand, which no window may lose.</para>
 /// </remarks>
 public static class NeedsAPerson
 {
     /// <summary>The intake states in which an ask is the harness's to answer, not yet the person's (D65 §1b).</summary>
     private static readonly HashSet<string> IntakeBusy = new(StringComparer.Ordinal) { "queued", "starting", "working" };
+
+    /// <summary>How a quest's and an ask's units are named (<see cref="QuestUnits.IdOf"/>, <see cref="AskUnits.IdOf"/>).</summary>
+    private static readonly string QuestUnit = QuestUnits.IdOf(""), AskUnit = AskUnits.IdOf("");
+
+    /// <summary>How the work inventory names a session's unit before a branch record follows it.</summary>
+    private const string SessionUnit = "session:";
 
     /// <summary>Every row that waits on the person, each one in no order: the band orders by group and wait.</summary>
     public static IReadOnlyList<JsonObject> Rows(AttentionFacts facts)
@@ -96,6 +104,24 @@ public static class NeedsAPerson
         var quests = First(facts.Quests);
         var asks = First(facts.Asks);
         var rows = new List<JsonObject>();
+        var units = new Dictionary<string, JsonObject>(StringComparer.Ordinal);
+        foreach (var unit in facts.Works)
+        {
+            if (Text(unit, "unit") is { } id) units.TryAdd(id, unit);
+        }
+
+        // The workspace of the session a row is, where its record is in hand (NEEDSSCOPE1); else none, and every window shows it.
+        string? SessionScope(string? id) => id is not null && sessions.GetValueOrDefault(id) is { } record ? Scope(record) : null;
+        // A unit's: a quest's or an ask's unit by that record; else the session of the unit as the work slice holds it, or the one its id names.
+        string? UnitScope(string? unit) => unit switch
+        {
+            null => null,
+            _ when unit.StartsWith(QuestUnit, StringComparison.Ordinal) => quests.GetValueOrDefault(unit[QuestUnit.Length..]) is { } quest ? Scope(quest) : null,
+            _ when unit.StartsWith(AskUnit, StringComparison.Ordinal) => asks.GetValueOrDefault(unit[AskUnit.Length..]) is { } ask ? Scope(ask) : null,
+            _ when units.GetValueOrDefault(unit) is { } held => SessionScope(Text(held, "session")),
+            _ when unit.StartsWith(SessionUnit, StringComparison.Ordinal) => SessionScope(unit[SessionUnit.Length..]),
+            _ => null,
+        };
 
         var live = facts.Asks.Where(ask => Text(ask, "state") is "Open" or "Proposed").ToList();
         JsonObject? IntakeOf(JsonObject ask) => Truthy(ask, "intake") is { } intake ? sessions.GetValueOrDefault(intake) : null;
@@ -180,7 +206,7 @@ public static class NeedsAPerson
         // A second opinion that waits on the person (XAGENT1g, design §9), from the driver's own list, its wait whole.
         foreach (var wait in facts.Opinions)
         {
-            var row = Row("opinion", Text(wait, "session"), Text(wait, "since"));
+            var row = Row("opinion", Text(wait, "session"), Text(wait, "since"), Text(wait, "workspace") ?? SessionScope(Text(wait, "session")));
             row["where"] = Text(wait, "repository");
             row["opinion"] = wait.DeepClone();
             rows.Add(row);
@@ -192,7 +218,7 @@ public static class NeedsAPerson
         {
             var record = sessions.GetValueOrDefault(Text(placed, "session") ?? "");
             if (AskDaoris(record) || Text(placed, "repository") == HelpRoom.Repository) continue;
-            var row = Row("review", Text(placed, "session"), Text(record, "updated"));
+            var row = Row("review", Text(placed, "session"), Text(record, "updated"), record is null ? null : Scope(record));
             row["where"] = Text(record, "repository") ?? "";
             row["placed"] = placed.DeepClone();
             rows.Add(row);
@@ -213,7 +239,7 @@ public static class NeedsAPerson
         foreach (var consideration in facts.Considered.Where(consideration => Text(consideration, "verdict") == "Exhausted"))
         {
             var held = quests.GetValueOrDefault(Text(consideration, "quest") ?? "");
-            var row = Row("parked-quest", Text(consideration, "quest"), Text(consideration, "since") ?? Text(held, "updated"));
+            var row = Row("parked-quest", Text(consideration, "quest"), Text(consideration, "since") ?? Text(held, "updated"), held is null ? null : Scope(held));
             row["where"] = Text(consideration, "repository");
             row["sitting"] = consideration.DeepClone();
             rows.Add(row);
@@ -231,9 +257,17 @@ public static class NeedsAPerson
         rows.AddRange(Folders(facts, quests, asks));
 
         // An agent's proposal to widen the rules (PERM2, D74) waits for the person's word: the proposal whole, why in its session's words.
+        // Its workspace is the one its change reaches: a workspace's rule that workspace's, a repository's the proposing session's. A
+        // rule for the whole machine carries none, deliberately: it reaches every workspace, so every window shows it (NEEDSSCOPE1).
         foreach (var proposal in facts.Proposals.Where(proposal => Text(proposal, "state") == "waiting"))
         {
-            var row = Row("rule", Text(proposal, "id"), Text(proposal, "proposed"));
+            var reaches = Text(proposal, "scope") switch
+            {
+                "machine" => null,
+                "workspace" when Text(proposal, "name") is { } workspace => workspace,
+                _ => SessionScope(Text(proposal, "session")),
+            };
+            var row = Row("rule", Text(proposal, "id"), Text(proposal, "proposed"), reaches);
             row["detail"] = Text(proposal, "why");
             row["proposal"] = proposal.DeepClone();
             rows.Add(row);
@@ -246,7 +280,7 @@ public static class NeedsAPerson
             var record = sessions.GetValueOrDefault(Text(wait, "session") ?? "");
             var question = Text(wait, "question") ?? "";
             var line = question.Split('\n')[0].Trim();
-            var row = Row("helper", Text(wait, "id"), Truthy(wait, "at"));
+            var row = Row("helper", Text(wait, "id"), Truthy(wait, "at"), SessionScope(Text(wait, "session")));
             row["where"] = Text(record, "repository") ?? "";
             row["session"] = Text(wait, "session");
             row["title"] = line.Length > 0 ? line : question;
@@ -258,7 +292,7 @@ public static class NeedsAPerson
         foreach (var wait in facts.Permissions)
         {
             var record = sessions.GetValueOrDefault(Text(wait, "session") ?? "");
-            var row = Row("permission", $"{Text(wait, "session")}#{Text(wait, "request")}", Truthy(wait, "since"));
+            var row = Row("permission", $"{Text(wait, "session")}#{Text(wait, "request")}", Truthy(wait, "since"), SessionScope(Text(wait, "session")));
             row["where"] = Text(record, "repository") ?? "";
             row["session"] = Text(wait, "session");
             row["permission"] = wait.DeepClone();
@@ -270,7 +304,7 @@ public static class NeedsAPerson
         foreach (var wait in facts.Answers)
         {
             var record = sessions.GetValueOrDefault(Text(wait, "session") ?? "");
-            var row = Row("answer", Text(wait, "session"), Truthy(wait, "since"));
+            var row = Row("answer", Text(wait, "session"), Truthy(wait, "since"), SessionScope(Text(wait, "session")));
             row["where"] = Text(record, "repository") ?? "";
             row["session"] = Text(wait, "session");
             row["answer"] = wait.DeepClone();
@@ -286,7 +320,8 @@ public static class NeedsAPerson
             if (waits.Count == 0) continue;
             var end = unit["end"] as JsonObject;
             var unknown = Text(end, "state") == "unknown";
-            var row = Row("work", Text(unit, "session") ?? Text(unit, "unit"), Text(end, "at"));
+            // A unit no record owns carries none, deliberately: nothing says whose it is, so every window shows it.
+            var row = Row("work", Text(unit, "session") ?? Text(unit, "unit"), Text(end, "at"), UnitScope(Text(unit, "unit")));
             row["where"] = Text(unit, "repository");
             row["session"] = Text(unit, "session");
             // Its branch, else its tree's folder by name: never the unit's id, which a tree's path makes.
@@ -303,7 +338,9 @@ public static class NeedsAPerson
         // its word was recorded where one was, else since it was held.
         foreach (var attempt in facts.Held)
         {
-            var row = Row("work", $"{Part(attempt["unit"])}#{Part(attempt["node"])}#{Part(attempt["attempt"])}", Text(attempt, "resolvedAt") ?? Text(attempt, "at"));
+            var row = Row(
+                "work", $"{Part(attempt["unit"])}#{Part(attempt["node"])}#{Part(attempt["attempt"])}", Text(attempt, "resolvedAt") ?? Text(attempt, "at"),
+                UnitScope(Text(attempt, "unit")));
             row["where"] = Text(attempt, "unit");
             row["held"] = attempt.DeepClone();
             rows.Add(row);
@@ -313,7 +350,7 @@ public static class NeedsAPerson
         // the row's press opens the folder it is kept in. By its file, since its unit may be unknown; since it was last written.
         foreach (var record in facts.Unreadable)
         {
-            var row = Row("work", $"record#{Part(record["file"])}", Text(record, "at"));
+            var row = Row("work", $"record#{Part(record["file"])}", Text(record, "at"), UnitScope(Text(record, "unit")));
             row["where"] = Text(record, "unit");
             row["unreadable"] = record.DeepClone();
             rows.Add(row);
@@ -324,7 +361,7 @@ public static class NeedsAPerson
         foreach (var end in facts.Ends.Where(end => Text(end, "kind") == "partially-closed"
                      && (Text(end, "resolution") is not null || (end["words"] as JsonArray)?.Any(word => word?.GetValue<string>() == "stop") == true)))
         {
-            var row = Row("work", $"{Part(end["unit"])}#{Part(end["node"])}#{Part(end["quest"])}", Text(end, "at"));
+            var row = Row("work", $"{Part(end["unit"])}#{Part(end["node"])}#{Part(end["quest"])}", Text(end, "at"), UnitScope(Text(end, "unit")));
             row["where"] = Text(end, "unit");
             row["ended"] = end.DeepClone();
             rows.Add(row);
@@ -335,6 +372,7 @@ public static class NeedsAPerson
         // asked; never a value it carries, which the card alone shows beside its Confirm. Every window shows it: the pipe is this machine's.
         foreach (var waiting in facts.Confirmations)
         {
+            // No workspace, deliberately (NEEDSSCOPE1): a terminal's press is the machine's, whichever workspace its route touches.
             var row = Row("confirmation", Text(waiting, "id"), Text(waiting, "asked"));
             var asker = waiting["asker"] as JsonObject;
             row["confirmation"] = new JsonObject
@@ -355,20 +393,23 @@ public static class NeedsAPerson
 
     /// <summary>
     /// What the Sessions icon's badge counts (UX5 U20, D126 §2.5), each by a key of its own: this machine's sessions parked to ask that
-    /// nobody answered, a parked intake among them, each with its workspace for the window's scope; and each quest parked on its failed
-    /// sessions, which every window counts. A teammate's park waits on them.
+    /// nobody answered, a parked intake among them, and each quest parked on its failed sessions, each with its workspace for the window's
+    /// scope (NEEDSSCOPE1); a parked quest whose record is not in hand says none, and every window counts it. A teammate's park waits on them.
     /// </summary>
     public static IReadOnlyList<(string Key, JsonObject Value)> WaitingInSessions(AttentionFacts facts)
     {
         var counted = new List<(string, JsonObject)>();
         foreach (var session in facts.Sessions.Where(session => Parks(session) && !Elsewhere(Text(session, "id") ?? "")))
         {
-            counted.Add(($"session:{Text(session, "id")}", new JsonObject { ["kind"] = "parked", ["workspace"] = Text(session, "workspace") ?? "default" }));
+            counted.Add(($"session:{Text(session, "id")}", new JsonObject { ["kind"] = "parked", ["workspace"] = Scope(session) }));
         }
 
+        var quests = First(facts.Quests);
         foreach (var quest in facts.Considered.Where(consideration => Text(consideration, "verdict") == "Exhausted").Select(each => Text(each, "quest")).Distinct())
         {
-            counted.Add(($"quest:{quest}", new JsonObject { ["kind"] = "parked-quest" }));
+            var parked = new JsonObject { ["kind"] = "parked-quest" };
+            if (quests.GetValueOrDefault(quest ?? "") is { } record) parked["workspace"] = Scope(record);
+            counted.Add(($"quest:{quest}", parked));
         }
 
         return counted;
@@ -403,17 +444,23 @@ public static class NeedsAPerson
     {
         var folders = new List<JsonObject>();
         var seen = new Dictionary<string, JsonObject>(StringComparer.Ordinal);
+        // Each folder's workspace while every hold's record names the same one; null once one is not in hand or two differ (NEEDSSCOPE1).
+        var scopes = new Dictionary<string, string?>(StringComparer.Ordinal);
         foreach (var hold in facts.Untrusted)
         {
             var held = Truthy(hold, "quest") is { } quest ? quests.GetValueOrDefault(quest) : null;
             var asked = Truthy(hold, "ask") is { } ask ? asks.GetValueOrDefault(ask) : null;
             var since = Text(held, "filed") ?? Text(asked, "asked");
             var key = $"{Text(hold, "trustFile")}\n{Text(hold, "folder")}";
+            var circle = held is not null ? Scope(held) : asked is not null ? Scope(asked) : null;
             if (seen.TryGetValue(key, out var row))
             {
                 if (since is not null && (Text(row, "since") is not { } was || string.CompareOrdinal(since, was) < 0)) row["since"] = since;
+                if (!string.Equals(scopes[key], circle, StringComparison.Ordinal)) scopes[key] = null;
                 continue;
             }
+
+            scopes[key] = circle;
 
             row = Row("trust", key, since);
             // Its repository where it holds a quest in hand; else the page names the ask it holds, or the quest by its id.
@@ -424,6 +471,13 @@ public static class NeedsAPerson
             if (Truthy(hold, "ask") is { } intake) row["ask"] = intake;
             seen[key] = row;
             folders.Add(row);
+        }
+
+        // The grant is the machine's, but what it holds is a quest's or an ask's: the row is their workspace's where they share one, and
+        // carries none where they span two or one is not in hand, so every window shows it.
+        foreach (var (key, workspace) in scopes)
+        {
+            if (workspace is not null) seen[key]["workspace"] = workspace;
         }
 
         return folders;
