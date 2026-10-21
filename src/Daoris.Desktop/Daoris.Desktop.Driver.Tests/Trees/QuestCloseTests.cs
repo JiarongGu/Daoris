@@ -530,6 +530,11 @@ public sealed class QuestCloseTests : IDisposable
         Assert.Equal((QuestClosing.Sender, NodeStates.Unknown), (listed.Plugin, listed.NodeState));
         Assert.Equal(HeldResolutions.CloseUnkept, listed.Words);
         Assert.Contains(HeldAttempts.Lines([listed]), line => line.EndsWith("resend|stop", StringComparison.Ordinal));
+        // FABRIC-CLOSE1y: said as its door's silence, asked again at each look, never as an answer Daoris failed to keep.
+        Assert.Equal(ReconcileStates.Unknown, listed.Why);
+        Assert.Contains("its door has not answered", HeldAttempts.WhySaid(listed), StringComparison.Ordinal);
+        Assert.Contains("asked again at each look", HeldAttempts.WhySaid(listed), StringComparison.Ordinal);
+        Assert.DoesNotContain("keeps no answer", HeldAttempts.WhySaid(listed), StringComparison.Ordinal);
         var record = HeldAttempts.Word(Files, Unit, "close", listed.Attempt, HeldResolutions.Record, () => _now);
         Assert.Equal((PerformedWhat.Refused, WorkPerformer.NotKept), (record.What, record.Code));
 

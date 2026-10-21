@@ -90,6 +90,8 @@ public static class HeldAttempts
             "the submission its close names was reopened or replaced since, so the work there is now is never that close's to record or stop: it can be sent again",
         (var code, WorkStates.Reached) => $"the quest was closed, and Daoris could not record that on its close's node ({code})",
         (var code, WorkStates.Failed) => $"the quest's close was refused, and Daoris could not record that on its close's node ({code})",
+        // FABRIC-CLOSE1y: an unknown close (FABRIC-CLOSE1u) is its door's silence, not a missing record: it is asked again at each look.
+        (ReconcileStates.Unknown, _) => "its door has not answered the quest's close or the question of what became of it, and is asked again at each look",
         (var code, _) => $"Daoris keeps no answer to the quest's close ({code})",
     };
 

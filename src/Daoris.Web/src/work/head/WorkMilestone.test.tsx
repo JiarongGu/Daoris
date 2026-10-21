@@ -270,6 +270,22 @@ describe('an attempt held for the person', () => {
       .toHaveTextContent('close，第 1 次尝试：委托的关闭被拒绝了，但 Daoris 没能把这一结果记到这项工作上（no-acceptance）。它在等你的答复。');
   });
 
+  it('says an unknown close as its door’s silence, asked again at each look, in English and in 中文 (FABRIC-CLOSE1y)', async () => {
+    const unknown = heldClose({ why: 'unknown', outcome: null, words: ['resend', 'stop'] });
+    const { unmount } = render(<WorkMilestone defaultOpen unit={unit({ held: [unknown] })} />);
+    const en = screen.getByRole('region', { name: 'Where this work stands' });
+    expect(en).toHaveTextContent(
+      "close, attempt 1: Its door has not answered the quest's close, and Daoris asks it again at each look. It waits for your word.");
+    expect(en).not.toHaveTextContent('keeps no answer');
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    render(<WorkMilestone defaultOpen unit={unit({ held: [unknown] })} />);
+    const zh = screen.getByRole('region', { name: '这项工作进展到哪里' });
+    expect(zh).toHaveTextContent('close，第 1 次尝试：受理委托关闭的一方还没有答复，Daoris 每次查看时都会再问一次。它在等你的答复。');
+    expect(zh).not.toHaveTextContent('没有留下');
+  });
+
   it('says a word taken back on a close whose submission was reopened or replaced, in English and in 中文 (FABRIC-CLOSE1q2)', async () => {
     const { unmount } = render(<WorkMilestone defaultOpen unit={unit({ held: [heldClose({ why: 'submission-moved' })] })} />);
     expect(screen.getByRole('region', { name: 'Where this work stands' })).toHaveTextContent(

@@ -117,7 +117,8 @@ export function heldWhy(t: TFunction, held: HeldAttempt): string {
     if (held.why === 'not-close-word') return t('work.milestone.held.close.why.notCloseWord');
     // FABRIC-CLOSE1q2: record or stop taken back, since the submission the close names was reopened or replaced.
     if (held.why === 'submission-moved') return t('work.milestone.held.close.why.submissionMoved');
-    const answer = held.outcome === 'reached' ? 'closed' : held.outcome === 'failed' ? 'refused' : 'unanswered';
+    // FABRIC-CLOSE1y: an unknown close (FABRIC-CLOSE1u) is its door's silence, asked again at each look, never a missing record.
+    const answer = held.outcome === 'reached' ? 'closed' : held.outcome === 'failed' ? 'refused' : held.why === 'unknown' ? 'unknown' : 'unanswered';
     return t(`work.milestone.held.close.why.${answer}`, { code: held.why });
   }
   const code = HELD_WHY.find((one) => one === held.why);

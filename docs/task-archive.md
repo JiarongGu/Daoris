@@ -18706,3 +18706,12 @@ log's KEEPALL1c entry.
 squash's branch, the line a merge went into) set back keeps the branch with "moved as it went", and the branch moved on keeps its new
 commit with `ContentHolds.MovedSince`. A cut-off opening held by the line is moved aside while the line rewound, or its branch moved,
 at the delete keeps the branch, said in `BranchKept`. On Opus: about 40 tool calls.
+
+## FABRIC-CLOSE1y — an unknown close said as its door's silence (2026-10-21, D173)
+
+> - [ ] **FABRIC-CLOSE1y — an unknown close said as its door's silence** (web, driver; D173's CLOSE1u note). The page and terminal word an unknown close as "Daoris keeps no answer to the quest's close (unknown)": say its door has not answered and is asked again at each look. Proof: `WorkMilestone.test.tsx` in en and 中文, and `HeldAttempts.WhySaid`.
+
+**Outcome** 2026-10-21: built. A held close with why `unknown` and no outcome is said as its door having answered neither the close
+nor the question, asked again at each look: `HeldAttempts.WhySaid` and the page's `work.milestone.held.close.why.unknown` (en, zh).
+Other unanswered codes keep their words. Proof: `QuestCloseTests` (CLOSE1u's unanswered case) and `WorkMilestone.test.tsx` in both
+languages. On Opus: about 40 tool calls. Detail: D173's FABRIC-CLOSE1y note.
