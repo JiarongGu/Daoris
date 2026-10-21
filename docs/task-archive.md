@@ -19275,3 +19275,14 @@ the terminal, the second hop), `key` (read from standard input, published under 
 terminal into a folder made first, its end published under the lease, a Ctrl+C there keeping the account); `daoris agent` hands all
 four. Today's text kept (69 rows, one changed on purpose). Their TypeScript and 80 CLI tests left. The account verbs' shapes
 unchanged. Detail: D194's PUSH1f2e4-6 note. On Opus.
+## KEEP1g — finished history by an age the person sets (2026-10-22, D195)
+
+> - [ ] **KEEP1g — finished history by an age the person sets** (driver, modules, web-settings; after KEEP1d; D195, the cleanup design §9, decided by the owner). History's age in `keep`, none by default, cleared daily through the clear with every refusal holding. Proof: as §9 names it.
+
+**Outcome** 2026-10-22: built. History joins `KeepKinds` and the person's rules: `driver.json`'s `keep.history` (30 to 3,650 days,
+`never` its default), `daoris driver keep history`, `SET_KEEP`, Ask Daoris's `keep` door and the *Disk space* row's *Change…*, which
+says what an age clears. The look's Keeping pass, once a day or at once when the age changes, clears each workspace's units whose last
+move is older through `HistoryClearing`'s two presses (`HistoryKeeping`), every refusal holding and each kept unit said;
+`history.cleared` says `door: rule`, and `keeping.json` gains `last.history`. The history clearing design §7 is amended. Proof:
+`HistoryKeepingTests`, `KeepRulesTests`' and `DriverChoicesBothWaysTests`' history rows, `WiringDomain.test.tsx` in English and 中文.
+No installed window has set one. Detail: D195's KEEP1g note. On Opus.
