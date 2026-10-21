@@ -1674,7 +1674,10 @@ public sealed class Driver(
         var resumedIn = start.Resumes is { Tree: { Length: > 0 } resumedTree } && isolated && StandsNow(priorStands, resumedTree)
             ? resumedTree
             : null;
-        var carryingOn = start.Resumes is not null && quest.Awaits is null or "";
+        // 🔴 SAYHELD1: words going on are never a resume (D79), whatever question the quest still names: the planner plans them only once
+        // a resume began (its ResumedOnAnswer), and that session was handed the answer.
+        var resuming = start.Resumes is not null && !start.GoesOn && quest.Awaits is { Length: > 0 };
+        var carryingOn = start.Resumes is not null && !resuming;
         // A further part of a session (SESSONE1d, D167 point 4 as amended) goes into the tree the planner found free, where it still
         // stands; one the tidy took at its landing grows again below, from the branch that work landed on (D82), else from the line.
         var joinedIn = entryTree is not null && StandsNow(entryStands, entryTree) ? entryTree : null;
@@ -1683,7 +1686,7 @@ public sealed class Driver(
         // it. Read before the record opens, like every hold above — a question the service no longer
         // knows leaves nothing to resume with.
         QuestView? answered = null;
-        if (start.Resumes is not null && quest.Awaits is { Length: > 0 } question)
+        if (resuming && quest.Awaits is { Length: > 0 } question)
         {
             answered = await service.FindQuestAsync(question, ct).ConfigureAwait(false);
             if (answered is null)
@@ -1692,6 +1695,10 @@ public sealed class Driver(
                     + "there is no answer to resume with.");
             }
         }
+
+        // 🔴 SAYHELD1 (A), the owner's case on the install: the words kept on the session that asked while its quest waited, which it never
+        // took, go to the session this resume opens, read as the record holds them now (SAIDBACK1f), so one taken back never goes.
+        var handsOn = answered is not null ? await GoOns.ResumeWordsAsync(start.Resumes!, ct).ConfigureAwait(false) : null;
 
         // LANDSYNC2 (D87's 2026-10-15 amendment point 7): a session going on in a tree that stands — a resume, words going on, a
         // carry-on, a further part gone into its session's tree — starts from the line where the line came to hold some of its commits,
@@ -1813,7 +1820,7 @@ public sealed class Driver(
         var written = start.Resumes;
         if (start.Resumes is { } park
             && (start.GoesOn || park is { State: "completed", Answer: not null, Said: null })
-            && quest.Awaits is null or "")
+            && !resuming)
         {
             // Where its own account could not carry the words, the walk's pick did, and the reason says why (MSG1g).
             (var continued, fellBack, answerKept) = await ContinueAsync(
@@ -1998,6 +2005,11 @@ public sealed class Driver(
             // on the ask by the service, so this start's instruction reads them among the person's words; and said in that
             // session's conversation, where the person wrote them.
             if (fellBack is not null) await GoOns.HandedOnAsync(written!, sessionId, fellBack, ct).ConfigureAwait(false);
+            // SAYHELD1 (A): and those said to the session that asked while its quest waited go to its resume, the same way.
+            else if (handsOn is not null)
+            {
+                await GoOns.HandedOnAsync(handsOn, sessionId, ContinueWhy.Of(ContinueWhy.Resumed), ct, resumed: true).ConfigureAwait(false);
+            }
 
             var adapter = Context.Adapters.Resolve(agent);
             // What it may read and write outside its tree (D107): the rules it is handed, and the sentence
@@ -2109,6 +2121,8 @@ public sealed class Driver(
                 Commits = Context.Trees.Holds(workTree) ? CommitRules.Resolve(config, quest.To, start.Workspace) : null,
                 // The person's answer, when the session before parked to ask them (STANDDOWN2).
                 PersonSaid = carryingOn ? start.Resumes!.Answer : null,
+                // SAYHELD1 (A): a resume's, the words said to the session that asked while it waited, each under its id.
+                Handed = handsOn is null ? [] : [.. handsOn.Waiting.Where(DriverContinuations.HandedToResume)],
                 // The person's stop, which they released with Try again (SESSUX1b): told so, never that it was cut off.
                 Released = carryingOn && start.Resumes!.PersonStopped && !handedFrom,
                 // The quest was handed over from that session (MIXAGENT1a-ii): told so, with the agent it ran on.
@@ -3023,11 +3037,13 @@ public sealed class Driver(
             ? CaptureAcpAsync(
                 process, transcript, sessionId, cwd, prompt, target.Access?.Posture ?? adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta,
                 handedServers ?? Context.Servers, target.PersonSaid, inbox, said, keepAs, resume, account, waitsOnBackground, noConnector, ending,
-                unoffered: target.Access is { } access ? access.Unoffered : null, setupChanged: setupChanged)
+                unoffered: target.Access is { } access ? access.Unoffered : null, setupChanged: setupChanged, handed: target.Handed)
             : null;
         // What the native door's harness says in its own words, apart from its agent's, for its ending (AGT3c).
         var own = new HarnessWords();
-        var structured = acp is null ? Structured(adapter, process, transcript, sessionId, prompt, ct, preamble, target.PersonSaid, said, keepAs, resume, account, own) : null;
+        var structured = acp is null
+            ? Structured(adapter, process, transcript, sessionId, prompt, ct, preamble, target.PersonSaid, said, keepAs, resume, account, own, target.Handed)
+            : null;
         Task capture = acp ?? structured ?? CaptureAsync(process, transcript, sessionId, ct, preamble);
 
         if (!movedFirst)
@@ -3246,14 +3262,16 @@ public sealed class Driver(
     /// <param name="resume">The conversation an answer continues: the record's transcript and conversation go on.</param>
     /// <param name="account">What the prompt was composed of (CONTEXT1), kept beside it on its event.</param>
     /// <param name="own">Where the harness's own words are kept for its run's ending (AGT3c).</param>
+    /// <param name="handed">A resume's words from the session that asked, shown after the target under their ids (SAYHELD1).</param>
     private Task<AcpUsage?>? Structured(
         ISessionAdapter adapter, Process process, string transcript, string sessionId, string prompt,
         CancellationToken ct, string? preamble = null, string? personSaid = null, Action<JsonElement>? said = null,
-        string? keepAs = null, ResumeAsk? resume = null, InstructionAccount? account = null, HarnessWords? own = null) =>
+        string? keepAs = null, ResumeAsk? resume = null, InstructionAccount? account = null, HarnessWords? own = null,
+        IReadOnlyList<SaidWordView>? handed = null) =>
         adapter.StructuredOutput() is { } mapper
             ? KeepingAsync(mapper, HarnessCapture.CaptureStructuredAsync(
                 process.StandardOutput, process.StandardError, transcript, sessionId, output, Context.Events, mapper,
-                resume is null ? prompt : null, ct, preamble, personSaid: personSaid,
+                resume is null ? prompt : null, ct, preamble, personSaid: personSaid, handed: handed,
                 opened: resume?.Opening(), append: resume is not null, said: said, account: account, own: own, lineageHome: home),
                 sessionId, keepAs, resume)
             : null;
@@ -3331,7 +3349,7 @@ public sealed class Driver(
         IReadOnlyList<AcpMcpServer>? servers = null, string? personSaid = null, DrivenInbox? inbox = null,
         Action<JsonElement>? said = null, string? keepAs = null, ResumeAsk? resume = null, InstructionAccount? account = null,
         Func<CancellationToken, Task<bool>>? waitsOnBackground = null, string? noConnector = null, AcpEnding? ending = null,
-        Func<string, string, string>? unoffered = null, Func<bool>? setupChanged = null)
+        Func<string, string, string>? unoffered = null, Func<bool>? setupChanged = null, IReadOnlyList<SaidWordView>? handed = null)
     {
         await using var file = TranscriptFile.Open(transcript, append: resume is not null);
 
@@ -3376,7 +3394,7 @@ public sealed class Driver(
             }
             else
             {
-                foreach (var opening in HarnessCapture.Opening(prompt, personSaid, account)) Event(opening);
+                foreach (var opening in HarnessCapture.Opening(prompt, personSaid, account, handed)) Event(opening);
             }
 
             // What this harness is doing that daoris has not been able to govern (ACP3). On the

@@ -324,6 +324,8 @@ public static class NoteCodes
         new(ContinueWhy.Started, [], "work.say.why.started"),
         // SESSCTX1c: the native door's failed exit apart from `gone`, added after the rest (a reason is additive).
         new(ContinueWhy.Exited, [], "work.say.why.exited"),
+        // SAYHELD1: a resume opened a new session once the question its quest waited on was answered, and took the asker's words.
+        new(ContinueWhy.Resumed, [], "work.say.why.resumed"),
     ]);
 
     /// <summary>Why a cool-off lasts until then, as the page words it (<c>harness.cooling.why.*</c>).</summary>

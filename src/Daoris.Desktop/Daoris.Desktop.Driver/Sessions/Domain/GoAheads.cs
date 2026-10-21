@@ -124,19 +124,36 @@ public static class GoAheadsText
 
     /// <summary>
     /// The prompt an answer resumes its own conversation with (ANSWER1a, D131 §1): the person's answer, verbatim, then the
-    /// answers to the go-aheads this session asked, which its conversation was not handed at its start. The answer alone
-    /// where none of them is answered, or the ask's go-aheads were not read.
+    /// answers to the go-aheads this session asked, which its conversation was not handed at its start, then those of them that
+    /// still wait. The answer alone where it asked none, or the ask's go-aheads were not read.
     /// </summary>
+    /// <remarks>
+    /// 🔴 SAYHELD1: the person's words to a park go on at the next look whatever go-ahead it asked still waits (MSG1b; GOAHEAD2b says
+    /// so of the box), and the go-ahead stays waiting. So the turn says which still wait and that their acts are not yet the session's,
+    /// or words that answered something else would read as leave to do them.
+    /// </remarks>
     public static string Resumed(string answer, AskWords? words, string session)
     {
-        var answered = (words?.GoAheads ?? [])
-            .Where(goAhead => goAhead.Answer is not null && goAhead.Asked.Any(request => request.Session == session))
-            .ToList();
-        if (answered.Count == 0) return answer;
+        var asked = (words?.GoAheads ?? []).Where(goAhead => goAhead.Asked.Any(request => request.Session == session)).ToList();
+        var answered = asked.Where(goAhead => goAhead.Answer is not null).ToList();
+        var waiting = asked.Where(goAhead => goAhead.Answer is null).ToList();
+        if (asked.Count == 0) return answer;
 
         var text = new StringBuilder(answer).Append("\n\n");
-        text.Append("The person has also answered the go-aheads you asked on this ask:\n");
-        foreach (var goAhead in answered) text.Append(Item(goAhead));
+        if (answered.Count > 0)
+        {
+            text.Append("The person has also answered the go-aheads you asked on this ask:\n");
+            foreach (var goAhead in answered) text.Append(Item(goAhead));
+        }
+
+        if (waiting.Count > 0)
+        {
+            if (answered.Count > 0) text.Append('\n');
+            text.Append("These go-aheads you asked still wait on the person: do not do their acts until each is approved, and do not ")
+                .Append("ask for them again:\n");
+            foreach (var goAhead in waiting) text.Append(Item(goAhead));
+        }
+
         return text.ToString();
     }
 

@@ -189,8 +189,12 @@ public sealed class GoAheadsHandedTests
     /// person's answer to the ones it asked since: the resumed prompt is the person's answer, verbatim, then what was
     /// answered on the go-aheads this session asked. The record keeps the person's words as theirs, and only those.
     /// </summary>
+    /// <remarks>
+    /// SAYHELD1: the person's words to a park go on while a go-ahead it asked still waits (MSG1b; GOAHEAD2b), so the turn says that
+    /// one still waits and its act is not the session's to do, after the answered ones. Another session's go-ahead is not said.
+    /// </remarks>
     [Fact]
-    public void A_resumed_conversation_is_told_the_answers_to_the_go_aheads_it_asked()
+    public void A_resumed_conversation_is_told_the_answers_to_the_go_aheads_it_asked_and_which_still_wait()
     {
         var words = Read(
             Held(1, "write", "dashboard configuration", true, "run the put", session: "s9"),
@@ -200,10 +204,18 @@ public sealed class GoAheadsHandedTests
         var prompt = GoAheadsText.Resumed("carry on", words, "s9");
 
         Assert.StartsWith("carry on\n\n", prompt, StringComparison.Ordinal);
-        Assert.Contains("Go-ahead 1, write on production: \"dashboard configuration\" — approved", prompt);
-        Assert.DoesNotContain("Go-ahead 2", prompt);
+        var approved = prompt.IndexOf("Go-ahead 1, write on production: \"dashboard configuration\" — approved", StringComparison.Ordinal);
+        var waits = prompt.IndexOf(
+            "Go-ahead 2, release on production: \"comparison report\" — still waiting on the person, first asked 2026-10-03 09:00 UTC.",
+            StringComparison.Ordinal);
+        Assert.True(approved > 0 && waits > approved, prompt);
+        Assert.Contains("still wait on the person: do not do their acts", prompt);
         Assert.DoesNotContain("Go-ahead 3", prompt);
-        Assert.Equal("carry on", GoAheadsText.Resumed("carry on", Read(Held(2, "release", "comparison report", null, session: "s9")), "s9"));
+
+        var onlyWaiting = GoAheadsText.Resumed("carry on", Read(Held(2, "release", "comparison report", null, session: "s9")), "s9");
+        Assert.StartsWith("carry on\n\nThese go-aheads you asked still wait on the person", onlyWaiting, StringComparison.Ordinal);
+        Assert.DoesNotContain("has also answered", onlyWaiting);
+        Assert.Equal("carry on", GoAheadsText.Resumed("carry on", Read(Held(3, "push", "report branch", null, session: "s1")), "s9"));
         Assert.Equal("carry on", GoAheadsText.Resumed("carry on", null, "s9"));
     }
 

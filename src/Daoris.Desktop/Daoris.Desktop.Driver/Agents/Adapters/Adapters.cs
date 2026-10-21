@@ -169,6 +169,13 @@ public sealed record SessionTarget(
     public string? PersonSaid { get; init; }
 
     /// <summary>
+    /// For a resume (D79): the words kept on the session that asked while its quest waited, which it never took (SAYHELD1), in the
+    /// order said, each with the id that record gave it: the person's, and Daoris's own. Quoted after what came back, and shown in the
+    /// conversation under their ids after the target. Empty for every other start, and the instruction reads as it did.
+    /// </summary>
+    public IReadOnlyList<SaidWordView> Handed { get; init; } = [];
+
+    /// <summary>
     /// The person's words on the ask this quest was asked by (DRIFT1b, D133 §2), read for this start: every one, newest
     /// last, beneath the quest, on a first start, a resume and a carry-on alike, so what the person said outlives the hops
     /// a quest makes across cut-offs and accounts. Null for a quest no ask asked, and the instruction reads as it did.
@@ -492,6 +499,7 @@ public static class TargetPrompt
             $"\nAn earlier session on this quest needed something only `{answered.To}` could answer, asked it, and\n"
             + "waited. What it did is in this tree — read its commits before you go on. The question was quest\n"
             + $"`#{answered.Id}`, \"{answered.Title}\", and {Answer(answered)}\n"),
+        new(HandedSections.WrittenTo, WhileItWaited(target)),
         .. Tail(target, target.Ready
             ? "\nCarry on from there, inside this repository under its own doctrine and gates, then say\n"
               + $"`#{target.QuestId}` is ready: `ready` when its work is done, with your note and an answer for each\n"
@@ -657,6 +665,34 @@ public static class TargetPrompt
           + TextBounds.Quote(said, indent: "  ")
           + "\n"
         : "";
+
+    /// <summary>
+    /// For a resume (D79), the words said to the session that asked while it waited, which it never took (SAYHELD1): the person's,
+    /// verbatim and quoted line by line, then Daoris's own, said as Daoris's. Nothing where it was handed none.
+    /// </summary>
+    private static string WhileItWaited(SessionTarget target)
+    {
+        var persons = target.Handed.Where(word => word.Persons).ToList();
+        var daoris = target.Handed.Where(word => word.Daoris).ToList();
+        var text = new StringBuilder();
+        if (persons.Count > 0)
+        {
+            text.Append("\nWhile it waited, the person wrote to that session, and it never took their words, so they are yours to act on, ")
+                .Append("oldest first:\n\n")
+                .Append(string.Join("\n\n", persons.Select(word => TextBounds.Quote(word.Text, indent: "  "))))
+                .Append('\n');
+        }
+
+        if (daoris.Count > 0)
+        {
+            text.Append("\nWhile it waited, Daoris told that session what follows, and it never took it, so it is yours to weigh, as Daoris's ")
+                .Append("words and not the person's:\n\n")
+                .Append(string.Join("\n\n", daoris.Select(word => TextBounds.Quote(word.Text, indent: "  "))))
+                .Append('\n');
+        }
+
+        return text.ToString();
+    }
 
     /// <summary>
     /// The most characters of the requirements' words and checks an instruction carries, for the person's words' reason

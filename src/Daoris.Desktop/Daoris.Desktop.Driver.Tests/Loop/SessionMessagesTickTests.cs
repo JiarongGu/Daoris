@@ -209,6 +209,78 @@ public sealed class SessionMessagesTickTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 SAYHELD1 (A), the owner's case on the install (2026-10-21): the quest's session asked another repository and ended waiting
+    /// on its answer (D79); the person wrote to it meanwhile, and the words waited with the quest. Once the answer came the quest
+    /// resumed in a new session, which was never handed them: they stayed on the first record, unread. Now the resume's session is
+    /// handed them beneath the answer, its conversation shows each under its id, and they leave the first record naming it, which
+    /// says where they went.
+    /// </summary>
+    [Fact]
+    public async Task Words_said_to_the_session_that_asked_while_its_quest_waits_reach_the_session_its_resume_opens()
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        service.Question();
+        await Protocol(service, "asks").RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.Equal(("completed", "Taken"), (service.State("s1"), service.Status("q1")));
+        Assert.Equal("w1", await service.SayAsync("s1", "Use the staging database, not production."));
+
+        // While the question is open, the words wait with the quest and nothing starts.
+        await Protocol(service, "resumes").RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.Equal(1, service.SessionCount);
+        Assert.Equal(["w1"], service.Said("s1"));
+
+        service.Close("q2", "Done", "POST /notes takes { text }.");
+        var look = await Protocol(service, "resumes").RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var seen = $"plan: {string.Join(" | ", look.Considerations.Select(c => $"{c.Quest.Id} {c.Verdict}: {c.Reason}"))}"
+                   + $"\nlook: {string.Join(" | ", look.Events)}\ns1: {service.Record("s1")}\ntaken: {string.Join(" | ", service.Taken)}";
+        Assert.True(service.SessionCount == 2, seen);
+        Assert.True(service.Said("s1").Count == 0, seen);
+        Assert.True(service.Taken.SequenceEqual([("s1", "w1", (string?)"s2")]), seen);
+        var instruction = string.Join("\n", Heard().Last(line => line["method"]!.GetValue<string>() == "session/prompt")["blocks"]!.AsArray()
+            .Select(block => block!.GetValue<string>()));
+        Assert.Contains("resuming quest `#q1`", instruction);
+        Assert.Contains("POST /notes takes { text }.", instruction);
+        Assert.Contains("> Use the staging database, not production.", instruction);
+        Assert.Contains(Events("s2"), e => e is { Kind: SessionEventKind.User, Origin: "person", Id: "w1", Text: "Use the staging database, not production." });
+        Assert.Contains(Events("s1"), e => e is { Kind: SessionEventKind.Note, Words: ["w1"], To: "s2", Why: ContinueWhy.Resumed });
+        Assert.Equal("Done", service.Status("q1"));
+    }
+
+    /// <summary>
+    /// 🔴 SAYHELD1 (B), the owner's case on the install (2026-10-21): the quest resumed in a new session once its question was answered,
+    /// and that session parked to ask the person. Their answer sat for hours: the service keeps naming the question while the quest is
+    /// taken, so the look read the quest as still waiting on it, planned its resume again, and found the park itself holding the
+    /// quest. The answer goes on at the next look in the park's own conversation, and the session ends as its run does.
+    /// </summary>
+    [Fact]
+    public async Task The_persons_answer_to_a_park_its_resume_made_goes_on_though_the_quest_still_names_its_question()
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        service.Question();
+        await Protocol(service, "asks").RunOnceAsync().WaitAsync(Poll.Patience);
+        service.Close("q2", "Done", "POST /notes takes { text }.");
+        // The answered park's turn closes the quest at once.
+        File.WriteAllText(Path.Combine(_home, "go.flag"), "");
+        await Protocol(service, "parks").RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.Equal(("awaiting-person", "Taken", 2), (service.State("s2"), service.Status("q1"), service.SessionCount));
+        Assert.Equal("w1", await service.SayAsync("s2", "Not production; use staging."));
+
+        var look = await Protocol(service, "parks").RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var seen = $"plan: {string.Join(" | ", look.Considerations.Select(c => $"{c.Quest.Id} {c.Verdict}: {c.Reason}"))}"
+                   + $"\nlook: {string.Join(" | ", look.Events)}\ns2: {service.Record("s2")}\nquest: {service.Status("q1")}";
+        Assert.True(look.Considerations.Any(c => c is { Verdict: StartVerdict.Start, GoesOn: true, Resumes.Session: "s2" }), seen);
+        Assert.True(service.SessionCount == 2, seen);
+        Assert.True((service.State("s2"), service.Status("q1")) == ("completed", "Done"), seen);
+        Assert.True(service.Taken.SequenceEqual([("s2", "w1", (string?)null)]), seen);
+        var resumed = Assert.Single(Heard(), line => line["method"]!.GetValue<string>() == "session/resume");
+        Assert.Equal("conv-s2", resumed["conversation"]!.GetValue<string>());
+        var prompt = Heard().Last(line => line["method"]!.GetValue<string>() == "session/prompt");
+        Assert.Equal("Not production; use staging.", prompt["blocks"]![0]!.GetValue<string>());
+    }
+
+    /// <summary>
     /// The agent's other client holds the conversation (<c>elsewhere</c>): the record goes back to `completed`, saying it
     /// cannot go on and why, its words still waiting as said and marked by their ids, and nothing else carries them on, its
     /// quest having closed. The next look does not try them again; a word said after does.
@@ -732,6 +804,11 @@ public sealed class SessionMessagesTickTests : IDisposable
                   // ANSWER2b: it takes its quest and asks, so it parks on the person.
                   await respond({ action: 'take' });
                   say('Which port should it listen on?');
+                } else if (mode === 'asks') {
+                  // SAYHELD1: it takes its quest and asks another repository, so it ends waiting on the answer (D79).
+                  await respond({ action: 'take' });
+                  await respond({ action: 'wait', on: 'q2' });
+                  say('Asked backend for the contract.');
                 } else {
                   await respond({ action: 'take' });
                   if (mode !== 'fails') await respond({ action: 'done', reason: 'served the report' });
@@ -864,6 +941,33 @@ public sealed class SessionMessagesTickTests : IDisposable
         }
 
         public int SessionCount { get { lock (_sessions) return _sessions.Count; } }
+
+        /// <summary>
+        /// SAYHELD1: the question <c>q1</c>'s session asks (D79), <c>q2</c> to <c>backend</c>, which this machine does not hold: open
+        /// until <see cref="Close"/>. Served only once called, so the tests that never ask read as they did.
+        /// </summary>
+        public void Question()
+        {
+            lock (_sessions)
+            {
+                _quests.Add(new JsonObject
+                {
+                    ["id"] = "q2", ["from"] = "engine", ["to"] = "backend", ["title"] = "What does the notes endpoint take?",
+                    ["body"] = "We need the contract.", ["status"] = "Open",
+                });
+            }
+        }
+
+        /// <summary>A quest closed by whoever holds it, with its note: the question answered.</summary>
+        public void Close(string quest, string status, string note)
+        {
+            lock (_sessions)
+            {
+                var closed = _quests.Single(q => q["id"]!.GetValue<string>() == quest);
+                closed["status"] = status;
+                closed["note"] = note;
+            }
+        }
 
         public string State(string id) => Field(id, "state")!;
 
@@ -1129,6 +1233,10 @@ public sealed class SessionMessagesTickTests : IDisposable
                             case "done" when quest["status"]!.GetValue<string>() == "Taken":
                                 quest["status"] = "Done";
                                 quest["note"] = body["reason"]?.GetValue<string>();
+                                break;
+                            // SAYHELD1: the taker waits on a question (D79), named while the quest is taken, as the service keeps it.
+                            case "wait" when quest["status"]!.GetValue<string>() == "Taken":
+                                quest["awaits"] = body["on"]!.GetValue<string>();
                                 break;
                             default:
                                 return (409, """{"error":"refused"}""");

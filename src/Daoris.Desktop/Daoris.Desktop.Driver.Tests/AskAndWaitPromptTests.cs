@@ -353,6 +353,63 @@ public sealed class AskAndWaitPromptTests
         Assert.Contains("Never write outside", prompt);
     }
 
+    /// <summary>
+    /// 🔴 SAYHELD1, the owner's case on the install (2026-10-21): the person wrote to the session that asked while its quest waited,
+    /// and the resume opened a new session that was never handed their words. A resume is handed every word the session that asked
+    /// never took, after what came back: the person's quoted whole, and Daoris's as Daoris's. A resume handed none reads as it did.
+    /// </summary>
+    [Fact]
+    public void A_resumed_target_is_handed_the_words_said_to_the_session_that_asked_while_it_waited()
+    {
+        var at = DateTimeOffset.Parse("2026-10-21T10:48:45Z");
+        var prompt = TargetPrompt.Compose(Target() with
+        {
+            Answered = Question(),
+            Handed =
+            [
+                new SaidWordView("w1", "Use the staging database,\nnot production.", at, [], Reopens: true),
+                new SaidWordView("w2", "The person reopened the work it grew from.", at, [], Reopens: true) { From = DaorisWords.From },
+            ],
+        });
+
+        var answer = prompt.IndexOf("> The endpoint is POST /notes", StringComparison.Ordinal);
+        var said = prompt.IndexOf("  > Use the staging database,\n  > not production.", StringComparison.Ordinal);
+        var daoris = prompt.IndexOf("  > The person reopened the work it grew from.", StringComparison.Ordinal);
+        Assert.True(answer >= 0 && said > answer && daoris > said, prompt);
+        Assert.Contains("the person wrote to that session", prompt);
+        Assert.Contains("Daoris told that session", prompt);
+
+        var none = TargetPrompt.Compose(Target() with { Answered = Question() });
+        Assert.DoesNotContain("wrote to that session", none);
+        Assert.DoesNotContain("Daoris told that session", none);
+    }
+
+    /// <summary>
+    /// SAYHELD1: the resume's record opens with the target, then each word it was handed from the session that asked under the id that
+    /// record gave it, the person's as theirs and Daoris's as Daoris's, so the conversation shows them where it took them (D137 §3.1).
+    /// </summary>
+    [Fact]
+    public void A_resume_opens_with_the_target_and_then_each_word_it_was_handed_under_its_id()
+    {
+        var at = DateTimeOffset.Parse("2026-10-21T10:48:45Z");
+        IReadOnlyList<SaidWordView> handed =
+        [
+            new SaidWordView("w1", "Use staging.", at, ["notes.txt"], Reopens: true),
+            new SaidWordView("w2", "A reopen was told.", at, [], Reopens: true) { From = DaorisWords.From },
+        ];
+
+        var opening = HarnessCapture.Opening("the target", null, handed: handed);
+
+        Assert.Equal(
+            [
+                ("user", "target", (string?)null, "the target", (string?)null),
+                ("user", "person", "w1", "Use staging.", null),
+                ("user", "target", "w2", "A reopen was told.", DaorisWords.From),
+            ],
+            opening.Select(e => (e.Kind, e.Origin, e.Id, e.Text, e.From)));
+        Assert.Equal(["notes.txt"], opening[1].Files);
+    }
+
     [Fact]
     public void A_declined_question_is_said_to_be_declined_with_its_reason()
     {
