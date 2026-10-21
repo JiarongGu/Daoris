@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { type MessageArrived, messageOf, type Notice } from '../bridge/notices';
 import type { ToastItem } from '../design/ui';
 import type { Confirmation } from '../person/Confirmations';
 
@@ -105,4 +106,103 @@ export function usePressAnnouncements({ presses, serviceRead = true, viewOpen, w
   };
 
   return { heard, toasts, close };
+}
+
+/** At most this many messages' ids are kept as said: past it the oldest go, each long since heard once. */
+const SAID = 200;
+
+/** The messages' toasts' ids, a space of their own beside the presses' (which count down from -1) and the window's (up from 1). */
+const MESSAGE_IDS = -1_000_000;
+
+/**
+ * The toasts that say an agent's or a teammate's urgent message to everyone came (NOTIFY2g, D196, the notification design §5): the
+ * shell's `MESSAGE`, which it says once per run while the notify switch is on, said here by a toast with *Open* in the window focused
+ * as it hears it, once per message.
+ *
+ * @remarks
+ * **Said on its arrival alone, by its id** (§5): the ids said are kept in memory, bounded, so an event heard twice is said once; a
+ * window not focused as it hears it says nothing, and the ask's item waits in *Messages*, counted by the bell's dot. An arrival missed
+ * is never said later. Only an urgent message to everyone is said, as the shell says only those: an ordinary one, or one to a single
+ * repository, only counts. **Its door** shows the ask's channel on its page; a secondary window holds no view, and its toast has no
+ * door. News, not a wait: the toast closes by its seven seconds. Nothing here reaches the desktop's notifications.
+ */
+export function useMessageAnnouncements({ words, openLabel, onOpen }: {
+  /** A message's toast in the reader's language: who wrote it, and its line as written. */
+  words: (arrived: MessageArrived) => string;
+  openLabel: string;
+  /** The toast's door: the ask's channel on its page. Absent in a window that holds no view. */
+  onOpen?: (arrived: MessageArrived) => void;
+}): {
+  /** A `MESSAGE` heard, as the shell told it. */
+  heard: (value: unknown) => void;
+  /** The toasts standing, the newest last. */
+  toasts: ToastItem[];
+  /** A toast closed, by the person or its seven seconds: true where it was one of these, which is then gone. */
+  close: (id: number) => boolean;
+} {
+  // What this window decided once for each message: said, or heard while it could not say it. Never said twice, never said later.
+  const decided = useRef(new Set<string>());
+  const [standing, setStanding] = useState<{ id: number; arrived: MessageArrived }[]>([]);
+  const next = useRef(MESSAGE_IDS);
+
+  const heard = useCallback((value: unknown) => {
+    const arrived = messageOf(value);
+    if (!arrived || arrived.newest.level !== 'urgent' || !arrived.newest.toEveryone) return;
+    if (decided.current.has(arrived.newest.id)) return;
+    decided.current.add(arrived.newest.id);
+    if (decided.current.size > SAID) decided.current.delete(decided.current.values().next().value!);
+    if (!looking()) return;
+    const id = next.current;
+    next.current -= 1;
+    setStanding((was) => [...was, { id, arrived }]);
+  }, []);
+
+  const toasts: ToastItem[] = standing.map(({ id, arrived }) => ({
+    id, kind: 'ok' as const, text: words(arrived), ...(onOpen ? { door: { label: openLabel, onOpen: () => onOpen(arrived) } } : {}),
+  }));
+
+  const close = (id: number) => {
+    if (!standing.some((each) => each.id === id)) return false;
+    setStanding((was) => was.filter((each) => each.id !== id));
+    return true;
+  };
+
+  return { heard, toasts, close };
+}
+
+/**
+ * A conversation's answer read where it is on screen (NOTIFY2g, the notification design §2.4): its `answered` notice is read when its
+ * conversation is the one this window attends, in a window visible and focused, which shows the answer on the page (the condition
+ * `ShellSignals` reads to keep the answer's toast off it). Looked at as the notices or the attended conversation move, and again as
+ * the window comes in front; each asked once, the read being the shell's to push to every window.
+ */
+export function useAnsweredRead({ answered, attended, onRead }: {
+  /** The window's `answered` notices. */
+  answered: readonly Notice[];
+  /** The conversation this window shows on its Sessions view now; null where none is. */
+  attended: string | null;
+  onRead: (ids: string[]) => void;
+}) {
+  const asked = useRef(new Set<string>());
+  const read = useRef(onRead);
+  read.current = onRead;
+  const unread = answered.filter((notice) => !notice.read && notice.session != null && notice.session === attended).map((notice) => notice.id);
+  const waiting = unread.join('\n');
+  useEffect(() => {
+    if (!waiting) return undefined;
+    const look = () => {
+      if (!looking()) return;
+      const ids = waiting.split('\n').filter((id) => !asked.current.has(id));
+      if (ids.length === 0) return;
+      for (const id of ids) asked.current.add(id);
+      read.current(ids);
+    };
+    look();
+    window.addEventListener('focus', look);
+    document.addEventListener('visibilitychange', look);
+    return () => {
+      window.removeEventListener('focus', look);
+      document.removeEventListener('visibilitychange', look);
+    };
+  }, [waiting]);
 }
