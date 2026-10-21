@@ -462,6 +462,13 @@ machine log design's §2). It is evidence about the machine, holds no one's word
 construction. **An age rule for clearing** was weighed and not chosen (§11): it would be the first thing in Daoris that
 removes records on its own, and the measured need, one install's 24 MB, is met by one listed press.
 
+**Amended 2026-10-22 by D195 point 7 (KEEP1g), as the owner decided it: nothing clears finished history by itself unless the
+person has set an age.** The default stays the press alone. Where the person sets an age (`driver.json`'s `keep.history`, 30 to
+3,650 days, on This Daoris's *Disk space* card or `daoris driver keep history`), the look's Keeping pass, once a day, lists each
+workspace through this design's first press and sends exactly the units whose last move (the newest of their quests' and
+sessions' moments) is older, judged again by both halves with every refusal of §1.2 holding; a unit whose moment is not known
+stays. Its line is §6.5's `history.cleared` with `door: rule` (the cleanup design §3.6).
+
 ## 8. Both languages
 
 Every name follows D116: its kind decides its form and budget, and a concept takes the glossary's term. A count is

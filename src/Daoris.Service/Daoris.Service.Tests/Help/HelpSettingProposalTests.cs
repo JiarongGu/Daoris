@@ -92,6 +92,9 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("keep", null, null, "set-aside whole")]
     [InlineData("keep", null, null, "downloads never")]
     [InlineData("keep", null, null, "logs default")]
+    // KEEP1g: history's age, the person's to apply.
+    [InlineData("keep", null, null, "history 365")]
+    [InlineData("keep", null, null, "history never")]
     // KNOWUSE1b: a standing answer for a repository, in the person's words, or cleared.
     [InlineData("standing", "engine", null, "dev writes allowed; test locally against dev; prod only on a yes")]
     [InlineData("standing", "engine", null, "--clear")]
@@ -364,7 +367,7 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("cap", null, null, "0", "a whole number, 1 or more")]
     [InlineData("cooloff", null, null, "0", "a whole number of minutes, 1 or more")]
     [InlineData("cooloff", null, null, "soon", "a whole number of minutes, 1 or more")]
-    [InlineData("keep", null, null, "history 30", "`keep` names a kind and its rule")]
+    [InlineData("keep", null, null, "browser-cache 30", "`keep` names a kind and its rule")]
     [InlineData("keep", null, null, "set-aside", "`keep` names a kind and its rule")]
     [InlineData("keep", "engine", null, "set-aside 30", "for this machine")]
     [InlineData("adapter", null, null, null, "an agent")]

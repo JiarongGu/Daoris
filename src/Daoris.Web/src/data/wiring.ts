@@ -136,7 +136,7 @@ export type SpaceKind = {
 };
 
 /** One kind's keep rule as the *Disk space* card's *Change…* sets it (KEEP1d, `SET_KEEP`): its days, `never`, `whole` or not, or its default. */
-export type KeepSet = { kind: 'set-aside' | 'downloads' | 'logs'; days?: number; never?: true; whole?: boolean; default?: true };
+export type KeepSet = { kind: 'set-aside' | 'downloads' | 'logs' | 'history'; days?: number; never?: true; whole?: boolean; default?: true };
 
 /**
  * A run of *Free up space…* (KEEP1e, the cleanup design §3.3): its id and door, when it started and ended, how it ended (`done` every

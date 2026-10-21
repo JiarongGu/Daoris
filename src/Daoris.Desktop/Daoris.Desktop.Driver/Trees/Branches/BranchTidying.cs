@@ -179,6 +179,19 @@ public sealed class BranchTidying(string home)
     private DateTimeOffset? _logsDaily;
     private TimeSpan? _logsDays;
 
+    // KEEP1g: the same for finished history's daily clear at the person's age.
+    private DateTimeOffset? _historyDaily;
+    private TimeSpan? _historyDays;
+
+    /// <summary>
+    /// This machine's session processes, which history's daily clear judges a live session by (KEEP1g); the watch names the loop's, and
+    /// none reads the home's markers.
+    /// </summary>
+    public SessionProcesses? Processes { get; init; }
+
+    /// <summary>The loop's record of conversations, so history's daily clear forgets a cleared one's numbering (KEEP1g); null removes the files alone.</summary>
+    public SessionEvents? Events { get; init; }
+
     /// <summary>How often the downloads' rule removes what is past its days (the cleanup design §3.1, step 5).</summary>
     public static readonly TimeSpan DownloadsPace = TimeSpan.FromDays(1);
 
@@ -188,7 +201,8 @@ public sealed class BranchTidying(string home)
     /// this look and names the holder, once; else the set-aside kind's removal, the purge at the policy's days then the slims due, within
     /// the pass's budget; then <c>keeping.json</c>'s <c>last</c> for the kind, where it removed something or newly kept a path. Then the
     /// downloads' rule (KEEP1b, <see cref="DownloadKeeping"/>): each version's unused stretch each pass, and once a day, or at once after
-    /// the rule changed, the versions past their days. Then the machine log's daily prune at the person's days (KEEP1d).
+    /// the rule changed, the versions past their days. Then the machine log's daily prune at the person's days (KEEP1d), and finished
+    /// history's daily clear where the person set an age (KEEP1g, <see cref="HistoryKeeping"/>).
     /// </summary>
     private async Task<IReadOnlyList<string>> KeepAsync(SessionTrees trees, ServiceClient service, MachineLog? log, HashSet<string> met, CancellationToken ct)
     {
@@ -198,9 +212,12 @@ public sealed class BranchTidying(string home)
         bool logsDue;
         lock (_gate) logsDue = _logsDaily is not { } pruned || Clock() - pruned >= DownloadsPace || _logsDays != logs.Days;
         logsDue = logsDue && MachineLog.HoldsOlder(home, Clock(), (int)logs.Days.TotalDays);
-        // Nothing set aside, nothing downloaded and no log's day due, nothing to keep: the run lock and its holder's file are not written
-        // every pace for nothing.
-        if (!setAside && !Downloaded() && !logsDue) return lines;
+        var history = Policy(home).History;
+        bool historyDue;
+        lock (_gate) historyDue = history.Days is not null && (_historyDaily is not { } cleared || Clock() - cleared >= DownloadsPace || _historyDays != history.Days);
+        // Nothing set aside, nothing downloaded, no log's day and no history's clear due, nothing to keep: the run lock and its holder's
+        // file are not written every pace for nothing.
+        if (!setAside && !Downloaded() && !logsDue && !historyDue) return lines;
         using var run = KeepingRun.TryTake(home, KeepingRun.Look);
         if (run is null)
         {
@@ -223,6 +240,7 @@ public sealed class BranchTidying(string home)
         var left = Budget - spent.Elapsed;
         lines.AddRange(await KeepDownloadsAsync(service, run, left > TimeSpan.Zero ? left : TimeSpan.Zero, log, met, ct).ConfigureAwait(false));
         if (logsDue) lines.AddRange(KeepLogs(logs, run, met));
+        if (historyDue) lines.AddRange(await KeepHistoryAsync(service, history, run, log, met, ct).ConfigureAwait(false));
 
         // KEEP1c (the cleanup design §3.1 step 6, §4.3): each kind counted at most once a day, and the kinds this run wrote a `last` for at
         // its end, in the background, so the card's sizes follow the rules without a page's open walking anything.
@@ -338,6 +356,80 @@ public sealed class BranchTidying(string home)
             lock (_gate)
             {
                 if (First(met, "", KeepingRecord.PathOf(home), "unwritten")) lines.Add(Look.Of(LookClass.Retry, "tidy", $"tidy  {Clause(refused)}."));
+            }
+        }
+
+        return lines;
+    }
+
+    /// <summary>
+    /// Finished history's rule, holding the home's run (KEEP1g; the cleanup design §3.1 step 5, §3.6): once a day, or at once after the
+    /// person's age changed, each workspace's finished units past it go through the clear itself, every refusal holding; what went said in
+    /// the report and in <c>history.cleared</c> with <c>door: rule</c>, each unit past its days that stayed said once while it stays, and
+    /// <c>last.history</c> written where one went. A service that did not answer is said once and tried at the next pass.
+    /// </summary>
+    private async Task<IReadOnlyList<string>> KeepHistoryAsync(
+        ServiceClient service, HistoryPolicy policy, KeepingRun run, MachineLog? log, HashSet<string> met, CancellationToken ct)
+    {
+        var lines = new List<string>();
+        var read = KeepingRecord.Read(home);
+        var days = policy.Days!.Value.TotalDays;
+        var world = new HistoryWorld(
+            service, home, ConfigPath ?? DriverConfig.ResolvePath(home), Processes ?? new SessionProcesses(DaorisHome.Entry(home, HomeEntry.SessionPids)))
+        {
+            Events = Events,
+            Log = log,
+            Clock = Clock,
+        };
+
+        HistoryKeepingPass pass;
+        try
+        {
+            pass = await HistoryKeeping.PassAsync(world, policy, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or JsonException
+                                      || (error is TaskCanceledException && !ct.IsCancellationRequested))
+        {
+            lock (_gate)
+            {
+                if (First(met, "", "history", "unread"))
+                {
+                    lines.Add(Look.Retry("tidy", $"tidy  finished history past {days:0} days was not cleared this look, since the service did not answer: "
+                        + $"{Clause(error.Message)}; a later look tries again."));
+                }
+            }
+
+            return lines;
+        }
+
+        var newly = 0;
+        lock (_gate)
+        {
+            _historyDaily = Clock();
+            _historyDays = policy.Days;
+            if (pass.Cleared > 0)
+            {
+                lines.Add(Look.Progress("tidy", $"tidy  cleared {pass.Cleared} unit(s) of finished history whose last move was over {days:0} days ago "
+                    + $"({Size(pass.Bytes)}), by the age you set."));
+            }
+
+            foreach (var unit in pass.Kept)
+            {
+                var keep = unit.Keep ?? new HistoryKeep(HistoryWords.Unknown, "it could not be judged again");
+                if (!First(met, "", $"history/{unit.Kind}/{unit.Id}", "kept-" + keep.Word)) continue;
+                newly++;
+                lines.Add(Look.Progress("tidy", $"tidy  {(unit.Kind == HistoryKinds.Ask ? "ask" : "quest")} #{unit.Id}'s finished history stays past "
+                    + $"{days:0} days: {Clause(keep.Message)}."));
+            }
+        }
+
+        if (pass.Cleared == 0 && newly == 0) return lines;
+        var last = new KeepingLast(Clock(), run.Door, run.Id, pass.Cleared, pass.Bytes, pass.KeptBy);
+        if (KeepingRecord.WriteLast(home, read, KeepKinds.History.Id, last) is { } refused)
+        {
+            lock (_gate)
+            {
+                if (First(met, "", KeepingRecord.PathOf(home), "unwritten")) lines.Add(Look.Retry("tidy", $"tidy  {Clause(refused)}."));
             }
         }
 

@@ -102,6 +102,8 @@ internal sealed class HistoryStandIn : HttpMessageHandler
         {
             return path switch
             {
+                // KEEP1g: the look's pass reads the registry before its Keeping pass; none here.
+                "/api/registry" => Answer(HttpStatusCode.OK, new JsonArray()),
                 "/api/sessions" => Answer(HttpStatusCode.OK, new JsonArray([.. Records.Select(record => record.DeepClone())])),
                 "/api/quests" => Answer(HttpStatusCode.OK, new JsonArray([.. Quests.Select(quest => quest.DeepClone())])),
                 "/api/asks" => Answer(HttpStatusCode.OK, new JsonArray([.. Asks.Select(ask => ask.DeepClone())])),

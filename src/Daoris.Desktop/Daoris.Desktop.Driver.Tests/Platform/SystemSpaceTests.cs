@@ -80,8 +80,9 @@ public sealed class SystemSpaceTests : IDisposable
             Assert.Null(kind!["bytes"]);
             Assert.Null(kind["measured"]);
             Assert.False((bool)kind["counting"]!);
-            // KEEP1d: the person sets the set-aside folders', the downloads' and the logs' rules; the rest are not theirs here.
-            Assert.Equal((string?)kind["id"] is "set-aside" or "downloads" or "logs", (bool)kind["settable"]!);
+            // KEEP1d: the person sets the set-aside folders', the downloads' and the logs' rules, and history's age (KEEP1g); the rest are
+            // not theirs here.
+            Assert.Equal((string?)kind["id"] is "set-aside" or "downloads" or "logs" or "history", (bool)kind["settable"]!);
         });
         Assert.All(SpaceKinds.Table, kind => Assert.Null(world.Sizes.Of(_home, kind.Id)));
         Assert.Equal(143L << 30, (long)space["volume"]!["free"]!);
@@ -233,7 +234,8 @@ public sealed class SystemSpaceTests : IDisposable
         Assert.Null(KindOf(unread, "set-aside")["last"]);
         Assert.Equal("unreadable", (string?)KindOf(unread, "set-aside")["lastWhy"]);
         Assert.Equal("unreadable", (string?)KindOf(unread, "logs")["lastWhy"]);
-        Assert.Null(KindOf(unread, "history")["lastWhy"]);
+        Assert.Equal("unreadable", (string?)KindOf(unread, "history")["lastWhy"]);
+        Assert.Null(KindOf(unread, "trees")["lastWhy"]);
     }
 
     /// <summary>
@@ -249,6 +251,7 @@ public sealed class SystemSpaceTests : IDisposable
             .WithKeep(new KeepSet("set-aside", Days: 30, Whole: true))
             .WithKeep(new KeepSet("downloads", Never: true))
             .WithKeep(new KeepSet("logs", Days: 14))
+            .WithKeep(new KeepSet("history", Days: 365))
             .Save(config);
         Write(Path.Combine(DaorisHome.Entry(_home, HomeEntry.Logs), "2026-10-15.driver.jsonl"), 50);
 
@@ -261,7 +264,10 @@ public sealed class SystemSpaceTests : IDisposable
         Assert.Equal("{\"min\":1,\"max\":90,\"whole\":true,\"never\":false}", KindOf(space, "set-aside")["bounds"]!.ToJsonString());
         Assert.Equal("{\"min\":0,\"max\":365,\"whole\":false,\"never\":true}", KindOf(space, "downloads")["bounds"]!.ToJsonString());
         Assert.Equal("{\"min\":7,\"max\":30,\"whole\":false,\"never\":false}", KindOf(space, "logs")["bounds"]!.ToJsonString());
-        Assert.Null(KindOf(space, "history")["bounds"]);
+        // KEEP1g: history's age, its default the press alone.
+        Assert.Equal(("days", "365", "false"), (Rule("history", "kind"), Rule("history", "days"), Rule("history", "default")));
+        Assert.Equal("{\"min\":30,\"max\":3650,\"whole\":false,\"never\":true}", KindOf(space, "history")["bounds"]!.ToJsonString());
+        Assert.Null(KindOf(space, "trees")["bounds"]);
         Assert.Equal(new DateTimeOffset(2026, 10, 29, 0, 0, 0, TimeSpan.Zero),
             DateTimeOffset.Parse((string)KindOf(space, "logs")["next"]!["at"]!, System.Globalization.CultureInfo.InvariantCulture));
     }

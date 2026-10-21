@@ -46,8 +46,22 @@ public static class KeepKinds
         TimeSpan.FromDays(MachineLog.KeptDays), MinDays: 7, MaxDays: MachineLog.KeptDays, MaySetWhole: false,
         Remover: "the log's prune, each process's at its open and the look's daily at the person's days");
 
+    /// <summary>
+    /// Finished history (KEEP1g, D195 point 7, decided by the owner; the cleanup design §3.6): nothing of it is made again, and by default
+    /// none goes by an age, the person's clear alone (the history clearing design §7). The person may set an age of 30 to 3,650 days: once a
+    /// day each workspace's finished units whose last move is older go through the clear itself, every refusal holding
+    /// (<see cref="HistoryKeeping"/>); <c>never</c> is the default again.
+    /// </summary>
+    public static KeepKind History { get; } = new(
+        "history", [HomeEntry.Sessions.Name, HomeEntry.Workflows.Name], "nothing: a record cleared is gone from this machine",
+        TimeSpan.Zero, MinDays: 30, MaxDays: 3650, MaySetWhole: false, Remover: "the clear, each refusal holding")
+    {
+        MaySetNever = true,
+        NeverByDefault = true,
+    };
+
     /// <summary>Every kind with a rule that runs, in the order the card will show them.</summary>
-    public static IReadOnlyList<KeepKind> Table { get; } = [SetAside, Downloads, Logs];
+    public static IReadOnlyList<KeepKind> Table { get; } = [SetAside, Downloads, Logs, History];
 
     /// <summary>The kind of this id, or null where the table holds none.</summary>
     public static KeepKind? Named(string id) => Table.FirstOrDefault(kind => string.Equals(kind.Id, id, StringComparison.Ordinal));
@@ -67,13 +81,16 @@ public sealed record KeepKind(
 {
     /// <summary>Whether the person may set <c>never</c>: none by its days, the press alone (the downloads', KEEP1b).</summary>
     public bool MaySetNever { get; init; }
+
+    /// <summary>Whether its default is <c>never</c>, the press alone, so <see cref="Days"/> is not read (history's, KEEP1g).</summary>
+    public bool NeverByDefault { get; init; }
 }
 
 /// <summary>
 /// The one effective policy (the cleanup design §2.1, Codex 5.2): the table's defaults under the person's choices, the only reader of a
 /// kind's days. Every place that says or acts on the set-aside folders' days reads it: the purge, the look's report, the work inventory
 /// and the terminal's trees list; the downloads' days, the look's pass and the Downloads row (KEEP1b); the logs' days, the look's daily
-/// prune and the card (KEEP1d).
+/// prune and the card (KEEP1d); history's age, the look's daily clear and the card (KEEP1g).
 /// </summary>
 /// <param name="SetAside">The set-aside folders' rule.</param>
 public sealed record KeepPolicy(SetAsidePolicy SetAside)
@@ -83,7 +100,8 @@ public sealed record KeepPolicy(SetAsidePolicy SetAside)
 
     /// <summary>
     /// The policy where the person's choices do not read (KEEP1d): what keeps the most, never the least, since a failure keeps (the
-    /// cleanup design §6 point 7): the set-aside folders whole for their most days, no download by its days, the logs their thirty.
+    /// cleanup design §6 point 7): the set-aside folders whole for their most days, no download by its days, the logs their thirty, no
+    /// history by an age.
     /// </summary>
     public static KeepPolicy Unread { get; } = new(new SetAsidePolicy(TimeSpan.FromDays(KeepKinds.SetAside.MaxDays), Whole: true))
     {
@@ -97,12 +115,16 @@ public sealed record KeepPolicy(SetAsidePolicy SetAside)
     /// <summary>The machine log's rule (KEEP1d): thirty days by default.</summary>
     public LogsPolicy Logs { get; init; } = new(KeepKinds.Logs.Days);
 
+    /// <summary>Finished history's rule (KEEP1g): no age by default, the person's clear alone.</summary>
+    public HistoryPolicy History { get; init; } = new(null);
+
     /// <summary>The policy the person's <paramref name="choices"/> make over the table's defaults.</summary>
     public static KeepPolicy From(KeepChoices choices) =>
         new(new SetAsidePolicy(choices.SetAsideDays is { } days ? TimeSpan.FromDays(days) : KeepKinds.SetAside.Days, choices.SetAsideWhole))
         {
             Downloads = new(choices.DownloadsNever ? null : choices.DownloadsDays is { } kept ? TimeSpan.FromDays(kept) : KeepKinds.Downloads.Days),
             Logs = new(choices.LogsDays is { } logs ? TimeSpan.FromDays(logs) : KeepKinds.Logs.Days),
+            History = new(choices.HistoryDays is { } age ? TimeSpan.FromDays(age) : null),
         };
 
     /// <summary>
@@ -134,3 +156,9 @@ public sealed record DownloadsPolicy(TimeSpan? Days);
 
 /// <summary>The machine log's rule (KEEP1d): how many days of files are kept, today included.</summary>
 public sealed record LogsPolicy(TimeSpan Days);
+
+/// <summary>
+/// Finished history's rule (KEEP1g, decided by the owner): the age past a unit's last move at which the look's daily clear takes it; null,
+/// the default, is <c>never</c>: nothing clears it by itself (the history clearing design §7 as D195 amends it).
+/// </summary>
+public sealed record HistoryPolicy(TimeSpan? Days);

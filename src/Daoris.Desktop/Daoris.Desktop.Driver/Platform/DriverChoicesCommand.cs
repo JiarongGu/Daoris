@@ -853,8 +853,8 @@ public static class DriverChoicesCommand
     /// <summary><c>keep &lt;kind&gt; &lt;value&gt;</c>'s words read as the rule they set (KEEP1d); anything else is its usage.</summary>
     private static KeepSet KeepAsked(IReadOnlyList<string> args)
     {
-        const string Usage = "`driver keep` needs a kind and its rule — `set-aside <days>|whole|slim|default`, `downloads <days>|never|default` "
-            + "or `logs <days>|default`; e.g. `daoris driver keep set-aside 30`.";
+        const string Usage = "`driver keep` needs a kind and its rule — `set-aside <days>|whole|slim|default`, `downloads <days>|never|default`, "
+            + "`logs <days>|default` or `history <days>|never|default`; e.g. `daoris driver keep set-aside 30`.";
         if (args.Count != 3) throw new ChoiceWords(Usage);
         try
         {

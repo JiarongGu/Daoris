@@ -5,8 +5,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// The person's keep rules (KEEP1d, D195 point 2; the cleanup design §2.2): <c>driver.json</c>'s <c>keep</c>, a standing choice in one
 /// object, each key absent meaning its kind's default in <see cref="KeepKinds"/>. This row's kinds: the set-aside folders' days and
-/// <c>whole</c>, the downloads' days or <c>never</c>, and the logs' days. The floor (KEEP1f) and history's age (KEEP1g) arrive with the
-/// acts they govern; a key this build does not know stays where it stands (<see cref="JsonKeeping"/>).
+/// <c>whole</c>, the downloads' days or <c>never</c>, the logs' days, and history's age (KEEP1g), none by default. The floor (KEEP1f)
+/// arrives with the act it governs; a key this build does not know stays where it stands (<see cref="JsonKeeping"/>).
 /// </summary>
 /// <remarks>
 /// <para><b>Read as a stored shape</b>: a value out of its kind's bounds, or of a kind it is not, is not read, so its kind keeps its
@@ -32,11 +32,14 @@ public sealed record KeepChoices
     /// <summary>The machine log's days, or null for the default thirty.</summary>
     public int? LogsDays { get; init; }
 
+    /// <summary>Finished history's age in days (KEEP1g), or null for the default: <c>never</c>, the person's clear alone.</summary>
+    public int? HistoryDays { get; init; }
+
     /// <summary>No choice made: every kind at its default.</summary>
     public static KeepChoices None { get; } = new();
 
     /// <summary>The kinds the person sets in this build, by id, in the table's order.</summary>
-    public static IReadOnlyList<KeepKind> Settable { get; } = [KeepKinds.SetAside, KeepKinds.Downloads, KeepKinds.Logs];
+    public static IReadOnlyList<KeepKind> Settable { get; } = [KeepKinds.SetAside, KeepKinds.Downloads, KeepKinds.Logs, KeepKinds.History];
 
     /// <summary>Whether <paramref name="kind"/>'s rule is its default: nothing of it chosen.</summary>
     public bool IsDefault(string kind) => kind switch
@@ -44,6 +47,7 @@ public sealed record KeepChoices
         "set-aside" => SetAsideDays is null && !SetAsideWhole,
         "downloads" => DownloadsDays is null && !DownloadsNever,
         "logs" => LogsDays is null,
+        "history" => HistoryDays is null,
         _ => true,
     };
 
@@ -69,6 +73,8 @@ public sealed record KeepChoices
         }
 
         if (Kind(keep, "logs") is { } logs) choices = choices with { LogsDays = Days(logs, KeepKinds.Logs) };
+        // `history.days` written null is `never`, its default, so it reads as none.
+        if (Kind(keep, "history") is { } history) choices = choices with { HistoryDays = Days(history, KeepKinds.History) };
         return choices;
     }
 
@@ -100,6 +106,13 @@ public sealed record KeepChoices
             writer.WriteEndObject();
         }
 
+        if (HistoryDays is { } history)
+        {
+            writer.WriteStartObject("history");
+            writer.WriteNumber("days", history);
+            writer.WriteEndObject();
+        }
+
         writer.WriteEndObject();
     }
 
@@ -118,9 +131,9 @@ public sealed record KeepChoices
 /// One kind's rule as the person sets it (KEEP1d): its days, <c>never</c>, <c>whole</c> or not, or back to its default. What
 /// <c>SET_KEEP</c> carries and <c>daoris driver keep</c> reads from its words; <see cref="KeepRules.Apply"/> judges it.
 /// </summary>
-/// <param name="Kind">The kind's id: <c>set-aside</c>, <c>downloads</c> or <c>logs</c>.</param>
+/// <param name="Kind">The kind's id: <c>set-aside</c>, <c>downloads</c>, <c>logs</c> or <c>history</c>.</param>
 /// <param name="Days">Its days, where given.</param>
-/// <param name="Never">The downloads' <c>never</c>.</param>
+/// <param name="Never">The downloads' or history's <c>never</c>.</param>
 /// <param name="Whole">The set-aside folders kept whole (true) or slimmed (false), where given.</param>
 /// <param name="Default">Its default again: every other field is then none.</param>
 public sealed record KeepSet(string Kind, int? Days = null, bool Never = false, bool? Whole = null, bool Default = false);
@@ -164,6 +177,8 @@ public static class KeepRules
             "downloads" => set.Never
                 ? keep with { DownloadsNever = true, DownloadsDays = null }
                 : keep with { DownloadsNever = false, DownloadsDays = set.Days },
+            // History's `never` is its default: no age, written as nothing (KEEP1g).
+            "history" => keep with { HistoryDays = set.Never ? null : set.Days },
             _ => keep with { LogsDays = set.Days },
         };
         return config with { Keep = keep };
@@ -203,6 +218,9 @@ public static class KeepRules
             "downloads" => policy.Downloads.Days is { } days
                 ? $"a downloaded version nothing uses goes {days.TotalDays:0} days into its unused stretch"
                 : "a downloaded version nothing uses stays until you remove it",
+            "history" => policy.History.Days is { } age
+                ? $"finished work's records go {age.TotalDays:0} days after their last move, through the clear, each refusal holding"
+                : "finished work's records stay until you clear them",
             _ => $"each day's file of the machine log is kept {policy.Logs.Days.TotalDays:0} days",
         };
     }
@@ -220,6 +238,7 @@ public static class KeepRules
     {
         "set-aside" => keep with { SetAsideDays = null, SetAsideWhole = false },
         "downloads" => keep with { DownloadsDays = null, DownloadsNever = false },
+        "history" => keep with { HistoryDays = null },
         _ => keep with { LogsDays = null },
     };
 

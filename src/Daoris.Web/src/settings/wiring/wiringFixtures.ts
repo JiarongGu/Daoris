@@ -237,7 +237,10 @@ export const SPACE: SystemSpace = {
       settable: true, bounds: { min: 7, max: 30, whole: false, never: false },
       next: { at: '2026-10-31T00:00:00.000+00:00', count: 2, bytes: 400_000 },
     }),
-    spaceKind('history', { entries: ['sessions', 'workflows'], bytes: 62 * 1024 ** 2, rule: { kind: 'press', days: null, whole: null, default: true, whose: null } }),
+    spaceKind('history', {
+      entries: ['sessions', 'workflows'], bytes: 62 * 1024 ** 2, rule: { kind: 'press', days: null, whole: null, default: true, whose: null },
+      settable: true, bounds: { min: 30, max: 3650, whole: false, never: true },
+    }),
     spaceKind('trees', { entries: ['trees'], bytes: 2.1 * GB, rule: { kind: 'proof', days: null, whole: null, default: true, whose: null } }),
     spaceKind('sign-ins', { bytes: 0.7 * GB, rule: { kind: 'own', days: null, whole: null, default: true, whose: 'agents' } }),
     spaceKind('left-over', { bytes: 282 * 1024 ** 2, rule: { kind: 'own', days: null, whole: null, default: true, whose: 'person' } }),
@@ -271,7 +274,12 @@ export const SPACE_SET: SystemSpace = {
     kind.id === 'set-aside' ? { ...kind, rule: { ...kind.rule, days: 30, whole: true, default: false } }
       : kind.id === 'downloads' ? { ...kind, rule: { ...kind.rule, kind: 'never', days: null, default: false } }
         : kind.id === 'logs' ? { ...kind, rule: { ...kind.rule, days: 14, default: false } }
-          : kind)),
+          // KEEP1g: an age set for finished history, its last clear the look's.
+          : kind.id === 'history' ? {
+            ...kind, rule: { ...kind.rule, kind: 'days', days: 365, default: false },
+            last: { at: '2026-10-16T08:12:00.000+00:00', door: 'look', removed: { count: 4, bytes: 12 * 1024 ** 2 }, kept: { 'needs-you': 1 } },
+          }
+            : kind)),
 };
 
 /** A run a crash cut short, said beside the card's rows until the next run ends. */

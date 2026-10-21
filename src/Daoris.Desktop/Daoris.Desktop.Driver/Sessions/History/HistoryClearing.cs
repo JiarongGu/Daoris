@@ -37,7 +37,8 @@ public sealed record HistoryWorld(ServiceClient Service, string Home, string Con
 ///
 /// <para><b>Never</b> a tree or a branch, an open or taken quest, what waits on the person, the team's copy on a remote,
 /// the machine log, the usage, the accounts, or a folder Daoris did not write (§1.3). <b>Nothing clears by itself</b>
-/// (§7): only a press calls this.</para>
+/// (§7) unless the person set an age: a press calls this, or the look's daily clear at that age (KEEP1g, <see cref="HistoryKeeping"/>),
+/// whose line says <c>rule</c>.</para>
 /// </remarks>
 public static class HistoryClearing
 {

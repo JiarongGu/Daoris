@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- You may now set an age for finished work's records: on the *Disk space* card's *Conversations and records* row (*Change…*), with
+  `daoris driver keep history <days>|never|default`, or through Ask Daoris's proposal you apply. Between 30 and 3,650 days; by default
+  none, and nothing clears your history by itself, as before. With an age set, once a day each workspace's finished work whose last
+  move is older is cleared from this machine as *Clear history…* clears it: work that is open, running, waits on you, still has a tree
+  or branch here or has not reached the remote stays, and is said. The card shows the age and the last clear; the machine log's
+  `history.cleared` says `rule`. In English and 中文.
 - *Done and failed* in *Notifications* now also lists, in your language, a meeting or a brainstorm that stopped because something
   failed, an ask for a helper refused because the session that asked it left this machine, a reopen that reached no session here or
   whose session's tree is gone, and a plugin that stopped after exiting three times within an hour.
