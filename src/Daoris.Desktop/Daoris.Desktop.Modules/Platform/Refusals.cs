@@ -171,6 +171,12 @@ public static class Refusals
     public const string QuestPaused = Daoris.Driver.ChoiceCodes.QuestPaused;
 
     /// <summary>
+    /// A keep rule out of its kind's bounds, or a choice its kind does not take (KEEP1d, the cleanup design §2.2): said under the row's
+    /// editor, the editor kept open. Its <c>kind</c>, <c>min</c> and <c>max</c> name the bounds.
+    /// </summary>
+    public const string KeepOutOfRange = Daoris.Driver.ChoiceCodes.KeepOutOfRange;
+
+    /// <summary>
     /// A work asked of an ask this machine has no record of, or a quest not here (PAUSE1b, D132 §7.3): nothing to plan, pause
     /// or resume. Its <c>id</c> names it; a quest's travels as the catalogue's <c>context</c> <c>quest</c>.
     /// </summary>

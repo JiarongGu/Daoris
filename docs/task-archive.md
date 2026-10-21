@@ -19234,3 +19234,11 @@ Through the running Daoris the open read `NOTIFICATIONS` answers its lines from 
 and JSON through the instance and alone, the usage line), `NotificationsReadTests` (modules: the look, the route changing nothing,
 the groups held to the page's), the census and publishing rows. Not run from an installed terminal. Detail: D196's NOTIFY2i note.
 On Opus.
+## KEEP1d — the person sets each rule, on the page and at the terminal (2026-10-22, D195)
+
+> - [ ] **KEEP1d — the person sets each rule, on the page and at the terminal** (driver, modules, web-settings, cli; after KEEP1c; D195, the cleanup design §9). `driver.json`'s `keep` for the set-aside folders, the downloads and the logs: `SET_KEEP`, `daoris driver keep`, each row's editor. Proof: as §9 names it.
+
+**Outcome** 2026-10-22: built. `driver.json`'s `keep` (`KeepChoices`), judged by `KeepRules.Apply` on every door and read by
+`KeepPolicy.Of`, so the six readers of the set-aside days say a set value; `SET_KEEP` (`Person`), `daoris driver keep [<kind> <rule>]`,
+each row's *Change…* on the *Disk space* card with its refusal under the editor, Ask Daoris's `keep` door, and the look's daily prune
+of the machine log at the person's days. A `driver.json` that does not read keeps the most. Detail: D195's KEEP1d note. On Opus.

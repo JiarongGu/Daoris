@@ -258,6 +258,27 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
+    // One kind's keep rule (KEEP1d, D195 point 2; the cleanup design §2.2, §4.4): the set-aside folders' days, `whole` or not, the
+    // downloads' days or `never`, the logs' days, or a kind's default again; the same `keep` `daoris driver keep` edits, judged by the
+    // one judgement (`KeepRules.Apply`) before anything is written, a value out of its bounds refused as KEEP_OUT_OF_RANGE. What the
+    // Disk space card shows moves with it, so it declares the wiring with the state.
+    [DriverRoute("SET_KEEP")]
+    [Publishes("SET_KEEP", StateScopes.Driver | StateScopes.Wiring)]
+    private object? SetKeep(IpcRequest request)
+    {
+        var whole = request.Payload is { } payload && payload.TryGetProperty("whole", out var said)
+            ? said.ValueKind switch { JsonValueKind.True => true, JsonValueKind.False => (bool?)false, _ => null }
+            : null;
+        var set = new KeepSet(
+            PayloadHelper.GetRequiredValue<string>(request.Payload, "kind"),
+            Number(request, "days") is { } days ? (int)Math.Clamp(days, int.MinValue, int.MaxValue) : null,
+            Flag(request, "never"),
+            whole,
+            Flag(request, "default"));
+        _context.Change(config => KeepRules.Apply(config, set));
+        return State(_loop);
+    }
+
     // How many sessions Daoris starts at once on this machine (CAPSET1, D130's CAPCOUNT1 note): the person's dial, the same
     // `cap` `daoris driver cap <n>` edits — one truth, two doors (D50). Less than one is the driver's refusal.
     [DriverRoute("SET_CAP")]

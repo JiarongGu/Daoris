@@ -20,8 +20,8 @@ public sealed record SpacePlaces(IReadOnlyList<string> Places, IReadOnlyList<str
 
 /// <summary>
 /// The card's rows, in its order (the cleanup design §4.1), and where each lies. Every rule a row shows already runs (§9): the set-aside
-/// folders' days and slim (KEEP1a), the downloads' days (KEEP1b), the machine log's thirty days, history's press, the trees' clean-up;
-/// the rest say whose rule it is. No row shows an editor: each rule's <i>Change…</i> arrives with the row that sets it (KEEP1d).
+/// folders' days and slim (KEEP1a), the downloads' days (KEEP1b), the machine log's days, history's press, the trees' clean-up; the rest
+/// say whose rule it is. The person sets the first three (KEEP1d, <see cref="KeepChoices.Settable"/>), each row's <i>Change…</i>.
 /// </summary>
 public static class SpaceKinds
 {
@@ -31,7 +31,7 @@ public static class SpaceKinds
         new("set-aside", "days", null, KeepKinds.SetAside),
         new("downloads", "days", null, KeepKinds.Downloads),
         new("browser-cache", "own", "browser", null),
-        new("logs", "days", null, null),
+        new("logs", "days", null, KeepKinds.Logs),
         new("history", "press", null, null),
         new("trees", "proof", null, null),
         new("sign-ins", "own", "agents", null),
@@ -419,8 +419,12 @@ public static class SystemSpace
             // KEEP1f's: a kind's entry on another volume than the Daoris folder's.
             ["volume"] = null,
             ["rule"] = Rule(kind, policy),
-            // KEEP1d's: the person sets no rule yet.
-            ["settable"] = false,
+            // KEEP1d: the person sets the rules of the kinds `KeepChoices.Settable` names, on the card's *Change…* and `daoris driver keep`.
+            ["settable"] = kind.Keeps is { } settable && KeepChoices.Settable.Contains(settable),
+            // KEEP1d: what the person may set, so the editor offers the kind's own choices and the driver's bounds, never a copy of them.
+            ["bounds"] = kind.Keeps is { } bounded && KeepChoices.Settable.Contains(bounded)
+                ? new JsonObject { ["min"] = bounded.MinDays, ["max"] = bounded.MaxDays, ["whole"] = bounded.MaySetWhole, ["never"] = bounded.MaySetNever }
+                : null,
             ["next"] = next,
             ["nextWhy"] = nextWhy,
             ["last"] = last is null ? null : Last(last),
@@ -444,7 +448,8 @@ public static class SystemSpace
                 rule["default"] = policy.Downloads == KeepPolicy.Default.Downloads;
                 break;
             case "logs":
-                rule["days"] = MachineLog.KeptDays;
+                rule["days"] = (int)policy.Logs.Days.TotalDays;
+                rule["default"] = policy.Logs == KeepPolicy.Default.Logs;
                 break;
         }
 
@@ -475,7 +480,7 @@ public static class SystemSpace
             {
                 "set-aside" => SetAsideNext(world.Home, policy, reading),
                 "downloads" => DownloadsNext(world, policy, record, now),
-                "logs" => LogsNext(world.Home),
+                "logs" => LogsNext(world.Home, policy),
                 _ => (null, null),
             };
         }
@@ -528,8 +533,11 @@ public static class SystemSpace
         return Earliest(goes, null);
     }
 
-    /// <summary>The machine log: a day's files go once it is thirty days old, at the next process's open (<see cref="MachineLog.Prune"/>).</summary>
-    private static (JsonObject? Next, string? Why) LogsNext(string home)
+    /// <summary>
+    /// The machine log: a day's files go once they are the policy's days old (KEEP1d), at the look's daily prune or the next process's open
+    /// (<see cref="MachineLog.Prune(int)"/>).
+    /// </summary>
+    private static (JsonObject? Next, string? Why) LogsNext(string home, KeepPolicy policy)
     {
         var folder = DaorisHome.Entry(home, HomeEntry.Logs);
         if (!Directory.Exists(folder)) return (null, null);
@@ -555,7 +563,7 @@ public static class SystemSpace
 
         if (days.Count == 0) return (null, null);
         var oldest = days.Keys.Min();
-        var at = new DateTimeOffset(DateTime.SpecifyKind(oldest.AddDays(MachineLog.KeptDays), DateTimeKind.Utc));
+        var at = new DateTimeOffset(DateTime.SpecifyKind(oldest.AddDays(policy.Logs.Days.TotalDays), DateTimeKind.Utc));
         return (new JsonObject { ["at"] = Moments.Write(at), ["count"] = counts[oldest], ["bytes"] = days[oldest] }, null);
     }
 

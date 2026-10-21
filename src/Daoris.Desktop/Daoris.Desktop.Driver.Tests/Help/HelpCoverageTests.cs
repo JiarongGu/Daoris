@@ -759,6 +759,8 @@ public sealed partial class HelpCoverageTests
         ("timeout", new Door("setting", "timeout")),
         // TOOL4e: the default cool-off's terminal door (D125 §6); TOOL4g built Settings → Driver's control, TOOL4l-b its Ask Daoris door.
         ("cooloff", new Door("setting", "cooloff")),
+        // KEEP1d (D195 point 2): each kind's keep rule, the Disk space card's Change… and Ask Daoris's `keep` door.
+        ("keep", new Door("setting", "keep")),
         ("cap", new Door("setting", "cap")),
         ("adapter", new Door("setting", "adapter")),
     ];
@@ -957,6 +959,8 @@ public sealed partial class HelpCoverageTests
         ("wiring", "useOpenLogFolder", null, new Exempt(
             "This Daoris's Logs card opens the same folder and changes nothing; a go reaches Settings → This Daoris (WIRING1c-ii).")),
         // CACHECLEAR1: the Downloads row's clearing, listed first and then pressed (D88's shape).
+        // KEEP1d: each kind's keep rule from the Disk space card's Change…, as `setting keep` proposes it.
+        ("wiring", "useSetKeep", null, new Door("setting", "keep")),
         ("wiring", "useClearDownloads", null, new Exempt(
             "it removes downloaded versions from this machine after the person has read the list, a discard that stays the person's own "
             + "press (D89), as the clean-up's is; nothing it removes is in use, and the next use downloads it again; a go reaches "

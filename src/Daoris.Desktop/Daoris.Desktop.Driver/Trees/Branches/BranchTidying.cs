@@ -169,6 +169,10 @@ public sealed class BranchTidying(string home)
     private DateTimeOffset? _downloadsDaily;
     private TimeSpan? _downloadsDays;
 
+    // KEEP1d: the same for the machine log's daily prune at the person's days.
+    private DateTimeOffset? _logsDaily;
+    private TimeSpan? _logsDays;
+
     /// <summary>How often the downloads' rule removes what is past its days (the cleanup design §3.1, step 5).</summary>
     public static readonly TimeSpan DownloadsPace = TimeSpan.FromDays(1);
 
@@ -178,14 +182,19 @@ public sealed class BranchTidying(string home)
     /// this look and names the holder, once; else the set-aside kind's removal, the purge at the policy's days then the slims due, within
     /// the pass's budget; then <c>keeping.json</c>'s <c>last</c> for the kind, where it removed something or newly kept a path. Then the
     /// downloads' rule (KEEP1b, <see cref="DownloadKeeping"/>): each version's unused stretch each pass, and once a day, or at once after
-    /// the rule changed, the versions past their days.
+    /// the rule changed, the versions past their days. Then the machine log's daily prune at the person's days (KEEP1d).
     /// </summary>
     private async Task<IReadOnlyList<string>> KeepAsync(SessionTrees trees, ServiceClient service, MachineLog? log, HashSet<string> met, CancellationToken ct)
     {
         var lines = new List<string>();
         var setAside = Directory.Exists(trees.SetAsideRoot);
-        // Nothing set aside and nothing downloaded, nothing to keep: the run lock and its holder's file are not written every pace for nothing.
-        if (!setAside && !Downloaded()) return lines;
+        var logs = Policy(home).Logs;
+        bool logsDue;
+        lock (_gate) logsDue = _logsDaily is not { } pruned || Clock() - pruned >= DownloadsPace || _logsDays != logs.Days;
+        logsDue = logsDue && MachineLog.HoldsOlder(home, Clock(), (int)logs.Days.TotalDays);
+        // Nothing set aside, nothing downloaded and no log's day due, nothing to keep: the run lock and its holder's file are not written
+        // every pace for nothing.
+        if (!setAside && !Downloaded() && !logsDue) return lines;
         using var run = KeepingRun.TryTake(home, KeepingRun.Look);
         if (run is null)
         {
@@ -207,6 +216,7 @@ public sealed class BranchTidying(string home)
         if (setAside) lines.AddRange(KeepSetAside(trees, run, log, met, ct));
         var left = Budget - spent.Elapsed;
         lines.AddRange(await KeepDownloadsAsync(service, run, left > TimeSpan.Zero ? left : TimeSpan.Zero, log, met, ct).ConfigureAwait(false));
+        if (logsDue) lines.AddRange(KeepLogs(logs, run, met));
 
         // KEEP1c (the cleanup design §3.1 step 6, §4.3): each kind counted at most once a day, and the kinds this run wrote a `last` for at
         // its end, in the background, so the card's sizes follow the rules without a page's open walking anything.
@@ -297,6 +307,36 @@ public sealed class BranchTidying(string home)
         "unread" => $"what uses it cannot be read now ({by.FirstOrDefault()})",
         _ => why,
     };
+
+    /// <summary>
+    /// The machine log's rule, holding the home's run (KEEP1d; the cleanup design §3.1 step 5): once a day, or at once after the person's
+    /// days changed, each day's file older than those days goes, today's never; <c>last.logs</c> written where one went. Each process's own
+    /// prune at its open keeps its thirty, the ceiling of the person's days.
+    /// </summary>
+    private IReadOnlyList<string> KeepLogs(LogsPolicy policy, KeepingRun run, HashSet<string> met)
+    {
+        var lines = new List<string>();
+        var read = KeepingRecord.Read(home);
+        var days = (int)policy.Days.TotalDays;
+        var (removed, bytes) = new MachineLog(home, "keeping", Clock).Prune(days);
+        lock (_gate)
+        {
+            _logsDaily = Clock();
+            _logsDays = policy.Days;
+        }
+
+        if (removed == 0) return lines;
+        lines.Add($"tidy  removed {removed} file(s) of the machine log older than {days} days ({Size(bytes)}).");
+        if (KeepingRecord.WriteLast(home, read, KeepKinds.Logs.Id, new KeepingLast(Clock(), run.Door, run.Id, removed, bytes, new Dictionary<string, int>())) is { } refused)
+        {
+            lock (_gate)
+            {
+                if (First(met, "", KeepingRecord.PathOf(home), "unwritten")) lines.Add($"tidy  {Clause(refused)}.");
+            }
+        }
+
+        return lines;
+    }
 
     /// <summary>The set-aside kind's removal, holding the home's run (KEEP1a).</summary>
     private IReadOnlyList<string> KeepSetAside(SessionTrees trees, KeepingRun run, MachineLog? log, HashSet<string> met, CancellationToken ct)

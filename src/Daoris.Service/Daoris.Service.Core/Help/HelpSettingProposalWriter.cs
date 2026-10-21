@@ -4,10 +4,10 @@ using static Daoris.Knowledge.HelpProposalFile;
 namespace Daoris.Knowledge;
 
 /// <summary>A setting Ask Daoris proposes (HELP1c, D89): one of the driver's doors, spelled as the CLI's verbs are.</summary>
-/// <param name="Door">One of <see cref="HelpSettingProposalWriter.Doors"/>: `drive`, `undrive`, `hold`, `resume`, `trees`, `line`, `landing`, `across`, `standing`, `language`, `review`, `opinion`, `helpers`, `commits`, `intake`, `helper`, `strikes`, `retry`, `timeout`, `notify`, `cap`, `adapter` or `cooloff`.</param>
+/// <param name="Door">One of <see cref="HelpSettingProposalWriter.Doors"/>: `drive`, `undrive`, `hold`, `resume`, `trees`, `line`, `landing`, `across`, `standing`, `language`, `review`, `opinion`, `helpers`, `commits`, `intake`, `helper`, `strikes`, `retry`, `timeout`, `notify`, `cap`, `adapter`, `cooloff` or `keep`.</param>
 /// <param name="Target">The repository, for the doors that take one; for `retry`, the quest its failed sessions parked or the person's stop holds.</param>
 /// <param name="Workspace">The workspace, for a line, a landing, a session language, a review rule, a second-opinion rule, a helpers rule, a commit rule or reading across set for a whole workspace.</param>
-/// <param name="Value">What it is set to, as the CLI takes it: `on`, a branch, `branch &lt;pattern&gt; --tidy`, `read off`, `write-to &lt;other&gt;`, `zh`, `--mode ask`, an agent…</param>
+/// <param name="Value">What it is set to, as the CLI takes it: `on`, a branch, `branch &lt;pattern&gt; --tidy`, `read off`, `write-to &lt;other&gt;`, `zh`, `--mode ask`, an agent, `set-aside 30`…</param>
 public sealed record SettingChange(string Door, string? Target, string? Workspace, string? Value);
 
 /// <summary>The <c>setting</c> kind's writer (HELP1c): one of the driver's doors, shape-checked as the CLI's verbs take it.</summary>
@@ -17,12 +17,12 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
     /// The doors a setting may name, as the CLI's verbs spell them, in the order the driver's <c>HelpSettingProposals</c>
     /// lists them — every <c>daoris driver</c> verb but <c>list</c> (HELP9, D110; <c>retry</c> since HELP10; <c>standing</c>
     /// since KNOWUSE1b; <c>language</c> since LANG1c2; <c>review</c> since REVIEWENV1a; <c>opinion</c> since XAGENT1a; <c>cooloff</c> since TOOL4l-b;
-    /// <c>helpers</c> and <c>commits</c> since DOORS1a).
+    /// <c>helpers</c> and <c>commits</c> since DOORS1a; <c>keep</c> since KEEP1d).
     /// </summary>
     public static readonly IReadOnlyList<string> Doors =
     [
         "drive", "undrive", "hold", "resume", "trees", "line", "landing", "across", "standing", "language", "review", "opinion",
-        "helpers", "commits", "intake", "helper", "strikes", "retry", "timeout", "notify", "cap", "adapter", "cooloff",
+        "helpers", "commits", "intake", "helper", "strikes", "retry", "timeout", "notify", "cap", "adapter", "cooloff", "keep",
     ];
 
     /// <summary>The flags a review's words may carry, as <c>daoris driver review</c> takes them (REVIEWENV1a).</summary>
@@ -148,6 +148,16 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
                 return int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var cool) && cool >= 1
                     ? null
                     : "`cooloff` is a whole number of minutes, 1 or more: how long an account cools when its limit names no time.";
+            case "keep":
+            {
+                // KEEP1d (D195 point 2): one kind's keep rule, as `daoris driver keep <kind> <rule>` takes it; its bounds are the
+                // driver's to judge, which knows them.
+                var words = (value ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                return !named && !circle && words.Length == 2 && words[0] is "set-aside" or "downloads" or "logs"
+                    ? null
+                    : "`keep` names a kind and its rule, for this machine: `set-aside <days>|whole|slim|default`, "
+                      + "`downloads <days>|never|default` or `logs <days>|default`.";
+            }
             case "adapter":
                 return string.IsNullOrWhiteSpace(value) || Word(value, "an agent") is not null
                     ? "`adapter` is set to an agent, one word, as `daoris agent list` names it."

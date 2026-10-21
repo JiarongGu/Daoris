@@ -2698,6 +2698,192 @@
         "daoris: `mode` is `as-you-go`, `ask` or `at-end`: whether commits are made as the work goes, wait for your yes first, or are made once at the end."
       ],
       "after": null
+    },
+    {
+      "name": "keep, an empty home",
+      "argv": [
+        "keep"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: <config>",
+        "  set-aside  a tree's folder moved aside is kept 14 days; its package folders go an hour after the move  (the default — `daoris driver keep set-aside …` changes it)",
+        "  downloads  a downloaded version nothing uses goes 7 days into its unused stretch  (the default — `daoris driver keep downloads …` changes it)",
+        "  logs       each day's file of the machine log is kept 30 days  (the default — `daoris driver keep logs …` changes it)"
+      ],
+      "err": [],
+      "after": null
+    },
+    {
+      "name": "keep, a home with every rule set",
+      "argv": [
+        "keep"
+      ],
+      "before": "{\n  \"keep\": {\n    \"setAside\": {\n      \"days\": 30,\n      \"whole\": true\n    },\n    \"downloads\": {\n      \"days\": null\n    },\n    \"logs\": {\n      \"days\": 14\n    }\n  }\n}\n",
+      "exit": 0,
+      "out": [
+        "daoris: <config>",
+        "  set-aside  a tree's folder moved aside is kept 30 days, whole  (set — `daoris driver keep set-aside default` takes the default again)",
+        "  downloads  a downloaded version nothing uses stays until you remove it  (set — `daoris driver keep downloads default` takes the default again)",
+        "  logs       each day's file of the machine log is kept 14 days  (set — `daoris driver keep logs default` takes the default again)"
+      ],
+      "err": [],
+      "after": "{\n  \"keep\": {\n    \"setAside\": {\n      \"days\": 30,\n      \"whole\": true\n    },\n    \"downloads\": {\n      \"days\": null\n    },\n    \"logs\": {\n      \"days\": 14\n    }\n  }\n}\n"
+    },
+    {
+      "name": "keep set-aside <days>",
+      "argv": [
+        "keep",
+        "set-aside",
+        "30"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: a tree's folder moved aside is kept 30 days; its package folders go an hour after the move.",
+        "  Written to <config> — the look's next pass keeps by it, so nothing restarts."
+      ],
+      "err": [],
+      "after": "{\n  \"keep\": {\n    \"setAside\": {\n      \"days\": 30\n    }\n  }\n}\n"
+    },
+    {
+      "name": "keep set-aside whole",
+      "argv": [
+        "keep",
+        "set-aside",
+        "whole"
+      ],
+      "before": "{\n  \"keep\": {\n    \"setAside\": {\n      \"days\": 30\n    }\n  }\n}\n",
+      "exit": 0,
+      "out": [
+        "daoris: a tree's folder moved aside is kept 30 days, whole.",
+        "  Written to <config> — the look's next pass keeps by it, so nothing restarts."
+      ],
+      "err": [],
+      "after": "{\n  \"keep\": {\n    \"setAside\": {\n      \"days\": 30,\n      \"whole\": true\n    }\n  }\n}\n"
+    },
+    {
+      "name": "keep set-aside default",
+      "argv": [
+        "keep",
+        "set-aside",
+        "default"
+      ],
+      "before": "{\n  \"keep\": {\n    \"setAside\": {\n      \"days\": 30,\n      \"whole\": true\n    },\n    \"downloads\": {\n      \"days\": null\n    },\n    \"logs\": {\n      \"days\": 14\n    }\n  }\n}\n",
+      "exit": 0,
+      "out": [
+        "daoris: a tree's folder moved aside is kept 14 days; its package folders go an hour after the move.",
+        "  Written to <config> — the look's next pass keeps by it, so nothing restarts."
+      ],
+      "err": [],
+      "after": "{\n  \"keep\": {\n    \"downloads\": {\n      \"days\": null\n    },\n    \"logs\": {\n      \"days\": 14\n    }\n  }\n}\n"
+    },
+    {
+      "name": "keep downloads never",
+      "argv": [
+        "keep",
+        "downloads",
+        "never"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: a downloaded version nothing uses stays until you remove it.",
+        "  Written to <config> — the look's next pass keeps by it, so nothing restarts."
+      ],
+      "err": [],
+      "after": "{\n  \"keep\": {\n    \"downloads\": {\n      \"days\": null\n    }\n  }\n}\n"
+    },
+    {
+      "name": "keep logs <days>",
+      "argv": [
+        "keep",
+        "logs",
+        "14"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: each day's file of the machine log is kept 14 days.",
+        "  Written to <config> — the look's next pass keeps by it, so nothing restarts."
+      ],
+      "err": [],
+      "after": "{\n  \"keep\": {\n    \"logs\": {\n      \"days\": 14\n    }\n  }\n}\n"
+    },
+    {
+      "name": "keep logs, past its bounds",
+      "argv": [
+        "keep",
+        "logs",
+        "60"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `logs` keeps 7 to 30 days or `default`; 60 days is out of its bounds, so nothing was written. (KEEP_OUT_OF_RANGE)"
+      ],
+      "after": null
+    },
+    {
+      "name": "keep logs never, a choice it does not take",
+      "argv": [
+        "keep",
+        "logs",
+        "never"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `logs` keeps 7 to 30 days or `default`; never is out of its bounds, so nothing was written. (KEEP_OUT_OF_RANGE)"
+      ],
+      "after": null
+    },
+    {
+      "name": "keep, no rule",
+      "argv": [
+        "keep",
+        "logs"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `driver keep` needs a kind and its rule — `set-aside <days>|whole|slim|default`, `downloads <days>|never|default` or `logs <days>|default`; e.g. `daoris driver keep set-aside 30`."
+      ],
+      "after": null
+    },
+    {
+      "name": "keep, a kind it does not set",
+      "argv": [
+        "keep",
+        "history",
+        "30"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `history` is no kind whose rule you set here: name `set-aside`, `downloads`, `logs`. `driver keep` needs a kind and its rule — `set-aside <days>|whole|slim|default`, `downloads <days>|never|default` or `logs <days>|default`; e.g. `daoris driver keep set-aside 30`."
+      ],
+      "after": null
+    },
+    {
+      "name": "keep set-aside, not a number",
+      "argv": [
+        "keep",
+        "set-aside",
+        "many"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `many` is no rule of `set-aside`: it keeps 1 to 90 days, `whole`, `slim` or `default`."
+      ],
+      "after": null
     }
   ]
 }

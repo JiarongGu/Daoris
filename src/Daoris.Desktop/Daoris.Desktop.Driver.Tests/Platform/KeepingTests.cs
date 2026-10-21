@@ -34,7 +34,7 @@ public sealed class KeepingTests : IDisposable
     {
         var kind = KeepKinds.SetAside;
         Assert.Same(kind, KeepKinds.Named("set-aside"));
-        Assert.Equal(["set-aside", "downloads"], KeepKinds.Table.Select(each => each.Id));
+        Assert.Equal(["set-aside", "downloads", "logs"], KeepKinds.Table.Select(each => each.Id));
         Assert.Equal((TimeSpan.FromDays(14), TimeSpan.FromHours(1), 1, 90), (kind.Days, KeepKinds.SetAsideSettle, kind.MinDays, kind.MaxDays));
         Assert.Equal([HomeEntry.Trees.Name], kind.Entries);
         Assert.Equal(new SetAsidePolicy(TimeSpan.FromDays(14), Whole: false), KeepPolicy.Of(_home).SetAside);
@@ -42,7 +42,7 @@ public sealed class KeepingTests : IDisposable
 
     /// <summary>
     /// KEEP1b, §2.1: the downloads' kind, every version made again by its next pin or use, seven days by default into its current unused
-    /// stretch, the person's 0 to 365 or <c>never</c>; and the one policy, which says the same until KEEP1d reads the person's choice.
+    /// stretch, the person's 0 to 365 or <c>never</c>; and the one policy, which says the same where the person chose nothing (KEEP1d).
     /// </summary>
     [Fact]
     public void The_downloads_kind_and_its_policy_keep_seven_days_of_an_unused_stretch()

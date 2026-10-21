@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { type QueryClient, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import type { SyncStanding } from '../data/api';
+import type { KeepSet } from '../data/wiring';
 import { keys, SYNC_SLICE } from '../data/queries';
 import type { AccountWaitTick, Consideration, TrustHold } from '../data/signals';
 import type { AccessLevel } from '../settings/repository/Access';
@@ -417,6 +418,13 @@ export const useSetCoolOff = () => useDriverChange<{ minutes: number }>('SET_COO
 
 /** How many sessions Daoris starts at once (CAPSET1): the same `cap` `daoris driver cap <n>` edits; less than one is refused. */
 export const useSetCap = () => useDriverChange<{ cap: number }>('SET_CAP');
+
+/**
+ * One kind's keep rule (KEEP1d, D195 point 2; the cleanup design §2.2): the same `keep` `daoris driver keep` edits. A value out of its
+ * kind's bounds is the driver's `KEEP_OUT_OF_RANGE`, said under the row's editor. It declares the wiring with the state, so the card
+ * reads its rules again.
+ */
+export const useSetKeep = () => useDriverChange<KeepSet>('SET_KEEP');
 
 /**
  * *Try again* (RETRY1; SESSUX1b, D126 §3.4): let a parked quest run again, counting from where it stands, or release one

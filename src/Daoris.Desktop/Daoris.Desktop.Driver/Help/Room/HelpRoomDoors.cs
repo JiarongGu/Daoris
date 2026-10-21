@@ -172,6 +172,9 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         // Ask Daoris's `setting` kind's `cooloff` (HelpCoverageTests).
         ("set how long an account cools when its agent hits a limit and names no time", "Settings → Driver → Cool-off when no time is named",
             "`daoris driver cooloff <minutes>`"),
+        // KEEP1d (D195 point 2): how long each kind Daoris keeps is kept, Ask Daoris's `setting` kind's `keep` (HelpCoverageTests).
+        ("set how long Daoris keeps set-aside trees, unused downloads or the machine log", "Settings → This Daoris → Disk space → Change…",
+            "`daoris driver keep <kind> <rule>`"),
         ("bound how many sessions run at once", "Settings → Driver → Sessions at once on this machine", "`daoris driver cap <n>`"),
         ("say so when a session parks", "Settings → Driver", "`daoris driver notify on|off`"),
         // UX6e2: the rules for every session and Daoris's defaults are the agent's page's (UX6e); a repository's are on its
