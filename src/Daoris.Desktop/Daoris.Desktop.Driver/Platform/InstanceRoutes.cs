@@ -63,6 +63,9 @@ public static class OpenRoutes
     /// <summary><c>register</c>: one repository followed from its line.</summary>
     public static InstanceRoute RegistryRefresh { get; } = Open("REGISTRY_REFRESH");
 
+    /// <summary><c>space free --yes</c>'s follow (KEEP1e): the disk space read each second, its <c>run</c> until it ends.</summary>
+    public static InstanceRoute SystemSpace { get; } = Open("SYSTEM_SPACE");
+
     /// <summary>
     /// Each verb of RPCOPEN1's scope, in the verb's words: the route it sends where the instance answers, or null with the reason it
     /// does not go through the pipe (yet).
@@ -78,6 +81,7 @@ public static class OpenRoutes
         ("sessions", SessionGroups, "the list"),
         ("sync", SyncNow, "an open press (D156 §3: sync)"),
         ("register", RegistryRefresh, "an open press (D156 §3: refresh)"),
+        ("space free --yes", SystemSpace, "the run its press started, read until it ends (KEEP1e)"),
         // The other open reads of RPC1e: each is read alone beside an instance, with the same words, until its route answers them as
         // `said` as the six above do (RPCOPEN1 built the shape, and the reads that follow it name no new one).
         ("trace", null, "alone: its words are built from the sources the host reads itself; TRACE answers the page's shape only"),
@@ -149,9 +153,16 @@ public static class PersonPresses
     /// <summary><c>sessions hand-over &lt;id&gt; --decline</c>: the no to an agent's ask to hand its session over (MIXAGENT1c).</summary>
     public static InstanceRoute SessionHandOverDecline { get; } = Person("SESSION_HAND_OVER_DECLINE");
 
+    /// <summary>
+    /// <c>space free --yes</c> (KEEP1e, the cleanup design §3.3): a run removing what the person's list showed, their delete. The list is
+    /// the same route's <c>plan</c> form, open (a <c>PipeRule</c> in the census), which the verb reads alone since a list runs anywhere.
+    /// </summary>
+    public static InstanceRoute SpaceFree { get; } = Person("SYSTEM_SPACE_FREE");
+
     /// <summary>Each person's press a verb sends over the pipe, in the verb's words, with its route.</summary>
     public static IReadOnlyList<(string Verb, InstanceRoute Route)> Presses { get; } =
     [
+        ("space free --yes", SpaceFree),
         ("sessions archive <id>…", SessionArchive),
         ("sessions unarchive <id>…", SessionArchive),
         ("sessions stop <id>", SessionStop),

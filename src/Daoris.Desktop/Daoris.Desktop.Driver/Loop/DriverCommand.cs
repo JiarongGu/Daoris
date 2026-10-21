@@ -268,6 +268,11 @@ public static class DriverCommand
               the free space and each kind Daoris keeps, This Daoris's Disk space twin: its size and when it was
               counted, its rule, when it next goes and when it was last cleaned. --measure counts each kind first,
               each within its own bound. Reads only; removes nothing.
+          space free [--kind <id>]... [--early <group>]... [--yes]
+              Free up space…'s twin: lists what each rule takes now and what could go early, and changes
+              nothing; with --yes removes what the rules take (--kind: set-aside, downloads, logs), and
+              with --early a group too (set-aside, downloads, browser-cache, left-over, update-failed),
+              each judged again, then reads the run to its end. Confirmed in the window where Daoris runs.
           plugins install <file.nupkg>
               install a plugin package's plugin, checked first; nothing reaches a network.
           plugins new <id> --point <point>… [--in <folder>]  ·  plugins try <folder|id> [--point <point>]

@@ -146,34 +146,54 @@ public sealed class MachineLog : IDisposable
     public void Prune()
     {
         if (_folder is null) return;
+        foreach (var name in Due(_folder, _clock())) Remove(_folder, name, _clock());
+    }
+
+    /// <summary>
+    /// The log files in <paramref name="folder"/> past <see cref="KeptDays"/> at <paramref name="now"/>, by name: what the prune takes, and
+    /// what the person's press lists (KEEP1e). Never today's, which its writer holds. None where the folder cannot be read.
+    /// </summary>
+    public static IReadOnlyList<string> Due(string folder, DateTimeOffset now)
+    {
         try
         {
-            if (!Directory.Exists(_folder)) return;
-            var oldest = _clock().ToUniversalTime().Date.AddDays(1 - KeptDays);
-            foreach (var path in Directory.EnumerateFiles(_folder, "*.jsonl"))
-            {
-                var name = Path.GetFileName(path);
-                if (name.Length < 10
-                    || !DateTime.TryParseExact(name[..10], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var day)
-                    || day >= oldest)
-                {
-                    continue;
-                }
-
-                try
-                {
-                    File.Delete(path);
-                }
-                catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-                {
-                    // Another process may still hold yesterday's file; the next start tries again.
-                }
-            }
+            if (!Directory.Exists(folder)) return [];
+            return [.. Directory.EnumerateFiles(folder, "*.jsonl").Select(Path.GetFileName).OfType<string>().Where(name => Past(name, now))
+                .Order(StringComparer.Ordinal)];
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
+            return [];
         }
     }
+
+    /// <summary>
+    /// One log file the prune or a press names, removed where its day is still past <see cref="KeptDays"/>: its bytes, or null where it
+    /// stays (no such day's file, within its days, or a delete refused; another process may still hold yesterday's file).
+    /// </summary>
+    public static long? Remove(string folder, string name, DateTimeOffset now)
+    {
+        if (!Past(name, now) || name != Path.GetFileName(name)) return null;
+        var path = Path.Combine(folder, name);
+        try
+        {
+            if (!File.Exists(path)) return null;
+            var bytes = new FileInfo(path).Length;
+            File.Delete(path);
+            return bytes;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // The next start tries again.
+            return null;
+        }
+    }
+
+    /// <summary>Whether a log file's name says a day past <see cref="KeptDays"/> at <paramref name="now"/>.</summary>
+    private static bool Past(string name, DateTimeOffset now) =>
+        name.Length >= 10 && name.EndsWith(".jsonl", StringComparison.Ordinal)
+        && DateTime.TryParseExact(name[..10], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var day)
+        && day < now.ToUniversalTime().Date.AddDays(1 - KeptDays);
 
     /// <summary>
     /// Write every exception nothing else caught (LOG1a): an unhandled one ends the process, and until
