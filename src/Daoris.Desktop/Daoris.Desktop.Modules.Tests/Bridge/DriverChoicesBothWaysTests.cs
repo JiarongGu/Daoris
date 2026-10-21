@@ -197,12 +197,18 @@ public sealed partial class DriverChoicesBothWaysTests : DriverModuleBridge
     [InlineData(false, "keep logs 7")]
     [InlineData(true, "keep logs 30")]
     [InlineData(true, "keep logs default")]
+    // KEEP1g: history's age, and `never`, its default again.
+    [InlineData(false, "keep history 30")]
+    [InlineData(false, "keep history never")]
+    [InlineData(true, "keep history 3650")]
+    [InlineData(true, "keep history never")]
+    [InlineData(true, "keep history default")]
     public async Task A_keep_rule_says_and_writes_the_same_alone_and_through_its_route(bool set, string words)
     {
         var module = Module();
         var before = set
             ? Before().WithKeep(new KeepSet("set-aside", Days: 30, Whole: true)).WithKeep(new KeepSet("downloads", Never: true))
-                .WithKeep(new KeepSet("logs", Days: 14))
+                .WithKeep(new KeepSet("logs", Days: 14)).WithKeep(new KeepSet("history", Days: 365))
             : Before();
         before.Save(DriverConfigPath);
         var text = File.ReadAllText(DriverConfigPath);
@@ -231,6 +237,9 @@ public sealed partial class DriverChoicesBothWaysTests : DriverModuleBridge
         Assert.Contains("kind=logs", past, StringComparison.Ordinal);
         Assert.Contains("max=30", past, StringComparison.Ordinal);
         Assert.StartsWith(Refusals.KeepOutOfRange + " ", await RefusalAsync(module, "SET_KEEP", new { kind = "set-aside", never = true }), StringComparison.Ordinal);
+        var young = await RefusalAsync(module, "SET_KEEP", new { kind = "history", days = 7 });
+        Assert.StartsWith(Refusals.KeepOutOfRange + " ", young, StringComparison.Ordinal);
+        Assert.Contains("min=30", young, StringComparison.Ordinal);
         Assert.Equal(text, File.ReadAllText(DriverConfigPath));
     }
 
