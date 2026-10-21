@@ -19310,3 +19310,14 @@ downloads but `never`, and the browser's caches once a stretch (`SpaceFloor`, do
 warn ink below it, what Daoris freed early and a kind's own volume. Proof: `SpaceFloorTests`, `AttentionStateSliceTests`,
 `DriverChoicesBothWaysTests`' floor rows, `attention.test.ts` and `WiringDomain.test.tsx` in English and 中文, the card's stories. No
 installed window has fallen below a floor. Detail: D195's KEEP1f note. On Opus.
+## FABRIC-PIPELINE1i — Ask Daoris proposes routes and verification pipelines (2026-10-22, D192)
+
+> - [ ] **FABRIC-PIPELINE1i — Ask Daoris proposes routes and verification pipelines: a `use` with a route and no version, and a graph version beside `steps`** (D192, the pipeline design §7; after 1a). Read the row in the design's §7 and its sections; build it end to end (D187). Proof: as the design's section for it names, with its words in en and zh where the page says it.
+
+**Outcome** 2026-10-22: built. `workflow_propose` takes a `route` (`default`, `landed` or `kind:<id>`) and a `graph` beside `steps`;
+with neither version, a route is the `use` door alone and saves nothing. The driver's judge reads a graph under the workflow's mark as a
+save does, a new workflow proposed as a graph made a verification pipeline; the card says what the change lowers
+(`InvolvementRoutes`), and the page draws the route, the nodes and *Asks less of you* in English and 中文. Proof:
+`HelpWorkflowProposalsTests` (a route applied at the press, a kind's route, a verification graph judged by the mark and saved as one,
+the other pipeline refused, an agent's lowering kept for the press), the box's and the tool's tests, `HelpWorkflowDoorTests`,
+`ProposalCard.test.tsx`. No installed window has shown one. Detail: D192's FABRIC-PIPELINE1i note. On Opus.
