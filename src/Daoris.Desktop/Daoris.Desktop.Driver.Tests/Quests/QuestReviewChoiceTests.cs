@@ -180,7 +180,7 @@ public sealed class QuestReviewChoiceTests
             Daoris.Driver.Tests.HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "Program.cs"));
         // The usage string is built from joined literals, so each form is read where it ends its literal.
         Assert.Contains("quest review <id> reviewed|not-yet|skip [\\\"…\\\"]  ·  \"", program);
-        Assert.Contains("+ \"quest review <id> off [\\\"…\\\"]  ·  quest review <id> on|<environment>\");", program);
+        Assert.Contains("+ \"quest review <id> off [\\\"…\\\"]  ·  quest review <id> on|<environment>  ·  \"", program);
         Assert.Contains("//   quest review <id> off [\"…\"]  ·  quest review <id> on|<environment>", program);
     }
 
