@@ -326,8 +326,8 @@ DaorisHome.Adopt(AppContext.BaseDirectory);
 // pipe makes it that instance's client; where another verb, the first-start move or the launcher's swap holds the home, it
 // waits up to thirty seconds and is then refused, exit 1, naming which. A home named nowhere takes none: the verb refuses as
 // it always did. The lease is let go as the verb ends. It is taken in the home the loop drives and holds (LEASEHOME2): the folder
-// the driver's config is in, `DAORIS_HOME` unless DAORIS_DRIVER_CONFIG names a file elsewhere, where the loop and a verb taking
-// `DAORIS_HOME`'s never met.
+// the driver's config is in, `DAORIS_HOME` unless DAORIS_DRIVER_CONFIG names a file elsewhere, so a verb meets the loop's lease
+// wherever the config is.
 HomeLease? verbLease = null;
 if (VerbLeases.HoldsHere(args, Environment.GetEnvironmentVariable) && DriverConfig.FindHome() is { } leaseHome)
 {
