@@ -272,9 +272,11 @@ public static class DownloadClearing
     /// </summary>
     /// <param name="move">The rename aside; a test hands in one that refuses, as a running program makes Windows refuse.</param>
     /// <param name="door">Who removed it, for the machine log: <c>press</c>, <c>look</c> (the rule) or <c>tools</c> (Tools' delete).</param>
+    /// <param name="spent">Whether the caller's budget is spent (the look's pass, §3.1): asked between versions, never inside one, and the
+    /// versions not reached are not in the answer.</param>
     public static async Task<IReadOnlyList<DownloadCleared>> ClearAsync(
         string? home, IReadOnlyList<DownloadAsked> asked, DownloadJudge judge, MachineLog? log = null,
-        Action<string, string>? move = null, CancellationToken cancellationToken = default, string? door = null)
+        Action<string, string>? move = null, CancellationToken cancellationToken = default, string? door = null, Func<bool>? spent = null)
     {
         log ??= MachineLog.None;
         var listed = List(home, judge.Uses(), judge.Now(), cancellationToken, measure: false).Versions;
@@ -282,6 +284,7 @@ public static class DownloadClearing
         foreach (var each in asked)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            if (spent?.Invoke() == true) break;
             var row = listed.FirstOrDefault(version => version.Kind == each.Kind && version.Name == each.Name
                 && version.Version == each.Version && version.Unfinished == each.Unfinished);
             if (row is null || !Directory.Exists(row.Path))
@@ -296,6 +299,13 @@ public static class DownloadClearing
                 // Read before the locks, so a slow service never holds a person's pin at the lock (F2.3).
                 var sessions = await judge.Sessions(cancellationToken).ConfigureAwait(false);
                 var (moved, kept) = MoveAside(row, judge, sessions, move);
+                if (moved is null && kept is null)
+                {
+                    // Taken by another remover while this one waited on the locks.
+                    cleared.Add(new DownloadCleared(each, "gone", null));
+                    continue;
+                }
+
                 if (kept is not null)
                 {
                     cleared.Add(Kept(each, kept, log, door));
@@ -318,7 +328,7 @@ public static class DownloadClearing
 
     /// <summary>
     /// One version judged and moved aside, holding the use files' locks from the judgement to the rename and letting them go before anything
-    /// is removed (F2.3): where it went, or the row as judged where it stays.
+    /// is removed (F2.3): where it went, or the row as judged where it stays; neither where it was gone once the locks were held.
     /// </summary>
     private static (string? Aside, DownloadedVersion? Kept) MoveAside(
         DownloadedVersion row, DownloadJudge judge, LiveSessions sessions, Action<string, string>? move)
@@ -339,6 +349,7 @@ public static class DownloadClearing
                 }
             }
 
+            if (!Directory.Exists(row.Path)) return (null, null);
             var (keeps, by) = Judge(
                 row.Kind, row.Name, row.Version, row.Path, judge.Uses(), judge.Now(), sessions, judge.FirstUnused(DownloadKeeping.Key(row)),
                 judge.KeepsRecent);

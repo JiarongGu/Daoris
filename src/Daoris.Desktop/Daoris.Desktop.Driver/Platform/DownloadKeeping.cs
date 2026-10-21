@@ -62,10 +62,13 @@ public static class DownloadKeeping
     /// </summary>
     /// <param name="door">The run's door, <see cref="KeepingRun"/>'s, for <c>last</c> and the machine log.</param>
     /// <param name="run">The run's id, for <c>last</c>.</param>
+    /// <param name="budget">How long it removes for, at most (§3.1), heard between versions; null is no bound. What it did not reach is
+    /// <see cref="DownloadsPass.Cut"/>, and the next pass takes it up.</param>
     public static async Task<DownloadsPass> PassAsync(
         string home, DownloadsPolicy policy, DownloadJudge judge, bool daily, string door, string run, MachineLog? log = null,
-        CancellationToken ct = default)
+        CancellationToken ct = default, TimeSpan? budget = null)
     {
+        var clock = Stopwatch.StartNew();
         var now = judge.Now();
         var listing = DownloadClearing.List(home, judge.Uses(), now, ct, measure: false);
         if (listing.Why is not null) return DownloadsPass.Nothing;
@@ -111,7 +114,8 @@ public static class DownloadKeeping
 
         var cleared = await DownloadClearing.ClearAsync(
             home, due, judge with { FirstUnused = key => unused.TryGetValue(key, out var since) ? since : null }, log,
-            cancellationToken: ct, door: door).ConfigureAwait(false);
+            cancellationToken: ct, door: door, spent: () => budget is { } bound && clock.Elapsed >= bound).ConfigureAwait(false);
+        if (cleared.Count == 0) return new([], unwritten) { Cut = true };
         var went = cleared.Where(each => each.Outcome is "removed" or "unfinished").ToList();
         var kept = cleared.Where(each => each.Outcome == "kept")
             .GroupBy(each => each.Version?.Keeps ?? "unread", StringComparer.Ordinal)
@@ -119,7 +123,7 @@ public static class DownloadKeeping
         var last = KeepingRecord.WriteLast(
             home, KeepingRecord.Read(home), KeepKinds.Downloads.Id,
             new KeepingLast(judge.Now(), door, run, went.Count, went.Sum(each => each.Version?.Bytes ?? 0), kept));
-        return new(cleared, unwritten ?? last);
+        return new(cleared, unwritten ?? last) { Cut = cleared.Count < due.Count };
     }
 }
 
@@ -130,4 +134,7 @@ public sealed record DownloadsPass(IReadOnlyList<DownloadCleared> Cleared, strin
 {
     /// <summary>Nothing listed, so nothing recorded and nothing removed.</summary>
     public static DownloadsPass Nothing { get; } = new([], null);
+
+    /// <summary>The budget was spent before every version past its days was reached: the next pass takes up the rest.</summary>
+    public bool Cut { get; init; }
 }

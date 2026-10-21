@@ -574,6 +574,73 @@ public sealed class DownloadClearingTests : IDisposable
         Assert.Null(FirstUnused("agent/claude-code/2.0.1"));
     }
 
+    /// <summary>
+    /// §3.1: the look's Keeping pass runs the rule: its first pass records the stretch, the day's removal seven days on takes the version,
+    /// said in the report and in the machine log by the rule's door, and its last run written; a pass later that day removes nothing more.
+    /// </summary>
+    [Fact]
+    public async Task The_look_s_keeping_pass_removes_a_download_past_its_days_and_says_so()
+    {
+        var folder = Agent("claude-code", "2.0.1");
+        using var ledger = new StandInLedger();
+        var now = T0;
+        var tidying = new BranchTidying(Home) { Pace = TimeSpan.Zero, Clock = () => now };
+        using var log = new MachineLog(Home, "driver", () => now);
+
+        Assert.Empty(await tidying.LookAsync(ledger.Client(), log, CancellationToken.None));
+        Assert.Equal(T0, FirstUnused("agent/claude-code/2.0.1"));
+
+        now = T0.AddDays(7);
+        var said = await tidying.LookAsync(ledger.Client(), log, CancellationToken.None);
+        now = T0.AddDays(7).AddHours(1);
+        var again = await tidying.LookAsync(ledger.Client(), log, CancellationToken.None);
+
+        Assert.StartsWith("tidy  removed the download claude-code 2.0.1, which nothing had used for 7 days (", Assert.Single(said), StringComparison.Ordinal);
+        Assert.Empty(again);
+        Assert.False(Directory.Exists(folder));
+        Assert.Equal((KeepingRun.Look, 1), (KeepingRecord.Read(Home).Last["downloads"].Door, KeepingRecord.Read(Home).Last["downloads"].Removed));
+        var cleared = Directory.EnumerateFiles(DaorisHome.Entry(Home, HomeEntry.Logs), "*.jsonl")
+            .SelectMany(StubFile.Lines).Select(line => System.Text.Json.JsonDocument.Parse(line).RootElement)
+            .Single(line => line.GetProperty("event").GetString() == "download.cleared").GetProperty("data");
+        Assert.Equal(("claude-code", "2.0.1", "look"),
+            (cleared.GetProperty("name").GetString(), cleared.GetProperty("version").GetString(), cleared.GetProperty("door").GetString()));
+    }
+
+    /// <summary>
+    /// §3.1: the rule removes within the pass's budget, heard between versions: one spent before any is reached removes nothing and says
+    /// the day's removal was cut, for the next pass to take up.
+    /// </summary>
+    [Fact]
+    public async Task A_spent_budget_removes_nothing_and_leaves_the_day_s_removal_to_the_next_pass()
+    {
+        var folder = Agent("claude-code", "2.0.1");
+        await PassAsync(T0);
+
+        var cut = await DownloadKeeping.PassAsync(Home, KeepPolicy.Default.Downloads, Judge(T0.AddDays(8)), true, KeepingRun.Look, "run-1", budget: TimeSpan.Zero);
+
+        Assert.Equal((0, true), (cut.Cleared.Count, cut.Cut));
+        Assert.True(Directory.Exists(folder));
+        Assert.False((await PassAsync(T0.AddDays(8), daily: true)).Cut);
+        Assert.False(Directory.Exists(folder));
+    }
+
+    /// <summary>A version another remover took while this one waited on the locks is gone, never said as one a program holds.</summary>
+    [Fact]
+    public async Task A_version_taken_meanwhile_is_gone_not_in_use()
+    {
+        var folder = Agent("claude-code", "2.0.1");
+        var judge = Judge(Later) with
+        {
+            Sessions = _ =>
+            {
+                Directory.Delete(folder, recursive: true);
+                return Task.FromResult(LiveSessions.None);
+            },
+        };
+
+        Assert.Equal("gone", Assert.Single(await DownloadClearing.ClearAsync(Home, [new("agent", "claude-code", "2.0.1")], judge)).Outcome);
+    }
+
     /// <summary>§2.2, §6.7: under <c>never</c> nothing goes by its days, and a <c>keeping.json</c> that does not read lets nothing go.</summary>
     [Fact]
     public async Task Never_and_an_unreadable_keeping_json_keep_it()

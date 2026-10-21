@@ -197,8 +197,11 @@ public sealed class BranchTidying(string home)
             return lines;
         }
 
+        // One budget for the pass's removals (§3.1): what the set-aside folders spent, the downloads do not spend again.
+        var spent = System.Diagnostics.Stopwatch.StartNew();
         if (setAside) lines.AddRange(KeepSetAside(trees, run, log, met, ct));
-        lines.AddRange(await KeepDownloadsAsync(service, run, log, met, ct).ConfigureAwait(false));
+        var left = Budget - spent.Elapsed;
+        lines.AddRange(await KeepDownloadsAsync(service, run, left > TimeSpan.Zero ? left : TimeSpan.Zero, log, met, ct).ConfigureAwait(false));
         return lines;
     }
 
@@ -217,9 +220,10 @@ public sealed class BranchTidying(string home)
 
     /// <summary>
     /// The downloads' rule, holding the home's run (KEEP1b): what it removed said in the report, and each version it kept past its days, and a
-    /// record it could not write, said the first look it is met.
+    /// record it could not write, said the first look it is met. A day's removal the budget cut short is taken up by the next pass.
     /// </summary>
-    private async Task<IReadOnlyList<string>> KeepDownloadsAsync(ServiceClient service, KeepingRun run, MachineLog? log, HashSet<string> met, CancellationToken ct)
+    private async Task<IReadOnlyList<string>> KeepDownloadsAsync(
+        ServiceClient service, KeepingRun run, TimeSpan budget, MachineLog? log, HashSet<string> met, CancellationToken ct)
     {
         var lines = new List<string>();
         var policy = Policy(home).Downloads;
@@ -230,10 +234,10 @@ public sealed class BranchTidying(string home)
         var judge = DownloadJudge.Of(
             home, HarnessSettings.ResolvePath(home), ConfigPath ?? DriverConfig.ResolvePath(home),
             token => Sessions is { } stand ? stand(service, token) : LiveSessions.ReadAsync(service, markers, token), Clock);
-        var pass = await DownloadKeeping.PassAsync(home, policy, judge, daily, run.Door, run.Id, log, ct).ConfigureAwait(false);
+        var pass = await DownloadKeeping.PassAsync(home, policy, judge, daily, run.Door, run.Id, log, ct, budget).ConfigureAwait(false);
         lock (_gate)
         {
-            if (daily && pass.Unwritten is null)
+            if (daily && pass.Unwritten is null && !pass.Cut)
             {
                 _downloadsDaily = now;
                 _downloadsDays = policy.Days;
