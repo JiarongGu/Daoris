@@ -17,7 +17,8 @@ namespace Daoris.Driver;
 /// another id are <c>late</c> (the first taken stands). Each commit is ordered apart, and each still passes the fourth rule. An
 /// <c>unknown</c> establishes nothing and is not kept, so no later word is ordered behind it.</para>
 /// <para><b>One outcome per binding.</b> Only an active node bound to the event's commit is moved. Its binding's first outcome stands: the same
-/// outcome again is a replay, another is <c>late</c>; a node the person stopped or skipped is no longer awaited, and evidence never brings it back.</para>
+/// outcome again is a replay, another is <c>late</c>; a node the person stopped or skipped is no longer awaited, and evidence never brings it back.
+/// An event the one table refuses on its binding moves nothing, is not kept, and is counted by the table's code (FABRIC-PERFORM1n).</para>
 /// </remarks>
 public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port, Func<DateTimeOffset> clock)
 {
@@ -151,8 +152,11 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
                     Source = NodeSource.Plugin, Attempt = status.Attempt, Acceptance = WorkPerformer.Accepted(node, frame.Id, binding, frame.Outcome),
                 }
                 : new NodeMove(NodeStates.Failed, NodeCause.Authority) { Source = NodeSource.Plugin, Attempt = status.Attempt, Code = frame.Outcome.Code ?? WorkPerformer.NoCode };
+            // FABRIC-PERFORM1n: an event the one table refuses (evidence of another schema than the node declares, an output undeclared or of
+            // another schema) moves nothing and is kept nowhere, and is no answer: counted as a plugin.step line of the table's code. A
+            // completion the table refuses holds its attempt for the person instead (WorkPerformer.Hold); an event has no attempt to hold.
             var moved = NodeLifecycle.Apply(node, status, move);
-            if (!moved.Moved) return (null, new(unit, node.Id, PerformedWhat.Refused, moved.Refused));
+            if (!moved.Moved) return (null, new(unit, node.Id, PerformedWhat.NotTaken, moved.Refused));
 
             // The newest taken for this step: another commit's is dropped, as the fourth rule makes its events stale while the tip stands here.
             var observed = new ObservedEvent(plugin, identity, step, commit, frame.Id, state, frame.At, node.Id);

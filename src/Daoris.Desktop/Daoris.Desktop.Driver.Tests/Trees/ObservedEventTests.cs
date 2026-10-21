@@ -542,6 +542,43 @@ public sealed class ObservedEventTests : IDisposable
     }
 
     [Fact]
+    public async Task A_believed_event_the_one_table_refuses_is_a_counted_refusal_and_no_state_changes()
+    {
+        // FABRIC-PERFORM1n: the deploy declares its evidence's schema, and the event's reference names another. The table refuses the move,
+        // so the node stays awaiting, nothing is kept, no wire fires, and the refusal is a plugin.step line of the table's code.
+        const string evidenced = """
+            { "landings": { "engine": { "form": "merge", "cycle": {
+                "schemaVersion": 2, "entries": ["deployed"], "end": "notify",
+                "nodes": [
+                  { "id": "deployed", "kind": "acme.deploy/deployed", "version": 1, "reach": "observed", "evidence": "acme.deploy/record" },
+                  { "id": "notify", "kind": "acme.deploy/notify", "version": 1, "reach": "performed" } ],
+                "wires": [{ "id": "w1", "kind": "after", "from": "deployed", "to": "notify" }] } } } }
+            """;
+        var runtime = Runtime();
+        await PassAsync(runtime, evidenced);
+        Assert.Equal(NodeStates.Active, Record().Statuses["deployed"].State);
+        var before = NodeRecordFiles.ToJson(Record());
+
+        var other = new WorkOutcome(WorkStates.Reached, Evidence: new WorkEvidence("acme.other/record:7", null, null, null));
+        _port.Heard.Enqueue(new(Plugin, _port.Generation!.Value, new WorkStepFrame("deployed", other, _now, "e1", "engine", "feature/a", C1)));
+        var pass = await PassAsync(runtime, evidenced, whole: false);
+
+        Assert.Contains(pass.Performed, done => (done.Node, done.What, done.Code) == ("deployed", PerformedWhat.NotTaken, NodeRefusal.NoEvidence));
+        Assert.Equal((Plugin, NodeRefusal.NoEvidence), Assert.Single(_port.Refusals));
+        Assert.Equal(before, NodeRecordFiles.ToJson(Record()));
+        Assert.Empty(Record().Observations);
+        Assert.Empty(_port.Sent);
+
+        // The declared schema's evidence, at the same commit, is still taken: the refused event established nothing for it to be ordered behind.
+        var declared = new WorkOutcome(WorkStates.Reached, Evidence: new WorkEvidence("acme.deploy/record:7", null, null, null));
+        _port.Heard.Enqueue(new(Plugin, _port.Generation!.Value, new WorkStepFrame("deployed", declared, _now, "e2", "engine", "feature/a", C1)));
+        await PassAsync(runtime, evidenced, whole: false);
+
+        Assert.Equal(NodeStates.Reached, Record().Statuses["deployed"].State);
+        Assert.Equal("e2", Assert.Single(Record().Observations).Id);
+    }
+
+    [Fact]
     public void A_records_events_read_back_and_a_record_written_before_them_reads_with_none()
     {
         var record = new NodeRecord(A) { Observations = [new ObservedEvent(Plugin, "repository-id", "deployed", C1, "e1", WorkStates.Reached, _now, "deployed")] };

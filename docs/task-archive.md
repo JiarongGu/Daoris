@@ -18806,3 +18806,11 @@ unit's milestone on the page stays open as FABRIC-CLOSE1j2. Detail: D173's FABRI
 >   Proof: the design accepted and its build rows filed.
 
 **Outcome** 2026-10-21: designed and accepted as D195 (`docs/2026-10-21-cleanup-design.md`) after three rounds (Codex's read, twenty-two findings; Fable's of §3 and §5, thirteen), every finding taken. One rule per kind, set in `driver.json`'s `keep` and shown on This Daoris; a set-aside tree's package folders dropped an hour after its move; the look, a free-space floor and the press run the rules, one run at a time. The build rows are KEEP1a-g and KEEP1a2. On Opus, read by Codex and Fable.
+## FABRIC-PERFORM1n — a believed event the one table refuses is said (2026-10-21, D173)
+
+> - [ ] **FABRIC-PERFORM1n — a believed event the one table refuses is said** (driver; after PERFORM1i; §C4, §E2). An event whose evidence is of another schema than the node declares moves nothing and is counted by no `plugin.step` code, unlike a completion, which holds its attempt. Proof: the refusal line said, and no state changed.
+
+**Outcome** 2026-10-21: built. `WorkObserver` answers an event the one table refuses as `not-taken` with the table's code (`no-evidence`,
+`output-schema`, …), counted as a `plugin.step` line of that code; nothing is written, so the node still awaits and a later event of the
+declared schema is taken. Proof: `ObservedEventTests` (the refusal counted once, the record unchanged, no wire fired). Detail: D173's
+FABRIC-PERFORM1n note.
