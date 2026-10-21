@@ -2,8 +2,9 @@
 
 **Status: proposed, round 3** (D197, 2026-10-21). Written by Claude Opus from the code at `dbac74517`; revised under D191 by
 Codex's read of round 1 and by Fable's read of round 2, whose findings and verdicts are §13. Round 3 read the code it cites again
-at `385bcf56f`, where only `AccountAttention.cs` had moved (NEEDSSCOPE1), and carries the steward's settlements of round 2's open
-questions (D197's note, as round 3 corrected it). Nothing here is built. Amends D125, D130, D152 and D175 once accepted (§10).
+at `20c324794`, the commit Fable read, and carries the steward's settlements of round 2's open questions (D197's note, as round 3
+corrected it). Nothing here is built but `HarnessSettings.Change`, which PUSH1f2e1 merged after the read (§6.2). Amends D125, D130,
+D152 and D175 once accepted (§10).
 
 The owner, adding an account on an agent's page, met the add-account dialog's third step, *Let it run work in*: a box for a
 workspace's own list of three accounts and a box for *This machine's list*, "used by games; its starts run on account-4 instead
@@ -215,8 +216,8 @@ altogether but for one case, and says so where the person adds an account.
    account (`kind == Driven && account is not null && !InScope(…)`, `:29`), as `KeptOf`'s test (`:30`) already passes a null
    account; `InScope` keeps its meaning for a named account. So the fold moves no such record; a cooling, a refusal or a
    signed-out own sign-in still carries its words to a new record on the set's walk, as `ElsewhereAsync` does today
-   (`HarnessRoster.cs:923-939`). Going on there runs the agent in the person's own home, its readiness asked as a resume asks it today, and the agent may write
-   there as it does at their terminal; nothing else runs there.
+   (`HarnessRoster.cs:923-939`). Going on there runs the agent in the person's own home, its readiness asked as a resume asks it
+   today, and the agent may write there as it does at their terminal; nothing else runs there.
 6. **Adding an account never changes it**, and the dialog says nothing that could be read as changing it: it names Daoris's
    accounts, never *this machine* (§4.1).
 7. **Its row stays last** (D175's OWNSPACE1b note, settlement 1, less its read), and its ⓘ says all of the above (§4.2).
@@ -504,16 +505,17 @@ agent:
 
 ### 6.2 When it runs, and its writer
 
-**Every write folds first** (round 3, Fable's F5, the steward's choice). `HarnessSettings.Change(path, edit)`, which PUSH1f2e adds
-so an edit is decided from the file as it stands under its keep lock, with every writer of `harnesses.json` through it (the
-alone-path design §1.4 and its PUSH1f2e row, as KEEPALL1b's amendment leaves it), folds before it edits: under the lock it reads
-the raw file, runs `AccountSet.Fold` over it, runs the edit over the folded settings, appends the fold's receipt where it had
-anything to say, and writes the result before the lock goes. So the first writer in any process is the folder: the terminal's
-`agent login` or `profile order` with the host down, a door's edit after an older build's write, or the come-up. No edit is ever
-made over a raw file whose scopes remain; one that was, writing the projected union as `rotation[agent]` beside a workspace's list
-or a default, would leave the later fold reading the union as the machine's list as it was. A folded file folds to itself, so the
-fold adds nothing to a write where there is nothing to fold. A writer of `harnesses.json` outside `Change` that PUSH1f2e leaves is
-moved into it by POOL1a.
+**Every write folds first** (round 3, Fable's F5, the steward's choice). `HarnessSettings.Change(path, edit)` decides an edit from
+the file as it stands under its keep lock (the alone-path design §1.4 and its PUSH1f2e row, as KEEPALL1b's amendment leaves it):
+PUSH1f2e1 built it after Fable's read (merged at `915440734`) as the lock, `Load`, the edit and the whole write, every window writer
+of `harnesses.json` through it, and the rest of PUSH1f2e brings the terminal's account verbs to it. POOL1a makes it fold before it
+edits: under the lock it reads the raw file, runs `AccountSet.Fold` over it, runs the edit over the folded settings, appends the
+fold's receipt where it had anything to say, and writes the result before the lock goes. So the first writer in any process is
+the folder: the terminal's `agent login` or `profile order` with the host down, a door's edit after an older build's write, or the
+come-up. No edit is ever made over a raw file whose scopes remain; one that was, writing the projected union as `rotation[agent]`
+beside a workspace's list or a default, would leave the later fold reading the union as the machine's list as it was. A folded
+file folds to itself, so the fold adds nothing to a write where there is nothing to fold. A writer of `harnesses.json` outside
+`Change` that PUSH1f2e leaves (`Save` stays public) is moved into it by POOL1a.
 
 **The come-up** is `Change(path, identity)`: once, at the driver's come-up, for a file with anything to fold, so a file nobody edits
 is folded too. Between a read and the first folding write, every reader sees the set through `AccountSet.Of`, so no start, look
@@ -542,8 +544,8 @@ of `harnesses.json`, listed in `HarnessSettings.Sections`; an older build keeps 
 While any receipt is unsaid, the agent's page shows each (§4.2) and `agent list` prints them; *Got it* (`ACCOUNT_USE` `said`, with
 the ids of the receipts it was shown) marks those said, and they are never drawn again. A receipt appended after the page drew is
 not among those ids, so a press that never showed it leaves it unsaid; an id no receipt holds is passed over. A later fold
-appends its own receipt and never replaces one unsaid. Said receipts beyond the last five are dropped at the next write. Nothing else announces it: it is news,
-not a wait (D196 point 7).
+appends its own receipt and never replaces one unsaid. Said receipts beyond the last five are dropped at the next write. Nothing
+else announces it: it is news, not a wait (D196 point 7).
 
 ### 6.4 Builds already shipped
 
@@ -646,10 +648,11 @@ TypeScript writer, which PUSH1f2e removes before POOL1a lands.
 
 ## 11. The rows
 
-All after **PUSH1f2e**, which hands `agent profile …` to the driver's program, removes the TypeScript twins and adds
-`HarnessSettings.Change`. PUSH1f2e is being built now, by a session of the owner's install, under a brief to keep today's account
-verb shapes (round 3, Fable's F12), so the rows below take its verbs and tables as it builds them. Where PUSH1f2e lands otherwise,
-the rows wait for it to be read again.
+All after **PUSH1f2e**, which adds `HarnessSettings.Change`, hands `agent profile …` to the driver's program and removes the
+TypeScript twins. Its first part, PUSH1f2e1, merged after Fable's read (`915440734`): `Change` and every window writer of
+`harnesses.json` through it, the account verbs' shapes unchanged. The rest is being built now, by a session of the owner's install,
+under a brief to keep today's account verb shapes (round 3, Fable's F12), so the rows below take its verbs and tables as it builds
+them. Where PUSH1f2e lands otherwise, the rows wait for it to be read again.
 
 - **POOL1a — one set in the driver and on the bridge** (driver, modules). `AccountSet.Of` and `AccountSet.Fold` with their table of
   shapes; `HarnessSettings.Change` folding before every edit, every writer of `harnesses.json` through it, the come-up as
@@ -700,8 +703,10 @@ the rows wait for it to be read again.
 ## 12. What no check here covers, and what is open
 
 - **Written from the code, nothing run.** Every file and line above was read at `dbac74517`, and those round 3 cites again at
-  `385bcf56f`, where only `AccountAttention.cs` had moved (NEEDSSCOPE1; its lines above are `385bcf56f`'s); no test ran and the
-  window was not looked at.
+  `20c324794`, where of round 2's files only `AccountAttention.cs` had moved (NEEDSSCOPE1; its lines above are `20c324794`'s). Since
+  then PUSH1f2e1 (`915440734`) has moved lines in `HarnessSettings.cs` (by twenty-eight after line 177), `HarnessSelection.cs`,
+  `AccountsRoutes.cs`, `AgentsRoutes.cs`, `HelpRoutes.cs`, `AgentActions.cs`, `AgentsCommand.cs`, `AccountCooling.cs` and
+  `AccountNames.cs`; the cites stay `20c324794`'s, and each names its member. No test ran and the window was not looked at.
 - **Settled by the steward** (D197's note, before Fable's read, as round 3 corrected it):
   - **The machine's default mapped to the set** (§0.3). The machine's own account is the person's own sign-in, outside the set;
     `defaults[agent]` is a Daoris account the machine scope began on, and folds into the order as its first. Where the machine
@@ -711,8 +716,9 @@ the rows wait for it to be read again.
     and CODEXUSE3, and, with Fable's F2, the roster's whole refresh's question of it.
   - **`trust` with no account named** grants the folder for every account of the set (§3 point 4, §5.1); the own home is never
     written, by the door or by a hold's press.
-- **PUSH1f2e as it lands.** Its brief keeps today's account verb shapes, and the rows take them so (§11); the tables it moves or
-  keeps, and whether every writer of `harnesses.json` goes through `Change`, are read again when it merges, before POOL1a starts.
+- **PUSH1f2e as it lands.** Its brief keeps today's account verb shapes, and the rows take them so (§11). PUSH1f2e1 put every
+  window writer of `harnesses.json` through `Change`; the tables the rest moves or keeps, and the terminal's writers coming to
+  `Change`, are read again when it merges, before POOL1a starts.
 - **The receipts in Notifications** once NOTIFY2f's record exists: a row for later, not this design's.
 - **The install's shape** is not read here; §8's consequences are said by shape, and POOL1d reads the real one.
 
@@ -748,8 +754,8 @@ sign-in) and the walk's inputs, it changes a foundation in D191's amendment's cl
 | C7.1 | A smaller shape: raw persistence, one projection for every reader, one locked migration, a stable receipt, a whole order | no | holds | taken whole: §2.2, §2.4, §6 |
 
 **Fable, round 2** (read at `20c324794`, the steward having asked most of §2.4, §3 and §6; prompt and output in `local/` scratch):
-thirteen findings, five blocking. Each was checked against the code at `385bcf56f`, where every file it cites stands as at
-`20c324794`; all hold, and each is taken into round 3 as the table says. Where Fable offered options the steward chose: F3, the
+thirteen findings, five blocking. Each was checked against the code at `20c324794`; all hold, and each is taken into round 3 as
+the table says. Where Fable offered options the steward chose: F3, the
 own-home hold offers no press (option a); F4, `use: order` for a machine scope of one account (option b); F5, every `Change`
 folds first; F12, the rows take PUSH1f2e's verbs as it builds them.
 
