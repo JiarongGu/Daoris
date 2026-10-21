@@ -22,10 +22,7 @@ public sealed class DownloadClearingTests : IDisposable
 
     public DownloadClearingTests() => Directory.CreateDirectory(Home);
 
-    public void Dispose()
-    {
-        try { TreeSetAside.DeleteNeverFollowing(_root); } catch (IOException) { } catch (UnauthorizedAccessException) { }
-    }
+    public void Dispose() => GitSeed.Discard(_root);
 
     private string Agent(string agent, string version, string binary = "claude")
     {
@@ -633,7 +630,7 @@ public sealed class DownloadClearingTests : IDisposable
         {
             Sessions = _ =>
             {
-                Directory.Delete(folder, recursive: true);
+                GitSeed.Remove(folder);
                 return Task.FromResult(LiveSessions.None);
             },
         };
