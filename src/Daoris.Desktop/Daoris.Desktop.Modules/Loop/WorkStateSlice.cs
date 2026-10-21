@@ -65,7 +65,7 @@ public static class WorkStateSlice
         ["attempt"] =
         [
             "unit", "node", "attempt", "plugin", "step", "nodeState", "why", "outcome", "revision", "at", "resolution", "resolvedAt", "said",
-            "words",
+            "words", "code",
         ],
     };
 
