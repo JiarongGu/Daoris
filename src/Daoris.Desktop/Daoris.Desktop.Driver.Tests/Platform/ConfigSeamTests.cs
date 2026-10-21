@@ -73,7 +73,7 @@ public sealed partial class ConfigSeamTests
         Func<string, string?>[] environments =
         [
             Env((DriverConfig.PathVariable, chosen), (DaorisHome.Variable, Home)),
-            Env((DriverConfig.PathVariable, Path.Combine(Home, "data", "driver.json")), (DaorisHome.Variable, Elsewhere)),
+            Env((DriverConfig.PathVariable, DaorisHome.Entry(Home, HomeEntry.DriverConfig)), (DaorisHome.Variable, Elsewhere)),
             Env((DaorisHome.Variable, Home)),
             Env((DaorisHome.Variable, Home + Path.DirectorySeparatorChar)),
         ];

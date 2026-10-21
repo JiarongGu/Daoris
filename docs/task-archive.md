@@ -19401,3 +19401,10 @@ operation whose plugin stop stays in the route, a held folder refused `PLUGIN_BU
 which `browser.ts` and `remotemap.ts` still write through; the seam is `platform/driverprogram.ts` (CLI `test(` lines 1,310 before,
 1,168 after). Unproven until the install: a plugin added and switched from a terminal beside the open window. Detail: D194's PUSH1f2f
 note. On Opus.
+
+## LEASEHOME2 — one home for the loop's lease and a verb's (2026-10-22, D171)
+
+> - [ ] **LEASEHOME2 — one home for the loop's lease and a verb's** (driver). The headless loop takes its lease in the driver config's folder (`DriverConfig.HomeOf`), a verb in `DAORIS_HOME`; with `DAORIS_DRIVER_CONFIG` elsewhere the two never meet, and a verb run with another `DAORIS_HOME` is unseen by the swap. The RPC design §5. Proof: a `DriverHostTests` row with the config elsewhere.
+
+**Outcome** 2026-10-22: a verb takes the lease in the home the loop drives, the folder the driver's config is in (`DriverConfig.FindHome`),
+`DAORIS_HOME` wherever no override names a file elsewhere, so an install is unchanged. Detail: D171's LEASEHOME2 note. On Opus.
