@@ -18639,3 +18639,13 @@ starts 44 git processes (55), the squash press 46 (51), the merge press 40 (43);
 Fewer than the row's estimate of 20: the rest are each act's own read, `status` (LANDGIT1c) and the tidy's. Proof: `LandGitCountTests`
 with its ceilings lowered, `What_another_process_moves_is_asked_of_git_each_time` green. On Opus: about 90 tool calls. Detail: D173's
 LANDGIT1b note.
+
+## HELP-PROPOSAL-SETTLED1 — a proposal settled from a terminal reaches an open window (2026-10-21, D173)
+
+> - [ ] **HELP-PROPOSAL-SETTLED1 — a proposal settled from a terminal reaches an open window** (driver; after EVENT5a). A settle by `HelpCommand` rewrites the file under its name, which the name-only stamp does not hear, so another window's card stays until the 30 s read: stamp state too, or have `HelpCommand` publish. Proof: a `HomeWatchTests` case for a settle from another process.
+
+**Outcome** 2026-10-21: the first of the row's two ways, stamp state too. `HomePart.Named` stamps each proposal by its `state`,
+read again only when the file's own stamp moved, so a settle by any other process (a terminal, another window) wakes `help` and
+the window's card goes within the debounce; a rewrite that keeps the state (a card's units kept) and a claim still wake nothing.
+Proof: `HomeWatchTests.A_proposal_settled_from_another_process_is_heard` (heard by the hint and found by the deadline), and the
+EVENT5a case narrowed to a rewrite with its state kept.

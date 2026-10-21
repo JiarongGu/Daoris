@@ -706,7 +706,8 @@ public sealed class DriverLoop(
 
         // FABRIC-EVENT5a: Ask Daoris's proposals, heard by this window's process whoever holds the home's lease (a headless loop may
         // drive while this shell's page and chats are live, and the connector writes there either way). Told once at the start, since
-        // one written before the watch opened is already in its first read, and again at each arrival. Before the lease is waited on.
+        // one written before the watch opened is already in its first read, and again at each arrival and each settle another process
+        // makes (HELP-PROPOSAL-SETTLED1), so a card a terminal settled leaves this window too. Before the lease is waited on.
         await using var proposals = HomeWatch.ForProposals(
             homeDirectory, (_, _) => StatePublisher.Publish(eventBus, StateScopes.Help), log: log);
         proposals.Start();
