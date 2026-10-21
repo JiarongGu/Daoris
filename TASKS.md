@@ -193,6 +193,7 @@ C0–C2 slice is here (§12); C3–C7 wait for contract tests. Correctness rows 
 
 ## Accounts and browser
 
+- [ ] **ACCTPOOL1 — one pool of Daoris's accounts serves every workspace** (design; D197, drafting 2026-10-21; amends D125, D130 and D152). The owner decided that an agent's accounts signed in for Daoris are one pool for every workspace, and that the machine's own account stays the machine's, never changed by Daoris. The add-account dialog's *Let it run work in* step offered *This machine's list* in words that read as moving the machine onto the new account, while ticking it would narrow every workspace without a list of its own to that one account (`src/Daoris.Web/src/agents/agents.ts` `joinChoices`, `AddAccount.tsx` `choiceDetail`). Proof: D197 and its design read by Codex under D191, accepted, and its build rows filed.
 - [ ] **SIGNIN1b — a Codex and a Claude sign-in proved on the install, with the owner signing in** (the parent with the owner; after the republish carrying SIGNIN1; D125's SIGNIN1 note). SIGNIN1 built the phases, the late panel and the log; whether Codex's device-code sign-in now completes on the owner's install, and how long Claude's takes, is shown only by a real sign-in, which is the owner's. Proof: each step shot and timed on the install, the machine log's `harness.*` lines for both, and the usual times written into the UI/UX design's `SIGNINLOG1` place.
 
 Contracts: toolchain (D57 §3), account rotation (D125), account use (D130), browser (D78/D84).
