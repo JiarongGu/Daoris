@@ -72,12 +72,14 @@ public static class AttentionStateSlice
             "kind", "id", "since", "workspace", "where", "note", "detail", "publishTo", "choices", "ask", "number", "goAhead", "session",
             "departed", "setUp", "local", "environment", "shows", "opinion", "placed", "sitting", "trust", "quest", "proposal", "title",
             "permission", "blocked", "held", "unreadable", "wholeWorkspace", "holding", "read", "runs", "account", "answer", "ended",
-            "confirmation",
+            "confirmation", "stale",
         ],
         ["waiting"] = ["kind", "workspace"],
         ["working"] = ["workspace"],
         ["note"] = ["note", "parts"],
         ["goAhead"] = ["kind", "on", "act"],
+        // GOAHEADSTALE1: a go-ahead nothing on its ask could still use, since the last thing on its ask moved.
+        ["stale"] = ["since"],
         ["departed"] = ["count", "number", "reason"],
         ["setUp"] = ["machine", "sequence"],
         ["opinion"] = ["session", "quest", "repository", "workspace", "since", "auto", "opinion"],
@@ -119,6 +121,7 @@ public static class AttentionStateSlice
     {
         ["row.note"] = "note",
         ["row.goAhead"] = "goAhead",
+        ["row.stale"] = "stale",
         ["row.departed"] = "departed",
         ["row.setUp"] = "setUp",
         ["row.opinion"] = "opinion",

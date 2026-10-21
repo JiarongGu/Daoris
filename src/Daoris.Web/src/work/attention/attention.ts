@@ -30,6 +30,12 @@ export type AttentionGroup = 'holding' | 'word' | 'ready';
 export const GROUP_ORDER: readonly AttentionGroup[] = ['holding', 'word', 'ready'];
 
 /**
+ * A stale go-ahead's mark (GOAHEADSTALE1), as .NET judges it: since when nothing on its ask could still use its answer, the last thing on
+ * its ask moving; null where no moment reads.
+ */
+export type StaleSince = { since: string | null };
+
+/**
  * Each kind's group (design §6.2). **Holding work**: a parked session holds its tree, a parked quest its repository's next
  * start, a go-ahead its session's act, a folder to trust the start the driver holds. **Waiting for your word**: an ask to
  * publish, an intake's question, a departure, a widening, a quest nobody can take, none of which holds anything already
@@ -301,6 +307,12 @@ export type PushedAttention = {
   number?: number;
   /** A go-ahead's act, which its title says. */
   goAhead?: Pick<GoAhead, 'kind' | 'on' | 'act'>;
+  /**
+   * A go-ahead nothing on its ask could still use (GOAHEADSTALE1): no session on the ask runs or waits, and no quest of it is open. Since
+   * the last thing on its ask moved, which its line says as its age; absent from a go-ahead something still waits for, and from a shell
+   * older than the field.
+   */
+  stale?: StaleSince;
   session?: string | null;
   /** A held done's first departed requirement, its reason, and how many it departed from. */
   departed?: { count: number; number: number; reason: string } | null;
