@@ -64,10 +64,13 @@ export function secondaryWindow(search: string): SecondaryWindow | null {
   return null;
 }
 
+/** The application's own window, the first main window, as the host names it (`MainWindows.First`): `main:<n>` starts from two. */
+export const FIRST_MAIN_WINDOW = 'main';
+
 /**
  * The name this page's window was opened under, which it tells the host when it asks for a picker (MAINWINDOWS2c): the
  * dialog is owned by this window, not the first main window, which is hidden while put away. Null for the application's own
- * window, the first, which a host takes a missing name to be.
+ * window, the first, which a host takes a missing name to be (`FIRST_MAIN_WINDOW` where the host names it).
  */
 export function ownWindowName(search: string): string | null {
   const other = anotherMainWindow(search);

@@ -379,4 +379,29 @@ describe('the shell push channel (ShellSignals)', () => {
     eventHandlers.get('DAORIS.ATTEND_SESSION')!({});
     expect(onAttend).toHaveBeenCalledTimes(1);
   });
+
+  /**
+   * NOTIFY2c: the shell brings forward the main window whose workspace holds what the notification was about, and names it; only that
+   * window's page attends the session, so a window on another workspace keeps what it shows. The first main window is `main`.
+   */
+  it('attends the session only in the window the shell names', () => {
+    const onAttend = vi.fn();
+    show(<ShellSignals notify={() => {}} onAttend={onAttend} />);
+
+    eventHandlers.get('DAORIS.ATTEND_SESSION')!({ session: 's1a2b3c4', window: 'main:2' });
+    expect(onAttend).not.toHaveBeenCalled();
+
+    eventHandlers.get('DAORIS.ATTEND_SESSION')!({ session: 's1a2b3c4', window: 'main' });
+    expect(onAttend).toHaveBeenCalledWith('s1a2b3c4');
+
+    window.history.replaceState(null, '', '/?window=main%3A2');
+    try {
+      eventHandlers.get('DAORIS.ATTEND_SESSION')!({ session: 's5e6f7a8', window: 'main' });
+      expect(onAttend).toHaveBeenCalledTimes(1);
+      eventHandlers.get('DAORIS.ATTEND_SESSION')!({ session: 's5e6f7a8', window: 'main:2' });
+      expect(onAttend).toHaveBeenLastCalledWith('s5e6f7a8');
+    } finally {
+      window.history.replaceState(null, '', '/');
+    }
+  });
 });

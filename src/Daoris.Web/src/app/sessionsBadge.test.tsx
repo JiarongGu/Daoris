@@ -460,6 +460,27 @@ describe('A window on one workspace', () => {
     expect(screen.queryByText('parked after failed sessions')).toBeNull();
   });
 
+  /**
+   * NOTIFY2c: with two main windows open, one per workspace, each wears its own workspace's count on its own taskbar button and title;
+   * the second tells its own frame by its name, and the workspace it holds beside its title, as data.
+   */
+  it('tells its own frame its own count and its workspace where it is another main window', async () => {
+    window.history.replaceState(null, '', '/?window=main%3A2');
+    try {
+      start(ROWS, WAITING, WORKING, 'default');
+
+      await waitFor(() => expect(within(bell()).getByText('3')).toBeInTheDocument());
+      await waitFor(() => expect(badges().at(-1)).toEqual(['DAORIS.WINDOWS', 'SET_BADGE', {
+        payload: { name: 'main:2', count: 3, description: '3 waiting on you', order: expect.any(Number) },
+      }]));
+      expect(badges().every(([, , request]) => (request as { payload: { name?: string } }).payload.name === 'main:2')).toBe(true);
+      expect(invoke).toHaveBeenCalledWith(
+        'DAORIS.WINDOWS', 'SET_TITLE', { payload: { name: 'main:2', title: 'Daoris (道衍) — default', workspace: 'default' } });
+    } finally {
+      window.history.replaceState(null, '', '/');
+    }
+  });
+
   it('counts and lists every workspace’s rows where it holds every workspace', async () => {
     start(ROWS, WAITING, WORKING, null);
 

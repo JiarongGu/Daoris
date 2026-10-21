@@ -9,6 +9,7 @@ import {
 } from '../bridge/shell';
 import { type AccountWaitTick, type Consideration, type TrustHold, newsFrom } from '../data/signals';
 import type { Notify } from '../design/ui';
+import { FIRST_MAIN_WINDOW, ownWindowName } from '../work/window';
 
 type Tick = { events?: string[]; considered?: Consideration[]; untrusted?: TrustHold[]; waits?: AccountWaitTick[] };
 
@@ -180,8 +181,13 @@ export function ShellSignals({ notify, onAttend, attended, onConfirming }: {
     void client.invalidateQueries({ queryKey: keys.driver, predicate: notPushed(client) });
   });
 
-  /** The person clicked an OS notification, so the window comes forward on that session. */
-  useShenoraEvent<{ session?: string }>('DAORIS', 'ATTEND_SESSION', (asked) => {
+  /**
+   * The person clicked an OS notification, so the window comes forward on that session. The shell names the main window it brought
+   * forward, the one whose workspace holds the session (NOTIFY2c), and only that window's page attends it, so a window on another
+   * workspace keeps what it shows; a shell that names none is every main window's, as before.
+   */
+  useShenoraEvent<{ session?: string; window?: string }>('DAORIS', 'ATTEND_SESSION', (asked) => {
+    if (asked?.window && asked.window !== (ownWindowName(globalThis.location?.search ?? '') ?? FIRST_MAIN_WINDOW)) return;
     if (asked?.session) onAttend?.(asked.session);
   });
 
