@@ -19,6 +19,14 @@ public sealed record ToolPlan(
     string Tool, string Action, string? Version, string? Current, bool Fetch, OfferedVersion? Offered, string? Source,
     ToolLicence? Licence, string? Nothing, string? Check, string? Problem);
 
+/// <summary>
+/// A version downloaded and verified into its run's staging, not yet the version (PUSH1f2c, the alone-path design §1.4):
+/// <see cref="ToolInstall.Publish"/> makes it one, or <see cref="ToolInstall.Discard(ToolStaged)"/> removes it.
+/// </summary>
+/// <param name="Staging">The staging folder, <c>&lt;version&gt;.part-&lt;pid&gt;</c>.</param>
+/// <param name="Exe">The executable inside the package, as the list names it.</param>
+public sealed record ToolStaged(string Home, string Tool, string Version, string Staging, string Exe);
+
 /// <summary>One resource location, looked at (§3.7).</summary>
 /// <param name="Outcome"><c>fetched</c> (its copy is the list just fetched), <c>unread</c> (it answered no list this build
 /// reads) or <c>failed</c>.</param>
@@ -34,10 +42,11 @@ public sealed record LocationLook(string Address, string Outcome, string Sentenc
 /// plan are the contract — and each carries the same tables (<c>ToolInstallTests</c> here, <c>toolinstall.test.ts</c>
 /// there), row for row. A rule changed here is changed there, in the same commit:</para>
 /// <list type="number">
-/// <item>A download is staged at <c>&lt;home&gt;/tools/&lt;tool&gt;/&lt;version&gt;.part/</c>: the archive lands there and is
-/// held to the list's size and SHA-256, it is unpacked into <c>package/</c>, the executable is found at <c>exe</c>, and
-/// <c>tool.json</c> is written. Then the whole folder is renamed to <c>&lt;version&gt;/</c>. A refusal, or the person's
-/// stop, removes the staging.</item>
+/// <item>A download is staged at <c>&lt;home&gt;/tools/&lt;tool&gt;/&lt;version&gt;.part-&lt;pid&gt;/</c>, its own process's
+/// (PUSH1f2c; a bare <c>.part</c> before it): the archive lands there and is held to the list's size and SHA-256, it is unpacked
+/// into <c>package/</c>, the executable is found at <c>exe</c>, and <c>tool.json</c> is written. Then, published, the whole folder
+/// is renamed to <c>&lt;version&gt;/</c>, unless another run published that version meanwhile. A refusal, or the person's stop,
+/// removes the staging; a staging whose process is gone is swept at the next run's start.</item>
 /// <item>Finding the record, naming a file that is there, is the proof: a version already downloaded fetches nothing.</item>
 /// <item>Every address a list names is tried in read order, the person's first; each is held to https://, or http://
 /// to this machine, and so is every redirect, followed here one at a time. The bytes are the check, whichever address
@@ -53,7 +62,10 @@ public sealed record LocationLook(string Address, string Outcome, string Sentenc
 /// </remarks>
 public static class ToolInstall
 {
-    /// <summary>Where a download is staged, beside the folder it becomes. The CLI's <c>STAGING</c>.</summary>
+    /// <summary>
+    /// Where a download is staged, beside the folder it becomes: <c>.part</c>, then its process's id (<see cref="StagingOf"/>,
+    /// PUSH1f2c). An older build's bare <c>.part</c> goes when its version is downloaded again.
+    /// </summary>
     public const string Staging = ".part";
 
     /// <summary>A record's keys, in the order both twins write them (§3.6). The CLI's <c>RECORD_KEYS</c>.</summary>
@@ -162,8 +174,9 @@ public static class ToolInstall
     }
 
     /// <summary>
-    /// Download one version, verify it, unpack it and lay it out (§3.6, rules 1–3). Nothing switches: using it is
-    /// <see cref="Tools.UseManaged"/>'s, once this has answered. The CLI's <c>downloadVersion</c>.
+    /// Download one version, verify it, unpack it and lay it out (§3.6, rules 1–3): <see cref="StageAsync"/>, then
+    /// <see cref="Publish"/>, in a process that already holds its home (the window's loop, PUSH1f2c). Nothing switches: using it is
+    /// <see cref="Tools.UseManaged"/>'s, once this has answered.
     /// </summary>
     /// <param name="ct">The person's stop: it ends the download, and the staging goes with it.</param>
     /// <param name="transport">How a host is reached — the network, unless a test holds its own.</param>
@@ -174,6 +187,24 @@ public static class ToolInstall
         string home, string tool, OfferedVersion offered, string platform, Action<string> write, CancellationToken ct = default,
         HttpMessageHandler? transport = null, MachineLog? log = null)
     {
+        var staged = await StageAsync(home, tool, offered, platform, write, ct, transport, log).ConfigureAwait(false);
+        return staged is null ? Tools.ManagedExecutable(home, tool, offered.Version).File! : Publish(staged, write, log).Exe;
+    }
+
+    /// <summary>
+    /// A download's first half (PUSH1f2c, D194 point 3, the alone-path design §1.4): fetched, verified, unpacked and its record
+    /// written into its own staging, <c>&lt;version&gt;.part-&lt;pid&gt;</c>, where no reader takes it for a version and no other run
+    /// meets it. It holds nothing while it waits on the network; <see cref="Publish"/> makes it the version. Null where the version is
+    /// already downloaded: nothing was fetched. Its start sweeps the tool's stagings whose process no longer runs.
+    /// </summary>
+    /// <param name="ct">The person's stop: it ends the download, and the staging goes with it.</param>
+    /// <param name="process">The process the staging is named by: this one, unless a test names two runs in one process.</param>
+    /// <param name="running">Whether a process of that id runs here: the sweep's look, or a test's stand-in.</param>
+    /// <exception cref="ToolRefusal">As <see cref="DownloadAsync"/>; the staging is gone.</exception>
+    public static async Task<ToolStaged?> StageAsync(
+        string home, string tool, OfferedVersion offered, string platform, Action<string> write, CancellationToken ct = default,
+        HttpMessageHandler? transport = null, MachineLog? log = null, int? process = null, Func<int, bool>? running = null)
+    {
         var declared = Declared(tool);
         var version = offered.Version;
         if (!Tools.IsExactVersion(version)) throw new ToolRefusal("version", $"`{version}` is not an exact version — nothing was fetched");
@@ -183,7 +214,7 @@ public static class ToolInstall
         {
             write($"  {declared.Name} {version} is already downloaded — nothing was fetched.");
             write($"  {present}");
-            return present;
+            return null;
         }
 
         if (!ToolResources.Archives.Contains(offered.Archive, StringComparer.Ordinal))
@@ -192,10 +223,14 @@ public static class ToolInstall
         }
 
         log ??= MachineLog.None;
+        Sweep(home, tool, running ?? Running);
         log.Info("tool.download.started", ("tool", tool), ("version", version));
-        var staging = folder + Staging;
+        var staging = StagingOf(folder, process ?? Environment.ProcessId);
+        var kept = false;
         try
         {
+            // An older build's bare staging of this version goes as it always did, at its download's start.
+            if (Directory.Exists(folder + Staging)) Directory.Delete(folder + Staging, recursive: true);
             if (Directory.Exists(staging)) Directory.Delete(staging, recursive: true);
             Directory.CreateDirectory(staging);
             var archive = Path.Combine(staging, "archive");
@@ -206,19 +241,9 @@ public static class ToolInstall
             ToolArchives.Unpack(archive, offered.Archive, Path.Combine(staging, Tools.Package), offered.Exe);
             File.Delete(archive);
             WriteRecord(Path.Combine(staging, Tools.Record), tool, offered, platform, url);
-
-            if (Directory.Exists(folder))
-            {
-                // Daoris's own folder, holding nothing that runs (asked above): a download that stopped, or a record that went.
-                write($"  replacing {folder}, which held nothing that runs");
-                Directory.Delete(folder, recursive: true);
-            }
-
-            // The scanner opens the executable just unpacked, and the folder cannot move until it lets go (FIX-LOG 2026-10-07).
-            AtomicFile.MoveFolder(staging, folder);
-            write($"  unpacked into {Path.Combine(folder, Tools.Package)}");
-            log.Info("tool.download.verified", ("tool", tool), ("version", version));
-            return Path.Combine([folder, Tools.Package, .. offered.Exe.Split('/')]);
+            ct.ThrowIfCancellationRequested();
+            kept = true;
+            return new ToolStaged(home, tool, version, staging, offered.Exe);
         }
         catch (ToolRefusal refusal)
         {
@@ -232,11 +257,110 @@ public static class ToolInstall
         }
         finally
         {
-            if (Directory.Exists(staging)) Directory.Delete(staging, recursive: true);
-            // A refusal leaves nothing under the tool's folder, not even the folder the staging made.
-            var parent = DaorisHome.Entry(home, HomeEntry.ToolVersions, tool);
-            if (Directory.Exists(parent) && !Directory.EnumerateFileSystemEntries(parent).Any()) Directory.Delete(parent);
+            if (!kept) Discard(home, tool, staging);
         }
+    }
+
+    /// <summary>
+    /// A download's second half (PUSH1f2c, the alone-path design §1.4): the staging made the version by one folder move, after a look
+    /// again at what is there now. A version another run published meanwhile is kept and this run's staging removed; a folder holding
+    /// nothing that runs, judged now, is replaced. A terminal's run calls it holding the home's lease, which it waited for; the window's
+    /// loop holds its home already.
+    /// </summary>
+    /// <returns>The executable, and whether this run's staging became the version.</returns>
+    public static (string Exe, bool Published) Publish(ToolStaged staged, Action<string> write, MachineLog? log = null)
+    {
+        var declared = Declared(staged.Tool);
+        var folder = VersionFolder(staged.Home, staged.Tool, staged.Version);
+        try
+        {
+            if (Tools.ManagedExecutable(staged.Home, staged.Tool, staged.Version).File is { } meanwhile)
+            {
+                write($"  another run downloaded {declared.Name} {staged.Version} meanwhile: it is kept, and this run's copy is removed.");
+                return (meanwhile, false);
+            }
+
+            if (Directory.Exists(folder))
+            {
+                // Daoris's own folder, holding nothing that runs (asked just now): a download that stopped, or a record that went.
+                write($"  replacing {folder}, which held nothing that runs");
+                Directory.Delete(folder, recursive: true);
+            }
+
+            // The scanner opens the executable just unpacked, and the folder cannot move until it lets go (FIX-LOG 2026-10-07).
+            AtomicFile.MoveFolder(staged.Staging, folder);
+            write($"  unpacked into {Path.Combine(folder, Tools.Package)}");
+            (log ?? MachineLog.None).Info("tool.download.verified", ("tool", staged.Tool), ("version", staged.Version));
+            return (Path.Combine([folder, Tools.Package, .. staged.Exe.Split('/')]), true);
+        }
+        finally
+        {
+            Discard(staged.Home, staged.Tool, staged.Staging);
+        }
+    }
+
+    /// <summary>A staging this run made and will not publish, removed (the person's stop while it waited to publish).</summary>
+    public static void Discard(ToolStaged staged) => Discard(staged.Home, staged.Tool, staged.Staging);
+
+    /// <summary>
+    /// Where a run stages a version (PUSH1f2c): <c>&lt;version&gt;.part-&lt;pid&gt;</c>, its own process's, so two runs of one
+    /// version never touch each other's staging and nothing waits.
+    /// </summary>
+    public static string StagingOf(string folder, int process) => $"{folder}{Staging}-{process.ToString(CultureInfo.InvariantCulture)}";
+
+    /// <summary>
+    /// The tool's stagings whose process no longer runs, removed (PUSH1f2c): a crash between a staging and its publication leaves
+    /// nothing for good. A process id the system gave another process since keeps its staging only until that process ends.
+    /// </summary>
+    public static void Sweep(string home, string tool, Func<int, bool> running)
+    {
+        var parent = DaorisHome.Entry(home, HomeEntry.ToolVersions, tool);
+        if (!Directory.Exists(parent)) return;
+        foreach (var folder in Directory.EnumerateDirectories(parent))
+        {
+            var name = Path.GetFileName(folder);
+            var at = name.LastIndexOf(Staging + "-", StringComparison.Ordinal);
+            if (at <= 0 || !int.TryParse(name.AsSpan(at + Staging.Length + 1), NumberStyles.None, CultureInfo.InvariantCulture, out var process)
+                || running(process))
+            {
+                continue;
+            }
+
+            try
+            {
+                Directory.Delete(folder, recursive: true);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                // Held this moment: the next run's sweep takes it.
+            }
+        }
+    }
+
+    /// <summary>Whether a process of this id runs here. One this process may not look at runs, as far as anything here knows.</summary>
+    private static bool Running(int process)
+    {
+        try
+        {
+            using var found = System.Diagnostics.Process.GetProcessById(process);
+            return !found.HasExited;
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
+        catch (Exception error) when (error is InvalidOperationException or System.ComponentModel.Win32Exception or NotSupportedException)
+        {
+            return true;
+        }
+    }
+
+    /// <summary>A staging removed, and the tool's folder with it where nothing else is under it, as a refusal leaves nothing.</summary>
+    private static void Discard(string home, string tool, string staging)
+    {
+        if (Directory.Exists(staging)) Directory.Delete(staging, recursive: true);
+        var parent = DaorisHome.Entry(home, HomeEntry.ToolVersions, tool);
+        if (Directory.Exists(parent) && !Directory.EnumerateFileSystemEntries(parent).Any()) Directory.Delete(parent);
     }
 
     /// <summary>The record, its keys in <see cref="RecordKeys"/>' order: what the CLI's <c>JSON.stringify</c> writes.</summary>

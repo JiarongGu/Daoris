@@ -234,6 +234,9 @@ public sealed class DownloadClearingTests : IDisposable
     {
         var staged = ToolInstall.VersionFolder(Home, "gh", "2.63.0") + ".part";
         Directory.CreateDirectory(staged);
+        // A run's own staging (PUSH1f2c), named by its process: never a version either.
+        var running = ToolInstall.StagingOf(ToolInstall.VersionFolder(Home, "gh", "2.64.0"), Environment.ProcessId);
+        Directory.CreateDirectory(running);
         var unfinished = HarnessSettings.ManagedHome(Home, "claude-code", "2.0.1") + ".0123abcd" + DownloadClearing.Aside;
         Directory.CreateDirectory(Path.Combine(unfinished, "bin"));
 
@@ -243,6 +246,7 @@ public sealed class DownloadClearingTests : IDisposable
         Assert.Equal("removed", Assert.Single(Press(Uses(), Later)).Outcome);
         Assert.False(Directory.Exists(unfinished));
         Assert.True(Directory.Exists(staged));
+        Assert.True(Directory.Exists(running));
     }
 
     [Fact]
