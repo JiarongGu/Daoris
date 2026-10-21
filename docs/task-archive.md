@@ -19081,3 +19081,13 @@ quest an ask published; the driver binds it as §4.1's row 1 at the run's first 
 `daoris-driver quest workflow` is the terminal's door. The quest's page offers no choice until WORKFLOW1g. Proof: `QuestOperationKindsTests`,
 `LocalHostTests`, `PersonDoorTableTests`, `WorkflowPortsTests`, `WorkflowRunBindingTests`, `QuestWorkflowCommandTests`. Detail: D157's
 WORKFLOW1e2 note, D68's 2026-10-21 note. On Opus.
+
+## PUSH1f2e1 — `agent which` and the account files' keep lock (2026-10-21, D194)
+
+> - [ ] **PUSH1f2e — the agents' tools and accounts** (cli, driver, modules, tools; after 2d; D194, the alone-path design §5). Read its row in §5 and the sections it names; build it end to end (D187), the family's TypeScript leaving as §4 says. Proof: as §5 names it.
+
+**Outcome** 2026-10-21: the first part of the row, split out because one session could not hold the whole family's port; PUSH1f2e
+stays open in the backlog from `agent list|install|…` on. Built: `daoris-driver agent which <agent> [--workspace] [--json]` (handed
+on by `daoris agent which`), which `proof-kit.mjs` and `acp-trust-probe.mjs` now ask instead of importing `toolchain.ts`; the keep
+lock held from the read to the write by `accounts.json`'s and `cooling.json`'s writers; `HarnessSettings.Change`, with every window
+writer of `harnesses.json` through it. Account verbs' shapes unchanged. Detail: D194's PUSH1f2e1 note, D173's of this day. On Opus.
