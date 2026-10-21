@@ -18834,8 +18834,8 @@ is the parent's installed proof; the taskbar is not flashed. Detail: D156's CONF
 >   that redraws the running record and counts the regions.
 
 **Outcome** 2026-10-21: fixed. The record's relations fold and its milestone were keyed alike under one parent, so each draw left a
-copy behind; the Work frame's foot had the same collision (strip, settler, composer). Each keyed child now names its kind beside
-the id, and `design/siblingKeys.test.ts` fails on two slots of one parent keyed alike. Detail: the fix log's RELSPAM1 entry.
+copy behind; the Work frame's foot had the same collision. Each keyed child now names its kind beside the id, and
+`design/siblingKeys.test.ts` fails on two slots of one parent keyed alike. Detail: the fix log's RELSPAM1 entry.
 ## FABRIC-CLOSECASE1 — one rule for "the same repository" across the close (2026-10-21, D173)
 
 > - [ ] **FABRIC-CLOSECASE1 — one rule for "the same repository" across the close** (driver, service; §E5). The driver compares a quest's repository exactly, the service's `NextStep` and the close door ignore case. Proof: a chain whose repository differs only in case is named and closed alike by both, or refused alike.
