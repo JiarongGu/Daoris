@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-21 — A landing whose replay conflicted only in the backlog was refused, and its session sent to rebase (LANDBACKLOG1)
+
+- **Symptom:** replaying a branch's work onto `main` conflicted in `TASKS.md` alone, and the landing was refused with the rebase words.
+  In this repository each session archives its own row, so nearly every landing touches the backlog, and under LANDREBASE1 most would
+  cost the session a turn over rows the merge tool settles by itself.
+- **Root cause:** LANDREBASE1's replay (`BranchReplays.RebaseTakingGeneratedAsync`) went on past a stop only where every conflicted file
+  was marked generated; anything else was the session's conflict. The merge tool had learned the backlog's rule (MERGETASKS1), the
+  landing had not, and the two shared no code to learn it from.
+- **Fix:** D87's LANDBACKLOG1 note. A stop whose conflict is the backlog the line declares, alone or beside generated files, is merged
+  by its base (`BacklogMerge`) and staged by its blob; the plan's trial does the same over objects. The rule is a twin of the merge
+  tool's, both held to `backlog-merges.json`.
+- **Verification:** `LandBacklogLandingTests.A_conflict_only_in_the_declared_backlog_is_settled_by_its_base_and_lands_replayed`, red
+  before (refused with *Merge conflict in docs/backlog.md*, and the plan named it), green after; the edited-twice, beside-code and
+  session-declared cases refused; `BacklogMergeTests` and `merge-branch.test.ts` on the table.
 ## 2026-10-21 — A terminal's press confirmed past its time still ran when its timer fired late (NOTIFY2a)
 
 - **Symptom:** found by Codex's read of the notification design (D196, its finding 2.5) and the steward's check (S1), never seen on

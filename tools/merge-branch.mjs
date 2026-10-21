@@ -944,6 +944,12 @@ export const REACH = Object.freeze([
     gates: ['driver', 'modules'],
     why: "the driver's TreesCommandTests and the modules' DriverModuleLinesTests read the checkout-scope table (BRSCOPE1b)",
   },
+  // LANDBACKLOG1: the backlog merges' table sits among the driver's tests, and the merge tool's twin reads it too.
+  {
+    paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/backlog-merges.json'],
+    gates: ['driver', 'tool-tests'],
+    why: "the driver's BacklogMergeTests and the merge tool's tests read the backlog merges' table (LANDBACKLOG1)",
+  },
   { paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/**'], gates: ['driver', 'driver-process', 'driver-process-git'], why: "the driver's tests, the fast half and both Process halves" },
   { paths: ['src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/**'], gates: ['modules', 'modules-process'], why: "the modules' tests, both halves" },
   // Before the service's tests, which would place it first: the driver's twin reads it too.
@@ -1144,12 +1150,30 @@ function writeGenerated(root) {
 // ---------------------------------------------------------------------------------------------------
 // MERGETASKS1: the backlog's line conflicts, resolved by the merge base
 
-/** The backlog `daoris.json` declares, else `TASKS.md`: the file a merge resolves by its base. */
+/** The backlog `daoris.json` declares, else `TASKS.md`: the file a merge resolves by its base; null where the manifest does not read. */
 export function backlogPath(root) {
   const manifest = join(root, 'daoris.json');
-  if (!existsSync(manifest)) return 'TASKS.md';
-  const entry = JSON.parse(readFileSync(manifest, 'utf8')).documents?.backlog;
-  const path = typeof entry === 'string' ? entry : entry?.path;
+  return backlogOf(existsSync(manifest) ? readFileSync(manifest, 'utf8') : null);
+}
+
+/**
+ * The backlog a manifest's text declares (LANDBACKLOG1): `TASKS.md` with no manifest; null where it is not JSON or not an object,
+ * so nothing is resolved by its base; `documents.backlog` as text, or an object's text `path`, with each backslash a slash; else
+ * `TASKS.md`. A twin: a landing's replay reads the line's manifest by the driver's `BacklogMerge.PathOf`, and both hold
+ * `backlog-merges.json` among the driver's test fixtures, row for row.
+ */
+export function backlogOf(text) {
+  if (text === null) return 'TASKS.md';
+  let manifest;
+  try {
+    manifest = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  if (manifest === null || typeof manifest !== 'object' || Array.isArray(manifest)) return null;
+  const documents = manifest.documents;
+  const entry = documents !== null && typeof documents === 'object' && !Array.isArray(documents) ? documents.backlog : undefined;
+  const path = typeof entry === 'string' ? entry : entry !== null && typeof entry === 'object' && !Array.isArray(entry) ? entry.path : undefined;
   return typeof path === 'string' ? path.replace(/\\/g, '/') : 'TASKS.md';
 }
 
@@ -1213,6 +1237,9 @@ function hunksCollide(x, y) {
  * Nearly every landing of a session's or a builder's branch stopped on `TASKS.md` (2026-10-21): each side removed or added a
  * row beside the other's, which git reads as one conflict. Union would undo every row a side moved to the archive, so the
  * backlog is not union-merged (`.gitattributes`); its base says which side changed what.
+ *
+ * A twin (LANDBACKLOG1): a landing's replay settles a backlog-only conflict by the driver's `BacklogMerge.ByBase`, and both hold
+ * `backlog-merges.json` among the driver's test fixtures, row for row. A change here is a change there, in the same commit.
  */
 export function mergeByBase(base, ours, theirs) {
   const [o, t, b] = [ours, theirs, base].map((text) => text.split('\n'));
@@ -1253,6 +1280,10 @@ function stageText(root, stage, path) {
  */
 function resolveBacklog(root) {
   const path = backlogPath(root);
+  if (path === null) {
+    console.log('daoris.json: it does not read as an object, so no backlog is resolved by the merge base; left for you');
+    return false;
+  }
   if (!unmergedPaths(root).includes(path)) return false;
   const [base, ours, theirs] = [1, 2, 3].map((stage) => stageText(root, stage, path));
   if (base === null || ours === null || theirs === null) {
