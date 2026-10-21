@@ -1,8 +1,10 @@
 # Daoris's accounts as one set: every account signed in for Daoris serves every workspace, and the person's own sign-in stays theirs (POOL1)
 
-**Status: proposed, round 2** (D197, 2026-10-21). Written by Claude Opus from the code at `dbac74517`; revised by Codex's read of
-round 1 under D191, whose findings and verdicts are §13. Nothing here is built. Amends D125, D130, D152 and D175 once accepted
-(§10).
+**Status: proposed, round 3** (D197, 2026-10-21). Written by Claude Opus from the code at `dbac74517`; revised under D191 by
+Codex's read of round 1 and by Fable's read of round 2, whose findings and verdicts are §13. Round 3 read the code it cites again
+at `20c324794`, the commit Fable read, and carries the steward's settlements of round 2's open questions (D197's note, as round 3
+corrected it). Nothing here is built but `HarnessSettings.Change`, which PUSH1f2e1 merged after the read (§6.2). Amends D125, D130,
+D152 and D175 once accepted (§10).
 
 The owner, adding an account on an agent's page, met the add-account dialog's third step, *Let it run work in*: a box for a
 workspace's own list of three accounts and a box for *This machine's list*, "used by games; its starts run on account-4 instead
@@ -33,7 +35,7 @@ rejected (§9), what this amends (§10), the rows (§11), what no check here cov
   while nothing names an account.
 - **A list is the whole set.** An account a scope does not list never carries its starts; the person's pick at a start is the one
   exception (D130 point 4). When every account a workspace may use is cooling and another is not, *What needs you* asks *Let
-  account-1 run work…*, which joins it to that list (`AccountAttention.cs:71-73`, `:249`; `AttentionRow.tsx:497-510`, `:549-568`).
+  account-1 run work…*, which joins it to that list (`AccountAttention.cs:71-73`, `:253`; `AttentionRow.tsx:497-510`, `:549-568`).
 - **Settings may lie dormant.** An entry beside no list is read by no start (line 869), but the machine's where the walk takes two
   or more accounts with nothing named (line 991).
 
@@ -56,7 +58,7 @@ the same: *This machine runs {{harness}} as {{account}} by default* (`harness.de
 
 | Name in the code | What it is | Where | Under this design |
 |---|---|---|---|
-| The person's own sign-in (the tool's own home; `HarnessReport.OwnLogin`, `OwnAccount`; the page's *Your own sign-in*, and `harness.own`, *this machine's own*) | The agent's credential in its own configuration home, the person's login at their own terminal | Asked at the person's press: `HarnessSelection.cs:214-223`, `:305-313`, and its usage read `HarnessRoster.cs:2016-2043`; no start runs there: `:1036-1038`, `:1057-1059`; a record begun there resumes there: `:883-940` | **The machine's own account.** Outside the set; Daoris runs nothing there but a conversation begun there (§3) |
+| The person's own sign-in (the tool's own home; `HarnessReport.OwnLogin`, `OwnAccount`; the page's *Your own sign-in*, and `harness.own`, *this machine's own*) | The agent's credential in its own configuration home, the person's login at their own terminal | Asked at the person's press, its row's or the whole roster's: `HarnessSelection.cs:214-223`, `:305-313`, `HarnessRoster.cs:810`, and its usage read `HarnessRoster.cs:2016-2043`; no start runs there: `:1036-1038`, `:1057-1059`; a record begun there resumes there: `:883-940` | **The machine's own account.** Outside the set; Daoris runs nothing there but a conversation begun there (§3) |
 | The machine scope's default (`defaults[agent]`, `HarnessSettings.Defaults`; `HarnessReport.MachineDefault`, the page's `tool.machineDefault`) | A Daoris account, a folder under the account homes, named as where the machine scope's starts begin; also what `login`, `trust` and `settings` take where no account is named | `HarnessSettings.cs:26`, `:297-304`, `:835`; `HarnessRoster.cs:506`; `HarnessSelection.cs:270`, `:321`; `AccountNames.cs:118-127`; `AgentsCommand.cs:530-531`, `:598-604`; `agents.ts:63`, `:427`, `:551` | **The set's.** Folded into the order (§6); the entry goes. The one mapping the direction does not settle in words: §12 |
 | The machine scope (`rotation`, `rotationUse`; with nothing named, D175's walk over every account) | The list and settings every workspace without its own reads | `HarnessSettings.cs:53-55`, `:807-809`, `:820-845`; `HarnessRoster.cs:973-993` | **The set.** Its order and its one set of settings (§2) |
 
@@ -68,14 +70,21 @@ dialog calls *This machine's default* (`work.start.harnessDefault`, `AgentChip.t
 - **No sign-in or sign-out by Daoris.** Every sign-in runs into a folder of Daoris's: a new account under a fresh id, a sign-in
   back into an account that is here, never the tool's own home (`AgentActions.cs:186-212`); no code runs an agent's sign-out.
 - **No start.** D175 points 1 and 2: a start with no Daoris account waits for a sign-in (`held.no-account`).
-- **Two runs of the agent against it, both at the person's press**: the status question (*Read again* on the own row,
-  `HarnessSelection.cs:221-223`, `:305-313`) and the usage read (CODEXUSE3, `HarnessRoster.cs:2016`, `:2042-2043`). The agent may
-  refresh an expired token to answer, which writes its credential; two refreshes with one single-use token once signed every
-  account on the install out (`HarnessSelection.cs:215-218`). The probe lock keeps two of Daoris's questions apart, never Daoris's
-  from the person's own terminal.
+- **Two runs of the agent against it, both at a person's press**: the status question and the usage read (CODEXUSE3,
+  `HarnessRoster.cs:2016`, `:2042-2043`, `:2124`). Each is asked by the own row's *Read again* (`HarnessSelection.cs:221-223`,
+  `:305-313`), and by a refresh of the whole roster (round 3, Fable's F2): `HARNESSES_REFRESH` with no agent
+  (`AgentsRoutes.cs:53-56`, from `useRefreshHarnesses`, `agents.ts:283-290`) runs `RosterAsync(config, refresh: true)`, which passes
+  `own: refresh` to each agent's report (`HarnessRoster.cs:797`, `:810`), whose press asks the own sign-in's status
+  (`PressAsync`, `:413`, `:440`, `:448`) and its usage (`PressUsageAsync`, `:453`, `:2124`); and `HarnessProbe.ProbeAsync` asks it
+  unless told not to (`own = true`, `HarnessSelection.cs:246`). The agent may refresh an expired token to answer, which writes its
+  credential; two refreshes with one single-use token once signed every account on the install out (`HarnessSelection.cs:215-218`).
+  The probe lock keeps two of Daoris's questions apart, never Daoris's from the person's own terminal.
 - **A record begun there goes on there** (D175 point 3; `ResumeAsync`, `HarnessRoster.cs:883-940`), the agent running in that home.
-- **One write by a door**: `daoris agent trust <agent> <folder> --yes` with no `--profile` and no machine default grants the folder
-  in the tool's own trust file (`AgentsCommand.cs:530-535`).
+- **Two writes**: by a door, `daoris agent trust <agent> <folder> --yes` with no `--profile` and no machine default grants the folder
+  in the tool's own trust file (`AgentsCommand.cs:530-535`); and by a press (round 3, Fable's F3), a trust hold on a conversation
+  going on in the own home reads the own home's trust file (`Driver.cs:1789-1805`: `ClaudeTrust.PathFor` with no account home,
+  `ClaudeTrust.cs:264-268`), and the screen's *Trust this folder* grants the hold in that file (`TRUST_FOLDER`,
+  `DriverRoutes.cs:334-346`, through `ClaudeTrust.Grant`, `ClaudeTrust.cs:160-220`).
 - **Words that send the person to Daoris to change it**: `note.account.refused-own` and `note.held.refused-own`
   (`en/note.json:36`, `:279`) say to sign it in again *in Settings or with `daoris agent`*, and that Daoris then starts sessions on
   it, which D175 ended.
@@ -92,7 +101,7 @@ dialog calls *This machine's default* (`work.start.harnessDefault`, `AgentChip.t
 | `--workspace` on `profile order` and `use`; `profile default`, `profile join`, `login --join`, `--join-machine` | `order` and `use` for the set; the rest refused, saying what to do instead |
 | Ask Daoris's `use`, `order` (with `workspace` and `clear`), `default` | `use` and `order` for the set, marked so; `default` retired; an unmarked stored proposal refused at Apply |
 | The wait that asks *Let account-1 run work…* | Gone: no account is outside the set |
-| The person's own sign-in: no start (D175), read at a press, a conversation begun there going on | No start and no read; only a conversation begun there goes on there (§3) |
+| The person's own sign-in: no start (D175), read at a press, written by `trust` and a trust hold's press, a conversation begun there going on | No start, no read and no write; only a conversation begun there goes on there (§3) |
 
 ## 2. The set
 
@@ -127,7 +136,8 @@ One entry per agent, `rotationUse[agent]`, read as today (`RotationUse.Read`, wh
 the agent's and no list's: clearing the order or removing the last account clears none of it (today `WithRotation` clears it with
 its list, `HarnessSettings.cs:400-417`, and `WithoutAccount` through it, `:442-469`); `profile use --clear` still returns it to the
 defaults. A `keep` is dropped where its account is removed or the set holds one account, and the removal's answer says so.
-`ScopeProblem.Default` goes with the default.
+`ScopeProblem.Default` goes with the default. The settings are set whatever the set holds: no list is waited on, so the refusal
+where a scope has none (`AccountUseNoList`, `AccountsRoutes.cs:502-510`) goes (§2.4).
 
 ### 2.4 One projection, every reader
 
@@ -138,10 +148,25 @@ agent's accounts, it answers the set's whole order, its settings and its first, 
 
 - **The walk and its judges**: `HarnessRoster.SelectAsync`, `WalkAsync` and `Walked` (`:973-1059`), `Next` (`:1450-1453`),
   `ResumeAsync` (`:883-940`, with §3's exception), `CurveMove` (`CurveMove.cs:86`).
+- **The wiring panel** (round 3, Fable's F6): `HarnessRoster.WiringAsync` (`:1753-1782`), behind `STARTS`
+  (`AgentsRoutes.cs:286-320`), reads `ResolveScope` beside the selection for where the scope begins and whose rung named it
+  (`:1763-1764`); it reads the projection, its `ProfileFrom` as the records point below says.
 - **The modules**: `ScopesOf` and `MeasuredBy` (`AccountsRoutes.cs:113-141`), which answer the one scope; `AccountAttention`'s own
-  readers of scope, `WorkspaceScope` and `MachineScope` (`AccountAttention.cs:57`, `:362-367`), `HeldBy` (`:393`), `OwnScopes`
-  (`:412`), `RunsFor` and the row's `runs` (`:114`, `:422`), `JoinChoices` (`:456`), and `OutsideOf` with `readFirst` (`:71-73`,
-  `:249`): the set's accounts all held, no `runs`, nothing outside.
+  readers of scope, `WorkspaceScope` and `MachineScope` (`AccountAttention.cs:57`, `:366-371`), `HeldBy` (`:397`), `OwnScopes`
+  (`:416`), `RunsFor` and the row's `runs` (`:118`, `:426`), `JoinChoices` (`:460`), and `OutsideOf` with `readFirst` (`:71-73`,
+  `:253`): the set's accounts all held, no `runs`, nothing outside.
+- **The modules' account edits** (F6): `AccountsRoutes.OrderEdited` and `UseEdited`, with their own-scope helpers `OwnList`,
+  `OwnDefault` and `OwnKeep` (`AccountsRoutes.cs:471-537`, `:561-577`), which serve `ACCOUNT_USE` (`:424-430`) and Ask Daoris's
+  `SetAccountOrderAsync` and `SetAccountUseAsync` (`HelpRoutes.cs:702-735`): they edit the set's order and settings, `UseEdited`'s
+  refusal where no list is (`AccountUseNoList`, `:502-510`) going. `DefaultAllowed` (`:545-558`), which `ProfileDefault`
+  (`AgentsRoutes.cs:697-703`) and Ask Daoris's `default` door (`HelpRoutes.cs:690`) ask, leaves with them.
+- **The default's sentence** (F6): `AgentsRoutes.DefaultStanding` (`AgentsRoutes.cs:729-739`) over `HarnessSettings.ResolveFrom`
+  (`HarnessSettings.cs:272-294`), which `profile-default` answers with, leaves with `profile-default`.
+- **What the page was told it inherits** (F6): `HarnessRoster.InheritsDaorisAccounts` (`HarnessRoster.cs:999-1004`), `ACCOUNTS`'
+  `inherited` (`AccountsRoutes.cs:104`, `:182-187`), would read a folded order as a list of the scope's own; it leaves, and
+  `inherited` with it (§5.2).
+- **A sign-in's place words** (F6): `AgentActions.PlacesSaid` (`AgentActions.cs:584-591`), over `ResolveScope(owner, null)`, leaves
+  with `PlacesOf`; a sign-in's end says *joined Daoris's accounts* (§4.4).
 - **Ask Daoris's facts**, its `use`, `order` and `default` judges (`HelpAgentProposals.cs:172-420`, `:476-492`), and the modules'
   Ask Daoris writes (`HelpRoutes.cs:681-698`, `:728-729`, `:1001`).
 - **What a start records.** `RotatedStart.Scope` and the `account.rotated` line's `scope` (`HarnessRoster.cs:1245`,
@@ -149,8 +174,9 @@ agent's accounts, it answers the set's whole order, its settings and its first, 
   `StartWiring.ProfileFrom` (`HarnessSelection.cs:733`) answers `Picked`, `Machine` (now the set) or `Unset`, never `Workspace` for
   an account; a version's `VersionFrom` keeps all four.
 
-`ResolveScope`, `JoinProblemOf`, `WithJoined` and `PlacesOf` (`HarnessSettings.cs:820-837`, `:973-1032`) leave with their last
-callers, in the row that moves those callers (§11); their CLI twins leave with PUSH1f2e in any case.
+`ResolveScope`, `JoinProblemOf`, `WithJoined` and `PlacesOf` (`HarnessSettings.cs:820-837`, `:973-1032`), with `DefaultAllowed`
+and `DefaultStanding` (F6), leave with their last callers, in the row that moves those callers (§11); their CLI twins leave with
+PUSH1f2e where it retires them.
 
 ## 3. The machine's own account
 
@@ -162,24 +188,41 @@ altogether but for one case, and says so where the person adds an account.
    held by a test that every sign-in action's spawn sets the agent's configuration-home variable to a folder under the home. No
    sign-out exists; none is added.
 2. **Never started in.** D175 points 1 and 2, unchanged.
-3. **Never asked.** The own row's *Read again* and the own usage read go (§0.4): each ran the agent against the person's home,
-   where it may refresh the person's token beside their own terminal's refresh and sign them out. The row shows no state and no
-   who; the roster's report stops asking it (`HarnessSelection.cs:305-313` asks nothing; `own` is never set). A reading kept from
-   before is not shown, since it would only age.
-4. **Never written by a door.** `agent trust` with no account named takes the order's first account, and with no account at all
-   is refused, never the tool's own trust file (§5.1). `profile ready --own` keeps ending the own sign-in's old cool-off, which is
+3. **Never asked.** The own row's *Read again*, the own usage read and the roster's whole refresh's question of it go (§0.4): each
+   ran the agent against the person's home, where it may refresh the person's token beside their own terminal's refresh and sign
+   them out. The row shows no state and no who. Nothing can ask it (round 3, Fable's F2): the `own` parameter leaves
+   `HarnessRoster.ReportAsync`, `PressAsync` and `PressUsageAsync` (`HarnessRoster.cs:384-453`, `:2111-2126`) and
+   `HarnessProbe.ProbeAsync` (`HarnessSelection.cs:246`, `own = true` today), so `RosterAsync` passes none (`own: refresh` today,
+   `HarnessRoster.cs:810`), the agent's press asks none (`AgentsRoutes.cs:50`), and the probe answers the own sign-in's kept reading
+   unasked (`HarnessSelection.cs:309-310`). The walk's `own` (`ChooseAsync`, `WalkAsync`, `HarnessRoster.cs:927`, `:961-965`),
+   which lets a record begun there go on there, is another parameter and stays (point 5). A reading kept from before is not shown,
+   since it would only age.
+4. **Never written by a door or a press.** `agent trust` with no account named trusts the folder for every account of the set
+   (the steward's settlement, D197's note: one set serves every workspace, so a folder trusted for Daoris is trusted for each
+   account that may run its work), and with no account at all is refused, never the tool's own trust file (§5.1). **A trust hold
+   whose file is the own home's offers no press** (round 3, Fable's F3, the steward's choice). Such a hold arises where a
+   conversation goes on there (point 5): its start's selection has no account home, so `ClaudeTrust.PathFor` answers the own home's
+   file (`Driver.cs:1789-1805`; `ClaudeTrust.cs:264-268`); the intake's own check (`DriverIntakes.cs:157-167`) keeps the same rule.
+   The hold records that its file is the own home's (`TrustHold`, `ClaudeTrust.cs:22`), its row carries `own: true`
+   (`NeedsAPerson.cs:468`), the page draws its sentence with no *Trust this folder* (§4.3), and `TRUST_FOLDER` refuses it before
+   `ClaudeTrust.Grant` (`DriverRoutes.cs:340-346`), as `TRUST_OWN_HOME`. Its sentence says to trust the folder with the tool itself,
+   at the person's terminal, in point 8's words (§4.4). `profile ready --own` keeps ending the own sign-in's old cool-off, which is
    `cooling.json`'s line under the home (D125 point 2), not the tool's home.
-5. **The one exception: a record begun there goes on there** (D175 point 3). The set never displaces it: a record whose account
-   is null is judged in scope as it was where nothing was named (`ResumeAccount.InScope`, `ResumeAccount.cs:49-52`, true for a null
-   account against the set), so the fold moves no such record; a cooling, a refusal or a signed-out own sign-in still carries its
-   words to a new record on the set's walk, as `ElsewhereAsync` does today (`HarnessRoster.cs:923-939`). Going on there runs the
-   agent in the person's own home, its readiness asked as a resume asks it today, and the agent may write there as it does at their
-   terminal; nothing else runs there.
+5. **The one exception: a record begun there goes on there** (D175 point 3). The set never displaces it. Today it would: a record
+   whose account is null is judged against the settings' scope, not the walked one (`HarnessRoster.cs:898-899`), and
+   `ResumeAccount.InScope` answers `account is not null && …` against any non-empty list (`ResumeAccount.cs:49-52`), so against a
+   folded order it would judge `NextHold.Outside` (`:29`; `HarnessRoster.cs:912`) and `ElsewhereAsync` would carry its words onto
+   the set's walk (`:923`, `:932-934`). **The change** (round 3, Fable's F1): `ResumeAccount.Judge` asks no scope of a record with no
+   account (`kind == Driven && account is not null && !InScope(…)`, `:29`), as `KeptOf`'s test (`:30`) already passes a null
+   account; `InScope` keeps its meaning for a named account. So the fold moves no such record; a cooling, a refusal or a
+   signed-out own sign-in still carries its words to a new record on the set's walk, as `ElsewhereAsync` does today
+   (`HarnessRoster.cs:923-939`). Going on there runs the agent in the person's own home, its readiness asked as a resume asks it
+   today, and the agent may write there as it does at their terminal; nothing else runs there.
 6. **Adding an account never changes it**, and the dialog says nothing that could be read as changing it: it names Daoris's
    accounts, never *this machine* (§4.1).
 7. **Its row stays last** (D175's OWNSPACE1b note, settlement 1, less its read), and its ⓘ says all of the above (§4.2).
 8. **Words never send the person to Daoris to change it**: the two refusal notes of §0.4 say to sign it in again with the tool
-   itself (§4.4).
+   itself, and a trust hold on its home says to trust the folder with the tool itself, each at the person's terminal (§4.4).
 
 ## 4. The screens and their words
 
@@ -238,11 +281,27 @@ lose. A sign-in's end in a toast (`harness.loginNew.done`) says *Signed in as {{
   - `agents.pooled.oneAccount` — EN: *{{workspace}} ran on {{account}} alone; it now runs on all {{count}}.* ZH: *{{workspace}} 原来只在
     {{account}} 上运行；现在它可以在全部 {{count}} 个账户上运行。*
   - `agents.pooled.unnamed` — EN: *Workspaces that named no accounts ran on {{accounts}}; they now run on all {{count}}.* ZH: *没有指定账户的
-    工作区原来在 {{accounts}} 上运行；现在它们可以在全部 {{count}} 个账户上运行。*
+    工作区原来在 {{accounts}} 上运行；现在它们可以在全部 {{count}} 个账户上运行。* (The machine's scope with a list.)
+  - `agents.pooled.unnamedOne` (round 3, Fable's F8) — EN: *Workspaces that named no accounts ran on {{account}} alone; they now run
+    on all {{count}}.* ZH: *没有指定账户的工作区原来只在 {{account}} 上运行；现在它们可以在全部 {{count}} 个账户上运行。* (The machine's scope
+    with a default and no list: `oneAccount`'s line with the machine's subject, a key of its own since a subject composed into a
+    sentence does not translate.)
+  - `agents.pooled.inOrder` (round 3, F4) — EN: *Their starts still begin at {{account}}, since the accounts are now used One by
+    one, in order.* ZH: *它们的启动仍从 {{account}} 开始，因为账户的使用方式现在是“按顺序逐个用”。* (After `unnamedOne`, where the fold set
+    `use: order` for it, §6.1 rule 3.)
   - `agents.pooled.moved` — EN: *{{workspace}}'s starts began at {{account}}; it is number {{place}} in the order now.* ZH:
-    *{{workspace}} 的启动原来从 {{account}} 开始；现在它在顺序中排第 {{place}} 位。* (Said for each scope whose first is no longer
-    first; the scope that named none is *workspaces that named no accounts*.)
+    *{{workspace}} 的启动原来从 {{account}} 开始；现在它在顺序中排第 {{place}} 位。* (Said for each workspace whose first, as its starts read
+    it, is no longer first, §6.1 rule 2.)
+  - `agents.pooled.unnamedMoved` (round 3, F8) — EN: *Starts of workspaces that named no accounts began at {{account}}; it is number
+    {{place}} in the order now.* ZH: *没有指定账户的工作区的启动原来从 {{account}} 开始；现在它在顺序中排第 {{place}} 位。* (`moved` for the
+    machine's scope.)
+  - `agents.pooled.joined` (round 3, F10) — EN: *{{account}} was not in the order; it is number {{place}} now, and every
+    workspace's work may run on it.* ZH: *{{account}} 原来不在顺序中；现在它排第 {{place}} 位，所有工作区的工作都可以在它上面运行。* (One line
+    per account the stored order left out, §6.1 rule 5.)
   - `agents.pooled.notKept` — EN: *Not kept: {{workspace}}'s {{setting}} ({{value}}).* ZH: *未保留：{{workspace}} 的{{setting}}（{{value}}）。*
+  - `agents.pooled.notKeptUnnamed` (round 3, with F8's reason) — EN: *Not kept: {{setting}} ({{value}}), set for workspaces that
+    named no accounts.* ZH: *未保留：为没有指定账户的工作区设置的{{setting}}（{{value}}）。* (`notKept` for the machine's entry: a `keep`
+    dropped, or a `use` rule 3 replaced.)
   - `agents.pooled.gone` — EN: *{{account}} was named but is no account here, so it was left out.* ZH: *{{account}} 曾被指定，但这里已没有这个
     账户，所以未列入。*
   - `agents.pooled.gotIt` — EN: *Got it*. ZH: *知道了*.
@@ -260,6 +319,14 @@ lose. A sign-in's end in a toast (`harness.loginNew.done`) says *Signed in as {{
   group; *Daoris's choice* stays first.
 - ***What needs you***: the let-run ask goes with its row's `outside` and `readFirst`, and the row's `runs` with it (§2.4); a wait
   on cooling accounts names the first reset, as D125 point 6 has it.
+- **A trust hold on the own home** (§3 point 4; round 3, Fable's F3): its question (`TrustAsk.tsx`), where the row says `own`,
+  shows the folder and one sentence, with no *Trust this folder* and no `trust.file` line, since Daoris writes nothing there:
+  - `trust.ownHome` — EN: *This conversation goes on in your own sign-in, outside Daoris's accounts, so Daoris writes nothing in
+    its file: trust the folder with the tool itself, at your terminal.* ZH: *这个对话在你自己的登录中继续，不属于 Daoris 的账户，所以 Daoris
+    不会写入它的文件：请在你的终端里用该工具本身信任这个文件夹。*
+  - `errors.TRUST_OWN_HOME`, `TRUST_FOLDER`'s refusal of such a hold — EN: *That folder is held for your own sign-in, outside
+    Daoris's accounts, so Daoris writes nothing in its file: trust it with the tool itself, at your terminal.* ZH: *这个文件夹是为你自己的
+    登录而扣住的，不属于 Daoris 的账户，所以 Daoris 不会写入它的文件：请在你的终端里用该工具本身信任它。*
 - **A start's record** (`NoteCodes.cs:345-370`, `:859-860`): a start that takes the order's first writes a new reason,
   `opening.why.first-order`; no start writes `default`, `default-here`, `first`, `first-here`, `held.outside-machine` or
   `held.outside-workspace` again. Every old code stays read with its meaning, a list that may have left accounts out; the two whose
@@ -278,7 +345,9 @@ lose. A sign-in's end in a toast (`harness.loginNew.done`) says *Signed in as {{
 `harness.use.machine`, `.workspace`, `.member`, `.memberFor`, `.cannotLeave.default`, `.problem.default`, `.empty`, `.emptyOwn`,
 `.emptyInherited`; `harness.use.scope.*`; `harness.next.takesIn`; `harness.default.*` (`en/harness.json:60-64`);
 `harness.loginNew.doneNowhere`, `.unnamedNowhere` (`:44-45`); `harness.own.sharedUnknown`; `work.start.outside`,
-`.outsideMachine`; `work.attention.ask.letRun`, `.letRunMachine`; `errors.ACCOUNT_SCOPE_DEFAULT`.
+`.outsideMachine`; `work.attention.ask.letRun`, `.letRunMachine`; `errors.ACCOUNT_SCOPE_DEFAULT` and its `_workspace`; and, with
+the refusals F6 found (round 3), `errors.ACCOUNT_USE_NO_LIST` and `errors.ACCOUNT_DEFAULT_OUTSIDE_LIST`, each with its `_workspace`
+(`en/errors.json:15-33`).
 
 **Reworded**, each in both languages: `agents.add.back`, `harness.use.listLabel`, `harness.use.listWhy`, `harness.use.orderHint`,
 `harness.own.shared` (above); `note.opening.why.first-here`, `.default-here` (§4.3); and:
@@ -298,7 +367,7 @@ lose. A sign-in's end in a toast (`harness.loginNew.done`) says *Signed in as {{
   (`settings/accounts/namer.ts:24`); it is the machine's own account in the owner's own sense and stays.
 
 **New**: `agents.add.joined`, `agents.add.done`, `agents.use.summary.all` (one and other), `agents.pooled.*`,
-`note.opening.why.first-order`.
+`note.opening.why.first-order`, `trust.ownHome` and `errors.TRUST_OWN_HOME` (§4.3).
 
 **The glossary** gains *Daoris's accounts* (EN *Daoris's accounts*, ZH *Daoris 的账户*): an agent's accounts signed in for Daoris,
 each serving every workspace; your own sign-in is not one of them (D197). Its `avoid` holds *this machine's list*, *machine's list*
@@ -306,15 +375,22 @@ and *this machine's accounts* (EN), and *本机的列表* and *本机账户* (ZH
 them again. *Pool* is the design's word only, never the chrome's.
 
 **.NET's and the terminal's sentences** (English, D194's text table) lose the same words in the same rows: `AccountJoin.cs`,
-`HelpAgentProposals.cs:393-397`, `:416-418`, `HelpRoomMayPropose.cs:22`, `:38`, `AccountsRoutes.cs:434`, `HelpRoutes.cs:728`, and
-the sign-in end's place words (`AgentActions.cs:562-593`), which say *joined Daoris's accounts* instead.
+`HelpAgentProposals.cs:393-397`, `:416-418`, `HelpRoomMayPropose.cs:22`, `:38`, `AccountsRoutes.cs:434`, `:505-508`, `:551-556`,
+`HelpRoutes.cs:728`, and the sign-in end's place words (`AgentActions.cs:562-598`), which say *joined Daoris's accounts* instead.
+A trust hold's sentence with no account (`ClaudeTrust.Refusal`, `ClaudeTrust.cs:250-251`) drops `daoris agent trust … --yes`, which
+no longer writes the own home, and says: *the conversation goes on in your own sign-in, outside Daoris's accounts: trust the folder
+with the tool itself, at your terminal (run `claude` there once and accept its trust prompt)*; `TRUST_FOLDER`'s refusal of such a
+hold says `errors.TRUST_OWN_HOME`'s English (round 3, F3).
 
 ## 5. The doors
 
 ### 5.1 The terminal
 
 After PUSH1f2e every `daoris agent profile` verb is the driver's program's (the alone-path design §5), so each change below is
-made once, in the driver library, and the TypeScript twins have already left.
+made once, in the driver library, and the TypeScript twins have already left. PUSH1f2e is being built under a brief to keep
+today's account verb shapes (round 3, Fable's F12), so it carries `login --join` and `--join-machine`, `profile join`, `profile
+default` and `--workspace` on `order` and `use` into the driver's program as they are; POOL1b turns those, as 2e built them, into
+the refusals below.
 
 | Verb | After |
 |---|---|
@@ -324,8 +400,9 @@ made once, in the driver library, and the TypeScript twins have already left.
 | `profile join <agent> <account> …` | Refused: *there is nothing to join: every account signed in for Daoris serves every workspace (D197)* |
 | `login … --join W`, `--join-machine` | Refused before anything starts, with `profile join`'s sentence; the account joins by itself |
 | `profile ready <agent> <account>\|--own` | Unchanged |
-| `agent list` | The set under each agent: its order, how it is used, the next start; then the person's own sign-in, outside, with no state; what the fold changed while unsaid (§6.3) |
-| `login`, `trust`, `settings` with no account named | The order's first, where today the machine's default; with no account of Daoris's, refused as `settings` is today, never the tool's own home |
+| `agent list` | The set under each agent: its order, how it is used, the next start; then the person's own sign-in, outside, with no state and never asked (§3 point 3); what the fold changed while unsaid (§6.3) |
+| `login`, `settings` with no account named | The order's first, where today the machine's default; with no account of Daoris's, refused as `settings` is today, never the tool's own home |
+| `trust <agent> <folder>` with no account named | The folder trusted for every account of the set, each in its own file, the question naming each (the steward's settlement, D197's note); with no account of Daoris's, refused, never the tool's own trust file. `--profile` trusts that account alone, as today |
 | `--workspace W` on `order` or `use` | Refused: *Daoris's accounts serve every workspace (D197), so `--workspace` names nothing here* |
 
 Refusing a flag that no longer means anything, rather than ignoring it, keeps a script from believing it set something (D50: the
@@ -340,15 +417,26 @@ terminal says what the screen does).
 - **`HARNESS_ACTION`**: `profile-join` (`AgentsRoutes.cs:442`) and `profile-default` (`:472`, `:486`, `:700-739`) go
   (`AgentActions.cs:63`); a sign-in's `join` is refused where it names anything (`AgentsRoutes.cs:510-532`;
   `AgentActions.cs:616-633`).
-- **`HARNESSES_REFRESH`** with an agent and no account (the header's *Read again*, `AgentsRoutes.cs:37-52`) reads every account of
-  Daoris's and passes `own: false`, so neither the status question nor the usage read (`HarnessRoster.cs:2124`) asks the own
-  sign-in; nothing else sets `own`.
-- **`ACCOUNT_USE`** (`AccountsRoutes.cs:413-454`): `order` and `use` for the set, a `workspace` refused; `inherit` goes, refused as
-  an unknown action whose sentence lists the rest; `ready` unchanged; `said` marks what the fold changed as said (§6.3).
-- **`ACCOUNTS`**: `scopes` holds the set's one scope; `pooled` carries what the fold changed while any of it is unsaid, each line's
-  kind and values (§4.2's keys), never words.
+- **`HARNESSES_REFRESH`** asks no own sign-in, with an agent or without (round 3, Fable's F2). With an agent and no account (the
+  header's *Read again*, `AgentsRoutes.cs:44-51`) it reads every account of Daoris's; with no agent (`AgentsRoutes.cs:53-56`, the
+  roster's whole refresh, `useRefreshHarnesses` with no target, `agents.ts:283-290`) it reads every agent's, through `RosterAsync`,
+  which today passes `own: refresh` to each report (`HarnessRoster.cs:810`). The `own` parameter leaves `ReportAsync`, `PressAsync`,
+  `PressUsageAsync` and `HarnessProbe.ProbeAsync`, whose default is `own = true` today (`HarnessSelection.cs:246`), so neither the
+  status question (`HarnessRoster.cs:440`, `:448`) nor the usage read (`:453`, `:2124`) can ask it (§3 point 3).
+- **`ACCOUNT_USE`** (`AccountsRoutes.cs:413-454`): `order` and `use` for the set, a `workspace` refused, `use`'s refusal where no list
+  is (`AccountUseNoList`) gone (F6); `inherit` goes, refused as an unknown action whose sentence lists the rest; `ready` unchanged;
+  `said`, with the ids of the receipts the page showed, marks those said (§6.3; F13).
+- **`ACCOUNTS`**: `scopes` holds the set's one scope; each scope's `inherited` (`AccountsRoutes.cs:104`, `:182-187`) goes with
+  `InheritsDaorisAccounts`, which would read a folded order as a list of the scope's own (F6); `pooled` carries what the fold changed
+  while any of it is unsaid, each receipt's id and each line's kind and values (§4.2's keys), never words.
+- **`STARTS`** (`AgentsRoutes.cs:286-320`): each start read through `WiringAsync` over the projection, `profileFrom` never
+  `workspace` for an account (§2.4; F6).
+- **`TRUST_FOLDER`** (`DriverRoutes.cs:334-346`): a hold whose file is the own home's is refused as `TRUST_OWN_HOME` before anything
+  is written; the attention row of such a hold carries `own: true` (`NeedsAPerson.cs:468`) and the page draws no press for it (§3
+  point 4, §4.3; F3).
 - **Ask Daoris's coverage** (`HelpCoverageTests`): the page's `profile-join`, `inherit` and *Use by default* rows go with their
-  hooks; *Got it*'s press is `Exempt` (the person's acknowledgement, nothing Ask Daoris proposes).
+  hooks; *Got it*'s press is `Exempt` (the person's acknowledgement, nothing Ask Daoris proposes). The own-home trust hold adds no
+  press.
 
 The page and the host ship together, so no answer from an older host is read.
 
@@ -380,44 +468,84 @@ agent:
 1. **When there is anything to fold**: the raw file holds the agent's `defaults` entry, or an entry for it in `workspaces`,
    `workspaceRotation` or `workspaceRotationUse`, or no stored order while it has accounts, or a stored order that leaves out an
    account or names one that is gone. A folded file has none of these, so it folds to itself.
-2. **The order**, the union with nothing signed in dropped: the machine's default, then its list; then each workspace by name
-   (ordinal), its default, then its list; then every other account, by the stored order where the machine had one, else by id. An
-   account keeps its first place. A name that is no account here is left out and said (`agents.pooled.gone`).
+2. **The order**, the union with nothing signed in dropped: the machine's scope, then each workspace's by name (ordinal), each as
+   its first, then its list; then every other account, by the stored order where the machine had one, else by id. **A scope's
+   first is where its starts began** (round 3, Fable's F9): its `Begins` as `ScopeOf` reads it, its default where its own list holds
+   it, else its list's first (`begins = own ∈ list ? own : list[0]`, `HarnessSettings.cs:873`), and with no list its default
+   (`:869`). A default its own list does not hold was never where its starts began, so it is placed as every other account is. A
+   scope is read as the raw file names it, so a machine scope that named nobody places nothing here. An account keeps its first
+   place. A name that is no account here is left out and said (`agents.pooled.gone`). **Which firsts moved** compares each scope's
+   `Begins` with the order written: each whose `Begins` is not the order's first is said with its new place (`agents.pooled.moved`,
+   and for the machine's scope `unnamedMoved`); a machine scope that named nobody is compared by its walk's first, the first of
+   its accounts by id (`Walked`, `HarnessRoster.cs:987-991`).
 3. **The settings**, field by field (`use`, `keep`, `switch`, `curve`), over each entry as `RotationUse.Read` normalizes it, so
-   `early` and `near` compare as the `switch` and `curve` they mean. An entry takes part only where a start read it before the fold:
-   a workspace's beside a list of its own; the machine's beside its list, or with nothing named and two or more accounts (§0.1).
-   Each field is the machine's value where its entry takes part and sets it; else the one value every taking-part workspace entry
-   that sets it agrees on; else none, the default. A `keep` naming no account of the set, or left alone in a set of one, is
-   dropped. Every value a taking-part entry set that the set does not take, and every dormant entry's set field, is said
-   (`agents.pooled.notKept`), with its scope. The machine's fields this build does not know are kept, as today; a workspace's are
-   said by name.
+   `early` and `near` compare as the `switch` and `curve` they mean.
+   - **The machine's entry always takes part** (round 3, Fable's F7), read by a start or dormant: it is the entry `profile use`
+     without `--workspace` wrote, the one the walk reads where nothing is named (`Over`, `HarnessSettings.cs:844-845`), and the slot
+     the set's settings are written to, which an older build reads beside the folded order (§6.4). Each field it sets is the set's.
+   - **A workspace's entry takes part only where a start read it**: beside a list of its own (`ScopeOf`, `:869`). A field the
+     machine's entry leaves unset is the one value every taking-part workspace entry that sets it agrees on; else none, the default.
+   - **An agent whose machine scope named a default and no list** (round 3, Fable's F4, the steward's choice), that default an
+     account here, takes `use: order`: every machine-scope start began on that account (`ScopeOf`, `:869`), and under `goal` the
+     order's first is only the last tie-break, so `order` keeps them beginning there. A `use` its machine entry set otherwise was
+     never read, and is said as not kept; the receipt says why (`agents.pooled.inOrder`).
+   - **A `keep`** naming no account of the set, or left alone in a set of one, is dropped and said, whichever entry set it.
+   - **What is said** (`agents.pooled.notKept`, with its workspace, or `notKeptUnnamed` for the machine's entry): every value a
+     taking-part workspace entry set that the set does not take; every field a dormant workspace entry set; a `keep` dropped; and a
+     `use` the previous point replaced. The machine's other values are the set's, so never said. The machine's fields this build
+     does not know are kept, as today; a workspace's are said by name.
 4. **What goes**: the agent's `defaults` entry and its entries in `workspaces`, `workspaceRotation` and `workspaceRotationUse`; a
    workspace left with nothing is dropped, as today. `versions` and `workspaceVersions` are untouched.
 5. **What is written**: `rotation[agent]` the whole order, `rotationUse[agent]` the settings, and a receipt in `pooled[agent]`
-   where anything is to be said (§6.3). A fold that only places an account an older build made, or writes a first order, says
-   nothing.
+   where anything is to be said (§6.3). **Each account a stored order left out**, where the file held one for the agent
+   (`rotation[agent]`), is said as the fold places it, one line each with its place (`agents.pooled.joined`; round 3, Fable's F10):
+   an older build's sign-in, or an account no list of the machine's held, now runs every workspace's work. Writing a first order
+   where the file held none for the agent is not itself said: with nothing named its starts already took every account, and what
+   it changes for a scope that named some is that scope's line.
 
 ### 6.2 When it runs, and its writer
 
-**At the driver's come-up, once, for a file with anything to fold**, through `HarnessSettings.Change(path, edit)`, which PUSH1f2e
-adds so an edit is decided from the file as it stands under its keep lock (the alone-path design §1.4, as KEEPALL1b's amendment
-leaves it): `Change` reads the raw file under the lock, runs `AccountSet.Fold` over it, and writes the result before the lock goes.
-Between a read and the come-up's write, every reader sees the set through `AccountSet.Of`, so no start, look or door reads a
-workspace's scope. Other writes stay what they are, raw edits of raw settings; one that changes the set (a sign-in, a removal, an
-order) writes the order whole (§2.2), through `Change` as well. The come-up writes one `accounts.pooled` line to the machine log
-(D94) per agent folded: how many accounts, how many scopes folded, how many settings not kept, by count and never by name.
+**Every write folds first** (round 3, Fable's F5, the steward's choice). `HarnessSettings.Change(path, edit)` decides an edit from
+the file as it stands under its keep lock (the alone-path design §1.4 and its PUSH1f2e row, as KEEPALL1b's amendment leaves it):
+PUSH1f2e1 built it after Fable's read (merged at `915440734`) as the lock, `Load`, the edit and the whole write, every window writer
+of `harnesses.json` through it, and the rest of PUSH1f2e brings the terminal's account verbs to it. POOL1a makes it fold before it
+edits: under the lock it reads the raw file, runs `AccountSet.Fold` over it, runs the edit over the folded settings, appends the
+fold's receipt where it had anything to say, and writes the result before the lock goes. So the first writer in any process is
+the folder: the terminal's `agent login` or `profile order` with the host down, a door's edit after an older build's write, or the
+come-up. No edit is ever made over a raw file whose scopes remain; one that was, writing the projected union as `rotation[agent]`
+beside a workspace's list or a default, would leave the later fold reading the union as the machine's list as it was. A folded
+file folds to itself, so the fold adds nothing to a write where there is nothing to fold. A writer of `harnesses.json` outside
+`Change` that PUSH1f2e leaves (`Save` stays public) is moved into it by POOL1a.
+
+**The come-up** is `Change(path, identity)`: once, at the driver's come-up, for a file with anything to fold, so a file nobody edits
+is folded too. Between a read and the first folding write, every reader sees the set through `AccountSet.Of`, so no start, look
+or door reads a workspace's scope. A write that changes the set (a sign-in, a key, a removal, an order) writes the order whole
+(§2.2), through `Change` like every other.
+
+**A lock held through the whole wait** (round 3, Fable's F11): `KeepLock.Take` waits, then refuses and writes nothing
+(`KeepLock.cs:61-99`). A come-up so refused logs the refusal once to the machine log (an `accounts.pooled` line saying the lock was
+held, by the holder its refusal names, its process and since), and the fold is tried again at each next look until one lands,
+unless another writer's `Change` has folded the file first. Nothing waits on it: every reader reads the projection meanwhile. A
+door's `Change` so refused is refused as it is today, its edit unwritten and said.
+
+Each fold writes one `accounts.pooled` line to the machine log (D94) per agent folded, whichever writer made it: how many accounts,
+how many scopes folded, how many settings not kept, by count and never by name.
 
 ### 6.3 Said once
 
-`pooled[agent]` is a list of receipts, one per fold that had anything to say. A receipt keeps when it was written; each folded scope
-(`workspace` or none for the machine's) with its default and list as they were; the order written; each first moved, with its new
-place; each setting not kept, with its scope and value; each name left out; and `said`. It is a section of `harnesses.json`, listed
-in `HarnessSettings.Sections`; an older build keeps it as a section it does not know (`Kept`, `HarnessSettings.cs:61-65`).
+`pooled[agent]` is a list of receipts, one per fold that had anything to say. A receipt keeps its `id` (round 3, Fable's F13: a
+random id, written once and unique among the agent's receipts); when it was written; each folded scope (`workspace` or none for
+the machine's) with its default and list as they were, and the first its starts read; the order written; each first moved, with
+its new place; each account the stored order left out, with its place; the account whose machine scope named it alone, where
+`use` was set to `order` for it; each setting not kept, with its scope and value; each name left out; and `said`. It is a section
+of `harnesses.json`, listed in `HarnessSettings.Sections`; an older build keeps it as a section it does not know (`Kept`,
+`HarnessSettings.cs:61-65`).
 
-While any receipt is unsaid, the agent's page shows each (§4.2) and `agent list` prints them; *Got it* (`ACCOUNT_USE` `said`, with the
-receipts' times it was shown) marks those said, and they are never drawn again. A later fold appends its own receipt and never
-replaces one unsaid. Said receipts beyond the last five are dropped at the next write. Nothing else announces it: it is news, not a
-wait (D196 point 7).
+While any receipt is unsaid, the agent's page shows each (§4.2) and `agent list` prints them; *Got it* (`ACCOUNT_USE` `said`, with
+the ids of the receipts it was shown) marks those said, and they are never drawn again. A receipt appended after the page drew is
+not among those ids, so a press that never showed it leaves it unsaid; an id no receipt holds is passed over. A later fold
+appends its own receipt and never replaces one unsaid. Said receipts beyond the last five are dropped at the next write. Nothing
+else announces it: it is news, not a wait (D196 point 7).
 
 ### 6.4 Builds already shipped
 
@@ -427,10 +555,10 @@ TypeScript writer, which PUSH1f2e removes before POOL1a lands.
 - **An older build over the folded file** reads `rotation[agent]` as the machine's list naming every account, no default and no
   workspace scope, so every workspace takes the machine's scope: the same accounts in the same order with the same settings. What
   differs is its own: an account it signs in is outside the list until joined, as it always was.
-- **What an older build writes** (a workspace's list, a default, a join) is read by the next newer come-up as a file to fold,
-  folded and said again in a new receipt. No version stamp is needed, since the fold is a rule over any file, not a step a stamp
-  would gate.
-- **What is left**: between an older build's write and the next newer come-up, the newer build reads the set through
+- **What an older build writes** (a workspace's list, a default, a join, an account it signed in) is folded by the next newer
+  write or come-up, whichever comes first (§6.2), and said again in a new receipt. No version stamp is needed, since the fold is a
+  rule over any file, not a step a stamp would gate.
+- **What is left**: between an older build's write and the next newer one, the newer build reads the set through
   `AccountSet.Of`, so no newer start honours the older build's list.
 
 ## 7. What stays machine-wide
@@ -447,7 +575,9 @@ TypeScript writer, which PUSH1f2e removes before POOL1a lands.
   personal one kept off it, is no longer kept: D130's aim E, *keep work where it belongs*, has no setting now.
 - **A scope that named one account alone now runs on all of them.** Where several scopes began at different accounts, only one
   can be first: the machine's, else the first workspace's by name. Each other first is placed later, and the receipt says where.
-  Under *Make the most of them* every account shares the work; *One by one, in order* begins at the order's first.
+  Under *Make the most of them* every account shares the work; *One by one, in order* begins at the order's first. An agent whose
+  machine scope named one account alone is used *One by one, in order*, so its starts keep beginning there, and the receipt says
+  so (§6.1 rule 3).
 - **An account no list held now runs**, every workspace's work.
 - **A setting two scopes chose differently** becomes the machine's, or the default, and is said.
 - **What spends**: Daoris may now start any workspace's work on any account signed in for it, which is what the owner chose. Each
@@ -472,6 +602,9 @@ TypeScript writer, which PUSH1f2e removes before POOL1a lands.
 - **Folding inside `Load`** (round 1). A load that answers folded settings while `Save` writes the difference from what it
   understood would lose the fold's own baseline; the raw file and one projection keep both (Codex's smaller shape, §13).
 - **A fold at every read, never written.** An older build would go on reading the workspace lists the newer one ignores.
+- **A fold at the come-up alone** (round 2). A raw `Change` before it, the terminal's with the host down or a door's after an older
+  build's write, would write the projected union as `rotation[agent]` while the scopes remained, and the later fold's receipt would
+  report the union as the machine's list as it was (Fable's F5); every `Change` folds first instead (§6.2).
 - **An order absent until edited** (round 1). A new account's random id would sort it anywhere in the order.
 - **Asking the person before the fold.** The owner decided the model; a question would hold every start behind it and bring the
   lists back for one turn.
@@ -479,12 +612,21 @@ TypeScript writer, which PUSH1f2e removes before POOL1a lands.
 - **One receipt replaced by the next fold** (round 1): an unread receipt would be lost.
 - **Dropping the per-scope settings silently**, or taking the most cautious of them: a setting chosen once and gone unseen is
   what the receipt is for; the cautious merge would invent a choice nobody made.
+- **Leaving `use` as it was where the machine scope named one account** (the steward's first reading, before round 3). Folded as
+  the order's first under *Make the most of them*, that account would only break the last tie, and the starts that all began
+  there would begin wherever the walk took them (Fable's F4).
+- **The machine's dormant entry judged by the took-part test** (round 2). It is the entry the person set for the machine and the
+  one an older build reads beside the folded order; dropping its fields because no start read them would undo the person's choice
+  for the set (Fable's F7).
 - **Keeping the own sign-in's read at the person's press.** It is the person's press, but it runs the agent in their own home,
   which may refresh their token beside their own terminal's and sign them out (§0.4); the owner's *never changes it* weighs more
   than a row's state (§12).
 - **Applying a stored `order` proposal to the set.** A list of one that meant *only this account* would mean *this one first*.
-- **Granting `trust` in every account of the set where none is named.** Better for a set, since any account may run any folder,
-  but a change of its own; the order's first keeps today's one-account behaviour (§12).
+- **Granting `trust` in the order's first alone where none is named** (round 2). Any account of the set may run any folder's
+  work, so a folder trusted for the first alone would hold the next start the walk takes on another; the steward settled every
+  account (D197's note; §5.1).
+- **Granting an own-home trust hold from the screen.** The press would write the person's own trust file, which the direction
+  rules out; the hold says how to trust the folder with the tool itself instead (Fable's F3; §3 point 4).
 
 ## 10. What this amends
 
@@ -498,54 +640,85 @@ TypeScript writer, which PUSH1f2e removes before POOL1a lands.
   and ACCTWALK3 stand.
 - **D152**: point 4 (*Runs for* and *Use in a workspace…*), point 5 (*asks which lists it joins*), and its UX7b note's step 3; the
   UX7 design §4.2, §4.3's *Read*, §4.4's summary row and §4.5's steps 1 and 3.
-- **D175**: OWNSPACE1a's settlement 2 holds for every workspace; OWNSPACE1b's settlement 1 loses the own row's state and *Read
-  again*, and settlement 5 (`inherited`) is always true for a real agent and no longer said; OWNSPACE1d's join sentence goes. Points
-  1 to 3 stand; point 3's continuation is the one run of the agent in the person's home that is left.
+- **D175**: OWNSPACE1a's settlement 2 holds for every workspace; its trust paragraph's hold on the person's own home offers no
+  press and is never granted from the screen (§3 point 4); OWNSPACE1b's settlement 1 loses the own row's state and *Read again*,
+  and settlement 5 (`inherited`) is always true for a real agent and no longer said, the field leaving `ACCOUNTS`; OWNSPACE1d's
+  join sentence goes. Points 1 to 3 stand; point 3's continuation is the one run of the agent in the person's home that is left,
+  judged against no scope (§3 point 5).
 
 ## 11. The rows
 
-All after **PUSH1f2e**, which hands `agent profile …` to the driver's program, removes the TypeScript twins and adds
-`HarnessSettings.Change`. Where PUSH1f2e lands otherwise, the rows wait for it to be read again.
+All after **PUSH1f2e**, which adds `HarnessSettings.Change`, hands `agent profile …` to the driver's program and removes the
+TypeScript twins. Its first part, PUSH1f2e1, merged after Fable's read (`915440734`): `Change` and every window writer of
+`harnesses.json` through it, the account verbs' shapes unchanged. The rest is being built now, by a session of the owner's install,
+under a brief to keep today's account verb shapes (round 3, Fable's F12), so the rows below take its verbs and tables as it builds
+them. Where PUSH1f2e lands otherwise, the rows wait for it to be read again.
 
 - **POOL1a — one set in the driver and on the bridge** (driver, modules). `AccountSet.Of` and `AccountSet.Fold` with their table of
-  shapes; the come-up's fold through `HarnessSettings.Change` and its machine-log line; the order written whole at every change of
-  the set; `pooled` and `ACCOUNT_USE` `said`; every reader of §2.4 moved to the projection, `AccountAttention`'s twins with them;
-  §3's own sign-in (no read, the null-account resume in scope, `trust` never the own home); the default's readers on the order's
-  first; the bridge's answers and refusals of §5.2 (`HARNESSES`, `HARNESS_ENDED`, `HARNESS_ACTION`, `ACCOUNT_USE`, `ACCOUNTS`),
-  with `ResolveScope`, `JoinProblemOf`, `WithJoined` and `PlacesOf` leaving with their last callers. Proof: the fold's table (each
-  scope shape, the order's union and its moved firsts, the settings rule over normalized and dormant entries, a `keep` dropped, a
-  name gone, idempotence, an older build's file folded again with a second receipt kept beside an unsaid first); an older build's
-  reading of a folded file as a test over the pre-change `ResolveScope` rule; a new account placed last whatever its id; a test
-  that every sign-in action's spawn sets the configuration-home variable under the home, and that the probe and usage read never
-  run with none; a null-account record resumed in its home against a folded set, and its cooling, refused and signed-out branches;
-  `held.no-account` unchanged; each touched class seen failing first.
+  shapes; `HarnessSettings.Change` folding before every edit, every writer of `harnesses.json` through it, the come-up as
+  `Change(path, identity)`, a come-up a held lock refuses logged and tried again at the next look, and the machine-log line (§6.2);
+  the order written whole at every change of the set; `pooled` with each receipt's id, and `ACCOUNT_USE` `said` by id; every reader
+  of §2.4 moved to the projection, `AccountAttention`'s twins, the wiring behind `STARTS` and `AccountsRoutes`' edits with them,
+  `InheritsDaorisAccounts`, `PlacesSaid` and `DefaultStanding` leaving; §3's own sign-in (the `own` parameter leaving the
+  roster's report and the probe, `ResumeAccount.Judge` asking no scope of a null account, the own-home trust hold with no press and
+  `TRUST_FOLDER`'s refusal, `agent trust` with no account named granting every account of the set and never the own home); the
+  default's readers on the order's first; the bridge's answers and refusals of §5.2 (`HARNESSES`, `HARNESSES_REFRESH`,
+  `HARNESS_ENDED`, `HARNESS_ACTION`, `ACCOUNT_USE`, `ACCOUNTS`, `STARTS`, `TRUST_FOLDER`), with `ResolveScope`, `JoinProblemOf`,
+  `WithJoined`, `PlacesOf` and `DefaultAllowed` leaving with their last callers. **The tables it rewrites** (F12): the CLI's
+  `src/Daoris.Cli/test/fixtures/rotation-use.json`, whose `read` rows resolve a scope per workspace, `order` rows clear a list's
+  settings with it and `problem` rows bind a default to its list, each read by `RotationUseTwinTests`: rewritten to the set's rules,
+  or retired with their helpers where PUSH1f2e has moved the table into the driver's suite; and, where PUSH1f2e keeps them,
+  `AccountJoinTwinTests`' tables (`joinProblem`, `withJoined`, `placesOf`) and `ProfileDefaultTwinTests`' (`DEFAULT_EDITS`),
+  retired with `JoinProblemOf`, `WithJoined`, `PlacesOf` and `DefaultEdited`. Proof: the fold's table (each scope shape, the
+  order's union with each scope's first as its starts read it and the moved firsts, a default outside its own list, the machine's
+  entry dormant and read, the settings rule over normalized workspace entries, a machine scope of one account taking `use: order`
+  with its line, a `keep` dropped, a name gone, an account no stored order held placed and said, idempotence, an older build's
+  file folded again with a second receipt kept beside an unsaid first); a raw edit through `Change` on an unfolded file leaving it
+  folded with the receipt reading the scopes as they were; a come-up refused by a held lock, logged, then folded at the next look;
+  *Got it* by id marking only the receipts it names; an older build's reading of a folded file as a test over the pre-change
+  `ResolveScope` rule; a new account placed last whatever its id; a test that every sign-in action's spawn sets the
+  configuration-home variable under the home, and that the probe and usage read never run with none; the roster's whole refresh
+  (`HARNESSES_REFRESH` with no agent) and the driver's `agent list` as PUSH1f2e builds it asking no own sign-in, neither its status
+  nor its usage; a null-account record resumed in its home against a folded set, and its cooling, refused and signed-out branches;
+  a trust hold whose file is the own home's carrying `own` and refused by `TRUST_FOLDER` with nothing written, and `agent trust`
+  with no account named writing each account's file and never the own home's; `held.no-account` unchanged; each touched class
+  seen failing first.
 - **POOL1b — the terminal and Ask Daoris** (driver, service; after 1a). §5.1's table in `daoris-driver agent profile` and `agent
-  list`, with its goldens; §5.3 in the driver's judge, the service's tool and box (the `set` mark), the room and its goldens; a
-  stored unmarked proposal refused at Apply. Proof: each refusal's words, both ways of the kinds test, the room's goldens.
+  list`, with its goldens: the verbs PUSH1f2e built as today's shapes (`login --join` and `--join-machine`, `profile join`,
+  `profile default`, `--workspace` on `order` and `use`) turned into §5.1's refusals (F12); §5.3 in the driver's judge, the
+  service's tool and box (the `set` mark), the room and its goldens; a stored unmarked proposal refused at Apply. Proof: each
+  refusal's words, both ways of the kinds test, the room's goldens.
 - **POOL1c — the page** (web; after 1a and 1b). §4: the dialog's steps 1 and 3, the rows and the ⋯, *How accounts are used*, the
-  receipts and *Got it*, the own row, the start dialog, *What needs you*, every key in §4.4 in both catalogues, the glossary's term
-  and its `avoid`. The parent adds the `HelpCoverageTests` rows it names. Proof: `agents.test.ts`, `AgentsView.test.tsx`,
-  `AddAccount` and `AccountUse` tests and stories at the main area's two widths in en and zh, `i18n:check`,
-  `names:check -- --strict`.
+  receipts by id and *Got it*, the own row, the own-home trust hold with no press, the start dialog, *What needs you*, every key in
+  §4.4 in both catalogues, the glossary's term and its `avoid`. The parent adds the `HelpCoverageTests` rows it names. Proof:
+  `agents.test.ts`, `AgentsView.test.tsx`, `AddAccount`, `AccountUse` and `TrustAsk` tests and stories at the main area's two widths
+  in en and zh, `i18n:check`, `names:check -- --strict`.
 - **POOL1d — the install's fold and dialog, seen** (parent; after 1c, on a republish). Before the republish, the install's
   `harnesses.json` and the own home's credential file's last write are copied into `local/`; after, the folded file is compared
   with §6.1's rules by a scratch script in `local/` that prints pass or fail per rule and no values; a second come-up writes nothing;
   the receipt is said once, *Got it* holds across a restart; the dialog's step 3 and the own row in en and zh; the own home's
-  credential file not written by Daoris across the session. Proof: dated shots, the script's pass lines, the machine log's
-  `accounts.pooled` line.
+  credential file and trust file not written by Daoris across the session. Proof: dated shots, the script's pass lines, the machine
+  log's `accounts.pooled` line.
 
 ## 12. What no check here covers, and what is open
 
-- **Written from the code, nothing run.** Every file and line above was read at `dbac74517`; no test ran and the window was not
-  looked at.
-- **The machine's default mapped to the set** (§0.3). The owner's direction names the person's own sign-in as the machine's own
-  account; this design reads `defaults[agent]` as a Daoris account the machine scope began on, so it folds into the order as its
-  first. Were the steward to read the owner's *machine's own account* as that default instead, the fold would keep it first and
-  set `use: order` for that agent, so starts keep beginning on it; open to the steward.
-- **The own sign-in's read** (§3 point 3) is dropped, which takes *Read again* and the own usage read from D175's OWNSPACE1b row and
-  CODEXUSE3. The steward may keep the press-only read if the person's token refresh beside Daoris's is judged acceptable; the
-  design's reading is that the owner's direction rules it out.
-- **`trust` with no account named** (§9's last item): the order's first or every account; the steward's.
+- **Written from the code, nothing run.** Every file and line above was read at `dbac74517`, and those round 3 cites again at
+  `20c324794`, where of round 2's files only `AccountAttention.cs` had moved (NEEDSSCOPE1; its lines above are `20c324794`'s). Since
+  then PUSH1f2e1 (`915440734`) has moved lines in `HarnessSettings.cs` (by twenty-eight after line 177), `HarnessSelection.cs`,
+  `AccountsRoutes.cs`, `AgentsRoutes.cs`, `HelpRoutes.cs`, `AgentActions.cs`, `AgentsCommand.cs`, `AccountCooling.cs` and
+  `AccountNames.cs`; the cites stay `20c324794`'s, and each names its member. No test ran and the window was not looked at.
+- **Settled by the steward** (D197's note, before Fable's read, as round 3 corrected it):
+  - **The machine's default mapped to the set** (§0.3). The machine's own account is the person's own sign-in, outside the set;
+    `defaults[agent]` is a Daoris account the machine scope began on, and folds into the order as its first. Where the machine
+    scope named it alone, the fold sets `use: order`, so its starts keep beginning there (§6.1 rule 3); the note's `use: list`
+    names no mode, and round 3's correction under it says so.
+  - **The own sign-in's read** (§3 point 3) is dropped, which takes *Read again* and the own usage read from D175's OWNSPACE1b row
+    and CODEXUSE3, and, with Fable's F2, the roster's whole refresh's question of it.
+  - **`trust` with no account named** grants the folder for every account of the set (§3 point 4, §5.1); the own home is never
+    written, by the door or by a hold's press.
+- **PUSH1f2e as it lands.** Its brief keeps today's account verb shapes, and the rows take them so (§11). PUSH1f2e1 put every
+  window writer of `harnesses.json` through `Change`; the tables the rest moves or keeps, and the terminal's writers coming to
+  `Change`, are read again when it merges, before POOL1a starts.
 - **The receipts in Notifications** once NOTIFY2f's record exists: a row for later, not this design's.
 - **The install's shape** is not read here; §8's consequences are said by shape, and POOL1d reads the real one.
 
@@ -579,3 +752,25 @@ sign-in) and the walk's inputs, it changes a foundation in D191's amendment's cl
 | C6.3 | POOL1c needs 1b and the answers' shapes; step 1's `runs` (`AgentPage.tsx:310`) and `orderHint`'s sentence were missed | yes | holds | §11: 1c after 1a and 1b; §5.2's shapes; §4.1 step 1; §4.2's `orderHint` |
 | C6.4 | POOL1d's counts and shots cannot prove the fold's rules or an untouched own home | no | holds | §11 POOL1d: a private comparison printing pass or fail per rule, a second come-up, *Got it* across a restart, the own home's last write |
 | C7.1 | A smaller shape: raw persistence, one projection for every reader, one locked migration, a stable receipt, a whole order | no | holds | taken whole: §2.2, §2.4, §6 |
+
+**Fable, round 2** (read at `20c324794`, the steward having asked most of §2.4, §3 and §6; prompt and output in `local/` scratch):
+thirteen findings, five blocking. Each was checked against the code at `20c324794`; all hold, and each is taken into round 3 as
+the table says. Where Fable offered options the steward chose: F3, the
+own-home hold offers no press (option a); F4, `use: order` for a machine scope of one account (option b); F5, every `Change`
+folds first; F12, the rows take PUSH1f2e's verbs as it builds them.
+
+| # | Finding | Blocking | Verdict | Taken |
+|---|---|---|---|---|
+| F1 | `ResumeAccount.InScope` is not true for a null account against the set: with a non-empty list it answers `account is not null && …` (`ResumeAccount.cs:29`, `:49-52`), so a driven record begun in the own home judges `Outside` and `ElsewhereAsync` carries its words onto the walk (`HarnessRoster.cs:898-899`, `:912`, `:923`, `:932-934`) | yes | holds | §3 point 5: `Judge` asks no scope of a null account, `KeptOf` (`:30`) already passing one; POOL1a's proof |
+| F2 | *Nothing else sets `own`* is false: `RosterAsync(config, refresh: true)` passes `own: refresh` (`HarnessRoster.cs:797`, `:810`), so `HARNESSES_REFRESH` with no agent asks every agent's own sign-in, its status and its usage (`:413`, `:440`, `:448`, `:453`, `:2124`; `AgentsRoutes.cs:53-56`; `agents.ts:283-290`); `ProbeAsync` defaults to `own = true` (`HarnessSelection.cs:246`, `:309-313`) | yes | holds | §0.4, §3 point 3 and §5.2: the `own` parameter leaves the report, the press, the usage read and the probe; POOL1a's proof over the roster's whole refresh |
+| F3 | The trust hold of the one run left resolves `ClaudeTrust.PathFor(trustFile, null, …)` to the own home, and `TRUST_FOLDER` writes `ClaudeTrust.Grant` into the person's own file (`Driver.cs:1789-1805`; `ClaudeTrust.cs:160-`, `:264-268`; `DriverRoutes.cs:334-346`) | yes | holds | §3 point 4 (option a): no press, `TRUST_FOLDER` refuses it as `TRUST_OWN_HOME`, its sentence says to trust the folder with the tool itself; §0.4, §4.3, §4.4, §5.2; POOL1a's proof row |
+| F4 | The steward's note keeps starts on the machine's default *under `use: list`*, which is no mode: the modes are `goal` and `order` (`HarnessSettings.cs:788-806`, `:867-869`, `:975`; `RotationUse.cs:32`) | yes | holds | a dated correction under the note in D197; §6.1 rule 3 (option b): `use: order` for a machine scope of one account, said (`agents.pooled.inOrder`); §8; §9; §12 |
+| F5 | Only the come-up folds, so a raw `Change` before it (the terminal's `agent login` or `profile order` with the host down, or after an older build's file) writes `rotation[agent]` whole as the projected union while the scopes remain, and the later fold's receipt reports the union as the machine's list as it was (`HarnessSettings.cs:401-417`; `KeepLock.cs:11-30`) | yes | holds | §6.2: every `Change` folds before its edit, the come-up being `Change(path, identity)`; §6.4; §9 |
+| F6 | Readers §2.4 does not name: `WiringAsync` and the wiring panel (`HarnessRoster.cs:1753-1782`); `AccountsRoutes`' `OrderEdited`, `UseEdited`, `DefaultAllowed`, `OwnList`, `OwnDefault`, `OwnKeep` (`:104`, `:471-577`), behind `ACCOUNT_USE`, Ask Daoris's writes and `ProfileDefault`; `DefaultStanding` over `ResolveFrom` (`AgentsRoutes.cs:697-703`, `:729-739`); `InheritsDaorisAccounts` and `ACCOUNTS`' `inherited` (`HarnessRoster.cs:999-1004`); `PlacesSaid` (`AgentActions.cs:584-591`) | no | holds | §2.4's five new points; §2.3; §4.4's retired refusals; §5.2's `ACCOUNT_USE`, `ACCOUNTS` and `STARTS` |
+| F7 | The machine's dormant `rotationUse` entry should always take part, its set fields winning and `keep` as ruled; only workspace entries pass the took-part test and are said (`HarnessSettings.cs:442-469`, `:844-845`, `:867-875`) | no | holds | §6.1 rule 3; §9 |
+| F8 | No receipt line for a machine scope with a default and no list: `oneAccount` should take the subject *workspaces that named no accounts*, as `moved` does | no | holds | §4.2's `unnamedOne`, a key of its own since a composed subject does not translate, with `unnamedMoved` and `notKeptUnnamed` for the machine's other lines |
+| F9 | The order should begin with each scope's `Begins` as `ScopeOf` reads it (`begins = own ∈ list ? own : list[0]`, `HarnessSettings.cs:872-873`), then its list, and the moved firsts should compare `Begins` | no | holds | §6.1 rule 2 |
+| F10 | A fold that places an account a stored order left out says nothing, though that account now runs every workspace's work | no | holds | §6.1 rule 5 and §4.2's `agents.pooled.joined`, one line per account; only a first order on a file with none is silent |
+| F11 | Nothing says what the come-up's fold does when it meets a held lock | no | holds | §6.2: the refusal logged, the fold tried again at the next look, or made first by the next writer's `Change` |
+| F12 | PUSH1f2e is being built under a brief to keep today's account verb shapes, so the rows cannot take those verbs as gone | no | holds | §5.1's lead and §11: POOL1b turns 2e's verbs into the refusals; POOL1a names the CLI fixture tables it rewrites and checks that 2e's driver `agent list` asks no own sign-in; §12 |
+| F13 | *Got it* marks receipts by the times they were shown, which is no identity | no | holds | §6.3: each receipt an id, *Got it* by id; §5.2 |
