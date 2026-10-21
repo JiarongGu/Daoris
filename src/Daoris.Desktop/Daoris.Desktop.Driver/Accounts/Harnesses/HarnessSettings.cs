@@ -83,7 +83,15 @@ public sealed record HarnessSettings(
     private static readonly HashSet<string> Sections = new(StringComparer.Ordinal)
     {
         "defaults", "workspaces", "versions", "workspaceVersions", "rotation", "workspaceRotation", "rotationUse", "workspaceRotationUse",
+        "pooled",
     };
+
+    /// <summary>
+    /// Agent → what each fold of its accounts into one set changed (POOL1a, D197; the account-pool design §6.3), oldest first, each
+    /// kept until the person presses <i>Got it</i>. An older build keeps the section as one it does not know.
+    /// </summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<PoolReceipt>> Pooled { get; init; } =
+        new Dictionary<string, IReadOnlyList<PoolReceipt>>(StringComparer.OrdinalIgnoreCase);
 
     public const string PathVariable = "DAORIS_HARNESS_CONFIG";
 
@@ -149,6 +157,7 @@ public sealed record HarnessSettings(
                 WorkspaceRotation = ReadOrderCircles(document.RootElement, "workspaceRotation"),
                 Uses = ReadUses(document.RootElement, "rotationUse"),
                 WorkspaceUses = ReadUseCircles(document.RootElement, "workspaceRotationUse"),
+                Pooled = PoolReceipts.Read(document.RootElement),
                 Kept = [.. document.RootElement.EnumerateObject()
                     .Where(property => !Sections.Contains(property.Name))
                     .Select(property => KeyValuePair.Create(property.Name, property.Value.Clone()))],
@@ -193,14 +202,191 @@ public sealed record HarnessSettings(
     /// <returns>The wiring as written.</returns>
     /// <exception cref="DriverException">The file does not read, or the edit is refused; nothing was written.</exception>
     /// <exception cref="IOException">Another writer held the file's lock for the whole of the wait; nothing was written.</exception>
-    public static HarnessSettings Change(string path, Func<HarnessSettings, HarnessSettings> edit, Action? read = null)
+    /// <remarks>
+    /// <para><b>Every change folds first</b> (POOL1a, D197 point 7; the account-pool design §6.2): under the lock the raw file is folded
+    /// to one set per agent (<see cref="AccountSet.Fold"/>), the edit is made over the folded wiring, each agent's order is made whole
+    /// (<see cref="AccountSet.Whole"/>), and the fold's receipts are written with it, so the first writer in any process is the folder
+    /// and no edit is ever made over a raw file whose scopes remain. A folded file folds to itself. Each agent folded writes one
+    /// <c>accounts.pooled</c> line to the machine log, by count.</para>
+    /// </remarks>
+    /// <param name="account">
+    /// An account the change itself adds or removes (a sign-in's new folder, a removal's), so the fold does not say it as one a stored
+    /// order left out or as a name gone: an added one is placed last by the edit's whole order, a removed one taken out by the edit.
+    /// </param>
+    /// <param name="log">Where the fold's line goes; the driver's log under the file's home where none is handed.</param>
+    public static HarnessSettings Change(
+        string path, Func<HarnessSettings, HarnessSettings> edit, Action? read = null, AccountChange? account = null, MachineLog? log = null,
+        TimeSpan? within = null)
     {
-        using var held = KeepLock.Take(path);
+        using var held = KeepLock.Take(path, within);
         var settings = Load(path);
         read?.Invoke();
-        var changed = edit(settings);
+        if (settings.Problem is not null)
+        {
+            var refused = edit(settings);
+            refused.SaveHolding(path);
+            return refused;
+        }
+
+        var home = HomeOf(path);
+        var accounts = AccountsOf(home, settings);
+        var (folded, counts) = AccountSet.Fold(settings, Hinted(accounts, account), DateTimeOffset.UtcNow, PoolReceipts.NewId);
+        var changed = AccountSet.Whole(folded, edit(folded), AccountsOf(home, folded)).WithSaidKept();
         changed.SaveHolding(path);
+        if (counts.Count > 0) Logged(home, log, counts);
         return changed;
+    }
+
+    /// <summary>
+    /// The wiring as every reader takes it (POOL1a, the account-pool design §2.4): the file at <paramref name="path"/> read raw and
+    /// projected to one set per agent (<see cref="AccountSet.Of"/>), nothing written.
+    /// </summary>
+    public static HarnessSettings LoadSet(string path)
+    {
+        var settings = Load(path);
+        return settings.Problem is not null ? settings : AccountSet.Of(settings, AccountsOf(HomeOf(path), settings));
+    }
+
+    /// <summary>
+    /// The driver's come-up fold (the account-pool design §6.2): <see cref="Change"/> with no edit, for a file with anything to fold,
+    /// so a file nobody edits is folded too. True when the file is folded now, or had nothing to fold; false where its lock was held
+    /// for the whole wait, which is logged once and tried again at the next look (Fable's F11).
+    /// </summary>
+    public static bool FoldNow(string path, MachineLog? log = null, TimeSpan? within = null)
+    {
+        var settings = Load(path);
+        if (settings.Problem is not null) return true;
+        var accounts = AccountsOf(HomeOf(path), settings);
+        if (!AccountSet.AgentsOf(settings, accounts).Any(agent => AccountSet.Unfolded(settings, agent, accounts.GetValueOrDefault(agent) ?? [])))
+        {
+            return true;
+        }
+
+        try
+        {
+            Change(path, read => read, log: log, within: within);
+            return true;
+        }
+        catch (IOException error)
+        {
+            (log ?? MachineLog.None).Warn("accounts.pooled", ("held", true), ("refusal", error.Message));
+            return false;
+        }
+    }
+
+    /// <summary>Each agent's accounts on this machine, for every agent the wiring names or whose account homes exist.</summary>
+    public static IReadOnlyDictionary<string, IReadOnlyList<string>> AccountsOf(string home, HarnessSettings settings)
+    {
+        var agents = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var place in DaorisHome.Places(home, HomeEntry.AgentHomes, "_"))
+        {
+            if (Path.GetDirectoryName(place) is { } holder && Directory.Exists(holder))
+            {
+                foreach (var folder in Directory.EnumerateDirectories(holder)) agents.Add(Path.GetFileName(folder));
+            }
+        }
+
+        foreach (var agent in AccountSet.AgentsOf(settings, new Dictionary<string, IReadOnlyList<string>>())) agents.Add(agent);
+        var accounts = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var agent in agents.Where(agent => !NotAnAccount(agent)))
+        {
+            try
+            {
+                accounts[agent] = Profiles(home, agent);
+            }
+            catch (DriverException)
+            {
+                // A name no folder may have names no accounts.
+            }
+        }
+
+        return accounts;
+    }
+
+    private static IReadOnlyDictionary<string, IReadOnlyList<string>> Hinted(
+        IReadOnlyDictionary<string, IReadOnlyList<string>> accounts, AccountChange? change)
+    {
+        if (change is null) return accounts;
+        var hinted = new Dictionary<string, IReadOnlyList<string>>(accounts, StringComparer.OrdinalIgnoreCase);
+        var mine = accounts.GetValueOrDefault(change.Agent) ?? [];
+        hinted[change.Agent] = change.Added
+            ? [.. mine.Where(name => name != change.Account)]
+            : [.. mine.Append(change.Account).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)];
+        return hinted;
+    }
+
+    private static void Logged(string home, MachineLog? log, IReadOnlyList<FoldCount> counts)
+    {
+        var own = log is null ? new MachineLog(home, "driver") : null;
+        try
+        {
+            foreach (var count in counts)
+            {
+                (log ?? own!).Info("accounts.pooled", ("agent", count.Agent), ("accounts", count.Accounts), ("scopes", count.Scopes), ("notKept", count.NotKept));
+            }
+        }
+        finally
+        {
+            own?.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// The receipts named by <paramref name="ids"/> marked said (<i>Got it</i>, the account-pool design §6.3; Fable's F13): a receipt
+    /// appended after the page drew is not among them and stays unsaid; an id no receipt holds is passed over.
+    /// </summary>
+    public HarnessSettings WithSaid(string agent, IReadOnlyCollection<string> ids) =>
+        Pooled.GetValueOrDefault(agent) is { } receipts
+            ? WithPooled(agent, [.. receipts.Select(receipt => ids.Contains(receipt.Id) ? receipt with { Said = true } : receipt)])
+            : this;
+
+    /// <summary>An agent's receipts replaced; none takes its entry out.</summary>
+    internal HarnessSettings WithPooled(string agent, IReadOnlyList<PoolReceipt> receipts)
+    {
+        var next = new Dictionary<string, IReadOnlyList<PoolReceipt>>(Pooled, StringComparer.OrdinalIgnoreCase);
+        if (receipts.Count == 0) next.Remove(agent);
+        else next[agent] = receipts;
+        return this with { Pooled = next };
+    }
+
+    /// <summary>Said receipts beyond the last <see cref="AccountSet.SaidKept"/> dropped, each unsaid one kept (design §6.3).</summary>
+    private HarnessSettings WithSaidKept()
+    {
+        var settings = this;
+        foreach (var (agent, receipts) in Pooled)
+        {
+            var said = receipts.Where(receipt => receipt.Said).ToList();
+            if (said.Count <= AccountSet.SaidKept) continue;
+            var dropped = said.Take(said.Count - AccountSet.SaidKept).ToHashSet();
+            settings = settings.WithPooled(agent, [.. receipts.Where(receipt => !dropped.Contains(receipt))]);
+        }
+
+        return settings;
+    }
+
+    /// <summary>
+    /// An agent's scopes taken out (the account-pool design §6.1 rule 4): its default, and its entries in every workspace's defaults,
+    /// lists and settings; a workspace left with nothing is dropped. Its pinned versions are untouched.
+    /// </summary>
+    internal HarnessSettings WithoutScopes(string agent)
+    {
+        var settings = WithDefault(agent, null);
+        foreach (var workspace in Workspaces.Keys.ToList()) settings = settings.WithWorkspaceDefault(workspace, agent, null);
+        var rotations = new Dictionary<string, IReadOnlyDictionary<string, IReadOnlyList<string>>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (workspace, orders) in settings.WorkspaceRotation)
+        {
+            var kept = Ordered(orders, agent, []);
+            if (kept.Count > 0) rotations[workspace] = kept;
+        }
+
+        var uses = new Dictionary<string, IReadOnlyDictionary<string, UseEntry>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (workspace, entries) in settings.WorkspaceUses)
+        {
+            var kept = Placed(entries, agent, UseEntry.Empty);
+            if (kept.Count > 0) uses[workspace] = kept;
+        }
+
+        return settings with { WorkspaceRotation = rotations, WorkspaceUses = uses };
     }
 
     /// <summary>
@@ -298,6 +484,7 @@ public sealed record HarnessSettings(
         }
 
         WriteUseCircles(writer, "workspaceRotationUse", WorkspaceUses, asRead);
+        PoolReceipts.Write(writer, Pooled);
 
         writer.WriteEndObject();
     }
@@ -441,15 +628,15 @@ public sealed record HarnessSettings(
     /// workspace left with no order is dropped. The names are kept trimmed; whether each is an account here, once, is
     /// <see cref="OrderProblem"/>'s question, which a door asks first.
     /// </summary>
-    /// <remarks>A list cleared takes its scope's settings with it (TOOL6a, D130 §2): they come with the list.</remarks>
+    /// <remarks>
+    /// The set's settings are the agent's and no list's (POOL1a, the account-pool design §2.3): clearing the machine's order clears none
+    /// of them, and <see cref="Change"/> writes the order whole again, by id. A workspace's list cleared still takes its settings with it
+    /// (TOOL6a, D130 §2), until the doors that write one are refused (POOL1b).
+    /// </remarks>
     public HarnessSettings WithRotation(string agent, IReadOnlyList<string>? order, string? workspace = null)
     {
         IReadOnlyList<string> kept = order is null ? [] : [.. order.Select(name => name.Trim()).Where(name => name.Length > 0)];
-        if (string.IsNullOrWhiteSpace(workspace))
-        {
-            var machine = this with { Rotation = Ordered(Rotation, agent, kept) };
-            return kept.Count > 0 ? machine : machine.WithUse(agent, null);
-        }
+        if (string.IsNullOrWhiteSpace(workspace)) return this with { Rotation = Ordered(Rotation, agent, kept) };
 
         var circles = new Dictionary<string, IReadOnlyDictionary<string, IReadOnlyList<string>>>(
             WorkspaceRotation, StringComparer.OrdinalIgnoreCase);
@@ -503,7 +690,10 @@ public sealed record HarnessSettings(
 
         bool Keeps(UseEntry? entry) =>
             entry?["keep"] is { ValueKind: JsonValueKind.String } keep && keep.GetString()!.Trim() == profile;
-        if (Keeps(settings.Uses.GetValueOrDefault(agent))) settings = settings.WithUse(agent, new UseChange(NoKeep: true));
+        // A keep left alone in a set of one is dropped too (the account-pool design §2.3): driven work would have none.
+        var alone = Rotation.ContainsKey(agent) && (settings.Rotation.GetValueOrDefault(agent)?.Count ?? 0) < 2
+            && settings.Uses.GetValueOrDefault(agent)?["keep"] is not null;
+        if (Keeps(settings.Uses.GetValueOrDefault(agent)) || alone) settings = settings.WithUse(agent, new UseChange(NoKeep: true));
         foreach (var (workspace, uses) in settings.WorkspaceUses)
         {
             if (Keeps(uses.GetValueOrDefault(agent))) settings = settings.WithUse(agent, new UseChange(NoKeep: true), workspace);
