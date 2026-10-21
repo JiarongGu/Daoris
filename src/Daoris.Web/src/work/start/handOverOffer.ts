@@ -1,5 +1,5 @@
 import type { Session } from '../../data/api';
-import { type AccountsAnswer, type AccountScope, agentOf, machineScope, workspaceScope } from '../../settings/accounts/accounts';
+import { type AccountsAnswer, type AccountScope, agentOf, machineScope, switchOf, workspaceScope } from '../../settings/accounts/accounts';
 import { toolOf, type ToolDoor } from '../../agents/tools';
 import { coolingFor } from '../say';
 
@@ -22,7 +22,8 @@ export type HandOverOffer = {
  * has an account its next start would take (`scope.next`). The agent's pace warning alone is never near, so it offers nothing
  * and passes no account (USAGEREAD3b, D165 point 2). A conversation on the tool's own sign-in can be cut and is never near,
  * since a sign-in that says nothing is never offered as near. No driver read: the offer is a line, and taken only by the
- * person's press (D163, `ask`).
+ * person's press (D163, `ask`). It is the fallback (SWITCH1e, D165 point 4): where the switch moves the conversation to another
+ * account of its own agent at its turn's end, there is no offer.
  *
  * @remarks
  * The scope is the conversation's workspace's own where it names one, else the machine's, as the start's chip reads it, for the
@@ -48,6 +49,7 @@ export function handOverOffer({ session, workspace, doors, answer, now }: {
     if (near) why = 'near';
   }
   if (!why) return null;
+  if (switchesAway(session, doors, answer, scopeOf)) return null;
 
   // Candidates are other tools (MIXAGENT1b-iii), each once by its first present door; a tool's other door is the same tool.
   for (const door of otherToolDoors(session, doors)) {
@@ -69,6 +71,28 @@ export function handOverOffer({ session, workspace, doors, answer, now }: {
     return { why, until: why === 'limit' ? until : null, agent: door.harness, account: taken };
   }
   return null;
+}
+
+/**
+ * Whether the switch moves the conversation to another account of its own agent at its turn's end, so the offer, the fallback,
+ * stays down (SWITCH1e, D165 point 4, the switch design §4): its scope's switch is not `off`, its account is over the scope's curve
+ * (`overCurve`, what `SwitchDecision` moves by), and another account of that scope has room (`room`). Each is .NET's verdict
+ * (D182 point 6); a shell older than SWITCH1e answers no `room`, and the offer stands as before.
+ */
+function switchesAway(
+  session: Pick<Session, 'adapter' | 'profile'>,
+  doors: readonly ToolDoor[],
+  answer: AccountsAnswer | null | undefined,
+  scopeOf: (agent: NonNullable<ReturnType<typeof agentOf>>) => AccountScope,
+): boolean {
+  if (!session.profile) return false;
+  const door = doors.find((each) => each.harness === session.adapter);
+  const own = agentOf(answer, door ? toolOf(door) : session.adapter);
+  if (!own) return false;
+  const scope = scopeOf(own);
+  return switchOf(scope.use) !== 'off'
+    && (scope.overCurve ?? []).some((each) => each.account === session.profile)
+    && (scope.room ?? []).some((account) => account !== session.profile);
 }
 
 const live = (cooling: { until: string } | null | undefined, now: Date): boolean =>

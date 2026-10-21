@@ -19014,3 +19014,13 @@ theory (the stop row reads the end; the others none) and its wake test (none whi
 edit and for their `Forget`, as `landings.json` and `session-branches.json` have since FABRIC-END2; no shape, caller or door changed.
 Proof: `RecordLockStoresTests`, per store an edit and a forget waiting for the lock with the holder's write kept. Detail: D173's
 FABRIC-RECLOCK2 note. On Opus.
+## SWITCH1e — the offer is the fallback (2026-10-21, D165)
+
+> - [ ] **SWITCH1e — the offer is the fallback** (web; after 1c). The low-allowance hand-over offer only where `switch` is `off` or no account of the agent has room. Design §4.
+
+**Outcome** 2026-10-21: built, with a modules half the row did not name: since PUSH1e the page judges no curve (D182 point 6), so
+each scope of `ACCOUNTS` answers `room`, the accounts of its list a running session could move to (`SwitchCandidates`' ready and
+`SwitchMargin` under the curve on every window said, as `SwitchDecision` moves). `handOverOffer` offers nothing where the scope's
+switch is not `off`, the conversation's account is in its `overCurve` and another account is in its `room`; anywhere else, and from
+a shell with no `room`, it offers as before. No words changed. Proof: `DriverModuleAccountsTests`' room case, `handOverOffer.test.ts`'
+SWITCH1e cases. Detail: D165's SWITCH1e note. On Opus.

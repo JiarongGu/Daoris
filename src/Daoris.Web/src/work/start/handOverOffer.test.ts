@@ -7,6 +7,7 @@ import { handOverOffer } from './handOverOffer';
 // answer. Cut by the account's cool-off, or near its limit by the scope's own `near` (a limit reached, usage credits or its
 // number, USAGEREAD3a), and only where another present agent has an account its next start would take; an account that says
 // nothing is never offered as near, and nor is one only ahead of its pace by its agent's warning (USAGEREAD3b, D165 point 2).
+// The offer is the fallback: none where the switch moves the conversation to another account of its agent (SWITCH1e).
 
 const now = new Date('2026-10-04T10:00:00Z');
 const until = '2026-10-04T13:10:00Z';
@@ -140,6 +141,42 @@ describe('handOverOffer', () => {
     it('does not offer a tool whose own sign-in is cooling', () => {
       const near = claude({ scopes: [scope({ near: [nearPersonal] })] });
       expect(offer(answer(near, codex({ own: { cooling }, scopes: [scope({ next: next(null, 'own') })] })))).toBeNull();
+    });
+  });
+
+  describe('is the fallback where the switch moves the conversation (SWITCH1e, D165 point 4)', () => {
+    const overPersonal = { account: 'personal', window: 'session', curve: 90 };
+    const switching = (over: Partial<AccountScope> = {}, use: Partial<AccountScope['use']> = {}) => claude({
+      scopes: [scope({ near: [nearPersonal], overCurve: [overPersonal], room: ['work'], ...over,
+        use: { use: 'goal', keep: null, early: true, near: 90, ...use } })],
+    });
+
+    it('offers nothing where its account is over its curve and another account of its agent has room', () => {
+      expect(offer(answer(switching(), codex()))).toBeNull();
+      expect(offer(answer(switching({}, { switch: 'curve' }), codex()))).toBeNull();
+      const cut = claude({ ...switching(), accounts: [{ name: 'personal', cooling }, { name: 'work' }] });
+      expect(offer(answer(cut, codex()))).toBeNull();
+    });
+
+    it('offers where the switch is off, whatever has room', () => {
+      expect(offer(answer(switching({}, { switch: 'off' }), codex()))).toEqual({ why: 'near', until: null, agent: 'codex', account: 'team' });
+      expect(offer(answer(switching({}, { early: false }), codex()))?.why).toBe('near');
+    });
+
+    it('offers where no other account of its agent has room', () => {
+      expect(offer(answer(switching({ room: [] }), codex()))?.why).toBe('near');
+      expect(offer(answer(switching({ room: ['personal'] }), codex()))?.why).toBe('near');
+    });
+
+    it('offers where its account is not over its curve, so the switch does not move it', () => {
+      const credits = { account: 'personal', window: 'session', by: 'credits' as const };
+      expect(offer(answer(switching({ near: [credits], overCurve: [] }), codex()))?.why).toBe('near');
+      const cut = claude({ ...switching({ overCurve: [] }), accounts: [{ name: 'personal', cooling }, { name: 'work' }] });
+      expect(offer(answer(cut, codex()))).toEqual({ why: 'limit', until, agent: 'codex', account: 'team' });
+    });
+
+    it('offers as before from a shell that answers no room', () => {
+      expect(offer(answer(switching({ room: undefined }), codex()))?.why).toBe('near');
     });
   });
 
