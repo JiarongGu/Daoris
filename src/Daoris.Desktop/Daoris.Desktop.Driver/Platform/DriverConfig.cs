@@ -1235,6 +1235,28 @@ public sealed record DriverConfig(
     }
 
     /// <summary>
+    /// The rules of <paramref name="name"/> (<c>landings</c> or <c>workspaceLandings</c>) that read as no rule (FABRIC-GRAPH1d), each by
+    /// its name as written, in the file's order: why, <c>object</c> (no rule's object), <c>form</c> (no <c>form</c>) or <c>refused</c> (one
+    /// <see cref="LandingRules.Problem"/> refuses), and the driver's sentence. Setup names them through the bridge's landing rows, as
+    /// <see cref="NodeGraphHomes.Strays"/> does for the terminal; a rule written null is none, and none here.
+    /// </summary>
+    public IReadOnlyList<UnreadLanding> UnreadLandings(string name)
+    {
+        if (Source is null) return [];
+        using var document = JsonDocument.Parse(Source);
+        if (!document.RootElement.TryGetProperty(name, out var map) || map.ValueKind != JsonValueKind.Object) return [];
+        var unread = new List<UnreadLanding>();
+        foreach (var entry in map.EnumerateObject())
+        {
+            if (RuleOf(entry.Value, out var said) is not null || said is null) continue;
+            var why = entry.Value.ValueKind != JsonValueKind.Object ? "object" : Json.NonEmpty(entry.Value, "form") is null ? "form" : "refused";
+            unread.Add(new(entry.Name, why, said));
+        }
+
+        return unread;
+    }
+
+    /// <summary>
     /// A map of names to landing rules; one that could not land work — an unknown form, a pattern that
     /// names no branch, a merge naming a plugin or accepting automatically — is skipped. A ticket's key it refuses is ignored, the
     /// rest of the rule standing. A plugin not installed here is still read: the press says so, and the file stays what the
@@ -1541,3 +1563,9 @@ public sealed record DriverConfig(
 /// <param name="At">When the person paused it, or null where the file does not say in a form this reads.</param>
 /// <param name="Stopped">Each quest the pause stopped, against the session it stopped: what <i>Resume</i> writes into <see cref="DriverConfig.Released"/> (design §2.4).</param>
 public sealed record WorkPause(DateTimeOffset? At, IReadOnlyDictionary<string, string> Stopped);
+
+/// <summary>A landing rule <c>driver.json</c> keeps that reads as no rule (FABRIC-GRAPH1d, <see cref="DriverConfig.UnreadLandings"/>).</summary>
+/// <param name="Name">The repository or workspace it is written under, as written.</param>
+/// <param name="Why"><c>object</c>, <c>form</c> or <c>refused</c>, which the page words.</param>
+/// <param name="Said">The driver's sentence for why, which the page passes through for <c>refused</c>.</param>
+public sealed record UnreadLanding(string Name, string Why, string Said);

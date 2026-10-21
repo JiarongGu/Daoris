@@ -18754,3 +18754,13 @@ Detail: D189's SESSCTX1d note.
 additive `unreadable`, the work slice's `<held>` partition, and `daoris-driver work held`. *What needs you* has a `work` row for each,
 worded in en and zh, whose press opens the records' folder (`WORK_RECORDS_FOLDER`) for the person to mend it. Proof: driver, modules
 and page tests listed in D173's note. On Opus: about 120 tool calls. Detail: D173's FABRIC-PERFORM1j note.
+
+## FABRIC-GRAPH1d — a landing rule that does not read is said (2026-10-21, D173)
+
+> - [ ] **FABRIC-GRAPH1d — a landing rule that does not read is said** (driver, cli, web; after GRAPH1; WSR1). A rule in `driver.json` that reads as no rule (no `form`) is skipped by both readers without a word. Proof: a rule holding only `tidy` named as unread at Setup and by `daoris driver list`. GRAPHTWINS1 (2026-10-20) built the twins and the terminal: a landing rule that reads as no rule is the `unread` stray in both readers (`graph-homes.json`'s `strays`), and `daoris driver list` names it with the reason. Left: Setup naming it (the page and the bridge's landing rows).
+
+**Outcome** 2026-10-21: built. Setup's half, after GRAPHTWINS1 built the twins and the terminal: `STATE` answers `unreadLandings` and
+`workspaceUnreadLandings` (why `object`, `form` or `refused`, and the driver's sentence), pushed in the driver slice; a repository's
+Setup names its own unread rule, else its workspace's where it lands by Daoris's merge, and a workspace's Setup its own, en and zh.
+Proof: `DriverModuleLinesTests`, `RepositorySetup.test.tsx`, `WorkspaceSetup.test.tsx`, `ProjectsView.test.tsx`. On Opus: about 70 tool
+calls. Detail: D173's FABRIC-GRAPH1d note.

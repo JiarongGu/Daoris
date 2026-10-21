@@ -370,6 +370,13 @@ export function useProjectsView({
       landing: landing ?? null,
       landingAbove: above ? { ...above } : { form: 'merge' },
       landers,
+      // FABRIC-GRAPH1d: a rule the file keeps that reads as no rule, its own, else its workspace's where Daoris's merge stands.
+      landingUnread: (() => {
+        const own = (driver.data.unreadLandings ?? []).find((row) => same(row.repository));
+        if (own) return { name: own.repository, why: own.why, said: own.said };
+        const shared = landing?.source === 'default' ? ofWorkspace(driver.data.workspaceUnreadLandings, workspace) : undefined;
+        return shared ? { name: shared.workspace, why: shared.why, said: shared.said } : null;
+      })(),
       onLanding: (rule?: LandingRule) => setLanding.mutate(rule ? { repository, ...rule } : { repository }, {
         onSuccess: () => notify(!rule
           ? t('settings.landing.cleared', { name: repository })

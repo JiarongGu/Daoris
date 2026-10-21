@@ -58,6 +58,32 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
         Assert.Equal(0, cleared.GetProperty("workspaceLandings").GetArrayLength());
     }
 
+    /// <summary>
+    /// FABRIC-GRAPH1d: a rule the file keeps that reads as no rule is skipped by the landing rows, so the state names it for Setup, with
+    /// why and the driver's sentence; a rule written null is none, and a readable rule is no unread one.
+    /// </summary>
+    [Fact]
+    public async Task A_landing_rule_that_does_not_read_is_named_beside_the_landing_rows()
+    {
+        File.WriteAllText(DriverConfigPath, """
+            {
+              "landings": { "engine": { "tidy": true }, "game": "merge", "tools": { "form": "push" }, "docs": null, "site": { "form": "merge" } },
+              "workspaceLandings": { "aurora": { "tidy": true } }
+            }
+            """);
+
+        var state = await AnswerAsync(Module(), "STATE");
+
+        Assert.Equal(["site"], state.GetProperty("landings").EnumerateArray().Select(row => row.GetProperty("repository").GetString()));
+        var unread = state.GetProperty("unreadLandings").EnumerateArray()
+            .Select(row => (row.GetProperty("repository").GetString(), row.GetProperty("why").GetString())).ToArray();
+        Assert.Equal([("engine", "form"), ("game", "object"), ("tools", "refused")], unread);
+        Assert.Contains("names no `form`", state.GetProperty("unreadLandings")[0].GetProperty("said").GetString());
+        Assert.Contains("a plugin's to do", state.GetProperty("unreadLandings")[2].GetProperty("said").GetString());
+        var workspace = state.GetProperty("workspaceUnreadLandings")[0];
+        Assert.Equal(("aurora", "form"), (workspace.GetProperty("workspace").GetString(), workspace.GetProperty("why").GetString()));
+    }
+
     [Fact]
     public async Task A_landing_rule_that_could_not_land_work_is_refused_in_the_drivers_words()
     {

@@ -37,7 +37,7 @@ public static class DriverStateSlice
             "lines", "workspaceLines", "landings", "workspaceLandings", "readAcross", "workspaceReadAcross", "writeAcross", "standing",
             "languages", "workspaceLanguages", "languageTable", "reviews", "workspaceReviews", "opinions", "workspaceOpinions",
             "helpers", "workspaceHelpers", "handOver", "workspaceHandOver", "commits", "workspaceCommits", "access", "workspaceAccess", "machineAccess", "heavyGates",
-            "sessionChecks",
+            "sessionChecks", "unreadLandings", "workspaceUnreadLandings",
         ],
         ["running"] = ["running", "drivingBrowser", "inReview", "helpSwapping"],
     };

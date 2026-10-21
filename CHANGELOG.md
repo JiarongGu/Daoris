@@ -9,6 +9,10 @@ with the version and date at release.
   over or moved from, and why, such as *moved on from part 2 on codex: its own conversation was lost*. Each part's row says what it
   spent, in tokens over its turns, or that its turns did not report them. Where a line of work ran on more than one agent, the
   head says which agent it is on now. In English and 中文.
+- A landing rule in `driver.json` that does not read, such as one holding only `tidy` with no `form`, is now named at Setup: a
+  repository's *How work lands* says its own such rule, or its workspace's where it lands by the default merge, and a workspace's
+  *Defaults* says its own, each saying that work there lands as though it set none, in English and 中文. `daoris driver list`
+  already named it.
 - A session's work now lands on its line's current tip. Where the line moved since the session's tree began, Accept, and the
   automatic landing at done, replay the work onto the line first, as they already did where the line held some of it: a branch
   made for it grows from the line's tip, a merge merges the replay, and the session's tree follows what landed. The review says so

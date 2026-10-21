@@ -207,6 +207,25 @@ describe("Setup's Work", () => {
     expect(onLanding).toHaveBeenLastCalledWith({ form: 'branch', pattern: 'feature/{quest}-{slug}', squash: false });
   });
 
+  /** FABRIC-GRAPH1d: a rule the file keeps that reads as no rule is said under the row, and opens the section. */
+  it('names a landing rule that does not read under its row, opening the section', () => {
+    draw({ ...SETUP_DEFAULTS, work: { ...SETUP_DEFAULTS.work, landingUnread: { name: 'engine', why: 'form', said: 'it names no `form`, `merge` or `branch`.' } } });
+
+    expect(head('Line and landing')).toHaveAttribute('aria-expanded', 'true');
+    const landing = row(section('Line and landing'), 'How work lands');
+    expect(within(landing).getByRole('note')).toHaveTextContent(
+      'driver.json keeps a landing rule for engine that names no form, merge or branch, so nothing reads it: work lands as though it set none.');
+    expect(within(landing).getByText('Merged into its line — the default.')).toBeInTheDocument();
+  });
+
+  it("says a refused rule in the driver's own sentence, in Chinese too", async () => {
+    await i18n.changeLanguage('zh');
+    draw({ ...SETUP_DEFAULTS, work: { ...SETUP_DEFAULTS.work, landingUnread: { name: 'aurora', why: 'refused', said: 'Pushing is a plugin\'s to do.' } } });
+
+    expect(within(row(section('主线与落地'), '工作如何落地')).getByRole('note')).toHaveTextContent(
+      'driver.json 为 aurora 保存的落地规则无法落地工作，因此没有谁读取它：工作按未设置规则落地。Pushing is a plugin\'s to do.');
+  });
+
   it('clears a rule of its own', async () => {
     const onLanding = vi.fn();
     draw({ ...SETUP_OWN, work: { ...SETUP_OWN.work, onLanding } });
