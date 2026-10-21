@@ -21,11 +21,13 @@ public sealed record PipeConfirmationField(string Name, string Type, string Valu
 /// A person's press a terminal sent over the pipe, waiting for the window (RPC1c): shown by its module and route, the names the
 /// census and the bridge give it, every value its payload carries, and the terminal that asks. Never its request's id or key.
 /// <see cref="ShownAt"/> is when a window first said its card was in front of the person (CONFIRMSEEN1), null until then;
-/// <see cref="Expires"/> is the end of its wait to be found until then, and of its two minutes from then.
+/// <see cref="Expires"/> is the end of its wait to be found until then, and of its two minutes from then. <see cref="Named"/> is the
+/// values its sentence names by role (NOTIFY2b, <see cref="PipeWording"/>), a field added beside <see cref="Fields"/>, which still
+/// holds every value.
 /// </summary>
 public sealed record PipeConfirmation(
     string Id, string Module, string Route, IReadOnlyList<PipeConfirmationField> Fields, PipeAsker Asker,
-    DateTimeOffset Asked, DateTimeOffset Expires, DateTimeOffset? ShownAt = null);
+    DateTimeOffset Asked, DateTimeOffset Expires, DateTimeOffset? ShownAt = null, IReadOnlyList<PipeNamed>? Named = null);
 
 /// <summary>What waits, told whole at each change, numbered so a window keeps the newest telling (as <c>UNDER_WAY</c> is).</summary>
 public sealed record PipeConfirmationsNow(long Seq, IReadOnlyList<PipeConfirmation> Waiting);
@@ -152,7 +154,9 @@ public sealed class PipeConfirmations : IDisposable
         {
             if (_waiting.Count >= Bound) return null;
             var asked = _clock.GetUtcNow();
-            held = new Held(new PipeConfirmation(Guid.NewGuid().ToString("N"), module, route, fields, asker, asked, asked + _find));
+            held = new Held(new PipeConfirmation(
+                Guid.NewGuid().ToString("N"), module, route, fields, asker, asked, asked + _find,
+                Named: PipeWording.Named(module, route, fields)));
             // Its timer, its ask's line and its place are made together under the lock, so a confirmation anyone can see already has its
             // wait to be found counting from its ask, and its end can be said only after its ask. The timer's first firing is that wait
             // away (never zero), so it finds the confirmation held.
