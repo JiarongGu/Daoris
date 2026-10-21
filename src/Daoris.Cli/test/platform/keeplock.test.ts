@@ -121,12 +121,13 @@ async function heldAcross(name: string, start: string, script: string, mine: (te
   return readFileSync(file, 'utf8');
 }
 
+// PUSH1f2b (the alone-path design §4): `driver.json`'s CLI writer left with the driver family's TypeScript, so its case is the shared
+// keeping write's over the same file, which the CLI's other home files still write through until PUSH1f2f.
 test('keeplock: an edit of driver.json in another process waits for this one\'s, and neither is lost (CONFIGLOCK1)', async () => {
   const text = await heldAcross('keeplock-driver', '{\n  "drivable": [\n    "engine"\n  ],\n  "notify": true\n}\n', [
-    `import { readDriverChoices, writeDriverChoices } from '${source('driver', 'driverconfig.ts')}';`,
-    'const choices = readDriverChoices(process.env.KEEP_FILE);',
+    `import { writeKeeping } from '${source('platform', 'jsonkeep.ts')}';`,
     "process.stdout.write('read\\n');",
-    "writeDriverChoices(process.env.KEEP_FILE, { ...choices, drivable: [...choices.drivable, 'orders'] });",
+    "writeKeeping(process.env.KEEP_FILE, true, { drivable: ['engine'], notify: true }, { drivable: ['engine', 'orders'], notify: true });",
   ].join('\n'), (read) => read.replace('"notify": true', '"notify": false'));
   assert.equal(text, '{\n  "drivable": [\n    "engine",\n    "orders"\n  ],\n  "notify": false\n}\n');
 });
