@@ -5,6 +5,19 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-21 — A chain naming its repository in another case was two repositories to the driver's close and one to the service's (FABRIC-CLOSECASE1)
+
+- **Symptom:** named by the backlog. A chain whose next step names the same repository in another case (`reports`, then `Reports`)
+  was published by the service as a step in the same tree, inheriting its evidence, and its close door would take both quests; the
+  driver's closer read the step as another repository's, so the first quest closed on its own without waiting for the last, and the
+  last quest's close never named the first.
+- **Root cause:** `QuestClosing.Lineage` and `QuestClosing.Judge`'s step-still-to-come wait compared `To` with `Ordinal`, while the
+  service's `NextStep` and the close door's scope check use `OrdinalIgnoreCase`, as do the driver's other quest-to-repository matches.
+- **Fix:** both driver comparisons ignore case, so the service's rule is the only one.
+- **Verification:** `QuestCloseTests.A_chain_naming_this_repository_in_another_case_closes_at_its_last_quest_with_its_first`
+  (the lineage, the wait, and one close naming both); `QuestClosureTests.A_chain_whose_step_names_its_repository_in_another_case_is_one_repositorys_and_closes_whole`
+  (the step inherits its evidence and the door closes both). `QuestCloseTests` (48) and `QuestClosureTests` (29) green.
+
 ## 2026-10-21 — A resource location another writer added while one wrote `tools.json` was lost (PUSH1f2c)
 
 - **Symptom:** found building PUSH1f2c, the alone-path design §1.4's audit of `tools.json`'s writers. Two writers of the resource
