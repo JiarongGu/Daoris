@@ -40,90 +40,104 @@ const QUOTES: ReadonlySet<string> = new Set(['look.skip', 'look.not-yet']);
 /**
  * One step's place in its run (design §5.2, §7): its state on its pill, *this session* where the attended session is its own,
  * when it came to stand there, what that state says, the person's words where it keeps them, why a step Current does not draw is
- * here, the owner's control where it waits, and the door to where its record is.
+ * here, the owner's control where it waits, and the door to where its record is. On the flowchart (FLOWCHART1d) the node wears
+ * the state's pill itself, so its mark is drawn without it.
  */
-function StepMark({ run, step, here, doors, control }: {
+function StepMark({ run, step, here, doors, control, pill = true }: {
   run: WorkflowRun;
   step: RunStep;
   here: boolean;
   doors?: RunDoors;
   control?: ReactNode;
+  pill?: boolean;
 }) {
   const { t } = useTranslation();
   const said = runSaid(t, step);
   const added = addedSaid(t, step);
   const kind = step.step.kind;
   const quoted = QUOTES.has(`${kind}.${step.detail}`) && step.words ? step.words : null;
-  const door = doorOf(t, run, step, doors);
+  const door = doorFor(t, run, step, doors);
   // The second opinion's gate holding the work on the person (XAGENT1f): its owner's control draws *Go on anyway…* under the step
   // (XAGENT1g), where the frame hands it, the attended session's own run; elsewhere its twins are said, the session's own page
   // and the terminal's, and the door opens the review, where the gate's presses stand.
   const twin = !control && kind === 'opinion' && step.state === 'waiting-on-you' && step.session
     ? t('workflow.run.opinionTwin', { session: step.session })
     : null;
+  const when = step.at && step.state !== 'not-reached' ? ago(step.at) : null;
 
   return (
     <div className="mt-1 grid min-w-0 gap-1">
-      <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-        <Pill tone={runTone(step.state)}>{stateSaid(t, step.state)}</Pill>
-        {here && (
-          <span className="rounded-full border border-line-strong px-2 py-px text-meta text-ink-soft">{t('workflow.run.thisSession')}</span>
-        )}
-        {step.at && step.state !== 'not-reached' && <span className="font-mono text-meta text-ink-faint">{ago(step.at)}</span>}
-      </p>
+      {(pill || here || when) && (
+        <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          {pill && <Pill tone={runTone(step.state)}>{stateSaid(t, step.state)}</Pill>}
+          {here && (
+            <span className="rounded-full border border-line-strong px-2 py-px text-meta text-ink-soft">{t('workflow.run.thisSession')}</span>
+          )}
+          {when && <span className="font-mono text-meta text-ink-faint">{when}</span>}
+        </p>
+      )}
       {said && <p className="m-0 text-small text-ink-soft"><Inline text={said} /></p>}
       {quoted && <p className="m-0 text-small text-ink">{t('workflow.run.quoted', { words: quoted })}</p>}
       {added && <p className="m-0 text-meta text-ink-faint">{added}</p>}
       {control}
       {twin && <p className="m-0 text-meta text-ink-faint"><Inline text={twin} /></p>}
-      {door && <div className="flex flex-wrap items-center gap-1.5">{door}</div>}
+      {door && <div className="flex flex-wrap items-center gap-1.5"><DoorPress door={door} /></div>}
     </div>
   );
 }
 
-/**
- * A step's door (design §7): where its record is. The work's session, or the ask where a go-ahead waits, or the quest its taker
- * waits on; the reviewer's session; the set-up step's page, where the review is answered; the session's review, where its work
- * is accepted; the pull request's address, outside the window as any link opens. A step not reached has none.
- */
-function doorOf(t: ReturnType<typeof useTranslation>['t'], run: WorkflowRun, step: RunStep, doors?: RunDoors): ReactNode {
-  if (step.state === 'not-reached') return null;
-  const ghost = 'min-h-0 px-1.5 py-0.5 text-small';
-  const button = (label: string, open: () => void) => <Button variant="ghost" className={ghost} onClick={open}>{label}</Button>;
-  const kind = step.step.kind;
+/** A step's door: a press that opens a place in the window, or an address that opens outside it. */
+type Door = { label: string; open: () => void } | { href: string };
 
-  if (kind === 'work' && step.detail === 'go-ahead' && run.ask && doors?.ask) {
-    return button(t('workflow.run.door.ask'), () => doors.ask?.(run.ask!));
-  }
-  // A go-on (FABRIC-CLOSE1c7) names the held step, whose page offers the person's go-on and abandon.
-  if (kind === 'work' && ['awaits', 'queued', 'unclosed', 'declined', 'reopened', 'go-on'].includes(step.detail) && step.quest && doors?.quest) {
-    return button(t('workflow.run.door.quest', { id: step.quest }), () => doors.quest?.(step.quest!));
-  }
-  // The gate holds the work on the person: its presses stand beside the review's Accept (XAGENT1f's `LANDING` answers it there).
-  if (kind === 'opinion' && step.state === 'waiting-on-you' && step.session && doors?.review) {
-    return button(t('workflow.run.door.review'), () => doors.review?.(step.session!));
-  }
-  if ((kind === 'work' || kind === 'opinion') && step.session && doors?.session) {
-    return button(t('workflow.run.door.session'), () => doors.session?.(step.session!));
-  }
-  if (kind === 'look' && step.quest && doors?.quest) {
-    return button(t('workflow.run.door.quest', { id: step.quest }), () => doors.quest?.(step.quest!));
-  }
-  if (kind === 'landing' && ['waiting-on-you', 'cannot-start'].includes(step.state) && step.session && doors?.review) {
-    return button(t('workflow.run.door.review'), () => doors.review?.(step.session!));
-  }
-  // Landed on a branch (FLOWCHART1c): its page draws how it landed. A landing into the line keeps no branch, so it has none.
-  if (kind === 'landing' && step.state === 'done' && step.detail === 'branch' && step.branch && doors?.branch) {
-    return button(t('landing.door', { branch: step.branch }), () => doors.branch?.(run.repository, step.branch!));
-  }
-  if (kind === 'pull-request' && step.pullRequest) {
+/** A door drawn: a ghost press, or a link outside the window as any link opens. */
+function DoorPress({ door }: { door: Door }) {
+  const { t } = useTranslation();
+  if ('href' in door) {
     return (
-      <ExternalLink href={step.pullRequest} className="inline-flex items-center gap-1 px-1.5 text-small text-accent">
+      <ExternalLink href={door.href} className="inline-flex items-center gap-1 px-1.5 text-small text-accent">
         {t('workflow.run.door.pullRequest')}
         <Icon name="external" size={12} />
       </ExternalLink>
     );
   }
+  return <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={door.open}>{door.label}</Button>;
+}
+
+/**
+ * A step's door (design §7): where its record is. The work's session, or the ask where a go-ahead waits, or the quest its taker
+ * waits on; the reviewer's session; the set-up step's page, where the review is answered; the session's review, where its work
+ * is accepted; the pull request's address, outside the window as any link opens. A step not reached has none. On the flowchart
+ * (FLOWCHART1d) a press is its node's door too, which Enter opens.
+ */
+function doorFor(t: ReturnType<typeof useTranslation>['t'], run: WorkflowRun, step: RunStep, doors?: RunDoors): Door | null {
+  if (step.state === 'not-reached') return null;
+  const kind = step.step.kind;
+
+  if (kind === 'work' && step.detail === 'go-ahead' && run.ask && doors?.ask) {
+    return { label: t('workflow.run.door.ask'), open: () => doors.ask?.(run.ask!) };
+  }
+  // A go-on (FABRIC-CLOSE1c7) names the held step, whose page offers the person's go-on and abandon.
+  if (kind === 'work' && ['awaits', 'queued', 'unclosed', 'declined', 'reopened', 'go-on'].includes(step.detail) && step.quest && doors?.quest) {
+    return { label: t('workflow.run.door.quest', { id: step.quest }), open: () => doors.quest?.(step.quest!) };
+  }
+  // The gate holds the work on the person: its presses stand beside the review's Accept (XAGENT1f's `LANDING` answers it there).
+  if (kind === 'opinion' && step.state === 'waiting-on-you' && step.session && doors?.review) {
+    return { label: t('workflow.run.door.review'), open: () => doors.review?.(step.session!) };
+  }
+  if ((kind === 'work' || kind === 'opinion') && step.session && doors?.session) {
+    return { label: t('workflow.run.door.session'), open: () => doors.session?.(step.session!) };
+  }
+  if (kind === 'look' && step.quest && doors?.quest) {
+    return { label: t('workflow.run.door.quest', { id: step.quest }), open: () => doors.quest?.(step.quest!) };
+  }
+  if (kind === 'landing' && ['waiting-on-you', 'cannot-start'].includes(step.state) && step.session && doors?.review) {
+    return { label: t('workflow.run.door.review'), open: () => doors.review?.(step.session!) };
+  }
+  // Landed on a branch (FLOWCHART1c): its page draws how it landed. A landing into the line keeps no branch, so it has none.
+  if (kind === 'landing' && step.state === 'done' && step.detail === 'branch' && step.branch && doors?.branch) {
+    return { label: t('landing.door', { branch: step.branch }), open: () => doors.branch?.(run.repository, step.branch!) };
+  }
+  if (kind === 'pull-request' && step.pullRequest) return { href: step.pullRequest };
   return null;
 }
 
@@ -139,19 +153,30 @@ function Run({ run, here, doors, controls, named }: {
   const { t } = useTranslation();
   const at = run.at ?? null;
   const reached = new Set(run.steps.filter((step) => step.state !== 'not-reached').map((step) => step.step.id));
-  const marks: RunMarks = Object.fromEntries(run.steps.map((step) => [step.step.id, {
-    reached: reached.has(step.step.id),
-    at: step.step.id === at,
-    mark: (
+  const marks: RunMarks = Object.fromEntries(run.steps.map((step) => {
+    const mark = (pill: boolean) => (
       <StepMark
         run={run}
         step={step}
         here={here === step.step.id}
         doors={doors}
         control={step.step.id === at ? controls?.[step.step.id] : undefined}
+        pill={pill}
       />
-    ),
-  }]));
+    );
+    const door = doorFor(t, run, step, doors);
+    return [step.step.id, {
+      reached: reached.has(step.step.id),
+      at: step.step.id === at,
+      mark: mark(true),
+      // Its node on the flowchart (FLOWCHART1d): its state's word in `runTone`'s tone, done only where it is (a skip stays in view
+      // when a long run folds), its lines without the pill the node draws, and its door for Enter.
+      state: { word: stateSaid(t, step.state), tone: runTone(step.state) },
+      settled: step.state === 'done',
+      node: mark(false),
+      ...(door && 'open' in door ? { open: door.open } : {}),
+    }];
+  }));
   const says = runShort(t, run);
 
   return (
@@ -180,6 +205,7 @@ function Run({ run, here, doors, controls, named }: {
         name={run.repository}
         run={marks}
         end={at === null ? <Pill tone="done">{stateSaid(t, 'done')}</Pill> : undefined}
+        finished={at === null}
       />}
     </div>
   );

@@ -109,10 +109,12 @@ describe("the session's Workflow view", () => {
     render(<WorkflowRunView answer={answerOf(IN_REVIEW)} doors={{ review: vi.fn(), session: vi.fn() }} />);
     const landing = row('landing');
 
-    expect(landing).toHaveClass('opacity-60');
+    // Faint at a token ink, never by opacity (FLOWCHART1d: the rail is the flowchart's, the flowchart design §3.3, trap 9).
+    expect(landing).toHaveAttribute('data-reached', 'false');
+    expect(landing.outerHTML).not.toMatch(/opacity-/);
     expect(landing).toHaveTextContent('not reached');
     expect(within(landing).queryByRole('button')).toBeNull();
-    expect(row('look')).not.toHaveClass('opacity-60');
+    expect(row('look')).not.toHaveAttribute('data-reached');
   });
 
   it("wears open's hue only where the person is waited on, done's green for done, and red only for a failure", () => {
