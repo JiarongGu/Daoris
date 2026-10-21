@@ -124,23 +124,24 @@ internal static class GeneratedWriters
         if (OperatingSystem.IsWindows())
         {
             // `/s` takes what is between the first and the last quote as it is, so the command's own quotes reach the shell untouched.
-            info = new ProcessStartInfo(HeavyStep.SystemShell()) { Arguments = $"/d /s /c \"{run}\"" };
+            info = new ProcessStartInfo(HeavyStep.SystemShell()) { Arguments = $"/d /s /c \"{run}\"", CreateNoWindow = true };
         }
         else
         {
-            info = new ProcessStartInfo("/bin/sh");
+            info = new ProcessStartInfo("/bin/sh") { CreateNoWindow = true };
             info.ArgumentList.Add("-c");
             info.ArgumentList.Add(run);
         }
 
         info.WorkingDirectory = directory;
         info.UseShellExecute = false;
-        info.CreateNoWindow = true;
         info.RedirectStandardInput = true;
         info.RedirectStandardOutput = true;
         info.RedirectStandardError = true;
         info.StandardOutputEncoding = Encoding.UTF8;
         info.StandardErrorEncoding = Encoding.UTF8;
+        // A writer is the repository's own command (node and its scripts), found as every child of the driver finds its tools (TOOLS5).
+        Tools.Hand(info);
         return info;
     }
 }

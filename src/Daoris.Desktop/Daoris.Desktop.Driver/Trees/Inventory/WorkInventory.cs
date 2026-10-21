@@ -59,6 +59,12 @@ public static class InventoryKind
 
     /// <summary>A file a quest or an ask carries, by its name: the service keeps its bytes.</summary>
     public const string Attachment = "attachment";
+
+    /// <summary>What a plugin's attempt created (FABRIC-PERFORM1d, §D3), by its receipt: only its plugin removes it, through <c>work/cleanup</c>.</summary>
+    public const string PluginResource = "plugin-resource";
+
+    /// <summary>A dispatched attempt whose outcome is not settled (FABRIC-PERFORM1d, §D3): no unit retires while one is.</summary>
+    public const string Attempt = "attempt";
 }
 
 /// <summary>
@@ -88,6 +94,15 @@ public static class InventoryCode
 
     /// <summary>An unknown owner: a standing <c>daoris/*</c> branch Daoris did not record (FABRIC-UNKNOWN1): fact <c>branch</c>.</summary>
     public const string Unrecorded = "unrecorded";
+
+    /// <summary>A plugin's resource of a schema its manifest does not declare (FABRIC-PERFORM1d): facts <c>plugin</c> and <c>schema</c>.</summary>
+    public const string Undeclared = "undeclared-resource";
+
+    /// <summary>A plugin's resource whose cleanup has failed for seven days (FABRIC-PERFORM1d, §D3): facts <c>plugin</c> and <c>tries</c>.</summary>
+    public const string CleanupBlocked = "cleanup-blocked";
+
+    /// <summary>A dispatched attempt held for the person (FABRIC-PERFORM1d): fact <c>node</c>.</summary>
+    public const string AttemptHeld = "attempt-held";
 }
 
 /// <summary>A tree a session's record names (D51): the join from a tree to the session that recorded it (OVERVIEWNOISE1b).</summary>
@@ -226,6 +241,12 @@ public sealed record InventoryFacts(
     /// and this. The table's default where none is given.
     /// </summary>
     public TimeSpan SetAsideFor { get; init; } = KeepKinds.SetAside.Days;
+
+    /// <summary>
+    /// What each unit still owes beyond its branch records (FABRIC-PERFORM1d, <see cref="WorkObligations"/>), by its id: its plugins'
+    /// receipts and its attempts not settled, joined to the unit of that id. None given, none joined.
+    /// </summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<InventoryEntry>> Owed { get; init; } = new Dictionary<string, IReadOnlyList<InventoryEntry>>();
 }
 
 /// <summary>
@@ -580,6 +601,8 @@ public static partial class WorkInventory
 
         foreach (var tree in trees) entries.Add(TreeEntry(draft, tree, facts, ended));
         entries.AddRange(draft.Extra);
+        // FABRIC-PERFORM1d (§D3): its plugins' receipts and its attempts not settled, so it retires only once those are terminal too.
+        if (facts.Owed.TryGetValue(draft.Id, out var owed)) entries.AddRange(owed);
         foreach (var id in draft.Sessions.Where(facts.HasHistory))
         {
             entries.Add(new InventoryEntry(draft.Id, InventoryKind.History, id, InventoryRole.Evidence, InventoryDisposition.Kept,

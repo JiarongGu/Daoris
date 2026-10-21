@@ -96,7 +96,8 @@ section('Keyless — what the intake will be handed');
 
 // The rules an intake is handed come from the driver's home, which here holds none — so it gets
 // Daoris's defaults. Read through the CLI's own door over an EMPTY home, so this answers what a
-// home with no `permissions.json` hands over, whatever the machine's own home holds.
+// home with no `permissions.json` hands over, whatever the machine's own home holds. `daoris agent rules` is the driver's program's
+// since PUSH1f2d, so a checkout's CLI runs the build the caller's DAORIS_DRIVER_PROGRAM names, as a contributor's terminal sets it.
 const keylessHome = join(scratch, 'keyless-home');
 rmSync(keylessHome, { recursive: true, force: true });
 mkdirSync(keylessHome, { recursive: true });

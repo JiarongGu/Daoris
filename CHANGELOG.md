@@ -19,6 +19,13 @@ with the version and date at release.
 - A conversation whose account is over its usage curve no longer offers to go on with another agent while another account of the
   same agent has room: Daoris moves it to that account at its turn's end instead. The offer still appears with switching off, or
   where no account of the agent has room.
+- A plugin whose performed step creates something (a preview deployment, say) can now name it with its answer, by a schema its
+  manifest's `resources` declares. Daoris keeps what it named with the work. Once the work ends, it asks the plugin to remove each
+  temporary one through `work/cleanup`, and a result stays. The same request and key are sent again until the plugin answers. Something
+  made by an attempt the work had already moved past is asked for at once. For a branch's work, `daoris-driver work state` names each one
+  still waiting, and `--entries` lists them all with what became of them. Its cleanup stays pending while one is still owed or an
+  attempt's outcome is unsettled. A removal that keeps failing is said as
+  blocked after seven days, with the plugin's words.
 - A workflow whose work you reopened, once its agent makes it ready again, now says that its next step waits for you to go on with
   it on the new work or abandon it, with a button to that step's page. Before, it said the work waited for your done, which that
   workflow does not take. In English and 中文.
@@ -58,6 +65,11 @@ with the version and date at release.
   with Daoris closed too. A download, an update or a managed use no longer holds your home while it fetches: it waits for the home
   only to make the version and switch to it, saying so if another act holds it for long, and Ctrl+C leaves nothing behind. Two
   downloads of one version at once each finish, one keeping the other's.
+- `daoris agent rules`, `daoris agent trust` and `daoris agent settings` are run by Daoris's own driver program now, as
+  `daoris-driver agent` with the same words; the rest of `daoris agent` is as it was. Each says what it said before, but for these:
+  the rules and their proposals are always your `DAORIS_HOME`'s, so with a wiring file named in `DAORIS_HARNESS_CONFIG` a rule or
+  your yes to a proposal still goes to that home, through Daoris's window while it runs; a rules file that does not read is said
+  as the window says it; and a change refused because a file does not read is said with its code, and exits 2.
 - A press from a terminal that waits for your Confirm in Daoris's window is now said where you look. It is a row of *What
   needs you*, counted in the badge and on the taskbar, whose *Confirm or refuse…* opens its card. While no Daoris window is in
   front, a notification says it too. Its two minutes now count from when a window in front of you shows its card, and a

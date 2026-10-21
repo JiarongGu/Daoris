@@ -12,9 +12,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <c>model</c>, <c>effortLevel</c> and an effort per model under <c>modelSettings</c>, and leaves every
 /// other key the tool keeps there exactly as it was.</para>
 ///
-/// <para>The driver's half of a TWIN CONTRACT: the CLI's <c>agentsettings.ts</c> reads and writes the same
-/// file from <c>daoris agent settings</c>. They share no code, so the same seven rules are asserted on
-/// both sides, case for case:</para>
+/// <para>The file's one writer since the CLI's <c>agentsettings.ts</c>, its twin, left with <c>daoris agent
+/// settings</c> (PUSH1f2d), whose words are <c>AgentsTextTests</c>'. Its seven rules, case for case:</para>
 /// <list type="number">
 /// <item>The file is the tool's own <c>settings.json</c>, in the account's configuration home.</item>
 /// <item>No file is the tool's defaults: nothing set, and reading creates nothing.</item>

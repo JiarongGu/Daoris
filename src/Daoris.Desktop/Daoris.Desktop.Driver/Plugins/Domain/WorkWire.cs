@@ -59,9 +59,22 @@ public sealed record WorkEvidence(string? Ref, string? Url, string? Environment,
 /// <summary>An output a reached step names (§D6): a reference <c>&lt;schema&gt;:&lt;id&gt;</c>, never its payload, and its revision.</summary>
 public sealed record WorkOutput(string Ref, string? Revision);
 
+/// <summary>
+/// What a plugin says it created (FABRIC-PERFORM1d; the fabric events design §D3's receipt): a declared schema and the opaque id the plugin
+/// issued for it, which only the plugin reads. Never a path: Daoris hands it back at <c>work/cleanup</c> and runs nothing for it.
+/// </summary>
+public sealed record WorkResource(string Schema, string Id);
+
 /// <summary>An outcome as a plugin reports it (§D4, §D6): its state, a failure's code, its evidence, and a reached step's outputs.</summary>
 public sealed record WorkOutcome(
-    string State, string? Code = null, WorkEvidence? Evidence = null, IReadOnlyDictionary<string, WorkOutput>? Outputs = null);
+    string State, string? Code = null, WorkEvidence? Evidence = null, IReadOnlyDictionary<string, WorkOutput>? Outputs = null)
+{
+    /// <summary>
+    /// What the attempt created (FABRIC-PERFORM1d, §D3), whatever its state: a failed deployment may still have made something. Taken as
+    /// receipts on the unit's resource record before the outcome is applied, so a crash between the two converges on the replay.
+    /// </summary>
+    public IReadOnlyList<WorkResource> Resources { get; init; } = [];
+}
 
 /// <summary>
 /// A <see cref="HookPoints.Step"/> event (§C4, §D6): an observed step bound to a repository, a branch and a full commit, or a performed
@@ -80,7 +93,39 @@ public sealed record WorkPerformCall(
 public sealed record WorkReconcileCall(string Unit, string Step, string Invocation, string IdempotencyKey, string SubjectRevision);
 
 /// <summary><c>work/reconcile</c>'s answer (§D6): its state, and the outcome where it is done or failed.</summary>
-public sealed record WorkReconcileAnswer(string State, WorkOutcome? Outcome = null);
+public sealed record WorkReconcileAnswer(string State, WorkOutcome? Outcome = null)
+{
+    /// <summary>What the attempt created so far (FABRIC-PERFORM1d, §D6's <c>resources?</c>), whatever its state: taken as its receipts.</summary>
+    public IReadOnlyList<WorkResource> Resources { get; init; } = [];
+}
+
+/// <summary>What <c>work/cleanup</c> answers of one receipt (§D3): three are terminal, and <see cref="Failed"/> is tried again on a back-off.</summary>
+public static class CleanupDispositions
+{
+    public const string Removed = "removed";
+
+    /// <summary>The plugin had already removed it: a second delivery of the same key never fails for having succeeded.</summary>
+    public const string AlreadyGone = "already-gone";
+
+    /// <summary>The plugin keeps it, with its reason (a reused environment, say).</summary>
+    public const string Retained = "retained";
+
+    public const string Failed = "failed";
+
+    public static readonly IReadOnlyList<string> All = [Removed, AlreadyGone, Retained, Failed];
+
+    /// <summary>Whether a disposition ends the receipt: everything but a failure.</summary>
+    public static bool Terminal(string disposition) => disposition is Removed or AlreadyGone or Retained;
+}
+
+/// <summary>
+/// A <c>work/cleanup</c> request's params (FABRIC-PERFORM1d, §D3): the receipt Daoris keeps, the plugin's own opaque id for what it created,
+/// and the key it deduplicates by, the same at every delivery.
+/// </summary>
+public sealed record WorkCleanupCall(string Receipt, string Resource, string IdempotencyKey);
+
+/// <summary><c>work/cleanup</c>'s answer (§D3): a disposition of <see cref="CleanupDispositions"/>, its proof and the plugin's words.</summary>
+public sealed record WorkCleanupAnswer(string Disposition, string? Proof = null, string? Message = null);
 
 /// <summary>
 /// A step event as the hook set heard it (FABRIC-PERFORM1a): the plugin and the generation of the process it was read from, never what the
@@ -104,6 +149,12 @@ public static class WorkWire
     public const string PerformMethod = "hook/" + HookPoints.Perform;
 
     public const string ReconcileMethod = "hook/" + PluginSteps.ReconcilePoint;
+
+    /// <summary>The cleanup adapter's request (FABRIC-PERFORM1d, §D3): one receipt's removal asked of the plugin that created it.</summary>
+    public const string CleanupMethod = "hook/" + PluginSteps.CleanupPoint;
+
+    /// <summary>How many resources one outcome or reconciliation names at most (FABRIC-PERFORM1d), as many as its outputs.</summary>
+    public const int ResourcesAtMost = 8;
 
     /// <summary>The plugin's notification: the one method a plugin may send unasked, and only to the lease's loop.</summary>
     public const string StepMethod = HookPoints.Step;
@@ -177,6 +228,14 @@ public static class WorkWire
         ["subjectRevision"] = call.SubjectRevision,
     };
 
+    /// <summary><c>work/cleanup</c>'s params (§D3): <c>{ receipt, resource, idempotencyKey }</c>.</summary>
+    public static JsonObject Cleanup(WorkCleanupCall call) => new()
+    {
+        ["receipt"] = call.Receipt,
+        ["resource"] = call.Resource,
+        ["idempotencyKey"] = call.IdempotencyKey,
+    };
+
     // ——— a plugin's messages: what a stand-in and the kit's scaffold write
 
     /// <summary>
@@ -204,6 +263,16 @@ public static class WorkWire
     {
         var written = new JsonObject { ["state"] = answer.State };
         if (answer.Outcome is { } outcome) written["outcome"] = Outcome([], outcome);
+        if (answer.Resources.Count > 0) written["resources"] = Resources(answer.Resources);
+        return written;
+    }
+
+    /// <summary><c>work/cleanup</c>'s answer (§D3): its disposition, and its proof and words where it has them.</summary>
+    public static JsonObject CleanupAnswer(WorkCleanupAnswer answer)
+    {
+        var written = new JsonObject { ["disposition"] = answer.Disposition };
+        if (answer.Proof is not null) written["proof"] = answer.Proof;
+        if (answer.Message is not null) written["message"] = answer.Message;
         return written;
     }
 
@@ -255,7 +324,7 @@ public static class WorkWire
 
     /// <summary>
     /// <c>work/reconcile</c>'s answer read by shape (§D6), or null: <c>done</c> carries an outcome reached or failed, <c>failed</c> one
-    /// failed, and the other three none. Its <c>resources</c> are PERFORM1d's, and passed over here.
+    /// failed, and the other three none. Its <c>resources</c> (FABRIC-PERFORM1d) are read as an outcome's are, whatever its state.
     /// </summary>
     public static WorkReconcileAnswer? ReadReconcileAnswer(JsonElement answer)
     {
@@ -267,14 +336,26 @@ public static class WorkWire
             if (said.ValueKind != JsonValueKind.Object || (outcome = ReadOutcome(said, out _)) is null) return null;
         }
 
+        if (ReadResources(answer) is not { } resources) return null;
         var fits = state switch
         {
             ReconcileStates.Done => outcome?.State is WorkStates.Reached or WorkStates.Failed,
             ReconcileStates.Failed => outcome?.State == WorkStates.Failed,
             _ => outcome is null,
         };
-        return fits ? new WorkReconcileAnswer(state, outcome) : null;
+        return fits ? new WorkReconcileAnswer(state, outcome) { Resources = resources } : null;
     }
+
+    /// <summary>
+    /// <c>work/cleanup</c>'s answer read by shape (FABRIC-PERFORM1d, §D3), or null: a disposition of the four, a proof of a name's length and
+    /// words a person reads of an evidence message's.
+    /// </summary>
+    public static WorkCleanupAnswer? ReadCleanupAnswer(JsonElement answer) =>
+        answer.ValueKind == JsonValueKind.Object
+        && Text(answer, "disposition") is { } disposition && CleanupDispositions.All.Contains(disposition)
+        && Optional(answer, "proof", RefChars, out var proof) && Words(answer, "message", MessageChars, out var message)
+            ? new WorkCleanupAnswer(disposition, proof, message)
+            : null;
 
     // ——— reading what Daoris sends: a stand-in's and the kit's
 
@@ -324,6 +405,13 @@ public static class WorkWire
             ? new WorkReconcileCall(unit, step, invocation, key, revision)
             : null;
 
+    /// <summary><c>work/cleanup</c>'s params read back, or null where they are not its shape.</summary>
+    public static WorkCleanupCall? ReadCleanup(JsonElement @params) =>
+        @params.ValueKind == JsonValueKind.Object
+        && Text(@params, "receipt") is { } receipt && Text(@params, "resource") is { } resource && Text(@params, "idempotencyKey") is { } key
+            ? new WorkCleanupCall(receipt, resource, key)
+            : null;
+
     // ——— the parts
 
     /// <summary>An outcome's fields written into <paramref name="into"/>: its state, then each part said.</summary>
@@ -354,7 +442,37 @@ public static class WorkWire
             into["outputs"] = written;
         }
 
+        if (outcome.Resources.Count > 0) into["resources"] = Resources(outcome.Resources);
         return into;
+    }
+
+    /// <summary>Resources as the wire writes them (FABRIC-PERFORM1d): <c>[{ schema, id }]</c>, in the order said.</summary>
+    private static JsonArray Resources(IEnumerable<WorkResource> resources) =>
+        new([.. resources.Select(resource => (JsonNode)new JsonObject { ["schema"] = resource.Schema, ["id"] = resource.Id })]);
+
+    /// <summary>
+    /// The <c>resources</c> beside an outcome or a reconciliation read by shape (FABRIC-PERFORM1d, §D3): absent or null is none; else at most
+    /// <see cref="ResourcesAtMost"/>, each a schema's name and an id of a reference's length, none twice. Null where any is not.
+    /// </summary>
+    private static IReadOnlyList<WorkResource>? ReadResources(JsonElement from)
+    {
+        if (!from.TryGetProperty("resources", out var said) || said.ValueKind == JsonValueKind.Null) return [];
+        if (said.ValueKind != JsonValueKind.Array) return null;
+        var read = new List<WorkResource>();
+        foreach (var each in said.EnumerateArray())
+        {
+            if (read.Count == ResourcesAtMost || each.ValueKind != JsonValueKind.Object
+                || Text(each, "schema") is not { } schema || !PluginSteps.IsSchema(schema) || Name(each, "id", RefChars) is not { } id
+                || read.Contains(new WorkResource(schema, id)))
+            {
+                return null;
+            }
+
+            read.Add(new WorkResource(schema, id));
+        }
+
+        // None said reads as none, the one empty list, so an outcome read back equals the one written.
+        return read.Count == 0 ? [] : read;
     }
 
     /// <summary>
@@ -404,8 +522,10 @@ public static class WorkWire
             }
         }
 
+        field = "resources";
+        if (ReadResources(from) is not { } resources) return null;
         field = null;
-        return new WorkOutcome(state, code, evidence, outputs);
+        return new WorkOutcome(state, code, evidence, outputs) { Resources = resources };
     }
 
     /// <summary>A step's name: the plugin's own id, or <c>&lt;plugin&gt;/&lt;id&gt;</c> (the kind, as §D6's example names it).</summary>

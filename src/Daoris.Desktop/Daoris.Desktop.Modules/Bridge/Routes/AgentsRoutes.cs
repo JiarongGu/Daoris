@@ -558,8 +558,8 @@ public sealed class AgentsRoutes(DriverContext context)
     private object? SetAgentSettings(IpcRequest request)
     {
         var harness = PayloadHelper.GetRequiredValue<string>(request.Payload, "harness");
-        var (owner, profile, read) = WriteAgentSettings(
-            _loop, harness, Optional(request, "profile"), () => (Edit(request, "model"), Edit(request, "effort"), PerModel(request)));
+        var (owner, profile, read) = Daoris.Driver.AccountSettings.Write(
+            _loop.Harnesses, harness, Optional(request, "profile"), () => (Edit(request, "model"), Edit(request, "effort"), PerModel(request)));
         return new { Harness = owner, Profile = profile, read.Model, read.Effort, PerModel = PerModelOf(read), read.Problem };
     }
 
@@ -629,42 +629,6 @@ public sealed class AgentsRoutes(DriverContext context)
                 ? $"signed in as {Told(account, apart)} — this machine lists it by that name."
                 : $"signed in as {Told(account, apart)} — this machine lists it as `{called ?? fresh}`."
             : $"signed in — `{owner}` did not say who, so this machine lists it as `{called ?? fresh}`.";
-
-    /// <summary>
-    /// An account's own model and effort, written — <c>SET_AGENT_SETTINGS</c>'s own write, and the one Ask
-    /// Daoris's Apply makes too (HELP6). Never the tool's own configuration home, and never an account a
-    /// setting would bring into being.
-    /// </summary>
-    /// <param name="edits">The keys to change, read only once the account is known to be one Daoris keeps.</param>
-    internal static (string Owner, string Profile, AgentSettingsRead Read) WriteAgentSettings(
-        DriverLoop loop, string harness, string? profile,
-        Func<(AgentSettingEdit? Model, AgentSettingEdit? Effort, IReadOnlyDictionary<string, AgentSettingEdit>? PerModel)> edits)
-    {
-        var toolchain = loop.Harnesses.Toolchain(harness)
-            ?? throw new DriverException(
-                $"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's.");
-        var owner = toolchain.Owner(harness);
-        var file = loop.Harnesses.AccountToolchain(harness)?.SettingsFile
-            ?? throw new DriverException(
-                $"`{owner}` keeps its settings in files of its own that Daoris does not know the shape of, "
-                + "so Daoris offers none — set its model with the tool itself.");
-        var named = profile
-            ?? throw new DriverException(
-                $"name the account these settings are for — `{owner}`'s own configuration home is the tool's, "
-                + "and Daoris never touches it.");
-        var accounts = HarnessSettings.Profiles(loop.Harnesses.Home, owner);
-        if (!accounts.Contains(named, StringComparer.Ordinal))
-        {
-            throw new DriverException(
-                $"`{owner}` has no account `{named}` on this machine — accounts that exist: "
-                + (accounts.Count > 0 ? string.Join(", ", accounts) : "(none)"));
-        }
-
-        var (model, effort, perModel) = edits();
-        var read = AgentSettings.Write(
-            Path.Combine(HarnessSettings.ProfileHome(loop.Harnesses.Home, owner, named), file), model, effort, perModel);
-        return (owner, named, read);
-    }
 
     /// <summary>
     /// Make a credential profile under a name the caller chose: a directory, and nothing else (DEPLOY3).

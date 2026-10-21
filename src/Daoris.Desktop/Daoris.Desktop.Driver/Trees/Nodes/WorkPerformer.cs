@@ -15,6 +15,13 @@ public interface IWorkPerformPort
     int? GenerationOf(string plugin);
 
     /// <summary>
+    /// One receipt's removal asked of the plugin's current process (FABRIC-PERFORM1d, §D3), with that process's generation. A port that has
+    /// no cleanup adapter refuses, and the receipt is asked again on its back-off.
+    /// </summary>
+    Task<(WorkCleanupAnswer Answer, int Generation)> CleanupAsync(string plugin, WorkCleanupCall call, CancellationToken ct) =>
+        Task.FromException<(WorkCleanupAnswer, int)>(new DriverException($"plugin `{plugin}` is asked to clean only on the work wire, and this port has none."));
+
+    /// <summary>
     /// A frame from <paramref name="plugin"/> not believed (FABRIC-PERFORM1c, §C4): counted as a <c>plugin.step</c> line of its code, with no
     /// words, at most once a minute per plugin and code.
     /// </summary>
@@ -210,6 +217,24 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     public const string PartStop = "part-stop";
 
     /// <summary>
+    /// A completion naming more resources than its unit's record keeps (FABRIC-PERFORM1d, <see cref="ResourceRecord.ReceiptsKept"/>): none
+    /// of them is taken, and the attempt is held for the person, since what it made could not be accounted for.
+    /// </summary>
+    public const string TooManyResources = "too-many-resources";
+
+    /// <summary>
+    /// The units' resource records (FABRIC-PERFORM1d, §D3), where a completion's receipts are taken before its outcome is applied. Null takes
+    /// none, as before the row: a caller outside the runtime.
+    /// </summary>
+    public ResourceRecordFiles? Receipts { get; init; }
+
+    /// <summary>
+    /// The resources each plugin's manifest declares (<see cref="PluginManifest.Resources"/>), as the pass reads the catalogue: a receipt's
+    /// role. Null for a plugin that declares none, whose receipts are taken as <see cref="ResourceReceipt.Undeclared"/>.
+    /// </summary>
+    public Func<string, IReadOnlyList<PluginResource>?> Resources { get; set; } = _ => null;
+
+    /// <summary>
     /// The invocations this performer's loop delivered: an attempt sent by a loop since ended is asked after before anything else, since a
     /// new loop's generations start again at 1 (FABRIC-PERFORM1a) and cannot tell its process from the old one's.
     /// </summary>
@@ -357,14 +382,90 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
             // Applied to the attempt as the record holds it now, under its lock (FABRIC-PERFORM1h): on its binding, or as a stale attempt's where
             // the work moved past the revision it was dispatched on.
             var lapsed = WorkBelief.Lapsed(attempt, told!);
-            done.Add(Counted(each, Edited(unit, node!.Id, record => record.Invoked(invocation) is not { } current
-                ? (null, new WorkPerformed(unit, node.Id, PerformedWhat.NotTaken, NotAttempt))
-                : lapsed ? Lapse(record, current, node, each.Step.Outcome, each.Generation)
-                : Outcome(record, current, node, each.Step.Outcome, each.Generation))));
+
+            // FABRIC-PERFORM1d (§D3): what the attempt created is taken as receipts first, so a crash before its outcome is kept converges
+            // on the replay, which takes none twice; a completion whose receipts could not be kept is not applied.
+            var resources = each.Step.Outcome.Resources;
+            var believed = node!;
+            if (Receipted(unit, attempt, believed, resources, lapsed) is { } unkept)
+            {
+                done.Add(Counted(each, unkept));
+                continue;
+            }
+
+            var applied = Edited(unit, believed.Id, record => record.Invoked(invocation) is not { } current
+                ? (null, new WorkPerformed(unit, believed.Id, PerformedWhat.NotTaken, NotAttempt))
+                : lapsed ? Lapse(record, current, believed, each.Step.Outcome, each.Generation)
+                : Outcome(record, current, believed, each.Step.Outcome, each.Generation));
+            Supersede(unit, attempt, resources, applied);
+            done.Add(Counted(each, applied));
         }
 
         return done;
     }
+
+    /// <summary>
+    /// An attempt's receipts taken on its unit's resource record (FABRIC-PERFORM1d, §D3) before its outcome is applied: each resource its
+    /// plugin names, once, with the role its manifest declares, and marked superseded where its node has already moved off the attempt (a
+    /// guess the outcome's own judgement corrects, <see cref="Supersede"/>). Null where they were taken or none was named; else what came of
+    /// the completion, which is then not applied: held for the person where the record would keep too many, not taken where the record
+    /// could not be written.
+    /// </summary>
+    private WorkPerformed? Receipted(string unit, NodeAttempt attempt, NodeDeclaration node, IReadOnlyList<WorkResource> resources, bool lapsed)
+    {
+        if (resources.Count == 0 || Receipts is null) return null;
+        var unsettled = attempt.State != AttemptStates.Settled;
+        var superseded = unsettled && (lapsed || records.Read(unit) is not { } now || !OnAttempt(StatusOf(now, node.Id), attempt));
+        var declared = Resources(attempt.Plugin) ?? [];
+        var at = clock();
+        var (refused, code) = Receipts.Edit<string?>(unit, record =>
+        {
+            var fresh = resources.Where(resource => record.Of(attempt.Plugin, resource.Schema, resource.Id) is null).ToList();
+            if (fresh.Count == 0) return (null, null);
+            if (record.Receipts.Count + fresh.Count > ResourceRecord.ReceiptsKept) return (null, TooManyResources);
+            var taken = fresh.Select(resource => new ResourceReceipt(
+                Random("r-", 12), attempt.Plugin, resource.Schema, resource.Id,
+                declared.FirstOrDefault(each => each.Schema == resource.Schema)?.Role ?? ResourceReceipt.Undeclared,
+                attempt.Node, attempt.Attempt, attempt.Call.Invocation, at) { Superseded = superseded });
+            return (record with { Receipts = [.. record.Receipts, .. taken] }, null);
+        });
+        if ((refused ?? code) is not { } why) return null;
+        if (why == TooManyResources && unsettled)
+        {
+            return Edited(unit, node.Id, record => record.Invoked(attempt.Call.Invocation) is { State: not AttemptStates.Settled } current
+                ? Hold(record, current, TooManyResources)
+                : (null, new WorkPerformed(unit, node.Id, PerformedWhat.NotTaken, TooManyResources)));
+        }
+
+        return new(unit, node.Id, PerformedWhat.NotTaken, why);
+    }
+
+    /// <summary>
+    /// The attempt's receipts marked as its outcome was judged (FABRIC-PERFORM1d, §D3): superseded where it came as a stale attempt's, which has
+    /// no result, so what it made is temporary and cleaned at once; else as its declared role. Only an attempt that was not settled before:
+    /// a replay changes nothing it already said.
+    /// </summary>
+    private void Supersede(string unit, NodeAttempt attempt, IReadOnlyList<WorkResource> resources, WorkPerformed applied)
+    {
+        if (resources.Count == 0 || Receipts is null || attempt.State == AttemptStates.Settled) return;
+        if (applied.What is not (PerformedWhat.Applied or PerformedWhat.Stale)) return;
+        var stale = applied.What == PerformedWhat.Stale;
+        Receipts.Edit<bool>(unit, record =>
+        {
+            var changed = false;
+            var receipts = record.Receipts.Select(receipt =>
+            {
+                if (receipt.Invocation != attempt.Call.Invocation || receipt.Superseded == stale || receipt.Settled) return receipt;
+                changed = true;
+                return receipt with { Superseded = stale };
+            }).ToList();
+            return (changed ? record with { Receipts = receipts } : null, changed);
+        });
+    }
+
+    /// <summary>Whether a node still stands on an attempt: its current one, active or unknown, so its outcome is the node's own.</summary>
+    private static bool OnAttempt(NodeStatus status, NodeAttempt attempt) =>
+        status.Attempt == attempt.Attempt && status.State is NodeStates.Active or NodeStates.Unknown;
 
     /// <summary>
     /// Asks after every attempt whose outcome is not established and is due (§D6: after a restart with an unresolved attempt, after its
@@ -695,6 +796,10 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         // After the await, the record as it is now (FABRIC-PERFORM1h): the answer is about this invocation alone, and applies only while the
         // attempt is still unknown, so an outcome heard while the question was out is kept, never taken back by a later `running`.
         now = clock();
+
+        // FABRIC-PERFORM1d (§D6's `resources?`): what the attempt created so far, taken before its answer is applied, as a completion's are.
+        IReadOnlyList<WorkResource> resources = [.. answer.Resources.Concat(answer.Outcome?.Resources ?? []).Distinct()];
+        if (Receipted(unit, asked, node, resources, lapsed: false) is { } unkept) return unkept;
         var applied = Edited(unit, node.Id, record => Still(record, invocation, node.Id, current =>
         {
             var status = StatusOf(record, node.Id);
@@ -725,6 +830,7 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
                     return Hold(record, current with { Generation = generation }, ReconcileStates.Unknown);
             }
         }));
+        Supersede(unit, asked, resources, applied);
         if (applied.What == PerformedWhat.Running) lock (_sentHere) _sentHere.Add(invocation);
         return applied.What == PerformedWhat.Redelivered ? await SendAsync(unit, asked, node, PerformedWhat.Redelivered, ct).ConfigureAwait(false) : applied;
     }

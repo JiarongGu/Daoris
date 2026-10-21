@@ -36,9 +36,9 @@ public sealed record RuleProposalNote(string Id, string? Session, string? Ask, b
 /// as they stand, which only the driver reads: it applies a narrowing at its next tick and holds a
 /// widening for the person (D74). This checks the proposal is well formed and records who made it.</para>
 ///
-/// <para><b>THE FILE is the contract</b>, as `permissions.json` is. The driver's `RuleProposals.cs` and
-/// the CLI's `ruleproposals.ts` read and settle it and share no code with this; each side's tests hold
-/// the same shape.</para>
+/// <para><b>THE FILE is the contract</b>, as `permissions.json` is. The driver's `RuleProposals.cs` reads
+/// and settles it (the CLI's `daoris agent rules accept|decline` through it since PUSH1f2d) and shares no
+/// code with this; each side's tests hold the same shape.</para>
 /// </remarks>
 /// <param name="home">The home proposals go under, or null when there is none — every proposal is then refused.</param>
 public sealed class RuleProposalBox(string? home)

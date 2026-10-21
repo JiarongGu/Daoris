@@ -164,7 +164,7 @@ function namesEntry(parts: readonly string[]): boolean {
   const part = parts[0];
   if (!part) return false;
   // An agent's own files sit under an account's home, the item `agent-homes` answers, never under Daoris's.
-  if (/^(?:AgentSettings|ClaudeTrust)\.|^AGENT_SETTINGS_FILE$/.test(part)) return false;
+  if (/^(?:AgentSettings|ClaudeTrust)\./.test(part)) return false;
   return /^[A-Z][\w]*\.(?:Folder|FileName|[A-Z]\w*(?:File|Folder))$|^[A-Z][A-Z_]*_(?:FILE|FOLDER|DIR)$/.test(part);
 }
 

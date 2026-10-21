@@ -8,10 +8,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// under the home, unioned with its defaults and handed to the harness at spawn as one more scope.
 /// </summary>
 /// <remarks>
-/// <para>It is the driver's half of a TWIN CONTRACT. The CLI's `permissions.ts` reads and writes the same
-/// file by the same rules, because the two artefacts share no code — THE FILE is the contract. The rules
-/// asserted here are asserted there too, and the defaults tables are held together by a test that reads
-/// the other side's source.</para>
+/// <para>THE FILE is the contract, and this is its one reader and writer: the CLI's `permissions.ts`, its
+/// twin, left when `daoris agent rules` became the driver program's (PUSH1f2d), and its words are
+/// <c>AgentsTextTests</c>'.</para>
 ///
 /// <para>Precedence is deliberately NOT tested here, because it is not Daoris's: the harness merges the
 /// scopes it is handed with its own, and `deny` beats `ask` beats `allow` there. What Daoris owns is the
@@ -700,31 +699,6 @@ public sealed class PermissionRulesTests : IDisposable
         foreach (var shipped in PermissionRules.Defaults)
         {
             Assert.DoesNotMatch(@"\bD\d+\b", shipped.Why);
-        }
-    }
-
-    // ——— The twin.
-
-    /// <summary>
-    /// The CLI lists and switches the same defaults the driver hands, in another language — two tables
-    /// with no compiler between them, held together by reading the other side's source.
-    /// </summary>
-    [Fact]
-    public void The_defaults_are_the_clis_defaults()
-    {
-        var source = File.ReadAllText(SourceFiles.Cli("permissions.ts"));
-
-        foreach (var shipped in PermissionRules.Defaults)
-        {
-            Assert.Contains($"id: '{shipped.Id}'", source);
-            Assert.Contains($"list: '{shipped.List.ToString().ToLowerInvariant()}'", source);
-            foreach (var rule in shipped.Rules)
-            {
-                var tool = rule.Replace("mcp__daoris-knowledge__", "", StringComparison.Ordinal);
-                Assert.Contains($"'{tool}'", source);
-            }
-
-            if (shipped.Hook is { } hook) Assert.Contains($"hook: '{hook}'", source);
         }
     }
 }

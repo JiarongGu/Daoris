@@ -141,8 +141,8 @@ export function readLogs(folder, { since } = {}) {
 }
 
 /**
- * The states a rule proposal can stand in, as its file's other readers know them (`RuleProposals.cs`,
- * `ruleproposals.ts`, PERM2, D74). A state not among them is read as `proposed`, as theirs read it.
+ * The states a rule proposal can stand in, as its file's other reader knows them (`RuleProposals.cs`, PERM2, D74; the CLI's
+ * `ruleproposals.ts` left in PUSH1f2d). A state not among them is read as `proposed`, as it reads it.
  */
 const PROPOSAL_STATES = ['proposed', 'applied', 'waiting', 'accepted', 'declined', 'refused', 'unchanged'];
 

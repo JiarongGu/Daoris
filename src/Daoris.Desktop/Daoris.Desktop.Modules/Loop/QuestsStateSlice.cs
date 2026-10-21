@@ -37,10 +37,11 @@ public static class QuestsStateSlice
         "id", "from", "to", "title", "body", "status", "note", "filed", "updated", "workspace", "noteParts", "links", "attachments", "then",
         "parent", "conflicts", "awaits", "publishedBy", "deletable", "lanes", "requirements", "answers", "held", "accepted", "short", "hold",
         "review", "setUpIn", "setUps", "verdicts", "closure", "submission", "grewFrom", "sourceReopened", "settled", "holder", "here",
+        "reopened",
     ];
 
-    /// <summary>What the service answers of a quest that no view reads from the list: what was read of its evidence, and its reopen.</summary>
-    public static readonly IReadOnlyList<string> PulledOnly = ["awaitsEvidence", "evidence", "reopened"];
+    /// <summary>What the service answers of a quest that no view reads from the list: what was read of its evidence.</summary>
+    public static readonly IReadOnlyList<string> PulledOnly = ["awaitsEvidence", "evidence"];
 
     /// <summary>What each file a quest or an ask carries is pushed with, as the service answers it.</summary>
     public static readonly IReadOnlyList<string> FileFields = ["name", "sha256", "bytes"];

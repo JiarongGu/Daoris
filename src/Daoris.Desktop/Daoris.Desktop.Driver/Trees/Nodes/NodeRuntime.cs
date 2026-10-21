@@ -16,6 +16,14 @@ public interface IWorkRuntimePort : IWorkPerformPort
     /// (FABRIC-PERFORM1i, §C4's third rule), or null where none did: what that process was actually told, never the set desired since.
     /// </summary>
     WorkWatchFrame? SentTo(string plugin, int generation) => null;
+
+    /// <summary>
+    /// The plugins owed a receipt's cleanup (FABRIC-PERFORM1d, <see cref="HookSet.Owe"/>), whole: their process is kept up though no unit
+    /// awaits their steps, since only it answers <c>work/cleanup</c>.
+    /// </summary>
+    void Owe(IReadOnlySet<string> plugins)
+    {
+    }
 }
 
 /// <summary>The units a pass reads (<see cref="WorkUnits"/>), and each repository's checkout here, which the awaited set names.</summary>
@@ -40,6 +48,12 @@ public sealed record NodeRuntimeLook(DriverConfig Config, bool Whole)
 
     /// <summary>The plugins' steps as the catalogue declares them (<see cref="PluginManifest.Steps"/>): a performed node's contract.</summary>
     public Func<IReadOnlyList<NodeDeclaration>> Steps { get; init; } = () => [];
+
+    /// <summary>
+    /// The resources a plugin's manifest declares (<see cref="PluginManifest.Resources"/>, FABRIC-PERFORM1d), by its id: a receipt's role. Null
+    /// for a plugin the catalogue does not contribute, whose receipts are taken as undeclared and never cleaned by themselves.
+    /// </summary>
+    public Func<string, IReadOnlyList<PluginResource>?> Resources { get; init; } = _ => null;
 
     /// <summary>
     /// Each named branch's tip in one checkout, read fresh (FABRIC-PERFORM1i, §C4's fourth rule): one read of the checkout's refs per pass
@@ -181,7 +195,15 @@ public sealed class NodeRuntime(
     private static readonly IReadOnlyDictionary<string, IReadOnlyList<WatchedUnit>> NoneAwaited = new Dictionary<string, IReadOnlyList<WatchedUnit>>();
 
     /// <summary>The loop's one performer (PERFORM1h's "for RUN1"): its delivered invocations live as long as the loop.</summary>
-    private readonly WorkPerformer _performer = new(records, port, clock);
+    private readonly WorkPerformer _performer = new(records, port, clock) { Receipts = new ResourceRecordFiles(records.Home, records.HoldsLease) };
+
+    /// <summary>The loop's one cleaner (FABRIC-PERFORM1d, §D3): what plugins created, asked of them at a true end or a superseded attempt.</summary>
+    private readonly ResourceCleaner _cleaner = new(new ResourceRecordFiles(records.Home, records.HoldsLease), port, clock);
+
+    /// <summary>Whether each unit's end was over at the last read of the units (FABRIC-PERFORM1d): what a cleanup waits for. Absent is not read.</summary>
+    private Dictionary<string, bool> _ends = new(StringComparer.Ordinal);
+
+    private bool? Ended(string unit) => _ends.TryGetValue(unit, out var over) ? over : null;
 
     /// <summary>The loop's one observer (FABRIC-PERFORM1i): an observed plugin node reached by its believed event.</summary>
     private readonly WorkObserver _observer = new(records, port, clock);
@@ -384,6 +406,8 @@ public sealed class NodeRuntime(
     private void Withdraw()
     {
         if (_told) port.Watch(NoneAwaited);
+        // FABRIC-PERFORM1d: nothing is owed a process either; a cleanup still due is asked once the runtime is armed again.
+        port.Owe(new HashSet<string>(StringComparer.Ordinal));
         (_told, _toldText, _governed, _choices, _after, NextDue) = (false, "", null, null, null, null);
         _tipsTold = new Dictionary<string, string>(StringComparer.Ordinal);
         LastQuests = null;
@@ -418,6 +442,9 @@ public sealed class NodeRuntime(
                 (_governed, _choices) = (Govern(look.Config, read, look.Steps(), kept, look.Bound).ToDictionary(each => each.Unit.Id, StringComparer.Ordinal), choices);
                 _quests = Quests(read);
                 LastQuests = _quests;
+                var ends = new Dictionary<string, bool>(StringComparer.Ordinal);
+                foreach (var unit in read.Units) ends[unit.Id] = WorkEndState.Over(unit.End.State);
+                _ends = ends;
                 QuestReads.Keep(home, _quests); // FABRIC-CLOSE1q5: the terminal's `work held` judges on it; the lease is held here.
                 if (_closer is not null)
                 {
@@ -427,6 +454,7 @@ public sealed class NodeRuntime(
             }
 
             var governed = _governed!;
+            _performer.Resources = look.Resources;
             NodeDeclaration? Declared(string unit, string node) => governed.TryGetValue(unit, out var each) ? each.Declared.GetValueOrDefault(node) : null;
 
             // FABRIC-PERFORM1m: the pass's tips, each checkout read once by whatever asks of it first (the hearing, a rebinding's check, a
@@ -466,6 +494,9 @@ public sealed class NodeRuntime(
             if (_closer is not null) done.AddRange(_closer.Resolve(Declared, _quests));
             done.AddRange(await _performer.ReconcileAsync(Declared, sends, ct).ConfigureAwait(false));
             done.AddRange(_performer.Due(Declared));
+            // FABRIC-PERFORM1d (§D3): what plugins created, asked of them at their unit's true end, or at once for a superseded attempt's,
+            // within the same count of calls, before any new start.
+            done.AddRange(await _cleaner.CleanAsync(Ended, sends, ct).ConfigureAwait(false));
 
             var said = new List<string>(bindings);
 
@@ -1154,11 +1185,16 @@ public sealed class NodeRuntime(
         }
 
         _tipsTold = tipsTold;
+        // FABRIC-PERFORM1d: a plugin owed a cleanup keeps its process though nothing awaits its steps, and a cleanup's back-off is a timer.
+        var owed = _cleaner.Owed(Ended);
+        Due(_cleaner.NextDue());
+        port.Owe(owed);
         port.Watch(awaited.ToDictionary(each => each.Key, each => (IReadOnlyList<WatchedUnit>)each.Value, StringComparer.Ordinal));
         _told = awaited.Count > 0;
         NextDue = due;
         var text = string.Join("\n", awaited.SelectMany(each => each.Value.Select(unit =>
-            $"{each.Key}\t{unit.Repository}\t{unit.Workspace}\t{unit.Branch}\t{unit.Tip}\t{string.Join(",", unit.Awaiting)}")));
+            $"{each.Key}\t{unit.Repository}\t{unit.Workspace}\t{unit.Branch}\t{unit.Tip}\t{string.Join(",", unit.Awaiting)}"))
+            .Concat(owed.Order(StringComparer.Ordinal).Select(plugin => $"{plugin}\towed")));
         var changed = !string.Equals(text, _toldText, StringComparison.Ordinal);
         _toldText = text;
         return changed;

@@ -488,6 +488,8 @@ public sealed class DriverWatch(
                     {
                         Units = NodeUnitsAsync,
                         Steps = () => [.. PluginCatalog.Load(home).Contributing.SelectMany(plugin => plugin.Manifest.Steps)],
+                        // FABRIC-PERFORM1d: a receipt's role is what its plugin's manifest declares of its schema.
+                        Resources = plugin => PluginCatalog.Load(home).Contributing.FirstOrDefault(each => each.Manifest.Id == plugin)?.Manifest.Resources,
                         // FABRIC-PERFORM1i: an observed node's event is bound to its branch's tip read now, once per checkout per pass.
                         Tips = NodeTips.ReadAsync,
                         // FABRIC-RUN1b: the look's git reads for `pushed` and an ahead `pull-request`, asked only where one waits on them.

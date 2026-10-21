@@ -55,23 +55,20 @@ export const PLUGIN_VERBS: readonly (readonly [verb: string, route: InstanceRout
 
 // `daoris tool`'s routes and verbs are the driver program's since PUSH1f2c (D194): its `ToolRoutes`, held to the census there.
 
+// `daoris agent rules|trust|settings`'s routes and verbs are the driver program's since PUSH1f2d (D194): its `AgentRoutes`, held to the
+// census there, with which home each writes.
+
 /**
- * The routes `daoris agent` sends while Daoris runs (the Agents and Accounts places, the rules): a trust, an account, a rule's answer
- * and a rule widen what an agent may do in one direction, so each is the person's.
+ * The routes `daoris agent` sends while Daoris runs (the Agents and Accounts places): an account and an agent's install widen what an
+ * agent may do in one direction, so each is the person's.
  */
 export const AGENT_ROUTES = {
-  settings: person('SET_AGENT_SETTINGS'),
-  rule: person('RULE_ACTION'),
-  proposal: person('RULE_PROPOSAL'),
   account: person('ACCOUNT_USE'),
   harness: person('HARNESS_ACTION'),
 } as const satisfies Record<string, InstanceRoute>;
 
 /** Each `daoris agent` verb that changes the home: its route, or null with the reason it acts alone. */
 export const AGENT_VERBS: readonly (readonly [verb: string, route: InstanceRoute | null, reason: string])[] = [
-  ['agent rules allow|ask|deny|remove|default', AGENT_ROUTES.rule, 'the rules screen\'s edit'],
-  ['agent rules accept|decline <id>', AGENT_ROUTES.proposal, 'the person\'s answer to an agent\'s proposal'],
-  ['agent settings <agent> … model|effort', AGENT_ROUTES.settings, 'an account\'s model and effort'],
   ['agent profile add|remove|default|rename|join', AGENT_ROUTES.harness, 'the Accounts place\'s `profile-*` actions'],
   ['agent unpin <agent>', AGENT_ROUTES.harness, 'the machine\'s pin taken back'],
   ['agent profile order|use|ready', AGENT_ROUTES.account, 'the Accounts place\'s order, use and *Try now*'],
@@ -80,7 +77,6 @@ export const AGENT_VERBS: readonly (readonly [verb: string, route: InstanceRoute
   ['agent key <agent>', null, 'alone: the key is read from this terminal\'s standard input, and never crosses a wire'],
   ['agent pin <agent> <version>', null, 'alone: a download through this terminal\'s fetcher, its checks said here; HARNESS_ACTION runs it in the window\'s console'],
   ['agent unpin <agent> --workspace <name>', null, 'alone: HARNESS_ACTION\'s unpin names no workspace'],
-  ['agent trust <agent> <folder> --yes', null, 'alone: TRUST_FOLDER grants only a folder the driver is holding, and this terminal names any folder'],
 ];
 
 /** What a verb hands its door: the route and payload it sends where Daoris runs, and what it does where none does. */

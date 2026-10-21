@@ -154,6 +154,7 @@ const tool = await import(
   setApartHeadings: (text: string, sides?: string[]) => { text: string; set: { line: number; label: string }[] };
   noteName: (label: string) => string;
   backlogPath: (root: string) => string;
+  backlogOf: (text: string | null) => string | null;
   mergeByBase: (base: string, ours: string, theirs: string) => { text: string | null; kept: number; dropped: number; both: { line: number }[] };
   REACH: readonly Rule[];
   PATH_CHECKS: readonly { gate: string; paths: string[]; why: string }[];

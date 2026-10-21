@@ -29,8 +29,8 @@ public sealed record AgentSettingEdit(string? Value);
 /// person asked it to — <c>model</c>, <c>effortLevel</c>, and an effort per model under
 /// <c>modelSettings</c> — and nothing else in it.</para>
 ///
-/// <para>The twin of the CLI's <c>agentsettings.ts</c>. They share no code; the FILE is the contract, and
-/// the same seven rules are asserted on both sides (<c>AgentSettingsTests</c>):</para>
+/// <para>The FILE is the contract, and this is its one writer since the CLI's <c>agentsettings.ts</c> left with
+/// <c>daoris agent settings</c> (PUSH1f2d). Its seven rules (<c>AgentSettingsTests</c>):</para>
 /// <list type="number">
 /// <item>The file is the tool's own <c>settings.json</c>, in the account's configuration home.</item>
 /// <item>No file is the tool's defaults: nothing set, and reading creates nothing.</item>
@@ -47,20 +47,20 @@ public sealed record AgentSettingEdit(string? Value);
 /// </remarks>
 public static class AgentSettings
 {
-    /// <summary>The tool's own settings file, in the account's configuration home. The CLI's <c>AGENT_SETTINGS_FILE</c>.</summary>
+    /// <summary>The tool's own settings file, in the account's configuration home.</summary>
     public const string FileName = "settings.json";
 
     /// <summary>
     /// The model names the tool itself accepts as aliases, offered before a free field for a full id: the
     /// Agent SDK's list at 0.3.284 (the one <c>claude-agent-acp</c> 0.84.0 carries), with <c>default</c>,
-    /// the tool's own default. The CLI's <c>AGENT_MODELS</c> is the other copy.
+    /// the tool's own default.
     /// </summary>
     public static readonly IReadOnlyList<string> Models =
         ["default", "sonnet", "opus", "haiku", "fable", "best", "sonnet[1m]", "opus[1m]", "fable[1m]", "opusplan"];
 
     /// <summary>
     /// The efforts the tool's settings keep: its schema's <c>effortLevel</c>. <c>max</c> exists for one
-    /// session and is never written to a file. The CLI's <c>AGENT_EFFORTS</c> is the other copy.
+    /// session and is never written to a file.
     /// </summary>
     public static readonly IReadOnlyList<string> Efforts = ["low", "medium", "high", "xhigh"];
 
@@ -218,4 +218,46 @@ public static class AgentSettings
 
     private static DriverException Unwritable(string problem) =>
         new($"{problem}, so nothing was written to it — fix it, or change the setting with the tool itself.");
+}
+
+/// <summary>
+/// An account's own model and effort, written for an agent by its name (AGT6, D98; PUSH1f2d, the alone-path design §1.3): the window's
+/// <c>SET_AGENT_SETTINGS</c>, Ask Daoris's Apply (HELP6) and <c>daoris-driver agent settings</c> alone call this one judgement over the
+/// roster they read. Never the tool's own configuration home, and never an account a setting would bring into being.
+/// </summary>
+public static class AccountSettings
+{
+    /// <param name="harnesses">The agents this machine runs and the wiring they are read by: the loop's roster, or one a terminal built.</param>
+    /// <param name="edits">The keys to change, read only once the account is known to be one Daoris keeps.</param>
+    /// <exception cref="DriverException">An agent with no toolchain or no settings Daoris knows, no account named or none by that name, a
+    /// value the tool would not read, or a file this build cannot; nothing is written.</exception>
+    public static (string Owner, string Profile, AgentSettingsRead Read) Write(
+        HarnessRoster harnesses, string harness, string? profile,
+        Func<(AgentSettingEdit? Model, AgentSettingEdit? Effort, IReadOnlyDictionary<string, AgentSettingEdit>? PerModel)> edits)
+    {
+        var toolchain = harnesses.Toolchain(harness)
+            ?? throw new DriverException(
+                $"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's.");
+        var owner = toolchain.Owner(harness);
+        var file = harnesses.AccountToolchain(harness)?.SettingsFile
+            ?? throw new DriverException(
+                $"`{owner}` keeps its settings in files of its own that Daoris does not know the shape of, "
+                + "so Daoris offers none — set its model with the tool itself.");
+        var named = profile
+            ?? throw new DriverException(
+                $"name the account these settings are for — `{owner}`'s own configuration home is the tool's, "
+                + "and Daoris never touches it.");
+        var accounts = HarnessSettings.Profiles(harnesses.Home, owner);
+        if (!accounts.Contains(named, StringComparer.Ordinal))
+        {
+            throw new DriverException(
+                $"`{owner}` has no account `{named}` on this machine — accounts that exist: "
+                + (accounts.Count > 0 ? string.Join(", ", accounts) : "(none)"));
+        }
+
+        var (model, effort, perModel) = edits();
+        var read = AgentSettings.Write(
+            Path.Combine(HarnessSettings.ProfileHome(harnesses.Home, owner, named), file), model, effort, perModel);
+        return (owner, named, read);
+    }
 }

@@ -19049,3 +19049,24 @@ doors. Detail: D173's FABRIC-EVENT3c note. On Opus.
 **Outcome** 2026-10-21: built. Every session's, quest's or ask's row of `NeedsAPerson` (the driver's own lists' too) and the Sessions badge's
 parked quest carry their record's workspace; the machine's carry none, each with its reason; the page's counts and lists read one
 `needsListed`. Detail: FIX-LOG's NEEDSSCOPE1 entry. On Opus.
+## PUSH1f2d — the agents' rules, trust and settings (2026-10-21, D194)
+
+> - [ ] **PUSH1f2d — the agents' rules, trust and settings** (cli, driver, modules; after 2a; D194, the alone-path design §5). Read its row in §5 and the sections it names; build it end to end (D187), the family's TypeScript leaving as §4 says. Proof: as §5 names it.
+
+**Outcome** 2026-10-21: `daoris agent rules|trust|settings` runs `daoris-driver agent` (the family's first allow-list), the rules and
+their proposals pressing `RULE_ACTION` and `RULE_PROPOSAL` on `DAORIS_HOME` whatever `DAORIS_HARNESS_CONFIG` names, an account's
+settings `SET_AGENT_SETTINGS`, a trust alone; a marked terminal's `rules accept` refused; today's text kept by 87 cases, nine changed
+with reasons. `permissions.ts`, `ruleproposals.ts`, `trust.ts`, `agentsettings.ts` and their tests left. Detail: D194's PUSH1f2d
+note. Unproven until the install: a `daoris agent rules` change confirmed in the open window. Built across two sessions, the first
+cut off at the timeout after the driver's commit.
+
+## FABRIC-PERFORM1d — resource cleanup and retirement (2026-10-21, D173)
+
+> - [ ] **FABRIC-PERFORM1d — resource cleanup and retirement** (driver; after END4a and PERFORM1c; the fabric events design's rows table (§E10), §D3). Receipts, a durable `work/cleanup`, accountability through invalidation, retirement apart from removal.
+
+**Outcome** 2026-10-21: built. A plugin attempt's `resources` are taken as receipts on the unit's own resource record
+(`<home>/workflows/resources/`) before its outcome; `ResourceCleaner` asks each temporary one of its plugin through `work/cleanup` at the
+unit's true end, at once for a superseded attempt's, the request and its key persisted before the send, a failure backed off and blocked
+after seven days; receipts and unsettled attempts join the unit's inventory, so it retires only once they are terminal, and the session
+branches' traces keep a unit that still owes. Proof: `ResourceCleanupTests` (canaries 34 and 36), `WorkRetirementTests` (canary 35),
+`NodeRuntimeTests`, `WorkSupervisionTests`, `WorkWireTests`. Detail: D173's FABRIC-PERFORM1d note. On Opus: about 110 tool calls.

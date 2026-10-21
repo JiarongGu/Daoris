@@ -96,6 +96,26 @@ public sealed class NodeRuntimeTests : IDisposable
 
         public int? GenerationOf(string plugin) => Generation;
 
+        /// <summary>The cleanups asked (FABRIC-PERFORM1d), and what each is answered.</summary>
+        public List<WorkCleanupCall> Cleaned { get; } = [];
+
+        public Func<WorkCleanupCall, WorkCleanupAnswer> Cleanup { get; set; } = _ => new(CleanupDispositions.Removed);
+
+        /// <summary>The plugins told owed a cleanup, each time (FABRIC-PERFORM1d).</summary>
+        public List<IReadOnlySet<string>> Owed { get; } = [];
+
+        public Task<(WorkCleanupAnswer Answer, int Generation)> CleanupAsync(string plugin, WorkCleanupCall call, CancellationToken ct)
+        {
+            Assert.Equal(Plugin, plugin);
+            lock (Cleaned) Cleaned.Add(call);
+            return Task.FromResult((Cleanup(call), Generation ?? throw new DriverException("not running")));
+        }
+
+        public void Owe(IReadOnlySet<string> plugins)
+        {
+            lock (Owed) Owed.Add(plugins);
+        }
+
         public void Watch(IReadOnlyDictionary<string, IReadOnlyList<WatchedUnit>> awaited)
         {
             lock (Told) Told.Add(awaited);
@@ -186,6 +206,56 @@ public sealed class NodeRuntimeTests : IDisposable
         new(Plugin, 1, new WorkStepFrame("build", new WorkOutcome(WorkStates.Reached, Evidence: new WorkEvidence(evidence, null, null, "built"),
             Outputs: new Dictionary<string, WorkOutput> { ["artifact"] = new(artifact, null) }), _now, "e-" + artifact,
             Invocation: Assert.Single(Record().Attempts, attempt => attempt.Node == "build" && attempt.State != AttemptStates.Settled).Call.Invocation));
+
+    /// <summary>
+    /// FABRIC-PERFORM1d (§D3): a completion's resources are its unit's receipts, by the roles its plugin's manifest declares; nothing is cleaned
+    /// before the unit's end; at its true end the temporary one is asked of its plugin, which is kept owed while it fails, its back-off the
+    /// loop's timer, and the result is kept.
+    /// </summary>
+    [Fact]
+    public async Task A_units_temporary_resources_are_cleaned_by_their_plugin_at_its_true_end_and_its_result_kept()
+    {
+        IReadOnlyList<PluginResource> declared =
+            [new("acme.deploy/preview@1", PluginResourceRoles.Temporary, PluginSteps.CleanupPoint), new("acme.deploy/site@1", PluginResourceRoles.Result, PluginSteps.CleanupPoint)];
+        NodeRuntimeLook Declaring(bool whole = true) => Look(Governed, whole) with { Resources = plugin => plugin == Plugin ? declared : null };
+        var runtime = Runtime();
+        await runtime.PassAsync(Declaring(), CancellationToken.None);
+        var invocation = Assert.Single(_port.Sent).Invocation;
+
+        _port.Heard.Enqueue(new(Plugin, 1, new WorkStepFrame("deploy", new WorkOutcome(WorkStates.Reached)
+        {
+            Resources = [new("acme.deploy/preview@1", "p-1"), new("acme.deploy/site@1", "s-1")],
+        }, _now, "e1", Invocation: invocation)));
+        await runtime.PassAsync(Declaring(whole: false), CancellationToken.None);
+        await runtime.PassAsync(Declaring(), CancellationToken.None);
+
+        var receipts = new ResourceRecordFiles(_home, () => true).Read(Unit)!.Receipts;
+        Assert.Equal([PluginResourceRoles.Temporary, PluginResourceRoles.Result], receipts.Select(receipt => receipt.Role));
+        Assert.Empty(_port.Cleaned);
+        Assert.Empty(_port.Owed[^1]);
+
+        // The quest is done: its true end. The first ask fails, so its plugin stays owed and the retry is the loop's next timer.
+        _units = [Quest with { End = new MilestoneEnd(WorkEndState.Ended, null, null, null, _now, "done") }];
+        _port.Cleanup = _ => new(CleanupDispositions.Failed, Message: "busy");
+        var failed = await runtime.PassAsync(Declaring(), CancellationToken.None);
+
+        Assert.Contains(failed.Performed, done => (done.What, done.Code) == (CleanedWhat.Again, CleanupDispositions.Failed));
+        Assert.Equal(["p-1"], _port.Cleaned.Select(call => call.Resource));
+        Assert.Equal([Plugin], _port.Owed[^1]);
+        Assert.Equal(_now + TimeSpan.FromMinutes(1), runtime.NextDue);
+
+        _now += TimeSpan.FromMinutes(1);
+        _port.Cleanup = _ => new(CleanupDispositions.Removed);
+        var cleaned = await runtime.PassAsync(Declaring(whole: false), CancellationToken.None);
+
+        Assert.Contains(cleaned.Performed, done => (done.What, done.Code) == (CleanedWhat.Cleaned, CleanupDispositions.Removed));
+        Assert.Equal(["p-1", "p-1"], _port.Cleaned.Select(call => call.Resource));
+        Assert.Single(_port.Cleaned.Select(call => call.IdempotencyKey).Distinct());
+        Assert.Empty(_port.Owed[^1]);
+        var owed = WorkObligations.Read(_home, _now)[Unit].ToDictionary(entry => entry.Resource, entry => entry.Disposition);
+        Assert.Equal(InventoryDisposition.Removed, owed["acme.deploy/preview@1:p-1"]);
+        Assert.Equal(InventoryDisposition.Kept, owed["acme.deploy/site@1:s-1"]);
+    }
 
     [Fact]
     public async Task A_reach_on_evidence_not_authorised_starts_nothing_downstream_and_an_authorised_ones_output_is_read_by_the_next_node()

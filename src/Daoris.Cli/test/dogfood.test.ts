@@ -787,8 +787,9 @@ test('agent pin reaches a release channel only through the fetcher the dispatche
 
   const row = readText(join(cliRoot, 'src', 'cli', 'agent.ts'));
   assert.match(row, /import \{ instanceDoor, portHold, releaseFetcher \} from '\.\.\/(?:[\w-]+\/)*service\.ts';/);
-  // RPC1f hands the door an edit goes through after them, the running Daoris's pipe reached through the same module.
-  assert.match(row, /run: \(args\) => commandHarness\(args, releaseFetcher\(\), \['npm'\],\s+process\.env\[PATH_VARIABLE\] \? ALONE : instanceDoor\(/);
+  // RPC1f hands the door an edit goes through after them, the running Daoris's pipe reached through the same module. PUSH1f2d: the
+  // verbs on the allow-list go to the driver's program first, handed nothing of the service's.
+  assert.match(row, /run: \(args\) => handed\(args\.argv\)\s+\? \(args\.driverProgram \?\? \(\(family, words\) => runDriverProgram\(family, words\)\)\)\('agent', args\.argv\)\s+: commandHarness\(args, releaseFetcher\(\), \['npm'\],\s+process\.env\[PATH_VARIABLE\] \? ALONE : instanceDoor\(/);
   // CODEXLOGIN1 hands the way a browser sign-in's port is tried last: a loopback socket, the same module's.
   assert.match(row, /instanceDoor\(\{[^}]*\}\), portHold\),/);
 });
