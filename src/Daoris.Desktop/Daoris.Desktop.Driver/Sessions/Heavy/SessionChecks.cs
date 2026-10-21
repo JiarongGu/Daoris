@@ -18,7 +18,8 @@ namespace Daoris.Driver;
 /// <para><b>A named workflow's run</b> takes its bound version's <c>checks</c> (<c>claimed</c>'s option in a graph version, the
 /// <c>work</c> step's field in a steps version), never this rule, which is Current's. A steps version's <c>work</c> takes <c>checks</c>
 /// (FABRIC-PIPELINE1b2), written into its canonical text only where set, so every version saved before keeps its digest; a graph version's
-/// option is read at the bind once the bind comes before the take (FABRIC-CUTOVER1g), so a graph's sessions run as today (<see cref="Of"/>).</para>
+/// option is read from the version its run bound (FABRIC-PIPELINE1b3, <see cref="WorkflowProcess.Claimed"/>). A run is bound before its
+/// take (FABRIC-CUTOVER1g), so its first session takes its version's as its later ones do (<see cref="Of"/>).</para>
 ///
 /// <para><b>Read as a stored shape</b>: a value this build does not know is passed over, read as no rule, and kept in the file by the
 /// keeping writer. Keyed as <c>heavyGates</c> is: the repository's name, trimmed, matched in any case, a key keeping the spelling first
@@ -46,12 +47,36 @@ public static class SessionChecks
 
     /// <summary>
     /// The checks a run takes (the pipeline design §3.1): under Current, or where no process was read, the repository's rule; a named
-    /// workflow's, its bound version's <c>work</c> step's (FABRIC-PIPELINE1b2), none where it sets none or the version could not be read.
+    /// workflow's, its bound version's: a steps version's <c>work</c> step's (FABRIC-PIPELINE1b2), a graph version's <c>claimed</c> node's
+    /// option (FABRIC-PIPELINE1b3); none where it sets none or the version could not be read.
     /// </summary>
     public static string? Of(DriverConfig config, string repository, WorkflowProcess? process) =>
         process is { Named: true }
-            ? Choice((string?)process.Steps.FirstOrDefault(step => step.Kind == WorkflowKinds.Work)?.Field("checks"))
+            ? process.Claimed is { } claimed
+                ? Claimed(claimed)
+                : Choice((string?)process.Steps.FirstOrDefault(step => step.Kind == WorkflowKinds.Work)?.Field("checks"))
             : For(config, repository);
+
+    /// <summary>
+    /// A graph version's <c>claimed</c> <c>checks</c> (FABRIC-PIPELINE1b3), its option's JSON text read as written: a choice spelled as the
+    /// choices are, since a version's bytes are its identity (D192's FABRIC-PIPELINE1b2 note, point 3); anything else is none, today's, as a
+    /// value the rule's file does not know is passed over.
+    /// </summary>
+    private static string? Claimed(IReadOnlyDictionary<string, string> options)
+    {
+        if (!options.TryGetValue("checks", out var text)) return null;
+        try
+        {
+            using var document = JsonDocument.Parse(text);
+            return document.RootElement.ValueKind == JsonValueKind.String && document.RootElement.GetString() is { } said
+                ? Choices.FirstOrDefault(choice => string.Equals(choice, said, StringComparison.Ordinal))
+                : null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
 
     /// <summary>
     /// One repository's rule set, a choice read in any case and kept in its own spelling, or taken away with null: the config changed and
@@ -85,28 +110,42 @@ public static class SessionChecks
     /// (the pipeline design §3.2's second layer): beside the session's other spawn files, gone when its run is (<see cref="LetGo"/>) or with
     /// its record (<see cref="SessionHomeFiles"/>). Nothing set keeps nothing, which reads as today's.
     /// </summary>
+    /// <param name="callMinutes">Its run's <c>callMinutes</c> (<see cref="LongCalls.MinutesOf"/>, FABRIC-PIPELINE1b3), kept beside the checks
+    /// for the long-call watch only where set, so the file keeps its shape for every run that sets none.</param>
     /// <returns>The file kept, or null for none.</returns>
-    public static string? Hold(string home, string session, string? checks)
+    public static string? Hold(string home, string session, string? checks, int? callMinutes = null)
     {
         if (Choice(checks) is not { } choice) return null;
         var path = DaorisHome.Entry(home, HomeEntry.Spawn, session + Suffix);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        JsonFile.Write(path, new System.Text.Json.Nodes.JsonObject { ["checks"] = choice });
+        var kept = new System.Text.Json.Nodes.JsonObject { ["checks"] = choice };
+        if (callMinutes is { } minutes) kept[LongCalls.Option] = minutes;
+        JsonFile.Write(path, kept);
         return path;
     }
 
     /// <summary>The checks <paramref name="session"/>'s run took, as its start kept them; null where none were kept or the file does not read.</summary>
-    public static string? Held(string home, string session)
+    public static string? Held(string home, string session) =>
+        Kept(home, session) is { } kept && kept.TryGetProperty("checks", out var checks) && checks.ValueKind == JsonValueKind.String
+            ? Choice(checks.GetString())
+            : null;
+
+    /// <summary>
+    /// The <c>callMinutes</c> <paramref name="session"/>'s start kept beside its checks (FABRIC-PIPELINE1b3); null where none was kept, or it
+    /// does not read as a whole number of minutes from one, which is the default bound.
+    /// </summary>
+    public static int? HeldMinutes(string home, string session) =>
+        Kept(home, session) is { } kept && kept.TryGetProperty(LongCalls.Option, out var minutes) ? LongCalls.Minutes(minutes) : null;
+
+    /// <summary>A session's kept checks file as an object; null where there is none or it does not read.</summary>
+    private static JsonElement? Kept(string home, string session)
     {
         var path = DaorisHome.Entry(home, HomeEntry.Spawn, session + Suffix);
         try
         {
             if (!File.Exists(path)) return null;
             using var document = JsonDocument.Parse(File.ReadAllText(path));
-            return document.RootElement.ValueKind == JsonValueKind.Object
-                   && document.RootElement.TryGetProperty("checks", out var checks) && checks.ValueKind == JsonValueKind.String
-                ? Choice(checks.GetString())
-                : null;
+            return document.RootElement.ValueKind == JsonValueKind.Object ? document.RootElement.Clone() : null;
         }
         catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
         {

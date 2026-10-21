@@ -257,6 +257,74 @@ public sealed class SessionChecksHandTests : IDisposable
         Assert.Null(SessionChecks.Of(config, "shop", current));
     }
 
+    /// <summary>
+    /// FABRIC-PIPELINE1b3 (D192's FABRIC-PIPELINE1b2 note, point 5): a run bound to a graph version takes its <c>claimed</c> node's
+    /// <c>checks</c>, read from the version as its file holds it, never the repository's rule, and its <c>callMinutes</c> beside them. Read
+    /// as written: a value no choice, or a bound that is no whole number of minutes from one, is none; and a version that is not the one its
+    /// run bound gives nothing.
+    /// </summary>
+    [Fact]
+    public void A_graph_run_takes_its_claimed_checks_and_call_minutes_as_written()
+    {
+        var rule = DriverConfig.Empty.WithSessionChecks("engine", SessionChecks.Light);
+        WorkflowProcess Bound(string run, string? options, string? digest = null)
+        {
+            var saved = RunHome.SaveGraph(Home, ClaimedGraph(options), workflow: run);
+            RunHome.Bind(Home, run, digest ?? saved, DateTimeOffset.UnixEpoch, workflow: run);
+            return WorkflowProcesses.Read(Home, rule, "engine", null, run);
+        }
+
+        var light = Bound("light", """{"checks":"light","callMinutes":30}""");
+        Assert.True(light.Named);
+        Assert.Equal(SessionChecks.Light, SessionChecks.Of(rule, "engine", light));
+        Assert.Equal(30, LongCalls.MinutesOf(light));
+
+        var atEnd = Bound("at-end", """{"checks":"heavy-at-end"}""");
+        Assert.Equal(SessionChecks.HeavyAtEnd, SessionChecks.Of(rule, "engine", atEnd));
+        Assert.Null(LongCalls.MinutesOf(atEnd));
+
+        // A graph that sets none is today's, never Current's rule.
+        Assert.Null(SessionChecks.Of(rule, "engine", Bound("none", options: null)));
+
+        var spelled = Bound("spelled", """{"checks":"Light","callMinutes":"30"}""");
+        Assert.Null(SessionChecks.Of(rule, "engine", spelled));
+        Assert.Null(LongCalls.MinutesOf(spelled));
+        Assert.Null(LongCalls.MinutesOf(Bound("zero", """{"checks":"light","callMinutes":0}""")));
+        Assert.Null(LongCalls.MinutesOf(Bound("part", """{"checks":"light","callMinutes":2.5}""")));
+
+        // Bound at a digest the file's version is not: not the version its run started on, so nothing of it is taken.
+        var other = Bound("other", """{"checks":"light","callMinutes":30}""", digest: "gph-00000000000000000000000000000000");
+        Assert.Null(SessionChecks.Of(rule, "engine", other));
+        Assert.Null(LongCalls.MinutesOf(other));
+    }
+
+    /// <summary>The smallest development graph: <c>claimed</c>, with <paramref name="options"/> where set, then <c>handed</c>.</summary>
+    private static string ClaimedGraph(string? options) =>
+        $$"""
+        {"schemaVersion":2,"entries":["claimed"],"end":"handed",
+         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"{{(options is null ? "" : $",\"options\":{options}")}}},
+                  {"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+         "wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"}]}
+        """;
+
+    /// <summary>
+    /// A run's <c>callMinutes</c> is kept beside its checks, by its session's id, where the long-call watch reads it; only where set, so the
+    /// file holds what it held before for every run that sets none.
+    /// </summary>
+    [Fact]
+    public void A_session_s_call_minutes_are_kept_beside_its_checks_only_where_set()
+    {
+        var kept = SessionChecks.Hold(Home, "s-1", SessionChecks.Light, callMinutes: 30);
+
+        Assert.Equal("""{"checks":"light","callMinutes":30}""", JsonNode.Parse(File.ReadAllText(kept!))!.ToJsonString());
+        Assert.Equal((SessionChecks.Light, (int?)30), (SessionChecks.Held(Home, "s-1"), SessionChecks.HeldMinutes(Home, "s-1")));
+
+        SessionChecks.Hold(Home, "s-2", SessionChecks.Light);
+        Assert.Null(SessionChecks.HeldMinutes(Home, "s-2"));
+        Assert.Null(SessionChecks.Hold(Home, "s-3", null, callMinutes: 30));
+        Assert.Null(SessionChecks.HeldMinutes(Home, "s-3"));
+    }
+
     private static SessionTarget Target(string root) => new(
         QuestId: "q1", Title: "Serve the report", Body: "The report needs a port.", Asker: "ask #a1", Repository: "engine", Root: root,
         ServiceUrl: "http://127.0.0.1:9");

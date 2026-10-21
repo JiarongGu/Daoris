@@ -2122,18 +2122,18 @@ public sealed class Driver(
                 .ConfigureAwait(false);
             // The process its work follows (WORKFLOW1f): read for the landing a session in a tree of its own is told, and for the checks its
             // run takes wherever its repository sets them, since a named workflow's run takes its version's, never Current's rule; and
-            // wherever a run here is bound to a named workflow, whose version's `work` may set them (FABRIC-PIPELINE1b2).
-            var process = Context.Trees.Holds(workTree) || SessionChecks.For(config, quest.To) is not null
-                          || WorkflowRunBindings.AnyNamed(home, quest.To)
-                ? await WorkflowProcesses.ReadAsync(home, config, new ServiceReviewWorld(service), quest.Id, quest.To, start.Workspace, ct)
-                    .ConfigureAwait(false)
+            // wherever its run is bound to a named workflow, whose version's `work`, or a graph's `claimed`, may set them
+            // (FABRIC-PIPELINE1b2, 1b3). Read from the binding the bind above came to, so the first session takes its version's, and
+            // neither the service's quests nor the run's file is read again (FABRIC-PIPELINE1b3).
+            var process = Context.Trees.Holds(workTree) || SessionChecks.For(config, quest.To) is not null || runBound.Binding is { IsCurrent: false }
+                ? WorkflowProcesses.Bound(home, config, quest.To, start.Workspace, runBound.Run, runBound.Binding)
                 : null;
             // FABRIC-PIPELINE1b (D192 point 5): what its run's checks tell and hand it, its words composed from the declaration, its deny
             // rules where its agent takes Daoris's rules; and those checks kept by its id for `run-heavy`, which reads them by the session
-            // its tree's lock names, let go as its run ends.
+            // its tree's lock names, let go as its run ends, a graph version's `callMinutes` beside them for its long-call watch (1b3).
             var checks = SessionChecks.Of(config, quest.To, process);
             var heavy = HeavyTold.Hand(workTree, home, quest.To, checks, adapter.TakesSettings);
-            var checksKept = SessionChecks.Hold(home, sessionId, checks);
+            var checksKept = SessionChecks.Hold(home, sessionId, checks, LongCalls.MinutesOf(process));
             using var checksHeld = new Disposer(() => SessionChecks.LetGo(checksKept));
             var target = WithAccess(WithLanguage(WithStanding(
                 await WithAskWordsAsync(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), service, ct).ConfigureAwait(false),
@@ -3510,12 +3510,14 @@ public sealed class Driver(
             if (said is not null) session.LimitsSaid += said;
             using var stops = output is null ? null : Context.Processes.OpenTaskStops(sessionId, session.StopTaskAsync);
             // FABRIC-PIPELINE1c (D192 point 5's fourth layer): under its run's light checks, a call or a background task past its bound is
-            // told to it once, as Daoris's urgent word, and never ended; the checks its start kept, so every run of it reads the same.
+            // told to it once, as Daoris's urgent word, and never ended; the checks its start kept, so every run of it reads the same, and
+            // the bound kept beside them where its graph version set one (FABRIC-PIPELINE1b3).
             var acpSession = session;
             using var longCalls = LongCalls.Watch(
                 SessionChecks.Held(home, sessionId), sessionId, RunningCalls.Of(Context.Events), () => acpSession.BackgroundRunning, inbox,
                 inbox is null ? null : new SaidDoor(service, sessionId),
-                failed: error => Line($"— Daoris's look at this session's long calls failed, and tells it nothing more: {error}"));
+                failed: error => Line($"— Daoris's look at this session's long calls failed, and tells it nothing more: {error}"),
+                minutes: SessionChecks.HeldMinutes(home, sessionId));
             // The person's words in the record the moment they are said, with when they reach the session (STEER1, D136):
             // the page shows them waiting in the turn they were said in, rather than nothing until they are handed over.
             inbox?.OnSaid((message, reach) =>
