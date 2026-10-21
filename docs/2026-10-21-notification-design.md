@@ -70,14 +70,14 @@ it is answered. Nothing below lays a scrim or traps the focus; the drawers that 
 | Overview's own lists | The tiles, *Outstanding* (six, then a count), the repositories by index size (`OverviewView.tsx:78-243`) | Quests' badge | — | no |
 | **A session's question** (a park, `awaiting-person`) | The session's head and foot (`waits.ts:151-153`); a `parked` row, its line the agent's question, two lines (`AttentionRow.tsx:406-416`) | as a row | `SESSION_ATTENTION` `Parked`: a toast in the error tone in every window (`ShellSignals.tsx:143-158`), a warning balloon behind (`SessionBalloon.cs:23-43`), its headline the driver's English (`Attention.cs:63-65`) | no |
 | A go-ahead, a helper's ask, a held tool call, an answer the answers-alone bound holds | The session's head and foot (`waits.ts:157-175`), the ask's page for a go-ahead; each a row with its acts (`attention.ts:41-67`) | as rows | none: no `AttentionKind` raises them (`Attention.cs:10-37`). A held call is refused by itself at its bound (PERMUNTIL1) | no |
-| **An agent's ask to hand its session over** (MIXAGENT1c) | The session's head alone (`waits.ts:34`, `:180`; `HandOverAgentAsk.tsx:47-57`) | **not counted**: no row (`NeedsAPerson.cs` has no such kind) | the look's English line, toasted (`DriverHandOvers.cs:181`) | no |
+| **An agent's ask to hand its session over** (MIXAGENT1c) | The session's head and foot alone (`waits.ts:34`, `:180`; `WaitStrip.tsx:268-271`; `HandOverAgentAsk.tsx:47-57`) | **not counted**: no row (`NeedsAPerson.cs` has no such kind) | the look's English line, toasted (`DriverHandOvers.cs:181`) | no |
 | **Session and ask channel messages** (D167, D188) | The ask's page (`AskPage.tsx:529`), the session's channel panel (`AttendedSession.tsx:305`), an ask row's *N unread* (`AskRow.tsx:100`), the rail's heading by ask (`SessionList.tsx:219-224`); unread past the person's mark (`asks.ts:107-122`), pulled per ask (`asks.ts:44-62`) | in no badge | never, at any level | no |
 | **Work done and failed, and an answer** | `SESSION_ATTENTION` `Ended` (a session ended without the person asking), `Answered` (a conversation answered the person's words), `QuestParked`, `Waiting` (`Attention.cs:10-37`); *Ready for you* rows for work to review | `QuestParked` and `Waiting` as rows; an ending and an answer **nowhere** | a toast in each window, but an answer over the conversation on screen (`ShellSignals.tsx:149-152`); a balloon behind | no; once the toast closes nothing lists what ended, and Sessions shows the record's state |
 | **The look's lines** (the tick's `events`) | The driver's English log lines, toasted when they change (`ShellSignals.tsx:53-63`): a look that could not read something and tries at the next, a session going on, a hand-over waiting for the person's word (`Driver.cs:603-1310`, `DriverHandOvers.cs:51-251`, `DriverBrainstorms.cs:98-133`) | — | as toasts | no |
 | **Toasts** (`notify`) | One corner per window, 26rem, at most three (`signals.ts:316`), seven seconds, two lines and the rest in a tip, text only with no door (`ui.tsx:1730-1805`): a refusal whose place has gone (R3), an outcome, a query's error (`useErrorNotify`), and the three rows above | — | — | covers the corner while it shows |
 | The strip's chips | The review chip while a set-up waits (`ReviewChip.tsx:33-48`), the browser's door | — | — | no |
 | The activity and status bars | Sessions' count with its waiting dot (SESSBADGE1), Agents' signed-out accounts; the status bar's sessions working | — | — | no |
-| **Outside the window** | One tray icon over the first main window, quiet while any window of Daoris is in front (`SessionNotifier.cs:43-163`); every line English, from .NET; the notify switch silences the look's (`DriverLoop.cs:781-790`, `:919-932`) and not a press's; a headless host prints `!  {line}` (`Driver.Host/Program.cs:834`) | the taskbar's count, one window's (above) | — | no |
+| **Outside the window** | One tray icon over the first main window, quiet while any window of Daoris is in front (`SessionNotifier.cs:43-163`); its headlines and default lines English, from .NET, and a park's question as the session wrote it; the notify switch silences the look's (`DriverLoop.cs:781-790`, `:919-932`) and not a press's; a headless host prints `!  {line}` (`Driver.Host/Program.cs:834`) | the taskbar's count, one window's (above) | — | no |
 
 ### 1.1 What cuts across
 
@@ -235,8 +235,8 @@ wrote (the person-door design §4.2). What changes is which values it names and 
   covers, never hidden; who sent it and when it was asked; once shown, its time left (R2: *refused by itself in 1 min 40 s*); D156's
   *Daoris cannot tell whether you ran this or an agent did. Confirm only what you ran.*; *Refuse* and *Confirm*; and *Details*,
   which opens the route's name and every value by its pointer, raw, as the card shows them today.
-- **Worked example, `sessions say`.** `SESSION_INPUT` carries `id`, `text`, `level`, `said` and `paths` (`ConversationRoutes.cs:
-  94-110`). Its row: `id` is the session, `text` the words, `level` the level, `paths` the files, `said` quiet (it asks for the verb's
+- **Worked example, `sessions say`.** `SESSION_INPUT` reads `id`, `text`, `level`, `said` and `paths`
+  (`ConversationRoutes.cs:94-110`). Its row: `id` is the session, `text` the words, `level` the level, `paths` the files, `said` quiet (it asks for the verb's
   own words in the answer). The card reads *A terminal asks to say to Fix the export feed, as your words, at its next step:* and the
   words, quoted, in the content's face; 中文 *一个终端请求以你的名义，在下一步时对 Fix the export feed 说：* and the words as written. A
   session the page cannot name is said by its id with *Daoris has no session by this id*.
@@ -345,7 +345,8 @@ desktop, at any level. The desktop is kept for what waits on the person with a c
 - **A message to one repository is that session's**, though the person may read it: it counts on its ask, and never announces.
 - **A message from before D188's levels** reads as ordinary.
 - **Each toast is said once, in the window the person is looking at**: the focused window speaks, another only counts, so two
-  windows never say one thing twice; a secondary window keeps its own toasts as today, with no door.
+  windows never say one thing twice. A secondary window (a detached session, the monitor) speaks by the same rule when it is the one
+  focused, its toasts with no door, since it holds no center.
 - **The notify switch** (Settings → Driver, `daoris driver notify`) governs every announcement in this table but a press's; it never
   governs what the center keeps.
 - **The look's lines stop being toasts.** A tick's report is a log (D62): what is news becomes a coded notice in the reader's
@@ -455,7 +456,7 @@ quick checks; the merge and the CI beside run the rest (D180). **Their order**: 
 notices; 2f, the messages); then what arrives without a row today (2g, 2h); the terminal last (2i).
 
 - **NOTIFY2a — the title bar's Notifications open a side bar view where a terminal's press waits in plain words, and nothing is drawn
-  across the page** (web-shell, modules). *What the person sees:* a bell on the title bar counting what needs them; pressed, the side
+  across the page** (web-shell, modules; driver for Ask Daoris's room). *What the person sees:* a bell on the title bar counting what needs them; pressed, the side
   bar shows *Notifications*, the presses first, each worded *A terminal asks to say to Fix the export feed, as your words, at its next
   step:* with the words quoted, its time left and *Refuse* and *Confirm*, then *What needs you* as Overview lists it; no band under the
   title bar for a press; at the window, a toast says a press came, with *Open*. §2.1, §2.2's first two groups, §2.3, §3.1-§3.5 but the
@@ -514,7 +515,7 @@ notices; 2f, the messages); then what arrives without a row today (2g, 2h); the 
   (the toast once, in the focused window alone; *Mark read* moving the mark; reading on the ask's page clearing the item).
 - **NOTIFY2g — an agent's ask to hand its session over waits in What needs you** (modules, web-shell). *What the person sees:* the
   ask is a row with *Hand over to {agent}* and *Not now*, counted by the bell and the taskbar, where today it is drawn only on its
-  session's head. Every place `person-waits.md` lists: the row judged in `NeedsAPerson` from the asks the look holds, its group by
+  session's page, in its head and foot. Every place `person-waits.md` lists: the row judged in `NeedsAPerson` from the asks the look holds, its group by
   whether its session stands still on it, `KIND_ORDER`, its words and acts, its hook's coverage row, its words in the glossary's kinds.
   *Proof:* `AttentionStateSliceTests`' cases; the attention, band and badge tests in en and zh; the coverage row (the parent's at the
   merge where the lane does not reach it).
