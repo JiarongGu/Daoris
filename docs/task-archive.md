@@ -19330,3 +19330,10 @@ the other pipeline refused, an agent's lowering kept for the press), the box's a
 `Driver.RunAsync`), holding, said, where the bind fails or its binding does not read; the first binding is moved into place without
 overwriting, the take names Current's work cycle under Current and none under a named version, and the next look says what the starts
 bound. Detail: D190's CUTOVER1g note. On Opus.
+
+## FABRIC-CLOSE1j2 — a quest's closure graph's end where the person looks for the quest (2026-10-22, D173)
+
+> - [ ] **FABRIC-CLOSE1j2 — a quest's closure graph's end where the person looks for the quest** (web; after CLOSE1j; §E5, D173's FABRIC-CLOSE1j note). `WORK_STATE`'s `ends` are `quest:` units', which no milestone on the page carries, so an override is said only in the pass's lines and a part lost only while its stop is offered. Say each on the quest's own page or its session's foot, en and zh. Proof: a page test reading `ends` for a quest in both languages.
+
+**Outcome** 2026-10-22: a quest's page says its own unit's closure ends as *Close* among its facts, in the work's foot's words (en, zh),
+a stop offered in the danger ink with its press still What needs you's; `workOf` picks an end by its unit's name. Detail: D173's CLOSE1j2 note.
