@@ -227,7 +227,8 @@ That count includes a plugin step's attempt held for the person, which `WORK_STA
 their word (`useResolveHeld` in `bridge/repositories/lines.ts`, `WORK_HELD`, FABRIC-PERFORM1g), a node record that does not read,
 which `WORK_STATE` lists as `unreadable` and its row's press opens the folder of (`useOpenWorkRecords`, `WORK_RECORDS_FOLDER`,
 FABRIC-PERFORM1j), a plugin step's failure Daoris will not retry, which `held` lists too and its row's *Try again* restarts
-(FABRIC-PERFORM1k), and a tool call a session holds for
+(FABRIC-PERFORM1k), a close found closed only in part whose close node waits again, which `WORK_STATE` lists among its `ends` and
+the same door stops (FABRIC-CLOSE1j), and a tool call a session holds for
 their answer under asking (`usePermissionWaits` in `bridge/sessions/sessions.ts`, `PERMISSION_WAITS`, AUTONOMY1b3c), answered
 with a choice its agent offered on the session's head and foot and on its row (`useAnswerPermission`,
 `SESSION_PERMISSION_ANSWER`); neither route publishes, so the page asks again itself: as a pushed call's `waiting`

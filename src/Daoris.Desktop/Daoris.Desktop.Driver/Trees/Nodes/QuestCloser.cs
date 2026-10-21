@@ -235,6 +235,17 @@ public static class QuestClosing
         && status.State is NodeStates.Active or NodeStates.Unknown;
 
     /// <summary>
+    /// Whether a close attempt is the settled one of a close found closed only in part (FABRIC-CLOSE1j; §E5, <see cref="Partial"/>), whose node
+    /// is live again: the newest on its node, which a <see cref="Partial"/> entry of its record names, and nothing in flight on it. Its node
+    /// would close the lost quest over the winner's take once that take submits, so the person is offered its stop.
+    /// </summary>
+    public static bool Partly(NodeRecord record, NodeAttempt attempt) =>
+        attempt is { Plugin: Sender or Chained, State: AttemptStates.Settled }
+        && record.Attempts.LastOrDefault(each => each.Node == attempt.Node) is { } newest && newest.Attempt == attempt.Attempt
+        && record.History.Any(entry => entry.Was.Node == attempt.Node && entry.Why.StartsWith(Partial + " #", StringComparison.Ordinal))
+        && NodeStates.Live.Contains(WorkPerformer.StatusOf(record, attempt.Node).State);
+
+    /// <summary>
     /// The first branch <paramref name="quest"/>'s chain worked whose tip git did not answer this judgement (FABRIC-CLOSE1p), or null: such a
     /// close waits, never judged on a revision that could not be read. Null without <paramref name="tips"/>, where the records alone are judged.
     /// </summary>
@@ -436,8 +447,10 @@ public sealed class QuestCloser(NodeRecordFiles records, IQuestClosePort port, F
     public bool Worded() => records.All().Records.Any(record => record.Attempts.Any(Worded));
 
     /// <summary>A close attempt holding a word to apply. FABRIC-CLOSE1u: an unknown close takes the person's word as a held one does, before it is asked after.</summary>
+    // FABRIC-CLOSE1j: a close found closed only in part takes the person's stop on its settled attempt (QuestClosing.Partly).
     private static bool Worded(NodeAttempt attempt) =>
-        attempt is { Plugin: QuestClosing.Sender, State: AttemptStates.Held or AttemptStates.Unknown, Resolution: not null, Close: not null };
+        attempt is { Plugin: QuestClosing.Sender, State: AttemptStates.Held or AttemptStates.Unknown, Resolution: not null, Close: not null }
+            or { Plugin: QuestClosing.Sender or QuestClosing.Chained, State: AttemptStates.Settled, Resolution: HeldResolutions.Stop };
 
     /// <summary>One word on a held close applied (<see cref="Resolve"/>): the record after it, and what it came to; a word taken back says why in <paramref name="lines"/>.</summary>
     private (NodeRecord Next, WorkPerformed Result) Recover(
@@ -447,6 +460,17 @@ public sealed class QuestCloser(NodeRecordFiles records, IQuestClosePort port, F
         var word = attempt.Resolution!;
         var node = declared(unit, attempt.Node) ?? Declaration(attempt);
         var cleared = attempt with { Resolution = null, ResolvedAt = null };
+
+        // FABRIC-CLOSE1j: the stop of a close found closed only in part. Its answer stands for the quests it kept, so the attempt stays settled,
+        // and its work's live nodes are stopped: the lost quest's work is the winner's, never closed here over its take (§E5).
+        if (attempt.State == AttemptStates.Settled)
+        {
+            var stopped = new List<string>();
+            record = Stopped(record, node, declared, stopped);
+            if (stopped.Count > 0) lines.Add($"work  {unit}: stopped by you, as its close was found closed only in part: {string.Join(", ", stopped)}.");
+            return (WorkPerformer.With(record, attempt, cleared), new(unit, node.Id, PerformedWhat.Resolved, word));
+        }
+
         if (WorkPerformer.WordRefused(attempt, word) is { } code)
         {
             return (WorkPerformer.With(record, attempt, cleared with { Code = code }), new(unit, node.Id, PerformedWhat.Refused, code));
@@ -475,13 +499,7 @@ public sealed class QuestCloser(NodeRecordFiles records, IQuestClosePort port, F
         }
 
         // Stop, apart from the close's answer: its work's live nodes stopped by the person, whatever the close comes to.
-        var now = clock();
-        foreach (var (id, status) in record.Statuses.Where(each => NodeStates.Live.Contains(each.Value.State)).ToList())
-        {
-            var live = id == node.Id ? node : declared(unit, id);
-            if (live is not null) record = WorkPerformer.Kept(record, NodeLifecycle.Apply(live, status, new NodeMove(NodeStates.Stopped, NodeCause.Person)), "person-stop", now);
-        }
-
+        record = Stopped(record, node, declared, []);
         if (attempt.Outcome != WorkStates.Reached)
         {
             return (WorkPerformer.With(record, attempt, cleared with { State = AttemptStates.Unknown }), new(unit, node.Id, PerformedWhat.Resolved, word));
@@ -490,6 +508,21 @@ public sealed class QuestCloser(NodeRecordFiles records, IQuestClosePort port, F
         var after = WorkPerformer.StatusOf(record, node.Id);
         record = WorkPerformer.With(record, attempt, cleared with { State = AttemptStates.Settled, Code = null });
         return (record with { Statuses = WorkPerformer.With(record.Statuses, NodeLifecycle.Reconciled(after, attempt.Attempt)) }, new(unit, node.Id, PerformedWhat.Resolved, word));
+    }
+
+    /// <summary>The record with every live node of its work stopped by the person, each kept in its history and named in <paramref name="stopped"/>.</summary>
+    private NodeRecord Stopped(NodeRecord record, NodeDeclaration node, Func<string, string, NodeDeclaration?> declared, List<string> stopped)
+    {
+        var now = clock();
+        foreach (var (id, status) in record.Statuses.Where(each => NodeStates.Live.Contains(each.Value.State)).ToList())
+        {
+            if ((id == node.Id ? node : declared(record.Unit, id)) is not { } live) continue;
+            var moved = NodeLifecycle.Apply(live, status, new NodeMove(NodeStates.Stopped, NodeCause.Person));
+            record = WorkPerformer.Kept(record, moved, "person-stop", now);
+            if (moved.Moved) stopped.Add(id);
+        }
+
+        return record;
     }
 
     /// <summary>A close node's declaration from its attempt: a close in flight is answered whatever graph governs its unit now.</summary>

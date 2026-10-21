@@ -1061,6 +1061,27 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.Empty(Rows(new() { Unreadable = [] }));
     }
 
+    // ---- a closure graph's end (FABRIC-CLOSE1j) ----
+
+    private static JsonObject Ended(string over = "{}") => With(
+        """
+        {"unit":"quest:q7","kind":"partially-closed","at":"2026-10-17T09:00:00Z","nodes":[],"quest":"q6","node":"close","attempt":2,
+         "nodeState":"ready","words":["stop"]}
+        """,
+        over);
+
+    [Fact]
+    public void A_close_found_closed_only_in_part_is_a_row_while_its_stop_is_offered_or_waits_for_the_next_look()
+    {
+        var row = Assert.Single(Rows(new() { Ends = [Ended()] }));
+        Is($$"""{"kind":"work","id":"quest:q7#close#q6","since":"2026-10-17T09:00:00Z","where":"quest:q7","ended":{{Ended().ToJsonString()}}}""", row);
+        Assert.Single(Rows(new() { Ends = [Ended("""{"resolution":"stop","words":[]}""")] }));
+
+        // Its node stopped, or the person's own done ending the work early: nothing waits on them.
+        Assert.Empty(Rows(new() { Ends = [Ended("""{"nodeState":"stopped","words":[]}""")] }));
+        Assert.Empty(Rows(new() { Ends = [Ended("""{"kind":"overridden","nodes":["qa","close"],"words":[]}""")] }));
+    }
+
     // ---- the slice ----
 
     /// <summary>
@@ -1094,8 +1115,11 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
             Held = [HeldAttempt("""{"outcome":"reached","revision":"r","resolution":"stop","resolvedAt":"2026-10-17T10:00:00Z","words":["stop"]}""")],
             // FABRIC-PERFORM1j: a node record that does not read.
             Unreadable = [Unreadable()],
+            // FABRIC-CLOSE1j: a close found closed only in part, every field set.
+            Ends = [Ended("""{"nodes":["qa"],"resolution":"stop"}""")],
         };
         var rows = Rows(facts);
+        Assert.Contains(rows, row => row["ended"] is JsonObject);
         Assert.Contains(rows, row => row["blocked"] is JsonObject blocked && blocked["entries"]![0]!["facts"] is JsonObject);
 
         // Every kind but the accounts': sixteen.
