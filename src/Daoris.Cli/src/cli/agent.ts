@@ -79,6 +79,10 @@ export const command: CliCommand = {
     "                                                   makers' own channels, verified",
     '                         unpin <agent> [--workspace W]',
     '                                                   back to whatever is on PATH',
+    '                         which <agent> [--workspace W] [--json]',
+    '                                                   the program a session would run',
+    '                                                   it as: its command, its pin, or',
+    "                                                   PATH's",
     '                         trust <agent> <folder> [--profile P] --yes',
     '                                                   what the agent asks the first',
     '                                                   time it runs in a folder, granted',
@@ -120,10 +124,11 @@ export const command: CliCommand = {
 };
 
 /**
- * The verbs `daoris agent` hands Daoris's driver program (PUSH1f2d, the alone-path design §5's allow-list): the rules, a trust and an
- * account's settings, each one `daoris-driver agent` has (`AgentsCommand.Verbs`, which a test reads beside this).
+ * The verbs `daoris agent` hands Daoris's driver program (PUSH1f2d, the alone-path design §5's allow-list): the rules, a trust, an
+ * account's settings and what an agent runs as (PUSH1f2e), each one `daoris-driver agent` has (`AgentsCommand.Verbs`, which a test
+ * reads beside this).
  */
-export const HANDED_VERBS: readonly string[] = Object.freeze(['rules', 'trust', 'settings']);
+export const HANDED_VERBS: readonly string[] = Object.freeze(['rules', 'trust', 'settings', 'which']);
 
 /** Whether these words are the driver program's: a handed verb. None named is `list`, which stays here until PUSH1f2e. */
 export function handed(argv: readonly string[]): boolean {

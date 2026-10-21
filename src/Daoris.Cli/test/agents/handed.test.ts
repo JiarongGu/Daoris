@@ -19,7 +19,8 @@ test('the verbs handed on are exactly the ones `daoris-driver agent` has', () =>
 });
 
 test('the rules, a trust and an account\'s settings are handed on; the rest of the family stays the CLI\'s', () => {
-  for (const argv of [['rules'], ['rules', 'accept', 'p0000007'], ['trust', 'claude-code', '.', '--yes'], ['settings', 'claude-code']]) {
+  for (const argv of [['rules'], ['rules', 'accept', 'p0000007'], ['trust', 'claude-code', '.', '--yes'], ['settings', 'claude-code'],
+    ['which', 'claude-code-acp', '--json']]) {
     assert.equal(handed(argv), true, argv.join(' '));
   }
   for (const argv of [[], ['list'], ['install', 'claude-code'], ['login', 'claude-code'], ['key', 'claude-code'], ['pin', 'codex', '1.0.0'],

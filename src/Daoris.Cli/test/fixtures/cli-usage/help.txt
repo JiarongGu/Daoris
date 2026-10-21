@@ -108,6 +108,10 @@ daoris <command> [options]
                                                    makers' own channels, verified
                          unpin <agent> [--workspace W]
                                                    back to whatever is on PATH
+                         which <agent> [--workspace W] [--json]
+                                                   the program a session would run
+                                                   it as: its command, its pin, or
+                                                   PATH's
                          trust <agent> <folder> [--profile P] --yes
                                                    what the agent asks the first
                                                    time it runs in a folder, granted
