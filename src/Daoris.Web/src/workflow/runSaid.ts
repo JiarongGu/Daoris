@@ -10,10 +10,11 @@ const short = (commit: string) => (commit.length > 8 ? commit.slice(0, 8) : comm
 
 /** The details each kind words; a detail a newer driver names is said as recorded. */
 const DETAILS: Record<string, readonly string[]> = {
-  // A closure graph's work finished at its submissions, and a submission the person reopened (FABRIC-WORKFLOW2d).
+  // A closure graph's work finished at its submissions, and a submission the person reopened (FABRIC-WORKFLOW2d); made ready again, its
+  // started step waits on their go-on (FABRIC-CLOSE1c7).
   work: [
     'queued', 'agent', 'answered', 'park', 'go-ahead', 'held', 'awaits', 'unclosed', 'failed', 'stopped', 'declined', 'finished', 'submitted',
-    'reopened',
+    'reopened', 'go-on',
   ],
   // The second opinion's gate's own states (XAGENT1f, `OpinionGateStates`), and a landing that let it go.
   opinion: [
@@ -60,7 +61,8 @@ export function runSaid(t: TFunction, step: RunStep): string | null {
     case 'work.awaits':
     case 'work.unclosed':
     case 'work.declined':
-    case 'work.reopened': return t(at, { quest: step.quest ?? '' });
+    case 'work.reopened':
+    case 'work.go-on': return t(at, { quest: step.quest ?? '' });
     case 'work.finished':
     case 'work.submitted': return t(at, { count: step.count ?? 0 });
     case 'opinion.reading': return step.agent ? t(at, { agent: step.agent }) : t('workflow.run.said.opinion.readingAnyone');
@@ -125,7 +127,7 @@ export function runShort(t: TFunction, run: WorkflowRun): string {
   }
 
   const kind = at.step.kind;
-  if (kind === 'work' && at.state === 'waiting-on-you' && ['park', 'go-ahead', 'held', 'unclosed'].includes(at.detail)) {
+  if (kind === 'work' && at.state === 'waiting-on-you' && ['park', 'go-ahead', 'held', 'unclosed', 'go-on'].includes(at.detail)) {
     return t(`workflow.run.short.work.${at.detail}`);
   }
 
