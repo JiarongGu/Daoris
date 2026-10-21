@@ -5,6 +5,13 @@ with the version and date at release.
 
 ## Unreleased
 
+- Daoris's system notifications, shown while Daoris is behind another program, now speak the window's language: a window in 中文
+  raises them in 中文. A terminal's request for your confirmation is named by what it asks to do, never by its route or a value it
+  carries. A session that parks, ends or answers you, a quest parked on its failed sessions and a start waiting for an account are
+  said in the window's words, an ending by its state in plain words, and what the session wrote as it wrote it; the notices inside
+  the window are worded the same way. A tool call a session holds for your answer is now announced as a parked session is.
+  Settings → Driver's switch, now *Announce what needs you or ended*, says what it turns on and off, and that a terminal's request
+  is announced either way.
 - What you say to a session while its quest waits on another repository's answer now reaches the session that carries the quest on
   once the answer comes. It is quoted beneath the answer and shown in that session's conversation. Your answer to a session that
   stopped to ask you after such a wait now goes on at the driver's next look; before, it could wait for good. The session is told

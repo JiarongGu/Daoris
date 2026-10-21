@@ -19120,3 +19120,10 @@ Detail: D194's PUSH1f2e2 note. On Opus.
 
 **Outcome** 2026-10-22: built. Each main window tells and wears its own count (`SET_BADGE` by name, its order per window); a balloon's
 click opens the window whose workspace holds its session or quest (`MainWindowScopes`), else the one last in front. Detail: D196's NOTIFY2c note. On Opus.
+
+## NOTIFY2d — behind the window, what waits is announced in the person's language (2026-10-22, D196)
+
+> - [ ] **NOTIFY2d — behind the window, what waits is announced in the person's language** (modules, web-shell, web-settings; after 2b; D196, the notification design §9). The shell's notifications are worded from the words the page hands it; a held tool call is announced as a park is; the notify switch says what it governs. Proof: as §9 names it.
+
+**Outcome** 2026-10-22: built. Each balloon is worded from the words a main window hands (`SET_NOTICE_WORDS`, `SessionBalloon`), the
+window's toasts likewise; a held call is `Holding`, said once under the switch; the switch says what it governs. Detail: D196's NOTIFY2d note. On Opus.
