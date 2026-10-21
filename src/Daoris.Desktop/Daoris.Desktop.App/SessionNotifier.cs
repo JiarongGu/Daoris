@@ -55,6 +55,9 @@ public sealed class SessionNotifier : IDisposable
     /// <summary>Brings another main window forward by its name (NOTIFY2c); false where it is not open. Null: none is.</summary>
     private readonly BringForward? _forwarding;
 
+    /// <summary>The words a main window's page handed, in its language (NOTIFY2d); null, or none told yet, says English.</summary>
+    private readonly NoticeWords? _words;
+
     /// <param name="window">The first main window: the tray's, and what a click opens where no other is picked.</param>
     /// <param name="events">The bus the attention is told on.</param>
     /// <param name="takingBack">Asked before the first is shown, so a window put away is taken back first (MAINWINDOWS2).</param>
@@ -63,13 +66,19 @@ public sealed class SessionNotifier : IDisposable
     /// or the main window last in front where none or several do (<see cref="MainWindowScopes"/>).
     /// </param>
     /// <param name="forwarding">Brings another main window forward by its name.</param>
+    /// <param name="words">
+    /// The words each balloon is said in, as a main window's page handed them over <c>SET_NOTICE_WORDS</c> (NOTIFY2d, the notification
+    /// design §3.3): read at each balloon, so a change of language is said from the next.
+    /// </param>
     public SessionNotifier(
-        Form window, IEventBus events, Action? takingBack = null, Func<string?, string?, string>? picking = null, BringForward? forwarding = null)
+        Form window, IEventBus events, Action? takingBack = null, Func<string?, string?, string>? picking = null, BringForward? forwarding = null,
+        NoticeWords? words = null)
     {
         _window = window;
         _takingBack = takingBack;
         _picking = picking;
         _forwarding = forwarding;
+        _words = words;
         _icon = new NotifyIcon
         {
             // The window's own icon where it has one, so the tray matches the taskbar.
@@ -106,10 +115,17 @@ public sealed class SessionNotifier : IDisposable
         var headline = Read(payload, "Headline");
         if (string.IsNullOrWhiteSpace(headline)) return;
 
-        var detail = Read(payload, "Detail");
         var session = Read(payload, "Session");
         var quest = Read(payload, "Quest");
-        var kind = Read(payload, "Kind");
+        var facts = new BalloonFacts(Read(payload, "Kind"), headline, Read(payload, "Detail"))
+        {
+            Repository = Read(payload, "Repository"),
+            State = Read(payload, "State"),
+            Quest = quest,
+            Strikes = payload.GetType().GetProperty("Strikes")?.GetValue(payload) as int?,
+            Module = Read(payload, "Module"),
+            Route = Read(payload, "Route"),
+        };
 
         _window.BeginInvoke(() =>
         {
@@ -118,14 +134,16 @@ public sealed class SessionNotifier : IDisposable
 
             _about = session;
             _aboutQuest = quest;
+            // Its words and icon by kind are the modules' judgement (NOTIFY1d), in the words the page handed (NOTIFY2d): the window's
+            // language, the event's facts filled in, what a session wrote as written; English where no page has handed any.
+            var said = SessionBalloon.Words(facts, _words?.Now);
             _icon.ShowBalloonTip(
                 // Ignored by Windows since Vista, which picks its own duration; passed because the
                 // overload requires it.
                 timeout: 10_000,
-                tipTitle: headline,
-                // The body and icon by kind are the modules' judgement (NOTIFY1d).
-                tipText: SessionBalloon.Body(kind, detail),
-                tipIcon: SessionBalloon.Icon(kind) == BalloonIcon.Warning ? ToolTipIcon.Warning : ToolTipIcon.Info);
+                tipTitle: said.Title,
+                tipText: said.Body,
+                tipIcon: said.Icon == BalloonIcon.Warning ? ToolTipIcon.Warning : ToolTipIcon.Info);
         });
     }
 

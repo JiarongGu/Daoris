@@ -37,7 +37,9 @@ public sealed class WindowsModule(
     // The workspace each main window's title wears (MAINWINDOWS3b). Null where there is no window to title.
     ShowWorkspace? workspace = null,
     // Which workspace each main window holds, from which a notification's click picks its window (NOTIFY2c). Null where none is kept.
-    MainWindowScopes? scopes = null)
+    MainWindowScopes? scopes = null,
+    // The words the shell's notifier says each notification in, as a main window's page handed them (NOTIFY2d). Null where none is kept.
+    NoticeWords? notices = null)
     : ModuleBase(events: events)
 {
     public override string ModuleName => "DAORIS.WINDOWS";
@@ -113,6 +115,17 @@ public sealed class WindowsModule(
                 }
 
                 return Task.FromResult<object?>(new { Applied = badge is not null });
+            }
+
+            // A main window's page handing the shell's notifier the notices' words in its language (NOTIFY2d, the notification design
+            // §3.3), at its load and at each change of language, the way SET_BADGE takes its description: the notifier has no
+            // catalogue, and a balloon in English over a window in 中文 was the defect. `{ words: { key: words } }`, kept whole as told.
+            case "SET_NOTICE_WORDS":
+            {
+                var words = request.Payload is { } payload && payload.ValueKind == System.Text.Json.JsonValueKind.Object
+                    && payload.TryGetProperty("words", out var told) ? told : default;
+                notices?.Told(words);
+                return Task.FromResult<object?>(new { Applied = notices is not null });
             }
 
             // A main window's page telling its frame its own title (MAINWINDOWS3b), so two windows on two workspaces read apart

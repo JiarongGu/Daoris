@@ -916,19 +916,23 @@ public sealed class DriverLoop(
     /// The switch is read from the machine's choices at each answer, since a conversation's turn ends outside any look. One that
     /// does not read errs toward saying it, as the shell's notifier does.
     /// </remarks>
-    public Task AnsweredAsync(AttentionEvent item)
+    public Task AnsweredAsync(AttentionEvent item) => Notifying() ? AttendAsync(item) : Task.CompletedTask;
+
+    /// <summary>
+    /// Whether this machine's notify switch is on (Settings → Driver, <c>daoris driver notify</c>), read from its choices now: for an
+    /// announcement made outside any look, a conversation's answer (NOTIFY1a) or a held tool call (NOTIFY2d). Choices that do not read
+    /// err toward saying it, as the shell's notifier does.
+    /// </summary>
+    public bool Notifying()
     {
-        bool notify;
         try
         {
-            notify = DriverConfig.Load(ConfigPath).Notify;
+            return DriverConfig.Load(ConfigPath).Notify;
         }
         catch (DriverConfigUnreadableException)
         {
-            notify = true;
+            return true;
         }
-
-        return notify ? AttendAsync(item) : Task.CompletedTask;
     }
 
     /// <summary>What is worth interrupting the person for (SURF5b), in the one shape the shell's notifier and the page's toast read.</summary>
@@ -942,6 +946,8 @@ public sealed class DriverLoop(
         item.Detail,
         // The quest a park names (SESSUX1i); null for a session's own news.
         item.Quest,
+        // NOTIFY2d, a field added: how many sessions failed before a quest parked, which its notification says in the window's words.
+        item.Strikes,
     });
 
     /// <summary>

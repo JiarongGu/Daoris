@@ -156,6 +156,45 @@ public sealed class PipeConfirmationsTests : Bridge
         }
     }
 
+    /// <summary>
+    /// NOTIFY2d (§3.3): as the application's notifier words it from the press's event, in the window's language or with no words handed,
+    /// the balloon names the press's act by the route's words and never the route's constant, its module or a value it carries.
+    /// </summary>
+    [Fact]
+    public void The_balloon_as_worded_names_its_act_and_no_route_or_value_in_either_language()
+    {
+        using var log = new MachineLog(Home, "desktop");
+        using var confirmations = new PipeConfirmations(Bus, log, new HeldClock());
+        var person = PipeCensus.Daoris.Routes
+            .Where(each => each.Class == PipeClass.Person || each.When?.Class == PipeClass.Person)
+            .ToList();
+        foreach (var each in person)
+        {
+            var asked = confirmations.Ask(each.Module, each.Route ?? "WRITE", [new PipeConfirmationField("/id", "string", "s9f8e7d6")], Asker)!.Value;
+            Assert.True(confirmations.Withdraw(asked.Shown.Id));
+        }
+
+        var balloons = Raised.Where(each => each.Type == PipeConfirmations.AttentionType).Select(each => each.Payload!).ToList();
+        Assert.Equal(person.Count, balloons.Count);
+        var handed = new[] { SessionBalloonTests.Handed("en"), SessionBalloonTests.Handed("zh"), null };
+        foreach (var (balloon, each) in balloons.Zip(person))
+        {
+            var route = each.Route ?? "WRITE";
+            Assert.Equal((each.Module, route), (Read(balloon, "Module"), Read(balloon, "Route")));
+            foreach (var words in handed)
+            {
+                var said = SessionBalloon.Words(
+                    new BalloonFacts(Read(balloon, "Kind"), Read(balloon, "Headline"), Read(balloon, "Detail")) { Module = Read(balloon, "Module"), Route = Read(balloon, "Route") },
+                    words);
+                var text = $"{said.Title} {said.Body}";
+                Assert.DoesNotContain(route, text, StringComparison.Ordinal);
+                Assert.DoesNotContain(each.Module, text, StringComparison.Ordinal);
+                Assert.DoesNotContain("s9f8e7d6", text, StringComparison.Ordinal);
+                if (words is not null) Assert.Contains(words[PipeWording.Key(each.Module, route)], text, StringComparison.Ordinal);
+            }
+        }
+    }
+
     // As the application's notifier reads it (`SessionNotifier.Read`): a field off the payload the bus carries.
     private static string? Read(object payload, string name) => payload.GetType().GetProperty(name)?.GetValue(payload) as string;
 

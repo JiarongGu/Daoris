@@ -354,12 +354,16 @@ public sealed class PipeConfirmations : IDisposable
     /// windows is in front, quiet while one is, whose card already shows it. The terminal as the system names it, never the route's
     /// constant (NOTIFY2a: a person reading 中文 met <c>SESSION_INPUT</c> in English), a value or a word the asker wrote; no session,
     /// so the balloon's click brings the window forward alone. <c>Id</c>, a field added, is the press's own, which the window's
-    /// announcement keys on (the notification design §3.3), so an event told twice is said once.
+    /// announcement keys on (the notification design §3.3), so an event told twice is said once. <c>Module</c> and <c>Route</c>, fields
+    /// added (NOTIFY2d), name its act for the notifier, which says it in the window's words by the route's catalogue key and never says
+    /// the route itself.
     /// </summary>
     private void Attend(PipeConfirmation confirmation) => _bus?.Emit(StatePublisher.Module, AttentionType, new
     {
         Kind = AttentionKind,
         Id = confirmation.Id,
+        confirmation.Module,
+        confirmation.Route,
         Session = (string?)null,
         Headline = "A terminal's press waits for you in Daoris's window",
         Detail = $"Sent by {Named(confirmation.Asker)}. Open Daoris to confirm or refuse it.",

@@ -63,7 +63,8 @@ public sealed class MainForm : OptimizedForm
         MainWindows? mains = null,
         PressFlash? flash = null,
         MainWindowScopes? scopes = null,
-        BringForward? forward = null)
+        BringForward? forward = null,
+        NoticeWords? notices = null)
         : base(new OptimizedFormOptions
         {
             FramelessChrome = true,
@@ -142,10 +143,11 @@ public sealed class MainForm : OptimizedForm
         // Its double-click and a balloon's click take this window back where it was put away (MAINWINDOWS2) before showing it.
         // NOTIFY2c: a balloon's click opens the main window whose workspace holds what it was about, as the windows' records hold
         // it, or the main window last in front where none or several do; and only that window's page attends its session.
+        // NOTIFY2d: each balloon in the window's language, from the words a main window's page handed over SET_NOTICE_WORDS.
         _notifier = new SessionNotifier(
             this, eventBus, takingBack: () => _mains?.TakeBackFirst(),
             picking: scopes is null ? null : (session, quest) => scopes.PickFor(driver.Slices, session, quest),
-            forwarding: forward);
+            forwarding: forward, words: notices);
         _notifier.Attend += (session, window) => eventBus.Emit(
             new EventMessage { Module = "DAORIS", Type = "ATTEND_SESSION", Payload = new { Session = session, Window = window } });
 
