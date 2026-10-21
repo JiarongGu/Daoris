@@ -42,7 +42,7 @@ import { ShellSignals } from './ShellSignals';
 import {
   logEvent, useAttention, useAttached, useDismissUpdate, useDriver, useHarnesses, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes,
   useSayUpdate, useShowReviewAgain, useSyncNow, useTaskbarCount, useUpdateState,
-  useAnswerConfirmation, usePersonKey, useServiceConfirmations, useTerminalConfirmations, useUnkeyedHost,
+  useAnswerConfirmation, useConfirmationShown, usePersonKey, useServiceConfirmations, useTerminalConfirmations, useUnkeyedHost,
 } from '../bridge/shell';
 import { Confirmations } from '../person/Confirmations';
 import { byTool } from '../agents/tools';
@@ -298,6 +298,8 @@ export function App() {
   const terminalConfirmations = useTerminalConfirmations();
   const serviceConfirmations = useServiceConfirmations(personKey.held);
   const answerConfirmation = useAnswerConfirmation();
+  // CONFIRMSEEN1: a terminal's press's two minutes count from when this window, in front of the person, shows its card.
+  const confirmationShown = useConfirmationShown();
   // Opening a window is the shell's act, not the page's (SURF8). In a browser it simply rejects,
   // which is why the commands that use it are gated on a shell being here.
   const openWindow = useOpenWindow();
@@ -1097,6 +1099,7 @@ export function App() {
           waiting={[...terminalConfirmations, ...serviceConfirmations]}
           notice={unkeyedHost && !unkeyedSaid}
           onAnswer={(waiting, confirm) => answerConfirmation.mutateAsync({ waiting, confirm })}
+          onShown={(waiting) => confirmationShown.mutate(waiting)}
           onDismissNotice={() => setUnkeyedSaid(true)}
         />
       )}

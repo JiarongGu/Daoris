@@ -625,6 +625,7 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     // as it runs; the answer itself moves no scope. PERSONDOOR1f: the key is a read.
     [InlineData("PERSON_CONFIRMATIONS", "", null)]
     [InlineData("PERSON_CONFIRM", "", null)]
+    [InlineData("PERSON_CONFIRM_SHOWN", "", null)]
     [InlineData("PERSON_KEY", "", null)]
     public void The_remaining_presses_declare_what_they_change(string route, string scopes, string? session)
     {

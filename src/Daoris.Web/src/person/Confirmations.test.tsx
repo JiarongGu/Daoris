@@ -90,6 +90,32 @@ describe("the window's confirmation of a terminal's press", () => {
     expect(await within(service).findByRole('alert')).toHaveTextContent('This confirmation no longer waits: it expired.');
   });
 
+  // CONFIRMSEEN1: a terminal's press's two minutes count from when it is in front of the person, so a card in a window behind others
+  // says nothing until that window comes in front, and then says it once.
+  it('says a terminal press is shown once its window is in front, once, and never of one shown or a service ask', async () => {
+    const focused = vi.spyOn(document, 'hasFocus').mockReturnValue(false);
+    try {
+      const onShown = vi.fn();
+      const answer = vi.fn(async () => ({ answered: true as const }));
+      const { rerender } = render(
+        <Confirmations waiting={[ARCHIVE, { ...UNKNOWN, shown: true }, SERVICE]} onAnswer={answer} onShown={onShown} />);
+      expect(onShown).not.toHaveBeenCalled();
+
+      focused.mockReturnValue(true);
+      window.dispatchEvent(new Event('focus'));
+      expect(onShown).toHaveBeenCalledTimes(1);
+      expect(onShown).toHaveBeenCalledWith(ARCHIVE);
+
+      window.dispatchEvent(new Event('focus'));
+      rerender(<Confirmations waiting={[ARCHIVE, { ...UNKNOWN, shown: true }, SERVICE]} onAnswer={answer} onShown={onShown} />);
+      expect(onShown).toHaveBeenCalledTimes(1);
+      // The row's door finds the card by its anchor.
+      expect(document.getElementById('confirmation-c1')).toHaveAttribute('role', 'group');
+    } finally {
+      focused.mockRestore();
+    }
+  });
+
   it('says once that the service in use was not started by this Daoris, until dismissed', async () => {
     const { onDismissNotice } = draw([], undefined, true);
 
