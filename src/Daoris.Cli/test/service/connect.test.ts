@@ -306,7 +306,7 @@ test('connect refuses a repository that has not said what it is', async () => {
  * keeps working until the tree is removed, and then the repository's root is a path that does not
  * exist. Git itself marks a linked worktree — its `.git` is a FILE naming the main repository's
  * `.git/worktrees/<name>` — so the check reads one file and spawns nothing, which is what keeps the
- * CLI's no-spawn discipline intact (only `toolchain.ts` spawns).
+ * CLI's no-spawn discipline intact (only `driverprogram.ts` spawns).
  */
 test('connect from a linked worktree is refused, naming the main tree', async () => {
   const fx = makeFixture('connect-linked');

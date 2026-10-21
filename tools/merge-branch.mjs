@@ -1060,9 +1060,10 @@ export const REACH = Object.freeze([
     why: "the CLI's own readers (the lane's), and the driver's KeepLockProcessTests runs these under node against the driver's lock (CONFIG1)",
   },
   // PUSH1f2a (D194 point 1): the driver's DriverProgramWordsProcessTests runs `daoris driver …` under node, the CLI's dispatcher, the
-  // driver row and the seam, beside a native program, so a change to those reaches the driver's Process half too.
+  // driver row and the seam, beside a native program, so a change to those reaches the driver's Process half too. The seam is
+  // `driverprogram.ts` since PUSH1f2f took `toolchain.ts`' last declarations.
   {
-    paths: ['src/Daoris.Cli/src/cli.ts', 'src/Daoris.Cli/src/cli/driver.ts', 'src/Daoris.Cli/src/**/toolchain.ts'],
+    paths: ['src/Daoris.Cli/src/cli.ts', 'src/Daoris.Cli/src/cli/driver.ts', 'src/Daoris.Cli/src/**/driverprogram.ts'],
     gates: [...CLI_READERS, 'driver-process'],
     why: "the CLI's own readers (the lane's), and the driver's DriverProgramWordsProcessTests runs these under node through the seam (PUSH1f2a)",
   },
@@ -1115,8 +1116,8 @@ export const REACH = Object.freeze([
   { paths: ['canon/**'], gates: ['service', 'rehearse', 'rehearse-family'], why: 'the package ships it, the examples must be current with it, and the service scans the doctrine synced from it' },
   {
     paths: ['examples/plugins/**'],
-    gates: ['service', 'driver', 'rehearse-family', 'web', 'deployment'],
-    why: "the example family the rehearsals and the end-to-end suite run on, and the offers the install lays out, which the driver's PluginOffer test reads as they stand (D103, MOD9b)",
+    gates: ['service', 'driver', 'driver-process', 'rehearse-family', 'web', 'deployment'],
+    why: "the example family the rehearsals and the end-to-end suite run on, the offers the install lays out, which the driver's PluginOffer test reads as they stand (D103, MOD9b), and the performed example the PluginKit Process tests run (FABRIC-PERFORM1e)",
   },
   { paths: ['examples/**'], gates: ['service', 'rehearse-family', 'web'], why: 'the example family the family rehearsal and the end-to-end suite run on' },
   { paths: ['README.md', 'LICENSE'], gates: ['service', 'rehearse'], why: 'staged into the package the release rehearsal packs' },

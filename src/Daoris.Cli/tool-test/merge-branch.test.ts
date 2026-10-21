@@ -1055,7 +1055,7 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ['the canon', ['canon/core/rules/task-lifecycle.md'], [...BASE, 'service', 'rehearse', 'rehearse-family']],
     ['the examples', ['examples/engine/README.md'], [...BASE, 'service', 'rehearse-family', 'web']],
     // MOD9b: the driver reads the offers and the adoption playbook, as the service reads the digest's note table.
-    ["the install's offers", ['examples/plugins/github-pull-request/land.mjs'], [...BASE, 'service', 'driver', 'rehearse-family', 'web', 'deployment']],
+    ["the install's offers", ['examples/plugins/github-pull-request/land.mjs'], [...BASE, 'service', 'driver', 'driver-process', 'rehearse-family', 'web', 'deployment']],
     ['the adoption playbook', ['.claude/knowledge/adoption.md'], [...BASE, 'service', 'driver']],
     ["the digest's note table", ['tools/orient-index-fixtures/decision-notes.json'], [...BASE, 'service']],
     // HIST1m: the history words' table sits among the service's tests, and the driver's twin reads it too.
@@ -1106,6 +1106,7 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ['the CLI', ['src/Daoris.Cli/src/platform/args.ts'], [...BASE, 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
     // PUSH1f2a: the driver's DriverProgramWordsProcessTests runs the CLI's entry, dispatcher, driver row and seam under node.
     ["the CLI's seam", ['src/Daoris.Cli/src/cli.ts'], [...BASE, 'driver', 'driver-process', 'rehearse', 'rehearse-family', 'web', 'deployment']],
+    ["the CLI's seam's module", ['src/Daoris.Cli/src/platform/driverprogram.ts'], [...BASE, 'driver', 'driver-process', 'rehearse', 'rehearse-family', 'web', 'deployment']],
     // ORIENT2e2: the service's roles twin reads the CLI's ROLES from its file, so that file reaches the service too; by its
     // name in whichever module folder it sits (STRUCT5d).
     ["the CLI's roles", ['src/Daoris.Cli/src/layout/documents.ts'], [...BASE, 'service', 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],

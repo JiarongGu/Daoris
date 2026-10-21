@@ -605,11 +605,11 @@ try
     }
 
     // The CLI's management families, handed to this program (PUSH1f2a, D194 point 1): `daoris driver …` runs `daoris-driver driver …`
-    // with the same words, `daoris tool …` `daoris-driver tool …` (PUSH1f2c), and `daoris agent rules|trust|settings …` `daoris-driver
-    // agent …` (PUSH1f2d); the rest of `agent` and `plugin` join here as their rows build them (PUSH1f2e-f). One Ctrl+C handler for the
+    // with the same words, `daoris tool …` `daoris-driver tool …` (PUSH1f2c), `daoris agent …` `daoris-driver agent …` (PUSH1f2d-e), and
+    // `daoris plugin …` `daoris-driver plugin …` (PUSH1f2f), beside the host's own `plugins` below. One Ctrl+C handler for the
     // families, registered here and not where `closing` is made, so a verb routed above keeps the runtime's own Ctrl+C: it keeps the
     // process and cancels `closing`, whose token each family command is handed, so a wait stops and is said, never a torn write.
-    if (args is ["driver" or "tool" or "agent", ..])
+    if (args is ["driver" or "tool" or "agent" or "plugin", ..])
     {
         Console.CancelKeyPress += (_, press) =>
         {
@@ -620,6 +620,7 @@ try
         {
             "tool" => await Daoris.Driver.Host.ToolsConsole.RunAsync(args[1..], log, closing.Token),
             "agent" => await Daoris.Driver.Host.AgentsConsole.RunAsync(args[1..], closing.Token),
+            "plugin" => await Daoris.Driver.Host.PluginConsole.RunAsync(args[1..], closing.Token),
             _ => await Daoris.Driver.Host.DriverChoicesConsole.RunAsync(args[1..], closing.Token),
         };
     }

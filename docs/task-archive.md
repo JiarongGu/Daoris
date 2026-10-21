@@ -19382,3 +19382,14 @@ rewritten rows, two `rotation-use.json` order rows. No window was looked at. Det
 
 **Outcome** 2026-10-22: a start reads its process from its bind's binding, so a run's first session takes its version's checks, and a graph
 version's `claimed` `checks` and `callMinutes` are read from the version its run bound. Detail: D192's FABRIC-PIPELINE1b3 note. On Opus.
+## PUSH1f2f — the plugins, and the last census (2026-10-22, D194)
+
+> - [ ] **PUSH1f2f — the plugins, and the last census** (cli, driver, modules; after 2b, 2c and 2e; D194, the alone-path design §5). Read its row in §5 and the sections it names; build it end to end (D187), the family's TypeScript leaving as §4 says. Proof: as §5 names it.
+
+**Outcome** 2026-10-22: built. `daoris-driver plugin` answers every verb, each change its route while Daoris runs, else its operation
+alone, refused from a session's terminal; the terminal's replace kept as the host's (`PluginInstall.Replace`), the remove one library
+operation whose plugin stop stays in the route, a held folder refused `PLUGIN_BUSY` with nothing taken. Today's text kept
+(`fixtures/plugins-text.json`, 62 rows, 8 changed on purpose). The last census emptied §4's list but `jsonkeep.ts` and `keeplock.ts`,
+which `browser.ts` and `remotemap.ts` still write through; the seam is `platform/driverprogram.ts` (CLI `test(` lines 1,310 before,
+1,168 after). Unproven until the install: a plugin added and switched from a terminal beside the open window. Detail: D194's PUSH1f2f
+note. On Opus.

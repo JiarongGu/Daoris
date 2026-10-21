@@ -11,8 +11,8 @@ namespace Daoris.Driver;
 /// install makes its <c>data/</c>. The CLI on a terminal has only the home, so it looks beside it; in an
 /// install the two are one folder.</para>
 ///
-/// <para>A twin of the CLI's <c>readOffers</c> and <c>readNeeds</c> in <c>plugins.ts</c>: the same folder, the
-/// same reading, the same requirement lines, and each side's tests hold the same table.</para>
+/// <para>The CLI's <c>readOffers</c> and <c>readNeeds</c> in <c>plugins.ts</c> were its twin, the same folder read the same way,
+/// until they left with <c>daoris plugin</c>'s TypeScript (PUSH1f2f): <c>daoris-driver plugin list</c> reads the offers here.</para>
 ///
 /// <para>The use case (STRUCT3a): the folders are read through <see cref="PluginFolders"/>, each manifest by the
 /// catalogue's own rules, and a README's needs by <see cref="PluginOffer.NeedsIn"/>.</para>

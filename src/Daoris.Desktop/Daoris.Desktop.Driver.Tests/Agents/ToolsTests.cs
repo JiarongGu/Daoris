@@ -6,9 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// <c>$DAORIS_HOME/tools.json</c> and its resolution (TOOLS2, D121; the tools design §2.1–§2.3, §5): the
-/// driver's half of a TWIN with the CLI's <c>tools.ts</c>, whose <c>tools.test.ts</c> holds the same tables,
-/// row for row and in the same order. They share no code; a row changed here is changed there, in the same
-/// commit.
+/// file's one reader's tables, to which the CLI's <c>tools.ts</c> was held row for row until its last reader left (PUSH1f2f).
 /// </summary>
 /// <remarks>
 /// <para>The file's rules (§2.2), each a table below:</para>

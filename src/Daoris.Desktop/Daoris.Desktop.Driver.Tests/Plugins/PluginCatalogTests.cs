@@ -6,8 +6,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The plugin catalogue (D64, PLUG4): a folder under the home's `plugins/` with a manifest, read by
-/// the host that drives whatever is there and names no plugin. Every rule here has a twin in the
-/// CLI's `plugins.ts`, because the two artefacts share no code and both read the same folder.
+/// the host that drives whatever is there and names no plugin. Every rule here had a twin in the CLI's `plugins.ts`, until it left
+/// with `daoris plugin`'s TypeScript (PUSH1f2f): these rows are the rules' one home.
 /// </summary>
 public sealed class PluginCatalogTests : IDisposable
 {

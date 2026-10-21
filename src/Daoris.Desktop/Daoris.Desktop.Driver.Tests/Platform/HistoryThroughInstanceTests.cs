@@ -26,7 +26,7 @@ public sealed class HistoryThroughInstanceTests
     }
 
     private static HistoryWorld World(EmptyService service, string home, InstanceWorld? instance) =>
-        new(new ServiceClient("http://stand-in", null, new HttpClient(service)), home, Path.Combine(home, "driver.json"),
+        new(new ServiceClient("http://stand-in", null, new HttpClient(service)), home, DaorisHome.Entry(home, HomeEntry.DriverConfig),
             new SessionProcesses(DaorisHome.Entry(home, HomeEntry.SessionPids))) { Instance = instance };
 
     /// <summary>Each verb, the ask it reads, the route it sends and the payload it sends it with, beside <c>said: true</c>.</summary>
