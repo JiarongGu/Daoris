@@ -1,5 +1,5 @@
 {
-  "note": "PUSH1f2d (D194, the alone-path design §3): what `daoris agent rules|trust|settings` said for each case its tests held, run once through the CLI's TypeScript verb before it retired, alone, on a root of its own (`<root>`): DAORIS_HOME `<root>/daoris` (none where `home` is false), the agent's own home `<root>/user`, a folder to trust under `<root>/work`, and with `harness` DAORIS_HARNESS_CONFIG naming `<root>/other/data/harnesses.json`. Each row: the words after `agent` (`<root>` where a whole path goes), the folders made empty before it, every file under the root before it and after it, the exit, and the lines said on the standard output and on the error stream. A path is spelled with `/`; a proposal's settling moment is `<at>`. The TypeScript said a refusal through its dispatcher, `daoris: ` and the sentence; the driver's command says it on the error stream, as every host verb does. `AgentsTextTests` reads it row for row. A sentence the port changes on purpose is a row changed here, with its reason under `changed`. PUSH1f2e3: a row with `now` was run at that moment, the machine's zone America/New_York, which the test hands the command too. PUSH1f2e4: `list` pins every agent to a version nothing installed, so no tool is asked, as its tests did; a row with `windows` pins Claude Code to a stand-in `claude.cmd` in the managed layout, asked as a start runs it, and runs on Windows alone. PUSH1f2e5: a row with `stdin` was run with that standard input, which the test hands the command (none is an empty one); an account id the run drew (`key`'s new account) is spelled `<id>`; the home's identity file the key's publication mints taking the lease is no file the verb writes. `install`'s rows were run with an empty PATH, as the test hands the command none, so no installer starts. PUSH1f2e6: `login`'s rows are its refusals, each said before any flow starts; a sign-in that runs is `AgentsCommandTests.SignIns`'.",
+  "note": "PUSH1f2d (D194, the alone-path design §3): what `daoris agent rules|trust|settings` said for each case its tests held, run once through the CLI's TypeScript verb before it retired, alone, on a root of its own (`<root>`): DAORIS_HOME `<root>/daoris` (none where `home` is false), the agent's own home `<root>/user`, a folder to trust under `<root>/work`, and with `harness` DAORIS_HARNESS_CONFIG naming `<root>/other/data/harnesses.json`. Each row: the words after `agent` (`<root>` where a whole path goes), the folders made empty before it, every file under the root before it and after it, the exit, and the lines said on the standard output and on the error stream. A path is spelled with `/`; a proposal's settling moment is `<at>`. The TypeScript said a refusal through its dispatcher, `daoris: ` and the sentence; the driver's command says it on the error stream, as every host verb does. `AgentsTextTests` reads it row for row. A sentence the port changes on purpose is a row changed here, with its reason under `changed`. PUSH1f2e3: a row with `now` was run at that moment, the machine's zone America/New_York, which the test hands the command too. PUSH1f2e4: `list` pins every agent to a version nothing installed, so no tool is asked, as its tests did; a row with `windows` pins Claude Code to a stand-in `claude.cmd` in the managed layout, asked as a start runs it, and runs on Windows alone. PUSH1f2e5: a row with `stdin` was run with that standard input, which the test hands the command (none is an empty one); an account id the run drew (`key`'s new account) is spelled `<id>`; the home's identity file the key's publication mints taking the lease is no file the verb writes. `install`'s rows were run with an empty PATH, as the test hands the command none, so no installer starts. PUSH1f2e6: `login`'s rows are its refusals, each said before any flow starts; a sign-in that runs is `AgentsCommandTests.SignIns`'. PUSH1f2e: `pin`'s and `update`'s rows fetch nothing and start nothing: their refusals, and a pin of a version already installed where Daoris keeps it, whose rows (`onWindows`) lay a Windows binary and run on Windows alone; a download, npm and an updater are `AgentsCommandTests.Pins`'.",
   "rows": [
     {
       "name": "rules, the bare word, an empty home",
@@ -8145,6 +8145,241 @@
       "out": [],
       "err": [
         "daoris: `-dash` is not a name a terminal can type — a name is one word, with no space or backtick, not starting with a dash, at most 64 characters; nothing was signed in."
+      ],
+      "after": {}
+    },
+    {
+      "name": "pin, no agent named",
+      "argv": [
+        "pin"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `agent pin` needs <agent> — e.g. `daoris agent pin claude-code`"
+      ],
+      "after": {}
+    },
+    {
+      "name": "pin, an agent that is not one",
+      "argv": [
+        "pin",
+        "nope",
+        "1.0.0"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: unknown agent 'nope' — one of: claude-code, claude-code-acp, codex, codex-acp, dsh. An agent is added deliberately, never guessed."
+      ],
+      "after": {}
+    },
+    {
+      "name": "pin, no version named",
+      "argv": [
+        "pin",
+        "dsh"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `agent pin` needs <agent> <version> — e.g. `daoris agent pin claude-code`"
+      ],
+      "after": {}
+    },
+    {
+      "name": "pin, a pointer for Claude Code",
+      "argv": [
+        "pin",
+        "claude-code",
+        "latest"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `latest` is not a Claude Code version — a pin names one exact release, like 2.1.281, never a pointer such as latest."
+      ],
+      "after": {}
+    },
+    {
+      "name": "pin, a Claude Code version from before signed manifests",
+      "argv": [
+        "pin",
+        "claude-code",
+        "2.1.87"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: Claude Code 2.1.87 was published before its release manifests were signed (the first is 2.1.89), so Daoris cannot verify it and does not install it. Pin 2.1.89 or later — or install that version with its own tooling, and unpinned, Daoris runs it from PATH."
+      ],
+      "after": {}
+    },
+    {
+      "name": "pin, a Codex tag for a version",
+      "argv": [
+        "pin",
+        "codex",
+        "rust-v0.156.1"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `rust-v0.156.1` is not a Codex version — a pin names one exact release, like 0.156.1, not its tag and not a pointer."
+      ],
+      "after": {}
+    },
+    {
+      "name": "pin, a Claude Code version already installed",
+      "argv": [
+        "pin",
+        "claude-code",
+        "2.1.281"
+      ],
+      "folders": [],
+      "before": {
+        "daoris/cache/toolchain/claude-code/2.1.281/bin/claude.exe": ""
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code` 2.1.281 is already installed where Daoris keeps it — nothing was downloaded.",
+        "  <root>/daoris/cache/toolchain/claude-code/2.1.281/bin/claude.exe",
+        "daoris: `claude-code` runs at 2.1.281 on this machine.",
+        "  Sessions spawn this binary rather than whatever is on PATH. `daoris agent unpin`",
+        "  puts it back, and the version is on every session record either way."
+      ],
+      "err": [],
+      "after": {
+        "daoris/cache/toolchain/claude-code/2.1.281/bin/claude.exe": "",
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {},\n  \"workspaces\": {},\n  \"versions\": {\n    \"claude-code\": \"2.1.281\"\n  },\n  \"workspaceVersions\": {}\n}\n"
+      },
+      "onWindows": true
+    },
+    {
+      "name": "pin, a version already installed, for a workspace",
+      "argv": [
+        "pin",
+        "claude-code",
+        "2.1.281",
+        "--workspace",
+        "Aurora"
+      ],
+      "folders": [],
+      "before": {
+        "daoris/cache/toolchain/claude-code/2.1.281/bin/claude.exe": "",
+        "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"2.1.200\"}}"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code` 2.1.281 is already installed where Daoris keeps it — nothing was downloaded.",
+        "  <root>/daoris/cache/toolchain/claude-code/2.1.281/bin/claude.exe",
+        "daoris: `claude-code` runs at 2.1.281 for the `Aurora` workspace on this machine.",
+        "  Sessions spawn this binary rather than whatever is on PATH. `daoris agent unpin`",
+        "  puts it back, and the version is on every session record either way."
+      ],
+      "err": [],
+      "after": {
+        "daoris/cache/toolchain/claude-code/2.1.281/bin/claude.exe": "",
+        "daoris/data/harnesses.json": "{\n  \"versions\": {\n    \"claude-code\": \"2.1.200\"\n  },\n  \"workspaceVersions\": {\n    \"Aurora\": {\n      \"claude-code\": \"2.1.281\"\n    }\n  }\n}\n"
+      },
+      "onWindows": true
+    },
+    {
+      "name": "pin, a Codex version already installed",
+      "argv": [
+        "pin",
+        "codex",
+        "0.156.1"
+      ],
+      "folders": [],
+      "before": {
+        "daoris/cache/toolchain/codex/0.156.1/bin/codex.exe": ""
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `codex` 0.156.1 is already installed where Daoris keeps it — nothing was downloaded.",
+        "  <root>/daoris/cache/toolchain/codex/0.156.1/bin/codex.exe",
+        "daoris: `codex` runs at 0.156.1 on this machine.",
+        "  Sessions spawn this binary rather than whatever is on PATH. `daoris agent unpin`",
+        "  puts it back, and the version is on every session record either way."
+      ],
+      "err": [],
+      "after": {
+        "daoris/cache/toolchain/codex/0.156.1/bin/codex.exe": "",
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {},\n  \"workspaces\": {},\n  \"versions\": {\n    \"codex\": \"0.156.1\"\n  },\n  \"workspaceVersions\": {}\n}\n"
+      },
+      "onWindows": true
+    },
+    {
+      "name": "update, no agent named",
+      "argv": [
+        "update"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `agent update` needs <agent> — e.g. `daoris agent update claude-code`"
+      ],
+      "after": {}
+    },
+    {
+      "name": "update, an agent that is not one",
+      "argv": [
+        "update",
+        "nope"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: unknown agent 'nope' — one of: claude-code, claude-code-acp, codex, codex-acp, dsh. An agent is added deliberately, never guessed."
+      ],
+      "after": {}
+    },
+    {
+      "name": "update, a workspace that pins nothing",
+      "argv": [
+        "update",
+        "claude-code",
+        "--workspace",
+        "aurora"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: the `aurora` workspace pins no version of `claude-code`, so there is no pin to move — `daoris agent pin claude-code <version> --workspace aurora` sets one."
+      ],
+      "after": {}
+    },
+    {
+      "name": "update, an agent with no updater, unpinned",
+      "argv": [
+        "update",
+        "dsh"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `dsh` declares no updater — it updates itself, or its package manager does."
       ],
       "after": {}
     }

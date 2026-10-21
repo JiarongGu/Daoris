@@ -17,7 +17,7 @@ internal static class AgentLongCommand
     private const string Prefix = "daoris";
 
     /// <summary>A session's terminal (<c>DAORIS_SESSION_ID</c>): a person's press acting alone is refused there, nothing done.</summary>
-    private static async Task<bool> RefusedHereAsync(AgentsWorld world)
+    internal static async Task<bool> RefusedHereAsync(AgentsWorld world)
     {
         if (world.Instance.Environment(DriverChoicesCommand.SessionVariable) is not { Length: > 0 }) return false;
         await world.Instance.Error.WriteLineAsync($"{Prefix}: {DriverChoicesCommand.SessionsTerminal}").ConfigureAwait(false);
@@ -58,7 +58,7 @@ internal static class AgentLongCommand
     }
 
     /// <summary>An agent's own command at this terminal, its exit mapped as the CLI's <c>relay</c> mapped it: 0 is 0, anything else 2.</summary>
-    private static async Task<int> TerminalAsync(
+    internal static async Task<int> TerminalAsync(
         AgentsWorld world, IReadOnlyList<string> command, HarnessToolchain toolchain, string what, CancellationToken ct)
     {
         var error = world.Instance.Error;

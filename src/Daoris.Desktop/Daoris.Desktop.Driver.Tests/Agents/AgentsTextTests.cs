@@ -80,7 +80,9 @@ public sealed partial class AgentsTextTests
     private static async Task Said(string name)
     {
         var row = Read.Value.GetProperty("rows").EnumerateArray().First(each => each.GetProperty("name").GetString() == name);
-        var root = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "agents-text", Guid.NewGuid().ToString("N")[..8]);
+        // A row that lays a Windows binary (PUSH1f2e's pin of a version already installed) is said on Windows alone.
+        if (row.TryGetProperty("onWindows", out var onWindows) && onWindows.GetBoolean() && !OperatingSystem.IsWindows()) return;
+        var root =Path.Combine(WorkspaceRoot.Folder, "_fixtures", "agents-text", Guid.NewGuid().ToString("N")[..8]);
         foreach (var sub in new[] { "daoris", "user", "work" }) Directory.CreateDirectory(Path.Combine(root, sub));
         try
         {

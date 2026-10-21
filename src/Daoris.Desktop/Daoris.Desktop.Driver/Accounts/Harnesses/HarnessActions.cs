@@ -338,7 +338,7 @@ public static class HarnessActions
     /// Which of two releases is newer: negative when <paramref name="a"/> is older, positive when newer,
     /// and null when either is not a version this can order. A release outranks its own prereleases.
     /// </summary>
-    private static int? CompareReleases(string a, string b)
+    internal static int? CompareReleases(string a, string b)
     {
         var left = Release.Match(a);
         var right = Release.Match(b);

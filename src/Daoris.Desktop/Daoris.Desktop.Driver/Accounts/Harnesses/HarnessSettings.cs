@@ -210,10 +210,11 @@ public sealed record HarnessSettings(
     /// rather than written naming nothing every later start refuses.
     /// </summary>
     /// <param name="home">The home whose managed versions the pin names.</param>
+    /// <param name="workspace">The workspace whose own pin it is (PUSH1f2e: <c>agent pin --workspace</c>), or null for the machine's.</param>
     /// <exception cref="DriverException">Nothing is installed at that version now, or the file does not read; nothing was written.</exception>
-    public static HarnessSettings Pin(string path, string home, string harness, string version) =>
+    public static HarnessSettings Pin(string path, string home, string harness, string version, string? workspace = null) =>
         Change(path, read => Directory.Exists(ManagedHome(home, harness, version))
-            ? read.WithVersion(harness, version)
+            ? workspace is null ? read.WithVersion(harness, version) : read.WithWorkspaceVersion(workspace, harness, version)
             : throw new DriverException(
                 $"`{harness}` {version} is no longer installed where Daoris keeps it — it was removed as the pin waited — so the pin was "
                 + $"not written. `daoris agent pin {harness} {version}` installs it again."));
