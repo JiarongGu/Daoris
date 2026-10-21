@@ -159,6 +159,36 @@ public sealed class PipeCensusTests
     }
 
     /// <summary>
+    /// The plugins' presses <c>daoris-driver plugin</c> sends (PUSH1f2f, D194 point 5): each a route of the driver's module the census
+    /// classes as the person's in the form the command sends it (<c>PLUGIN_UPDATE</c> with <c>apply: true</c>), and the replace no route
+    /// takes says why it acts alone.
+    /// </summary>
+    [Fact]
+    public void Each_plugin_press_names_a_route_the_census_classes_as_the_person_s_and_the_replace_says_why_it_is_alone()
+    {
+        Assert.NotEmpty(Daoris.Driver.PluginRoutes.Verbs);
+        Assert.Equal(Daoris.Driver.PluginRoutes.Verbs.Count, Daoris.Driver.PluginRoutes.Verbs.Select(each => each.Verb).Distinct().Count());
+        using var sent = System.Text.Json.JsonDocument.Parse("""{ "apply": true }""");
+        foreach (var (verb, route, reason) in Daoris.Driver.PluginRoutes.Verbs)
+        {
+            Assert.False(string.IsNullOrWhiteSpace(reason), $"`{verb}` says no reason");
+            if (route is null)
+            {
+                Assert.StartsWith("alone:", reason, StringComparison.Ordinal);
+                continue;
+            }
+
+            Assert.Equal(DriverModule.Name, route.Module);
+            Assert.Contains(route.Route, DriverModule.Routes);
+            var census = PipeCensus.Daoris.Of(route.Module, route.Route, sent.RootElement);
+            Assert.True(census == PipeClass.Person && route.Class == Daoris.Driver.RouteClass.Person,
+                $"`{verb}` sends {route.Route} as the person's, and the census classes it {census}");
+        }
+
+        Assert.Single(Daoris.Driver.PluginRoutes.Verbs, each => each.Route is null);
+    }
+
+    /// <summary>
     /// The open reads and presses the host's verbs send (RPCOPEN1, RPC1e): each names a route of the driver's module that the census
     /// opens, and each verb of the scope left off the pipe says why. A route the census closes fails here, naming the verb that
     /// would send a press the instance refuses.

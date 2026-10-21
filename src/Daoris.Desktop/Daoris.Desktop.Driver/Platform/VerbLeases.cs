@@ -84,6 +84,9 @@ public static class VerbLeases
             // The agents' rules, trust and settings `daoris agent …` hands on (PUSH1f2d): a rule's edit, a proposal's answer, a setting's
             // change and a trust granted hold it from the top; a read, a question and a dry run none.
             "agent" => AgentsCommand.Changes([.. args.Skip(1)]),
+            // This machine's plugins `daoris plugin …` hands on (PUSH1f2f): an add, an update with --yes, a remove and a switch hold it
+            // from the top; the list, an update's plan, the kit's pointers and the usage none.
+            "plugin" => PluginCommand.Changes([.. args.Skip(1)]),
             "update" => args.Skip(1).Any(arg => arg is "--when-idle" or "--now" or "--cancel"),
             _ => true,
         };
@@ -102,7 +105,8 @@ public static class VerbLeases
     /// <summary>The words a lease names a verb by: its verb, and its sub-verb where it has one; never an argument.</summary>
     public static string Name(IReadOnlyList<string> args) =>
         args.Count > 1 && IsWord(args[1]) && (SubVerbs.Contains(args[1]) || (args[0] == "driver" && DriverChoicesCommand.Verbs.Contains(args[1]))
-            || (args[0] == "tool" && ToolsCommand.Verbs.Contains(args[1])) || (args[0] == "agent" && AgentsCommand.Verbs.Contains(args[1])))
+            || (args[0] == "tool" && ToolsCommand.Verbs.Contains(args[1])) || (args[0] == "agent" && AgentsCommand.Verbs.Contains(args[1]))
+            || (args[0] == "plugin" && PluginCommand.Verbs.Contains(args[1])))
             ? $"daoris-driver {args[0]} {args[1]}"
             : $"daoris-driver {(args.Count > 0 ? args[0] : "")}".TrimEnd();
 

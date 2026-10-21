@@ -121,6 +121,13 @@ public sealed class VerbLeasesTests
     [InlineData("agent profile use claude-code --switch off --workspace work")]
     [InlineData("agent profile use claude-code --clear")]
     [InlineData("agent profile use claude-code --frob")]
+    // This machine's plugins changed (PUSH1f2f): an add, an update pressed, a remove and a switch, each a short act.
+    [InlineData("plugin add D:/work/acme.gate")]
+    [InlineData("plugin add --offer github-pull-request")]
+    [InlineData("plugin update acme.gate --yes")]
+    [InlineData("plugin remove acme.gate")]
+    [InlineData("plugin enable acme.gate")]
+    [InlineData("plugin disable acme.gate")]
     [InlineData("a-verb-nobody-classed")]
     public void A_mutation_holds_the_lease(string words) => Assert.True(VerbLeases.Holds(words.Split(' ')), words);
 
@@ -241,6 +248,16 @@ public sealed class VerbLeasesTests
     [InlineData("agent pin codex 0.156.1 --workspace aurora")]
     [InlineData("agent update claude-code")]
     [InlineData("agent update codex --workspace aurora")]
+    // This machine's plugins read, an update's plan, the kit's pointers and the usage (PUSH1f2f).
+    [InlineData("plugin")]
+    [InlineData("plugin list")]
+    [InlineData("plugin update acme.gate")]
+    [InlineData("plugin new acme.gate")]
+    [InlineData("plugin try acme.gate")]
+    [InlineData("plugin install Acme.Gate.1.0.0.nupkg")]
+    [InlineData("plugin --help")]
+    [InlineData("plugin remove acme.gate --help")]
+    [InlineData("plugin frobnicate")]
     public void A_read_or_another_writers_verb_holds_none(string words) => Assert.False(VerbLeases.Holds(words.Split(' ')), words);
 
     [Fact]
@@ -301,6 +318,9 @@ public sealed class VerbLeasesTests
     [InlineData("agent key claude-code", "daoris-driver agent key")]
     [InlineData("agent install claude-code", "daoris-driver agent install")]
     [InlineData("agent login claude-code --new", "daoris-driver agent login")]
+    [InlineData("plugin add D:/work/acme.gate", "daoris-driver plugin add")]
+    [InlineData("plugin disable acme.gate", "daoris-driver plugin disable")]
+    [InlineData("plugin acme.gate", "daoris-driver plugin")]
     public void A_lease_names_the_verb_and_never_its_arguments(string words, string named) =>
         Assert.Equal(named, VerbLeases.Name(words.Split(' ')));
 }
