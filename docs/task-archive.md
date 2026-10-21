@@ -18834,3 +18834,13 @@ is the parent's installed proof; the taskbar is not flashed. Detail: D156's CONF
 **Outcome** 2026-10-21: built. The driver's `QuestClosing.Judge` and `Lineage` now compare a quest's repository blind to case, as the
 service does, so a chain whose step names its repository in another case waits for its last quest here and closes in one close naming
 both. Proof: `QuestCloseTests` and `QuestClosureTests`. Detail: D173's FABRIC-CLOSECASE1 note.
+
+## FABRIC-CLOSE1h9 — the page tells a press whose push was held back (2026-10-21, D173)
+
+> - [ ] **FABRIC-CLOSE1h9 — the page tells a press whose push was held back** (web, modules; after CLOSE1h3). `LAND_SESSION_TREE` answers `done: true` with no `plugin` and the held-back sentence in `message` when its push was held, so the page may show it as an ordinary landing: a wire field (e.g. `withheld`, old answers read as before) and the page showing the hand-off, en and zh. Contract: D173's FABRIC-CLOSE1h3 note, decision 4. Proof: a modules answer test and a page test; check the family rehearsal for a whole-answer comparison first.
+
+**Outcome** 2026-10-21: the press's answer carries `withheld`, why its push was held back (`TreesRoutes.Pressed`, null and absent
+otherwise, so an older page reads it as before). The review's foot says the driver's sentence as written with *Its push was held back…
+hand it off here* and offers the hand-off, and the head's Accept… tells it as an error notice naming the review, in en and zh. The
+family rehearsal compares no `LAND_SESSION_TREE` answer whole. Proof: `DriverModuleLandSyncTests`, `DiffPane.pushheld.test.tsx`,
+`WorkFrame.landed.test.tsx`. Detail: D173's FABRIC-CLOSE1h9 note.

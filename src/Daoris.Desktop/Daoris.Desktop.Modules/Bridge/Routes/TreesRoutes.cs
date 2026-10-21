@@ -633,23 +633,35 @@ public sealed class TreesRoutes(DriverLoop loop)
         var followed = Flag(request, "follow")
             ? await TreesWords.FollowMovedAsync(service, _loop.Home, () => DriverConfig.Load(_loop.ConfigPath), _loop.Log, cancellationToken)
             : null;
-        return new
-        {
-            Session = id, Done = landed.Landed, landed.Message, landed.Branch,
-            Plugin = landed.Plugin is { } said
-                ? new { Id = said.Plugin, said.Pushed, said.PullRequest, said.Message, said.Failed }
-                : null,
-            Review = Waits(gate.Review),
-            Opinion = Opinion(gate.Opinion),
-            Workflow = WorkflowWaits(gate.Workflow),
-            // LANDSYNC1: what it left out, and the conflict that refused it with the words the review offers to say to the session.
-            LeftOut = LeftOut(landed.LeftOut),
-            Conflict = Conflict(landed.Conflict),
-            // RPC1b3: what `trees land` prints, the plugin's lines first, and its exit code (§7.3).
-            Said = TreesWords.Land(landed, pluginLines).Followed(followed).ToWire(),
-            Followed = followed?.Out ?? [],
-        };
+        return Pressed(id, landed, gate, TreesWords.Land(landed, pluginLines).Followed(followed), followed?.Out ?? []);
     }
+
+    /// <summary>
+    /// What a press that reached the landing answers: whether it landed, the driver's sentence, the branch and what its plugin said,
+    /// the gate's parts, what it left out or the conflict that refused it, and the verb's words.
+    /// </summary>
+    /// <remarks>
+    /// FABRIC-CLOSE1h9 (D173's FABRIC-CLOSE1h3 note, decision 4): a push held back lands (<c>done</c>) with no <c>plugin</c>, so
+    /// <c>withheld</c> says why it was held, the branch standing and no plugin told, for the page to offer the hand-off. Null wherever
+    /// the push went on or was never asked about; a page before it reads the answer as before.
+    /// </remarks>
+    public static object Pressed(string id, TreeLanding landed, LandingGate gate, TreesSaid said, IReadOnlyList<string> followed) => new
+    {
+        Session = id, Done = landed.Landed, landed.Message, landed.Branch,
+        Plugin = landed.Plugin is { } plugin
+            ? new { Id = plugin.Plugin, plugin.Pushed, plugin.PullRequest, plugin.Message, plugin.Failed }
+            : null,
+        landed.Withheld,
+        Review = Waits(gate.Review),
+        Opinion = Opinion(gate.Opinion),
+        Workflow = WorkflowWaits(gate.Workflow),
+        // LANDSYNC1: what it left out, and the conflict that refused it with the words the review offers to say to the session.
+        LeftOut = LeftOut(landed.LeftOut),
+        Conflict = Conflict(landed.Conflict),
+        // RPC1b3: what `trees land` prints, the plugin's lines first, and its exit code (§7.3).
+        Said = said.ToWire(),
+        Followed = followed,
+    };
 
     /// <summary>
     /// A press the verb refuses before it lands anything (RPC1b4): the page's fields as a refusal reads them, nothing landed, and the
@@ -657,9 +669,9 @@ public sealed class TreesRoutes(DriverLoop loop)
     /// </summary>
     private static object Refused(string session, TreesSaid said) => new
     {
-        Session = session, Done = false, Message = Sentence(said), Branch = (string?)null, Plugin = (object?)null, Review = (object?)null,
-        Opinion = (object?)null, Workflow = (object?)null, LeftOut = (object?)null, Conflict = (object?)null, Said = said.ToWire(),
-        Followed = Array.Empty<string>(),
+        Session = session, Done = false, Message = Sentence(said), Branch = (string?)null, Plugin = (object?)null, Withheld = (string?)null,
+        Review = (object?)null, Opinion = (object?)null, Workflow = (object?)null, LeftOut = (object?)null, Conflict = (object?)null,
+        Said = said.ToWire(), Followed = Array.Empty<string>(),
     };
 
     /// <summary>The sentence a refusal's words carry without the verb's <c>trees: </c> lead, as the page shows it.</summary>

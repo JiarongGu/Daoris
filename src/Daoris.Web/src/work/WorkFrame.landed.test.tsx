@@ -1318,6 +1318,41 @@ describe('acting on what a session landed', () => {
   });
 
   /**
+   * FABRIC-CLOSE1h9 (D173's FABRIC-CLOSE1h3 note, decision 4): a press whose push was held back lands with no plugin told, and says why
+   * (`withheld`). The head says it as a push held back, the driver's sentence as written with the hand-off its review offers, not as
+   * an ordinary landing.
+   */
+  it('says a press whose push was held back as such, with the hand-off its review offers', async () => {
+    SESSIONS = [{ ...IN_A_TREE, state: 'completed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
+    const message = 'put its work on `mine/x` — 1 commit(s). Its quest was taken back before its plugin was told, so its push was not tried.';
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_GROUPS') {
+        return { sessions: [{ session: 's1a2b3c4', group: 'review', shown: 'completed', archived: false, teammate: false,
+          lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 } }] };
+      }
+      if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'mine/x', source: 'workspace' };
+      if (type === 'LAND_SESSION_TREE') {
+        return { session: 's1a2b3c4', done: true, message, branch: 'mine/x', withheld: 'Its quest was taken back before its plugin was told' };
+      }
+      if (type === 'SESSION_DIFF') return DIFF;
+      return DRIVER_STATE;
+    });
+    const notify = vi.fn();
+
+    show('s1a2b3c4', notify);
+    await userEvent.click(await within(screen.getByRole('main')).findByRole('button', { name: 'Accept…' }));
+    const ask = screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' });
+    await vi.waitFor(() => expect(within(ask).getByRole('button', { name: 'Accept' })).toBeEnabled());
+    await userEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
+
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith(
+      `${message} Its push was held back, so no plugin was told and the branch stands. Look at its quest as it stands, then hand it off from its review.`,
+      'error',
+    ));
+    expect(notify).not.toHaveBeenCalledWith(message);
+  });
+
+  /**
    * WAITFOOT1b (D168 point 3): *Accept…* stands in the head and in the strip at the foot, one press, and its ask is open in one
    * of them at a time: opening it in one puts the other down, a branch name typed there with it.
    */
