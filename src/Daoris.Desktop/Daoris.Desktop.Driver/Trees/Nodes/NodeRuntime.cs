@@ -473,7 +473,8 @@ public sealed class NodeRuntime(
                 if (fresh || named.Contains(each.Unit.Id) || OwesStart(each) || await RebindsAsync(each, tips, ct).ConfigureAwait(false)) owing.Add(each);
             }
 
-            var concerned = Turn(owing);
+            // FABRIC-PERFORM1q: a unit whose event was held is judged first, so a turn past UnitsPerPass never leaves its node unrebound.
+            var concerned = Turn(owing, lagging.Select(each => each.Unit).ToHashSet(StringComparer.Ordinal));
             foreach (var each in concerned)
             {
                 if (each.Closes) Settle(each, done, said);
@@ -974,17 +975,21 @@ public sealed class NodeRuntime(
     /// <summary>
     /// The units a pass evaluates, in id order (FABRIC-RUN1e): all of them up to <see cref="UnitsPerPass"/>; past it, the next
     /// <see cref="UnitsPerPass"/> after the last unit the pass before reached, round again from the first, so no unit waits behind the same
-    /// prefix at every pass.
+    /// prefix at every pass. A unit whose event the hearing held (<paramref name="held"/>) is judged first, outside the rotation, so its node
+    /// rebinds in the pass that heard the event (FABRIC-PERFORM1q); the rotation fills what is left of the turn, and moves on only by what
+    /// it took.
     /// </summary>
-    private List<GovernedUnit> Turn(IEnumerable<GovernedUnit> concerned)
+    private List<GovernedUnit> Turn(IEnumerable<GovernedUnit> concerned, IReadOnlySet<string> held)
     {
         var ordered = concerned.OrderBy(each => each.Unit.Id, StringComparer.Ordinal).ToList();
-        if (ordered.Count <= UnitsPerPass) return ordered;
-        var next = _after is null ? 0 : ordered.FindIndex(each => string.CompareOrdinal(each.Unit.Id, _after) > 0);
+        var first = ordered.Where(each => held.Contains(each.Unit.Id)).Take(UnitsPerPass).ToList();
+        var rest = ordered.Where(each => !held.Contains(each.Unit.Id)).ToList();
+        if (ordered.Count <= UnitsPerPass) return [.. first, .. rest];
+        var next = _after is null ? 0 : rest.FindIndex(each => string.CompareOrdinal(each.Unit.Id, _after) > 0);
         if (next < 0) next = 0;
-        var turn = ordered.Skip(next).Concat(ordered.Take(next)).Take(UnitsPerPass).ToList();
-        _after = turn[^1].Unit.Id;
-        return turn;
+        var rotation = rest.Skip(next).Concat(rest.Take(next)).Take(UnitsPerPass - first.Count).ToList();
+        if (rotation.Count > 0) _after = rotation[^1].Unit.Id;
+        return [.. first, .. rotation];
     }
 
     /// <summary>Whether a unit's record holds one of its dispatchable nodes ready: a start owed, judged at a wake as well as at the look.</summary>
@@ -1018,7 +1023,8 @@ public sealed class NodeRuntime(
     /// The events the pass's hearing held because their node lagged the tip read this pass (FABRIC-PERFORM1o), heard again after the
     /// evaluations, the five rules and all, on the pass's one read of each checkout, so no git is started for them. A node the evaluation
     /// rebound takes its event, and its unit is evaluated once more so the wires it satisfies fire in this pass; an event whose node was not
-    /// rebound (its unit past the pass's turn) is refused <c>stale</c> and counted, once, as it was before.
+    /// rebound is refused <c>stale</c> and counted, once, as it was before. Its unit is judged first in the turn (FABRIC-PERFORM1q), so that
+    /// is left to a node its evaluation did not rebind, or to more held units than a turn holds.
     /// </summary>
     private async Task HearAgainAsync(
         List<WorkLagging> lagging, IReadOnlyDictionary<string, GovernedUnit> governed, IReadOnlyList<GovernedUnit> concerned, WorkSends sends,

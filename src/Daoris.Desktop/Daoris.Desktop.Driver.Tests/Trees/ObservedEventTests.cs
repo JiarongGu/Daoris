@@ -310,11 +310,11 @@ public sealed class ObservedEventTests : IDisposable
     }
 
     [Fact]
-    public async Task An_event_at_the_moved_tip_whose_node_is_not_rebound_in_the_pass_is_still_refused_stale_once()
+    public async Task An_event_held_past_the_units_one_pass_evaluates_is_taken_in_its_pass_and_the_rotation_still_reaches_every_unit()
     {
-        // FABRIC-PERFORM1o: past the units one pass evaluates, a unit heard while its node lags is not rebound in that pass; its event is heard
-        // again after the evaluations, still on the old binding, and refused stale once, as before, with nothing written. Two units more than
-        // a pass's turn: the second look's turn ends on A, so the pass that rebinds begins after it and leaves it for the next.
+        // FABRIC-PERFORM1q: two units more than a pass's turn. The second look's turn ends on A, so the rotation of the pass that rebinds
+        // begins after it; A's event was held for lagging its node, so A is judged first in that turn all the same, rebound, and its event
+        // taken in the pass that heard it. The rotation fills the rest of the turn and reaches the two it left at the next pass.
         _units =
         [
             .. Enumerable.Range(0, NodeRuntime.UnitsPerPass - 3).Select(at => BranchUnit($"engine~a{at:D2}", $"a/{at:D2}")),
@@ -327,18 +327,28 @@ public sealed class ObservedEventTests : IDisposable
         Assert.Equal(A, (await PassAsync(runtime)).Evaluated[^1]);
         Assert.All(_units, unit => Assert.Equal(NodeStates.Active, Record(unit.Id).Statuses["deployed"].State));
 
-        // Every branch moved: each unit owes its rebinding, and the turn that judges them leaves A for the next.
+        // Every branch moved: each unit owes its rebinding, and the turn judges A first though its rotation begins after it.
         foreach (var branch in _tips.Keys.ToList()) _tips[branch] = C2;
         _port.Heard.Enqueue(Event(WorkStates.Reached, "e2", _now, commit: C2));
         var pass = await PassAsync(runtime, whole: false);
         Assert.Equal(NodeRuntime.UnitsPerPass, pass.Evaluated.Count);
-        Assert.DoesNotContain(A, pass.Evaluated);
+        Assert.Equal(A, pass.Evaluated[0]);
+        Assert.Equal(pass.Evaluated.Count, pass.Evaluated.Distinct().Count());
 
-        var refused = Assert.Single(pass.Performed, done => done.Unit == A);
-        Assert.Equal(("deployed", PerformedWhat.NotTaken, WorkRefusals.Stale), (refused.Node, refused.What, refused.Code));
-        Assert.Equal((Plugin, WorkRefusals.Stale), Assert.Single(_port.Refusals));
-        Assert.Equal((NodeStates.Active, C1), (Record().Statuses["deployed"].State, Record().Statuses["deployed"].Binding!.SubjectRevision));
-        Assert.Empty(Record().Observations);
+        var deployed = Record().Statuses["deployed"];
+        Assert.Equal((NodeStates.Reached, C2, C2), (deployed.State, deployed.Binding!.SubjectRevision, deployed.Acceptance!.SubjectRevision));
+        Assert.Equal((C2, "e2"), (Assert.Single(Record().Observations).Commit, Record().Observations[0].Id));
+        Assert.Contains(pass.Performed, done => (done.Unit, done.Node, done.What, done.Code) == (A, "deployed", PerformedWhat.Applied, WorkStates.Reached));
+        Assert.Empty(_port.Refusals);
+
+        // The rotation went on from where the turn before left it, the held unit taking no turn of its own: the two it left are reached next,
+        // and every unit is rebound to the moved tip.
+        var left = _units.Select(unit => unit.Id).Except(pass.Evaluated).ToList();
+        Assert.Equal(2, left.Count);
+        var next = await PassAsync(runtime, whole: false);
+        Assert.Equal(left, next.Evaluated);
+        Assert.Equal(left, (await PassAsync(runtime)).Evaluated.Take(2));
+        Assert.All(_units, unit => Assert.Equal(C2, Record(unit.Id).Statuses["deployed"].Binding!.SubjectRevision));
     }
 
     [Fact]

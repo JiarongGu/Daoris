@@ -18893,3 +18893,12 @@ and `plugins install` name each step with its reach and what the steps create. `
 page and the offer's page list them in en and zh; `daoris-driver plugins show` says them too. Proof: `PluginStepsTests`' change and
 description theories held cell for cell by `plugin-steps.test.ts`, `PluginPageTests`, `DriverModulePluginPageTests`,
 `PluginPage.test.tsx` in both languages. Detail: D173's FABRIC-UNIT1e note.
+
+## FABRIC-PERFORM1q — a held event's unit judged first in its pass's turn (2026-10-21, D173)
+
+> - [ ] **FABRIC-PERFORM1q — a held event's unit judged first in its pass's turn** (driver; after PERFORM1o). Past `UnitsPerPass` units, a unit whose event was held for lagging its node can fall outside the turn, and its event is refused `stale`. Proof: the 34-unit case takes the held event in its pass, and the rotation still reaches every other unit.
+
+**Outcome** 2026-10-21: built. `NodeRuntime.Turn` takes the units whose events were held first, inside the bound and outside the
+rotation, which fills the rest of the turn and moves on only by what it took. Proof: `ObservedEventTests`' 34-unit case, seen failing
+first: the held event taken in its pass, the two units the rotation left reached at the next pass and first at the look's deadline.
+Detail: D173's FABRIC-PERFORM1q note.
