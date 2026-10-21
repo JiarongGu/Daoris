@@ -237,8 +237,11 @@ function Band({ doors, notify, onSessions, onRun }: {
     declineRule: (item) => run(item, () => ruleAnswer.settled(item.id, false, item.title), (said) => notify(said)),
     // The person's word on a plugin step's attempt held for them (FABRIC-PERFORM1g): recorded, it is said; refused (the desktop not holding
     // the home, the attempt no longer held), the driver's own sentence in the error's tone. Its row moves as the slice is judged again.
+    // FABRIC-CLOSE1j: a close found closed only in part takes the person's stop through the same door, on its close's attempt.
     held: (item, resolution) => {
-      const attempt = item.held;
+      const end = item.ended;
+      const attempt = item.held
+        ?? (end?.node && typeof end.attempt === 'number' ? { unit: end.unit, node: end.node, attempt: end.attempt } : null);
       if (!attempt) return;
       run(item, () => resolveHeld.mutateAsync({ unit: attempt.unit, node: attempt.node, attempt: attempt.attempt, resolution }),
         (answer) => notify(answer.done ? t('work.milestone.held.recorded', { node: attempt.node }) : answer.message, answer.done ? undefined : 'error'));

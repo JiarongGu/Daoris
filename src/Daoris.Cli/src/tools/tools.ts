@@ -1,35 +1,31 @@
-// `daoris tool` — the programs Daoris runs beside its agents, and which file each one is (TOOLS2, D121;
-// `docs/2026-10-01-tools-design.md` §2.1–§2.3). A tool is run one of three ways: the system's, from PATH;
-// managed, one exact version downloaded into the home; or a file the person names. The way lives in
-// `$DAORIS_HOME/tools.json`, one file for both doors (D50), and absent means the system's.
+// The programs Daoris runs beside its agents, and which file each one is (TOOLS2, D121;
+// `docs/2026-10-01-tools-design.md` §2.1–§2.3), read for every child the CLI starts (TOOLS5, below). A tool is run one of
+// three ways: the system's, from PATH; managed, one exact version downloaded into the home; or a file the person names.
+// The way lives in `$DAORIS_HOME/tools.json`, and absent means the system's.
 //
-// 🔴 A TWIN of the driver's `Tools.cs`. The two share no code — the FILE is the contract — and each
-// carries the same tables (`tools.test.ts` here, `ToolsTests.cs` there), row for row. A rule changed here
-// is changed there, in the same commit:
+// 🔴 A TWIN of the driver's `Tools.cs` for the file's reading and the resolution. The two share no code — the FILE is the
+// contract — and each carries the same tables (`tools.test.ts` here, `ToolsTests.cs` there), row for row. A rule changed
+// here is changed there, in the same commit:
 //
 //   1. No file, no entry, or `"use": "system"` is the system's.
 //   2. `managed` needs an exact version of one to four numbers; `file` needs a whole path. An entry that
 //      names another way's field, or lacks its own, is refused whole: its tool is never run another way.
 //   3. A tool id this build does not declare is kept as written and never applied.
-//   4. `git` holds only keys on the allow-list: refused on a write; on a read kept, not applied, said.
-//   5. `locations` holds only https://, or http:// to this machine: refused on a write; skipped and said.
-//   6. Setting one way clears the others, and a writer keeps what it has no field for.
+//   4. `git` holds only keys on the allow-list: on a read kept, not applied, said.
+//   5. `locations` holds only https://, or http:// to this machine: skipped and said.
 //
 // Then the resolution: the way set decides which file starts. A managed version nobody downloaded, or a
 // named file that is gone, refuses and NEVER falls back to PATH (D57's pin rule, read for a tool).
 //
-// It stays PURE: it reads and writes files and answers "which program". It spawns nothing — a tool's
-// version is asked in `toolchain.ts`, the one module that may spawn — and it opens no connection, so no
-// doctrine command could reach either through it (the dogfood tests hold both). The verb, `daoris tool`, is
-// `toolinstall.ts`'s since TOOLS4: it downloads through a fetcher, and merges the lists `resources.ts` reads,
-// which imports this module.
+// It stays PURE: it reads files and answers "which program". It spawns nothing and opens no connection, so no doctrine
+// command could reach either through it (the dogfood tests hold both). The file's writes, the downloads and the verb are
+// Daoris's driver program's since PUSH1f2c (D194): `daoris tool` hands its words to `daoris-driver tool`.
 
 import { existsSync, statSync } from 'node:fs';
 import { delimiter, dirname, join, resolve } from 'node:path';
 import { DaorisError } from '../platform/errors.ts';
 import { onPath, readJsonObject } from '../platform/fsx.ts';
 import { homeEntry, homeFolder } from '../platform/home.ts';
-import { writeKeeping } from '../platform/jsonkeep.ts';
 
 type Env = Record<string, string | undefined>;
 
@@ -267,13 +263,6 @@ export function readTools(home: string): ToolsRead {
   return read;
 }
 
-/** A key off git's allow-list, refused on a write (rule 4); null for a key on it. */
-export function gitKeyProblem(key: string): string | null {
-  return GIT_SETTINGS.includes(key)
-    ? null
-    : `\`${key}\` is not a setting Daoris's git carries — the one it carries is ${GIT_SETTINGS.join(', ')}`;
-}
-
 /** This machine, named: the hosts an http:// location may have (rule 5). */
 const LOOPBACK: readonly string[] = ['localhost', '127.0.0.1', '[::1]'];
 
@@ -319,12 +308,6 @@ export function isInsidePath(path: string): boolean {
  * A downloaded version's executable, or why there is none (§3.6's layout): its record, naming a file that is there.
  * Finding it is the proof the download verified.
  */
-export function managedExecutable(home: string, id: string, version: string): { file: string | null; problem: string | null } {
-  const tool = declaredTool(id);
-  if (!tool) throw new DaorisError(undeclared(id));
-  return managedFile(home, tool, version);
-}
-
 function managedFile(home: string, tool: ToolDeclaration, version: string): { file: string | null; problem: string | null } {
   const folder = homeEntry(home, 'tool-versions', tool.id, version);
   const back = `— ${NEVER}. \`daoris tool use ${tool.id} managed ${version}\` downloads it, and \`daoris tool use ${tool.id} system\` `
@@ -403,116 +386,6 @@ export function resolveTool(home: string, id: string, env: Env = process.env): T
 function undeclared(id: string): string {
   return `\`${id}\` is not a tool this build runs — one of: ${TOOLS.map((tool) => tool.id).join(', ')}. `
     + 'A tool is added in the code, never by a file.';
-}
-
-/** The file as an object to write over, and whether there was one, or the refusal that leaves it as it is. */
-function writable(home: string): { path: string; root: Record<string, unknown>; found: boolean } {
-  const path = toolsFile(home);
-  const { value, problem } = readJsonObject(path);
-  if (problem !== null) {
-    throw new DaorisError(`${problem}. Fix it, or delete it to start from nothing — nothing was written.`);
-  }
-  return { path, root: value ?? {}, found: value !== null };
-}
-
-/**
- * The edit from `root`, the file as read, to `edited` made onto the file as it stands (KEEPALL1c, `writeKeeping`): every number by its
- * own text, its line ends kept, a key written twice refused, no edit nothing written. Written from `JSON.parse`'s values, it wrote
- * `1.50` as `1.5` and LF over a file in CRLF. The driver's `Tools.Keep`.
- */
-function keepTools(path: string, found: boolean, root: Record<string, unknown>, edited: Record<string, unknown>): void {
-  writeKeeping(path, found, root, edited);
-}
-
-/**
- * Set one tool's way (rule 6): the other ways' fields go, and every key the writer has no field for stays,
- * on the entry and on the file. Refused over a file it could not read, and over a `tools` that is no object.
- */
-function setWay(home: string, id: string, way: ToolWay, field: { version?: string; file?: string } = {}): void {
-  if (!declaredTool(id)) throw new DaorisError(undeclared(id));
-  const { path, root, found } = writable(home);
-  if (present(root, 'tools') && !isObject(root.tools)) {
-    throw new DaorisError(`${path}'s \`tools\` is not an object, so nothing was written — fix it, or delete the file to start from nothing.`);
-  }
-
-  const tools = isObject(root.tools) ? root.tools : {};
-  const entry = isObject(tools[id]) ? { ...tools[id] } : {};
-  delete entry.version;
-  delete entry.file;
-  entry.use = way;
-  if (field.version !== undefined) entry.version = field.version;
-  if (field.file !== undefined) entry.file = field.file;
-  keepTools(path, found, root, { ...root, tools: { ...tools, [id]: entry } });
-}
-
-/** The system's: the one PATH finds, as before. */
-export function useSystem(home: string, id: string): void {
-  setWay(home, id, 'system');
-}
-
-/** A file the person names, by its whole path; one that is not there is refused. */
-export function useFile(home: string, id: string, file: string): void {
-  if (!declaredTool(id)) throw new DaorisError(undeclared(id));
-  if (!isWholePath(file)) throw new DaorisError(`\`${file}\` is not a whole path — name the executable by its whole path.`);
-  if (!isFile(file)) throw new DaorisError(`no file at ${file} — a tool is a file that is there.`);
-  setWay(home, id, 'file', { file });
-}
-
-/**
- * Managed at one exact version (TOOLS4), written only once that version is downloaded: a pin nobody installed
- * refuses every start (D57), so it is never written ahead of its download. `toolinstall.ts` downloads, then writes.
- */
-export function useManaged(home: string, id: string, version: string): void {
-  const tool = declaredTool(id);
-  if (!tool) throw new DaorisError(undeclared(id));
-  if (!isExactVersion(version)) {
-    throw new DaorisError(`\`${version}\` is not an exact version — one to four numbers, like 2.51.0 — so nothing was written.`);
-  }
-  if (managedFile(home, tool, version).file === null) {
-    throw new DaorisError(`${tool.name} ${version} is not downloaded (${homeEntry(home, 'tool-versions', id, version)}), so nothing was `
-      + `written: a managed version nobody downloaded would refuse every start. \`daoris tool use ${id} managed ${version}\` `
-      + 'downloads it, then uses it');
-  }
-  setWay(home, id, 'managed', { version });
-}
-
-/** The locations as written, or the refusal that leaves the file as it is (rule 5's write side). */
-function writableLocations(home: string): { path: string; root: Record<string, unknown>; found: boolean; locations: unknown[] } {
-  const { path, root, found } = writable(home);
-  if (present(root, 'locations') && !Array.isArray(root.locations)) {
-    throw new DaorisError(`${path}'s \`locations\` is not a list, so nothing was written — fix it, or delete the key to start from nothing.`);
-  }
-  return { path, root, found, locations: Array.isArray(root.locations) ? [...root.locations as unknown[]] : [] };
-}
-
-/**
- * Add a resource location at the end, after the person's others and before the list built in (§3.3). @returns
- * false when it is already listed, and nothing is written. Refused when the address is no resource location.
- */
-export function addLocation(home: string, address: string): boolean {
-  const problem = locationProblem(address);
-  if (problem !== null) throw new DaorisError(`${problem} — nothing was written.`);
-  const { path, root, found, locations } = writableLocations(home);
-  if (locations.includes(address)) return false;
-  keepTools(path, found, root, { ...root, locations: [...locations, address] });
-  return true;
-}
-
-/**
- * Remove a resource location (§3.3): its versions are no longer offered, and a version already downloaded stays.
- * Every other entry stays as written, one that is not an address included. @returns false when it was not listed.
- */
-export function removeLocation(home: string, address: string): boolean {
-  if (!existsSync(toolsFile(home))) return false;
-  const { path, root, found, locations } = writableLocations(home);
-  if (!locations.includes(address)) return false;
-  keepTools(path, found, root, { ...root, locations: locations.filter((each) => each !== address) });
-  return true;
-}
-
-/** How a way reads in a sentence, for the verb (`toolinstall.ts`). */
-export function wayWords(way: ToolWay): string {
-  return WAY_WORDS[way];
 }
 
 // ——— One answer for Daoris and every child (TOOLS5, D121 §2.4) ———————————————————————————————————————
@@ -690,9 +563,4 @@ export function commandOnTheSystem(command: string[], env: Env = process.env): s
       + 'whatever Daoris runs it as. `daoris agent pin <agent> <version>` installs one where Daoris keeps it instead.');
   }
   return [file, ...command.slice(1)];
-}
-
-/** The refusal for a tool this build does not declare, for the verb. */
-export function undeclaredTool(id: string): string {
-  return undeclared(id);
 }

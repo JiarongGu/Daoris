@@ -61,8 +61,6 @@
     "ruleproposals.test.ts": "agents",
     "toolchain.test.ts": "agents",
     "trust.test.ts": "agents",
-    "resources.test.ts": "tools",
-    "toolinstall.test.ts": "tools",
     "tools.test.ts": "tools",
     "tools-children.test.ts": "tools",
     "connect.test.ts": "service",

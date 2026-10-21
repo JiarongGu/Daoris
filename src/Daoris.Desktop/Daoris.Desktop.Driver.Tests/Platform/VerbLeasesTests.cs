@@ -89,6 +89,13 @@ public sealed class VerbLeasesTests
     [InlineData("driver workflow use docs --repository engine")]
     [InlineData("driver workflow use web-verify --repository engine --landed")]
     [InlineData("driver workflow kind work docs --label Documentation")]
+    // The tools `daoris tool …` hands on (PUSH1f2c, D194 point 2): each short change, held from the top.
+    [InlineData("tool use git system")]
+    [InlineData("tool use git file C:/bin/git.exe")]
+    [InlineData("tool delete gh 2.62.0")]
+    [InlineData("tool locations add https://lists.example/r.json")]
+    [InlineData("tool locations remove https://lists.example/r.json")]
+    [InlineData("tool look")]
     [InlineData("a-verb-nobody-classed")]
     public void A_mutation_holds_the_lease(string words) => Assert.True(VerbLeases.Holds(words.Split(' ')), words);
 
@@ -161,6 +168,17 @@ public sealed class VerbLeasesTests
     [InlineData("driver workflow new docs --from merge-after-accept --plan")]
     [InlineData("driver workflow use docs --workspace work --plan")]
     [InlineData("driver workflow frobnicate")]
+    // The tools read, their usage, and the long verbs, which take the lease themselves to publish (PUSH1f2c, the alone-path design §1.4).
+    [InlineData("tool")]
+    [InlineData("tool list")]
+    [InlineData("tool path git")]
+    [InlineData("tool locations")]
+    [InlineData("tool --help")]
+    [InlineData("tool frobnicate")]
+    [InlineData("tool use gh managed")]
+    [InlineData("tool use gh managed 2.62.0")]
+    [InlineData("tool download gh")]
+    [InlineData("tool update gh")]
     public void A_read_or_another_writers_verb_holds_none(string words) => Assert.False(VerbLeases.Holds(words.Split(' ')), words);
 
     [Fact]
@@ -193,6 +211,8 @@ public sealed class VerbLeasesTests
     [InlineData("driver retry 12 --at 2", "daoris-driver driver retry")]
     [InlineData("driver workflow new docs --from merge-after-accept", "daoris-driver driver workflow")]
     [InlineData("driver work-cycle engine quest cycle.json", "daoris-driver driver work-cycle")]
+    [InlineData("tool use git system", "daoris-driver tool use")]
+    [InlineData("tool look", "daoris-driver tool look")]
     public void A_lease_names_the_verb_and_never_its_arguments(string words, string named) =>
         Assert.Equal(named, VerbLeases.Name(words.Split(' ')));
 }

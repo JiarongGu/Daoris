@@ -8,7 +8,7 @@ import {
   addKeyAccount, keyOf, profileHome, readHarnessSettings, writeHarnessSettings,
 } from '../src/agents/toolchain.ts';
 import { disablePlugin, readPluginState } from '../src/plugins/plugins.ts';
-import { readTools, useSystem } from '../src/tools/tools.ts';
+import { readTools } from '../src/tools/tools.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
 /**
@@ -131,19 +131,12 @@ test('plugins.json: a BOM reads, and a switch over a torn file is refused', () =
   fx.cleanup();
 });
 
-test('tools.json: a BOM reads, and a write over a torn file is refused with the file untouched', () => {
+// The write over a torn file is the driver's alone since PUSH1f2c (`ToolsTests`' BOM and torn-file case): `daoris tool` is its program's.
+test('tools.json: a BOM reads', () => {
   const fx = makeFixture('homefiles-tools');
   const path = fx.entry('tools');
 
   writeFileSync(path, `${BOM}{ "tools": { "git": { "use": "managed", "version": "2.51.0" } } }`, 'utf8');
   assert.deepEqual(readTools(fx.root).entries.git, { way: 'managed', version: '2.51.0', file: null, problem: null });
-  useSystem(fx.root, 'node');
-  assert.equal(readTools(fx.root).entries.git!.version, '2.51.0', 'the managed git survived the edit');
-
-  const torn = '{ "tools": { "git": { "use": "managed", "version": "2.51.0" } }, }';
-  writeFileSync(path, torn, 'utf8');
-  const error = captureError(() => useSystem(fx.root, 'node'));
-  assert.match(error.message, /nothing was written/);
-  assert.equal(readFileSync(path, 'utf8'), torn);
   fx.cleanup();
 });

@@ -88,15 +88,22 @@ test('a handed verb goes to the driver\'s program whole, with nothing written fi
     [['driver', 'workflow', 'list'], ['workflow', 'list']],
     [['driver', 'workflow', 'kind', 'work', 'docs', '--label', 'Docs & notes'], ['workflow', 'kind', 'work', 'docs', '--label', 'Docs & notes']],
     [['driver', 'frobnicate'], ['frobnicate']],
+    // PUSH1f2c: `daoris tool` is the family's one row, so every word of it is handed on, a verb the program lacks among them.
+    [['tool'], []],
+    [['tool', 'use', 'git', 'file', 'C:/Program Files/Git/bin/git.exe'], ['use', 'git', 'file', 'C:/Program Files/Git/bin/git.exe']],
+    [['tool', 'download', 'gh', '2.62.0'], ['download', 'gh', '2.62.0']],
+    [['tool', 'locations', 'add', 'https://lists.example/r.json'], ['locations', 'add', 'https://lists.example/r.json']],
+    [['tool', 'frobnicate'], ['frobnicate']],
   ] as const) {
     for (const exit of [0, 1, 2] as const) {
       const handed: Handed[] = [];
       assert.deepEqual(await run([...argv], handed, exit), { code: exit, out: [] }, `daoris ${argv.join(' ')}`);
-      assert.deepEqual(handed, [{ family: 'driver', words: [...words], written: 0 }], `daoris ${argv.join(' ')}`);
+      assert.deepEqual(handed, [{ family: argv[0], words: [...words], written: 0 }], `daoris ${argv.join(' ')}`);
     }
   }
 
-  for (const argv of [['driver', '--help'], ['driver', 'drive', '--help'], ['driver', 'workflow', 'list', '--help']]) {
+  for (const argv of [['tool', '--help'], ['tool', 'use', '--help'], ['driver', '--help'], ['driver', 'drive', '--help'],
+    ['driver', 'workflow', 'list', '--help']]) {
     const handed: Handed[] = [];
     await run(argv, handed);
     assert.deepEqual(handed, [], `daoris ${argv.join(' ')} is the dispatcher's own`);

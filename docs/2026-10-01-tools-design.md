@@ -12,7 +12,8 @@ followed action. TOOLS5 is built: one answer for every child (§2.4, §2.6, §2.
 every child the driver and the modules start is handed the tools' `PATH`, held by source scans. `GIT_CONFIG_GLOBAL` is
 TOOLS6's. TOOLS7 is built: Settings → Tools (§4.1), on `DriverModule.Tools.cs` and the page's `bridge/tools.ts`, with the
 glossary's three terms (§4.4); its SSH command is TOOLS6's and its Ask Daoris doors TOOLS8's. D121's notes say what each
-row settled that this document left open. The owner, 2026-10-01:
+row settled that this document left open. Since PUSH1f2c (D194's note) the CLI's halves of TOOLS3 and TOOLS4 and its writers of
+`tools.json` are gone: `daoris tool` is `daoris-driver tool`, and a download stages under its process's name. The owner, 2026-10-01:
 
 > *"all tools that daoris using like git, [terminal] should all have a self managed option (and can be setup
 > in settings) which can be download from locations … I perfer provide default download location and built

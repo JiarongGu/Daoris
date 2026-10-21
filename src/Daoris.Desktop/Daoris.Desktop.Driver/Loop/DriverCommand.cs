@@ -181,6 +181,11 @@ public static class DriverCommand
               this machine's standing choices, its workflows and its cycles, the words `daoris driver …` hands
               this program (D194): a change a route takes goes to the running Daoris's window to confirm where one
               runs, and is written here where none does; `driver --help` says each verb's words.
+          tool [list | path <tool> | use <tool> system|managed [<version>]|file <path> | download | update
+                | delete <tool> <version> | locations [add|remove <address>] | look]
+              the programs Daoris runs beside its agents, the words `daoris tool …` hands this program (D194):
+              a change goes to the running Daoris's window to confirm where one runs; a download fetches holding
+              nothing and is published under the home's lease, waited for; `tool --help` says each verb's words.
           trees [list | remove <path|session|branch> [--repository <name>] [--force]
                 | clean [--workspace <name>] [--yes] | land <session> [--plan] [--branch <name>]
                 | land --entry <id> | --ask <id> [--leave-out <session>]... [--plan]

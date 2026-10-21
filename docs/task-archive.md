@@ -18723,6 +18723,15 @@ languages. On Opus: about 40 tool calls. Detail: D173's FABRIC-CLOSE1y note.
 **Outcome** 2026-10-21: `daoris driver` hands every word to `daoris-driver driver`, the workflows, `work-cycle`, `brainstorms` and a
 landing's cycle now the driver's (`DriverWorkflowsCommand`), each acting alone; today's text kept by 201 cases, four changed with
 reasons. `driver/*.ts`, `workflows/*.ts` and their tests left, six tables moved to the driver's fixtures. Detail: D194's PUSH1f2b note.
+
+## PUSH1f2c — the tools (2026-10-21, D194)
+
+> - [ ] **PUSH1f2c — the tools** (cli, driver, modules; after 2a; D194, the alone-path design §5). Read its row in §5 and the sections it names; build it end to end (D187), the family's TypeScript leaving as §4 says. Proof: as §5 names it.
+
+**Outcome** 2026-10-21: `daoris tool` runs `daoris-driver tool`, each change its Tools route or the library's operation; a download
+stages under its process's name and publishes under the lease, waited for; `tools.json`'s writers hold the keep lock from their read;
+today's text kept by a 49-case table, five rows changed. The tools' TypeScript left. Detail: D194's PUSH1f2c note, D173's of this
+day. Unproven until the install: a `daoris tool` change confirmed in the open window.
 ## SYNCMERGE1c4 — *bring mine forward* waits while the losing session still runs (2026-10-21, D178)
 
 > - [ ] **SYNCMERGE1c4 — *bring mine forward* waits while the losing session still runs** (service or web; D178 point 3 and its traps). Neither the service nor the page holds the press until the lost take's process has ended. Proof: a service refusal test or a web state test.
@@ -18782,3 +18791,14 @@ you row; the work's foot, en and zh) and offered one word, `again`, recorded by 
 applied by the runtime as the person's `failed → ready`, so the next evaluation starts it with a new key; the word is cleared as it is
 applied. Proof: `NodeRuntimeTests` (3), `WorkStateSliceTests`, `WorkMilestone.test.tsx`. On Opus: about 90 tool calls. Detail: D173's
 FABRIC-PERFORM1k note.
+
+## FABRIC-CLOSE1j — "closed by you before its end" and "partially closed" on the page (2026-10-21, D173)
+
+> - [ ] **FABRIC-CLOSE1j — "closed by you before its end" and "partially closed" on the page** (web, driver; §E5, §D0). The milestone reads the `overridden` and `partially-closed` history entries and offers to stop the node (PERFORM1g's doors). Proof: web tests in both languages; a driver milestone test.
+
+**Outcome** 2026-10-21: built. `GraphEnds.Read` derives both ends from the node records' history, and the override now keeps an entry
+for every node it stops; `WORK_STATE` answers them as `ends` and the work slice pushes them in `<held>`. The milestone says each on
+its foot and line in en and zh. A close found closed only in part is live again and would close the lost quest over the winner's take,
+so `WORK_HELD`'s `stop` is taken on it (any other word refused `part-stop`), offered as a What needs you row and applied by the closer.
+Proof: `QuestCloseTests`, `WorkStateSliceTests`, `AttentionStateSliceTests`, `WorkMilestone.test.tsx` in both languages. A quest
+unit's milestone on the page stays open as FABRIC-CLOSE1j2. Detail: D173's FABRIC-CLOSE1j note.

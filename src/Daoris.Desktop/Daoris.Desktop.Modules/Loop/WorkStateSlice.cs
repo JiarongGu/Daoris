@@ -57,7 +57,7 @@ public static class WorkStateSlice
     public static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> Fields = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
     {
         ["part"] = ["units", "recovery", "unread"],
-        ["held"] = ["held", "unreadable"],
+        ["held"] = ["held", "unreadable", "ends"],
         ["unit"] = ["unit", "repository", "branch", "session", "end", "result", "cleanup", "recovery", "entries"],
         ["end"] = ["state", "by", "on", "revision", "at", "said"],
         ["cleanup"] = ["state", "waits", "gone"],
@@ -69,6 +69,7 @@ public static class WorkStateSlice
         ],
         // FABRIC-PERFORM1j: a node record that does not read, which stops its unit until a person mends it.
         ["unreadable"] = ["file", "unit", "at", "said"],
+        ["graphEnd"] = ["unit", "kind", "at", "nodes", "quest", "node", "attempt", "nodeState", "resolution", "words"],
     };
 
     /// <summary>Which shape a field holds, as <c>shape.field</c>, an object of it or a list of them; every other field is a value.</summary>
@@ -78,6 +79,7 @@ public static class WorkStateSlice
         ["part.recovery"] = "entry",
         ["held.held"] = "attempt",
         ["held.unreadable"] = "unreadable",
+        ["held.ends"] = "graphEnd",
         ["unit.end"] = "end",
         ["unit.result"] = "entry",
         ["unit.cleanup"] = "cleanup",
@@ -103,14 +105,16 @@ public static class WorkStateSlice
     /// <summary>The slice the shell's loop owns, judging from <paramref name="loop"/>'s facts and its home's node records.</summary>
     public static StateSlice Of(DriverLoop loop, IEventBus bus) =>
         Of(loop.Facts, bus, () => HeldAttempts.Read(new NodeRecordFiles(loop.Home), quests: loop.LastQuests), loop.Log,
-            () => HeldAttempts.Unreadable(new NodeRecordFiles(loop.Home)));
+            () => HeldAttempts.Unreadable(new NodeRecordFiles(loop.Home)), () => GraphEnds.Read(new NodeRecordFiles(loop.Home)));
 
     /// <summary>
-    /// The slice over <paramref name="facts"/>, its held attempts read by <paramref name="held"/> and the node records that do not read by
-    /// <paramref name="unreadable"/> (none where it is not given) at each judgement.
+    /// The slice over <paramref name="facts"/>, its held attempts read by <paramref name="held"/>, the node records that do not read by
+    /// <paramref name="unreadable"/> and its graphs' ends by <paramref name="ends"/> (FABRIC-CLOSE1j; each none where it is not given) at
+    /// each judgement.
     /// </summary>
     public static StateSlice Of(
-        MachineFacts facts, IEventBus bus, Func<IReadOnlyList<HeldAttempt>> held, MachineLog? log = null, Func<IReadOnlyList<UnreadableRecord>>? unreadable = null)
+        MachineFacts facts, IEventBus bus, Func<IReadOnlyList<HeldAttempt>> held, MachineLog? log = null,
+        Func<IReadOnlyList<UnreadableRecord>>? unreadable = null, Func<IReadOnlyList<GraphEnd>>? ends = null)
     {
         // Whether a judgement found every part judged: until one has, a part never judged leaves the slice not judged. Read and written
         // only within a judgement's turn, which the slice runs one at a time.
@@ -118,7 +122,9 @@ public static class WorkStateSlice
         return new(Name, bus, _ =>
         {
             // The node records are read only once the service's answers name the parts: before, nothing is judged.
-            var judged = HelpFacts.WorkParts(facts.Current) is { } parts ? Judge(parts, held(), partly: whole, unreadable?.Invoke()) : null;
+            var judged = HelpFacts.WorkParts(facts.Current) is { } parts
+                ? Judge(parts, held(), partly: whole, unreadable?.Invoke(), ends?.Invoke())
+                : null;
             whole |= judged is not null;
             return Task.FromResult(judged);
         })
@@ -139,8 +145,10 @@ public static class WorkStateSlice
     /// <param name="held">The attempts held for the person, every unit's.</param>
     /// <param name="partly">Whether a part never judged is left out rather than leaving the slice not judged: once one judgement was whole.</param>
     /// <param name="unreadable">The node records that do not read (FABRIC-PERFORM1j), pushed beside the held attempts; none where null.</param>
+    /// <param name="ends">The closure graphs' ends the milestone tells of (FABRIC-CLOSE1j), every unit's, carried in the held partition.</param>
     public static IReadOnlyList<SliceJudged>? Judge(
-        IReadOnlyList<(string Part, HelpWork? Work)>? parts, IReadOnlyList<HeldAttempt> held, bool partly, IReadOnlyList<UnreadableRecord>? unreadable = null)
+        IReadOnlyList<(string Part, HelpWork? Work)>? parts, IReadOnlyList<HeldAttempt> held, bool partly,
+        IReadOnlyList<UnreadableRecord>? unreadable = null, IReadOnlyList<GraphEnd>? ends = null)
     {
         if (parts is null || (!partly && parts.Any(part => part.Work is null))) return null;
         var judged = new List<SliceJudged>();
@@ -155,7 +163,10 @@ public static class WorkStateSlice
             }, "part")));
         }
 
-        judged.Add(new SliceJudged(Held, Allowed(new { Held = LinesRoutes.HeldAnswer(held), Unreadable = LinesRoutes.UnreadableAnswer(unreadable ?? []) }, "held")));
+        judged.Add(new SliceJudged(Held, Allowed(new
+        {
+            Held = LinesRoutes.HeldAnswer(held), Unreadable = LinesRoutes.UnreadableAnswer(unreadable ?? []), Ends = LinesRoutes.EndsAnswer(ends ?? []),
+        }, "held")));
         return judged;
     }
 

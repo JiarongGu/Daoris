@@ -9,6 +9,12 @@ with the version and date at release.
   `work-cycle`, `brainstorms` and a landing's `--cycle|--no-cycle` too, each saying what it said before. A cycle or a graph whose
   option holds a number by its own text, keys that are numbers out of their order, or letters outside ASCII is now set as written,
   where `daoris driver` refused it; and a verb the family does not have is said with the program's usage.
+- `daoris tool` hands every verb to Daoris's own driver program, as `daoris-driver tool` with the same words, as `daoris driver`
+  does. What each verb says is as before, but for these: a delete refused, and a file named for a tool that is not there, are said
+  as the window's Tools place says them, with their code, and exit 2; and a file you name is asked its version before it is written,
+  with Daoris closed too. A download, an update or a managed use no longer holds your home while it fetches: it waits for the home
+  only to make the version and switch to it, saying so if another act holds it for long, and Ctrl+C leaves nothing behind. Two
+  downloads of one version at once each finish, one keeping the other's.
 - A session that moved to another agent now reads as one session on its page. Its *Parts* say which agent each part was handed
   over or moved from, and why, such as *moved on from part 2 on codex: its own conversation was lost*. Each part's row says what it
   spent, in tokens over its turns, or that its turns did not report them. Where a line of work ran on more than one agent, the
@@ -17,6 +23,10 @@ with the version and date at release.
   repository's *How work lands* says its own such rule, or its workspace's where it lands by the default merge, and a workspace's
   *Defaults* says its own, each saying that work there lands as though it set none, in English and 中文. `daoris driver list`
   already named it.
+- Where a workflow closes its own quests, the page now says when you closed the quest before the workflow's end, naming the steps
+  that stopped, and when a close went through only in part because another machine won one quest's take. In that case its close
+  step would otherwise close that quest over the other machine's take, so *What needs you* offers *Stop its close*. Both are said
+  in English and Chinese.
 - A session's work now lands on its line's current tip. Where the line moved since the session's tree began, Accept, and the
   automatic landing at done, replay the work onto the line first, as they already did where the line held some of it: a branch
   made for it grows from the line's tip, a merge merges the replay, and the session's tree follows what landed. The review says so

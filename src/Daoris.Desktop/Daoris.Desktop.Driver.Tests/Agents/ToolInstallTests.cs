@@ -6,17 +6,14 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// A managed version, downloaded, verified, unpacked and laid out (TOOLS4, D121; the tools design §3.6, §3.7, §5):
-/// the driver's half of a TWIN with the CLI's <c>toolinstall.ts</c>, whose <c>toolinstall.test.ts</c> holds the same
-/// tables, row for row and in the same order. They share no code; a row changed here is changed there, in the same
-/// commit.
+/// the one implementation's tables since PUSH1f2c (D194), when the CLI's twin, <c>toolinstall.ts</c>, left with
+/// <c>daoris tool</c>; a test named for the CLI names the twin it was held to. A download staged and published apart is
+/// <c>ToolDownloadsTests</c>'.
 /// </summary>
 /// <remarks>
-/// <para>🔴 <b>The CLI reads these theories.</b> <c>toolinstall.test.ts</c>'s <i>the driver's tables are these
-/// tables</i> parses each <c>[InlineData]</c> row here and holds it to its own table, cell for cell and in order, so
-/// a row changed on one side alone fails <c>npm run verify</c>. Keep each row on one line, its cells literals.</para>
-/// <para>Every archive is built in the test from a row's words (<see cref="Archive"/>, the CLI's
-/// <c>_archives.ts</c>), and nothing here reaches a network: a download is served by a stand-in that answers as a
-/// host would.</para>
+/// <para>Every archive is built in the test from a row's words (<see cref="Archive"/>, as the CLI's <c>_archives.ts</c> built
+/// them until PUSH1f2c), and nothing here reaches a network: a download is served by a stand-in that answers as a host
+/// would.</para>
 /// </remarks>
 public sealed class ToolInstallTests : IDisposable
 {

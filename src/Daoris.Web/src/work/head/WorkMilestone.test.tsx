@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import i18n from '../../locales/i18n';
 import userEvent from '@testing-library/user-event';
-import { type HeldAttempt, type MilestoneEntry, type MilestoneUnit, readWorkState, unitOfBranch, waitsOnPerson } from './milestone';
+import { type GraphEnd, type HeldAttempt, type MilestoneEntry, type MilestoneUnit, readWorkState, unitOfBranch, waitsOnPerson } from './milestone';
 import { MilestoneLine, WorkMilestone } from './WorkMilestone';
 import { attentionActs, attentionWorded } from '../attention/attention';
 import { AttentionRow } from '../attention/AttentionRow';
@@ -362,6 +362,88 @@ describe('an attempt held for the person', () => {
   it('shows nothing held where the driver lists none, as on an install no plugin step governs', () => {
     render(<WorkMilestone defaultOpen unit={unit({ held: [] })} />);
     expect(screen.queryByText('Held for you')).not.toBeInTheDocument();
+  });
+});
+
+// FABRIC-CLOSE1j (the fabric events design §E5): a closure graph ended by the person's own done before its end, naming the nodes it
+// stopped, and one closed only in part, naming the quest lost and why, its close node's stop offered while it waits again: on the
+// work's foot and its line, and as What needs you's row with the stop alone, in both languages.
+const graphEnd = (over: Partial<GraphEnd> = {}): GraphEnd => ({
+  unit: 'u1', kind: 'partially-closed', at: '2026-10-17T09:00:00Z', nodes: [], quest: 'q6', node: 'close', attempt: 2, nodeState: 'ready',
+  words: ['stop'], ...over,
+});
+const overridden = graphEnd({ kind: 'overridden', nodes: ['qa', 'close'], quest: null, node: null, attempt: null, nodeState: null, words: [] });
+
+/** What needs you's row for a close found closed only in part, as the shell pushes it. */
+const endedRow = (end: GraphEnd) => attentionWorded({ kind: 'work', id: `${end.unit}#${end.node}#${end.quest}`, since: end.at, where: end.unit, ended: end });
+
+describe('a closure graph’s end', () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  it('joins each unit its ends, keeps every one of any unit, and reads none from an older shell', () => {
+    const read = readWorkState({ units: [unit()], recovery: [], unread: [], held: [], ends: [graphEnd(), graphEnd({ unit: 'quest:q7' })] });
+    expect(read.ends).toHaveLength(2);
+    expect(read.units[0]!.ends).toEqual([graphEnd()]);
+    expect(readWorkState({ units: [unit()], held: [] }).ends).toEqual([]);
+  });
+
+  it('says closed by you before its end, naming the nodes stopped, on the work’s foot and its line, in English and in 中文', async () => {
+    const { unmount } = render(<WorkMilestone defaultOpen unit={unit({ ends: [overridden] })} />);
+    const en = screen.getByRole('region', { name: 'Where this work stands' });
+    expect(within(en).getByText('Close')).toBeInTheDocument();
+    expect(en).toHaveTextContent('Closed by you before its end, so nothing more of it runs: stopped qa, close.');
+    expect(en).toHaveTextContent('closed by you before its end');
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    render(<WorkMilestone defaultOpen unit={unit({ ends: [overridden] })} />);
+    const zh = screen.getByRole('region', { name: '这项工作进展到哪里' });
+    expect(within(zh).getByText('关闭')).toBeInTheDocument();
+    expect(zh).toHaveTextContent('在结束前已由你关闭，它不会再继续：已停止 qa, close。');
+    expect(zh).toHaveTextContent('在结束前由你关闭');
+  });
+
+  it('says partially closed, naming the quest and why, and offers its close node’s stop, in English and in 中文', async () => {
+    const { unmount } = render(<WorkMilestone defaultOpen unit={unit({ ends: [graphEnd()] })} />);
+    const en = screen.getByRole('region', { name: 'Where this work stands' });
+    expect(en).toHaveTextContent('Partially closed: #q6 is no longer done, since its take was lost to another machine, which holds its work now.');
+    expect(en).toHaveTextContent('Its close close waits again, and would close #q6 over that take once it is submitted: stop it to leave the quest to whoever took it.');
+    expect(within(en).getByText('partially closed')).toHaveClass('text-ink-danger');
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    render(<WorkMilestone defaultOpen unit={unit({ ends: [graphEnd({ resolution: 'stop', words: [] })] })} />);
+    const zh = screen.getByRole('region', { name: '这项工作进展到哪里' });
+    expect(zh).toHaveTextContent('部分关闭：#q6 已不再是已完成，因为它的接下输给了另一台机器，那里现在持有它的工作。');
+    expect(zh).toHaveTextContent('你停止 close 的答复已记下，下一次查看时生效。');
+  });
+
+  it('says its close node stopped once the stop is applied, offering nothing', () => {
+    render(<WorkMilestone defaultOpen unit={unit({ ends: [graphEnd({ nodeState: 'stopped', words: [] })] })} />);
+    const region = screen.getByRole('region', { name: 'Where this work stands' });
+    expect(region).toHaveTextContent('Its close close is stopped.');
+    expect(within(region).getByText('partially closed')).not.toHaveClass('text-ink-danger');
+    expect(attentionActs(endedRow(graphEnd({ nodeState: 'stopped', words: [] })))).toEqual([]);
+  });
+
+  it('is a row in What needs you offering the stop of its close node alone, pressed through the held door, in English and in 中文', async () => {
+    const row = endedRow(graphEnd({ unit: 'quest:q7' }));
+    expect(row).toMatchObject({ kind: 'work', title: '#q6 partially closed', where: 'quest:q7' });
+    expect(row.detail).toContain('Daoris never closes it over that take');
+    expect(attentionActs(row)).toEqual(['stop-partial']);
+    expect(attentionActs(endedRow(graphEnd({ resolution: 'stop', words: [] })))).toEqual([]);
+
+    const words: string[] = [];
+    const { unmount } = render(<ul><AttentionRow item={row!} acts={{ held: (item, resolution) => words.push(`${item.ended?.node}:${resolution}`) }} /></ul>);
+    await userEvent.click(screen.getByRole('button', { name: 'Stop its close' }));
+    expect(words).toEqual(['close:stop']);
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    const zh = endedRow(graphEnd({ unit: 'quest:q7' }));
+    expect(zh.title).toBe('#q6 部分关闭');
+    render(<ul><AttentionRow item={zh!} acts={{ held: () => undefined }} /></ul>);
+    expect(screen.getByRole('button', { name: '停止它的关闭' })).toBeInTheDocument();
   });
 });
 
