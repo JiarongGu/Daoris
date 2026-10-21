@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- `daoris driver` hands every word to Daoris's own driver program now: its workflows (`workflow list|show|new|edit|apply|import|export|use|kind`),
+  `work-cycle`, `brainstorms` and a landing's `--cycle|--no-cycle` too, each saying what it said before. A cycle or a graph whose
+  option holds a number by its own text, keys that are numbers out of their order, or letters outside ASCII is now set as written,
+  where `daoris driver` refused it; and a verb the family does not have is said with the program's usage.
 - A session's work now lands on its line's current tip. Where the line moved since the session's tree began, Accept, and the
   automatic landing at done, replay the work onto the line first, as they already did where the line held some of it: a branch
   made for it grows from the line's tip, a merge merges the replay, and the session's tree follows what landed. The review says so
