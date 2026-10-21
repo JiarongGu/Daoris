@@ -166,8 +166,8 @@ public static partial class PluginToolChecks
 
     /// <summary>
     /// The version a program said: its first dotted number, the way each tool says it (<c>git version 2.51.0.windows.1</c>,
-    /// <c>v22.11.0</c>, az's JSON). The modules' <c>ToolQuestions.VersionIn</c> reads Settings → Tools' versions by the same
-    /// rule, which the driver library cannot reference.
+    /// <c>v22.11.0</c>, az's JSON). <see cref="ToolQuestions.VersionIn"/> reads Settings → Tools' versions by the same rule; it was the
+    /// modules' when this was written, and is the driver library's since PUSH1f2c.
     /// </summary>
     internal static string? VersionIn(string said) => DottedNumber().Match(said) is { Success: true } found ? found.Value : null;
 

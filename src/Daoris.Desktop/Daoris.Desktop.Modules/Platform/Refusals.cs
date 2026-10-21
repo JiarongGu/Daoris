@@ -359,16 +359,16 @@ public static class Refusals
     /// A managed version asked for where it is not downloaded (TOOLS7, D121 §4.1): a delete of one, or what a switch of
     /// git to it would change, which is asked of that git and so needs it here.
     /// </summary>
-    public const string ToolNotDownloaded = "TOOL_NOT_DOWNLOADED";
+    public const string ToolNotDownloaded = Daoris.Driver.ToolCodes.NotDownloaded;
 
     /// <summary>A tool named as a file that is not a whole path, or holds no file (TOOLS7): it is never written.</summary>
-    public const string ToolFileMissing = "TOOL_FILE_MISSING";
+    public const string ToolFileMissing = Daoris.Driver.ToolCodes.FileMissing;
 
     /// <summary>
     /// A tool named as a file that did not start, or started and answered no version (TOOLS7, §4.1: a named file starts
     /// with a version). The system's own reason goes with it, and nothing is written.
     /// </summary>
-    public const string ToolFileNoVersion = "TOOL_FILE_NO_VERSION";
+    public const string ToolFileNoVersion = Daoris.Driver.ToolCodes.FileNoVersion;
 
     /// <summary>A download or a use of a version no list names for this machine, or one that is no exact version (TOOLS7).</summary>
     public const string ToolVersionUnknown = "TOOL_VERSION_UNKNOWN";
@@ -380,13 +380,13 @@ public static class Refusals
     public const string ToolDownloadRefused = "TOOL_DOWNLOAD_REFUSED";
 
     /// <summary>A resource location that is no address Daoris reads from: https://, or http:// to this machine (TOOLS7, rule 5).</summary>
-    public const string ToolLocationRefused = "TOOL_LOCATION_REFUSED";
+    public const string ToolLocationRefused = Daoris.Driver.ToolCodes.LocationRefused;
 
     /// <summary>A delete of the version a tool runs (TOOLS7, §3.6): another way or version is chosen first.</summary>
-    public const string ToolInUse = "TOOL_IN_USE";
+    public const string ToolInUse = Daoris.Driver.ToolCodes.InUse;
 
     /// <summary>A delete the system refused, since something still holds a file in that version's folder; its reason goes with it.</summary>
-    public const string ToolHeld = "TOOL_HELD";
+    public const string ToolHeld = Daoris.Driver.ToolCodes.Held;
 
     /// <summary>A download, or a use that downloads, started while that tool already has one running (TOOLS7, §3.6).</summary>
     public const string ToolBusy = "TOOL_BUSY";

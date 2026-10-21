@@ -3,20 +3,18 @@ import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  GIT_SETTINGS, TOOLS, TOOLS_FILE, TOOLS_FOLDER, TOOL_PACKAGE, TOOL_RECORD, addLocation, gitKeyProblem,
-  isWholePath, locationProblem, readTools, removeLocation, resolveTool, useFile, useManaged, useSystem,
+  GIT_SETTINGS, TOOLS, TOOLS_FILE, TOOLS_FOLDER, TOOL_PACKAGE, TOOL_RECORD, isWholePath, locationProblem, readTools, resolveTool,
 } from '../../src/tools/tools.ts';
-import { commandTool } from '../../src/tools/toolinstall.ts';
 import { homeEntry } from '../../src/platform/home.ts';
-import type { VerbPress } from '../../src/platform/door.ts';
 import { driverRows as csharpRows, driverTestFile } from '../_csharp.ts';
-import { captureError, makeFixture } from '../_fixture.ts';
+import { makeFixture } from '../_fixture.ts';
 
 /**
- * `$DAORIS_HOME/tools.json` and its resolution (TOOLS2, D121; the tools design §2.1–§2.3, §5) — the CLI's
- * half of a TWIN with the driver's `Tools.cs`. 🔴 `ToolsTests.cs` holds the same tables, row for row and in
- * the same order: a row changed here is changed there, in the same commit. *The driver's tables are these
- * tables*, below, reads that class's theories and holds them to these, cell for cell.
+ * `$DAORIS_HOME/tools.json` read and resolved (TOOLS2, D121; the tools design §2.1–§2.3, §5) — the CLI's half of a TWIN with the
+ * driver's `Tools.cs`, which every child the CLI starts is handed through (TOOLS5). 🔴 `ToolsTests.cs` holds the same tables, row for
+ * row and in the same order: a row changed here is changed there, in the same commit. *The driver's tables are these tables*, below,
+ * reads that class's theories and holds them to these, cell for cell. The file's writes and `daoris tool` are the driver's program's
+ * alone since PUSH1f2c (D194), so its write tables are `ToolsTests`' own.
  *
  * The file's rules (§2.2), each a table below:
  *
@@ -24,9 +22,8 @@ import { captureError, makeFixture } from '../_fixture.ts';
  *   2. `managed` needs an exact version of one to four numbers; `file` needs a whole path. An entry that
  *      names another way's field, or lacks its own, is refused whole, and its tool is never run another way.
  *   3. A tool id this build does not declare is kept as written and never applied.
- *   4. `git` holds only keys on the allow-list: off it, refused on a write; on a read kept, not applied, said.
- *   5. `locations` holds only https://, or http:// to this machine: refused on a write; skipped and said on a read.
- *   6. Setting one way clears the others, and a writer keeps what it has no field for.
+ *   4. `git` holds only keys on the allow-list: on a read kept, not applied, said.
+ *   5. `locations` holds only https://, or http:// to this machine: skipped and said on a read.
  *
  * Then the resolution (§2.3): the way set decides which file starts, and a managed version nobody
  * downloaded, or a named file that is gone, refuses — never a fall back to PATH.
@@ -206,16 +203,6 @@ test('git’s settings read as the driver reads them (rule 4)', () => {
   fx.cleanup();
 });
 
-const OFF_THE_LIST = ['credential.helper', 'core.sshcommand', 'core.autocrlf', ''];
-
-test('a key off the allow-list is refused on a write', () => {
-  assert.equal(gitKeyProblem('core.sshCommand'), null);
-  for (const key of OFF_THE_LIST) {
-    assert.equal(gitKeyProblem(key),
-      `\`${key}\` is not a setting Daoris's git carries — the one it carries is core.sshCommand`, key);
-  }
-});
-
 // ——— Rule 5: where versions come from. The twin is `ToolsTests.A_location_is_judged_as_the_cli_judges_it`.
 
 const LOCATION_ROWS: [string, boolean][] = [
@@ -363,152 +350,6 @@ test('a tool PATH does not find is said, naming the three ways, and is not a ref
   fx.cleanup();
 });
 
-// ——— Rule 6: a write. The twin is `ToolsTests.A_write_sets_one_way_and_keeps_the_rest`.
-
-test('setting one way clears the others, and keeps what the writer has no field for', () => {
-  const { fx, home: at, whole } = home('tools-write');
-  mkdirSync(join(fx.root, 'bin'), { recursive: true });
-  writeFileSync(whole, '');
-  const file = homeEntry(at, 'tools');
-
-  useSystem(at, 'git');
-  assert.deepEqual(JSON.parse(readFileSync(file, 'utf8')), { tools: { git: { use: 'system' } } });
-
-  writeFile(at, JSON.stringify({
-    note: 'mine',
-    tools: { git: { use: 'managed', version: '2.51.0', keep: 'this' }, bun: { use: 'system' }, gh: { use: 'managed' } },
-    git: { 'core.sshCommand': 'ssh', 'credential.helper': 'manager' },
-    locations: ['https://example.org/r.json', 'ftp://kept.example/r.json'],
-  }));
-  useFile(at, 'git', whole);
-  assert.deepEqual(JSON.parse(readFileSync(file, 'utf8')), {
-    note: 'mine',
-    tools: { git: { use: 'file', keep: 'this', file: whole }, bun: { use: 'system' }, gh: { use: 'managed' } },
-    git: { 'core.sshCommand': 'ssh', 'credential.helper': 'manager' },
-    locations: ['https://example.org/r.json', 'ftp://kept.example/r.json'],
-  });
-  assert.equal(readFileSync(file, 'utf8').endsWith('}\n'), true, 'two-space JSON and a final newline');
-
-  useSystem(at, 'git');
-  assert.deepEqual(JSON.parse(readFileSync(file, 'utf8')).tools.git, { use: 'system', keep: 'this' });
-
-  writeFile(at, '{"tools":{"git":"managed"}}');
-  useSystem(at, 'git');
-  assert.deepEqual(JSON.parse(readFileSync(file, 'utf8')), { tools: { git: { use: 'system' } } }, 'an entry that was no object is replaced');
-  fx.cleanup();
-});
-
-/** [case, the file's text before, the way written, the tool, the file (GONE: one not there), a fragment of the refusal]. */
-const REFUSED_WRITES: [string, string, 'system' | 'file', string, string | null, string][] = [
-  ['a file that is not JSON', 'not json', 'system', 'git', null, 'is not readable JSON'],
-  ['tools that are a list', '{"tools":[]}', 'system', 'git', null, '`tools` is not an object'],
-  ['a tool nobody declared', '{}', 'system', 'bun', null, '`bun` is not a tool this build runs — one of: git, node, pwsh, gh, az'],
-  ['a file that is not whole', '{}', 'file', 'git', 'bin/git', '`bin/git` is not a whole path'],
-  ['a file that is not there', '{}', 'file', 'git', 'GONE', 'no file at'],
-];
-
-test('a write that cannot be made writes nothing', () => {
-  const { fx, home: at, whole } = home('tools-refused-writes');
-  mkdirSync(join(fx.root, 'bin'), { recursive: true });
-  writeFileSync(whole, '');
-  for (const [name, before, way, tool, file, fragment] of REFUSED_WRITES) {
-    writeFile(at, before);
-    const error = captureError(() => (way === 'system'
-      ? useSystem(at, tool)
-      : useFile(at, tool, file === 'GONE' ? `${whole}.gone` : file!)));
-    assert.ok(error.message.includes(fragment), `${name}: ${error.message}`);
-    assert.equal(readFileSync(homeEntry(at, 'tools'), 'utf8'), before, `${name}: the file is as it was`);
-  }
-  fx.cleanup();
-});
-
-// ——— Managed, written (TOOLS4, rule 6): only over a version that is downloaded. The twin is
-// `ToolsTests.Managed_is_written_as_the_cli_writes_it`.
-
-/** [case, the file's text before (null: none; FILE: a whole path), the version downloaded (null: none), the version asked, the entry after, a fragment of the refusal]. */
-const USE_MANAGED_ROWS: [string, string | null, string | null, string, string | null, string | null][] = [
-  ['a version downloaded', null, '2.62.0', '2.62.0', '{"use":"managed","version":"2.62.0"}', null],
-  ['a version not downloaded', null, null, '2.62.0', null, 'is not downloaded'],
-  ['another version downloaded', null, '2.61.0', '2.62.0', null, 'is not downloaded'],
-  ['a version that is not exact', null, null, 'latest', null, '`latest` is not an exact version'],
-  ['a version that climbs out', null, null, '../2.62.0', null, '`../2.62.0` is not an exact version'],
-  ['over a file it names', '{"tools":{"gh":{"use":"file","file":"FILE","keep":"this"}}}', '2.62.0', '2.62.0', '{"use":"managed","keep":"this","version":"2.62.0"}', null],
-  ['over a file that does not read', 'not json', '2.62.0', '2.62.0', null, 'is not readable JSON'],
-];
-
-/** A downloaded version as the resolution finds it: its record, naming an executable that is there. */
-function downloaded(at: string, tool: string, version: string): void {
-  const folder = homeEntry(at, 'tool-versions', tool, version);
-  mkdirSync(join(folder, TOOL_PACKAGE, 'bin'), { recursive: true });
-  writeFileSync(join(folder, TOOL_PACKAGE, 'bin', `${tool}.exe`), tool);
-  writeFileSync(join(folder, TOOL_RECORD), JSON.stringify({ exe: `bin/${tool}.exe` }));
-}
-
-test('managed is written only over a version that is downloaded, as the driver writes it', () => {
-  for (const [index, [name, before, has, version, after, refusal]] of USE_MANAGED_ROWS.entries()) {
-    const { fx, home: at, whole } = home(`tools-use-managed-${index}`);
-    if (before !== null) writeFile(at, before.replace('FILE', JSON.stringify(whole).slice(1, -1)));
-    if (has !== null) downloaded(at, 'gh', has);
-    const was = existsSync(homeEntry(at, 'tools')) ? readFileSync(homeEntry(at, 'tools'), 'utf8') : null;
-
-    if (refusal === null) {
-      useManaged(at, 'gh', version);
-      assert.deepEqual(JSON.parse(readFileSync(homeEntry(at, 'tools'), 'utf8')).tools.gh, JSON.parse(after!), name);
-      assert.equal(resolveTool(at, 'gh', { PATH: '' }).file, homeEntry(at, 'tool-versions', 'gh', version, TOOL_PACKAGE, 'bin', 'gh.exe'), name);
-    } else {
-      const error = captureError(() => useManaged(at, 'gh', version));
-      assert.ok(error.message.includes(refusal), `${name}: ${error.message}`);
-      assert.equal(existsSync(homeEntry(at, 'tools')) ? readFileSync(homeEntry(at, 'tools'), 'utf8') : null, was, `${name}: nothing written`);
-    }
-    fx.cleanup();
-  }
-});
-
-// ——— Locations, written (rule 5's write side, TOOLS4). The twin is `ToolsTests.A_location_is_written_as_the_cli_writes_it`.
-
-/** [case, the file's text before (null: none), add or remove, the address, the locations after (JSON), whether it changed, a fragment of the refusal]. */
-const LOCATION_WRITES: [string, string | null, string, string, string | null, boolean, string | null][] = [
-  ['add to no file', null, 'add', 'https://a.example/r.json', '["https://a.example/r.json"]', true, null],
-  ['add after another', '{"locations":["https://a.example/r.json"]}', 'add', 'http://localhost:8080/r.json', '["https://a.example/r.json","http://localhost:8080/r.json"]', true, null],
-  ['add one already listed', '{"locations":["https://a.example/r.json"]}', 'add', 'https://a.example/r.json', '["https://a.example/r.json"]', false, null],
-  ['add over http to another host', null, 'add', 'http://a.example/r.json', null, false, 'is not a resource location'],
-  ['add over locations that are not a list', '{"locations":"https://a.example/r.json"}', 'add', 'https://b.example/r.json', null, false, '`locations` is not a list'],
-  ['add over a file that does not read', 'not json', 'add', 'https://a.example/r.json', null, false, 'is not readable JSON'],
-  ['remove one listed', '{"locations":["https://a.example/r.json","https://b.example/r.json"]}', 'remove', 'https://a.example/r.json', '["https://b.example/r.json"]', true, null],
-  ['remove one not listed', '{"locations":["https://a.example/r.json"]}', 'remove', 'https://b.example/r.json', '["https://a.example/r.json"]', false, null],
-  ['remove beside one that is not an address', '{"locations":["ftp://kept.example/r.json","https://a.example/r.json"]}', 'remove', 'https://a.example/r.json', '["ftp://kept.example/r.json"]', true, null],
-  ['remove from no file', null, 'remove', 'https://a.example/r.json', null, false, null],
-];
-
-test('a location is added or removed as the driver writes it, and a refusal writes nothing', () => {
-  for (const [index, [name, before, verb, address, after, changed, refusal]] of LOCATION_WRITES.entries()) {
-    const { fx, home: at } = home(`tools-locations-write-${index}`);
-    if (before !== null) writeFile(at, before);
-    const write = () => (verb === 'add' ? addLocation(at, address) : removeLocation(at, address));
-
-    if (refusal === null) {
-      assert.equal(write(), changed, name);
-      const file = homeEntry(at, 'tools');
-      assert.deepEqual(existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')).locations : null, after === null ? null : JSON.parse(after), name);
-    } else {
-      const error = captureError(write);
-      assert.ok(error.message.includes(refusal), `${name}: ${error.message}`);
-      assert.equal(existsSync(homeEntry(at, 'tools')) ? readFileSync(homeEntry(at, 'tools'), 'utf8') : null, before, `${name}: nothing written`);
-    }
-    fx.cleanup();
-  }
-});
-
-test('a location written keeps every key the writer has no field for', () => {
-  const { fx, home: at } = home('tools-locations-keep');
-  writeFile(at, '{"note":"mine","tools":{"git":{"use":"system"}},"git":{"core.sshCommand":"ssh"}}');
-  addLocation(at, 'https://a.example/r.json');
-  assert.deepEqual(JSON.parse(readFileSync(homeEntry(at, 'tools'), 'utf8')), {
-    note: 'mine', tools: { git: { use: 'system' } }, git: { 'core.sshCommand': 'ssh' }, locations: ['https://a.example/r.json'],
-  });
-  fx.cleanup();
-});
-
 // ——— The twin, held: the driver's tables are these tables, row for row and in this order.
 
 const DRIVER_TABLES = driverTestFile('ToolsTests.cs');
@@ -521,232 +362,10 @@ test('the driver’s tables are these tables, row for row and in this order', ()
 
   assert.deepEqual(driverRows(source, 'An_entry_reads_as_the_cli_reads_it'), ENTRY_ROWS);
   assert.deepEqual(driverRows(source, 'A_whole_path_is_one_dotnet_calls_fully_qualified'), WHOLE_ROWS);
-  assert.deepEqual(driverRows(source, 'A_key_off_the_allow_list_is_refused_on_a_write'), OFF_THE_LIST.map((key) => [key]));
   assert.deepEqual(driverRows(source, 'A_location_is_judged_as_the_cli_judges_it'), LOCATION_ROWS);
   assert.deepEqual(driverRows(source, 'A_tool_resolves_as_the_cli_resolves_it'), RESOLVE_ROWS);
-  assert.deepEqual(driverRows(source, 'A_write_that_cannot_be_made_writes_nothing'), REFUSED_WRITES);
-  assert.deepEqual(driverRows(source, 'Managed_is_written_as_the_cli_writes_it'), USE_MANAGED_ROWS);
-  assert.deepEqual(driverRows(source, 'A_location_is_written_as_the_cli_writes_it'), LOCATION_WRITES);
 
   // The git rows are member data, one `{ "case", …` per row.
   const git = source.slice(source.indexOf('GitRows =>'), source.indexOf('[MemberData(nameof(GitRows))]'));
   assert.deepEqual([...git.matchAll(/^\s*\{ "([^"]+)",/gm)].map((match) => match[1]), GIT_ROWS.map(([name]) => name));
-});
-
-// ——— The verb: `daoris tool list|path|use`.
-
-/**
- * An environment whose PATH is the case's, under no other spelling (TEST2). A copy of `process.env` keeps the
- * spelling the shell that ran the suite gave it (`Path` from PowerShell, `PATH` from Git Bash), and on Windows
- * `onPath` reads the first key that is PATH in any case (TOOLS5), so a `PATH` set beside an inherited `Path`
- * was not the one read, and the system's git and gh were found.
- */
-function withOnlyPath(path: string, inherited: NodeJS.ProcessEnv): Record<string, string | undefined> {
-  const env: Record<string, string | undefined> = {};
-  for (const [key, value] of Object.entries(inherited)) if (key.toUpperCase() !== 'PATH') env[key] = value;
-  env.PATH = path;
-  return env;
-}
-
-/** The verb, given no way to reach a network: these verbs need none. */
-function run(argv: string[], at: string | null, path = '', inherited: NodeJS.ProcessEnv = process.env): { code: number; out: string[] } {
-  const out: string[] = [];
-  const env = withOnlyPath(path, inherited);
-  if (at === null) delete env.DAORIS_HOME;
-  else env.DAORIS_HOME = at;
-  const code = commandTool({ root: process.cwd(), argv, write: (line) => out.push(line), packageRoot: process.cwd() }, null, env);
-  assert.equal(typeof code, 'number', `${argv.join(' ')} answers at once: it reaches no network`);
-  return { code: code as number, out };
-}
-
-test('a case’s PATH is the one read, whatever the shell that ran the suite spells it (TEST2)', () => {
-  const { fx, home: at } = home('tools-path-spelling');
-  const shell = join(fx.root, 'shell');
-  mkdirSync(shell, { recursive: true });
-  writeFileSync(join(shell, process.platform === 'win32' ? 'gh.exe' : 'gh'), '');
-  // PowerShell hands its children `Path`, Git Bash `PATH`: this is PowerShell's, from whichever shell runs it.
-  const inherited: NodeJS.ProcessEnv = withOnlyPath(shell, process.env);
-  inherited.Path = inherited.PATH;
-  delete inherited.PATH;
-
-  const gh = run(['path', 'gh'], at, '', inherited);
-  assert.equal(gh.code, 1, `the case's empty PATH finds no gh, and the shell's was not read: ${gh.out.join('\n')}`);
-  fx.cleanup();
-});
-
-test('tool list on a home with no file says every tool is the system’s, and writes nothing', () => {
-  const { fx, home: at } = home('tools-list-empty');
-
-  const { code, out } = run(['list'], at);
-  assert.equal(code, 0, out.join('\n'));
-  assert.equal(out[0], `daoris: ${homeEntry(at, 'tools')} — no file, so every tool is the system's, from PATH.`);
-  for (const tool of TOOLS) {
-    const line = out.find((row) => row.startsWith(`  ${tool.id.padEnd(5)} ${tool.name}`));
-    assert.ok(line, `no row for ${tool.id}:\n${out.join('\n')}`);
-    assert.match(line, /the system's: not found — /, line);
-  }
-  assert.equal(existsSync(homeEntry(at, 'tools')), false);
-  assert.deepEqual(run([], at).out, out, 'no verb is list');
-  fx.cleanup();
-});
-
-test('tool list names each way, a refusal, and what the file keeps without applying it', () => {
-  const { fx, home: at, whole } = home('tools-list');
-  mkdirSync(join(fx.root, 'bin'), { recursive: true });
-  writeFileSync(whole, '');
-  const pathDir = join(fx.root, 'path');
-  mkdirSync(pathDir, { recursive: true });
-  const onPathGh = join(pathDir, process.platform === 'win32' ? 'gh.exe' : 'gh');
-  writeFileSync(onPathGh, '');
-  writeFile(at, JSON.stringify({
-    tools: { git: { use: 'file', file: whole }, node: { use: 'managed', version: '22.20.0' }, pwsh: { use: 'managed' }, bun: { use: 'system' } },
-  }));
-
-  const { code, out } = run(['list'], at, pathDir);
-  assert.equal(code, 1, 'a refused tool is a refusal');
-  assert.equal(out[0], `daoris: ${homeEntry(at, 'tools')}`);
-  assert.ok(out.includes(`  git   Git        a file: ${whole}`), out.join('\n'));
-  assert.ok(out.some((row) => row.startsWith('  node  Node.js    managed 22.20.0: refused — Node.js is managed at 22.20.0')), out.join('\n'));
-  assert.ok(out.some((row) => row.startsWith('  pwsh  PowerShell refused — the entry for `pwsh`')), out.join('\n'));
-  assert.ok(out.map(spelled).includes(spelled(`  gh    GitHub CLI the system's: ${onPathGh}`)), out.join('\n'));
-  assert.ok(out.includes('  `bun` in `tools` is not a tool this build runs: it is kept as written, and never applied'), out.join('\n'));
-  fx.cleanup();
-});
-
-test('tool path prints the file alone, or says why there is none and exits 1', () => {
-  const { fx, home: at, whole } = home('tools-path');
-  mkdirSync(join(fx.root, 'bin'), { recursive: true });
-  writeFileSync(whole, '');
-  writeFile(at, JSON.stringify({ tools: { git: { use: 'file', file: whole }, gh: { use: 'managed', version: '2.62.0' } } }));
-
-  assert.deepEqual(run(['path', 'git'], at), { code: 0, out: [whole] });
-  const gh = run(['path', 'gh'], at);
-  assert.equal(gh.code, 1);
-  assert.match(gh.out[0]!, /^daoris: GitHub CLI is managed at 2\.62\.0, and that version is not downloaded/);
-  assert.deepEqual(run(['path', 'az'], at).code, 1, 'not on PATH is no file to print');
-  fx.cleanup();
-});
-
-test('tool use writes the file and says what the tool now resolves to', () => {
-  const { fx, home: at, whole } = home('tools-use');
-  mkdirSync(join(fx.root, 'bin'), { recursive: true });
-  writeFileSync(whole, '');
-
-  const file = run(['use', 'git', 'file', whole], at);
-  assert.equal(file.code, 0, file.out.join('\n'));
-  assert.deepEqual(file.out, [
-    `daoris: Git is set to the file ${whole} — written to ${homeEntry(at, 'tools')}.`,
-    `  \`daoris tool path git\` answers ${whole}; \`daoris tool use git system\` puts it back on PATH.`,
-  ]);
-
-  const system = run(['use', 'git', 'system'], at);
-  assert.equal(system.code, 0);
-  assert.equal(system.out[0], `daoris: Git is set to the system's, from PATH — written to ${homeEntry(at, 'tools')}.`);
-  assert.match(system.out[1]!, /^ {2}`daoris tool path git` answers: `git` is not on this machine's PATH/);
-  assert.deepEqual(JSON.parse(readFileSync(homeEntry(at, 'tools'), 'utf8')), { tools: { git: { use: 'system' } } });
-  fx.cleanup();
-});
-
-test('a relative file is named from where the command runs', () => {
-  const { fx, home: at, whole } = home('tools-use-relative');
-  mkdirSync(join(fx.root, 'bin'), { recursive: true });
-  writeFileSync(whole, '');
-  const out: string[] = [];
-  const code = commandTool({
-    root: fx.root, argv: ['use', 'git', 'file', join('bin', process.platform === 'win32' ? 'git.exe' : 'git')],
-    write: (line) => out.push(line), packageRoot: fx.root,
-  }, null, { ...process.env, DAORIS_HOME: at });
-  assert.equal(code, 0, out.join('\n'));
-  assert.equal(readTools(at).entries.git!.file, whole);
-  fx.cleanup();
-});
-
-test('the verb refuses what it does not set, with no file written', () => {
-  const { fx, home: at } = home('tools-verb-refusals');
-  const rows: [string[], RegExp][] = [
-    [['frobnicate'], /^unknown tool verb 'frobnicate' — one of: list, path, use, download, update, delete, locations, look$/],
-    [['path'], /^`tool path` needs a tool — one of: git, node, pwsh, gh, az$/],
-    [['path', 'bun'], /^`bun` is not a tool this build runs — one of: git, node, pwsh, gh, az/],
-    [['use', 'git'], /^`tool use git` takes `system`, `managed \[<version>\]` or `file <path>`$/],
-    [['use', 'git', 'file'], /^`tool use git file` needs a path — the executable to run$/],
-  ];
-  for (const [argv, said] of rows) {
-    const error = captureError(() => run(argv, at));
-    assert.match(error.message, said, argv.join(' '));
-    assert.equal(error.exitCode, 2, argv.join(' '));
-  }
-  assert.equal(existsSync(homeEntry(at, 'tools')), false);
-  assert.match(captureError(() => run(['list'], null)).message, /no Daoris home.*\(wanted: tools\.json\)/);
-  fx.cleanup();
-});
-
-/**
- * RPC1f: a tool verb that changes the home is the Tools place's route while Daoris runs on it, with the payload that place sends,
- * said in the alone path's words and written by the instance alone; a managed use, a download and an update act alone, since their
- * routes answer once a download starts and its end is an event only a subscription hears (RPC1g).
- */
-async function sent(argv: string[], at: string, answer: unknown = {}): Promise<{ code: number; out: string[]; press: VerbPress | null }> {
-  const out: string[] = [];
-  let press: VerbPress | null = null;
-  const code = await commandTool({ root: process.cwd(), argv, write: (line) => out.push(line), packageRoot: process.cwd() }, null,
-    { ...withOnlyPath('', process.env), DAORIS_HOME: at }, (given) => {
-      press = given;
-      return given.route ? given.words(answer) : given.alone();
-    });
-  return { code, out, press };
-}
-
-const routed = (press: VerbPress | null) => [press?.what, press?.route?.route, press?.route?.class, press?.payload];
-
-test('a tool verb that changes the home is the Tools place\'s route while Daoris runs, in the alone path\'s words', async () => {
-  const { fx, home: at, whole } = home('tools-door');
-  try {
-    const system = await sent(['use', 'git', 'system'], at);
-    assert.deepEqual(routed(system.press), ['tool use', 'TOOLS_USE', 'person', { tool: 'git', action: 'system' }]);
-    assert.equal(existsSync(homeEntry(at, 'tools')), false, 'the instance writes it, not this terminal');
-    assert.deepEqual(system.out, run(['use', 'git', 'system'], at).out);
-
-    mkdirSync(join(fx.root, 'bin'), { recursive: true });
-    writeFileSync(whole, '');
-    const file = await sent(['use', 'git', 'file', whole], at);
-    assert.deepEqual(routed(file.press), ['tool use', 'TOOLS_USE', 'person', { tool: 'git', action: 'file', file: whole }]);
-    assert.equal(readTools(at).entries.git!.way, 'system');
-    assert.deepEqual(file.out, run(['use', 'git', 'file', whole], at).out);
-
-    const deleted = await sent(['delete', 'git', '2.45.0'], at, { tool: 'git', version: '2.45.0', folder: 'X:/daoris/tools/git/2.45.0' });
-    assert.deepEqual(routed(deleted.press), ['tool delete', 'TOOLS_DELETE', 'person', { tool: 'git', version: '2.45.0' }]);
-    assert.deepEqual(deleted.out, ['daoris: Git 2.45.0 is deleted — X:/daoris/tools/git/2.45.0.']);
-
-    const address = 'https://lists.example.test/resources.json';
-    const added = await sent(['locations', 'add', address], at, { address, added: true });
-    assert.deepEqual(routed(added.press), ['tool locations', 'TOOLS_LOCATION', 'person', { action: 'add', address }]);
-    assert.deepEqual(readTools(at).locations, []);
-    assert.deepEqual(added.out, run(['locations', 'add', address], at).out);
-    const again = await sent(['locations', 'add', address], at, { address, added: false });
-    assert.deepEqual(again.out, run(['locations', 'add', address], at).out);
-    const removed = await sent(['locations', 'remove', address], at, { address, removed: true });
-    assert.deepEqual(routed(removed.press), ['tool locations', 'TOOLS_LOCATION', 'person', { action: 'remove', address }]);
-    assert.deepEqual(removed.out, run(['locations', 'remove', address], at).out);
-
-    const looked = await sent(['look'], at, { looks: [{ address, outcome: 'unreachable', sentence: `${address} did not answer.` }] });
-    assert.deepEqual(routed(looked.press), ['tool look', 'TOOLS_LOOK', 'open', {}]);
-    assert.equal(looked.code, 1);
-    assert.deepEqual(looked.out.slice(0, 2), ['daoris: looked at 1 location:', `  ${address} did not answer.`]);
-    assert.match(looked.out.join('\n'), /git +Git +runs /);
-
-    // Their alone path downloads, so the door here only says what it was handed.
-    for (const argv of [['use', 'git', 'managed'], ['download', 'git'], ['update', 'git']]) {
-      let handed: VerbPress | null = null;
-      await commandTool({ root: process.cwd(), argv, write: () => {}, packageRoot: process.cwd() }, null, { DAORIS_HOME: at }, (given) => {
-        handed = given;
-        return 0;
-      });
-      assert.deepEqual(routed(handed).slice(0, 3), [`tool ${argv[0]}`, undefined, undefined], argv.join(' '));
-    }
-    for (const argv of [['list'], ['path', 'git'], ['locations']]) {
-      assert.equal((await sent(argv, at)).press, null, argv.join(' '));
-    }
-  } finally {
-    fx.cleanup();
-  }
 });

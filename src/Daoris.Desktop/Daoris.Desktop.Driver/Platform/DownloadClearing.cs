@@ -72,7 +72,8 @@ public sealed record DownloadUses(HarnessSettings Harnesses, ToolsRead Tools, Dr
 ///
 /// <para><b>A download a moment old stays.</b> A pin and a use are written after their download lands (<see cref="HarnessActions"/>,
 /// <see cref="ToolInstall.DownloadAsync"/>), so a version downloaded within <see cref="Settling"/> is kept: it may be the one about to be
-/// pinned. A staged download (<c>.part</c>) is never listed.</para>
+/// pinned. A staged download (<c>.part</c>, and a tool's <c>.part-&lt;pid&gt;</c>, PUSH1f2c) is never listed: a tool's folder lists
+/// exact versions alone.</para>
 ///
 /// <para><b>Moved aside, then removed.</b> A version goes by one rename beside itself first, which fails while a program runs from it
 /// (Windows holds a running executable's folder), so a running session's old version is kept as <c>in-use</c> rather than half

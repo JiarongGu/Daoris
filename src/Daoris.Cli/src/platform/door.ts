@@ -116,28 +116,7 @@ export const PLUGIN_VERBS: readonly (readonly [verb: string, route: InstanceRout
   ['plugin add … (installed already)', null, 'alone: PLUGIN_ADD and PLUGIN_INSTALL add and never replace; a replace is the terminal\'s'],
 ];
 
-const open = (route: string): InstanceRoute => ({ module: DRIVER_MODULE, route, class: 'open' });
-
-/** The routes `daoris tool` sends while Daoris runs (the Tools place's presses). `TOOLS_LOOK` is the driver's own look, so open. */
-export const TOOL_ROUTES = {
-  use: person('TOOLS_USE'),
-  delete: person('TOOLS_DELETE'),
-  location: person('TOOLS_LOCATION'),
-  look: open('TOOLS_LOOK'),
-} as const satisfies Record<string, InstanceRoute>;
-
-/** Each `daoris tool` verb that changes the home: its route, or null with the reason it acts alone. */
-export const TOOL_VERBS: readonly (readonly [verb: string, route: InstanceRoute | null, reason: string])[] = [
-  ['tool use <tool> system', TOOL_ROUTES.use, 'the Tools place\'s way chosen'],
-  ['tool use <tool> file <path>', TOOL_ROUTES.use, 'the Tools place\'s way chosen; the instance runs the file for its version before it writes it'],
-  ['tool delete <tool> <version>', TOOL_ROUTES.delete, 'a downloaded version removed'],
-  ['tool locations add|remove <address>', TOOL_ROUTES.location, 'a resource location added or removed'],
-  ['tool look', TOOL_ROUTES.look, 'the look for updates, whose copies the instance keeps'],
-  ['tool use <tool> managed [<version>]', null,
-    'alone: TOOLS_USE answers once the driver\'s download starts, and its end is an event the pipe forwards only to a subscription (RPC1g)'],
-  ['tool download <tool> [<version>]', null, 'alone: TOOLS_DOWNLOAD answers once the download starts, and its end is an event (RPC1g)'],
-  ['tool update <tool>', null, 'alone: no route moves a tool to the newest the lists name, and a managed use\'s end is an event (RPC1g)'],
-];
+// `daoris tool`'s routes and verbs are the driver program's since PUSH1f2c (D194): its `ToolRoutes`, held to the census there.
 
 /**
  * The routes `daoris agent` sends while Daoris runs (the Agents and Accounts places, the rules): a trust, an account, a rule's answer

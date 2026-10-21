@@ -26,7 +26,6 @@ import { HOSTS, publishCommand } from '../../../tools/service-publish.mjs';
 import { renameHeld } from '../../../tools/fsx.mjs';
 import { resolveCanonRoot } from '../src/doctrine/canon.ts';
 import { OFFERS_DIR, readManifest } from '../src/plugins/plugins.ts';
-import { BUILT_IN, BUILT_IN_LAYOUT, parseResources } from '../src/tools/resources.ts';
 import { INSTALL_BIN, installBin } from '../src/tools/tools.ts';
 import { DRIVER_PROGRAM_FILE, DRIVER_PROGRAM_HOME } from '../src/agents/toolchain.ts';
 import { INSTALL_APP, INSTALL_DATA, INSTALL_MARKER, installOf } from '../src/platform/home.ts';
@@ -846,14 +845,14 @@ test('an offer missing from the examples stops the publish, naming it, and the o
 
 /**
  * TOOLS3, D121 §3.1: the install carries the list built in at `app/resources.json`, beside the application,
- * where the driver reads it from its own folder; the CLI finds it beside the home, which in an install is the
- * same folder. Three spellings, held here, and the source the publish copies is the driver's own.
+ * where the driver reads it from its own folder. Two spellings, held here, and the source the publish copies is the
+ * driver's own. The CLI read it too until PUSH1f2c handed `daoris tool` to the driver's program; whether the list
+ * reads is the driver's `ToolResourcesTests`', which read the build's copy.
  */
 const workspace = join(here, '..', '..', '..');
 
-test('the list built in is where the CLI and the driver look for it', () => {
+test('the list built in is where the driver looks for it', () => {
   assert.deepEqual([...RESOURCES], ['app', 'resources.json']);
-  assert.deepEqual([...RESOURCES], [...BUILT_IN_LAYOUT]);
   assert.equal(RESOURCES[0], SHELL_HOME[0], 'beside the application, in app/');
   const driver = readFileSync(driverFile('ToolResources.cs'), 'utf8');
   assert.ok(driver.includes(`Layout = [${RESOURCES.map((part: string) => `"${part}"`).join(', ')}]`), 'ToolResources.Layout');
@@ -873,9 +872,6 @@ test('laying out the list copies the driver’s own whole into app/resources.jso
 
   assert.equal(laid, join(install, ...RESOURCES));
   assert.deepEqual(readFileSync(laid), readFileSync(source), 'the bytes as tracked, so its hash is the list’s own');
-  const list = parseResources(readFileSync(laid, 'utf8'), BUILT_IN);
-  assert.equal(list.problem, null);
-  assert.deepEqual(list.notes, []);
   assert.deepEqual(readdirSync(join(install, 'data')), [], 'nothing under the home');
   assert.deepEqual(readdirSync(join(install, SHELL_HOME[0])), [RESOURCES[1]], 'nothing left staged beside it');
 });

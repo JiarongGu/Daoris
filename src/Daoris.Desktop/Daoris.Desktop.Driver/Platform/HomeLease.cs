@@ -225,6 +225,47 @@ public sealed class HomeLease : IDisposable
     }
 
     /// <summary>
+    /// The lease a long verb publishes under (PUSH1f2c, D194 point 3, the alone-path design §1.4): a download's end, and in its rows a
+    /// sign-in's, a key's and a pin's. Waited for and never refused, as the desktop's loop waits for an act: what the person waited
+    /// for is never thrown away for another act's hold. Taken the moment that hold lets go; beside an instance (the desktop started
+    /// meanwhile), run holding nothing, each file's keep lock the publication's protection.
+    /// </summary>
+    /// <param name="what">The verb's own words, which another's refusal names.</param>
+    /// <param name="told">Said once the hold has lasted <paramref name="tellAfter"/>: who holds the home.</param>
+    /// <param name="ct">The person's Ctrl+C, which ends the wait; nothing is taken.</param>
+    /// <param name="waiting">Called once, the first time another act is found holding the home: a test's sign that this waits.</param>
+    /// <param name="clock">The moment, read for <paramref name="tellAfter"/>: the machine's, or a test's.</param>
+    /// <exception cref="OperationCanceledException">The wait was stopped.</exception>
+    public static async Task<HomeLease> ForPublicationAsync(
+        string home, string what, Action<LeaseHolder> told, CancellationToken ct, Action? waiting = null, Func<DateTimeOffset>? clock = null,
+        TimeSpan? tellAfter = null, TimeSpan? poll = null)
+    {
+        clock ??= () => DateTimeOffset.UtcNow;
+        DateTimeOffset? since = null;
+        var said = false;
+        while (true)
+        {
+            ct.ThrowIfCancellationRequested();
+            if (TryAcquire(home, LeaseKind.Verb, out var holder, what) is { } lease) return lease;
+            if (holder is { IsInstance: true } instance) return new HomeLease(PathIn(home), written: null, beside: instance);
+
+            if (since is null)
+            {
+                since = clock();
+                waiting?.Invoke();
+            }
+
+            if (!said && holder is not null && clock() - since >= (tellAfter ?? Wait))
+            {
+                told(holder);
+                said = true;
+            }
+
+            await Task.Delay(poll ?? Poll, ct).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
     /// Take the home for <paramref name="kind"/>, waiting up to <paramref name="within"/> while another holds it; null with the
     /// holder once the wait is over. With <paramref name="besideInstance"/>, an instance's lease is not waited for: this one
     /// runs beside it, holding nothing.
