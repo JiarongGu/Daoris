@@ -62,6 +62,37 @@ public sealed partial class ConfigSeamTests
     }
 
     /// <summary>
+    /// 🔴 LEASEHOME2 (the terminal RPC design §5): the home a verb takes the lease in is the home the loop drives, the folder the machine's
+    /// file is in, found without reading or making anything. The loop holds <c>HomeOf(FindPath())</c>'s lease, so each environment here
+    /// names that lease's own file; a verb that took <c>DAORIS_HOME</c>'s while the override named a file elsewhere never met the loop.
+    /// </summary>
+    [Fact]
+    public void The_home_a_verb_takes_the_lease_in_is_the_one_the_loop_drives()
+    {
+        var chosen = Path.Combine(Elsewhere, "landing.json");
+        Func<string, string?>[] environments =
+        [
+            Env((DriverConfig.PathVariable, chosen), (DaorisHome.Variable, Home)),
+            Env((DriverConfig.PathVariable, DaorisHome.Entry(Home, HomeEntry.DriverConfig)), (DaorisHome.Variable, Elsewhere)),
+            Env((DaorisHome.Variable, Home)),
+            Env((DaorisHome.Variable, Home + Path.DirectorySeparatorChar)),
+        ];
+
+        Assert.Equal(Elsewhere, DriverConfig.FindHome(environments[0]));
+        Assert.Equal(Home, DriverConfig.FindHome(environments[1]));
+        Assert.Equal(Home, DriverConfig.FindHome(environments[2]));
+        foreach (var environment in environments)
+        {
+            Assert.Equal(HomeLease.PathIn(DriverConfig.HomeOf(DriverConfig.FindPath(environment)!)), HomeLease.PathIn(DriverConfig.FindHome(environment)!));
+        }
+
+        // Blank is none, as a blank home is: the home's own file, and with no home, nothing to hold.
+        Assert.Equal(Home, DriverConfig.FindHome(Env((DriverConfig.PathVariable, " "), (DaorisHome.Variable, Home))));
+        Assert.Null(DriverConfig.FindHome(Env()));
+        Assert.Null(DriverConfig.FindHome(Env((DaorisHome.Variable, "  "))));
+    }
+
+    /// <summary>
     /// The seam held by a scan, as the spawn sites' are (<see cref="NoConsoleWindowTests"/>): the property is one every reader must
     /// carry, and the next reader written will not know to. Outside <c>DriverConfig.cs</c> no source names the file, the variable,
     /// or the default path, so a reader can only come through the one resolution; inside it, the variable is read once. The home's

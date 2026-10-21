@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-22 — A verb and the loop took the home's lease in two homes when the driver's config was named elsewhere (LEASEHOME2)
+
+- **Symptom:** none seen on an install, which names no override; found after HOMELEASE1. With `DAORIS_DRIVER_CONFIG` naming a file
+  outside `DAORIS_HOME` (the family rehearsal's scratch does), a terminal's verb never met a headless loop's lease,
+  nor the loop the verb's, and a verb writing the config's home held another home, so what only the lease's holder writes there
+  (`HomeLease.HeldHere`, a recovery's drop) was refused it.
+- **Root cause:** HOMELEASE1 (`5a5bee786`) took a verb's lease in `DaorisHome.Resolve()`, while the loop, the desktop and every door
+  derive their home from the config's folder (`DriverConfig.HomeOf`, CONFIGSEAM1); the two agree only where the config is
+  `DAORIS_HOME`'s own.
+- **Fix:** `DriverConfig.FindHome` names the config's folder, found without reading or making anything, and the host takes a verb's
+  lease there (`Driver.Host/Program.cs`). D171's LEASEHOME2 note says which families that write `DAORIS_HOME` itself it leaves.
+- **Verification:** `DriverHostTests.With_the_config_elsewhere_a_verb_takes_the_lease_in_the_home_the_loop_drives`, seen failing
+  before the host's change (the verb wrote the config's home and held `DAORIS_HOME`), green after; `ConfigSeamTests` holds the
+  resolution to the loop's lease file in each environment.
+
 ## 2026-10-22 — Two starts of one run could each write its binding, the second over the first (FABRIC-CUTOVER1g)
 
 - **Symptom:** none seen on an install; found by the cutover design's second reads (D190, design §13 row 29). Starts run beside one

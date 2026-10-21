@@ -768,6 +768,19 @@ public sealed record DriverConfig(
     /// <summary>The same, from the process environment: for a reader with no home in hand that reads nothing on a machine with none.</summary>
     public static string? FindPath() => FindPath(Environment.GetEnvironmentVariable);
 
+    /// <summary>
+    /// The home this environment's loop drives, where the loop holds the home's lease and a verb takes it too (LEASEHOME2, the terminal
+    /// RPC design §5): the folder <see cref="FindPath(Func{string, string?})"/>'s file is in, as <see cref="HomeOf"/> undoes it, so the
+    /// override's where one is named and <c>DAORIS_HOME</c> otherwise; null where neither is. Found without reading or making anything and
+    /// never refused for a file in both its places, so a verb takes its lease before its door reads the file, and meets the loop's
+    /// lease wherever the override names a file.
+    /// </summary>
+    public static string? FindHome(Func<string, string?> environment) =>
+        Named(environment) is { } named && !string.IsNullOrWhiteSpace(named) ? HomeOf(named) : DaorisHome.Resolve(environment);
+
+    /// <summary>The same, from the process environment.</summary>
+    public static string? FindHome() => FindHome(Environment.GetEnvironmentVariable);
+
     /// <summary>The file every door reads and writes — the override, or the conventional home; refused, naming what to set, with neither.</summary>
     public static string ResolvePath() => FindPath() ?? DefaultPath;
 
