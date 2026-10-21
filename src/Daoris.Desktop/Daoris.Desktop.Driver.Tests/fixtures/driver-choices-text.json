@@ -2711,7 +2711,8 @@
         "  set-aside  a tree's folder moved aside is kept 14 days; its package folders go an hour after the move  (the default — `daoris driver keep set-aside …` changes it)",
         "  downloads  a downloaded version nothing uses goes 7 days into its unused stretch  (the default — `daoris driver keep downloads …` changes it)",
         "  logs       each day's file of the machine log is kept 30 days  (the default — `daoris driver keep logs …` changes it)",
-        "  history    finished work's records stay until you clear them  (the default — `daoris driver keep history …` changes it)"
+        "  history    finished work's records stay until you clear them  (the default — `daoris driver keep history …` changes it)",
+        "  floor      below the smaller of 10% of a volume and 20 GB free, Daoris frees early what it can make again and says the rest  (the default — `daoris driver keep floor …` changes it)"
       ],
       "err": [],
       "after": null
@@ -2721,17 +2722,18 @@
       "argv": [
         "keep"
       ],
-      "before": "{\n  \"keep\": {\n    \"setAside\": {\n      \"days\": 30,\n      \"whole\": true\n    },\n    \"downloads\": {\n      \"days\": null\n    },\n    \"logs\": {\n      \"days\": 14\n    },\n    \"history\": {\n      \"days\": 365\n    }\n  }\n}\n",
+      "before": "{\n  \"keep\": {\n    \"setAside\": {\n      \"days\": 30,\n      \"whole\": true\n    },\n    \"downloads\": {\n      \"days\": null\n    },\n    \"logs\": {\n      \"days\": 14\n    },\n    \"history\": {\n      \"days\": 365\n    },\n    \"floor\": {\n      \"percent\": 15\n    }\n  }\n}\n",
       "exit": 0,
       "out": [
         "daoris: <config>",
         "  set-aside  a tree's folder moved aside is kept 30 days, whole  (set — `daoris driver keep set-aside default` takes the default again)",
         "  downloads  a downloaded version nothing uses stays until you remove it  (set — `daoris driver keep downloads default` takes the default again)",
         "  logs       each day's file of the machine log is kept 14 days  (set — `daoris driver keep logs default` takes the default again)",
-        "  history    finished work's records go 365 days after their last move, through the clear, each refusal holding  (set — `daoris driver keep history default` takes the default again)"
+        "  history    finished work's records go 365 days after their last move, through the clear, each refusal holding  (set — `daoris driver keep history default` takes the default again)",
+        "  floor      below 15% of a volume free, Daoris frees early what it can make again and says the rest  (set — `daoris driver keep floor default` takes the default again)"
       ],
       "err": [],
-      "after": "{\n  \"keep\": {\n    \"setAside\": {\n      \"days\": 30,\n      \"whole\": true\n    },\n    \"downloads\": {\n      \"days\": null\n    },\n    \"logs\": {\n      \"days\": 14\n    },\n    \"history\": {\n      \"days\": 365\n    }\n  }\n}\n"
+      "after": "{\n  \"keep\": {\n    \"setAside\": {\n      \"days\": 30,\n      \"whole\": true\n    },\n    \"downloads\": {\n      \"days\": null\n    },\n    \"logs\": {\n      \"days\": 14\n    },\n    \"history\": {\n      \"days\": 365\n    },\n    \"floor\": {\n      \"percent\": 15\n    }\n  }\n}\n"
     },
     {
       "name": "keep set-aside <days>",
@@ -2900,7 +2902,54 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver keep` needs a kind and its rule — `set-aside <days>|whole|slim|default`, `downloads <days>|never|default`, `logs <days>|default` or `history <days>|never|default`; e.g. `daoris driver keep set-aside 30`."
+        "daoris: `driver keep` needs a kind and its rule — `set-aside <days>|whole|slim|default`, `downloads <days>|never|default`, `logs <days>|default`, `history <days>|never|default` or `floor <n>GB|<n>%|off|default`; e.g. `daoris driver keep set-aside 30`."
+      ],
+      "after": null
+    },
+    {
+      "name": "keep floor <n>%",
+      "argv": [
+        "keep",
+        "floor",
+        "12%"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: below 12% of a volume free, Daoris frees early what it can make again and says the rest.",
+        "  Written to <config> — the look's next pass keeps by it, so nothing restarts."
+      ],
+      "err": [],
+      "after": "{\n  \"keep\": {\n    \"floor\": {\n      \"percent\": 12\n    }\n  }\n}\n"
+    },
+    {
+      "name": "keep floor off",
+      "argv": [
+        "keep",
+        "floor",
+        "off"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: no floor: Daoris frees nothing early, and says nothing of the free space.",
+        "  Written to <config> — the look's next pass keeps by it, so nothing restarts."
+      ],
+      "err": [],
+      "after": "{\n  \"keep\": {\n    \"floor\": {\n      \"off\": true\n    }\n  }\n}\n"
+    },
+    {
+      "name": "keep floor, a share past its bounds",
+      "argv": [
+        "keep",
+        "floor",
+        "60%"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: the floor takes a size from 1 GB to half its volume, a share from 1% to 50%, `off` or `default`; 60% is out of its bounds, so nothing was written. (KEEP_OUT_OF_RANGE)"
       ],
       "after": null
     },
@@ -2915,7 +2964,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `browser-cache` is no kind whose rule you set here: name `set-aside`, `downloads`, `logs`, `history`. `driver keep` needs a kind and its rule — `set-aside <days>|whole|slim|default`, `downloads <days>|never|default`, `logs <days>|default` or `history <days>|never|default`; e.g. `daoris driver keep set-aside 30`."
+        "daoris: `browser-cache` is no kind whose rule you set here: name `set-aside`, `downloads`, `logs`, `history` or `floor`. `driver keep` needs a kind and its rule — `set-aside <days>|whole|slim|default`, `downloads <days>|never|default`, `logs <days>|default`, `history <days>|never|default` or `floor <n>GB|<n>%|off|default`; e.g. `daoris driver keep set-aside 30`."
       ],
       "after": null
     },

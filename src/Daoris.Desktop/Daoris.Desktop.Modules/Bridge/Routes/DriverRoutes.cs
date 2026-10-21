@@ -274,7 +274,12 @@ public sealed class DriverRoutes(DriverContext context)
             Number(request, "days") is { } days ? (int)Math.Clamp(days, int.MinValue, int.MaxValue) : null,
             Flag(request, "never"),
             whole,
-            Flag(request, "default"));
+            Flag(request, "default"),
+            // KEEP1f: the floor's size in GB, its share, or `off`, a size judged against half the Daoris folder's volume as read here.
+            Number(request, "gb") is { } gb ? (int)Math.Clamp(gb, int.MinValue, int.MaxValue) : null,
+            Number(request, "percent") is { } percent ? (int)Math.Clamp(percent, int.MinValue, int.MaxValue) : null,
+            Flag(request, "off"));
+        if (KeepRules.IsFloor(set.Kind) && set.Gb is not null) set = set with { Volume = SpaceVolumes.Read(DaorisHome.FolderOf(_loop.Home).Folder)?.Total };
         _context.Change(config => KeepRules.Apply(config, set));
         return State(_loop);
     }

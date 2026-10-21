@@ -107,7 +107,12 @@ public sealed record KeepPolicy(SetAsidePolicy SetAside)
     {
         Downloads = new(null),
         Logs = new(KeepKinds.Logs.Days),
+        // KEEP1f: no floor, so nothing goes early on a rule that could not be read.
+        Floor = FloorPolicy.None,
     };
+
+    /// <summary>The free-space floor (KEEP1f): the smaller of 10% of each volume and 20 GB by default.</summary>
+    public FloorPolicy Floor { get; init; } = FloorPolicy.Default;
 
     /// <summary>The downloads' rule (KEEP1b): seven days by default; null is the person's <c>never</c>.</summary>
     public DownloadsPolicy Downloads { get; init; } = new(KeepKinds.Downloads.Days);
@@ -125,6 +130,7 @@ public sealed record KeepPolicy(SetAsidePolicy SetAside)
             Downloads = new(choices.DownloadsNever ? null : choices.DownloadsDays is { } kept ? TimeSpan.FromDays(kept) : KeepKinds.Downloads.Days),
             Logs = new(choices.LogsDays is { } logs ? TimeSpan.FromDays(logs) : KeepKinds.Logs.Days),
             History = new(choices.HistoryDays is { } age ? TimeSpan.FromDays(age) : null),
+            Floor = choices.FloorOff ? FloorPolicy.None : new FloorPolicy(choices.FloorGb, choices.FloorPercent, Off: false),
         };
 
     /// <summary>
@@ -162,3 +168,68 @@ public sealed record LogsPolicy(TimeSpan Days);
 /// the default, is <c>never</c>: nothing clears it by itself (the history clearing design §7 as D195 amends it).
 /// </summary>
 public sealed record HistoryPolicy(TimeSpan? Days);
+
+/// <summary>
+/// The free-space floor (KEEP1f, D195; the cleanup design §3.2): the free space at which Daoris frees early what it can make again and
+/// says the rest. A trigger, not a reserve. Each volume's floor is computed from its own size: the person's size (at most half of it),
+/// their share, or by default the smaller of 10% of it and 20 GB; <c>off</c> frees nothing early and says nothing.
+/// </summary>
+/// <param name="Gb">The person's size in GB (binary, as Windows shows sizes), or null.</param>
+/// <param name="Percent">The person's share of each volume, or null.</param>
+/// <param name="Off">No floor.</param>
+public sealed record FloorPolicy(int? Gb, int? Percent, bool Off)
+{
+    /// <summary>The fewest GB the person may set.</summary>
+    public const int MinGb = 1;
+
+    /// <summary>The most GB a stored size may hold, whatever the volume; a door judges against half the volume it reads.</summary>
+    public const int MaxGb = 1 << 20;
+
+    /// <summary>The smallest share the person may set.</summary>
+    public const int MinPercent = 1;
+
+    /// <summary>The largest share the person may set: half the volume.</summary>
+    public const int MaxPercent = 50;
+
+    /// <summary>The default share of a volume.</summary>
+    public const int DefaultPercent = 10;
+
+    /// <summary>The default's cap: 20 GB.</summary>
+    public const long DefaultCap = 20L << 30;
+
+    /// <summary>The margin above the floor at which a stretch below ends (<c>space.ok</c>): the smaller of 5 GB and 5% of the volume.</summary>
+    public const long MarginCap = 5L << 30;
+
+    /// <summary>The table's default.</summary>
+    public static FloorPolicy Default { get; } = new(null, null, false);
+
+    /// <summary><c>off</c>.</summary>
+    public static FloorPolicy None { get; } = new(null, null, true);
+
+    /// <summary>Where the floor comes from, as <c>SYSTEM_SPACE</c>'s <c>floor.from</c> says it: <c>default</c>, <c>size</c>, <c>percent</c> or <c>off</c>.</summary>
+    public string From => Off ? "off" : Gb is not null ? "size" : Percent is not null ? "percent" : "default";
+
+    /// <summary>Half of a volume of <paramref name="total"/> bytes, in whole GB: the most a size may be there.</summary>
+    public static int HalfGb(long total) => (int)Math.Min(MaxGb, total / 2 / (1L << 30));
+
+    /// <summary>A volume of <paramref name="total"/> bytes' floor in bytes; null where it is off.</summary>
+    public long? Of(long total)
+    {
+        if (Off || total <= 0) return null;
+        if (Gb is { } gb) return Math.Min((long)gb << 30, total / 2);
+        if (Percent is { } share) return total / 100 * share;
+        return Math.Min(total / 100 * DefaultPercent, DefaultCap);
+    }
+
+    /// <summary>The margin above a volume's floor that ends a stretch below it (§3.2): the smaller of 5 GB and 5% of the volume.</summary>
+    public static long Margin(long total) => Math.Min(MarginCap, total / 100 * 5);
+
+    /// <summary>The rule in a clause: the terminal's and Ask Daoris's card's words.</summary>
+    public string Said => From switch
+    {
+        "off" => "no floor: Daoris frees nothing early, and says nothing of the free space",
+        "size" => $"below {Gb} GB free (at most half of a volume), Daoris frees early what it can make again and says the rest",
+        "percent" => $"below {Percent}% of a volume free, Daoris frees early what it can make again and says the rest",
+        _ => "below the smaller of 10% of a volume and 20 GB free, Daoris frees early what it can make again and says the rest",
+    };
+}

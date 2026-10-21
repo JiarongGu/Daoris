@@ -341,7 +341,12 @@ public sealed class DriverWatch(
         // KEEP1b: the downloads' rule reads and locks the loop's own choices, as the Downloads row's press does.
         // NOTIFY2h2: each of its lines classed as it is made, the look's pass's and link 2's alike.
         // KEEP1g: history's daily clear judges a live session by the loop's processes, and forgets a cleared one's numbering in its record.
-        var tidy = Tidying ?? new BranchTidying(home) { ConfigPath = configPath, Sizes = SpaceSizes.Shared, Look = Lines, Processes = processes, Events = events };
+        // KEEP1f: the floor's third act clears the browser's caches only through the shell's browser host, where it carries one.
+        var tidy = Tidying ?? new BranchTidying(home)
+        {
+            ConfigPath = configPath, Sizes = SpaceSizes.Shared, Look = Lines, Processes = processes, Events = events, Caches = browser as IBrowserCaches,
+            Volume = SpaceVolumes.Read,
+        };
         Task<IReadOnlyList<string>>? tidying = null;
 
         // What woke each look, for its line in the machine log (FABRIC-EVENT2): the loop's start, its pace, a session's end, or a
