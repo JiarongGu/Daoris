@@ -108,6 +108,7 @@
   "note.landing.uncommitted": "Not accepted automatically: its tree holds uncommitted work (paths: {{paths}}), which a branch would leave behind. Commit it in the tree or tell the session, then Accept lands it.",
   "note.landing.exists": "Not accepted automatically: `{{branch}}` is already a branch, and Daoris does not move it. It waits for your review.",
   "note.landing.refused": "Not accepted automatically: the landing was refused, as follows. It waits for your review.",
+  "note.landing.rebase": "Not accepted automatically: replaying its work onto the line conflicts, so its session was asked to rebase in its own tree, as follows. It lands at the first look after its tree changes.",
   "note.landing.unreviewed": "Not accepted automatically: its work waits for your review before it lands, as follows. It lands at the first look after you review it or skip the review.",
   "note.landing.opinion": "Not accepted automatically: its work waits for a second opinion before it lands, as follows. It lands at the first look once the opinion is settled, or you go on without one.",
   "note.landing.no-tree": "Its quest was done, and it worked in the repository's own checkout, so its work is already there: nothing lands automatically.",

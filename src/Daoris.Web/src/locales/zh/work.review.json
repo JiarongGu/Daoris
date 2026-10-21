@@ -45,6 +45,8 @@
   "work.review.leftOut.empty": "重放后为空：它的改动已在主线上",
   "work.review.replays": "其余 {{count}} 个提交会重放到主线上。",
   "work.review.replays_other": "其余 {{count}} 个提交会重放到主线上。",
+  "work.review.replaysMoved": "这份工作开始后主线已前进：采纳会先把它的 {{count}} 个提交重放到主线上。",
+  "work.review.replaysMoved_other": "这份工作开始后主线已前进：采纳会先把它的 {{count}} 个提交重放到主线上。",
   "work.review.conflict": "现在采纳会被拒绝：把这份工作重放到主线上会冲突。{{says}}",
   "work.review.rebaseWords": "这些话会发给它的会话：",
   "work.review.askRebase": "请它变基",

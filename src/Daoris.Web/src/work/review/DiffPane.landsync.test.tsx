@@ -27,7 +27,7 @@ vi.mock('@shenora/react', async () => {
   };
 });
 
-import '../../locales/i18n';
+import i18n from '../../locales/i18n';
 import { useStateHub } from '../../bridge/shell';
 import { DiffPane } from './DiffPane';
 
@@ -84,12 +84,34 @@ describe('what Accept leaves out because the line holds it', () => {
     expect(screen.getByRole('button', { name: 'Accept' })).toBeInTheDocument();
   });
 
-  it('says nothing more where the line holds none of its commits', async () => {
+  it('says nothing more where the line holds none of its commits and has not moved', async () => {
     answer(() => PLAN);
     pane();
 
     expect(await screen.findByRole('button', { name: 'Accept' })).toBeInTheDocument();
     expect(screen.queryByText(/leaves out/)).toBeNull();
+    expect(screen.queryByText(/replays/)).toBeNull();
+  });
+
+  // LANDREBASE1 (D87's note): the line moved since the work began and holds none of it, so Accept replays it onto the line first.
+  it('says Accept replays the work onto the line first where the line only moved', async () => {
+    answer(() => ({ ...PLAN, leftOut: [], lands: LANDS }));
+    pane();
+
+    expect(await screen.findByText('The line moved since this work began: Accepting replays its 2 commits onto the line first.')).toBeInTheDocument();
+    expect(screen.queryByText(/leaves out/)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Accept' })).toBeInTheDocument();
+  });
+
+  it('says it in Chinese too', async () => {
+    answer(() => ({ ...PLAN, leftOut: [], lands: [LANDS[0]] }));
+    await i18n.changeLanguage('zh');
+    try {
+      pane();
+      expect(await screen.findByText('这份工作开始后主线已前进：采纳会先把它的 1 个提交重放到主线上。')).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 });
 
