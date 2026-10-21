@@ -18639,3 +18639,11 @@ starts 44 git processes (55), the squash press 46 (51), the merge press 40 (43);
 Fewer than the row's estimate of 20: the rest are each act's own read, `status` (LANDGIT1c) and the tidy's. Proof: `LandGitCountTests`
 with its ceilings lowered, `What_another_process_moves_is_asked_of_git_each_time` green. On Opus: about 90 tool calls. Detail: D173's
 LANDGIT1b note.
+
+## MERGETASKS1 — the merge tool resolves the backlog's line conflicts by the merge base (2026-10-21)
+
+> - [ ] **MERGETASKS1 — the merge tool resolves the backlog's line conflicts by the merge base** (tools; found landing the install's work, 2026-10-21). Nearly every merge of a session's or a builder's branch stopped on `TASKS.md`: each side removed or added a row near the other's. The parent resolved each with a scratch helper that keeps a line where one side added it and drops it where the other removed it, judged by the merge base, and stops where both sides edited the same line. The merge tool should do the same for `TASKS.md`, as it already regenerates `docs/index`, and say what it resolved. Proof: `merge-branch.test.ts` cases for an added row, a removed row, and the same row edited on both sides (left for the person).
+
+**Outcome** 2026-10-21: built. A backlog conflict is merged against its base (`mergeByBase` in `tools/merge-branch.mjs`), staged,
+said in one line, and gated; one base line both sides changed is left as git wrote it, its line named. Proof: `merge-branch.test.ts`,
+a unit case and an end-to-end merge. On Opus: about 40 tool calls. Detail: the tool's MERGETASKS1 section.
