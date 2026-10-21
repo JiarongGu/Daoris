@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- `daoris plugin` is run by Daoris's own driver program now, as `daoris-driver plugin` with the same words. An add, an update with
+  `--yes`, a remove and an enable or disable go through Daoris's window while it runs, and alone otherwise; from a session's own
+  terminal they are refused, since each plugin press is yours. Each says what it said before, but for these: it says *agent* where it
+  said *harness*; an add whose manifest does not read is said as the window says it, and an add from a folder inside your `DAORIS_HOME`, or
+  one holding it, is refused with nothing copied; a remove of a plugin whose folder something holds is refused and takes nothing; and a change refused
+  because `plugins.json` does not read is said with its code.
 - You may now set an age for finished work's records: on the *Disk space* card's *Conversations and records* row (*Change…*), with
   `daoris driver keep history <days>|never|default`, or through Ask Daoris's proposal you apply. Between 30 and 3,650 days; by default
   none, and nothing clears your history by itself, as before. With an age set, once a day each workspace's finished work whose last
