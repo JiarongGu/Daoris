@@ -133,7 +133,7 @@ internal static class AgentPinCommand
         void Say(string line) => world.Instance.Out.WriteLine(line);
         var error = world.Instance.Error;
         var home = HarnessSettings.HomeOf(path);
-        var circle = workspace?.Trim() is { Length: > 0 } trimmed ? trimmed : null;
+        var named = workspace?.Trim() is { Length: > 0 } trimmed ? trimmed : null;
         try
         {
             using (await HomeLease.ForPublicationAsync(home, "daoris-driver agent pin",
@@ -146,7 +146,7 @@ internal static class AgentPinCommand
                     staged = null;
                 }
 
-                HarnessSettings.Pin(path, home, name, version, circle);
+                HarnessSettings.Pin(path, home, name, version, named);
             }
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -192,22 +192,22 @@ internal static class AgentPinCommand
         var path = AgentsCommand.WiringPath(world);
         var (name, toolchain, _, _) = AgentsCommand.Agent(args, "update", "<agent>", world, path);
         var workspace = AgentsCommand.FlagValue(args, "--workspace");
-        var circle = workspace?.Trim() is { Length: > 0 } trimmed ? trimmed : null;
+        var named = workspace?.Trim() is { Length: > 0 } trimmed ? trimmed : null;
         var settings = HarnessSettings.Load(path);
         if (settings.Problem is { } problem) throw new AgentWords(problem);
-        var pins = circle is null ? settings.Versions : settings.WorkspaceVersions.GetValueOrDefault(circle);
+        var pins = named is null ? settings.Versions : settings.WorkspaceVersions.GetValueOrDefault(named);
         var pin = pins?.GetValueOrDefault(name)?.Trim() is { Length: > 0 } held ? held : null;
 
         if (pin is not null && (toolchain.Package is { Length: > 0 } || toolchain.Channel is { Length: > 0 }))
         {
-            return await MovePinAsync(world, path, name, toolchain, pin, circle, ct).ConfigureAwait(false);
+            return await MovePinAsync(world, path, name, toolchain, pin, named, ct).ConfigureAwait(false);
         }
 
-        if (circle is not null)
+        if (named is not null)
         {
             throw new AgentWords(
-                $"the `{circle}` workspace pins no version of `{name}`, so there is no pin to move — `daoris agent pin {name} <version> "
-                + $"--workspace {ShellWord.Of(circle, "<workspace>")}` sets one.");
+                $"the `{named}` workspace pins no version of `{name}`, so there is no pin to move — `daoris agent pin {name} <version> "
+                + $"--workspace {ShellWord.Of(named, "<workspace>")}` sets one.");
         }
 
         if (toolchain.UpdateArguments is not { Count: > 0 } update)
@@ -226,12 +226,12 @@ internal static class AgentPinCommand
     /// never names a pointer, and never moves backwards.
     /// </summary>
     private static async Task<int> MovePinAsync(
-        AgentsWorld world, string path, string name, HarnessToolchain toolchain, string pin, string? circle, CancellationToken ct)
+        AgentsWorld world, string path, string name, HarnessToolchain toolchain, string pin, string? named, CancellationToken ct)
     {
         void Say(string line) => world.Instance.Out.WriteLine(line);
         var error = world.Instance.Error;
         var home = HarnessSettings.HomeOf(path);
-        var scope = circle is not null ? $" for the `{circle}` workspace" : "";
+        var scope = named is not null ? $" for the `{named}` workspace" : "";
         string newest;
         try
         {
@@ -276,7 +276,7 @@ internal static class AgentPinCommand
         Say(newest == pin
             ? $"{Prefix}: `{name}` {pin} is the newest release and is not installed here — installing it."
             : $"{Prefix}: `{name}` {pin} → {newest}");
-        return await InstallAndPinAsync(world, path, name, toolchain, newest, circle, ct).ConfigureAwait(false);
+        return await InstallAndPinAsync(world, path, name, toolchain, newest, named, ct).ConfigureAwait(false);
     }
 
     /// <summary>
