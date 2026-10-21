@@ -19120,3 +19120,11 @@ Detail: D194's PUSH1f2e2 note. On Opus.
 
 **Outcome** 2026-10-22: built. Each main window tells and wears its own count (`SET_BADGE` by name, its order per window); a balloon's
 click opens the window whose workspace holds its session or quest (`MainWindowScopes`), else the one last in front. Detail: D196's NOTIFY2c note. On Opus.
+## NOTIFY2j — a press at the service's door is told to the windows (2026-10-22, D196)
+
+> - [ ] **NOTIFY2j — a press at the service's door is told to the windows, not polled** (modules, web-shell, service; after 2b; D196, the notification design §9). The desktop's host tells the windows the service's waiting confirmations beside the pipe's, so their count is judged once in .NET and each window's poll goes. Proof: as §9 names it.
+
+**Outcome** 2026-10-22: built. The service's `GET /api/confirmations/waiting` answers at each change of what waits, one past its time
+at its time; the desktop's host holds one such wait (`ServiceConfirmations`) and tells every window `SERVICE_CONFIRMATIONS`, which the
+page reads in place of its five-second poll, kept for an older shell and a browser. A press is said once across two windows. Detail:
+D196's NOTIFY2j note. On Opus.
