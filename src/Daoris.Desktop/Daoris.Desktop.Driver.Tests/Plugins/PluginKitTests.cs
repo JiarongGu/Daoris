@@ -1103,6 +1103,33 @@ public sealed class PluginKitTests : IDisposable
         Assert.Contains("never an installed plugin's data", refused.ToString());
     }
 
+    /// <summary>
+    /// The example performed plugin (<c>examples/plugins/local-preview</c>) is the kit's own output filled in: its kit-owned files are what
+    /// the kit writes now, so a change to the kit changes the example in the same commit, and it passes its cycle through the driver.
+    /// </summary>
+    [Fact]
+    public async Task The_example_performer_is_the_kit_s_scaffold_filled_in_and_passes_its_cycle()
+    {
+        var example = Path.Combine(GitSeed.RepoRoot(), "examples", "plugins", "local-preview");
+        var made = PluginKit.Plan("local-preview", [HookPoints.Perform], _scratch);
+
+        foreach (var name in new[] { PluginKit.WorkScript, PluginKit.Test, PluginKit.ContractTest, PluginKit.CycleFixture })
+        {
+            Assert.Equal(made.Files.Single(file => file.Name == name).Content, File.ReadAllText(Path.Combine(example, name)).Replace("\r\n", "\n"));
+        }
+
+        var (manifest, problem) = PluginCatalog.ReadFolder(example);
+        Assert.Null(problem);
+        Assert.Equal("local-preview/perform", Assert.Single(manifest.Steps).Kind);
+
+        // Copied out, so the cycle's journal and previews never land in the repository's folder.
+        var copy = Path.Combine(_scratch, "local-preview");
+        Directory.CreateDirectory(copy);
+        foreach (var file in Directory.GetFiles(example)) File.Copy(file, Path.Combine(copy, Path.GetFileName(file)));
+        var cycle = await PluginCycles.TryAsync(Home, copy, PluginCycles.Read(Path.Combine(copy, PluginKit.CycleFixture)) with { Deadline = TimeSpan.FromSeconds(1) });
+        Assert.True(cycle.Passed, Describe(cycle));
+    }
+
     // ——— helpers
 
     private static void Sabotage(string folder, string file, string from, string to)

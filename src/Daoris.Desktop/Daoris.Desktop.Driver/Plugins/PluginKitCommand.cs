@@ -86,7 +86,7 @@ public static class PluginKitCommand
         output.WriteLine(performs
             ? "  Next: write act(), check() and remove() in plugin.mjs, then `node --test` in the folder and"
             : "  Next: write what each handler does in plugin.mjs, then `node --test` in the folder and");
-        output.WriteLine($"  `daoris-driver plugins try {plan.Folder}`{(performs ? $" --cycle {Path.Combine(plan.Folder, PluginKit.CycleFixture)}" : "")}.");
+        output.WriteLine($"  `daoris-driver plugins try {plan.Folder}{(performs ? $" --cycle {Path.Combine(plan.Folder, PluginKit.CycleFixture)}" : "")}`.");
         output.WriteLine("  Once a person has read it, `daoris plugin add <folder>` installs it; nothing runs before that.");
         return 0;
     }
