@@ -219,13 +219,15 @@ public sealed class ObservedEventTests : IDisposable
 
         // FABRIC-PERFORM1m: the branch moved and the unit's revision, the end fact's, still lags at C1. The next pass, a wake, reads the tip and
         // rebinds the node to it: the old binding lapses under RUN1's rules, and the person is told nothing, no work is sent, nothing kept.
+        // FABRIC-PERFORM1p: the plugins are told the tip the node rebound to.
         _tips["feature/a"] = C2;
         var rebound = await PassAsync(runtime, whole: false);
         var deployed = Record().Statuses["deployed"];
         Assert.Equal((NodeStates.Active, C2), (deployed.State, deployed.Binding!.SubjectRevision));
         Assert.Equal([A], rebound.Evaluated);
         Assert.Empty(rebound.Said);
-        Assert.False(rebound.AwaitedChanged);
+        Assert.True(rebound.AwaitedChanged);
+        Assert.Equal(C2, Assert.Single(_port.SentTo(Plugin, 1)!.Units).Tip);
         Assert.Empty(_port.Sent);
         Assert.Empty(Record().Observations);
 
@@ -237,8 +239,8 @@ public sealed class ObservedEventTests : IDisposable
         Assert.Equal(C2, Assert.Single(reached.Observations).Commit);
         Assert.Empty(_port.Refusals);
 
-        // A performed node is bound as before, to the unit's revision: only the observed node reads the tip.
-        Assert.Equal(C1, Assert.Single(_port.Sent).SubjectRevision);
+        // FABRIC-PERFORM1p: the performed node its wire starts is bound to the same tip, not the unit's lagging revision.
+        Assert.Equal(C2, Assert.Single(_port.Sent).SubjectRevision);
 
         // The end fact catching up reaches nothing again: the observed node keeps its acceptance and its event, its wire fires no more.
         _units = [BranchUnit(A, "feature/a", C2)];
@@ -249,6 +251,67 @@ public sealed class ObservedEventTests : IDisposable
 
         // One read of the checkout's tips a pass, whatever binds or hears.
         Assert.Equal([("checkout", 1), ("checkout", 1), ("checkout", 1), ("checkout", 1)], _tipReads);
+    }
+
+    [Fact]
+    public async Task A_performed_node_after_an_observed_one_reached_on_the_fresh_tip_starts_once_there_and_its_completion_is_taken()
+    {
+        var runtime = Runtime();
+        await PassAsync(runtime);
+        _tips["feature/a"] = C2;
+        await PassAsync(runtime, whole: false);
+
+        // FABRIC-PERFORM1p: the end fact lags at C1 while the deploy is reached on the branch's tip, C2. Its wire starts the notify on C2, and
+        // the plugins are told C2 as the unit's tip.
+        _port.Heard.Enqueue(Event(WorkStates.Reached, "e1", _now, commit: C2));
+        await PassAsync(runtime, whole: false);
+        var call = Assert.Single(_port.Sent);
+        Assert.Equal(C2, call.SubjectRevision);
+        Assert.Equal(C2, Assert.Single(_port.SentTo(Plugin, 1)!.Units).Tip);
+
+        // Its completion is judged on that tip, read in its pass: taken on its binding, not applied as a lapsed attempt's.
+        _port.Heard.Enqueue(new WorkStepHeard(Plugin, 1, new WorkStepFrame("notify", new WorkOutcome(WorkStates.Reached,
+            Evidence: new WorkEvidence(null, "https://notify.example/n1", null, "notified")), _now, "n1", Invocation: call.Invocation)));
+        var answered = await PassAsync(runtime, whole: false);
+        var notify = Record().Statuses["notify"];
+        Assert.Equal((NodeStates.Reached, C2), (notify.State, notify.Acceptance!.SubjectRevision));
+        Assert.Contains(answered.Performed, done => (done.Node, done.What) == ("notify", PerformedWhat.Applied));
+        Assert.Empty(_port.Refusals);
+
+        // The end fact catching up starts nothing again: the notify ran once, on the new tip.
+        var reached = Record();
+        _units = [BranchUnit(A, "feature/a", C2)];
+        await PassAsync(runtime);
+        Assert.Single(_port.Sent);
+        Assert.Equal(NodeRecordFiles.StatusText(reached.Statuses["notify"]), NodeRecordFiles.StatusText(Record().Statuses["notify"]));
+
+        // One read of the checkout's tips a pass: the look's, the rebinding's, the event's, the completion's and the look's again.
+        Assert.Equal(Enumerable.Repeat(("checkout", 1), 5), _tipReads);
+    }
+
+    [Fact]
+    public async Task A_completion_heard_while_the_tip_is_unread_is_judged_on_the_tip_told_not_the_lagging_revision()
+    {
+        _units = [BranchUnit(A, "feature/a", C0)];
+        var runtime = Runtime();
+        await PassAsync(runtime);
+        _port.Heard.Enqueue(Event(WorkStates.Reached, "e1", _now));
+        await PassAsync(runtime, whole: false);
+        var call = Assert.Single(_port.Sent);
+        Assert.Equal(C1, call.SubjectRevision);
+
+        // FABRIC-PERFORM1p: the branch then unread, at a look and at the completion's wake. The plugins are still told the tip they were told,
+        // and the completion is judged on it: taken, never lapsed against the unit's lagging C0.
+        _tips.Remove("feature/a");
+        await PassAsync(runtime);
+        Assert.Equal(C1, Assert.Single(_port.SentTo(Plugin, 1)!.Units).Tip);
+        _port.Heard.Enqueue(new WorkStepHeard(Plugin, 1, new WorkStepFrame("notify", new WorkOutcome(WorkStates.Reached,
+            Evidence: new WorkEvidence(null, "https://notify.example/n1", null, "notified")), _now, "n1", Invocation: call.Invocation)));
+        await PassAsync(runtime, whole: false);
+        var notify = Record().Statuses["notify"];
+        Assert.Equal((NodeStates.Reached, C1), (notify.State, notify.Acceptance!.SubjectRevision));
+        Assert.Single(_port.Sent);
+        Assert.Empty(_port.Refusals);
     }
 
     [Fact]
@@ -294,7 +357,7 @@ public sealed class ObservedEventTests : IDisposable
             [(PerformedWhat.NotTaken, WorkRefusals.Stale), (PerformedWhat.Begun, null), (PerformedWhat.Applied, WorkStates.Reached), (PerformedWhat.Replay, null)],
             pass.Performed.Where(done => done.Node == "deployed").Select(done => (done.What, done.Code)));
         Assert.Equal((Plugin, WorkRefusals.Stale), Assert.Single(_port.Refusals));
-        Assert.Equal(C1, Assert.Single(_port.Sent).SubjectRevision);
+        Assert.Equal(C2, Assert.Single(_port.Sent).SubjectRevision); // FABRIC-PERFORM1p: the notify on the tip the deploy was reached on.
         Assert.Equal([A], pass.Evaluated);
 
         // One read of the checkout a pass: the hearing's, the rebinding's and the second hearing's alike.

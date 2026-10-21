@@ -18902,3 +18902,13 @@ description theories held cell for cell by `plugin-steps.test.ts`, `PluginPageTe
 rotation, which fills the rest of the turn and moves on only by what it took. Proof: `ObservedEventTests`' 34-unit case, seen failing
 first: the held event taken in its pass, the two units the rotation left reached at the next pass and first at the look's deadline.
 Detail: D173's FABRIC-PERFORM1q note.
+
+## FABRIC-PERFORM1p — a branch unit's performed nodes and told tip on the pass's tip too (2026-10-21, D173)
+
+> - [ ] **FABRIC-PERFORM1p — a branch unit's performed nodes and told tip on the pass's tip too** (driver; after PERFORM1m; §C4, §E2). A performed node wired after an observed node reached on a branch's fresh tip starts on the unit's lagging end-fact revision, then runs again when the end fact catches up, and `work/watch` still tells the end fact's tip: bind the unit's performed nodes, the told tip and `WorkBelief.Lapsed` to the pass's one read together. Proof: its notify starts once, on the new tip, and the completion is taken; one read per checkout per pass.
+
+**Outcome** 2026-10-21: built. A branch unit with an observed node binds its performed nodes to the tip its pass reads
+(`NodeRuntime.TipRevisions`), tells its plugins that tip (`Told`, else the tip told before), and judges an answer's lapse on it, the
+checkout of each unit answered read once before the hearing (`WorkPerformer.UnitsOf`); an unread tip sends nothing new. Proof:
+`ObservedEventTests` (the notify sent once on the new tip and its completion taken, the end fact catching up sending nothing, one read a
+pass; a completion while the tip is unread judged on the tip told). Detail: D173's FABRIC-PERFORM1p note.
