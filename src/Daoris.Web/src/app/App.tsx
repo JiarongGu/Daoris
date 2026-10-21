@@ -9,6 +9,7 @@ import { type NotificationsAt, NotificationsView } from '../notifications/Notifi
 import { usePressAnnouncements } from '../notifications/announce';
 import { sessionTitle } from '../work/identity';
 import { AttentionBand } from '../work/attention/AttentionBand';
+import { needsListed } from '../work/attention/attention';
 import { useScope } from '../data/scope';
 import { AskDaoris } from '../help/AskDaoris';
 import type { AskOpening } from '../help/AskConversation';
@@ -475,7 +476,7 @@ export function App() {
   // The bell's count (NOTIFY2b, the notification design §2.1): each press of either source once, and every other row of What needs
   // you as .NET judged them (PUSH1d4), a press's own row being its card. Two answers to "how many need me" would disagree the first
   // time either was edited. Before the first judgement the rows are no count yet, and the presses count alone.
-  const needsRows = attention.state === 'known' ? attention.rows.filter((row) => row.kind !== 'confirmation').length : 0;
+  const needsRows = attention.state === 'known' ? needsListed(attention.rows).length : 0;
   const waiting = presses.length + needsRows;
   // While any press waits unshown, the bell wears the warning hue with the presses' own count (§3.3, Fable's F1.1).
   const pressUnshown = presses.some((each) => each.shown !== true);

@@ -17,7 +17,7 @@ import { sentence } from '../../locales/format';
 import type { Attention, AttentionActs } from './AttentionRow';
 import type { Answered } from '../InlineConfirm';
 import { attentionKey, AttentionList, type AttentionDoors, AttentionRegion, NothingNeedsYou } from './AttentionList';
-import { attentionOf, rowRun } from './attention';
+import { attentionOf, needsListed, rowRun } from './attention';
 import { useOpinionActs } from '../gates/opinionActs';
 import { useReviewActs } from '../gates/reviewActs';
 import { ruleHearing, useRuleAnswer } from '../waits/ruleAnswer';
@@ -141,7 +141,7 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
 
   const harnesses = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
   // In *Notifications* a press is its card, drawn above from the confirmation channel, never its row (NOTIFY2b, §3.1).
-  const rows = inView ? attention.rows.filter((row) => row.kind !== 'confirmation') : attention.rows;
+  const rows = inView ? needsListed(attention.rows) : attention.rows;
   const waiting = attentionOf(rows, {
     sessions: sessions.data ?? [], quests: quests.data ?? [], asks: asks.data ?? [], tools: byTool(harnesses),
   });

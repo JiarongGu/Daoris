@@ -6,7 +6,7 @@ import { elapsed, span } from '../locales/format';
 import type { NotificationsGroup } from '../notifications/NotificationsView';
 import type { Confirmation } from '../person/Confirmations';
 import { NothingNeedsYou } from '../work/attention/AttentionList';
-import { ATTENTION_GROUP, type AttentionGroup, GROUP_ORDER } from '../work/attention/attention';
+import { ATTENTION_GROUP, type AttentionGroup, GROUP_ORDER, needsListed } from '../work/attention/attention';
 
 /** A line of the summary: its group's name, its count, and its oldest wait or its press's time left, where one is known. */
 type Line = { id: 'presses' | AttentionGroup; label: string; count: number; detail: string | null; opens: NotificationsGroup };
@@ -50,7 +50,7 @@ export function NeedsSummary({ attention, presses, onNotifications, now = Date.n
   if (attention.state === 'app') return region(<p className="m-0 text-body text-ink-soft">{t('work.attention.needsApp')}</p>);
   if (attention.state === 'reading') return region(<SkeletonRows />);
 
-  const rows = attention.rows.filter((row) => row.kind !== 'confirmation');
+  const rows = needsListed(attention.rows);
   const lines: Line[] = [];
   if (presses.length > 0) {
     const first = Math.min(...presses.map((each) => new Date(each.expires).getTime()));
