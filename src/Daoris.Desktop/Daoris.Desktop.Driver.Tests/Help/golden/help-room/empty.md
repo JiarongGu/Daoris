@@ -134,6 +134,10 @@ under *Doors Daoris still owes* (below), say Daoris still owes that door and nam
   applies, a landing plugin that cannot land here, or a kind this build does not run
   makes the card a draft with no apply until it is. Changes against a base, a kind and an import are not
   proposed yet.
+  `route` chooses it for `default`, `landed` (the work that lands) or `kind:<id>`; with no `steps` and no
+  `graph`, it chooses a workflow saved here and saves nothing. A verification pipeline, which only `landed`
+  names, takes its whole `graph` in place of `steps`: at least one `check`, and nothing that lands. Its gates
+  are the person's to accept on the Workflow tab, and what a change asks less of them is said on its card.
   Merging with nobody is never proposed: *land without my review* is a pull request opened with no press, which
   the person still merges, and a merge at done is a decision of its own, which you say rather than propose.
 - `setup_propose`: set a repository registered here up for every agent, as `daoris-driver setup <repository>`

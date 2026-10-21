@@ -133,6 +133,11 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  applies, a landing plugin that cannot land here, or a kind this build does not run\n");
         text.Append("  makes the card a draft with no apply until it is. Changes against a base, a kind and an import are not\n");
         text.Append("  proposed yet.\n");
+        // FABRIC-PIPELINE1i (D192 point 2, the pipeline design §1.3): a route with no version, and a verification pipeline's graph.
+        text.Append("  `route` chooses it for `default`, `landed` (the work that lands) or `kind:<id>`; with no `steps` and no\n");
+        text.Append("  `graph`, it chooses a workflow saved here and saves nothing. A verification pipeline, which only `landed`\n");
+        text.Append("  names, takes its whole `graph` in place of `steps`: at least one `check`, and nothing that lands. Its gates\n");
+        text.Append("  are the person's to accept on the Workflow tab, and what a change asks less of them is said on its card.\n");
         text.Append("  Merging with nobody is never proposed: *land without my review* is a pull request opened with no press, which\n");
         text.Append("  the person still merges, and a merge at done is a decision of its own, which you say rather than propose.\n");
         // LAYOUT8 (D170 point 1): the set-up press as a card, where the owner's helper could only name the terminal command. The
