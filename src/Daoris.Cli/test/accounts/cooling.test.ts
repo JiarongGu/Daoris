@@ -10,7 +10,7 @@ import {
 } from '../../src/agents/toolchain.ts';
 import type { HarnessReport, HarnessSettings } from '../../src/agents/toolchain.ts';
 import { driverRows as csharpRows, driverTestFile } from '../_csharp.ts';
-import { captureError, makeFixture } from '../_fixture.ts';
+import { makeFixture } from '../_fixture.ts';
 
 /**
  * `cooling.json` read and ended (TOOL4e, D125 §2.3, §2.4): the driver writes an account's cool-off when a limit is read,
@@ -198,56 +198,6 @@ function cooling(fx: { root: string }, held: Record<string, Record<string, unkno
 }
 
 const AHEAD = () => new Date(Date.now() + 86_400_000).toISOString().replace(/\.\d+Z$/, 'Z');
-
-test('`profile ready` ends an account\'s cool-off, and says so', () => {
-  const fx = makeFixture('cooling-ready');
-  mkdirSync(profileHome(fx.root, 'claude-code', 'account-1'), { recursive: true });
-  cooling(fx, { 'claude-code': { 'account-1': { until: AHEAD(), stated: true }, 'account-2': { until: AHEAD(), stated: true } } });
-
-  const ready = run(['profile', 'ready', 'claude-code', 'account-1'], homeEntry(fx.root, 'harnesses'));
-
-  assert.equal(ready.code, 0);
-  assert.match(ready.out, /the `claude-code` account `account-1` is offered again: no start waits on its limit now/);
-  assert.equal(coolingOf(fx.root, 'claude-code', 'account-1', new Date()), null);
-  assert.notEqual(coolingOf(fx.root, 'claude-code', 'account-2', new Date()), null);
-  fx.cleanup();
-});
-
-test('`profile ready` on an account that is not cooling says so and changes nothing', () => {
-  const fx = makeFixture('cooling-ready-not');
-  cooling(fx, { 'claude-code': { 'account-2': { until: AHEAD(), stated: true } } });
-  const before = readFileSync(homeEntry(fx.root, 'cooling'), 'utf8');
-
-  const ready = run(['profile', 'ready', 'claude-code', 'account-1'], homeEntry(fx.root, 'harnesses'));
-
-  assert.equal(ready.code, 0);
-  assert.match(ready.out, /the `claude-code` account `account-1` is not cooling, so nothing changed — cooling now: account-2/);
-  assert.equal(readFileSync(homeEntry(fx.root, 'cooling'), 'utf8'), before);
-  fx.cleanup();
-});
-
-test('`profile ready --own` ends the tool\'s own sign-in\'s cool-off, and a door ends its owner\'s', () => {
-  const fx = makeFixture('cooling-ready-own');
-  cooling(fx, { 'claude-code': { '': { until: AHEAD(), stated: false }, 'account-1': { until: AHEAD(), stated: true } } });
-
-  const own = run(['profile', 'ready', 'claude-code', '--own'], homeEntry(fx.root, 'harnesses'));
-  const door = run(['profile', 'ready', 'claude-code-acp', 'account-1'], homeEntry(fx.root, 'harnesses'));
-
-  assert.match(own.out, /`claude-code`'s own sign-in is offered again/);
-  assert.match(door.out, /runs as `claude-code`/);
-  assert.deepEqual(readCooling(fx.root, new Date()), []);
-  fx.cleanup();
-});
-
-test('`profile ready` needs an account or --own, never both', () => {
-  const fx = makeFixture('cooling-ready-args');
-
-  assert.match(captureError(() => run(['profile', 'ready', 'claude-code'], homeEntry(fx.root, 'harnesses'))).message,
-    /needs <agent> <profile>\|--own/);
-  assert.match(captureError(() => run(['profile', 'ready', 'claude-code', 'account-1', '--own'], homeEntry(fx.root, 'harnesses'))).message,
-    /`--own` names no account/);
-  fx.cleanup();
-});
 
 // ——— What else ends one (§2.3): a sign-in or a key into the account, as the driver's `LoginAsync` and `HarnessKeys.Add`
 // end one; and an account removed takes its cool-off with it, as the driver's `RemoveProfile` does.

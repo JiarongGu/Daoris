@@ -325,7 +325,8 @@ public static class AccountNames
             ? "(none)"
             : string.Join(", ", accounts.Select(account => names.TryGetValue(account, out var name) ? $"{name} ({account})" : account));
 
-    private static string Sentence(
+    /// <summary>A refused name in a person's words, which <c>daoris-driver agent profile rename</c> says before it acts (PUSH1f2e).</summary>
+    internal static string Sentence(
         string agent, AccountNameProblem problem, string account, string? name, IReadOnlyCollection<string> accounts,
         IReadOnlyDictionary<string, string> names) => problem.Kind switch
     {

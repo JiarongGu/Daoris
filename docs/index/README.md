@@ -125,7 +125,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Usage/UsageHistory.cs` | 47 | 925 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Acp/Acp.cs` | 142 | 2800 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Adapters/Adapters.cs` | 140 | 2419 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/AgentsCommand.cs` | 44 | 861 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/AgentsCommand.cs` | 47 | 894 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatGoOn.cs` | 40 | 750 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.cs` | 150 | 2681 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatTurns.cs` | 45 | 1004 |
@@ -141,7 +141,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/NoteCodes.cs` | 80 | 1250 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/SystemWiring.cs` | 50 | 1072 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Hooks.cs` | 62 | 1199 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Quests/Domain/Planner.cs` | 122 | 1995 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Quests/Domain/Planner.cs` | 122 | 1996 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Review/Domain/OpinionGate.cs` | 40 | 718 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs` | 161 | 2835 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Domain/Trace.Chain.cs` | 65 | 1420 |
@@ -218,10 +218,10 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Cli/src/agents/toolchain.ts` | 166 | 3102 |
+| `src/Daoris.Cli/src/agents/toolchain.ts` | 145 | 2744 |
 | `src/Daoris.Cli/src/doctrine/materialize.ts` | 47 | 935 |
 | `src/Daoris.Cli/src/plugins/plugins.ts` | 83 | 1612 |
-| `src/Daoris.Cli/test/agents/toolchain.test.ts` | 117 | 2202 |
+| `src/Daoris.Cli/test/agents/toolchain.test.ts` | 105 | 1969 |
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 47 | 895 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 49 | 852 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 75 | 1281 |
@@ -236,7 +236,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/deployment-rehearsal.mjs` | 103 | 1778 |
 | `tools/desktop-publish.mjs` | 74 | 1295 |
 | `tools/desktop.mjs` | 54 | 1090 |
-| `tools/family-rehearsal.mjs` | 352 | 6149 |
+| `tools/family-rehearsal.mjs` | 352 | 6150 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
 | `tools/merge-branch.mjs` | 250 | 4429 |
 | `tools/orient-index.mjs` | 66 | 1425 |
@@ -281,7 +281,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-20-pipeline-design.md` | 97 | 846 |
 | `docs/2026-10-20-session-context-design.md` | 45 | 478 |
 | `docs/2026-10-20-ui-ux-design.md` | 106 | 1115 |
-| `docs/2026-10-21-account-pool-design.md` | 55 | 581 |
+| `docs/2026-10-21-account-pool-design.md` | 80 | 776 |
 | `docs/2026-10-21-alone-path-design.md` | 74 | 545 |
 | `docs/2026-10-21-cleanup-design.md` | 111 | 1063 |
 | `docs/2026-10-21-notification-design.md` | 114 | 972 |

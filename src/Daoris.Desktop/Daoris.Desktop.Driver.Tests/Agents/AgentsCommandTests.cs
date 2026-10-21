@@ -99,6 +99,14 @@ public sealed class AgentsCommandTests : IDisposable
     [InlineData("rules decline p0000007")]
     [InlineData("settings claude-code --account work model opus")]
     [InlineData("trust claude-code <folder> --yes")]
+    [InlineData("unpin claude-code")]
+    [InlineData("unpin claude-code --workspace work")]
+    [InlineData("profile remove claude-code work")]
+    [InlineData("profile default claude-code work")]
+    [InlineData("profile order claude-code work")]
+    [InlineData("profile ready claude-code --own")]
+    [InlineData("profile rename claude-code work seat")]
+    [InlineData("profile join claude-code work --machine")]
     public async Task A_marked_terminal_s_change_acting_alone_is_refused_and_nothing_is_written(string words)
     {
         Propose(Home, "p0000007");
@@ -110,6 +118,7 @@ public sealed class AgentsCommandTests : IDisposable
         Assert.Equal(1, exit);
         Assert.Contains(DriverChoicesCommand.SessionsTerminal, _error.ToString(), StringComparison.Ordinal);
         Assert.Equal(written, Snapshot());
+        Assert.True(Directory.Exists(HarnessSettings.ProfileHome(Home, "claude-code", "work")));
     }
 
     /// <summary>A read is no press: the marker refuses nothing it says.</summary>
@@ -118,6 +127,8 @@ public sealed class AgentsCommandTests : IDisposable
     [InlineData("rules proposals")]
     [InlineData("settings claude-code --account work")]
     [InlineData("trust claude-code <folder> --profile work --dry-run")]
+    [InlineData("profile")]
+    [InlineData("profile list")]
     public async Task A_read_is_said_from_a_marked_terminal(string words)
     {
         Propose(Home, "p0000007");
@@ -183,6 +194,46 @@ public sealed class AgentsCommandTests : IDisposable
         var account = HarnessSettings.ProfileHome(other, "claude-code", "work");
         Assert.True(File.Exists(Path.Combine(account, words.StartsWith("settings", StringComparison.Ordinal) ? AgentSettings.FileName : ClaudeTrust.FileName)),
             running.Error.ToString());
+    }
+
+    /// <summary>
+    /// An account's change beside the running Daoris is the Accounts place's own press (PUSH1f2e2): <c>profile order</c> sends
+    /// <c>ACCOUNT_USE</c>'s order, confirmed in its window, and this process writes nothing; a workspace's unpin, which no route takes, is
+    /// written here and nothing is sent.
+    /// </summary>
+    [Fact]
+    public async Task Beside_the_running_Daoris_an_order_is_its_route_and_a_workspace_s_unpin_is_written_here()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        await using var running = new InstanceTestHome();
+        var standIn = running.Serve();
+        standIn.Confirming = true;
+        Account(running.Home);
+        Account(running.Home, "seat");
+        var wiring = DaorisHome.Entry(running.Home, HomeEntry.Harnesses);
+
+        var exit = await AgentsCommand.RunAsync(["profile", "order", "claude-code-acp", "seat", "work", "--workspace", "aurora"], Beside(running),
+            CancellationToken.None);
+
+        Assert.Equal(0, exit);
+        var press = Assert.Single(standIn.Presses);
+        Assert.Equal("ACCOUNT_USE", press.GetProperty("type").GetString());
+        var payload = press.GetProperty("payload");
+        Assert.Equal("order", payload.GetProperty("action").GetString());
+        Assert.Equal("claude-code", payload.GetProperty("harness").GetString());
+        Assert.Equal(["seat", "work"], payload.GetProperty("accounts").EnumerateArray().Select(each => each.GetString()));
+        Assert.Equal("aurora", payload.GetProperty("workspace").GetString());
+        Assert.Contains("daoris: in `aurora`, `claude-code`'s rotation is seat, then work.", running.Out.ToString(), StringComparison.Ordinal);
+        Assert.False(File.Exists(wiring));
+
+        File.WriteAllText(wiring, """{"workspaceVersions":{"aurora":{"claude-code":"2.1.0"}},"versions":{"claude-code":"2.1.0"}}""");
+        exit = await AgentsCommand.RunAsync(["unpin", "claude-code", "--workspace", "aurora"], Beside(running), CancellationToken.None);
+
+        Assert.Equal(0, exit);
+        Assert.Single(standIn.Presses);
+        var settings = HarnessSettings.Load(wiring);
+        Assert.Empty(settings.WorkspaceVersions);
+        Assert.Equal("2.1.0", settings.Versions["claude-code"]);
     }
 
     /// <summary>A trust no route takes is written here beside the running Daoris too (D171's PUSH1f note, kept by D194 point 5), nothing sent.</summary>

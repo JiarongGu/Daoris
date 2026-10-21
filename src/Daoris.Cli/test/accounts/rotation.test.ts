@@ -2,11 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { commandHarness, profileHome, readHarnessSettings, withDefault, writeHarnessSettings } from '../../src/agents/toolchain.ts';
+import { readHarnessSettings, withDefault, writeHarnessSettings } from '../../src/agents/toolchain.ts';
 import { resolveRotation, rotationProblem, withRotation, withoutAccount } from '../../src/accounts/rotation.ts';
 import { homeEntry } from '../../src/platform/home.ts';
 import { driverRows as csharpRows, driverTestFile } from '../_csharp.ts';
-import { captureError, makeFixture } from '../_fixture.ts';
+import { makeFixture } from '../_fixture.ts';
 
 /**
  * The order in `harnesses.json` (TOOL4e, D125 §3.1): `rotation` and `workspaceRotation`, the accounts rotation may use
@@ -161,100 +161,6 @@ test('both twins write the same file: every section, in the same order, as the s
     writeHarnessSettings(at(fx), codexDefault === null ? settings : withDefault(settings, 'codex', codexDefault, null));
     assert.equal(readFileSync(at(fx), 'utf8'), `${JSON.stringify(JSON.parse(after), null, 2)}\n`, why);
   }
-  fx.cleanup();
-});
-
-// ——— The verb (§6): `daoris agent profile order <agent> <profile>…|--clear [--workspace <name>]`.
-
-function run(argv: string[], path: string): { code: number; out: string } {
-  const saved = process.env.DAORIS_HARNESS_CONFIG;
-  process.env.DAORIS_HARNESS_CONFIG = path;
-  const lines: string[] = [];
-  try {
-    const code = commandHarness({ root: process.cwd(), argv, write: (line) => lines.push(line), packageRoot: process.cwd() }) as number;
-    return { code, out: lines.join('\n') };
-  } finally {
-    if (saved === undefined) delete process.env.DAORIS_HARNESS_CONFIG;
-    else process.env.DAORIS_HARNESS_CONFIG = saved;
-  }
-}
-
-function accounts(fx: { root: string }, agent: string, ...names: string[]): void {
-  for (const name of names) mkdirSync(profileHome(fx.root, agent, name), { recursive: true });
-}
-
-test('`profile order` writes the machine\'s order as given, and `--workspace` one workspace\'s', () => {
-  const fx = makeFixture('rotation-verb');
-  accounts(fx, 'claude-code', 'account-1', 'account-2', 'account-3');
-
-  const machine = run(['profile', 'order', 'claude-code', 'account-2', 'account-1'], at(fx));
-  const scoped = run(['profile', 'order', 'claude-code', 'account-3', '--workspace', 'work'], at(fx));
-
-  assert.equal(machine.code, 0);
-  assert.match(machine.out, /on this machine, `claude-code`'s rotation is account-2, then account-1\./);
-  assert.match(machine.out, /An account not in it is never rotated into/);
-  assert.match(scoped.out, /in `work`, `claude-code`'s rotation is account-3\./);
-  const settings = readHarnessSettings(at(fx));
-  assert.deepEqual(resolveRotation(settings, 'claude-code', null), { order: ['account-2', 'account-1'], from: 'machine' });
-  assert.deepEqual(resolveRotation(settings, 'claude-code', 'work'), { order: ['account-3'], from: 'workspace' });
-  fx.cleanup();
-});
-
-test('`profile order` refuses an account that does not exist and one named twice, writing nothing', () => {
-  const fx = makeFixture('rotation-verb-refused');
-  accounts(fx, 'claude-code', 'account-1', 'account-2');
-
-  const missing = captureError(() => run(['profile', 'order', 'claude-code', 'account-1', 'account-9'], at(fx)));
-  const twice = captureError(() => run(['profile', 'order', 'claude-code', 'account-1', 'account-1'], at(fx)));
-  const none = captureError(() => run(['profile', 'order', 'claude-code'], at(fx)));
-
-  assert.match(missing.message, /`claude-code` has no account `account-9`.*accounts there: account-1, account-2/);
-  assert.match(twice.message, /`account-1` is named twice/);
-  assert.match(none.message, /needs the accounts, in order, or --clear/);
-  assert.deepEqual(readHarnessSettings(at(fx)).rotation, {});
-  fx.cleanup();
-});
-
-test('`profile order --clear` takes the order away, and refuses accounts named beside it', () => {
-  const fx = makeFixture('rotation-verb-clear');
-  accounts(fx, 'claude-code', 'account-1', 'account-2');
-  run(['profile', 'order', 'claude-code', 'account-1', 'account-2'], at(fx));
-  run(['profile', 'order', 'claude-code', 'account-2', '--workspace', 'work'], at(fx));
-
-  const scoped = run(['profile', 'order', 'claude-code', '--clear', '--workspace', 'work'], at(fx));
-  assert.match(scoped.out, /`work` names no order for `claude-code` now: the machine's applies there, account-1, then account-2\./);
-  const machine = run(['profile', 'order', 'claude-code', '--clear'], at(fx));
-  assert.match(machine.out, /`claude-code` has no order on this machine now\./);
-  assert.deepEqual(resolveRotation(readHarnessSettings(at(fx)), 'claude-code', 'work'), { order: [], from: 'unset' });
-
-  const both = captureError(() => run(['profile', 'order', 'claude-code', 'account-1', '--clear'], at(fx)));
-  assert.match(both.message, /`--clear` names no account/);
-  fx.cleanup();
-});
-
-test('`profile order` on a door writes its owner\'s order, and says so', () => {
-  const fx = makeFixture('rotation-verb-door');
-  accounts(fx, 'claude-code', 'account-1');
-
-  const door = run(['profile', 'order', 'claude-code-acp', 'account-1'], at(fx));
-
-  assert.match(door.out, /runs as `claude-code`/);
-  assert.deepEqual(readHarnessSettings(at(fx)).rotation, { 'claude-code': ['account-1'] });
-  fx.cleanup();
-});
-
-test('`profile remove` takes the account out of every order, as it un-defaults it', () => {
-  const fx = makeFixture('rotation-verb-remove');
-  accounts(fx, 'claude-code', 'account-1', 'account-2');
-  run(['profile', 'order', 'claude-code', 'account-1', 'account-2'], at(fx));
-  run(['profile', 'order', 'claude-code', 'account-1', '--workspace', 'work'], at(fx));
-
-  const removed = run(['profile', 'remove', 'claude-code', 'account-1'], at(fx));
-
-  assert.match(removed.out, /no default and no order names it/);
-  const settings = readHarnessSettings(at(fx));
-  assert.deepEqual(settings.rotation, { 'claude-code': ['account-2'] });
-  assert.deepEqual(settings.workspaceRotation, {});
   fx.cleanup();
 });
 

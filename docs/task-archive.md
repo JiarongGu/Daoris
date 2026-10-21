@@ -19098,3 +19098,19 @@ writer of `harnesses.json` through it. Account verbs' shapes unchanged. Detail: 
 
 **Outcome** 2026-10-21: the resume (D79) hands the asker's words to its new session, and a park made after a resume goes on with its
 answer, the quest's stale `awaits` no longer read as a wait. Detail: `docs/FIX-LOG.md`'s SAYHELD1 entry and D137's SAYHELD1 note.
+## ACCTPOOL1 — one pool of Daoris's accounts serves every workspace (2026-10-21)
+
+> - [ ] **ACCTPOOL1 — one pool of Daoris's accounts serves every workspace** (design; D197, drafting 2026-10-21; amends D125, D130 and D152). The owner decided that an agent's accounts signed in for Daoris are one pool for every workspace, and that the machine's own account stays the machine's, never changed by Daoris. The add-account dialog's *Let it run work in* step offered *This machine's list* in words that read as moving the machine onto the new account, while ticking it would narrow every workspace without a list of its own to that one account (`src/Daoris.Web/src/agents/agents.ts` `joinChoices`, `AddAccount.tsx` `choiceDetail`). Proof: D197 and its design read by Codex under D191, accepted, and its build rows filed.
+
+**Outcome** 2026-10-21: designed and accepted as D197, after Codex's read of round 1 (21 findings, 15 blocking) and Fable's of round 2
+(13 findings, 5 blocking), all taken; the build is POOL1a-d after PUSH1f2e. Detail: `docs/2026-10-21-account-pool-design.md` and D197's notes.
+## PUSH1f2e2 — `agent unpin` and the account verbs but `profile use` (2026-10-22, D194)
+
+> - [ ] **PUSH1f2e — the agents' tools and accounts** (cli, driver, modules, tools; after 2d; D194, the alone-path design §5). Read its row in §5 and the sections it names; build it end to end (D187), the family's TypeScript leaving as §4 says. Built so far: PUSH1f2e1 (archived); the rest starts at `agent list|install|…`. Proof: as §5 names it.
+
+**Outcome** 2026-10-22: the second part of the row, split out as the first was; PUSH1f2e stays open in the backlog for `agent list`,
+`profile use`, the long verbs and the TypeScript's leaving. Built: `daoris-driver agent unpin` and `agent profile
+list|add|remove|default|order|ready|rename|join` (`AgentAccountsCommand`), handed on by `daoris agent`; each change `HARNESS_ACTION`'s
+or `ACCOUNT_USE`'s press while Daoris runs, else the library's write, refused from a marked terminal. Today's text kept (70 rows, none
+changed); both ways over 23 cases. Their TypeScript branches and 26 CLI tests left. The account verbs' shapes and payloads unchanged.
+Detail: D194's PUSH1f2e2 note. On Opus.
