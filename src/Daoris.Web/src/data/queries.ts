@@ -155,6 +155,8 @@ export const keys = {
   systemWiring: ['system', 'wiring'] as const,
   /** The Downloads row's list (CACHECLEAR1) — shell-only: the versions under this install's `cache/`, read when the row opens it. */
   systemDownloads: ['system', 'downloads'] as const,
+  /** The *Disk space* card (KEEP1c) — shell-only: each kind's size, rule, next and last clean, read again as each kind's walk ends. */
+  systemSpace: ['system', 'space'] as const,
   /**
    * Git's reads (GIT1d-b, D147) — shell-only: they read this machine's checkouts. The branch list moves, so it is keyed by its
    * scope alone; every other read is named by whole commit ids (D147 §4.2), so a commit is cached by its commit and never changes.

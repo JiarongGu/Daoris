@@ -264,6 +264,10 @@ public static class DriverCommand
               how this Daoris is wired, Settings → This Daoris's twin: its folders, service, loop, settings files,
               variables and where each came from, versions and what a new terminal finds; what only the window
               knows says so. --measure walks the folders' sizes first. Never a key's value. Reads only.
+          space [--json] [--measure]
+              the free space and each kind Daoris keeps, This Daoris's Disk space twin: its size and when it was
+              counted, its rule, when it next goes and when it was last cleaned. --measure counts each kind first,
+              each within its own bound. Reads only; removes nothing.
           plugins install <file.nupkg>
               install a plugin package's plugin, checked first; nothing reaches a network.
           plugins new <id> --point <point>… [--in <folder>]  ·  plugins try <folder|id> [--point <point>]

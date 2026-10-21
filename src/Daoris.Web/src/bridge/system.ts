@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../data/queries';
-import type { DownloadCleared, DownloadedVersion, DownloadsListing, SystemWiring } from '../data/wiring';
+import type { DownloadCleared, DownloadedVersion, DownloadsListing, SystemSpace, SystemWiring } from '../data/wiring';
 import { call, refusedNoRoute } from './call';
 import { pollUnlessTold } from './state/published';
 
@@ -9,8 +9,8 @@ import { pollUnlessTold } from './state/published';
 // `daoris-driver wiring`, one reader in the driver library. Shell-only: this machine's paths, variables and service (D47 §4).
 // The shape is a wire shape (`data/wiring.ts`, where the cards that draw it can name it): a field is added, never renamed.
 export type {
-  DownloadCleared, DownloadedVersion, DownloadsListing, SystemWiring, WiringFile, WiringFolder, WiringLocated, WiringOld, WiringToolFolder,
-  WiringVariable,
+  DownloadCleared, DownloadedVersion, DownloadsListing, SpaceKind, SystemSpace, SystemWiring, WiringFile, WiringFolder, WiringLocated,
+  WiringOld, WiringToolFolder, WiringVariable,
 } from '../data/wiring';
 // The page tells a shell older than it by this refusal, and reaches the route helper through the domain, not around it.
 export { refusedNoRoute } from './call';
@@ -48,6 +48,32 @@ export const useSystemWiring = () => {
     return answered;
   };
   return { available: isAvailable, query, measure };
+};
+
+/**
+ * The *Disk space* card (KEEP1c, the cleanup design §4.4): the free space, and each kind's size, rule, next and last clean, read only in
+ * the desktop. The open counts nothing: `count` asks the kinds named, or every kind, each a bounded walk in the background, and each
+ * kind's end tells `wiring`, which reads this again, so the card fills in kind by kind. A window with no bus reads again every two
+ * seconds while a kind counts.
+ */
+export const useSystemSpace = () => {
+  const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const query = useQuery({
+    queryKey: keys.systemSpace,
+    queryFn: () => call<SystemSpace>('SYSTEM_SPACE'),
+    enabled: isAvailable,
+    retry: (count, error) => !refusedNoRoute(error) && count < 2,
+    refetchInterval: (current) => (current.state.data?.kinds?.some((kind) => kind.counting) ? pollUnlessTold(isAvailable, 2_000) : false),
+  });
+  const count = async (kinds?: string[]) => {
+    const asked = Date.now();
+    const answered = await call<SystemSpace>('SYSTEM_SPACE', { measure: kinds ?? true });
+    // A read that landed meanwhile is newer than this answer (FABRIC-EVENT5b, as the wiring's measure keeps it).
+    if ((client.getQueryState(keys.systemSpace)?.dataUpdatedAt ?? 0) <= asked) client.setQueryData(keys.systemSpace, answered);
+    return answered;
+  };
+  return { available: isAvailable, query, count };
 };
 
 /**

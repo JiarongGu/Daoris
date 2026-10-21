@@ -339,6 +339,14 @@ public sealed partial class HelpCoverageTests
         + "nothing to propose, as `trace` is exempt (D171, D110 §4); each setting it shows is changed at its own door.");
 
     /// <summary>
+    /// KEEP1c's <c>daoris-driver space</c> (D195 point 5, the cleanup design §4.4), a verb of the headless host: exempt, since it reads
+    /// each kind's size, rule, next and last clean and changes nothing, as <c>wiring</c> is; its <c>--measure</c> counts sizes.
+    /// </summary>
+    private static readonly Exempt SpaceDoor = new(
+        "it reads the free space and each kind Daoris keeps, its size, rule, next and last clean, and changes nothing, so there is "
+        + "nothing to propose, as `wiring` is exempt (D195, D110 §4); each rule is set at its own door once it may be.");
+
+    /// <summary>
     /// WORKFLOW1f's <c>daoris-driver workflow keep</c> (D157 point 10, the workflow design §4.4), a verb of the headless host:
     /// exempt, since keeping a workflow that asks less of the person for work outside its kind's paths is their say-so, as going
     /// on without a second opinion is. The screen's press is the editor's row (WORKFLOW1g).
@@ -1108,6 +1116,7 @@ public sealed partial class HelpCoverageTests
             .Append(TraceDoor)
             .Append(WorkflowRunDoor)
             .Append(WiringDoor)
+            .Append(SpaceDoor)
             .Append(WorkflowKeepDoor)
             .Append(CheckDoor)
             .Append(GitBranchesDoor)
@@ -1500,6 +1509,19 @@ public sealed partial class HelpCoverageTests
         Assert.Null(HelpProposalKinds.Find("wiring"));
         Assert.Contains("changes nothing", WiringDoor.Reason);
         Assert.Contains("D171", WiringDoor.Reason);
+    }
+
+    /// <summary>
+    /// KEEP1c: the headless host's <c>space</c> is exempt from Ask Daoris (D195, D110 §4) while its usage spells it: a read that removes
+    /// nothing, with no kind of that name to take it. Its <c>space free</c> and the rules' <c>keep</c> are KEEP1e's and KEEP1d's.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_space_is_exempt_since_it_changes_nothing()
+    {
+        Assert.Contains("space [--json] [--measure]", DriverCommand.Usage);
+        Assert.Null(HelpProposalKinds.Find("space"));
+        Assert.Contains("changes nothing", SpaceDoor.Reason);
+        Assert.Contains("D195", SpaceDoor.Reason);
     }
 
     /// <summary>

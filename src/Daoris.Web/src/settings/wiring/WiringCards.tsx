@@ -28,7 +28,7 @@ export type WiringDoors = {
  * shell's one answer. The domain (`WiringDomain`) holds the hooks and hands the answer here; a story hands a fixture, so
  * the whole domain is drawn at the frame's widths (the UI/UX design R6, UIFIT1). A molecule: every state by props.
  */
-export function WiringCards({ wiring, update, busy = false, onMeasure, onOpenLogFolder, doors, downloads, onDownloads }: {
+export function WiringCards({ wiring, update, busy = false, onMeasure, onOpenLogFolder, doors, downloads, onDownloads, space }: {
   wiring: SystemWiring;
   /** The install's update, the shell's own state (UPDATE1b): the Versions card's line. */
   update?: UpdateState;
@@ -39,11 +39,14 @@ export function WiringCards({ wiring, update, busy = false, onMeasure, onOpenLog
   /** The Downloads row's clearing, open (CACHECLEAR1), and the press that opens it. */
   downloads?: ReactNode;
   onDownloads?: () => void;
+  /** The Disk space card (KEEP1c), after Folders: the domain draws it from its own read (`WiringSpace`). */
+  space?: ReactNode;
 }) {
   return (
     <>
       <WiringHead kind={wiring.folder.kind} />
       <WiringFolders wiring={wiring} busy={busy} onMeasure={onMeasure} downloads={downloads} onDownloads={onDownloads} />
+      {space}
       <WiringService wiring={wiring} />
       <WiringLoop loop={wiring.loop} onDriver={doors.driver} />
       <WiringFiles files={wiring.files} onDoor={doors.file} />

@@ -115,3 +115,33 @@ export type DownloadCleared = {
   kind: 'agent' | 'tool'; name: string; version: string; unfinished: boolean;
   outcome: 'removed' | 'kept' | 'gone' | 'unfinished'; bytes?: number | null; keeps?: string | null; by?: string[] | null;
 };
+
+/**
+ * One kind This Daoris's *Disk space* card shows (KEEP1c, the cleanup design §4.4): `SYSTEM_SPACE`'s row. Its size is its own last
+ * walk's (`measured`, null where never counted; `partial` with why where the walk stopped short), its `rule` the one that runs
+ * (`days`, `never`, `press`, `proof`, or another's `own` with `whose`), `next` when its rule next takes something (`bytes` null where
+ * not counted), and `last` its last clean from `keeping.json`. `volume` and `settable` are KEEP1f's and KEEP1d's.
+ */
+export type SpaceKind = {
+  id: string;
+  entries: string[];
+  bytes: number | null; files: number | null; measured: string | null; partial: boolean; partialWhy: Why; counting: boolean;
+  volume: { path: string; free: number; total: number } | null;
+  rule: { kind: 'days' | 'never' | 'press' | 'proof' | 'own'; days: number | null; whole: boolean | null; default: boolean; whose: string | null };
+  settable: boolean;
+  next: { at: string; count: number; bytes: number | null } | null; nextWhy: Why;
+  last: { at: string; door: string; removed: { count: number; bytes: number }; kept: Record<string, number> } | null; lastWhy: Why;
+};
+
+/**
+ * `SYSTEM_SPACE`'s answer (KEEP1c): the Daoris folder's volume (its `floor` none until KEEP1f), each kind in the card's order, the
+ * press's `run` (KEEP1e's, none yet) and `held`, the run lock's holder elsewhere, or one a crash left (`gone`).
+ */
+export type SystemSpace = {
+  schema: number;
+  volume: { path: string; free: number; total: number; floor: { bytes: number; from: string } | null; below: boolean } | null;
+  volumeWhy: Why;
+  kinds: SpaceKind[];
+  run: unknown;
+  held: { pid: number; since: string; door: string; gone: boolean } | null;
+};

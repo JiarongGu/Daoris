@@ -17,20 +17,26 @@ vi.mock('@shenora/react', () => ({
 
 import { SettingsView } from './SettingsView';
 import i18n from '../locales/i18n';
-import { clockOf } from '../locales/format';
+import { clockOf, dayOf, size } from '../locales/format';
 import { code } from '../test/code';
 import { DRIVER_STATE, respond, show, WIRING } from '../test/shellHarness';
-import type { SystemWiring } from '../bridge/system';
-import { DEVELOPMENT, DOWNLOADS, MEASURING, WIRED } from './wiring/wiringFixtures';
+import type { SystemSpace, SystemWiring } from '../bridge/system';
+import {
+  DEVELOPMENT, DOWNLOADS, MEASURING, SPACE, SPACE_COUNTING, SPACE_STOPPED, SPACE_UNCOUNTED, WIRED,
+} from './wiring/wiringFixtures';
 
 const NO_UPDATE = { state: 'none', staged: null, mode: null, driven: 0, turns: 0, problem: null, outcome: null, last: null };
 
-/** The shell: the wiring as given for `SYSTEM_WIRING` (a function may ask the payload), the driver's state for the rest. */
-const shell = (wiring: SystemWiring | ((payload?: { measure?: boolean }) => SystemWiring)) =>
+/**
+ * The shell: the wiring as given for `SYSTEM_WIRING` (a function may ask the payload), the disk space for `SYSTEM_SPACE` (KEEP1c), the
+ * driver's state for the rest.
+ */
+const shell = (wiring: SystemWiring | ((payload?: { measure?: boolean }) => SystemWiring), space: SystemSpace = SPACE) =>
   async (module: string, type: string, request?: { payload?: { measure?: boolean } }) => {
     if (module === 'DAORIS.UPDATE') return NO_UPDATE;
     if (module !== 'DAORIS.DRIVER') return WIRING;
     if (type === 'SYSTEM_WIRING') return typeof wiring === 'function' ? wiring(request?.payload) : wiring;
+    if (type === 'SYSTEM_SPACE') return space;
     return DRIVER_STATE;
   };
 
@@ -552,6 +558,103 @@ describe('Settings → This Daoris', () => {
 
     expect(await screen.findByText(/This window is older than this page/)).toBeTruthy();
     expect(screen.queryByRole('region', { name: 'Folders' })).toBeNull();
+  });
+
+  // KEEP1c (D195 point 5, the cleanup design §4.1, §4.2): the Disk space card, each kind's size, rule, next and last clean.
+  it('shows the disk space after the folders: each kind with its size, rule, next and last, and counts nothing on the open', async () => {
+    invoke.mockImplementation(shell(WIRED));
+    open();
+
+    const card = await screen.findByRole('region', { name: 'Disk space' });
+    const regions = screen.getAllByRole('region').map((region) => region.getAttribute('aria-label'));
+    expect(regions.indexOf('Disk space')).toBe(regions.indexOf('Folders') + 1);
+    const scope = within(card);
+    expect(scope.getByText(`${size(143.5 * 1024 ** 3)} of ${size(1024 ** 4)}`)).toBeTruthy();
+    expect(scope.getByText('Set-aside trees')).toBeTruthy();
+    expect(scope.getByText('kept 14 days; its package folders go an hour after the move')).toBeTruthy();
+    expect(scope.getByText(
+      `next: 3 folders, ${size(0.6 * 1024 ** 3)} on ${dayOf('2026-10-29T09:00:00.000+00:00')} · `
+      + `last: ${clockOf('2026-10-16T08:10:00.000+00:00')}, 2 removed, ${size(1.1 * 1024 ** 3)}`,
+    )).toBeTruthy();
+    expect(scope.getByText('an unused version goes 7 days after it was found unused')).toBeTruthy();
+    expect(scope.getByText('kept 30 days')).toBeTruthy();
+    expect(scope.getByText('kept until you clear it')).toBeTruthy();
+    expect(scope.getByText('cleaned up once its work is on the line')).toBeTruthy();
+    expect(scope.getByText("the browser's own limit")).toBeTruthy();
+    expect(scope.getByText('nothing removes it by itself; yours to remove')).toBeTruthy();
+    // It sets nothing yet: no rule's editor and no press that frees space (KEEP1d, KEEP1e).
+    expect(scope.queryByRole('button', { name: /Change|Free up space/ })).toBeNull();
+    await vi.waitFor(() => expect(invoke.mock.calls.some(([, type]) => type === 'SYSTEM_SPACE')).toBe(true));
+    expect(invoke.mock.calls.filter(([, type, request]) => type === 'SYSTEM_SPACE' && request?.payload)).toEqual([]);
+  });
+
+  it("counts one kind from its Count, and every kind from the card's Measure again", async () => {
+    invoke.mockImplementation(shell(WIRED, SPACE_UNCOUNTED));
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Disk space' }));
+    expect(card.getAllByText('not counted yet')).toHaveLength(9);
+
+    await userEvent.click(card.getAllByRole('button', { name: 'Count' })[0]!);
+    await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SYSTEM_SPACE', { payload: { measure: ['set-aside'] } }));
+    await userEvent.click(card.getByRole('button', { name: 'Measure again' }));
+    await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SYSTEM_SPACE', { payload: { measure: true } }));
+  });
+
+  it("says a count under way, one that stopped short, a last it could not read and a terminal's run", async () => {
+    invoke.mockImplementation(shell(WIRED, SPACE_COUNTING));
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Disk space' }));
+
+    expect(card.getAllByText(/Counting…/).length).toBeGreaterThanOrEqual(2);
+    expect(card.getByText(`at least ${size(2.1 * 1024 ** 3)}`)).toBeTruthy();
+    expect(card.getByText(/more files than one count reads/)).toBeTruthy();
+    expect(card.getByText(/last: not known, since its record could not be read/)).toBeTruthy();
+    expect(card.getByText(`A run from a terminal is under way, since ${clockOf('2026-10-16T10:40:00.000+00:00')}.`)).toBeTruthy();
+    expect((card.getByRole('button', { name: 'Measure again' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('says a run a crash cut short until the next run ends', async () => {
+    invoke.mockImplementation(shell(WIRED, SPACE_STOPPED));
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Disk space' }));
+
+    expect(card.getByText(`The last run, from the look, stopped before its end; it began ${clockOf('2026-10-16T03:00:00.000+00:00')}.`)).toBeTruthy();
+  });
+
+  it("opens the downloads' list under its own row", async () => {
+    invoke.mockImplementation(async (module: string, type: string, request?: { payload?: { measure?: boolean } }) => (
+      type === 'SYSTEM_DOWNLOADS' ? DOWNLOADS : shell(WIRED)(module, type, request)));
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Disk space' }));
+
+    await userEvent.click(card.getByRole('button', { name: 'Clear unused downloads…' }));
+
+    expect(await card.findByRole('region', { name: 'Clear downloads' })).toBeTruthy();
+    expect(within(screen.getByRole('region', { name: 'Folders' })).queryByRole('region', { name: 'Clear downloads' })).toBeNull();
+  });
+
+  it('says in its card that a shell older than it answers no disk space', async () => {
+    invoke.mockImplementation(async (module: string, type: string, request?: { payload?: { measure?: boolean } }) => {
+      if (module === 'DAORIS.DRIVER' && type === 'SYSTEM_SPACE') throw Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' });
+      return shell(WIRED)(module, type, request);
+    });
+    open();
+
+    const card = await screen.findByRole('region', { name: 'Disk space' });
+    expect(await within(card).findByText('This window answers no disk space: it is older than this page.')).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Folders' })).toBeTruthy();
+  });
+
+  it('shows the disk space in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    invoke.mockImplementation(shell(WIRED));
+    open();
+
+    const card = within(await screen.findByRole('region', { name: '磁盘空间' }));
+    expect(card.getByText('另行存放的工作树')).toBeTruthy();
+    expect(card.getByText('保留 14 天；其依赖包文件夹在移走一小时后移除')).toBeTruthy();
+    expect(card.getByText('保留到你清除为止')).toBeTruthy();
+    expect(card.getByText(`共 ${size(1024 ** 4)}，可用 ${size(143.5 * 1024 ** 3)}`)).toBeTruthy();
   });
 
   it('speaks 中文', async () => {

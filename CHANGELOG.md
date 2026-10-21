@@ -20,6 +20,12 @@ with the version and date at release.
   a brainstorm cut short because the driver running it stopped; and a session left running when Daoris last stopped. A meeting or a
   brainstorm you stopped yourself is not said back. Everything else the driver reports, such as a look that could not read something
   and tries again, is in Settings → Logs and in the headless driver's console only. In English and 中文.
+- Settings → This Daoris has a *Disk space* card after *Folders*: the free space on Daoris's drive, then each kind of thing Daoris
+  keeps (trees set aside, downloaded versions, the browser's cache, the machine log, conversations and records, trees in use,
+  sign-ins, what an earlier build left, and everything else) with its size and when it was counted, the rule that keeps it, when it
+  next goes and when it was last cleaned. A size is counted when you press *Count* or *Measure again*, and once a day by Daoris's own
+  look while it keeps trees set aside or downloads, never by opening the page. `daoris-driver space` says the same at a terminal, `--measure` counting first. It removes and changes nothing.
+  Sizes of a gigabyte or more are now said in GB everywhere. In English and 中文.
 - A go-ahead that nothing on its ask can use any more is now marked *stale go-ahead* (过时的放行) in *What needs you* and on its ask's
   page, with how long since its sessions stopped and its quests closed. It is listed under *Waiting for your word* and offers only
   *Refuse…*. Where two or more are stale, *Refuse all …* refuses them together with one reason you give, each on its own ask. A

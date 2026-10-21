@@ -157,6 +157,11 @@ public sealed class BranchTidying(string home)
     /// </summary>
     public string? ConfigPath { get; init; }
 
+    /// <summary>
+    /// The card's sizes the Keeping pass counts by itself (KEEP1c): the watch names the process's own; null, a test's tidy, counts none.
+    /// </summary>
+    public SpaceSizes? Sizes { get; init; }
+
     /// <summary>The running sessions, as the downloads' rule reads them; a test hands its own, as it hands a clock.</summary>
     internal Func<ServiceClient, CancellationToken, Task<LiveSessions>>? Sessions { get; init; }
 
@@ -202,6 +207,15 @@ public sealed class BranchTidying(string home)
         if (setAside) lines.AddRange(KeepSetAside(trees, run, log, met, ct));
         var left = Budget - spent.Elapsed;
         lines.AddRange(await KeepDownloadsAsync(service, run, left > TimeSpan.Zero ? left : TimeSpan.Zero, log, met, ct).ConfigureAwait(false));
+
+        // KEEP1c (the cleanup design §3.1 step 6, §4.3): each kind counted at most once a day, and the kinds this run wrote a `last` for at
+        // its end, in the background, so the card's sizes follow the rules without a page's open walking anything.
+        if (Sizes is { } sizes)
+        {
+            var ran = KeepingRecord.Read(home).Last.Where(each => each.Value.Run == run.Id).Select(each => each.Key);
+            sizes.StartDue(home, Clock(), ran, WiringBudget.Default);
+        }
+
         return lines;
     }
 
