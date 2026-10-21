@@ -1,7 +1,7 @@
 # Keeping: each kind of thing Daoris writes kept by one rule the person sets and sees, a set-aside tree's package folders dropped once it has settled, and the rules run by the look, a free-space floor and a press (proposed, 2026-10-21)
 
 **Standing:** proposed under D195 (CLEANUP1), in its second round under D191. Nothing here is built; its rows (§9) build it.
-Codex read the first round: its fourteen blocking findings and six others all hold, and each is taken in this round (§11). The
+Codex read the first round: its fourteen blocking findings and eight others all hold, and each is taken in this round (§11). The
 design meets D191's foundation threshold: it adds durable records (`data/keeping.json` and a manifest beside each set-aside folder
 it slims), removal nobody presses, a lock between processes, and it amends decided rules other designs rest on (D88's fourteen days
 and CACHECLEAR1's judgement). So Fable reads §3 and §5 of this round next, then the steward settles it. The owner decided §3.6
