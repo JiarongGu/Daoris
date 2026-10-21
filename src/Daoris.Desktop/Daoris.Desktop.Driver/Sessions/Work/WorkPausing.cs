@@ -36,6 +36,12 @@ public sealed record WorkWorld(ServiceClient Service, string Home, string Config
     /// </summary>
     public Func<string, CancellationToken, Task<SyncReport?>>? Sync { get; init; }
 
+    /// <summary>
+    /// Where the terminal's verb looks for the running Daoris (RPC1e), whose routes it sends while one answers; null acts alone, as the
+    /// window's own world and a test's do.
+    /// </summary>
+    public InstanceWorld? Instance { get; init; }
+
     /// <summary>The trees an abandon judges and discards: <see cref="Trees"/>, or this home's own.</summary>
     internal IWorkTrees TreesHere => Trees ?? new SessionTrees(Home);
 }

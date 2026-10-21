@@ -69,6 +69,9 @@ public static class OpenRoutes
     /// <summary><c>space free --yes</c>'s follow (KEEP1e): the disk space read each second, its <c>run</c> until it ends.</summary>
     public static InstanceRoute SystemSpace { get; } = Open("SYSTEM_SPACE");
 
+    /// <summary><c>ask --abandon &lt;id&gt;</c> and <c>quest abandon &lt;id&gt;</c> without <c>--yes</c> (RPC1e): what an abandon would take and keep.</summary>
+    public static InstanceRoute WorkPlan { get; } = Open("WORK_PLAN");
+
     /// <summary>
     /// Each verb of RPCOPEN1's scope, in the verb's words: the route it sends where the instance answers, or null with the reason it
     /// does not go through the pipe (yet).
@@ -86,6 +89,8 @@ public static class OpenRoutes
         ("sync", SyncNow, "an open press (D156 §3: sync)"),
         ("register", RegistryRefresh, "an open press (D156 §3: refresh)"),
         ("space free --yes", SystemSpace, "the run its press started, read until it ends (KEEP1e)"),
+        ("ask --abandon <id>", WorkPlan, "the list; with `--yes` the person's press (WORK_ABANDON)"),
+        ("quest abandon <id>", WorkPlan, "the list; with `--yes` the person's press (WORK_ABANDON)"),
         // The other open reads of RPC1e: each is read alone beside an instance, with the same words, until its route answers them as
         // `said` as the six above do (RPCOPEN1 built the shape, and the reads that follow it name no new one).
         ("trace", null, "alone: its words are built from the sources the host reads itself; TRACE answers the page's shape only"),
@@ -163,10 +168,25 @@ public static class PersonPresses
     /// </summary>
     public static InstanceRoute SpaceFree { get; } = Person("SYSTEM_SPACE_FREE");
 
+    /// <summary><c>ask --pause &lt;id&gt;</c> and <c>quest pause &lt;id&gt;</c> (RPC1e): a work paused on this machine, what of it runs stopped.</summary>
+    public static InstanceRoute WorkPause { get; } = Person("WORK_PAUSE");
+
+    /// <summary><c>ask --resume &lt;id&gt;</c> and <c>quest resume &lt;id&gt;</c> (RPC1e): a pause taken away, each stop it made released.</summary>
+    public static InstanceRoute WorkResume { get; } = Person("WORK_RESUME");
+
+    /// <summary><c>ask --abandon &lt;id&gt; --reason "…" --yes</c> and <c>quest abandon …</c> (RPC1e): what the list holds now abandoned.</summary>
+    public static InstanceRoute WorkAbandon { get; } = Person("WORK_ABANDON");
+
     /// <summary>Each person's press a verb sends over the pipe, in the verb's words, with its route.</summary>
     public static IReadOnlyList<(string Verb, InstanceRoute Route)> Presses { get; } =
     [
         ("space free --yes", SpaceFree),
+        ("ask --pause <id>", WorkPause),
+        ("quest pause <id>", WorkPause),
+        ("ask --resume <id>", WorkResume),
+        ("quest resume <id>", WorkResume),
+        ("ask --abandon <id> --reason \"…\" --yes", WorkAbandon),
+        ("quest abandon <id> --reason \"…\" --yes", WorkAbandon),
         ("sessions archive <id>…", SessionArchive),
         ("sessions unarchive <id>…", SessionArchive),
         ("sessions stop <id>", SessionStop),
