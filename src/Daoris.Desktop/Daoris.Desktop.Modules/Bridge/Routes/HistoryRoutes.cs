@@ -35,6 +35,8 @@ public sealed class HistoryRoutes(DriverLoop loop)
     [DriverRoute("HISTORY_PLAN")]
     private async Task<object?> HistoryPlanAsync(IpcRequest request, CancellationToken cancellationToken)
     {
+        // RPC1e: `history` and a clear's list without `--yes`, in the verb's words.
+        if (Flag(request, "said")) return await SaidAsync(SaidAsk(request, yes: false), cancellationToken).ConfigureAwait(false);
         var (scope, id) = HistoryNamed(request);
         var plan = await HistoryClearing.PlanAsync(WorldOf(_loop), scope, id, cancellationToken).ConfigureAwait(false);
         if (scope != HistoryScope.Workspace && plan.Units is [{ Keep.Word: HistoryWords.Unknown } unknown]) throw HistoryKept(unknown.Keep!);
@@ -57,6 +59,14 @@ public sealed class HistoryRoutes(DriverLoop loop)
     [Publishes("HISTORY_CLEAR", StateScopes.Sessions | StateScopes.Quests | StateScopes.Asks | StateScopes.Driver | StateScopes.History)]
     private async Task<object?> HistoryClearAsync(IpcRequest request, CancellationToken cancellationToken)
     {
+        // RPC1e: a terminal's `--yes`, which lists again and clears what may go, as the verb does alone; a kept unit is its exit 1.
+        if (Flag(request, "said"))
+        {
+            var said = await SaidAsync(SaidAsk(request, yes: true), cancellationToken).ConfigureAwait(false);
+            _loop.Nudge();
+            return said;
+        }
+
         var (scope, id) = HistoryNamed(request);
         var units = HistoryUnits(request);
         var outcome = await HistoryClearing.ClearAsync(WorldOf(_loop), scope, id, units, PluginEvents.Screen, cancellationToken)
@@ -65,6 +75,28 @@ public sealed class HistoryRoutes(DriverLoop loop)
 
         _loop.Nudge();
         return HistoryAnswers.Cleared(outcome);
+    }
+
+    /// <summary>
+    /// The verb's own lines and exit code for a history route a terminal sent (RPC1e): <see cref="HistoryCommand.RunAsync"/> with this
+    /// Daoris's world, at the terminal's door.
+    /// </summary>
+    private Task<object> SaidAsync(HistoryAsk ask, CancellationToken cancellationToken) =>
+        TerminalSaid.RunAsync(output => HistoryCommand.RunAsync(ask, WorldOf(_loop), output, cancellationToken));
+
+    /// <summary>
+    /// What the terminal asked, read from the route's payload (RPC1e): a clear's list (<c>clear: true</c>) or its press names its scope as
+    /// the page's does; the reading names a workspace or none, and <c>json</c> for the route's own answer.
+    /// </summary>
+    private static HistoryAsk SaidAsk(IpcRequest request, bool yes)
+    {
+        if (!yes && !Flag(request, "clear"))
+        {
+            return new HistoryAsk(HistoryScope.Workspace, Optional(request, "workspace")?.Trim()) { Json = Flag(request, "json") };
+        }
+
+        var (scope, id) = HistoryNamed(request);
+        return new HistoryAsk(scope, id) { Clear = true, Yes = yes };
     }
 
     /// <summary>The scope a history route names: exactly one of <c>workspace</c>, <c>quest</c> and <c>ask</c>; <c>failed</c> only beside a quest.</summary>

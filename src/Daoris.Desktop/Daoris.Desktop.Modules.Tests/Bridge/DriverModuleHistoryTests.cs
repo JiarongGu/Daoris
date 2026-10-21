@@ -290,4 +290,78 @@ public sealed class DriverModuleHistoryTests : DriverModuleBridge
         Assert.True(File.Exists(DaorisHome.Entry(Home, HomeEntry.Sessions,"c1.log")));
         Assert.DoesNotContain(JsonSerializer.Serialize(Home).Trim('"'), answer.GetRawText(), StringComparison.OrdinalIgnoreCase);
     }
+
+    /// <summary>The lines and the exit code a route answered as <c>said</c> (RPC1e), which the terminal prints, joined.</summary>
+    private static (string Out, int Code) SaidOf(JsonElement answer)
+    {
+        var said = answer.GetProperty("said");
+        return (string.Join("\n", said.GetProperty("out").EnumerateArray().Select(line => line.GetString())), said.GetProperty("code").GetInt32());
+    }
+
+    /// <summary>The terminal's own path over the same service and home, with no instance to look for: what the verb prints alone.</summary>
+    private static async Task<(string Out, int Code)> AloneAsync(LoopbackHost service, DriverLoop loop, IReadOnlyList<string> words, WorkScope? scope = null)
+    {
+        var ask = scope is { } named ? HistoryCommand.Read(named, words, out _) : HistoryCommand.Read(words, out _);
+        var output = new StringWriter { NewLine = "\n" };
+        var code = await HistoryCommand.RunAsync(ask!, new HistoryWorld(new ServiceClient(service.Address, null), loop.Home, loop.ConfigPath, loop.Processes), output);
+        return (output.ToString().TrimEnd('\n'), code);
+    }
+
+    /// <summary>
+    /// RPC1e: asked for its words (<c>said: true</c>) by <c>history</c>, <c>quest clear</c> and <c>history clear</c> sent over the pipe,
+    /// <c>HISTORY_PLAN</c> answers the reading and a clear's list, and <c>HISTORY_CLEAR</c> a clear the service keeps, each in the lines
+    /// and the exit code the alone path prints over the same service, as an answer and never a refusal. The page asks for no words.
+    /// </summary>
+    [Fact]
+    public async Task Asked_for_its_words_each_history_route_answers_the_lines_the_alone_path_prints()
+    {
+        Kept("s1");
+        using var service = Service(new Dictionary<string, string>
+        {
+            ["workspace=aurora"] = Unit("quest", "q1", sessions: """["s1"]""", quests: """["q1"]""") + ","
+                                   + Unit("quest", "qt", refusal: """{"refusal":"open","error":"taken","quest":"qt"}"""),
+            ["quest=q1"] = Unit("quest", "q1", sessions: """["s1"]""", quests: """["q1"]"""),
+            ["quest=qt"] = Unit("quest", "qt", refusal: """{"refusal":"open","error":"taken","quest":"qt"}"""),
+        });
+        var loop = Loop();
+        await loop.ComeUpAsync(new ServiceClient(service.Address, null));
+        var module = new DriverModule(Bus, loop);
+
+        foreach (var (route, payload, words, scope) in new (string, object, string[], WorkScope?)[]
+        {
+            ("HISTORY_PLAN", new { workspace = "aurora", said = true }, ["--workspace", "aurora"], null),
+            ("HISTORY_PLAN", new { workspace = "aurora", json = true, said = true }, ["--workspace", "aurora", "--json"], null),
+            ("HISTORY_PLAN", new { workspace = "aurora", clear = true, said = true }, ["clear", "--workspace", "aurora"], null),
+            ("HISTORY_PLAN", new { quest = "q1", clear = true, said = true }, ["clear", "q1"], WorkScope.Quest),
+            ("HISTORY_PLAN", new { quest = "qt", clear = true, said = true }, ["clear", "qt"], WorkScope.Quest),
+            ("HISTORY_CLEAR", new { quest = "qt", said = true }, ["clear", "qt", "--yes"], WorkScope.Quest),
+        })
+        {
+            var said = SaidOf(await AnswerAsync(module, route, payload));
+            var alone = await AloneAsync(service, loop, words, scope);
+            Assert.True(alone.Out.Length > 0, $"{route} printed nothing alone");
+            Assert.Equal(alone, said);
+        }
+
+        Assert.True(File.Exists(DaorisHome.Entry(Home, HomeEntry.Sessions, "s1.log")));
+        Assert.False((await AnswerAsync(module, "HISTORY_PLAN", new { workspace = "aurora" })).TryGetProperty("said", out _));
+    }
+
+    /// <summary>RPC1e: a terminal's clear runs here, at the terminal's door, and says what went in the verb's words.</summary>
+    [Fact]
+    public async Task A_terminal_s_clear_runs_here_and_says_what_went_in_the_verb_s_words()
+    {
+        Kept("s1");
+        var unit = Unit("quest", "q1", sessions: """["s1"]""", quests: """["q1"]""");
+        using var service = Service(
+            new Dictionary<string, string> { ["workspace=aurora"] = unit },
+            cleared: $$"""{"unit":{{unit}},"cleared":true,"message":"Cleared `#q1` from this machine."}""");
+        var module = await UpAsync(service);
+
+        var (lines, code) = SaidOf(await AnswerAsync(module, "HISTORY_CLEAR", new { workspace = "aurora", said = true }));
+
+        Assert.Equal(0, code);
+        Assert.StartsWith("daoris-driver: cleared aurora's finished history from this machine: 1 of 1 listed, 1 quest and 1 session", lines, StringComparison.Ordinal);
+        Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.Sessions, "s1.log")));
+    }
 }

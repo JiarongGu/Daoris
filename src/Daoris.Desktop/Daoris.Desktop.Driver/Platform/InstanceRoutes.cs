@@ -72,6 +72,9 @@ public static class OpenRoutes
     /// <summary><c>ask --abandon &lt;id&gt;</c> and <c>quest abandon &lt;id&gt;</c> without <c>--yes</c> (RPC1e): what an abandon would take and keep.</summary>
     public static InstanceRoute WorkPlan { get; } = Open("WORK_PLAN");
 
+    /// <summary><c>history</c>'s reading, and a clear's list without <c>--yes</c> (RPC1e): what a clear would take and keep.</summary>
+    public static InstanceRoute HistoryPlan { get; } = Open("HISTORY_PLAN");
+
     /// <summary>
     /// Each verb of RPCOPEN1's scope, in the verb's words: the route it sends where the instance answers, or null with the reason it
     /// does not go through the pipe (yet).
@@ -91,13 +94,16 @@ public static class OpenRoutes
         ("space free --yes", SystemSpace, "the run its press started, read until it ends (KEEP1e)"),
         ("ask --abandon <id>", WorkPlan, "the list; with `--yes` the person's press (WORK_ABANDON)"),
         ("quest abandon <id>", WorkPlan, "the list; with `--yes` the person's press (WORK_ABANDON)"),
+        ("history", HistoryPlan, "the reading; `--json` prints the route's own answer"),
+        ("history clear --workspace <name>", HistoryPlan, "the list; with `--yes` the person's press (HISTORY_CLEAR)"),
+        ("quest clear <id>", HistoryPlan, "the list; with `--yes` the person's press (HISTORY_CLEAR)"),
+        ("ask --clear <id>", HistoryPlan, "the list; with `--yes` the person's press (HISTORY_CLEAR)"),
         // The other open reads of RPC1e: each is read alone beside an instance, with the same words, until its route answers them as
         // `said` as the six above do (RPCOPEN1 built the shape, and the reads that follow it name no new one).
         ("trace", null, "alone: its words are built from the sources the host reads itself; TRACE answers the page's shape only"),
         ("git branches", null, "alone: its words are built from the registry's checkouts the host reads itself; GIT_BRANCHES answers the page's shape only"),
         ("workflow", null, "alone: WORKFLOW_RUN answers the page's shape only, and `workflow keep` writes its run"),
         ("help list", null, "alone: HELP_CONVERSATIONS answers the page's shape only"),
-        ("history", null, "alone: HISTORY_PLAN answers the page's shape only, and its clear is a person's press"),
         ("plugins show", null, "alone: PLUGIN_READ answers the page's shape only"),
     ];
 }
@@ -177,6 +183,9 @@ public static class PersonPresses
     /// <summary><c>ask --abandon &lt;id&gt; --reason "…" --yes</c> and <c>quest abandon …</c> (RPC1e): what the list holds now abandoned.</summary>
     public static InstanceRoute WorkAbandon { get; } = Person("WORK_ABANDON");
 
+    /// <summary><c>history clear --workspace &lt;name&gt; --yes</c>, <c>quest clear &lt;id&gt; --yes</c> and <c>ask --clear &lt;id&gt; --yes</c> (RPC1e): a clear.</summary>
+    public static InstanceRoute HistoryClear { get; } = Person("HISTORY_CLEAR");
+
     /// <summary>Each person's press a verb sends over the pipe, in the verb's words, with its route.</summary>
     public static IReadOnlyList<(string Verb, InstanceRoute Route)> Presses { get; } =
     [
@@ -187,6 +196,9 @@ public static class PersonPresses
         ("quest resume <id>", WorkResume),
         ("ask --abandon <id> --reason \"…\" --yes", WorkAbandon),
         ("quest abandon <id> --reason \"…\" --yes", WorkAbandon),
+        ("history clear --workspace <name> --yes", HistoryClear),
+        ("quest clear <id> [--failed] --yes", HistoryClear),
+        ("ask --clear <id> --yes", HistoryClear),
         ("sessions archive <id>…", SessionArchive),
         ("sessions unarchive <id>…", SessionArchive),
         ("sessions stop <id>", SessionStop),

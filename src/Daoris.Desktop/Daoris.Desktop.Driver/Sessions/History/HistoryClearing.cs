@@ -21,6 +21,12 @@ public sealed record HistoryWorld(ServiceClient Service, string Home, string Con
     /// as a process holding a transcript makes the disk refuse it, so what a clear frees is held on every platform.
     /// </summary>
     public Action<string, bool> Remover { get; init; } = SessionHomeFiles.FromDisk;
+
+    /// <summary>
+    /// Where the terminal's verb looks for the running Daoris (RPC1e), whose routes it sends while one answers; null acts alone, as the
+    /// window's own world and a test's do.
+    /// </summary>
+    public InstanceWorld? Instance { get; init; }
 }
 
 /// <summary>
