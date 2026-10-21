@@ -18922,3 +18922,12 @@ workspace's Branches tab, `help/places.ts`). What was added: on the page alone, 
 in its repository to the session whose tree's folder names it, as `WorkFrame` finds a session's own branch, and the row's door opens
 that session, whose head discards the branch; with no match it opens Branches. No driver field. Proof: `attention.test.ts` and
 `sessionsBadge.test.tsx`; the installed window is not yet seen. Detail: D173's FABRIC-UNKNOWN1c note. On Opus.
+
+## FABRIC-CLOSE1h14 — a push held back by its gate said as the gate's in the conversation (2026-10-21, D173)
+
+> - [ ] **FABRIC-CLOSE1h14 — a push held back by its gate said as the gate's in the conversation** (web, driver; after CLOSE1h12). `note.landing.push-held` and `work.trace.try.push-held` lead with "its quest was held or taken back" in en and zh even when CLOSE1h12's gate held the push; only the sentence beneath names the gate. A new code is the stored-shape-safe route; old notes read as before. Proof: a gate-held push's note leads with the gate's words; `i18n:check` and `names:check -- --strict` pass.
+
+**Outcome** 2026-10-21: built. A push its landing's gate held back is noted `landing.push-gated`, which leads with the gate's words in
+en and zh; a quest's hold, and every note from before, keep `landing.push-held` as worded. The try keeps `push-held`, so its recovery
+and the stored shape are unchanged, and its trace word now names the quest or the gate. Proof: `AutoLandingRulesTests`,
+`noteLines.test.ts`; `i18n:check` and `names:check -- --strict` pass. Detail: D173's FABRIC-CLOSE1h14 note.

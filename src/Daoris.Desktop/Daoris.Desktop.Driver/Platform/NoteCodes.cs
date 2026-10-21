@@ -644,6 +644,9 @@ public static class NoteCodes
     public static readonly NoteCode LandingPluginFailed = new("landing.plugin-failed", ["branch", "plugin"]);
     // Its push held back after the branch was made (FABRIC-CLOSE1h2): a code of its own, handed on at the look after the release.
     public static readonly NoteCode LandingPushHeld = new("landing.push-held", ["branch", "plugin"]);
+    // Held back there by its landing's gate (FABRIC-CLOSE1h14, after CLOSE1h12): a code of its own, so it never leads with its quest;
+    // a note written before it keeps `landing.push-held`.
+    public static readonly NoteCode LandingPushGated = new("landing.push-gated", ["branch", "plugin"]);
     public static readonly NoteCode LandingNothing = new("landing.nothing", []);
     public static readonly NoteCode LandingHeld = new("landing.held", []);
     public static readonly NoteCode LandingUncommitted = new("landing.uncommitted", ["paths"]);

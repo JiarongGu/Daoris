@@ -1121,6 +1121,34 @@ describe('noteLines', () => {
       { kind: 'words', text: gate, by: 'program' },
     ]);
   });
+
+  /**
+   * FABRIC-CLOSE1h14: a push its landing's gate held back leads with the gate's words, never its quest's, in either language; one
+   * written before it says `landing.push-held`, and keeps being worded as that.
+   */
+  it('words a push its gate held back as the gate\'s, and one from before as its quest\'s', () => {
+    const values = { branch: 'feature/x', plugin: 'acme.lands' };
+    const held = '`feature/x` is made. Its landing\'s gate held it before its plugin was told, so its push was not tried. Waits for a second opinion.';
+    const gated = [coded('landing.push-gated', 'Accepted automatically when its quest was done: …', values), words(held, 'program')];
+
+    const [lead] = noteLines(t, { parts: gated }, 'en');
+    expect(lead).toEqual({
+      kind: 'said',
+      text: 'Accepted automatically when its quest was done: its work is on `feature/x`, but its landing\'s gate held it before '
+        + '`acme.lands` was told, so nothing was pushed. The first look once the gate lets it go hands the branch on.',
+    });
+    expect(lead.text).not.toContain('held or taken back');
+    expect(noteLines(zh, { parts: gated }, 'zh')).toEqual([
+      {
+        kind: 'said',
+        text: '委托完成时已自动采纳：工作已放到 `feature/x`，但在告知 `acme.lands` 之前，它的落地关卡拦住了它，所以没有推送。关卡放开后的第一轮会把分支交给它。',
+      },
+      { kind: 'words', text: held, by: 'program' },
+    ]);
+
+    const before = [coded('landing.push-held', 'Accepted automatically when its quest was done: …', values)];
+    expect(noteLines(t, { parts: before }, 'en')[0].text).toContain('its quest was held or taken back before `acme.lands` was told');
+  });
 });
 
 describe('noteBlocks', () => {
