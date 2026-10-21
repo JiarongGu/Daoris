@@ -8,7 +8,9 @@ import type { SessionGrouping } from '../groups';
 import { askName, questName, sessionTitle } from '../identity';
 import type { Attention, AttentionKind } from './AttentionRow';
 import { accountRowWorded, type PushedAccountFacts } from './accountWords';
-import { CLOSE_SENDER, entryDetail, entryName, type HeldAttempt, heldWhy, heldWords, type MilestoneEntry } from '../head/milestone';
+import {
+  CLOSE_SENDER, endOffersStop, endSentences, entryDetail, entryName, type GraphEnd, type HeldAttempt, heldWhy, heldWords, type MilestoneEntry,
+} from '../head/milestone';
 import { type OpinionWait, opinionState } from '../gates/opinion';
 import { boundMinutes, type PermissionWait } from '../waits/PermissionAsks';
 import type { AnswerWait } from '../waits/AnswerAlone';
@@ -109,7 +111,9 @@ export type AttentionActId =
   // FABRIC-PERFORM1g: the person's word on a plugin step's attempt held for them.
   | 'happened' | 'did-not' | 'stop-step'
   // FABRIC-CLOSE1q: the person's word on Daoris's own close held for them: its recoveries, and the rest of the work stopped apart.
-  | 'record-close' | 'resend-close' | 'stop-close';
+  | 'record-close' | 'resend-close' | 'stop-close'
+  // FABRIC-CLOSE1j: the stop of a close found closed only in part, its node waiting again.
+  | 'stop-partial';
 
 /** The act each word offered on a held attempt is pressed by (FABRIC-PERFORM1g, FABRIC-CLOSE1q): a close's stop is not a step's. */
 export function heldActs(held: HeldAttempt): AttentionActId[] {
@@ -225,7 +229,9 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
     // A plugin step's attempt held for the person (FABRIC-PERFORM1g, §D6): their three words, until one is recorded and the driver's next
     // look applies it; a held close (FABRIC-CLOSE1q) its own, as the driver offers them. A unit only the clean-up's press settles has
     // that list, on its workspace's Branches, for its door (OVERVIEWNOISE1b), and no act of its own here.
-    case 'work': return item.held && !item.held.resolution ? plain(...heldActs(item.held)) : [];
+    // FABRIC-CLOSE1j: a close found closed only in part offers its node's stop alone, while it is offered and no word of theirs waits.
+    case 'work': return item.held && !item.held.resolution ? plain(...heldActs(item.held))
+      : item.ended && endOffersStop(item.ended) ? plain('stop-partial') : [];
     case 'account-wait':
     case 'signed-out': return accountOffers(item);
     default: return [];
@@ -301,6 +307,8 @@ export type PushedAttention = {
    */
   blocked?: { unknown: boolean; entries: Pick<MilestoneEntry, 'kind' | 'resource' | 'detail' | 'code' | 'facts'>[] };
   held?: HeldAttempt;
+  /** A closure graph closed only in part whose close node's stop is offered (FABRIC-CLOSE1j), its end whole. */
+  ended?: GraphEnd;
   /** A start waiting on accounts that holds an intake, or quests in several repositories: `where` is its workspace. */
   wholeWorkspace?: boolean;
   /** What a start waiting on accounts holds, which its title says. */
@@ -513,6 +521,7 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
     }
     case 'work': {
       if (row.held) return heldWorded(row, row.held);
+      if (row.ended) return endedWorded(row, row.ended);
       const entries = row.blocked?.entries ?? [];
       // OVERVIEWNOISE1b: named by the session that recorded its tree, as Sessions names it, else its branch or its tree's folder; each
       // entry worded by its code in the reader's language, the reason said once. An unknown owner says so first only where an entry
@@ -554,6 +563,22 @@ function heldWorded(row: PushedAttention, attempt: HeldAttempt): Attention {
         ? i18n.t('work.milestone.held.close.detail', { why: heldWhy(i18n.t, attempt) })
         : i18n.t('work.milestone.held.detail', { why: heldWhy(i18n.t, attempt), step: attempt.step }),
     held: attempt,
+  };
+}
+
+/**
+ * A closure graph closed only in part (FABRIC-CLOSE1j, the fabric events design §E5): the quest lost and why, and its close node, which
+ * waits again and would close that quest over the winner's take; the person's stop recorded stays a row, saying so, until the next look.
+ */
+function endedWorded(row: PushedAttention, end: GraphEnd): Attention {
+  return {
+    id: row.id,
+    kind: 'work',
+    since: row.since,
+    where: row.where ?? end.unit,
+    title: i18n.t('work.milestone.closed.title', { quest: end.quest ?? '' }),
+    detail: endSentences(i18n.t, end).join(' '),
+    ended: end,
   };
 }
 

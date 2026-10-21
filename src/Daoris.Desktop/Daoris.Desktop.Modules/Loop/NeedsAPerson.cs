@@ -46,6 +46,9 @@ public sealed record AttentionFacts
     /// <summary>Every plugin step's attempt held for the person, as the work slice holds them.</summary>
     public IReadOnlyList<JsonObject> Held { get; init; } = [];
 
+    /// <summary>Every closure graph's end (FABRIC-CLOSE1j), as the work slice holds them.</summary>
+    public IReadOnlyList<JsonObject> Ends { get; init; } = [];
+
     /// <summary>The tool calls the sessions hold for the person's answer, as <c>PERMISSION_WAITS</c> answers them.</summary>
     public IReadOnlyList<JsonObject> Permissions { get; init; } = [];
 
@@ -297,6 +300,17 @@ public static class NeedsAPerson
             var row = Row("work", $"{Part(attempt["unit"])}#{Part(attempt["node"])}#{Part(attempt["attempt"])}", Text(attempt, "resolvedAt") ?? Text(attempt, "at"));
             row["where"] = Text(attempt, "unit");
             row["held"] = attempt.DeepClone();
+            rows.Add(row);
+        }
+
+        // A closure graph closed only in part (FABRIC-CLOSE1j, §E5): while its close node's stop is offered, or the person's stop waits for
+        // the next look, since it was found. An override is the person's own, and said on the work's foot alone.
+        foreach (var end in facts.Ends.Where(end => Text(end, "kind") == "partially-closed"
+                     && (Text(end, "resolution") is not null || (end["words"] as JsonArray)?.Any(word => word?.GetValue<string>() == "stop") == true)))
+        {
+            var row = Row("work", $"{Part(end["unit"])}#{Part(end["node"])}#{Part(end["quest"])}", Text(end, "at"));
+            row["where"] = Text(end, "unit");
+            row["ended"] = end.DeepClone();
             rows.Add(row);
         }
 

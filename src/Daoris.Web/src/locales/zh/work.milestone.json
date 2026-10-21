@@ -93,5 +93,16 @@
   "work.milestone.held.act.resend": "再问一次结果",
   "work.milestone.held.act.stopClose": "停止余下的工作",
   "work.milestone.held.word.record": "重新记下结果",
-  "work.milestone.held.word.resend": "再问一次结果"
+  "work.milestone.held.word.resend": "再问一次结果",
+  "work.milestone.line.overridden": "在结束前由你关闭",
+  "work.milestone.line.partial": "部分关闭",
+  "work.milestone.closed.label": "关闭",
+  "work.milestone.closed.overridden": "在结束前已由你关闭，它不会再继续：已停止 {{nodes}}。",
+  "work.milestone.closed.overriddenNone": "在结束前已由你关闭，它不会再继续。",
+  "work.milestone.closed.partial": "部分关闭：#{{quest}} 已不再是已完成，因为它的接下输给了另一台机器，那里现在持有它的工作。其余委托仍是已完成，Daoris 绝不会越过那次接下去关闭它。",
+  "work.milestone.closed.offer": "它的关闭 {{node}} 又在等待，一旦 #{{quest}} 交付，就会越过那次接下去关闭它：停止它，把这个委托留给接下它的一方。",
+  "work.milestone.closed.worded": "你停止 {{node}} 的答复已记下，下一次查看时生效。",
+  "work.milestone.closed.stopped": "它的关闭 {{node}} 已停止。",
+  "work.milestone.closed.title": "#{{quest}} 部分关闭",
+  "work.milestone.closed.act.stop": "停止它的关闭"
 }

@@ -79,7 +79,7 @@ const HELD = '<held>';
 
 /**
  * The work as the shell pushes it (PUSH1c2b, D182): a partition per repository with a checkout here, then `<no checkout>`, each
- * `{units, recovery, unread}`, and `<held>`, `{held}`, apart. Composed into the one entry `WORK_STATE` answers, repositories in name
+ * `{units, recovery, unread}`, and `<held>`, `{held, ends}`, apart. Composed into the one entry `WORK_STATE` answers, repositories in name
  * order with `<no checkout>` last (a name sorts after `<`, so it is placed, not sorted). Not composed until the owner has judged every
  * part, which keeps the pull; a part of another shape keeps it too.
  */
@@ -96,7 +96,11 @@ export const workSlice: SliceSpec = {
     const held = partitions.get(HELD);
     if (!parts.every(object) || (held !== undefined && !object(held))) return undefined;
     const rows = (field: string) => parts.flatMap((part) => (Array.isArray(part[field]) ? part[field] as unknown[] : []));
-    return readWorkState({ units: rows('units'), recovery: rows('recovery'), unread: rows('unread'), held: held && Array.isArray(held.held) ? held.held : [] });
+    // FABRIC-CLOSE1j: the closure graphs' ends ride in `<held>` too, absent from a shell before them.
+    return readWorkState({
+      units: rows('units'), recovery: rows('recovery'), unread: rows('unread'),
+      held: held && Array.isArray(held.held) ? held.held : [], ends: held && Array.isArray(held.ends) ? held.ends : [],
+    });
   },
 };
 

@@ -93,5 +93,16 @@
   "work.milestone.held.act.resend": "Ask for the answer again",
   "work.milestone.held.act.stopClose": "Stop the rest of this work",
   "work.milestone.held.word.record": "record the answer again",
-  "work.milestone.held.word.resend": "ask for the answer again"
+  "work.milestone.held.word.resend": "ask for the answer again",
+  "work.milestone.line.overridden": "closed by you before its end",
+  "work.milestone.line.partial": "partially closed",
+  "work.milestone.closed.label": "Close",
+  "work.milestone.closed.overridden": "Closed by you before its end, so nothing more of it runs: stopped {{nodes}}.",
+  "work.milestone.closed.overriddenNone": "Closed by you before its end, so nothing more of it runs.",
+  "work.milestone.closed.partial": "Partially closed: #{{quest}} is no longer done, since its take was lost to another machine, which holds its work now. The others stay done, and Daoris never closes it over that take.",
+  "work.milestone.closed.offer": "Its close {{node}} waits again, and would close #{{quest}} over that take once it is submitted: stop it to leave the quest to whoever took it.",
+  "work.milestone.closed.worded": "Your stop of {{node}} is recorded, and the next look applies it.",
+  "work.milestone.closed.stopped": "Its close {{node}} is stopped.",
+  "work.milestone.closed.title": "#{{quest}} partially closed",
+  "work.milestone.closed.act.stop": "Stop its close"
 }

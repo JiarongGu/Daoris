@@ -8,7 +8,7 @@ import type { TrustHold } from '../../data/signals';
 import { Button, Dot, Icon, Inline, SelectField } from '../../design/ui';
 import type { AccountRowFacts } from './accountWords';
 import type { RuleProposal } from '../../settings/repository/AgentRules';
-import type { HeldAttempt, HeldResolution } from '../head/milestone';
+import type { GraphEnd, HeldAttempt, HeldResolution } from '../head/milestone';
 import { ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers } from './attention';
 import { Note } from '../Note';
 import { type Answered, InlineConfirm } from '../InlineConfirm';
@@ -77,6 +77,8 @@ export type Attention = {
   opinion?: OpinionWait;
   /** A `work` row's plugin step's attempt held for the person (FABRIC-PERFORM1g): what their word is on. */
   held?: HeldAttempt;
+  /** A `work` row's closure graph closed only in part (FABRIC-CLOSE1j): the stop of its close node is what their word is on. */
+  ended?: GraphEnd;
   /**
    * A `permission` row's tool call held for the person's answer (AUTONOMY1b3c): what its presses answer, by the choices its agent
    * offered. Its `session` is the session that holds it, whose page its door opens.
@@ -203,6 +205,7 @@ const HANDLER: Record<AttentionActId, keyof AttentionActs> = {
   'record-close': 'held',
   'resend-close': 'held',
   'stop-close': 'held',
+  'stop-partial': 'held',
 };
 
 /** The kinds that wait in a circle rather than in a repository. */
@@ -299,7 +302,7 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
     else if (act === 'let-ask' || act === 'not-now') acts.helper?.(item, act === 'let-ask');
     else if (act === 'go-on-answer' || act === 'keep-answer') acts.answerAlone?.(item, act === 'go-on-answer');
     else if (act === 'happened' || act === 'did-not') acts.held?.(item, act);
-    else if (act === 'stop-step' || act === 'stop-close') acts.held?.(item, 'stop');
+    else if (act === 'stop-step' || act === 'stop-close' || act === 'stop-partial') acts.held?.(item, 'stop');
     else if (act === 'record-close') acts.held?.(item, 'record');
     else if (act === 'resend-close') acts.held?.(item, 'resend');
   };
@@ -348,6 +351,8 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
       case 'record-close': return t('work.milestone.held.act.record');
       case 'resend-close': return t('work.milestone.held.act.resend');
       case 'stop-close': return t('work.milestone.held.act.stopClose');
+      // FABRIC-CLOSE1j: a close found closed only in part, its node waiting again: its stop alone.
+      case 'stop-partial': return t('work.milestone.closed.act.stop');
     }
   };
 
