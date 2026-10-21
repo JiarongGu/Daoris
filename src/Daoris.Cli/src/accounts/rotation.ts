@@ -57,8 +57,8 @@
 //
 // The driver's walk reads them (TOOL6b, TOOL6c): `use` and `keep` choose a start's account, and since SWITCH1b-ii the switch
 // and the curve pass an account over its curve, where the agent's door carries its windows or its own server is asked them
-// (`windows.json`, the toolchain's `windows`; CODEXUSE1). The curve is measured by `usagecurves.ts`, the driver's
-// `UsageCurves`' twin, which `profile use`'s said line reads (SWITCH1b-iii). `early` and `near` stay derived, as the
+// (`windows.json`; CODEXUSE1). The curve is measured by the driver's `UsageCurves` alone since `agent list` went to its
+// program (PUSH1f2e4) with the CLI's `usagecurves.ts`. `early` and `near` stay derived, as the
 // driver's `RotationUse` keeps them for the doors that still speak them, and nothing here reads them.
 
 import { atName, byName, findName, foldName } from '../platform/casefold.ts';
@@ -268,7 +268,7 @@ export function placesOf(settings: HarnessSettings, agent: string, account: stri
 
 /**
  * *Use accounts*' choices (§16.6): `goal`, make the most of them (§16.3, the driver's walk), and `order`, one by one in
- * the list's order (D125's walk). A new choice is a row here, and its words in the terminal's `USE_WORDS` (`toolchain.ts`).
+ * the list's order (D125's walk). A new choice is a row here, and its words in the driver program's `UseWords` (PUSH1f2e4).
  */
 export const USE_MODES = ['goal', 'order'] as const;
 export type UseMode = (typeof USE_MODES)[number];
@@ -318,7 +318,7 @@ export interface RotationUse {
   early: boolean;
   /**
    * Derived, as the old name reads: the session window's one point under `curve`, else the smart curve's 90. The walk reads
-   * the curve since SWITCH1b-ii (`usagecurves.ts`); the twin table keeps this for the doors that still speak it.
+   * the curve since SWITCH1b-ii (the driver's `UsageCurves`); the twin table keeps this for the doors that still speak it.
    */
   near: number;
 }

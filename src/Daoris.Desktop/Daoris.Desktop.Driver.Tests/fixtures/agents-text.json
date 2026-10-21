@@ -7060,6 +7060,144 @@
         "daoris/profiles/agents/claude-code/acct-0000000c/who.json": "{\"loggedIn\":true,\"email\":\"other@example.invalid\",\"orgName\":\"Org A\",\"subscriptionType\":\"pro\"}",
         "daoris/profiles/agents/claude-code/acct-0000000d/who.json": "{\"loggedIn\":true,\"email\":\"person@example.invalid\",\"orgName\":\"Org D\",\"subscriptionType\":\"max\"}"
       }
+    },
+    {
+      "name": "list, a cooling account's Try now names an account a shell cannot take by a placeholder",
+      "argv": [
+        "list"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/R&D",
+        "daoris/profiles/agents/claude-code/account-2"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"0.0.0-none\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"},\"rotation\":{\"claude-code\":[\"R&D\",\"account-2\"]}}",
+        "daoris/data/cooling.json": "{\"claude-code\":{\"R&D\":{\"until\":\"2026-10-22T16:02:00Z\",\"stated\":true}}}"
+      },
+      "now": "2026-10-22T12:00:00Z",
+      "exit": 0,
+      "out": [
+        "daoris: <root>/daoris/data/harnesses.json",
+        "",
+        "  claude-code    Claude Code, by Anthropic",
+        "                 absent — pinned to 0.0.0-none on this machine, and nothing is installed at that version — `daoris agent pin claude-code 0.0.0-none` installs it, and `daoris agent unpin claude-code` goes back to PATH",
+        "                 `daoris agent install claude-code` installs it, with its own installer",
+        "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
+        "                 `daoris agent pin claude-code 0.0.0-none` installs it",
+        "                 R&D              unknown  ",
+        "                                  cooling until Oct 22, 12:02 (America/New_York), in 4 h 2 min — as the agent said; `daoris agent profile ready claude-code <account>` tries it now",
+        "                 account-2        unknown  ",
+        "                 rotation         R&D, then account-2",
+        "                                  use accounts: make the most of them",
+        "                                  kept for conversations: none",
+        "                                  switch accounts: Smart — a session moves at a turn's end when its use is over the curve; a start passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve",
+        "                                  next start: the ready account running the fewest of Daoris's sessions; then the one whose week would lapse the most: within its last day, its room under its curve per hour to its reset; then the one with the most room under its curve; then the one Daoris started on least recently; then this list's order, from `R&D`; one whose limit is reached, that draws on usage credits or whose use is over its curve goes last, the least over first",
+        "                                  no account has said what it has left yet: Daoris spreads starts across them by its own sessions",
+        "                                  held now: `R&D` is cooling until Oct 22, 12:02 (America/New_York)",
+        "                                  Agents → the agent's page → How accounts are used names the account it takes, from the sessions Daoris runs and its last starts, which this terminal does not read",
+        "",
+        "  claude-code-acp Claude Code, by Anthropic",
+        "                 absent — pinned to 0.0.0-none on this machine, and nothing is installed at that version — `daoris agent pin claude-code-acp 0.0.0-none` installs it, and `daoris agent unpin claude-code-acp` goes back to PATH",
+        "                 `daoris agent install claude-code-acp` installs it, with its own installer",
+        "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
+        "                 `daoris agent pin claude-code-acp 0.0.0-none` installs it",
+        "                 its accounts are Claude Code's, listed under `claude-code`: this is another way Claude Code runs on them",
+        "",
+        "  codex          Codex, by OpenAI",
+        "                 absent — pinned to 0.0.0-none on this machine, and nothing is installed at that version — `daoris agent pin codex 0.0.0-none` installs it, and `daoris agent unpin codex` goes back to PATH",
+        "                 `daoris agent install codex` installs it, with its own installer",
+        "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
+        "                 `daoris agent pin codex 0.0.0-none` installs it",
+        "                 no accounts — Daoris's sessions wait until you sign in: `daoris agent login codex --new`",
+        "",
+        "  codex-acp      Codex, by OpenAI",
+        "                 absent — pinned to 0.0.0-none on this machine, and nothing is installed at that version — `daoris agent pin codex-acp 0.0.0-none` installs it, and `daoris agent unpin codex-acp` goes back to PATH",
+        "                 `daoris agent install codex-acp` installs it, with its own installer",
+        "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
+        "                 `daoris agent pin codex-acp 0.0.0-none` installs it",
+        "                 its accounts are Codex's, listed under `codex`: this is another way Codex runs on them",
+        "",
+        "  dsh            DeepSeek Harness, by DeepSeek",
+        "                 absent — pinned to 0.0.0-none on this machine, and nothing is installed at that version — `daoris agent pin dsh 0.0.0-none` installs it, and `daoris agent unpin dsh` goes back to PATH",
+        "                 `daoris agent install dsh` installs it, with its own installer",
+        "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
+        "                 `daoris agent pin dsh 0.0.0-none` installs it",
+        "                 no accounts — Daoris's sessions wait until you sign in: `daoris agent login dsh --new`",
+        "",
+        "  An account is a directory Daoris owns the location of. The credential inside it belongs to",
+        "  the agent's own store. An API key is the one secret Daoris keeps: `agent key`, in keys.json."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/cooling.json": "{\"claude-code\":{\"R&D\":{\"until\":\"2026-10-22T16:02:00Z\",\"stated\":true}}}",
+        "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"0.0.0-none\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"},\"rotation\":{\"claude-code\":[\"R&D\",\"account-2\"]}}"
+      }
+    },
+    {
+      "name": "list, the join names an account by its name where a shell can take it, and by its id where none can",
+      "argv": [
+        "list"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/account-1",
+        "daoris/profiles/agents/claude-code/account-2"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"0.0.0-none\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"},\"defaults\":{\"claude-code\":\"elsewhere\"}}",
+        "daoris/data/accounts.json": "{\"claude-code\":{\"account-1\":{\"name\":\"R&D\"},\"account-2\":{\"name\":\"O'Brien\"}}}"
+      },
+      "now": "2026-10-22T12:00:00Z",
+      "exit": 0,
+      "out": [
+        "daoris: <root>/daoris/data/harnesses.json",
+        "",
+        "  claude-code    Claude Code, by Anthropic",
+        "                 absent — pinned to 0.0.0-none on this machine, and nothing is installed at that version — `daoris agent pin claude-code 0.0.0-none` installs it, and `daoris agent unpin claude-code` goes back to PATH",
+        "                 `daoris agent install claude-code` installs it, with its own installer",
+        "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
+        "                 `daoris agent pin claude-code 0.0.0-none` installs it",
+        "                 R&D              unknown   (id account-1)",
+        "                                  no workspace: no list and no default holds it, so no start runs on it — `daoris agent profile join claude-code account-1 <workspace>…|--machine` puts it in one",
+        "                 O'Brien          unknown   (id account-2)",
+        "                                  no workspace: no list and no default holds it, so no start runs on it — `daoris agent profile join claude-code \"O'Brien\" <workspace>…|--machine` puts it in one",
+        "                 next start       `elsewhere`, this machine's default — with no list, the one account its starts run on",
+        "",
+        "  claude-code-acp Claude Code, by Anthropic",
+        "                 absent — pinned to 0.0.0-none on this machine, and nothing is installed at that version — `daoris agent pin claude-code-acp 0.0.0-none` installs it, and `daoris agent unpin claude-code-acp` goes back to PATH",
+        "                 `daoris agent install claude-code-acp` installs it, with its own installer",
+        "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
+        "                 `daoris agent pin claude-code-acp 0.0.0-none` installs it",
+        "                 its accounts are Claude Code's, listed under `claude-code`: this is another way Claude Code runs on them",
+        "",
+        "  codex          Codex, by OpenAI",
+        "                 absent — pinned to 0.0.0-none on this machine, and nothing is installed at that version — `daoris agent pin codex 0.0.0-none` installs it, and `daoris agent unpin codex` goes back to PATH",
+        "                 `daoris agent install codex` installs it, with its own installer",
+        "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
+        "                 `daoris agent pin codex 0.0.0-none` installs it",
+        "                 no accounts — Daoris's sessions wait until you sign in: `daoris agent login codex --new`",
+        "",
+        "  codex-acp      Codex, by OpenAI",
+        "                 absent — pinned to 0.0.0-none on this machine, and nothing is installed at that version — `daoris agent pin codex-acp 0.0.0-none` installs it, and `daoris agent unpin codex-acp` goes back to PATH",
+        "                 `daoris agent install codex-acp` installs it, with its own installer",
+        "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
+        "                 `daoris agent pin codex-acp 0.0.0-none` installs it",
+        "                 its accounts are Codex's, listed under `codex`: this is another way Codex runs on them",
+        "",
+        "  dsh            DeepSeek Harness, by DeepSeek",
+        "                 absent — pinned to 0.0.0-none on this machine, and nothing is installed at that version — `daoris agent pin dsh 0.0.0-none` installs it, and `daoris agent unpin dsh` goes back to PATH",
+        "                 `daoris agent install dsh` installs it, with its own installer",
+        "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
+        "                 `daoris agent pin dsh 0.0.0-none` installs it",
+        "                 no accounts — Daoris's sessions wait until you sign in: `daoris agent login dsh --new`",
+        "",
+        "  An account is a directory Daoris owns the location of. The credential inside it belongs to",
+        "  the agent's own store. An API key is the one secret Daoris keeps: `agent key`, in keys.json."
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/accounts.json": "{\"claude-code\":{\"account-1\":{\"name\":\"R&D\"},\"account-2\":{\"name\":\"O'Brien\"}}}",
+        "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"0.0.0-none\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"},\"defaults\":{\"claude-code\":\"elsewhere\"}}"
+      }
     }
   ]
 }

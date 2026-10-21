@@ -1,13 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { READS_FILE, forgetRead, keepRead, readOf, readsOf } from '../../src/accounts/accountreads.ts';
 import type { Login } from '../../src/accounts/accountreads.ts';
-import {
-  TOOLCHAINS, commandHarness, managedHome, profileHome, removeProfile, signInNew, signInTo,
-} from '../../src/agents/toolchain.ts';
+import { TOOLCHAINS, profileHome, removeProfile, signInNew, signInTo } from '../../src/agents/toolchain.ts';
 import type { Toolchain } from '../../src/agents/toolchain.ts';
 import { homeEntry } from '../../src/platform/home.ts';
 import { driverFile, driverRows, driverTestFile } from '../_csharp.ts';
@@ -113,22 +111,7 @@ test('the file, its keys and its words are spelled as the driver spells them', (
   assert.match(source, /\["login"\] = Word\(login\), \["read"\] = AccountCooling\.Stamp\(at\)/);
 });
 
-// ——— The doors that ask (AGENTREAD1): `agent list`, a sign-in's end, and a removal forgetting.
-
-function run(argv: string[], path: string): { code: number; out: string } {
-  const saved = process.env.DAORIS_HARNESS_CONFIG;
-  process.env.DAORIS_HARNESS_CONFIG = path;
-  const lines: string[] = [];
-  try {
-    const code = commandHarness({
-      root: process.cwd(), argv, write: (line) => lines.push(line), packageRoot: process.cwd(),
-    }) as number;
-    return { code, out: lines.join('\n') };
-  } finally {
-    if (saved === undefined) delete process.env.DAORIS_HARNESS_CONFIG;
-    else process.env.DAORIS_HARNESS_CONFIG = saved;
-  }
-}
+// ——— The doors that ask (AGENTREAD1): a sign-in's end, and a removal forgetting.
 
 /**
  * A stand-in agent whose login question reads the home it is asked about, by `variable`: signed in exactly when the home
@@ -161,59 +144,8 @@ function fileOf(root: string): Record<string, { accounts?: Record<string, Record
   return JSON.parse(readFileSync(homeEntry(root, 'reads'), 'utf8'));
 }
 
-/** The moment the driver's `AccountCooling.Stamp` writes, and the first form its reader takes: UTC, to the second. */
-const STAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
-
-/**
- * 🔴 AGENTREAD1: `agent list` reads each account, and keeps what it read where the driver keeps its own, so the screen and
- * the loop learn from a terminal's reading (D50). Claude Code is pinned to a stand-in installed in the managed layout, so
- * the real tool is asked nothing; every other agent is pinned to a version nothing installed, so it is asked nothing.
- */
-test('`agent list` keeps each account it read, in the shape the driver reads', () => {
-  const fx = makeFixture('reads-list');
-  const script = standIn(fx.root, 'CLAUDE_CONFIG_DIR');
-  const bin = join(managedHome(fx.root, 'claude-code', '1.2.3'), 'node_modules', '.bin');
-  mkdirSync(bin, { recursive: true });
-  const windows = process.platform === 'win32';
-  const shim = join(bin, windows ? 'claude.cmd' : 'claude');
-  writeFileSync(shim, windows
-    ? `@"${process.execPath}" "${script}" %*\r\n`
-    : `#!/bin/sh\nexec "${process.execPath}" "${script}" "$@"\n`, 'utf8');
-  if (!windows) chmodSync(shim, 0o755);
-  mkdirSync(profileHome(fx.root, 'claude-code', 'account-1'), { recursive: true });
-  mkdirSync(profileHome(fx.root, 'claude-code', 'account-2'), { recursive: true });
-  writeFileSync(join(profileHome(fx.root, 'claude-code', 'account-1'), 'credentials.json'), 'someone@example.invalid', 'utf8');
-  const path = fx.entry('harnesses');
-  writeFileSync(path, JSON.stringify({ versions: {
-    'claude-code': '1.2.3', 'claude-code-acp': '0.0.0-none', codex: '0.0.0-none', 'codex-acp': '0.0.0-none', dsh: '0.0.0-none',
-  } }), 'utf8');
-  const before = Math.floor(Date.now() / 1000) * 1000;
-
-  const listed = run(['list'], path);
-
-  assert.equal(listed.code, 0);
-  assert.match(listed.out, /account-1\s+in\s+someone@example\.invalid/);
-  const file = fileOf(fx.root);
-  // Only the tool that was asked: a door asks no account (AGT7), and an agent nothing is installed for is asked nothing.
-  assert.deepEqual(Object.keys(file), ['claude-code']);
-  assert.deepEqual(Object.keys(file['claude-code']!), ['accounts']);
-  const accounts = file['claude-code']!.accounts!;
-  assert.deepEqual(Object.keys(accounts), ['account-1', 'account-2']);
-  assert.deepEqual(Object.values(accounts).map((entry) => [Object.keys(entry), entry.login]), [
-    [['login', 'read'], 'in'], [['login', 'read'], 'out'],
-  ]);
-  for (const entry of Object.values(accounts)) {
-    assert.match(String(entry.read), STAMP);
-    assert.ok(Date.parse(String(entry.read)) >= before && Date.parse(String(entry.read)) <= Date.now());
-  }
-  // Who signed in is read fresh and written nowhere (D66 §3).
-  assert.doesNotMatch(readFileSync(homeEntry(fx.root, 'reads'), 'utf8'), /@|\r/);
-  // And it reads back as the driver's reader reads it: the twin's rules, held by the shared table above.
-  const reads = readsOf(fx.root, 'claude-code');
-  assert.equal(readOf(reads, 'account-1')?.login, 'in');
-  assert.equal(readOf(reads, 'account-2')?.login, 'out');
-  fx.cleanup();
-});
+// `agent list`'s reading of each account, kept in `reads.json` (AGENTREAD1), is the driver's program's since PUSH1f2e4: an
+// `AgentsTextTests` row asks a stand-in Claude Code and holds the file it keeps.
 
 /** A sign-in's end reads its account (ROSTER1, D150 §5.3), and keeps the reading; a sign-in that did not finish keeps none. */
 test('a new account\'s sign-in keeps its reading at its end, and one that did not finish keeps none', () => {

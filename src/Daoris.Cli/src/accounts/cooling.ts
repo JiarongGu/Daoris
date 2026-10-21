@@ -4,11 +4,11 @@
 //   { "claude-code": { "account-1": { "until": "2026-09-29T21:52:00Z", "stated": true, "window": "session",
 //                                      "seen": "2026-09-29T14:02:11Z", "session": "3f9c2a71" } } }
 //
-// The driver WRITES it when a limit is read (`AccountCooling.Cool`); this module only reads it and ends an entry early,
-// the terminal's *Try now* (`daoris agent profile ready`) and a sign-in or a key into the account. It is the CLI's twin
-// of the driver's `AccountCooling.Read`, `Of` and `End`, and of `CoolingWords.When` and the reason a cool-off gives;
-// `cooling.test.ts` holds the tables `CoolingTwinTests.cs` and `AccountCoolingTests.cs` hold, cell for cell. The rules
-// both keep:
+// The driver WRITES it when a limit is read (`AccountCooling.Cool`); this module only reads it and ends an entry early, a
+// sign-in or a key into the account and its removal. It is the CLI's twin of the driver's `AccountCooling.Read`, `Of` and
+// `End`; `cooling.test.ts` holds the tables `CoolingTwinTests.cs` holds, cell for cell. A cool-off said in words, its moment
+// in the machine's zone and why it lasts (`CoolingWords`), is the driver's alone since `agent list` went to its program
+// (PUSH1f2e4), as *Try now* is since `profile ready` did (PUSH1f2e2). The rules both keep:
 //
 //   1. Missing or unreadable is no account cooling (D21's reading): an observation lost costs at most one start.
 //   2. An entry is an object with an `until` written as ISO 8601 and nothing else — a lenient parse would read *Oct 3*
@@ -24,7 +24,6 @@
 import { compareNames, findName, sameName } from '../platform/casefold.ts';
 import { homeEntry } from '../platform/home.ts';
 import { readJsonObject, writeJsonAtomic } from '../platform/fsx.ts';
-import { shellWord } from '../platform/shellword.ts';
 
 export const COOLING_FILE = 'cooling.json';
 
@@ -92,44 +91,6 @@ export function endCooling(home: string, agent: string, account: string | null, 
   return ended;
 }
 
-/** A moment as a person reads it here, `Oct 3, 16:02 (Asia/Kathmandu)`: in the machine's zone, named. */
-export function coolingWhen(at: Date, zone: string): string {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: zone, month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
-  }).formatToParts(at);
-  const part = (type: string) => parts.find((each) => each.type === type)?.value ?? '';
-  return `${part('month')} ${part('day')}, ${part('hour')}:${part('minute')} (${zone})`;
-}
-
-/** Why a cool-off lasts as long as it does, in the driver's words. */
-export function coolingWhy(entry: Pick<CoolingEntry, 'stated' | 'assumedZone' | 'notBelieved'>): string {
-  if (entry.stated) return entry.assumedZone ? 'as the agent said, in this machine\'s zone' : 'as the agent said';
-  return entry.notBelieved
-    ? 'Daoris\'s default: the agent named a date more than 8 days off'
-    : 'Daoris\'s default: the agent named no time';
-}
-
-/** The line `agent list` gives a cooling account (D125 §2.4): until when, how long that is, why, and how to try it now. */
-export function coolingLine(entry: CoolingEntry, now: Date, zone: string): string {
-  const ready = `\`daoris agent profile ready ${entry.agent} ${entry.account === null ? '--own' : shellWord(entry.account, '<account>')}\``;
-  return `cooling until ${coolingWhen(entry.until, zone)}, in ${span(entry.until.getTime() - now.getTime())} — `
-    + `${coolingWhy(entry)}; ${ready} tries it now`;
-}
-
-/** This machine's zone, as the platform names it. */
-export function machineZone(): string {
-  return Intl.DateTimeFormat().resolvedOptions().timeZone;
-}
-
-/** How long until then, to the minute and rounded up: `2 d 2 h`, `3 h 10 min`, `1 min`. */
-function span(milliseconds: number): string {
-  const minutes = Math.max(1, Math.ceil(milliseconds / 60_000));
-  const days = Math.floor(minutes / 1440);
-  const hours = Math.floor((minutes % 1440) / 60);
-  if (days > 0) return hours > 0 ? `${days} d ${hours} h` : `${days} d`;
-  return hours > 0 ? `${hours} h ${minutes % 60} min` : `${minutes} min`;
-}
-
 type Node = Record<string, unknown>;
 
 /** The file's root, or an empty one when it is missing or does not read (rule 1). */
@@ -175,7 +136,7 @@ function key(held: Node, name: string): string | null {
 const ISO_MOMENT = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,7}))?(Z|[+-]\d{2}:\d{2})$/;
 
 /**
- * A moment as ISO 8601 writes it, and only so, as the driver reads one; `windows.ts` reads its moments with it too.
+ * A moment as ISO 8601 writes it, and only so, as the driver reads one; `accountreads.ts` reads its moments with it too.
  */
 export function isoMoment(value: unknown): Date | null {
   return moment(value);

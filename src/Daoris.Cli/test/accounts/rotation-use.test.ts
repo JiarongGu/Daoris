@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { commandHarness, profileHome, readHarnessSettings, writeHarnessSettings } from '../../src/agents/toolchain.ts';
+import { readHarnessSettings, writeHarnessSettings } from '../../src/agents/toolchain.ts';
 import {
   CURVE_MOST_POINTS, CURVE_WINDOWS, SWITCHES, USE_DEFAULTS, USE_MODES, curveProblem, resolveScope, scopeProblem, withRotation, withUse,
 } from '../../src/accounts/rotation.ts';
@@ -153,52 +153,5 @@ test('a curve is refused as the driver refuses it, in the same sentence (the sha
   for (const [why, curve, refused] of TABLE.refusal) assert.equal(curveProblem(JSON.parse(curve)), refused, why);
 });
 
-// ——— The doors (§3.1, §4.6, §16.6; the switch design §5): `profile use`, and the refusals `profile order` and
-// `profile default` gain.
-
-function run(argv: string[], path: string): { code: number; out: string } {
-  const saved = process.env.DAORIS_HARNESS_CONFIG;
-  process.env.DAORIS_HARNESS_CONFIG = path;
-  const lines: string[] = [];
-  try {
-    const code = commandHarness({ root: process.cwd(), argv, write: (line) => lines.push(line), packageRoot: process.cwd() }) as number;
-    return { code, out: lines.join('\n') };
-  } finally {
-    if (saved === undefined) delete process.env.DAORIS_HARNESS_CONFIG;
-    else process.env.DAORIS_HARNESS_CONFIG = saved;
-  }
-}
-
-function accounts(fx: { root: string }, agent: string, ...names: string[]): void {
-  for (const name of names) mkdirSync(profileHome(fx.root, agent, name), { recursive: true });
-}
-
-// ——— `daoris agent list` (§3.1, §3.2, §6, §16.6): how each list is used beneath it, a default outside its list named,
-// and what this build does not know said. Every agent is pinned to a version nothing installed, so the listing asks no
-// tool anything.
-
-function listed(fx: { root: string }, wiring: Record<string, unknown>): string {
-  const nowhere = { 'claude-code': '0.0.0-none', 'claude-code-acp': '0.0.0-none', codex: '0.0.0-none', 'codex-acp': '0.0.0-none', dsh: '0.0.0-none' };
-  writeFileSync(at(fx), JSON.stringify({ versions: nowhere, ...wiring }), 'utf8');
-  return run(['list'], at(fx)).out;
-}
-
-test('`agent list` says how each list is used beneath it, the machine\'s and each workspace\'s own', () => {
-  const fx = makeFixture('rotation-use-list');
-  accounts(fx, 'claude-code', 'account-1', 'account-2', 'account-3');
-
-  const plain = listed(fx, { rotation: { 'claude-code': ['account-1', 'account-2'] } });
-  const set = listed(fx, {
-    defaults: { 'claude-code': 'account-9' },
-    rotation: { 'claude-code': ['account-1', 'account-2', 'account-3'] },
-    rotationUse: { 'claude-code': { use: 'order', keep: 'account-3', early: false, near: 85 } },
-    workspaceRotation: { work: { 'claude-code': ['account-2'] } },
-    workspaceRotationUse: { work: { 'claude-code': { keep: 'account-2', weekly: 'pace', early: 'no', switch: 'eager' } } },
-  });
-
-  assert.match(plain, /rotation\s+account-1, then account-2\n\s+use accounts: make the most of them\n\s+kept for conversations: none\n\s+switch accounts: Smart — a session moves at a turn's end when its use is over the curve; a start passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve\n/);
-  // The old names read on: `early: false` is off, and `near: 85` the session window flat at 85, kept under off.
-  assert.match(set, /rotation\s+account-1, then account-2, then account-3\n\s+use accounts: one by one, in order — one limit stops every session on that account\n\s+kept for conversations: account-3\n\s+switch accounts: Off — no session moves at a turn's end; a start still passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve\n\s+curve: session 0:85 — kept, and read only under curve\n\s+its default, `account-9`, is not in this list: name it in the list, or make one of the list the default\n/);
-  assert.match(set, /rotation in work account-2\n\s+use accounts: make the most of them\n\s+kept for conversations: account-2\n\s+switch accounts: Smart — a session moves at a turn's end when its use is over the curve; a start passes an account whose limit is reached, that draws on usage credits, or whose use is over Daoris's smart curve\n\s+`account-2` is kept for conversations, and this list holds no other account for driven work\n\s+`switch` holds a value this build does not know, so it reads as today's default; it is kept as written\n\s+`early` is an old name of the switch, and holds a value this build does not read: nothing reads it, and the next write takes it out\n\s+`weekly` is a setting this build does not know: nothing here reads it, and it is kept as written\n/);
-  fx.cleanup();
-});
+// ——— The doors (§3.1, §4.6, §16.6; the switch design §5): `profile use` and `agent list`, which say how each list is used,
+// are the driver's program's since PUSH1f2e3 and PUSH1f2e4, held by `AgentsTextTests`' rows.

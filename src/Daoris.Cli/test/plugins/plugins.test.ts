@@ -5,7 +5,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   API_VERSION, KNOWLEDGE_SERVER, MANIFEST, commandPlugin, dataFolder, disablePlugin,
-  enablePlugin, isPluginId, pluginsRoot, readPluginState, readPlugins, reservedHarnesses, resolvable,
+  enablePlugin, isPluginId, pluginsRoot, readPluginState, readPlugins, reservedHarnesses,
 } from '../../src/plugins/plugins.ts';
 import { homeEntry } from '../../src/platform/home.ts';
 import { captureError, makeFixture } from '../_fixture.ts';
@@ -166,18 +166,6 @@ for (const [why, name, refused] of RESERVED_TABLE.declares) {
     fx.cleanup();
   });
 }
-
-test('presence is asked of the file or PATH, never by running the command', () => {
-  const fx = makeFixture('plugins-presence');
-  const here = join(fx.root, 'agent.mjs');
-  writeFileSync(here, '// would wait on stdin forever if it were run');
-  assert.equal(resolvable(here), true);
-  assert.equal(resolvable(join(fx.root, 'gone.mjs')), false);
-  // `node` is on this machine's PATH — the tests are running on it.
-  assert.equal(resolvable('node'), true);
-  assert.equal(resolvable('no-such-program-daoris-ever-heard-of'), false);
-  fx.cleanup();
-});
 
 test('two plugins declaring the same harness keep the first by id and refuse the second naming it', () => {
   const fx = makeFixture('plugins-twice');

@@ -294,7 +294,7 @@ public sealed class AccountCoolingTests : IDisposable
             said);
     }
 
-    /// <summary>The CLI's <c>cooling.test.ts</c> parses this theory: <c>daoris agent list</c> says why in the same words (TOOL4e).</summary>
+    /// <summary>Why a cool-off lasts, as <c>daoris-driver agent list</c> says it (TOOL4e; the CLI's twin left with its list, PUSH1f2e4).</summary>
     [Theory]
     [InlineData(true, false, false, "as the agent said")]
     [InlineData(false, false, false, "Daoris's default: the agent named no time")]

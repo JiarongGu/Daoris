@@ -109,6 +109,9 @@ test('a handed verb goes to the driver\'s program whole, with nothing written fi
     [['agent', 'profile', 'use', 'claude-code', '--curve', 'weekly=0:30,100:100', '--workspace', 'Work & play'],
       ['profile', 'use', 'claude-code', '--curve', 'weekly=0:30,100:100', '--workspace', 'Work & play']],
     [['agent', 'profile', 'frobnicate'], ['profile', 'frobnicate']],
+    // PUSH1f2e4: `list`, and so a bare `daoris agent`.
+    [['agent'], []],
+    [['agent', 'list'], ['list']],
   ] as const) {
     for (const exit of [0, 1, 2] as const) {
       const handed: Handed[] = [];

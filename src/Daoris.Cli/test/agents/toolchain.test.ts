@@ -5,20 +5,20 @@ import { createHash } from 'node:crypto';
 import { dirname, join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import {
-  TOOLCHAINS, accountLines, addKeyAccount, commandHarness, harnessesPath, joinsOf, keyOf, managedBinary, managedHome,
+  TOOLCHAINS, addKeyAccount, commandHarness, harnessesPath, joinsOf, keyOf, managedBinary, managedHome,
   nextAccount, portsHeld, profileHome, profiles, probe, readHarnessSettings, removeProfile, replaceKeyAccount, resolveProfile,
   resolveVersion, signInNew, signInTo, versionFromNpm, withDefault, writeHarnessSettings,
 } from '../../src/agents/toolchain.ts';
 import type { HarnessSettings, PortHold, Toolchain } from '../../src/agents/toolchain.ts';
 import { CLAUDE_LATEST, CODEX_LATEST, CODEX_RELEASES, codexTarget } from '../../src/agents/channels.ts';
 import type { Fetcher } from '../../src/agents/channels.ts';
-import { coolingOf, coolingWhen, machineZone } from '../../src/accounts/cooling.ts';
+import { coolingOf } from '../../src/accounts/cooling.ts';
 import { keepRead, readOf, readsOf } from '../../src/accounts/accountreads.ts';
 import { accountNames, renameAccount } from '../../src/accounts/accountnames.ts';
 import { homeEntry } from '../../src/platform/home.ts';
-import { makeFixture, type Fixture } from '../_fixture.ts';
+import { makeFixture } from '../_fixture.ts';
 import { captureError } from '../_fixture.ts';
-import { defaulted, ordered } from './_wiring.ts';
+import { defaulted } from './_wiring.ts';
 import { TAR_END, tarEntry } from '../_tar.ts';
 
 /**
@@ -798,102 +798,8 @@ test('`login` refuses `--new` beside `--profile`, and `--name` without `--new`',
   fx.cleanup();
 });
 
-// ——— ACCT2: an account's name, from the terminal. Its id stays, so every list, default, reading and record keeps it.
-
-/**
- * ACCOUNTID1: two sign-ins of one email in two organisations are listed apart, the organisation after who, and each said
- * once (ACCTNAME1's rule): a name that is the email says the organisation alone after it, and a name that is the email with
- * its organisation says neither again. An email no other account has needs no organisation, and no plan is said.
- */
-test('`agent list` tells two sign-ins of one email apart by their organisations, each said once', () => {
-  const fx = makeFixture('harness-list-orgs');
-  const signedIn = (name: string, account: string, org: string, plan: string) =>
-    ({ name, home: '', login: 'in' as const, account, key: null, org, plan });
-  const report = {
-    harness: 'claude-code', present: true, version: '1', problem: null, machineDefault: null,
-    profiles: [
-      signedIn('acct-0000000a', 'person@example.invalid', 'Org A', 'max'),
-      signedIn('acct-0000000b', 'person@example.invalid', 'Org B', 'max'),
-      signedIn('acct-0000000d', 'person@example.invalid', 'Org D', 'max'),
-      signedIn('acct-0000000c', 'other@example.invalid', 'Org A', 'pro'),
-    ],
-  };
-  writeFileSync(fx.entry('accounts'), JSON.stringify({ 'claude-code': {
-    'acct-0000000a': { name: 'person@example.invalid' }, 'acct-0000000b': { name: 'person@example.invalid·Org-B' } } }), 'utf8');
-
-  const lines = accountLines('claude-code', TOOLCHAINS['claude-code']!, report, readHarnessSettings(at(fx)), fx.root, new Date(), 'UTC');
-  const line = (account: string) => lines.find((each) => each.includes(account))!;
-
-  assert.match(line('acct-0000000a'), /person@example\.invalid +in +Org A \(id acct-0000000a\)$/);
-  assert.match(line('acct-0000000b'), /person@example\.invalid·Org-B +in +\(id acct-0000000b\)$/);
-  assert.match(line('acct-0000000d'), /acct-0000000d +in +person@example\.invalid · Org D$/);
-  assert.match(line('acct-0000000c'), /acct-0000000c +in +other@example\.invalid$/);
-  assert.doesNotMatch(lines.join('\n'), /\bmax\b|\bpro\b/);
-  fx.cleanup();
-});
-
-/** ACCTNAME1: the email offered as the name is read once, and the name column fits the longest name. */
-test('`agent list` says an account\'s email once when it is the name, and sizes the name column to the longest', () => {
-  const fx = makeFixture('harness-acctname');
-  const long = 'a.rather.long.person@work.example';
-  const report = {
-    harness: 'claude-code', present: true, version: '1', problem: null, machineDefault: 'account-1',
-    profiles: [
-      { name: 'account-1', home: '', login: 'in' as const, account: long.toUpperCase(), key: null },
-      { name: 'account-2', home: '', login: 'in' as const, account: 'other@work.example', key: null },
-    ],
-  };
-  writeFileSync(fx.entry('accounts'), JSON.stringify({ 'claude-code': { 'account-1': { name: long } } }), 'utf8');
-  // The machine names account-1, so account-2 runs nowhere and its continuation line is said (OWNSPACE1d: with nothing named, none is).
-  writeFileSync(at(fx), JSON.stringify({ defaults: { 'claude-code': 'account-1' } }), 'utf8');
-  const lines = accountLines('claude-code', TOOLCHAINS['claude-code']!, report, readHarnessSettings(at(fx)), fx.root, new Date(), 'UTC');
-  const first = lines.find((line) => line.includes(long))!;
-  // Once: the email after the name is dropped where it folds equal; another account's is kept.
-  assert.equal(first.toLowerCase().split(long).length - 1, 1);
-  assert.match(lines.join('\n'), /account-2 +in +other@work\.example/);
-  // The column fits the long name, so the login starts one space after it, and the continuation lines align.
-  assert.match(first, new RegExp(`${long.replace(/\./g, '\\.')} in `));
-  const width = long.length;
-  assert.ok(lines.filter((line) => line.includes('rotation')).every((line) => /rotation +/.test(line)));
-  assert.ok(lines.some((line) => line.startsWith(`  ${' '.repeat(14)} ${' '.repeat(width)} `)));
-  fx.cleanup();
-});
-
-// ——— ACCT1: an account put into lists from the terminal, and one in none said where it is listed.
-
-test('`agent list` says an account no list and no default holds runs nowhere, and how to put it in one', () => {
-  const fx = makeFixture('harness-list-nowhere');
-  mkdirSync(profileHome(fx.root, 'claude-code', 'account-1'), { recursive: true });
-  mkdirSync(profileHome(fx.root, 'claude-code', 'account-2'), { recursive: true });
-  ordered(at(fx), 'claude-code', ['account-1'], null);
-
-  const lines = accountLines('claude-code', TOOLCHAINS['claude-code']!, {
-    harness: 'claude-code', present: true, version: '1', problem: null, machineDefault: null,
-    profiles: [
-      { name: 'account-1', home: '', login: 'in', account: null, key: null },
-      { name: 'account-2', home: '', login: 'in', account: null, key: null },
-    ],
-  }, readHarnessSettings(at(fx)), fx.root, new Date(), 'UTC');
-
-  const nowhere = lines.filter((line) => /no workspace: no list and no default holds it/.test(line));
-  assert.equal(nowhere.length, 1);
-  assert.match(nowhere[0]!, /daoris agent profile join claude-code account-2 <workspace>…\|--machine/);
-  fx.cleanup();
-});
-
-/** OWNSPACE1d (D175): where the machine names nothing, an account in no list is in Daoris's turn, so the list does not say it runs nowhere. */
-test('`agent list` says no account runs nowhere where the machine names nothing', () => {
-  const fx = makeFixture('harness-list-in-turn');
-  mkdirSync(profileHome(fx.root, 'claude-code', 'account-1'), { recursive: true });
-
-  const lines = accountLines('claude-code', TOOLCHAINS['claude-code']!, {
-    harness: 'claude-code', present: true, version: '1', problem: null, machineDefault: null,
-    profiles: [{ name: 'account-1', home: '', login: 'in', account: null, key: null }],
-  }, readHarnessSettings(at(fx)), fx.root, new Date(), 'UTC');
-
-  assert.equal(lines.filter((line) => /no workspace: no list and no default holds it/.test(line)).length, 0);
-  fx.cleanup();
-});
+// ——— ACCT2: an account's name, from the terminal. Its id stays, so every list, default, reading and record keeps it. How
+// `agent list` says each account (ACCOUNTID1, ACCTNAME1, ACCT1, OWNSPACE1d) is `AgentsTextTests`' `list` rows since PUSH1f2e4.
 
 /** A sign-in that did not finish — failed, or ended signed out — leaves nothing behind. */
 test('`login --new` that does not finish leaves nothing behind', () => {
@@ -959,176 +865,8 @@ test('pin refuses a harness Daoris has no package for, rather than guessing one'
   fx.cleanup();
 });
 
-test('list says which version is pinned, and whether it is actually installed', () => {
-  const fx = makeFixture('harness-pin-list');
-  const settings = readHarnessSettings(at(fx));
-  writeHarnessSettings(at(fx), { ...settings, versions: { 'claude-code': '9.9.9' } });
-
-  // Pinned but never installed: the list must say so rather than imply the pin is in force.
-  const out = run(['list'], at(fx)).out;
-  assert.match(out, /9\.9\.9/);
-  assert.match(out, /not installed|missing/i);
-  // And say what the driver does about it, which is refuse — never run whatever PATH has (REV3 CLI F13).
-  assert.equal(/fall back to PATH/i.test(out), false, out);
-  assert.match(out, /refuse/i, out);
-  fx.cleanup();
-});
-
-// ——— `agent list`'s next start (TOOL6f; D130's TOOL6e note, design §16.4): beneath each list, the walk's steps as
-// `profile use` names them, each account of it held now and until when, and where the account it takes is named. This
-// command reads no session record, so it never names that account where a step would choose it (D57, D143). Every agent
-// is pinned to a version nothing installed, so the listing asks no tool anything.
-
-function listedWith(fx: Fixture, wiring: Record<string, unknown>, held: Record<string, unknown> = {}): string {
-  const nowhere = { 'claude-code': '0.0.0-none', 'claude-code-acp': '0.0.0-none', codex: '0.0.0-none', 'codex-acp': '0.0.0-none', dsh: '0.0.0-none' };
-  writeFileSync(fx.entry('cooling'), JSON.stringify(held), 'utf8');
-  writeFileSync(at(fx), JSON.stringify({ versions: nowhere, ...wiring }), 'utf8');
-  return run(['list'], at(fx)).out;
-}
-
-function claudeAccounts(fx: { root: string }, ...names: string[]): void {
-  for (const name of names) mkdirSync(profileHome(fx.root, 'claude-code', name), { recursive: true });
-}
-
-/** A moment `hours` from now, as the driver writes `until`, and as `agent list` says it in this machine's zone. */
-function moment(hours: number): { until: string; said: string } {
-  const until = new Date(Math.floor((Date.now() + hours * 3_600_000) / 60_000) * 60_000).toISOString().replace(/\.\d+Z$/, 'Z');
-  return { until, said: coolingWhen(new Date(until), machineZone()).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') };
-}
-
-// UX6e2: the screen that names it is the agent's page in the Agents place since UX6e (D150 §5.2).
-const POINTER = 'Agents → the agent\'s page → How accounts are used names the account it takes, from the sessions Daoris '
-  + 'runs and its last starts, which this terminal does not read';
-
-/**
- * TOOL6g: one account list per tool. A door onto another agent's accounts (`claude-code-acp`) listed the same accounts
- * again, with states its owner had already said (`unknown` beside `out`). It now names whose accounts it runs on, once.
- */
-test('`agent list` lists a tool\'s accounts once, under the tool, and a door names whose it runs on', () => {
-  const fx = makeFixture('harness-list-one');
-  claudeAccounts(fx, 'account-1', 'account-2');
-
-  const out = listedWith(fx, { rotation: { 'claude-code': ['account-1', 'account-2'] } });
-
-  assert.equal(out.match(/^\s+account-1\s/gm)?.length, 1, out);
-  assert.equal(out.match(/rotation\s+account-1, then account-2/g)?.length, 1, out);
-  assert.match(out, /claude-code-acp[^\n]*\n(?:\s{17}[^\n]*\n)*?\s{17}its accounts are Claude Code's, listed under `claude-code`: this is another way Claude Code runs on them\n/);
-  fx.cleanup();
-});
-
-test('`agent list` says the next start\'s steps beneath each list, and where the account it takes is named (TOOL6f)', () => {
-  const fx = makeFixture('harness-list-next');
-  claudeAccounts(fx, 'account-1', 'account-2', 'account-3');
-
-  const out = listedWith(fx, {
-    rotation: { 'claude-code': ['account-1', 'account-2', 'account-3'] },
-    workspaceRotation: { work: { 'claude-code': ['account-2', 'account-1'] } },
-    workspaceRotationUse: { work: { 'claude-code': { use: 'order' } } },
-  });
-
-  assert.match(out, new RegExp('rotation\\s+account-1, then account-2, then account-3\\n(?:.*\\n)*?'
-    + '\\s+next start: the ready account running the fewest of Daoris\'s sessions; then the one whose week would lapse the '
-    + 'most: within its last day, its room under its curve per hour to its reset; '
-    + 'then the one with the most room under its curve; then the one Daoris started on least recently; then this list\'s '
-    + 'order, from `account-1`; one whose limit is reached, that draws on usage credits or whose use is over its curve goes '
-    + 'last, the least over first\\n'
-    + '\\s+no account has said what it has left yet: Daoris spreads starts across them by its own sessions\\n'
-    + `\\s+${POINTER}\\n`));
-  assert.match(out, new RegExp('rotation in work account-2, then account-1\\n(?:.*\\n)*?'
-    + '\\s+next start: the first ready account of this list, from `account-2`; one whose limit is reached, that draws on usage '
-    + 'credits or whose use is over its curve goes last\\n'
-    + `\\s+${POINTER}\\n`));
-  // Never a guessed account: nothing is held, and no line names the account a step would choose.
-  assert.doesNotMatch(out, /held now|waits until|next start takes|next start runs on/);
-  fx.cleanup();
-});
-
-test('`agent list` names each account of a list held now and until when, and the wait when none is ready (TOOL6f)', () => {
-  const fx = makeFixture('harness-list-held');
-  claudeAccounts(fx, 'account-1', 'account-2');
-  const wiring = { rotation: { 'claude-code': ['account-1', 'account-2'] } };
-  const later = moment(5);
-  const sooner = moment(2);
-
-  const one = listedWith(fx, wiring, { 'claude-code': { 'account-2': { until: later.until, stated: true } } });
-  const both = listedWith(fx, wiring, {
-    'claude-code': { 'account-1': { until: later.until, stated: true }, 'account-2': { until: sooner.until, stated: false } },
-  });
-
-  assert.match(one, new RegExp(`next start: [^\\n]+\\n(?:.*\\n)*?\\s+held now: \`account-2\` is cooling until ${later.said}\\n\\s+${POINTER}\\n`));
-  assert.doesNotMatch(one, /held now: `account-1`|waits until/);
-  assert.match(both, new RegExp(`held now: \`account-1\` is cooling until ${later.said}; \`account-2\` is cooling until ${sooner.said}\\n`
-    + `\\s+every account of this list is cooling, so the next start waits until ${sooner.said}\\n`));
-
-  // A kept account ready while every other cools: driven work waits, and a conversation is not said to.
-  claudeAccounts(fx, 'account-3');
-  const kept = listedWith(fx, {
-    rotation: { 'claude-code': ['account-1', 'account-2', 'account-3'] },
-    rotationUse: { 'claude-code': { keep: 'account-3' } },
-  }, { 'claude-code': { 'account-1': { until: later.until, stated: true }, 'account-2': { until: sooner.until, stated: true } } });
-  assert.match(kept, new RegExp(`held now: \`account-1\` is cooling until ${later.said}; \`account-2\` is cooling until ${sooner.said}\\n`
-    + `\\s+every account but \`account-3\`, kept for conversations, is cooling, so driven work waits until ${sooner.said}\\n`));
-  assert.doesNotMatch(kept, /every account of this list is cooling/);
-  fx.cleanup();
-});
-
-test('`agent list` says the machine\'s next start where it has no list: its default alone, or nothing more (TOOL6f)', () => {
-  const fx = makeFixture('harness-list-nolist');
-  claudeAccounts(fx, 'account-1', 'account-2');
-  const held = moment(3);
-
-  const named = listedWith(fx, { defaults: { 'claude-code': 'account-1' } });
-  const cooling = listedWith(fx, { defaults: { 'claude-code': 'account-1' } }, {
-    'claude-code': { 'account-1': { until: held.until, stated: true } },
-  });
-  const none = listedWith(fx, {});
-
-  // Its one account is the settings', not a step's choice, so it is named; no walk, so no pointer.
-  assert.match(named, /\n\s+next start\s+`account-1`, this machine's default — with no list, the one account its starts run on\n/);
-  assert.doesNotMatch(named, /names the account it takes|held now|waits until/);
-  assert.match(cooling, new RegExp(`next start\\s+\`account-1\`[^\\n]+\\n\\s+held now: \`account-1\` is cooling until ${held.said}, `
-    + 'so the next start waits until then\\n'));
-  // No default and no list: the tool's own sign-in, which its own lines say; nothing is guessed here.
-  assert.doesNotMatch(none, /next start/);
-  fx.cleanup();
-});
-
-/**
- * CODEXUSE1b: the driver reads a Codex account's windows from Codex's own app server and keeps them as a door's frame is
- * kept (CODEXUSE1, `docs/2026-10-07-codex-usage-evidence.md`), so `agent list` printed the reading beneath the account and
- * still said, beneath its list, that Codex's sessions do not say how near their limits are, and walked without near and pace.
- * Since SWITCH1b-iii the walk's words are the curve's: what passes an account, and the most room under its curve.
- */
-test('`agent list` reads a Codex account\'s kept reading as one that speaks: its use and next-start lines weigh its week (CODEXUSE1b)', () => {
-  const fx = makeFixture('harness-list-codex');
-  for (const name of ['account-1', 'account-2']) mkdirSync(profileHome(fx.root, 'codex', name), { recursive: true });
-  const stamp = (offset: number) => new Date(Date.now() + offset).toISOString().replace(/\.\d+Z$/, 'Z');
-  // As the driver keeps the server's answer (evidence §2): a use per window, its reset, when; no standing and no session.
-  writeFileSync(fx.entry('windows'), JSON.stringify({
-    codex: {
-      'account-1': {
-        session: { reset: stamp(3 * 3_600_000), used: 0.01, seen: stamp(-20 * 60_000) },
-        weekly: { reset: stamp(100 * 3_600_000), used: 0.15, seen: stamp(-20 * 60_000) },
-      },
-    },
-  }), 'utf8');
-
-  const out = listedWith(fx, { rotation: { codex: ['account-1', 'account-2'] } });
-  const codex = out.slice(out.search(/^\s*codex\s/m));
-
-  assert.match(codex, /account-1[^\n]*\n\s+said 20 min ago: 1% of its session limit used, resetting [^;]+; 15% of its weekly limit used, resetting [^\n]+\n/);
-  assert.match(codex, new RegExp('rotation\\s+account-1, then account-2\\n(?:.*\\n)*?'
-    + '\\s+switch accounts: Smart — a session moves at a turn\'s end when its use is over the curve; a start passes an account whose limit is reached, that draws on usage credits, or '
-    + 'whose use is over Daoris\'s smart curve\\n'
-    + '\\s+next start: the ready account running the fewest of Daoris\'s sessions; then the one whose week would lapse the '
-    + 'most: within its last day, its room under its curve per hour to its reset; '
-    + 'then the one with the most room under its curve; then the one Daoris started on least recently; then this list\'s '
-    + 'order, from `account-1`; one whose limit is reached, that draws on usage credits or whose use is over its curve goes '
-    + 'last, the least over first\\n'
-    + `\\s+${POINTER}\\n`));
-  assert.doesNotMatch(codex, /do not say how much of each window is used|no account has said what it has left yet/);
-  fx.cleanup();
-});
+// ——— `agent list` (its pins, its next start, each account held now; TOOL2, TOOL6f, CODEXUSE1b) is the driver's program's since
+// PUSH1f2e4: `AgentsTextTests`' `list` rows hold what these tests held, run once through this verb before it retired.
 
 test('an unknown verb names the ones that exist', () => {
   const fx = makeFixture('harness-verb');
@@ -1226,12 +964,7 @@ test('every declared harness is pinned by name, binary, seam, and what a person 
   assert.equal(TOOLCHAINS['codex-acp']!.accountOf, 'codex');
 
   // The trust record (DEPLOY1, D73) is the driver's alone since `agent trust` went to it (PUSH1f2d): `HarnessToolchain.TrustFile`.
-
-  // Whose accounts say how much of each window is used (TOOL6c, CODEXUSE1b) — the driver's `Speaks` is its twin: Claude Code's
-  // `Windows`, its frame on the door (and the stub mirroring it, which the CLI does not know), and Codex's `Usage`, its own app
-  // server asked, declared on `codex-acp` since no `codex` adapter exists. Both are owners' here, and a door reads its owner's.
-  const saying = Object.entries(TOOLCHAINS).filter(([, toolchain]) => toolchain.windows).map(([name]) => name);
-  assert.deepEqual(saying, ['claude-code', 'codex']);
+  // Whose accounts say how much of each window is used is the driver's alone since `agent list` went to it (PUSH1f2e4): `Speaks`.
 });
 
 /**

@@ -24,8 +24,9 @@ test('the verbs handed on are exactly the ones `daoris-driver agent` has', () =>
     ['list', 'add', 'remove', 'default', 'order', 'ready', 'use', 'rename', 'join']);
 });
 
-test('the rules, a trust, an account\'s settings, an unpin and every account verb are handed on; the rest stays the CLI\'s', () => {
-  for (const argv of [['rules'], ['rules', 'accept', 'p0000007'], ['trust', 'claude-code', '.', '--yes'], ['settings', 'claude-code'],
+test('the list, the rules, a trust, an account\'s settings, an unpin and every account verb are handed on; the rest stays the CLI\'s', () => {
+  // PUSH1f2e4: `list`, and no verb at all, which is `list`.
+  for (const argv of [[], ['list'], ['rules'], ['rules', 'accept', 'p0000007'], ['trust', 'claude-code', '.', '--yes'], ['settings', 'claude-code'],
     ['which', 'claude-code-acp', '--json'], ['unpin', 'codex'], ['unpin', 'codex', '--workspace', 'work'], ['profile'], ['profile', 'list'],
     ['profile', 'add', 'claude-code', 'work'], ['profile', 'remove', 'claude-code', 'work'], ['profile', 'default', 'claude-code', '--clear'],
     ['profile', 'order', 'claude-code', 'a', 'b'], ['profile', 'ready', 'claude-code', '--own'], ['profile', 'rename', 'claude-code', 'a', 'b'],
@@ -33,7 +34,7 @@ test('the rules, a trust, an account\'s settings, an unpin and every account ver
     ['profile', 'frobnicate']]) {
     assert.equal(handed(argv), true, argv.join(' '));
   }
-  for (const argv of [[], ['list'], ['install', 'claude-code'], ['login', 'claude-code'], ['key', 'claude-code'], ['pin', 'codex', '1.0.0'],
+  for (const argv of [['install', 'claude-code'], ['login', 'claude-code'], ['key', 'claude-code'], ['pin', 'codex', '1.0.0'],
     ['update', 'codex'], ['frobnicate']]) {
     assert.equal(handed(argv), false, argv.join(' ') || '(none)');
   }

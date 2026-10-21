@@ -2,22 +2,18 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { coolingLine, coolingOf, coolingWhen, coolingWhy, endCooling, readCooling } from '../../src/accounts/cooling.ts';
+import { coolingOf, endCooling, readCooling } from '../../src/accounts/cooling.ts';
 import type { CoolingEntry } from '../../src/accounts/cooling.ts';
 import { homeEntry } from '../../src/platform/home.ts';
-import {
-  TOOLCHAINS, accountLines, addKeyAccount, commandHarness, profileHome, removeProfile, signInNew, signInTo,
-} from '../../src/agents/toolchain.ts';
-import type { HarnessReport, HarnessSettings } from '../../src/agents/toolchain.ts';
+import { TOOLCHAINS, addKeyAccount, profileHome, removeProfile, signInNew, signInTo } from '../../src/agents/toolchain.ts';
 import { driverRows as csharpRows, driverTestFile } from '../_csharp.ts';
 import { makeFixture } from '../_fixture.ts';
 
 /**
- * `cooling.json` read and ended (TOOL4e, D125 §2.3, §2.4): the driver writes an account's cool-off when a limit is read,
- * and both twins read it and end one early — the screen's *Try now* and `daoris agent profile ready`. The CLI's half of
- * a TWIN with the driver's `AccountCooling.cs`: 🔴 `CoolingTwinTests.cs` holds the same tables, row for row and in the
- * same order, and the last test here holds each to this one, cell for cell, as it does the words from
- * `AccountCoolingTests.cs`.
+ * `cooling.json` read and ended (TOOL4e, D125 §2.3): the driver writes an account's cool-off when a limit is read, and
+ * both twins read it and end one early, here a sign-in or a key into the account and its removal. The CLI's half of a
+ * TWIN with the driver's `AccountCooling.cs`: 🔴 `CoolingTwinTests.cs` holds the same tables, row for row and in the same
+ * order, and the last test here holds each to this one, cell for cell.
  *
  * An entry is said as JSON: whose, until when and seen when (UTC, to the second), and what said so; `null` is no account
  * cooling. An `after` is the file's JSON once the end is done, or `unchanged` where nothing was written.
@@ -135,62 +131,8 @@ test('an entry ends as the driver ends it (the twin\'s table)', () => {
   }
 });
 
-// ——— What a cool-off says (§2.4), in the driver's words.
-
-const WHEN_ROWS: [moment: string, zone: string, said: string][] = [
-  ['2026-10-03T10:17:00Z', 'Asia/Kathmandu', 'Oct 3, 16:02 (Asia/Kathmandu)'],
-  ['2026-10-02T18:15:00Z', 'Asia/Kathmandu', 'Oct 3, 00:00 (Asia/Kathmandu)'],
-  ['2026-01-01T23:30:00Z', 'America/New_York', 'Jan 1, 18:30 (America/New_York)'],
-  ['2026-09-29T21:52:00Z', 'Europe/London', 'Sep 29, 22:52 (Europe/London)'],
-];
-
-test('a moment is said in the machine\'s zone with the zone named, as the driver says it', () => {
-  for (const [at, zone, words] of WHEN_ROWS) assert.equal(coolingWhen(moment(at), zone), words, `${at} in ${zone}`);
-});
-
-const WHY_ROWS: [stated: boolean, assumed: boolean, notBelieved: boolean, why: string][] = [
-  [true, false, false, 'as the agent said'],
-  [false, false, false, 'Daoris\'s default: the agent named no time'],
-  [false, false, true, 'Daoris\'s default: the agent named a date more than 8 days off'],
-  [true, true, false, 'as the agent said, in this machine\'s zone'],
-];
-
-test('why a cool-off lasts as long as it does is said in the driver\'s words', () => {
-  for (const [stated, assumedZone, notBelieved, why] of WHY_ROWS) {
-    assert.equal(coolingWhy({ stated, assumedZone, notBelieved }), why);
-  }
-});
-
-test('a cooling account\'s line says until when, how long that is, why, and how to try it now', () => {
-  const entry: CoolingEntry = {
-    agent: 'claude-code', account: 'account-1', until: moment('2026-10-03T10:17:00Z'), stated: true, window: 'weekly',
-    seen: moment('2026-10-01T08:15:00Z'), session: '3f9c2a71', assumedZone: false, notBelieved: false,
-  };
-
-  assert.equal(
-    coolingLine(entry, moment('2026-10-01T08:15:00Z'), 'Asia/Kathmandu'),
-    'cooling until Oct 3, 16:02 (Asia/Kathmandu), in 2 d 2 h — as the agent said; '
-      + '`daoris agent profile ready claude-code account-1` tries it now');
-  assert.match(coolingLine(entry, moment('2026-10-03T07:07:00Z'), 'UTC'), /, in 3 h 10 min —/);
-  assert.match(coolingLine(entry, moment('2026-10-03T10:16:30Z'), 'UTC'), /, in 1 min —/);
-  assert.match(coolingLine({ ...entry, account: null }, moment('2026-10-01T08:15:00Z'), 'UTC'),
-    /`daoris agent profile ready claude-code --own` tries it now/);
-});
-
-// ——— The verb (§6): `daoris agent profile ready <agent> <profile>|--own`, the terminal's *Try now*.
-
-function run(argv: string[], path: string): { code: number; out: string } {
-  const saved = process.env.DAORIS_HARNESS_CONFIG;
-  process.env.DAORIS_HARNESS_CONFIG = path;
-  const lines: string[] = [];
-  try {
-    const code = commandHarness({ root: process.cwd(), argv, write: (line) => lines.push(line), packageRoot: process.cwd() }) as number;
-    return { code, out: lines.join('\n') };
-  } finally {
-    if (saved === undefined) delete process.env.DAORIS_HARNESS_CONFIG;
-    else process.env.DAORIS_HARNESS_CONFIG = saved;
-  }
-}
+// A cool-off said in words (§2.4: its moment in the machine's zone, why it lasts, *Try now*) is the driver's alone since
+// `agent list` went to its program (PUSH1f2e4): `CoolingWords` and `AgentsTextTests`' `list` rows hold it.
 
 /** A cool-off a day ahead of now, written as the driver writes one. */
 function cooling(fx: { root: string }, held: Record<string, Record<string, unknown>>): void {
@@ -246,62 +188,11 @@ test('an account removed takes its cool-off with it, whether its directory was t
   fx.cleanup();
 });
 
-// ——— `daoris agent list` (§2.4, §3.7): each account's cool-off, the order, and whether starts run on the person's own
-// sign-in. Every agent is pinned to a version nothing installed, so the listing asks no tool anything.
-
-function listed(fx: { root: string }, wiring: Record<string, unknown>): string {
-  const path = homeEntry(fx.root, 'harnesses');
-  const nowhere = { 'claude-code': '0.0.0-none', 'claude-code-acp': '0.0.0-none', codex: '0.0.0-none', 'codex-acp': '0.0.0-none', dsh: '0.0.0-none' };
-  writeFileSync(path, JSON.stringify({ versions: nowhere, ...wiring }), 'utf8');
-  return run(['list'], path).out;
-}
-
-test('`agent list` says each account\'s cool-off under it, and the tool\'s own sign-in\'s under the agent', () => {
-  const fx = makeFixture('cooling-list');
-  for (const name of ['account-1', 'account-2']) mkdirSync(profileHome(fx.root, 'claude-code', name), { recursive: true });
-  cooling(fx, { 'claude-code': { 'account-1': { until: AHEAD(), stated: true }, '': { until: AHEAD(), stated: false } } });
-
-  const out = listed(fx, { defaults: { 'claude-code': 'account-2' }, rotation: { 'claude-code': ['account-1', 'account-2'] } });
-
-  assert.match(out, /account-1 .*\n\s+cooling until [A-Z][a-z]{2} \d{1,2}, \d{2}:\d{2} \(.+\), in [^—]+ — as the agent said; `daoris agent profile ready claude-code account-1` tries it now/);
-  assert.match(out, /its own sign-in: cooling until .*Daoris's default: the agent named no time; `daoris agent profile ready claude-code --own` tries it now/);
-  assert.match(out, /rotation\s+account-1, then account-2/);
-  assert.doesNotMatch(out, /ready claude-code account-2/);
-  fx.cleanup();
-});
-
-test('`agent list` says when starts run on the person\'s own sign-in, and how to give Daoris an account of its own', () => {
-  const fx = makeFixture('cooling-list-own');
-  const report = (machineDefault: string | null): HarnessReport => ({
-    harness: 'claude-code', present: true, version: '2.1.0', problem: null, machineDefault,
-    profiles: [{ name: 'account-1', home: '', login: 'in', account: null, key: null }],
-  });
-  const settings: HarnessSettings = {
-    defaults: {}, workspaces: { work: { 'claude-code': 'account-1' } }, versions: {}, workspaceVersions: {},
-    rotation: {}, workspaceRotation: {}, rotationUse: {}, workspaceRotationUse: {}, rest: {},
-  };
-  const said = (agent: string, at: HarnessReport) =>
-    accountLines(agent, TOOLCHAINS[agent]!, at, settings, fx.root, new Date(), 'UTC').join('\n');
-
-  // OWNSPACE1d (D175): Daoris never starts in the person's own sign-in; it says so, and that what began there goes on there.
-  assert.match(said('claude-code', report(null)), /Daoris starts no session on your own sign-in, the account `claude-code` uses at your own terminal \(outside work\)/);
-  assert.match(said('claude-code', report(null)), /a conversation begun there goes on there/);
-  assert.doesNotMatch(said('claude-code', report(null)), /starts run on your own sign-in/);
-  // A default named, an agent not here, and a door onto another agent's accounts say nothing of it.
-  assert.doesNotMatch(said('claude-code', report('account-1')), /own sign-in/);
-  assert.doesNotMatch(said('claude-code', { ...report(null), present: false }), /own sign-in/);
-  assert.doesNotMatch(said('claude-code-acp', report(null)), /own sign-in/);
-  fx.cleanup();
-});
-
 // ——— The twin, held: the driver's tables are these tables, row for row and in this order.
 
 test('the driver’s tables are these tables, row for row and in this order', () => {
   const twin = readFileSync(driverTestFile('CoolingTwinTests.cs'), 'utf8').replace(/\r\n/g, '\n');
-  const words = readFileSync(driverTestFile('AccountCoolingTests.cs'), 'utf8').replace(/\r\n/g, '\n');
 
   assert.deepEqual(csharpRows(twin, 'An_entry_reads_as_the_cli_reads_it', {}, 'CoolingTwinTests'), READ_ROWS);
   assert.deepEqual(csharpRows(twin, 'An_entry_ends_as_the_cli_ends_it', {}, 'CoolingTwinTests'), END_ROWS);
-  assert.deepEqual(csharpRows(twin, 'A_moment_is_said_in_the_machine_s_zone_with_the_zone_named', {}, 'CoolingTwinTests'), WHEN_ROWS);
-  assert.deepEqual(csharpRows(words, 'Why_says_whether_the_agent_named_the_time', {}, 'AccountCoolingTests'), WHY_ROWS);
 });

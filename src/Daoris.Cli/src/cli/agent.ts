@@ -111,7 +111,8 @@ export const command: CliCommand = {
   ],
   // PUSH1f2d (D194 point 1): `rules`, `trust` and `settings` are Daoris's driver program's, `daoris-driver agent` with the same words;
   // this writes nothing before it starts; so are `which`, `unpin` and every `profile` verb (PUSH1f2e1, PUSH1f2e2, PUSH1f2e3), so no
-  // verb left here takes a route. The rest stays here until the rest of PUSH1f2e. `pin` and a pinned `update` fetch a maker's release
+  // verb left here takes a route, and `list` with a bare `daoris agent` (PUSH1f2e4). The rest stays here until the rest of PUSH1f2e,
+  // the long verbs. `pin` and a pinned `update` fetch a maker's release
   // (AGT2b, USE1a) through the one module that may reach a network, handed in here so the toolchain never holds a socket of its own.
   // And the way a browser sign-in's ports are tried before it starts (CODEXLOGIN1), a socket of `service.ts`'s like the fetcher.
   run: (args) => handed(args.argv)
@@ -120,13 +121,13 @@ export const command: CliCommand = {
 };
 
 /**
- * The verbs `daoris agent` hands Daoris's driver program (PUSH1f2d, the alone-path design §5's allow-list): the rules, a trust, an
- * account's settings and what an agent runs as (PUSH1f2e1), an unpin and every account verb (PUSH1f2e2, PUSH1f2e3), each one
- * `daoris-driver agent` has (`AgentsCommand.Verbs`, which a test reads beside this).
+ * The verbs `daoris agent` hands Daoris's driver program (PUSH1f2d, the alone-path design §5's allow-list): this machine's agents
+ * (PUSH1f2e4), the rules, a trust, an account's settings and what an agent runs as (PUSH1f2e1), an unpin and every account verb
+ * (PUSH1f2e2, PUSH1f2e3), each one `daoris-driver agent` has (`AgentsCommand.Verbs`, which a test reads beside this).
  */
-export const HANDED_VERBS: readonly string[] = Object.freeze(['rules', 'trust', 'settings', 'which', 'unpin', 'profile']);
+export const HANDED_VERBS: readonly string[] = Object.freeze(['list', 'rules', 'trust', 'settings', 'which', 'unpin', 'profile']);
 
-/** Whether these words are the driver program's: a handed verb. None named is `list`, which stays here. */
+/** Whether these words are the driver program's: a handed verb. None named is `list`, handed too since PUSH1f2e4. */
 export function handed(argv: readonly string[]): boolean {
   return HANDED_VERBS.includes(argv[0] ?? 'list');
 }

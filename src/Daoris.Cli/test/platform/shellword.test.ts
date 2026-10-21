@@ -6,11 +6,8 @@ import { delimiter, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 // @ts-expect-error — untyped workspace tooling; see desktop-tool.test.ts for why
 import { CLI_BIN, CLI_ENTRY, CLI_PACKAGE, cliLaunchers } from '../../../../tools/desktop-publish.mjs';
-import { coolingLine } from '../../src/accounts/cooling.ts';
 import { joinRefusal } from '../../src/accounts/rotation.ts';
 import { shellWord, shellWords } from '../../src/platform/shellword.ts';
-import { homeEntry } from '../../src/platform/home.ts';
-import { TOOLCHAINS, accountLines, profileHome, readHarnessSettings } from '../../src/agents/toolchain.ts';
 import { makeFixture } from '../_fixture.ts';
 
 /**
@@ -106,49 +103,9 @@ test('a line ending in a placeholder, pasted as it is, reaches nothing: each she
 
 // ——— The hints: every command the CLI prints from an account's name or id, or a workspace's name, spells it.
 
-function at(fx: { root: string }): string {
-  const path = homeEntry(fx.root, 'harnesses');
-  mkdirSync(dirname(path), { recursive: true });
-  return path;
-}
-
-function accounts(fx: { root: string }, ...names: string[]): void {
-  for (const name of names) mkdirSync(profileHome(fx.root, 'claude-code', name), { recursive: true });
-}
-
-// The account verbs' own refusals are the driver's program's since PUSH1f2e, held by `AgentsCommandTests`' twin of this test.
+// The account verbs' own refusals are the driver's program's since PUSH1f2e, held by `AgentsCommandTests`' twin of this test;
+// `agent list`'s *Try now* and join hints since PUSH1f2e4, held by `AgentsTextTests`' rows.
 test('a refusal\'s command names a workspace with a space in double quotes, and an account it cannot spell by a placeholder', () => {
   assert.match(joinRefusal('claude-code', 'my team'),
     /`daoris agent profile order claude-code <account>… --workspace "my team"`/);
-});
-
-test('a cool-off\'s Try now names an account it cannot spell by a placeholder', () => {
-  const until = new Date('2026-10-03T16:02:00Z');
-  const line = coolingLine({ agent: 'claude-code', account: 'R&D', until, stated: true, window: null, seen: until, session: null,
-    assumedZone: false, notBelieved: false }, new Date('2026-10-03T12:00:00Z'), 'UTC');
-
-  assert.match(line, /`daoris agent profile ready claude-code <account>` tries it now/);
-});
-
-test('`agent list` names an account in no list by its name where a shell can take it, and by its id where none can', () => {
-  const fx = makeFixture('shell-words-list');
-  accounts(fx, 'account-1', 'account-2');
-  // Named as `profile rename` names them, which the driver's program says since PUSH1f2e.
-  const names = homeEntry(fx.root, 'accounts');
-  mkdirSync(dirname(names), { recursive: true });
-  writeFileSync(names, JSON.stringify({ 'claude-code': { 'account-1': { name: 'R&D' }, 'account-2': { name: "O'Brien" } } }), 'utf8');
-  // The machine names another account, so these run nowhere and the join is said (OWNSPACE1d: with nothing named, they are in turn).
-  writeFileSync(at(fx), JSON.stringify({ defaults: { 'claude-code': 'elsewhere' } }), 'utf8');
-
-  const lines = accountLines('claude-code', TOOLCHAINS['claude-code']!, {
-    harness: 'claude-code', present: true, version: '1', problem: null, machineDefault: null,
-    profiles: [
-      { name: 'account-1', home: '', login: 'in', account: null, key: null },
-      { name: 'account-2', home: '', login: 'in', account: null, key: null },
-    ],
-  }, readHarnessSettings(at(fx)), fx.root, new Date(), 'UTC').join('\n');
-
-  assert.match(lines, /`daoris agent profile join claude-code account-1 <workspace>…\|--machine` puts it in one/);
-  assert.match(lines, /`daoris agent profile join claude-code "O'Brien" <workspace>…\|--machine` puts it in one/);
-  fx.cleanup();
 });
