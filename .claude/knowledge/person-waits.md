@@ -31,6 +31,10 @@ badge count. A rule proposal's (D74) is the older one.
   an answer from any of them is one answer.
 - **Never an answer the asker did not offer.** A press per choice offered, by its own id; where none allows, the person can
   only refuse (D52, D184's AUTONOMY1b3a note).
+- **A wait nothing waits for any more says so.** Where nothing that asked can still use the answer, .NET marks the row stale with
+  since when, the page lists it with what holds nothing (`attentionGroupOf`) and offers its refusal alone, and that refusal sends
+  nothing on. A press over several such rows refuses each through its own row's door, never a yes (`StaleGoAheads.tsx`; D196's
+  GOAHEADSTALE1 note).
 - **Listed only with an act.** A row is in the band only where the person has something to do about it: a press on the row,
   or a door to the place of the press. What the cycle settles by itself, or a guard nothing of theirs lifts, is said on its own
   page instead; a unit of work is a row only where the clean-up's press settles it (OVERVIEWNOISE1b, D173's note).

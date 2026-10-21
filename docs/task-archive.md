@@ -19120,3 +19120,11 @@ Detail: D194's PUSH1f2e2 note. On Opus.
 
 **Outcome** 2026-10-22: built. Each main window tells and wears its own count (`SET_BADGE` by name, its order per window); a balloon's
 click opens the window whose workspace holds its session or quest (`MainWindowScopes`), else the one last in front. Detail: D196's NOTIFY2c note. On Opus.
+
+## GOAHEADSTALE1 — a stale go-ahead says so, and is refused in one press (2026-10-22, D196)
+
+> - [ ] **GOAHEADSTALE1 — a go-ahead whose ask has nothing left running says so, and is refused in one press** (modules, web-shell, driver; found 2026-10-21 cleaning the owner's work workspace; D167, D196). Three go-aheads to write production configuration sat in *What needs you* for six to twelve days after their asks' work was done another way: a go-ahead never ages, and nothing says no session on its ask still waits for it. Wanted: such a go-ahead is marked stale, with its age, where it is listed. The person can refuse every stale one at once with one reason; refusing runs nothing, and it is the only answer offered for stale ones. Proof: modules tests of the stale judgement, a web test of the one press in both languages, and the window.
+
+**Outcome** 2026-10-22: built. `NeedsAPerson` marks a go-ahead row `stale` with since when; the row, the ask's page and Overview's summary
+say it under *Waiting for your word* with its refusal alone, and *Refuse all …* refuses two or more through the service's answer with
+`goesOn: false`. Detail: D196's GOAHEADSTALE1 note. Unproven until the window. On Opus.

@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A go-ahead that nothing on its ask can use any more is now marked *stale go-ahead* (过时的放行) in *What needs you* and on its ask's
+  page, with how long since its sessions stopped and its quests closed. It is listed under *Waiting for your word* and offers only
+  *Refuse…*. Where two or more are stale, *Refuse all …* refuses them together with one reason you give, each on its own ask. A
+  refusal of a stale go-ahead sends no session on and starts nothing.
 - What you say to a session while its quest waits on another repository's answer now reaches the session that carries the quest on
   once the answer comes. It is quoted beneath the answer and shown in that session's conversation. Your answer to a session that
   stopped to ask you after such a wait now goes on at the driver's next look; before, it could wait for good. The session is told
