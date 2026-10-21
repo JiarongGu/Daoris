@@ -33,6 +33,8 @@ export const keys = {
    * browser has none (its own root, so no broad invalidation reaches it).
    */
   attention: ['attention'] as const,
+  /** Done and failed, as the shell pushes it (NOTIFY2f) — written by the pushes, never pulled, as `attention` is. */
+  notices: ['notices'] as const,
   /** The presses the driver has not answered yet, as it last told them (STATEHUB1c) — written by the state hub, never fetched. */
   underWay: ['underWay'] as const,
   /** Ask Daoris's conversation opened ahead of the person (HELP5) — kept by the page, never fetched. */
@@ -530,6 +532,9 @@ export const ACCOUNTS_SLICE = 'accounts';
  * and what the Sessions badge counts, judged in .NET.
  */
 export const ATTENTION_SLICE = 'attention';
+
+/** Done and failed, as the shell pushes it (NOTIFY2f; its spec is `noticesSlice` in `bridge/notices`): the notices' record, judged in .NET. */
+export const NOTICES_SLICE = 'notices';
 
 /** The service's own name for a workspace asked of it (`Workspaces.Normalize`), its ASCII letters folded as its `NOCASE` folds them. */
 const circle = (workspace: string) => (workspace.trim() || 'default').replace(/[A-Z]/g, (letter) => letter.toLowerCase());

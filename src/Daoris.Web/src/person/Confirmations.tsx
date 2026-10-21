@@ -163,9 +163,10 @@ const STEPS = Array.from({ length: 101 }, (_, index) => index / 100);
 /**
  * Says once that a card's decision region is shown (NOTIFY2b, §3.4): one judgement over its intersection with its area, the
  * window's size and focus, and a drawer's scrim, judged again at each change of any; its group's fold, its tab and where the view is
- * docked mount or unmount the card, which judges again as it mounts. The scroll stays the person's: nothing here moves it.
+ * docked mount or unmount the card, which judges again as it mounts. The scroll stays the person's: nothing here moves it. A notice of
+ * *Done and failed* is read by the same judgement (NOTIFY2f, §2.4), with no buttons' row.
  */
-function useShownOnce(enabled: boolean, region: RefObject<HTMLElement | null>, buttons: RefObject<HTMLElement | null>, said: () => void) {
+export function useShownOnce(enabled: boolean, region: RefObject<HTMLElement | null>, buttons: RefObject<HTMLElement | null>, said: () => void) {
   const area = useContext(PressArea);
   const latest = useRef(said);
   useEffect(() => { latest.current = said; });

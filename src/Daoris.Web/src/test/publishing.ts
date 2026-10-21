@@ -104,6 +104,9 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   SET_AGENT_SETTINGS: { scopes: ['harnesses'] },
   CHANNEL_POST: { scopes: ['asks'] },
   CHANNEL_MARK: { scopes: ['asks'] },
+  // NOTIFY2f: the person's notices read or dismissed, which the notices slice pushes.
+  NOTICES_READ: { scopes: ['notices'] },
+  NOTICE_DISMISS: { scopes: ['notices'] },
   // COWORK1d: the person's *Send to its session*, whose receipts the ask's channel shows.
   CHANNEL_FORWARD: { scopes: ['asks'] },
   REGISTRY_REFRESH: { scopes: ['registry'] },

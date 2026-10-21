@@ -665,6 +665,13 @@ public sealed partial class HelpCoverageTests
         ("asks", "useMarkChannel", null, new Exempt(
             "it moves the person's own read mark on an ask's channel to what the page showed them, and changes nothing of the work "
             + "or the machine's settings, as reading is exempt, so there is nothing to propose (D167 point 7).")),
+        // NOTIFY2f (D196 point 6): Done and failed's read and dismissal, the person's own reading of what came to them.
+        ("app", "useMarkNoticesRead", null, new Exempt(
+            "it marks the person's own notices read as Notifications shows them, and changes nothing of the work or the machine's "
+            + "settings, as reading is exempt, so there is nothing to propose (the notification design §2.5).")),
+        ("app", "useDismissNotice", null, new Exempt(
+            "it takes a notice the person has read out of their own Notifications; what ended stays in the sessions' records, and "
+            + "nothing of the work or the machine's settings changes, so there is nothing to propose (the notification design §2.5).")),
         // FABRIC-PERFORM1g (D173's note): What needs you's word on a plugin step's attempt held for the person, `daoris-driver work held`'s twin.
         // FABRIC-CLOSE1q: the same press carries the person's recovery of Daoris's own close held for them, whose answer is its door's.
         ("work", "useResolveHeld", null, new Exempt(

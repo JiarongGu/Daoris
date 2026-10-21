@@ -1,14 +1,16 @@
 import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
+import { useTranslation } from 'react-i18next';
 import { sentence } from '../locales/format';
 import { keys } from '../data/queries';
 import {
-  accountsSlice, asksSlice, attentionSlice, callsSlice, driverSlice, groupsSlice, linesSlice, notPushed, questsSlice, sessionsSlice,
-  sweepSlice, syncSlice, usageSlice, useDriverReady, useStateHub, useStateSlices, workSlice,
+  accountsSlice, asksSlice, attentionSlice, callsSlice, driverSlice, groupsSlice, linesSlice, noticeOf, noticesSlice, notPushed,
+  questsSlice, sessionsSlice, sweepSlice, syncSlice, usageSlice, useDriverReady, useStateHub, useStateSlices, workSlice,
 } from '../bridge/shell';
 import { type AccountWaitTick, type Consideration, type TrustHold, newsFrom } from '../data/signals';
 import type { Notify } from '../design/ui';
+import { noticeWords } from '../notifications/DoneAndFailed';
 import { FIRST_MAIN_WINDOW, ownWindowName } from '../work/window';
 
 type Tick = { events?: string[]; considered?: Consideration[]; untrusted?: TrustHold[]; waits?: AccountWaitTick[] };
@@ -16,7 +18,7 @@ type Tick = { events?: string[]; considered?: Consideration[]; untrusted?: Trust
 /** The slices the shell pushes with their data and this page reads pushed (PUSH1a, D182); every other family keeps its pulls. */
 const PUSHED = [
   driverSlice, linesSlice, sessionsSlice, callsSlice, workSlice, groupsSlice, syncSlice, sweepSlice, questsSlice, asksSlice, usageSlice,
-  accountsSlice, attentionSlice,
+  accountsSlice, attentionSlice, noticesSlice,
 ];
 
 /**
@@ -45,6 +47,7 @@ export function ShellSignals({ notify, onAttend, attended, onConfirming }: {
 }) {
   const { isAvailable, bridge } = useShenora();
   const client = useQueryClient();
+  const { t } = useTranslation();
   /** What the last tick said, so an unchanged report is not said again. A ref: it must not re-render. */
   const toldLast = useRef<string[]>([]);
 
@@ -167,6 +170,21 @@ export function ShellSignals({ notify, onAttend, attended, onConfirming }: {
       }
       void client.invalidateQueries({ queryKey: keys.allSessions, predicate: notPushed(client) });
     });
+
+  /**
+   * A notice another process recorded (NOTIFY2f, the notification design §5): the headless host's session that ended, or a press
+   * that went unanswered, said by the shell as it reads the record again, once per notice. Said here in the reader's words, in the
+   * window in front alone, and once for an event heard twice; a window not focused as it hears it says nothing, and the notice waits
+   * in *Done and failed*, counted by the bell's dot.
+   */
+  const saidNotices = useRef(new Set<string>());
+  useShenoraEvent<unknown>('DAORIS', 'NOTICE', (arrived) => {
+    const notice = noticeOf(arrived);
+    if (!notice || saidNotices.current.has(notice.id)) return;
+    saidNotices.current.add(notice.id);
+    if (typeof document === 'undefined' || document.visibilityState !== 'visible' || !document.hasFocus()) return;
+    notify(noticeWords(notice, t), notice.kind === 'expired' || notice.state === 'failed' ? 'error' : 'ok');
+  });
 
   /**
    * A conversation ended (SES2). The driver says so the moment its record moves, because nothing

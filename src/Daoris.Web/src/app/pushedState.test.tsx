@@ -57,7 +57,7 @@ import type { AccountsAnswer } from '../settings/accounts/accounts';
 const CHOICES = { drivable: ['engine'], holds: [], trees: [], notify: false, strikes: 3, forgiven: {} };
 
 /** How many slices a window reads pushed, each its one snapshot as the window opens (`PUSHED` in `ShellSignals`). */
-const SLICES = 13;
+const SLICES = 14;
 
 /** A session parked to ask, as the attention slice's owner pushes its row and what the Sessions badge counts (PUSH1d4). */
 const PARKED_ROW = { kind: 'parked', id: 'a-1', since: '2026-10-20T08:00:00+00:00', workspace: 'default', where: 'engine', note: {} };

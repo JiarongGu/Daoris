@@ -583,6 +583,8 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("USAGE", "", null)]
     [InlineData("CHANNEL_POST", "asks", null)]
     [InlineData("CHANNEL_MARK", "asks", null)]
+    [InlineData("NOTICES_READ", "notices", null)]
+    [InlineData("NOTICE_DISMISS", "notices", null)]
     [InlineData("CHANNEL_READ", "", null)]
     [InlineData("ASKS_ELSEWHERE", "", null)]
     [InlineData("REGISTRY_REFRESH", "registry", null)]
@@ -644,7 +646,7 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     public void Every_scope_has_its_word_on_the_wire_in_its_declared_order() =>
         Assert.Equal(
             "sessions,landing,diff,handOff,sweep,treesSync,lines,quests,asks,driver,rules,history,sync,registry,plugins,harnesses,"
-            + "tools,help,browser,wiring",
+            + "tools,help,browser,wiring,notices",
             string.Join(",", StatePublisher.Names((StateScopes)~0)));
 
     /// <summary>

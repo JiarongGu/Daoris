@@ -135,6 +135,12 @@ public sealed class PipeConfirmations : IDisposable
     /// <summary>How many may wait at once.</summary>
     public int Bound { get; }
 
+    /// <summary>
+    /// Told each press that ended unanswered, <see cref="PipeConfirmationEnd.Expired"/>, after every window was told it ended (NOTIFY2f,
+    /// the notification design §2.2): the loop keeps it as a notice in <i>Done and failed</i>. None keeps nothing.
+    /// </summary>
+    public Action<PipeConfirmation>? Unanswered { get; set; }
+
     /// <summary>What waits now, oldest first.</summary>
     public PipeConfirmationsNow Now()
     {
@@ -342,6 +348,7 @@ public sealed class PipeConfirmations : IDisposable
         held.Timer?.Dispose();
         Write(end.ToString().ToLowerInvariant(), held.Shown);
         Tell(told);
+        if (end == PipeConfirmationEnd.Expired) Unanswered?.Invoke(held.Shown);
         held.Ended.TrySetResult(end);
     }
 

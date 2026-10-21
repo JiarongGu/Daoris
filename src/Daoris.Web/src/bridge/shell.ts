@@ -20,6 +20,7 @@ export * from './help';
 export * from './sessions/history';
 export * from './repositories/lines';
 export * from './log';
+export * from './notices';
 export * from './person';
 export * from './plugins';
 export * from './repositories/registry';

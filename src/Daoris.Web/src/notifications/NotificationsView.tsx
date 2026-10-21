@@ -6,9 +6,13 @@ import {
   type Confirmation, type ConfirmationAnswer, confirmationAnchor, Confirmations, PressArea, type PressNames,
 } from '../person/Confirmations';
 import { NothingNeedsYou } from '../work/attention/AttentionList';
+import type { Notice } from '../bridge/notices';
+import { DoneAndFailed } from './DoneAndFailed';
 
-/** A group of *Notifications* a door can name (§2.2): the presses waiting for confirmation, and *What needs you*. */
-export type NotificationsGroup = 'presses' | 'needs';
+/** A group of *Notifications* a door can name (§2.2): the presses waiting for confirmation, *What needs you*, and *Done and failed*. */
+export type NotificationsGroup = 'presses' | 'needs' | 'done';
+
+const GROUPS: readonly NotificationsGroup[] = ['presses', 'needs', 'done'];
 
 /** What a door asked *Notifications* to show: a group, or a press's card; counted, so the same ask twice is two. */
 export type NotificationsAt = { group?: NotificationsGroup; press?: string; n: number };
@@ -19,7 +23,7 @@ export const FOLDED = 'daoris.notifications.folded';
 function foldedHere(): Set<NotificationsGroup> {
   try {
     const kept: unknown = JSON.parse(storedHere(FOLDED) ?? '[]');
-    return new Set(Array.isArray(kept) ? kept.filter((each): each is NotificationsGroup => each === 'presses' || each === 'needs') : []);
+    return new Set(Array.isArray(kept) ? kept.filter((each): each is NotificationsGroup => GROUPS.includes(each as NotificationsGroup)) : []);
   } catch {
     return new Set();
   }
@@ -34,7 +38,8 @@ function foldedHere(): Set<NotificationsGroup> {
  * confirmation channel alone (never a row's copy); then *What needs you*, today's rows in their groups and order with their acts and
  * doors, its `confirmation` row drawn as its card above. Each is headed by its name and its count and folds by its head, the fold
  * this window's own; a group holding nothing is not drawn, and with nothing in any, *Nothing needs you* and the sessions working.
- * *Done and failed* and *Messages* join with the rows that produce them (NOTIFY2f, 2g).
+ * Then *Done and failed* (NOTIFY2f): what ended, failed or went unanswered, newest first, each read once it is shown here in a
+ * window in front (`DoneAndFailed`). *Messages* joins with the rows that produce it (2g).
  *
  * **Its scroll area is the presses' area** (§3.4): a card is *shown* when its decision region is in view here, which a folded group,
  * a tab not shown or a closed region never are, since none of them draws the card.
@@ -42,7 +47,9 @@ function foldedHere(): Set<NotificationsGroup> {
  * A molecule over a slot: the application hands it the presses and their answers, and *What needs you* as the band it draws, so it
  * presses no hook itself.
  */
-export function NotificationsView({ presses, needs, working, attention, onAnswer, notify, onShown, names, at = null, onVisible }: {
+export function NotificationsView({
+  presses, needs, working, attention, onAnswer, notify, onShown, names, at = null, onVisible, notices = [], onRead, onOpenNotice, onDismiss,
+}: {
   presses: Confirmation[];
   /** How many rows *What needs you* holds but the presses' own; null while not judged, which draws the band's own skeleton. */
   needs: number | null;
@@ -58,6 +65,13 @@ export function NotificationsView({ presses, needs, working, attention, onAnswer
   at?: NotificationsAt | null;
   /** Told whether the view is drawn: a press's toast stays until the view opens (§3.3). */
   onVisible?: (shown: boolean) => void;
+  /** *Done and failed*, the window's notices newest first (NOTIFY2f). */
+  notices?: Notice[];
+  /** The notices shown here in a window in front, *Opened*, or named by *Mark all read*, read. */
+  onRead?: (ids: string[]) => void;
+  /** A notice's door: its session's page. */
+  onOpenNotice?: (notice: Notice) => void;
+  onDismiss?: (notice: Notice) => void;
 }) {
   const { t } = useTranslation();
   const area = useRef<HTMLDivElement>(null);
@@ -97,7 +111,9 @@ export function NotificationsView({ presses, needs, working, attention, onAnswer
     target?.scrollIntoView?.({ block: 'nearest' });
   }, [asked]);
 
+  // Nothing waiting on the person: said above what ended, which is no wait.
   const nothing = presses.length === 0 && needs === 0;
+  const unread = notices.filter((notice) => !notice.read).length;
   return (
     <div ref={area} data-notifications="" className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
       <PressArea.Provider value={area}>
@@ -112,6 +128,11 @@ export function NotificationsView({ presses, needs, working, attention, onAnswer
           </Group>
         )}
         {nothing && <NothingNeedsYou working={working} />}
+        {notices.length > 0 && (
+          <Group id="done" title={t('notifications.done.title')} count={unread > 0 ? unread : null}folded={folded.has('done')} onFold={fold}>
+            <DoneAndFailed notices={notices} onRead={onRead ?? (() => {})} onOpen={onOpenNotice} onDismiss={onDismiss ?? (() => {})} />
+          </Group>
+        )}
       </PressArea.Provider>
     </div>
   );

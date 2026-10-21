@@ -204,6 +204,8 @@ public sealed class PipeCensus
             // FABRIC-PERFORM1g: the person's word on a plugin step's attempt held for them, which settles what nothing else can.
             "WORK_HELD",
             "HELP_DISMISS", "CHANNEL_MARK",
+            // NOTIFY2f: the person's news read or dismissed, which a terminal marking would hide from them.
+            "NOTICES_READ", "NOTICE_DISMISS",
             // A go-ahead's answer, a parked session's yes or no, a helper's, a quest retried after its strikes, and the answer to a
             // permission a session holds for the person (AUTONOMY1b3a), whose allow is the person's alone.
             "SESSION_GO_AHEAD", "RESOLVE_SESSION", "SESSION_HELPER_APPROVE", "SESSION_HELPER_DECLINE", "SESSION_HELPER_ASK", "SESSION_PERMISSION_ANSWER",

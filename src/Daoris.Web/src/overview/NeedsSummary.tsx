@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { AttentionRead } from '../bridge/attention';
+import type { Notice } from '../bridge/notices';
 import { Icon, SectionTitle, SkeletonRows } from '../design/ui';
 import { cn } from '../lib/cn';
 import { elapsed, span } from '../locales/format';
@@ -9,7 +10,7 @@ import { NothingNeedsYou } from '../work/attention/AttentionList';
 import { ATTENTION_GROUP, type AttentionGroup, GROUP_ORDER, needsListed } from '../work/attention/attention';
 
 /** A line of the summary: its group's name, its count, and its oldest wait or its press's time left, where one is known. */
-type Line = { id: 'presses' | AttentionGroup; label: string; count: number; detail: string | null; opens: NotificationsGroup };
+type Line = { id: 'presses' | AttentionGroup | 'done'; label: string; count: number; detail: string | null; opens: NotificationsGroup };
 
 /**
  * Overview's summary of what needs the person (NOTIFY2b, D196 point 5, the notification design §4): a line per group with its count
@@ -25,9 +26,11 @@ type Line = { id: 'presses' | AttentionGroup; label: string; count: number; deta
  *
  * A molecule: what waits comes in, and the doors go out.
  */
-export function NeedsSummary({ attention, presses, onNotifications, now = Date.now() }: {
+export function NeedsSummary({ attention, presses, notices = [], onNotifications, now = Date.now() }: {
   attention: AttentionRead;
   presses: Confirmation[];
+  /** *Done and failed*, the window's notices (NOTIFY2f): their line, after what waits, with how many are unread. */
+  notices?: Notice[];
   /** *Notifications* shown at a group: the app's alone, since a browser has no side bar. Absent, the lines are words. */
   onNotifications?: (group: NotificationsGroup) => void;
   /** The clock the times are read by. */
@@ -69,7 +72,16 @@ export function NeedsSummary({ attention, presses, onNotifications, now = Date.n
     });
   }
 
-  if (lines.length === 0) return region(<NothingNeedsYou working={attention.working} />);
+  // What ended waits on nobody: its line follows the waits, counting every notice, its detail how many are unread.
+  const unread = notices.filter((notice) => !notice.read).length;
+  const done: Line | null = notices.length > 0
+    ? {
+      id: 'done', label: t('notifications.done.title'), count: notices.length, opens: 'done',
+      detail: unread > 0 ? t('notifications.done.unreadCount', { count: unread }) : null,
+    }
+    : null;
+  if (lines.length === 0 && !done) return region(<NothingNeedsYou working={attention.working} />);
+  if (done) lines.push(done);
 
   return region(
     // R1 (the UI/UX design §2): one label track at 32rem and wider, each line's count and wait beside its words; stacked below.

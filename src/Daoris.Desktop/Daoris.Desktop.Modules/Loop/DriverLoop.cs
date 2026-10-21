@@ -119,9 +119,18 @@ public sealed class DriverLoop(
         DriverSlice, LinesStateSlice.Of(this, eventBus), SessionsStateSlice.Of(this, eventBus), CallsStateSlice.Of(this, eventBus),
         WorkStateSlice.Of(this, eventBus), GroupsStateSlice.Of(this, eventBus), SweepStateSlice.Of(this, eventBus),
         SyncStateSlice.Of(this, eventBus), QuestsStateSlice.Of(this, eventBus), AsksStateSlice.Of(this, eventBus),
-        UsageStateSlice.Of(this, eventBus), AccountsStateSlice.Of(this, eventBus), AttentionStateSlice.Of(this, eventBus)));
+        UsageStateSlice.Of(this, eventBus), AccountsStateSlice.Of(this, eventBus), AttentionStateSlice.Of(this, eventBus),
+        Notices.Slice));
 
     private StateSlices? _slices;
+
+    /// <summary>
+    /// <i>Done and failed</i> (NOTIFY2f, D196 point 6): the notices this process records and reads again, which the <c>NOTICES_READ</c>
+    /// and <c>NOTICE_DISMISS</c> routes write through.
+    /// </summary>
+    public NoticesStateSlice Notices => LazyInitializer.EnsureInitialized(ref _notices, () => NoticesStateSlice.Of(this, eventBus));
+
+    private NoticesStateSlice? _notices;
 
     /// <summary>
     /// Each move the change sources heard, as the watch tells the machine's facts (PARALLEL1a): its topic and subject, a ledger family
@@ -714,6 +723,13 @@ public sealed class DriverLoop(
         using var proposalsResumed = Power?.Hear(proposals.Resumed);
         StatePublisher.Publish(eventBus, StateScopes.Help);
 
+        // NOTIFY2f (D196 point 6): the notices' record, read again by this window's process whoever holds the lease, since any process
+        // on the home writes it; another's write is heard, or found at the topic's deadline, and its own wakes nothing, since its writer
+        // pushes it. Before the lease is waited on, as the proposals are.
+        await using var notices = HomeWatch.ForNotices(homeDirectory, (_, _) => Notices.Slice.Wake(), log: log);
+        notices.Start();
+        using var noticesResumed = Power?.Hear(notices.Resumed);
+
         // A plugin's word goes to the console under `plugin:<id>` (D49 §2, D64 §4) — the same buffer
         // a session's lines and a harness action's lines land in, readable only over this bridge.
         // What the set does with each plugin goes to the machine log without its words, and into the loop's
@@ -734,6 +750,8 @@ public sealed class DriverLoop(
 
         // The terminal's pipe (RPC1a, the terminal RPC design §6.3): served once this loop holds the home, the one writer, and only
         // then named in the address, so a terminal that reads it finds it served. A name already held serves none, said in the log.
+        // NOTIFY2f: a press that ends unanswered is kept in Done and failed.
+        if (Pipe is { } served) served.Confirmations.Unanswered = Notices.Unanswered;
         if (Pipe?.Serve() is { } pipe) AnnouncePipe(pipe);
 
         var attention = new AttentionWatch();
@@ -784,6 +802,8 @@ public sealed class DriverLoop(
                     report, ticked.ForgivenAt, token => SessionRecords.ReadAsync(service.BaseUrl, key, ct: token), ct)
                     .ConfigureAwait(false);
                 var attend = attention.Observe(report, read);
+                // Kept in Notifications whatever the switch says (NOTIFY2f, the notification design §2.5): recording is not telling.
+                Notices.Keep(attend);
                 if (ticked.Notify)
                 {
                     foreach (var item in attend) await AttendAsync(item).ConfigureAwait(false);

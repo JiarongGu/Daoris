@@ -80,6 +80,11 @@ public enum StateScopes
 
     /// <summary>How this Daoris is wired: its sizes, once a walk has counted them (FABRIC-EVENT5b). Told by the driver, declared by no route.</summary>
     Wiring = 1 << 19,
+
+    // NOTIFY2f (D196 point 6): after STATEHUB1h's, which keep their numbers.
+
+    /// <summary>The notices of Done and failed and whether each is read, which the <c>notices</c> slice pushes.</summary>
+    Notices = 1 << 20,
 }
 
 /// <summary>
