@@ -42,5 +42,16 @@
   "notifications.done.unread": "未读",
   "notifications.done.unreadCount": "{{count}} 条未读",
   "notifications.done.dismiss": "移除",
-  "notifications.done.markAll": "全部标为已读"
+  "notifications.done.markAll": "全部标为已读",
+  "notifications.done.look.hand-over-refused": "一个会话未能转交给另一个智能体",
+  "notifications.done.look.hand-over-elsewhere": "一个会话未能转交：它在本机另一个 Daoris 进程中运行",
+  "notifications.done.look.hand-over-dropped": "一个智能体转交其会话的请求已作废：该会话已离开本机",
+  "notifications.done.look.hand-over-ask-refused": "一个智能体转交其会话的请求被规则拒绝",
+  "notifications.done.look.hand-over-failed": "一个智能体转交其会话的请求未能执行",
+  "notifications.done.look.handed-back": "一个转交给另一个智能体的委托已交还本机的智能体",
+  "notifications.done.look.lost-claim": "一个会话已停止：另一台机器先接下了它的委托",
+  "notifications.done.look.lost-to-reopen": "一个会话已停止：你重新打开它所源自的工作，收回了它的委托",
+  "notifications.done.look.meeting-cut": "一次会议被中断：运行它的驱动已停止",
+  "notifications.done.look.brainstorm-cut": "一次头脑风暴被中断：运行它的驱动已停止",
+  "notifications.done.look.swept": "Daoris 上次停止时留下运行的一个会话已结束"
 }

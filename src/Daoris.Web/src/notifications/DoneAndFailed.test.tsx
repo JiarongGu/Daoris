@@ -121,4 +121,30 @@ describe('Done and failed', () => {
     expect(screen.getByRole('button', { name: '全部标为已读' })).toBeInTheDocument();
     expect(within(rows[1]!).getByRole('button', { name: '移除' })).toBeInTheDocument();
   });
+
+  /**
+   * NOTIFY2h (D196 point 7, the notification design §5.1): a look's news is said by its code in the reader's language, never the
+   * driver's English line; it opens its session where it names one; a code a later build says reads as something ended.
+   */
+  it.each([
+    ['en', 'A session was stopped: another machine took its quest first', 'A meeting was cut short: the driver running it stopped', 'Something ended'],
+    ['zh', '一个会话已停止：另一台机器先接下了它的委托', '一次会议被中断：运行它的驱动已停止', '有事项已结束'],
+  ])("says a look's news by its code in %s", async (language, lost, cut, other) => {
+    await i18n.changeLanguage(language);
+    layout.row = { top: 500, height: 60 };
+    const LOST: Notice = { id: 'look-lost-claim-s3', kind: 'look', code: 'lost-claim', at: '2026-10-22T08:59:00.000Z', read: false, session: 's3', quest: 'q3' };
+    const CUT: Notice = { id: 'look-meeting-cut-m1', kind: 'look', code: 'meeting-cut', at: '2026-10-22T08:58:00.000Z', read: false };
+    const LATER: Notice = { id: 'look-later-x', kind: 'look', code: 'a-later-code', at: '2026-10-22T08:57:00.000Z', read: false };
+    const { onOpen } = drawn([LOST, CUT, LATER]);
+
+    const rows = screen.getAllByRole('listitem');
+    expect(within(rows[0]!).getByText(lost)).toBeInTheDocument();
+    expect(within(rows[1]!).getByText(cut)).toBeInTheDocument();
+    expect(within(rows[2]!).getByText(other)).toBeInTheDocument();
+    expect(screen.queryByText(/lost-claim|meeting-cut|stop  session/)).not.toBeInTheDocument();
+    // A meeting's names no session: it has no door; a stopped session's opens it.
+    expect(within(rows[1]!).queryByRole('button', { name: language === 'en' ? 'Open' : '打开' })).not.toBeInTheDocument();
+    await userEvent.click(within(rows[0]!).getByRole('button', { name: language === 'en' ? 'Open' : '打开' }));
+    expect(onOpen).toHaveBeenCalledWith(LOST);
+  });
 });

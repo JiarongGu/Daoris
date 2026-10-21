@@ -43,16 +43,21 @@ describe('the shell push channel (ShellSignals)', () => {
     expect(notifyReady).toHaveBeenCalledTimes(1);
   });
 
-  it('a tick becomes toasts, and everything a tick can change refetches', () => {
+  /**
+   * NOTIFY2h (D196 point 7, the notification design §5.1): a tick's lines are the machine log's, never a toast. News among them is a
+   * notice in *Done and failed*, a wait its row; an English log line no longer toasts in a 中文 window.
+   */
+  it("a tick's lines toast nothing, and everything a tick can change refetches", () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const invalidate = vi.spyOn(client, 'invalidateQueries');
     const notify = vi.fn();
     show(<ShellSignals notify={notify} />, client);
 
-    eventHandlers.get('DAORIS.DRIVER_TICK')!({ events: ['engine  spawned s1a2b3c4', 'sync  fed 2'] });
+    eventHandlers.get('DAORIS.DRIVER_TICK')!({
+      events: ['engine  spawned s1a2b3c4', 'sync  fed 2', 'rules  the proposals could not be settled this tick: busy'],
+    });
 
-    expect(notify).toHaveBeenCalledWith('engine  spawned s1a2b3c4');
-    expect(notify).toHaveBeenCalledWith('sync  fed 2');
+    expect(notify).not.toHaveBeenCalled();
     // The index too: a schema rebuild is observable, and a summary cached mid-feed stayed "555 · 7"
     // on an index of 1,050 · 17 for as long as the window was open (deployed app, 2026-09-23).
     // And where each circle stands with its remote (SYNC6b): every tick runs a pass. And the asks: a

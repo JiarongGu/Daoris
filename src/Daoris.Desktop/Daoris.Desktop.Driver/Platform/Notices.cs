@@ -40,6 +40,9 @@ public static class Notices
     /// <summary>A terminal's press that ended unanswered, refused by its time.</summary>
     public const string Expired = "expired";
 
+    /// <summary>A line of the look's that is news, by its code (NOTIFY2h, <see cref="LookSaid"/>).</summary>
+    public const string Look = "look";
+
     private const string Moment = "yyyy-MM-dd'T'HH:mm:ss.fff'Z'";
 
     /// <summary>Where the record is: the home table's <c>notices</c> entry.</summary>
@@ -219,6 +222,7 @@ public static class Notices
         Optional("state", notice.State);
         Optional("route", notice.Route);
         Optional("act", notice.Act);
+        Optional("code", notice.Code);
         writer.WriteEndObject();
 
         void Optional(string name, string? value)
@@ -273,7 +277,7 @@ public static class Notices
 
         var read = element.TryGetProperty("read", out var seen) && seen.ValueKind == JsonValueKind.True;
         return new(id, kind.GetString()!, when, read, Text("workspace"), Text("session"), Text("quest"), Text("repository"), Text("state"),
-            Text("route"), Text("act"));
+            Text("route"), Text("act"), Text("code"));
 
         string? Text(string name) => element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
     }
@@ -286,10 +290,11 @@ public static class Notices
 /// it is about. Its workspace is the one it was made in, kept on it and never read again from a session that may since be gone; none is
 /// machine-wide.
 /// </summary>
-/// <param name="Kind"><see cref="Notices.Ended"/> or <see cref="Notices.Expired"/>; a later build's kinds are read as written.</param>
+/// <param name="Kind"><see cref="Notices.Ended"/>, <see cref="Notices.Expired"/> or <see cref="Notices.Look"/>; a later build's kinds are read as written.</param>
 /// <param name="State">A session's end state, for <see cref="Notices.Ended"/>.</param>
 /// <param name="Route">A press's route, its module before it where the module is not the driver's (<c>REMOTES.SET</c>).</param>
 /// <param name="Act">A press's act in its asker's own words, where it has no route the page words.</param>
+/// <param name="Code">What a look's line said, for <see cref="Notices.Look"/>: one of <see cref="LookSaid.NewsCodes"/>.</param>
 public sealed record Notice(
     string Id,
     string Kind,
@@ -301,4 +306,5 @@ public sealed record Notice(
     string? Repository = null,
     string? State = null,
     string? Route = null,
-    string? Act = null);
+    string? Act = null,
+    string? Code = null);
