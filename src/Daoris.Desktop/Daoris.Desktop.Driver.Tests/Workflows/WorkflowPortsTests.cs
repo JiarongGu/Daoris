@@ -184,6 +184,38 @@ public sealed class WorkflowPortsTests
         Assert.Equal(["workflow  #q3 → web-app: its run was not bound to a workflow at this start: the service did not answer"], unanswered);
     }
 
+    /// <summary>
+    /// WORKFLOW1e2 (the workflow design §4.1 row 1): a quest no ask published binds the person's choice made on it, at the task's level,
+    /// over its repository's default; a chain's step in another repository with none of its own follows its parent's; and a quest whose
+    /// latest choice is a clear follows its repository.
+    /// </summary>
+    [Fact]
+    public async Task A_quest_with_no_ask_binds_its_own_choice_and_its_chains_steps_follow_it()
+    {
+        var store = new MemoryStore();
+        var runs = new MemoryRuns();
+        WorkflowStore.Add(store, runs, Added("automatic"));
+        var config = DriverConfig.Parse("""{"workflows":{"web-app":{"default":"current"},"api":{"default":"current"}}}""");
+        var chosen = new AskWorkflowChoiceView(null, "docs-to-pr", At, "docs only");
+        var first = new QuestView("q1", "daoris", "web-app", "Docs", "", "Open") { WorkflowChoices = [chosen] };
+        var step = new QuestView("q2", "daoris", "api", "Its endpoint", "", "Open") { Parent = "q1" };
+        var cleared = new QuestView("q3", "daoris", "web-app", "Later", "", "Open")
+        {
+            WorkflowChoices = [chosen, new AskWorkflowChoiceView(null, null, At.AddMinutes(1))],
+        };
+        var world = new StartWorld([first, step, cleared]);
+        var events = new List<string>();
+
+        await WorkflowRunStart.BindAsync(
+            [new WorkflowStarted(first, "work"), new WorkflowStarted(step, "work"), new WorkflowStarted(cleared, "work")],
+            world, store, runs, config, [], () => At, events, CancellationToken.None);
+
+        Assert.Equal(("docs-to-pr", WorkflowLevels.Task, 1), (runs.Read("q1")!.Workflow, runs.Read("q1")!.Level, runs.Read("q1")!.Version));
+        Assert.Equal(("docs-to-pr", WorkflowLevels.Task), (runs.Read("q2")!.Workflow, runs.Read("q2")!.Level));
+        Assert.Equal((WorkflowSelection.Current, WorkflowLevels.Repository), (runs.Read("q3")!.Workflow, runs.Read("q3")!.Level));
+        Assert.Null(runs.Read("q1")!.Ask);
+    }
+
     // ——— stand-ins
 
     /// <summary>The service a start reads, in memory: its quests, or none where it does not answer; and the machine log's lines said.</summary>

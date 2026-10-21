@@ -332,7 +332,8 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "one; each run binds what is chosen at its first start)",
             "(no screen yet)",
             "`daoris-driver ask … --kind <kind> [--workflow <id>|current]`, `daoris-driver ask --set-workflow <id> [--kind <kind>] "
-            + "[--workflow <id>|current]|--clear [\"…\"]`"),
+            + "[--workflow <id>|current]|--clear [\"…\"]`, and for a quest no ask published, before it starts (WORKFLOW1e2), "
+            + "`daoris-driver quest workflow <id> [--kind <kind>] [--workflow <id>|current]|--clear [\"…\"]`"),
         // WORKFLOW1f (D157 point 10, the workflow design §4.4): the person's Keep where a kind's paths hold its work. Exempt from Ask
         // Daoris (HelpCoverageTests): keeping a workflow that asks less of the person is their say-so, as going on without a second
         // opinion is. The screen's press, and §4.4's other two, are the editor's row (WORKFLOW1g).

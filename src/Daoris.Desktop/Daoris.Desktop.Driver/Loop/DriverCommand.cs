@@ -103,6 +103,8 @@ public static class DriverCommand
               say what kind of task an ask is and which workflow its work follows: a kind its workspace declares, a
               workflow saved here or current; the latest stands, and each run binds what is chosen at its first start.
               Yours alone: an agent proposes a kind, never sets one.
+          quest workflow <id> [--kind <kind>] [--workflow <id>|current]|--clear ["…"]
+              the same for a quest no ask published, before it starts: its chain's later steps follow it too.
           opinion ask <session> [--reviewer <adapter>] [--same-agent] ["…"]  ·  opinion show <session|opinion>
           opinion stop <opinion>  ·  opinion anyway <session> ["…"]  ·  opinion myself <session> ["…"]
               a session's second opinion before its work lands: ask another agent to read it (one of its rule's reviewers by

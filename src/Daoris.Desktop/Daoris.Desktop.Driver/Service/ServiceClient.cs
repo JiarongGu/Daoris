@@ -1789,6 +1789,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
                 // FABRIC-CLOSE1c4, read for FABRIC-CLOSE1c8: the source's own reopen no later submission answered. Absent once one did,
                 // and from a host before it; one named in half is none.
                 Reopened = ReadReopen(quest),
+                // WORKFLOW1e2: the person's kind and workflow on a quest no ask published, in an ask's shape. Absent is none.
+                WorkflowChoices = ReadWorkflowChoices(quest),
             });
         }
 
@@ -2785,6 +2787,28 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             if (workflow is not null) writer.WriteString("workflow", workflow);
             if (!string.IsNullOrWhiteSpace(words)) writer.WriteString("words", words.Trim());
         }, ct);
+
+    /// <summary>
+    /// The person's kind and workflow on a quest no ask published, before it starts (WORKFLOW1e2; the workflow design §4.1 row 1): the
+    /// local host's <c>POST /api/quests/{id}/workflow</c>, <c>{ kind?, workflow?, words? }</c>, a person's door (D156); neither clears
+    /// the choice. The service's sentence comes back verbatim, a refusal included, and a host older than the door says so.
+    /// </summary>
+    public async Task<(bool Ok, string Message)> ChooseQuestWorkflowAsync(
+        string quest, string? kind, string? workflow, string? words, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            if (kind is not null) writer.WriteString("kind", kind);
+            if (workflow is not null) writer.WriteString("workflow", workflow);
+            if (!string.IsNullOrWhiteSpace(words)) writer.WriteString("words", words.Trim());
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, root) = await PostJsonAsync($"/api/quests/{Uri.EscapeDataString(quest.TrimStart('#'))}/workflow", body, ct)
+            .ConfigureAwait(false);
+        if (root is not { } answer) return (false, $"the service at {_base} has no quest workflow door ({status}) — is it older than this driver?");
+        return ok ? (true, Text(answer, "message") ?? "") : (false, Text(answer, "error") ?? payload);
+    }
 }
 
 /// <summary>A session record the ledger opened for this client (LOG1b).</summary>
