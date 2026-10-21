@@ -94,6 +94,12 @@ public static class WorkflowRunDetails
     /// </summary>
     public const string Reopened = "reopened";
 
+    /// <summary>
+    /// A submission the person reopened is made ready again, and the started step it held waits on their go-on or abandon (FABRIC-CLOSE1c7,
+    /// D173's WORKFLOW2d note, choice 2): its quest is that step's, whose door they choose at.
+    /// </summary>
+    public const string GoOn = "go-on";
+
     // The second opinion: its details are its gate's own states (OpinionGateStates, XAGENT1f), and one more.
     /// <summary>The work landed, and its landing record keeps no word of the opinion that let it go.</summary>
     public const string Landed = "landed";
@@ -406,6 +412,16 @@ public static class WorkflowRuns
         && chain.Any(step => Same(step.Parent, quest.Id) && step.SourceReopened is not null);
 
     /// <summary>
+    /// The started step a closure graph's quest's reopen still holds once that quest is made ready again (FABRIC-CLOSE1c7, CLOSE1c's choice
+    /// 2), or null: taken, the source's submission unheld, as the service's <c>continue</c> takes it. An untaken step is rebound by that
+    /// submission instead, so only a taken one waits on the person.
+    /// </summary>
+    private static QuestView? WaitsGoOn(QuestView quest, IReadOnlyList<QuestView> chain) =>
+        quest is { Status: "Taken", Closure: not null, Submission: not null, Held: false }
+            ? chain.FirstOrDefault(step => Same(step.Parent, quest.Id) && step is { Status: "Taken", SourceReopened: not null })
+            : null;
+
+    /// <summary>
     /// A hold the work's words name (D133, D144): a held done's, and a closure graph's held submission's, which holds as a done does (§E5).
     /// A step held because its source was reopened is FABRIC-CLOSE1c's, which these words do not say.
     /// </summary>
@@ -490,6 +506,12 @@ public static class WorkflowRuns
         // The person reopened its submission (FABRIC-CLOSE1c): the finish is taken back, and the work waits for its agent's next ready, judged
         // from the start (FABRIC-WORKFLOW2d). Said where nobody is at it, as its done would be; an agent at it, failed or stopped is said above.
         if (Reopened(current, chain)) return At(WorkflowRunStates.WaitingOnAgent, WorkflowRunDetails.Reopened);
+
+        // Made ready again, its started step still held waits on the person's go-on or abandon at that step's door (FABRIC-CLOSE1c7).
+        if (WaitsGoOn(current, chain) is { } held)
+        {
+            return At(WorkflowRunStates.WaitingOnYou, WorkflowRunDetails.GoOn) with { Quest = held.Id, At = current.Submission!.At ?? current.Updated };
+        }
 
         if (current.Status == "Taken" && latest is { State: "completed" or "stood-down" })
         {

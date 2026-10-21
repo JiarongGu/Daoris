@@ -22,7 +22,7 @@ public static class WorkflowRunWords
             WorkflowRunDetails.Queued, WorkflowRunDetails.Agent, WorkflowRunDetails.Answered, WorkflowRunDetails.Park,
             WorkflowRunDetails.GoAhead, WorkflowRunDetails.Held, WorkflowRunDetails.Awaits, WorkflowRunDetails.Unclosed,
             WorkflowRunDetails.Failed, WorkflowRunDetails.Stopped, WorkflowRunDetails.Declined, WorkflowRunDetails.Finished,
-            WorkflowRunDetails.Submitted, WorkflowRunDetails.Reopened,
+            WorkflowRunDetails.Submitted, WorkflowRunDetails.Reopened, WorkflowRunDetails.GoOn,
         ],
         [WorkflowKinds.Opinion] =
         [
@@ -130,6 +130,9 @@ public static class WorkflowRunWords
                 : $"The agent finished: {count} quests here are submitted, and close at the workflow's end.",
             (WorkflowKinds.Work, WorkflowRunDetails.Reopened) =>
                 $"You reopened quest #{quest}'s submission: it waits for its agent to make it ready again.",
+            // FABRIC-CLOSE1c7: made ready again, the started step the reopen held waits on the person's word.
+            (WorkflowKinds.Work, WorkflowRunDetails.GoOn) =>
+                $"The work you reopened is ready again: quest #{quest}, its next step, waits for you to go on with it on the new work or abandon it.",
 
             (WorkflowKinds.Opinion, OpinionGateStates.None) => "No second opinion is asked before this work lands.",
             (WorkflowKinds.Opinion, OpinionGateStates.WaitsChain) =>
