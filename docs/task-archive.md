@@ -19042,9 +19042,9 @@ waits, so a message is heard without the poll; no second reader was added. Proof
 message kept on a parked part's record with `pollSeconds` at 60, no nudge, no remote sync), over the stand-in ledger's new channel
 doors. Detail: D173's FABRIC-EVENT3c note. On Opus.
 
-## NEEDSSCOPE1 — a window counts and lists only its workspace's needs and the machine's (2026-10-21)
+## NEEDSSCOPE1 — a window counts only its own workspace's waits (2026-10-21)
 
-> - [ ] **NEEDSSCOPE1 — a window counts and lists only its workspace's needs and the machine's** (modules, web). Two windows on one home, each on its own workspace: one's bell and taskbar counted three of the other's sessions to review that its *What needs you* did not list. Every row of a session, a quest or an ask carries that record's workspace; only the machine's carries none. Proof: `AttentionStateSliceTests`, a vitest that another workspace's row is neither counted nor listed.
+> - [ ] **NEEDSSCOPE1 — a window counts only its own workspace's waits** (modules, web; found 2026-10-21 with two windows on one home). A window on one workspace counted another workspace's sessions to review on its bell and taskbar while its list showed none: `NeedsAPerson` builds the review, opinion, permission, answer, helper, parked-quest and work rows without a workspace (`src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/NeedsAPerson.cs:183-327`), and the page keeps a row with none in every window. Proof: each row of a session, quest or ask carries its record's workspace and the machine's rows none; a window on another workspace neither counts nor lists it. Building.
 
 **Outcome** 2026-10-21: built. Every session's, quest's or ask's row of `NeedsAPerson` (the driver's own lists' too) and the Sessions badge's
 parked quest carry their record's workspace; the machine's carry none, each with its reason; the page's counts and lists read one
