@@ -19,6 +19,12 @@ with the version and date at release.
   a named workflow's first session follows its version from the start, told its landing and taking its checks, and its quest is not
   bound to Current's closure graph. A start held after that keeps its run bound to what was chosen then, so a choice you change
   later applies to the next run. A start whose run cannot be bound waits, saying why, and is tried again at the next look.
+- A run bound to a workflow version saved as a graph is now followed by that graph, on a record of the run's own: its claim, its
+  go-ahead (answered only by your answers to what the run's own sessions asked) and its landing are observed as the run goes, and a
+  plugin's observed step is told the run's branch, or after the landing the landed branch at the landing's commit. Your repository's
+  landing cycle no longer runs on such a run's branches; a branch two runs worked, or any branch of its repository while the service's
+  quests cannot be read, is left to neither and said. The run's opinion and look, and a plugin's performed step, wait for a later build
+  whose landing doors read the run.
 - You may now set an age for finished work's records: on the *Disk space* card's *Conversations and records* row (*Change…*), with
   `daoris driver keep history <days>|never|default`, or through Ask Daoris's proposal you apply. Between 30 and 3,650 days; by default
   none, and nothing clears your history by itself, as before. With an age set, once a day each workspace's finished work whose last
