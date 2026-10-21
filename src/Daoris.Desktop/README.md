@@ -118,7 +118,12 @@ durably on its unit's record (`NodeRecordFiles`, `<home>/workflows/units/`), the
 `work/perform` is sent, reconciled before any new attempt, retried only for a declared transient code after a persisted delay, an
 answer taken from the plugin's current process alone (FABRIC-PERFORM1b, D173's note). Each change of the record is one locked
 read-modify-write with the lease asked inside it (`NodeRecordFiles.Edit`), and a reply is applied after its await to the record as
-it is then (FABRIC-PERFORM1h). `NodeRuntime` runs them in the lease's loop, link 8 of its chain (`ChainRanks.Nodes`, bound by
+it is then (FABRIC-PERFORM1h). What an attempt created is taken as receipts on the unit's resource record before its outcome
+(`ResourceRecordFiles`, `<home>/workflows/resources/`, a folder of its own so a build before it, which writes the node record whole,
+never drops one), and `ResourceCleaner` asks each temporary one of its plugin through `work/cleanup` at the unit's true end, at once
+for a superseded attempt's, the request and its key written before the send and a failure tried again on a back-off; the receipts and
+the attempts not settled join the unit's inventory (`WorkObligations`), so it retires only once they are terminal, and the session
+branches' traces keep a unit that still owes (FABRIC-PERFORM1d, D173's note). `NodeRuntime` runs them in the lease's loop, link 8 of its chain (`ChainRanks.Nodes`, bound by
 `DriverWatch` where it holds a hook set): off unless a graph naming a plugin's performed node governs a unit, it hears completions,
 reconciles, makes retries due, evaluates the concerned units to settled with their moves kept and starts made, and tells the plugins
 the awaited set; one pass at a time, with the loop's one performer (FABRIC-RUN1, D173's note). A wake under other choices reads

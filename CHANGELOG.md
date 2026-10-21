@@ -5,6 +5,13 @@ with the version and date at release.
 
 ## Unreleased
 
+- A plugin whose performed step creates something (a preview deployment, say) can now name it with its answer, by a schema its
+  manifest's `resources` declares. Daoris keeps what it named with the work. Once the work ends, it asks the plugin to remove each
+  temporary one through `work/cleanup`, and a result stays. The same request and key are sent again until the plugin answers. Something
+  made by an attempt the work had already moved past is asked for at once. For a branch's work, `daoris-driver work state` names each one
+  still waiting, and `--entries` lists them all with what became of them. Its cleanup stays pending while one is still owed or an
+  attempt's outcome is unsettled. A removal that keeps failing is said as
+  blocked after seven days, with the plugin's words.
 - A workflow whose work you reopened, once its agent makes it ready again, now says that its next step waits for you to go on with
   it on the new work or abandon it, with a button to that step's page. Before, it said the work waited for your done, which that
   workflow does not take. In English and 中文.

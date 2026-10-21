@@ -19014,3 +19014,13 @@ theory (the stop row reads the end; the others none) and its wake test (none whi
 edit and for their `Forget`, as `landings.json` and `session-branches.json` have since FABRIC-END2; no shape, caller or door changed.
 Proof: `RecordLockStoresTests`, per store an edit and a forget waiting for the lock with the holder's write kept. Detail: D173's
 FABRIC-RECLOCK2 note. On Opus.
+## FABRIC-PERFORM1d — resource cleanup and retirement (2026-10-21, D173)
+
+> - [ ] **FABRIC-PERFORM1d — resource cleanup and retirement** (driver; after END4a and PERFORM1c; the fabric events design's rows table (§E10), §D3). Receipts, a durable `work/cleanup`, accountability through invalidation, retirement apart from removal.
+
+**Outcome** 2026-10-21: built. A plugin attempt's `resources` are taken as receipts on the unit's own resource record
+(`<home>/workflows/resources/`) before its outcome; `ResourceCleaner` asks each temporary one of its plugin through `work/cleanup` at the
+unit's true end, at once for a superseded attempt's, the request and its key persisted before the send, a failure backed off and blocked
+after seven days; receipts and unsettled attempts join the unit's inventory, so it retires only once they are terminal, and the session
+branches' traces keep a unit that still owes. Proof: `ResourceCleanupTests` (canaries 34 and 36), `WorkRetirementTests` (canary 35),
+`NodeRuntimeTests`, `WorkSupervisionTests`, `WorkWireTests`. Detail: D173's FABRIC-PERFORM1d note. On Opus: about 110 tool calls.
