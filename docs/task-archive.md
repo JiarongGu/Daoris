@@ -18639,3 +18639,15 @@ starts 44 git processes (55), the squash press 46 (51), the merge press 40 (43);
 Fewer than the row's estimate of 20: the rest are each act's own read, `status` (LANDGIT1c) and the tidy's. Proof: `LandGitCountTests`
 with its ceilings lowered, `What_another_process_moves_is_asked_of_git_each_time` green. On Opus: about 90 tool calls. Detail: D173's
 LANDGIT1b note.
+
+## RETRYWORK1 — a failed session's committed work is carried on, never built again from nothing (2026-10-21, D80)
+
+> - [ ] **RETRYWORK1 — a failed session's committed work is carried on, never built again from nothing** (driver; found 2026-10-21 watching the install; D46 §4). Two sessions built their rows, committed them, and failed only because their connector could not start (QUESTOPENLOCK1), so they could not take or close their quests. Each quest was then retried in a new session with a new tree, which built the same row again from the start: MERGEWEBRULES1 and FABRIC-PIPELINE1b2 were each built twice, about twice the tokens. One retry even read the earlier tree as an earlier run and rebuilt anyway. Wanted: where a failed session's tree holds commits beyond its start, the retry carries on in that tree, told what its predecessor committed and said, as *Try again* carries a stopped take on (StopHold). Where a person must judge it, the session waits in review with its work rather than being retried blind. Proof: a `Process` case where a session commits and then fails on a closed quest door, and its retry starts in the same tree with the predecessor's commits and words in its brief; the retry's note says so.
+
+**Outcome** 2026-10-21: an open quest whose last session here failed (or was stopped by the sweep or a shutdown) with commits in
+its tree beyond its `baseCommit` is carried on in that tree: the look counts them (`CommittedWork`), the planner plans `CarryOn`
+with `CarriesWork`, the session is told to take the quest and finish the work with its record's end and Daoris's brief of the line
+(`SessionTarget.Retried`, golden `retried.md`), and its record opens on `started.carried-work` in both catalogues. The strikes
+still park it on the third failure, its work in the tree, for the person to judge; the sessions' groups no longer offer that tree
+to review while the carry-on waits. Proof: `RetryWorkTickTests` (real ticks, green), with planner, look, groups, note and golden
+rows. Detail: D80's RETRYWORK1 note.

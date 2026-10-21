@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-21 — A session that committed its work and failed before its take was built again from nothing (RETRYWORK1)
+
+- **Symptom:** on the install, MERGEWEBRULES1 and FABRIC-PIPELINE1b2 were each built twice: the first session built and committed
+  the row, failed, and the next session built it again in a new tree, about twice the tokens.
+- **Root cause:** each first session failed only because its connector could not start (QUESTOPENLOCK1), so it never took its
+  quest. D80 carries on a cut-off of a take alone; an open quest's failed session was read as having done nothing, and the quest's
+  next start was a first start, which grows a new tree from the line. Nothing asked whether the failed tree held commits.
+- **Fix:** the look counts the commits beyond `baseCommit` in such a session's tree (`CommittedWork`), and the planner carries an
+  open quest with any on in that tree (`Planner.RetriedFrom`, `Consideration.CarriesWork`), told to take the quest and finish the
+  work with Daoris's brief of the line; the strikes still park it on the third failure. D80's RETRYWORK1 note.
+- **Verification:** `RetryWorkTickTests` through real ticks (a session commits, fails on a closed quest door, and the next look
+  carries it on in the same tree, its instruction naming the commit and the words, its record's note saying so); `PlannerTests`'
+  RETRYWORK1 rows, `CommittedWorkTests`, `SessionGroupsTests`' row, `NoteSitesTests`' row and the `retried` golden.
+
 ## 2026-10-21 — A turn that ended just after its background command did parked on the person (BGWAIT3)
 
 - **Symptom:** a driven session on the install backgrounded a test class, wrote that it would close its quest when the tests

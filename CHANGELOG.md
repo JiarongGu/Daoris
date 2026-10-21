@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A driven session that commits its work and then fails before it takes its quest, such as when its connector cannot start, is
+  no longer followed by a session that builds the same work again in a new tree. The next session carries the quest on in that
+  tree: it is told what was committed and said, takes the quest and finishes from there, and its first line says it carried that
+  work on (接续……已提交的工作). A quest that keeps failing so still parks for you after its third failure, with the work in its tree.
 - Codex signs in through your browser again, as ChatGPT's desktop app does, so a ChatGPT workspace that turns device codes off can
   add its account: *Add an account…* on Agents → Codex and `daoris agent login codex` open the page, and the device code stays
   beside it (*Use a device code*, or `--device-code` at a terminal). Either way can be switched to while the other waits, which
