@@ -16,9 +16,12 @@ public sealed class DriverModuleSetupTests : DriverModuleBridge
     private void Driven() =>
         (DriverConfig.Empty with { Adapter = "claude-code-acp" }).WithDrivable("atlas", true).WithTrees("atlas", true).Save(DriverConfigPath);
 
+    /// <summary>The loop <see cref="UpAsync"/> brought up, whose door the terminal's own path reads too (RPC1e).</summary>
+    private DriverLoop? _up;
+
     private async Task<DriverModule> UpAsync()
     {
-        var loop = Loop();
+        var loop = _up = Loop();
         var module = new DriverModule(Bus, loop) { SetupWorlds = _ => _world };
         await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new SetupStandIn.EmptyHost())));
         return module;
@@ -114,5 +117,63 @@ public sealed class DriverModuleSetupTests : DriverModuleBridge
         Assert.False(pressed.GetProperty("plan").GetProperty("pressable").GetBoolean());
         Assert.Empty(_world.Published);
         Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.Permissions)));
+    }
+
+    /// <summary>The lines and the exit code a route answered as <c>said</c> (RPC1e), which the terminal prints, joined.</summary>
+    private static (string Out, int Code) SaidOf(System.Text.Json.JsonElement answer)
+    {
+        var said = answer.GetProperty("said");
+        return (string.Join("\n", said.GetProperty("out").EnumerateArray().Select(line => line.GetString())), said.GetProperty("code").GetInt32());
+    }
+
+    /// <summary>The terminal's own path over the same world, file and home, with no instance to look for: what <c>setup</c> prints alone.</summary>
+    private async Task<(string Out, int Code)> AloneAsync(params string[] args)
+    {
+        var config = DriverConfig.Load(DriverConfigPath);
+        var output = new StringWriter { NewLine = "\n" };
+        var code = await SetupCommand.RunAsync(
+            args, output, _world, config, DriverContext.DoorOf(_up!, config), Home, DateOnly.FromDateTime(DateTime.Now));
+        return (output.ToString().TrimEnd('\n'), code);
+    }
+
+    /// <summary>
+    /// RPC1e: asked for its words (<c>said: true</c>) by <c>daoris-driver setup &lt;repository&gt; [--plan]</c> sent over the pipe,
+    /// <c>SETUP_PLAN</c> and <c>SETUP_PRESS</c> answer the lines and the exit code the alone path prints over the same world: a plan that
+    /// would publish, one the press refuses, and a press refused, which publishes nothing and adds no rule. The page's answers keep their shape.
+    /// </summary>
+    [Fact]
+    public async Task Asked_for_its_words_each_setup_route_answers_the_lines_the_alone_path_prints()
+    {
+        (DriverConfig.Empty with { Adapter = "claude-code-acp" }).Save(DriverConfigPath);
+        var module = await UpAsync();
+
+        Assert.Equal(await AloneAsync("atlas", "--plan"), SaidOf(await AnswerAsync(module, "SETUP_PLAN", new { repository = "atlas", said = true })));
+        var refused = SaidOf(await AnswerAsync(module, "SETUP_PRESS", new { repository = "atlas", said = true }));
+        Assert.Equal(await AloneAsync("atlas"), refused);
+        Assert.Equal(1, refused.Code);
+        Assert.Empty(_world.Published);
+
+        Driven();
+        var plan = SaidOf(await AnswerAsync(module, "SETUP_PLAN", new { repository = "atlas", said = true }));
+        Assert.Equal(await AloneAsync("atlas", "--plan"), plan);
+        Assert.Equal(0, plan.Code);
+        Assert.EndsWith("--plan: nothing was published, and no rule was added.", plan.Out, StringComparison.Ordinal);
+        Assert.Empty(_world.Published);
+        Assert.False((await AnswerAsync(module, "SETUP_PLAN", new { repository = "atlas" })).TryGetProperty("said", out _));
+    }
+
+    /// <summary>RPC1e: a terminal's press runs here, adds the rule and publishes one ask, and says so in the verb's words.</summary>
+    [Fact]
+    public async Task A_terminal_s_press_runs_here_and_says_what_it_published_in_the_verb_s_words()
+    {
+        Driven();
+        var module = await UpAsync();
+
+        var (lines, code) = SaidOf(await AnswerAsync(module, "SETUP_PRESS", new { repository = "atlas", said = true }));
+
+        Assert.Equal(0, code);
+        Assert.Contains("Asked as `#a1b2c3d4` in `work`.\n  ask    #a1b2c3d4\n  quest  #q1a2b3c4", lines, StringComparison.Ordinal);
+        Assert.Single(_world.Published);
+        Assert.Equal(SetupPressRules.Rules, PermissionRules.Load(Home).Repositories["atlas"].Allow);
     }
 }

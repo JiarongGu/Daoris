@@ -168,6 +168,8 @@ internal static class WorkConsole
         {
             Door = SessionsConsole.Wire(config),
             Log = log,
+            // RPC1e: the running Daoris's client where one answers, the person's presses confirmed in its window.
+            Instance = InstanceHost.World(home, "daoris-driver"),
             Sync = async (workspace, ct) => sync.Workspaces.Contains(RemoteTarget.Workspace(workspace), StringComparer.OrdinalIgnoreCase)
                 ? await sync.RunOnceAsync(workspace, ct).ConfigureAwait(false)
                 : null,

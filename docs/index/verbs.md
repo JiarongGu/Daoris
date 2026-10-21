@@ -66,7 +66,7 @@ Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage 
 | `space free` | `Program.cs:717` | `Daoris.Desktop.Driver/Platform/SpaceFreeCommand.cs:24` SpaceFreeCommand | — |
 | `space` | `Program.cs:732` | `Daoris.Desktop.Driver/Platform/SpaceCommand.cs:17` SpaceCommand | free `SpaceCommand.cs:54` |
 | `logs` | `Program.cs:741` | `Daoris.Desktop.Driver.Host/LogsConsole.cs:18` LogsConsole | — |
-| `plugins` | `Program.cs:748` | `Daoris.Desktop.Driver/Plugins/PluginsCommand.cs:25` PluginsCommand | install `Program.cs:689` · new `PluginsCommand.cs:49` · try `PluginsCommand.cs:49` · show `PluginsCommand.cs:51` · activity `PluginsCommand.cs:53` · approve `PluginsCommand.cs:57` · withdraw `PluginsCommand.cs:75` |
+| `plugins` | `Program.cs:748` | `Daoris.Desktop.Driver/Plugins/PluginsCommand.cs:25` PluginsCommand | install `Program.cs:689` · new `PluginsCommand.cs:89` · try `PluginsCommand.cs:89` · show `PluginsCommand.cs:91` · activity `PluginsCommand.cs:93` · approve `PluginsCommand.cs:61` · withdraw `PluginsCommand.cs:66` |
 | `drive` | `Program.cs:387` | `Daoris.Desktop.Driver/Loop/DriverCommand.cs:310` DriverCommand.Read | — |
 
 ## `daoris-devkit`

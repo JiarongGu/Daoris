@@ -20,7 +20,8 @@ internal static class ChannelConsole
         try
         {
             using var service = ServiceClient.FromEnvironment();
-            return await ChannelCommand.RunAsync(ask, service, Console.Out).ConfigureAwait(false);
+            // RPC1e: a post goes through the running Daoris where one answers, confirmed in its window.
+            return await ChannelCommand.RunAsync(ask, service, Console.Out, InstanceHost.World("ask")).ConfigureAwait(false);
         }
         catch (DriverException error)
         {

@@ -308,6 +308,36 @@ public static class InstanceDoor
     }
 
     /// <summary>
+    /// A host verb's route as the running Daoris's client (RPC1d, RPC1e, §7.2 and §7.3): where the verb was handed an instance to look
+    /// for, an open route is read through <see cref="ReadAsync"/> and any other pressed through <see cref="PressAsync"/>, its answer
+    /// said in the verb's own lines (<see cref="TreesSaid"/>, which the route answers asked by <see cref="Said"/>); handed none, the
+    /// verb acts alone.
+    /// </summary>
+    public static Task<int> ThroughAsync(
+        InstanceWorld? instance, InstanceRoute route, object payload, Func<Task<int>> alone, TextWriter output, CancellationToken ct = default) =>
+        instance is null
+            ? alone()
+            : route.Class == RouteClass.Open
+                ? ReadAsync(route, payload, alone, TreesSaid.ReadWords(output, instance.Error), instance, ct)
+                : PressAsync(route, payload, alone, TreesSaid.Words(output, instance.Error, instance.Verb), instance, ct);
+
+    /// <summary>
+    /// A verb's payload: the route's own fields, as a window's press sends them, beside <c>said: true</c>, which asks the route for the
+    /// verb's lines and exit code (RPC1d). An absent value is left out.
+    /// </summary>
+    public static Dictionary<string, object?> Said(params (string Name, object? Value)[] fields)
+    {
+        var body = new Dictionary<string, object?>();
+        foreach (var (name, value) in fields)
+        {
+            if (value is not null) body[name] = value;
+        }
+
+        body["said"] = true;
+        return body;
+    }
+
+    /// <summary>
     /// <c>daoris-driver result &lt;id&gt;</c> (RPC1j, §6.1): how a press this terminal sent ended, asked of the instance with the key it
     /// was sent with. An answered press's words are its route's (<c>said</c>), else its answer as the instance gave it; a press still
     /// under way, one the instance does not know and one it holds for another key are said, exit 2.

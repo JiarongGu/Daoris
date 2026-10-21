@@ -1150,6 +1150,21 @@ public sealed class HelpRoutes(DriverContext context)
     [DriverRoute("HELP_CONVERSATIONS")]
     private async Task<object?> HelpConversationsAsync(IpcRequest request, CancellationToken cancellationToken)
     {
+        // RPC1e: `help list` in the verb's words, `--json` its own answer.
+        if (Flag(request, "said"))
+        {
+            var listed = new HelpVerbAsk("list")
+            {
+                Search = Optional(request, "q")?.Trim(),
+                Offset = (int)Math.Clamp(Number(request, "offset") ?? 0, 0, int.MaxValue),
+                Limit = Number(request, "limit") is { } limit ? (int)Math.Clamp(limit, 1, HelpConversations.PageLimit) : null,
+                Workspace = Optional(request, "workspace"),
+                All = Flag(request, "all"),
+                Json = Flag(request, "json"),
+            };
+            return await SessionsVerbs.HelpSaidAsync(_context, listed, cancellationToken).ConfigureAwait(false);
+        }
+
         var service = _loop.Service ?? throw NotReady();
         var records = SessionRecords.Parse(await service.SessionRecordsJsonAsync(cancellationToken).ConfigureAwait(false));
         var listing = new HelpConversations(_loop.Home).List(
@@ -1195,6 +1210,14 @@ public sealed class HelpRoutes(DriverContext context)
     [Publishes("HELP_RENAME", Kept, Session = "id")]
     private async Task<object?> HelpRenameAsync(IpcRequest request, CancellationToken cancellationToken)
     {
+        // RPC1e: `help rename <id> "…"` or `--clear`, said in the verb's words, a conversation that is not Ask Daoris's among them.
+        if (Flag(request, "said"))
+        {
+            var name = Optional(request, "name");
+            var renamed = new HelpVerbAsk("rename") { Id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id"), Text = name, Clear = name is null };
+            return await SessionsVerbs.HelpSaidAsync(_context, renamed, cancellationToken).ConfigureAwait(false);
+        }
+
         var id = await HelpConversationOfAsync(PayloadHelper.GetRequiredValue<string>(request.Payload, "id"), cancellationToken)
             .ConfigureAwait(false);
         var kept = new HelpConversations(_loop.Home);
@@ -1207,6 +1230,16 @@ public sealed class HelpRoutes(DriverContext context)
     [Publishes("HELP_PIN", Kept, Session = "id")]
     private async Task<object?> HelpPinAsync(IpcRequest request, CancellationToken cancellationToken)
     {
+        // RPC1e: `help pin <id>` and `unpin`, said in the verb's words.
+        if (Flag(request, "said"))
+        {
+            var pin = new HelpVerbAsk(PayloadHelper.GetRequiredValue<bool>(request.Payload, "pinned") ? "pin" : "unpin")
+            {
+                Id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id"),
+            };
+            return await SessionsVerbs.HelpSaidAsync(_context, pin, cancellationToken).ConfigureAwait(false);
+        }
+
         var id = await HelpConversationOfAsync(PayloadHelper.GetRequiredValue<string>(request.Payload, "id"), cancellationToken)
             .ConfigureAwait(false);
         var kept = new HelpConversations(_loop.Home);

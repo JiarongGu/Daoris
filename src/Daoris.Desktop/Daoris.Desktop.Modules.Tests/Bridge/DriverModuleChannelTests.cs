@@ -211,6 +211,36 @@ public sealed class DriverModuleChannelTests : DriverModuleBridge
         Assert.Contains(Refusals.DriverRefused, await RefusalAsync(module, "CHANNEL_POST", new { ask = " ", text = "hi" }));
     }
 
+    /// <summary>
+    /// RPC1e: asked for its words (<c>said: true</c>) by <c>ask channel &lt;id&gt; "…"</c> sent over the pipe, <c>CHANNEL_POST</c> answers the
+    /// lines and the exit code the alone path prints over the same service: a post and its level, to a repository answering a message,
+    /// and each refusal as its exit 1, never thrown. <c>--ordinary</c> reaches the service as the alone path sends it.
+    /// </summary>
+    [Theory]
+    [InlineData(null, false)]
+    [InlineData(null, true)]
+    [InlineData("bad-to", false)]
+    [InlineData("not-found", false)]
+    public async Task Asked_for_its_words_the_post_answers_the_lines_the_alone_path_prints(string? refused, bool ordinary)
+    {
+        var standIn = new StandIn(_ => refused is null
+            ? (HttpStatusCode.OK, $$$"""{"message":{"kind":"message","at":"2026-10-14T09:06:00Z","id":"m2","person":true,"to":"db","re":"m1","urgent":{{{(ordinary ? "false" : "true")}}},"text":"The v3 one."}}""")
+            : (HttpStatusCode.BadRequest, $$"""{"error":"{{refused}}","code":"{{refused}}"}"""));
+        var (module, _) = await UpAsync(standIn);
+
+        var answer = (await AnswerAsync(module, "CHANNEL_POST", new { ask = "a1", text = "The v3 one.", to = "db", re = "m1", ordinary = ordinary ? true : (bool?)null, said = true }))
+            .GetProperty("said");
+        var said = (string.Join("\n", answer.GetProperty("out").EnumerateArray().Select(line => line.GetString())), answer.GetProperty("code").GetInt32());
+        var output = new StringWriter { NewLine = "\n" };
+        var code = await ChannelCommand.RunAsync(
+            new ChannelAsk("a1", "db", "m1", "The v3 one.", ordinary), new ServiceClient("http://stand-in", null, new HttpClient(standIn, disposeHandler: false)), output);
+
+        Assert.Equal((output.ToString().TrimEnd('\n'), code), said);
+        Assert.Equal(refused is null ? 0 : 1, code);
+        Assert.Equal(standIn.Bodies[^1], standIn.Bodies[^2]);
+        Assert.Contains($"\"urgent\":{(ordinary ? "false" : "true")}", standIn.Bodies[^1]);
+    }
+
     private sealed class StandIn(Func<HttpRequestMessage, (HttpStatusCode Status, string Body)?> answer) : HttpMessageHandler
     {
         public List<string> Requests { get; } = [];

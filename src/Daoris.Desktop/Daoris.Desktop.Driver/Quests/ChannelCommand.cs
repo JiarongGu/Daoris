@@ -92,7 +92,20 @@ public static class ChannelCommand
 
     /// <summary>Read the channel, or post to it, and print what the service answered.</summary>
     public static Task<int> RunAsync(ChannelAsk ask, ServiceClient service, TextWriter output, CancellationToken ct = default) =>
-        ask.Text is { } text ? PostAsync(ask, text, service, output, ct) : ReadAsync(ask, service, output, ct);
+        RunAsync(ask, service, output, instance: null, ct);
+
+    /// <summary>
+    /// The verb, as the running Daoris's client where <paramref name="instance"/> names one to look for (RPC1e, the terminal RPC design
+    /// §7.2): a post is the person's words, which the window confirms, its route asked for this verb's own lines. A read stays the
+    /// service's: it moves the person's own mark, a door the service writes once whoever asks.
+    /// </summary>
+    public static Task<int> RunAsync(ChannelAsk ask, ServiceClient service, TextWriter output, InstanceWorld? instance, CancellationToken ct = default) =>
+        ask.Text is { } text
+            ? InstanceDoor.ThroughAsync(
+                instance, PersonPresses.ChannelPost,
+                InstanceDoor.Said(("ask", ask.Ask), ("text", text), ("to", ask.To), ("re", ask.Re), ("ordinary", ask.Ordinary ? true : null)),
+                () => PostAsync(ask, text, service, output, ct), output, ct)
+            : ReadAsync(ask, service, output, ct);
 
     private static async Task<int> ReadAsync(ChannelAsk ask, ServiceClient service, TextWriter output, CancellationToken ct)
     {

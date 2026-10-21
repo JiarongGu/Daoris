@@ -47,6 +47,13 @@ public sealed class AsksRoutes(DriverLoop loop)
     {
         var ask = Asked(request);
         var service = _loop.Service ?? throw NotReady();
+        // RPC1e: `ask channel <id> "…"` sent over the pipe asks for the verb's own words, its level as the verb sends it.
+        if (Flag(request, "said"))
+        {
+            var asked = new ChannelAsk(ask, Optional(request, "to"), Optional(request, "re"), Optional(request, "text") ?? "", Flag(request, "ordinary"));
+            return await TerminalSaid.RunAsync(output => ChannelCommand.RunAsync(asked, service, output, cancellationToken)).ConfigureAwait(false);
+        }
+
         var posted = await service.ChannelPostAsync(
             ask, Optional(request, "text") ?? "", Optional(request, "to"), Optional(request, "re"), cancellationToken).ConfigureAwait(false);
         return ChannelAnswers.Posted(posted);

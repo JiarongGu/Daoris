@@ -185,6 +185,39 @@ public sealed class PipeCensusTests
             each => Assert.StartsWith("alone:", each.Reason, StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// RPC1e's proof (the terminal RPC design §1.2, §7.1): of the host's verbs with a window twin, only these stay off the pipe, each with
+    /// its reason. By design, a conversation the terminal runs (<c>chat</c>, <c>help resume</c>, until RPC1g), a loop (<c>drive</c>), the
+    /// updater's request (<c>update</c>) and the service's own doors; and, until a decision lets this machine's paths travel over the
+    /// local pipe (§4.3), the reads whose words name this machine's folders or quote its trees, with the few no route answers. A verb
+    /// that becomes a client leaves this list in the change that sends its route, and one that joins it says why here.
+    /// </summary>
+    [Fact]
+    public void Only_the_verbs_that_stay_alone_are_off_the_pipe_each_with_its_reason()
+    {
+        string[] off =
+        [
+            "chat", "help resume <id>", "drive", "update",
+            "quest delete|accept|done|reopen|go-on|check|review", "answer", "ask \"…\"", "sync status", "ask channel <id>",
+            "trace", "git branches", "workflow", "logs",
+            "plugins show <id>", "plugins activity <id>", "plugins try <folder|id>", "plugins install <file>", "plugins new <id>",
+            "help delete <id>", "setup --workspace <name>",
+        ];
+
+        var left = Daoris.Driver.OpenRoutes.Verbs.Where(each => each.Route is null).ToList();
+
+        Assert.Equal(off.Order(StringComparer.Ordinal), left.Select(each => each.Verb).Order(StringComparer.Ordinal));
+        Assert.All(left, each => Assert.True(each.Reason.Length > "alone: ".Length, $"`{each.Verb}` says no reason"));
+        // Every family of §1.2 the row names sends at least one route: work, history, help, opinion, setup, register, sync, plugins
+        // and the channel.
+        var sent = Daoris.Driver.OpenRoutes.Verbs.Where(each => each.Route is not null).Select(each => each.Verb)
+            .Concat(Daoris.Driver.PersonPresses.Presses.Select(each => each.Verb)).ToList();
+        foreach (var family in new[] { "quest pause", "history", "help", "opinion", "setup", "register", "sync", "plugins", "ask channel" })
+        {
+            Assert.Contains(sent, verb => verb.StartsWith(family, StringComparison.Ordinal));
+        }
+    }
+
     /// <summary>The census fails on a route it does not class, and on a class that names no route: the check the test above runs.</summary>
     [Fact]
     public void The_census_names_a_route_it_does_not_class_and_a_class_that_names_none()

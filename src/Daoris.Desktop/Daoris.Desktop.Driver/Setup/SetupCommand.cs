@@ -16,9 +16,19 @@ public static class SetupCommand
 {
     public const string Usage = "usage: daoris-driver setup <repository> [--plan]";
 
+    public static Task<int> RunAsync(
+        IReadOnlyList<string> args, TextWriter output, ISetupWorld world, DriverConfig config, SessionWire door, string home,
+        DateOnly day, CancellationToken ct = default) =>
+        RunAsync(args, output, world, config, door, home, day, instance: null, ct);
+
+    /// <summary>
+    /// The verb, as the running Daoris's client where <paramref name="instance"/> names one to look for (RPC1e, the terminal RPC design
+    /// §7.2): the press is the person's, which the window confirms, and <c>--plan</c> a read; each route asked for its words runs this
+    /// verb's own path in that Daoris, so the lines are the alone path's. The usage is said first, sending nothing; alone where none runs.
+    /// </summary>
     public static async Task<int> RunAsync(
         IReadOnlyList<string> args, TextWriter output, ISetupWorld world, DriverConfig config, SessionWire door, string home,
-        DateOnly day, CancellationToken ct = default)
+        DateOnly day, InstanceWorld? instance, CancellationToken ct = default)
     {
         if (Problem(args) is { } problem)
         {
@@ -27,6 +37,17 @@ public static class SetupCommand
             return 2;
         }
 
+        var route = args.Contains("--plan") ? OpenRoutes.SetupPlan : PersonPresses.SetupPress;
+        return await InstanceDoor.ThroughAsync(
+                instance, route, InstanceDoor.Said(("repository", args.Single(arg => arg != "--plan"))),
+                () => AloneAsync(args, output, world, config, door, home, day, ct), output, ct)
+            .ConfigureAwait(false);
+    }
+
+    private static async Task<int> AloneAsync(
+        IReadOnlyList<string> args, TextWriter output, ISetupWorld world, DriverConfig config, SessionWire door, string home,
+        DateOnly day, CancellationToken ct)
+    {
         var plan = args.Contains("--plan");
         var setup = await SetupPress.PlanAsync(world, config, door, args.Single(arg => arg != "--plan"), day, ct).ConfigureAwait(false);
         Describe(setup, output);
