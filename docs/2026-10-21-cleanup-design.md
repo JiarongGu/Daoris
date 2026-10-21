@@ -380,7 +380,10 @@ person has set an age*.
 **Place:** Settings → This Daoris, a card *Disk space* after *Folders* (the This Daoris design §2). Its rows use R1's label track
 (`SettingList`). Each kind is one `SettingRow`: the kind's name as the label; its terminal twin as the hint; the size with when it
 was counted as the value; under it, the rule in words with *Change…* where the person may set it, and a line *next* and *last*. A
-kind whose rule is not Daoris's says whose it is and offers no *Change…*.
+kind whose rule is not Daoris's says whose it is and offers no *Change…*. *Unused downloads* opens the Downloads row's list as it is
+drawn today (`WiringDownloads`, `WiringDownloads.tsx:31`), each version with its date by the rule: the card draws no second list of
+versions (Codex 6.1). Each *Change…* appears with the row that lets the person set that rule (§9), so a build never shows an editor
+for a rule it does not run.
 
 ```
  wide, Settings → This Daoris, Disk space
@@ -389,7 +392,7 @@ kind whose rule is not Daoris's says whose it is and offers no *Change…*.
 │ Free space                     143.5 GB of 1,024 GB · keep at least 20 GB         [Change…]            │
 │ daoris driver keep floor …                                                                             │
 │ Set-aside trees ⓘ              37.4 GB · 73 folders · counted 10:42                                    │
-│ daoris driver keep set-aside … kept 14 days; what can be made again goes at once  [Change…]            │
+│ daoris driver keep set-aside … kept 14 days; package folders go after an hour     [Change…]            │
 │                                next: 3 folders on 29 Oct, 0.6 GB · last: nothing removed yet           │
 │ Unused downloads ⓘ             1 of 4 versions, 0.4 GB                                                 │
 │ daoris driver keep downloads … an unused version goes 7 days after it was found unused [Change…]       │
@@ -415,8 +418,8 @@ kind whose rule is not Daoris's says whose it is and offers no *Change…*.
 │ Set-aside trees ⓘ                            │
 │ daoris driver keep set-aside …               │
 │ 37.4 GB · 73 folders · counted 10:42         │
-│ kept 14 days; what can be made again goes    │
-│ at once                          [Change…]   │
+│ kept 14 days; package folders go after       │
+│ an hour                          [Change…]   │
 │ next: 3 folders on 29 Oct, 0.6 GB            │
 └──────────────────────────────────────────────┘
 ```
@@ -458,17 +461,19 @@ The *Change…* editor is inline under its row (`FormGrid`): a number of days (4
 ### 4.3 Sizes without walking every file
 
 1. **The free space is the operating system's read** (§3.2), at each pass and each open: never a walk.
-2. **The big kinds keep a ledger** in `data/keeping.json`, kept by the acts that change them: a move aside records what remains after
-   its slim, counted by the slim's own walk of a folder that is by then small; a purge or a press subtracts what it removed, counted
-   as it removes; a download adds its version's size as it publishes; CACHECLEAR1's listing already walks each version and writes
-   it. The page reads the ledger at once, saying *counted* with the time.
-3. **A walk per kind**, never the whole home: bounded by `WiringBudget` per kind so one large kind never starves the rest, in the
-   background, at most once a day per kind and on *Count* or *Measure again*, never on a page's open (`WiringSizes.cs:47-51`). Each
-   kind's walk publishes as it ends, so the card fills in kind by kind: WIRING-SIZES-LIVE1's need, for the kinds this card shows.
+2. **No ledger of sizes** (Codex 6.1). Round 1 had every remover, measure and download keep counters in `keeping.json`, a second
+   accounting each writer had to keep true. Sizes are derived instead, through `WiringSizes`' own walk.
+3. **A walk per kind**, never the whole home: `WiringSizes.MeasureFolder` over the kind's entries, bounded by `WiringBudget` per kind
+   (400,000 files and 60 s, `WiringSizes.cs:10-13`) so one large kind never starves the rest, in the background, at most once a day
+   per kind, on *Count* or *Measure again*, and at a run's end for the kinds it removed from, never on a page's open
+   (`WiringSizes.cs:47-51`). Kept for the process, as `WiringSizes.Shared` keeps today's measure; after a start a kind reads *not
+   counted yet* until its walk. Each kind's walk publishes as it ends, so the card fills in kind by kind: WIRING-SIZES-LIVE1's need,
+   for the kinds this card shows. The set-aside kind's walk keeps each folder's size, which its *next* reads.
 4. **What drifts** (a late write into a set-aside folder, a tree built in) is corrected by the next walk of that kind; the card says
-   the time of the count, so a stale size is never presented as now.
+   the time of the count, so a stale size is never presented as now. A run's own count of what it removed is said as the run's.
 
-With §5's slim, a set-aside folder of this repository is a few KB rather than 22 thousand files, and the walks fit their budgets.
+With §5's slim, a set-aside folder of this repository holds about 5,100 files rather than 22,000; the install's 73 would be about
+0.37 million, within the kind's budget but near it, so a count that stops short says *at least*.
 
 ### 4.4 The read, the presses and the terminal
 
@@ -481,13 +486,20 @@ With §5's slim, a set-aside folder of this repository is a few KB rather than 2
   kinds:  [ { id, entries, bytes, files, measured, partial, partialWhy, counting,
               rule: { kind: days|never|own|proof|press, days, whole, default, whose },
               settable, next: { at, count, bytes } | null,
-              last: { at, door, removed: { count, bytes }, kept: { <why>: count } } | null } ] }
+              last: { at, door, removed: { count, bytes }, kept: { <why>: count } } | null } ],
+  run:    { id, door, started, ended, outcome: done|kept|stopped,
+            kinds: [ { id, state: waiting|running|done, removed: { count, bytes }, kept: { <why>: count } } ] } | null }
 ```
 
 - **`SET_KEEP`**, the standing choice's press in the driver's route domain, `{ kind, days | never | whole | default }` or
   `{ floor }`, answering the state as every standing choice does; its operation is `StandingChoices`' (D194 point 4).
-- **`SYSTEM_SPACE_FREE`**: `{ plan: true }` answers the list of §3.3; `{ units, early }` removes exactly those, answering at once
-  that it started where it removes many, then its end as news under the `system` scope.
+- **`SYSTEM_SPACE_FREE`**: `{ plan: true }` answers the list of §3.3; `{ units, early }` starts a run removing exactly those and
+  answers at once `{ run, joined }`, the run's progress then read in `SYSTEM_SPACE`'s `run` and its end the news under the `system`
+  scope (§3.3).
+- **The pipe's census** (`PipeCensus.Driver()`, `bridge-presses.md` row 11): `SYSTEM_SPACE` `Open`; `SYSTEM_SPACE_FREE` by a
+  `PipeRule` on `plan` (`PipeCensus.cs:83-84`), the plan `Open` and the removal `Person`; `SET_KEEP` `Person`, a standing choice.
+  `person.route.SYSTEM_SPACE_FREE` and `person.route.SET_KEEP` word the window's Confirm in both catalogues (`Confirmations.tsx`'s
+  `WORDED`), and the verbs that send them are named in the driver library's `PersonPresses`.
 - **The terminal**, D50's twin of each:
 
 ```
@@ -495,17 +507,22 @@ daoris-driver space [--json] [--measure]
     the free space and the floor; each kind's size, rule, next and last clean.
 daoris-driver space free [--kind <id>]... [--early <group>]... [--yes]
     list what each rule takes now, and what could go early; with --yes, remove what the rules take,
-    and with --early, that group too. Exit 0 done or listed, 1 something named was kept, 2 could not.
+    and with --early, that group too, then wait for the run's end, a line per kind as it ends.
+    Exit 0 listed, or every unit removed; 1 something named was kept, or the person refused it in the
+    window; 2 could not: a read failed, the run stopped, or Daoris stopped while it ran.
 ```
 
-  With a Daoris running, `space free --yes` is its client (`InstanceDoor.PressAsync`, D194 point 2); alone, it acts under the
-  home's lease. `--json`
-  prints `SYSTEM_SPACE`'s answer field for field, so the twins share one test table.
+  With a Daoris running, `space free --yes` is its client (`InstanceDoor.PressAsync`, D194 point 2), confirmed in the window. Its
+  answer is the run's id, not its end (`InstanceDoor.cs:232-234` hands the verb the answer as it arrives), so the verb then reads
+  `SYSTEM_SPACE`, an `Open` read, each second until the run has ended, printing each kind as it turns done; where Daoris stops first it
+  says how it ended is not known and that `daoris-driver space` says what remains, exit 2. Alone, it is a long verb: it holds no lease
+  (D194 point 3), takes the run lock, which a desktop starting meanwhile finds held, and prints as each kind ends in its own process.
+  `--json` prints `SYSTEM_SPACE`'s answer field for field, so the twins share one test table.
 - **Ask Daoris**: `SET_KEEP` through the `setting` kind's door; *Free up space…* `Exempt`, in CACHECLEAR1's words: a discard that
   stays the person's own press, listed first, nothing in use removed. *The machine now* says the free space and the floor.
 - **The machine log** gains, names and counts only, folders relative to the trees home (the machine log design §4): `tidied.slimmed`
-  (`folder`, `commit`, `tracked`, `build`, `bytes`, `remains`), `space.freed` (`kind`, `count`, `bytes`, `door`, `early`),
-  `space.kept` (`kind`, `why`, `count`), `space.low` and `space.ok` (`free`, `floor`).
+  (`folder`, `removed`, `bytes`, `kept`), `space.freed` (`kind`, `count`, `bytes`, `door`, `early`, `run`), `space.kept` (`kind`,
+  `why`, `count`), `space.low` and `space.ok` (`free`, `floor`).
 
 ### 4.5 Both languages
 
@@ -534,7 +551,7 @@ the person chooses early; a record's *clear* and a tree's *clean up* keep their 
 | `settings.daoris.space.kind.rest` | row | Everything else | 其他 |
 | `settings.daoris.space.rule.days` | value | kept {{count}} days | 保留 {{count}} 天 |
 | `settings.daoris.space.rule.never` | value | kept until you remove it | 保留到你移除为止 |
-| `settings.daoris.space.rule.slim` | value | what can be made again goes at once | 可重新生成的内容立即移除 |
+| `settings.daoris.space.rule.slim` | value | its package folders go after an hour | 其依赖包文件夹一小时后移除 |
 | `settings.daoris.space.next` | value | next: {{what}} on {{when}} | 下次：{{when}}，{{what}} |
 | `settings.daoris.space.last` | value | last: {{when}}, {{count}} removed, {{size}} | 上次：{{when}}，移除 {{count}} 项，{{size}} |
 | `settings.daoris.space.nothingYet` | value | nothing removed yet | 尚未移除任何内容 |
@@ -545,79 +562,161 @@ Each rule's word, each *whose* (`settings.daoris.space.whose.*`: *the agent's ow
 kept reason (`settings.daoris.space.kept.*`) and each refusal (`settings.daoris.space.refused.*`) is a key in both catalogues. A size
 is formatted by `format.ts`; a version, a repository and a folder are content and stay as written.
 
-## 5. Slimming at the source
+## 5. Dropping a set-aside tree's package folders
 
-**Decided: yes.** At the move aside, a tree's folder keeps only what cannot be made again; what git says it holds and what a shared
-build folder holds goes at once, and the rest waits its days.
+**Decided: yes, narrowed in round 2.** A tree's folder set aside drops its package folders, each a `node_modules` beside a
+`package.json` git tracks, at the first pass an hour after its move, where nothing in the folder was written since. Everything else
+waits the folder's days: git's tracked files, `bin/` and `obj/`, every other build folder and everything the session wrote. **Where
+anything about a path is unknown, the path stays**: that is the rule each step below applies.
 
-**The judgement, by git's word and never a guess.** In the look's last look (`TreeSetAside.LastLookAsync`, `:55-111`), inside the
-repository's hold, before the move, with the moment taken first (*judged at*):
+**Why this part and no other.** A removal nobody presses needs to know the thing holds nothing a person keeps. A build folder's name
+does not say so: an ignored `build/` may hold a `.env`, a local database or a hand-made export (Codex 2.1), and a program run from
+`bin/` writes beside itself. A shared name was TREEKEEP1's rule for the person's press (`TreeScratch.cs:9-19`, D102's TREEKEEP1),
+which is the person's act; it is not proof enough without one. A package folder is the one whose producer discards it whole: npm's
+clean install removes an existing `node_modules` before it installs, and another package manager in its place rebuilds it from the
+same `package.json`, so nothing kept there outlives the next install. It is also most of the gain: 52% of the measured folder's
+bytes and at least 77% of its files (§0.2). Git's tracked files (12%) stay because removing them needed three guards of their own
+(§7); `bin/` and `obj/` (35%) stay because no producer of theirs discards them whole (§7, and §11's question for Fable).
 
-1. **The commit**: `rev-parse --verify HEAD^{commit}` in the tree. Where it does not read, nothing is slimmed.
-2. **Git's own files**: the index the last look already reads (`ls-files -v -z`, `:76`), whose hidden entries already keep the tree
-   (`:79-87`). The look moves only a tree with no uncommitted and no untracked path (D88:160-161), so each listed path equals the
-   commit. A submodule checked out in the tree holds a `.git`, which the last look reads as another repository and keeps the tree
-   for (`:89-108`); one not checked out is an empty folder.
-3. **Shared build outputs**: one `status --porcelain=v1 -z --ignored=traditional --untracked-files=normal` in the tree, which lists a
-   folder holding only ignored files as `!! <folder>/`. Such a folder goes where a segment of its path is in `TreeScratch`'s list and
-   the registered checkout holds a folder at that same path (TREEKEEP1's *shared*): the same rule that lets the press delete it
-   unasked (`TreeScratch.cs:9-26`). A build folder git lists file by file (a tracked file inside it) stays.
-4. **Everything else stays**: an ignored file outside the list (a `.env`, a local config, `local/`, `_fixtures/`, an editor's
-   folder), a build folder the checkout does not hold (a `dist/` only this tree built), any path git did not name, and anything a
-   read could not reach.
+**The judgement, before the move.** In the look's last look (`TreeSetAside.LastLookAsync`, `:55-111`), inside the repository's hold,
+after its guards have passed. A folder is droppable where all of these hold:
 
-**The slim, after the move.** Only once `MoveAsideAsync` reports the folder moved and git's record let go (`:166-197`); a folder put
-back is never slimmed. The rename succeeding is Windows' word that nothing held a file in the folder open. The slim removes exactly the
-paths the judgement named, inside the moved folder, never what it did not name: each tracked file, each shared build folder through
-`DeleteNeverFollowing` (`:413`), a link removed as a link with what it points at untouched (TIDIEDLINK1), a read-only file made
-writable first. A path written after *judged at* stays, so a write that raced the move is kept for the folder's days; one written
-after the move keeps the folder at the purge, as today. Empty folders left go. A failure leaves that path and is said; the next pass finishes a slim it began.
-The ledger records the commit, the repository and the branch, what went and what remains, and the log writes `tidied.slimmed`.
+1. **Git ignores it whole**: one `status --porcelain=v1 -z --ignored=traditional --untracked-files=normal` in the tree names it
+   `!! <path>/`. A folder git lists file by file, a tracked file inside it, is not one.
+2. **It is a package folder**: its last segment is `node_modules`, and the folder above it holds a `package.json` the tree's index
+   lists (the last look's `ls-files -v -z`, `:76`, already read). A `node_modules` with no tracked `package.json` above it stays.
+3. **Nothing in it is another's**: no repository lies under it (the last look's `NestedRepositories`, `:89-108`, whose answer for
+   paths under an ignored folder it now also reads), and no link lies on the way to it from the tree's top, it included.
 
-**Bringing it back.** The commit is on the line, or on the recovery ref the look kept (D88's AUTOTIDY2a), so `git worktree add
-<folder> <commit>` makes git's files again and a build the rest. The folder's row in the press's list and in `work state` says that
-command with the commit from the ledger.
+Where git's status, the index or the folders could not be read, the tree moves aside whole with no manifest, as today.
+
+**The manifest, written before the move** (Codex 2.4). The look chooses the folder's name in `.tidied` first (`<name>-<moment>`,
+`TreeSetAside.cs:206-220`, which today chooses it inside the move), and writes `<name>-<moment>.slim.json` beside where the folder will
+go, atomically:
+
+```
+{ schema: 1, state: judged|moved, judged, moved, repository, branch,
+  paths: [ { path, state: pending|removing|removed|kept, why, tried } ] }
+```
+
+Each path is relative to the tree's top in git's spelling. Then it moves the folder. Once `MoveAsideAsync` reports the folder moved
+and git's record let go (`:166-197`), it writes `state: moved` with the moment. A folder put back, or a move refused, removes its
+manifest. Only a manifest at `moved` is ever slimmed: one left at `judged`, where the process stopped between the move and that write,
+is unknown, so its folder is kept whole for its days and the manifest dropped by the next pass. A manifest whose folder is gone is
+dropped. The manifest is a file, so the folders' enumerations pass it over (the purge's, `TreeSetAside.cs:259-261`; the inventory's,
+`SessionTrees.cs:531-535`), and it goes with its folder.
+
+**The slim, later, in the Keeping pass** (§3.1), under the run lock and within the pass's budget, outside every repository's hold
+(Codex 5.1: the move runs inside `SweepAsync`, under the hold, `AutoTidies.cs:286-292`; the slim touches no git and no live tree, so
+nothing of it runs there). It takes each manifest at `moved` whose folder was moved an hour or more ago (`Settle`, the downloads'
+`Settling`, `DownloadClearing.cs:87`), where the person's rule is not `whole`, read at the slim too:
+
+1. **Nothing written since the move.** The purge's own read of the whole folder (`TreeSetAside.Kept`, `:363-405`), the package folders
+   included: a write after the move, by an install or a program still running from the folder, keeps the folder whole for its days,
+   said as the purge says it, and the manifest's paths are marked `kept: written`. This, and the move's own guards (no session,
+   review or words held the tree, read inside the hold), are what is known of the folder's use; the move's rename succeeding is not
+   (§3.5). A program that outlived its session and writes nothing is the residual, the one the purge accepts at its days; here it
+   costs that program its packages, never work.
+2. **Each path checked again right before it goes** (Codex 2.5). Its relative path holds no `..` and is not rooted; joined to the
+   folder, its full path lies under the folder by whole segments, compared without case on Windows; no link lies on the way from the
+   trees home to it, it included (`TreeWorktrees.LinkBelowTreesRoot`, `:89-110`, which checks links and not containment: a path
+   outside the trees home gives it `..` segments to walk, so containment is checked apart); and it is still a folder named
+   `node_modules`.
+3. **Removed, never following a link.** The path is marked `removing` in the manifest, then removed by `DeleteNeverFollowing`
+   (`TreeSetAside.cs:413-437`), which in this round checks its own argument, and each folder again right before it reads it, and refuses
+   one that is a link: today it checks only the children it lists (`:416-418`), so handed a folder that is, or became, a junction it
+   would read the junction's target (Codex 2.5). A link inside goes as a link, what it points at untouched (TIDIEDLINK1); a read-only
+   file is made writable first. The path's end is written as it ends: `removed`, or `kept` with why. A stop midway leaves it
+   `removing`, and the next pass begins it again from step 1. A path that failed for the same reason as at its last try (`tried`)
+   waits a day (§3.1).
+4. **The purge knows what the slim removed.** Removing a folder changes the last-write time of the folder above it, and the purge
+   reads every entry's last-write time against the move (`TreeSetAside.cs:390-398`): with nothing more, every folder slimmed would be
+   kept at its date for ever as *written after it was moved aside*, each a blocked unit in *What needs you*. So the purge's read, and
+   step 1's, pass over what a manifest marks `removing` or `removed` without reading into it, and do not read the last-write time of
+   the folder directly above it; every file and every other entry of that folder is still read. A file another process writes there
+   still keeps the folder; a removal by another process there is not seen, and loses nothing a person keeps. The purge deletes the
+   manifest with its folder.
+
+The log writes `tidied.slimmed`; the folder's line in the work inventory and in `work state` names what was dropped.
+
+**Bringing it back** (Codex 2.7). The folder keeps git's tracked files and everything of the session's own; only its package folders
+are gone, and its producer makes them again in place (`npm ci` beside the `package.json`). No git command restores anything, since
+git's files never left.
 
 **What is not slimmed**: a folder moved aside that was no tree (`TreeStrays`), a cut-off opening, an opinion's copy and a replay's
-tree (`PassLeftovers`), since git cannot vouch for them; a tree whose judgement did not read; `whole` set by the person; and the 73
-folders already set aside, whose git records are gone, which go by their fourteen days (all by 2026-11-03) or by the person's early
-press.
+tree (`PassLeftovers`), since git cannot vouch for them; a tree whose judgement did not read; a folder while the person's rule is
+`whole`; and the 73 folders already set aside, which have no manifest and go by their fourteen days (all by 2026-11-03) or by the
+person's early press.
 
-**What it saves on the install's day** (§0.2): of a 484 MB folder of this repository, about 424 MB of shared build output and 60 MB of
-git's own files go; what remains is what the session wrote of its own. Of the 73 folders, 90% of the bytes are under a build
-folder's name; how much of that the checkouts share was not measured, so the saving is between that share and the whole.
+**An older build** sharing the home (one put back by an update's rollback) reads no manifest: its purge keeps a slimmed folder as
+written, a blocked unit the person can remove by the press. It keeps more than it should, never less (`compatible-builds.md`).
 
 ## 6. Safety
 
-1. **Nothing a session uses is removed.** The live trees and the set-aside folders keep the look's guards (§3.5); every other removal
-   is moved aside by one rename first wherever a program could hold it, which Windows refuses while a file is open, so a held thing
-   is kept as *in use*, never half removed (CACHECLEAR1's rule).
-2. **Nothing outside the home is touched.** Every path is the table's entry under the Daoris folder (`DaorisHome.Entry`), checked to
-   lie below it with no link on the way (`TreeWorktrees.LinkBelowTreesRoot`'s rule, `TreeWorktrees.cs:89`), and every walk and
-   delete follows no link. Daoris's
-   refs in a registered repository keep D88's and D102's rules alone; the checkouts and the person's tool home are never written.
-3. **Only what can be made again goes by itself before its time**: git's files, shared build outputs, unused downloads and the
-   browser's caches. Everything else goes only by a rule the person can see and set, or by their press (D88's amendment of D51 rule 7).
-4. **Every removal is said**: the machine log (§4.4), the ledger's *last* per kind, the card's *last*, the look's report line, and
+1. **Nothing a session uses is removed, by what is known of each thing's use** (§3.5). The live trees keep the look's guards; a
+   set-aside folder's packages go only an hour after a move the look made of a tree no session, review or words held, and only where
+   nothing in the folder was written since; a downloaded version is kept while a pin, a use or a setting names it, judged under those
+   files' locks, and while a session that started before it was found unused still runs; the browser's caches go only while the
+   shell says its browser is not running, holding its start. A rename still goes first wherever a program could hold a thing, and its
+   refusal still keeps it as *in use* (CACHECLEAR1's rule), but its success proves nothing (Codex 2.6).
+2. **Nothing outside the home is touched.** Every path is the table's entry under the Daoris folder (`DaorisHome.Entry`), or a
+   manifest's path checked to lie under its set-aside folder by whole segments, with no link on the way (`LinkBelowTreesRoot`,
+   `TreeWorktrees.cs:89-110`, and containment checked apart, §5). Every walk and delete follows no link, and `DeleteNeverFollowing`
+   checks its own argument as well as what it lists (§5). Daoris's refs in a registered repository keep D88's and D102's rules alone;
+   the checkouts and the person's tool home are never written.
+3. **Only what is known to be made again goes by itself before its time**: a set-aside tree's package folders, unused downloads and
+   the browser's caches. Everything else, git's tracked files, `bin/` and `obj/` among them, goes only by a rule the person can see and
+   set, or by their press (D88's amendment of D51 rule 7). Where anything about a path is unknown, it stays.
+4. **Every removal is said**: the machine log (§4.4), `keeping.json`'s *last* per kind, the card's *last*, the look's report line, and
    the list's kept units with their reasons.
 5. **What a clean would remove is seen before it runs**: each kind's *next* on the card; the press listed first, its second press
    sending exactly the listed units, each judged again right before it goes; `daoris-driver space free` without `--yes` lists and
    changes nothing.
-6. **One remover per kind.** The pass and the press call each kind's own act, so the guards a kind has are the ones it keeps; the slim
-   and the browser's caches, the two new acts, are written in the purge's and CACHECLEAR1's shapes.
-7. **A failure keeps.** A read that fails keeps what it would have judged (D88's *unread*); a delete that fails leaves its path and is
-   said once; a ledger that does not read is measured again, never taken as empty.
+6. **One remover per kind.** The pass, the route and the terminal alone call each kind's one typed operation (§2.1), so the guards a
+   kind has are the ones it keeps; the downloads' two acts become one, Tools' delete taking CACHECLEAR1's (§3.5); the slim and the
+   browser's caches, the two new acts, are written in the purge's and CACHECLEAR1's shapes.
+7. **A failure keeps, and so does what is unknown.** A read that fails keeps what it would have judged (D88's *unread*); a delete that
+   fails leaves its path and is said once; a manifest left at `judged` keeps its folder whole; a `keeping.json` that does not read
+   lets no download go by its days; a free-space read that fails runs no floor act; a browser whose state no shell can say keeps its
+   caches.
+8. **One run at a time, bounded** (§3.1): the run lock between processes, at most 60 seconds of removal a pass, a stop heard between
+   paths, an unchanged failure tried again the next day.
 
 ## 7. Rejected
 
 - **Deleting a tree's folder at the move, whole.** The fourteen days hold a session's own scratch and a write that raced the move
   (D88's AUTOTIDY1); slimming keeps both and drops the rest.
 - **Taking every ignored path as made again.** A `.env`, a local config or a session's prepared requests (TREEKEEP1's case) are
-  ignored and are the person's; only a shared build folder of the fixed list goes.
+  ignored and are the person's; only a package folder goes.
+- **Removing git's tracked files at the move** (round 1's choice). About 61 MB a folder, 12% of its bytes, 52 GB at the rate of
+  2026-10-20 over fourteen days, for a removal that needed three guards of its own: the clean judgement fenced against an edit made
+  after it, which today is read before the last look (`TreeSweeps.cs:142, 152`; Codex 2.2); the commit kept on a ref for every kind of
+  removal, where a completed pull request's carrier and a squashing landing's hold set no `HeldBy` and so get no recovery ref
+  (`:163, 319-338, 343-346`; Codex 2.3), and the slim waiting for the ref transaction (`:221`); and a tested restore into a fresh
+  folder (Codex 2.7). Kept, the folder is the session's tree as it was but for its packages, and a reinstall makes it whole.
+- **A build folder's shared name as proof it can be made again** (round 1, TREEKEEP1's rule). It is the rule for the person's press;
+  for a removal nobody presses, the proof is a producer that discards the folder whole (§5; Codex 2.1).
+- **`bin/` and `obj/` at once**, for now. About 35% of the measured folder, in few files. A program run from `bin/` writes beside
+  itself (a local database), no build discards either whole, and `dotnet clean` removes only the files the build recorded. Taking
+  exactly those files (MSBuild's `*.FileListAbsolute.txt`, each configuration's, its paths absolute at the tree's old place) is
+  precise but a guard of its own; the person's days, the press and the floor's word hold them meanwhile. Whether `obj/` alone, from
+  which no program runs, may join is asked of Fable (§11).
 - **Slimming the folders already set aside** by reading their `.gitignore` files without git: a guess, since git's record of each is
   gone; they go by their date or the person's press.
-- **Keeping git's own files in the folder** for the person to look at: about 61 MB a folder, 52 GB at the 2026-10-20 rate, for what
-  `git worktree add` at the recorded commit makes again.
+- **The slim at once, inside the tidy's pass** (round 1): it ran inside the repository's hold (`AutoTidies.cs:286-292`) and on a rename's
+  word. Later, it runs on an hour's evidence, under the run lock, outside every hold (§5).
+- **A rename's success as proof that nothing uses a thing** (round 1, §6): a file opened with delete sharing does not refuse it
+  (`MachineLog.cs:299-300`), nor a version an agent runs through npm's shims (`HarnessSettings.cs:509-512`); each kind says what it
+  knows of its use instead (§3.5; Codex 2.6).
+- **A ledger of sizes kept by every remover** (round 1's `kinds` and `setAside` in `keeping.json`): counters every writer had to keep
+  true, among several processes; sizes come from a bounded walk per kind, and a slimmed folder is small (§4.3; Codex 6.1).
+- **An opinion's packet with its quest's clear** (round 1's KEEP1g). A packet is an opinion's, its folder named by the opinion's id
+  (`OpinionPackets.cs:36-45`); it may cover several quests (`OpinionPacket.cs:40-41`), and its reviewer's session names no quest
+  (`DriverOpinions.cs:157-158`), so one quest's clear cannot tell whether another quest or a live reviewer still needs it (Codex 5.5).
+  The rooms together are under 1 MB on the install. A rule for packets belongs with the opinion's own record and its liveness.
+- **The floor taking a `never` download** (round 1): the person's `never` is the press alone, below the floor too (Codex 3.1).
+- **A floor sized to hold a day of builds** (round 1's justification): no fixed margin on a small disk could; the floor is a trigger
+  (§3.2; Codex 3.3).
 - **One size limit for the whole Daoris folder, oldest first**: it would remove what cannot be made again by size alone.
 - **A floor that removes what cannot be made again**: a full disk is the person's to answer for their own records and scratch; Daoris
   frees what it can make again and says the rest.
@@ -631,7 +730,8 @@ folder's name; how much of that the checkouts share was not measured, so the sav
   clearing below the floor and by the press needs none. Measured first, it may replace the floor's third act.
 - **The machine log kept past 30 days**: each process prunes at its open by its own constant, and the service would have to read the
   driver's choices; 30 days stays the ceiling.
-- **A walk of the whole home at each pass**: about 2.2 million files on the install, 36 to 100 s, for numbers the ledger keeps.
+- **A walk of the whole home at each pass**: about 2.2 million files on the install, 36 to 100 s; a bounded walk per kind, at most once a
+  day, says the same.
 - **A file of its own for the rules** (`keep.json`): the standing choices already have one file, its twin, its terminal family and
   its Ask Daoris door.
 - **A word of its own for each act**: *clean up* stays the trees' and branches', *clear* the records' and the downloads'; the
@@ -641,12 +741,17 @@ folder's name; how much of that the checkouts share was not measured, so the sav
 
 ## 8. What this amends, once accepted
 
-- **D88's AUTOTIDY1 note**: a folder the look moves aside drops at once what git says can be made again (§5), and the purge's
-  fourteen days are the person's to set; its guards, the move, the purge's checks and *Said once* stand.
-- **D102's TREEKEEP1**: its *shared build folder* rule is also the slim's at the move.
-- **D88's CACHECLEAR1 note**: unused versions also go by a rule the person sets, and below the floor; its judgement, the rename first
-  and the press stand; the terminal twin is `daoris-driver space free --kind downloads`.
-- **The history clearing design §7**: only where the owner says yes to §3.6.
+- **D88's AUTOTIDY1 note**: a folder the look moves aside drops its package folders an hour after the move, where nothing was written
+  in it since (§5); the purge's fourteen days are the person's to set, read by every reader through one policy; the purge's read
+  passes over what the slim removed; the purge runs in the Keeping pass under the run lock. Its guards, the move and *Said once*
+  stand. `DeleteNeverFollowing` checks its own argument too.
+- **D102's TREEKEEP1** stands as it is: its *shared build folder* rule stays the person's press's, and the slim does not use it.
+- **D88's CACHECLEAR1 note**: unused versions also go by a rule the person sets, and below the floor but for `never`; the judgement
+  gains the running session's keep and runs under the use files' keep locks to the rename, and a pin's writer looks again under its
+  lock; Tools' delete of one version takes the same act; the rename first and the press stand; the terminal twin is `daoris-driver
+  space free --kind downloads`.
+- **The history clearing design §7**: decided by the owner (§3.6): nothing clears finished history by itself unless the person has set
+  an age.
 - **D172's layout §4**: the logs' row keeps 30 days *or fewer, as set*; `data/` gains `keeping.json`.
 - **The This Daoris design**: §3.1's *nothing offers to delete it*, for `webview2/` and `browser/profile/` alone, which the press now
   offers (§3.3); §9's *editing settings on this page*, for the keep rules, which have no other place, so the page is their one door.
