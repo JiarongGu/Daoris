@@ -26,9 +26,12 @@ The frame is specified in `docs/2026-09-21-desktop-frame-design.md` §3 (D56, as
 D75), where its own rules live; this is what a view may assume of it.
 
 - **The app strip** (36px) is the title bar: the mark, the menus of verbs and places (*Workspace · Edit ·
-  View · Go · Run · Terminal · Help*, D152), the command center naming the scope, and the window's controls. **The
+  View · Go · Run · Terminal · Help*, D152), the command center naming the scope, *Notifications*' bell first in its trailing
+  group, and the window's controls. The bell (NOTIFY2b, D196 point 3) counts what needs the person, each press waiting for their
+  confirmation once and every other row of *What needs you*, in open's hue, and the presses' own count in the warning hue while
+  one waits unshown; pressed, it shows the *Notifications* view where it stands. **The
   activity bar** (48px) is the one navigation, a place per icon and Settings alone at its foot (UX6j),
-  and a badge counts what its place holds: Overview the whole of *What needs you*; Sessions the sessions the driver runs, the cap's
+  and a badge counts what its place holds: Sessions the sessions the driver runs, the cap's
   count, with its list's *Waiting on you* marked beside it by a dot in the waiting hue, a parked quest there too (UX5 U20 as
   SESSBADGE1 amended it in D76's note, D126 §2.5); and Agents the signed-out accounts a list or a default holds (UX6e, D150 §2.1).
   **The status bar** states the machine's standing facts: the driver, the sessions the driver runs (the Sessions badge's count),
@@ -214,7 +217,9 @@ controls are in the frame design's §3.
   `tokens.test.ts` holds the rule for every overlay, so the next one cannot inherit `inset-0`.
 - **Toast** (bottom-right, overlay surface, auto-dismiss with close) carries an action's outcome and
   an error that has no place to stand in — the place has gone, or the act was started by a door that drew nothing (a
-  menu item, a key, the palette) — the service's sentence verbatim, because the refusal text is the contract. Nothing shifts the layout to speak. **Beside an open drawer, never over it** (UXTOAST1, D41
+  menu item, a key, the palette) — the service's sentence verbatim, because the refusal text is the contract. Nothing shifts the layout to speak.
+  A third use (NOTIFY2b, D196 point 4): an arrival worth interrupting for, said once in the focused window, with a door into
+  *Notifications*; a terminal's press's stays until the view opens or the press ends. **Beside an open drawer, never over it** (UXTOAST1, D41
   amended 2026-10-11): the drawer holds the corner whole, and a toast there lay over an ask's presses at its foot, so
   while one is open the toasts stand at its left edge, over the scrim, the corner's gap from it; narrower than 56rem,
   where none fits beside it, they keep the corner. They take their own presses, so a press on one never reaches the
@@ -419,8 +424,9 @@ controls are in the frame design's §3.
   (row = pill · title · route · how long — and, on the desktop, *sitting — why*, the driver's own
   sentence from its last look, truncated with the whole in its tip) beside *Repositories by index
   size* (single-hue bars, adopted dot, values in ink). Every row is a door: outstanding rows open the
-  quest's page on Quests (FRAME1d); repository rows go to Repositories. **The page leads with *What needs you***
-  (UX6c, D150 §6): *Holding work* (parked sessions, quests parked on their failed sessions, go-aheads, folders waiting on
+  quest's page on Quests (FRAME1d); repository rows go to Repositories. **The page leads with a summary of *What needs you***
+  (NOTIFY2b, D196 point 5): a line per group with its count and its oldest wait, each a door into *Notifications* at its group,
+  where every row below is drawn; Overview lists no row and wears no badge. The rows (UX6c, D150 §6): *Holding work* (parked sessions, quests parked on their failed sessions, go-aheads, folders waiting on
   trust, and since UX6d a start that *waits for an account*, an ask's intake among them, and a *signed out* account a list
   holds that no waiting start names), *Waiting for your word* (asks to publish or whose intake asked, departures, widenings, quests nobody can take)
   and *Ready for you* (work to review, five rows then *N more in Sessions*), the longest waiting first in each group and
@@ -430,7 +436,7 @@ controls are in the frame design's §3.
   (a park, an intake, a review) as its door alone; every other row's door is *Open* at its end. **An account's row says each
   account as last read, with when** (UX6d): *Sign in to …* for each read signed out, its steps under the row, *Read …* for one
   never read, and *Let … run …*, which asks once since it widens what Daoris may spend; its door is the agent's page, named
-  by the agent. No row starts a process to find out. Overview's badge counts every row. **The band is live, or it lies**: an
+  by the agent. No row starts a process to find out. The title bar's bell counts every row. **The band is live, or it lies**: an
   ask made by another door moves nothing else a tick reports, so the shell forwards a tick when the
   asks change and the page refetches them. A wait is a span (*waiting 4d 3h*, U40).
 - **Quests** (on the frame since FRAME1d, D118 §2) — a list pane and a main area. The list's `＋` offers
