@@ -158,7 +158,7 @@ describe('Done and failed', () => {
       'An ask for a helper was refused: the session that asked it has left this machine'],
     ['zh', '一个被重新打开的委托的会话未被告知：它的工作树已不在，所以不会重做这项工作',
       '一个插件在一小时内退出三次后已停止：你再试一次后它才会重新启动',
-      '一个请助手回答的请求被拒绝：提出它的会话已离开本机'],
+      '没有助手回答一个会话的问题：提出它的会话已离开本机'],
   ])("says the deeper producers' news by its code in %s", async (language, tree, plugin, helper) => {
     await i18n.changeLanguage(language);
     layout.row = { top: 500, height: 60 };

@@ -56,7 +56,7 @@
   "notifications.done.look.swept": "Daoris 上次停止时留下运行的一个会话已结束",
   "notifications.done.look.meeting-failed": "一次会议在某一轮中停止：有一步失败了，会议以失败结束",
   "notifications.done.look.brainstorm-failed": "一次头脑风暴已停止：有一步失败了，它以失败结束",
-  "notifications.done.look.helper-asker-gone": "一个请助手回答的请求被拒绝：提出它的会话已离开本机",
+  "notifications.done.look.helper-asker-gone": "没有助手回答一个会话的问题：提出它的会话已离开本机",
   "notifications.done.look.reopen-unrecorded": "一次重新打开指向的会话在本机没有记录：这里没有通知任何会话",
   "notifications.done.look.reopen-tree-gone": "一个被重新打开的委托的会话未被告知：它的工作树已不在，所以不会重做这项工作",
   "notifications.done.look.plugin-unsound": "一个插件在一小时内退出三次后已停止：你再试一次后它才会重新启动",
