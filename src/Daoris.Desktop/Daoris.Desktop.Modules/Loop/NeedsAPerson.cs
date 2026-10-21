@@ -46,6 +46,9 @@ public sealed record AttentionFacts
     /// <summary>Every plugin step's attempt held for the person, as the work slice holds them.</summary>
     public IReadOnlyList<JsonObject> Held { get; init; } = [];
 
+    /// <summary>Every node record that does not read (FABRIC-PERFORM1j), as the work slice holds them.</summary>
+    public IReadOnlyList<JsonObject> Unreadable { get; init; } = [];
+
     /// <summary>The tool calls the sessions hold for the person's answer, as <c>PERMISSION_WAITS</c> answers them.</summary>
     public IReadOnlyList<JsonObject> Permissions { get; init; } = [];
 
@@ -297,6 +300,16 @@ public static class NeedsAPerson
             var row = Row("work", $"{Part(attempt["unit"])}#{Part(attempt["node"])}#{Part(attempt["attempt"])}", Text(attempt, "resolvedAt") ?? Text(attempt, "at"));
             row["where"] = Text(attempt, "unit");
             row["held"] = attempt.DeepClone();
+            rows.Add(row);
+        }
+
+        // A node record that does not read (FABRIC-PERFORM1j, §D3): nothing on its unit is judged or started until the person mends it, and
+        // the row's press opens the folder it is kept in. By its file, since its unit may be unknown; since it was last written.
+        foreach (var record in facts.Unreadable)
+        {
+            var row = Row("work", $"record#{Part(record["file"])}", Text(record, "at"));
+            row["where"] = Text(record, "unit");
+            row["unreadable"] = record.DeepClone();
             rows.Add(row);
         }
 

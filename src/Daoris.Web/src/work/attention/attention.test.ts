@@ -443,6 +443,37 @@ describe('the groups', () => {
     expect(keyed([row('answer', 'a1', '2026-09-21T09:00:00Z'), row('permission', 'p1', '2026-09-21T09:00:00Z')])).toEqual(['permission:p1', 'answer:a1']);
   });
 
+  /**
+   * FABRIC-PERFORM1j (the fabric events design §D3): a node record that does not read stops everything on its unit, so it is a row of the
+   * person's, named by the unit it still names or else by its file, saying nothing moves until it is mended, with its folder's press;
+   * in 中文 too.
+   */
+  it('words a node record that does not read by its unit or its file, with its folder opened, in each language', async () => {
+    const file = '0a1b2c3d4e5f60718293a4b5c6d7e8f9.json';
+    const named = row('work', `record#${file}`, '2026-10-17T09:00:00Z', { where: 'quest:q7', unreadable: { file, unit: 'quest:q7', said: 'x' } });
+    const unnamed = row('work', 'record#b.json', '2026-10-17T09:00:00Z', { where: null, unreadable: { file: 'b.json', unit: null, said: 'x' } });
+
+    expect(words(named)).toMatchObject({
+      kind: 'work', where: 'quest:q7', title: 'The record of quest:q7 does not read',
+      detail: `Nothing on this work is judged or started until its record, ${file}, is mended where it is kept. `
+        + 'Daoris never reads it as empty, since a step it holds could then be sent twice.',
+    });
+    expect(words(unnamed)).toMatchObject({ where: '', title: 'A work record does not read (b.json)' });
+    expect(attentionActs(words(named))).toEqual(['open-records']);
+    expect(ATTENTION_GROUP.work).toBe('word');
+
+    await i18n.changeLanguage('zh');
+    try {
+      expect(words(named)).toMatchObject({
+        title: 'quest:q7 的记录无法读取',
+        detail: `在它的记录 ${file} 于存放处修好之前，这项工作不会被判断，也不会开始。Daoris 从不把它当作空记录，否则它记着的步骤可能被发送两次。`,
+      });
+      expect(words(unnamed).title).toBe('有一份工作记录无法读取（b.json）');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
   /** AUTONOMY1b3c (D184 point 3): a tool call a session holds for the person, a press per choice its agent offered. */
   it('words a tool call a session holds for the person, with a press per offered choice', () => {
     const held = {

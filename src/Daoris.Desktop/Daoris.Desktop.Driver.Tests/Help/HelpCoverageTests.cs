@@ -670,6 +670,10 @@ public sealed partial class HelpCoverageTests
             "it discards a session's tree and its work for good, a discard, which stays the person's own press (D89), as the "
             + "clean-up and a failed attempt's branch do.")),
         ("work", "useOpenWindow", null, OpensAWindow),
+        // FABRIC-PERFORM1j: What needs you's press on a node record that does not read.
+        ("work", "useOpenWorkRecords", null, new Exempt(
+            "it opens the folder the units' node records are kept in, in the system's file browser, and changes nothing, as a "
+            + "session's folder is exempt; mending a record is the person's own, in that folder.")),
         ("work", "useOpenSessionFolder", null, new Exempt(
             "it opens a session's folder in the system's file browser and changes nothing, as the log's folder is exempt; a go "
             + "reaches the session.")),

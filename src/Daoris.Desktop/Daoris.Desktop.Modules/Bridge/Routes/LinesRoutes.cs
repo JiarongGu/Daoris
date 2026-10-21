@@ -586,6 +586,11 @@ public sealed class LinesRoutes(DriverContext context)
             // units the name picked. An install no graph naming a plugin's performed node governs keeps no node record, and lists none.
             Held = HeldAnswer(HeldAttempts.Read(new NodeRecordFiles(_loop.Home), quests: _loop.LastQuests)
                 .Where(held => Optional(request, "unit") is not { } picked || held.Unit == picked || units.Any(unit => unit.Unit == held.Unit))),
+            // FABRIC-PERFORM1j, additive: the node records that do not read, each stopping its unit until a person mends it; with a name,
+            // those of the units it picked, by the unit a record names or its file's key.
+            Unreadable = UnreadableAnswer(HeldAttempts.Unreadable(new NodeRecordFiles(_loop.Home))
+                .Where(record => Optional(request, "unit") is not { } picked
+                    || units.Select(unit => unit.Unit).Append(picked).Any(unit => HeldAttempts.Picks(record, unit)))),
         };
     }
 
@@ -622,6 +627,37 @@ public sealed class LinesRoutes(DriverContext context)
             At = each.RecordedAt, each.Resolution, each.ResolvedAt, Said = HeldAttempts.WhySaid(each), each.Words,
         }),
     ];
+
+    /// <summary>
+    /// The node records that do not read as the wire carries them (FABRIC-PERFORM1j): the file's name, the unit it names where it still
+    /// names one, when it was last written, and the driver's sentence; the page words it in the reader's language.
+    /// </summary>
+    public static object[] UnreadableAnswer(IEnumerable<UnreadableRecord> unreadable) =>
+        [.. unreadable.Select(each => new { each.File, each.Unit, each.At, Said = HeldAttempts.UnreadableSaid(each) })];
+
+    // Open the node records' folder (FABRIC-PERFORM1j): What needs you's press on a record that does not read, which the person mends
+    // there. The module names the folder, never the page, and opens it through the window kit's launcher, through the start gate, as a
+    // session's and a plugin's folder are (PROCSTART2).
+    /// <summary>Open the folder the units' node records are kept in, in the system's file manager.</summary>
+    /// <remarks>Nothing machine-local comes back: whether it opened. With no record kept there is no folder, which is refused and said.</remarks>
+    [DriverRoute("WORK_RECORDS_FOLDER")]
+    private async Task<object?> WorkRecordsFolderAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var folder = NodeRecordFiles.FolderOf(_loop.Home);
+        if (!Directory.Exists(folder)) throw new DriverException("no unit keeps a node record here now, so there is no folder to open.");
+        if (_context.OpenFolder is not { } open) return new { Opened = false };
+        try
+        {
+            await open.OpenAsync(folder, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException
+            or System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            throw new DriverException($"the node records' folder would not open: {error.Message}");
+        }
+
+        return new { Opened = true };
+    }
 
     // The person's word on a plugin step's attempt held for them (FABRIC-PERFORM1g, D173's note): the page's half of `daoris-driver work
     // held <unit> <node> <attempt> <word>`. Both doors end in HeldAttempts.Word, which records it under the unit's node record's lock with

@@ -394,6 +394,29 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
         Assert.Null(Loop().LastQuests);
     }
 
+    /// <summary>
+    /// FABRIC-PERFORM1j: a node record that does not read is listed by the work's state, by its file and the unit it names, with the driver's
+    /// sentence; a unit picked lists its own alone. Its folder's press is refused and said where no record is kept, and opens nothing
+    /// without the window's launcher.
+    /// </summary>
+    [Fact]
+    public async Task A_node_record_that_does_not_read_is_listed_by_the_work_s_state_and_its_folder_opened_only_where_it_is()
+    {
+        var module = await ModuleOverAsync(new DiscardService(root: Home));
+        Assert.Contains("no unit keeps a node record", await RefusalAsync(module, "WORK_RECORDS_FOLDER", new { }));
+
+        Directory.CreateDirectory(NodeRecordFiles.FolderOf(Home));
+        File.WriteAllText(NodeRecordFiles.PathOf(Home, "quest:q7"), "{ \"unit\": \"quest:q7\" }");
+        var listed = (await AnswerAsync(module, "WORK_STATE", new { })).GetProperty("unreadable");
+
+        var record = Assert.Single(listed.EnumerateArray());
+        Assert.Equal((NodeRecordFiles.KeyOf("quest:q7") + ".json", "quest:q7"), (record.GetProperty("file").GetString(), record.GetProperty("unit").GetString()));
+        Assert.Contains("does not read", record.GetProperty("said").GetString());
+        Assert.Single((await AnswerAsync(module, "WORK_STATE", new { unit = "quest:q7" })).GetProperty("unreadable").EnumerateArray());
+        Assert.Empty((await AnswerAsync(module, "WORK_STATE", new { unit = "quest:q8" })).GetProperty("unreadable").EnumerateArray());
+        Assert.False((await AnswerAsync(module, "WORK_RECORDS_FOLDER", new { })).GetProperty("opened").GetBoolean());
+    }
+
     /// <summary>The route's module over a loop come up on <paramref name="service"/>, standing in for the service.</summary>
     private async Task<DriverModule> ModuleOverAsync(DiscardService service)
     {

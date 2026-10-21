@@ -18745,3 +18745,12 @@ part's own, and a hand-over's why; each part's row and node say its tokens over 
 `SessionEvents.Spent`, the modules' `SESSION_SPENT`); the head's facts name the agent the line's leading part runs on where its
 parts ran on more than one. Stories and vitest in en and zh, `i18n:check`, `names:check -- --strict`. The window has not been seen.
 Detail: D189's SESSCTX1d note.
+
+## FABRIC-PERFORM1j — an unreadable node record said where the person looks (2026-10-21, D173)
+
+> - [ ] **FABRIC-PERFORM1j — an unreadable node record said where the person looks** (driver, modules, web-shell; §D3). A unit whose node record does not read stops everything on it, and only the loop's lines say so: list it in `WORK_STATE` with a What needs you row. Proof: an unreadable record listed, en and zh.
+
+**Outcome** 2026-10-21: built. A node record that does not read is listed by its file and the unit it still names: `WORK_STATE`'s
+additive `unreadable`, the work slice's `<held>` partition, and `daoris-driver work held`. *What needs you* has a `work` row for each,
+worded in en and zh, whose press opens the records' folder (`WORK_RECORDS_FOLDER`) for the person to mend it. Proof: driver, modules
+and page tests listed in D173's note. On Opus: about 120 tool calls. Detail: D173's FABRIC-PERFORM1j note.

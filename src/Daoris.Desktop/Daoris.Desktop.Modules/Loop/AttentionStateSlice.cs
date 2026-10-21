@@ -70,7 +70,7 @@ public static class AttentionStateSlice
         [
             "kind", "id", "since", "workspace", "where", "note", "detail", "publishTo", "choices", "ask", "number", "goAhead", "session",
             "departed", "setUp", "local", "environment", "shows", "opinion", "placed", "sitting", "trust", "quest", "proposal", "title",
-            "permission", "blocked", "held", "wholeWorkspace", "holding", "read", "runs", "account", "answer",
+            "permission", "blocked", "held", "unreadable", "wholeWorkspace", "holding", "read", "runs", "account", "answer",
         ],
         ["waiting"] = ["kind", "workspace"],
         ["working"] = ["workspace"],
@@ -101,6 +101,7 @@ public static class AttentionStateSlice
         ["blocked"] = ["unknown", "entries"],
         ["entry"] = ["kind", "resource", "detail", "code", "facts"],
         ["attempt"] = WorkStateSlice.Fields["attempt"],
+        ["unreadable"] = WorkStateSlice.Fields["unreadable"],
         ["holding"] = ["quests", "asks"],
         ["account"] = ["agent", "product", "harness", "signsIn", "named", "outside", "readFirst", "noAccount"],
         ["named"] = ["id", "name", "state", "read", "until"],
@@ -130,6 +131,7 @@ public static class AttentionStateSlice
         ["row.blocked"] = "blocked",
         ["blocked.entries"] = "entry",
         ["row.held"] = "attempt",
+        ["row.unreadable"] = "unreadable",
         ["row.holding"] = "holding",
         ["row.account"] = "account",
         ["account.named"] = "named",
@@ -271,16 +273,21 @@ public static class AttentionStateSlice
 
         var units = new List<JsonObject>();
         var held = new List<JsonObject>();
+        var unreadable = new List<JsonObject>();
         foreach (var part in work.Partitions)
         {
             var data = Node(part.Data) as JsonObject;
-            if (part.Partition == WorkStateSlice.Held) held.AddRange(Items(data?["held"]));
+            if (part.Partition == WorkStateSlice.Held)
+            {
+                held.AddRange(Items(data?["held"]));
+                unreadable.AddRange(Items(data?["unreadable"]));
+            }
             else units.AddRange(Items(data?["units"]));
         }
 
         return new AttentionFacts
         {
-            Sessions = sessions, Quests = quests, Asks = asks, Groups = groups, Works = units, Held = held,
+            Sessions = sessions, Quests = quests, Asks = asks, Groups = groups, Works = units, Held = held, Unreadable = unreadable,
             Registry = [.. registry.Select(Registration)],
         };
     }
