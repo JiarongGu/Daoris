@@ -85,8 +85,9 @@ public static class OpenRoutes
     public static InstanceRoute SetupPlan { get; } = Open("SETUP_PLAN");
 
     /// <summary>
-    /// Each verb of RPCOPEN1's scope, in the verb's words: the route it sends where the instance answers, or null with the reason it
-    /// does not go through the pipe (yet).
+    /// Each verb of RPCOPEN1's and RPC1e's scope, the host's verbs with a window twin (the terminal RPC design §1.2), in the verb's words:
+    /// the open route it reads where the instance answers, or null with the reason it stays off the pipe. A person's press is
+    /// <see cref="PersonPresses"/>'; <c>PipeCensusTests</c> holds which verbs stay off, so one that leaves the list or joins it is said.
     /// </summary>
     public static IReadOnlyList<(string Verb, InstanceRoute? Route, string Reason)> Verbs { get; } =
     [
@@ -127,6 +128,16 @@ public static class OpenRoutes
         ("plugins try <folder|id>", null, "alone: a trial starts the plugin as this terminal's own child, and its words name the folder it tried"),
         ("plugins install <file>", null, "alone: PLUGIN_INSTALL installs one of the install's own offers; no route reads a package file, and its words name the folder"),
         ("plugins new <id>", null, "alone: it writes a plugin's folder where the terminal stands, never under the home"),
+        ("logs", null, "alone: a read of the machine log this process reads itself, whose words name its folder"),
+        // What stays off the pipe by design (§7.1, §11): a conversation the terminal runs, a loop, the updater's request, and the
+        // service's own doors, which the service writes once whoever asks.
+        ("chat", null, "alone: the conversation runs in this terminal's own process, with its own agent and its own Ctrl+C, until RPC1g"),
+        ("drive", null, "alone: it is a loop, the home's lease's holder, refused where the desktop holds the home unless `--share` (DRV8a)"),
+        ("update", null, "alone: a request file under the home the desktop's updater watches (D139); its window twin is the update banner, no route"),
+        ("quest delete|accept|done|reopen|go-on|check|review", null, "alone: the service's door, its one writer, as the page's own HTTP call is (§7.1)"),
+        ("answer", null, "alone: the service's door, its one writer, as the page's own HTTP call is (§7.1)"),
+        ("ask \"…\"", null, "alone: the service publishes an ask, its one writer, as the page's own HTTP call does (§7.1)"),
+        ("sync status", null, "alone: a read of the service's own standing (`/api/sync`), as the page's read is"),
     ];
 }
 
