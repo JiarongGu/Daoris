@@ -39,6 +39,46 @@ public sealed class HelpWorkflowProposalTests : HelpProposalBoxFixture
         Assert.True(written.GetProperty("choose").GetBoolean());
     }
 
+    /// <summary>FABRIC-PIPELINE1i: a verification pipeline's graph is written as nested JSON in place of steps, beside the route it is for.</summary>
+    [Fact]
+    public void A_graph_is_written_in_place_of_steps_with_its_route()
+    {
+        const string graph = """{"schemaVersion":2,"entries":["gates"],"end":"gates","nodes":[{"id":"gates","kind":"check","version":1,"reach":"performed"}],"wires":[]}""";
+        var (id, _) = Box().ProposeWorkflow("web-app", "line-verify", null, null, false, null, null, null, "why", "h1", Now, graph: graph, route: "landed");
+
+        var written = Written(id!);
+        Assert.Equal("landed", written.GetProperty("route").GetString());
+        Assert.Equal("check", written.GetProperty("graph").GetProperty("nodes")[0].GetProperty("kind").GetString());
+        Assert.False(written.TryGetProperty("steps", out _));
+    }
+
+    /// <summary>FABRIC-PIPELINE1i: a route with no version is written alone, with no steps and no graph; the driver judges the workflow.</summary>
+    [Fact]
+    public void A_route_with_no_version_is_written_alone()
+    {
+        var (id, _) = Box().ProposeWorkflow("web-app", "docs-to-pr", null, null, false, null, null, null, "why", "h1", Now, route: "kind:docs");
+
+        var written = Written(id!);
+        Assert.Equal("kind:docs", written.GetProperty("route").GetString());
+        Assert.False(written.TryGetProperty("steps", out _));
+        Assert.False(written.TryGetProperty("graph", out _));
+    }
+
+    [Theory]
+    [InlineData(Steps, """{"nodes":[]}""", null, "never both")]
+    [InlineData(null, "[1]", null, "the graph's JSON object")]
+    [InlineData(null, "not json", null, "`graph` is not valid JSON")]
+    [InlineData(null, null, "kind:", "is not a route")]
+    [InlineData(null, null, "everything", "is not a route")]
+    public void A_malformed_graph_or_route_is_refused_with_nothing_written(string? steps, string? graph, string? route, string says)
+    {
+        var (id, message) = Box().ProposeWorkflow("web-app", "docs-to-pr", null, steps, false, null, null, null, "why", "h1", Now, graph: graph, route: route);
+
+        Assert.Null(id);
+        Assert.Contains(says, message);
+        Assert.Contains("Nothing was proposed", message);
+    }
+
     [Theory]
     [InlineData("", "docs-to-pr", 1, Steps, null, null, null, "a reason", "scope")]
     [InlineData("web app", "docs-to-pr", 1, Steps, null, null, null, "a reason", "one word")]
