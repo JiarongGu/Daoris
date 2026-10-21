@@ -652,6 +652,33 @@ public sealed class QuestCloseTests : IDisposable
         Assert.Single(_door.Sent);
     }
 
+    /// <summary>
+    /// FABRIC-CLOSECASE1 (§E5): a step naming this repository in another case is the same repository, as the service's NextStep and close
+    /// door read it: the first quest's close waits for the chain's last, and that one close names both.
+    /// </summary>
+    [Fact]
+    public async Task A_chain_whose_repository_differs_only_in_case_is_one_repositorys_and_closes_at_its_last_quest()
+    {
+        var digest = Digest(Closing);
+        var first = Taken("q6", digest, Ready40) with { Then = [new QuestStepView("Engine", "Ship q7", "")] };
+        var last = Taken("q7", digest, Ready41) with { To = "Engine", Parent = "q6" };
+        var quests = new Dictionary<string, QuestView> { ["q6"] = first, ["q7"] = last };
+
+        Assert.Equal(["q6", "q7"], QuestClosing.Lineage(last, quests).Chain.Select(each => each.Id));
+        var waits = QuestClosing.Judge(first, quests);
+        Assert.Empty(waits.Named);
+        Assert.Contains("still to come", waits.Waits, StringComparison.Ordinal);
+        Assert.Equal([new QuestCloseItem("q6", "desk", 40), new QuestCloseItem("q7", "desk", 41)], QuestClosing.Judge(last, quests).Named);
+
+        Quest(first);
+        Quest(last);
+        await Runtime().PassAsync(Look(Closing), CancellationToken.None);
+
+        var (quest, _, _, named) = Assert.Single(_door.Sent);
+        Assert.Equal("q7", quest);
+        Assert.Equal([new QuestCloseItem("q6", "desk", 40), new QuestCloseItem("q7", "desk", 41)], named);
+    }
+
     /// <summary>FABRIC-CLOSE1l, the review's finding 1: a chain that leaves this repository and comes back is walked whole.</summary>
     [Fact]
     public async Task A_chain_that_leaves_this_repository_and_comes_back_closes_at_its_last_quest_here_only_with_its_first()

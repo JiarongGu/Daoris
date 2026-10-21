@@ -459,13 +459,13 @@ public sealed class QuestClosureTests : IAsyncLifetime
     /// the report's repository, as a close names only its own repository's chain (FABRIC-CLOSE1v), so it inherits the requirements with
     /// their evidence, and its own submission is released by its own read.
     /// </summary>
-    private async Task<(Quest First, Quest Second)> Chain(string firstGraph = Graph)
+    private async Task<(Quest First, Quest Second)> Chain(string firstGraph = Graph, string next = "reports")
     {
-        var first = await Bound(next: "reports", graph: firstGraph);
+        var first = await Bound(next: next, graph: firstGraph);
         await Ready(first);
         await Found(first);
         var second = Assert.Single(await _quests.ListAsync(), q => q.Parent == first.Id);
-        Assert.Equal("reports", second.To);
+        Assert.Equal(next, second.To);
         Assert.Equal(QuestRespondRefusal.None, (await _exchange.RespondAsync(second.Id, "take", null, Now)).Refusal);
         Assert.Equal(QuestRespondRefusal.None, (await _exchange.BindAsync(second.Id, Graph, Now)).Refusal);
         Assert.Equal(QuestHold.EvidenceUnread, (await Ready(second)).Quest!.Hold);
@@ -598,6 +598,24 @@ public sealed class QuestClosureTests : IAsyncLifetime
             Assert.Equal(QuestStatus.Done, standing.Status);
             Assert.Null(standing.Hold);
         }
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSECASE1 (§E5): a step naming the report's repository in another case is the same repository, as the driver's close names it
+    /// too. It inherits the requirements whole, its evidence holding it as in the same tree, and the close at it takes both.
+    /// </summary>
+    [Fact]
+    public async Task A_chain_whose_repository_differs_only_in_case_is_closed_as_one_repositorys()
+    {
+        var (first, second) = await Chain(next: "Reports");
+        Assert.Equal("reports", first.To);
+
+        var closed = await Close("k1", first, second);
+
+        Assert.Equal(QuestCloseRefusal.None, closed.Refusal);
+        Assert.All(closed.Quests, q => Assert.Equal(QuestStatus.Done, q.Status));
+        Assert.Equal(QuestStatus.Done, (await Find(first.Id)).Status);
+        Assert.Equal(QuestStatus.Done, (await Find(second.Id)).Status);
     }
 
     [Fact]

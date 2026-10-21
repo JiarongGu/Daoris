@@ -18826,3 +18826,11 @@ badge and the taskbar, whose one control opens the card. Asked, it raises `SESSI
 balloon while no window is in front. Proof: `PipeConfirmTests`, `DriverModulePersonTests`, `AttentionStateSliceTests`,
 `SessionBalloonTests`, and the page's person, attention and signals tests in en and zh. The window with a press from a terminal
 is the parent's installed proof; the taskbar is not flashed. Detail: D156's CONFIRMSEEN1 note.
+
+## FABRIC-CLOSECASE1 — one rule for "the same repository" across the close (2026-10-21, D173)
+
+> - [ ] **FABRIC-CLOSECASE1 — one rule for "the same repository" across the close** (driver, service; §E5). The driver compares a quest's repository exactly, the service's `NextStep` and the close door ignore case. Proof: a chain whose repository differs only in case is named and closed alike by both, or refused alike.
+
+**Outcome** 2026-10-21: built. The driver's `QuestClosing.Judge` and `Lineage` now compare a quest's repository blind to case, as the
+service does, so a chain whose step names its repository in another case waits for its last quest here and closes in one close naming
+both. Proof: `QuestCloseTests` and `QuestClosureTests`. Detail: D173's FABRIC-CLOSECASE1 note.
