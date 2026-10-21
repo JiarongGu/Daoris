@@ -169,7 +169,7 @@ public sealed class SpaceFloorTests : IDisposable
     [InlineData("off", "{\"off\":true}", "off")]
     public void A_floor_within_its_bounds_is_written_and_read_back(string word, string written, string from)
     {
-        var path = Path.Combine(_home, "driver.json");
+        var path = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         DriverConfig.Empty.WithKeep(KeepRules.Asked("floor", word) with { Volume = 100 * Gb }).Save(path);
 
         var keep = JsonNode.Parse(File.ReadAllText(path))!["keep"]!["floor"]!.ToJsonString();

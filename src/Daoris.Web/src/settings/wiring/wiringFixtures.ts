@@ -285,6 +285,27 @@ export const SPACE_SET: SystemSpace = {
 /** A run a crash cut short, said beside the card's rows until the next run ends. */
 export const SPACE_STOPPED: SystemSpace = { ...SPACE, held: { pid: 4242, since: '2026-10-16T03:00:00.000+00:00', door: 'look', gone: true } };
 
+/**
+ * Below the floor (KEEP1f, the cleanup design §3.2, §4.2): 8 GB free of 1,024 GB, below the default floor of 20 GB, 2 GB freed early;
+ * the set-aside trees on another volume, above its own floor, and the kinds the floor frees early saying so.
+ */
+export const SPACE_LOW: SystemSpace = {
+  ...SPACE,
+  volume: {
+    ...SPACE.volume!, free: 8 * GB, total: 1024 * GB, floor: { bytes: 20 * GB, from: 'default' }, below: true,
+    freedEarly: { bytes: 2 * GB, at: '2026-10-22T09:00:00.000+00:00' },
+  },
+  kinds: SPACE.kinds.map((kind) => (kind.id === 'set-aside'
+    ? {
+      ...kind, rule: { ...kind.rule, low: true },
+      volume: { path: 'D:\\', free: 300 * GB, total: 2048 * GB, floor: { bytes: 20 * GB, from: 'default' as const }, below: false, freedEarly: null },
+    }
+    : kind.id === 'downloads' || kind.id === 'browser-cache' ? { ...kind, rule: { ...kind.rule, low: true } } : kind)),
+};
+
+/** The floor turned off (KEEP1f): Daoris frees nothing early, and says so. */
+export const SPACE_FLOOR_OFF: SystemSpace = { ...SPACE, volume: { ...SPACE.volume!, floor: { bytes: null, from: 'off' }, below: false } };
+
 /** Free up space's list (KEEP1e): two folders and a day of the log the rules take now; three groups that could go early. */
 export const SPACE_PLAN: SpacePlan = {
   schema: 1,

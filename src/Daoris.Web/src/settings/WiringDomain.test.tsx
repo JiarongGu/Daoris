@@ -22,8 +22,8 @@ import { code } from '../test/code';
 import { DRIVER_STATE, respond, show, WIRING } from '../test/shellHarness';
 import type { SystemSpace, SystemWiring } from '../bridge/system';
 import {
-  DEVELOPMENT, DOWNLOADS, MEASURING, SPACE, SPACE_COUNTING, SPACE_FREED, SPACE_PLAN, SPACE_RUNNING, SPACE_SET, SPACE_STOPPED,
-  SPACE_UNCOUNTED, WIRED,
+  DEVELOPMENT, DOWNLOADS, MEASURING, SPACE, SPACE_COUNTING, SPACE_FLOOR_OFF, SPACE_FREED, SPACE_LOW, SPACE_PLAN, SPACE_RUNNING, SPACE_SET,
+  SPACE_STOPPED, SPACE_UNCOUNTED, WIRED,
 } from './wiring/wiringFixtures';
 
 const NO_UPDATE = { state: 'none', staged: null, mode: null, driven: 0, turns: 0, problem: null, outcome: null, last: null };
@@ -900,19 +900,6 @@ describe('Settings → This Daoris', () => {
   // KEEP1f (the cleanup design §3.2, §4.2): the floor on the free-space line, below it in the warn ink with what Daoris freed early and
   // the press as primary; a kind on another volume says that volume on its row; the floor set from its own Change…, and refused by its unit.
   const GIB = 1024 ** 3;
-  const SPACE_LOW: SystemSpace = {
-    ...SPACE,
-    volume: {
-      ...SPACE.volume!, free: 8 * GIB, total: 1024 * GIB, floor: { bytes: 20 * GIB, from: 'default' }, below: true,
-      freedEarly: { bytes: 2 * GIB, at: '2026-10-22T09:00:00.000+00:00' },
-    },
-    kinds: SPACE.kinds.map((kind) => (kind.id === 'set-aside'
-      ? {
-        ...kind, rule: { ...kind.rule, low: true },
-        volume: { path: 'D:\\', free: 300 * GIB, total: 2048 * GIB, floor: { bytes: 20 * GIB, from: 'default' as const }, below: false, freedEarly: null },
-      }
-      : kind)),
-  };
 
   it('says the floor below it in the warn ink with what Daoris freed early, and a kind on another volume on its row', async () => {
     invoke.mockImplementation(keeping(() => DRIVER_STATE, SPACE_LOW));
@@ -965,10 +952,10 @@ describe('Settings → This Daoris', () => {
 
   it('says a floor turned off in 中文, with its editor', async () => {
     await i18n.changeLanguage('zh');
-    invoke.mockImplementation(keeping(() => DRIVER_STATE, { ...SPACE_LOW, volume: { ...SPACE_LOW.volume!, floor: { bytes: null, from: 'off' }, below: false } }));
+    invoke.mockImplementation(keeping(() => DRIVER_STATE, SPACE_FLOOR_OFF));
     open();
     const card = within(await screen.findByRole('region', { name: '磁盘空间' }));
-    expect(card.getByText(`共 ${size(1024 * GIB)}，可用 ${size(8 * GIB)} · 未设下限：道衍不会提前释放`)).toBeTruthy();
+    expect(card.getByText(`共 ${size(1024 * GIB)}，可用 ${size(143.5 * GIB)} · 未设下限：道衍不会提前释放`)).toBeTruthy();
     expect(row(card, '可用空间').getByRole('button', { name: '更改…' })).toBeTruthy();
   });
 
