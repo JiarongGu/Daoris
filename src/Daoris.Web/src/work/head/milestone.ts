@@ -105,7 +105,8 @@ export type UnreadableRecord = {
  * A closure graph's end the milestone tells of (FABRIC-CLOSE1j, the fabric events design §E5), read from its node record's history:
  * ended by the person's own done before its end (`overridden`), naming the nodes it stopped; or closed only in part
  * (`partially-closed`), naming the quest lost with its take and the close node, whose stop is offered (`words`, said through
- * `WORK_HELD` on `attempt`) while that node waits again.
+ * `WORK_HELD` on `attempt`) while that node waits again; or the person's `word` on its close taken back (`word-taken-back`,
+ * FABRIC-CLOSE1q4), since the submission of `quest` it names was reopened or replaced, said here where no held row says it any more.
  */
 export type GraphEnd = {
   unit: string;
@@ -119,6 +120,8 @@ export type GraphEnd = {
   /** The person's stop, recorded and not yet applied by the driver's next look. */
   resolution?: HeldResolution | null;
   words?: HeldResolution[] | null;
+  /** FABRIC-CLOSE1q4: the person's word the driver did not take on a `word-taken-back` end, `record` or `stop`. */
+  word?: HeldResolution | null;
 };
 
 export type MilestoneUnit = {
@@ -157,12 +160,16 @@ export function endOffersStop(end: GraphEnd): boolean {
 /**
  * A closure graph's end in the reader's language (FABRIC-CLOSE1j, §E5): *closed by you before its end*, naming the nodes it stopped; or
  * *partially closed*, naming the quest lost and why, then where its close node stands: its stop offered, the person's stop recorded, or
- * stopped. A kind the page has no words for says nothing.
+ * stopped; or the person's word on its close *not taken*, naming the quest whose submission moved (FABRIC-CLOSE1q4). A kind the page
+ * has no words for says nothing.
  */
 export function endSentences(t: TFunction, end: GraphEnd): string[] {
   if (end.kind === 'overridden') {
     const nodes = end.nodes ?? [];
     return [nodes.length > 0 ? t('work.milestone.closed.overridden', { nodes: nodes.join(', ') }) : t('work.milestone.closed.overriddenNone')];
+  }
+  if (end.kind === 'word-taken-back') {
+    return [t(end.word === 'record' ? 'work.milestone.closed.takenBack.record' : 'work.milestone.closed.takenBack.stop', { node: end.node ?? '', quest: end.quest ?? '' })];
   }
   if (end.kind !== 'partially-closed') return [];
   const node = end.node ?? '';

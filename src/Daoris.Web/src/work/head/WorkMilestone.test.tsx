@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import i18n from '../../locales/i18n';
 import userEvent from '@testing-library/user-event';
-import { type GraphEnd, type HeldAttempt, type MilestoneEntry, type MilestoneUnit, readWorkState, unitOfBranch, waitsOnPerson } from './milestone';
+import { endSentences, type GraphEnd, type HeldAttempt, type MilestoneEntry, type MilestoneUnit, readWorkState, unitOfBranch, waitsOnPerson } from './milestone';
 import { MilestoneLine, WorkMilestone } from './WorkMilestone';
 import { attentionActs, attentionWorded } from '../attention/attention';
 import { AttentionRow } from '../attention/AttentionRow';
@@ -416,6 +416,27 @@ describe('a closure graph’s end', () => {
     const zh = screen.getByRole('region', { name: '这项工作进展到哪里' });
     expect(zh).toHaveTextContent('部分关闭：#q6 已不再是已完成，因为它的接下输给了另一台机器，那里现在持有它的工作。');
     expect(zh).toHaveTextContent('你停止 close 的答复已记下，下一次查看时生效。');
+  });
+
+  it('says a word on its close taken back once its node moved off, naming the quest, in English and in 中文 (FABRIC-CLOSE1q4)', async () => {
+    const takenBack = (word: 'record' | 'stop') =>
+      graphEnd({ kind: 'word-taken-back', quest: 'q7', node: 'close', attempt: 1, nodeState: 'ready', words: [], word });
+    const { unmount } = render(<WorkMilestone defaultOpen unit={unit({ ends: [takenBack('stop')] })} />);
+    const en = screen.getByRole('region', { name: 'Where this work stands' });
+    expect(en).toHaveTextContent('Your word to stop the rest of this work through its close close was not taken: #q7\'s submission that close names '
+      + 'was reopened or replaced since, so the work there now is never that close\'s to stop.');
+    expect(en).toHaveTextContent('your word on its close not taken');
+    expect(endSentences(i18n.t, takenBack('record'))).toEqual(['Your word to record its close close\'s answer again was not taken: #q7\'s '
+      + 'submission that close names was reopened or replaced since, so the work there now is never that close\'s to record.']);
+    expect(attentionActs(endedRow(takenBack('stop')))).toEqual([]);
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    render(<WorkMilestone defaultOpen unit={unit({ ends: [takenBack('stop')] })} />);
+    const zh = screen.getByRole('region', { name: '这项工作进展到哪里' });
+    expect(zh).toHaveTextContent('你通过它的关闭 close 停止这项工作其余部分的答复未被采用：这次关闭针对的 #q7 的交付此后已被重新打开或替换，现在那里的工作不能由这次关闭来停止。');
+    expect(zh).toHaveTextContent('你对它的关闭的答复未被采用');
+    expect(endSentences(i18n.t, takenBack('record'))[0]).toContain('重新记下结果的答复未被采用');
   });
 
   it('says its close node stopped once the stop is applied, offering nothing', () => {

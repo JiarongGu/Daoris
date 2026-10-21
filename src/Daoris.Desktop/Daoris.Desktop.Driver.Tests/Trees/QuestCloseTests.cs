@@ -1301,6 +1301,16 @@ public sealed class QuestCloseTests : IDisposable
             Assert.Contains(applied.Said, line => line.Contains("reopened or replaced", StringComparison.Ordinal));
         }
 
+        // FABRIC-CLOSE1q4: its close no longer listed, the stop taken back is said once where the person looks, WORK_STATE's ends, naming
+        // the quest, the word and the attempt; a word applied, or refused at the door, is no such end.
+        var ended = GraphEnds.Read(Files).Where(end => end.Kind == QuestClosing.TakenBack).ToList();
+        if (word == HeldResolutions.Stop)
+        {
+            var end = Assert.Single(ended);
+            Assert.Equal((Unit, "q7", "close", (int?)listed.Attempt, HeldResolutions.Stop), (end.Unit, end.Quest, end.Node, end.Attempt, end.Word));
+        }
+        else Assert.Empty(ended);
+
         // S2's deploy reached: S2 closes under a key of its own, naming S2 alone.
         plugins.Heard.Enqueue(Reached(plugins.Sent[^1]));
         _door.Lose = false;
@@ -1420,6 +1430,9 @@ public sealed class QuestCloseTests : IDisposable
         Assert.Contains("reopened or replaced", HeldAttempts.WhySaid(taken), StringComparison.Ordinal);
         Assert.True(_reads > reads);
 
+        // FABRIC-CLOSE1q4: still listed, its held row says it, so WORK_STATE's ends do not say it twice, before or after its settling.
+        Assert.DoesNotContain(GraphEnds.Read(Files), end => end.Kind == QuestClosing.TakenBack);
+
         // S1's held attempt still gates a new one (§D3): the person's resend asks its door after S1's key, which settles it as a stale one's,
         // and S2 closes under its own key.
         Assert.Single(_door.Sent);
@@ -1428,6 +1441,8 @@ public sealed class QuestCloseTests : IDisposable
         Assert.Equal(("q7", s1), Assert.Single(_door.Asked));
         Assert.Equal(2, _door.Sent.Count);
         Assert.Equal([new QuestCloseItem("q7", "desk", 43)], _door.Sent[1].Quests);
+        // FABRIC-CLOSE1q4: the resend answered the word taken back, so its settling says it no more.
+        Assert.DoesNotContain(GraphEnds.Read(Files), end => end.Kind == QuestClosing.TakenBack);
         status = Record().Statuses["close"];
         Assert.Equal((NodeStates.Reached, "close:" + _door.Sent[1].Key), (status.State, status.Current!.Evidence!.Ref));
     }

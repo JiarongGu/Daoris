@@ -69,7 +69,7 @@ public static class WorkStateSlice
         ],
         // FABRIC-PERFORM1j: a node record that does not read, which stops its unit until a person mends it.
         ["unreadable"] = ["file", "unit", "at", "said"],
-        ["graphEnd"] = ["unit", "kind", "at", "nodes", "quest", "node", "attempt", "nodeState", "resolution", "words"],
+        ["graphEnd"] = ["unit", "kind", "at", "nodes", "quest", "node", "attempt", "nodeState", "resolution", "words", "word"],
     };
 
     /// <summary>Which shape a field holds, as <c>shape.field</c>, an object of it or a list of them; every other field is a value.</summary>

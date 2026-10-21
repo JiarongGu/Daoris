@@ -224,7 +224,7 @@ public sealed class WorkStateSliceTests : DriverModuleBridge
         var end = new GraphEnd("quest:q7", QuestClosing.Partial, At)
         {
             Nodes = ["qa"], Quest = "q6", Node = "close", Attempt = 2, NodeState = NodeStates.Ready, Resolution = HeldResolutions.Stop,
-            Words = [HeldResolutions.Stop],
+            Words = [HeldResolutions.Stop], Word = HeldResolutions.Record,
         };
 
         var judged = WorkStateSlice.Judge(

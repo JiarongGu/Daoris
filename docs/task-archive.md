@@ -18995,3 +18995,14 @@ that is, and opens its watch when it is heard made, marking the reading stale ag
 opened the same way. The watched folders are the layout's roots, `docs/` and the named ones; each declared room outside them is
 watched for its `AGENTS.md`, and both are read again when `daoris.json` or `daoris.lock` moves. Proof: `CheckoutFreshnessTests`.
 Detail: D173's FABRIC-EVENT6b note. On Opus.
+
+## FABRIC-CLOSE1q4 — a close's word taken back after its node moved off is said where the person looks (2026-10-21, D173)
+
+> - [ ] **FABRIC-CLOSE1q4 — a close's word taken back after its node moved off is said where the person looks** (driver, web; after CLOSE1q2). An unanswered close whose node lapsed is no longer listed, so a word taken back on it is said only in the pass's English lines: say it once on the page, en and zh. Proof: a `QuestCloseTests` case reading the fact off `WORK_STATE`, and its page words.
+
+**Outcome** 2026-10-21: built. A `record` or `stop` taken back as `submission-moved` is kept in its node record's history
+(`word-taken-back #<quest> <word> <attempt>`), and `WORK_STATE`'s `ends` lists it as a `word-taken-back` end, with the quest, the node,
+the attempt and the `word`, once its close is no longer listed as held; while the close is listed, its held row says it, and the
+person's `resend` on it drops the entry. The page says it on the work's foot and line, en and zh. Proof: `QuestCloseTests`' CLOSE1q2
+theory (the stop row reads the end; the others none) and its wake test (none while listed, none after the resend),
+`WorkStateSliceTests`, and `WorkMilestone.test.tsx` in both languages. Detail: D173's FABRIC-CLOSE1q4 note. On Opus.
