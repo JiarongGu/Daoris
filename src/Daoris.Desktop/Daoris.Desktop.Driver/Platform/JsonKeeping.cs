@@ -69,6 +69,16 @@ public static class JsonKeeping
     {
         if (understood == edited) return;
         using var held = KeepLock.Take(path);
+        SaveHolding(path, found, understood, edited);
+    }
+
+    /// <summary>
+    /// <see cref="Save"/> for a writer that already holds the file's <see cref="KeepLock"/> over its own read (PUSH1f2c, the alone-path
+    /// design §1.4: <c>tools.json</c>'s writers decide their edit from the file as they read it, so the read and the write are one hold).
+    /// </summary>
+    internal static void SaveHolding(string path, bool found, string understood, string edited)
+    {
+        if (understood == edited) return;
         var name = Path.GetFileName(path);
         string? current = null;
         try

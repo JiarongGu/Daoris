@@ -46,7 +46,6 @@ const OWED: readonly { readonly file: string; readonly join: string; readonly wh
   { file: 'desktop-tool.test.ts', join: "join(root, 'bin', ", like: true, why: 'a project’s build output, no home' },
   { file: 'knowledge-server.test.ts', join: "join(fx.root, 'tools', 'knowledge-server.mjs')", why: 'a copy of the repository’s tools folder, no home' },
   { file: 'fsx.test.ts', join: "join(fx.root, 'bin'", like: true, why: 'a folder put on PATH, no home' },
-  { file: 'toolinstall.test.ts', join: "join(fx.root, 'bin'", like: true, why: 'a folder put on PATH, no home' },
   { file: 'landing-plugins.test.ts', join: "join(fx.root, 'bin'", like: true, why: 'a folder put on PATH, no home' },
   { file: 'tools.test.ts', join: "join(fx.root, 'bin'", like: true, why: 'a folder put on PATH, no home (the tool entries are asked of the table)' },
   {

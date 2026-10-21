@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- `daoris tool` hands every verb to Daoris's own driver program, as `daoris-driver tool` with the same words, as `daoris driver`
+  does. What each verb says is as before, but for these: a delete refused, and a file named for a tool that is not there, are said
+  as the window's Tools place says them, with their code, and exit 2; and a file you name is asked its version before it is written,
+  with Daoris closed too. A download, an update or a managed use no longer holds your home while it fetches: it waits for the home
+  only to make the version and switch to it, saying so if another act holds it for long, and Ctrl+C leaves nothing behind. Two
+  downloads of one version at once each finish, one keeping the other's.
 - A session that moved to another agent now reads as one session on its page. Its *Parts* say which agent each part was handed
   over or moved from, and why, such as *moved on from part 2 on codex: its own conversation was lost*. Each part's row says what it
   spent, in tokens over its turns, or that its turns did not report them. Where a line of work ran on more than one agent, the

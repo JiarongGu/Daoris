@@ -173,6 +173,13 @@ using Daoris.Driver;
 //                 the running Daoris's route, confirmed in its window, where one runs on this home, else written here under the
 //                 home's lease, refused from a session's terminal (exit 1); a file DAORIS_DRIVER_CONFIG names is written alone.
 //
+//   tool [list | path <tool> | use <tool> system|managed [<version>]|file <path> | download <tool> [<version>] | update <tool>
+//        | delete <tool> <version> | locations [add|remove <address>] | look]
+//                 the programs Daoris runs beside its agents (PUSH1f2c, D194): the words `daoris tool …` hands this program, each
+//                 short change the running Daoris's route, confirmed in its window, where one runs on this home, else written here
+//                 under the home's lease; a download holds nothing while it fetches, stages under this process's name, and publishes
+//                 under the lease, waited for. A person's press from a session's terminal is refused, exit 1.
+//
 //   trees [list | remove <path|session|branch> [--repository <name>] [--force] | clean [--workspace <name>] [--yes]
 //         | land <session> [--plan] [--branch <name>] | hand <session|branch> [...]
 //         | sync [--repository <name>] [--workspace <name>] [--all] [--yes]]
@@ -557,17 +564,20 @@ try
     }
 
     // The CLI's management families, handed to this program (PUSH1f2a, D194 point 1): `daoris driver …` runs `daoris-driver driver …`
-    // with the same words; `agent`, `plugin` and `tool` join here as their rows build them (PUSH1f2c-f). One Ctrl+C handler for the
-    // families, registered here and not where `closing` is made, so a verb routed above keeps the runtime's own Ctrl+C: it keeps the
-    // process and cancels `closing`, whose token each family command is handed, so a wait stops and is said, never a torn write.
-    if (args is ["driver", .. var choicesArgs])
+    // with the same words, and `daoris tool …` `daoris-driver tool …` (PUSH1f2c); `agent` and `plugin` join here as their rows build
+    // them (PUSH1f2d-f). One Ctrl+C handler for the families, registered here and not where `closing` is made, so a verb routed above
+    // keeps the runtime's own Ctrl+C: it keeps the process and cancels `closing`, whose token each family command is handed, so a wait
+    // stops and is said, never a torn write.
+    if (args is ["driver" or "tool", ..])
     {
         Console.CancelKeyPress += (_, press) =>
         {
             press.Cancel = true;
             closing.Cancel();
         };
-        return await Daoris.Driver.Host.DriverChoicesConsole.RunAsync(choicesArgs, closing.Token);
+        return args[0] == "tool"
+            ? await Daoris.Driver.Host.ToolsConsole.RunAsync(args[1..], log, closing.Token)
+            : await Daoris.Driver.Host.DriverChoicesConsole.RunAsync(args[1..], closing.Token);
     }
 
     // This machine's heavy gates for a repository whose own daoris.gates.json marks none (HEAVYRUN1b2a, D180's HEAVYRUN1b2a note,

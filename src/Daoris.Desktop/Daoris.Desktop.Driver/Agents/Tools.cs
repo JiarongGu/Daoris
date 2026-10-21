@@ -54,9 +54,10 @@ public sealed record ToolResolution(string Tool, ToolWay? Way, string? Version, 
 /// file for both doors (D50), and absent means the system's.
 /// </summary>
 /// <remarks>
-/// <para>🔴 <b>A TWIN of the CLI's <c>tools.ts</c>.</b> The two share no code — the FILE is the contract —
-/// and each carries the same tables (<c>ToolsTests</c> here, <c>tools.test.ts</c> there), row for row. A
-/// rule changed here is changed there, in the same commit:</para>
+/// <para>🔴 <b>A TWIN of the CLI's <c>tools.ts</c> for the file's reading and the resolution.</b> The two share no code —
+/// the FILE is the contract — and each carries the same tables (<c>ToolsTests</c> here, <c>tools.test.ts</c> there), row for
+/// row. A rule changed here is changed there, in the same commit. The writes are this side's alone since PUSH1f2c (D194):
+/// <c>daoris tool</c> is <c>daoris-driver tool</c>, and the CLI's writers left with it.</para>
 /// <list type="number">
 /// <item>No file, no entry, or <c>"use": "system"</c> is the system's.</item>
 /// <item><c>managed</c> needs an exact version of one to four numbers; <c>file</c> needs a whole path. An
@@ -306,7 +307,10 @@ public static class Tools
 
     /// <summary>The system's: the one <c>PATH</c> finds, as before (rule 6).</summary>
     /// <exception cref="DriverException">An undeclared tool, or a file this build cannot read; nothing is written.</exception>
-    public static void UseSystem(string home, string tool) => SetWay(home, tool, "system", null, null);
+    public static void UseSystem(string home, string tool) => SetWay(home, tool, "system", null, null, read: null);
+
+    /// <summary><see cref="UseSystem(string, string)"/>, with what happens once the file is read: a test's other writer.</summary>
+    internal static void UseSystem(string home, string tool, Action? read) => SetWay(home, tool, "system", null, null, read);
 
     /// <summary>A file the person names, by its whole path (rule 6); one that is not there is refused.</summary>
     /// <exception cref="DriverException">An undeclared tool, a path that is not whole or holds no file, or a file
@@ -316,7 +320,7 @@ public static class Tools
         if (Find(tool) is null) throw new DriverException(Undeclared(tool));
         if (!IsWholePath(file)) throw new DriverException($"`{file}` is not a whole path — name the executable by its whole path.");
         if (!File.Exists(file)) throw new DriverException($"no file at {file} — a tool is a file that is there.");
-        SetWay(home, tool, "file", null, file);
+        SetWay(home, tool, "file", null, file, read: null);
     }
 
     /// <summary>
@@ -341,7 +345,7 @@ public static class Tools
                 + "then uses it");
         }
 
-        SetWay(home, tool, "managed", version, null);
+        SetWay(home, tool, "managed", version, null, read: null);
     }
 
     /// <summary>
@@ -359,13 +363,18 @@ public static class Tools
     /// <returns>False when it is already listed, and nothing is written.</returns>
     /// <exception cref="DriverException">An address that is no resource location, or a file whose <c>locations</c>
     /// this build cannot read; nothing is written.</exception>
-    public static bool AddLocation(string home, string address)
+    public static bool AddLocation(string home, string address) => AddLocation(home, address, read: null);
+
+    /// <summary><see cref="AddLocation(string, string)"/>, with what happens once the file is read: a test's other writer.</summary>
+    internal static bool AddLocation(string home, string address, Action? read)
     {
         if (LocationProblem(address) is { } problem) throw new DriverException($"{problem} — nothing was written.");
-        var (path, root, locations, read) = WritableLocations(home);
+        using var locked = KeepLock.Take(DaorisHome.Entry(home, HomeEntry.Tools));
+        var (path, root, locations, understood) = WritableLocations(home);
+        read?.Invoke();
         if (locations.Any(each => Text(each) == address)) return false;
         locations.Add(address);
-        Keep(path, read, root);
+        Keep(path, understood, root);
         return true;
     }
 
@@ -374,10 +383,15 @@ public static class Tools
     /// Every other entry stays as written, one that is not an address included. The CLI's <c>removeLocation</c>.
     /// </summary>
     /// <returns>False when it was not listed, and nothing is written.</returns>
-    public static bool RemoveLocation(string home, string address)
+    public static bool RemoveLocation(string home, string address) => RemoveLocation(home, address, read: null);
+
+    /// <summary><see cref="RemoveLocation(string, string)"/>, with what happens once the file is read: a test's other writer.</summary>
+    internal static bool RemoveLocation(string home, string address, Action? read)
     {
         if (!File.Exists(DaorisHome.Entry(home, HomeEntry.Tools))) return false;
-        var (path, root, locations, read) = WritableLocations(home);
+        using var locked = KeepLock.Take(DaorisHome.Entry(home, HomeEntry.Tools));
+        var (path, root, locations, understood) = WritableLocations(home);
+        read?.Invoke();
         var removed = false;
         for (var at = locations.Count - 1; at >= 0; at--)
         {
@@ -387,7 +401,7 @@ public static class Tools
         }
 
         if (!removed) return false;
-        Keep(path, read, root);
+        Keep(path, understood, root);
         return true;
     }
 
@@ -426,20 +440,28 @@ public static class Tools
     /// <summary>
     /// The edit from <paramref name="read"/> to <paramref name="root"/> made onto the file as it stands (KEEPALL1c,
     /// <see cref="JsonKeeping.Save"/>): its line ends kept, a key written twice refused, no edit nothing written. Written from the
-    /// nodes, it wrote LF over a file in CRLF and edited a file holding a key twice. The CLI's <c>keepTools</c>.
+    /// nodes, it wrote LF over a file in CRLF and edited a file holding a key twice.
     /// </summary>
+    /// <remarks>
+    /// 🔴 <b>Its writer holds the file's <see cref="KeepLock"/> from its read to here</b> (PUSH1f2c, D194 point 3, the alone-path
+    /// design §1.4): each writer decides its edit from the file as it read it (a location already listed, the list it adds to), so a
+    /// change another writer made between that read and this write was lost where the edit wrote <c>locations</c> whole. A terminal's
+    /// change beside a running window's is the case: the lease keeps them apart only while no instance runs.
+    /// </remarks>
     private static void Keep(string path, string? read, JsonObject root) =>
-        JsonKeeping.Save(path, read is not null, read ?? "{}\n", JsonFile.Serialize(root));
+        JsonKeeping.SaveHolding(path, read is not null, read ?? "{}\n", JsonFile.Serialize(root));
 
     /// <summary>
     /// Set one tool's way (rule 6): the other ways' fields go, and every key the writer has no field for stays,
     /// on the entry and on the file. Refused over a file it could not read, and over a <c>tools</c> that is no
     /// object.
     /// </summary>
-    private static void SetWay(string home, string id, string way, string? version, string? file)
+    private static void SetWay(string home, string id, string way, string? version, string? file, Action? read)
     {
         if (Find(id) is null) throw new DriverException(Undeclared(id));
-        var (path, root, read) = Writable(home);
+        using var locked = KeepLock.Take(DaorisHome.Entry(home, HomeEntry.Tools));
+        var (path, root, understood) = Writable(home);
+        read?.Invoke();
         if (root["tools"] is { } held && held is not JsonObject)
         {
             throw new DriverException(
@@ -463,7 +485,7 @@ public static class Tools
         entry["use"] = way;
         if (version is not null) entry["version"] = version;
         if (file is not null) entry["file"] = file;
-        Keep(path, read, root);
+        Keep(path, understood, root);
     }
 
     /// <summary>A downloaded version's executable, or why there is none (§3.6's layout).</summary>
@@ -493,7 +515,7 @@ public static class Tools
     }
 
     /// <summary>How a way reads in a sentence.</summary>
-    private static string Words(ToolWay way) => way switch
+    internal static string Words(ToolWay way) => way switch
     {
         ToolWay.System => "the system's",
         ToolWay.Managed => "managed",
@@ -534,7 +556,7 @@ public static class Tools
         return (new ToolEntry(way, null, null, null), null);
     }
 
-    private static string Undeclared(string id) =>
+    internal static string Undeclared(string id) =>
         $"`{id}` is not a tool this build runs — one of: {string.Join(", ", Declared.Select(tool => tool.Id))}. "
         + "A tool is added in the code, never by a file.";
 

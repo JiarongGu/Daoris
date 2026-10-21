@@ -757,21 +757,16 @@ test('the file-local management verbs reach no network module either', () => {
 });
 
 /**
- * `tools.ts` answers "which program" and edits one file (TOOLS2, D121 §4.2): it stays pure. A tool's
- * version is asked where spawning lives, and a download reaches the network through the fetcher the
- * dispatcher hands in (TOOLS4) — so the module that holds the file's rules reaches neither on its own, and
- * neither does anything that reads the lists, unpacks an archive or lays a version out.
+ * `tools.ts` answers "which program" (TOOLS2, D121 §4.2): it stays pure. A tool's version is asked where spawning lives, so the
+ * module that holds the file's rules reaches neither the toolchain nor the network on its own. The lists, the downloads, the
+ * archives and the file's writes are Daoris's driver program's since PUSH1f2c (D194).
  */
 test('the tools file reaches neither the toolchain nor the service client', () => {
-  // TOOLS3: the resource lists are read and merged beside it, as pure. TOOLS4: the download, the archive readers and
-  // the verb are pure too; only the dispatcher's row, below, hands them a fetcher.
-  for (const entry of ['tools.ts', 'resources.ts', 'toolinstall.ts', 'zipfile.ts'].map((name) => cliSource(name))) {
-    const seen = reachableFrom(entry);
-    assert.equal(seen.has(SPAWNS), false, `${entry} reaches the harness toolchain through: ${[...seen].sort().join(', ')}`);
-    assert.equal(seen.has(SERVICE_CLIENT), false, `${entry} reaches the service client through: ${[...seen].sort().join(', ')}`);
-    assert.ok(seen.size > 1, `the walk from ${entry} found nothing, so it proved nothing`);
-  }
-  assert.ok(reachableFrom(cliSource('toolinstall.ts')).has(cliSource('zipfile.ts')), 'the walk from the download no longer reaches the zip reader');
+  const entry = cliSource('tools.ts');
+  const seen = reachableFrom(entry);
+  assert.equal(seen.has(SPAWNS), false, `${entry} reaches the harness toolchain through: ${[...seen].sort().join(', ')}`);
+  assert.equal(seen.has(SERVICE_CLIENT), false, `${entry} reaches the service client through: ${[...seen].sort().join(', ')}`);
+  assert.ok(seen.size > 1, `the walk from ${entry} found nothing, so it proved nothing`);
 });
 
 /**
@@ -799,25 +794,23 @@ test('agent pin reaches a release channel only through the fetcher the dispatche
 });
 
 /**
- * The same shape for `daoris tool` (TOOLS4, D121 §4.2): `download`, `use … managed`, `update` and `look` reach a
- * tool's maker and a resource location through `service.ts`, handed in by the dispatcher's row with the address rule
- * every hop is held to. Everything that judges what arrived — the lists, the hash, the archive, the layout — imports
- * no network module (the test above this one), so the one place the two meet is the `tool` row, `cli/tool.ts`.
+ * `daoris tool` is Daoris's driver program's since PUSH1f2c (D194 point 1): its row hands the family and its words to the seam, and
+ * the program reaches a tool's maker and a resource location itself, every hop held to the address rule (`ToolInstall`). The CLI's
+ * row reaches no fetcher and no door of its own.
  */
-test('tool download reaches a host only through the fetcher the dispatcher hands in, every hop held to the address rule', () => {
+test('tool hands its words to the driver\'s program, and the rows that reach the service client say so', () => {
   const row = readText(join(cliRoot, 'src', 'cli', 'tool.ts'));
-  assert.match(row, /import \{ instanceDoor, releaseFetcher \} from '\.\.\/(?:[\w-]+\/)*service\.ts';/);
-  assert.match(row, /import \{ isAddress \} from '\.\.\/(?:[\w-]+\/)*tools\.ts';/);
-  // RPC1f hands the door a change goes through after them, the running Daoris's pipe reached through the same module.
-  assert.match(row, /run: \(args\) => commandTool\(args, releaseFetcher\(\{ hop: isAddress, redirects: REDIRECTS, bound: LOOK_BOUND_MS \}\), process\.env,\s+instanceDoor\(/);
+  assert.match(row, /import \{ runDriverProgram \} from '\.\.\/(?:[\w-]+\/)*toolchain\.ts';/);
+  assert.match(row, /run: \(args\) => \(args\.driverProgram \?\? \(\(family, words\) => runDriverProgram\(family, words\)\)\)\('tool', args\.argv\),/);
+  assert.doesNotMatch(row, /service\.ts|releaseFetcher|instanceDoor/);
 
   // The only rows that reach the service client are the ones that say so: a new row reaching it is a decision.
   const reaching = COMMANDS.map((command) => `cli/${command.name}.ts`).filter((entry) => reachableFrom(entry).has(SERVICE_CLIENT));
   // BRAINSTORM1a3: `brainstorm` reaches this machine's own service, by the local host's brainstorm door (D176 point 8). RPC1f:
   // `plugin` reaches the running Daoris's pipe, by the door its row hands in (D171 point 3, the terminal RPC design §9).
+  // PUSH1f2c: `tool` reaches none, its family the driver program's.
   assert.deepEqual(reaching.sort(), [
-    'cli/agent.ts', 'cli/brainstorm.ts', 'cli/connect.ts', 'cli/driver.ts', 'cli/import.ts', 'cli/plugin.ts', 'cli/retire.ts', 'cli/tool.ts',
-    'cli/wire.ts',
+    'cli/agent.ts', 'cli/brainstorm.ts', 'cli/connect.ts', 'cli/driver.ts', 'cli/import.ts', 'cli/plugin.ts', 'cli/retire.ts', 'cli/wire.ts',
   ]);
 });
 

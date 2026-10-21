@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-21 — A resource location another writer added while one wrote `tools.json` was lost (PUSH1f2c)
+
+- **Symptom:** found building PUSH1f2c, the alone-path design §1.4's audit of `tools.json`'s writers. Two writers of the resource
+  locations at once (a terminal's `daoris tool locations add` beside the window's Tools place) could each succeed and one location
+  be gone: the second wrote the list as it had read it.
+- **Root cause:** KEEPALL1c's keeping write takes the file's keep lock over its re-read and its rename, but `Tools.SetWay`,
+  `AddLocation` and `RemoveLocation` read the file and decided their edit before it. `locations` is an array, which the keeping write
+  writes whole, so the edit carried the stale list over the other writer's.
+- **Fix:** D173's PUSH1f2c note. Each writer takes `KeepLock.Take` before its read and writes through `JsonKeeping.SaveHolding`, the
+  keeping write for a holder, so another writer waits its turn and finds the file as this one left it.
+- **Verification:** `ToolsTests.A_change_another_writer_makes_while_this_one_writes_is_kept`, red before for an added and a removed
+  location (the other's lost), green after; `ToolsTests`, `HomeFilesKeepTests`, `KeepLockTests`, `ToolInstallTests` and
+  `ToolActionsTests` green.
+
 ## 2026-10-21 — Wiring a workspace deleted what `remotes.json`'s writers did not know, and the page wrote over a torn map (KEEPALL1e)
 
 - **Symptom:** named by KEEPALL1's audit (D173's KEEPALL1 note). Wiring or unwiring a workspace, at Settings or with

@@ -73,9 +73,9 @@ public sealed record MergedResources(
 /// copies and the list built in, and merges them. Fetching is TOOLS4's.
 /// </summary>
 /// <remarks>
-/// <para>🔴 <b>A TWIN of the CLI's <c>resources.ts</c>.</b> The two share no code — the FILE is the contract — and
-/// each carries the same tables (<c>ToolResourcesTests</c> here, <c>resources.test.ts</c> there), row for row. A
-/// rule changed here is changed there, in the same commit:</para>
+/// <para>🔴 <b>The one reader since PUSH1f2c</b> (D194): the CLI's <c>resources.ts</c> was its twin, held row for row to
+/// <c>ToolResourcesTests</c>' tables, until <c>daoris tool</c> became <c>daoris-driver tool</c>; a member's note naming the CLI names
+/// the function it was the twin of. Its rules:</para>
 /// <list type="number">
 /// <item><c>schema</c> is read first: anything but 1 refuses the whole list, and so does a <c>tools</c> that is no
 /// object.</item>

@@ -808,41 +808,24 @@ export async function registryCheckouts(
   };
 }
 
-/**
- * How a fetcher may follow a host (TOOLS4, D121 §3.6). Absent, it follows redirects as `fetch` does, as a maker's
- * release channel always has been.
- */
-export interface FetchRules {
-  /**
-   * Whether an address may be fetched from: every hop is held to it — the first address and each redirect, which
-   * are then followed here, one at a time, rather than by `fetch`. A tool's download and a resource location are
-   * held to `isAddress`: https://, or http:// to this machine.
-   */
-  hop?: (url: string) => boolean;
-  /** How many redirects one fetch follows before it is refused. */
-  redirects?: number;
-  /** How long a small read (`bytes`) may wait, in milliseconds; a download (`save`) waits for the person's stop. */
-  bound?: number;
-}
-
 /** What `fetch` is to this module: handed in by a test, which answers as a host without opening a socket. */
 export type Get = (url: string, init: RequestInit) => Promise<Response>;
 
 /**
- * A vendor's release channel, over HTTPS (AGT2b), and since TOOLS4 a tool's download and a resource location,
- * held to the rules the caller names. It fetches and nothing else: every judgement about what arrived — the
- * signature, the hashes, the version, the list — is `channels.ts`'s or `toolinstall.ts`'s, where it is tested
- * without a network.
+ * A vendor's release channel, over HTTPS (AGT2b), its redirects followed as `fetch` follows them. It fetches and nothing
+ * else: every judgement about what arrived — the signature, the hashes, the version — is `channels.ts`'s, where it is
+ * tested without a network. A tool's download and a resource location were fetched here too, every hop held to their
+ * address rule (TOOLS4), until PUSH1f2c made them Daoris's driver program's (`ToolInstall`, which holds that rule).
  *
  * @remarks
  * A download is streamed to disk and hashed on the way, never held whole: a Claude Code binary is
  * over 200 MB. A 404 answers null, because "that version is not there" is an answer the caller words;
  * anything else that is not a 2xx is refused here with the address and the status, as `unreachable`.
  */
-export function releaseFetcher(rules: FetchRules = {}, request: Get = fetch): Fetcher {
+export function releaseFetcher(request: Get = fetch): Fetcher {
   return {
     async bytes(url) {
-      const response = await get(url, rules.bound);
+      const response = await get(url);
       return response ? Buffer.from(await response.arrayBuffer()) : null;
     },
 
@@ -868,38 +851,13 @@ export function releaseFetcher(rules: FetchRules = {}, request: Get = fetch): Fe
     },
   };
 
-  async function get(url: string, bound?: number): Promise<Response | null> {
-    const { hop, redirects = 10 } = rules;
-    let at = url;
-    for (let hops = 0; ; hops += 1) {
-      if (hop && !hop(at)) {
-        throw new RefusalError('address', hops === 0
-          ? `${at} is not https://, or http:// to this machine — nothing was fetched from it.`
-          : `${url} redirected to ${at}, which is not https://, or http:// to this machine — nothing was fetched from it.`);
-      }
+  async function get(url: string): Promise<Response | null> {
+    const response = await request(url, { redirect: 'follow', headers: { 'user-agent': 'daoris' } }).catch((error: Error) => {
+      throw new RefusalError('unreachable', `could not reach ${new URL(url).host} — ${error.message}. Nothing was installed.`);
+    });
 
-      const response = await request(at, {
-        redirect: hop ? 'manual' : 'follow',
-        headers: { 'user-agent': 'daoris' },
-        ...(bound === undefined ? {} : { signal: AbortSignal.timeout(bound) }),
-      }).catch((error: Error) => {
-        throw new RefusalError('unreachable', error.name === 'TimeoutError'
-          ? `${new URL(at).host} did not answer within ${Math.round(bound! / 1000)} seconds. Nothing was installed.`
-          : `could not reach ${new URL(at).host} — ${error.message}. Nothing was installed.`);
-      });
-
-      const location = response.headers.get('location');
-      if (hop && response.status >= 300 && response.status < 400 && location) {
-        if (hops >= redirects) {
-          throw new RefusalError('unreachable', `${url} redirected more than ${redirects} times — nothing was fetched from it.`);
-        }
-        at = new URL(location, at).href;
-        continue;
-      }
-
-      if (response.status === 404) return null;
-      if (!response.ok) throw new RefusalError('unreachable', `${at} answered ${response.status} — nothing was installed.`);
-      return response;
-    }
+    if (response.status === 404) return null;
+    if (!response.ok) throw new RefusalError('unreachable', `${url} answered ${response.status} — nothing was installed.`);
+    return response;
   }
 }

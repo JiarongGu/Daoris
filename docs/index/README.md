@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (227)
+## Files over 40 KB (226)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -74,14 +74,14 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs` | 56 | 880 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs` | 57 | 890 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Accounts/AccountRotationWalkTests.cs` | 42 | 633 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Accounts/HarnessTests.cs` | 53 | 1143 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AcpBackgroundTests.cs` | 74 | 1537 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AcpSteerTests.cs` | 57 | 1142 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AcpTests.cs` | 142 | 2606 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/ToolInstallTests.cs` | 41 | 726 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/ToolResourcesTests.cs` | 41 | 573 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/ToolInstallTests.cs` | 41 | 723 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/ToolResourcesTests.cs` | 40 | 568 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Conversations/ChatGoOnTests.cs` | 54 | 1022 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Conversations/ChatGoesOnProcessTests.cs` | 41 | 706 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Conversations/ChatTurnsTests.cs` | 50 | 1022 |
@@ -220,16 +220,15 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/src/doctrine/materialize.ts` | 47 | 935 |
 | `src/Daoris.Cli/src/driver/driverconfig.ts` | 163 | 2883 |
 | `src/Daoris.Cli/src/plugins/plugins.ts` | 82 | 1598 |
-| `src/Daoris.Cli/src/service/service.ts` | 44 | 905 |
+| `src/Daoris.Cli/src/service/service.ts` | 42 | 863 |
 | `src/Daoris.Cli/src/workflows/namedworkflows.ts` | 50 | 969 |
 | `src/Daoris.Cli/src/workflows/workflowdoor.ts` | 61 | 1061 |
 | `src/Daoris.Cli/test/agents/toolchain.test.ts` | 117 | 2206 |
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 47 | 895 |
-| `src/Daoris.Cli/test/dogfood.test.ts` | 50 | 863 |
+| `src/Daoris.Cli/test/dogfood.test.ts` | 50 | 856 |
 | `src/Daoris.Cli/test/driver/driverconfig.test.ts` | 160 | 2923 |
-| `src/Daoris.Cli/test/tools/tools.test.ts` | 44 | 752 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 75 | 1281 |
-| `src/Daoris.Cli/tool-test/desktop-publish.test.ts` | 73 | 1259 |
+| `src/Daoris.Cli/tool-test/desktop-publish.test.ts` | 73 | 1255 |
 | `src/Daoris.Cli/tool-test/merge-branch.test.ts` | 348 | 5323 |
 | `src/Daoris.Cli/tool-test/setup-kit.test.ts` | 55 | 1030 |
 
@@ -251,7 +250,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `.claude/knowledge/twins.md` | 123 | 188 |
+| `.claude/knowledge/twins.md` | 124 | 188 |
 | `docs/2026-09-19-platform-ux.md` | 70 | 730 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 54 | 354 |
@@ -265,7 +264,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-01-plugin-distribution-design.md` | 64 | 910 |
 | `docs/2026-10-01-plugins-screen-design.md` | 66 | 925 |
 | `docs/2026-10-01-self-development-design.md` | 50 | 651 |
-| `docs/2026-10-01-tools-design.md` | 60 | 856 |
+| `docs/2026-10-01-tools-design.md` | 61 | 857 |
 | `docs/2026-10-01-workspace-setup-design.md` | 58 | 744 |
 | `docs/2026-10-02-account-use-design.md` | 87 | 983 |
 | `docs/2026-10-02-knowledge-design-review.md` | 43 | 542 |
@@ -288,4 +287,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-21-alone-path-design.md` | 74 | 545 |
 | `docs/2026-10-21-cleanup-design.md` | 111 | 1061 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
-| `src/Daoris.Desktop/README.md` | 138 | 720 |
+| `src/Daoris.Desktop/README.md` | 139 | 720 |

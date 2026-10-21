@@ -18716,6 +18716,14 @@ nor the question, asked again at each look: `HeldAttempts.WhySaid` and the page'
 Other unanswered codes keep their words. Proof: `QuestCloseTests` (CLOSE1u's unanswered case) and `WorkMilestone.test.tsx` in both
 languages. On Opus: about 40 tool calls. Detail: D173's FABRIC-CLOSE1y note.
 
+## PUSH1f2c — the tools (2026-10-21, D194)
+
+> - [ ] **PUSH1f2c — the tools** (cli, driver, modules; after 2a; D194, the alone-path design §5). Read its row in §5 and the sections it names; build it end to end (D187), the family's TypeScript leaving as §4 says. Proof: as §5 names it.
+
+**Outcome** 2026-10-21: `daoris tool` runs `daoris-driver tool`, each change its Tools route or the library's operation; a download
+stages under its process's name and publishes under the lease, waited for; `tools.json`'s writers hold the keep lock from their read;
+today's text kept by a 49-case table, five rows changed. The tools' TypeScript left. Detail: D194's PUSH1f2c note, D173's of this
+day. Unproven until the install: a `daoris tool` change confirmed in the open window.
 ## SYNCMERGE1c4 — *bring mine forward* waits while the losing session still runs (2026-10-21, D178)
 
 > - [ ] **SYNCMERGE1c4 — *bring mine forward* waits while the losing session still runs** (service or web; D178 point 3 and its traps). Neither the service nor the page holds the press until the lost take's process has ended. Proof: a service refusal test or a web state test.
