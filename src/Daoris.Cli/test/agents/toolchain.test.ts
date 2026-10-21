@@ -1,24 +1,21 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { dirname, join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import {
-  TOOLCHAINS, accountLines, addKeyAccount, commandHarness, harnessesPath, joinsOf, keyOf, managedBinary, managedHome,
-  nextAccount, portsHeld, profileHome, profiles, probe, readHarnessSettings, removeProfile, replaceKeyAccount, resolveProfile,
-  resolveVersion, signInNew, signInTo, versionFromNpm, withDefault, writeHarnessSettings,
+  TOOLCHAINS, commandHarness, harnessesPath, keyOf, managedBinary, managedHome,
+  nextAccount, profileHome, profiles, probe, readHarnessSettings, removeProfile, resolveProfile,
+  resolveVersion, versionFromNpm, withDefault, writeHarnessSettings,
 } from '../../src/agents/toolchain.ts';
-import type { HarnessSettings, PortHold, Toolchain } from '../../src/agents/toolchain.ts';
+import type { HarnessSettings, Toolchain } from '../../src/agents/toolchain.ts';
 import { CLAUDE_LATEST, CODEX_LATEST, CODEX_RELEASES, codexTarget } from '../../src/agents/channels.ts';
 import type { Fetcher } from '../../src/agents/channels.ts';
-import { coolingOf, coolingWhen, machineZone } from '../../src/accounts/cooling.ts';
-import { keepRead, readOf, readsOf } from '../../src/accounts/accountreads.ts';
-import { accountNames, renameAccount } from '../../src/accounts/accountnames.ts';
 import { homeEntry } from '../../src/platform/home.ts';
-import { makeFixture, type Fixture } from '../_fixture.ts';
+import { makeFixture } from '../_fixture.ts';
 import { captureError } from '../_fixture.ts';
-import { defaulted, ordered } from './_wiring.ts';
+import { defaulted } from './_wiring.ts';
 import { TAR_END, tarEntry } from '../_tar.ts';
 
 /**
@@ -322,111 +319,29 @@ test('a remove naming somewhere else is refused before anything is deleted', () 
 // ——— Twin rule 6: an account that is an API key keeps its key in `keys.json` under the home
 // (AGT3, D67 §1) — beside the account, never inside it — and shows it only by its last four.
 
-test('an API key makes an account whose key is kept beside it, in the file both twins read', () => {
-  const fx = makeFixture('harness-key');
-  const lines: string[] = [];
+// An account made of a key, and a new key into one, are the driver program's since PUSH1f2e5 (`daoris-driver agent key`): their cases
+// are `agents-text.json`'s rows, and `ApiKeyAccountTests` and `KeyReplaceTests` hold `HarnessKeys`. What is left here reads a key, and
+// removes one with its account; a key account is laid as the driver writes it.
 
-  const account = addKeyAccount(fx.root, 'claude-code', 'sk-ant-api03-cli-test-wxyz\n', (l) => lines.push(l));
-
-  assert.match(account, /^acct-[0-9a-f]{8}$/);
-  assert.deepEqual(readdirSync(profileHome(fx.root, 'claude-code', account)), []);
-  // The file's shape is the twin contract: the driver's HarnessKeys reads exactly this.
-  assert.deepEqual(JSON.parse(readFileSync(homeEntry(fx.root, 'keys'), 'utf8')),
-    { 'claude-code': { [account]: 'sk-ant-api03-cli-test-wxyz' } });
-  assert.equal(keyOf(fx.root, 'claude-code', account), 'sk-ant-api03-cli-test-wxyz');
-  // ACCT2: its id is never what a person has to read; the end offers a name of theirs.
-  assert.match(lines.join('\n'), new RegExp(`daoris agent profile rename claude-code ${account} <name>`));
-  // Said back by its handle only.
-  assert.match(lines.join('\n'), /…wxyz/);
-  assert.doesNotMatch(lines.join('\n'), /sk-ant-api03-cli-test/);
-  fx.cleanup();
-});
-
-/** 🔴 A key typed as an argument is in the shell's history: refused, saying so, and nothing made. */
-test('`agent key` refuses a key on the command line', () => {
-  const fx = makeFixture('harness-key-argv');
-
-  const error = captureError(() => run(['key', 'claude-code', 'sk-ant-api03-in-history-0000'], at(fx)));
-
-  assert.match(error.message, /stdin, not on the command line/);
-  assert.doesNotMatch(error.message, /in-history/);
-  assert.deepEqual(profiles(fx.root, 'claude-code'), []);
-  fx.cleanup();
-});
-
-test('a blank key is refused and makes nothing; an agent with no key variable takes none', () => {
-  const fx = makeFixture('harness-key-refused');
-
-  assert.match(captureError(() => addKeyAccount(fx.root, 'claude-code', '  \n', () => {})).message, /not an API key/);
-  assert.match(captureError(() => addKeyAccount(fx.root, 'dsh', 'sk-x-1234', () => {})).message, /takes no API key/);
-  assert.deepEqual(profiles(fx.root, 'claude-code'), []);
-  assert.deepEqual(profiles(fx.root, 'dsh'), []);
-  fx.cleanup();
-});
+/** A key account laid as the driver's `HarnessKeys.Add` writes it: its folder, and its key in `keys.json` beside it. */
+function keyed(fx: { root: string }, agent: string, account: string, key: string): string {
+  mkdirSync(profileHome(fx.root, agent, account), { recursive: true });
+  const path = homeEntry(fx.root, 'keys');
+  mkdirSync(dirname(path), { recursive: true });
+  const held = existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) as Record<string, Record<string, string>> : {};
+  writeFileSync(path, JSON.stringify({ ...held, [agent]: { ...held[agent], [account]: key } }), 'utf8');
+  return account;
+}
 
 test('removing a key account removes its key, and another account keeps its own', () => {
   const fx = makeFixture('harness-key-remove');
-  const first = addKeyAccount(fx.root, 'claude-code', 'sk-first-1111', () => {});
-  const second = addKeyAccount(fx.root, 'claude-code', 'sk-second-2222', () => {});
+  const first = keyed(fx, 'claude-code', 'acct-00000001', 'sk-first-1111');
+  const second = keyed(fx, 'claude-code', 'acct-00000002', 'sk-second-2222');
 
   removeProfile(fx.root, 'claude-code', first);
 
   assert.equal(keyOf(fx.root, 'claude-code', first), null);
   assert.equal(keyOf(fx.root, 'claude-code', second), 'sk-second-2222');
-  fx.cleanup();
-});
-
-// KEYREPLACE1a: a refused key is replaced in the same account, which keeps its id and so its name, lists and defaults.
-test('a new key replaces an account\'s key in place, ends what marked it refused, and leaves another account alone', () => {
-  const fx = makeFixture('harness-key-replace');
-  const first = addKeyAccount(fx.root, 'claude-code', 'sk-first-1111', () => {});
-  const second = addKeyAccount(fx.root, 'claude-code', 'sk-second-2222', () => {});
-  renameAccount(fx.root, 'claude-code', profiles(fx.root, 'claude-code'), first, 'work-key');
-  defaulted(at(fx), 'claude-code', first, null);
-  keepRead(fx.root, 'claude-code', first, 'out', new Date());
-  writeFileSync(fx.entry('cooling'), JSON.stringify({ 'claude-code': { [first]: { until: '2999-01-01T00:00:00Z' } } }), 'utf8');
-  const lines: string[] = [];
-
-  replaceKeyAccount(fx.root, 'claude-code', 'work-key', 'sk-ant-api03-new-key-abcd\n', (l) => lines.push(l));
-
-  assert.equal(keyOf(fx.root, 'claude-code', first), 'sk-ant-api03-new-key-abcd');
-  assert.equal(keyOf(fx.root, 'claude-code', second), 'sk-second-2222');
-  assert.deepEqual(profiles(fx.root, 'claude-code').sort(), [first, second].sort());
-  assert.equal(readHarnessSettings(at(fx)).defaults['claude-code'], first);
-  assert.equal(accountNames(fx.root, 'claude-code')[first], 'work-key');
-  assert.notEqual(readOf(readsOf(fx.root, 'claude-code'), first)?.login, 'out');
-  assert.equal(coolingOf(fx.root, 'claude-code', first, new Date()), null);
-  const said = lines.join('\n');
-  assert.match(said, /…abcd/);
-  assert.doesNotMatch(said, /sk-ant-api03-new/);
-  assert.match(said, /running desktop reads the account again at its next press/);
-  fx.cleanup();
-});
-
-test('a key is replaced only in an account that exists and is a key, with a key that is one', () => {
-  const fx = makeFixture('harness-key-replace-refused');
-  const kept = addKeyAccount(fx.root, 'claude-code', 'sk-kept-1111', () => {});
-  mkdirSync(profileHome(fx.root, 'claude-code', 'signed-in'), { recursive: true });
-
-  assert.match(captureError(() => replaceKeyAccount(fx.root, 'claude-code', 'nobody', 'sk-x-1234', () => {})).message, /no account/);
-  assert.match(captureError(() => replaceKeyAccount(fx.root, 'claude-code', 'signed-in', 'sk-x-1234', () => {})).message, /not an API key account/);
-  assert.match(captureError(() => replaceKeyAccount(fx.root, 'claude-code', kept, '  \n', () => {})).message, /not an API key/);
-  assert.match(captureError(() => replaceKeyAccount(fx.root, 'claude-code', kept, 'sk a b', () => {})).message, /not an API key/);
-  assert.match(captureError(() => replaceKeyAccount(fx.root, 'dsh', kept, 'sk-x-1234', () => {})).message, /takes no API key/);
-  assert.equal(keyOf(fx.root, 'claude-code', kept), 'sk-kept-1111');
-  fx.cleanup();
-});
-
-// The verb reads stdin, which a test cannot hand it: the argv is judged first, so a key typed beside `--account` is still
-// refused as one in the shell's history, and the account's own value is not mistaken for one.
-test('`agent key <agent> --account` still refuses a key on the command line', () => {
-  const fx = makeFixture('harness-key-replace-argv');
-  const kept = addKeyAccount(fx.root, 'claude-code', 'sk-kept-1111', () => {});
-
-  const error = captureError(() => run(['key', 'claude-code', '--account', kept, 'sk-ant-api03-in-history-0000'], at(fx)));
-
-  assert.match(error.message, /stdin, not on the command line/);
-  assert.equal(keyOf(fx.root, 'claude-code', kept), 'sk-kept-1111');
   fx.cleanup();
 });
 
@@ -437,7 +352,7 @@ test('a key account is asked with its key, and listed by its handle', () => {
     "if (process.argv[2] === '--version') { console.log('keyed 1.0'); process.exit(0); }",
     "console.log(JSON.stringify({ loggedIn: Boolean(process.env.ANTHROPIC_API_KEY), authMethod: 'api_key' }));",
   ].join('\n'), 'utf8');
-  const account = addKeyAccount(fx.root, 'claude-code', 'sk-probe-abcd', () => {});
+  const account = keyed(fx, 'claude-code', 'acct-0000abcd', 'sk-probe-abcd');
 
   const report = probe('claude-code', {
     ...TOOLCHAINS['claude-code']!, binary: [process.execPath, script],
@@ -450,14 +365,14 @@ test('a key account is asked with its key, and listed by its handle', () => {
 // ——— Twin rule 7: a door's accounts are its owner's (AGT7). `accountOf` says whose account a door
 // runs as; its accounts, defaults and keys live under that name. Its pin stays its own.
 
-test('a door lists its owner’s accounts, and a key given for it is the owner’s', () => {
+// A key given for a door being its owner's is `agents-text.json`'s row since PUSH1f2e5.
+test('a door lists its owner’s accounts, a key account among them', () => {
   const fx = makeFixture('harness-door-list');
   mkdirSync(profileHome(fx.root, 'claude-code', 'work'), { recursive: true });
 
-  const account = addKeyAccount(fx.root, 'claude-code-acp', 'sk-door-9999', () => {});
+  const account = keyed(fx, 'claude-code', 'acct-00009999', 'sk-door-9999');
   const report = probe('claude-code-acp', TOOLCHAINS['claude-code-acp']!, fx.root, readHarnessSettings(at(fx)));
 
-  assert.equal(keyOf(fx.root, 'claude-code', account), 'sk-door-9999');
   assert.deepEqual(report.profiles.map((p) => p.home).sort(),
     [profileHome(fx.root, 'claude-code', account), profileHome(fx.root, 'claude-code', 'work')].sort());
   fx.cleanup();
@@ -505,411 +420,8 @@ function fakeHarness(fx: { root: string }): Toolchain {
   };
 }
 
-/**
- * 🔴 An account is made by signing in (D66 §3) — the terminal's half of the desktop's *Add an account…* (D50). The
- * sign-in runs into a fresh id (ACCT2), and the end names who signed in by the tool's own answer — and offers it as the
- * account's name, written only by the person's rename. The organisation and the plan are read beside who (ACCOUNTID1) and
- * kept nowhere; an email no other account has needs neither said.
- */
-test('`login --new` keeps a finished sign-in, names who signed in, and offers it as the name, writing none', () => {
-  const fx = makeFixture('harness-sign-in');
-  const toolchain = fakeHarness(fx);
-  const lines: string[] = [];
-
-  const code = signInNew('fake', toolchain, fx.root, (where) => {
-    writeFileSync(join(where, 'credentials.json'), 'someone@example.invalid', 'utf8');
-    return 0;
-  }, (line) => lines.push(line));
-
-  assert.equal(code, 0);
-  const [made] = profiles(fx.root, 'fake');
-  assert.match(made!, /^acct-[0-9a-f]{8}$/);
-  assert.ok(existsSync(join(profileHome(fx.root, 'fake', made!), 'credentials.json')));
-  assert.match(lines.join('\n'), /signed in as someone@example\.invalid/);
-  assert.match(lines.join('\n'), new RegExp(`daoris agent profile rename fake ${made} someone@example\\.invalid`));
-  assert.doesNotMatch(lines.join('\n'), /Org A/);
-  // D66 §3: who signed in is offered, never written without the person.
-  assert.ok(!existsSync(homeEntry(fx.root, 'accounts')));
-
-  const listed = probe('fake', toolchain, fx.root, readHarnessSettings(at(fx)));
-  assert.equal(listed.profiles[0]!.account, 'someone@example.invalid');
-  // ACCOUNTID1: read beside who, fresh, for the list to tell two sign-ins of one email apart.
-  assert.deepEqual([listed.profiles[0]!.org, listed.profiles[0]!.plan], ['Org A', 'max']);
-  fx.cleanup();
-});
-
-/**
- * ACCOUNTID1: one email signed in to two organisations is two accounts. The second's email already names the first, so
- * the end offers the email with its organisation beside it, a name the rename takes; and the list reads them apart.
- */
-test('a second sign-in of an email another account is named is offered it with its organisation', () => {
-  const fx = makeFixture('harness-sign-in-second-org');
-  const toolchain = fakeHarness(fx);
-  const signIn = (org: string, name: string | null) => {
-    const lines: string[] = [];
-    signInNew('fake', toolchain, fx.root, (where) => {
-      writeFileSync(join(where, 'credentials.json'), 'person@example.invalid', 'utf8');
-      writeFileSync(join(where, 'org.txt'), org, 'utf8');
-      return 0;
-    }, (line) => lines.push(line), { name });
-    return lines.join('\n');
-  };
-
-  signIn('Org A', 'person@example.invalid');
-  const [first] = profiles(fx.root, 'fake');
-  const second = signIn('Org B', null);
-  const made = profiles(fx.root, 'fake').find((account) => account !== first)!;
-
-  assert.match(second, new RegExp(`\`daoris agent profile rename fake ${made} "person@example\\.invalid·Org-B"\` names it person@example\\.invalid·Org-B;`));
-  // ACCOUNTID1c: the end tells the second sign-in apart from the first, in its own sentence.
-  assert.match(second, new RegExp(`daoris: signed in as person@example\\.invalid · Org B — this machine lists it as \`${made}\`\\.`));
-  // Accepting the offer names it: the email was refused as taken, and this is not.
-  assert.equal(renameAccount(fx.root, 'fake', profiles(fx.root, 'fake'), made, 'person@example.invalid·Org-B'), 'person@example.invalid·Org-B');
-  const listed = probe('fake', toolchain, fx.root, readHarnessSettings(at(fx)));
-  assert.deepEqual(listed.profiles.map((profile) => [profile.account, profile.org]).sort(),
-    [['person@example.invalid', 'Org A'], ['person@example.invalid', 'Org B']]);
-  fx.cleanup();
-});
-
-/** ACCOUNTID1c: a second sign-in named with the organisation beside the email is "that name", and the email is refused as taken. */
-test('a second sign-in named email·organisation says it lists it by that name', () => {
-  const fx = makeFixture('harness-sign-in-second-org-named');
-  const toolchain = fakeHarness(fx);
-  const signIn = (org: string, name: string): string => {
-    const lines: string[] = [];
-    signInNew('fake', toolchain, fx.root, (where) => {
-      writeFileSync(join(where, 'credentials.json'), 'person@example.invalid', 'utf8');
-      writeFileSync(join(where, 'org.txt'), org, 'utf8');
-      return 0;
-    }, (line) => lines.push(line), { name });
-    return lines.join('\n');
-  };
-
-  signIn('Org A', 'person@example.invalid');
-  const before = profiles(fx.root, 'fake');
-  const refused = captureError(() => signInNew('fake', toolchain, fx.root, () => 0, () => {}, { name: 'person@example.invalid' }));
-  assert.match(refused.message, /name it `person@example\.invalid·<organization>`, with the organization it signed in to/);
-  assert.deepEqual(profiles(fx.root, 'fake'), before);
-
-  assert.match(signIn('Org B', 'person@example.invalid·Org-B'),
-    /daoris: signed in as person@example\.invalid · Org B — this machine lists it by that name\./);
-  fx.cleanup();
-});
-
-/**
- * ACCTQUOTE1: who signed in is offered as a command the person pastes, so it is spelled for a shell — and where no spelling
- * holds in every shell, the command names a placeholder and the sentence says who.
- */
-test('`login --new` offers who signed in as a command every shell reads as written', () => {
-  const fx = makeFixture('harness-sign-in-spelled');
-  const toolchain = fakeHarness(fx);
-  const said = (who: string): string => {
-    const lines: string[] = [];
-    signInNew('fake', toolchain, fx.root, (where) => {
-      writeFileSync(join(where, 'credentials.json'), who, 'utf8');
-      return 0;
-    }, (line) => lines.push(line));
-    return lines.join('\n');
-  };
-
-  assert.match(said("o'brien@example.invalid"), /`daoris agent profile rename fake acct-[0-9a-f]{8} "o'brien@example\.invalid"` names it o'brien@/);
-  assert.match(said('r&d@example.invalid'), /`daoris agent profile rename fake acct-[0-9a-f]{8} <name>` names it r&d@example\.invalid;/);
-  fx.cleanup();
-});
-
-/**
- * ACCT1, ACCT2: a new account named as it is made, and put into the lists the person named in the same step; the end says
- * where it runs. A list that cannot be joined is refused before anything starts, so it costs nothing.
- */
-test('`login --new --name --join` names the new account, joins the lists named, and says where it runs', () => {
-  const fx = makeFixture('harness-sign-in-join');
-  const toolchain = fakeHarness(fx);
-  mkdirSync(profileHome(fx.root, 'fake', 'account-1'), { recursive: true });
-  writeFileSync(at(fx), JSON.stringify({ rotation: { fake: ['account-1'] }, workspaceRotation: { work: { fake: ['account-1'] } } }), 'utf8');
-  const lines: string[] = [];
-
-  const code = signInNew('fake', toolchain, fx.root, (where) => {
-    writeFileSync(join(where, 'credentials.json'), 'spare@example.invalid', 'utf8');
-    return 0;
-  }, (line) => lines.push(line), { name: 'spare', joins: ['work', null], path: at(fx) });
-
-  assert.equal(code, 0);
-  const made = profiles(fx.root, 'fake').find((name) => name !== 'account-1')!;
-  const settings = readHarnessSettings(at(fx));
-  assert.deepEqual(settings.workspaceRotation.work!.fake, ['account-1', made]);
-  assert.deepEqual(settings.rotation.fake, ['account-1', made]);
-  assert.deepEqual(JSON.parse(readFileSync(homeEntry(fx.root, 'accounts'), 'utf8')), { fake: { [made]: { name: 'spare' } } });
-  assert.match(lines.join('\n'), /this machine lists it as `spare`/);
-  assert.match(lines.join('\n'), /`spare` runs work in this machine's list, `work`'s list/);
-  assert.doesNotMatch(lines.join('\n'), /profile rename/);
-
-  // A workspace that takes this machine's list cannot be joined: refused before anything starts, nothing made.
-  const before = profiles(fx.root, 'fake');
-  const refused = captureError(() => signInNew('fake', toolchain, fx.root, () => 0, () => {}, { joins: ['forge'], path: at(fx) }));
-  assert.match(refused.message, /`forge` names no `fake` account or list of its own/);
-  assert.deepEqual(profiles(fx.root, 'fake'), before);
-  // So is a name another account has.
-  const taken = captureError(() => signInNew('fake', toolchain, fx.root, () => 0, () => {}, { name: 'SPARE', path: at(fx) }));
-  assert.match(taken.message, /already names/);
-  assert.deepEqual(profiles(fx.root, 'fake'), before);
-  fx.cleanup();
-});
-
-/** ACCT1: a new account that joins nothing says it runs nowhere, the lists there are, and the command that joins one. */
-test('a new account in no list says no start runs on it, and names the lists and the join', () => {
-  const fx = makeFixture('harness-sign-in-nowhere');
-  const toolchain = fakeHarness(fx);
-  mkdirSync(profileHome(fx.root, 'fake', 'account-1'), { recursive: true });
-  writeFileSync(at(fx), JSON.stringify({ workspaceRotation: { work: { fake: ['account-1'] } } }), 'utf8');
-  const lines: string[] = [];
-
-  signInNew('fake', toolchain, fx.root, (where) => {
-    writeFileSync(join(where, 'credentials.json'), 'spare@example.invalid', 'utf8');
-    return 0;
-  }, (line) => lines.push(line), { path: at(fx) });
-
-  // OWNSPACE1d (D175): the machine's scope names nothing, so Daoris takes its accounts in turn (the modules' `PlacesSaid`, said alike).
-  const said = lines.join('\n');
-  assert.match(said, /no list and no default names `acct-[0-9a-f]{8}`, and none names another, so Daoris takes its accounts in turn/);
-  assert.match(said, /The lists here: `work`'s own \(account-1\)/);
-  assert.doesNotMatch(said, /no start runs on it/);
-  fx.cleanup();
-});
-
-/** A machine that names another account keeps the join: the new one runs nowhere until a list holds it (ACCT1). */
-test('a new account in no list, where the machine names another, says no start runs on it and names the join', () => {
-  const fx = makeFixture('harness-sign-in-nowhere-named');
-  const toolchain = fakeHarness(fx);
-  mkdirSync(profileHome(fx.root, 'fake', 'account-1'), { recursive: true });
-  writeFileSync(at(fx), JSON.stringify({ rotation: { fake: ['account-1'] } }), 'utf8');
-  const lines: string[] = [];
-
-  signInNew('fake', toolchain, fx.root, (where) => {
-    writeFileSync(join(where, 'credentials.json'), 'spare@example.invalid', 'utf8');
-    return 0;
-  }, (line) => lines.push(line), { path: at(fx) });
-
-  const said = lines.join('\n');
-  assert.match(said, /no list and no default holds `acct-[0-9a-f]{8}`, so no start runs on it/);
-  assert.match(said, /daoris agent profile join fake acct-[0-9a-f]{8} <workspace>…\|--machine/);
-  fx.cleanup();
-});
-
-/**
- * 🔴 ACCT1: signing back in to an account that is here signs in there — by its id or its name, else the machine's default
- * — never a new folder. The install's owner signed in to bring a signed-out account back and got a new account no list
- * held.
- */
-test('`login --profile` signs in to the account that is here, by its id or its name, never a new folder', () => {
-  const fx = makeFixture('harness-sign-in-existing');
-  const toolchain = fakeHarness(fx);
-  mkdirSync(profileHome(fx.root, 'fake', 'account-1'), { recursive: true });
-  mkdirSync(profileHome(fx.root, 'fake', 'account-2'), { recursive: true });
-  writeFileSync(fx.entry('accounts'), JSON.stringify({ fake: { 'account-2': { name: 'seat' } } }), 'utf8');
-  writeFileSync(at(fx), JSON.stringify({ defaults: { fake: 'account-1' }, rotation: { fake: ['account-1', 'account-2'] } }), 'utf8');
-  const reached: string[] = [];
-  const signIn = (where: string) => {
-    reached.push(where);
-    writeFileSync(join(where, 'credentials.json'), 'back@example.invalid', 'utf8');
-    return 0 as const;
-  };
-
-  const lines: string[] = [];
-  assert.equal(signInTo('fake', toolchain, fx.root, 'seat', signIn, (line) => lines.push(line), { path: at(fx) }), 0);
-  assert.equal(signInTo('fake', toolchain, fx.root, 'account-2', signIn, () => {}, { path: at(fx) }), 0);
-  assert.equal(signInTo('fake', toolchain, fx.root, null, signIn, () => {}, { path: at(fx) }), 0);
-
-  assert.deepEqual(reached, [
-    profileHome(fx.root, 'fake', 'account-2'), profileHome(fx.root, 'fake', 'account-2'), profileHome(fx.root, 'fake', 'account-1'),
-  ]);
-  assert.deepEqual(profiles(fx.root, 'fake'), ['account-1', 'account-2']);
-  assert.match(lines.join('\n'), /into the account `seat`/);
-  assert.match(lines.join('\n'), /`seat` runs work in this machine's list/);
-
-  // An account that is not here is refused before the sign-in runs, and no folder is made.
-  const refused = captureError(() => signInTo('fake', toolchain, fx.root, 'account-3', signIn, () => {}, { path: at(fx) }));
-  assert.match(refused.message, /no account `account-3` on this machine, so nothing was signed in and no account was made/);
-  assert.match(refused.message, /account-1, seat \(account-2\)/);
-  assert.equal(reached.length, 3);
-  assert.ok(!existsSync(profileHome(fx.root, 'fake', 'account-3')));
-
-  // None named and no default is refused too, naming the new account's door.
-  writeFileSync(at(fx), '{}', 'utf8');
-  const none = captureError(() => signInTo('fake', toolchain, fx.root, null, signIn, () => {}, { path: at(fx) }));
-  assert.match(none.message, /name the `fake` account to sign in to/);
-  assert.match(none.message, /daoris agent login fake --new/);
-  fx.cleanup();
-});
-
-/** ACCT1, ACCT2: an account with no name signed back in is offered who signed in as one; one with a name is not. */
-test('signing back in to an account with no name offers who signed in as its name, writing none', () => {
-  const fx = makeFixture('harness-sign-in-offer');
-  const toolchain = fakeHarness(fx);
-  mkdirSync(profileHome(fx.root, 'fake', 'account-1'), { recursive: true });
-  const lines: string[] = [];
-
-  signInTo('fake', toolchain, fx.root, 'account-1', (where) => {
-    writeFileSync(join(where, 'credentials.json'), 'back@example.invalid', 'utf8');
-    return 0;
-  }, (line) => lines.push(line), { path: at(fx) });
-
-  assert.match(lines.join('\n'), /daoris agent profile rename fake account-1 back@example\.invalid/);
-  assert.match(lines.join('\n'), /no list and no default names `account-1`, and none names another, so Daoris takes its accounts in turn/);
-  assert.ok(!existsSync(homeEntry(fx.root, 'accounts')));
-  fx.cleanup();
-});
-
-test('a sign-in named for its email says the email once (ACCTNAME1)', () => {
-  const fx = makeFixture('harness-sign-in-once');
-  const toolchain = fakeHarness(fx);
-  const lines: string[] = [];
-
-  signInNew('fake', toolchain, fx.root, (where) => {
-    writeFileSync(join(where, 'credentials.json'), 'Same@example.invalid', 'utf8');
-    return 0;
-  }, (line) => lines.push(line), { name: 'same@example.invalid', joins: [], path: at(fx) });
-
-  const end = lines.find((line) => line.startsWith('daoris: signed in as'))!;
-  assert.equal(end.toLowerCase().split('same@example.invalid').length - 1, 1);
-  assert.match(end, /this machine lists it by that name/);
-  fx.cleanup();
-});
-
-test('`--join` names workspaces, repeated or comma-separated, and `--join-machine` this machine\'s list', () => {
-  assert.deepEqual(joinsOf(['login', 'claude-code', '--new', '--join', 'work,lab', '--join', ' tools ', '--join-machine']),
-    ['work', 'lab', 'tools', null]);
-  assert.deepEqual(joinsOf(['login', 'claude-code', '--join', 'work', '--join', 'work']), ['work']);
-  assert.deepEqual(joinsOf(['login', 'claude-code']), []);
-  assert.match(captureError(() => joinsOf(['login', 'claude-code', '--join'])).message, /`--join` needs a workspace/);
-  assert.match(captureError(() => joinsOf(['login', 'claude-code', '--join', '--new'])).message, /`--join` needs a workspace/);
-});
-
-test('`login` refuses `--new` beside `--profile`, and `--name` without `--new`', () => {
-  const fx = makeFixture('harness-login-args');
-
-  assert.match(captureError(() => run(['login', 'claude-code', '--new', '--profile', 'work'], at(fx))).message,
-    /`--new` signs in to a new account and `--profile` to one that is here/);
-  assert.match(captureError(() => run(['login', 'claude-code', '--name', 'work'], at(fx))).message,
-    /`--name` names a new account as it is made/);
-  // An account that is not here is refused before any login flow runs.
-  assert.match(captureError(() => run(['login', 'claude-code', '--profile', 'nobody'], at(fx))).message,
-    /no account `nobody` on this machine/);
-  assert.deepEqual(profiles(fx.root, 'claude-code'), []);
-  fx.cleanup();
-});
-
-// ——— ACCT2: an account's name, from the terminal. Its id stays, so every list, default, reading and record keeps it.
-
-/**
- * ACCOUNTID1: two sign-ins of one email in two organisations are listed apart, the organisation after who, and each said
- * once (ACCTNAME1's rule): a name that is the email says the organisation alone after it, and a name that is the email with
- * its organisation says neither again. An email no other account has needs no organisation, and no plan is said.
- */
-test('`agent list` tells two sign-ins of one email apart by their organisations, each said once', () => {
-  const fx = makeFixture('harness-list-orgs');
-  const signedIn = (name: string, account: string, org: string, plan: string) =>
-    ({ name, home: '', login: 'in' as const, account, key: null, org, plan });
-  const report = {
-    harness: 'claude-code', present: true, version: '1', problem: null, machineDefault: null,
-    profiles: [
-      signedIn('acct-0000000a', 'person@example.invalid', 'Org A', 'max'),
-      signedIn('acct-0000000b', 'person@example.invalid', 'Org B', 'max'),
-      signedIn('acct-0000000d', 'person@example.invalid', 'Org D', 'max'),
-      signedIn('acct-0000000c', 'other@example.invalid', 'Org A', 'pro'),
-    ],
-  };
-  writeFileSync(fx.entry('accounts'), JSON.stringify({ 'claude-code': {
-    'acct-0000000a': { name: 'person@example.invalid' }, 'acct-0000000b': { name: 'person@example.invalid·Org-B' } } }), 'utf8');
-
-  const lines = accountLines('claude-code', TOOLCHAINS['claude-code']!, report, readHarnessSettings(at(fx)), fx.root, new Date(), 'UTC');
-  const line = (account: string) => lines.find((each) => each.includes(account))!;
-
-  assert.match(line('acct-0000000a'), /person@example\.invalid +in +Org A \(id acct-0000000a\)$/);
-  assert.match(line('acct-0000000b'), /person@example\.invalid·Org-B +in +\(id acct-0000000b\)$/);
-  assert.match(line('acct-0000000d'), /acct-0000000d +in +person@example\.invalid · Org D$/);
-  assert.match(line('acct-0000000c'), /acct-0000000c +in +other@example\.invalid$/);
-  assert.doesNotMatch(lines.join('\n'), /\bmax\b|\bpro\b/);
-  fx.cleanup();
-});
-
-/** ACCTNAME1: the email offered as the name is read once, and the name column fits the longest name. */
-test('`agent list` says an account\'s email once when it is the name, and sizes the name column to the longest', () => {
-  const fx = makeFixture('harness-acctname');
-  const long = 'a.rather.long.person@work.example';
-  const report = {
-    harness: 'claude-code', present: true, version: '1', problem: null, machineDefault: 'account-1',
-    profiles: [
-      { name: 'account-1', home: '', login: 'in' as const, account: long.toUpperCase(), key: null },
-      { name: 'account-2', home: '', login: 'in' as const, account: 'other@work.example', key: null },
-    ],
-  };
-  writeFileSync(fx.entry('accounts'), JSON.stringify({ 'claude-code': { 'account-1': { name: long } } }), 'utf8');
-  // The machine names account-1, so account-2 runs nowhere and its continuation line is said (OWNSPACE1d: with nothing named, none is).
-  writeFileSync(at(fx), JSON.stringify({ defaults: { 'claude-code': 'account-1' } }), 'utf8');
-  const lines = accountLines('claude-code', TOOLCHAINS['claude-code']!, report, readHarnessSettings(at(fx)), fx.root, new Date(), 'UTC');
-  const first = lines.find((line) => line.includes(long))!;
-  // Once: the email after the name is dropped where it folds equal; another account's is kept.
-  assert.equal(first.toLowerCase().split(long).length - 1, 1);
-  assert.match(lines.join('\n'), /account-2 +in +other@work\.example/);
-  // The column fits the long name, so the login starts one space after it, and the continuation lines align.
-  assert.match(first, new RegExp(`${long.replace(/\./g, '\\.')} in `));
-  const width = long.length;
-  assert.ok(lines.filter((line) => line.includes('rotation')).every((line) => /rotation +/.test(line)));
-  assert.ok(lines.some((line) => line.startsWith(`  ${' '.repeat(14)} ${' '.repeat(width)} `)));
-  fx.cleanup();
-});
-
-// ——— ACCT1: an account put into lists from the terminal, and one in none said where it is listed.
-
-test('`agent list` says an account no list and no default holds runs nowhere, and how to put it in one', () => {
-  const fx = makeFixture('harness-list-nowhere');
-  mkdirSync(profileHome(fx.root, 'claude-code', 'account-1'), { recursive: true });
-  mkdirSync(profileHome(fx.root, 'claude-code', 'account-2'), { recursive: true });
-  ordered(at(fx), 'claude-code', ['account-1'], null);
-
-  const lines = accountLines('claude-code', TOOLCHAINS['claude-code']!, {
-    harness: 'claude-code', present: true, version: '1', problem: null, machineDefault: null,
-    profiles: [
-      { name: 'account-1', home: '', login: 'in', account: null, key: null },
-      { name: 'account-2', home: '', login: 'in', account: null, key: null },
-    ],
-  }, readHarnessSettings(at(fx)), fx.root, new Date(), 'UTC');
-
-  const nowhere = lines.filter((line) => /no workspace: no list and no default holds it/.test(line));
-  assert.equal(nowhere.length, 1);
-  assert.match(nowhere[0]!, /daoris agent profile join claude-code account-2 <workspace>…\|--machine/);
-  fx.cleanup();
-});
-
-/** OWNSPACE1d (D175): where the machine names nothing, an account in no list is in Daoris's turn, so the list does not say it runs nowhere. */
-test('`agent list` says no account runs nowhere where the machine names nothing', () => {
-  const fx = makeFixture('harness-list-in-turn');
-  mkdirSync(profileHome(fx.root, 'claude-code', 'account-1'), { recursive: true });
-
-  const lines = accountLines('claude-code', TOOLCHAINS['claude-code']!, {
-    harness: 'claude-code', present: true, version: '1', problem: null, machineDefault: null,
-    profiles: [{ name: 'account-1', home: '', login: 'in', account: null, key: null }],
-  }, readHarnessSettings(at(fx)), fx.root, new Date(), 'UTC');
-
-  assert.equal(lines.filter((line) => /no workspace: no list and no default holds it/.test(line)).length, 0);
-  fx.cleanup();
-});
-
-/** A sign-in that did not finish — failed, or ended signed out — leaves nothing behind. */
-test('`login --new` that does not finish leaves nothing behind', () => {
-  const fx = makeFixture('harness-sign-in-unfinished');
-  const toolchain = fakeHarness(fx);
-
-  for (const outcome of [2, 0] as const) {
-    const lines: string[] = [];
-    const code = signInNew('fake', toolchain, fx.root, () => outcome, (line) => lines.push(line));
-
-    assert.equal(code, outcome);
-    assert.deepEqual(profiles(fx.root, 'fake'), []);
-    assert.match(lines.join('\n'), /nothing was kept/);
-  }
-  fx.cleanup();
-});
+// ——— ACCT2: an account's name, from the terminal. Its id stays, so every list, default, reading and record keeps it. How
+// `agent list` says each account (ACCOUNTID1, ACCTNAME1, ACCT1, OWNSPACE1d) is `AgentsTextTests`' `list` rows since PUSH1f2e4.
 
 test('a signed-out home names nobody, and a toolchain that does not ask keeps no name', () => {
   const fx = makeFixture('harness-who');
@@ -933,7 +445,7 @@ test('a signed-out home names nobody, and a toolchain that does not ask keeps no
 
 test('an unknown agent errors naming what exists, never a silent fallback', () => {
   const fx = makeFixture('harness-unknown');
-  const error = captureError(() => run(['install', 'not-an-agent'], at(fx)));
+  const error = captureError(() => run(['update', 'not-an-agent'], at(fx)));
 
   assert.match(error.message, /unknown agent 'not-an-agent'/);
   assert.match(error.message, /claude-code/);
@@ -959,176 +471,8 @@ test('pin refuses a harness Daoris has no package for, rather than guessing one'
   fx.cleanup();
 });
 
-test('list says which version is pinned, and whether it is actually installed', () => {
-  const fx = makeFixture('harness-pin-list');
-  const settings = readHarnessSettings(at(fx));
-  writeHarnessSettings(at(fx), { ...settings, versions: { 'claude-code': '9.9.9' } });
-
-  // Pinned but never installed: the list must say so rather than imply the pin is in force.
-  const out = run(['list'], at(fx)).out;
-  assert.match(out, /9\.9\.9/);
-  assert.match(out, /not installed|missing/i);
-  // And say what the driver does about it, which is refuse — never run whatever PATH has (REV3 CLI F13).
-  assert.equal(/fall back to PATH/i.test(out), false, out);
-  assert.match(out, /refuse/i, out);
-  fx.cleanup();
-});
-
-// ——— `agent list`'s next start (TOOL6f; D130's TOOL6e note, design §16.4): beneath each list, the walk's steps as
-// `profile use` names them, each account of it held now and until when, and where the account it takes is named. This
-// command reads no session record, so it never names that account where a step would choose it (D57, D143). Every agent
-// is pinned to a version nothing installed, so the listing asks no tool anything.
-
-function listedWith(fx: Fixture, wiring: Record<string, unknown>, held: Record<string, unknown> = {}): string {
-  const nowhere = { 'claude-code': '0.0.0-none', 'claude-code-acp': '0.0.0-none', codex: '0.0.0-none', 'codex-acp': '0.0.0-none', dsh: '0.0.0-none' };
-  writeFileSync(fx.entry('cooling'), JSON.stringify(held), 'utf8');
-  writeFileSync(at(fx), JSON.stringify({ versions: nowhere, ...wiring }), 'utf8');
-  return run(['list'], at(fx)).out;
-}
-
-function claudeAccounts(fx: { root: string }, ...names: string[]): void {
-  for (const name of names) mkdirSync(profileHome(fx.root, 'claude-code', name), { recursive: true });
-}
-
-/** A moment `hours` from now, as the driver writes `until`, and as `agent list` says it in this machine's zone. */
-function moment(hours: number): { until: string; said: string } {
-  const until = new Date(Math.floor((Date.now() + hours * 3_600_000) / 60_000) * 60_000).toISOString().replace(/\.\d+Z$/, 'Z');
-  return { until, said: coolingWhen(new Date(until), machineZone()).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') };
-}
-
-// UX6e2: the screen that names it is the agent's page in the Agents place since UX6e (D150 §5.2).
-const POINTER = 'Agents → the agent\'s page → How accounts are used names the account it takes, from the sessions Daoris '
-  + 'runs and its last starts, which this terminal does not read';
-
-/**
- * TOOL6g: one account list per tool. A door onto another agent's accounts (`claude-code-acp`) listed the same accounts
- * again, with states its owner had already said (`unknown` beside `out`). It now names whose accounts it runs on, once.
- */
-test('`agent list` lists a tool\'s accounts once, under the tool, and a door names whose it runs on', () => {
-  const fx = makeFixture('harness-list-one');
-  claudeAccounts(fx, 'account-1', 'account-2');
-
-  const out = listedWith(fx, { rotation: { 'claude-code': ['account-1', 'account-2'] } });
-
-  assert.equal(out.match(/^\s+account-1\s/gm)?.length, 1, out);
-  assert.equal(out.match(/rotation\s+account-1, then account-2/g)?.length, 1, out);
-  assert.match(out, /claude-code-acp[^\n]*\n(?:\s{17}[^\n]*\n)*?\s{17}its accounts are Claude Code's, listed under `claude-code`: this is another way Claude Code runs on them\n/);
-  fx.cleanup();
-});
-
-test('`agent list` says the next start\'s steps beneath each list, and where the account it takes is named (TOOL6f)', () => {
-  const fx = makeFixture('harness-list-next');
-  claudeAccounts(fx, 'account-1', 'account-2', 'account-3');
-
-  const out = listedWith(fx, {
-    rotation: { 'claude-code': ['account-1', 'account-2', 'account-3'] },
-    workspaceRotation: { work: { 'claude-code': ['account-2', 'account-1'] } },
-    workspaceRotationUse: { work: { 'claude-code': { use: 'order' } } },
-  });
-
-  assert.match(out, new RegExp('rotation\\s+account-1, then account-2, then account-3\\n(?:.*\\n)*?'
-    + '\\s+next start: the ready account running the fewest of Daoris\'s sessions; then the one whose week would lapse the '
-    + 'most: within its last day, its room under its curve per hour to its reset; '
-    + 'then the one with the most room under its curve; then the one Daoris started on least recently; then this list\'s '
-    + 'order, from `account-1`; one whose limit is reached, that draws on usage credits or whose use is over its curve goes '
-    + 'last, the least over first\\n'
-    + '\\s+no account has said what it has left yet: Daoris spreads starts across them by its own sessions\\n'
-    + `\\s+${POINTER}\\n`));
-  assert.match(out, new RegExp('rotation in work account-2, then account-1\\n(?:.*\\n)*?'
-    + '\\s+next start: the first ready account of this list, from `account-2`; one whose limit is reached, that draws on usage '
-    + 'credits or whose use is over its curve goes last\\n'
-    + `\\s+${POINTER}\\n`));
-  // Never a guessed account: nothing is held, and no line names the account a step would choose.
-  assert.doesNotMatch(out, /held now|waits until|next start takes|next start runs on/);
-  fx.cleanup();
-});
-
-test('`agent list` names each account of a list held now and until when, and the wait when none is ready (TOOL6f)', () => {
-  const fx = makeFixture('harness-list-held');
-  claudeAccounts(fx, 'account-1', 'account-2');
-  const wiring = { rotation: { 'claude-code': ['account-1', 'account-2'] } };
-  const later = moment(5);
-  const sooner = moment(2);
-
-  const one = listedWith(fx, wiring, { 'claude-code': { 'account-2': { until: later.until, stated: true } } });
-  const both = listedWith(fx, wiring, {
-    'claude-code': { 'account-1': { until: later.until, stated: true }, 'account-2': { until: sooner.until, stated: false } },
-  });
-
-  assert.match(one, new RegExp(`next start: [^\\n]+\\n(?:.*\\n)*?\\s+held now: \`account-2\` is cooling until ${later.said}\\n\\s+${POINTER}\\n`));
-  assert.doesNotMatch(one, /held now: `account-1`|waits until/);
-  assert.match(both, new RegExp(`held now: \`account-1\` is cooling until ${later.said}; \`account-2\` is cooling until ${sooner.said}\\n`
-    + `\\s+every account of this list is cooling, so the next start waits until ${sooner.said}\\n`));
-
-  // A kept account ready while every other cools: driven work waits, and a conversation is not said to.
-  claudeAccounts(fx, 'account-3');
-  const kept = listedWith(fx, {
-    rotation: { 'claude-code': ['account-1', 'account-2', 'account-3'] },
-    rotationUse: { 'claude-code': { keep: 'account-3' } },
-  }, { 'claude-code': { 'account-1': { until: later.until, stated: true }, 'account-2': { until: sooner.until, stated: true } } });
-  assert.match(kept, new RegExp(`held now: \`account-1\` is cooling until ${later.said}; \`account-2\` is cooling until ${sooner.said}\\n`
-    + `\\s+every account but \`account-3\`, kept for conversations, is cooling, so driven work waits until ${sooner.said}\\n`));
-  assert.doesNotMatch(kept, /every account of this list is cooling/);
-  fx.cleanup();
-});
-
-test('`agent list` says the machine\'s next start where it has no list: its default alone, or nothing more (TOOL6f)', () => {
-  const fx = makeFixture('harness-list-nolist');
-  claudeAccounts(fx, 'account-1', 'account-2');
-  const held = moment(3);
-
-  const named = listedWith(fx, { defaults: { 'claude-code': 'account-1' } });
-  const cooling = listedWith(fx, { defaults: { 'claude-code': 'account-1' } }, {
-    'claude-code': { 'account-1': { until: held.until, stated: true } },
-  });
-  const none = listedWith(fx, {});
-
-  // Its one account is the settings', not a step's choice, so it is named; no walk, so no pointer.
-  assert.match(named, /\n\s+next start\s+`account-1`, this machine's default — with no list, the one account its starts run on\n/);
-  assert.doesNotMatch(named, /names the account it takes|held now|waits until/);
-  assert.match(cooling, new RegExp(`next start\\s+\`account-1\`[^\\n]+\\n\\s+held now: \`account-1\` is cooling until ${held.said}, `
-    + 'so the next start waits until then\\n'));
-  // No default and no list: the tool's own sign-in, which its own lines say; nothing is guessed here.
-  assert.doesNotMatch(none, /next start/);
-  fx.cleanup();
-});
-
-/**
- * CODEXUSE1b: the driver reads a Codex account's windows from Codex's own app server and keeps them as a door's frame is
- * kept (CODEXUSE1, `docs/2026-10-07-codex-usage-evidence.md`), so `agent list` printed the reading beneath the account and
- * still said, beneath its list, that Codex's sessions do not say how near their limits are, and walked without near and pace.
- * Since SWITCH1b-iii the walk's words are the curve's: what passes an account, and the most room under its curve.
- */
-test('`agent list` reads a Codex account\'s kept reading as one that speaks: its use and next-start lines weigh its week (CODEXUSE1b)', () => {
-  const fx = makeFixture('harness-list-codex');
-  for (const name of ['account-1', 'account-2']) mkdirSync(profileHome(fx.root, 'codex', name), { recursive: true });
-  const stamp = (offset: number) => new Date(Date.now() + offset).toISOString().replace(/\.\d+Z$/, 'Z');
-  // As the driver keeps the server's answer (evidence §2): a use per window, its reset, when; no standing and no session.
-  writeFileSync(fx.entry('windows'), JSON.stringify({
-    codex: {
-      'account-1': {
-        session: { reset: stamp(3 * 3_600_000), used: 0.01, seen: stamp(-20 * 60_000) },
-        weekly: { reset: stamp(100 * 3_600_000), used: 0.15, seen: stamp(-20 * 60_000) },
-      },
-    },
-  }), 'utf8');
-
-  const out = listedWith(fx, { rotation: { codex: ['account-1', 'account-2'] } });
-  const codex = out.slice(out.search(/^\s*codex\s/m));
-
-  assert.match(codex, /account-1[^\n]*\n\s+said 20 min ago: 1% of its session limit used, resetting [^;]+; 15% of its weekly limit used, resetting [^\n]+\n/);
-  assert.match(codex, new RegExp('rotation\\s+account-1, then account-2\\n(?:.*\\n)*?'
-    + '\\s+switch accounts: Smart — a session moves at a turn\'s end when its use is over the curve; a start passes an account whose limit is reached, that draws on usage credits, or '
-    + 'whose use is over Daoris\'s smart curve\\n'
-    + '\\s+next start: the ready account running the fewest of Daoris\'s sessions; then the one whose week would lapse the '
-    + 'most: within its last day, its room under its curve per hour to its reset; '
-    + 'then the one with the most room under its curve; then the one Daoris started on least recently; then this list\'s '
-    + 'order, from `account-1`; one whose limit is reached, that draws on usage credits or whose use is over its curve goes '
-    + 'last, the least over first\\n'
-    + `\\s+${POINTER}\\n`));
-  assert.doesNotMatch(codex, /do not say how much of each window is used|no account has said what it has left yet/);
-  fx.cleanup();
-});
+// ——— `agent list` (its pins, its next start, each account held now; TOOL2, TOOL6f, CODEXUSE1b) is the driver's program's since
+// PUSH1f2e4: `AgentsTextTests`' `list` rows hold what these tests held, run once through this verb before it retired.
 
 test('an unknown verb names the ones that exist', () => {
   const fx = makeFixture('harness-verb');
@@ -1226,12 +570,7 @@ test('every declared harness is pinned by name, binary, seam, and what a person 
   assert.equal(TOOLCHAINS['codex-acp']!.accountOf, 'codex');
 
   // The trust record (DEPLOY1, D73) is the driver's alone since `agent trust` went to it (PUSH1f2d): `HarnessToolchain.TrustFile`.
-
-  // Whose accounts say how much of each window is used (TOOL6c, CODEXUSE1b) — the driver's `Speaks` is its twin: Claude Code's
-  // `Windows`, its frame on the door (and the stub mirroring it, which the CLI does not know), and Codex's `Usage`, its own app
-  // server asked, declared on `codex-acp` since no `codex` adapter exists. Both are owners' here, and a door reads its owner's.
-  const saying = Object.entries(TOOLCHAINS).filter(([, toolchain]) => toolchain.windows).map(([name]) => name);
-  assert.deepEqual(saying, ['claude-code', 'codex']);
+  // Whose accounts say how much of each window is used is the driver's alone since `agent list` went to it (PUSH1f2e4): `Speaks`.
 });
 
 /**
@@ -1368,201 +707,6 @@ test('Codex signs in by its browser first, on the ports it tries, and by its dev
   // Claude Code's own flow is its one way, and waits on no port Daoris tries.
   assert.equal(TOOLCHAINS['claude-code']!.deviceLogin, undefined);
   assert.equal(TOOLCHAINS['claude-code']!.loginPorts, undefined);
-});
-
-/**
- * The twin of the driver's `SignInPorts` table (`CodexAccountTests`), row for row: only where none of the ports can be taken
- * is the browser sign-in refused, in the same words to the byte; the way out after them is the terminal's own.
- */
-test('the browser sign-in is refused only where none of its ports can be taken, in the driver\'s words (CODEXLOGIN1)', () => {
-  const rows: [PortHold, PortHold, string | null][] = [
-    ['in-use', 'free', null],
-    ['free', 'in-use', null],
-    ['in-use', 'reserved',
-      '`codex login` waits for your browser on port 1455, else 1457, and neither can be taken now: 1455 is held by another '
-      + 'program; 1457 is held by a range Windows reserves, which a restart may move.'],
-    ['reserved', 'refused',
-      '`codex login` waits for your browser on port 1455, else 1457, and neither can be taken now: 1455 is held by a range '
-      + 'Windows reserves, which a restart may move; 1457 is refused to Daoris.'],
-  ];
-  for (const [first, second, said] of rows) {
-    const held = first === 'free' || second === 'free' ? null : [{ port: 1455, hold: first }, { port: 1457, hold: second }];
-    assert.equal(held === null ? null : portsHeld('codex', ['login'], held), said);
-  }
-});
-
-/**
- * `agent login codex` with only a pin, through a port probe that says both ports are held: refused before anything is
- * made, in the driver's words, naming `--device-code`; the stand-in `codex` is never asked. With one free, it runs `codex
- * login`; with `--device-code`, `codex login --device-auth`, and no port is tried.
- */
-test('`agent login codex` tries its ports first, and `--device-code` signs in with none (CODEXLOGIN1)', async () => {
-  const fx = makeFixture('harness-sign-in-codex-ports');
-  const codex = pinnedCodex(fx, '0.160.0');
-  const tried: number[] = [];
-  const held = (busy: PortHold) => async (port: number): Promise<PortHold> => {
-    tried.push(port);
-    return busy;
-  };
-
-  const refused = await pathless(fx, async () => runPorts(['login', 'codex', '--new'], at(fx), held('in-use')).then(
-    (answer) => assert.fail(`expected a refusal, but it answered: ${answer.out}`), (error: Error) => error));
-  assert.equal(refused.message,
-    '`codex login` waits for your browser on port 1455, else 1457, and neither can be taken now: 1455 is held by another '
-    + 'program; 1457 is held by another program. Nothing was signed in — `daoris agent login codex --new --device-code` signs '
-    + 'in with a device code instead.');
-  assert.deepEqual(tried, [1455, 1457]);
-  assert.deepEqual(profiles(fx.root, 'codex'), []);
-  assert.deepEqual(codex.asked(), []);
-
-  tried.length = 0;
-  const browser = await pathless(fx, async () => runPorts(['login', 'codex', '--new'], at(fx), held('free')));
-  assert.equal(browser.code, 0, browser.out);
-  assert.deepEqual(tried, [1455]);
-  const [first] = profiles(fx.root, 'codex');
-  assert.deepEqual(codex.asked(), [`${first} login`, `${first} login status`]);
-
-  tried.length = 0;
-  const device = await pathless(fx, async () => runPorts(['login', 'codex', '--new', '--device-code'], at(fx), held('in-use')));
-  assert.equal(device.code, 0, device.out);
-  assert.deepEqual(tried, []);
-  const second = profiles(fx.root, 'codex').find((account) => account !== first)!;
-  assert.deepEqual(codex.asked().slice(2), [`${second} login --device-auth`, `${second} login status`]);
-  assert.ok(device.out.includes(`$ ${codex.binary} login --device-auth`), device.out);
-
-  // An agent with no device code says so before anything starts.
-  const none = await pathless(fx, async () => captureError(() => run(['login', 'claude-code', '--new', '--device-code'], at(fx))));
-  assert.equal(none.message, '`claude-code` signs in by no device code, so nothing was signed in — its own sign-in is its one way.');
-  fx.cleanup();
-});
-
-/**
- * 🔴 The owner's report: a workspace that refuses device codes says so on the maker's page, and the tool keeps waiting or
- * ends with its own line. Whichever way failed, the terminal offers the other once nothing was kept: the browser after a
- * device code, `--device-code` after the browser. The stand-in ends each with the line 0.160.0 prints (D125's note).
- */
-test('a sign-in that fails one way offers the other (CODEXLOGIN1)', async () => {
-  const fx = makeFixture('harness-sign-in-codex-refused');
-  pinnedCodex(fx, '0.160.0', { refuse: true });
-
-  const device = await pathless(fx, async () => run(['login', 'codex', '--new', '--device-code'], at(fx)));
-  assert.equal(device.code, 2, device.out);
-  assert.match(device.out, /nothing was signed in, so nothing was kept/);
-  assert.match(device.out, /`daoris agent login codex --new` signs in through your browser instead\./);
-
-  const browser = await pathless(fx, async () => run(['login', 'codex', '--new'], at(fx)));
-  assert.equal(browser.code, 2, browser.out);
-  assert.match(browser.out, /`daoris agent login codex --new --device-code` signs in with a device code instead\./);
-  assert.deepEqual(profiles(fx.root, 'codex'), []);
-  fx.cleanup();
-});
-
-/** `commandHarness` handed a port probe, as `agent.ts` hands it `service.ts`' own: a sign-in through it is a promise. */
-async function runPorts(argv: string[], path: string, ports: (port: number) => Promise<PortHold>): Promise<{ code: number; out: string }> {
-  const saved = process.env.DAORIS_HARNESS_CONFIG;
-  process.env.DAORIS_HARNESS_CONFIG = path;
-  const lines: string[] = [];
-  try {
-    const code = await commandHarness({
-      root: process.cwd(), argv, write: (line) => lines.push(line), packageRoot: process.cwd(),
-    }, null, ['npm'], ports);
-    return { code, out: lines.join('\n') };
-  } finally {
-    if (saved === undefined) delete process.env.DAORIS_HARNESS_CONFIG;
-    else process.env.DAORIS_HARNESS_CONFIG = saved;
-  }
-}
-
-/**
- * A stand-in `codex`, pinned in npm's layout at `version` and nowhere on PATH: each call is logged with the folder it was
- * handed as `CODEX_HOME`, either sign-in leaves `auth.json` there, and its status question answers in the words `codex login
- * status` printed (0.160.0). The browser's prints the lines 0.160.0 printed (D125's CODEXLOGIN1 note, the page's query
- * left out); with `refuse`, each way ends with the line 0.160.0 ends a refused one with, exit 1.
- */
-function pinnedCodex(fx: { root: string }, version: string, { refuse = false } = {}): { binary: string; asked: () => string[] } {
-  const script = join(fx.root, 'codex-stand-in.mjs');
-  const log = join(fx.root, 'codex-asked.log');
-  writeFileSync(script, [
-    "import { appendFileSync, existsSync, writeFileSync } from 'node:fs';",
-    "import { basename, join } from 'node:path';",
-    "const home = process.env.CODEX_HOME ?? '';",
-    'const args = process.argv.slice(2);',
-    `const refuse = ${JSON.stringify(refuse)};`,
-    `appendFileSync(${JSON.stringify(log)}, basename(home) + ' ' + args.join(' ') + '\\n');`,
-    "if (args[0] === 'login' && args[1] === 'status') {",
-    "  console.log(existsSync(join(home, 'auth.json')) ? 'Logged in using ChatGPT' : 'Not logged in');",
-    '  process.exit(0);',
-    '}',
-    "if (args[0] === 'login' && args.length === 1 && home) {",
-    "  console.error('Starting local login server on http://localhost:1455.');",
-    "  console.error('If your browser did not open, navigate to this URL to authenticate:\\n\\nhttps://auth.openai.com/oauth/authorize?state=STATE\\n');",
-    "  console.error('On a remote or headless machine? Use `codex login --device-auth` instead.');",
-    "  if (refuse) { console.error('Error logging in: Sign-in failed: access_denied'); process.exit(1); }",
-    "  writeFileSync(join(home, 'auth.json'), '{}');",
-    "  console.error('Successfully logged in');",
-    '  process.exit(0);',
-    '}',
-    "if (args[0] === 'login' && args[1] === '--device-auth' && args.length === 2 && home) {",
-    "  if (refuse) { console.error('Error logging in with device code: device auth timed out after 15 minutes'); process.exit(1); }",
-    "  writeFileSync(join(home, 'auth.json'), '{}');",
-    '  process.exit(0);',
-    '}',
-    'process.exit(1);',
-  ].join('\n'), 'utf8');
-
-  const settings = readHarnessSettings(at(fx));
-  writeHarnessSettings(at(fx), { ...settings, versions: { ...settings.versions, codex: version } });
-  const bin = join(managedHome(fx.root, 'codex', version), 'node_modules', '.bin');
-  mkdirSync(bin, { recursive: true });
-  const windows = process.platform === 'win32';
-  const binary = join(bin, windows ? 'codex.cmd' : 'codex');
-  writeFileSync(binary, windows
-    ? `@"${process.execPath}" "${script}" %*\r\n`
-    : `#!/bin/sh\nexec "${process.execPath}" "${script}" "$@"\n`, 'utf8');
-  if (!windows) chmodSync(binary, 0o755);
-  return { binary, asked: () => (existsSync(log) ? readFileSync(log, 'utf8').split('\n').filter(Boolean) : []) };
-}
-
-/**
- * 🔴 CODEXACCT1b: the owner's machine has `codex` only as its pin, and the terminal's sign-in ran `PATH`'s, so it could not
- * start. It runs the binary `agent list` asks now: the pin, its browser sign-in first (CODEXLOGIN1) into a new folder, and
- * the end's status question on the same pin. Nothing is on PATH, so a regression fails here and runs no real `codex`.
- */
-test('`agent login codex --new` with only a pin signs in on the pinned codex, by its browser first (CODEXACCT1b)', async () => {
-  const fx = makeFixture('harness-sign-in-codex-pin');
-  const codex = pinnedCodex(fx, '0.160.0');
-
-  const made = await pathless(fx, async () => run(['login', 'codex', '--new'], at(fx)));
-
-  assert.equal(made.code, 0, made.out);
-  const [account] = profiles(fx.root, 'codex');
-  assert.match(account!, /^acct-[0-9a-f]{8}$/);
-  assert.ok(existsSync(join(profileHome(fx.root, 'codex', account!), 'auth.json')));
-  assert.ok(made.out.split('\n').some((line) => line.trim() === `$ ${codex.binary} login`), made.out);
-  assert.deepEqual(codex.asked(), [`${account} login`, `${account} login status`]);
-  assert.match(made.out, /`codex` did not say who/);
-
-  // Signing back in to it runs the same pin, into its own folder (ACCT1), by its device code where asked.
-  const again = await pathless(fx, async () => run(['login', 'codex', '--profile', account!, '--device-code'], at(fx)));
-  assert.equal(again.code, 0, again.out);
-  assert.deepEqual(codex.asked().slice(2), [`${account} login --device-auth`, `${account} login status`]);
-  fx.cleanup();
-});
-
-/** Pinned with nothing installed at the pin: refused naming the pin, with nothing made, and never `PATH`'s instead (D57). */
-test('`agent login codex --new` on a pin with nothing installed is refused naming the pin, and makes nothing', async () => {
-  const fx = makeFixture('harness-sign-in-codex-pin-missing');
-  writeHarnessSettings(at(fx), { ...readHarnessSettings(at(fx)), versions: { codex: '0.160.0' } });
-
-  for (const argv of [['login', 'codex', '--new'], ['login', 'codex', '--profile', 'acct-0a1b2c3d']]) {
-    if (argv.includes('--profile')) mkdirSync(profileHome(fx.root, 'codex', 'acct-0a1b2c3d'), { recursive: true });
-    const refused = await pathless(fx, async () => captureError(() => run(argv, at(fx))));
-
-    assert.match(refused.message, /`codex` is pinned to 0\.160\.0 on this machine, and nothing is installed at that version/);
-    assert.match(refused.message, /`daoris agent pin codex 0\.160\.0` installs it/);
-  }
-  assert.deepEqual(profiles(fx.root, 'codex'), ['acct-0a1b2c3d']);
-  fx.cleanup();
 });
 
 // ——— AGT2b: the two makers that publish their own channel are pinned from it; npm stays for the rest.

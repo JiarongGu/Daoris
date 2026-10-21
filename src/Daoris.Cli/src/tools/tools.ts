@@ -548,19 +548,3 @@ export function commandThroughTools(home: string, command: string[], env: Env = 
   if (tool.refused) throw new DaorisError(`${tool.problem} — so \`${command[0]}\` was not run.`);
   return tool.file ? [tool.file, ...command.slice(1)] : command;
 }
-
-/**
- * A command whose first word a tool answers for, found on the system's PATH whatever the tools run it as (§2.7):
- * `agent install` is the machine's npm's job. Any other first word is left as named. The driver's
- * `HarnessActions.OnTheSystem`.
- */
-export function commandOnTheSystem(command: string[], env: Env = process.env): string[] {
-  const name = command[0];
-  if (name === undefined || !TOOLS.some((tool) => tool.answers.includes(name))) return command;
-  const file = onPath(name, { env, startable: true });
-  if (!file) {
-    throw new DaorisError(`\`${name}\` is not on this machine's PATH, and installing an agent is the machine's own ${name}'s job, `
-      + 'whatever Daoris runs it as. `daoris agent pin <agent> <version>` installs one where Daoris keeps it instead.');
-  }
-  return [file, ...command.slice(1)];
-}

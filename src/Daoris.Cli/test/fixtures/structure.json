@@ -52,8 +52,6 @@
     "probelock.test.ts": "accounts",
     "rotation.test.ts": "accounts",
     "rotation-use.test.ts": "accounts",
-    "usagecurves.test.ts": "accounts",
-    "windows.test.ts": "accounts",
     "channels.test.ts": "agents",
     "openpgp.test.ts": "agents",
     "toolchain.test.ts": "agents",

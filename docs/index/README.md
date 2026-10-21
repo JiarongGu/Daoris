@@ -133,8 +133,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Usage/UsageHistory.cs` | 47 | 925 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Acp/Acp.cs` | 142 | 2800 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Adapters/Adapters.cs` | 140 | 2419 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/AgentAccountsCommand.cs` | 59 | 1108 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/AgentsCommand.cs` | 47 | 899 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/AgentAccountsCommand.cs` | 60 | 1112 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/AgentsCommand.cs` | 50 | 931 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatGoOn.cs` | 40 | 750 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.cs` | 150 | 2684 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatTurns.cs` | 45 | 1004 |
@@ -188,7 +188,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Loop/AttentionStateSliceTests.cs` | 96 | 1699 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/InstancePipeTests.cs` | 43 | 813 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/StatePublisherTests.cs` | 42 | 813 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/AgentsRoutes.cs` | 44 | 768 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/AgentsRoutes.cs` | 43 | 756 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs` | 41 | 645 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/HelpRoutes.cs` | 76 | 1290 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/LinesRoutes.cs` | 63 | 1018 |
@@ -231,10 +231,10 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Cli/src/agents/toolchain.ts` | 128 | 2423 |
+| `src/Daoris.Cli/src/agents/toolchain.ts` | 75 | 1494 |
 | `src/Daoris.Cli/src/doctrine/materialize.ts` | 47 | 935 |
-| `src/Daoris.Cli/src/plugins/plugins.ts` | 83 | 1612 |
-| `src/Daoris.Cli/test/agents/toolchain.test.ts` | 105 | 1969 |
+| `src/Daoris.Cli/src/plugins/plugins.ts` | 82 | 1602 |
+| `src/Daoris.Cli/test/agents/toolchain.test.ts` | 56 | 1113 |
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 47 | 895 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 49 | 851 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 75 | 1281 |

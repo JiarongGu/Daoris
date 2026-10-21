@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { withRotation, withUse } from '../src/accounts/rotation.ts';
-import { addKeyAccount, profileHome, readHarnessSettings, replaceKeyAccount, withDefault, writeHarnessSettings } from '../src/agents/toolchain.ts';
+import { readHarnessSettings, withDefault, writeHarnessSettings } from '../src/agents/toolchain.ts';
 import { setBrowser, setExtensions, setLinks } from '../src/browser/browser.ts';
 import { homeEntry } from '../src/platform/home.ts';
 import { disablePlugin, enablePlugin } from '../src/plugins/plugins.ts';
@@ -56,16 +56,7 @@ function applied(home: string, row: Row, between: () => void): void {
     else throw new Error(`the table names an edit this test does not make: ${edit.op}`);
     return;
   }
-  if (row.file === 'keys.json') {
-    between();
-    if (edit.op === 'key-replace') {
-      // An account the key replaces is one on this machine: its directory is there.
-      mkdirSync(profileHome(home, edit.agent!, edit.account!), { recursive: true });
-      replaceKeyAccount(home, edit.agent!, edit.account!, edit.key!, () => {});
-    } else if (edit.op === 'key-add') addKeyAccount(home, edit.agent!, edit.key!, () => {});
-    else throw new Error(`the table names an edit this test does not make: ${edit.op}`);
-    return;
-  }
+  // `keys.json`'s writer is the driver program's since PUSH1f2e5 (`daoris-driver agent key`): its rows are `only: driver`.
   if (row.file === 'harnesses.json') {
     const path = homeEntry(home, 'harnesses');
     const read = readHarnessSettings(path);

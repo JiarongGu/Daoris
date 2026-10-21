@@ -109,6 +109,14 @@ test('a handed verb goes to the driver\'s program whole, with nothing written fi
     [['agent', 'profile', 'use', 'claude-code', '--curve', 'weekly=0:30,100:100', '--workspace', 'Work & play'],
       ['profile', 'use', 'claude-code', '--curve', 'weekly=0:30,100:100', '--workspace', 'Work & play']],
     [['agent', 'profile', 'frobnicate'], ['profile', 'frobnicate']],
+    // PUSH1f2e4: `list`, and so a bare `daoris agent`.
+    [['agent'], []],
+    [['agent', 'list'], ['list']],
+    // PUSH1f2e5: an agent's install, and an API key's account, whose key the program reads from the terminal's standard input.
+    [['agent', 'install', 'claude-code'], ['install', 'claude-code']],
+    [['agent', 'key', 'claude-code', '--account', 'work key'], ['key', 'claude-code', '--account', 'work key']],
+    // PUSH1f2e6: an agent's sign-in, whose prompts the agent asks at this terminal.
+    [['agent', 'login', 'codex', '--new', '--name', 'R&D seat', '--join', 'Work & play'], ['login', 'codex', '--new', '--name', 'R&D seat', '--join', 'Work & play']],
   ] as const) {
     for (const exit of [0, 1, 2] as const) {
       const handed: Handed[] = [];

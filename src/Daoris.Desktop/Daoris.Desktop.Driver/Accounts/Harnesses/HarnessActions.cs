@@ -452,32 +452,76 @@ public static class HarnessActions
         RunAsync(Prepare(command, toolchain, profileHome), command, write, ct, started);
 
     /// <summary>
+    /// An agent's own command at a terminal (PUSH1f2e5, the alone-path design §1.1, <i>The second hop</i>): its installer, as the CLI's
+    /// <c>relay</c> started it, said first as <c>$ command</c> and a blank line, then started with the console's three streams left as
+    /// the host's and no window flag, so the person answers its prompts, it finds a terminal, and Ctrl+C reaches it. The same facts as
+    /// the window's start (<see cref="Tools.Hand(ProcessStartInfo, string?)"/> from <paramref name="home"/>, <see cref="HarnessProbe.Apply"/>,
+    /// the account's variable, the pin's environment) through the same start gate. Its exit code, once it ended: the person's Ctrl+C,
+    /// which <paramref name="ct"/> carries, reached the agent too, so the host waits for it to end by its own rule.
+    /// </summary>
+    /// <exception cref="DriverException">It could not be started.</exception>
+    /// <exception cref="OperationCanceledException">Stopped before it started, waiting for a place at the start gate.</exception>
+    public static async Task<int> TerminalRunAsync(
+        IReadOnlyList<string> command, HarnessToolchain toolchain, string? profileHome, string? home, Action<string> write,
+        CancellationToken ct, string? managed = null)
+    {
+        write($"  $ {string.Join(' ', command)}");
+        write("");
+
+        var info = Prepare(command, toolchain, profileHome, managed, terminal: true, home);
+        Process process;
+        try
+        {
+            process = await ProcessStarts.Shared.StartAsync(info, ct).ConfigureAwait(false)
+                ?? throw new DriverException($"`{command[0]}` did not start");
+        }
+        catch (Win32Exception error)
+        {
+            // The CLI's words for a start that failed: Daoris runs the agent's own tooling and carries no copy of it.
+            throw new DriverException(
+                $"`{command[0]}` could not be run — {error.Message.TrimEnd('.')}. "
+                + "Daoris spawns the agent's own tooling; it does not vendor a copy of it.");
+        }
+
+        using var _ = process;
+        // Never ended by the token: the agent shares the console, has the person's Ctrl+C itself, and ends by its own rule.
+        await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
+        return process.ExitCode;
+    }
+
+    /// <summary>
     /// A harness action's start: its streams redirected as UTF-8, the tools' environment, and the account and binary
     /// through the one seam every spawn takes (<see cref="HarnessProbe.Apply"/>), with the pin's environment where
-    /// <paramref name="managed"/> is the pin's executable (AGT2).
+    /// <paramref name="managed"/> is the pin's executable (AGT2). At a <paramref name="terminal"/> its streams are the host's
+    /// console's and it may have a window, the tools read from <paramref name="home"/>'s file (<see cref="TerminalRunAsync"/>).
     /// </summary>
     private static ProcessStartInfo Prepare(
-        IReadOnlyList<string> command, HarnessToolchain toolchain, string? profileHome, string? managed = null)
+        IReadOnlyList<string> command, HarnessToolchain toolchain, string? profileHome, string? managed = null, bool terminal = false,
+        string? home = null)
     {
-        var info = new ProcessStartInfo
-        {
-            FileName = command[0],
-            // Its stdin is the screen's: a login asks for the code the browser shows, and a
-            // process nobody can answer waits for ever. Its output is relayed to the console
-            // below, never a window of its own — and read as UTF-8, because a harness writes it so
-            // and the console's codepage is not the transcript (the Adapters.Shell rule).
-            RedirectStandardInput = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            StandardInputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
-            StandardOutputEncoding = Encoding.UTF8,
-            StandardErrorEncoding = Encoding.UTF8,
-        };
+        var info = terminal
+            ? new ProcessStartInfo { FileName = command[0], UseShellExecute = false }
+            : new ProcessStartInfo
+            {
+                FileName = command[0],
+                // Its stdin is the screen's: a login asks for the code the browser shows, and a
+                // process nobody can answer waits for ever. Its output is relayed to the console
+                // below, never a window of its own — and read as UTF-8, because a harness writes it so
+                // and the console's codepage is not the transcript (the Adapters.Shell rule).
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                StandardInputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
+                StandardOutputEncoding = Encoding.UTF8,
+                StandardErrorEncoding = Encoding.UTF8,
+            };
         foreach (var part in command.Skip(1)) info.ArgumentList.Add(part);
-        // An agent action is a child like a session (TOOLS5): the tools' PATH, before the file is resolved on it.
-        Tools.Hand(info);
+        // An agent action is a child like a session (TOOLS5): the tools' PATH, before the file is resolved on it. A terminal's are its
+        // home's, the one the verb was handed.
+        if (terminal) Tools.Hand(info, home);
+        else Tools.Hand(info);
         // Resolves the file Windows can start too (WindowsShim, USE1f): one line for every spawn.
         HarnessProbe.Apply(info, toolchain, profileHome, binary: managed);
         return info;

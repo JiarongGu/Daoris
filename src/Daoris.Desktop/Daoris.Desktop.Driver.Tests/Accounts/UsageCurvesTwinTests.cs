@@ -7,9 +7,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// The usage curve (D165 point 2; the switch design §2, §3 and §5; SWITCH1b-iii): how much of each window an account may have
 /// used by now, and whether what its agent said is over that, which the start's line says as <c>opening.said-over</c>. The
-/// driver's half of a TWIN with the CLI's <c>usagecurves.ts</c>, whose <c>saidLine</c> marks the same window in
-/// <c>profile use</c>: 🔴 both read the table in the CLI's <c>test/fixtures/usage-curves.json</c>, row for row, as
-/// <c>usagecurves.test.ts</c> does. <see cref="UsageCurvesTests"/> holds the curve's own cases.
+/// driver reads the table in the CLI's <c>test/fixtures/usage-curves.json</c>, row for row, as the page's
+/// <c>usageCurves.test.ts</c> does; the CLI's <c>usagecurves.ts</c>, its twin until then, left with <c>daoris agent list</c>
+/// (PUSH1f2e4). <see cref="UsageCurvesTests"/> holds the curve's own cases.
 /// </summary>
 public sealed class UsageCurvesTwinTests
 {

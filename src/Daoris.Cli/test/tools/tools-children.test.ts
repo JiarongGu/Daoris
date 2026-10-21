@@ -4,7 +4,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { delimiter, dirname, join, sep } from 'node:path';
 import {
   PATH_VARIABLE, TOOLS, TOOL_PACKAGE, TOOL_RECORD, childEnvironment, childPath,
-  commandOnTheSystem, commandThroughTools, handTools, installBin, readTools, resolveCommand,
+  commandThroughTools, handTools, installBin, readTools, resolveCommand,
 } from '../../src/tools/tools.ts';
 import { homeEntry } from '../../src/platform/home.ts';
 import { probe, readHarnessSettings } from '../../src/agents/toolchain.ts';
@@ -315,16 +315,7 @@ test('a pin’s npm is the one the tools resolve, and one that cannot run is ref
   at.fx.cleanup();
 });
 
-test('agent install keeps the system’s npm, and refuses naming agent pin where there is none', () => {
-  const at = laidOut('tools-children-install');
-  at.write('{"tools":{"node":{"use":"managed","version":"22.20.0"}}}');
-  const env = { PATH: at.inherited('two')! };
-
-  assert.equal(spelled(commandOnTheSystem(['npm', 'install', '-g', 'p'], env)[0]), spelled(join(at.root, 'path', program('npm'))));
-  assert.match(captureError(() => commandOnTheSystem(['npx', 'p'], env)).message, /agent pin/);
-  assert.deepEqual(commandOnTheSystem(['claude', 'install'], env), ['claude', 'install']);
-  at.fx.cleanup();
-});
+// `agent install` on the system's npm is the driver program's since PUSH1f2e5: `ToolsChildrenTests` holds `HarnessActions.OnTheSystem`.
 
 // ——— A child of the toolchain, started for real: a probe sees the tools' PATH.
 

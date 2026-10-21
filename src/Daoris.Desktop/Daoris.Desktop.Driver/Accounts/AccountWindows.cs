@@ -27,9 +27,9 @@ namespace Daoris.Driver;
 ///
 /// <para><b>Missing or unreadable is nothing known</b> (D21's reading): nothing stands in for it, never spent and never
 /// fresh (D57). Names, numbers, times and a session id only — never the agent's words, a key or who signed in. Written by
-/// the driver alone, atomically, LF, keeping what it has no field for; read by the driver and by the CLI's
-/// <c>windows.ts</c> for <c>daoris agent list</c> and <c>profile use</c>, which <c>WindowsTwinTests</c> holds to this
-/// reader (TOOL6c amends §14's <i>not a twin</i>). No HTTP route reaches it (D47 §4).</para>
+/// the driver alone, atomically, LF, keeping what it has no field for; read by the driver alone since the CLI's
+/// <c>windows.ts</c> left with <c>daoris agent list</c> (PUSH1f2e4), which is <c>daoris-driver agent list</c> now;
+/// <c>WindowsTwinTests</c> keeps the table the two held. No HTTP route reaches it (D47 §4).</para>
 ///
 /// <para>The file's shape: <c>{ "&lt;agent&gt;": { "&lt;account&gt;": { "weekly": { "reset": "…Z", "used": 0.14, "seen": "…Z",
 /// "session": "3f9c2a71" }, "session": { "reset": "…Z", "used": 0.88, "standing": "clear", "seen": "…Z" } } } }</c>, where a
@@ -147,7 +147,7 @@ public static class AccountWindows
     /// window whose reset has not passed and that says a use or a standing, in the file's order; null where none does, which
     /// is unknown — never spent and never fresh. A week a limit told says no use, so it is no reading.
     /// </summary>
-    /// <remarks>The CLI's <c>windows.ts</c> is the twin of this reading; <c>WindowsTwinTests</c> holds the table both keep.</remarks>
+    /// <remarks><c>WindowsTwinTests</c> holds the table this reading keeps, the CLI's <c>windows.ts</c>'s until it left (PUSH1f2e4).</remarks>
     public static AccountSaid? SaidOf(string home, string agent, string? account, DateTimeOffset now)
     {
         if (account is null || Child(Child(Load(home), agent), account) is not { } held) return null;

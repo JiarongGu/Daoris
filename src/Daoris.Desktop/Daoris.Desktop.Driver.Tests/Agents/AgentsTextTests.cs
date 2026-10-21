@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The port keeps today's text (PUSH1f2d, D194 point 6, the alone-path design §3): each case of <c>daoris agent rules|trust|settings</c>,
+/// The port keeps today's text (PUSH1f2d, D194 point 6, the alone-path design §3): each case of <c>daoris agent [list]|rules|trust|settings|…</c>,
 /// as the CLI's TypeScript verb said it before it retired (<c>fixtures/agents-text.json</c>), said again by <see cref="AgentsCommand"/>
 /// acting alone on a root of its own: the same lines on each stream, the same exit, and every file under the root after it the same. A
 /// row the port changes on purpose says why under <c>changed</c>.
@@ -16,11 +16,36 @@ public sealed partial class AgentsTextTests
     private static readonly Lazy<JsonElement> Read = new(() => JsonDocument.Parse(File.ReadAllText(Path.Combine(
         WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "agents-text.json"))).RootElement.Clone());
 
-    public static TheoryData<string> Names()
+    public static TheoryData<string> Names() => Rows(standIn: false);
+
+    /// <summary>The rows whose agent is a stand-in program asked as a start runs it (<c>windows</c>, PUSH1f2e4's <c>list</c>), or the rest.</summary>
+    private static TheoryData<string> Rows(bool standIn)
     {
         var names = new TheoryData<string>();
-        foreach (var row in Read.Value.GetProperty("rows").EnumerateArray()) names.Add(row.GetProperty("name").GetString()!);
+        foreach (var row in Read.Value.GetProperty("rows").EnumerateArray())
+        {
+            if ((row.TryGetProperty("windows", out var windows) && windows.GetBoolean()) == standIn) names.Add(row.GetProperty("name").GetString()!);
+        }
+
         return names;
+    }
+
+    /// <summary>
+    /// The rows that start a stand-in agent, a <c>claude.cmd</c> in the managed layout (PUSH1f2e4): real processes, so the suite's
+    /// Process half runs them, and on Windows alone, which runs a <c>.cmd</c>.
+    /// </summary>
+    [Trait(Category.Name, Category.Process)]
+    public sealed class StandIns
+    {
+        public static TheoryData<string> Names() => Rows(standIn: true);
+
+        [Theory]
+        [MemberData(nameof(Names))]
+        public async Task Each_case_says_today_s_text_and_writes_the_same_files(string name)
+        {
+            if (!OperatingSystem.IsWindows()) return;
+            await Said(name);
+        }
     }
 
     [Fact]
@@ -28,7 +53,9 @@ public sealed partial class AgentsTextTests
     {
         var rows = Read.Value.GetProperty("rows").EnumerateArray().ToList();
         Assert.True(rows.Count >= 60, $"only {rows.Count} rows, so this proves little");
-        var verbs = rows.Select(row => row.GetProperty("argv").EnumerateArray().Select(each => each.GetString()).First()).ToHashSet(StringComparer.Ordinal);
+        // No words are `list` (PUSH1f2e4).
+        var verbs = rows.Select(row => row.GetProperty("argv").EnumerateArray().Select(each => each.GetString()).FirstOrDefault() ?? "list")
+            .ToHashSet(StringComparer.Ordinal);
         Assert.All(AgentsCommand.Verbs, verb => Assert.Contains(verb, verbs));
     }
 
@@ -48,7 +75,9 @@ public sealed partial class AgentsTextTests
 
     [Theory]
     [MemberData(nameof(Names))]
-    public async Task Each_case_says_today_s_text_and_writes_the_same_files(string name)
+    public Task Each_case_says_today_s_text_and_writes_the_same_files(string name) => Said(name);
+
+    private static async Task Said(string name)
     {
         var row = Read.Value.GetProperty("rows").EnumerateArray().First(each => each.GetProperty("name").GetString() == name);
         var root = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "agents-text", Guid.NewGuid().ToString("N")[..8]);
@@ -79,11 +108,13 @@ public sealed partial class AgentsTextTests
                     Environment = variable => variable == DaorisHome.Variable ? home : variable == HarnessSettings.PathVariable ? wiring : null,
                     Out = output,
                     Error = error,
+                    // `key`'s key (PUSH1f2e5), the row's standard input; none is an empty one.
+                    In = new StringReader(row.TryGetProperty("stdin", out var stdin) ? stdin.GetString()! : ""),
                     Verb = "daoris",
                 },
                 Folder = root,
                 UserHome = Path.Combine(root, "user"),
-                Adapters = _ => AdapterSet.Built(),
+                // The build's agents and those the home's plugins declare, as the window's roster reads them (`list`'s plugin rows).
                 Zone = TimeZoneInfo.FindSystemTimeZoneById("America/New_York"),
             };
             // A row run at a moment of its own (PUSH1f2e3: a cool-off's end and a reading's age) is said at that moment.
@@ -95,13 +126,21 @@ public sealed partial class AgentsTextTests
                     : word)];
             var exit = await AgentsCommand.RunAsync(argv, world, CancellationToken.None);
 
-            string Spelled(string text) => Settled().Replace(text
+            // An account's id drawn by the run (PUSH1f2e5: a key's new account), one the row did not lay or name, is spelled `<id>`.
+            var known = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var text in row.GetProperty("before").EnumerateObject().SelectMany(file => new[] { file.Name, file.Value.GetString()! })
+                .Concat(row.GetProperty("folders").EnumerateArray().Select(each => each.GetString()!)).Concat(argv))
+            {
+                foreach (Match id in Drawn().Matches(text)) known.Add(id.Value);
+            }
+
+            string Spelled(string text) => Drawn().Replace(Settled().Replace(text
                 .Replace(JsonEncodedText.Encode(root).ToString(), "<root>", StringComparison.Ordinal)
                 .Replace(root, "<root>", StringComparison.Ordinal)
                 .Replace(slashed, "<root>", StringComparison.Ordinal)
                 .Replace("\\\\", "/", StringComparison.Ordinal)
                 .Replace('\\', '/')
-                .Replace($"({Why})", "(<why>)", StringComparison.Ordinal), "$1\"<at>\"");
+                .Replace($"({Why})", "(<why>)", StringComparison.Ordinal), "$1\"<at>\""), id => known.Contains(id.Value) ? id.Value : "<id>");
             static IReadOnlyList<string> Lines(string text) =>
                 text.Length == 0 ? [] : text.Replace("\r\n", "\n", StringComparison.Ordinal).TrimEnd('\n').Split('\n');
             string[] said = [.. Lines(output.ToString()).Select(Spelled)];
@@ -111,8 +150,13 @@ public sealed partial class AgentsTextTests
             Assert.True(Expected(row, "err").SequenceEqual(refused), shown);
             Assert.True(row.GetProperty("exit").GetInt32() == exit, shown);
 
+            // The home's identity, which taking its lease mints (HOMEID1; `key` publishes under it, PUSH1f2e5), is no file the verb writes.
+            var identity = home is null || row.GetProperty("before").TryGetProperty(Spelled(Path.GetRelativePath(root, HomeIdentity.PathIn(home))), out _)
+                ? null
+                : Path.GetFullPath(HomeIdentity.PathIn(home));
             var written = Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories)
-                .ToDictionary(path => Path.GetRelativePath(root, path).Replace('\\', '/'), path => Spelled(File.ReadAllText(path)), StringComparer.Ordinal);
+                .Where(path => !string.Equals(Path.GetFullPath(path), identity, StringComparison.OrdinalIgnoreCase))
+                .ToDictionary(path => Spelled(Path.GetRelativePath(root, path).Replace('\\', '/')), path => Spelled(File.ReadAllText(path)), StringComparer.Ordinal);
             var after = row.GetProperty("after").EnumerateObject().ToDictionary(file => file.Name, file => file.Value.GetString()!, StringComparer.Ordinal);
             Assert.True(after.Keys.Order(StringComparer.Ordinal).SequenceEqual(written.Keys.Order(StringComparer.Ordinal)),
                 $"the files after `{name}`: {string.Join(", ", written.Keys.Order(StringComparer.Ordinal))}\nexpected: {string.Join(", ", after.Keys.Order(StringComparer.Ordinal))}");
@@ -153,4 +197,8 @@ public sealed partial class AgentsTextTests
     /// <summary>A proposal's settling moment, the run's own: the table spells it <c>&lt;at&gt;</c>.</summary>
     [GeneratedRegex("(\"at\": ?)\"\\d{4}-\\d\\d-\\d\\dT[^\"]*\"")]
     private static partial Regex Settled();
+
+    /// <summary>An account's id as <see cref="AccountNames.NewId"/> draws it: a run's own, the table spells it <c>&lt;id&gt;</c>.</summary>
+    [GeneratedRegex("acct-[0-9a-f]{8}")]
+    private static partial Regex Drawn();
 }

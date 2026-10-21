@@ -60,7 +60,7 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameS
 import { basename, dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { foldName, sameName } from '../platform/casefold.ts';
 import { DaorisError } from '../platform/errors.ts';
-import { onPath, readJsonObject, readText, renameHeld } from '../platform/fsx.ts';
+import { readJsonObject, readText, renameHeld } from '../platform/fsx.ts';
 import { writeKeeping } from '../platform/jsonkeep.ts';
 import type { ExitCode } from '../platform/errors.ts';
 import { daorisHome, HOME_SENTENCE, homeEntry, homeFolder } from '../platform/home.ts';
@@ -128,21 +128,11 @@ export function isPluginId(id: string): boolean {
  * and each agent a door runs as (`codex`, a holder since CODEXACCT1); both suites hold their list to the
  * driver suite's `fixtures/reserved-harnesses.json`.
  *
- * A function rather than a constant: `toolchain.ts` imports this module for `harness list`, and this
- * module imports its table — read at call time, the cycle costs nothing; read at load time, whichever
- * module loaded second would see an empty table.
+ * A function rather than a constant, read at call time, as it was while `toolchain.ts` imported this module back for `agent list`
+ * (until PUSH1f2e4, when the list went to the driver's program with the presence question, its `CommandPresence`).
  */
 export function reservedHarnesses(): ReadonlySet<string> {
   return new Set([...Object.keys(TOOLCHAINS), 'stub', 'acp-stub', 'dsh']);
-}
-
-/**
- * Whether a command would start, without starting it — the twin of the driver's `CommandPresence`.
- * A declared harness with no version question is asked this rather than run: an ACP agent started
- * bare waits on its stdin.
- */
-export function resolvable(command: string, env: Record<string, string | undefined> = process.env): boolean {
-  return onPath(command, { env }) !== null;
 }
 
 export interface PluginHarness {

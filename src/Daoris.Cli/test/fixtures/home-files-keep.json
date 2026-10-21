@@ -1,5 +1,5 @@
 {
-  "about": "KEEPALL1, KEEPALL1b, KEEPALL1c and KEEPALL1e (D173's KEEPALL1, KEEPALL1b, KEEPALL1c and KEEPALL1e notes; FIX-LOG 2026-10-17): every home file a door edits keeps what its writer does not own, as driver.json's writers do (driver-config-keeps.json). Read row for row by the CLI's homefileskeep.test.ts and the driver's HomeFilesKeepTests, and browser/settings.json's rows by the modules' BrowserSettingsTests, whose writer that is; a remotes.json row's `reads` is the map every reader reads from what was written (or left), workspace → url and key, held by those two and by the service's RemoteConfigKeepTests, the third reader. `files` holds each file as it stands before the read, in the writer's layout, its lines joined by LF with one final LF, with keys neither twin knows at each level and numbers JavaScript cannot hold or would write shorter. A row names its `file` and one door's `edit` (`op` and its fields); `changes` turn that file into what both twins write, each `from` found exactly once (its lines joined by LF) and replaced by `to`. A row's `start` is made to the file before the read; `between` is another writer's change, made after this writer read the file and before it writes, which the write keeps (only for a writer whose read and write are two calls); a row whose file `crlf` is true has its lines joined by CRLF, and so is what both write; a row `refused` writes nothing, its refusal naming what it says, the file left as `start` or `between` made it (and `changes` say so). A row `only` names the one twin with a writer for its file (`plugin-approvals.json` is the driver's alone, KEEPALL1d; `tools.json` too since PUSH1f2c handed `daoris tool` to the driver's program, and `permissions.json` since PUSH1f2d handed `daoris agent rules`), and the other skips it.",
+  "about": "KEEPALL1, KEEPALL1b, KEEPALL1c and KEEPALL1e (D173's KEEPALL1, KEEPALL1b, KEEPALL1c and KEEPALL1e notes; FIX-LOG 2026-10-17): every home file a door edits keeps what its writer does not own, as driver.json's writers do (driver-config-keeps.json). Read row for row by the CLI's homefileskeep.test.ts and the driver's HomeFilesKeepTests, and browser/settings.json's rows by the modules' BrowserSettingsTests, whose writer that is; a remotes.json row's `reads` is the map every reader reads from what was written (or left), workspace → url and key, held by those two and by the service's RemoteConfigKeepTests, the third reader. `files` holds each file as it stands before the read, in the writer's layout, its lines joined by LF with one final LF, with keys neither twin knows at each level and numbers JavaScript cannot hold or would write shorter. A row names its `file` and one door's `edit` (`op` and its fields); `changes` turn that file into what both twins write, each `from` found exactly once (its lines joined by LF) and replaced by `to`. A row's `start` is made to the file before the read; `between` is another writer's change, made after this writer read the file and before it writes, which the write keeps (only for a writer whose read and write are two calls); a row whose file `crlf` is true has its lines joined by CRLF, and so is what both write; a row `refused` writes nothing, its refusal naming what it says, the file left as `start` or `between` made it (and `changes` say so). A row `only` names the one twin with a writer for its file (`plugin-approvals.json` is the driver's alone, KEEPALL1d; `tools.json` too since PUSH1f2c handed `daoris tool` to the driver's program, `permissions.json` since PUSH1f2d handed `daoris agent rules`, and `keys.json` since PUSH1f2e5 handed `daoris agent key`), and the other skips it.",
   "files": {
     "tools.json": [
       "{",
@@ -352,6 +352,7 @@
     {
       "name": "keys: an account's key replaced changes that key alone, an agent's own unknown key and the file's kept as written",
       "file": "keys.json",
+      "only": "driver",
       "edit": { "op": "key-replace", "agent": "claude-code", "account": "account-1", "key": "sk-new" },
       "changes": [
         { "from": ["    \"account-1\": \"sk-one\","], "to": ["    \"account-1\": \"sk-new\","] }
@@ -360,6 +361,7 @@
     {
       "name": "keys: a file in CRLF stays in CRLF",
       "file": "keys.json",
+      "only": "driver",
       "crlf": true,
       "edit": { "op": "key-replace", "agent": "claude-code", "account": "account-2", "key": "sk-new" },
       "changes": [
@@ -369,6 +371,7 @@
     {
       "name": "keys: a key added over a file that does not read is refused, every key in it kept",
       "file": "keys.json",
+      "only": "driver",
       "start": [
         { "from": ["  \"ratio\": 1.50"], "to": ["  \"ratio\": 1.50,"] }
       ],
