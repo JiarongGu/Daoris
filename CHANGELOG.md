@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- A conversation whose account is over its usage curve no longer offers to go on with another agent while another account of the
+  same agent has room: Daoris moves it to that account at its turn's end instead. The offer still appears with switching off, or
+  where no account of the agent has room.
 - A workflow whose work you reopened, once its agent makes it ready again, now says that its next step waits for you to go on with
   it on the new work or abandon it, with a button to that step's page. Before, it said the work waited for your done, which that
   workflow does not take. In English and 中文.
