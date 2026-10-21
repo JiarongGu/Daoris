@@ -54,6 +54,36 @@ public sealed class AgentsCommandTests : IDisposable
     private static void Account(string home, string name = "work") =>
         Directory.CreateDirectory(HarnessSettings.ProfileHome(home, "claude-code", name));
 
+    /// <summary>
+    /// A refusal's command names a workspace with a space in double quotes, and an account a shell cannot take by a placeholder
+    /// (<see cref="ShellWord"/>): the CLI's <c>shellword.test.ts</c> held these through its TypeScript verbs until PUSH1f2e handed them here.
+    /// </summary>
+    [Fact]
+    public async Task A_refusals_command_names_a_workspace_with_a_space_in_double_quotes_and_an_account_it_cannot_spell_by_a_placeholder()
+    {
+        foreach (var name in new[] { "account-1", "account-2", "R&D" }) Account(Home, name);
+        Assert.Equal(0, await AgentsCommand.RunAsync(
+            ["profile", "order", "claude-code", "account-1", "--workspace", "my team"], World(), CancellationToken.None));
+
+        Assert.Contains("`daoris agent profile order claude-code account-1 account-2 --workspace \"my team\"` adds it",
+            await Refused("profile", "default", "claude-code", "account-2", "--workspace", "my team"));
+        Assert.Contains("`daoris agent profile order claude-code <account> account-1` sets it",
+            await Refused("profile", "order", "claude-code", "R&D", "account-1", "--clear"));
+        Assert.Contains("`daoris agent profile ready claude-code <account>` is that account",
+            await Refused("profile", "ready", "claude-code", "R&D", "--own"));
+        Assert.Contains("`daoris agent profile rename claude-code <account> work`; naming it `R&D` gives it none",
+            await Refused("profile", "rename", "claude-code", "R&D"));
+        Assert.Contains("`daoris agent profile join claude-code <account> work`", await Refused("profile", "join", "claude-code", "R&D"));
+
+        async Task<string> Refused(params string[] words)
+        {
+            _out.GetStringBuilder().Clear();
+            _error.GetStringBuilder().Clear();
+            Assert.NotEqual(0, await AgentsCommand.RunAsync(words, World(), CancellationToken.None));
+            return _out.ToString() + _error;
+        }
+    }
+
     private AgentsWorld World(string? marker = null, string? wiring = null) => new()
     {
         Instance = new InstanceWorld
