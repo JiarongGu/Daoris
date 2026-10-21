@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Daoris.Driver;
+using Xunit.Abstractions;
 
 namespace Daoris.Desktop.Driver.Tests;
 
@@ -23,9 +24,11 @@ public sealed class LandGitCountTests : IDisposable
 
     private readonly string _scratch;
     private readonly string _home;
+    private readonly ITestOutputHelper _output;
 
-    public LandGitCountTests()
+    public LandGitCountTests(ITestOutputHelper output)
     {
+        _output = output;
         _scratch = Path.Combine(RepoRoot(), "_fixtures", "land-git-count", Guid.NewGuid().ToString("N")[..8]);
         _home = Path.Combine(_scratch, "daoris-home");
         Directory.CreateDirectory(_home);
@@ -213,16 +216,23 @@ public sealed class LandGitCountTests : IDisposable
     // automatic landing measured 55 and the merge press 43; the squash press stayed within 51. PROC1d-iv's questions of commits kept
     // a judgement (and `diff` and `rev-list --count` of ids kept in the planning) moved none of the three: one branch asks no pair twice.
     // LANDGIT1c hands the judgement's `status` count to the dirty check, and the look's to the landing: 53, 50 and 42.
-    private const int AutomaticCeiling = 53;
-    private const int SquashCeiling = 50;
-    private const int MergeCeiling = 42;
+    // LANDGIT1b passed the head and tip reads down instead of keeping them: the look's try takes the rule's plan alone (the press's plan
+    // read the line's tips, the head and the named branch's tip again), the landing reads the tree's repository and branch once for
+    // its readers, the content proof takes the tree's own branch its judgement read, and the line's two forms are one snapshot. 44, 46
+    // and 40, each act's own read (the branch's commits, the pinned tip, the tree's move) still made right before it. The two together,
+    // each landing's `status` and its repository and branch handed down: 42, 45 and 39.
+    private const int AutomaticCeiling = 42;
+    private const int SquashCeiling = 45;
+    private const int MergeCeiling = 39;
 
     private const string VerifyQuiet = "git rev-parse --verify --quiet ";
 
-    private static void Judge(List<string> starts, int ceiling)
+    private void Judge(List<string> starts, int ceiling)
     {
         var git = starts.Where(each => each.StartsWith("git ", StringComparison.Ordinal)).ToList();
         var report = $"{git.Count} git starts:\n{string.Join('\n', git)}";
+        // The run's starts in its output, so a ceiling is lowered to what was measured.
+        _output.WriteLine(report);
         // A question of commits by their ids is asked once unless a git that may move a ref ran between its two askings. What names a
         // ref or the head is never kept (another process moves it, and a judgement or a delete must see the move), so those are asked
         // as often as the steps ask them. `status` is never kept either, but the landing's judgement hands its count to the dirty check

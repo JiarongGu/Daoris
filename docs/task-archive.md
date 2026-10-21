@@ -18627,3 +18627,15 @@ On Opus: about 60 tool calls. Detail: D80's CARRY3 note.
 > - [ ] **FABRIC-PIPELINE1b2 — a saved workflow keeps a repository's light checks** (driver, cli; D192; after FABRIC-PIPELINE1a). FABRIC-PIPELINE1b built the sessions' checks under Current only: schema 1's `work` takes no `checks`, since a new field in its canonical text would change every bound run's digest, so saving Current as a named workflow drops a light repository's rule and its sessions run every gate again. Wanted: `work.checks` written only where set (the canonical rule 1a's readers adopt), read by both twins, and a graph version's `claimed.checks` read at the bind (after CUTOVER1g). Proof: a workflow saved from a light Current keeps `light`; every existing version's digest unchanged.
 
 **Outcome** 2026-10-21: built but for what waits on FABRIC-CUTOVER1g. `work` takes `checks` (`light` or `heavy-at-end`), marked `whereSet` in the kinds table both twins hold (`workflow-named.json`): the canonical text and the steps decoder leave it out where it is none, so every existing version keeps its digest and decoded graph (the table's rows, `bcf751a72ffe` unchanged); set, it is the `claimed` node's option. `workflow new --from current:<repository>` copies a light repository's rule onto the work (`workflowdoor.test.ts`); a named run's start takes its bound version's checks, never Current's rule (`SessionChecksHandTests`). A graph version's `claimed.checks`, and a run's first start reading its version's, wait for the bind before the take: FABRIC-PIPELINE1b3. D192's FABRIC-PIPELINE1b2 note says why.
+
+## LANDGIT1b — the head and tip reads saved safely (2026-10-21, D173)
+
+> - [ ] **LANDGIT1b — the head and tip reads saved safely** (driver; after LANDGIT1 and END4a; D88). Head, tip and ref reads are about 20 of a landing's remaining starts: pass them down from where they are read, with an uncached re-read right before any act that follows. Proof: the count test's ceilings lowered; `What_another_process_moves_is_asked_of_git_each_time` green.
+
+**Outcome** 2026-10-21: a landing passes down the head and tip reads it already holds instead of asking them again, and keeps none
+in `GitFacts`: the look's try takes the rule's plan alone, the landing reads the tree's repository and branch once for its readers,
+the content proof takes the tree's own branch its judgement read, and the line's two forms are one snapshot. The automatic landing
+starts 44 git processes (55), the squash press 46 (51), the merge press 40 (43); what an act rests on is still read right before it.
+Fewer than the row's estimate of 20: the rest are each act's own read, `status` (LANDGIT1c) and the tidy's. Proof: `LandGitCountTests`
+with its ceilings lowered, `What_another_process_moves_is_asked_of_git_each_time` green. On Opus: about 90 tool calls. Detail: D173's
+LANDGIT1b note.

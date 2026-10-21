@@ -343,7 +343,9 @@ public sealed class AutoLander(
         var subject = await trees.OwnSubjectAsync(
             entry.Tree, entry.Session, entry.Quest, await fresh.RecordsAsync(ct).ConfigureAwait(false), id => fresh.QuestAsync(id, ct),
             named => events.Openings([named]).GetValueOrDefault(named), choice.Gate?.Process, ct).ConfigureAwait(false);
-        var plan = await trees.PlanAsync(entry.Tree, subject, ct, choice.Gate?.Process).ConfigureAwait(false);
+        // LANDGIT1b: the rule's plan alone, since the try keeps only its plugin and the branch it names; the press's plan would read the
+        // line's tips, the head and the named branch's tip, which the landing reads again for itself.
+        var plan = await trees.PlanRuleAsync(entry.Tree, subject, ct, choice.Gate?.Process).ConfigureAwait(false);
         string? judgedAgain = null;
         var landed = await trees.LandAsync(entry.Tree, subject, ct, fresh.InUseAsync, AcceptedBy.Auto, choice.Gate, subject.Joins,
             judged: async (waited, token) =>
