@@ -355,6 +355,33 @@ public sealed class DownloadClearingTests : IDisposable
     }
 
     /// <summary>
+    /// §3.5 (F2.5): what a start was handed is kept on its record through the record's own door before it is spawned, a go-on's added to the
+    /// first's, and read back as the running session's; a start handed nothing asks nothing, and a record the service does not know is no
+    /// failure of the start.
+    /// </summary>
+    [Fact]
+    public async Task What_a_start_was_handed_is_kept_on_its_record_and_read_back()
+    {
+        using var ledger = new StandInLedger();
+        ledger.Working("s-1", "Engine", Path.Combine(_root, "tree"));
+        var claude = Agent("claude-code", "2.0.1");
+        var gh = Tool("gh", "2.61.0");
+        var first = new ProcessStartInfo(Path.Combine(claude, "bin", "claude.exe"));
+        var goOn = new ProcessStartInfo("claude");
+        goOn.Environment[Tools.PathVariable] = Path.Combine(gh, Tools.Package, "bin");
+        using var service = ledger.Client();
+
+        await DownloadKeeping.KeepHandedAsync(service, Home, "s-1", first, CancellationToken.None);
+        await DownloadKeeping.KeepHandedAsync(service, Home, "s-1", goOn, CancellationToken.None);
+        await DownloadKeeping.KeepHandedAsync(service, Home, "s-1", new ProcessStartInfo("claude"), CancellationToken.None);
+        await DownloadKeeping.KeepHandedAsync(service, Home, "nothere", first, CancellationToken.None);
+
+        var running = Assert.Single(await service.LiveSessionsAsync(CancellationToken.None));
+        Assert.Equal("s-1", running.Id);
+        Assert.Equal(["agent/claude-code/2.0.1", "tool/gh/2.61.0"], running.Resolved);
+    }
+
+    /// <summary>
     /// §3.5: the running sessions as the service answers them, each with when it opened and what its starts were handed; a record with none
     /// reads none, the start-time rule's, and a teammate's runs nothing here.
     /// </summary>
