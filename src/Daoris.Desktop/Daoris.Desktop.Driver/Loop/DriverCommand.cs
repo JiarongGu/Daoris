@@ -127,6 +127,10 @@ public static class DriverCommand
           answer <session> ["…"]
               answer a session that parked to ask you; the same session goes on with your words at the
               driver's next look.
+          notices [--json]
+              what came to you, changing nothing: what waits for your confirmation (by act and session), what needs
+              you by group, unread messages by ask, and Done and failed, as the running Daoris holds them; without
+              it, the notices' record alone, and the rest said not read. The window's Notifications is the other door.
           sessions [--group you|review|working|later|ended|archived] [--repository <name>] [--json]
               this machine's sessions by what they need: waiting on you first, then to review, working,
               resumes later and ended.

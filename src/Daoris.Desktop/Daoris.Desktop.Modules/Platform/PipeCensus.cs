@@ -192,6 +192,8 @@ public sealed class PipeCensus
             "SESSION_PROCESS", "SESSION_QUEUE", "SESSION_SEARCH", "SESSION_SPENT", "SESSION_STREAMS", "SESSION_WHERE", "SETUP_PLAN", "STARTS",
             "STATE", "STATE_SLICE", "SWEEP_PLAN", "SYSTEM_DOWNLOADS", "SYSTEM_SPACE", "SYSTEM_WIRING", "TAIL_SESSION", "TOOLS_LIST", "TRACE", "TREES_SYNC_PLAN", "TREES_SYNC_SCOPE",
             "UNDER_WAY", "USAGE", "WORKFLOW_CURRENT", "WORKFLOW_RUN", "WORK_PLAN", "WORK_STATE",
+            // NOTIFY2i: what came to the person, a press by its act and session alone, never a value, so a terminal answers none of it.
+            "NOTIFICATIONS",
             // The driver's own (D156 §3: sync, refresh): a look now, a sync pass with the service, the registry and the
             // accounts' use read again, the tools' locations looked at.
             "NUDGE", "SYNC_NOW", "REGISTRY_REFRESH", "ACCOUNTS_READ", "TOOLS_LOOK");

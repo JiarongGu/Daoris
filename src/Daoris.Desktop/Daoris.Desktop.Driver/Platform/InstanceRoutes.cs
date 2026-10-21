@@ -57,6 +57,9 @@ public static class OpenRoutes
     /// <summary><c>sessions</c>' list.</summary>
     public static InstanceRoute SessionGroups { get; } = Open("SESSION_GROUPS");
 
+    /// <summary><c>notices</c>: what came to the person, as the windows hold it (NOTIFY2i).</summary>
+    public static InstanceRoute Notifications { get; } = Open("NOTIFICATIONS");
+
     /// <summary><c>sync</c>: the tick's own pass for one circle.</summary>
     public static InstanceRoute SyncNow { get; } = Open("SYNC_NOW");
 
@@ -76,6 +79,7 @@ public static class OpenRoutes
         ("trees land --ask <id> --plan", AskLanding, "the plan; the press is the person's and acts alone until its client path is built"),
         ("trees hand <session|branch> --plan", HandoffPlan, "the plan; the press is the person's and acts alone until its client path is built"),
         ("sessions", SessionGroups, "the list"),
+        ("notices", Notifications, "the read; alone, the notices' record, the live groups said not read"),
         ("sync", SyncNow, "an open press (D156 §3: sync)"),
         ("register", RegistryRefresh, "an open press (D156 §3: refresh)"),
         // The other open reads of RPC1e: each is read alone beside an instance, with the same words, until its route answers them as
