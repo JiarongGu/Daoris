@@ -230,6 +230,37 @@ internal sealed class StandInLedger : HttpMessageHandler
         lock (_gate) Moved(families);
     }
 
+    // Each ask's channel (FABRIC-EVENT3c): its messages oldest first, and each entry's acknowledgment of a message by its id.
+    private readonly Dictionary<string, List<JsonObject>> _channels = new(StringComparer.Ordinal);
+    private readonly Dictionary<(string Ask, string Entry, string Message), (string State, string Session)> _acks = [];
+
+    /// <summary>
+    /// The person's message <paramref name="id"/> on ask <paramref name="ask"/>'s channel, to <paramref name="to"/> or everyone, as a
+    /// connector or the page keeps it (FABRIC-EVENT3c): the <c>channel</c> family moves with it, as the service's trigger moves it.
+    /// </summary>
+    public void Posted(string ask, string id, string text, string? to = null, bool? urgent = null)
+    {
+        lock (_gate)
+        {
+            _clock = _clock.AddSeconds(1);
+            var message = new JsonObject
+            {
+                ["kind"] = "message", ["id"] = id, ["person"] = true, ["text"] = text, ["at"] = _clock.ToString("O"),
+            };
+            if (to is not null) message["to"] = to;
+            if (urgent is { } level) message["urgent"] = level;
+            if (!_channels.TryGetValue(ask, out var channel)) _channels[ask] = channel = [];
+            channel.Add(message);
+            Moved("channel");
+        }
+    }
+
+    /// <summary>What entry <paramref name="entry"/> acknowledged of message <paramref name="id"/> on ask <paramref name="ask"/>'s channel, or null.</summary>
+    public string? AckOf(string ask, string entry, string id)
+    {
+        lock (_gate) return _acks.TryGetValue((ask, entry, id), out var ack) ? ack.State : null;
+    }
+
     /// <summary>A client over this ledger, as a driver is handed one; <paramref name="timeout"/> is the client's own.</summary>
     public ServiceClient Client(TimeSpan? timeout = null)
     {
@@ -475,19 +506,22 @@ internal sealed class StandInLedger : HttpMessageHandler
     /// A driven session of this machine's that took <paramref name="quest"/> and parked to ask the person (D83), in its own
     /// tree, with no words on it yet (ANSWER2): what the say door keeps the person's answer on.
     /// </summary>
-    public void Park(string session, string quest, string tree)
+    /// <param name="entry">Its line of work's key (D167 point 2), where the test reads it: <c>ask:&lt;id&gt;/&lt;repository&gt;</c> has a channel.</param>
+    public void Park(string session, string quest, string tree, string? entry = null)
     {
         lock (_gate)
         {
             var asked = _quests.Single(q => q["id"]!.GetValue<string>() == quest);
             asked["status"] = "Taken";
             _clock = _clock.AddSeconds(1);
-            _sessions.Add(new JsonObject
+            var parked = new JsonObject
             {
                 ["id"] = session, ["quest"] = quest, ["repository"] = asked["to"]!.GetValue<string>(), ["state"] = "awaiting-person",
                 ["kind"] = "driven", ["adapter"] = "stub", ["tree"] = tree, ["created"] = _clock.ToString("O"),
                 ["updated"] = _clock.ToString("O"), ["note"] = "Which port should it listen on?", ["said"] = new JsonArray(),
-            });
+            };
+            if (entry is not null) parked["entry"] = entry;
+            _sessions.Add(parked);
         }
     }
 
@@ -841,6 +875,52 @@ internal sealed class StandInLedger : HttpMessageHandler
                     if (persons.Count == 0) session.Remove("answer");
                     else session["answer"] = string.Join("\n\n", persons);
                     return Answer(HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "taken" });
+                }
+
+                // An ask's channel as one entry reads it (SESSONE2a), each message with that entry's acknowledgment (COWORK1d); an ask
+                // with no channel here is not found, as a host without it answers.
+                case ("GET", _) when path.StartsWith("/api/asks/", StringComparison.Ordinal) && path.EndsWith("/channel", StringComparison.Ordinal):
+                {
+                    var ask = path["/api/asks/".Length..^"/channel".Length];
+                    var entry = System.Web.HttpUtility.ParseQueryString(request.RequestUri.Query)["entry"] ?? "";
+                    if (!_channels.TryGetValue(ask, out var channel))
+                    {
+                        return Answer(HttpStatusCode.NotFound, new JsonObject { ["error"] = $"No ask `#{ask}`." });
+                    }
+
+                    return Answer(HttpStatusCode.OK, new JsonObject
+                    {
+                        ["ask"] = ask, ["entry"] = entry, ["unread"] = 0,
+                        ["items"] = new JsonArray([.. channel.Select(message =>
+                        {
+                            var item = message.DeepClone().AsObject();
+                            if (_acks.TryGetValue((ask, entry, message["id"]!.GetValue<string>()), out var ack))
+                            {
+                                item["ack"] = ack.State;
+                                item["ackSession"] = ack.Session;
+                            }
+
+                            return item;
+                        })]),
+                    });
+                }
+
+                // An entry's acknowledgments by message id (COWORK1d): a claim only where the entry holds none or let one go, the rest
+                // kept as said. Answers the ids it changed.
+                case ("POST", _) when path.StartsWith("/api/asks/", StringComparison.Ordinal) && path.EndsWith("/channel/ack", StringComparison.Ordinal):
+                {
+                    var ask = path["/api/asks/".Length..^"/channel/ack".Length];
+                    var (entry, session, state) = (body!["entry"]!.GetValue<string>(), body["session"]!.GetValue<string>(), body["state"]!.GetValue<string>());
+                    var changed = new JsonArray();
+                    foreach (var id in body["messages"]!.AsArray().Select(message => message!.GetValue<string>()))
+                    {
+                        var held = _acks.TryGetValue((ask, entry, id), out var ack) ? ack.State : null;
+                        if (state == ChannelAcks.Taking && held is not null and not ChannelAcks.Released) continue;
+                        _acks[(ask, entry, id)] = (state, session);
+                        changed.Add(id);
+                    }
+
+                    return Answer(HttpStatusCode.OK, new JsonObject { ["acknowledged"] = changed });
                 }
 
                 // One ask, whole, as a session's start and resume read the go-aheads on it (KNOWUSE1a).

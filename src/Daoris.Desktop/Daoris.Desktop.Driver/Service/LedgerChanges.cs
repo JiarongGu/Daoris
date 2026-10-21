@@ -8,8 +8,9 @@ namespace Daoris.Driver;
 /// life, and each answer that names a family wakes the <c>ledger</c> topic once, so the look's local plan runs as soon as a quest
 /// an agent published, a session's record, an ask or an ask's channel moved, never the remote sync (FABRIC-EVENT3a). The wake's
 /// subject is the families the answer named, joined with commas (<c>sessions</c>, <c>quests</c>, <c>asks</c>, <c>channel</c>;
-/// PUSH1d1), so whoever hears it tells them apart. The <c>look</c> topic's deadline (<c>pollSeconds</c>) still runs behind it, the
-/// reconciliation for anything the stream does not carry.
+/// PUSH1d1), so whoever hears it tells them apart. A <c>channel</c> wake is the channel's delivery (FABRIC-EVENT3c): the plan it runs
+/// reaches each line of work's part with what waits for it (<see cref="ChannelReach"/>), so a message is heard without the poll. The
+/// <c>look</c> topic's deadline (<c>pollSeconds</c>) still runs behind it, the reconciliation for anything the stream does not carry.
 /// </summary>
 /// <remarks>
 /// <para><b>Never a hot loop.</b> The next ask is never sooner than <see cref="Floor"/> after the last began; a refused or dropped
