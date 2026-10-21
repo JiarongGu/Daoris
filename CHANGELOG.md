@@ -5,6 +5,14 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session's work now lands on its line's current tip. Where the line moved since the session's tree began, Accept, and the
+  automatic landing at done, replay the work onto the line first, as they already did where the line held some of it: a branch
+  made for it grows from the line's tip, a merge merges the replay, and the session's tree follows what landed. The review says so
+  before the press (*The line moved since this work began…*). Where the replay conflicts, nothing lands: your press offers the
+  words that ask the session to rebase, and an automatic landing says them to the session itself, which rebases in its own tree,
+  reruns its tests and commits, and its work lands at the next look. A conflict only in files the repository marks
+  `linguist-generated` in its `.gitattributes` takes the line's copy of them instead, and the landing names them. In English and
+  中文.
 - Codex signs in through your browser again, as ChatGPT's desktop app does, so a ChatGPT workspace that turns device codes off can
   add its account: *Add an account…* on Agents → Codex and `daoris agent login codex` open the page, and the device code stays
   beside it (*Use a device code*, or `--device-code` at a terminal). Either way can be switched to while the other waits, which

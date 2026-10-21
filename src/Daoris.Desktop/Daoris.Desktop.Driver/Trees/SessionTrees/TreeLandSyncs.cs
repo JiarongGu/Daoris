@@ -12,7 +12,14 @@ internal sealed record LandSync(string Root, string Branch, string Line, string 
 
 /// <summary>What a landing's replay made: the new tip, the commits on it beyond what it was replayed onto, and what was left out.</summary>
 /// <param name="LeftOut">What the line holds, with what the replay found empty among the kept, oldest first.</param>
-internal sealed record LandReplay(string Now, IReadOnlyList<LandingCommit> Landed, IReadOnlyList<LeftOutCommit> LeftOut);
+internal sealed record LandReplay(string Now, IReadOnlyList<LandingCommit> Landed, IReadOnlyList<LeftOutCommit> LeftOut)
+{
+    /// <summary>
+    /// The files the repository marks generated that the work and the line both changed, which the replay took at the line's copy
+    /// (LANDREBASE1): written again where the work is merged, never the session's conflict. Empty where there were none.
+    /// </summary>
+    public IReadOnlyList<string> Generated { get; init; } = [];
+}
 
 /// <summary>
 /// A landing in sync with its line (LANDSYNC1, D87's 2026-10-15 amendment): the press's one fetch and its words where it fails, the
@@ -119,7 +126,10 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
 
         var left = sync.Held.LeftOut.ToDictionary(each => each.Sha, StringComparer.Ordinal);
         foreach (var commit in kept.Where(each => empty.Contains(each.Sha))) left[commit.Sha] = new LeftOutCommit(commit.Sha, commit.Subject, LeftOutWhy.Empty);
-        return (new LandReplay(now, landed, [.. sync.Held.Commits.Where(each => left.ContainsKey(each.Sha)).Select(each => left[each.Sha])]), null);
+        return (new LandReplay(now, landed, [.. sync.Held.Commits.Where(each => left.ContainsKey(each.Sha)).Select(each => left[each.Sha])])
+        {
+            Generated = made.Generated,
+        }, null);
     }
 
     /// <summary>The conflict's refusal (point 5): git's lines, nothing made, and the words the review offers to say to the session.</summary>
@@ -203,15 +213,23 @@ public static class LandingSyncWords
 {
     /// <summary>
     /// What <c>trees land --plan</c> says of what the line holds (LANDSYNC1, D87's amendment point 4): what the press would leave out
-    /// and why, what it would replay, and a conflict it would be refused for; nothing where the line holds none of the tree's commits.
+    /// and why, what it would replay, and a conflict it would be refused for; where the line holds none of the tree's commits and only
+    /// moved since the work began, what it would replay onto it first (LANDREBASE1); nothing where it lands the commits as made.
     /// </summary>
     public static IEnumerable<string> Plan(LandingPlan plan)
     {
-        if (plan.LeftOut is not { Count: > 0 } left) yield break;
-        yield return $"trees: it would leave out {left.Count} commit(s) the line holds: {string.Join(", ", left.Select(Each))}.";
-        var lands = plan.Lands ?? [];
-        yield return $"trees: it would replay {lands.Count} commit(s) onto the line: "
-            + string.Join(", ", lands.Select(commit => $"`{TextBounds.ShortCommit(commit.Sha, 8)}` “{commit.Subject}”")) + ".";
+        if (plan.LeftOut is not { } left || plan.Lands is not { } lands) yield break;
+        var replays = string.Join(", ", lands.Select(commit => $"`{TextBounds.ShortCommit(commit.Sha, 8)}` “{commit.Subject}”")) + ".";
+        if (left.Count == 0)
+        {
+            yield return $"trees: the line moved since its work began, so it would replay its {lands.Count} commit(s) onto the line first: {replays}";
+        }
+        else
+        {
+            yield return $"trees: it would leave out {left.Count} commit(s) the line holds: {string.Join(", ", left.Select(Each))}.";
+            yield return $"trees: it would replay {lands.Count} commit(s) onto the line: {replays}";
+        }
+
         if (plan.Conflict is { } conflict)
         {
             yield return $"trees: replaying them conflicts now, so a press would be refused: {conflict.Says} Its session can be asked: {conflict.Words}";
@@ -227,12 +245,25 @@ public static class LandingSyncWords
         _ => " (it became empty: its changes are already on the line)",
     };
 
-    /// <summary>What a replayed landing carried: <c>N commit(s) replayed onto `line`, leaving out M the line holds: …</c>.</summary>
+    /// <summary>
+    /// What a replayed landing carried: <c>N commit(s) replayed onto `line`, leaving out M the line holds: …</c>; where it left out
+    /// nothing the line holds, the line only moved since the work began (LANDREBASE1), and that is said.
+    /// </summary>
     public static string Replayed(int landed, string ontoName, IReadOnlyList<LeftOutCommit> leftOut)
     {
         var held = leftOut.Where(each => each.Why != LeftOutWhy.Empty).ToList();
-        return $"{landed} commit(s) replayed onto `{ontoName}`, leaving out {held.Count} the line holds: {string.Join(", ", held.Select(Each))}";
+        return held.Count == 0
+            ? $"{landed} commit(s) replayed onto `{ontoName}`, which moved since the work began"
+            : $"{landed} commit(s) replayed onto `{ontoName}`, leaving out {held.Count} the line holds: {string.Join(", ", held.Select(Each))}";
     }
+
+    /// <summary>
+    /// The generated files a replay took at the line's copy (LANDREBASE1), said after the sentence: up to three named, to be written again
+    /// where the work is merged. Nothing where there were none.
+    /// </summary>
+    public static string Generated(IReadOnlyList<string> paths) => paths.Count == 0 ? ""
+        : $" {paths.Count} generated file(s) the line changed too took the line's copy ({string.Join(", ", paths.Take(3))}"
+          + (paths.Count > 3 ? $" and {paths.Count - 3} more" : "") + "), to be written again where the work is merged.";
 
     /// <summary>The commits the replay found empty, said after the sentence; nothing where none was.</summary>
     public static string Emptied(IReadOnlyList<LeftOutCommit> leftOut)
@@ -255,15 +286,20 @@ public static class LandingSyncWords
         leftOut.Count == 0 ? "" : $" The line already holds {string.Join(", ", leftOut.Select(Each))}.";
 
     /// <summary>
-    /// The words the review offers to say to the session where its replay conflicts (point 5): that the line moved and holds some of
-    /// its work, the files, and to replay its own commits onto the line, keeping only what the line lacks.
+    /// The words the session is asked to rebase with where its replay conflicts (point 5): the review offers them to the person's press,
+    /// and an automatic landing says them itself (LANDREBASE1). That the line moved, and what of the work it holds where it holds some,
+    /// the files, and the steps in the session's own tree: replay its own commits onto the line (keeping only what the line lacks where it
+    /// holds some), resolve, rerun the tests its change reaches, and commit.
     /// </summary>
     public static string Rebase(string ontoName, IReadOnlyList<LeftOutCommit> leftOut, string? conflicts) =>
-        $"Rebase your work onto `{ontoName}`: the line moved since your work began and already holds some of it"
-        + (leftOut.Count == 0 ? "" : $" ({string.Join(", ", leftOut.Select(Each))})")
-        + (conflicts is null ? "." : $", and landing the rest conflicts with it: {conflicts}")
-        + $" Replay only your own commits onto `{ontoName}`, keeping only what the line lacks, resolve any conflict, and check that the work "
-        + "still holds. It is accepted again once your tree has changed.";
+        $"Rebase your work onto `{ontoName}`: the line moved since your work began"
+        + (leftOut.Count == 0
+            ? conflicts is null ? "." : $", and landing it conflicts with what the line changed: {conflicts}"
+            : $" and already holds some of it ({string.Join(", ", leftOut.Select(Each))})"
+              + (conflicts is null ? "." : $", and landing the rest conflicts with it: {conflicts}"))
+        + $" In your own tree, replay only your own commits onto `{ontoName}`"
+        + (leftOut.Count == 0 ? "" : ", keeping only what the line lacks")
+        + ", resolve each conflict, rerun the tests your change reaches, and commit. It can land again once your tree has changed.";
 
     /// <summary>
     /// A fetch that failed (point 6), in WSR7's words: git's reason, that the landing was judged against what origin said when it was

@@ -64,9 +64,13 @@ internal sealed class TreeLands(
         }
 
         var (sync, _) = await syncs.JudgeAsync(full, repository, workspace, plan.Form == LandingForm.Branch, fetch: false, ct).ConfigureAwait(false);
-        if (sync is null || sync.Held.HoldsNone) return plan;
+        if (sync is null || !sync.Held.Replays) return plan;
+        // LANDREBASE1: where the line only moved, a standing branch the press moves on grows from its own tip (D145 §3), never rewritten.
+        if (sync.Held.HoldsNone && plan.Stands) return plan;
         if (plan.Own && await OnRemoteAsync(sync.Root, sync.Branch, ct).ConfigureAwait(false))
         {
+            // A pushed branch of its own is never rewritten (D109): where the line holds none of it, it lands as it stands, as before.
+            if (sync.Held.HoldsNone) return plan;
             return plan with { LeftOut = sync.Held.LeftOut, Lands = sync.Held.Kept, Conflict = TreeLandSyncs.OwnOnRemote(sync).Conflict };
         }
 
@@ -284,7 +288,7 @@ internal sealed class TreeLands(
         return replay is null
             ? new(true, $"merged `{branch}` into `{canonical}` — {landed} commit(s).{TreeStays}")
             : new(true, $"merged `{branch}` into `{canonical}` — {LandingSyncWords.Replayed(replay.Landed.Count, canonical, replay.LeftOut)}."
-                + $"{LandingSyncWords.Emptied(replay.LeftOut)}{TreeStays}");
+                + $"{LandingSyncWords.Emptied(replay.LeftOut)}{LandingSyncWords.Generated(replay.Generated)}{TreeStays}");
     }
 
     /// <summary>What a landing says of the tree it leaves — dropped when a tidy removed it; the squash's advance says it too.</summary>
@@ -511,7 +515,9 @@ internal sealed class TreeLands(
         // (point 6), a failed fetch said and judged against the last one; the look's automatic landing has no press and fetches nothing.
         var (sync, notFetched) = await syncs.JudgeAsync(full, repository, workspace, branchForm, fetch: acceptedBy != AcceptedBy.Auto && !fetched, ct, here)
             .ConfigureAwait(false);
-        var replaying = sync is { Held.HoldsNone: false } ? sync : null;
+        // LANDREBASE1 (D87's note): and where the line moved since the tree left it, the work is brought onto its tip first, by the same
+        // replay, so what lands descends from the line's tip and a conflict is the session's to resolve, never the merge's.
+        var replaying = sync is { Held.Replays: true } ? sync : null;
         if (replaying is { Held.Kept.Count: 0 })
         {
             // The fetch brought what holds all of it: SQUASHTIDY1f's sentence where its proof now finds it, else nothing to land.
@@ -813,10 +819,11 @@ internal sealed class TreeLands(
     /// the session's own commits. A tree on a branch of its own is never squashed.
     /// </param>
     /// <param name="sync">
-    /// What the line holds of the tree's commits, where it holds some (LANDSYNC1, D87's 2026-10-15 amendment points 2 and 3): only the
-    /// rest is replayed, aside, onto the line's latest, and the branch is made at the replay's tip; a branch the landing advances takes
-    /// what neither it nor the line holds, replayed onto its tip; a branch of the tree's own is replayed in place. Null lands the
-    /// commits as made.
+    /// What the line holds of the tree's commits, where it holds some (LANDSYNC1, D87's 2026-10-15 amendment points 2 and 3), or where it
+    /// only moved since the tree left it (LANDREBASE1): only the rest is replayed, aside, onto the line's latest, and the branch is made at
+    /// the replay's tip; a branch the landing advances takes what neither it nor the line holds, replayed onto its tip, and nothing where
+    /// the line only moved; a branch of the tree's own is replayed in place, unless it is on its remote and the line only moved. Null
+    /// lands the commits as made.
     /// </param>
     /// <param name="join">
     /// The tree's judgement where it joins its entry's branch (ACCEPTALL1), even where the line holds none of its commits: where the
@@ -908,10 +915,12 @@ internal sealed class TreeLands(
             if (entered) return new TreeLanding(false, EnteredOwn(branch));
             var pushOwn = handedOn ? "" : $" Push it and open the pull request from there: `git push -u origin {branch}`.";
             // LANDSYNC1 (point 3): where the line holds some of its commits, the branch is replayed in place and keeps its name; one on its
-            // remote is never rewritten (D109), and is refused as a conflict is.
-            if (sync is not null)
+            // remote is never rewritten (D109), and is refused as a conflict is. LANDREBASE1: so is one whose line only moved, unless it is
+            // on its remote, where it lands as it stands, as before, its pull request the place it meets the line.
+            var pushed = sync is not null && await OnRemoteAsync(root, branch, ct).ConfigureAwait(false);
+            if (sync is not null && !(pushed && sync.Held.HoldsNone))
             {
-                if (await OnRemoteAsync(root, branch, ct).ConfigureAwait(false)) return TreeLandSyncs.OwnOnRemote(sync);
+                if (pushed) return TreeLandSyncs.OwnOnRemote(sync);
                 var (made, refused) = await syncs.ReplayAsync(sync, repository, workspace, sync.Onto, sync.Held.Kept, ct).ConfigureAwait(false);
                 if (refused is not null) return refused;
                 if (await syncs.MoveTreeAsync(full, sync, made!.Now, repository, workspace, inUse: null, ct).ConfigureAwait(false) is { } stays)
@@ -923,7 +932,8 @@ internal sealed class TreeLands(
                 return new Branched(
                     new TreeLanding(true,
                         $"lands `{branch}`, the session's own branch, replayed in place — {LandingSyncWords.Replayed(made.Landed.Count, sync.OntoName, made.LeftOut)}."
-                        + $"{LandingSyncWords.Emptied(made.LeftOut)} No other branch was made.{pushOwn} Nothing was merged and the checkout was not touched."
+                        + $"{LandingSyncWords.Emptied(made.LeftOut)}{LandingSyncWords.Generated(made.Generated)} No other branch was made.{pushOwn} "
+                        + "Nothing was merged and the checkout was not touched."
                         + $"{LandingSyncWords.Followed(null)}{TreeStays}",
                         branch) { LeftOut = made.LeftOut },
                     root, line, made.Landed, follows.BranchOfTree(full)?.Branch)
@@ -968,8 +978,10 @@ internal sealed class TreeLands(
             var squashedTip = squash is null ? null : context.Recorded.Of(repository, name)?.Squashed;
             var grown = squashedTip ?? standsAt;
             // ACCEPTALL1 (D167's amendment point 2): a part that ran alongside, its work not grown from the entry's branch, joins it by
-            // the same replay as what the line partly holds; one grown from it still moves it by its own tip.
-            var onto = sync ?? (join is not null && !await IsAncestorAsync(root, grown, join.Tip, ct).ConfigureAwait(false) ? join : null);
+            // the same replay as what the line partly holds; one grown from it still moves it by its own tip. LANDREBASE1: a line that only
+            // moved replays nothing onto a standing branch, which grows from its own tip (D145 §3) and is never rewritten.
+            var holding = sync is { Held.HoldsNone: false } ? sync : null;
+            var onto = holding ?? (join is not null && !await IsAncestorAsync(root, grown, join.Tip, ct).ConfigureAwait(false) ? join : null);
             if (onto is null)
             {
                 return await AdvanceAsync(root, repository, name, standsAt, branch, line, commits, handedOn, ct, against, squash, pinned: pinned).ConfigureAwait(false);
@@ -985,14 +997,14 @@ internal sealed class TreeLands(
                 lacking.Add(commit);
             }
 
-            var (onBranch, refusedOn) = await syncs.ReplayAsync(onto, repository, workspace, standsAt, lacking, ct, joining: sync is null ? name : null)
+            var (onBranch, refusedOn) = await syncs.ReplayAsync(onto, repository, workspace, standsAt, lacking, ct, joining: holding is null ? name : null)
                 .ConfigureAwait(false);
             if (refusedOn is not null) return refusedOn;
             var holds = await LineHolds.CommitsAsync(root, $"{against}..{onBranch!.Now}", ct).ConfigureAwait(false) ?? onBranch.Landed;
             var advanced = await AdvanceAsync(root, repository, name, standsAt, branch, line, holds, handedOn, ct, against, squash, onBranch.Now)
                 .ConfigureAwait(false);
             // A part that joined with nothing the line holds left nothing out: said as a landing of the commits as made says it.
-            var joined = sync is null;
+            var joined = holding is null;
             return !advanced.Landing.Landed ? advanced : advanced with
             {
                 Landing = advanced.Landing with
@@ -1055,7 +1067,8 @@ internal sealed class TreeLands(
         return new Branched(
             new TreeLanding(true,
                 $"put the work on `{name}` — {what}"
-                + (squashed is null ? "" : ", squashed into one commit") + $".{(replayed is null ? "" : LandingSyncWords.Emptied(replayed.LeftOut))}"
+                + (squashed is null ? "" : ", squashed into one commit")
+                + $".{(replayed is null ? "" : LandingSyncWords.Emptied(replayed.LeftOut) + LandingSyncWords.Generated(replayed.Generated))}"
                 + $"{pushIt} Nothing was merged and the checkout was not touched.{TreeStays}",
                 name) { LeftOut = replayed?.LeftOut },
             root, line, carried, branch)

@@ -1073,6 +1073,31 @@ describe('noteLines', () => {
   });
 
   /**
+   * LANDREBASE1 (D87's note): the look whose replay onto the line conflicts, and which told the session to rebase in its own tree, says
+   * so with a code of its own, the landing's sentence beneath it as the driver wrote it, in either language.
+   */
+  it('words a look that asked the session to rebase as its own line, in either language', () => {
+    const refused = 'Nothing was landed: replaying its own commits onto `main` conflicts with what the line changed since: CONFLICT (content).';
+    const parts = [
+      coded('landing.rebase', 'not accepted automatically: replaying its work onto the line conflicts, so its session was asked to rebase …'),
+      words(refused, 'program'),
+    ];
+
+    expect(noteLines(t, { parts }, 'en')).toEqual([
+      {
+        kind: 'said',
+        text: 'Not accepted automatically: replaying its work onto the line conflicts, so its session was asked to rebase in its own '
+          + 'tree, as follows. It lands at the first look after its tree changes.',
+      },
+      { kind: 'words', text: refused, by: 'program' },
+    ]);
+    expect(noteLines(zh, { parts }, 'zh')).toEqual([
+      { kind: 'said', text: '未自动采纳：把它的工作重放到主线上会冲突，所以已请它的会话在自己的工作树里变基，详情如下。它的工作树改变后，下一轮会落地它的工作。' },
+      { kind: 'words', text: refused, by: 'program' },
+    ]);
+  });
+
+  /**
    * XAGENT1g: the look held for a second opinion says so with a code of its own, the gate's sentence beneath it as the driver
    * wrote it, in either language; one written before the page worded it says `landing.refused`, and keeps being worded as that.
    */

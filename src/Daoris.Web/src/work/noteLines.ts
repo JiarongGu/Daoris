@@ -159,6 +159,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'landing.uncommitted': { values: ['paths'] },
   'landing.exists': { values: ['branch'] },
   'landing.refused': { values: [] },
+  // Its replay onto the line conflicts and its session was told to rebase in its own tree (LANDREBASE1), the refusal beneath it.
+  'landing.rebase': { values: [] },
   // Held by the review's gate (REVIEWENV1c), the gate's sentence beneath it; a note from before it says `landing.refused`.
   'landing.unreviewed': { values: [] },
   // Held by the second opinion's gate (XAGENT1g), the gate's sentence beneath it; a note from before it says `landing.refused`.

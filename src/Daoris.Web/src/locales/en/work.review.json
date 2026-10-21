@@ -45,6 +45,8 @@
   "work.review.leftOut.empty": "it became empty: its changes are already on the line",
   "work.review.replays": "It replays the {{count}} other commit onto the line.",
   "work.review.replays_other": "It replays the {{count}} other commits onto the line.",
+  "work.review.replaysMoved": "The line moved since this work began: Accepting replays its {{count}} commit onto the line first.",
+  "work.review.replaysMoved_other": "The line moved since this work began: Accepting replays its {{count}} commits onto the line first.",
   "work.review.conflict": "Accept would be refused now: replaying this work onto the line conflicts. {{says}}",
   "work.review.rebaseWords": "These words go to its session:",
   "work.review.askRebase": "Ask it to rebase",

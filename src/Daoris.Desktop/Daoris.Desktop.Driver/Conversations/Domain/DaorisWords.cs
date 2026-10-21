@@ -125,6 +125,14 @@ public static class DaorisKeys
     /// <summary>A step's go-on's key: the step and the submission it grew from.</summary>
     public static string GoneOn(string step, QuestSubmissionRef grew) => $"{GoneOnKind}/{step}/{grew.Machine}/{grew.Sequence}";
 
+    public const string RebaseKind = "rebase";
+
+    /// <summary>
+    /// The rebase words' key (LANDREBASE1): the session an automatic landing refused for a conflict, and the tip that conflicted, so a
+    /// look that tries the same tip again keeps one word. No quest's fact: <see cref="Read"/> names none, so the word waits as it is.
+    /// </summary>
+    public static string Rebase(string session, string tip) => $"{RebaseKind}/{session}/{tip}";
+
     /// <summary>The fact a key names; null for none, or a key that is not one of Daoris's facts.</summary>
     /// <remarks>Read from both ends, since a machine's name sits between the quest and the sequence.</remarks>
     public static DaorisFact? Read(string? key)

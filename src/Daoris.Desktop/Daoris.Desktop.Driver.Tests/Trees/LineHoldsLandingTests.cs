@@ -175,16 +175,18 @@ public sealed class LineHoldsLandingTests : LandedFixture
         Assert.Empty(trees.Recorded.All());
     }
 
-    /// <summary>The control: the line moved, but holds none of the tree's commits, so it lands exactly as before.</summary>
+    /// <summary>
+    /// The control: the line has not moved since the tree left it, so it holds none of the tree's commits and the work lands as made.
+    /// Where it moved, LANDREBASE1 replays the work onto its tip (<c>LandRebaseLandingTests</c>).
+    /// </summary>
     [Fact]
-    public async Task A_tree_whose_commits_the_line_holds_none_of_lands_as_before()
+    public async Task A_tree_whose_line_has_not_moved_lands_its_commits_as_made()
     {
         var root = await RepositoryAsync("engine");
         var trees = new SessionTrees(Home);
         var tree = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(tree.Path, "work.txt", "the work\n", "the work");
         var tip = await HeadAsync(tree.Path);
-        await CommitAsync(root, "later.txt", "the line moves on\n", "the line moves on");
 
         var plan = await trees.PlanAsync(tree.Path, Subject);
         var landed = await trees.LandAsync(tree.Path, Subject);

@@ -445,7 +445,12 @@ public static class AutoLandingNotes
     /// <param name="plugin">The rule's plugin, where the lead-in names it.</param>
     /// <param name="uncommitted">How many paths were uncommitted, where that held it.</param>
     /// <param name="branch">The branch the pattern names, where a refusal names one and the landing did not.</param>
-    public static SessionEvent Of(string code, TreeLanding? landed, string? plugin = null, int? uncommitted = null, string? branch = null)
+    /// <param name="rebaseTold">
+    /// A refusal whose replay onto the line conflicted, and whose session Daoris told to rebase in its own tree (LANDREBASE1): its own
+    /// lead-in, <c>landing.rebase</c>. A refusal it could not tell keeps <c>landing.refused</c>.
+    /// </param>
+    public static SessionEvent Of(
+        string code, TreeLanding? landed, string? plugin = null, int? uncommitted = null, string? branch = null, bool rebaseTold = false)
     {
         var named = landed?.Branch ?? branch ?? "";
         var lead = code switch
@@ -483,6 +488,9 @@ public static class AutoLandingNotes
             AutoLandingCode.Opinion => Noted.Of(NoteCodes.LandingOpinion,
                 "not accepted automatically: its work waits for a second opinion before it lands, as follows. It lands at the first "
                 + "look once the opinion is settled, or you go on without one."),
+            AutoLandingCode.Refused when rebaseTold => Noted.Of(NoteCodes.LandingRebase,
+                "not accepted automatically: replaying its work onto the line conflicts, so its session was asked to rebase in its own tree, "
+                + "as follows. It lands at the first look after its tree changes."),
             _ => Noted.Of(NoteCodes.LandingRefused, "not accepted automatically: the landing was refused, as follows. It waits for your review."),
         };
 

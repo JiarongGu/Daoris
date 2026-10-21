@@ -13,8 +13,20 @@ namespace Daoris.Driver;
 internal sealed record LineHeld(
     string Onto, string Leaves, IReadOnlyList<LandingCommit> Commits, IReadOnlyList<LandingCommit> Kept, IReadOnlyList<LeftOutCommit> LeftOut)
 {
-    /// <summary>The line holds none of the tree's commits: the landing makes its branch from the session's as made (D87).</summary>
+    /// <summary>The line holds none of the tree's commits: nothing is left out of its landing (D87).</summary>
     public bool HoldsNone => LeftOut.Count == 0;
+
+    /// <summary>
+    /// The line moved since the tree left it, and the tree has commits beyond it (LANDREBASE1, D87's note): a landing brings them onto
+    /// the line's tip first, so the work it publishes descends from that tip.
+    /// </summary>
+    public bool Behind => Commits.Count > 0 && !string.Equals(Leaves, Onto, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// A landing replays the tree's commits: the line holds some of them (LANDSYNC1), or it moved since the tree left it (LANDREBASE1).
+    /// Where neither, the work lands as made.
+    /// </summary>
+    public bool Replays => !HoldsNone || Behind;
 }
 
 /// <summary>One commit beyond a branch's cut as the look's one log reads it (LANDSYNC3): whether the line has its patch, and its files.</summary>
@@ -128,6 +140,17 @@ internal static class LineHolds
                 root, ["merge-tree", "--write-tree", "--name-only", "--messages", $"--merge-base={commit.Sha}^", current, commit.Sha], ct)
                 .ConfigureAwait(false);
             var lines = output.Split('\n', StringSplitOptions.TrimEntries);
+            // LANDREBASE1: a step that conflicts only in files the repository marks generated is not the session's conflict, as the
+            // press's replay takes the line's copy of them; the trial goes on from the tree git wrote. The names follow the tree's id,
+            // up to the blank line before git's messages.
+            if (code == 1 && lines.Length > 1 && lines[0].Length > 0
+                && lines.Skip(1).TakeWhile(each => each.Length > 0).Distinct(StringComparer.Ordinal).ToList() is { Count: > 0 } named
+                && await GeneratedPaths.AllAsync(root, named, ct, source: onto).ConfigureAwait(false) is true)
+            {
+                current = lines[0];
+                continue;
+            }
+
             if (code == 1)
             {
                 var conflicts = lines.Where(each => each.StartsWith("CONFLICT", StringComparison.Ordinal)).Distinct(StringComparer.Ordinal).ToList();

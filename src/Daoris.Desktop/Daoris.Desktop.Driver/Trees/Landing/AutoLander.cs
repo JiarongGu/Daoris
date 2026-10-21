@@ -21,6 +21,12 @@ public interface IAutoLandingWorld : IOpinionWorld
     /// landing. A world that keeps nothing between reads answers itself.
     /// </summary>
     IAutoLandingWorld Again() => this;
+
+    /// <summary>
+    /// The say door (MSG1a) for Daoris's words (LANDREBASE1): kept on an ended or parked record of this machine's under their fact's key,
+    /// for its own conversation to go on with at the next look. Null where the world has no door, and nothing is said.
+    /// </summary>
+    Task<SayAnswer?> SayAsync(string session, string text, string key, CancellationToken ct) => Task.FromResult<SayAnswer?>(null);
 }
 
 /// <summary>The world over this machine's service: the quests read once per instance, since a look builds one.</summary>
@@ -53,6 +59,9 @@ public sealed class ServiceAutoLandingWorld(ServiceClient service) : IAutoLandin
 
     /// <summary>A new world over the same service, so nothing this one read is kept.</summary>
     public IAutoLandingWorld Again() => new ServiceAutoLandingWorld(service);
+
+    public async Task<SayAnswer?> SayAsync(string session, string text, string key, CancellationToken ct) =>
+        await service.SayAsync(session, text, null, ct, from: DaorisWords.From, key: key).ConfigureAwait(false);
 }
 
 /// <summary>A due session the look chose to try, with what it read of it there: its quest, and its tree's tip and status.</summary>
@@ -357,7 +366,29 @@ public sealed class AutoLander(
         // Judged again under the tree's hold and refused there: what that judgement kept is the try, so nothing more is kept for it.
         if (judgedAgain is not null) return judgedAgain;
         var code = AutoLandingRules.CodeOf(landed);
-        return Tried(entry, code, choice.Tip, choice.Status, landed, plan.Plugin, plan.Target, unlanded);
+        var told = landed is { Landed: false, Conflict: { } conflict } && await ToldRebaseAsync(fresh, entry, choice.Tip, conflict, ct).ConfigureAwait(false);
+        return Tried(entry, code, choice.Tip, choice.Status, landed, plan.Plugin, plan.Target, unlanded, rebaseTold: told);
+    }
+
+    /// <summary>
+    /// The rebase words said to the session itself (LANDREBASE1, D87's note): an automatic landing has nobody to press the review's
+    /// <i>Ask it to rebase</i>, so where its replay onto the line conflicts, the words the press would send go to the session through the
+    /// say door as Daoris's, keyed by the session and the tip that conflicted. Its own conversation goes on with them in its own tree at
+    /// the next look, where the context to resolve the conflict is; the landing is tried again once its tree changes, and a tip that
+    /// conflicts again is told again, once. True where the door kept them.
+    /// </summary>
+    private static async Task<bool> ToldRebaseAsync(IAutoLandingWorld world, AutoLanding entry, string? tip, LandingConflict conflict, CancellationToken ct)
+    {
+        if (tip is null) return false;
+        try
+        {
+            return await world.SayAsync(entry.Session, conflict.Words, DaorisKeys.Rebase(entry.Session, tip), ct).ConfigureAwait(false) is { Kept: true };
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
+        {
+            // Untold, the refusal is said as any other is, and the person's review offers the words.
+            return false;
+        }
     }
 
     /// <summary>
@@ -608,9 +639,10 @@ public sealed class AutoLander(
     /// machine log by its code; and the look's line for it.
     /// </summary>
     /// <param name="named">The branch the pattern names, which a refusal's note names where the landing made none.</param>
+    /// <param name="rebaseTold">Its replay conflicted and its session was told to rebase (LANDREBASE1), which its note says.</param>
     private string Tried(
         AutoLanding entry, string code, string? tip, string? status, TreeLanding? landed = null, string? plugin = null,
-        string? named = null, int? commits = null, int? uncommitted = null)
+        string? named = null, int? commits = null, int? uncommitted = null, bool rebaseTold = false)
     {
         var made = landed is { Landed: true } ? landed.Branch : null;
         Due.Tried(entry.Session, new AutoTry(Now(), code)
@@ -625,7 +657,7 @@ public sealed class AutoLander(
         var line = Words(code, landed);
         if (AutoLandingNotes.Says(code))
         {
-            var note = AutoLandingNotes.Of(code, landed, plugin, uncommitted, named);
+            var note = AutoLandingNotes.Of(code, landed, plugin, uncommitted, named, rebaseTold);
             events.Keep(entry.Session, note, say: null);
             line = note.Text!;
         }

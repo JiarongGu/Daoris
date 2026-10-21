@@ -214,8 +214,9 @@ public sealed record LandingPlan(string Form, string Target, string Source, stri
 
     /// <summary>
     /// The tree's commits the line already holds, which the press would leave out, oldest first (LANDSYNC1, D87's 2026-10-15
-    /// amendment point 4): judged against the line as last fetched, since the plan reaches no network. Null where the line holds
-    /// none of them, and the press lands the tree as before.
+    /// amendment point 4): judged against the line as last fetched, since the plan reaches no network. Empty where the line holds none
+    /// of them but moved since the tree left it, and the press replays them all onto it first (LANDREBASE1, D87's note). Null where the
+    /// press lands the tree's commits as made: the line has not moved, or the branch is one the press moves on or may not rewrite.
     /// </summary>
     public IReadOnlyList<LeftOutCommit>? LeftOut { get; init; }
 
@@ -224,7 +225,8 @@ public sealed record LandingPlan(string Form, string Target, string Source, stri
 
     /// <summary>
     /// Where replaying <see cref="Lands"/> onto the line conflicts now (a trial that writes no ref and no tree), and the words that
-    /// would ask the session to rebase: the press would be refused. Null where it replays cleanly, or nothing is left out.
+    /// would ask the session to rebase: the press would be refused. Null where it replays cleanly, where only files the repository
+    /// marks generated conflict (LANDREBASE1), or where nothing is replayed.
     /// </summary>
     public LandingConflict? Conflict { get; init; }
 }
@@ -290,7 +292,8 @@ public sealed record TreeLanding(
 
     /// <summary>
     /// What the landing left out because the line holds it, and what its replay found empty, oldest first (LANDSYNC1, D87's
-    /// 2026-10-15 amendment point 4). Null where the line held none of the tree's commits and it landed them as made.
+    /// 2026-10-15 amendment point 4); empty where it replayed the commits onto a line that only moved (LANDREBASE1). Null where it
+    /// landed them as made.
     /// </summary>
     public IReadOnlyList<LeftOutCommit>? LeftOut { get; init; }
 

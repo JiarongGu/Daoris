@@ -22,10 +22,14 @@ const whyOf = (t: TFunction, commit: LeftOutCommit) => {
 
 /**
  * What a press would leave out because the line holds it, and how many it would replay onto the line (LANDSYNC1): said before the
- * press in the review's foot and in the head's ask. Nothing where the line holds none of the tree's commits, which land as made.
+ * press in the review's foot and in the head's ask. Where the line holds none of the tree's commits but moved since the work began,
+ * the plan leaves out nothing and replays them all, and that is said (LANDREBASE1). Nothing where they land as made.
  */
 export function LeftOutLines({ leftOut, lands }: { leftOut?: LeftOutCommit[] | null; lands?: LandsCommit[] | null }) {
   const { t } = useTranslation();
+  if (leftOut && leftOut.length === 0 && lands?.length) {
+    return <p className="m-0 text-small text-ink-soft">{t('work.review.replaysMoved', { count: lands.length })}</p>;
+  }
   if (!leftOut?.length) return null;
   return (
     <div className="grid gap-1 text-small text-ink-soft">

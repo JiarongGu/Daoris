@@ -684,7 +684,8 @@ public sealed class TreesRoutes(DriverLoop loop)
         Session = session, plan.Form, plan.Target, plan.Source, plan.Plugin, plan.Problem, plan.Own, plan.Stands, Uncommitted = uncommitted,
         Workflow = WorkflowWaits(gate.Workflow), Review = Waits(gate.Review), Opinion = Opinion(gate.Opinion),
         // LANDSYNC1 (D87's 2026-10-15 amendment point 4): what the press would leave out because the line holds it, what it would land,
-        // and a conflict it would be refused for; each absent where the line holds none of the tree's commits.
+        // and a conflict it would be refused for; `leftOut` empty beside `lands` where the line only moved since the work began and the
+        // press replays it all (LANDREBASE1); each absent where the work lands as made.
         LeftOut = LeftOut(plan.LeftOut), Lands = plan.Lands?.Select(commit => new { Commit = Short(commit.Sha), commit.Subject }).ToArray(),
         Conflict = Conflict(plan.Conflict),
         LeftOutOf = leftOutOf,

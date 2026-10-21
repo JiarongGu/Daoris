@@ -6,7 +6,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// PROCESS1b-ii (D164's amendment point 2 and its PROCESS1b-ii note): where the repository's landing rule asks for <c>squash</c>,
 /// Accept makes the pull request's branch one commit, the first commit Daoris itself makes: the session's tip's tree, its parent
-/// where the session left the line, its message the quest's title and the session's commits' subjects, made as git's own
+/// where the session left the line (the line's tip, where it moved since and the work was brought onto it first, LANDREBASE1), its
+/// message the quest's title and the session's commits' subjects, made as git's own
 /// identity in that repository and refused where git has none. The record keeps the session tip it squashed, which is what
 /// proves the session landed: its head, Discard's offer and the clean-up read the session branch as landed while its tip is
 /// that commit or an ancestor of it. A chain's later landing adds one commit squashing only what was added since. A tree on a
@@ -37,20 +38,21 @@ public sealed class LandingSquashTests : IDisposable
     }
 
     /// <summary>
-    /// One commit: the session's tree, its parent the commit the session grew from though the line moved on since, its message the
-    /// title, each commit's subject and the session, its author git's own identity here; the record names the tip it squashed.
+    /// One commit: the session's work brought onto the line's tip first, since the line moved on (LANDREBASE1, D87's note), its parent
+    /// that tip, its message the title, each commit's subject and the session, its author git's own identity here; the record names the
+    /// tip it squashed, the replay's, which the session's tree follows.
     /// </summary>
     [Fact]
-    public async Task A_squash_lands_one_commit_of_the_sessions_tree_onto_where_it_left_the_line()
+    public async Task A_squash_lands_one_commit_of_the_sessions_work_onto_the_line_s_tip()
     {
         var root = await RepositoryAsync("engine");
         Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Squash: true));
         var trees = new SessionTrees(_home);
         var tree = await trees.OpenAsync(root, "engine", "aurora");
-        var grewFrom = (await GitAsync(root, "rev-parse", "main")).Trim();
         await CommitAsync(tree.Path, "first.txt", "the first step", "the first step");
         await CommitAsync(tree.Path, "second.txt", "the second step", "the second step");
         await CommitAsync(root, "line.txt", "the line moved on", "the line moved on");
+        var line = (await GitAsync(root, "rev-parse", "main")).Trim();
         var sessionTip = (await GitAsync(root, "rev-parse", tree.Branch)).Trim();
 
         var landed = await trees.LandAsync(tree.Path, new LandingSubject("s1", "0fda18", "Fix the gap"), inUse: NoneRunning);
@@ -59,9 +61,10 @@ public sealed class LandingSquashTests : IDisposable
         Assert.Contains($"put the work on `{Named}`", landed.Message);
         Assert.Contains("squashed", landed.Message);
         var made = (await GitAsync(root, "rev-parse", Named)).Trim();
-        Assert.Equal(grewFrom, (await GitAsync(root, "rev-parse", $"{Named}^")).Trim());
-        Assert.Equal("1", (await GitAsync(root, "rev-list", "--count", $"{grewFrom}..{Named}")).Trim());
-        Assert.Equal((await GitAsync(root, "rev-parse", $"{sessionTip}^{{tree}}")).Trim(), (await GitAsync(root, "rev-parse", $"{Named}^{{tree}}")).Trim());
+        Assert.Equal(line, (await GitAsync(root, "rev-parse", $"{Named}^")).Trim());
+        Assert.Equal("1", (await GitAsync(root, "rev-list", "--count", $"{line}..{Named}")).Trim());
+        Assert.Equal("the line moved on\n", (await GitAsync(root, "show", $"{Named}:line.txt")).Replace("\r\n", "\n"));
+        Assert.Equal("the second step\n", (await GitAsync(root, "show", $"{Named}:second.txt")).Replace("\r\n", "\n"));
         Assert.Equal("Fix the gap\n\n- the first step\n- the second step\n\nSquashed by Daoris from session `s1`\n",
             (await GitAsync(root, "log", "-1", "--format=%B", Named)).Replace("\r\n", "\n").TrimEnd('\n') + "\n");
         Assert.Equal("Fixture <fixture@example.test>", (await GitAsync(root, "log", "-1", "--format=%an <%ae>", Named)).Trim());
@@ -70,8 +73,9 @@ public sealed class LandingSquashTests : IDisposable
         var record = trees.Recorded.Of("engine", Named);
         Assert.NotNull(record);
         Assert.Equal(made, record.Tip);
-        Assert.Equal(sessionTip, record.Squashed);
-        Assert.Equal(sessionTip, (await GitAsync(root, "rev-parse", tree.Branch)).Trim());
+        Assert.NotEqual(sessionTip, record.Squashed);
+        Assert.Equal((await GitAsync(root, "rev-parse", $"{record.Squashed}^{{tree}}")).Trim(), (await GitAsync(root, "rev-parse", $"{Named}^{{tree}}")).Trim());
+        Assert.Equal(record.Squashed, (await GitAsync(root, "rev-parse", tree.Branch)).Trim());
     }
 
     /// <summary>
