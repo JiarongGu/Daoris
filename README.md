@@ -120,7 +120,7 @@ D194), `driver`'s standing choices, its workflows, its cycles and its brainstorm
 nothing. A tool's download holds nothing while it fetches, and is
 made the version under the home's lease, which it waits for. From a terminal Daoris started for a session (`DAORIS_SESSION_ID`), a change no window confirms is
 refused: it is yours to make, in the window or in your own terminal. The home's `notices.json` is what Notifications keeps of
-what ended, failed or went unanswered (NOTIFY2f); no command writes it.
+what ended, failed or went unanswered (NOTIFY2f), and of each conversation that answered you (NOTIFY2g); no command writes it.
 `agent` runs each agent's own installer,
 updater or login flow, `agent pin` fetches from a maker's verified channel, and `agent trust --yes`
 and `agent settings` edit the agent's files (D73, D98). Every other

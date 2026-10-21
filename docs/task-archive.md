@@ -19168,3 +19168,13 @@ twins' `notices` entry); each look's ended sessions, with the workspace they wer
 recorded whatever the switch says; the `notices` slice reads it again in every process and says another's notice once as `NOTICE`;
 `NOTICES_READ` and `NOTICE_DISMISS`. The page's *Done and failed* group, the bell's dot and Overview's line. Detail: D196's NOTIFY2f
 note. On Opus.
+
+## NOTIFY2g — an agent's message reaches Notifications by its urgency (2026-10-22, D196)
+
+> - [ ] **NOTIFY2g — an agent's message reaches Notifications by its urgency** (service, modules, web-shell; after 2f; D196, the notification design §9). *Messages* per ask on the service's own count, a teammate's ask marked on this machine, an urgent message to everyone toasted once, a conversation's answer kept as a notice. Proof: as §9 names it.
+
+**Outcome** 2026-10-22: built. The service counts for the person only what an agent or a teammate wrote, and keeps their mark on a
+teammate's ask on this machine (`ChannelDesk`); the `notices` slice's `messages` partition holds each live and teammate's ask with
+that count and the newest of theirs (`AskMessages`), says each urgent message to everyone once past a watermark per ask as
+`MESSAGE`, and a conversation's answer is the `answered` notice, kept before the switch's gate. The page's *Messages* group, its
+toast, the per-ask counts read from the partition, the bell's dot and Overview's line. Detail: D196's NOTIFY2g note. On Opus.
