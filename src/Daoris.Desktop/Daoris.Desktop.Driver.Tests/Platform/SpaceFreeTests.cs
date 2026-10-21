@@ -76,6 +76,9 @@ public sealed class SpaceFreeTests : IAsyncLifetime
 
     private string Engine => DaorisHome.Entry(_home, HomeEntry.BrowserEngine);
 
+    /// <summary>What an earlier build left, by its exact path as the card names it (no entry of the table holds it).</summary>
+    private string LeftOver(string path) => SpaceKinds.Places(_home, "left-over").Places[SpaceKinds.EarlierBuild.ToList().IndexOf(path)];
+
     /// <summary>A home laid out with one unit of each kind and group: what the list names, and what it must leave.</summary>
     private void LayOut()
     {
@@ -92,8 +95,8 @@ public sealed class SpaceFreeTests : IAsyncLifetime
         Write(Path.Combine(Engine, "GrShaderCache", "data_1"), 20);
         Write(Path.Combine(Engine, "Default", "Cookies"), 5);
         Write(Path.Combine(Engine, "Default", "Preferences"), 4);
-        Write(Path.Combine(_home, "webview2", "EBWebView", "x"), 9);
-        Write(Path.Combine(_home, "browser", "profile", "Cookies"), 11);
+        Write(Path.Combine(LeftOver("webview2"), "EBWebView", "x"), 9);
+        Write(Path.Combine(LeftOver("browser/profile"), "Cookies"), 11);
     }
 
     /// <summary>Every file under the home with its size and write time: what a list must leave as it was.</summary>
@@ -168,7 +171,7 @@ public sealed class SpaceFreeTests : IAsyncLifetime
         Assert.False(File.Exists(Path.Combine(DaorisHome.Entry(_home, HomeEntry.Logs), "2026-09-01.driver.jsonl")));
         Assert.True(File.Exists(Path.Combine(DaorisHome.Entry(_home, HomeEntry.Logs), "2026-10-21.driver.jsonl")));
         Assert.True(Directory.Exists(HarnessSettings.ManagedHome(_home, "claude-code", "2.0.1")));
-        Assert.True(Directory.Exists(Path.Combine(_home, "webview2")));
+        Assert.True(Directory.Exists(LeftOver("webview2")));
 
         var setAside = KindOf(run, "set-aside");
         Assert.Equal(("done", 2), (setAside.State, setAside.Removed));
@@ -243,7 +246,7 @@ public sealed class SpaceFreeTests : IAsyncLifetime
     public async Task An_earlier_builds_folder_a_program_holds_is_kept_as_in_use()
     {
         LayOut();
-        var webview = Path.Combine(_home, "webview2");
+        var webview = LeftOver("webview2");
         void Move(string from, string to)
         {
             if (string.Equals(Path.GetFullPath(from), Path.GetFullPath(webview), StringComparison.OrdinalIgnoreCase)) throw new IOException("held");
@@ -254,7 +257,7 @@ public sealed class SpaceFreeTests : IAsyncLifetime
         var run = await Ran(new SpaceRuns().Start(world, KeepingRun.Press, Asked(SpaceFree.Plan(world), unit => unit.Kind == "left-over")));
 
         Assert.True(Directory.Exists(webview));
-        Assert.False(Directory.Exists(Path.Combine(_home, "browser", "profile")));
+        Assert.False(Directory.Exists(LeftOver("browser/profile")));
         var kind = KindOf(run, "left-over");
         Assert.Equal((1, 11L), (kind.Removed, kind.Bytes));
         Assert.Equal(new Dictionary<string, int> { [SpaceKept.InUse] = 1 }, kind.Kept);

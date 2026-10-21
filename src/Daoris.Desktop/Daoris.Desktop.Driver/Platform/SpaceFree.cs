@@ -477,7 +477,9 @@ public static class SpaceFree
             foreach (var path in SpaceKinds.BrowserCaches) yield return ("browser-cache", path, Path.Combine([engine, .. path.Split('/')]));
         }
 
-        foreach (var path in SpaceKinds.EarlierBuild) yield return ("left-over", path, Path.Combine([home, .. path.Split('/')]));
+        // The card's places for what an earlier build left, in the table's order: the one place each exact path is named.
+        var left = SpaceKinds.Places(home, "left-over").Places;
+        for (var at = 0; at < SpaceKinds.EarlierBuild.Count; at++) yield return ("left-over", SpaceKinds.EarlierBuild[at], left[at]);
         var folder = DaorisHome.FolderOf(home).Folder;
         if (File.Exists(Path.Combine(folder, DaorisHome.InstallMarker)))
         {
