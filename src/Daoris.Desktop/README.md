@@ -134,6 +134,14 @@ ancestry, FABRIC-RUN1b) and D157's gates (`PassGates`), each read once a pass an
 of observed reach, `opinion`, `look`, `stop` and `all` included, and leaves a quest bound to a named version to that version (FABRIC-RUN1c).
 Its own wakes, the persisted timer and the awaited set's change, and a plugin's step as it is queued (`HookSet.StepArrived`) run link 8
 alone, never the local plan (`ChainEvents.Nodes`, FABRIC-RUN1d).
+A run bound to a graph version arms it too, and is governed on its own record, `run:<run>` (`GraphRuns`, FABRIC-CUTOVER1c, D190 points 2
+and 3): the runs folder listed once a look and each binding read once; each node observing the subject its kind names, the run's newest
+work quest here, its branch at the tip read, the landing `handed` reached on at that landing's tip, or the run itself; Current's graphs
+governing none of its quests and branches, and a branch two runs produced, or every branch of a repository holding an open run while the
+work's attribution is not read, held and said (`RunOwners`); its plugins told under the subject's unit, a landed branch at its landing's
+tip; its go-ahead begun on its own sessions' and quests' answers; and no opinion or look begun and no performed node started until its
+doors read it (CUTOVER1d). Its end is kept on its record, and its chain coming back here, at a start's ask (`NodeRuntime.Return`) or a
+restart's first look, arms it again.
 A graph holding `quest.close` arms it too (`QuestCloser.cs`, FABRIC-CLOSE1b), and so does a closure graph the home keeps (`ClosureGraphs`,
 FABRIC-CLOSE1l). An open quest's first start names its graph for the take, which binds it in its own write, and its session says `ready`
 (`ClosureBinding.AtStartAsync`, never against a host whose status does not say `closure`, nor in a workspace synced through a remote by

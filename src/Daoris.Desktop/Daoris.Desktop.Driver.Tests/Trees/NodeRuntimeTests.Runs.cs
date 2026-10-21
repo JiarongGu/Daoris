@@ -184,6 +184,31 @@ public sealed partial class NodeRuntimeTests
     }
 
     /// <summary>
+    /// A record Current's work cycle wrote on the run's quest before the run was bound is left as it stands (§2.3): nothing governs it now, so its
+    /// attempt is not asked after or sent again, and the look says so.
+    /// </summary>
+    [Fact]
+    public async Task A_record_Current_wrote_on_a_runs_quest_before_it_was_bound_is_left_as_it_stands_and_said()
+    {
+        BoundTo(ClaimedThenHanded);
+        const string Quest = "quest:q7";
+        var call = new WorkPerformCall(Quest, Plugin + "/deploy", 1, "i-before", "k-before", "", [], _now.AddMinutes(15));
+        Files.Write(new NodeRecord(Quest)
+        {
+            Statuses = new Dictionary<string, NodeStatus> { ["deploy"] = new(Quest, "deploy", NodeStates.Active) { Attempt = 1, Tries = 1, Unreconciled = 1 } },
+            Attempts = [new NodeAttempt("deploy", 1, Plugin, call, AttemptStates.Sent) { RecordedAt = _now, Generation = 1, Deliveries = 1 }],
+        });
+        _units = [RunHome.QuestUnit(RunHome.Quest(RunId))];
+
+        var pass = await RunPassAsync(Runtime(), CurrentCycles);
+
+        Assert.Single(pass.Said, line => line.StartsWith($"work  {Quest}:", StringComparison.Ordinal) && line.Contains("left as it stands", StringComparison.Ordinal));
+        Assert.Equal([RunUnit], pass.Evaluated);
+        Assert.Equal((0, 0), (_port.Asked.Count, _port.Sent.Count));
+        Assert.Equal(AttemptStates.Sent, Assert.Single(Files.Read(Quest)!.Attempts).State);
+    }
+
+    /// <summary>
     /// The chain's next step here opens a session on a branch of its own at the same commit: <c>claimed</c> moves to its quest and <c>handed</c>
     /// lapses off the old branch (§2.4.4), and is begun on the new one once that step is done. A look's set-up step published after it, its
     /// session's branch newer still, is never the run's subject (§2.2).

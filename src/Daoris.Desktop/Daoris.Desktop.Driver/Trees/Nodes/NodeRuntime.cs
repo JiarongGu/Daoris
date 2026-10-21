@@ -644,6 +644,7 @@ public sealed class NodeRuntime(
                 _restarted = false;
                 foreach (var run in runs) _returned.TryRemove(run.Run, out _);
                 _byTold = ByTold(_governed.Values);
+                bindings.AddRange(LeftBefore(_governed.Values));
                 _quests = Quests(read);
                 LastQuests = _quests;
                 var ends = new Dictionary<string, bool>(StringComparer.Ordinal);
@@ -1053,6 +1054,26 @@ public sealed class NodeRuntime(
         {
             Unit = unit.Id, Identity = scope.Identity, Landing = true,
         };
+    }
+
+    /// <summary>
+    /// What a fresh read says of the records Current's graphs wrote on a run's quests and branches before the run was bound to a graph version
+    /// (FABRIC-CUTOVER1c; the cutover design §2.3): each left as it stands, no graph governing it now, so an attempt on it not settled is held for
+    /// the person as a removed graph's is; one line each, once a look.
+    /// </summary>
+    private IEnumerable<string> LeftBefore(IEnumerable<GovernedUnit> governed)
+    {
+        foreach (var each in governed.Where(each => each.Scope is not null))
+        {
+            var units = each.Scope!.Quests.Select(quest => QuestUnits.IdOf(quest.Id)).Concat(each.Scope.Branches.Select(branch => branch.Id));
+            foreach (var unit in units.Distinct(StringComparer.Ordinal))
+            {
+                if (!File.Exists(NodeRecordFiles.PathOf(records.Home, unit))) continue;
+                if (records.Read(unit) is { } left && left.Attempts.All(attempt => attempt.State == AttemptStates.Settled)) continue;
+                yield return $"work  {unit}: a record Current's graphs wrote on it before its run `{each.Run}` was bound to a graph version is left as "
+                             + "it stands; nothing governs it now, so what it holds unsettled waits for you.";
+            }
+        }
     }
 
     /// <summary>
