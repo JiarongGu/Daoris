@@ -46,6 +46,45 @@ public sealed class SystemRoutes(DriverContext context)
         }, cancellationToken).ConfigureAwait(false);
     }
 
+    // KEEP1c (D195 point 5, the cleanup design §4.4): the Disk space card's read through the driver library's `SystemSpace`, the reader
+    // `daoris-driver space` calls too: the free space, and each kind's size with when it was counted, its rule, its next and last clean,
+    // and the run lock's holder. A read: it declares nothing and removes nothing. `{ measure: true }` counts every kind, `{ measure: [ids] }`
+    // those, each a bounded walk in the background, one kind after another; each kind's end tells `wiring`, so the card fills in kind by
+    // kind (WIRING-SIZES-LIVE1's need). The open walks nothing. Off the window's thread; the reader's own JSON whole, so a null stays a field.
+    [DriverRoute("SYSTEM_SPACE")]
+    private Task<object?> SpaceAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var asked = SpaceAsked(request.Payload);
+        return Task.Run(() =>
+        {
+            var loop = _context.Loop;
+            var home = loop.Home;
+            var sizes = SpaceSizes.Shared;
+            if (asked.Count > 0)
+            {
+                sizes.Tell(home, _ => StatePublisher.Publish(_context.Events, StateScopes.Wiring));
+                if (sizes.Start(home, asked, WiringBudget.Default)) StatePublisher.Publish(_context.Events, StateScopes.Wiring);
+            }
+
+            var world = new SpaceWorld(home) { Sizes = sizes, Uses = () => Judge().Uses() };
+            using var answer = JsonDocument.Parse(SystemSpace.Json(SystemSpace.Read(world)));
+            return (object?)answer.RootElement.Clone();
+        }, cancellationToken);
+    }
+
+    /// <summary>The kinds a read asks counted: every kind for <c>measure: true</c>, the named ones for a list, none otherwise.</summary>
+    public static IReadOnlyList<string> SpaceAsked(JsonElement? payload)
+    {
+        if (payload is not { ValueKind: JsonValueKind.Object } body || !body.TryGetProperty("measure", out var measure)) return [];
+        return measure.ValueKind switch
+        {
+            JsonValueKind.True => [.. SpaceKinds.Table.Select(kind => kind.Id)],
+            JsonValueKind.Array => [.. measure.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.String).Select(each => each.GetString()!)
+                .Where(id => SpaceKinds.Named(id) is not null)],
+            _ => [],
+        };
+    }
+
     // CACHECLEAR1: the Downloads row's list, the agents' and tools' downloaded versions with what keeps each, sized as they are
     // listed (a walk of each version's folder, off the window's thread). A read: it declares nothing and removes nothing.
     // KEEP1b: with the rule's days (`days`, null under `never`), and for each version nothing uses when its current unused stretch began

@@ -507,7 +507,18 @@ public static class SystemSpace
     {
         if (world.Uses is not { } uses) return (null, "unread");
         if (record.Problem is not null) return (null, "unreadable");
-        var listing = DownloadClearing.List(world.Home, uses(), now, measure: false);
+        DownloadUses read;
+        try
+        {
+            read = uses();
+        }
+        catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+        {
+            // What uses a version cannot be read now: no day is said, rather than a day a use would move.
+            return (null, "unreadable");
+        }
+
+        var listing = DownloadClearing.List(world.Home, read, now, measure: false);
         if (listing.Why is { } why) return (null, why);
         var goes = listing.Versions
             .Select(row => (At: DownloadKeeping.Goes(row, record, policy.Downloads), Folder: DownloadKeeping.Key(row)))
