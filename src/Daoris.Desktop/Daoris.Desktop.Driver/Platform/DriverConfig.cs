@@ -378,6 +378,16 @@ public sealed record DriverConfig(
     /// <exception cref="DriverException">The edit's refusal, nothing changed.</exception>
     public DriverConfig WithSessionChecks(string? repository, string? checks) => Daoris.Driver.SessionChecks.Apply(this, repository, checks);
 
+    /// <summary>
+    /// The person's keep rules (KEEP1d, D195 point 2; the cleanup design §2.2): <c>keep</c>, each kind absent meaning its default.
+    /// Read by the one effective policy (<see cref="KeepPolicy.Of"/>); edited only through <see cref="KeepRules.Apply"/>.
+    /// </summary>
+    public KeepChoices Keep { get; init; } = KeepChoices.None;
+
+    /// <summary>One kind's keep rule set, or its default again, through <see cref="KeepRules.Apply"/>.</summary>
+    /// <exception cref="DriverException">The rule's refusal (<see cref="ChoiceRefusal"/> out of its bounds), nothing changed.</exception>
+    public DriverConfig WithKeep(KeepSet set) => KeepRules.Apply(this, set);
+
     /// <summary>A moment as the file keeps it: in UTC, to the second.</summary>
     private static DateTimeOffset ToTheSecond(DateTimeOffset at)
     {
@@ -1014,6 +1024,8 @@ public sealed record DriverConfig(
             HeavyMapping.WriteMap(writer, HeavyGates);
             // Written only when set (FABRIC-PIPELINE1b), as the CLI writes it: absent is today's, a session running as it did.
             Daoris.Driver.SessionChecks.WriteMap(writer, SessionChecks);
+            // Written only where set (KEEP1d): absent is each kind's default, and an edit elsewhere must not pin today's defaults.
+            Keep.Write(writer);
             // Written only when set (D107), for the same reason: absent is reading on and no relationship.
             WriteFlags(writer, "readAcross", ReadAcross);
             WriteFlags(writer, "workspaceReadAcross", WorkspaceReadAcross);
@@ -1457,6 +1469,8 @@ public sealed record DriverConfig(
             HeavyGates = HeavyMapping.Map(root),
             // Read as a stored shape (FABRIC-PIPELINE1b): a value that is no choice is not read, and shadows none.
             SessionChecks = Daoris.Driver.SessionChecks.Map(root),
+            // Read as a stored shape (KEEP1d): a value out of its kind's bounds is not read, and its kind keeps its default.
+            Keep = KeepChoices.Read(root),
             ReadAcross = FlagMap(root, "readAcross"),
             WorkspaceReadAcross = FlagMap(root, "workspaceReadAcross"),
             WriteAcross = TargetMap(root, "writeAcross"),

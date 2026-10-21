@@ -12,7 +12,7 @@ public static class KeepKinds
     /// The trees the look moved aside (D88's AUTOTIDY1): its package folders, a <c>node_modules</c> beside a <c>package.json</c> git
     /// tracks, can be made again and go an hour after the move (<see cref="SetAsideSettle"/>, the cleanup design §5); the rest, git's
     /// own files, <c>bin/</c> and <c>obj/</c> among them, waits the folder's days. The person may set 1 to 90 days, or <c>whole</c>,
-    /// which keeps every folder whole as before (KEEP1d).
+    /// which keeps every folder whole as before (KEEP1d, <see cref="KeepRules"/>).
     /// </summary>
     public static KeepKind SetAside { get; } = new(
         "set-aside", [HomeEntry.Trees.Name],
@@ -36,8 +36,18 @@ public static class KeepKinds
         MaySetNever = true,
     };
 
+    /// <summary>
+    /// The machine log (D94): nothing of it is made again, and each day's file goes thirty days on, by each process's prune at its open
+    /// and by the look's pass once a day at the person's days (KEEP1d). The person may set 7 to 30 days: each process's own thirty stays
+    /// the ceiling, since the service would otherwise read the driver's choices (the cleanup design §2.1).
+    /// </summary>
+    public static KeepKind Logs { get; } = new(
+        "logs", [HomeEntry.Logs.Name], "nothing: each day's file is this machine's evidence",
+        TimeSpan.FromDays(MachineLog.KeptDays), MinDays: 7, MaxDays: MachineLog.KeptDays, MaySetWhole: false,
+        Remover: "the log's prune, each process's at its open and the look's daily at the person's days");
+
     /// <summary>Every kind with a rule that runs, in the order the card will show them.</summary>
-    public static IReadOnlyList<KeepKind> Table { get; } = [SetAside, Downloads];
+    public static IReadOnlyList<KeepKind> Table { get; } = [SetAside, Downloads, Logs];
 
     /// <summary>The kind of this id, or null where the table holds none.</summary>
     public static KeepKind? Named(string id) => Table.FirstOrDefault(kind => string.Equals(kind.Id, id, StringComparison.Ordinal));
@@ -62,7 +72,8 @@ public sealed record KeepKind(
 /// <summary>
 /// The one effective policy (the cleanup design §2.1, Codex 5.2): the table's defaults under the person's choices, the only reader of a
 /// kind's days. Every place that says or acts on the set-aside folders' days reads it: the purge, the look's report, the work inventory
-/// and the terminal's trees list; the downloads' days, the look's pass and the Downloads row (KEEP1b).
+/// and the terminal's trees list; the downloads' days, the look's pass and the Downloads row (KEEP1b); the logs' days, the look's daily
+/// prune and the card (KEEP1d).
 /// </summary>
 /// <param name="SetAside">The set-aside folders' rule.</param>
 public sealed record KeepPolicy(SetAsidePolicy SetAside)
@@ -70,17 +81,45 @@ public sealed record KeepPolicy(SetAsidePolicy SetAside)
     /// <summary>The table's defaults.</summary>
     public static KeepPolicy Default { get; } = new(new SetAsidePolicy(KeepKinds.SetAside.Days, Whole: false));
 
-    /// <summary>The downloads' rule (KEEP1b): the table's seven days until KEEP1d reads the person's choice.</summary>
+    /// <summary>
+    /// The policy where the person's choices do not read (KEEP1d): what keeps the most, never the least, since a failure keeps (the
+    /// cleanup design §6 point 7): the set-aside folders whole for their most days, no download by its days, the logs their thirty.
+    /// </summary>
+    public static KeepPolicy Unread { get; } = new(new SetAsidePolicy(TimeSpan.FromDays(KeepKinds.SetAside.MaxDays), Whole: true))
+    {
+        Downloads = new(null),
+        Logs = new(KeepKinds.Logs.Days),
+    };
+
+    /// <summary>The downloads' rule (KEEP1b): seven days by default; null is the person's <c>never</c>.</summary>
     public DownloadsPolicy Downloads { get; init; } = new(KeepKinds.Downloads.Days);
 
+    /// <summary>The machine log's rule (KEEP1d): thirty days by default.</summary>
+    public LogsPolicy Logs { get; init; } = new(KeepKinds.Logs.Days);
+
+    /// <summary>The policy the person's <paramref name="choices"/> make over the table's defaults.</summary>
+    public static KeepPolicy From(KeepChoices choices) =>
+        new(new SetAsidePolicy(choices.SetAsideDays is { } days ? TimeSpan.FromDays(days) : KeepKinds.SetAside.Days, choices.SetAsideWhole))
+        {
+            Downloads = new(choices.DownloadsNever ? null : choices.DownloadsDays is { } kept ? TimeSpan.FromDays(kept) : KeepKinds.Downloads.Days),
+            Logs = new(choices.LogsDays is { } logs ? TimeSpan.FromDays(logs) : KeepKinds.Logs.Days),
+        };
+
     /// <summary>
-    /// The policy this home keeps by. Today the table's defaults: the person's choices in <c>driver.json</c>'s <c>keep</c> arrive with
-    /// their editor and their terminal verb (KEEP1d), read here, so no reader changes then.
+    /// The policy this home keeps by: the person's choices in <c>driver.json</c>'s <c>keep</c> (KEEP1d), at the path this home's loop
+    /// resolves, over the table's defaults; <see cref="Unread"/> where that file does not read.
     /// </summary>
     public static KeepPolicy Of(string home)
     {
         ArgumentException.ThrowIfNullOrEmpty(home);
-        return Default;
+        try
+        {
+            return From(DriverConfig.Load(DriverConfig.ResolvePath(home)).Keep);
+        }
+        catch (Exception error) when (error is DriverConfigUnreadableException or HomeEntryTwiceException)
+        {
+            return Unread;
+        }
     }
 }
 
@@ -92,3 +131,6 @@ public sealed record SetAsidePolicy(TimeSpan Days, bool Whole);
 /// alone, below the floor too (KEEP1f).
 /// </summary>
 public sealed record DownloadsPolicy(TimeSpan? Days);
+
+/// <summary>The machine log's rule (KEEP1d): how many days of files are kept, today included.</summary>
+public sealed record LogsPolicy(TimeSpan Days);

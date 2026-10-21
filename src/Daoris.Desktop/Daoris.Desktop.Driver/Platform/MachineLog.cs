@@ -143,36 +143,75 @@ public sealed class MachineLog : IDisposable
     }
 
     /// <summary>Delete this machine's log files older than <see cref="KeptDays"/>; files it did not name stay.</summary>
-    public void Prune()
+    public void Prune() => Prune(KeptDays);
+
+    /// <summary>
+    /// Delete this machine's log files older than <paramref name="days"/>, today included (KEEP1d: the person's days, at most
+    /// <see cref="KeptDays"/>); files it did not name stay, and today's never goes. What went: how many files, and their bytes.
+    /// </summary>
+    public (int Count, long Bytes) Prune(int days)
     {
-        if (_folder is null) return;
+        var count = 0;
+        var bytes = 0L;
+        foreach (var path in Older(_folder, _clock(), days))
+        {
+            try
+            {
+                var length = new FileInfo(path).Length;
+                File.Delete(path);
+                count++;
+                bytes += length;
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                // Another process may still hold yesterday's file; the next start tries again.
+            }
+        }
+
+        return (count, bytes);
+    }
+
+    /// <summary>Whether the home's log folder holds a file older than <paramref name="days"/> at <paramref name="now"/>: a prune would take one.</summary>
+    public static bool HoldsOlder(string home, DateTimeOffset now, int days)
+    {
         try
         {
-            if (!Directory.Exists(_folder)) return;
-            var oldest = _clock().ToUniversalTime().Date.AddDays(1 - KeptDays);
-            foreach (var path in Directory.EnumerateFiles(_folder, "*.jsonl"))
+            return Older(DaorisHome.Entry(home, HomeEntry.Logs), now, days).Count > 0;
+        }
+        catch (HomeEntryTwiceException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// The files of <paramref name="folder"/> named by a day older than <paramref name="days"/>, today included, at most
+    /// <see cref="KeptDays"/>; a file it did not name is none of them, and a folder that does not read holds none.
+    /// </summary>
+    private static List<string> Older(string? folder, DateTimeOffset now, int days)
+    {
+        var older = new List<string>();
+        if (folder is null) return older;
+        try
+        {
+            if (!Directory.Exists(folder)) return older;
+            var oldest = now.ToUniversalTime().Date.AddDays(1 - Math.Clamp(days, 1, KeptDays));
+            foreach (var path in Directory.EnumerateFiles(folder, "*.jsonl"))
             {
                 var name = Path.GetFileName(path);
-                if (name.Length < 10
-                    || !DateTime.TryParseExact(name[..10], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var day)
-                    || day >= oldest)
+                if (name.Length >= 10
+                    && DateTime.TryParseExact(name[..10], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var day)
+                    && day < oldest)
                 {
-                    continue;
-                }
-
-                try
-                {
-                    File.Delete(path);
-                }
-                catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-                {
-                    // Another process may still hold yesterday's file; the next start tries again.
+                    older.Add(path);
                 }
             }
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
         }
+
+        return older;
     }
 
     /// <summary>

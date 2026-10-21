@@ -151,6 +151,13 @@ public sealed class DriverConfigKeepsTests
             "hand-over" => HandOverRules.Apply(
                 config, new HandOverEdit { Repository = Text("repository"), Set = new HandOverSet { Mode = Text("mode"), ModeGiven = true } }),
             "notify" => config.WithNotify(edit.GetProperty("on").GetBoolean()),
+            // KEEP1d: one kind's keep rule, through the judgement SET_KEEP, the terminal's `keep` and Ask Daoris's door make.
+            "keep" => config.WithKeep(new KeepSet(
+                Text("kind"),
+                Days: edit.TryGetProperty("days", out var days) ? days.GetInt32() : null,
+                Never: edit.TryGetProperty("never", out var never) && never.GetBoolean(),
+                Whole: edit.TryGetProperty("whole", out var whole) ? whole.GetBoolean() : null,
+                Default: edit.TryGetProperty("default", out var back) && back.GetBoolean())),
             "work-cycle-clear" => config.WithWorkCycle(Text("repository"), Text("kind"), null),
             var op => throw new InvalidOperationException($"the table names an edit this test does not make: {op}"),
         };

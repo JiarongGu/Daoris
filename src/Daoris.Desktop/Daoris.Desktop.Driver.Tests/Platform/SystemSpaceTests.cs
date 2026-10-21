@@ -58,7 +58,8 @@ public sealed class SystemSpaceTests : IDisposable
         Write(Path.Combine(engine, "Default", "Cookies"), 5);
         Write(Path.Combine(DaorisHome.Entry(_home, HomeEntry.Sessions), "s-1.events.jsonl"), 40);
         Write(Path.Combine(_home, "webview2", "EBWebView", "x"), 9);
-        Write(DaorisHome.Entry(_home, HomeEntry.DriverConfig), 3);
+        // Three bytes that read as choices (KEEP1d): a file that does not read is the policy that keeps the most.
+        File.WriteAllText(Write(DaorisHome.Entry(_home, HomeEntry.DriverConfig), 3), "{}\n");
     }
 
     /// <summary>§4.2, §4.3: the card's rows in their order, each never counted saying so; the read itself walks nothing.</summary>
@@ -79,7 +80,8 @@ public sealed class SystemSpaceTests : IDisposable
             Assert.Null(kind!["bytes"]);
             Assert.Null(kind["measured"]);
             Assert.False((bool)kind["counting"]!);
-            Assert.False((bool)kind["settable"]!);
+            // KEEP1d: the person sets the set-aside folders', the downloads' and the logs' rules; the rest are not theirs here.
+            Assert.Equal((string?)kind["id"] is "set-aside" or "downloads" or "logs", (bool)kind["settable"]!);
         });
         Assert.All(SpaceKinds.Table, kind => Assert.Null(world.Sizes.Of(_home, kind.Id)));
         Assert.Equal(143L << 30, (long)space["volume"]!["free"]!);
@@ -194,7 +196,7 @@ public sealed class SystemSpaceTests : IDisposable
         Assert.Equal((2, 75L), ((int)next["count"]!, (long)next["bytes"]!));
     }
 
-    /// <summary>§4.1, §9: each rule the card shows already runs, in its words' fields; and none is the person's to set yet (KEEP1d).</summary>
+    /// <summary>§4.1, §9: each rule the card shows already runs, in its words' fields, each at its default where the person set none.</summary>
     [Fact]
     public void Each_kinds_rule_is_the_one_that_runs()
     {
@@ -202,7 +204,7 @@ public sealed class SystemSpaceTests : IDisposable
         string? Rule(string id, string field) => KindOf(space, id)["rule"]![field]?.ToString();
 
         Assert.Equal(("days", "14", "false", "true"), (Rule("set-aside", "kind"), Rule("set-aside", "days"), Rule("set-aside", "whole"), Rule("set-aside", "default")));
-        Assert.Equal(("days", "30"), (Rule("logs", "kind"), Rule("logs", "days")));
+        Assert.Equal(("days", "30", "true"), (Rule("logs", "kind"), Rule("logs", "days"), Rule("logs", "default")));
         Assert.Equal("press", Rule("history", "kind"));
         Assert.Equal("proof", Rule("trees", "kind"));
         Assert.Equal(("own", "browser"), (Rule("browser-cache", "kind"), Rule("browser-cache", "whose")));
@@ -230,7 +232,34 @@ public sealed class SystemSpaceTests : IDisposable
         var unread = SystemSpace.Read(World());
         Assert.Null(KindOf(unread, "set-aside")["last"]);
         Assert.Equal("unreadable", (string?)KindOf(unread, "set-aside")["lastWhy"]);
-        Assert.Null(KindOf(unread, "logs")["lastWhy"]);
+        Assert.Equal("unreadable", (string?)KindOf(unread, "logs")["lastWhy"]);
+        Assert.Null(KindOf(unread, "history")["lastWhy"]);
+    }
+
+    /// <summary>
+    /// KEEP1d (§2.2, §4.1): the rules the person set in <c>driver.json</c>'s <c>keep</c> are the ones the card says, none of them the
+    /// default; and the machine log's next is its oldest day's files at the person's days.
+    /// </summary>
+    [Fact]
+    public void The_rules_the_person_set_are_said_and_the_logs_next_reads_their_days()
+    {
+        var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
+        Directory.CreateDirectory(Path.GetDirectoryName(config)!);
+        DriverConfig.Load(config)
+            .WithKeep(new KeepSet("set-aside", Days: 30, Whole: true))
+            .WithKeep(new KeepSet("downloads", Never: true))
+            .WithKeep(new KeepSet("logs", Days: 14))
+            .Save(config);
+        Write(Path.Combine(DaorisHome.Entry(_home, HomeEntry.Logs), "2026-10-15.driver.jsonl"), 50);
+
+        var space = SystemSpace.Read(World());
+        string? Rule(string id, string field) => KindOf(space, id)["rule"]![field]?.ToString();
+
+        Assert.Equal(("days", "30", "true", "false"), (Rule("set-aside", "kind"), Rule("set-aside", "days"), Rule("set-aside", "whole"), Rule("set-aside", "default")));
+        Assert.Equal(("never", null, "false"), (Rule("downloads", "kind"), Rule("downloads", "days"), Rule("downloads", "default")));
+        Assert.Equal(("days", "14", "false"), (Rule("logs", "kind"), Rule("logs", "days"), Rule("logs", "default")));
+        Assert.Equal(new DateTimeOffset(2026, 10, 29, 0, 0, 0, TimeSpan.Zero),
+            DateTimeOffset.Parse((string)KindOf(space, "logs")["next"]!["at"]!, System.Globalization.CultureInfo.InvariantCulture));
     }
 
     /// <summary>§3.1, §3.3: the run lock's holder from its file, a run under way, and one whose process is gone read as stopped before its end.</summary>

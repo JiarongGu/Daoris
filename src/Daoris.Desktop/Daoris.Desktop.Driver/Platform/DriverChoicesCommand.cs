@@ -87,6 +87,7 @@ public static class ChoiceRoutes
     public static InstanceRoute Helpers { get; } = Person("SET_HELPERS");
     public static InstanceRoute HandOver { get; } = Person("SET_HAND_OVER");
     public static InstanceRoute Commits { get; } = Person("SET_COMMITS");
+    public static InstanceRoute Keep { get; } = Person("SET_KEEP");
 
     /// <summary>Each verb that changes the home, in the verb's words: the route it sends while Daoris runs, or null with why it acts alone.</summary>
     public static IReadOnlyList<(string Verb, InstanceRoute? Route, string Reason)> Verbs { get; } =
@@ -112,6 +113,7 @@ public static class ChoiceRoutes
         ("driver helpers", Helpers, "the helpers rule"),
         ("driver handover", HandOver, "the hand-over rule"),
         ("driver commits", Commits, "the commit rule"),
+        ("driver keep <kind> …", Keep, "the Disk space card's rule of that kind"),
         ("driver timeout <minutes>", null, "alone: no route sets a session's timeout"),
         ("driver adapter <name>", null, "alone: no route sets the working agent; the window names it from the roster"),
         ("driver retry <quest> --at <n>", null, "alone: RETRY_QUEST marks at the failures its verdict counts, never at a number the person gives"),
@@ -145,7 +147,7 @@ public static class DriverChoicesCommand
     [
         "list", "drive", "undrive", "hold", "resume", "trees", "notify", "cap", "strikes", "retry", "timeout", "cooloff", "adapter", "helper",
         "intake", "line", "landing", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits", "work-cycle",
-        "brainstorms", "workflow",
+        "brainstorms", "workflow", "keep",
     ];
 
     public const string Usage =
@@ -183,6 +185,7 @@ public static class DriverChoicesCommand
                daoris-driver driver workflow use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]
                daoris-driver driver workflow kind <workspace> <kind> --label "…" [--paths <path,…>] | --drop
                       (a workflow's writes say their change, and with --plan save nothing)
+               daoris-driver driver keep [set-aside <days>|whole|slim|default · downloads <days>|never|default · logs <days>|default]
         `daoris driver …` runs these.
         """;
 
@@ -212,6 +215,8 @@ public static class DriverChoicesCommand
             "list" => false,
             "workflow" => DriverWorkflowsCommand.Changes([.. args.Skip(1)]),
             "brainstorms" => args.Any(arg => arg is "--clear" or "--mode" or "--agents" || MinuteFlags.Any(each => each.Flag == arg)),
+            // `keep` naming no kind says each rule, a read (KEEP1d).
+            "keep" => args.Count > 1,
             _ => Verbs.Contains(verb, StringComparer.Ordinal),
         };
     }
@@ -260,6 +265,7 @@ public static class DriverChoicesCommand
         {
             // `brainstorms` naming no change says the policy, a read that holds nothing and asks no confirmation (BRAINSTORM1b).
             if (verb == "brainstorms" && !Changes(args)) return BrainstormsSaid(args, before, world);
+            if (verb == "keep" && !Changes(args)) return KeepsSaid(before, world);
             press = Plan(args, before, world);
         }
         catch (ChoiceWords refused)
@@ -810,9 +816,100 @@ public static class DriverChoicesCommand
                 });
             }
 
+            // The person's keep rules (KEEP1d, D195 point 2; the cleanup design §2.2): one kind's days, `whole` or `slim`, `never`, or its
+            // default again. Judged here by the one judgement the window's SET_KEEP makes, so a value out of its bounds is refused before
+            // the window is asked, in the line both paths say (`… (KEEP_OUT_OF_RANGE)`).
+            case "keep":
+            {
+                var set = KeepAsked(args);
+                DriverConfig after;
+                try
+                {
+                    after = KeepRules.Apply(before, set);
+                }
+                catch (DriverException refused)
+                {
+                    throw new ChoiceWords(refused is ChoiceRefusal ? $"{refused.Message} ({ChoiceCodes.Of(refused)})" : refused.Message);
+                }
+
+                var payload = new JsonObject { ["kind"] = set.Kind };
+                if (set.Days is { } days) payload["days"] = days;
+                if (set.Never) payload["never"] = true;
+                if (set.Whole is { } whole) payload["whole"] = whole;
+                if (set.Default) payload["default"] = true;
+                return Change(ChoiceRoutes.Keep, payload, config => KeepRules.Apply(config, set), () =>
+                {
+                    Say($"daoris: {KeepSaid(set.Kind, after.Keep)}.");
+                    Say($"  Written to {path} — the look's next pass keeps by it, so nothing restarts.");
+                    return 0;
+                });
+            }
+
             default:
                 throw new ChoiceWords($"`{verb}` is not a standing choice this program changes.");
         }
+    }
+
+    /// <summary><c>keep &lt;kind&gt; &lt;value&gt;</c>'s words read as the rule they set (KEEP1d); anything else is its usage.</summary>
+    private static KeepSet KeepAsked(IReadOnlyList<string> args)
+    {
+        const string Usage = "`driver keep` needs a kind and its rule — `set-aside <days>|whole|slim|default`, `downloads <days>|never|default` "
+            + "or `logs <days>|default`; e.g. `daoris driver keep set-aside 30`.";
+        if (args.Count != 3) throw new ChoiceWords(Usage);
+        KeepKind kind;
+        try
+        {
+            kind = KeepRules.Kind(args[1]);
+        }
+        catch (DriverException refused)
+        {
+            throw new ChoiceWords($"{refused.Message} {Usage}");
+        }
+
+        var value = args[2].Trim();
+        switch (value)
+        {
+            case "default": return new KeepSet(kind.Id, Default: true);
+            case "never": return new KeepSet(kind.Id, Never: true);
+            case "whole": return new KeepSet(kind.Id, Whole: true);
+            case "slim": return new KeepSet(kind.Id, Whole: false);
+        }
+
+        var number = Number(value);
+        if (!IsWhole(number) || value.Length == 0) throw new ChoiceWords($"`{value}` is no rule of `{kind.Id}`: it keeps {KeepRules.Choices(kind)}.");
+        return new KeepSet(kind.Id, Days: (int)Math.Clamp(number, int.MinValue, int.MaxValue));
+    }
+
+    /// <summary>One kind's rule, as the person's <paramref name="keep"/> makes it, in a clause (KEEP1d).</summary>
+    private static string KeepSaid(string kind, KeepChoices keep)
+    {
+        var policy = KeepPolicy.From(keep);
+        return kind switch
+        {
+            "set-aside" => policy.SetAside.Whole
+                ? $"a tree's folder moved aside is kept {policy.SetAside.Days.TotalDays:0} days, whole"
+                : $"a tree's folder moved aside is kept {policy.SetAside.Days.TotalDays:0} days; its package folders go an hour after the move",
+            "downloads" => policy.Downloads.Days is { } days
+                ? $"a downloaded version nothing uses goes {days.TotalDays:0} days into its unused stretch"
+                : "a downloaded version nothing uses stays until you remove it",
+            _ => $"each day's file of the machine log is kept {policy.Logs.Days.TotalDays:0} days",
+        };
+    }
+
+    /// <summary><c>keep</c>: each kind's rule the person sets, and whether it is the default (KEEP1d).</summary>
+    private static int KeepsSaid(DriverConfig choices, DriverChoicesWorld world)
+    {
+        var write = world.Instance.Out;
+        write.WriteLine($"daoris: {world.ConfigPath}");
+        foreach (var kind in KeepChoices.Settable)
+        {
+            var said = KeepSaid(kind.Id, choices.Keep);
+            write.WriteLine(choices.Keep.IsDefault(kind.Id)
+                ? $"  {kind.Id,-10} {said}  (the default — `daoris driver keep {kind.Id} …` changes it)"
+                : $"  {kind.Id,-10} {said}  (set — `daoris driver keep {kind.Id} default` takes the default again)");
+        }
+
+        return 0;
     }
 
     /// <summary><c>list</c>: what this machine drives, as <c>daoris driver list</c> always said it.</summary>
