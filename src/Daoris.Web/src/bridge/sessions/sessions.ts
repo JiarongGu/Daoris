@@ -6,7 +6,7 @@ import { type Session, SESSION_ACTIVE } from '../../data/api';
 import { CALLS_SLICE, GROUPS_SLICE, keys, SESSIONS_SLICE } from '../../data/queries';
 import { searchable } from '../../lib/searchable';
 import type { SessionEvent } from '../../work/conversation/conversation';
-import type { SessionEntry } from '../../work/entries';
+import type { PartSpent, SessionEntry } from '../../work/entries';
 import { GROUP_ORDER, type SessionGroupName, type SessionGrouping } from '../../work/groups';
 import type { HelperAskRow, HelperWait } from '../../work/waits/HelperAsks';
 import type { HandOverAskRow } from '../../work/waits/HandOverAgentAsk';
@@ -182,6 +182,32 @@ export const useSessionOpenings = (sessions: readonly { id: string }[] | undefin
   });
 
   return openings;
+};
+
+/**
+ * What each of a line of work's parts spent (SESSCTX1d; the session-context design §7), from this machine's own record as the
+ * openings are: the *Parts* strip says it on each part's own row, so a moved session reads as one. Asked again when one of them
+ * ends a turn. Nothing in a browser, which holds no record.
+ */
+export const useSessionSpent = (ids: readonly string[] | undefined): Record<string, PartSpent> => {
+  const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const asked = [...new Set(ids ?? [])].sort();
+  const answer = useQuery({
+    queryKey: keys.spent(asked),
+    queryFn: () => call<{ spent?: Record<string, PartSpent> }>('SESSION_SPENT', { ids: asked }),
+    enabled: isAvailable && asked.length > 1,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+
+  useShenoraEvent('DAORIS', 'SESSION_EVENTS', (payload) => {
+    const batch = payload as { session?: string; events?: SessionEvent[] } | undefined;
+    if (!batch?.session || !asked.includes(batch.session)) return;
+    if (batch.events?.some((event) => event.kind === 'turn')) void client.invalidateQueries({ queryKey: keys.allSpent });
+  });
+
+  return answer.data?.spent ?? {};
 };
 
 /**

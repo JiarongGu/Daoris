@@ -18735,3 +18735,13 @@ On Opus: about 40 tool calls. Detail: D178's SYNCMERGE1c4 line.
 branch replayed in place leaving out a cherry-pick by its patch id, the tree on it; the same branch on its remote refused with the
 rebase words; an advance moving the chain's branch on by only what neither it nor the line holds, the tree following; and a tree a
 session holds staying while the landing stands. On Opus: about 40 tool calls. Detail: D87's LANDSYNC1b note.
+
+## SESSCTX1d — a session's move on the page (2026-10-21, D189)
+
+> - [ ] **SESSCTX1d — a session's move on the page** (modules, web-shell; after 1c; D189). The Parts strip says how a part began from a move (from which agent, and why), the head shows the leading part's agent, and each part's cost is on its own row, so a moved session reads as one session. Contract: the design §7. Proof: stories, vitest in en and zh, `i18n:check`, `names:check -- --strict`, the window.
+
+**Outcome** 2026-10-21: built. The *Parts* strip and flow name the agent a move or a hand-over left, where it is another than the
+part's own, and a hand-over's why; each part's row and node say its tokens over its turns from this machine's record (the driver's
+`SessionEvents.Spent`, the modules' `SESSION_SPENT`); the head's facts name the agent the line's leading part runs on where its
+parts ran on more than one. Stories and vitest in en and zh, `i18n:check`, `names:check -- --strict`. The window has not been seen.
+Detail: D189's SESSCTX1d note.

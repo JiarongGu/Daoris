@@ -42,6 +42,31 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         await Assert.ThrowsAnyAsync<Exception>(() => AnswerAsync(module, "SESSION_SEARCH", new { }));
     }
 
+    /// <summary>
+    /// SESSCTX1d (the session-context design §7): what each part spent, from this machine's own record, for the *Parts* strip's
+    /// rows: its turns, those that said what they consumed, the counts summed, a count none said null; an id with no turn left out.
+    /// </summary>
+    [Fact]
+    public async Task What_each_part_spent_is_answered_from_the_machines_own_record()
+    {
+        var loop = Loop();
+        loop.Events.Append("part1", new SessionEvent { Kind = SessionEventKind.Turn, Tokens = new(Input: 3, Output: 40, CacheRead: 900, CacheWrite: null) });
+        loop.Events.Append("part1", new SessionEvent { Kind = SessionEventKind.Turn });
+        loop.Events.Append("talk1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "hi" });
+        var module = new DriverModule(Bus, loop);
+
+        var spent = (await AnswerAsync(module, "SESSION_SPENT", new { ids = new[] { "part1", "talk1", "none1" } })).GetProperty("spent");
+        var part = spent.GetProperty("part1");
+        Assert.Equal(2, part.GetProperty("turns").GetInt32());
+        Assert.Equal(1, part.GetProperty("reported").GetInt32());
+        Assert.Equal(3, part.GetProperty("input").GetInt64());
+        Assert.Equal(40, part.GetProperty("output").GetInt64());
+        Assert.Equal(900, part.GetProperty("cacheRead").GetInt64());
+        Assert.Equal(JsonValueKind.Null, part.GetProperty("cacheWrite").ValueKind);
+        Assert.False(spent.TryGetProperty("talk1", out _));
+        Assert.False(spent.TryGetProperty("none1", out _));
+    }
+
     /// <summary>RAILPAGE1a: the rail's search takes <c>offset</c> and <c>limit</c> in sessions and answers the total and the next.</summary>
     [Fact]
     public async Task A_search_is_read_a_page_of_sessions_at_a_time()

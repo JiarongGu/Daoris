@@ -56,7 +56,7 @@ export function PartsFold({ plan, defaultOpen = false, ...props }: PartsProps & 
       <span className="min-w-0 text-ink-soft [overflow-wrap:anywhere]">
         {t('work.parts.of', { n: shown + 1, total: parts.length })}
         {' · '}
-        {t('work.parts.newest', { began: beganLine(t, newest, parts) })}
+        {t('work.parts.newest', { began: beganLine(t, newest, parts, props.rows) })}
       </span>
       <button type="button" onClick={() => setOpen(true)} className={PRESS}>
         {t('work.parts.showAll')}

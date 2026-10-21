@@ -3,10 +3,10 @@ import type { Session } from '../../data/api';
 import { ago } from '../../locales/format';
 import { cn } from '../../lib/cn';
 import { Dot, SectionTitle, SESSION_DOT, shownKey } from '../../design/ui';
-import type { SessionEntry } from '../entries';
+import type { PartSpent, SessionEntry } from '../entries';
 import { shownOf } from '../groups';
 import type { SessionWhere } from '../rail/SessionRow';
-import { beganLine, partPlace } from './partsLife';
+import { beganLine, partPlace, spentLine } from './partsLife';
 
 /** What the strip reads of one part's record besides the driver's word: its record, its repository's checkout, where its work is. */
 export type PartFacts = {
@@ -15,6 +15,8 @@ export type PartFacts = {
   root?: string | null;
   /** Where its work is now (LOOK2b): the tree it opened, or where its landing put the work. */
   where?: SessionWhere | null;
+  /** What it spent, from this machine's record (SESSCTX1d, `SESSION_SPENT`); absent where none answered or it ended no turn. */
+  spent?: PartSpent | null;
 };
 
 /** What the strip and the flow beside it are handed: the entry, the part shown, each part's record and place, and how to show another. */
@@ -52,6 +54,7 @@ export function PartsList({ entry, attended, rows, onShow }: PartsProps) {
         const facts = rows[part.session];
         const word = facts ? shownOf(facts.session, { shown: part.shown }, undefined) : null;
         const place = partPlace(t, facts);
+        const spent = spentLine(t, facts?.spent);
         const here = part.session === attended;
         return (
           <li key={part.session}>
@@ -69,9 +72,10 @@ export function PartsList({ entry, attended, rows, onShow }: PartsProps) {
               {word
                 ? <Dot tone={SESSION_DOT[word]} label={t(shownKey(word))} />
                 : <span className="text-meta text-ink-faint">{part.shown}</span>}
-              <span>{beganLine(t, part, parts)}</span>
+              <span>{beganLine(t, part, parts, rows)}</span>
               {part.quest && <span className="font-mono text-meta text-ink-faint">#{part.quest}</span>}
               {place && <span className="text-meta text-ink-faint">{place}</span>}
+              {spent && <span className="text-meta text-ink-faint">{spent}</span>}
               {facts && <span className="ml-auto shrink-0 text-meta text-ink-faint">{ago(facts.session.updated)}</span>}
             </button>
           </li>
@@ -83,7 +87,8 @@ export function PartsList({ entry, attended, rows, onShow }: PartsProps) {
 
 /**
  * **A session's parts** (SESSONE1c, D167 point 5, the co-working design §1.6): under its head, one button per record of the
- * entry, oldest first, each with its word, how it began and which tree or branch it held. The part shown is marked and counted,
+ * entry, oldest first, each with its word, how it began (a move or a hand-over from which agent, and why: SESSCTX1d), which tree
+ * or branch it held, and what it spent, on its own row, so a moved session reads as one. The part shown is marked and counted,
  * *Part 2 of 3*; a press shows another, and every act on the page stays the part shown's, since each part is still one
  * record with its own lifecycle (D167 point 1).
  *

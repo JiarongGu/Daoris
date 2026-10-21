@@ -87,4 +87,44 @@ describe('the parts strip', () => {
     render(<PartsStrip entry={line} attended="ap000003" rows={rows} onShow={() => {}} />);
     expect(screen.getAllByRole('button')[2]).toHaveTextContent('接第 2 段另起：它自己的对话已丢失');
   });
+
+  /**
+   * SESSCTX1d (the session-context design §7): a moved session reads as one. A move and a hand-over say from which agent and
+   * why, where the page holds the earlier part's record; each part says what it spent on its own row, its turns' tokens, or
+   * that its turns said none; in both languages.
+   */
+  it('says from which agent a part moved and why, and what each part spent, in both languages', async () => {
+    const parts = [
+      { ...APP.parts[0]!, began: 'opened', after: null },
+      { ...APP.parts[1]!, began: 'handed-over', after: APP.parts[0]!.session },
+      { ...APP.parts[2]!, began: 'moved', after: APP.parts[1]!.session, askedBy: null },
+    ];
+    const line = { ...APP, parts };
+    const [first, second, third] = EVIDENCE_SESSIONS;
+    const moved = {
+      ap000001: { session: { ...first!, adapter: 'claude-code' }, spent: { turns: 1, reported: 0 } },
+      ap000002: {
+        session: { ...second!, adapter: 'codex', from: 'ap000001', fromWhy: 'limit', fromBy: 'daoris' },
+        spent: { turns: 3, reported: 3, input: 1200, output: 800, cacheRead: 40_000, cacheWrite: null },
+      },
+      ap000003: { session: { ...third!, adapter: 'claude-code', from: 'ap000002', fromWhy: 'resume', fromBy: 'daoris' } },
+    };
+    render(<PartsStrip entry={line} attended="ap000003" rows={moved} onShow={() => {}} />);
+
+    let shown = screen.getAllByRole('button');
+    expect(shown[0]).toHaveTextContent('1 turn, its tokens not said');
+    expect(shown[1]).toHaveTextContent('handed over from part 1 on claude-code: its account reached its limit');
+    expect(shown[1]).toHaveTextContent('42K tokens over 3 turns');
+    expect(shown[2]).toHaveTextContent('moved on from part 2 on codex: its own conversation was lost');
+    expect(shown[2]).not.toHaveTextContent('tokens');
+
+    cleanup();
+    await i18n.changeLanguage('zh');
+    render(<PartsStrip entry={line} attended="ap000003" rows={moved} onShow={() => {}} />);
+    shown = screen.getAllByRole('button');
+    expect(shown[1]).toHaveTextContent('由第 1 段（claude-code）转交而来：');
+    expect(shown[1]).toHaveTextContent('3 轮，共 42K 个 token');
+    expect(shown[2]).toHaveTextContent('接第 2 段（codex）另起：它自己的对话已丢失');
+    expect(shown[0]).toHaveTextContent('1 轮，未报 token 数');
+  });
 });
