@@ -96,7 +96,8 @@ public sealed class VerbLeasesTests
     [InlineData("tool locations add https://lists.example/r.json")]
     [InlineData("tool locations remove https://lists.example/r.json")]
     [InlineData("tool look")]
-    // The agents' rules, trust and settings `daoris agent …` hands on (PUSH1f2d): each change, held from the top.
+    // The agents' rules, trust and settings `daoris agent …` hands on (PUSH1f2d), a pin taken back and an account's change (PUSH1f2e2):
+    // each change, held from the top.
     [InlineData("agent rules allow WebFetch")]
     [InlineData("agent rules deny Bash(rm:*) --workspace work")]
     [InlineData("agent rules ask Edit(/docs/**) --repository engine")]
@@ -107,6 +108,15 @@ public sealed class VerbLeasesTests
     [InlineData("agent settings claude-code --account work model opus")]
     [InlineData("agent settings claude-code effort low --for claude-opus-5")]
     [InlineData("agent trust claude-code D:/work/engine --yes")]
+    [InlineData("agent unpin claude-code")]
+    [InlineData("agent unpin claude-code --workspace work")]
+    [InlineData("agent profile add claude-code work")]
+    [InlineData("agent profile remove claude-code work")]
+    [InlineData("agent profile default claude-code --clear --workspace work")]
+    [InlineData("agent profile order claude-code account-1 account-2")]
+    [InlineData("agent profile ready claude-code --own")]
+    [InlineData("agent profile rename claude-code account-1 seat")]
+    [InlineData("agent profile join claude-code account-1 --machine")]
     [InlineData("a-verb-nobody-classed")]
     public void A_mutation_holds_the_lease(string words) => Assert.True(VerbLeases.Holds(words.Split(' ')), words);
 
@@ -202,6 +212,9 @@ public sealed class VerbLeasesTests
     [InlineData("agent trust claude-code D:/work/engine --yes --dry-run")]
     // What an agent runs as, read (PUSH1f2e).
     [InlineData("agent which claude-code")]
+    [InlineData("agent profile")]
+    [InlineData("agent profile list")]
+    [InlineData("agent profile order claude-code account-1 --help")]
     [InlineData("agent which claude-code-acp --workspace work --json")]
     [InlineData("agent --help")]
     [InlineData("agent rules allow WebFetch --help")]
@@ -260,6 +273,8 @@ public sealed class VerbLeasesTests
     [InlineData("agent rules accept p0000007", "daoris-driver agent rules")]
     [InlineData("agent settings claude-code model opus", "daoris-driver agent settings")]
     [InlineData("agent trust claude-code D:/work/engine --yes", "daoris-driver agent trust")]
+    [InlineData("agent unpin claude-code", "daoris-driver agent unpin")]
+    [InlineData("agent profile order claude-code account-1", "daoris-driver agent profile")]
     public void A_lease_names_the_verb_and_never_its_arguments(string words, string named) =>
         Assert.Equal(named, VerbLeases.Name(words.Split(' ')));
 }
