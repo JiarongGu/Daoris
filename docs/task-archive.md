@@ -18953,3 +18953,10 @@ graph with every synthetic node authored (`WorkflowGraphs.Saved`), and saves it 
 observed nodes of one plugin step are refused naming both, and nothing is written; the steps version is kept as written, and a go-ahead
 is said as now holding what follows it. The CLI half has no file since PUSH1f2b, so the driver is the one reader. Proof:
 `workflow-graphs.json`'s `saved` rows (`WorkflowGraphsTests`) and `WorkflowAsGraphCommandTests`. Detail: D190's FABRIC-GRAPH1j note.
+
+## LANDBACKLOG1 — a landing's replay settles a backlog-only conflict by the merge base, as the merge tool does (2026-10-21, D87)
+
+> - [ ] **LANDBACKLOG1 — a landing's replay settles a backlog-only conflict by the merge base, as the merge tool does** (driver; found 2026-10-21; D87's LANDREBASE1 note, MERGETASKS1). Replaying FABRIC-GRAPH1j onto `main` conflicted in `TASKS.md` alone and the landing was refused. Under LANDREBASE1 every such refusal sends the session the rebase words, a turn spent on a line the merge tool settles by itself (a line one side added kept, one the other removed dropped, the same line edited twice left to the session). Wanted: the replay settles a conflict confined to the repository's declared backlog (`daoris.json`'s `backlog`) by MERGETASKS1's rule, and refuses as before for anything else. Proof: a `Process` case where a branch landing conflicts only in the backlog and lands replayed, and one where a row is edited on both sides and is refused.
+
+**Outcome** 2026-10-21: built. A replay conflicting only in the line's declared backlog merges it by its base and lands, saying what
+it kept and dropped; a row both sides edited, a conflict beside code, or a backlog only the session declared stays refused. A twin of the merge tool's rule, one table (`backlog-merges.json`). Detail: D87's LANDBACKLOG1 note.

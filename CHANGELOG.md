@@ -66,6 +66,11 @@ with the version and date at release.
   file and you accepted that declaration for the repository's landed route, the landing runs the command in its replay and commits
   what it wrote on top, so the landed files read as the work's tree; without your acceptance, or with a command only the session's
   own work declares, nothing runs and the line's copy stays. This repository's merge tool reads the same declaration.
+- A landing whose replay conflicts only in the repository's backlog (`documents.backlog` in its `daoris.json`, else `TASKS.md`)
+  now lands instead of sending the session to rebase: the backlog is merged against the commit both sides grew from, keeping a row
+  one side added and dropping one a side removed, as this repository's merge tool already merges it, and the landing says so. A row
+  both sides edited, or a backlog conflict beside one in any other file, is still the session's to rebase. The backlog is the one
+  the line declares; a session's own work cannot name another.
 - Wiring or unwiring a workspace, at Settings or with `daoris remote add|remove`, now changes only that workspace's entry in
   `remotes.json`: anything else you wrote there stays as written, in its order and with its line endings, and a workspace wired
   again keeps its entry's other keys. Settings now refuses to wire a workspace over a `remotes.json` that does not read, saying
