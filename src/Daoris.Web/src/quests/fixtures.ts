@@ -1,5 +1,6 @@
 import type { Quest, Session } from '../data/api';
 import type { Consideration, TrustHold } from '../data/signals';
+import type { GraphEnd } from '../work/head/milestone';
 
 // Quests in each state a real machine reaches (FRAME1d), for the stories and the molecule tests alike — one set, so
 // what a reviewer designs against is what the tests assert against.
@@ -247,6 +248,23 @@ export const SOURCE_REOPENED: Quest = {
     session: 's-7f3a21',
   },
 };
+
+/**
+ * A closure graph's quest the person closed done before its graph's end (FABRIC-CLOSE1j2, §E5's override): its unit's record keeps
+ * the moment its done stopped the nodes still to run, which `WORK_STATE` answers as an end of `quest:<id>`.
+ */
+export const CLOSED_EARLY: Quest = { ...DONE, id: 'ce0ce0', title: 'Cache the tile atlas between runs', closure: 'gph-1' };
+export const CLOSED_EARLY_ENDS: GraphEnd[] = [{ unit: `quest:${CLOSED_EARLY.id}`, kind: 'overridden', at: hoursAgo(2), nodes: ['qa', 'close'] }];
+
+/**
+ * A chain closed by its last step's close, one of whose quests the remote refused since its take was lost meanwhile (§E5, D69): the
+ * others stay done, and its close node waits again, which would close the lost quest over the winner's take, so its stop is offered.
+ */
+export const PART_CLOSED: Quest = { ...DONE, id: 'pc0pc0', title: 'Verify the tiles in a playtest', closure: 'gph-1' };
+export const PART_CLOSED_ENDS: GraphEnd[] = [{
+  unit: `quest:${PART_CLOSED.id}`, kind: 'partially-closed', at: hoursAgo(1), quest: SEALED.id, node: 'close', attempt: 2, nodeState: 'ready',
+  words: ['stop'],
+}];
 
 // SYNCMERGE1c2 (D178 points 2, 7 and 8): two machines' work on one step, read from where this machine (`desk`) stands. The quest
 // answer names this machine (`here`), the machine holding the step while it is taken (`holder`), and how each settled conflict ended.
