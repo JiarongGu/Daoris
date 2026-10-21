@@ -40,6 +40,7 @@ holds the detail. The structural changes come first, so the features built after
 
 - **The owner's UI/UX findings with many sessions running** (2026-10-20): all built and merged by 2026-10-21 (QUESTLISTS1, SESSBADGE1, RAILLINE1, OVERVIEWNOISE1a-d, TITLEONE1, DONEEND1, STARTERSCOPE1); they reach the owner's window with the next republish, and are looked at there.
 - **BGWAIT3**: a session that ended its turn on its own background command was shown as waiting for the person (等你处理), and nothing woke it when the command ended (the owner's report, 2026-10-21).
+- **NOTIFY1**: a notification center for everything that comes to the person, so a terminal's press never blocks the page and Overview stops listing every message (the owner's direction, 2026-10-21); design first.
 - **CLEANUP1**: one cleanup strategy built into Daoris, each kind of thing it keeps given a retention rule the person can set and see on This Daoris (the owner's direction, 2026-10-21); design first.
 
 - **SIGNIN1b**: an account's sign-in says where it is and how long (SIGNIN1, merged: its phases, a late panel reading the code back, the log's harness lines); proved with the owner signing in on the install after the republish (SIGNIN1b).
@@ -59,6 +60,14 @@ holds the detail. The structural changes come first, so the features built after
 
 
 ## UI/UX first
+
+- [ ] **NOTIFY1 — a notification center: what comes to the person, in one place that never blocks the page** (design, then its rows; the owner's direction, 2026-10-21; D185, D156 §4.2, D188). A terminal's press waiting for the window is drawn across the top of every page and blocks it until answered. It says the route's raw name (`SESSION_INPUT`) under its sentence (一个终端请求以你的名义对会话说话。), and it expires in two minutes. Meanwhile session messages are listed one by one on Overview, which makes Overview long and hides what it is for. Wanted, as a design under D191 (Codex reads; D185 amended):
+  - one notification center for everything that comes to the person: a terminal's press waiting for Confirm, a session's or an ask's message, a question asked of the person, work done or failed, and *What needs you*;
+  - unread counts and a badge, opened from the title bar, with each item answered or dismissed in place;
+  - a terminal's press shown there and announced without blocking the page, worded in plain words that name the session and the words to be sent, never the route's name;
+  - Overview kept to a short summary that links into the center;
+  - whether a press's two minutes still fit once it waits in the center.
+  CONFIRMSEEN1, which the install is building, logs a card as shown and gives it a row; the design takes it as its first slice. Proof: the design accepted and its build rows filed.
 
 - [ ] **FLOWCHART1d — a workflow and its run drawn as flowcharts** (web-shell; after FLOWCHART1a1; §2.4-§2.5, §3.6, §5.1). `WorkflowChart` on `Flow`: the Workflow tab and the side bar's Workflow view top to bottom where wide, the rail at the floor; groups as fork and join, failure paths, the landing's divider, the run lit; the layout gains settled folds, focus and *Show whole*. Proof: the workflow tests' words unchanged, a 96-node run folded, stories; seen on the window. Revised 2026-10-20 by another maker's read (DESIGNREAD1): its outcome, proof and trap as the flowchart design's §10 now words them.
 - [ ] **MAPUX1 — the Map's UI/UX, its own design** (design; the map design §1, D186 §5.5). The Map stays the map of requests between repositories, and its screen was judged poor: shots of the ring and the layers at 1546 and 680 px in both themes first, then what it answers that no page does, and its rows. Proof: the document and its rows.
