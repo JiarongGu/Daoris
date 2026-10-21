@@ -916,10 +916,13 @@ public sealed class HelpRoutes(DriverContext context)
     /// steps Apply saves and the choice it makes stay with the driver, which sends exactly those when the person presses it.
     /// Null for every other kind.
     /// </summary>
+    /// <remarks>FABRIC-PIPELINE1i: the route it chooses for, whether it saves a version, whether it is a verification pipeline, and what it
+    /// asks less of the person.</remarks>
     public static object? WorkflowShown(HelpWorkflowCard? card) => card is null ? null : new
     {
         card.Id, card.Name, card.Base, card.Version, card.Scope,
         card.Diff, card.YourPart, card.Outward, card.Needs, card.AppliesTo, card.Choose,
+        card.Route, card.Saves, card.Verifies, card.Lowers,
     };
 
     // A go naming an item on the view, read as the judge reads its view (`HelpGoProposals.Plan`); an item on any other view

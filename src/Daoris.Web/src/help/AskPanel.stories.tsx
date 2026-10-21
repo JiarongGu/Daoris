@@ -230,6 +230,21 @@ const workflowCards = (): ReactNode => (
         terminal: 'daoris driver workflow apply docs-to-pr plan.json --base 1',
         workflow: { ...WORKFLOW_SHOWN, choose: false, needs: ['The plugin `azure-devops-pull-request` is not installed: add it on Plugins.'] },
       },
+      // FABRIC-PIPELINE1i: a verification pipeline's graph for the landed route, lowering the person's part; a kind's route alone.
+      {
+        id: 'w4', kind: 'workflow' as const, describe: 'Save `line-verify` v1 → v2 (Verify the line).', why: 'you asked failures to ask for their fix',
+        terminal: 'daoris driver workflow apply line-verify <file> --base 1',
+        workflow: {
+          ...WORKFLOW_SHOWN, id: 'line-verify', name: 'Verify the line', route: 'landed', saves: true, verifies: true,
+          diff: ['~ gates · check'], yourPart: [], outward: ['`gates` asks for a fix of each failed gate with no press of yours.'],
+          lowers: ['it moves the check `gates`\'s failure off your press, to `ask`'], appliesTo: 'New work only, in `web-app`.',
+        },
+      },
+      {
+        id: 'w5', kind: 'workflow' as const, describe: 'Choose `docs-to-pr` for the workspace `work`\'s kind `docs`.', why: 'you asked docs work to follow it',
+        terminal: 'daoris driver workflow use docs-to-pr --workspace work --kind docs',
+        workflow: { ...WORKFLOW_SHOWN, base: null, scope: 'work', route: 'kind:docs', saves: false, diff: [], yourPart: [], outward: [] },
+      },
     ].map((proposal) => <ProposalCard key={proposal.id} proposal={proposal} onApply={() => {}} onDismiss={() => {}} />)}
   </ul>
 );

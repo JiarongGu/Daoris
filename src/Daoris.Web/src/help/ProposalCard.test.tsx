@@ -318,6 +318,51 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByText('It is also chosen for web-app.')).toBeInTheDocument();
   });
 
+  // FABRIC-PIPELINE1i: a route with no version, a verification pipeline's graph, and what a change asks less of the person.
+  const VERIFY = {
+    ...WORKFLOW.workflow!, id: 'line-verify', name: 'Verify the line', base: 1, version: 2, choose: true, route: 'landed', saves: true,
+    verifies: true, diff: ['~ gates · check'], yourPart: [], outward: ['`gates` asks for a fix of each failed gate with no press of yours.'],
+    lowers: ['it moves the check `gates`\'s failure off your press, to `ask`'],
+  };
+
+  it('a verification pipeline\'s card leads with what it asks less of you, its nodes, and the work that lands', () => {
+    render(<ul><ProposalCard proposal={{ ...WORKFLOW, workflow: VERIFY }} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+
+    expect(headings()).toEqual(['Asks less of you', 'Nodes', 'Without asking you each time', 'Applies to']);
+    expect(screen.getByText('A verification pipeline: it checks the work that lands, and lands nothing itself.')).toBeInTheDocument();
+    expect(screen.getByText('Only your Apply makes this change.')).toBeInTheDocument();
+    expect(screen.getByText('It is chosen for the work that lands in web-app.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Apply' })).toBeInTheDocument();
+  });
+
+  it('a route with no version says nothing is saved, and names the kind of task it is chosen for', () => {
+    const kept = { ...WORKFLOW.workflow!, base: null, version: 3, choose: true, route: 'kind:docs', saves: false, diff: [], yourPart: [] };
+    render(<ul><ProposalCard proposal={{ ...WORKFLOW, workflow: kept }} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+
+    expect(screen.getByText('v3 of Documentation to a pull request, as it is: no version is saved')).toBeInTheDocument();
+    expect(screen.getByText('It is chosen for web-app\'s kind of task docs.')).toBeInTheDocument();
+    expect(screen.queryByText('Asks less of you')).not.toBeInTheDocument();
+  });
+
+  it('speaks 中文 on a verification pipeline\'s and a route\'s card', async () => {
+    const { default: i18n } = await import('../locales/i18n');
+    await i18n.changeLanguage('zh');
+    try {
+      render(<ul><ProposalCard proposal={{ ...WORKFLOW, workflow: VERIFY }} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+      expect(headings()).toEqual(['减少你的参与', '节点', '不再每次询问你', '适用于']);
+      expect(screen.getByText('选用于 web-app 中落地的工作。')).toBeInTheDocument();
+      expect(screen.getByText('只有你按下“应用”才会做出这项更改。')).toBeInTheDocument();
+      cleanup();
+      const kept = { ...WORKFLOW.workflow!, version: 3, choose: true, route: 'kind:docs', saves: false };
+      render(<ul><ProposalCard proposal={{ ...WORKFLOW, workflow: kept }} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+      expect(screen.getByText('Documentation to a pull request 的 v3，原样选用：不保存新版本')).toBeInTheDocument();
+      expect(screen.getByText('选用于 web-app 的工作类型 docs。')).toBeInTheDocument();
+    } finally {
+      cleanup();
+      await i18n.changeLanguage('en');
+    }
+  });
+
   it('speaks 中文 in the headings and leaves the driver\'s lines as sent', async () => {
     const { default: i18n } = await import('../locales/i18n');
     await i18n.changeLanguage('zh');

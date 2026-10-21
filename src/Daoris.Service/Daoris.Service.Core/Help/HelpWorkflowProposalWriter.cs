@@ -7,7 +7,8 @@ namespace Daoris.Knowledge;
 /// <summary>
 /// The <c>workflow</c> kind's writer (WORKFLOW1h-a, D157, design §8.1): a whole version of a workflow, new or an edit on a
 /// base version, for a repository or a workspace, and optionally its choice there. Its <c>steps</c> are written as nested
-/// JSON, the first kind to carry any. Only the shape is judged here; the editor's validation, the base's staleness and what
+/// JSON, the first kind to carry any; since FABRIC-PIPELINE1i a verification pipeline's <c>graph</c> in their place, and a <c>route</c>
+/// the choice is made for, which with neither chooses a saved workflow alone. Only the shape is judged here; the editor's validation, the base's staleness and what
 /// the steps need are the driver's to judge. Changes, a kind and an import are WORKFLOW1h2's, so they are refused by name.
 /// </summary>
 /// <remarks><c>partial</c> for its generated <see cref="WorkflowIdShape"/> alone (PART7), and declared in this one file.</remarks>
@@ -26,16 +27,21 @@ internal sealed partial class HelpWorkflowProposalWriter(HelpProposalFile file)
     /// </summary>
     public (string? Id, string Message) Propose(
         string? scope, string? workflow, int? baseVersion, string? steps, bool choose,
-        string? changes, string? kind, string? import, string why, string? session, DateTimeOffset at, string? name = null)
+        string? changes, string? kind, string? import, string why, string? session, DateTimeOffset at, string? name = null,
+        string? graph = null, string? route = null)
     {
         var scopeName = Blank(scope);
         var workflowId = Blank(workflow);
         var workflowName = Blank(name);
+        var routeName = Blank(route);
         if (string.IsNullOrWhiteSpace(why)) return NoReason;
         var notYet = new (string Name, string? Value)[] { ("changes", changes), ("kind", kind), ("import", import) }
             .FirstOrDefault(field => Blank(field.Value) is not null).Name;
 
         JsonElement stepList = default;
+        JsonElement graphObject = default;
+        var hasSteps = Blank(steps) is not null;
+        var hasGraph = Blank(graph) is not null;
         var refused =
             notYet is not null ? $"`{notYet}` is not proposed yet: propose the whole `steps`."
             : scopeName is null ? "a workflow proposal names its scope: the repository or workspace it applies to."
@@ -47,6 +53,10 @@ internal sealed partial class HelpWorkflowProposalWriter(HelpProposalFile file)
                  : baseVersion is < 1 ? "the base version is a whole number from 1."
                  : workflowName is not null && baseVersion is not null ? "an edit keeps its workflow's name, so `name` is left out: renaming is not proposed."
                  : workflowName is { Length: > 60 } ? "`name` is a short line, at most 60 characters."
+                 : routeName is not null && RouteProblem(routeName) is { } routeProblem ? routeProblem
+                 : hasSteps && hasGraph ? "a workflow proposal carries its `steps` or its `graph`, never both."
+                 : hasGraph ? Graph(graph, out graphObject)
+                 : !hasSteps && routeName is not null ? null
                  : Steps(steps, out stepList));
         if (refused is not null) return (null, $"{Capital(refused)} Nothing was proposed.");
 
@@ -59,16 +69,58 @@ internal sealed partial class HelpWorkflowProposalWriter(HelpProposalFile file)
             if (baseVersion is { } baseNumber) writer.WriteNumber("base", baseNumber);
             else writer.WriteNull("base");
             writer.WriteBoolean("choose", choose);
-            writer.WritePropertyName("steps");
-            stepList.WriteTo(writer);
+            // FABRIC-PIPELINE1i: a version is its steps or a verification pipeline's graph, and a route with neither chooses alone.
+            if (routeName is not null) writer.WriteString("route", routeName);
+            if (hasSteps)
+            {
+                writer.WritePropertyName("steps");
+                stepList.WriteTo(writer);
+            }
+            else if (hasGraph)
+            {
+                writer.WritePropertyName("graph");
+                graphObject.WriteTo(writer);
+            }
         }, why, session, at);
+    }
+
+    /// <summary>
+    /// Why a route is none a proposal names (FABRIC-PIPELINE1i), or null: <c>default</c>, <c>landed</c>, or <c>kind:&lt;id&gt;</c>, a kind's id
+    /// as the driver takes it: lower-case letters, digits and dashes, at most 24.
+    /// </summary>
+    private static string? RouteProblem(string route) =>
+        route is "default" or "landed"
+        || (route.StartsWith("kind:", StringComparison.Ordinal) && route[5..] is { Length: > 0 and <= 24 } kind && WorkflowIdShape().IsMatch(kind))
+            ? null
+            : $"`{route}` is not a route: `default`, `landed` for the work that lands, or `kind:<id>` for one of the scope's kinds, such as `kind:docs`.";
+
+    /// <summary>Why <c>graph</c> is not a JSON object, or null with the object; the driver's graph reader judges the rest.</summary>
+    private static string? Graph(string? text, out JsonElement graph)
+    {
+        graph = default;
+        try
+        {
+            using var document = JsonDocument.Parse(text!);
+            if (document.RootElement.ValueKind != JsonValueKind.Object) return "`graph` is the graph's JSON object, its nodes and wires.";
+            graph = document.RootElement.Clone();
+            return null;
+        }
+        catch (JsonException)
+        {
+            return "`graph` is not valid JSON: send it as the graph's JSON object.";
+        }
     }
 
     /// <summary>Why <c>steps</c> is not a non-empty JSON list of objects, or null with the list.</summary>
     private static string? Steps(string? text, out JsonElement list)
     {
         list = default;
-        if (string.IsNullOrWhiteSpace(text)) return "a workflow proposal carries its `steps`, a JSON list of step objects.";
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return "a workflow proposal carries its `steps`, a JSON list of step objects, or a verification pipeline's `graph`; or, with "
+                + "neither, the `route` it chooses a saved workflow for.";
+        }
+
         try
         {
             using var document = JsonDocument.Parse(text);

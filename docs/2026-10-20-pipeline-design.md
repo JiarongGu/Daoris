@@ -131,7 +131,9 @@ with the pipelines it routes to (§1.3), and each pipeline is versioned and boun
 - **Ask Daoris** proposes a route only once its proposal can carry one. It carries `steps` alone today, read as schema 1
   (`HelpWorkflowProposals.cs:70`, `:93`), so it can propose neither a graph version, which a verification pipeline is, nor a route
   with no version. FABRIC-PIPELINE1i adds both: a `use` with a `route` and no version (an existing workflow chosen for a route), and a
-  `graph` beside `steps`, judged by the graph reader and the mark (§2.1). The person's *Apply* sets either.
+  `graph` beside `steps`, judged by the graph reader and the mark (§2.1). The person's *Apply* sets either. (Built 2026-10-22: a
+  route is `default`, `landed` or `kind:<id>`, and a graph is proposed only for a verification pipeline; D192's FABRIC-PIPELINE1i
+  note.)
 - **The person's part is never lowered by an agent** (D157 point 10). `Involvement.Lowers` (`WorkflowGate.cs:240`) compares steps;
   a verification pipeline is a graph, so its rows read its `check` nodes, beside CUTOVER1e's reading of a graph's gate nodes. Each
   change below lowers the person's part, so an agent's choice of one is kept as a proposal, and only the person's press applies it:

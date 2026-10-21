@@ -82,6 +82,18 @@ public sealed partial class McpToolDescriptionTests
         Assert.Contains("Not proposed yet", text);
     }
 
+    /// <summary>FABRIC-PIPELINE1i: the workflow tool says a verification pipeline takes a graph, and a route alone chooses and saves nothing.</summary>
+    [Fact]
+    public void The_workflow_tool_says_a_graph_and_a_route_alone()
+    {
+        var text = string.Join(" ", Descriptions().Where(d => d.Tool == "workflow_propose").Select(d => d.Text));
+
+        Assert.Contains("verification pipeline", text);
+        Assert.Contains("graph", text);
+        Assert.Contains("`kind:<id>`", text);
+        Assert.Contains("saving nothing", text);
+    }
+
     /// <summary>WORKFLOW1h-name: the workflow tool says a new workflow is named by the person's words, and an edit keeps its name.</summary>
     [Fact]
     public void The_workflow_tool_says_a_new_workflow_takes_the_persons_name()
