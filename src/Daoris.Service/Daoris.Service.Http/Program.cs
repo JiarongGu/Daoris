@@ -922,6 +922,16 @@ if (mode == ServiceMode.Local)
 {
     app.MapGet("/api/confirmations", () => confirmations.Waiting().Select(PersonConfirmations.Wire));
 
+    // NOTIFY2j (D196 point 4, the notification design §2.5): what waits after `since` (`<epoch>.<n>`), answered as soon as it
+    // moves, one past its time at its time, or at `wait` seconds (30 at most) as it is; any other cursor at once. The desktop's
+    // host holds one and tells every window, so no window polls. The host's stop answers a held wait at once.
+    app.MapGet("/api/confirmations/waiting", async (string? since, int? wait, CancellationToken ct) =>
+    {
+        using var ends = CancellationTokenSource.CreateLinkedTokenSource(ct, app.Lifetime.ApplicationStopping);
+        var (next, waiting) = await confirmations.WaitAsync(since, TimeSpan.FromSeconds(Math.Clamp(wait ?? 0, 0, 30)), ends.Token);
+        return new ConfirmationsWaitingResponse(next, [.. waiting.Select(PersonConfirmations.Wire)]);
+    });
+
     app.MapGet("/api/confirmations/{id}", (string id) =>
         confirmations.Find(id) is { } found
             ? Results.Ok(PersonConfirmations.Wire(found))

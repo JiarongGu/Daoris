@@ -33,6 +33,29 @@ public sealed class MovableClock : TimeProvider
         foreach (var timer in due) timer.Fire();
     }
 
+    /// <summary>How many timers wait for the clock to reach their time: what a wait held on it has made.</summary>
+    public int Pending
+    {
+        get
+        {
+            lock (_gate) return _timers.Count(timer => timer.Due is not null);
+        }
+    }
+
+    /// <summary>
+    /// Until <paramref name="count"/> timers wait on the clock (TESTCLOCK3): a wait the host holds on it has made its timer, so a move
+    /// after reaches it. Bounded by <see cref="Poll.Patience"/>, which only a wait never held reaches.
+    /// </summary>
+    public async Task PendingAsync(int count)
+    {
+        var until = DateTime.UtcNow + Poll.Patience;
+        while (Pending < count)
+        {
+            if (DateTime.UtcNow > until) throw new TimeoutException($"{Pending} timers wait on the clock, not {count}");
+            await Task.Delay(10);
+        }
+    }
+
     public override DateTimeOffset GetUtcNow() => Now;
 
     public override long TimestampFrequency => TimeSpan.TicksPerSecond;
