@@ -5,6 +5,29 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-21 — A running session's *Who it worked with* stood eleven times over on its page (RELSPAM1)
+
+- **Symptom:** on an installed window for another workspace, a driven session on an ask, working, showed its folded relations line
+  (*Who it worked with · asked by ask #… · Show who it worked with*) eleven times, one copy under another. The count grew while the
+  session ran, and moving to another session left the copies in place.
+- **Root cause:** a parent's keys are one namespace across all its slots, not only within a list. `AttendedSession` keyed both
+  `SessionRelations` (HEADFIT1) and `WorkMilestone` (MILESTONEUX1) by `session.id` alone, both added 2026-10-20. Any falsy slot
+  before them (no parts, no entry Accept, a one-stop chain) sends React's reconcile to its key map, where the milestone's old fiber
+  overwrote the fold's under the shared key. The new fold was matched to the milestone's fiber, a type mismatch, so a fresh fold
+  was mounted; the old fold was in no map and never deleted, so its DOM stayed. One copy per draw of the record, folded each time.
+  The Work frame's foot had the same collision since WAITFOOT1b: `WaitStrip` and the chat `Composer` were keyed `attended.id`,
+  and `SentSettler` by the same id held as `sending.lateTo`. A settler leaving, or a move between two conversations, left a fiber
+  behind: the settler's events reader, or the old session's strip.
+- **Fix:** each keyed child says what it is beside the id (`relations:`, `milestone:`, `parts:` in the record; `strip:`,
+  `settler:`, `composer:` at the foot). `design/siblingKeys.test.ts` reads every shipped `.tsx` with the TypeScript parser and fails
+  on two slots of one parent keyed alike, the branches of one condition being one slot. Its sabotaged cases show it catching what
+  it should.
+- **Verification:** `AttendedSession.test.tsx`'s new case (ten redraws of a running session with relations and a milestone, then a
+  move) and `WorkFrame.landed.test.tsx`'s (a driven session on a quest an intake published, its record changed ten times) each saw
+  11 regions before the fix and 1 after. `siblingKeys.test.ts` named the record's and the foot's collisions before, and passes
+  after. `WorkFrame.test.tsx`, `WorkFrame.words.test.tsx`, `DetachedSession.test.tsx`, `SessionRelations.test.tsx` and
+  `work/waits` are green.
+
 ## 2026-10-21 — A resource location another writer added while one wrote `tools.json` was lost (PUSH1f2c)
 
 - **Symptom:** found building PUSH1f2c, the alone-path design §1.4's audit of `tools.json`'s writers. Two writers of the resource
@@ -136,6 +159,19 @@ repository.
   `InstanceDoorTests`' three refused rows failed (two said *did not answer*, one pressed), then passed; `instance.test.ts`'s two
   failed the same way, then passed. `InstancePipeTests` and `PipeCensusTests` (77) and `InstanceDoorTests` (39) under both
   elevated PowerShell and Git Bash, the instance-path classes (109), `instance.test.ts` (29).
+
+## 2026-10-21 — A CLI test that passed was failed by its fixture's cleanup
+
+- **Symptom:** the full set on 7ac72cc5a failed the `cli` gate on `gitforwindows.test.ts`'s *the toolchain starts the
+  system's git past the launcher*: `EPERM` removing `_fixtures/gitforwindows-toolchain` after the test's assertions passed. A
+  builder saw the same under load the same day.
+- **Root cause:** the test copies the running `node.exe` twice into its fixture and runs them; a copied program just run is
+  still held past the fixture cleanup's five seconds of retries, by the machine's scanners (DEVDRIVE1), with nothing of the test
+  left running.
+- **Fix:** the shared fixture's `cleanup` leaves a folder still held past its wait for the next run's `makeFixture`, which now
+  clears it with the same retries; any other error still throws. The bridge tests and the deployment rehearsal already do the
+  same.
+- **Verification:** the CLI typecheck; `gitforwindows.test.ts` and `homefiles.test.ts` (23).
 
 ## 2026-10-21 — The roster fix read past the harness override, and a woken-turn test raced its look
 

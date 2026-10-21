@@ -93,6 +93,34 @@ describe('the attended session', () => {
     expect(screen.getByRole('button', { name: 'Show who it worked with' })).toBeInTheDocument();
   });
 
+  /**
+   * RELSPAM1: who it worked with and the milestone were both keyed by the session's id under the record's one parent, and React
+   * matched the new fold to the milestone's old one by that key: each draw of a running driven session mounted a fresh fold and left
+   * the last one in the page, never unmounted. A working session is drawn again at every change of its record, so its relations line
+   * stood eleven times over on the install's window, and moving to another session left the old ones behind too.
+   */
+  it('keeps one line of who it worked with, however often a running session with a milestone is drawn again', async () => {
+    vi.useRealTimers();
+    const { SHARED_UNITS } = await import('../projects/git/landingFixtures');
+    const relations = { askedBy: { id: 'z9y8x7w6', session: null }, resumedAfter: null, asked: [] };
+    const running = (n: number, id = 's1a2b3c4') => (
+      <AttendedSession
+        session={session({ id, kind: 'driven', quest: 'q1', updated: `2026-09-21T11:${String(n).padStart(2, '0')}:00Z` })}
+        relations={relations}
+        milestone={SHARED_UNITS[1]!}
+      />
+    );
+    const { rerender } = render(running(0));
+    for (let n = 1; n <= 10; n += 1) rerender(running(n));
+    expect(screen.getAllByRole('region', { name: 'Who it worked with' })).toHaveLength(1);
+    expect(screen.getAllByRole('region', { name: 'Where this work stands' })).toHaveLength(1);
+
+    rerender(running(11, 's9f8e7d6'));
+    rerender(running(12, 's9f8e7d6'));
+    expect(screen.getAllByRole('region', { name: 'Who it worked with' })).toHaveLength(1);
+    expect(screen.getAllByRole('region', { name: 'Where this work stands' })).toHaveLength(1);
+  });
+
   it('offers a designed nothing when the person has not chosen a session', () => {
     render(<AttendedSession session={null} />);
     expect(screen.getByText('Nothing attended')).toBeInTheDocument();

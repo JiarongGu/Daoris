@@ -6,8 +6,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// MIXAGENT1c (D163 point 3; the mixed agents design §5): the hand-over rule, <c>handOver</c> and <c>workspaceHandOver</c> in
-/// <c>driver.json</c> — read, refused, resolved and edited. The driver's half of a TWIN with the CLI's <c>handover.ts</c>: both are
-/// held, cell for cell, to ONE table, <c>fixtures/hand-over-rules.json</c>, which <c>driverconfig.test.ts</c> reads too.
+/// <c>driver.json</c> — read, refused, resolved and edited, held cell for cell to ONE table, <c>fixtures/hand-over-rules.json</c>
+/// (the CLI's twin, <c>handover.ts</c>, left with the driver family's TypeScript in PUSH1f2b).
 /// </summary>
 public sealed class HandOverRulesTests
 {

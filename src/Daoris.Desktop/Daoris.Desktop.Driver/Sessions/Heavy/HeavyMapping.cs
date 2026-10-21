@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// This machine's heavy gates for a repository that marks none of its own (HEAVYRUN1b2a, D180's HEAVYRUN1b2a note): <c>heavyGates</c>
 /// in <c>driver.json</c>, by repository, each a list of gates in the order they run, each its name, its command and its folder under
 /// the repository's root, heavy by being there. Read, edited and written here, the one place the terminal's <c>heavy</c>, a heavy run
-/// and a driven start ask; the CLI's <c>driverconfig.ts</c> reads and keeps it the same way (<c>fixtures/heavy-gates.json</c>).
+/// and a driven start ask, held to <c>fixtures/heavy-gates.json</c> (the CLI's twin left in PUSH1f2b).
 /// </summary>
 /// <remarks>
 /// <para><b>Never an edit to the repository.</b> A repository with no CI beside often declares no gates file, and the owner's machine

@@ -33,7 +33,7 @@
  *    their `merge=union` attribute (D106), and the backlog by its merge base: a line a side added is kept,
  *    one a side removed is dropped, one line both changed is left (`mergeByBase`, MERGETASKS1), one line
  *    said either way. The orientation index is written from the merged tree and
- *    staged before the gates choose (`GENERATED`, ORIENT1a), so a conflict in it alone does not stop the
+ *    staged before the gates choose (`readGenerated`, ORIENT1a), so a conflict in it alone does not stop the
  *    merge, and one beside others is written once they are resolved. Before it, each decision file the merge
  *    changed has a blank line set before a note's label union left under another note, one line said per
  *    note (`setApart`, MERGEJOIN1); and each other union record it changed, before a heading union left under
@@ -957,19 +957,13 @@ export const REACH = Object.freeze([
   { paths: ['src/Daoris.Cli/test/fixtures/shell-words.json'], gates: ['driver', 'web-unit'], why: "the driver's ShellWord twin and the page's shellWord read the shell-word table (ACCTQUOTE1b)" },
   { paths: ['src/Daoris.Cli/test/fixtures/account-reads.json'], gates: ['driver'], why: "the driver's AccountReads twin reads the shared reads table (AGENTREAD1b)" },
   { paths: ['src/Daoris.Cli/test/fixtures/rotation-use.json'], gates: ['driver', 'web-unit'], why: "the driver's RotationUseTwinTests and the page's curve rules read the shared rotation-use table (SWITCH1a, SWITCH1d)" },
-  { paths: ['src/Daoris.Cli/test/fixtures/landing-says.json'], gates: ['driver'], why: "the driver's LandingSaysTwinTests read the shared landing, helpers and commits sentences (TWINWORDS1)" },
   { paths: ['src/Daoris.Cli/test/fixtures/usage-curves.json'], gates: ['driver', 'modules', 'web-unit'], why: "the driver's UsageCurvesTwinTests, the modules' DriverModuleAccountsTests (the verdicts .NET pushes, PUSH1e) and the page's curve rules read the shared usage curve table (SWITCH1b-iii, SWITCH1d)" },
   { paths: ['src/Daoris.Cli/test/fixtures/name-case.json'], gates: ['driver'], why: "the driver's NameCaseTests reads the shared name-case table (CASEFOLD1d)" },
-  { paths: ['src/Daoris.Cli/test/fixtures/graph-homes.json'], gates: ['driver'], why: "the driver's NodeGraphHomesTests reads the shared table of which cycle governs a unit (FABRIC-GRAPH1)" },
-  { paths: ['src/Daoris.Cli/test/fixtures/driver-config-keeps.json'], gates: ['driver'], why: "the driver's DriverConfigKeepsTests reads the shared table of the bytes an edit of driver.json writes (FABRIC-GRAPH1's review)" },
   {
     paths: ['src/Daoris.Cli/test/fixtures/home-files-keep.json'],
     gates: ['service', 'driver', 'modules'],
     why: "the driver's HomeFilesKeepTests reads the shared table of the bytes an edit of each other home file a door edits writes (KEEPALL1), the service's RemoteConfigKeepTests its remotes.json rows' reads (KEEPALL1e), and the modules' BrowserSettingsTests browser/settings.json's (KEEPALL1c)",
   },
-  { paths: ['src/Daoris.Cli/test/fixtures/workflow-graphs.json'], gates: ['driver'], why: "the driver's WorkflowGraphsTests reads the shared table of D157's versions decoded as graphs (FABRIC-WORKFLOW2)" },
-  { paths: ['src/Daoris.Cli/test/fixtures/workflow-graph-versions.json'], gates: ['driver'], why: "the driver's WorkflowGraphVersionsTests reads the shared table of a named graph as a named workflow's version (FABRIC-GRAPH1b)" },
-  { paths: ['src/Daoris.Cli/test/fixtures/graph-problems.json'], gates: ['driver'], why: "the driver's NodeWiresTests and NodeGraphsTests read the shared table of a graph judged when saved (FABRIC-GRAPH1c)" },
   {
     paths: ['src/Daoris.Cli/test/fixtures/fence-cases.json'],
     gates: ['service', 'driver'],
@@ -1024,9 +1018,10 @@ export const REACH = Object.freeze([
   // GATESLIM1: desktop-publish.test.ts (the tool-tests) imports the tarball reader from the CLI's sources; a path rule replaces the cli lane's.
   { paths: ['src/Daoris.Cli/src/**/tarball.ts'], gates: [...CLI_READERS, 'tool-tests'], why: "the CLI's own readers (the lane's), and the publish's tool-tests import it (GATESLIM1)" },
   // CONFIG1: the driver's KeepLockProcessTests runs the CLI's keeping write under node beside the driver's, so a change to
-  // either side of the lock reaches the driver's Process half; a path rule replaces the cli lane's.
+  // either side of the lock reaches the driver's Process half; a path rule replaces the cli lane's. PUSH1f2b: driverconfig.ts left
+  // with the driver family's TypeScript, and the test runs the keeping write over driver.json.
   {
-    paths: ['src/Daoris.Cli/src/**/keeplock.ts', 'src/Daoris.Cli/src/**/jsonkeep.ts', 'src/Daoris.Cli/src/driver/driverconfig.ts'],
+    paths: ['src/Daoris.Cli/src/**/keeplock.ts', 'src/Daoris.Cli/src/**/jsonkeep.ts'],
     gates: [...CLI_READERS, 'driver-process'],
     why: "the CLI's own readers (the lane's), and the driver's KeepLockProcessTests runs these under node against the driver's lock (CONFIG1)",
   },
@@ -1111,22 +1106,38 @@ export const REACH = Object.freeze([
  * Folders a tool writes from the tree, never merged: the orientation index's line numbers move with nearly
  * every change, so two branches' copies disagree wherever both touched a large file, and neither copy speaks
  * for the merge. So each merge writes them again from the merged tree before its gates, a conflict in one is
- * resolved by that writing, and the parent reads the result in the merge's diff. A repository without the
- * tool writes nothing.
+ * resolved by that writing, and the parent reads the result in the merge's diff. Which folders, and the
+ * command that writes each, are the repository's declaration (GENREGEN1, D87's note): `daoris.gates.json`'s
+ * `generated`, which a landing's replay reads too. A repository declaring none writes nothing.
  */
-export const GENERATED = Object.freeze([{ folder: 'docs/index', tool: 'tools/orient-index.mjs' }]);
+export function readGenerated(root) {
+  const file = join(root, 'daoris.gates.json');
+  if (!existsSync(file)) return [];
+  let parsed;
+  try {
+    parsed = JSON.parse(readFileSync(file, 'utf8'));
+  } catch (error) {
+    throw new Refusal(`daoris.gates.json is not valid JSON: ${error.message}`);
+  }
+  const entries = Array.isArray(parsed?.generated) ? parsed.generated : [];
+  for (const entry of entries) {
+    if (typeof entry?.paths !== 'string' || !entry.paths.trim() || typeof entry?.run !== 'string' || !entry.run.trim()) {
+      throw new Refusal("daoris.gates.json: every generated entry needs both 'paths' and 'run'");
+    }
+  }
+  return entries.map(({ paths, run }) => ({ folder: paths.trim().replace(/\/+$/, ''), run }));
+}
 
-/** Whether a path is one a merge writes rather than merges. */
-export const isGenerated = (path) => GENERATED.some(({ folder }) => path.startsWith(`${folder}/`));
+/** Whether a path is one a merge writes rather than merges, by the folders `generated` names. */
+export const isGenerated = (path, generated) => generated.some(({ folder }) => path.startsWith(`${folder}/`));
 
-/** Each generated folder written from the tree as it stands, and staged; one line each. A tool that fails refuses the merge's gates. */
+/** Each generated folder written from the tree as it stands, and staged; one line each. A command that fails refuses the merge's gates. */
 function writeGenerated(root) {
-  for (const { folder, tool } of GENERATED) {
-    if (!existsSync(join(root, tool))) continue;
-    const run = spawnSync(process.execPath, [tool], { cwd: root, encoding: 'utf8' });
-    if (run.status !== 0) throw new Refusal(`${tool} could not write ${folder}/ into the merge:\n${(run.stderr || run.stdout).trim()}`, 1);
+  for (const { folder, run } of readGenerated(root)) {
+    const ran = spawnSync(run, { cwd: root, encoding: 'utf8', shell: true });
+    if (ran.status !== 0) throw new Refusal(`${run} could not write ${folder}/ into the merge:\n${(ran.stderr || ran.stdout || '').trim()}`, 1);
     git(root, ['add', '-A', '--', folder]);
-    console.log(`${folder}/: written from the merged tree (${run.stdout.trim().replace(/^[\w-]+: /, '')})`);
+    console.log(`${folder}/: written from the merged tree (${ran.stdout.trim().replace(/^[\w-]+: /, '')})`);
   }
 }
 
@@ -3743,7 +3754,8 @@ function reportConflict(branch, unmerged, generated = []) {
 /** The unmerged paths a person resolves, and the generated ones a merge writes again (ORIENT1a). */
 function conflicts(root) {
   const unmerged = unmergedPaths(root);
-  return { blocking: unmerged.filter((path) => !isGenerated(path)), generated: unmerged.filter(isGenerated) };
+  const declared = readGenerated(root);
+  return { blocking: unmerged.filter((path) => !isGenerated(path, declared)), generated: unmerged.filter((path) => isGenerated(path, declared)) };
 }
 
 async function mergeNext(root, state) {

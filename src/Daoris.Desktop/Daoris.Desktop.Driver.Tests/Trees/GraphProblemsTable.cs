@@ -4,15 +4,15 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-GRAPH1c: the shared table of graphs and the problems a save names in them, <c>test/fixtures/graph-problems.json</c>, which the
-/// CLI's <c>graphproblems.test.ts</c> reads too (its <c>nodegraphs.ts</c>, the twin of <see cref="NodeWires.Problems"/>,
-/// <see cref="NodeGraphs.Problems"/> and <see cref="NodeGraphHomes.OfLanding"/>). A row's graph is written as a file holds it and read by
+/// FABRIC-GRAPH1c: the table of graphs and the problems a save names in them, <c>fixtures/graph-problems.json</c>, which held
+/// <see cref="NodeWires.Problems"/>, <see cref="NodeGraphs.Problems"/> and <see cref="NodeGraphHomes.OfLanding"/> to the CLI's
+/// <c>nodegraphs.ts</c> until it left with the driver family's TypeScript (PUSH1f2b). A row's graph is written as a file holds it and read by
 /// <see cref="NodeGraphs.Parts"/>: a base changed by its <c>remove</c>, <c>replace</c>, <c>add</c> and <c>set</c>, or written whole, or made by
 /// <see cref="Chain"/> and <see cref="Dense"/>; its <c>ends</c> are set after reading, where a file cannot say them.
 /// </summary>
 internal static class GraphProblemsTable
 {
-    private static readonly string TablePath = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "test", "fixtures", "graph-problems.json");
+    private static readonly string TablePath = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "graph-problems.json");
 
     private static JsonObject Table() => JsonNode.Parse(File.ReadAllText(TablePath))!.AsObject();
 

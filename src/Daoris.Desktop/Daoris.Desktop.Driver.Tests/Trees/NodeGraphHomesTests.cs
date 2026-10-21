@@ -6,7 +6,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// FABRIC-GRAPH1 (the fabric events design §E7, §C2, §D7): Current's graph derived from the rules, the landing rule's <c>cycle</c> as a
 /// fragment after the landing, <c>workCycles</c> for the kinds that do not land, D164's whole-rule inheritance from workspace to
-/// repository, the doors that set them, and the CLI's twin read from one table, <c>test/fixtures/graph-homes.json</c>, row for row.
+/// repository, and the doors that set them, read from one table, <c>fixtures/graph-homes.json</c>, row for row (the CLI's twin,
+/// <c>cycles.ts</c>, left with the driver family's TypeScript in PUSH1f2b).
 /// </summary>
 public sealed class NodeGraphHomesTests
 {
@@ -207,7 +208,7 @@ public sealed class NodeGraphHomesTests
 
     public static TheoryData<string, string, string, string?, string, string, string?> Rows()
     {
-        using var table = JsonDocument.Parse(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "test", "fixtures", "graph-homes.json")));
+        using var table = JsonDocument.Parse(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "graph-homes.json")));
         var rows = new TheoryData<string, string, string, string?, string, string, string?>();
         foreach (var row in table.RootElement.GetProperty("rows").EnumerateArray())
         {
@@ -234,7 +235,7 @@ public sealed class NodeGraphHomesTests
 
     public static TheoryData<string, string, string> StrayRows()
     {
-        using var table = JsonDocument.Parse(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "test", "fixtures", "graph-homes.json")));
+        using var table = JsonDocument.Parse(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "graph-homes.json")));
         var rows = new TheoryData<string, string, string>();
         foreach (var row in table.RootElement.GetProperty("strays").EnumerateArray())
         {

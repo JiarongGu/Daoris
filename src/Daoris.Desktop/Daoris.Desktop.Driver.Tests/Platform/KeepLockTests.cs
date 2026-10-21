@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// CONFIGLOCK1 (D173's CONFIG1 note): a keeping write holds <c>&lt;file&gt;.lock</c> from its re-read to its rename, so a change another
-/// writer makes in between is never lost. The stale rules are one table both twins read, <c>test/fixtures/driver-config-keeps.json</c>'s
+/// writer makes in between is never lost. The stale rules are one table both twins read, <c>fixtures/driver-config-keeps.json</c>'s
 /// <c>lock</c>, row for row with the CLI's <c>keeplock.test.ts</c>; <see cref="KeepLockProcessTests"/> holds it across the two runtimes.
 /// </summary>
 public sealed class KeepLockTests : IDisposable
@@ -32,7 +32,7 @@ public sealed class KeepLockTests : IDisposable
 
     public static TheoryData<string, string, bool, bool> Rows()
     {
-        using var table = JsonDocument.Parse(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "test", "fixtures", "driver-config-keeps.json")));
+        using var table = JsonDocument.Parse(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "driver-config-keeps.json")));
         var rows = new TheoryData<string, string, bool, bool>();
         foreach (var row in table.RootElement.GetProperty("lock").EnumerateArray())
         {

@@ -9,6 +9,12 @@ with the version and date at release.
   you gave none), that it waits for its agent to make it ready again, and the session that submitted it, which is told. Before,
   it read as a quest whose agent had not yet said it was ready. A submission also names the session that made it. In English and
   中文; a service from before these shows neither.
+- `daoris driver` hands every word to Daoris's own driver program now: its workflows (`workflow list|show|new|edit|apply|import|export|use|kind`),
+  `work-cycle`, `brainstorms` and a landing's `--cycle|--no-cycle` too, each saying what it said before. A cycle or a graph whose
+  option holds a number by its own text, keys that are numbers out of their order, or letters outside ASCII is now set as written,
+  where `daoris driver` refused it; and a verb the family does not have is said with the program's usage.
+- A running session's page now shows *Who it worked with* once. It used to add another copy of that line each time the session's
+  record changed, and kept the copies after you moved to another session.
 - `daoris tool` hands every verb to Daoris's own driver program, as `daoris-driver tool` with the same words, as `daoris driver`
   does. What each verb says is as before, but for these: a delete refused, and a file named for a tool that is not there, are said
   as the window's Tools place says them, with their code, and exit 2; and a file you name is asked its version before it is written,
@@ -43,6 +49,11 @@ with the version and date at release.
   reruns its tests and commits, and its work lands at the next look. A conflict only in files the repository marks
   `linguist-generated` in its `.gitattributes` takes the line's copy of them instead, and the landing names them. In English and
   中文.
+- A repository can now declare the command that writes each generated folder, as `generated` in its `daoris.gates.json`
+  (`{ "paths": "docs/index", "run": "node tools/orient-index.mjs" }`). Where a landing's replay took the line's copy of a generated
+  file and you accepted that declaration for the repository's landed route, the landing runs the command in its replay and commits
+  what it wrote on top, so the landed files read as the work's tree; without your acceptance, or with a command only the session's
+  own work declares, nothing runs and the line's copy stays. This repository's merge tool reads the same declaration.
 - Wiring or unwiring a workspace, at Settings or with `daoris remote add|remove`, now changes only that workspace's entry in
   `remotes.json`: anything else you wrote there stays as written, in its order and with its line endings, and a workspace wired
   again keeps its entry's other keys. Settings now refuses to wire a workspace over a `remotes.json` that does not read, saying

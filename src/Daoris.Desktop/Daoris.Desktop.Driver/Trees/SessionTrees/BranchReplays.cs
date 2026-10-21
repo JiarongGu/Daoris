@@ -311,6 +311,9 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
     {
         /// <summary>The generated files it took at the line's copy where only those conflicted (LANDREBASE1), in the order met.</summary>
         public IReadOnlyList<string> Generated { get; init; } = [];
+
+        /// <summary>Those written again from the replayed tree by the writers the person accepted (GENREGEN1); none where none ran.</summary>
+        public GeneratedWriters.Written Written { get; init; } = GeneratedWriters.Written.None;
     }
 
     /// <summary>
@@ -319,7 +322,8 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
     /// <c>git rebase --onto</c> per stretch of <paramref name="commits"/> it keeps, each onto the last one's new tip. A commit that
     /// becomes empty is dropped by git as WSR6's replay drops one; a conflict aborts it, and nothing is moved. LANDREBASE1: a conflict
     /// only in files the repository marks generated is not the session's, so those take the line's copy and the replay goes on
-    /// (<see cref="GeneratedPaths"/>); one in any other file still aborts it.
+    /// (<see cref="GeneratedPaths"/>); one in any other file still aborts it. GENREGEN1: where it took any, the writers the person
+    /// accepted for their folders write them again from the replayed tree, in a commit on top (<see cref="GeneratedWriters"/>).
     /// </summary>
     /// <param name="commits">Every commit beyond the line, oldest first, which <paramref name="kept"/> is a subset of.</param>
     internal async Task<KeptReplay> ReplayKeptAsideAsync(
@@ -334,13 +338,39 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
         if (aside is null) return new(null, notMade, false);
         try
         {
-            return await RebaseStretchesAsync(aside, onto, stretches, switchFirst: false, ct, takesGenerated: true).ConfigureAwait(false);
+            var made = await RebaseStretchesAsync(aside, onto, stretches, switchFirst: false, ct, takesGenerated: true).ConfigureAwait(false);
+            if (made.Now is null || made.Generated.Count == 0) return made;
+            var writers = await AcceptedWritersAsync(root, repository, workspace, onto, ct).ConfigureAwait(false);
+            var written = await GeneratedWriters.WriteAsync(aside, writers, made.Generated, ct).ConfigureAwait(false);
+            return written.Paths.Count == 0
+                ? made with { Written = written }
+                : made with { Now = await CommitOfAsync(aside, "HEAD", ct).ConfigureAwait(false) ?? made.Now, Written = written };
         }
         finally
         {
             // Daoris's own tree, made a moment ago for this one replay and holding nothing of anyone's, as WSR6's is.
             await CloseAsideAsync(root, aside).ConfigureAwait(false);
         }
+    }
+
+    /// <summary>
+    /// The generated folders' writers the person accepted for <paramref name="repository"/>, as declared at <paramref name="onto"/>
+    /// (GENREGEN1); none where the driver's settings could not be read, and the replay leaves the line's copy as it would without one.
+    /// </summary>
+    private async Task<IReadOnlyList<GeneratedWriters.Writer>> AcceptedWritersAsync(
+        string root, string repository, string workspace, string onto, CancellationToken ct)
+    {
+        DriverConfig config;
+        try
+        {
+            config = context.Config();
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
+        {
+            return [];
+        }
+
+        return await GeneratedWriters.AcceptedAsync(config, root, repository, workspace, onto, ct).ConfigureAwait(false);
     }
 
     /// <summary>

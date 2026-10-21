@@ -59,8 +59,8 @@ public sealed record BrainstormSet
 /// Modelled on <see cref="HelperRules"/>.
 /// </summary>
 /// <remarks>
-/// A TWIN with the CLI's <c>brainstorms.ts</c>: both hold ONE table, this suite's <c>fixtures/brainstorm-rules.json</c>, cell for cell
-/// (<c>BrainstormRulesTests</c> and <c>brainstorms.test.ts</c>). The look reads the agents and the minutes; the mode is read by an
+/// One table, this suite's <c>fixtures/brainstorm-rules.json</c>, cell for cell (<c>BrainstormRulesTests</c>); its CLI twin,
+/// <c>brainstorms.ts</c>, left with the driver family's TypeScript (PUSH1f2b, D194 point 7). The look reads the agents and the minutes; the mode is read by an
 /// agent's ask, which is BRAINSTORM1d's.
 /// </remarks>
 public static class BrainstormRules

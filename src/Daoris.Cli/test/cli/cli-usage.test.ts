@@ -72,8 +72,8 @@ test('every refusal says what it said before the split, with the same exit code'
 
 /**
  * The families' verbs the CLI hands Daoris's driver program (PUSH1f2a, D194 point 1): the family and its words whole, nothing written
- * before the start, and the program's exit the run's; `--help` stays the dispatcher's own, wherever it stands, and a verb the
- * allow-list does not name stays the CLI's.
+ * before the start, and the program's exit the run's; `--help` stays the dispatcher's own, wherever it stands. `daoris driver` hands
+ * every word since its last verbs became the program's (PUSH1f2b), one it does not have among them: the program says its usage.
  */
 test('a handed verb goes to the driver\'s program whole, with nothing written first, and its exit is the run\'s', async () => {
   for (const [argv, words] of [
@@ -82,6 +82,12 @@ test('a handed verb goes to the driver\'s program whole, with nothing written fi
     [['driver', 'standing', 'engine', 'a "quoted" & 100% 中文 word', '--clear'], ['standing', 'engine', 'a "quoted" & 100% 中文 word', '--clear']],
     [['driver', 'landing', 'engine', 'merge'], ['landing', 'engine', 'merge']],
     [['driver', 'retry', '12', '--at', '2'], ['retry', '12', '--at', '2']],
+    [['driver', 'landing', 'engine', 'merge', '--no-cycle'], ['landing', 'engine', 'merge', '--no-cycle']],
+    [['driver', 'work-cycle', 'engine', 'quest', '--clear'], ['work-cycle', 'engine', 'quest', '--clear']],
+    [['driver', 'brainstorms'], ['brainstorms']],
+    [['driver', 'workflow', 'list'], ['workflow', 'list']],
+    [['driver', 'workflow', 'kind', 'work', 'docs', '--label', 'Docs & notes'], ['workflow', 'kind', 'work', 'docs', '--label', 'Docs & notes']],
+    [['driver', 'frobnicate'], ['frobnicate']],
     // PUSH1f2c: `daoris tool` is the family's one row, so every word of it is handed on, a verb the program lacks among them.
     [['tool'], []],
     [['tool', 'use', 'git', 'file', 'C:/Program Files/Git/bin/git.exe'], ['use', 'git', 'file', 'C:/Program Files/Git/bin/git.exe']],
@@ -96,10 +102,10 @@ test('a handed verb goes to the driver\'s program whole, with nothing written fi
     }
   }
 
-  for (const argv of [['tool', '--help'], ['tool', 'use', '--help'], ['driver', '--help'], ['driver', 'drive', '--help'], ['driver', 'workflow', 'list'], ['driver', 'brainstorms'],
-    ['driver', 'work-cycle', 'engine', 'quest', '--clear'], ['driver', 'landing', 'engine', 'merge', '--no-cycle'], ['driver', 'frobnicate']]) {
+  for (const argv of [['tool', '--help'], ['tool', 'use', '--help'], ['driver', '--help'], ['driver', 'drive', '--help'],
+    ['driver', 'workflow', 'list', '--help']]) {
     const handed: Handed[] = [];
     await run(argv, handed);
-    assert.deepEqual(handed, [], `daoris ${argv.join(' ')} is the CLI's own`);
+    assert.deepEqual(handed, [], `daoris ${argv.join(' ')} is the dispatcher's own`);
   }
 });

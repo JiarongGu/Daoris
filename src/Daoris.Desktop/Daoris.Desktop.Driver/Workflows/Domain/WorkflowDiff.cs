@@ -36,8 +36,8 @@ public sealed record WorkflowDiffSaid(IReadOnlyList<WorkflowDiffEntry> Entries, 
 /// leaves this machine with no press of theirs that did not before. Ask Daoris's card (WORKFLOW1h) draws the same.
 /// </summary>
 /// <remarks>
-/// A TWIN with the CLI's <c>workflowDiff</c> (<c>namedworkflows.ts</c>): both hold this suite's tests'
-/// <c>fixtures/workflow-named.json</c> <c>diffs</c>, cell for cell, every line said included. The lists said apart
+/// Held to this suite's tests' <c>fixtures/workflow-named.json</c> <c>diffs</c>, cell for cell, every line said included; the CLI's
+/// twin, <c>workflowDiff</c> (<c>namedworkflows.ts</c>), left with the driver family's TypeScript (PUSH1f2b). The lists said apart
 /// (<see cref="WorkflowDiffSaid.Part"/>, <see cref="WorkflowDiffSaid.Steps"/>, <see cref="WorkflowDiffSaid.Outward"/>) are this
 /// side's alone, the same lines unindented, for Ask Daoris's card (WORKFLOW1h-b).
 /// </remarks>
@@ -225,8 +225,11 @@ public static class WorkflowDiff
         _ => null,
     };
 
-    /// <summary>A field's value as a diff says it: absence as declared, a switch, text and names in backticks, a group by its size.</summary>
-    private static string Rendered(object? value) => value switch
+    /// <summary>
+    /// A field's value as a diff says it: absence as declared, a switch, text and names in backticks, a group by its size. <c>daoris
+    /// driver workflow show</c> says a step's fields in the same words (<see cref="WorkflowWords.NamedStepSaid"/>).
+    /// </summary>
+    internal static string Rendered(object? value) => value switch
     {
         null => "as declared",
         bool flag => flag ? "true" : "false",

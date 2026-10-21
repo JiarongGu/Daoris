@@ -7,8 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// <c>pausedAsks</c> and <c>pausedQuests</c> in <c>driver.json</c> (PAUSE1a, D132 point 5, design §2.5): each pause by its ask
 /// or quest, with when it was made and the stops it made, each quest against the session it stopped. The driver's half of a
-/// TWIN with the CLI's <c>driverconfig.ts</c>, whose <c>driverconfig.test.ts</c> holds the same table and parses this theory
-/// to hold it to its own, cell for cell.
+/// TWIN with the CLI's <c>driverconfig.ts</c>, until it left with the driver family's TypeScript (PUSH1f2b).
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>Keep each row on one line, its cells literals</b>: the CLI's test reads them.</para>

@@ -6,8 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <c>autoAccept</c> on a landing rule in <c>driver.json</c> (LAND2a, D145): a branch rule may accept done work
 /// automatically, its plugin pushing and opening the pull request with no press. Off until set; only a branch rule takes
 /// it, with a plugin or without one; a repository's own rule replaces its workspace's whole, the switch with it. The
-/// driver's half of a TWIN with the CLI's <c>driverconfig.ts</c>, whose <c>driverconfig.test.ts</c> holds the same two
-/// tables and parses these theories to hold them to its own, cell for cell.
+/// driver's half of a TWIN with the CLI's <c>driverconfig.ts</c>, until it left with the driver family's TypeScript (PUSH1f2b).
 /// </summary>
 /// <remarks>🔴 <b>Keep each row on one line, its cells literals</b>: the CLI's test reads them.</remarks>
 public sealed class LandingAutoAcceptTests

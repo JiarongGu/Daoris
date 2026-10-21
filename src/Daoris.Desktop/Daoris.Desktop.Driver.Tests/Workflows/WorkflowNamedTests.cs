@@ -10,9 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// what a file and each version may say, a version's digest, the diff by step id, the presets, and a version added.
 /// </summary>
 /// <remarks>
-/// The driver's half of a TWIN with the CLI's <c>namedworkflows.ts</c>: both are held, cell for cell, to ONE table, this suite's
-/// <c>fixtures/workflow-named.json</c>, which <c>namedworkflows.test.ts</c> reads too. A row changed on one side alone is the
-/// other side's failure.
+/// Held, cell for cell, to ONE table, this suite's <c>fixtures/workflow-named.json</c> (the CLI's twin, <c>namedworkflows.ts</c>,
+/// left with the driver family's TypeScript in PUSH1f2b).
 /// </remarks>
 public sealed class WorkflowNamedTests
 {

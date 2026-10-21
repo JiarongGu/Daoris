@@ -7,8 +7,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// CONFIGLOCK1 across the two runtimes (D173's CONFIG1 note): the driver's writer of <c>driver.json</c> and the CLI's take one lock,
 /// <c>driver.json.lock</c>, so neither's edit lands inside the other's re-read and rename. The other process is a Node running the CLI's
-/// own <c>keeplock.ts</c> and <c>driverconfig.ts</c>: the lock file is the contract, as the lease's is (<see cref="RecordLockProcessTests"/>).
-/// The in-process half is <see cref="KeepLockTests"/>.
+/// own <c>keeplock.ts</c> and its keeping write, <c>jsonkeep.ts</c>, which the CLI's other home files still write through until PUSH1f2f
+/// (<c>driverconfig.ts</c> left with the driver family's TypeScript in PUSH1f2b): the lock file is the contract, as the lease's is
+/// (<see cref="RecordLockProcessTests"/>). The in-process half is <see cref="KeepLockTests"/>.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class KeepLockProcessTests : IDisposable
@@ -30,8 +31,8 @@ public sealed class KeepLockProcessTests : IDisposable
     private static readonly string KeepLockSource =
         new Uri(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "src", "platform", "keeplock.ts")).AbsoluteUri;
 
-    private static readonly string DriverConfigSource =
-        new Uri(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "src", "driver", "driverconfig.ts")).AbsoluteUri;
+    private static readonly string KeepingSource =
+        new Uri(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "src", "platform", "jsonkeep.ts")).AbsoluteUri;
 
     /// <summary>A Node process running <paramref name="script"/> as a module, <c>KEEP_FILE</c> naming the file.</summary>
     private static Process Node(string script, string file)
@@ -85,10 +86,9 @@ public sealed class KeepLockProcessTests : IDisposable
         var path = Path.Combine(_folder, "driver.json");
         File.WriteAllText(path, Start);
         var script = $$"""
-            import { readDriverChoices, writeDriverChoices } from '{{DriverConfigSource}}';
-            const choices = readDriverChoices(process.env.KEEP_FILE);
+            import { writeKeeping } from '{{KeepingSource}}';
             process.stdout.write('read\n');
-            writeDriverChoices(process.env.KEEP_FILE, { ...choices, drivable: [...choices.drivable, 'orders'] });
+            writeKeeping(process.env.KEEP_FILE, true, { drivable: ['engine'], notify: true }, { drivable: ['engine', 'orders'], notify: true });
             """;
         Process other;
         Task<string> errors;

@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A branch name the line may be set to (WSR2): git's own rules for a ref name, the ones a person could
-/// break by typing. The CLI's <c>driverconfig.ts</c> holds the same rule and the same test table.
+/// break by typing.
 /// </summary>
 public static class BranchName
 {

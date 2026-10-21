@@ -63,8 +63,8 @@ public sealed record ReviewEdit
 /// §1.1–§1.3, §1.7): read, refused, resolved, said and edited — the one place every door asks.
 /// </summary>
 /// <remarks>
-/// <para>A TWIN with the CLI's <c>reviews.ts</c>: both hold one table, this suite's tests' <c>fixtures/review-rules.json</c>, cell
-/// for cell (<c>ReviewRulesTests</c> and <c>driverconfig.test.ts</c>): the reading and its precedence, every refusal in the
+/// <para>One table, this suite's tests' <c>fixtures/review-rules.json</c>, cell for cell (<c>ReviewRulesTests</c>; its CLI twin,
+/// <c>reviews.ts</c>, left with the driver family's TypeScript in PUSH1f2b): the reading and its precedence, every refusal in the
 /// same words, each door's sentences and what each says after them of the gate, the edits, and what a checkout holding a
 /// procedure means.</para>
 ///

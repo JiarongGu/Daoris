@@ -5,8 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// <c>languages</c> and <c>workspaceLanguages</c> in <c>driver.json</c> (LANG1c, D142 point 7, the language design §7): the
 /// language a session is asked to write to the person in, set for a repository or a workspace, the repository's winning,
-/// neither set none, from a closed table. The driver's half of a TWIN with the CLI's <c>driverconfig.ts</c>, whose
-/// <c>driverconfig.test.ts</c> holds the same two tables and parses these theories to hold them to its own, cell for cell.
+/// neither set none, from a closed table (the CLI's twin, <c>driverconfig.ts</c>, left in PUSH1f2b).
 /// </summary>
 /// <remarks>🔴 <b>Keep each row on one line, its cells literals</b>: the CLI's test reads them.</remarks>
 public sealed class SessionLanguageTests

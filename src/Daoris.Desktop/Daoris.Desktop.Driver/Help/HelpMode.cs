@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>Kept in the driver's file</b> as <c>helpMode</c> (<see cref="DriverConfig.HelpMode"/>), written only while full; the
-/// CLI's <c>driverconfig.ts</c> reads it by the same table. Set at a terminal with <c>daoris-driver help mode</c>, and never by Ask
+/// CLI read it by the same table until PUSH1f2b. Set at a terminal with <c>daoris-driver help mode</c>, and never by Ask
 /// Daoris itself: no proposal names it (D183 point 2, full access is never chosen for the person).</para>
 /// </remarks>
 public static class HelpModes

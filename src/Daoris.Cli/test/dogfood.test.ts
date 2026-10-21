@@ -746,7 +746,7 @@ function reachableFrom(entry: string): Set<string> {
  * append to without thinking.
  */
 test('the file-local management verbs reach no network module either', () => {
-  for (const entry of ['remotes.ts', 'remotemap.ts', 'toolchain.ts', 'driverconfig.ts', 'plugins.ts', 'tools.ts'].map((name) => cliSource(name))) {
+  for (const entry of ['remotes.ts', 'remotemap.ts', 'toolchain.ts', 'plugins.ts', 'tools.ts'].map((name) => cliSource(name))) {
     const seen = reachableFrom(entry);
 
     assert.equal(
@@ -807,28 +807,23 @@ test('tool hands its words to the driver\'s program, and the rows that reach the
   // The only rows that reach the service client are the ones that say so: a new row reaching it is a decision.
   const reaching = COMMANDS.map((command) => `cli/${command.name}.ts`).filter((entry) => reachableFrom(entry).has(SERVICE_CLIENT));
   // BRAINSTORM1a3: `brainstorm` reaches this machine's own service, by the local host's brainstorm door (D176 point 8). RPC1f:
-  // `plugin` reaches the running Daoris's pipe, by the door its row hands in (D171 point 3, the terminal RPC design §9).
-  // PUSH1f2c: `tool` reaches none, its family the driver program's.
+  // `plugin` reaches the running Daoris's pipe, by the door its row hands in (D171 point 3, the terminal RPC design §9). PUSH1f2b
+  // and PUSH1f2c: `driver` and `tool` reach none, each family the driver program's, which reads the service and the pipe itself.
   assert.deepEqual(reaching.sort(), [
-    'cli/agent.ts', 'cli/brainstorm.ts', 'cli/connect.ts', 'cli/driver.ts', 'cli/import.ts', 'cli/plugin.ts', 'cli/retire.ts', 'cli/wire.ts',
+    'cli/agent.ts', 'cli/brainstorm.ts', 'cli/connect.ts', 'cli/import.ts', 'cli/plugin.ts', 'cli/retire.ts', 'cli/wire.ts',
   ]);
 });
 
 /**
- * `driver retry <quest>` without `--at` reads this machine's session records since RETRY1b (D126's RETRY1b note), to mark
- * the quest at its failures as the driver counts them. The same shape again: the count (`strikes.ts`) and the verb
- * (`driverconfig.ts`) import no network module (the file-local test above), and the records arrive through
- * `service.ts`, handed in by the `driver` row, `cli/driver.ts`, the one line where the two meet. `driver review` reads the
- * registry's checkouts the same way since REVIEWENV1a, to look for a procedure in them (`reviews.ts` imports no network
- * module either).
+ * `daoris driver` is Daoris's driver program's whole since PUSH1f2b (D194 points 1 and 7): its row hands the family and every word to
+ * the seam and imports nothing else, so no word of it is the CLI's to read or act on, and `retry` and `review` read the service
+ * through the program, never through this package.
  */
-test('driver retry and review read the service only through the readers the dispatcher hands in', () => {
+test('the driver row hands every word to the driver\'s program and reads nothing itself', () => {
   const row = readText(join(cliRoot, 'src', 'cli', 'driver.ts'));
-  assert.match(row, /import \{ instanceDoor, registryCheckouts, sessionRecords \} from '\.\.\/(?:[\w-]+\/)*service\.ts';/);
-  // WORKFLOW1d hands the `workflow` verbs in after them, which read the registry through the same reader; RPC1f the door a change
-  // goes through last, the running Daoris's pipe reached through the same module. PUSH1f2a hands the standing choices, `retry` and
-  // `review` among them, to Daoris's driver program first, which reads the service itself; the rest stay commandDriver's until PUSH1f2b.
-  assert.match(row, /run: \(args\) => handed\(args\.argv\)\s+\? \(args\.driverProgram \?\? \(\(family, words\) => runDriverProgram\(family, words\)\)\)\('driver', args\.argv\)\s+: commandDriver\(args, \(\) => sessionRecords\(\), \(\) => registryCheckouts\(\), \(each, context\) => commandWorkflow\(each, context\),\s+process\.env\[PATH_VARIABLE\] \? ALONE : instanceDoor\(/);
+  const imports = [...row.matchAll(/^import .* from '([^']+)';$/gm)].map(([, from]) => from);
+  assert.deepEqual(imports, ['../platform/types.ts', '../agents/toolchain.ts']);
+  assert.match(row, /run: \(args\) => \(args\.driverProgram \?\? \(\(family, words\) => runDriverProgram\(family, words\)\)\)\('driver', args\.argv\),/);
 });
 
 /**

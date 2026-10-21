@@ -113,9 +113,10 @@ account, never your profile; D63), refusing with none set. A `daoris` the instal
 `DAORIS_SERVICE_URL`: it takes its install's `data/`, and the service the running Daoris holds (D171). While Daoris runs on that
 home, `agent`, `driver`, `plugin` and `tool` send what they change to it over its own pipe, where its window asks you to confirm it
 and every window shows it at once; with none running they edit the files themselves, holding the home's lease (D171's PUSH1f note).
-`driver`'s standing choices and every `tool` verb are run by Daoris's own driver program, with the same words (`daoris-driver driver …`,
-`daoris-driver tool …`, D194): the one the install carries in `app/daoris-driver/`, or the build `DAORIS_DRIVER_PROGRAM` names; a
-`daoris` with neither, a checkout's among them, says so and does nothing. A tool's download holds nothing while it fetches, and is
+`driver` and `tool` are run by Daoris's own driver program, with the same words (`daoris-driver driver …`, `daoris-driver tool …`,
+D194), `driver`'s standing choices, its workflows, its cycles and its brainstorm policy alike: the one the install carries in
+`app/daoris-driver/`, or the build `DAORIS_DRIVER_PROGRAM` names; a `daoris` with neither, a checkout's among them, says so and does
+nothing. A tool's download holds nothing while it fetches, and is
 made the version under the home's lease, which it waits for. From a terminal Daoris started for a session (`DAORIS_SESSION_ID`), a change no window confirms is
 refused: it is yours to make, in the window or in your own terminal.
 `agent` runs each agent's own installer,

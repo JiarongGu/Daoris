@@ -22,10 +22,9 @@ public static class LanguageSource
 /// repository, else for its workspace, else none. No machine-wide value, and nothing taken from the window.
 /// </summary>
 /// <remarks>
-/// A TWIN with the CLI's <c>driverconfig.ts</c> (<c>SESSION_LANGUAGES</c>, <c>languageFor</c>): <c>SessionLanguageTests</c>
-/// holds the table and the reading row for row, and the CLI's <c>driverconfig.test.ts</c> parses both theories to hold them
-/// to its own, cell for cell. Adding a language is a row in both tables and needs no window catalogue, since a session may
-/// write in a language the window does not speak.
+/// <c>SessionLanguageTests</c> holds the table and the reading row for row; the CLI's twin, <c>driverconfig.ts</c>, left with the
+/// driver family's TypeScript (PUSH1f2b, D194 point 7). Adding a language is a row in the table and needs no window catalogue, since
+/// a session may write in a language the window does not speak.
 /// </remarks>
 public static class SessionLanguages
 {

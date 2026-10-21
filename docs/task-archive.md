@@ -18716,6 +18716,14 @@ nor the question, asked again at each look: `HeldAttempts.WhySaid` and the page'
 Other unanswered codes keep their words. Proof: `QuestCloseTests` (CLOSE1u's unanswered case) and `WorkMilestone.test.tsx` in both
 languages. On Opus: about 40 tool calls. Detail: D173's FABRIC-CLOSE1y note.
 
+## PUSH1f2b — the driver's workflows and cycles (2026-10-21, D194)
+
+> - [ ] **PUSH1f2b — the driver's workflows and cycles** (cli, driver; after 2a; D194, the alone-path design §5). Read its row in §5 and the sections it names; build it end to end (D187), the family's TypeScript leaving as §4 says. Proof: as §5 names it.
+
+**Outcome** 2026-10-21: `daoris driver` hands every word to `daoris-driver driver`, the workflows, `work-cycle`, `brainstorms` and a
+landing's cycle now the driver's (`DriverWorkflowsCommand`), each acting alone; today's text kept by 201 cases, four changed with
+reasons. `driver/*.ts`, `workflows/*.ts` and their tests left, six tables moved to the driver's fixtures. Detail: D194's PUSH1f2b note.
+
 ## PUSH1f2c — the tools (2026-10-21, D194)
 
 > - [ ] **PUSH1f2c — the tools** (cli, driver, modules; after 2a; D194, the alone-path design §5). Read its row in §5 and the sections it names; build it end to end (D187), the family's TypeScript leaving as §4 says. Proof: as §5 names it.
@@ -18827,6 +18835,15 @@ balloon while no window is in front. Proof: `PipeConfirmTests`, `DriverModulePer
 `SessionBalloonTests`, and the page's person, attention and signals tests in en and zh. The window with a press from a terminal
 is the parent's installed proof; the taskbar is not flashed. Detail: D156's CONFIRMSEEN1 note.
 
+## RELSPAM1 — a running session's *Who it worked with* said once (2026-10-21)
+
+> - [ ] **RELSPAM1 — a running session's *Who it worked with* repeated on its page** (web; found 2026-10-21 on an installed
+>   window). A driven session on an ask showed its folded relations line eleven times. One block per attended session; a test
+>   that redraws the running record and counts the regions.
+
+**Outcome** 2026-10-21: fixed. The record's relations fold and its milestone were keyed alike under one parent, so each draw left a
+copy behind; the Work frame's foot had the same collision. Each keyed child now names its kind beside the id, and
+`design/siblingKeys.test.ts` fails on two slots of one parent keyed alike. Detail: the fix log's RELSPAM1 entry.
 ## FABRIC-CLOSECASE1 — one rule for "the same repository" across the close (2026-10-21, D173)
 
 > - [ ] **FABRIC-CLOSECASE1 — one rule for "the same repository" across the close** (driver, service; §E5). The driver compares a quest's repository exactly, the service's `NextStep` and the close door ignore case. Proof: a chain whose repository differs only in case is named and closed alike by both, or refused alike.
@@ -18854,3 +18871,14 @@ family rehearsal compares no `LAND_SESSION_TREE` answer whole. Proof: `DriverMod
 facts: when, that it waits for its agent's ready, the person's words quoted as written (or that they gave none), and the session told.
 *Submitted* names the session that said its ready. Proof: `api.test.ts` (both read, neither from an older host) and
 `QuestPage.closure.test.tsx` in en and zh. On Opus, by a driven session. Detail: D173's FABRIC-CLOSE1d3 note.
+
+## GENREGEN1 — a repository declares the command that writes each generated path, so a landing's replay writes it again (2026-10-21, D87)
+
+> - [ ] **GENREGEN1 — a repository declares the command that writes each generated path, so a landing's replay writes it again** (driver, tools; D87's LANDREBASE1 note point 4). A replay takes the line's copy of a conflicting `linguist-generated` file, so a landed branch's `docs/index` can lag its tree until the merge rewrites it; only the merge tool knows the writer. Wanted: one declaration both read, decided with whether a landing may run a repository's command. Proof: a `Process` case whose replayed index reads as its tree's.
+
+**Outcome** 2026-10-21: `daoris.gates.json`'s `generated` declares each folder and the command that writes it (`docs/index` by
+`node tools/orient-index.mjs`); the merge tool reads it in place of its own list. A landing runs a writer only where the person
+accepted that declaration for the repository's landed route (its blob at the commit the replay builds on), read from the line, never
+the session's copy: then a replay that took the line's copy of a generated file writes its folder again in the replay's tree, in a
+commit of its own on top, and the landing says so; otherwise the line's copy stays, as before. Proof: `LandRebaseLandingTests`
+(Process) and `merge-branch.test.ts`. Detail: D87's GENREGEN1 note.

@@ -9,11 +9,11 @@ namespace Daoris.Driver;
 /// version as written, then the newest 20 and every version a kept run names.
 /// </summary>
 /// <remarks>
-/// <para>A TWIN with the CLI's <c>planAddVersion</c> (<c>namedworkflows.ts</c>) and its door (<c>workflowdoor.ts</c>): the plan,
-/// <see cref="WorkflowNamed.PlanAdd"/>, is held to this suite's tests' <c>fixtures/workflow-named.json</c> <c>store</c>, cell for
-/// cell. A run binds a named workflow's newest version at its first start (WORKFLOW1e, <see cref="WorkflowRunBindings"/>), which
-/// every gate reads (WORKFLOW1f, <see cref="WorkflowProcesses"/>); the screen's editor (WORKFLOW1g) and Ask Daoris (WORKFLOW1h)
-/// write through here.</para>
+/// <para>The plan, <see cref="WorkflowNamed.PlanAdd"/>, is held to this suite's tests' <c>fixtures/workflow-named.json</c>
+/// <c>store</c>, cell for cell. A run binds a named workflow's newest version at its first start (WORKFLOW1e,
+/// <see cref="WorkflowRunBindings"/>), which every gate reads (WORKFLOW1f, <see cref="WorkflowProcesses"/>); the screen's editor
+/// (WORKFLOW1g), Ask Daoris (WORKFLOW1h) and <c>daoris driver workflow</c> (<see cref="DriverWorkflowsCommand"/>, the CLI's
+/// <c>workflowdoor.ts</c> until PUSH1f2b) write through here.</para>
 ///
 /// <para><b>Layered</b> (STRUCT3b, D166): the store's use cases, written against <see cref="IWorkflowStore"/> and
 /// <see cref="IWorkflowRunStore"/>; a caller that holds only the home reaches them by it, as every module did before.</para>

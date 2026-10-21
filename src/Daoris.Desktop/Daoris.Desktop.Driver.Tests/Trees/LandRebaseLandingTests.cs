@@ -137,6 +137,66 @@ public sealed class LandRebaseLandingTests : LandedFixture
         Assert.Equal(2, await TreesAsync(root));
     }
 
+    /// <summary>
+    /// GENREGEN1: where the repository declares the command that writes the generated folder (<c>daoris.gates.json</c>'s
+    /// <c>generated</c>) and the person accepted that declaration for its landed route, the replay writes the file again from the replayed
+    /// tree, in a commit of Daoris's on top, so the landed index reads as its tree's, the line's work and the session's both.
+    /// </summary>
+    [Fact]
+    public async Task A_generated_file_the_replay_took_is_written_again_by_the_writer_the_person_accepted()
+    {
+        var root = await RepositoryAsync("engine");
+        var declared = await GeneratedDeclaredAsync(root, Writer);
+        Accept(declared);
+        var trees = new SessionTrees(Home);
+        var tree = await trees.OpenAsync(root, "engine", "aurora");
+        await File.WriteAllTextAsync(Path.Combine(tree.Path, "work.txt"), "the work\n");
+        await CommitAsync(tree.Path, "index/map.md", "shared.txt\nwork.txt\n", "the work");
+        await File.WriteAllTextAsync(Path.Combine(root, "zline.txt"), "the line\n");
+        await CommitAsync(root, "index/map.md", "shared.txt\nzline.txt\n", "the line's own");
+        var line = await HeadAsync(root);
+
+        var landed = await trees.LandAsync(tree.Path, Subject);
+
+        Assert.True(landed.Landed, landed.Message);
+        Assert.Contains($"1 generated file(s) the line changed too took the line's copy (index/map.md), then were written again from the replayed tree by `{Writer}`.",
+            landed.Message);
+        Assert.Equal("shared.txt\nwork.txt\nzline.txt\n", await GitAsync(root, "show", $"{Branch}:index/map.md"));
+        Assert.Equal("Write index again from the replayed tree", (await GitAsync(root, "log", "-1", "--format=%s", Branch)).Trim());
+        Assert.Equal("the work", (await GitAsync(root, "log", "-1", "--format=%s", $"{Branch}~1")).Trim());
+        Assert.Equal(line, (await GitAsync(root, "rev-parse", $"{Branch}~2")).Trim());
+        Assert.Equal("the work\n", await GitAsync(root, "show", $"{Branch}:work.txt"));
+        Assert.Equal(2, await TreesAsync(root));
+    }
+
+    /// <summary>
+    /// GENREGEN1: a writer runs only as the person accepted it, from the declaration at the line, never the session's own copy: a session
+    /// that declares one in its work lands with the line's copy of the generated file, as a repository declaring none does.
+    /// </summary>
+    [Fact]
+    public async Task A_writer_the_session_declared_itself_is_not_run_and_the_line_s_copy_stays()
+    {
+        var root = await RepositoryAsync("engine");
+        var declared = await GeneratedDeclaredAsync(root, writer: null);
+        Accept(declared);
+        var trees = new SessionTrees(Home);
+        var tree = await trees.OpenAsync(root, "engine", "aurora");
+        await File.WriteAllTextAsync(Path.Combine(tree.Path, LandedGates.File), Declaration(Writer));
+        await File.WriteAllTextAsync(Path.Combine(tree.Path, "work.txt"), "the work\n");
+        await CommitAsync(tree.Path, "index/map.md", "shared.txt\nwork.txt\n", "the work");
+        await File.WriteAllTextAsync(Path.Combine(root, "zline.txt"), "the line\n");
+        await CommitAsync(root, "index/map.md", "shared.txt\nzline.txt\n", "the line's own");
+        var line = await HeadAsync(root);
+
+        var landed = await trees.LandAsync(tree.Path, Subject);
+
+        Assert.True(landed.Landed, landed.Message);
+        Assert.Contains("1 generated file(s) the line changed too took the line's copy (index/map.md), to be written again where the work is merged.",
+            landed.Message);
+        Assert.Equal("shared.txt\nzline.txt\n", await GitAsync(root, "show", $"{Branch}:index/map.md"));
+        Assert.Equal(line, (await GitAsync(root, "rev-parse", $"{Branch}~1")).Trim());
+    }
+
     /// <summary>The same conflict beside one in code stays the session's: refused, the code's file named, nothing made.</summary>
     [Fact]
     public async Task A_conflict_in_code_beside_a_generated_file_is_still_refused()
@@ -235,6 +295,41 @@ public sealed class LandRebaseLandingTests : LandedFixture
         Assert.Contains("1 commit(s) replayed onto `main`, which moved since the work began", landed.Message);
         Assert.Equal(line, (await GitAsync(root, "rev-parse", "main^2~1")).Trim());
         Assert.Equal((await GitAsync(root, "rev-parse", "main^2")).Trim(), await HeadAsync(tree.Path));
+    }
+
+    /// <summary>
+    /// A stand-in for the index's writer (GENREGEN1): it lists the tree's top <c>.txt</c> files, so the line and the work, each adding
+    /// one, disagree on it, and only the replayed tree's writing holds both. Read alike by <c>cmd.exe</c> and <c>/bin/sh</c>.
+    /// </summary>
+    private const string Writer = "git ls-files -- *.txt > index/map.md";
+
+    private static string Declaration(string? writer) =>
+        writer is null
+            ? "{ \"gates\": [] }\n"
+            : $"{{ \"gates\": [], \"generated\": [{{ \"paths\": \"index\", \"run\": \"{writer}\" }}] }}\n";
+
+    /// <summary>The line's generated folder, marked so, its first copy, and its declaration; git's blob id of that declaration.</summary>
+    private static async Task<string> GeneratedDeclaredAsync(string root, string? writer)
+    {
+        Directory.CreateDirectory(Path.Combine(root, "index"));
+        await File.WriteAllTextAsync(Path.Combine(root, ".gitattributes"), "index/** linguist-generated\n");
+        await File.WriteAllTextAsync(Path.Combine(root, "index", "map.md"), "shared.txt\n");
+        await CommitAsync(root, LandedGates.File, Declaration(writer), "the index and its declaration");
+        return (await GitAsync(root, "rev-parse", $"HEAD:{LandedGates.File}")).Trim();
+    }
+
+    /// <summary>The person's acceptance of <paramref name="gates"/> for the repository's landed route, as <i>Accept the gates</i> writes it.</summary>
+    private void Accept(string gates)
+    {
+        var path = DaorisHome.Entry(Home, HomeEntry.DriverConfig);
+        var config = DriverConfig.Load(path);
+        (config with
+        {
+            Workflows = new Dictionary<string, WorkflowChoice>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["engine"] = new WorkflowChoice(null, []) { Landed = new WorkflowLanded("verify-landed", gates) },
+            },
+        }).Save(path);
     }
 
     private static async Task<string> HeadAsync(string place) => (await GitAsync(place, "rev-parse", "HEAD")).Trim();

@@ -737,8 +737,8 @@ public sealed record CycleStray(IReadOnlyList<string> At, string Code, string Wo
 /// Current's graphs, derived from the rules (FABRIC-GRAPH1; the fabric events design §E7, §C2, §D7): a branch's from its landing rule,
 /// the landing's own nodes first and the rule's <see cref="LandingRule.Cycle"/> after them; a quest's or an ask's from
 /// <see cref="DriverConfig.WorkCycles"/>, else <see cref="DriverConfig.WorkspaceWorkCycles"/>. Inherited as D164's amendment inherits a
-/// rule: a repository's own replaces its workspace's whole. Nothing set is today exactly. The CLI's twin is <c>cycles.ts</c>, and both
-/// read <c>test/fixtures/graph-homes.json</c>.
+/// rule: a repository's own replaces its workspace's whole. Nothing set is today exactly. Held to this suite's tests'
+/// <c>fixtures/graph-homes.json</c>; the CLI's twin, <c>cycles.ts</c>, left with the driver family's TypeScript (PUSH1f2b).
 /// </summary>
 public static class NodeGraphHomes
 {
