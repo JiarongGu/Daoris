@@ -281,7 +281,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-20-pipeline-design.md` | 97 | 846 |
 | `docs/2026-10-20-session-context-design.md` | 45 | 478 |
 | `docs/2026-10-20-ui-ux-design.md` | 106 | 1115 |
-| `docs/2026-10-21-account-pool-design.md` | 55 | 581 |
+| `docs/2026-10-21-account-pool-design.md` | 80 | 770 |
 | `docs/2026-10-21-alone-path-design.md` | 74 | 545 |
 | `docs/2026-10-21-cleanup-design.md` | 111 | 1063 |
 | `docs/2026-10-21-notification-design.md` | 114 | 972 |
