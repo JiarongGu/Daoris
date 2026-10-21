@@ -257,7 +257,10 @@ A session's parts are a flowchart in the parts strip's place on its page (FLOWCH
 what it followed (`EntryPart.after`) and labels the edge by how it began, an asked part from a faint node for the repository that
 asked it and a part with no `after` from the start, and draws Accept's plan, once its ask is open and read, as a dashed node of
 where the parts *would* land. Parts are lineage, never a cause or a concurrency, and a part keeps no time, so its agent and when it
-began are said only where the page holds that part's record. The strip is the flow's rail, drawn where only the rail fits or the
+began are said only where the page holds that part's record. A move and a hand-over name the agent they left where it is another
+than the part's own, and a hand-over its why by the part's `fromWhy` (SESSCTX1d); each part's row and node say what it spent, its
+turns' tokens from this machine's record (`SESSION_SPENT`, `useSessionSpent`); and the head's facts name the agent the line's
+leading part runs on where its parts ran on more than one (`leadingAgentOf`). The strip is the flow's rail, drawn where only the rail fits or the
 person chose the list (`Flow`'s `rail`), and a press on a node, or Enter on it, shows that part as the strip's button did. The
 measured check (`e2e:measured`) draws both flows' stories in a rendered browser, each frame with a ceiling of crossings.
 

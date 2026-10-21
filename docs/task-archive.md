@@ -18715,3 +18715,13 @@ at the delete keeps the branch, said in `BranchKept`. On Opus: about 40 tool cal
 nor the question, asked again at each look: `HeldAttempts.WhySaid` and the page's `work.milestone.held.close.why.unknown` (en, zh).
 Other unanswered codes keep their words. Proof: `QuestCloseTests` (CLOSE1u's unanswered case) and `WorkMilestone.test.tsx` in both
 languages. On Opus: about 40 tool calls. Detail: D173's FABRIC-CLOSE1y note.
+
+## SESSCTX1d — a session's move on the page (2026-10-21, D189)
+
+> - [ ] **SESSCTX1d — a session's move on the page** (modules, web-shell; after 1c; D189). The Parts strip says how a part began from a move (from which agent, and why), the head shows the leading part's agent, and each part's cost is on its own row, so a moved session reads as one session. Contract: the design §7. Proof: stories, vitest in en and zh, `i18n:check`, `names:check -- --strict`, the window.
+
+**Outcome** 2026-10-21: built. The *Parts* strip and flow name the agent a move or a hand-over left, where it is another than the
+part's own, and a hand-over's why; each part's row and node say its tokens over its turns from this machine's record (the driver's
+`SessionEvents.Spent`, the modules' `SESSION_SPENT`); the head's facts name the agent the line's leading part runs on where its
+parts ran on more than one. Stories and vitest in en and zh, `i18n:check`, `names:check -- --strict`. The window has not been seen.
+Detail: D189's SESSCTX1d note.
