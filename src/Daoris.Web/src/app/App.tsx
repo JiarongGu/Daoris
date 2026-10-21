@@ -44,7 +44,7 @@ import {
   useSayUpdate, useShowReviewAgain, useSyncNow, useTaskbarCount, useUpdateState,
   useAnswerConfirmation, useConfirmationShown, usePersonKey, useServiceConfirmations, useTerminalConfirmations, useUnkeyedHost,
 } from '../bridge/shell';
-import { Confirmations } from '../person/Confirmations';
+import { Confirmations, confirmationAnchor } from '../person/Confirmations';
 import { byTool } from '../agents/tools';
 import { useSay } from '../bridge/sessions/conversation';
 import { UpdateBanner } from '../update/UpdateBanner';
@@ -893,6 +893,15 @@ export function App() {
     // A third answer alone held for the person opens the session whose line it would take on, whose head and foot carry its two presses
     // with its other waits (COWORK1e). A shell's alone: the marks are this machine's driver's.
     ...(attached ? { answer: (item: Attention) => { if (item.session) open('sessions', item.session); } } : {}),
+    // A terminal's press waiting for the window (CONFIRMSEEN1) opens its card, under the strip of this window, where every value it
+    // carries is read beside its Confirm. Focused as a region, never on a press: the card's default stays no. A shell's alone.
+    ...(attached ? {
+      confirmation: (item: Attention) => {
+        const card = document.getElementById(confirmationAnchor(item.id));
+        card?.scrollIntoView({ block: 'nearest' });
+        card?.focus();
+      },
+    } : {}),
     // A unit only the clean-up's press settles (OVERVIEWNOISE1b) opens the workspace's Branches, where the session branches' list and
     // its presses are; a held attempt's presses are on its row. A shell's alone.
     ...(attached ? { work: (item: Attention) => { if (!item.held) open('projects', null, { workspaceTab: 'branches' }); } } : {}),

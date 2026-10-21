@@ -23,7 +23,7 @@ import { TrustAsk } from '../waits/TrustAsk';
 export type AttentionKind =
   | 'parked' | 'parked-quest' | 'go-ahead' | 'trust' | 'account-wait' | 'signed-out'
   | 'proposal' | 'intake' | 'departure' | 'set-up' | 'rule' | 'unanswerable'
-  | 'review' | 'opinion' | 'helper' | 'work' | 'permission' | 'answer';
+  | 'review' | 'opinion' | 'helper' | 'work' | 'permission' | 'answer' | 'confirmation';
 
 /**
  * One thing that is waiting on a person, as Overview's band shows it.
@@ -48,6 +48,9 @@ export type AttentionKind =
  * **UX6d added the accounts** (design §6.2, TOOL4m's row): an `account-wait`, a start held because every account it may
  * use is cooling or signed out, naming each account that would serve it as last known; and `signed-out`, an account a list
  * or a default holds that read signed out, which no waiting start names.
+ *
+ * **CONFIRMSEEN1 added `confirmation`**: a press a terminal sent that waits for the person's Confirm on the window's card, which
+ * its terminal holds still for. Its answer needs the card's values read first, so its door to the card is its one control.
  */
 export type Attention = {
   /**
@@ -228,6 +231,8 @@ const DOOR_ONLY: Partial<Record<Attention['kind'], (item: Attention) => [string,
   parked: () => ['work.attention.door.answer'],
   intake: (item) => ['work.attention.door.intake', { id: item.id }],
   review: () => ['work.attention.door.review'],
+  // CONFIRMSEEN1: a terminal's press is answered on its card, which shows every value it carries; the row never answers it.
+  confirmation: () => ['work.attention.door.confirmation'],
 };
 
 /**

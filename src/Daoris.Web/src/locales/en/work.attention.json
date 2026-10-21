@@ -17,6 +17,7 @@
   "work.attention.door.intake": "Answer ask #{{id}}",
   "work.attention.door.review": "Review",
   "work.attention.door.open": "Open",
+  "work.attention.door.confirmation": "Confirm or refuse…",
   "work.attention.act.publish": "Publish to {{repositories}}",
   "work.attention.act.choose": "Choose…",
   "work.attention.act.chooseWhere": "Choose where it goes…",
@@ -89,5 +90,7 @@
   "work.attention.answerWhySomeone": "Another agent’s answer would take this work on a third time with nobody between. It waits for you.",
   "work.attention.act.allowOnce": "Allow once",
   "work.attention.act.refuseOnce": "Refuse",
-  "work.attention.act.refuseAlways": "Always refuse"
+  "work.attention.act.refuseAlways": "Always refuse",
+  "work.attention.confirmation": "a terminal waits",
+  "work.attention.confirmationWhy": "It runs only once you confirm it on its card at the top of the window, and is refused at {{time}}."
 }

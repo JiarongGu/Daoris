@@ -829,6 +829,43 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Is("""{"kind":"helper","id":"a2","since":"2026-09-21T09:10:00Z","where":"","session":"g0n3","title":"Is the cap right?"}""", rows.Single(row => row["id"]!.GetValue<string>() == "a2"));
     }
 
+    /// <summary>
+    /// CONFIRMSEEN1: a terminal's press waiting for the window is a row of <i>What needs you</i>, which the badge counts: by its route and
+    /// the terminal as the system names it, since it was asked, never a value it carries; and it is gone once it no longer waits.
+    /// </summary>
+    [Fact]
+    public void A_terminal_s_press_waiting_for_the_window_is_a_row_by_its_route_and_terminal_never_its_values()
+    {
+        var clock = new HeldClock();
+        using var log = new MachineLog(Home, "desktop");
+        using var confirmations = new PipeConfirmations(null, log, clock);
+        var asked = confirmations.Ask(DriverModule.Name, "SESSION_ARCHIVE",
+            [new PipeConfirmationField("/ids/0", "string", "s1a2b3c4")], new PipeAsker("daoris-driver", 4242))!.Value;
+
+        var rows = Rows(new() { Confirmations = Waits(confirmations) });
+        var at = clock.GetUtcNow();
+
+        Is($$$"""
+             {"kind":"confirmation","id":"{{{asked.Shown.Id}}}","since":"{{{Moments.Write(at)}}}","confirmation":{"module":"DAORIS.DRIVER",
+              "route":"SESSION_ARCHIVE","asker":{"process":"daoris-driver","pid":4242},"expires":"{{{Moments.Write(at.AddMinutes(10))}}}","shownAt":null}}
+             """, Assert.Single(rows));
+        Assert.DoesNotContain("s1a2b3c4", JsonSerializer.Serialize(AttentionStateSlice.Judge(new() { Confirmations = Waits(confirmations) })!
+            .Select(each => each.Data), IpcJson.Options));
+
+        // Shown, its two minutes are said; answered, it is no row.
+        clock.Advance(TimeSpan.FromMinutes(1));
+        Assert.True(confirmations.Show(asked.Shown.Id));
+        var shown = Assert.Single(Rows(new() { Confirmations = Waits(confirmations) }))["confirmation"]!;
+        Assert.Equal(Moments.Write(at.AddMinutes(1)), shown["shownAt"]!.GetValue<string>());
+        Assert.Equal(Moments.Write(at.AddMinutes(3)), shown["expires"]!.GetValue<string>());
+        Assert.True(confirmations.Answer(asked.Shown.Id, confirm: false));
+        Assert.Empty(Rows(new() { Confirmations = Waits(confirmations) }));
+        Assert.Empty(AttentionStateSlice.ConfirmationWaits(null));
+    }
+
+    private static List<JsonObject> Waits(PipeConfirmations confirmations) =>
+        [.. AttentionStateSlice.ConfirmationWaits(confirmations).Select(each => JsonSerializer.SerializeToNode(each, IpcJson.Options)).OfType<JsonObject>()];
+
     /// <summary>AUTONOMY1b3c (D184 point 3): a tool call a session holds for the person holds work: its wait whole, the session that holds it.</summary>
     [Fact]
     public void A_tool_call_a_session_holds_for_the_person_is_a_row_with_the_wait_whole()
@@ -1117,13 +1154,18 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
             Unreadable = [Unreadable()],
             // FABRIC-CLOSE1j: a close found closed only in part, every field set.
             Ends = [Ended("""{"nodes":["qa"],"resolution":"stop"}""")],
+            // CONFIRMSEEN1: a terminal's press waiting for the window, shown.
+            Confirmations =
+            [
+                JsonNode.Parse("""{"id":"c1","module":"DAORIS.DRIVER","route":"SESSION_ARCHIVE","asker":{"process":"daoris-driver","pid":4242},"asked":"2026-10-20T09:00:00Z","expires":"2026-10-20T09:03:00Z","shownAt":"2026-10-20T09:01:00Z"}""")!.AsObject(),
+            ],
         };
         var rows = Rows(facts);
         Assert.Contains(rows, row => row["ended"] is JsonObject);
         Assert.Contains(rows, row => row["blocked"] is JsonObject blocked && blocked["entries"]![0]!["facts"] is JsonObject);
 
-        // Every kind but the accounts': sixteen.
-        Assert.Equal(16, rows.Select(row => row["kind"]!.GetValue<string>()).Distinct().Count());
+        // Every kind but the accounts': seventeen.
+        Assert.Equal(17, rows.Select(row => row["kind"]!.GetValue<string>()).Distinct().Count());
         foreach (var row in rows) Assert.Equal(Normal(row), Normal(AttentionStateSlice.Picked(row)));
     }
 

@@ -206,6 +206,22 @@ describe('the shell push channel (ShellSignals)', () => {
     expect(notify).toHaveBeenCalledWith("engine — `#7a82cc` parked after 3 failed sessions: You've hit your limit.", 'error');
   });
 
+  /**
+   * CONFIRMSEEN1: a terminal's press waiting for the window is its card's and its row's; the shell's balloon is for when no window is
+   * in front, so the page says it in no toast over the card.
+   */
+  it("a terminal's press waiting for the window is no toast: its card and its row say it", () => {
+    const notify = vi.fn();
+    show(<ShellSignals notify={notify} />);
+
+    eventHandlers.get('DAORIS.SESSION_ATTENTION')!({
+      kind: 'Confirming', session: null, headline: "A terminal's press waits for you in Daoris's window",
+      detail: 'SESSION_ARCHIVE, sent by daoris-driver (4242). Confirm or refuse it there.',
+    });
+
+    expect(notify).not.toHaveBeenCalled();
+  });
+
   it('an ending is news rather than a demand, and a session that said nothing still says something', () => {
     const notify = vi.fn();
     show(<ShellSignals notify={notify} />);

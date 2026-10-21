@@ -66,6 +66,9 @@ public sealed record AttentionFacts
 
     /// <summary>The starts the last look held on their accounts, an intake's among them, as the tick hands them (UX6d).</summary>
     public IReadOnlyList<JsonObject> Waits { get; init; } = [];
+
+    /// <summary>The presses a terminal sent that wait for the window's Confirm (CONFIRMSEEN1), as <c>PERSON_CONFIRMATIONS</c> answers them.</summary>
+    public IReadOnlyList<JsonObject> Confirmations { get; init; } = [];
 }
 
 /// <summary>
@@ -324,6 +327,24 @@ public static class NeedsAPerson
             var row = Row("work", $"{Part(end["unit"])}#{Part(end["node"])}#{Part(end["quest"])}", Text(end, "at"));
             row["where"] = Text(end, "unit");
             row["ended"] = end.DeepClone();
+            rows.Add(row);
+        }
+
+        // A press a terminal sent that waits for the person's Confirm in the window (CONFIRMSEEN1): its terminal holds still until they
+        // answer on its card, or its time ends, which refuses it. By its route and the terminal as the system names it, since it was
+        // asked; never a value it carries, which the card alone shows beside its Confirm. Every window shows it: the pipe is this machine's.
+        foreach (var waiting in facts.Confirmations)
+        {
+            var row = Row("confirmation", Text(waiting, "id"), Text(waiting, "asked"));
+            var asker = waiting["asker"] as JsonObject;
+            row["confirmation"] = new JsonObject
+            {
+                ["module"] = Text(waiting, "module"),
+                ["route"] = Text(waiting, "route"),
+                ["asker"] = new JsonObject { ["process"] = Text(asker, "process"), ["pid"] = asker?["pid"]?.DeepClone() },
+                ["expires"] = Text(waiting, "expires"),
+                ["shownAt"] = Text(waiting, "shownAt"),
+            };
             rows.Add(row);
         }
 
