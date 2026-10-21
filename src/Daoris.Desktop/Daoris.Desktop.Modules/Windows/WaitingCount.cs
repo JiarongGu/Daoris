@@ -1,35 +1,43 @@
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The count the first main window's page last told (NOTIFY1b), and which windows show it (MAINWINDOWS2b): the first main
-/// window always, and each other main window while the first is put away and its button is gone, so the taskbar shows the
-/// count on one button at least. Kept here, in plain <c>net10.0</c>, so that is tested; the windows only draw what they are
-/// told.
+/// The count each main window's page last told (NOTIFY1b), by the window's name: what that window wears on its own taskbar button
+/// and in its title (NOTIFY2c, D196 point 6, the notification design §2.4). Kept here, in plain <c>net10.0</c>, so that is tested; the
+/// windows only draw what they are told.
 /// </summary>
 /// <remarks>
-/// Only the first main window's page tells it (<c>useTaskbarCount</c>), and a put-away window's page keeps running, so the
-/// count stays current while it is away. Called from any thread: one lock holds the pair.
+/// <para><b>Each its own.</b> Every main window's page tells its own workspace's count (<c>useTaskbarCount</c>), and its window wears
+/// that, whatever workspace another window holds. The first put away (MAINWINDOWS2) takes its button and its count with it, and every
+/// other main window wears its own.</para>
+///
+/// <para>Kept so a window wears its count again where it is made after its page told it, and forgotten as the window closes, so one
+/// opened again under its name wears nothing until its own page tells it. Called from any thread: one lock holds the map.</para>
 /// </remarks>
-public sealed class WaitingCount(MainWindows mains)
+public sealed class WaitingCount
 {
     private readonly object _gate = new();
-    private int _count;
-    private string? _description;
+    private readonly Dictionary<string, (int Count, string? Description)> _told = new(StringComparer.Ordinal);
 
-    /// <summary>The page told how much waits: a count below none is none, and words with none are none.</summary>
-    public void Told(int count, string? description)
+    /// <summary>
+    /// The page of the main window named <paramref name="window"/> told how much waits: a count below none is none, and words with
+    /// none are none. A utility window's is no count.
+    /// </summary>
+    public void Told(string window, int count, string? description)
     {
-        lock (_gate)
-        {
-            _count = Math.Max(0, count);
-            _description = _count > 0 ? description : null;
-        }
+        if (!MainWindows.IsMain(window)) return;
+        var worn = Math.Max(0, count);
+        lock (_gate) _told[window] = (worn, worn > 0 ? description : null);
     }
 
-    /// <summary>What the window named <paramref name="window"/> shows of the count now: nothing where it does not wear it.</summary>
+    /// <summary>What the window named <paramref name="window"/> wears now: nothing where its page has told nothing.</summary>
     public (int Count, string? Description) For(string window)
     {
-        if (!mains.WearsCount(window)) return (0, null);
-        lock (_gate) return (_count, _description);
+        lock (_gate) return _told.TryGetValue(window, out var told) ? told : (0, null);
+    }
+
+    /// <summary>The window named <paramref name="window"/> closed: its count goes with it.</summary>
+    public void Closed(string window)
+    {
+        lock (_gate) _told.Remove(window);
     }
 }

@@ -303,6 +303,63 @@ public sealed class SessionMessagesPlanTests
     }
 
     /// <summary>
+    /// 🔴 SAYHELD1, the owner's case on the install (2026-10-21): a quest waited on another repository's answer, was resumed in a
+    /// new session once it came, and that session parked to ask the person. The service keeps naming the question the quest waited
+    /// on for as long as it is taken, so the person's answer to the park was read as words waiting on the question: the quest went
+    /// to its resume again, which the park itself held as a session working on it, and nothing went on. The answer goes on in the
+    /// park's own conversation, as any answered park's does; its question was answered before it began.
+    /// </summary>
+    [Fact]
+    public void An_answered_park_whose_quest_still_names_its_answered_question_goes_on()
+    {
+        var park = new PriorSession("s2", "D:/trees/s-1", "awaiting-person", "May I write to production?", "Game", Answer: "Use staging.")
+        {
+            Said = [Word with { Id = "w2", Text = "Use staging.", Reopens = false }],
+        };
+        var snapshot = new Snapshot(
+            [Quest("q1", "Taken") with { Awaits = "q0" }], [Repo],
+            [new SessionView("s2", "Game", "awaiting-person") { Tree = "D:/trees/s-1", Quest = "q1" }])
+        {
+            LastRun = new Dictionary<string, PriorSession> { ["q1"] = park },
+        };
+
+        var only = Assert.Single(Planner.Plan(snapshot, Config(cap: 1)));
+
+        Assert.Equal((StartVerdict.Start, true, "s2"), (only.Verdict, only.GoesOn, only.Resumes?.Session));
+        Assert.Equal("carrying on in `Game` — you answered session `s2`: Use staging.", only.Reason);
+    }
+
+    /// <summary>
+    /// SAYHELD1: words to the session that asked wait with its quest while the question is open (D79, MSG1b), and once it is answered
+    /// they go with the resume, which opens a new session handed the answer, never back into the asker's own conversation, which
+    /// would not be. A park on a question still open waits with it too.
+    /// </summary>
+    [Fact]
+    public void Words_to_the_session_that_asked_wait_while_its_question_is_open_and_go_with_its_resume()
+    {
+        var question = new QuestView("q0", "Game", "Backend", "What does it take?", "The contract.", "Open");
+        var waiting = new Snapshot([Quest("q1", "Taken") with { Awaits = "q0" }, question], [Repo], [])
+        {
+            LastRun = new Dictionary<string, PriorSession> { ["q1"] = Written("completed") },
+        };
+
+        var waits = Assert.Single(Planner.Plan(waiting, Config()), c => c.Quest.Id == "q1");
+        Assert.Equal((StartVerdict.Waiting, false), (waits.Verdict, waits.GoesOn));
+
+        var answered = waiting with { Quests = [Quest("q1", "Taken") with { Awaits = "q0" }] };
+        var resumes = Assert.Single(Planner.Plan(answered, Config()));
+        Assert.Equal((StartVerdict.Start, false, "s1"), (resumes.Verdict, resumes.GoesOn, resumes.Resumes?.Session));
+        Assert.Equal("w1", Assert.Single(resumes.Resumes!.Waiting).Id);
+        Assert.Equal("resuming in `Game` — `#q0` is answered.", resumes.Reason);
+
+        var parked = waiting with
+        {
+            LastRun = new Dictionary<string, PriorSession> { ["q1"] = Written("awaiting-person") with { Said = [Word with { Reopens = false }] } },
+        };
+        Assert.False(Assert.Single(Planner.Plan(parked, Config()), c => c.Quest.Id == "q1").GoesOn);
+    }
+
+    /// <summary>
     /// 🔴 ANSWER2, the owner's case on the install: a resumed run moves its record to working, and takes the person's words
     /// off it only as it concludes, so for the whole run the record works with the words still on it. A look meanwhile does not
     /// plan it to go on a second time, whose move to working the ledger refuses (working → working) and whose failure failed

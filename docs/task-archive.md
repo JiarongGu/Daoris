@@ -19092,6 +19092,12 @@ on by `daoris agent which`), which `proof-kit.mjs` and `acp-trust-probe.mjs` now
 lock held from the read to the write by `accounts.json`'s and `cooling.json`'s writers; `HarnessSettings.Change`, with every window
 writer of `harnesses.json` through it. Account verbs' shapes unchanged. Detail: D194's PUSH1f2e1 note, D173's of this day. On Opus.
 
+## SAYHELD1 — the person's words around an ask-and-wait reach a run (2026-10-21, D137)
+
+> - [ ] **SAYHELD1 — words kept on a quest's sessions around an ask-and-wait never reached a run** (driver, web; D137, D135, D79). Found on the install: words said to a session waiting on another repository's answer were not handed to its resume's new session, and the person's answer to the park that session made sat for hours. Proof: a test per path, red first.
+
+**Outcome** 2026-10-21: the resume (D79) hands the asker's words to its new session, and a park made after a resume goes on with its
+answer, the quest's stale `awaits` no longer read as a wait. Detail: `docs/FIX-LOG.md`'s SAYHELD1 entry and D137's SAYHELD1 note.
 ## ACCTPOOL1 — one pool of Daoris's accounts serves every workspace (2026-10-21)
 
 > - [ ] **ACCTPOOL1 — one pool of Daoris's accounts serves every workspace** (design; D197, drafting 2026-10-21; amends D125, D130 and D152). The owner decided that an agent's accounts signed in for Daoris are one pool for every workspace, and that the machine's own account stays the machine's, never changed by Daoris. The add-account dialog's *Let it run work in* step offered *This machine's list* in words that read as moving the machine onto the new account, while ticking it would narrow every workspace without a list of its own to that one account (`src/Daoris.Web/src/agents/agents.ts` `joinChoices`, `AddAccount.tsx` `choiceDetail`). Proof: D197 and its design read by Codex under D191, accepted, and its build rows filed.
@@ -19115,3 +19121,9 @@ Detail: D194's PUSH1f2e2 note. On Opus.
 
 **Outcome** 2026-10-22: built. The Keeping pass removes daily what is seven days into its unused stretch through the one act (Tools' delete's
 too), under the use files' locks, kept while a session's `resolved` names it; the Downloads row says each day. Detail: D195's KEEP1b note.
+## NOTIFY2c — every main window counts its own workspace (2026-10-22, D196)
+
+> - [ ] **NOTIFY2c — every main window counts its own workspace** (modules, web-shell; after 2b; D196, the notification design §9). Each main window's taskbar button and title wear its own workspace's count, and a notification's click opens the window holding what it is about. Proof: as §9 names it.
+
+**Outcome** 2026-10-22: built. Each main window tells and wears its own count (`SET_BADGE` by name, its order per window); a balloon's
+click opens the window whose workspace holds its session or quest (`MainWindowScopes`), else the one last in front. Detail: D196's NOTIFY2c note. On Opus.

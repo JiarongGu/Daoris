@@ -1,15 +1,16 @@
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The main window wearing how much waits on the person (NOTIFY1b): its taskbar button's overlay and its title, told by
-/// its page over <c>SET_BADGE</c>. <paramref name="count"/> is never below none; <paramref name="description"/> is what a
-/// screen reader says of the overlay, in the page's language, or null.
+/// A main window wearing how much waits on the person in its workspace (NOTIFY1b, NOTIFY2c): its taskbar button's overlay and its
+/// title, told by its own page over <c>SET_BADGE</c>. <paramref name="window"/> is the main window's name (<see cref="MainWindows.First"/>
+/// or <c>main:&lt;n&gt;</c>); <paramref name="count"/> is never below none; <paramref name="description"/> is what a screen reader says
+/// of the overlay, in the page's language, or null.
 /// </summary>
 /// <remarks>
 /// A delegate for the reason <see cref="PickFile"/> is one: these modules are plain <c>net10.0</c> and tested as such, and
-/// the application hands in its window. Resolved at call time there, since the window is made after the modules are.
+/// the application hands in its windows. Resolved at call time there, since the windows are made after the modules are.
 /// </remarks>
-public delegate void ShowWaiting(int count, string? description);
+public delegate void ShowWaiting(string window, int count, string? description);
 
 /// <summary>
 /// A main window's page telling its frame the workspace it holds (MAINWINDOWS3b), for the title: <paramref name="name"/> is the

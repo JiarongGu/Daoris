@@ -66,7 +66,7 @@ describe('a secondary window\'s caption (WINDOW2)', () => {
   });
 });
 
-/** NOTIFY1b: the main window's taskbar button counts what waits; the whole window's case is `sessionsBadge.test.tsx`. */
+/** NOTIFY1b, NOTIFY2c: each main window's taskbar button counts what waits in its workspace; the whole window's case is `sessionsBadge.test.tsx`. */
 describe('the taskbar\'s count (NOTIFY1b)', () => {
   afterEach(() => {
     invoke.mockReset();
@@ -121,13 +121,18 @@ describe('the taskbar\'s count (NOTIFY1b)', () => {
     await act(async () => {});
   });
 
-  /** ONEINSTANCE1: another main window a later launch opened counts the same, and the taskbar's button is the first one's. */
-  it('says nothing from another main window', () => {
+  /**
+   * NOTIFY2c: another main window a later launch opened (ONEINSTANCE1) holds its own workspace, so it counts its own and wears it on
+   * its own taskbar button, told by the name it was opened under as its title is.
+   */
+  it('tells another main window\'s own frame its own count, by its name', () => {
     invoke.mockResolvedValue({ applied: true });
     window.history.replaceState(null, '', '/?window=main%3A2');
     renderHook(() => useTaskbarCount(3, '3 waiting on you'));
 
-    expect(told()).toEqual([]);
+    expect(told().map(([, , request]) => request)).toEqual([
+      { payload: { name: 'main:2', count: 3, description: '3 waiting on you', order: expect.any(Number) } },
+    ]);
   });
 });
 

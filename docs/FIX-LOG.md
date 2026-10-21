@@ -5,6 +5,32 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-21 — The person's words to a quest's sessions around an ask-and-wait never reached a run (SAYHELD1)
+
+- **Symptom:** on the install, a driven session ended waiting on another repository's answer (D79), and the person wrote to it. Once
+  the answer came, the quest resumed in a new session whose opening and events never held their words: they stayed on the first
+  record, unread. That session parked to ask a go-ahead, and the person answered the park. Nothing went on for hours, though the
+  go-ahead was later refused (none waited) and no account was cooling. No plan action, start or reopen was logged for it.
+- **Root cause:** the service names the question a taken quest waited on (`awaits`) until the quest closes (`QuestLog`), and the
+  driver read that field alone as a wait. (B) `Planner.WordsOn` planned nothing for a quest naming one, so the park's answer was
+  never taken up. The quest fell to D79's resume branch, whose `Consider` found the park itself among the active sessions and sat it
+  `RepositoryBusy` (*session … is already working on …*). The go-ahead held nothing. The start read the same field too:
+  `ResumesOwn`, the continuation's guard, `carryingOn` and the answer's read. Had the planner planned the park, the start would have
+  opened a third session. (A) MSG1b left words to a waiting quest's session on that record until its resume, and the resume opened a
+  new session without handing them. Only a fallback's carry-on hands words on (`HandedOnAsync`), and the asker, superseded by the new
+  session, was never planned again.
+- **Fix:** `Planner.ResumedOnAnswer`: a quest whose question has left the open list and whose last session here is a park was resumed
+  on its answer, since a session that asks ends `completed`. It waits on nothing: the park's words go on in its own conversation, and
+  its resume is not planned again. A record already left so goes on at the next look by itself. The start's reads of `awaits` yield to
+  words going on. The D79 resume reads the asker's words as they stand (SAIDBACK1f) and hands the person's and Daoris's to the new
+  session (`SessionTarget.Handed`): quoted beneath the answer in the `written-to` section, shown under their ids after the target, and
+  taken off the asker naming it. The asker's conversation says where they went (`went`, reason `resumed`, worded in both catalogues).
+  A resumed park is told which of its go-aheads still wait and that their acts are not yet its own (`GoAheadsText.Resumed`).
+- **Verification:** red before, green after: `SessionMessagesPlanTests` (the answered park after a resume read `RepositoryBusy`),
+  `AskAndWaitPromptTests` (the resume's instruction and opening), `GoAheadsHandedTests` (the waiting go-ahead said), and two real
+  ticks in `SessionMessagesTickTests`. In A, the words reach the resume's prompt and events and are taken off the asker naming it. In
+  B, the park's own conversation resumes with the answer and the quest closes. Both tick rows were seen failing on the same lines.
+
 ## 2026-10-21 — A window on one workspace counted another workspace's sessions to review (NEEDSSCOPE1)
 
 - **Symptom:** on the install, two windows on one home, each scoped to its own workspace. One window's title bar and taskbar

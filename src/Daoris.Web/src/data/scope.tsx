@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { store, stored, storedHere, storeHere } from '../lib/stored';
-import { ownWindowName, secondaryWindow } from '../work/window';
+import { FIRST_MAIN_WINDOW, ownWindowName, secondaryWindow } from '../work/window';
 
 // The workspace scope (WSP5; workspace design §4): every cross-repository answer is scoped to ONE
 // workspace per query, and the platform never silently mixes circles. The scope is global chrome
@@ -26,7 +26,7 @@ const OPENED = 'daoris.workspace.opened';
 /** How many opened windows are kept, the newest last: one per session ever detached would otherwise grow for ever. */
 const OPENED_KEPT = 32;
 /** The application's own window, which the host names none (`ownWindowName`): `main:<n>` starts from two. */
-const FIRST = 'main';
+const FIRST = FIRST_MAIN_WINDOW;
 
 /** Where a window keeps what is its alone: its session storage, or a second document's in a test. */
 export type WindowStore = {

@@ -6,7 +6,7 @@ import { useScope } from '../data/scope';
 import { anotherMainWindow, secondaryWindow } from '../work/window';
 
 // This build's secondary windows (MOD3): opening one, and telling its frame the theme; telling the engine every window
-// renders on the viewer's choice (THEMESCHEME1); and telling the main window's taskbar button what waits (NOTIFY1b).
+// renders on the viewer's choice (THEMESCHEME1); and telling each main window's taskbar button what waits (NOTIFY1b, NOTIFY2c).
 
 /**
  * Open one of this build's secondary windows (D55 §b, SURF8): the monitor, or one session detached.
@@ -78,37 +78,45 @@ export function tellFrameTheme(name: string) {
  * A main window's page telling its frame its own title (MAINWINDOWS3b), which names the workspace the window holds: the frame
  * wears the application's name itself and takes only what follows it, so the taskbar and Alt-Tab read two windows on two
  * workspaces apart. `name` is another main window's (`main:<n>`); none is the first. Fire and forget, as the theme is.
+ *
+ * `workspace` is the one the window holds, none for every workspace, told beside the title as data (NOTIFY2c): the shell picks the
+ * window a notification opens from it, and never reads the title, which is the person's words.
  */
-export function tellFrameTitle(title: string, name: string | null) {
+export function tellFrameTitle(title: string, name: string | null, workspace: string | null) {
   try {
-    void getBridge().invoke('DAORIS.WINDOWS', 'SET_TITLE', { payload: name ? { name, title } : { title } }).catch(() => {});
+    void getBridge().invoke('DAORIS.WINDOWS', 'SET_TITLE', { payload: name ? { name, title, workspace } : { title, workspace } })
+      .catch(() => {});
   } catch {
     // No bridge at all: a browser has no frame to tell.
   }
 }
 
 /**
- * The main window's page telling its frame how much waits on the person (NOTIFY1b): Overview's *What needs you* count, which
- * the frame wears as its taskbar button's overlay and in its title, with `description` the words a screen reader says of
- * the overlay, in the page's language. On arrival and on each change of either.
+ * A main window's page telling its own frame how much waits on the person in its workspace (NOTIFY1b, NOTIFY2c): its *What needs
+ * you* count, which the frame wears as its taskbar button's overlay and in its title, with `description` the words a screen reader
+ * says of the overlay, in the page's language. On arrival and on each change of either.
  *
  * @remarks
- * **The main window's alone.** The taskbar button is the main window's, so a secondary window's page, which reads the same
- * counts, never tells it: the page is a secondary window when its own address names one (`work/window.ts`). Fire and
- * forget, as the theme is: a frame that cannot be told shows no count, which is what it showed before.
+ * **Each main window its own** (NOTIFY2c, the notification design §2.4). Every main window holds its own workspace and counts its
+ * own, so each tells its own frame: another main window a later launch opened (ONEINSTANCE1) by the name it was opened under, as its
+ * title is, and the first by none. A utility window's page (the monitor, a detached session), which reads the same counts, never
+ * tells it: it has no button of its own. Fire and forget, as the theme is: a frame that cannot be told shows no count, which is what
+ * it showed before.
  *
  * 🔴 **In order** (SESSBADGE1): two counts told close together may reach the frame in either order, and the title once kept 5
  * while the band read 4 from the same value. Each carries `order`, later than the one before (`nextBadgeOrder`), and the frame
- * never wears a count told before the one it wears.
+ * never wears a count told before the one it wears; it keeps the order per window, since each page orders by its own clock.
  */
 export function useTaskbarCount(count: number, description: string) {
   const { isAvailable } = useShenora();
   useEffect(() => {
     const search = globalThis.location?.search ?? '';
-    // The first main window's alone: another a later launch opened (ONEINSTANCE1) counts the same, and is no button of its own.
-    if (!isAvailable || secondaryWindow(search) !== null || anotherMainWindow(search) !== null) return;
+    if (!isAvailable || secondaryWindow(search) !== null) return;
+    const name = anotherMainWindow(search);
     const order = nextBadgeOrder();
-    void getBridge().invoke('DAORIS.WINDOWS', 'SET_BADGE', { payload: { count, description, order } }).catch(() => {});
+    void getBridge().invoke('DAORIS.WINDOWS', 'SET_BADGE', {
+      payload: name ? { name, count, description, order } : { count, description, order },
+    }).catch(() => {});
   }, [isAvailable, count, description]);
 }
 

@@ -42,15 +42,19 @@ public sealed class WindowsModuleTests : Bridge
 
     private readonly Windows _windows = new();
 
-    /// <summary>What the main window was told to wear on its taskbar button (NOTIFY1b).</summary>
-    private readonly List<(int Count, string? Description)> _badges = [];
+    /// <summary>What each main window was told to wear on its taskbar button (NOTIFY1b), by its name (NOTIFY2c).</summary>
+    private readonly List<(string Window, int Count, string? Description)> _badges = [];
 
     /// <summary>The workspace each window was told to wear in its title (MAINWINDOWS3b); a null name is the first main window.</summary>
     private readonly List<(string? Name, string? Workspace)> _workspaces = [];
 
+    /// <summary>Which workspace each main window holds, as its page told it (NOTIFY2c).</summary>
+    private readonly MainWindowScopes _scopes = new();
+
     private WindowsModule Module() => new(Bus, _windows, new PlatformAddress(Service),
-        badge: (count, description) => _badges.Add((count, description)),
-        workspace: (name, workspace) => _workspaces.Add((name, workspace)));
+        badge: (window, count, description) => _badges.Add((window, count, description)),
+        workspace: (name, workspace) => _workspaces.Add((name, workspace)),
+        scopes: _scopes);
 
     /// <summary>
     /// MAINWINDOWS3b: the frame's title is the count, the application's own name, then the workspace the page names. The name is
@@ -94,6 +98,26 @@ public sealed class WindowsModuleTests : Bridge
 
         Assert.True(first.GetProperty("applied").GetBoolean());
         Assert.Equal([(null, "games"), ("main:2", "work"), ("main:3", null), (null, null)], _workspaces);
+    }
+
+    /// <summary>
+    /// NOTIFY2c: the workspace a main window holds reaches the registry a notification's click reads as data, `workspace` beside the
+    /// title, never read from the title, which is the person's words; none is every workspace.
+    /// </summary>
+    [Fact]
+    public async Task A_page_tells_the_registry_the_workspace_its_window_holds_as_data()
+    {
+        await AnswerAsync(Module(), "SET_TITLE", new { title = "Daoris (道衍) — work", workspace = "games" });
+        await AnswerAsync(Module(), "SET_TITLE", new { name = "main:2", title = "Daoris (道衍) — games", workspace = "work" });
+        _scopes.CameForward(MainWindows.First);
+
+        Assert.Equal(MainWindows.First, _scopes.Pick("games"));
+        Assert.Equal("main:2", _scopes.Pick("work"));
+
+        // The second window turned to every workspace: it holds the first's too, and the first was last in front.
+        await AnswerAsync(Module(), "SET_TITLE", new { name = "main:2", title = "Daoris (道衍)", workspace = (string?)null });
+        Assert.Equal(MainWindows.First, _scopes.Pick("games"));
+        Assert.Equal("main:2", _scopes.Pick("work"));
     }
 
     [Fact]
@@ -230,7 +254,58 @@ public sealed class WindowsModuleTests : Bridge
         var told = await AnswerAsync(Module(), "SET_BADGE", new { count = 3, description = "3 waiting on you" });
 
         Assert.True(told.GetProperty("applied").GetBoolean());
-        Assert.Equal((3, "3 waiting on you"), _badges.Single());
+        Assert.Equal((MainWindows.First, 3, "3 waiting on you"), _badges.Single());
+    }
+
+    /// <summary>
+    /// NOTIFY2c: every main window's page tells its own workspace's count, by the name its window was opened under as `SET_TITLE`
+    /// does, and its own frame wears it; no name is the first main window's.
+    /// </summary>
+    [Fact]
+    public async Task Each_main_windows_page_tells_its_own_frame_its_own_count()
+    {
+        var module = Module();
+
+        await AnswerAsync(module, "SET_BADGE", new { count = 3, description = "3 waiting on you" });
+        var other = await AnswerAsync(module, "SET_BADGE", new { name = "main:2", count = 1, description = "1 waiting on you" });
+
+        Assert.True(other.GetProperty("applied").GetBoolean());
+        Assert.Equal([(MainWindows.First, 3, "3 waiting on you"), ("main:2", 1, "1 waiting on you")], _badges);
+    }
+
+    /// <summary>
+    /// NOTIFY2c, SESSBADGE1: each page orders the counts it tells by its own clock, so the order is kept per window. One kept for all
+    /// refused a second window's count told before the first window's last, though the two say different workspaces.
+    /// </summary>
+    [Fact]
+    public async Task Two_windows_counts_told_out_of_order_are_each_kept_by_their_own_order()
+    {
+        var module = Module();
+
+        await AnswerAsync(module, "SET_BADGE", new { count = 4, description = "4 waiting on you", order = 1760950000002L });
+        var second = await AnswerAsync(module, "SET_BADGE", new { name = "main:2", count = 2, description = "2 waiting on you", order = 1760950000001L });
+        var stale = await AnswerAsync(module, "SET_BADGE", new { count = 5, description = "5 waiting on you", order = 1760950000001L });
+        var staleSecond = await AnswerAsync(module, "SET_BADGE", new { name = "main:2", count = 7, description = "7 waiting on you", order = 1760950000000L });
+        var next = await AnswerAsync(module, "SET_BADGE", new { name = "main:2", count = 1, description = "1 waiting on you", order = 1760950000003L });
+
+        Assert.True(second.GetProperty("applied").GetBoolean());
+        Assert.False(stale.GetProperty("applied").GetBoolean());
+        Assert.False(staleSecond.GetProperty("applied").GetBoolean());
+        Assert.True(next.GetProperty("applied").GetBoolean());
+        Assert.Equal(
+            [(MainWindows.First, 4, "4 waiting on you"), ("main:2", 2, "2 waiting on you"), ("main:2", 1, "1 waiting on you")], _badges);
+    }
+
+    /// <summary>A utility window (the monitor, a detached session) has no count of its own to wear, and a name this build does not open is refused.</summary>
+    [Fact]
+    public async Task A_count_for_a_utility_window_is_worn_nowhere()
+    {
+        var monitor = await AnswerAsync(Module(), "SET_BADGE", new { name = "monitor", count = 2, description = "2 waiting on you" });
+        var refusal = await RefusalAsync(Module(), "SET_BADGE", new { name = "session:../x", count = 2 });
+
+        Assert.False(monitor.GetProperty("applied").GetBoolean());
+        Assert.Contains("WINDOW_UNKNOWN", refusal);
+        Assert.Empty(_badges);
     }
 
     /// <summary>
@@ -249,7 +324,7 @@ public sealed class WindowsModuleTests : Bridge
 
         Assert.False(stale.GetProperty("applied").GetBoolean());
         Assert.True(next.GetProperty("applied").GetBoolean());
-        Assert.Equal([(4, "4 waiting on you"), (3, "3 waiting on you")], _badges);
+        Assert.Equal([(MainWindows.First, 4, "4 waiting on you"), (MainWindows.First, 3, "3 waiting on you")], _badges);
     }
 
     /// <summary>Two told at once from two threads: whichever the module takes last, the frame ends on the later order's count.</summary>
@@ -271,7 +346,7 @@ public sealed class WindowsModuleTests : Bridge
         await AnswerAsync(Module(), "SET_BADGE", new { count = 0 });
         await AnswerAsync(Module(), "SET_BADGE", new { count = -2, description = "" });
 
-        Assert.Equal([(0, null), (0, null)], _badges);
+        Assert.Equal([(MainWindows.First, 0, null), (MainWindows.First, 0, null)], _badges);
     }
 
     /// <summary>A host with no main window (a test, a headless composition) has no button to badge, and says so.</summary>

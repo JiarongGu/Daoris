@@ -422,12 +422,35 @@ describe('the window\'s title', () => {
     expect(document.title).toBe('Daoris (道衍)');
   });
 
-  it('is told to the frame, which wears the workspace after its own name (MAINWINDOWS3b)', async () => {
+  /**
+   * NOTIFY2c: and the workspace the window holds as data beside the title, none for every workspace, from which the shell picks the
+   * window a notification opens; it never reads the title, which is the person's words.
+   */
+  it('is told to the frame, which wears the workspace after its own name (MAINWINDOWS3b), with the workspace as data (NOTIFY2c)', async () => {
     invoke.mockClear();
     invoke.mockResolvedValue({});
-    renderHook(() => useWindowTitle('games'));
+    const { rerender } = renderHook(({ workspace }: { workspace: string | null }) => useWindowTitle(workspace), {
+      initialProps: { workspace: 'games' as string | null },
+    });
     await waitFor(() => expect(invoke).toHaveBeenCalledWith(
-      'DAORIS.WINDOWS', 'SET_TITLE', { payload: { title: 'Daoris (道衍) — games' } }));
+      'DAORIS.WINDOWS', 'SET_TITLE', { payload: { title: 'Daoris (道衍) — games', workspace: 'games' } }));
+
+    rerender({ workspace: null });
+    await waitFor(() => expect(invoke).toHaveBeenLastCalledWith(
+      'DAORIS.WINDOWS', 'SET_TITLE', { payload: { title: 'Daoris (道衍)', workspace: null } }));
+  });
+
+  it('is told by another main window under its own name (NOTIFY2c)', async () => {
+    invoke.mockClear();
+    invoke.mockResolvedValue({});
+    window.history.replaceState(null, '', '/?window=main%3A2');
+    try {
+      renderHook(() => useWindowTitle('work'));
+      await waitFor(() => expect(invoke).toHaveBeenCalledWith(
+        'DAORIS.WINDOWS', 'SET_TITLE', { payload: { name: 'main:2', title: 'Daoris (道衍) — work', workspace: 'work' } }));
+    } finally {
+      window.history.replaceState(null, '', '/');
+    }
   });
 });
 

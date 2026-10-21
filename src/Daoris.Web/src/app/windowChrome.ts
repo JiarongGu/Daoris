@@ -68,9 +68,10 @@ export function useWindowTitle(workspace: string | null) {
   useEffect(() => {
     const title = windowTitle(workspace);
     document.title = title;
-    // The frame wears the workspace after its own count and name (MAINWINDOWS3b): the kit raises no title event to the host.
+    // The frame wears the workspace after its own count and name (MAINWINDOWS3b): the kit raises no title event to the host. And
+    // the workspace the window holds, as data, from which the shell picks the window a notification opens (NOTIFY2c).
     if (isAvailable && secondaryWindow(globalThis.location?.search ?? '') === null) {
-      tellFrameTitle(title, anotherMainWindow(globalThis.location?.search ?? ''));
+      tellFrameTitle(title, anotherMainWindow(globalThis.location?.search ?? ''), workspace);
     }
   }, [workspace, isAvailable]);
 }

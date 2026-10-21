@@ -41,7 +41,8 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
     /// null. A taken quest carrying one is its taker's to resume once the question closes. Only a taken quest waits: a
     /// service keeps the field after the quest closes (AWAITSTALE1), and the owner's words of 2026-10-15 to a done quest's
     /// session were planned and then sent down the open door, which refused them, because the start read it. So a quest
-    /// that is not taken names none here, to every reader.
+    /// that is not taken names none here, to every reader. A taken quest keeps naming its question after the answer and after
+    /// the resume it made (SAYHELD1): whether it still waits is the planner's <c>ResumedOnAnswer</c>, never this field alone.
     /// </summary>
     public string? Awaits
     {
@@ -1287,6 +1288,7 @@ public static class Planner
                         : Joining(considered));
             }
             else if (quest is { Status: "Taken", Awaits: { Length: > 0 } awaits }
+                     && !ResumedOnAnswer(quest)
                      && snapshot.LastRun.TryGetValue(quest.Id, out var prior))
             {
                 considerations.Add(Resume(quest, awaits, prior));
@@ -1344,7 +1346,7 @@ public static class Planner
             || WrittenTo(quest)
             || (quest.Status == "Taken"
                 && snapshot.LastRun.TryGetValue(quest.Id, out var run)
-                && (quest.Awaits is { Length: > 0 }
+                && ((quest.Awaits is { Length: > 0 } && !ResumedOnAnswer(quest))
                     || run.AnsweredPark
                     || string.Equals(run.State, "failed", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(run.State, "stopped", StringComparison.OrdinalIgnoreCase)
@@ -1382,16 +1384,31 @@ public static class Planner
         // Whether the person's words wait on this quest's record here for it to go on with (see WordsOn).
         bool WrittenTo(QuestView quest) => WordsOn(quest) is not null;
 
+        // 🔴 SAYHELD1, the owner's case on the install (2026-10-21): whether a taken quest's resume (D79) already began, so it waits on
+        // its question no more. The service names the question for as long as the quest is taken (QuestLog clears it only at a close),
+        // so read alone it held the quest after its resume for good: the person's answer to the park the resumed session made was read
+        // as words waiting on the question, its resume was planned again, and the park itself held it as a session working on the quest.
+        // Read from what the look holds, so a record already left so goes on by itself: the question is off the open list (answered),
+        // and the quest's last session here is a park, which only a session started after the answer makes, since one that asks ends
+        // `completed` (Observation.Conclude). A last session that ended any other way is still the resume's to carry on, its words handed
+        // to the session it opens (DriverContinuations.ResumeWordsAsync).
+        bool ResumedOnAnswer(QuestView quest) =>
+            quest.Awaits is { Length: > 0 } awaits
+            && !snapshot.Quests.Any(asked => string.Equals(asked.Id, awaits, StringComparison.OrdinalIgnoreCase))
+            && snapshot.LastRun.TryGetValue(quest.Id, out var last)
+            && last.Parked;
+
         // The record the person's words wait on for this quest (MSG1b, D137 §2.2), parked or ended, and not all words a reopen
         // already found it could not take (MSG1a's open point): its last session here, or null. A taken quest waiting on a
-        // question waits with them: D79's resume is its next start, and the words stay on the record they were said to. A closed
-        // quest waits on nothing, whatever question the service still keeps for it (QuestView.Awaits reads none).
+        // question waits with them: D79's resume is its next start, which is handed them (SAYHELD1, Driver's handsOn). Once that
+        // resume began (ResumedOnAnswer), the quest waits on nothing, and words to its session go on in it as any record's do. A
+        // closed quest waits on nothing, whatever question the service still keeps for it (QuestView.Awaits reads none).
         // 🔴 FABRIC-CLOSE1c9: the session a taken quest's reopen names, where a later one is its last here, goes first with the words
         // it was told (its marks judged as the last's are); the last one's go on at a later look. Not while the person's stop of the
         // last session holds the quest: the reopen's words are Daoris's, and release no stop the person made (D173's note).
         PriorSession? WordsOn(QuestView quest)
         {
-            if (quest.Awaits is { Length: > 0 }) return null;
+            if (quest.Awaits is { Length: > 0 } && !ResumedOnAnswer(quest)) return null;
             if (snapshot.NamedByReopen.TryGetValue(quest.Id, out var named) && Waits(named) && StopHolding(quest) is null) return named;
             return snapshot.LastRun.TryGetValue(quest.Id, out var written) && Waits(written) ? written : null;
 

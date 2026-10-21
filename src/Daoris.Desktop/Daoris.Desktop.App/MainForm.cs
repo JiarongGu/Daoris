@@ -61,7 +61,9 @@ public sealed class MainForm : OptimizedForm
         UiStallWatch? watch = null,
         Daoris.Driver.MachineLog? log = null,
         MainWindows? mains = null,
-        PressFlash? flash = null)
+        PressFlash? flash = null,
+        MainWindowScopes? scopes = null,
+        BringForward? forward = null)
         : base(new OptimizedFormOptions
         {
             FramelessChrome = true,
@@ -138,9 +140,14 @@ public sealed class MainForm : OptimizedForm
         // parks while nobody is looking at this window now reaches the person. It decides nothing —
         // `AttentionWatch` in the driver does, so a machine with no screen answers the same question.
         // Its double-click and a balloon's click take this window back where it was put away (MAINWINDOWS2) before showing it.
-        _notifier = new SessionNotifier(this, eventBus, takingBack: () => _mains?.TakeBackFirst());
-        _notifier.Attend += session => eventBus.Emit(
-            new EventMessage { Module = "DAORIS", Type = "ATTEND_SESSION", Payload = new { Session = session } });
+        // NOTIFY2c: a balloon's click opens the main window whose workspace holds what it was about, as the windows' records hold
+        // it, or the main window last in front where none or several do; and only that window's page attends its session.
+        _notifier = new SessionNotifier(
+            this, eventBus, takingBack: () => _mains?.TakeBackFirst(),
+            picking: scopes is null ? null : (session, quest) => scopes.PickFor(driver.Slices, session, quest),
+            forwarding: forward);
+        _notifier.Attend += (session, window) => eventBus.Emit(
+            new EventMessage { Module = "DAORIS", Type = "ATTEND_SESSION", Payload = new { Session = session, Window = window } });
 
         Load += async (_, _) => await BringUpAsync();
         // Shown again while put away, by the kit's bringing it forward for a later launch: that launch's window (MAINWINDOWS2).
@@ -150,6 +157,8 @@ public sealed class MainForm : OptimizedForm
         };
         // FABRIC-END6: the window's focus is a moment to ask about an open pull request (§A4.3); the driver bounds it to D148's minute.
         Activated += (_, _) => _driver.Focused();
+        // NOTIFY2c: the main window last in front is the one a notification about nobody's workspace opens.
+        if (scopes is not null) Activated += (_, _) => scopes.CameForward(MainWindows.First);
         // NOTIFY2b (the notification design §3.3): a terminal's press waiting unshown lights the taskbar button of the main window last
         // in front while none is; this window's coming forward stops it. What waits is told by the pipe, on the thread that changed it.
         if (flash is not null)
@@ -210,14 +219,28 @@ public sealed class MainForm : OptimizedForm
     /// Show this window again where it was put away, from any thread, never blocking (MAINWINDOWS2): a later launch's window.
     /// Un-minimized before it is activated, then brought forward on the OS's side too, as the tray's restore does.
     /// </summary>
-    public void TakeBack() => Post(() =>
+    public void TakeBack() => Post(() => Forward(this));
+
+    /// <summary>
+    /// Bring <paramref name="form"/> in front of the person, on its own thread: the tray's restore, a later launch's window, and a
+    /// notification's click (NOTIFY2c, on whichever main window it opens).
+    /// </summary>
+    /// <remarks>
+    /// 🔴 THE ORDER IS THE PART PEOPLE GET WRONG, and the framework's own <c>WindowActivation</c> documents it: un-minimize BEFORE
+    /// activating, because activating a minimized window leaves it minimized; then the managed show and activate; then
+    /// <c>SetForegroundWindow</c> for the OS side, without which restoring while another app holds the foreground leaves the window
+    /// behind everything, visible only in the taskbar. That type is internal to the package, so the sequence is written out here. The
+    /// un-minimize restores a window minimized from maximized as maximized (Shenora 0.22), which <c>WindowState = Normal</c> does not.
+    /// </remarks>
+    internal static void Forward(Form form)
     {
-        Unminimize(this);
-        Show();
-        Activate();
-        BringToFront();
-        SetForegroundWindow(Handle);
-    });
+        if (form.IsDisposed) return;
+        Unminimize(form);
+        form.Show();
+        form.Activate();
+        form.BringToFront();
+        SetForegroundWindow(form.Handle);
+    }
 
     /// <summary>
     /// Un-minimize <paramref name="form"/> to where it was minimized from, maximized if it was (Shenora 0.22): <c>WindowState =
