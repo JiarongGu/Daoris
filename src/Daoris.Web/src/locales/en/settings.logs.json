@@ -1,5 +1,5 @@
 {
-  "settings.logs.body": "What happens on this machine: each Daoris process writes a line an event, kept thirty days, to improve Daoris from. Nobody's words are in it — no message, prompt or answer — and it never leaves this machine. `daoris-driver logs` reads the same lines at a terminal.",
+  "settings.logs.body": "What happens on this machine: each Daoris process writes a line an event, kept for the days set on This Daoris (thirty unless you change it), to improve Daoris from. Nobody's words are in it — no message, prompt or answer — and it never leaves this machine. `daoris-driver logs` reads the same lines at a terminal.",
   "settings.logs.folder": "Folder",
   "settings.logs.open": "Open the folder",
   "settings.logs.notOpened": "This window cannot open a folder. The log is in {{folder}}.",

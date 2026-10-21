@@ -1,5 +1,5 @@
 {
-  "settings.logs.body": "本机上发生的事：每个 Daoris 进程每个事件写一行，保留三十天，用来改进 Daoris。其中没有任何人的话——没有消息、提示或回答——也从不离开本机。`daoris-driver logs` 在终端里读的是同样的行。",
+  "settings.logs.body": "本机上发生的事：每个 Daoris 进程每个事件写一行，按本机页上设定的天数保留（未改时为三十天），用来改进 Daoris。其中没有任何人的话——没有消息、提示或回答——也从不离开本机。`daoris-driver logs` 在终端里读的是同样的行。",
   "settings.logs.folder": "文件夹",
   "settings.logs.open": "打开文件夹",
   "settings.logs.notOpened": "这个窗口无法打开文件夹。日志在 {{folder}}。",
