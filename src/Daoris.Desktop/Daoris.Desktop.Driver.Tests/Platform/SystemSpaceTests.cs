@@ -86,7 +86,10 @@ public sealed class SystemSpaceTests : IDisposable
         });
         Assert.All(SpaceKinds.Table, kind => Assert.Null(world.Sizes.Of(_home, kind.Id)));
         Assert.Equal(143L << 30, (long)space["volume"]!["free"]!);
-        Assert.Null(space["volume"]!["floor"]);
+        // KEEP1f: the floor this volume is held to, by default the smaller of 10% of it and 20 GB, and nothing freed early.
+        Assert.Equal("default", (string?)space["volume"]!["floor"]!["from"]);
+        Assert.False((bool)space["volume"]!["below"]!);
+        Assert.Null(space["volume"]!["freedEarly"]);
         Assert.Null(space["run"]);
         Assert.Null(space["held"]);
     }

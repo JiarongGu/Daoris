@@ -115,6 +115,34 @@ describe('what needs a person, worded', () => {
     }
   });
 
+  /**
+   * KEEP1f (the cleanup design §3.2): a volume still below its floor, named by its free space where it is mounted; its floor, what Daoris
+   * freed of what it can make again, and what *Free up space…* could free; no act of its own, its door the press, in each language.
+   */
+  it('names a volume below its floor by its free space, says its floor, what Daoris freed and what the press could, and offers no act', async () => {
+    const gb = 2 ** 30;
+    const low = row('space', '\\\\?\\Volume{A}\\', '2026-10-22T09:00:00Z', {
+      space: { root: 'C:\\', free: 4 * gb, total: 100 * gb, floor: 10 * gb, freed: 2 * gb, could: 3 * gb },
+    });
+    const item = words(low);
+    expect(item.title).toBe('4 GB free of 100 GB on C:\\');
+    expect(item.detail).toBe(
+      'Below the floor of 10 GB Daoris keeps free. Daoris freed 2 GB of what it can make again; the rest is yours to choose. '
+      + 'Free up space… could free about 3 GB more.');
+    expect(attentionActs(item)).toEqual([]);
+    expect(attentionGroup(item)).toBe('word');
+    // Nothing freed, and no list read: said so, and no press's size.
+    expect(words(row('space', 'v2', null, { space: { ...low.space!, freed: 0, could: null } })).detail)
+      .toBe('Below the floor of 10 GB Daoris keeps free. Daoris found nothing it can make again to free; the rest is yours to choose.');
+    await i18n.changeLanguage('zh');
+    try {
+      expect(words(low).title).toBe('C:\\ 共 100 GB，可用 4 GB');
+      expect(words(low).detail).toContain('道衍已释放 2 GB 可重新生成的内容');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
   it('explains an unanswerable quest, in the active language', async () => {
     const pushed = row('unanswerable', '7a82cc', '2026-09-14T09:00:00Z', { where: 'retired' });
     expect(words(pushed).detail).toContain('retired');
@@ -397,7 +425,7 @@ describe('the groups', () => {
       confirmation: 'holding', trust: 'holding',
       'account-wait': 'holding', 'signed-out': 'holding',
       proposal: 'word', intake: 'word', departure: 'word', 'set-up': 'word', opinion: 'word', rule: 'word', helper: 'word',
-      'hand-over': 'word', unanswerable: 'word', review: 'ready', work: 'word',
+      'hand-over': 'word', unanswerable: 'word', review: 'ready', work: 'word', space: 'word',
     });
   });
 

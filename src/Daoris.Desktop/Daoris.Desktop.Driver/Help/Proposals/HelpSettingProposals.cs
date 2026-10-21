@@ -234,7 +234,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
             case "keep":
             {
                 var words = value.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                if (words.Length != 2) return Refused("`keep` takes a kind and its rule: `set-aside <days>|whole|slim|default`, `downloads <days>|never|default` or `logs <days>|default`.", "", "");
+                if (words.Length != 2) return Refused("`keep` takes a kind and its rule: `set-aside <days>|whole|slim|default`, `downloads <days>|never|default`, `logs <days>|default`, `history <days>|never|default` or `floor <n>GB|<n>%|off|default`.", "", "");
                 KeepSet set;
                 DriverConfig after;
                 try

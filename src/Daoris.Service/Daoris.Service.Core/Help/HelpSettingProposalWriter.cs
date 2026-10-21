@@ -151,12 +151,13 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
             case "keep":
             {
                 // KEEP1d (D195 point 2): one kind's keep rule, as `daoris driver keep <kind> <rule>` takes it; its bounds are the
-                // driver's to judge, which knows them. History's age since KEEP1g, applied by the person's press as every door is.
+                // driver's to judge, which knows them. History's age since KEEP1g, and the free-space floor since KEEP1f, applied by the
+                // person's press as every door is.
                 var words = (value ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                return !named && !circle && words.Length == 2 && words[0] is "set-aside" or "downloads" or "logs" or "history"
+                return !named && !circle && words.Length == 2 && words[0] is "set-aside" or "downloads" or "logs" or "history" or "floor"
                     ? null
                     : "`keep` names a kind and its rule, for this machine: `set-aside <days>|whole|slim|default`, "
-                      + "`downloads <days>|never|default`, `logs <days>|default` or `history <days>|never|default`.";
+                      + "`downloads <days>|never|default`, `logs <days>|default`, `history <days>|never|default` or `floor <n>GB|<n>%|off|default`.";
             }
             case "adapter":
                 return string.IsNullOrWhiteSpace(value) || Word(value, "an agent") is not null

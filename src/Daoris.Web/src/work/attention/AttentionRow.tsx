@@ -23,7 +23,7 @@ import { TrustAsk } from '../waits/TrustAsk';
 export type AttentionKind =
   | 'parked' | 'parked-quest' | 'go-ahead' | 'trust' | 'account-wait' | 'signed-out'
   | 'proposal' | 'intake' | 'departure' | 'set-up' | 'rule' | 'unanswerable'
-  | 'review' | 'opinion' | 'helper' | 'hand-over' | 'work' | 'permission' | 'answer' | 'confirmation';
+  | 'review' | 'opinion' | 'helper' | 'hand-over' | 'work' | 'permission' | 'answer' | 'confirmation' | 'space';
 
 /**
  * One thing that is waiting on a person, as Overview's band shows it.
@@ -54,6 +54,9 @@ export type AttentionKind =
  *
  * **NOTIFY2e added `hand-over`**: an agent's ask to hand its session over that waits on the person's yes or no, which holds work once
  * its session's turn has ended and the session stands still on it.
+ *
+ * **KEEP1f added `space`**: a volume still below its free-space floor once Daoris freed what it can make again (the cleanup design
+ * §3.2). What else goes is the person's to choose, so its door, *Free up space…*, is its one control: it opens the *Disk space* card.
  */
 export type Attention = {
   /**
@@ -255,6 +258,8 @@ const DOOR_ONLY: Partial<Record<Attention['kind'], (item: Attention) => [string,
   review: () => ['work.attention.door.review'],
   // CONFIRMSEEN1: a terminal's press is answered on its card, which shows every value it carries; the row never answers it.
   confirmation: () => ['work.attention.door.confirmation'],
+  // KEEP1f: what else goes below the floor is chosen on the *Disk space* card's press, where every unit is listed first.
+  space: () => ['work.attention.door.space'],
 };
 
 /**

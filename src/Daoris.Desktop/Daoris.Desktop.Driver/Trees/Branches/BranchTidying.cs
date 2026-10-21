@@ -192,6 +192,21 @@ public sealed class BranchTidying(string home)
     /// <summary>The loop's record of conversations, so history's daily clear forgets a cleared one's numbering (KEEP1g); null removes the files alone.</summary>
     public SessionEvents? Events { get; init; }
 
+    /// <summary>
+    /// The shell's browser host, which says whether Daoris's own browser runs and holds its start through a clear of its caches (KEEP1f's
+    /// third act); null with no shell, which keeps them.
+    /// </summary>
+    public IBrowserCaches? Caches { get; init; }
+
+    /// <summary>The stretches below the floor this process keeps (KEEP1f); a test hands its own.</summary>
+    internal SpaceFloors Floors { get; init; } = SpaceFloors.Shared;
+
+    /// <summary>
+    /// A folder's volume (KEEP1f): the watch names the system's read (<see cref="SpaceVolumes.Read"/>), a test its stand-in; null, a test's
+    /// tidy that is about something else, runs no floor, so its lines never hang on the machine's own free space.
+    /// </summary>
+    public Func<string, VolumeReading?>? Volume { get; init; }
+
     /// <summary>How often the downloads' rule removes what is past its days (the cleanup design §3.1, step 5).</summary>
     public static readonly TimeSpan DownloadsPace = TimeSpan.FromDays(1);
 
@@ -202,11 +217,13 @@ public sealed class BranchTidying(string home)
     /// the pass's budget; then <c>keeping.json</c>'s <c>last</c> for the kind, where it removed something or newly kept a path. Then the
     /// downloads' rule (KEEP1b, <see cref="DownloadKeeping"/>): each version's unused stretch each pass, and once a day, or at once after
     /// the rule changed, the versions past their days. Then the machine log's daily prune at the person's days (KEEP1d), and finished
-    /// history's daily clear where the person set an age (KEEP1g, <see cref="HistoryKeeping"/>).
+    /// history's daily clear where the person set an age (KEEP1g, <see cref="HistoryKeeping"/>). First of all, the free-space floor
+    /// (KEEP1f, <see cref="SpaceFloor"/>): each volume read, and below its floor the floor's three acts at once, at most hourly.
     /// </summary>
     private async Task<IReadOnlyList<string>> KeepAsync(SessionTrees trees, ServiceClient service, MachineLog? log, HashSet<string> met, CancellationToken ct)
     {
         var lines = new List<string>();
+        lines.AddRange(await KeepFloorAsync(service, log, met, ct).ConfigureAwait(false));
         var setAside = Directory.Exists(trees.SetAsideRoot);
         var logs = Policy(home).Logs;
         bool logsDue;
@@ -252,6 +269,106 @@ public sealed class BranchTidying(string home)
 
         return lines;
     }
+
+    /// <summary>
+    /// The free-space floor, at each pass (KEEP1f; the cleanup design §3.2): each volume read for its own entries, and below its floor the
+    /// three acts that free what can be made again, at once and at most hourly, each with its own guards, under the run lock as the
+    /// <c>floor</c>'s door. What they freed is said as they free it; a volume still below after them is said once, until it is above its
+    /// floor by the margin again.
+    /// </summary>
+    private async Task<IReadOnlyList<string>> KeepFloorAsync(ServiceClient service, MachineLog? log, HashSet<string> met, CancellationToken ct)
+    {
+        var lines = new List<string>();
+        if (Volume is not { } volume) return lines;
+        var markers = DaorisHome.Entry(home, HomeEntry.SessionPids);
+        var world = new FloorWorld(home)
+        {
+            Volume = volume,
+            Now = Clock,
+            Policy = Policy,
+            Judge = () => DownloadJudge.Of(
+                home, HarnessSettings.ResolvePath(home), ConfigPath ?? DriverConfig.ResolvePath(home),
+                token => Sessions is { } stand ? stand(service, token) : LiveSessions.ReadAsync(service, markers, token), Clock),
+            Caches = Caches,
+            Log = log,
+            Floors = Floors,
+            Budget = Budget,
+            Could = Could,
+        };
+        var pass = await SpaceFloor.PassAsync(world, ct).ConfigureAwait(false);
+        lock (_gate)
+        {
+            if (pass.WasHeld && First(met, "", "keeping", "floor-held"))
+            {
+                lines.Add(Look.Retry("tidy", $"tidy  the free space is below its floor, and nothing was freed early this look: {pass.Held?.Said ?? "another run"} "
+                    + "holds Daoris's keeping, and a later look tries again."));
+            }
+
+            foreach (var act in pass.Acts)
+            {
+                if (act.Removed > 0)
+                {
+                    lines.Add(Look.Progress("tidy", $"tidy  the free space is below its floor: removed {act.Removed} of {FloorWhat(act.Kind)} early ({Size(act.Bytes)}); "
+                        + "each is made again when it is next needed."));
+                }
+
+                foreach (var (why, _) in act.Kept.Where(each => each.Key is SpaceKept.Running or SpaceKept.NoShell or "never"))
+                {
+                    if (!First(met, "", $"floor/{act.Kind}", "kept-" + why)) continue;
+                    lines.Add(Look.Progress("tidy", $"tidy  the free space is below its floor, and {FloorWhat(act.Kind)} stay{(act.Kind == "browser-cache" ? "s" : "")}: {FloorKept(why)}."));
+                }
+            }
+
+            foreach (var low in pass.Low)
+            {
+                var read = low.Read!;
+                lines.Add(Look.Progress("tidy", $"tidy  {read.Read.Root} has {Size(read.Read.Free)} free, below its floor of {Size(read.Floor ?? 0)}: Daoris freed "
+                    + $"{Size(low.Freed)} of what it can make again, and the rest is yours to free"
+                    + (low.Could is { } could and > 0 ? $" (Free up space… on This Daoris lists about {Size(could)} you could remove)" : " (Free up space… on This Daoris lists what could go)")
+                    + "."));
+            }
+
+            foreach (var ok in pass.Ok)
+            {
+                lines.Add(Look.Progress("tidy", $"tidy  {ok.Read.Root} has {Size(ok.Read.Free)} free again, above its floor of {Size(ok.Floor ?? 0)}."));
+            }
+        }
+
+        return lines;
+    }
+
+    /// <summary>
+    /// What the person's press could free now (KEEP1f's row), in bytes, of what its list measures: every unit the list names whose size it
+    /// knows. Read only when a volume is first said below its floor; null where the list does not read.
+    /// </summary>
+    private long? Could()
+    {
+        try
+        {
+            var plan = SpaceFree.Plan(new SpaceFreeWorld(home) { Sizes = Sizes ?? new SpaceSizes(), Policy = Policy, Now = Clock });
+            return plan.Units.Sum(unit => unit.Bytes ?? 0);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException or HomeEntryTwiceException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>What a floor's act frees, in words.</summary>
+    private static string FloorWhat(string kind) => kind switch
+    {
+        "set-aside" => "the package folders of the trees moved aside",
+        "downloads" => "the downloaded versions nothing uses",
+        _ => "the browser's cache",
+    };
+
+    /// <summary>Why a floor's act kept what it would free, in a clause.</summary>
+    private static string FloorKept(string why) => why switch
+    {
+        SpaceKept.Running => "Daoris's browser is running, and its cache is cleared once it is closed",
+        SpaceKept.NoShell => "no Daoris window runs to say whether its browser does",
+        _ => "you keep them until you remove them (`never`)",
+    };
 
     /// <summary>Whether anything is downloaded here to keep: either folder of the downloads, or both places of the layout holding one.</summary>
     private bool Downloaded()

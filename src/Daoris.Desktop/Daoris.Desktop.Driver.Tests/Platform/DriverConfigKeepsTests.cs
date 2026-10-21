@@ -157,7 +157,11 @@ public sealed class DriverConfigKeepsTests
                 Days: edit.TryGetProperty("days", out var days) ? days.GetInt32() : null,
                 Never: edit.TryGetProperty("never", out var never) && never.GetBoolean(),
                 Whole: edit.TryGetProperty("whole", out var whole) ? whole.GetBoolean() : null,
-                Default: edit.TryGetProperty("default", out var back) && back.GetBoolean())),
+                Default: edit.TryGetProperty("default", out var back) && back.GetBoolean(),
+                // KEEP1f: the floor's size, share or `off`.
+                Gb: edit.TryGetProperty("gb", out var gb) ? gb.GetInt32() : null,
+                Percent: edit.TryGetProperty("percent", out var percent) ? percent.GetInt32() : null,
+                Off: edit.TryGetProperty("off", out var off) && off.GetBoolean())),
             "work-cycle-clear" => config.WithWorkCycle(Text("repository"), Text("kind"), null),
             var op => throw new InvalidOperationException($"the table names an edit this test does not make: {op}"),
         };

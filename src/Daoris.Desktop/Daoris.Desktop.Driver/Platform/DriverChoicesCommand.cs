@@ -36,6 +36,12 @@ public sealed record DriverChoicesWorld
     /// workflow's to apply or import, and an export's.
     /// </summary>
     public string Folder { get; init; } = Directory.GetCurrentDirectory();
+
+    /// <summary>
+    /// The size of the Daoris folder's volume in bytes (KEEP1f), which a floor's size is judged against; the system's read of the home's
+    /// folder by default, a test's stand-in otherwise. Null where it does not read.
+    /// </summary>
+    public Func<long?>? FloorVolume { get; init; }
 }
 
 /// <summary>
@@ -185,7 +191,8 @@ public static class DriverChoicesCommand
                daoris-driver driver workflow use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]
                daoris-driver driver workflow kind <workspace> <kind> --label "…" [--paths <path,…>] | --drop
                       (a workflow's writes say their change, and with --plan save nothing)
-               daoris-driver driver keep [set-aside <days>|whole|slim|default · downloads <days>|never|default · logs <days>|default]
+               daoris-driver driver keep [set-aside <days>|whole|slim|default · downloads <days>|never|default · logs <days>|default
+                      · history <days>|never|default · floor <n>GB|<n>%|off|default]
         `daoris driver …` runs these.
         """;
 
@@ -821,7 +828,7 @@ public static class DriverChoicesCommand
             // the window is asked, in the line both paths say (`… (KEEP_OUT_OF_RANGE)`).
             case "keep":
             {
-                var set = KeepAsked(args);
+                var set = KeepAsked(args, world);
                 DriverConfig after;
                 try
                 {
@@ -837,6 +844,10 @@ public static class DriverChoicesCommand
                 if (set.Never) payload["never"] = true;
                 if (set.Whole is { } whole) payload["whole"] = whole;
                 if (set.Default) payload["default"] = true;
+                // KEEP1f: the floor's size, share or `off`; the window judges a size against its own read of the volume.
+                if (set.Gb is { } gb) payload["gb"] = gb;
+                if (set.Percent is { } percent) payload["percent"] = percent;
+                if (set.Off) payload["off"] = true;
                 return Change(ChoiceRoutes.Keep, payload, config => KeepRules.Apply(config, set), () =>
                 {
                     Say($"daoris: {KeepRules.Said(set.Kind, after.Keep)}.");
@@ -851,14 +862,14 @@ public static class DriverChoicesCommand
     }
 
     /// <summary><c>keep &lt;kind&gt; &lt;value&gt;</c>'s words read as the rule they set (KEEP1d); anything else is its usage.</summary>
-    private static KeepSet KeepAsked(IReadOnlyList<string> args)
+    private static KeepSet KeepAsked(IReadOnlyList<string> args, DriverChoicesWorld world)
     {
         const string Usage = "`driver keep` needs a kind and its rule — `set-aside <days>|whole|slim|default`, `downloads <days>|never|default`, "
-            + "`logs <days>|default` or `history <days>|never|default`; e.g. `daoris driver keep set-aside 30`.";
+            + "`logs <days>|default`, `history <days>|never|default` or `floor <n>GB|<n>%|off|default`; e.g. `daoris driver keep set-aside 30`.";
         if (args.Count != 3) throw new ChoiceWords(Usage);
         try
         {
-            KeepRules.Kind(args[1]);
+            if (!KeepRules.IsFloor(args[1])) KeepRules.Kind(args[1]);
         }
         catch (DriverException refused)
         {
@@ -867,7 +878,13 @@ public static class DriverChoicesCommand
 
         try
         {
-            return KeepRules.Asked(args[1], args[2]);
+            var set = KeepRules.Asked(args[1], args[2]);
+            if (!KeepRules.IsFloor(set.Kind) || set.Gb is null) return set;
+            // KEEP1f: a size is at most half the Daoris folder's volume, read here so the refusal comes before the window is asked.
+            var volume = world.FloorVolume is { } read
+                ? read()
+                : world.Instance.Home is { } home ? SpaceVolumes.Read(DaorisHome.FolderOf(home).Folder)?.Total : null;
+            return set with { Volume = volume };
         }
         catch (DriverException refused)
         {
@@ -888,6 +905,11 @@ public static class DriverChoicesCommand
                 : $"  {kind.Id,-10} {said}  (set — `daoris driver keep {kind.Id} default` takes the default again)");
         }
 
+        // KEEP1f: the free-space floor, set beside the kinds' rules.
+        var floor = KeepRules.Said(KeepRules.Floor, choices.Keep);
+        write.WriteLine(choices.Keep.IsDefault(KeepRules.Floor)
+            ? $"  {KeepRules.Floor,-10} {floor}  (the default — `daoris driver keep floor …` changes it)"
+            : $"  {KeepRules.Floor,-10} {floor}  (set — `daoris driver keep floor default` takes the default again)");
         return 0;
     }
 

@@ -31,9 +31,9 @@ export type { SettingsSection } from './domains';
  * A part of a domain a menu item is named for (UX5 U72), found by the id `settings-<anchor>` — and since
  * HELP6 each place Ask Daoris's go may name: each step of the setup guide. Session branches, the lines, the landing,
  * the wiring and reading across left Settings (the old Workspace and Permissions) for Repositories → the workspace's page (UX6g), whose
- * doors name its tab and section instead.
+ * doors name its tab and section instead. KEEP1f: This Daoris's *Disk space* card, which a volume below its floor opens.
  */
-export type SettingsAnchor = 'usage' | 'proposals' | 'update' | `step-${SetupStepId}`;
+export type SettingsAnchor = 'usage' | 'proposals' | 'update' | 'daoris-space' | `step-${SetupStepId}`;
 
 /** Settings' domains in the order its list shows them — what Ask Daoris's places are held to (HELP6). */
 export const SETTINGS_SECTIONS: readonly SettingsSection[] = SETTINGS_DOMAINS.map(({ id }) => id);

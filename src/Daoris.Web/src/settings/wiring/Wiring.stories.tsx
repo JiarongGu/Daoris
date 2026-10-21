@@ -20,8 +20,8 @@ import { WiringToolHome } from './WiringToolHome';
 import { WiringVariablesCard } from './WiringVariables';
 import { WiringVersions } from './WiringVersions';
 import {
-  DEVELOPMENT, DOWNLOADS, MEASURING, SPACE, SPACE_COUNTING, SPACE_FREED, SPACE_PLAN, SPACE_RUNNING, SPACE_SET, SPACE_STOPPED,
-  SPACE_UNCOUNTED, WIRED,
+  DEVELOPMENT, DOWNLOADS, MEASURING, SPACE, SPACE_COUNTING, SPACE_FLOOR_OFF, SPACE_FREED, SPACE_LOW, SPACE_PLAN, SPACE_RUNNING, SPACE_SET,
+  SPACE_STOPPED, SPACE_UNCOUNTED, WIRED,
 } from './wiringFixtures';
 
 // Settings → This Daoris's cards (WIRING1c, the this-Daoris design §3.1-3.3, §7), in the shape `SYSTEM_WIRING` answers: an
@@ -366,6 +366,37 @@ export const SpaceEditingHistoryChineseNarrow: Story = {
 
 /** The first load: skeleton rows in the card's place. */
 export const SpaceLoading: Story = { render: () => space({ space: undefined }) };
+
+// KEEP1f (the cleanup design §3.2, §4.2): below the floor, the free-space line in the warn ink with what Daoris freed early and *Free up
+// space…* as the primary press; a kind on another volume says it on its row; the floor's own editor; the floor turned off.
+const low = (props: Partial<Parameters<typeof WiringSpace>[0]> = {}) => space({ space: SPACE_LOW, onKeep: keep, onFreeUp: () => {}, ...props });
+
+/** Below the floor. */
+export const SpaceBelowFloor: Story = { render: () => low(), decorators: inTheme('light') };
+
+/** Below the floor, in dark. */
+export const SpaceBelowFloorDark: Story = { render: () => low(), decorators: inTheme('dark') };
+
+/** Below the floor, at half. */
+export const SpaceBelowFloorHalf: Story = { render: () => low(), decorators: [storyWidths.half] };
+
+/** Below the floor, at the 400 px floor: each value under its words. */
+export const SpaceBelowFloorNarrow: Story = { render: () => low(), decorators: narrow };
+
+/** Below the floor, in 中文. */
+export const SpaceBelowFloorChinese: Story = { render: () => low(), decorators: [chinese] };
+
+/** Below the floor, in 中文 at the 400 px floor. */
+export const SpaceBelowFloorChineseNarrow: Story = { render: () => low(), decorators: [...narrow, chinese] };
+
+/** The floor's editor, open. */
+export const SpaceEditingFloor: Story = { render: () => low({ editing: 'floor' }) };
+
+/** The floor's editor in 中文 at the 400 px floor. */
+export const SpaceEditingFloorChineseNarrow: Story = { render: () => low({ editing: 'floor' }), decorators: [...narrow, chinese] };
+
+/** The floor turned off: Daoris frees nothing early, and says so. */
+export const SpaceFloorOff: Story = { render: () => space({ space: SPACE_FLOOR_OFF, onKeep: keep }) };
 
 // KEEP1e (the cleanup design §3.3, §4.1, §4.2): Free up space…, listed under the card's head, then pressed; a run's line under way and
 // ended; a refusal said beside the press. At the three widths in English and 中文, light and dark.

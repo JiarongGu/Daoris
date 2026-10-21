@@ -72,6 +72,12 @@ public sealed record AttentionFacts
 
     /// <summary>The presses a terminal sent that wait for the window's Confirm (CONFIRMSEEN1), as <c>PERSON_CONFIRMATIONS</c> answers them.</summary>
     public IReadOnlyList<JsonObject> Confirmations { get; init; } = [];
+
+    /// <summary>
+    /// Each volume still below its free-space floor once the floor's acts ran (KEEP1f), as the look's pass said it
+    /// (<see cref="AttentionStateSlice.SpaceWaits"/>): its root, free space, size and floor, what the floor freed and what the press could.
+    /// </summary>
+    public IReadOnlyList<JsonObject> Space { get; init; } = [];
 }
 
 /// <summary>
@@ -406,6 +412,24 @@ public static class NeedsAPerson
                 ["asker"] = new JsonObject { ["process"] = Text(asker, "process"), ["pid"] = asker?["pid"]?.DeepClone() },
                 ["expires"] = Text(waiting, "expires"),
                 ["shownAt"] = Text(waiting, "shownAt"),
+            };
+            rows.Add(row);
+        }
+
+        // A volume still below its free-space floor once the floor freed what Daoris can make again (KEEP1f, the cleanup design §3.2): the
+        // rest is the person's to free, by the press its row opens, since it was said; it goes once the volume is above its floor by the
+        // margin. Every window shows it: the disk is the machine's.
+        foreach (var low in facts.Space)
+        {
+            var row = Row("space", Text(low, "volume"), Text(low, "said"));
+            row["space"] = new JsonObject
+            {
+                ["root"] = Text(low, "root"),
+                ["free"] = low["free"]?.DeepClone(),
+                ["total"] = low["total"]?.DeepClone(),
+                ["floor"] = low["floor"]?.DeepClone(),
+                ["freed"] = low["freed"]?.DeepClone(),
+                ["could"] = low["could"]?.DeepClone(),
             };
             rows.Add(row);
         }

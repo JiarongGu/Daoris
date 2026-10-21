@@ -699,10 +699,17 @@
       "name": "the downloads' never set (KEEP1d) where another writer added a kind this build does not know between the read and the write: both kept, the one this build writes in its place first",
       "edit": { "op": "keep", "kind": "downloads", "never": true },
       "between": [
-        { "from": ["  \"sessionChecks\": {", "    \"engine\": \"heavy-at-end\"", "  },", "  \"readAcross\": {"], "to": ["  \"sessionChecks\": {", "    \"engine\": \"heavy-at-end\"", "  },", "  \"keep\": {", "    \"floor\": {", "      \"gb\": 20", "    }", "  },", "  \"readAcross\": {"] }
+        { "from": ["  \"sessionChecks\": {", "    \"engine\": \"heavy-at-end\"", "  },", "  \"readAcross\": {"], "to": ["  \"sessionChecks\": {", "    \"engine\": \"heavy-at-end\"", "  },", "  \"keep\": {", "    \"later\": {", "      \"days\": 3", "    }", "  },", "  \"readAcross\": {"] }
       ],
       "changes": [
-        { "from": ["  \"sessionChecks\": {", "    \"engine\": \"heavy-at-end\"", "  },", "  \"readAcross\": {"], "to": ["  \"sessionChecks\": {", "    \"engine\": \"heavy-at-end\"", "  },", "  \"keep\": {", "    \"downloads\": {", "      \"days\": null", "    },", "    \"floor\": {", "      \"gb\": 20", "    }", "  },", "  \"readAcross\": {"] }
+        { "from": ["  \"sessionChecks\": {", "    \"engine\": \"heavy-at-end\"", "  },", "  \"readAcross\": {"], "to": ["  \"sessionChecks\": {", "    \"engine\": \"heavy-at-end\"", "  },", "  \"keep\": {", "    \"downloads\": {", "      \"days\": null", "    },", "    \"later\": {", "      \"days\": 3", "    }", "  },", "  \"readAcross\": {"] }
+      ]
+    },
+    {
+      "name": "the free-space floor set (KEEP1f): `keep.floor` written last under `keep`, only its size",
+      "edit": { "op": "keep", "kind": "floor", "gb": 30 },
+      "changes": [
+        { "from": ["  \"sessionChecks\": {", "    \"engine\": \"heavy-at-end\"", "  },", "  \"readAcross\": {"], "to": ["  \"sessionChecks\": {", "    \"engine\": \"heavy-at-end\"", "  },", "  \"keep\": {", "    \"floor\": {", "      \"gb\": 30", "    }", "  },", "  \"readAcross\": {"] }
       ]
     }
   ],

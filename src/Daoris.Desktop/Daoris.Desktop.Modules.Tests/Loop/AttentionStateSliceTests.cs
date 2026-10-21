@@ -1054,6 +1054,56 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     private static List<JsonObject> Waits(PipeConfirmations confirmations) =>
         [.. AttentionStateSlice.ConfirmationWaits(confirmations).Select(each => JsonSerializer.SerializeToNode(each, IpcJson.Options)).OfType<JsonObject>()];
 
+    /// <summary>
+    /// KEEP1f (the cleanup design §3.2): a volume still below its free-space floor once the floor's acts ran is a row of <i>What needs
+    /// you</i>, by its volume since it was said, with its free space, size and floor, what the floor freed and what the press could; the
+    /// slice is woken as it is said and as it ends, and the row is gone once the volume is above its floor by the margin. A stand-in read.
+    /// </summary>
+    [Fact]
+    public async Task A_volume_still_below_its_floor_is_a_row_until_it_is_above_it_by_the_margin()
+    {
+        const long gb = 1L << 30;
+        var free = 4 * gb;
+        var now = new DateTimeOffset(2026, 10, 22, 9, 0, 0, TimeSpan.Zero);
+        var floors = new SpaceFloors();
+        var woken = 0;
+        using var hearing = AttentionStateSlice.HearFloors(floors, () => woken++);
+        var world = new FloorWorld(Home)
+        {
+            Volume = _ => new VolumeReading(@"\\?\Volume{A}\", @"C:\", free, 100 * gb),
+            Now = () => now,
+            Policy = _ => KeepPolicy.Default,
+            Floors = floors,
+            Could = () => 3 * gb,
+        };
+        List<JsonObject> Space() =>
+            [.. AttentionStateSlice.SpaceWaits(floors, Home).Select(each => JsonSerializer.SerializeToNode(each, IpcJson.Options)).OfType<JsonObject>()];
+
+        await SpaceFloor.PassAsync(world);
+
+        Assert.Equal(1, woken);
+        Is($$$"""
+             {"kind":"space","id":"\\\\?\\Volume{A}\\","since":"{{{Moments.Write(now)}}}","space":{"root":"C:\\","free":{{{4 * gb}}},
+              "total":{{{100 * gb}}},"floor":{{{10 * gb}}},"freed":0,"could":{{{3 * gb}}}}}
+             """, Assert.Single(Rows(new() { Space = Space() })));
+        var pushed = AttentionStateSlice.Judge(new() { Space = Space() })!.Single(each => each.Partition == AttentionStateSlice.Rows);
+        Assert.Contains("\"could\"", JsonSerializer.Serialize(pushed.Data, IpcJson.Options));
+
+        // An hour later, still below: said once, never again.
+        now = now.AddHours(1);
+        await SpaceFloor.PassAsync(world);
+        Assert.Equal(Moments.Write(now.AddHours(-1)), Assert.Single(Rows(new() { Space = Space() }))["since"]!.GetValue<string>());
+
+        // Above its floor but within the margin, it stands; above it by the margin, it is gone.
+        free = 12 * gb;
+        await SpaceFloor.PassAsync(world);
+        Assert.Single(Rows(new() { Space = Space() }));
+        free = 40 * gb;
+        await SpaceFloor.PassAsync(world);
+        Assert.Empty(Rows(new() { Space = Space() }));
+        Assert.True(woken >= 2);
+    }
+
     /// <summary>AUTONOMY1b3c (D184 point 3): a tool call a session holds for the person holds work: its wait whole, the session that holds it.</summary>
     [Fact]
     public void A_tool_call_a_session_holds_for_the_person_is_a_row_with_the_wait_whole()
@@ -1481,13 +1531,18 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
             [
                 JsonNode.Parse("""{"id":"c1","module":"DAORIS.DRIVER","route":"SESSION_ARCHIVE","asker":{"process":"daoris-driver","pid":4242},"asked":"2026-10-20T09:00:00Z","expires":"2026-10-20T09:03:00Z","shownAt":"2026-10-20T09:01:00Z"}""")!.AsObject(),
             ],
+            // KEEP1f: a volume still below its floor, every field set.
+            Space =
+            [
+                JsonNode.Parse("""{"volume":"v1","said":"2026-10-22T09:00:00Z","root":"C:\\","free":4,"total":100,"floor":10,"freed":2,"could":3}""")!.AsObject(),
+            ],
         };
         var rows = Rows(facts);
         Assert.Contains(rows, row => row["ended"] is JsonObject);
         Assert.Contains(rows, row => row["blocked"] is JsonObject blocked && blocked["entries"]![0]!["facts"] is JsonObject);
 
-        // Every kind but the accounts': eighteen.
-        Assert.Equal(18, rows.Select(row => row["kind"]!.GetValue<string>()).Distinct().Count());
+        // Every kind but the accounts': nineteen.
+        Assert.Equal(19, rows.Select(row => row["kind"]!.GetValue<string>()).Distinct().Count());
         foreach (var row in rows) Assert.Equal(Normal(row), Normal(AttentionStateSlice.Picked(row)));
     }
 

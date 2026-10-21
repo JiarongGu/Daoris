@@ -29,7 +29,8 @@ namespace Daoris.Desktop;
 /// <para><b>Its wakes</b>, each only asking. Each input slice's push (<see cref="StateSlice.Pushed"/>), the accounts' among them, the
 /// sessions' only where what the judge reads of them moved (<see cref="SessionsRead"/>), so a working session's every word judges nothing
 /// here; each look of the driver (the loop wakes it beside the driver's state); a held tool call's start and end
-/// (<see cref="HeldPermissions.Changed"/>); the registry landing in the machine's facts; a press declared to the rules, the sessions, the
+/// (<see cref="HeldPermissions.Changed"/>); a stretch below the free-space floor said or ended (<see cref="SpaceFloors.Changed"/>,
+/// KEEP1f); the registry landing in the machine's facts; a press declared to the rules, the sessions, the
 /// driver or the roster (a proposal answered, a helper's yes or no, a reading); a harness action's end; the service coming up; a
 /// terminal's press for the window asked, shown or ended (<see cref="PipeConfirmations.Event"/>, CONFIRMSEEN1); and the
 /// 15 s period, which reads a helper's or a hand-over's ask a terminal's driver wrote and an account a terminal signed in.</para>
@@ -72,7 +73,7 @@ public static class AttentionStateSlice
             "kind", "id", "since", "workspace", "where", "note", "detail", "publishTo", "choices", "ask", "number", "goAhead", "session",
             "departed", "setUp", "local", "environment", "shows", "opinion", "placed", "sitting", "trust", "quest", "proposal", "title",
             "permission", "blocked", "held", "unreadable", "wholeWorkspace", "holding", "read", "runs", "account", "answer", "ended",
-            "confirmation", "agent", "stands", "stale",
+            "confirmation", "agent", "stands", "stale", "space",
         ],
         ["waiting"] = ["kind", "workspace"],
         ["working"] = ["workspace"],
@@ -114,6 +115,8 @@ public static class AttentionStateSlice
         ["readFirst"] = ["id"],
         ["confirmation"] = ["module", "route", "asker", "expires", "shownAt"],
         ["asker"] = ["process", "pid"],
+        // KEEP1f: a volume still below its free-space floor once the floor's acts ran.
+        ["space"] = ["root", "free", "total", "floor", "freed", "could"],
     };
 
     /// <summary>Which shape a field holds, as <c>shape.field</c>, an object of it or a list of them; every other field is a value.</summary>
@@ -148,6 +151,7 @@ public static class AttentionStateSlice
         ["account.readFirst"] = "readFirst",
         ["row.confirmation"] = "confirmation",
         ["confirmation.asker"] = "asker",
+        ["row.space"] = "space",
     };
 
     /// <summary>
@@ -171,7 +175,10 @@ public static class AttentionStateSlice
     /// </summary>
     public static StateSlice Of(DriverLoop loop, IEventBus bus) =>
         Of(ct => FactsAsync(loop, ct), bus,
-            [wake => HearSlices(loop.Slices, wake), wake => HearHolds(HeldPermissions.Of(loop.Events), wake), wake => HearRegistry(loop.Facts, wake)],
+            [
+                wake => HearSlices(loop.Slices, wake), wake => HearHolds(HeldPermissions.Of(loop.Events), wake), wake => HearRegistry(loop.Facts, wake),
+                wake => HearFloors(SpaceFloors.Shared, wake),
+            ],
             loop.Log, new HeldCallAnnouncements(bus, loop.Notifying));
 
     /// <summary>The slice over <paramref name="facts"/>, read at each judgement, woken where <paramref name="hears"/> hear a move.</summary>
@@ -273,6 +280,8 @@ public static class AttentionStateSlice
             Waits = Written(loop.Look.Waits.Select(DriverLoop.TickWait)),
             // CONFIRMSEEN1: what a terminal sent that waits for the window, from the pipe's memory; none where this shell serves no pipe.
             Confirmations = Written(ConfirmationWaits(loop.Pipe?.Confirmations)),
+            // KEEP1f: each volume the look's floor pass said is still below its floor, from the process's memory.
+            Space = Written(SpaceWaits(SpaceFloors.Shared, loop.Home)),
         };
     }
 
@@ -400,6 +409,27 @@ public static class AttentionStateSlice
     ];
 
     /// <summary>
+    /// Each volume still below its free-space floor once the floor's acts ran (KEEP1f; the cleanup design §3.2), as the look's pass said
+    /// it, oldest first: by the volume's identity, since it was said, its root, free space, size and floor as read then, what the floor
+    /// freed in this stretch and what the person's press could free (null where none was read). A volume above its floor by the margin
+    /// holds no stretch, so none is said. From the process's memory.
+    /// </summary>
+    public static IReadOnlyList<object> SpaceWaits(SpaceFloors floors, string home) =>
+    [
+        .. floors.Of(home).Values
+            .Where(each => each is { Said: not null, Read: not null })
+            .OrderBy(each => each.Said).ThenBy(each => each.Volume, StringComparer.Ordinal)
+            .Select(each => (object)new
+            {
+                each.Volume,
+                Said = Moments.Write(each.Said!.Value),
+                each.Read!.Read.Root, each.Read.Read.Free, each.Read.Read.Total, each.Read.Floor,
+                each.Freed,
+                each.Could,
+            }),
+    ];
+
+    /// <summary>
     /// The answers the answers-alone bound holds for the person (COWORK1e, D188 point 4; the message-urgency design §8.3), as
     /// <c>ANSWER_WAITS</c> answers them, oldest first: each session's mark <see cref="GoOnMarks.AnswersAlone"/> with the agent that
     /// answered, the answers' ids and since when. A read off the home's marks; one the person kept with *Not now*, and a mark of any
@@ -454,6 +484,14 @@ public static class AttentionStateSlice
         void Heard(string _) => wake();
         holds.Changed += Heard;
         return new Hearing(() => holds.Changed -= Heard);
+    }
+
+    /// <summary>Wake the slice where a stretch below the free-space floor is said or ends (KEEP1f, <see cref="SpaceFloors.Changed"/>).</summary>
+    public static IDisposable HearFloors(SpaceFloors floors, Action wake)
+    {
+        void Heard(string _) => wake();
+        floors.Changed += Heard;
+        return new Hearing(() => floors.Changed -= Heard);
     }
 
     /// <summary>Wake the slice where the registry the machine's facts hold landed with a new value, by its reference.</summary>

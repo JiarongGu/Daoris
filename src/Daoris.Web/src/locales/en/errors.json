@@ -47,6 +47,8 @@
   "errors.QUEST_PAUSED": "#{{id}} is paused with ask #{{pause}}; Resume carries it on.",
   "errors.QUEST_PAUSED_quest": "#{{id}} is paused on its own; Resume carries it on.",
   "errors.KEEP_OUT_OF_RANGE": "This rule keeps {{min}} to {{max}} days; that value is outside it, so nothing was written.",
+  "errors.KEEP_OUT_OF_RANGE_gb": "The floor takes a size from {{min}} to {{max}} GB, half the disk; that value is outside it, so nothing was written.",
+  "errors.KEEP_OUT_OF_RANGE_percent": "The floor takes a share from {{min}}% to {{max}}%; that value is outside it, so nothing was written.",
   "errors.WORK_UNKNOWN": "There is no ask #{{id}} on this machine.",
   "errors.WORK_UNKNOWN_quest": "There is no quest #{{id}} here.",
   "errors.WORK_REASON": "Abandoning needs your reason: each declined quest keeps it.",

@@ -203,12 +203,18 @@ public sealed partial class DriverChoicesBothWaysTests : DriverModuleBridge
     [InlineData(true, "keep history 3650")]
     [InlineData(true, "keep history never")]
     [InlineData(true, "keep history default")]
+    // KEEP1f: the free-space floor, a size, a share or off, and its default again.
+    [InlineData(false, "keep floor 1GB")]
+    [InlineData(false, "keep floor 12%")]
+    [InlineData(false, "keep floor off")]
+    [InlineData(true, "keep floor 50%")]
+    [InlineData(true, "keep floor default")]
     public async Task A_keep_rule_says_and_writes_the_same_alone_and_through_its_route(bool set, string words)
     {
         var module = Module();
         var before = set
             ? Before().WithKeep(new KeepSet("set-aside", Days: 30, Whole: true)).WithKeep(new KeepSet("downloads", Never: true))
-                .WithKeep(new KeepSet("logs", Days: 14)).WithKeep(new KeepSet("history", Days: 365))
+                .WithKeep(new KeepSet("logs", Days: 14)).WithKeep(new KeepSet("history", Days: 365)).WithKeep(new KeepSet("floor", Percent: 5))
             : Before();
         before.Save(DriverConfigPath);
         var text = File.ReadAllText(DriverConfigPath);
@@ -240,6 +246,10 @@ public sealed partial class DriverChoicesBothWaysTests : DriverModuleBridge
         var young = await RefusalAsync(module, "SET_KEEP", new { kind = "history", days = 7 });
         Assert.StartsWith(Refusals.KeepOutOfRange + " ", young, StringComparison.Ordinal);
         Assert.Contains("min=30", young, StringComparison.Ordinal);
+        // KEEP1f: a floor's share past half the volume, refused with its unit as the page's context.
+        var share = await RefusalAsync(module, "SET_KEEP", new { kind = "floor", percent = 51 });
+        Assert.StartsWith(Refusals.KeepOutOfRange + " ", share, StringComparison.Ordinal);
+        Assert.Contains("context=percent", share, StringComparison.Ordinal);
         Assert.Equal(text, File.ReadAllText(DriverConfigPath));
     }
 

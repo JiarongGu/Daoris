@@ -45,7 +45,7 @@ public static class SpaceKinds
 
     /// <summary>
     /// The browser's caches, relative to <c>browser-engine</c>'s root, its active profile being <c>Default</c> (the cleanup design §3.2's
-    /// table): counted here as the browser's own, cleared only by the person's press while the browser is closed (KEEP1e, <see cref="BrowserCacheClearing"/>); below the floor too once KEEP1f builds it.
+    /// table): counted here as the browser's own, cleared by the person's press while the browser is closed (KEEP1e, <see cref="BrowserCacheClearing"/>), and below the floor once a stretch (KEEP1f).
     /// </summary>
     public static IReadOnlyList<string> BrowserCaches { get; } =
     [
@@ -313,6 +313,15 @@ public sealed record SpaceWorld(string Home)
     /// <summary>A folder's volume, its free bytes this account may use and its size; null where it cannot be read.</summary>
     public Func<string, (long Free, long Total)?> Volume { get; init; } = SystemSpace.VolumeOf;
 
+    /// <summary>
+    /// A folder's volume with its identity (KEEP1f), read for the folder's own path through any junction or mount: which volume each kind's
+    /// entry lies on, said on its row where it is not the Daoris folder's. The system's read by default.
+    /// </summary>
+    public Func<string, VolumeReading?> Reading { get; init; } = SpaceVolumes.Read;
+
+    /// <summary>The stretches below the floor this process keeps (KEEP1f), whose freeing the read says.</summary>
+    public SpaceFloors Floors { get; init; } = SpaceFloors.Shared;
+
     /// <summary>Whether a process still runs, for the run lock's holder; null asks the system.</summary>
     public Func<int, bool>? Lives { get; init; }
 
@@ -334,8 +343,9 @@ public sealed record SpaceWorld(string Home)
 /// </summary>
 /// <remarks>
 /// <para>The shape is a wire shape: every field added, never renamed. A fact not read is <c>null</c> beside its <c>…Why</c>. The floor
-/// (<c>volume.floor</c>, <c>below</c>, <c>freedEarly</c>, a kind's own <c>volume</c>) is KEEP1f's: answered as none until the rule that
-/// fills it runs, so the card never shows a rule that does not run (§9). The press's <c>run</c> is KEEP1e's (<see cref="SpaceRuns"/>).</para>
+/// (KEEP1f, <see cref="SpaceFloor"/>): <c>volume.floor</c> from the volume's own size and the person's rule, <c>below</c>, what the floor
+/// freed early in this stretch below (<c>freedEarly</c>), and a kind's own <c>volume</c> where its entry lies on another; each kind's
+/// <c>rule.low</c> where the floor frees it early. The press's <c>run</c> is KEEP1e's (<see cref="SpaceRuns"/>).</para>
 /// </remarks>
 public static class SystemSpace
 {
@@ -352,8 +362,12 @@ public static class SystemSpace
         var holder = KeepingRun.Holder(home, world.Lives);
         var folder = DaorisHome.FolderOf(home).Folder;
         var volume = world.Volume(folder);
+        // KEEP1f: the folder's volume by its identity, so a kind whose entry lies on another says that volume on its row.
+        var folderId = world.Reading(folder)?.Id;
+        var stretches = world.Floors.Of(home);
+        var stretch = folderId is not null && stretches.TryGetValue(folderId, out var held) ? held : null;
         var kinds = new JsonArray();
-        foreach (var kind in SpaceKinds.Table) kinds.Add(Kind(world, kind, policy, record, now));
+        foreach (var kind in SpaceKinds.Table) kinds.Add(Kind(world, kind, policy, record, now, folderId, stretches));
         return new JsonObject
         {
             ["schema"] = Schema,
@@ -361,8 +375,10 @@ public static class SystemSpace
                 ? new JsonObject
                 {
                     ["path"] = folder, ["free"] = read.Free, ["total"] = read.Total,
-                    // KEEP1f's: no floor runs yet, so none is said.
-                    ["floor"] = null, ["below"] = false, ["freedEarly"] = null,
+                    // KEEP1f: the floor this volume is held to, from its own size, and whether it is below; what the floor freed early in this
+                    // stretch below, where it freed anything.
+                    ["floor"] = Floor(policy.Floor, read.Total), ["below"] = Below(policy.Floor, read.Free, read.Total),
+                    ["freedEarly"] = Freed(stretch),
                 }
                 : null,
             ["volumeWhy"] = volume is null ? "unreadable" : null,
@@ -394,7 +410,52 @@ public static class SystemSpace
         }
     }
 
-    private static JsonObject Kind(SpaceWorld world, SpaceKind kind, KeepPolicy policy, KeepingFile record, DateTimeOffset now)
+    /// <summary>A volume's floor as the read says it (KEEP1f): its bytes from the volume's own size, none where it is off, and where it comes from.</summary>
+    private static JsonObject Floor(FloorPolicy policy, long total) => new() { ["bytes"] = policy.Of(total), ["from"] = policy.From };
+
+    private static bool Below(FloorPolicy policy, long free, long total) => policy.Of(total) is { } floor && free < floor;
+
+    private static JsonObject? Freed(FloorStretch? stretch) =>
+        stretch is { Freed: > 0, FreedAt: { } at } ? new JsonObject { ["bytes"] = stretch.Freed, ["at"] = Moments.Write(at) } : null;
+
+    /// <summary>The entry the floor reads a kind's volume by (KEEP1f): where its acts free from, or the trees' own; none for the rest.</summary>
+    private static HomeEntry? FloorEntry(string kind) => kind switch
+    {
+        "set-aside" or "trees" => HomeEntry.Trees,
+        "downloads" => HomeEntry.Toolchain,
+        "browser-cache" => HomeEntry.BrowserEngine,
+        _ => null,
+    };
+
+    /// <summary>
+    /// A kind's own volume (KEEP1f; the cleanup design §3.2, §4.4's <c>kinds[].volume</c>): only where its entry lies on another volume than
+    /// the Daoris folder's, read for its own path; null otherwise, or where either does not read.
+    /// </summary>
+    private static JsonObject? KindVolume(SpaceWorld world, SpaceKind kind, KeepPolicy policy, string? folderId, IReadOnlyDictionary<string, FloorStretch> stretches)
+    {
+        if (folderId is null || FloorEntry(kind.Id) is not { } entry) return null;
+        VolumeReading? read;
+        try
+        {
+            read = world.Reading(DaorisHome.Entry(world.Home, entry));
+        }
+        catch (HomeEntryTwiceException)
+        {
+            return null;
+        }
+
+        if (read is null || string.Equals(read.Id, folderId, StringComparison.OrdinalIgnoreCase)) return null;
+        return new JsonObject
+        {
+            ["path"] = read.Root, ["free"] = read.Free, ["total"] = read.Total,
+            ["floor"] = Floor(policy.Floor, read.Total), ["below"] = Below(policy.Floor, read.Free, read.Total),
+            ["freedEarly"] = Freed(stretches.TryGetValue(read.Id, out var stretch) ? stretch : null),
+        };
+    }
+
+    private static JsonObject Kind(
+        SpaceWorld world, SpaceKind kind, KeepPolicy policy, KeepingFile record, DateTimeOffset now, string? folderId,
+        IReadOnlyDictionary<string, FloorStretch> stretches)
     {
         var home = world.Home;
         var reading = world.Sizes.Of(home, kind.Id);
@@ -420,8 +481,8 @@ public static class SystemSpace
             ["partial"] = reading?.Partial is not null,
             ["partialWhy"] = reading?.Partial,
             ["counting"] = world.Sizes.Counting(home, kind.Id),
-            // KEEP1f's: a kind's entry on another volume than the Daoris folder's.
-            ["volume"] = null,
+            // KEEP1f: a kind's entry on another volume than the Daoris folder's, said on its own row with that volume's floor.
+            ["volume"] = KindVolume(world, kind, policy, folderId, stretches),
             ["rule"] = Rule(kind, policy),
             // KEEP1d: the person sets the rules of the kinds `KeepChoices.Settable` names, on the card's *Change…* and `daoris driver keep`.
             ["settable"] = kind.Keeps is { } settable && KeepChoices.Settable.Contains(settable),
@@ -439,6 +500,8 @@ public static class SystemSpace
     private static JsonObject Rule(SpaceKind kind, KeepPolicy policy)
     {
         var rule = new JsonObject { ["kind"] = kind.Rule, ["days"] = null, ["whole"] = null, ["default"] = true, ["whose"] = kind.Whose };
+        // KEEP1f: what the floor frees early of a kind while the floor is on, which its rule then says (*cleared when space is low*).
+        rule["low"] = !policy.Floor.Off && kind.Id is "set-aside" or "downloads" or "browser-cache";
         switch (kind.Id)
         {
             case "set-aside":

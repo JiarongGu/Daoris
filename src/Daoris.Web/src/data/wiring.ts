@@ -120,23 +120,44 @@ export type DownloadCleared = {
  * One kind This Daoris's *Disk space* card shows (KEEP1c, the cleanup design §4.4): `SYSTEM_SPACE`'s row. Its size is its own last
  * walk's (`measured`, null where never counted; `partial` with why where the walk stopped short), its `rule` the one that runs
  * (`days`, `never`, `press`, `proof`, or another's `own` with `whose`), `next` when its rule next takes something (`bytes` null where
- * not counted), and `last` its last clean from `keeping.json`. `volume` is KEEP1f's. KEEP1d: `settable` where the person sets its rule,
+ * not counted), and `last` its last clean from `keeping.json`. KEEP1f: `volume` where its entry lies on another volume than the
+ * Daoris folder's, with that volume's floor; `rule.low` where the floor frees it early. KEEP1d: `settable` where the person sets its rule,
  * with `bounds`, the days and the choices the driver takes (absent from a shell before it, and null for a kind not the person's).
  */
 export type SpaceKind = {
   id: string;
   entries: string[];
   bytes: number | null; files: number | null; measured: string | null; partial: boolean; partialWhy: Why; counting: boolean;
-  volume: { path: string; free: number; total: number } | null;
-  rule: { kind: 'days' | 'never' | 'press' | 'proof' | 'own'; days: number | null; whole: boolean | null; default: boolean; whose: string | null };
+  volume: SpaceVolume | null;
+  rule: {
+    kind: 'days' | 'never' | 'press' | 'proof' | 'own'; days: number | null; whole: boolean | null; default: boolean; whose: string | null;
+    low?: boolean;
+  };
   settable: boolean;
   bounds?: { min: number; max: number; whole: boolean; never: boolean } | null;
   next: { at: string; count: number; bytes: number | null } | null; nextWhy: Why;
   last: { at: string; door: string; removed: { count: number; bytes: number }; kept: Record<string, number> } | null; lastWhy: Why;
 };
 
-/** One kind's keep rule as the *Disk space* card's *Change…* sets it (KEEP1d, `SET_KEEP`): its days, `never`, `whole` or not, or its default. */
-export type KeepSet = { kind: 'set-aside' | 'downloads' | 'logs' | 'history'; days?: number; never?: true; whole?: boolean; default?: true };
+/**
+ * One kind's keep rule as the *Disk space* card's *Change…* sets it (KEEP1d, `SET_KEEP`): its days, `never`, `whole` or not, or its
+ * default; or the free-space floor (KEEP1f): a size in GB, a share in percent, `off`, or its default.
+ */
+export type KeepSet =
+  | { kind: 'set-aside' | 'downloads' | 'logs' | 'history'; days?: number; never?: true; whole?: boolean; default?: true }
+  | { kind: 'floor'; gb?: number; percent?: number; off?: true; default?: true };
+
+/**
+ * A volume as `SYSTEM_SPACE` says it (KEEP1f, the cleanup design §3.2): where it is, its free space and size, the floor it is held to
+ * (`bytes` null where it is off; `from` the person's rule: `default`, `size`, `percent` or `off`), whether it is below it, and what the
+ * floor freed early in this stretch below.
+ */
+export type SpaceVolume = {
+  path: string; free: number; total: number;
+  floor?: { bytes: number | null; from: 'default' | 'size' | 'percent' | 'off' } | null;
+  below?: boolean;
+  freedEarly?: { bytes: number; at: string } | null;
+};
 
 /**
  * A run of *Free up space…* (KEEP1e, the cleanup design §3.3): its id and door, when it started and ended, how it ended (`done` every
@@ -149,12 +170,12 @@ export type SpaceRun = {
 };
 
 /**
- * `SYSTEM_SPACE`'s answer (KEEP1c): the Daoris folder's volume (its `floor` none until KEEP1f), each kind in the card's order, the
+ * `SYSTEM_SPACE`'s answer (KEEP1c): the Daoris folder's volume with its floor (KEEP1f), each kind in the card's order, the
  * press's `run` (KEEP1e: the current or last run in this window's process) and `held`, the run lock's holder, or one a crash left (`gone`).
  */
 export type SystemSpace = {
   schema: number;
-  volume: { path: string; free: number; total: number; floor: { bytes: number; from: string } | null; below: boolean } | null;
+  volume: SpaceVolume | null;
   volumeWhy: Why;
   kinds: SpaceKind[];
   run: SpaceRun | null;

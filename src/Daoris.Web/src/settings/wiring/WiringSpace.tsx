@@ -1,7 +1,8 @@
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { KeepSet, SpaceKind, SystemSpace } from '../../data/wiring';
-import { Button, Card, CheckField, SettingRow, SkeletonRows } from '../../design/ui';
+import type { KeepSet, SpaceKind, SpaceVolume, SystemSpace } from '../../data/wiring';
+import { Button, Card, CheckField, SelectField, SettingRow, SkeletonRows } from '../../design/ui';
+import { cn } from '../../lib/cn';
 import { clockOf, dayOf, size } from '../../locales/format';
 import { WiringCard } from './WiringParts';
 import { SpaceRunLine } from './WiringSpaceFree';
@@ -29,8 +30,13 @@ export type KeepAnswered = { done: () => void; refused: (words: string) => void 
 
 type T = (key: string, options?: Record<string, unknown>) => string;
 
-/** A kind's rule in words: the one that runs, or whose it is. */
+/** A kind's rule in words: the one that runs, or whose it is; and sooner when space is low, where the floor frees it early (KEEP1f). */
 function ruleWords(t: T, kind: SpaceKind): string {
+  const words = ruleOwnWords(t, kind);
+  return kind.rule.low ? t('settings.daoris.space.rule.joined', { days: words, then: t('settings.daoris.space.rule.low') }) : words;
+}
+
+function ruleOwnWords(t: T, kind: SpaceKind): string {
   const { rule } = kind;
   if (rule.kind === 'days' && kind.id === 'downloads') return t('settings.daoris.space.rule.downloads', { count: rule.days });
   if (rule.kind === 'days' && kind.id === 'history') return t('settings.daoris.space.rule.history', { count: rule.days });
@@ -78,7 +84,7 @@ function Sized({ kind, onCount }: { kind: SpaceKind; onCount: () => void }) {
 function KeepEditor({ kind, onKeep, onClose }: { kind: SpaceKind; onKeep: (set: KeepSet, answered: KeepAnswered) => void; onClose: () => void }) {
   const { t } = useTranslation();
   const bounds = kind.bounds!;
-  const id = kind.id as KeepSet['kind'];
+  const id = kind.id as Exclude<KeepSet['kind'], 'floor'>;
   const [days, setDays] = useState(kind.rule.days === null ? '' : String(kind.rule.days));
   const [whole, setWhole] = useState(kind.rule.whole === true);
   // History's press alone is its `never` (KEEP1g).
@@ -142,6 +148,128 @@ function KeepEditor({ kind, onKeep, onClose }: { kind: SpaceKind; onKeep: (set: 
   );
 }
 
+const GB = 2 ** 30;
+
+/** The floor's editor, by the id `editing` holds beside the kinds'. */
+const FLOOR = 'floor';
+
+/** The most GB a floor may be on a volume of `total` bytes: half of it (`FloorPolicy.HalfGb`). */
+const halfGb = (total: number) => Math.max(1, Math.floor(total / 2 / GB));
+
+/**
+ * The free-space floor's *Change…* editor, under the *Free space* row (KEEP1f, the cleanup design §3.2): a size in GB up to half the
+ * volume, a share from 1% to 50%, or no floor; *Save*, *The default* and *Never mind*. A value that is no whole number is said here; one
+ * out of its bounds is the driver's refusal, said under the editor, which stays open (R3).
+ */
+function FloorEditor({ volume, onKeep, onClose }: { volume: SpaceVolume; onKeep: (set: KeepSet, answered: KeepAnswered) => void; onClose: () => void }) {
+  const { t } = useTranslation();
+  const floor = volume.floor;
+  const [mode, setMode] = useState<'size' | 'percent' | 'off'>(floor?.from === 'percent' ? 'percent' : floor?.from === 'off' ? 'off' : 'size');
+  const [value, setValue] = useState(() => {
+    if (!floor || floor.bytes == null) return '';
+    return String(floor.from === 'percent' ? Math.round((floor.bytes / volume.total) * 100) : Math.round(floor.bytes / GB));
+  });
+  const [saving, setSaving] = useState(false);
+  const [said, setSaid] = useState<string | null>(null);
+  const send = (set: KeepSet) => {
+    setSaving(true);
+    setSaid(null);
+    onKeep(set, {
+      done: () => { setSaving(false); onClose(); },
+      refused: (words) => { setSaving(false); setSaid(words); },
+    });
+  };
+  const save = () => {
+    if (mode === 'off') return send({ kind: 'floor', off: true });
+    const count = Number(value);
+    if (value.trim() === '' || !Number.isInteger(count)) {
+      setSaid(t('settings.daoris.space.edit.notANumber'));
+      return;
+    }
+    send(mode === 'size' ? { kind: 'floor', gb: count } : { kind: 'floor', percent: count });
+  };
+  const max = mode === 'size' ? halfGb(volume.total) : 50;
+  return (
+    <div className="grid gap-2 rounded-control border border-line bg-page/60 px-3 py-2" role="group" aria-label={t('settings.daoris.space.edit.floor')}>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <SelectField
+          ariaLabel={t('settings.daoris.space.edit.floor')}
+          value={mode}
+          disabled={saving}
+          onChange={(chosen) => setMode(chosen as typeof mode)}
+          options={[
+            { value: 'size', label: t('settings.daoris.space.edit.floorSize') },
+            { value: 'percent', label: t('settings.daoris.space.edit.floorPercent') },
+            { value: 'off', label: t('settings.daoris.space.edit.floorOff') },
+          ]}
+        />
+        {mode !== 'off' && (
+          <span className="inline-flex items-center gap-1.5">
+            <input
+              type="number"
+              min={1}
+              max={max}
+              aria-label={t('settings.daoris.space.edit.floor')}
+              value={value}
+              disabled={saving}
+              onChange={(event) => setValue(event.target.value)}
+              className="w-[5.5rem] rounded-control border border-line-strong bg-raised px-2.5 py-1 text-right text-body text-ink"
+            />
+            <span className="text-small text-ink-faint">
+              {mode === 'size'
+                ? t('settings.daoris.space.edit.floorBoundsSize', { min: 1, max })
+                : t('settings.daoris.space.edit.floorBoundsPercent', { min: 1, max })}
+            </span>
+          </span>
+        )}
+      </div>
+      <p className="m-0 text-small text-ink-soft">
+        {t(mode === 'off' ? 'settings.daoris.space.edit.floorOffWarn' : 'settings.daoris.space.edit.floorDefault')}
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button variant="primary" disabled={saving} onClick={save}>
+          {saving ? t('settings.daoris.space.edit.saving') : t('settings.daoris.space.edit.save')}
+        </Button>
+        <Button disabled={saving || floor?.from === 'default'} onClick={() => send({ kind: 'floor', default: true })}>{t('settings.daoris.space.edit.default')}</Button>
+        <Button variant="ghost" disabled={saving} onClick={onClose}>{t('common.cancel')}</Button>
+      </div>
+      {said && <p className="m-0 text-small text-ink-danger" role="alert">{said}</p>}
+    </div>
+  );
+}
+
+/**
+ * A volume's free space as the card says it (KEEP1f): its free space of its size and the floor it keeps, or that no floor is set, in
+ * the warn ink while it is below; `path` said where it is a kind's own volume, not the Daoris folder's.
+ */
+function VolumeWords({ volume, path = false }: { volume: SpaceVolume; path?: boolean }) {
+  const { t } = useTranslation();
+  const of = path
+    ? t('settings.daoris.space.ownVolume', { path: volume.path, free: size(volume.free), total: size(volume.total) })
+    : t('settings.daoris.space.ofVolume', { free: size(volume.free), total: size(volume.total) });
+  const floor = volume.floor;
+  const kept = !floor ? null
+    : floor.bytes == null ? t('settings.daoris.space.floorOff') : t('settings.daoris.space.floor', { size: size(floor.bytes) });
+  return (
+    <span className={cn('text-small', volume.below ? 'text-warn' : 'text-ink-soft')}>
+      {kept ? `${of} · ${kept}` : of}
+    </span>
+  );
+}
+
+/** What the floor freed early in this stretch below (KEEP1f), while the volume is below it. */
+function FreedEarly({ volume }: { volume: SpaceVolume }) {
+  const { t } = useTranslation();
+  if (!volume.below) return null;
+  return (
+    <p className="m-0 text-small text-ink-soft">
+      {volume.freedEarly
+        ? t('settings.daoris.space.freedEarly', { size: size(volume.freedEarly.bytes), when: clockOf(volume.freedEarly.at) })
+        : t('settings.daoris.space.belowNothing')}
+    </p>
+  );
+}
+
 /** A kind's *next* and *last*, on one line: when its rule next takes something, and what its last run removed. */
 function NextAndLast({ kind }: { kind: SpaceKind }) {
   const { t } = useTranslation();
@@ -173,7 +301,8 @@ function NextAndLast({ kind }: { kind: SpaceKind }) {
  * day, never by the page's open. The Downloads row opens the list the Folders card draws (CACHECLEAR1), under its own row here. The
  * rules the person sets carry *Change…* (KEEP1d), the editor under the row. KEEP1e: *Free up space…* in the head lists first, under the
  * head, then presses; a run's line (R2) says the kind it is on, then what went and what was kept by reason. A run under way elsewhere
- * disables it.
+ * disables it. KEEP1f: the free space with the floor it keeps, in the warn ink below it with what Daoris freed early, the floor's own
+ * *Change…*; a kind whose entry lies on another volume says that volume on its row, and a kind the floor frees early says so.
  *
  * @remarks
  * A molecule: drawn from props, so every state is reachable without a shell. `space` absent is the first load; `older` a shell that
@@ -215,6 +344,8 @@ export function WiringSpace({ space, older = false, busy = false, onCount, downl
     );
   }
   const counting = space.kinds.some((kind) => kind.counting);
+  // KEEP1f: the floor is set here where the shell says it (one before KEEP1f answers none).
+  const floorSettable = onKeep !== undefined && space.volume?.floor != null;
   const door = (named: string) => t(`settings.daoris.space.door.${named}`, { defaultValue: named });
   // A run of this window's process under way is said by its own line; the lock's holder then is that run.
   const running = space.run != null && !space.run.outcome;
@@ -242,15 +373,23 @@ export function WiringSpace({ space, older = false, busy = false, onCount, downl
       )}
       <SettingRow
         label={t('settings.daoris.space.free')}
-        hint={t('settings.daoris.space.terminal')}
-        control={(
-          <span className="text-small text-ink-soft">
-            {space.volume
-              ? t('settings.daoris.space.ofVolume', { free: size(space.volume.free), total: size(space.volume.total) })
-              : t('settings.daoris.space.volumeUnread')}
-          </span>
+        hint={floorSettable
+          ? `${t('settings.daoris.space.terminal')} ${t('settings.daoris.space.keepTerminal', { kind: 'floor' })}`
+          : t('settings.daoris.space.terminal')}
+        control={space.volume
+          ? <VolumeWords volume={space.volume} />
+          : <span className="text-small text-ink-soft">{t('settings.daoris.space.volumeUnread')}</span>}
+      >
+        {space.volume && (floorSettable || space.volume.below) && (
+          <div className="grid gap-1">
+            <FreedEarly volume={space.volume} />
+            {floorSettable && editing !== FLOOR && (
+              <p className="m-0"><Button variant="ghost" onClick={() => setEditing(FLOOR)}>{t('settings.daoris.button.change')}</Button></p>
+            )}
+            {floorSettable && editing === FLOOR && <FloorEditor volume={space.volume} onKeep={onKeep!} onClose={() => setEditing(null)} />}
+          </div>
         )}
-      />
+      </SettingRow>
       {space.kinds.map((kind) => (
         <SettingRow
           key={kind.id}
@@ -269,6 +408,12 @@ export function WiringSpace({ space, older = false, busy = false, onCount, downl
               <KeepEditor kind={kind} onKeep={onKeep} onClose={() => setEditing(null)} />
             )}
             <NextAndLast kind={kind} />
+            {kind.volume && (
+              <>
+                <p className="m-0"><VolumeWords volume={kind.volume} path /></p>
+                <FreedEarly volume={kind.volume} />
+              </>
+            )}
             {kind.id === 'downloads' && (downloads ?? (onDownloads && (
               <p className="m-0"><Button variant="ghost" onClick={onDownloads}>{t('settings.daoris.downloads.open')}</Button></p>
             )))}

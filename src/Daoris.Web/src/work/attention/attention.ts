@@ -1,5 +1,5 @@
 import i18n from '../../locales/i18n';
-import { clockOf, elapsed } from '../../locales/format';
+import { clockOf, elapsed, size } from '../../locales/format';
 import type { Ask, GoAhead, Quest, SetUpRef, Session } from '../../data/api';
 import type { RuleProposal } from '../../settings/repository/AgentRules';
 import { proposalAuthor, proposalChange } from '../../settings/repository/proposals';
@@ -79,6 +79,9 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   // nothing records, or a tree its session recorded that no branch record follows. Nothing running is held by it, and nothing of it
   // is removed until they press. A guard the look keeps a branch by is said on its session's page, never here.
   work: 'word',
+  // A volume still below its free-space floor once the floor freed what Daoris can make again (KEEP1f, the cleanup design §3.2): the
+  // rest waits for the person's choice on *Free up space…*, and nothing running is held by it yet.
+  space: 'word',
   unanswerable: 'word',
   review: 'ready',
 };
@@ -408,6 +411,11 @@ export type PushedAttention = {
     module: string; route: string; asker?: { process?: string | null; pid?: number | null } | null; expires: string;
     shownAt?: string | null;
   };
+  /**
+   * A volume still below its free-space floor once the floor's acts ran (KEEP1f): where it is mounted, its free space, size and floor in
+   * bytes as read when it was said, what the floor freed in this stretch, and what *Free up space…* could free (null where none was read).
+   */
+  space?: { root: string | null; free: number; total: number; floor: number | null; freed: number; could?: number | null };
 };
 
 /**
@@ -428,7 +436,7 @@ export type AttentionPushed = {
  */
 const KIND_ORDER: readonly AttentionKind[] = [
   'account-wait', 'signed-out', 'parked', 'parked-quest', 'go-ahead', 'permission', 'answer', 'confirmation', 'trust',
-  'proposal', 'departure', 'set-up', 'opinion', 'rule', 'helper', 'hand-over', 'work', 'unanswerable', 'review',
+  'proposal', 'departure', 'set-up', 'opinion', 'rule', 'helper', 'hand-over', 'work', 'space', 'unanswerable', 'review',
 ];
 
 /** A row's place among its group's kinds; an intake is an ask's, and a held attempt comes after a unit's blocked clean-up. */
@@ -669,6 +677,9 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
     // the system names it, and until when it waits.
     case 'confirmation':
       return { ...base, ...(row.confirmation ? confirmationWorded(row.confirmation) : { title: row.id, detail: null }) };
+    // KEEP1f: named by the volume's free space and where it is mounted; why, its floor, what Daoris freed, and what the press could.
+    case 'space':
+      return { ...base, ...(row.space ? spaceWorded(row.space) : { title: row.id, detail: null }) };
     default:
       return { ...base, title: row.title ?? row.id };
   }
@@ -694,6 +705,21 @@ function confirmationWorded(waiting: NonNullable<PushedAttention['confirmation']
         ? i18n.t('person.asker.process', { process: asker.process, pid: asker.pid })
         : asker?.pid != null ? i18n.t('person.asker.pid', { pid: asker.pid }) : i18n.t('person.asker.unknown'),
       i18n.t('work.attention.confirmationWhy', { time: clockOf(waiting.expires) }),
+    ].join(' '),
+  };
+}
+
+/**
+ * A volume still below its free-space floor (KEEP1f; the cleanup design §3.2), in the card's words: its free space of its size where it
+ * is mounted; then the floor, what Daoris freed early of what it can make again, and what *Free up space…* could free where it listed any.
+ */
+function spaceWorded(low: NonNullable<PushedAttention['space']>): Pick<Attention, 'title' | 'detail'> {
+  return {
+    title: i18n.t('work.attention.spaceTitle', { free: size(low.free), total: size(low.total), root: low.root ?? '' }),
+    detail: [
+      ...(low.floor != null ? [i18n.t('work.attention.spaceFloor', { floor: size(low.floor) })] : []),
+      low.freed > 0 ? i18n.t('work.attention.spaceFreed', { size: size(low.freed) }) : i18n.t('work.attention.spaceFreedNothing'),
+      ...(low.could ? [i18n.t('work.attention.spaceCould', { size: size(low.could) })] : []),
     ].join(' '),
   };
 }
