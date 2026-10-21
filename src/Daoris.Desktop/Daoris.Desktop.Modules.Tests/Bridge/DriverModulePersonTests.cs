@@ -67,6 +67,31 @@ public sealed class DriverModulePersonTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// NOTIFY2j: the window reads what waits at the service's door as the loop was last told it, the service's own shape whole and
+    /// numbered; none before the first telling.
+    /// </summary>
+    [Fact]
+    public async Task The_window_reads_what_waits_at_the_service_as_the_loop_was_told_it()
+    {
+        var loop = Loop();
+        var module = new DriverModule(Bus, loop);
+        var none = await AnswerAsync(module, "SERVICE_CONFIRMATIONS");
+        Assert.Equal(0, none.GetProperty("seq").GetInt64());
+        Assert.Empty(none.GetProperty("waiting").EnumerateArray());
+
+        using var waiting = System.Text.Json.JsonDocument.Parse(
+            """[{"id":"a1b2c3d4e5f60718","state":"waiting","method":"POST","route":"/api/asks","act":"an ask","values":[],"fields":[{"name":"/sentence","type":"string","value":"Rename it."}],"asked":"2026-10-22T12:00:00+00:00","expires":"2026-10-22T12:02:00+00:00"}]""");
+        Assert.True(loop.ServiceConfirmations.Tell([.. waiting.RootElement.EnumerateArray()]));
+        Assert.False(loop.ServiceConfirmations.Tell([.. waiting.RootElement.EnumerateArray()]));
+
+        var read = await AnswerAsync(module, "SERVICE_CONFIRMATIONS");
+        Assert.Equal(1, read.GetProperty("seq").GetInt64());
+        var shown = Assert.Single(read.GetProperty("waiting").EnumerateArray());
+        Assert.Equal("an ask", shown.GetProperty("act").GetString());
+        Assert.Equal("Rename it.", shown.GetProperty("fields")[0].GetProperty("value").GetString());
+    }
+
+    /// <summary>
     /// CONFIRMSEEN1: the window says a card is in front of the person, and its two minutes count from then, once; one no longer waiting
     /// is said as data, by its code.
     /// </summary>

@@ -30,6 +30,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         _base = doors.BaseUrl;
         Opinions = new OpinionDoors(this);
         Helpers = new HelperDoors(this);
+        Confirmations = new ConfirmationDoors(this);
     }
 
     /// <summary>A client over HTTP to the host at <paramref name="baseUrl"/>, with its key; a test may hand its own HTTP client.</summary>
@@ -43,6 +44,9 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
 
     /// <summary>The local host's helper doors (MIXAGENT2a-ii), over this client.</summary>
     public HelperDoors Helpers { get; }
+
+    /// <summary>The local host's confirmation doors, read for the windows (NOTIFY2j), over this client.</summary>
+    public ConfirmationDoors Confirmations { get; }
 
     /// <summary>A door class's request whose every answer comes back, a refusal's included (<see cref="IServiceDoors.SendAsync"/>).</summary>
     internal Task<ServiceReply> SendAsync(ServiceVerb verb, string path, string? json, CancellationToken ct) =>
