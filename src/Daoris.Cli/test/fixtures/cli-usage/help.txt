@@ -336,8 +336,8 @@ daoris <command> [options]
   and agent spawns each agent's own tooling. Of them only agent pin and agent
   update open a connection themselves, to a maker's release channel for Claude
   Code and Codex, and tool download, use … managed, update and look, to a tool's
-  maker and a resource location. driver's standing choices are run by Daoris's own
-  driver program, the one this install carries in app/daoris-driver/ (or the one
+  maker and a resource location. driver is run by Daoris's own driver program,
+  the one this install carries in app/daoris-driver/ (or the one
   DAORIS_DRIVER_PROGRAM names); a daoris with neither says so and does nothing.
   While Daoris runs on that home, agent, driver, plugin and tool send what they
   change to it over its own pipe, and its window asks you to confirm it; with none

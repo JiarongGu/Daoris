@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { Socket } from 'node:net';
 import { dirname, join } from 'node:path';
 import { findInstance, INSTANCE_VARIABLE, instanceDoor, pressInstance, type InstanceWorld } from '../../src/service/service.ts';
@@ -8,7 +8,6 @@ import type { InstanceRoute } from '../../src/platform/door.ts';
 import { DaorisError, type ExitCode } from '../../src/platform/errors.ts';
 import { homeEntry } from '../../src/platform/home.ts';
 import { leaseHolder, tryLease } from '../../src/platform/lease.ts';
-import { commandDriver, readDriverChoices } from '../../src/driver/driverconfig.ts';
 import { InstanceStandIn, ON_WINDOWS, pipeOf } from '../_instance.ts';
 import { makeFixture, type Fixture } from '../_fixture.ts';
 
@@ -481,40 +480,9 @@ test('what it finds where the instance answers is its client', WINDOWS, async ()
   }
 });
 
-/** The driver's choices through the door the `driver` row hands in: sent while Daoris runs, written alone under the lease when none does. */
-function drive(h: Home, door: ReturnType<typeof instanceDoor>): Promise<number> | number {
-  const saved = process.env.DAORIS_DRIVER_CONFIG;
-  process.env.DAORIS_DRIVER_CONFIG = homeEntry(h.home, 'driver');
-  try {
-    return commandDriver({ root: h.fx.root, argv: ['drive', 'engine'], write: (line) => h.out.push(line), packageRoot: h.fx.root },
-      undefined, undefined, undefined, door);
-  } finally {
-    if (saved === undefined) delete process.env.DAORIS_DRIVER_CONFIG;
-    else process.env.DAORIS_DRIVER_CONFIG = saved;
-  }
-}
-
-test("`daoris driver drive` while Daoris runs sends SET_DRIVABLE, writes nothing itself, and says the alone path's words", WINDOWS, async () => {
-  const h = installed('instance-driver-sent');
-  try {
-    const standIn = await serve(h);
-    standIn.confirming = true;
-    leave(h);
-    const code = await drive(h, instanceDoor(world(h)));
-    assert.equal(code, 0);
-    assert.equal(standIn.presses.length, 1);
-    assert.equal(standIn.presses[0]!.module, 'DAORIS.DRIVER');
-    assert.equal(standIn.presses[0]!.type, 'SET_DRIVABLE');
-    assert.deepEqual(standIn.presses[0]!.payload, { repository: 'engine', drivable: true });
-    assert.equal(existsSync(homeEntry(h.home, 'driver')), false, 'the instance writes its own file');
-    assert.equal(h.out[0], 'daoris: this machine may drive `engine`.');
-    assert.deepEqual(h.said, ["daoris: waiting for you to confirm this in Daoris's window…"]);
-  } finally {
-    await done(h);
-  }
-});
-
-test('`daoris driver drive` with no Daoris running writes alone, holding the lease for its act alone', WINDOWS, async () => {
+// PUSH1f2b: `daoris driver` is Daoris's driver program's, which is the running Daoris's client itself (`DriverChoicesCommandTests`);
+// this door is the other families' until PUSH1f2f.
+test('a press with no Daoris running acts alone, holding the lease for its act alone', WINDOWS, async () => {
   const h = installed('instance-driver-alone');
   try {
     const standIn = await serve(h);
@@ -532,10 +500,6 @@ test('`daoris driver drive` with no Daoris running writes alone, holding the lea
     assert.equal(held, 'driver drive', 'the act held the home as a verb');
     assert.equal(leaseHolder(h.home), null, 'and let it go');
     assert.equal(standIn.connections, 0);
-
-    assert.equal(await drive(h, door), 0);
-    assert.deepEqual(readDriverChoices(homeEntry(h.home, 'driver')).drivable, ['engine']);
-    assert.equal(leaseHolder(h.home), null);
     assert.ok(!readdirSync(dirname(homeEntry(h.home, 'home-lease'))).some((name) => name.startsWith('home.lease')));
   } finally {
     await done(h);

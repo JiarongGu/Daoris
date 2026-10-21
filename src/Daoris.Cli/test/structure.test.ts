@@ -185,9 +185,10 @@ test('the map names declared modules and files that are there', () => {
 
 const mapFile = join(cliRoot, 'test', 'fixtures', 'structure.json');
 
+// PUSH1f2b (D194 point 7): `driver` and `workflows` left with the driver family's TypeScript, the family Daoris's driver program's whole.
 test("the map names the CLI's modules", () => {
   assert.deepEqual(readMap(readFileSync(mapFile, 'utf8')).modules,
-    ['cli', 'platform', 'doctrine', 'layout', 'accounts', 'agents', 'tools', 'service', 'driver', 'workflows', 'plugins', 'browser']);
+    ['cli', 'platform', 'doctrine', 'layout', 'accounts', 'agents', 'tools', 'service', 'plugins', 'browser']);
 });
 
 test("the CLI's own tree keeps its structure", () => {

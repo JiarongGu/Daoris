@@ -1,9 +1,4 @@
 import type { CliCommand } from '../platform/types.ts';
-import { ALONE } from '../platform/door.ts';
-import { daorisHome } from '../platform/home.ts';
-import { commandDriver, PATH_VARIABLE } from '../driver/driverconfig.ts';
-import { instanceDoor, registryCheckouts, sessionRecords } from '../service/service.ts';
-import { commandWorkflow } from '../workflows/workflowdoor.ts';
 import { runDriverProgram } from '../agents/toolchain.ts';
 
 export const command: CliCommand = {
@@ -167,28 +162,8 @@ export const command: CliCommand = {
     '                       clear and update are `daoris-driver`, not verbs here:',
     '                       the install\'s app/bin/ holds it (sh and .cmd).',
   ],
-  // PUSH1f2a (D194 point 1): the standing choices are Daoris's driver program's, `daoris-driver driver` with the same words; this
-  // writes nothing before it starts. The rest stays here until PUSH1f2b: the workflows, `work-cycle`, `brainstorms` and a landing's
-  // cycle, the `workflow` verbs handed in (WORKFLOW1d, `WorkflowDoor`), and the door a change goes through (RPC1f): the running
-  // Daoris's route while it runs on this home, this verb's own write under the home's lease when none does. A file
-  // `DAORIS_DRIVER_CONFIG` names is no instance's, so it is written alone, holding nothing.
-  run: (args) => handed(args.argv)
-    ? (args.driverProgram ?? ((family, words) => runDriverProgram(family, words)))('driver', args.argv)
-    : commandDriver(args, () => sessionRecords(), () => registryCheckouts(), (each, context) => commandWorkflow(each, context),
-      process.env[PATH_VARIABLE] ? ALONE : instanceDoor({ home: daorisHome(), write: args.write })),
+  // The family is Daoris's driver program's whole (PUSH1f2a, PUSH1f2b; D194 point 1): `daoris-driver driver` with the same words, every
+  // one of them, which says its usage for a verb it does not have; this writes nothing before it starts. The program is the verb: the
+  // running Daoris's client where a route takes the change, its own act under the home's lease where none does or no Daoris runs.
+  run: (args) => (args.driverProgram ?? ((family, words) => runDriverProgram(family, words)))('driver', args.argv),
 };
-
-/**
- * The verbs `daoris driver` hands Daoris's driver program (PUSH1f2a, the alone-path design §5's allow-list): its standing choices, each
- * one `daoris-driver driver` has (`DriverChoicesCommand.Verbs`, which a test reads beside this), and `list` where no verb is named.
- */
-export const HANDED_VERBS: readonly string[] = Object.freeze([
-  'list', 'drive', 'undrive', 'hold', 'resume', 'trees', 'notify', 'cap', 'strikes', 'retry', 'timeout', 'cooloff', 'adapter', 'helper',
-  'intake', 'line', 'landing', 'across', 'standing', 'language', 'review', 'opinion', 'helpers', 'handover', 'commits',
-]);
-
-/** Whether these words are the driver program's: a handed verb, or none, but a landing's cycle, which stays here until PUSH1f2b. */
-export function handed(argv: readonly string[]): boolean {
-  const verb = argv[0] ?? 'list';
-  return HANDED_VERBS.includes(verb) && !(verb === 'landing' && argv.some((word) => word === '--cycle' || word === '--no-cycle'));
-}

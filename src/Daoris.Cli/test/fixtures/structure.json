@@ -1,5 +1,5 @@
 {
-  "modules": ["cli","platform","doctrine","layout","accounts","agents","tools","service","driver","workflows","plugins","browser"],
+  "modules": ["cli","platform","doctrine","layout","accounts","agents","tools","service","plugins","browser"],
   "entry": ["cli.ts"],
   "root": {
   },
@@ -69,12 +69,6 @@
     "connect-twin.test.ts": "service",
     "manage.test.ts": "service",
     "remotes.test.ts": "service",
-    "driverconfig.test.ts": "driver",
-    "strikes.test.ts": "driver",
-    "namedworkflows.test.ts": "workflows",
-    "workflows.test.ts": "workflows",
-    "workflowdoor.test.ts": "workflows",
-    "workflowchoice-door.test.ts": "workflows",
     "plugins.test.ts": "plugins",
     "plugin-icons.test.ts": "plugins",
     "plugin-sources.test.ts": "plugins",

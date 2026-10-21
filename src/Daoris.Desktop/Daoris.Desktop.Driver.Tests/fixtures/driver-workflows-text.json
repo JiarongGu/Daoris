@@ -4753,6 +4753,54 @@
       "after": "{\n  \"workCycles\": {\n    \"Engine\": {\n      \"quest\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n"
     },
     {
+      "name": "a verb the family does not have",
+      "changed": "The family's words are Daoris's driver program's whole (PUSH1f2b): a verb it does not have is said in its own words and its usage on the error stream, as every host verb says one (D194 point 1); the dispatcher's golden row moved here.",
+      "argv": [
+        "frobnicate"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris-driver driver: `frobnicate` is not a verb of this program's.",
+        "usage: daoris-driver driver [list]",
+        "       daoris-driver driver drive|undrive|hold|resume <repository>",
+        "       daoris-driver driver trees <repository> on|off · notify on|off",
+        "       daoris-driver driver cap <n> · strikes <n> · timeout <minutes> · cooloff <minutes> · adapter <name>",
+        "       daoris-driver driver intake <adapter>|off · helper <adapter>|off",
+        "       daoris-driver driver retry <quest> [--at <n> | --session <id>]",
+        "       daoris-driver driver line <repository>|--workspace <name> <branch>|--clear",
+        "       daoris-driver driver landing <repository>|--workspace <name> merge|branch <pattern>|--clear",
+        "              [--tidy] [--plugin <id>] [--auto-accept|--no-auto-accept] [--key <shape>|--no-key] [--squash|--no-squash]",
+        "              [--cycle <file>|--no-cycle]",
+        "       daoris-driver driver work-cycle <repository>|--workspace <name> quest|ask <file>|--clear",
+        "       daoris-driver driver across <repository>|--workspace <name> read on|off|--clear",
+        "       daoris-driver driver across <repository> write-to <other> [--clear]",
+        "       daoris-driver driver standing <repository> \"…\"|--clear",
+        "       daoris-driver driver language <repository>|--workspace <name> en|zh|--clear",
+        "       daoris-driver driver review <repository>|--workspace <name> <environment> --kind local|deployed --procedure <path>",
+        "              [--address <url>] [--run \"…\"] [--required|--not-required]; none, --drop <environment>, or --clear",
+        "       daoris-driver driver opinion <repository>|--workspace <name> --reviewers <adapter,adapter> [--on landing,steps]",
+        "              [--required|--not-required] [--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck]; none, or --clear",
+        "       daoris-driver driver helpers <repository>|--workspace <name> [--mode ask|on|off] [--agents <a,b>] | --clear",
+        "       daoris-driver driver handover <repository>|--workspace <name> --mode ask|on|off | --clear",
+        "       daoris-driver driver commits <repository>|--workspace <name> [--mode as-you-go|ask|at-end]",
+        "              [--convention \"…\"|--no-convention] | --clear",
+        "       daoris-driver driver brainstorms [--workspace <name>] [--mode ask|off] [--agents <a,b>] [--pass-minutes <n>]",
+        "              [--synthesis-minutes <n>] [--challenge-minutes <n>] [--request-minutes <n>] | --clear",
+        "       daoris-driver driver workflow list · show <id>[@<version>] · show --repository <name>|--workspace <name> [--kind <kind>]",
+        "       daoris-driver driver workflow new <id> --from <preset>|current:<repository>|<id>[@<version>]",
+        "              [--with-opinion] [--with-look] [--name \"…\"]",
+        "       daoris-driver driver workflow edit <id> [--base <version>] <change>… · apply <id> <file> [--base <version>]",
+        "       daoris-driver driver workflow export <id> [--to <file>] · import <file>",
+        "       daoris-driver driver workflow use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]",
+        "       daoris-driver driver workflow kind <workspace> <kind> --label \"…\" [--paths <path,…>] | --drop",
+        "              (a workflow's writes say their change, and with --plan save nothing)",
+        "`daoris driver …` runs these."
+      ],
+      "after": null
+    },
+    {
       "name": "brainstorms, the default said",
       "argv": [
         "brainstorms"
