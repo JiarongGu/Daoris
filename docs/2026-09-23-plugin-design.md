@@ -271,6 +271,7 @@ driver's, not the canon's: it knows this build's points and frames, which no oth
 |---|---|
 | `daoris-driver plugins new <id> --point <p>… [--in <folder>]` | *Make a plugin*: an id, the points, a folder picked or typed, **New** |
 | `daoris-driver plugins try <folder\|id> [--point <p>] [--frame <file>]` | **Try** beside each installed plugin that speaks, and *Try a folder* |
+| `daoris-driver plugins try <folder> --cycle <fixture>` *(FABRIC-PERFORM1e)* | none yet: a performer's cycle, from a terminal |
 
 **`new`** writes `<folder>/<id>/`, refusing a name that is not an id, a point this build lacks, a
 folder that is not there and a folder that holds anything, and installs nothing. The folder holds:
@@ -307,6 +308,19 @@ catalogue skips, never the system's temporary folder (D63; the owner's call, ame
 | `session/ended` | observation, after a session | `session`, `quest`, `repository`, `state`, `adapter`, `account`, `byPerson`, `note` | anything; `{}` | 10 s; a failure is a console line |
 | `work/land` | act, once a landing made its branch | `repository`, `workspace`, `root`, `branch`, `base`, `title`, `quest { id, title }`, `session`, `commits [{ sha, subject }]` | `{ "pushed": bool, "pullRequest": "https://…"\|null, "message": "…"\|null }` | 2 min; a failure leaves the branch |
 | `work/state` | query (D148), at a look that may remove a landed branch | `repository`, `workspace`, `root`, `branch`, `line`, `pullRequest`, `pushedTip` | `{ "state": "open"\|"completed"\|"abandoned"\|"unknown", … }`, a completed one naming `mergeCommit` and `sourceCommit` in full | 30 s, the handshake inside the first; a failure removes nothing |
+| `state/changed` | observation (STATEHUB1g), once something the driver holds changes | `scopes`, `sessions` | anything; `{}` | 10 s; a failure is a console line |
+| `work/watch` | observation (FABRIC-PERFORM1a/1e), while work awaits the plugin's steps; the lease's loop alone | `generation`, `resync`, `units [{ repository, workspace, root, branch, tip, line, pullRequest, awaiting }]` | anything; `{}`, then a resync's events at `work/step` | 10 s; told again with `resync` |
+| `work/step` | event (§C4, §D6): the plugin's own notification, never asked | — | — | — |
+| `work/perform` | act (§D6), once a performed step is due; `work/reconcile` and `work/cleanup` asked beside it | `unit`, `step`, `stepVersion`, `invocation`, `idempotencyKey`, `subjectRevision`, `inputs`, `deadlineAt` | `{ "invocation": "…" }`, the outcome later at `work/step` | 10 s; an unknown receipt is reconciled before any new attempt |
+
+**A plugin that works** *(FABRIC-PERFORM1e, the fabric events design §D9)*: `new --point work/perform` brings `work/watch` and
+`work/step` with it (the hook set tells every plugin that works the awaited set, and its outcome is heard at `work/step`) and writes
+three more files: `work.mjs`, the kit's half (the durable idempotency journal, the watch and its resync, `work/reconcile` and
+`work/cleanup` answered, the stand-in world); `plugin.contract.test.mjs`, §D9's contract test; and `cycle.json`, the fixture `try
+--cycle` reads. Its manifest declares one performed step, `perform`, with §D6's `idempotent`, `reconcile` and `transient` under a
+retry that can take them, and one temporary resource. The author writes `act()`, `check()` and `remove()` and nothing else.
+**The stand-in world** (`DAORIS_PLUGIN_WORLD`) answers in the platform's place in the wire test, the contract test and every trial,
+and no attempt is sent to a plugin that has not taken it. `examples/plugins/local-preview` is the scaffold filled in.
 
 The samples the kit writes are built by the functions the driver sends with, and a test sends them
 through the real waterfall, observation and landing. A frame's `root` in a sample is `{root}`, which the

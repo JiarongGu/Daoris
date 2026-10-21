@@ -27,6 +27,10 @@ namespace Daoris.Driver;
 /// <para><b>The use case</b> (STRUCT3a): what the kit says and plans is here; the folder it writes, the templates the build
 /// carries, a trial's scratch and its process are <see cref="PluginKitFiles"/>' and
 /// <see cref="PluginTrialProcess"/>'s.</para>
+///
+/// <para><b>A change to a working plugin's kit files</b> (<c>work.mjs</c>, the wire and contract tests, <c>cycle.json</c>) is written into
+/// <c>examples/plugins/local-preview</c> in the same commit, by `plugins new` into a scratch folder and copied over: <c>PluginKitTests</c>
+/// holds the example's copies to what the kit writes (FABRIC-PERFORM1e).</para>
 /// </remarks>
 public static class PluginKit
 {
