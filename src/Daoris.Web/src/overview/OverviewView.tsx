@@ -9,42 +9,41 @@ import {
   SkeletonRows, Tile, Tip, useErrorNotify,
 } from '../design/ui';
 import { QuestStatus } from '../quests/QuestStatus';
-import { AttentionBand, type AttentionDoors } from '../work/attention/AttentionBand';
+import { useAttention } from '../bridge/shell';
+import type { NotificationsGroup } from '../notifications/NotificationsView';
+import type { Confirmation } from '../person/Confirmations';
 import { questName } from '../work/identity';
+import { NeedsSummary } from './NeedsSummary';
 
 /**
  * The management landing (D40). A person overseeing several projects' agents opens this window to
- * answer one question first — what needs me, and is anything sitting — so that is what leads: *What needs you*
- * (UX6c, design §6), then family health as stat tiles, the outstanding quests oldest-first, and the repositories by what
- * the index holds. Every row is a door.
+ * answer one question first — what needs me, and is anything sitting — so that is what leads: a summary of *What needs you*
+ * (NOTIFY2b, the notification design §4: a line per group, each a door into *Notifications*, where every row is), then family
+ * health as stat tiles, the outstanding quests oldest-first, and the repositories by what the index holds. Every row is a door.
  *
  * The repository bars are ONE series in one hue: entries per repository is magnitude, not identity.
  * Values sit beside the marks in ink, never in the mark's color.
  */
-export function OverviewView({ onNavigate, onOpenQuest, doors, notify, onSessions, onRun, onRefresh, refreshing }: {
+export function OverviewView({ onNavigate, onOpenQuest, notify, presses = [], onNotifications, onRefresh, refreshing }: {
   /** The shell's refresh of the index, its notices its own: offered by the empty repositories card (OVERVIEWNOISE1d). */
   onRefresh?: () => void;
   /** Whether that refresh is running, so the card's button waits for it. */
   refreshing?: boolean;
-  /** The door into a run whose step a row waits at (WORKFLOW1c): a shell's alone. */
-  onRun?: (session: string) => void;
   onNavigate: (tab: 'quests' | 'projects') => void;
   /**
    * Where an outstanding row goes: that quest's page on Quests (§5; FRAME1d). The row went to Quests and opened
    * nothing, so the person pressed a quest and had to find it again (UX5 U26).
    */
   onOpenQuest: (id: string) => void;
-  /**
-   * The *what needs you* band's doors (design §4), one per kind of row. A kind with nowhere to go —
-   * a parked session in a browser, which has no Sessions — has none, and the band still SHOWS what
-   * is waiting, because knowing is the half that travels.
-   */
-  doors?: AttentionDoors;
   notify: Notify;
-  /** Sessions itself, where the band's work to review past its fifth row is (UX6c): a shell's alone. */
-  onSessions?: () => void;
+  /** The presses waiting for the person's confirmation, of either source, which the summary's first line counts (NOTIFY2b). */
+  presses?: Confirmation[];
+  /** *Notifications* shown at a group, each summary line's door: the app's alone, since a browser has no side bar. */
+  onNotifications?: (group: NotificationsGroup) => void;
 }) {
   const { t } = useTranslation();
+  // Who needs the person, as the shell pushes it (PUSH1d4), which the summary counts by group.
+  const attention = useAttention();
   const repositories = useRepositories();
   const registry = useRegistry();
   const quests = useQuests(null, false);
@@ -71,9 +70,9 @@ export function OverviewView({ onNavigate, onOpenQuest, doors, notify, onSession
     <section>
       <PageHeader title={t('overview.title')} description={t('overview.description')} />
 
-      {/* The page's lead, above the tiles, because "what needs me" outranks "how is the family" (UX6c, design §6.1);
-          one line when nothing is waiting, since a card that always says all-clear stops being read. */}
-      <AttentionBand doors={doors} notify={notify} onSessions={onSessions} onRun={onRun} />
+      {/* The page's lead, above the tiles, because "what needs me" outranks "how is the family" (UX6c, design §6.1); since
+          NOTIFY2b a line per group, each a door into *Notifications*, and one line when nothing is waiting. */}
+      <NeedsSummary attention={attention} presses={presses} onNotifications={onNotifications} />
 
       <div className="mb-5 grid grid-cols-[repeat(auto-fit,minmax(10.5rem,1fr))] gap-3">
         <Tile

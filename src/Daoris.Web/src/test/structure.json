@@ -1,5 +1,5 @@
 {
-  "modules": ["app", "data", "design", "lib", "locales", "bridge", "menus", "overview", "quests", "projects", "knowledge", "map", "agents", "asks", "compose", "help", "person", "plugins", "settings", "update", "work", "workflow", "test"],
+  "modules": ["app", "data", "design", "lib", "locales", "bridge", "menus", "overview", "quests", "projects", "knowledge", "map", "agents", "asks", "compose", "help", "notifications", "person", "plugins", "settings", "update", "work", "workflow", "test"],
   "entry": ["main.tsx", "tokens.css", "vite-env.d.ts"],
   "wide": [],
   "loose": {

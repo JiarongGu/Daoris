@@ -68,7 +68,7 @@
   "person.route.CANCEL_TURN": "停止一个会话的本轮",
   "person.route.END_CHAT": "结束一段对话",
   "person.route.WORK_ABANDON": "放弃一项工作",
-  "person.route.WORK_PAUSE": "暂停本机上的这项工作",
+  "person.route.WORK_PAUSE": "暂缓本机上的这项工作",
   "person.route.WORK_RESUME": "恢复这项工作",
   "person.route.WORK_HELD": "对为你保留的一次尝试给出你的意见",
   "person.route.HELP_DISMISS": "搁置问道衍的一项提议",
@@ -133,9 +133,9 @@
   "person.route.TOOLS_STOP": "停止一个工具的下载",
   "person.route.TOOLS_USE": "更改 Daoris 运行的工具版本",
   "person.route.TOOLS_GIT": "从你指定的文件运行 git",
-  "person.route.ASK_OPINION": "用你的一个账户请求第二意见",
+  "person.route.ASK_OPINION": "用你的一个账户获取第二意见",
   "person.route.HARNESSES_REFRESH": "重新读取一个智能体的账户",
   "person.route.REGISTRY.WRITE_DECLARATION": "将一份声明写入仓库",
   "person.route.REMOTES.SET": "将一个工作区接到远端",
-  "person.route.REMOTES.REMOVE": "将一个工作区从其远端断开"
+  "person.route.REMOTES.REMOVE": "将一个工作区从所接的远端断开"
 }

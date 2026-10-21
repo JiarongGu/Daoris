@@ -118,14 +118,14 @@ export function Confirmations({ waiting, onAnswer, notify, onShown, names }: {
   onShown?: (waiting: Confirmation) => void;
   names?: PressNames;
 }) {
-  const { t } = useTranslation();
   if (waiting.length === 0) return null;
+  // No landmark of its own: *Notifications*' group is the region these cards are drawn in.
   return (
-    <section aria-label={t('person.label')} className="grid gap-2">
+    <div className="grid gap-2">
       {waiting.map((each) => (
         <Card key={`${each.source}:${each.id}`} waiting={each} onAnswer={onAnswer} notify={notify} onShown={onShown} names={names} />
       ))}
-    </section>
+    </div>
   );
 }
 

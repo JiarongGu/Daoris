@@ -1,5 +1,7 @@
 {
   "overview.title": "总览",
+  "overview.needs.oldest": "最早的已等 {{age}}",
+  "overview.needs.door": "在通知中查看",
   "overview.description": "是否有事在搁置，家族是否健康——被管理之物的状态。",
   "overview.tiles.adopted.label": "已采用的仓库",
   "overview.tiles.adopted.note": "家族共 {{total}} 个",

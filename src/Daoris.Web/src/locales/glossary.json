@@ -50,6 +50,7 @@
       "case": "sentence",
       "keys": [
         "help.title", "projects.tab.branches", "projects.tab.details", "projects.tab.history", "projects.tab.setup", "projects.tab.workflow",
+        "notifications.title",
         "work.panel.title",
         "work.preview.tab",
         "work.review.tab",
@@ -62,7 +63,7 @@
       "budget": { "en": 32, "zh": 12 },
       "case": "sentence",
       "keys": [
-        "agents.section.rules", "agents.section.settings", "agents.section.workspaces", "work.composer.level",
+        "agents.section.rules", "agents.section.settings", "agents.section.workspaces", "work.composer.level", "person.label",
         "agents.list.absent", "agents.add.title", "agents.add.lists", "agents.place.title", "agents.rename.title",
         "asks.channel.title", "asks.group", "asks.record.files", "asks.record.goAheads", "asks.record.intake", "asks.record.links", "asks.record.proposal",
         "asks.record.stayed", "asks.record.went", "quests.detail.stayed", "quests.detail.went", "work.abandon.goes",
@@ -108,7 +109,7 @@
       "budget": { "en": 36, "zh": 14 },
       "case": "sentence",
       "keys": [
-        "settings.daoris.label.*", "about.index", "about.surface", "asks.channel.compose.to", "asks.channel.compose.reply", "asks.compose.circle", "asks.compose.sentence", "asks.compose.to",
+        "settings.daoris.label.*", "person.also", "person.role.*", "about.index", "about.surface", "asks.channel.compose.to", "asks.channel.compose.reply", "asks.compose.circle", "asks.compose.sentence", "asks.compose.to",
         "agents.col.account", "agents.col.state", "agents.col.runs", "agents.col.now", "agents.add.name", "agents.add.machine",
         "asks.record.abandonedAt", "asks.record.asked", "asks.record.asker", "asks.record.circle", "asks.record.closedBecause",
         "quests.detail.abandonedAt",
@@ -192,6 +193,7 @@
       "case": "sentence",
       "keys": [
         "agents.read.again", "agents.read.now", "harness.curve.setOwn", "harness.curve.add", "harness.curve.save", "harness.curve.clear",
+        "notifications.toast.open", "person.details",
         "agents.add.open", "agents.add.new", "agents.add.join", "agents.add.notNow", "agents.act.read", "agents.act.signInTo",
         "agents.act.place", "agents.rename.save",
         "update.whenIdle", "update.now", "update.notNow",
@@ -353,7 +355,7 @@
         "help.history.startFrom", "help.history.delete", "asks.record.clear", "quests.detail.clear", "quests.detail.clearFailed",
         "work.sync.now", "work.sync.remotes", "work.sync.syncing", "work.views.reset",
         "work.views.toPanel", "work.views.toRight", "work.composer.levelOrdinary", "work.composer.levelUrgent", "work.composer.levelNow",
-        "work.queue.makeUrgent", "work.queue.makeOrdinary"
+        "work.queue.makeUrgent", "work.queue.makeOrdinary", "notifications.open"
       ]
     },
     "command": {
@@ -410,7 +412,7 @@
       "room": "The 26rem toast clamped to two lines: about 720px of text-body; past it the sentence is cut.",
       "budget": { "en": 110, "zh": 55 },
       "case": "none",
-      "keys": []
+      "keys": ["notifications.toast.press", "notifications.toast.inMain"]
     },
     "sentence": {
       "what": "The platform explaining itself, and a row's meta fragments: a hint, a tip, a body, a description, 'filed 2d ago'.",
@@ -463,7 +465,8 @@
   ],
 
   "terms": [
-    { "term": "overview", "en": "Overview", "zh": "总览", "means": "The view that opens the day: what needs you, the tiles, what is outstanding.", "match": "\\boverview\\b", "avoid": { "en": [], "zh": [] } },
+    { "term": "overview", "en": "Overview", "zh": "总览", "means": "The view that opens the day: a summary of what needs you, a line per group, each a door into Notifications; then the tiles, what is outstanding.", "match": "\\boverview\\b", "avoid": { "en": [], "zh": [] } },
+    { "term": "notifications", "en": "Notifications", "zh": "通知", "means": "The view and the title bar's button holding everything that came to the person: the presses waiting for their confirmation, what needs them, messages, and what ended (D196).", "why": "通知 by the steward's default (the notification design §12), open to the owner. 通知中心 is Windows's and macOS's own name for the system's list, where Daoris's notifications land too, and an inbox holds messages alone.", "match": "\\bnotifications\\b", "avoid": { "en": ["inbox", "notification center"], "zh": ["通知中心", "消息中心"] } },
     { "term": "session", "en": "session", "zh": "会话", "means": "One line of work in one repository, started by the driver for a quest or by the person as a chat, however many runs it took: a retry, a carry-on, a resume, a hand-over and a sibling's request of the same ask are its parts (D167).", "why": "The person counts lines of work and the ledger counts runs; the window shows the first. 会话 stays, now the line of work, so a record is a part of it and never a session of its own.", "match": "\\bsessions?\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "part", "en": "part", "zh": "段", "means": "One run of a session, one record of its ledger: a retry, a carry-on, a resume, a hand-over or a request of the same ask is a further part of the same session, each with its own conversation (D167). Said as a count (3 parts) and a place (Part 2 of 3).", "why": "段 is a stretch of one thing, counted in order, which is what a session's runs are; a share of a whole would say each run is a fraction of the session, and a count of occasions would not say what each one holds.", "match": "\\b(\\d+|\\{\\{count\\}\\}|\\{\\{n\\}\\}|a|its|each|every|another|further|earlier|the) parts?\\b|\\bparts?\\b (?:of|began|strip)\\b|^Parts?\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "chat", "en": "chat", "zh": "聊天", "means": "A session the person started to talk with its agent, rather than one the driver started for a quest.", "why": "VS Code's zh-CN names its Chat view 聊天; 对话 is the conversation every structured session keeps.", "match": "\\bchats?\\b", "avoid": { "en": [], "zh": ["对话"] } },
@@ -736,18 +739,19 @@
       { "key": "harness.pin.pinned", "en": "pinned {{version}}", "zh": "已固定 {{version}}", "why": "A pill in the pin's row in Settings' agent card, a row that wraps; the version is the point, and a version is about six characters." },
       { "key": "projects.manage.noGit", "zh": "没有 git 历史", "why": "A chip in the Manage drawer, not a pill beside a row's title; git is three Latin letters at half a unit each." },
       { "key": "settings.tools.status.managed", "en": "managed {{version}}", "zh": "托管 {{version}}", "why": "The pill in a tool's card header in Settings, carrying the version, which is about six characters." },
-      { "key": "work.attention.intake", "en": "its intake asked you", "zh": "受理会话在等你回答", "why": "A dot's word on a What needs you row, in Overview's main area, in a row that wraps; no pill holds it." },
-      { "key": "work.attention.parked", "en": "parked at a checkpoint", "zh": "在检查点挂起", "why": "A dot's word on a What needs you row, in Overview's main area, in a row that wraps; no pill holds it." },
-      { "key": "work.attention.rule", "en": "an agent asks to do more", "zh": "智能体请求放宽权限", "why": "A dot's word on a What needs you row, in Overview's main area, in a row that wraps; no pill holds it." },
-      { "key": "work.attention.helper", "en": "an agent asks for a helper", "zh": "智能体想请助手", "why": "A dot's word on a What needs you row, in Overview's main area, in a row that wraps; no pill holds it, as the rule's beside it (MIXAGENT2c)." },
-      { "key": "work.attention.permission", "en": "an agent asks permission", "zh": "智能体请求权限", "why": "A dot's word on a What needs you row, in Overview's main area, in a row that wraps; no pill holds it, as the rule's and the helper's beside it (AUTONOMY1b3c)." },
+      { "key": "work.attention.intake", "en": "its intake asked you", "zh": "受理会话在等你回答", "why": "A dot's word on a What needs you row, in Notifications, at the side bar's 300px or in the panel, in a row that wraps (judged again for NOTIFY2b, where the rows moved from Overview's main area); no pill holds it." },
+      { "key": "work.attention.parked", "en": "parked at a checkpoint", "zh": "在检查点挂起", "why": "A dot's word on a What needs you row, in Notifications, at the side bar's 300px or in the panel, in a row that wraps (judged again for NOTIFY2b, where the rows moved from Overview's main area); no pill holds it." },
+      { "key": "work.attention.rule", "en": "an agent asks to do more", "zh": "智能体请求放宽权限", "why": "A dot's word on a What needs you row, in Notifications, at the side bar's 300px or in the panel, in a row that wraps (judged again for NOTIFY2b, where the rows moved from Overview's main area); no pill holds it." },
+      { "key": "work.attention.helper", "en": "an agent asks for a helper", "zh": "智能体想请助手", "why": "A dot's word on a What needs you row, in Notifications, at the side bar's 300px or in the panel, in a row that wraps (judged again for NOTIFY2b, where the rows moved from Overview's main area); no pill holds it, as the rule's beside it (MIXAGENT2c)." },
+      { "key": "work.attention.permission", "en": "an agent asks permission", "zh": "智能体请求权限", "why": "A dot's word on a What needs you row, in Notifications, at the side bar's 300px or in the panel, in a row that wraps (judged again for NOTIFY2b, where the rows moved from Overview's main area); no pill holds it, as the rule's and the helper's beside it (AUTONOMY1b3c)." },
       { "key": "work.wait.goOnAnswer", "en": "Go on with this answer", "why": "A wait's first button on a line of its own under the wait's sentence, in the session's head, at its foot and on a What needs you row, each of which wraps; the message-urgency design words it whole (§8.5), and a shorter word would not say that the answer is what goes on (COWORK1e)." },
-      { "key": "work.attention.trust", "en": "waiting on your trust", "zh": "等你授予信任", "why": "A dot's word on a What needs you row, in Overview's main area, in a row that wraps; no pill holds it." },
-      { "key": "work.attention.go-ahead", "en": "needs your go-ahead", "why": "A dot's word on a What needs you row, in Overview's main area, in a row that wraps; no pill holds it (UX6c)." },
-      { "key": "work.attention.act.publish", "en": "Publish to {{repositories}}", "zh": "发布给 {{repositories}}", "why": "A press on a What needs you row naming the repositories it publishes to, in Overview's main area on a row that wraps, not the side bar (UX6c, D150 §6.2)." },
-      { "key": "work.attention.act.chooseWhere", "en": "Choose where it goes…", "why": "A press on a What needs you row, in Overview's main area on a row that wraps; the design names it so (D150 §6.2), and it says the choice it opens." },
-      { "key": "work.attention.account-wait", "en": "waits for an account", "why": "A dot's word on a What needs you row, in Overview's main area, in a row that wraps; no pill holds it, and it is the quest page's word for the same wait (UX6d, D125 §4)." },
-      { "key": "work.attention.act.letRun", "en": "Let {{account}} run {{workspace}}…", "zh": "允许 {{account}} 运行 {{workspace}}…", "why": "A press on a What needs you row naming the account it lets in and the workspace that waits, in Overview's main area on a row that wraps; the account-use design names it so (D130 §9, UX6d)." },
+      { "key": "work.attention.trust", "en": "waiting on your trust", "zh": "等你授予信任", "why": "A dot's word on a What needs you row, in Notifications, at the side bar's 300px or in the panel, in a row that wraps (judged again for NOTIFY2b, where the rows moved from Overview's main area); no pill holds it." },
+      { "key": "work.attention.go-ahead", "en": "needs your go-ahead", "why": "A dot's word on a What needs you row, in Notifications, at the side bar's 300px or in the panel, in a row that wraps (judged again for NOTIFY2b, where the rows moved from Overview's main area); no pill holds it (UX6c)." },
+      { "key": "work.attention.act.publish", "en": "Publish to {{repositories}}", "zh": "发布给 {{repositories}}", "why": "A press on a What needs you row naming the repositories it publishes to, in Notifications, at the side bar's 300px or in the panel, on a row that wraps (judged again for NOTIFY2b, where the rows moved from Overview's main area), not the side bar (UX6c, D150 §6.2)." },
+      { "key": "work.attention.act.chooseWhere", "en": "Choose where it goes…", "why": "A press on a What needs you row, in Notifications, at the side bar's 300px or in the panel, on a row that wraps (judged again for NOTIFY2b, where the rows moved from Overview's main area); the design names it so (D150 §6.2), and it says the choice it opens." },
+      { "key": "work.attention.account-wait", "en": "waits for an account", "why": "A dot's word on a What needs you row, in Notifications, at the side bar's 300px or in the panel, in a row that wraps (judged again for NOTIFY2b, where the rows moved from Overview's main area); no pill holds it, and it is the quest page's word for the same wait (UX6d, D125 §4)." },
+      { "key": "work.attention.act.letRun", "en": "Let {{account}} run {{workspace}}…", "zh": "允许 {{account}} 运行 {{workspace}}…", "why": "A press on a What needs you row naming the account it lets in and the workspace that waits, in Notifications, at the side bar's 300px or in the panel, on a row that wraps (judged again for NOTIFY2b, where the rows moved from Overview's main area); the account-use design names it so (D130 §9, UX6d)." },
+      { "key": "notifications.title", "en": "Notifications", "why": "The view's tab in the side bar or the panel (NOTIFY2b): the selected tab shows its whole name, and the others give way to their icon, the bell, where the row cannot hold every name (TABS1), so the name is never cut; the notification design names it so (§6), and the window confirms the room." },
       { "key": "work.composer.opening", "en": "waiting for the conversation to open", "zh": "等待对话打开", "why": "The line above the composer's box saying what waits for the turn, at the centre's width; no pill holds it." },
       { "key": "work.composer.queued", "en": "waiting for this turn to end", "zh": "等待这一轮结束", "why": "The line above the composer's box saying what waits for the turn, at the centre's width; no pill holds it." },
       { "key": "work.panel.stream.state.session-ended", "en": "ended with its session", "why": "A panel tab's tip and accessible name, its kind and state; the tab shows its name and a mark." },

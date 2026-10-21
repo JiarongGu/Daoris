@@ -133,9 +133,9 @@
   "person.route.TOOLS_STOP": "stop a tool's download",
   "person.route.TOOLS_USE": "change which version of a tool Daoris runs",
   "person.route.TOOLS_GIT": "run git from a file you name",
-  "person.route.ASK_OPINION": "ask for a second opinion on one of your accounts",
+  "person.route.ASK_OPINION": "get a second opinion, read on one of your accounts",
   "person.route.HARNESSES_REFRESH": "read an agent's accounts again",
   "person.route.REGISTRY.WRITE_DECLARATION": "write a declaration into a repository",
   "person.route.REMOTES.SET": "wire a workspace to a remote",
-  "person.route.REMOTES.REMOVE": "unwire a workspace from its remote"
+  "person.route.REMOTES.REMOVE": "unwire a workspace from the remote it is wired to"
 }

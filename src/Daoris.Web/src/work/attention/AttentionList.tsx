@@ -26,8 +26,13 @@ export const attentionKey = (item: Attention) => `${item.kind}:${item.id}`;
  * Its kind wears open's hue on the card's edge and on each row's (D41 §3: waiting on the person is open's hue, everywhere
  * it is shown). A molecule: handed the rows, their doors and acts, it draws them and reports each press.
  */
-export function AttentionList({ items, doors = {}, run, acts, acting = null, held, below, onSessions }: {
+export function AttentionList({ items, doors = {}, run, acts, acting = null, held, below, onSessions, bare = false }: {
   items: readonly Attention[];
+  /**
+   * Its groups alone, with no card and no head of its own (NOTIFY2b): *Notifications*' group is its head, which says its name and
+   * its count.
+   */
+  bare?: boolean;
   doors?: AttentionDoors;
   /** A row's door into the run whose step it waits at (WORKFLOW1c), where it has one. */
   run?: (item: Attention) => (() => void) | undefined;
@@ -43,18 +48,20 @@ export function AttentionList({ items, doors = {}, run, acts, acting = null, hel
 }) {
   const { t } = useTranslation();
   return (
-    <div className="rounded-card border border-line border-l-[3px] border-l-st-open bg-raised px-0 pb-2 pt-3.5">
-      <header className="flex items-baseline justify-between gap-4 px-[1.15rem] pb-1">
-        <Tip content={t('work.attention.hint')}>
-          <h2 className="m-0 text-title font-semibold">{t('work.attention.title')}</h2>
-        </Tip>
-        <span className="font-mono text-meta tabular-nums text-ink-open">{items.length}</span>
-      </header>
+    <div className={bare ? 'border-l-[3px] border-l-st-open pb-1' : 'rounded-card border border-line border-l-[3px] border-l-st-open bg-raised px-0 pb-2 pt-3.5'}>
+      {!bare && (
+        <header className="flex items-baseline justify-between gap-4 px-[1.15rem] pb-1">
+          <Tip content={t('work.attention.hint')}>
+            <h2 className="m-0 text-title font-semibold">{t('work.attention.title')}</h2>
+          </Tip>
+          <span className="font-mono text-meta tabular-nums text-ink-open">{items.length}</span>
+        </header>
+      )}
       {attentionGroups(items).map(({ group, items: rows }) => {
         const shown = group === 'ready' ? rows.slice(0, READY_SHOWN) : rows;
         const more = rows.length - shown.length;
         return (
-          <div key={group} role="group" aria-label={t(`work.attention.group.${group}`)} className="mt-2">
+          <div key={group} role="group" aria-label={t(`work.attention.group.${group}`)} className={bare ? 'mt-1 first:mt-0' : 'mt-2'}>
             <div className="px-[1.15rem]"><SectionTitle level={3}>{t(`work.attention.group.${group}`)}</SectionTitle></div>
             <ul className="m-0 grid list-none gap-1 p-0">
               {shown.map((item) => (
@@ -110,12 +117,21 @@ export function NothingNeedsYou({ working }: { working: number }) {
  * The band's region, one element whatever it holds: the line while nothing waits and the list once something does are
  * one landmark, so a reader and a test holding it are not left with a node the page replaced as the answers arrived.
  */
-export function AttentionRegion({ children, resyncing = false }: {
+export function AttentionRegion({ children, resyncing = false, bare = false }: {
   children: ReactNode;
   /** Who needs the person read again whole (PUSHUX1): the last rows held at reduced opacity until it lands. */
   resyncing?: boolean;
+  /** Within *Notifications*' group (NOTIFY2b), which is the region: no landmark and no margin of its own. */
+  bare?: boolean;
 }) {
   const { t } = useTranslation();
+  if (bare) {
+    return (
+      <div aria-busy={resyncing || undefined} className={cn(resyncing && 'opacity-60 transition-opacity duration-(--speed)')}>
+        {children}
+      </div>
+    );
+  }
   return (
     <section
       aria-label={t('work.attention.title')}

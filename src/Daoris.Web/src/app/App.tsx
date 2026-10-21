@@ -1,9 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  useQuests, useRefreshIndex, useRepositories, useSessions,
+  useQuests, useRefreshIndex, useRegistry, useRepositories, useSessions,
   useStatus, useSyncStanding, useWorkspaceHoldings, useWorkspaces,
 } from '../data/queries';
+import { NotificationsBell } from '../notifications/NotificationsBell';
+import { type NotificationsAt, NotificationsView } from '../notifications/NotificationsView';
+import { usePressAnnouncements } from '../notifications/announce';
+import { sessionTitle } from '../work/identity';
+import { AttentionBand } from '../work/attention/AttentionBand';
 import { useScope } from '../data/scope';
 import { AskDaoris } from '../help/AskDaoris';
 import type { AskOpening } from '../help/AskConversation';
@@ -44,7 +49,7 @@ import {
   useSayUpdate, useShowReviewAgain, useSyncNow, useTaskbarCount, useUpdateState,
   useAnswerConfirmation, useConfirmationShown, usePersonKey, useServiceConfirmations, useTerminalConfirmations, useUnkeyedHost,
 } from '../bridge/shell';
-import { AdoptionNotice, Confirmations, confirmationAnchor } from '../person/Confirmations';
+import { AdoptionNotice, type Confirmation, type PressNames, routeKey } from '../person/Confirmations';
 import { byTool } from '../agents/tools';
 import { useSay } from '../bridge/sessions/conversation';
 import { UpdateBanner } from '../update/UpdateBanner';
@@ -300,6 +305,31 @@ export function App() {
   const answerConfirmation = useAnswerConfirmation();
   // CONFIRMSEEN1: a terminal's press's two minutes count from when this window, in front of the person, shows its card.
   const confirmationShown = useConfirmationShown();
+  // NOTIFY2b (the notification design §3.4): a service's press is shown when this window judges its card's region in view, which its
+  // door never hears; the window keeps that, so the bell's warning hue goes once each is shown here.
+  const [serviceShown, setServiceShown] = useState<ReadonlySet<string>>(() => new Set());
+  // Every press waiting, of either source, as the confirmation channel tells them (never a row's copy, §2.2).
+  const presses: Confirmation[] = useMemo(() => [
+    ...terminalConfirmations,
+    ...serviceConfirmations.map((each) => ({ ...each, shown: serviceShown.has(each.id) })),
+  ], [terminalConfirmations, serviceConfirmations, serviceShown]);
+  const pressShown = (waiting: Confirmation) => {
+    if (waiting.source === 'pipe') confirmationShown.mutate(waiting);
+    else setServiceShown((was) => new Set([...was, waiting.id]));
+  };
+  // *Notifications* (NOTIFY2b, §2.1): whether this window draws it; each ask for it shown where it stands, and the bell's presses,
+  // each counted, as Ask Daoris's are; and what a door asked to show there.
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notificationsShow, setNotificationsShow] = useState(0);
+  const [notificationsToggle, setNotificationsToggle] = useState(0);
+  const [notificationsAt, setNotificationsAt] = useState<NotificationsAt | null>(null);
+  const notificationsAsks = useRef(0);
+  const showNotifications = useCallback((at?: Omit<NotificationsAt, 'n'>) => {
+    notificationsAsks.current += 1;
+    const n = notificationsAsks.current;
+    if (at) setNotificationsAt({ ...at, n });
+    setNotificationsShow(n);
+  }, []);
   // Opening a window is the shell's act, not the page's (SURF8). In a browser it simply rejects,
   // which is why the commands that use it are gated on a shell being here.
   const openWindow = useOpenWindow();
@@ -442,11 +472,19 @@ export function App() {
   const presence: DriverPresence = driver.data
     ? (driver.data.ready === false ? 'starting' : 'running')
     : driver.isError ? 'stopped' : attached ? 'starting' : 'absent';
-  // Overview's badge, the band's own rows as .NET judged them (PUSH1d4) — two answers to "how many need me" would disagree the
-  // first time either was edited. Nothing before the first judgement, which is no count yet.
-  const waiting = attention.state === 'known' ? attention.rows.length : 0;
+  // The bell's count (NOTIFY2b, the notification design §2.1): each press of either source once, and every other row of What needs
+  // you as .NET judged them (PUSH1d4), a press's own row being its card. Two answers to "how many need me" would disagree the first
+  // time either was edited. Before the first judgement the rows are no count yet, and the presses count alone.
+  const needsRows = attention.state === 'known' ? attention.rows.filter((row) => row.kind !== 'confirmation').length : 0;
+  const waiting = presses.length + needsRows;
+  // While any press waits unshown, the bell wears the warning hue with the presses' own count (§3.3, Fable's F1.1).
+  const pressUnshown = presses.some((each) => each.shown !== true);
   // The same count on the window's taskbar button and in its title (NOTIFY1b), so it is seen with the window behind others.
   useTaskbarCount(waiting, t('nav.waiting', { count: waiting }));
+  // What a press's card names its references by (§3.2): a session as Sessions names it, its workspace beside it where its
+  // repository's name is in two workspaces, from the records the window holds; a quest by its name.
+  const allSessions = useSessions(null, true, attached);
+  const machineRegistry = useRegistry('machine');
   // 🔴 One count of the sessions the driver runs (SESSBADGE1, D76's note), the cap's own (CAPCOUNT1), judged in .NET beside the rows:
   // Sessions' badge counts it and the status bar says it, so the two never disagree; neither counts a conversation the person holds.
   // What waits on the person in Sessions (the sessions parked asking, the quests parked on their failed sessions) is marked beside it.
@@ -466,6 +504,44 @@ export function App() {
   // Titles for the quests in conflict, from the cache the Quests view fills anyway; one it has not
   // loaded is named by its id alone.
   const everything = useQuests(null, true);
+  const pressNames: PressNames = useMemo(() => {
+    const workspacesOf = new Map<string, Set<string>>();
+    for (const row of machineRegistry.data ?? []) {
+      if (!row.workspace) continue;
+      const held = workspacesOf.get(row.repository) ?? new Set<string>();
+      held.add(row.workspace);
+      workspacesOf.set(row.repository, held);
+    }
+    const quests = everything.data ?? [];
+    return {
+      session: (id) => {
+        const record = (allSessions.data ?? []).find((one) => one.id === id);
+        if (!record) return null;
+        const quest = record.quest ? quests.find((one) => one.id === record.quest) : undefined;
+        const collides = (workspacesOf.get(record.repository)?.size ?? 0) > 1;
+        return { title: sessionTitle(record, quest), repository: record.repository, workspace: collides ? record.workspace ?? null : null };
+      },
+      quest: (id) => quests.find((one) => one.id === id)?.title ?? null,
+    };
+  }, [allSessions.data, machineRegistry.data, everything.data]);
+  // A press said by a toast in the window in front (NOTIFY2b, §3.3): its act and the session it names, never a value; its door
+  // shows *Notifications* at its card. Said once, staying until the view opens or the press ends.
+  const pressToast = (press: Confirmation): string => {
+    if (press.act) return t('person.ask.for', { act: press.act });
+    const key = routeKey(press.module, press.route);
+    const act = t(key);
+    if (act === key) return t('person.ask.for', { act: press.route });
+    const session = press.named?.find((each) => each.role === 'session');
+    const named = session ? pressNames.session?.(session.value) : null;
+    return named ? t('notifications.toast.press', { act, session: named.title }) : t('person.ask.to', { act });
+  };
+  const announcements = usePressAnnouncements({
+    presses,
+    viewOpen: notificationsOpen,
+    words: pressToast,
+    openLabel: t('notifications.toast.open'),
+    onOpen: (press) => showNotifications({ press: press.id }),
+  });
   // Who is driving Daoris's browser (BRW8), named from the caches the frame already fills: the driver's
   // ids, the sessions, and the quests they serve. Said beside the browser's door and in its Settings.
   const driving = browserDrivers(driver.data?.drivingBrowser, running.data ?? [], everything.data ?? []);
@@ -645,6 +721,8 @@ export function App() {
     toggle: (region: LayoutRegion) => { toggleRegion(region); },
     reset: () => placements.reset(),
     frame: frameIntent,
+    // *Notifications* where it stands (NOTIFY2b, §2.1): View's row and the palette's, as the bell shows it.
+    notifications: () => showNotifications(),
     // A window is the shell's to open (SURF8), so neither is in a browser's table.
     monitor: () => openWindow.mutate(MONITOR_WINDOW),
     browser: () => openBrowser.mutate(),
@@ -893,15 +971,9 @@ export function App() {
     // A third answer alone held for the person opens the session whose line it would take on, whose head and foot carry its two presses
     // with its other waits (COWORK1e). A shell's alone: the marks are this machine's driver's.
     ...(attached ? { answer: (item: Attention) => { if (item.session) open('sessions', item.session); } } : {}),
-    // A terminal's press waiting for the window (CONFIRMSEEN1) opens its card, under the strip of this window, where every value it
-    // carries is read beside its Confirm. Focused as a region, never on a press: the card's default stays no. A shell's alone.
-    ...(attached ? {
-      confirmation: (item: Attention) => {
-        const card = document.getElementById(confirmationAnchor(item.id));
-        card?.scrollIntoView({ block: 'nearest' });
-        card?.focus();
-      },
-    } : {}),
+    // A terminal's press waiting for the window (CONFIRMSEEN1) opens its card in *Notifications* (NOTIFY2b), where every value it
+    // carries is read beside its Confirm. Brought into view, never pressed: the card's default stays no. A shell's alone.
+    ...(attached ? { confirmation: (item: Attention) => showNotifications({ press: item.id }) } : {}),
     // A unit only the clean-up's press settles (OVERVIEWNOISE1b) opens the workspace's Branches, where the session branches' list and
     // its presses are; a held attempt's presses are on its row. An unknown owner's branch named for a session the page holds opens that
     // session, whose page discards it too (FABRIC-UNKNOWN1c). A shell's alone.
@@ -972,10 +1044,10 @@ export function App() {
           <OverviewView
             onNavigate={(target) => open(target)}
             onOpenQuest={openQuest}
-            doors={attentionDoors}
             notify={notify}
-            onSessions={attached ? () => open('sessions') : undefined}
-            onRun={attached ? openRun : undefined}
+            // Its summary's lines, each a door into *Notifications* at its group (NOTIFY2b, §4): the app's alone.
+            presses={presses}
+            onNotifications={attached ? (group) => showNotifications({ group }) : undefined}
             onRefresh={onRefresh}
             refreshing={refresh.isPending}
           />
@@ -1008,7 +1080,12 @@ export function App() {
       {/* First (PUSHMOUNT1, as the secondary root since PUSH1a): its effects run before any view's, so the driver's state and the
           lines are read as the snapshot it asks and never pulled beside it. A notification is a door (design §4): clicking the OS
           balloon lands on that session rather than on whatever was last open. It renders nothing. */}
-      <ShellSignals notify={notify} onAttend={openInWork} attended={view === 'sessions' ? attending : null} />
+      <ShellSignals
+        notify={notify}
+        onAttend={openInWork}
+        attended={view === 'sessions' ? attending : null}
+        onConfirming={announcements.heard}
+      />
       {/* The application's one global row (D56). It holds what is true everywhere, which is exactly
           why none of it belongs in a sidebar owned by one view. Since SURF7 it is the window's own
           title bar. */}
@@ -1055,6 +1132,14 @@ export function App() {
         // with its key, and seven menus beside a command center reduced to its glyph need the room.
         trailing={attached ? (
           <div className="flex items-center gap-2">
+            {/* *Notifications* (NOTIFY2b, §2.1): first of the trailing group, before the browser's door, and on a narrow window
+                too, since it is how anything that came to the person is found. */}
+            <NotificationsBell
+              needs={waiting}
+              presses={presses.length}
+              warn={pressUnshown}
+              onPress={() => setNotificationsToggle((was) => was + 1)}
+            />
             <BrowserDoor onOpen={() => openBrowser.mutate()} drivers={driving} onAttend={openInWork} />
             {/* A set-up waiting for the person's review (REVIEWENV1d): said beside the browser, never inside it, which an
                 agent drives. */}
@@ -1108,17 +1193,9 @@ export function App() {
         />
       )}
 
-      {/* What waits for the person's Confirm (PERSONDOOR1f, RPC1c; D156 §4.2): under the strip and above every view, so a
-          terminal's press is seen whichever view is open, each answered where it is drawn; and the adoption notice, said once. */}
+      {/* The adoption notice (D156 §2.3), said once under the strip: about the window's own host. What waits for the person's
+          Confirm is drawn in *Notifications* and nowhere across the page (NOTIFY2b, the notification design §3.1). */}
       {attached && unkeyedHost && !unkeyedSaid && <AdoptionNotice onDismiss={() => setUnkeyedSaid(true)} />}
-      {attached && (
-        <Confirmations
-          waiting={[...terminalConfirmations, ...serviceConfirmations]}
-          onAnswer={(waiting, confirm) => answerConfirmation.mutateAsync({ waiting, confirm })}
-          notify={notify}
-          onShown={(waiting) => confirmationShown.mutate(waiting)}
-        />
-      )}
 
       {/* No narrow-window stacking. The 15rem sidebar this replaced had to become a top bar under
           768px (D41 §2) — a 48px icon rail does not, and stacking it was actively wrong: it put a
@@ -1136,14 +1213,14 @@ export function App() {
             tab: target,
             label: t(`nav.${target}`),
             icon,
-            // 🔴 A badge counts what its place holds (UX5 U20, as SESSBADGE1 amended it in D76's note): Overview the whole of
-            // What needs you, beside its band, a status in its hue. Sessions the sessions the driver runs, a quantity in the
-            // accent as outstanding quests are, with what waits on the person there marked beside it in the waiting hue.
+            // 🔴 A badge counts what its place holds (UX5 U20, as SESSBADGE1 amended it in D76's note). Sessions the sessions the
+            // driver runs, a quantity in the accent as outstanding quests are, with what waits on the person there marked beside it in
+            // the waiting hue. What needs the person is the title bar's bell's since NOTIFY2b (the notification design §4): a count
+            // lives in one place, and Overview lists no row.
             badge: target === 'quests' ? outstandingCount
-              : target === 'overview' ? waiting
-                : target === 'sessions' ? working
-                  : target === 'agents' ? agentsWaiting : undefined,
-            tone: target === 'overview' || target === 'agents' ? 'open' as const : undefined,
+              : target === 'sessions' ? working
+                : target === 'agents' ? agentsWaiting : undefined,
+            tone: target === 'agents' ? 'open' as const : undefined,
             waiting: target === 'sessions' && sessionsWaiting > 0,
             detail: target === 'sessions' && (working > 0 || sessionsWaiting > 0)
               ? [
@@ -1196,6 +1273,24 @@ export function App() {
               // Ask Daoris as a view of the frame's regions: one right region, never a second column.
               ask={<AskDaoris {...askProps} framed={false} opening={helpOpening} onOpened={() => setHelpOpening(null)} />}
               askFocus={helpFocus}
+              // *Notifications* as a view of the frame's regions (NOTIFY2b, §2.1): the presses of both sources as their cards, then
+              // What needs you; shown where it stands by the bell and every door into it.
+              notifications={(
+                <NotificationsView
+                  presses={presses}
+                  needs={attention.state === 'known' ? needsRows : null}
+                  working={working}
+                  attention={<AttentionBand inView doors={attentionDoors} notify={notify} onSessions={() => open('sessions')} onRun={openRun} />}
+                  onAnswer={(waiting, confirm) => answerConfirmation.mutateAsync({ waiting, confirm })}
+                  notify={notify}
+                  onShown={pressShown}
+                  names={pressNames}
+                  at={notificationsAt}
+                  onVisible={setNotificationsOpen}
+                />
+              )}
+              notificationsShow={notificationsShow}
+              notificationsToggle={notificationsToggle}
               // The person's own shell (CONSOLE4b): a frame is only drawn where a shell is attached.
               terminal
               closings={closings}
@@ -1353,7 +1448,8 @@ export function App() {
         </QuickAsk>
       )}
 
-      <Toasts items={toasts} onClose={dismiss} />
+      {/* A press's toast first, staying until the view opens or the press ends (NOTIFY2b, §3.3); then the window's outcomes. */}
+      <Toasts items={[...announcements.toasts, ...toasts]} onClose={(id) => { if (!announcements.close(id)) dismiss(id); }} />
       {/* The window's one right-click handler (CTX1, D138): each surface offers its acts, and it draws the menu. */}
       <ContextMenus doors={contextDoors} shell={chrome.present} />
     </div>

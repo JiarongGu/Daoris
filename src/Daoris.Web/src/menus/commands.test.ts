@@ -35,7 +35,7 @@ const state = (over: Partial<CommandState> = {}): CommandState => ({
 const doors = (): CommandDoors => ({
   ask: vi.fn(), quest: vi.fn(), scope: vi.fn(), add: vi.fn(), import: vi.fn(), workspaceSetup: vi.fn(), sync: vi.fn(),
   wire: vi.fn(), settings: vi.fn(), edit: vi.fn(), find: vi.fn(), searchKnowledge: vi.fn(), copyId: vi.fn(), palette: vi.fn(),
-  toggle: vi.fn(), reset: vi.fn(), frame: vi.fn(), monitor: vi.fn(), browser: vi.fn(), theme: vi.fn(), language: vi.fn(),
+  toggle: vi.fn(), reset: vi.fn(), frame: vi.fn(), notifications: vi.fn(), monitor: vi.fn(), browser: vi.fn(), theme: vi.fn(), language: vi.fn(),
   refresh: vi.fn(), go: vi.fn(), knowledge: vi.fn(), agent: vi.fn(), agentPart: vi.fn(), region: vi.fn(), sessionAct: vi.fn(), questAct: vi.fn(), help: vi.fn(),
   quickAsk: vi.fn(), setup: vi.fn(), shortcuts: vi.fn(), update: vi.fn(), about: vi.fn(),
 });
@@ -80,10 +80,16 @@ describe('each menu (the design §3.2)', () => {
 
   it('View: Commands, the regions, the views, the windows, Theme and Language, Refresh the index', () => {
     expect(ids(inMenu(table({ view: 'sessions', list: { shown: true } }), 'view'))).toEqual([
-      'view.commands', 'view.list', 'view.panel', 'view.side', 'view.reset', 'view.timeline', 'view.workflow', 'view.console', 'view.monitor',
-      'view.browser', 'view.theme:system', 'view.theme:light', 'view.theme:dark', 'view.language:en', 'view.language:zh',
-      'view.refresh',
+      'view.commands', 'view.list', 'view.panel', 'view.side', 'view.reset', 'view.notifications', 'view.timeline', 'view.workflow',
+      'view.console', 'view.monitor', 'view.browser', 'view.theme:system', 'view.theme:light', 'view.theme:dark', 'view.language:en',
+      'view.language:zh', 'view.refresh',
     ]);
+    // NOTIFY2b (the notification design §2.1): *Notifications* is reached from the one table, the menu and the palette alike.
+    const notifications = entry(table(), 'view.notifications');
+    const opened = doors();
+    commandTable(state(), opened, t).find((each) => each.id === 'view.notifications')!.run();
+    expect(opened.notifications).toHaveBeenCalledTimes(1);
+    expect(notifications?.label).toBe('notifications.open');
     // Theme and Language each open to their side, ticked as they stand.
     const theme = table({ theme: 'dark' }).filter((each) => each.submenu === 'menu.view.theme');
     expect(theme.map((each) => [each.id, each.checked])).toEqual([

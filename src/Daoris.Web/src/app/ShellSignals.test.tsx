@@ -210,7 +210,7 @@ describe('the shell push channel (ShellSignals)', () => {
    * CONFIRMSEEN1: a terminal's press waiting for the window is its card's and its row's; the shell's balloon is for when no window is
    * in front, so the page says it in no toast over the card.
    */
-  it("a terminal's press waiting for the window is no toast: its card and its row say it", () => {
+  it("a terminal's press waiting for the window is no toast of its words: its card and its row say it", () => {
     const notify = vi.fn();
     show(<ShellSignals notify={notify} />);
 
@@ -220,6 +220,22 @@ describe('the shell push channel (ShellSignals)', () => {
     });
 
     expect(notify).not.toHaveBeenCalled();
+  });
+
+  /**
+   * NOTIFY2b (the notification design §3.3): the press's own event, told once at its ask, is handed to the window by the press's id,
+   * which the window keys its announcement on; a snapshot of what waits is never what says it.
+   */
+  it("hands a terminal's press's event to the window by the press's id, and nothing without one", () => {
+    const onConfirming = vi.fn();
+    show(<ShellSignals notify={vi.fn()} onConfirming={onConfirming} />);
+
+    eventHandlers.get('DAORIS.SESSION_ATTENTION')!({ kind: 'Confirming', id: 'c1', session: null, headline: 'waits' });
+    eventHandlers.get('DAORIS.SESSION_ATTENTION')!({ kind: 'Confirming', session: null, headline: 'waits' });
+    eventHandlers.get('DAORIS.SESSION_ATTENTION')!({ kind: 'Parked', id: 'c2', session: 's1', headline: 'parked' });
+
+    expect(onConfirming).toHaveBeenCalledTimes(1);
+    expect(onConfirming).toHaveBeenCalledWith('c1');
   });
 
   it('an ending is news rather than a demand, and a session that said nothing still says something', () => {
