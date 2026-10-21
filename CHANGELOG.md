@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A press from a terminal that waits for your Confirm in Daoris's window is now said where you look. It is a row of *What
+  needs you*, counted in the badge and on the taskbar, whose *Confirm or refuse…* opens its card. While no Daoris window is in
+  front, a notification says it too. Its two minutes now count from when a window in front of you shows its card, and a
+  press nobody is shown is refused after ten minutes. In English and 中文.
 - A session that moved to another agent now reads as one session on its page. Its *Parts* say which agent each part was handed
   over or moved from, and why, such as *moved on from part 2 on codex: its own conversation was lost*. Each part's row says what it
   spent, in tokens over its turns, or that its turns did not report them. Where a line of work ran on more than one agent, the

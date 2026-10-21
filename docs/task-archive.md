@@ -18786,3 +18786,15 @@ its foot and line in en and zh. A close found closed only in part is live again 
 so `WORK_HELD`'s `stop` is taken on it (any other word refused `part-stop`), offered as a What needs you row and applied by the closer.
 Proof: `QuestCloseTests`, `WorkStateSliceTests`, `AttentionStateSliceTests`, `WorkMilestone.test.tsx` in both languages. A quest
 unit's milestone on the page stays open as FABRIC-CLOSE1j2. Detail: D173's FABRIC-CLOSE1j note.
+
+## CONFIRMSEEN1 — a terminal's press waiting for the window is seen where the person looks (2026-10-21, D156)
+
+> - [ ] **CONFIRMSEEN1 — a terminal's press waiting for the window is seen where the person looks** (modules, web-shell; found 2026-10-21; D156 §4.2, RPC1c). On 2026-10-21 five presses from a terminal (two `sessions say`, three `sessions finish`) each waited for the window's Confirm and expired after two minutes. The owner was at the machine and asked about the stuck session itself. The machine log says each was `asked` then `expired` (`person.confirmation`) and nothing says it was shown. Wanted: the card where the person looks: a row of *What needs you* the badge counts, a notification while the window is in the background (the taskbar's flash or the system's toast), the log saying `shown`, and its two minutes counted from when it is shown. Read whether two minutes is the right bound for a press a person must find. Proof: modules tests that a terminal's press raises the row and the notification, and is logged `shown`; the window with a press from a terminal.
+
+**Outcome** 2026-10-21: built. A press now waits ten minutes to be found (`PipeConfirmations.FindWithin`); its two minutes count
+from the card's first showing in a window that is visible and focused (`PERSON_CONFIRM_SHOWN`, the window's), logged `shown`.
+Two minutes stays the bound once shown. Each press is a `confirmation` row of *What needs you* in *Holding work*, counted by the
+badge and the taskbar, whose one control opens the card. Asked, it raises `SESSION_ATTENTION` `Confirming`, the shell's warning
+balloon while no window is in front. Proof: `PipeConfirmTests`, `DriverModulePersonTests`, `AttentionStateSliceTests`,
+`SessionBalloonTests`, and the page's person, attention and signals tests in en and zh. The window with a press from a terminal
+is the parent's installed proof; the taskbar is not flashed. Detail: D156's CONFIRMSEEN1 note.
