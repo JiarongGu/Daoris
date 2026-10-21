@@ -93,5 +93,9 @@
   "work.milestone.held.act.resend": "再问一次结果",
   "work.milestone.held.act.stopClose": "停止余下的工作",
   "work.milestone.held.word.record": "重新记下结果",
-  "work.milestone.held.word.resend": "再问一次结果"
+  "work.milestone.held.word.resend": "再问一次结果",
+  "work.milestone.unreadable.title": "{{unit}} 的记录无法读取",
+  "work.milestone.unreadable.titleUnnamed": "有一份工作记录无法读取（{{file}}）",
+  "work.milestone.unreadable.detail": "在它的记录 {{file}} 于存放处修好之前，这项工作不会被判断，也不会开始。Daoris 从不把它当作空记录，否则它记着的步骤可能被发送两次。",
+  "work.milestone.unreadable.act.open": "打开所在文件夹"
 }

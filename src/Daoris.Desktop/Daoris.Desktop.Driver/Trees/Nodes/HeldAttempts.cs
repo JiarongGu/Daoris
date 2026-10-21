@@ -86,10 +86,14 @@ public static class HeldAttempts
     /// </summary>
     public static IReadOnlyList<UnreadableRecord> Unreadable(NodeRecordFiles records, string? unit = null) =>
         [.. records.Unread()
-            .Where(record => unit is null || string.Equals(record.Unit, unit, StringComparison.Ordinal)
-                || string.Equals(record.File, NodeRecordFiles.KeyOf(unit) + ".json", StringComparison.Ordinal))
+            .Where(record => unit is null || Picks(record, unit))
             .OrderBy(record => record.At ?? DateTimeOffset.MaxValue)
             .ThenBy(record => record.File, StringComparer.Ordinal)];
+
+    /// <summary>Whether a record that does not read is <paramref name="unit"/>'s: the unit its text names, or its file's name that unit's key.</summary>
+    public static bool Picks(UnreadableRecord record, string unit) =>
+        string.Equals(record.Unit, unit, StringComparison.Ordinal)
+        || string.Equals(record.File, NodeRecordFiles.KeyOf(unit) + ".json", StringComparison.Ordinal);
 
     /// <summary>What a node record that does not read stops, as the terminal says it; the page words the same in the reader's language.</summary>
     public static string UnreadableSaid(UnreadableRecord record) =>

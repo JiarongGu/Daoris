@@ -87,6 +87,18 @@ export type HeldAttempt = {
   words?: HeldResolution[] | null;
 };
 
+/**
+ * A unit's node record whose file does not read (FABRIC-PERFORM1j, the fabric events design §D3): nothing on its unit is judged or started
+ * until the person mends it. `file` is its name in the records' folder; `unit` the unit it still names, or null; `at` when it was last
+ * written; `said` the driver's sentence.
+ */
+export type UnreadableRecord = {
+  file: string;
+  unit?: string | null;
+  at?: string | null;
+  said: string;
+};
+
 export type MilestoneUnit = {
   unit: string;
   repository: string;
@@ -104,9 +116,9 @@ export type MilestoneUnit = {
 /**
  * What `WORK_STATE` answers: the units, Daoris's own recoveries no unit names (RECOVERYVIEW1, CLEANUP1: a folder moved aside, a
  * recovery ref), what could not be read (a repository with no checkout here), and every attempt held for the person, of any unit
- * (FABRIC-PERFORM1g: a quest's too, which no milestone names).
+ * (FABRIC-PERFORM1g: a quest's too, which no milestone names), and every node record that does not read (FABRIC-PERFORM1j).
  */
-export type WorkState = { units: MilestoneUnit[]; recovery: MilestoneEntry[]; unread: string[]; held: HeldAttempt[] };
+export type WorkState = { units: MilestoneUnit[]; recovery: MilestoneEntry[]; unread: string[]; held: HeldAttempt[]; unreadable: UnreadableRecord[] };
 
 /** The why codes the page has words for; any other is the one table's refusal of an outcome, said with its code. */
 const HELD_WHY = ['unknown', 'no-reconcile', 'no-outcome', 'not-current', 'not-on-word'] as const;
@@ -203,12 +215,16 @@ export function workOf(all: WorkState, unit: string | null): WorkState {
   const units = all.units.filter((each) => same(each.unit) || same(each.session) || each.branch === unit || each.branch === `daoris/${unit}`
     || each.entries.some((entry) => (entry.kind === 'landing-branch' || entry.kind === 'session-branch') && entry.resource === unit));
   const ids = new Set(units.map((each) => each.unit));
-  return { units, recovery: [], unread: all.unread, held: all.held.filter((each) => ids.has(each.unit)) };
+  // FABRIC-PERFORM1j: a record that does not read, by the unit it names; one naming none the route picks by its file's key alone.
+  return {
+    units, recovery: [], unread: all.unread, held: all.held.filter((each) => ids.has(each.unit)),
+    unreadable: all.unreadable.filter((each) => !!each.unit && (ids.has(each.unit) || same(each.unit))),
+  };
 }
 
 /** Older shells answer nothing of the kind, and a malformed answer reads as none. */
 export function readWorkState(answer: unknown): WorkState {
-  const read = answer as { units?: unknown; recovery?: unknown; unread?: unknown; held?: unknown } | null | undefined;
+  const read = answer as { units?: unknown; recovery?: unknown; unread?: unknown; held?: unknown; unreadable?: unknown } | null | undefined;
   // FABRIC-PERFORM1g: a shell older than the field answers none held.
   const held = Array.isArray(read?.held) ? read.held as HeldAttempt[] : [];
   const units = Array.isArray(read?.units) ? read.units as MilestoneUnit[] : [];
@@ -217,5 +233,7 @@ export function readWorkState(answer: unknown): WorkState {
     recovery: Array.isArray(read?.recovery) ? read.recovery as MilestoneEntry[] : [],
     unread: Array.isArray(read?.unread) ? read.unread.filter((each): each is string => typeof each === 'string') : [],
     held,
+    // FABRIC-PERFORM1j: a shell older than the field answers none.
+    unreadable: Array.isArray(read?.unreadable) ? read.unreadable as UnreadableRecord[] : [],
   };
 }
