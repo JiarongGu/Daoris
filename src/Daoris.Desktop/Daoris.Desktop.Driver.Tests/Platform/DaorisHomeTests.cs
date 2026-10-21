@@ -325,6 +325,19 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
+    /// KEEP1a (D195 point 2, the cleanup design §2.3): the record of the keeping rules' runs, a file of the machine's own in
+    /// <c>data/</c> (the install layout design §2's seventh test), after the usage history, as the three twins hold it.
+    /// </summary>
+    [Fact]
+    public void The_keeping_record_is_a_data_file_after_the_usage_history()
+    {
+        Assert.Same(HomeEntry.Keeping, HomeEntry.Named("keeping"));
+        Assert.Equal((HomeCategory.Data, "data/keeping.json", "keeping.json"), (HomeEntry.Keeping.Category, HomeEntry.Keeping.New, HomeEntry.Keeping.Old));
+        var table = HomeEntry.Table.ToList();
+        Assert.Equal(table.IndexOf(HomeEntry.UsageHistory) + 1, table.IndexOf(HomeEntry.Keeping));
+    }
+
+    /// <summary>
     /// HELPMODE1c2a (D183's note): Ask Daoris's configured access, a data file of the person's choices at the home's root, named
     /// with no <c>help-</c> prefix, since a workspace's room folder is matched by <c>help-*</c>.
     /// </summary>

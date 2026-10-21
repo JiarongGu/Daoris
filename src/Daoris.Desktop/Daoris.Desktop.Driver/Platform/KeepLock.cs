@@ -125,8 +125,8 @@ internal sealed class KeepLock : IDisposable
         }
     }
 
-    /// <summary>Whether a process runs with this id; one whose state is not ours to read still runs.</summary>
-    private static bool Lives(int pid)
+    /// <summary>Whether a process runs with this id; one whose state is not ours to read still runs. The run lock's holder reads it too.</summary>
+    internal static bool Lives(int pid)
     {
         try
         {

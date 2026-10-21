@@ -185,6 +185,22 @@ public sealed class WorkInventoryTests
         Assert.Contains(unit.Entries, entry => entry.Kind == "tree");
     }
 
+    /// <summary>
+    /// KEEP1a (the cleanup design §5): a folder set aside whose package folders the slim dropped says which, in the line the work
+    /// inventory and <c>work state</c> show, beside its date.
+    /// </summary>
+    [Fact]
+    public void A_slimmed_folder_s_line_names_the_package_folders_it_dropped()
+    {
+        var entry = One(Facts(branches: [Grown(gone: Then)], trees: [Aside("s1", Then) with { Slimmed = ["node_modules", "web/node_modules"] }]))
+            .Entries.Single(each => each.Kind == "moved-aside");
+
+        Assert.Equal(
+            "moved aside 2026-10-17 09:00 UTC; its package folders went an hour after (node_modules, web/node_modules), which `npm ci` "
+            + "makes again; deleted once it is left untouched until 2026-10-31 09:00 UTC",
+            entry.Detail);
+    }
+
     [Fact]
     public void A_moved_aside_folder_is_recovery_retained_until_fourteen_days_after_it_moved()
     {

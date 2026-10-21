@@ -226,7 +226,7 @@ public sealed class BranchTidyingFolderTests : BranchTidyingFixture
         Directory.CreateDirectory(linked);
         await JunctionAsync(Path.Combine(linked, "data"), data);
 
-        var purged = new SessionTrees(_home).PurgeSetAside(moved.AddDays(15), BranchTidying.SetAsideFor);
+        var purged = new SessionTrees(_home).PurgeSetAside(moved.AddDays(15), KeepKinds.SetAside.Days);
 
         Assert.Equal(2, purged.Count);
         Assert.True(purged.Single(each => each.Folder == built).Purged, purged.Single(each => each.Folder == built).Kept);
