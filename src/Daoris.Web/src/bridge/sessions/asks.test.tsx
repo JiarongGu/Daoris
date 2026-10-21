@@ -31,6 +31,8 @@ import {
   channelKey, elsewhereKey, useChannel, useElsewhereAsks, useChannelUnreads, useForwardChannel, useMarkChannel, usePostChannel,
 } from './asks';
 import { useStateHub } from '../state/stateHub';
+import { pushedOf } from '../state/slices';
+import { noticesSlice } from '../notices';
 
 const wrapper = (client: QueryClient) => ({ children }: { children: ReactNode }) => (
   <QueryClientProvider client={client}>{children}</QueryClientProvider>
@@ -87,6 +89,49 @@ describe('the asks domain', () => {
 
     await waitFor(() => expect(result.current).toEqual({ a1: 3, a2: 0 }));
     expect(client.getQueryData(channelKey('a1'))).toMatchObject({ unread: 3 });
+  });
+
+  /**
+   * NOTIFY2g (the notification design §2.5): once the `notices` slice is live with its `messages` partition, each ask's count is the
+   * partition's, the service's own, with no CHANNEL_READ per ask; an ask the partition does not hold (a closed one a rail names) is
+   * still pulled, and a slice without the partition pulls every one as before.
+   */
+  it('reads the counts from the messages partition once live, with no CHANNEL_READ per ask, and pulls where it is not', async () => {
+    const live = async (partitions: Record<string, unknown>) => {
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      invoke.mockImplementation(async (_module: string, route: string, { payload }: { payload: { ask?: string; slice?: string } }) => (
+        route === 'STATE_SLICE'
+          ? {
+            slice: 'notices', epoch: 'e1', status: 'ready',
+            partitions: Object.entries(partitions).map(([partition, data]) => ({ partition, seq: 1, status: 'ready', data })),
+          }
+          : { ...CHANNEL, ask: payload.ask, unread: 9 }));
+      pushedOf(client).register(noticesSlice);
+      await pushedOf(client).resync('notices');
+      invoke.mockClear();
+      return client;
+    };
+    const messages = {
+      a1: { ask: 'a1', workspace: 'default', teammate: false, unread: 3 },
+      a2: { ask: 'a2', workspace: 'default', teammate: false, unread: 0 },
+    };
+
+    const pushed = await live({ news: {}, messages });
+    const { result } = renderHook(() => useChannelUnreads(['a1', 'a2']), { wrapper: wrapper(pushed) });
+    await waitFor(() => expect(result.current).toEqual({ a1: 3, a2: 0 }));
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'CHANNEL_READ', expect.anything());
+
+    // A closed ask the partition does not hold is read from its channel.
+    const closed = renderHook(() => useChannelUnreads(['a1', 'a9']), { wrapper: wrapper(pushed) });
+    await waitFor(() => expect(closed.result.current).toEqual({ a1: 3, a9: 9 }));
+    expect(invoke).toHaveBeenCalledTimes(1);
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'CHANNEL_READ', { payload: { ask: 'a9' } });
+
+    // A shell that pushes no messages partition: every ask's channel is pulled, as before.
+    const older = await live({ news: {} });
+    const pulled = renderHook(() => useChannelUnreads(['a1', 'a2']), { wrapper: wrapper(older) });
+    await waitFor(() => expect(pulled.result.current).toEqual({ a1: 9, a2: 9 }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'CHANNEL_READ', { payload: { ask: 'a1' } });
   });
 
   /** SESSONE2h: the asks held elsewhere are one read of the driver, under the asks' key; a shell before it answers none. */

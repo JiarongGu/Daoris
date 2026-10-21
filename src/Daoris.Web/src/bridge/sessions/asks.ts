@@ -1,6 +1,9 @@
+import { useMemo } from 'react';
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
-import { keys } from '../../data/queries';
+import { keys, NOTICES_SLICE } from '../../data/queries';
+import { useAskMessages } from '../notices';
+import { usePushedLive } from '../state/slices';
 import {
   type Channel, type ChannelForwarded, channelOf, type ChannelPost, type ChannelPosted, elsewhereOf, forwardedOf, postedOf,
 } from '../../work/channel';
@@ -45,20 +48,38 @@ export const useChannel = (ask: string | null, { enabled = true }: { enabled?: b
  * How many items of each ask's channel are past the person's mark, for the ask's row and the list by ask. The same reads as
  * `useChannel`, under the same key, so a row's count and the page's section ask once. An ask whose channel could not be read
  * has no entry; nothing is asked in a browser.
+ *
+ * @remarks
+ * **Pushed once live** (NOTIFY2g, the notification design §2.5): where the `notices` slice is live with its `messages` partition,
+ * each ask's count is the partition's, the service's own for the person's mark, and no channel is read for it; an ask the partition
+ * does not hold (a closed one a rail names) is still pulled. A channel is still pulled where it is read whole (`useChannel`).
  */
 export const useChannelUnreads = (asks: readonly string[], { enabled = true }: { enabled?: boolean } = {}): Readonly<Record<string, number>> => {
   const { isAvailable } = useShenora();
-  return useQueries({
+  const live = usePushedLive(NOTICES_SLICE);
+  const pushed = useAskMessages();
+  const counts = useMemo(
+    () => (live && pushed ? new Map(pushed.map((entry) => [entry.ask, entry.unread])) : null),
+    [live, pushed],
+  );
+  const pulled = useQueries({
     queries: asks.map((ask) => ({
       queryKey: channelKey(ask),
       queryFn: () => readChannel(ask),
-      enabled: isAvailable && enabled,
+      enabled: isAvailable && enabled && !counts?.has(ask),
       refetchOnWindowFocus: false,
     })),
     combine: (results) => Object.fromEntries(
       results.flatMap((result, at): [string, number][] => (result.data ? [[asks[at], result.data.unread]] : [])),
     ),
   });
+  return useMemo(() => {
+    if (!counts) return pulled;
+    return Object.fromEntries(asks.flatMap((ask): [string, number][] => {
+      const unread = counts.get(ask) ?? pulled[ask];
+      return unread === undefined ? [] : [[ask, unread]];
+    }));
+  }, [asks, counts, pulled]);
 };
 
 /** Under the asks' key, like each channel: a tick asks the asks again, and the teammates' asks follow. */
