@@ -9,6 +9,10 @@ with the version and date at release.
   over or moved from, and why, such as *moved on from part 2 on codex: its own conversation was lost*. Each part's row says what it
   spent, in tokens over its turns, or that its turns did not report them. Where a line of work ran on more than one agent, the
   head says which agent it is on now. In English and 中文.
+- Where a workflow closes its own quests, the page now says when you closed the quest before the workflow's end, naming the steps
+  that stopped, and when a close went through only in part because another machine won one quest's take. In that case its close
+  step would otherwise close that quest over the other machine's take, so *What needs you* offers *Stop its close*. Both are said
+  in English and Chinese.
 - A session's work now lands on its line's current tip. Where the line moved since the session's tree began, Accept, and the
   automatic landing at done, replay the work onto the line first, as they already did where the line held some of it: a branch
   made for it grows from the line's tip, a merge merges the replay, and the session's tree follows what landed. The review says so

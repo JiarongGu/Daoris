@@ -18754,3 +18754,13 @@ Detail: D189's SESSCTX1d note.
 additive `unreadable`, the work slice's `<held>` partition, and `daoris-driver work held`. *What needs you* has a `work` row for each,
 worded in en and zh, whose press opens the records' folder (`WORK_RECORDS_FOLDER`) for the person to mend it. Proof: driver, modules
 and page tests listed in D173's note. On Opus: about 120 tool calls. Detail: D173's FABRIC-PERFORM1j note.
+## FABRIC-CLOSE1j — "closed by you before its end" and "partially closed" on the page (2026-10-21, D173)
+
+> - [ ] **FABRIC-CLOSE1j — "closed by you before its end" and "partially closed" on the page** (web, driver; §E5, §D0). The milestone reads the `overridden` and `partially-closed` history entries and offers to stop the node (PERFORM1g's doors). Proof: web tests in both languages; a driver milestone test.
+
+**Outcome** 2026-10-21: built. `GraphEnds.Read` derives both ends from the node records' history, and the override now keeps an entry
+for every node it stops; `WORK_STATE` answers them as `ends` and the work slice pushes them in `<held>`. The milestone says each on
+its foot and line in en and zh. A close found closed only in part is live again and would close the lost quest over the winner's take,
+so `WORK_HELD`'s `stop` is taken on it (any other word refused `part-stop`), offered as a What needs you row and applied by the closer.
+Proof: `QuestCloseTests`, `WorkStateSliceTests`, `AttentionStateSliceTests`, `WorkMilestone.test.tsx` in both languages. A quest
+unit's milestone on the page stays open as FABRIC-CLOSE1j2. Detail: D173's FABRIC-CLOSE1j note.

@@ -591,6 +591,9 @@ public sealed class LinesRoutes(DriverContext context)
             Unreadable = UnreadableAnswer(HeldAttempts.Unreadable(new NodeRecordFiles(_loop.Home))
                 .Where(record => Optional(request, "unit") is not { } picked
                     || units.Select(unit => unit.Unit).Append(picked).Any(unit => HeldAttempts.Picks(record, unit)))),
+            // FABRIC-CLOSE1j, additive: the closure graphs ended by the person's own done, or closed only in part, read from the same records.
+            Ends = EndsAnswer(GraphEnds.Read(new NodeRecordFiles(_loop.Home))
+                .Where(end => Optional(request, "unit") is not { } picked || end.Unit == picked || units.Any(unit => unit.Unit == end.Unit))),
         };
     }
 
@@ -658,6 +661,16 @@ public sealed class LinesRoutes(DriverContext context)
 
         return new { Opened = true };
     }
+
+    /// <summary>
+    /// The closure graphs' ends as the wire carries them (FABRIC-CLOSE1j): <c>kind</c> <c>overridden</c> with the <c>nodes</c> it stopped,
+    /// or <c>partially-closed</c> with the <c>quest</c> lost, its close <c>node</c> and <c>attempt</c>, and <c>words</c> (<c>stop</c>, said
+    /// through <c>WORK_HELD</c>) while that node is live again. A page before the field reads without it.
+    /// </summary>
+    public static object[] EndsAnswer(IEnumerable<GraphEnd> ends) =>
+    [
+        .. ends.Select(each => new { each.Unit, each.Kind, each.At, each.Nodes, each.Quest, each.Node, each.Attempt, each.NodeState, each.Resolution, each.Words }),
+    ];
 
     // The person's word on a plugin step's attempt held for them (FABRIC-PERFORM1g, D173's note): the page's half of `daoris-driver work
     // held <unit> <node> <attempt> <word>`. Both doors end in HeldAttempts.Word, which records it under the unit's node record's lock with

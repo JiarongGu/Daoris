@@ -954,6 +954,8 @@ public sealed class NodeRuntime(
                 var moved = NodeLifecycle.Apply(governed.Declared[node.Id], status, new NodeMove(NodeStates.Stopped, NodeCause.Person) { Words = "closed by you before its end" });
                 if (!moved.Moved) continue;
                 next = WorkPerformer.Kept(next, moved, QuestClosing.Overridden, now);
+                // FABRIC-CLOSE1j: the milestone reads the override from its entries, so a stop that cleared nothing keeps one too.
+                if (moved.Cleared is null) next = next with { History = [.. next.History, new NodeHistory(now, QuestClosing.Overridden, status)] };
                 names.Add(node.Id);
             }
 
