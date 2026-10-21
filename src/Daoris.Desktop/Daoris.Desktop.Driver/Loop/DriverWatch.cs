@@ -339,7 +339,8 @@ public sealed class DriverWatch(
         // The session branches tidied beside the looks (AUTOTIDY1, AUTOTIDY2a): a pass once each pace, its lines joining the report
         // of the look that finds it done, as the following's do.
         // KEEP1b: the downloads' rule reads and locks the loop's own choices, as the Downloads row's press does.
-        var tidy = Tidying ?? new BranchTidying(home) { ConfigPath = configPath, Sizes = SpaceSizes.Shared };
+        // NOTIFY2h2: each of its lines classed as it is made, the look's pass's and link 2's alike.
+        var tidy = Tidying ?? new BranchTidying(home) { ConfigPath = configPath, Sizes = SpaceSizes.Shared, Look = Lines };
         Task<IReadOnlyList<string>>? tidying = null;
 
         // What woke each look, for its line in the machine log (FABRIC-EVENT2): the loop's start, its pace, a session's end, or a
@@ -625,8 +626,7 @@ public sealed class DriverWatch(
                         await OrphansDueAsync(orphans, config, ct).ConfigureAwait(false);
                         // COWORK1c (the message-urgency design §6, trap 8): the words a shell before this one wrote to its agent and never
                         // took off leave their records, said where their conversation never showed them taken, and are never sent again.
-                        carried.AddRange(Lines.Each(
-                            LookClass.Progress, "uncertain", await Stages.TimeAsync("uncertain", () => UncertainWords.SettleAsync(service, events, ct)).ConfigureAwait(false)));
+                        carried.AddRange(await Stages.TimeAsync("uncertain", () => UncertainWords.SettleAsync(service, events, ct, Lines)).ConfigureAwait(false));
                     }
 
                     if (!followed) following ??= FollowEveryLineAsync(config, ct);
@@ -648,7 +648,8 @@ public sealed class DriverWatch(
                         if (lines is not null)
                         {
                             followed = true;
-                            if (lines.Count > 0) report = report with { Events = [.. report.Events, .. Lines.Each(LookClass.Progress, "registry", lines)] };
+                            // Classed where the pass made them (NOTIFY2h2).
+                            if (lines.Count > 0) report = report with { Events = [.. report.Events, .. lines] };
                         }
                     }
 
@@ -656,7 +657,8 @@ public sealed class DriverWatch(
                     {
                         tidying = null;
                         // A pass that failed past its own catches is said, and so observed, rather than left to the finalizer.
-                        IReadOnlyList<string> lines = tidied.IsCompletedSuccessfully ? Lines.Each(LookClass.Progress, "tidy", tidied.Result)
+                        // Classed where the tidy made them (NOTIFY2h2).
+                        IReadOnlyList<string> lines = tidied.IsCompletedSuccessfully ? tidied.Result
                             : tidied.Exception?.InnerException is { } failure
                                 ? [Lines.Retry("tidy", $"tidy  the session branches were not looked at this time, and are looked at again later: {failure.Message}")]
                                 : [];
@@ -666,7 +668,8 @@ public sealed class DriverWatch(
                     // What link 2 removed or kept since the last look (FABRIC-END4a).
                     lock (effected)
                     {
-                        if (effected.Count > 0) report = report with { Events = [.. report.Events, .. Lines.Each(LookClass.Progress, "tidy", effected)] };
+                        // Classed where the tidy made them (NOTIFY2h2).
+                        if (effected.Count > 0) report = report with { Events = [.. report.Events, .. effected] };
                         effected.Clear();
                     }
 
@@ -893,7 +896,7 @@ public sealed class DriverWatch(
             catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException
                                               or IOException or UnauthorizedAccessException)
             {
-                return [$"tidy  the session branches were not looked at this time, and are looked at again later: {error.Message}"];
+                return [Lines.Retry("tidy", $"tidy  the session branches were not looked at this time, and are looked at again later: {error.Message}")];
             }
         }, CancellationToken.None);
     }
@@ -911,10 +914,13 @@ public sealed class DriverWatch(
                 var report = await Stages.TimeAsync(
                         "follow", () => RegistrationFollow.FollowAsync(new RegistrationWorld(service, home, config), only: null, ct), beside: true)
                     .ConfigureAwait(false);
+                // Each line classed as it is made (NOTIFY2h2).
                 return
                 [
-                    .. report.Followed.Select(RegistrationFollow.EventLine).OfType<string>(),
-                    .. report.Refresh is { } refresh ? [$"registry  the index was not read again after registering: {refresh}"] : Array.Empty<string>(),
+                    .. report.Followed.Select(followed => RegistrationFollow.EventLine(followed, Lines)).OfType<string>(),
+                    .. report.Refresh is { } refresh
+                        ? [Lines.Retry("registry", $"registry  the index was not read again after registering: {refresh}")]
+                        : Array.Empty<string>(),
                 ];
             }
             catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)

@@ -133,10 +133,12 @@ public sealed class ReviewDesk(IReviewTabs tabs)
     /// Each look (design §2.3, *kept shown, then stopped*): the set-ups waiting for the person here, from the quests the look read;
     /// and each tab served whose set-up the person answered, whose quest is declined or gone, or whose tree went, let go. A served
     /// quest off <paramref name="quests"/>, the outstanding list, is read whole by <paramref name="find"/> before it is let go.
-    /// Answers the lines the look says.
+    /// Answers the lines the look says, each classed as it is made (NOTIFY2h2): a tab let go on the person's answer their own act, any
+    /// other what the strip says.
     /// </summary>
+    /// <param name="said">The look's classing; none classes and keeps nothing.</param>
     public async Task<IReadOnlyList<string>> LookAsync(
-        IReadOnlyList<QuestView> quests, Func<string, CancellationToken, Task<QuestView?>> find, CancellationToken ct)
+        IReadOnlyList<QuestView> quests, Func<string, CancellationToken, Task<QuestView?>> find, CancellationToken ct, LookSaid? said = null)
     {
         var waiting = new List<ReviewWaiting>();
         foreach (var quest in quests)
@@ -150,23 +152,24 @@ public sealed class ReviewDesk(IReviewTabs tabs)
 
         lock (_gate) _waiting = waiting;
 
-        var lines = new List<string>();
+        var lines = new LookLines(said ?? LookSaid.None, "review");
         foreach (var serve in tabs.Serving)
         {
             var quest = quests.FirstOrDefault(each => string.Equals(each.Id, serve.Quest, StringComparison.OrdinalIgnoreCase))
                         ?? await find(serve.Quest, ct).ConfigureAwait(false);
+            var answered = quest is not null && quest.Status != "Declined" ? ReviewServed.Answered(quest, serve.SetUp) : null;
             var why = quest is null ? "its quest is gone from this machine's service"
                 : quest.Status == "Declined" ? "it was declined"
-                : ReviewServed.Answered(quest, serve.SetUp) is { } verdict ? $"you said `{verdict}`"
+                : answered is { } verdict ? $"you said `{verdict}`"
                 : !ReviewServed.Stands(serve.Folder) ? "the tree that held its build is gone"
                 : null;
             if (why is null) continue;
 
             tabs.Stop(serve.Quest);
-            lines.Add($"review  #{serve.Quest}: its tab is no longer served, since {why}; nothing of yours was touched.");
+            lines.Of(answered is null ? LookClass.Progress : LookClass.Own, $"review  #{serve.Quest}: its tab is no longer served, since {why}; nothing of yours was touched.");
         }
 
-        return lines;
+        return lines.Said;
     }
 
     /// <summary>

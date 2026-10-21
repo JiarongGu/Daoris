@@ -317,7 +317,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
             opened();
             try
             {
-                return new StartRun(await RunAsync(request, digest, rule, files, ct).ConfigureAwait(false), Opened: true);
+                return await RunAsync(request, digest, rule, files, ct).ConfigureAwait(false);
             }
             catch (Exception error) when (error is HttpRequestException or DriverException or JsonException or IOException
                                               or UnauthorizedAccessException
@@ -325,7 +325,11 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
             {
                 files.WriteState(new BrainstormState(request.Id, BrainstormStates.Ended, digest, "failed", DateTimeOffset.UtcNow));
                 files.RemoveRooms(request.Id);
-                return new StartRun($"brainstorm `{request.Id}` stopped: {error.Message}", Opened: true);
+                // Stopped by a failure, not by the person: an end nobody pressed and nobody must answer (NOTIFY2h2).
+                return new StartRun($"brainstorm `{request.Id}` stopped: {error.Message}", Opened: true)
+                {
+                    Look = LookClassed.Noticed("brainstorm", new LookNews(LookSaid.BrainstormFailed, request.Id)),
+                };
             }
             finally
             {
@@ -357,9 +361,9 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
     /// <summary>
     /// The passes of one sent brainstorm: the generators side by side within the generators' deadline, then the synthesis within
     /// its own minutes, the challenge's kept in reserve, then the document; the person's stop watched throughout, and the rooms
-    /// removed however it ended.
+    /// removed however it ended. Its line is classed here (NOTIFY2h2): the person's stop their own, an end its page says.
     /// </summary>
-    private async Task<string> RunAsync(BrainstormRequest request, string digest, BrainstormRule rule, BrainstormFiles files, CancellationToken ct)
+    private async Task<StartRun> RunAsync(BrainstormRequest request, string digest, BrainstormRule rule, BrainstormFiles files, CancellationToken ct)
     {
         var id = request.Id;
         var bytes = files.PacketBytes(id);
@@ -394,11 +398,11 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
             var needs = Needs(answered);
             var ran = plan.Count(each => each.Allowed);
 
-            if (stop.IsCancellationRequested) return Stopped(id, packet, passes, answered, needs, files, digest);
+            if (stop.IsCancellationRequested) return Ran(LookClass.Own, Stopped(id, packet, passes, answered, needs, files, digest));
             if (answered.Count == 0)
             {
                 files.WriteState(new BrainstormState(id, BrainstormStates.Ended, digest, BrainstormStates.NoAgent, DateTimeOffset.UtcNow));
-                return $"brainstorm `{id}` ended: no agent could answer, and its packet is kept.";
+                return Ran(LookClass.Progress, $"brainstorm `{id}` ended: no agent could answer, and its packet is kept.");
             }
 
             var handed = BrainstormSyntheses.Number(answered);
@@ -421,7 +425,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                         return (check.Synthesis, check.Codes);
                     }, files, minutes.Synthesis * Minute, deadline - minutes.Challenge * Minute, stop.Token, ct).ConfigureAwait(false);
                 passes.Add(record);
-                if (stop.IsCancellationRequested && synthesis is null) return Stopped(id, packet, passes, answered, needs, files, digest);
+                if (stop.IsCancellationRequested && synthesis is null) return Ran(LookClass.Own, Stopped(id, packet, passes, answered, needs, files, digest));
                 document = synthesis is not null
                     ? BrainstormDocuments.Ranked(id, packet, passes, handed, synthesis, needs)
                     : BrainstormDocuments.Unranked(id, packet, passes, handed, needs, $"{BrainstormDocuments.NoSynthesis}: {string.Join(", ", record.Codes)}");
@@ -430,8 +434,8 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
             files.WriteDocument(id, document);
             files.WriteState(new BrainstormState(
                 id, BrainstormStates.Ended, digest, document.Unranked is null ? null : BrainstormStates.Unranked, DateTimeOffset.UtcNow));
-            return $"brainstorm `{id}` ended: {document.Rows.Count} {(document.Unranked is null ? "ranked" : "unranked")} rows from "
-                + $"{answered.Count} of {ran} generators. Read it with `daoris-driver brainstorm show {id}`.";
+            return Ran(LookClass.Progress, $"brainstorm `{id}` ended: {document.Rows.Count} {(document.Unranked is null ? "ranked" : "unranked")} rows from "
+                + $"{answered.Count} of {ran} generators. Read it with `daoris-driver brainstorm show {id}`.");
         }
         finally
         {
@@ -440,6 +444,9 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
             files.RemoveRooms(id);
         }
     }
+
+    /// <summary>A run's line, classed where it is made (NOTIFY2h2).</summary>
+    private static StartRun Ran(LookClass @class, string line) => new(line, Opened: true) { Look = new LookClassed(@class, "brainstorm") };
 
     /// <summary>The person's stop (D176 point 6): every pass ended, and what answered kept as the unranked document.</summary>
     private static string Stopped(

@@ -122,6 +122,12 @@ public sealed class AutoLander(
     public AutoLandings Due { get; } = new(home);
 
     /// <summary>
+    /// The look's classing (NOTIFY2h2), by which each line is classed as it is made: a try by its code (<see cref="ClassOf"/>), one
+    /// that could not be made, or was overtaken, the next look's. None classes and keeps nothing.
+    /// </summary>
+    public LookSaid Look { get; init; } = LookSaid.None;
+
+    /// <summary>
     /// The look's half: every open entry read against its rule, its records, its quest and its tree. What can no longer land is
     /// closed and said, a hold is kept once, uncommitted work is a try of its own, and the rest that is worth a try is chosen.
     /// </summary>
@@ -305,8 +311,8 @@ public sealed class AutoLander(
                     // The due list does not write either: the line below says what happened.
                 }
 
-                said.Add($"landing  session {choice.Entry.Session} (#{choice.Entry.Quest} → {choice.Entry.Repository}): could not be "
-                    + $"tried: {error.Message.TrimEnd().TrimEnd('.')}. It is tried again once its tree changes, or your Accept lands it.");
+                said.Add(Look.Retry("landing", $"landing  session {choice.Entry.Session} (#{choice.Entry.Quest} → {choice.Entry.Repository}): could not be "
+                    + $"tried: {error.Message.TrimEnd().TrimEnd('.')}. It is tried again once its tree changes, or your Accept lands it."));
             }
         }
 
@@ -396,10 +402,10 @@ public sealed class AutoLander(
         var entry = choice.Entry;
         // A later `ready` while it waited is another submission, judged again from the start (§E5): nothing is kept, so the next look
         // judges the one standing then, and lands it where nothing holds it.
-        return said ?? $"landing  session {entry.Session} (#{entry.Quest} → {entry.Repository}): "
+        return said ?? Look.Retry("landing", $"landing  session {entry.Session} (#{entry.Quest} → {entry.Repository}): "
             + (again is null
                 ? "what it was chosen on moved while it waited to land, so nothing was landed: the next look judges it again."
-                : "its quest's submission was made again while it waited to land, so nothing was landed: the next look judges the new one.");
+                : "its quest's submission was made again while it waited to land, so nothing was landed: the next look judges the new one."));
     }
 
     /// <summary>
@@ -653,8 +659,15 @@ public sealed class AutoLander(
 
         log?.Invoke(LandingLine.Auto(entry.Session, entry.Repository, entry.Workspace, code, made is null ? null : commits, uncommitted,
             plugin, landed?.Plugin?.Pushed));
-        return $"landing  session {entry.Session} (#{entry.Quest} → {entry.Repository}): {line}";
+        return Look.Of(ClassOf(code), "landing", $"landing  session {entry.Session} (#{entry.Quest} → {entry.Repository}): {line}");
     }
+
+    /// <summary>
+    /// A try's class by its code (NOTIFY2h2): a done held for the person's yes, a review or a second opinion waits on its own row; every
+    /// other try is said in the session's conversation and kept on the due list, which the session's page shows.
+    /// </summary>
+    internal static LookClass ClassOf(string code) =>
+        code is AutoLandingCode.Held or AutoLandingCode.Unreviewed or AutoLandingCode.Opinion ? LookClass.Wait : LookClass.Progress;
 
     /// <summary>An entry closed with no landing, said and kept as a try of its own.</summary>
     private string Closed(AutoLanding entry, string code, string? branch = null) =>

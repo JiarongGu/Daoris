@@ -221,6 +221,27 @@ public sealed class HelperLookTests : IDisposable
         Assert.Equal((HelperStates.Refused, code), (Files.ReadState("a1")!.State, Files.ReadState("a1")!.Code));
     }
 
+    /// <summary>
+    /// NOTIFY2h2 (D196's NOTIFY2h note): a refusal because the asker has left tells nobody, so it is news, a coded notice in <i>Done and
+    /// failed</i>; one the asker is told of on its own session (it cannot ask) is the log's alone. The line itself is as it was.
+    /// </summary>
+    [Theory]
+    [InlineData("gone", true)]
+    [InlineData("helper", false)]
+    public async Task A_refusal_whose_asker_has_left_is_news_and_one_it_is_told_of_is_not(string row, bool news)
+    {
+        Ask("a1");
+        var host = row == "gone" ? new OpinionStandIn() : Host();
+        if (row == "helper") host.Set("s1", "serves", "s0");
+
+        var events = await Look(Driver(host, pass: null));
+
+        Assert.StartsWith("helper  ask `a1` refused (", Assert.Single(events));
+        var notices = Notices.Read(_home, DateTimeOffset.UtcNow)!;
+        if (news) Assert.Equal(("look-helper-asker-gone-a1", LookSaid.HelperAskerGone), (Assert.Single(notices).Id, Assert.Single(notices).Code));
+        else Assert.Empty(notices);
+    }
+
     /// <summary>At most two helpers at once per asker: a third is refused `too-many`, and a finished one frees a place.</summary>
     [Fact]
     public async Task At_most_two_helpers_at_once_per_asker()

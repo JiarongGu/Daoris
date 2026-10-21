@@ -177,11 +177,13 @@ public static class WorkspaceSetup
     /// <summary>
     /// One look's work on every plan under the home that works and is not paused: the next to go published while fewer than
     /// its <c>atOnce</c> are open, a refusal skipped and said, the pilot's pause taken once it has closed. What it did, in the
-    /// lines a look's report carries; a home with no plan to work reads nothing.
+    /// lines a look's report carries, each classed as it is made (NOTIFY2h2): what moved, a pause and a skip included, which the
+    /// workspace's set-up says where the person resumes it; a home with no plan to work reads nothing.
     /// </summary>
+    /// <param name="look">The look's classing; none classes and keeps nothing.</param>
     public static async Task<IReadOnlyList<string>> TickAsync(
         IWorkspaceSetupWorld world, DriverConfig config, SessionWire door, string home, DateOnly day, DateTimeOffset now,
-        CancellationToken ct = default)
+        CancellationToken ct = default, LookSaid? look = null)
     {
         var plans = WorkspaceSetupFile.All(home).Where(plan => plan is { Live: true, Paused: null }).ToList();
         if (plans.Count == 0) return [];
@@ -189,13 +191,13 @@ public static class WorkspaceSetup
         var rows = await world.RegistrationsAsync(ct).ConfigureAwait(false);
         var quests = await world.QuestsAsync(ct).ConfigureAwait(false);
         var strikes = await world.StrikesAsync(ct).ConfigureAwait(false);
-        var said = new List<string>();
+        var said = new LookLines(look ?? LookSaid.None, "setup");
         foreach (var plan in plans)
         {
             await WorkAsync(plan, WorkspaceSetupRules.Stand(plan, rows, quests, strikes, config)).ConfigureAwait(false);
         }
 
-        return said;
+        return said.Said;
 
         async Task WorkAsync(WorkspaceSetupPlan plan, IReadOnlyList<SetupStanding> standings)
         {
@@ -214,7 +216,7 @@ public static class WorkspaceSetup
                     if (PauseItself(home, workspace, new SetupPause(SetupPausedBy.Pilot, sentence, now), current => !current.PilotResumed))
                     {
                         world.Said(SetupLine.Paused(workspace, SetupPausedBy.Pilot));
-                        said.Add($"setup  {workspace}: {sentence}");
+                        said.Progress($"setup  {workspace}: {sentence}");
                     }
                 }
 
@@ -236,7 +238,7 @@ public static class WorkspaceSetup
                         world.Said(SetupLine.Published(workspace, next.Repository, quest));
                         open++;
                         asked++;
-                        said.Add($"setup  {workspace}: asked `{next.Repository}` to set itself up, #{quest} ({open} of {most} at once).");
+                        said.Progress($"setup  {workspace}: asked `{next.Repository}` to set itself up, #{quest} ({open} of {most} at once).");
                         continue;
                     }
 
@@ -250,7 +252,7 @@ public static class WorkspaceSetup
                     if (PauseItself(home, workspace, new SetupPause(SetupPausedBy.Tool, tool.Sentence, now), _ => true))
                     {
                         world.Said(SetupLine.Paused(workspace, SetupPausedBy.Tool));
-                        said.Add($"setup  {workspace}: paused: {tool.Sentence} `daoris-driver setup --workspace {Spelled(workspace)} --resume` carries on once it is.");
+                        said.Progress($"setup  {workspace}: paused: {tool.Sentence} `daoris-driver setup --workspace {Spelled(workspace)} --resume` carries on once it is.");
                     }
 
                     return;
@@ -274,7 +276,7 @@ public static class WorkspaceSetup
         {
             WorkspaceSetupFile.Update(home, workspace, current => current with { Skipped = With(current.Skipped, repository, new SetupSkip(code, sentence, now)) });
             world.Said(SetupLine.Skipped(workspace, repository, code));
-            said.Add($"setup  {workspace}: skipped `{repository}`: {sentence}");
+            said.Progress($"setup  {workspace}: skipped `{repository}`: {sentence}");
         }
     }
 

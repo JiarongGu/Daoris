@@ -19242,3 +19242,15 @@ On Opus.
 `KeepPolicy.Of`, so the six readers of the set-aside days say a set value; `SET_KEEP` (`Person`), `daoris driver keep [<kind> <rule>]`,
 each row's *Change…* on the *Disk space* card with its refusal under the editor, Ask Daoris's `keep` door, and the look's daily prune
 of the machine log at the person's days. A `driver.json` that does not read keeps the most. Detail: D195's KEEP1d note. On Opus.
+
+## NOTIFY2h2 — the look's deeper producers classed line by line (2026-10-22, D196)
+
+> - [ ] **NOTIFY2h2 — the look's deeper producers classed line by line** (driver, web-shell; after 2h; D196's NOTIFY2h note). 2h classes a producer that hands the look its lines whole by one class where they enter the look; the news-shaped lines inside them stay the log's: a meeting or brainstorm stopped by a failure, a helper's ask refused because its asker left, a reopen that reaches no record or tree, a plugin stopped as unsound. Each class judged at its producer, each news line a code with its words in en and zh. Proof: the census reading those producers too.
+
+**Outcome** 2026-10-22: built. Each producer 2h classed whole is handed the look's `LookSaid` and classes each line as it makes it
+(`LookLines`; the lander's and the tidy's `Look`); a meeting's, a brainstorm's and a helper's pass carry their line's class on their
+run (`StartRun.Look`, `LookLine`); `LookSaid.Each` is gone. Six news codes, worded in en and zh: `meeting-failed`,
+`brainstorm-failed`, `helper-asker-gone`, `reopen-unrecorded`, `reopen-tree-gone`, `plugin-unsound`; a meeting or brainstorm the
+person stopped is now `own`. Proof: `LookSaidTests`' census over the producers' lines and runs, every news code in both catalogues,
+`HelperLookTests`, `ReopenTellingTests`, `DoneAndFailed.test.tsx`. No installed window has listed one. Detail: D196's NOTIFY2h2
+note. On Opus.

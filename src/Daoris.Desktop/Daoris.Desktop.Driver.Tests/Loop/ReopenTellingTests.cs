@@ -380,6 +380,32 @@ public sealed class ReopenTellingTests : IDisposable
         Assert.Empty(doors.Said);
     }
 
+    /// <summary>
+    /// NOTIFY2h2 (D196's NOTIFY2h note): a reopen that reaches no record or no tree tells nobody and asks nobody, so each is news, one
+    /// coded notice in <i>Done and failed</i> however many looks meet it; a session the person stopped is their own, and makes none.
+    /// </summary>
+    [Fact]
+    public async Task A_reopen_that_reaches_no_record_or_no_tree_is_news_and_the_persons_stop_is_not()
+    {
+        var doors = new Doors();
+        var telling = Telling();
+        var said = new LookSaid(_home, () => null);
+        doors.Records["s2"] = Record("completed", "s2", Path.Combine(_home, "tidied"));
+        doors.Records["s3"] = Record("stopped", "s3");
+
+        foreach (var _ in new[] { 1, 2 })
+        {
+            await telling.LookAsync(doors, Look(Source()), _closing.Token, said);
+            await telling.LookAsync(doors, Look(Source(session: "s2", id: "q2")), _closing.Token, said);
+            await telling.LookAsync(doors, Look(Source(session: "s3", id: "q3")), _closing.Token, said);
+        }
+
+        var notices = Notices.Read(_home, DateTimeOffset.UtcNow)!;
+        Assert.Equal(
+            [("look-reopen-tree-gone-q2", LookSaid.ReopenTreeGone, "s2"), ("look-reopen-unrecorded-q1", LookSaid.ReopenUnrecorded, null)],
+            notices.Select(notice => (notice.Id, notice.Code, notice.Session)).Order());
+    }
+
     [Fact]
     public async Task The_session_the_reopen_names_is_told_and_never_the_quests_last_record_here()
     {

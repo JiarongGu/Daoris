@@ -155,11 +155,13 @@ public static class RuleProposals
 
     /// <summary>
     /// The tick's part: every proposal not yet read is applied if it narrows, held if it widens, and
-    /// settled either way. Answered as the lines the tick reports.
+    /// settled either way. Answered as the lines the tick reports, each classed as it is made (NOTIFY2h2): a widening held is its row
+    /// of <i>What needs you</i>, an unreadable file the next tick's, the rest what the proposals' list says.
     /// </summary>
-    public static IReadOnlyList<string> Settle(string home, DateTimeOffset at)
+    /// <param name="look">The look's classing; none classes and keeps nothing.</param>
+    public static IReadOnlyList<string> Settle(string home, DateTimeOffset at, LookSaid? look = null)
     {
-        var said = new List<string>();
+        var said = new LookLines(look ?? LookSaid.None, "rules");
         foreach (var proposal in Load(home).Where(p => p.State == ProposalState.Proposed).Reverse())
         {
             var path = PathOf(home, proposal.Id);
@@ -173,7 +175,7 @@ public static class RuleProposals
                 // Nothing is settled over a file the driver could not read: a narrowing written now
                 // would replace every rule in it (REV3). The proposals stay as they are, to be settled
                 // on the first tick after the file is fixed.
-                said.Add($"rules  no proposal settled: {rules.Problem}");
+                said.Retry($"rules  no proposal settled: {rules.Problem}");
                 break;
             }
 
@@ -185,7 +187,7 @@ public static class RuleProposals
             catch (DriverException refused)
             {
                 Mark(path, ProposalState.Refused, "the driver", refused.Message, at);
-                said.Add($"rules  refused #{proposal.Id} from {Author(proposal)}: {refused.Message}");
+                said.Progress($"rules  refused #{proposal.Id} from {Author(proposal)}: {refused.Message}");
                 continue;
             }
 
@@ -194,11 +196,11 @@ public static class RuleProposals
                 case ChangeEffect.Narrows:
                     PermissionRules.Save(home, rules);
                     Mark(path, ProposalState.Applied, "the driver", "it narrows what agents may do, so it applied at once.", at);
-                    said.Add($"rules  applied #{proposal.Id} from {Author(proposal)}: {Describe(proposal.Change)} — it narrows.");
+                    said.Progress($"rules  applied #{proposal.Id} from {Author(proposal)}: {Describe(proposal.Change)} — it narrows.");
                     break;
                 case ChangeEffect.Widens:
                     Mark(path, ProposalState.Waiting, "the driver", "it widens what agents may do, so it waits for the person.", at);
-                    said.Add($"rules  #{proposal.Id} waits for you: {Author(proposal)} proposes {Describe(proposal.Change)} — it widens what agents may do.");
+                    said.Wait($"rules  #{proposal.Id} waits for you: {Author(proposal)} proposes {Describe(proposal.Change)} — it widens what agents may do.");
                     break;
                 default:
                     Mark(path, ProposalState.Unchanged, "the driver", "the rules already say it.", at);
@@ -206,7 +208,7 @@ public static class RuleProposals
             }
         }
 
-        return said;
+        return said.Said;
     }
 
     /// <summary>

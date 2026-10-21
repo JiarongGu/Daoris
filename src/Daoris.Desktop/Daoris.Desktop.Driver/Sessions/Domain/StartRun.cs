@@ -13,4 +13,10 @@ internal sealed record StartRun(string Line, bool Opened, SessionEnded? Ended = 
 {
     /// <summary>The accounts a held start passed because they are not signed in (TOOL6g), or null.</summary>
     public SignedOutAccounts? SignedOut { get; init; }
+
+    /// <summary>
+    /// Its line's class as the pass that made it judged it (NOTIFY2h2): a meeting's, a brainstorm's or a helper's, said where the look
+    /// drains it. Null for a session's start, whose end the watch announces, or the person's own where <see cref="Ended"/> says so.
+    /// </summary>
+    public LookClassed? Look { get; init; }
 }

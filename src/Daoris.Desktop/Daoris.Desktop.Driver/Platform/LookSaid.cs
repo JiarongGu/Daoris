@@ -28,6 +28,60 @@ public enum LookClass
 public sealed record LookNews(string Code, string Subject, string? Session = null, string? Quest = null, string? Workspace = null);
 
 /// <summary>
+/// A line's class as its producer judged it, carried with a line said later where it enters the look (NOTIFY2h2): a pass beside the
+/// look whose line its run carries (<c>StartRun.Look</c>).
+/// </summary>
+/// <param name="Class">Its class; <see cref="LookClass.News"/> names its notice.</param>
+/// <param name="Family">What made it, as <c>look.said</c> names it.</param>
+/// <param name="News">A news line's notice.</param>
+public sealed record LookClassed(LookClass Class, string Family, LookNews? News = null)
+{
+    /// <summary>A news line: its notice.</summary>
+    public static LookClassed Noticed(string family, LookNews news) => new(LookClass.News, family, news);
+}
+
+/// <summary>A line with its class as its producer judged it, handed up to where it enters the look (NOTIFY2h2).</summary>
+/// <param name="Text">The line, unchanged.</param>
+/// <param name="Look">Its class.</param>
+public sealed record LookLine(string Text, LookClassed Look);
+
+/// <summary>
+/// The lines one producer of the look says (NOTIFY2h2, D196's NOTIFY2h note): each classed as it is made, through
+/// <see cref="LookSaid"/>, so a producer that hands the look its lines whole has no add that is not classed. <see cref="Said"/> is what
+/// it hands on, the lines unchanged.
+/// </summary>
+/// <param name="said">The look's classing; <see cref="LookSaid.None"/> for a producer a test runs bare.</param>
+/// <param name="family">What made them, as <c>look.said</c> names it.</param>
+public sealed class LookLines(LookSaid said, string family)
+{
+    private readonly List<string> _lines = [];
+
+    /// <summary>The lines said, in their order, unchanged.</summary>
+    public IReadOnlyList<string> Said => _lines;
+
+    /// <summary>How many lines were said.</summary>
+    public int Count => _lines.Count;
+
+    /// <inheritdoc cref="LookClass.Retry"/>
+    public void Retry(string line) => _lines.Add(said.Retry(family, line));
+
+    /// <inheritdoc cref="LookClass.Own"/>
+    public void Own(string line) => _lines.Add(said.Own(family, line));
+
+    /// <inheritdoc cref="LookClass.Wait"/>
+    public void Wait(string line) => _lines.Add(said.Wait(family, line));
+
+    /// <inheritdoc cref="LookClass.Progress"/>
+    public void Progress(string line) => _lines.Add(said.Progress(family, line));
+
+    /// <inheritdoc cref="LookSaid.Of"/>
+    public void Of(LookClass @class, string line) => _lines.Add(said.Of(@class, family, line));
+
+    /// <inheritdoc cref="LookClass.News"/>
+    public void News(LookNews news, string line) => _lines.Add(said.News(family, news, line));
+}
+
+/// <summary>
 /// Each line the look says, classed at its producer and written as the declared machine-log event <c>look.said</c> before it goes
 /// anywhere (NOTIFY2h, D196 point 7; the notification design §5.1): a <see cref="LookClass.News"/> line is kept as a coded notice in
 /// <i>Done and failed</i> through <see cref="Notices"/>, whatever the notify switch says; every other class is the log's alone.
@@ -38,8 +92,10 @@ public sealed record LookNews(string Code, string Subject, string? Session = nul
 /// passing failure the next answers (D62).</para>
 /// <para><b>The event carries the class and the family, never the line</b> (D94 §5): a line can quote a session's note or an agent's
 /// words, which the session's own record keeps.</para>
-/// <para><b>The census</b> (<c>LookSaidCensusTests</c>): every line a producer of the look adds goes through here, so a line with no
-/// class fails the test.</para>
+/// <para><b>The census</b> (<c>LookSaidTests</c>): every line a producer of the look adds goes through here, so a line with no
+/// class fails the test. A producer that hands the look its lines whole takes the look's <see cref="LookSaid"/> and adds each through
+/// <see cref="LookLines"/>, or carries its class up (<see cref="LookLine"/>, <c>StartRun.Look</c>); its file joins the census's
+/// producers (NOTIFY2h2).</para>
 /// </remarks>
 /// <param name="home">The home whose notices a news line is kept in; none keeps none.</param>
 /// <param name="log">The machine log at the moment of the line, or none.</param>
@@ -83,10 +139,29 @@ public sealed class LookSaid(string? home, Func<MachineLog?> log, Action? notice
     /// <summary>A session a Daoris before this one left running, ended as this one began.</summary>
     public const string Swept = "swept";
 
+    /// <summary>A meeting stopped in a round by a failure, not by the person: ended as failed (NOTIFY2h2).</summary>
+    public const string MeetingFailed = "meeting-failed";
+
+    /// <summary>A brainstorm stopped by a failure, not by the person: ended as failed (NOTIFY2h2).</summary>
+    public const string BrainstormFailed = "brainstorm-failed";
+
+    /// <summary>An ask for a helper refused because the session that asked it has left this machine: nobody is told (NOTIFY2h2).</summary>
+    public const string HelperAskerGone = "helper-asker-gone";
+
+    /// <summary>A reopen naming a session this machine keeps no record of: nobody here is told (NOTIFY2h2).</summary>
+    public const string ReopenUnrecorded = "reopen-unrecorded";
+
+    /// <summary>A reopen, or a step's go-on, whose session's tree is gone: it is told nothing, and no work is made again (NOTIFY2h2).</summary>
+    public const string ReopenTreeGone = "reopen-tree-gone";
+
+    /// <summary>A plugin whose hook process exited three times within an hour: not started again until the person tries again (NOTIFY2h2).</summary>
+    public const string PluginUnsound = "plugin-unsound";
+
     /// <summary>Every news code, which the page's words cover in both languages.</summary>
     public static readonly IReadOnlyList<string> NewsCodes =
         [HandOverRefused, HandOverElsewhere, HandOverDropped, HandOverAskRefused, HandOverFailed, HandedBack, LostClaim, LostToReopen,
-         MeetingCut, BrainstormCut, Swept];
+         MeetingCut, BrainstormCut, Swept, MeetingFailed, BrainstormFailed, HelperAskerGone, ReopenUnrecorded, ReopenTreeGone,
+         PluginUnsound];
 
     private readonly Func<DateTimeOffset> _clock = clock ?? (() => DateTimeOffset.UtcNow);
 
@@ -109,9 +184,20 @@ public sealed class LookSaid(string? home, Func<MachineLog?> log, Action? notice
     public string Of(LookClass @class, string family, string line) =>
         @class == LookClass.News ? throw new ArgumentException("a news line names its notice: News", nameof(@class)) : Said(@class, family, line);
 
-    /// <summary>The lines a producer hands whole, each of one class.</summary>
-    public IReadOnlyList<string> Each(LookClass @class, string family, IEnumerable<string> lines) =>
-        [.. lines.Select(line => Said(@class, family, line))];
+    /// <summary>A line its producer classed, said as it enters the look (NOTIFY2h2).</summary>
+    public string Say(LookLine line) => Ran(line.Look, byPerson: false, line.Text);
+
+    /// <summary>
+    /// A run's line said as it enters the look, by the class its producer gave it (NOTIFY2h2); one its producer did not class is a
+    /// session's end, which the watch announces (<c>progress</c>, the design §5.1's <c>:1246</c>), or the person's own (<c>own</c>).
+    /// </summary>
+    public string Ran(LookClassed? classed, bool byPerson, string line) => classed switch
+    {
+        { News: { } news } => News(classed.Family, news, line),
+        { Class: LookClass.News } => throw new ArgumentException("a news line names its notice", nameof(classed)),
+        { } judged => Said(judged.Class, judged.Family, line),
+        null => Said(byPerson ? LookClass.Own : LookClass.Progress, "ended", line),
+    };
 
     /// <inheritdoc cref="LookClass.News"/>
     public string News(string family, LookNews news, string line)
