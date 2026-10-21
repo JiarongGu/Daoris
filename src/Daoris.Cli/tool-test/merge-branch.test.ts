@@ -3491,7 +3491,7 @@ test('MEMGATE1: a second death of memory is a failure still named as memory; a s
   assert.equal(tool.flakeNote([]), '');
   assert.equal(tool.memoryLine([as('cli', 'FAIL')]), null);
   assert.equal(tool.memoryLine([as('cli', 'FAIL'), as('web-rules', 'FAIL', 'memory')]),
-    '  Of memory, not of a check: web-rules died of memory twice; run it again when the machine has memory to spare.');
+    '  Of memory, not of a check: web-rules died of memory; run it again when the machine has memory to spare.');
   fx.cleanup();
 });
 
