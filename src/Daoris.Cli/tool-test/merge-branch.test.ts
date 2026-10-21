@@ -21,7 +21,7 @@ import { makeFixture } from '../test/_fixture.ts';
  * this suite sits in would merge into it.
  */
 
-interface Gate { name: string; run: string; kind: string; cwd?: string; clock?: boolean }
+interface Gate { name: string; run: string; kind: string; cwd?: string; clock?: boolean; memoryGb?: number }
 interface Lane { id: string; title: string; summary: string; steward: boolean; paths: string[]; gates?: string[] }
 interface Classified { lanes: { id: string; title: string; files: string[] }[]; steward: string[]; shared: string[]; laneless: string[]; outside: string[] }
 interface Options {
@@ -56,7 +56,7 @@ interface Built { gate: string; tree: string | null }
  * What a lane runner hands a gate: when the light lane has ended, for a Process gate's re-run alone; and to a Process
  * half whose fast half passed in this run, that pass (GATEBUILD1).
  */
-interface Beside { settled?: () => Promise<void>; built?: Built }
+interface Beside { settled?: () => Promise<void>; built?: Built; memory?: MemoryWait | null; again?: GateResult | null }
 interface Worktree { path: string; branch: string; locked: boolean; lockReason: string; prunable: boolean; bare: boolean }
 interface Candidate { branch: string; worktree: Worktree | null; held: string | null }
 /** CLEANUP2: what a prune knows of a harness-locked worktree beyond its changes: its branch at main's tip, the processes inside it. */
@@ -70,7 +70,17 @@ interface Proc { pid: number; exe: string; command: string }
 /** CLEANUP2: a folder under `.claude/worktrees/` that git does not list. */
 interface Folder { path: string; link: boolean; git: boolean; processes?: Proc[]; processError?: string }
 interface Slow { name: string; ms: number; tests: number }
-interface GateResult { gate: Gate; code: number; log: string; verdict: string; note: string; ms: number; slowest?: Slow[]; trx?: string }
+interface GateResult {
+  gate: Gate; code: number; log: string; verdict: string; note: string; ms: number; slowest?: Slow[]; trx?: string;
+  /** MEMGATE1: 'memory' when the gate died of memory; `again` while its run again alone is still to come. */
+  cause?: string; again?: boolean; flakes?: string[];
+}
+/** MEMGATE1: what a reading of the machine's memory answers, in bytes; null where it cannot be read, and why. */
+interface Reading { physical: number | null; commit: number | null; total?: number | null; why?: string }
+/** MEMGATE1: what a run's memory reading is made of, each a stand-in in a test. */
+interface MemoryOptions { read?: () => Reading; sleep?: (ms: number) => Promise<void>; now?: () => number; pollMs?: number; boundMs?: number }
+/** MEMGATE1: a run's wait for a gate's need of memory, before it starts or runs again. */
+type MemoryWait = (gate: Gate, options?: { again?: boolean; halted?: () => boolean }) => Promise<void>;
 /** CIPRIO1c: the step trees a run has running, by each step's own pid; `ended` says why once the run ended them. */
 interface Trees { ended: string | null; hold: (pid: number) => void; release: (pid: number) => boolean; end: (why: string) => void }
 type Step = (command: string, cwd: string, fd: number, options?: { raise?: ((pid: number) => void) | null; trees?: Trees | null }) => Promise<number>;
@@ -102,7 +112,23 @@ const tool = await import(
     run?: (root: string, gate: Gate, dir: string, beside?: Beside) => Promise<GateResult>;
     print?: (line: string) => void;
     halt?: () => boolean;
+    memory?: MemoryOptions | null;
   }) => Promise<GateResult[]>;
+  /** MEMGATE1: a heavy gate waits for memory rather than failing for want of it. */
+  memoryNeed: (gate: { name: string; run: string; memoryGb?: number }) => number;
+  MEMORY_NEEDS: Readonly<Record<string, number>>;
+  MEMORY_POLL_MS: number;
+  MEMORY_WAIT_MS: number;
+  memoryGate: (options?: MemoryOptions & { say?: (line: string) => void }) => MemoryWait;
+  memoryDeath: (log: string, ...codes: number[]) => { said: string } | null;
+  readMemory: (options?: {
+    platform?: string; run?: (command: string, args: string[], options: object) => { status: number | null; stdout?: string; stderr?: string; error?: Error };
+    freemem?: () => number; totalmem?: () => number; read?: (path: string) => string;
+  }) => Reading;
+  parseWindowsMemory: (text: string) => { physical: number | null; commit: number | null };
+  parseMeminfo: (text: string) => { commit: number | null };
+  flakeNote: (flakes: GateResult[]) => string;
+  memoryLine: (failed: GateResult[]) => string | null;
   isProcessLane: (gate: { name: string; run: string }) => boolean;
   isGitHalf: (gate: { name: string; run: string }) => boolean;
   BESIDE_GIT_HALF: readonly string[];
@@ -2532,7 +2558,7 @@ function laneRun(names: string[]) {
 function summary(printed: string[]): string[] {
   const at = printed.findIndex((line) => /in the plan's order/.test(line));
   assert.ok(at >= 0, `no summary in:\n${printed.join('\n')}`);
-  return printed.slice(at + 1).map((line) => /^\s+(PASS|FAIL|FLAKE|NOT RUN)\s+(\S+)/.exec(line)!.slice(1).join(' '));
+  return printed.slice(at + 1).map((line) => /^\s+(PASS|FAIL|FLAKE|MEMORY|NOT RUN)\s+(\S+)/.exec(line)!.slice(1).join(' '));
 }
 
 // a and b build one component, so the light lane runs them in turn (GATELANES2), as both lanes' tests below need.
@@ -3208,6 +3234,362 @@ test('a rehearsal that died is run again once, with its steps: a pass is a FLAKE
   assert.equal(result.verdict, 'FAIL');
   assert.equal(fake.asked.length, 1);
   fx.cleanup();
+});
+
+// ---------------------------------------------------------------------------------------------------
+// MEMGATE1: a heavy gate waits for memory rather than failing for want of it, and a gate that died of memory is said so
+// and run again once, alone. On 2026-10-22 a full set beside the install's driven sessions and two builders ran a 64 GB
+// machine out of commit: the sensitive scan threw OutOfMemoryException, web-rules could not allocate, the family
+// rehearsal's landing said "Out of memory." twice, each read as the change's failure, and each passed run later.
+
+const GiB = 2 ** 30;
+
+/**
+ * A stand-in machine (never the real one): each reading is the next of `commits` (GB of free commit, the last one kept),
+ * with `physical` GB of free physical memory and `total` GB in all; each read is noted, in `events` too when given. Its
+ * clock moves only when the wait sleeps.
+ */
+function standIn(commits: number[], { physical = 32, total = 64, events }: { physical?: number; total?: number; events?: string[] } = {}) {
+  let at = 0;
+  let clock = 0;
+  const reads: number[] = [];
+  const slept: number[] = [];
+  const read = (): Reading => {
+    const commit = commits[Math.min(at, commits.length - 1)]!;
+    at += 1;
+    reads.push(commit);
+    events?.push(`read ${commit}`);
+    return { physical: physical * GiB, commit: commit * GiB, total: total * GiB };
+  };
+  return { read, reads, slept, sleep: async (ms: number) => { slept.push(ms); clock += ms; }, now: () => clock };
+}
+
+/** The lines a gate that died of memory leaves, one per way the 2026-10-22 run and its like said it. */
+const MEMORY_SIGNS = [
+  "Unhandled exception. System.OutOfMemoryException: Exception of type 'System.OutOfMemoryException' was thrown.",
+  'fatal error: runtime: cannot allocate memory',
+  'DataCloneError: Data cannot be cloned, out of memory.',
+  'Out of memory.',
+  'FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory',
+  'Error: The paging file is too small for this operation to complete.',
+];
+
+test('MEMGATE1: the memory a gate needs is its class\'s, or what daoris.gates.json declares; a light gate needs none', () => {
+  const needs = Object.fromEntries(repoPlan.map((gate) => [gate.name, tool.memoryNeed(gate)]));
+  const { suite, process: half, rehearsal } = tool.MEMORY_NEEDS;
+  assert.deepEqual(needs, {
+    universal: 0, 'code-map': 0, 'orient-index': 0, 'web-types': 0, 'web-rules': 0, 'tool-tests': 0,
+    cli: suite, service: suite, devkit: suite, driver: suite, modules: suite, web: suite, 'web-unit': suite, 'web-measured': suite,
+    'driver-process': half, 'driver-process-git': half, 'modules-process': half,
+    rehearse: rehearsal, 'rehearse-family': rehearsal, deployment: rehearsal,
+  });
+  assert.ok(suite! > 0 && half! >= suite! && rehearsal! >= half!, 'a heavier class needs no less');
+  assert.ok(tool.MEMORY_NEEDS['again']! > 0, 'a light gate that died of memory needs some to run again');
+
+  // `"memoryGb"` on a declared gate is its need, whatever its class: more, less, or none at all.
+  const fx = makeFixture('merge-branch-memory-declared');
+  fx.write('daoris.gates.json', JSON.stringify({ gates: [
+    { name: 'deployment', run: 'npm run rehearse:deploy', memoryGb: 14 },
+    { name: 'scan', run: 'node scan.mjs', memoryGb: 2 },
+    { name: 'service', run: 'dotnet test src/S', memoryGb: 0 },
+    { name: 'plain', run: 'dotnet test src/T' },
+  ] }));
+  const plan = tool.readPlan(fx.root);
+  assert.deepEqual(Object.fromEntries(plan.map((gate) => [gate.name, tool.memoryNeed(gate)])), { scan: 2, service: 0, plain: suite, deployment: 14 });
+  assert.equal('memoryGb' in plan.find((gate) => gate.name === 'plain')!, false);
+  for (const wrong of ['lots', -1, null]) {
+    fx.write('daoris.gates.json', JSON.stringify({ gates: [{ name: 'x', run: 'node x.mjs', memoryGb: wrong }] }));
+    const refused = refusal(() => tool.readPlan(fx.root));
+    assert.equal(refused.exitCode, 2);
+    assert.match(refused.message, /gate 'x'.*memoryGb.*GB/);
+  }
+  fx.cleanup();
+});
+
+test('MEMGATE1: a stand-in machine short of memory delays a heavy gate and says why; it starts once the memory is free', async () => {
+  const lanes = laneRun(['u', 'p']);
+  const machine = standIn([3, 3, 12], { events: lanes.events });
+  const printed: string[] = [];
+  const gates = [planned('u', 'node u.mjs'), planned('p', processRun('fake/P.Tests'))];
+  await tool.runGates('root', gates, 'logs', { run: lanes.run, print: (line) => printed.push(line), memory: machine });
+  // Read before it, again every few seconds while short, and started only once the reading had its need.
+  const at = (event: string) => lanes.events.indexOf(event);
+  assert.ok(at('start p') > lanes.events.lastIndexOf('read 12'), lanes.events.join(', '));
+  assert.ok(at('start p') > at('read 3'), lanes.events.join(', '));
+  assert.deepEqual(machine.reads, [3, 3, 12], 'the light gate beside it was never read for');
+  assert.deepEqual(machine.slept, [tool.MEMORY_POLL_MS, tool.MEMORY_POLL_MS]);
+  const said = printed.join('\n');
+  assert.match(said, /waiting for memory before p: 3\.0 GB free commit, the gate needs 8 GB; read again every 5 s, for up to 10 m/);
+  assert.match(said, /memory for p: 12\.0 GB free commit and 32\.0 GB free physical memory after 10 s; it starts/);
+  assert.deepEqual(summary(printed), ['PASS u', 'PASS p']);
+});
+
+test('MEMGATE1: past its bound a heavy gate runs anyway, saying so; a commit that cannot be read is said once, and physical memory judges alone', async () => {
+  const deploy = planned('deployment', 'npm run rehearse:deploy');
+  // Short the whole time: read every poll until the bound, then it runs, saying so.
+  let machine = standIn([2]);
+  let said: string[] = [];
+  await tool.memoryGate({ ...machine, say: (line) => said.push(line) })(deploy);
+  assert.equal(machine.slept.reduce((sum, ms) => sum + ms, 0), tool.MEMORY_WAIT_MS);
+  assert.equal(machine.reads.length, tool.MEMORY_WAIT_MS / tool.MEMORY_POLL_MS + 1);
+  assert.match(said.join('\n'), /waiting for memory before deployment: 2\.0 GB free commit, the gate needs 10 GB/);
+  assert.match(said.at(-1)!, /memory for deployment: still 2\.0 GB free commit after 10 m, the gate needs 10 GB; it runs anyway, past the bound/);
+
+  // A run that stops while a gate waits stops the wait.
+  machine = standIn([2]);
+  let reads = 0;
+  await tool.memoryGate({ ...machine, say: () => {} })(deploy, { halted: () => ++reads > 3 });
+  assert.ok(machine.slept.length <= 3, 'the wait ends with the run');
+
+  // A machine smaller than the needs were set on waits for a quarter of its memory at most, never for what it has not got.
+  machine = standIn([5], { total: 16 });
+  said = [];
+  await tool.memoryGate({ ...machine, say: (line) => said.push(line) })(deploy);
+  assert.deepEqual(said, [], 'a quarter of 16 GB is free');
+
+  // Where the commit cannot be read, it is said once a run, and the physical memory alone is waited for.
+  let physical = [1, 1, 20];
+  said = [];
+  let clock = 0;
+  const unread = tool.memoryGate({
+    read: () => ({ physical: physical.shift()! * GiB, commit: null, total: 64 * GiB, why: 'this platform keeps none' }),
+    sleep: async (ms) => { clock += ms; }, now: () => clock, say: (line) => said.push(line),
+  });
+  await unread(deploy);
+  physical = [30];
+  await unread(planned('rehearse', 'npm run rehearse'));
+  assert.equal(said.filter((line) => /cannot be read/.test(line)).length, 1, said.join('\n'));
+  assert.match(said[0]!, /memory: free commit cannot be read here \(this platform keeps none\); the heavy gates wait on free physical memory alone/);
+  assert.match(said.join('\n'), /waiting for memory before deployment: 1\.0 GB free physical memory, the gate needs 10 GB/);
+  // Nothing readable at all: said once, and no gate waits.
+  said = [];
+  const blind = tool.memoryGate({ read: () => { throw new Error('no query'); }, sleep: async () => { throw new Error('never sleeps'); }, say: (line) => said.push(line) });
+  await blind(deploy);
+  await blind(deploy);
+  assert.deepEqual(said, ['  memory: it cannot be read here (the reading failed: no query); the heavy gates run without waiting for it']);
+});
+
+test('MEMGATE1: a light gate never waits: its memory is not even read, in two lanes or one at a time', async () => {
+  for (const oneAtATime of [false, true]) {
+    const lanes = laneRun(['a', 'b']);
+    let asked = 0;
+    const memory = { read: () => { asked += 1; return { physical: 0, commit: 0, total: 64 * GiB }; }, sleep: async () => {}, now: () => 0 };
+    await tool.runGates('root', [planned('a', 'node a.mjs'), planned('b', 'npm run check:web-rules')], 'logs', { run: lanes.run, print: () => {}, memory, oneAtATime });
+    assert.equal(asked, 0, `oneAtATime ${oneAtATime}`);
+    assert.deepEqual(lanes.events.filter((event) => event.startsWith('start')).sort(), ['start a', 'start b']);
+  }
+  // The same in turn for a heavy one: it waits there too.
+  const lanes = laneRun(['h']);
+  const machine = standIn([1, 9]);
+  await tool.runGates('root', [planned('h', 'npm run verify')], 'logs', { run: lanes.run, print: () => {}, memory: machine, oneAtATime: true });
+  assert.deepEqual(machine.reads, [1, 9]);
+});
+
+test('MEMGATE1: each out-of-memory sign in a log is a death of memory, and the platform\'s exit for it; a quoted one, a failed check and another crash are not', () => {
+  for (const sign of MEMORY_SIGNS) {
+    const died = tool.memoryDeath(`$ npm run check:web-rules\nsome output\n${sign}\n    at somewhere\n\n(exited 1)\n`, 1);
+    assert.ok(died, sign);
+    assert.match(died.said, /memory|paging file/i, sign);
+  }
+  // Windows' statuses for an allocation it refused, unsigned as cmd and npm pass them on, and signed.
+  for (const code of [0xC0000017, 0xC000012D, -1073741801, -1073741523]) {
+    assert.match(tool.memoryDeath('', code)?.said ?? '', /exit 0xC000(0017|012D)/, `exit ${code}`);
+  }
+  // An assertion that shows the phrase as a value, a failed check, and a process that crashed some other way.
+  assert.equal(tool.memoryDeath('  Error Message:\n   Assert.Equal() Failure: Collections differ\nExpected: ["out of memory"]\nActual:   ["full"]\n', 1), null);
+  assert.equal(tool.memoryDeath(PROCESS_FAILURE, 1), null);
+  assert.equal(tool.memoryDeath('', 0xC0000142), null);
+  assert.equal(tool.memoryDeath('', 127), null);
+});
+
+test('MEMGATE1: a gate that died of memory is classed as memory and run again once, alone, after waiting: a pass is a FLAKE of memory', async () => {
+  const fx = makeFixture('merge-branch-memory-again');
+  for (const sign of MEMORY_SIGNS) {
+    const died = planned('web-rules', 'npm run check:web-rules');
+    const beside = planned('u', 'node u.mjs');
+    const printed: string[] = [];
+    const firstLine = signal();
+    const asked: string[] = [];
+    let runs = 0;
+    // u ends only once the first run's line is printed, so a run again that came before u ended would show here.
+    const step: Step = async (command, _cwd, fd) => {
+      asked.push(command);
+      if (command === beside.run) {
+        await within(firstLine.promise, "the dead gate's first line");
+        asked.push('u ended');
+      }
+      const dies = command === died.run && ++runs === 1;
+      writeSync(fd, `$ ${command}\n${dies ? `${sign}\n` : 'ok\n'}`);
+      return dies ? 1 : 0;
+    };
+    const machine = standIn([2, 9]);
+    const results = await tool.runGates(fx.root, [died, beside], fx.root, {
+      run: (root, gate, dir, given) => tool.runGate(root, gate, dir, { ...given, step }),
+      print: (line) => {
+        printed.push(line);
+        if (/MEMORY\s+web-rules/.test(line)) firstLine.resolve();
+      },
+      memory: machine,
+    });
+    assert.deepEqual(asked, [died.run, beside.run, 'u ended', died.run], `${sign}: run again once, after every other gate ended`);
+    const [again] = results;
+    assert.equal(again!.verdict, 'FLAKE', sign);
+    assert.equal(again!.cause, 'memory', sign);
+    const said = printed.join('\n');
+    assert.match(said, /MEMORY\s+web-rules\s.*\(exit 1; died of memory \(.+\): run again alone once every other gate has ended, after waiting for memory\)/, sign);
+    // A light gate waits for memory only to run again, for what a light gate that died of memory needs.
+    assert.deepEqual(machine.reads, [2, 9], sign);
+    assert.match(said, new RegExp(`waiting for memory before web-rules: 2\\.0 GB free commit, the gate needs ${tool.MEMORY_NEEDS['again']} GB to run again`), sign);
+    assert.match(said, /FLAKE\s+web-rules\s.*died of memory \(.+\), and passed run again alone; web-rules\.rerun\.log/, sign);
+    assert.deepEqual(summary(printed), ['FLAKE web-rules', 'PASS u'], sign);
+    assert.ok(readFileSync(join(fx.root, 'web-rules.log'), 'utf8').includes(sign), 'the first run keeps its own log');
+  }
+  fx.cleanup();
+});
+
+test('MEMGATE1: a second death of memory is a failure still named as memory; a second failure of another kind is a plain one', async () => {
+  const fx = makeFixture('merge-branch-memory-twice');
+  const died = planned('web-rules', 'npm run check:web-rules');
+  const gateOn = (answer: (run: number) => { out: string; code: number }) => {
+    let runs = 0;
+    const fake = fakeStep(() => answer(++runs));
+    const printed: string[] = [];
+    return {
+      fake, printed,
+      results: tool.runGates(fx.root, [died], fx.root, {
+        run: (root, gate, dir, given) => tool.runGate(root, gate, dir, { ...given, step: fake.step }), print: (line) => printed.push(line),
+      }),
+    };
+  };
+  let run = gateOn(() => ({ out: 'DataCloneError: Data cannot be cloned, out of memory.\n', code: 1 }));
+  let [result] = await run.results;
+  assert.equal(run.fake.asked.length, 2, 'run again once, not until it passes');
+  assert.equal(result!.verdict, 'FAIL', 'a failure all the same: the gate did not pass');
+  assert.equal(result!.cause, 'memory');
+  assert.match(result!.note, /died of memory twice \(.*out of memory.*; then .*out of memory.*\), not of a check: run it again when the machine has memory to spare; web-rules\.rerun\.log/);
+  assert.match(run.printed.at(-1)!, /^\s+MEMORY\s+web-rules\s/, 'one at a time and alone, its line is its verdict, said as memory');
+
+  // The platform's exit for it counts the same, with nothing printed.
+  run = gateOn(() => ({ out: '', code: 0xC000012D }));
+  [result] = await run.results;
+  assert.equal(result!.cause, 'memory');
+  assert.match(result!.note, /died of memory twice \(exit 0xC000012D/);
+
+  // Died of memory, then failed a check: a plain failure, and it says so.
+  run = gateOn((n) => (n === 1 ? { out: 'Out of memory.\n', code: 1 } : { out: 'AssertionError: expected 1 to equal 2\n', code: 1 }));
+  [result] = await run.results;
+  assert.equal(result!.verdict, 'FAIL');
+  assert.equal(result!.cause, undefined);
+  assert.match(result!.note, /exit 1; died of memory \("Out of memory\."\), then failed run again alone, not of memory; web-rules\.rerun\.log/);
+  assert.match(run.printed.at(-1)!, /^\s+FAIL\s+web-rules\s/);
+
+  // How a summary says them: a flake of memory is the machine's, never recorded under FLAKE1; a failure names it.
+  const as = (name: string, verdict: string, cause?: string): GateResult => ({ gate: planned(name, 'x'), code: 0, log: '', verdict, note: '', ms: 0, ...(cause ? { cause } : {}) });
+  assert.equal(tool.flakeNote([as('driver', 'FLAKE'), as('rehearse', 'FLAKE')]), ', with 2 flakes (driver, rehearse): record it under FLAKE1');
+  assert.equal(tool.flakeNote([as('driver', 'FLAKE'), as('web-rules', 'FLAKE', 'memory')]),
+    ', with 1 flake (driver): record it under FLAKE1; and 1 flake of memory (web-rules): it died of memory and passed run again alone, the machine\'s and not the change\'s');
+  assert.equal(tool.flakeNote([]), '');
+  assert.equal(tool.memoryLine([as('cli', 'FAIL')]), null);
+  assert.equal(tool.memoryLine([as('cli', 'FAIL'), as('web-rules', 'FAIL', 'memory')]),
+    '  Of memory, not of a check: web-rules died of memory; run it again when the machine has memory to spare.');
+  fx.cleanup();
+});
+
+test('MEMGATE1: a rehearsal that died of memory is run again for memory, though its checks failed with it', async () => {
+  const fx = makeFixture('merge-branch-memory-rehearsal');
+  const family = planned('rehearse-family', 'npm run rehearse:family');
+  // The 2026-10-22 landing step: two checks failed, each saying Out of memory.
+  const landing = `${OK_LINES}  FAIL  the landing plugin lands\n          Out of memory.\n  FAIL  the landing is kept\n          Out of memory.\n\n  299/301 checks passed\n`;
+  const fake = fakeStep(() => ({ out: landing, code: 1 }));
+  const result = await tool.runGate(fx.root, family, fx.root, { step: fake.step });
+  assert.equal(fake.asked.length, 1, 'not run again in place, beside the gates still running');
+  assert.equal(result.cause, 'memory');
+  assert.equal(result.again, true);
+  assert.equal(result.verdict, 'FAIL', 'a verdict recorded before it runs again is no pass');
+  assert.match(result.note, /died of memory \("Out of memory\."\)/);
+  fx.cleanup();
+});
+
+test("MEMGATE1: a Process half's tests that died of memory run alone once its memory is free; a whole half that died runs again whole", async () => {
+  const fx = makeFixture('merge-branch-memory-half');
+  const half = planned('driver-process', 'dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/process.runsettings');
+  const flaky = 'Daoris.Desktop.Driver.Tests.ProcessJobTests.A_child_that_outlives_its_parent_ends_when_the_session_is_untracked';
+  const oom = PROCESS_FAILURE.replace('   Assert.True() Failure', '   System.OutOfMemoryException: Insufficient memory to continue the execution of the program.');
+  const alone = 'Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 5 s - D.dll (net10.0)\n';
+  const order: string[] = [];
+  const memory: MemoryWait = async (gate, options) => { order.push(`memory ${gate.name}${options?.again ? ' again' : ''}`); };
+  const settled = async () => { order.push('settled'); };
+
+  let fake = fakeStep((command) => (command.includes('--filter') ? { out: alone, code: 0 } : { out: oom, code: 1 }));
+  let result = await tool.runGate(fx.root, half, fx.root, { step: fake.step, settled, memory });
+  assert.equal(result.verdict, 'FLAKE');
+  assert.equal(result.cause, 'memory');
+  assert.deepEqual(order, ['settled', 'memory driver-process again'], 'alone first, then its memory');
+  assert.equal(fake.asked.at(-1), tool.rerunCommand(half.run, flaky));
+  assert.match(result.note, /died of memory in the full run \(.*OutOfMemoryException.*\) and passed alone: ProcessJobTests\.A_child.*driver-process\.rerun\.log/);
+
+  // Alone, it died of memory again: a failure, named as memory.
+  fake = fakeStep((command) => (command.includes('--filter') ? { out: `${oom}\n`, code: 1 } : { out: oom, code: 1 }));
+  result = await tool.runGate(fx.root, half, fx.root, { step: fake.step, settled, memory });
+  assert.equal(result.verdict, 'FAIL');
+  assert.equal(result.cause, 'memory');
+  assert.match(result.note, /died of memory again alone \(.*OutOfMemoryException.*\): ProcessJobTests\.A_child/);
+
+  // The test host itself died of memory, naming no test: the half runs again whole, at the run's end.
+  fake = fakeStep(() => ({ out: 'The active test run was aborted. Reason: Test host process crashed : Out of memory.\n', code: 1 }));
+  result = await tool.runGate(fx.root, half, fx.root, { step: fake.step, settled, memory });
+  assert.equal(result.again, true);
+  assert.equal(result.cause, 'memory');
+  assert.equal(fake.asked.length, 1);
+  fx.cleanup();
+});
+
+test('MEMGATE1: a run a failure stopped runs no gate again for memory, and says why; --keep-going runs it again', async () => {
+  const fx = makeFixture('merge-branch-memory-stopped');
+  // Of two components, so they run side by side.
+  const gates = [planned('a', 'dotnet build src/A/A'), planned('b', 'dotnet build src/B/B')];
+  for (const keepGoing of [false, true]) {
+    const fake = fakeStep((command) => (command === gates[0]!.run ? { out: 'Out of memory.\n', code: 1 } : { out: 'error CS0103\n', code: 1 }));
+    const printed: string[] = [];
+    const results = await tool.runGates(fx.root, gates, fx.root, {
+      keepGoing, run: (root, gate, dir, given) => tool.runGate(root, gate, dir, { ...given, step: fake.step }), print: (line) => printed.push(line),
+    });
+    assert.equal(fake.asked.filter((command) => command === gates[0]!.run).length, keepGoing ? 2 : 1, `keepGoing ${keepGoing}`);
+    assert.deepEqual(summary(printed), ['MEMORY a', 'FAIL b'], `keepGoing ${keepGoing}`);
+    if (!keepGoing) assert.match(results[0]!.note, /not run again: b failed, and the run stopped there/);
+  }
+  fx.cleanup();
+});
+
+test("MEMGATE1: the machine's memory is read from the platform: Windows' free physical memory and free commit, Linux's commit only where it is held", () => {
+  // Win32_OperatingSystem's fields are in KB, as the CIM query answers them.
+  assert.deepEqual(tool.parseWindowsMemory('{"FreePhysicalMemory":22818728,"FreeVirtualMemory":15787368}'),
+    { physical: 22818728 * 1024, commit: 15787368 * 1024 });
+  assert.deepEqual(tool.parseWindowsMemory('﻿{"FreePhysicalMemory":null,"FreeVirtualMemory":1024}\r\n'), { physical: null, commit: 1024 * 1024 });
+  const asked: string[] = [];
+  const windows = tool.readMemory({
+    platform: 'win32', freemem: () => 7, totalmem: () => 64 * GiB,
+    run: (command, args) => { asked.push(`${command} ${args.join(' ')}`); return { status: 0, stdout: '{"FreePhysicalMemory":1048576,"FreeVirtualMemory":2097152}' }; },
+  });
+  assert.deepEqual(windows, { physical: GiB, commit: 2 * GiB, total: 64 * GiB });
+  assert.match(asked[0]!, /^powershell\.exe .*Win32_OperatingSystem.*FreePhysicalMemory.*FreeVirtualMemory/);
+  // A query that fails leaves Node's free memory, and says why the commit is not read.
+  const failed = tool.readMemory({ platform: 'win32', freemem: () => 7, totalmem: () => 8, run: () => ({ status: 1, stdout: '', stderr: 'denied' }) });
+  assert.equal(failed.physical, 7);
+  assert.equal(failed.commit, null);
+  assert.match(failed.why!, /the memory query failed: denied/);
+
+  // Linux holds a process to a commit limit only under strict overcommit (mode 2); otherwise there is none to read.
+  const meminfo = 'MemTotal:       16000000 kB\nMemAvailable:    8000000 kB\nCommitLimit:    12000000 kB\nCommitted_AS:    9000000 kB\n';
+  assert.deepEqual(tool.parseMeminfo(meminfo), { commit: 3000000 * 1024 });
+  const files = (mode: string) => (path: string) => (path.endsWith('overcommit_memory') ? `${mode}\n` : meminfo);
+  assert.deepEqual(tool.readMemory({ platform: 'linux', freemem: () => 5, totalmem: () => 9, read: files('2') }), { physical: 5, commit: 3000000 * 1024, total: 9 });
+  const loose = tool.readMemory({ platform: 'linux', freemem: () => 5, totalmem: () => 9, read: files('0') });
+  assert.deepEqual([loose.physical, loose.commit], [5, null]);
+  assert.match(loose.why!, /overcommit/);
+  const mac = tool.readMemory({ platform: 'darwin', freemem: () => 5, totalmem: () => 9 });
+  assert.deepEqual([mac.physical, mac.commit], [5, null]);
+  assert.match(mac.why!, /darwin/);
 });
 
 // ---------------------------------------------------------------------------------------------------
@@ -4181,7 +4563,8 @@ function scratch(name: string, gates: { name: string; run: string }[], files: Re
       // `BY_DEFAULT` in `extra` is the default itself, and the verbs that name their own gates take no flag.
       const named = args.some((arg) => ['--full', '--rerun', '--stale', '--passed', '--prune', '--gated'].includes(arg));
       const given = named || extra['BY_DEFAULT'] !== undefined ? args : [...args, '--gated'];
-      const child = spawn(process.execPath, [TOOL, ...given], { cwd, env: { ...env, ...GIT_ENV, ...extra } });
+      // MEMGATE1: a scratch's heavy gates never read the machine's memory, so no test here waits on what the machine holds.
+      const child = spawn(process.execPath, [TOOL, ...given], { cwd, env: { ...env, ...GIT_ENV, MERGE_BRANCH_MEMORY: 'off', ...extra } });
       let out = '';
       child.stdout.on('data', (chunk) => { out += String(chunk); });
       child.stderr.on('data', (chunk) => { out += String(chunk); });
