@@ -19321,3 +19321,12 @@ save does, a new workflow proposed as a graph made a verification pipeline; the 
 `HelpWorkflowProposalsTests` (a route applied at the press, a kind's route, a verification graph judged by the mark and saved as one,
 the other pipeline refused, an agent's lowering kept for the press), the box's and the tool's tests, `HelpWorkflowDoorTests`,
 `ProposalCard.test.tsx`. No installed window has shown one. Detail: D192's FABRIC-PIPELINE1i note. On Opus.
+
+## FABRIC-CUTOVER1g — the binding moment: a run bound before its take (2026-10-22, D190)
+
+> - [ ] **FABRIC-CUTOVER1g — the binding moment: a run bound before its take** (driver; after 1b; D190, design §8). The run bound inside its first start after its tree opens and before its take (`Driver.cs:1630`, `:1898-1906`), amending D157 point 11; the bind returns its result, and a start holds on a bind not made (`WorkflowRunStart.cs:74-78`); the first binding moved into place without overwriting (`WorkflowRunFiles.cs:40-42`); the look's bind kept for a run opened before the build (`Driver.cs:766-774`); `ClosureBinding.AtTakeAsync` reads the binding (`QuestCloser.cs:864-869`): Current's work cycle, none under a version until 1h. Proof: a schema-1 run's quest taken unbound; a start that holds after its bind keeps the binding, and a later task choice applies to the next run; a failed bind holds the start, said, and the next look takes it; two starts of one run at once leave one binding; a start held before its tree opens binds nothing.
+
+**Outcome** 2026-10-22: a start binds its run once its tree is settled and before its take (`WorkflowRunStart.AtStartAsync` from
+`Driver.RunAsync`), holding, said, where the bind fails or its binding does not read; the first binding is moved into place without
+overwriting, the take names Current's work cycle under Current and none under a named version, and the next look says what the starts
+bound. Detail: D190's CUTOVER1g note. On Opus.

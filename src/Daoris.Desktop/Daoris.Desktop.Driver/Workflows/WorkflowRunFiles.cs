@@ -31,15 +31,16 @@ public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
 
     /// <summary>
     /// Keep a run's binding where none is (design §4.5): a run already bound keeps the version it started on. Written atomically,
-    /// BOM-less and LF.
+    /// BOM-less and LF, and moved into place without overwriting (FABRIC-CUTOVER1g, the cutover design §8): starts run beside one
+    /// another, and two of one run checked for a binding and then each wrote one, so the second's replaced the first's.
     /// </summary>
-    /// <returns>Whether it was written: false where the run was bound already.</returns>
+    /// <returns>Whether it was written: false where the run was bound already, by an earlier start or by one beside this one.</returns>
     public bool Bind(WorkflowRunBinding binding)
     {
         var path = WorkflowRunBindings.PathOf(home, binding.Run);
         if (File.Exists(path)) return false;
         Directory.CreateDirectory(WorkflowRunBindings.FolderOf(home));
-        AtomicFile.WriteText(path, ToJson(binding));
+        if (!AtomicFile.TryCreateText(path, ToJson(binding))) return false;
         // This process's own write wakes no landing (FABRIC-END7, EVENT2's rule): the gate's files are heard for another's.
         HomeWrites.Mine(path);
         return true;

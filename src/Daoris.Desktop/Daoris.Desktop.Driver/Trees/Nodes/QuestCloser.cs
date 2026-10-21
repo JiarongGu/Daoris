@@ -903,19 +903,27 @@ public static class ClosureBinding
     /// closure graph governs the quest and it is bound to none: nothing is asked, kept or said (the owner's install).
     /// </summary>
     /// <param name="session">The session opening, whose take alone binds the graph named for it (FABRIC-CLOSE1o); none names nothing.</param>
+    /// <param name="run">The binding of the run the quest's work is, as the start's bind kept it before this take (FABRIC-CUTOVER1g).</param>
     public static async Task<ClosureBound?> AtStartAsync(
         IClosureBindPort port, DriverConfig config, QuestView quest, string workspace, bool remote, string? home, CancellationToken ct,
-        string? session = null)
+        string? session = null, WorkflowRunBinding? run = null)
     {
         if (quest.Closure is { Length: > 0 } bound) return new(true, $"#{quest.Id} closes through its graph `{bound}`: its session says `ready`.");
-        return quest.Status == "Open" ? await AtTakeAsync(port, config, quest, workspace, remote, ct, home, session).ConfigureAwait(false) : null;
+        return quest.Status == "Open" ? await AtTakeAsync(port, config, quest, workspace, remote, ct, home, session, run).ConfigureAwait(false) : null;
     }
 
     /// <summary>The bind for a quest just taken, or null where no closure graph governs it: nothing is asked, nothing changes.</summary>
+    /// <param name="run">
+    /// The binding of the run the quest's work is (FABRIC-CUTOVER1g, D190's binding moment; the cutover design §8): the take names the graph
+    /// its run is bound to. Under Current, or with no binding (a quest whose id names no run), Current's work cycle, as before; under a named
+    /// version, none, so a schema-1 run's quest closes by its done as schema 1 reads it. A schema-2 run's take names its version's graph where
+    /// that holds <c>quest.close</c> from FABRIC-CUTOVER1h, and none until then.
+    /// </param>
     public static async Task<ClosureBound?> AtTakeAsync(
         IClosureBindPort port, DriverConfig config, QuestView quest, string workspace, bool remote, CancellationToken ct, string? keepIn = null,
-        string? session = null)
+        string? session = null, WorkflowRunBinding? run = null)
     {
+        if (run is { IsCurrent: false }) return null;
         var home = NodeGraphHomes.Work(config, quest.To, workspace, WorkUnitKind.Quest);
         if (!QuestClosing.Holds(home.Graph)) return null;
         const string AsToday = "so it closes by its done, as today.";

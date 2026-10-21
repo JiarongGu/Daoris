@@ -32,7 +32,10 @@ public interface IWorkflowRunStore
     /// <summary>A run's binding, or null where it has none here, or its file does not read as one.</summary>
     WorkflowRunBinding? Read(string run);
 
-    /// <summary>A run's binding kept where none is: a run already bound keeps the version it started on. False where it was bound already.</summary>
+    /// <summary>
+    /// A run's binding kept where none is: a run already bound keeps the version it started on. False where it was bound already, a
+    /// bind racing it included: of two binds of one run at once exactly one is kept (FABRIC-CUTOVER1g).
+    /// </summary>
     bool Bind(WorkflowRunBinding binding);
 
     /// <summary>A run's binding written over its file, whole: the person's keep (WORKFLOW1f) and nothing else.</summary>

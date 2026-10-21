@@ -194,6 +194,84 @@ public sealed class WorkflowRunBindingTests : IDisposable
         Assert.Contains("\"at\": \"2026-10-09T09:12:30Z\"", text);
     }
 
+    /// <summary>
+    /// FABRIC-CUTOVER1g (design §8, *one first binding*): starts run beside one another, so two binds of one run can race. The first
+    /// binding is moved into place without overwriting: exactly one bind is written, whole, and every other reads it as bound already.
+    /// </summary>
+    [Fact]
+    public async Task Binds_of_one_run_at_once_leave_the_first_binding_whole()
+    {
+        Save("docs-to-pr", Steps("automatic"));
+        var config = Config("""{"workflows":{"web-app":{"default":"docs-to-pr"}}}""");
+        const int Racers = 8;
+        for (var round = 0; round < 10; round++)
+        {
+            var run = $"r{round}";
+            using var gate = new Barrier(Racers);
+            var binds = Enumerable.Range(0, Racers)
+                .Select(racer => Task.Run(() =>
+                {
+                    var binding = WorkflowRunBindings.Plan(config, _home, run, "web-app", "work", null, null, [], At) with { Label = $"racer {racer}" };
+                    gate.SignalAndWait();
+                    return (Written: WorkflowRunBindings.Bind(_home, binding), binding.Label);
+                }))
+                .ToArray();
+            var came = await Task.WhenAll(binds);
+
+            var written = Assert.Single(came, each => each.Written);
+            Assert.Equal(written.Label, WorkflowRunBindings.Read(_home, run)!.Label);
+        }
+
+        Assert.Empty(Directory.GetFiles(WorkflowRunBindings.FolderOf(_home), "*.writing"));
+    }
+
+    /// <summary>
+    /// FABRIC-CUTOVER1g (design §8): two starts of one run at once each bind it before their take; one makes the binding and the other
+    /// reads it as bound already, so both take under the one binding.
+    /// </summary>
+    [Fact]
+    public async Task Two_starts_of_one_run_at_once_both_take_under_one_binding()
+    {
+        Save("docs-to-pr", Steps("automatic"));
+        var config = Config("""{"workflows":{"web-app":{"default":"docs-to-pr"}}}""");
+        // The chain came here from `api`, so its first quest here, q1, names the run both steps are.
+        var before = new QuestView("q0", "daoris", "api", "Its endpoint", "", "Done");
+        var first = new QuestView("q1", "daoris", "web-app", "Docs", "", "Open") { Parent = "q0" };
+        var second = new QuestView("q2", "daoris", "web-app", "More docs", "", "Open") { Parent = "q1" };
+        var world = new Gated([before, first, second]);
+
+        var starts = new[] { first, second }
+            .Select(quest => Task.Run(() => WorkflowRunStart.AtStartAsync(
+                new WorkflowStarted(quest, "work"), world, _home, config, [], () => At, CancellationToken.None)))
+            .ToArray();
+        var came = await Task.WhenAll(starts);
+
+        Assert.Equal([WorkflowBindCame.Bound, WorkflowBindCame.Already], came.Select(each => each.Came).Order());
+        Assert.All(came, each => Assert.Equal(("q1", "docs-to-pr", (int?)1), (each.Run, each.Binding!.Workflow, each.Binding.Version)));
+        Assert.Single(world.Said);
+    }
+
+    /// <summary>A service that answers each start's read of the chain only once both have asked, so the two binds meet.</summary>
+    private sealed class Gated(IReadOnlyList<QuestView> quests) : IWorkflowStartWorld
+    {
+        private readonly Barrier _both = new(2);
+
+        public List<LandingLine> Said { get; } = [];
+
+        public Task<IReadOnlyList<QuestView>> EveryQuestAsync(CancellationToken ct)
+        {
+            _both.SignalAndWait(TimeSpan.FromSeconds(10));
+            return Task.FromResult(quests);
+        }
+
+        public Task<AskView?> FindAskAsync(string id, CancellationToken ct) => Task.FromResult<AskView?>(null);
+
+        public void Chosen(LandingLine line)
+        {
+            lock (Said) Said.Add(line);
+        }
+    }
+
     [Fact]
     public void A_Current_binding_reads_back_its_graph()
     {
