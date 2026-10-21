@@ -29,9 +29,10 @@ internal static class SetupConsole
         var home = DriverConfig.HomeOf(configPath);
         using var service = ServiceClient.FromEnvironment();
 
+        // RPC1e: the running Daoris's client where one answers, the press confirmed in its window.
         return await SetupCommand.RunAsync(
             args, Console.Out, new SetupWorld(service, home), config, SetupWorld.DoorOf(config, home), home,
-            DateOnly.FromDateTime(DateTime.Now)).ConfigureAwait(false);
+            DateOnly.FromDateTime(DateTime.Now), InstanceHost.World(home, "setup")).ConfigureAwait(false);
     }
 
     private static async Task<int> WorkspaceAsync(string[] args, MachineLog log)

@@ -19287,6 +19287,12 @@ move is older through `HistoryClearing`'s two presses (`HistoryKeeping`), every 
 `HistoryKeepingTests`, `KeepRulesTests`' and `DriverChoicesBothWaysTests`' history rows, `WiringDomain.test.tsx` in English and 中文.
 No installed window has set one. Detail: D195's KEEP1g note. On Opus.
 
+## RPC1e — the rest of the host's verbs with a window twin (2026-10-22, D182)
+
+> - [ ] **RPC1e — the rest of the host's verbs with a window twin** (driver host; after RPC1d). Work, history, help, opinion, setup, register, sync, plugins and the channel send their routes; reads go through the instance where they have one. Proof: the census test with only `chat`, `help resume`, `drive`, `update` and the service's verbs off the pipe, each with its reason. RPCOPEN1 (2026-10-20): `sessions`, `sync` and `register` are the instance's clients (`SESSION_GROUPS`, `SYNC_NOW`, `REGISTRY_REFRESH`) with the alone path's words; `trace`, `git branches`, `workflow`, `help list`, `history` and `plugins show` stay alone, each held in the census's `OpenRoutes.Verbs` with its reason (`trace` and `git branches` keep machine-local text off the wire, D47 §4: what may travel over the local pipe is a decision first); the presses wait for RPC1c.
+
+**Outcome** 2026-10-22: work, history, help, opinion, setup, the channel's post and `plugins approve|withdraw` send their routes, presses confirmed in
+the window and lists read, each route asked for `said` running the verb's own path; `PipeCensusTests` holds who stays alone. Detail: D182's RPC1e note.
 ## PUSH1f2e — the agents' tools and accounts (2026-10-22, D194)
 
 > - [ ] **PUSH1f2e — the agents' tools and accounts** (cli, driver, modules, tools; after 2d; D194, the alone-path design §5). Read its row in §5 and the sections it names; build it end to end (D187), the family's TypeScript leaving as §4 says. Built so far: PUSH1f2e1-6 (archived): every verb but `update` and `pin`. Left: (1) Codex's release channel in the driver beside `ClaudeReleaseDownloads` (`channels.ts`' `codex`, its newest and its version check), then `agent pin` and `update` (a pin's move, else the agent's updater at the terminal) with §1.4's publication, a channel pin staged under its process's name, and `daoris agent` handing the family whole; (2) the TypeScript's leaving and the twins rows and tables §4 names; (3) §5's Process proofs through the CLI and the host (a code typed to a stub's sign-in, a key read the same way, a sign-in stopped midway, the probe lock against the host's reads; `install` finding the machine's npm beside a managed node is `ToolsChildrenTests`'). Proof: as §5 names it.
@@ -19337,3 +19343,12 @@ bound. Detail: D190's CUTOVER1g note. On Opus.
 
 **Outcome** 2026-10-22: a quest's page says its own unit's closure ends as *Close* among its facts, in the work's foot's words (en, zh),
 a stop offered in the danger ink with its press still What needs you's; `workOf` picks an end by its unit's name. Detail: D173's CLOSE1j2 note.
+
+## FABRIC-PERFORM1e — the kit and an example (2026-10-22, D173)
+
+> - [ ] **FABRIC-PERFORM1e — the kit and an example** (driver, examples; after PERFORM1d; the fabric events design's rows table (§E10), §D9). The scaffold, `plugins try --cycle`, a contract test, an example performed plugin.
+
+**Outcome** 2026-10-22: built. The kit scaffolds a performer (`work.mjs`'s journal, a contract test, `cycle.json`), `plugins try
+--cycle` drives one through the driver, both in a stand-in world; `examples/plugins/local-preview` fills one in. The plugin design's §9
+and D64 amended. Proof: `PluginKitTests`, `PluginCycleFixtureTests`, the example's `node --test`. Detail: D173's FABRIC-PERFORM1e note.
+On Opus.

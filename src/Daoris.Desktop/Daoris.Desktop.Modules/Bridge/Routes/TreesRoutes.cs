@@ -795,6 +795,15 @@ public sealed class TreesRoutes(DriverLoop loop)
     {
         var service = _loop.Service ?? throw NotReady();
         var presses = new OpinionPresses(_loop.Home, service);
+        // RPC1e: `daoris-driver opinion …` sent over the pipe asks for the verb's own words, a refusal among them as its exit 1.
+        if (Flag(request, "said"))
+        {
+            var said = await TerminalSaid.RunAsync(output => OpinionCommand.RunAsync(
+                OpinionAsked(request), presses, service, _loop.Processes, output, cancellationToken)).ConfigureAwait(false);
+            if (request.Type != "OPINION_GATE") _loop.Nudge();
+            return said;
+        }
+
         if (request.Type == "STOP_OPINION")
         {
             var opinion = PayloadHelper.GetRequiredValue<string>(request.Payload, "opinion");
@@ -823,6 +832,20 @@ public sealed class TreesRoutes(DriverLoop loop)
             Detail = pressed.Gate is { } read ? OpinionDetail(read.Opinion, session => _loop.Usage.Of(session)) : null,
         };
     }
+
+    /// <summary>What <c>daoris-driver opinion</c> asked, read from the route it sent and its payload (RPC1e).</summary>
+    private static OpinionCommandAsk OpinionAsked(IpcRequest request) => request.Type switch
+    {
+        "STOP_OPINION" => new("stop", PayloadHelper.GetRequiredValue<string>(request.Payload, "opinion")),
+        "OPINION_GATE" => new("show", PayloadHelper.GetRequiredValue<string>(request.Payload, "id")),
+        "ASK_OPINION" => new("ask", PayloadHelper.GetRequiredValue<string>(request.Payload, "id"))
+        {
+            Reviewer = Optional(request, "reviewer"), SameAgent = Flag(request, "sameAgent"),
+            Failure = Optional(request, "occasion") == "failure", Words = Optional(request, "words"),
+        },
+        "OPINION_ANYWAY" => new("anyway", PayloadHelper.GetRequiredValue<string>(request.Payload, "id")) { Words = Optional(request, "words") },
+        _ => new("myself", PayloadHelper.GetRequiredValue<string>(request.Payload, "id")) { Words = Optional(request, "words") },
+    };
 
     /// <summary>
     /// The second opinion as the review draws it (XAGENT1g; the second-agent design §9): the reviewer, the candidate and whether it

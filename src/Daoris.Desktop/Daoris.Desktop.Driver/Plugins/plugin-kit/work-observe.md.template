@@ -1,0 +1,16 @@
+## Working
+
+This plugin observes a step: while a unit's work awaits `{{step}}`, which `plugin.json` declares, Daoris tells it the unit
+at `work/watch`, and it says at `work/step` what its platform says of the unit's tip. `work.mjs` keeps what it reported
+in a journal: the same answer for the same tip is sent once, a changed one under an id of its own, and a resync sends
+each again under the id it first had.
+
+So you write one external call in `plugin.mjs`: `observe()`, what the platform says of an awaited step at a unit's tip.
+An event is believed only at the tip it names, so it names the `commit` it was told.
+
+What a plugin may not do, whatever it can: write a store, a rule or a ref of Daoris's; stand in for a person; make
+another step's evidence; use a publishing right or a credential it was not given; write into another repository.
+
+`DAORIS_PLUGIN_WORLD`, when it is set, names a JSON file that answers in the platform's place, so a test or a trial
+reaches nothing; `work.mjs` says what it may script.
+

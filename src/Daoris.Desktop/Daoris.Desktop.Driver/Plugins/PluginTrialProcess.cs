@@ -25,7 +25,11 @@ internal sealed class PluginTrialProcess : IDisposable
     /// Through the start gate (PROCSTART2): the plugin page's trial is a press, so a person's start (PARALLEL1d), and the
     /// trial's token ends its wait for a place (PARALLEL1e).
     /// </remarks>
-    public static async Task<PluginTrialProcess> StartAsync(PluginEntry entry, string home, string? noRepositoryAt, CancellationToken ct)
+    /// <param name="world">
+    /// The kit's stand-in world (FABRIC-PERFORM1e, <see cref="PluginCycles.World"/>): a file answering in a working plugin's platform's place,
+    /// so a trial's attempt reaches nothing. Null where nothing it is sent can reach a platform's work.
+    /// </param>
+    public static async Task<PluginTrialProcess> StartAsync(PluginEntry entry, string home, string? noRepositoryAt, CancellationToken ct, string? world = null)
     {
         var info = HookProcess.StartInfo(entry, home);
         if (noRepositoryAt is not null)
@@ -33,6 +37,8 @@ internal sealed class PluginTrialProcess : IDisposable
             info.Environment["GIT_DIR"] = Path.Combine(noRepositoryAt, ".git");
             info.Environment["GIT_TERMINAL_PROMPT"] = "0";
         }
+
+        if (world is not null) info.Environment[PluginCycles.World] = world;
 
         return new(await ProcessStarts.Shared.StartAsync(info, ct).ConfigureAwait(false)
             ?? throw new Win32Exception("the process did not start"));

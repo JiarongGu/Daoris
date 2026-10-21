@@ -23,7 +23,10 @@ public sealed class SetupRoutes(DriverContext context)
     // press adds, how its work lands, the agent that carries it and the quest's whole text. It reads, and changes nothing.
     [DriverRoute("SETUP_PLAN")]
     private async Task<object?> SetupPlanAsync(IpcRequest request, CancellationToken cancellationToken) =>
-        Shown(await PlanAsync(request, cancellationToken).ConfigureAwait(false));
+        // RPC1e: `daoris-driver setup <repository> --plan` in the verb's own words.
+        Flag(request, "said")
+            ? await SaidAsync(request, plan: true, cancellationToken).ConfigureAwait(false)
+            : Shown(await PlanAsync(request, cancellationToken).ConfigureAwait(false));
 
     // The press, as the terminal's: the plan read again now, then the rule into the repository's scope and one ask to it; a
     // refusal publishes nothing and adds nothing, and is an answer, its plan beside it. It declares the ask, its quest and the
@@ -32,6 +35,14 @@ public sealed class SetupRoutes(DriverContext context)
     [Publishes("SETUP_PRESS", StateScopes.Quests | StateScopes.Asks | StateScopes.Rules)]
     private async Task<object?> SetupPressAsync(IpcRequest request, CancellationToken cancellationToken)
     {
+        // RPC1e: `daoris-driver setup <repository>`, the verb's own press and words, a refusal its exit 1.
+        if (Flag(request, "said"))
+        {
+            var said = await SaidAsync(request, plan: false, cancellationToken).ConfigureAwait(false);
+            _loop.Nudge();
+            return said;
+        }
+
         var plan = await PlanAsync(request, cancellationToken).ConfigureAwait(false);
         var outcome = await SetupPress.ApplyAsync(plan, _context.SetupWorldOf(_loop.Service!), _loop.Home, cancellationToken)
             .ConfigureAwait(false);
@@ -46,6 +57,21 @@ public sealed class SetupRoutes(DriverContext context)
             outcome.Added,
             Plan = Shown(plan),
         };
+    }
+
+    /// <summary>
+    /// The verb's own lines and exit code for a set-up a terminal sent (RPC1e): <see cref="SetupCommand.RunAsync"/> with this Daoris's
+    /// world, file, door and home, so the plan and the press say what they say alone.
+    /// </summary>
+    private async Task<object> SaidAsync(IpcRequest request, bool plan, CancellationToken cancellationToken)
+    {
+        var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
+        var service = _loop.Service ?? throw NotReady();
+        var config = DriverConfig.Load(_loop.ConfigPath);
+        string[] args = plan ? [repository, "--plan"] : [repository];
+        return await TerminalSaid.RunAsync(output => SetupCommand.RunAsync(
+            args, output, _context.SetupWorldOf(service), config, _context.Door(config), _loop.Home, DateOnly.FromDateTime(DateTime.Now),
+            cancellationToken)).ConfigureAwait(false);
     }
 
     /// <summary>The press's plan for the payload's repository, against the driver's file and the door its sessions ride.</summary>

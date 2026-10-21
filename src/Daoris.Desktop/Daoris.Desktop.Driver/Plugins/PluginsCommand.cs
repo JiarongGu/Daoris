@@ -39,8 +39,48 @@ public static class PluginsCommand
     };
 
     /// <param name="log">This host's machine log, where the kit's trial of an installed plugin is written.</param>
+    /// <param name="instance">
+    /// Where the terminal's verb looks for the running Daoris (RPC1e, the terminal RPC design §7.2): <c>approve</c> and <c>withdraw</c>
+    /// are the person's presses, sent as <c>PLUGIN_ACTION</c> and confirmed in its window, its route asked for this verb's own lines.
+    /// <c>new</c>, <c>try</c>, <c>show</c> and <c>activity</c> stay this terminal's: their words name this machine's folders, which no
+    /// answer carries (§4.3). Null acts alone.
+    /// </param>
     public static async Task<int> RunAsync(
-        string[] args, TextWriter output, string? home, MachineLog? log = null, CancellationToken ct = default)
+        string[] args, TextWriter output, string? home, MachineLog? log = null, CancellationToken ct = default, InstanceWorld? instance = null) =>
+        Granted(args) is { } payload
+            ? await InstanceDoor.ThroughAsync(instance, PersonPresses.PluginAction, payload, () => AloneAsync(args, output, home, log, ct), output, ct)
+                .ConfigureAwait(false)
+            : await AloneAsync(args, output, home, log, ct).ConfigureAwait(false);
+
+    /// <summary>
+    /// <c>approve</c>'s and <c>withdraw</c>'s payload, <c>PLUGIN_ACTION</c>'s own as the page sends it (<c>help-approve</c> with the writes
+    /// named, <c>help-reads</c>, <c>help-withdraw</c>), beside <c>said: true</c>; null for every other word, the usage's among them.
+    /// </summary>
+    private static Dictionary<string, object?>? Granted(string[] args) => args switch
+    {
+        ["approve", var id, var server] => InstanceDoor.Said(("action", "help-approve"), ("id", id), ("server", server)),
+        ["approve", var id, var server, "--reads-only"] => InstanceDoor.Said(("action", "help-reads"), ("id", id), ("server", server)),
+        ["approve", var id, var server, "--writes", var named] => InstanceDoor.Said(
+            ("action", "help-approve"), ("id", id), ("server", server),
+            ("writes", named.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))),
+        ["withdraw", var id, var server] => InstanceDoor.Said(("action", "help-withdraw"), ("id", id), ("server", server)),
+        _ => null,
+    };
+
+    /// <summary>
+    /// The words <c>PLUGIN_ACTION</c>'s payload stands for, when a terminal sent it asking for its words (RPC1e): the verb's own, so the
+    /// route runs <see cref="RunAsync"/> as the terminal would alone; null for an action no verb of this family sends.
+    /// </summary>
+    public static string[]? GrantWords(string action, string id, string server, IReadOnlyList<string>? writes) => action switch
+    {
+        "help-approve" when writes is not null => ["approve", id, server, "--writes", string.Join(",", writes)],
+        "help-approve" => ["approve", id, server],
+        "help-reads" => ["approve", id, server, "--reads-only"],
+        "help-withdraw" => ["withdraw", id, server],
+        _ => null,
+    };
+
+    private static async Task<int> AloneAsync(string[] args, TextWriter output, string? home, MachineLog? log, CancellationToken ct)
     {
         try
         {

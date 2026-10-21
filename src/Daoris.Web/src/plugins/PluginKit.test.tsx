@@ -80,6 +80,18 @@ describe('the plugin kit card', () => {
     expect(screen.getByRole('checkbox', { name: /^work\/state — A query, when git cannot tell whether a landed branch merged$/ })).toBeInTheDocument();
   });
 
+  // FABRIC-PERFORM1e: the work wire's three speak at times of their own, so each says its own when, not its kind's.
+  it('says when each work point speaks, apart from the points of its kind', () => {
+    draw({
+      points: [...POINTS, { name: 'work/watch', kind: 'observation' }, { name: 'work/step', kind: 'event' }, { name: 'work/perform', kind: 'act' }],
+    });
+
+    expect(screen.getByRole('checkbox', { name: /^work\/watch — An observation, while some work awaits its steps$/ })).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: /^work\/step — An event it sends, saying what became of a step$/ })).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: /^work\/perform — An act, once a step it performs is due$/ })).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: /^work\/land — An act, once a landing has made its branch$/ })).toBeInTheDocument();
+  });
+
   // A zero-basis field never wraps its row, it only shrinks: with the side bar open the folder showed
   // two characters beside its two buttons (seen on the window). A floor makes the row wrap instead.
   it('keeps each field wide enough to read, wrapping its row rather than shrinking the field', () => {

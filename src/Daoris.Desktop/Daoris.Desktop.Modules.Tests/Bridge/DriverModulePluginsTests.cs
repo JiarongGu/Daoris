@@ -269,8 +269,8 @@ public sealed class DriverModulePluginsTests : DriverModuleBridge
     {
         var module = Module();
         var kit = (await AnswerAsync(module, "PLUGINS")).GetProperty("kit").GetProperty("points").EnumerateArray().ToList();
-        Assert.Equal(["quest/consider", "session/ended", "work/land", "work/state", "state/changed"], kit.Select(p => p.GetProperty("name").GetString()!).ToArray());
-        Assert.Equal(["decision", "observation", "act", "query", "observation"], kit.Select(p => p.GetProperty("kind").GetString()!).ToArray());
+        Assert.Equal(["quest/consider", "session/ended", "work/land", "work/state", "state/changed", "work/watch", "work/step", "work/perform"], kit.Select(p => p.GetProperty("name").GetString()!).ToArray());
+        Assert.Equal(["decision", "observation", "act", "query", "observation", "observation", "event", "act"], kit.Select(p => p.GetProperty("kind").GetString()!).ToArray());
 
         var repository = Path.Combine(Home, "a-plugins-repository");
         Directory.CreateDirectory(repository);

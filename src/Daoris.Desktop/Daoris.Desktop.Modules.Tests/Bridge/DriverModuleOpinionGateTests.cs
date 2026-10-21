@@ -279,4 +279,54 @@ public sealed class DriverModuleOpinionGateTests : DriverModuleBridge
 
         Assert.StartsWith(Refusals.DriverNotReady, refused, StringComparison.Ordinal);
     }
+
+    /// <summary>A service whose lists are empty and which holds no opinion: what the presses read finds nothing.</summary>
+    private sealed class Empty : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            var path = request.RequestUri!.AbsolutePath;
+            var listed = path is "/api/sessions" or "/api/quests" or "/api/registry" or "/api/asks";
+            return Task.FromResult(new HttpResponseMessage(listed ? System.Net.HttpStatusCode.OK : System.Net.HttpStatusCode.NotFound)
+            {
+                Content = new StringContent(listed ? "[]" : """{"error":"not here"}""", System.Text.Encoding.UTF8, "application/json"),
+            });
+        }
+    }
+
+    /// <summary>
+    /// RPC1e: asked for its words (<c>said: true</c>) by <c>opinion ask|show|stop|anyway|myself</c> sent over the pipe, each route answers
+    /// the lines and the exit code the alone path prints over the same service, a refusal among them as an answer, never thrown: no
+    /// such session, and no such opinion. The page asks for no words, and its answer keeps its shape.
+    /// </summary>
+    [Fact]
+    public async Task Asked_for_its_words_each_opinion_route_answers_the_lines_the_alone_path_prints()
+    {
+        var served = new Empty();
+        var loop = Loop();
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(served, disposeHandler: false)));
+        var module = new DriverModule(Bus, loop);
+
+        foreach (var (route, payload, words) in new (string, object, string[])[]
+        {
+            ("STOP_OPINION", new { opinion = "o9", said = true }, ["stop", "o9"]),
+            ("OPINION_GATE", new { id = "s9", said = true }, ["show", "s9"]),
+            ("ASK_OPINION", new { id = "s9", reviewer = "codex-acp", said = true }, ["ask", "s9", "--reviewer", "codex-acp"]),
+            ("OPINION_ANYWAY", new { id = "s9", words = "fine", said = true }, ["anyway", "s9", "fine"]),
+            ("OPINION_MYSELF", new { id = "s9", said = true }, ["myself", "s9"]),
+        })
+        {
+            var answer = (await AnswerAsync(module, route, payload)).GetProperty("said");
+            var said = (string.Join("\n", answer.GetProperty("out").EnumerateArray().Select(line => line.GetString())), answer.GetProperty("code").GetInt32());
+            var client = new ServiceClient("http://stand-in", null, new HttpClient(served, disposeHandler: false));
+            var output = new StringWriter { NewLine = "\n" };
+            var code = await OpinionCommand.RunAsync(OpinionCommand.Read(words, out _)!, new OpinionPresses(loop.Home, client), client, loop.Processes, output);
+
+            Assert.Equal((output.ToString().TrimEnd('\n'), code), said);
+            Assert.Equal(1, code);
+            Assert.StartsWith("opinion: ", said.Item1, StringComparison.Ordinal);
+        }
+
+        Assert.False((await AnswerAsync(module, "STOP_OPINION", new { opinion = "o9" })).TryGetProperty("said", out _));
+    }
 }

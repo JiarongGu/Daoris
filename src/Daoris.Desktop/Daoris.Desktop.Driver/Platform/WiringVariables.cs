@@ -116,6 +116,7 @@ public static class WiringVariables
         ["DAORIS_PLUGIN_ID"] = "handed to a plugin's process by the driver",
         ["DAORIS_PLUGIN_FOLDER"] = "handed to a plugin's process by the driver",
         ["DAORIS_PLUGIN_DATA"] = "handed to a plugin's process by the driver",
+        [PluginCycles.World] = "handed to a plugin's process by the kit's trial and cycle alone (FABRIC-PERFORM1e): the stand-in world it answers from in its platform's place",
         ["DAORIS_RULES_HOME"] = "handed to a session's connector by the driver: the home its rule proposals go to",
         ["DAORIS_STOP_ON_INPUT_END"] = "handed to the service host the desktop starts: its stop",
         ["DAORIS_PERSON_KEY_ON_INPUT"] = "handed to the service host the desktop starts: the person key's line",

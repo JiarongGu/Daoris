@@ -17,6 +17,10 @@ internal sealed class HelpRoomMakingAPlugin : IHelpRoomSection
         [HookPoints.Land] = "to push a branch Daoris made and open its pull request",
         [HookPoints.State] = "to say whether a landed branch's pull request completed, and with which commit",
         [HookPoints.StateChanged] = "to hear what a press or a terminal's verb changed of what the driver holds",
+        // FABRIC-PERFORM1e: the work wire's points, which the kit scaffolds with its performer's contract and contract test.
+        [HookPoints.Watch] = "to be told which units await its steps",
+        [HookPoints.Step] = "to report what became of a step it performs or observes",
+        [HookPoints.Perform] = "to perform a step of the work, once per attempt, with what it makes removed at the end",
     };
 
     public string Render(HelpMachine machine)

@@ -388,4 +388,77 @@ public sealed class DriverModuleWorkTests : DriverModuleBridge
         Assert.Contains("\"door\":\"screen\"", line);
         Assert.Contains("\"declined\":1", line);
     }
+
+    /// <summary>The lines and the exit code a route answered as <c>said</c> (RPC1e), which the terminal prints.</summary>
+    private static (string[] Out, int Code) SaidOf(System.Text.Json.JsonElement answer)
+    {
+        var said = answer.GetProperty("said");
+        return ([.. said.GetProperty("out").EnumerateArray().Select(line => line.GetString()!)], said.GetProperty("code").GetInt32());
+    }
+
+    /// <summary>The terminal's own path over the same ledger and home, with no instance to look for: what the verb prints alone.</summary>
+    private async Task<(string[] Out, int Code)> AloneAsync(LoopbackHost ledger, WorkAsk ask)
+    {
+        var output = new StringWriter { NewLine = "\n" };
+        var world = new WorkWorld(new ServiceClient(ledger.Address, null), Home, DriverConfigPath,
+            new SessionProcesses(DaorisHome.Entry(Home, HomeEntry.SessionPids)));
+        var code = await WorkCommand.RunAsync(ask, world, output);
+        return ([.. output.ToString().Split('\n').SkipLast(1)], code);
+    }
+
+    /// <summary>
+    /// RPC1e: asked for its words (<c>said: true</c>) by <c>ask --pause|--resume|--abandon</c> and <c>quest pause|resume|abandon</c> sent
+    /// over the pipe, each work route answers the lines and the exit code the alone path prints over the same ledger, as an answer and
+    /// never a refusal: an unknown work, a resume of what is not paused, an abandon's list, and an abandon with no reason. The page asks
+    /// for no words, and its answers keep their shape.
+    /// </summary>
+    [Fact]
+    public async Task Asked_for_its_words_each_work_route_answers_the_lines_the_alone_path_prints()
+    {
+        using var ledger = Ledger();
+        var module = await UpAsync(ledger);
+
+        foreach (var (route, payload, ask) in new (string, object, WorkAsk)[]
+        {
+            ("WORK_PAUSE", new { ask = "zz", said = true }, new WorkAsk(WorkScope.Ask, "pause", "zz")),
+            ("WORK_RESUME", new { quest = "q99", said = true }, new WorkAsk(WorkScope.Quest, "resume", "q99")),
+            ("WORK_RESUME", new { ask = "a1", said = true }, new WorkAsk(WorkScope.Ask, "resume", "a1")),
+            ("WORK_PLAN", new { ask = "a1", said = true }, new WorkAsk(WorkScope.Ask, "abandon", "a1")),
+            ("WORK_ABANDON", new { quest = "q99", reason = "gone wrong", said = true }, new WorkAsk(WorkScope.Quest, "abandon", "q99") { Reason = "gone wrong", Yes = true }),
+        })
+        {
+            var said = SaidOf(await AnswerAsync(module, route, payload));
+            var alone = await AloneAsync(ledger, ask);
+            Assert.True(alone.Out.Length > 0, $"{route} printed nothing alone");
+            Assert.Equal((string.Join("\n", alone.Out), alone.Code), (string.Join("\n", said.Out), said.Code));
+        }
+
+        // An abandon's press with no reason is the verb's own sentence, exit 1, and nothing is written.
+        var reasonless = SaidOf(await AnswerAsync(module, "WORK_ABANDON", new { ask = "a1", said = true }));
+        Assert.Equal(($"daoris-driver: {WorkAbandoning.NeedsReason}", 1), (Assert.Single(reasonless.Out), reasonless.Code));
+        Assert.False(File.Exists(new AbandonRecord(Home).FilePath));
+        Assert.False((await AnswerAsync(module, "WORK_RESUME", new { ask = "a1" })).TryGetProperty("said", out _));
+    }
+
+    /// <summary>
+    /// RPC1e: a terminal's pause runs here as the person's press from the terminal: what runs of the work is stopped by this Daoris's own
+    /// registry, the lines are the verb's, and the machine log says the terminal's door.
+    /// </summary>
+    [Fact]
+    public async Task A_terminal_s_pause_runs_here_in_the_verb_s_words_at_the_terminal_s_door()
+    {
+        using var ledger = Ledger();
+        var log = new MachineLog(Home, "desktop");
+        var module = await UpAsync(ledger, log);
+
+        var (lines, code) = SaidOf(await AnswerAsync(module, "WORK_PAUSE", new { ask = "a1", said = true }));
+
+        Assert.Equal(0, code);
+        Assert.StartsWith("daoris-driver: ", lines[0], StringComparison.Ordinal);
+        Assert.Equal("w0rk1ng0", DriverConfig.Load(DriverConfigPath).PausedAsk("a1")!.Stopped["q2"]);
+        log.Dispose();
+        var line = Assert.Single(Directory.GetFiles(DaorisHome.Entry(Home, HomeEntry.Logs)).SelectMany(File.ReadAllLines),
+            each => each.Contains("\"work.paused\"", StringComparison.Ordinal));
+        Assert.Contains("\"door\":\"terminal\"", line);
+    }
 }

@@ -1,0 +1,48 @@
+## Working
+
+This plugin performs a step: Daoris asks it to do a piece of work for a unit (a branch, a quest), once the step's place in
+the work's graph is due, and it says what became of it. `plugin.json` declares the step, `{{step}}`, with what the kit
+promises of it:
+
+- **`idempotent`**: an attempt Daoris sends again under the same `idempotencyKey`, after a restart or a lost answer, never
+  does the work twice. `work.mjs` writes each key to its journal before `act()` is called, and calls it once per key.
+- **`reconcile`**: asked `work/reconcile` about an attempt, it answers what became of it: `done` with its outcome,
+  `not-started`, `running`, `failed` with its outcome, or `unknown`. `work.mjs` answers from its journal, and asks `check()`
+  only about an attempt a process before this one began, which only the platform can tell.
+- **`transient`**: the failure codes worth trying again, under the step's `retry`. Any other code stops the step for the
+  person. An attempt whose outcome is unknown is never tried again by itself.
+- **`resources`**: what `act()` makes, by schema, `{{resource}}` here, `temporary`: Daoris asks `work/cleanup` to remove
+  each one once the work's end is over, under the same key at every try, and `work.mjs` calls `remove()` once per resource
+  and answers `already-gone` when it is asked again.
+
+So you write three external calls in `plugin.mjs` and nothing else: `act()`, the work; `check()`, what became of an
+attempt an earlier process began; `remove()`, one thing `act()` made. Daoris supplies the ordering, the references,
+recovering a dispatch, the deadlines, the validation and the cleanup's accounting.
+
+What a plugin may not do, whatever it can: write a store, a rule or a ref of Daoris's; remove anything except through
+`work/cleanup`; stand in for a person; make another step's evidence; use a publishing right or a credential it was not
+given; write into another repository. It acts with its own authority, on its own platform, and nothing else.
+
+### The stand-in world
+
+`DAORIS_PLUGIN_WORLD`, when it is set, names a JSON file that answers in the platform's place: `act()`, `check()` and
+`remove()` are not called, so a test or a trial reaches nothing. The kit's tests and `daoris-driver plugins try` set it,
+and nothing is sent to a plugin that does not take it. `work.mjs` says what the file may script.
+
+## Its contract test
+
+`plugin.contract.test.mjs` runs beside the wire test, with nothing of Daoris's installed, in the stand-in world. It shows:
+
+- one external effect under duplicate delivery, before and after a restart;
+- each `work/reconcile` answer;
+- `already-gone` on a repeated cleanup;
+- an event sent again keeping its id, so Daoris takes it once;
+- no frame claiming what a plugin may not, and nothing written to the Daoris home it is told.
+
+It checks the protocol, not the code's honesty: what `act()` really does on its platform is for a test of your own, with
+a fake of that platform.
+
+`daoris-driver plugins try <this folder> --cycle cycle.json` drives the same plugin through the driver itself: a step
+made due, its attempt delivered twice, a failure, a timeout, a restart and a new revision's attempt, then its resource
+removed twice. `cycle.json` names the step and what each attempt is given.
+
