@@ -5,6 +5,15 @@ with the version and date at release.
 
 ## Unreleased
 
+- The *Disk space* card on Settings → This Daoris has *Free up space…*. It first lists, removing nothing, what each rule would take now
+  (trees set aside past their days, their package folders once due, downloads unused past their days, machine log days past thirty)
+  and what could go early on your word: trees set aside before their date (saying which hold files of their own), unused downloads
+  still within their days, the browser's caches, what an earlier build left and a failed update's folder. One press removes what the
+  rules take; each early group has its own press, which says first what it removes. Each item is checked again just before it goes,
+  and one that changed since the list is kept and said. The browser's caches are cleared only while Daoris's browser is closed, and
+  its sign-ins stay. The card then shows the run as it goes and what it removed and kept. `daoris-driver space free` lists the same at
+  a terminal, and with `--yes` removes it: confirmed in Daoris's window when Daoris is running, refused from a session's own terminal.
+  In English and 中文.
 - The driver's own report lines no longer pop up as English messages in the window. What is news among them now waits in
   *Notifications* → *Done and failed* in the window's language: a session that could not be handed over to another agent, or an
   agent's ask to hand one over that was dropped, refused or could not be carried out; a quest handed to another agent that went back

@@ -19203,3 +19203,13 @@ list`, the long verbs and the TypeScript's leaving. Built: `daoris-driver agent 
 *Count*, *Measure again*, `--measure`, or the Keeping pass at most daily), with the rule that runs, `next` from the disk and the policy,
 `last` from `keeping.json` and the run lock's holder; `SYSTEM_SPACE` (`Open`) and `daoris-driver space [--json] [--measure]`; the card
 after *Folders* in both languages, no editor and no press. Detail: D195's KEEP1c note. On Opus.
+## KEEP1e — the press frees space, listed first (2026-10-22, D195)
+
+> - [ ] **KEEP1e — the press frees space, listed first** (driver, modules, web-settings; after KEEP1c; D195, the cleanup design §9). *Free up space…* and `daoris-driver space free` list what each rule takes and what could go early, then run, removing exactly what was listed. Proof: as §9 names it.
+
+**Outcome** 2026-10-22: built. `SpaceFree.Plan` lists each rule's now and the early groups, changing nothing; `SYSTEM_SPACE_FREE` (its
+`plan` open by a `PipeRule`, its run the person's) and `SpaceRuns` run exactly the units named under the home's run lock, each through
+its kind's one removal and judged again, one changed since kept and counted; the run is `SYSTEM_SPACE`'s `run`. The browser's caches
+through the shell's host (`IBrowserCaches`), kept while it runs and with no Daoris; `daoris-driver space free` lists, and with `--yes`
+is the running Daoris's client read to the run's end, or alone, refused from a session's terminal. The card's *Free up space…* in both
+languages. Detail: D195's KEEP1e note. On Opus.
