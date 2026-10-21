@@ -92,8 +92,10 @@ public sealed class LookLines(LookSaid said, string family)
 /// passing failure the next answers (D62).</para>
 /// <para><b>The event carries the class and the family, never the line</b> (D94 §5): a line can quote a session's note or an agent's
 /// words, which the session's own record keeps.</para>
-/// <para><b>The census</b> (<c>LookSaidCensusTests</c>): every line a producer of the look adds goes through here, so a line with no
-/// class fails the test.</para>
+/// <para><b>The census</b> (<c>LookSaidTests</c>): every line a producer of the look adds goes through here, so a line with no
+/// class fails the test. A producer that hands the look its lines whole takes the look's <see cref="LookSaid"/> and adds each through
+/// <see cref="LookLines"/>, or carries its class up (<see cref="LookLine"/>, <c>StartRun.Look</c>); its file joins the census's
+/// producers (NOTIFY2h2).</para>
 /// </remarks>
 /// <param name="home">The home whose notices a news line is kept in; none keeps none.</param>
 /// <param name="log">The machine log at the moment of the line, or none.</param>

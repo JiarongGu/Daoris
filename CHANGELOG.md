@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- *Done and failed* in *Notifications* now also lists, in your language, a meeting or a brainstorm that stopped because something
+  failed, an ask for a helper refused because the session that asked it left this machine, a reopen that reached no session here or
+  whose session's tree is gone, and a plugin that stopped after exiting three times within an hour.
 - `daoris-driver notices` prints what came to you from a terminal, changing nothing: what waits for your confirmation (by its act
   and session), what needs you by group, unread messages by ask, and *Done and failed*, as Daoris's *Notifications* holds them;
   `--json` prints the same as one JSON document. Without a running Daoris it reads the notices kept on this machine and says that the
