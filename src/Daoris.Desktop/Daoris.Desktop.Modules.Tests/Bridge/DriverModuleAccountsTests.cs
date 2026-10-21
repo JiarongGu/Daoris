@@ -302,6 +302,35 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// SWITCH1e (D165 point 4, the switch design §4): each scope answers the accounts of its list a running session could move to,
+    /// as <see cref="SwitchDecision"/> moves: ready, and at least the margin under the scope's curve on every window it said. Over
+    /// its curve, within the margin, cooling or saying no number is no room; it is judged under <c>off</c> too, which the page reads.
+    /// </summary>
+    [Fact]
+    public async Task Each_scope_answers_the_accounts_a_running_session_could_move_to()
+    {
+        Accounts("claude-code", "account-1", "account-2", "account-3", "account-4", "account-5");
+        Wiring("""
+            {
+              "rotation": { "claude-code": ["account-1", "account-2", "account-3", "account-4", "account-5"] },
+              "workspaceRotation": { "off": { "claude-code": ["account-3", "account-2"] } },
+              "workspaceRotationUse": { "off": { "claude-code": { "switch": "off" } } }
+            }
+            """);
+        // Four days to its reset, the smart week stands at 63%; the smart session at 90%.
+        AccountWindows.Said(Home, "claude-code", "account-1", [new WindowReading("session", 0.95, Now.AddHours(2))], Now, "s1");
+        AccountWindows.Said(Home, "claude-code", "account-2", [new WindowReading("weekly", 0.10, Now.AddDays(4))], Now, "s2");
+        AccountWindows.Said(Home, "claude-code", "account-3", [new WindowReading("session", 0.85, Now.AddHours(2))], Now, "s3");
+        AccountWindows.Said(Home, "claude-code", "account-4", [new WindowReading("weekly", 0.10, Now.AddDays(4))], Now, "s4");
+        AccountCooling.Cool(Home, new CoolingEntry("claude-code", "account-4", Now.AddHours(3), true, "weekly", Now.AddMinutes(-5), "s4"), Now);
+
+        var claude = Agent(await AnswerAsync(Module(), "ACCOUNTS"), "claude-code");
+
+        Assert.Equal(["account-2"], Strings(Scope(claude, null).GetProperty("room")));
+        Assert.Equal(["account-2"], Strings(Scope(claude, "off").GetProperty("room")));
+    }
+
+    /// <summary>
     /// The page's verdicts are .NET's on the shared table (PUSH1e): for every <c>tightest</c> row of the CLI's
     /// <c>usage-curves.json</c>, a scope with the row's switch and curve and an account saying the row's windows answers each
     /// measured window's curve as the row's value in whole points, and the account among those over the curve exactly where the
