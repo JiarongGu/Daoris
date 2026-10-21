@@ -229,7 +229,8 @@ public static class PersonDoors
         // WORKFLOW1e2 (§4.1 row 1): a quest published with no ask has its own, set on its page before it starts, the person's alike.
         new("POST", "/api/quests/{id}/workflow", DoorClass.Person, "a quest's kind and workflow"),
         // SESSONE2a (D167 point 7): the person's message on the ask's channel is their words, with every reach D137 gives them; an agent
-        // posts through the connector's tool, which is marked as its claim. Their read mark is theirs to move, and a driver's, for a part.
+        // posts through the connector's tool, which is marked as its claim. Their read mark is theirs to move, and a driver's, for a part;
+        // NOTIFY2g: on a teammate's ask too, classed as a local ask's mark is.
         new("POST", "/api/asks/{id}/channel", DoorClass.Person, "a message on an ask's channel"),
         new("POST", "/api/asks/{id}/channel/read", DoorClass.Person, "an entry's read mark on an ask's channel"),
         new("POST", "/api/quests/{id}/accept", DoorClass.Person, "the yes to a departure"),

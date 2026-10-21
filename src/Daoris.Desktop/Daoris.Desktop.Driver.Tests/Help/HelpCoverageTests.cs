@@ -690,6 +690,10 @@ public sealed partial class HelpCoverageTests
         ("app", "useDismissNotice", null, new Exempt(
             "it takes a notice the person has read out of their own Notifications; what ended stays in the sessions' records, and "
             + "nothing of the work or the machine's settings changes, so there is nothing to propose (the notification design §2.5).")),
+        // NOTIFY2g (D196's note): Messages' *Mark read* and *Mark all read*, the ask's page's own mark pressed from Notifications.
+        ("app", "useMarkChannel", null, new Exempt(
+            "it moves the person's own read mark on an ask's channel to the newest message Notifications showed them, and changes "
+            + "nothing of the work or the machine's settings, as reading is exempt, so there is nothing to propose (D167 point 7).")),
         // FABRIC-PERFORM1g (D173's note): What needs you's word on a plugin step's attempt held for the person, `daoris-driver work held`'s twin.
         // FABRIC-CLOSE1q: the same press carries the person's recovery of Daoris's own close held for them, whose answer is its door's.
         ("work", "useResolveHeld", null, new Exempt(
@@ -764,6 +768,8 @@ public sealed partial class HelpCoverageTests
         ("timeout", new Door("setting", "timeout")),
         // TOOL4e: the default cool-off's terminal door (D125 §6); TOOL4g built Settings → Driver's control, TOOL4l-b its Ask Daoris door.
         ("cooloff", new Door("setting", "cooloff")),
+        // KEEP1d (D195 point 2): each kind's keep rule, the Disk space card's Change… and Ask Daoris's `keep` door.
+        ("keep", new Door("setting", "keep")),
         ("cap", new Door("setting", "cap")),
         ("adapter", new Door("setting", "adapter")),
     ];
@@ -962,6 +968,8 @@ public sealed partial class HelpCoverageTests
         ("wiring", "useOpenLogFolder", null, new Exempt(
             "This Daoris's Logs card opens the same folder and changes nothing; a go reaches Settings → This Daoris (WIRING1c-ii).")),
         // CACHECLEAR1: the Downloads row's clearing, listed first and then pressed (D88's shape).
+        // KEEP1d: each kind's keep rule from the Disk space card's Change…, as `setting keep` proposes it.
+        ("wiring", "useSetKeep", null, new Door("setting", "keep")),
         ("wiring", "useClearDownloads", null, new Exempt(
             "it removes downloaded versions from this machine after the person has read the list, a discard that stays the person's own "
             + "press (D89), as the clean-up's is; nothing it removes is in use, and the next use downloads it again; a go reaches "

@@ -216,6 +216,8 @@ public sealed class PipeCensusTests
     [Theory]
     // Reads, and what D156 §3 leaves to the driver: run as asked.
     [InlineData("DAORIS.DRIVER", "SESSION_GROUPS", PipeClass.Open)]
+    // NOTIFY2i: what came to the person, read by a terminal, a press by its act alone; the presses' own read stays the window's.
+    [InlineData("DAORIS.DRIVER", "NOTIFICATIONS", PipeClass.Open)]
     [InlineData("DAORIS.DRIVER", "UNDER_WAY", PipeClass.Open)]
     [InlineData("DAORIS.DRIVER", "SYNC_NOW", PipeClass.Open)]
     [InlineData("DAORIS.DRIVER", "ACCOUNTS_READ", PipeClass.Open)]
@@ -236,6 +238,7 @@ public sealed class PipeCensusTests
     [InlineData("DAORIS.DRIVER", "SET_REVIEW", PipeClass.Person)]
     // HEAVYRUN1b2b: the commands this machine runs for a repository's heavy gates are the person's to write.
     [InlineData("DAORIS.DRIVER", "SET_HEAVY_GATES", PipeClass.Person)]
+    [InlineData("DAORIS.DRIVER", "SET_KEEP", PipeClass.Person)]
     // FABRIC-PIPELINE1b: which checks a repository's sessions run is the person's standing choice, and light lowers their part.
     [InlineData("DAORIS.DRIVER", "SET_SESSION_CHECKS", PipeClass.Person)]
     // What only a window does: the pickers, the file manager, Daoris's browser, its frame, its shells.

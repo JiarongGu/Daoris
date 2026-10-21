@@ -106,6 +106,7 @@
   "person.route.SET_HEAVY_GATES": "更改一个仓库的重型检查",
   "person.route.SET_HOLD": "暂停一个仓库的工作，或将其放开",
   "person.route.SET_INTAKE": "更改阅读需求的智能体",
+  "person.route.SET_KEEP": "更改 Daoris 保留某类内容的时长",
   "person.route.SET_LANDING": "更改一个仓库的工作如何落地",
   "person.route.SET_LANGUAGE": "更改会话写给你时所用的语言",
   "person.route.SET_LINE": "更改一个仓库的主线",

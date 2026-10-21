@@ -20,7 +20,8 @@ import { WiringToolHome } from './WiringToolHome';
 import { WiringVariablesCard } from './WiringVariables';
 import { WiringVersions } from './WiringVersions';
 import {
-  DEVELOPMENT, DOWNLOADS, MEASURING, SPACE, SPACE_COUNTING, SPACE_FREED, SPACE_PLAN, SPACE_RUNNING, SPACE_STOPPED, SPACE_UNCOUNTED, WIRED,
+  DEVELOPMENT, DOWNLOADS, MEASURING, SPACE, SPACE_COUNTING, SPACE_FREED, SPACE_PLAN, SPACE_RUNNING, SPACE_SET, SPACE_STOPPED,
+  SPACE_UNCOUNTED, WIRED,
 } from './wiringFixtures';
 
 // Settings → This Daoris's cards (WIRING1c, the this-Daoris design §3.1-3.3, §7), in the shape `SYSTEM_WIRING` answers: an
@@ -314,6 +315,35 @@ export const SpaceStopped: Story = { render: () => space({ space: SPACE_STOPPED 
 /** The Downloads row's list, opened from this card's row. */
 export const SpaceDownloads: Story = {
   render: () => space({ downloads: <WiringDownloads listing={DOWNLOADS} onClear={() => {}} onClose={() => {}} /> }),
+};
+
+// KEEP1d (the cleanup design §4.1, §4.2): the rules the person set, and a rule's editor open under its row, at the three widths in
+// English and 中文.
+const keep = () => {};
+
+/** The rules as the person set them, each with its Change…. */
+export const SpaceRulesSet: Story = { render: () => space({ space: SPACE_SET, onKeep: keep }) };
+
+/** The set-aside folders' editor open: its days, its bounds, keep each folder whole; Save, The default, Never mind. */
+export const SpaceEditing: Story = { render: () => space({ onKeep: keep, editing: 'set-aside' }) };
+
+/** The same at the half width. */
+export const SpaceEditingHalf: Story = { render: () => space({ onKeep: keep, editing: 'set-aside' }), decorators: [storyWidths.half] };
+
+/** The downloads' editor at the 400 px floor, its own choice *until I remove it* set. */
+export const SpaceEditingNarrow: Story = { render: () => space({ space: SPACE_SET, onKeep: keep, editing: 'downloads' }), decorators: narrow };
+
+/** The set-aside folders' editor in 中文, wide. */
+export const SpaceEditingChinese: Story = { render: () => space({ onKeep: keep, editing: 'set-aside' }), decorators: [chinese] };
+
+/** The same in 中文 at the half width. */
+export const SpaceEditingChineseHalf: Story = {
+  render: () => space({ onKeep: keep, editing: 'set-aside' }), decorators: [storyWidths.half, chinese],
+};
+
+/** The logs' editor in 中文 at the floor. */
+export const SpaceEditingChineseNarrow: Story = {
+  render: () => space({ space: SPACE_SET, onKeep: keep, editing: 'logs' }), decorators: [...narrow, chinese],
 };
 
 /** The first load: skeleton rows in the card's place. */

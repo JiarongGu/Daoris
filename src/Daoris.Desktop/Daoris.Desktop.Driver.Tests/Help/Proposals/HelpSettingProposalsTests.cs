@@ -29,6 +29,12 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     // TOOL4l-b: how long an account cools when its limit names no time, as `daoris driver cooloff` takes it.
     [InlineData("cooloff", null, null, "90", "daoris driver cooloff 90", "cools for 90 minutes")]
     [InlineData("cooloff", null, null, "1", "daoris driver cooloff 1", "cools for 1 minute before")]
+    // KEEP1d: each kind's keep rule, as `daoris driver keep <kind> <rule>` takes it, judged by the one judgement.
+    [InlineData("keep", null, null, "set-aside 30", "daoris driver keep set-aside 30", "kept 30 days; its package folders go an hour after the move")]
+    [InlineData("keep", null, null, "set-aside whole", "daoris driver keep set-aside whole", "kept 14 days, whole")]
+    [InlineData("keep", null, null, "downloads never", "daoris driver keep downloads never", "stays until you remove it")]
+    [InlineData("keep", null, null, "logs 7", "daoris driver keep logs 7", "machine log is kept 7 days")]
+    [InlineData("keep", null, null, "logs default", "daoris driver keep logs default", "machine log is kept 30 days")]
     // HELP10: a quest its strikes parked, started again as the drawer's Retry and `daoris driver retry` do, `#` or not.
     [InlineData("retry", "q1a2b3c4", null, null, "daoris driver retry q1a2b3c4", "`#q1a2b3c4` may be started again")]
     [InlineData("retry", "#q1a2b3c4", null, null, "daoris driver retry q1a2b3c4", "what already happened is still in the records")]
@@ -570,7 +576,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
             ("helpers", "engine", null, "--mode on"), ("commits", null, "work", "--mode ask"), ("intake", null, null, "off"),
             ("helper", null, null, "claude-code"), ("strikes", null, null, "0"), ("retry", "q1a2b3c4", null, null),
             ("timeout", null, null, "30"), ("notify", null, null, "on"), ("cap", null, null, "1"), ("adapter", null, null, "claude-code"),
-            ("cooloff", null, null, "90"),
+            ("cooloff", null, null, "90"), ("keep", null, null, "logs 14"),
         ];
 
         Assert.Equal(new HelpSettingProposals().Doors, samples.Select(sample => sample.Door));
@@ -600,6 +606,12 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     [InlineData("adapter", null, null, "gpt-agent", "no agent `gpt-agent`")]
     [InlineData("cooloff", null, null, "0", "`cooloff 0` is not a change the driver makes")]
     [InlineData("cooloff", null, null, "soon", "`cooloff soon` is not a change the driver makes")]
+    // KEEP1d: out of its kind's bounds, a choice its kind does not take, a kind not the person's, and words that are no rule.
+    [InlineData("keep", null, null, "logs 60", "`logs` keeps 7 to 30 days or `default`; 60 days is out of its bounds")]
+    [InlineData("keep", null, null, "logs never", "never is out of its bounds")]
+    [InlineData("keep", null, null, "history 30", "`history` is no kind whose rule you set here")]
+    [InlineData("keep", null, null, "set-aside soon", "`soon` is no rule of `set-aside`")]
+    [InlineData("keep", null, null, "set-aside", "`keep` takes a kind and its rule")]
     // HELP10: a quest id a helper can invent, or one not parked, which forgiven would run past its strikes (D110).
     // SESSUX1b: or one no stop of the person's holds; the refusal names what the last look parked and what it held.
     [InlineData("retry", "q9none00", null, null, "`#q9none00` is neither parked nor held by your stop on this machine")]

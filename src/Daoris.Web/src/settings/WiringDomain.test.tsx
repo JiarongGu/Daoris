@@ -22,7 +22,8 @@ import { code } from '../test/code';
 import { DRIVER_STATE, respond, show, WIRING } from '../test/shellHarness';
 import type { SystemSpace, SystemWiring } from '../bridge/system';
 import {
-  DEVELOPMENT, DOWNLOADS, MEASURING, SPACE, SPACE_COUNTING, SPACE_FREED, SPACE_PLAN, SPACE_RUNNING, SPACE_STOPPED, SPACE_UNCOUNTED, WIRED,
+  DEVELOPMENT, DOWNLOADS, MEASURING, SPACE, SPACE_COUNTING, SPACE_FREED, SPACE_PLAN, SPACE_RUNNING, SPACE_SET, SPACE_STOPPED,
+  SPACE_UNCOUNTED, WIRED,
 } from './wiring/wiringFixtures';
 
 const NO_UPDATE = { state: 'none', staged: null, mode: null, driven: 0, turns: 0, problem: null, outcome: null, last: null };
@@ -581,10 +582,12 @@ describe('Settings → This Daoris', () => {
     expect(scope.getByText('kept until you clear it')).toBeTruthy();
     expect(scope.getByText('cleaned up once its work is on the line')).toBeTruthy();
     expect(scope.getByText("the browser's own limit")).toBeTruthy();
+    // What an earlier build left goes only by the person's press, which frees space, listed first (KEEP1e).
     expect(scope.getByText('removed only by your press')).toBeTruthy();
-    // It sets no rule yet (KEEP1d); its one press frees space, listed first (KEEP1e).
-    expect(scope.queryByRole('button', { name: /Change/ })).toBeNull();
     expect(scope.getByRole('button', { name: 'Free up space…' })).toBeTruthy();
+    // KEEP1d: the three rules the person sets carry their editor and their terminal twin.
+    expect(scope.getAllByRole('button', { name: 'Change…' })).toHaveLength(3);
+    expect(card.textContent).toContain('daoris driver keep set-aside …');
     await vi.waitFor(() => expect(invoke.mock.calls.some(([, type]) => type === 'SYSTEM_SPACE')).toBe(true));
     expect(invoke.mock.calls.filter(([, type, request]) => type === 'SYSTEM_SPACE' && request?.payload)).toEqual([]);
   });
@@ -642,7 +645,8 @@ describe('Settings → This Daoris', () => {
     expect(await list.findByText('What goes now, by your rules')).toBeTruthy();
     expect(list.getByText(`3 items, ${size(0.6 * 1024 ** 3 + 4 * 1024 ** 2)}`)).toBeTruthy();
     expect(list.getByText(`2 folders past their days, ${size(0.6 * 1024 ** 3)}`)).toBeTruthy();
-    expect(list.getByText(`1 day past 30 days, ${size(4 * 1024 ** 2)}`)).toBeTruthy();
+    // The log's days by the person's rule (KEEP1d), so the line names no number of days.
+    expect(list.getByText(`1 file past its days, ${size(4 * 1024 ** 2)}`)).toBeTruthy();
     expect(list.getByText('What could go early, by your word')).toBeTruthy();
     expect(list.getByText('2 folders before their date · 1 holds files of its own')).toBeTruthy();
     expect(list.getByText('kept while the browser runs')).toBeTruthy();
@@ -749,6 +753,102 @@ describe('Settings → This Daoris', () => {
 
     expect(await card.findByRole('region', { name: 'Clear downloads' })).toBeTruthy();
     expect(within(screen.getByRole('region', { name: 'Folders' })).queryByRole('region', { name: 'Clear downloads' })).toBeNull();
+  });
+
+  // KEEP1d (the cleanup design §4.1, §4.2): each rule the person sets, from its row's Change…, inline under the row.
+  /** The shell answering SET_KEEP as `keep` answers it; every other route as before. */
+  const keeping = (keep: (payload: Record<string, unknown>) => unknown, space: SystemSpace = SPACE) =>
+    async (module: string, type: string, request?: { payload?: Record<string, unknown> }) => (
+      type === 'SET_KEEP' ? keep(request!.payload!) : shell(WIRED, space)(module, type, request as { payload?: { measure?: boolean } }));
+  const row = (card: ReturnType<typeof within>, label: string) =>
+    within(card.getByText(label).closest('[data-setting-label]')!.parentElement!);
+
+  it("sets the set-aside folders' days and keeps them whole from the row's editor, which closes once it is saved", async () => {
+    invoke.mockImplementation(keeping(() => DRIVER_STATE));
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Disk space' }));
+    const aside = row(card, 'Set-aside trees');
+
+    await userEvent.click(aside.getByRole('button', { name: 'Change…' }));
+    const days = aside.getByRole('spinbutton', { name: 'Days kept' });
+    expect((days as HTMLInputElement).value).toBe('14');
+    expect(aside.getByText('1 to 90 days')).toBeTruthy();
+    expect(aside.queryByRole('checkbox', { name: 'Until I remove it' })).toBeNull();
+    await userEvent.clear(days);
+    await userEvent.type(days, '30');
+    await userEvent.click(aside.getByRole('checkbox', { name: 'Keep each folder whole' }));
+    await userEvent.click(aside.getByRole('button', { name: 'Save' }));
+
+    await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_KEEP', { payload: { kind: 'set-aside', days: 30, whole: true } }));
+    await vi.waitFor(() => expect(aside.queryByRole('button', { name: 'Save' })).toBeNull());
+    // The default is the rule it holds: nothing to take back.
+    await userEvent.click(aside.getByRole('button', { name: 'Change…' }));
+    expect((aside.getByRole('button', { name: 'The default' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("sets the downloads to stay until the person removes them, and a rule back to its default", async () => {
+    invoke.mockImplementation(keeping(() => DRIVER_STATE, SPACE_SET));
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Disk space' }));
+    expect(card.getByText('kept 30 days; each folder kept whole')).toBeTruthy();
+    expect(card.getByText('kept until you remove it')).toBeTruthy();
+    expect(card.getByText('kept 14 days')).toBeTruthy();
+
+    const downloads = row(card, 'Downloaded versions');
+    await userEvent.click(downloads.getByRole('button', { name: 'Change…' }));
+    expect((downloads.getByRole('checkbox', { name: 'Until I remove it' }) as HTMLElement).getAttribute('data-state')).toBe('checked');
+    expect((downloads.getByRole('spinbutton', { name: 'Days kept' }) as HTMLInputElement).disabled).toBe(true);
+    await userEvent.click(downloads.getByRole('button', { name: 'Save' }));
+    await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_KEEP', { payload: { kind: 'downloads', never: true } }));
+
+    const logs = row(card, 'Machine log');
+    await userEvent.click(logs.getByRole('button', { name: 'Change…' }));
+    await userEvent.click(logs.getByRole('button', { name: 'The default' }));
+    await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_KEEP', { payload: { kind: 'logs', default: true } }));
+  });
+
+  it("says the driver's refusal of a value out of its bounds under the editor, which stays open, and a value that is no number", async () => {
+    invoke.mockImplementation(keeping(() => {
+      throw Object.assign(new Error('KEEP_OUT_OF_RANGE'), { code: 'KEEP_OUT_OF_RANGE', parameters: { kind: 'logs', min: '7', max: '30' } });
+    }));
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Disk space' }));
+    const logs = row(card, 'Machine log');
+
+    await userEvent.click(logs.getByRole('button', { name: 'Change…' }));
+    const days = logs.getByRole('spinbutton', { name: 'Days kept' });
+    await userEvent.clear(days);
+    await userEvent.click(logs.getByRole('button', { name: 'Save' }));
+    expect(logs.getByRole('alert').textContent).toBe('Name a whole number of days.');
+    expect(invoke.mock.calls.some(([, type]) => type === 'SET_KEEP')).toBe(false);
+
+    await userEvent.type(days, '60');
+    await userEvent.click(logs.getByRole('button', { name: 'Save' }));
+
+    await vi.waitFor(() => expect(logs.getByRole('alert').textContent)
+      .toBe('This rule keeps 7 to 30 days; that value is outside it, so nothing was written.'));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_KEEP', { payload: { kind: 'logs', days: 60 } });
+    expect(logs.getByRole('button', { name: 'Save' })).toBeTruthy();
+  });
+
+  it('sets a rule and says its refusal in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    invoke.mockImplementation(keeping(() => {
+      throw Object.assign(new Error('KEEP_OUT_OF_RANGE'), { code: 'KEEP_OUT_OF_RANGE', parameters: { kind: 'set-aside', min: '1', max: '90' } });
+    }));
+    open();
+    const card = within(await screen.findByRole('region', { name: '磁盘空间' }));
+    const aside = row(card, '另行存放的工作树');
+
+    await userEvent.click(aside.getByRole('button', { name: '更改…' }));
+    expect(aside.getByText('1 到 90 天')).toBeTruthy();
+    expect(aside.getByRole('checkbox', { name: '完整保留每个文件夹' })).toBeTruthy();
+    const days = aside.getByRole('spinbutton', { name: '保留天数' });
+    await userEvent.clear(days);
+    await userEvent.type(days, '120');
+    await userEvent.click(aside.getByRole('button', { name: '保存' }));
+
+    await vi.waitFor(() => expect(aside.getByRole('alert').textContent).toBe('此规则可保留 1 到 90 天；该值超出范围，未写入任何内容。'));
   });
 
   it('says in its card that a shell older than it answers no disk space', async () => {

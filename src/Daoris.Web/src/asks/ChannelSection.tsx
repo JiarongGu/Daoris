@@ -54,8 +54,8 @@ const firstWords = (text: string | null | undefined, limit = 60) => {
  * until the page is left, so what was new is seen. A panel reads a part of the channel and moves no mark.
  *
  * **A teammate's ask's channel is read-only** (SESSONE2h): `readOnly` draws the messages and the unread count and no composer, no
- * *Reply*, and a sentence saying the ask is a teammate's, held on their machine. The unread count is drawn as the heading's, but no
- * mark moves: the host holds no record to mark it on.
+ * *Reply*, and a sentence saying the ask is a teammate's, held on their machine. The unread count is drawn as the heading's, and the
+ * mark moves where `onRead` is handed: the service keeps the person's mark on a teammate's ask its mirror holds (NOTIFY2g).
  *
  * **A refusal is the service's code** (`empty`, `too-long`, `bad-to`, `bad-re`, `not-found`), said in the composer in the
  * reader's language, the words kept.

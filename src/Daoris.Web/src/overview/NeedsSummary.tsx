@@ -1,16 +1,17 @@
 import { useTranslation } from 'react-i18next';
 import type { AttentionRead } from '../bridge/attention';
-import type { Notice } from '../bridge/notices';
+import type { AskMessages, Notice } from '../bridge/notices';
 import { Icon, SectionTitle, SkeletonRows } from '../design/ui';
 import { cn } from '../lib/cn';
 import { elapsed, span } from '../locales/format';
+import { messagesCount } from '../notifications/Messages';
 import type { NotificationsGroup } from '../notifications/NotificationsView';
 import type { Confirmation } from '../person/Confirmations';
 import { NothingNeedsYou } from '../work/attention/AttentionList';
 import { attentionGroup, type AttentionGroup, GROUP_ORDER, needsListed } from '../work/attention/attention';
 
 /** A line of the summary: its group's name, its count, and its oldest wait or its press's time left, where one is known. */
-type Line = { id: 'presses' | AttentionGroup | 'done'; label: string; count: number; detail: string | null; opens: NotificationsGroup };
+type Line = { id: 'presses' | AttentionGroup | 'messages' | 'done'; label: string; count: number; detail: string | null; opens: NotificationsGroup };
 
 /**
  * Overview's summary of what needs the person (NOTIFY2b, D196 point 5, the notification design §4): a line per group with its count
@@ -23,15 +24,20 @@ type Line = { id: 'presses' | AttentionGroup | 'done'; label: string; count: num
  * waits for the person's word), a press's own row being its card. The presses' line says the time left of the one that
  * ends first (R2), the others their oldest wait. **R1**: the lines share one label track while the summary is 32rem wide or more,
  * each value beside its words, and stack below it. With nothing waiting, today's one line, *Nothing needs you* and the sessions
- * working; not judged yet, its skeleton (PUSHUX1); in a plain browser, that this is the app's (D47 §4).
+ * working; not judged yet, its skeleton (PUSHUX1); in a plain browser, that this is the app's (D47 §4). After what waits, *Messages*
+ * (NOTIFY2g) where anything is unread, its items and how many are unread, then *Done and failed*.
  *
  * A molecule: what waits comes in, and the doors go out.
  */
-export function NeedsSummary({ attention, presses, notices = [], onNotifications, now = Date.now() }: {
+export function NeedsSummary({ attention, presses, notices = [], messages = [], answered = [], onNotifications, now = Date.now() }: {
   attention: AttentionRead;
   presses: Confirmation[];
   /** *Done and failed*, the window's notices (NOTIFY2f): their line, after what waits, with how many are unread. */
   notices?: Notice[];
+  /** *Messages*' asks, the window's entries (NOTIFY2g): their line, before what ended, while anything is unread. */
+  messages?: readonly AskMessages[];
+  /** *Messages*' answers, the window's `answered` notices. */
+  answered?: readonly Notice[];
   /** *Notifications* shown at a group: the app's alone, since a browser has no side bar. Absent, the lines are words. */
   onNotifications?: (group: NotificationsGroup) => void;
   /** The clock the times are read by. */
@@ -73,6 +79,15 @@ export function NeedsSummary({ attention, presses, notices = [], onNotifications
     });
   }
 
+  // Messages wait on nobody either: their line follows the waits while anything is unread, counting its items, its detail how many
+  // are unread (NOTIFY2g).
+  const said = messagesCount(messages, answered);
+  const told: Line | null = said.items > 0
+    ? {
+      id: 'messages', label: t('notifications.group.messages'), count: said.items, opens: 'messages',
+      detail: t('notifications.messages.unread', { count: said.unread }),
+    }
+    : null;
   // What ended waits on nobody: its line follows the waits, counting every notice, its detail how many are unread.
   const unread = notices.filter((notice) => !notice.read).length;
   const done: Line | null = notices.length > 0
@@ -81,7 +96,8 @@ export function NeedsSummary({ attention, presses, notices = [], onNotifications
       detail: unread > 0 ? t('notifications.done.unreadCount', { count: unread }) : null,
     }
     : null;
-  if (lines.length === 0 && !done) return region(<NothingNeedsYou working={attention.working} />);
+  if (lines.length === 0 && !told && !done) return region(<NothingNeedsYou working={attention.working} />);
+  if (told) lines.push(told);
   if (done) lines.push(done);
 
   return region(

@@ -371,8 +371,16 @@ export function useAsksPart({
         />
       )
       : teammate
-        // A teammate's ask has no record here (SESSONE2h): its page is its channel, read-only.
-        ? <TeammateAskPage key={teammate.id} ask={teammate} channel={channel.channel} />
+        // A teammate's ask has no record here (SESSONE2h): its page is its channel, read-only, where reading moves the person's mark,
+        // which the service keeps on an ask its mirror holds (NOTIFY2g).
+        ? (
+          <TeammateAskPage
+            key={teammate.id}
+            ask={teammate}
+            channel={channel.channel}
+            onRead={(through) => markChannel.mutate({ ask: teammate.id, through })}
+          />
+        )
         // A read that failed is not an ask gone (PUSHUX1): said in its words, as a quest's is.
         : every.data === undefined && every.error
           ? <QuestsMainNotice state="unanswered" sentence={sentence(every.error)} />

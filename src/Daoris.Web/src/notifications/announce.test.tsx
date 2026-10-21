@@ -1,7 +1,8 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Notice } from '../bridge/notices';
 import type { Confirmation } from '../person/Confirmations';
-import { usePressAnnouncements } from './announce';
+import { useAnsweredRead, useMessageAnnouncements, usePressAnnouncements } from './announce';
 
 // A press announced in the window in front (NOTIFY2b, the notification design §3.3, §5, Fable's F1.1): a toast with *Open*, said
 // once in the focused main window on the press's own event by its id (a service's on its told list's first sight), and staying until
@@ -116,5 +117,113 @@ describe('announcing a press', () => {
     focused.mockReturnValue(true);
     rerender({ presses: [SERVICE, { ...SERVICE, id: 'h2' }], viewOpen: false });
     expect(result.current.toasts).toHaveLength(0);
+  });
+});
+
+// An agent's or a teammate's urgent message to everyone (NOTIFY2g, the notification design §5): the shell's `MESSAGE`, said by a toast
+// with *Open* in the focused window alone, once per message, an event heard twice said once; a secondary window's with no door.
+describe('announcing an urgent message', () => {
+  let focused: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => { focused = vi.spyOn(document, 'hasFocus').mockReturnValue(true); });
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  const MESSAGE = {
+    ask: 'a1', workspace: 'default', teammate: false, id: 'm2', at: '2026-10-22T09:20:00.000Z', who: 'agent', repository: 'db',
+    line: 'The schema moved: stop before you land.', level: 'urgent', toEveryone: true,
+  };
+  const announce = (door = true) => {
+    const onOpen = vi.fn();
+    const hook = renderHook(() => useMessageAnnouncements({
+      words: (arrived) => `${arrived.newest.repository}: ${arrived.newest.line}`, openLabel: 'Open', onOpen: door ? onOpen : undefined,
+    }));
+    return { ...hook, onOpen };
+  };
+
+  it('says it once in the focused window, with a door to its ask, an event heard twice said once', () => {
+    const { result, onOpen } = announce();
+
+    act(() => { result.current.heard(MESSAGE); });
+    act(() => { result.current.heard({ ...MESSAGE }); });
+
+    expect(result.current.toasts).toHaveLength(1);
+    const [toast] = result.current.toasts;
+    expect(toast).toMatchObject({ text: 'db: The schema moved: stop before you land.', kind: 'ok' });
+    // News, not a wait: it closes by its seven seconds.
+    expect(toast!.stays).toBeFalsy();
+    toast!.door!.onOpen();
+    expect(onOpen).toHaveBeenCalledWith({
+      ask: 'a1', workspace: 'default', teammate: false,
+      newest: { id: 'm2', at: MESSAGE.at, who: 'agent', repository: 'db', line: MESSAGE.line, level: 'urgent', toEveryone: true },
+    });
+    act(() => { expect(result.current.close(toast!.id)).toBe(true); });
+    expect(result.current.toasts).toHaveLength(0);
+  });
+
+  it('says nothing in a window not focused, and never later', () => {
+    focused.mockReturnValue(false);
+    const { result } = announce();
+    act(() => { result.current.heard(MESSAGE); });
+    expect(result.current.toasts).toHaveLength(0);
+
+    focused.mockReturnValue(true);
+    act(() => { result.current.heard(MESSAGE); });
+    expect(result.current.toasts).toHaveLength(0);
+    act(() => { result.current.heard({ ...MESSAGE, id: 'm3' }); });
+    expect(result.current.toasts).toHaveLength(1);
+  });
+
+  it('says one ordinary, or to one repository, never, and one of another shape never', () => {
+    const { result } = announce();
+    act(() => { result.current.heard({ ...MESSAGE, id: 'm4', level: 'ordinary' }); });
+    act(() => { result.current.heard({ ...MESSAGE, id: 'm5', toEveryone: false }); });
+    act(() => { result.current.heard({ ask: 'a1' }); });
+    expect(result.current.toasts).toHaveLength(0);
+  });
+
+  it("gives a secondary window's toast no door, since it holds no view", () => {
+    const { result } = announce(false);
+    act(() => { result.current.heard(MESSAGE); });
+    expect(result.current.toasts).toHaveLength(1);
+    expect(result.current.toasts[0]!.door).toBeUndefined();
+  });
+});
+
+// A conversation's answer is read when its conversation is the one attended in a window visible and focused (NOTIFY2g, §2.4).
+describe('reading an answer where its conversation is on screen', () => {
+  let focused: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => { focused = vi.spyOn(document, 'hasFocus').mockReturnValue(true); });
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  const ANSWER: Notice = { id: 'answered-c1', kind: 'answered', at: '2026-10-22T09:30:00.000Z', read: false, session: 'c1', repository: 'game' };
+  const reading = (initial: { answered: Notice[]; attended: string | null }) => {
+    const onRead = vi.fn();
+    const hook = renderHook((props: { answered: Notice[]; attended: string | null }) => useAnsweredRead({ ...props, onRead }), { initialProps: initial });
+    return { ...hook, onRead };
+  };
+
+  it('reads it once where its conversation is attended in the focused window, and none of another', () => {
+    const { rerender, onRead } = reading({ answered: [ANSWER, { ...ANSWER, id: 'answered-c2', session: 'c2' }], attended: 'c1' });
+    expect(onRead).toHaveBeenCalledTimes(1);
+    expect(onRead).toHaveBeenCalledWith(['answered-c1']);
+
+    // Its read on its way: asked once, however often the window draws before the push.
+    rerender({ answered: [ANSWER], attended: 'c1' });
+    expect(onRead).toHaveBeenCalledTimes(1);
+  });
+
+  it('reads none in a window behind, and reads it once the window comes in front', () => {
+    focused.mockReturnValue(false);
+    const { onRead } = reading({ answered: [ANSWER], attended: 'c1' });
+    expect(onRead).not.toHaveBeenCalled();
+
+    focused.mockReturnValue(true);
+    act(() => { window.dispatchEvent(new Event('focus')); });
+    expect(onRead).toHaveBeenCalledWith(['answered-c1']);
+  });
+
+  it('reads none already read, and none where no conversation is attended', () => {
+    const { rerender, onRead } = reading({ answered: [{ ...ANSWER, read: true }], attended: 'c1' });
+    rerender({ answered: [ANSWER], attended: null });
+    expect(onRead).not.toHaveBeenCalled();
   });
 });

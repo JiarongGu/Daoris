@@ -29,12 +29,12 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     /// HELP9 added <c>across</c> (D107), and <c>cap</c> and <c>adapter</c>, which only a terminal set before; HELP10
     /// <c>retry</c>, once the facts carried the parked quests; LANG1c2 <c>language</c>, once the service's writer listed it;
     /// REVIEWENV1a <c>review</c>, with the service's writer in the same change; XAGENT1a <c>opinion</c>, the same way; TOOL4l-b <c>cooloff</c>, the same way;
-    /// DOORS1a <c>helpers</c> and <c>commits</c>, the same way (D164's amendment point 5).
+    /// DOORS1a <c>helpers</c> and <c>commits</c>, the same way (D164's amendment point 5); KEEP1d <c>keep</c>, the same way (D195 point 2).
     /// </remarks>
     public IReadOnlyList<string> Doors { get; } =
     [
         "drive", "undrive", "hold", "resume", "trees", "line", "landing", "across", "standing", "language", "review", "opinion",
-        "helpers", "commits", "intake", "helper", "strikes", "retry", "timeout", "notify", "cap", "adapter", "cooloff",
+        "helpers", "commits", "intake", "helper", "strikes", "retry", "timeout", "notify", "cap", "adapter", "cooloff", "keep",
     ];
 
     /// <summary>
@@ -229,6 +229,28 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                 planned = ($"An account whose limit names no time cools for {cool} minute{(cool == 1 ? "" : "s")} before it is offered again.",
                     $"daoris driver cooloff {cool}", c => c.WithCoolOff(cool));
                 break;
+            // KEEP1d (D195 point 2; the cleanup design §2.2): one kind's keep rule, its words `<kind> <rule>` as `daoris driver keep`
+            // takes them, judged by the one judgement the terminal and SET_KEEP make, so a value out of its bounds is refused here.
+            case "keep":
+            {
+                var words = value.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                if (words.Length != 2) return Refused("`keep` takes a kind and its rule: `set-aside <days>|whole|slim|default`, `downloads <days>|never|default` or `logs <days>|default`.", "", "");
+                KeepSet set;
+                DriverConfig after;
+                try
+                {
+                    set = KeepRules.Asked(words[0], words[1]);
+                    after = KeepRules.Apply(config, set);
+                }
+                catch (DriverException refused)
+                {
+                    return Refused(refused.Message, "", "");
+                }
+
+                var said = KeepRules.Said(set.Kind, after.Keep);
+                planned = ($"{char.ToUpperInvariant(said[0])}{said[1..]}.", $"daoris driver keep {set.Kind} {words[1]}", c => KeepRules.Apply(c, set));
+                break;
+            }
             case "adapter":
                 // The CLI leaves the name to the driver, which knows its adapters: the same names an intake is judged by.
                 if (!facts.Agents.Contains(value, StringComparer.Ordinal))

@@ -304,11 +304,13 @@ public sealed record ChannelReceiptResponse(string Repository, string State);
 // claim go; `sent`, `taken`, `read` and `partly` raise what the entry holds, never lowering it. Answers the ids it changed.
 public sealed record ChannelAckRequest(string? Entry, string? Session, string? State, IReadOnlyList<string>? Messages);
 public sealed record ChannelAckResponse(IReadOnlyList<string> Acknowledged);
-// The channel as one entry reads it: every item (or those after `since`), `unread` against the entry's `mark` (absent for none).
+// The channel as one entry reads it: every item (or those after `since`), `unread` against the entry's `mark` (absent for none). The
+// person's `unread` (NOTIFY2g) counts only what an agent or a teammate wrote, never their own posts nor Daoris's lines.
 public sealed record ChannelResponse(string Ask, string Entry, IReadOnlyList<ChannelItemResponse> Items, int Unread, DateTimeOffset? Mark);
 public sealed record ChannelPostResponse(ChannelItemResponse Message);
 // The asks the mirrored messages name that this machine does not hold (SESSONE2h), newest message first. There is no ask record here,
-// so no title: `workspace` is from the messages, `origins` the machines they came from, `unread` is against the person's local mark.
+// so no title: `workspace` is from the messages, `origins` the machines they came from, `unread` is against the person's local mark,
+// counted as the person's channel `unread` is (NOTIFY2g).
 public sealed record ElsewhereAskResponse(
     string Id, string Workspace, IReadOnlyList<string> Origins, DateTimeOffset Latest, int Messages, int Unread);
 public sealed record ElsewhereAsksResponse(IReadOnlyList<ElsewhereAskResponse> Asks);

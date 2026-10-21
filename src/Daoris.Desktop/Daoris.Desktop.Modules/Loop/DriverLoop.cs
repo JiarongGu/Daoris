@@ -952,9 +952,17 @@ public sealed class DriverLoop(
     /// </summary>
     /// <remarks>
     /// The switch is read from the machine's choices at each answer, since a conversation's turn ends outside any look. One that
-    /// does not read errs toward saying it, as the shell's notifier does.
+    /// does not read errs toward saying it, as the shell's notifier does. NOTIFY2g: the answer is kept as a notice before the switch's
+    /// gate, its workspace the conversation's partition in the sessions slice, so an answer heard with the switch off is listed.
     /// </remarks>
-    public Task AnsweredAsync(AttentionEvent item) => Notifying() ? AttendAsync(item) : Task.CompletedTask;
+    public Task AnsweredAsync(AttentionEvent item)
+    {
+        Notices.Answered(item with
+        {
+            Workspace = MainWindowScopes.WorkspaceOf(Slices.Find(SessionsStateSlice.Name)?.Snapshot(), null, item.Session, null),
+        });
+        return Notifying() ? AttendAsync(item) : Task.CompletedTask;
+    }
 
     /// <summary>
     /// Whether this machine's notify switch is on (Settings → Driver, <c>daoris driver notify</c>), read from its choices now: for an

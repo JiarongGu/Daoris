@@ -4,7 +4,9 @@ import {
   type DownloadCleared, refusedNoRoute, type SpacePlan, type SpaceStarted, useClearDownloads, useOpenLogFolder, useSpaceFree,
   useSystemDownloads, useSystemSpace, useSystemWiring, useUpdateState,
 } from '../bridge/shell';
+import { useSetKeep } from '../bridge/driver';
 import { failure, useErrorNotify } from '../design/ui';
+import { sentence } from '../locales/format';
 import type { StarterDoor } from '../help/starters';
 import { DomainLoading } from './DomainLoading';
 import type { SettingsDomainProps } from './domains';
@@ -26,9 +28,11 @@ const FILE_DOORS: Record<string, StarterDoor> = {
 
 /**
  * Settings → This Daoris (WIRING1c, the this-Daoris design §2): how this install is set up here, read from the shell's one
- * reader (`SYSTEM_WIRING`, WIRING1b) and drawn as cards. **It shows and sets nothing**: the domain that sets a thing keeps its
- * control, and a row whose value is set elsewhere carries a door to where. Its one act is the Downloads row's clearing
- * (CACHECLEAR1), listed first and then pressed, which removes only what nothing uses.
+ * reader (`SYSTEM_WIRING`, WIRING1b) and drawn as cards. **It shows, and sets only the keep rules**: the domain that sets a thing
+ * keeps its control, and a row whose value is set elsewhere carries a door to where. Its acts are the Downloads row's clearing
+ * (CACHECLEAR1), listed first and then pressed, which removes only what nothing uses; the Disk space card's *Change…* (KEEP1d),
+ * the keep rules, which have no other place on the page (the cleanup design §8, the this-Daoris design §9); and that card's *Free up
+ * space…* (KEEP1e), listed first and then pressed, removing exactly what was listed.
  *
  * - **Machine-only** like every machine domain (D47 §4): a browser is never offered it, and no host route answers any of it.
  * - **Sizes are asked once**, when the page first has its answer: the open itself walks no folder, and the answer to the ask
@@ -58,6 +62,8 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   const spaceOlder = space.query.isError && refusedNoRoute(space.query.error);
   useErrorNotify(spaceOlder ? null : space.query.error, notify);
   const clearDownloads = useClearDownloads();
+  // KEEP1d: each rule's *Change…*, the same `keep` `daoris driver keep` edits; a refusal is said under its editor.
+  const setKeep = useSetKeep();
   // KEEP1e: Free up space…, listed first under the card's head, then pressed; a refusal stays beside the press (R3).
   const spaceFree = useSpaceFree();
   const [freeOpen, setFreeOpen] = useState(false);
@@ -121,6 +127,10 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
           onCount={count}
           onDownloads={() => { setCleared(null); setDownloadsOpen('space'); }}
           downloads={downloadsOpen === 'space' ? list : undefined}
+          onKeep={(set, answered) => setKeep.mutate(set, {
+            onSuccess: () => answered.done(),
+            onError: (error) => answered.refused(sentence(error)),
+          })}
           onFreeUp={() => {
             setFreeOpen(true);
             setPlan(undefined);

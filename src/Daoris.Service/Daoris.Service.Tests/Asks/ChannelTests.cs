@@ -19,6 +19,7 @@ public sealed class ChannelTests : IAsyncLifetime
     private SessionLedger _ledger = null!;
     private ChannelDesk _channel = null!;
     private ChannelStore _store = null!;
+    private KnowledgeService _service = null!;
     private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-10-14T09:00:00Z");
 
     private const string Sentence = "the report needs the v3 bridge, and the bridge needs a column";
@@ -40,6 +41,7 @@ public sealed class ChannelTests : IAsyncLifetime
             DisclosurePolicy.LocalOnly, registry: new Registry());
         await service.ImportAsync(Path.Combine(_root, "family"), Now);
         foreach (var row in await service.RegistryAsync()) await service.RegisterAsync(row with { Workspace = "work" }, Now);
+        _service = service;
 
         var files = new QuestFiles(Path.Combine(_root, "home"));
         _exchange = new QuestExchange(service, _quests, files: files);
@@ -399,10 +401,129 @@ public sealed class ChannelTests : IAsyncLifetime
         // A `since` reads from that moment, whatever the mark says.
         Assert.Equal([second.Id], (await _channel.ReadAsSessionAsync(session.Id, Now.AddMinutes(2)))!.Read!.Messages.Select(m => m.Id));
 
-        // The person's read counts without moving a mark (the two quests' lines and the two messages), and moves it only when asked to.
-        Assert.Equal(4, (await _channel.ReadAsync(ask.Id, ChannelDesk.PersonEntry, null, moveMark: false))!.Unread);
-        Assert.Equal(4, (await _channel.ReadAsync(ask.Id, ChannelDesk.PersonEntry, null, moveMark: true))!.Unread);
+        // The person's read counts without moving a mark (the session's message; NOTIFY2g: never their own post nor the two quests'
+        // lines), and moves it only when asked to.
+        Assert.Equal(1, (await _channel.ReadAsync(ask.Id, ChannelDesk.PersonEntry, null, moveMark: false))!.Unread);
+        Assert.Equal(1, (await _channel.ReadAsync(ask.Id, ChannelDesk.PersonEntry, null, moveMark: true))!.Unread);
         Assert.Equal(0, (await _channel.ReadAsync(ask.Id, ChannelDesk.PersonEntry, null, moveMark: false))!.Unread);
+    }
+
+    // ——— NOTIFY2g (D196 point 6; the notification design §2.4): the person's count, and their mark on a teammate's ask.
+
+    /// <summary>A message a teammate's machine sent: <paramref name="session"/> null for that person's own post.</summary>
+    private static ChannelMessage Teammates(string id, string ask, DateTimeOffset at, string? session = "b@two/s9") => new(
+        id, ask, "work", at, session, session is null ? null : "reports", session is null ? null : "stub",
+        session is null ? null : $"ask:{ask}/reports", null, null, false, "words " + id, Origin: "b@two") { Urgent = false };
+
+    /// <summary>
+    /// 🔴 The person's count passes over their own posts on this machine and Daoris's lines, and counts what an agent wrote; a
+    /// session's entry on the same channel counts every message and line past its mark, as before; the mark still moves through all.
+    /// </summary>
+    [Fact]
+    public async Task The_persons_count_passes_over_their_own_posts_and_daoriss_lines_and_a_sessions_entry_counts_as_before()
+    {
+        var (ask, _, session) = await AskedAsync();
+        var entry = $"ask:{ask.Id}/reports";
+        await _channel.PostAsSessionAsync(session.Id, "the bridge wants a column", null, null, false, Now.AddMinutes(1));
+        var own = (await _channel.PostAsPersonAsync(ask.Id, "use the older bridge", null, null, Now.AddMinutes(2))).Message!;
+
+        Assert.Equal(1, (await _channel.ReadAsync(ask.Id, ChannelDesk.PersonEntry, null, moveMark: false))!.Unread);
+        Assert.Equal(3, (await _channel.ReadAsync(ask.Id, entry, null, moveMark: false))!.Unread);
+
+        Assert.Equal(1, (await _channel.MarkReadAsync(ask.Id, ChannelDesk.PersonEntry, Now.AddSeconds(30)))!.Unread);
+        Assert.Equal(0, (await _channel.MarkReadAsync(ask.Id, ChannelDesk.PersonEntry, null))!.Unread);
+        Assert.Equal(own.At, await _store.MarkAsync(ask.Id, ChannelDesk.PersonEntry));
+        Assert.Equal(3, (await _channel.ReadAsync(ask.Id, entry, null, moveMark: false))!.Unread);
+    }
+
+    /// <summary>
+    /// 🔴 A teammate's person post and a mirrored agent's message are counted for the person, on a local ask and on an ask held
+    /// elsewhere alike, where this machine's own person post is not; the list of asks held elsewhere counts the same.
+    /// </summary>
+    [Fact]
+    public async Task A_teammates_person_post_and_a_mirrored_agents_message_are_counted()
+    {
+        var (ask, _, _) = await AskedAsync();
+        await _store.MirrorAsync(Teammates("t1", ask.Id, Now.AddMinutes(1), session: null));
+        await _store.MirrorAsync(Teammates("t2", ask.Id, Now.AddMinutes(2)));
+        await _channel.PostAsPersonAsync(ask.Id, "mine", null, null, Now.AddMinutes(3));
+
+        Assert.Equal(2, (await _channel.ReadAsync(ask.Id, ChannelDesk.PersonEntry, null, false))!.Unread);
+
+        await _store.MirrorAsync(Teammates("t3", "e1e1e1", Now.AddMinutes(1), session: null));
+        await _store.MirrorAsync(Teammates("t4", "e1e1e1", Now.AddMinutes(2)));
+        await _store.AddAsync(new ChannelMessage(
+            "p1", "e1e1e1", "work", Now.AddMinutes(3), null, null, null, null, null, null, false, "mine"), int.MaxValue);
+
+        Assert.Equal(2, (await _channel.ReadAsync("e1e1e1", ChannelDesk.PersonEntry, null, false))!.Unread);
+        Assert.Equal((3, 2), (await _channel.ElsewhereAsync()).Where(a => a.Id == "e1e1e1").Select(a => (a.Messages, a.Unread)).Single());
+    }
+
+    /// <summary>
+    /// 🔴 The person's mark is kept on a teammate's ask this machine holds no record of, from the messages the sync mirrored: to
+    /// <c>through</c> where given, else to the newest; the channel is answered as it then reads, and the list's count falls with it.
+    /// </summary>
+    [Fact]
+    public async Task A_teammates_ask_is_marked_by_the_persons_read_and_its_count_falls()
+    {
+        await _store.MirrorAsync(Teammates("t1", "e2e2e2", Now.AddMinutes(1)));
+        await _store.MirrorAsync(Teammates("t2", "e2e2e2", Now.AddMinutes(2), session: null));
+        int Listed(IReadOnlyList<ElsewhereAsk> asks) => asks.Single(a => a.Id == "e2e2e2").Unread;
+        Assert.Equal(2, Listed(await _channel.ElsewhereAsync()));
+
+        var through = (await _channel.MarkReadAsync("#e2e2e2", ChannelDesk.PersonEntry, Now.AddMinutes(1)))!;
+        Assert.Equal((1, Now.AddMinutes(1)), (through.Unread, through.Mark));
+        Assert.Equal(2, through.Messages.Count);
+        Assert.Equal(1, Listed(await _channel.ElsewhereAsync()));
+
+        var newest = (await _channel.MarkReadAsync("e2e2e2", ChannelDesk.PersonEntry, null))!;
+        Assert.Equal((0, Now.AddMinutes(2)), (newest.Unread, newest.Mark));
+        Assert.Equal(0, Listed(await _channel.ElsewhereAsync()));
+        Assert.Equal(0, (await _channel.ReadAsync("e2e2e2", ChannelDesk.PersonEntry, null, false))!.Unread);
+    }
+
+    /// <summary>A session's entry on a teammate's ask moves no mark there, and an ask nowhere is refused for the person too.</summary>
+    [Fact]
+    public async Task A_sessions_entry_on_a_teammates_ask_and_an_ask_nowhere_are_refused()
+    {
+        await _store.MirrorAsync(Teammates("t1", "e3e3e3", Now.AddMinutes(1)));
+
+        Assert.Null(await _channel.MarkReadAsync("e3e3e3", "ask:e3e3e3/reports", null));
+        Assert.Null(await _channel.MarkReadAsync("e3e3e3", "ask:e3e3e3/reports", Now.AddMinutes(1)));
+        Assert.Null(await _store.MarkAsync("e3e3e3", "ask:e3e3e3/reports"));
+        Assert.Null(await _channel.MarkReadAsync("ffffff", ChannelDesk.PersonEntry, null));
+        Assert.Null(await _channel.MarkReadAsync("ffffff", ChannelDesk.PersonEntry, Now));
+        Assert.Null(await _store.MarkAsync("ffffff", ChannelDesk.PersonEntry));
+    }
+
+    /// <summary>
+    /// 🔴 The person's mark on a teammate's ask stays on this machine: it keeps no message, so the channel's revision does not move,
+    /// there is nothing of this machine's own to push, and a sync pass sends nothing.
+    /// </summary>
+    [Fact]
+    public async Task Marking_a_teammates_ask_sends_nothing_and_never_its_mark()
+    {
+        await _store.MirrorAsync(Teammates("t1", "e4e4e4", Now.AddMinutes(1)));
+        async Task<long> RevisionAsync()
+        {
+            await using var command = _connection.CreateCommand();
+            command.CommandText = "SELECT revision FROM channel_revision WHERE one = 1";
+            return (long)(await command.ExecuteScalarAsync())!;
+        }
+
+        var before = await RevisionAsync();
+        Assert.NotNull(await _channel.MarkReadAsync("e4e4e4", ChannelDesk.PersonEntry, null));
+
+        Assert.Equal(before, await RevisionAsync());
+        Assert.Empty(await _store.OwnChangedSinceAsync(0, "work"));
+        await using var held = new SqliteConnection("Data Source=:memory:");
+        await held.OpenAsync();
+        var remoteChannel = await ChannelStore.OpenAsync(held);
+        var remote = new StoreRemote(null!, null, _service, "a@one", remoteChannel);
+        var report = await ChannelSync.RunAsync(_store, _sessions, _service, remote, "work");
+        Assert.Equal((0, null), (report.Pushed, report.Problem));
+        Assert.Null(remote.LastChannelFeed);
+        Assert.Empty(await remoteChannel.OfAsync("e4e4e4"));
     }
 
     /// <summary>

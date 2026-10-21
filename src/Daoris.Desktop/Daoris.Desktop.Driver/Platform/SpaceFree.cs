@@ -135,6 +135,9 @@ public static class SpaceFree
     /// <summary>The card's kind a run's kind is counted under, for the sizes counted again at its end.</summary>
     public static string CardKind(string kind) => kind == "update-failed" ? "rest" : kind;
 
+    /// <summary>The machine log's days by the person's rule (KEEP1d), which the press lists and removes by as the look's prune does.</summary>
+    private static int LogDays(KeepPolicy policy) => (int)policy.Logs.Days.TotalDays;
+
     /// <summary>The list, read and never written.</summary>
     public static SpacePlan Plan(SpaceFreeWorld world, CancellationToken ct = default)
     {
@@ -193,11 +196,11 @@ public static class SpaceFree
             unread["downloads"] = "unreadable";
         }
 
-        // The machine log's days past thirty, which each process's open prunes: what is left until the next.
+        // The machine log's days past the person's days (KEEP1d), which the look's daily prune takes: what is left until the next.
         try
         {
             var logs = DaorisHome.Entry(home, HomeEntry.Logs);
-            foreach (var name in MachineLog.Due(logs, now)) units.Add(new SpaceUnit("logs", name, false, Length(Path.Combine(logs, name))) { Why = "past" });
+            foreach (var name in MachineLog.Due(logs, now, LogDays(policy))) units.Add(new SpaceUnit("logs", name, false, Length(Path.Combine(logs, name))) { Why = "past" });
         }
         catch (HomeEntryTwiceException)
         {
@@ -377,9 +380,11 @@ public static class SpaceFree
             return;
         }
 
+        // Judged again at the person's days as they are now: a day the list named that a longer rule keeps since is changed, and stays.
+        var days = LogDays(world.Policy(world.Home));
         foreach (var unit in units)
         {
-            if (MachineLog.Remove(folder, unit.Id, world.Now()) is { } bytes) tally.Remove(bytes, unit.Early);
+            if (MachineLog.Remove(folder, unit.Id, world.Now(), days) is { } bytes) tally.Remove(bytes, unit.Early);
             else tally.Keep(File.Exists(Path.Combine(folder, Path.GetFileName(unit.Id))) ? SpaceKept.Changed : SpaceKept.Gone, unit.Early);
         }
     }

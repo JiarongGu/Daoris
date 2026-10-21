@@ -6,7 +6,7 @@ with the version and date at release.
 ## Unreleased
 
 - The *Disk space* card on Settings → This Daoris has *Free up space…*. It first lists, removing nothing, what each rule would take now
-  (trees set aside past their days, their package folders once due, downloads unused past their days, machine log days past thirty)
+  (trees set aside past their days, their package folders once due, downloads unused past their days, machine log days past their days)
   and what could go early on your word: trees set aside before their date (saying which hold files of their own), unused downloads
   still within their days, the browser's caches, what an earlier build left and a failed update's folder. One press removes what the
   rules take; each early group has its own press, which says first what it removes. Each item is checked again just before it goes,
@@ -14,6 +14,26 @@ with the version and date at release.
   its sign-ins stay. The card then shows the run as it goes and what it removed and kept. `daoris-driver space free` lists the same at
   a terminal, and with `--yes` removes it: confirmed in Daoris's window when Daoris is running, refused from a session's own terminal.
   In English and 中文.
+- `daoris-driver notices` prints what came to you from a terminal, changing nothing: what waits for your confirmation (by its act
+  and session), what needs you by group, unread messages by ask, and *Done and failed*, as Daoris's *Notifications* holds them;
+  `--json` prints the same as one JSON document. Without a running Daoris it reads the notices kept on this machine and says that the
+  rest is the running Daoris's to read.
+- `daoris-driver trees land <session>` whose work conflicts with what the line changed now asks the session itself to rebase in its
+  own tree, as an automatic landing does, and says so; run it again once the session has. Where the session cannot be reached, it
+  says why and prints the words to pass on.
+- *Notifications* now has *Messages*: each ask with something new since you last read it, a teammate's ask among them. Each shows
+  how many, the newest message's first line and who wrote it. Each conversation that answered you is listed there too. *Open* goes
+  to the ask's channel or the conversation, *Mark read* reads it, and *Mark all read* reads them all. An agent's or a teammate's
+  urgent message to everyone shows a toast once, in the window you are looking at. An ordinary message, or one to a single
+  repository, is only counted. Nothing an agent says ever reaches the desktop's notifications. The unread counts on an ask's row and
+  on the rail no longer include your own posts or Daoris's lines. Reading a teammate's ask now clears it. Answers are kept with
+  notifications switched off too. Overview's summary has a *Messages* line, and the bell shows a dot while anything there is
+  unread. In English and 中文.
+- You can now set how long Daoris keeps three kinds of thing, from *Change…* on their rows of Settings → This Daoris → *Disk space*:
+  trees set aside (1 to 90 days, or each folder kept whole), downloaded versions nothing uses (0 to 365 days, or until you remove
+  them) and the machine log (7 to 30 days). *The default* takes a rule back. A value outside its bounds is refused under the editor,
+  and nothing is written. `daoris driver keep` says each rule and sets one at a terminal, and Ask Daoris can propose one for you to
+  apply. The machine log is now trimmed once a day to your days as well as at each start. In English and 中文.
 - The driver's own report lines no longer pop up as English messages in the window. What is news among them now waits in
   *Notifications* → *Done and failed* in the window's language: a session that could not be handed over to another agent, or an
   agent's ask to hand one over that was dropped, refused or could not be carried out; a quest handed to another agent that went back

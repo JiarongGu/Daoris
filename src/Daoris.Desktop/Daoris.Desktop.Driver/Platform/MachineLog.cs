@@ -143,22 +143,53 @@ public sealed class MachineLog : IDisposable
     }
 
     /// <summary>Delete this machine's log files older than <see cref="KeptDays"/>; files it did not name stay.</summary>
-    public void Prune()
+    public void Prune() => Prune(KeptDays);
+
+    /// <summary>
+    /// Delete this machine's log files older than <paramref name="days"/>, today included (KEEP1d: the person's days, at most
+    /// <see cref="KeptDays"/>); files it did not name stay, and today's never goes. What went: how many files, and their bytes.
+    /// Each goes through <see cref="Remove"/>, the person's press's removal too (KEEP1e): one path for the rule and the press.
+    /// </summary>
+    public (int Count, long Bytes) Prune(int days)
     {
-        if (_folder is null) return;
-        foreach (var name in Due(_folder, _clock())) Remove(_folder, name, _clock());
+        var count = 0;
+        var bytes = 0L;
+        if (_folder is null) return (count, bytes);
+        var now = _clock();
+        foreach (var name in Due(_folder, now, days))
+        {
+            if (Remove(_folder, name, now, days) is not { } length) continue;
+            count++;
+            bytes += length;
+        }
+
+        return (count, bytes);
+    }
+
+    /// <summary>Whether the home's log folder holds a file older than <paramref name="days"/> at <paramref name="now"/>: a prune would take one.</summary>
+    public static bool HoldsOlder(string home, DateTimeOffset now, int days)
+    {
+        try
+        {
+            return Due(DaorisHome.Entry(home, HomeEntry.Logs), now, days).Count > 0;
+        }
+        catch (HomeEntryTwiceException)
+        {
+            return false;
+        }
     }
 
     /// <summary>
-    /// The log files in <paramref name="folder"/> past <see cref="KeptDays"/> at <paramref name="now"/>, by name: what the prune takes, and
-    /// what the person's press lists (KEEP1e). Never today's, which its writer holds. None where the folder cannot be read.
+    /// The log files in <paramref name="folder"/> older than <paramref name="days"/> at <paramref name="now"/>, today included, at most
+    /// <see cref="KeptDays"/> (KEEP1d: the person's days), by name: what the prune takes, and what the person's press lists (KEEP1e).
+    /// Never today's, which its writer holds; a file it did not name is none of them. None where the folder cannot be read.
     /// </summary>
-    public static IReadOnlyList<string> Due(string folder, DateTimeOffset now)
+    public static IReadOnlyList<string> Due(string folder, DateTimeOffset now, int days)
     {
         try
         {
             if (!Directory.Exists(folder)) return [];
-            return [.. Directory.EnumerateFiles(folder, "*.jsonl").Select(Path.GetFileName).OfType<string>().Where(name => Past(name, now))
+            return [.. Directory.EnumerateFiles(folder, "*.jsonl").Select(Path.GetFileName).OfType<string>().Where(name => Past(name, now, days))
                 .Order(StringComparer.Ordinal)];
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -168,12 +199,13 @@ public sealed class MachineLog : IDisposable
     }
 
     /// <summary>
-    /// One log file the prune or a press names, removed where its day is still past <see cref="KeptDays"/>: its bytes, or null where it
-    /// stays (no such day's file, within its days, or a delete refused; another process may still hold yesterday's file).
+    /// One log file the prune or a press names, removed where its day is still older than <paramref name="days"/> (at most
+    /// <see cref="KeptDays"/>): its bytes, or null where it stays (no such day's file, within its days, or a delete refused; another
+    /// process may still hold yesterday's file).
     /// </summary>
-    public static long? Remove(string folder, string name, DateTimeOffset now)
+    public static long? Remove(string folder, string name, DateTimeOffset now, int days)
     {
-        if (!Past(name, now) || name != Path.GetFileName(name)) return null;
+        if (!Past(name, now, days) || name != Path.GetFileName(name)) return null;
         var path = Path.Combine(folder, name);
         try
         {
@@ -189,11 +221,11 @@ public sealed class MachineLog : IDisposable
         }
     }
 
-    /// <summary>Whether a log file's name says a day past <see cref="KeptDays"/> at <paramref name="now"/>.</summary>
-    private static bool Past(string name, DateTimeOffset now) =>
+    /// <summary>Whether a log file's name says a day older than <paramref name="days"/>, today included, at most <see cref="KeptDays"/>.</summary>
+    private static bool Past(string name, DateTimeOffset now, int days) =>
         name.Length >= 10 && name.EndsWith(".jsonl", StringComparison.Ordinal)
         && DateTime.TryParseExact(name[..10], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var day)
-        && day < now.ToUniversalTime().Date.AddDays(1 - KeptDays);
+        && day < now.ToUniversalTime().Date.AddDays(1 - Math.Clamp(days, 1, KeptDays));
 
     /// <summary>
     /// Write every exception nothing else caught (LOG1a): an unhandled one ends the process, and until

@@ -19169,6 +19169,16 @@ recorded whatever the switch says; the `notices` slice reads it again in every p
 `NOTICES_READ` and `NOTICE_DISMISS`. The page's *Done and failed* group, the bell's dot and Overview's line. Detail: D196's NOTIFY2f
 note. On Opus.
 
+## NOTIFY2g — an agent's message reaches Notifications by its urgency (2026-10-22, D196)
+
+> - [ ] **NOTIFY2g — an agent's message reaches Notifications by its urgency** (service, modules, web-shell; after 2f; D196, the notification design §9). *Messages* per ask on the service's own count, a teammate's ask marked on this machine, an urgent message to everyone toasted once, a conversation's answer kept as a notice. Proof: as §9 names it.
+
+**Outcome** 2026-10-22: built. The service counts for the person only what an agent or a teammate wrote, and keeps their mark on a
+teammate's ask on this machine (`ChannelDesk`); the `notices` slice's `messages` partition holds each live and teammate's ask with
+that count and the newest of theirs (`AskMessages`), says each urgent message to everyone once past a watermark per ask as
+`MESSAGE`, and a conversation's answer is the `answered` notice, kept before the switch's gate. The page's *Messages* group, its
+toast, the per-ask counts read from the partition, the bell's dot and Overview's line. Detail: D196's NOTIFY2g note. On Opus.
+
 ## NOTIFY2h — the look's lines are logged, not toasted (2026-10-22, D196)
 
 > - [ ] **NOTIFY2h — the look's lines are logged, not toasted** (driver, modules, web-shell; after 2e and 2f; D196, the notification design §9). Each line the look says is a declared machine-log event first, then classed: news a coded notice, a wait its row, the rest the log's. Proof: as §9 names it, a census over every line.
@@ -19213,3 +19223,32 @@ its kind's one removal and judged again, one changed since kept and counted; the
 through the shell's host (`IBrowserCaches`), kept while it runs and with no Daoris; `daoris-driver space free` lists, and with `--yes`
 is the running Daoris's client read to the run's end, or alone, refused from a session's terminal. The card's *Free up space…* in both
 languages. Detail: D195's KEEP1e note. On Opus.
+
+## LANDREBASE2 — a terminal's landing that conflicts tells the session to rebase, as the window's does (2026-10-22, D87)
+
+> - [ ] **LANDREBASE2 — a terminal's landing that conflicts tells the session to rebase, as the window's does** (driver; found 2026-10-22 landing NOTIFY2g; LANDREBASE1, D87). `daoris-driver trees land <session>` refused a replay that conflicted with what the line changed and printed it, but the session was handed nothing: its events end at its own turn, so the work waits until someone resolves it without its context, which LANDREBASE1 set out to end. Proof: a Process case where a terminal landing conflicts and the session gets the rebase words and goes on to rebase, as the window's press does.
+
+**Outcome** 2026-10-22: `trees land <session>` whose replay conflicts now says the rebase words to the session itself through the say
+door, as Daoris's, keyed by the session and its tree's tip, as the automatic landing does (one helper, `RebaseTelling`), and prints
+that it did, or why it could not with the words for the person. Proof: `TerminalLandRebaseTests` (Process), `AutoLandingRebaseTests`.
+Not run through the installed terminal. On Opus. Detail: D87's LANDREBASE2 note.
+
+## NOTIFY2i — the terminal reads what came to the person (2026-10-22, D196)
+
+> - [ ] **NOTIFY2i — the terminal reads what came to the person** (driver, modules; after 2h; D196, the notification design §9). `daoris-driver notices` prints the presses, what needs the person, unread messages and *Done and failed*, through the running Daoris or from the record alone. Proof: as §9 names it.
+
+**Outcome** 2026-10-22: built. `daoris-driver notices [--json]` (`NoticesRead`) prints the presses waiting for confirmation by act and
+session, *What needs you* by group, unread messages by ask (with each unread answer) and *Done and failed*, and changes nothing.
+Through the running Daoris the open read `NOTIFICATIONS` answers its lines from the confirmation channel and the `attention` and
+`notices` slices as last judged; alone, the notices' record, the live groups said not read. Proof: `NoticesReadTests` (driver: text
+and JSON through the instance and alone, the usage line), `NotificationsReadTests` (modules: the look, the route changing nothing,
+the groups held to the page's), the census and publishing rows. Not run from an installed terminal. Detail: D196's NOTIFY2i note.
+On Opus.
+## KEEP1d — the person sets each rule, on the page and at the terminal (2026-10-22, D195)
+
+> - [ ] **KEEP1d — the person sets each rule, on the page and at the terminal** (driver, modules, web-settings, cli; after KEEP1c; D195, the cleanup design §9). `driver.json`'s `keep` for the set-aside folders, the downloads and the logs: `SET_KEEP`, `daoris driver keep`, each row's editor. Proof: as §9 names it.
+
+**Outcome** 2026-10-22: built. `driver.json`'s `keep` (`KeepChoices`), judged by `KeepRules.Apply` on every door and read by
+`KeepPolicy.Of`, so the six readers of the set-aside days say a set value; `SET_KEEP` (`Person`), `daoris driver keep [<kind> <rule>]`,
+each row's *Change…* on the *Disk space* card with its refusal under the editor, Ask Daoris's `keep` door, and the look's daily prune
+of the machine log at the person's days. A `driver.json` that does not read keeps the most. Detail: D195's KEEP1d note. On Opus.

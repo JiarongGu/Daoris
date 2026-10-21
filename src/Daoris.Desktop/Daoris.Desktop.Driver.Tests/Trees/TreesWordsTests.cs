@@ -323,6 +323,8 @@ public sealed class TreesWordsTests : IAsyncLifetime
     [InlineData("TreesPlanWords.LandedPlan(")]
     [InlineData("TreesPlanWords.HandPlan(")]
     [InlineData("TreesPlanWords.EntryPlanned(")]
+    // LANDREBASE2: a landing's conflict says the rebase words to the session, as the automatic landing does.
+    [InlineData("RebaseTelling.TellTreeAsync(")]
     public void TreesConsoleUsesTheWords(string call)
     {
         var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesConsole.cs"));

@@ -305,6 +305,32 @@ public sealed class BranchTidyingTests : IDisposable
     }
 
     /// <summary>
+    /// KEEP1d: the report's two readers of the set-aside days, a tree's folder and a stray folder moved aside, say the days the person set
+    /// in <c>driver.json</c>'s <c>keep</c>, read through the one effective policy.
+    /// </summary>
+    [Fact]
+    public void The_report_says_the_set_aside_days_the_person_set()
+    {
+        var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
+        Directory.CreateDirectory(Path.GetDirectoryName(config)!);
+        DriverConfig.Load(config).WithKeep(new KeepSet("set-aside", Days: 30)).Save(config);
+        var aside = DaorisHome.Entry(_home, HomeEntry.Trees, ".tidied", "default", "engine", "s-1a2b3c4d-20261009T090000000Z");
+        var stray = DaorisHome.Entry(_home, HomeEntry.Trees, ".tidied", "default", "engine", "devtools-20261009T090000000Z");
+
+        var said = new BranchTidying(_home).Said(
+            [
+                Pass("engine", new SweepResult(Item("daoris/s-1a2b3c4d", HomeTree), true, "removed") { MovedTo = aside }) with
+                {
+                    Strays = [new StrayResult(DaorisHome.Entry(_home, HomeEntry.Trees, "default", "engine", "devtools"), StrayKind.Folder, true, "") { MovedTo = stray }],
+                },
+            ],
+            null);
+
+        Assert.Equal(2, said.Count);
+        Assert.All(said, line => Assert.EndsWith("and goes once it is left untouched for 30 days.", line, StringComparison.Ordinal));
+    }
+
+    /// <summary>
     /// AUTOTIDY2c: a folder under the trees that git knows no tree in, moved aside, is said with where it went, and logged as
     /// <c>branch.tidied</c> with no branch, <c>tree</c> true, the folder it went to from the home, and <c>kind</c> <c>stray</c>.
     /// </summary>

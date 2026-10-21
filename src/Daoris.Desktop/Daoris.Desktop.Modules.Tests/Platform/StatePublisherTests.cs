@@ -535,6 +535,7 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("SET_TREES", "driver", null)]
     [InlineData("SET_STANDING", "driver", null)]
     [InlineData("SET_HEAVY_GATES", "driver", null)]
+    [InlineData("SET_KEEP", "driver,wiring", null)]
     [InlineData("SET_SESSION_CHECKS", "driver", null)]
     // HEAVYSLOT1: who holds a repository's heavy-run slot and who waits, a read.
     [InlineData("HEAVY_SLOT", "", null)]
@@ -585,6 +586,8 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("CHANNEL_MARK", "asks", null)]
     [InlineData("NOTICES_READ", "notices", null)]
     [InlineData("NOTICE_DISMISS", "notices", null)]
+    // NOTIFY2i: the terminal's read of what came to the person, which changes nothing.
+    [InlineData("NOTIFICATIONS", "", null)]
     [InlineData("CHANNEL_READ", "", null)]
     [InlineData("ASKS_ELSEWHERE", "", null)]
     [InlineData("REGISTRY_REFRESH", "registry", null)]

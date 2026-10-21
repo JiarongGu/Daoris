@@ -183,6 +183,33 @@ public sealed class SpaceFreeTests : IAsyncLifetime
         Assert.Null(KeepingRun.Holder(_home));
     }
 
+    /// <summary>
+    /// KEEP1d with KEEP1e: the machine log's days the press lists and removes are the person's, as the look's prune keeps them, judged again
+    /// at the press: a day listed past seven days that a rule of thirty keeps since is changed, and stays.
+    /// </summary>
+    [Fact]
+    public async Task The_log_days_listed_and_removed_are_the_persons_days()
+    {
+        var logs = DaorisHome.Entry(_home, HomeEntry.Logs);
+        Write(Path.Combine(logs, "2026-09-01.driver.jsonl"), 50);
+        Write(Path.Combine(logs, "2026-10-10.driver.jsonl"), 40);
+        Write(Path.Combine(logs, "2026-10-20.driver.jsonl"), 30);
+        var days = 7;
+        var world = World() with { Policy = _ => KeepPolicy.Default with { Logs = new LogsPolicy(TimeSpan.FromDays(days)) } };
+
+        var plan = SpaceFree.Plan(world);
+
+        Assert.Equal(["2026-09-01.driver.jsonl", "2026-10-10.driver.jsonl"], plan.Units.Where(unit => unit.Kind == "logs").Select(unit => unit.Id));
+        days = 30;
+        var run = await Ran(new SpaceRuns().Start(world, KeepingRun.Press, Asked(plan, unit => unit.Kind == "logs")));
+
+        Assert.False(File.Exists(Path.Combine(logs, "2026-09-01.driver.jsonl")));
+        Assert.True(File.Exists(Path.Combine(logs, "2026-10-10.driver.jsonl")));
+        var kind = KindOf(run, "logs");
+        Assert.Equal(1, kind.Removed);
+        Assert.Equal(new Dictionary<string, int> { [SpaceKept.Changed] = 1 }, kind.Kept);
+    }
+
     /// <summary>A browser host's stand-in: whether its browser runs, and how often it was asked.</summary>
     private sealed class Browser(bool running, Task? until = null) : IBrowserCaches
     {

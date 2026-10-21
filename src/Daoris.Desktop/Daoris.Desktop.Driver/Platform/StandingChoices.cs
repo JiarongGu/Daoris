@@ -13,6 +13,9 @@ public static class ChoiceCodes
     /// <summary>*Try again* asked of a quest a pause holds: Resume is the press that moves it.</summary>
     public const string QuestPaused = "QUEST_PAUSED";
 
+    /// <summary>A keep rule out of its kind's bounds, or a choice its kind does not take (KEEP1d, the cleanup design §2.2).</summary>
+    public const string KeepOutOfRange = "KEEP_OUT_OF_RANGE";
+
     /// <summary>The shell's <c>DRIVER_REFUSED</c>: any other refusal, said in its own sentence.</summary>
     public const string Refused = "DRIVER_REFUSED";
 
@@ -21,6 +24,7 @@ public static class ChoiceCodes
     {
         [ChoiceRefusal.NotHeld] = QuestNotHeld,
         [ChoiceRefusal.Paused] = QuestPaused,
+        [ChoiceRefusal.KeepOutOfRange] = KeepOutOfRange,
     };
 
     /// <summary>The code a refusal is said in: its check's, else the verbatim refusal.</summary>
@@ -39,6 +43,9 @@ public sealed class ChoiceRefusal(string check, string message, params (string K
 
     /// <summary>The quest is paused, on its own or with its ask.</summary>
     public const string Paused = "quest-paused";
+
+    /// <summary>A keep rule out of its kind's bounds (KEEP1d): its <c>kind</c>, <c>min</c> and <c>max</c> said with it.</summary>
+    public const string KeepOutOfRange = "keep-out-of-range";
 
     public string Check { get; } = check;
 

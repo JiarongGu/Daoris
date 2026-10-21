@@ -127,6 +127,11 @@ using Daoris.Driver;
 //                 tree, handed them, and says why. Nothing after the id is "carry on". The page's box on the
 //                 parked session is the other door.
 //
+//   notices [--json]
+//                 what came to the person (NOTIFY2i, D196): the presses waiting for their confirmation, what needs them by
+//                 group, unread messages by ask and Done and failed, read through the running Daoris (NOTIFICATIONS); alone,
+//                 the notices' record, saying the rest is the running Daoris's to read. It changes nothing.
+//
 //   sessions [--group you|review|working|later|ended|archived] [--repository <name>] [--json]
 //   sessions stop <id> · finish <id> [--note "…"] · decline <id> --reason "…"
 //   sessions archive <id>… | --ended [--yes] · unarchive <id>… · delete <id>
@@ -575,6 +580,14 @@ try
     if (args is ["sessions", .. var sessionsArgs])
     {
         return await Daoris.Driver.Host.SessionsConsole.RunAsync(sessionsArgs, log);
+    }
+
+    // What came to the person, from a terminal (NOTIFY2i, D196, D50): the running Daoris's NOTIFICATIONS where it answers, the notices'
+    // record alone otherwise; it changes nothing. The window's Notifications is the other door.
+    if (args is ["notices", .. var noticesArgs])
+    {
+        var noticesHome = DriverConfig.HomeOf(DriverConfig.ResolvePath());
+        return await NoticesRead.RunAsync(noticesArgs, noticesHome, Daoris.Driver.Host.InstanceHost.World(noticesHome, "notices"), Console.Out, Console.Error);
     }
 
     // Ask Daoris's history from a terminal (ASKHIST1, D50): the panel's list and search, words to one that go on in it, its name,
