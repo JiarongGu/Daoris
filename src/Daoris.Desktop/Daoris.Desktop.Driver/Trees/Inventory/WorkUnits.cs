@@ -74,7 +74,9 @@ public static class WorkUnits
             return branches;
         }
 
-        return Linked(branches, QuestUnits.Read(quests, sessions), AskUnits.Read(asks), sessions);
+        // FABRIC-PERFORM1d: a quest's or an ask's receipts and attempts are its own, as a branch unit's are (WorkInventory's facts).
+        var owed = WorkObligations.Read(home, DateTimeOffset.UtcNow);
+        return Linked(branches, WorkObligations.Attach(QuestUnits.Read(quests, sessions), owed), WorkObligations.Attach(AskUnits.Read(asks), owed), sessions);
     }
 
     /// <summary>
