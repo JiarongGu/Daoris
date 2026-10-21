@@ -104,6 +104,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'started.answer': { values: ['quest', 'session'] },
   'started.released': { values: ['quest', 'session'] },
   'started.cut-off': { values: ['quest', 'session'] },
+  // An open quest carried on in the tree whose session committed work and failed before it took it (RETRYWORK1).
+  'started.carried-work': { values: ['quest', 'session'] },
   // A stand-down carried on once the person brought its lost take forward (SYNCMERGE1b).
   'started.brought-forward': { values: ['quest', 'session'] },
   // A quest handed to another agent (MIXAGENT1a-ii): where it came from, and the account it named passed.

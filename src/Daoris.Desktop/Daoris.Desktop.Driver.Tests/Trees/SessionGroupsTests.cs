@@ -306,6 +306,11 @@ public sealed class SessionGroupsTests
         ["a failed first start whose quest starts again in a new tree leaves its own to review"] =
             new(Look([Record("s1", "failed", "q1", Tree)], [Open], [Verdict(Open, StartVerdict.Start)], [(Tree, new TreeWork(1, 0))]),
                 "s1", SessionGroup.Review, "failed"),
+        // RETRYWORK1: an open quest whose failed session committed work goes back into that tree, whatever holds its carry-on now.
+        ["a failed first start whose committed work its open quest carries on is ended, not to review"] =
+            new(Look([Record("s1", "failed", "q1", Tree)], [Open], [Verdict(Open, StartVerdict.AtCapacity) with { CarriesWork = 1 }],
+                    [(Tree, new TreeWork(1, 0))]),
+                "s1", SessionGroup.Ended, "failed"),
         ["a teammate's record is never to review: its tree is on its machine"] =
             new(Look([Record("laptop/s1", "completed", "q1", Tree)], [Done], trees: [(Tree, new TreeWork(3, 0))]),
                 "laptop/s1", SessionGroup.Ended, "completed")

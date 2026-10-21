@@ -63,6 +63,7 @@
   "note.started.answer": "Carries #{{quest}} on with your answer to session {{session}}.",
   "note.started.released": "Carries #{{quest}} on: you stopped session {{session}}, and released it.",
   "note.started.cut-off": "Carries #{{quest}} on after session {{session}} was cut off.",
+  "note.started.carried-work": "Carries #{{quest}} on with the work session {{session}} committed before it failed.",
   "note.started.brought-forward": "Carries #{{quest}} on: you brought the work of session {{session}} forward after its take lost.",
   "note.started.handed-over": "Carries #{{quest}} on: session {{session}} was handed over from {{agent}}.",
   "note.started.handed-walked": "The account it named could not run it, so another account of its agent did.",

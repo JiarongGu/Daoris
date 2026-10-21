@@ -1139,10 +1139,11 @@ public static class SessionGroups
             // Parked comes first, and a quest the planner still considers while it is taken goes back into this
             // session's tree: its carry-on (D80) or its resume (D79), whatever holds that start for now. Bar the person's
             // stop (SESSUX1b): nothing goes back into its tree until they release it, so its work is theirs to review. And bar
-            // a pause (PAUSE1b, D132 §6.1): nothing goes back in until Resume, and the person paused the work to look at it.
+            // a pause (PAUSE1b, D132 §6.1): nothing goes back in until Resume, and the person paused the work to look at it. An open
+            // quest whose failed session committed work here goes back into it too (RETRYWORK1), so its tree is not offered meanwhile.
             return VerdictOnLast(record) is { } verdict
                    && verdict.Verdict is not (StartVerdict.Stopped or StartVerdict.Paused)
-                   && (verdict.Verdict == StartVerdict.Exhausted || verdict.Quest.Status == "Taken")
+                   && (verdict.Verdict == StartVerdict.Exhausted || verdict.Quest.Status == "Taken" || verdict.CarriesWork is > 0)
                 ? null
                 : tree;
         }

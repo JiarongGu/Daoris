@@ -319,6 +319,9 @@ public sealed class NoteSitesTests
         var cut = new PriorSession("s0", "/t", "failed");
         Line(Daoris.Driver.Driver.StartingNote(null, Quest(), null, null, true, cut, null, false, null)!,
             "carries `#q1` on after session `s0` was cut off.", "started.cut-off");
+        // RETRYWORK1: an open quest carried on in the tree its failed session committed work in says so, never that it was cut off.
+        Line(Daoris.Driver.Driver.StartingNote(null, Quest(), null, null, true, cut, null, false, null, carriesWork: true)!,
+            "carries `#q1` on with the work session `s0` committed before it failed.", "started.carried-work");
 
         var released = cut with { State = "stopped" };
         Line(Daoris.Driver.Driver.StartingNote(null, Quest(), null, "/t", true, released, null, true, null)!,

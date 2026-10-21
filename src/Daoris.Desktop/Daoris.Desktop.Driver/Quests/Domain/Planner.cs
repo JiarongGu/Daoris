@@ -929,6 +929,14 @@ public sealed record Snapshot(
     /// stands for. Absent is none, as for a caller that waits for each start to open.
     /// </summary>
     public IReadOnlyList<StartReservation> Starting { get; init; } = [];
+
+    /// <summary>
+    /// How many commits the tree of each open quest's last session here holds beyond the commit it opened at, by quest id, where that
+    /// session was cut off before it took the quest (RETRYWORK1, <see cref="CommittedWork"/>): the look reads them from git, and the
+    /// planner carries a quest with any on in that tree rather than starting it again in a new one. Absent is unread or none.
+    /// </summary>
+    public IReadOnlyDictionary<string, int> Committed { get; init; } =
+        new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 }
 
 public enum StartVerdict
@@ -1041,6 +1049,14 @@ public sealed record Consideration(
     /// branch this step's tree grows from, so it sees the unmerged work it builds on or checks.
     /// </summary>
     public PriorSession? BuildsOn { get; init; }
+
+    /// <summary>
+    /// For an open quest carried on in the tree of its last session here, which committed work and failed before it took the quest
+    /// (RETRYWORK1): how many commits that tree holds beyond its start, so the start is told to take the quest and finish that work.
+    /// Set whatever the verdict, since a carry-on held for now still goes back into that tree. Null for every other quest, a carry-on
+    /// of a take included.
+    /// </summary>
+    public int? CarriesWork { get; init; }
 
     /// <summary>
     /// For a first start that is a further part of a session (SESSONE1d, D167 point 4 as amended): its entry, the parts it already
@@ -1243,7 +1259,16 @@ public static class Planner
                 continue;
             }
 
-            if (quest.Status == "Open")
+            // 🔴 RETRYWORK1 (D80's note): a session that committed work and failed before it took its quest (its connector could not
+            // start, QUESTOPENLOCK1) left the quest open, and was started again in a new tree, which built the same work from nothing.
+            // Where its tree holds commits beyond its start, the quest is carried on there, as a cut-off of a take is; the strikes
+            // still count it, so a quest that fails so again parks for the person with its work in the tree. Whatever holds the
+            // carry-on, its verdict names the work, so the sessions' groups read that tree as one the quest goes back into.
+            if (quest.Status == "Open" && RetriedFrom(quest) is { } failed)
+            {
+                considerations.Add(CarryOn(quest, failed) with { CarriesWork = snapshot.Committed[quest.Id] });
+            }
+            else if (quest.Status == "Open")
             {
                 var considered = Consider(quest);
                 // A chain's next step in the repository its parent ran in builds on that run (CHAIN2); any other first start may be
@@ -1275,6 +1300,16 @@ public static class Planner
         PriorSession? CarriedOnFrom(QuestView quest) =>
             BroughtForwardFrom(quest)
             ?? (snapshot.LastRun.TryGetValue(quest.Id, out var last) && CarriesOn(last) && !HeldForPerson(last) ? last : null);
+
+        // The record an open quest is carried on from (RETRYWORK1): its last session here, cut off before it took the quest, whose tree
+        // the look found commits in beyond its start; else null, and the quest is a first start.
+        PriorSession? RetriedFrom(QuestView quest) =>
+            snapshot.Committed.GetValueOrDefault(quest.Id) > 0
+            && snapshot.LastRun.TryGetValue(quest.Id, out var last)
+            && CommittedWork.CutOff(last)
+            && !HeldForPerson(last)
+                ? last
+                : null;
 
         // 🔴 SESSCTX1c (D189's amendment): a record whose words wait marked because another client holds its conversation waits for the
         // person, as a park does, so no carry-on moves its quest to a new session meanwhile; a word said since is tried by WordsOn first.
@@ -1433,6 +1468,11 @@ public static class Planner
                             ? $"carrying on in `{quest.To}` — session `{cutOff.Session}` was handed over to {handed.Agent}."
                         : cutOff.PersonStopped
                             ? $"carrying on in `{quest.To}` — you stopped session `{cutOff.Session}`, and released it."
+                        // RETRYWORK1: an open quest whose cut-off session committed work before it took the quest.
+                        : quest.Status == "Open"
+                            ? $"carrying on in `{quest.To}` — session `{cutOff.Session}` failed before it took the quest, and its tree holds "
+                              + $"{Commits(snapshot.Committed.GetValueOrDefault(quest.Id))} beyond its start: "
+                              + (cutOff.Note is { Length: > 0 } failure ? failure : "it ended before closing the quest.")
                             : $"carrying on in `{quest.To}` — session `{cutOff.Session}` was cut off: "
                               + (cutOff.Note is { Length: > 0 } note ? note : "it ended before closing the quest."),
                     Resumes = cutOff,
@@ -1440,6 +1480,8 @@ public static class Planner
                 }
                 : considered;
         }
+
+        static string Commits(int count) => count == 1 ? "1 commit" : $"{count} commits";
 
         // A take that is not this machine's (CARRY2b), as the ledger judges it (CARRY2) and in its words: another machine's by
         // the claim, named by a teammate's record where one came, or one made here after the session ended that no record
