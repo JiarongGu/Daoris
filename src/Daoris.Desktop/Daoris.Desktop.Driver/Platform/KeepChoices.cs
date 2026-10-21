@@ -169,6 +169,44 @@ public static class KeepRules
         return config with { Keep = keep };
     }
 
+    /// <summary>
+    /// The rule a kind's word and its value name, as <c>daoris driver keep &lt;kind&gt; &lt;rule&gt;</c> and Ask Daoris's <c>keep</c> door
+    /// read them: a whole number of days, <c>never</c>, <c>whole</c>, <c>slim</c> or <c>default</c>. Its bounds are
+    /// <see cref="Apply"/>'s to judge.
+    /// </summary>
+    /// <exception cref="DriverException">No kind the person sets, or a value that is none of those.</exception>
+    public static KeepSet Asked(string kindWord, string value)
+    {
+        var kind = Kind(kindWord);
+        var word = value.Trim();
+        return word switch
+        {
+            "default" => new KeepSet(kind.Id, Default: true),
+            "never" => new KeepSet(kind.Id, Never: true),
+            "whole" => new KeepSet(kind.Id, Whole: true),
+            "slim" => new KeepSet(kind.Id, Whole: false),
+            _ when int.TryParse(word, System.Globalization.NumberStyles.AllowLeadingSign, System.Globalization.CultureInfo.InvariantCulture, out var days)
+                => new KeepSet(kind.Id, Days: days),
+            _ => throw new DriverException($"`{word}` is no rule of `{kind.Id}`: it keeps {Choices(kind)}."),
+        };
+    }
+
+    /// <summary>One kind's rule, as the person's <paramref name="keep"/> makes it, in a clause: the terminal's and Ask Daoris's card's words.</summary>
+    public static string Said(string kind, KeepChoices keep)
+    {
+        var policy = KeepPolicy.From(keep);
+        return kind switch
+        {
+            "set-aside" => policy.SetAside.Whole
+                ? $"a tree's folder moved aside is kept {policy.SetAside.Days.TotalDays:0} days, whole"
+                : $"a tree's folder moved aside is kept {policy.SetAside.Days.TotalDays:0} days; its package folders go an hour after the move",
+            "downloads" => policy.Downloads.Days is { } days
+                ? $"a downloaded version nothing uses goes {days.TotalDays:0} days into its unused stretch"
+                : "a downloaded version nothing uses stays until you remove it",
+            _ => $"each day's file of the machine log is kept {policy.Logs.Days.TotalDays:0} days",
+        };
+    }
+
     /// <summary>What <paramref name="kind"/> takes, in the words its refusal and its usage say.</summary>
     public static string Choices(KeepKind kind)
     {

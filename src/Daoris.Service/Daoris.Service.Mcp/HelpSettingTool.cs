@@ -44,7 +44,10 @@ public sealed class HelpSettingTool(IntakeScope? intake = null, HelpProposalBox?
         + "Apply and Not now; nothing changes until the person presses Apply, and their answer comes back as "
         + "their next message. Each door is a `daoris driver` verb: drive, undrive, hold, resume, trees, line, "
         + "landing, across, standing, language, review, opinion, helpers, commits, intake, helper, strikes, retry, timeout, notify, cap, "
-        + "adapter, cooloff. An `across`"
+        + "adapter, cooloff, keep. `keep` sets how long this machine keeps one kind of thing Daoris writes, its words a kind and "
+        + "its rule: `set-aside <days>|whole|slim|default` (trees the look moved aside), `downloads <days>|never|default` "
+        + "(versions nothing uses) or `logs <days>|default` (the machine log); never history, whose age is the person's alone. "
+        + "An `across`"
         + "write-to is the person's standing say-so for one repository's sessions to write into another; `standing` keeps what "
         + "the person says holds for every session in one repository (which writes are allowed, where to test), in their words; "
         + "`language` sets the language a repository's or a workspace's sessions write to the person in, the work's and never "
@@ -80,7 +83,7 @@ public sealed class HelpSettingTool(IntakeScope? intake = null, HelpProposalBox?
         + "for a push, a merge, a discard, a sign-in or an account's key: those "
         + "stay the person's own presses.")]
     public string ProposeSetting(
-        [Description("The door, as `daoris driver` spells it: drive, undrive, hold, resume, trees, line, landing, across, standing, language, review, opinion, helpers, commits, intake, helper, strikes, retry, timeout, notify, cap, adapter or cooloff.")]
+        [Description("The door, as `daoris driver` spells it: drive, undrive, hold, resume, trees, line, landing, across, standing, language, review, opinion, helpers, commits, intake, helper, strikes, retry, timeout, notify, cap, adapter, cooloff or keep.")]
         string door,
         [Description("Why: what the person asked, and what the change would do. The person decides on this.")]
         string why,
@@ -88,7 +91,7 @@ public sealed class HelpSettingTool(IntakeScope? intake = null, HelpProposalBox?
         string? target = null,
         [Description("The workspace, for a line, a landing, a language, a review, a second opinion, a helpers rule or a commit rule, or `across … read`, set for every repository in it. Name this or target, not both.")]
         string? workspace = null,
-        [Description("What it is set to, as the CLI takes it: `on`/`off` (trees, notify), a branch or `--clear` (line), `merge`, `branch <pattern>` with `--tidy`, `--plugin <id>` and `--auto-accept` if wanted, `--key <shape>` or `--no-key` where the pattern says `{ticket}`, and `--squash` or `--no-squash`, or `--clear` (landing), `read on|off|--clear` or `write-to <other> [--clear]` (across), the person's own words or `--clear` (standing), `en` or `zh`, or `--clear` (language), `<environment> --kind local|deployed --procedure <path> [--address <url>] [--run \"<command>\"] [--required|--not-required]`, `none`, `--drop <environment>`, `--required|--not-required` or `--clear` (review), `--reviewers <adapter,adapter> [--on landing,steps] [--required|--not-required] [--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck]`, `none` or `--clear` (opinion), `--mode ask|on|off` and/or `--agents <adapter,adapter>`, or `--clear` (helpers), `--mode as-you-go|ask|at-end` and/or `--convention \"<words>\"` or `--no-convention`, or `--clear` (commits), an agent or `off` (intake, helper), an agent (adapter), a number (strikes, timeout minutes, cap, cooloff minutes).")]
+        [Description("What it is set to, as the CLI takes it: `on`/`off` (trees, notify), a branch or `--clear` (line), `merge`, `branch <pattern>` with `--tidy`, `--plugin <id>` and `--auto-accept` if wanted, `--key <shape>` or `--no-key` where the pattern says `{ticket}`, and `--squash` or `--no-squash`, or `--clear` (landing), `read on|off|--clear` or `write-to <other> [--clear]` (across), the person's own words or `--clear` (standing), `en` or `zh`, or `--clear` (language), `<environment> --kind local|deployed --procedure <path> [--address <url>] [--run \"<command>\"] [--required|--not-required]`, `none`, `--drop <environment>`, `--required|--not-required` or `--clear` (review), `--reviewers <adapter,adapter> [--on landing,steps] [--required|--not-required] [--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck]`, `none` or `--clear` (opinion), `--mode ask|on|off` and/or `--agents <adapter,adapter>`, or `--clear` (helpers), `--mode as-you-go|ask|at-end` and/or `--convention \"<words>\"` or `--no-convention`, or `--clear` (commits), an agent or `off` (intake, helper), an agent (adapter), a number (strikes, timeout minutes, cap, cooloff minutes), a kind and its rule (keep: `set-aside 30`, `downloads never`, `logs default`).")]
         string? value = null)
     {
         var box = help ?? HelpProposalBox.FromEnvironment();

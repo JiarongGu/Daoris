@@ -839,7 +839,7 @@ public static class DriverChoicesCommand
                 if (set.Default) payload["default"] = true;
                 return Change(ChoiceRoutes.Keep, payload, config => KeepRules.Apply(config, set), () =>
                 {
-                    Say($"daoris: {KeepSaid(set.Kind, after.Keep)}.");
+                    Say($"daoris: {KeepRules.Said(set.Kind, after.Keep)}.");
                     Say($"  Written to {path} — the look's next pass keeps by it, so nothing restarts.");
                     return 0;
                 });
@@ -856,44 +856,23 @@ public static class DriverChoicesCommand
         const string Usage = "`driver keep` needs a kind and its rule — `set-aside <days>|whole|slim|default`, `downloads <days>|never|default` "
             + "or `logs <days>|default`; e.g. `daoris driver keep set-aside 30`.";
         if (args.Count != 3) throw new ChoiceWords(Usage);
-        KeepKind kind;
         try
         {
-            kind = KeepRules.Kind(args[1]);
+            KeepRules.Kind(args[1]);
         }
         catch (DriverException refused)
         {
             throw new ChoiceWords($"{refused.Message} {Usage}");
         }
 
-        var value = args[2].Trim();
-        switch (value)
+        try
         {
-            case "default": return new KeepSet(kind.Id, Default: true);
-            case "never": return new KeepSet(kind.Id, Never: true);
-            case "whole": return new KeepSet(kind.Id, Whole: true);
-            case "slim": return new KeepSet(kind.Id, Whole: false);
+            return KeepRules.Asked(args[1], args[2]);
         }
-
-        var number = Number(value);
-        if (!IsWhole(number) || value.Length == 0) throw new ChoiceWords($"`{value}` is no rule of `{kind.Id}`: it keeps {KeepRules.Choices(kind)}.");
-        return new KeepSet(kind.Id, Days: (int)Math.Clamp(number, int.MinValue, int.MaxValue));
-    }
-
-    /// <summary>One kind's rule, as the person's <paramref name="keep"/> makes it, in a clause (KEEP1d).</summary>
-    private static string KeepSaid(string kind, KeepChoices keep)
-    {
-        var policy = KeepPolicy.From(keep);
-        return kind switch
+        catch (DriverException refused)
         {
-            "set-aside" => policy.SetAside.Whole
-                ? $"a tree's folder moved aside is kept {policy.SetAside.Days.TotalDays:0} days, whole"
-                : $"a tree's folder moved aside is kept {policy.SetAside.Days.TotalDays:0} days; its package folders go an hour after the move",
-            "downloads" => policy.Downloads.Days is { } days
-                ? $"a downloaded version nothing uses goes {days.TotalDays:0} days into its unused stretch"
-                : "a downloaded version nothing uses stays until you remove it",
-            _ => $"each day's file of the machine log is kept {policy.Logs.Days.TotalDays:0} days",
-        };
+            throw new ChoiceWords(refused.Message);
+        }
     }
 
     /// <summary><c>keep</c>: each kind's rule the person sets, and whether it is the default (KEEP1d).</summary>
@@ -903,7 +882,7 @@ public static class DriverChoicesCommand
         write.WriteLine($"daoris: {world.ConfigPath}");
         foreach (var kind in KeepChoices.Settable)
         {
-            var said = KeepSaid(kind.Id, choices.Keep);
+            var said = KeepRules.Said(kind.Id, choices.Keep);
             write.WriteLine(choices.Keep.IsDefault(kind.Id)
                 ? $"  {kind.Id,-10} {said}  (the default — `daoris driver keep {kind.Id} …` changes it)"
                 : $"  {kind.Id,-10} {said}  (set — `daoris driver keep {kind.Id} default` takes the default again)");
