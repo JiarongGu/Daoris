@@ -3,8 +3,8 @@ import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../design/storyLanguage';
 import { Button } from '../design/ui';
 import {
-  answerOf, FAILED, HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DISPUTED, OPINION_SETTLED, PULL_REQUEST_OPEN, SEVERAL,
-  WAITING_ON_YOU, WORKING,
+  answerOf, FAILED, GO_AHEAD_REFUSAL, HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DISPUTED, OPINION_SETTLED, PULL_REQUEST_OPEN,
+  SEVERAL, WAITING_ON_YOU, WORKING,
 } from './runFixtures';
 import { OpinionGate } from '../work/gates/OpinionGate';
 import { DETAIL, GATES } from '../work/gates/opinionFixtures';
@@ -18,7 +18,10 @@ import { WorkflowRunView } from './WorkflowRunView';
 const nothing = () => {};
 const doors = { session: nothing, quest: nothing, ask: nothing, review: nothing };
 
-/** The side bar at a width: 360 px as it opens beside a session, and 300 px, its floor. */
+/**
+ * The side bar at a width: 360 px as it opens beside a session, 300 px, its floor, where the flowchart is its rail (FLOWCHART1d),
+ * and 696 px, 45% of the install's 1546 px window (the UI/UX design R6).
+ */
 const sideAt = (width: number): Decorator => (Story) => (
   <div className="border border-line bg-page p-3" style={{ width }}><Story /></div>
 );
@@ -144,6 +147,28 @@ export const AtTheFloor: Story = { ...InReview, decorators: [sideAt(300)] };
 
 /** At the floor, in 中文 and dark. */
 export const AtTheFloorChineseDark: Story = { ...HeldForAnOpinion, decorators: [sideAt(300), chinese, dark] };
+
+/** At 45% of the install's window: the run drawn as a flowchart top to bottom, the look current, the rest not reached and dashed. */
+export const AtHalfTheWindow: Story = { ...InReview, decorators: [sideAt(696)] };
+
+/** At 45% of the window, in 中文 and dark: held for an opinion. */
+export const AtHalfTheWindowChineseDark: Story = { ...HeldForAnOpinion, decorators: [sideAt(696), chinese, dark] };
+
+/** At 45% of the window, landed: the end of the line reached. */
+export const LandedAtHalfTheWindow: Story = { ...Landed, decorators: [sideAt(696)] };
+
+/**
+ * **Passed over, and a go-ahead's refusal** (FLOWCHART1d): a named version's run, its second opinion passed over where nothing asked
+ * for one and its look skipped by the person, each said as its record names who; the go-ahead's refusal waits for you, on a dashed
+ * failure path once the outcome fits beside the end.
+ */
+export const PassedOver: Story = { args: { answer: answerOf(GO_AHEAD_REFUSAL), here: null } };
+
+/** Passed over, at 45% of the window, where the refusal's outcome fits beside the end. */
+export const PassedOverAtHalfTheWindow: Story = { ...PassedOver, decorators: [sideAt(696)] };
+
+/** Passed over, at the floor in 中文: the rail, the refusal said under its step. */
+export const PassedOverAtTheFloorChinese: Story = { ...PassedOver, decorators: [sideAt(300), chinese] };
 
 /** **The one line** a quest's page carries among its head's facts, and an ask's for each of its runs, each a door into the run. */
 export const OneLine: StoryObj<typeof WorkflowLine> = {

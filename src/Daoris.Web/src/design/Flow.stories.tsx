@@ -3,7 +3,8 @@ import { useLayoutEffect, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Flow } from './Flow';
 import {
-  APPEND_AFTER, APPEND_BEFORE, DENSE, type Fixture, LIFECYCLE, MANY_CURRENT, NONE_CURRENT, type Said, UNEQUAL,
+  APPEND_AFTER, APPEND_BEFORE, DENSE, type Fixture, LARGE_ONE, LARGE_SETTLED, LARGE_THREE, LIFECYCLE, MANY_CURRENT, NONE_CURRENT, type Said,
+  UNEQUAL,
 } from './flowFixtures';
 import { atWidths, FLOW_WIDTHS, inDark, inLight } from './flowFrames';
 import { chinese } from './storyLanguage';
@@ -22,7 +23,7 @@ function FixtureFlow({ fixture }: { fixture: Fixture }) {
       label={say(fixture.label)}
       entries={fixture.entries}
       nodes={fixture.nodes.map((node) => ({
-        id: node.id, title: say(node.title), current: node.current, reached: node.reached,
+        id: node.id, title: say(node.title), current: node.current, reached: node.reached, settled: node.settled,
         state: node.state && { word: say(node.state.word), tone: node.state.tone },
       }))}
       edges={fixture.edges.map((edge) => ({
@@ -75,8 +76,9 @@ export const LifecycleChineseDark: Story = lifecycle.chineseDark;
 
 /**
  * A dense graph at the bounds (§E7): 24 authored steps, `allOf` and `anyOf` groups with their joins, failure sinks and
- * tasks, 96 wires. It needs 1432 px top to bottom, so it is the rail at every frame width until folds come (FLOWCHART1d),
- * and drawn whole at 1440 px, the width it needs, for the measured-box check.
+ * tasks, 96 wires. Past 24 nodes and nothing started, it is focused after its entries and the rest folded into *later steps*
+ * (FLOWCHART1d), each edge into the fold drawn to it and counted. *Show whole* draws it whole, which needs 1432 px top to bottom:
+ * the measured-box check presses it in its 1440 px frame.
  */
 const dense = looks(DENSE, [...FLOW_WIDTHS, 1440]);
 export const Dense: Story = dense.light;
@@ -122,6 +124,32 @@ export const NoneCurrent: Story = none.light;
 export const NoneCurrentDark: Story = none.dark;
 export const NoneCurrentChinese: Story = none.chinese;
 export const NoneCurrentChineseDark: Story = none.chineseDark;
+
+/**
+ * A run too large to show whole (FLOWCHART1d; §3.6, trap 16): 96 nodes, three lines of work of 31 steps, folded around its one
+ * current node, the build at its 20th step: what settled two ranks before it as *steps done*, the ranks from two before to three
+ * after it drawn, and the rest as *later steps*, every edge across a fold's boundary drawn to it with its cause. *Show whole* opens
+ * every fold.
+ */
+const largeOne = looks(LARGE_ONE);
+export const TooLarge: Story = largeOne.light;
+export const TooLargeDark: Story = largeOne.dark;
+export const TooLargeChinese: Story = largeOne.chinese;
+export const TooLargeChineseDark: Story = largeOne.chineseDark;
+
+/** The same run folded around three current nodes far apart, their union, with a fold between where they part. */
+const largeThree = looks(LARGE_THREE);
+export const TooLargeThreeCurrent: Story = largeThree.light;
+export const TooLargeThreeCurrentDark: Story = largeThree.dark;
+export const TooLargeThreeCurrentChinese: Story = largeThree.chinese;
+export const TooLargeThreeCurrentChineseDark: Story = largeThree.chineseDark;
+
+/** The same run ended, none current: focused before the end, what settled before it folded as *steps done*. */
+const largeSettled = looks(LARGE_SETTLED);
+export const TooLargeNoneCurrent: Story = largeSettled.light;
+export const TooLargeNoneCurrentDark: Story = largeSettled.dark;
+export const TooLargeNoneCurrentChinese: Story = largeSettled.chinese;
+export const TooLargeNoneCurrentChineseDark: Story = largeSettled.chineseDark;
 
 /** *Show as list* chosen, at 1200 px where the drawing fits: the rail, with *Show as flowchart* to go back. */
 export const ShownAsListAt1200: Story = {
