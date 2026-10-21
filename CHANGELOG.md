@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A press from a terminal that you Confirm after its time has run out is now refused, and nothing runs. Before, a Confirm taken while
+  the machine was slow to end it could still run it, and a window saying its card was shown after ten minutes gave it two more. Its
+  card has gone by then, so the refusal is said in a notice in the corner. The notification behind the window no longer names the
+  press's code (such as `SESSION_INPUT`); it says which terminal sent it.
 - A *What needs you* row for a `daoris/…` branch Daoris has no record of now opens the session it was made for, where you can
   discard it, if that session is still listed. Otherwise it opens the workspace's Branches as before.
 - `daoris driver workflow apply <id> --as-graph` saves a workflow's newest version of steps as its next version, a graph, one holding

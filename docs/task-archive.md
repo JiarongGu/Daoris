@@ -18953,3 +18953,13 @@ graph with every synthetic node authored (`WorkflowGraphs.Saved`), and saves it 
 observed nodes of one plugin step are refused naming both, and nothing is written; the steps version is kept as written, and a go-ahead
 is said as now holding what follows it. The CLI half has no file since PUSH1f2b, so the driver is the one reader. Proof:
 `workflow-graphs.json`'s `saved` rows (`WorkflowGraphsTests`) and `WorkflowAsGraphCommandTests`. Detail: D190's FABRIC-GRAPH1j note.
+
+## NOTIFY2a — a terminal's press answered or shown past its time runs nothing (2026-10-21, D196)
+
+> - [ ] **NOTIFY2a — a terminal's press answered or shown past its time runs nothing** (modules, web-shell; first; D196, the notification design §9). The pipe's half, with no view: a late answer or shown word ends the press expired, its refusal toasted; `Confirming` carries its id; the balloon names no route. Proof: as §9 names it.
+
+**Outcome** 2026-10-21: built. `PipeConfirmations` reads the clock in `End` for every answer and in `Show` before its early return,
+so an answer or a shown word at or past the press's time ends it expired and runs nothing, whether or not its timer fired; the
+`Confirming` attention carries the press's `Id`, and its balloon names the terminal and no route. The card toasts a refusal whose card
+has gone with its press. Proof: `PipeConfirmationsTests` and `PipeConfirmTests` on a held clock with the timer held late, and
+`Confirmations.test.tsx` in en and zh, each seen failing first. Detail: D196's NOTIFY2a note, `docs/FIX-LOG.md`. On Opus.
