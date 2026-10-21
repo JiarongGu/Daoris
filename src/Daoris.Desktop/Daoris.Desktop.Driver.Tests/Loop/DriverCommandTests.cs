@@ -563,7 +563,9 @@ public sealed class DriverCommandTests
         Assert.Contains("HistoryCommand.Read(args, out var problem)", console);
         Assert.Contains("HistoryCommand.Read(scope, args, out var problem)", console);
         Assert.Contains("Console.Error.WriteLine(HistoryCommand.Usage);", console);
-        Assert.Contains("new HistoryWorld(service, home, configPath, new SessionProcesses(DaorisHome.Entry(home, HomeEntry.SessionPids))) { Log = log }", console);
+        Assert.Contains("new HistoryWorld(service, home, configPath, new SessionProcesses(DaorisHome.Entry(home, HomeEntry.SessionPids)))", console);
+        // RPC1e: the running Daoris's client where one answers.
+        Assert.Contains("Instance = InstanceHost.World(home, \"daoris-driver\")", console);
         Assert.Contains("HistoryCommand.RunAsync(ask, world, Console.Out)", console);
     }
 
