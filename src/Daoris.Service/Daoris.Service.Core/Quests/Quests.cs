@@ -629,6 +629,13 @@ public enum QuestForwardRefusal
 
     /// <summary>The person's reopen holds the work the step grows from (FABRIC-CLOSE1c): withdrawn, it is taken by nobody until that work is ready again.</summary>
     SourceReopened,
+
+    /// <summary>
+    /// A session here still runs on the quest, the one whose take lost or a later one (SYNCMERGE1c4, D178 point 3): the press waits until
+    /// its process has ended, so a late done, <c>ready</c> or wait of the old session cannot stand on the fresh take. Judged last, once
+    /// the press could otherwise stand.
+    /// </summary>
+    StillRunning,
 }
 
 /// <param name="Refusal"><see cref="QuestForwardRefusal.None"/> when it wrote the take and the dismissal.</param>
@@ -2627,8 +2634,12 @@ public sealed class QuestStore
     /// its source, and where the conflict is not this machine's lost take still on the quest. Pushing the take and awaiting its answer is
     /// the exchange's (D69); a rebase loses both where another machine's take, or a dismissal of the same conflict, reached the remote first.
     /// </summary>
+    /// <param name="running">
+    /// That a session here still runs on the quest, as the exchange read the session store (SYNCMERGE1c4): refused
+    /// <see cref="QuestForwardRefusal.StillRunning"/> once every other rule would let the press stand.
+    /// </param>
     public Task<QuestBringingForward> BringForwardAsync(
-        string id, QuestOperationRef conflict, DateTimeOffset now, CancellationToken ct = default) =>
+        string id, QuestOperationRef conflict, DateTimeOffset now, CancellationToken ct = default, bool running = false) =>
         InTransactionAsync(async (transaction, inside) =>
         {
             var history = await HistoryAsync(id, transaction, inside).ConfigureAwait(false);
@@ -2668,6 +2679,7 @@ public sealed class QuestStore
                 refusal = QuestForwardRefusal.SourceReopened;
             }
 
+            if (refusal == QuestForwardRefusal.None && running) refusal = QuestForwardRefusal.StillRunning;
             if (refusal != QuestForwardRefusal.None) return new QuestBringingForward(refusal, standing);
 
             var take = await AppendAsync(
