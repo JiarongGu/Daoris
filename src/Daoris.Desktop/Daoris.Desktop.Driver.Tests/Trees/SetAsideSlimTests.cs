@@ -115,6 +115,10 @@ public sealed class SetAsideSlimTests : IDisposable
         var folder = Aside("s-0b", Package);
         Manifest(folder, SlimStates.Moved, "node_modules", "web/node_modules");
         Assert.Single(Pass(folder, TimeSpan.FromHours(1)).Slims);
+        // The removal changed `web`'s own time; NTFS shows that in its parent's listing only later (measured), so it is made so here.
+        var ended = Read(folder).Paths.Single(path => path.Path == "web/node_modules").Ended!.Value;
+        Directory.SetLastWriteTimeUtc(Path.Combine(folder, "web"), ended.UtcDateTime.AddMilliseconds(-1));
+        Assert.True(Directory.GetLastWriteTimeUtc(Path.Combine(folder, "web")) > MovedOf(folder).UtcDateTime);
 
         var purged = Assert.Single(Pass(folder, TimeSpan.FromDays(15)).Purged);
 

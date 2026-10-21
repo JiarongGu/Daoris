@@ -312,14 +312,20 @@ internal sealed class TreeSetAside(TreeContext context)
     /// <summary>The manifest of a move refused or a folder put back, gone with the attempt (Codex 2.4).</summary>
     private static void Forget(string? path)
     {
-        if (path is null) return;
+        // Left at `judged`, the next pass drops it and keeps any folder beside it whole.
+        if (path is not null) TryDelete(path);
+    }
+
+    /// <summary>A file deleted where it can be; one that cannot is left for a later pass, which judges it again.</summary>
+    private static void TryDelete(string path)
+    {
         try
         {
             File.Delete(path);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            // Left at `judged` beside no folder, the next pass drops it.
+            // Left for the next pass.
         }
     }
 
@@ -390,14 +396,15 @@ internal sealed class TreeSetAside(TreeContext context)
                 try
                 {
                     bytes = DeleteNeverFollowing(folder);
-                    var manifest = SlimManifest.PathFor(folder);
-                    if (File.Exists(manifest)) File.Delete(manifest);
                 }
                 catch (Exception error) when (error is IOException or UnauthorizedAccessException)
                 {
                     kept = (SetAsideKept.Unread, $"it could not be read or deleted ({error.Message.Trim()})");
                     failed.Add((folder, kept.Value.Sentence, last.Why == kept.Value.Sentence ? now : null));
                 }
+
+                // Its manifest goes with it; one left beside no folder is dropped by the next pass's slim.
+                if (kept is null) TryDelete(SlimManifest.PathFor(folder));
             }
 
             results.Add(new SetAside(folder, moved, kept is null, kept?.Sentence, kept?.Code) { Bytes = bytes });

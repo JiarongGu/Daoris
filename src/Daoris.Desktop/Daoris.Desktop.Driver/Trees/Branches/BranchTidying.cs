@@ -160,6 +160,8 @@ public sealed class BranchTidying(string home)
     private IReadOnlyList<string> Keep(SessionTrees trees, MachineLog? log, HashSet<string> met, CancellationToken ct)
     {
         var lines = new List<string>();
+        // Nothing set aside, nothing to keep: the run lock and its holder's file are not written every pace for nothing.
+        if (!Directory.Exists(trees.SetAsideRoot)) return lines;
         using var run = KeepingRun.TryTake(home, KeepingRun.Look);
         if (run is null)
         {
