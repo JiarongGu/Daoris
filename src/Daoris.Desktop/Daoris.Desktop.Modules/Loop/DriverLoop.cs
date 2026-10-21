@@ -500,6 +500,12 @@ public sealed class DriverLoop(
     public MachineFacts Facts { get; } = new() { Log = log };
 
     /// <summary>
+    /// What waits at the service's own door for the person (NOTIFY2j, D196 point 4): one wait held from the loop's service, told to
+    /// every window at each change, so no window polls. Read by the bridge's <c>SERVICE_CONFIRMATIONS</c>; none before it is told.
+    /// </summary>
+    public ServiceConfirmations ServiceConfirmations { get; } = new(eventBus, log);
+
+    /// <summary>
     /// The second-opinion gates the last tick judged (XAGENT1g3), replaced whole each tick: what <c>OPINION_WAITS</c> answers, as of
     /// that tick, at most one poll old. Null before the first.
     /// </summary>
@@ -683,6 +689,10 @@ public sealed class DriverLoop(
         // PARALLEL1a (D181 point 2): the machine's facts judged from here, on their own tasks, the service answering; every loop on the
         // home keeps them, whoever holds its lease, since a person presses here either way. The watch below tells them its wakes.
         Facts.Start(ct);
+
+        // NOTIFY2j: the presses waiting at the service's door, told to the windows from one wait on the service, held by every loop
+        // on the home whoever holds its lease, since the windows are this process's either way. It ends with the loop.
+        _ = Task.Run(() => ServiceConfirmations.RunAsync(service.Confirmations, ct), ct);
 
         // Every loop on the home watches the requests a terminal's `sessions stop|finish|decline` writes (SESSUX1g, D126
         // §7.1): one for a session this registry runs, a conversation or a driven session, is acted on as the screen's

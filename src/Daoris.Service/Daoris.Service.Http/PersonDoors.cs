@@ -169,6 +169,8 @@ public static class PersonDoors
         // Neither answers a secret's hash, so a reader learns nothing that grants.
         new("GET", "/api/confirmations", DoorClass.Open),
         new("GET", "/api/confirmations/{id}", DoorClass.Open),
+        // What waits, held until it moves (NOTIFY2j), as the list answers it: the desktop's host holds one and tells its windows.
+        new("GET", "/api/confirmations/waiting", DoorClass.Open),
         // Which ledger families moved (FABRIC-EVENT3b, the fabric events design §A4.2): families and a cursor, never a record, as
         // the connector reads the same store. A local host's alone, with at most eight waits held at once.
         new("GET", ChangeStream.Route, DoorClass.Open),

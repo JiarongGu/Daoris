@@ -10,6 +10,9 @@ with the version and date at release.
   that session runs. Settings → This Daoris → *Clear unused downloads…* says the rule and, beside each unused version, the day it
   goes. Tools' *Delete* of a version now takes the same care: a version a running session was handed, or one a program holds, is
   refused and left whole, where a failed delete could leave part of it. In English and 中文.
+- A terminal's request waiting at the service for your confirmation now reaches every Daoris window the moment it is asked, answered
+  or expires, where each window used to check every five seconds. With two windows open it is announced once, in the window you are
+  using, and a window you open or reload while one waits no longer announces it again; the bell still counts it.
 - What you say to a session while its quest waits on another repository's answer now reaches the session that carries the quest on
   once the answer comes. It is quoted beneath the answer and shown in that session's conversation. Your answer to a session that
   stopped to ask you after such a wait now goes on at the driver's next look; before, it could wait for good. The session is told

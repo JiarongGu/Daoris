@@ -16,16 +16,20 @@ function looking(): boolean {
  *
  * @remarks
  * **Said on an arrival, never a snapshot** (§5): a terminal's press on its own event (`SESSION_ATTENTION` of the kind `Confirming`,
- * told once at its ask), keyed by its id, so an event heard twice is said once; a service's press, which tells no window, the first
- * time this window's poll sees its id. A window not focused as it hears it says nothing, and the press is counted in its bell; an
- * arrival missed is never said later, which a press may accept only because the bell's warning hue stays while it waits unshown.
+ * told once at its ask), keyed by its id, so an event heard twice is said once; a service's press the first time the list this
+ * window is told holds its id (NOTIFY2j: the shell tells every window the one list at once, so only the focused one says it), and
+ * never one already waiting at this window's first read of the list, which arrived before the window did, as a terminal's does.
+ * A window not focused as it hears it says nothing, and the press is counted in its bell; an arrival missed is never said later,
+ * which a press may accept only because the bell's warning hue stays while it waits unshown.
  *
  * **Never over the view**: a press heard while *Notifications* is open says no toast, and the view's opening takes every one away.
  * Nothing here moves the focus, opens the view or confirms anything: the door shows the card, where only the person answers.
  */
-export function usePressAnnouncements({ presses, viewOpen, words, openLabel, onOpen }: {
+export function usePressAnnouncements({ presses, serviceRead = true, viewOpen, words, openLabel, onOpen }: {
   /** The presses waiting now, of either source, as the confirmation channel tells them. */
   presses: Confirmation[];
+  /** Whether this window has read the service's list yet: the presses its first read holds are no arrival. */
+  serviceRead?: boolean;
   /** Whether *Notifications* is drawn in this window now. */
   viewOpen: boolean;
   /** A press's toast in the reader's language: its act and its session's name, never a value. */
@@ -60,10 +64,19 @@ export function usePressAnnouncements({ presses, viewOpen, words, openLabel, onO
 
   const heard = useCallback((id: string) => say(keyOf({ source: 'pipe', id })), [say]);
 
-  // A service's press is said the first time the poll sees it; a terminal's is decided by its event alone.
+  // A service's press is said the first time the list this window is told holds it, after its first read, which is a baseline; a
+  // terminal's is decided by its event alone.
+  const based = useRef(false);
   const waiting = presses.map(keyOf).join('\n');
   useEffect(() => {
-    for (const press of presses) if (press.source === 'service') say(keyOf(press));
+    if (serviceRead) {
+      for (const press of presses) {
+        if (press.source !== 'service') continue;
+        if (based.current) say(keyOf(press));
+        else decided.current.add(keyOf(press));
+      }
+      based.current = true;
+    }
     // A press seen waiting is marked so; one seen and gone since has ended, and its toast goes with it.
     const now = new Set(presses.map(keyOf));
     setStanding((was) => {
@@ -71,7 +84,7 @@ export function usePressAnnouncements({ presses, viewOpen, words, openLabel, onO
       return kept.length === was.length && kept.every((each, index) => each.seen === was[index]!.seen) ? was : kept;
     });
     // The keys of what waits name the change; the list is read through them.
-  }, [waiting, say]);
+  }, [waiting, serviceRead, say]);
 
   // The view opening takes every one away: it is where they all are.
   useEffect(() => {

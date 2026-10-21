@@ -26,6 +26,12 @@ public sealed class PersonRoutes(DriverLoop loop)
     private Task<object?> PersonConfirmationsAsync(IpcRequest request, CancellationToken cancellationToken) =>
         Task.FromResult<object?>(_loop.Pipe?.Confirmations.Now() ?? new PipeConfirmationsNow(0, []));
 
+    // NOTIFY2j (D196 point 4): what waits at the service's own door, read whole as the `SERVICE_CONFIRMATIONS` event tells it, for a
+    // window that opens or reloads while one waits; the person answers each at the service's door with the key, as before.
+    [DriverRoute("SERVICE_CONFIRMATIONS")]
+    private Task<object?> ServiceConfirmationsAsync(IpcRequest request, CancellationToken cancellationToken) =>
+        Task.FromResult<object?>(_loop.ServiceConfirmations.Now());
+
     // RPC1c: the person's Confirm or Refuse on a terminal's press, each once. One no longer waiting (answered in another window, its two
     // minutes over, taken back by its terminal or by the close) is answered as data, `gone`, for the card to say where it was pressed
     // (the UI/UX design's R3), or a toast where its card has gone with it; so is one answered at or past its time, which that answer

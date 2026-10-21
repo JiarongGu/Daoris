@@ -22,7 +22,8 @@ import type { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { holdPersonKey, holdsPersonKey } from '../data/api';
 import {
-  type PipeConfirmations, useAnswerConfirmation, useConfirmationShown, usePersonKey, useTerminalConfirmations,
+  type PipeConfirmations, useAnswerConfirmation, useConfirmationShown, usePersonKey, useServiceConfirmations,
+  useTerminalConfirmations,
 } from './person';
 
 const wrapper = () => {
@@ -121,6 +122,53 @@ describe("the person's door over the bridge", () => {
       ['/api/confirmations/h1/confirm', 'POST', 'k'.repeat(43)],
       ['/api/confirmations/h1/refuse', 'POST', 'k'.repeat(43)],
     ]);
+  });
+
+  // NOTIFY2j: what waits at the service's door, told by the shell to every window, so no window polls.
+  const HELD = {
+    id: 'h1', state: 'waiting', method: 'POST', path: '/api/asks', route: '/api/asks', act: 'an ask', values: [],
+    fields: [{ name: '/sentence', type: 'string', value: 'Rename it.' }], asked: '2026-10-22T12:00:00Z', expires: '2026-10-22T12:02:00Z',
+  };
+  const OTHER = { ...HELD, id: 'h2', act: "a quest's deletion" };
+
+  it("reads what waits at the service as the shell tells it, keeps each newer telling, and never polls the service", async () => {
+    invoke.mockImplementation(async (_module: string, type: string) =>
+      (type === 'SERVICE_CONFIRMATIONS' ? { seq: 2, waiting: [HELD] } : null));
+    const fetcher = vi.fn();
+    vi.stubGlobal('fetch', fetcher);
+    const { result } = renderHook(() => useServiceConfirmations(true), { wrapper: wrapper() });
+
+    await waitFor(() => expect(result.current.waiting.map((each) => each.id)).toEqual(['h1']));
+    expect(result.current.read).toBe(true);
+    expect(result.current.waiting[0]).toMatchObject({ source: 'service', route: 'POST /api/asks', act: 'an ask', fields: HELD.fields });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SERVICE_CONFIRMATIONS', {});
+
+    const tell = (told: unknown) => act(() => { eventHandlers.get('DAORIS.SERVICE_CONFIRMATIONS')!(told); });
+    tell({ seq: 3, waiting: [HELD, OTHER] });
+    await waitFor(() => expect(result.current.waiting.map((each) => each.id)).toEqual(['h1', 'h2']));
+    // An older telling, delivered late, is not kept.
+    tell({ seq: 1, waiting: [] });
+    tell({ seq: 4, waiting: [OTHER] });
+    await waitFor(() => expect(result.current.waiting.map((each) => each.id)).toEqual(['h2']));
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it("keeps the poll of the service's list where the shell is older than the telling, and lists none without the key", async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SERVICE_CONFIRMATIONS') throw Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' });
+      return null;
+    });
+    const fetcher = vi.fn(async () => Response.json([HELD]));
+    vi.stubGlobal('fetch', fetcher);
+    const { result } = renderHook(() => useServiceConfirmations(true), { wrapper: wrapper() });
+
+    await waitFor(() => expect(result.current.waiting.map((each) => each.id)).toEqual(['h1']));
+    expect((fetcher.mock.calls as unknown as [string][]).map(([path]) => path)).toContain('/api/confirmations');
+
+    invoke.mockClear();
+    const none = renderHook(() => useServiceConfirmations(false), { wrapper: wrapper() });
+    expect(none.result.current).toEqual({ waiting: [], read: false });
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SERVICE_CONFIRMATIONS', {});
   });
 
   it('asks the shell for the key once it answers, and holds it in memory for the writes', async () => {
