@@ -31,7 +31,7 @@ public static class DriverWorkflowsCommand
 
     public const string Usage = "`driver workflow` takes list; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; "
         + "new <id> --from <preset>|current:<repository>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; "
-        + "edit <id> [--base <version>] <change>…; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; "
+        + "edit <id> [--base <version>] <change>…; apply <id> <file>|--as-graph [--base <version>]; export <id> [--to <file>]; import <file>; "
         + "use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]; "
         + "kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. "
         + "new, edit, apply, import, use and kind print their change, and with --plan save nothing — e.g. "
@@ -791,10 +791,12 @@ public static class DriverWorkflowsCommand
 
         private int Apply()
         {
-            Flags("apply", 4, ["--base"], ["--plan"]);
+            var asGraph = argv.Contains("--as-graph");
+            Flags("apply", asGraph ? 3 : 4, ["--base"], ["--plan", "--as-graph"]);
             var id = Named(argv[2]).Id;
             var found = Required(id);
             var (version, _) = BaseOf(found);
+            if (asGraph) return AsGraph(found, version);
             var held = Parsed(FileOperand(argv[3]));
             // A graph (FABRIC-GRAPH1f): the file's own, a version's of schema 2, or a workflow's newest version's.
             var versions = held is JsonObject record && record["versions"] is JsonArray listed ? listed : null;
@@ -836,10 +838,33 @@ public static class DriverWorkflowsCommand
         }
 
         /// <summary>
+        /// <c>apply &lt;id&gt; --as-graph</c> (FABRIC-GRAPH1j; D190 point 8, the cutover design §7.2): the base, a steps version, read by its
+        /// shape, since one holding a kind schema 1 does not run reads as no steps; decoded and saved as the next version, its synthetic nodes
+        /// authored (<see cref="WorkflowGraphs.Saved"/>) and judged as a saved graph is, so two observed nodes of one plugin step are refused
+        /// naming both. The steps version stays as it was read. A go-ahead is said, since the graph holds what follows it where the steps went on.
+        /// </summary>
+        private int AsGraph(Found found, NamedVersion @base)
+        {
+            if (@base.Graph is not null) throw new ChoiceWords($"`{found.Id}` v{@base.Version} is a graph already: --as-graph saves a version of steps as one.", 1);
+            var index = found.Read.Versions.ToList().IndexOf(@base);
+            var raw = found.File!["versions"]![index]!["steps"];
+            var prior = found.Read.Versions.Take(index).Where(each => each.Steps is not null).ToList();
+            var (steps, problem) = WorkflowNamed.ReadShape(raw is null ? null : WorkflowNamed.ElementOf(raw), @base.Version, prior);
+            if (steps is null) throw new ChoiceWords($"`{found.Id}` v{@base.Version} cannot be saved as a graph: {problem}", 1);
+            var held = steps.Where(step => step.Kind == WorkflowKinds.GoAhead)
+                .Select(step => $"  The go-ahead `{step.Id}` now holds what follows it until your yes, or your skip with your words: the steps went on past "
+                    + "one that could not start.")
+                .ToList();
+            return ChangeGraph(found, @base, WorkflowGraphs.Saved(steps), $"v{@base.Version}'s steps as a graph", held);
+        }
+
+        /// <summary>
         /// A new version that is a graph (FABRIC-GRAPH1f), against the base: judged whole as the driver judges it, said with its digest,
         /// and saved unless <c>--plan</c>. The same graph as the base's is nothing to do.
         /// </summary>
-        private int ChangeGraph(Found found, NamedVersion @base, JsonNode? graph)
+        /// <param name="what">What the graph is, said after the workflow's name, where it is not a file's.</param>
+        /// <param name="lines">Lines said after the header, before what is written.</param>
+        private int ChangeGraph(Found found, NamedVersion @base, JsonNode? graph, string? what = null, IReadOnlyList<string>? lines = null)
         {
             var plan = WorkflowNamed.PlanAdd(found.File, new WorkflowVersionAdded(found.Id, null, "terminal", Moment(), null, graph?.DeepClone()),
                 WorkflowRunBindings.KeptVersions(_home, found.Id).ToList());
@@ -852,7 +877,8 @@ public static class DriverWorkflowsCommand
                 return 0;
             }
 
-            Say($"daoris: `{found.Id}` v{@base.Version} → v{plan.Version} — {found.Read.Name}: {WorkflowWords.GraphSaid(next)}");
+            Say($"daoris: `{found.Id}` v{@base.Version} → v{plan.Version} — {found.Read.Name}{(what is null ? "" : $", {what}")}: {WorkflowWords.GraphSaid(next)}");
+            foreach (var line in lines ?? []) Say(line);
             return Saved(found.Id, plan.Result!);
         }
 

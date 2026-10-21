@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
@@ -61,7 +62,7 @@ public static class WorkflowGraphs
         var identity = WorkflowNamed.Digest(steps);
         var graph = Graph(steps);
         // A version's two steps of one plugin kind are valid in schema 1 (a stored version never becomes unreadable by a later rule), so the
-        // authored graph's `observed-twice` is not asked of a decoded one (FABRIC-GRAPH1g); the cutover that binds a run to one owes it.
+        // authored graph's `observed-twice` is not asked of a decoded one (FABRIC-GRAPH1g); a save as a graph asks it (`Saved`, FABRIC-GRAPH1j).
         return NodeGraphs.Problems(graph, saved: false) is [var first, ..]
             ? new DecodedVersion(version, null, null, null, $"v{version}: its graph does not hold: {first.Words}")
             : new DecodedVersion(version, identity, graph, GraphDigest(identity, graph), null);
@@ -206,6 +207,37 @@ public static class WorkflowGraphs
     /// </summary>
     internal static string GraphDigest(string identity, NodeGraph graph, int decoder) =>
         "gph-" + Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes($"workflow-graph\n{decoder}\n{identity}\n{NodeGraphs.Digest(graph)}\n")))[..32];
+
+    /// <summary>
+    /// <paramref name="steps"/> as the graph a save writes (FABRIC-GRAPH1j; D190 point 8, the cutover design §7.2): <see cref="Graph"/>'s
+    /// graph with every synthetic node authored, its id kept, since a saved file declares no <c>synthetic</c> and the authored bound then
+    /// counts them; each option as its JSON value. Nothing judges it here: the save reads it as a graph version is read, so it is held to
+    /// every rule an authored graph is, <c>observed-twice</c> among them. No run binds a decoded graph (D190 point 1), so a steps version
+    /// reaches the runtime only so.
+    /// </summary>
+    public static JsonObject Saved(IReadOnlyList<NamedStep> steps)
+    {
+        var graph = Graph(steps);
+        JsonNode Node(NodeDeclaration node)
+        {
+            var json = new JsonObject { ["id"] = node.Id, ["kind"] = node.Kind, ["version"] = node.Version, ["reach"] = node.Reach };
+            if (node.Options.Count > 0) json["options"] = new JsonObject(node.Options.Select(pair => KeyValuePair.Create(pair.Key, JsonNode.Parse(pair.Value))));
+            return json;
+        }
+
+        return new JsonObject
+        {
+            ["schemaVersion"] = graph.SchemaVersion,
+            ["entries"] = new JsonArray([.. graph.Entries.Select(entry => (JsonNode?)entry)]),
+            ["end"] = graph.End,
+            ["cleanup"] = new JsonObject { ["until"] = graph.Cleanup.Until },
+            ["nodes"] = new JsonArray([.. graph.Nodes.Select(Node)]),
+            ["wires"] = new JsonArray([.. graph.Wires.Select(wire => (JsonNode)new JsonObject
+            {
+                ["id"] = wire.Id, ["kind"] = wire.Kind, ["from"] = wire.From!.Node, ["to"] = wire.To.Node,
+            })]),
+        };
+    }
 
     /// <summary>
     /// The nodes a person's skip of <paramref name="step"/> moves (§E7's last row): a group's members, since its join is never skipped

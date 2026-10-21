@@ -1,5 +1,5 @@
 {
-  "about": "FABRIC-WORKFLOW2: D157's stored versions and the graphs they decode to (the fabric events design §E7's migration contract). Read row for row by the CLI's workflowgraphs.test.ts and the driver's WorkflowGraphsTests. A row's `version` is a version as a workflow's file holds it. `read` is `version` (as the stored version reads in this build: a kind it does not run, or a version that does not read, is unreadable with its reason) or `shape` (its steps as their shape reads, every kind included: the mapping, for the build that runs them). `pipeline` is the mark the version's workflow carries (FABRIC-PIPELINE1a), absent read as `development`. `identity` is the version's digest (WorkflowNamed.Digest, unchanged), `graphDigest` the decoded graph's, derived from the version and the decoder's version; `graph` is the decoded graph, each node's options as JSON values.",
+  "about": "FABRIC-WORKFLOW2: D157's stored versions and the graphs they decode to (the fabric events design §E7's migration contract). Read row for row by the CLI's workflowgraphs.test.ts and the driver's WorkflowGraphsTests. A row's `version` is a version as a workflow's file holds it. `read` is `version` (as the stored version reads in this build: a kind it does not run, or a version that does not read, is unreadable with its reason) or `shape` (its steps as their shape reads, every kind included: the mapping, for the build that runs them). `pipeline` is the mark the version's workflow carries (FABRIC-PIPELINE1a), absent read as `development`. `identity` is the version's digest (WorkflowNamed.Digest, unchanged), `graphDigest` the decoded graph's, derived from the version and the decoder's version; `graph` is the decoded graph, each node's options as JSON values. `saved` (FABRIC-GRAPH1j), where a row has it, is its steps read by their shape and saved as a graph by `workflow apply --as-graph`, every synthetic node authored, judged as a saved graph where a schema 2 version numbered the next is read: `refused` with that version's problem, or `digest` the saved graph's own.",
   "decoderVersion": 3,
   "rows": [
     {
@@ -170,7 +170,41 @@
           { "id": "smoke>both", "kind": "after", "from": "smoke", "to": "both" },
           { "id": "both>both:failed", "kind": "failed", "from": "both", "to": "both:failed" },
           { "id": "both>release", "kind": "after", "from": "both", "to": "release" },
-          { "id": "release>release:failed", "kind": "failed", "from": "release", "to": "release:failed" } ] }
+          { "id": "release>release:failed", "kind": "failed", "from": "release", "to": "release:failed" } ] },
+      "saved": { "refused": "v7: its graph does not hold: node `unit` and `lint` are both observed nodes of `acme.ci/work.checks`: an event of that step names one node, so neither would be reached." }
+    },
+    {
+      "name": "a group of a check and a stage, and a go-ahead, saved as a graph with its join and its outcomes' nodes authored (FABRIC-GRAPH1j)",
+      "read": "shape",
+      "version": { "version": 7, "at": "2026-10-21T08:00:00Z", "door": "screen", "steps": [
+        { "id": "work", "kind": "work" },
+        { "id": "ask", "kind": "go-ahead", "act": "Ship", "on": "the line" },
+        { "id": "land", "kind": "landing", "form": "branch", "accept": "you", "plugin": "acme.ci" },
+        { "id": "both", "kind": "all", "steps": [
+          { "id": "unit", "kind": "check", "plugin": "acme.ci" },
+          { "id": "smoke", "kind": "stage", "plugin": "acme.deploy", "stage": "smoke", "start": "automatic" } ] } ] },
+      "identity": "f86bb4b33933", "graphDigest": "gph-71f331b79ad4e4fd26937f594671cb60",
+      "graph": { "schemaVersion": 2, "entries": ["work"], "end": "both", "cleanup": { "until": "held" },
+        "nodes": [
+          { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+          { "id": "ask", "kind": "go-ahead", "version": 1, "reach": "pressed", "options": { "act": "Ship", "on": "the line", "refused": "stop" } },
+          { "id": "ask:rejected", "kind": "stop", "version": 1, "reach": "observed", "synthetic": true, "options": { "outcome": "rejected", "step": "ask" } },
+          { "id": "land", "kind": "handed", "version": 1, "reach": "observed", "options": { "accept": "you", "form": "branch", "pattern": null, "plugin": "acme.ci" } },
+          { "id": "unit", "kind": "acme.ci/work.checks", "version": 1, "reach": "observed", "options": { "checks": "required", "failed": "wait", "plugin": "acme.ci" } },
+          { "id": "smoke", "kind": "acme.deploy/smoke", "version": 1, "reach": "performed", "options": { "failed": "wait", "plugin": "acme.deploy", "stage": "smoke", "start": "automatic" } },
+          { "id": "both", "kind": "all", "version": 1, "reach": "observed", "synthetic": true, "options": { "failed": "wait" } },
+          { "id": "both:failed", "kind": "human", "version": 1, "reach": "pressed", "synthetic": true, "options": { "outcome": "failed", "step": "both" } } ],
+        "wires": [
+          { "id": "work>ask", "kind": "after", "from": "work", "to": "ask" },
+          { "id": "ask>ask:rejected", "kind": "rejected", "from": "ask", "to": "ask:rejected" },
+          { "id": "ask>land", "kind": "after", "from": "ask", "to": "land" },
+          { "id": "work>land", "kind": "after", "from": "work", "to": "land" },
+          { "id": "land>unit", "kind": "after", "from": "land", "to": "unit" },
+          { "id": "land>smoke", "kind": "after", "from": "land", "to": "smoke" },
+          { "id": "unit>both", "kind": "after", "from": "unit", "to": "both" },
+          { "id": "smoke>both", "kind": "after", "from": "smoke", "to": "both" },
+          { "id": "both>both:failed", "kind": "failed", "from": "both", "to": "both:failed" } ] },
+      "saved": { "digest": "gph-e336ed86bc06526dccbcc95a8da3add3" }
     }
   ]
 }

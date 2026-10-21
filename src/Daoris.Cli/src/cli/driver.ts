@@ -118,7 +118,7 @@ export const command: CliCommand = {
     '                                                   remove, set <step> <f>=<v>,',
     '                                                   move <step> --after <step>,',
     '                                                   on <step> failed=…',
-    '                         workflow apply <id> <file> [--base <v>]',
+    '                         workflow apply <id> <file>|--as-graph [--base <v>]',
     '                         workflow export <id> [--to <file>] · workflow import <file>',
     '                                                   each change saved as the next',
     '                                                   version, said step by step and',
