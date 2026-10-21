@@ -28,7 +28,8 @@ import type { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { setThemeChoice } from '../design/theme';
 import { useScope, WorkspaceScopeProvider, type WindowStore } from '../data/scope';
-import { useOpenWindow, useSecondaryWindowTheme, useTaskbarCount } from './windows';
+import i18n from '../locales/i18n';
+import { useNoticeWords, useOpenWindow, useSecondaryWindowTheme, useTaskbarCount } from './windows';
 
 /**
  * WINDOW2: a secondary window's page tells its own frame which theme it is in, by the name it was
@@ -133,6 +134,47 @@ describe('the taskbar\'s count (NOTIFY1b)', () => {
     expect(told().map(([, , request]) => request)).toEqual([
       { payload: { name: 'main:2', count: 3, description: '3 waiting on you', order: expect.any(Number) } },
     ]);
+  });
+});
+
+/**
+ * NOTIFY2d (the notification design §3.3): a main window's page hands the shell's notifier the notices' words in its language, at
+ * its load and at each change of language, so a balloon behind the window speaks as the window does.
+ */
+describe('the notices\' words told to the shell (NOTIFY2d)', () => {
+  afterEach(async () => {
+    invoke.mockReset();
+    window.history.replaceState(null, '', '/');
+    await i18n.changeLanguage('en');
+  });
+
+  const told = () => invoke.mock.calls.filter(([, type]) => type === 'SET_NOTICE_WORDS')
+    .map(([module, , request]) => [module, (request as { payload: { words: Record<string, string> } }).payload.words]);
+
+  it('tells them at load and again in the new language, and not otherwise', async () => {
+    invoke.mockResolvedValue({ applied: true });
+    const { rerender } = renderHook(() => useNoticeWords());
+    rerender();
+
+    expect(told()).toHaveLength(1);
+    expect(told()[0]![0]).toBe('DAORIS.WINDOWS');
+    expect(told()[0]![1]['notifications.system.parked.title']).toBe('{{repository}}: a session waits on you');
+
+    await act(async () => { await i18n.changeLanguage('zh'); });
+
+    expect(told()).toHaveLength(2);
+    expect(told()[1]![1]['notifications.system.parked.title']).toBe('{{repository}}：一个会话等你处理');
+    expect(told()[1]![1]['person.route.SESSION_INPUT']).toBe('以你的名义对会话说话');
+  });
+
+  it('says nothing from a utility window, and a shell that cannot be told is not a failure', async () => {
+    invoke.mockRejectedValue(new Error('NO_ROUTE'));
+    renderHook(() => useNoticeWords());
+    window.history.replaceState(null, '', '/?window=monitor');
+    renderHook(() => useNoticeWords());
+
+    expect(told()).toHaveLength(1);
+    await act(async () => {});
   });
 });
 

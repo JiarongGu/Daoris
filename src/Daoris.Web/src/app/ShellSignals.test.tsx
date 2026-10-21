@@ -21,6 +21,7 @@ vi.mock('@shenora/react', () => ({
   },
 }));
 
+import i18n from '../locales/i18n';
 import { OverviewView } from '../overview/OverviewView';
 import { ShellSignals } from './ShellSignals';
 import { keys } from '../data/queries';
@@ -168,7 +169,8 @@ describe('the shell push channel (ShellSignals)', () => {
   /**
    * The in-window half of the notification (SURF5b). The shell raises an OS balloon only while
    * nobody is looking at the window, so these two never both fire — this is the one for when
-   * somebody is, and it carries the driver's own sentence exactly as the tick's lines do.
+   * somebody is. Since NOTIFY2d it is said in the window's own words, the balloon's, and what the
+   * session wrote beside them as written.
    */
   it('a session that needs somebody becomes a toast, and the sessions refetch', () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -186,24 +188,57 @@ describe('the shell push channel (ShellSignals)', () => {
 
     // A park wears the status tone, because it is the one that is WAITING on somebody.
     expect(notify).toHaveBeenCalledWith(
-      'engine — a session needs you: Two ways forward; I recommend capping.', 'error');
+      'engine: a session waits on you — Two ways forward; I recommend capping.', 'error');
     expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSessions, predicate: expect.any(Function) });
   });
 
   /**
-   * SESSUX1i (D126 §4.7): a quest parked on its failed sessions waits on the person's Try again, so it wears the park's
-   * tone. Its sentence is the driver's, verbatim, as every notice's is.
+   * NOTIFY2d: a 中文 window toasted the driver's English headline over its own chrome. Each kind is said in the window's words, and
+   * what the session wrote stays as written.
    */
-  it("a quest's park is a demand, in the driver's own words", () => {
+  it('a 中文 window toasts in 中文, and what the session wrote as written', async () => {
+    const notify = vi.fn();
+    await i18n.changeLanguage('zh');
+    try {
+      show(<ShellSignals notify={notify} />);
+      eventHandlers.get('DAORIS.SESSION_ATTENTION')!({
+        kind: 'Parked', session: 's1a2b3c4', repository: 'engine', headline: 'engine — a session needs you', detail: 'Which branch?',
+      });
+      eventHandlers.get('DAORIS.SESSION_ATTENTION')!({ kind: 'Ended', session: 's1', repository: 'tools', state: 'stopped', headline: 'tools — a session stopped' });
+
+      expect(notify.mock.calls).toEqual([['engine：一个会话等你处理——Which branch?', 'error'], ['tools：一个会话已停止', 'ok']]);
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
+  /** NOTIFY2d (§5): a held tool call, which its bound refuses by itself, is announced as a park is, its call's title as written. */
+  it('a held tool call is a demand, said as a park is', () => {
     const notify = vi.fn();
     show(<ShellSignals notify={notify} />);
 
     eventHandlers.get('DAORIS.SESSION_ATTENTION')!({
-      kind: 'QuestParked', session: 's3a2b3c4', quest: '7a82cc', repository: 'engine',
+      kind: 'Holding', id: 's1a2b3c4#900', session: 's1a2b3c4', repository: 'engine',
+      headline: 'engine: a session holds a tool call for you', detail: 'npm test',
+    });
+
+    expect(notify).toHaveBeenCalledWith('engine: a session holds a tool call for you — npm test', 'error');
+  });
+
+  /**
+   * SESSUX1i (D126 §4.7): a quest parked on its failed sessions waits on the person's Try again, so it wears the park's
+   * tone. What its last session wrote is said as written.
+   */
+  it("a quest's park is a demand, its failure as written", () => {
+    const notify = vi.fn();
+    show(<ShellSignals notify={notify} />);
+
+    eventHandlers.get('DAORIS.SESSION_ATTENTION')!({
+      kind: 'QuestParked', session: 's3a2b3c4', quest: '7a82cc', repository: 'engine', strikes: 3,
       headline: 'engine — `#7a82cc` parked after 3 failed sessions', detail: "You've hit your limit.",
     });
 
-    expect(notify).toHaveBeenCalledWith("engine — `#7a82cc` parked after 3 failed sessions: You've hit your limit.", 'error');
+    expect(notify).toHaveBeenCalledWith("engine: quest #7a82cc parked after 3 failed sessions — You've hit your limit.", 'error');
   });
 
   /**
@@ -243,17 +278,17 @@ describe('the shell push channel (ShellSignals)', () => {
     show(<ShellSignals notify={notify} />);
 
     eventHandlers.get('DAORIS.SESSION_ATTENTION')!({
-      kind: 'Ended', session: 's1', repository: 'tools', headline: 'tools — a session failed',
+      kind: 'Ended', session: 's1', repository: 'tools', state: 'failed', headline: 'tools — a session failed',
     });
 
-    expect(notify).toHaveBeenCalledWith('tools — a session failed', 'ok');
+    expect(notify).toHaveBeenCalledWith('tools: a session failed', 'ok');
   });
 
   /**
-   * NOTIFY1a: a conversation that answered the person is news they wait on, never a demand: the driver's own sentence, in
-   * the ending's tone, and the sessions asked again so its row shows the turn's end.
+   * NOTIFY1a: a conversation that answered the person is news they wait on, never a demand: in the ending's tone, and the
+   * sessions asked again so its row shows the turn's end.
    */
-  it('a conversation that answered is news in the driver\'s own words', () => {
+  it('a conversation that answered is news', () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const invalidate = vi.spyOn(client, 'invalidateQueries');
     const notify = vi.fn();
@@ -263,7 +298,7 @@ describe('the shell push channel (ShellSignals)', () => {
       kind: 'Answered', session: 'c1a2b3c4', repository: 'engine', headline: 'engine — a conversation answered you',
     });
 
-    expect(notify).toHaveBeenCalledWith('engine — a conversation answered you', 'ok');
+    expect(notify).toHaveBeenCalledWith('engine: a conversation answered you', 'ok');
     expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSessions, predicate: expect.any(Function) });
   });
 
@@ -282,12 +317,12 @@ describe('the shell push channel (ShellSignals)', () => {
     expect(notify).not.toHaveBeenCalled();
 
     answered('c9z9z9z9');
-    expect(notify).toHaveBeenCalledWith('engine — a conversation answered you', 'ok');
+    expect(notify).toHaveBeenCalledWith('engine: a conversation answered you', 'ok');
 
     // A park of the attended session still demands them: only an answer is news the page already shows.
     notify.mockClear();
-    eventHandlers.get('DAORIS.SESSION_ATTENTION')!({ kind: 'Parked', session: 'c1a2b3c4', headline: 'engine — a session needs you' });
-    expect(notify).toHaveBeenCalledWith('engine — a session needs you', 'error');
+    eventHandlers.get('DAORIS.SESSION_ATTENTION')!({ kind: 'Parked', session: 'c1a2b3c4', repository: 'engine', headline: 'engine — a session needs you' });
+    expect(notify).toHaveBeenCalledWith('engine: a session waits on you', 'error');
   });
 
   it('keeps the answered toast while the window is hidden, though its conversation is the attended one', () => {
@@ -295,8 +330,8 @@ describe('the shell push channel (ShellSignals)', () => {
     const visibility = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
     try {
       show(<ShellSignals notify={notify} attended="c1a2b3c4" />);
-      eventHandlers.get('DAORIS.SESSION_ATTENTION')!({ kind: 'Answered', session: 'c1a2b3c4', headline: 'engine — a conversation answered you' });
-      expect(notify).toHaveBeenCalledWith('engine — a conversation answered you', 'ok');
+      eventHandlers.get('DAORIS.SESSION_ATTENTION')!({ kind: 'Answered', session: 'c1a2b3c4', repository: 'engine', headline: 'engine — a conversation answered you' });
+      expect(notify).toHaveBeenCalledWith('engine: a conversation answered you', 'ok');
     } finally {
       visibility.mockRestore();
     }

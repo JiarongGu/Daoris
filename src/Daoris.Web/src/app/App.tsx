@@ -47,7 +47,7 @@ import { type SettingsAnchor, type SettingsSection, useSettingsLayout } from '..
 import { ShellSignals } from './ShellSignals';
 import {
   logEvent, useAttention, useAttached, useDismissUpdate, useDriver, useHarnesses, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes,
-  useSayUpdate, useShowReviewAgain, useSyncNow, useTaskbarCount, useUpdateState,
+  useNoticeWords, useSayUpdate, useShowReviewAgain, useSyncNow, useTaskbarCount, useUpdateState,
   useAnswerConfirmation, useConfirmationShown, usePersonKey, useServiceConfirmations, useTerminalConfirmations, useUnkeyedHost,
 } from '../bridge/shell';
 import { AdoptionNotice, type Confirmation, type PressNames, routeKey } from '../person/Confirmations';
@@ -482,6 +482,8 @@ export function App() {
   const pressUnshown = presses.some((each) => each.shown !== true);
   // The same count on the window's taskbar button and in its title (NOTIFY1b), so it is seen with the window behind others.
   useTaskbarCount(waiting, t('nav.waiting', { count: waiting }));
+  // And the notices' words, so a notification behind the window speaks its language (NOTIFY2d, the notification design §3.3).
+  useNoticeWords();
   // What a press's card names its references by (§3.2): a session as Sessions names it, its workspace beside it where its
   // repository's name is in two workspaces, from the records the window holds; a quest by its name.
   const allSessions = useSessions(null, true, attached);
