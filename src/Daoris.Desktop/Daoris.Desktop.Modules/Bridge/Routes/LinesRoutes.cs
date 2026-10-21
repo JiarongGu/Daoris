@@ -667,11 +667,13 @@ public sealed class LinesRoutes(DriverContext context)
     /// <summary>
     /// The closure graphs' ends as the wire carries them (FABRIC-CLOSE1j): <c>kind</c> <c>overridden</c> with the <c>nodes</c> it stopped,
     /// or <c>partially-closed</c> with the <c>quest</c> lost, its close <c>node</c> and <c>attempt</c>, and <c>words</c> (<c>stop</c>, said
-    /// through <c>WORK_HELD</c>) while that node is live again. A page before the field reads without it.
+    /// through <c>WORK_HELD</c>) while that node is live again. A page before the field reads without it. FABRIC-CLOSE1q4, additive: kind
+    /// <c>word-taken-back</c>, the person's <c>word</c> on a close no longer listed, taken back since the <c>quest</c>'s submission moved; a
+    /// page before it says nothing of that kind.
     /// </summary>
     public static object[] EndsAnswer(IEnumerable<GraphEnd> ends) =>
     [
-        .. ends.Select(each => new { each.Unit, each.Kind, each.At, each.Nodes, each.Quest, each.Node, each.Attempt, each.NodeState, each.Resolution, each.Words }),
+        .. ends.Select(each => new { each.Unit, each.Kind, each.At, each.Nodes, each.Quest, each.Node, each.Attempt, each.NodeState, each.Resolution, each.Words, each.Word }),
     ];
 
     // The person's word on a plugin step's attempt held for them (FABRIC-PERFORM1g, D173's note): the page's half of `daoris-driver work
