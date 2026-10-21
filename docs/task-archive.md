@@ -18986,3 +18986,12 @@ reads *waiting on you*, `go-on`, at the new submission's moment, its quest the h
 *Abandon…*; the head says *waits for your go-on* (等你继续或放弃). An open step the reopen withdrew is rebound instead, and reads as
 before. Proof: `WorkflowRunTests`, `WorkflowRunSaidTwinTests` (one table row) and `runSaid.test.ts`. Detail: D173's FABRIC-CLOSE1c7
 note. On Opus.
+## FABRIC-EVENT6b — a knowledge folder made after the server started (2026-10-21, D173)
+
+> - [ ] **FABRIC-EVENT6b — a knowledge folder made after the server started** (service; after EVENT6; §A4.1, §A5). A `docs/` or `.claude/` made after the watch opened waits for the 5-minute deadline, and a room's nested `AGENTS.md` is never watched: hear a folder made under a watched name and open a watch for it; nested rooms through the layout's room list. Proof: a folder made after start read at the next search with no deadline passing.
+
+**Outcome** 2026-10-21: built. `CheckoutFreshness` awaits a knowledge folder that is not there in the deepest folder of its path
+that is, and opens its watch when it is heard made, marking the reading stale again; a folder made inside one watched in parts is
+opened the same way. The watched folders are the layout's roots, `docs/` and the named ones; each declared room outside them is
+watched for its `AGENTS.md`, and both are read again when `daoris.json` or `daoris.lock` moves. Proof: `CheckoutFreshnessTests`.
+Detail: D173's FABRIC-EVENT6b note. On Opus.
