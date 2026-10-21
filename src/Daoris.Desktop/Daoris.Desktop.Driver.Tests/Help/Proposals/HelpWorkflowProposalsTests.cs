@@ -28,16 +28,21 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         new WorkflowUse(Id, "engine", null, null));
 
     /// <summary>The proposal's file as the service's box writes it (WORKFLOW1h-a), read back as the driver reads it.</summary>
-    private HelpProposal Propose(string steps, int? @base = null, bool choose = false, string scope = "engine", string? name = null)
+    private HelpProposal Propose(
+        string? steps, int? @base = null, bool choose = false, string scope = "engine", string? name = null,
+        string? graph = null, string? route = null, string workflow = Id)
     {
         var node = new JsonObject
         {
             ["id"] = "p6", ["proposed"] = "2026-10-11T10:00:00.0000000+00:00", ["by"] = new JsonObject { ["session"] = "h1" },
-            ["kind"] = "workflow", ["scope"] = scope, ["workflow"] = Id, ["base"] = @base, ["choose"] = choose,
-            ["steps"] = JsonNode.Parse(steps), ["why"] = "the person asked", ["state"] = "proposed", ["note"] = null,
+            ["kind"] = "workflow", ["scope"] = scope, ["workflow"] = workflow, ["base"] = @base, ["choose"] = choose,
+            ["why"] = "the person asked", ["state"] = "proposed", ["note"] = null,
         };
 
-        // The box writes `name` only when one is given (WORKFLOW1h-name).
+        // The box writes `name`, `steps`, `graph` and `route` only when given (WORKFLOW1h-name, FABRIC-PIPELINE1i).
+        if (steps is not null) node["steps"] = JsonNode.Parse(steps);
+        if (graph is not null) node["graph"] = JsonNode.Parse(graph);
+        if (route is not null) node["route"] = route;
         if (name is not null) node["name"] = name;
         System.IO.File.WriteAllText(Path.Combine(HelpProposals.FolderOf(_home), "p6.json"), node.ToJsonString());
         return HelpProposals.Find(_home, "p6")!;
@@ -59,27 +64,164 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         return Assert.IsType<HelpWorkflowCard>(plan.Workflow);
     }
 
-    /// <summary>
-    /// FABRIC-PIPELINE1a (the pipeline design §1.3, §2.1): a proposal carries steps, and a verification pipeline's versions are graphs, so
-    /// an agent's proposal can neither change one nor choose one for a default; FABRIC-PIPELINE1i lets it propose a graph and a route.
-    /// </summary>
-    [Fact]
-    public void A_proposal_on_a_verification_pipeline_is_refused_as_its_versions_are_graphs()
-    {
-        WorkflowStore.Add(_home, new WorkflowVersionAdded(Id, "Verify the line", "terminal", "2026-10-21T09:00:00Z", null, JsonNode.Parse(
-            """{"schemaVersion":2,"entries":["gates"],"end":"gates","nodes":[{"id":"gates","kind":"check","version":1,"reach":"performed"}],"wires":[]}"""))
+    /// <summary>A verification pipeline's graph: one check over the named gates, its failure as given (the pipeline design §4.1).</summary>
+    private static string Verify(string gates = "\"heavy\"", string failed = "wait") =>
+        $$$"""{"schemaVersion":2,"entries":["gates"],"end":"gates","nodes":[{"id":"gates","kind":"check","version":1,"reach":"performed","options":{"gates":{{{gates}}},"failed":"{{{failed}}}"}}],"wires":[]}""";
+
+    private void SavedVerification(string graph, string id = Id) =>
+        WorkflowStore.Add(_home, new WorkflowVersionAdded(id, "Verify the line", "terminal", "2026-10-21T09:00:00Z", null, JsonNode.Parse(graph))
         {
             Pipeline = WorkflowPipelines.Verification,
         }, kept: []);
 
-        var plan = HelpProposals.Plan(Propose(Merge, @base: 1, choose: true), DriverConfig.Empty, Here());
+    /// <summary>
+    /// FABRIC-PIPELINE1i (the pipeline design §1.3): a route with no version chooses a saved workflow, saving nothing, and only the person's
+    /// press applies it.
+    /// </summary>
+    [Fact]
+    public async Task A_route_proposed_with_no_version_applies_at_the_person_s_press()
+    {
+        Saved(Merge);
+        var proposal = Propose(null, route: "default");
+        Assert.Equal(("default", false), (proposal.Route, proposal.Steps.HasValue));
+        var plan = HelpProposals.Plan(proposal, DriverConfig.Empty, Here());
+        var card = Card(plan);
 
-        Assert.Null(plan.Workflow);
+        Assert.Equal((false, 1, "default", true), (card.Saves, card.Version, card.Route, card.Choose));
+        Assert.StartsWith(
+            "Choose `docs-to-pr` (Documentation to a pull request) for `engine`; no version is saved, and it follows its newest, v1.",
+            plan.Describe, StringComparison.Ordinal);
+        Assert.Equal("daoris driver workflow use docs-to-pr --repository engine", plan.Terminal);
+        Assert.Equal("New work only, in `engine`.", card.AppliesTo);
+
+        var doors = new HelpStandInDoors();
+        var applied = await HelpProposals.ApplyAsync(_home, proposal, plan, doors, _ => { }, CancellationToken.None);
+
+        Assert.True(applied.Applied);
+        Assert.Equal($"Applied: `#p6` (`{plan.Terminal}`) — `engine` chooses it now.", applied.Told);
+        Assert.Equal(Id, doors.Config.Workflows["engine"].Default);
+        Assert.Single(WorkflowStore.Load(_home, Id)!.Read.Versions);
+    }
+
+    /// <summary>FABRIC-PIPELINE1i: a kind's route, as the terminal's <c>use … --kind</c> chooses it; once chosen, a second says so.</summary>
+    [Fact]
+    public void A_kind_s_route_with_no_version_chooses_it_for_that_kind()
+    {
+        Saved(Merge);
+        var config = WorkflowSelection.Apply(DriverConfig.Empty, new WorkflowDeclare("docs", "work", "Documentation", []));
+        var plan = HelpProposals.Plan(Propose(null, scope: "work", route: "kind:docs"), config, Here());
+
+        Assert.StartsWith(
+            "Choose `docs-to-pr` (Documentation to a pull request) for the workspace `work`'s kind `docs`;", plan.Describe, StringComparison.Ordinal);
+        Assert.Equal("daoris driver workflow use docs-to-pr --workspace work --kind docs", plan.Terminal);
+        Assert.Equal(Id, WorkflowSelection.Apply(config, Card(plan).Use!).WorkspaceWorkflows["work"].KindOf("docs")!.Workflow);
+
+        var chosen = WorkflowSelection.Apply(config, Card(plan).Use!);
+        var again = HelpProposals.Plan(Propose(null, scope: "work", route: "kind:docs"), chosen, Here());
+        Assert.StartsWith(
+            "The workspace `work` chooses `docs-to-pr` for its kind `docs` already: applying changes nothing.", again.Describe, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(null, "kind:Docs", "`kind:Docs` is not a route: `default`, `landed` for the work that lands, or `kind:<id>` for one of the scope's kinds, such as `kind:docs`.")]
+    [InlineData(null, "default", "there is no workflow `docs-to-pr` on this machine: a `route` with no version chooses a workflow saved here.")]
+    [InlineData(null, null, "a workflow proposal carries its whole `steps`, a JSON list of step objects, or a verification pipeline's `graph`; or, with neither, the `route` it chooses a saved workflow for.")]
+    [InlineData(1, "default", "a `route` with no version saves nothing, so it names no `base` and no `name`.")]
+    public void A_route_with_no_version_is_refused_where_it_cannot_choose(int? @base, string? route, string refusal)
+    {
+        Assert.Equal(refusal, HelpProposals.Plan(Propose(null, @base: @base, route: route), DriverConfig.Empty, Here()).Refusal);
+    }
+
+    /// <summary>
+    /// FABRIC-PIPELINE1i (the pipeline design §2.1): a graph proposed is a verification pipeline's, judged by the mark as a save is, and
+    /// made so at its first save; chosen for the landed route, its gates wait for the person's own <i>Accept the gates</i> (D156).
+    /// </summary>
+    [Fact]
+    public async Task A_verification_graph_proposed_is_judged_by_the_mark_and_saved_as_one()
+    {
+        var landing = """{"schemaVersion":2,"entries":["gates"],"end":"land","nodes":[{"id":"gates","kind":"check","version":1,"reach":"performed"},{"id":"land","kind":"handed","version":1,"reach":"observed"}],"wires":[{"id":"w1","kind":"after","from":"gates","to":"land"}]}""";
+        Assert.StartsWith(
+            "v1: its graph holds `land`, a `handed`, and a verification pipeline's graph lands nothing",
+            HelpProposals.Plan(Propose(null, graph: landing), DriverConfig.Empty, Here()).Refusal, StringComparison.Ordinal);
+
+        var proposal = Propose(null, graph: Verify(), route: "landed");
+        var plan = HelpProposals.Plan(proposal, DriverConfig.Empty, Here());
+        var card = Card(plan);
+
+        Assert.Equal((true, true, "landed", 1), (card.Saves, card.Verifies, card.Route, card.Version));
+        Assert.Equal(["+ gates · check"], card.Diff);
+        Assert.Equal(["gates: you ask for a fix when it fails (*Ask for a fix…*)."], card.YourPart);
+        Assert.Empty(card.Outward);
+        Assert.Empty(card.Lowers);
+        Assert.StartsWith(
+            "Save a new verification pipeline `docs-to-pr` as v1, and choose it for the work that lands in `engine`.", plan.Describe, StringComparison.Ordinal);
+        Assert.Contains("Its gates wait for your *Accept the gates* on `engine`'s Workflow tab", plan.Describe, StringComparison.Ordinal);
+        Assert.Equal("daoris driver workflow import <file> && daoris driver workflow use docs-to-pr --repository engine --landed", plan.Terminal);
+        Assert.Equal("New work only, in `engine`.", card.AppliesTo);
+
+        var doors = new HelpStandInDoors();
+        var applied = await HelpProposals.ApplyAsync(_home, proposal, plan, doors, _ => { }, CancellationToken.None);
+
+        Assert.True(applied.Applied, applied.Told);
+        Assert.Equal($"Applied: `#p6` (`{plan.Terminal}`) — `docs-to-pr` v1 is saved, and `engine` chooses it for the work that lands now.", applied.Told);
+        var saved = WorkflowStore.Load(_home, Id)!.Read;
+        Assert.Equal((true, "ask-daoris:p6"), (saved.Verifies, saved.Versions[0].Door));
+        Assert.NotNull(saved.Versions[0].Graph);
+        Assert.Equal(new WorkflowLanded(Id, null), doors.Config.Workflows["engine"].Landed);
+    }
+
+    /// <summary>FABRIC-PIPELINE1i: each pipeline takes its own versions, and each route its own pipeline, refused in the twins' words.</summary>
+    [Fact]
+    public void A_version_or_a_route_of_the_other_pipeline_is_refused()
+    {
+        Saved(Merge);
+        Assert.StartsWith(
+            "`docs-to-pr` is a development pipeline, and Ask Daoris proposes a graph only for a verification pipeline",
+            HelpProposals.Plan(Propose(null, graph: Verify(), @base: 1), DriverConfig.Empty, Here()).Refusal, StringComparison.Ordinal);
+        Assert.Equal(WorkflowSelection.NotVerification(Id), HelpProposals.Plan(Propose(null, route: "landed"), DriverConfig.Empty, Here()).Refusal);
+
+        SavedVerification(Verify(), "line-verify");
         Assert.Equal(
-            "`docs-to-pr` is a verification pipeline, whose versions are graphs, and a proposal carries steps: it changes and chooses none "
-            + "yet. `daoris driver workflow apply docs-to-pr <file>` saves a graph version, and `daoris driver workflow use docs-to-pr "
-            + "--repository <name> --landed` names it for work that lands.",
-            plan.Refusal);
+            "`line-verify` is a verification pipeline, whose versions are graphs holding its checks: a proposal changes it with its `graph`, never `steps`.",
+            HelpProposals.Plan(Propose(Merge, @base: 1, workflow: "line-verify"), DriverConfig.Empty, Here()).Refusal);
+        Assert.Equal(
+            WorkflowSelection.VerificationElsewhere("line-verify"),
+            HelpProposals.Plan(Propose(null, route: "default", workflow: "line-verify"), DriverConfig.Empty, Here()).Refusal);
+    }
+
+    /// <summary>
+    /// D157 point 10, the pipeline design §1.3: an agent's change that asks less of the person is kept as its proposal, said, and applies
+    /// only at the person's press: a check's failure moved off <c>wait</c>, and a landed route pointed at a pipeline running fewer gates.
+    /// </summary>
+    [Fact]
+    public async Task An_agent_s_lowering_is_kept_as_a_proposal_for_the_person_s_press()
+    {
+        SavedVerification(Verify());
+        var proposal = Propose(null, graph: Verify(failed: "ask"), @base: 1);
+        var plan = HelpProposals.Plan(proposal, DriverConfig.Empty, Here());
+        var card = Card(plan);
+
+        Assert.Equal(["it moves the check `gates`'s failure off your press, to `ask`"], card.Lowers);
+        Assert.Equal(["~ gates · check"], card.Diff);
+        Assert.Empty(card.YourPart);
+        Assert.Equal(["`gates` asks for a fix of each failed gate with no press of yours."], card.Outward);
+        Assert.Contains(
+            "\nIt asks less of you, so only your press applies it:\n  it moves the check `gates`'s failure off your press, to `ask`\n",
+            plan.Describe, StringComparison.Ordinal);
+        Assert.Single(WorkflowStore.Load(_home, Id)!.Read.Versions);
+
+        var applied = await HelpProposals.ApplyAsync(_home, proposal, plan, new HelpStandInDoors(), _ => { }, CancellationToken.None);
+        Assert.True(applied.Applied, applied.Told);
+        Assert.Equal(2, WorkflowStore.Load(_home, Id)!.Read.Versions.Count);
+
+        SavedVerification(Verify(gates: """["unit","e2e"]"""), "full-verify");
+        var full = WorkflowSelection.Apply(DriverConfig.Empty, new WorkflowUse("full-verify", "engine", null, null)
+        {
+            Landed = true, Pipeline = WorkflowPipelines.Verification,
+        });
+        var narrower = HelpProposals.Plan(Propose(null, graph: Verify(gates: """["unit"]"""), route: "landed", workflow: "quick-verify"), full, Here());
+
+        Assert.Equal(["it verifies the work that lands with fewer of its gates: `e2e`"], Card(narrower).Lowers);
     }
 
     [Fact]

@@ -132,6 +132,18 @@ public sealed record HelpProposal(
 
     /// <summary>A new workflow's name, the person's words (WORKFLOW1h-name); null where the box wrote none, and the id names it.</summary>
     public string? Name { get; init; }
+
+    /// <summary>
+    /// A workflow proposal's graph version (FABRIC-PIPELINE1i, the pipeline design §1.3), the graph's JSON object as the box wrote it;
+    /// null where it carries steps or no version.
+    /// </summary>
+    public JsonElement? Graph { get; init; }
+
+    /// <summary>
+    /// The route a workflow proposal chooses its workflow for (FABRIC-PIPELINE1i): <c>default</c>, <c>landed</c> or <c>kind:&lt;id&gt;</c>;
+    /// null where it names none, and <see cref="Choose"/> asks the default.
+    /// </summary>
+    public string? Route { get; init; }
 }
 
 /// <summary>What the machine holds that a proposal is judged against: names only.</summary>
