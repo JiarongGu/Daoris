@@ -98,6 +98,12 @@ public static class QuestClosing
     /// <summary>The history entry a close found closed only in part keeps, with the quest it names: what says it once.</summary>
     public const string Partial = "partially-closed";
 
+    /// <summary>
+    /// The history entry the person's word taken back on a close whose submission moved keeps (FABRIC-CLOSE1q4), with the quest and the
+    /// word and the attempt (<c>word-taken-back #q7 stop 1</c>): what says it once on the page, where its close is no longer listed as held.
+    /// </summary>
+    public const string TakenBack = "word-taken-back";
+
     private const string Done = "Done";
 
     private const string Taken = "Taken";
@@ -484,12 +490,23 @@ public sealed class QuestCloser(NodeRecordFiles records, IQuestClosePort port, F
                 + $"{moved.Machine}/{moved.Sequence}, which that close names, was reopened or replaced since, so the work there is now is never that close's to "
                 + (word == HeldResolutions.Record ? "record" : "stop")
                 + (attempt.State == AttemptStates.Unknown ? "; its door is still asked what became of it." : "; say resend to ask its door what became of it."));
+            // FABRIC-CLOSE1q4: kept in its history too, said on the page once its close is no longer listed (its node moved off, before
+            // this pass ends or later); while it is listed, its held row says it (submission-moved).
+            var why = $"{QuestClosing.TakenBack} #{moved.Id} {word} {attempt.Attempt}";
+            record = record with { History = [.. record.History, new NodeHistory(clock(), why, WorkPerformer.StatusOf(record, node.Id))] };
             return (WorkPerformer.With(record, attempt, cleared with { Code = WorkPerformer.SubmissionMoved }),
                 new(unit, node.Id, PerformedWhat.Refused, WorkPerformer.SubmissionMoved));
         }
 
         if (word == HeldResolutions.Resend)
         {
+            // FABRIC-CLOSE1q4: the person's resend answers a word of theirs taken back on it, which is said no more.
+            var answered = $" {attempt.Attempt}";
+            record = record with
+            {
+                History = [.. record.History.Where(entry => !(entry.Was.Node == node.Id && entry.Why.StartsWith(QuestClosing.TakenBack + " #", StringComparison.Ordinal)
+                                                              && entry.Why.EndsWith(answered, StringComparison.Ordinal)))],
+            };
             return (WorkPerformer.With(record, attempt, cleared with { State = AttemptStates.Unknown }), new(unit, node.Id, PerformedWhat.Resolved, word));
         }
 

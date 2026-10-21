@@ -478,7 +478,8 @@ a section each and its `docs/index/` a row each (`DAORIS_KNOWLEDGE_DOCUMENTS`, `
 words only, and re-read at the next search once the checkout moved (a watch of its git refs and knowledge folders marks it stale,
 FABRIC-EVENT6) or its reading is five minutes old, a minute where nothing could be watched. Its instructions say so before the first search.
 A folder of documents or records is walked without entering what git ignores, the watch is opened around it (KNOWWALK1), and
-the host itself watches no file in the folder it starts in.
+the host itself watches no file in the folder it starts in. A knowledge folder made after the server started, and a declared room's
+`AGENTS.md`, are watched too: the folder from when it is made, the room through the layout's room list (FABRIC-EVENT6b).
 A running session moves onto the build a merge made, its handshake replayed, within a minute (KNOWHOLD1).
 A session a driver started keeps the environment it was handed and runs the machine's host first. With no
 build the launcher answers the protocol itself: the handshake says why and lists no tool, and the session

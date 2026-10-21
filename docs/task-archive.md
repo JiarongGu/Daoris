@@ -18961,6 +18961,12 @@ observed nodes of one plugin step are refused naming both, and nothing is writte
 is said as now holding what follows it. The CLI half has no file since PUSH1f2b, so the driver is the one reader. Proof:
 `workflow-graphs.json`'s `saved` rows (`WorkflowGraphsTests`) and `WorkflowAsGraphCommandTests`. Detail: D190's FABRIC-GRAPH1j note.
 
+## LANDBACKLOG1 — a landing's replay settles a backlog-only conflict by the merge base, as the merge tool does (2026-10-21, D87)
+
+> - [ ] **LANDBACKLOG1 — a landing's replay settles a backlog-only conflict by the merge base, as the merge tool does** (driver; found 2026-10-21; D87's LANDREBASE1 note, MERGETASKS1). Replaying FABRIC-GRAPH1j onto `main` conflicted in `TASKS.md` alone and the landing was refused. Under LANDREBASE1 every such refusal sends the session the rebase words, a turn spent on a line the merge tool settles by itself (a line one side added kept, one the other removed dropped, the same line edited twice left to the session). Wanted: the replay settles a conflict confined to the repository's declared backlog (`daoris.json`'s `backlog`) by MERGETASKS1's rule, and refuses as before for anything else. Proof: a `Process` case where a branch landing conflicts only in the backlog and lands replayed, and one where a row is edited on both sides and is refused.
+
+**Outcome** 2026-10-21: built. A replay conflicting only in the line's declared backlog merges it by its base and lands, saying what
+it kept and dropped; a row both sides edited, a conflict beside code, or a backlog only the session declared stays refused. A twin of the merge tool's rule, one table (`backlog-merges.json`). Detail: D87's LANDBACKLOG1 note.
 ## NOTIFY2a — a terminal's press answered or shown past its time runs nothing (2026-10-21, D196)
 
 > - [ ] **NOTIFY2a — a terminal's press answered or shown past its time runs nothing** (modules, web-shell; first; D196, the notification design §9). The pipe's half, with no view: a late answer or shown word ends the press expired, its refusal toasted; `Confirming` carries its id; the balloon names no route. Proof: as §9 names it.
@@ -18970,3 +18976,41 @@ so an answer or a shown word at or past the press's time ends it expired and run
 `Confirming` attention carries the press's `Id`, and its balloon names the terminal and no route. The card toasts a refusal whose card
 has gone with its press. Proof: `PipeConfirmationsTests` and `PipeConfirmTests` on a held clock with the timer held late, and
 `Confirmations.test.tsx` in en and zh, each seen failing first. Detail: D196's NOTIFY2a note, `docs/FIX-LOG.md`. On Opus.
+
+## FABRIC-CLOSE1c7 — the run says a source made ready again waits on the person's go-on (2026-10-21, D173)
+
+> - [ ] **FABRIC-CLOSE1c7 — the run says a source made ready again waits on the person's go-on** (driver, web; after CLOSE1c3; §E5, D173's WORKFLOW2d note choice 2). A run with a started step held `source-reopened`, whose source has an unheld submission again, reads `unclosed`: it should say the step waits for the person's go-on or abandon, with the step's door, en and zh. Proof: a `WorkflowRunTests` row, `WorkflowRunSaidTwinTests` and the page's `runSaid.test.ts` in both languages.
+
+**Outcome** 2026-10-21: built. A closure graph's quest made ready again while its chain's taken next step stays held `source-reopened`
+reads *waiting on you*, `go-on`, at the new submission's moment, its quest the held step's, whose page door offers *Go on with it* and
+*Abandon…*; the head says *waits for your go-on* (等你继续或放弃). An open step the reopen withdrew is rebound instead, and reads as
+before. Proof: `WorkflowRunTests`, `WorkflowRunSaidTwinTests` (one table row) and `runSaid.test.ts`. Detail: D173's FABRIC-CLOSE1c7
+note. On Opus.
+## FABRIC-EVENT6b — a knowledge folder made after the server started (2026-10-21, D173)
+
+> - [ ] **FABRIC-EVENT6b — a knowledge folder made after the server started** (service; after EVENT6; §A4.1, §A5). A `docs/` or `.claude/` made after the watch opened waits for the 5-minute deadline, and a room's nested `AGENTS.md` is never watched: hear a folder made under a watched name and open a watch for it; nested rooms through the layout's room list. Proof: a folder made after start read at the next search with no deadline passing.
+
+**Outcome** 2026-10-21: built. `CheckoutFreshness` awaits a knowledge folder that is not there in the deepest folder of its path
+that is, and opens its watch when it is heard made, marking the reading stale again; a folder made inside one watched in parts is
+opened the same way. The watched folders are the layout's roots, `docs/` and the named ones; each declared room outside them is
+watched for its `AGENTS.md`, and both are read again when `daoris.json` or `daoris.lock` moves. Proof: `CheckoutFreshnessTests`.
+Detail: D173's FABRIC-EVENT6b note. On Opus.
+
+## FABRIC-CLOSE1q4 — a close's word taken back after its node moved off is said where the person looks (2026-10-21, D173)
+
+> - [ ] **FABRIC-CLOSE1q4 — a close's word taken back after its node moved off is said where the person looks** (driver, web; after CLOSE1q2). An unanswered close whose node lapsed is no longer listed, so a word taken back on it is said only in the pass's English lines: say it once on the page, en and zh. Proof: a `QuestCloseTests` case reading the fact off `WORK_STATE`, and its page words.
+
+**Outcome** 2026-10-21: built. A `record` or `stop` taken back as `submission-moved` is kept in its node record's history
+(`word-taken-back #<quest> <word> <attempt>`), and `WORK_STATE`'s `ends` lists it as a `word-taken-back` end, with the quest, the node,
+the attempt and the `word`, once its close is no longer listed as held; while the close is listed, its held row says it, and the
+person's `resend` on it drops the entry. The page says it on the work's foot and line, en and zh. Proof: `QuestCloseTests`' CLOSE1q2
+theory (the stop row reads the end; the others none) and its wake test (none while listed, none after the resend),
+`WorkStateSliceTests`, and `WorkMilestone.test.tsx` in both languages. Detail: D173's FABRIC-CLOSE1q4 note. On Opus.
+## FABRIC-RECLOCK2 — the other shared records under the lock (2026-10-21, D173)
+
+> - [ ] **FABRIC-RECLOCK2 — the other shared records under the lock** (driver; D173's FABRIC-END2 note). `sessions/auto-landings.json` and the abandon record edited under `RecordLock`. Proof: per store, an edit waits for its lock and no write is lost.
+
+**Outcome** 2026-10-21: built. `AutoLandings` and `AbandonRecord` each name a `LockPath` under `locks/records/` and hold it for every
+edit and for their `Forget`, as `landings.json` and `session-branches.json` have since FABRIC-END2; no shape, caller or door changed.
+Proof: `RecordLockStoresTests`, per store an edit and a forget waiting for the lock with the holder's write kept. Detail: D173's
+FABRIC-RECLOCK2 note. On Opus.

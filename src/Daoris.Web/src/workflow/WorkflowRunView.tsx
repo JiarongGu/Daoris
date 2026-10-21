@@ -95,7 +95,8 @@ function doorOf(t: ReturnType<typeof useTranslation>['t'], run: WorkflowRun, ste
   if (kind === 'work' && step.detail === 'go-ahead' && run.ask && doors?.ask) {
     return button(t('workflow.run.door.ask'), () => doors.ask?.(run.ask!));
   }
-  if (kind === 'work' && ['awaits', 'queued', 'unclosed', 'declined', 'reopened'].includes(step.detail) && step.quest && doors?.quest) {
+  // A go-on (FABRIC-CLOSE1c7) names the held step, whose page offers the person's go-on and abandon.
+  if (kind === 'work' && ['awaits', 'queued', 'unclosed', 'declined', 'reopened', 'go-on'].includes(step.detail) && step.quest && doors?.quest) {
     return button(t('workflow.run.door.quest', { id: step.quest }), () => doors.quest?.(step.quest!));
   }
   // The gate holds the work on the person: its presses stand beside the review's Accept (XAGENT1f's `LANDING` answers it there).

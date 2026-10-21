@@ -170,7 +170,7 @@ function Facts({ id, unit }: { id: string; unit: MilestoneUnit }) {
         </Row>
       )}
       {/* FABRIC-CLOSE1j (§E5): its closure graph ended by the person's own done, or closed only in part, the stop of its close node
-          offered while it waits again; their press is What needs you's. */}
+          offered while it waits again; their press is What needs you's. FABRIC-CLOSE1q4: a word on its close taken back, said here. */}
       {(unit.ends?.length ?? 0) > 0 && (
         <Row label={t('work.milestone.closed.label')} tone={unit.ends!.some(endOffersStop) ? 'failed' : 'ended'}>
           {unit.ends!.flatMap((end, index) => endSentences(t, end).map((said, part) => (
@@ -204,6 +204,8 @@ export function MilestoneLine({ unit, className }: { unit: MilestoneUnit; classN
     (unit.ends ?? []).some((end) => end.kind === 'overridden') ? t('work.milestone.line.overridden') : null,
     (unit.ends ?? []).some((end) => end.kind === 'partially-closed')
       ? <span className={unit.ends!.some(endOffersStop) ? 'text-ink-danger' : undefined}>{t('work.milestone.line.partial')}</span> : null,
+    // FABRIC-CLOSE1q4: a word of the person's on its close taken back, which no held row says once its node moved off.
+    (unit.ends ?? []).some((end) => end.kind === 'word-taken-back') ? t('work.milestone.line.takenBack') : null,
   ].filter(Boolean);
   return (
     <span className={cn('text-small text-ink-soft', className)}>

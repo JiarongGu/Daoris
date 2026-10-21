@@ -620,6 +620,41 @@ public sealed class WorkflowRunTests
     }
 
     /// <summary>
+    /// FABRIC-CLOSE1c7 (D173's WORKFLOW2d note, choice 2): a source made ready again while its started step stays held by the reopen waits
+    /// on the person's go-on or abandon, said with the step's door at the new submission's moment, never as the source's <c>unclosed</c>.
+    /// An untaken step is rebound by that submission instead, and a session at work on the source is said as it was.
+    /// </summary>
+    [Fact]
+    public void A_source_made_ready_again_waits_on_the_persons_go_on_with_its_started_step()
+    {
+        var current = WorkflowCurrent.Derive(DriverConfig.Parse("{}"), "engine", "aurora", Plugins);
+        IReadOnlyList<TracedSession> ended = [Session("s1", "q1", "completed"), Session("s2", "q2", "stood-down", 1), Session("s3", "q1", "completed", 2)];
+        WorkflowRun Read(IReadOnlyList<TracedSession> sessions, params QuestView[] quests) =>
+            WorkflowRuns.Derive(new WorkflowRunFacts("engine", current) { Quests = quests, Sessions = sessions }, "aurora");
+        var ready = Bound("q1", 2);
+        var held = Withdrawn(Bound("q2", 2, last: true));
+
+        var run = Read(ended, ready, held);
+
+        var work = run.Steps[0];
+        Assert.Equal((WorkflowRunStates.WaitingOnYou, WorkflowRunDetails.GoOn), (work.State, work.Detail));
+        Assert.Equal(("q2", 0, ready.Submission!.At), (work.Quest, work.Count, work.At));
+        Assert.Equal("work", run.At);
+        Assert.Equal(
+            "The work you reopened is ready again: quest #q2, its next step, waits for you to go on with it on the new work or abandon it.",
+            WorkflowRunWords.Said(work));
+
+        // The same step in another repository, read through the whole chain the reader hands in.
+        var there = held with { To = "game" };
+        var whole = WorkflowRuns.Derive(new WorkflowRunFacts("engine", current) { Quests = [ready], Chain = [ready, there], Sessions = ended }, "aurora");
+        Assert.Equal((WorkflowRunDetails.GoOn, "q2"), (whole.Steps[0].Detail, whole.Steps[0].Quest));
+
+        // A session at work on the source is said as it was; a held source is the person's yes before their go-on.
+        Assert.Equal(WorkflowRunDetails.Agent, Read([.. ended.SkipLast(1), Session("s3", "q1", "working", 2)], ready, held).Steps[0].Detail);
+        Assert.Equal(WorkflowRunDetails.Held, Read(ended, ready with { Held = true }, held).Steps[0].Detail);
+    }
+
+    /// <summary>
     /// FABRIC-WORKFLOW2d: a quest no closure graph holds reads exactly as it did, whatever a host answers of a submission or a step's source:
     /// only its Done finishes it. The owner's schema-1 runs hold none, and the table's every other row stands as it did.
     /// </summary>

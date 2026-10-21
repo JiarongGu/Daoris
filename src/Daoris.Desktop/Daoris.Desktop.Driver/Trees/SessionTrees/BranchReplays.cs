@@ -314,6 +314,9 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
 
         /// <summary>Those written again from the replayed tree by the writers the person accepted (GENREGEN1); none where none ran.</summary>
         public GeneratedWriters.Written Written { get; init; } = GeneratedWriters.Written.None;
+
+        /// <summary>The declared backlog it settled by the merge base where it conflicted (LANDBACKLOG1); null where it settled none.</summary>
+        public BacklogMerge.Settled? Backlog { get; init; }
     }
 
     /// <summary>
@@ -324,6 +327,8 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
     /// only in files the repository marks generated is not the session's, so those take the line's copy and the replay goes on
     /// (<see cref="GeneratedPaths"/>); one in any other file still aborts it. GENREGEN1: where it took any, the writers the person
     /// accepted for their folders write them again from the replayed tree, in a commit on top (<see cref="GeneratedWriters"/>).
+    /// LANDBACKLOG1: the backlog the line declares at <paramref name="onto"/>, conflicted alone or beside generated files, is settled by
+    /// its merge base as the merge tool settles it (<see cref="BacklogMerge"/>); a base line both sides changed still aborts it.
     /// </summary>
     /// <param name="commits">Every commit beyond the line, oldest first, which <paramref name="kept"/> is a subset of.</param>
     internal async Task<KeptReplay> ReplayKeptAsideAsync(
@@ -338,7 +343,7 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
         if (aside is null) return new(null, notMade, false);
         try
         {
-            var made = await RebaseStretchesAsync(aside, onto, stretches, switchFirst: false, ct, takesGenerated: true).ConfigureAwait(false);
+            var made = await RebaseStretchesAsync(aside, onto, stretches, switchFirst: false, ct, landing: new BacklogMerge.Stops(onto)).ConfigureAwait(false);
             if (made.Now is null || made.Generated.Count == 0) return made;
             var writers = await AcceptedWritersAsync(root, repository, workspace, onto, ct).ConfigureAwait(false);
             var written = await GeneratedWriters.WriteAsync(aside, writers, made.Generated, ct).ConfigureAwait(false);
@@ -418,12 +423,14 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
     /// <paramref name="onto"/>: the new tip, or null and git's words, and whether those name a conflict. Each run is taken up detached
     /// at its last commit first (the first only where <paramref name="switchFirst"/>: a tree opened there already stands on it).
     /// </summary>
-    /// <param name="takesGenerated">
-    /// A landing's replay (LANDREBASE1): a stop whose every conflicted file the repository marks generated takes the line's copy of
-    /// those and goes on, and the answer names them. False stops at any conflict, as WSR6's replays do.
+    /// <param name="landing">
+    /// A landing's replay (LANDREBASE1, LANDBACKLOG1), with the backlog's settling over its stops: a stop whose every conflicted file the
+    /// repository marks generated, or is the declared backlog that its base settles, takes the line's copy of the generated ones and the
+    /// merge of the backlog, and goes on; the answer names them. Null stops at any conflict, as WSR6's replays do.
     /// </param>
     private static async Task<KeptReplay> RebaseStretchesAsync(
-        string tree, string onto, IReadOnlyList<(string From, string To)> stretches, bool switchFirst, CancellationToken ct, bool takesGenerated = false)
+        string tree, string onto, IReadOnlyList<(string From, string To)> stretches, bool switchFirst, CancellationToken ct,
+        BacklogMerge.Stops? landing = null)
     {
         var current = onto;
         var generated = new List<string>();
@@ -435,14 +442,14 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
                 if (moved != 0) return new(null, $"git would not take up its next commits to replay: {Failure(moveErr)}", false);
             }
 
-            var (failed, words) = takesGenerated
-                ? await RebaseTakingGeneratedAsync(tree, current, stretches[at].From, generated, ct).ConfigureAwait(false)
+            var (failed, words) = landing is not null
+                ? await RebaseTakingGeneratedAsync(tree, current, stretches[at].From, generated, landing, ct).ConfigureAwait(false)
                 : await RebaseInAsync(tree, current, stretches[at].From, ct).ConfigureAwait(false);
             if (failed) return new(null, words, words.StartsWith("CONFLICT", StringComparison.Ordinal));
             current = await CommitOfAsync(tree, "HEAD", ct).ConfigureAwait(false) ?? current;
         }
 
-        return new(current, "", false) { Generated = generated };
+        return new(current, "", false) { Generated = generated, Backlog = landing?.Settled };
     }
 
     /// <summary>
@@ -450,9 +457,11 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
     /// (<see cref="GeneratedPaths"/>, LANDREBASE1) is not the session's conflict: those files take the line's side, the side the replay
     /// builds on, and the replay goes on, a commit left empty by it skipped as git would drop one. Any other stop aborts as
     /// <see cref="RebaseInAsync"/> does, with git's <c>CONFLICT</c> lines. The files taken are added to <paramref name="generated"/>.
+    /// LANDBACKLOG1: the backlog the line declares, conflicted alone or beside generated files, is settled by its merge base in
+    /// <paramref name="backlog"/>, which sums what each stop settled; a base line both sides changed aborts the replay as any conflict does.
     /// </summary>
     private static async Task<(bool Failed, string Words)> RebaseTakingGeneratedAsync(
-        string tree, string onto, string upstream, List<string> generated, CancellationToken ct)
+        string tree, string onto, string upstream, List<string> generated, BacklogMerge.Stops backlog, CancellationToken ct)
     {
         var (code, output, err) = await WorkingTree.GitAsync(
             tree, ["-c", "rebase.updateRefs=false", "-c", "rebase.autoStash=false", "rebase", "--onto", onto, upstream],
@@ -463,9 +472,23 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
             var (listed, unmerged, _) = await WorkingTree.GitAsync(tree, ["-c", "core.quotePath=false", "diff", "--name-only", "--diff-filter=U"], ct)
                 .ConfigureAwait(false);
             var paths = unmerged.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            if (listed != 0 || paths.Length == 0 || await GeneratedPaths.AllAsync(tree, paths, ct).ConfigureAwait(false) is not true) break;
+            if (listed != 0 || paths.Length == 0) break;
+            // The backlog is asked of only where the generated files alone do not settle the stop, so a replay that meets none reads no
+            // manifest; its other files must all be generated, and its own conflict must settle by its base.
+            string? settled = null;
+            if (await GeneratedPaths.AllAsync(tree, paths, ct).ConfigureAwait(false) is not true)
+            {
+                settled = await backlog.DeclaredAsync(tree, ct).ConfigureAwait(false);
+                var others = paths.Where(path => path != settled).ToArray();
+                if (settled is null || others.Length == paths.Length
+                    || (others.Length > 0 && await GeneratedPaths.AllAsync(tree, others, ct).ConfigureAwait(false) is not true)
+                    || !await backlog.SettleAsync(tree, settled, ct).ConfigureAwait(false))
+                {
+                    break;
+                }
+            }
 
-            foreach (var path in paths)
+            foreach (var path in paths.Where(path => path != settled))
             {
                 // The line's side, `--ours` in a rebase; a path the line removed goes, as it does there.
                 var (taken, _, _) = await WorkingTree.GitAsync(tree, ["checkout", "--ours", "--", path], ct).ConfigureAwait(false);

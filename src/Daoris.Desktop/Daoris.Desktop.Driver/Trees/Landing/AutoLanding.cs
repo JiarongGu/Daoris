@@ -277,6 +277,10 @@ public static class AutoLandingRules
 /// press, as it did before the switch: the safe side.</para>
 ///
 /// <para><b>Bounded</b>: the newest <see cref="ClosedKept"/> closed entries are kept, an open one always.</para>
+///
+/// <para><b>Edited under its record's lock</b> (FABRIC-RECLOCK2, D173's note): the look's pass and a conclusion in the instance, and a
+/// terminal's verb beside it (a look, a history clear), each read, change and write the whole file, so each edit holds <see cref="LockPath"/> as
+/// <c>landings.json</c>'s do.</para>
 /// </remarks>
 public sealed class AutoLandings(string home)
 {
@@ -291,6 +295,9 @@ public sealed class AutoLandings(string home)
     private static readonly RecordList<AutoLanding> List = new(Gate, "due", Read, ToJson, Bounded);
 
     public string FilePath => DaorisHome.Entry(home, HomeEntry.Sessions, FileName);
+
+    /// <summary>The record's lock across processes (FABRIC-RECLOCK2): the loop and a verb beside it edit this file one at a time.</summary>
+    public string LockPath => RecordLock.PathOf(home, FileName);
 
     /// <summary>Every entry, open and closed, in the order they became due.</summary>
     public IReadOnlyList<AutoLanding> All() => List.Read(FilePath);
@@ -327,6 +334,7 @@ public sealed class AutoLandings(string home)
     {
         lock (Gate)
         {
+            using var held = RecordLock.Take(LockPath);
             var all = All();
             var gone = all.Where(entry => entry.Closed is not null && sessions.Any(session => Same(entry, session))).ToList();
             if (gone.Count == 0) return [];
@@ -337,7 +345,7 @@ public sealed class AutoLandings(string home)
 
     private static bool Same(AutoLanding entry, string session) => string.Equals(entry.Session, session, StringComparison.OrdinalIgnoreCase);
 
-    private void Edit(Func<IReadOnlyList<AutoLanding>, IReadOnlyList<AutoLanding>> change) => List.Edit(FilePath, change);
+    private void Edit(Func<IReadOnlyList<AutoLanding>, IReadOnlyList<AutoLanding>> change) => List.Edit(FilePath, change, LockPath);
 
     /// <summary>The entries with the closed ones beyond the newest <see cref="ClosedKept"/> dropped, the rest in their order.</summary>
     private static IReadOnlyList<AutoLanding> Bounded(IReadOnlyList<AutoLanding> entries)

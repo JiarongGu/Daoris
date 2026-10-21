@@ -5,6 +5,14 @@ with the version and date at release.
 
 ## Unreleased
 
+- A workflow whose work you reopened, once its agent makes it ready again, now says that its next step waits for you to go on with
+  it on the new work or abandon it, with a button to that step's page. Before, it said the work waited for your done, which that
+  workflow does not take. In English and 中文.
+- The knowledge server now reads a `docs/` or `.claude/` folder made after it started at the next search, and hears an edit to a
+  declared room's `AGENTS.md`. Before, both waited up to five minutes.
+- When you said *record the answer again* or *stop* on a quest's close and Daoris could not take it, because the quest's submission
+  was reopened or replaced since and the close's work had already moved on, the work's page now says so, naming the quest, in English
+  and Chinese. Before, it was said only in the driver's log.
 - A session's tree that Daoris set aside after its work landed now drops its installed packages an hour later: each `node_modules`
   beside a `package.json` the repository tracks, which `npm ci` makes again. The rest of the folder (your files, `bin/`, `obj/`, a
   `.env`, what the session wrote) still waits its fourteen days, and a folder anything was written in after it was set aside keeps
@@ -75,6 +83,11 @@ with the version and date at release.
   file and you accepted that declaration for the repository's landed route, the landing runs the command in its replay and commits
   what it wrote on top, so the landed files read as the work's tree; without your acceptance, or with a command only the session's
   own work declares, nothing runs and the line's copy stays. This repository's merge tool reads the same declaration.
+- A landing whose replay conflicts only in the repository's backlog (`documents.backlog` in its `daoris.json`, else `TASKS.md`)
+  now lands instead of sending the session to rebase: the backlog is merged against the commit both sides grew from, keeping a row
+  one side added and dropping one a side removed, as this repository's merge tool already merges it, and the landing says so. A row
+  both sides edited, or a backlog conflict beside one in any other file, is still the session's to rebase. The backlog is the one
+  the line declares; a session's own work cannot name another.
 - Wiring or unwiring a workspace, at Settings or with `daoris remote add|remove`, now changes only that workspace's entry in
   `remotes.json`: anything else you wrote there stays as written, in its order and with its line endings, and a workspace wired
   again keeps its entry's other keys. Settings now refuses to wire a workspace over a `remotes.json` that does not read, saying

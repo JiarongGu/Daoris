@@ -25,6 +25,12 @@ internal sealed record LandReplay(string Now, IReadOnlyList<LandingCommit> Lande
     /// commands run, or why they were not; nothing run where none was accepted.
     /// </summary>
     public GeneratedWriters.Written Written { get; init; } = GeneratedWriters.Written.None;
+
+    /// <summary>
+    /// The declared backlog the work and the line both changed, which the replay settled by the merge base (LANDBACKLOG1): its path and
+    /// the lines kept and dropped. Null where it settled none.
+    /// </summary>
+    internal BacklogMerge.Settled? Backlog { get; init; }
 }
 
 /// <summary>
@@ -136,6 +142,7 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
         {
             Generated = made.Generated,
             Written = made.Written,
+            Backlog = made.Backlog,
         }, null);
     }
 
@@ -290,6 +297,21 @@ public static class LandingSyncWords
     /// <summary>A replay's generated files in <see cref="Generated(IReadOnlyList{string}, IReadOnlyList{string}?, string?)"/>'s words.</summary>
     internal static string Generated(LandReplay replay) =>
         Generated(replay.Generated, replay.Written.Failed is null ? replay.Written.Runs : null, replay.Written.Failed);
+
+    /// <summary>
+    /// What a replay settled without the session (LANDREBASE1, LANDBACKLOG1), said after the sentence: the backlog it merged by its base,
+    /// then the generated files it took at the line's copy. Nothing where it settled neither.
+    /// </summary>
+    internal static string Settled(LandReplay replay) =>
+        Backlog(replay.Backlog?.Path, replay.Backlog?.Kept ?? 0, replay.Backlog?.Dropped ?? 0) + Generated(replay);
+
+    /// <summary>
+    /// The backlog a replay settled by the merge base (LANDBACKLOG1), said after the sentence: the lines a side added kept and those a
+    /// side removed dropped, as the merge tool counts them. Nothing where it settled none.
+    /// </summary>
+    public static string Backlog(string? path, int kept, int dropped) => path is null ? ""
+        : $" The backlog `{path}` conflicted with the line's and was settled by the merge base: {kept} line(s) a side added kept, "
+          + $"{dropped} line(s) a side removed dropped.";
 
     /// <summary>The commits the replay found empty, said after the sentence; nothing where none was.</summary>
     public static string Emptied(IReadOnlyList<LeftOutCommit> leftOut)

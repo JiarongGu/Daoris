@@ -243,6 +243,79 @@ public sealed class CheckoutFreshnessTests : IDisposable
         await Heard(freshness);
     }
 
+    [Fact]
+    public async Task A_knowledge_folder_made_after_the_watch_opened_is_read_at_the_next_search_with_no_deadline_passing()
+    {
+        // FABRIC-EVENT6b: a `docs/` made after start was left to the deadline. Its making is heard at the checkout's top, and
+        // its own watch opens then, so a write in it later is heard as well.
+        Write("served/daoris.json", """{ "source": "s" }""");
+        Write("served/.git/HEAD", "ref: refs/heads/main\n");
+        var checkout = Path.Combine(_root, "served");
+        var time = new SteppedTime(DateTimeOffset.Parse("2026-10-21T10:00:00Z"));
+        using var freshness = new CheckoutFreshness(checkout, documents: "docs", index: "docs/index");
+        Assert.True(freshness.Watching);
+        var service = Serve(checkout, freshness, time);
+        Assert.False(await Finds(service));
+
+        Write("served/docs/later.md", "# Zeppelins\n\nWritten after the server started.\n");
+        await Heard(freshness);
+        Assert.True(await Finds(service));
+
+        await Task.Delay(500);
+        freshness.Take();
+        Write("served/docs/second.md", "# Airships\n\nWritten in the folder made later.\n");
+        await Heard(freshness);
+    }
+
+    [Fact]
+    public async Task A_declared_rooms_instructions_are_heard_and_a_room_made_later_is_watched_when_it_is_made()
+    {
+        Write("served/daoris.json", """{ "source": "s", "rooms": ["src/probe", "tools/later"] }""");
+        Write("served/src/probe/AGENTS.md", "# The probe's room\n");
+        Write("served/src/probe/Probe.cs", "class Probe {}\n");
+        var checkout = Path.Combine(_root, "served");
+        using var freshness = new CheckoutFreshness(checkout, documents: "docs", index: null);
+        await Task.Delay(500);
+        freshness.Take();
+
+        // The room is watched for its instructions alone, not for the code beside them.
+        Write("served/src/probe/Probe.cs", "class Probe { int changed; }\n");
+        await Task.Delay(1500);
+        Assert.False(freshness.IsStale, "a write beside a room's AGENTS.md marked the reading stale");
+        Write("served/src/probe/AGENTS.md", "# The probe's room, changed\n");
+        await Heard(freshness);
+
+        // `tools/` is not there: the room is awaited at the top, then in `tools/`, and opened once it is made.
+        await Task.Delay(500);
+        freshness.Take();
+        Write("served/tools/later/AGENTS.md", "# A room made later\n");
+        await Heard(freshness);
+        await Task.Delay(1000);
+        freshness.Take();
+        Write("served/tools/later/AGENTS.md", "# A room made later, changed\n");
+        await Heard(freshness);
+    }
+
+    [Fact]
+    public async Task A_folder_made_inside_one_watched_in_parts_is_watched_from_when_it_is_made()
+    {
+        var checkout = Path.Combine(_root, "served");
+        Write("served/.gitignore", ".claude/worktrees/\n");
+        Write("served/.claude/knowledge/twins.md", "# Twins\n");
+        Write("served/.claude/worktrees/side/AGENTS.md", "# A worktree's brief\n");
+        GitCheckouts.Init(checkout);
+        using var freshness = new CheckoutFreshness(checkout, documents: "docs", index: null);
+        await Task.Delay(500);
+        freshness.Take();
+
+        Write("served/.claude/skills/probe/SKILL.md", "# A skill made later\n");
+        await Heard(freshness);
+        await Task.Delay(1000);
+        freshness.Take();
+        Write("served/.claude/skills/probe/SKILL.md", "# A skill made later, changed\n");
+        await Heard(freshness);
+    }
+
     private static async Task Heard(CheckoutFreshness freshness)
     {
         for (var waited = 0; waited < Poll.Patience.TotalMilliseconds / 100 && !freshness.IsStale; waited++) await Task.Delay(100);

@@ -1,0 +1,100 @@
+{
+  "about": "The declared backlog and its merge by the merge base (MERGETASKS1, LANDBACKLOG1; D87's LANDBACKLOG1 note): the table both twins hold, the merge tool's backlogOf and mergeByBase (tools/merge-branch.mjs) and the driver's BacklogMerge, which a landing's replay settles a backlog-only conflict by. Each `paths` row is the text of daoris.json (null where there is none) and the backlog read from it: none is TASKS.md; text that is not JSON, or JSON that is not an object, reads as no backlog (null), so nothing is settled; documents.backlog as text, or as an object's text `path`, is that path with each backslash a slash; anything else is TASKS.md. Each `merges` row is the base's, our side's and their side's lines (joined by LF; a line keeps its CR), and what the merge makes of them: the merged lines, or null where both sides changed one base line (or one side added inside a run the other replaced), the lines kept from the hunks taken and the base lines they dropped, and each such base line (1-based). Ours is the side the work lands on (main in the merge tool, the line in a replay), and two sides adding at one place keep ours first.",
+  "paths": [
+    { "name": "no manifest is TASKS.md", "manifest": null, "backlog": "TASKS.md" },
+    { "name": "a manifest with no documents is TASKS.md", "manifest": "{}", "backlog": "TASKS.md" },
+    { "name": "documents with no backlog is TASKS.md", "manifest": "{ \"documents\": { \"archive\": \"docs/archive.md\" } }", "backlog": "TASKS.md" },
+    { "name": "a backlog as text is that path", "manifest": "{ \"documents\": { \"backlog\": \"docs/TASKS.md\" } }", "backlog": "docs/TASKS.md" },
+    { "name": "a backlog as an object is its path", "manifest": "{ \"documents\": { \"backlog\": { \"path\": \"TASKS.md\", \"words\": 6600 } } }", "backlog": "TASKS.md" },
+    { "name": "a backslash in the path is a slash", "manifest": "{ \"documents\": { \"backlog\": { \"path\": \"docs\\\\work\\\\backlog.md\" } } }", "backlog": "docs/work/backlog.md" },
+    { "name": "a backlog with a ceiling alone is TASKS.md", "manifest": "{ \"documents\": { \"backlog\": { \"words\": 600 } } }", "backlog": "TASKS.md" },
+    { "name": "a backlog that is a number is TASKS.md", "manifest": "{ \"documents\": { \"backlog\": 5 } }", "backlog": "TASKS.md" },
+    { "name": "a path that is not text is TASKS.md", "manifest": "{ \"documents\": { \"backlog\": { \"path\": 5 } } }", "backlog": "TASKS.md" },
+    { "name": "documents that are not an object is TASKS.md", "manifest": "{ \"documents\": \"TASKS.md\" }", "backlog": "TASKS.md" },
+    { "name": "a manifest that is not JSON reads as none", "manifest": "{ \"documents\": ", "backlog": null },
+    { "name": "a manifest that is a list reads as none", "manifest": "[]", "backlog": null },
+    { "name": "a manifest that is null reads as none", "manifest": "null", "backlog": null }
+  ],
+  "merges": [
+    {
+      "name": "a row one side removed beside a row the other added",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two.", "- [ ] **A3** three.", ""],
+      "ours": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A3** three.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two.", "- [ ] **A3** three.", "- [ ] **A4** four.", ""],
+      "text": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A3** three.", "- [ ] **A4** four.", ""],
+      "kept": 1, "dropped": 1, "both": []
+    },
+    {
+      "name": "two rows side by side, each removed by one side",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two.", "- [ ] **A3** three.", ""],
+      "ours": ["# Tasks", "", "- [ ] **A2** two.", "- [ ] **A3** three.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A3** three.", ""],
+      "text": ["# Tasks", "", "- [ ] **A3** three.", ""],
+      "kept": 0, "dropped": 2, "both": []
+    },
+    {
+      "name": "a row removed beside the next row edited, each by one side",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two.", "- [ ] **A3** three.", ""],
+      "ours": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two.", "- [ ] **A3** three, edited.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A3** three.", ""],
+      "text": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A3** three, edited.", ""],
+      "kept": 1, "dropped": 2, "both": []
+    },
+    {
+      "name": "rows both sides add at one place are both kept, ours first, and a row both removed goes once",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two.", "- [ ] **A3** three.", ""],
+      "ours": ["# Tasks", "", "- [ ] **A2** two.", "- [ ] **A3** three.", "- [ ] **B1** ours.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A2** two.", "- [ ] **A3** three.", "- [ ] **C1** theirs.", ""],
+      "text": ["# Tasks", "", "- [ ] **A2** two.", "- [ ] **A3** three.", "- [ ] **B1** ours.", "- [ ] **C1** theirs.", ""],
+      "kept": 2, "dropped": 1, "both": []
+    },
+    {
+      "name": "one row both sides edited is left",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two.", "- [ ] **A3** three.", ""],
+      "ours": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two, ours.", "- [ ] **A3** three.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two, theirs.", "- [ ] **A3** three.", ""],
+      "text": null,
+      "kept": 2, "dropped": 2, "both": [4]
+    },
+    {
+      "name": "a row one side edited and the other removed is left",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two.", "- [ ] **A3** three.", ""],
+      "ours": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** edited.", "- [ ] **A3** three.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A3** three.", ""],
+      "text": null,
+      "kept": 1, "dropped": 2, "both": [4]
+    },
+    {
+      "name": "a row added inside a run the other side replaced is left",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two.", "- [ ] **A3** three.", ""],
+      "ours": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A5** five.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two.", "- [ ] **B1** new.", "- [ ] **A3** three.", ""],
+      "text": null,
+      "kept": 2, "dropped": 2, "both": [4]
+    },
+    {
+      "name": "the same edit on both sides is one edit",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** two.", "- [ ] **A3** three.", ""],
+      "ours": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** edited.", "- [ ] **A3** three.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** edited.", "- [ ] **A3** three.", ""],
+      "text": ["# Tasks", "", "- [ ] **A1** one.", "- [ ] **A2** edited.", "- [ ] **A3** three.", ""],
+      "kept": 1, "dropped": 1, "both": []
+    },
+    {
+      "name": "neither side changed it",
+      "base": ["# Tasks", "", "- [ ] **A1** one.", ""],
+      "ours": ["# Tasks", "", "- [ ] **A1** one.", ""],
+      "theirs": ["# Tasks", "", "- [ ] **A1** one.", ""],
+      "text": ["# Tasks", "", "- [ ] **A1** one.", ""],
+      "kept": 0, "dropped": 0, "both": []
+    },
+    {
+      "name": "lines ending in CR are compared with it",
+      "base": ["# Tasks\r", "- [ ] **A1** one.\r", "- [ ] **A2** two.\r", ""],
+      "ours": ["# Tasks\r", "- [ ] **A2** two.\r", ""],
+      "theirs": ["# Tasks\r", "- [ ] **A1** one.\r", "- [ ] **A2** two.\r", "- [ ] **A3** three.\r", ""],
+      "text": ["# Tasks\r", "- [ ] **A2** two.\r", "- [ ] **A3** three.\r", ""],
+      "kept": 1, "dropped": 1, "both": []
+    }
+  ]
+}
