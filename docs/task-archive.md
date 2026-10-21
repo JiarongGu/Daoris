@@ -19168,3 +19168,11 @@ twins' `notices` entry); each look's ended sessions, with the workspace they wer
 recorded whatever the switch says; the `notices` slice reads it again in every process and says another's notice once as `NOTICE`;
 `NOTICES_READ` and `NOTICE_DISMISS`. The page's *Done and failed* group, the bell's dot and Overview's line. Detail: D196's NOTIFY2f
 note. On Opus.
+
+## MEMGATE1 — a heavy gate waits for memory rather than failing for want of it (2026-10-22, D180)
+
+> - [ ] **MEMGATE1 — a heavy gate waits for memory rather than failing for want of it** (tools; found 2026-10-22, D180). With the full set beside the install's driven sessions, the person's own and two builders, the machine's commit charge ran out: the sensitive scan threw `OutOfMemoryException`, web-rules could not allocate, and the family rehearsal's landing said *Out of memory* twice, each read as the change's failure. The merge tool should read the machine's free commit before a heavy gate, wait for it or run the gate alone, and name memory as the cause where a gate dies of it, never as a check that failed. Proof: a stand-in machine short of memory delays the gate and says why; a gate killed by memory is reported as such and run again.
+
+**Outcome** 2026-10-22: built. The merge tool waits, up to ten minutes, for a heavy gate's free commit and physical memory (6, 8 and 10 GB
+by class, or `"memoryGb"`); a gate that died of memory reads MEMORY and runs again once, alone, at the run's end. Detail: the tool's
+MEMGATE1 header section and FIX-LOG's entry of that date. On Opus.
