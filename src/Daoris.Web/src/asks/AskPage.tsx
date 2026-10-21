@@ -27,6 +27,7 @@ import { AskWorkflowKind } from './AskWorkflowKind';
 import { AskWork } from './AskWork';
 import { workTree } from './workTree';
 import { type GoAheadAnswer, GoAheadList } from './GoAheadList';
+import type { StaleSince } from '../work/attention/attention';
 
 /** The acts in an ask's header (CTX1, D138 §4): its buttons and its page's right-click draw this one list. */
 type AskAct = 'resume' | 'pause' | 'close' | 'abandon' | 'delete';
@@ -100,8 +101,13 @@ const ASK_ACT: Record<AskAct, { label: string; variant: 'primary' | 'default' | 
  */
 export function AskPage({
   ask, receivers, questTitles, quests, intake = null, onAttend, busy = false, onPublish, onClose, onDelete, onOpenQuest, onAnswerGoAhead,
-  work, history, considered = [], nameOf, environments, onChooseReview, onChooseKind, workflow, lines = [], channel,
+  work, history, considered = [], nameOf, environments, onChooseReview, onChooseKind, workflow, lines = [], channel, staleGoAheads,
 }: {
+  /**
+   * Its go-aheads nothing on it could still use, by number, as What needs you's rows say (GOAHEADSTALE1): each marked stale with how
+   * long, its refusal the one answer offered. Absent where nothing judges them, a browser.
+   */
+  staleGoAheads?: Readonly<Record<number, StaleSince>>;
   /**
    * Its channel (SESSONE2c, D167 points 6 to 8): as the shell answers it (null while it is read), the person's post and the
    * move of their mark. Absent where no driver answers one, a browser, and then no section is drawn.
@@ -433,7 +439,7 @@ export function AskPage({
         /* What its sessions asked the person for, each once (KNOWUSE1a): first among the sections, since one waiting
            holds a session until the person answers it. */
         <PageSection title={t('asks.record.goAheads')}>
-          <GoAheadList goAheads={ask.goAheads} busy={busy} onAnswer={onAnswerGoAhead} />
+          <GoAheadList goAheads={ask.goAheads} busy={busy} onAnswer={onAnswerGoAhead} stale={staleGoAheads} />
         </PageSection>
       )}
 

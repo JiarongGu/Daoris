@@ -1,5 +1,5 @@
 import i18n from '../../locales/i18n';
-import { clockOf } from '../../locales/format';
+import { clockOf, elapsed } from '../../locales/format';
 import type { Ask, GoAhead, Quest, SetUpRef, Session } from '../../data/api';
 import type { RuleProposal } from '../../settings/repository/AgentRules';
 import { proposalAuthor, proposalChange } from '../../settings/repository/proposals';
@@ -44,6 +44,7 @@ export type StaleSince = { since: string | null };
 export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = {
   parked: 'holding',
   'parked-quest': 'holding',
+  // A stale one holds nothing and waits for the person's word instead (GOAHEADSTALE1, `attentionGroupOf`).
   'go-ahead': 'holding',
   // A tool call a session holds for the person's answer under asking (AUTONOMY1b3c, D184 point 3): its turn stands still until they
   // answer, or the bound refuses it, as a go-ahead holds its session's act.
@@ -89,13 +90,42 @@ export function needsListed<T extends { kind: string }>(rows: readonly T[]): T[]
 }
 
 /**
+ * A row's group: its kind's, but a stale go-ahead's (GOAHEADSTALE1), which holds no session's act since nothing on its ask could still
+ * use it, so it waits for the person's word with what holds nothing running. The list, its order and Overview's summary read this one
+ * answer, so a row is counted in the group it is listed in.
+ */
+export function attentionGroupOf(row: { kind: AttentionKind; stale?: StaleSince | null }): AttentionGroup {
+  return row.kind === 'go-ahead' && row.stale ? 'word' : ATTENTION_GROUP[row.kind] ?? 'word';
+}
+
+/**
  * The rows by group, only the groups that hold any, in `GROUP_ORDER`, each keeping the order `attentionInOrder` gave it.
  * A group with no rows is not shown (design §6.2).
  */
 export function attentionGroups(items: readonly Attention[]): { group: AttentionGroup; items: Attention[] }[] {
   return GROUP_ORDER
-    .map((group) => ({ group, items: items.filter((item) => ATTENTION_GROUP[item.kind] === group) }))
+    .map((group) => ({ group, items: items.filter((item) => attentionGroupOf(item) === group) }))
     .filter(({ items: held }) => held.length > 0);
+}
+
+/**
+ * The stale go-aheads a list holds (GOAHEADSTALE1), in its order: what the one refusal refuses, each through its own door with the one
+ * reason the person gave.
+ */
+export function staleGoAheads(items: readonly Attention[]): Attention[] {
+  return items.filter((item) => item.kind === 'go-ahead' && item.stale && item.ask && typeof item.number === 'number');
+}
+
+/**
+ * An ask's stale go-aheads by number, from the rows .NET pushed (GOAHEADSTALE1): what its page marks, so the ask and What needs you say
+ * the one judgement.
+ */
+export function staleOnAsk(rows: readonly PushedAttention[], ask: string): Record<number, StaleSince> {
+  const stale: Record<number, StaleSince> = {};
+  for (const row of rows) {
+    if (row.kind === 'go-ahead' && row.ask === ask && row.stale && typeof row.number === 'number') stale[row.number] = row.stale;
+  }
+  return stale;
 }
 
 /**
@@ -235,7 +265,9 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
   switch (item.kind) {
     case 'proposal': return (item.publishTo?.length ?? 0) > 0 ? plain('publish', 'choose') : plain('choose');
     case 'parked-quest': return plain('retry');
-    case 'go-ahead': return plain('approve', 'refuse');
+    // GOAHEADSTALE1: nothing on a stale one's ask could use a yes but whatever starts there next, which no session asked it for, so
+    // its refusal is the one answer offered.
+    case 'go-ahead': return item.stale ? plain('refuse') : plain('approve', 'refuse');
     case 'trust': return item.trust ? plain('trust') : [];
     case 'departure': return plain('accept-departure');
     // A set-up shown and waiting (REVIEWENV1g, design §3.3): the strip's chip's and the step's page's own presses, *Show it
@@ -396,7 +428,7 @@ function kindRank(row: PushedAttention): number {
  * of kinds; then the row's key. A place in the list is never pushed (D182's PUSH1c3a note): one move would push every row after it.
  */
 export function attentionInOrder(rows: readonly PushedAttention[]): PushedAttention[] {
-  const groupOf = (row: PushedAttention) => GROUP_ORDER.indexOf(ATTENTION_GROUP[row.kind] ?? 'word');
+  const groupOf = (row: PushedAttention) => GROUP_ORDER.indexOf(attentionGroupOf(row));
   const key = (row: PushedAttention) => `${row.kind}:${row.id}`;
   return [...rows].sort((a, b) => groupOf(a) - groupOf(b)
     || (a.since === null || b.since === null ? Number(a.since === null) - Number(b.since === null) : a.since.localeCompare(b.since))
@@ -418,6 +450,17 @@ function goAheadTitle(goAhead: Pick<GoAhead, 'kind' | 'on' | 'act'>): string {
   const known = `asks.goAhead.kind.${goAhead.kind}`;
   const kind = i18n.exists(known) ? i18n.t(known) : goAhead.kind;
   return i18n.t('work.attention.goAheadTitle', { act: i18n.t('asks.goAhead.act', { kind, on: goAhead.on }), words: goAhead.act });
+}
+
+/**
+ * A stale go-ahead's line (GOAHEADSTALE1): that it is stale, for how long nothing on its ask has needed it where a moment says, and that
+ * no session on the ask runs or waits and no quest of it is open; then why its session asked, as written.
+ */
+function staleDetail(ask: string, stale: StaleSince, why: string | null, now: Date): string {
+  const first = stale.since
+    ? i18n.t('work.attention.staleWhy', { span: elapsed(stale.since, now.toISOString()), id: ask })
+    : i18n.t('work.attention.staleWhyUndated', { id: ask });
+  return why ? i18n.t('work.composer.twoSentences', { first, second: why }) : first;
 }
 
 /** Which requirement a held done departed from and why, in its own words; how many where it departed from several. */
@@ -473,10 +516,12 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         ...base,
         title: row.goAhead ? goAheadTitle(row.goAhead) : row.id,
         where: askWhere(row.ask ?? ''),
-        detail: row.detail ?? null,
+        // GOAHEADSTALE1: a stale one says so first, with how long nothing on its ask has needed it, then why its session asked.
+        detail: row.stale ? staleDetail(row.ask ?? '', row.stale, row.detail ?? null, now) : row.detail ?? null,
         ask: row.ask,
         number: row.number,
         session: row.session ?? null,
+        ...(row.stale ? { stale: row.stale } : {}),
       };
     case 'departure':
       return { ...base, title: quested(row.id), detail: departureWhy(row.departed) };

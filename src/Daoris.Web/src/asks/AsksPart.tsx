@@ -12,8 +12,9 @@ import { useScope } from '../data/scope';
 import { namer } from '../settings/accounts/namer';
 import { askLines } from '../work/entries';
 import {
-  useChannel, useChannelUnreads, useElsewhereAsks, useForwardChannel, useMarkChannel, usePostChannel,
+  useAttention, useChannel, useChannelUnreads, useElsewhereAsks, useForwardChannel, useMarkChannel, usePostChannel,
 } from '../bridge/shell';
+import { staleOnAsk } from '../work/attention/attention';
 import type { ElsewhereAsk } from '../work/channel';
 import { TeammateAskPage } from './TeammateAskPage';
 import { useConsidered, useDriver, useHarnesses, useHistoryPlan, useNudge, useRemotes, useSessionEntries, useWorkflowRun, useWorkPlan } from '../bridge/shell';
@@ -126,6 +127,9 @@ export function useAsksPart({
   const close = useCloseAsk();
   const remove = useDeleteAsk();
   const answerGoAhead = useAnswerGoAhead();
+  // Who needs the person as .NET judged it (PUSH1d4), read from memory: which of an ask's go-aheads are stale (GOAHEADSTALE1). A
+  // browser judges none.
+  const attention = useAttention();
   // The person's review choice for an ask's work (REVIEWENV1g, design §1.5): the service's door, the latest standing.
   const chooseReview = useChooseAskReview();
   // An intake's kind proposal applied on the person's press (WORKFLOW1i-c, design §4.3).
@@ -248,11 +252,16 @@ export function useAsksPart({
   // The person's yes or no to a go-ahead (KNOWUSE1a): the record as the door answers it, and a nudge, since a session that
   // waits on it is the driver's next move once the person answers it too.
   // A refusal is said beside the go-ahead that was answered (UXFIX2b3b), and its presses are pressable again.
-  const onAnswerGoAhead = (id: string, number: number, approved: boolean, words: string | undefined, answered: Answered) =>
-    answerGoAhead.mutate({ id, number, approved, words }, {
-      onSuccess: (result) => { notify(result.message); setHeld(result.ask); nudge(); answered.done(); },
+  // GOAHEADSTALE1: a stale one's refusal sends no park on and nudges nothing, since nothing on its ask waits for it.
+  const onAnswerGoAhead = (
+    id: string, number: number, approved: boolean, words: string | undefined, answered: Answered, stale = false,
+  ) =>
+    answerGoAhead.mutate({ id, number, approved, words, ...(stale ? { goesOn: false } : {}) }, {
+      onSuccess: (result) => { notify(result.message); setHeld(result.ask); if (!stale) nudge(); answered.done(); },
       onError: (error) => answered.refused(sentence(error)),
     });
+  // Which of the shown ask's go-aheads are stale, as What needs you's rows say: the one judgement, .NET's (GOAHEADSTALE1).
+  const staleGoAheads = shown && attention.state === 'known' ? staleOnAsk(attention.rows, shown.id) : undefined;
 
   // Deleted with every quest asked by it (D95): the record is gone, so the list chooses nothing, on the service's
   // sentence. A refusal is the service's sentence too, said inside the ask that was pressed (UXFIX2), and the page stays on
@@ -337,7 +346,9 @@ export function useAsksPart({
           onClose={(reason, answered) => onClose(shown.id, reason, answered)}
           onDelete={(answered) => onDelete(shown.id, answered)}
           onOpenQuest={(id) => onChoose(id)}
-          onAnswerGoAhead={(number, approved, words, answered) => onAnswerGoAhead(shown.id, number, approved, words, answered)}
+          onAnswerGoAhead={(number, approved, words, answered) =>
+            onAnswerGoAhead(shown.id, number, approved, words, answered, staleGoAheads?.[number] !== undefined)}
+          staleGoAheads={staleGoAheads}
           environments={environmentsIn(shown.workspace)}
           // The record as the door answers it, so the page shows the choice before the list catches up; a refusal (a
           // repository that declares no environment) is the service's sentence, said under the press (ACCESSASK1, R3).

@@ -3,7 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { SectionTitle, Tip } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import { type Attention, type AttentionActs, AttentionRow } from './AttentionRow';
-import { attentionGroups } from './attention';
+import { attentionGroups, staleGoAheads } from './attention';
+import type { Answered } from '../InlineConfirm';
+import { STALE_AT_ONCE, StaleGoAheads } from './StaleGoAheads';
 
 /**
  * Where each kind of row leads, when it leads anywhere. A kind with no door here is shown, and is
@@ -26,8 +28,17 @@ export const attentionKey = (item: Attention) => `${item.kind}:${item.id}`;
  * Its kind wears open's hue on the card's edge and on each row's (D41 §3: waiting on the person is open's hue, everywhere
  * it is shown). A molecule: handed the rows, their doors and acts, it draws them and reports each press.
  */
-export function AttentionList({ items, doors = {}, run, acts, acting = null, held, below, onSessions, bare = false }: {
+export function AttentionList({
+  items, doors = {}, run, acts, acting = null, held, below, onSessions, bare = false, onRefuseStale, refusingStale = false,
+}: {
   items: readonly Attention[];
+  /**
+   * Every stale go-ahead a group holds refused in one press, with one reason (GOAHEADSTALE1), each through its own row's door; offered
+   * where a group holds two or more. Absent, none is offered.
+   */
+  onRefuseStale?: (items: readonly Attention[], words: string, answered: Answered) => void;
+  /** The stale go-aheads' refusals are on their way. */
+  refusingStale?: boolean;
   /**
    * Its groups alone, with no card and no head of its own (NOTIFY2b): *Notifications*' group is its head, which says its name and
    * its count.
@@ -60,9 +71,13 @@ export function AttentionList({ items, doors = {}, run, acts, acting = null, hel
       {attentionGroups(items).map(({ group, items: rows }) => {
         const shown = group === 'ready' ? rows.slice(0, READY_SHOWN) : rows;
         const more = rows.length - shown.length;
+        const stale = onRefuseStale ? staleGoAheads(rows) : [];
         return (
           <div key={group} role="group" aria-label={t(`work.attention.group.${group}`)} className={bare ? 'mt-1 first:mt-0' : 'mt-2'}>
             <div className="px-[1.15rem]"><SectionTitle level={3}>{t(`work.attention.group.${group}`)}</SectionTitle></div>
+            {onRefuseStale && stale.length >= STALE_AT_ONCE && (
+              <StaleGoAheads items={stale} busy={refusingStale} onRefuse={onRefuseStale} />
+            )}
             <ul className="m-0 grid list-none gap-1 p-0">
               {shown.map((item) => (
                 <AttentionRow

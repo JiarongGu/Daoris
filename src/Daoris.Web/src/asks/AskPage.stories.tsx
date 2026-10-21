@@ -156,6 +156,16 @@ export const IntakeUnloaded: Story = { args: { ask: BY_INTAKE, intake: null, onA
 export const GoAheads: Story = { args: { ask: WITH_GO_AHEADS, onAnswerGoAhead: nothing } };
 /** The same go-aheads where there is no door to answer them: what became of each, and nothing offered. */
 export const GoAheadsWithNoDoor: Story = { args: { ask: WITH_GO_AHEADS } };
+/**
+ * GOAHEADSTALE1: the waiting one stale, nothing on the ask having needed it for six days: marked so with how long, and its refusal
+ * the one answer offered.
+ */
+export const GoAheadsStale: Story = {
+  args: {
+    ask: WITH_GO_AHEADS, onAnswerGoAhead: nothing,
+    staleGoAheads: { 3: { since: new Date(Date.now() - 6 * 86_400_000).toISOString() } },
+  },
+};
 
 // ——— Its work on this machine (PAUSE1e, D132 §7.1): *Pause…*, *Resume* and *Abandon…* where each applies, from the
 // driver's plan.

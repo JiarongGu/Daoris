@@ -766,10 +766,11 @@ export const api = {
   closeAsk: (id: string, reason: string) =>
     post<AskAction>(`/api/asks/${encodeURIComponent(id)}/close`, { reason }),
   // The person's yes or no to a go-ahead a session asked on their ask (KNOWUSE1a), with their words where they give any;
-  // `daoris-driver ask --go-ahead` is the terminal's twin.
-  answerGoAhead: (id: string, number: number, approved: boolean, words?: string) =>
+  // `daoris-driver ask --go-ahead` is the terminal's twin. `goesOn` false says no park goes on with the answer (GOAHEAD2's door):
+  // a stale go-ahead's refusal runs nothing (GOAHEADSTALE1). Absent, the host reads it as true, as it always has.
+  answerGoAhead: (id: string, number: number, approved: boolean, words?: string, goesOn = true) =>
     post<AskAction>(`/api/asks/${encodeURIComponent(id)}/go-aheads/${number}`, {
-      answer: approved ? 'approved' : 'refused', ...(words ? { words } : {}),
+      answer: approved ? 'approved' : 'refused', ...(words ? { words } : {}), ...(goesOn ? {} : { goesOn: false }),
     }),
   // Deleting a record made by mistake (D95) — `daoris-driver ask --delete` and `quest delete` are the
   // terminal's twins. A refusal is the service's sentence, verbatim, like every other write's.

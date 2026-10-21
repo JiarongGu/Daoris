@@ -357,6 +357,25 @@ describe('settling one where it stands', () => {
     expect(acts.answer).toHaveBeenCalledWith(GO_AHEAD, false, undefined, answeredByAct);
   });
 
+  /**
+   * GOAHEADSTALE1: a go-ahead nothing on its ask could still use says so by its kind's word and offers only its refusal, whose question
+   * says that nothing runs, since no session waits for it.
+   */
+  it('names a stale go-ahead so, and refuses it saying nothing runs', async () => {
+    const acts = everyAct();
+    const stale: Attention = { ...GO_AHEAD, stale: { since: '2026-09-20T09:00:00Z' } };
+    render(<AttentionRow item={stale} acts={acts} />);
+
+    expect(screen.getByText('stale go-ahead')).toBeInTheDocument();
+    expect(screen.queryByText('needs your go-ahead')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Approve…' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Refuse…' }));
+    expect(screen.getByText('It is refused on ask #7c1e9a04b2d5, and nothing runs: no session waits for it, so none goes on. '
+      + 'A later session on the ask is handed your no.')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Refuse' }));
+    expect(acts.answer).toHaveBeenCalledWith(stale, false, undefined, answeredByAct);
+  });
+
   /** The agent's own trust question, asked in the open under the row, and granted only on its press (D73). */
   it('asks the agent’s trust question under the row before it trusts the folder', async () => {
     const acts = everyAct();

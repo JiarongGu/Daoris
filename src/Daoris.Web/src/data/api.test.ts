@@ -85,6 +85,20 @@ describe('answering a go-ahead', () => {
     vi.stubGlobal('fetch', vi.fn(async () => Response.json({ error: 'Ask `#a1` holds no go-ahead 7: it holds 1, 2.' }, { status: 404 })));
     expect(sentence(await api.answerGoAhead('a1', 7, true).catch((error: unknown) => error))).toBe('Ask `#a1` holds no go-ahead 7: it holds 1, 2.');
   });
+
+  /** GOAHEADSTALE1: a stale go-ahead's refusal says no park goes on, so it runs nothing; every other answer reads as it always did. */
+  it('says no park goes on only where it is asked to', async () => {
+    const sent: unknown[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (_url: string, init: RequestInit) => {
+      sent.push(JSON.parse(init.body as string));
+      return Response.json({ ask: { id: 'a1' }, message: 'Go-ahead 3 on ask `#a1` refused.' });
+    }));
+
+    await api.answerGoAhead('a1', 3, false, 'done another way', false);
+    await api.answerGoAhead('a1', 3, false, undefined, true);
+
+    expect(sent).toEqual([{ answer: 'refused', words: 'done another way', goesOn: false }, { answer: 'refused' }]);
+  });
 });
 
 /**

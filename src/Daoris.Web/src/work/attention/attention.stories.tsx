@@ -262,6 +262,42 @@ export const BandNarrow: StoryObj = {
 export const BandNarrowChinese: StoryObj = { ...BandNarrow, decorators: [chinese] };
 
 /**
+ * GOAHEADSTALE1, the owner's case (2026-10-21): three go-aheads to write production configuration that nothing on their asks waits for
+ * any more, each marked stale with how long and offering its refusal alone, listed with what waits for the person's word under the line
+ * that refuses all three at once with one reason; a go-ahead a session still waits for keeps both answers where it holds work.
+ */
+const STALE_GO_AHEADS: Attention[] = [
+  { ask: '3c9e21', days: 12, act: 'the report dashboard’s configuration' },
+  { ask: '7b04d5', days: 9, act: 'the export job’s schedule' },
+  { ask: 'a51f80', days: 6, act: 'the alert thresholds' },
+].map(({ ask, days, act }): Attention => ({
+  id: `${ask}#1`, kind: 'go-ahead', ask, number: 1, title: `write on production: “${act}”`, where: `ask #${ask}`, since: at(days * 24 * 60 + 90),
+  detail: `Stale for ${days}d 0h: no session on ask #${ask} runs or waits, and none of its quests is open. The procedure writes it there.`,
+  stale: { since: at(days * 24 * 60) },
+}));
+export const BandStaleGoAheads: StoryObj = {
+  render: () => (
+    <Main width={1180}>
+      <AttentionRegion>
+        <AttentionList items={[GO_AHEAD, ...STALE_GO_AHEADS, PROPOSAL]} doors={DOORS} acts={ACTS} onRefuseStale={() => {}} onSessions={() => {}} />
+      </AttentionRegion>
+    </Main>
+  ),
+};
+
+/** The same at 300 px, the side bar's, where *Notifications* draws it, in 中文. */
+export const BandStaleGoAheadsNarrowChinese: StoryObj = {
+  render: () => (
+    <Main width={300}>
+      <AttentionRegion>
+        <AttentionList items={[GO_AHEAD, ...STALE_GO_AHEADS, PROPOSAL]} doors={DOORS} acts={ACTS} onRefuseStale={() => {}} onSessions={() => {}} />
+      </AttentionRegion>
+    </Main>
+  ),
+  decorators: [chinese],
+};
+
+/**
  * Each row that is a step waiting on the person with its door into the run (WORKFLOW1c, the workflow design §7): *Workflow*,
  * quieter than the row's own, on a parked quest, a go-ahead, a parked session, a departure, a set-up and the reviews.
  */

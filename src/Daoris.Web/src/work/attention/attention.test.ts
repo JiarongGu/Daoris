@@ -8,8 +8,8 @@ import type { AccountRowFacts, NamedAccount } from './accountWords';
 import type { Attention } from './AttentionRow';
 import type { SessionGrouping } from '../groups';
 import {
-  ASKS_ONCE, ATTENTION_GROUP, attentionActs, attentionGroups, attentionInOrder, attentionOf, attentionOffers, attentionWorded,
-  type AttentionNames, needsListed, type PushedAttention,
+  ASKS_ONCE, ATTENTION_GROUP, attentionActs, attentionGroupOf, attentionGroups, attentionInOrder, attentionOf, attentionOffers, attentionWorded,
+  type AttentionNames, needsListed, type PushedAttention, staleGoAheads,
 } from './attention';
 import { entryDetail } from '../head/milestone';
 
@@ -303,6 +303,57 @@ describe('a go-ahead asked on an ask, worded', () => {
     expect(attentionInOrder([
       row('proposal', 'proposed', '2026-09-20T09:00:00Z'), pushed(), row('parked', 'parked', '2026-09-21T09:00:00Z'),
     ]).map((each) => each.kind)).toEqual(['parked', 'go-ahead', 'proposal']);
+  });
+});
+
+/**
+ * GOAHEADSTALE1 (the owner's case, 2026-10-21): go-aheads sat in What needs you for days after their asks' work was done another way.
+ * .NET marks one nothing on its ask could still use; the page says so with its age, lists it where nothing is held, and offers only
+ * the refusal, which runs nothing.
+ */
+describe('a stale go-ahead, worded', () => {
+  const goAhead = { kind: 'write', on: 'production', act: 'the dashboard configuration' };
+  const NOW = new Date('2026-10-01T12:00:00Z');
+  const stale = (since: string | null = '2026-09-25T09:00:00Z', over: Partial<PushedAttention> = {}) =>
+    row('go-ahead', '7c1e9a04b2d5#2', '2026-09-21T09:10:00Z', {
+      workspace: 'aurora', ask: '7c1e9a04b2d5', number: 2, goAhead, detail: 'The tile reads its target there.', session: 's1a2b3c4',
+      stale: { since }, ...over,
+    });
+
+  it('says it is stale, for how long nothing on its ask has needed it, before why its session asked', async () => {
+    const item = attentionWorded(stale(), {}, NOW);
+    expect(item).toMatchObject({ kind: 'go-ahead', stale: { since: '2026-09-25T09:00:00Z' }, since: '2026-09-21T09:10:00Z' });
+    expect(item.detail).toBe('Stale for 6d 3h: no session on ask #7c1e9a04b2d5 runs or waits, and none of its quests is open. '
+      + 'The tile reads its target there.');
+    expect(attentionWorded(stale(null, { detail: null }), {}, NOW).detail)
+      .toBe('Stale: no session on ask #7c1e9a04b2d5 runs or waits, and none of its quests is open.');
+    await i18n.changeLanguage('zh');
+    try {
+      expect(attentionWorded(stale(), {}, NOW).detail).toBe('已过时 6 天 3 小时：需求 #7c1e9a04b2d5 上没有会话在运行或等待，也没有仍开放的委托。'
+        + 'The tile reads its target there.');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
+  it('offers only the refusal: a yes nothing on its ask waits for would be handed to whatever starts there next', () => {
+    expect(attentionActs(attentionWorded(stale(), {}, NOW))).toEqual(['refuse']);
+    expect(attentionActs(attentionWorded(stale(undefined, { stale: undefined }), {}, NOW))).toEqual(['approve', 'refuse']);
+  });
+
+  /** It holds no session's act, so it waits for the person's word with the asks, and is counted there: the list and the count agree. */
+  it('is listed under Waiting for your word, where nothing it holds is running', () => {
+    expect(attentionGroupOf(stale())).toBe('word');
+    expect(attentionGroupOf(stale(undefined, { stale: undefined }))).toBe('holding');
+    const rows = attentionOf(attentionInOrder([stale(), row('proposal', 'proposed', '2026-09-22T09:00:00Z'), row('parked', 'p1', '2026-09-30T09:00:00Z')]), {}, NOW);
+    expect(attentionGroups(rows).map(({ group, items }) => [group, items.map((item) => item.id)])).toEqual([
+      ['holding', ['p1']], ['word', ['7c1e9a04b2d5#2', 'proposed']],
+    ]);
+  });
+
+  it('gathers the stale go-aheads a list holds, in its order, for the one refusal', () => {
+    const rows = attentionOf([stale(), row('go-ahead', 'b#1', '2026-09-22T09:00:00Z', { ask: 'b', number: 1, goAhead }), stale(undefined, { id: 'c#3', ask: 'c', number: 3 })], {}, NOW);
+    expect(staleGoAheads(rows).map((item) => item.id)).toEqual(['7c1e9a04b2d5#2', 'c#3']);
   });
 });
 

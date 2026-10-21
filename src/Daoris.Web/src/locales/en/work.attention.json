@@ -92,5 +92,18 @@
   "work.attention.act.refuseOnce": "Refuse",
   "work.attention.act.refuseAlways": "Always refuse",
   "work.attention.confirmation": "a terminal waits",
-  "work.attention.confirmationWhy": "It runs only once you confirm it on its card in Notifications, and is refused at {{time}}."
+  "work.attention.confirmationWhy": "It runs only once you confirm it on its card in Notifications, and is refused at {{time}}.",
+  "work.attention.goAheadStale": "stale go-ahead",
+  "work.attention.staleWhy": "Stale for {{span}}: no session on ask #{{id}} runs or waits, and none of its quests is open.",
+  "work.attention.staleWhyUndated": "Stale: no session on ask #{{id}} runs or waits, and none of its quests is open.",
+  "work.attention.ask.refuseStale": "It is refused on ask #{{id}}, and nothing runs: no session waits for it, so none goes on. A later session on the ask is handed your no.",
+  "work.attention.stale.lead": "{{count}} go-ahead is stale: nothing on its ask waits for it.",
+  "work.attention.stale.lead_other": "{{count}} go-aheads are stale: nothing on their asks waits for them.",
+  "work.attention.stale.act": "Refuse all {{count}}…",
+  "work.attention.stale.ask": "Each is refused on its own ask with the reason below, as its own Refuse would be: no session is sent on, and nothing runs. A later session on one of these asks is handed your no.",
+  "work.attention.stale.reason": "why you refuse them",
+  "work.attention.stale.meanIt": "Refuse {{count}} go-ahead",
+  "work.attention.stale.meanIt_other": "Refuse {{count}} go-aheads",
+  "work.attention.stale.refused": "Refused {{count}} stale go-ahead.",
+  "work.attention.stale.refused_other": "Refused {{count}} stale go-aheads."
 }

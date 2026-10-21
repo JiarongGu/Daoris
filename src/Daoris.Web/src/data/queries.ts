@@ -463,10 +463,13 @@ export const usePublishAsk = () =>
   useAskChange(({ id, to }: { id: string; to: string }) => api.publishAsk(id, to));
 export const useCloseAsk = () =>
   useAskChange(({ id, reason }: { id: string; reason: string }) => api.closeAsk(id, reason));
-/** The person answers a go-ahead on their ask (KNOWUSE1a): every session on the ask is handed it at its next start. */
+/**
+ * The person answers a go-ahead on their ask (KNOWUSE1a): every session on the ask is handed it at its next start. `goesOn` false sends
+ * no park on with it: a stale go-ahead's refusal runs nothing (GOAHEADSTALE1).
+ */
 export const useAnswerGoAhead = () =>
-  useAskChange(({ id, number, approved, words }: { id: string; number: number; approved: boolean; words?: string }) =>
-    api.answerGoAhead(id, number, approved, words));
+  useAskChange(({ id, number, approved, words, goesOn }: { id: string; number: number; approved: boolean; words?: string; goesOn?: boolean }) =>
+    api.answerGoAhead(id, number, approved, words, goesOn));
 
 /**
  * The quests in scope; `enabled` false asks nothing, for a reader that needs them only sometimes (a session branch's title, UX6h2a).
