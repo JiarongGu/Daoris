@@ -138,6 +138,12 @@ public sealed class AgentAccountsBothWaysTests : DriverModuleBridge
     [InlineData("profile rename claude-code seat account-3")]
     [InlineData("profile join claude-code seat work --machine")]
     [InlineData("profile join claude-code account-3 --machine")]
+    [InlineData("profile use claude-code order --keep account-1")]
+    [InlineData("profile use claude-code --keep account-2 --switch curve --curve weekly=0:30,100:100 --curve session=0:80")]
+    [InlineData("profile use claude-code-acp --near 85 --early off")]
+    [InlineData("profile use claude-code --no-keep --no-curve --workspace work")]
+    [InlineData("profile use claude-code --clear")]
+    [InlineData("profile use claude-code --clear --workspace work")]
     /// <remarks>
     /// Not here: <c>unpin codex</c>. The window's <c>HARNESS_ACTION</c> refuses an agent no door of its roster runs (<c>codex</c> is
     /// one a door runs as), which the TypeScript verb met the same way through the route; alone, the pin is taken back.
