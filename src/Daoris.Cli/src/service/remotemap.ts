@@ -14,8 +14,9 @@
 //   3. Absence is the default, and it is silent (D21).
 
 import { findName } from '../platform/casefold.ts';
-import { readJsonObject, writeJsonAtomic } from '../platform/fsx.ts';
+import { readJsonObject } from '../platform/fsx.ts';
 import { homeFile, requireHomeFile } from '../platform/home.ts';
+import { writeKeeping } from '../platform/jsonkeep.ts';
 
 /** Where a workspace's shared deployment is, and the key this machine speaks to it with. */
 export interface Remote {
@@ -72,27 +73,32 @@ export function redactKey(key: string): string {
   return key.length > 11 ? `${key.slice(0, 11)}…` : '…';
 }
 
-/** The map as it sits on disk — every entry, including ones missing half a pair. */
+/** The map as it sits on disk. */
 function parse(path: string | null): Map<string, Remote> {
-  const remotes = new Map<string, Remote>();
-  if (path === null) return remotes;
-
   // A file that will not parse names no remote. The sync loop, not this reader, is where "you
   // configured a remote and it does not work" gets said out loud — and the editor refuses to write
-  // over it (`writeJsonAtomic`). A BOM is not "will not parse": the C# twins strip it.
-  const { value: parsed } = readJsonObject(path);
-  if (parsed === null) return remotes;
+  // over it (`writeKeeping`). A BOM is not "will not parse": the C# twins strip it.
+  return path === null ? new Map() : remotesIn(readJsonObject(path).value ?? {});
+}
 
-  for (const [workspace, value] of Object.entries(parsed)) {
-    if (!value || typeof value !== 'object') continue;
-    const { url, key } = value as { url?: unknown; key?: unknown };
+/** The remotes `entries` name. */
+function remotesIn(entries: Record<string, unknown>): Map<string, Remote> {
+  const remotes = new Map<string, Remote>();
+  for (const [workspace, value] of Object.entries(entries)) {
+    if (!whole(value)) continue;
     // An entry missing half its pair is one workspace with no remote, never a machine with none: a
     // typo in one circle must not silently unwire the others.
-    if (typeof url !== 'string' || typeof key !== 'string' || !url.trim() || !key.trim()) continue;
-    remotes.set(normalizeWorkspace(workspace), { url: url.replace(/\/+$/, ''), key });
+    remotes.set(normalizeWorkspace(workspace), { url: (value.url as string).replace(/\/+$/, ''), key: value.key as string });
   }
 
   return remotes;
+}
+
+/** Whether an entry is a whole pair, the only one any reader reads. */
+function whole(value: unknown): value is Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const { url, key } = value as { url?: unknown; key?: unknown };
+  return typeof url === 'string' && typeof key === 'string' && url.trim() !== '' && key.trim() !== '';
 }
 
 /** This machine's remotes, by workspace, and which source decided. */
@@ -117,15 +123,66 @@ export function readRemotes(env: Env = process.env): Wiring {
 }
 
 /**
- * Write the map back — through the tool's one atomic writer, so this file gets what every canon file
- * gets: beside-then-rename, BOM-less UTF-8, LF. A driver tick may read it at any moment, and a torn
- * read must never be what it finds.
+ * The map's file as an editor reads it (KEEPALL1e, D173's KEEPALL1e note), the driver's `RemoteFile`: every entry as the file holds it,
+ * in its order, whole or not, and whether a file was there. An edit sets or takes one workspace's entry, and `writeRemoteFile` makes
+ * only that onto the file as it stands (`writeKeeping`), so another key, an entry's own unknown keys, an entry missing half its pair,
+ * numbers as written and CRLF all stay. Rebuilt from the remotes read, the file lost each of them. Both twins are held to
+ * `test/fixtures/home-files-keep.json`, which the service's reader (`RemoteConfig`) reads too.
  */
-export function writeRemotes(path: string, remotes: Map<string, Remote>): void {
-  const body: Record<string, Remote> = {};
-  for (const workspace of [...remotes.keys()].sort()) body[workspace] = remotes.get(workspace)!;
+export interface RemoteFile {
+  found: boolean;
+  read: Record<string, unknown>;
+  entries: Record<string, unknown>;
+}
 
-  writeJsonAtomic(path, body);
+/**
+ * The file at `path` as it stands; no entry for none, or for a text that does not read, which `writeRemoteFile` then refuses to write
+ * over. A key written twice is read as `JSON.parse` reads it, its last value in its first place.
+ */
+export function readRemoteFile(path: string): RemoteFile {
+  const { value, problem, text } = readJsonObject(path);
+  const entries = value ?? {};
+  return { found: text !== undefined || problem !== null, read: entries, entries };
+}
+
+/** The remotes a file's entries name, as every reader reads them. */
+export function remotesOf(file: RemoteFile): Map<string, Remote> {
+  return remotesIn(file.entries);
+}
+
+/** The names in `file` held as `workspace`, compared as a person compares names, in the file's order. */
+function holding(file: RemoteFile, workspace: string): string[] {
+  const wanted = normalizeWorkspace(workspace);
+  return Object.keys(file.entries).filter((name) => findName([normalizeWorkspace(name)], wanted) !== null);
+}
+
+/**
+ * `workspace` wired to `remote`: the entry the readers read for it changed where it stands, else the last one held under its name in any
+ * case (an entry missing half its pair, completed), else a new entry, last. Its own other keys stay.
+ */
+export function withRemote(file: RemoteFile, workspace: string, remote: Remote): RemoteFile {
+  const held = holding(file, workspace);
+  const name = held.filter((each) => whole(file.entries[each])).at(-1) ?? held.at(-1);
+  const was = name === undefined ? undefined : file.entries[name];
+  const own = was !== null && typeof was === 'object' && !Array.isArray(was) ? was as Record<string, unknown> : {};
+  return { ...file, entries: { ...file.entries, [name ?? normalizeWorkspace(workspace)]: { ...own, url: remote.url, key: remote.key } } };
+}
+
+/** `workspace` no longer wired: every entry the readers read under its name in any case taken, whole. */
+export function withoutRemote(file: RemoteFile, workspace: string): RemoteFile {
+  const taken = holding(file, workspace).filter((name) => whole(file.entries[name]));
+  if (taken.length === 0) return file;
+  return { ...file, entries: Object.fromEntries(Object.entries(file.entries).filter(([name]) => !taken.includes(name))) };
+}
+
+/**
+ * The edit made onto the file as it stands (`writeKeeping`): beside-then-rename, BOM-less UTF-8, its lines ended as the file's are, and
+ * no edit nothing written. A driver tick may read it at any moment, and a torn read must never be what it finds.
+ *
+ * @throws DaorisError The file there now does not read or holds a key twice; nothing was written.
+ */
+export function writeRemoteFile(path: string, file: RemoteFile): void {
+  writeKeeping(path, file.found, file.read, file.entries);
 }
 
 /**

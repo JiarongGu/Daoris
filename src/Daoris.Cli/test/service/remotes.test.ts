@@ -216,7 +216,8 @@ test('a workspace is one only as the driver\'s OrdinalIgnoreCase finds it: İzmi
   await run(['add', 'i\u{307}zmir', '--url', 'https://other.example.com', '--key', KEY], path);
   await run(['add', 'STRASSE', '--url', 'https://other.example.com', '--key', KEY], path);
 
-  assert.deepEqual(Object.keys(JSON.parse(readFileSync(path, 'utf8'))), ['STRASSE', 'i\u{307}zmir', 'straße', 'İzmir']);
+  // Four rows, each new one last: an edit keeps the file's order (KEEPALL1e).
+  assert.deepEqual(Object.keys(JSON.parse(readFileSync(path, 'utf8'))), ['İzmir', 'straße', 'i\u{307}zmir', 'STRASSE']);
   fx.cleanup();
 });
 

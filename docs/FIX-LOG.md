@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-21 — Wiring a workspace deleted what `remotes.json`'s writers did not know, and the page wrote over a torn map (KEEPALL1e)
+
+- **Symptom:** named by KEEPALL1's audit (D173's KEEPALL1 note). Wiring or unwiring a workspace, at Settings or with
+  `daoris remote add|remove`, rewrote `remotes.json` as `{ workspace: { url, key } }` sorted by name: every other top-level key, an
+  entry's own unknown keys, an entry missing half its pair and CRLF went. At Settings, over a map that did not read, the page's
+  entry was written alone and every other workspace's key was lost; the CLI already refused that.
+- **Root cause:** `RemotesModule` rebuilt the dictionary `RemoteTarget.LoadFile` parsed and wrote it with `RemoteTarget.Save`; the
+  CLI's `writeRemotes` wrote the `Map` its reader parsed. Both readers keep only whole pairs, and the driver's reads a torn file as
+  no remotes.
+- **Fix:** D173's KEEPALL1e note. Both edit the file as it stands (`RemoteFile`, `readRemoteFile`) and write through the keeping
+  write (`JsonKeeping.Save`, `writeKeeping`); the page says a refusal as `DRIVER_REFUSED`. The service's `RemoteConfig` writes
+  nothing, and reads what they write.
+- **Verification:** ten `remotes:` rows in `home-files-keep.json`, each with the map the readers read, through `HomeFilesKeepTests`,
+  `homefileskeep.test.ts` and the service's `RemoteConfigKeepTests`; `RemotesModuleTests`' new case (unknown keys kept, a torn map
+  refused and untouched) holds what the old writer broke. `RemoteTargetTests`, `SyncStateSliceTests`, `RemoteConfigTests`, `homefiles.test.ts`,
+  `remotes.test.ts` (its order row re-decided) and `dogfood.test.ts` green.
+
 ## 2026-10-21 — A turn that ended just after its background command did parked on the person (BGWAIT3)
 
 - **Symptom:** a driven session on the install backgrounded a test class, wrote that it would close its quest when the tests

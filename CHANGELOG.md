@@ -13,6 +13,10 @@ with the version and date at release.
   reruns its tests and commits, and its work lands at the next look. A conflict only in files the repository marks
   `linguist-generated` in its `.gitattributes` takes the line's copy of them instead, and the landing names them. In English and
   中文.
+- Wiring or unwiring a workspace, at Settings or with `daoris remote add|remove`, now changes only that workspace's entry in
+  `remotes.json`: anything else you wrote there stays as written, in its order and with its line endings, and a workspace wired
+  again keeps its entry's other keys. Settings now refuses to wire a workspace over a `remotes.json` that does not read, saying
+  so, instead of writing its one entry over it and losing every other workspace's key, as `daoris remote` already did.
 - Codex signs in through your browser again, as ChatGPT's desktop app does, so a ChatGPT workspace that turns device codes off can
   add its account: *Add an account…* on Agents → Codex and `daoris agent login codex` open the page, and the device code stays
   beside it (*Use a device code*, or `--device-code` at a terminal). Either way can be switched to while the other waits, which
