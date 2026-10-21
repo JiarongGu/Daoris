@@ -18815,3 +18815,13 @@ badge and the taskbar, whose one control opens the card. Asked, it raises `SESSI
 balloon while no window is in front. Proof: `PipeConfirmTests`, `DriverModulePersonTests`, `AttentionStateSliceTests`,
 `SessionBalloonTests`, and the page's person, attention and signals tests in en and zh. The window with a press from a terminal
 is the parent's installed proof; the taskbar is not flashed. Detail: D156's CONFIRMSEEN1 note.
+
+## RELSPAM1 — a running session's *Who it worked with* said once (2026-10-21)
+
+> - [ ] **RELSPAM1 — a running session's *Who it worked with* repeated on its page** (web; found 2026-10-21 on an installed
+>   window for another workspace). A driven session on an ask, working, showed its folded relations line eleven times. One block
+>   per attended session, however long it runs; a test that redraws the running record and counts the regions.
+
+**Outcome** 2026-10-21: fixed. The record's relations fold and its milestone were keyed alike under one parent, so each draw left a
+copy behind; the Work frame's foot had the same collision (strip, settler, composer). Each keyed child now names its kind beside
+the id, and `design/siblingKeys.test.ts` fails on two slots of one parent keyed alike. Detail: the fix log's RELSPAM1 entry.

@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- A running session's page now shows *Who it worked with* once. It used to add another copy of that line each time the session's
+  record changed, and kept the copies after you moved to another session.
 - `daoris tool` hands every verb to Daoris's own driver program, as `daoris-driver tool` with the same words, as `daoris driver`
   does. What each verb says is as before, but for these: a delete refused, and a file named for a tool that is not there, are said
   as the window's Tools place says them, with their code, and exit 2; and a file you name is asked its version before it is written,
