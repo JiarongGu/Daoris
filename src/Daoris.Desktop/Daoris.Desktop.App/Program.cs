@@ -220,16 +220,19 @@ internal static class Program
         // edits, read by `daoris-browser` each time it starts.
         builder.Services.AddIpcModule<BrowserModule>();
         builder.Services.AddSingleton(new PlatformAddress(serviceUrl));
-        // The main window's taskbar count (NOTIFY1b): the window is resolved as the page tells it, never as the module
-        // is made, since the window is made after the modules and maps one of its own.
-        // And, while the first is put away and its button is gone, each other main window's (MAINWINDOWS2b).
-        builder.Services.AddSingleton(sp => new WaitingCount(sp.GetRequiredService<MainWindows>()));
-        builder.Services.AddSingleton<ShowWaiting>(sp => (count, description) =>
+        // Each main window's taskbar count (NOTIFY1b), its own workspace's as its own page tells it (NOTIFY2c): the window is resolved
+        // as the page tells it, never as the module is made, since the windows are made after the modules.
+        builder.Services.AddSingleton(new WaitingCount());
+        builder.Services.AddSingleton<ShowWaiting>(sp => (window, count, description) =>
         {
-            sp.GetRequiredService<WaitingCount>().Told(count, description);
-            sp.GetRequiredService<MainForm>().ShowWaiting(count, description);
-            sp.GetRequiredService<SecondaryWindowHost>().ShowWaiting();
+            sp.GetRequiredService<WaitingCount>().Told(window, count, description);
+            if (window == MainWindows.First) sp.GetRequiredService<MainForm>().ShowWaiting(count, description);
+            else sp.GetRequiredService<SecondaryWindowHost>().ShowWaiting(window);
         });
+        // Which workspace each main window holds, as its page tells it, and which main window a notification's click opens (NOTIFY2c,
+        // the notification design §9): the one holding what it is about, or the main window last in front where none or several do.
+        builder.Services.AddSingleton(sp => new MainWindowScopes(sp.GetRequiredService<MainWindows>()));
+        builder.Services.AddSingleton<BringForward>(sp => window => sp.GetRequiredService<SecondaryWindowHost>().BringForward(window));
         // And the workspace each main window's page holds, worn in its title (MAINWINDOWS3b): no name is the first main window.
         builder.Services.AddSingleton<ShowWorkspace>(sp => (name, workspace) =>
         {

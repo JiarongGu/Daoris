@@ -50,7 +50,7 @@ public sealed class SecondaryForm : OptimizedForm
         _startsDark = startsDark;
         _main = SecondaryWindow.IsMain(name);
         // The taskbar's label and the window's own caption — a utility window HAS a caption, so it is read. Another main
-        // window is named as the main one is, with no count: the taskbar's count is the main window's (NOTIFY1b).
+        // window is named as the main one is, with no count until its own page tells it its workspace's (NOTIFY2c).
         Text = name == SecondaryWindow.Monitor ? "Daoris — Monitor" : _main ? WaitingBadge.Title(0) : $"Daoris — {name}";
         StartPosition = FormStartPosition.CenterScreen;
         if (_main)
@@ -65,9 +65,9 @@ public sealed class SecondaryForm : OptimizedForm
         TaskbarWindow.Wear(this);
         WindowName = name;
 
-        // And, for another main window, the taskbar's count while the first is put away and its button is gone (MAINWINDOWS2b):
-        // the host tells it what to show (`SecondaryWindowHost.ShowWaiting`), and the button's overlay is put back each time
-        // Explorer makes the button, as the main window's is.
+        // And, for another main window, its own workspace's count on its own button (NOTIFY2c): the host tells it what its page
+        // told (`SecondaryWindowHost.ShowWaiting`), and the button's overlay is put back each time Explorer makes the button, as
+        // the main window's is.
         if (_main)
         {
             _badge = new TaskbarBadge(this);
@@ -124,8 +124,8 @@ public sealed class SecondaryForm : OptimizedForm
     };
 
     /// <summary>
-    /// Wear the taskbar's count on this window's button and in its title (MAINWINDOWS2b), or none at none: another main window's
-    /// while the first is put away. From any thread; a window that is not a main window wears nothing.
+    /// Wear the count this window's own page told on its button and in its title (NOTIFY2c), or none at none. From any thread; a
+    /// window that is not a main window wears nothing.
     /// </summary>
     public void ShowWaiting(int count, string? description)
     {

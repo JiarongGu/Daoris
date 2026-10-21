@@ -9,6 +9,9 @@ with the version and date at release.
   once the answer comes. It is quoted beneath the answer and shown in that session's conversation. Your answer to a session that
   stopped to ask you after such a wait now goes on at the driver's next look; before, it could wait for good. The session is told
   which go-aheads it asked still wait, and that it may not do those acts yet.
+- With two Daoris windows open, one per workspace, each window's taskbar button and title now show that window's own workspace's
+  count, where before only the first window opened showed one. Clicking a Daoris notification brings forward the window whose
+  workspace holds the session or quest it is about, or the window you used last, and only that window opens the session.
 - `daoris agent which <agent> [--workspace <name>] [--json]` says which program a session would run the agent as: the command your
   `driver.json` names for it, its pin, or the one on `PATH`. It also says when a pinned version is not installed. When Daoris writes
   an account's name, a cool-off or the agents' wiring while another of its processes writes the same file, it now waits for that

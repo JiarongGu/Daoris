@@ -31,15 +31,16 @@ public sealed class SecondaryWindowHost(
     Microsoft.Extensions.Logging.ILogger<ChromiumView>? log = null,
     // Each window's showing and closing, by its name, so the last main window ends the application (MAINWINDOWS2).
     MainWindows? mains = null,
-    // The taskbar's count, worn by each other main window while the first is put away (MAINWINDOWS2b).
+    // The count each other main window's own page told, worn on its own button and in its title (NOTIFY2c).
     WaitingCount? waiting = null,
     // The loop each other main window's focus is told to, as the first one's is (FABRIC-END6a, §A4.3): a moment to ask about an open pull
     // request, bounded by D148's minute in the driver. The container hands it, as it hands the first window its own.
     DriverLoop? focused = null,
     // Which main window's taskbar button a terminal's press waiting unshown lights (NOTIFY2b): each other main window's focus, told.
-    PressFlash? flash = null) : ISecondaryWindows, IDisposable
+    PressFlash? flash = null,
+    // Which main window a notification's click opens (NOTIFY2c): each other main window's focus and close, told.
+    MainWindowScopes? scopes = null) : ISecondaryWindows, IDisposable
 {
-    private bool _hooked;
 
     /// <summary>
     /// Every name asked for so far. <see cref="SecondaryWindows"/> answers whether a name is open but
@@ -69,18 +70,40 @@ public sealed class SecondaryWindowHost(
     }
 
     /// <summary>
-    /// Tell each other main window what to show of the taskbar's count (MAINWINDOWS2b): the count while the first is put away and
-    /// its button is gone, nothing while it is shown. Any thread; each window draws on its own.
+    /// The main window opened under <paramref name="name"/> wears the count its own page last told (NOTIFY2c), on its own button and
+    /// in its title. Any thread; the window draws on its own.
     /// </summary>
-    public void ShowWaiting()
+    public void ShowWaiting(string name)
     {
-        if (waiting is null) return;
-        SecondaryForm[] forms;
-        lock (_forms) forms = [.. _forms.Where(entry => SecondaryWindow.IsMain(entry.Key)).Select(entry => entry.Value)];
-        foreach (var form in forms)
+        if (waiting is null || !SecondaryWindow.IsMain(name)) return;
+        SecondaryForm? form;
+        lock (_forms) _forms.TryGetValue(name, out form);
+        if (form is null) return;
+        var (count, description) = waiting.For(name);
+        form.ShowWaiting(count, description);
+    }
+
+    /// <summary>
+    /// Bring the main window opened under <paramref name="name"/> in front of the person (NOTIFY2c): a notification's click about what
+    /// its workspace holds. Un-minimized before it is activated, then brought forward on the OS's side too, on its own thread. False
+    /// where it is not open. Any thread, never blocking.
+    /// </summary>
+    public bool BringForward(string name)
+    {
+        if (!SecondaryWindow.IsMain(name)) return false;
+        SecondaryForm? form;
+        lock (_forms) _forms.TryGetValue(name, out form);
+        if (form is null || form.IsDisposed || !form.IsHandleCreated) return false;
+        try
         {
-            var (count, description) = waiting.For(form.WindowName);
-            form.ShowWaiting(count, description);
+            // 🔴 BeginInvoke, never Invoke: the click arrives on the first main window's thread, and this window runs its own pump.
+            form.BeginInvoke(() => MainForm.Forward(form));
+            return true;
+        }
+        catch (InvalidOperationException)
+        {
+            // The handle went between the look and the post.
+            return false;
         }
     }
 
@@ -95,16 +118,7 @@ public sealed class SecondaryWindowHost(
 
     public bool Open(string name, string address)
     {
-        lock (_asked)
-        {
-            _asked.Add(name);
-            // The first going away or coming back moves the count between buttons, so each other main window is told again.
-            if (mains is not null && waiting is not null && !_hooked)
-            {
-                _hooked = true;
-                mains.AwayChanged += ShowWaiting;
-            }
-        }
+        lock (_asked) _asked.Add(name);
 
         return windows.Open(name, new SecondaryWindowOptions
         {
@@ -127,13 +141,15 @@ public sealed class SecondaryWindowHost(
                     form.Activated += (_, _) => flash.CameForward(name);
                     form.Deactivate += (_, _) => flash.WentBehind(name);
                 }
+                // NOTIFY2c: the main window last in front is the one a notification about nobody's workspace opens.
+                if (scopes is not null && SecondaryWindow.IsMain(name)) form.Activated += (_, _) => scopes.CameForward(name);
                 // Counted once it is on the screen, since only a window that loaded is ever told closed: one whose making
                 // failed would otherwise keep a put-away first main window hidden with nothing else open (MAINWINDOWS2).
                 form.Load += (_, _) =>
                 {
                     mains?.Opened(name);
-                    // A window opened while the first is put away wears the count at once (MAINWINDOWS2b).
-                    ShowWaiting();
+                    // What its page told before the window came up, worn at once (NOTIFY2c).
+                    ShowWaiting(name);
                 };
                 form.FormClosed += (_, _) =>
                 {
@@ -142,6 +158,10 @@ public sealed class SecondaryWindowHost(
                         if (_forms.TryGetValue(name, out var held) && ReferenceEquals(held, form)) _forms.Remove(name);
                     }
 
+                    // Its count and its workspace go with it: one opened again under its name wears and holds nothing until its page
+                    // tells it (NOTIFY2c).
+                    waiting?.Closed(name);
+                    scopes?.Closed(name);
                     // The last main window closing, the first put away, ends the application (MAINWINDOWS2).
                     mains?.Closed(name);
                 };

@@ -19114,3 +19114,9 @@ list|add|remove|default|order|ready|rename|join` (`AgentAccountsCommand`), hande
 or `ACCOUNT_USE`'s press while Daoris runs, else the library's write, refused from a marked terminal. Today's text kept (70 rows, none
 changed); both ways over 23 cases. Their TypeScript branches and 26 CLI tests left. The account verbs' shapes and payloads unchanged.
 Detail: D194's PUSH1f2e2 note. On Opus.
+## NOTIFY2c — every main window counts its own workspace (2026-10-22, D196)
+
+> - [ ] **NOTIFY2c — every main window counts its own workspace** (modules, web-shell; after 2b; D196, the notification design §9). Each main window's taskbar button and title wear its own workspace's count, and a notification's click opens the window holding what it is about. Proof: as §9 names it.
+
+**Outcome** 2026-10-22: built. Each main window tells and wears its own count (`SET_BADGE` by name, its order per window); a balloon's
+click opens the window whose workspace holds its session or quest (`MainWindowScopes`), else the one last in front. Detail: D196's NOTIFY2c note. On Opus.

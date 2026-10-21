@@ -5,6 +5,12 @@ using Shenora.Windows;
 namespace Daoris.Desktop;
 
 /// <summary>
+/// Bring another main window (<c>main:&lt;n&gt;</c>) in front of the person by its name, from any thread, never blocking (NOTIFY2c):
+/// false where it is not open. Resolved at call time, since the windows are made after the notifier is.
+/// </summary>
+public delegate bool BringForward(string window);
+
+/// <summary>
 /// The OS notification (SURF5b, working-surface design §4) — a session parked, or one that ended
 /// without the person asking for it, or a quest parked on its failed sessions (SESSUX1i).
 /// </summary>
@@ -37,13 +43,33 @@ public sealed class SessionNotifier : IDisposable
     /// <summary>The session the last balloon was about — what clicking it opens.</summary>
     private string? _about;
 
+    /// <summary>The quest the last balloon was about, where it names one (a quest's park): its workspace where its session's is not known.</summary>
+    private string? _aboutQuest;
+
     /// <summary>Asked before the window is shown: a window put away is taken back first (MAINWINDOWS2). Null asks nothing.</summary>
     private readonly Action? _takingBack;
 
-    public SessionNotifier(Form window, IEventBus events, Action? takingBack = null)
+    /// <summary>Which main window a balloon's click opens, by the session and quest it is about (NOTIFY2c). Null: this window.</summary>
+    private readonly Func<string?, string?, string>? _picking;
+
+    /// <summary>Brings another main window forward by its name (NOTIFY2c); false where it is not open. Null: none is.</summary>
+    private readonly BringForward? _forwarding;
+
+    /// <param name="window">The first main window: the tray's, and what a click opens where no other is picked.</param>
+    /// <param name="events">The bus the attention is told on.</param>
+    /// <param name="takingBack">Asked before the first is shown, so a window put away is taken back first (MAINWINDOWS2).</param>
+    /// <param name="picking">
+    /// The main window a balloon's click opens (NOTIFY2c, the notification design §9): the one whose workspace holds what it is about,
+    /// or the main window last in front where none or several do (<see cref="MainWindowScopes"/>).
+    /// </param>
+    /// <param name="forwarding">Brings another main window forward by its name.</param>
+    public SessionNotifier(
+        Form window, IEventBus events, Action? takingBack = null, Func<string?, string?, string>? picking = null, BringForward? forwarding = null)
     {
         _window = window;
         _takingBack = takingBack;
+        _picking = picking;
+        _forwarding = forwarding;
         _icon = new NotifyIcon
         {
             // The window's own icon where it has one, so the tray matches the taskbar.
@@ -52,9 +78,10 @@ public sealed class SessionNotifier : IDisposable
             Visible = true,
         };
 
-        // Double-click is the gesture every tray icon in Windows has taught people.
+        // Double-click is the gesture every tray icon in Windows has taught people: the first main window, taken back where it was
+        // put away (MAINWINDOWS2). A balloon's click opens the main window holding what it is about (NOTIFY2c).
         _icon.DoubleClick += (_, _) => Show(null);
-        _icon.BalloonTipClicked += (_, _) => Show(_about);
+        _icon.BalloonTipClicked += (_, _) => Open(_about, _aboutQuest);
 
         _subscription = events.Subscribe("DAORIS", "SESSION_ATTENTION", message =>
         {
@@ -81,6 +108,7 @@ public sealed class SessionNotifier : IDisposable
 
         var detail = Read(payload, "Detail");
         var session = Read(payload, "Session");
+        var quest = Read(payload, "Quest");
         var kind = Read(payload, "Kind");
 
         _window.BeginInvoke(() =>
@@ -89,6 +117,7 @@ public sealed class SessionNotifier : IDisposable
             if (IsLookingAtIt()) return;
 
             _about = session;
+            _aboutQuest = quest;
             _icon.ShowBalloonTip(
                 // Ignored by Windows since Vista, which picks its own duration; passed because the
                 // overload requires it.
@@ -100,7 +129,23 @@ public sealed class SessionNotifier : IDisposable
         });
     }
 
-    /// <summary>Bring the window forward, and attend that session if one was named.</summary>
+    /// <summary>
+    /// A balloon's click (NOTIFY2c): the main window whose workspace holds what it was about comes forward on it, or the main window
+    /// last in front where none or several do; the first main window, as before, where that is the one or another cannot come.
+    /// </summary>
+    private void Open(string? session, string? quest)
+    {
+        var window = _picking?.Invoke(session, quest) ?? MainWindows.First;
+        if (window != MainWindows.First && _forwarding?.Invoke(window) == true)
+        {
+            if (session is { Length: > 0 } id) Attend?.Invoke(id, window);
+            return;
+        }
+
+        Show(session);
+    }
+
+    /// <summary>Bring the first main window forward, and attend that session if one was named.</summary>
     /// <remarks>
     /// A notification is a door (design §4: every attention row is one), so clicking it lands on the
     /// session rather than on whatever the person last had open. The page is told over the bridge,
@@ -114,24 +159,17 @@ public sealed class SessionNotifier : IDisposable
         // is shown, so its showing is not read as a later launch's.
         _takingBack?.Invoke();
 
-        // 🔴 THE ORDER IS THE PART PEOPLE GET WRONG, and the framework's own `WindowActivation`
-        // documents it — un-minimize BEFORE activating, because activating a minimized window leaves
-        // it minimized; then the managed show/activate; then `SetForegroundWindow` for the OS side,
-        // without which restoring while another app holds the foreground leaves the window behind
-        // everything, visible only in the taskbar. That type is internal to the package, so the
-        // sequence is written out here rather than reached for. The un-minimize restores a window
-        // minimized from maximized as maximized (Shenora 0.22), which `WindowState = Normal` does not.
-        MainForm.Unminimize(_window);
-        _window.Show();
-        _window.Activate();
-        _window.BringToFront();
-        SetForegroundWindow(_window.Handle);
+        // In the order `MainForm.Forward` gives: un-minimized before it is activated, then brought forward on the OS's side.
+        MainForm.Forward(_window);
 
-        if (session is { Length: > 0 } id) Attend?.Invoke(id);
+        if (session is { Length: > 0 } id) Attend?.Invoke(id, MainWindows.First);
     }
 
-    /// <summary>Asked to attend a session, from a balloon the person clicked.</summary>
-    public event Action<string>? Attend;
+    /// <summary>
+    /// Asked to attend a session, from a balloon the person clicked: the session, and the main window brought forward on it, whose page
+    /// alone attends it (NOTIFY2c).
+    /// </summary>
+    public event Action<string, string>? Attend;
 
     /// <summary>
     /// Whether the person is already looking at one of this application's windows — the test for
@@ -171,10 +209,6 @@ public sealed class SessionNotifier : IDisposable
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool IsIconic(IntPtr window);
-
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool SetForegroundWindow(IntPtr window);
 
     /// <summary>
     /// One field off the anonymous payload the loop emitted.
