@@ -1116,8 +1116,8 @@ export const REACH = Object.freeze([
   { paths: ['canon/**'], gates: ['service', 'rehearse', 'rehearse-family'], why: 'the package ships it, the examples must be current with it, and the service scans the doctrine synced from it' },
   {
     paths: ['examples/plugins/**'],
-    gates: ['service', 'driver', 'rehearse-family', 'web', 'deployment'],
-    why: "the example family the rehearsals and the end-to-end suite run on, and the offers the install lays out, which the driver's PluginOffer test reads as they stand (D103, MOD9b)",
+    gates: ['service', 'driver', 'driver-process', 'rehearse-family', 'web', 'deployment'],
+    why: "the example family the rehearsals and the end-to-end suite run on, the offers the install lays out, which the driver's PluginOffer test reads as they stand (D103, MOD9b), and the performed example the PluginKit Process tests run (FABRIC-PERFORM1e)",
   },
   { paths: ['examples/**'], gates: ['service', 'rehearse-family', 'web'], why: 'the example family the family rehearsal and the end-to-end suite run on' },
   { paths: ['README.md', 'LICENSE'], gates: ['service', 'rehearse'], why: 'staged into the package the release rehearsal packs' },
