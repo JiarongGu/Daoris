@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-21 — Three censuses on `main` broken by merges that passed their own gates (GENREGEN1, FABRIC-CLOSE1d3, LANDBACKLOG1)
+
+- **Symptom:** the full set on `main` failed `NoConsoleWindowTests` and `EveryChildIsHandedTheToolsTests` (driver),
+  `QuestsStateSliceTests`' field census (modules), and the CLI's typecheck of `tool-test/merge-branch.test.ts`.
+- **Root cause:** GENREGEN1's `GeneratedWriters.Shell` set `CreateNoWindow` after its initializers and never handed the tools'
+  environment, so a writer ran whatever `node` the PATH it inherited found; its merge was committed under another change's message,
+  so the merge's own gates never ran. FABRIC-CLOSE1d3 made the page's quest list read `reopened`, which the quests slice still named
+  the pull's alone, so the list never received it. LANDBACKLOG1's test called `tool.backlogOf` without declaring it in the test's
+  typed import. Each passed the gates its merge ran; the full set caught all three.
+- **Fix:** the writer's shell says `CreateNoWindow` in each initializer and is handed the tools (TOOLS5); `reopened` is pushed with
+  the quest; the import declares `backlogOf`.
+- **Verification:** the two driver censuses and `GeneratedWritersTests`, `LandRebaseLandingTests`' git half (9) with the tools
+  handed, `QuestsStateSliceTests` and the modules censuses (83), and `tsc -p src/Daoris.Cli` clean.
+
 ## 2026-10-21 — Ask Daoris named `workflow apply` without the `--as-graph` its usage gained (FABRIC-GRAPH1j)
 
 - **Symptom:** `HelpRoomOwedTests.Each_command_owed_is_spelled_as_its_usage_spells_it` failed on `main`: the help room's owed
