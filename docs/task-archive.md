@@ -19368,3 +19368,11 @@ every edit and writing each order whole, a new account last and a removal unsaid
 fold's table, a raw edit folded, a second receipt beside an unsaid first, *Got it* by id, a new account last, a held come-up, an
 older build's reading), `ResumeAccountTests`' own sign-in row, `DriverModuleAccountsTests`' and `DriverModuleAccountNamesTests`'
 rewritten rows, two `rotation-use.json` order rows. No window was looked at. Detail: D197's POOL1a1 note. On Opus.
+
+## FLOWCHART1d — a workflow and its run drawn as flowcharts (2026-10-22, D186)
+
+> - [ ] **FLOWCHART1d — a workflow and its run drawn as flowcharts** (web-shell; after FLOWCHART1a1; §2.4-§2.5, §3.6, §5.1). `WorkflowChart` on `Flow`: the Workflow tab and the side bar's Workflow view top to bottom where wide, the rail at the floor; groups as fork and join, failure paths, the landing's divider, the run lit; the layout gains settled folds, focus and *Show whole*. Proof: the workflow tests' words unchanged, a 96-node run folded, stories; seen on the window. Revised 2026-10-20 by another maker's read (DESIGNREAD1): its outcome, proof and trap as the flowchart design's §10 now words them.
+
+**Outcome** 2026-10-22: the Workflow tab and the side bar's Workflow view draw a workflow and its run top to bottom where a step fits,
+the list at the floor, with failure paths, the landing's divider and the run lit with no path; no group, none being answered. `Flow`
+folds past 24 nodes, with *Show whole*. Detail: D186's FLOWCHART1d note.

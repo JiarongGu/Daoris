@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- The Workflow tab and the side bar's *Workflow* view now draw the workflow and its run as a flowchart wherever the pane holds a
+  step: its steps top to bottom under *Before it lands* and *After it lands*, each step's move to the next said at its foot, a
+  failure or a go-ahead's refusal drawn as a dashed path to what follows it, the step a run stands at lit and those it has not
+  reached dashed. At the side bar's narrowest it is the list you knew, and *Show as list* chooses the list at any width. Any
+  flowchart past 24 steps now folds what is done and what is far from where the work stands, with *Show whole* to open it all and
+  *Fold again*. In English and 中文.
 - A quest whose workflow closes it now says on its own page, under *Close*, when you closed it done before the workflow's end and
   which steps that stopped, or when its close was found closed only in part: which quest was lost to another machine's take, and
   that its close waits again, with its stop offered in *What needs you*. In English and 中文.
