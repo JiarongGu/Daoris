@@ -101,6 +101,17 @@ public sealed class DriverWatch(
     public Func<string, string, CancellationToken, Task<HandedOver>>? HandsOver { get; init; }
 
     /// <summary>
+    /// Told after a look's news is kept as a notice (NOTIFY2h, <see cref="LookSaid"/>): the desktop wakes its notices slice, since a write
+    /// this process marked wakes nothing on its own home watch. Null where no window reads the record: the headless host's.
+    /// </summary>
+    public Action? Noticed { get; init; }
+
+    /// <summary>The watch's own lines, classed where each is made (NOTIFY2h): a swept session, the tidy's, a line followed.</summary>
+    private LookSaid Lines => LazyInitializer.EnsureInitialized(ref _lines, () => new LookSaid(home, () => Log, () => Noticed?.Invoke()));
+
+    private LookSaid? _lines;
+
+    /// <summary>
     /// Handed to every look's driver (<see cref="Driver.GoesOnLost"/>): the shell's chat runner's move of a closed quest's session whose
     /// conversation is proven lost to a conversation in its tree (SESSCTX1c part B). Null in the headless host, which runs no conversation.
     /// </summary>
@@ -532,7 +543,7 @@ public sealed class DriverWatch(
                     service, draining ? InstallUpdate.Drained(config) : config, AdapterSet.Built(), home, processes, sync, output,
                     _harnesses, usage, hooks, events, browser, Running)
                 {
-                    Runner = Runner, Stops = Stops, HandsOver = HandsOver, GoesOnLost = GoesOnLost, Log = Log, Stages = Stages, Reviews = Reviews,
+                    Runner = Runner, Stops = Stops, HandsOver = HandsOver, GoesOnLost = GoesOnLost, Log = Log, Noticed = Noticed, Stages = Stages, Reviews = Reviews,
                     Part = part, Woke = taken.Woke,
                     LandingEnded = Reoffered, Wanted = token => WantedAsync(part, token), WokeBack = () => Unspent(taken, busy: false),
                     // ACCESSSWAP1b: a session outlives this look's reading of the file, so its run reads the file again at its turn's end.
@@ -602,14 +613,20 @@ public sealed class DriverWatch(
                     if (!swept)
                     {
                         var orphans = await Stages.TimeAsync("sweep", () => Orphans.EndAsync(service, processes, ct: ct)).ConfigureAwait(false);
-                        carried.AddRange(orphans.Select(ended => $"stopped  session {ended.Id} ({ended.Repository}): {Orphans.Note}"));
+                        // An end nobody pressed and nobody must answer: news (NOTIFY2h).
+                        foreach (var ended in orphans)
+                        {
+                            carried.Add(Lines.News(
+                                "sweep", new LookNews(LookSaid.Swept, ended.Id, ended.Id), $"stopped  session {ended.Id} ({ended.Repository}): {Orphans.Note}"));
+                        }
                         swept = true;
                         // A record the sweep ended concludes too (LAND2b, design §2): one whose quest its session closed done
                         // before the crash is due, and this first look lands it.
                         await OrphansDueAsync(orphans, config, ct).ConfigureAwait(false);
                         // COWORK1c (the message-urgency design §6, trap 8): the words a shell before this one wrote to its agent and never
                         // took off leave their records, said where their conversation never showed them taken, and are never sent again.
-                        carried.AddRange(await Stages.TimeAsync("uncertain", () => UncertainWords.SettleAsync(service, events, ct)).ConfigureAwait(false));
+                        carried.AddRange(Lines.Each(
+                            LookClass.Progress, "uncertain", await Stages.TimeAsync("uncertain", () => UncertainWords.SettleAsync(service, events, ct)).ConfigureAwait(false)));
                     }
 
                     if (!followed) following ??= FollowEveryLineAsync(config, ct);
@@ -631,7 +648,7 @@ public sealed class DriverWatch(
                         if (lines is not null)
                         {
                             followed = true;
-                            if (lines.Count > 0) report = report with { Events = [.. report.Events, .. lines] };
+                            if (lines.Count > 0) report = report with { Events = [.. report.Events, .. Lines.Each(LookClass.Progress, "registry", lines)] };
                         }
                     }
 
@@ -639,9 +656,9 @@ public sealed class DriverWatch(
                     {
                         tidying = null;
                         // A pass that failed past its own catches is said, and so observed, rather than left to the finalizer.
-                        IReadOnlyList<string> lines = tidied.IsCompletedSuccessfully ? tidied.Result
+                        IReadOnlyList<string> lines = tidied.IsCompletedSuccessfully ? Lines.Each(LookClass.Progress, "tidy", tidied.Result)
                             : tidied.Exception?.InnerException is { } failure
-                                ? [$"tidy  the session branches were not looked at this time, and are looked at again later: {failure.Message}"]
+                                ? [Lines.Retry("tidy", $"tidy  the session branches were not looked at this time, and are looked at again later: {failure.Message}")]
                                 : [];
                         if (lines.Count > 0) report = report with { Events = [.. report.Events, .. lines] };
                     }
@@ -649,7 +666,7 @@ public sealed class DriverWatch(
                     // What link 2 removed or kept since the last look (FABRIC-END4a).
                     lock (effected)
                     {
-                        if (effected.Count > 0) report = report with { Events = [.. report.Events, .. effected] };
+                        if (effected.Count > 0) report = report with { Events = [.. report.Events, .. Lines.Each(LookClass.Progress, "tidy", effected)] };
                         effected.Clear();
                     }
 

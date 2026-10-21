@@ -34,16 +34,19 @@ public static class WorkflowRunStart
     /// <param name="plugins">The plugins switched on and sound, as Current reads them (<see cref="WorkflowCurrent.PluginsOf"/>).</param>
     /// <param name="now">The moment each run is bound at, read as it is bound.</param>
     /// <param name="events">The look's lines, which a binding adds to.</param>
+    /// <param name="said">Where each line is classed (NOTIFY2h): a binding's is <c>progress</c>, said on the run's own place, and a
+    /// failure's <c>retry</c>.</param>
     public static Task BindAsync(
         IReadOnlyList<WorkflowStarted> opened, IWorkflowStartWorld world, string home, DriverConfig config,
-        IReadOnlyList<WorkflowPlugin> plugins, Func<DateTimeOffset> now, List<string> events, CancellationToken ct) =>
-        BindAsync(opened, world, WorkflowPorts.Store(home), WorkflowPorts.Runs(home), config, plugins, now, events, ct);
+        IReadOnlyList<WorkflowPlugin> plugins, Func<DateTimeOffset> now, List<string> events, CancellationToken ct, LookSaid? said = null) =>
+        BindAsync(opened, world, WorkflowPorts.Store(home), WorkflowPorts.Runs(home), config, plugins, now, events, ct, said);
 
     /// <summary>Each run that opened in this look and is bound nowhere, bound through the ports.</summary>
     public static async Task BindAsync(
         IReadOnlyList<WorkflowStarted> opened, IWorkflowStartWorld world, IWorkflowStore store, IWorkflowRunStore runs, DriverConfig config,
-        IReadOnlyList<WorkflowPlugin> plugins, Func<DateTimeOffset> now, List<string> events, CancellationToken ct)
+        IReadOnlyList<WorkflowPlugin> plugins, Func<DateTimeOffset> now, List<string> events, CancellationToken ct, LookSaid? said = null)
     {
+        said ??= LookSaid.None;
         IReadOnlyList<QuestView>? every = null;
         foreach (var start in opened)
         {
@@ -70,13 +73,13 @@ public static class WorkflowRunStart
                 {
                     // The machine log keeps which level chose and whether a named version or Current (WORKFLOW1f, design §5.5).
                     world.Chosen(WorkflowLines.Chosen(binding));
-                    if (!binding.IsCurrent || binding.Problem is not null) events.Add(WorkflowRunBindings.Said(binding, quest.Id));
+                    if (!binding.IsCurrent || binding.Problem is not null) events.Add(said.Progress("workflow", WorkflowRunBindings.Said(binding, quest.Id)));
                 }
             }
             catch (Exception error) when (error is HttpRequestException or System.Text.Json.JsonException or DriverException or IOException
                                               or UnauthorizedAccessException || (error is OperationCanceledException && !ct.IsCancellationRequested))
             {
-                events.Add($"workflow  #{quest.Id} → {quest.To}: its run was not bound to a workflow at this start: {error.Message}");
+                events.Add(said.Retry("workflow", $"workflow  #{quest.Id} → {quest.To}: its run was not bound to a workflow at this start: {error.Message}"));
             }
         }
     }

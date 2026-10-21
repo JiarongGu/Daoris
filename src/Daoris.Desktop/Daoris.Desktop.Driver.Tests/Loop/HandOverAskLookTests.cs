@@ -94,7 +94,7 @@ public sealed class HandOverAskLookTests : IDisposable
         Assert.Equal((HandOverAskStates.Waiting, "codex-acp"), (State("c0nv0001")!.State, State("c0nv0001")!.Agent));
         Assert.Equal(["handover.asked"], Notes("c0nv0001"));
         Assert.Null(new HandOverBox(_home).Read("c0nv0001"));
-        Assert.Contains(look.Events, line => line.Contains("waits for the person's yes or no on its session's page", StringComparison.Ordinal));
+        Assert.Contains(look.Events, line => line.Contains("waits for the person's yes or no in What needs you", StringComparison.Ordinal));
     }
 
     /// <summary>🔴 `off`: refused, the session's record saying why.</summary>

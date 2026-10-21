@@ -100,11 +100,15 @@ test('a handed verb goes to the driver\'s program whole, with nothing written fi
     [['agent', 'rules', 'decline', 'p0000007', '--note', 'not "now" & 100% 中文'], ['rules', 'decline', 'p0000007', '--note', 'not "now" & 100% 中文']],
     [['agent', 'trust', 'claude-code', 'C:/Work Trees/engine', '--yes'], ['trust', 'claude-code', 'C:/Work Trees/engine', '--yes']],
     [['agent', 'settings', 'claude-code', '--account', 'work', 'model', 'opus'], ['settings', 'claude-code', '--account', 'work', 'model', 'opus']],
-    // PUSH1f2e2: an unpin and every account verb but `profile use`.
+    // PUSH1f2e2: an unpin and the account verbs.
     [['agent', 'unpin', 'codex', '--workspace', 'Work & play'], ['unpin', 'codex', '--workspace', 'Work & play']],
     [['agent', 'profile'], ['profile']],
     [['agent', 'profile', 'order', 'claude-code'], ['profile', 'order', 'claude-code']],
     [['agent', 'profile', 'rename', 'claude-code', 'account-1', 'you@work.example'], ['profile', 'rename', 'claude-code', 'account-1', 'you@work.example']],
+    // PUSH1f2e3: `profile use`, and so `profile` whole, an unknown profile verb among it.
+    [['agent', 'profile', 'use', 'claude-code', '--curve', 'weekly=0:30,100:100', '--workspace', 'Work & play'],
+      ['profile', 'use', 'claude-code', '--curve', 'weekly=0:30,100:100', '--workspace', 'Work & play']],
+    [['agent', 'profile', 'frobnicate'], ['profile', 'frobnicate']],
   ] as const) {
     for (const exit of [0, 1, 2] as const) {
       const handed: Handed[] = [];

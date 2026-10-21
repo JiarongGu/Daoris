@@ -130,8 +130,11 @@ suite loading the CPU (GATEORDER1). A Process half runs `--no-build` when its fa
 same run on the same tree (GATEBUILD1). The release, family and deployment rehearsals run beside the git half, one after
 the other, and every other Process-lane gate alone (REHLANE1, REHLANE2, REHLANE2b); the web gate's vitests are a light gate of their own, `web-unit`, beside the
 service suite (WEBSPLIT1), and the measured-box check (`web-measured`: the flowchart's and the setting rows' stories in Chromium) is another that builds none (FLOWCHART1e). The driver's Process half runs eight classes at once (PROCPAR1), and its
-slowest classes print by their own times beside the half's wall. Add `--one-at-a-time` on a
-loaded machine to run every gate in turn. `--full --beside` is a guest on the machine (CIPRIO1): it runs
+slowest classes print by their own times beside the half's wall. Before a heavy gate (a suite that builds .NET or the
+page, a Process half, a rehearsal) the tool reads the machine's free commit and free physical memory, and waits, up to
+ten minutes, while either is below the gate's need (its class's, or `"memoryGb"` on the gate in `daoris.gates.json`); a gate
+that died of memory reads MEMORY, not a failed check, and runs again once, alone, at the run's end (MEMGATE1). Add
+`--one-at-a-time` on a loaded machine to run every gate in turn. `--full --beside` is a guest on the machine (CIPRIO1): it runs
 at below normal priority with build servers of its own (its Process lane at normal: FAMILYFAIL1c), a second is refused
 while one runs, and a run of main's tip ends the gates it is running, each with its whole tree, and starts no more once a
 newer tip exists (CIPRIO1c), recorded as superseded and never as passed; a Ctrl+C ends its trees the same way. A stage requires that full verdict. The merge tool normally runs selected gates; a merge receipt alone does not

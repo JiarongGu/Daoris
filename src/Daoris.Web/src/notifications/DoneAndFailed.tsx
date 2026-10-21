@@ -7,7 +7,10 @@ import { cn } from '../lib/cn';
 import { elapsed } from '../locales/format';
 import { useShownOnce } from '../person/Confirmations';
 
-/** A notice's one line in the reader's language (§2.2): what ended and how, or which press went unanswered. Never a raw state. */
+/**
+ * A notice's one line in the reader's language (§2.2): what ended and how, which press went unanswered, or what a look found that is
+ * news (NOTIFY2h). Never a raw state or code.
+ */
 export function noticeWords(notice: Notice, t: TFunction): string {
   if (notice.kind === 'ended') {
     const state = notice.state ? t(`sessionState.${notice.state}`, { defaultValue: '' }) : '';
@@ -16,6 +19,10 @@ export function noticeWords(notice: Notice, t: TFunction): string {
   if (notice.kind === 'expired') {
     const act = notice.route ? t(`person.route.${notice.route}`, { defaultValue: '' }) : '';
     return act ? t('notifications.done.expired', { act }) : t('notifications.done.other');
+  }
+  if (notice.kind === 'look') {
+    // A look's news by its code (NOTIFY2h): never the driver's English line. A code a later build says reads as something ended.
+    return notice.code ? t(`notifications.done.look.${notice.code}`, { defaultValue: t('notifications.done.other') }) : t('notifications.done.other');
   }
   return t('notifications.done.other');
 }
@@ -73,7 +80,7 @@ function NoticeRow({ notice, onRead, onOpen, onDismiss, now }: {
   const row = useRef<HTMLLIElement>(null);
   const noButtons = useRef<HTMLElement>(null);
   useShownOnce(!notice.read, row, noButtons, () => onRead([notice.id]));
-  const failed = notice.kind === 'expired' || notice.state === 'failed';
+  const failed = notice.kind === 'expired' || notice.kind === 'look' || notice.state === 'failed';
   const opens = onOpen && notice.session ? () => {
     if (!notice.read) onRead([notice.id]);
     onOpen(notice);

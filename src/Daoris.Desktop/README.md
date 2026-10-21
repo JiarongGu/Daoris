@@ -368,11 +368,12 @@ press settles it (OVERVIEWNOISE1b, D173's note): an owner nothing records, or a 
 follows; the work parts join each tree to the session that recorded it (`InventoryFacts.Recorded`, from the facts' sessions look),
 and each blocked entry carries a `code` and its `facts`, which the page words. And *Done and failed* the fourteenth
 (`NoticesStateSlice`, NOTIFY2f, D196 point 6), its partition `news` keyed by notice, `{id, kind, at, read, workspace?, session?,
-quest?, repository?, state?, route?, act?}`, read from the machine's record `data/notices.json` (`Notices`, written by any process on
+quest?, repository?, state?, route?, act?, code?}` (`code` a look's news, NOTIFY2h), read from the machine's record `data/notices.json` (`Notices`, written by any process on
 the home under its keep lock) at the start, at each change this process's own watch of the file hears (`HomeWatch.ForNotices`) and at
 its deadline, and pushed by the writer at its own write; a notice another process wrote, the headless host's, is said once as it
-arrives, `NOTICE` with the partition's fields, while the notify switch is on; a conversation's answer is the kind `answered`, one per
-conversation, kept before the switch's gate (NOTIFY2g). Beside it *Messages* (NOTIFY2g), its partition `messages` keyed by ask,
+arrives, `NOTICE` with the partition's fields, while the notify switch is on; a look's news (`look`, written by the process whose look
+said it, `LookSaid`) is listed and never said; a conversation's answer is the kind `answered`, one per conversation, kept before the
+switch's gate (NOTIFY2g). Beside it *Messages* (NOTIFY2g), its partition `messages` keyed by ask,
 `{ask, workspace, teammate, unread, newest?: {id, at, who, repository?, line, level, toEveryone}}` (`AskMessages`), every live ask's
 channel and every teammate's read through the service as the person reads it, `unread` the service's own, read again only where the
 change stream's `channel` or `asks` moved, a press declared to the asks, the service came up, or thirty seconds passed; an urgent

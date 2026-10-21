@@ -28,6 +28,9 @@ public sealed record AgentsWorld
 
     /// <summary>The moment the person's answer to a proposal is settled at.</summary>
     public Func<DateTimeOffset> Now { get; init; } = () => DateTimeOffset.UtcNow;
+
+    /// <summary>The machine's zone, a cool-off's end and a window's reset are said in (<c>profile use</c>), named.</summary>
+    public TimeZoneInfo Zone { get; init; } = TimeZoneInfo.Local;
 }
 
 /// <summary>
@@ -81,7 +84,7 @@ public static class AgentRoutes
     /// <summary><c>agent unpin</c> and <c>agent profile add|remove|default|rename|join</c>: the Agents place's own actions (PUSH1f2e2).</summary>
     public static InstanceRoute Harness { get; } = Person("HARNESS_ACTION");
 
-    /// <summary><c>agent profile order|ready</c>: the Accounts place's order and <i>Try now</i> (PUSH1f2e2).</summary>
+    /// <summary><c>agent profile order|ready|use</c>: the Accounts place's order, <i>Try now</i> and how a list is used (PUSH1f2e2, PUSH1f2e3).</summary>
     public static InstanceRoute Account { get; } = Person("ACCOUNT_USE");
 
     /// <summary>
@@ -98,6 +101,7 @@ public static class AgentRoutes
         ("agent profile add|remove|default|rename|join", Harness, "the Accounts place's `profile-*` actions", AgentHome.Wiring),
         ("agent unpin <agent>", Harness, "the machine's pin taken back", AgentHome.Wiring),
         ("agent profile order|ready", Account, "the Accounts place's order and *Try now*", AgentHome.Wiring),
+        ("agent profile use <agent> …", Account, "the Accounts place's *How accounts are used*", AgentHome.Wiring),
         ("agent unpin <agent> --workspace <name>", null, "alone: HARNESS_ACTION's unpin names no workspace", AgentHome.Wiring),
     ];
 
@@ -109,7 +113,7 @@ public static class AgentRoutes
 /// <summary>
 /// <c>daoris-driver agent</c> (PUSH1f2d, D194, the alone-path design §1.2): the agents' rules, trust and settings from a terminal, the words
 /// <c>daoris agent rules|trust|settings …</c> hands this program, what an agent runs as, and its pin taken back and its accounts
-/// (PUSH1f2e1, PUSH1f2e2, <see cref="AgentAccountsCommand"/>); the rest of the family is the CLI's until the rest of PUSH1f2e. Each change a route
+/// (PUSH1f2e1, PUSH1f2e2, PUSH1f2e3, <see cref="AgentAccountsCommand"/>); the rest of the family is the CLI's until the rest of PUSH1f2e. Each change a route
 /// takes is its route through <see cref="InstanceDoor.PressAsync"/> where the running Daoris answers, confirmed in its window; else its
 /// operation, on the terminal's word (D50), refused from a session's terminal (D194 point 5). The rules and their proposals are
 /// <c>DAORIS_HOME</c>'s whatever <c>DAORIS_HARNESS_CONFIG</c> names, so they keep the door on that home; an account's settings and a
@@ -126,7 +130,7 @@ public static class AgentsCommand
     /// <summary>The verbs this program has, each the CLI hands on (the CLI's allow-list is held to it).</summary>
     public static IReadOnlyList<string> Verbs { get; } = ["rules", "trust", "settings", "which", "unpin", "profile"];
 
-    /// <summary>The <c>profile</c> verbs this program has, each the CLI hands on; <c>profile use</c> is still the CLI's (PUSH1f2e2).</summary>
+    /// <summary>The <c>profile</c> verbs this program has, each the CLI hands on: every one (PUSH1f2e2, <c>use</c> PUSH1f2e3).</summary>
     public static IReadOnlyList<string> ProfileVerbs => AgentAccountsCommand.ProfileVerbs;
 
     public const string Usage =
@@ -139,9 +143,10 @@ public static class AgentsCommand
                daoris-driver agent unpin <agent> [--workspace <name>]
                daoris-driver agent profile [list] · add|remove <agent> <profile> · default <agent> <profile>|--clear [--workspace <name>]
                daoris-driver agent profile order <agent> <profile>…|--clear [--workspace <name>] · ready <agent> <profile>|--own
+               daoris-driver agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off]
+                     [--curve <window>=<elapsed>:<used>,…]… [--no-curve] [--workspace <name>] · use <agent> --clear [--workspace <name>]
                daoris-driver agent profile rename <agent> <account> <name> · join <agent> <account> [<workspace>…] [--machine]
-        `daoris agent rules|trust|settings|which|unpin …` and `daoris agent profile …` but `use` run these; the family's other verbs
-        are still `daoris agent`'s own.
+        `daoris agent rules|trust|settings|which|unpin|profile …` run these; the family's other verbs are still `daoris agent`'s own.
         """;
 
     private const string Prefix = "daoris";
@@ -170,7 +175,7 @@ public static class AgentsCommand
             "settings" => Operands(args, Valued).Count > 2,
             "trust" => args.Contains("--yes") && !args.Contains("--dry-run"),
             "unpin" => true,
-            "profile" => args.Count > 1 && AgentAccountsCommand.ProfileChanges(args[1]),
+            "profile" => args.Count > 1 && AgentAccountsCommand.ProfileChanges(args),
             _ => false,
         };
     }

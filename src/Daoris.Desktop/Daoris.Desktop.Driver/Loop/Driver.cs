@@ -93,7 +93,21 @@ public sealed class Driver(
     /// The machine log (LOG1a, D94), where a failure nothing else awaits is written with its place: a run's capture once the
     /// run was ended before awaiting it (ANSWER2). Null where nothing keeps one, as in a gate's driver; the console says it still.
     /// </summary>
-    public MachineLog? Log { get; init; }
+    public MachineLog? Log
+    {
+        get => Context.Log;
+        init => Context.Log = value;
+    }
+
+    /// <summary>Told after a look's news is kept as a notice (NOTIFY2h): <see cref="LoopContext.Noticed"/>.</summary>
+    public Action? Noticed
+    {
+        get => Context.Noticed;
+        init => Context.Noticed = value;
+    }
+
+    /// <summary>The look's lines, classed where each is made (NOTIFY2h): <see cref="LoopContext.Said"/>.</summary>
+    internal LookSaid Lines => Context.Said;
 
     /// <summary>
     /// Where this driver's looks time their stages (LOOKWAIT1, D181 point 6): the watch's, shared across its looks and read into each
@@ -485,7 +499,7 @@ public sealed class Driver(
     private Task BindRunsAsync(IReadOnlyList<Consideration> opened, List<string> events, CancellationToken ct) =>
         WorkflowRunStart.BindAsync(
             [.. opened.Select(start => new WorkflowStarted(start.Quest, start.Workspace))], new StartWorld(service), home, config,
-            WorkflowCurrent.PluginsOf(Context.Catalog), () => DateTimeOffset.UtcNow, events, ct);
+            WorkflowCurrent.PluginsOf(Context.Catalog), () => DateTimeOffset.UtcNow, events, ct, Lines);
 
     /// <summary>What binding a run reads and says through the loop's service: its quests, its asks, and the machine log's line.</summary>
     private sealed class StartWorld(ServiceClient service) : IWorkflowStartWorld
@@ -587,7 +601,7 @@ public sealed class Driver(
             Context.Harnesses.Use(Context.Adapters);
             if (Context.Hooks is { } hooks)
             {
-                events.AddRange(await hooks.ReconcileAsync(catalog, ct).ConfigureAwait(false));
+                events.AddRange(Lines.Each(LookClass.Progress, "plugin", await hooks.ReconcileAsync(catalog, ct).ConfigureAwait(false)));
             }
         }).ConfigureAwait(false);
 
@@ -596,11 +610,12 @@ public sealed class Driver(
         // is held for the person — who alone may let an agent do more.
         try
         {
-            using (Stages.Begin("rules")) events.AddRange(RuleProposals.Settle(home, DateTimeOffset.UtcNow));
+            // A widening held for the person is its row of *What needs you*; the rest the rules' list says (NOTIFY2h).
+            using (Stages.Begin("rules")) events.AddRange(Lines.Each(LookClass.Progress, "rules", RuleProposals.Settle(home, DateTimeOffset.UtcNow)));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            events.Add($"rules  the proposals could not be settled this tick: {error.Message}");
+            events.Add(Lines.Retry("rules", $"rules  the proposals could not be settled this tick: {error.Message}"));
         }
 
         // The lines Daoris moved since each was last followed (WSSETUP5, D124 §3.1), registered from the line before this
@@ -643,16 +658,16 @@ public sealed class Driver(
         // The ask's channel (SESSONE2b, D167 point 7; the co-working design §2.3): what is new for each line of work on an ask reaches
         // its newest part here where it can take it now, and otherwise waits for the entry's next part. One read per such line of work.
         var looked = snapshot;
-        events.AddRange(await Stages.TimeAsync("channel", () => Context.Channel
+        events.AddRange(Lines.Each(LookClass.Progress, "channel", await Stages.TimeAsync("channel", () => Context.Channel
             .LookAsync(new ServiceChannelDoors(service), ChannelReach.Parts(looked, Context.Processes), ct))
-            .ConfigureAwait(false));
+            .ConfigureAwait(false)));
 
         // A source's reopen (FABRIC-CLOSE1c8, §E5): the session that said the reopened ready is told once, with the person's words,
         // and the planner's go-on resumes it at the next look; a running one this loop runs at its next step, through its inbox
         // (COWORK1b). Read from the quests this look read: nothing more where none is reopened.
-        events.AddRange(await Stages.TimeAsync("reopens", () => Context.Reopens
+        events.AddRange(Lines.Each(LookClass.Progress, "reopen", await Stages.TimeAsync("reopens", () => Context.Reopens
                 .LookAsync(new ServiceReopenDoors(service, Context.Processes, Context.Events), looked, ct))
-            .ConfigureAwait(false));
+            .ConfigureAwait(false)));
 
         // The set-ups waiting for the person here, and each set-up step's tab let go once they answered it (REVIEWENV1d, design
         // §2.3): kept served from look to look until then. A miss is said and tried again at the next look.
@@ -660,13 +675,13 @@ public sealed class Driver(
         {
             try
             {
-                events.AddRange(await Stages.TimeAsync("reviews", () => showing.LookAsync(looked.Quests, service.FindQuestAsync, ct))
-                    .ConfigureAwait(false));
+                events.AddRange(Lines.Each(LookClass.Progress, "review", await Stages.TimeAsync("reviews", () => showing.LookAsync(looked.Quests, service.FindQuestAsync, ct))
+                    .ConfigureAwait(false)));
             }
             catch (Exception error) when (error is HttpRequestException or System.Text.Json.JsonException or DriverException
                                               || (error is OperationCanceledException && !ct.IsCancellationRequested))
             {
-                events.Add($"review  the set-ups' tabs were not looked at this look: {error.Message}");
+                events.Add(Lines.Retry("review", $"review  the set-ups' tabs were not looked at this look: {error.Message}"));
             }
         }
 
@@ -750,8 +765,8 @@ public sealed class Driver(
             {
                 if (!Context.Runs.TryGoOn(record.Session))
                 {
-                    events.Add($"going on  session {record.Session} (#{start.Quest.Id} → {start.Quest.To}): "
-                        + "a run of this machine's already goes on with the person's words in it.");
+                    events.Add(Lines.Progress("going-on", $"going on  session {record.Session} (#{start.Quest.Id} → {start.Quest.To}): "
+                        + "a run of this machine's already goes on with the person's words in it."));
                     continue;
                 }
 
@@ -805,7 +820,11 @@ public sealed class Driver(
                 continue;
             }
 
-            events.Add(came.Came.Line);
+            // A start held on its accounts waits on the person (its row); one held otherwise is tried at a later look (NOTIFY2h).
+            var startClass = came.Came is { Cooling: not null } or { SignedOut: not null } ? LookClass.Wait
+                : came.Came is { Held: not null, Ended: null } ? LookClass.Retry
+                : LookClass.Progress;
+            events.Add(Lines.Of(startClass, "start", came.Came.Line));
             progressed |= came.Came.Opened;
             if (came.Came.Ended is not null) concluded.Add(came.Came.Ended);
             if (came.Started.Quest is { } quest && came.Came.Held is not null) heldAt[quest] = came.Came.Held;
@@ -844,7 +863,8 @@ public sealed class Driver(
         {
             if (!Context.Runs.TryReserve(reserved))
             {
-                events.Add($"starting  {started.Where}: a start of this machine's is already opening its session, so none is begun beside it.");
+                events.Add(Lines.Progress(
+                    "starting", $"starting  {started.Where}: a start of this machine's is already opening its session, so none is begun beside it."));
                 if (started.Quest is { } quest && goingOn.TryGetValue(quest, out var session)) Context.Runs.WentOn(session);
                 return;
             }
@@ -1062,7 +1082,7 @@ public sealed class Driver(
 
             var (chosen, said) = await lander.ChooseAsync(config, ct, Woke).ConfigureAwait(false);
             WokeSpent = true;
-            events.AddRange(said);
+            events.AddRange(Lines.Each(LookClass.Progress, "landing", said));
             if (chosen.Count > 0 && !Context.Runs.Beside(token => lander.LandAsync(chosen, token), ct, LandingEnded))
             {
                 // A pass began meanwhile (looks run one at a time, so none should): what was chosen is chosen again after it.
@@ -1073,7 +1093,8 @@ public sealed class Driver(
         catch (Exception error) when (error is DriverException or HttpRequestException or JsonException or IOException
                                           or UnauthorizedAccessException)
         {
-            events.Add($"landing  the sessions due to land could not be looked at this look, and are tried again at the next: {error.Message}");
+            events.Add(Lines.Retry(
+                "landing", $"landing  the sessions due to land could not be looked at this look, and are tried again at the next: {error.Message}"));
         }
     }
 
@@ -1153,12 +1174,13 @@ public sealed class Driver(
         try
         {
             var report = await RegistrationFollow.FollowAsync(new RegistrationWorld(service, home, config), due, ct).ConfigureAwait(false);
-            events.AddRange(report.Followed.Select(RegistrationFollow.EventLine).OfType<string>());
-            if (report.Refresh is { } refresh) events.Add($"registry  the index was not read again after registering: {refresh}");
+            events.AddRange(Lines.Each(LookClass.Progress, "registry", report.Followed.Select(RegistrationFollow.EventLine).OfType<string>()));
+            if (report.Refresh is { } refresh) events.Add(Lines.Retry("registry", $"registry  the index was not read again after registering: {refresh}"));
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
         {
-            events.Add($"registry  the lines Daoris moved could not be followed this look, and are tried again at the next: {error.Message}");
+            events.Add(Lines.Retry(
+                "registry", $"registry  the lines Daoris moved could not be followed this look, and are tried again at the next: {error.Message}"));
         }
     }
 
@@ -1172,13 +1194,14 @@ public sealed class Driver(
         try
         {
             var world = SetupPlans?.Invoke() ?? new WorkspaceSetupWorld(service, home);
-            events.AddRange(await WorkspaceSetup.TickAsync(
-                world, config, Door(), home, DateOnly.FromDateTime(DateTime.Now), DateTimeOffset.UtcNow, ct).ConfigureAwait(false));
+            events.AddRange(Lines.Each(LookClass.Progress, "setup", await WorkspaceSetup.TickAsync(
+                world, config, Door(), home, DateOnly.FromDateTime(DateTime.Now), DateTimeOffset.UtcNow, ct).ConfigureAwait(false)));
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException
                                           or IOException or UnauthorizedAccessException)
         {
-            events.Add($"setup  the workspace plans could not be worked this look, and are tried again at the next: {error.Message}");
+            events.Add(Lines.Retry(
+                "setup", $"setup  the workspace plans could not be worked this look, and are tried again at the next: {error.Message}"));
         }
     }
 
@@ -1204,13 +1227,13 @@ public sealed class Driver(
         {
             if (synced.Problem is not null)
             {
-                events.Add($"sync  {synced.Problem}");
+                events.Add(Lines.Retry("sync", $"sync  {synced.Problem}"));
             }
 
             // What the remote understood and deliberately did not take (D48 §6) — a stale or
             // branch feed, a quest it would not keep, a move that lost to another machine's.
             // Reported as its own kind of line: each is news about the family, not a fault here.
-            foreach (var note in synced.Notes) events.Add($"held  {note}");
+            foreach (var note in synced.Notes) events.Add(Lines.Progress("sync", $"held  {note}"));
         }
     }
 
@@ -1243,7 +1266,8 @@ public sealed class Driver(
     {
         foreach (var ended in Context.Runs.Drain())
         {
-            events.Add(ended.Line);
+            // An end the watch announces, or the person's own (NOTIFY2h, the design §5.1: `:1246` is `progress`).
+            events.Add(Lines.Of(ended.Ended is { ByPerson: true } ? LookClass.Own : LookClass.Progress, "ended", ended.Line));
             if (ended.Ended is not null) concluded.Add(ended.Ended);
         }
 
@@ -1262,7 +1286,7 @@ public sealed class Driver(
                     continue;
                 }
 
-                events.AddRange(await Stages.TimeAsync("hooks", () => hooks.EndedAsync(ended, ct), ended.Session).ConfigureAwait(false));
+                events.AddRange(Lines.Each(LookClass.Progress, "plugin", await Stages.TimeAsync("hooks", () => hooks.EndedAsync(ended, ct), ended.Session).ConfigureAwait(false)));
             }
         }
 
@@ -1307,7 +1331,8 @@ public sealed class Driver(
                 var reopened = why == "source-reopened";
                 if (claim == "lost" && (Stops ?? StopForLostClaim)(session, reopened ? LostClaimToReopenNoted : LostClaimNoted))
                 {
-                    lock (events) events.Add($"stop  session {session} (#{quest}): {(reopened ? LostClaimToReopen : LostClaim)}");
+                    var news = new LookNews(reopened ? LookSaid.LostToReopen : LookSaid.LostClaim, session, session, quest);
+                    lock (events) events.Add(Lines.News("stop", news, $"stop  session {session} (#{quest}): {(reopened ? LostClaimToReopen : LostClaim)}"));
                 }
             }).ConfigureAwait(false);
     }
@@ -1415,7 +1440,7 @@ public sealed class Driver(
 
         var ended = Context.Runs.Drain();
         if (ended.Count == 0) return;
-        said(new TickReport([], [.. ended.Select(run => run.Line)], Progressed: false, Concluded: [.. ended.Select(run => run.Ended).OfType<SessionEnded>()]));
+        said(new TickReport([], Lines.Each(LookClass.Progress, "ended", ended.Select(run => run.Line)), Progressed: false, Concluded: [.. ended.Select(run => run.Ended).OfType<SessionEnded>()]));
     }
 
     /// <summary>
@@ -1474,7 +1499,7 @@ public sealed class Driver(
                 }
                 catch (Exception error)
                 {
-                    lock (pending) pending.Add($"sync  a pass beside the running sessions failed, and the next tries again: {error.Message}");
+                    lock (pending) pending.Add(Lines.Retry("sync", $"sync  a pass beside the running sessions failed, and the next tries again: {error.Message}"));
                 }
 
                 Say([]);
@@ -1489,7 +1514,7 @@ public sealed class Driver(
             catch (Exception error) when (!ct.IsCancellationRequested)
             {
                 // What ended is drained into the report before the pass after it runs, so a failed pass loses none of it.
-                lock (pending) pending.Add($"sync  the pass after the sessions ended failed, and the next look tries again: {error.Message}");
+                lock (pending) pending.Add(Lines.Retry("sync", $"sync  the pass after the sessions ended failed, and the next look tries again: {error.Message}"));
             }
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)

@@ -109,6 +109,20 @@ internal sealed class LoopContext(
     /// </summary>
     public bool Beside { get; set; }
 
+    /// <summary>The machine log (LOG1a, D94), the driver's <see cref="Driver.Log"/>; null where nothing keeps one.</summary>
+    public MachineLog? Log { get; set; }
+
+    /// <summary>Told after a look's news is kept as a notice (NOTIFY2h): the desktop wakes its notices slice. Set once, before a look.</summary>
+    public Action? Noticed { get; set; }
+
+    /// <summary>
+    /// Each line the look says, classed where it is made (NOTIFY2h, D196 point 7): <c>look.said</c> in <see cref="Log"/>, and a news line
+    /// kept as a notice under <see cref="Home"/>.
+    /// </summary>
+    public LookSaid Said => LazyInitializer.EnsureInitialized(ref _said, () => new LookSaid(Home, () => Log, () => Noticed?.Invoke()));
+
+    private LookSaid? _said;
+
     public ServiceClient Service { get; } = service;
 
     public DriverConfig Config { get; } = config;

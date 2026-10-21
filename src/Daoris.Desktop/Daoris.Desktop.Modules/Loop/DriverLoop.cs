@@ -780,6 +780,8 @@ public sealed class DriverLoop(
         {
             // Asked at every look, so an update staged or put off between looks holds or frees the next one (UPDATE1).
             Draining = () => Draining?.Invoke() == true,
+            // A look's news kept as a notice (NOTIFY2h): its writer pushes it, as the slice's own writes are.
+            Noticed = () => Notices.Slice.Wake(),
             // Where a run's failure nothing else awaits is written with its place, not left to the finalizer (ANSWER2).
             Log = log,
             // A set-up step's tab and its build kept served until the verdict (REVIEWENV1d), across every look.

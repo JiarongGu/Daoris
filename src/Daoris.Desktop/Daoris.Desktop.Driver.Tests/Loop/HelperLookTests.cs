@@ -141,7 +141,7 @@ public sealed class HelperLookTests : IDisposable
         var first = await Look(driver);
         var second = await Look(driver);
 
-        Assert.Equal("helper  ask `a1` from session `s1` waits for the person's yes or no on its session's page", Assert.Single(first));
+        Assert.Equal("helper  ask `a1` from session `s1` waits for the person's yes or no in What needs you", Assert.Single(first));
         Assert.Empty(second);
     }
 

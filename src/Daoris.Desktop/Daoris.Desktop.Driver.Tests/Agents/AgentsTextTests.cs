@@ -84,7 +84,10 @@ public sealed partial class AgentsTextTests
                 Folder = root,
                 UserHome = Path.Combine(root, "user"),
                 Adapters = _ => AdapterSet.Built(),
+                Zone = TimeZoneInfo.FindSystemTimeZoneById("America/New_York"),
             };
+            // A row run at a moment of its own (PUSH1f2e3: a cool-off's end and a reading's age) is said at that moment.
+            if (row.TryGetProperty("now", out var moment)) world = world with { Now = () => DateTimeOffset.Parse(moment.GetString()!, System.Globalization.CultureInfo.InvariantCulture) };
 
             string[] argv = [.. row.GetProperty("argv").EnumerateArray().Select(each => each.GetString()!)
                 .Select(word => word.StartsWith("<root>/", StringComparison.Ordinal)

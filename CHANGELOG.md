@@ -13,6 +13,13 @@ with the version and date at release.
   on the rail no longer include your own posts or Daoris's lines. Reading a teammate's ask now clears it. Answers are kept with
   notifications switched off too. Overview's summary has a *Messages* line, and the bell shows a dot while anything there is
   unread. In English and 中文.
+- The driver's own report lines no longer pop up as English messages in the window. What is news among them now waits in
+  *Notifications* → *Done and failed* in the window's language: a session that could not be handed over to another agent, or an
+  agent's ask to hand one over that was dropped, refused or could not be carried out; a quest handed to another agent that went back
+  to this machine's agent; a session stopped because another machine took its quest first or your reopen took it back; a meeting or
+  a brainstorm cut short because the driver running it stopped; and a session left running when Daoris last stopped. A meeting or a
+  brainstorm you stopped yourself is not said back. Everything else the driver reports, such as a look that could not read something
+  and tries again, is in Settings → Logs and in the headless driver's console only. In English and 中文.
 - A go-ahead that nothing on its ask can use any more is now marked *stale go-ahead* (过时的放行) in *What needs you* and on its ask's
   page, with how long since its sessions stopped and its quests closed. It is listed under *Waiting for your word* and offers only
   *Refuse…*. Where two or more are stale, *Refuse all …* refuses them together with one reason you give, each on its own ask. A

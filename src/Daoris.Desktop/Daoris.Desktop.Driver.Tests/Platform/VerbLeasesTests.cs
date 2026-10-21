@@ -117,6 +117,10 @@ public sealed class VerbLeasesTests
     [InlineData("agent profile ready claude-code --own")]
     [InlineData("agent profile rename claude-code account-1 seat")]
     [InlineData("agent profile join claude-code account-1 --machine")]
+    [InlineData("agent profile use claude-code order")]
+    [InlineData("agent profile use claude-code --switch off --workspace work")]
+    [InlineData("agent profile use claude-code --clear")]
+    [InlineData("agent profile use claude-code --frob")]
     [InlineData("a-verb-nobody-classed")]
     public void A_mutation_holds_the_lease(string words) => Assert.True(VerbLeases.Holds(words.Split(' ')), words);
 
@@ -214,6 +218,9 @@ public sealed class VerbLeasesTests
     [InlineData("agent which claude-code")]
     [InlineData("agent profile")]
     [InlineData("agent profile list")]
+    [InlineData("agent profile use claude-code")]
+    [InlineData("agent profile use claude-code --workspace work")]
+    [InlineData("agent profile use claude-code order --help")]
     [InlineData("agent profile order claude-code account-1 --help")]
     [InlineData("agent which claude-code-acp --workspace work --json")]
     [InlineData("agent --help")]

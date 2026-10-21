@@ -12,7 +12,7 @@ namespace Daoris.Desktop;
 /// </summary>
 /// <remarks>
 /// <para><b>One partition, keyed by notice</b> (<see cref="News"/>): <c>{ id, kind, at, read, workspace?, session?, quest?, repository?,
-/// state?, route?, act? }</c>, picked to <see cref="Fields"/>. No field says what to announce: an arrival is an event
+/// state?, route?, act?, code? }</c>, picked to <see cref="Fields"/>. No field says what to announce: an arrival is an event
 /// (<see cref="ArrivedType"/>). A conversation's answer is the kind <c>answered</c> (NOTIFY2g), which the page lists in
 /// <i>Messages</i>.</para>
 ///
@@ -30,7 +30,8 @@ namespace Daoris.Desktop;
 ///
 /// <para><b>Arrivals</b> (§5): a notice id this host's read has not seen is said once, as <see cref="ArrivedType"/>, while the notify
 /// switch is on; the first read is a baseline and says nothing, so a restart repeats nothing. A session's end this process recorded
-/// is said already by its own <c>SESSION_ATTENTION</c>, so it is not said again; a press's unanswered end has no other voice, and is.
+/// is said already by its own <c>SESSION_ATTENTION</c>, so it is not said again; a press's unanswered end has no other voice, and is. A
+/// look's news (<see cref="Notices.Look"/>, NOTIFY2h) is never said: the design's §5 lists it with a dot and nothing at the window.
 /// With the headless loop driving, this re-read is the only way its notice reaches the windows.</para>
 ///
 /// <para><b>Desktop-only</b>: machine-local, never on a wire to a shared host (D47, D182 point 2).</para>
@@ -60,7 +61,7 @@ public sealed class NoticesStateSlice
 
     /// <summary>The fields a notice is pushed with: the page's <c>Notice</c> type, which its test reads.</summary>
     public static readonly IReadOnlyList<string> Fields =
-        ["id", "kind", "at", "read", "workspace", "session", "quest", "repository", "state", "route", "act"];
+        ["id", "kind", "at", "read", "workspace", "session", "quest", "repository", "state", "route", "act", "code"];
 
     private const string Moment = "yyyy-MM-dd'T'HH:mm:ss.fff'Z'";
 
@@ -335,7 +336,8 @@ public sealed class NoticesStateSlice
             if (known is null) return arrived;
             foreach (var notice in read)
             {
-                if (known.Contains(notice.Id) || _said.Remove(notice.Id)) continue;
+                // A look's news is listed and counted, never said aloud (NOTIFY2h, the design §5's table).
+                if (known.Contains(notice.Id) || _said.Remove(notice.Id) || notice.Kind == Notices.Look) continue;
                 arrived.Add(notice);
             }
         }
@@ -360,6 +362,7 @@ public sealed class NoticesStateSlice
         Optional("state", notice.State);
         Optional("route", notice.Route);
         Optional("act", notice.Act);
+        Optional("code", notice.Code);
         return picked;
 
         void Optional(string name, string? value)

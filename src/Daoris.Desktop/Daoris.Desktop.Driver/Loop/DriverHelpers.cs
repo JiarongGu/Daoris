@@ -97,14 +97,15 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                 switch (verdict.Kind)
                 {
                     case HelperVerdict.RefuseKind:
-                        events.Add(await RefuseAsync(ask, verdict.Code!, null, files, ct).ConfigureAwait(false));
+                        // The asker is told on its own session; nobody else must answer (NOTIFY2h).
+                        events.Add(_context.Said.Progress("helper", await RefuseAsync(ask, verdict.Code!, null, files, ct).ConfigureAwait(false)));
                         break;
                     case HelperVerdict.WaitKind:
                         // An agent's ask that comes to wait on the person's word is said once (MIXAGENT2c, D168): the line makes
                         // the loop's tick reach the windows, so the page reads what waits on the person again.
                         if (Wait(files, ask, state, verdict.Code) && verdict.Code is null)
                         {
-                            events.Add($"helper  ask `{ask.Id}` from session `{ask.Asker}` waits for the person's yes or no on its session's page");
+                            events.Add(_context.Said.Wait("helper", $"helper  ask `{ask.Id}` from session `{ask.Asker}` waits for the person's yes or no in What needs you"));
                         }
 
                         break;
@@ -119,7 +120,8 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                                               or UnauthorizedAccessException
                                               || (error is OperationCanceledException && !ct.IsCancellationRequested))
             {
-                events.Add($"helper  the ask for a helper `{ask.Id}` could not be looked at this look, and is looked at again at the next: {error.Message}");
+                events.Add(_context.Said.Retry(
+                    "helper", $"helper  the ask for a helper `{ask.Id}` could not be looked at this look, and is looked at again at the next: {error.Message}"));
             }
         }
 
@@ -138,11 +140,11 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     {
         if (_context.Beside)
         {
-            Judging(ask.Id, async token => await SettleOnceAsync(ask, settle, token).ConfigureAwait(false) is { } said ? [said] : [], ct);
+            Judging(ask.Id, async token => await SettleOnceAsync(ask, settle, token).ConfigureAwait(false) is { } said ? [_context.Said.Progress("helper", said)] : [], ct);
             return;
         }
 
-        if (await SettleOnceAsync(ask, settle, ct).ConfigureAwait(false) is { } line) events.Add(line);
+        if (await SettleOnceAsync(ask, settle, ct).ConfigureAwait(false) is { } line) events.Add(_context.Said.Progress("helper", line));
     }
 
     private async Task<string?> SettleOnceAsync(HelperAsk ask, Func<CancellationToken, Task<string?>> settle, CancellationToken ct)

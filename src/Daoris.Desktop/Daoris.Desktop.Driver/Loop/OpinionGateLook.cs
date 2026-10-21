@@ -67,7 +67,8 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
                                           or UnauthorizedAccessException
                                           || (error is OperationCanceledException && !ct.IsCancellationRequested))
         {
-            events.Add($"opinion  the second opinions owed could not be looked at this look, and are looked at again at the next: {error.Message}");
+            events.Add(_context.Said.Retry(
+                "opinion", $"opinion  the second opinions owed could not be looked at this look, and are looked at again at the next: {error.Message}"));
             judged?.Clear();
         }
 

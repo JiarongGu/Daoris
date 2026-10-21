@@ -202,6 +202,27 @@
  * built, and passed alone. If the second run passes, the gate reads FLAKE. A rehearsal that reported a
  * failed check has failed whatever its exit, and so has one that said why it stopped; neither is run again.
  *
+ * ## A heavy gate waits for memory (MEMGATE1)
+ *
+ * On 2026-10-22 a full set beside the install's driven sessions and two builders ran a 64 GB machine out of commit: the
+ * sensitive scan threw `OutOfMemoryException`, web-rules could not allocate, the family rehearsal's landing said "Out of
+ * memory." twice and the deployment rehearsal's start timed out, each read as the change's failure, and each passed later.
+ * So before a heavy gate starts (a suite of `isHeavyGate`, a Process half, a rehearsal) the tool reads the machine's free
+ * commit and free physical memory (`readMemory`: on Windows `Win32_OperatingSystem`'s FreeVirtualMemory and
+ * FreePhysicalMemory; elsewhere Node's free memory, and the commit only where the platform holds one, said once where not).
+ * While either is below the gate's need (`MEMORY_NEEDS` by class, or the gate's own `"memoryGb"` in `daoris.gates.json`), it
+ * says "waiting for memory before <gate>: N GB free commit, the gate needs M GB" and reads again every five seconds, for up to
+ * ten minutes, past which the gate runs anyway, said (`memoryGate`). A light gate is never read for. The gate waits in its
+ * lane's place. `MERGE_BRANCH_MEMORY=off` reads nothing (the tool's own end-to-end tests).
+ *
+ * A gate that died of memory (`memoryDeath`: `OutOfMemoryException`, "cannot allocate memory", "out of memory", "the paging
+ * file is too small", or Windows' exit for an allocation refused) is said as memory, its line MEMORY, never a check that
+ * failed, and stops nothing. Once both lanes have ended it runs again once, whole and alone, in the plan's order, after its
+ * memory is free (`againOfMemory`): a pass reads FLAKE of memory, which the summary names as the machine's and not the
+ * change's, never for FLAKE1; a second death of memory fails, still named as memory; another failure fails plainly. A Process
+ * half whose dead tests are named runs them alone as FLAKE1's are, once its memory is free. A run a failure stopped runs none
+ * again, saying so. The gate's own pass and fail are unchanged, and so is `--one-at-a-time`, whose memory re-runs come last.
+ *
  * ## Two lanes (GATELANES1)
  *
  * The real-process halves and the rehearsals start real processes and run one at a time (AGENTS.md); the other gates
@@ -338,7 +359,7 @@ import { createHash } from 'node:crypto';
 import {
   closeSync, cpSync, existsSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync, writeSync,
 } from 'node:fs';
-import { constants as osConstants, setPriority as osSetPriority } from 'node:os';
+import { constants as osConstants, freemem as osFreemem, setPriority as osSetPriority, totalmem as osTotalmem } from 'node:os';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fenced, gluedLabels, records } from './doc-duplicates.mjs';
 import { isMain, renameHeld, spawnGit, stagedTree, writeAtomic } from './fsx.mjs';
@@ -741,6 +762,7 @@ export function gatePlan(declared, workflow = '') {
         kind,
         ...(gate.cwd ? { cwd: gate.cwd } : {}),
         ...(gate.clock ? { clock: true } : {}),
+        ...(typeof gate.memoryGb === 'number' ? { memoryGb: gate.memoryGb } : {}),
       };
     });
 }
@@ -761,10 +783,16 @@ export function readDeclared(root) {
     if (typeof gate?.name !== 'string' || typeof gate?.run !== 'string') {
       throw new Refusal("daoris.gates.json: every gate needs both 'name' and 'run'");
     }
+    // MEMGATE1: a need of memory the tool cannot read is refused, never read as none.
+    if ('memoryGb' in gate && !(typeof gate.memoryGb === 'number' && Number.isFinite(gate.memoryGb) && gate.memoryGb >= 0)) {
+      throw new Refusal(`daoris.gates.json: gate '${gate.name}': 'memoryGb' is the free memory it needs before it starts, in GB, a number 0 or more`);
+    }
   }
   // FAMILYFAIL1d: `"clock": true` marks a gate whose tests are bounded by the wall clock, which a run beside raises.
-  return gates.map(({ name, run, cwd, clock }) => ({
+  // MEMGATE1: `"memoryGb"` is the free memory a gate needs before it starts, whatever its class (`memoryNeed`).
+  return gates.map(({ name, run, cwd, clock, memoryGb }) => ({
     name, run, ...(typeof cwd === 'string' ? { cwd } : {}), ...(clock === true ? { clock: true } : {}),
+    ...(typeof memoryGb === 'number' ? { memoryGb } : {}),
   }));
 }
 
@@ -1931,6 +1959,191 @@ export function rehearsalDecision(log, code, command) {
 }
 
 // ---------------------------------------------------------------------------------------------------
+// A heavy gate waits for memory, and a gate that died of memory is said so (MEMGATE1)
+
+/**
+ * The free memory, in GB, each class of gate needs before it starts (MEMGATE1), of free commit and of free physical memory
+ * both. On 2026-10-22 a full set beside the install's driven sessions and two builders ran a 64 GB machine (its commit limit
+ * about 80 GB) out of commit, and four gates died of it, each read as the change's failure. These are estimates on the safe
+ * side, not measurements: a suite (`isHeavyGate`) builds with MSBuild's nodes and a compiler server and runs a test host, or
+ * the page's build and a browser; a Process half runs eight classes at once, each starting real hosts and git; a rehearsal
+ * builds and starts the driver's and the service's hosts and runs the CLI's bin, the deployment one publishing every desktop
+ * project too. A light gate needs none and is never read for; one that died of memory needs `again` to run again. A gate's
+ * `"memoryGb"` in `daoris.gates.json` is its need whatever its class, 0 for none.
+ */
+export const MEMORY_NEEDS = Object.freeze({ suite: 6, process: 8, rehearsal: 10, again: 4 });
+
+/** How often a gate waiting for memory reads it again, and how long it waits before it runs anyway (MEMGATE1). */
+export const MEMORY_POLL_MS = 5_000;
+export const MEMORY_WAIT_MS = 10 * 60_000;
+
+const GB = 2 ** 30;
+
+/** The free memory a gate needs before it starts, in GB (MEMGATE1): its declared `memoryGb`, else its class's; 0 never waits. */
+export function memoryNeed(gate) {
+  if (typeof gate.memoryGb === 'number') return gate.memoryGb;
+  if (isProcessGate(gate)) return MEMORY_NEEDS.process;
+  if (isProcessLane(gate)) return MEMORY_NEEDS.rehearsal;
+  if (isHeavyGate(gate)) return MEMORY_NEEDS.suite;
+  return 0;
+}
+
+/**
+ * What a gate that died of memory leaves in its log (MEMGATE1): .NET's `OutOfMemoryException` (the sensitive scan's), "cannot
+ * allocate memory" (Go's runtime under esbuild, web-rules'; POSIX's ENOMEM), "out of memory" (V8's heap, a worker's
+ * `DataCloneError`, cmd's and git's "Out of memory."), and Windows' "the paging file is too small" (its commit limit). A sign
+ * directly inside quotes is a value shown, as an assertion shows what it expected, not a process that died of it.
+ */
+const MEMORY_SIGNS = [/OutOfMemoryException/, /cannot allocate memory/i, /\bout of memory\b/i, /the paging file is too small/i]
+  .map((sign) => new RegExp(`(?<!["'\`])${sign.source}(?!["'\`])`, sign.flags));
+
+/** Windows' statuses for an allocation the machine refused, as cmd and npm pass them on, unsigned (MEMGATE1). */
+const MEMORY_EXITS = new Map([[0xC0000017, 'STATUS_NO_MEMORY'], [0xC000012D, 'STATUS_COMMITMENT_LIMIT']]);
+
+const clip = (text, width = 120) => (text.length > width ? `${text.slice(0, width - 1)}…` : text);
+
+/**
+ * Whether a gate that failed died of memory (MEMGATE1): an exit of `MEMORY_EXITS`, signed or not, or a line of its log with a
+ * sign of `MEMORY_SIGNS`. What said so, `{ said }`, or null. POSIX has no exit of its own for it: the kernel's killer sends the
+ * SIGKILL any kill sends, so there a death of memory is read from what it printed.
+ */
+export function memoryDeath(log, ...codes) {
+  for (const code of codes) {
+    const status = typeof code === 'number' && code < 0 ? code + 2 ** 32 : code;
+    if (MEMORY_EXITS.has(status)) return { said: `exit 0x${status.toString(16).toUpperCase()}, ${MEMORY_EXITS.get(status)}` };
+  }
+  for (const line of String(log ?? '').replace(/\r\n/g, '\n').split('\n')) {
+    if (MEMORY_SIGNS.some((sign) => sign.test(line))) return { said: `"${clip(line.trim())}"` };
+  }
+  return null;
+}
+
+// One CIM query: the free physical memory and the free commit (`FreeVirtualMemory`, the commit limit less the commit charge).
+const MEMORY_QUERY = 'ConvertTo-Json -Compress -InputObject (Get-CimInstance Win32_OperatingSystem | Select-Object FreePhysicalMemory,FreeVirtualMemory)';
+
+const kilobytes = (value) => (typeof value === 'number' && Number.isFinite(value) ? value * 1024 : null);
+
+/** The CIM query's answer in bytes (MEMGATE1): its fields are in KB, and one it leaves out or empties is null. */
+export function parseWindowsMemory(text) {
+  const parsed = JSON.parse(String(text).replace(/^﻿/, '').trim());
+  return { physical: kilobytes(parsed?.FreePhysicalMemory), commit: kilobytes(parsed?.FreeVirtualMemory) };
+}
+
+/** Linux's free commit from `/proc/meminfo` (MEMGATE1): `CommitLimit` less `Committed_AS`, in bytes, or null when either is missing. */
+export function parseMeminfo(text) {
+  const field = (name) => {
+    const found = new RegExp(`^${name}:\\s+(\\d+)\\s*kB`, 'm').exec(text);
+    return found ? Number(found[1]) * 1024 : null;
+  };
+  const limit = field('CommitLimit');
+  const committed = field('Committed_AS');
+  return { commit: limit === null || committed === null ? null : Math.max(0, limit - committed) };
+}
+
+/**
+ * The machine's free memory, read once (MEMGATE1), in bytes: `physical`, `commit` (null where it cannot be read, with `why`),
+ * and `total`, its physical memory in all. On Windows one CIM query reads `Win32_OperatingSystem`'s FreePhysicalMemory and
+ * FreeVirtualMemory, the free commit the 2026-10-22 run ran out of; a query that fails leaves Node's free memory. Linux holds a
+ * process to a commit limit only under strict overcommit (`vm.overcommit_memory` 2), so only there is it read; elsewhere there
+ * is none to read, and the free physical memory judges alone.
+ */
+export function readMemory({ platform = process.platform, run = spawnSync, freemem = osFreemem, totalmem = osTotalmem, read = (path) => readFileSync(path, 'utf8') } = {}) {
+  const total = totalmem();
+  const without = (why, physical = null) => ({ physical: physical ?? freemem(), commit: null, total, why });
+  if (platform === 'win32') {
+    const result = run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', MEMORY_QUERY], { encoding: 'utf8', windowsHide: true, timeout: 30_000 });
+    if (result.error) return without(`the memory query could not start: ${result.error.message}`);
+    if (result.status !== 0) return without(`the memory query failed: ${gitSays(result.stderr || result.stdout || '')}`);
+    try {
+      const { physical, commit } = parseWindowsMemory(result.stdout);
+      return commit === null ? without('the memory query named no free commit', physical) : { physical: physical ?? freemem(), commit, total };
+    } catch (error) {
+      return without(`the memory query answered what could not be read: ${error?.message ?? error}`);
+    }
+  }
+  if (platform === 'linux') {
+    try {
+      if (read('/proc/sys/vm/overcommit_memory').trim() !== '2') return without('Linux holds no process to a commit limit unless vm.overcommit_memory is 2');
+      const { commit } = parseMeminfo(read('/proc/meminfo'));
+      return commit === null ? without('/proc/meminfo names no commit limit') : { physical: freemem(), commit, total };
+    } catch (error) {
+      return without(`its commit could not be read: ${error?.message ?? error}`);
+    }
+  }
+  return without(`${platform} keeps no commit limit to read`);
+}
+
+const gbOf = (bytes) => (bytes / GB).toFixed(1);
+const needOf = (gb) => (Number.isInteger(gb) ? String(gb) : gb.toFixed(1));
+const span = (ms) => (ms >= 60_000 && ms % 60_000 === 0 ? `${ms / 60_000} m` : duration(ms));
+const finite = (value) => (typeof value === 'number' && Number.isFinite(value) ? value : null);
+
+/** A reading's free commit and free physical memory, said, each that is read; `need` keeps those below it, in GB. */
+function memoryShown(reading, need = Infinity) {
+  return [[reading.commit, 'free commit'], [reading.physical, 'free physical memory']]
+    .filter(([bytes]) => bytes !== null && bytes < need * GB)
+    .map(([bytes, what]) => `${gbOf(bytes)} GB ${what}`);
+}
+
+/**
+ * A run's wait for memory (MEMGATE1). Handed a gate, it reads the machine (`read`, the seam a test replaces), and while its free
+ * commit or its free physical memory is below the gate's need (`memoryNeed`) it says so, reads again every `pollMs` and waits,
+ * up to `boundMs`, past which the gate runs anyway, said. A light gate, whose need is 0, is never read for. `again` is the run
+ * again of a gate that died of memory, which needs `MEMORY_NEEDS.again` at least. No need is above a quarter of the machine's
+ * physical memory, so a machine smaller than the needs were set on is not kept waiting for what it never has free. What cannot
+ * be read is said once a run: a commit the platform keeps none of leaves the physical memory to judge alone, and nothing read
+ * leaves the gates to run without waiting. `halted` ends a wait the run no longer needs.
+ */
+export function memoryGate({
+  read = readMemory, say = console.log, sleep = (ms) => new Promise((done) => { setTimeout(done, ms); }), now = Date.now,
+  pollMs = MEMORY_POLL_MS, boundMs = MEMORY_WAIT_MS,
+} = {}) {
+  let told = false;
+  const reading = () => {
+    let got;
+    try {
+      got = read() ?? {};
+    } catch (error) {
+      got = { why: `the reading failed: ${error?.message ?? error}` };
+    }
+    const value = { physical: finite(got.physical), commit: finite(got.commit), total: finite(got.total), why: got.why || 'no reason given' };
+    if (!told && (value.physical === null || value.commit === null)) {
+      told = true;
+      if (value.physical === null && value.commit === null) say(`  memory: it cannot be read here (${value.why}); the heavy gates run without waiting for it`);
+      else if (value.commit === null) say(`  memory: free commit cannot be read here (${value.why}); the heavy gates wait on free physical memory alone`);
+      else say(`  memory: free physical memory cannot be read here (${value.why}); the heavy gates wait on free commit alone`);
+    }
+    return value;
+  };
+  return async (gate, { again = false, halted = () => false } = {}) => {
+    const wanted = again ? Math.max(memoryNeed(gate), MEMORY_NEEDS.again) : memoryNeed(gate);
+    if (!(wanted > 0)) return;
+    let current = reading();
+    const need = current.total ? Math.min(wanted, current.total / GB / 4) : wanted;
+    let lacking = memoryShown(current, need);
+    if (!lacking.length) return;
+    const from = now();
+    const needs = `the gate needs ${needOf(need)} GB${again ? ' to run again' : ''}`;
+    say(`  waiting for memory before ${gate.name}: ${lacking.join(' and ')}, ${needs}; read again every ${span(pollMs)}, for up to ${span(boundMs)}`);
+    for (;;) {
+      if (halted()) return;
+      const waited = now() - from;
+      if (waited >= boundMs) {
+        say(`  memory for ${gate.name}: still ${lacking.join(' and ')} after ${span(waited)}, ${needs}; it runs anyway, past the bound`);
+        return;
+      }
+      await sleep(Math.min(pollMs, boundMs - waited));
+      current = reading();
+      lacking = memoryShown(current, need);
+      if (!lacking.length) {
+        say(`  memory for ${gate.name}: ${memoryShown(current).join(' and ')} after ${span(now() - from)}; it ${again ? 'runs again' : 'starts'}`);
+        return;
+      }
+    }
+  };
+}
+
+// ---------------------------------------------------------------------------------------------------
 // Lanes
 
 const escapeRegExp = (text) => text.replace(/[.+^${}()|[\]\\]/g, '\\$&');
@@ -2991,6 +3204,7 @@ async function rerunAlone(root, gate, dir, tests, step, trees = null) {
   const log = join(dir, `${gate.name}.rerun.log`);
   const cwd = gate.cwd ? join(root, gate.cwd) : root;
   const failed = [];
+  const codes = [];
   let ended = false;
   await withLog(log, async (fd, partial) => {
     for (const test of tests) {
@@ -3003,11 +3217,13 @@ async function rerunAlone(root, gate, dir, tests, step, trees = null) {
       }
       const output = readFileSync(partial).subarray(from).toString('utf8');
       writeSync(fd, `\n(exited ${code})\n\n`);
+      codes.push(code);
       if (code !== 0 || !rerunPassed(output)) failed.push(test);
     }
   });
   // Which failed again, not only whether any did: a note naming every re-run test as failed sends a reader after ones that passed.
-  return { passed: !ended && failed.length === 0, failed, log, ended };
+  // MEMGATE1: and each test's exit, for whether one died of memory.
+  return { passed: !ended && failed.length === 0, failed, codes, log, ended };
 }
 
 /**
@@ -3039,8 +3255,14 @@ function endedResult(result, started, trees, before = '') {
  *
  * CIPRIO1c: given the run's `trees`, each step's child is held there; a gate whose step the run ended is `ENDED`, never
  * FAIL, and nothing of it starts after: no step before it, no rehearsal run again, no test run alone.
+ *
+ * MEMGATE1: a gate whose log or exit says it died of memory (`memoryDeath`) is said so, `cause: 'memory'`, never as a check that
+ * failed. Its verdict is FAIL, with `again`: `runGates` runs it again once, alone, at the run's end (`again`, the first result,
+ * given back here, runs it whole: `runAgain`). A Process half whose dead tests are named runs them alone in place, as FLAKE1's,
+ * once `memory` (the run's wait) has its memory free.
  */
-export async function runGate(root, gate, dir, { step = runStep, settled = null, noBuild = false, built = null, trees = null } = {}) {
+export async function runGate(root, gate, dir, { step = runStep, settled = null, noBuild = false, built = null, trees = null, again = null, memory = null } = {}) {
+  if (again) return runAgain(root, gate, dir, again, guarded(step, trees), trees);
   const log = join(dir, `${gate.name}.log`);
   const started = Date.now();
   const go = guarded(step, trees);
@@ -3053,7 +3275,15 @@ export async function runGate(root, gate, dir, { step = runStep, settled = null,
   const result = { gate, code, log, verdict: code === 0 ? 'PASS' : 'FAIL', note: code === 0 ? '' : `exit ${code}` };
   if (code === STEP_ENDED) return endedResult(result, started, trees);
   if (trx && existsSync(trx)) Object.assign(result, { trx, slowest: slowestClasses(readFileSync(trx, 'utf8')) });
-  if (code !== 0 && gateKind(gate.run) === 'rehearsal') {
+  const died = code !== 0 ? memoryDeath(readFileSync(log, 'utf8'), code) : null;
+  const testsAlone = died !== null && isProcessGate(gate) && /^dotnet test\b/.test(gate.run) && flakeDecision(readFileSync(log, 'utf8')).rerun.length > 0;
+  if (died && !testsAlone) {
+    // MEMGATE1: before a rehearsal's report and LEFT1's re-run in place, beside the gates still running.
+    Object.assign(result, {
+      cause: 'memory', again: true, died,
+      note: `exit ${code}; died of memory (${died.said}): run again alone once every other gate has ended, after waiting for memory`,
+    });
+  } else if (code !== 0 && gateKind(gate.run) === 'rehearsal') {
     // A rehearsal that died is run again once, whole, into a log of its own beside the first (LEFT1).
     const decision = rehearsalDecision(readFileSync(log, 'utf8'), code, gate.run);
     if (!decision.rerun) {
@@ -3082,16 +3312,26 @@ export async function runGate(root, gate, dir, { step = runStep, settled = null,
       if (settled) await settled();
       // CIPRIO1c: main may move on, or a person stop the run, while the half waits to be alone.
       if (trees?.ended) return endedResult(result, started, trees, `exit ${code}; not run alone`);
+      // MEMGATE1: tests that died of memory run alone once the memory they need is free.
+      if (died && memory) {
+        await memory(gate, { again: true });
+        if (trees?.ended) return endedResult(result, started, trees, `exit ${code}; not run alone`);
+      }
       const rerun = await rerunAlone(root, gate, dir, decision.rerun, go, trees);
       const names = decision.rerun.map(short).join(', ');
       if (rerun.ended) {
         return endedResult(result, started, trees, `exit ${code}; run alone, ${shown(root, rerun.log)}`);
       } else if (rerun.passed) {
-        Object.assign(result, { verdict: 'FLAKE', flakes: decision.rerun, note: `failed in the full run and passed alone: ${names}; ${shown(root, rerun.log)}` });
+        const failedHow = died ? `died of memory in the full run (${died.said})` : 'failed in the full run';
+        Object.assign(result, { verdict: 'FLAKE', flakes: decision.rerun, note: `${failedHow} and passed alone: ${names}; ${shown(root, rerun.log)}`, ...(died ? { cause: 'memory' } : {}) });
       } else {
         const alone = decision.rerun.filter((test) => !rerun.failed.includes(test));
         const passedAlone = alone.length ? `; passed alone: ${alone.map(short).join(', ')}` : '';
-        result.note = `exit ${code}; failed again alone: ${rerun.failed.map(short).join(', ')}${passedAlone}; ${shown(root, rerun.log)}`;
+        // MEMGATE1: alone, a death of memory is still memory's, said as such.
+        const diedAlone = memoryDeath(readFileSync(rerun.log, 'utf8'), ...rerun.codes);
+        const failedAgain = diedAlone ? `died of memory ${died ? 'again ' : ''}alone (${diedAlone.said})` : 'failed again alone';
+        result.note = `exit ${code}; ${failedAgain}: ${rerun.failed.map(short).join(', ')}${passedAlone}; ${shown(root, rerun.log)}`;
+        if (diedAlone) result.cause = 'memory';
       }
     }
   }
@@ -3100,9 +3340,63 @@ export async function runGate(root, gate, dir, { step = runStep, settled = null,
   return result;
 }
 
+/**
+ * MEMGATE1: a gate that died of memory (`first`, its result) run again once, whole, into a log of its own beside the first: a
+ * pass is a FLAKE of memory; a second death of memory a failure still named as memory; any other failure a plain one, said.
+ * Its line names the first log and its note the second, as LEFT1's re-run does.
+ */
+async function runAgain(root, gate, dir, first, go, trees) {
+  const started = Date.now();
+  const log = join(dir, `${gate.name}.rerun.log`);
+  const code = await runSteps(root, gate, log, go, gate.run, trees);
+  const before = first.died?.said ?? 'its first run';
+  const result = { gate, code, log: first.log, verdict: code === 0 ? 'PASS' : 'FAIL', note: '' };
+  if (code === STEP_ENDED) return endedResult(result, started, trees, `died of memory (${before}); run again alone, ${shown(root, log)}`);
+  if (code === 0) {
+    Object.assign(result, { verdict: 'FLAKE', flakes: [gate.name], cause: 'memory', note: `died of memory (${before}), and passed run again alone; ${shown(root, log)}` });
+  } else {
+    const died = memoryDeath(readFileSync(log, 'utf8'), code);
+    result.note = died
+      ? `exit ${code}; died of memory twice (${before}; then ${died.said}), not of a check: run it again when the machine has memory to spare; ${shown(root, log)}`
+      : `exit ${code}; died of memory (${before}), then failed run again alone, not of memory; ${shown(root, log)}`;
+    if (died) Object.assign(result, { cause: 'memory', died });
+  }
+  result.ms = (first.ms ?? 0) + Date.now() - started;
+  return result;
+}
+
+/** A verdict as its line says it: a failure of memory reads MEMORY, never a check that failed (MEMGATE1). */
+const verdictShown = (result) => (result.verdict === 'FAIL' && result.cause === 'memory' ? 'MEMORY' : result.verdict);
+
 function resultLine(root, result) {
   const note = result.note ? `  (${result.note})` : '';
-  return `  ${pad(result.verdict, 8)} ${pad(result.gate.name, 16)} ${pad(duration(result.ms), 9)} ${shown(root, result.log)}${note}`;
+  return `  ${pad(verdictShown(result), 8)} ${pad(result.gate.name, 16)} ${pad(duration(result.ms), 9)} ${shown(root, result.log)}${note}`;
+}
+
+/** MEMGATE1: a gate as a summary names it, one that died of memory said so. */
+const gateNamed = (result) => (result.cause === 'memory' ? `${result.gate.name} (memory)` : result.gate.name);
+
+/**
+ * What a summary says of its flakes, empty when none: a test's flake is recorded under FLAKE1, and one of memory (MEMGATE1) is
+ * the machine's, not the change's, and said so.
+ */
+export function flakeNote(flakes) {
+  const of = (list) => list.map((result) => result.gate.name).join(', ');
+  const tests = flakes.filter((result) => result.cause !== 'memory');
+  const memory = flakes.filter((result) => result.cause === 'memory');
+  const parts = [];
+  if (tests.length) parts.push(`${count(tests.length, 'flake')} (${of(tests)}): record it under FLAKE1`);
+  if (memory.length) {
+    parts.push(`${count(memory.length, 'flake')} of memory (${of(memory)}): ${memory.length === 1 ? 'it' : 'each'} died of memory and passed run again alone, the machine's and not the change's`);
+  }
+  return parts.length ? `, with ${parts.join('; and ')}` : '';
+}
+
+/** MEMGATE1: the line a failed run's summary adds when a gate of it died of memory, or null. */
+export function memoryLine(failed) {
+  const memory = failed.filter((result) => result.cause === 'memory').map((result) => result.gate.name);
+  if (!memory.length) return null;
+  return `  Of memory, not of a check: ${memory.join(', ')} died of memory; run ${memory.length === 1 ? 'it' : 'them'} again when the machine has memory to spare.`;
 }
 
 /**
@@ -3178,28 +3472,68 @@ function laneLines(schedule) {
   return out;
 }
 
+/** MEMGATE1: a result that stops the run: a failure, but for one that died of memory and runs again at the run's end. */
+const stops = (result) => result.verdict === 'FAIL' && !result.again;
+
+/** MEMGATE1: what a gate is handed beside what its lane hands it: the run's wait for memory, for its tests run alone. */
+const withWait = (beside, wait) => (wait ? { ...beside, memory: wait } : beside);
+
+/**
+ * MEMGATE1: each gate of this run that died of memory, run again once, alone: once every other gate has ended, one at a time in
+ * the plan's order, each once its memory is free (`wait`). A run that stopped (`halted`: a failure, or a run beside ended) runs
+ * none again: each keeps its first verdict, a failure named as memory, its note saying why it was not run again.
+ */
+async function againOfMemory(root, gates, dir, results, { run, print, wait, heard, halted }) {
+  const died = gates.filter((gate) => results.get(gate.name)?.again);
+  if (!died.length) return;
+  const failure = gates.map((gate) => results.get(gate.name)).find((result) => result && stops(result));
+  const why = () => (failure ? `${failure.gate.name} failed, and the run stopped there` : 'the run was stopped');
+  if (!halted()) print(`  run again alone, every other gate having ended: ${died.map((gate) => gate.name).join(', ')}, which died of memory`);
+  for (const gate of died) {
+    const first = results.get(gate.name);
+    first.again = false;
+    if (wait && !halted()) await wait(gate, { again: true, halted });
+    if (halted()) {
+      first.note = `${first.note}; not run again: ${why()}`;
+      print(`  not run again: ${gate.name}, which died of memory, since ${why()}`);
+      continue;
+    }
+    const result = await run(root, gate, dir, withWait({ again: first }, wait));
+    results.set(gate.name, result);
+    heard(result);
+    print(resultLine(root, result));
+    for (const line of slowestLines(root, result)) print(line);
+  }
+}
+
 /**
  * One gate after another, in the plan's order: every run before GATELANES1, and `--one-at-a-time`. `beside` names what
- * each gate is handed (GATEBUILD1: a Process half, its fast half's pass), and `heard` hears each result.
+ * each gate is handed (GATEBUILD1: a Process half, its fast half's pass), and `heard` hears each result. MEMGATE1: a heavy
+ * gate first waits for its memory (`wait`), and a gate that died of memory runs again after the last.
  */
-async function runInTurn(root, gates, dir, { keepGoing, run, print, beside = () => ({}), heard = () => {}, halt = () => false }) {
-  const results = [];
+async function runInTurn(root, gates, dir, { keepGoing, run, print, beside = () => ({}), heard = () => {}, halt = () => false, wait = null }) {
+  const results = new Map();
+  let stopped = false;
   for (let i = 0; i < gates.length; i += 1) {
+    if (wait && !halt()) await wait(gates[i], { halted: halt });
     if (halt()) {
+      stopped = true;
       for (const skipped of gates.slice(i)) print(notRunLine(skipped));
       break;
     }
-    const result = await run(root, gates[i], dir, beside(gates[i]));
+    const result = await run(root, gates[i], dir, withWait(beside(gates[i]), wait));
     heard(result);
-    results.push(result);
+    results.set(gates[i].name, result);
     print(resultLine(root, result));
     for (const line of slowestLines(root, result)) print(line);
-    if (result.verdict === 'FAIL' && !keepGoing) {
+    if (stops(result) && !keepGoing) {
+      stopped = true;
       for (const skipped of gates.slice(i + 1)) print(notRunLine(skipped));
       break;
     }
   }
-  return results;
+  await againOfMemory(root, gates, dir, results, { run, print, wait, heard, halted: () => stopped || halt() });
+  return gates.filter((gate) => results.has(gate.name)).map((gate) => results.get(gate.name));
 }
 
 /**
@@ -3219,16 +3553,22 @@ async function runInTurn(root, gates, dir, { keepGoing, run, print, beside = () 
  * GATEBUILD1: a Process half is handed `built`, its fast half's pass in this run and the tree that ran on, which the
  * runner compares with the tree the half starts on (`reuseBuild`). A run with no fast half (a `--rerun` or `--stale`
  * that names a Process half alone) hands none, and the half builds.
+ *
+ * MEMGATE1: given `memory` (what `memoryGate` reads the machine with: `{ read }`, or stand-ins), a heavy gate waits for its
+ * memory before it starts, holding its place in its lane, and is handed the wait, for its tests run alone. A gate that died
+ * of memory stops nothing: once both lanes have ended it runs again alone (`againOfMemory`), before the summary. With no
+ * `memory` nothing is read and nothing waits, and a gate that died of memory still runs again.
  */
-export async function runGates(root, gates, dir, { keepGoing = false, oneAtATime = false, width = LIGHT_WIDTH, scripts = null, run = runGate, print = console.log, halt = () => false } = {}) {
+export async function runGates(root, gates, dir, { keepGoing = false, oneAtATime = false, width = LIGHT_WIDTH, scripts = null, run = runGate, print = console.log, halt = () => false, memory = null } = {}) {
   const schedule = laneSchedule(gates, { scripts: scripts ?? rootScripts(root), width });
   const passed = new Map();
   const heard = (result) => {
     if (result.verdict === 'PASS' && !isProcessLane(result.gate)) passed.set(result.gate.name, { gate: result.gate.name, tree: result.tree ?? null });
   };
   const built = (gate) => (passed.has(schedule.reuses[gate.name]) ? { built: passed.get(schedule.reuses[gate.name]) } : {});
+  const wait = memory ? memoryGate({ ...memory, say: print }) : null;
   if (oneAtATime || !schedule.light.length || (schedule.light.length === 1 && !schedule.process.length)) {
-    return runInTurn(root, gates, dir, { keepGoing, run, print, beside: built, heard, halt });
+    return runInTurn(root, gates, dir, { keepGoing, run, print, beside: built, heard, halt, wait });
   }
 
   for (const line of laneLines(schedule)) print(line);
@@ -3243,9 +3583,14 @@ export async function runGates(root, gates, dir, { keepGoing = false, oneAtATime
     return stopped;
   };
   const one = async (gate, beside) => {
+    // MEMGATE1: a heavy gate waits for its memory in its place; one the run stopped meanwhile starts not.
+    if (wait) {
+      await wait(gate, { halted });
+      if (halted()) return;
+    }
     let result;
     try {
-      result = await run(root, gate, dir, beside);
+      result = await run(root, gate, dir, withWait(beside, wait));
     } catch (error) {
       // A tool error ends the run as it always did, once the gates running beside it have ended.
       stopped = true;
@@ -3255,7 +3600,7 @@ export async function runGates(root, gates, dir, { keepGoing = false, oneAtATime
     heard(result);
     print(resultLine(root, result));
     for (const line of slowestLines(root, result)) print(line);
-    if (result.verdict === 'FAIL' && !keepGoing) stopped = true;
+    if (stops(result) && !keepGoing) stopped = true;
   };
   const light = (async () => {
     const waiting = [...schedule.light];
@@ -3329,6 +3674,7 @@ export async function runGates(root, gates, dir, { keepGoing = false, oneAtATime
   const outcomes = await Promise.allSettled([light, processLane]);
   const thrown = outcomes.find((outcome) => outcome.status === 'rejected');
   if (thrown) throw thrown.reason;
+  await againOfMemory(root, gates, dir, results, { run, print, wait, heard, halted });
 
   print("  every gate, in the plan's order:");
   for (const gate of gates) print(results.has(gate.name) ? resultLine(root, results.get(gate.name)) : notRunLine(gate));
@@ -3434,6 +3780,9 @@ function runRecorded(root, gates, dir, { keepGoing = false, oneAtATime = false, 
     keepGoing,
     oneAtATime,
     halt,
+    // MEMGATE1: the machine's memory, read before each heavy gate. `MERGE_BRANCH_MEMORY=off` reads none and waits for none: the
+    // tool's own end-to-end tests set it, so none of them waits on what the machine holds.
+    memory: process.env.MERGE_BRANCH_MEMORY === 'off' ? null : { read: readMemory },
     run: async (where, gate, logs, beside) => {
       const tree = contentTree(where);
       const started = nowIso();
@@ -3484,14 +3833,15 @@ async function gateMerge(root, state, plan) {
   console.log('');
   if (failed.length) {
     const names = failed.map((result) => result.gate.name).join(' ');
-    console.log(`merge-branch: ${branch} is merged into ${MAIN}, NOT committed, and ${count(failed.length, 'gate')} failed: ${failed.map((result) => result.gate.name).join(', ')}${notRun ? `; ${notRun} not run` : ''}.`);
+    console.log(`merge-branch: ${branch} is merged into ${MAIN}, NOT committed, and ${count(failed.length, 'gate')} failed: ${failed.map(gateNamed).join(', ')}${notRun ? `; ${notRun} not run` : ''}.`);
+    const memory = memoryLine(failed);
+    if (memory) console.log(memory);
     console.log('  The merge is left in place. Read the failing log and fix it in the merge; then');
     console.log(`  node tools/merge-branch.mjs --rerun ${names} runs it again, keeping each other verdict no path your fix changes reaches (and runs what did not run),`);
     console.log('  or --continue gates the merge again whole. Or git merge --abort.');
     return 1;
   }
-  const flakeNote = flakes.length ? `, with ${count(flakes.length, 'flake')} (${flakes.map((result) => result.gate.name).join(', ')}): record it under FLAKE1` : '';
-  console.log(`merge-branch: ${branch} is merged into ${MAIN}, NOT committed; ${count(results.length, 'gate')} passed${flakeNote}.`);
+  console.log(`merge-branch: ${branch} is merged into ${MAIN}, NOT committed; ${count(results.length, 'gate')} passed${flakeNote(flakes)}.`);
   refreshKnowledgeServer(root);
   const owed = owedLine(skipped);
   if (owed) console.log(owed);
@@ -3573,8 +3923,8 @@ async function rerunGates(root, options) {
     },
   });
 
-  const failed = [...ran.filter((result) => result.verdict === 'FAIL').map((result) => result.gate.name),
-    ...planned.kept.filter((kept) => kept.verdict === 'FAIL').map((kept) => kept.name)];
+  const failedRan = ran.filter((result) => result.verdict === 'FAIL');
+  const failed = [...failedRan.map(gateNamed), ...planned.kept.filter((kept) => kept.verdict === 'FAIL').map((kept) => kept.name)];
   const notRun = gates.length - ran.length;
   const keptNote = planned.kept.length
     ? `${count(planned.kept.length, 'verdict')} kept (${planned.kept.map((kept) => `${kept.name}, from ${when(kept.at)}`).join('; ')})`
@@ -3582,10 +3932,12 @@ async function rerunGates(root, options) {
   console.log('');
   if (failed.length || notRun) {
     console.log(`merge-branch: ${branch} is merged into ${MAIN}, NOT committed, and ${count(failed.length, 'gate')} failed: ${failed.join(', ')}${notRun ? `; ${notRun} not run` : ''}; ${keptNote}.`);
+    const memory = memoryLine(failedRan);
+    if (memory) console.log(memory);
     console.log('  The merge is left in place: fix it and --rerun the gate again, or --continue gates the merge again whole, or git merge --abort.');
     return 1;
   }
-  console.log(`merge-branch: ${branch} is merged into ${MAIN}, NOT committed; ${count(ran.length, 'gate')} run and passed; ${keptNote}.`);
+  console.log(`merge-branch: ${branch} is merged into ${MAIN}, NOT committed; ${count(ran.length, 'gate')} run and passed${flakeNote(ran.filter((result) => result.verdict === 'FLAKE'))}; ${keptNote}.`);
   refreshKnowledgeServer(root);
   console.log('  Next: read the diff (git diff --cached), write the records, and commit the merge.');
   return 0;
@@ -3634,14 +3986,15 @@ async function gateCheckout(root, options, watch = null, trees = null) {
     return 1;
   }
   if (failed.length || results.length < plan.length) {
-    console.log(`merge-branch: the full set did NOT pass ${head.slice(0, 7)}: ${failed.map((result) => result.gate.name).join(', ')} failed${results.length < plan.length ? `; ${plan.length - results.length} not run` : ''}.`);
+    console.log(`merge-branch: the full set did NOT pass ${head.slice(0, 7)}: ${failed.map(gateNamed).join(', ')} failed${results.length < plan.length ? `; ${plan.length - results.length} not run` : ''}.`);
+    const memory = memoryLine(failed);
+    if (memory) console.log(memory);
     // GATE6b: once the failure is fixed and committed, or at once when it flaked, the smaller command does the rest.
     const remedy = stageRemedy(judgeCheckout(root, plan)?.gates ?? []);
     if (remedy) console.log(remedyLine(remedy));
     return 1;
   }
-  const flakeNote = flakes.length ? `, with ${count(flakes.length, 'flake')} (${flakes.map((result) => result.gate.name).join(', ')}): record it under FLAKE1` : '';
-  console.log(`merge-branch: the full set passed ${head.slice(0, 7)}: ${count(results.length, 'gate')}${flakeNote}. A stage of this tree is allowed.`);
+  console.log(`merge-branch: the full set passed ${head.slice(0, 7)}: ${count(results.length, 'gate')}${flakeNote(flakes)}. A stage of this tree is allowed.`);
   return 0;
 }
 
@@ -3753,9 +4106,10 @@ async function rerunCheckout(root, options) {
   for (const line of stageLines(judged.gates.filter((gate) => !planned.run.includes(gate.name)))) console.log(line);
   const ran = await runRecorded(root, gates, dir, { keepGoing: options.keepGoing, oneAtATime: options.oneAtATime });
 
-  const failed = ran.filter((result) => result.verdict === 'FAIL').map((result) => result.gate.name);
+  const failedRan = ran.filter((result) => result.verdict === 'FAIL');
+  const failed = failedRan.map(gateNamed);
   const notRun = gates.length - ran.length;
-  const flakes = ran.filter((result) => result.verdict === 'FLAKE').map((result) => result.gate.name);
+  const flakes = ran.filter((result) => result.verdict === 'FLAKE');
   // The stage's answer, read again from the record the run just wrote, on the tree as it is now.
   const after = judgeCheckout(root, plan);
   const remedy = after ? stageRemedy(after.gates) : null;
@@ -3763,9 +4117,10 @@ async function rerunCheckout(root, options) {
   console.log('');
   if (failed.length || notRun) {
     console.log(`merge-branch: the re-run on ${sha} did NOT pass: ${failed.join(', ')} failed${notRun ? `; ${notRun} not run` : ''}; ${stage}.`);
+    const memory = memoryLine(failedRan);
+    if (memory) console.log(memory);
   } else {
-    const flakeNote = flakes.length ? `, with ${count(flakes.length, 'flake')} (${flakes.join(', ')}): record it under FLAKE1` : '';
-    const ranNote = ran.length ? `${count(ran.length, 'gate')} run and passed on ${sha}${flakeNote}` : `no gate run on ${sha}`;
+    const ranNote = ran.length ? `${count(ran.length, 'gate')} run and passed on ${sha}${flakeNote(flakes)}` : `no gate run on ${sha}`;
     const passed = after?.passed === true;
     console.log(`merge-branch: ${ranNote}; ${stage}.${passed ? ' A stage of this tree is allowed.' : ''}`);
   }

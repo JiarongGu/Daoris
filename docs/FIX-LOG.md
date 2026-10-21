@@ -5,6 +5,28 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-22 — A full set's gates that died of the machine's memory were read as the change's failures (MEMGATE1)
+
+- **Symptom:** a full set (`--full --beside`) ran on a 64 GB Windows machine whose commit limit was about 80 GB, beside the install
+  with five or more driven sessions and two or three builder agents. The universal gate's sensitive scan threw
+  `OutOfMemoryException`, `web-rules` died with "cannot allocate memory" and a `DataCloneError` "out of memory", and the family
+  rehearsal's landing printed "Out of memory." twice. The deployment rehearsal's start after a restart timed out. Each was reported
+  as the change's failure, and each passed when run later on a calmer machine.
+- **Root cause:** the merge tool started each gate whatever the machine held, and read a gate's death of memory as any other failure:
+  a FAIL, which stopped the run, or for a rehearsal that reported failed checks, a failure never run again. Nothing it printed said
+  memory.
+- **Fix:** `tools/merge-branch.mjs` reads the machine's free commit and free physical memory before a heavy gate (`readMemory`: on
+  Windows `Win32_OperatingSystem`'s FreeVirtualMemory and FreePhysicalMemory). While either is below the gate's need (`MEMORY_NEEDS`
+  by class, or `"memoryGb"` on the gate), it waits up to ten minutes and says so (`memoryGate`); a light gate is never read for. A gate
+  whose log or exit shows a death of memory (`memoryDeath`) reads MEMORY and stops nothing. Once both lanes have ended it runs again
+  once, alone, after waiting for its memory (`againOfMemory`): a pass is a FLAKE of memory, which the summary names as the machine's;
+  a second death of memory fails, still named as memory. A Process half's named tests that died of memory run alone after the same wait.
+- **Verification:** 11 new tests in `src/Daoris.Cli/tool-test/merge-branch.test.ts`, each seen failing before the change. A stand-in
+  reader short of memory delays a heavy gate and says why. Every sign is classed as memory and run again once, after the gate beside it
+  ended. A second death reads MEMORY, a light gate is never read for, and a run a failure stopped runs none again. The whole file and
+  `tsc -p src/Daoris.Cli --noEmit` pass. The deployment rehearsal's timeout printed no sign of memory: it is waited for before it starts
+  (10 GB), and is not read as memory when it times out.
+
 ## 2026-10-21 — The person's words to a quest's sessions around an ask-and-wait never reached a run (SAYHELD1)
 
 - **Symptom:** on the install, a driven session ended waiting on another repository's answer (D79), and the person wrote to it. Once

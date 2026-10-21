@@ -29,7 +29,8 @@ export type Notice = {
   id: string;
   /**
    * `ended`, a session that ended without the person asking; `expired`, a terminal's press refused by its time; `answered`, a
-   * conversation that answered the person's words (NOTIFY2g), one per conversation.
+   * conversation that answered the person's words (NOTIFY2g), one per conversation; `look`, a line of the driver's look that is news,
+   * by its `code` (NOTIFY2h).
    */
   kind: string;
   at: string;
@@ -44,6 +45,8 @@ export type Notice = {
   /** A press's act, as its catalogue key names it after `person.route.`. */
   route?: string;
   act?: string;
+  /** What a look's line said, for `look`: a hand-over that could not be made, a session stopped on a lost claim, … */
+  code?: string;
 };
 
 const keyed = (value: unknown): Record<string, unknown> | null =>
