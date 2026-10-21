@@ -400,6 +400,16 @@ internal static class TreesConsole
                 // The plugin's lines were said as they came; the landing's sentence and the exit are the route's words too (RPC1b3).
                 var said = TreesWords.Land(landed, []);
                 said.Print(Console.Out, Console.Error);
+                // LANDREBASE2: a conflict is the session's (D87's LANDREBASE1 note point 3). The window offers its *Ask it to rebase*; a
+                // terminal has no second press, so the words go to the session itself, as the automatic landing says them.
+                if (landed is { Landed: false, Conflict: { } conflict })
+                {
+                    var told = await RebaseTelling.TellTreeAsync(
+                        async (named, text, key, token) => await service.SayAsync(named, text, null, token, from: DaorisWords.From, key: key).ConfigureAwait(false),
+                        session, tree, conflict).ConfigureAwait(false);
+                    Console.WriteLine($"trees: {told}");
+                }
+
                 if (log is not null && LandingGateWords.Held(session, landing.Owner(tree), gate, landed, ReviewDoors.Terminal) is { } held)
                 {
                     SessionLog.WriteLanding(log, held);

@@ -19203,3 +19203,12 @@ list`, the long verbs and the TypeScript's leaving. Built: `daoris-driver agent 
 *Count*, *Measure again*, `--measure`, or the Keeping pass at most daily), with the rule that runs, `next` from the disk and the policy,
 `last` from `keeping.json` and the run lock's holder; `SYSTEM_SPACE` (`Open`) and `daoris-driver space [--json] [--measure]`; the card
 after *Folders* in both languages, no editor and no press. Detail: D195's KEEP1c note. On Opus.
+
+## LANDREBASE2 — a terminal's landing that conflicts tells the session to rebase, as the window's does (2026-10-22, D87)
+
+> - [ ] **LANDREBASE2 — a terminal's landing that conflicts tells the session to rebase, as the window's does** (driver; found 2026-10-22 landing NOTIFY2g; LANDREBASE1, D87). `daoris-driver trees land <session>` refused a replay that conflicted with what the line changed and printed it, but the session was handed nothing: its events end at its own turn, so the work waits until someone resolves it without its context, which LANDREBASE1 set out to end. Proof: a Process case where a terminal landing conflicts and the session gets the rebase words and goes on to rebase, as the window's press does.
+
+**Outcome** 2026-10-22: `trees land <session>` whose replay conflicts now says the rebase words to the session itself through the say
+door, as Daoris's, keyed by the session and its tree's tip, as the automatic landing does (one helper, `RebaseTelling`), and prints
+that it did, or why it could not with the words for the person. Proof: `TerminalLandRebaseTests` (Process), `AutoLandingRebaseTests`.
+Not run through the installed terminal. On Opus. Detail: D87's LANDREBASE2 note.

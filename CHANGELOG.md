@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- `daoris-driver trees land <session>` whose work conflicts with what the line changed now asks the session itself to rebase in its
+  own tree, as an automatic landing does, and says so; run it again once the session has. Where the session cannot be reached, it
+  says why and prints the words to pass on.
 - The driver's own report lines no longer pop up as English messages in the window. What is news among them now waits in
   *Notifications* → *Done and failed* in the window's language: a session that could not be handed over to another agent, or an
   agent's ask to hand one over that was dropped, refused or could not be carried out; a quest handed to another agent that went back
