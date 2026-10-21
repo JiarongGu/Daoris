@@ -1634,7 +1634,9 @@ export function WorkFrame({
           answered.refused(result.message);
           return;
         }
-        notify(result.message);
+        // FABRIC-CLOSE1h9: a push held back is said as such, with the hand-off its review offers, never as an ordinary landing.
+        if (result.withheld) notify(`${result.message} ${t('work.review.pushHeldReview')}`, 'error');
+        else notify(result.message);
         answered.done();
       },
       onError: (error) => answered.refused(sentence(error)),

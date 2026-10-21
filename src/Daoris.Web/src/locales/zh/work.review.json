@@ -65,6 +65,8 @@
   "work.review.hand": "交给 {{plugin}}",
   "work.review.handing": "正在交接…",
   "work.review.handProblem": "现在交接会被拒绝：{{problem}}",
+  "work.review.pushHeld": "它的推送被暂缓，没有告知插件，分支保留着。先看看它的委托现在如何，再在这里交接它。",
+  "work.review.pushHeldReview": "它的推送被暂缓，没有告知插件，分支保留着。先看看它的委托现在如何，再从它的审阅中交接它。",
   "work.review.accepting": "落地中…",
   "work.review.acceptingGate": "检查中…",
   "work.review.acceptingWaiting": "排队中…",

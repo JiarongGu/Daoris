@@ -65,6 +65,8 @@
   "work.review.hand": "Hand to {{plugin}}",
   "work.review.handing": "Handing off…",
   "work.review.handProblem": "A hand-off would be refused now: {{problem}}",
+  "work.review.pushHeld": "Its push was held back, so no plugin was told and the branch stands. Look at its quest as it stands, then hand it off here.",
+  "work.review.pushHeldReview": "Its push was held back, so no plugin was told and the branch stands. Look at its quest as it stands, then hand it off from its review.",
   "work.review.accepting": "Landing…",
   "work.review.acceptingGate": "Checking…",
   "work.review.acceptingWaiting": "Waiting its turn…",
