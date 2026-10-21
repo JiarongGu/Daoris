@@ -433,6 +433,55 @@ public sealed class SessionLedger(
             : null;
     }
 
+    /// <summary>The most versions one record keeps (KEEP1b): a session's starts are handed a few; more is no start's list.</summary>
+    public const int MostResolved = 64;
+
+    /// <summary>
+    /// Record the downloaded versions a start of a record of this machine's was handed (KEEP1b, D195 point 6; the cleanup design §3.5,
+    /// Fable F2.5), added to those of its earlier starts: the downloads' rule keeps each while the session runs. Any kind of record, since
+    /// every start runs a binary. Its state, its last move and its revision stay: what a start was handed is a fact about its run, and it
+    /// never travels.
+    /// </summary>
+    /// <returns>The record as it now reads; null where no record of this machine's has that id.</returns>
+    /// <exception cref="ArgumentException">
+    /// None named, more than <see cref="MostResolved"/>, or one that is no <c>&lt;agent|tool&gt;/&lt;name&gt;/&lt;version&gt;</c>: a path never is.
+    /// </exception>
+    public async Task<Session?> KeepResolvedAsync(string id, IReadOnlyList<string> versions, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(versions);
+        if (versions.Count is 0 or > MostResolved)
+        {
+            throw new ArgumentException($"resolved names the versions a start was handed, one to {MostResolved} of them.", nameof(versions));
+        }
+
+        if (versions.FirstOrDefault(version => !IsVersionKey(version)) is { } wrong)
+        {
+            throw new ArgumentException(
+                $"`{OneLine(Clip(wrong, 80))}` is no downloaded version's key: each is agent|tool/<name>/<version>, and never a path.", nameof(versions));
+        }
+
+        var before = await sessions.FindAsync(id, ct).ConfigureAwait(false);
+        if (before is null || before.Origin is not null) return null;
+        if ((before.Resolved ?? []).Union(versions, StringComparer.Ordinal).Count() > MostResolved)
+        {
+            throw new ArgumentException($"a record keeps at most {MostResolved} versions its starts were handed.", nameof(versions));
+        }
+
+        return await sessions.KeepResolvedAsync(id, versions, ct).ConfigureAwait(false)
+            ? await sessions.FindAsync(id, ct).ConfigureAwait(false)
+            : null;
+    }
+
+    /// <summary>Whether a text is a downloaded version's key: <c>agent</c> or <c>tool</c>, then a name and a version, each a plain segment.</summary>
+    private static bool IsVersionKey(string? key)
+    {
+        if (key is null || key.Length > 200) return false;
+        var parts = key.Split('/');
+        return parts.Length == 3 && parts[0] is "agent" or "tool"
+            && parts.Skip(1).All(part => part.Length > 0 && part is not ("." or "..")
+                && part.All(each => char.IsAsciiLetterOrDigit(each) || each is '.' or '-' or '_' or '+' or '@'));
+    }
+
     /// <summary>
     /// Open Ask Daoris's conversation (HELP1a, D89) — a chat about Daoris itself, in the room the
     /// driver keeps for it under its home.

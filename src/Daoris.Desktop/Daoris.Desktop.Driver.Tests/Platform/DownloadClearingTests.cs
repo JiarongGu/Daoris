@@ -357,6 +357,43 @@ public sealed class DownloadClearingTests : IDisposable
         Assert.Equal("removed", after.Outcome);
     }
 
+    /// <summary>
+    /// §3.5: the running sessions as the service answers them, each with when it opened and what its starts were handed; a record with none
+    /// reads none, the start-time rule's, and a teammate's runs nothing here.
+    /// </summary>
+    [Fact]
+    public void The_running_sessions_are_read_with_what_their_starts_were_handed()
+    {
+        var running = ServiceClient.ReadRunning("""
+            [ { "id": "s1", "created": "2026-10-20T09:00:00+00:00", "resolved": ["agent/claude-code/2.0.1", "tool/gh/2.61.0"] },
+              { "id": "s2", "created": "2026-10-21T09:00:00+00:00" },
+              { "id": "alice-laptop/s3", "created": "2026-10-21T09:00:00+00:00", "resolved": ["agent/codex/0.40.0"] } ]
+            """);
+
+        Assert.Equal(["s1", "s2"], running.Select(session => session.Id));
+        Assert.Equal(["agent/claude-code/2.0.1", "tool/gh/2.61.0"], running[0].Resolved);
+        Assert.Equal((new DateTimeOffset(2026, 10, 21, 9, 0, 0, TimeSpan.Zero), (IReadOnlyList<string>?)null), (running[1].Started, running[1].Resolved));
+    }
+
+    /// <summary>
+    /// §6.7: with no service to ask, the home's process markers say whether a session runs here at all: none is none; a live one keeps
+    /// every version, since what it was handed cannot be read.
+    /// </summary>
+    [Fact]
+    public async Task With_no_service_a_live_process_marker_keeps_every_version_and_none_keeps_none()
+    {
+        var markers = Path.Combine(_root, "markers");
+        Assert.Same(LiveSessions.None, await LiveSessions.ReadAsync(null, markers, CancellationToken.None));
+
+        Directory.CreateDirectory(markers);
+        using var self = Process.GetCurrentProcess();
+        File.WriteAllText(Path.Combine(markers, "s-alone.pid"), $"{self.Id} {self.StartTime.ToUniversalTime().Ticks}");
+        var read = await LiveSessions.ReadAsync(null, markers, CancellationToken.None);
+
+        Assert.NotNull(read.Problem);
+        Assert.Empty(read.Sessions);
+    }
+
     /// <summary>§6.7: sessions that cannot be read keep every version, named by what could not be read.</summary>
     [Fact]
     public async Task Sessions_that_cannot_be_read_keep_every_version()

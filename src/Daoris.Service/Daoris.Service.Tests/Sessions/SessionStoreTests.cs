@@ -102,6 +102,27 @@ public sealed class SessionStoreTests : IAsyncLifetime
         Assert.False((await _sessions.FindAsync(limited.Id))!.Interrupted);
     }
 
+    /// <summary>
+    /// KEEP1b (D195 point 6): the downloaded versions a record's starts were handed, kept on this machine's own records alone and read
+    /// back in order, each start's added to the last's; a teammate's mirrored record is never written to and reads none, as a record from
+    /// before the column does.
+    /// </summary>
+    [Fact]
+    public async Task A_record_keeps_the_versions_its_starts_were_handed_and_a_mirror_none()
+    {
+        var own = await _sessions.CreateAsync("abc123", "Owner", "claude-code", Now);
+        var fed = new Session("alice-laptop/ab12cd34", "abc123", "Owner", "claude-code", SessionState.Working, null, null, null, Now, Now);
+        await _sessions.MirrorAsync(fed);
+
+        Assert.True(await _sessions.KeepResolvedAsync(own.Id, ["tool/gh/2.61.0"]));
+        Assert.True(await _sessions.KeepResolvedAsync(own.Id, ["agent/claude-code/2.0.1", "tool/gh/2.61.0"]));
+        Assert.False(await _sessions.KeepResolvedAsync(fed.Id, ["agent/claude-code/2.0.1"]));
+
+        Assert.Equal(["agent/claude-code/2.0.1", "tool/gh/2.61.0"], (await _sessions.FindAsync(own.Id))!.Resolved);
+        Assert.Null((await _sessions.FindAsync(fed.Id))!.Resolved);
+        Assert.Null((await _sessions.CreateAsync("abc123", "Owner", "claude-code", Now)).Resolved);
+    }
+
     /// <summary>A teammate's record keeps its limit when mirrored, on its first copy and on each later one.</summary>
     [Fact]
     public async Task A_mirrored_record_keeps_its_limit()

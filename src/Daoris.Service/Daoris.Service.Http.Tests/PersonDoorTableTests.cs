@@ -79,6 +79,8 @@ public sealed class PersonDoorTableTests
         ("POST", "/api/sessions/{id}/help-mode", Driver),
         // AUTONOMY1b2: the setup a resumed driven record now runs under, which the driver that spawns it knows.
         ("POST", "/api/sessions/{id}/access", Driver),
+        // KEEP1b: the downloaded versions a start of the record was handed, which the driver that spawns it knows.
+        ("POST", "/api/sessions/{id}/resolved", Driver),
         // COWORK1d: an entry's acknowledgment of a channel message, the driver's as it hands one to a part.
         ("POST", "/api/asks/{id}/channel/ack", Driver),
         ("POST", "/api/sync", Driver),
@@ -159,10 +161,11 @@ public sealed class PersonDoorTableTests
         // three presses: its question, its send and its clear (BRAINSTORM1a3), and the person's bring-forward of a lost take (SYNCMERGE1a),
         // and the mode an Ask Daoris conversation going on runs under, the driver's (HELPMODE1a2), and the setup a resumed driven record now runs under (AUTONOMY1b2),
         // and a quest's moves, a read (FLOWCHART1a2), and a word's attempt, the driver's (COWORK1c), and an entry's acknowledgment of a
-        // channel message, the driver's (COWORK1d), and a quest's own kind and workflow, the person's (WORKFLOW1e2).
+        // channel message, the driver's (COWORK1d), and a quest's own kind and workflow, the person's (WORKFLOW1e2), and the downloaded
+        // versions a start of a record was handed, the driver's (KEEP1b).
         Assert.Equal(28, Routes.Count(route => route.Class == Open));
         Assert.Equal(4, Routes.Count(route => route.Class == Agent));
-        Assert.Equal(23, Routes.Count(route => route.Class == Driver));
+        Assert.Equal(24, Routes.Count(route => route.Class == Driver));
         Assert.Equal(32, Routes.Count(route => route.Class == Person));
         // And a shared host's two channel doors, a feed and a page (SESSONE2d).
         Assert.Equal(9, Routes.Count(route => route.Class == Shared));
