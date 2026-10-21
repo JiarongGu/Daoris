@@ -358,6 +358,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry Brainstorms = new("brainstorms", HomeCategory.Data, "data/brainstorms", "brainstorms");
     public static readonly HomeEntry UsageHistory = new("usage-history", HomeCategory.Data, "data/usage-history", "usage-history");
     public static readonly HomeEntry Keeping = new("keeping", HomeCategory.Data, "data/keeping.json", "keeping.json");
+    public static readonly HomeEntry Notices = new("notices", HomeCategory.Data, "data/notices.json", "notices.json");
     public static readonly HomeEntry Keys = new("keys", HomeCategory.Profiles, "profiles/keys.json", "keys.json");
     public static readonly HomeEntry Remotes = new("remotes", HomeCategory.Profiles, "profiles/remotes.json", "remotes.json");
     public static readonly HomeEntry AgentHomes = new("agent-homes", HomeCategory.Profiles, "profiles/agents/*/*", "harnesses/*/*");
@@ -401,7 +402,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
         PluginApprovals, Usage,
         Landings, SessionBranches, LinesMoved, RegistryFollowed, Abandoned, Update, Knowledge, Sessions, Helpers, Handed, Setup,
         Workflows, HelpProposals, ConfiguredAccess, OpinionGates, OpinionDues, BrowserSettings, BrowserFavorites, HomeId, Brainstorms,
-        UsageHistory, Keeping,
+        UsageHistory, Keeping, Notices,
         Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, Window,
         Trees, HelpRoom, HelpRooms, Intake, OpinionPackets, QuestFiles, AskFiles, SessionFiles, Proof, UsageRead, BrainstormRooms,
         Toolchain, ToolVersions, Bin,
