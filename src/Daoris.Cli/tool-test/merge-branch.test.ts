@@ -1061,8 +1061,8 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     // reads them too.
     ['the driver-config-keeps table', ['src/Daoris.Cli/test/fixtures/driver-config-keeps.json'], [...BASE, 'driver']],
     // KEEPALL1: the bytes an edit of each other home file a door edits writes sit among the CLI's fixtures, and the driver's
-    // HomeFilesKeepTests reads them too.
-    ['the home-files-keep table', ['src/Daoris.Cli/test/fixtures/home-files-keep.json'], [...BASE, 'driver']],
+    // HomeFilesKeepTests reads them too; since KEEPALL1e the service's RemoteConfigKeepTests its remotes.json rows' reads.
+    ['the home-files-keep table', ['src/Daoris.Cli/test/fixtures/home-files-keep.json'], [...BASE, 'service', 'driver']],
     // FABRIC-WORKFLOW2: D157's versions and the graphs they decode to sit among the CLI's fixtures, and the driver's WorkflowGraphsTests reads them too.
     ['the workflow-graphs table', ['src/Daoris.Cli/test/fixtures/workflow-graphs.json'], [...BASE, 'driver']],
     // FABRIC-GRAPH1b: a named graph as a named workflow's version sits among the CLI's fixtures, and the driver's WorkflowGraphVersionsTests reads it too.
@@ -1245,8 +1245,9 @@ test('what a merge writes rather than merges is the orientation index, by its fo
   assert.equal(tool.isGenerated('docs/decisions/D1.md'), false);
   for (const { folder, tool: writer } of tool.GENERATED) {
     assert.ok(existsSync(join(repoRoot, writer)), `${writer} writes ${folder}/ and is not here`);
-    // A hand merge meets no textual merge of it either: the attribute keeps one side whole, and the tool writes it again.
-    assert.match(readFileSync(join(repoRoot, '.gitattributes'), 'utf8'), new RegExp(`^${folder.replace(/\//g, '\\/')}/\\*\\* -merge$`, 'm'));
+    // A hand merge meets no textual merge of it either: the attribute keeps one side whole, and the tool writes it again. It is
+    // marked generated too (LANDREBASE1), so a landing's replay takes the line's copy of it.
+    assert.match(readFileSync(join(repoRoot, '.gitattributes'), 'utf8'), new RegExp(`^${folder.replace(/\//g, '\\/')}/\\*\\* -merge linguist-generated$`, 'm'));
   }
 });
 
