@@ -189,11 +189,11 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Asks/Channel.cs` | 67 | 1188 |
 | `src/Daoris.Service/Daoris.Service.Core/Asks/History.cs` | 41 | 826 |
 | `src/Daoris.Service/Daoris.Service.Core/Knowledge/KnowledgeService.cs` | 57 | 1129 |
-| `src/Daoris.Service/Daoris.Service.Core/Quests/QuestExchange.cs` | 154 | 2718 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests/QuestExchange.cs` | 155 | 2733 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests/QuestLog.cs` | 51 | 803 |
-| `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 256 | 4366 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 257 | 4378 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs` | 97 | 1770 |
-| `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 94 | 1592 |
+| `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 95 | 1612 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 51 | 903 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 157 | 2585 |
 | `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 69 | 804 |
