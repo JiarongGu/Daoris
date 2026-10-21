@@ -14,48 +14,22 @@
 // Two tests enforce exactly that shape. The second is the one that matters — a gate breaks by an
 // innocuous import three modules deep acquiring a socket, not by an obvious `fetch`.
 //
-// It reaches one other kind of host (AGT2b): a vendor's release channel, for `agent pin` (and for
-// `agent update`, which asks the channel for its newest release and then pins it, USE1a). That is the
-// same shape of conversation — a person asked for it, and no gate runs it — so it lives here rather
-// than giving the toolchain a socket of its own; the dispatcher hands the fetcher in.
-//
-// And since TOOLS4, a tool's maker and a resource location, for `daoris tool download|use … managed|update|look`
-// (D121 §3.6, §3.7): the same fetcher, its hops held to the address rule the dispatcher names.
+// A vendor's release channel (AGT2b), a tool's maker and a resource location (TOOLS4) were fetched here once; each is Daoris's
+// driver program's since its family became the program's (PUSH1f2c, PUSH1f2e), so no verb of this package fetches one.
 //
 // And since RPC1f, the running Daoris's own pipe (D171 point 3, the terminal RPC design §9): a management verb that edits what a
 // window's route edits sends that route while Daoris runs, so the instance's own handler judges, writes and publishes it, and takes
 // the home's lease where none runs (`instanceDoor`). Node opens a Windows named pipe with `net.connect`, so the wire is here too.
-//
-// And since CODEXLOGIN1, a local port tried for a moment before a browser sign-in starts (`portHold`): a socket all the same,
-// bound on the loopback address and let go, reaching no host, handed to `agent login` as the fetcher is to `agent pin`.
 
-import { createWriteStream, mkdirSync, readdirSync, readFileSync, statSync, unlinkSync } from 'node:fs';
-import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import { once } from 'node:events';
-import { connect, createServer, type Socket } from 'node:net';
+import { mkdirSync, readdirSync, readFileSync, statSync, unlinkSync } from 'node:fs';
+import { randomBytes, randomUUID } from 'node:crypto';
+import { connect, type Socket } from 'node:net';
 import { dirname, join } from 'node:path';
-import { finished } from 'node:stream/promises';
-import { DaorisError, RefusalError, type ExitCode } from '../platform/errors.ts';
+import { DaorisError, type ExitCode } from '../platform/errors.ts';
 import { writeTextAtomic } from '../platform/fsx.ts';
 import { daorisHome, homeEntry, homeId, isHomeId, THIS_INSTALL } from '../platform/home.ts';
 import { leaseForVerb, leaseHolder, leaseNamed } from '../platform/lease.ts';
 import type { InstanceRoute, VerbDoor, VerbPress } from '../platform/door.ts';
-import type { Fetcher } from '../agents/channels.ts';
-
-/**
- * Take `port` on the loopback address for a moment, exclusively, and say whether it could be (CODEXLOGIN1, D125's note): the
- * toolchain's `PortHold`, its words the driver's `SignInPorts.Hold`'s. Tried by binding, never read from Windows' table of
- * reserved ranges: a range is not the only holder. Its error's code tells another program (`EADDRINUSE`) from Windows'
- * refusal (`EACCES`, os error 10013).
- */
-export function portHold(port: number): Promise<'free' | 'in-use' | 'reserved' | 'refused'> {
-  return new Promise((resolve) => {
-    const server = createServer();
-    server.once('error', (error: NodeJS.ErrnoException) => resolve(
-      error.code === 'EADDRINUSE' ? 'in-use' : error.code === 'EACCES' ? 'reserved' : 'refused'));
-    server.listen({ port, host: '127.0.0.1', exclusive: true }, () => server.close(() => resolve('free')));
-  });
-}
 
 const NO_SERVICE =
   'no DAORIS_SERVICE_URL — this command talks to a knowledge service, and needs\n'
@@ -726,53 +700,5 @@ export function refusal(status: number, json: Record<string, unknown> | null): s
 /** What `fetch` is to this module: handed in by a test, which answers as a host without opening a socket. */
 export type Get = (url: string, init: RequestInit) => Promise<Response>;
 
-/**
- * A vendor's release channel, over HTTPS (AGT2b), its redirects followed as `fetch` follows them. It fetches and nothing
- * else: every judgement about what arrived — the signature, the hashes, the version — is `channels.ts`'s, where it is
- * tested without a network. A tool's download and a resource location were fetched here too, every hop held to their
- * address rule (TOOLS4), until PUSH1f2c made them Daoris's driver program's (`ToolInstall`, which holds that rule).
- *
- * @remarks
- * A download is streamed to disk and hashed on the way, never held whole: a Claude Code binary is
- * over 200 MB. A 404 answers null, because "that version is not there" is an answer the caller words;
- * anything else that is not a 2xx is refused here with the address and the status, as `unreachable`.
- */
-export function releaseFetcher(request: Get = fetch): Fetcher {
-  return {
-    async bytes(url) {
-      const response = await get(url);
-      return response ? Buffer.from(await response.arrayBuffer()) : null;
-    },
-
-    async save(url, to) {
-      const response = await get(url);
-      if (!response?.body) return null;
-
-      const hash = createHash('sha256');
-      let size = 0;
-      const out = createWriteStream(to);
-      try {
-        for await (const chunk of response.body as AsyncIterable<Uint8Array>) {
-          hash.update(chunk);
-          size += chunk.length;
-          if (!out.write(chunk)) await once(out, 'drain');
-        }
-      } finally {
-        out.end();
-        await finished(out);
-      }
-
-      return { sha256: hash.digest('hex'), size };
-    },
-  };
-
-  async function get(url: string): Promise<Response | null> {
-    const response = await request(url, { redirect: 'follow', headers: { 'user-agent': 'daoris' } }).catch((error: Error) => {
-      throw new RefusalError('unreachable', `could not reach ${new URL(url).host} — ${error.message}. Nothing was installed.`);
-    });
-
-    if (response.status === 404) return null;
-    if (!response.ok) throw new RefusalError('unreachable', `${url} answered ${response.status} — nothing was installed.`);
-    return response;
-  }
-}
+// PUSH1f2e: a maker's release channel, which `daoris agent pin` and a pinned `update` fetched here, is Daoris's driver program's
+// (`ReleaseChannels`), with the judgements `channels.ts` made of what arrived.

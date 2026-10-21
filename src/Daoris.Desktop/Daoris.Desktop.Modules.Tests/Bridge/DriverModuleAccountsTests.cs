@@ -339,7 +339,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     [Fact]
     public void The_scopes_verdicts_are_the_shared_tables_rows()
     {
-        var table = JsonNode.Parse(File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "Daoris.Cli", "test", "fixtures", "usage-curves.json")))!;
+        var table = JsonNode.Parse(File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "usage-curves.json")))!;
         var now = DateTimeOffset.Parse(table["now"]!.GetValue<string>(), System.Globalization.CultureInfo.InvariantCulture);
         var loop = Loop();
         var rows = table["tightest"]!.AsArray();

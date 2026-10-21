@@ -4,14 +4,14 @@ import { describe, expect, it } from 'vitest';
 import { shellWord, shellWords } from './shellWord';
 
 /**
- * An argument as a terminal hint prints it (ACCTQUOTE1, D125's ACCTQUOTE1 note). The page's half of a TWIN with the CLI's
- * `shellword.ts`: both read the CLI's `test/fixtures/shell-words.json`, row for row, so the screen's twin of a command and
+ * An argument as a terminal hint prints it (ACCTQUOTE1, D125's ACCTQUOTE1 note). The page's half of a TWIN with the driver's
+ * `ShellWord`: both read `fixtures/shell-words.json` among the driver's tests, row for row, so the screen's twin of a command and
  * the terminal's own spell an argument the same way. The CLI's suite holds the table against the shells themselves.
  */
 
 type Row = [why: string, value: string, word: string];
 // From the page's package, where its suite runs, as the names check reads the package's own files.
-const TABLE = join(process.cwd(), '..', 'Daoris.Cli', 'test', 'fixtures', 'shell-words.json');
+const TABLE = join(process.cwd(), '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests', 'fixtures', 'shell-words.json');
 const ROWS = JSON.parse(readFileSync(TABLE, 'utf8')) as Row[];
 
 describe('an argument in a terminal hint', () => {

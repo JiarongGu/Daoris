@@ -13,9 +13,9 @@
 //      person types the value as their shell spells it; pasted as it is, the placeholder reads as a redirection, as
 //      `<branch>` in a twin always has.
 //
-// It is the page's twin of the CLI's `shellword.ts`, which carries the reasons beside each kind; `shellWord.test.ts` and
-// the CLI's `shellword.test.ts` read one table, the CLI's `test/fixtures/shell-words.json`, row for row, and the CLI's
-// suite holds that table against the shells themselves.
+// It is the page's twin of the driver's `ShellWord` (the CLI's `shellword.ts` left with PUSH1f2e); `shellWord.test.ts` and
+// the driver's `ShellWordTests` read one table, `fixtures/shell-words.json` among the driver's tests, row for row, and the
+// CLI's suite holds that table against the shells themselves.
 
 /** Every shell reads it as itself. */
 const BARE = /^[\p{L}\p{N}_][\p{L}\p{N}_.+:@/-]*$/u;

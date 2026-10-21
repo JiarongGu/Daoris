@@ -610,7 +610,7 @@ public sealed class ReleaseChannelTests : IDisposable
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory is not null)
         {
-            var candidate = Path.Combine(directory.FullName, "src", "Daoris.Cli", "test", "fixtures", "vendor");
+            var candidate = Path.Combine(directory.FullName, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "vendor");
             if (Directory.Exists(candidate)) return candidate;
             directory = directory.Parent;
         }

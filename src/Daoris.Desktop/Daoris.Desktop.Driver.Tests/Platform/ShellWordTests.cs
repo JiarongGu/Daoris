@@ -6,9 +6,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// An argument as a command in the driver's words prints it (ACCTQUOTE1b, D125's ACCTQUOTE1 note): bare where every shell
 /// reads it as itself, in double quotes where they keep it whole in PowerShell, Command Prompt and a POSIX shell alike, and a
-/// placeholder where no spelling does. The driver's half of a TWIN with the CLI's <c>shellword.ts</c> and the page's
-/// <c>shellWord.ts</c>: all three read one table, the CLI's <c>test/fixtures/shell-words.json</c>, row for row, and the CLI's
-/// suite holds that table against the shells themselves.
+/// placeholder where no spelling does. The driver's half of a TWIN with the page's <c>shellWord.ts</c>: both read one table,
+/// <c>fixtures/shell-words.json</c> among the driver's tests (the CLI's <c>shellword.ts</c> left with PUSH1f2e), row for row, and
+/// the CLI's suite holds that table against the shells themselves.
 /// </summary>
 public sealed class ShellWordTests
 {
@@ -47,7 +47,7 @@ public sealed class ShellWordTests
 
     private static IReadOnlyList<(string, string, string)> ReadRows()
     {
-        using var table = JsonDocument.Parse(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "test", "fixtures", "shell-words.json")));
+        using var table = JsonDocument.Parse(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "shell-words.json")));
         return [.. table.RootElement.EnumerateArray().Select(row => (row[0].GetString()!, row[1].GetString()!, row[2].GetString()!))];
     }
 }
