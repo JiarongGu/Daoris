@@ -172,13 +172,18 @@ public sealed class ToolsRoutes(DriverContext context)
 
     // A downloaded version nothing uses, removed (§3.6): the one in use refuses, and so does one the system holds. Its coded refusals
     // (missing, in use, held) are the module's one mapping's (ToolCodes, PUSH1f2c), the codes `daoris-driver tool delete` says alone.
+    // KEEP1b (D195 point 6): through the downloads' one act, judged under the use files' locks against the running sessions, moved aside
+    // first; off the window's thread, since it asks the service and walks the version.
     [DriverRoute("TOOLS_DELETE")]
     [Publishes("TOOLS_DELETE", StateScopes.Tools)]
-    private object? ToolsDelete(IpcRequest request)
+    private async Task<object?> ToolsDeleteAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var declared = DeclaredTool(PayloadHelper.GetRequiredValue<string>(request.Payload, "tool"));
         var version = PayloadHelper.GetRequiredValue<string>(request.Payload, "version");
-        var folder = ToolInstall.Delete(_loop.Home, declared.Id, version);
+        var home = _loop.Home;
+        var folder = await Task.Run(() => ToolInstall.DeleteAsync(
+            home, declared.Id, version, token => LiveSessions.ReadAsync(_loop.Service, DaorisHome.Entry(home, HomeEntry.SessionPids), token),
+            _loop.Harnesses.SettingsPath, _loop.ConfigPath, _loop.Log, ct: cancellationToken), cancellationToken).ConfigureAwait(false);
         return new { Tool = declared.Id, Version = version, Folder = folder };
     }
 

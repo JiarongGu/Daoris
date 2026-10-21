@@ -22,8 +22,22 @@ public static class KeepKinds
     /// <summary>How long a folder set aside waits after its move before its package folders go: a write by then keeps it whole (§5).</summary>
     public static readonly TimeSpan SetAsideSettle = TimeSpan.FromHours(1);
 
+    /// <summary>
+    /// The versions the agents and the tools downloaded (KEEP1b, the cleanup design §2.1): every one is made again by its next pin or use,
+    /// and one nothing uses goes seven days into its current unused stretch (§2.3, <see cref="DownloadKeeping"/>), through CACHECLEAR1's
+    /// act, which Tools' delete of one version takes too (<see cref="DownloadClearing"/>). The person may set 0 to 365 days, or
+    /// <c>never</c>, which leaves them to the press alone (KEEP1d).
+    /// </summary>
+    public static KeepKind Downloads { get; } = new(
+        "downloads", [HomeEntry.Toolchain.Name, HomeEntry.ToolVersions.Name],
+        "every version, downloaded again by its next pin or use",
+        TimeSpan.FromDays(7), MinDays: 0, MaxDays: 365, MaySetWhole: false, Remover: "CACHECLEAR1's act, which Tools' delete takes too")
+    {
+        MaySetNever = true,
+    };
+
     /// <summary>Every kind with a rule that runs, in the order the card will show them.</summary>
-    public static IReadOnlyList<KeepKind> Table { get; } = [SetAside];
+    public static IReadOnlyList<KeepKind> Table { get; } = [SetAside, Downloads];
 
     /// <summary>The kind of this id, or null where the table holds none.</summary>
     public static KeepKind? Named(string id) => Table.FirstOrDefault(kind => string.Equals(kind.Id, id, StringComparison.Ordinal));
@@ -39,18 +53,25 @@ public static class KeepKinds
 /// <param name="MaySetWhole">Whether the person may keep it whole, as before its rule.</param>
 /// <param name="Remover">Its removal's one typed operation, in words.</param>
 public sealed record KeepKind(
-    string Id, IReadOnlyList<string> Entries, string MadeAgain, TimeSpan Days, int MinDays, int MaxDays, bool MaySetWhole, string Remover);
+    string Id, IReadOnlyList<string> Entries, string MadeAgain, TimeSpan Days, int MinDays, int MaxDays, bool MaySetWhole, string Remover)
+{
+    /// <summary>Whether the person may set <c>never</c>: none by its days, the press alone (the downloads', KEEP1b).</summary>
+    public bool MaySetNever { get; init; }
+}
 
 /// <summary>
 /// The one effective policy (the cleanup design §2.1, Codex 5.2): the table's defaults under the person's choices, the only reader of a
 /// kind's days. Every place that says or acts on the set-aside folders' days reads it: the purge, the look's report, the work inventory
-/// and the terminal's trees list.
+/// and the terminal's trees list; the downloads' days, the look's pass and the Downloads row (KEEP1b).
 /// </summary>
 /// <param name="SetAside">The set-aside folders' rule.</param>
 public sealed record KeepPolicy(SetAsidePolicy SetAside)
 {
     /// <summary>The table's defaults.</summary>
     public static KeepPolicy Default { get; } = new(new SetAsidePolicy(KeepKinds.SetAside.Days, Whole: false));
+
+    /// <summary>The downloads' rule (KEEP1b): the table's seven days until KEEP1d reads the person's choice.</summary>
+    public DownloadsPolicy Downloads { get; init; } = new(KeepKinds.Downloads.Days);
 
     /// <summary>
     /// The policy this home keeps by. Today the table's defaults: the person's choices in <c>driver.json</c>'s <c>keep</c> arrive with
@@ -65,3 +86,9 @@ public sealed record KeepPolicy(SetAsidePolicy SetAside)
 
 /// <summary>The set-aside folders' rule: their days, and whether every folder is kept whole (no slim).</summary>
 public sealed record SetAsidePolicy(TimeSpan Days, bool Whole);
+
+/// <summary>
+/// The downloads' rule (KEEP1b): how long into its current unused stretch a version nothing uses is kept; null is <c>never</c>, the press
+/// alone, below the floor too (KEEP1f).
+/// </summary>
+public sealed record DownloadsPolicy(TimeSpan? Days);

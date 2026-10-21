@@ -19114,6 +19114,13 @@ list|add|remove|default|order|ready|rename|join` (`AgentAccountsCommand`), hande
 or `ACCOUNT_USE`'s press while Daoris runs, else the library's write, refused from a marked terminal. Today's text kept (70 rows, none
 changed); both ways over 23 cases. Their TypeScript branches and 26 CLI tests left. The account verbs' shapes and payloads unchanged.
 Detail: D194's PUSH1f2e2 note. On Opus.
+
+## KEEP1b — unused downloads go by their rule (2026-10-22, D195)
+
+> - [ ] **KEEP1b — unused downloads go by their rule** (driver, service, modules, web-settings; after KEEP1a and PUSH1f2e; D195, the cleanup design §9). An unused version goes seven days into its current unused stretch, judged under the use files' locks and kept while a running session resolved it; Tools' delete takes the same act. Proof: as §9 names it.
+
+**Outcome** 2026-10-22: built. The Keeping pass removes daily what is seven days into its unused stretch through the one act (Tools' delete's
+too), under the use files' locks, kept while a session's `resolved` names it; the Downloads row says each day. Detail: D195's KEEP1b note.
 ## NOTIFY2c — every main window counts its own workspace (2026-10-22, D196)
 
 > - [ ] **NOTIFY2c — every main window counts its own workspace** (modules, web-shell; after 2b; D196, the notification design §9). Each main window's taskbar button and title wear its own workspace's count, and a notification's click opens the window holding what it is about. Proof: as §9 names it.

@@ -838,6 +838,32 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         }
     }
 
+    /// <summary>
+    /// Record the downloaded versions a start of this session was handed (KEEP1b, D195 point 6; the cleanup design §3.5, Fable F2.5),
+    /// <c>&lt;agent|tool&gt;/&lt;name&gt;/&lt;version&gt;</c> (<see cref="DownloadClearing.Handed"/>), which the record adds to those of its
+    /// earlier starts: the downloads' rule keeps each while the session runs. A refusal is the ledger's sentence (<see cref="DriverException"/>).
+    /// </summary>
+    public async Task KeepResolvedAsync(string sessionId, IReadOnlyList<string> versions, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteStartArray("resolved");
+            foreach (var version in versions) writer.WriteStringValue(version);
+            writer.WriteEndArray();
+            writer.WriteEndObject();
+        });
+
+        var (ok, _, payload, root) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(sessionId)}/resolved", body, ct)
+            .ConfigureAwait(false);
+        if (!ok)
+        {
+            throw new DriverException(
+                $"the service refused recording the versions session `{sessionId}` was handed: "
+                + ((root is { } refused ? Text(refused, "error") : null) ?? payload));
+        }
+    }
+
     /// <summary>This machine's asks that are not closed, newest first — what the loop finds intakes in.</summary>
     public async Task<IReadOnlyList<AskView>> AsksAsync(CancellationToken ct = default)
     {
@@ -1922,6 +1948,27 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         }
 
         return sessions;
+    }
+
+    /// <summary>
+    /// This machine's active sessions as the downloads' rule reads them (KEEP1b, D195 point 6; the cleanup design §3.5): each id, when its
+    /// record was opened, and the downloaded versions its starts were handed (<c>resolved</c>, answered on loopback alone), null for a record
+    /// from before that field, which keeps the start-time rule. A teammate's record runs nothing here.
+    /// </summary>
+    public async Task<IReadOnlyList<LiveSession>> LiveSessionsAsync(CancellationToken ct = default) =>
+        ReadRunning(await GetAsync("/api/sessions", ct).ConfigureAwait(false));
+
+    /// <summary><see cref="LiveSessionsAsync"/>'s read of an answer.</summary>
+    internal static IReadOnlyList<LiveSession> ReadRunning(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        return [.. document.RootElement.EnumerateArray()
+            .Where(session => !IsTeams(session))
+            .Select(session => new LiveSession(
+                Text(session, "id") ?? "", Moment(session, "created"),
+                session.TryGetProperty("resolved", out var resolved) && resolved.ValueKind == JsonValueKind.Array
+                    ? [.. resolved.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.String).Select(each => each.GetString()!)]
+                    : null))];
     }
 
     /// <summary>

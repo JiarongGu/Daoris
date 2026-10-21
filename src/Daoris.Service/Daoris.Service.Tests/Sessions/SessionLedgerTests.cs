@@ -162,6 +162,38 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Equal(now, (await _sessions.FindAsync(opened.Id))!.Access);
     }
 
+    /// <summary>
+    /// KEEP1b (D195 point 6; the cleanup design §3.5, Fable F2.5): a record of this machine's keeps the downloaded versions each start of it
+    /// was handed, a go-on's added to the first's, of any kind; one told none reads none, a record from before. Its state, its last move and
+    /// its revision stay. A version that is no <c>&lt;agent|tool&gt;/&lt;name&gt;/&lt;version&gt;</c>, none, or too many moves nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_record_keeps_the_downloaded_versions_its_starts_were_handed()
+    {
+        var quest = await Publish();
+        var opened = (await _ledger.OpenAsync(quest.Id, "stub", Now)).Session!;
+        var chat = await _sessions.CreateAsync(null, "Engine", "stub", Now, kind: SessionKind.Chat);
+        Assert.Null((await _sessions.FindAsync(opened.Id))!.Resolved);
+
+        var first = await _ledger.KeepResolvedAsync(opened.Id, ["agent/claude-code/2.0.1"]);
+        var then = await _ledger.KeepResolvedAsync(opened.Id, ["tool/gh/2.61.0", "agent/claude-code/2.0.1"]);
+
+        Assert.Equal(["agent/claude-code/2.0.1"], first!.Resolved);
+        Assert.Equal(["agent/claude-code/2.0.1", "tool/gh/2.61.0"], then!.Resolved);
+        Assert.Equal(["agent/claude-code/2.0.1", "tool/gh/2.61.0"], (await _sessions.FindAsync(opened.Id))!.Resolved);
+        Assert.Equal((opened.State, opened.Updated), (then.State, then.Updated));
+        Assert.Equal(["agent/codex-acp/0.5.0"], (await _ledger.KeepResolvedAsync(chat.Id, ["agent/codex-acp/0.5.0"]))!.Resolved);
+        Assert.Null(await _ledger.KeepResolvedAsync("nothere", ["agent/claude-code/2.0.1"]));
+        foreach (var wrong in new[] { "agent/claude-code", "file/gh/2.61.0", "agent/../2.0.1", "agent/a b/1", "agent/claude-code/2.0.1/bin" })
+        {
+            await Assert.ThrowsAsync<ArgumentException>(() => _ledger.KeepResolvedAsync(opened.Id, [wrong]));
+        }
+
+        await Assert.ThrowsAsync<ArgumentException>(() => _ledger.KeepResolvedAsync(opened.Id, []));
+        await Assert.ThrowsAsync<ArgumentException>(() => _ledger.KeepResolvedAsync(opened.Id, [.. Enumerable.Range(0, 65).Select(at => $"agent/a/{at}")]));
+        Assert.Equal(["agent/claude-code/2.0.1", "tool/gh/2.61.0"], (await _sessions.FindAsync(opened.Id))!.Resolved);
+    }
+
     [Fact]
     public async Task An_unknown_quest_is_refused()
     {

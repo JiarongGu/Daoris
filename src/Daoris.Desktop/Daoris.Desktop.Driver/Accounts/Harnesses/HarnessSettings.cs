@@ -203,6 +203,21 @@ public sealed record HarnessSettings(
         return changed;
     }
 
+    /// <summary>
+    /// This machine's pin of <paramref name="harness"/> at <paramref name="version"/>, written through <see cref="Change"/> once the version's
+    /// folder is found there again under the file's lock (KEEP1b, the cleanup design §3.5; Fable F2.2, F2.3): the downloads' rule judges a
+    /// version under the same lock and renames it before letting go, so a pin that waited on it finds its version gone and is refused,
+    /// rather than written naming nothing every later start refuses.
+    /// </summary>
+    /// <param name="home">The home whose managed versions the pin names.</param>
+    /// <exception cref="DriverException">Nothing is installed at that version now, or the file does not read; nothing was written.</exception>
+    public static HarnessSettings Pin(string path, string home, string harness, string version) =>
+        Change(path, read => Directory.Exists(ManagedHome(home, harness, version))
+            ? read.WithVersion(harness, version)
+            : throw new DriverException(
+                $"`{harness}` {version} is no longer installed where Daoris keeps it — it was removed as the pin waited — so the pin was "
+                + $"not written. `daoris agent pin {harness} {version}` installs it again."));
+
     /// <summary><see cref="Save"/> for a writer already holding the file's <see cref="KeepLock"/>.</summary>
     private void SaveHolding(string path)
     {

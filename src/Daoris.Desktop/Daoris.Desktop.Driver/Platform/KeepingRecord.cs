@@ -5,8 +5,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// <c>data/keeping.json</c>, what the disk cannot say again of the keeping rules' runs (CLEANUP1, D195 point 2; the cleanup design §2.3):
-/// each kind's last run, <c>last.&lt;kind&gt;</c>; KEEP1b adds each download's first-unused time beside it. A machine record: never synced,
-/// and no route answers it raw.
+/// each kind's last run, <c>last.&lt;kind&gt;</c>, and each download's first-unused time, <c>unused.&lt;agent|tool&gt;/&lt;name&gt;/&lt;version&gt;</c>
+/// (KEEP1b), the start of its current unused stretch. A machine record: never synced, and no route answers it raw.
 /// </summary>
 /// <remarks>
 /// <para><b>One way to write it</b> (Codex 4.1): <see cref="JsonKeeping.Save"/>, the file's keep lock held from its re-read to its rename,
@@ -62,7 +62,25 @@ public static class KeepingRecord
                 return Unread("its `last` is not an object");
             }
 
-            return new(true, null, last, raw, schema);
+            // KEEP1b: each download's first-unused time. An entry that is no time is no first-unused time, so its version does not go
+            // by its days; an `unused` that is no object is a record that does not read, so none does (the cleanup design §2.3).
+            var unused = new Dictionary<string, DateTimeOffset>(StringComparer.Ordinal);
+            var unusedRaw = new Dictionary<string, string>(StringComparer.Ordinal);
+            if (root.TryGetProperty("unused", out var versions))
+            {
+                if (versions.ValueKind != JsonValueKind.Object) return Unread("its `unused` is not an object");
+                foreach (var version in versions.EnumerateObject())
+                {
+                    unusedRaw[version.Name] = version.Value.GetRawText();
+                    if (version.Value.ValueKind == JsonValueKind.String
+                        && DateTimeOffset.TryParseExact(version.Value.GetString(), Moment, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var since))
+                    {
+                        unused[version.Name] = since;
+                    }
+                }
+            }
+
+            return new(true, null, last, raw, schema) { Unused = unused, UnusedRaw = unusedRaw };
         }
         catch (JsonException error)
         {
@@ -120,6 +138,68 @@ public static class KeepingRecord
         }
     }
 
+    /// <summary>
+    /// Downloads' first-unused times set (a time) or cleared (null) over the record as it stands now, <paramref name="read"/> being the record
+    /// as this writer read it (KEEP1b, the cleanup design §2.3): only those <c>unused</c> keys are this edit's, so another writer's entries
+    /// and its <c>last</c> stay. Null where it was written, or there was nothing to change; else why not, nothing written.
+    /// </summary>
+    public static string? WriteUnused(string home, KeepingFile read, IReadOnlyDictionary<string, DateTimeOffset?> changes)
+    {
+        if (read.Problem is { } problem) return $"{problem}, so no download's first-unused time was written: a file that does not read is never written over";
+        var after = new Dictionary<string, string>(read.UnusedRaw, StringComparer.Ordinal);
+        foreach (var (key, since) in changes)
+        {
+            if (since is { } at) after[key] = JsonSerializer.Serialize(At(at));
+            else after.Remove(key);
+        }
+
+        var understood = JsonFile.Serialize(writer =>
+        {
+            writer.WriteStartObject();
+            if (read.Schema is { } schema)
+            {
+                writer.WritePropertyName("schema");
+                writer.WriteRawValue(schema);
+            }
+
+            Entries(writer, read.UnusedRaw);
+            writer.WriteEndObject();
+        });
+        var edited = JsonFile.Serialize(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteNumber("schema", Schema);
+            Entries(writer, after);
+            writer.WriteEndObject();
+        });
+        try
+        {
+            JsonKeeping.Save(PathOf(home), read.Found, understood, edited);
+            return null;
+        }
+        catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
+        {
+            return error.Message;
+        }
+
+        // An emptied map is left out, which the keeping write reads as the entries this writer read taken, never another's.
+        static void Entries(Utf8JsonWriter writer, IReadOnlyDictionary<string, string> entries)
+        {
+            if (entries.Count == 0) return;
+            writer.WriteStartObject("unused");
+            foreach (var (key, raw) in entries.OrderBy(each => each.Key, StringComparer.Ordinal))
+            {
+                writer.WritePropertyName(key);
+                writer.WriteRawValue(raw);
+            }
+
+            writer.WriteEndObject();
+        }
+    }
+
+    /// <summary>A moment as the record writes it.</summary>
+    private static string At(DateTimeOffset at) => at.UtcDateTime.ToString(Moment, CultureInfo.InvariantCulture);
+
     private static void Write(Utf8JsonWriter writer, KeepingLast last)
     {
         writer.WriteStartObject();
@@ -171,7 +251,17 @@ public static class KeepingRecord
 /// <param name="Raw">Each kind's last run as written, which an edit of it is made from.</param>
 /// <param name="Schema">The record's <c>schema</c> as written; null where it holds none.</param>
 public sealed record KeepingFile(
-    bool Found, string? Problem, IReadOnlyDictionary<string, KeepingLast> Last, IReadOnlyDictionary<string, string> Raw, string? Schema);
+    bool Found, string? Problem, IReadOnlyDictionary<string, KeepingLast> Last, IReadOnlyDictionary<string, string> Raw, string? Schema)
+{
+    /// <summary>
+    /// Each download's first-unused time that reads as one (KEEP1b), by <c>&lt;agent|tool&gt;/&lt;name&gt;/&lt;version&gt;</c>
+    /// (<see cref="DownloadKeeping.Key(string, string, string)"/>): the start of its current unused stretch.
+    /// </summary>
+    public IReadOnlyDictionary<string, DateTimeOffset> Unused { get; init; } = new Dictionary<string, DateTimeOffset>();
+
+    /// <summary>Each <c>unused</c> entry as written, which an edit of it is made from.</summary>
+    public IReadOnlyDictionary<string, string> UnusedRaw { get; init; } = new Dictionary<string, string>();
+}
 
 /// <summary>A kind's last run (the cleanup design §2.3): when, through which door, which run, what it removed and what it kept, by why.</summary>
 /// <param name="Door"><c>look</c>, <c>floor</c>, <c>press</c> or <c>terminal</c> (<see cref="KeepingRun"/>'s doors).</param>

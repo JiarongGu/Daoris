@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { DownloadCleared, DownloadedVersion, DownloadsListing } from '../../data/wiring';
 import { Button, Pill, Prose } from '../../design/ui';
-import { size } from '../../locales/format';
+import { clockOf, size } from '../../locales/format';
 
 /** A kept row's words: why it stays, with what keeps it where that is a workspace or a file. */
 function keptWords(t: (key: string, options?: Record<string, unknown>) => string, keeps: string, by: readonly string[] = []) {
@@ -24,6 +24,7 @@ export const removable = (row: DownloadedVersion) => row.unfinished || !row.keep
  * The Downloads row's clearing (CACHECLEAR1, D88's shape): every version the agents and tools downloaded under `cache/`, listed
  * first with its size and what keeps it, then one press that removes those nothing uses. The driver judges each again right before
  * it goes, so the press's answer may keep a row the list offered, and says why; a version kept is never offered to be forced.
+ * KEEP1b: the rule's sentence, and beside each version nothing uses the day the rule takes it, once a pass has found it unused.
  *
  * @remarks
  * A molecule: drawn from props, so every state is reachable without a shell. `listing` absent is the list on its way.
@@ -46,6 +47,7 @@ export function WiringDownloads({ listing, busy = false, cleared = null, onClear
   return (
     <section aria-label={t('settings.daoris.downloads.title')} className="grid gap-2 border-t border-line pt-2">
       <Prose className="text-small text-ink-soft">{t('settings.daoris.downloads.what')}</Prose>
+      {listing?.days != null && <p className="m-0 text-small text-ink-soft">{t('settings.daoris.downloads.rule', { count: listing.days })}</p>}
       {!listing && <p className="m-0 text-small text-ink-faint">{t('settings.daoris.downloads.listing')}</p>}
       {listing?.why && <p className="m-0 text-small text-ink-soft">{t(`settings.daoris.downloads.listWhy.${listing.why}`, { defaultValue: listing.why })}</p>}
       {listing && !listing.why && rows.length === 0 && <p className="m-0 text-small text-ink-soft">{t('settings.daoris.downloads.none')}</p>}
@@ -59,6 +61,9 @@ export function WiringDownloads({ listing, busy = false, cleared = null, onClear
               {removable(row)
                 ? <Pill tone="open">{t(row.unfinished ? 'settings.daoris.downloads.unfinished' : 'settings.daoris.downloads.goes')}</Pill>
                 : <span className="text-ink-faint">{keptWords(t, row.keeps!, row.by)}</span>}
+              {removable(row) && !row.unfinished && row.goes && (
+                <span className="text-ink-faint">{t('settings.daoris.downloads.goesOn', { when: clockOf(row.goes) })}</span>
+              )}
             </li>
           ))}
         </ul>

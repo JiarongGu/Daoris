@@ -17,6 +17,7 @@ vi.mock('@shenora/react', () => ({
 
 import { SettingsView } from './SettingsView';
 import i18n from '../locales/i18n';
+import { clockOf } from '../locales/format';
 import { code } from '../test/code';
 import { DRIVER_STATE, respond, show, WIRING } from '../test/shellHarness';
 import type { SystemWiring } from '../bridge/system';
@@ -475,6 +476,21 @@ describe('Settings → This Daoris', () => {
     expect(invoke.mock.calls.some(([, type]) => type === 'SYSTEM_DOWNLOADS_CLEAR')).toBe(false);
   });
 
+  // KEEP1b (D195, the cleanup design §9): the row says each version's date by the rule, and a version a running session was handed is
+  // kept; one no pass has found unused yet has no date.
+  it('says the rule, when each unused version goes by it, and keeps what a running session was handed', async () => {
+    invoke.mockImplementation(withDownloads());
+    open();
+    const folders = within(await screen.findByRole('region', { name: 'Folders' }));
+    await userEvent.click(folders.getByRole('button', { name: 'Clear unused downloads…' }));
+    const list = within(await screen.findByRole('region', { name: 'Clear downloads' }));
+
+    expect(await list.findByText('A version nothing uses goes by itself 7 days after Daoris first finds it unused.')).toBeTruthy();
+    expect(list.getAllByText(/^goes by itself on /)).toHaveLength(1);
+    expect(list.getByText(`goes by itself on ${clockOf('2026-10-22T09:00:00.000+00:00')}`)).toBeTruthy();
+    expect(list.getByText('kept: a running session was handed it')).toBeTruthy();
+  });
+
   it('removes only the rows nothing keeps, and says what the driver kept at the press', async () => {
     const asked = vi.fn();
     invoke.mockImplementation(withDownloads((versions) => {
@@ -511,6 +527,10 @@ describe('Settings → This Daoris', () => {
     expect(list.getByText('保留：本机固定了这个版本')).toBeTruthy();
     expect(list.getByText('保留：工作区 games 固定了这个版本')).toBeTruthy();
     expect(list.getAllByText('智能体').length).toBeGreaterThan(0);
+    // KEEP1b: the rule, the date it goes and the running session's keep, in 中文.
+    expect(list.getByText('没有任何地方使用的版本，会在 Daoris 首次发现它未被使用的 7 天后自动移除。')).toBeTruthy();
+    expect(list.getByText(`将于 ${clockOf('2026-10-22T09:00:00.000+00:00', new Date(), 'zh')} 自动移除`)).toBeTruthy();
+    expect(list.getByText('保留：一个正在运行的会话使用了它')).toBeTruthy();
     await userEvent.click(list.getByRole('button', { name: /^移除 2 个未使用的版本/ }));
     expect(await list.findByText(/^已移除 0 个版本/)).toBeTruthy();
   });

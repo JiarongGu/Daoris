@@ -204,6 +204,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
                     ask, SessionLanguages.OfWorkspace(config, ask.Workspace), InAppBrowserServers.Told(browserDrivers), routedByIntake),
             };
             var (info, harnessNotice) = _driver.Prepare(adapter, target, selection);
+            await _driver.KeepHandedAsync(sessionId, info, ct).ConfigureAwait(false);
 
             await service.AdvanceAsync(sessionId, "starting", ct: ct).ConfigureAwait(false);
 
