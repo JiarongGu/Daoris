@@ -371,7 +371,13 @@ and each blocked entry carries a `code` and its `facts`, which the page words. A
 quest?, repository?, state?, route?, act?}`, read from the machine's record `data/notices.json` (`Notices`, written by any process on
 the home under its keep lock) at the start, at each change this process's own watch of the file hears (`HomeWatch.ForNotices`) and at
 its deadline, and pushed by the writer at its own write; a notice another process wrote, the headless host's, is said once as it
-arrives, `NOTICE` with the partition's fields, while the notify switch is on. A keyed slice's partition
+arrives, `NOTICE` with the partition's fields, while the notify switch is on; a conversation's answer is the kind `answered`, one per
+conversation, kept before the switch's gate (NOTIFY2g). Beside it *Messages* (NOTIFY2g), its partition `messages` keyed by ask,
+`{ask, workspace, teammate, unread, newest?: {id, at, who, repository?, line, level, toEveryone}}` (`AskMessages`), every live ask's
+channel and every teammate's read through the service as the person reads it, `unread` the service's own, read again only where the
+change stream's `channel` or `asks` moved, a press declared to the asks, the service came up, or thirty seconds passed; an urgent
+message to everyone an agent or a teammate wrote, past a watermark per ask whose first judgement is a baseline, is said once as
+`MESSAGE` with `newest`'s fields and its ask's, while the notify switch is on, and never reaches the desktop. A keyed slice's partition
 (`StateSlice.Keyed`) pushes the keys a judgement moved as a delta {baseSeq, removed}, never coalesced.
 
 | Domain | What it carries |

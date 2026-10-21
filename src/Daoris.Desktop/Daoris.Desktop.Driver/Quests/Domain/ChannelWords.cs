@@ -49,6 +49,12 @@ public sealed record ChannelItemView(string Kind, DateTimeOffset At)
     /// <summary>A message's words as written.</summary>
     public string? Text { get; init; }
 
+    /// <summary>
+    /// The teammate's machine a message came from, where not this one (SESSONE2d); null for this machine's own. What tells the person's
+    /// own words from a teammate's (NOTIFY2g), both <see cref="Person"/>.
+    /// </summary>
+    public string? Origin { get; init; }
+
     /// <summary>A line's code: <c>published</c>, <c>taken</c>, <c>done</c>, <c>declined</c> or <c>awaiting</c>.</summary>
     public string? Code { get; init; }
 
@@ -187,6 +193,7 @@ public sealed record ChannelView(string Ask, string Entry, IReadOnlyList<Channel
                 Question = Flag(item, "question"),
                 Open = Flag(item, "open"),
                 Text = Json.Text(item, "text"),
+                Origin = Json.Text(item, "origin"),
                 Code = Json.Text(item, "code"),
                 Quest = Json.Text(item, "quest"),
                 Name = Json.Text(item, "name"),

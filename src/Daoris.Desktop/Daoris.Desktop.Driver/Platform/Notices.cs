@@ -40,6 +40,13 @@ public static class Notices
     /// <summary>A terminal's press that ended unanswered, refused by its time.</summary>
     public const string Expired = "expired";
 
+    /// <summary>
+    /// A conversation that answered the person's words (NOTIFY2g, the notification design §2.4): one per conversation, under
+    /// <c>answered-&lt;session&gt;</c>, made unread again with the moment of each later answer (<see cref="Renew"/>). Listed in
+    /// <i>Messages</i>, never in <i>Done and failed</i>.
+    /// </summary>
+    public const string Answered = "answered";
+
     private const string Moment = "yyyy-MM-dd'T'HH:mm:ss.fff'Z'";
 
     /// <summary>Where the record is: the home table's <c>notices</c> entry.</summary>
@@ -74,9 +81,12 @@ public static class Notices
     /// its workspace with it; null for what waits on the person or is said elsewhere. Its id is the session's, so a second writer of
     /// one end keeps it once.
     /// </summary>
-    public static Notice? Of(AttentionEvent item, DateTimeOffset at) => item.Kind == AttentionKind.Ended
-        ? new($"ended-{item.Session}", Ended, at, Workspace: item.Workspace, Session: item.Session, Repository: item.Repository, State: item.State)
-        : null;
+    public static Notice? Of(AttentionEvent item, DateTimeOffset at) => item.Kind switch
+    {
+        AttentionKind.Ended => new($"ended-{item.Session}", Ended, at, Workspace: item.Workspace, Session: item.Session, Repository: item.Repository, State: item.State),
+        AttentionKind.Answered => new($"answered-{item.Session}", Answered, at, Workspace: item.Workspace, Session: item.Session, Repository: item.Repository),
+        _ => null,
+    };
 
     /// <summary>
     /// The notices a look's attention items keep, each added (<see cref="Of"/>), whether or not the person is told of them: the notify
@@ -101,6 +111,18 @@ public static class Notices
         Edit(home, now, within, notices =>
         {
             if (notices.ContainsKey(notice.Id)) return false;
+            notices[notice.Id] = notice;
+            return true;
+        });
+
+    /// <summary>
+    /// <paramref name="notice"/> kept, over one of the same id that is older: what a conversation's later answer does to its
+    /// <see cref="Answered"/> notice, unread again at its new moment. Null where written; else why not.
+    /// </summary>
+    public static string? Renew(string home, Notice notice, DateTimeOffset now, TimeSpan? within = null) =>
+        Edit(home, now, within, notices =>
+        {
+            if (notices.TryGetValue(notice.Id, out var held) && held.At >= notice.At) return false;
             notices[notice.Id] = notice;
             return true;
         });
@@ -286,7 +308,9 @@ public static class Notices
 /// it is about. Its workspace is the one it was made in, kept on it and never read again from a session that may since be gone; none is
 /// machine-wide.
 /// </summary>
-/// <param name="Kind"><see cref="Notices.Ended"/> or <see cref="Notices.Expired"/>; a later build's kinds are read as written.</param>
+/// <param name="Kind">
+/// <see cref="Notices.Ended"/>, <see cref="Notices.Expired"/> or <see cref="Notices.Answered"/>; a later build's kinds are read as written.
+/// </param>
 /// <param name="State">A session's end state, for <see cref="Notices.Ended"/>.</param>
 /// <param name="Route">A press's route, its module before it where the module is not the driver's (<c>REMOTES.SET</c>).</param>
 /// <param name="Act">A press's act in its asker's own words, where it has no route the page words.</param>

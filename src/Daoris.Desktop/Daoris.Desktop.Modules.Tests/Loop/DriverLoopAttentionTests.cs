@@ -45,4 +45,32 @@ public sealed class DriverLoopAttentionTests : DriverModuleBridge
         await UntilAsync(() => Attention().Length > 0);
         Assert.Equal("c2", Assert.Single(Attention()).GetProperty("Session").GetString());
     }
+
+    /// <summary>
+    /// NOTIFY2g (the notification design §2.4, §2.5): an answer is kept as an <c>answered</c> notice before the switch's gate, so one heard
+    /// with the switch off is listed; one notice per conversation, unread again at its next answer, and never said again as a notice's
+    /// arrival, its own attention being its voice.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_s_answer_is_kept_as_a_notice_whatever_the_switch_says()
+    {
+        DriverConfig.Empty.WithNotify(false).Save(DriverConfigPath);
+        var loop = Loop();
+        await loop.Notices.Slice.JudgeAsync();
+
+        await loop.AnsweredAsync(new AttentionEvent(AttentionKind.Answered, "c1", "engine"));
+        var kept = Assert.Single(Daoris.Driver.Notices.Read(Home, DateTimeOffset.UtcNow)!);
+        Assert.Equal(("answered-c1", "answered", "c1", "engine", false, (string?)null), (kept.Id, kept.Kind, kept.Session, kept.Repository, kept.Read, kept.Workspace));
+        Assert.Empty(Attention());
+
+        DriverConfig.Empty.Save(DriverConfigPath);
+        Assert.Null(loop.Notices.MarkRead(["answered-c1"]));
+        await Task.Delay(20);
+        await loop.AnsweredAsync(new AttentionEvent(AttentionKind.Answered, "c1", "engine"));
+        await loop.Notices.Slice.JudgeAsync();
+
+        var renewed = Assert.Single(Daoris.Driver.Notices.Read(Home, DateTimeOffset.UtcNow)!);
+        Assert.False(renewed.Read);
+        Assert.DoesNotContain(Raised, each => each.Type == NoticesStateSlice.ArrivedType);
+    }
 }

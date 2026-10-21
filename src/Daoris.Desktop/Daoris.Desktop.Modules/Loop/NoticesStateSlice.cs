@@ -13,7 +13,13 @@ namespace Daoris.Desktop;
 /// <remarks>
 /// <para><b>One partition, keyed by notice</b> (<see cref="News"/>): <c>{ id, kind, at, read, workspace?, session?, quest?, repository?,
 /// state?, route?, act? }</c>, picked to <see cref="Fields"/>. No field says what to announce: an arrival is an event
-/// (<see cref="ArrivedType"/>).</para>
+/// (<see cref="ArrivedType"/>). A conversation's answer is the kind <c>answered</c> (NOTIFY2g), which the page lists in
+/// <i>Messages</i>.</para>
+///
+/// <para><b><i>Messages</i>, keyed by ask</b> (NOTIFY2g, <see cref="Messages"/>, judged by <see cref="AskMessages"/>): every live ask's
+/// channel and every teammate's, read through the service as the person reads them, again only where the change stream's channel or
+/// asks moved, a press declared to the asks, or <see cref="ChannelsDeadline"/> passed; an urgent message to everyone said once as
+/// <see cref="AskMessages.ArrivedType"/>, while the switch is on.</para>
 ///
 /// <para><b>Read in every process, whoever drives</b>: at its start, at each change its home watch hears
 /// (<see cref="HomeWatch.ForNotices"/>) and at the topic's deadline behind a missed one. A read that fails keeps what was pushed, and
@@ -34,8 +40,20 @@ public sealed class NoticesStateSlice
     /// <summary>The slice's name, in the page's words.</summary>
     public const string Name = "notices";
 
-    /// <summary>Its partition of notices, keyed by id (2g adds <c>messages</c> beside it).</summary>
+    /// <summary>Its partition of notices, keyed by id.</summary>
     public const string News = "news";
+
+    /// <summary>Its partition of <i>Messages</i>, keyed by ask (NOTIFY2g, <see cref="AskMessages"/>).</summary>
+    public const string Messages = "messages";
+
+    /// <summary>
+    /// How long the channels' read stands with nothing heard (NOTIFY2g): a move the slice did not hear (a mark moved at the service's
+    /// door by no press here) is read within it.
+    /// </summary>
+    public static readonly TimeSpan ChannelsDeadline = TimeSpan.FromSeconds(30);
+
+    /// <summary>The change stream's families that move an ask's channel as the person reads it, or which asks are live.</summary>
+    public static readonly IReadOnlyList<string> ChannelFamilies = ["channel", "asks"];
 
     /// <summary>The event a notice's arrival is said by, its fields the partition's.</summary>
     public const string ArrivedType = "NOTICE";
@@ -56,29 +74,109 @@ public sealed class NoticesStateSlice
     private readonly Func<bool> _notify;
     private readonly Lock _gate = new();
     private readonly LinkedList<string> _said = new();
+    private readonly Func<CancellationToken, Task<IReadOnlyList<AskChannel>?>>? _channels;
+    private readonly AskMessages _messages = new();
     private HashSet<string>? _known;
+    private JsonObject? _asks;
+    private DateTimeOffset? _asksRead;
+    private int _asksDue = 1;
+    private bool _asksFailing;
 
     /// <param name="home">The home whose record is read and written.</param>
     /// <param name="bus">Where the slice pushes and an arrival is said.</param>
     /// <param name="log">The machine log, where a refused write and a failed judgement are said.</param>
     /// <param name="clock">The clock a notice's moment and its week are read by: the system's, or a test's.</param>
     /// <param name="notify">Whether the person is told (the notify switch), read at each arrival; told where none is given.</param>
-    public NoticesStateSlice(string home, IEventBus bus, MachineLog? log = null, TimeProvider? clock = null, Func<bool>? notify = null)
+    /// <param name="channels">
+    /// Every live ask's channel and every teammate's, as the person reads them (NOTIFY2g); null where the service does not answer yet,
+    /// which keeps what was pushed. None given, the slice has no <see cref="Messages"/> partition.
+    /// </param>
+    /// <param name="hears">Where the channels are heard moving (<see cref="ChannelsMoved"/>), beside the record's own wakes.</param>
+    public NoticesStateSlice(
+        string home, IEventBus bus, MachineLog? log = null, TimeProvider? clock = null, Func<bool>? notify = null,
+        Func<CancellationToken, Task<IReadOnlyList<AskChannel>?>>? channels = null, IReadOnlyList<Func<Action, IDisposable>>? hears = null)
     {
         _home = home;
         _bus = bus;
         _log = log;
         _clock = clock ?? TimeProvider.System;
         _notify = notify ?? (() => true);
-        Slice = new(Name, bus, _ => Task.FromResult(Judge()))
+        _channels = channels;
+        Slice = new(Name, bus, JudgeAsync)
         {
             Keyed = true,
+            Hears = hears ?? [],
             Failed = error => log?.Warn("state.slice", ("slice", Name), ("message", error.Message)),
         };
     }
 
-    /// <summary>The loop's own: its home, its log, and its notify switch read from the machine's choices at each arrival.</summary>
-    public static NoticesStateSlice Of(DriverLoop loop, IEventBus bus) => new(loop.Home, bus, loop.Log, notify: () => Notifying(loop.ConfigPath));
+    /// <summary>
+    /// The loop's own: its home, its log, its notify switch read from the machine's choices at each arrival, and the channels read
+    /// through its service, heard moving by the change stream's <see cref="ChannelFamilies"/>, a press declared to the asks (a post, a
+    /// mark) and the service coming up.
+    /// </summary>
+    public static NoticesStateSlice Of(DriverLoop loop, IEventBus bus)
+    {
+        NoticesStateSlice? slice = null;
+        slice = new(loop.Home, bus, loop.Log, notify: () => Notifying(loop.ConfigPath), channels: ct => ChannelsAsync(loop, ct), hears:
+        [
+            wake => QuestsStateSlice.HearLedger(loop, ChannelFamilies, () => slice!.ChannelsMoved()),
+            wake => bus.Subscribe(StateSlice.Module, StatePublisher.Type, message =>
+            {
+                if (message.Payload is StateChanged changed && changed.Scopes.Contains("asks")) slice!.ChannelsMoved();
+                return Task.CompletedTask;
+            }),
+            wake => bus.Subscribe(StateSlice.Module, "DRIVER_READY", _ =>
+            {
+                slice!.ChannelsMoved();
+                return Task.CompletedTask;
+            }),
+        ]);
+        return slice;
+    }
+
+    /// <summary>
+    /// Every live ask's channel and every teammate's, as the person reads them through <paramref name="loop"/>'s service: null until it
+    /// answers. An ask whose channel the host does not hold is passed over.
+    /// </summary>
+    private static async Task<IReadOnlyList<AskChannel>?> ChannelsAsync(DriverLoop loop, CancellationToken ct)
+    {
+        if (loop.Service is not { } service) return null;
+        var channels = new List<AskChannel>();
+        foreach (var ask in await service.AsksAsync(ct).ConfigureAwait(false))
+        {
+            if (await service.ChannelAsync(ask.Id, null, ct).ConfigureAwait(false) is { } view) channels.Add(new(ask.Id, ask.Workspace, false, view));
+        }
+
+        foreach (var ask in await service.ElsewhereAsksAsync(ct).ConfigureAwait(false))
+        {
+            if (await service.ChannelAsync(ask.Id, null, ct).ConfigureAwait(false) is { } view) channels.Add(new(ask.Id, ask.Workspace, true, view));
+        }
+
+        return channels;
+    }
+
+    /// <summary>An ask's channel moved, or which asks are live: the next judgement reads the channels again, and is asked for now.</summary>
+    public void ChannelsMoved()
+    {
+        Interlocked.Exchange(ref _asksDue, 1);
+        Slice.Wake();
+    }
+
+    /// <summary>
+    /// A conversation's answer kept as a notice (NOTIFY2g, §2.4), <paramref name="item"/> an <see cref="AttentionKind.Answered"/>, whatever
+    /// the switch says, renewed unread at each later answer. Said already by its own <c>SESSION_ATTENTION</c> where the switch is on, so
+    /// never said again as an arrival.
+    /// </summary>
+    public void Answered(AttentionEvent item)
+    {
+        if (Notices.Of(item, _clock.GetUtcNow()) is not { } notice) return;
+        Said(notice.Id);
+        if (!Written(Notices.Renew(_home, notice, _clock.GetUtcNow())))
+        {
+            lock (_gate) _said.Remove(notice.Id);
+        }
+    }
 
     /// <summary>The slice the windows hold, which <see cref="DriverLoop.Slices"/> runs.</summary>
     public StateSlice Slice { get; }
@@ -159,8 +257,19 @@ public sealed class NoticesStateSlice
 
     /// <summary>
     /// One judgement: the record read, each notice younger than a week under its id; null where the record does not read, so what was
-    /// pushed stands. Each id not read before is an arrival, said once, but on the first read.
+    /// pushed stands. Each id not read before is an arrival, said once, but on the first read. Beside it <i>Messages</i>
+    /// (<see cref="Messages"/>), its channels read again only where they moved or past <see cref="ChannelsDeadline"/>.
     /// </summary>
+    public async Task<IReadOnlyList<SliceJudged>?> JudgeAsync(CancellationToken ct = default)
+    {
+        var news = Judge();
+        if (news is null) return null;
+
+        var asks = await AsksAsync(ct).ConfigureAwait(false);
+        return asks is null ? news : [.. news, new SliceJudged(Messages, asks)];
+    }
+
+    /// <summary><i>Done and failed</i>'s partition alone, judged from the record (<see cref="JudgeAsync"/>'s first half).</summary>
     public IReadOnlyList<SliceJudged>? Judge()
     {
         var read = Notices.Read(_home, _clock.GetUtcNow());
@@ -170,6 +279,49 @@ public sealed class NoticesStateSlice
         foreach (var notice in read) part[notice.Id] = Picked(notice);
         foreach (var notice in Arrived(read)) _ = _bus.EmitAsync(StateSlice.Module, ArrivedType, Picked(notice));
         return [new SliceJudged(News, part)];
+    }
+
+    /// <summary>
+    /// <i>Messages</i> as last read, read again where the channels moved or the deadline passed: null while none was read, which names no
+    /// partition. A read the service did not answer, or that failed, keeps the last one, said once in the log, and is asked again at the
+    /// next judgement. Each urgent message to everyone that arrived is said, while the switch is on.
+    /// </summary>
+    private async Task<JsonObject?> AsksAsync(CancellationToken ct)
+    {
+        if (_channels is null) return null;
+        var now = _clock.GetUtcNow();
+        if (Interlocked.Exchange(ref _asksDue, 0) == 0 && _asksRead is { } read && now - read < ChannelsDeadline) return _asks;
+
+        IReadOnlyList<AskChannel>? channels;
+        try
+        {
+            channels = await _channels(ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            // Said once until a read succeeds again, as a slice's own failure is.
+            if (!_asksFailing) _log?.Warn("state.slice", ("slice", Name), ("partition", Messages), ("message", error.Message));
+            _asksFailing = true;
+            Interlocked.Exchange(ref _asksDue, 1);
+            return _asks;
+        }
+
+        if (channels is null)
+        {
+            Interlocked.Exchange(ref _asksDue, 1);
+            return _asks;
+        }
+
+        _asksFailing = false;
+        var (partition, arrived) = _messages.Judge(channels);
+        _asks = partition;
+        _asksRead = now;
+        if (arrived.Count > 0 && _notify())
+        {
+            foreach (var message in arrived) _ = _bus.EmitAsync(StateSlice.Module, AskMessages.ArrivedType, message);
+        }
+
+        return partition;
     }
 
     /// <summary>The notices read now that no read before held, none at the first read, and none said already or with the switch off.</summary>
