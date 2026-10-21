@@ -19186,3 +19186,12 @@ On Opus.
 **Outcome** 2026-10-22: built. The merge tool waits, up to ten minutes, for a heavy gate's free commit and physical memory (6, 8 and 10 GB
 by class, or `"memoryGb"`); a gate that died of memory reads MEMORY and runs again once, alone, at the run's end. Detail: the tool's
 MEMGATE1 header section and FIX-LOG's entry of that date. On Opus.
+## PUSH1f2e3 — `agent profile use` (2026-10-22, D194)
+
+> - [ ] **PUSH1f2e — the agents' tools and accounts** (cli, driver, modules, tools; after 2d; D194, the alone-path design §5). Read its row in §5 and the sections it names; build it end to end (D187), the family's TypeScript leaving as §4 says. Built so far: PUSH1f2e1 and PUSH1f2e2 (archived); the rest is `agent list`, `profile use` and the long verbs (`install|update|login|key|pin`) with §1.1's terminal start and §1.4's publication, then the TypeScript's leaving. Proof: as §5 names it.
+
+**Outcome** 2026-10-22: the third part of the row, split out as the first two were; PUSH1f2e stays open in the backlog for `agent
+list`, the long verbs and the TypeScript's leaving. Built: `daoris-driver agent profile use` (`AgentAccountsCommand`), `ACCOUNT_USE`'s
+`use` while Daoris runs, else `HarnessSettings.Change` with `WithUse`, refused from a marked terminal, its print with no flag a read;
+`daoris agent` hands `profile` whole. Today's text kept (61 rows, none changed); both ways over six more cases. Its TypeScript branch,
+`AGENT_ROUTES` and 12 CLI tests left. The account verbs' shapes and payloads unchanged. Detail: D194's PUSH1f2e3 note. On Opus.
