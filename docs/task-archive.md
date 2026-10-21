@@ -18786,3 +18786,11 @@ its foot and line in en and zh. A close found closed only in part is live again 
 so `WORK_HELD`'s `stop` is taken on it (any other word refused `part-stop`), offered as a What needs you row and applied by the closer.
 Proof: `QuestCloseTests`, `WorkStateSliceTests`, `AttentionStateSliceTests`, `WorkMilestone.test.tsx` in both languages. A quest
 unit's milestone on the page stays open as FABRIC-CLOSE1j2. Detail: D173's FABRIC-CLOSE1j note.
+
+## FABRIC-CLOSECASE1 — one rule for "the same repository" across the close (2026-10-21, D173)
+
+> - [ ] **FABRIC-CLOSECASE1 — one rule for "the same repository" across the close** (driver, service; §E5). The driver compares a quest's repository exactly, the service's `NextStep` and the close door ignore case. Proof: a chain whose repository differs only in case is named and closed alike by both, or refused alike.
+
+**Outcome** 2026-10-21: built. The driver's `QuestClosing.Judge` and `Lineage` now compare a quest's repository blind to case, as the
+service does, so a chain whose step names its repository in another case waits for its last quest here and closes in one close naming
+both. Proof: `QuestCloseTests` and `QuestClosureTests`. Detail: D173's FABRIC-CLOSECASE1 note.
