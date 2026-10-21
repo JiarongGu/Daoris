@@ -159,6 +159,8 @@ public sealed class SpaceFloorTests : IDisposable
 
         Assert.Equal((ChoiceRefusal.KeepOutOfRange, ChoiceCodes.KeepOutOfRange), (refused.Check, ChoiceCodes.Of(refused)));
         Assert.Contains("the floor takes", refused.Message, StringComparison.Ordinal);
+        // Its bounds are worded by their unit on the page (`errors.KEEP_OUT_OF_RANGE_gb`, `_percent`).
+        Assert.Contains(("context", word.EndsWith('%') ? "percent" : "gb"), refused.Facts);
     }
 
     [Theory]

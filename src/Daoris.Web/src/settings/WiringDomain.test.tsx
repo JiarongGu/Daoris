@@ -897,6 +897,88 @@ describe('Settings → This Daoris', () => {
     await vi.waitFor(() => expect(aside.getByRole('alert').textContent).toBe('此规则可保留 1 到 90 天；该值超出范围，未写入任何内容。'));
   });
 
+  // KEEP1f (the cleanup design §3.2, §4.2): the floor on the free-space line, below it in the warn ink with what Daoris freed early and
+  // the press as primary; a kind on another volume says that volume on its row; the floor set from its own Change…, and refused by its unit.
+  const GIB = 1024 ** 3;
+  const SPACE_LOW: SystemSpace = {
+    ...SPACE,
+    volume: {
+      ...SPACE.volume!, free: 8 * GIB, total: 1024 * GIB, floor: { bytes: 20 * GIB, from: 'default' }, below: true,
+      freedEarly: { bytes: 2 * GIB, at: '2026-10-22T09:00:00.000+00:00' },
+    },
+    kinds: SPACE.kinds.map((kind) => (kind.id === 'set-aside'
+      ? {
+        ...kind, rule: { ...kind.rule, low: true },
+        volume: { path: 'D:\\', free: 300 * GIB, total: 2048 * GIB, floor: { bytes: 20 * GIB, from: 'default' as const }, below: false, freedEarly: null },
+      }
+      : kind)),
+  };
+
+  it('says the floor below it in the warn ink with what Daoris freed early, and a kind on another volume on its row', async () => {
+    invoke.mockImplementation(keeping(() => DRIVER_STATE, SPACE_LOW));
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Disk space' }));
+    const free = row(card, 'Free space');
+
+    const line = free.getByText(`${size(8 * GIB)} of ${size(1024 * GIB)} · keep at least ${size(20 * GIB)}`);
+    expect(line.className).toContain('text-warn');
+    expect(free.getByText(`Below the floor: Daoris freed ${size(2 * GIB)} early of what it can make again, last at ${clockOf('2026-10-22T09:00:00.000+00:00')}.`))
+      .toBeTruthy();
+    expect(card.getByRole('button', { name: 'Free up space…' })).toBeTruthy();
+    const aside = row(card, 'Set-aside trees');
+    expect(aside.getByText('kept 14 days; its package folders go an hour after the move; sooner when space is low')).toBeTruthy();
+    expect(aside.getByText(`on D:\\: ${size(300 * GIB)} of ${size(2048 * GIB)} · keep at least ${size(20 * GIB)}`).className).toContain('text-ink-soft');
+  });
+
+  it("sets the floor from its own editor, and says the driver's refusal by its unit", async () => {
+    let refuse = false;
+    invoke.mockImplementation(keeping(() => {
+      if (!refuse) return DRIVER_STATE;
+      throw Object.assign(new Error('KEEP_OUT_OF_RANGE'), {
+        code: 'KEEP_OUT_OF_RANGE', parameters: { kind: 'floor', min: '1', max: '512', unit: 'gb', context: 'gb' },
+      });
+    }, SPACE_LOW));
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Disk space' }));
+    const free = row(card, 'Free space');
+
+    await userEvent.click(free.getByRole('button', { name: 'Change…' }));
+    const value = free.getByRole('spinbutton', { name: 'The floor' });
+    expect((value as HTMLInputElement).value).toBe('20');
+    expect(free.getByText('1 to 512 GB')).toBeTruthy();
+    expect((free.getByRole('button', { name: 'The default' }) as HTMLButtonElement).disabled).toBe(true);
+    await userEvent.clear(value);
+    await userEvent.type(value, '30');
+    await userEvent.click(free.getByRole('button', { name: 'Save' }));
+    await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_KEEP', { payload: { kind: 'floor', gb: 30 } }));
+    await vi.waitFor(() => expect(free.queryByRole('button', { name: 'Save' })).toBeNull());
+
+    refuse = true;
+    await userEvent.click(free.getByRole('button', { name: 'Change…' }));
+    await userEvent.clear(free.getByRole('spinbutton', { name: 'The floor' }));
+    await userEvent.type(free.getByRole('spinbutton', { name: 'The floor' }), '900');
+    await userEvent.click(free.getByRole('button', { name: 'Save' }));
+    await vi.waitFor(() => expect(free.getByRole('alert').textContent)
+      .toBe('The floor takes a size from 1 to 512 GB, half the disk; that value is outside it, so nothing was written.'));
+    expect(free.getByRole('button', { name: 'Save' })).toBeTruthy();
+  });
+
+  it('says a floor turned off in 中文, with its editor', async () => {
+    await i18n.changeLanguage('zh');
+    invoke.mockImplementation(keeping(() => DRIVER_STATE, { ...SPACE_LOW, volume: { ...SPACE_LOW.volume!, floor: { bytes: null, from: 'off' }, below: false } }));
+    open();
+    const card = within(await screen.findByRole('region', { name: '磁盘空间' }));
+    expect(card.getByText(`共 ${size(1024 * GIB)}，可用 ${size(8 * GIB)} · 未设下限：道衍不会提前释放`)).toBeTruthy();
+    expect(row(card, '可用空间').getByRole('button', { name: '更改…' })).toBeTruthy();
+  });
+
+  it('offers no floor editor where the shell says no floor', async () => {
+    invoke.mockImplementation(keeping(() => DRIVER_STATE));
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Disk space' }));
+    expect(row(card, 'Free space').queryByRole('button', { name: 'Change…' })).toBeNull();
+  });
+
   it('says in its card that a shell older than it answers no disk space', async () => {
     invoke.mockImplementation(async (module: string, type: string, request?: { payload?: { measure?: boolean } }) => {
       if (module === 'DAORIS.DRIVER' && type === 'SYSTEM_SPACE') throw Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' });

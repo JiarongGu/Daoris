@@ -1017,6 +1017,9 @@ export function App() {
     // A terminal's press waiting for the window (CONFIRMSEEN1) opens its card in *Notifications* (NOTIFY2b), where every value it
     // carries is read beside its Confirm. Brought into view, never pressed: the card's default stays no. A shell's alone.
     ...(attached ? { confirmation: (item: Attention) => showNotifications({ press: item.id }) } : {}),
+    // A volume still below its free-space floor (KEEP1f) opens This Daoris's *Disk space* card, where *Free up space…* lists what else
+    // could go before anything does. A shell's alone: the disk is the machine's.
+    ...(attached ? { space: () => openSettings('wiring', 'daoris-space') } : {}),
     // A unit only the clean-up's press settles (OVERVIEWNOISE1b) opens the workspace's Branches, where the session branches' list and
     // its presses are; a held attempt's presses are on its row. An unknown owner's branch named for a session the page holds opens that
     // session, whose page discards it too (FABRIC-UNKNOWN1c). A shell's alone.

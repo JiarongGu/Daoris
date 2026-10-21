@@ -346,7 +346,9 @@ public static class KeepRules
             ? (FloorPolicy.MinPercent, FloorPolicy.MaxPercent, "percent")
             : (FloorPolicy.MinGb, set.Volume is { } total ? Math.Min(FloorPolicy.HalfGb(total), FloorPolicy.MaxGb) : FloorPolicy.MaxGb, "gb");
         return new(ChoiceRefusal.KeepOutOfRange, $"the floor takes {FloorChoices(set.Volume)}; {value} is out of its bounds, so nothing was written.",
-            ("kind", Floor), ("value", value), ("min", min.ToString(invariant)), ("max", max.ToString(invariant)), ("unit", unit));
+            ("kind", Floor), ("value", value), ("min", min.ToString(invariant)), ("max", max.ToString(invariant)), ("unit", unit),
+            // The page words a floor's bounds by its unit, not as days.
+            ("context", unit));
     }
 
     private static KeepChoices Cleared(KeepChoices keep, string kind) => kind switch
