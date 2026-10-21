@@ -1,5 +1,5 @@
 {
-  "note": "PUSH1f2d (D194, the alone-path design §3): what `daoris agent rules|trust|settings` said for each case its tests held, run once through the CLI's TypeScript verb before it retired, alone, on a root of its own (`<root>`): DAORIS_HOME `<root>/daoris` (none where `home` is false), the agent's own home `<root>/user`, a folder to trust under `<root>/work`, and with `harness` DAORIS_HARNESS_CONFIG naming `<root>/other/data/harnesses.json`. Each row: the words after `agent` (`<root>` where a whole path goes), the folders made empty before it, every file under the root before it and after it, the exit, and the lines said on the standard output and on the error stream. A path is spelled with `/`; a proposal's settling moment is `<at>`. The TypeScript said a refusal through its dispatcher, `daoris: ` and the sentence; the driver's command says it on the error stream, as every host verb does. `AgentsTextTests` reads it row for row. A sentence the port changes on purpose is a row changed here, with its reason under `changed`. PUSH1f2e3: a row with `now` was run at that moment, the machine's zone America/New_York, which the test hands the command too. PUSH1f2e4: `list` pins every agent to a version nothing installed, so no tool is asked, as its tests did; a row with `windows` pins Claude Code to a stand-in `claude.cmd` in the managed layout, asked as a start runs it, and runs on Windows alone. PUSH1f2e5: a row with `stdin` was run with that standard input, which the test hands the command (none is an empty one); an account id the run drew (`key`'s new account) is spelled `<id>`; the home's identity file the key's publication mints taking the lease is no file the verb writes. `install`'s rows were run with an empty PATH, as the test hands the command none, so no installer starts.",
+  "note": "PUSH1f2d (D194, the alone-path design §3): what `daoris agent rules|trust|settings` said for each case its tests held, run once through the CLI's TypeScript verb before it retired, alone, on a root of its own (`<root>`): DAORIS_HOME `<root>/daoris` (none where `home` is false), the agent's own home `<root>/user`, a folder to trust under `<root>/work`, and with `harness` DAORIS_HARNESS_CONFIG naming `<root>/other/data/harnesses.json`. Each row: the words after `agent` (`<root>` where a whole path goes), the folders made empty before it, every file under the root before it and after it, the exit, and the lines said on the standard output and on the error stream. A path is spelled with `/`; a proposal's settling moment is `<at>`. The TypeScript said a refusal through its dispatcher, `daoris: ` and the sentence; the driver's command says it on the error stream, as every host verb does. `AgentsTextTests` reads it row for row. A sentence the port changes on purpose is a row changed here, with its reason under `changed`. PUSH1f2e3: a row with `now` was run at that moment, the machine's zone America/New_York, which the test hands the command too. PUSH1f2e4: `list` pins every agent to a version nothing installed, so no tool is asked, as its tests did; a row with `windows` pins Claude Code to a stand-in `claude.cmd` in the managed layout, asked as a start runs it, and runs on Windows alone. PUSH1f2e5: a row with `stdin` was run with that standard input, which the test hands the command (none is an empty one); an account id the run drew (`key`'s new account) is spelled `<id>`; the home's identity file the key's publication mints taking the lease is no file the verb writes. `install`'s rows were run with an empty PATH, as the test hands the command none, so no installer starts. PUSH1f2e6: `login`'s rows are its refusals, each said before any flow starts; a sign-in that runs is `AgentsCommandTests.SignIns`'.",
   "rows": [
     {
       "name": "rules, the bare word, an empty home",
@@ -7882,6 +7882,269 @@
       ],
       "err": [
         "daoris: `npm` is not on this machine's PATH, and installing an agent is the machine's own npm's job, whatever Daoris runs it as. `daoris agent pin <agent> <version>` installs one where Daoris keeps it instead."
+      ],
+      "after": {}
+    },
+    {
+      "name": "login, no agent named",
+      "argv": [
+        "login"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `agent login` needs <agent> — e.g. `daoris agent login claude-code`"
+      ],
+      "after": {}
+    },
+    {
+      "name": "login, an unknown agent",
+      "argv": [
+        "login",
+        "nobody"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: unknown agent 'nobody' — one of: claude-code, claude-code-acp, codex, codex-acp, dsh. An agent is added deliberately, never guessed."
+      ],
+      "after": {}
+    },
+    {
+      "name": "login, a door with no login flow of its own",
+      "argv": [
+        "login",
+        "claude-code-acp"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `claude-code-acp` declares no login flow — log in with its own tooling, pointing CLAUDE_CONFIG_DIR at the profile directory."
+      ],
+      "after": {}
+    },
+    {
+      "name": "login, a device code of an agent that has none",
+      "argv": [
+        "login",
+        "claude-code",
+        "--device-code"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `claude-code` signs in by no device code, so nothing was signed in — its own sign-in is its one way."
+      ],
+      "after": {}
+    },
+    {
+      "name": "login, --new beside --profile",
+      "argv": [
+        "login",
+        "claude-code",
+        "--new",
+        "--profile",
+        "work"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `--new` signs in to a new account and `--profile` to one that is here — `daoris agent login claude-code --new`, or `daoris agent login claude-code --profile work`."
+      ],
+      "after": {}
+    },
+    {
+      "name": "login, --name without --new",
+      "argv": [
+        "login",
+        "claude-code",
+        "--name",
+        "Seat"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `--name` names a new account as it is made (`--new`); an account that is here is named with `daoris agent profile rename claude-code <account> <name>`."
+      ],
+      "after": {}
+    },
+    {
+      "name": "login, --join with no workspace",
+      "argv": [
+        "login",
+        "claude-code",
+        "--new",
+        "--join"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `--join` needs a workspace — e.g. `--join work`, or `--join-machine` for this machine's list."
+      ],
+      "after": {}
+    },
+    {
+      "name": "login, a pin with nothing installed at it",
+      "argv": [
+        "login",
+        "codex",
+        "--new",
+        "--device-code"
+      ],
+      "folders": [],
+      "before": {
+        "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"0.0.0-none\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"}}"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `codex` is pinned to 0.0.0-none on this machine, and nothing is installed at that version, so nothing was signed in — `daoris agent pin codex 0.0.0-none` installs it, and `daoris agent unpin codex` goes back to PATH."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"0.0.0-none\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"}}"
+      }
+    },
+    {
+      "name": "login, an account that is not here",
+      "argv": [
+        "login",
+        "claude-code",
+        "--profile",
+        "nobody"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/work"
+      ],
+      "before": {
+        "daoris/data/accounts.json": "{\"claude-code\":{\"work\":{\"name\":\"R&D\"}}}"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `claude-code` has no account `nobody` on this machine, so nothing was signed in and no account was made — accounts there: R&D (work). `daoris agent login claude-code --new` signs in to a new account."
+      ],
+      "after": {
+        "daoris/data/accounts.json": "{\"claude-code\":{\"work\":{\"name\":\"R&D\"}}}"
+      }
+    },
+    {
+      "name": "login, no account named and no default",
+      "argv": [
+        "login",
+        "claude-code"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/work"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: name the `claude-code` account to sign in to: this machine names no default for it, and a sign-in into an account never makes one — accounts there: work. `daoris agent login claude-code --new` signs in to a new account."
+      ],
+      "after": {}
+    },
+    {
+      "name": "login, a join of a workspace that takes this machine's list",
+      "argv": [
+        "login",
+        "claude-code",
+        "--new",
+        "--join",
+        "aurora borealis"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/work"
+      ],
+      "before": {
+        "daoris/data/harnesses.json": "{\"rotation\":{\"claude-code\":[\"work\"]}}"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `aurora borealis` names no `claude-code` account or list of its own, so its starts take this machine's list — join this machine's list, or give `aurora borealis` a list of its own first (`daoris agent profile order claude-code <account>… --workspace \"aurora borealis\"`)."
+      ],
+      "after": {
+        "daoris/data/harnesses.json": "{\"rotation\":{\"claude-code\":[\"work\"]}}"
+      }
+    },
+    {
+      "name": "login, a new account named as another is",
+      "argv": [
+        "login",
+        "claude-code",
+        "--new",
+        "--name",
+        "r&d"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/work"
+      ],
+      "before": {
+        "daoris/data/accounts.json": "{\"claude-code\":{\"work\":{\"name\":\"R&D\"}}}"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `r&d` already names `work` — each `claude-code` account has a name of its own, so nothing was signed in — give it a name of your own."
+      ],
+      "after": {
+        "daoris/data/accounts.json": "{\"claude-code\":{\"work\":{\"name\":\"R&D\"}}}"
+      }
+    },
+    {
+      "name": "login, a new account named an email another is",
+      "argv": [
+        "login",
+        "claude-code",
+        "--new",
+        "--name",
+        "seat@work.example"
+      ],
+      "folders": [
+        "daoris/profiles/agents/claude-code/work"
+      ],
+      "before": {
+        "daoris/data/accounts.json": "{\"claude-code\":{\"work\":{\"name\":\"seat@work.example\"}}}"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `seat@work.example` already names `work` — each `claude-code` account has a name of its own, so nothing was signed in — name it `seat@work.example·<organization>`, with the organization it signed in to, or give it a name of your own."
+      ],
+      "after": {
+        "daoris/data/accounts.json": "{\"claude-code\":{\"work\":{\"name\":\"seat@work.example\"}}}"
+      }
+    },
+    {
+      "name": "login, a new account named what a terminal cannot type",
+      "argv": [
+        "login",
+        "claude-code",
+        "--new",
+        "--name",
+        "-dash"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `-dash` is not a name a terminal can type — a name is one word, with no space or backtick, not starting with a dash, at most 64 characters; nothing was signed in."
       ],
       "after": {}
     }

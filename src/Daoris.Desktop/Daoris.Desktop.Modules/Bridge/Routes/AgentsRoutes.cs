@@ -614,21 +614,9 @@ public sealed class AgentsRoutes(DriverContext context)
     private static object[] PerModelOf(AgentSettingsRead read) =>
         [.. read.PerModel.Select(entry => (object)new { entry.Model, entry.Effort })];
 
-    /// <summary>Who signed in, with what tells a second sign-in of the email apart after it (ACCOUNTID1c, <c>AccountNames.ApartWords</c>).</summary>
-    private static string Told(string account, string? apart) => apart is null ? account : $"{account} · {apart}";
-
-    /// <summary>
-    /// The sign-in's end sentence (ACCTNAME1): the email offered as the name is said once, as the terminal's twin says it;
-    /// where the email is another sign-in's, the organisation (else the plan) is said after it (ACCOUNTID1c), and a name that
-    /// is the email with it beside is "that name".
-    /// </summary>
+    /// <summary>The sign-in's end sentence (ACCTNAME1, ACCOUNTID1c): the library's, which the terminal's sign-in says too (PUSH1f2e6).</summary>
     public static string SignedInSentence(string? account, string owner, string? called, string fresh, string? apart = null) =>
-        account is { Length: > 0 }
-            ? called is not null && (string.Equals(account, called, StringComparison.OrdinalIgnoreCase)
-                    || (apart is not null && string.Equals(AccountNames.Beside(account, apart), called, StringComparison.OrdinalIgnoreCase)))
-                ? $"signed in as {Told(account, apart)} — this machine lists it by that name."
-                : $"signed in as {Told(account, apart)} — this machine lists it as `{called ?? fresh}`."
-            : $"signed in — `{owner}` did not say who, so this machine lists it as `{called ?? fresh}`.";
+        AccountNames.SignedInSentence(account, owner, called, fresh, apart);
 
     /// <summary>
     /// Make a credential profile under a name the caller chose: a directory, and nothing else (DEPLOY3).

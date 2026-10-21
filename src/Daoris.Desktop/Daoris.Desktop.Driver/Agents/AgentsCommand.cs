@@ -34,6 +34,9 @@ public sealed record AgentsWorld
 
     /// <summary>Called once a long verb's publication finds another act holding the home (<c>key</c>): a test's sign that it waits.</summary>
     public Action? Waiting { get; init; }
+
+    /// <summary>How a browser sign-in's port is tried before its flow starts (<c>login</c>, CODEXLOGIN1): taken for a moment, unless a test's.</summary>
+    public Func<int, PortHold> Ports { get; init; } = SignInPorts.Hold;
 }
 
 /// <summary>
@@ -110,6 +113,8 @@ public static class AgentRoutes
             "alone: the agent's own installer, run at this terminal with its streams, writes the machine and not the home", AgentHome.Wiring),
         ("agent key <agent> [--account <account>]", null,
             "alone: the key is read from this terminal's standard input, and no press carries a key across the pipe", AgentHome.Wiring),
+        ("agent login <agent> [--new|--profile <account>] …", null,
+            "alone: the agent's own sign-in runs at this terminal, the person answering it; its end is published under the lease", AgentHome.Wiring),
     ];
 
     /// <summary>The home a verb of this program's writes: its row's, by its first word.</summary>
@@ -122,7 +127,8 @@ public static class AgentRoutes
 /// <c>daoris agent rules|trust|settings …</c> hands this program, what an agent runs as, and its pin taken back and its accounts
 /// (PUSH1f2e1, PUSH1f2e2, PUSH1f2e3, <see cref="AgentAccountsCommand"/>), and the list of this machine's agents, its bare word too (PUSH1f2e4,
 /// <see cref="AgentListCommand"/>), and an agent's install and an API key's account, the long verbs no route takes (PUSH1f2e5,
-/// <see cref="AgentLongCommand"/>); the rest of the family is the CLI's until the rest of PUSH1f2e. Each change a route
+/// <see cref="AgentLongCommand"/>), and an agent's sign-in (PUSH1f2e6, <see cref="AgentLoginCommand"/>); <c>update</c> and <c>pin</c> are the
+/// CLI's until the rest of PUSH1f2e. Each change a route
 /// takes is its route through <see cref="InstanceDoor.PressAsync"/> where the running Daoris answers, confirmed in its window; else its
 /// operation, on the terminal's word (D50), refused from a session's terminal (D194 point 5). The rules and their proposals are
 /// <c>DAORIS_HOME</c>'s whatever <c>DAORIS_HARNESS_CONFIG</c> names, so they keep the door on that home; an account's settings and a
@@ -137,7 +143,7 @@ public static class AgentRoutes
 public static class AgentsCommand
 {
     /// <summary>The verbs this program has, each the CLI hands on (the CLI's allow-list is held to it).</summary>
-    public static IReadOnlyList<string> Verbs { get; } = ["list", "rules", "trust", "settings", "which", "unpin", "profile", "install", "key"];
+    public static IReadOnlyList<string> Verbs { get; } = ["list", "rules", "trust", "settings", "which", "unpin", "profile", "install", "key", "login"];
 
     /// <summary>The <c>profile</c> verbs this program has, each the CLI hands on: every one (PUSH1f2e2, <c>use</c> PUSH1f2e3).</summary>
     public static IReadOnlyList<string> ProfileVerbs => AgentAccountsCommand.ProfileVerbs;
@@ -158,7 +164,9 @@ public static class AgentsCommand
                daoris-driver agent profile rename <agent> <account> <name> · join <agent> <account> [<workspace>…] [--machine]
                daoris-driver agent install <agent>
                daoris-driver agent key <agent> [--account <account>]     the key read from standard input, never an argument
-        `daoris agent [list]|rules|trust|settings|which|unpin|profile|install|key …` run these; the family's other verbs are still
+               daoris-driver agent login <agent> [--profile <account>] [--join <workspace>]… [--join-machine] [--device-code]
+               daoris-driver agent login <agent> --new [--name <name>] [--join <workspace>]… [--join-machine] [--device-code]
+        `daoris agent [list]|rules|trust|settings|which|unpin|profile|install|key|login …` run these; the family's other verbs are still
         `daoris agent`'s own.
         """;
 
@@ -235,6 +243,7 @@ public static class AgentsCommand
             // The long verbs (PUSH1f2e5, the alone-path design §1.4): no route takes them, and each holds no lease at its top.
             if (verb == "install") return await AgentLongCommand.InstallAsync(args, world, ct).ConfigureAwait(false);
             if (verb == "key") return await AgentLongCommand.KeyAsync(args, world, ct).ConfigureAwait(false);
+            if (verb == "login") return await AgentLoginCommand.LoginAsync(args, world, ct).ConfigureAwait(false);
 
             // A person's grant from a session's terminal is refused before a word of it is said (D194 point 5): no route takes it.
             if (verb == "trust" && Changes(args) && world.Instance.Environment(DriverChoicesCommand.SessionVariable) is { Length: > 0 })

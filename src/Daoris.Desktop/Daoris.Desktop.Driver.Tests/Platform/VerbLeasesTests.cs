@@ -232,6 +232,8 @@ public sealed class VerbLeasesTests
     // The long verbs (PUSH1f2e5, the alone-path design §1.4): an install holds none at all, its installer writing the machine; a key
     // holds none at its top, taking the lease itself to publish.
     [InlineData("agent install claude-code")]
+    [InlineData("agent login claude-code --new")]
+    [InlineData("agent login codex --profile work --join aurora --device-code")]
     [InlineData("agent key claude-code")]
     [InlineData("agent key claude-code --account work")]
     public void A_read_or_another_writers_verb_holds_none(string words) => Assert.False(VerbLeases.Holds(words.Split(' ')), words);
@@ -293,6 +295,7 @@ public sealed class VerbLeasesTests
     [InlineData("agent list", "daoris-driver agent list")]
     [InlineData("agent key claude-code", "daoris-driver agent key")]
     [InlineData("agent install claude-code", "daoris-driver agent install")]
+    [InlineData("agent login claude-code --new", "daoris-driver agent login")]
     public void A_lease_names_the_verb_and_never_its_arguments(string words, string named) =>
         Assert.Equal(named, VerbLeases.Name(words.Split(' ')));
 }

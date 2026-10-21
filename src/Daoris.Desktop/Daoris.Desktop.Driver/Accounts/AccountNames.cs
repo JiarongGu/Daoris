@@ -343,6 +343,21 @@ public static class AccountNames
     };
 
     /// <summary>
+    /// The sign-in's end sentence (ACCTNAME1): the email offered as the name is said once; where the email is another sign-in's, the
+    /// organisation (else the plan) is said after it (ACCOUNTID1c), and a name that is the email with it beside is "that name". The window's
+    /// sign-in and <c>daoris-driver agent login</c> both say it (PUSH1f2e6).
+    /// </summary>
+    public static string SignedInSentence(string? account, string owner, string? called, string fresh, string? apart = null)
+    {
+        if (account is not { Length: > 0 }) return $"signed in — `{owner}` did not say who, so this machine lists it as `{called ?? fresh}`.";
+        var who = apart is null ? account : $"{account} · {apart}";
+        return called is not null && (string.Equals(account, called, StringComparison.OrdinalIgnoreCase)
+                || (apart is not null && string.Equals(Beside(account, apart), called, StringComparison.OrdinalIgnoreCase)))
+            ? $"signed in as {who} — this machine lists it by that name."
+            : $"signed in as {who} — this machine lists it as `{called ?? fresh}`.";
+    }
+
+    /// <summary>
     /// The way out of a name another account has (ACCOUNTID1c): an email is another sign-in's, so the organisation beside it
     /// tells them apart; any other name, one of the person's own. The CLI's twin is <c>takenWayOut</c>.
     /// </summary>
