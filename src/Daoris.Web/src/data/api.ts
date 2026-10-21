@@ -146,6 +146,12 @@ export type Quest = {
   grewFrom?: SubmissionRef | null;
   sourceReopened?: SubmissionRef | null;
   /**
+   * The person's last reopen of its own submission that no later submission answered (FABRIC-CLOSE1c4, §E5): absent for a quest
+   * never reopened, once its next `ready` answered it, and from a host before it, so a reopened source, which has no `submission`,
+   * is told from one whose taker has not said `ready` yet.
+   */
+  reopened?: QuestReopen | null;
+  /**
    * SYNCMERGE1b0 (D178 point 7), each absent where unset and from a host before it: the conflicts settled on it, in order, each with
    * how it `ended`; the machine whose take holds the step while it is taken; and this machine's id, answered only to a page on a local
    * host's own machine, which tells this machine's lost take, the one it may bring forward, from another machine's.
@@ -174,8 +180,17 @@ export type QuestMove = {
   verdict?: Verdict | (string & {}) | null;
   hold?: QuestHold | 'none' | null;
 };
-/** A taker's submission in a closure graph (FABRIC-CLOSE1a): the operation that made it, when, and its note. */
-export type QuestSubmission = SubmissionRef & { at: string; note?: string | null };
+/**
+ * A taker's submission in a closure graph (FABRIC-CLOSE1a): the operation that made it, when, and its note. `session`
+ * (FABRIC-CLOSE1c4): the session that said its `ready`, the one a reopen of it is told; absent where none did, and from a host before it.
+ */
+export type QuestSubmission = SubmissionRef & { at: string; note?: string | null; session?: string | null };
+/**
+ * A quest's reopen of its own submission (FABRIC-CLOSE1c4): the reopen by its machine and sequence, the submission it reopened
+ * (`of`), the person's words as they wrote them, and when; `session` (CLOSE1c8), the session that said the reopened `ready`, the one
+ * told of it, absent where none did and from a host before it.
+ */
+export type QuestReopen = SubmissionRef & { of: SubmissionRef; note?: string | null; at: string; session?: string | null };
 /**
  * Why a done, or a submission, is held (EVID1a, REVIEWENV1b, FABRIC-CLOSE1a), as the service spells it: `source-reopened` is a
  * chain's step whose source the person reopened (FABRIC-CLOSE1c). A newer host may name another.

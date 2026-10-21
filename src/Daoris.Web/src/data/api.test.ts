@@ -86,3 +86,27 @@ describe('answering a go-ahead', () => {
     expect(sentence(await api.answerGoAhead('a1', 7, true).catch((error: unknown) => error))).toBe('Ask `#a1` holds no go-ahead 7: it holds 1, 2.');
   });
 });
+
+/**
+ * FABRIC-CLOSE1d3: a quest's list reads a source's reopen (FABRIC-CLOSE1c4's `reopened`, with CLOSE1c8's `session`) and the session
+ * that said a submission's ready, as the host answers them; a host before them answers neither, and both read as absent.
+ */
+describe("a source's reopen and its submitting session", () => {
+  afterEach(() => { vi.unstubAllGlobals(); });
+
+  const quest = { id: 'sr0sr0', from: 'game', to: 'engine', status: 'Taken', title: 'Stream the tiles', body: '', filed: '2026-10-18T00:00:00Z', updated: '2026-10-18T00:00:00Z' };
+
+  it('reads both where the host answers them, and neither from an older host', async () => {
+    const reopened = { machine: 'desk', sequence: 44, of: { machine: 'desk', sequence: 41 }, note: 'It seams.', at: '2026-10-18T02:00:00Z', session: 's-7f3a21' };
+    const submission = { machine: 'desk', sequence: 45, at: '2026-10-18T03:00:00Z', note: 'ready', session: 's-7f3a21' };
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json([{ ...quest, reopened }, { ...quest, id: 'su0su0', submission }])));
+    const [source, submitted] = await api.quests('engine', false, null);
+    expect(source.reopened).toEqual(reopened);
+    expect(submitted.submission?.session).toBe('s-7f3a21');
+
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json([quest, { ...quest, id: 'su0su0', submission: { ...submission, session: undefined } }])));
+    const [older, olderSubmitted] = await api.quests('engine', false, null);
+    expect(older.reopened).toBeUndefined();
+    expect(olderSubmitted.submission?.session).toBeUndefined();
+  });
+});
