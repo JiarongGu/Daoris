@@ -34,6 +34,13 @@ with the version and date at release.
   a failure, a timeout, a restart, a new revision and a cleanup asked twice. Every test and trial runs it in a stand-in world, so
   nothing reaches its platform, and a plugin that does not take that world is sent no attempt. `examples/plugins/local-preview` is one
   filled in. The three work points have their own descriptions under *Make a plugin* and on a plugin's page, in English and 中文.
+- An agent's accounts signed in for Daoris are now one set that serves every workspace (D197). When Daoris comes up, and at the
+  next change of its accounts' settings, a workspace's own list or default and this machine's list are folded into one order of
+  every account, with one set of use settings; nothing signed in is dropped, and an agent whose machine named one account alone is
+  used *One by one, in order* so its starts still begin there. What changed is kept beside the accounts until you mark it seen. A
+  new account goes last in the order whatever its id. On the bridge the order and use act on the set, and a workspace, a list to
+  join or a default is refused, saying the order decides where starts begin; the page's screens for them follow. A conversation
+  that began in your own sign-in goes on there.
 - You may now set an age for finished work's records: on the *Disk space* card's *Conversations and records* row (*Change…*), with
   `daoris driver keep history <days>|never|default`, or through Ask Daoris's proposal you apply. Between 30 and 3,650 days; by default
   none, and nothing clears your history by itself, as before. With an age set, once a day each workspace's finished work whose last
