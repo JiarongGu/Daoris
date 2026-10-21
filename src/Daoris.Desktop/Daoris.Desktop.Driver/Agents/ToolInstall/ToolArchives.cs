@@ -36,8 +36,8 @@ public sealed class ToolRefusal(string check, string message, params (string Key
 }
 
 /// <summary>
-/// A tool's archive, unpacked whole (TOOLS4, D121 §3.6): the twin of the CLI's <c>zipfile.ts</c> and
-/// <c>tarball.ts</c>, held by one table.
+/// A tool's archive, unpacked whole (TOOLS4, D121 §3.6): the twin of the CLI's <c>tarball.ts</c>, which unpacks a vendor's
+/// <c>tar.gz</c>, and of its <c>zipfile.ts</c> until PUSH1f2c made a tool's download the driver program's alone.
 /// </summary>
 /// <remarks>
 /// <para>Only ever opened AFTER its hash and size matched the list's. That makes the bytes the ones the list vouched
@@ -129,7 +129,7 @@ public static class ToolArchives
 
     /// <summary>
     /// Where an entry lands, or null for the archive's own root; refused when that is outside. The CLI's
-    /// <c>placed</c>, in <c>zipfile.ts</c> and <c>tarball.ts</c>.
+    /// <c>placed</c>, in <c>tarball.ts</c> (and <c>zipfile.ts</c>, until PUSH1f2c).
     /// </summary>
     internal static string? Placed(string name, string root)
     {

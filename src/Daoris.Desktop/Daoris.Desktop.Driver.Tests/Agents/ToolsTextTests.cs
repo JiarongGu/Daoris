@@ -138,7 +138,7 @@ public sealed partial class ToolsTextTests
         }
         finally
         {
-            try { Directory.Delete(root, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+            GitSeed.Discard(root);
         }
     }
 

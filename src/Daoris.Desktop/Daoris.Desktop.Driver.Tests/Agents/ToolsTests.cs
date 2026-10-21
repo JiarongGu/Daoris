@@ -27,9 +27,10 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <para>Then the resolution (§2.3): the way set decides which file starts, and a managed version nobody
 /// downloaded, or a named file that is gone, refuses — never a fall back to <c>PATH</c>.</para>
 /// <para>🔴 <b>The CLI reads these theories.</b> <c>tools.test.ts</c>'s <i>the driver's tables are these
-/// tables</i> parses each <c>[InlineData]</c> row here and holds it to its own table, cell for cell and in
-/// order, so a row changed on one side alone fails <c>npm run verify</c>. Keep each row on one line, its
-/// cells literals.</para>
+/// tables</i> parses each reading and resolution <c>[InlineData]</c> row here and holds it to its own table, cell for cell
+/// and in order, so a row changed on one side alone fails <c>npm run verify</c>. Keep each row on one line, its
+/// cells literals. The writes' tables are this side's alone since PUSH1f2c (D194), when the CLI's writers left with
+/// <c>daoris tool</c>.</para>
 /// <para>Every case runs in a temporary directory, and nothing here starts a program: presence is a file on
 /// disk.</para>
 /// </remarks>

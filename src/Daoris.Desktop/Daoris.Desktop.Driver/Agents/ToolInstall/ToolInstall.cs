@@ -38,9 +38,9 @@ public sealed record LocationLook(string Address, string Outcome, string Sentenc
 /// <c>docs/2026-10-01-tools-design.md</c> §3.6, §3.7).
 /// </summary>
 /// <remarks>
-/// <para>🔴 <b>A TWIN of the CLI's <c>toolinstall.ts</c>.</b> The two share no code — the LAYOUT, the refusals and the
-/// plan are the contract — and each carries the same tables (<c>ToolInstallTests</c> here, <c>toolinstall.test.ts</c>
-/// there), row for row. A rule changed here is changed there, in the same commit:</para>
+/// <para>🔴 <b>The one implementation since PUSH1f2c</b> (D194): the CLI's <c>toolinstall.ts</c> was its twin, held row for row
+/// to <c>ToolInstallTests</c>' tables, until <c>daoris tool</c> became <c>daoris-driver tool</c> (<see cref="ToolsCommand"/>); a
+/// member's note naming the CLI names the function it was the twin of. Its rules:</para>
 /// <list type="number">
 /// <item>A download is staged at <c>&lt;home&gt;/tools/&lt;tool&gt;/&lt;version&gt;.part-&lt;pid&gt;/</c>, its own process's
 /// (PUSH1f2c; a bare <c>.part</c> before it): the archive lands there and is held to the list's size and SHA-256, it is unpacked

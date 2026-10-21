@@ -14,10 +14,7 @@ public sealed class ToolDownloadsTests : IDisposable
 
     public ToolDownloadsTests() => Directory.CreateDirectory(Home);
 
-    public void Dispose()
-    {
-        try { Directory.Delete(_root, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
-    }
+    public void Dispose() => GitSeed.Discard(_root);
 
     private string Home => Path.Combine(_root, "data");
 

@@ -8,9 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// <c>resources.json</c>, schema 1, and the merge of every list read (TOOLS3, D121; the tools design §3.1–§3.5,
-/// §5): the driver's half of a TWIN with the CLI's <c>resources.ts</c>, whose <c>resources.test.ts</c> holds the
-/// same tables, row for row and in the same order. They share no code; a row changed here is changed there, in
-/// the same commit.
+/// §5): the one reader's tables since PUSH1f2c (D194), when the CLI's twin, <c>resources.ts</c>, left with
+/// <c>daoris tool</c>; a test named for the CLI names the twin it was held to.
 /// </summary>
 /// <remarks>
 /// <para>The list's rules (§3.2), each a table below:</para>
@@ -29,10 +28,6 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <para>Then the merge (§3.4): the person's locations in order, then the list built in; one tool, version and
 /// platform is one download, so lists that disagree refuse that version, naming both; lists that agree under
 /// other addresses are mirrors; the versions are the union, and the newest is the highest by number.</para>
-/// <para>🔴 <b>The CLI reads these theories.</b> <c>resources.test.ts</c>'s <i>the driver's tables are these
-/// tables</i> parses each <c>[InlineData]</c> row here and holds it to its own table, cell for cell and in order,
-/// so a row changed on one side alone fails <c>npm run verify</c>. Keep each row on one line, its cells
-/// literals.</para>
 /// <para>Nothing here opens a connection: a list is text, or a file on disk.</para>
 /// </remarks>
 public sealed class ToolResourcesTests : IDisposable

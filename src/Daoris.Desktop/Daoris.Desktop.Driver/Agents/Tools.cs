@@ -54,9 +54,10 @@ public sealed record ToolResolution(string Tool, ToolWay? Way, string? Version, 
 /// file for both doors (D50), and absent means the system's.
 /// </summary>
 /// <remarks>
-/// <para>🔴 <b>A TWIN of the CLI's <c>tools.ts</c>.</b> The two share no code — the FILE is the contract —
-/// and each carries the same tables (<c>ToolsTests</c> here, <c>tools.test.ts</c> there), row for row. A
-/// rule changed here is changed there, in the same commit:</para>
+/// <para>🔴 <b>A TWIN of the CLI's <c>tools.ts</c> for the file's reading and the resolution.</b> The two share no code —
+/// the FILE is the contract — and each carries the same tables (<c>ToolsTests</c> here, <c>tools.test.ts</c> there), row for
+/// row. A rule changed here is changed there, in the same commit. The writes are this side's alone since PUSH1f2c (D194):
+/// <c>daoris tool</c> is <c>daoris-driver tool</c>, and the CLI's writers left with it.</para>
 /// <list type="number">
 /// <item>No file, no entry, or <c>"use": "system"</c> is the system's.</item>
 /// <item><c>managed</c> needs an exact version of one to four numbers; <c>file</c> needs a whole path. An
