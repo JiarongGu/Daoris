@@ -100,12 +100,15 @@ internal static class TreesConsole
                     return 0;
                 }
 
+                // KEEP1a: the days are the one effective policy's, as the purge reads them.
+                var days = KeepPolicy.Of(home).SetAside.Days;
                 foreach (var tree in listed)
                 {
                     // AUTOTIDY2c: a folder the look moved aside is listed so, with when, until the purge deletes it.
                     Console.WriteLine(tree.MovedAside is { } moved
                         ? $"  {tree.Workspace}/{tree.Repository}  {tree.Branch} on {moved.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)}, "
-                          + $"deleted once it is left untouched for {BranchTidying.SetAsideFor.TotalDays:0} days"
+                          + $"deleted once it is left untouched for {days.TotalDays:0} days"
+                          + (tree.Slimmed.Count == 0 ? "" : $"; its package folders went an hour after it moved: {string.Join(", ", tree.Slimmed)}")
                         : $"  {tree.Workspace}/{tree.Repository}  {tree.Branch}");
                     Console.WriteLine($"    {tree.Path}");
                 }

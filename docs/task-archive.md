@@ -18894,6 +18894,13 @@ page and the offer's page list them in en and zh; `daoris-driver plugins show` s
 description theories held cell for cell by `plugin-steps.test.ts`, `PluginPageTests`, `DriverModulePluginPageTests`,
 `PluginPage.test.tsx` in both languages. Detail: D173's FABRIC-UNIT1e note.
 
+## KEEP1a — a tree set aside drops its package folders once it has settled (2026-10-21, D195)
+
+> - [ ] **KEEP1a — a tree set aside drops its package folders once it has settled** (driver, service, cli; first; D195, the cleanup design §9). With the foundations (the kinds' table, `keeping.json`, the run lock, the Keeping pass), each `node_modules` beside a tracked `package.json` goes an hour after the move, from a manifest written before it. Proof: as §9 names it, over real git.
+
+**Outcome** 2026-10-21: built. The look judges a tree's package folders before its hold, checks them inside it and writes
+`<folder>.slim.json` before the move; the Keeping pass takes them an hour later under the home's run lock, and the purge reads what
+they left. Foundations: `KeepKinds`, `KeepPolicy`, `keeping.json`, `KeepingRun`. Detail: D195's KEEP1a note.
 ## NOTIFY1 — a notification center: what comes to the person, in one place that never blocks the page (design) (2026-10-21, D196)
 
 > - [ ] **NOTIFY1 — a notification center: what comes to the person, in one place that never blocks the page** (design, then its rows; the owner's direction, 2026-10-21; D185, D156 §4.2, D188). A terminal's press waiting for the window is drawn across the top of every page and blocks it until answered. It says the route's raw name (`SESSION_INPUT`) under its sentence (一个终端请求以你的名义对会话说话。), and it expires in two minutes. Meanwhile session messages are listed one by one on Overview, which makes Overview long and hides what it is for. Wanted, as a design under D191 (Codex reads; D185 amended):

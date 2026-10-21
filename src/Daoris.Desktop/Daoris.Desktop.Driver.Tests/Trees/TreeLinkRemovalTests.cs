@@ -198,7 +198,7 @@ public sealed class TreeLinkRemovalTests : BranchTidyingFixture
         var aside = Assert.Single(Directory.GetDirectories(DaorisHome.Entry(_home, HomeEntry.Trees, ".tidied", "default", "engine")));
         var moved = TreeSetAside.MovedAt(Path.GetFileName(aside))!.Value;
 
-        var purged = new SessionTrees(_home).PurgeSetAside(moved.AddDays(15), BranchTidying.SetAsideFor);
+        var purged = new SessionTrees(_home).PurgeSetAside(moved.AddDays(15), KeepKinds.SetAside.Days);
 
         Assert.True(Assert.Single(purged).Purged, purged[0].Kept);
         Assert.False(Directory.Exists(aside));

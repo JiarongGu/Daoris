@@ -529,6 +529,12 @@ public sealed record SweepItem(
     public bool Worked { get; init; }
 
     /// <summary>
+    /// The package folders of its tree the look may drop once the tree is set aside (KEEP1a, <see cref="TreeSlims.JudgeAsync"/>), judged
+    /// before the repository's hold for the look's own tidy; none on every row the press's list judged, and where git could not say.
+    /// </summary>
+    public IReadOnlyList<string> Droppable { get; init; } = [];
+
+    /// <summary>
     /// Landed, judged for the look's own tidy (AUTOTIDY2a): its work is on the line itself, every commit an ancestor of the line's
     /// own branch or origin's copy, or held there by content; or a squashing landing's branch the line holds. False where it is
     /// only on another branch of the person's, whose session the person may still ask to change it: the look waits for the line,

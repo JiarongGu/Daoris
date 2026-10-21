@@ -266,10 +266,15 @@ internal sealed class AutoTidies(
         // FABRIC-END4a, fourth review: each with what its own proof rested on, which a session branch's removal through it rests on too.
         var onLine = landed.Where(each => each.Line is not null)
             .Select(each => new LineLanding(each.Item.Branch, each.Tip, each.Line!) { Rests = each.Rests }).ToList();
+        // KEEP1a: each tree that may go is judged here for the package folders it may drop once set aside, before the hold (Fable F1.5),
+        // unless the person keeps every folder whole; inside the hold the last look checks that judgement by its own reads.
         var plan = branches.Count == 0 ? []
-            : await sweeps.SweepPlanAsync([(repository, space, root)], before, ct, branches, byItself: true, onLine).ConfigureAwait(false);
+            : await sweeps.SweepPlanAsync([(repository, space, root)], before, ct, branches, byItself: true, onLine,
+                slims: !KeepPolicy.Of(context.Home).SetAside.Whole).ConfigureAwait(false);
         var stays = plan.Where(item => !setAside.GoesByItself(item)).Select(item => new SweepResult(item, false, "kept")).ToList();
         var candidates = plan.Where(setAside.GoesByItself).Select(item => $"{repository}:{item.Branch}").ToHashSet(StringComparer.Ordinal);
+        var droppable = plan.Where(item => setAside.GoesByItself(item) && item.Droppable.Count > 0)
+            .ToDictionary(item => item.Branch, item => item.Droppable, StringComparer.Ordinal);
         // Then each landing's branch the press would take, unless a session branch the look leaves leans on it (D102: those go first).
         // FABRIC-END4a: every session branch the look leaves leans, the ones it did not judge because the line holds none of them too.
         var leaning = plan.Where(item => !setAside.GoesByItself(item)).Select(item => item.Branch)
@@ -289,7 +294,7 @@ internal sealed class AutoTidies(
         if (busy is null) return Pass([], TidyKept.Sessions, unsaidNow);
 
         var results = candidates.Count == 0 ? []
-            : await sweeps.SweepAsync([(repository, space, root)], busy, candidates, byItself: true, ct, onLine).ConfigureAwait(false);
+            : await sweeps.SweepAsync([(repository, space, root)], busy, candidates, byItself: true, ct, onLine, droppable).ConfigureAwait(false);
         // The record of where session branches grew from drops what is gone (LAND3), as the press's does: after a removal, so not
         // cancelled either.
         if (results.Any(result => result.Removed))

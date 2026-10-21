@@ -13,7 +13,8 @@ namespace Daoris.Driver;
 /// which judges each session branch the line is kept holding (FABRIC-END4a) as the press's list does and runs the clean-up's own path over those the look takes
 /// (<see cref="SessionTrees.GoesByItself"/>). Every guard is the press's: judged again right before it goes, deleted only
 /// while it is the commit judged, never forced. The look adds its last guards, and never deletes a tree's folder: it moves it
-/// aside, and a later look deletes it only once it has waited <see cref="SetAsideFor"/> with nothing written in it since.</para>
+/// aside, its package folders go an hour later, and a later look deletes it only once it has waited the policy's days with nothing
+/// written in it since (KEEP1a, <see cref="KeepPolicy"/>).</para>
 ///
 /// <para><b>Said once.</b> A branch kept by a last guard, because git could not read one, or because the removal did not
 /// happen, is said in the report and written to the log the first look it is met, and not again while it lasts: a branch that
@@ -108,7 +109,7 @@ public sealed class BranchTidying(string home)
                 lines.AddRange(Say([pass with { Strays = strays }], log, met));
             }
 
-            lines.AddRange(SayPurged(trees.PurgeSetAside(Clock(), SetAsideFor), log, met));
+            lines.AddRange(Keep(trees, log, met, ct));
             whole = true;
             return lines;
         }
@@ -141,8 +142,129 @@ public sealed class BranchTidying(string home)
         return held;
     }
 
-    /// <summary>How long a folder the look moved aside waits before a later look deletes it, where nothing was written in it since.</summary>
-    public static readonly TimeSpan SetAsideFor = TimeSpan.FromDays(14);
+    /// <summary>
+    /// The policy a pass keeps by (KEEP1a): the one effective policy every reader of the set-aside days reads (<see cref="KeepPolicy"/>); a
+    /// test hands another, as it hands a clock.
+    /// </summary>
+    internal Func<string, KeepPolicy> Policy { get; init; } = KeepPolicy.Of;
+
+    /// <summary>How long the Keeping pass removes for, at most (the cleanup design §3.1); a test's may be none.</summary>
+    internal TimeSpan Budget { get; init; } = SetAsideKeeping.DefaultBudget;
+
+    /// <summary>
+    /// The Keeping pass (KEEP1a, D195 point 4; the cleanup design §3.1), in the tidy's task after its repositories, where the purge ran,
+    /// so it holds no repository's hold and a start never waits on it: it tries the home's run lock, and held elsewhere removes nothing
+    /// this look and names the holder, once; else the set-aside kind's removal, the purge at the policy's days then the slims due, within
+    /// the pass's budget; then <c>keeping.json</c>'s <c>last</c> for the kind, where it removed something or newly kept a path.
+    /// </summary>
+    private IReadOnlyList<string> Keep(SessionTrees trees, MachineLog? log, HashSet<string> met, CancellationToken ct)
+    {
+        var lines = new List<string>();
+        // Nothing set aside, nothing to keep: the run lock and its holder's file are not written every pace for nothing.
+        if (!Directory.Exists(trees.SetAsideRoot)) return lines;
+        using var run = KeepingRun.TryTake(home, KeepingRun.Look);
+        if (run is null)
+        {
+            var holder = KeepingRun.Holder(home);
+            lock (_gate)
+            {
+                if (First(met, "", "keeping", "held"))
+                {
+                    lines.Add($"tidy  the folders moved aside were not cleaned this look: {holder?.Said ?? "another run"} holds Daoris's "
+                        + "keeping, and a later look tries again.");
+                }
+            }
+
+            return lines;
+        }
+
+        var read = KeepingRecord.Read(home);
+        var done = trees.KeepSetAside(Policy(home), Clock(), Budget, ct);
+        lines.AddRange(SayPurged(done.Purged, log, met));
+        lines.AddRange(SaySlimmed(done.Slims, log, met));
+        var removed = done.Purged.Count(folder => folder.Purged) + done.Slims.Sum(slim => slim.Removed.Count);
+        if (removed == 0 && done.Slims.All(slim => slim.Kept.Count == 0)) return lines;
+        var kept = done.Purged.Where(folder => !folder.Purged).Select(folder => folder.Code ?? SetAsideKept.Unread)
+            .Concat(done.Slims.SelectMany(slim => slim.Kept).Select(path => path.Why ?? SlimKept.Gone))
+            .GroupBy(why => why, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
+        var bytes = done.Purged.Sum(folder => folder.Bytes) + done.Slims.Sum(slim => slim.Bytes);
+        if (KeepingRecord.WriteLast(home, read, KeepKinds.SetAside.Id, new KeepingLast(Clock(), run.Door, run.Id, removed, bytes, kept)) is { } refused)
+        {
+            lock (_gate)
+            {
+                if (First(met, "", KeepingRecord.PathOf(home), "unwritten")) lines.Add($"tidy  {Clause(refused)}.");
+            }
+        }
+
+        return lines;
+    }
+
+    /// <summary>
+    /// What the slim says (KEEP1a, the cleanup design §5): each folder's package folders dropped, with <c>tidied.slimmed</c>; and each
+    /// folder or path it kept, and each removal that failed, said the first look it is met. The log names the folder from the home, as
+    /// <c>tidied.purged</c> does, and counts; never a path inside it.
+    /// </summary>
+    private IReadOnlyList<string> SaySlimmed(IReadOnlyList<SlimResult> slims, MachineLog? log, HashSet<string> met)
+    {
+        var lines = new List<string>();
+        lock (_gate)
+        {
+            foreach (var slim in slims)
+            {
+                if (slim.Removed.Count > 0)
+                {
+                    lines.Add($"tidy  dropped the package folders of the folder moved aside to {slim.Folder}: {string.Join(", ", slim.Removed)} "
+                        + $"({Size(slim.Bytes)}); `npm ci` beside each `package.json` makes them again, and the rest of it waits its days.");
+                }
+
+                if (slim.Said is { } said && First(met, "", slim.Folder, "slim-" + SlimKept.Written))
+                {
+                    lines.Add($"tidy  the folder moved aside to {slim.Folder} keeps its package folders for its days, since {Clause(said)}.");
+                }
+
+                foreach (var path in slim.Kept.Where(path => slim.Said is null))
+                {
+                    if (!First(met, "", $"{slim.Folder}/{path.Path}", "slim-" + path.Why)) continue;
+                    lines.Add($"tidy  `{path.Path}` in the folder moved aside to {slim.Folder} stays for its days, since {KeptWhy(path.Why)}.");
+                }
+
+                foreach (var path in slim.Failed)
+                {
+                    if (!First(met, "", $"{slim.Folder}/{path.Path}", "slim-failed")) continue;
+                    lines.Add($"tidy  `{path.Path}` in the folder moved aside to {slim.Folder} could not be removed yet ({Clause(path.Why ?? "")}); "
+                        + "a later look tries again.");
+                }
+
+                if (slim.Unread is { } unread && First(met, "", slim.Folder, "slim-" + SetAsideKept.Unread))
+                {
+                    lines.Add($"tidy  the folder moved aside to {slim.Folder} keeps its package folders this look, since {Clause(unread)}.");
+                }
+
+                if (slim.Removed.Count > 0 || slim.Kept.Count > 0)
+                {
+                    log?.Info("tidied.slimmed",
+                        ("folder", Path.GetRelativePath(home, slim.Folder).Replace('\\', '/')), ("removed", slim.Removed.Count), ("bytes", slim.Bytes),
+                        ("kept", slim.Kept.Count));
+                }
+            }
+        }
+
+        return lines;
+    }
+
+    /// <summary>Why the slim kept a path, in a clause (<see cref="SlimKept"/>).</summary>
+    private static string KeptWhy(string? why) => why switch
+    {
+        SlimKept.Linked => "a link lies on the way to it, or it is one",
+        SlimKept.Refused => "its path does not name a package folder inside the folder",
+        SlimKept.Gone => "it is no longer there as a folder",
+        _ => "something in the folder was written after it was moved aside",
+    };
+
+    /// <summary>A count of bytes as a person reads it.</summary>
+    private static string Size(long bytes) => bytes >= 1 << 20
+        ? (bytes / 1048576.0).ToString("0.0 MB", System.Globalization.CultureInfo.InvariantCulture)
+        : (bytes / 1024.0).ToString("0.0 KB", System.Globalization.CultureInfo.InvariantCulture);
 
     /// <summary>
     /// The folders a review step in progress shows from (REVIEWENV1d): the tree of the session that said each set-up waiting
@@ -245,7 +367,7 @@ public sealed class BranchTidying(string home)
                     {
                         lines.Add($"tidy  {pass.Repository}: removed `{item.Branch}`, {Why(item)}"
                             + (result.MovedTo is { } to
-                                ? $"; its tree's folder was moved aside to {to}, and goes once it is left untouched for {SetAsideFor.TotalDays:0} days."
+                                ? $"; its tree's folder was moved aside to {to}, and goes once it is left untouched for {Policy(home).SetAside.Days.TotalDays:0} days."
                                 // TREEFOLLOW1: the tree stays, on the branch its agent made; this one only said where it started.
                                 : item.TreeOn is { } on && on != item.Where ? $"; the session's work is on `{on}`." : ".")
                             + (result.KeptRef is { } kept ? $" {ContentHold.KeptAt(item.Branch, kept)}" : ""));
@@ -314,7 +436,7 @@ public sealed class BranchTidying(string home)
             var name = Path.GetFileName(stray.Folder);
             if (stray.Moved)
             {
-                var goes = $"was moved aside to {stray.MovedTo}, and goes once it is left untouched for {SetAsideFor.TotalDays:0} days.";
+                var goes = $"was moved aside to {stray.MovedTo}, and goes once it is left untouched for {Policy(home).SetAside.Days.TotalDays:0} days.";
                 lines.Add(stray.Kind != StrayKind.Opening
                     ? $"tidy  {pass.Repository}: `{name}`, a folder under its trees that git knows no tree in, {goes}"
                     : stray is { Branch: { } branch, BranchKept: null }
