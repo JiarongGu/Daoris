@@ -8,7 +8,9 @@ import type { SessionGrouping } from '../groups';
 import { askName, questName, sessionTitle } from '../identity';
 import type { Attention, AttentionKind } from './AttentionRow';
 import { accountRowWorded, type PushedAccountFacts } from './accountWords';
-import { CLOSE_SENDER, entryDetail, entryName, type HeldAttempt, heldWhy, heldWords, type MilestoneEntry } from '../head/milestone';
+import {
+  CLOSE_SENDER, entryDetail, entryName, type HeldAttempt, heldFailed, heldWhy, heldWords, type MilestoneEntry, type UnreadableRecord,
+} from '../head/milestone';
 import { type OpinionWait, opinionState } from '../gates/opinion';
 import { boundMinutes, type PermissionWait } from '../waits/PermissionAsks';
 import type { AnswerWait } from '../waits/AnswerAlone';
@@ -109,7 +111,11 @@ export type AttentionActId =
   // FABRIC-PERFORM1g: the person's word on a plugin step's attempt held for them.
   | 'happened' | 'did-not' | 'stop-step'
   // FABRIC-CLOSE1q: the person's word on Daoris's own close held for them: its recoveries, and the rest of the work stopped apart.
-  | 'record-close' | 'resend-close' | 'stop-close';
+  | 'record-close' | 'resend-close' | 'stop-close'
+  // FABRIC-PERFORM1j: the folder a node record that does not read is kept in, opened for the person to mend it.
+  | 'open-records'
+  // FABRIC-PERFORM1k: the person's new attempt on a plugin step's failure kept for them.
+  | 'again-step';
 
 /** The act each word offered on a held attempt is pressed by (FABRIC-PERFORM1g, FABRIC-CLOSE1q): a close's stop is not a step's. */
 export function heldActs(held: HeldAttempt): AttentionActId[] {
@@ -118,6 +124,7 @@ export function heldActs(held: HeldAttempt): AttentionActId[] {
     switch (word) {
       case 'record': return 'record-close';
       case 'resend': return 'resend-close';
+      case 'again': return 'again-step';
       case 'stop': return close ? 'stop-close' : 'stop-step';
       default: return word;
     }
@@ -225,7 +232,8 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
     // A plugin step's attempt held for the person (FABRIC-PERFORM1g, §D6): their three words, until one is recorded and the driver's next
     // look applies it; a held close (FABRIC-CLOSE1q) its own, as the driver offers them. A unit only the clean-up's press settles has
     // that list, on its workspace's Branches, for its door (OVERVIEWNOISE1b), and no act of its own here.
-    case 'work': return item.held && !item.held.resolution ? plain(...heldActs(item.held)) : [];
+    // A node record that does not read (FABRIC-PERFORM1j): its folder opened, where the person mends it; nothing else of Daoris's moves it.
+    case 'work': return item.unreadable ? plain('open-records') : item.held && !item.held.resolution ? plain(...heldActs(item.held)) : [];
     case 'account-wait':
     case 'signed-out': return accountOffers(item);
     default: return [];
@@ -301,6 +309,8 @@ export type PushedAttention = {
    */
   blocked?: { unknown: boolean; entries: Pick<MilestoneEntry, 'kind' | 'resource' | 'detail' | 'code' | 'facts'>[] };
   held?: HeldAttempt;
+  /** A node record that does not read (FABRIC-PERFORM1j): its file, the unit it names, and the driver's sentence. */
+  unreadable?: UnreadableRecord;
   /** A start waiting on accounts that holds an intake, or quests in several repositories: `where` is its workspace. */
   wholeWorkspace?: boolean;
   /** What a start waiting on accounts holds, which its title says. */
@@ -512,6 +522,7 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
       };
     }
     case 'work': {
+      if (row.unreadable) return unreadableWorded(row, row.unreadable);
       if (row.held) return heldWorded(row, row.held);
       const entries = row.blocked?.entries ?? [];
       // OVERVIEWNOISE1b: named by the session that recorded its tree, as Sessions names it, else its branch or its tree's folder; each
@@ -552,8 +563,27 @@ function heldWorded(row: PushedAttention, attempt: HeldAttempt): Attention {
       // FABRIC-CLOSE1q: a held close's outcome is its door's answer, so its row says what the door answered and that no second close is made.
       : attempt.plugin === CLOSE_SENDER
         ? i18n.t('work.milestone.held.close.detail', { why: heldWhy(i18n.t, attempt) })
-        : i18n.t('work.milestone.held.detail', { why: heldWhy(i18n.t, attempt), step: attempt.step }),
+        // FABRIC-PERFORM1k: a failure kept for the person waits for their new attempt, not their word on what became of it.
+        : i18n.t(heldFailed(attempt) ? 'work.milestone.held.failedDetail' : 'work.milestone.held.detail', { why: heldWhy(i18n.t, attempt), step: attempt.step }),
     held: attempt,
+  };
+}
+
+/**
+ * A unit's node record that does not read (FABRIC-PERFORM1j, the fabric events design §D3): named by its unit where it still names one,
+ * else by its file; it says that nothing on that unit is judged or started until the person mends it, in the folder its press opens.
+ */
+function unreadableWorded(row: PushedAttention, record: UnreadableRecord): Attention {
+  return {
+    id: row.id,
+    kind: 'work',
+    since: row.since,
+    where: row.where ?? '',
+    title: record.unit
+      ? i18n.t('work.milestone.unreadable.title', { unit: record.unit })
+      : i18n.t('work.milestone.unreadable.titleUnnamed', { file: record.file }),
+    detail: i18n.t('work.milestone.unreadable.detail', { file: record.file }),
+    unreadable: record,
   };
 }
 

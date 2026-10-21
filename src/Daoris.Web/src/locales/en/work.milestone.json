@@ -93,5 +93,15 @@
   "work.milestone.held.act.resend": "Ask for the answer again",
   "work.milestone.held.act.stopClose": "Stop the rest of this work",
   "work.milestone.held.word.record": "record the answer again",
-  "work.milestone.held.word.resend": "ask for the answer again"
+  "work.milestone.held.word.resend": "ask for the answer again",
+  "work.milestone.unreadable.title": "The record of {{unit}} does not read",
+  "work.milestone.unreadable.titleUnnamed": "A work record does not read ({{file}})",
+  "work.milestone.unreadable.detail": "Nothing on this work is judged or started until its record, {{file}}, is mended where it is kept. Daoris never reads it as empty, since a step it holds could then be sent twice.",
+  "work.milestone.unreadable.act.open": "Open its folder",
+  "work.milestone.held.failed": "{{node}}, attempt {{attempt}}: {{why}}. It waits for you to try it again.",
+  "work.milestone.held.failedDetail": "{{why}}. Nothing goes on until you try it again ({{step}}).",
+  "work.milestone.held.why.failure-kept": "Its plugin said it failed ({{code}}), and Daoris does not try it again by itself",
+  "work.milestone.held.why.tries-spent": "Its plugin said it failed ({{code}}) and its tries are spent, so Daoris does not try it again by itself",
+  "work.milestone.held.act.again": "Try again",
+  "work.milestone.held.word.again": "try again"
 }

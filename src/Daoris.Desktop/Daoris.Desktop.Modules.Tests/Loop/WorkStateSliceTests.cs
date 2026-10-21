@@ -159,6 +159,8 @@ public sealed class WorkStateSliceTests : DriverModuleBridge
         // Every field the route answers, its nulls written, is pushed or named as the pull's alone, never left to chance.
         Assert.All(RouteFields(answered), field => Assert.Contains(field, Classed()));
         Assert.Contains("attempt.words", RouteFields(answered));
+        // FABRIC-PERFORM1k: a failure kept for the person's code, pushed as the page words it.
+        Assert.Contains("attempt.code", RouteFields(answered));
         var parts = snapshot.Partitions.Where(each => each.Partition != WorkStateSlice.Held).ToList();
         foreach (var part in parts)
         {
@@ -212,20 +214,28 @@ public sealed class WorkStateSliceTests : DriverModuleBridge
         var attempt = new HeldAttempt("unit-a", "deploy", 1, "acme.deploy", "acme.deploy/deploy", NodeStates.Unknown, ReconcileStates.Unknown)
         {
             Outcome = "running", Revision = "a1b2c3d4", RecordedAt = At, Resolution = HeldResolutions.DidNot, ResolvedAt = At,
-            Words = HeldResolutions.Plugin,
+            Words = HeldResolutions.Plugin, Code = "broken",
         };
 
-        var judged = WorkStateSlice.Judge([("alpha", new HelpWork([unit], [new InventoryUnread("alpha", "git could not list it")], [entries[3]]))], [attempt], partly: false)!;
+        // FABRIC-PERFORM1j: a node record that does not read, pushed beside the held attempts.
+        var record = new UnreadableRecord("0a1b2c3d.json", "unit-a") { At = At };
+        var judged = WorkStateSlice.Judge(
+            [("alpha", new HelpWork([unit], [new InventoryUnread("alpha", "git could not list it")], [entries[3]]))], [attempt], partly: false, [record])!;
         var part = Written(judged.Single(each => each.Partition == "alpha").Data);
         var held = Written(judged.Single(each => each.Partition == WorkStateSlice.Held).Data);
 
         var built = Written(LinesRoutes.WorkUnit(unit));
         var heldBuilt = Written(LinesRoutes.HeldAnswer([attempt]));
-        Assert.All(FieldsOf(built, "unit").Concat(FieldsOf(heldBuilt[0], "attempt")), field => Assert.Contains(field, Classed()));
+        var recordBuilt = Written(LinesRoutes.UnreadableAnswer([record]));
+        Assert.All(
+            FieldsOf(built, "unit").Concat(FieldsOf(heldBuilt[0], "attempt")).Concat(FieldsOf(recordBuilt[0], "unreadable")),
+            field => Assert.Contains(field, Classed()));
         Same(built, part.GetProperty("units")[0]);
         Same(Written(LinesRoutes.WorkEntry(entries[3])), part.GetProperty("recovery")[0]);
         Assert.Equal("git could not list it", part.GetProperty("unread")[0].GetString());
         Same(heldBuilt, held.GetProperty("held"));
+        Same(recordBuilt, held.GetProperty("unreadable"));
+        Assert.Equal("unit-a", held.GetProperty("unreadable")[0].GetProperty("unit").GetString());
     }
 
     [Fact]

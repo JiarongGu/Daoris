@@ -27,6 +27,7 @@ const ACTS: Required<AttentionActs> = {
   publish: () => {}, retry: () => {}, answer: () => {}, trust: () => {}, acceptDeparture: () => {}, acceptRule: () => {},
   declineRule: () => {}, signIn: () => {}, signInNew: () => {}, read: () => {}, letRun: () => {}, reviewed: () => {}, notYet: () => {},
   showAgain: () => {}, opinionAgain: () => {}, opinionAnyway: () => {}, helper: () => {}, held: () => {}, permission: () => {},
+  openRecords: () => {},
   answerAlone: () => {},
 };
 /** Every door, as a shell's Overview hands them. */

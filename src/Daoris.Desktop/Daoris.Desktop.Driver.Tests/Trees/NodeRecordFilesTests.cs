@@ -229,4 +229,36 @@ public sealed class NodeRecordFilesTests : IDisposable
         Assert.Null(Files().Read(Unit));
         Assert.Single(Files().All().Unreadable);
     }
+
+    /// <summary>
+    /// FABRIC-PERFORM1j: a record that does not read is listed for the person, by its file and the unit its text still names under that
+    /// file's key; one that is not JSON names no unit, a record that reads is never listed, and a unit picked lists its own alone. The
+    /// terminal's `work held` says each, after the attempts held.
+    /// </summary>
+    [Fact]
+    public void A_record_that_does_not_read_is_listed_with_the_unit_it_names_and_said_by_the_terminal()
+    {
+        var files = Files();
+        files.Write(Full() with { Unit = "quest:q-ok", Statuses = new Dictionary<string, NodeStatus>(), Attempts = [], History = [] });
+        File.WriteAllText(NodeRecordFiles.PathOf(_home, Unit), "{ \"unit\": \"quest:q-17\", \"attempts\": [ { \"node\": 1 } ] }");
+        File.WriteAllText(NodeRecordFiles.PathOf(_home, "quest:q-18"), "not json");
+        File.SetLastWriteTimeUtc(NodeRecordFiles.PathOf(_home, Unit), Then.UtcDateTime);
+        File.SetLastWriteTimeUtc(NodeRecordFiles.PathOf(_home, "quest:q-18"), Then.AddMinutes(1).UtcDateTime);
+
+        var listed = HeldAttempts.Unreadable(files);
+
+        Assert.Equal(
+            [(NodeRecordFiles.KeyOf(Unit) + ".json", (string?)Unit, (DateTimeOffset?)Then), (NodeRecordFiles.KeyOf("quest:q-18") + ".json", null, Then.AddMinutes(1))],
+            listed.Select(each => (each.File, each.Unit, each.At)));
+        Assert.Equal([(string?)Unit], HeldAttempts.Unreadable(files, Unit).Select(each => each.Unit));
+        Assert.Equal([(string?)null], HeldAttempts.Unreadable(files, "quest:q-18").Select(each => each.Unit));
+        Assert.Empty(HeldAttempts.Unreadable(files, "quest:q-ok"));
+
+        var output = new StringWriter();
+        Assert.Equal(0, HeldAttempts.Run(_home, ["--unit", Unit], output, new StringWriter()));
+        Assert.Equal(
+            $"work: the node record {NodeRecordFiles.KeyOf(Unit)}.json of {Unit} under the home's workflows/units does not read, so nothing on its unit is "
+            + "judged or started until a person mends it.",
+            output.ToString().TrimEnd());
+    }
 }

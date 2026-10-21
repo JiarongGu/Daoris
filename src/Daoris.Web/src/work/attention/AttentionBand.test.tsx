@@ -247,6 +247,25 @@ describe('What needs you on a machine', () => {
   });
 
   /**
+   * FABRIC-PERFORM1j: a node record that does not read is listed with its folder's press, which asks the shell to open it, naming no
+   * folder; a refusal (no record kept now) is said in the driver's words.
+   */
+  it('lists a node record that does not read and opens its folder, saying a refusal in its words', async () => {
+    const notify = vi.fn();
+    const unreadable = { file: 'k.json', unit: 'quest:q7', at: '2026-10-17T09:00:00Z', said: 'x' };
+    start([row('work', 'record#k.json', unreadable.at, { where: 'quest:q7', unreadable })], { notify });
+
+    const item = await screen.findByRole('listitem', { name: 'The record of quest:q7 does not read' });
+    await userEvent.click(within(item).getByRole('button', { name: 'Open its folder' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORK_RECORDS_FOLDER', { payload: {} }));
+    expect(notify).not.toHaveBeenCalled();
+
+    invoke.mockRejectedValueOnce(new Error('no unit keeps a node record here now, so there is no folder to open.'));
+    await userEvent.click(within(item).getByRole('button', { name: 'Open its folder' }));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('no unit keeps a node record here now'), 'error'));
+  });
+
+  /**
    * COWORK1e (D188 point 4; the message-urgency design §8.3): a third answer in a row with nobody between holds its session's work for
    * the person, with *Go on with this answer* and *Not now*, the session's page's own, each sending the session and the choice; its
    * answer said in the page's words, a refusal by its code.

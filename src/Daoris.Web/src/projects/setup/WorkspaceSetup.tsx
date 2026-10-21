@@ -16,7 +16,7 @@ import { shellWord } from '../../lib/shellWord';
 import { Button, FormField, FormGrid, FormRow, Icon, Inline, PathText, Prose, Segmented, SettingRow, Tip } from '../../design/ui';
 import { RepositoryRules, type RuleLists } from './RepositoryRules';
 import type { AccessSetup } from './RepositorySetup';
-import { Inheritable, landingRowSays, landingSays, SetupSection } from './SetupParts';
+import { Inheritable, landingRowSays, landingSays, SetupSection, type UnreadLanding, UnreadLandingNote } from './SetupParts';
 import type { WorkspaceSection } from '../tabs';
 import { hostOf } from '../workspace/workspace';
 
@@ -29,7 +29,11 @@ export type WorkspaceDefaults = {
   /** Its line (WSR2): `daoris driver line --workspace`. */
   line?: { set?: string; onSet: (branch: string | undefined) => void } | null;
   /** How its work lands (WSR1, D87): `daoris driver landing --workspace`; the plugins here that land work (D100). */
-  landing?: { set?: LandingRule; landers: string[]; onSet: (rule: LandingRule | undefined) => void } | null;
+  landing?: {
+    set?: LandingRule; landers: string[]; onSet: (rule: LandingRule | undefined) => void;
+    /** A rule `driver.json` keeps for it that reads as no rule (FABRIC-GRAPH1d); absent where none. */
+    unread?: UnreadLanding;
+  } | null;
   /** The language its sessions write in (LANG1c), by the driver's table: `daoris driver language --workspace`. */
   language?: { set?: string; table: LanguageOption[]; onSet: (code: string | undefined) => void } | null;
   /** Whether agents outside its repositories read their checkouts (READ1, D107): `daoris driver across --workspace`. */
@@ -144,7 +148,7 @@ export function WorkspaceSetup({
   const accessShown = access && access.pauses.length > 0 ? access : null;
 
   const opensItself: Record<WorkspaceSection, boolean> = {
-    defaults: Boolean(line?.set || landing?.set || language?.set || read?.set !== undefined || review?.set || opinion?.set
+    defaults: Boolean(line?.set || landing?.set || landing?.unread || language?.set || read?.set !== undefined || review?.set || opinion?.set
       || commits?.set || helpers?.set || handOver?.set),
     access: Boolean(accessShown?.pauses.some((each) => each.source === 'workspace')),
     remote: Boolean(wired) || ruleCount > 0 || startWiring,
@@ -422,6 +426,7 @@ function LandingDefault({ workspace, landing, busy, onOpenPlugin }: {
       )}
     >
       <AcceptingNote accepting={accepting} />
+      {landing.unread && <UnreadLandingNote name={workspace} unread={landing.unread} />}
     </Inheritable>
   );
 }

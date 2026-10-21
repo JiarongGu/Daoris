@@ -77,6 +77,37 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
     }
 
     /// <summary>
+    /// The files that do not read (FABRIC-PERFORM1j), for the person to mend: each by its name, the unit it names where its text still
+    /// names one whose key is that name, and when it was last written. Read-only.
+    /// </summary>
+    public IReadOnlyList<UnreadableRecord> Unread() =>
+    [
+        .. All().Unreadable.Select(name =>
+        {
+            var path = Path.Combine(FolderOf(home), name);
+            DateTimeOffset? at = File.Exists(path) ? new DateTimeOffset(File.GetLastWriteTimeUtc(path), TimeSpan.Zero) : null;
+            return new UnreadableRecord(name, UnitNamed(path, name)) { At = at };
+        }),
+    ];
+
+    /// <summary>The unit a file that does not read still names, where it is JSON naming one whose key is the file's name; else null.</summary>
+    private static string? UnitNamed(string path, string name)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            return document.RootElement.ValueKind == JsonValueKind.Object && Text(document.RootElement, "unit") is { } unit
+                && string.Equals(KeyOf(unit) + ".json", name, StringComparison.Ordinal)
+                ? unit
+                : null;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
     /// One change of a unit's record (FABRIC-PERFORM1h, as <see cref="RecordList{T}.Edit"/> is for a list): the record's lock held, the
     /// lease asked, the record read as it is now, <paramref name="change"/> judged on it, and the record it returns written whole, atomically,
     /// and marked as this process's own write; a null record writes nothing. Two callers that read the same record therefore never both

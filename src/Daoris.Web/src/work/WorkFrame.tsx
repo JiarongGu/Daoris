@@ -8,7 +8,7 @@ import { SESSIONS_SLICE, useAnswerSession, useAsks, usePersonDone, useQuests, us
 import { usePushedResyncing } from '../bridge/state/slices';
 import {
   type TurnStop, useCancelTurn, useEditQueued, useEndChat, useHarnesses, useResolveSession, useSendMessage,
-  NO_TURNS, useChatTurns, useSessionEntries, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionStreams, useSessionWhere,
+  NO_TURNS, useChatTurns, useSessionEntries, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionSpent, useSessionStreams, useSessionWhere,
   useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, useGoOnBrief, type WordsAnswer,
   useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree, useSessionDiff,
@@ -74,7 +74,7 @@ import { type ActFacts, actMenu, headerActs, offeredActs, primaryAct, stopAsk } 
 import { askOfEntry, entryOfSession, isIntakeEntry, nameOfEntry } from './entries';
 import { useChannel, useForwardChannel, usePostChannel } from '../bridge/shell';
 import { keptSessionFilters, sessionFilters, shownOf } from './groups';
-import { type SessionFactsOf, sessionFacts, sessionFactsTip } from './head/headFacts';
+import { leadingAgentOf, type SessionFactsOf, sessionFacts, sessionFactsTip } from './head/headFacts';
 import type { Answered } from './InlineConfirm';
 import type { AgentChoice } from './start/AgentChip';
 import { HandOverAsk, type HandOverRoster } from './start/HandOverAsk';
@@ -429,6 +429,8 @@ export function WorkFrame({
   // ask's page holds, under one key; a conversation, an intake and a line rooted in a quest alone have none.
   const attendedEntry = attended ? entryOfSession(entries, attended.id) : null;
   const channelAsk = attendedEntry && !isIntakeEntry(attendedEntry) ? askOfEntry(attendedEntry) : null;
+  // What each of its parts spent (SESSCTX1d), on each part's own row of the strip, from this machine's record.
+  const spent = useSessionSpent(attendedEntry?.parts.map((part) => part.session));
   const channel = useChannel(channelAsk);
   const postChannel = usePostChannel();
   const forwardChannel = useForwardChannel();
@@ -1789,6 +1791,7 @@ export function WorkFrame({
     continuesAgent: continues
       ? roster.find((row) => row.harness === continues.session.adapter)?.product || continues.session.adapter
       : null,
+    leadingAgent: leadingAgentOf(attendedEntry, sessions.data ?? [], roster),
     helping: helps?.title,
     waitingSince: waiting?.session === attended.id ? waiting.since : undefined,
     calling: waiting?.session === attended.id ? waiting.calling : undefined,
@@ -2098,7 +2101,7 @@ export function WorkFrame({
               entry: entryOfSession(entries, attended.id)!,
               attended: attended.id,
               rows: Object.fromEntries((sessions.data ?? []).map((row) => [row.id, {
-                session: row, root: rootOf(row.repository), where: where[row.id],
+                session: row, root: rootOf(row.repository), where: where[row.id], spent: spent[row.id],
               }])),
               onShow: (id: string) => attend(id),
             } : undefined}

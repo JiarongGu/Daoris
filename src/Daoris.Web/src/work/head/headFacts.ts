@@ -5,6 +5,7 @@ import type { Consideration } from '../../data/signals';
 import type { SweepBranch } from '../../settings/Sweep';
 import type { AccountNamer } from '../../agents/tools';
 import { SESSION_ACTIVE } from '../../design/ui';
+import type { SessionEntry } from '../entries';
 import { callHead, type SessionGrouping } from '../groups';
 import { isIntake } from '../identity';
 import { HANDED_REASONS } from '../noteLines';
@@ -33,6 +34,11 @@ export type SessionFactsOf = {
    * session. Absent, the line says it continues another session.
    */
   continuesAgent?: string | null;
+  /**
+   * The agent its line of work's leading part runs on (SESSCTX1d; the session-context design §7), by the roster's name for it,
+   * where the line's parts ran on more than one agent: a moved session reads as one, on the agent it is on now. Absent otherwise.
+   */
+  leadingAgent?: string | null;
   /** The title of the session a helper helps (`serves`, MIXAGENT3a-i), where the frame holds it; absent, another session. */
   helping?: string | null;
   /** When the turn its agent is on was asked, while it has answered nothing (`firstAnswerWait`, WAITSHOWN1); absent otherwise. */
@@ -48,6 +54,24 @@ export type SessionFactsOf = {
    */
   heavy?: string | null;
 };
+
+/**
+ * The agent a line of work's leading part runs on (SESSCTX1d; the session-context design §7), by the roster's name for it, where
+ * the parts the page holds ran on more than one agent: what the head says, so a moved session reads as one. Null for a record
+ * alone, a line on one agent, or a leading part the page does not hold.
+ */
+export function leadingAgentOf(
+  entry: Pick<SessionEntry, 'leading' | 'parts'> | null | undefined,
+  sessions: readonly Pick<Session, 'id' | 'adapter'>[],
+  roster: readonly { harness: string; product?: string | null }[],
+): string | null {
+  if (!entry || entry.parts.length < 2) return null;
+  const held = new Map(sessions.map((session) => [session.id, session.adapter]));
+  const agents = new Set(entry.parts.map((part) => held.get(part.session)).filter(Boolean));
+  const leading = held.get(entry.leading);
+  if (!leading || agents.size < 2) return null;
+  return roster.find((row) => row.harness === leading)?.product || leading;
+}
 
 /**
  * What the record's own links say (MIXAGENT3a-i, the mixed-agents design §4): the agent it continues, then why, in the hand-over's
@@ -109,7 +133,12 @@ function factsOf(t: TFunction, of: SessionFactsOf, whole: boolean): string[] {
   const { session, shown, grouping, branch } = of;
   if (isIntake(session)) return [t('work.scope.ask', { id: session.ask }), t('work.intake.kind')];
 
-  const facts: (string | null)[] = [session.repository, ...linkFacts(t, session, of)];
+  const facts: (string | null)[] = [
+    session.repository,
+    // SESSCTX1d: the agent the line is on now, where its parts ran on more than one.
+    of.leadingAgent ? t('work.facts.leadsOn', { agent: of.leadingAgent }) : null,
+    ...linkFacts(t, session, of),
+  ];
   // What the row's line says for its group (D126 §2.2): parked after its failures, what it awaits, what holds the words,
   // its stop's hold, its work to review. Said here in the row's own words.
   const placed = placedFact(grouping, shown);

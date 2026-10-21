@@ -22,7 +22,7 @@ namespace Daoris.Desktop;
 /// one repository judges its part alone (<see cref="HelpFacts"/>), so it pushes that partition alone. A part never judged is pushed
 /// nothing, never an empty list, which a window would read as nothing to clean up; one the registry no longer names is pushed gone. The
 /// attempts held for the person are a partition of their own, <see cref="Held"/>, read from the node records at each judgement (a file
-/// read: no git, no service).</para>
+/// read: no git, no service), with the node records that do not read beside them (FABRIC-PERFORM1j).</para>
 ///
 /// <para><b>Not judged until the work is.</b> Until the service's answers land, and until every part they name was judged once, the
 /// slice answers <see cref="StateSlice.NotJudged"/>, so a window keeps the pull rather than install the parts judged so far as all
@@ -57,7 +57,7 @@ public static class WorkStateSlice
     public static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> Fields = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
     {
         ["part"] = ["units", "recovery", "unread"],
-        ["held"] = ["held"],
+        ["held"] = ["held", "unreadable"],
         ["unit"] = ["unit", "repository", "branch", "session", "end", "result", "cleanup", "recovery", "entries"],
         ["end"] = ["state", "by", "on", "revision", "at", "said"],
         ["cleanup"] = ["state", "waits", "gone"],
@@ -65,8 +65,10 @@ public static class WorkStateSlice
         ["attempt"] =
         [
             "unit", "node", "attempt", "plugin", "step", "nodeState", "why", "outcome", "revision", "at", "resolution", "resolvedAt", "said",
-            "words",
+            "words", "code",
         ],
+        // FABRIC-PERFORM1j: a node record that does not read, which stops its unit until a person mends it.
+        ["unreadable"] = ["file", "unit", "at", "said"],
     };
 
     /// <summary>Which shape a field holds, as <c>shape.field</c>, an object of it or a list of them; every other field is a value.</summary>
@@ -75,6 +77,7 @@ public static class WorkStateSlice
         ["part.units"] = "unit",
         ["part.recovery"] = "entry",
         ["held.held"] = "attempt",
+        ["held.unreadable"] = "unreadable",
         ["unit.end"] = "end",
         ["unit.result"] = "entry",
         ["unit.cleanup"] = "cleanup",
@@ -99,10 +102,15 @@ public static class WorkStateSlice
 
     /// <summary>The slice the shell's loop owns, judging from <paramref name="loop"/>'s facts and its home's node records.</summary>
     public static StateSlice Of(DriverLoop loop, IEventBus bus) =>
-        Of(loop.Facts, bus, () => HeldAttempts.Read(new NodeRecordFiles(loop.Home), quests: loop.LastQuests), loop.Log);
+        Of(loop.Facts, bus, () => HeldAttempts.Read(new NodeRecordFiles(loop.Home), quests: loop.LastQuests), loop.Log,
+            () => HeldAttempts.Unreadable(new NodeRecordFiles(loop.Home)));
 
-    /// <summary>The slice over <paramref name="facts"/>, its held attempts read by <paramref name="held"/> at each judgement.</summary>
-    public static StateSlice Of(MachineFacts facts, IEventBus bus, Func<IReadOnlyList<HeldAttempt>> held, MachineLog? log = null)
+    /// <summary>
+    /// The slice over <paramref name="facts"/>, its held attempts read by <paramref name="held"/> and the node records that do not read by
+    /// <paramref name="unreadable"/> (none where it is not given) at each judgement.
+    /// </summary>
+    public static StateSlice Of(
+        MachineFacts facts, IEventBus bus, Func<IReadOnlyList<HeldAttempt>> held, MachineLog? log = null, Func<IReadOnlyList<UnreadableRecord>>? unreadable = null)
     {
         // Whether a judgement found every part judged: until one has, a part never judged leaves the slice not judged. Read and written
         // only within a judgement's turn, which the slice runs one at a time.
@@ -110,7 +118,7 @@ public static class WorkStateSlice
         return new(Name, bus, _ =>
         {
             // The node records are read only once the service's answers name the parts: before, nothing is judged.
-            var judged = HelpFacts.WorkParts(facts.Current) is { } parts ? Judge(parts, held(), partly: whole) : null;
+            var judged = HelpFacts.WorkParts(facts.Current) is { } parts ? Judge(parts, held(), partly: whole, unreadable?.Invoke()) : null;
             whole |= judged is not null;
             return Task.FromResult(judged);
         })
@@ -130,7 +138,9 @@ public static class WorkStateSlice
     /// <param name="parts">The facts' parts (<see cref="HelpFacts.WorkParts(MachineFactsSnapshot)"/>), each as last judged or null.</param>
     /// <param name="held">The attempts held for the person, every unit's.</param>
     /// <param name="partly">Whether a part never judged is left out rather than leaving the slice not judged: once one judgement was whole.</param>
-    public static IReadOnlyList<SliceJudged>? Judge(IReadOnlyList<(string Part, HelpWork? Work)>? parts, IReadOnlyList<HeldAttempt> held, bool partly)
+    /// <param name="unreadable">The node records that do not read (FABRIC-PERFORM1j), pushed beside the held attempts; none where null.</param>
+    public static IReadOnlyList<SliceJudged>? Judge(
+        IReadOnlyList<(string Part, HelpWork? Work)>? parts, IReadOnlyList<HeldAttempt> held, bool partly, IReadOnlyList<UnreadableRecord>? unreadable = null)
     {
         if (parts is null || (!partly && parts.Any(part => part.Work is null))) return null;
         var judged = new List<SliceJudged>();
@@ -145,7 +155,7 @@ public static class WorkStateSlice
             }, "part")));
         }
 
-        judged.Add(new SliceJudged(Held, Allowed(new { Held = LinesRoutes.HeldAnswer(held) }, "held")));
+        judged.Add(new SliceJudged(Held, Allowed(new { Held = LinesRoutes.HeldAnswer(held), Unreadable = LinesRoutes.UnreadableAnswer(unreadable ?? []) }, "held")));
         return judged;
     }
 

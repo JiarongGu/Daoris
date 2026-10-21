@@ -266,6 +266,12 @@ public enum QuestRespondRefusal
     /// again by a take of its own. The answer says which.
     /// </summary>
     NoLostTake,
+
+    /// <summary>
+    /// The person's bring-forward while a session here still runs on the quest (SYNCMERGE1c4, D178 point 3): it waits until that process
+    /// has ended, so the old session's late moves cannot stand on the fresh take. The answer names the session.
+    /// </summary>
+    StillRunning,
 }
 
 /// <param name="Refusal"><see cref="QuestRespondRefusal.None"/> when the status moved.</param>
@@ -1992,7 +1998,10 @@ public sealed class QuestExchange(
     {
         var quest = id.TrimStart('#');
         var named = $"`{conflict.Machine}:{conflict.Sequence}`";
-        var bringing = await quests.BringForwardAsync(quest, conflict, now, ct).ConfigureAwait(false);
+        // SYNCMERGE1c4: read before the write, as the session store keeps its own; a session the driver starts between the two finds the
+        // step taken by the fresh take, as any start after the press does.
+        var running = sessions is null ? null : await sessions.RunningForQuestAsync(quest, ct).ConfigureAwait(false);
+        var bringing = await quests.BringForwardAsync(quest, conflict, now, ct, running: running is not null).ConfigureAwait(false);
         return bringing.Refusal switch
         {
             QuestForwardRefusal.None => await ForwardByPushAsync(bringing.Quest!, conflict, ct).ConfigureAwait(false)
@@ -2027,6 +2036,12 @@ public sealed class QuestExchange(
                 QuestRespondRefusal.Closed,
                 $"Quest `#{quest}` is {bringing.Quest!.Status}: a closed step takes no take, so its lost take cannot be brought forward. "
                 + $"Nothing moved; dismiss conflict {named}.",
+                null),
+            QuestForwardRefusal.StillRunning => new(
+                QuestRespondRefusal.StillRunning,
+                $"Quest `#{quest}`'s session `{running!.Id}` is still {running.StateName} on this machine: the lost take is brought forward "
+                + "only once its process has ended, so nothing the old session does late can stand on the fresh take. Nothing moved; stop "
+                + "the session, or bring it forward when it ends.",
                 null),
             _ => new(
                 QuestRespondRefusal.SourceReopened,

@@ -96,7 +96,11 @@ export const workSlice: SliceSpec = {
     const held = partitions.get(HELD);
     if (!parts.every(object) || (held !== undefined && !object(held))) return undefined;
     const rows = (field: string) => parts.flatMap((part) => (Array.isArray(part[field]) ? part[field] as unknown[] : []));
-    return readWorkState({ units: rows('units'), recovery: rows('recovery'), unread: rows('unread'), held: held && Array.isArray(held.held) ? held.held : [] });
+    return readWorkState({
+      units: rows('units'), recovery: rows('recovery'), unread: rows('unread'), held: held && Array.isArray(held.held) ? held.held : [],
+      // FABRIC-PERFORM1j: the node records that do not read, pushed beside the held attempts.
+      unreadable: held && Array.isArray(held.unreadable) ? held.unreadable : [],
+    });
   },
 };
 
@@ -257,6 +261,15 @@ export const useResolveHeld = () =>
   useMutation({
     mutationFn: ({ unit, node, attempt, resolution }: { unit: string; node: string; attempt: number; resolution: HeldResolution }) =>
       call<{ done: boolean; refused?: string | null; message: string }>('WORK_HELD', { unit, node, attempt, resolution }),
+  });
+
+/**
+ * Open the folder the units' node records are kept in (FABRIC-PERFORM1j), where the person mends one that does not read: the shell names
+ * the folder, never the page, and answers only whether it opened; with no record kept, the driver's refusal.
+ */
+export const useOpenWorkRecords = () =>
+  useMutation({
+    mutationFn: () => call<{ opened: boolean }>('WORK_RECORDS_FOLDER', {}),
   });
 
 type RecoveryDropAnswer = {

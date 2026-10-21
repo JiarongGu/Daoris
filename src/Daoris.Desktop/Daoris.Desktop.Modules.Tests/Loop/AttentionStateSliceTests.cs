@@ -1034,6 +1034,33 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     [Fact]
     public void Nothing_is_held_where_the_driver_lists_none() => Assert.Empty(Rows(new() { Held = [] }));
 
+    // ---- a node record that does not read (FABRIC-PERFORM1j) ----
+
+    private static JsonObject Unreadable(string over = "{}") => With(
+        """
+        {"file":"0a1b2c3d4e5f60718293a4b5c6d7e8f9.json","unit":"quest:q7","at":"2026-10-17T09:00:00Z",
+         "said":"the node record 0a1b2c3d4e5f60718293a4b5c6d7e8f9.json of quest:q7 under the home's workflows/units does not read"}
+        """,
+        over);
+
+    /// <summary>
+    /// A node record that does not read is a row of its own, by its file, naming the unit it names where it names one, since it was last
+    /// written, with the record whole for the page to word; one naming no unit is a row too, said where nothing names it.
+    /// </summary>
+    [Fact]
+    public void A_node_record_that_does_not_read_is_a_row_by_its_file_naming_its_unit()
+    {
+        var row = Assert.Single(Rows(new() { Unreadable = [Unreadable()] }));
+        Is($$"""
+            {"kind":"work","id":"record#0a1b2c3d4e5f60718293a4b5c6d7e8f9.json","since":"2026-10-17T09:00:00Z","where":"quest:q7",
+             "unreadable":{{Unreadable().ToJsonString()}}}
+            """, row);
+
+        var unnamed = Assert.Single(Rows(new() { Unreadable = [Unreadable("""{"unit":null}""")] }));
+        Assert.Null(unnamed["where"]);
+        Assert.Empty(Rows(new() { Unreadable = [] }));
+    }
+
     // ---- the slice ----
 
     /// <summary>
@@ -1065,6 +1092,8 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
             // OVERVIEWNOISE1b: a unit's row, its blocked entry with its code and facts.
             Works = [Unit($$$"""{"cleanup":{"state":"pending","waits":[{{{Entry("""{"code":"unfollowed","facts":{"branch":"daoris/s1a2b3c4"}}""").ToJsonString()}}}],"gone":[]}}""")],
             Held = [HeldAttempt("""{"outcome":"reached","revision":"r","resolution":"stop","resolvedAt":"2026-10-17T10:00:00Z","words":["stop"]}""")],
+            // FABRIC-PERFORM1j: a node record that does not read.
+            Unreadable = [Unreadable()],
         };
         var rows = Rows(facts);
         Assert.Contains(rows, row => row["blocked"] is JsonObject blocked && blocked["entries"]![0]!["facts"] is JsonObject);

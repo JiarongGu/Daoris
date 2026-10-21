@@ -468,10 +468,13 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("SESSION_ANSWER_ALONE", "sessions,driver", "session")]
     [InlineData("ANSWER_WAITS", "", null)]
     [InlineData("SESSION_OPENINGS", "", null)]
+    // SESSCTX1d: what each part spent, the *Parts* strip's read.
+    [InlineData("SESSION_SPENT", "", null)]
     [InlineData("SESSION_WHERE", "", null)]
     [InlineData("SESSION_GROUPS", "", null)]
     [InlineData("SESSION_SEARCH", "", null)]
     [InlineData("SESSION_OPEN_FOLDER", "", null)]
+    [InlineData("WORK_RECORDS_FOLDER", "", null)]
     [InlineData("START_CHAT", "sessions,driver", null)]
     [InlineData("SESSION_START_FROM", "sessions,driver", "id")]
     // SESSCTX1c part B: *Go on with Daoris's brief*, a new part of the session opened and the words taken off the one it continues.

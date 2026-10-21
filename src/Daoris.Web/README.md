@@ -224,7 +224,10 @@ also tells its frame Overview's *What needs you* count (`useTaskbarCount` in `br
 NOTIFY1b), which the frame wears on its taskbar button and in its title; a secondary window's page never does. Each
 count carries a later `order` than the one before, so the frame never wears an older count over a newer (SESSBADGE1).
 That count includes a plugin step's attempt held for the person, which `WORK_STATE` lists as `held` and its row settles with
-their word (`useResolveHeld` in `bridge/repositories/lines.ts`, `WORK_HELD`, FABRIC-PERFORM1g), and a tool call a session holds for
+their word (`useResolveHeld` in `bridge/repositories/lines.ts`, `WORK_HELD`, FABRIC-PERFORM1g), a node record that does not read,
+which `WORK_STATE` lists as `unreadable` and its row's press opens the folder of (`useOpenWorkRecords`, `WORK_RECORDS_FOLDER`,
+FABRIC-PERFORM1j), a plugin step's failure Daoris will not retry, which `held` lists too and its row's *Try again* restarts
+(FABRIC-PERFORM1k), and a tool call a session holds for
 their answer under asking (`usePermissionWaits` in `bridge/sessions/sessions.ts`, `PERMISSION_WAITS`, AUTONOMY1b3c), answered
 with a choice its agent offered on the session's head and foot and on its row (`useAnswerPermission`,
 `SESSION_PERMISSION_ANSWER`); neither route publishes, so the page asks again itself: as a pushed call's `waiting`
@@ -257,7 +260,10 @@ A session's parts are a flowchart in the parts strip's place on its page (FLOWCH
 what it followed (`EntryPart.after`) and labels the edge by how it began, an asked part from a faint node for the repository that
 asked it and a part with no `after` from the start, and draws Accept's plan, once its ask is open and read, as a dashed node of
 where the parts *would* land. Parts are lineage, never a cause or a concurrency, and a part keeps no time, so its agent and when it
-began are said only where the page holds that part's record. The strip is the flow's rail, drawn where only the rail fits or the
+began are said only where the page holds that part's record. A move and a hand-over name the agent they left where it is another
+than the part's own, and a hand-over its why by the part's `fromWhy` (SESSCTX1d); each part's row and node say what it spent, its
+turns' tokens from this machine's record (`SESSION_SPENT`, `useSessionSpent`); and the head's facts name the agent the line's
+leading part runs on where its parts ran on more than one (`leadingAgentOf`). The strip is the flow's rail, drawn where only the rail fits or the
 person chose the list (`Flow`'s `rail`), and a press on a node, or Enter on it, shows that part as the strip's button did. The
 measured check (`e2e:measured`) draws both flows' stories in a rendered browser, each frame with a ceiling of crossings.
 
