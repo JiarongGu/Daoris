@@ -13,7 +13,7 @@ vi.mock('@shenora/react', async () => (await import('../test/workFrameBridge')).
 import { watchScreen } from '../test/onScreen';
 import { eventHandlers, invoke } from '../test/workFrameBridge';
 import {
-  CHAT, DRIVEN, DRIVER_STATE, PARKED, QUESTS, REGISTRY, ROSTER, STRUCTURED_ROSTER, show, userEvent,
+  CHAT, DRIVEN, DRIVER_STATE, PARKED, PARKED_INTAKE, QUESTS, REGISTRY, ROSTER, STRUCTURED_ROSTER, show, userEvent,
 } from '../test/workFrameKit';
 import { DiffPane } from './review/DiffPane';
 import { WorkFrame } from './WorkFrame';
@@ -557,6 +557,36 @@ describe('a session’s page header and its acts', () => {
     expect(foot).toHaveTextContent('Blocked: tree s1a2b3c4, a session still holds this tree');
     expect(foot).toHaveTextContent('folder set aside s1a2b3c4-20261017, kept until');
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORK_STATE', expect.objectContaining({ payload: { unit: 's1a2b3c4' } }));
+  });
+
+  /**
+   * RELSPAM1: a running driven session on a quest an ask's intake published, with its milestone, is drawn again at every change of
+   * its record. Its *Who it worked with* and its milestone were keyed alike under the record, so each draw left one more copy of the
+   * relations line in the page: eleven on an installed window.
+   */
+  it('keeps one line of who a running session worked with, however often its record changes', async () => {
+    const intake = { ...PARKED_INTAKE, id: 'i9n8t7k6', state: 'completed', note: undefined };
+    const quests = [{ ...QUESTS[0]!, publishedBy: intake.id }];
+    const unit = {
+      unit: 'u1', repository: 'engine', branch: 'daoris/s1a2b3c4', session: 's1a2b3c4',
+      end: { state: 'not-ended', said: 'no line holds its work yet' }, result: [], cleanup: { state: 'pending', waits: [], gone: [] }, recovery: [], entries: [],
+    };
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => (String(input).startsWith('/api/quests')
+      ? Response.json(quests)
+      : respond(String(input)))));
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'WORK_STATE' ? { units: [unit], unread: [] } : DRIVER_STATE));
+    SESSIONS = [DRIVEN, intake];
+    const { client } = show('s1a2b3c4');
+
+    expect(await screen.findByRole('region', { name: 'Who it worked with' })).toHaveTextContent('asked by ask #0fda18');
+    await screen.findByRole('region', { name: 'Where this work stands' });
+    for (let minute = 10; minute < 20; minute += 1) {
+      SESSIONS = [{ ...DRIVEN, updated: `2026-09-02T01:${minute}:00Z` }, intake];
+      await act(() => client.invalidateQueries());
+      await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: 'Expose a streaming budget' })).toBeInTheDocument());
+    }
+    expect(screen.getAllByRole('region', { name: 'Who it worked with' })).toHaveLength(1);
+    expect(screen.getAllByRole('region', { name: 'Where this work stands' })).toHaveLength(1);
   });
 
   it('says nothing at the foot where the driver names no unit for the session', async () => {

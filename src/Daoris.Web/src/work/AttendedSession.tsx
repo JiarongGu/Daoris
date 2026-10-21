@@ -285,7 +285,7 @@ export function AttendedSession({
       {/* Its parts as a flowchart, the strip its rail (FLOWCHART1b); Accept's plan, once read, is where they would land. Folded to one
           line (HEADFIT1: the drawing alone was over the head's whole budget), keyed by the line of work, not the session: a press on
           a part shows another session of it, and the flow being read stays open. */}
-      {parts && <PartsFold key={parts.entry.entry} {...parts} plan={entryAccept?.open ? entryAccept.plans?.[0] ?? null : null} />}
+      {parts && <PartsFold key={`parts:${parts.entry.entry}`} {...parts} plan={entryAccept?.open ? entryAccept.plans?.[0] ?? null : null} />}
       {/* One Accept for every part with work to land (ACCEPTALL1, D167's 2026-10-15 amendment), under the strip that lists them. */}
       {entryAccept && <div className="grid justify-items-start gap-1"><EntryAccept {...entryAccept} /></div>}
       {/* Every stop a door (the study's §5: "every stop pressable"): a session attends, a quest opens.
@@ -299,13 +299,16 @@ export function AttendedSession({
           </div>
         )
         : <ChainLine chain={chain} onQuest={onQuest} onExpand={() => showChain(true)} />)}
-      {/* Who it worked with, folded to a line and opened in place (HEADFIT1); keyed by the record so another one starts folded. */}
-      {relations && <SessionRelations key={session.id} relations={relations} onQuest={onQuest} onSession={onSession} />}
+      {/* Who it worked with, folded to a line and opened in place (HEADFIT1); keyed by the record so another one starts folded.
+          🔴 Each fold keyed here says what it is beside the record's id (RELSPAM1): this one and the milestone's were both keyed by
+          the id alone, React matched the one to the other's fiber, and every draw of a running session left a copy of this line
+          in the page, never unmounted (eleven on an installed window). `design/siblingKeys.test.ts` holds every parent to it. */}
+      {relations && <SessionRelations key={`relations:${session.id}`} relations={relations} onQuest={onQuest} onSession={onSession} />}
       {/* Its ask's channel kept to this line of work, folded to a line (SESSONE2c, D167 points 6 to 8). */}
       {channel && <ChannelPanel {...channel} />}
       {/* Where its work stands (FABRIC-MILESTONE1b): the end, the result, the clean-up and the recovery, read from the driver, folded
           to its line, opened in place (MILESTONEUX1); keyed by the record so another one starts folded. */}
-      {milestone && <WorkMilestone key={session.id} unit={milestone} />}
+      {milestone && <WorkMilestone key={`milestone:${session.id}`} unit={milestone} />}
       {/* Its door to how the branch its landing made landed (FLOWCHART1c), a line beside the milestone and none of its own. */}
       {milestone && onOpenBranch && <LandedBranchDoor unit={milestone} onOpen={onOpenBranch} />}
       {/* Folded, a line above the conversation: nothing is read until the person opens it (TRACE1b). */}

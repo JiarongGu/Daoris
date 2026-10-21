@@ -2220,10 +2220,12 @@ export function WorkFrame({
 
         {/* What waits on the person, where they read (WAITFOOT1b, D168): above the box and outside the conversation's scroll,
             each wait with the head's own press. None on a teammate's record, which has no press here (D47 §4). Keyed by the
-            session, so a fold is its own. */}
+            session, so a fold is its own; 🔴 each child keyed by the session here says what it is beside the id (RELSPAM1), since
+            the strip, the settler and the composer keyed by the id alone were matched to each other's fibers and one was left
+            behind, never unmounted. */}
         {attended && here && waits && (
           <WaitStrip
-            key={attended.id}
+            key={`strip:${attended.id}`}
             {...waits}
             // The box below takes the park's answer: a driven park's answer box, or a parked chat's composer.
             answerBelow={answerBelow}
@@ -2237,12 +2239,12 @@ export function WorkFrame({
           />
         )}
 
-        {sending.lateTo && <SentSettler key={sending.lateTo} sending={sending} giveBack={giveBackSent} />}
+        {sending.lateTo && <SentSettler key={`settler:${sending.lateTo}`} sending={sending} giveBack={giveBackSent} />}
 
         {talking && attended && box.kind === 'chat' && (
           <Composer
             // Per session: the files attached in one conversation never follow the person to another.
-            key={attended.id}
+            key={`composer:${attended.id}`}
             live={live}
             sending={send.isPending}
             refusal={refusal?.session === attended.id ? refusal.text : null}
