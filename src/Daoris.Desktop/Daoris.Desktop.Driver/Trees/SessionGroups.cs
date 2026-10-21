@@ -864,8 +864,8 @@ public static class SessionGroups
             {
                 // The resume's own account, as the loop's start asks for it (MSG1g): words going on in the record they were said
                 // to, in its own conversation, on the adapter this machine starts on.
+                // SAYHELD1: never by the quest's `awaits`, as the start's own ask does not (DriverContinuations.ResumesOwn).
                 if (verdict is not { Verdict: StartVerdict.Start, GoesOn: true, Resumes: { WordsWaiting: true } words }
-                    || verdict.Quest.Awaits is { Length: > 0 }
                     || (words.Adapter ?? conversations.Read(words.Session)?.Adapter) is { Length: > 0 } ranOn
                        && !string.Equals(ranOn, adapter, StringComparison.OrdinalIgnoreCase)
                     || choices.Covers(words)

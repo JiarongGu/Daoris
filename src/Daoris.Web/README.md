@@ -39,7 +39,8 @@ the record's own `from` and `serves` joined in the rail; and a helper is titled 
 no box. Where a session's words wait for the person on a reason that leaves its tree to go on in (SESSCTX1c part B, `BRIEF_WAITS`),
 the line saying they cannot go on offers *Go on with Daoris's brief* (`SESSION_GO_ON_BRIEF`) beside *Start a conversation with these
 words*, on a session's page and in Ask Daoris's dock; the new part is attended once it opens, and a refusal is said by its code
-(`GO_ON_BRIEF`, twinned with the driver's `GoOnBrief`). Review reads a session's work against its line (REVIEWBASE1): the head says, in one line, when the latest line the
+(`GO_ON_BRIEF`, twinned with the driver's `GoOnBrief`). Words that went with a quest's resume to its new session say so on the
+session they were said to, by the went line's `resumed` reason (`work.say.why.resumed`, SAYHELD1). Review reads a session's work against its line (REVIEWBASE1): the head says, in one line, when the latest line the
 host knows has commits the work does not, naming *Updates* on the workspace's *Branches*; a tree holding nothing beyond the
 line says so where *Nothing landed* would be false. Such a tree has nothing to land (REVIEWBASE4): the foot says so where
 *Accept* would be, offers neither *Accept* nor *Send back…*, and *Discard tree* leads; the head names the branch the tree

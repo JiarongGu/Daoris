@@ -120,6 +120,13 @@ public static class ContinueWhy
     /// </summary>
     public const string Started = "started";
 
+    /// <summary>
+    /// The quest of the session that asked another repository and waited (D79) resumed in a new session once the answer came, handed
+    /// the words said to the asker meanwhile (SAYHELD1): its own conversation was never handed the answer. Never judged: only that
+    /// resume says it, on the went note it leaves.
+    /// </summary>
+    public const string Resumed = "resumed";
+
     /// <summary>A reason whose line is fixed: every code but <see cref="Adapter"/> and <see cref="Unable"/>, which name adapters.</summary>
     public static ContinueReason Of(string code) => new(code, code switch
     {
@@ -138,6 +145,7 @@ public static class ContinueWhy
         Intake => "an intake is answered through its ask",
         StoodDown => "it stood down, so it has nothing to go on with",
         Started => "you started a conversation with them",
+        Resumed => "its quest resumed in a new session once the question it waited on was answered",
         _ => throw new ArgumentOutOfRangeException(nameof(code), code, "a reason whose line names an adapter is made by its own method"),
     });
 

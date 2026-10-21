@@ -19,14 +19,28 @@ internal static class HarnessCapture
     /// said was nowhere they would look.
     /// </remarks>
     /// <param name="account">What the target was composed of, kept on its event; null where none was composed here.</param>
-    internal static IReadOnlyList<SessionEvent> Opening(string prompt, string? personSaid, InstructionAccount? account = null) =>
-        personSaid is { Length: > 0 } said
-            ?
-            [
-                new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = prompt, Account = account },
-                new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = said },
-            ]
-            : [new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = prompt, Account = account }];
+    /// <param name="handed">
+    /// For a resume, the words it was handed from the session that asked (SAYHELD1), each after the target under the id that record gave
+    /// it, so the conversation shows them where the session took them (D137 §3.1): the person's as theirs, Daoris's as Daoris's. Null or
+    /// empty for none.
+    /// </param>
+    internal static IReadOnlyList<SessionEvent> Opening(
+        string prompt, string? personSaid, InstructionAccount? account = null, IReadOnlyList<SaidWordView>? handed = null) =>
+    [
+        new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = prompt, Account = account },
+        .. personSaid is { Length: > 0 } said
+            ? new[] { new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = said } }
+            : [],
+        .. (handed ?? []).Select(word => new SessionEvent
+        {
+            Kind = SessionEventKind.User,
+            Origin = word.Persons ? "person" : "target",
+            From = word.Daoris ? DaorisWords.From : null,
+            Id = word.Id,
+            Text = word.Text,
+            Files = word.Files.Count > 0 ? word.Files : null,
+        }),
+    ];
 
     /// <summary>
     /// The driven session's capture, and the same for a session the loop did not spawn — a chat (D49 §3), whose process
@@ -101,7 +115,8 @@ internal static class HarnessCapture
         SessionEvents? events, IStreamMapper mapper, string? prompt, CancellationToken ct, string? preamble = null,
         Action<SessionEvent>? observed = null, string? personSaid = null,
         IReadOnlyList<SessionEvent>? opened = null, bool append = false, Action<JsonElement>? said = null,
-        Action<string>? named = null, InstructionAccount? account = null, HarnessWords? own = null, string? lineageHome = null)
+        Action<string>? named = null, InstructionAccount? account = null, HarnessWords? own = null, string? lineageHome = null,
+        IReadOnlyList<SaidWordView>? handed = null)
     {
         own?.Begin();
         var lineage = lineageHome is null ? null : ChildLineage.Watch(lineageHome, sessionId);
@@ -119,7 +134,7 @@ internal static class HarnessCapture
         void Event(SessionEvent e) => events?.Keep(sessionId, e, Line);
 
         if (preamble is { Length: > 0 }) Line(preamble);
-        foreach (var opening in opened ?? (prompt is null ? [] : Opening(prompt, personSaid, account)))
+        foreach (var opening in opened ?? (prompt is null ? [] : Opening(prompt, personSaid, account, handed)))
         {
             // The driver's own first line is the transcript's too; the person's answer is the conversation's alone.
             if (opening.Kind == SessionEventKind.Note && opening.Text is { } note) Line(note);

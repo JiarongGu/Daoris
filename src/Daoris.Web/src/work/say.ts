@@ -290,6 +290,8 @@ export const REASONS: Readonly<Record<string, { key: string; needs?: readonly (k
   'started': { key: 'work.say.why.started' },
   // SESSCTX1c: the native door's agent ended before it reopened its conversation, apart from `gone`.
   'exited': { key: 'work.say.why.exited' },
+  // SAYHELD1: its quest resumed in a new session once the question it waited on was answered, and that session took the words.
+  'resumed': { key: 'work.say.why.resumed' },
 };
 
 /**

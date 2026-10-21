@@ -33,9 +33,13 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     /// on another adapter, whose conversation cannot go on here whichever account runs (D131 §2's <c>adapter</c>), so its words
     /// are carried on by the walk's pick as before.
     /// </summary>
+    /// <remarks>
+    /// 🔴 SAYHELD1: never judged by the quest's <c>awaits</c>. The planner plans words going on only where no question holds them, and
+    /// a quest resumed on its answer still names that question (Planner's <c>ResumedOnAnswer</c>), so its park's answer took the walk.
+    /// </remarks>
     internal PriorSession? ResumesOwn(Consideration start, string agent)
     {
-        if (!start.GoesOn || start.Resumes is not { WordsWaiting: true } words || start.Quest.Awaits is { Length: > 0 }) return null;
+        if (!start.GoesOn || start.Resumes is not { WordsWaiting: true } words) return null;
         var ranOn = words.Adapter ?? _context.Conversations.Read(words.Session)?.Adapter;
         return ranOn is not { Length: > 0 } || string.Equals(ranOn, agent, StringComparison.OrdinalIgnoreCase) ? words : null;
     }
@@ -656,6 +660,26 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     internal async Task<PriorSession> HandedOnRecordAsync(PriorSession look, CancellationToken ct) =>
         look.Parked ? look : Continuations.HandedOn(look, await ReadAgainAsync(_context.Service, look.Session, ct).ConfigureAwait(false));
 
+    /// <summary>
+    /// The record a resume (D79) hands words on from (SAYHELD1, A): the session that asked and ended waiting, as it stands now
+    /// (SAIDBACK1f), where any word it is handed waits on it (<see cref="HandedToResume"/>); null where none does. A resume opens a new
+    /// session handed the answer, so the words said to the asker meanwhile go there, or they would wait on a record no look takes up
+    /// again (<see cref="WordsNever.Superseded"/>).
+    /// </summary>
+    internal async Task<PriorSession?> ResumeWordsAsync(PriorSession asked, CancellationToken ct)
+    {
+        if (!asked.WordsWaiting) return null;
+        var now = await HandedOnRecordAsync(asked, ct).ConfigureAwait(false);
+        return now.Waiting.Any(HandedToResume) ? now : null;
+    }
+
+    /// <summary>
+    /// The words a resume is handed from the session that asked (SAYHELD1): the person's, and Daoris's own, said as Daoris's, since the
+    /// resume starts anyway and Daoris's never starts one by itself (COWORK1b). Another agent's findings and a helper's answer go to the
+    /// person instead, as any new session's do (XAGENT1e, MIXAGENT2a-ii).
+    /// </summary>
+    internal static bool HandedToResume(SaidWordView word) => word.Persons || word.Daoris;
+
     /// <summary>The look's line where every word waiting on the record was taken back before it went on (SAIDBACK1d, SAIDBACK1e).</summary>
     internal static StartRun TakenBackFirst(QuestView quest, string session) => new(
         $"held  #{quest.Id} → {quest.To}: every word waiting on session {session} was taken back before it went on; nothing is sent.",
@@ -773,24 +797,28 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     /// <c>reopened</c>; and, for a record that had ended, said in its conversation where the person wrote them. A park's
     /// answer is said beneath its question as it always was. A refusal costs a line, never the start.
     /// </summary>
-    internal async Task HandedOnAsync(PriorSession record, string to, ContinueReason why, CancellationToken ct)
+    /// <param name="resumed">
+    /// A resume's (SAYHELD1): the session opened anyway, so Daoris's own words go on in it too (<see cref="HandedToResume"/>).
+    /// </param>
+    internal async Task HandedOnAsync(PriorSession record, string to, ContinueReason why, CancellationToken ct, bool resumed = false)
     {
         if (!record.WordsWaiting) return;
 
         var output = _context.Output;
+        bool Handed(SaidWordView word) => resumed ? HandedToResume(word) : word.Persons;
         // A choice of a new session is spent with the words it named, which went now (MSG1g).
         _context.NewSessions.Clear(record.Session);
         // 🔴 Only the person's words go on in a new session (XAGENT1e, design §6.7): another agent's findings would reach it as the
         // person's, which DRIFT1 would make requirements. They stay on the record, marked as words that cannot go on there, and
         // go to the person instead. So do Daoris's own words (COWORK1b): a message of Daoris's never starts a new session (the
-        // message-urgency design §4.1).
-        if (record.Waiting.Any(word => !word.Persons))
+        // message-urgency design §4.1), bar a resume's, which starts whatever they say (SAYHELD1).
+        if (record.Waiting.Any(word => !Handed(word)))
         {
-            _context.Marks.Mark(record.Session, record.Waiting.Where(word => !word.Persons).Select(word => word.Id).OfType<string>(), why, DateTimeOffset.UtcNow);
+            _context.Marks.Mark(record.Session, record.Waiting.Where(word => !Handed(word)).Select(word => word.Id).OfType<string>(), why, DateTimeOffset.UtcNow);
             _driver.Deliverer.FindingsToPerson(record, why);
         }
 
-        var ids = record.Waiting.Where(word => word.Persons).Select(word => word.Id).OfType<string>().ToList();
+        var ids = record.Waiting.Where(Handed).Select(word => word.Id).OfType<string>().ToList();
         if (!record.Parked)
         {
             // The words' ids, the session and the code beside the line (MSG1d, D137 §3.1): the page links where they went.

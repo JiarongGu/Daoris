@@ -41,7 +41,6 @@ holds the detail. The structural changes come first, so the features built after
 - **The owner's UI/UX findings with many sessions running** (2026-10-20): all built and merged by 2026-10-21 (QUESTLISTS1, SESSBADGE1, RAILLINE1, OVERVIEWNOISE1a-d, TITLEONE1, DONEEND1, STARTERSCOPE1); they reach the owner's window with the next republish, and are looked at there.
 - **BGWAIT3**: a session that ended its turn on its own background command was shown as waiting for the person (等你处理), and nothing woke it when the command ended (the owner's report, 2026-10-21).
 - **NOTIFY1**: a notification center for everything that comes to the person, so a terminal's press never blocks the page and Overview stops listing every message (the owner's direction, 2026-10-21). The design is accepted (D196, 2026-10-21, after Codex's and Fable's reads); its build rows follow in order: NOTIFY2a (the pipe's half) and NOTIFY2b (the view, which with 2a fixes the owner's three reports) are built; 2c-j follow.
-- **SAYHELD1**: the person's words to a session were kept and reached no session (the owner's report, 2026-10-21). Words said to a session whose quest awaited another repository stayed on its record when the quest resumed as a new session; an answer to a parked session waited behind a go-ahead it asked, with nothing saying so. Building.
 - **POOL1**: one pool of Daoris's accounts for every workspace, the machine's own account untouched (the owner's direction, 2026-10-21). The design is accepted (D197); POOL1a-d follow PUSH1f2e.
 - **CLEANUP1**: one cleanup strategy built into Daoris, each kind of thing it keeps given a retention rule the person can set and see on This Daoris (the owner's direction, 2026-10-21). The design is accepted (D195, 2026-10-21, after Codex's and Fable's reads); KEEP1a is built (the slim with the foundations), and its build rows follow in order: KEEP1a2 and KEEP1b-g (KEEP1b after PUSH1f2e).
 
@@ -340,7 +339,6 @@ EVID1a → b → c; corresponding EVID1 precedes EVID2; EVID1d also needs DEV5/7
 Contracts: session-management (D126 §9), session-messages (D137), answer-continues (D131),
 pause-and-clean-up (D132), D133/D136. Installed canaries follow completed build rows.
 
-- [ ] **SAYHELD1 — the person's kept words reach a run or say what they wait on** (driver; the owner's report, 2026-10-21; D137, GOAHEAD2). Words said to an ended session whose quest awaited another repository stayed on its record when the quest resumed as a new session, which was never handed them; an answer to a parked session waited behind a go-ahead it asked, with nothing saying so (`Conversations/GoOn/SessionSay.cs`, `Loop/DriverContinuations.cs`). Proof: words said while a quest awaits reach the session that resumes it; an answered park with a go-ahead waiting goes on, or shows the hold where a decision requires it.
 
 Found driving the installed home clean on 2026-10-15 (the owner: *"please drive daoris and please also clean up all unfinished task/session in this local daoris so we can start the next round of tasks; currently we find a lot of issues because this design is for as automated as possible"*):
 
