@@ -1106,6 +1106,7 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ['the CLI', ['src/Daoris.Cli/src/platform/args.ts'], [...BASE, 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
     // PUSH1f2a: the driver's DriverProgramWordsProcessTests runs the CLI's entry, dispatcher, driver row and seam under node.
     ["the CLI's seam", ['src/Daoris.Cli/src/cli.ts'], [...BASE, 'driver', 'driver-process', 'rehearse', 'rehearse-family', 'web', 'deployment']],
+    ["the CLI's seam's module", ['src/Daoris.Cli/src/platform/driverprogram.ts'], [...BASE, 'driver', 'driver-process', 'rehearse', 'rehearse-family', 'web', 'deployment']],
     // ORIENT2e2: the service's roles twin reads the CLI's ROLES from its file, so that file reaches the service too; by its
     // name in whichever module folder it sits (STRUCT5d).
     ["the CLI's roles", ['src/Daoris.Cli/src/layout/documents.ts'], [...BASE, 'service', 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],

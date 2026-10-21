@@ -5,9 +5,9 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// A plugin's steps and resources (FABRIC-UNIT1d; the fabric events design §D4, §D6, §D9, §E2): the manifest declares a step once, and
-/// it is read into the one <see cref="NodeDeclaration"/> a built-in is, judged by <see cref="NodeDeclarations.Problem"/>. The driver's
-/// half of a twin with the CLI's <c>steps.ts</c>: <c>plugin-steps.test.ts</c> parses <see cref="The_steps_read_as_the_cli_reads_them"/>
-/// and holds its own table to it, cell for cell and in order. They share no code.
+/// it is read into the one <see cref="NodeDeclaration"/> a built-in is, judged by <see cref="NodeDeclarations.Problem"/>. The rules' one
+/// table: the CLI's <c>steps.ts</c> held its twin to <see cref="The_steps_read_as_the_cli_reads_them"/> until it left with
+/// <c>daoris plugin</c>'s TypeScript (PUSH1f2f).
 /// </summary>
 /// <remarks>🔴 <b>A problem refuses the plugin</b>, as a skill's does (§C4): its code and words, and nothing of the plugin is taken.</remarks>
 public sealed class PluginStepsTests : IDisposable

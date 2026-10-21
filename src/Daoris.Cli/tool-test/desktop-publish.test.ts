@@ -25,9 +25,7 @@ import { HOSTS, publishCommand } from '../../../tools/service-publish.mjs';
 // @ts-expect-error — untyped workspace tooling; see above
 import { renameHeld } from '../../../tools/fsx.mjs';
 import { resolveCanonRoot } from '../src/doctrine/canon.ts';
-import { OFFERS_DIR, readManifest } from '../src/plugins/plugins.ts';
-import { INSTALL_BIN, installBin } from '../src/tools/tools.ts';
-import { DRIVER_PROGRAM_FILE, DRIVER_PROGRAM_HOME } from '../src/agents/toolchain.ts';
+import { DRIVER_PROGRAM_FILE, DRIVER_PROGRAM_HOME } from '../src/platform/driverprogram.ts';
 import { INSTALL_APP, INSTALL_DATA, INSTALL_MARKER, installOf } from '../src/platform/home.ts';
 import { RUNNING_FILE } from '../src/service/service.ts';
 import { makeFixture } from '../test/_fixture.ts';
@@ -453,8 +451,9 @@ test('the install note says where the doctrine tool is, how each shell runs it, 
 
 /**
  * WSSETUP3 (D124 §1.3): every child Daoris starts is handed a PATH that begins with the install's `app/bin/`, found
- * beside the home (`Tools.InstallBin`, the CLI's `installBin`), while the account's PATH stays the person's. The note
- * says both, in one section, and names the condition the code tests: the home, `data/`, sits beside `app/`.
+ * beside the home (`Tools.InstallBin`; the CLI's `installBin` left with `tools.ts`, PUSH1f2f, its one child the driver's
+ * program), while the account's PATH stays the person's. The note says both, in one section, and names the condition the
+ * driver's `ToolsChildrenTests` holds: the home, `data/`, sits beside `app/`.
  */
 test('the install note says Daoris’s own children find the doctrine tool first on their PATH, and your account’s PATH is untouched', () => {
   const note: string = installedNote();
@@ -467,13 +466,6 @@ test('the install note says Daoris’s own children find the doctrine tool first
   assert.ok(prose.includes(`begin their PATH with \`${CLI_BIN.join('/')}/\``), 'says app/bin/ comes first');
   assert.ok(prose.includes(`this install's home, \`${HOME}/\`, sits beside \`${CLI_BIN[0]}/\``), 'names why: the home beside app/');
   assert.match(prose, /Nothing puts `app\/bin\/` on your account's PATH, so a terminal of yours outside Daoris still runs whatever `daoris` you installed/);
-  // What the note says is what the code finds: the install's home finds its own launchers, a home elsewhere none.
-  const install = folder();
-  markInstalled(install);
-  mkdirSync(join(install, HOME));
-  mkdirSync(join(install, ...CLI_BIN), { recursive: true });
-  assert.equal(installBin(join(install, HOME)), join(install, ...CLI_BIN));
-  assert.equal(installBin(join(folder(), HOME)), null);
 });
 
 /**
@@ -750,19 +742,18 @@ test('the offers are the examples meant for people, never a rehearsal fixture', 
   assert.deepEqual([...OFFERED_PLUGINS], ['github-pull-request', 'azure-devops-pull-request', 'in-app-browser']);
   assert.ok(!OFFERED_PLUGINS.includes('hold-by-title'), 'the family and deployment rehearsals install hold-by-title');
   assert.ok(!OFFERED_PLUGINS.includes('browser'), 'a second `browser` server would contribute nothing beside in-app-browser');
+  // Each is a plugin's folder; that each reads sound, by the catalogue's rules, is the driver's `PluginOfferTests`' (the CLI's
+  // reader left with `daoris plugin`'s TypeScript, PUSH1f2f).
   const examples = join(here, '..', '..', '..', 'examples', 'plugins');
-  for (const id of OFFERED_PLUGINS) {
-    assert.equal(readManifest(id, join(examples, id), true).problem, null, id);
-  }
+  for (const id of OFFERED_PLUGINS) assert.ok(existsSync(join(examples, id, 'plugin.json')), id);
 });
 
 /**
- * Where the offers are is a twin (D103): the publish lays them out, the CLI finds them beside the home, and
- * the driver's `PluginOffers.Layout` beside the application or the home. Three spellings, held here.
+ * Where the offers are is a twin (D103): the publish lays them out, and the driver's `PluginOffers.Layout` finds them beside the
+ * application or the home. Two spellings, held here: the CLI's `OFFERS_DIR` left with `daoris plugin`'s TypeScript (PUSH1f2f).
  */
-test('the offers folder is where the CLI and the driver look for it', () => {
+test('the offers folder is where the driver looks for it', () => {
   assert.deepEqual([...PLUGIN_OFFERS], ['app', 'plugin-offers']);
-  assert.deepEqual([...PLUGIN_OFFERS], [...OFFERS_DIR]);
   assert.equal(PLUGIN_OFFERS[0], SHELL_HOME[0], 'beside the application, in app/');
   const driver = readFileSync(driverFile('PluginOffers.cs'), 'utf8');
   assert.ok(driver.includes(`Layout = [${PLUGIN_OFFERS.map((part: string) => `"${part}"`).join(', ')}]`), 'PluginOffers.Layout');
@@ -1016,20 +1007,13 @@ test('a terminal’s programs find the install and the running Daoris where the 
 });
 
 /**
- * WSSETUP3 (D124 §1.3): the launchers' folder is where every child's PATH begins. The publish lays it out, and
- * the CLI's `INSTALL_BIN` and the driver's `Tools.InstallBinLayout` find it beside the home, which in an install is
- * the same `app/`. Three spellings, held here.
+ * WSSETUP3 (D124 §1.3): the launchers' folder is where every child's PATH begins. The publish lays it out, and the driver's
+ * `Tools.InstallBinLayout` finds it beside the home, which in an install is the same `app/`. Two spellings, held here: the CLI's
+ * `INSTALL_BIN` left with `tools.ts` (PUSH1f2f), the driver's program its one child, which hands its own children the tools.
  */
 test('the launchers are where the tools’ environment puts them first on every child’s PATH', () => {
-  assert.deepEqual([...CLI_BIN], [...INSTALL_BIN]);
   const driver = readFileSync(driverFile('Tools.cs'), 'utf8');
   assert.ok(driver.includes(`InstallBinLayout = [${CLI_BIN.map((part: string) => `"${part}"`).join(', ')}]`), 'Tools.InstallBinLayout');
-
-  const install = folder();
-  markInstalled(install);
-  mkdirSync(join(install, 'data'));
-  mkdirSync(join(install, ...CLI_BIN), { recursive: true });
-  assert.equal(installBin(join(install, 'data')), join(install, ...CLI_BIN), 'an install’s home finds its own launchers');
 });
 
 test('a launcher for each shell runs the package’s bin entry on the node PATH finds, and names no machine path', () => {

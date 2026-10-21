@@ -1,5 +1,4 @@
-import { existsSync, linkSync, mkdirSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
-import { randomBytes } from 'node:crypto';
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DaorisError } from './errors.ts';
@@ -363,7 +362,10 @@ export function isHomeId(value: unknown): value is string {
   return typeof value === 'string' && /^[0-9a-f]{32}$/.test(value);
 }
 
-/** The home's id, or null where it has none or its file does not read. A read: discovery mints nothing. */
+/**
+ * The home's id, or null where it has none or its file does not read. A read: discovery mints nothing, and since the home's lease
+ * left with the last family's TypeScript (PUSH1f2f) nothing here mints one; the driver's `HomeIdentity.Ensure` does.
+ */
 export function homeId(home: string): string | null {
   try {
     const file: unknown = JSON.parse(readFileSync(homeEntry(home, 'home-id'), 'utf8'));
@@ -372,26 +374,4 @@ export function homeId(home: string): string | null {
   } catch {
     return null;
   }
-}
-
-/**
- * The home's id, minted where it has none (HOMELEASE1: a lease records it): written beside, then linked into place, which
- * refuses where a file is, so of two minting at once one stands and both read it. Null where its file does not read, which is
- * never replaced, or none could be written.
- */
-export function ensureHomeId(home: string): string | null {
-  const path = homeEntry(home, 'home-id');
-  if (existsSync(path)) return homeId(home);
-  const beside = `${path}.${randomBytes(8).toString('hex')}.writing`;
-  try {
-    mkdirSync(dirname(path), { recursive: true });
-    const minted = { id: randomBytes(16).toString('hex'), minted: new Date().toISOString() };
-    writeFileSync(beside, `${JSON.stringify(minted, null, 2)}\n`, 'utf8');
-    linkSync(beside, path);
-  } catch {
-    // Almost always: another process minted it first. Its file is the home's id, read below like any other.
-  } finally {
-    try { unlinkSync(beside); } catch { /* never written */ }
-  }
-  return homeId(home);
 }

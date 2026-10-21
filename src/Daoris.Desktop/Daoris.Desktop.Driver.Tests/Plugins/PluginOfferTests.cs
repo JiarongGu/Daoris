@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Daoris's own example plugins, offered by the install (PLUG9 d, D103): the driver's half of a twin with
-/// the CLI's <c>plugins.ts</c>, whose <c>plugin-sources.test.ts</c> holds the same table. The offers are the
+/// Daoris's own example plugins, offered by the install (PLUG9 d, D103), whose twin in the CLI's <c>plugins.ts</c> left with
+/// <c>daoris plugin</c>'s TypeScript (PUSH1f2f). The offers are the
 /// install's <c>app/plugin-offers/</c>, read as the catalogue reads a plugin with the placeholders as
 /// written, each with what its README says it needs. None is installed until a press.
 /// </summary>

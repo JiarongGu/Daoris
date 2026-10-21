@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import {
-  daorisHome, ensureHomeId, HOME_ENTRIES, HOME_ID_FILE, HOME_TWICE, homeEntry, HomeEntryTwice, homeFile, homeId, homeOf, homePlaces,
+  daorisHome, HOME_ENTRIES, HOME_ID_FILE, HOME_TWICE, homeEntry, HomeEntryTwice, homeFile, homeId, homeOf, homePlaces,
   HOME_VARIABLE, INSTALL_DATA, INSTALL_MARKER, installOf, requireHomeFile, THIS_INSTALL, type HomeEntry, type HomeEntryName,
 } from '../../src/platform/home.ts';
 import { DESKTOP, driverFile, driverRows, driverTestFile, type Cell } from '../_csharp.ts';
@@ -84,27 +84,6 @@ test('a home’s id is read from home.json by every path to the folder, and a fi
       assert.equal(homeId(home), null, text);
       assert.equal(readFileSync(file, 'utf8'), text);
     }
-  } finally {
-    fx.cleanup();
-  }
-});
-
-/** HOMELEASE1: a lease records the home's id, so the CLI mints one where the home has none, as a new file only. */
-test('a home with no id is minted one once, and a file that does not read is never replaced', () => {
-  const fx = makeFixture('home-id-mint');
-  try {
-    const home = fx.root;
-    const id = ensureHomeId(home);
-    assert.match(id ?? '', /^[0-9a-f]{32}$/);
-    assert.equal(ensureHomeId(home), id);
-    assert.equal(ensureHomeId(join(home, '.')), id);
-    const file = homeEntry(home, 'home-id');
-    const text = readFileSync(file, 'utf8');
-    assert.ok(!text.includes('\r') && text.includes('"minted"'), text);
-
-    writeFileSync(file, 'not json');
-    assert.equal(ensureHomeId(home), null);
-    assert.equal(readFileSync(file, 'utf8'), 'not json');
   } finally {
     fx.cleanup();
   }

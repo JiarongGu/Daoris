@@ -142,6 +142,12 @@ public sealed class DriverModule : ModuleBase
             // version not downloaded, in use or held, a location that is no address), the code `daoris-driver tool` says it in alone.
             throw Refusals.Declared(ToolCodes.Of(coded), coded.Message, [.. coded.Facts]);
         }
+        catch (PluginRefusal coded) when (PluginCodes.Coded(coded))
+        {
+            // PUSH1f2f: a plugin's operation refusing by a check the library's table codes (not installed, its folder held), the code
+            // `daoris-driver plugin` says it in alone.
+            throw Refusals.Declared(PluginCodes.Of(coded), coded.Message, [.. coded.Facts]);
+        }
         catch (DriverException error)
         {
             throw Refusals.Because(Refusals.DriverRefused, error.Message, ("message", error.Message));

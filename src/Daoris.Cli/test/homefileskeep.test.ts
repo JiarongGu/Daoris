@@ -4,7 +4,6 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setBrowser, setExtensions, setLinks } from '../src/browser/browser.ts';
-import { disablePlugin, enablePlugin } from '../src/plugins/plugins.ts';
 import { readRemoteFile, readRemotes, withoutRemote, withRemote, writeRemoteFile } from '../src/service/remotemap.ts';
 import { makeFixture } from './_fixture.ts';
 
@@ -46,15 +45,9 @@ function changed(file: string, changes: Change[] = [], crlf = false): string {
 /** The edit through the door's own functions, as the terminal's verbs call them. */
 function applied(home: string, row: Row, between: () => void): void {
   const { edit } = row;
-  if (row.file === 'plugins.json') {
-    between();
-    if (edit.op === 'plugin-disable') disablePlugin(home, edit.id!);
-    else if (edit.op === 'plugin-enable') enablePlugin(home, edit.id!);
-    else throw new Error(`the table names an edit this test does not make: ${edit.op}`);
-    return;
-  }
-  // `keys.json`'s writer is the driver program's since PUSH1f2e5 (`daoris-driver agent key`), and `harnesses.json`'s since PUSH1f2e
-  // (`daoris-driver agent …`, the family's TypeScript gone): their rows are `only: driver`.
+  // `keys.json`'s writer is the driver program's since PUSH1f2e5 (`daoris-driver agent key`), `harnesses.json`'s since PUSH1f2e
+  // (`daoris-driver agent …`, the family's TypeScript gone), and `plugins.json`'s since PUSH1f2f (`daoris-driver plugin`): their rows
+  // are `only: driver`.
   if (row.file === 'remotes.json') {
     const path = join(home, row.file);
     const read = readRemoteFile(path);
@@ -78,7 +71,8 @@ function applied(home: string, row: Row, between: () => void): void {
 
 // A test a row, so each row passes or fails on its own.
 TABLE.rows.forEach((row, index) => {
-  // A row the driver alone writes (`plugin-approvals.json`, KEEPALL1d; `tools.json` since PUSH1f2c) has no writer here.
+  // A row the driver alone writes (`plugin-approvals.json`, KEEPALL1d; `tools.json` since PUSH1f2c, `plugins.json` since PUSH1f2f)
+  // has no writer here.
   const skip = row.only !== undefined && row.only !== 'cli' ? `the ${row.only}'s alone` : false;
   test(`homefileskeep: the shared table writes the bytes the driver writes: ${row.name}`, { skip }, () => {
     const fx = makeFixture(`home-files-keep-${index}`);

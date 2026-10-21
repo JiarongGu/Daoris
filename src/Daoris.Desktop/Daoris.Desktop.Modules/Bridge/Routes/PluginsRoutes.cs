@@ -324,30 +324,11 @@ public sealed class PluginsRoutes(DriverContext context)
             {
                 // The install folder goes; what the plugin kept is NAMED and stays — it is
                 // the person's to throw away, the same judgement Forget makes for an account.
-                // 🔴 Its hook process first, then the folder moved aside WHOLE (REV3): on
-                // Windows a running hook holds its folder, and a recursive delete took every
-                // file it could before failing, stranding a plugin with no manifest.
+                // 🔴 Its hook process first (the live process's coordination stays here, the alone-path design §1.3), then the
+                // library's remove (PUSH1f2f), which `daoris-driver plugin remove` calls alone: the folder moved aside WHOLE, a
+                // held one refused as PLUGIN_BUSY with nothing taken.
                 await _loop.StopPluginAsync(entry.Manifest.Id).ConfigureAwait(false);
-                var aside = Path.Combine(
-                    Path.GetDirectoryName(entry.Folder)!, $".removing-{entry.Manifest.Id}-{Guid.NewGuid():N}");
-                try
-                {
-                    Directory.Move(entry.Folder, aside);
-                }
-                catch (Exception held) when (held is IOException or UnauthorizedAccessException)
-                {
-                    throw Refusals.Because(
-                        Refusals.PluginBusy,
-                        $"`{entry.Manifest.Id}` was not removed: something on this machine still has a file in "
-                        + "its folder open. Close it, or wait for the plugin's own process to end, and remove it "
-                        + "again. Nothing was taken.",
-                        ("id", entry.Manifest.Id));
-                }
-
-                // Aside is a dot-folder, which the catalogue never reads, so a delete that
-                // cannot finish leaves nothing that looks like a plugin.
-                try { Directory.Delete(aside, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
-                PluginState.Enable(_loop.Home, entry.Manifest.Id);
+                PluginInstall.Remove(_loop.Home, entry.Manifest.Id);
                 break;
             }
             // HELPPLUG1a's tightening (D170's note): the person's approval of the exact tools a plugin's server offers Ask Daoris,

@@ -125,7 +125,7 @@ export function isDeclared(domain: Domain | undefined | null): boolean {
  * @remarks
  * Git marks a linked worktree itself: its `.git` is a **file** naming the main repository's
  * `.git/worktrees/<name>` directory. Reading that file is the whole check — no spawn, which is what
- * keeps the CLI's discipline intact (only `toolchain.ts` spawns anything). A **submodule** wears a
+ * keeps the CLI's discipline intact (only `driverprogram.ts` spawns anything). A **submodule** wears a
  * `.git` file too, pointing at `.git/modules/<name>` — and a submodule is a repository of its own,
  * entirely registrable, so only the worktree marker counts.
  */

@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
@@ -89,38 +88,8 @@ public sealed class CodexAccountTests : IDisposable
         Assert.Null(said.Account);
     }
 
-    /// <summary>
-    /// The twin (<c>.claude/knowledge/twins.md</c>, harnesses and accounts): the driver's declaration is the CLI's
-    /// <c>codex</c> entry, read from its source, so <c>daoris agent login codex --new</c> and the window's *Add an
-    /// account…* run one sign-in and ask one question. A JavaScript pattern's <c>m</c> is the driver's <c>(?m)</c>, and its
-    /// <c>i</c> the driver's ignoring case, which every status question is matched with.
-    /// </summary>
-    [Fact]
-    public void The_declaration_is_the_cli_s_codex_entry()
-    {
-        var source = File.ReadAllText(SourceFiles.Cli("toolchain.ts"));
-        var start = source.IndexOf("\n  codex: {", StringComparison.Ordinal);
-        Assert.True(start >= 0, "the CLI declares no `codex` entry");
-        var entry = source[start..source.IndexOf("\n  },", start, StringComparison.Ordinal)];
-        var declared = Roster().AccountToolchain("codex-acp")!;
-
-        Assert.Equal(Words(Field(entry, @"\n    binary: \[(?<v>[^\]]*)\]")), declared.Binary);
-        Assert.Equal(Field(entry, @"\n    profileVariable: '(?<v>[^']*)'"), declared.ProfileVariable);
-        Assert.Equal(Words(Field(entry, @"\n    login: \[(?<v>[^\]]*)\]")), declared.LoginArguments!);
-        // CODEXLOGIN1: the second way and the browser's ports, as the terminal declares them.
-        Assert.Equal(Words(Field(entry, @"\n    deviceLogin: \[(?<v>[^\]]*)\]")), declared.DeviceLoginArguments!);
-        Assert.Equal(
-            Words(Field(entry, @"\n    loginPorts: \[(?<v>[^\]]*)\]")).Select(int.Parse), declared.LoginPorts!);
-
-        var check = Regex.Match(
-            entry, @"\n    loginCheck: \{ args: \[(?<args>[^\]]*)\], in: /(?<in>.+?)/(?<inFlags>[a-z]*), out: /(?<out>.+?)/(?<outFlags>[a-z]*) \}");
-        Assert.True(check.Success, "the CLI's `codex` entry declares no login question this test reads");
-        Assert.Equal(Words(check.Groups["args"].Value), declared.LoginCheck!.Arguments);
-        Assert.Equal(Pattern(check.Groups["in"].Value, check.Groups["inFlags"].Value), declared.LoginCheck.LoggedIn);
-        Assert.Equal(Pattern(check.Groups["out"].Value, check.Groups["outFlags"].Value), declared.LoginCheck.LoggedOut);
-        // The CLI reads nobody's name from Codex's answer either.
-        Assert.Null(declared.LoginCheck.Account);
-    }
+    // The declaration was held to the CLI's `codex` entry in `toolchain.ts` until `TOOLCHAINS` left with the plugins' TypeScript
+    // (PUSH1f2f): every sign-in is the driver's since `daoris agent` became its program's (PUSH1f2e), so the declaration has one home.
 
     /// <summary>
     /// CODEXACCT2: what <c>codex login --device-auth</c> prints reaches the window's console as plain lines, as Claude
@@ -411,22 +380,4 @@ public sealed class CodexAccountTests : IDisposable
         Assert.Empty(_asked);
     }
 
-    private static string Field(string entry, string pattern)
-    {
-        var match = Regex.Match(entry, pattern);
-        Assert.True(match.Success, $"the CLI's `codex` entry has nothing matching {pattern}");
-        return match.Groups["v"].Value;
-    }
-
-    /// <summary>A TypeScript list of quoted words: <c>'login', 'status'</c>.</summary>
-    private static string[] Words(string list) =>
-        [.. list.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(word => word.Trim('\''))];
-
-    /// <summary>A JavaScript pattern as the driver writes it: case ignored where the CLI's ignores it, which the driver always does.</summary>
-    private static string Pattern(string source, string flags)
-    {
-        Assert.Contains('i', flags);
-        Assert.All(flags, flag => Assert.Contains(flag, "im"));
-        return (flags.Contains('m') ? "(?m)" : "") + source;
-    }
 }

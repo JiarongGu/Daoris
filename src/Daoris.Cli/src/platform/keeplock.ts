@@ -19,7 +19,19 @@ import { randomBytes } from 'node:crypto';
 import { linkSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { DaorisError } from './errors.ts';
-import { processLives } from './lease.ts';
+
+/**
+ * Whether a process runs with this id: signal 0 tests and sends nothing; one not ours to signal still runs. The home's lease asked it
+ * here until the lease left with the last family's TypeScript (PUSH1f2f): a stale keep lock is still judged by it.
+ */
+function processLives(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === 'EPERM';
+  }
+}
 
 /** How long a writer waits for another's edit, in milliseconds, before it is refused (the driver's `KeepLock.Wait`). */
 export const KEEP_LOCK_WAIT_MS = 10_000;

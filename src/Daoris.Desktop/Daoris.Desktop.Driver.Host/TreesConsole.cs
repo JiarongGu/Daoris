@@ -5,7 +5,7 @@ namespace Daoris.Driver.Host;
 /// </summary>
 /// <remarks>
 /// <para><b>Why here and not in the `daoris` CLI.</b> The tree lifecycle is git spawned against real
-/// checkouts, and the CLI's discipline is that only `toolchain.ts` spawns anything — so the verbs live
+/// checkouts, and the CLI's discipline is that it spawns nothing but this program (`driverprogram.ts`) — so the verbs live
 /// on the binary that already owns git (D50's parity is between surfaces, not between packages). The
 /// standing OPT-IN is the CLI's (`daoris driver trees &lt;repo&gt; on|off`), because that is a file
 /// edit; the trees themselves are this side's, because they are processes and disk.</para>

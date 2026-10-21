@@ -310,11 +310,13 @@ public static class Refusals
     public const string WindowUnknown = "WINDOW_UNKNOWN";
 
     /// <summary>A plugin id this machine has no folder for (D64).</summary>
-    public const string PluginUnknown = "PLUGIN_UNKNOWN";
+    public const string PluginUnknown = Daoris.Driver.PluginCodes.Unknown;
 
     /// <summary>A plugin action this build does not have.</summary>
     public const string PluginActionUnknown = "PLUGIN_ACTION_UNKNOWN";
-    public const string PluginBusy = "PLUGIN_BUSY";
+
+    /// <summary>A remove the system refused, since something holds a file in the plugin's folder (the library's code, PUSH1f2f).</summary>
+    public const string PluginBusy = Daoris.Driver.PluginCodes.Busy;
 
     /// <summary>The system would not open a plugin's folder, or the plugins folder, in the file manager; its own reason goes with it (PLUGUI1e).</summary>
     public const string PluginFolderNotOpened = "PLUGIN_FOLDER_NOT_OPENED";

@@ -197,6 +197,10 @@ public static class DriverCommand
               the agents' rules, trust and settings, the words `daoris agent rules|trust|settings …` hands this
               program (D194): a change a route takes goes to the running Daoris's window to confirm where one runs,
               and is written here where none does; `agent --help` says each verb's words.
+          plugin [list | add <folder> | add --offer <id> | update <id> [--yes] | remove <id> | enable|disable <id>]
+              this machine's plugins, the words `daoris plugin …` hands this program (D194): a change a route takes
+              goes to the running Daoris's window to confirm where one runs, and is made here where none does; an add
+              over an installed plugin replaces it here alone; `plugin --help` says each verb's words.
           trees [list | remove <path|session|branch> [--repository <name>] [--force]
                 | clean [--workspace <name>] [--yes] | land <session> [--plan] [--branch <name>]
                 | land --entry <id> | --ask <id> [--leave-out <session>]... [--plan]

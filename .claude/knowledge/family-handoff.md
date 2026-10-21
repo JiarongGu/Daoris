@@ -8,7 +8,9 @@ enforces: a handed family goes into every one of its places in the same change, 
 
 **`daoris driver|agent|plugin|tool …` runs `daoris-driver` with the same words (D194). A family handed over is spelled in the
 driver library, the host, the modules, the CLI and the records, and nothing but this list ties them together. PUSH1f2a built
-the seam with `driver`; PUSH1f2c walked these rows for `tool`. Put a family in every row below in the same branch.**
+the seam with `driver`; PUSH1f2c walked these rows for `tool`, and PUSH1f2f for `plugin`, the last of the four. `browser` and
+`remote` still edit their files in TypeScript (the alone-path design §7): a family handed later walks the same rows. Put a family
+in every row below in the same branch.**
 
 ## Why
 
@@ -35,7 +37,7 @@ exists.
 | 8 | The text table | `Driver.Tests/fixtures/<family>-text.json`, a changed row with its reason | the text test, row for row |
 | 9 | Both ways | `Modules.Tests/Bridge/<Family>BothWaysTests`: alone vs the route's answer through `Plan`, bytes, text, exit equal | itself |
 | 10 | The CLI's forward | `cli/<family>.ts` hands `args.argv` to `args.driverProgram ?? runDriverProgram`; until the family's last row, an allow-list held to `Verbs` | `cli-usage.test.ts`' handed rows; `refusals.json` loses the family's rows; `help.txt` and `cli.ts`' usage paragraph |
-| 11 | What leaves | each module whose last reader goes, found by a search of `src/Daoris.Cli/src`, `tools/`, `src/Daoris.Web` and the tests; `door.ts`' tables; the keep table's rows (`only: driver`); `structure.json`; `home-census.test.ts`' rows; the dogfood rules naming them | `npm run typecheck -w daoris`, the dogfood test, the structure and census tests |
+| 11 | What leaves | each module whose last reader goes, found by a search of `src/Daoris.Cli/src`, `tools/`, `src/Daoris.Web` and the tests, the driver's and the service's tests that read a CLI file among them (`SourceFiles.Cli`); the keep table's rows (`only: driver`); `structure.json`'s modules and tests; `home-census.test.ts`' rows; the dogfood rules naming them; a table stays where a twin still reads it | `npm run typecheck -w daoris`, the dogfood test, the structure and census tests |
 | 12 | The records | `twins.md` rows losing the CLI's column; D194's dated note; the READMEs; the changelog; the archive; `docs/index/` regenerated | `doc-shapes`, `orient-index --check` |
 
 A new test class's scratch goes under `_fixtures/` and is removed by `GitSeed.Discard`, never `Directory.Delete`.
