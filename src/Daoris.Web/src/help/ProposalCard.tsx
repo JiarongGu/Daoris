@@ -79,6 +79,14 @@ export type HelpWorkflowShown = {
   needs: string[];
   appliesTo: string;
   choose: boolean;
+  /** FABRIC-PIPELINE1i: the route it is chosen for, `default`, `landed` or `kind:<id>`; absent where none, or from an older driver. */
+  route?: string | null;
+  /** Whether Apply saves a version; false for a route with no version. Absent from an older driver, which always saves. */
+  saves?: boolean;
+  /** Whether the workflow is a verification pipeline, its lines the graph's nodes. */
+  verifies?: boolean;
+  /** What the change asks less of the person, in the driver's words; only their Apply makes it. */
+  lowers?: string[];
 };
 
 /**
@@ -198,22 +206,39 @@ function WorkflowChange({ workflow }: { workflow: HelpWorkflowShown }) {
       </ul>
     </section>
   );
+  // FABRIC-PIPELINE1i: a route with no version saves nothing, a verification pipeline's lines are its graph's nodes, and what the
+  // change asks less of the person leads, since only their Apply makes it.
+  const kind = workflow.route?.startsWith('kind:') ? workflow.route.slice('kind:'.length) : null;
+  const lowers = workflow.lowers ?? [];
   return (
     <>
       <p className="m-0 mt-1 text-small text-ink">
-        {workflow.base != null
-          ? t('help.proposal.workflow.versionEdit', { version: workflow.version, name: workflow.name, base: workflow.base })
-          : t('help.proposal.workflow.versionNew', { version: workflow.version, name: workflow.name })}
+        {workflow.saves === false
+          ? t('help.proposal.workflow.versionKept', { version: workflow.version, name: workflow.name })
+          : workflow.base != null
+            ? t('help.proposal.workflow.versionEdit', { version: workflow.version, name: workflow.name, base: workflow.base })
+            : t('help.proposal.workflow.versionNew', { version: workflow.version, name: workflow.name })}
       </p>
+      {workflow.verifies && <p className="m-0 mt-1 text-meta text-ink-soft">{t('help.proposal.workflow.verification')}</p>}
+      {lowers.length > 0 && section(t('help.proposal.workflow.lowers'), lowers, 'lowers')}
+      {lowers.length > 0 && <p className="m-0 mt-1 text-meta text-ink-faint">{t('help.proposal.workflow.lowersNote')}</p>}
       {workflow.yourPart.length > 0 && section(t('help.proposal.workflow.yourPart'), workflow.yourPart, 'part')}
-      {workflow.diff.length > 0 && section(t('help.proposal.workflow.steps'), workflow.diff, 'diff')}
+      {workflow.diff.length > 0 && section(t(workflow.verifies ? 'help.proposal.workflow.nodes' : 'help.proposal.workflow.steps'), workflow.diff, 'diff')}
       {workflow.outward.length > 0
         ? section(t('help.proposal.workflow.outward'), workflow.outward, 'outward')
         : section(t('help.proposal.workflow.outward'), [t('help.proposal.workflow.nothingLeaves')], 'outward')}
       {workflow.needs.length > 0 && section(t('help.proposal.workflow.needs'), workflow.needs, 'need')}
       {workflow.needs.length > 0 && <p className="m-0 mt-1 text-meta text-ink-faint">{t('help.proposal.workflow.needsNote')}</p>}
       {section(t('help.proposal.workflow.appliesTo'), [workflow.appliesTo], 'applies')}
-      {workflow.choose && <p className="m-0 mt-1 text-meta text-ink-soft">{t('help.proposal.workflow.choose', { scope: workflow.scope })}</p>}
+      {workflow.choose && (
+        <p className="m-0 mt-1 text-meta text-ink-soft">
+          {workflow.route === 'landed'
+            ? t('help.proposal.workflow.chooseLanded', { scope: workflow.scope })
+            : kind
+              ? t('help.proposal.workflow.chooseKind', { scope: workflow.scope, kind })
+              : t('help.proposal.workflow.choose', { scope: workflow.scope })}
+        </p>
+      )}
     </>
   );
 }
