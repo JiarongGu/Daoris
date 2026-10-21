@@ -87,6 +87,12 @@ public static class ChangeTopics
     /// </summary>
     public const string Help = "help";
 
+    /// <summary>
+    /// <c>notices.json</c>, written by any process on the home (NOTIFY2f, the notification design §2.5): read again by each process's
+    /// <c>notices</c> slice, which needs no look, so the shell's watch alone listens for it.
+    /// </summary>
+    public const string Notices = "notices";
+
     /// <summary>The staged update's folder and the person's request, the installing shell's alone (FABRIC-EVENT4, link 7).</summary>
     public const string Update = "update";
 

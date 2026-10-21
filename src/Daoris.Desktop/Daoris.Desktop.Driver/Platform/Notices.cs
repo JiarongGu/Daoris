@@ -69,6 +69,33 @@ public static class Notices
         return [.. Young(record.Notices.Values, now)];
     }
 
+    /// <summary>
+    /// The notice an attention item keeps (§2.2's fourth group): a session that ended without the person asking, by its end state,
+    /// its workspace with it; null for what waits on the person or is said elsewhere. Its id is the session's, so a second writer of
+    /// one end keeps it once.
+    /// </summary>
+    public static Notice? Of(AttentionEvent item, DateTimeOffset at) => item.Kind == AttentionKind.Ended
+        ? new($"ended-{item.Session}", Ended, at, Workspace: item.Workspace, Session: item.Session, Repository: item.Repository, State: item.State)
+        : null;
+
+    /// <summary>
+    /// The notices a look's attention items keep, each added (<see cref="Of"/>), whether or not the person is told of them: the notify
+    /// switch governs being told, never recording. Each refusal is <paramref name="refused"/>'s to log, and is dropped.
+    /// </summary>
+    /// <returns>The notices written.</returns>
+    public static IReadOnlyList<Notice> Keep(string home, IEnumerable<AttentionEvent> items, DateTimeOffset now, Action<string> refused)
+    {
+        var kept = new List<Notice>();
+        foreach (var item in items)
+        {
+            if (Of(item, now) is not { } notice) continue;
+            if (Add(home, notice, now) is { } why) refused(why);
+            else kept.Add(notice);
+        }
+
+        return kept;
+    }
+
     /// <summary><paramref name="notice"/> kept; one of the same id already there is left as it is. Null where written; else why not.</summary>
     public static string? Add(string home, Notice notice, DateTimeOffset now, TimeSpan? within = null) =>
         Edit(home, now, within, notices =>

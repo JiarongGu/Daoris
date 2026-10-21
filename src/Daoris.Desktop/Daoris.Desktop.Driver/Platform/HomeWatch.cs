@@ -235,6 +235,20 @@ public sealed class HomeWatch : IAsyncDisposable
         return watch;
     }
 
+    /// <summary>
+    /// <c>notices.json</c> alone (<see cref="ChangeTopics.Notices"/>, NOTIFY2f): each process's own, whoever holds the home's lease, since
+    /// any process on the home writes the record. A write this process marked wakes nothing, its writer pushing it; another's is heard,
+    /// or found at the deadline. Not started: the caller starts it, and reads the record once at the start.
+    /// </summary>
+    public static HomeWatch ForNotices(
+        string home, Action<string, string> wake, TimeSpan? every = null, IChangeSource? source = null, MachineLog? log = null)
+    {
+        var watch = new HomeWatch(wake, every, source) { Log = log };
+        var path = global::Daoris.Driver.Notices.PathOf(home);
+        watch.Topic(ChangeTopics.Notices, Path.GetFileName(path), HomePart.File(path));
+        return watch;
+    }
+
     /// <summary>Where each look a hint or a deadline woke is written (<c>change.judged</c>), and each loss; none by default.</summary>
     public MachineLog? Log
     {

@@ -127,6 +127,24 @@ public sealed class AttentionTests
     }
 
     /// <summary>
+    /// NOTIFY2f (the notification design §2.5): an end carries the workspace its session was filed under at the last look that saw it
+    /// active, which its notice keeps; one no look saw active carries none, and its notice is every window's.
+    /// </summary>
+    [Fact]
+    public void An_end_carries_the_workspace_its_session_was_filed_under()
+    {
+        var watch = new AttentionWatch();
+        watch.Observe(Tick([Session("s1", "working") with { Workspace = "games" }]));
+
+        var events = watch.Observe(Tick([], new SessionEnded("s1", "engine", "failed", ByPerson: false), new SessionEnded("s2", "engine", "failed", ByPerson: false)));
+
+        Assert.Equal([("s1", "games"), ("s2", null)], events.Select(item => (item.Session, item.Workspace)));
+        var notice = Notices.Of(events[0], DateTimeOffset.UnixEpoch)!;
+        Assert.Equal(new Notice("ended-s1", Notices.Ended, DateTimeOffset.UnixEpoch, Workspace: "games", Session: "s1", Repository: "engine", State: "failed"), notice);
+        Assert.Null(Notices.Of(new AttentionEvent(AttentionKind.Parked, "s1", "engine"), DateTimeOffset.UnixEpoch));
+    }
+
+    /// <summary>
     /// 🔴 The rule design §4 states outright: **never for an ending the person caused**, because a
     /// toast telling you what you just pressed is how people learn to dismiss toasts unread. The
     /// driver already knows whose decision it was — `WasStopRequested` is the flag, and the driver's
