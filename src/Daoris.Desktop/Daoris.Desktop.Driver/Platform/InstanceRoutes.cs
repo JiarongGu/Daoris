@@ -108,6 +108,9 @@ public static class OpenRoutes
         ("help delete <id>", null, "alone: the first ask reads the conversation's name here, which no route answers; with `--yes` the person's press (SESSION_DELETE)"),
         ("help resume <id>", null, "alone: the conversation goes on in this terminal's own process until RPC1g"),
         ("opinion show <session|opinion>", OpinionGate, "the gate's reading"),
+        ("ask channel <id>", null,
+            "alone: the read moves the person's own mark (CHANNEL_MARK, the person's), a door of the service, which writes it once whoever "
+            + "asks; with words the person's press (CHANNEL_POST)"),
         // The other open reads of RPC1e: each is read alone beside an instance, with the same words, until its route answers them as
         // `said` as the six above do (RPCOPEN1 built the shape, and the reads that follow it name no new one).
         ("trace", null, "alone: its words are built from the sources the host reads itself; TRACE answers the page's shape only"),
@@ -213,6 +216,9 @@ public static class PersonPresses
     /// <summary><c>opinion myself &lt;session&gt;</c> (RPC1e): the person's own reading in the opinion's place.</summary>
     public static InstanceRoute OpinionMyself { get; } = Person("OPINION_MYSELF");
 
+    /// <summary><c>ask channel &lt;id&gt; "…"</c> (RPC1e): the person's words on an ask's channel, which every session on the ask reads.</summary>
+    public static InstanceRoute ChannelPost { get; } = Person("CHANNEL_POST");
+
     /// <summary>Each person's press a verb sends over the pipe, in the verb's words, with its route.</summary>
     public static IReadOnlyList<(string Verb, InstanceRoute Route)> Presses { get; } =
     [
@@ -234,6 +240,7 @@ public static class PersonPresses
         ("opinion stop <opinion>", StopOpinion),
         ("opinion anyway <session>", OpinionAnyway),
         ("opinion myself <session>", OpinionMyself),
+        ("ask channel <id> \"…\"", ChannelPost),
         ("sessions archive <id>…", SessionArchive),
         ("sessions unarchive <id>…", SessionArchive),
         ("sessions stop <id>", SessionStop),
