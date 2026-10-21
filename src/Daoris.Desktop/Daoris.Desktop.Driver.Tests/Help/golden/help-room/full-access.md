@@ -302,11 +302,16 @@ the command palette. The menu bar across the top holds Workspace, Edit, View, Go
 VS Code's does: Go opens the places (`Ctrl+1` to `Ctrl+8`), Run acts on the session or the quest in front, and
 Help → Keyboard shortcuts lists every key. Every view sits in one frame: the view in the centre, the panel beneath it,
 and the right side bar beside it; on Sessions the session list is at the left and the centre is the
-attended session. Six views stand in the two regions and move between them:
-the timeline, the review, the workflow and the console of the session attended on Sessions, Ask Daoris, and the
+attended session. Seven views stand in the two regions and move between them:
+Notifications, the timeline, the review, the workflow and the console of the session attended on Sessions, Ask Daoris, and the
 terminal: the person's own shell (PowerShell unless they choose another), in the panel beside the
 console, which starts where the attended session works. A session's console takes no typing; the
 terminal is the person's, never a session's.
+Notifications, in the right side bar unless the person moved it, is everything that came to the person: first
+each press a terminal sent that waits for their confirmation, as its whole card, then What needs you, every
+row with its acts. The bell on the title bar shows it (View → Notifications too) and counts what needs them,
+in the warning hue while a press waits unseen; only the person confirms a press, on its card. Overview leads with a summary
+of it, a line per group.
 A view moves from its region's tab list (the button at the end of the tab row), by a right-click on
 its tab, or by dragging its tab to the other region; View → Reset view locations puts every view
 back. The toggles beside the window controls, and the View menu, show or hide the panel (`Ctrl+J`)

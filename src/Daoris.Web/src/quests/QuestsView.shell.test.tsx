@@ -22,7 +22,7 @@ vi.mock('@shenora/react', () => ({
   },
 }));
 
-import { OverviewView } from '../overview/OverviewView';
+import { AttentionBand } from '../work/attention/AttentionBand';
 import { chooseRow, QuestsView } from '../test/questsView';
 import { ShellSignals } from '../app/ShellSignals';
 import { keys } from '../data/queries';
@@ -224,7 +224,8 @@ describe('trusting a folder the driver is holding (D73)', () => {
       kind: 'trust', id: `${HOLD.trustFile}\n${HOLD.folder}`, since: null, where: null,
       trust: { folder: HOLD.folder, trustFile: HOLD.trustFile }, quest: HOLD.quest,
     }]);
-    show(<OverviewView onNavigate={() => {}} onOpenQuest={() => {}} notify={() => {}} doors={{ trust }} />, client);
+    // NOTIFY2b: its row is *Notifications*' What needs you, which Overview's summary counts.
+    show(<AttentionBand inView notify={() => {}} doors={{ trust }} />, client);
 
     const row = await screen.findByRole('listitem', { name: HOLD.folder });
     await userEvent.click(within(row).getByRole('button', { name: 'Open' }));
@@ -248,7 +249,7 @@ describe('trusting a folder the driver is holding (D73)', () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     pushAttention(client, [{ kind: 'rule', id: proposal.id, since: proposal.proposed, detail: proposal.why, proposal }]);
     const rule = vi.fn();
-    show(<OverviewView onNavigate={() => {}} onOpenQuest={() => {}} notify={() => {}} doors={{ rule }} />, client);
+    show(<AttentionBand inView notify={() => {}} doors={{ rule }} />, client);
 
     const row = await screen.findByRole('listitem', { name: 'allow WebFetch for every session on this machine' });
     await userEvent.click(within(row).getByRole('button', { name: 'Open' }));

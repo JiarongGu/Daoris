@@ -1,0 +1,10 @@
+{
+  "notifications.title": "通知",
+  "notifications.open": "通知",
+  "notifications.labelled": "通知：{{what}}",
+  "notifications.tip": "{{count}} 个等你处理",
+  "notifications.tipConfirm": "{{count}} 个等你确认",
+  "notifications.toast.open": "打开",
+  "notifications.toast.press": "一个终端请求{{act}}：{{session}}",
+  "notifications.toast.inMain": "一个终端的请求在 Daoris 主窗口等你确认"
+}

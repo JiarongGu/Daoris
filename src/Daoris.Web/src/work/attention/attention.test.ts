@@ -100,14 +100,16 @@ describe('what needs a person, worded', () => {
     const item = words(waiting);
     expect(item.title).toBe('A terminal asks to archive sessions on this machine, or bring them back.');
     expect(item.detail).toContain('Sent by daoris-driver, process 4242.');
-    expect(item.detail).toContain('It runs only once you confirm it on its card');
+    // NOTIFY2b: its card is in Notifications, never at the top of the window.
+    expect(item.detail).toContain('It runs only once you confirm it on its card in Notifications');
     expect(attentionActs(item)).toEqual([]);
-    expect(words(row('confirmation', 'c2', null, { confirmation: { ...waiting.confirmation!, route: 'SET_TREES', asker: null } })))
-      .toMatchObject({ title: 'A terminal asks for SET_TREES.', detail: expect.stringContaining('Daoris could not name what sent it.') });
+    // Every route the census makes the person's is worded since NOTIFY2b; one no catalogue words is named by its route.
+    expect(words(row('confirmation', 'c2', null, { confirmation: { ...waiting.confirmation!, route: 'SET_MYSTERY', asker: null } })))
+      .toMatchObject({ title: 'A terminal asks for SET_MYSTERY.', detail: expect.stringContaining('Daoris could not name what sent it.') });
     await i18n.changeLanguage('zh');
     try {
       expect(words(waiting).title).toBe('一个终端请求在本机归档会话，或将其恢复。');
-      expect(words(waiting).detail).toContain('只有你在窗口顶部它的卡片上确认后它才会运行');
+      expect(words(waiting).detail).toContain('只有你在通知中它的卡片上确认后它才会运行');
     } finally {
       await i18n.changeLanguage('en');
     }

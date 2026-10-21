@@ -2,7 +2,7 @@ import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tansta
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import { api, holdPersonKey } from '../data/api';
 import { keys } from '../data/queries';
-import type { Confirmation, ConfirmationAnswer, ConfirmationField } from '../person/Confirmations';
+import type { Confirmation, ConfirmationAnswer, ConfirmationField, ConfirmationNamed } from '../person/Confirmations';
 import { call } from './call';
 
 // The person's door in the window (PERSONDOOR1f, RPC1c; D156 points 2 and 4, the person-door design §2.2 and §4.2): the person
@@ -16,6 +16,8 @@ export type PipeConfirmation = {
   asker?: { process?: string | null; pid?: number | null } | null; asked: string; expires: string;
   /** When a window first said its card was in front of the person (CONFIRMSEEN1); absent until then, and from a shell before it. */
   shownAt?: string | null;
+  /** The values its sentence names by role (NOTIFY2b, the modules' `PipeWording`), beside `fields`; absent from a shell before them. */
+  named?: ConfirmationNamed[] | null;
 };
 
 /** What waits, whole, numbered so the newest telling is kept (as `UNDER_WAY` is). */
@@ -43,8 +45,9 @@ function keep(client: QueryClient, told: unknown) {
 }
 
 const fromPipe = (waiting: PipeConfirmation): Confirmation => ({
-  source: 'pipe', id: waiting.id, route: waiting.route, fields: waiting.fields ?? [], asker: waiting.asker ?? null, expires: waiting.expires,
-  shown: waiting.shownAt != null,
+  source: 'pipe', id: waiting.id, module: waiting.module, route: waiting.route, fields: waiting.fields ?? [],
+  named: Array.isArray(waiting.named) ? waiting.named : [], asker: waiting.asker ?? null, asked: waiting.asked ?? null,
+  expires: waiting.expires, shown: waiting.shownAt != null,
 });
 
 /**
@@ -90,6 +93,7 @@ export function useServiceConfirmations(held: boolean): Confirmation[] {
     act: each.act,
     fields: [...(each.values ?? []), ...(each.fields ?? [])],
     asker: null,
+    asked: each.asked ?? null,
     expires: each.expires,
   }));
 }

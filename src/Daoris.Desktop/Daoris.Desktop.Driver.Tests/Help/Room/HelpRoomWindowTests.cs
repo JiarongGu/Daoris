@@ -19,7 +19,7 @@ public sealed class HelpRoomWindowTests
         Assert.Contains("## The window", agents);
         foreach (var said in new[]
         {
-            "the right side bar", "the panel", "the timeline, the review, the workflow and the console", "Every view sits in one frame",
+            "the right side bar", "the panel", "Notifications, the timeline, the review, the workflow and the console", "Every view sits in one frame",
             "tab list", "right-click", "drag", "Reset view locations",
             "`Ctrl+B`", "`Ctrl+J`", "`Ctrl+Alt+B`", "`F1`", "`Ctrl+Alt+I`", "`Ctrl+Shift+Alt+L`", "`Ctrl+K`",
             // The person's own terminal (CONSOLE4b), and that it is theirs rather than a session's.
@@ -62,9 +62,28 @@ public sealed class HelpRoomWindowTests
     {
         var window = new HelpRoomWindow().Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("Six views stand in the two regions and move between them:", window);
+        Assert.Contains("Seven views stand in the two regions and move between them:", window);
         Assert.Contains("the timeline, the review, the workflow and the console of the session attended on Sessions", window);
         Assert.DoesNotContain("Five views", window);
+        Assert.DoesNotContain("Six views", window);
+    }
+
+    /// <summary>
+    /// NOTIFY2b (D196 point 3, the notification design §2.1, §4): *Notifications* is a view of the regions, on the right by default,
+    /// which the title bar's bell shows; it holds the presses waiting for the person's confirmation and *What needs you*, and Overview
+    /// keeps a summary of it. Asked where a terminal's press waits, the helper names the view the window has, and that only the
+    /// person confirms it there.
+    /// </summary>
+    [Fact]
+    public void The_room_names_notifications_among_the_views_and_the_bell_that_shows_it()
+    {
+        var window = new HelpRoomWindow().Render(HelpRoomFixture.Machine);
+
+        Assert.Contains("Notifications, the timeline, the review, the workflow and the console", window);
+        Assert.Contains("The bell on the title bar shows it", window);
+        Assert.Contains("What needs you", window);
+        Assert.Contains("Overview leads with a summary", window);
+        Assert.Contains("only the person confirms", window);
     }
 
     /// <summary>

@@ -27,11 +27,18 @@ internal sealed class HelpRoomWindow : IHelpRoomSection
         text.Append("and the right side bar beside it; on Sessions the session list is at the left and the centre is the\n");
         // WORKFLOW1c4: the session's Workflow view (WORKFLOW1c, the workflow design §7) stands beside the timeline and the
         // review and moves as they do; the doors say what it draws.
-        text.Append("attended session. Six views stand in the two regions and move between them:\n");
-        text.Append("the timeline, the review, the workflow and the console of the session attended on Sessions, Ask Daoris, and the\n");
+        // NOTIFY2b (D196 point 3, the notification design §2.1, §4): Notifications joined the views, on the right by default, shown
+        // by the title bar's bell; it holds the presses waiting for the person's confirmation and What needs you.
+        text.Append("attended session. Seven views stand in the two regions and move between them:\n");
+        text.Append("Notifications, the timeline, the review, the workflow and the console of the session attended on Sessions, Ask Daoris, and the\n");
         text.Append("terminal: the person's own shell (PowerShell unless they choose another), in the panel beside the\n");
         text.Append("console, which starts where the attended session works. A session's console takes no typing; the\n");
         text.Append("terminal is the person's, never a session's.\n");
+        text.Append("Notifications, in the right side bar unless the person moved it, is everything that came to the person: first\n");
+        text.Append("each press a terminal sent that waits for their confirmation, as its whole card, then What needs you, every\n");
+        text.Append("row with its acts. The bell on the title bar shows it (View → Notifications too) and counts what needs them,\n");
+        text.Append("in the warning hue while a press waits unseen; only the person confirms a press, on its card. Overview leads with a summary\n");
+        text.Append("of it, a line per group.\n");
         text.Append("A view moves from its region's tab list (the button at the end of the tab row), by a right-click on\n");
         text.Append("its tab, or by dragging its tab to the other region; View → Reset view locations puts every view\n");
         text.Append("back. The toggles beside the window controls, and the View menu, show or hide the panel (`Ctrl+J`)\n");

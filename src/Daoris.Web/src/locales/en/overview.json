@@ -1,5 +1,7 @@
 {
   "overview.title": "Overview",
+  "overview.needs.oldest": "the oldest {{age}}",
+  "overview.needs.door": "Show it in Notifications",
   "overview.description": "Is anything sitting, and is the family healthy — the state of the thing being managed.",
   "overview.tiles.adopted.label": "Adopted repositories",
   "overview.tiles.adopted.note": "of {{total}} in the family",

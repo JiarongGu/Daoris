@@ -205,6 +205,11 @@ internal static class Program
         // kit's loop runs on and as which the pickers, the taskbar's count, the tray and the update are resolved, is put away
         // on the person's close while another main window is open, and closed for good when the last of them closes.
         builder.Services.AddSingleton(sp => new MainWindows(() => sp.GetRequiredService<MainForm>().CloseForGood(), log));
+        // A terminal's press waiting unshown lights the taskbar button of the main window last in front (NOTIFY2b, the notification
+        // design §3.3): the judgement's, told each window's focus and what the pipe says waits; the window is resolved as it is lit.
+        builder.Services.AddSingleton(sp => new PressFlash((window, on) => TaskbarFlash.Set(
+            window == MainWindows.First ? sp.GetRequiredService<MainForm>() : sp.GetRequiredService<SecondaryWindowHost>().FormNamed(window),
+            on)));
         // Daoris's own browser (D78, D85): the engine's own window, in a process of its own
         // (`daoris-browser`: this executable with the browser's argument, CHR8), with its profile under
         // the home — the home `driver.json` is in, as every machine file's is.

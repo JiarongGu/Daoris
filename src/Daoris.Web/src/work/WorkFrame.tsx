@@ -185,8 +185,20 @@ function SentSettler({ sending, giveBack }: { sending: ReturnType<typeof useSend
 export function WorkFrame({
   selected, onSelect, notify, onSendBack, onAnswerAsk, onOpenQuest, intent, onIntentTaken, ask, askFocus = 0, closings, placements,
   lists, layout: viewLayout, onOpenSessions, terminal = false, onListMode, group = null, onGroupBrought, compose = null, onMakeTask,
-  onOpenBranch,
+  onOpenBranch, notifications, notificationsShow = 0, notificationsToggle = 0,
 }: {
+  /**
+   * *Notifications* (NOTIFY2b, the notification design §2.1): everything that comes to the person, a view of the regions on the
+   * right by default, as Ask Daoris is. Absent where no shell is attached.
+   */
+  notifications?: ReactNode;
+  /** Bumped each time a door asks for *Notifications* (View, the palette, Overview's summary, a toast's *Open*): it is shown. */
+  notificationsShow?: number;
+  /**
+   * Bumped by each press of the title bar's bell (§2.1): it shows the view where it stands, or, pressed while the view is shown,
+   * gives the region back to the view it held, or closes the region where it was closed.
+   */
+  notificationsToggle?: number;
   /**
    * What each view's list remembers (D118 §3f), held by the application so the list's doors reach it from
    * every view; this frame's own where it is rendered alone.
@@ -954,24 +966,27 @@ export function WorkFrame({
   // off Sessions with none followed.
   const dockKey = following?.id ?? '';
   // What stands where (DOCK1b): Ask Daoris only where a shell handed it in, and the terminal likewise.
-  const present = (view: ViewId) => (view === 'ask' ? Boolean(ask) : view === 'terminal' ? terminal : true);
+  // *Notifications* likewise (NOTIFY2b): where the application handed it in.
+  const present = (view: ViewId) => (view === 'ask' ? Boolean(ask) : view === 'terminal' ? terminal
+    : view === 'notifications' ? Boolean(notifications) : true);
   const rightViews = viewsIn(placed.places, 'right', present);
   const panelViews = viewsIn(placed.places, 'panel', present);
-  // Ask Daoris is the machine's, not the attended session's: its tab stays whichever session is attended.
-  const [asking, setAsking] = useState(false);
+  // Ask Daoris and *Notifications* are the machine's, not the attended session's: their tab stays whichever session is attended.
+  const [machineTab, setMachineTab] = useState<'ask' | 'notifications' | null>(null);
   // A file's preview per session (PREVIEW1, D111): what a tool card or the review opened, and the tab it
   // covered, which its × goes back to. Kept while the window is open, like the dock's tab.
   const [previews, setPreviews] = useState<Record<string, FileOpen & { back: DockTab }>>({});
   const previewing = following && here ? previews[following.id] ?? null : null;
   const sessionTab = docked[dockKey] ?? dockOpensOn(elsewhere, following !== null);
-  const dock: DockTab | undefined = asking && rightViews.includes('ask')
-    ? 'ask'
+  const dock: DockTab | undefined = machineTab && rightViews.includes(machineTab)
+    ? machineTab
     : sessionTab === 'preview'
       ? (previewing ? 'preview' : rightViews[0])
       : rightViews.includes(sessionTab) ? sessionTab : rightViews[0];
   const setDock = (tab: DockTab) => {
-    setAsking(tab === 'ask');
-    if (tab !== 'ask') setDocked((was) => ({ ...was, [dockKey]: tab }));
+    const machine = tab === 'ask' || tab === 'notifications' ? tab : null;
+    setMachineTab(machine);
+    if (!machine) setDocked((was) => ({ ...was, [dockKey]: tab }));
   };
   // The panel's shown view: the machine's, like its height, not the attended session's.
   const [panelPick, setPanelPick] = useState<ViewId>('console');
@@ -1050,6 +1065,51 @@ export function WorkFrame({
     openView('ask');
     // Only a new ask for it; where it stands and the closings are read, not watched.
   }, [askFocus]);
+
+  // NOTIFY2b (the notification design §2.1): *Notifications* shown where it stands, by a door that asks for it; and what its region
+  // showed before the bell opened it, so the bell's next press gives the region back: the view it held, or closed where it was.
+  const notificationsBack = useRef<{ place: Place; view: ViewId | DockTab | undefined; closed: boolean } | null>(null);
+  const notificationsShown = placed.places.notifications === 'panel'
+    ? !collapsed && panelView === 'notifications'
+    : !dockClosed && dock === 'notifications';
+  useEffect(() => {
+    if (notificationsShow <= 0) return;
+    if (!notificationsShown) {
+      const place = placed.places.notifications;
+      notificationsBack.current = { place, view: place === 'panel' ? panelView : dock, closed: place === 'panel' ? collapsed : dockClosed };
+    }
+    openView('notifications');
+    // Only a new ask for it, as Ask Daoris's.
+  }, [notificationsShow]);
+  useEffect(() => {
+    if (notificationsToggle <= 0) return;
+    const place = placed.places.notifications;
+    if (!notificationsShown) {
+      notificationsBack.current = { place, view: place === 'panel' ? panelView : dock, closed: place === 'panel' ? collapsed : dockClosed };
+      openView('notifications');
+      return;
+    }
+    const back = notificationsBack.current?.place === place ? notificationsBack.current : null;
+    notificationsBack.current = null;
+    const others: (ViewId | DockTab)[] = (place === 'panel' ? panelViews : rightViews).filter((view) => view !== 'notifications');
+    if (back?.closed) {
+      // Opened from a closed region: the region closes, as it was.
+      if (place === 'panel') closed.setPanel(true);
+      else closeDock(true);
+      return;
+    }
+    // The view the region held, where it still stands there (or the file's preview it covered); else the region's first other view.
+    const held = back?.view && back.view !== 'notifications' && (others.includes(back.view) || back.view === 'preview') ? back.view : others[0];
+    if (!held) {
+      if (place === 'panel') closed.setPanel(true);
+      else closeDock(true);
+    } else if (place === 'panel') {
+      setPanelPick(held as ViewId);
+    } else {
+      setDock(held);
+    }
+    // Only a new press of the bell; where it stands and what it showed are read, not watched.
+  }, [notificationsToggle]);
 
   const [taken, setTaken] = useState<typeof intent>(null);
   if (intent && intent !== taken) {
@@ -1140,6 +1200,7 @@ export function WorkFrame({
   /** A view's surface, drawn in whichever region it stands (DOCK1b). The panel draws the console itself. */
   const surface = (view: ViewId, where: Place = 'panel') => {
     if (view === 'ask') return ask;
+    if (view === 'notifications') return notifications;
     if (view === 'terminal') return <TerminalView terminals={terminals} cwd={terminalCwd} />;
     if (view === 'review') {
       // The line of work the reviewed part belongs to, and its ask: either's one Accept holds this one's while it lands (ACCEPTALL1h).

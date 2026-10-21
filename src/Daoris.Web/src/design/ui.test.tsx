@@ -1,6 +1,6 @@
 import { type ReactElement, useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { SessionState } from '../data/api';
 import i18n from '../locales/i18n';
@@ -989,6 +989,39 @@ describe('a toast beside an open drawer', () => {
     expect(toasts()).not.toHaveAttribute('data-beside');
     expect(classes(toasts())).toContain('right-5');
     expect(toasts().className).not.toContain('min-[56rem]:right-');
+  });
+});
+
+/**
+ * NOTIFY2b (the notification design §3.3, Fable's F1.1): a toast may carry a door, and one that stays is never closed by its seven
+ * seconds: a terminal's press's toast stays until the view opens or the press ends, which its owner says by taking it away.
+ */
+describe('a toast with a door', () => {
+  it('opens its door, and stays past its seven seconds where it stays', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const onOpen = vi.fn();
+      const onClose = vi.fn();
+      render(
+        <Tooltip.Provider>
+          <Toasts
+            items={[
+              { id: 1, kind: 'error', text: 'A terminal asks to stop a session: Fix the feed', door: { label: 'Open', onOpen }, stays: true },
+              { id: 2, kind: 'ok', text: 'Declaration written.' },
+            ]}
+            onClose={onClose}
+          />
+        </Tooltip.Provider>,
+      );
+
+      await act(async () => { vi.advanceTimersByTime(8_000); });
+      expect(onClose).toHaveBeenCalledWith(2);
+      expect(onClose).not.toHaveBeenCalledWith(1);
+      await act(async () => { screen.getByRole('button', { name: 'Open' }).click(); });
+      expect(onOpen).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

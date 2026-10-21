@@ -60,7 +60,12 @@ const ACCOUNT_KINDS: ReadonlySet<Attention['kind']> = new Set(['account-wait', '
  *
  * The organism: it holds the queries and the acts, so the list and its rows hold none (components §2).
  */
-export function AttentionBand({ doors = {}, notify = () => {}, onSessions, onRun }: {
+export function AttentionBand({ doors = {}, notify = () => {}, onSessions, onRun, inView = false }: {
+  /**
+   * Drawn in *Notifications* (NOTIFY2b, the notification design §2.2): its rows alone under the view's group head, which says its
+   * name and count, and the `confirmation` row left out, since each press is its whole card in the group above.
+   */
+  inView?: boolean;
   doors?: AttentionDoors;
   /** Where each act's sentence is said: the service's or the driver's, verbatim (frontend §4a). */
   notify?: Notify;
@@ -75,13 +80,13 @@ export function AttentionBand({ doors = {}, notify = () => {}, onSessions, onRun
   // The application's running action where it holds one (a sign-in outlives the view, SIGNIN1); its own where drawn alone.
   return (
     <WithHarnessRuns notify={notify}>
-      <Band doors={doors} notify={notify} onSessions={onSessions} onRun={onRun} />
+      <Band doors={doors} notify={notify} onSessions={onSessions} onRun={onRun} inView={inView} />
     </WithHarnessRuns>
   );
 }
 
-function Band({ doors, notify, onSessions, onRun }: {
-  doors: AttentionDoors; notify: Notify; onSessions?: () => void; onRun?: (session: string) => void;
+function Band({ doors, notify, onSessions, onRun, inView }: {
+  doors: AttentionDoors; notify: Notify; onSessions?: () => void; onRun?: (session: string) => void; inView: boolean;
 }) {
   const { t } = useTranslation();
   // Who needs the person, as the shell pushes it (PUSH1d4): the rows, judged in .NET.
@@ -131,15 +136,18 @@ function Band({ doors, notify, onSessions, onRun }: {
   }
   // Not judged yet: loading, never empty (PUSHUX1).
   if (attention.state === 'reading') {
-    return <AttentionRegion><SkeletonRows /></AttentionRegion>;
+    return <AttentionRegion bare={inView}><SkeletonRows /></AttentionRegion>;
   }
 
   const harnesses = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
-  const waiting = attentionOf(attention.rows, {
+  // In *Notifications* a press is its card, drawn above from the confirmation channel, never its row (NOTIFY2b, §3.1).
+  const rows = inView ? attention.rows.filter((row) => row.kind !== 'confirmation') : attention.rows;
+  const waiting = attentionOf(rows, {
     sessions: sessions.data ?? [], quests: quests.data ?? [], asks: asks.data ?? [], tools: byTool(harnesses),
   });
 
   if (waiting.length === 0) {
+    if (inView) return null;
     return (
       <AttentionRegion resyncing={attention.resyncing}>
         <NothingNeedsYou working={(sessions.data ?? []).filter((session) => WORKING.has(session.state)).length} />
@@ -359,7 +367,7 @@ function Band({ doors, notify, onSessions, onRun }: {
   };
 
   return (
-    <AttentionRegion resyncing={attention.resyncing}>
+    <AttentionRegion resyncing={attention.resyncing} bare={inView}>
       <AttentionList
         items={waiting}
         doors={doors}
@@ -369,6 +377,7 @@ function Band({ doors, notify, onSessions, onRun }: {
         held={(item) => ACCOUNT_KINDS.has(item.kind) && harnessRun.busy}
         below={below}
         onSessions={onSessions}
+        bare={inView}
       />
     </AttentionRegion>
   );

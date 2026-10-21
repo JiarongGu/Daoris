@@ -193,32 +193,45 @@ describe("Sessions' badge", () => {
   });
 });
 
+/** The title bar's bell (NOTIFY2b, the notification design §2.1), which counts what Overview's badge counted. */
+const bell = () => screen.getByRole('button', { name: /^Notifications/ });
 const overviewButton = () => within(screen.getByRole('navigation', { name: 'Views' })).getByRole('button', { name: 'Overview' });
+/** *Notifications* shown by its bell, where every row of What needs you is (NOTIFY2b). */
+const openNotifications = async () => {
+  await userEvent.click(bell());
+  await screen.findByRole('tab', { name: 'Notifications', selected: true });
+};
 
 /**
  * SESSUX1i (D126 §4.6): on 1 October the owner's work stood parked on its failed sessions, and *What needs you* said
- * nothing. It holds the quest the driver's last look parked, after the parked sessions; Overview's badge counts the band,
- * as it always has; and the row's door opens the quest's page, where *Try again* is.
+ * nothing. It holds the quest the driver's last look parked, after the parked sessions; the bell counts the rows, as Overview's
+ * badge did until NOTIFY2b moved the count to the title bar and the rows to *Notifications*; and the row's door opens the quest's
+ * page, where *Try again* is.
  */
-describe("Overview's What needs you, on a machine", () => {
+describe("What needs you, on a machine", () => {
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
     invoke.mockReset();
     window.localStorage.clear();
+    window.sessionStorage.clear();
   });
 
   it('holds the quest the driver parked, counts it, and opens its page', async () => {
     start([...PARKS, PARKED_QUEST]);
 
+    // Two sessions parked to ask, and the parked quest: the bell's count in open's hue; Overview wears no badge (NOTIFY2b).
+    await waitFor(() => expect(within(bell()).getByText('3')).toBeInTheDocument());
+    expect(within(bell()).getByText('3')).toHaveAttribute('data-tone', 'open');
+    expect(within(overviewButton()).queryByText(/^\d+$/)).toBeNull();
+    // Overview says its summary, and lists no row.
+    expect(await screen.findByRole('button', { name: /^Holding work3/ })).toBeInTheDocument();
+    expect(screen.queryByRole('listitem', { name: 'Expose a streaming budget' })).toBeNull();
+
+    await openNotifications();
     // The band is drawn again as the window's answers arrive, so its row is found afresh rather than inside a held node.
-    await screen.findByRole('listitem', { name: 'Expose a streaming budget' });
-    // Two sessions parked to ask, and the parked quest: the band's count, on the icon of the view that holds it (UX5 U20), in
-    // the waiting hue.
-    await waitFor(() => expect(within(overviewButton()).getByText('3')).toBeInTheDocument());
-    expect(within(overviewButton()).getByText('3').className).toContain('text-ink-open');
-    const row = screen.getByRole('listitem', { name: 'Expose a streaming budget' });
-    expect(screen.getByRole('region', { name: 'What needs you' })).toContainElement(row);
+    const row = await screen.findByRole('listitem', { name: 'Expose a streaming budget' });
+    expect(screen.getAllByRole('region', { name: 'What needs you' }).some((region) => region.contains(row))).toBe(true);
     expect(within(row).getByText('parked after failed sessions')).toBeInTheDocument();
 
     // UX6c: the row's door is its own press, beside *Try again*, which the row offers in place.
@@ -236,8 +249,9 @@ describe("Overview's What needs you, on a machine", () => {
     };
     start([...PARKS, { kind: 'rule', id: proposal.id, since: proposal.proposed, detail: proposal.why, proposal }]);
 
+    await waitFor(() => expect(within(bell()).getByText('3')).toBeInTheDocument());
+    await openNotifications();
     await screen.findByText('an agent asks to do more');
-    await waitFor(() => expect(within(overviewButton()).getByText('3')).toBeInTheDocument());
   });
 
   /**
@@ -247,6 +261,7 @@ describe("Overview's What needs you, on a machine", () => {
   it('opens an ask’s record from its row, chosen as an ask', async () => {
     start([{ kind: 'proposal', id: ASKS[0]!.id, since: ASKS[0]!.asked, workspace: 'default', where: 'default', publishTo: ['engine'], choices: ['engine'] }]);
 
+    await openNotifications();
     const row = await screen.findByRole('listitem', { name: 'Cap the hydration per frame.' });
     expect(within(row).getByText('proposed, not yet published')).toBeInTheDocument();
     await userEvent.click(within(row).getByRole('button', { name: 'Open' }));
@@ -266,6 +281,7 @@ describe("Overview's What needs you, on a machine", () => {
       blocked: { unknown: true, entries: [] },
     }]);
 
+    await openNotifications();
     const row = await screen.findByRole('listitem', { name: 'daoris/s-orphan' });
     await userEvent.click(within(row).getByRole('button', { name: 'Open' }));
 
@@ -285,6 +301,7 @@ describe("Overview's What needs you, on a machine", () => {
         title: 'daoris/s-c4a7c4a7', blocked: { unknown: true, entries: [] },
       }]);
 
+      await openNotifications();
       const row = await screen.findByRole('listitem', { name: 'daoris/s-c4a7c4a7' });
       await userEvent.click(within(row).getByRole('button', { name: 'Open' }));
 
@@ -298,8 +315,10 @@ describe("Overview's What needs you, on a machine", () => {
   it('holds no parked quest where none is pushed', async () => {
     start(PARKS);
 
-    await waitFor(() => expect(within(overviewButton()).getByText('2')).toBeInTheDocument());
-    expect(within(screen.getByRole('region', { name: 'What needs you' })).queryByText('parked after failed sessions')).toBeNull();
+    await waitFor(() => expect(within(bell()).getByText('2')).toBeInTheDocument());
+    await openNotifications();
+    await screen.findAllByText('parked at a checkpoint');
+    expect(screen.queryByText('parked after failed sessions')).toBeNull();
   });
 });
 
@@ -320,10 +339,10 @@ describe("The taskbar's count", () => {
     window.history.replaceState(null, '', '/');
   });
 
-  it('tells the main window’s frame what needs the person, as Overview’s badge counts it', async () => {
+  it('tells the main window’s frame what needs the person, as the bell counts it', async () => {
     start([...PARKS, PARKED_QUEST]);
 
-    await waitFor(() => expect(within(overviewButton()).getByText('3')).toBeInTheDocument());
+    await waitFor(() => expect(within(bell()).getByText('3')).toBeInTheDocument());
     await waitFor(() => expect(badges().at(-1)).toEqual(
       ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 3, description: '3 waiting on you', order: expect.any(Number) } }]));
   });
@@ -346,7 +365,7 @@ describe("The taskbar's count", () => {
     ]);
 
     // The two parks, the work ready to review, the helper's ask and the opinion.
-    await waitFor(() => expect(within(overviewButton()).getByText('5')).toBeInTheDocument());
+    await waitFor(() => expect(within(bell()).getByText('5')).toBeInTheDocument());
     await waitFor(() => expect(badges().at(-1)).toEqual(
       ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 5, description: '5 waiting on you', order: expect.any(Number) } }]));
   });
@@ -363,7 +382,7 @@ describe("The taskbar's count", () => {
     start([...PARKS, { kind: 'permission', id: 'c4a7c4a7#900', since: permission.since, where: 'engine', session: 'c4a7c4a7', permission }]);
 
     // The two parks, and the held call.
-    await waitFor(() => expect(within(overviewButton()).getByText('3')).toBeInTheDocument());
+    await waitFor(() => expect(within(bell()).getByText('3')).toBeInTheDocument());
     await waitFor(() => expect(badges().at(-1)).toEqual(
       ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 3, description: '3 waiting on you', order: expect.any(Number) } }]));
   });
@@ -377,7 +396,7 @@ describe("The taskbar's count", () => {
     start([...PARKS, { kind: 'answer', id: 'c4a7c4a7', since: answer.since, where: 'engine', session: 'c4a7c4a7', answer }]);
 
     // The two parks, and the answer held.
-    await waitFor(() => expect(within(overviewButton()).getByText('3')).toBeInTheDocument());
+    await waitFor(() => expect(within(bell()).getByText('3')).toBeInTheDocument());
     await waitFor(() => expect(badges().at(-1)).toEqual(
       ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 3, description: '3 waiting on you', order: expect.any(Number) } }]));
   });
@@ -386,7 +405,7 @@ describe("The taskbar's count", () => {
     window.history.replaceState(null, '', '/?window=monitor');
     start([...PARKS, PARKED_QUEST]);
 
-    await waitFor(() => expect(within(overviewButton()).getByText('3')).toBeInTheDocument());
+    await waitFor(() => expect(within(bell()).getByText('3')).toBeInTheDocument());
     expect(badges()).toEqual([]);
   });
 });

@@ -45,7 +45,14 @@ export function SecondaryWindowRoot({ window: which }: { window: SecondaryWindow
     <LinkOpener.Provider value={linkOpener}>
       {/* First (PUSH1a): its effects run before the window's own, so the driver's state is read as the snapshot it asks and
           never pulled beside it. It renders nothing. */}
-      <ShellSignals notify={notify} />
+      <ShellSignals
+        notify={notify}
+        // NOTIFY2b (the notification design §3.3): this window holds no *Notifications*, so a terminal's press heard while it is the
+        // one in front is said here by where it waits, with no door; the main window's taskbar button is lit meanwhile.
+        onConfirming={() => {
+          if (document.visibilityState === 'visible' && document.hasFocus()) notify(t('notifications.toast.inMain'), 'error');
+        }}
+      />
       {which.kind === 'monitor'
         ? <MonitorWindow notify={notify} />
         : <DetachedSession id={which.id} notify={notify} />}

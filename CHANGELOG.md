@@ -5,6 +5,14 @@ with the version and date at release.
 
 ## Unreleased
 
+- A terminal's request for your confirmation no longer lies across the top of every page. The title bar has a bell, *Notifications*
+  (通知): pressed, it opens a view in the right side bar (or the panel, where you move it) with each request waiting for your
+  confirmation, then *What needs you*. A request says in plain words what it asks: the session by its name, repository and short id,
+  the words it would say, each file by its whole path, and every other value under *It also carries*; the route and the raw values are
+  under *Details*. Its two minutes start only once its card is in view in the window in front. While one waits unseen, the bell turns
+  to the warning colour with the number of requests, a notice with *Open* stays in the corner until you open the view, and, with Daoris
+  behind other windows, its taskbar button flashes. Overview now opens with a line per group (each opening *Notifications* there)
+  instead of every row, and its icon carries no count. View → *Notifications* and the palette open it too. In English and 中文.
 - A conversation whose account is over its usage curve no longer offers to go on with another agent while another account of the
   same agent has room: Daoris moves it to that account at its turn's end instead. The offer still appears with switching off, or
   where no account of the agent has room.

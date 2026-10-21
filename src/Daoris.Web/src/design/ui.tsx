@@ -10,7 +10,7 @@ import * as RadixSelect from '@radix-ui/react-select';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import {
-  Archive, ArchiveRestore, ArrowDown, ArrowDownToLine, ArrowLeft, ArrowLeftRight, ArrowUp, BookOpen, Bot, Brain, Check, ChevronDown, ChevronRight, ChevronUp,
+  Archive, ArchiveRestore, ArrowDown, ArrowDownToLine, ArrowLeft, ArrowLeftRight, ArrowUp, Bell, BookOpen, Bot, Brain, Check, ChevronDown, ChevronRight, ChevronUp,
   CircleHelp, ClipboardPaste, Cloud, CloudOff, Compass, Copy, Ellipsis, Eye, FileDiff, FilePen, FileText, Flag, FolderOpen, Gauge, GitBranch,
   GitMerge, GitPullRequest, Globe, Hand, History, Inbox, Info, Pin, ScanEye,
   Keyboard, KeyRound, Languages, LayoutDashboard, LayoutGrid, Layers, Link, ListTodo, LogIn, Maximize2, Menu as MenuGlyph, Minimize2,
@@ -162,6 +162,8 @@ const ICONS = {
   back: ArrowLeft,
   pin: Pin,
   wrap: WrapText,
+  // Notifications (NOTIFY2b, the notification design §6): the title bar's button and the view's tab, the one new glyph.
+  bell: Bell,
 } as const;
 
 export type IconName = keyof typeof ICONS;
@@ -837,11 +839,15 @@ const composingEscape = (event: KeyboardEvent) => {
  */
 let drawersOpen = 0;
 const drawerWatchers = new Set<() => void>();
-const watchDrawers = (watch: () => void) => {
+/**
+ * Told at each drawer opened or closed; and whether one is open. A drawer's scrim lies over the whole window, so what is under it
+ * is not shown (NOTIFY2b, the notification design §3.4: a press's card under a scrim does not start its two minutes).
+ */
+export const watchDrawers = (watch: () => void) => {
   drawerWatchers.add(watch);
   return () => { drawerWatchers.delete(watch); };
 };
-const drawerOpen = () => drawersOpen > 0;
+export const drawerOpen = () => drawersOpen > 0;
 const countDrawer = (by: 1 | -1) => {
   drawersOpen += by;
   drawerWatchers.forEach((watch) => watch());
@@ -1416,20 +1422,24 @@ export const Menu = {
  */
 export function CountBadge({ count, tone = 'accent' }: {
   count: number;
-  /** A status hue for a count that IS a status (sessions waiting on a person); the accent otherwise. */
-  tone?: 'accent' | 'open';
+  /**
+   * A status hue for a count that IS a status (sessions waiting on a person); the accent otherwise. The warning hue is a press
+   * that waits unshown with a clock on it (NOTIFY2b, the notification design §3.3: the bell's count of the presses).
+   */
+  tone?: 'accent' | 'open' | 'warn';
 }) {
   if (count <= 0) return null;
   return (
     <span
       aria-hidden
+      data-tone={tone}
       className={cn(
         // `px-0.5`, not `px-1`: measured on the window, a single digit plus 4px a side plus the border
         // came to 16.45px — wider than the 16px height by the padding alone. At 2px a side one digit
         // sits inside the circle, and two grow it into a pill as they should.
         'absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full border bg-page px-0.5',
         'font-mono text-meta leading-none tabular-nums',
-        tone === 'open' ? 'border-st-open text-ink-open' : 'border-accent text-accent',
+        tone === 'open' ? 'border-st-open text-ink-open' : tone === 'warn' ? 'border-warn text-warn' : 'border-accent text-accent',
       )}
     >
       {count > 99 ? '99+' : count}
@@ -1727,7 +1737,16 @@ export function Tip({ content, children, side = 'bottom' }: {
 
 /* ---------------------------------------------------------------- toasts */
 
-export type ToastItem = { id: number; text: string; kind: 'ok' | 'error' };
+/**
+ * A toast: its sentence and its kind; and, for an arrival worth interrupting for (NOTIFY2b, the notification design §3.3, the
+ * platform language §4's *Toast*), a door into where it is answered, and whether it stays past its seven seconds until its owner
+ * takes it away (a terminal's press's, until the view opens or the press ends).
+ */
+export type ToastItem = {
+  id: number; text: string; kind: 'ok' | 'error';
+  door?: { label: string; onOpen: () => void };
+  stays?: boolean;
+};
 
 /** The one shape a view's outcome channel has — declared once, not restated at every prop. */
 export type Notify = (text: string, kind?: 'ok' | 'error') => void;
@@ -1767,6 +1786,8 @@ export function Toasts({ items, onClose }: { items: ToastItem[]; onClose: (id: n
       {items.map((toast) => (
         <Toast.Root
           key={toast.id}
+          // One that stays is closed by its owner or the person, never by its seven seconds (NOTIFY2b, §3.3).
+          duration={toast.stays ? Number.POSITIVE_INFINITY : undefined}
           onOpenChange={(open) => { if (!open) onClose(toast.id); }}
           className={cn(
             'flex items-start gap-2.5 rounded-card border border-line bg-overlay py-2.5 pl-3.5 pr-2.5 text-body',
@@ -1783,6 +1804,12 @@ export function Toasts({ items, onClose }: { items: ToastItem[]; onClose: (id: n
           <Tip content={toast.text}>
             <Toast.Description className="line-clamp-2 flex-1"><Inline text={toast.text} /></Toast.Description>
           </Tip>
+          {/* Its door (NOTIFY2b): where the arrival is answered, opened on the person's press alone; it confirms nothing. */}
+          {toast.door && (
+            <Toast.Action asChild altText={toast.door.label}>
+              <Button onClick={toast.door.onOpen}>{toast.door.label}</Button>
+            </Toast.Action>
+          )}
           <Toast.Close asChild>
             <Button variant="ghost" aria-label={t('common.dismiss')}><Icon name="x" size={14} /></Button>
           </Toast.Close>

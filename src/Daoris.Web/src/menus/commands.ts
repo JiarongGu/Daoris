@@ -147,6 +147,8 @@ export type CommandDoors = {
   toggle: (region: 'list' | 'panel' | 'right') => void;
   reset: () => void;
   frame: (intent: FrameIntent) => void;
+  /** *Notifications*, shown where it stands (NOTIFY2b). */
+  notifications: () => void;
   monitor: () => void;
   browser: () => void;
   theme: (choice: ThemeChoice) => void;
@@ -386,6 +388,11 @@ export const COMMANDS: readonly CommandSpec[] = [
   {
     id: 'view.reset', menu: 'view', group: 'layout', label: 'work.views.reset', icon: 'refresh', shell: true,
     applies: (state) => state.moved, run: (doors) => doors.reset(),
+  },
+  {
+    // Everything that comes to the person (NOTIFY2b, the notification design §2.1): shown where it stands, as the bell shows it.
+    id: 'view.notifications', menu: 'view', group: 'views', label: 'notifications.open', icon: 'bell', shell: true,
+    keywords: 'notifications notify bell what needs you confirm press waiting 通知 等你处理 确认', run: (doors) => doors.notifications(),
   },
   {
     id: 'view.timeline', menu: 'view', group: 'views', label: 'work.review.timelineTab', icon: 'quests', shell: true,

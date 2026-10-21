@@ -92,5 +92,5 @@
   "work.attention.act.refuseOnce": "Refuse",
   "work.attention.act.refuseAlways": "Always refuse",
   "work.attention.confirmation": "a terminal waits",
-  "work.attention.confirmationWhy": "It runs only once you confirm it on its card at the top of the window, and is refused at {{time}}."
+  "work.attention.confirmationWhy": "It runs only once you confirm it on its card in Notifications, and is refused at {{time}}."
 }

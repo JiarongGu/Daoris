@@ -24,8 +24,13 @@ const PUSHED = [
  * browser keeps its polling and never mounts a transport. Renders nothing; costs nothing where no
  * host answers.
  */
-export function ShellSignals({ notify, onAttend, attended }: {
+export function ShellSignals({ notify, onAttend, attended, onConfirming }: {
   notify: Notify;
+  /**
+   * A terminal's press asked, by its id (NOTIFY2b, the notification design §3.3): the press's own event, told once at its ask, which
+   * the window announces in its own words while it is the one focused. Absent, it is said by no toast here.
+   */
+  onConfirming?: (id: string) => void;
   /**
    * The session this window shows on its Sessions view now (NOTIFY1c), so an answer from that very conversation is not toasted
    * over the page that already shows it. Absent or null: no session is open here, and every toast is said.
@@ -140,12 +145,15 @@ export function ShellSignals({ notify, onAttend, attended }: {
    * writes (D24): it is composed once in `AttentionWatch` so a toast here and a line on a headless
    * machine cannot drift.
    */
-  useShenoraEvent<{ headline?: string; detail?: string; kind?: string; session?: string }>(
+  useShenoraEvent<{ headline?: string; detail?: string; kind?: string; session?: string; id?: string }>(
     'DAORIS', 'SESSION_ATTENTION', (item) => {
+      // NOTIFY2b (§3.3): a terminal's press is announced by the window in its own words, keyed on the press's id, never in the
+      // shell's English; its card is in *Notifications*, and the shell's balloon is for when no window is in front.
+      if (item?.kind === 'Confirming') {
+        if (typeof item.id === 'string' && item.id) onConfirming?.(item.id);
+        return;
+      }
       if (!item?.headline) return;
-      // CONFIRMSEEN1: a terminal's press waiting for the window is its card's under the strip of every main window, and its row of
-      // *What needs you*: the shell's balloon is for when no window is in front, and a toast over the card would say it twice.
-      if (item.kind === 'Confirming') return;
       // NOTIFY1c: a conversation's answer to the one the person is reading, in a window in front, is already on their page,
       // so a toast over it is noise. Only that kind: a park or an ending of the attended session still interrupts.
       const reading = item.kind === 'Answered' && attended != null && item.session === attended
