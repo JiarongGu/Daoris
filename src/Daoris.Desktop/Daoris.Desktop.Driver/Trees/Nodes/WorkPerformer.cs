@@ -304,7 +304,9 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
             if (WorkBelief.Unresolved(record, binding) is not null) return (null, (null, StaleInput));
             var moved = NodeLifecycle.Apply(node, StatusOf(record, node.Id), start.Move);
             if (!moved.Moved) return (null, (null, moved.Refused));
-            var call = new WorkPerformCall(unit, node.Kind, node.Version, Random("i-", 12), Random("k-", 16), binding.SubjectRevision ?? "",
+            // FABRIC-CUTOVER1c (the cutover design §2.4.1): the call names the unit its node observes, which on a run's record is its subject's,
+            // never `run:`; on a unit's own record it is that unit, as before.
+            var call = new WorkPerformCall(binding.Observes, node.Kind, node.Version, Random("i-", 12), Random("k-", 16), binding.SubjectRevision ?? "",
                 [.. binding.Inputs.OrderBy(input => input.Key, StringComparer.Ordinal).Select(input => input.Value.Ref)], now + Timeout(node));
             var attempt = new NodeAttempt(node.Id, moved.Status.Attempt, node.Kind[..node.Kind.IndexOf('/')], call, AttemptStates.Recorded) { RecordedAt = now };
             var fired = record.Fired.Concat(start.Firings.Select(firing => firing.Key)).Distinct(StringComparer.Ordinal).ToList();
@@ -343,7 +345,16 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     /// observed plugin node's, passed over here and judged by <see cref="WorkObserver"/> (FABRIC-PERFORM1i).
     /// </summary>
     public IReadOnlyList<WorkPerformed> Hear(
-        IReadOnlyList<WorkStepHeard> heard, Func<string, string, NodeDeclaration?> declared, Func<string, WatchedUnit?> watched)
+        IReadOnlyList<WorkStepHeard> heard, Func<string, string, NodeDeclaration?> declared, Func<string, WatchedUnit?> watched) =>
+        Hear(heard, declared, (unit, _) => watched(unit));
+
+    /// <summary>
+    /// <see cref="Hear(IReadOnlyList{WorkStepHeard}, Func{string, string, NodeDeclaration?}, Func{string, WatchedUnit?})"/> with the unit as told
+    /// for each attempt (FABRIC-CUTOVER1c; the cutover design §2.4.1): on a run's record, the subject the attempt was sent for, which may be one the
+    /// run has since left, so its answer still reaches the run's record.
+    /// </summary>
+    public IReadOnlyList<WorkPerformed> Hear(
+        IReadOnlyList<WorkStepHeard> heard, Func<string, string, NodeDeclaration?> declared, Func<string, NodeAttempt, WatchedUnit?> watched)
     {
         var done = new List<WorkPerformed>();
 
@@ -370,7 +381,7 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
             // a later process's replay of it is taken (PERFORM1a's review).
             // FABRIC-CLOSE1b: a close's outcome is its door's answer alone; no plugin's frame speaks for it.
             var node = declared(unit, attempt.Node);
-            var told = watched(unit);
+            var told = watched(unit, attempt);
             if ((attempt.Plugin == QuestClosing.Sender
                     ? WorkRefusals.NotSender
                     : WorkBelief.Completion(each, attempt, port.GenerationOf(attempt.Plugin), node, told, clock())) is { } code)
@@ -784,8 +795,9 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         int generation;
         try
         {
+            // FABRIC-CUTOVER1c (the cutover design §2.4.1): asked under the unit its call was sent for, a run's subject's, never the record's.
             (answer, generation) = await port.ReconcileStepAsync(
-                asked.Plugin, new WorkReconcileCall(unit, asked.Call.Step, invocation, asked.Call.IdempotencyKey, asked.Call.SubjectRevision), ct)
+                asked.Plugin, new WorkReconcileCall(asked.Call.Unit, asked.Call.Step, invocation, asked.Call.IdempotencyKey, asked.Call.SubjectRevision), ct)
                 .ConfigureAwait(false);
         }
         catch (Exception error) when (Unanswered(error))

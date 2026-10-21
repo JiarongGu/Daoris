@@ -52,10 +52,12 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
         if (bound.Count == 0) return done;
 
         // §C4's fourth rule: each tip read fresh, never a cached unit's revision, with one read of each checkout's refs for the judgement.
+        // FABRIC-CUTOVER1c (the cutover design §2.4.1, a change to the fourth rule for a landing's telling alone): a landed branch told at a
+        // landing's tip is judged on that tip, which the landing's record keeps, so its live tip is not read for it.
         var fresh = new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.Ordinal);
-        foreach (var root in bound.Select(each => each.Told.Root).Distinct(StringComparer.Ordinal))
+        foreach (var root in bound.Where(each => !each.Told.Landing).Select(each => each.Told.Root).Distinct(StringComparer.Ordinal))
         {
-            var branches = bound.Where(each => each.Told.Root == root).Select(each => each.Told.Branch).Distinct(StringComparer.Ordinal).ToList();
+            var branches = bound.Where(each => each.Told.Root == root && !each.Told.Landing).Select(each => each.Told.Branch).Distinct(StringComparer.Ordinal).ToList();
             fresh[root] = root.Length == 0 ? new Dictionary<string, string>() : await tips(root, branches, ct).ConfigureAwait(false);
         }
 
@@ -66,7 +68,8 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
             var unit = each.Governed.Unit.Id;
 
             // An unread tip establishes nothing; a tip moved since the frame was told makes the event another commit's.
-            var code = fresh[each.Told.Root].GetValueOrDefault(each.Told.Branch) is not { } tip || !string.Equals(tip, frame.Commit, StringComparison.OrdinalIgnoreCase)
+            var read = each.Told.Landing ? each.Told.Tip : fresh[each.Told.Root].GetValueOrDefault(each.Told.Branch);
+            var code = read is not { Length: > 0 } tip || !string.Equals(tip, frame.Commit, StringComparison.OrdinalIgnoreCase)
                 ? WorkRefusals.Stale
                 : frame.At > now + WorkBounds.Minute ? WorkRefusals.Shape
                 : null;
@@ -99,6 +102,10 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
             .Where(unit => unit.Unit is not null && string.Equals(unit.Repository, frame.Repository, StringComparison.Ordinal)
                            && string.Equals(unit.Branch, frame.Branch, StringComparison.Ordinal) && unit.Awaiting.Contains(step, StringComparer.Ordinal))
             .ToList() ?? [];
+
+        // FABRIC-CUTOVER1c (the cutover design §2.4.1): one landed branch may carry several runs' landings, each told at its own tip, so an event on
+        // a branch told for several units is taken by the one whose told tip is its commit; two at that tip still name neither.
+        if (told.Count > 1) told = [.. told.Where(unit => string.Equals(unit.Tip, frame.Commit, StringComparison.OrdinalIgnoreCase))];
         // The unit still governed, in the repository the process was told of: a checkout moved since names another repository's identity.
         if (told.Count != 1 || !governed.TryGetValue(told[0].Unit!, out var unit) || unit.Watched.Identity != told[0].Identity)
         {
@@ -121,9 +128,12 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
     {
         var (unit, node, frame) = (bound.Governed.Unit.Id, bound.Node, bound.Heard.Step);
         var (plugin, identity, step, commit, state) = (bound.Heard.Plugin, bound.Told.Identity ?? "", bound.Step, frame.Commit!, frame.Outcome.State);
+        // FABRIC-CUTOVER1c (the cutover design §2.2): on a run's record the event is its node's subject's, the unit it was told under, and is kept
+        // naming it, so a branch at the same commit inherits no replay or late refusal from the one it replaced.
+        var subject = bound.Governed.Scope is null ? null : bound.Told.Unit;
         var (refused, result) = records.Edit<WorkPerformed>(unit, record =>
         {
-            bool Same(ObservedEvent kept) => kept.Plugin == plugin && kept.Repository == identity && kept.Step == step;
+            bool Same(ObservedEvent kept) => kept.Plugin == plugin && kept.Repository == identity && kept.Step == step && kept.Subject == subject;
             var kept = record.Observations.FirstOrDefault(each => Same(each) && string.Equals(each.Commit, commit, StringComparison.OrdinalIgnoreCase));
             if (kept is not null)
             {
@@ -136,6 +146,12 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
             if (state == WorkStates.Unknown) return (null, new(unit, node.Id, PerformedWhat.Noted));
 
             var status = WorkPerformer.StatusOf(record, node.Id);
+            if (subject is not null && status.Binding is { } other && !string.Equals(other.Observes, subject, StringComparison.Ordinal))
+            {
+                // Its node is bound to another subject of the run now: the event was told for one it has left.
+                return (null, new(unit, node.Id, PerformedWhat.NotTaken, WorkRefusals.NotWatched));
+            }
+
             if (status is not { State: NodeStates.Active, Binding: { } binding } || !string.Equals(binding.SubjectRevision, commit, StringComparison.OrdinalIgnoreCase))
             {
                 var on = string.Equals(status.Binding?.SubjectRevision, commit, StringComparison.OrdinalIgnoreCase);
@@ -159,7 +175,7 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
             if (!moved.Moved) return (null, new(unit, node.Id, PerformedWhat.NotTaken, moved.Refused));
 
             // The newest taken for this step: another commit's is dropped, as the fourth rule makes its events stale while the tip stands here.
-            var observed = new ObservedEvent(plugin, identity, step, commit, frame.Id, state, frame.At, node.Id);
+            var observed = new ObservedEvent(plugin, identity, step, commit, frame.Id, state, frame.At, node.Id) { Subject = subject };
             return (WorkPerformer.Kept(record, moved, Why, now) with { Observations = [.. record.Observations.Where(each => !Same(each)), observed] },
                 new(unit, node.Id, PerformedWhat.Applied, state));
         });

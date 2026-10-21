@@ -117,6 +117,12 @@ public sealed record WorkSubject(string? Artifact, string? Revision);
 public sealed record WorkUnitRecords(GrownBranch? Branch, IReadOnlyList<LandedBranch> Landings, QuestView? Quest)
 {
     public static readonly WorkUnitRecords None = new(null, [], null);
+
+    /// <summary>
+    /// An ask unit's ask as the service answered it (FABRIC-CUTOVER1c): the go-aheads a run's <c>go-ahead</c> observes are on it (D135); null on
+    /// every other kind.
+    /// </summary>
+    public AskView? Ask { get; init; }
 }
 
 /// <summary>One unit naming another by its id (<see cref="WorkRelation"/>): a link, never a copy of the other's entries.</summary>

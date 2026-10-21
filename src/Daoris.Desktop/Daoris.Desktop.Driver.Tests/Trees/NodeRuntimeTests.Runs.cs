@@ -152,7 +152,9 @@ public sealed partial class NodeRuntimeTests
     {
         BoundTo(ClaimedThenHanded);
         var b1 = RunHome.Branch("unit-b1", "daoris/s1", Opened, [RunId]);
-        IReadOnlyList<WorkUnit> Others() => [RunHome.QuestUnit(RunHome.Quest("q9")), RunHome.Branch("unit-b9", "daoris/s9", Opened, ["q9"])];
+        // Another quest and its branch, its work ended at its tip, which the landing rule's cycle evaluates once a branch's end is proved (§1).
+        IReadOnlyList<WorkUnit> Others() =>
+            [RunHome.QuestUnit(RunHome.Quest("q9")), RunHome.Branch("unit-b9", "daoris/s9", Opened, ["q9"]) with { Subject = new WorkSubject("daoris/s9", Tip2) }];
         _branchTips["daoris/s1"] = Tip1;
         _branchTips["daoris/s9"] = Tip2;
         _units = [RunHome.QuestUnit(RunHome.Quest(RunId)), b1, .. Others()];
@@ -295,8 +297,12 @@ public sealed partial class NodeRuntimeTests
         BoundTo(ClaimedThenHanded);
         _branchTips["daoris/s1"] = Tip1;
         _branchTips["daoris/s5"] = Tip2;
-        var b1 = RunHome.Branch("unit-b1", "daoris/s1", Opened, []);
-        var b5 = RunHome.Branch("unit-b5", "daoris/s5", Opened, []) with { Owner = new WorkOwner("other", "default", SessionBranches.FileName, WorkRecord.DriverWriter) };
+        // Both branches' work ended at their tips, so a landing rule's cycle would evaluate either.
+        var b1 = RunHome.Branch("unit-b1", "daoris/s1", Opened, []) with { Subject = new WorkSubject("daoris/s1", Tip1) };
+        var b5 = RunHome.Branch("unit-b5", "daoris/s5", Opened, []) with
+        {
+            Owner = new WorkOwner("other", "default", SessionBranches.FileName, WorkRecord.DriverWriter), Subject = new WorkSubject("daoris/s5", Tip2),
+        };
         _units = [b1, b5];
         _unread = ["the service did not answer, so its quests and asks were not read: offline"];
         var runtime = Runtime();
@@ -304,6 +310,7 @@ public sealed partial class NodeRuntimeTests
         var pass = await RunPassAsync(runtime, TwoLandingCycles);
 
         Assert.Contains("unit-b5", pass.Evaluated);
+        Assert.True(RecordKept("unit-b5"));
         Assert.DoesNotContain("unit-b1", pass.Evaluated);
         Assert.False(RecordKept("unit-b1"));
         Assert.Single(pass.Said, line => line.Contains("`engine`", StringComparison.Ordinal) && line.Contains("offline", StringComparison.Ordinal));
@@ -322,13 +329,14 @@ public sealed partial class NodeRuntimeTests
         _units =
         [
             RunHome.QuestUnit(RunHome.Quest(RunId, "Done")), RunHome.QuestUnit(RunHome.Quest("q9")),
-            RunHome.Branch("unit-b1", "daoris/s1", Opened, [RunId, "q9"]),
+            RunHome.Branch("unit-b1", "daoris/s1", Opened, [RunId, "q9"]) with { Subject = new WorkSubject("daoris/s1", Tip1) },
         ];
         var runtime = Runtime();
 
         var pass = await RunPassAsync(runtime, CurrentCycles);
 
         Assert.Equal((NodeStates.Reached, NodeStates.Ready), (RunStatus("claimed").State, RunStatus("handed").State));
+        Assert.DoesNotContain("unit-b1", pass.Evaluated);
         Assert.False(RecordKept("unit-b1"));
         Assert.Single(pass.Said, line => line.Contains("unit-b1", StringComparison.Ordinal) && line.Contains("#q9", StringComparison.Ordinal));
     }

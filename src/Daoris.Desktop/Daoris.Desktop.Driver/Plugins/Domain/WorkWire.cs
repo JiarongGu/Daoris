@@ -45,6 +45,12 @@ public sealed record WatchedUnit(
 
     /// <summary>The repository's identity (§B5): its common git folder's file identity, else its spelling. The host's alone, as <see cref="Unit"/> is.</summary>
     public string? Identity { get; init; }
+
+    /// <summary>
+    /// Whether it tells a landed branch at a landing's tip (FABRIC-CUTOVER1c; the cutover design §2.4.1): an event is judged against <see cref="Tip"/>,
+    /// which the landing's record keeps, never the branch's live tip, which a later landing moves on. The host's alone, as <see cref="Unit"/> is.
+    /// </summary>
+    public bool Landing { get; init; }
 }
 
 /// <summary>
