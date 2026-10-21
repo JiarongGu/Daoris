@@ -7,9 +7,8 @@ namespace Daoris.Desktop;
 /// </summary>
 /// <remarks>
 /// <para><b>Each its own.</b> Every main window's page tells its own workspace's count (<c>useTaskbarCount</c>), and its window wears
-/// that. Until NOTIFY2c the first main window's page alone told one count, which another main window wore while the first was put
-/// away (MAINWINDOWS2b), whichever workspace it held. The first put away now takes its button and its count with it, and every other
-/// main window wears its own.</para>
+/// that, whatever workspace another window holds. The first put away (MAINWINDOWS2) takes its button and its count with it, and every
+/// other main window wears its own.</para>
 ///
 /// <para>Kept so a window wears its count again where it is made after its page told it, and forgotten as the window closes, so one
 /// opened again under its name wears nothing until its own page tells it. Called from any thread: one lock holds the map.</para>
