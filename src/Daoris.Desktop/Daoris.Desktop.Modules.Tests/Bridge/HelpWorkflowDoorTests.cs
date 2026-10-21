@@ -58,7 +58,13 @@ public sealed class HelpWorkflowDoorTests : DriverModuleBridge
         Assert.True(card.GetProperty("diff").GetArrayLength() > 0);
         Assert.False(card.TryGetProperty("steps", out _));
         Assert.False(card.TryGetProperty("use", out _));
-        Assert.False(card.TryGetProperty("saves", out _));
+        Assert.False(card.TryGetProperty("graph", out _));
+
+        // FABRIC-PIPELINE1i: whether it saves a version, the route it chooses for, its pipeline, and what it asks less of the person.
+        Assert.True(card.GetProperty("saves").GetBoolean());
+        Assert.Equal("default", card.GetProperty("route").GetString());
+        Assert.False(card.GetProperty("verifies").GetBoolean());
+        Assert.Equal(0, card.GetProperty("lowers").GetArrayLength());
     }
 
     [Fact]
