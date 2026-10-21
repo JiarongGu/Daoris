@@ -237,7 +237,35 @@ public static class HelpCommand
         return null;
     }
 
+    /// <summary>
+    /// The verb, as the running Daoris's client where its world names an instance to look for (RPC1e, the terminal RPC design §7.2):
+    /// <c>rename</c>, <c>pin</c>, <c>unpin</c> and <c>delete --yes</c> are the person's presses, which the window confirms, and <c>list</c> a
+    /// read; each route asked for its words runs this verb's own path in that Daoris, so the lines are the alone path's. <c>resume</c>
+    /// stays this terminal's own until RPC1g, and a delete's first ask reads here; alone where none runs.
+    /// </summary>
     public static async Task<int> RunAsync(HelpVerbAsk ask, SessionsWorld world, Func<string, bool> resumes, TextWriter output, CancellationToken ct = default)
+    {
+        (InstanceRoute Route, Dictionary<string, object?> Payload)? press = ask.Verb switch
+        {
+            "list" => (OpenRoutes.HelpConversations, InstanceDoor.Said(
+                ("q", ask.Search), ("offset", ask.Offset == 0 ? null : ask.Offset), ("limit", ask.Limit), ("workspace", ask.Workspace),
+                ("all", ask.All ? true : null), ("json", ask.Json ? true : null))),
+            "rename" => (PersonPresses.HelpRename, InstanceDoor.Said(("id", ask.Id), ("name", ask.Clear ? null : ask.Text))),
+            "pin" or "unpin" => (PersonPresses.HelpPin, InstanceDoor.Said(("id", ask.Id), ("pinned", ask.Verb == "pin"))),
+            // SESSION_DELETE's own delete, asked to say it as `help delete` does: its checks first, then `sessions delete`'s words.
+            "delete" when ask.Yes => (PersonPresses.SessionDelete, InstanceDoor.Said(("id", ask.Id), ("help", true))),
+            _ => null,
+        };
+
+        // Alone, nothing this verb runs looks for the instance again: `resume`'s say stays this terminal's own (RPC1g).
+        var alone = world with { Instance = null };
+        return press is { } sent
+            ? await InstanceDoor.ThroughAsync(world.Instance, sent.Route, sent.Payload, () => AloneAsync(ask, alone, resumes, output, ct), output, ct)
+                .ConfigureAwait(false)
+            : await AloneAsync(ask, alone, resumes, output, ct).ConfigureAwait(false);
+    }
+
+    private static async Task<int> AloneAsync(HelpVerbAsk ask, SessionsWorld world, Func<string, bool> resumes, TextWriter output, CancellationToken ct)
     {
         var json = await world.Service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
         var records = SessionRecords.Parse(json);

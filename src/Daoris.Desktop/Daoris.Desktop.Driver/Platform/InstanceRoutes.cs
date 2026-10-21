@@ -75,6 +75,9 @@ public static class OpenRoutes
     /// <summary><c>history</c>'s reading, and a clear's list without <c>--yes</c> (RPC1e): what a clear would take and keep.</summary>
     public static InstanceRoute HistoryPlan { get; } = Open("HISTORY_PLAN");
 
+    /// <summary><c>help list</c> (RPC1e): a page of Ask Daoris's conversations, a search's among them.</summary>
+    public static InstanceRoute HelpConversations { get; } = Open("HELP_CONVERSATIONS");
+
     /// <summary>
     /// Each verb of RPCOPEN1's scope, in the verb's words: the route it sends where the instance answers, or null with the reason it
     /// does not go through the pipe (yet).
@@ -98,12 +101,14 @@ public static class OpenRoutes
         ("history clear --workspace <name>", HistoryPlan, "the list; with `--yes` the person's press (HISTORY_CLEAR)"),
         ("quest clear <id>", HistoryPlan, "the list; with `--yes` the person's press (HISTORY_CLEAR)"),
         ("ask --clear <id>", HistoryPlan, "the list; with `--yes` the person's press (HISTORY_CLEAR)"),
+        ("help list", HelpConversations, "the list; `--json` prints the route's own answer"),
+        ("help delete <id>", null, "alone: the first ask reads the conversation's name here, which no route answers; with `--yes` the person's press (SESSION_DELETE)"),
+        ("help resume <id>", null, "alone: the conversation goes on in this terminal's own process until RPC1g"),
         // The other open reads of RPC1e: each is read alone beside an instance, with the same words, until its route answers them as
         // `said` as the six above do (RPCOPEN1 built the shape, and the reads that follow it name no new one).
         ("trace", null, "alone: its words are built from the sources the host reads itself; TRACE answers the page's shape only"),
         ("git branches", null, "alone: its words are built from the registry's checkouts the host reads itself; GIT_BRANCHES answers the page's shape only"),
         ("workflow", null, "alone: WORKFLOW_RUN answers the page's shape only, and `workflow keep` writes its run"),
-        ("help list", null, "alone: HELP_CONVERSATIONS answers the page's shape only"),
         ("plugins show", null, "alone: PLUGIN_READ answers the page's shape only"),
     ];
 }
@@ -186,6 +191,12 @@ public static class PersonPresses
     /// <summary><c>history clear --workspace &lt;name&gt; --yes</c>, <c>quest clear &lt;id&gt; --yes</c> and <c>ask --clear &lt;id&gt; --yes</c> (RPC1e): a clear.</summary>
     public static InstanceRoute HistoryClear { get; } = Person("HISTORY_CLEAR");
 
+    /// <summary><c>help rename &lt;id&gt; "…"</c> and <c>--clear</c> (RPC1e): an Ask Daoris conversation's name, or its first question again.</summary>
+    public static InstanceRoute HelpRename { get; } = Person("HELP_RENAME");
+
+    /// <summary><c>help pin &lt;id&gt;</c> and <c>unpin</c> (RPC1e): an Ask Daoris conversation kept at the top of its history, or not.</summary>
+    public static InstanceRoute HelpPin { get; } = Person("HELP_PIN");
+
     /// <summary>Each person's press a verb sends over the pipe, in the verb's words, with its route.</summary>
     public static IReadOnlyList<(string Verb, InstanceRoute Route)> Presses { get; } =
     [
@@ -199,6 +210,10 @@ public static class PersonPresses
         ("history clear --workspace <name> --yes", HistoryClear),
         ("quest clear <id> [--failed] --yes", HistoryClear),
         ("ask --clear <id> --yes", HistoryClear),
+        ("help rename <id> \"…\"|--clear", HelpRename),
+        ("help pin <id>", HelpPin),
+        ("help unpin <id>", HelpPin),
+        ("help delete <id> --yes", SessionDelete),
         ("sessions archive <id>…", SessionArchive),
         ("sessions unarchive <id>…", SessionArchive),
         ("sessions stop <id>", SessionStop),

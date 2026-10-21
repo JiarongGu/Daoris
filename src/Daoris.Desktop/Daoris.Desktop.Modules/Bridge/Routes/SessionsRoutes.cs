@@ -645,6 +645,12 @@ public sealed class SessionsRoutes(DriverContext context)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
         var service = _loop.Service ?? throw NotReady();
+        // RPC1e: `help delete <id> --yes` asks for its own words, its checks that the conversation is Ask Daoris's before the delete's.
+        if (Flag(request, "said") && Flag(request, "help"))
+        {
+            return await SessionsVerbs.HelpSaidAsync(_context, new HelpVerbAsk("delete") { Id = id, Yes = true }, cancellationToken).ConfigureAwait(false);
+        }
+
         // RPC1d: `sessions delete` sent over the pipe asks for the verb's own words, a refusal said with its exit 1 as the alone path says it.
         if (Flag(request, "said")) return await SaidAsync(new SessionsAsk("delete") { Ids = [id] }, cancellationToken).ConfigureAwait(false);
 

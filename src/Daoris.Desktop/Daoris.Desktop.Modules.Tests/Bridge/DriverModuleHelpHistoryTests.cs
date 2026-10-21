@@ -245,6 +245,79 @@ public sealed class DriverModuleHelpHistoryTests : DriverModuleBridge
         Assert.Contains("is no Ask Daoris conversation of this machine's", await RefusalAsync(module, "HELP_START_FROM", new { id = "c1" }));
     }
 
+    /// <summary>The lines and the exit code a route answered as <c>said</c> (RPC1e), which the terminal prints, joined.</summary>
+    private static (string Out, int Code) SaidOf(JsonElement answer)
+    {
+        var said = answer.GetProperty("said");
+        return (string.Join("\n", said.GetProperty("out").EnumerateArray().Select(line => line.GetString())), said.GetProperty("code").GetInt32());
+    }
+
+    /// <summary>The terminal's own path over the same records and home, with no instance to look for: what <c>help</c> prints alone.</summary>
+    private static async Task<(string Out, int Code)> AloneAsync(DriverLoop loop, Ledger ledger, params string[] words)
+    {
+        var output = new StringWriter { NewLine = "\n" };
+        var world = new SessionsWorld(
+            new ServiceClient("http://stand-in", null, new HttpClient(ledger, disposeHandler: false)), loop.Home, DriverConfig.Load(loop.ConfigPath), SessionWire.Pipe, null);
+        var code = await HelpCommand.RunAsync(HelpCommand.Read(words, out _)!, world, adapter => loop.Harnesses.Adapters.Resolve(adapter).Resumes, output);
+        return (output.ToString().TrimEnd('\n'), code);
+    }
+
+    /// <summary>
+    /// RPC1e: asked for its words (<c>said: true</c>) by <c>help list</c>, <c>rename</c>, <c>pin</c> and <c>delete --yes</c> sent over the
+    /// pipe, each route answers the lines and the exit code the alone path prints over the same records, a refusal among them as an
+    /// answer, never thrown: a list, a search as its JSON, a conversation that is not Ask Daoris's, one no record holds, and a name too
+    /// long. Nothing is kept or deleted, and the page's answers keep their shape.
+    /// </summary>
+    [Fact]
+    public async Task Asked_for_its_words_each_help_route_answers_the_lines_the_alone_path_prints()
+    {
+        var (loop, module, ledger) = await UpAsync(Record("h1"), Record("h2"), Record("c1", repository: "engine"));
+        Said(loop, "h1", "what is a workspace?", "A circle of repositories that share a remote.");
+        Said(loop, "h2", "how do I land?", "Setup.");
+        var name = new string('x', 81);
+
+        foreach (var (route, payload, words) in new (string, object, string[])[]
+        {
+            ("HELP_CONVERSATIONS", new { said = true }, ["list"]),
+            ("HELP_CONVERSATIONS", new { q = "remote", json = true, said = true }, ["list", "--search", "remote", "--json"]),
+            ("HELP_CONVERSATIONS", new { workspace = "games", said = true }, ["list", "--workspace", "games"]),
+            ("HELP_RENAME", new { id = "c1", name = "x", said = true }, ["rename", "c1", "x"]),
+            ("HELP_RENAME", new { id = "h1", name, said = true }, ["rename", "h1", name]),
+            ("HELP_PIN", new { id = "n0b0dy00", pinned = true, said = true }, ["pin", "n0b0dy00"]),
+            ("SESSION_DELETE", new { id = "c1", help = true, said = true }, ["delete", "c1", "--yes"]),
+        })
+        {
+            var said = SaidOf(await AnswerAsync(module, route, payload));
+            var alone = await AloneAsync(loop, ledger, words);
+            Assert.True(alone.Out.Length > 0, $"{route} printed nothing alone");
+            Assert.Equal(alone, said);
+        }
+
+        Assert.Empty(ledger.Deletes);
+        Assert.Equal(HelpKept.None, new HelpConversations(loop.Home).Read("h1"));
+        Assert.False((await AnswerAsync(module, "HELP_PIN", new { id = "h1", pinned = false })).TryGetProperty("said", out _));
+    }
+
+    /// <summary>RPC1e: a terminal's rename, pin, unpin and delete run here, kept and deleted as the window's are, in the verb's words.</summary>
+    [Fact]
+    public async Task A_terminal_s_rename_pin_and_delete_run_here_in_the_verb_s_words()
+    {
+        var (loop, module, ledger) = await UpAsync(Record("h1"), Record("h2"));
+        Said(loop, "h1", "what is a workspace?", "A circle.");
+
+        Assert.Equal(("help: h1 is named “Workspaces”.", 0), SaidOf(await AnswerAsync(module, "HELP_RENAME", new { id = "h1", name = "Workspaces", said = true })));
+        Assert.Equal(("help: h1 is pinned to the top of the list.", 0), SaidOf(await AnswerAsync(module, "HELP_PIN", new { id = "h1", pinned = true, said = true })));
+        Assert.Equal("Workspaces", new HelpConversations(loop.Home).Read("h1").Name);
+        Assert.NotNull(new HelpConversations(loop.Home).Read("h1").Pinned);
+        Assert.Equal(("help: h1 is unpinned.", 0), SaidOf(await AnswerAsync(module, "HELP_PIN", new { id = "h1", pinned = false, said = true })));
+        Assert.Equal(("help: h1 is called by its first question again.", 0), SaidOf(await AnswerAsync(module, "HELP_RENAME", new { id = "h1", said = true })));
+
+        var deleted = SaidOf(await AnswerAsync(module, "SESSION_DELETE", new { id = "h1", help = true, said = true }));
+        Assert.Equal(0, deleted.Code);
+        Assert.StartsWith("sessions: ", deleted.Out, StringComparison.Ordinal);
+        Assert.Equal(["DELETE /api/sessions/h1"], ledger.Deletes);
+    }
+
     /// <summary>Before the loop's service answers, the history waits for it, as every route that reads the records does.</summary>
     [Fact]
     public async Task The_history_waits_for_the_loop()
