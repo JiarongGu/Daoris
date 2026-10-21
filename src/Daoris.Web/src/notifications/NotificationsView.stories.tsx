@@ -1,6 +1,7 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { chinese } from '../design/storyLanguage';
 import { InTheme } from '../plugins/storyIcons';
+import type { Notice } from '../bridge/notices';
 import type { Confirmation, PressNames } from '../person/Confirmations';
 import { NotificationsView } from './NotificationsView';
 
@@ -69,6 +70,25 @@ export const WideChinese: Story = { decorators: [sideAt(696), chinese] };
 
 /** What needs you alone, no press waiting. */
 export const NoPress: Story = { args: { presses: [] } };
+
+/** *Done and failed* (NOTIFY2f): a session that failed and a press that ran out of time unread, a session that completed read. */
+const NOTICES: Notice[] = [
+  { id: 'expired-p1', kind: 'expired', at: new Date(Date.now() - 2 * 60_000).toISOString(), read: false, route: 'SESSION_INPUT' },
+  {
+    id: 'ended-s1', kind: 'ended', at: new Date(Date.now() - 14 * 60_000).toISOString(), read: false, session: 's1',
+    repository: 'game', state: 'failed',
+  },
+  {
+    id: 'ended-s2', kind: 'ended', at: new Date(Date.now() - 3 * 3600_000).toISOString(), read: true, session: 's2',
+    repository: 'engine', state: 'completed',
+  },
+];
+export const DoneAndFailed: Story = { args: { notices: NOTICES } };
+export const DoneAndFailedChinese: Story = { args: { notices: NOTICES }, decorators: [chinese] };
+export const DoneAndFailedDark: Story = { args: { notices: NOTICES }, decorators: [dark] };
+export const DoneAndFailedWide: Story = { args: { notices: NOTICES }, decorators: [sideAt(696)] };
+/** Nothing waits on the person, and what ended is listed under the line that says so. */
+export const OnlyDoneAndFailed: Story = { args: { presses: [], needs: 0, notices: NOTICES } };
 
 /** Nothing in any group: *Nothing needs you* and the sessions working. */
 export const Nothing: Story = { args: { presses: [], needs: 0 } };

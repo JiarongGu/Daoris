@@ -314,6 +314,40 @@ describe('the shell push channel (ShellSignals)', () => {
   });
 
   /**
+   * NOTIFY2f (the notification design §5): a notice another process recorded, the headless host's, is said in the reader's words in
+   * the window in front alone, once for an event heard twice; a window not focused as it hears it says nothing, and never later.
+   */
+  it("says another process's notice once, in the reader's words, in the focused window alone", async () => {
+    const focused = vi.spyOn(document, 'hasFocus').mockReturnValue(true);
+    const notify = vi.fn();
+    show(<ShellSignals notify={notify} />);
+    const ended = { id: 'ended-s1', kind: 'ended', at: '2026-10-22T09:00:00.000Z', read: false, repository: 'Engine', state: 'failed' };
+
+    eventHandlers.get('DAORIS.NOTICE')!(ended);
+    eventHandlers.get('DAORIS.NOTICE')!(ended);
+    expect(notify).toHaveBeenCalledTimes(1);
+    expect(notify).toHaveBeenCalledWith('A session in Engine ended: failed', 'error');
+
+    focused.mockReturnValue(false);
+    eventHandlers.get('DAORIS.NOTICE')!({ ...ended, id: 'ended-s2', state: 'completed' });
+    focused.mockReturnValue(true);
+    eventHandlers.get('DAORIS.NOTICE')!({ ...ended, id: 'ended-s2', state: 'completed' });
+    expect(notify).toHaveBeenCalledTimes(1);
+
+    eventHandlers.get('DAORIS.NOTICE')!({ id: 'expired-p1', kind: 'expired', at: '2026-10-22T09:00:00.000Z', read: false, route: 'SESSION_INPUT' });
+    expect(notify).toHaveBeenLastCalledWith("A terminal's press to say words to a session as yours went unanswered, and ran out of time", 'error');
+    eventHandlers.get('DAORIS.NOTICE')!({ kind: 'ended' });
+    expect(notify).toHaveBeenCalledTimes(2);
+
+    const { default: i18n } = await import('../locales/i18n');
+    await i18n.changeLanguage('zh');
+    eventHandlers.get('DAORIS.NOTICE')!({ ...ended, id: 'ended-s3', state: 'completed' });
+    expect(notify).toHaveBeenLastCalledWith('Engine 的一个会话已结束：已完成', 'ok');
+    await i18n.changeLanguage('en');
+    focused.mockRestore();
+  });
+
+  /**
    * REV3: the driver said a conversation ended the moment its record moved, and no page code
    * listened — so a chat whose harness exited read as working until the next tick, and a message
    * typed into it in that window went nowhere.

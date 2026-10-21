@@ -1,5 +1,6 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import type { AttentionRead } from '../bridge/attention';
+import type { Notice } from '../bridge/notices';
 import { chinese } from '../design/storyLanguage';
 import { storyWidths } from '../design/storyWidths';
 import { InTheme } from '../plugins/storyIcons';
@@ -45,3 +46,12 @@ export const NarrowChineseDark: Story = { decorators: [storyWidths.narrow, chine
 export const Nothing: Story = { args: { attention: { ...KNOWN, rows: [] }, presses: [] } };
 /** A plain browser: the app's to judge. */
 export const InABrowser: Story = { args: { attention: { state: 'app' }, presses: [], onNotifications: undefined } };
+
+/** *Done and failed*'s line after what waits (NOTIFY2f): its notices, and how many are unread. */
+const NOTICES: Notice[] = [
+  { id: 'ended-s1', kind: 'ended', at: ago(5), read: false, repository: 'game', state: 'failed' },
+  { id: 'ended-s2', kind: 'ended', at: ago(90), read: true, repository: 'engine', state: 'completed' },
+];
+export const WithDoneAndFailed: Story = { args: { notices: NOTICES } };
+export const WithDoneAndFailedChinese: Story = { args: { notices: NOTICES }, decorators: [chinese] };
+export const WithDoneAndFailedNarrow: Story = { args: { notices: NOTICES }, decorators: [storyWidths.narrow] };

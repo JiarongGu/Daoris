@@ -34,6 +34,24 @@ describe("the title bar's bell", () => {
     expect(bell).not.toHaveTextContent('5');
   });
 
+  it('wears a dot, never a second count, while anything is unread, and says so by its name (NOTIFY2f)', async () => {
+    const { rerender } = render(<NotificationsBell needs={3} presses={0} warn={false} unread onPress={() => {}} />);
+
+    const bell = screen.getByRole('button', { name: 'Notifications: 3 need you, and something unread' });
+    expect(bell.querySelector('[data-unread]')).not.toBeNull();
+    expect(bell).toHaveTextContent('3');
+
+    rerender(<NotificationsBell needs={0} presses={0} warn={false} unread onPress={() => {}} />);
+    expect(screen.getByRole('button', { name: 'Notifications: something unread' }).querySelector('[data-unread]')).not.toBeNull();
+
+    rerender(<NotificationsBell needs={0} presses={0} warn={false} onPress={() => {}} />);
+    expect(screen.getByRole('button', { name: 'Notifications' }).querySelector('[data-unread]')).toBeNull();
+
+    await i18n.changeLanguage('zh');
+    rerender(<NotificationsBell needs={2} presses={0} warn={false} unread onPress={() => {}} />);
+    expect(screen.getByRole('button', { name: '通知：2 个等你处理，另有未读' })).toBeInTheDocument();
+  });
+
   it('is the bell alone with nothing to count, and is pressed', async () => {
     const onPress = vi.fn();
     render(<NotificationsBell needs={0} presses={0} warn={false} onPress={onPress} />);

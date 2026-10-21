@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../locales/i18n';
+import type { Notice } from '../bridge/notices';
 import type { Confirmation } from '../person/Confirmations';
 import { NotificationsView } from './NotificationsView';
 
@@ -97,10 +98,40 @@ describe('Notifications', () => {
     expect(onVisible).toHaveBeenLastCalledWith(false);
   });
 
+  it('lists Done and failed last, counting its unread, folding as the others do, and opens at it (NOTIFY2f)', async () => {
+    const notices: Notice[] = [
+      { id: 'ended-s1', kind: 'ended', at: '2026-10-21T09:00:00.000Z', read: false, session: 's1', repository: 'Engine', state: 'failed' },
+      { id: 'ended-s2', kind: 'ended', at: '2026-10-21T08:00:00.000Z', read: true, session: 's2', repository: 'Engine', state: 'completed' },
+    ];
+    const onDismiss = vi.fn();
+    view({ notices, onDismiss });
+
+    const groups = screen.getAllByRole('region');
+    expect(groups.map((group) => group.getAttribute('aria-label'))).toEqual(['Waiting for your confirmation', 'What needs you', 'Done and failed']);
+    expect(within(groups[2]!).getByRole('button', { name: /Done and failed/ })).toHaveTextContent('1');
+    expect(within(groups[2]!).getAllByRole('listitem')).toHaveLength(2);
+    await userEvent.click(within(groups[2]!).getAllByRole('button', { name: 'Dismiss' })[1]!);
+    expect(onDismiss).toHaveBeenCalledWith(notices[1]);
+
+    await userEvent.click(within(groups[2]!).getByRole('button', { name: /Done and failed/ }));
+    expect(within(screen.getAllByRole('region')[2]!).queryAllByRole('listitem')).toHaveLength(0);
+    expect(JSON.parse(window.sessionStorage.getItem('daoris.notifications.folded')!)).toEqual(['done']);
+  });
+
+  it('says nothing needs you above what ended, which waits on nobody', () => {
+    view({
+      presses: [], needs: 0, working: 0,
+      notices: [{ id: 'expired-p1', kind: 'expired', at: '2026-10-21T09:00:00.000Z', read: true, route: 'SESSION_INPUT' }],
+    });
+
+    expect(screen.getByText('Nothing needs you')).toBeInTheDocument();
+    expect(screen.getAllByRole('region').map((group) => group.getAttribute('aria-label'))).toEqual(['Done and failed']);
+  });
+
   it('says its groups in Chinese', async () => {
     await i18n.changeLanguage('zh');
-    view();
+    view({ notices: [{ id: 'ended-s1', kind: 'ended', at: '2026-10-21T09:00:00.000Z', read: false, repository: 'Engine', state: 'failed' }] });
 
-    expect(screen.getAllByRole('region').map((group) => group.getAttribute('aria-label'))).toEqual(['等待你确认', '等你处理']);
+    expect(screen.getAllByRole('region').map((group) => group.getAttribute('aria-label'))).toEqual(['等待你确认', '等你处理', '完成与出错']);
   });
 });
