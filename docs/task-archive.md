@@ -19120,3 +19120,10 @@ Detail: D194's PUSH1f2e2 note. On Opus.
 
 **Outcome** 2026-10-22: built. Each main window tells and wears its own count (`SET_BADGE` by name, its order per window); a balloon's
 click opens the window whose workspace holds its session or quest (`MainWindowScopes`), else the one last in front. Detail: D196's NOTIFY2c note. On Opus.
+## NOTIFY2e — an agent's ask to hand its session over waits in What needs you (2026-10-22, D196)
+
+> - [ ] **NOTIFY2e — an agent's ask to hand its session over waits in What needs you** (modules, web-shell; after 2b; D196, the notification design §9). The ask becomes a row with its acts, counted by the bell and the taskbar, in every place `person-waits.md` lists. Proof: as §9 names it.
+
+**Outcome** 2026-10-22: built. The ask the look holds waiting is a `hand-over` row by its own id (`AttentionStateSlice.HandOverWaits`,
+`NeedsAPerson`), with *Hand over to {agent}* and *Not now* through the session's own routes, its door the session, counted by the bell
+and the taskbar; it holds work once its session's turn has ended (`attentionGroup`). Detail: D196's NOTIFY2e note. On Opus.
