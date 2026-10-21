@@ -19041,6 +19041,14 @@ row proves the driver's half. A `channel` wake runs the local plan, whose `chann
 waits, so a message is heard without the poll; no second reader was added. Proof: `DriverWatchTopicsTests`' new case (the person's
 message kept on a parked part's record with `pollSeconds` at 60, no nudge, no remote sync), over the stand-in ledger's new channel
 doors. Detail: D173's FABRIC-EVENT3c note. On Opus.
+
+## NEEDSSCOPE1 — a window counts only its own workspace's waits (2026-10-21)
+
+> - [ ] **NEEDSSCOPE1 — a window counts only its own workspace's waits** (modules, web; found 2026-10-21 with two windows on one home). A window on one workspace counted another workspace's sessions to review on its bell and taskbar while its list showed none: `NeedsAPerson` builds the review, opinion, permission, answer, helper, parked-quest and work rows without a workspace (`src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/NeedsAPerson.cs:183-327`), and the page keeps a row with none in every window. Proof: each row of a session, quest or ask carries its record's workspace and the machine's rows none; a window on another workspace neither counts nor lists it. Building.
+
+**Outcome** 2026-10-21: built. Every session's, quest's or ask's row of `NeedsAPerson` (the driver's own lists' too) and the Sessions badge's
+parked quest carry their record's workspace; the machine's carry none, each with its reason; the page's counts and lists read one
+`needsListed`. Detail: FIX-LOG's NEEDSSCOPE1 entry. On Opus.
 ## PUSH1f2d — the agents' rules, trust and settings (2026-10-21, D194)
 
 > - [ ] **PUSH1f2d — the agents' rules, trust and settings** (cli, driver, modules; after 2a; D194, the alone-path design §5). Read its row in §5 and the sections it names; build it end to end (D187), the family's TypeScript leaving as §4 says. Proof: as §5 names it.
@@ -19051,3 +19059,25 @@ settings `SET_AGENT_SETTINGS`, a trust alone; a marked terminal's `rules accept`
 with reasons. `permissions.ts`, `ruleproposals.ts`, `trust.ts`, `agentsettings.ts` and their tests left. Detail: D194's PUSH1f2d
 note. Unproven until the install: a `daoris agent rules` change confirmed in the open window. Built across two sessions, the first
 cut off at the timeout after the driver's commit.
+
+## FABRIC-PERFORM1d — resource cleanup and retirement (2026-10-21, D173)
+
+> - [ ] **FABRIC-PERFORM1d — resource cleanup and retirement** (driver; after END4a and PERFORM1c; the fabric events design's rows table (§E10), §D3). Receipts, a durable `work/cleanup`, accountability through invalidation, retirement apart from removal.
+
+**Outcome** 2026-10-21: built. A plugin attempt's `resources` are taken as receipts on the unit's own resource record
+(`<home>/workflows/resources/`) before its outcome; `ResourceCleaner` asks each temporary one of its plugin through `work/cleanup` at the
+unit's true end, at once for a superseded attempt's, the request and its key persisted before the send, a failure backed off and blocked
+after seven days; receipts and unsettled attempts join the unit's inventory, so it retires only once they are terminal, and the session
+branches' traces keep a unit that still owes. Proof: `ResourceCleanupTests` (canaries 34 and 36), `WorkRetirementTests` (canary 35),
+`NodeRuntimeTests`, `WorkSupervisionTests`, `WorkWireTests`. Detail: D173's FABRIC-PERFORM1d note. On Opus: about 110 tool calls.
+
+## WORKFLOW1e2 — quest-specific choice (2026-10-21, D157)
+
+> - [ ] **WORKFLOW1e2 — quest-specific choice** (service/driver; after e). Field, census, person's door and selection for quests without asks. §4.1/D156.
+
+**Outcome** 2026-10-21: built. A quest no ask published keeps the person's kind and workflow in a new quest operation, `chosen`, placed
+in every census place and applying only while open; the local host's `POST /api/quests/{id}/workflow` is the person's door, refusing a
+quest an ask published; the driver binds it as §4.1's row 1 at the run's first start, a chain's step following its nearest parent's;
+`daoris-driver quest workflow` is the terminal's door. The quest's page offers no choice until WORKFLOW1g. Proof: `QuestOperationKindsTests`,
+`LocalHostTests`, `PersonDoorTableTests`, `WorkflowPortsTests`, `WorkflowRunBindingTests`, `QuestWorkflowCommandTests`. Detail: D157's
+WORKFLOW1e2 note, D68's 2026-10-21 note. On Opus.

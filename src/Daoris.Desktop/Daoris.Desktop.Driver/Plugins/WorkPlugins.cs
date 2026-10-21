@@ -86,9 +86,19 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
         }
     }
 
+    /// <summary>The plugins owed a receipt's cleanup (FABRIC-PERFORM1d): kept up though no unit awaits their steps.</summary>
+    private HashSet<string> _owed = new(StringComparer.Ordinal);
+
+    /// <summary>The plugins owed a receipt's cleanup, whole: their process is wanted as an awaited one's is (§D3, only its process answers).</summary>
+    public void Owe(IReadOnlySet<string> plugins)
+    {
+        lock (_gate) _owed = new HashSet<string>(plugins, StringComparer.Ordinal);
+    }
+
+    /// <summary>Whether the plugin's process is wanted: a unit awaits its steps, or it is owed a receipt's cleanup (FABRIC-PERFORM1d).</summary>
     public bool Awaits(string id)
     {
-        lock (_gate) return _states.TryGetValue(id, out var state) && state.Awaited.Count > 0;
+        lock (_gate) return (_states.TryGetValue(id, out var state) && state.Awaited.Count > 0) || _owed.Contains(id);
     }
 
     public bool MayStart(string id, DateTimeOffset now)

@@ -9,7 +9,7 @@ import type { Attention } from './AttentionRow';
 import type { SessionGrouping } from '../groups';
 import {
   ASKS_ONCE, ATTENTION_GROUP, attentionActs, attentionGroups, attentionInOrder, attentionOf, attentionOffers, attentionWorded,
-  type AttentionNames, type PushedAttention,
+  type AttentionNames, needsListed, type PushedAttention,
 } from './attention';
 import { entryDetail } from '../head/milestone';
 
@@ -597,6 +597,17 @@ describe('the groups', () => {
       row('work', 'u1#deploy#2', at, { held: { unit: 'u1' } as PushedAttention['held'] }), row('work', 's9', at),
       row('rule', 'p2', at), row('rule', 'p1', at), row('intake', 'a2', at), row('proposal', 'a1', at),
     ])).toEqual(['intake:a2', 'proposal:a1', 'rule:p1', 'rule:p2', 'work:s9', 'work:u1#deploy#2']);
+  });
+
+  /**
+   * NEEDSSCOPE1: the bell, the taskbar, *Notifications*' group and Overview's summary each filtered the window's rows apart. One
+   * answer for what is listed and counted: every row but a press's own, whose card is drawn from the confirmation channel (NOTIFY2b).
+   */
+  it('lists and counts every row but a press’s own, in the order given', () => {
+    const at = '2026-09-21T09:00:00Z';
+    expect(needsListed([row('review', 'r1', null), row('confirmation', 'c1', at), row('parked', 'p1', at)]).map((each) => `${each.kind}:${each.id}`))
+      .toEqual(['review:r1', 'parked:p1']);
+    expect(needsListed([])).toEqual([]);
   });
 });
 

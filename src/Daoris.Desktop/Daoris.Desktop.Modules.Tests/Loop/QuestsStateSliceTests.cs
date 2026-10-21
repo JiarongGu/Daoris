@@ -37,6 +37,7 @@ public sealed class QuestsStateSliceTests : DriverModuleBridge
         ["submission"] = null, ["grewFrom"] = null, ["sourceReopened"] = null,
         ["reopened"] = new JsonObject { ["machine"] = "m1", ["sequence"] = 4, ["note"] = "again" }, ["settled"] = null, ["holder"] = null,
         ["here"] = "m1",
+        ["workflowChoices"] = new JsonArray(new JsonObject { ["kind"] = "docs", ["at"] = "2026-10-21T09:00:00Z" }),
     };
 
     internal static string List(params JsonObject[] records) => new JsonArray([.. records.Select(record => record.DeepClone())]).ToJsonString();
@@ -98,7 +99,7 @@ public sealed class QuestsStateSliceTests : DriverModuleBridge
         // The first parameter and the last: the reading went through the whole record.
         Assert.Equal("id", service[0]);
         Assert.Contains("evidence", service);
-        Assert.Equal("here", service[^1]);
+        Assert.Equal("workflowChoices", service[^1]);
         Assert.Equal(page.Order(StringComparer.Ordinal), QuestsStateSlice.Fields.Order(StringComparer.Ordinal));
         Assert.Empty(QuestsStateSlice.Fields.Intersect(QuestsStateSlice.PulledOnly));
         var classed = QuestsStateSlice.Fields.Concat(QuestsStateSlice.PulledOnly).ToHashSet(StringComparer.Ordinal);

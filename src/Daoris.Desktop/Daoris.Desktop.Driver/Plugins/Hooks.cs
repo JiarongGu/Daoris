@@ -71,6 +71,11 @@ public interface IHookChannel : IAsyncDisposable
     Task<WorkReconcileAnswer> ReconcileStepAsync(WorkReconcileCall call, CancellationToken ct) =>
         Task.FromException<WorkReconcileAnswer>(PluginFailures.Mark(
             new DriverException($"this channel does not answer `{PluginSteps.ReconcilePoint}`."), PluginEvents.Errored));
+
+    /// <summary>One receipt's removal asked of the plugin that created it (FABRIC-PERFORM1d, §D3). Fails where the answer is not a disposition.</summary>
+    Task<WorkCleanupAnswer> CleanupAsync(WorkCleanupCall call, CancellationToken ct) =>
+        Task.FromException<WorkCleanupAnswer>(PluginFailures.Mark(
+            new DriverException($"this channel does not answer `{PluginSteps.CleanupPoint}`."), PluginEvents.Errored));
 }
 
 /// <summary>
@@ -324,6 +329,15 @@ public sealed class HookPeer(
         return WorkWire.ReadReconcileAnswer(answer) ?? throw Unreadable(
             $"plugin `{plugin}` answered {Raw(answer)}, which is not what became of an attempt — "
             + "`{ \"state\": \"done\" | \"not-started\" | \"running\" | \"failed\" | \"unknown\", \"outcome\": … }`, done and failed with their outcome.");
+    }
+
+    /// <summary>One receipt's removal (FABRIC-PERFORM1d, §D3), read by shape (<see cref="WorkWire.ReadCleanupAnswer"/>): anything else is unreadable.</summary>
+    public async Task<WorkCleanupAnswer> CleanupAsync(WorkCleanupCall call, CancellationToken ct)
+    {
+        var answer = await InFlightAsync(WorkWire.CleanupMethod, WorkWire.Cleanup(call), ct).ConfigureAwait(false);
+        return WorkWire.ReadCleanupAnswer(answer) ?? throw Unreadable(
+            $"plugin `{plugin}` answered {Raw(answer)}, which is not what became of a resource — "
+            + "`{ \"disposition\": \"removed\" | \"already-gone\" | \"retained\" | \"failed\", \"proof\": …, \"message\": … }`.");
     }
 
     /// <summary>
@@ -945,6 +959,24 @@ public sealed class HookSet(
         HandedBack(plugin, channel, generation, PluginSteps.ReconcilePoint);
         return (answer, generation);
     }
+
+    /// <summary>
+    /// One receipt's removal asked of the plugin's current process (FABRIC-PERFORM1d, §D3), with that process's generation: fenced as a
+    /// performance is, so only the lease's loop asks, of a process that named <c>work/perform</c> and its capability.
+    /// </summary>
+    public async Task<(WorkCleanupAnswer Answer, int Generation)> CleanupAsync(string plugin, WorkCleanupCall call, CancellationToken ct)
+    {
+        var (channel, generation) = Performer(plugin);
+        var answer = await channel.CleanupAsync(call, ct).ConfigureAwait(false);
+        HandedBack(plugin, channel, generation, PluginSteps.CleanupPoint);
+        return (answer, generation);
+    }
+
+    /// <summary>
+    /// The plugins whose process the lease's loop keeps up though no unit awaits their steps (FABRIC-PERFORM1d): each owes a receipt's
+    /// cleanup, which only its process answers. Whole each time; a plugin not named is owed nothing.
+    /// </summary>
+    public void Owe(IReadOnlySet<string> plugins) => _work.Owe(plugins);
 
     /// <summary>
     /// The generation fence (FABRIC-PERFORM1a, round 2): an answer is handed back while its process is the plugin's current one, and refused

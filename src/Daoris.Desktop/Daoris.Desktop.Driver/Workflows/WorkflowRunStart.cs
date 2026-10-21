@@ -27,7 +27,7 @@ public static class WorkflowRunStart
     /// <summary>
     /// Each run whose session opened in this look and that no binding names yet is bound to the workflow §4.1 chooses for it now
     /// (<see cref="WorkflowRunBindings"/>): its chain's first quest in the repository names it, its ask's latest choice is the task's,
-    /// and a named workflow's newest version is kept. Said in the look where a named workflow chose it, or where it could not be
+    /// or, for a quest no ask published, its own (WORKFLOW1e2), and a named workflow's newest version is kept. Said in the look where a named workflow chose it, or where it could not be
     /// bound; a run under Current is bound silently, as nothing about its work changes. A failure binds nothing and costs the
     /// session nothing: the gate reads a run with no binding as it reads every run today.
     /// </summary>
@@ -62,8 +62,10 @@ public static class WorkflowRunStart
 
                 var askId = AskWords.AskOf(quest.From);
                 var ask = askId is null ? null : await world.FindAskAsync(askId, ct).ConfigureAwait(false);
+                // A quest no ask published carries its own choice, made on its page before it started (WORKFLOW1e2).
+                var task = askId is null ? WorkflowRunBindings.TaskOf(quest, every) : WorkflowRunBindings.TaskOf(ask);
                 var binding = WorkflowRunBindings.Plan(
-                    config, store, run, quest.To, start.Workspace, askId, WorkflowRunBindings.TaskOf(ask), plugins, now());
+                    config, store, run, quest.To, start.Workspace, askId, task, plugins, now());
                 if (runs.Bind(binding))
                 {
                     // The machine log keeps which level chose and whether a named version or Current (WORKFLOW1f, design §5.5).

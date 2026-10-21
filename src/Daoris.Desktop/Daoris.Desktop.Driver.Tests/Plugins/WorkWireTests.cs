@@ -207,4 +207,88 @@ public sealed class WorkWireTests
 
         Assert.Equal(field, broken);
     }
+
+    /// <summary>FABRIC-PERFORM1d (§D3): what an attempt created rides its completion and its reconciliation, whatever its state, as receipts.</summary>
+    [Fact]
+    public void Resources_round_trip_on_a_completion_and_a_reconciliation()
+    {
+        IReadOnlyList<WorkResource> made = [new("acme.deploy/preview@1", "p-41"), new("acme.deploy/site@1", "s-41")];
+        var failed = new WorkStepFrame("deploy", new WorkOutcome(WorkStates.Failed, Code: "timeout") { Resources = made }, At, "e1", Invocation: "i1");
+
+        var frame = WorkWire.Step(failed);
+        var read = WorkWire.ReadStep(Parse(frame).GetProperty("params"), out var field);
+
+        Assert.Null(field);
+        Assert.Equal(made, read!.Outcome.Resources);
+        Assert.Equal(frame.ToJsonString(), WorkWire.Step(read).ToJsonString());
+        Assert.Contains("""
+            "resources":[{"schema":"acme.deploy/preview@1","id":"p-41"},{"schema":"acme.deploy/site@1","id":"s-41"}]
+            """.Trim(), frame.ToJsonString(), StringComparison.Ordinal);
+
+        var running = new WorkReconcileAnswer(ReconcileStates.Running) { Resources = made };
+        var heard = WorkWire.ReadReconcileAnswer(Parse(WorkWire.ReconcileAnswer(running)));
+        Assert.Equal(made, heard!.Resources);
+
+        // None said is none, and an outcome said with none reads back as the one written.
+        Assert.Empty(WorkWire.ReadReconcileAnswer(Parse("""{"state":"running","resources":[]}"""))!.Resources);
+        var plain = new WorkOutcome(WorkStates.Reached);
+        Assert.Equal(plain, WorkWire.ReadStep(Parse(WorkWire.Step(new WorkStepFrame("deploy", plain, At, "e1", Invocation: "i1"))).GetProperty("params"), out _)!.Outcome);
+    }
+
+    [Theory]
+    [InlineData("""{"step":"deploy","state":"reached","at":"2026-10-17T09:30:00Z","id":"e1","invocation":"i1","resources":{"schema":"acme.deploy/preview@1","id":"p"}}""")]
+    [InlineData("""{"step":"deploy","state":"reached","at":"2026-10-17T09:30:00Z","id":"e1","invocation":"i1","resources":[{"schema":"preview","id":"p"}]}""")]
+    [InlineData("""{"step":"deploy","state":"reached","at":"2026-10-17T09:30:00Z","id":"e1","invocation":"i1","resources":[{"schema":"acme.deploy/preview@1"}]}""")]
+    [InlineData("""{"step":"deploy","state":"reached","at":"2026-10-17T09:30:00Z","id":"e1","invocation":"i1","resources":[{"schema":"acme.deploy/preview@1","id":"p"},{"schema":"acme.deploy/preview@1","id":"p"}]}""")]
+    public void A_completion_naming_resources_of_the_wrong_shape_is_no_event(string json)
+    {
+        Assert.Null(WorkWire.ReadStep(Parse(json), out var field));
+        Assert.Equal("resources", field);
+    }
+
+    /// <summary>§D3's bound on one frame's resources: eight, and one past it.</summary>
+    [Theory]
+    [InlineData(8, true)]
+    [InlineData(9, false)]
+    public void A_frames_resources_are_bounded(int count, bool reads)
+    {
+        var answer = new WorkReconcileAnswer(ReconcileStates.Running)
+        {
+            Resources = [.. Enumerable.Range(0, count).Select(at => new WorkResource("acme.deploy/preview@1", $"p-{at}"))],
+        };
+
+        Assert.Equal(reads, WorkWire.ReadReconcileAnswer(Parse(WorkWire.ReconcileAnswer(answer))) is not null);
+    }
+
+    public static TheoryData<string, string?, string?> CleanupAnswers => new()
+    {
+        { CleanupDispositions.Removed, "deleted:p-41", null },
+        { CleanupDispositions.AlreadyGone, null, null },
+        { CleanupDispositions.Retained, null, "a reused environment — 复用的环境" },
+        { CleanupDispositions.Failed, null, "locked" },
+    };
+
+    /// <summary>FABRIC-PERFORM1d (§D3): <c>work/cleanup { receipt, resource, idempotencyKey }</c>, and each disposition, written and read back.</summary>
+    [Theory]
+    [MemberData(nameof(CleanupAnswers))]
+    public void A_cleanup_call_and_each_answer_round_trip(string disposition, string? proof, string? message)
+    {
+        Assert.Equal("hook/work/cleanup", WorkWire.CleanupMethod);
+        var call = new WorkCleanupCall("r-1", "p-41", "c-1");
+        var written = WorkWire.Cleanup(call);
+        Assert.Equal("""{"receipt":"r-1","resource":"p-41","idempotencyKey":"c-1"}""", written.ToJsonString());
+        Assert.Equal(call, WorkWire.ReadCleanup(Parse(written)));
+
+        var answer = new WorkCleanupAnswer(disposition, proof, message);
+        Assert.Equal(answer, WorkWire.ReadCleanupAnswer(Parse(WorkWire.CleanupAnswer(answer))));
+        Assert.Equal(disposition != CleanupDispositions.Failed, CleanupDispositions.Terminal(disposition));
+    }
+
+    [Theory]
+    [InlineData("""{"disposition":"deleted"}""")]
+    [InlineData("""{"state":"removed"}""")]
+    [InlineData("""{"disposition":"removed","proof":7}""")]
+    [InlineData("""["removed"]""")]
+    public void A_cleanup_answer_of_the_wrong_shape_is_no_answer(string json) =>
+        Assert.Null(WorkWire.ReadCleanupAnswer(Parse(json)));
 }

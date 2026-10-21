@@ -70,8 +70,8 @@ export type AttentionRead =
 
 /**
  * Who needs the person in this window (PUSH1d4): the pushed rows, read from memory and never pulled, since no route answers them;
- * those judged from the service's sessions, quests and asks filtered to the window's scope as the lists they came from were, the
- * driver's own everywhere. Nothing a tick or a focus asks again.
+ * each row of a session, a quest or an ask filtered to the window's scope by the workspace .NET judged it with, as the lists it came
+ * from were, and the machine's, which carry none, in every window (NEEDSSCOPE1). Nothing a tick or a focus asks again.
  */
 export const useAttention = (): AttentionRead => {
   const { isAvailable } = useShenora();

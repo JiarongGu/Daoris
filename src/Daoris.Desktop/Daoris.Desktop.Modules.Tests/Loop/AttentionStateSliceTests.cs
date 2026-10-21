@@ -255,7 +255,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
 
         Is("""
            {"kind":"trust","id":"C:/somewhere/data/harnesses/claude-code/work/.claude.json\nC:/somewhere/engine","since":"2026-09-10T09:00:00Z",
-            "where":"engine","trust":{"folder":"C:/somewhere/engine","trustFile":"C:/somewhere/data/harnesses/claude-code/work/.claude.json"},
+            "workspace":"default","where":"engine","trust":{"folder":"C:/somewhere/engine","trustFile":"C:/somewhere/data/harnesses/claude-code/work/.claude.json"},
             "quest":"q1"}
            """, Assert.Single(rows));
     }
@@ -353,7 +353,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     {
         var item = Assert.Single(Rows(new() { Quests = [Quest("""{"status":"Taken"}""")], Registry = [Registration("engine")], Considered = [Parked()] }));
 
-        Is($$"""{"kind":"parked-quest","id":"7a82cc","since":"2026-10-01T09:21:00+00:00","where":"engine","sitting":{{Parked().ToJsonString()}}}""", item);
+        Is($$"""{"kind":"parked-quest","id":"7a82cc","since":"2026-10-01T09:21:00+00:00","workspace":"default","where":"engine","sitting":{{Parked().ToJsonString()}}}""", item);
     }
 
     [Fact]
@@ -470,18 +470,25 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.Equal(["session:p4rk3d00"], NeedsAPerson.WaitingInSessions(facts).Select(each => each.Key));
     }
 
-    /// <summary>The badge's partition says each counted thing's workspace where the window's scope filters it: a session's, never a park's quest.</summary>
+    /// <summary>
+    /// The badge's partition says each counted thing's workspace where the window's scope filters it: a session's, and a parked quest's
+    /// where its record is in hand (NEEDSSCOPE1); one whose quest is not in hand says none, and every window counts it.
+    /// </summary>
     [Fact]
     public void The_sessions_badge_says_a_session_s_workspace_for_the_window_s_scope()
     {
         var counted = NeedsAPerson.WaitingInSessions(new()
         {
             Sessions = [Session("""{"id":"c4a7c4a7","state":"awaiting-person","workspace":"aurora"}""")],
-            Considered = [Parked("""{"quest":"q1"}""")],
+            Quests = [Quest("""{"id":"q1","status":"Taken","workspace":"aurora"}""")],
+            Considered = [Parked("""{"quest":"q1"}"""), Parked("""{"quest":"q9"}""")],
         });
 
         Assert.Equal(
-            ["quest:q1={\"kind\":\"parked-quest\"}", "session:c4a7c4a7={\"kind\":\"parked\",\"workspace\":\"aurora\"}"],
+            [
+                "quest:q1={\"kind\":\"parked-quest\",\"workspace\":\"aurora\"}", "quest:q9={\"kind\":\"parked-quest\"}",
+                "session:c4a7c4a7={\"kind\":\"parked\",\"workspace\":\"aurora\"}",
+            ],
             counted.Select(each => $"{each.Key}={each.Value.ToJsonString()}").Order(StringComparer.Ordinal));
     }
 
@@ -667,15 +674,19 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
             Groups = [Placed()],
         }));
 
-        Is($$"""{"kind":"review","id":"r3v13w00","since":"2026-09-21T11:00:00Z","where":"engine","placed":{{Placed().ToJsonString()}}}""", item);
+        Is($$"""{"kind":"review","id":"r3v13w00","since":"2026-09-21T11:00:00Z","workspace":"default","where":"engine","placed":{{Placed().ToJsonString()}}}""", item);
     }
 
-    /// <summary>A session whose record is not in hand still says what waits: no repository, and no known wait.</summary>
+    /// <summary>
+    /// A session whose record is not in hand still says what waits: no repository, and no known wait; and no workspace, so every window
+    /// shows it rather than none (NEEDSSCOPE1).
+    /// </summary>
     [Fact]
     public void Work_to_review_whose_record_is_not_in_hand_still_says_what_waits()
     {
         var item = Assert.Single(Rows(new() { Groups = [Placed()] }));
         Assert.Equal(("review", "", null), (item["kind"]!.GetValue<string>(), item["where"]!.GetValue<string>(), item["since"]));
+        Assert.False(item.ContainsKey("workspace"));
     }
 
     [Fact]
@@ -824,7 +835,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         });
 
         Assert.Equal(["helper:a1", "helper:a2"], Keys(rows));
-        Is("""{"kind":"helper","id":"a1","since":"2026-09-21T09:30:00Z","where":"engine","session":"c0nv0001","title":"Which test covers the loader?"}""", rows.Single(row => row["id"]!.GetValue<string>() == "a1"));
+        Is("""{"kind":"helper","id":"a1","since":"2026-09-21T09:30:00Z","workspace":"default","where":"engine","session":"c0nv0001","title":"Which test covers the loader?"}""", rows.Single(row => row["id"]!.GetValue<string>() == "a1"));
         // A session the page does not hold: no repository is guessed.
         Is("""{"kind":"helper","id":"a2","since":"2026-09-21T09:10:00Z","where":"","session":"g0n3","title":"Is the cap right?"}""", rows.Single(row => row["id"]!.GetValue<string>() == "a2"));
     }
@@ -888,7 +899,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         });
 
         Assert.Equal(["permission:c0nv0001#900", "permission:g0n3#7"], Keys(rows));
-        Is($$"""{"kind":"permission","id":"c0nv0001#900","since":"2026-09-21T09:30:00Z","where":"engine","session":"c0nv0001","permission":{{held}}}""", rows.Single(row => row["id"]!.GetValue<string>() == "c0nv0001#900"));
+        Is($$"""{"kind":"permission","id":"c0nv0001#900","since":"2026-09-21T09:30:00Z","workspace":"default","where":"engine","session":"c0nv0001","permission":{{held}}}""", rows.Single(row => row["id"]!.GetValue<string>() == "c0nv0001#900"));
         Assert.Equal("", rows.Single(row => row["id"]!.GetValue<string>() == "g0n3#7")["where"]!.GetValue<string>());
     }
 
@@ -910,7 +921,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         });
 
         Assert.Equal(["answer:c0nv0001", "answer:g0n3"], Keys(rows));
-        Is($$"""{"kind":"answer","id":"c0nv0001","since":"2026-09-21T09:30:00Z","where":"engine","session":"c0nv0001","answer":{{held}}}""", rows.Single(row => row["id"]!.GetValue<string>() == "c0nv0001"));
+        Is($$"""{"kind":"answer","id":"c0nv0001","since":"2026-09-21T09:30:00Z","workspace":"default","where":"engine","session":"c0nv0001","answer":{{held}}}""", rows.Single(row => row["id"]!.GetValue<string>() == "c0nv0001"));
         Assert.Equal("", rows.Single(row => row["id"]!.GetValue<string>() == "g0n3")["where"]!.GetValue<string>());
     }
 
@@ -1117,6 +1128,137 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         // Its node stopped, or the person's own done ending the work early: nothing waits on them.
         Assert.Empty(Rows(new() { Ends = [Ended("""{"nodeState":"stopped","words":[]}""")] }));
         Assert.Empty(Rows(new() { Ends = [Ended("""{"kind":"overridden","nodes":["qa","close"],"words":[]}""")] }));
+    }
+
+    // ---- the scope a window reads (NEEDSSCOPE1) ----
+
+    /// <summary>
+    /// NEEDSSCOPE1: two windows on one home, each on its own workspace, and one counted three sessions the other's list placed to review.
+    /// Every row that is a session's, a quest's or an ask's carries that record's workspace, however its wait reached the judge (the
+    /// service's records or the driver's own lists), so a window on another workspace neither counts nor lists it.
+    /// </summary>
+    [Fact]
+    public void Each_row_of_a_session_a_quest_or_an_ask_carries_its_record_s_workspace()
+    {
+        const string unfollowed = """
+            {"unit":"session:c0nv0001","kind":"tree","resource":"X:/daoris/trees/aurora/engine/s-c0nv0001","role":"temporary","disposition":"blocked",
+             "code":"unfollowed","facts":{"branch":"daoris/s-c0nv0001"},"detail":"its session recorded it, but no branch record follows it"}
+            """;
+        var rows = Rows(new()
+        {
+            Sessions =
+            [
+                Session("""{"id":"c0nv0001","quest":"q1","state":"completed","workspace":"aurora"}"""),
+                Session("""{"id":"p4rk3d00","state":"awaiting-person","workspace":"aurora"}"""),
+            ],
+            Quests = [Quest("""{"id":"q1","status":"Taken","workspace":"aurora"}"""), Quest("""{"id":"q2","to":"retired","workspace":"aurora"}""")],
+            Asks = [Ask()],
+            Registry = [Registration("engine", """{"workspace":"aurora"}""")],
+            Groups = [Placed("""{"session":"c0nv0001"}""")],
+            Opinions =
+            [
+                JsonNode.Parse("""{"session":"s42","quest":"q1","repository":"engine","workspace":"aurora","since":"2026-09-21T09:00:00Z","auto":false,"opinion":{"state":"disputed","holds":true}}""")!.AsObject(),
+                JsonNode.Parse("""{"session":"c0nv0001","quest":"q1","repository":"engine","since":"2026-09-21T09:00:00Z","auto":false,"opinion":{"state":"disputed","holds":true}}""")!.AsObject(),
+            ],
+            Considered = [Parked("""{"quest":"q1"}""")],
+            Helpers = [JsonNode.Parse("""{"id":"a1","session":"c0nv0001","question":"Which test covers the loader?","at":"2026-09-21T09:30:00Z"}""")!.AsObject()],
+            Permissions = [JsonNode.Parse("""{"session":"c0nv0001","request":"900","kind":"execute","since":"2026-09-21T09:30:00Z","choices":[]}""")!.AsObject()],
+            Answers = [JsonNode.Parse("""{"session":"c0nv0001","agent":"codex-acp","words":["w3"],"since":"2026-09-21T09:30:00Z"}""")!.AsObject()],
+            Works =
+            [
+                Unit($$$"""
+                    {"unit":"session:c0nv0001","session":"c0nv0001","branch":null,"end":{"state":"not-ended","said":"no branch record follows its tree"},
+                     "cleanup":{"state":"pending","waits":[{{{unfollowed}}}],"gone":[]}}
+                    """),
+            ],
+            Held = [HeldAttempt("""{"unit":"session:c0nv0001"}"""), HeldAttempt("""{"unit":"quest:q1","node":"close","attempt":1}""")],
+            Unreadable = [Unreadable("""{"unit":"quest:q1"}""")],
+            Ends = [Ended("""{"unit":"quest:q1"}""")],
+            Proposals =
+            [
+                Proposal("""{"id":"p-workspace","scope":"workspace","name":"aurora"}"""),
+                Proposal("""{"id":"p-repository","scope":"repository","name":"engine","session":"c0nv0001"}"""),
+            ],
+            Untrusted = [JsonNode.Parse("""{"folder":"C:/somewhere/engine","trustFile":"C:/somewhere/.claude.json","quest":"q1"}""")!.AsObject()],
+            Waits =
+            [
+                JsonNode.Parse("""
+                    {"agent":"claude-code","account":"account-2","name":"home","workspace":"aurora","until":"2026-10-06T04:42:00Z","stated":true,
+                     "quests":["q1"],"asks":[],"signedOut":[]}
+                    """)!.AsObject(),
+            ],
+        });
+
+        Assert.Equal(
+            [
+                "account-wait:wait:claude-code/account-2", "answer:c0nv0001", "helper:a1", "opinion:c0nv0001", "opinion:s42", "parked-quest:q1",
+                "parked:p4rk3d00", "permission:c0nv0001#900", "proposal:7c1e9a04b2d5", "review:c0nv0001", "rule:p-repository", "rule:p-workspace",
+                "trust:C:/somewhere/.claude.json\nC:/somewhere/engine", "unanswerable:q2", "work:c0nv0001", "work:quest:q1#close#1",
+                "work:quest:q1#close#q6", "work:record#0a1b2c3d4e5f60718293a4b5c6d7e8f9.json", "work:session:c0nv0001#deploy#2",
+            ],
+            Keys(rows));
+        Assert.Equal(
+            [.. Keys(rows).Select(key => $"{key}=aurora")],
+            [.. rows.Select(row => $"{Keys([row])[0]}={row["workspace"]?.GetValue<string>()}").Order(StringComparer.Ordinal)]);
+    }
+
+    /// <summary>
+    /// NEEDSSCOPE1: what is the machine's carries no workspace, so every window counts and lists it: a terminal's press (the pipe is this
+    /// machine's), a rule for the whole machine, a folder whose holds span two workspaces, starts held on an account across workspaces, a
+    /// unit no record owns. A row whose record is not in hand carries none either, so no window loses it.
+    /// </summary>
+    [Fact]
+    public void What_is_the_machine_s_or_whose_record_is_not_in_hand_carries_no_workspace()
+    {
+        var orphan = JsonSerializer.Serialize(new
+        {
+            unit = "unknown-branch:engine/daoris/orphan", kind = "session-branch", resource = "daoris/orphan", role = "temporary", disposition = "blocked",
+            detail = "its owner is unknown",
+        });
+        var rows = Rows(new()
+        {
+            Quests = [Quest("""{"id":"q1","status":"Taken","workspace":"aurora"}"""), Quest("""{"id":"q2","status":"Taken","workspace":"borealis"}""")],
+            Registry = [Registration("engine")],
+            Confirmations =
+            [
+                JsonNode.Parse("""
+                    {"id":"c1","module":"DAORIS.DRIVER","route":"SESSION_ARCHIVE","asker":{"process":"daoris-driver","pid":4242},
+                     "asked":"2026-09-21T09:00:00Z","expires":"2026-09-21T09:10:00Z"}
+                    """)!.AsObject(),
+            ],
+            Proposals = [Proposal(), Proposal("""{"id":"p-unheld","scope":"repository","name":"engine","session":"g0n3"}""")],
+            Untrusted =
+            [
+                JsonNode.Parse("""{"folder":"C:/somewhere/engine","trustFile":"C:/somewhere/.claude.json","quest":"q1"}""")!.AsObject(),
+                JsonNode.Parse("""{"folder":"C:/somewhere/engine","trustFile":"C:/somewhere/.claude.json","quest":"q2"}""")!.AsObject(),
+            ],
+            Waits =
+            [
+                JsonNode.Parse("""
+                    {"agent":"claude-code","account":"account-2","name":"home","workspace":null,"until":"2026-10-06T04:42:00Z","stated":true,
+                     "quests":["q1","q2"],"asks":[],"signedOut":[]}
+                    """)!.AsObject(),
+            ],
+            Groups = [Placed()],
+            Helpers = [JsonNode.Parse("""{"id":"a2","session":"g0n3","question":"Is the cap right?","at":"2026-09-21T09:10:00Z"}""")!.AsObject()],
+            Works =
+            [
+                JsonNode.Parse($$"""
+                    {"unit":"unknown-branch:engine/daoris/orphan","repository":"engine","branch":"daoris/orphan","session":null,
+                     "end":{"state":"unknown","said":"no record names its unit"},"result":[],"cleanup":{"state":"pending","waits":[{{orphan}}],"gone":[]},
+                     "recovery":[],"entries":[{{orphan}}]}
+                    """)!.AsObject(),
+            ],
+            Held = [HeldAttempt()],
+        });
+
+        Assert.Equal(
+            [
+                "account-wait:wait:claude-code/account-2", "confirmation:c1", "helper:a2", "review:r3v13w00", "rule:p-unheld", "rule:p0000002",
+                "trust:C:/somewhere/.claude.json\nC:/somewhere/engine", "work:u1#deploy#2", "work:unknown-branch:engine/daoris/orphan",
+            ],
+            Keys(rows));
+        Assert.Empty(rows.Where(row => row.ContainsKey("workspace")).Select(row => Keys([row])[0]));
     }
 
     // ---- the slice ----

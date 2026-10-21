@@ -74,6 +74,15 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
 };
 
 /**
+ * What *What needs you* lists and the bell counts (NOTIFY2b §2.2; NEEDSSCOPE1): every row of the window's scope but a press's own,
+ * whose card is drawn from the confirmation channel. The bell, the taskbar, *Notifications*' group and Overview's summary read this
+ * one answer, so a count never holds a row the list does not.
+ */
+export function needsListed<T extends { kind: string }>(rows: readonly T[]): T[] {
+  return rows.filter((row) => row.kind !== 'confirmation');
+}
+
+/**
  * The rows by group, only the groups that hold any, in `GROUP_ORDER`, each keeping the order `attentionInOrder` gave it.
  * A group with no rows is not shown (design §6.2).
  */

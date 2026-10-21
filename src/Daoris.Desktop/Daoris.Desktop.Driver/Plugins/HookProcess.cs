@@ -181,6 +181,8 @@ public sealed class HookProcess : IHookChannel
 
     public Task<WorkReconcileAnswer> ReconcileStepAsync(WorkReconcileCall call, CancellationToken ct) => _peer.ReconcileStepAsync(call, ct);
 
+    public Task<WorkCleanupAnswer> CleanupAsync(WorkCleanupCall call, CancellationToken ct) => _peer.CleanupAsync(call, ct);
+
     /// <summary>Shutdown said, a moment given, and then the process is ended — a plugin that will not leave is left no choice.</summary>
     /// <remarks>
     /// One grace bounds it all (FABRIC-PERFORM1a, round 2): the write of <c>shutdown</c> too, which waited with no bound on a plugin that

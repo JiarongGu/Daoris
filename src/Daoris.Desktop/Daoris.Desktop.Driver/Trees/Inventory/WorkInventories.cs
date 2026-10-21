@@ -99,7 +99,7 @@ public static class WorkInventories
         return new InventoryFacts(
             branches, landings, trees, Ours(new AutoLandings(home).All(), entry => entry.Repository), refs, inUse,
             session => Directory.Exists(DaorisHome.Entry(home, HomeEntry.Sessions, session)), at)
-        { Standing = standing, Recorded = recorded ?? [], SetAsideFor = days };
+        { Standing = standing, Recorded = recorded ?? [], SetAsideFor = days, Owed = WorkObligations.Read(home, at) };
     }
 
     /// <summary>The milestone of every unit this home names, and Daoris's own recoveries no unit names (CLEANUP1), from one read.</summary>

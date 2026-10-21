@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- With two windows open on different workspaces, a window's *Notifications* bell, its taskbar count and Sessions' mark no longer
+  count another workspace's work: sessions to review, second opinions, a helper's ask, a held tool call or answer, a quest parked on
+  its failed sessions, a work's clean-up. Each counts and lists its own workspace's, and what is the whole machine's in both.
 - A terminal's request for your confirmation no longer lies across the top of every page. The title bar has a bell, *Notifications*
   (通知): pressed, it opens a view in the right side bar (or the panel, where you move it) with each request waiting for your
   confirmation, then *What needs you*. A request says in plain words what it asks: the session by its name, repository and short id,
@@ -16,6 +19,18 @@ with the version and date at release.
 - A conversation whose account is over its usage curve no longer offers to go on with another agent while another account of the
   same agent has room: Daoris moves it to that account at its turn's end instead. The offer still appears with switching off, or
   where no account of the agent has room.
+- A plugin whose performed step creates something (a preview deployment, say) can now name it with its answer, by a schema its
+  manifest's `resources` declares. Daoris keeps what it named with the work. Once the work ends, it asks the plugin to remove each
+  temporary one through `work/cleanup`, and a result stays. The same request and key are sent again until the plugin answers. Something
+  made by an attempt the work had already moved past is asked for at once. For a branch's work, `daoris-driver work state` names each one
+  still waiting, and `--entries` lists them all with what became of them. Its cleanup stays pending while one is still owed or an
+  attempt's outcome is unsettled. A removal that keeps failing is said as
+  blocked after seven days, with the plugin's words.
+- A quest published with no ask can now be given its own kind of task and workflow before it starts, with `daoris-driver quest
+  workflow <id> --kind <kind>` and/or `--workflow <id>|current` (`--clear` takes it off); the latest stands, and its work follows it
+  from its first start, as an ask's choice is followed. A quest's later steps follow it too, unless one has its own. Only you set it,
+  and a quest an ask published still follows its ask's choice. Every machine of a shared workspace, and its deployment, need this
+  version before one is made: an older one refuses a quest that carries it.
 - A workflow whose work you reopened, once its agent makes it ready again, now says that its next step waits for you to go on with
   it on the new work or abandon it, with a button to that step's page. Before, it said the work waited for your done, which that
   workflow does not take. In English and 中文.

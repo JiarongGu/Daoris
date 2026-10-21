@@ -140,6 +140,31 @@ public sealed class WorkflowRunBindingTests : IDisposable
         Assert.Null(WorkflowRunBindings.TaskOf(null));
     }
 
+    /// <summary>
+    /// WORKFLOW1e2: a quest no ask published takes its own latest choice, else the nearest of its chain above it with any; the nearest
+    /// with any decides, so a clear there is none, and a parent the quests do not hold ends the walk.
+    /// </summary>
+    [Fact]
+    public void A_quests_own_latest_choice_is_the_tasks_else_its_nearest_parents()
+    {
+        var at = DateTimeOffset.UnixEpoch;
+        QuestView Quest(string id, string? parent, params AskWorkflowChoiceView[] choices) =>
+            new(id, "daoris", "web-app", "t", "b", "Open") { Parent = parent, WorkflowChoices = choices };
+        var root = Quest("a1", null, new AskWorkflowChoiceView("docs", null, at), new AskWorkflowChoiceView("docs", "hotfix", at));
+        var middle = Quest("b2", "a1");
+        var leaf = Quest("c3", "b2");
+        var own = Quest("d4", "a1", new AskWorkflowChoiceView(null, "current", at));
+        var cleared = Quest("e5", "a1", new AskWorkflowChoiceView(null, null, at));
+        IReadOnlyList<QuestView> every = [root, middle, leaf, own, cleared];
+
+        Assert.Equal(new WorkflowTaskChoice("docs", "hotfix"), WorkflowRunBindings.TaskOf(root, every));
+        Assert.Equal(new WorkflowTaskChoice("docs", "hotfix"), WorkflowRunBindings.TaskOf(leaf, every));
+        Assert.Equal(new WorkflowTaskChoice(null, "current"), WorkflowRunBindings.TaskOf(own, every));
+        Assert.Null(WorkflowRunBindings.TaskOf(cleared, every));
+        Assert.Null(WorkflowRunBindings.TaskOf(leaf, [leaf]));
+        Assert.Null(WorkflowRunBindings.TaskOf(middle, null));
+    }
+
     [Fact]
     public void A_run_is_named_by_its_chain_s_first_quest_in_the_repository()
     {

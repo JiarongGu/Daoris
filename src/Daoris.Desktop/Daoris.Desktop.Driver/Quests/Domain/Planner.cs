@@ -24,6 +24,12 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
     /// <summary>The quest whose close published this one, when it is a step of a chain.</summary>
     public string? Parent { get; init; }
 
+    /// <summary>
+    /// The person's kind and workflow choices on a quest no ask published, made on its page before it started (WORKFLOW1e2, the
+    /// workflow design §4.1 row 1), oldest first, the latest standing; empty for none, and from a host before them.
+    /// </summary>
+    public IReadOnlyList<AskWorkflowChoiceView> WorkflowChoices { get; init; } = [];
+
     /// <summary>The machine that holds the quest, as the list answers it (SYNCMERGE1b1); null where none is named.</summary>
     public string? Holder { get; init; }
 

@@ -229,6 +229,13 @@ public sealed record Quest(
     public QuestReopen? Reopened { get; init; }
 
     /// <summary>
+    /// The person's kind and workflow choices on it before it started (WORKFLOW1e2, the workflow design §4.1 row 1), oldest first, each
+    /// with when; the latest stands, and one naming neither is a clear. Empty for a quest none was made on, which is every quest from
+    /// before it and every quest an ask published, whose ask's choice is the task's.
+    /// </summary>
+    public IReadOnlyList<QuestWorkflowChoice> WorkflowChoices { get; init; } = [];
+
+    /// <summary>
     /// Whether its result is judged (FABRIC-CLOSE1a, §E5): closed done, or taken with a current submission. The holds, the
     /// evidence and the review hang on it, so in a closure graph they hang on the submission exactly as they hang on a done.
     /// </summary>
@@ -974,7 +981,8 @@ public sealed class QuestStore
                   submission  TEXT NULL,
                   grew_from   TEXT NULL,
                   source_reopened TEXT NULL,
-                  reopened    TEXT NULL
+                  reopened    TEXT NULL,
+                  workflow_choices TEXT NOT NULL DEFAULT '[]'
                 );
                 CREATE INDEX IF NOT EXISTS quests_receiver ON quests (receiver, status);
                 """;
@@ -1029,6 +1037,9 @@ public sealed class QuestStore
             // A quest's own reopen no later submission answered (FABRIC-CLOSE1c4); a row from before keeps none, and the next replay
             // that writes it reads the log.
             ("quests", "reopened", "reopened TEXT NULL"),
+            // The person's workflow choices on a quest before it started (WORKFLOW1e2); no build before it made one, so no row from
+            // before needs its log read again.
+            ("quests", "workflow_choices", "workflow_choices TEXT NOT NULL DEFAULT '[]'"),
             ("quest_log", "remote", "remote INTEGER NULL"),
             // A bind named for a take, owned (FABRIC-CLOSE1o): CLOSE1l's rows named only the quest. `CREATE TABLE IF NOT EXISTS`
             // upgrades nothing, so the columns are added here, on a local store and a shared one alike. FABRIC-CLOSE1w keeps them for
@@ -1320,7 +1331,8 @@ public sealed class QuestStore
         SqliteTransaction transaction, CancellationToken ct, QuestOperationRef? dismisses = null,
         IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false, QuestEvidenceVerdict? evidence = null,
         QuestSetUp? setUp = null, QuestReviewVerdict? review = null, string? noteParts = null, QuestClose? close = null,
-        QuestOperationRef? submission = null, string? session = null, QuestOperationRef? forward = null)
+        QuestOperationRef? submission = null, string? session = null, QuestOperationRef? forward = null,
+        QuestWorkflowChoice? choice = null)
     {
         await using var command = _db.Command();
         command.Transaction = transaction;
@@ -1351,9 +1363,12 @@ public sealed class QuestStore
         var by = kind == QuestOperationKind.Submitted ? session : null;
         // The take a dismissal brought forward is that dismissal's alone (SYNCMERGE1a).
         var brought = kind == QuestOperationKind.Dismissed ? forward : null;
+        // The person's workflow choice is a choice's alone (WORKFLOW1e2).
+        var chosen = kind == QuestOperationKind.Chosen ? choice : null;
         command.Parameters.AddWithValue(
             "$payload", PayloadJson(
-                note, published, attempted: null, dismisses, answers, flagged, verdict, shown, said, parts, closed, named, by, forward: brought));
+                note, published, attempted: null, dismisses, answers, flagged, verdict, shown, said, parts, closed, named, by, forward: brought,
+                choice: chosen));
         var sequence = Convert.ToInt64(await command.ExecuteScalarAsync(ct).ConfigureAwait(false));
 
         // Handed back as it will read back: a publish carries the quest as asked, open from this moment.
@@ -1372,7 +1387,8 @@ public sealed class QuestStore
             Close: closed,
             Submission: named,
             Session: by,
-            Forward: brought);
+            Forward: brought,
+            Choice: chosen);
     }
 
     /// <summary>The kinds that name a submission (FABRIC-CLOSE1c): a reopen, and a rebind.</summary>
@@ -1423,7 +1439,8 @@ public sealed class QuestStore
                 Carries(operation.Kind) ? operation.Submission : null,
                 operation.Kind == QuestOperationKind.Submitted ? operation.Session : null,
                 operation.Kind == QuestOperationKind.Conflict && operation.LostToTheReopen,
-                operation.Kind == QuestOperationKind.Dismissed ? operation.Forward : null));
+                operation.Kind == QuestOperationKind.Dismissed ? operation.Forward : null,
+                operation.Kind == QuestOperationKind.Chosen ? operation.Choice : null));
         command.Parameters.AddWithValue("$remote", (object?)number ?? DBNull.Value);
         return Convert.ToInt64(await command.ExecuteScalarAsync(ct).ConfigureAwait(false));
     }
@@ -1451,8 +1468,8 @@ public sealed class QuestStore
         await using var command = _db.Command();
         command.Transaction = transaction;
         command.CommandText = """
-            INSERT INTO quests (id, sender, receiver, title, body, status, note, note_parts, filed, updated, workspace, links, attachments, then_steps, parent, conflicts, awaits, published_by, lanes, requirements, answers, accepted, held, short_title, evidence, review, set_up_in, set_ups, verdicts, closure, submission, grew_from, source_reopened, reopened)
-            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $noteParts, $filed, $updated, $workspace, $links, $attachments, $then, $parent, $conflicts, $awaits, $publishedBy, $lanes, $requirements, $answers, $accepted, $held, $short, $evidence, $review, $setUpIn, $setUps, $verdicts, $closure, $submission, $grewFrom, $sourceReopened, $reopened)
+            INSERT INTO quests (id, sender, receiver, title, body, status, note, note_parts, filed, updated, workspace, links, attachments, then_steps, parent, conflicts, awaits, published_by, lanes, requirements, answers, accepted, held, short_title, evidence, review, set_up_in, set_ups, verdicts, closure, submission, grew_from, source_reopened, reopened, workflow_choices)
+            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $noteParts, $filed, $updated, $workspace, $links, $attachments, $then, $parent, $conflicts, $awaits, $publishedBy, $lanes, $requirements, $answers, $accepted, $held, $short, $evidence, $review, $setUpIn, $setUps, $verdicts, $closure, $submission, $grewFrom, $sourceReopened, $reopened, $workflowChoices)
             ON CONFLICT (id) DO UPDATE SET
               sender = excluded.sender, receiver = excluded.receiver, title = excluded.title, body = excluded.body,
               status = excluded.status, note = excluded.note, note_parts = excluded.note_parts, filed = excluded.filed, updated = excluded.updated,
@@ -1463,8 +1480,15 @@ public sealed class QuestStore
               held = excluded.held, short_title = excluded.short_title, evidence = excluded.evidence,
               review = excluded.review, set_up_in = excluded.set_up_in, set_ups = excluded.set_ups, verdicts = excluded.verdicts,
               closure = excluded.closure, submission = excluded.submission,
-              grew_from = excluded.grew_from, source_reopened = excluded.source_reopened, reopened = excluded.reopened
+              grew_from = excluded.grew_from, source_reopened = excluded.source_reopened, reopened = excluded.reopened,
+              workflow_choices = excluded.workflow_choices
             """;
+        command.Parameters.AddWithValue("$workflowChoices", JsonFields.Written(writer =>
+        {
+            writer.WriteStartArray();
+            foreach (var choice in quest.WorkflowChoices) WorkflowChoices.Write(writer, choice, standing: true);
+            writer.WriteEndArray();
+        }));
         command.Parameters.AddWithValue("$closure", (object?)quest.Closure ?? DBNull.Value);
         command.Parameters.AddWithValue("$grewFrom", quest.GrewFrom is { } from
             ? JsonFields.Written(writer => { writer.WriteStartObject(); WriteRefFields(writer, from); writer.WriteEndObject(); })
@@ -2466,6 +2490,34 @@ public sealed class QuestStore
             var released = quest.Held && !given.Held;
             return new QuestMove(
                 given, Moved: true, released ? await PublishNextAsync(given, now, transaction, inside).ConfigureAwait(false) : null);
+        }, ct);
+
+    /// <summary>
+    /// The person's kind and workflow on a quest before it starts (WORKFLOW1e2, the workflow design §4.1 row 1): a
+    /// <see cref="QuestOperationKind.Chosen"/> operation, judged against the replayed history inside the write, so a choice that
+    /// meets a quest already taken is no move. It releases nothing.
+    /// </summary>
+    /// <returns>The quest as it now stands and whether this call kept the choice; a null quest means no such id.</returns>
+    public Task<QuestMove> ChooseAsync(string id, QuestWorkflowChoice choice, DateTimeOffset now, CancellationToken ct = default) =>
+        InTransactionAsync(async (transaction, inside) =>
+        {
+            var history = await HistoryAsync(id, transaction, inside).ConfigureAwait(false);
+            if (QuestLog.Replay(history) is not { } quest)
+            {
+                return new QuestMove(await FindAsync(id, transaction, inside).ConfigureAwait(false), Moved: false);
+            }
+
+            var chosen = choice with { At = null };
+            if (!QuestLog.Applies(quest, new QuestOperation(id, QuestOperationKind.Chosen, Machine, 0, now, Choice: chosen)))
+            {
+                return new QuestMove(quest, Moved: false);
+            }
+
+            var operation = await AppendAsync(
+                id, QuestOperationKind.Chosen, now, note: null, published: null, transaction, inside, choice: chosen).ConfigureAwait(false);
+            var kept = QuestLog.Step(quest, operation)!;
+            await WriteCacheAsync(kept, transaction, inside).ConfigureAwait(false);
+            return new QuestMove(kept, Moved: true);
         }, ct);
 
     /// <summary>
@@ -3854,6 +3906,7 @@ public sealed class QuestStore
         GrewFrom = ReadRefColumn(reader, "grew_from"),
         SourceReopened = ReadRefColumn(reader, "source_reopened"),
         Reopened = reader.IsDBNull(reader.GetOrdinal("reopened")) ? null : ReadReopen(reader.GetString(reader.GetOrdinal("reopened"))),
+        WorkflowChoices = ReadList(reader.GetString(reader.GetOrdinal("workflow_choices")), WorkflowChoices.Judged),
     };
 
     /// <summary>A current submission as this store's own column keeps it (FABRIC-CLOSE1a; its session, FABRIC-CLOSE1c4).</summary>
@@ -3985,7 +4038,9 @@ public sealed class QuestStore
             kind == QuestOperationKind.Conflict && payload.TryGetProperty("lostToTheReopen", out var reopened)
             && reopened.ValueKind == System.Text.Json.JsonValueKind.True,
             // Absent from every dismissal before SYNCMERGE1a, and from every plain one; this store wrote a marked one whole.
-            kind == QuestOperationKind.Dismissed && payload.TryGetProperty("forward", out var forward) ? ReadRef(forward) : null);
+            kind == QuestOperationKind.Dismissed && payload.TryGetProperty("forward", out var forward) ? ReadRef(forward) : null,
+            // A workflow choice (WORKFLOW1e2), written only after the exchange judged it.
+            kind == QuestOperationKind.Chosen && payload.TryGetProperty("choice", out var choice) ? WorkflowChoices.Judged(choice) : null);
     }
 
     /// <summary>A close's provenance (FABRIC-CLOSE1a), or null where it is not whole: a key and a token, both strings.</summary>
@@ -4017,7 +4072,8 @@ public sealed class QuestStore
         string? note, Quest? published, QuestStatus? attempted, QuestOperationRef? dismisses = null,
         IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false, QuestEvidenceVerdict? evidence = null,
         QuestSetUp? setUp = null, QuestReviewVerdict? review = null, string? noteParts = null, QuestClose? close = null,
-        QuestOperationRef? submission = null, string? session = null, bool lostToTheReopen = false, QuestOperationRef? forward = null) =>
+        QuestOperationRef? submission = null, string? session = null, bool lostToTheReopen = false, QuestOperationRef? forward = null,
+        QuestWorkflowChoice? choice = null) =>
         JsonFields.Written(writer =>
     {
         if (dismisses is not null)
@@ -4133,6 +4189,13 @@ public sealed class QuestStore
 
         // Only on a submission a session said (FABRIC-CLOSE1c4), for the lanes' reason: every other operation reads as it did.
         if (session is not null) writer.WriteString("session", session);
+
+        // Only on a workflow choice (WORKFLOW1e2), for the evidence's reason: its when is the operation's own.
+        if (choice is not null)
+        {
+            writer.WritePropertyName("choice");
+            WorkflowChoices.Write(writer, choice);
+        }
 
         writer.WriteEndObject();
     });
