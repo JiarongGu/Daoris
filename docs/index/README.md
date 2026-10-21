@@ -261,7 +261,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-01-plugin-distribution-design.md` | 64 | 910 |
 | `docs/2026-10-01-plugins-screen-design.md` | 66 | 925 |
 | `docs/2026-10-01-self-development-design.md` | 50 | 651 |
-| `docs/2026-10-01-tools-design.md` | 60 | 856 |
+| `docs/2026-10-01-tools-design.md` | 61 | 857 |
 | `docs/2026-10-01-workspace-setup-design.md` | 58 | 744 |
 | `docs/2026-10-02-account-use-design.md` | 87 | 983 |
 | `docs/2026-10-02-knowledge-design-review.md` | 43 | 542 |
