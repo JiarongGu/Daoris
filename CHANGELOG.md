@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- A quest whose workflow closes it now says on its own page, under *Close*, when you closed it done before the workflow's end and
+  which steps that stopped, or when its close was found closed only in part: which quest was lost to another machine's take, and
+  that its close waits again, with its stop offered in *What needs you*. In English and 中文.
 - Daoris now keeps a free-space floor: when a disk it writes to falls below it, Daoris frees early what it can make again (the
   package folders of trees set aside, downloaded versions nothing uses unless you keep them until you remove them, and its browser's
   cache once while it is closed) and, if that is not enough, says so in *What needs you* with how much it freed and what *Free up

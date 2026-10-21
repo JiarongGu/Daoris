@@ -4,7 +4,9 @@ import { cleanup, render as rtlRender, screen, within } from '@testing-library/r
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../locales/i18n';
-import { REOPENED, SEALED, SOURCE_REOPENED, SUBMITTED, TAKEN, WITHDRAWN } from './fixtures';
+import {
+  CLOSED_EARLY, CLOSED_EARLY_ENDS, PART_CLOSED, PART_CLOSED_ENDS, REOPENED, SEALED, SOURCE_REOPENED, SUBMITTED, TAKEN, WITHDRAWN,
+} from './fixtures';
 import { QuestPage } from './QuestPage';
 
 // FABRIC-CLOSE1d and CLOSE1c3 (the fabric events design §E5; D173's CLOSE1a, CLOSE1c and WORKFLOW2d notes; D156): a closure
@@ -172,5 +174,51 @@ describe('a step its source’s reopen holds', () => {
     const reopened = screen.getByRole('region', { name: '其来源已重新打开' });
     expect(within(reopened).getByRole('button', { name: '在新的工作上继续' })).toBeInTheDocument();
     expect(within(reopened).getByRole('button', { name: '放弃…' })).toBeInTheDocument();
+  });
+});
+
+// FABRIC-CLOSE1j2 (§E5; D173's CLOSE1j and CLOSE1j2 notes): a closure graph's end, which `WORK_STATE` answers on the quest's own unit
+// (`quest:<id>`) and no milestone on the page carries, is said among the facts of that quest's page, in the milestone's words: closed by
+// you before its end, naming the nodes it stopped; or partially closed, naming the quest lost and why, its close node's stop offered in
+// the danger ink while What needs you holds its press.
+describe('its closure graph’s end on its page', () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  const closeFact = (label: string) => screen.getByText(label, { selector: 'dt' }).nextElementSibling as HTMLElement;
+
+  it('says closed by you before its end, naming the nodes it stopped, in English and in 中文', async () => {
+    page({ quest: CLOSED_EARLY, ends: CLOSED_EARLY_ENDS });
+    expect(closeFact('Close')).toHaveTextContent('Closed by you before its end, so nothing more of it runs: stopped qa, close.');
+    cleanup();
+
+    await i18n.changeLanguage('zh');
+    page({ quest: CLOSED_EARLY, ends: CLOSED_EARLY_ENDS });
+    expect(closeFact('关闭')).toHaveTextContent('在结束前已由你关闭，它不会再继续：已停止 qa, close。');
+  });
+
+  it('says partially closed, naming the quest lost, and offers its close node’s stop in the danger ink, in English and in 中文', async () => {
+    page({ quest: PART_CLOSED, ends: PART_CLOSED_ENDS });
+    const fact = closeFact('Close');
+    expect(fact).toHaveTextContent(
+      'Partially closed: #se0se0 is no longer done, since its take was lost to another machine, which holds its work now.');
+    // As on the work's foot: the whole end in the danger ink while its stop is offered, and no longer once the person has said it.
+    expect(within(fact).getByText(/^Partially closed/)).toHaveClass('text-ink-danger');
+    expect(within(fact).getByText(/^Its close close waits again, and would close #se0se0 over that take/)).toHaveClass('text-ink-danger');
+    cleanup();
+
+    await i18n.changeLanguage('zh');
+    page({ quest: PART_CLOSED, ends: [{ ...PART_CLOSED_ENDS[0]!, resolution: 'stop', words: [] }] });
+    const zh = closeFact('关闭');
+    expect(zh).toHaveTextContent('部分关闭：#se0se0 已不再是已完成，因为它的接下输给了另一台机器，那里现在持有它的工作。');
+    expect(within(zh).getByText('你停止 close 的答复已记下，下一次查看时生效。')).not.toHaveClass('text-ink-danger');
+  });
+
+  it('says nothing where its graph has no end to tell, as on every quest no closure graph holds', () => {
+    page({ quest: SEALED, ends: [] });
+    expect(screen.queryByText('Close', { selector: 'dt' })).toBeNull();
+    cleanup();
+
+    page({ quest: TAKEN });
+    expect(screen.queryByText('Close', { selector: 'dt' })).toBeNull();
   });
 });

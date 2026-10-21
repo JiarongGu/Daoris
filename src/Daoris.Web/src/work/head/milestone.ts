@@ -152,6 +152,9 @@ export type WorkState = {
   ends?: GraphEnd[];
 };
 
+/** A quest's unit, as the driver names it (`QuestUnits.IdOf`): what its closure graph's ends name (FABRIC-CLOSE1j2). */
+export const questUnit = (quest: string): string => `quest:${quest}`;
+
 /** Whether a closure graph's end offers the person the stop of its close node now (FABRIC-CLOSE1j): offered, and no word of theirs waiting. */
 export function endOffersStop(end: GraphEnd): boolean {
   return end.kind === 'partially-closed' && !end.resolution && (end.words ?? []).includes('stop') && typeof end.attempt === 'number';
@@ -274,7 +277,8 @@ export function unitOfBranch(units: readonly MilestoneUnit[], repository: string
 /**
  * The units a name picks, as the driver's `WorkInventories.Named` does (PUSH1c2b): a unit's id or session in any case, a branch exact,
  * a branch equal to `daoris/` and the name, or any session or landing branch entry whose resource is the name. With none named, the
- * whole; with one, no recovery (the route answers none for a unit) and only the attempts held of the units picked.
+ * whole; with one, no recovery (the route answers none for a unit), only the attempts held of the units picked, and the closure
+ * graphs' ends of those units or of the unit the name is (FABRIC-CLOSE1j2).
  */
 export function workOf(all: WorkState, unit: string | null): WorkState {
   if (!unit) return all;
@@ -283,10 +287,12 @@ export function workOf(all: WorkState, unit: string | null): WorkState {
     || each.entries.some((entry) => (entry.kind === 'landing-branch' || entry.kind === 'session-branch') && entry.resource === unit));
   const ids = new Set(units.map((each) => each.unit));
   // FABRIC-PERFORM1j: a record that does not read, by the unit it names; one naming none the route picks by its file's key alone.
+  // FABRIC-CLOSE1j2: a closure graph's end by the unit it names too, as the route's `end.Unit == picked`: a quest's (`quest:<id>`),
+  // which no unit here carries, is what its page asks for.
   return {
     units, recovery: [], unread: all.unread, held: all.held.filter((each) => ids.has(each.unit)),
     unreadable: all.unreadable.filter((each) => !!each.unit && (ids.has(each.unit) || same(each.unit))),
-    ends: (all.ends ?? []).filter((each) => ids.has(each.unit)),
+    ends: (all.ends ?? []).filter((each) => ids.has(each.unit) || each.unit === unit),
   };
 }
 

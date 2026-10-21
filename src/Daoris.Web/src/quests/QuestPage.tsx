@@ -15,6 +15,7 @@ import { placedFact } from '../work/rail/SessionRow';
 import { lastAbandon, pauseAsk, type WorkDoor, workOffers, type WorkPlan, type WorkTarget } from '../work/pausing/pausing';
 import { ClearAsk } from '../work/history/ClearAsk';
 import { DetailsFold } from '../work/head/DetailsFold';
+import { endOffersStop, endSentences, type GraphEnd } from '../work/head/milestone';
 import { clearOffered, type HistoryDoor, type HistoryTarget } from '../work/history/history';
 import { questFacts } from '../work/head/headFacts';
 import { HowItCameToBe, type TraceDoor } from '../work/head/HowItCameToBe';
@@ -141,13 +142,22 @@ function Fact({ name, children }: { name: string; children: ReactNode }) {
  *   D156): *Reopen…* asks once with the step it publishes named, and sends the submission it showed. A step its source's reopen
  *   holds says so in its own words, offering *Go on with it* once the source is ready again and *Abandon…*, never the yes. A quest
  *   no closure graph holds, which is every quest on an install that binds none, reads as before.
+ * - **Its closure graph's end is one of its facts** (FABRIC-CLOSE1j2, after CLOSE1j): *Close*, in the milestone's words, where its
+ *   unit's record says the person's own done ended it before its end, naming the nodes it stopped, or that it closed only in part,
+ *   naming the quest lost, its close node's stop offered in the danger ink. That stop is What needs you's press, as on a work's foot.
  */
 export function QuestPage({
   quest, lanes, question, sitting, hold, chain = [], session,
   busy = false, retrying = false, trusting = false, granting = false, dismissing = false, forwarding = false, accepting = false,
   onRespond, onDelete, onDismiss, onForward, onRetry, onTrusting, onGrant, onOpenQuest, onAttend, onOpenAsk, onAccept, work, history, trace,
-  nameOf, review, workflow, grouping, reopen, goOn, moves,
+  nameOf, review, workflow, grouping, reopen, goOn, moves, ends = [],
 }: {
+  /**
+   * Its closure graph's ends (FABRIC-CLOSE1j2, the fabric events design §E5), which this machine's driver reads from its unit's record
+   * (`WORK_STATE`'s `ends` of `quest:<id>`): said among its facts. Absent in a browser, which has no driver, and on a quest no closure
+   * graph ended early or in part.
+   */
+  ends?: GraphEnd[];
   /**
    * Its flowchart's fold and its moves (FLOWCHART1a2, D186): the page's organism holds both, so the moves are read only once the
    * person opens it. Absent, the section holds its own fold and draws the statuses alone.
@@ -753,6 +763,15 @@ export function QuestPage({
             {quest.reopened.session && (
               <span className="mt-1.5 block">{t('quests.detail.reopenedTold', { session: quest.reopened.session })}</span>
             )}
+          </Fact>
+        )}
+        {ends.length > 0 && (
+          /* Its closure graph's end (FABRIC-CLOSE1j2): no milestone carries a quest's unit, so its page says what the work's foot says
+             of one, in the same words; a stop offered wears the danger ink, and its press is What needs you's (CLOSE1j's choice 5). */
+          <Fact name={t('work.milestone.closed.label')}>
+            {ends.flatMap((end, index) => endSentences(t, end).map((said, part) => (
+              <span key={`${end.kind}-${end.at}-${index}-${part}`} className={endOffersStop(end) ? 'block text-ink-danger' : 'block'}>{said}</span>
+            )))}
           </Fact>
         )}
         {abandoned && (
