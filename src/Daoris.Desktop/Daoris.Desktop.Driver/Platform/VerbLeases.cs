@@ -19,7 +19,8 @@ namespace Daoris.Driver;
 /// <item><b>A long verb</b> (PUSH1f2c, the alone-path design §1.4): <c>tool download</c>, <c>update</c> and <c>use … managed</c> hold
 /// nothing while they fetch, and take the lease themselves to publish, waited for; <c>agent key</c> holds nothing while the key is
 /// typed and takes it to write the key's account, and <c>agent install</c> none at all, its installer writing the machine (PUSH1f2e5); <c>agent login</c> holds nothing while the
-/// agent's sign-in runs and takes it to publish the sign-in's end (PUSH1f2e6).</item>
+/// agent's sign-in runs and takes it to publish the sign-in's end (PUSH1f2e6); <c>agent pin</c> and a pinned <c>update</c> hold nothing while a
+/// release downloads or npm installs and take it to publish the pin, and an unpinned <c>update</c> none at all (PUSH1f2e).</item>
 /// <item><b>The service's own doors</b>, whose one writer is the service already (§7.1): <c>quest delete</c>, <c>accept</c>,
 /// <c>done</c>, <c>check</c> and <c>review</c>, <c>answer</c>, an ask's words, publish, close and delete, and <c>ask channel</c>.</item>
 /// <item><b>A conversation in the terminal</b> (<c>chat</c>, <c>help resume</c>, <c>sessions start-from</c> and

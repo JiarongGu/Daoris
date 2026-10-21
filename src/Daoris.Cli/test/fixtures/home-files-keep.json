@@ -250,12 +250,14 @@
     {
       "name": "harnesses: read and written with no edit, the same bytes",
       "file": "harnesses.json",
+      "only": "driver",
       "edit": { "op": "none" },
       "changes": []
     },
     {
       "name": "harnesses: a default set changes that key alone, the section's own unknown key and the file's kept as written",
       "file": "harnesses.json",
+      "only": "driver",
       "edit": { "op": "harness-default", "agent": "codex", "account": "account-3" },
       "changes": [
         { "from": ["    \"claude-code\": \"account-1\","], "to": ["    \"claude-code\": \"account-1\",", "    \"codex\": \"account-3\","] }
@@ -264,6 +266,7 @@
     {
       "name": "harnesses: a workspace's default set keeps the workspace's own unknown key",
       "file": "harnesses.json",
+      "only": "driver",
       "edit": { "op": "harness-default", "agent": "codex", "account": "account-4", "workspace": "work" },
       "changes": [
         { "from": ["      \"claude-code\": \"account-2\","], "to": ["      \"claude-code\": \"account-2\",", "      \"codex\": \"account-4\","] }
@@ -272,6 +275,7 @@
     {
       "name": "harnesses: a setting changed changes that setting alone, the entry's unknown setting kept where it is",
       "file": "harnesses.json",
+      "only": "driver",
       "edit": { "op": "harness-use", "agent": "claude-code", "use": "goal" },
       "changes": [
         { "from": ["      \"use\": \"order\","], "to": ["      \"use\": \"goal\","] }
@@ -280,6 +284,7 @@
     {
       "name": "harnesses: an old name in an entry no edit touched is written as the new at a save (D165 §6)",
       "file": "harnesses.json",
+      "only": "driver",
       "start": [
         { "from": ["      \"switch\": \"off\","], "to": ["      \"early\": false,"] }
       ],
@@ -291,6 +296,7 @@
     {
       "name": "harnesses: a pin set goes after the one before it",
       "file": "harnesses.json",
+      "only": "driver",
       "edit": { "op": "harness-pin", "agent": "codex", "version": "0.50.0" },
       "changes": [
         { "from": ["    \"claude-code\": \"2.1.0\""], "to": ["    \"claude-code\": \"2.1.0\",", "    \"codex\": \"0.50.0\""] }
@@ -299,6 +305,7 @@
     {
       "name": "harnesses: an order set goes after the one before it",
       "file": "harnesses.json",
+      "only": "driver",
       "edit": { "op": "harness-order", "agent": "codex", "order": ["account-1"] },
       "changes": [
         { "from": ["      \"account-2\"", "    ]"], "to": ["      \"account-2\"", "    ],", "    \"codex\": [", "      \"account-1\"", "    ]"] }
@@ -307,6 +314,7 @@
     {
       "name": "harnesses: a file in CRLF stays in CRLF",
       "file": "harnesses.json",
+      "only": "driver",
       "crlf": true,
       "edit": { "op": "harness-default", "agent": "codex", "account": "account-3" },
       "changes": [
@@ -316,6 +324,7 @@
     {
       "name": "harnesses: another writer's change between the read and the write stays",
       "file": "harnesses.json",
+      "only": "driver",
       "between": [
         { "from": ["    \"kept\": true,"], "to": ["    \"kept\": false,"] }
       ],
@@ -328,6 +337,7 @@
     {
       "name": "harnesses: the workspaces another writer made a string since refuse a workspace's edit, naming them",
       "file": "harnesses.json",
+      "only": "driver",
       "between": [
         { "from": ["  \"workspaces\": {", "    \"work\": {", "      \"claude-code\": \"account-2\",", "      \"since\": 9007199254740993", "    }", "  },"], "to": ["  \"workspaces\": \"none\","] }
       ],
@@ -340,6 +350,7 @@
     {
       "name": "harnesses: a key written twice in one object refuses the edit, naming it",
       "file": "harnesses.json",
+      "only": "driver",
       "start": [
         { "from": ["    \"note\": 7"], "to": ["    \"note\": 7,", "    \"note\": 8"] }
       ],

@@ -7,8 +7,6 @@ import {
   commandThroughTools, handTools, installBin, readTools, resolveCommand,
 } from '../../src/tools/tools.ts';
 import { homeEntry } from '../../src/platform/home.ts';
-import { probe, readHarnessSettings } from '../../src/agents/toolchain.ts';
-import type { Toolchain } from '../../src/agents/toolchain.ts';
 import { driverRows as csharpRows, driverTestFile } from '../_csharp.ts';
 import { captureError, makeFixture } from '../_fixture.ts';
 
@@ -317,27 +315,8 @@ test('a pin’s npm is the one the tools resolve, and one that cannot run is ref
 
 // `agent install` on the system's npm is the driver program's since PUSH1f2e5: `ToolsChildrenTests` holds `HarnessActions.OnTheSystem`.
 
-// ——— A child of the toolchain, started for real: a probe sees the tools' PATH.
-
-test('a harness probe is started on the tools’ PATH, as a session of the desktop’s is', () => {
-  const at = laidOut('tools-children-probe');
-  at.write('{"tools":{"gh":{"use":"file","file":"@gh"}}}');
-  const script = join(at.root, 'says-its-path.mjs');
-  writeFileSync(script, "const key = Object.keys(process.env).find((k) => k.toUpperCase() === 'PATH');\nconsole.log(process.env[key]);\n");
-  const toolchain: Toolchain = { binary: [process.execPath, script], version: [], profileVariable: 'FAKE_HOME' };
-
-  const saved = process.env.DAORIS_HOME;
-  process.env.DAORIS_HOME = at.home;
-  try {
-    const report = probe('fake', toolchain, at.root, readHarnessSettings(join(at.root, 'harnesses.json')));
-    assert.ok(report.present, report.problem ?? '');
-    assert.ok(spelled(report.version)!.startsWith(spelled(dirname(at.named('gh')) + delimiter)!), `the probe said: ${report.version}`);
-  } finally {
-    if (saved === undefined) delete process.env.DAORIS_HOME;
-    else process.env.DAORIS_HOME = saved;
-    at.fx.cleanup();
-  }
-});
+// A child of the toolchain started for real, an agent's probe on the tools' PATH, left with `daoris agent`'s TypeScript (PUSH1f2e):
+// `EveryChildIsHandedTheToolsTests` holds the driver's.
 
 // ——— The twin, held: the driver's tables are these tables, row for row and in this order.
 

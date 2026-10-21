@@ -3,10 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { withRotation, withUse } from '../src/accounts/rotation.ts';
-import { readHarnessSettings, withDefault, writeHarnessSettings } from '../src/agents/toolchain.ts';
 import { setBrowser, setExtensions, setLinks } from '../src/browser/browser.ts';
-import { homeEntry } from '../src/platform/home.ts';
 import { disablePlugin, enablePlugin } from '../src/plugins/plugins.ts';
 import { readRemoteFile, readRemotes, withoutRemote, withRemote, writeRemoteFile } from '../src/service/remotemap.ts';
 import { makeFixture } from './_fixture.ts';
@@ -56,22 +53,8 @@ function applied(home: string, row: Row, between: () => void): void {
     else throw new Error(`the table names an edit this test does not make: ${edit.op}`);
     return;
   }
-  // `keys.json`'s writer is the driver program's since PUSH1f2e5 (`daoris-driver agent key`): its rows are `only: driver`.
-  if (row.file === 'harnesses.json') {
-    const path = homeEntry(home, 'harnesses');
-    const read = readHarnessSettings(path);
-    between();
-    const workspace = edit.workspace ?? null;
-    const edited = edit.op === 'none' ? read
-      : edit.op === 'harness-default' ? withDefault(read, edit.agent!, edit.account!, workspace)
-        : edit.op === 'harness-use' ? withUse(read, edit.agent!, { use: edit.use as 'goal' }, workspace)
-          // As `daoris agent pin` sets a machine's pin.
-          : edit.op === 'harness-pin' ? { ...read, versions: { ...read.versions, [edit.agent!]: edit.version! } }
-            : edit.op === 'harness-order' ? withRotation(read, edit.agent!, edit.order!, workspace)
-              : assert.fail(`the table names an edit this test does not make: ${edit.op}`);
-    writeHarnessSettings(path, edited);
-    return;
-  }
+  // `keys.json`'s writer is the driver program's since PUSH1f2e5 (`daoris-driver agent key`), and `harnesses.json`'s since PUSH1f2e
+  // (`daoris-driver agent …`, the family's TypeScript gone): their rows are `only: driver`.
   if (row.file === 'remotes.json') {
     const path = join(home, row.file);
     const read = readRemoteFile(path);

@@ -770,30 +770,6 @@ test('the tools file reaches neither the toolchain nor the service client', () =
 });
 
 /**
- * `agent pin` DOES reach a network since AGT2b — a maker's release channel — and so does `agent update`
- * on a pinned agent since USE1a, asking the channel for its newest release; the usage text says they are
- * the verbs of their class that do. They reach it the way `connect` reaches a service:
- * through `service.ts`, which the DISPATCHER hands in. So the toolchain and everything that judges a
- * download (the channel, the signature, the archive) import no network module, and the one place the
- * two meet is a line a reviewer can read: the `agent` row of the dispatcher's table, `cli/agent.ts`
- * since MOD7.
- */
-test('agent pin reaches a release channel only through the fetcher the dispatcher hands in', () => {
-  for (const entry of ['channels.ts', 'openpgp.ts', 'tarball.ts'].map((name) => cliSource(name))) {
-    const seen = reachableFrom(entry);
-    assert.equal(seen.has(SERVICE_CLIENT), false, `${entry} reaches the service client through: ${[...seen].sort().join(', ')}`);
-    assert.equal(seen.has(SPAWNS), false, `${entry} reaches the harness toolchain through: ${[...seen].sort().join(', ')}`);
-  }
-
-  const row = readText(join(cliRoot, 'src', 'cli', 'agent.ts'));
-  assert.match(row, /import \{ releaseFetcher \} from '\.\.\/(?:[\w-]+\/)*service\.ts';/);
-  // PUSH1f2d: the verbs on the allow-list go to the driver's program first, handed nothing of the service's; since PUSH1f2e3 no verb
-  // left here takes a route, so none is handed a door. The way a browser sign-in's port is tried went with `login` (PUSH1f2e6), which
-  // the driver program tries itself.
-  assert.match(row, /run: \(args\) => handed\(args\.argv\)\s+\? \(args\.driverProgram \?\? \(\(family, words\) => runDriverProgram\(family, words\)\)\)\('agent', args\.argv\)\s+: commandHarness\(args, releaseFetcher\(\), \['npm'\]\),/);
-});
-
-/**
  * `daoris tool` is Daoris's driver program's since PUSH1f2c (D194 point 1): its row hands the family and its words to the seam, and
  * the program reaches a tool's maker and a resource location itself, every hop held to the address rule (`ToolInstall`). The CLI's
  * row reaches no fetcher and no door of its own.
@@ -808,9 +784,10 @@ test('tool hands its words to the driver\'s program, and the rows that reach the
   const reaching = COMMANDS.map((command) => `cli/${command.name}.ts`).filter((entry) => reachableFrom(entry).has(SERVICE_CLIENT));
   // BRAINSTORM1a3: `brainstorm` reaches this machine's own service, by the local host's brainstorm door (D176 point 8). RPC1f:
   // `plugin` reaches the running Daoris's pipe, by the door its row hands in (D171 point 3, the terminal RPC design §9). PUSH1f2b
-  // and PUSH1f2c: `driver` and `tool` reach none, each family the driver program's, which reads the service and the pipe itself.
+  // and PUSH1f2c: `driver` and `tool` reach none, each family the driver program's, which reads the service and the pipe itself; and
+  // PUSH1f2e: `agent` neither, a pin's download the program's own.
   assert.deepEqual(reaching.sort(), [
-    'cli/agent.ts', 'cli/brainstorm.ts', 'cli/connect.ts', 'cli/import.ts', 'cli/plugin.ts', 'cli/retire.ts', 'cli/wire.ts',
+    'cli/brainstorm.ts', 'cli/connect.ts', 'cli/import.ts', 'cli/plugin.ts', 'cli/retire.ts', 'cli/wire.ts',
   ]);
 });
 
@@ -824,6 +801,17 @@ test('the driver row hands every word to the driver\'s program and reads nothing
   const imports = [...row.matchAll(/^import .* from '([^']+)';$/gm)].map(([, from]) => from);
   assert.deepEqual(imports, ['../platform/types.ts', '../agents/toolchain.ts']);
   assert.match(row, /run: \(args\) => \(args\.driverProgram \?\? \(\(family, words\) => runDriverProgram\(family, words\)\)\)\('driver', args\.argv\),/);
+});
+
+/**
+ * `daoris agent` is Daoris's driver program's whole since PUSH1f2e (D194 point 1, the alone-path design §5): its row hands the family
+ * and every word to the seam and imports nothing else, as `daoris driver`'s does, so no verb of it is the CLI's to read, write or fetch.
+ */
+test('the agent row hands every word to the driver\'s program and reads nothing itself', () => {
+  const row = readText(join(cliRoot, 'src', 'cli', 'agent.ts'));
+  const imports = [...row.matchAll(/^import .* from '([^']+)';$/gm)].map(([, from]) => from);
+  assert.deepEqual(imports, ['../platform/types.ts', '../agents/toolchain.ts']);
+  assert.match(row, /run: \(args\) => \(args\.driverProgram \?\? \(\(family, words\) => runDriverProgram\(family, words\)\)\)\('agent', args\.argv\),/);
 });
 
 /**

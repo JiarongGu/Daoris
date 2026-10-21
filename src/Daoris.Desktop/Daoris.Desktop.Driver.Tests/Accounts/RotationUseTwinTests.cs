@@ -10,8 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// (<c>use</c>: <c>goal</c> or <c>order</c>), <i>keep for conversations</i> (<c>keep</c>) and when to switch
 /// (<c>switch</c>: <c>smart</c>, <c>curve</c> or <c>off</c>; and <c>curve</c>, the person's own points per window), read on
 /// from the old names <c>early</c> and <c>near</c> — and the rule binding a scope's default and kept account to its list.
-/// The driver's half of a TWIN with the CLI's <c>rotation.ts</c>: 🔴 both read the table in the CLI's
-/// <c>test/fixtures/rotation-use.json</c>, row for row, as <c>rotation-use.test.ts</c> does.
+/// 🔴 Held, row for row, to the table <c>fixtures/rotation-use.json</c> among the driver's tests, which the page's curve rules read
+/// too; the CLI's <c>rotation.ts</c>, its twin, left with <c>daoris agent</c>'s TypeScript (PUSH1f2e), and the table moved here.
 /// </summary>
 /// <remarks>
 /// <para>A scope's settings are said in one word each, today's defaults left out, then <c>?name</c> for each value or
@@ -262,7 +262,7 @@ public sealed class RotationUseTwinTests : IDisposable
     /// <summary>One kind of the shared table's rows: a text cell as itself, null as null, and any other JSON as its text.</summary>
     private static IEnumerable<object?[]> Table(string kind)
     {
-        using var table = JsonDocument.Parse(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "test", "fixtures", "rotation-use.json")));
+        using var table = JsonDocument.Parse(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "rotation-use.json")));
         return [.. table.RootElement.GetProperty(kind).EnumerateArray()
             .Select(row => row.EnumerateArray().Select(cell => cell.ValueKind switch
             {

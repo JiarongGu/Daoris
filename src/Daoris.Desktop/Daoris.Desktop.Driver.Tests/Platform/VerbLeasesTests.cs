@@ -236,6 +236,11 @@ public sealed class VerbLeasesTests
     [InlineData("agent login codex --profile work --join aurora --device-code")]
     [InlineData("agent key claude-code")]
     [InlineData("agent key claude-code --account work")]
+    // PUSH1f2e: a pin downloads or installs holding nothing and takes the lease to publish; an unpinned update writes the machine.
+    [InlineData("agent pin claude-code 2.1.300")]
+    [InlineData("agent pin codex 0.156.1 --workspace aurora")]
+    [InlineData("agent update claude-code")]
+    [InlineData("agent update codex --workspace aurora")]
     public void A_read_or_another_writers_verb_holds_none(string words) => Assert.False(VerbLeases.Holds(words.Split(' ')), words);
 
     [Fact]

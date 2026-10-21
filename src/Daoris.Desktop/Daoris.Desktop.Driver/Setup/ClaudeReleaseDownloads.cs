@@ -61,14 +61,27 @@ public static class ClaudeReleaseDownloads
     }
 
     /// <summary>
-    /// Install one version into <paramref name="where"/>, verified end to end. Staged at
-    /// <c>&lt;where&gt;.part</c> and moved into place only once it verified, so the managed directory
-    /// holds a verified install or nothing — <see cref="HarnessSettings.ManagedBinary"/> finding one is
-    /// the proof.
+    /// Install one version into <paramref name="where"/>, verified end to end: staged under this process's name and moved into place
+    /// only once it verified (<see cref="ReleaseChannels"/>), so the managed directory holds a verified install or nothing —
+    /// <see cref="HarnessSettings.ManagedBinary"/> finding one is the proof.
     /// </summary>
     /// <returns>The executable, inside <paramref name="where"/>.</returns>
     public static async Task<string> InstallAsync(
         string where, string version, Action<string> write, CancellationToken ct,
+        HttpMessageHandler? transport = null, string? platform = null, (string Key, string Fingerprint)? trust = null)
+    {
+        var staged = await ReleaseChannels.StageAsync(
+            ClaudeReleases.Channel, where, version, write, ct, transport, platform, trust).ConfigureAwait(false);
+        return ReleaseChannels.Publish(staged, write).Exe;
+    }
+
+    /// <summary>
+    /// One version fetched and verified into <paramref name="staging"/>'s <c>package</c> folder: the manifest, its signature under the
+    /// pinned key, then the binary it vouches for. Every refusal throws before the binary is kept.
+    /// </summary>
+    /// <returns>The executable, relative to the package folder.</returns>
+    internal static async Task<string> StageAsync(
+        string staging, string version, Action<string> write, CancellationToken ct,
         HttpMessageHandler? transport = null, string? platform = null, (string Key, string Fingerprint)? trust = null)
     {
         ClaudeReleases.RefuseVersion(version);
@@ -77,71 +90,52 @@ public static class ClaudeReleaseDownloads
         var (key, pinned) = trust ?? (ClaudeReleases.ReleaseKey, ClaudeReleases.Fingerprint);
 
         using var http = Downloads.Client(transport);
-
-        var staging = where + ".part";
-        if (Directory.Exists(staging)) Directory.Delete(staging, recursive: true);
         var into = Path.Combine(staging, "package", "bin");
         Directory.CreateDirectory(into);
 
-        try
+        var manifestUrl = $"{ClaudeReleases.Base}/{version}/manifest.json";
+        write($"fetching Claude Code {version}'s release manifest for {platform}, and its signature");
+        var manifest = await BytesAsync(http, manifestUrl, ct).ConfigureAwait(false)
+            ?? throw new DriverException(
+                $"the release bucket holds no Claude Code {version} — nothing answered at {manifestUrl}. Versions "
+                + "skip numbers; the release notes name the ones that exist.");
+        var signature = await BytesAsync(http, manifestUrl + ".sig", ct).ConfigureAwait(false)
+            ?? throw new DriverException(
+                $"Claude Code {version}'s manifest has no signature beside it, so Daoris cannot verify it and did "
+                + "not install it. Nothing was downloaded beyond the manifest.");
+
+        var verdict = OpenPgp.VerifyDetached(manifest, Encoding.UTF8.GetString(signature), key, pinned);
+        if (!verdict.Ok)
         {
-            var manifestUrl = $"{ClaudeReleases.Base}/{version}/manifest.json";
-            write($"fetching Claude Code {version}'s release manifest for {platform}, and its signature");
-            var manifest = await BytesAsync(http, manifestUrl, ct).ConfigureAwait(false)
-                ?? throw new DriverException(
-                    $"the release bucket holds no Claude Code {version} — nothing answered at {manifestUrl}. Versions "
-                    + "skip numbers; the release notes name the ones that exist.");
-            var signature = await BytesAsync(http, manifestUrl + ".sig", ct).ConfigureAwait(false)
-                ?? throw new DriverException(
-                    $"Claude Code {version}'s manifest has no signature beside it, so Daoris cannot verify it and did "
-                    + "not install it. Nothing was downloaded beyond the manifest.");
-
-            var verdict = OpenPgp.VerifyDetached(manifest, Encoding.UTF8.GetString(signature), key, pinned);
-            if (!verdict.Ok)
-            {
-                throw new DriverException(
-                    $"Claude Code {version}'s manifest did not verify: {verdict.Reason}. Nothing was installed — a "
-                    + "manifest that does not verify vouches for no binary.");
-            }
-            write($"the signature verifies: signed by the release key {OpenPgp.Spaced(verdict.Fingerprint!)}");
-
-            var (checksum, size) = ClaudeReleases.Entry(manifest, manifestUrl, version, platform, binary);
-
-            var url = $"{ClaudeReleases.Base}/{version}/{platform}/{binary}";
-            write($"downloading {url} ({size / 1024.0 / 1024.0:0.0} MB)");
-            var saved = await SaveAsync(http, url, Path.Combine(into, binary), ct).ConfigureAwait(false)
-                ?? throw new DriverException($"nothing answered at {url}, which Claude Code {version}'s signed manifest names.");
-            if (saved.Sha256 != checksum || saved.Size != size)
-            {
-                throw new DriverException(
-                    $"the binary downloaded from {url} is not the one the signed manifest names — its SHA-256 is "
-                    + $"{saved.Sha256} ({saved.Size} bytes), and the manifest says {checksum} ({size} bytes). It was "
-                    + "deleted, and nothing was installed.");
-            }
-            write($"the binary's SHA-256 matches the signed manifest: {saved.Sha256}");
-
-            if (!OperatingSystem.IsWindows() && !platform.StartsWith("win32", StringComparison.Ordinal))
-            {
-                File.SetUnixFileMode(Path.Combine(into, binary),
-                    UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute
-                    | UnixFileMode.GroupRead | UnixFileMode.GroupExecute | UnixFileMode.OtherRead | UnixFileMode.OtherExecute);
-            }
-
-            if (Directory.Exists(where))
-            {
-                // Daoris's own directory, holding nothing that runs (the caller asked ManagedBinary first).
-                write($"replacing {where}, which held nothing that runs");
-                Directory.Delete(where, recursive: true);
-            }
-            Directory.CreateDirectory(Path.GetDirectoryName(where)!);
-            // The scanner opens the executables just unpacked, and the folder cannot move until it lets go (FIX-LOG 2026-10-07).
-            AtomicFile.MoveFolder(Path.Combine(staging, "package"), where);
-            return Path.Combine(where, "bin", binary);
+            throw new DriverException(
+                $"Claude Code {version}'s manifest did not verify: {verdict.Reason}. Nothing was installed — a "
+                + "manifest that does not verify vouches for no binary.");
         }
-        finally
+        write($"the signature verifies: signed by the release key {OpenPgp.Spaced(verdict.Fingerprint!)}");
+
+        var (checksum, size) = ClaudeReleases.Entry(manifest, manifestUrl, version, platform, binary);
+
+        var url = $"{ClaudeReleases.Base}/{version}/{platform}/{binary}";
+        write($"downloading {url} ({size / 1024.0 / 1024.0:0.0} MB)");
+        var saved = await SaveAsync(http, url, Path.Combine(into, binary), ct).ConfigureAwait(false)
+            ?? throw new DriverException($"nothing answered at {url}, which Claude Code {version}'s signed manifest names.");
+        if (saved.Sha256 != checksum || saved.Size != size)
         {
-            if (Directory.Exists(staging)) Directory.Delete(staging, recursive: true);
+            throw new DriverException(
+                $"the binary downloaded from {url} is not the one the signed manifest names — its SHA-256 is "
+                + $"{saved.Sha256} ({saved.Size} bytes), and the manifest says {checksum} ({size} bytes). It was "
+                + "deleted, and nothing was installed.");
         }
+        write($"the binary's SHA-256 matches the signed manifest: {saved.Sha256}");
+
+        if (!OperatingSystem.IsWindows() && !platform.StartsWith("win32", StringComparison.Ordinal))
+        {
+            File.SetUnixFileMode(Path.Combine(into, binary),
+                UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute
+                | UnixFileMode.GroupRead | UnixFileMode.GroupExecute | UnixFileMode.OtherRead | UnixFileMode.OtherExecute);
+        }
+
+        return $"bin/{binary}";
     }
 
     private static async Task<byte[]?> BytesAsync(HttpClient http, string url, CancellationToken ct)

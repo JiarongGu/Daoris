@@ -1081,9 +1081,9 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     // ORIENT2h6: the fence table sits among the CLI's fixtures, and the driver's SelfDescription twin reads it too, and
     // since ORIENT2h6b the service's MarkdownFence twin.
     ['the fence table', ['src/Daoris.Cli/test/fixtures/fence-cases.json'], [...BASE, 'service', 'driver']],
-    // SWITCH1a: the rotation-use table sits among the CLI's fixtures, and the driver's twin reads it too; since SWITCH1d the
+    // SWITCH1a: the rotation-use table, among the driver's fixtures since PUSH1f2e, which its twin reads; since SWITCH1d the
     // page's curve rules.
-    ['the rotation-use table', ['src/Daoris.Cli/test/fixtures/rotation-use.json'], [...BASE, 'driver', 'web-unit']],
+    ['the rotation-use table', ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/rotation-use.json'], [...BASE, 'driver', 'web-unit']],
     // PUSH1f2b (D194 point 7): the driver family's shared tables moved to the driver's fixtures with their last CLI readers gone, the
     // landing sentences, which cycle governs a unit, the bytes an edit of driver.json writes, D157's versions as graphs, a named graph
     // as a version, and a graph judged when saved; the CLI's keep lock test still reads the lock rows, and verify runs it at every merge.
@@ -1099,9 +1099,9 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     // HomeFilesKeepTests reads them too; since KEEPALL1e the service's RemoteConfigKeepTests its remotes.json rows' reads, and since
     // KEEPALL1c the modules' BrowserSettingsTests browser/settings.json's.
     ['the home-files-keep table', ['src/Daoris.Cli/test/fixtures/home-files-keep.json'], [...BASE, 'service', 'driver', 'modules']],
-    // SWITCH1b-iii: the usage curve's table sits among the CLI's fixtures, and the driver's twin reads it too; since SWITCH1d the
+    // SWITCH1b-iii: the usage curve's table, among the driver's fixtures since PUSH1f2e, which its twin reads; since SWITCH1d the
     // page's twin.
-    ['the usage curve table', ['src/Daoris.Cli/test/fixtures/usage-curves.json'], [...BASE, 'driver', 'modules', 'web-unit']],
+    ['the usage curve table', ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/usage-curves.json'], [...BASE, 'driver', 'modules', 'web-unit']],
     ['release tooling', ['tools/release-rehearsal.mjs'], [...BASE, 'rehearse']],
     ['the CLI', ['src/Daoris.Cli/src/platform/args.ts'], [...BASE, 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
     // PUSH1f2a: the driver's DriverProgramWordsProcessTests runs the CLI's entry, dispatcher, driver row and seam under node.

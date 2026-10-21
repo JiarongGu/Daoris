@@ -12,9 +12,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// own, with when, so a restart starts from what was last read rather than from a probe. Nothing here starts a process.
 /// </summary>
 /// <remarks>
-/// The driver's half of a TWIN with the CLI's <c>accountreads.ts</c> (AGENTREAD1, AGENTREAD1b): both are held, row for row, to
-/// one table, the CLI's <c>test/fixtures/account-reads.json</c> (reading, keeping, forgetting), and the CLI's suite holds this
-/// class's <see cref="What_does_not_read_is_nothing_known"/> rows to it, cell for cell.
+/// Held, row for row, to one table, <c>fixtures/account-reads.json</c> (reading, keeping, forgetting; AGENTREAD1, AGENTREAD1b). The
+/// CLI's <c>accountreads.ts</c>, its twin, left with <c>daoris agent</c>'s TypeScript (PUSH1f2e), and the table moved here with it.
 /// </remarks>
 public sealed class AccountReadsTests : IDisposable
 {
@@ -250,7 +249,7 @@ public sealed class AccountReadsTests : IDisposable
     /// <summary>One kind of the shared table's rows, each its cells as the file spells them, a JSON null as null.</summary>
     private static IEnumerable<object?[]> Table(string kind)
     {
-        using var table = JsonDocument.Parse(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "test", "fixtures", "account-reads.json")));
+        using var table = JsonDocument.Parse(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "account-reads.json")));
         return [.. table.RootElement.GetProperty(kind).EnumerateArray()
             .Select(row => row.EnumerateArray().Select(cell => cell.ValueKind == JsonValueKind.Null ? null : (object?)cell.GetString()).ToArray())];
     }
