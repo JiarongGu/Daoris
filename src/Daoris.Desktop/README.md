@@ -306,7 +306,7 @@ absent; a move the account forces asks none.
 | `DAORIS.REGISTRY` | A folder picked and inspected; an existing manifest's declaration written, uncommitted, for that repository's review |
 | `DAORIS.REMOTES` | The machine's `remotes.json`, the file `daoris remote` edits: a key goes in, and only its audit prefix comes back |
 | `DAORIS.BROWSER` | Daoris's browser's two files under the home, as Settings → Browser: `favorites.json` (`ADD_FAVORITE`, `REMOVE_FAVORITE`), shown in a Daoris folder on its bookmarks bar, and `settings.json` (`SET_EXTENSIONS`: other software's Chrome extensions offered or refused; `SET_BROWSER`: Daoris's own or the person's Edge; `SET_LINKS`: whether the page's links open in the system's browser or Daoris's, BRW7). The same files `daoris browser` edits, read by `daoris-browser` at each start, and `links` by the page |
-| `DAORIS.WINDOWS` | Named secondary windows: `monitor` and `session:<id>`; and `OPEN_BROWSER`, Daoris's own browser (D78, D85): `daoris-browser` (this executable with `--daoris-browser`, CHR8) started, or its window brought forward. With a `url`, a link on the page opened there in a tab of its own (BRW7), a web page only, by the favorites' address rule. Its profile is under the home at `browser/engine`, with no bridge, and a loopback CDP port that a plugin's browser MCP attaches to. And `SET_BADGE`, the main window's taskbar count (NOTIFY1b); and `SET_TITLE`, a main window's page title, of which the frame wears the workspace after its name (MAINWINDOWS3b) |
+| `DAORIS.WINDOWS` | Named secondary windows: `monitor` and `session:<id>`; and `OPEN_BROWSER`, Daoris's own browser (D78, D85): `daoris-browser` (this executable with `--daoris-browser`, CHR8) started, or its window brought forward. With a `url`, a link on the page opened there in a tab of its own (BRW7), a web page only, by the favorites' address rule. Its profile is under the home at `browser/engine`, with no bridge, and a loopback CDP port that a plugin's browser MCP attaches to. And `SET_BADGE`, a main window's own taskbar count, by its name as `SET_TITLE` (NOTIFY1b, NOTIFY2c); and `SET_TITLE`, a main window's page title, of which the frame wears the workspace after its name (MAINWINDOWS3b), with the workspace the window holds as data for the window a notification opens (NOTIFY2c) |
 | `DAORIS.TERMINAL` | The person's own shells, for the terminal view (CONSOLE4, D96): `SHELLS` (what this machine has on the tools' PATH, `pwsh` the default, else `powershell`, then `cmd` and Git Bash beside the git the tools resolve, else the system's; D121, TOOLS5), `OPEN` {shell?, cwd?, cols?, rows?} a shell under a Windows pseudo-console (`PseudoConsole`) with `DAORIS_HOME` and the tools' `PATH` in its environment, in the folder asked for or else the home, `INPUT`, `RESIZE` and `CLOSE`, with its output as batched `TERMINAL_OUTPUT` events and `TERMINAL_EXITED` when a shell ends on its own. Each shell's job ends everything it started with its tab, and every terminal ends with the application. Nothing typed or printed reaches the machine log |
 | `DAORIS.UPDATE` | The install's update (UPDATE1, D139), held by `InstallUpdater`: `STATE` (none, waiting, draining, applying or refused; the staged build by id, version and commit; the mode that holds for it; what still runs; a refusal's code; the last swap's outcome, said once), `SET` {mode: when-idle, now, not-now}, written to `$DAORIS_HOME/update.json` as `daoris-driver update --when-idle\|--now\|--cancel` writes it (`UPDATE_NOTHING_STAGED`, `UPDATE_MODE_UNKNOWN`), and `DISMISS`. Each change reaches the page as `UPDATE_STATE`; no path is named |
 | `DAORIS.LOG` | The page's report into the machine log (LOG1b, D94): `EVENT` with `{ event, data }`, kept only as the catalogue names it (a view opened, a command run, a view moved, a message's length and file count, a proposal settled, a caught error), each field in its kind, everything else dropped. Every refusal any module answers is logged beside it by its code (`RefusalLog`, a middleware in the dispatcher). And Settings → Logs reading it back (LOG1c): `LINES` {since?, source?, event?, level?, limit?} answers the newest lines first (200, at most 1000) with the folder, how many matched, a count per level, the period's events and the lines skipped, filtered here by the reader `daoris-driver logs` uses (`MachineLogReader`); `OPEN_FOLDER` opens the home's `logs/` in the file manager, a folder the page never names |
@@ -425,13 +425,19 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
 - **The splash lifts on the page's word** (SPLASHDATA1, D56's note): the main window's page says over the kit's
   `CLOSE_SPLASH` when its first screen has its data, and the window lifts the splash then, or ten seconds after the
   page's browser is made when the page never says (`SplashLift`), writing `splash.lifted` either way.
-- **The taskbar button counts what waits on the person** (NOTIFY1b, D126's note): the main window's page tells its
-  frame Overview's *What needs you* count over `DAORIS.WINDOWS SET_BADGE`, and the window wears it as the button's
-  overlay (`TaskbarBadge`, a number on a circle drawn at run time through `ITaskbarList3`, *9+* past nine, put back on
-  each `TaskbarButtonCreated`) and in its title, `(3) Daoris (道衍)`, the taskbar's hover and Alt-Tab's label. What it
-  says is `WaitingBadge`'s, in the modules where it is tested; a secondary window's page never sends it. Each count
-  carries the order its page told it in, and the module never wears one told before the count the window wears
-  (SESSBADGE1): the page waits on no answer, so two told close together may arrive in either order.
+- **Each main window's taskbar button counts what waits on the person in its workspace** (NOTIFY1b, D126's note;
+  NOTIFY2c, D196): each main window's page tells its own frame its *What needs you* count over `DAORIS.WINDOWS
+  SET_BADGE`, another main window by its name, and that window wears it as its button's overlay (`TaskbarBadge`, a
+  number on a circle drawn at run time through `ITaskbarList3`, *9+* past nine, put back on each
+  `TaskbarButtonCreated`) and in its title, `(3) Daoris (道衍) — games`, the taskbar's hover and Alt-Tab's label. What it
+  says is `WaitingBadge`'s, and what each window wears `WaitingCount`'s, in the modules where they are tested; a utility
+  window's page never sends it. Each count carries the order its page told it in, kept per window, and the module never
+  wears one told before the count that window wears (SESSBADGE1): the page waits on no answer, so two told close
+  together may arrive in either order.
+- **A notification opens the window holding what it is about** (NOTIFY2c, D196): each main window's page tells
+  `SET_TITLE` the workspace it holds as data, and a balloon's click brings forward the main window whose workspace holds
+  its session or quest (`MainWindowScopes`, read from the sessions' and quests' slices), or the main window last in front
+  where none or several do; `ATTEND_SESSION` names that window, whose page alone attends the session.
 - **It notifies, and decides nothing** (SURF5b): a session that parks, or ends without the person
   asking, or a conversation that answers the person's words (NOTIFY1a), raises an OS balloon unless
   one of its windows has focus. `AttentionWatch` in the library makes the judgement, so `daoris-driver`
@@ -479,7 +485,7 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
   for an `ILogger<T>`, and a registered `ILoggerProvider` alone makes none: register loggers through it, never a provider
   alone. Its single-instance guard's and engine's hand-over information is written too.
 - **It ends with its last main window** (MAINWINDOWS2, D171 point 2). The first main window holds the kit's loop and the
-  services resolved as it (the pickers, the taskbar's count, the tray, the update), so the person's close of it while a
+  services resolved as it (the pickers, the tray, the update), so the person's close of it while a
   `main:<n>` is open hides it (`MainWindows`); the last of those closing closes it for good, and a later launch or the tray
   shows it again rather than opening another. A close from code is not the person's: the update's is `CloseForGood`.
 - 🔴 **A diff confirms the tree it was given** (`rev-parse --show-toplevel`): git searches upward, and

@@ -222,10 +222,12 @@ UI would be the same divergence problem in a new place.
 The viewer's chosen theme reaches what the shell paints too. Each window's page tells its own frame the theme it is
 in (`SET_THEME`, and `DAORIS.WINDOWS` for a secondary window, WINDOW2), and tells the engine the choice itself over
 the kit's colour scheme (`useEngineTheme` in `bridge/windows.ts`, THEMESCHEME1), so Chromium's own UI and
-`prefers-color-scheme` follow an explicit light or dark, and *System* still follows the OS. The main window's page
-also tells its frame Overview's *What needs you* count (`useTaskbarCount` in `bridge/windows.ts`, `SET_BADGE`,
-NOTIFY1b), which the frame wears on its taskbar button and in its title; a secondary window's page never does. Each
-count carries a later `order` than the one before, so the frame never wears an older count over a newer (SESSBADGE1).
+`prefers-color-scheme` follow an explicit light or dark, and *System* still follows the OS. Each main window's page
+also tells its own frame its workspace's *What needs you* count (`useTaskbarCount` in `bridge/windows.ts`, `SET_BADGE`,
+NOTIFY1b, NOTIFY2c), another main window by its name, which that frame wears on its taskbar button and in its title; a
+utility window's page never does. Each count carries a later `order` than the one before, so the frame never wears an
+older count over a newer (SESSBADGE1). Its title carries the workspace it holds as data (`SET_TITLE`'s `workspace`),
+from which the shell picks the window a notification opens, naming it on `ATTEND_SESSION` so that window alone attends.
 That count includes a plugin step's attempt held for the person, which `WORK_STATE` lists as `held` and its row settles with
 their word (`useResolveHeld` in `bridge/repositories/lines.ts`, `WORK_HELD`, FABRIC-PERFORM1g), a node record that does not read,
 which `WORK_STATE` lists as `unreadable` and its row's press opens the folder of (`useOpenWorkRecords`, `WORK_RECORDS_FOLDER`,
