@@ -19091,3 +19091,10 @@ stays open in the backlog from `agent list|install|…` on. Built: `daoris-drive
 on by `daoris agent which`), which `proof-kit.mjs` and `acp-trust-probe.mjs` now ask instead of importing `toolchain.ts`; the keep
 lock held from the read to the write by `accounts.json`'s and `cooling.json`'s writers; `HarnessSettings.Change`, with every window
 writer of `harnesses.json` through it. Account verbs' shapes unchanged. Detail: D194's PUSH1f2e1 note, D173's of this day. On Opus.
+
+## ACCTPOOL1 — one pool of Daoris's accounts serves every workspace (2026-10-21)
+
+> - [ ] **ACCTPOOL1 — one pool of Daoris's accounts serves every workspace** (design; D197, drafting 2026-10-21; amends D125, D130 and D152). The owner decided that an agent's accounts signed in for Daoris are one pool for every workspace, and that the machine's own account stays the machine's, never changed by Daoris. The add-account dialog's *Let it run work in* step offered *This machine's list* in words that read as moving the machine onto the new account, while ticking it would narrow every workspace without a list of its own to that one account (`src/Daoris.Web/src/agents/agents.ts` `joinChoices`, `AddAccount.tsx` `choiceDetail`). Proof: D197 and its design read by Codex under D191, accepted, and its build rows filed.
+
+**Outcome** 2026-10-21: designed and accepted as D197, after Codex's read of round 1 (21 findings, 15 blocking) and Fable's of round 2
+(13 findings, 5 blocking), all taken; the build is POOL1a-d after PUSH1f2e. Detail: `docs/2026-10-21-account-pool-design.md` and D197's notes.
