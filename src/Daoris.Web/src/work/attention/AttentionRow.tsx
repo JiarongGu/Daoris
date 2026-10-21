@@ -208,6 +208,7 @@ const HANDLER: Record<AttentionActId, keyof AttentionActs> = {
   'resend-close': 'held',
   'stop-close': 'held',
   'open-records': 'openRecords',
+  'again-step': 'held',
 };
 
 /** The kinds that wait in a circle rather than in a repository. */
@@ -308,6 +309,7 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
     else if (act === 'record-close') acts.held?.(item, 'record');
     else if (act === 'resend-close') acts.held?.(item, 'resend');
     else if (act === 'open-records') acts.openRecords?.(item);
+    else if (act === 'again-step') acts.held?.(item, 'again');
   };
   const label = (act: AttentionActId, account?: string): string => {
     switch (act) {
@@ -356,6 +358,8 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
       case 'stop-close': return t('work.milestone.held.act.stopClose');
       // FABRIC-PERFORM1j: where the record is mended.
       case 'open-records': return t('work.milestone.unreadable.act.open');
+      // FABRIC-PERFORM1k: a failure kept for the person, as `daoris-driver work held … again` names it.
+      case 'again-step': return t('work.milestone.held.act.again');
     }
   };
 

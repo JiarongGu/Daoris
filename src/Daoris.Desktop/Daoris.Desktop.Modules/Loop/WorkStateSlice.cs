@@ -65,7 +65,7 @@ public static class WorkStateSlice
         ["attempt"] =
         [
             "unit", "node", "attempt", "plugin", "step", "nodeState", "why", "outcome", "revision", "at", "resolution", "resolvedAt", "said",
-            "words",
+            "words", "code",
         ],
         // FABRIC-PERFORM1j: a node record that does not read, which stops its unit until a person mends it.
         ["unreadable"] = ["file", "unit", "at", "said"],

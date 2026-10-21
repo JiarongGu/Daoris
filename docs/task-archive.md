@@ -18764,3 +18764,14 @@ and page tests listed in D173's note. On Opus: about 120 tool calls. Detail: D17
 Setup names its own unread rule, else its workspace's where it lands by Daoris's merge, and a workspace's Setup its own, en and zh.
 Proof: `DriverModuleLinesTests`, `RepositorySetup.test.tsx`, `WorkspaceSetup.test.tsx`, `ProjectsView.test.tsx`. On Opus: about 70 tool
 calls. Detail: D173's FABRIC-GRAPH1d note.
+
+## FABRIC-PERFORM1k — a failure kept for the person shown, with their new attempt (2026-10-21, D173)
+
+> - [ ] **FABRIC-PERFORM1k — a failure kept for the person shown, with their new attempt** (driver, modules, web-shell; after PERFORM1g; §E2, D173's RUN1e note). A plugin node failed with no retry coming stalls for the person, but nothing lists it and the page offers no `failed → ready` press. Proof: a non-transient failure listed and restarted with a new key by the person's press.
+
+**Outcome** 2026-10-21: built. A plugin step's failure with no retry coming (not transient, or its tries spent) is listed with the
+held attempts (`WORK_STATE`'s `held`, why `failure-kept` or `tries-spent`, an additive `code`; `daoris-driver work held`; a What needs
+you row; the work's foot, en and zh) and offered one word, `again`, recorded by `WORK_HELD` or its terminal twin under the lease and
+applied by the runtime as the person's `failed → ready`, so the next evaluation starts it with a new key; the word is cleared as it is
+applied. Proof: `NodeRuntimeTests` (3), `WorkStateSliceTests`, `WorkMilestone.test.tsx`. On Opus: about 90 tool calls. Detail: D173's
+FABRIC-PERFORM1k note.

@@ -159,6 +159,8 @@ public sealed class WorkStateSliceTests : DriverModuleBridge
         // Every field the route answers, its nulls written, is pushed or named as the pull's alone, never left to chance.
         Assert.All(RouteFields(answered), field => Assert.Contains(field, Classed()));
         Assert.Contains("attempt.words", RouteFields(answered));
+        // FABRIC-PERFORM1k: a failure kept for the person's code, pushed as the page words it.
+        Assert.Contains("attempt.code", RouteFields(answered));
         var parts = snapshot.Partitions.Where(each => each.Partition != WorkStateSlice.Held).ToList();
         foreach (var part in parts)
         {
@@ -212,7 +214,7 @@ public sealed class WorkStateSliceTests : DriverModuleBridge
         var attempt = new HeldAttempt("unit-a", "deploy", 1, "acme.deploy", "acme.deploy/deploy", NodeStates.Unknown, ReconcileStates.Unknown)
         {
             Outcome = "running", Revision = "a1b2c3d4", RecordedAt = At, Resolution = HeldResolutions.DidNot, ResolvedAt = At,
-            Words = HeldResolutions.Plugin,
+            Words = HeldResolutions.Plugin, Code = "broken",
         };
 
         // FABRIC-PERFORM1j: a node record that does not read, pushed beside the held attempts.

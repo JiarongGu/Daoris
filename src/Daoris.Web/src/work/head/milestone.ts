@@ -56,9 +56,9 @@ export type MilestoneEnd = {
 /**
  * The person's words on a held attempt (FABRIC-PERFORM1g): it happened, it did not (a new attempt), or stop the step. On Daoris's own
  * close (FABRIC-CLOSE1q), whose outcome is its door's answer and never the person's word: record that answer again, ask for it again
- * with the same close, or stop the rest of the work.
+ * with the same close, or stop the rest of the work. On a failure kept for the person (FABRIC-PERFORM1k): their new attempt.
  */
-export type HeldResolution = 'happened' | 'did-not' | 'stop' | 'record' | 'resend';
+export type HeldResolution = 'happened' | 'did-not' | 'stop' | 'record' | 'resend' | 'again';
 
 /** The sender Daoris's own close is held under (FABRIC-CLOSE1q): never a plugin's. */
 export const CLOSE_SENDER = 'quest.close';
@@ -85,6 +85,8 @@ export type HeldAttempt = {
   said: string;
   /** The words the driver offers on it (FABRIC-CLOSE1q): a plugin's three, or a held close's own; absent from a driver before the field. */
   words?: HeldResolution[] | null;
+  /** A failure kept for the person's code, as its plugin gave it (FABRIC-PERFORM1k); absent on an attempt held. */
+  code?: string | null;
 };
 
 /**
@@ -121,7 +123,15 @@ export type MilestoneUnit = {
 export type WorkState = { units: MilestoneUnit[]; recovery: MilestoneEntry[]; unread: string[]; held: HeldAttempt[]; unreadable: UnreadableRecord[] };
 
 /** The why codes the page has words for; any other is the one table's refusal of an outcome, said with its code. */
-const HELD_WHY = ['unknown', 'no-reconcile', 'no-outcome', 'not-current', 'not-on-word'] as const;
+const HELD_WHY = ['unknown', 'no-reconcile', 'no-outcome', 'not-current', 'not-on-word', 'failure-kept', 'tries-spent'] as const;
+
+/**
+ * Whether it is a failure kept for the person (FABRIC-PERFORM1k, D173's RUN1e note): its plugin said it failed and Daoris tries it
+ * no more by itself, so it waits for the person's new attempt rather than their word on what became of it.
+ */
+export function heldFailed(held: HeldAttempt): boolean {
+  return held.why === 'failure-kept' || held.why === 'tries-spent';
+}
 
 /** Why an attempt is held, in the reader's language (FABRIC-PERFORM1g); a held close by what its door answered (FABRIC-CLOSE1q). */
 export function heldWhy(t: TFunction, held: HeldAttempt): string {
@@ -134,7 +144,7 @@ export function heldWhy(t: TFunction, held: HeldAttempt): string {
     return t(`work.milestone.held.close.why.${answer}`, { code: held.why });
   }
   const code = HELD_WHY.find((one) => one === held.why);
-  return code ? t(`work.milestone.held.why.${code}`) : t('work.milestone.held.why.other', { code: held.why });
+  return code ? t(`work.milestone.held.why.${code}`, { code: held.code ?? '' }) : t('work.milestone.held.why.other', { code: held.why });
 }
 
 /**
@@ -150,7 +160,7 @@ export function heldWords(held: HeldAttempt): HeldResolution[] {
 export function heldSentence(t: TFunction, held: HeldAttempt): string {
   return held.resolution
     ? t('work.milestone.held.worded', { node: held.node, attempt: held.attempt, word: t(`work.milestone.held.word.${held.resolution}`) })
-    : t('work.milestone.held.step', { node: held.node, attempt: held.attempt, why: heldWhy(t, held) });
+    : t(heldFailed(held) ? 'work.milestone.held.failed' : 'work.milestone.held.step', { node: held.node, attempt: held.attempt, why: heldWhy(t, held) });
 }
 
 /** The kinds of thing a unit owns that have a word of the page's; a `line` or an `end` is its resource's own name. */

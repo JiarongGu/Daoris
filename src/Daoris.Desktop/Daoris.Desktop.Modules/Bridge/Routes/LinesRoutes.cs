@@ -618,13 +618,15 @@ public sealed class LinesRoutes(DriverContext context)
     /// <summary>
     /// The attempts held for the person as the wire carries them: the page words <c>why</c> by its code. FABRIC-CLOSE1q, additive: <c>words</c>,
     /// the words offered on each (a plugin's three; a held close's recoveries and its stop), which a page before the field reads without.
+    /// FABRIC-PERFORM1k, additive: a failure kept for the person, its <c>why</c> <c>failure-kept</c> or <c>tries-spent</c>, its failure's
+    /// <c>code</c>, and its one word <c>again</c>.
     /// </summary>
     public static object[] HeldAnswer(IEnumerable<HeldAttempt> held) =>
     [
         .. held.Select(each => new
         {
             each.Unit, each.Node, each.Attempt, each.Plugin, each.Step, each.NodeState, each.Why, each.Outcome, each.Revision,
-            At = each.RecordedAt, each.Resolution, each.ResolvedAt, Said = HeldAttempts.WhySaid(each), each.Words,
+            At = each.RecordedAt, each.Resolution, each.ResolvedAt, Said = HeldAttempts.WhySaid(each), each.Words, each.Code,
         }),
     ];
 
@@ -663,8 +665,8 @@ public sealed class LinesRoutes(DriverContext context)
     // held <unit> <node> <attempt> <word>`. Both doors end in HeldAttempts.Word, which records it under the unit's node record's lock with
     // the lease asked inside it; the loop's runtime applies it under the node's declaration at its next pass, which the nudge wakes.
     /// <summary>
-    /// Record the person's word (`resolution`: `happened`, `did-not` or `stop`; on a held close `record`, `resend` or `stop`, FABRIC-CLOSE1q)
-    /// on `attempt` of `node` on `unit`, held for them.
+    /// Record the person's word (`resolution`: `happened`, `did-not` or `stop`; on a held close `record`, `resend` or `stop`, FABRIC-CLOSE1q;
+    /// on a failure kept for them `again`, FABRIC-PERFORM1k) on `attempt` of `node` on `unit`, held for them.
     /// </summary>
     /// <remarks>
     /// A refusal is an ANSWER, as a discard's is: `{ done, refused, message }`, the message the terminal's sentence. Only the lease's

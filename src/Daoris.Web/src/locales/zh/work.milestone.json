@@ -97,5 +97,11 @@
   "work.milestone.unreadable.title": "{{unit}} 的记录无法读取",
   "work.milestone.unreadable.titleUnnamed": "有一份工作记录无法读取（{{file}}）",
   "work.milestone.unreadable.detail": "在它的记录 {{file}} 于存放处修好之前，这项工作不会被判断，也不会开始。Daoris 从不把它当作空记录，否则它记着的步骤可能被发送两次。",
-  "work.milestone.unreadable.act.open": "打开所在文件夹"
+  "work.milestone.unreadable.act.open": "打开所在文件夹",
+  "work.milestone.held.failed": "{{node}}，第 {{attempt}} 次尝试：{{why}}。它在等你重试。",
+  "work.milestone.held.failedDetail": "{{why}}。在你重试之前，什么都不会继续（{{step}}）。",
+  "work.milestone.held.why.failure-kept": "它的插件说它失败了（{{code}}），Daoris 不会自行重试",
+  "work.milestone.held.why.tries-spent": "它的插件说它失败了（{{code}}），重试次数已用完，Daoris 不会再自行重试",
+  "work.milestone.held.act.again": "重试",
+  "work.milestone.held.word.again": "重试"
 }
