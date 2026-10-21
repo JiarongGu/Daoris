@@ -78,6 +78,9 @@ public static class OpenRoutes
     /// <summary><c>help list</c> (RPC1e): a page of Ask Daoris's conversations, a search's among them.</summary>
     public static InstanceRoute HelpConversations { get; } = Open("HELP_CONVERSATIONS");
 
+    /// <summary><c>opinion show &lt;session|opinion&gt;</c> (RPC1e): where a work's second opinion stands, its findings and their answers.</summary>
+    public static InstanceRoute OpinionGate { get; } = Open("OPINION_GATE");
+
     /// <summary>
     /// Each verb of RPCOPEN1's scope, in the verb's words: the route it sends where the instance answers, or null with the reason it
     /// does not go through the pipe (yet).
@@ -104,6 +107,7 @@ public static class OpenRoutes
         ("help list", HelpConversations, "the list; `--json` prints the route's own answer"),
         ("help delete <id>", null, "alone: the first ask reads the conversation's name here, which no route answers; with `--yes` the person's press (SESSION_DELETE)"),
         ("help resume <id>", null, "alone: the conversation goes on in this terminal's own process until RPC1g"),
+        ("opinion show <session|opinion>", OpinionGate, "the gate's reading"),
         // The other open reads of RPC1e: each is read alone beside an instance, with the same words, until its route answers them as
         // `said` as the six above do (RPCOPEN1 built the shape, and the reads that follow it name no new one).
         ("trace", null, "alone: its words are built from the sources the host reads itself; TRACE answers the page's shape only"),
@@ -197,6 +201,18 @@ public static class PersonPresses
     /// <summary><c>help pin &lt;id&gt;</c> and <c>unpin</c> (RPC1e): an Ask Daoris conversation kept at the top of its history, or not.</summary>
     public static InstanceRoute HelpPin { get; } = Person("HELP_PIN");
 
+    /// <summary><c>opinion ask &lt;session&gt;</c> (RPC1e): a second opinion asked, spending an account at the person's choice.</summary>
+    public static InstanceRoute AskOpinion { get; } = Person("ASK_OPINION");
+
+    /// <summary><c>opinion stop &lt;opinion&gt;</c> (RPC1e): a reviewer's reading stopped.</summary>
+    public static InstanceRoute StopOpinion { get; } = Person("STOP_OPINION");
+
+    /// <summary><c>opinion anyway &lt;session&gt;</c> (RPC1e): going on without a settled opinion, the person's answer kept.</summary>
+    public static InstanceRoute OpinionAnyway { get; } = Person("OPINION_ANYWAY");
+
+    /// <summary><c>opinion myself &lt;session&gt;</c> (RPC1e): the person's own reading in the opinion's place.</summary>
+    public static InstanceRoute OpinionMyself { get; } = Person("OPINION_MYSELF");
+
     /// <summary>Each person's press a verb sends over the pipe, in the verb's words, with its route.</summary>
     public static IReadOnlyList<(string Verb, InstanceRoute Route)> Presses { get; } =
     [
@@ -214,6 +230,10 @@ public static class PersonPresses
         ("help pin <id>", HelpPin),
         ("help unpin <id>", HelpPin),
         ("help delete <id> --yes", SessionDelete),
+        ("opinion ask <session>", AskOpinion),
+        ("opinion stop <opinion>", StopOpinion),
+        ("opinion anyway <session>", OpinionAnyway),
+        ("opinion myself <session>", OpinionMyself),
         ("sessions archive <id>…", SessionArchive),
         ("sessions unarchive <id>…", SessionArchive),
         ("sessions stop <id>", SessionStop),

@@ -115,8 +115,36 @@ public static class OpinionCommand
 
     /// <summary>Press as asked, through the driver's own presses, and say what the gate says after it.</summary>
     /// <param name="processes">The sessions this machine runs, for <c>stop</c>.</param>
+    public static Task<int> RunAsync(
+        OpinionCommandAsk ask, OpinionPresses presses, ServiceClient service, SessionProcesses processes, TextWriter output, CancellationToken ct = default) =>
+        RunAsync(ask, presses, service, processes, output, instance: null, ct);
+
+    /// <summary>
+    /// The verb, as the running Daoris's client where <paramref name="instance"/> names one to look for (RPC1e, the terminal RPC design
+    /// §7.2): <c>ask</c>, <c>stop</c>, <c>anyway</c> and <c>myself</c> are the person's presses, which the window confirms, and <c>show</c>
+    /// a read; each route asked for its words runs this verb's own path in that Daoris, so the lines are the alone path's; alone where
+    /// none runs.
+    /// </summary>
     public static async Task<int> RunAsync(
-        OpinionCommandAsk ask, OpinionPresses presses, ServiceClient service, SessionProcesses processes, TextWriter output, CancellationToken ct = default)
+        OpinionCommandAsk ask, OpinionPresses presses, ServiceClient service, SessionProcesses processes, TextWriter output, InstanceWorld? instance,
+        CancellationToken ct = default)
+    {
+        var (route, payload) = ask.Verb switch
+        {
+            "stop" => (PersonPresses.StopOpinion, InstanceDoor.Said(("opinion", ask.Id))),
+            "show" => (OpenRoutes.OpinionGate, InstanceDoor.Said(("id", ask.Id))),
+            "ask" => (PersonPresses.AskOpinion, InstanceDoor.Said(
+                ("id", ask.Id), ("reviewer", ask.Reviewer), ("sameAgent", ask.SameAgent ? true : null), ("words", ask.Words),
+                ("occasion", ask.Failure ? "failure" : null))),
+            "anyway" => (PersonPresses.OpinionAnyway, InstanceDoor.Said(("id", ask.Id), ("words", ask.Words))),
+            _ => (PersonPresses.OpinionMyself, InstanceDoor.Said(("id", ask.Id), ("words", ask.Words))),
+        };
+        return await InstanceDoor.ThroughAsync(instance, route, payload, () => AloneAsync(ask, presses, service, processes, output, ct), output, ct)
+            .ConfigureAwait(false);
+    }
+
+    private static async Task<int> AloneAsync(
+        OpinionCommandAsk ask, OpinionPresses presses, ServiceClient service, SessionProcesses processes, TextWriter output, CancellationToken ct)
     {
         OpinionPressed pressed;
         switch (ask.Verb)
