@@ -440,7 +440,10 @@ public sealed record SessionResponse(
     IReadOnlyDictionary<string, string>? Access = null,
     // CLOSETAKE1 (FABRIC-CLOSE1o-ii): why the closure graph named for its take did not bind it (`expired`, `replaced` or `remote`), for
     // the driver's end line; additive, absent otherwise. This machine's own, like the opinion: answered to it only.
-    string? TookBind = null);
+    string? TookBind = null,
+    // KEEP1b (D195 point 6): the downloaded versions its starts were handed, which the downloads' rule keeps while it runs; absent for a
+    // record told none. This machine's own, like the opinion: answered to it only.
+    IReadOnlyList<string>? Resolved = null);
 // MSG1a: one word waiting on a record — its id, which the record's events say again where the session took it; the
 // words; when; its files' names, never where they are; and whether it was said after the record ended. XAGENT1c: `by`, the
 // second opinion whose findings these are, another agent's claims; absent, the person's words, as every word before it was.
@@ -598,6 +601,8 @@ public sealed record OpenHelpRequest(
 public sealed record HelpModeRequest(string? Mode);
 // AUTONOMY1b2 (D184 point 1): the access setup a resumed driven session now runs under, each pause with its value, as its driver resolved it.
 public sealed record AccessKeepRequest(Dictionary<string, string>? Access);
+// KEEP1b (D195 point 6): the downloaded versions a start of the record was handed, `agent|tool/<name>/<version>`, as its driver read them.
+public sealed record ResolvedKeepRequest(List<string>? Resolved);
 // `Interrupted` (D104): a move to `stopped` that was not the person's. `Limit` (TOOL4c): a move to `failed`
 // that an account's limit made. Silence is the old reading of both. `NoteParts` (LANG1a): the note's lines by code, beside
 // it; a note sent without them clears the record's, and an older driver sends none.

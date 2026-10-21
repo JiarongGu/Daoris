@@ -1375,6 +1375,32 @@ if (mode == ServiceMode.Local)
                 await ToSessionAsync(s, kept, MachineLocal(http)), $"Session `{id}` goes on under the setup it was told."));
     });
 
+    // The downloaded versions a start of a record was handed (KEEP1b, D195 point 6): the driver names them before each spawn, a go-on's
+    // added to the first's, and the downloads' rule keeps each while the session runs. Local like the open; any record of this machine's.
+    app.MapPost("/api/sessions/{id}/resolved", async (
+        ComposedService s, HttpContext http, string id, ResolvedKeepRequest body, CancellationToken ct) =>
+    {
+        if (body.Resolved is not { Count: > 0 })
+        {
+            return Results.BadRequest(new ErrorResponse("resolved is required — the downloaded versions the start was handed, agent|tool/<name>/<version>"));
+        }
+
+        Session? kept;
+        try
+        {
+            kept = await s.Ledger.KeepResolvedAsync(id, body.Resolved, ct);
+        }
+        catch (ArgumentException refused)
+        {
+            return Results.BadRequest(new ErrorResponse(refused.Message));
+        }
+
+        return kept is null
+            ? Results.NotFound(new ErrorResponse($"no session of this machine's is `{id}`"))
+            : Results.Ok(new SessionActionResponse(
+                await ToSessionAsync(s, kept, MachineLocal(http)), $"Session `{id}` keeps the versions its start was handed."));
+    });
+
     // Deleting a conversation that served no quest (SESSUX1f, D126 §5.4): the ledger judges the record's half and removes
     // it, and the driver, which judged the machine's half first, removes what this machine kept of it after this yes. LOCAL
     // mode only, as D95's deletes are: a person deletes on their own machine, and a session record does not travel as a
@@ -2675,7 +2701,9 @@ static SessionResponse ToSession(Session s, bool loopback) => new(
     // The access setup a driven session started under (AUTONOMY1a): this machine's, like the opinion, so answered to it only.
     Access: loopback ? s.Access : null,
     // Why the graph named for its take did not bind it (CLOSETAKE1): this machine's, so answered to it only.
-    TookBind: loopback ? s.TookBind : null);
+    TookBind: loopback ? s.TookBind : null,
+    // The downloaded versions its starts were handed (KEEP1b): this machine's, like the opinion, so answered to it only.
+    Resolved: loopback ? s.Resolved : null);
 
 // A word with whose it is (XAGENT1c): `by` names the second opinion whose findings these are, and is absent for the person's.
 static SaidWordResponse ToSaid(SaidWord word) =>

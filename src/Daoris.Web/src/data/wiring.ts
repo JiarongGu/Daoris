@@ -94,16 +94,21 @@ export interface SystemWiring {
 
 /**
  * One version an agent or a tool downloaded under the install's `cache/` (CACHECLEAR1): `SYSTEM_DOWNLOADS`' row. `keeps` is why it
- * stays (`pinned`, `used`, `named`, `unread`, `recent`, and at a press `in-use`), absent or null where nothing uses it; `by` says
- * what keeps it (`machine`, `workspace:<name>`, or a file). `unfinished` is one an earlier clearing moved aside and left part of.
+ * stays (`pinned`, `used`, `named`, `unread`, `recent`, `running` since KEEP1b, and at a press `in-use`), absent or null where nothing
+ * uses it; `by` says what keeps it (`machine`, `workspace:<name>`, `session:<id>`, or a file). `unfinished` is one an earlier clearing
+ * moved aside and left part of. KEEP1b: for one nothing uses, `unusedSince` is when its current unused stretch began and `goes` when the
+ * rule takes it; both absent where no pass has found it unused yet, and `goes` under `never`.
  */
 export type DownloadedVersion = {
   kind: 'agent' | 'tool'; name: string; version: string; path: string; bytes: number; partial: boolean;
-  keeps?: string | null; by?: string[]; unfinished: boolean;
+  keeps?: string | null; by?: string[]; unfinished: boolean; unusedSince?: string | null; goes?: string | null;
 };
 
-/** `SYSTEM_DOWNLOADS`' answer: every downloaded version, and why none could be listed (`no-home`, `twice`). */
-export type DownloadsListing = { why?: string | null; versions: DownloadedVersion[] };
+/**
+ * `SYSTEM_DOWNLOADS`' answer: every downloaded version, and why none could be listed (`no-home`, `twice`); `days` is the rule's
+ * (KEEP1b), how long into its unused stretch a version nothing uses is kept, absent from a shell before it and under `never`.
+ */
+export type DownloadsListing = { why?: string | null; days?: number | null; versions: DownloadedVersion[] };
 
 /** One row a press named, and what it came to: `removed`, `kept` with why, `gone` or `unfinished`. */
 export type DownloadCleared = {

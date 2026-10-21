@@ -184,14 +184,17 @@ export const downloaded = (kind: DownloadedVersion['kind'], name: string, versio
   partial: false, keeps: null, by: [], unfinished: false, ...extra,
 });
 
-/** The Downloads row's list: two versions nothing uses, and one each that a pin, Tools, a workspace and a moment keep. */
+/** The Downloads row's list: two versions nothing uses, and one each that a pin, Tools, a workspace, a moment and a running session keep. */
 export const DOWNLOADS: DownloadsListing = {
   why: null,
+  // KEEP1b: the rule's days; claude-code 2.0.1 found unused a week before it goes, gh 2.61.0 not yet found by a pass.
+  days: 7,
   versions: [
-    downloaded('agent', 'claude-code', '2.0.1'),
+    downloaded('agent', 'claude-code', '2.0.1', { unusedSince: '2026-10-15T09:00:00.000+00:00', goes: '2026-10-22T09:00:00.000+00:00' }),
     downloaded('agent', 'claude-code', '2.1.0', { keeps: 'pinned', by: ['machine'] }),
     downloaded('agent', 'codex', '0.40.0', { keeps: 'pinned', by: ['workspace:games'] }),
     downloaded('agent', 'claude-code', '2.2.0', { keeps: 'recent' }),
+    downloaded('agent', 'codex-acp', '0.5.0', { keeps: 'running', by: ['session:s-acp'] }),
     downloaded('tool', 'gh', '2.61.0', { bytes: 30_000_000 }),
     downloaded('tool', 'gh', '2.62.0', { keeps: 'used', by: ['tools.json'] }),
   ],

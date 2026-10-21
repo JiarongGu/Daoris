@@ -34,10 +34,71 @@ public sealed class KeepingTests : IDisposable
     {
         var kind = KeepKinds.SetAside;
         Assert.Same(kind, KeepKinds.Named("set-aside"));
-        Assert.Equal(["set-aside"], KeepKinds.Table.Select(each => each.Id));
+        Assert.Equal(["set-aside", "downloads"], KeepKinds.Table.Select(each => each.Id));
         Assert.Equal((TimeSpan.FromDays(14), TimeSpan.FromHours(1), 1, 90), (kind.Days, KeepKinds.SetAsideSettle, kind.MinDays, kind.MaxDays));
         Assert.Equal([HomeEntry.Trees.Name], kind.Entries);
         Assert.Equal(new SetAsidePolicy(TimeSpan.FromDays(14), Whole: false), KeepPolicy.Of(_home).SetAside);
+    }
+
+    /// <summary>
+    /// KEEP1b, §2.1: the downloads' kind, every version made again by its next pin or use, seven days by default into its current unused
+    /// stretch, the person's 0 to 365 or <c>never</c>; and the one policy, which says the same until KEEP1d reads the person's choice.
+    /// </summary>
+    [Fact]
+    public void The_downloads_kind_and_its_policy_keep_seven_days_of_an_unused_stretch()
+    {
+        var kind = KeepKinds.Downloads;
+        Assert.Same(kind, KeepKinds.Named("downloads"));
+        Assert.Equal((TimeSpan.FromDays(7), 0, 365, true, false), (kind.Days, kind.MinDays, kind.MaxDays, kind.MaySetNever, kind.MaySetWhole));
+        Assert.Equal([HomeEntry.Toolchain.Name, HomeEntry.ToolVersions.Name], kind.Entries);
+        Assert.Equal(new DownloadsPolicy(TimeSpan.FromDays(7)), KeepPolicy.Of(_home).Downloads);
+        Assert.Equal(new DownloadsPolicy(TimeSpan.FromDays(7)), KeepPolicy.Default.Downloads);
+    }
+
+    /// <summary>
+    /// KEEP1b, §2.3 (Fable F2.1): each download's first-unused time, <c>unused.&lt;agent|tool&gt;/&lt;name&gt;/&lt;version&gt;</c>, set and
+    /// cleared under the keep lock, an edit of only the keys it changed: another writer's <c>last</c> and an entry it never read stay.
+    /// </summary>
+    [Fact]
+    public void A_download_s_first_unused_time_is_set_and_cleared_keeping_what_another_writer_wrote()
+    {
+        Assert.Null(KeepingRecord.WriteUnused(_home, KeepingRecord.Read(_home), new Dictionary<string, DateTimeOffset?>
+        {
+            ["agent/claude-code/2.0.1"] = Now, ["tool/gh/2.61.0"] = Now.AddDays(-1),
+        }));
+        var read = KeepingRecord.Read(_home);
+        Assert.Equal(Now, read.Unused["agent/claude-code/2.0.1"]);
+        Assert.Equal(Now.AddDays(-1), read.Unused["tool/gh/2.61.0"]);
+
+        // Another writer, between this writer's read and its write: its last run and an entry of its own.
+        File.WriteAllText(KeepingRecord.PathOf(_home),
+            """{ "schema": 1, "last": { "set-aside": { "at": "2026-10-20T09:00:00.000Z", "door": "look", "run": "r", "removed": { "count": 1, "bytes": 1 }, "kept": {} } }, "unused": { "agent/claude-code/2.0.1": "2026-10-21T09:00:00.000Z", "tool/gh/2.61.0": "2026-10-20T09:00:00.000Z", "agent/codex/0.40.0": "2026-10-18T09:00:00.000Z" } }""" + "\n");
+        Assert.Null(KeepingRecord.WriteUnused(_home, read, new Dictionary<string, DateTimeOffset?> { ["agent/claude-code/2.0.1"] = null }));
+
+        var after = KeepingRecord.Read(_home);
+        Assert.Equal(["agent/codex/0.40.0", "tool/gh/2.61.0"], after.Unused.Keys.Order(StringComparer.Ordinal));
+        Assert.Equal("look", after.Last["set-aside"].Door);
+        Assert.False(File.Exists(KeepLock.PathOf(KeepingRecord.PathOf(_home))));
+    }
+
+    /// <summary>
+    /// §2.3: an <c>unused</c> that is not an object is a record that does not read, so no download goes by its days and nothing is written
+    /// over it; an entry that is no time is no first-unused time, and the others still read.
+    /// </summary>
+    [Fact]
+    public void An_unused_that_does_not_read_gives_no_first_unused_time()
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(KeepingRecord.PathOf(_home))!);
+        File.WriteAllText(KeepingRecord.PathOf(_home), """{ "schema": 1, "unused": [] }""" + "\n");
+        var read = KeepingRecord.Read(_home);
+        Assert.NotNull(read.Problem);
+        Assert.Empty(read.Unused);
+        Assert.NotNull(KeepingRecord.WriteUnused(_home, read, new Dictionary<string, DateTimeOffset?> { ["agent/a/1"] = Now }));
+
+        File.WriteAllText(KeepingRecord.PathOf(_home), """{ "schema": 1, "unused": { "agent/a/1": "not a time", "agent/b/2": "2026-10-20T09:00:00.000Z" } }""" + "\n");
+        read = KeepingRecord.Read(_home);
+        Assert.Null(read.Problem);
+        Assert.Equal(["agent/b/2"], read.Unused.Keys);
     }
 
     /// <summary>§2.3: the pass's last run of a kind, written under the keep lock as <c>last.&lt;kind&gt;</c>, the record's shape.</summary>

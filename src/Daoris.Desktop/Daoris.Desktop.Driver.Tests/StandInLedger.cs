@@ -877,6 +877,22 @@ internal sealed class StandInLedger : HttpMessageHandler
                     return Answer(HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "taken" });
                 }
 
+                // The resolved door (KEEP1b): the downloaded versions a start was handed, added to the record's, as the ledger keeps them.
+                case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/resolved", StringComparison.Ordinal):
+                {
+                    var id = path["/api/sessions/".Length..^"/resolved".Length];
+                    if (_sessions.FirstOrDefault(s => s["id"]!.GetValue<string>() == id) is not JsonObject session)
+                    {
+                        return Answer(HttpStatusCode.NotFound, new JsonObject { ["error"] = $"no session of this machine's is `{id}`" });
+                    }
+
+                    var kept = (session["resolved"] as JsonArray ?? []).Select(version => version!.GetValue<string>())
+                        .Concat(body!["resolved"]!.AsArray().Select(version => version!.GetValue<string>()))
+                        .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal);
+                    session["resolved"] = new JsonArray([.. kept.Select(version => (JsonNode)version)]);
+                    return Answer(HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "kept" });
+                }
+
                 // An ask's channel as one entry reads it (SESSONE2a), each message with that entry's acknowledgment (COWORK1d); an ask
                 // with no channel here is not found, as a host without it answers.
                 case ("GET", _) when path.StartsWith("/api/asks/", StringComparison.Ordinal) && path.EndsWith("/channel", StringComparison.Ordinal):
