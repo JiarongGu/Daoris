@@ -18715,3 +18715,12 @@ at the delete keeps the branch, said in `BranchKept`. On Opus: about 40 tool cal
 nor the question, asked again at each look: `HeldAttempts.WhySaid` and the page's `work.milestone.held.close.why.unknown` (en, zh).
 Other unanswered codes keep their words. Proof: `QuestCloseTests` (CLOSE1u's unanswered case) and `WorkMilestone.test.tsx` in both
 languages. On Opus: about 40 tool calls. Detail: D173's FABRIC-CLOSE1y note.
+
+## LANDSYNC1b — the landing's sync, its `Process` cases (2026-10-21, D87)
+
+> - [ ] **LANDSYNC1b — the landing's sync, its `Process` cases** (driver tests; after 1). LANDSYNC1's fast half holds the judgement; over real git still: TREEFOLLOW1's own branch replayed in place, an advance whose line holds some of the commits, and D87's amendment point 3 (the tree moved to what landed). Proof: `Process` cases beside `TreeSyncTests`.
+
+**Outcome** 2026-10-21: tests only, no code changed, all green on the current code. `LandSyncProcessTests` (Process, git): an own
+branch replayed in place leaving out a cherry-pick by its patch id, the tree on it; the same branch on its remote refused with the
+rebase words; an advance moving the chain's branch on by only what neither it nor the line holds, the tree following; and a tree a
+session holds staying while the landing stands. On Opus: about 40 tool calls. Detail: D87's LANDSYNC1b note.
