@@ -18639,3 +18639,13 @@ starts 44 git processes (55), the squash press 46 (51), the merge press 40 (43);
 Fewer than the row's estimate of 20: the rest are each act's own read, `status` (LANDGIT1c) and the tidy's. Proof: `LandGitCountTests`
 with its ceilings lowered, `What_another_process_moves_is_asked_of_git_each_time` green. On Opus: about 90 tool calls. Detail: D173's
 LANDGIT1b note.
+
+## KEEPALL1c — the home files that already keep keys keep their numbers and line endings too (2026-10-21, D173)
+
+> - [ ] **KEEPALL1c — the home files that already keep keys keep their numbers and line endings too** (driver, cli). The CLI's writers parse with `JSON.parse` (large numbers and `1.50` change); the driver's node writers drop CRLF and do not refuse a key written twice. Proof: `tools.json` and `browser/settings.json` rows in both twins.
+
+**Outcome** 2026-10-21: built. Both twins' writers of `tools.json` (its tools and locations) and `browser/settings.json` write
+through `JsonKeeping.Save` and `writeKeeping`: numbers by their own text, CRLF kept, a key written twice refused, no edit nothing
+written; the driver's loads read a key twice as `JSON.parse` does, where a node threw. Proof: eleven rows in
+`home-files-keep.json`, the browser rows read by the modules' `BrowserSettingsTests`. Detail: D173's KEEPALL1c note and the fix
+log's KEEPALL1c entry.
