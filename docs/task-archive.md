@@ -19014,3 +19014,11 @@ theory (the stop row reads the end; the others none) and its wake test (none whi
 edit and for their `Forget`, as `landings.json` and `session-branches.json` have since FABRIC-END2; no shape, caller or door changed.
 Proof: `RecordLockStoresTests`, per store an edit and a forget waiting for the lock with the holder's write kept. Detail: D173's
 FABRIC-RECLOCK2 note. On Opus.
+
+## NOTIFY2b — Notifications on the title bar: a press in plain words, Overview a summary (2026-10-21, D196)
+
+> - [ ] **NOTIFY2b — Notifications on the title bar: a press in plain words, Overview a summary** (web-shell, modules, driver; after 2a; D196, the notification design §9). The bell opens both sources' presses and *What needs you*, and wears the warning hue while a press waits unshown; Overview keeps a line per group. Proof: as §9 names it.
+
+**Outcome** 2026-10-21: built. No band under the title bar: each press is its card in *Notifications*, which the bell shows, worded by
+`PipeWording`; the bell warns while a press waits unshown, its toast stays, the taskbar flashes behind; Overview keeps a line per
+group. Detail: D196's NOTIFY2b note. On Opus.
