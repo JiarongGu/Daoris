@@ -599,8 +599,8 @@ with the version and date at release.
   page, Ask Daoris or `daoris agent` changes only what it edits, a setting you added by hand stays where you wrote it at any
   level, a change made by another of them meanwhile is kept, and a file saved with no change keeps its bytes. A save still writes
   an old `early` or `near` as `switch` and `curve`, as before.
-- And for `tools.json` and the browser's `settings.json`: choosing a tool's way or a resource location, or a browser setting, at
-  Settings, from Ask Daoris or with `daoris tool` and `daoris browser`, keeps every number as you wrote it (`1.50` stayed `1.5`
+- And for `tools.json` and the browser's `settings.json`: choosing a tool's way or a resource location at Settings or with
+  `daoris tool`, or a browser setting at Settings, from Ask Daoris or with `daoris browser`, keeps every number as you wrote it (`1.50` stayed `1.5`
   from a terminal) and a file's Windows line endings (Settings wrote them as LF), refuses a file that holds a key twice rather than
   guess which it changes, and writes nothing where the choice is already the file's. Settings' Browser screen reads such a file as
   the terminal does, where it failed.
