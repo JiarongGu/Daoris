@@ -85,6 +85,7 @@
   "work.milestone.held.close.why.closed": "The quest was closed, and Daoris could not record that on this work ({{code}})",
   "work.milestone.held.close.why.refused": "The quest's close was refused, and Daoris could not record that on this work ({{code}})",
   "work.milestone.held.close.why.unanswered": "Daoris keeps no answer to the quest's close ({{code}})",
+  "work.milestone.held.close.why.unknown": "Its door has not answered the quest's close, and Daoris asks it again at each look",
   "work.milestone.held.close.why.notCloseWord": "Your word could not be taken: only the close's own answer says whether the quest closed",
   "work.milestone.held.close.why.submissionMoved": "The submission this close names was reopened or replaced since, so the work now is not this close's to record or stop; it can be sent again",
   "work.milestone.held.close.detail": "{{why}}. The quest is never closed a second time: record the answer again, ask for it again, or stop the rest of this work.",

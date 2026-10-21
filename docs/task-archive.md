@@ -18647,3 +18647,12 @@ LANDGIT1b note.
 **Outcome** 2026-10-21: built. A backlog conflict is merged against its base (`mergeByBase` in `tools/merge-branch.mjs`), staged,
 said in one line, and gated; one base line both sides changed is left as git wrote it, its line named. Proof: `merge-branch.test.ts`,
 a unit case and an end-to-end merge. On Opus: about 40 tool calls. Detail: the tool's MERGETASKS1 section.
+
+## FABRIC-CLOSE1y — an unknown close said as its door's silence (2026-10-21, D173)
+
+> - [ ] **FABRIC-CLOSE1y — an unknown close said as its door's silence** (web, driver; D173's CLOSE1u note). The page and terminal word an unknown close as "Daoris keeps no answer to the quest's close (unknown)": say its door has not answered and is asked again at each look. Proof: `WorkMilestone.test.tsx` in en and 中文, and `HeldAttempts.WhySaid`.
+
+**Outcome** 2026-10-21: built. A held close with why `unknown` and no outcome is said as its door having answered neither the close
+nor the question, asked again at each look: `HeldAttempts.WhySaid` and the page's `work.milestone.held.close.why.unknown` (en, zh).
+Other unanswered codes keep their words. Proof: `QuestCloseTests` (CLOSE1u's unanswered case) and `WorkMilestone.test.tsx` in both
+languages. On Opus: about 40 tool calls. Detail: D173's FABRIC-CLOSE1y note.
