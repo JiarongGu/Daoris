@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- When you said *record the answer again* or *stop* on a quest's close and Daoris could not take it, because the quest's submission
+  was reopened or replaced since and the close's work had already moved on, the work's page now says so, naming the quest, in English
+  and Chinese. Before, it was said only in the driver's log.
 - A session's tree that Daoris set aside after its work landed now drops its installed packages an hour later: each `node_modules`
   beside a `package.json` the repository tracks, which `npm ci` makes again. The rest of the folder (your files, `bin/`, `obj/`, a
   `.env`, what the session wrote) still waits its fourteen days, and a folder anything was written in after it was set aside keeps

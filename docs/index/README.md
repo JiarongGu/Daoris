@@ -114,7 +114,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/LandingTests.cs` | 46 | 816 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/NodeLifecycleTests.cs` | 60 | 933 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/NodeRuntimeTests.cs` | 52 | 973 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/QuestCloseTests.cs` | 91 | 1612 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/QuestCloseTests.cs` | 92 | 1627 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/SessionGroupsTests.cs` | 75 | 1277 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/WireEvaluationTests.cs` | 53 | 1028 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workflows/WorkflowRunTests.cs` | 54 | 826 |
@@ -153,7 +153,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Landing/Landing.cs` | 62 | 1086 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/NodeGraphs.cs` | 52 | 912 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/NodeRuntime.cs` | 78 | 1186 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/QuestCloser.cs` | 63 | 980 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/QuestCloser.cs` | 64 | 997 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/WireEvaluation.cs` | 49 | 773 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/WorkPerformer.cs` | 58 | 965 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionGroups.cs` | 70 | 1221 |
@@ -178,7 +178,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/StatePublisherTests.cs` | 41 | 802 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/AgentsRoutes.cs` | 46 | 802 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/HelpRoutes.cs` | 76 | 1290 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/LinesRoutes.cs` | 63 | 1016 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/LinesRoutes.cs` | 63 | 1018 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/SessionsRoutes.cs` | 53 | 859 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/TreesRoutes.cs` | 63 | 1076 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverLoop.cs` | 72 | 1286 |
