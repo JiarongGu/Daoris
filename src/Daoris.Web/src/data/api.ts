@@ -159,6 +159,11 @@ export type Quest = {
   settled?: QuestConflict[];
   holder?: string | null;
   here?: string | null;
+  /**
+   * The person's kind and workflow choices on a quest no ask published, made before it started (WORKFLOW1e2, workflow design §4.1
+   * row 1), oldest first, the latest standing, an ask's shape. Absent where they made none, and from a host before it.
+   */
+  workflowChoices?: { kind?: string | null; workflow?: string | null; at: string; words?: string | null }[];
 };
 /** A submission by the machine and sequence that made it (FABRIC-CLOSE1a): what a reopen names it by. */
 export type SubmissionRef = { machine: string; sequence: number };

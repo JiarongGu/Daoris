@@ -273,6 +273,7 @@ internal static class TraceWords
         "submitted" => move.Session is { } session ? $"submitted by session {session}" : "submitted, by a session not recorded",
         "reopened" => "the person reopened its submission",
         "rebound" => "grew again from its source's submission",
+        "chosen" => "the person chose its kind and workflow",
         _ => $"`{move.Kind}`, shown as recorded",
     };
 

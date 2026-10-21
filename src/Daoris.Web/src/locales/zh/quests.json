@@ -238,6 +238,7 @@
   "quests.flow.kind.submitted": "由会话 {{session}} 交付",
   "quests.flow.kind.reopened": "由你重新打开",
   "quests.flow.kind.rebound": "从源头的交付重新生长",
+  "quests.flow.kind.chosen": "你为它选的任务类型和工作流",
   "quests.flow.kind.unknown": "`{{kind}}`，按记录显示",
   "quests.flow.evidence.found": "全部找到",
   "quests.flow.evidence.missing": "未全部找到",
