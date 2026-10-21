@@ -302,7 +302,8 @@ export function App() {
   const unkeyedHost = useUnkeyedHost(personKey);
   const [unkeyedSaid, setUnkeyedSaid] = useState(false);
   const terminalConfirmations = useTerminalConfirmations();
-  const serviceConfirmations = useServiceConfirmations(personKey.held);
+  // NOTIFY2j: as the shell tells every window, so each counts one list, and its first read is no arrival.
+  const { waiting: serviceConfirmations, read: serviceRead } = useServiceConfirmations(personKey.held);
   const answerConfirmation = useAnswerConfirmation();
   // CONFIRMSEEN1: a terminal's press's two minutes count from when this window, in front of the person, shows its card.
   const confirmationShown = useConfirmationShown();
@@ -538,6 +539,7 @@ export function App() {
   };
   const announcements = usePressAnnouncements({
     presses,
+    serviceRead,
     viewOpen: notificationsOpen,
     words: pressToast,
     openLabel: t('notifications.toast.open'),
@@ -966,6 +968,9 @@ export function App() {
     // An agent's ask for a helper opens the session that asked, whose head and foot carry its yes and no with its other waits
     // (MIXAGENT2c, D168). A shell's alone: the asks are this machine's files.
     ...(attached ? { helper: (item: Attention) => { if (item.session) open('sessions', item.session); } } : {}),
+    // An agent's ask to hand its session over opens that session, whose foot carries its note whole with its yes and no (NOTIFY2e).
+    // A shell's alone: the asks are this machine's files.
+    ...(attached ? { 'hand-over': (item: Attention) => { if (item.session) open('sessions', item.session); } } : {}),
     // A tool call a session holds for the person's answer opens that session, whose head and foot carry its presses with its other
     // waits (AUTONOMY1b3c). A shell's alone: the holds are this machine's driver's.
     ...(attached ? { permission: (item: Attention) => { if (item.session) open('sessions', item.session); } } : {}),

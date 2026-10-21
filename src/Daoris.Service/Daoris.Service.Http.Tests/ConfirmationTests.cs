@@ -324,6 +324,92 @@ public sealed class ConfirmationTests
         Assert.Equal(404, (await ConfirmAsync(host, unanswered)).Status);
     }
 
+    /// <summary>What a held wait on what waits answers: its cursor, and the ids waiting, oldest first.</summary>
+    private static async Task<(string Since, string[] Waiting)> WaitingAsync(Task<Answer> held)
+    {
+        var answer = await held.WaitAsync(Poll.Patience);
+        Assert.True(answer.Status == 200, $"the wait answered {answer.Status}: {answer.Body}");
+        return (answer.Json.GetProperty("since").GetString()!,
+            [.. answer.Json.GetProperty("waiting").EnumerateArray().Select(row => row.GetProperty("id").GetString()!)]);
+    }
+
+    private static Task<Answer> WaitFromAsync(DaorisHost host, string? since, int wait = 30) =>
+        host.GetAsync($"/api/confirmations/waiting?wait={wait}" + (since is null ? "" : $"&since={Uri.EscapeDataString(since)}"));
+
+    /// <summary>
+    /// NOTIFY2j (D196 point 4, the notification design §2.5): what waits says its change, so the desktop's host holds one wait and
+    /// no window polls. No cursor, or another start's, is answered at once with what waits; a wait from the current cursor is held
+    /// (the clock never reaching its bound) and answered by an ask, by the person's answer, and by one reaching its two minutes, at
+    /// its time; with nothing moving, at its bound with what waits as it is.
+    /// </summary>
+    [Fact]
+    public async Task What_waits_is_answered_at_each_change_and_at_its_time()
+    {
+        var (host, clock) = Keyed();
+        using var _host = host;
+        const string Body = """{"workspace":"default","sentence":"Rename the totals column."}""";
+
+        var (empty, none) = await WaitingAsync(WaitFromAsync(host, null));
+        Assert.Empty(none);
+        Assert.Equal(empty, (await WaitingAsync(WaitFromAsync(host, "0123abcd0123.7"))).Since);
+
+        var held = WaitFromAsync(host, empty);
+        var first = await AskedAsync(host, "POST", "/api/asks", Body, NewSecret());
+        var (asked, waiting) = await WaitingAsync(held);
+        Assert.NotEqual(empty, asked);
+        Assert.Equal([first], waiting);
+
+        clock.Move(TimeSpan.FromMinutes(1));
+        held = WaitFromAsync(host, asked);
+        var second = await AskedAsync(host, "POST", "/api/asks", Body, NewSecret());
+        var (twice, both) = await WaitingAsync(held);
+        Assert.Equal([first, second], both);
+
+        held = WaitFromAsync(host, twice);
+        Assert.Equal(200, (await RefuseAsync(host, second)).Status);
+        var (refused, left) = await WaitingAsync(held);
+        Assert.Equal([first], left);
+
+        // The first's two minutes end a minute on: the wait is answered then, with nothing else having moved. Each move waits for the
+        // wait's timer, so it reaches a wait already held (TESTCLOCK3).
+        var others = clock.Pending;
+        held = WaitFromAsync(host, refused);
+        await clock.PendingAsync(others + 1);
+        clock.Move(TimeSpan.FromMinutes(1));
+        var (expired, after) = await WaitingAsync(held);
+        Assert.NotEqual(refused, expired);
+        Assert.Empty(after);
+        Assert.Equal("expired", await StateAsync(host, first));
+
+        // Nothing waits and nothing moves: answered at its bound, the cursor as it was.
+        held = WaitFromAsync(host, expired, wait: 10);
+        await clock.PendingAsync(others + 1);
+        clock.Move(TimeSpan.FromSeconds(10));
+        Assert.Equal((expired, Array.Empty<string>()), await WaitingAsync(held));
+    }
+
+    /// <summary>
+    /// NOTIFY2j: at most eight waits on what waits are held at once, as the change stream's are; a ninth is answered at once with
+    /// what waits and the cursor as it is, and the eight are still answered by the next move.
+    /// </summary>
+    [Fact]
+    public async Task A_ninth_wait_on_what_waits_is_answered_at_once()
+    {
+        var (host, clock) = Keyed();
+        using var _host = host;
+        var (since, _) = await WaitingAsync(WaitFromAsync(host, null));
+        var others = clock.Pending;
+        var held = Enumerable.Range(0, PersonConfirmations.MostWaits).Select(_ => WaitFromAsync(host, since)).ToList();
+        // The eight held, each with its timer on the host's clock, which never reaches their bound: only the place answers a ninth.
+        await clock.PendingAsync(others + PersonConfirmations.MostWaits);
+
+        Assert.Equal((since, Array.Empty<string>()), await WaitingAsync(WaitFromAsync(host, since)));
+        Assert.All(held, each => Assert.False(each.IsCompleted));
+
+        var asked = await AskedAsync(host, "POST", "/api/asks", """{"workspace":"default","sentence":"A sentence."}""", NewSecret());
+        foreach (var each in held) Assert.Equal([asked], (await WaitingAsync(each)).Waiting);
+    }
+
     /// <summary>
     /// At most five wait for the person (design §4.2): the sixth is refused <c>confirmations-full</c> with the design's
     /// sentence, and asks nothing. A confirmation the person answered waits no more, so its place is free again.

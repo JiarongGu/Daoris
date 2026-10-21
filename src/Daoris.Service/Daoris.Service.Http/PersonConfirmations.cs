@@ -105,6 +105,12 @@ public enum ConfirmationAnswerRefusal
 /// <para><b>The log</b> (§5.1): one <see cref="Event"/> line as each is asked, confirmed, refused or expires, by the door's
 /// method and pattern. Never the id, the secret, its hash, the path's values or the body. A grant used writes nothing; a
 /// grant refused, and a sixth ask, are the gate's <c>person.refused</c> lines.</para>
+///
+/// <para><b>What waits says its change</b> (NOTIFY2j, D196 point 4, the notification design §2.5): a wait on
+/// <see cref="WaitAsync"/> is answered as soon as what waits moves (one asked, answered, or past its two minutes, at its
+/// time), or at its bound with what waits as it is, so the desktop's host holds one wait and tells every window, and no
+/// window polls. The cursor is <c>&lt;epoch&gt;.&lt;n&gt;</c>, the epoch new at each start of the host; any other cursor
+/// is answered at once.</para>
 /// </remarks>
 public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool holds, Func<string, string, DoorContract?> contracts)
 {
@@ -158,8 +164,18 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
         "This act's two minutes passed before it was answered, so it grants nothing. The terminal asks again if it still "
         + "means it.";
 
+    /// <summary>The most waits on what waits held at once; a ninth is answered at once.</summary>
+    public const int MostWaits = 8;
+
+    /// <summary>The longest a wait on what waits is held.</summary>
+    public static readonly TimeSpan LongestWait = TimeSpan.FromSeconds(30);
+
     private readonly object _gate = new();
     private readonly List<Confirmation> _kept = [];
+    private readonly string _epoch = Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(6));
+    private long _moves;
+    private int _waits;
+    private TaskCompletionSource _moved = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     /// <summary>The sentence for a confirmation this host holds no more, or never held.</summary>
     public static string NotFoundSentence(string id) =>
@@ -174,6 +190,69 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
             Sweep(clock.GetUtcNow());
             return [.. _kept.Where(c => c.State == ConfirmationState.Waiting)];
         }
+    }
+
+    /// <summary>
+    /// What waits after <paramref name="since"/>, answered with the cursor to ask from next: at once where the cursor is not the
+    /// current one (none, malformed, another start's, or behind), else as soon as what waits moves, one past its two minutes at its
+    /// time, or at <paramref name="wait"/> (at most <see cref="LongestWait"/>) as it is. A cancelled wait answers what waits then;
+    /// a wait past <see cref="MostWaits"/> is answered at once.
+    /// </summary>
+    public async Task<(string Since, IReadOnlyList<Confirmation> Waiting)> WaitAsync(string? since, TimeSpan wait, CancellationToken ct = default)
+    {
+        if (wait < TimeSpan.Zero) wait = TimeSpan.Zero;
+        if (wait > LongestWait) wait = LongestWait;
+        var arrived = clock.GetTimestamp();
+        lock (_gate)
+        {
+            if (_waits >= MostWaits) return Told(clock.GetUtcNow(), out _, out _);
+            _waits++;
+        }
+
+        try
+        {
+            while (true)
+            {
+                var read = clock.GetUtcNow();
+                var told = Told(read, out var moved, out var ends);
+                var left = wait - clock.GetElapsedTime(arrived);
+                if (told.Since != since || left <= TimeSpan.Zero || ct.IsCancellationRequested) return told;
+
+                // Held to the first of a move, the bound and the first of what waits reaching its time, which the sweep then ends.
+                var hold = ends is { } end && end < left ? end : left;
+                // Its own timer, stopped before the answer: a wait answered holds nothing on the clock.
+                var woken = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                using var timer = clock.CreateTimer(_ => woken.TrySetResult(), null, hold, Timeout.InfiniteTimeSpan);
+                using var cancelled = ct.Register(() => woken.TrySetResult());
+                // The clock may have passed the hold between its read and the timer's making, which then counts from later.
+                if (clock.GetUtcNow() >= read + hold) continue;
+                await Task.WhenAny(moved, woken.Task).ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            lock (_gate) _waits--;
+        }
+    }
+
+    // What waits at `now` and its cursor, swept first; what the next move completes; and how long until the first of it ends.
+    private (string Since, IReadOnlyList<Confirmation> Waiting) Told(DateTimeOffset now, out Task moved, out TimeSpan? ends)
+    {
+        lock (_gate)
+        {
+            Sweep(now);
+            List<Confirmation> waiting = [.. _kept.Where(c => c.State == ConfirmationState.Waiting)];
+            moved = _moved.Task;
+            ends = waiting.Count == 0 ? null : waiting.Min(c => c.Expires) - now;
+            return (_epoch + "." + _moves.ToString(System.Globalization.CultureInfo.InvariantCulture), waiting);
+        }
+    }
+
+    // What waits moved: the cursor goes on, and every held wait reads it again. Under the lock.
+    private void Moved()
+    {
+        _moves++;
+        Interlocked.Exchange(ref _moved, new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)).TrySetResult();
     }
 
     /// <summary>One confirmation, whatever its state, or null for one not held.</summary>
@@ -281,6 +360,7 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
                 Bytes = text is null ? [] : Encoding.UTF8.GetBytes(text),
             };
             _kept.Add(confirmation);
+            Moved();
             Write("asked", confirmation);
             return (confirmation, ConfirmationAskRefusal.None, WaitingSentence);
         }
@@ -326,6 +406,7 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
 
             var answered = found with { State = confirm ? ConfirmationState.Confirmed : ConfirmationState.Refused };
             _kept[index] = answered;
+            Moved();
             Write(confirm ? "confirmed" : "refused", answered);
             return (answered, ConfirmationAnswerRefusal.None, confirm ? ConfirmedSentence : RefusedAnswer);
         }
@@ -446,6 +527,8 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
             if (_kept[i] is { State: ConfirmationState.Waiting or ConfirmationState.Confirmed } open && now >= open.Expires)
             {
                 _kept[i] = open with { State = ConfirmationState.Expired };
+                // One no longer waiting moves what waits; a grant unused past its time moves nothing a window lists.
+                if (open.State == ConfirmationState.Waiting) Moved();
                 Write("expired", _kept[i]);
             }
         }

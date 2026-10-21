@@ -43,6 +43,8 @@ export const keys = {
   terminalAsks: ['terminal-asks'] as const,
   /** What waits at the service for the person's confirmation (PERSONDOOR1f): asked only while the page holds the person key. */
   serviceAsks: ['service-asks'] as const,
+  /** The same, as the shell tells it (NOTIFY2j): asked as the page mounts, then kept by `SERVICE_CONFIRMATIONS`; a browser polls. */
+  serviceTold: ['service-told'] as const,
   /** Whether the host holds a person key the page does not (PERSONDOOR1f's adoption notice): asked once a page holds none. */
   hostKeyed: ['host-keyed'] as const,
   /** Whether the page holds the person key (PERSONDOOR1f): the key itself is `data/api.ts`'s, in memory, never in this cache. */

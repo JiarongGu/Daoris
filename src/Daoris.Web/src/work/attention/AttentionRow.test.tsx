@@ -111,7 +111,7 @@ const everyAct = (): Required<AttentionActs> => ({
   acceptDeparture: vi.fn(), acceptRule: vi.fn(), declineRule: vi.fn(),
   signIn: vi.fn(), signInNew: vi.fn(), read: vi.fn(), letRun: vi.fn(), reviewed: vi.fn(), notYet: vi.fn(), showAgain: vi.fn(),
   opinionAgain: vi.fn(), opinionAnyway: vi.fn(), helper: vi.fn(), held: vi.fn(), permission: vi.fn(), answerAlone: vi.fn(),
-  openRecords: vi.fn(),
+  openRecords: vi.fn(), handOver: vi.fn(),
 });
 
 describe('a row in what needs you', () => {
@@ -443,6 +443,43 @@ describe('settling one where it stands', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Not now' }));
     expect(acts.helper).toHaveBeenLastCalledWith(HELPER, false);
     expect(screen.getByRole('button', { name: /Open/ })).toBeInTheDocument();
+  });
+
+  /** NOTIFY2e: an agent's ask to hand its session over is said yes or no to in one press each, as its session's foot does. */
+  const HAND_OVER: Attention = {
+    id: 'h1', kind: 'hand-over', title: 'Near my limit; ParserTests are left.', where: 'engine', since: '2026-09-21T11:00:00Z',
+    detail: 'Its agent asks to hand Fix the loader over to Codex. Nothing goes until you say yes.', session: 'c0nv0001', agent: 'Codex',
+    stands: true,
+  };
+
+  it('hands a session over to the agent its ask names, or says not now, in one press each', async () => {
+    const acts = everyAct();
+    render(<AttentionRow item={HAND_OVER} acts={acts} onOpen={vi.fn()} />);
+
+    expect(screen.getByText('an agent asks to hand over')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Hand over to Codex' }));
+    expect(acts.handOver).toHaveBeenLastCalledWith(HAND_OVER, true);
+    await userEvent.click(screen.getByRole('button', { name: 'Not now' }));
+    expect(acts.handOver).toHaveBeenLastCalledWith(HAND_OVER, false);
+    expect(screen.getByRole('button', { name: /Open/ })).toBeInTheDocument();
+  });
+
+  it('says an agent’s ask to hand over and its presses in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      render(<AttentionRow item={HAND_OVER} acts={everyAct()} onOpen={vi.fn()} />);
+      expect(screen.getByText('智能体请求转交')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '转交给 Codex' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '暂不' })).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
+  it('offers no yes where the look named no agent', () => {
+    render(<AttentionRow item={{ ...HAND_OVER, agent: undefined }} acts={everyAct()} onOpen={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: /Hand over/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Not now' })).toBeNull();
   });
 
   /**

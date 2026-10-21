@@ -29,12 +29,13 @@ const ACTS: Required<AttentionActs> = {
   showAgain: () => {}, opinionAgain: () => {}, opinionAnyway: () => {}, helper: () => {}, held: () => {}, permission: () => {},
   openRecords: () => {},
   answerAlone: () => {},
+  handOver: () => {},
 };
 /** Every door, as a shell's Overview hands them. */
 const DOORS: AttentionDoors = {
   parked: () => {}, 'parked-quest': () => {}, 'go-ahead': () => {}, trust: () => {}, proposal: () => {}, intake: () => {},
   departure: () => {}, rule: () => {}, unanswerable: () => {}, review: () => {}, 'account-wait': () => {}, 'signed-out': () => {},
-  'set-up': () => {}, opinion: () => {}, helper: () => {}, answer: () => {},
+  'set-up': () => {}, opinion: () => {}, helper: () => {}, answer: () => {}, 'hand-over': () => {},
 };
 
 /** A reset tomorrow early, and a reading at this morning's clock: what the account rows say their times from. */
@@ -674,6 +675,16 @@ export const Rows: StoryObj = {
         <AttentionRow item={GO_AHEAD} acts={ACTS} onOpen={() => {}} />
         <AttentionRow item={DEPARTURE} acts={ACTS} onOpen={() => {}} />
         <AttentionRow item={RULE} acts={ACTS} onOpen={() => {}} />
+        {/* NOTIFY2e: an agent's ask to hand its session over, its note's first line, its yes naming the agent. */}
+        <AttentionRow
+          item={{
+            id: 'h1', kind: 'hand-over', title: 'Near my limit; ParserTests and the loader’s fixture are left.', where: 'engine',
+            since: at(6), detail: 'Its agent asks to hand Fix the loader over to Codex. Nothing goes until you say yes.',
+            session: 'c0nv0001', agent: 'Codex', stands: true,
+          }}
+          acts={ACTS}
+          onOpen={() => {}}
+        />
         <AttentionRow item={REVIEWS[0]!} onOpen={() => {}} />
         <AttentionRow item={{ ...PARKED, id: 'quiet', note: undefined, since: at(4) }} onOpen={() => {}} />
         <AttentionRow

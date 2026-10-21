@@ -627,6 +627,8 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("PERSON_CONFIRM", "", null)]
     [InlineData("PERSON_CONFIRM_SHOWN", "", null)]
     [InlineData("PERSON_KEY", "", null)]
+    // NOTIFY2j: what waits at the service's door is told by its own event (`SERVICE_CONFIRMATIONS`); the read moves nothing.
+    [InlineData("SERVICE_CONFIRMATIONS", "", null)]
     public void The_remaining_presses_declare_what_they_change(string route, string scopes, string? session)
     {
         Assert.Contains(route, DriverModule.Routes);

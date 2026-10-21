@@ -6,6 +6,7 @@
   "work.handOverAsk.unread": "道衍下次查看时，会按你的转交规则处理它。",
   "work.handOverAsk.approve": "转交给 {{agent}}",
   "work.handOverAsk.decline": "暂不",
+  "work.handOverAsk.declined": "未转交：会话仍由它的智能体继续，时间线会记下你的拒绝。",
   "work.handOverAsk.refused.gone": "这个会话的智能体已不再要求转交。",
   "work.handOverAsk.refused.past": "它已不需要你答复：已经转交或被拒绝。",
   "work.handOverAsk.refused.unread": "道衍还没读到它：等它等你答复时再拒绝。",

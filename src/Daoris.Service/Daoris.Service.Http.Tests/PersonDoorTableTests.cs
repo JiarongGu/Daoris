@@ -53,6 +53,8 @@ public sealed class PersonDoorTableTests
         ("GET", "/api/brainstorms/{id}", Open),
         ("GET", "/api/confirmations", Open),
         ("GET", "/api/confirmations/{id}", Open),
+        // NOTIFY2j: what waits, held until it moves.
+        ("GET", "/api/confirmations/waiting", Open),
         ("GET", "/api/changes", Open),
 
         ("POST", "/api/quests/{id}/respond", Agent),
@@ -162,8 +164,9 @@ public sealed class PersonDoorTableTests
         // and the mode an Ask Daoris conversation going on runs under, the driver's (HELPMODE1a2), and the setup a resumed driven record now runs under (AUTONOMY1b2),
         // and a quest's moves, a read (FLOWCHART1a2), and a word's attempt, the driver's (COWORK1c), and an entry's acknowledgment of a
         // channel message, the driver's (COWORK1d), and a quest's own kind and workflow, the person's (WORKFLOW1e2), and the downloaded
-        // versions a start of a record was handed, the driver's (KEEP1b).
-        Assert.Equal(28, Routes.Count(route => route.Class == Open));
+        // versions a start of a record was handed, the driver's (KEEP1b), and what waits for confirmation held until it moves, a read
+        // (NOTIFY2j).
+        Assert.Equal(29, Routes.Count(route => route.Class == Open));
         Assert.Equal(4, Routes.Count(route => route.Class == Agent));
         Assert.Equal(24, Routes.Count(route => route.Class == Driver));
         Assert.Equal(32, Routes.Count(route => route.Class == Person));

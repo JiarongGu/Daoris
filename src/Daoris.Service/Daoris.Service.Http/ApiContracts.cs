@@ -712,6 +712,9 @@ public sealed record ConfirmationResponse(
     DateTimeOffset Asked, DateTimeOffset Expires);
 // An ask's, a confirm's or a refusal's answer: the confirmation as it now stands, and a sentence the caller says.
 public sealed record ConfirmationActionResponse(ConfirmationResponse Confirmation, string Message);
+// NOTIFY2j: what waits for the person, as a held wait answers it. `Since` is the cursor to ask from next (`<epoch>.<n>`), and
+// `Waiting` every confirmation waiting now, whole, oldest first, as `GET /api/confirmations` lists them.
+public sealed record ConfirmationsWaitingResponse(string Since, IReadOnlyList<ConfirmationResponse> Waiting);
 // FABRIC-EVENT3b (the fabric events design §A4.2): the change stream's answer. `Since` is the cursor to ask from next
 // (`<epoch>.<n>`), and `Moved` the ledger families that moved after the one asked from, by name (`sessions`, `quests`): empty
 // at the wait's end with nothing moved. Families, never records, and no path (D169 §3).
@@ -801,6 +804,7 @@ public sealed record ChangesResponse(string Since, IReadOnlyList<string> Moved);
 [JsonSerializable(typeof(ConfirmationAskRequest))]
 [JsonSerializable(typeof(ConfirmationResponse))]
 [JsonSerializable(typeof(IEnumerable<ConfirmationResponse>))]
+[JsonSerializable(typeof(ConfirmationsWaitingResponse))]
 [JsonSerializable(typeof(ConfirmationActionResponse))]
 
 [JsonSerializable(typeof(FeedEntriesRequest))]

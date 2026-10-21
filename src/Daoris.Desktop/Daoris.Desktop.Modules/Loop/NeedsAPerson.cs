@@ -40,6 +40,9 @@ public sealed record AttentionFacts
     /// <summary>The agents' asks for a helper that wait on the person's yes, as <c>HELPER_WAITS</c> answers them.</summary>
     public IReadOnlyList<JsonObject> Helpers { get; init; } = [];
 
+    /// <summary>The agents' asks to hand their sessions over that wait on the person's yes or no (NOTIFY2e), as the look holds them.</summary>
+    public IReadOnlyList<JsonObject> HandOvers { get; init; } = [];
+
     /// <summary>Each unit of work's milestone, as the work slice holds them.</summary>
     public IReadOnlyList<JsonObject> Works { get; init; } = [];
 
@@ -82,7 +85,7 @@ public sealed record AttentionFacts
 ///
 /// <para><b>The scope a window reads</b> (NEEDSSCOPE1): a row that is a session's, a quest's or an ask's carries that record's
 /// <c>workspace</c>, however its wait reached the judge, the service's records or the driver's own lists (a review, an opinion, a
-/// helper's ask, a held call, a held answer, a unit's clean-up), by which a window scoped to one circle filters, as its lists were. Only
+/// helper's ask, a hand-over ask, a held call, a held answer, a unit's clean-up), by which a window scoped to one circle filters, as its lists were. Only
 /// what is the machine's carries none, and every window shows it: a terminal's press, a rule for the whole machine, a folder or an
 /// account whose holds span workspaces, a unit no record owns; and a row whose record is not in hand, which no window may lose.</para>
 /// </remarks>
@@ -90,6 +93,9 @@ public static class NeedsAPerson
 {
     /// <summary>The intake states in which an ask is the harness's to answer, not yet the person's (D65 §1b).</summary>
     private static readonly HashSet<string> IntakeBusy = new(StringComparer.Ordinal) { "queued", "starting", "working" };
+
+    /// <summary>The states in which a session's turn runs: an agent's ask to hand it over holds nothing up until it ends (NOTIFY2e).</summary>
+    private static readonly HashSet<string> TurnRuns = new(StringComparer.Ordinal) { "queued", "starting", "working" };
 
     /// <summary>How a quest's and an ask's units are named (<see cref="QuestUnits.IdOf"/>, <see cref="AskUnits.IdOf"/>).</summary>
     private static readonly string QuestUnit = QuestUnits.IdOf(""), AskUnit = AskUnits.IdOf("");
@@ -285,6 +291,23 @@ public static class NeedsAPerson
             row["where"] = Text(record, "repository") ?? "";
             row["session"] = Text(wait, "session");
             row["title"] = line.Length > 0 ? line : question;
+            rows.Add(row);
+        }
+
+        // An agent's ask to hand its session over that waits on the person's yes or no (NOTIFY2e, MIXAGENT1c): by the ask's own id, its
+        // note's first line as written, the session that asked and the agent it goes to. It stands still on it once that session's turn
+        // is no longer running, since the session goes on only by their word; while its turn runs it holds nothing up yet.
+        foreach (var wait in facts.HandOvers)
+        {
+            var record = sessions.GetValueOrDefault(Text(wait, "session") ?? "");
+            var note = Text(wait, "note") ?? "";
+            var line = note.Split('\n')[0].Trim();
+            var row = Row("hand-over", Text(wait, "id"), Truthy(wait, "at"), SessionScope(Text(wait, "session")));
+            row["where"] = Text(record, "repository") ?? "";
+            row["session"] = Text(wait, "session");
+            row["title"] = line.Length > 0 ? line : note;
+            row["agent"] = Text(wait, "agent");
+            row["stands"] = record is not null && !TurnRuns.Contains(Text(record, "state") ?? "");
             rows.Add(row);
         }
 

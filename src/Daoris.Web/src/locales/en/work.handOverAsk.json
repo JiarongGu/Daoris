@@ -6,6 +6,7 @@
   "work.handOverAsk.unread": "Daoris reads it at its next look, by your rule for hand-overs.",
   "work.handOverAsk.approve": "Hand over to {{agent}}",
   "work.handOverAsk.decline": "Not now",
+  "work.handOverAsk.declined": "Not handed over: the session stays with its agent, and its timeline says you said no.",
   "work.handOverAsk.refused.gone": "This session holds no such ask any more.",
   "work.handOverAsk.refused.past": "It is past your word: taken or refused already.",
   "work.handOverAsk.refused.unread": "Daoris has not read it yet: say no once it waits on your word.",

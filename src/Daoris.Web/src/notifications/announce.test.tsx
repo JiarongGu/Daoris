@@ -4,7 +4,7 @@ import type { Confirmation } from '../person/Confirmations';
 import { usePressAnnouncements } from './announce';
 
 // A press announced in the window in front (NOTIFY2b, the notification design §3.3, §5, Fable's F1.1): a toast with *Open*, said
-// once in the focused main window on the press's own event by its id (a service's on its poll's first sight), and staying until
+// once in the focused main window on the press's own event by its id (a service's on its told list's first sight), and staying until
 // the view opens or the press ends; never in a window not focused, and never while the view is open.
 
 const PIPE: Confirmation = { source: 'pipe', id: 'c1', route: 'STOP_SESSION', fields: [], expires: '2026-10-21T09:10:00Z' };
@@ -67,7 +67,41 @@ describe('announcing a press', () => {
     expect(result.current.close(12345)).toBe(false);
   });
 
-  it("says a service's press the first time its poll sees it in a focused window, and never again", () => {
+  // NOTIFY2j: the shell tells every window one list at once, so the window focused as it is told says it, and no other.
+  it("says a service's press once across two windows told it, in the one focused as they are", () => {
+    focused.mockReturnValue(false);
+    const behind = announce({ presses: [], viewOpen: false });
+    focused.mockReturnValue(true);
+    const front = announce({ presses: [], viewOpen: false });
+
+    focused.mockReturnValue(false);
+    behind.rerender({ presses: [SERVICE], viewOpen: false });
+    focused.mockReturnValue(true);
+    front.rerender({ presses: [SERVICE], viewOpen: false });
+    expect(front.result.current.toasts.map((toast) => toast.text)).toEqual(['asks: h1']);
+    expect(behind.result.current.toasts).toHaveLength(0);
+
+    // The focus moving to the other window later says it there no more: it heard the press when it came.
+    behind.rerender({ presses: [{ ...SERVICE }], viewOpen: false });
+    expect(behind.result.current.toasts).toHaveLength(0);
+  });
+
+  it("says no service's press already waiting at this window's first read, and says one told after it", () => {
+    const onOpen = vi.fn();
+    const { result, rerender } = renderHook(
+      (props: { presses: Confirmation[]; serviceRead: boolean }) => usePressAnnouncements({
+        ...props, viewOpen: false, words: (press) => `asks: ${press.id}`, openLabel: 'Open', onOpen,
+      }),
+      { initialProps: { presses: [] as Confirmation[], serviceRead: false } },
+    );
+
+    rerender({ presses: [SERVICE], serviceRead: true });
+    expect(result.current.toasts).toHaveLength(0);
+    rerender({ presses: [SERVICE, { ...SERVICE, id: 'h2' }], serviceRead: true });
+    expect(result.current.toasts.map((toast) => toast.text)).toEqual(['asks: h2']);
+  });
+
+  it("says a service's press the first time the list told it holds it in a focused window, and never again", () => {
     const { result, rerender } = announce({ presses: [], viewOpen: false });
     rerender({ presses: [SERVICE], viewOpen: false });
     expect(result.current.toasts.map((toast) => toast.text)).toEqual(['asks: h1']);

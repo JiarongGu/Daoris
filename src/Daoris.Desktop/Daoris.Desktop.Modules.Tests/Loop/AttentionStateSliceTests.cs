@@ -952,6 +952,72 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// NOTIFY2e: an agent's ask to hand its session over waiting on the person's yes or no is a row by the ask's own id: its note's first
+    /// line, the session that asked and the agent it goes to; it stands still on it once that session's turn no longer runs.
+    /// </summary>
+    [Fact]
+    public void An_agent_s_ask_to_hand_its_session_over_is_a_row_by_its_own_id_standing_still_once_its_turn_ended()
+    {
+        var rows = Rows(new()
+        {
+            Sessions =
+            [
+                Session("""{"id":"c0nv0001","quest":"7a82cc","state":"completed"}"""),
+                Session("""{"id":"w0rk1ng0","quest":"7a82cc","state":"working"}"""),
+            ],
+            Quests = [Quest()],
+            Registry = [Registration("engine")],
+            HandOvers =
+            [
+                JsonNode.Parse("""{"id":"h1","session":"c0nv0001","note":"Near my limit.\nParserTests are left.","agent":"codex-acp","at":"2026-10-21T09:30:00Z"}""")!.AsObject(),
+                JsonNode.Parse("""{"id":"h2","session":"w0rk1ng0","note":"Codex suits the rest.","agent":"codex-acp","at":"2026-10-21T09:10:00Z"}""")!.AsObject(),
+                JsonNode.Parse("""{"id":"h3","session":"g0n3","note":"Gone.","agent":"codex-acp","at":"2026-10-21T09:00:00Z"}""")!.AsObject(),
+            ],
+        });
+
+        Assert.Equal(["hand-over:h1", "hand-over:h2", "hand-over:h3"], Keys(rows));
+        Is("""{"kind":"hand-over","id":"h1","since":"2026-10-21T09:30:00Z","workspace":"default","where":"engine","session":"c0nv0001","title":"Near my limit.","agent":"codex-acp","stands":true}""",
+            rows.Single(row => row["id"]!.GetValue<string>() == "h1"));
+        // Its turn still runs: it holds nothing up yet.
+        Assert.False(rows.Single(row => row["id"]!.GetValue<string>() == "h2")["stands"]!.GetValue<bool>());
+        // A session the page does not hold: no repository is guessed, and nothing says it stands still.
+        Is("""{"kind":"hand-over","id":"h3","since":"2026-10-21T09:00:00Z","where":"","session":"g0n3","title":"Gone.","agent":"codex-acp","stands":false}""",
+            rows.Single(row => row["id"]!.GetValue<string>() == "h3"));
+    }
+
+    /// <summary>
+    /// NOTIFY2e: the hand-over waits are read off the home's sessions folder: an ask the look holds <c>waiting</c>, by its own id, with its
+    /// session, note and agent; one not read yet, approved, taken or refused, and a state naming an earlier ask, wait on nothing of theirs.
+    /// </summary>
+    [Fact]
+    public void The_hand_over_waits_are_the_asks_the_look_holds_waiting()
+    {
+        var files = new HandOverAskFiles(Home);
+        Directory.CreateDirectory(DaorisHome.Entry(Home, HomeEntry.Sessions));
+        void Ask(string session, string id, string at, string? state, string? code = null, string? stateId = null)
+        {
+            File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Sessions, session + HandOverAskFiles.AskSuffix),
+                $$"""{"id":"{{id}}","session":"{{session}}","note":"Near my limit.","askedBy":"agent","at":"{{at}}"}""");
+            if (state is not null) files.WriteState(session, new HandOverAskState(stateId ?? id, state, code, "codex-acp", DateTimeOffset.Parse(at)));
+        }
+
+        Ask("s1", "h1", "2026-10-21T09:10:00Z", HandOverAskStates.Waiting);
+        Ask("s2", "h2", "2026-10-21T09:00:00Z", HandOverAskStates.Waiting);
+        Ask("s3", "h3", "2026-10-21T08:00:00Z", null);
+        Ask("s4", "h4", "2026-10-21T08:00:00Z", HandOverAskStates.Approved);
+        Ask("s5", "h5", "2026-10-21T08:00:00Z", HandOverAskStates.Taken);
+        Ask("s6", "h6", "2026-10-21T08:00:00Z", HandOverAskStates.Refused, HandOverAskWhy.Declined);
+        Ask("s7", "h7", "2026-10-21T08:00:00Z", HandOverAskStates.Waiting, stateId: "h0");
+
+        var waits = JsonSerializer.SerializeToNode(AttentionStateSlice.HandOverWaits(Home), IpcJson.Options)!.AsArray();
+
+        Assert.Equal([("h2", "s2"), ("h1", "s1")], waits.Select(wait => (wait!["id"]!.GetValue<string>(), wait["session"]!.GetValue<string>())));
+        Assert.Equal(["id", "session", "note", "agent", "at"], waits[0]!.AsObject().Select(field => field.Key));
+        Assert.Equal(("Near my limit.", "codex-acp"), (waits[0]!["note"]!.GetValue<string>(), waits[0]!["agent"]!.GetValue<string>()));
+        Assert.Equal(DateTimeOffset.Parse("2026-10-21T09:00:00Z"), DateTimeOffset.Parse(waits[0]!["at"]!.GetValue<string>()));
+    }
+
+    /// <summary>
     /// CONFIRMSEEN1: a terminal's press waiting for the window is a row of <i>What needs you</i>, which the badge counts: by its route and
     /// the terminal as the system names it, since it was asked, never a value it carries; and it is gone once it no longer waits.
     /// </summary>
@@ -1273,6 +1339,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
             ],
             Considered = [Parked("""{"quest":"q1"}""")],
             Helpers = [JsonNode.Parse("""{"id":"a1","session":"c0nv0001","question":"Which test covers the loader?","at":"2026-09-21T09:30:00Z"}""")!.AsObject()],
+            HandOvers = [JsonNode.Parse("""{"id":"h1","session":"c0nv0001","note":"Near my limit.","agent":"codex-acp","at":"2026-09-21T09:30:00Z"}""")!.AsObject()],
             Permissions = [JsonNode.Parse("""{"session":"c0nv0001","request":"900","kind":"execute","since":"2026-09-21T09:30:00Z","choices":[]}""")!.AsObject()],
             Answers = [JsonNode.Parse("""{"session":"c0nv0001","agent":"codex-acp","words":["w3"],"since":"2026-09-21T09:30:00Z"}""")!.AsObject()],
             Works =
@@ -1302,7 +1369,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
 
         Assert.Equal(
             [
-                "account-wait:wait:claude-code/account-2", "answer:c0nv0001", "helper:a1", "opinion:c0nv0001", "opinion:s42", "parked-quest:q1",
+                "account-wait:wait:claude-code/account-2", "answer:c0nv0001", "hand-over:h1", "helper:a1", "opinion:c0nv0001", "opinion:s42", "parked-quest:q1",
                 "parked:p4rk3d00", "permission:c0nv0001#900", "proposal:7c1e9a04b2d5", "review:c0nv0001", "rule:p-repository", "rule:p-workspace",
                 "trust:C:/somewhere/.claude.json\nC:/somewhere/engine", "unanswerable:q2", "work:c0nv0001", "work:quest:q1#close#1",
                 "work:quest:q1#close#q6", "work:record#0a1b2c3d4e5f60718293a4b5c6d7e8f9.json", "work:session:c0nv0001#deploy#2",
@@ -1397,6 +1464,8 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
             Groups = [Placed("""{"pausedBy":{"scope":"ask","id":"a1"},"holds":{"why":"cap","reason":"r","repository":"engine","until":"2026-10-20T10:00:00Z"},"strikes":2,"awaits":"q","awaitsOf":"engine","holdsQuest":true}""")],
             Opinions = [JsonNode.Parse("""{"session":"s42","quest":"q1","repository":"engine","workspace":"aurora","since":"2026-09-21T09:00:00Z","auto":false,"opinion":{"state":"disputed","holds":true,"required":true,"opinion":"o1","reviewer":"codex","product":"Codex","maker":"OpenAI","label":"Codex","reviewing":"s42","findings":2,"disputes":2,"since":"2026-09-21T09:00:00Z","code":"c","until":"2026-09-22T09:00:00Z","later":1,"person":"p","answers":"o1","says":"s"}}""")!.AsObject()],
             Helpers = [JsonNode.Parse("""{"id":"a1","session":"parked","question":"Which?","agent":null,"at":"2026-09-21T09:30:00Z"}""")!.AsObject()],
+            // NOTIFY2e: an agent's ask to hand its session over, waiting on the person.
+            HandOvers = [JsonNode.Parse("""{"id":"h1","session":"parked","note":"Near my limit.","agent":"codex-acp","at":"2026-09-21T09:30:00Z"}""")!.AsObject()],
             Permissions = [JsonNode.Parse("""{"session":"parked","request":"9","call":"c","title":"t","kind":"edit","since":"2026-09-21T09:10:00Z","until":"2026-09-21T09:25:00Z","choices":[{"id":"a","name":"A","kind":"allow_once"}]}""")!.AsObject()],
             // COWORK1e: a third answer alone held for the person.
             Answers = [JsonNode.Parse("""{"session":"parked","agent":"codex-acp","words":["w1"],"since":"2026-09-21T09:20:00Z"}""")!.AsObject()],
@@ -1417,8 +1486,8 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.Contains(rows, row => row["ended"] is JsonObject);
         Assert.Contains(rows, row => row["blocked"] is JsonObject blocked && blocked["entries"]![0]!["facts"] is JsonObject);
 
-        // Every kind but the accounts': seventeen.
-        Assert.Equal(17, rows.Select(row => row["kind"]!.GetValue<string>()).Distinct().Count());
+        // Every kind but the accounts': eighteen.
+        Assert.Equal(18, rows.Select(row => row["kind"]!.GetValue<string>()).Distinct().Count());
         foreach (var row in rows) Assert.Equal(Normal(row), Normal(AttentionStateSlice.Picked(row)));
     }
 

@@ -247,6 +247,8 @@ public sealed class PipeCensusTests
     [InlineData("DAORIS.DRIVER", "PERSON_CONFIRM", PipeClass.Window)]
     [InlineData("DAORIS.DRIVER", "PERSON_CONFIRM_SHOWN", PipeClass.Window)]
     [InlineData("DAORIS.DRIVER", "PERSON_KEY", PipeClass.Window)]
+    // NOTIFY2j: nor what waits at the service's door as the window is told it; the service's own list stays its own door's.
+    [InlineData("DAORIS.DRIVER", "SERVICE_CONFIRMATIONS", PipeClass.Window)]
     [InlineData("DAORIS.WINDOWS", "OPEN", PipeClass.Window)]
     [InlineData("DAORIS.TERMINAL", "INPUT", PipeClass.Window)]
     [InlineData("DAORIS.BROWSER", "SET_LINKS", PipeClass.Window)]

@@ -19135,3 +19135,19 @@ click opens the window whose workspace holds its session or quest (`MainWindowSc
 **Outcome** 2026-10-22: built. `NeedsAPerson` marks a go-ahead row `stale` with since when; the row, the ask's page and Overview's summary
 say it under *Waiting for your word* with its refusal alone, and *Refuse all …* refuses two or more through the service's answer with
 `goesOn: false`. Detail: D196's GOAHEADSTALE1 note. Unproven until the window. On Opus.
+## NOTIFY2j — a press at the service's door is told to the windows (2026-10-22, D196)
+
+> - [ ] **NOTIFY2j — a press at the service's door is told to the windows, not polled** (modules, web-shell, service; after 2b; D196, the notification design §9). The desktop's host tells the windows the service's waiting confirmations beside the pipe's, so their count is judged once in .NET and each window's poll goes. Proof: as §9 names it.
+
+**Outcome** 2026-10-22: built. The service's `GET /api/confirmations/waiting` answers at each change of what waits, one past its time
+at its time; the desktop's host holds one such wait (`ServiceConfirmations`) and tells every window `SERVICE_CONFIRMATIONS`, which the
+page reads in place of its five-second poll, kept for an older shell and a browser. A press is said once across two windows. Detail:
+D196's NOTIFY2j note. On Opus.
+
+## NOTIFY2e — an agent's ask to hand its session over waits in What needs you (2026-10-22, D196)
+
+> - [ ] **NOTIFY2e — an agent's ask to hand its session over waits in What needs you** (modules, web-shell; after 2b; D196, the notification design §9). The ask becomes a row with its acts, counted by the bell and the taskbar, in every place `person-waits.md` lists. Proof: as §9 names it.
+
+**Outcome** 2026-10-22: built. The ask the look holds waiting is a `hand-over` row by its own id (`AttentionStateSlice.HandOverWaits`,
+`NeedsAPerson`), with *Hand over to {agent}* and *Not now* through the session's own routes, its door the session, counted by the bell
+and the taskbar; it holds work once its session's turn has ended (`attentionGroup`). Detail: D196's NOTIFY2e note. On Opus.

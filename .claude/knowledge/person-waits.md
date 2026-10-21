@@ -9,7 +9,8 @@ enforces: a wait the person answers is one kind in `work/waits/waits.ts`, drawn 
 **A wait the person answers is drawn in four places and counted in one, and none of them finds a new kind by itself.**
 AUTONOMY1b3c (D184) built the held tool request and rediscovered each place below; the helper's ask (MIXAGENT2c,
 `useHelperWaits`) is the closest exemplar, since it too is a live wait per session with a hook, a band row with acts and a
-badge count. A rule proposal's (D74) is the older one.
+badge count. A rule proposal's (D74) is the older one. An agent's ask to hand its session over (NOTIFY2e) is the one whose group
+is the row's, not its kind's: `attentionGroup` reads it, and the band, its order and Overview's summary go through it.
 
 | Place | File | What goes there |
 |---|---|---|
@@ -32,7 +33,7 @@ badge count. A rule proposal's (D74) is the older one.
 - **Never an answer the asker did not offer.** A press per choice offered, by its own id; where none allows, the person can
   only refuse (D52, D184's AUTONOMY1b3a note).
 - **A wait nothing waits for any more says so.** Where nothing that asked can still use the answer, .NET marks the row stale with
-  since when, the page lists it with what holds nothing (`attentionGroupOf`) and offers its refusal alone, and that refusal sends
+  since when, the page lists it with what holds nothing (`attentionGroup`) and offers its refusal alone, and that refusal sends
   nothing on. A press over several such rows refuses each through its own row's door, never a yes (`StaleGoAheads.tsx`; D196's
   GOAHEADSTALE1 note).
 - **Listed only with an act.** A row is in the band only where the person has something to do about it: a press on the row,

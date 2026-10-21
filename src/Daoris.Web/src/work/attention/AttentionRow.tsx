@@ -23,7 +23,7 @@ import { TrustAsk } from '../waits/TrustAsk';
 export type AttentionKind =
   | 'parked' | 'parked-quest' | 'go-ahead' | 'trust' | 'account-wait' | 'signed-out'
   | 'proposal' | 'intake' | 'departure' | 'set-up' | 'rule' | 'unanswerable'
-  | 'review' | 'opinion' | 'helper' | 'work' | 'permission' | 'answer' | 'confirmation';
+  | 'review' | 'opinion' | 'helper' | 'hand-over' | 'work' | 'permission' | 'answer' | 'confirmation';
 
 /**
  * One thing that is waiting on a person, as Overview's band shows it.
@@ -51,6 +51,9 @@ export type AttentionKind =
  *
  * **CONFIRMSEEN1 added `confirmation`**: a press a terminal sent that waits for the person's Confirm on the window's card, which
  * its terminal holds still for. Its answer needs the card's values read first, so its door to the card is its one control.
+ *
+ * **NOTIFY2e added `hand-over`**: an agent's ask to hand its session over that waits on the person's yes or no, which holds work once
+ * its session's turn has ended and the session stands still on it.
  */
 export type Attention = {
   /**
@@ -78,9 +81,14 @@ export type Attention = {
   local?: boolean;
   /**
    * The session that said a `set-up` row's set-up, which a *not yet*'s words go to; null for the person's own. For a `helper`
-   * row, the session that asked, whose ask its yes and no answer and whose page its door opens (MIXAGENT2c).
+   * row, the session that asked, whose ask its yes and no answer and whose page its door opens (MIXAGENT2c); for a `hand-over` row,
+   * the session whose agent asked to hand it over (NOTIFY2e).
    */
   session?: string | null;
+  /** A `hand-over` row's agent, as the roster names it: whom its yes hands the session over to (NOTIFY2e). */
+  agent?: string;
+  /** A `hand-over` row's session stands still on it, its turn ended: the row holds work (NOTIFY2e). */
+  stands?: boolean;
   /**
    * A `work` row whose owner nothing records, whose `daoris/<folder>` branch names a session's tree the page holds (FABRIC-UNKNOWN1c):
    * that session, whose page its door opens, where the branch's Discard branch press is too.
@@ -179,6 +187,8 @@ export type AttentionActs = {
   opinionAnyway?: (item: Attention, words: string | undefined, answered: Answered) => void;
   /** An agent's ask for a helper said yes or no to (MIXAGENT2c, D163 point 3): its session's page's own presses. */
   helper?: (item: Attention, yes: boolean) => void;
+  /** An agent's ask to hand its session over said yes or no to (NOTIFY2e, MIXAGENT1c): its session's foot's own presses. */
+  handOver?: (item: Attention, yes: boolean) => void;
   /** The person's word on a plugin step's attempt held for them (FABRIC-PERFORM1g): `daoris-driver work held`'s. */
   held?: (item: Attention, resolution: HeldResolution) => void;
   /** The node records' folder opened, where the person mends one that does not read (FABRIC-PERFORM1j). */
@@ -211,6 +221,8 @@ const HANDLER: Record<AttentionActId, keyof AttentionActs> = {
   'opinion-anyway': 'opinionAnyway',
   'let-ask': 'helper',
   'not-now': 'helper',
+  'hand-over': 'handOver',
+  'keep-agent': 'handOver',
   'allow-once': 'permission',
   'refuse-once': 'permission',
   'refuse-always': 'permission',
@@ -321,6 +333,7 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
     else if (act === 'show-again') acts.showAgain?.(item);
     else if (act === 'opinion-again') acts.opinionAgain?.(item);
     else if (act === 'let-ask' || act === 'not-now') acts.helper?.(item, act === 'let-ask');
+    else if (act === 'hand-over' || act === 'keep-agent') acts.handOver?.(item, act === 'hand-over');
     else if (act === 'go-on-answer' || act === 'keep-answer') acts.answerAlone?.(item, act === 'go-on-answer');
     else if (act === 'happened' || act === 'did-not') acts.held?.(item, act);
     else if (act === 'stop-step' || act === 'stop-close' || act === 'stop-partial') acts.held?.(item, 'stop');
@@ -359,6 +372,9 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
       case 'opinion-anyway': return t('opinion.act.anyway');
       case 'let-ask': return t('work.helper.approve');
       case 'not-now': return t('work.helper.decline');
+      // NOTIFY2e: the session's foot's own words for its agent's ask to hand it over.
+      case 'hand-over': return t('work.handOverAsk.approve', { agent: item.agent ?? '' });
+      case 'keep-agent': return t('work.handOverAsk.decline');
       // AUTONOMY1b3c: the session's card's own words, one per choice its agent offered.
       case 'allow-once': return t('work.attention.act.allowOnce');
       case 'refuse-once': return t('work.attention.act.refuseOnce');

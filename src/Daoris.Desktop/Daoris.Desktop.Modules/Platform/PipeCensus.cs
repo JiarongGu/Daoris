@@ -243,6 +243,8 @@ public sealed class PipeCensus
             // RPC1c, PERSONDOOR1f: what waits for the person's Confirm is the window's to read and answer, so a terminal can ask and never
             // answer; and the person key is the window's, which the pipe never answers (D156 point 2, the terminal RPC design §4.3).
             "PERSON_CONFIRMATIONS", "PERSON_CONFIRM", "PERSON_KEY",
+            // NOTIFY2j: and what waits at the service's door, told to the windows, read beside the pipe's.
+            "SERVICE_CONFIRMATIONS",
             // CONFIRMSEEN1: that a card is in front of the person is the window's to say; a terminal saying it would start its two minutes.
             "PERSON_CONFIRM_SHOWN");
         // One route, two forms. What a switch of git would change compares programs Daoris already knows (the PATH's, a

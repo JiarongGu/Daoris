@@ -127,6 +127,8 @@ function start(rows: PushedAttention[], props: {
     }
     if (type === 'SESSION_HELPER_APPROVE') return { approved: true, why: null, message: 'yes' };
     if (type === 'SESSION_HELPER_DECLINE') return { declined: false, why: 'approved', message: 'x' };
+    if (type === 'SESSION_HAND_OVER_APPROVE') return { approved: true, why: null, message: 'yes', agent: 'claude-code' };
+    if (type === 'SESSION_HAND_OVER_DECLINE') return { declined: false, why: 'approved', message: 'x' };
     if (type === 'ASK_OPINION') return { session: request?.payload?.id, done: true, message: 'A second opinion is asked.' };
     if (type === 'OPINION_ANYWAY') return { session: request?.payload?.id, done: true, message: 'You went on without a settled second opinion.' };
     if (type === 'HARNESSES') return roster;
@@ -218,6 +220,43 @@ describe('What needs you on a machine', () => {
     await userEvent.click(within(item).getByRole('button', { name: 'Not now' }));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HELPER_DECLINE', { payload: { session: 'c0nv0001', ask: 'a1' } }));
     await waitFor(() => expect(notify).toHaveBeenCalledWith('It has your yes already: the driver starts it at its next look.', 'error'));
+  });
+
+  /**
+   * NOTIFY2e (D196 point 8): an agent's ask to hand its session over that waits on the person's word is a row waiting for it, with
+   * *Hand over to {agent}* and *Not now*, its session's foot's own presses by the session and the ask's own id; a refusal is said in
+   * its words. Its session standing still on it, the row holds work.
+   */
+  it('lists an agent’s ask to hand its session over, hands it over in one press and says a refused no in its words', async () => {
+    const notify = vi.fn();
+    start([row('hand-over', 'h1', '2026-10-01T09:00:00Z', {
+      where: '', session: 'c0nv0001', title: 'Near my limit; ParserTests are left.', agent: 'claude-code', stands: true,
+    })], { notify, doors: { 'hand-over': vi.fn() } });
+
+    const item = await screen.findByRole('listitem', { name: 'Near my limit; ParserTests are left.' });
+    expect(within(item).getByText('an agent asks to hand over')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Holding work/ })).toBeInTheDocument();
+    // The agent as the roster names it, once its last readings are read.
+    await userEvent.click(await within(item).findByRole('button', { name: 'Hand over to Claude Code' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HAND_OVER_APPROVE', { payload: { session: 'c0nv0001', ask: 'h1' } }));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('You said yes: it goes on with Claude Code at the driver’s next look, once its turn has ended.'));
+
+    await userEvent.click(within(item).getByRole('button', { name: 'Not now' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HAND_OVER_DECLINE', { payload: { session: 'c0nv0001', ask: 'h1' } }));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('It has your yes already, and goes at the driver’s next look.', 'error'));
+  });
+
+  it('says an agent’s ask to hand its session over and its presses in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      start([row('hand-over', 'h1', '2026-10-01T09:00:00Z', { where: '', session: 'c0nv0001', title: '快到额度了。', agent: 'claude-code' })]);
+      const item = await screen.findByRole('listitem', { name: '快到额度了。' });
+      expect(within(item).getByText('智能体请求转交')).toBeInTheDocument();
+      expect(await within(item).findByRole('button', { name: '转交给 Claude Code' })).toBeInTheDocument();
+      expect(within(item).getByRole('button', { name: '暂不' })).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 
   /**

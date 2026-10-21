@@ -21,7 +21,7 @@ namespace Daoris.Desktop;
 /// <para><b>Its inputs, from memory.</b> The sessions, the quests, the asks, the groups and the work as their slices last judged them
 /// (<see cref="StateSlice.Snapshot"/>); the registry as the machine's facts hold it; and what the driver's look kept: the trust holds,
 /// the considerations and the account waits as the tick hands them, the second opinions judged, the rule proposals, the helpers' asks,
-/// the held tool calls and the answers the answers-alone bound holds (COWORK1e, off the home's marks); and for the accounts' rows, the roster's last readings as <c>HARNESSES</c> answers them (asking no account,
+/// the agents' asks to hand over (NOTIFY2e), the held tool calls and the answers the answers-alone bound holds (COWORK1e, off the home's marks); and for the accounts' rows, the roster's last readings as <c>HARNESSES</c> answers them (asking no account,
 /// ROSTER1) and how each agent's accounts are used as the accounts slice holds it. Not judged until every slice it reads has judged and
 /// the registry has landed (PUSHUX1): a band drawn from half its inputs would say nothing waits where something does. The look's own
 /// lists are empty before its first look, as the page's were.</para>
@@ -32,7 +32,7 @@ namespace Daoris.Desktop;
 /// (<see cref="HeldPermissions.Changed"/>); the registry landing in the machine's facts; a press declared to the rules, the sessions, the
 /// driver or the roster (a proposal answered, a helper's yes or no, a reading); a harness action's end; the service coming up; a
 /// terminal's press for the window asked, shown or ended (<see cref="PipeConfirmations.Event"/>, CONFIRMSEEN1); and the
-/// 15 s period, which reads a helper's ask a terminal's driver wrote and an account a terminal signed in.</para>
+/// 15 s period, which reads a helper's or a hand-over's ask a terminal's driver wrote and an account a terminal signed in.</para>
 ///
 /// <para><b>Desktop-only.</b> A trust hold names a folder and the agent's own file, machine paths this machine's windows alone read
 /// (D47, D182 point 2).</para>
@@ -72,7 +72,7 @@ public static class AttentionStateSlice
             "kind", "id", "since", "workspace", "where", "note", "detail", "publishTo", "choices", "ask", "number", "goAhead", "session",
             "departed", "setUp", "local", "environment", "shows", "opinion", "placed", "sitting", "trust", "quest", "proposal", "title",
             "permission", "blocked", "held", "unreadable", "wholeWorkspace", "holding", "read", "runs", "account", "answer", "ended",
-            "confirmation", "stale",
+            "confirmation", "agent", "stands", "stale",
         ],
         ["waiting"] = ["kind", "workspace"],
         ["working"] = ["workspace"],
@@ -251,6 +251,7 @@ public static class AttentionStateSlice
             Proposals = Written(RulesRoutes.Proposals(loop.Home)),
             Opinions = Written(TreesRoutes.OpinionWaits(loop.Judged.Latest)),
             Helpers = Written(HelperWaits(loop.Home)),
+            HandOvers = Written(HandOverWaits(loop.Home)),
             Permissions = Written(PermissionWaits(HeldPermissions.Of(loop.Events))),
             Answers = Written(AnswerWaits(loop.Home)),
             Doors = Written(AgentsRoutes.Doors(loop.Harnesses, roster)),
@@ -331,6 +332,23 @@ public static class AttentionStateSlice
                 .Where(ask => ask.AskedBy == HelperAsk.ByAgent && files.ReadState(ask.Id) is { State: HelperStates.Waiting, Code: null })
                 .OrderBy(ask => ask.At)
                 .Select(ask => (object)new { ask.Id, Session = ask.Asker, ask.Question, ask.Agent, At = Moments.Write(ask.At) }),
+        ];
+    }
+
+    /// <summary>
+    /// What the agents' asks to hand their sessions over wait on the person's word (NOTIFY2e, MIXAGENT1c), oldest first: each the
+    /// driver's look holds <c>waiting</c> with no code and the agent it goes to, by the ask's own id, with the session that asked and
+    /// its note. One approved, taken or refused waits on nothing of theirs. A read off the home's sessions folder.
+    /// </summary>
+    public static IReadOnlyList<object> HandOverWaits(string home)
+    {
+        var files = new HandOverAskFiles(home);
+        return
+        [
+            .. files.Asks()
+                .Select(ask => (Ask: ask, State: files.ReadState(ask.Session)))
+                .Where(each => each.State is { State: HandOverAskStates.Waiting, Code: null, Agent: { Length: > 0 } } kept && kept.Id == each.Ask.Id)
+                .Select(each => (object)new { each.Ask.Id, each.Ask.Session, each.Ask.Note, each.State!.Agent, At = Moments.Write(each.Ask.At) }),
         ];
     }
 
