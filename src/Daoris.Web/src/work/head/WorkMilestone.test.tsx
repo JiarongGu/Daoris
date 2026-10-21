@@ -323,6 +323,42 @@ describe('an attempt held for the person', () => {
     expect(zh).toHaveTextContent('deploy，第 2 次尝试：它的插件的答复与它所针对的工作不符（acme-refused）。它在等你的答复。');
   });
 
+  // FABRIC-PERFORM1k (D173's RUN1e note): a plugin step's failure Daoris will not retry waits for the person's new attempt, its one
+  // press *Try again*, never their word on what became of it, in both languages.
+  const keptFailure = (over: Partial<HeldAttempt> = {}): HeldAttempt => heldAttempt({
+    attempt: 1, nodeState: 'failed', why: 'failure-kept', code: 'broken', outcome: 'failed', words: ['again'], said: 'its plugin said it failed', ...over,
+  });
+
+  it('offers a failure kept for the person their new attempt alone, saying its code, and presses it', async () => {
+    const row = heldRow(keptFailure());
+    expect(row).toMatchObject({ kind: 'work', title: 'deploy, attempt 1', where: 'u1' });
+    expect(row.detail).toBe('Its plugin said it failed (broken), and Daoris does not try it again by itself. Nothing goes on until you try it again (acme.deploy/deploy).');
+    expect(attentionActs(row)).toEqual(['again-step']);
+    expect(heldRow(keptFailure({ why: 'tries-spent', code: 'unavailable' })).detail).toContain('failed (unavailable) and its tries are spent');
+
+    const words: string[] = [];
+    render(<ul><AttentionRow item={row!} acts={{ held: (_, resolution) => words.push(resolution) }} /></ul>);
+    expect(screen.queryByRole('button', { name: 'It happened' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(words).toEqual(['again']);
+
+    const worded = heldRow(keptFailure({ resolution: 'again' }));
+    expect(worded.detail).toContain('your word “try again” is recorded');
+    expect(attentionActs(worded)).toEqual([]);
+  });
+
+  it('says a failure kept for the person on the work’s foot in English and in 中文', async () => {
+    const { unmount } = render(<WorkMilestone defaultOpen unit={unit({ held: [keptFailure()] })} />);
+    expect(screen.getByRole('region', { name: 'Where this work stands' }))
+      .toHaveTextContent('deploy, attempt 1: Its plugin said it failed (broken), and Daoris does not try it again by itself. It waits for you to try it again.');
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    render(<WorkMilestone defaultOpen unit={unit({ held: [keptFailure({ why: 'tries-spent', code: 'unavailable' })] })} />);
+    expect(screen.getByRole('region', { name: '这项工作进展到哪里' }))
+      .toHaveTextContent('deploy，第 1 次尝试：它的插件说它失败了（unavailable），重试次数已用完，Daoris 不会再自行重试。它在等你重试。');
+  });
+
   it('shows nothing held where the driver lists none, as on an install no plugin step governs', () => {
     render(<WorkMilestone defaultOpen unit={unit({ held: [] })} />);
     expect(screen.queryByText('Held for you')).not.toBeInTheDocument();

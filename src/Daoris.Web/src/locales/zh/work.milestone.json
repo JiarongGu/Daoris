@@ -93,5 +93,11 @@
   "work.milestone.held.act.resend": "再问一次结果",
   "work.milestone.held.act.stopClose": "停止余下的工作",
   "work.milestone.held.word.record": "重新记下结果",
-  "work.milestone.held.word.resend": "再问一次结果"
+  "work.milestone.held.word.resend": "再问一次结果",
+  "work.milestone.held.failed": "{{node}}，第 {{attempt}} 次尝试：{{why}}。它在等你重试。",
+  "work.milestone.held.failedDetail": "{{why}}。在你重试之前，什么都不会继续（{{step}}）。",
+  "work.milestone.held.why.failure-kept": "它的插件说它失败了（{{code}}），Daoris 不会自行重试",
+  "work.milestone.held.why.tries-spent": "它的插件说它失败了（{{code}}），重试次数已用完，Daoris 不会再自行重试",
+  "work.milestone.held.act.again": "重试",
+  "work.milestone.held.word.again": "重试"
 }
