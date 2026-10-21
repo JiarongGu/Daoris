@@ -16,7 +16,7 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import { keys } from '../data/queries';
-import { useSystemSpace, useSystemWiring, wiringAgainIn, type SystemWiring } from './system';
+import { useSpaceFree, useSystemSpace, useSystemWiring, wiringAgainIn, type SpaceUnit, type SystemWiring } from './system';
 
 const wrapper = (client: QueryClient) => ({ children }: { children: ReactNode }) => (
   <QueryClientProvider client={client}>{children}</QueryClientProvider>
@@ -133,5 +133,28 @@ describe('the system domain', () => {
     await act(async () => { await result.current.count(['logs']); });
     await act(async () => { await result.current.count(); });
     expect(invoke.mock.calls.slice(1).map((call) => call[2]?.payload)).toEqual([{ measure: ['logs'] }, { measure: true }]);
+  });
+
+  it("lists Free up space's units, changing nothing, and sends back exactly the ones pressed, now and early (KEEP1e)", async () => {
+    invoke.mockImplementation(async (_module: string, _type: string, request?: { payload?: { plan?: boolean } }) => (
+      request?.payload?.plan ? { schema: 1, now: [], early: [], doors: [], unread: {} } : { run: 'r1', joined: false }));
+    const { result } = renderHook(() => useSpaceFree(), { wrapper: wrapper(fresh()) });
+    const unit = (kind: string, id: string, early: boolean, own: boolean | null): SpaceUnit => ({
+      kind, id, early, why: early ? 'early' : 'past', bytes: 1, at: null, workspace: null, repository: null, own,
+    });
+
+    await act(async () => { await result.current.list.mutateAsync(); });
+    const started = await act(async () => result.current.free.mutateAsync({
+      now: [unit('logs', '2026-09-01.driver.jsonl', false, null)], early: [unit('set-aside', 'games/Daoris/s-1', true, true)],
+    }));
+
+    expect(started).toEqual({ run: 'r1', joined: false });
+    expect(invoke.mock.calls.map((call) => [call[1], call[2]?.payload])).toEqual([
+      ['SYSTEM_SPACE_FREE', { plan: true }],
+      ['SYSTEM_SPACE_FREE', {
+        units: [{ kind: 'logs', id: '2026-09-01.driver.jsonl', why: 'past', own: false }],
+        early: [{ kind: 'set-aside', id: 'games/Daoris/s-1', why: 'early', own: true }],
+      }],
+    ]);
   });
 });

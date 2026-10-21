@@ -41,14 +41,29 @@ export function Door({ label, onPress }: { label: string; onPress: () => void })
 }
 
 /** One card of the page: its title as a heading, a press at its right where it has one, and its rows under. */
-export function WiringCard({ id, title, aside, children }: { id: string; title: string; aside?: { label: string; busy?: boolean; onPress: () => void }; children: ReactNode }) {
+export function WiringCard({ id, title, aside, press, head, children }: {
+  id: string; title: string; aside?: { label: string; busy?: boolean; onPress: () => void };
+  /** The card's own press in its head, before `aside` (KEEP1e's *Free up space…*), disabled with its reason where `why` is said. */
+  press?: { label: string; disabled?: boolean; why?: string; primary?: boolean; onPress: () => void };
+  /** What a press of the head draws under it, above the rows (KEEP1e's list). */
+  head?: ReactNode;
+  children: ReactNode;
+}) {
   return (
     <Card id={id} className="scroll-mt-3">
       <section aria-label={title}>
-        <div className="flex items-baseline justify-between gap-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
           <SectionTitle>{title}</SectionTitle>
-          {aside && <Button variant="ghost" disabled={aside.busy} onClick={aside.onPress}>{aside.label}</Button>}
+          <span className="flex flex-wrap items-baseline gap-2">
+            {press && (
+              <Button variant={press.primary ? 'primary' : 'default'} disabled={press.disabled} title={press.why} onClick={press.onPress}>
+                {press.label}
+              </Button>
+            )}
+            {aside && <Button variant="ghost" disabled={aside.busy} onClick={aside.onPress}>{aside.label}</Button>}
+          </span>
         </div>
+        {head}
         {/* The card's rows on one label track (R1); a fold under them spans it. */}
         <SettingList>{children}</SettingList>
       </section>

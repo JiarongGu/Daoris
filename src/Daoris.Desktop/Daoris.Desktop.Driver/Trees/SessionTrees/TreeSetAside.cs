@@ -317,7 +317,7 @@ internal sealed class TreeSetAside(TreeContext context)
     }
 
     /// <summary>A file deleted where it can be; one that cannot is left for a later pass, which judges it again.</summary>
-    private static void TryDelete(string path)
+    internal static void TryDelete(string path)
     {
         try
         {
@@ -361,7 +361,9 @@ internal sealed class TreeSetAside(TreeContext context)
     /// once <paramref name="spent"/> says so, between folders and never inside one's delete, it stops, and the next pass takes up the
     /// rest; a folder whose delete failed for the same reason as at its last try waits a day. A folder's manifest goes with it.
     /// </summary>
-    internal IReadOnlyList<SetAside> PurgeSetAside(DateTimeOffset now, TimeSpan after, Func<bool> spent, out bool stopped)
+    /// <param name="only">The folders a press listed (KEEP1e, the cleanup design §3.3): only those are met, each judged again as the purge
+    /// judges every folder; null meets every folder past its days. A folder not met keeps what <c>purge-failed.json</c> says of it.</param>
+    internal IReadOnlyList<SetAside> PurgeSetAside(DateTimeOffset now, TimeSpan after, Func<bool> spent, out bool stopped, Func<string, bool>? only = null)
     {
         stopped = false;
         var results = new List<SetAside>();
@@ -374,6 +376,13 @@ internal sealed class TreeSetAside(TreeContext context)
         {
             if (MovedAt(Path.GetFileName(folder)) is not { } moved || now - moved < after) continue;
             var last = before.GetValueOrDefault(Path.GetFullPath(folder));
+            if (only is not null && !only(folder))
+            {
+                // Not this press's: what the last pass kept of it stays kept, as it was said.
+                if (last.Why is { } why) failed.Add((folder, why, last.Tried));
+                continue;
+            }
+
             if (last.Tried is { } tried && now - tried < SetAsideKeeping.Again)
             {
                 // Failed the same way twice: kept as the last pass said, and tried again the next day.

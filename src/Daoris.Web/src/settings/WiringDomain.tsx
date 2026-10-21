@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  type DownloadCleared, refusedNoRoute, useClearDownloads, useOpenLogFolder, useSystemDownloads, useSystemSpace, useSystemWiring,
-  useUpdateState,
+  type DownloadCleared, refusedNoRoute, type SpacePlan, type SpaceStarted, useClearDownloads, useOpenLogFolder, useSpaceFree,
+  useSystemDownloads, useSystemSpace, useSystemWiring, useUpdateState,
 } from '../bridge/shell';
 import { useSetKeep } from '../bridge/driver';
 import { failure, useErrorNotify } from '../design/ui';
@@ -14,6 +14,7 @@ import { WiringCards } from './wiring/WiringCards';
 import { WiringDownloads } from './wiring/WiringDownloads';
 import { WiringOlder } from './wiring/WiringHead';
 import { WiringSpace } from './wiring/WiringSpace';
+import { WiringSpaceFree } from './wiring/WiringSpaceFree';
 
 /** Where each file's door goes: the read names the place by a word, and the page knows its door (§3.4). */
 const FILE_DOORS: Record<string, StarterDoor> = {
@@ -29,8 +30,9 @@ const FILE_DOORS: Record<string, StarterDoor> = {
  * Settings → This Daoris (WIRING1c, the this-Daoris design §2): how this install is set up here, read from the shell's one
  * reader (`SYSTEM_WIRING`, WIRING1b) and drawn as cards. **It shows, and sets only the keep rules**: the domain that sets a thing
  * keeps its control, and a row whose value is set elsewhere carries a door to where. Its acts are the Downloads row's clearing
- * (CACHECLEAR1), listed first and then pressed, which removes only what nothing uses, and the Disk space card's *Change…* (KEEP1d),
- * the keep rules, which have no other place on the page (the cleanup design §8, the this-Daoris design §9).
+ * (CACHECLEAR1), listed first and then pressed, which removes only what nothing uses; the Disk space card's *Change…* (KEEP1d),
+ * the keep rules, which have no other place on the page (the cleanup design §8, the this-Daoris design §9); and that card's *Free up
+ * space…* (KEEP1e), listed first and then pressed, removing exactly what was listed.
  *
  * - **Machine-only** like every machine domain (D47 §4): a browser is never offered it, and no host route answers any of it.
  * - **Sizes are asked once**, when the page first has its answer: the open itself walks no folder, and the answer to the ask
@@ -62,6 +64,11 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   const clearDownloads = useClearDownloads();
   // KEEP1d: each rule's *Change…*, the same `keep` `daoris driver keep` edits; a refusal is said under its editor.
   const setKeep = useSetKeep();
+  // KEEP1e: Free up space…, listed first under the card's head, then pressed; a refusal stays beside the press (R3).
+  const spaceFree = useSpaceFree();
+  const [freeOpen, setFreeOpen] = useState(false);
+  const [plan, setPlan] = useState<SpacePlan | undefined>(undefined);
+  const [freeRefused, setFreeRefused] = useState<SpaceStarted | null>(null);
   useErrorNotify(downloads.error, notify);
   const asked = useRef(false);
   const older = query.isError && refusedNoRoute(query.error);
@@ -124,6 +131,28 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
             onSuccess: () => answered.done(),
             onError: (error) => answered.refused(sentence(error)),
           })}
+          onFreeUp={() => {
+            setFreeOpen(true);
+            setPlan(undefined);
+            setFreeRefused(null);
+            spaceFree.list.mutate(undefined, { onSuccess: setPlan, onError: failure(notify) });
+          }}
+          freeing={freeOpen ? (
+            <WiringSpaceFree
+              plan={plan}
+              busy={spaceFree.free.isPending || spaceFree.list.isPending}
+              refused={freeRefused}
+              onFree={(units) => spaceFree.free.mutate(units, {
+                // Started: the run's line says the rest, so the list closes; held: said here, the list kept open (R3).
+                onSuccess: (answer) => {
+                  if (answer.run) setFreeOpen(false);
+                  else setFreeRefused(answer);
+                },
+                onError: failure(notify),
+              })}
+              onClose={() => setFreeOpen(false)}
+            />
+          ) : undefined}
         />
       )}
       onOpenLogFolder={() => openLogs.mutate(undefined, {

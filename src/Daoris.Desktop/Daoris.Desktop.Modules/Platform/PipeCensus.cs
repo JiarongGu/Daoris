@@ -258,6 +258,8 @@ public sealed class PipeCensus
         table.Add("TOOLS_GIT", PipeRule.Of("way", PipeClass.Open, PipeClass.Person, "\"system\"", "\"managed\""));
         // An update's preview reads what it would change; with `apply: true` it replaces the plugin.
         table.Add("PLUGIN_UPDATE", PipeRule.Of("apply", PipeClass.Person, PipeClass.Open, "true"));
+        // KEEP1e: Free up space's list (`plan: true`) changes nothing; every other form starts a run removing what it names, their delete.
+        table.Add("SYSTEM_SPACE_FREE", PipeRule.Of("plan", PipeClass.Open, PipeClass.Person, "true"));
         return table;
 
         void Add(PipeClass @class, params string[] routes)

@@ -118,6 +118,7 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   TOOLS_DELETE: { scopes: ['tools'] },
   // CACHECLEAR1: the Downloads row's press; the agents' and tools' pages and This Daoris's sizes ask again.
   SYSTEM_DOWNLOADS_CLEAR: { scopes: ['harnesses', 'tools', 'wiring'] },
+  SYSTEM_SPACE_FREE: { scopes: ['harnesses', 'tools', 'wiring'] },
   TOOLS_LOOK: { scopes: ['tools'] },
   TOOLS_LOCATION: { scopes: ['tools'] },
   START_HELP: { scopes: ['sessions'] },

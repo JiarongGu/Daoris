@@ -1,5 +1,5 @@
 import type {
-  DownloadedVersion, DownloadsListing, SpaceKind, SystemSpace, SystemWiring, WiringFile, WiringFolder, WiringVariable,
+  DownloadedVersion, DownloadsListing, SpaceKind, SpacePlan, SystemSpace, SystemWiring, WiringFile, WiringFolder, WiringVariable,
 } from '../../data/wiring';
 
 // What the wiring reads back, for the stories and the tests of This Daoris (WIRING1c): neutral paths by convention, like the
@@ -276,3 +276,61 @@ export const SPACE_SET: SystemSpace = {
 
 /** A run a crash cut short, said beside the card's rows until the next run ends. */
 export const SPACE_STOPPED: SystemSpace = { ...SPACE, held: { pid: 4242, since: '2026-10-16T03:00:00.000+00:00', door: 'look', gone: true } };
+
+/** Free up space's list (KEEP1e): two folders and a day of the log the rules take now; three groups that could go early. */
+export const SPACE_PLAN: SpacePlan = {
+  schema: 1,
+  at: '2026-10-16T10:42:00.000+00:00',
+  now: [
+    { kind: 'set-aside', id: 'games/Daoris/s-1-20261001T090000000Z', early: false, why: 'past', bytes: 0.4 * GB, at: '2026-10-15T09:00:00.000+00:00', workspace: 'games', repository: 'Daoris', own: false },
+    { kind: 'set-aside', id: 'games/Daoris/s-2-20261001T100000000Z', early: false, why: 'past', bytes: 0.2 * GB, at: '2026-10-15T10:00:00.000+00:00', workspace: 'games', repository: 'Daoris', own: false },
+    { kind: 'logs', id: '2026-09-15.driver.jsonl', early: false, why: 'past', bytes: 4 * 1024 ** 2, at: null, workspace: null, repository: null, own: null },
+  ],
+  early: [
+    {
+      group: 'set-aside', count: 2, bytes: 1.5 * GB, own: 1,
+      units: [
+        { kind: 'set-aside', id: 'games/Daoris/s-3-20261014T090000000Z', early: true, why: 'early', bytes: 0.5 * GB, at: '2026-10-28T09:00:00.000+00:00', workspace: 'games', repository: 'Daoris', own: true },
+        { kind: 'set-aside', id: 'games/Kobo/s-4-20261015T090000000Z', early: true, why: 'early', bytes: 1.0 * GB, at: '2026-10-29T09:00:00.000+00:00', workspace: 'games', repository: 'Kobo', own: false },
+      ],
+    },
+    {
+      group: 'browser-cache', count: 1, bytes: 0.7 * GB, own: 0,
+      units: [{ kind: 'browser-cache', id: 'Default/Cache', early: true, why: 'early', bytes: 0.7 * GB, at: null, workspace: null, repository: null, own: null }],
+    },
+    {
+      group: 'left-over', count: 2, bytes: 282 * 1024 ** 2, own: 0,
+      units: [
+        { kind: 'left-over', id: 'webview2', early: true, why: 'early', bytes: 270 * 1024 ** 2, at: null, workspace: null, repository: null, own: null },
+        { kind: 'left-over', id: 'browser/profile', early: true, why: 'early', bytes: 12 * 1024 ** 2, at: null, workspace: null, repository: null, own: null },
+      ],
+    },
+  ],
+  doors: ['history', 'trees'],
+  unread: {},
+};
+
+/** A press's run under way: the set-aside folders done, the log's day running. */
+export const SPACE_RUNNING: SystemSpace = {
+  ...SPACE,
+  run: {
+    id: 'r1', door: 'press', started: '2026-10-16T10:43:00.000+00:00', ended: null, outcome: null,
+    kinds: [
+      { id: 'set-aside', state: 'done', removed: { count: 2, bytes: 0.6 * GB }, kept: {} },
+      { id: 'logs', state: 'running', removed: { count: 0, bytes: 0 }, kept: {} },
+    ],
+  },
+  held: { pid: 4242, since: '2026-10-16T10:43:00.000+00:00', door: 'press', gone: false },
+};
+
+/** That run ended: one folder changed since the list and kept. */
+export const SPACE_FREED: SystemSpace = {
+  ...SPACE,
+  run: {
+    id: 'r1', door: 'press', started: '2026-10-16T10:43:00.000+00:00', ended: '2026-10-16T10:44:00.000+00:00', outcome: 'kept',
+    kinds: [
+      { id: 'set-aside', state: 'done', removed: { count: 1, bytes: 0.4 * GB }, kept: { changed: 1 } },
+      { id: 'logs', state: 'done', removed: { count: 1, bytes: 4 * 1024 ** 2 }, kept: {} },
+    ],
+  },
+};

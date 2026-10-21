@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// The set-aside kind's one removal (KEEP1a, D195 points 1 and 3; the cleanup design §2.1, §3.1 and §5): the purge at the policy's days,
 /// then the slims due, within the pass's budget. The look's Keeping pass calls it holding the home's run lock (<see cref="KeepingRun"/>);
-/// a press's run and a terminal's will call it the same way (KEEP1e), so the three share one set of guards. Outside every repository's
+/// a press's run and a terminal's call it the same way (KEEP1e, <see cref="SpaceFree"/>), so the three share one set of guards. Outside every repository's
 /// hold: it touches no git and no live tree.
 /// </summary>
 /// <remarks>
@@ -27,18 +27,79 @@ internal sealed class SetAsideKeeping(TreeContext context, TreeSetAside setAside
     internal static readonly TimeSpan Again = TimeSpan.FromDays(1);
 
     /// <summary>One run of the set-aside kind's removal at <paramref name="now"/>, by <paramref name="policy"/>.</summary>
-    internal SetAsideRun Run(KeepPolicy policy, DateTimeOffset now, TimeSpan budget, CancellationToken ct)
+    /// <param name="purge">The folders past their days a press listed (KEEP1e); null purges every one.</param>
+    /// <param name="slim">The folders whose slim is due a press listed (KEEP1e); null slims every one.</param>
+    internal SetAsideRun Run(
+        KeepPolicy policy, DateTimeOffset now, TimeSpan budget, CancellationToken ct, Func<string, bool>? purge = null, Func<string, bool>? slim = null)
     {
         var clock = Stopwatch.StartNew();
         bool Spent() => clock.Elapsed >= budget || ct.IsCancellationRequested;
-        var purged = setAside.PurgeSetAside(now, policy.SetAside.Days, Spent, out var stopped);
+        var purged = setAside.PurgeSetAside(now, policy.SetAside.Days, Spent, out var stopped, purge);
         var slims = new List<SlimResult>();
-        if (!stopped && !policy.SetAside.Whole) stopped = SlimDue(now, Spent, slims);
+        if (!stopped && !policy.SetAside.Whole) stopped = SlimDue(now, Spent, slims, slim);
         return new(purged, slims) { Stopped = stopped };
     }
 
+    /// <summary>
+    /// What the press lists of the set-aside folders (KEEP1e, the cleanup design §3.3), read and never written: each folder with when it
+    /// was moved and when its days end; whether the purge takes it now (past its days, nothing written in it since), whether its slim is
+    /// due, and whether it holds files of its own (something written in it after the move, or a link in it, which the purge keeps it for).
+    /// </summary>
+    internal IReadOnlyList<SetAsideListed> List(KeepPolicy policy, DateTimeOffset now)
+    {
+        var listed = new List<SetAsideListed>();
+        if (!Directory.Exists(setAside.SetAsideRoot)) return listed;
+        foreach (var workspace in Directory.EnumerateDirectories(setAside.SetAsideRoot))
+        foreach (var repository in Directory.EnumerateDirectories(workspace))
+        foreach (var folder in Directory.EnumerateDirectories(repository))
+        {
+            if (TreeSetAside.MovedAt(Path.GetFileName(folder)) is not { } moved) continue;
+            var kept = setAside.Kept(folder, moved);
+            var past = now - moved >= policy.SetAside.Days;
+            var slim = !past && !policy.SetAside.Whole && kept is null && SlimDueOf(folder, now);
+            listed.Add(new(folder, Path.GetFileName(workspace), Path.GetFileName(repository), moved, moved + policy.SetAside.Days, past, slim, kept?.Code));
+        }
+
+        return listed;
+    }
+
+    /// <summary>Whether <paramref name="folder"/>'s manifest reads at <c>moved</c>, an hour after its move, with a path left to take.</summary>
+    private static bool SlimDueOf(string folder, DateTimeOffset now) =>
+        SlimManifest.Read(SlimManifest.PathFor(folder)).Manifest is { State: SlimStates.Moved, Moved: { } moved } manifest
+        && now - moved >= KeepKinds.SetAsideSettle
+        && manifest.Paths.Any(path => !path.Final && !Waits(path, now));
+
+    /// <summary>
+    /// A folder set aside removed before its date by the person's word (KEEP1e, the cleanup design §3.3), whole and with its manifest,
+    /// judged again right before it goes: one reached through a link, or that cannot be read, is kept; one that holds files of its own now
+    /// where the list said it held none changed since the list, and is kept. Never following a link inside it.
+    /// </summary>
+    /// <param name="listedOwn">Whether the list the person read said it holds files of its own.</param>
+    internal (long Bytes, string? Kept) RemoveEarly(string folder, bool listedOwn)
+    {
+        if (!Directory.Exists(folder)) return (0, SpaceKept.Gone);
+        if (TreeSetAside.MovedAt(Path.GetFileName(folder)) is not { } moved) return (0, SpaceKept.Refused);
+        if (context.Worktrees.LinkBelowTreesRoot(folder) is not null) return (0, SetAsideKept.Linked);
+        var kept = setAside.Kept(folder, moved);
+        if (kept is { Code: SetAsideKept.Unread }) return (0, SetAsideKept.Unread);
+        if (kept is not null && !listedOwn) return (0, SpaceKept.Changed);
+        long bytes;
+        try
+        {
+            bytes = TreeSetAside.DeleteNeverFollowing(folder);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // What went before the failure stays gone; the rest waits its days, or the next press.
+            return (0, SpaceKept.Failed);
+        }
+
+        TreeSetAside.TryDelete(SlimManifest.PathFor(folder));
+        return (bytes, null);
+    }
+
     /// <summary>The slims due: each manifest at <c>moved</c> an hour after its move; true where the budget or a stop ended the pass.</summary>
-    private bool SlimDue(DateTimeOffset now, Func<bool> spent, List<SlimResult> slims)
+    private bool SlimDue(DateTimeOffset now, Func<bool> spent, List<SlimResult> slims, Func<string, bool>? only)
     {
         if (!Directory.Exists(setAside.SetAsideRoot)) return false;
         foreach (var workspace in Directory.EnumerateDirectories(setAside.SetAsideRoot))
@@ -46,6 +107,7 @@ internal sealed class SetAsideKeeping(TreeContext context, TreeSetAside setAside
         foreach (var file in Directory.EnumerateFiles(repository, "*" + SlimManifest.Suffix).ToList())
         {
             var folder = SlimManifest.FolderOf(file)!;
+            if (only is not null && !only(folder)) continue;
             if (!Directory.Exists(folder))
             {
                 // Its folder went at its days, or by the person's hand: the manifest goes with it.
@@ -182,6 +244,21 @@ internal sealed class SetAsideKeeping(TreeContext context, TreeSetAside setAside
             // Left, it is read again at the next pass, and judged the same way.
         }
     }
+}
+
+/// <summary>A folder set aside as the press lists it (<see cref="SetAsideKeeping.List"/>).</summary>
+/// <param name="Goes">When its days end, and the purge takes it.</param>
+/// <param name="Past">Its days have ended.</param>
+/// <param name="Slim">Its slim is due: an hour after its move, a package folder left to take.</param>
+/// <param name="Kept">Why the purge keeps it, <see cref="SetAsideKept"/>'s code; null where nothing in it keeps it.</param>
+internal sealed record SetAsideListed(
+    string Folder, string Workspace, string Repository, DateTimeOffset Moved, DateTimeOffset Goes, bool Past, bool Slim, string? Kept)
+{
+    /// <summary>It holds files of its own: something written in it after its move, or a link in it.</summary>
+    public bool Own => Kept is SetAsideKept.Written or SetAsideKept.Linked;
+
+    /// <summary>Its id in a press: <c>&lt;workspace&gt;/&lt;repository&gt;/&lt;folder&gt;</c>, as the card's walk names it.</summary>
+    public string Id => $"{Workspace}/{Repository}/{Path.GetFileName(Folder)}";
 }
 
 /// <summary>One run of the set-aside kind's removal: the folders the purge met and the slims it made.</summary>

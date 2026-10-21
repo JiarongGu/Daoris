@@ -347,6 +347,15 @@ public sealed partial class HelpCoverageTests
         + "nothing to propose, as `wiring` is exempt (D195, D110 §4); each rule is set at its own door once it may be.");
 
     /// <summary>
+    /// KEEP1e's <i>Free up space…</i> and <c>daoris-driver space free</c> (D195 point 4, the cleanup design §4.4): exempt, in CACHECLEAR1's
+    /// words, since it is a discard that stays the person's own press, listed first, nothing in use removed.
+    /// </summary>
+    private static readonly Exempt SpaceFreeDoor = new(
+        "it removes what the person's list showed, a discard that stays the person's own press (D89, D195), listed first and each "
+        + "unit judged again right before it goes, nothing in use removed, as the Downloads row's clearing is; a go reaches "
+        + "Settings → This Daoris.");
+
+    /// <summary>
     /// WORKFLOW1f's <c>daoris-driver workflow keep</c> (D157 point 10, the workflow design §4.4), a verb of the headless host:
     /// exempt, since keeping a workflow that asks less of the person for work outside its kind's paths is their say-so, as going
     /// on without a second opinion is. The screen's press is the editor's row (WORKFLOW1g).
@@ -965,6 +974,8 @@ public sealed partial class HelpCoverageTests
             "it removes downloaded versions from this machine after the person has read the list, a discard that stays the person's own "
             + "press (D89), as the clean-up's is; nothing it removes is in use, and the next use downloads it again; a go reaches "
             + "Settings → This Daoris.")),
+        // KEEP1e: Free up space…, listed first and then pressed (D88's shape, the cleanup design §4.4).
+        ("wiring", "useSpaceFree", null, SpaceFreeDoor),
     ];
 
     /// <summary>
@@ -1517,7 +1528,7 @@ public sealed partial class HelpCoverageTests
 
     /// <summary>
     /// KEEP1c: the headless host's <c>space</c> is exempt from Ask Daoris (D195, D110 §4) while its usage spells it: a read that removes
-    /// nothing, with no kind of that name to take it. Its <c>space free</c> and the rules' <c>keep</c> are KEEP1e's and KEEP1d's.
+    /// nothing, with no kind of that name to take it. Its <c>space free</c> is <see cref="SpaceFreeDoor"/>; the rules' <c>keep</c> is KEEP1d's.
     /// </summary>
     [Fact]
     public void The_headless_hosts_space_is_exempt_since_it_changes_nothing()
@@ -1526,6 +1537,20 @@ public sealed partial class HelpCoverageTests
         Assert.Null(HelpProposalKinds.Find("space"));
         Assert.Contains("changes nothing", SpaceDoor.Reason);
         Assert.Contains("D195", SpaceDoor.Reason);
+    }
+
+    /// <summary>
+    /// KEEP1e: the headless host's <c>space free</c> and the card's <i>Free up space…</i> are exempt from Ask Daoris (D195, D110 §4), in
+    /// CACHECLEAR1's words: a discard that stays the person's own press, listed first, nothing in use removed.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_space_free_is_exempt_as_the_persons_own_discard()
+    {
+        Assert.Contains("space free [--kind <id>]... [--early <group>]... [--yes]", DriverCommand.Usage);
+        Assert.Null(HelpProposalKinds.Find("space"));
+        Assert.Contains("the person's own press", SpaceFreeDoor.Reason);
+        Assert.Contains("listed first", SpaceFreeDoor.Reason);
+        Assert.Contains("D195", SpaceFreeDoor.Reason);
     }
 
     /// <summary>

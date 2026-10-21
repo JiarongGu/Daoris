@@ -58,6 +58,13 @@ public sealed class DriverModule : ModuleBase
         init => _context.WiringWorlds = value;
     }
 
+    /// <summary>What *Free up space…* is handed, changed (KEEP1e): null is the window's own; a test names a browser host and a clock of its own.</summary>
+    public Func<SpaceFreeWorld, SpaceFreeWorld>? SpaceFreeWorlds
+    {
+        get => _context.SpaceFreeWorlds;
+        init => _context.SpaceFreeWorlds = value;
+    }
+
     // Each domain's handler, built over the context, in the order of Domains: a route's entry names its domain's place.
     private readonly object[] _handlers;
 

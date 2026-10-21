@@ -14,12 +14,14 @@ import { WiringLogs } from './WiringLogs';
 import { WiringLoop } from './WiringLoop';
 import { WiringService } from './WiringService';
 import { WiringSpace } from './WiringSpace';
+import { WiringSpaceFree } from './WiringSpaceFree';
 import { WiringTerminal } from './WiringTerminal';
 import { WiringToolHome } from './WiringToolHome';
 import { WiringVariablesCard } from './WiringVariables';
 import { WiringVersions } from './WiringVersions';
 import {
-  DEVELOPMENT, DOWNLOADS, MEASURING, SPACE, SPACE_COUNTING, SPACE_SET, SPACE_STOPPED, SPACE_UNCOUNTED, WIRED,
+  DEVELOPMENT, DOWNLOADS, MEASURING, SPACE, SPACE_COUNTING, SPACE_FREED, SPACE_PLAN, SPACE_RUNNING, SPACE_SET, SPACE_STOPPED,
+  SPACE_UNCOUNTED, WIRED,
 } from './wiringFixtures';
 
 // Settings → This Daoris's cards (WIRING1c, the this-Daoris design §3.1-3.3, §7), in the shape `SYSTEM_WIRING` answers: an
@@ -346,6 +348,56 @@ export const SpaceEditingChineseNarrow: Story = {
 
 /** The first load: skeleton rows in the card's place. */
 export const SpaceLoading: Story = { render: () => space({ space: undefined }) };
+
+// KEEP1e (the cleanup design §3.3, §4.1, §4.2): Free up space…, listed under the card's head, then pressed; a run's line under way and
+// ended; a refusal said beside the press. At the three widths in English and 中文, light and dark.
+const freeing = (props: Partial<Parameters<typeof WiringSpaceFree>[0]> = {}) => (
+  <WiringSpaceFree plan={SPACE_PLAN} onFree={() => {}} onClose={() => {}} {...props} />
+);
+const listed = (props: Partial<Parameters<typeof WiringSpaceFree>[0]> = {}) => space({ onFreeUp: () => {}, freeing: freeing(props) });
+
+/** The list: what goes now with its one press, what could go early in groups each with its own, and the kinds with presses of their own. */
+export const SpaceFreeListed: Story = { render: () => listed(), decorators: inTheme('light') };
+
+/** The same, in dark. */
+export const SpaceFreeListedDark: Story = { render: () => listed(), decorators: inTheme('dark') };
+
+/** The same at the half width. */
+export const SpaceFreeListedHalf: Story = { render: () => listed(), decorators: [storyWidths.half] };
+
+/** The same at the 400 px floor. */
+export const SpaceFreeListedNarrow: Story = { render: () => listed(), decorators: narrow };
+
+/** In 中文, wide, half and at the floor. */
+export const SpaceFreeListedChinese: Story = { render: () => listed(), decorators: [chinese] };
+
+export const SpaceFreeListedChineseHalf: Story = { render: () => listed(), decorators: [storyWidths.half, chinese] };
+
+export const SpaceFreeListedChineseNarrow: Story = { render: () => listed(), decorators: [...narrow, chinese] };
+
+/** The list on its way. */
+export const SpaceFreeListing: Story = { render: () => listed({ plan: undefined }) };
+
+/** A press refused while a terminal's run holds Daoris's keeping, said where it was pressed. */
+export const SpaceFreeRefused: Story = {
+  render: () => listed({
+    refused: { run: null, joined: false, why: 'held', held: { pid: 4242, since: '2026-10-16T10:40:00.000+00:00', door: 'terminal', gone: false } },
+  }),
+};
+
+/** A run under way: the kind it is on, and the press held meanwhile. */
+export const SpaceFreeRunning: Story = { render: () => space({ space: SPACE_RUNNING, onFreeUp: () => {} }) };
+
+/** The same in 中文 at the floor. */
+export const SpaceFreeRunningChineseNarrow: Story = { render: () => space({ space: SPACE_RUNNING, onFreeUp: () => {} }), decorators: [...narrow, chinese] };
+
+/** The run ended: what went, and what was kept by reason. */
+export const SpaceFreeEnded: Story = { render: () => space({ space: SPACE_FREED, onFreeUp: () => {} }), decorators: inTheme('light') };
+
+/** The same, in dark and in 中文 at the half width. */
+export const SpaceFreeEndedDark: Story = { render: () => space({ space: SPACE_FREED, onFreeUp: () => {} }), decorators: inTheme('dark') };
+
+export const SpaceFreeEndedChineseHalf: Story = { render: () => space({ space: SPACE_FREED, onFreeUp: () => {} }), decorators: [storyWidths.half, chinese] };
 
 /** A shell older than the page: the card says it answers no disk space. */
 export const SpaceOlder: Story = { render: () => space({ space: undefined, older: true }) };

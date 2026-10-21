@@ -8,6 +8,15 @@ with the version and date at release.
 - *Done and failed* in *Notifications* now also lists, in your language, a meeting or a brainstorm that stopped because something
   failed, an ask for a helper refused because the session that asked it left this machine, a reopen that reached no session here or
   whose session's tree is gone, and a plugin that stopped after exiting three times within an hour.
+- The *Disk space* card on Settings → This Daoris has *Free up space…*. It first lists, removing nothing, what each rule would take now
+  (trees set aside past their days, their package folders once due, downloads unused past their days, machine log days past their days)
+  and what could go early on your word: trees set aside before their date (saying which hold files of their own), unused downloads
+  still within their days, the browser's caches, what an earlier build left and a failed update's folder. One press removes what the
+  rules take; each early group has its own press, which says first what it removes. Each item is checked again just before it goes,
+  and one that changed since the list is kept and said. The browser's caches are cleared only while Daoris's browser is closed, and
+  its sign-ins stay. The card then shows the run as it goes and what it removed and kept. `daoris-driver space free` lists the same at
+  a terminal, and with `--yes` removes it: confirmed in Daoris's window when Daoris is running, refused from a session's own terminal.
+  In English and 中文.
 - `daoris-driver notices` prints what came to you from a terminal, changing nothing: what waits for your confirmation (by its act
   and session), what needs you by group, unread messages by ask, and *Done and failed*, as Daoris's *Notifications* holds them;
   `--json` prints the same as one JSON document. Without a running Daoris it reads the notices kept on this machine and says that the

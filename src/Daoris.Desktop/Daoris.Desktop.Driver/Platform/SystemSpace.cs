@@ -44,7 +44,7 @@ public static class SpaceKinds
 
     /// <summary>
     /// The browser's caches, relative to <c>browser-engine</c>'s root, its active profile being <c>Default</c> (the cleanup design §3.2's
-    /// table): counted here as the browser's own; nothing of Daoris's clears them yet (KEEP1e, KEEP1f).
+    /// table): counted here as the browser's own, cleared only by the person's press while the browser is closed (KEEP1e, <see cref="BrowserCacheClearing"/>); below the floor too once KEEP1f builds it.
     /// </summary>
     public static IReadOnlyList<string> BrowserCaches { get; } =
     [
@@ -315,6 +315,9 @@ public sealed record SpaceWorld(string Home)
     /// <summary>Whether a process still runs, for the run lock's holder; null asks the system.</summary>
     public Func<int, bool>? Lives { get; init; }
 
+    /// <summary>The press's runs in this process (KEEP1e), whose current or last is the answer's <c>run</c>.</summary>
+    public SpaceRuns Runs { get; init; } = SpaceRuns.Shared;
+
     /// <summary>The terminal's world: this home, its downloads' uses read from the files as the loop resolves them.</summary>
     public static SpaceWorld OfThisTerminal(string home) => new(home)
     {
@@ -330,8 +333,8 @@ public sealed record SpaceWorld(string Home)
 /// </summary>
 /// <remarks>
 /// <para>The shape is a wire shape: every field added, never renamed. A fact not read is <c>null</c> beside its <c>…Why</c>. The floor
-/// (<c>volume.floor</c>, <c>below</c>, <c>freedEarly</c>, a kind's own <c>volume</c>) and the press's <c>run</c> are KEEP1f's and KEEP1e's:
-/// answered as none until the rule that fills them runs, so the card never shows a rule that does not run (§9).</para>
+/// (<c>volume.floor</c>, <c>below</c>, <c>freedEarly</c>, a kind's own <c>volume</c>) is KEEP1f's: answered as none until the rule that
+/// fills it runs, so the card never shows a rule that does not run (§9). The press's <c>run</c> is KEEP1e's (<see cref="SpaceRuns"/>).</para>
 /// </remarks>
 public static class SystemSpace
 {
@@ -363,8 +366,8 @@ public static class SystemSpace
                 : null,
             ["volumeWhy"] = volume is null ? "unreadable" : null,
             ["kinds"] = kinds,
-            // KEEP1e's: the press's run, under way or last ended in this process.
-            ["run"] = null,
+            // KEEP1e: the press's run, under way or last ended in this process; none where this process ran none.
+            ["run"] = world.Runs.Last(home)?.Json(),
             ["held"] = holder is null
                 ? null
                 : new JsonObject { ["pid"] = holder.Pid, ["since"] = Moments.Write(holder.Since), ["door"] = holder.Door, ["gone"] = holder.Gone },

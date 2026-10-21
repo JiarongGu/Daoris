@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../data/queries';
-import type { DownloadCleared, DownloadedVersion, DownloadsListing, SystemSpace, SystemWiring } from '../data/wiring';
+import type {
+  DownloadCleared, DownloadedVersion, DownloadsListing, SpacePlan, SpaceStarted, SpaceUnit, SystemSpace, SystemWiring,
+} from '../data/wiring';
 import { call, refusedNoRoute } from './call';
 import { pollUnlessTold } from './state/published';
 
@@ -9,7 +11,8 @@ import { pollUnlessTold } from './state/published';
 // `daoris-driver wiring`, one reader in the driver library. Shell-only: this machine's paths, variables and service (D47 §4).
 // The shape is a wire shape (`data/wiring.ts`, where the cards that draw it can name it): a field is added, never renamed.
 export type {
-  DownloadCleared, DownloadedVersion, DownloadsListing, SpaceKind, SystemSpace, SystemWiring, WiringFile, WiringFolder, WiringLocated,
+  DownloadCleared, DownloadedVersion, DownloadsListing, SpaceKind, SpacePlan, SpaceRun, SpaceStarted, SpaceUnit, SystemSpace, SystemWiring,
+  WiringFile, WiringFolder, WiringLocated,
   WiringOld, WiringToolFolder, WiringVariable,
 } from '../data/wiring';
 // The page tells a shell older than it by this refusal, and reaches the route helper through the domain, not around it.
@@ -64,7 +67,12 @@ export const useSystemSpace = () => {
     queryFn: () => call<SystemSpace>('SYSTEM_SPACE'),
     enabled: isAvailable,
     retry: (count, error) => !refusedNoRoute(error) && count < 2,
-    refetchInterval: (current) => (current.state.data?.kinds?.some((kind) => kind.counting) ? pollUnlessTold(isAvailable, 2_000) : false),
+    // KEEP1e: a press's run under way reads again too, each kind's end told by the bus where there is one.
+    refetchInterval: (current) => {
+      const data = current.state.data;
+      const running = data?.kinds?.some((kind) => kind.counting) || (data?.run != null && !data.run.outcome);
+      return running ? pollUnlessTold(isAvailable, 2_000) : false;
+    },
   });
   const count = async (kinds?: string[]) => {
     const asked = Date.now();
@@ -100,3 +108,21 @@ export const useClearDownloads = () =>
         versions: versions.map(({ kind, name, version, unfinished }) => ({ kind, name, version, unfinished })),
       }),
   });
+
+/** A listed unit as a press sends it back: its kind and id, why the list named it, and whether it held files of its own. */
+const sent = (unit: SpaceUnit) => ({ kind: unit.kind, id: unit.id, why: unit.why, own: unit.own === true });
+
+/**
+ * *Free up space…* (KEEP1e, the cleanup design §3.3, D88's shape): `list` asks what each rule takes now and what could go early, and
+ * changes nothing; `free` sends exactly the units the list showed, each judged again by the driver right before it goes, and is answered
+ * at once with the run's id, its progress then read in `SYSTEM_SPACE`'s `run`. A press while another run holds Daoris's keeping is
+ * answered `held`, nothing done. What a run moves is asked again by the state hub, as the route declares it.
+ */
+export const useSpaceFree = () => {
+  const list = useMutation({ mutationFn: () => call<SpacePlan>('SYSTEM_SPACE_FREE', { plan: true }) });
+  const free = useMutation({
+    mutationFn: ({ now, early }: { now: SpaceUnit[]; early: SpaceUnit[] }) =>
+      call<SpaceStarted>('SYSTEM_SPACE_FREE', { units: now.map(sent), early: early.map(sent) }),
+  });
+  return { list, free };
+};

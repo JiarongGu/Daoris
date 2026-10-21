@@ -63,6 +63,7 @@
   "person.route.RECOVERY_DROP": "丢弃为恢复而保留的提交",
   "person.route.HISTORY_CLEAR": "从本机清除已完成工作的记录",
   "person.route.SYSTEM_DOWNLOADS_CLEAR": "清除 Daoris 保留的下载",
+  "person.route.SYSTEM_SPACE_FREE": "释放空间，移除列表所列的内容",
   "person.route.STOP_OPINION": "停止一个第二意见",
   "person.route.STOP_TASK": "停止一个会话运行的任务",
   "person.route.CANCEL_TURN": "停止一个会话的本轮",

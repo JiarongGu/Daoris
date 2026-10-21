@@ -41,6 +41,12 @@ public sealed class DriverLoop(
     /// </summary>
     public ReviewDesk? Reviews { get; } = reviews is null ? null : new ReviewDesk(reviews);
 
+    /// <summary>
+    /// The shell's word on Daoris's own browser for clearing its caches (KEEP1e, the cleanup design §3.2): its browser host, handed as the
+    /// in-app browser is. Null where this loop carries no browser, which keeps the caches, as a terminal alone does.
+    /// </summary>
+    public IBrowserCaches? BrowserCaches => browser as IBrowserCaches;
+
     private readonly CancellationTokenSource _stopping = new();
     private readonly TaskCompletionSource<bool> _hostReady = new();
     private DriverWatch? _watch;

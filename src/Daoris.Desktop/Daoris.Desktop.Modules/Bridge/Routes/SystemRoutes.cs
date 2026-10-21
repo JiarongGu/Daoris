@@ -72,6 +72,52 @@ public sealed class SystemRoutes(DriverContext context)
         }, cancellationToken);
     }
 
+    // KEEP1e (D195 point 4, the cleanup design §3.3, §4.4): *Free up space…*, listed first, then pressed, through the driver library's
+    // `SpaceFree`, which `daoris-driver space free` calls too. `{ plan: true }` answers the list and changes nothing (open on the pipe, a
+    // `PipeRule`): per kind what its rule takes now, what could go early in groups, and the doors of the kinds with presses of their own.
+    // `{ units, early }` starts a run removing exactly those, each judged again right before it goes, under the home's run lock, and answers
+    // at once `{ run, joined }`; a run under way here is joined, and one held elsewhere is refused as data, `{ why: held, held, message }`.
+    // The run's progress is `SYSTEM_SPACE`'s `run`; each kind's end and the whole's tell `wiring`. The removal is the person's delete.
+    [DriverRoute("SYSTEM_SPACE_FREE")]
+    [Publishes("SYSTEM_SPACE_FREE", StateScopes.Harnesses | StateScopes.Tools | StateScopes.Wiring)]
+    private Task<object?> FreeSpaceAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var plan = request.Payload is { ValueKind: JsonValueKind.Object } body
+            && body.TryGetProperty("plan", out var asked) && asked.ValueKind == JsonValueKind.True;
+        var world = SpaceFreeWorldOf();
+        if (plan)
+        {
+            return Task.Run(() =>
+            {
+                using var answer = JsonDocument.Parse(SpaceFree.Json(SpaceFree.Plan(world, cancellationToken)).ToJsonString());
+                return (object?)answer.RootElement.Clone();
+            }, cancellationToken);
+        }
+
+        var units = SpaceFree.Asked(request.Payload);
+        var start = SpaceRuns.Shared.Start(world, KeepingRun.Press, units, _ => StatePublisher.Publish(_context.Events, StateScopes.Wiring));
+        if (start.Run is not { } run)
+        {
+            var held = start.Held;
+            return Task.FromResult<object?>(new
+            {
+                Run = (string?)null, Joined = false, Why = "held",
+                Held = held is null ? null : new { held.Pid, Since = Moments.Write(held.Since), held.Door, held.Gone },
+                Message = $"{held?.Said ?? "another run"} holds Daoris's keeping, so nothing was removed; press again once it ends",
+            });
+        }
+
+        return Task.FromResult<object?>(new { Run = run.Id, start.Joined });
+    }
+
+    /// <summary>The press's world here: this home's sizes and downloads' judge, the shell's browser host and the loop's log; a test's changed.</summary>
+    private SpaceFreeWorld SpaceFreeWorldOf()
+    {
+        var loop = _context.Loop;
+        var world = new SpaceFreeWorld(loop.Home) { Judge = Judge, Caches = loop.BrowserCaches, Log = loop.Log };
+        return _context.SpaceFreeWorlds?.Invoke(world) ?? world;
+    }
+
     /// <summary>The kinds a read asks counted: every kind for <c>measure: true</c>, the named ones for a list, none otherwise.</summary>
     public static IReadOnlyList<string> SpaceAsked(JsonElement? payload)
     {

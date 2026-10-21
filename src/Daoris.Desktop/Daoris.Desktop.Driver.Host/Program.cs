@@ -711,6 +711,22 @@ try
         return exit;
     }
 
+    // Free up space from a terminal (KEEP1e, D195 point 4, D50): the Disk space card's *Free up space…* is the other door to the same
+    // list and run. Listed first and changing nothing; with --yes, the client of a running Daoris (confirmed in its window), or alone
+    // under the home's run lock, refused from a session's terminal.
+    if (args is ["space", "free", .. var freeArgs])
+    {
+        var freeHome = DaorisHome.Resolve() ?? throw new DriverException(DaorisHome.Sentence);
+        // A Ctrl+C is a stop heard between units, never inside one's delete (the cleanup design §3.1).
+        Console.CancelKeyPress += (_, press) =>
+        {
+            press.Cancel = true;
+            closing.Cancel();
+        };
+        return await SpaceFreeCommand.RunAsync(
+            freeArgs, SpaceFreeWorld.OfThisTerminal(freeHome, log), Daoris.Driver.Host.InstanceHost.World(freeHome, "daoris-driver"), closing.Token);
+    }
+
     // The disk space from a terminal (KEEP1c, D195 point 5, D50): This Daoris's Disk space card is the other door to the same reader.
     // Reads only, and needs no service: each kind's size is this process's walk, `--measure`'s.
     if (args is ["space", .. var spaceArgs])

@@ -411,6 +411,23 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
+    /// KEEP1e (the cleanup design §4.4): <c>space free</c> is a door the usage names, routed by the host to the library's verb before the
+    /// read, with this host's log and the instance's door for its home.
+    /// </summary>
+    [Fact]
+    public void The_usage_names_space_free_and_the_host_routes_it_before_the_read()
+    {
+        Assert.Contains("\n  space free [--kind <id>]... [--early <group>]... [--yes]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
+        Assert.Equal("usage: daoris-driver space free [--kind <id>]... [--early <group>]... [--yes]", SpaceFreeCommand.Usage);
+
+        var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
+        var free = program.IndexOf("if (args is [\"space\", \"free\", .. var freeArgs])", StringComparison.Ordinal);
+        Assert.True(free >= 0);
+        Assert.True(free < program.IndexOf("if (args is [\"space\", .. var spaceArgs])", StringComparison.Ordinal));
+        Assert.Contains("SpaceFreeCommand.RunAsync(\n            freeArgs, SpaceFreeWorld.OfThisTerminal(freeHome, log)", program.ReplaceLineEndings("\n"));
+    }
+
+    /// <summary>
     /// WSSETUP5 (D124 §3.1, §4.5): following each line when the person asks is a door the usage names, routed by the host to
     /// its console with this host's log, and spoken in the library's words, which <c>RegisterCommandTests</c> holds.
     /// </summary>

@@ -76,6 +76,11 @@ each is still held:
 5. **The index regenerated** (`node tools/orient-index.mjs`, row 10). A read is no coverage row (row 7): it changes nothing.
 6. **Its class in the pipe's census** (row 11): `Open`, since a read changes nothing.
 
+A route that is a list in one form and a press in another (a `PipeRule` in the census, row 11) carries the press's `[Publishes]`,
+which the publisher tells after every answer, the list's included. So the page asks its list through a `useMutation`, never a
+`useQuery` keyed under a family that mark invalidates, which would read the list again after each of its own answers without end
+(KEEP1e's `SYSTEM_SPACE_FREE`, `useSpaceFree`).
+
 A read whose shape keeps a `null` as a field (a fact not read, beside its `…Why`) cannot answer an object: the bridge leaves a
 null out of what it serializes. Answer the reader's own JSON as a `JsonElement`, which is written as it is (`SystemRoutes`'
 `SYSTEM_WIRING`, WIRING1b; `WorkflowRoutes`' steps). A read that looks at files leaves the window's thread first

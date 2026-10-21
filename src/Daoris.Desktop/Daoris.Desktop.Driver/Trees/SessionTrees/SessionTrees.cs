@@ -733,8 +733,15 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null, Fu
     internal IReadOnlyList<SetAside> PurgeSetAside(DateTimeOffset now, TimeSpan after) => SetAsides.PurgeSetAside(now, after);
 
     /// <inheritdoc cref="SetAsideKeeping.Run"/>
-    internal SetAsideRun KeepSetAside(KeepPolicy policy, DateTimeOffset now, TimeSpan budget, CancellationToken ct) =>
-        Keeping.Run(policy, now, budget, ct);
+    internal SetAsideRun KeepSetAside(
+        KeepPolicy policy, DateTimeOffset now, TimeSpan budget, CancellationToken ct, Func<string, bool>? purge = null, Func<string, bool>? slim = null) =>
+        Keeping.Run(policy, now, budget, ct, purge, slim);
+
+    /// <inheritdoc cref="SetAsideKeeping.List"/>
+    internal IReadOnlyList<SetAsideListed> ListSetAside(KeepPolicy policy, DateTimeOffset now) => Keeping.List(policy, now);
+
+    /// <inheritdoc cref="SetAsideKeeping.RemoveEarly"/>
+    internal (long Bytes, string? Kept) RemoveSetAsideEarly(string folder, bool listedOwn) => Keeping.RemoveEarly(folder, listedOwn);
 
     /// <inheritdoc cref="TreeSetAside.LastLookAsync"/>
     internal Task<(string Code, string Sentence, string? Cause)?> LastLookAsync(

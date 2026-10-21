@@ -628,6 +628,8 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("SYSTEM_DOWNLOADS_CLEAR", "harnesses,tools,wiring", null)]
     // KEEP1c: the Disk space card's read; asking it to count starts walks, each kind's end telling `wiring` by itself.
     [InlineData("SYSTEM_SPACE", "", null)]
+    // KEEP1e: Free up space's press removes what the sizes, the agents' and the tools' pages say; each kind's end tells `wiring` by itself.
+    [InlineData("SYSTEM_SPACE_FREE", "harnesses,tools,wiring", null)]
     // RPC1c: what waits for the window is told by its own event (`CONFIRMATIONS`), and a confirmed press publishes what it changes
     // as it runs; the answer itself moves no scope. PERSONDOOR1f: the key is a read.
     [InlineData("PERSON_CONFIRMATIONS", "", null)]
