@@ -121,6 +121,12 @@ A branch in one lane cannot run the others; the hand-back then names the rows le
   in `PersonDoors.Table` and in `PersonDoorTableTests` with its class's count. The reader answers a default for that kind alone
   (`restricted` for a help record from before, null for every other record), so a record from before reads as what it ran.
   The driver reads it twice, on `PriorSession` (`Prior`) and on `SessionRecord` (`SessionRecords.Parse`), for the history's rows.
+- **KEEP1b** (D195's KEEP1b note): `resolved`, machine-only, a list set later on every kind of record, through its own door
+  (`POST /api/sessions/{id}/resolved`, `SessionLedger.KeepResolvedAsync`, `SessionStore.KeepResolvedAsync`), which adds to what the
+  record holds rather than writing it whole, so a go-on's start adds its own. The driver writes it before every spawn, from the start
+  itself (`DownloadKeeping.KeepHandedAsync` after `Driver.Prepare` and in `ChatRunner`), best-effort, since an unkept record reads as one
+  from before; its reader is a reader of its own (`ServiceClient.LiveSessionsAsync`), not `SessionView`, which the planner compares.
+  The door's row is in `PersonDoors.Table` and `PersonDoorTableTests`; `StandInLedger` answers it.
 
 ## What this does not cover
 
