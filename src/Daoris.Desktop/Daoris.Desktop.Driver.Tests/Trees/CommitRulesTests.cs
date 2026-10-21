@@ -6,8 +6,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// PROCESS1a (D164's amendment point 1): the commit rule, <c>commits</c> and <c>workspaceCommits</c> in <c>driver.json</c> — read,
-/// refused, resolved, said and edited. The driver's half of a TWIN with the CLI's <c>commits.ts</c>: both are held, cell for cell,
-/// to ONE table, <c>fixtures/commit-rules.json</c>, which <c>driverconfig.test.ts</c> reads too. A cell's <c>CONV400</c> and
+/// refused, resolved, said and edited, held cell for cell to ONE table, <c>fixtures/commit-rules.json</c> (the CLI's twin,
+/// <c>commits.ts</c>, left with the driver family's TypeScript in PUSH1f2b). A cell's <c>CONV400</c> and
 /// <c>CONV401</c> stand for a convention of that many characters.
 /// </summary>
 public sealed class CommitRulesTests

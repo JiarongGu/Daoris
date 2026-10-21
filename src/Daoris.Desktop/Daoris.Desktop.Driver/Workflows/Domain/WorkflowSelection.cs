@@ -140,8 +140,8 @@ public sealed record WorkflowDrop(string Kind, string Workspace) : WorkflowChoic
 /// and the paths work of that kind keeps to; read, written, edited, and resolved in §4.1's order.
 /// </summary>
 /// <remarks>
-/// <para>A TWIN with the CLI's <c>workflowchoice.ts</c>: both are held, cell for cell, to ONE table, this suite's
-/// <c>fixtures/workflow-selection.json</c>, which <c>driverconfig.test.ts</c> reads too (<c>.claude/knowledge/twins.md</c>).</para>
+/// <para>Held, cell for cell, to ONE table, this suite's <c>fixtures/workflow-selection.json</c>; the CLI's twin,
+/// <c>workflowchoice.ts</c>, left with the driver family's TypeScript (PUSH1f2b).</para>
 ///
 /// <para><b>A repository's choice replaces its workspace's whole</b> (§4.1), as its landing, review and opinion rules do: a
 /// repository that names any workflow follows its own kinds and its own default, Current where it names none, and the

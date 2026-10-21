@@ -216,8 +216,8 @@ public sealed class ConfigTests
 
     /// <summary>
     /// CASEFOLD1d: a repository opted in, held or given trees is another only as <c>OrdinalIgnoreCase</c> parts them, each letter
-    /// to its one capital, as the CLI's <c>driverconfig.ts</c> parts them through <c>casefold.ts</c> (<c>driverconfig.test.ts</c>
-    /// names this behaviour): a name full case mapping would widen or lower to the same letters is another repository.
+    /// to its one capital, as the CLI's <c>driverconfig.ts</c> parted them through <c>casefold.ts</c> until PUSH1f2b: a name full case
+    /// mapping would widen or lower to the same letters is another repository.
     /// </summary>
     [Fact]
     public void A_repository_in_each_list_is_another_only_as_OrdinalIgnoreCase_parts_them()

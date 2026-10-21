@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// HEAVYRUN1b2a (D180's HEAVYRUN1b2a note): this machine's heavy gates for a repository that marks none of its own, <c>heavyGates</c>
 /// in <c>driver.json</c>, by repository, each a list of gates in the order they run. Read as a stored shape, held cell for cell to ONE
-/// table, <c>fixtures/heavy-gates.json</c>, which the CLI's <c>driverconfig.test.ts</c> reads too; written only when set; and edited
+/// table, <c>fixtures/heavy-gates.json</c> (the CLI's twin left in PUSH1f2b); written only when set; and edited
 /// through one door (<see cref="HeavyMapping.Apply"/>) the terminal's verb and the page's go through, refusing alike. Reads text only.
 /// </summary>
 public sealed class HeavyMappingTests

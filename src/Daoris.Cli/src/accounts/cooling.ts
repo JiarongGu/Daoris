@@ -175,8 +175,7 @@ function key(held: Node, name: string): string | null {
 const ISO_MOMENT = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,7}))?(Z|[+-]\d{2}:\d{2})$/;
 
 /**
- * A moment as ISO 8601 writes it, and only so, as the driver reads one; `windows.ts` reads its moments with it too, and a
- * pause's time in `driver.json` is read by the same forms (PAUSE1a, `driverconfig.ts`).
+ * A moment as ISO 8601 writes it, and only so, as the driver reads one; `windows.ts` reads its moments with it too.
  */
 export function isoMoment(value: unknown): Date | null {
   return moment(value);

@@ -9,7 +9,8 @@ namespace Daoris.Driver;
 /// understood it written again, and the edited choices written. What the edit did not change is written as the file has it; what it
 /// changed is written as the edit has it, an object the three hold alike merged key by key, so a rule's own unknown keys stay; a key
 /// the edit adds goes after the one before it in the writer's order. The CLI's twin is <c>jsonkeep.ts</c> (<c>keepEdits</c>), and
-/// both are held to <c>test/fixtures/driver-config-keeps.json</c>.
+/// both are held to the CLI's <c>test/fixtures/home-files-keep.json</c>; <c>driver.json</c>'s rows, this suite's
+/// <c>fixtures/driver-config-keeps.json</c>, are this side's alone since its CLI writer left (PUSH1f2b).
 /// <para>🔴 An edit is the set of key paths it changed (a value set, a key added, a key removed), from the text read and the edited choices,
 /// and making it touches those paths alone (the second re-check, finding 1): merged over the file as it stands, an object another writer
 /// had taken out came back whole with every key the edit never touched, and one another writer had made a string was overwritten by the

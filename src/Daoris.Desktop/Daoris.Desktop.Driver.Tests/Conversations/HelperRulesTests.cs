@@ -6,8 +6,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// MIXAGENT2a-i (D163 point 5; the mixed agents design §5): the helpers rule, <c>helpers</c> and <c>workspaceHelpers</c> in
-/// <c>driver.json</c> — read, refused, resolved, said and edited. The driver's half of a TWIN with the CLI's <c>helpers.ts</c>:
-/// both are held, cell for cell, to ONE table, <c>fixtures/helper-rules.json</c>, which <c>driverconfig.test.ts</c> reads too.
+/// <c>driver.json</c> — read, refused, resolved, said and edited, held cell for cell to ONE table, <c>fixtures/helper-rules.json</c>
+/// (the CLI's twin, <c>helpers.ts</c>, left with the driver family's TypeScript in PUSH1f2b).
 /// </summary>
 public sealed class HelperRulesTests
 {

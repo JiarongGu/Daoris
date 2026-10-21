@@ -23,8 +23,8 @@ public sealed record DecodedVersion(int Version, string? Identity, NodeGraph? Gr
 /// <c>send-back</c> the adapter's one return, then the person's task; a person's skip is the node's, a group's its members'.
 /// </summary>
 /// <remarks>
-/// A TWIN with the CLI's <c>workflowgraphs.ts</c>: both read the CLI's <c>test/fixtures/workflow-graphs.json</c>, row for row, every graph
-/// and digest included (<c>WorkflowGraphsTests</c>, <c>workflowgraphs.test.ts</c>). The choices §E7 left open are D173's FABRIC-WORKFLOW2
+/// Held to this suite's tests' <c>fixtures/workflow-graphs.json</c>, row for row, every graph and digest included
+/// (<c>WorkflowGraphsTests</c>); the CLI's twin, <c>workflowgraphs.ts</c>, left with the driver family's TypeScript (PUSH1f2b). The choices §E7 left open are D173's FABRIC-WORKFLOW2
 /// note's.
 /// </remarks>
 public static class WorkflowGraphs

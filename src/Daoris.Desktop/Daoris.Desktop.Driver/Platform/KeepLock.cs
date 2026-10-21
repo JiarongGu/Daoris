@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// One writer at a time from the re-read to the rename of a home file an edit keeps (CONFIGLOCK1, D173's CONFIG1 note). A keeping write
 /// reads the file again, makes its edit onto it and renames its own text over it (<see cref="DriverConfig.Save"/>,
 /// <see cref="JsonKeeping.Save"/>); another writer whose rename landed between that read and that rename was lost. The CLI's twin is
-/// <c>keeplock.ts</c>, and both read <c>test/fixtures/driver-config-keeps.json</c>'s <c>lock</c> rows.
+/// <c>keeplock.ts</c>, and both read this suite's tests' <c>fixtures/driver-config-keeps.json</c>'s <c>lock</c> rows.
 /// </summary>
 /// <remarks>
 /// <para><b>Where:</b> <c>&lt;file&gt;.lock</c>, the file's full path with <c>.lock</c> after it, beside the file whoever names it: a

@@ -71,7 +71,7 @@ public sealed class NodeWiresTests
     }
 
     /// <summary>
-    /// FABRIC-GRAPH1c: each row of the shared table (`graph-problems.json`'s `wires`), which the CLI's <c>nodegraphs.ts</c> judges too:
+    /// FABRIC-GRAPH1c: each row of the table (`graph-problems.json`'s `wires`):
     /// each refusal §E3 names alone, with its code, its wire and node, and its words; the wires that hold; several problems in a stable
     /// order.
     /// </summary>

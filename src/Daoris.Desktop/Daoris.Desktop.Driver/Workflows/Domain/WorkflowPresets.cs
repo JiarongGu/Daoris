@@ -15,8 +15,8 @@ public sealed record WorkflowPreset(string Id, string Name, string StepsJson)
 /// each is shown by a line composed from its steps (<see cref="Line"/>), never typed, so it cannot drift from them.
 /// </summary>
 /// <remarks>
-/// A TWIN with the CLI's <c>WORKFLOW_PRESETS</c>, <c>withGates</c> and <c>workflowLine</c> (<c>namedworkflows.ts</c>): both hold
-/// this suite's tests' <c>fixtures/workflow-named.json</c> <c>presets</c>, <c>variants</c> and <c>lines</c>, cell for cell.
+/// Held to this suite's tests' <c>fixtures/workflow-named.json</c> <c>presets</c>, <c>variants</c> and <c>lines</c>, cell for cell
+/// (the CLI's twin, <c>namedworkflows.ts</c>, left in PUSH1f2b).
 /// </remarks>
 public static class WorkflowPresets
 {

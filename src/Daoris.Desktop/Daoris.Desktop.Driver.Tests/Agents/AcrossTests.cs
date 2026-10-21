@@ -8,8 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// another only where the person declared it. The setting lives in `driver.json`.
 /// </summary>
 /// <remarks>
-/// The file's shape is a twin (`.claude/knowledge/twins.md`): the CLI's <c>driverconfig.test.ts</c> holds
-/// the same shape cases, answer for answer. Only the driver resolves the setting, so the precedence, the
+/// The file's shape was a twin (`.claude/knowledge/twins.md`) until the CLI's <c>driverconfig.ts</c> left (PUSH1f2b); these
+/// are its shape cases. Only the driver resolves the setting, so the precedence, the
 /// reach and the rules are held here alone.
 /// </remarks>
 public sealed class AcrossTests
@@ -102,7 +102,7 @@ public sealed class AcrossTests
 
     /// <summary>
     /// CASEFOLD1d: a relationship's names compare by <c>OrdinalIgnoreCase</c>, each letter to its one capital, as the CLI's
-    /// <c>writeAcrossProblem</c> and its reader compare them through <c>casefold.ts</c> (<c>driverconfig.test.ts</c> names this
+    /// <c>writeAcrossProblem</c> and its reader compare them through <c>casefold.ts</c> (as the CLI's twin did until PUSH1f2b, naming this
     /// behaviour): a name full case mapping would lower to the same letters is another repository, so it is neither refused
     /// as the repository's own, nor read as a repeat, nor cleared with the other.
     /// </summary>

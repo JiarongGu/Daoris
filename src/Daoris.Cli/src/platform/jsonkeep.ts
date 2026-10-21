@@ -5,7 +5,7 @@
  * stands, the file as its reader understood it, and the edited choices, the last two built by the same writer. What the edit did not change
  * is written as the file has it, every number by its own text; what it changed is written as the edit has it, an object the three hold alike
  * merged key by key; a key the edit adds goes after the one before it in the writer's order. Both twins are held to
- * `test/fixtures/driver-config-keeps.json`.
+ * `test/fixtures/home-files-keep.json`; `driver.json`'s table moved to the driver's tests with its CLI writer (PUSH1f2b).
  *
  * A name JavaScript reads as an array index (`"2048"`) is laid out before the other names of its object when an edit rewrites the file:
  * a plain object keeps such keys in number order, so the driver's twin, which keeps every key in place, is the exact one there.
@@ -65,7 +65,7 @@ function isObject(value: unknown): value is Record<string, unknown> {
  * 3: an edit wrote LF over a file in CRLF). No edit is `original`'s own text. `original` is the file as it stands when the edit is
  * written, which may be another writer's since the read (finding 1): what that writer changed and this edit did not stays as it is.
  *
- * `sets` names the arrays that are sets (CONFIGMERGE1, D173's CONFIG1 note; `driverconfig.ts`' `DRIVER_SETS`), each a key path, `*` any
+ * `sets` names the arrays that are sets (CONFIGMERGE1, D173's CONFIG1 note; `driver.json`'s, whose CLI writer left in PUSH1f2b), each a key path, `*` any
  * one name: an edit of one is the names it added and took, compared without case, made onto the file's array as it stands (`merged`),
  * so two writers each adding a name keep both. Every other array is a value, written whole.
  */

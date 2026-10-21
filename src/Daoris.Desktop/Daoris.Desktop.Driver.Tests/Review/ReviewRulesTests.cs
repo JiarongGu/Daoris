@@ -9,9 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <c>workspaceReviews</c> in <c>driver.json</c> — read, refused, resolved, said and edited. Nothing here starts a process.
 /// </summary>
 /// <remarks>
-/// The driver's half of a TWIN with the CLI's <c>reviews.ts</c>: both are held, cell for cell, to ONE table, the CLI's
-/// <c>fixtures/review-rules.json</c>, which <c>driverconfig.test.ts</c> reads too. A row changed on one side alone is the
-/// other side's failure.
+/// Held, cell for cell, to ONE table, this suite's <c>fixtures/review-rules.json</c>, which the service's tool test reads too (the
+/// CLI's twin, <c>reviews.ts</c>, left with the driver family's TypeScript in PUSH1f2b).
 /// </remarks>
 public sealed class ReviewRulesTests : IDisposable
 {

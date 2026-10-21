@@ -209,8 +209,7 @@ public sealed class QuestNameTests
     /// <summary>
     /// The key's shape (PROCESS1b-i): a regular expression both readers of a rule take the same way, at most 64 characters, no
     /// <c>(?</c> group, no back-reference, a letter escaped only as one of the classes and controls both engines share, and no
-    /// empty class; only on a branch rule whose pattern says <c>{ticket}</c>. The CLI's <c>driverconfig.test.ts</c> holds these
-    /// cases, answer for answer (<c>KEY_SHAPES</c>).
+    /// empty class; only on a branch rule whose pattern says <c>{ticket}</c>.
     /// </summary>
     [Theory]
     [InlineData("branch", "feature/{ticket}-{slug}", null, null)]
@@ -265,7 +264,7 @@ public sealed class QuestNameTests
     /// <summary>
     /// A key the driver refuses in the file is ignored, and the rest of its rule stands (PROCESS1b-i): a key written by a reader
     /// that takes more never drops the rule, so the repository never lands by its workspace's rule or a merge unasked. A door that
-    /// sets one still refuses it. The CLI's <c>driverconfig.test.ts</c> reads the same file the same way.
+    /// sets one still refuses it.
     /// </summary>
     [Fact]
     public void A_rule_whose_key_is_refused_is_read_without_it()
@@ -294,9 +293,8 @@ public sealed class QuestNameTests
 
     /// <summary>
     /// <c>squash</c> on a landing rule (PROCESS1b-ii, D164's amendment point 2): Accept makes the pull request's branch one commit.
-    /// Only a branch rule takes it, as only a branch rule accepts automatically. The driver's half of a TWIN with the CLI's
-    /// <c>driverconfig.ts</c>, whose <c>driverconfig.test.ts</c> parses these two theories to hold its own tables to them.
-    /// 🔴 Keep each row on one line, its cells literals: the CLI's test reads them.
+    /// Only a branch rule takes it, as only a branch rule accepts automatically (the CLI's twin, <c>driverconfig.ts</c>, left in
+    /// PUSH1f2b).
     /// </summary>
     [Theory]
     [InlineData("branch", "feature/{ticket}-{slug}", true, null)]

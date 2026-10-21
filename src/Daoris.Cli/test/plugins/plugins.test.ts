@@ -695,7 +695,7 @@ test('enable and disable edit the row, and an unknown id is refused naming the l
  */
 /**
  * REFAC1 (the second-opinion review of 2026-10-07): a plugin id's shape has one owner in this package, `isPluginId`, which
- * the catalogue, `plugin` and the landing rule's check (`driverconfig.ts`) all ask; CASEFOLD1e had to mend the same pattern
+ * the catalogue and `plugin` ask (the landing rule's check left with `driverconfig.ts`, PUSH1f2b); CASEFOLD1e had to mend the same pattern
  * in two places. Each caller keeps its own lowering. The driver's `PluginCatalog.IsId` is the twin, held by its own tables.
  */
 test('only plugins.ts spells a plugin id’s shape, and isPluginId answers it', () => {

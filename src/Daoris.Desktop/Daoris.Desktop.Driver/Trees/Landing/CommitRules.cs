@@ -43,8 +43,8 @@ public sealed record CommitEdit
 /// the one place every door asks. Modelled on <see cref="HelperRules"/>; a rule is a mode and an optional convention.
 /// </summary>
 /// <remarks>
-/// A TWIN with the CLI's <c>commits.ts</c>: both hold ONE table, this suite's <c>fixtures/commit-rules.json</c>, cell for cell
-/// (<c>CommitRulesTests</c> and <c>driverconfig.test.ts</c>). Nothing here commits or tells a session: a driven session in a tree
+/// One table, this suite's <c>fixtures/commit-rules.json</c>, cell for cell (<c>CommitRulesTests</c>); its CLI twin, <c>commits.ts</c>,
+/// left with the driver family's TypeScript (PUSH1f2b, D194 point 7). Nothing here commits or tells a session: a driven session in a tree
 /// of its own is told the rule <see cref="Resolve"/> answers by <see cref="ProcessWords"/> (PROCESS1d-i); a conversation's
 /// briefing is PROCESS1d-ii's.
 /// </remarks>

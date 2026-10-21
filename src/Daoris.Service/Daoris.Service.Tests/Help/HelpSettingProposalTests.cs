@@ -203,7 +203,7 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     /// <summary>
     /// What every door says after a review rule's own sentences, in the gate's words: each sentence of the shared table's
     /// <c>gate</c> rows, <c>src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/review-rules.json</c>, which the driver's
-    /// <c>ReviewRulesTests</c> and the CLI's <c>driverconfig.test.ts</c> read too. Read from the table, never spelled here, so
+    /// <c>ReviewRulesTests</c> reads too. Read from the table, never spelled here, so
     /// the tool's copy cannot drift from the twins' (REVIEWENV1c4).
     /// </summary>
     private static IReadOnlyList<string> GateSays()
@@ -216,7 +216,7 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     /// <summary>
     /// What every door says after a second-opinion rule's own sentences, in the gate's words (XAGENT1f4): each sentence of the
     /// shared table's <c>gate</c> rows, <c>src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/opinion-rules.json</c>, which
-    /// the driver's <c>OpinionRulesTests</c> and the CLI's <c>driverconfig.test.ts</c> read too, read as REVIEWENV1c4 reads the
+    /// the driver's <c>OpinionRulesTests</c> reads too, read as REVIEWENV1c4 reads the
     /// review's: never spelled here.
     /// </summary>
     private static IReadOnlyList<string> OpinionGateSays()

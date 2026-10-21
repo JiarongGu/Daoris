@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// FABRIC-GRAPH1's review, finding 1 (FIX-LOG 2026-10-17): a door that edits <c>driver.json</c> (Setup, Ask Daoris's proposals, the
 /// terminal) keeps every key the writer does not own, in its place, and changes only what it edits. One table both twins read,
-/// <c>test/fixtures/driver-config-keeps.json</c>, row for row with the CLI's <c>configkeeps.test.ts</c>: an existing file in the writer's
+/// <c>fixtures/driver-config-keeps.json</c>, row for row (the CLI's <c>configkeeps.test.ts</c> read it until PUSH1f2b): an existing file in the writer's
 /// layout with keys neither twin knows at each level, one door's edit, and the bytes both write. The re-check (findings 1 and 3) adds
 /// another writer's change made between this one's read and its write, a file in CRLF, a file that no longer reads, and a key written twice.
 /// </summary>
@@ -48,7 +48,7 @@ public sealed class DriverConfigKeepsTests
 
     /// <summary>
     /// CASEMAP1 (D173's CONFIG1 note): every per-name map reads a name written twice in any case where first readable, its first
-    /// spelling and value, row for row with the CLI's <c>configkeeps.test.ts</c> (the table's <c>names</c>).
+    /// spelling and value, row for row (the table's <c>names</c>).
     /// </summary>
     [Theory]
     [MemberData(nameof(Names))]
@@ -184,7 +184,7 @@ public sealed class DriverConfigKeepsTests
     }
 
     private static readonly JsonDocument Table =
-        JsonDocument.Parse(System.IO.File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "test", "fixtures", "driver-config-keeps.json")));
+        JsonDocument.Parse(System.IO.File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "driver-config-keeps.json")));
 
     private static string Lines(JsonElement lines) => string.Join("\n", lines.EnumerateArray().Select(line => line.GetString()));
 

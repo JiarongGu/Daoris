@@ -55,7 +55,6 @@ public sealed record LandingRule(
     /// end, cleanup }</c>, its JSON text as the file holds it, compact. Null is the default, today's: ended when the line holds the work,
     /// the cleanup at <i>held</i>. It rides the rule (D164's amendment), so a repository's own rule replaces its workspace's cycle with the
     /// rest of it; a door with no field for it keeps it (<see cref="DriverConfig.WithLanding"/>). <see cref="NodeGraphHomes"/> reads it.
-    /// The CLI's <c>driverconfig.ts</c> keeps the same field.
     /// </summary>
     public string? Cycle { get; init; }
 }
@@ -566,7 +565,7 @@ public sealed record SweepResult(SweepItem Item, bool Removed, string Message)
 
 /// <summary>
 /// The landing rules (WSR1, D87): which applies to a repository, whether a pattern can name a branch,
-/// and what it names for one session. The CLI's <c>driverconfig.ts</c> holds the same pattern rule.
+/// and what it names for one session.
 /// </summary>
 public static class LandingRules
 {
@@ -583,7 +582,7 @@ public static class LandingRules
 
     /// <summary>
     /// The shape of a ticket's key where the rule names none (PROCESS1b-i, D164's amendment point 2): a project's capitals, a dash
-    /// and its number, as <c>TK-2202</c>. The CLI's <c>driverconfig.ts</c> names the same shape.
+    /// and its number, as <c>TK-2202</c>.
     /// </summary>
     public const string DefaultKey = @"[A-Z][A-Z0-9]+-\d+";
 
@@ -637,7 +636,7 @@ public static class LandingRules
     /// Why the plugin a rule names cannot land work on this machine, in a sentence, or null when it can
     /// (D100): not installed, switched off, refused by the catalogue, or speaking on no
     /// <see cref="HookPoints.Land"/> point. Asked when the rule is set and again at the press, so a plugin
-    /// gone since is refused before anything is made. The CLI's <c>driverconfig.ts</c> is the twin.
+    /// gone since is refused before anything is made.
     /// </summary>
     public static string? PluginProblem(string plugin, PluginCatalog catalog)
     {
@@ -663,8 +662,7 @@ public static class LandingRules
     /// <summary>
     /// What a door says as <i>Accept automatically</i> is set (LAND2a, D145 point 5, design §6): the switch is the
     /// person's standing say-so for a push with no press, so it is said where it is given. With no plugin, the warning
-    /// that nothing leaves the machine. The CLI's <c>driverconfig.ts</c> says the same words; the page says them in its
-    /// own catalogue.
+    /// that nothing leaves the machine. <c>daoris-driver driver landing</c> says these words; the page says them in its own catalogue.
     /// </summary>
     public static string AutoAcceptSays(string? plugin) => plugin is { } named
         ? $"when a quest here is done, its work is put on its branch, and `{named}` pushes it and opens a pull request without "

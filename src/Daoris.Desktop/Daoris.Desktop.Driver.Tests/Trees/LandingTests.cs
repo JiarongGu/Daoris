@@ -27,7 +27,7 @@ public sealed class LandingTests : IDisposable
         GitSeed.Discard(_scratch);
     }
 
-    /// <summary>The pattern rule. The CLI's <c>driverconfig.test.ts</c> holds these cases, answer for answer.</summary>
+    /// <summary>The pattern rule.</summary>
     [Theory]
     [InlineData("feature/{quest}-{slug}", true)]
     [InlineData("review/{session}", true)]
@@ -135,7 +135,7 @@ public sealed class LandingTests : IDisposable
     /// <summary>
     /// WSR4 (D100): a rule may name the plugin that pushes its branch and opens the pull request — only
     /// the branch form, since the plugin starts from the branch Daoris made, and only an id a plugin
-    /// could have. The CLI's <c>driverconfig.test.ts</c> holds these cases, answer for answer.
+    /// could have.
     /// </summary>
     [Theory]
     [InlineData("branch", "feature/{quest}-{slug}", "example.github-pull-request", null)]

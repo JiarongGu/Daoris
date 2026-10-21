@@ -114,8 +114,8 @@ const ID_SHAPE = /^[a-z0-9][a-z0-9.-]*$/;
 
 /**
  * Whether a name has a plugin id's shape: lowercase letters, digits, dots and dashes, never leading with a dot or a dash. The
- * one owner of the shape in this package (REFAC1): the catalogue's ids, a server's and a tool's names, `plugin`'s words and a
- * landing rule's plugin (`driverconfig.ts`) are all asked here, each caller trimming or lowering first as it always did.
+ * one owner of the shape in this package (REFAC1): the catalogue's ids, a server's and a tool's names and `plugin`'s words are all
+ * asked here, each caller trimming or lowering first as it always did.
  */
 export function isPluginId(id: string): boolean {
   return ID_SHAPE.test(id);

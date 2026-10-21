@@ -149,8 +149,9 @@ public sealed record NamedWorkflowRead(string? Id, string? Name, IReadOnlyList<N
 /// and every gate reads the version a run bound (WORKFLOW1f, <see cref="WorkflowProcesses"/>).
 /// </summary>
 /// <remarks>
-/// A TWIN with the CLI's <c>namedworkflows.ts</c>: both hold one table, this suite's tests' <c>fixtures/workflow-named.json</c>,
-/// cell for cell, every sentence and every digest included (<c>WorkflowNamedTests</c> and <c>namedworkflows.test.ts</c>).
+/// One table, this suite's tests' <c>fixtures/workflow-named.json</c>, cell for cell, every sentence and every digest included
+/// (<c>WorkflowNamedTests</c>); the CLI's twin, <c>namedworkflows.ts</c>, left with the driver family's TypeScript (PUSH1f2b), and
+/// <c>daoris driver workflow</c> is <see cref="DriverWorkflowsCommand"/>.
 /// </remarks>
 public static class WorkflowNamed
 {
@@ -286,8 +287,8 @@ public static class WorkflowNamed
     /// <summary>
     /// Why a named version's graph is not one landing, or null (FABRIC-CUTOVER1b; D190 point 4, the cutover design §4): it holds one
     /// <c>handed</c>, and at most one <c>opinion</c> and one <c>look</c>, since the process it is read as holds one of each. Judged after
-    /// the graph holds, in that order, so a save is refused and a stored version is kept as written and read as unreadable. A TWIN with
-    /// the CLI's <c>oneLandingProblem</c> (<c>namedworkflows.ts</c>), on <c>workflow-graph-versions.json</c>.
+    /// the graph holds, in that order, so a save is refused and a stored version is kept as written and read as unreadable. Held to
+    /// <c>workflow-graph-versions.json</c>.
     /// </summary>
     private static string? OneLandingProblem(NodeGraph graph, int number)
     {
@@ -307,8 +308,8 @@ public static class WorkflowNamed
     /// <summary>
     /// Why a verification pipeline's graph is not one, or null (FABRIC-PIPELINE1a, D192 point 3, the pipeline design §2.1): it holds none
     /// of <c>claimed</c>, <c>opinion</c>, <c>look</c>, <c>go-ahead</c>, <c>handed</c> or <c>quest.close</c>, whose subjects (a chain's
-    /// quests, its branch, its ask) a landed run has none of, the first in node order named; then at least one <c>check</c>. A TWIN with
-    /// the CLI's <c>verificationProblem</c> (<c>namedworkflows.ts</c>), on <c>workflow-graph-versions.json</c>.
+    /// quests, its branch, its ask) a landed run has none of, the first in node order named; then at least one <c>check</c>. Held to
+    /// <c>workflow-graph-versions.json</c>.
     /// </summary>
     private static string? VerificationProblem(NodeGraph graph, int number)
     {
@@ -682,8 +683,8 @@ public static class WorkflowNamed
     // ---- Adding a version (WORKFLOW1d, D157 point 5, the workflow design §2.4–§2.6) ----
     // Planned and not written: the store's use case (WorkflowStore's Add) writes the plan through its port. A version is
     // whole and never edited: saving adds the next number, keeping the file's other fields and every version as written,
-    // then the newest 20 and every version a kept run names. A TWIN with the CLI's planAddVersion (namedworkflows.ts): the
-    // plan is held to the driver suite's fixtures/workflow-named.json `store`, cell for cell.
+    // then the newest 20 and every version a kept run names. The plan is held to the driver suite's fixtures/workflow-named.json
+    // `store`, cell for cell (the CLI's planAddVersion left in PUSH1f2b).
 
     /// <summary>
     /// A version added to a workflow's file, planned and not written (design §2.6): the next number after the last, the file's

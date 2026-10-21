@@ -8,7 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// FABRIC-WORKFLOW2 (the fabric events design §E7, §E4; canaries 49 and 50): D157's stored versions read as graphs by the exact migration
 /// contract, never rewritten; a version that does not decode read as unreadable with its reason, never in part; a bound run's identity
-/// unchanged; and the CLI's twin read from one table, <c>test/fixtures/workflow-graphs.json</c>, row for row.
+/// unchanged; read from one table, <c>fixtures/workflow-graphs.json</c>, row for row (the CLI's twin left in PUSH1f2b).
 /// </summary>
 public sealed class WorkflowGraphsTests : IDisposable
 {
@@ -23,7 +23,7 @@ public sealed class WorkflowGraphsTests : IDisposable
 
     private static JsonElement Table()
     {
-        using var table = JsonDocument.Parse(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "test", "fixtures", "workflow-graphs.json")));
+        using var table = JsonDocument.Parse(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "workflow-graphs.json")));
         return table.RootElement.Clone();
     }
 

@@ -91,7 +91,7 @@ public sealed class NodeGraphsTests
     }
 
     /// <summary>
-    /// FABRIC-GRAPH1c: each row of the shared table (`graph-problems.json`'s `graphs`), which the CLI's <c>nodegraphs.ts</c> judges too:
+    /// FABRIC-GRAPH1c: each row of the table (`graph-problems.json`'s `graphs`):
     /// each refusal of the graph's own alone, with its code, wire and node, and its words; the graphs that hold, the bounds at their limits
     /// among them; the wires' and the declarations' checks composed with the graph's.
     /// </summary>

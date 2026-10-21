@@ -1053,23 +1053,21 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     // SWITCH1a: the rotation-use table sits among the CLI's fixtures, and the driver's twin reads it too; since SWITCH1d the
     // page's curve rules.
     ['the rotation-use table', ['src/Daoris.Cli/test/fixtures/rotation-use.json'], [...BASE, 'driver', 'web-unit']],
-    // TWINWORDS1: the landing, helpers and commits sentences sit among the CLI's fixtures, and the driver's twin reads them too.
-    ['the landing-says table', ['src/Daoris.Cli/test/fixtures/landing-says.json'], [...BASE, 'driver']],
-    // FABRIC-GRAPH1: which cycle governs a unit sits among the CLI's fixtures, and the driver's NodeGraphHomesTests reads it too.
-    ['the graph-homes table', ['src/Daoris.Cli/test/fixtures/graph-homes.json'], [...BASE, 'driver']],
-    // FABRIC-GRAPH1's review: the bytes an edit of driver.json writes sit among the CLI's fixtures, and the driver's DriverConfigKeepsTests
-    // reads them too.
-    ['the driver-config-keeps table', ['src/Daoris.Cli/test/fixtures/driver-config-keeps.json'], [...BASE, 'driver']],
+    // PUSH1f2b (D194 point 7): the driver family's shared tables moved to the driver's fixtures with their last CLI readers gone, the
+    // landing sentences, which cycle governs a unit, the bytes an edit of driver.json writes, D157's versions as graphs, a named graph
+    // as a version, and a graph judged when saved; the CLI's keep lock test still reads the lock rows, and verify runs it at every merge.
+    ["the driver's tables the CLI's TypeScript left", [
+      'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/landing-says.json',
+      'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/graph-homes.json',
+      'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/driver-config-keeps.json',
+      'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/workflow-graphs.json',
+      'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/workflow-graph-versions.json',
+      'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/graph-problems.json',
+    ], [...BASE, 'driver', 'driver-process', 'driver-process-git']],
     // KEEPALL1: the bytes an edit of each other home file a door edits writes sit among the CLI's fixtures, and the driver's
     // HomeFilesKeepTests reads them too; since KEEPALL1e the service's RemoteConfigKeepTests its remotes.json rows' reads, and since
     // KEEPALL1c the modules' BrowserSettingsTests browser/settings.json's.
     ['the home-files-keep table', ['src/Daoris.Cli/test/fixtures/home-files-keep.json'], [...BASE, 'service', 'driver', 'modules']],
-    // FABRIC-WORKFLOW2: D157's versions and the graphs they decode to sit among the CLI's fixtures, and the driver's WorkflowGraphsTests reads them too.
-    ['the workflow-graphs table', ['src/Daoris.Cli/test/fixtures/workflow-graphs.json'], [...BASE, 'driver']],
-    // FABRIC-GRAPH1b: a named graph as a named workflow's version sits among the CLI's fixtures, and the driver's WorkflowGraphVersionsTests reads it too.
-    ['the workflow-graph-versions table', ['src/Daoris.Cli/test/fixtures/workflow-graph-versions.json'], [...BASE, 'driver']],
-    // FABRIC-GRAPH1c: a graph judged when saved sits among the CLI's fixtures, and the driver's NodeWiresTests and NodeGraphsTests read it too.
-    ['the graph-problems table', ['src/Daoris.Cli/test/fixtures/graph-problems.json'], [...BASE, 'driver']],
     // SWITCH1b-iii: the usage curve's table sits among the CLI's fixtures, and the driver's twin reads it too; since SWITCH1d the
     // page's twin.
     ['the usage curve table', ['src/Daoris.Cli/test/fixtures/usage-curves.json'], [...BASE, 'driver', 'modules', 'web-unit']],

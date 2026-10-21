@@ -7,8 +7,8 @@ namespace Daoris.Driver;
 /// the repository does not mark heavy and the checks a change reaches, filtered, the heavy gates left to the verification and refused to
 /// the session; <c>heavy-at-end</c>, the heavy gates once, at the session's end, through <c>run-heavy</c>; absent, today's. Under Current
 /// it is a repository's rule, <c>sessionChecks</c> in <c>driver.json</c> (D157 point 4: Current draws the rules), read, edited and written
-/// here, the one place the terminal's <c>checks</c>, Setup's row, a driven start and <c>run-heavy</c> ask; the CLI's
-/// <c>driverconfig.ts</c> reads and keeps it the same way (<c>fixtures/session-checks.json</c>).
+/// here, the one place the terminal's <c>checks</c>, Setup's row, a driven start and <c>run-heavy</c> ask, held to
+/// <c>fixtures/session-checks.json</c> (the CLI's twin left in PUSH1f2b).
 /// </summary>
 /// <remarks>
 /// <para><b>Why a rule and not a sentence.</b> Driven sessions on this repository ran its whole test project inside their session until

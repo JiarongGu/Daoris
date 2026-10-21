@@ -40,8 +40,8 @@ public sealed record HandOverEdit
 /// one place every door asks. Modelled on <see cref="HelperRules"/>, simpler: a rule is its mode.
 /// </summary>
 /// <remarks>
-/// A TWIN with the CLI's <c>handover.ts</c>: both hold ONE table, this suite's <c>fixtures/hand-over-rules.json</c>, cell for cell
-/// (<c>HandOverRulesTests</c> and <c>driverconfig.test.ts</c>). The look's judge of an agent's ask reads it (<c>HandOverAskJudge</c>).
+/// One table, this suite's <c>fixtures/hand-over-rules.json</c>, cell for cell (<c>HandOverRulesTests</c>); its CLI twin,
+/// <c>handover.ts</c>, left with the driver family's TypeScript (PUSH1f2b, D194 point 7). The look's judge of an agent's ask reads it (<c>HandOverAskJudge</c>).
 /// </remarks>
 public static class HandOverRules
 {
