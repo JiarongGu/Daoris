@@ -19158,3 +19158,13 @@ and the taskbar; it holds work once its session's turn has ended (`attentionGrou
 
 **Outcome** 2026-10-22: built. Each balloon is worded from the words a main window hands (`SET_NOTICE_WORDS`, `SessionBalloon`), the
 window's toasts likewise; a held call is `Holding`, said once under the switch; the switch says what it governs. Detail: D196's NOTIFY2d note. On Opus.
+
+## NOTIFY2f — what ended, failed or went unanswered is kept in Notifications (2026-10-22, D196)
+
+> - [ ] **NOTIFY2f — what ended, failed or went unanswered is kept in Notifications** (driver, modules, web-shell; after 2b; D196, the notification design §9). *Done and failed* from `data/notices.json`, written by any process under its keep lock and read alike in every window, a week and at most 200 kept. Proof: as §9 names it.
+
+**Outcome** 2026-10-22: built. `Notices` keeps `data/notices.json` (a map by id, one keep-lock hold from read to rename, the three home
+twins' `notices` entry); each look's ended sessions, with the workspace they were filed under, and each press refused by its time are
+recorded whatever the switch says; the `notices` slice reads it again in every process and says another's notice once as `NOTICE`;
+`NOTICES_READ` and `NOTICE_DISMISS`. The page's *Done and failed* group, the bell's dot and Overview's line. Detail: D196's NOTIFY2f
+note. On Opus.

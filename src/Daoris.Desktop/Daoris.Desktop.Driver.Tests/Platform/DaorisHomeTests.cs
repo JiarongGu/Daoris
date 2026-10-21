@@ -338,6 +338,19 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
+    /// NOTIFY2f (D196 point 6, the notification design §2.5): what ended, failed or went unanswered, a file of the machine's own in
+    /// <c>data/</c>, after the keeping record, as the three twins hold it.
+    /// </summary>
+    [Fact]
+    public void The_notices_record_is_a_data_file_after_the_keeping_record()
+    {
+        Assert.Same(HomeEntry.Notices, HomeEntry.Named("notices"));
+        Assert.Equal((HomeCategory.Data, "data/notices.json", "notices.json"), (HomeEntry.Notices.Category, HomeEntry.Notices.New, HomeEntry.Notices.Old));
+        var table = HomeEntry.Table.ToList();
+        Assert.Equal(table.IndexOf(HomeEntry.Keeping) + 1, table.IndexOf(HomeEntry.Notices));
+    }
+
+    /// <summary>
     /// HELPMODE1c2a (D183's note): Ask Daoris's configured access, a data file of the person's choices at the home's root, named
     /// with no <c>help-</c> prefix, since a workspace's room folder is matched by <c>help-*</c>.
     /// </summary>

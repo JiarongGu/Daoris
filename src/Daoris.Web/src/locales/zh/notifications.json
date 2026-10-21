@@ -4,6 +4,8 @@
   "notifications.labelled": "通知：{{what}}",
   "notifications.tip": "{{count}} 个等你处理",
   "notifications.tipConfirm": "{{count}} 个等你确认",
+  "notifications.unread": "{{what}}，另有未读",
+  "notifications.unreadAlone": "通知：有未读",
   "notifications.toast.open": "打开",
   "notifications.toast.press": "一个终端请求{{act}}：{{session}}",
   "notifications.toast.inMain": "一个终端的请求在 Daoris 主窗口等你确认",
@@ -31,5 +33,14 @@
   "notifications.system.confirming.plain": "打开 Daoris 确认或拒绝。",
   "notifications.system.holding.title": "{{repository}}：一个会话的工具调用在等你处理",
   "notifications.system.holding.help": "问道衍的一个工具调用在等你处理",
-  "notifications.system.holding.body": "在它被自动拒绝前，打开 Daoris 回答它。"
+  "notifications.system.holding.body": "在它被自动拒绝前，打开 Daoris 回答它。",
+  "notifications.done.title": "完成与出错",
+  "notifications.done.ended": "{{repository}} 的一个会话已结束：{{state}}",
+  "notifications.done.expired": "一个终端请求{{act}}，无人回答，已超时",
+  "notifications.done.other": "有事项已结束",
+  "notifications.done.ago": "{{age}}前",
+  "notifications.done.unread": "未读",
+  "notifications.done.unreadCount": "{{count}} 条未读",
+  "notifications.done.dismiss": "移除",
+  "notifications.done.markAll": "全部标为已读"
 }

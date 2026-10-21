@@ -73,6 +73,8 @@
   "person.route.WORK_HELD": "对为你保留的一次尝试给出你的意见",
   "person.route.HELP_DISMISS": "搁置问道衍的一项提议",
   "person.route.CHANNEL_MARK": "为你将一个需求的频道标为已读",
+  "person.route.NOTICES_READ": "将你的通知标为已读",
+  "person.route.NOTICE_DISMISS": "移除你的通知",
   "person.route.SESSION_GO_AHEAD": "答复一个会话请求的放行",
   "person.route.SESSION_PERMISSION_ANSWER": "答复一个会话为你保留的工具调用",
   "person.route.SESSION_HAND_OVER_APPROVE": "同意某个智能体转交其会话的请求",

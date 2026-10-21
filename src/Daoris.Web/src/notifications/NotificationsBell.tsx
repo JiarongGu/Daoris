@@ -16,25 +16,29 @@ import { Button, CountBadge, Icon, Tip } from '../design/ui';
  *
  * A molecule: the counts come in and the press goes out.
  */
-export function NotificationsBell({ needs, presses, warn, onPress }: {
+export function NotificationsBell({ needs, presses, warn, unread = false, onPress }: {
   /** What needs the person in all: each press once, and every other row of *What needs you*. */
   needs: number;
   /** How many presses wait, of either source. */
   presses: number;
   /** Whether any press waits unshown: the warning hue, with the presses' count. */
   warn: boolean;
+  /** Whether anything is unread (NOTIFY2f, §2.1): a dot, never a second count, since news waits on nobody. */
+  unread?: boolean;
   onPress: () => void;
 }) {
   const { t } = useTranslation();
   const count = warn ? presses : needs;
-  const label = count > 0
+  const counted = count > 0
     ? t('notifications.labelled', { what: t(warn ? 'notifications.tipConfirm' : 'notifications.tip', { count }) })
     : t('notifications.title');
+  const label = !unread ? counted : count > 0 ? t('notifications.unread', { what: counted }) : t('notifications.unreadAlone');
   return (
     <Tip content={label}>
       <Button variant="ghost" aria-label={label} onClick={onPress} className="relative h-7 w-7 justify-center px-0" data-bell="">
         <Icon name="bell" size={15} className={warn ? 'text-warn' : undefined} />
         <CountBadge count={count} tone={warn ? 'warn' : 'open'} />
+        {unread && <span data-unread="" aria-hidden className="absolute bottom-1 right-1 h-1.5 w-1.5 rounded-full bg-accent" />}
       </Button>
     </Tip>
   );

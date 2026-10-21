@@ -29,7 +29,8 @@ D75), where its own rules live; this is what a view may assume of it.
   View · Go · Run · Terminal · Help*, D152), the command center naming the scope, *Notifications*' bell first in its trailing
   group, and the window's controls. The bell (NOTIFY2b, D196 point 3) counts what needs the person, each press waiting for their
   confirmation once and every other row of *What needs you*, in open's hue, and the presses' own count in the warning hue while
-  one waits unshown; pressed, it shows the *Notifications* view where it stands. **The
+  one waits unshown, and a dot, never a second count, while a notice of *Done and failed* is unread (NOTIFY2f); pressed, it shows
+  the *Notifications* view where it stands. **The
   activity bar** (48px) is the one navigation, a place per icon and Settings alone at its foot (UX6j),
   and a badge counts what its place holds: Sessions the sessions the driver runs, the cap's
   count, with its list's *Waiting on you* marked beside it by a dot in the waiting hue, a parked quest there too (UX5 U20 as

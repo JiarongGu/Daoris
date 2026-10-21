@@ -27,6 +27,12 @@ with the version and date at release.
 - An agent's ask to hand its session over to another agent now waits in *What needs you*, in *Notifications*, with *Hand over to
   {agent}* and *Not now*, and the bell and the taskbar count it. Before, it was shown only on its session's page. Once the session's
   turn has ended, the ask is listed under *Holding work*, since the session goes on only when you answer. In English and 中文.
+- *Notifications* now keeps *Done and failed*: each session that ended without you asking, and each terminal request that ran out
+  of time unanswered, newest first, with how long ago. What you have not seen yet is marked, and the bell shows a dot. Once a notice
+  is in view in the window in front, it counts as read in every Daoris window. *Open* goes to its session, *Dismiss* removes it and
+  *Mark all read* reads them all. Notices are kept for a week, at most 200. They are kept with notifications switched off too. When a
+  headless driver is driving, what it ended is listed here and said in the window you are looking at. Overview's summary has a
+  *Done and failed* line. In English and 中文.
 - What you say to a session while its quest waits on another repository's answer now reaches the session that carries the quest on
   once the answer comes. It is quoted beneath the answer and shown in that session's conversation. Your answer to a session that
   stopped to ask you after such a wait now goes on at the driver's next look; before, it could wait for good. The session is told

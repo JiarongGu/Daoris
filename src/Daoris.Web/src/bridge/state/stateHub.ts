@@ -59,6 +59,8 @@ const scopes = new Map<string, (sessions: string[] | null) => QueryKey[]>([
   // How this Daoris is wired, told by the driver as a walk of its sizes starts and ends (FABRIC-EVENT5b), and by the Downloads
   // row's clearing (CACHECLEAR1), with that row's list.
   ['wiring', () => [keys.systemWiring, keys.systemDownloads]],
+  // NOTIFY2f: Done and failed, which the notices slice pushes whole, so no query is asked again.
+  ['notices', () => []],
 ]);
 
 const words = (value: unknown): string[] =>

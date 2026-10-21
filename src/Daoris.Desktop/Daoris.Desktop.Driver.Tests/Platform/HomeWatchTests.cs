@@ -211,6 +211,39 @@ public sealed class HomeWatchTests : IDisposable
         await Poll.Until(() => _woken.Contains((ChangeTopics.Help, "proposals")), () => "the settle was never found at its deadline");
     }
 
+    /// <summary>
+    /// NOTIFY2f (the notification design §2.5): <c>notices.json</c> written by another process is heard as the <c>notices</c> topic, and
+    /// found by the deadline where the source is silent; this process's own write through <see cref="Notices"/> wakes nothing, its writer
+    /// pushing it.
+    /// </summary>
+    [Fact]
+    public async Task The_notices_record_written_elsewhere_is_heard_and_found_by_its_deadline_and_its_own_write_wakes_nothing()
+    {
+        var path = Notices.PathOf(_home);
+        var now = DateTimeOffset.UtcNow;
+        Assert.Null(Notices.Add(_home, new Notice("ended-s0", Notices.Ended, now), now));
+        void Wake(string topic, string subject) => _woken.Enqueue((topic, subject));
+        await using (var heard = HomeWatch.ForNotices(_home, Wake, TimeSpan.FromHours(1), _source))
+        {
+            heard.Start();
+            Assert.Null(Notices.Add(_home, new Notice("ended-s1", Notices.Ended, now), now));
+            Say(Path.GetDirectoryName(path)!, "notices.json", ChangeKind.Renamed);
+            await Settle(heard, 1);
+            await Task.Delay(500);
+            Assert.Empty(_woken);
+
+            File.WriteAllText(path, File.ReadAllText(path).Replace("\"read\": false", "\"read\": true", StringComparison.Ordinal));
+            Say(Path.GetDirectoryName(path)!, "notices.json");
+            await Poll.Until(() => _woken.Contains((ChangeTopics.Notices, "notices.json")), () => "another process's write was never heard");
+        }
+
+        _woken.Clear();
+        await using var silent = HomeWatch.ForNotices(_home, Wake, TimeSpan.FromMilliseconds(300), _source);
+        silent.Start();
+        File.WriteAllText(path, File.ReadAllText(path) + "\n");
+        await Poll.Until(() => _woken.Contains((ChangeTopics.Notices, "notices.json")), () => "the write was never found at its deadline");
+    }
+
     /// <summary>The driving loop's watch hears no proposals folder: the window's own process watches it, whoever holds the lease.</summary>
     [Fact]
     public async Task The_proposals_folder_is_watched_only_where_asked()

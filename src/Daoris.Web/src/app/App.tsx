@@ -49,6 +49,7 @@ import {
   logEvent, useAttention, useAttached, useDismissUpdate, useDriver, useHarnesses, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes,
   useNoticeWords, useSayUpdate, useShowReviewAgain, useSyncNow, useTaskbarCount, useUpdateState,
   useAnswerConfirmation, useConfirmationShown, usePersonKey, useServiceConfirmations, useTerminalConfirmations, useUnkeyedHost,
+  useDismissNotice, useMarkNoticesRead, useNotices,
 } from '../bridge/shell';
 import { AdoptionNotice, type Confirmation, type PressNames, routeKey } from '../person/Confirmations';
 import { byTool } from '../agents/tools';
@@ -289,6 +290,11 @@ export function App() {
   // driver runs with what waits there marked (SESSBADGE1), all judged in .NET once for every window, so the badge and the band are
   // one judgement, and the status bar's count is the badge's. A browser has none.
   const attention = useAttention();
+  // Done and failed (NOTIFY2f, D196 point 6): the notices of this window's scope, as the shell pushes them, and the person's read and
+  // dismissal of them, written by the shell and pushed to every window.
+  const notices = useNotices();
+  const markNoticesRead = useMarkNoticesRead();
+  const dismissNotice = useDismissNotice();
   // The agents this machine has, for the Agents menu (UX6e): the roster the frame holds, asked once and kept.
   const roster = useHarnesses();
   // The install's update (UPDATE1, D139): what is staged, the drain, and the person's word on it, as the banner's.
@@ -1146,6 +1152,7 @@ export function App() {
               needs={waiting}
               presses={presses.length}
               warn={pressUnshown}
+              unread={notices.some((notice) => !notice.read)}
               onPress={() => setNotificationsToggle((was) => was + 1)}
             />
             <BrowserDoor onOpen={() => openBrowser.mutate()} drivers={driving} onAttend={openInWork} />
@@ -1295,6 +1302,10 @@ export function App() {
                   names={pressNames}
                   at={notificationsAt}
                   onVisible={setNotificationsOpen}
+                  notices={notices}
+                  onRead={(ids) => markNoticesRead.mutate(ids)}
+                  onOpenNotice={(notice) => { if (notice.session) openInWork(notice.session); }}
+                  onDismiss={(notice) => dismissNotice.mutate(notice.id)}
                 />
               )}
               notificationsShow={notificationsShow}

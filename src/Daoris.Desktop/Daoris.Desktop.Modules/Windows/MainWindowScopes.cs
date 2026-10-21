@@ -119,7 +119,7 @@ public sealed class MainWindowScopes(MainWindows? mains = null)
     }
 
     /// <summary>A workspace as the service names it (<c>Workspaces.Normalize</c>): trimmed, none the default's, its ASCII letters folded.</summary>
-    private static string Circle(string workspace)
+    internal static string Circle(string workspace)
     {
         var named = workspace.Trim();
         if (named.Length == 0) return "default";

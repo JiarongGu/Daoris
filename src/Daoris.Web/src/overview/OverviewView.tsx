@@ -9,7 +9,7 @@ import {
   SkeletonRows, Tile, Tip, useErrorNotify,
 } from '../design/ui';
 import { QuestStatus } from '../quests/QuestStatus';
-import { useAttention } from '../bridge/shell';
+import { useAttention, useNotices } from '../bridge/shell';
 import type { NotificationsGroup } from '../notifications/NotificationsView';
 import type { Confirmation } from '../person/Confirmations';
 import { questName } from '../work/identity';
@@ -44,6 +44,8 @@ export function OverviewView({ onNavigate, onOpenQuest, notify, presses = [], on
   const { t } = useTranslation();
   // Who needs the person, as the shell pushes it (PUSH1d4), which the summary counts by group.
   const attention = useAttention();
+  // Done and failed (NOTIFY2f): its line follows what waits.
+  const notices = useNotices();
   const repositories = useRepositories();
   const registry = useRegistry();
   const quests = useQuests(null, false);
@@ -72,7 +74,7 @@ export function OverviewView({ onNavigate, onOpenQuest, notify, presses = [], on
 
       {/* The page's lead, above the tiles, because "what needs me" outranks "how is the family" (UX6c, design §6.1); since
           NOTIFY2b a line per group, each a door into *Notifications*, and one line when nothing is waiting. */}
-      <NeedsSummary attention={attention} presses={presses} onNotifications={onNotifications} />
+      <NeedsSummary attention={attention} presses={presses} notices={notices} onNotifications={onNotifications} />
 
       <div className="mb-5 grid grid-cols-[repeat(auto-fit,minmax(10.5rem,1fr))] gap-3">
         <Tile

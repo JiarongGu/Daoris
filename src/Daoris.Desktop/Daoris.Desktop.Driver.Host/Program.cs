@@ -862,6 +862,9 @@ try
                 var read = await parks.LookAsync(
                     report, ticked.ForgivenAt, token => SessionRecords.ReadAsync(service.BaseUrl, key, ct: token), closing.Token);
                 var events = attention.Observe(report, read);
+                // Kept in Notifications whatever the switch says (NOTIFY2f, the notification design §2.5): the desktop's windows
+                // read the record again and say what this host wrote; a write refused is logged and dropped.
+                Notices.Keep(home, events, DateTimeOffset.UtcNow, why => log.Warn("notices.refused", ("why", why)));
                 if (ticked.Notify) foreach (var item in events) Console.WriteLine($"  !  {item.Line}");
             },
             onError: null,

@@ -132,6 +132,7 @@ export const HOME_ENTRIES = [
   row('brainstorms', 'data', 'data/brainstorms', 'brainstorms'),
   row('usage-history', 'data', 'data/usage-history', 'usage-history'),
   row('keeping', 'data', 'data/keeping.json', 'keeping.json'),
+  row('notices', 'data', 'data/notices.json', 'notices.json'),
   row('keys', 'profiles', 'profiles/keys.json', 'keys.json'),
   row('remotes', 'profiles', 'profiles/remotes.json', 'remotes.json'),
   row('agent-homes', 'profiles', 'profiles/agents/*/*', 'harnesses/*/*'),

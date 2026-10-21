@@ -73,6 +73,8 @@
   "person.route.WORK_HELD": "give your word on an attempt held for you",
   "person.route.HELP_DISMISS": "set aside a proposal of Ask Daoris",
   "person.route.CHANNEL_MARK": "mark an ask's channel read for you",
+  "person.route.NOTICES_READ": "mark your notifications read",
+  "person.route.NOTICE_DISMISS": "dismiss your notifications",
   "person.route.SESSION_GO_AHEAD": "answer a go-ahead a session asked",
   "person.route.SESSION_PERMISSION_ANSWER": "answer a tool call a session holds for you",
   "person.route.SESSION_HAND_OVER_APPROVE": "say yes to an agent's ask to hand its session over",

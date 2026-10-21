@@ -4,6 +4,8 @@
   "notifications.labelled": "Notifications: {{what}}",
   "notifications.tip": "{{count}} need you",
   "notifications.tipConfirm": "{{count}} waiting for your confirmation",
+  "notifications.unread": "{{what}}, and something unread",
+  "notifications.unreadAlone": "Notifications: something unread",
   "notifications.toast.open": "Open",
   "notifications.toast.press": "A terminal asks to {{act}}: {{session}}",
   "notifications.toast.inMain": "A terminal's press waits in Daoris's main window",
@@ -31,5 +33,14 @@
   "notifications.system.confirming.plain": "Open Daoris to confirm or refuse it.",
   "notifications.system.holding.title": "{{repository}}: a session holds a tool call for you",
   "notifications.system.holding.help": "Ask Daoris holds a tool call for you",
-  "notifications.system.holding.body": "Open Daoris to answer it before it is refused by itself."
+  "notifications.system.holding.body": "Open Daoris to answer it before it is refused by itself.",
+  "notifications.done.title": "Done and failed",
+  "notifications.done.ended": "A session in {{repository}} ended: {{state}}",
+  "notifications.done.expired": "A terminal's press to {{act}} went unanswered, and ran out of time",
+  "notifications.done.other": "Something ended",
+  "notifications.done.ago": "{{age}} ago",
+  "notifications.done.unread": "Unread",
+  "notifications.done.unreadCount": "{{count}} unread",
+  "notifications.done.dismiss": "Dismiss",
+  "notifications.done.markAll": "Mark all read"
 }

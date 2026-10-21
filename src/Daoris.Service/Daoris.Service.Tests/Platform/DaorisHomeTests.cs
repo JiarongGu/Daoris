@@ -272,6 +272,14 @@ public sealed class DaorisHomeTests
         Assert.Equal((HomeCategory.Data, "data/keeping.json"), (HomeEntry.Keeping.Category, HomeEntry.Keeping.New));
     }
 
+    /// <summary>NOTIFY2f (D196 point 6): the notices' record, a data file the service's table names as its twins do.</summary>
+    [Fact]
+    public void The_notices_record_is_a_data_file()
+    {
+        Assert.Same(HomeEntry.Notices, HomeEntry.Named("notices"));
+        Assert.Equal((HomeCategory.Data, "data/notices.json"), (HomeEntry.Notices.Category, HomeEntry.Notices.New));
+    }
+
     /// <summary>HELPMODE1c2a (D183's note): Ask Daoris's configured access, a data file the service's table names as its twin does.</summary>
     [Fact]
     public void Ask_Daoris_configured_access_is_a_data_file()

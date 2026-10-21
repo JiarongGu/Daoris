@@ -52,6 +52,12 @@ public sealed record AttentionEvent(
     public int? Strikes { get; init; }
 
     /// <summary>
+    /// For <see cref="AttentionKind.Ended"/>: the workspace the session was filed under at the last look that saw it active, which its
+    /// notice keeps (NOTIFY2f, the notification design §2.5); null where no look saw it, and the notice is every window's.
+    /// </summary>
+    public string? Workspace { get; init; }
+
+    /// <summary>
     /// The one line this is worth saying — a toast's title, and a headless console's line.
     /// </summary>
     /// <remarks>
@@ -155,6 +161,10 @@ public sealed class AttentionWatch
 {
     private Dictionary<string, string>? _seen;
 
+    // The workspace of each session the last look saw active (NOTIFY2f): an ended session has left the report's active ones by the
+    // look that concludes it, so its notice keeps the workspace it was filed under then. Bounded by what is active.
+    private Dictionary<string, string> _workspaces = new(StringComparer.Ordinal);
+
     // Each conversation's turns as this watch judged them (NOTIFY1a), by session: whether the person spoke since its last
     // answer, and the turn's end it was last judged at. Told from the conversations' threads, so each is locked on its own.
     private readonly ConcurrentDictionary<string, Turns> _turns = new(StringComparer.OrdinalIgnoreCase);
@@ -203,6 +213,9 @@ public sealed class AttentionWatch
 
         var previous = _seen;
         _seen = now;
+        var workspaces = _workspaces;
+        _workspaces = report.Active.GroupBy(session => session.Id, StringComparer.Ordinal)
+            .ToDictionary(same => same.Key, same => same.First().Workspace, StringComparer.Ordinal);
 
         // A wait whose cool-off was not said yet (TOOL4d, D125 §4) — recorded on the first look too, which says nothing.
         var waits = report.Waits.Where(Unsaid).ToList();
@@ -236,7 +249,10 @@ public sealed class AttentionWatch
         {
             if (ended.ByPerson || saidByPark.Contains(ended.Session)) continue;
             events.Add(new AttentionEvent(
-                AttentionKind.Ended, ended.Session, ended.Repository, ended.State, ended.Note));
+                AttentionKind.Ended, ended.Session, ended.Repository, ended.State, ended.Note)
+            {
+                Workspace = workspaces.GetValueOrDefault(ended.Session) ?? _workspaces.GetValueOrDefault(ended.Session),
+            });
         }
 
         return events;

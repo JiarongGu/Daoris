@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AttentionRead } from '../bridge/attention';
+import type { Notice } from '../bridge/notices';
 import i18n from '../locales/i18n';
 import type { Confirmation } from '../person/Confirmations';
 import type { PushedAttention } from '../work/attention/attention';
@@ -83,6 +84,31 @@ describe("Overview's summary of what needs you", () => {
     expect(summary).toHaveTextContent('Nothing needs you');
     expect(summary).toHaveTextContent('2 sessions working');
     expect(within(summary).queryByRole('button')).toBeNull();
+  });
+
+  it('says Done and failed after what waits, its notices and how many are unread, a door to its group (NOTIFY2f)', async () => {
+    const onNotifications = vi.fn();
+    const notices: Notice[] = [
+      { id: 'ended-s1', kind: 'ended', at: ago(5), read: false, repository: 'Engine', state: 'failed' },
+      { id: 'ended-s2', kind: 'ended', at: ago(50), read: true, repository: 'Engine', state: 'completed' },
+    ];
+    const { rerender } = render(<NeedsSummary attention={KNOWN} presses={[]} notices={notices} onNotifications={onNotifications} />);
+
+    const lines = within(screen.getByRole('region', { name: 'What needs you' })).getAllByRole('button');
+    expect(lines.at(-1)!.textContent).toBe('Done and failed21 unread');
+    vi.useRealTimers();
+    await userEvent.click(lines.at(-1)!);
+    expect(onNotifications).toHaveBeenLastCalledWith('done');
+
+    // With nothing waiting, its line stands alone, and every one read says no count of unread.
+    rerender(<NeedsSummary attention={{ ...KNOWN, rows: [] }} presses={[]} notices={[notices[1]!]} onNotifications={onNotifications} />);
+    expect(within(screen.getByRole('region', { name: 'What needs you' })).getAllByRole('button').map((line) => line.textContent))
+      .toEqual(['Done and failed1']);
+
+    await i18n.changeLanguage('zh');
+    rerender(<NeedsSummary attention={{ ...KNOWN, rows: [] }} presses={[]} notices={notices} onNotifications={onNotifications} />);
+    expect(within(screen.getByRole('region', { name: '等你处理' })).getAllByRole('button').map((line) => line.textContent))
+      .toEqual(['完成与出错21 条未读']);
   });
 
   it("says in a plain browser that it is the app's", () => {
