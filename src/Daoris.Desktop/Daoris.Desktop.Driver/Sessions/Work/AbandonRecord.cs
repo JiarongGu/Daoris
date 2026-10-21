@@ -18,15 +18,24 @@ namespace Daoris.Driver;
 ///
 /// <para><b>A missing or unreadable file is no record</b>, and the abandon still abandons. An entry stays while its ask or
 /// quest has a record here: it is the only trace of a discarded tree, and it is small.</para>
+///
+/// <para><b>Edited under its record's lock</b> (FABRIC-RECLOCK2, D173's note): the window's press and a terminal's
+/// <c>quest abandon</c> or <c>ask --abandon</c> beside it, and a history clear, each read, change and write the whole file, so each edit holds <see cref="LockPath"/> as
+/// <c>landings.json</c>'s do.</para>
 /// </remarks>
 public sealed class AbandonRecord(string home)
 {
+    public const string FileName = "abandoned.json";
+
     // One writer at a time in this process: two presses would otherwise read the same file, and the second drop the first.
     private static readonly object Gate = new();
 
     private static readonly RecordList<AbandonEntry> List = new(Gate, "abandoned", Read, ToJson);
 
     public string FilePath => DaorisHome.Entry(home, HomeEntry.Abandoned);
+
+    /// <summary>The record's lock across processes (FABRIC-RECLOCK2): the loop and a verb beside it edit this file one at a time.</summary>
+    public string LockPath => RecordLock.PathOf(home, FileName);
 
     /// <summary>Every entry, oldest first; none when the file is missing or does not read.</summary>
     public IReadOnlyList<AbandonEntry> Entries() => List.Read(FilePath);
@@ -41,7 +50,7 @@ public sealed class AbandonRecord(string home)
     /// </summary>
     /// <param name="known">Whether an entry's ask or quest still has a record here; null keeps every entry.</param>
     public void Write(AbandonEntry entry, Func<AbandonEntry, bool>? known = null) =>
-        List.Edit(FilePath, all => [.. all.Where(each => known is null || known(each)), entry]);
+        List.Edit(FilePath, all => [.. all.Where(each => known is null || known(each)), entry], LockPath);
 
     /// <summary>
     /// Drop the entries whose ask or quest no longer has a record here (HIST1c, the history-clearing design §2.2), as
@@ -52,6 +61,7 @@ public sealed class AbandonRecord(string home)
     {
         lock (Gate)
         {
+            using var held = RecordLock.Take(LockPath);
             var all = Entries();
             var kept = all.Where(known).ToList();
             if (kept.Count == all.Count) return 0;
