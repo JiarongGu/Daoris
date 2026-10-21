@@ -107,6 +107,13 @@ public static class HeldResolutions
     /// <summary>On a held close (FABRIC-CLOSE1q): ask its door again with the same key, token and submissions, which answers its first outcome.</summary>
     public const string Resend = "resend";
 
+    /// <summary>
+    /// On a failure kept for the person (FABRIC-PERFORM1k; RUN1e: a code not transient, its tries spent, or another graph's or run's): §E2's
+    /// <c>failed → ready</c> by the person, a new attempt the next evaluation starts with a new key under the graph governing now. The
+    /// failure stays its plugin's: the word is cleared as it is applied, so it is never read as the person's outcome.
+    /// </summary>
+    public const string Again = "again";
+
     /// <summary>The words on a plugin's attempt (FABRIC-PERFORM1g), as they were.</summary>
     public static readonly IReadOnlyList<string> Plugin = [Happened, DidNot, Stop];
 
@@ -116,11 +123,15 @@ public static class HeldResolutions
     /// <summary>The words on a close whose door's answer is not kept: nothing to record again, so it is asked for again, or its work stopped.</summary>
     public static readonly IReadOnlyList<string> CloseUnkept = [Resend, Stop];
 
+    /// <summary>The word on a failure kept for the person (FABRIC-PERFORM1k): their new attempt.</summary>
+    public static readonly IReadOnlyList<string> Failure = [Again];
+
     /// <summary>
-    /// Every word a record may hold on an attempt. A record holding a close's word reads as unreadable on a build before FABRIC-CLOSE1q, which
-    /// is why the closer clears the word as it applies it: only a word not applied yet is ever written.
+    /// Every word a record may hold on an attempt. A record holding a close's word reads as unreadable on a build before FABRIC-CLOSE1q, and
+    /// one holding <c>again</c> on a build before FABRIC-PERFORM1k, which is why the closer and the performer clear those words as they apply
+    /// them: only a word not applied yet is ever written.
     /// </summary>
-    public static readonly IReadOnlyList<string> All = [Happened, DidNot, Stop, Record, Resend];
+    public static readonly IReadOnlyList<string> All = [Happened, DidNot, Stop, Record, Resend, Again];
 
     /// <summary>
     /// The words offered on a held attempt (FABRIC-CLOSE1q): a plugin's three; on Daoris's own close, <c>record</c> only where its door closed

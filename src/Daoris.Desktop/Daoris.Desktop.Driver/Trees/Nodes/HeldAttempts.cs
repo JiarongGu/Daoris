@@ -32,6 +32,12 @@ public sealed record HeldAttempt(string Unit, string Node, int Attempt, string P
     /// recoveries and its stop (<see cref="HeldResolutions.Close"/>), <c>record</c> only where its door's answer is kept on it.
     /// </summary>
     public IReadOnlyList<string> Words { get; init; } = HeldResolutions.Plugin;
+
+    /// <summary>A failure kept for the person's code (FABRIC-PERFORM1k), as its plugin gave it; null on an attempt held.</summary>
+    public string? Code { get; init; }
+
+    /// <summary>Whether it is a failure kept for the person (FABRIC-PERFORM1k), which takes their new attempt alone, rather than an attempt held.</summary>
+    public bool Failed => Why is WorkPerformer.FailureKept or WorkPerformer.TriesSpent;
 }
 
 /// <summary>
@@ -43,16 +49,24 @@ public static class HeldAttempts
 {
     /// <summary>The usage of <c>daoris-driver work held</c>, as the terminal says it when its words are not understood.</summary>
     public const string Usage =
-        "usage: daoris-driver work held [--unit <id>]  |  daoris-driver work held <unit> <node> <attempt> happened|did-not|stop  (a held close: record|resend|stop)";
+        "usage: daoris-driver work held [--unit <id>]  |  daoris-driver work held <unit> <node> <attempt> happened|did-not|stop  (a held close: record|resend|stop; a failed step: again)";
 
     /// <summary>
-    /// Every attempt held on the records that read, and every close unknown with its node still on it (FABRIC-CLOSE1u,
-    /// <see cref="QuestClosing.Unanswered"/>), oldest first; with <paramref name="unit"/>, that unit's alone.
+    /// Every attempt held on the records that read, every close unknown with its node still on it (FABRIC-CLOSE1u,
+    /// <see cref="QuestClosing.Unanswered"/>), and every failure kept for the person (FABRIC-PERFORM1k, <see cref="WorkPerformer.KeptFailure"/>),
+    /// oldest first; with <paramref name="unit"/>, that unit's alone.
     /// </summary>
     public static IReadOnlyList<HeldAttempt> Read(NodeRecordFiles records, string? unit = null, IReadOnlyDictionary<string, QuestView>? quests = null) =>
         [.. records.All().Records
             .Where(record => unit is null || string.Equals(record.Unit, unit, StringComparison.Ordinal))
-            .SelectMany(record => record.Attempts.Where(attempt => attempt.State == AttemptStates.Held || QuestClosing.Unanswered(record, attempt)).Select(attempt =>
+            .SelectMany(record => record.Attempts.Where(attempt => WorkPerformer.KeptFailure(record, attempt)).Select(attempt =>
+                new HeldAttempt(record.Unit, attempt.Node, attempt.Attempt, attempt.Plugin, attempt.Call.Step, NodeStates.Failed,
+                    record.Statuses[attempt.Node].Transient ? WorkPerformer.TriesSpent : WorkPerformer.FailureKept)
+                {
+                    Outcome = attempt.Outcome, Revision = attempt.Call.SubjectRevision, RecordedAt = attempt.RecordedAt, Resolution = attempt.Resolution,
+                    ResolvedAt = attempt.ResolvedAt, Words = HeldResolutions.Failure, Code = record.Statuses[attempt.Node].Code ?? attempt.Code,
+                })
+            .Concat(record.Attempts.Where(attempt => attempt.State == AttemptStates.Held || QuestClosing.Unanswered(record, attempt)).Select(attempt =>
             {
                 // FABRIC-CLOSE1q3: a close whose submission moved by the runtime's last read is offered resend alone: the pass takes back
                 // record and stop, which the node records alone cannot tell (WORK_HELD holds no quest). No last read judges nothing.
@@ -65,7 +79,7 @@ public static class HeldAttempts
                     Outcome = attempt.Outcome, Revision = attempt.Call.SubjectRevision, RecordedAt = attempt.RecordedAt,
                     Resolution = attempt.Resolution, ResolvedAt = attempt.ResolvedAt, Words = moved ? [HeldResolutions.Resend] : HeldResolutions.Of(attempt),
                 };
-            }))
+            })))
             .OrderBy(held => held.RecordedAt)];
 
     /// <summary>Why an attempt is held, as the terminal says it; the page words the same codes in the reader's language.</summary>
@@ -75,6 +89,8 @@ public static class HeldAttempts
         WorkPerformer.NoReconcile => "its step declares no way to ask what became of it, so it is never sent again by itself",
         WorkPerformer.NoOutcome => "its plugin said it was done and named no outcome",
         WorkPerformer.NotCurrent => "its node moved off it while its effect may still run, and its step can be sent again but not asked",
+        WorkPerformer.FailureKept => $"its plugin said it failed ({held.Code}), and Daoris does not try it again by itself",
+        WorkPerformer.TriesSpent => $"its plugin said it failed ({held.Code}) and its tries are spent, so Daoris does not try it again by itself",
         NodeRefusal.NotOnWord => "your word that it happened could not be taken: its results are its plugin's to give",
         var code => $"its plugin's {held.Outcome ?? "answer"} did not bind to the work it was sent on ({code})",
     };
@@ -101,7 +117,7 @@ public static class HeldAttempts
         if (held.Count == 0) return ["work: no attempt is held for you."];
         return [.. held.SelectMany(each => new[]
         {
-            $"{each.Unit}  {each.Node} (attempt {each.Attempt}, {each.Step}, node {each.NodeState}): held, {WhySaid(each)}.",
+            $"{each.Unit}  {each.Node} (attempt {each.Attempt}, {each.Step}, node {each.NodeState}): {(each.Failed ? "failed" : "held")}, {WhySaid(each)}.",
             each.Resolution is { } word
                 ? $"  your word `{word}` is recorded{(each.ResolvedAt is { } at ? $" ({Moments.Write(at)})" : "")}, and applied at the next look."
                 : $"  say: daoris-driver work held {each.Unit} {each.Node} {each.Attempt} {string.Join('|', each.Words)}",
@@ -110,7 +126,8 @@ public static class HeldAttempts
 
     /// <summary>
     /// <c>daoris-driver work held [--unit &lt;id&gt;]</c> lists; <c>daoris-driver work held &lt;unit&gt; &lt;node&gt; &lt;attempt&gt;
-    /// happened|did-not|stop</c> (a held close's: <c>record|resend|stop</c>, FABRIC-CLOSE1q) records the person's word (FABRIC-PERFORM1g, D50:
+    /// happened|did-not|stop</c> (a held close's: <c>record|resend|stop</c>, FABRIC-CLOSE1q; a failure kept for the person's: <c>again</c>,
+    /// FABRIC-PERFORM1k) records the person's word (FABRIC-PERFORM1g, D50:
     /// the page's <c>WORK_HELD</c> is the other door). Only the
     /// process holding the home's lease records it, asked inside the record's lock. Exit 0 clean; 1 refused; 2 words not understood.
     /// </summary>
@@ -159,7 +176,11 @@ public static class HeldAttempts
         (_, WorkPerformer.NotHeld) => "work: this process does not hold the home, so it records nothing: the desktop holds it while it runs, so say it there, or close the desktop and run this again.",
         (_, WorkPerformer.Unreadable) => $"work: the node record of {done.Unit} does not read, so nothing on it is changed.",
         (_, WorkPerformer.Worded) => $"work: {done.Node} (attempt {attempt}) of {done.Unit} already has your word, which the next look applies.",
-        (_, WorkPerformer.NotResolution) => $"work: `{resolution}` is not a word for a held attempt: say happened, did-not or stop, or on a held close record, resend or stop.",
+        (_, WorkPerformer.NotResolution) =>
+            $"work: `{resolution}` is not a word for a held attempt: say happened, did-not or stop, on a held close record, resend or stop, or on a failed step again.",
+        (_, WorkPerformer.NotAgain) when resolution == HeldResolutions.Again =>
+            $"work: {done.Node} (attempt {attempt}) of {done.Unit} is held, not failed, so it takes no new attempt by itself: say what became of it first.",
+        (_, WorkPerformer.NotAgain) => $"work: {done.Node} (attempt {attempt}) of {done.Unit} failed, and its plugin said so: say again for a new attempt.",
         (_, WorkPerformer.NotCloseWord) => $"work: `{resolution}` is not a word for a held close, whose outcome is its door's answer and never a person's word: say record, resend or stop.",
         (_, WorkPerformer.NotOffered) => $"work: `{resolution}` is a word for a held close, and {done.Node} is a plugin's step: say happened, did-not or stop.",
         (_, WorkPerformer.NotKept) => $"work: no answer of its door's is kept on {done.Node} (attempt {attempt}) of {done.Unit}, so there is nothing to record again: say resend or stop.",

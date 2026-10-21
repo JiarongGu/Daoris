@@ -883,4 +883,91 @@ public sealed class NodeRuntimeTests : IDisposable
         Assert.Equal(PerformedWhat.Refused, again.What);
         Assert.Contains("already has your word", HeldAttempts.Said(again, 1, HeldResolutions.DidNot));
     }
+
+    /// <summary>
+    /// FABRIC-PERFORM1k: a failure Daoris will not retry (a code its step does not declare transient) is listed for the person with its code
+    /// and their one word, keeping its node failed across passes; their <i>again</i> restarts it as a new attempt with a new key, the failure
+    /// still its plugin's, and the word cleared as it is applied.
+    /// </summary>
+    [Fact]
+    public async Task A_failure_kept_for_the_person_is_listed_and_their_again_restarts_it_with_a_new_key()
+    {
+        var runtime = Runtime();
+        await runtime.PassAsync(Look(Governed), CancellationToken.None);
+        var sent = Assert.Single(_port.Sent);
+        _port.Heard.Enqueue(Completion(new WorkOutcome(WorkStates.Failed, "broken")));
+        await runtime.PassAsync(Look(Governed, whole: false), CancellationToken.None);
+        await runtime.PassAsync(Look(Governed), CancellationToken.None);
+
+        var kept = Assert.Single(HeldAttempts.Read(Files));
+        Assert.Equal((Unit, "deploy", 1, NodeStates.Failed, WorkPerformer.FailureKept, "broken", (string?)null),
+            (kept.Unit, kept.Node, kept.Attempt, kept.NodeState, kept.Why, kept.Code, kept.Resolution));
+        Assert.True(kept.Failed);
+        Assert.Equal(HeldResolutions.Failure, kept.Words);
+        Assert.Contains("failed (broken), and Daoris does not try it again by itself", HeldAttempts.WhySaid(kept), StringComparison.Ordinal);
+        Assert.Contains($"say: daoris-driver work held {Unit} deploy 1 again", HeldAttempts.Lines([kept])[1], StringComparison.Ordinal);
+        Assert.Single(_port.Sent);
+
+        Assert.Equal(PerformedWhat.Worded, Door().Word(Unit, "deploy", 1, HeldResolutions.Again).What);
+        Assert.Equal(HeldResolutions.Again, Assert.Single(HeldAttempts.Read(Files)).Resolution);
+        var pass = await runtime.PassAsync(Look(Governed, whole: false), CancellationToken.None);
+
+        Assert.Contains(pass.Performed, done => done is { What: PerformedWhat.Resolved, Code: HeldResolutions.Again });
+        Assert.Equal(2, _port.Sent.Count);
+        Assert.NotEqual(sent.IdempotencyKey, _port.Sent[1].IdempotencyKey);
+        Assert.NotEqual(sent.Invocation, _port.Sent[1].Invocation);
+        var first = Record().Attempts.Single(attempt => attempt.Attempt == 1);
+        Assert.Equal((AttemptStates.Settled, WorkStates.Failed, "broken", (string?)null), (first.State, first.Outcome, first.Code, first.Resolution));
+        Assert.Contains(Record().History, entry => entry is { Why: "person-again", Was: { State: NodeStates.Failed, By: NodeSource.Plugin } });
+        Assert.Equal((NodeStates.Active, 2), (Record().Statuses["deploy"].State, Record().Statuses["deploy"].Attempt));
+        Assert.Empty(HeldAttempts.Read(Files));
+    }
+
+    /// <summary>
+    /// FABRIC-PERFORM1k: a transient failure with tries left is Daoris's to retry and is not listed; spent, it is, saying so. Each kind takes
+    /// its own words alone: a held attempt's on a failure, and <i>again</i> on a held attempt, are refused and nothing is written.
+    /// </summary>
+    [Fact]
+    public async Task A_retry_coming_is_not_listed_and_the_words_of_a_failure_and_a_held_attempt_stay_apart()
+    {
+        var runtime = Runtime();
+        await runtime.PassAsync(Look(Governed), CancellationToken.None);
+        _port.Heard.Enqueue(Completion(new WorkOutcome(WorkStates.Failed, "unavailable")));
+        await runtime.PassAsync(Look(Governed, whole: false), CancellationToken.None);
+        Assert.Empty(HeldAttempts.Read(Files));
+
+        for (var tried = 2; tried <= 3; tried++)
+        {
+            _now += TimeSpan.FromMinutes(5);
+            await runtime.PassAsync(Look(Governed), CancellationToken.None);
+            Assert.Equal(tried, _port.Sent.Count);
+            _port.Heard.Enqueue(Completion(new WorkOutcome(WorkStates.Failed, "unavailable")));
+            await runtime.PassAsync(Look(Governed, whole: false), CancellationToken.None);
+        }
+
+        var spent = Assert.Single(HeldAttempts.Read(Files));
+        Assert.Equal((3, WorkPerformer.TriesSpent, "unavailable"), (spent.Attempt, spent.Why, spent.Code));
+        Assert.Contains("its tries are spent", HeldAttempts.WhySaid(spent), StringComparison.Ordinal);
+        var before = File.ReadAllText(NodeRecordFiles.PathOf(_home, Unit));
+
+        var heldWord = Door().Word(Unit, "deploy", 3, HeldResolutions.DidNot);
+        Assert.Equal((PerformedWhat.Refused, WorkPerformer.NotAgain), (heldWord.What, heldWord.Code));
+        Assert.Contains("say again", HeldAttempts.Said(heldWord, 3, HeldResolutions.DidNot), StringComparison.Ordinal);
+        Assert.Equal(WorkPerformer.NotAttempt, Door().Word(Unit, "deploy", 2, HeldResolutions.Again).Code);
+        Assert.Equal(WorkPerformer.NotHeld, Door(holdsLease: false).Word(Unit, "deploy", 3, HeldResolutions.Again).Code);
+        Assert.Equal(before, File.ReadAllText(NodeRecordFiles.PathOf(_home, Unit)));
+    }
+
+    /// <summary>FABRIC-PERFORM1k: <i>again</i> on an attempt held is refused, saying what to say first; its three words stay.</summary>
+    [Fact]
+    public async Task Again_on_a_held_attempt_is_refused()
+    {
+        await HeldAsync();
+
+        var again = Door().Word(Unit, "deploy", 1, HeldResolutions.Again);
+
+        Assert.Equal((PerformedWhat.Refused, WorkPerformer.NotAgain), (again.What, again.Code));
+        Assert.Contains("is held, not failed", HeldAttempts.Said(again, 1, HeldResolutions.Again), StringComparison.Ordinal);
+        Assert.Equal(HeldResolutions.Plugin, Assert.Single(HeldAttempts.Read(Files)).Words);
+    }
 }
