@@ -492,14 +492,31 @@ public sealed class Driver(
         Gate.OpinionsAsync(snapshot, events, ct, judged);
 
     /// <summary>
-    /// Each run whose session opened in this look and that no binding names yet is bound to the workflow §4.1 chooses for it now
-    /// (WORKFLOW1e, D157 point 11; the workflow design §4.5): Workflows' use case (<see cref="WorkflowRunStart"/>), composed here over
-    /// the loop's service, home, choices and plugins, and the clock.
+    /// The look's bind (WORKFLOW1e, D157 point 11 as D190 amends it; the workflow design §4.5, the cutover design §8): what the starts
+    /// bound before their take since the last look (<see cref="BindAtStartAsync"/>), said; then each run whose session opened in this look
+    /// and that no binding names yet, bound to the workflow §4.1 chooses for it now, which only a run opened before FABRIC-CUTOVER1g or a
+    /// start a test stands in for leaves. Workflows' use case (<see cref="WorkflowRunStart"/>), composed here over the loop's service,
+    /// home, choices and plugins, and the clock.
     /// </summary>
     private Task BindRunsAsync(IReadOnlyList<Consideration> opened, List<string> events, CancellationToken ct) =>
         WorkflowRunStart.BindAsync(
             [.. opened.Select(start => new WorkflowStarted(start.Quest, start.Workspace))], new StartWorld(service), home, config,
-            WorkflowCurrent.PluginsOf(Context.Catalog), () => DateTimeOffset.UtcNow, events, ct, Lines);
+            WorkflowCurrent.PluginsOf(Context.Catalog), () => DateTimeOffset.UtcNow, events, ct, Lines, made: Context.Runs.TakeBound());
+
+    /// <summary>
+    /// A start's bind of its run before its take (FABRIC-CUTOVER1g, D190's binding moment; the cutover design §8): Workflows' use case
+    /// (<see cref="WorkflowRunStart.AtStartAsync(WorkflowStarted, IWorkflowStartWorld, string, DriverConfig, IReadOnlyList{WorkflowPlugin}, Func{DateTimeOffset}, CancellationToken)"/>)
+    /// over the loop's service, home, choices and plugins. A binding it made is kept for the next look's bind to say.
+    /// </summary>
+    private async Task<WorkflowBind> BindAtStartAsync(QuestView quest, string? workspace, CancellationToken ct)
+    {
+        var bound = await WorkflowRunStart.AtStartAsync(
+                new WorkflowStarted(quest, workspace), new StartWorld(service), home, config, WorkflowCurrent.PluginsOf(Context.Catalog),
+                () => DateTimeOffset.UtcNow, ct)
+            .ConfigureAwait(false);
+        if (bound.Came == WorkflowBindCame.Bound) Context.Runs.Bound(bound);
+        return bound;
+    }
 
     /// <summary>What binding a run reads and says through the loop's service: its quests, its asks, and the machine log's line.</summary>
     private sealed class StartWorld(ServiceClient service) : IWorkflowStartWorld
@@ -833,9 +850,10 @@ public sealed class Driver(
 
         var waits = Waits(outcomes);
 
-        // WORKFLOW1e (design §4.5): each run whose session opened in this look is bound, at its first start, to the workflow that
-        // chooses it now. A start that held or was refused opened nothing, and binds nothing. PARALLEL1b: one an earlier look let go
-        // of is bound by the look after it opened, from the start that look planned.
+        // WORKFLOW1e (design §4.5), as FABRIC-CUTOVER1g moves it (D190, the cutover design §8): a start binds its run itself, before its
+        // take, and the look says what the starts bound since the last look, a start held or refused after its bind included. A run whose
+        // session opened in this look and that no binding names yet (one opened before that build, or a start a test stands in for) is
+        // bound here. PARALLEL1b: what a start an earlier look let go of bound is said by the look after it.
         var openedStarts = outcomes
             .Where(each => each.Opened && each.Started.Start is not null)
             .Select(each => each.Started.Start!)
@@ -1785,6 +1803,18 @@ public sealed class Driver(
 
         var workTree = opened?.Path ?? resumedIn ?? joinedIn ?? root;
 
+        // FABRIC-CUTOVER1g (D190's binding moment, the cutover design §8; amends D157 point 11): the run is bound here, once its tree is
+        // open and before its take names a closure graph below, so the take names the graph its run is bound to and no look binds it later
+        // to something else. A start held before this binds nothing; one held or refused after it keeps its run bound to what it chose, so
+        // a choice changed since applies to the next run. A bind not made, or a binding that does not read, holds the start, said, and the
+        // next look tries again, its fresh tree let go as a refused open's is.
+        var runBound = await BindAtStartAsync(quest, start.Workspace, ct).ConfigureAwait(false);
+        if (runBound.Holds)
+        {
+            await fresh.LetGoAsync().ConfigureAwait(false);
+            return Hold(runBound.Why!);
+        }
+
         // A set-up step follows its repository's own procedure, which its tree must hold (REVIEWENV1c, design §2.1): checked
         // here, once the tree exists, and held before any record, a fresh tree going as a refused open's does.
         var setUp = ReviewSetUps.Environment(config, quest, start.Workspace);
@@ -2071,11 +2101,12 @@ public sealed class Driver(
             // FABRIC-CLOSE1l (CLOSE1f, CLOSE1g; the fabric events design §E5): a quest whose work cycle holds `quest.close` names its graph for
             // the take as its first session opens, so the take binds it in its own write, and a bound quest's session says `ready`, never
             // `done`. A circle synced through a remote, by the map sync reads, is never bound. No closure graph: nothing asked, nothing said.
-            // FABRIC-CLOSE1o: named for this session, whose take alone binds it, the service judging it again at the take.
+            // FABRIC-CLOSE1o: named for this session, whose take alone binds it, the service judging it again at the take. FABRIC-CUTOVER1g:
+            // the graph its run is bound to, as the bind above kept it: Current's work cycle under Current, none under a named version.
             var closure = await ClosureBinding.AtStartAsync(
                 service, config, quest, start.Workspace ?? RemoteTarget.DefaultWorkspace,
                 RemoteTarget.Effective(Variable, home).ContainsKey(RemoteTarget.Workspace(start.Workspace)), home, ct,
-                session: sessionId)
+                session: sessionId, run: runBound.Binding)
                 .ConfigureAwait(false);
             // The process its work follows (WORKFLOW1f): read for the landing a session in a tree of its own is told, and for the checks its
             // run takes wherever its repository sets them, since a named workflow's run takes its version's, never Current's rule; and
@@ -2134,8 +2165,8 @@ public sealed class Driver(
                 Channel = channelHeld,
                 // How its work will land (WSR1, D87), for a session in a tree of its own — the only kind
                 // the review's press reaches. A chain's step is told its chain's branch, which its done moves on (LAND2c). Under a
-                // named workflow its run's bound version's landing step says it (WORKFLOW1f); a run's first start is bound after it
-                // opens, so its first session is told the rule.
+                // named workflow its run's bound version's landing step says it (WORKFLOW1f); a run is bound before its take
+                // (FABRIC-CUTOVER1g), so its first session is told its version's too.
                 LandsOn = Context.Trees.Holds(workTree)
                     ? await Context.Trees.PlanAsync(
                         workTree, await LandsAsAsync(sessionId, quest, id => service.FindQuestAsync(id, ct), ct).ConfigureAwait(false), ct,

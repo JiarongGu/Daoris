@@ -216,6 +216,90 @@ public sealed class WorkflowPortsTests
         Assert.Null(runs.Read("q1")!.Ask);
     }
 
+    /// <summary>
+    /// FABRIC-CUTOVER1g (D190's binding moment, the cutover design §8): a start binds its run before its take and says what the bind came
+    /// to: bound by it, bound already with the binding kept, or not bound with why, which holds the start. The look says a binding a start
+    /// made, once, and binds nothing again; a service that answers at the next start binds the run then.
+    /// </summary>
+    [Fact]
+    public async Task A_start_binds_its_run_before_its_take_and_says_what_the_bind_came_to()
+    {
+        var store = new MemoryStore();
+        var runs = new MemoryRuns();
+        WorkflowStore.Add(store, runs, Added("automatic"));
+        var first = new QuestView("q1", "daoris", "web-app", "Docs", "", "Open");
+        var second = new QuestView("q2", "daoris", "web-app", "More docs", "", "Open") { Parent = "q1" };
+        var world = new StartWorld([first, second]);
+
+        var made = await WorkflowRunStart.AtStartAsync(new WorkflowStarted(first, "work"), world, store, runs, Choice, [], () => At, CancellationToken.None);
+        var kept = await WorkflowRunStart.AtStartAsync(new WorkflowStarted(second, "work"), world, store, runs, Choice, [], () => At, CancellationToken.None);
+
+        Assert.Equal((WorkflowBindCame.Bound, "q1", false), (made.Came, made.Run, made.Holds));
+        Assert.Equal(("docs-to-pr", (int?)1), (made.Binding!.Workflow, made.Binding.Version));
+        Assert.Equal((WorkflowBindCame.Already, "q1", false), (kept.Came, kept.Run, kept.Holds));
+        Assert.Same(made.Binding, kept.Binding);
+        Assert.False(runs.Bound("q2"));
+        Assert.Equal(["workflow.chosen"], world.Said.Select(line => line.Event));
+
+        // The look says the binding a start made, once; one a start found bound is not said again, and nothing is bound twice.
+        var events = new List<string>();
+        await WorkflowRunStart.BindAsync(
+            [new WorkflowStarted(first, "work"), new WorkflowStarted(second, "work")], world, store, runs, Choice, [], () => At, events,
+            CancellationToken.None, made: [made, kept]);
+        Assert.Equal(["workflow  #q1 → web-app: its run follows `docs-to-pr` v1, `web-app`'s default."], events);
+        Assert.Equal(["workflow.chosen"], world.Said.Select(line => line.Event));
+
+        // A service that does not answer binds nothing, and the start holds saying why; answered at the next start, the run is bound.
+        var step = new QuestView("q3", "daoris", "web-app", "Its page", "", "Open") { Parent = "q8" };
+        var unanswered = await WorkflowRunStart.AtStartAsync(
+            new WorkflowStarted(step, "work"), new StartWorld(null), store, runs, Choice, [], () => At, CancellationToken.None);
+        Assert.Equal((WorkflowBindCame.Failed, true, (WorkflowRunBinding?)null), (unanswered.Came, unanswered.Holds, unanswered.Binding));
+        Assert.Equal(
+            "its run was not bound to a workflow, and its quest is taken only once it is: the service did not answer", unanswered.Why);
+        Assert.False(runs.Bound("q3"));
+
+        var answered = await WorkflowRunStart.AtStartAsync(
+            new WorkflowStarted(step, "work"), new StartWorld([new QuestView("q8", "daoris", "api", "Its endpoint", "", "Done"), step]),
+            store, runs, Choice, [], () => At, CancellationToken.None);
+        Assert.Equal((WorkflowBindCame.Bound, "q3", false), (answered.Came, answered.Run, answered.Holds));
+        Assert.True(runs.Bound("q3"));
+    }
+
+    /// <summary>
+    /// FABRIC-CUTOVER1g (design §8, *the choice read once*): a start that holds after its bind keeps its run bound to what it chose, so a
+    /// choice the person changes on the quest since applies to the next run, never to this one; a binding that does not read holds the
+    /// start, since the workflow its take would name is not known.
+    /// </summary>
+    [Fact]
+    public async Task A_choice_changed_after_its_run_is_bound_applies_to_the_next_run_and_an_unread_binding_holds()
+    {
+        var store = new MemoryStore();
+        var runs = new MemoryRuns();
+        WorkflowStore.Add(store, runs, Added("automatic"));
+        var config = DriverConfig.Parse("""{"workflows":{"web-app":{"default":"current"}}}""");
+        var chosen = new AskWorkflowChoiceView(null, "docs-to-pr", At, "docs only");
+        var quest = new QuestView("q1", "daoris", "web-app", "Docs", "", "Open") { WorkflowChoices = [chosen] };
+        var world = new StartWorld([quest]);
+
+        var held = await WorkflowRunStart.AtStartAsync(new WorkflowStarted(quest, "work"), world, store, runs, config, [], () => At, CancellationToken.None);
+        var changed = quest with { WorkflowChoices = [chosen, new AskWorkflowChoiceView(null, WorkflowSelection.Current, At.AddMinutes(1))] };
+        var again = await WorkflowRunStart.AtStartAsync(new WorkflowStarted(changed, "work"), world, store, runs, config, [], () => At, CancellationToken.None);
+        var next = new QuestView("q2", "daoris", "web-app", "More docs", "", "Open") { WorkflowChoices = changed.WorkflowChoices };
+        var later = await WorkflowRunStart.AtStartAsync(new WorkflowStarted(next, "work"), world, store, runs, config, [], () => At, CancellationToken.None);
+
+        Assert.Equal((WorkflowBindCame.Bound, "docs-to-pr", WorkflowLevels.Task), (held.Came, held.Binding!.Workflow, held.Binding.Level));
+        Assert.Equal((WorkflowBindCame.Already, "docs-to-pr"), (again.Came, again.Binding!.Workflow));
+        Assert.Equal("docs-to-pr", runs.Read("q1")!.Workflow);
+        Assert.Equal((WorkflowBindCame.Bound, WorkflowSelection.Current), (later.Came, later.Binding!.Workflow));
+
+        runs.Damage("q1");
+        var unread = await WorkflowRunStart.AtStartAsync(new WorkflowStarted(quest, "work"), world, store, runs, config, [], () => At, CancellationToken.None);
+        Assert.Equal((WorkflowBindCame.Unread, true, (WorkflowRunBinding?)null), (unread.Came, unread.Holds, unread.Binding));
+        Assert.Equal(
+            "its run's binding could not be read here, so the workflow its quest is taken under is not known, and none is put in its place.",
+            unread.Why);
+    }
+
     // ——— stand-ins
 
     /// <summary>The service a start reads, in memory: its quests, or none where it does not answer; and the machine log's lines said.</summary>

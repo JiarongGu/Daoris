@@ -30,6 +30,36 @@ public static class AtomicFile
         Write(path, beside => File.WriteAllBytes(beside, bytes));
 
     /// <summary>
+    /// Write <paramref name="text"/> to <paramref name="path"/> whole where no file is there, never over one (FABRIC-CUTOVER1g): written
+    /// beside, then moved into place without overwriting, so of writers racing for one path exactly one lands and each other is told so.
+    /// </summary>
+    /// <returns>Whether this write landed: false where a file was there already, or another writer's landed first.</returns>
+    /// <exception cref="IOException">The write failed and no file is there: not another's, so nothing to read instead.</exception>
+    public static bool TryCreateText(string path, string text)
+    {
+        if (File.Exists(path)) return false;
+        var beside = $"{path}.{Guid.NewGuid():N}.writing";
+        try
+        {
+            File.WriteAllText(beside, text, Utf8);
+            File.Move(beside, path, overwrite: false);
+            return true;
+        }
+        catch (Exception error) when ((error is IOException or UnauthorizedAccessException) && File.Exists(path))
+        {
+            // Almost always: another writer's file landed first, and it is the one kept.
+            return false;
+        }
+        finally
+        {
+            if (File.Exists(beside))
+            {
+                try { File.Delete(beside); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+            }
+        }
+    }
+
+    /// <summary>
     /// A folder moved into place, tried again while something holds a file in it (FIX-LOG 2026-10-07): on Windows a folder
     /// holding an executable written a moment ago cannot move while the virus scanner has it open, and that gives way within
     /// seconds. A missing folder is not held, and throws at once; the last refusal throws after the tries.

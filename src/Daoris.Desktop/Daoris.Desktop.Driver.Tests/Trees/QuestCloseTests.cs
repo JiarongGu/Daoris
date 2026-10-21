@@ -1624,4 +1624,37 @@ public sealed class QuestCloseTests : IDisposable
         Assert.False(taken!.Bound);
         Assert.Contains("taken on another machine", taken.Said, StringComparison.Ordinal);
     }
+
+    /// <summary>
+    /// FABRIC-CUTOVER1g (D190's binding moment, the cutover design §8): the take names the graph its run is bound to. Under Current, Current's
+    /// work cycle, as before; under a named version, whose run is bound before its take, none: a schema-1 run's quest is taken unbound under a
+    /// work cycle that holds `quest.close`, so it closes by its done as schema 1 reads it, nothing asked, kept or said. A quest bound already
+    /// keeps its graph whatever its run.
+    /// </summary>
+    [Fact]
+    public async Task A_take_names_the_graph_its_run_is_bound_to()
+    {
+        var digest = Digest(Closing);
+        var open = new QuestView("q7", "game", "engine", "Ship q7", "", "Open");
+        var named = new WorkflowRunBinding("q7", "engine", "default", "merge-after", WorkflowLevels.Repository, DateTimeOffset.UnixEpoch) { Version = 1 };
+        var current = new WorkflowRunBinding("q7", "engine", "default", WorkflowSelection.Current, WorkflowLevels.Current, DateTimeOffset.UnixEpoch);
+
+        var schemaOne = new Binds(knows: true);
+        Assert.Null(await ClosureBinding.AtStartAsync(
+            schemaOne, DriverConfig.Parse(Closing), open, "default", remote: false, _home, CancellationToken.None, session: "ses-q7", run: named));
+        Assert.Null(await ClosureBinding.AtTakeAsync(
+            schemaOne, DriverConfig.Parse(Closing), open, "default", remote: false, CancellationToken.None, _home, "ses-q7", run: named));
+        Assert.Equal((0, 0), (schemaOne.Asked, schemaOne.Bound.Count));
+        Assert.False(Directory.Exists(ClosureGraphs.FolderOf(_home)));
+
+        var underCurrent = new Binds(knows: true);
+        var bound = await ClosureBinding.AtStartAsync(
+            underCurrent, DriverConfig.Parse(Closing), open, "default", remote: false, _home, CancellationToken.None, session: "ses-q7", run: current);
+        Assert.True(bound!.Bound);
+        Assert.Equal([("q7", digest)], underCurrent.Bound);
+
+        var resumed = await ClosureBinding.AtStartAsync(
+            new Binds(knows: true), DriverConfig.Parse(Closing), Taken("q7", digest), "default", remote: false, _home, CancellationToken.None, run: named);
+        Assert.True(resumed!.Bound);
+    }
 }

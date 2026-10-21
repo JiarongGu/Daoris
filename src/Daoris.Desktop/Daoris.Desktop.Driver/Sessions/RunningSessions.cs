@@ -498,6 +498,29 @@ public sealed class RunningSessions
         }
     }
 
+    // The runs the starts bound since a look last took them (FABRIC-CUTOVER1g), which that look's bind says.
+    private readonly List<WorkflowBind> _bound = [];
+
+    /// <summary>
+    /// A run a start bound before its take (FABRIC-CUTOVER1g, the cutover design §8), kept for the next look's bind to say: a start runs
+    /// beside the look that began it (PARALLEL1b), and binds whatever it comes to after, a hold or a refusal included.
+    /// </summary>
+    internal void Bound(WorkflowBind bound)
+    {
+        lock (_gate) _bound.Add(bound);
+    }
+
+    /// <summary>The runs the starts bound since the last look took them, each handed on once.</summary>
+    internal IReadOnlyList<WorkflowBind> TakeBound()
+    {
+        lock (_gate)
+        {
+            List<WorkflowBind> taken = [.. _bound];
+            _bound.Clear();
+            return taken;
+        }
+    }
+
     /// <summary>
     /// Start a run, and answer once it has opened its session record or come to nothing before that.
     /// </summary>
