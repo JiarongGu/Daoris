@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A workflow version saved as a graph now says which checks its sessions run: its `claimed` node's `checks` (`light` or
+  `heavy-at-end`) is taken by every session of a run bound to it, its first included, in place of the repository's choice, and its
+  `callMinutes` sets how long one call may run under *Light* before the session is told (20 by default). A value written another
+  way is read as none.
 - A quest whose workflow closes it now says on its own page, under *Close*, when you closed it done before the workflow's end and
   which steps that stopped, or when its close was found closed only in part: which quest was lost to another machine's take, and
   that its close waits again, with its stop offered in *What needs you*. In English and 中文.
