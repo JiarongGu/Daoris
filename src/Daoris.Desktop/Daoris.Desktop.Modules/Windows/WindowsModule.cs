@@ -32,17 +32,22 @@ public sealed class WindowsModule(
     // Daoris's own browser (D78): a window the person opens to sign in and to watch. Null where the
     // host carries none, which is only a test that does not care.
     Daoris.Driver.IInAppBrowser? browser = null,
-    // The main window's taskbar button and title (NOTIFY1b). Null where there is no main window to badge.
+    // Each main window's taskbar button and title (NOTIFY1b, NOTIFY2c). Null where there is no main window to badge.
     ShowWaiting? badge = null,
     // The workspace each main window's title wears (MAINWINDOWS3b). Null where there is no window to title.
-    ShowWorkspace? workspace = null)
+    ShowWorkspace? workspace = null,
+    // Which workspace each main window holds, from which a notification's click picks its window (NOTIFY2c). Null where none is kept.
+    MainWindowScopes? scopes = null)
     : ModuleBase(events: events)
 {
     public override string ModuleName => "DAORIS.WINDOWS";
 
-    /// <summary>The order of the count the main window wears, as its page told it (SESSBADGE1), and the lock both are held by.</summary>
+    /// <summary>
+    /// The order of the count each main window wears, as its own page told it (SESSBADGE1), by the window's name (NOTIFY2c): each page
+    /// orders by its own clock, so one order kept for all refused one window's count for being told before another's. And the lock.
+    /// </summary>
     private readonly Lock _badgeGate = new();
-    private long _badgeOrder = long.MinValue;
+    private readonly Dictionary<string, long> _badgeOrders = new(StringComparer.Ordinal);
 
     protected override Task<object?> RouteMessageAsync(
         IpcRequest request, IModuleContext context, CancellationToken cancellationToken)
@@ -82,26 +87,29 @@ public sealed class WindowsModule(
                 return Task.FromResult<object?>(new { Applied = windows.SetTheme(name, dark) });
             }
 
-            // The main window's page telling its frame how much waits on the person (NOTIFY1b): Overview's *What needs
-            // you*, worn as the taskbar button's overlay and in the title. The main window only, so no name: a secondary
-            // window's page never sends it. A count below none is none, and blank words are none.
+            // A main window's page telling its own frame how much waits on the person in its workspace (NOTIFY1b, NOTIFY2c): its
+            // *What needs you*, worn as its taskbar button's overlay and in its title. By name as SET_TITLE is, no name the first
+            // main window's; a utility window wears none. A count below none is none, and blank words are none.
             case "SET_BADGE":
             {
+                var window = PayloadHelper.GetOptionalValue<string>(request.Payload, "name") is { } named ? Known(named) : MainWindows.First;
                 var count = Math.Max(0, PayloadHelper.GetRequiredValue<int>(request.Payload, "count"));
                 var description = PayloadHelper.GetOptionalValue<string>(request.Payload, "description");
+                if (!MainWindows.IsMain(window)) return Task.FromResult<object?>(new { Applied = false });
                 // SESSBADGE1: the page tells each count without waiting, so two may arrive here in either order and the window
-                // posts each to its thread as it comes: the title once kept 5 over a band reading 4. Each carries the order the page
-                // told it in, and one told before the count the frame wears is never worn over it; a page that tells none is worn.
+                // posts each to its thread as it comes: the title once kept 5 over a band reading 4. Each carries the order its page
+                // told it in, kept per window, and one told before the count that window wears is never worn over it; a page that
+                // tells none is worn.
                 var order = PayloadHelper.GetOptionalValue<long?>(request.Payload, "order");
                 lock (_badgeGate)
                 {
                     if (order is { } told)
                     {
-                        if (told <= _badgeOrder) return Task.FromResult<object?>(new { Applied = false });
-                        _badgeOrder = told;
+                        if (_badgeOrders.TryGetValue(window, out var worn) && told <= worn) return Task.FromResult<object?>(new { Applied = false });
+                        _badgeOrders[window] = told;
                     }
 
-                    badge?.Invoke(count, count > 0 && !string.IsNullOrWhiteSpace(description) ? description : null);
+                    badge?.Invoke(window, count, count > 0 && !string.IsNullOrWhiteSpace(description) ? description : null);
                 }
 
                 return Task.FromResult<object?>(new { Applied = badge is not null });
@@ -115,6 +123,9 @@ public sealed class WindowsModule(
                 var name = PayloadHelper.GetOptionalValue<string>(request.Payload, "name") is { } named ? Known(named) : null;
                 var title = PayloadHelper.GetOptionalValue<string>(request.Payload, "title");
                 workspace?.Invoke(name, WaitingBadge.Workspace(title));
+                // NOTIFY2c: and the workspace the window holds, as data beside the title, for the registry a notification's click
+                // reads; never the title's words. None is every workspace.
+                scopes?.Told(name ?? MainWindows.First, PayloadHelper.GetOptionalValue<string>(request.Payload, "workspace"));
                 return Task.FromResult<object?>(new { Applied = workspace is not null });
             }
 

@@ -142,68 +142,15 @@ public sealed class MainWindowsTests : IDisposable
         Assert.False(windows.TakeBackFirst());
     }
 
-    /// <summary>MAINWINDOWS2b: another main window wears the taskbar's count only while the first, whose button it is, is put away.</summary>
+    /// <summary>NOTIFY2c: a main window is the first or one a later launch opened; a utility window is none.</summary>
     [Fact]
-    public void Another_main_window_wears_the_count_only_while_the_first_is_put_away()
+    public void A_main_window_is_the_first_or_another_a_later_launch_opened()
     {
-        var windows = Windows();
-        windows.Opened("main:2");
-
-        Assert.True(windows.WearsCount(MainWindows.First));
-        Assert.False(windows.WearsCount("main:2"));
-        Assert.False(windows.WearsCount(SecondaryWindow.Monitor));
-
-        Assert.True(windows.FirstClosing(byPerson: true));
-        Assert.True(windows.WearsCount("main:2"));
-        Assert.False(windows.WearsCount(SecondaryWindow.Monitor));
-        Assert.False(windows.WearsCount(SecondaryWindow.ForSession("a1b2c3d4")));
-
-        windows.Shown();
-        Assert.False(windows.WearsCount("main:2"));
-    }
-
-    [Fact]
-    public void The_windows_are_told_each_time_the_first_goes_away_or_comes_back()
-    {
-        var windows = Windows();
-        var told = 0;
-        windows.AwayChanged += () => told++;
-        windows.Opened("main:2");
-
-        Assert.True(windows.FirstClosing(byPerson: true));
-        Assert.Equal(1, told);
-
-        Assert.True(windows.TakeBackFirst());
-        Assert.Equal(2, told);
-
-        // Nothing to take back, and shown while not away: nothing changed, nothing told.
-        Assert.False(windows.TakeBackFirst());
-        windows.Shown();
-        Assert.Equal(2, told);
-
-        Assert.True(windows.FirstClosing(byPerson: true));
-        windows.Shown();
-        Assert.Equal(4, told);
-    }
-
-    /// <summary>MAINWINDOWS2b: what each window is to show of the count the page last told.</summary>
-    [Fact]
-    public void The_count_the_page_told_is_shown_by_the_windows_that_wear_it()
-    {
-        var windows = Windows();
-        var count = new WaitingCount(windows);
-        windows.Opened("main:2");
-        count.Told(3, "3 waiting on you");
-
-        Assert.Equal((3, "3 waiting on you"), count.For(MainWindows.First));
-        Assert.Equal((0, null), count.For("main:2"));
-
-        windows.FirstClosing(byPerson: true);
-        Assert.Equal((3, "3 waiting on you"), count.For("main:2"));
-        Assert.Equal((0, null), count.For(SecondaryWindow.Monitor));
-
-        count.Told(0, "stale words");
-        Assert.Equal((0, null), count.For("main:2"));
+        Assert.True(MainWindows.IsMain(MainWindows.First));
+        Assert.True(MainWindows.IsMain("main:2"));
+        Assert.False(MainWindows.IsMain(SecondaryWindow.Monitor));
+        Assert.False(MainWindows.IsMain(SecondaryWindow.ForSession("a1b2c3d4")));
+        Assert.False(MainWindows.IsMain("main:1"));
     }
 
     [Fact]
