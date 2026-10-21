@@ -22,6 +22,10 @@
     { "name": "deployment", "run": "npm run rehearse:deploy" }
   ],
 
+  "generated": [
+    { "paths": "docs/index", "run": "node tools/orient-index.mjs" }
+  ],
+
   "sensitive": {
     "patternsFile": "local/sensitive-patterns.txt",
 
