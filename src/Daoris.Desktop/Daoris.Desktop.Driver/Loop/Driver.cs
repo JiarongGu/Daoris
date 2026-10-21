@@ -616,6 +616,8 @@ public sealed class Driver(
             Context.Servers = catalog.Servers;
             Context.Catalog = catalog;
             Context.Harnesses.Use(Context.Adapters);
+            // One set of Daoris's accounts (POOL1a, D197): the wiring folded at the come-up, and again at a next look a held lock refused.
+            Context.Harnesses.Pool(Log);
             if (Context.Hooks is { } hooks)
             {
                 events.AddRange(await hooks.ReconcileAsync(catalog, ct, Lines).ConfigureAwait(false));

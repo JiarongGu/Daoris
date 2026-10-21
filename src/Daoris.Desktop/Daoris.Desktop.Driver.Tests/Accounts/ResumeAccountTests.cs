@@ -53,8 +53,24 @@ public sealed class ResumeAccountTests : IDisposable
         Assert.Equal(NextHold.Ready, Judge("a", "@a"));
         Assert.Equal(NextHold.Outside, Judge("b", "@a"));
         Assert.Equal(NextHold.Ready, Judge(null, ""));
-        Assert.Equal(NextHold.Outside, Judge(null, "@a"));
-        Assert.Equal(NextHold.Outside, Judge(null, "a b"));
+    }
+
+    /// <summary>
+    /// A record begun in the person's own sign-in is judged against no scope (POOL1a, D197 point 3; the account-pool design §3 point 5,
+    /// Fable's F1): the set, whose order names every account of Daoris's, never displaces it; its cooling, refused and signed-out
+    /// branches carry its words as before.
+    /// </summary>
+    [Fact]
+    public void A_record_begun_in_the_own_sign_in_goes_on_there_against_the_set()
+    {
+        Assert.Equal(NextHold.Ready, Judge(null, "@a"));
+        Assert.Equal(NextHold.Ready, Judge(null, "a b"));
+        Assert.Equal(NextHold.Ready, Judge(null, "a b keep=b"));
+        Assert.Equal(NextHold.Cooling, Judge(null, "a b", readiness: AccountReadiness.Cooling));
+        Assert.Equal(NextHold.Refused, Judge(null, "a b", readiness: AccountReadiness.Refused));
+        Assert.Equal(NextHold.SignedOut, Judge(null, "a b", readiness: AccountReadiness.SignedOut));
+        // A named account keeps its meaning: one the set does not hold is outside it.
+        Assert.Equal(NextHold.Outside, Judge("c", "a b"));
     }
 
     /// <summary>Cooling, the words wait for its reset (D125 §2): a time, which passes by itself.</summary>
