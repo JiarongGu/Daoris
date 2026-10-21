@@ -643,7 +643,7 @@ public sealed class InstancePipe : IDisposable
             PipeConfirmationEnd.Refused => IpcResponse.CreateError(id, Refused, null,
                 "The person refused this in Daoris's window. Nothing was done."),
             PipeConfirmationEnd.Expired => IpcResponse.CreateError(id, Expired, null,
-                "Nobody confirmed this in Daoris's window within two minutes. Nothing was done."),
+                "Nobody confirmed this in Daoris's window: not within two minutes of its card being shown, or no window showed it within ten. Nothing was done."),
             _ when IsStopping => RefuseStopping(request),
             _ => IpcResponse.CreateError(id, IpcErrorCodes.OperationCancelled, null,
                 "This terminal took its request back before the person answered it. Nothing was done."),
