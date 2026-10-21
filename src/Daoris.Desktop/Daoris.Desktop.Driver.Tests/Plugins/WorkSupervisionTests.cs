@@ -106,6 +106,15 @@ public sealed class WorkSupervisionTests : IDisposable
             return new WorkReconcileAnswer(ReconcileStates.Running);
         }
 
+        /// <summary>The cleanups asked of this process (FABRIC-PERFORM1d).</summary>
+        public List<WorkCleanupCall> Cleaned { get; } = [];
+
+        public Task<WorkCleanupAnswer> CleanupAsync(WorkCleanupCall call, CancellationToken ct)
+        {
+            Cleaned.Add(call);
+            return Task.FromResult(new WorkCleanupAnswer(CleanupDispositions.Removed));
+        }
+
         /// <summary>An event as the process sends it: through whatever listener the loop gave it, if any.</summary>
         public void Send(string id) => Steps?.Invoke(Params(id));
 
@@ -220,6 +229,32 @@ public sealed class WorkSupervisionTests : IDisposable
         Assert.True(channel.Disposed);
         Assert.Empty(set.Running);
         Assert.Equal(PluginEvents.Idle, Text(Assert.Single(Lines(PluginEvents.Stopped)), "why"));
+    }
+
+    /// <summary>
+    /// FABRIC-PERFORM1d (§D3): a plugin owed a cleanup has its process started and kept though no unit awaits its steps, is asked through the
+    /// performer's fence, and is stopped once it is owed nothing; without the lease, nothing is asked.
+    /// </summary>
+    [Fact]
+    public async Task A_plugin_owed_a_cleanup_keeps_its_process_and_answers_it_through_the_fence()
+    {
+        await using var set = Set();
+        set.Owe(new HashSet<string> { Deploy });
+        await set.ReconcileAsync(Performer(), CancellationToken.None);
+
+        var channel = Assert.Single(_started);
+        var (answer, generation) = await set.CleanupAsync(Deploy, new WorkCleanupCall("r-1", "p-1", "c-1"), CancellationToken.None);
+        Assert.Equal((CleanupDispositions.Removed, 1), (answer.Disposition, generation));
+        Assert.Equal("c-1", Assert.Single(channel.Cleaned).IdempotencyKey);
+
+        _holds = false;
+        await Assert.ThrowsAsync<DriverException>(() => set.CleanupAsync(Deploy, new WorkCleanupCall("r-1", "p-1", "c-1"), CancellationToken.None));
+        _holds = true;
+
+        set.Owe(new HashSet<string>());
+        await set.ReconcileAsync(PluginCatalog.Load(_home), CancellationToken.None);
+        Assert.True(channel.Disposed);
+        Assert.Empty(set.Running);
     }
 
     /// <summary>
