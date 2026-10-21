@@ -19286,3 +19286,10 @@ move is older through `HistoryClearing`'s two presses (`HistoryKeeping`), every 
 `history.cleared` says `door: rule`, and `keeping.json` gains `last.history`. The history clearing design §7 is amended. Proof:
 `HistoryKeepingTests`, `KeepRulesTests`' and `DriverChoicesBothWaysTests`' history rows, `WiringDomain.test.tsx` in English and 中文.
 No installed window has set one. Detail: D195's KEEP1g note. On Opus.
+
+## RPC1e — the rest of the host's verbs with a window twin (2026-10-22, D182)
+
+> - [ ] **RPC1e — the rest of the host's verbs with a window twin** (driver host; after RPC1d). Work, history, help, opinion, setup, register, sync, plugins and the channel send their routes; reads go through the instance where they have one. Proof: the census test with only `chat`, `help resume`, `drive`, `update` and the service's verbs off the pipe, each with its reason. RPCOPEN1 (2026-10-20): `sessions`, `sync` and `register` are the instance's clients (`SESSION_GROUPS`, `SYNC_NOW`, `REGISTRY_REFRESH`) with the alone path's words; `trace`, `git branches`, `workflow`, `help list`, `history` and `plugins show` stay alone, each held in the census's `OpenRoutes.Verbs` with its reason (`trace` and `git branches` keep machine-local text off the wire, D47 §4: what may travel over the local pipe is a decision first); the presses wait for RPC1c.
+
+**Outcome** 2026-10-22: work, history, help, opinion, setup, the channel's post and `plugins approve|withdraw` send their routes, presses confirmed in
+the window and lists read, each route asked for `said` running the verb's own path; `PipeCensusTests` holds who stays alone. Detail: D182's RPC1e note.

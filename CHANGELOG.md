@@ -5,6 +5,13 @@ with the version and date at release.
 
 ## Unreleased
 
+- More of `daoris-driver`, run while Daoris is open on the same home, hands its press to Daoris instead of acting beside it:
+  `quest pause|resume|abandon` and `ask --pause|--resume|--abandon`, `history clear`, `quest clear` and `ask --clear`,
+  `help rename|pin|unpin|delete`, `opinion ask|stop|anyway|myself`, `setup <repository>`, `ask channel <id> "…"` and
+  `plugins approve|withdraw`. Daoris's window asks you to confirm each, every window shows it at once, and the terminal prints the
+  words it printed before. Their lists and readings (`history`, `help list`, `opinion show`, `setup --plan`, an abandon's or a
+  clear's list) are read from Daoris too. With Daoris closed they act as before; a Daoris that is open and does not answer refuses
+  the press, and nothing is done.
 - You may now set an age for finished work's records: on the *Disk space* card's *Conversations and records* row (*Change…*), with
   `daoris driver keep history <days>|never|default`, or through Ask Daoris's proposal you apply. Between 30 and 3,650 days; by default
   none, and nothing clears your history by itself, as before. With an age set, once a day each workspace's finished work whose last
