@@ -288,7 +288,7 @@ internal sealed class TreeLands(
         return replay is null
             ? new(true, $"merged `{branch}` into `{canonical}` — {landed} commit(s).{TreeStays}")
             : new(true, $"merged `{branch}` into `{canonical}` — {LandingSyncWords.Replayed(replay.Landed.Count, canonical, replay.LeftOut)}."
-                + $"{LandingSyncWords.Emptied(replay.LeftOut)}{LandingSyncWords.Generated(replay)}{TreeStays}");
+                + $"{LandingSyncWords.Emptied(replay.LeftOut)}{LandingSyncWords.Settled(replay)}{TreeStays}");
     }
 
     /// <summary>What a landing says of the tree it leaves — dropped when a tidy removed it; the squash's advance says it too.</summary>
@@ -932,7 +932,7 @@ internal sealed class TreeLands(
                 return new Branched(
                     new TreeLanding(true,
                         $"lands `{branch}`, the session's own branch, replayed in place — {LandingSyncWords.Replayed(made.Landed.Count, sync.OntoName, made.LeftOut)}."
-                        + $"{LandingSyncWords.Emptied(made.LeftOut)}{LandingSyncWords.Generated(made)} No other branch was made.{pushOwn} "
+                        + $"{LandingSyncWords.Emptied(made.LeftOut)}{LandingSyncWords.Settled(made)} No other branch was made.{pushOwn} "
                         + "Nothing was merged and the checkout was not touched."
                         + $"{LandingSyncWords.Followed(null)}{TreeStays}",
                         branch) { LeftOut = made.LeftOut },
@@ -1068,7 +1068,7 @@ internal sealed class TreeLands(
             new TreeLanding(true,
                 $"put the work on `{name}` — {what}"
                 + (squashed is null ? "" : ", squashed into one commit")
-                + $".{(replayed is null ? "" : LandingSyncWords.Emptied(replayed.LeftOut) + LandingSyncWords.Generated(replayed))}"
+                + $".{(replayed is null ? "" : LandingSyncWords.Emptied(replayed.LeftOut) + LandingSyncWords.Settled(replayed))}"
                 + $"{pushIt} Nothing was merged and the checkout was not touched.{TreeStays}",
                 name) { LeftOut = replayed?.LeftOut },
             root, line, carried, branch)
