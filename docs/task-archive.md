@@ -18715,3 +18715,14 @@ at the delete keeps the branch, said in `BranchKept`. On Opus: about 40 tool cal
 nor the question, asked again at each look: `HeldAttempts.WhySaid` and the page's `work.milestone.held.close.why.unknown` (en, zh).
 Other unanswered codes keep their words. Proof: `QuestCloseTests` (CLOSE1u's unanswered case) and `WorkMilestone.test.tsx` in both
 languages. On Opus: about 40 tool calls. Detail: D173's FABRIC-CLOSE1y note.
+
+## SYNCMERGE1c4 — *bring mine forward* waits while the losing session still runs (2026-10-21, D178)
+
+> - [ ] **SYNCMERGE1c4 — *bring mine forward* waits while the losing session still runs** (service or web; D178 point 3 and its traps). Neither the service nor the page holds the press until the lost take's process has ended. Proof: a service refusal test or a web state test.
+
+**Outcome** 2026-10-21: built in the service. The bring-forward door refuses `StillRunning` (409), naming the session and its state,
+while a session of this machine's on the quest, driven for it or a conversation that took it, is queued, starting or working
+(`SessionStore.RunningForQuestAsync`); parked or ended, the press stands. Judged after every other refusal, so a press that could not
+stand anyway keeps its own words. The page shows the 409's words as for any refusal and still offers the press. Proof:
+`QuestShareTests.A_bring_forward_waits_while_the_losing_session_still_runs` and `A_running_session_does_not_hide_why_the_press_cannot_stand`.
+On Opus: about 40 tool calls. Detail: D178's SYNCMERGE1c4 line.
