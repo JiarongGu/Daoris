@@ -377,19 +377,8 @@ public sealed class AutoLander(
     /// the next look, where the context to resolve the conflict is; the landing is tried again once its tree changes, and a tip that
     /// conflicts again is told again, once. True where the door kept them.
     /// </summary>
-    private static async Task<bool> ToldRebaseAsync(IAutoLandingWorld world, AutoLanding entry, string? tip, LandingConflict conflict, CancellationToken ct)
-    {
-        if (tip is null) return false;
-        try
-        {
-            return await world.SayAsync(entry.Session, conflict.Words, DaorisKeys.Rebase(entry.Session, tip), ct).ConfigureAwait(false) is { Kept: true };
-        }
-        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
-        {
-            // Untold, the refusal is said as any other is, and the person's review offers the words.
-            return false;
-        }
-    }
+    private static async Task<bool> ToldRebaseAsync(IAutoLandingWorld world, AutoLanding entry, string? tip, LandingConflict conflict, CancellationToken ct) =>
+        await RebaseTelling.TellAsync(world.SayAsync, entry.Session, tip, conflict, ct).ConfigureAwait(false) is { Kept: true };
 
     /// <summary>
     /// The choice judged once more under its tree's hold (FABRIC-CLOSE1h, the fabric design §E5): what the look and the judgement just
