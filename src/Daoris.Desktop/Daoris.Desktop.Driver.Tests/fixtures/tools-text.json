@@ -1,0 +1,971 @@
+{
+  "note": "PUSH1f2c (D194, the alone-path design §3): what `daoris tool` said for each case its tests held, run once through the CLI's TypeScript verb before it retired, alone on a home of its own (`<home>`) with no PATH, as `win-x64`. Each row: the words (`<home>` where a whole path goes), tools.json before (null: none), the files under the home before it (a downloaded version, a location's fetched copy, a named file), what each address answers (bytes in base64; any other is nothing there), the exit, the lines said on the standard output and on the error stream, tools.json after, and the versions downloaded after. A path is spelled with `/`; a copy's age is `<age>`. The TypeScript said a refusal through its dispatcher, `daoris: ` and the sentence; the driver's command says it on the error stream, as every host verb does. `ToolsTextTests` reads it row for row. A sentence the port changes on purpose is a row changed here, with its reason under `changed`.",
+  "rows": [
+    {
+      "name": "list, an empty home",
+      "argv": [
+        "list"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: <home>/data/tools.json — no file, so every tool is the system's, from PATH.",
+        "  git   Git        the system's: not found — `git` is not on this machine's PATH. A tool is run as the system's, managed, or from a file you name: `daoris tool use git file <path>` names one",
+        "  node  Node.js    the system's: not found — `node` is not on this machine's PATH. A tool is run as the system's, managed, or from a file you name: `daoris tool use node file <path>` names one",
+        "  pwsh  PowerShell the system's: not found — `pwsh` is not on this machine's PATH. A tool is run as the system's, managed, or from a file you name: `daoris tool use pwsh file <path>` names one",
+        "  gh    GitHub CLI the system's: not found — `gh` is not on this machine's PATH. A tool is run as the system's, managed, or from a file you name: `daoris tool use gh file <path>` names one",
+        "  az    Azure CLI  the system's: not found — `az` is not on this machine's PATH. A tool is run as the system's, managed, or from a file you name: `daoris tool use az file <path>` names one",
+        "",
+        "  `daoris tool use <tool> system|managed [<version>]|file <path>` sets one; nothing switches on its own."
+      ],
+      "err": [],
+      "after": null,
+      "versions": {}
+    },
+    {
+      "name": "list, the bare family word",
+      "argv": [],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: <home>/data/tools.json — no file, so every tool is the system's, from PATH.",
+        "  git   Git        the system's: not found — `git` is not on this machine's PATH. A tool is run as the system's, managed, or from a file you name: `daoris tool use git file <path>` names one",
+        "  node  Node.js    the system's: not found — `node` is not on this machine's PATH. A tool is run as the system's, managed, or from a file you name: `daoris tool use node file <path>` names one",
+        "  pwsh  PowerShell the system's: not found — `pwsh` is not on this machine's PATH. A tool is run as the system's, managed, or from a file you name: `daoris tool use pwsh file <path>` names one",
+        "  gh    GitHub CLI the system's: not found — `gh` is not on this machine's PATH. A tool is run as the system's, managed, or from a file you name: `daoris tool use gh file <path>` names one",
+        "  az    Azure CLI  the system's: not found — `az` is not on this machine's PATH. A tool is run as the system's, managed, or from a file you name: `daoris tool use az file <path>` names one",
+        "",
+        "  `daoris tool use <tool> system|managed [<version>]|file <path>` sets one; nothing switches on its own."
+      ],
+      "err": [],
+      "after": null,
+      "versions": {}
+    },
+    {
+      "name": "list names each way, a refusal, and what the file keeps without applying it",
+      "argv": [
+        "list"
+      ],
+      "before": "{\"tools\":{\"git\":{\"use\":\"file\",\"file\":\"<home>/bin/git.exe\"},\"node\":{\"use\":\"managed\",\"version\":\"22.20.0\"},\"pwsh\":{\"use\":\"managed\"},\"bun\":{\"use\":\"system\"}}}",
+      "files": {
+        "bin/git.exe": ""
+      },
+      "exit": 1,
+      "out": [
+        "daoris: <home>/data/tools.json",
+        "  git   Git        a file: <home>/bin/git.exe",
+        "  node  Node.js    managed 22.20.0: refused — Node.js is managed at 22.20.0, and that version is not downloaded (<home>/cache/tools/node/22.20.0) — it never falls back to PATH. `daoris tool use node managed 22.20.0` downloads it, and `daoris tool use node system` runs the one on PATH",
+        "  pwsh  PowerShell refused — the entry for `pwsh` in <home>/data/tools.json does not read (managed needs a `version`, one to four numbers), and PowerShell is never run another way: fix the entry, or `daoris tool use pwsh system` writes a new one",
+        "  gh    GitHub CLI the system's: not found — `gh` is not on this machine's PATH. A tool is run as the system's, managed, or from a file you name: `daoris tool use gh file <path>` names one",
+        "  az    Azure CLI  the system's: not found — `az` is not on this machine's PATH. A tool is run as the system's, managed, or from a file you name: `daoris tool use az file <path>` names one",
+        "  `bun` in `tools` is not a tool this build runs: it is kept as written, and never applied",
+        "",
+        "  `daoris tool use <tool> system|managed [<version>]|file <path>` sets one; nothing switches on its own."
+      ],
+      "err": [],
+      "after": "{\n  \"tools\": {\n    \"git\": {\n      \"use\": \"file\",\n      \"file\": \"<home>/bin/git.exe\"\n    },\n    \"node\": {\n      \"use\": \"managed\",\n      \"version\": \"22.20.0\"\n    },\n    \"pwsh\": {\n      \"use\": \"managed\"\n    },\n    \"bun\": {\n      \"use\": \"system\"\n    }\n  }\n}",
+      "versions": {}
+    },
+    {
+      "name": "list, versions downloaded",
+      "argv": [
+        "list"
+      ],
+      "before": "{\"tools\":{\"gh\":{\"use\":\"managed\",\"version\":\"2.63.0\"}}}",
+      "files": {
+        "cache/tools/gh/2.62.0/package/bin/gh.exe": "gh",
+        "cache/tools/gh/2.62.0/tool.json": "{\"exe\":\"bin/gh.exe\"}",
+        "cache/tools/gh/2.63.0/package/bin/gh.exe": "gh",
+        "cache/tools/gh/2.63.0/tool.json": "{\"exe\":\"bin/gh.exe\"}"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: <home>/data/tools.json",
+        "  git   Git        the system's: not found — `git` is not on this machine's PATH. A tool is run as the system's, managed, or from a file you name: `daoris tool use git file <path>` names one",
+        "  node  Node.js    the system's: not found — `node` is not on this machine's PATH. A tool is run as the system's, managed, or from a file you name: `daoris tool use node file <path>` names one",
+        "  pwsh  PowerShell the system's: not found — `pwsh` is not on this machine's PATH. A tool is run as the system's, managed, or from a file you name: `daoris tool use pwsh file <path>` names one",
+        "  gh    GitHub CLI managed 2.63.0: <home>/cache/tools/gh/2.63.0/package/bin/gh.exe",
+        "        downloaded: 2.63.0, 2.62.0",
+        "  az    Azure CLI  the system's: not found — `az` is not on this machine's PATH. A tool is run as the system's, managed, or from a file you name: `daoris tool use az file <path>` names one",
+        "",
+        "  `daoris tool use <tool> system|managed [<version>]|file <path>` sets one; nothing switches on its own."
+      ],
+      "err": [],
+      "after": "{\n  \"tools\": {\n    \"gh\": {\n      \"use\": \"managed\",\n      \"version\": \"2.63.0\"\n    }\n  }\n}",
+      "versions": {
+        "gh": [
+          "2.63.0",
+          "2.62.0"
+        ]
+      }
+    },
+    {
+      "name": "list, a file that does not read",
+      "argv": [
+        "list"
+      ],
+      "before": "not json",
+      "exit": 1,
+      "out": [
+        "daoris: <home>/data/tools.json",
+        "  git   Git        refused — <home>/data/tools.json is not readable JSON (Unexpected token 'o', \"not json\" is not valid JSON), and every tool is refused, never run another way: fix it, or delete it to run every tool from PATH",
+        "  node  Node.js    refused — <home>/data/tools.json is not readable JSON (Unexpected token 'o', \"not json\" is not valid JSON), and every tool is refused, never run another way: fix it, or delete it to run every tool from PATH",
+        "  pwsh  PowerShell refused — <home>/data/tools.json is not readable JSON (Unexpected token 'o', \"not json\" is not valid JSON), and every tool is refused, never run another way: fix it, or delete it to run every tool from PATH",
+        "  gh    GitHub CLI refused — <home>/data/tools.json is not readable JSON (Unexpected token 'o', \"not json\" is not valid JSON), and every tool is refused, never run another way: fix it, or delete it to run every tool from PATH",
+        "  az    Azure CLI  refused — <home>/data/tools.json is not readable JSON (Unexpected token 'o', \"not json\" is not valid JSON), and every tool is refused, never run another way: fix it, or delete it to run every tool from PATH",
+        "",
+        "  `daoris tool use <tool> system|managed [<version>]|file <path>` sets one; nothing switches on its own."
+      ],
+      "err": [],
+      "after": "not json",
+      "versions": {}
+    },
+    {
+      "name": "list, no home",
+      "argv": [
+        "list"
+      ],
+      "home": false,
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: no Daoris home: set DAORIS_HOME to the application's data folder (the `data` directory beside Daoris.exe), or name the file's own variable. Daoris keeps nothing under the user profile. (wanted: tools.json)"
+      ],
+      "after": null,
+      "versions": {}
+    },
+    {
+      "name": "path, a named file",
+      "argv": [
+        "path",
+        "git"
+      ],
+      "before": "{\"tools\":{\"git\":{\"use\":\"file\",\"file\":\"<home>/bin/git.exe\"}}}",
+      "files": {
+        "bin/git.exe": ""
+      },
+      "exit": 0,
+      "out": [
+        "<home>/bin/git.exe"
+      ],
+      "err": [],
+      "after": "{\n  \"tools\": {\n    \"git\": {\n      \"use\": \"file\",\n      \"file\": \"<home>/bin/git.exe\"\n    }\n  }\n}",
+      "versions": {}
+    },
+    {
+      "name": "path, a version not downloaded",
+      "argv": [
+        "path",
+        "gh"
+      ],
+      "before": "{\"tools\":{\"gh\":{\"use\":\"managed\",\"version\":\"2.62.0\"}}}",
+      "exit": 1,
+      "out": [
+        "daoris: GitHub CLI is managed at 2.62.0, and that version is not downloaded (<home>/cache/tools/gh/2.62.0) — it never falls back to PATH. `daoris tool use gh managed 2.62.0` downloads it, and `daoris tool use gh system` runs the one on PATH"
+      ],
+      "err": [],
+      "after": "{\n  \"tools\": {\n    \"gh\": {\n      \"use\": \"managed\",\n      \"version\": \"2.62.0\"\n    }\n  }\n}",
+      "versions": {}
+    },
+    {
+      "name": "path, not on PATH",
+      "argv": [
+        "path",
+        "az"
+      ],
+      "before": null,
+      "exit": 1,
+      "out": [
+        "daoris: `az` is not on this machine's PATH. A tool is run as the system's, managed, or from a file you name: `daoris tool use az file <path>` names one"
+      ],
+      "err": [],
+      "after": null,
+      "versions": {}
+    },
+    {
+      "name": "path, no tool",
+      "argv": [
+        "path"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `tool path` needs a tool — one of: git, node, pwsh, gh, az"
+      ],
+      "after": null,
+      "versions": {}
+    },
+    {
+      "name": "path, a tool this build does not run",
+      "argv": [
+        "path",
+        "bun"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `bun` is not a tool this build runs — one of: git, node, pwsh, gh, az. A tool is added in the code, never by a file."
+      ],
+      "after": null,
+      "versions": {}
+    },
+    {
+      "name": "use system, no file",
+      "argv": [
+        "use",
+        "git",
+        "system"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: Git is set to the system's, from PATH — written to <home>/data/tools.json.",
+        "  `daoris tool path git` answers: `git` is not on this machine's PATH. A tool is run as the system's, managed, or from a file you name: `daoris tool use git file <path>` names one."
+      ],
+      "err": [],
+      "after": "{\n  \"tools\": {\n    \"git\": {\n      \"use\": \"system\"\n    }\n  }\n}",
+      "versions": {}
+    },
+    {
+      "name": "use system over a named file",
+      "argv": [
+        "use",
+        "git",
+        "system"
+      ],
+      "before": "{\"tools\":{\"git\":{\"use\":\"file\",\"file\":\"<home>/bin/git.exe\"}}}",
+      "files": {
+        "bin/git.exe": ""
+      },
+      "exit": 0,
+      "out": [
+        "daoris: Git is set to the system's, from PATH — written to <home>/data/tools.json.",
+        "  `daoris tool path git` answers: `git` is not on this machine's PATH. A tool is run as the system's, managed, or from a file you name: `daoris tool use git file <path>` names one."
+      ],
+      "err": [],
+      "after": "{\n  \"tools\": {\n    \"git\": {\n      \"use\": \"system\"\n    }\n  }\n}",
+      "versions": {}
+    },
+    {
+      "name": "use file, a whole path",
+      "argv": [
+        "use",
+        "git",
+        "file",
+        "<home>/bin/git.exe"
+      ],
+      "before": null,
+      "files": {
+        "bin/git.exe": ""
+      },
+      "exit": 0,
+      "out": [
+        "daoris: Git is set to the file <home>/bin/git.exe — written to <home>/data/tools.json.",
+        "  `daoris tool path git` answers <home>/bin/git.exe; `daoris tool use git system` puts it back on PATH."
+      ],
+      "err": [],
+      "after": "{\n  \"tools\": {\n    \"git\": {\n      \"use\": \"file\",\n      \"file\": \"<home>/bin/git.exe\"\n    }\n  }\n}",
+      "versions": {}
+    },
+    {
+      "name": "use file, a path from where the command runs",
+      "argv": [
+        "use",
+        "git",
+        "file",
+        "bin/git.exe"
+      ],
+      "before": null,
+      "files": {
+        "bin/git.exe": ""
+      },
+      "exit": 0,
+      "out": [
+        "daoris: Git is set to the file <home>/bin/git.exe — written to <home>/data/tools.json.",
+        "  `daoris tool path git` answers <home>/bin/git.exe; `daoris tool use git system` puts it back on PATH."
+      ],
+      "err": [],
+      "after": "{\n  \"tools\": {\n    \"git\": {\n      \"use\": \"file\",\n      \"file\": \"<home>/bin/git.exe\"\n    }\n  }\n}",
+      "versions": {}
+    },
+    {
+      "name": "use file, no file there",
+      "argv": [
+        "use",
+        "git",
+        "file",
+        "<home>/bin/missing.exe"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: no file at <home>/bin/missing.exe — a tool is a file that is there."
+      ],
+      "after": null,
+      "versions": {}
+    },
+    {
+      "name": "use, no way",
+      "argv": [
+        "use",
+        "git"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `tool use git` takes `system`, `managed [<version>]` or `file <path>`"
+      ],
+      "after": null,
+      "versions": {}
+    },
+    {
+      "name": "use file, no path",
+      "argv": [
+        "use",
+        "git",
+        "file"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `tool use git file` needs a path — the executable to run"
+      ],
+      "after": null,
+      "versions": {}
+    },
+    {
+      "name": "use system, a file that does not read",
+      "argv": [
+        "use",
+        "git",
+        "system"
+      ],
+      "before": "not json",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: <home>/data/tools.json is not readable JSON (Unexpected token 'o', \"not json\" is not valid JSON). Fix it, or delete it to start from nothing — nothing was written."
+      ],
+      "after": "not json",
+      "versions": {}
+    },
+    {
+      "name": "use, a tool this build does not run",
+      "argv": [
+        "use",
+        "bun",
+        "system"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `bun` is not a tool this build runs — one of: git, node, pwsh, gh, az. A tool is added in the code, never by a file."
+      ],
+      "after": null,
+      "versions": {}
+    },
+    {
+      "name": "use managed, a version that is not exact",
+      "argv": [
+        "use",
+        "git",
+        "managed",
+        "latest"
+      ],
+      "before": null,
+      "exit": 1,
+      "out": [],
+      "err": [
+        "daoris: `latest` is not an exact version — one to four numbers, like 2.51.0"
+      ],
+      "after": null,
+      "versions": {}
+    },
+    {
+      "name": "delete a version nothing uses",
+      "argv": [
+        "delete",
+        "gh",
+        "2.62.0"
+      ],
+      "before": null,
+      "files": {
+        "cache/tools/gh/2.62.0/package/bin/gh.exe": "gh",
+        "cache/tools/gh/2.62.0/tool.json": "{\"exe\":\"bin/gh.exe\"}"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: GitHub CLI 2.62.0 is deleted — <home>/cache/tools/gh/2.62.0."
+      ],
+      "err": [],
+      "after": null,
+      "versions": {}
+    },
+    {
+      "name": "delete the version in use",
+      "argv": [
+        "delete",
+        "gh",
+        "2.62.0"
+      ],
+      "before": "{\"tools\":{\"gh\":{\"use\":\"managed\",\"version\":\"2.62.0\"}}}",
+      "files": {
+        "cache/tools/gh/2.62.0/package/bin/gh.exe": "gh",
+        "cache/tools/gh/2.62.0/tool.json": "{\"exe\":\"bin/gh.exe\"}"
+      },
+      "exit": 1,
+      "out": [],
+      "err": [
+        "daoris: GitHub CLI runs 2.62.0 — `daoris tool use gh system`, or another version, first; nothing was deleted"
+      ],
+      "after": "{\n  \"tools\": {\n    \"gh\": {\n      \"use\": \"managed\",\n      \"version\": \"2.62.0\"\n    }\n  }\n}",
+      "versions": {
+        "gh": [
+          "2.62.0"
+        ]
+      }
+    },
+    {
+      "name": "delete a version not downloaded",
+      "argv": [
+        "delete",
+        "gh",
+        "2.62.0"
+      ],
+      "before": null,
+      "exit": 1,
+      "out": [],
+      "err": [
+        "daoris: GitHub CLI 2.62.0 is not downloaded (<home>/cache/tools/gh/2.62.0) — nothing was deleted"
+      ],
+      "after": null,
+      "versions": {}
+    },
+    {
+      "name": "delete a version that climbs out",
+      "argv": [
+        "delete",
+        "gh",
+        "../2.62.0"
+      ],
+      "before": null,
+      "exit": 1,
+      "out": [],
+      "err": [
+        "daoris: `../2.62.0` is not an exact version — one to four numbers, like 2.51.0 — so nothing was deleted"
+      ],
+      "after": null,
+      "versions": {}
+    },
+    {
+      "name": "delete, no version",
+      "argv": [
+        "delete",
+        "gh"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `tool delete gh` needs a version — `daoris tool list` names the ones downloaded"
+      ],
+      "after": null,
+      "versions": {}
+    },
+    {
+      "name": "locations, none listed",
+      "argv": [
+        "locations"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: <home>/data/tools.json — the lists versions come from, read in this order:",
+        "  1. the built-in list — none beside this home (<home>/app/resources.json)"
+      ],
+      "err": [],
+      "after": null,
+      "versions": {}
+    },
+    {
+      "name": "locations, one fetched and one never fetched",
+      "argv": [
+        "locations"
+      ],
+      "before": "{\"locations\":[\"https://lists.example/resources.json\",\"https://mirror.example/resources.json\"]}",
+      "files": {
+        "cache/tools/locations/9e2d00d86421873c8e22310af7feb849fd65067cb12c198e027ffdab0d002899.json": "{\"schema\":1,\"tools\":{\"gh\":{\"source\":\"https://maker.example/releases\",\"licence\":{\"id\":\"MIT\",\"url\":\"https://maker.example/LICENSE\"},\"versions\":{\"2.62.0\":{\"files\":{\"win-x64\":{\"url\":\"https://maker.example/gh-2.62.0.zip\",\"sha256\":\"7f14f5e6df4637cc017fff9e2ee7294380f31fa9bfb46b48ff865d46ba7d74fd\",\"size\":122,\"archive\":\"zip\",\"exe\":\"bin/gh.exe\"}}}}}}}"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: <home>/data/tools.json — the lists versions come from, read in this order:",
+        "  1. https://lists.example/resources.json — fetched <age> ago, vouched for by lists.example, sha256 cfd4bea973fd0fd314edbe61f2fdbcbf7f2d4e8cba3ca3be498f97a070351ece",
+        "  2. https://mirror.example/resources.json — never fetched, so it names nothing yet",
+        "  3. the built-in list — none beside this home (<home>/app/resources.json)"
+      ],
+      "err": [],
+      "after": "{\n  \"locations\": [\n    \"https://lists.example/resources.json\",\n    \"https://mirror.example/resources.json\"\n  ]\n}",
+      "versions": {}
+    },
+    {
+      "name": "locations add",
+      "argv": [
+        "locations",
+        "add",
+        "https://lists.example/resources.json"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: https://lists.example/resources.json is added, read before the list built in — `daoris tool look` fetches it."
+      ],
+      "err": [],
+      "after": "{\n  \"locations\": [\n    \"https://lists.example/resources.json\"\n  ]\n}",
+      "versions": {}
+    },
+    {
+      "name": "locations add, one already listed",
+      "argv": [
+        "locations",
+        "add",
+        "https://lists.example/resources.json"
+      ],
+      "before": "{\"locations\":[\"https://lists.example/resources.json\"]}",
+      "exit": 0,
+      "out": [
+        "daoris: https://lists.example/resources.json is already a location — nothing was written."
+      ],
+      "err": [],
+      "after": "{\n  \"locations\": [\n    \"https://lists.example/resources.json\"\n  ]\n}",
+      "versions": {}
+    },
+    {
+      "name": "locations add, no resource location",
+      "argv": [
+        "locations",
+        "add",
+        "http://lists.example/resources.json"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `http://lists.example/resources.json` is not a resource location — an address is https://, or http:// to this machine (localhost, 127.0.0.1 or [::1]) — nothing was written."
+      ],
+      "after": null,
+      "versions": {}
+    },
+    {
+      "name": "locations remove",
+      "argv": [
+        "locations",
+        "remove",
+        "https://lists.example/resources.json"
+      ],
+      "before": "{\"locations\":[\"https://lists.example/resources.json\"]}",
+      "exit": 0,
+      "out": [
+        "daoris: https://lists.example/resources.json is removed: its versions are no longer offered, and a version already downloaded stays."
+      ],
+      "err": [],
+      "after": "{\n  \"locations\": []\n}",
+      "versions": {}
+    },
+    {
+      "name": "locations remove, one not listed",
+      "argv": [
+        "locations",
+        "remove",
+        "https://mirror.example/resources.json"
+      ],
+      "before": "{\"locations\":[\"https://lists.example/resources.json\"]}",
+      "exit": 0,
+      "out": [
+        "daoris: https://mirror.example/resources.json is not a location — nothing was written."
+      ],
+      "err": [],
+      "after": "{\n  \"locations\": [\n    \"https://lists.example/resources.json\"\n  ]\n}",
+      "versions": {}
+    },
+    {
+      "name": "locations add, no address",
+      "argv": [
+        "locations",
+        "add"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `tool locations add` needs an address — https://, or http:// to this machine"
+      ],
+      "after": null,
+      "versions": {}
+    },
+    {
+      "name": "locations, a word it does not take",
+      "argv": [
+        "locations",
+        "frob"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `tool locations` takes `add <address>` or `remove <address>`, or nothing to list them"
+      ],
+      "after": null,
+      "versions": {}
+    },
+    {
+      "name": "look, no location listed",
+      "argv": [
+        "look"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: no resource location is listed — only the list built in is read. `daoris tool locations add <address>` adds one.",
+        "",
+        "  git   Git        runs the system's; no list names a version for win-x64",
+        "  node  Node.js    runs the system's; no list names a version for win-x64",
+        "  pwsh  PowerShell runs the system's; no list names a version for win-x64",
+        "  gh    GitHub CLI runs the system's; no list names a version for win-x64",
+        "  az    Azure CLI  runs the system's; no list names a version for win-x64",
+        "  no list is built in beside this home (<home>/app/resources.json), so only the locations are read"
+      ],
+      "err": [],
+      "after": null,
+      "versions": {}
+    },
+    {
+      "name": "look, a location that answers a list",
+      "argv": [
+        "look"
+      ],
+      "before": "{\"locations\":[\"https://lists.example/resources.json\"]}",
+      "served": {
+        "https://lists.example/resources.json": {
+          "base64": "eyJzY2hlbWEiOjEsInRvb2xzIjp7ImdoIjp7InNvdXJjZSI6Imh0dHBzOi8vbWFrZXIuZXhhbXBsZS9yZWxlYXNlcyIsImxpY2VuY2UiOnsiaWQiOiJNSVQiLCJ1cmwiOiJodHRwczovL21ha2VyLmV4YW1wbGUvTElDRU5TRSJ9LCJ2ZXJzaW9ucyI6eyIyLjYyLjAiOnsiZmlsZXMiOnsid2luLXg2NCI6eyJ1cmwiOiJodHRwczovL21ha2VyLmV4YW1wbGUvZ2gtMi42Mi4wLnppcCIsInNoYTI1NiI6IjdmMTRmNWU2ZGY0NjM3Y2MwMTdmZmY5ZTJlZTcyOTQzODBmMzFmYTliZmI0NmI0OGZmODY1ZDQ2YmE3ZDc0ZmQiLCJzaXplIjoxMjIsImFyY2hpdmUiOiJ6aXAiLCJleGUiOiJiaW4vZ2guZXhlIn19fX19fX0="
+        }
+      },
+      "exit": 0,
+      "out": [
+        "daoris: looked at 1 location:",
+        "  https://lists.example/resources.json: fetched — 1 version for win-x64; added gh 2.62.0",
+        "",
+        "  git   Git        runs the system's; no list names a version for win-x64",
+        "  node  Node.js    runs the system's; no list names a version for win-x64",
+        "  pwsh  PowerShell runs the system's; no list names a version for win-x64",
+        "  gh    GitHub CLI runs the system's; the lists name 2.62.0 (https://lists.example/resources.json)",
+        "  az    Azure CLI  runs the system's; no list names a version for win-x64",
+        "  no list is built in beside this home (<home>/app/resources.json), so only the locations are read"
+      ],
+      "err": [],
+      "after": "{\n  \"locations\": [\n    \"https://lists.example/resources.json\"\n  ]\n}",
+      "versions": {}
+    },
+    {
+      "name": "look, a location with nothing there",
+      "argv": [
+        "look"
+      ],
+      "before": "{\"locations\":[\"https://lists.example/resources.json\"]}",
+      "exit": 1,
+      "out": [
+        "daoris: looked at 1 location:",
+        "  https://lists.example/resources.json could not be fetched (nothing there); it has never been fetched, so it names nothing",
+        "",
+        "  git   Git        runs the system's; no list names a version for win-x64",
+        "  node  Node.js    runs the system's; no list names a version for win-x64",
+        "  pwsh  PowerShell runs the system's; no list names a version for win-x64",
+        "  gh    GitHub CLI runs the system's; no list names a version for win-x64",
+        "  az    Azure CLI  runs the system's; no list names a version for win-x64",
+        "  https://lists.example/resources.json has not been fetched yet, so it names nothing",
+        "  no list is built in beside this home (<home>/app/resources.json), so only the locations are read"
+      ],
+      "err": [],
+      "after": "{\n  \"locations\": [\n    \"https://lists.example/resources.json\"\n  ]\n}",
+      "versions": {}
+    },
+    {
+      "name": "use managed, the newest the lists name",
+      "argv": [
+        "use",
+        "gh",
+        "managed"
+      ],
+      "before": "{\"locations\":[\"https://lists.example/resources.json\"]}",
+      "files": {
+        "cache/tools/locations/9e2d00d86421873c8e22310af7feb849fd65067cb12c198e027ffdab0d002899.json": "{\"schema\":1,\"tools\":{\"gh\":{\"source\":\"https://maker.example/releases\",\"licence\":{\"id\":\"MIT\",\"url\":\"https://maker.example/LICENSE\"},\"versions\":{\"2.62.0\":{\"files\":{\"win-x64\":{\"url\":\"https://maker.example/gh-2.62.0.zip\",\"sha256\":\"7f14f5e6df4637cc017fff9e2ee7294380f31fa9bfb46b48ff865d46ba7d74fd\",\"size\":122,\"archive\":\"zip\",\"exe\":\"bin/gh.exe\"}}}}}}}"
+      },
+      "served": {
+        "https://maker.example/gh-2.62.0.zip": {
+          "base64": "UEsDBBQAAAgIAAAAIQD1BgwoBAAAAAIAAAAKAAAAYmluL2doLmV4ZUvPAABQSwECFAMUAAAICAAAACEA9QYMKAQAAAACAAAACgAAAAAAAAAAAAAApIEAAAAAYmluL2doLmV4ZVBLBQYAAAAAAQABADgAAAAsAAAAAAA="
+        }
+      },
+      "exit": 0,
+      "out": [
+        "daoris: GitHub CLI 2.62.0 for win-x64 — 0.0 MB, MIT (https://maker.example/LICENSE), from https://maker.example/releases.",
+        "  Daoris redistributes nothing: it downloads from the addresses the lists name, as you, and checks the bytes.",
+        "  downloading https://maker.example/gh-2.62.0.zip (0.0 MB)",
+        "  its size and SHA-256 match the list: 7f14f5e6df4637cc017fff9e2ee7294380f31fa9bfb46b48ff865d46ba7d74fd",
+        "  unpacked into <home>/cache/tools/gh/2.62.0/package",
+        "daoris: GitHub CLI is set to managed 2.62.0 — written to <home>/data/tools.json.",
+        "  `daoris tool path gh` answers <home>/cache/tools/gh/2.62.0/package/bin/gh.exe; `daoris tool use gh system` puts it back on PATH."
+      ],
+      "err": [],
+      "after": "{\n  \"locations\": [\n    \"https://lists.example/resources.json\"\n  ],\n  \"tools\": {\n    \"gh\": {\n      \"use\": \"managed\",\n      \"version\": \"2.62.0\"\n    }\n  }\n}",
+      "versions": {
+        "gh": [
+          "2.62.0"
+        ]
+      }
+    },
+    {
+      "name": "use managed, a version downloaded that no list names",
+      "argv": [
+        "use",
+        "gh",
+        "managed",
+        "2.61.0"
+      ],
+      "before": null,
+      "files": {
+        "cache/tools/gh/2.61.0/package/bin/gh.exe": "gh",
+        "cache/tools/gh/2.61.0/tool.json": "{\"exe\":\"bin/gh.exe\"}"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: GitHub CLI is set to managed 2.61.0 — written to <home>/data/tools.json.",
+        "  `daoris tool path gh` answers <home>/cache/tools/gh/2.61.0/package/bin/gh.exe; `daoris tool use gh system` puts it back on PATH."
+      ],
+      "err": [],
+      "after": "{\n  \"tools\": {\n    \"gh\": {\n      \"use\": \"managed\",\n      \"version\": \"2.61.0\"\n    }\n  }\n}",
+      "versions": {
+        "gh": [
+          "2.61.0"
+        ]
+      }
+    },
+    {
+      "name": "download a version, nothing switches",
+      "argv": [
+        "download",
+        "gh",
+        "2.62.0"
+      ],
+      "before": "{\"locations\":[\"https://lists.example/resources.json\"]}",
+      "files": {
+        "cache/tools/locations/9e2d00d86421873c8e22310af7feb849fd65067cb12c198e027ffdab0d002899.json": "{\"schema\":1,\"tools\":{\"gh\":{\"source\":\"https://maker.example/releases\",\"licence\":{\"id\":\"MIT\",\"url\":\"https://maker.example/LICENSE\"},\"versions\":{\"2.62.0\":{\"files\":{\"win-x64\":{\"url\":\"https://maker.example/gh-2.62.0.zip\",\"sha256\":\"7f14f5e6df4637cc017fff9e2ee7294380f31fa9bfb46b48ff865d46ba7d74fd\",\"size\":122,\"archive\":\"zip\",\"exe\":\"bin/gh.exe\"}}}}}}}"
+      },
+      "served": {
+        "https://maker.example/gh-2.62.0.zip": {
+          "base64": "UEsDBBQAAAgIAAAAIQD1BgwoBAAAAAIAAAAKAAAAYmluL2doLmV4ZUvPAABQSwECFAMUAAAICAAAACEA9QYMKAQAAAACAAAACgAAAAAAAAAAAAAApIEAAAAAYmluL2doLmV4ZVBLBQYAAAAAAQABADgAAAAsAAAAAAA="
+        }
+      },
+      "exit": 0,
+      "out": [
+        "daoris: GitHub CLI 2.62.0 for win-x64 — 0.0 MB, MIT (https://maker.example/LICENSE), from https://maker.example/releases.",
+        "  Daoris redistributes nothing: it downloads from the addresses the lists name, as you, and checks the bytes.",
+        "  downloading https://maker.example/gh-2.62.0.zip (0.0 MB)",
+        "  its size and SHA-256 match the list: 7f14f5e6df4637cc017fff9e2ee7294380f31fa9bfb46b48ff865d46ba7d74fd",
+        "  unpacked into <home>/cache/tools/gh/2.62.0/package",
+        "daoris: GitHub CLI 2.62.0 is downloaded and verified — nothing switches.",
+        "  <home>/cache/tools/gh/2.62.0/package/bin/gh.exe",
+        "  `daoris tool use gh managed 2.62.0` runs it."
+      ],
+      "err": [],
+      "after": "{\n  \"locations\": [\n    \"https://lists.example/resources.json\"\n  ]\n}",
+      "versions": {
+        "gh": [
+          "2.62.0"
+        ]
+      }
+    },
+    {
+      "name": "download a version already downloaded",
+      "argv": [
+        "download",
+        "gh",
+        "2.62.0"
+      ],
+      "before": null,
+      "files": {
+        "cache/tools/gh/2.62.0/package/bin/gh.exe": "gh",
+        "cache/tools/gh/2.62.0/tool.json": "{\"exe\":\"bin/gh.exe\"}"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: GitHub CLI 2.62.0 is already downloaded — nothing was fetched, and nothing switches.",
+        "  <home>/cache/tools/gh/2.62.0/package/bin/gh.exe",
+        "  `daoris tool use gh managed 2.62.0` runs it."
+      ],
+      "err": [],
+      "after": null,
+      "versions": {
+        "gh": [
+          "2.62.0"
+        ]
+      }
+    },
+    {
+      "name": "update to the newest",
+      "argv": [
+        "update",
+        "gh"
+      ],
+      "before": "{\"tools\":{\"gh\":{\"use\":\"managed\",\"version\":\"2.62.0\"}},\"locations\":[\"https://lists.example/resources.json\"]}",
+      "files": {
+        "cache/tools/gh/2.62.0/package/bin/gh.exe": "gh",
+        "cache/tools/gh/2.62.0/tool.json": "{\"exe\":\"bin/gh.exe\"}",
+        "cache/tools/locations/9e2d00d86421873c8e22310af7feb849fd65067cb12c198e027ffdab0d002899.json": "{\"schema\":1,\"tools\":{\"gh\":{\"source\":\"https://maker.example/releases\",\"licence\":{\"id\":\"MIT\",\"url\":\"https://maker.example/LICENSE\"},\"versions\":{\"2.62.0\":{\"files\":{\"win-x64\":{\"url\":\"https://maker.example/gh-2.62.0.zip\",\"sha256\":\"7f14f5e6df4637cc017fff9e2ee7294380f31fa9bfb46b48ff865d46ba7d74fd\",\"size\":122,\"archive\":\"zip\",\"exe\":\"bin/gh.exe\"}}},\"2.63.0\":{\"files\":{\"win-x64\":{\"url\":\"https://maker.example/gh-2.63.0.zip\",\"sha256\":\"7f14f5e6df4637cc017fff9e2ee7294380f31fa9bfb46b48ff865d46ba7d74fd\",\"size\":122,\"archive\":\"zip\",\"exe\":\"bin/gh.exe\"}}}}}}}"
+      },
+      "served": {
+        "https://maker.example/gh-2.63.0.zip": {
+          "base64": "UEsDBBQAAAgIAAAAIQD1BgwoBAAAAAIAAAAKAAAAYmluL2doLmV4ZUvPAABQSwECFAMUAAAICAAAACEA9QYMKAQAAAACAAAACgAAAAAAAAAAAAAApIEAAAAAYmluL2doLmV4ZVBLBQYAAAAAAQABADgAAAAsAAAAAAA="
+        }
+      },
+      "exit": 0,
+      "out": [
+        "daoris: GitHub CLI 2.63.0 for win-x64 — 0.0 MB, MIT (https://maker.example/LICENSE), from https://maker.example/releases.",
+        "  Daoris redistributes nothing: it downloads from the addresses the lists name, as you, and checks the bytes.",
+        "  downloading https://maker.example/gh-2.63.0.zip (0.0 MB)",
+        "  its size and SHA-256 match the list: 7f14f5e6df4637cc017fff9e2ee7294380f31fa9bfb46b48ff865d46ba7d74fd",
+        "  unpacked into <home>/cache/tools/gh/2.63.0/package",
+        "daoris: GitHub CLI is set to managed 2.63.0 (it was 2.62.0) — written to <home>/data/tools.json.",
+        "  `daoris tool path gh` answers <home>/cache/tools/gh/2.63.0/package/bin/gh.exe; `daoris tool use gh system` puts it back on PATH."
+      ],
+      "err": [],
+      "after": "{\n  \"tools\": {\n    \"gh\": {\n      \"use\": \"managed\",\n      \"version\": \"2.63.0\"\n    }\n  },\n  \"locations\": [\n    \"https://lists.example/resources.json\"\n  ]\n}",
+      "versions": {
+        "gh": [
+          "2.63.0",
+          "2.62.0"
+        ]
+      }
+    },
+    {
+      "name": "update at the newest, downloaded",
+      "argv": [
+        "update",
+        "gh"
+      ],
+      "before": "{\"tools\":{\"gh\":{\"use\":\"managed\",\"version\":\"2.62.0\"}},\"locations\":[\"https://lists.example/resources.json\"]}",
+      "files": {
+        "cache/tools/gh/2.62.0/package/bin/gh.exe": "gh",
+        "cache/tools/gh/2.62.0/tool.json": "{\"exe\":\"bin/gh.exe\"}",
+        "cache/tools/locations/9e2d00d86421873c8e22310af7feb849fd65067cb12c198e027ffdab0d002899.json": "{\"schema\":1,\"tools\":{\"gh\":{\"source\":\"https://maker.example/releases\",\"licence\":{\"id\":\"MIT\",\"url\":\"https://maker.example/LICENSE\"},\"versions\":{\"2.62.0\":{\"files\":{\"win-x64\":{\"url\":\"https://maker.example/gh-2.62.0.zip\",\"sha256\":\"7f14f5e6df4637cc017fff9e2ee7294380f31fa9bfb46b48ff865d46ba7d74fd\",\"size\":122,\"archive\":\"zip\",\"exe\":\"bin/gh.exe\"}}}}}}}"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: GitHub CLI 2.62.0 is the newest the lists name, and it is downloaded — nothing to do."
+      ],
+      "err": [],
+      "after": "{\n  \"tools\": {\n    \"gh\": {\n      \"use\": \"managed\",\n      \"version\": \"2.62.0\"\n    }\n  },\n  \"locations\": [\n    \"https://lists.example/resources.json\"\n  ]\n}",
+      "versions": {
+        "gh": [
+          "2.62.0"
+        ]
+      }
+    },
+    {
+      "name": "update the system's",
+      "argv": [
+        "update",
+        "gh"
+      ],
+      "before": "{\"locations\":[\"https://lists.example/resources.json\"]}",
+      "files": {
+        "cache/tools/locations/9e2d00d86421873c8e22310af7feb849fd65067cb12c198e027ffdab0d002899.json": "{\"schema\":1,\"tools\":{\"gh\":{\"source\":\"https://maker.example/releases\",\"licence\":{\"id\":\"MIT\",\"url\":\"https://maker.example/LICENSE\"},\"versions\":{\"2.62.0\":{\"files\":{\"win-x64\":{\"url\":\"https://maker.example/gh-2.62.0.zip\",\"sha256\":\"7f14f5e6df4637cc017fff9e2ee7294380f31fa9bfb46b48ff865d46ba7d74fd\",\"size\":122,\"archive\":\"zip\",\"exe\":\"bin/gh.exe\"}}}}}}}"
+      },
+      "exit": 1,
+      "out": [],
+      "err": [
+        "daoris: GitHub CLI runs the system's: its updates are the machine's, not Daoris's — `daoris tool use gh managed` keeps a version in the home"
+      ],
+      "after": "{\n  \"locations\": [\n    \"https://lists.example/resources.json\"\n  ]\n}",
+      "versions": {}
+    },
+    {
+      "name": "use managed, bytes that are not the list's",
+      "argv": [
+        "use",
+        "gh",
+        "managed",
+        "2.62.0"
+      ],
+      "before": "{\"locations\":[\"https://lists.example/resources.json\"]}",
+      "files": {
+        "cache/tools/locations/9e2d00d86421873c8e22310af7feb849fd65067cb12c198e027ffdab0d002899.json": "{\"schema\":1,\"tools\":{\"gh\":{\"versions\":{\"2.62.0\":{\"files\":{\"win-x64\":{\"url\":\"https://maker.example/gh.zip\",\"sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"size\":3,\"archive\":\"zip\",\"exe\":\"bin/gh.exe\"}}}}}}}"
+      },
+      "served": {
+        "https://maker.example/gh.zip": {
+          "base64": "YWJj"
+        }
+      },
+      "exit": 1,
+      "out": [
+        "daoris: GitHub CLI 2.62.0 for win-x64 — 0.0 MB, no licence named.",
+        "  Daoris redistributes nothing: it downloads from the addresses the lists name, as you, and checks the bytes.",
+        "  downloading https://maker.example/gh.zip (0.0 MB)",
+        "  https://maker.example/gh.zip served bytes whose SHA-256 is ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad, and the list says aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ],
+      "err": [
+        "daoris: GitHub CLI 2.62.0 was not downloaded: https://maker.example/gh.zip served bytes whose SHA-256 is ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad, and the list says aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa. Nothing was kept"
+      ],
+      "after": "{\n  \"locations\": [\n    \"https://lists.example/resources.json\"\n  ]\n}",
+      "versions": {}
+    },
+    {
+      "name": "download, no list naming any",
+      "argv": [
+        "download",
+        "gh"
+      ],
+      "before": null,
+      "exit": 1,
+      "out": [],
+      "err": [
+        "daoris: no list names a version of GitHub CLI for win-x64 — `daoris tool look` fetches the locations, and `daoris tool locations add <address>` adds one"
+      ],
+      "after": null,
+      "versions": {}
+    },
+    {
+      "name": "download, no tool",
+      "argv": [
+        "download"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `tool download` needs a tool — one of: git, node, pwsh, gh, az"
+      ],
+      "after": null,
+      "versions": {}
+    },
+    {
+      "name": "a verb it does not have",
+      "argv": [
+        "frobnicate"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: unknown tool verb 'frobnicate' — one of: list, path, use, download, update, delete, locations, look"
+      ],
+      "after": null,
+      "versions": {}
+    }
+  ]
+}
