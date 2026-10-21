@@ -262,6 +262,12 @@ public sealed class AskAndWaitTickTests : IDisposable
         /// </summary>
         public bool KeepsAdapter { get; set; }
 
+        /// <summary>
+        /// Whether a session's record keeps the commit its tree stood at as it opened, as the service does (SURF6; RETRYWORK1's look reads
+        /// it): off, as before, so the tests that never read it read as they did.
+        /// </summary>
+        public bool KeepsBaseCommit { get; set; }
+
         /// <summary>What a quest's claim door answers (D68 §4), or null where the stand-in has none, as before.</summary>
         public string? Claim { get; set; }
 
@@ -384,6 +390,7 @@ public sealed class AskAndWaitTickTests : IDisposable
                             ["created"] = DateTimeOffset.UtcNow.AddMinutes(_sessions.Count).ToString("O"),
                         };
                         if (KeepsAdapter) session["adapter"] = body["adapter"]?.GetValue<string>();
+                        if (KeepsBaseCommit) session["baseCommit"] = body["baseCommit"]?.GetValue<string>();
                         if (Entries.TryGetValue(body["quest"]!.GetValue<string>(), out var entry)) session["entry"] = entry;
                         // The session it continues, why and who asked (MIXAGENT1a-iii), as the service answers them on loopback.
                         StandInLedger.Continues(session, body.AsObject());
