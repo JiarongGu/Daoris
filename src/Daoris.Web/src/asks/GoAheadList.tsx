@@ -1,7 +1,8 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GoAhead } from '../data/api';
-import { ago } from '../locales/format';
+import { ago, elapsed } from '../locales/format';
+import type { StaleSince } from '../work/attention/attention';
 import { cn } from '../lib/cn';
 import { Button, Pill } from '../design/ui';
 import { type Answered, Refused } from '../work/InlineConfirm';
@@ -34,9 +35,14 @@ const KINDS = new Set(['write', 'release', 'push', 'sign-in', 'run']);
  * The same list stands on a parked session's page (KNOWUSE1a2), the go-aheads that session asked, where answering the
  * last one open sends the session on (GOAHEAD2b): its lead says so there, handed in as `lead`.
  */
-export function GoAheadList({ goAheads, busy = false, onAnswer, lead, inConversation, marked }: {
+export function GoAheadList({ goAheads, busy = false, onAnswer, lead, inConversation, marked, stale }: {
   goAheads: GoAhead[];
   busy?: boolean;
+  /**
+   * The go-aheads nothing on the ask could still use, by number, as What needs you's rows say (GOAHEADSTALE1): each marked stale with
+   * how long, its refusal the one answer offered. Absent, none is (a browser, which judges none).
+   */
+  stale?: Readonly<Record<number, StaleSince>>;
   /**
    * The way to each go-ahead's call in the session's conversation, by its number, where the conversation found it (WAITFOOT1c,
    * D168 point 4): *In the conversation* on its item. Absent, none.
@@ -62,6 +68,7 @@ export function GoAheadList({ goAheads, busy = false, onAnswer, lead, inConversa
             key={goAhead.number} goAhead={goAhead} busy={busy} onAnswer={onAnswer}
             kindWord={KINDS.has(goAhead.kind) ? t(`asks.goAhead.kind.${goAhead.kind}`) : goAhead.kind}
             onConversation={inConversation?.[goAhead.number]} marked={marked === goAhead.number}
+            stale={goAhead.state === 'asked' ? stale?.[goAhead.number] : undefined}
           />
         ))}
       </ul>
@@ -74,13 +81,15 @@ export function GoAheadList({ goAheads, busy = false, onAnswer, lead, inConversa
  * destructive edit), so they wait in place and a refused answer is said beside this item (UXFIX2b3b), the words kept and
  * both presses pressable again.
  */
-function GoAheadItem({ goAhead, kindWord, busy, onAnswer, onConversation, marked = false }: {
+function GoAheadItem({ goAhead, kindWord, busy, onAnswer, onConversation, marked = false, stale }: {
   goAhead: GoAhead;
   kindWord: string;
   busy: boolean;
   onAnswer?: GoAheadAnswer;
   onConversation?: () => void;
   marked?: boolean;
+  /** Nothing on the ask could still use it (GOAHEADSTALE1): marked so with how long, and only its refusal offered. */
+  stale?: StaleSince;
 }) {
   const { t } = useTranslation();
   const [changing, setChanging] = useState(false);
@@ -135,11 +144,19 @@ function GoAheadItem({ goAhead, kindWord, busy, onAnswer, onConversation, marked
     >
       <p className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
         <span className="font-mono text-meta text-ink-faint">#{goAhead.number}</span>
-        <Pill tone={GO_AHEAD_TONE[goAhead.state]}>{t(`asks.goAhead.state.${goAhead.state}`)}</Pill>
+        {/* GOAHEADSTALE1: still asked, but nothing on the ask waits for it, so it is not said to wait on the person. */}
+        {stale
+          ? <Pill tone="neutral">{t('asks.goAhead.stale.pill')}</Pill>
+          : <Pill tone={GO_AHEAD_TONE[goAhead.state]}>{t(`asks.goAhead.state.${goAhead.state}`)}</Pill>}
         <span className="text-body font-semibold">{t('asks.goAhead.act', { kind: kindWord, on: goAhead.on })}</span>
         <span className="min-w-0 break-words text-body">“{goAhead.act}”</span>
         {onConversation && <span className="ml-auto"><InConversation onPress={onConversation} /></span>}
       </p>
+      {stale && (
+        <p className="m-0 text-small text-ink-soft">
+          {stale.since ? t('asks.goAhead.stale.line', { span: elapsed(stale.since) }) : t('asks.goAhead.stale.lineUndated')}
+        </p>
+      )}
       {first && <p className="m-0 text-small text-ink-soft">{first.why}</p>}
       <p className="m-0 font-mono text-meta text-ink-faint">
         {first && t('asks.goAhead.asked', { ago: ago(first.at) })}
@@ -165,9 +182,12 @@ function GoAheadItem({ goAhead, kindWord, busy, onAnswer, onConversation, marked
             onChange={(e) => setWords(e.target.value)}
             className="min-h-[1.9rem] flex-1 basis-56 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
           />
-          <Button disabled={waiting} aria-describedby={refusal ? refusalId : undefined} onClick={() => answer(true)}>
-            {t('asks.goAhead.approve')}
-          </Button>
+          {/* A stale one is offered its refusal alone (GOAHEADSTALE1): nothing on the ask waits for a yes. */}
+          {!stale && (
+            <Button disabled={waiting} aria-describedby={refusal ? refusalId : undefined} onClick={() => answer(true)}>
+              {t('asks.goAhead.approve')}
+            </Button>
+          )}
           <Button variant="danger" disabled={waiting} aria-describedby={refusal ? refusalId : undefined} onClick={() => answer(false)}>
             {t('asks.goAhead.refuse')}
           </Button>

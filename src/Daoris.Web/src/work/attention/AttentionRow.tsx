@@ -9,7 +9,7 @@ import { Button, Dot, Icon, Inline, SelectField } from '../../design/ui';
 import type { AccountRowFacts } from './accountWords';
 import type { RuleProposal } from '../../settings/repository/AgentRules';
 import type { GraphEnd, HeldAttempt, HeldResolution, UnreadableRecord } from '../head/milestone';
-import { ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers } from './attention';
+import { ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers, type StaleSince } from './attention';
 import { Note } from '../Note';
 import { type Answered, InlineConfirm } from '../InlineConfirm';
 import { hasNote, type NoteRecord } from '../noteLines';
@@ -70,6 +70,11 @@ export type Attention = {
   quest?: string;
   /** A `go-ahead`'s number on its ask, which the answer names. */
   number?: number;
+  /**
+   * A `go-ahead` nothing on its ask could still use (GOAHEADSTALE1): named so by its kind's word, its refusal the one answer offered,
+   * which runs nothing.
+   */
+  stale?: StaleSince;
   /** A `set-up` row's set-up, named whole as the row drew it: what its verdict answers (REVIEWENV1g, REVIEWENV1b3). */
   setUp?: SetUpRef;
   /** A `set-up` row's set-up is local, so Daoris serves it and *Show it again* can. */
@@ -409,7 +414,7 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
         {/* Status leads (D41 §4): the kind, then what, where and how long. The title moves to its own line where the main
             area is narrow, so the kind, where and how long keep one line above it. */}
         <p className="m-0 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-small">
-          <Dot tone="parked" label={t(`work.attention.${item.kind}`)} />
+          <Dot tone="parked" label={t(item.kind === 'go-ahead' && item.stale ? 'work.attention.goAheadStale' : `work.attention.${item.kind}`)} />
           <span
             id={titleId}
             className="order-last min-w-0 max-w-full basis-full truncate text-body font-semibold text-ink @3xl/main:order-none @3xl/main:basis-auto"
@@ -572,7 +577,8 @@ function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onC
     : act === 'approve'
       ? t('work.attention.ask.approve', { id: item.ask ?? '' })
       : act === 'refuse'
-        ? t('work.attention.ask.refuse', { id: item.ask ?? '' })
+        // GOAHEADSTALE1: a stale one's refusal sends no session on, since none waits for it.
+        ? t(item.stale ? 'work.attention.ask.refuseStale' : 'work.attention.ask.refuse', { id: item.ask ?? '' })
         : act === 'accept-rule'
           ? t('work.attention.ask.acceptRule', { change: item.title })
           : t('work.attention.ask.choose', { workspace: item.where });

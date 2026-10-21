@@ -708,6 +708,85 @@ describe('What needs you settles what one press can', () => {
     expect(posted).toEqual([{ url: '/api/asks/7c1e9a04b2d5/go-aheads/1', body: { answer: 'approved' } }]);
   });
 
+  /**
+   * GOAHEADSTALE1: the go-aheads nothing on their asks could still use are refused in one press, with one reason. Each goes through its
+   * own door, the service's answer, as its row's Refuse would, saying no park goes on (`goesOn: false`), and nothing is nudged: refusing
+   * runs nothing. A go-ahead something still waits for is left as it was.
+   */
+  describe('the stale go-aheads', () => {
+    const stale = (ask: string, number: number) => row('go-ahead', `${ask}#${number}`, '2026-09-20T09:00:00Z', {
+      workspace: 'default', ask, number, goAhead: { kind: 'write', on: 'production', act: `configuration ${number}` },
+      detail: 'The tile reads its target there.', session: 'g0n30000', stale: { since: '2026-09-25T09:00:00Z' },
+    });
+
+    it.each([
+      ['en', 'Waiting for your word', '2 go-aheads are stale: nothing on their asks waits for them.', 'Refuse all 2…',
+        'why you refuse them', 'Refuse 2 go-aheads', 'Refused 2 stale go-aheads.'],
+      ['zh', '等你发话', '有 2 个放行已过时：它们的需求上已没有任何东西在等。', '全部拒绝 2 个…',
+        '你拒绝的理由', '拒绝 2 个放行', '已拒绝 2 个过时的放行。'],
+    ])('refuses every stale one at once with one reason, and runs nothing (%s)', async (language, group, lead, press, field, move, said) => {
+      await i18n.changeLanguage(language);
+      try {
+        const notify = settle([stale('a1', 1), goAhead, stale('b2', 3)]);
+        const word = await screen.findByRole('group', { name: group });
+        expect(within(word).getByText(lead)).toBeInTheDocument();
+        await userEvent.click(within(word).getByRole('button', { name: press }));
+        const confirm = within(word).getByRole('button', { name: move });
+        expect(confirm).toBeDisabled();
+        await userEvent.type(within(word).getByRole('textbox', { name: field }), 'Done another way.');
+        await userEvent.click(confirm);
+
+        await waitFor(() => expect(notify).toHaveBeenCalledWith(said));
+        expect(posted).toEqual([
+          { url: '/api/asks/a1/go-aheads/1', body: { answer: 'refused', words: 'Done another way.', goesOn: false } },
+          { url: '/api/asks/b2/go-aheads/3', body: { answer: 'refused', words: 'Done another way.', goesOn: false } },
+        ]);
+        expect(asked()).not.toContain('NUDGE');
+      } finally {
+        await i18n.changeLanguage('en');
+      }
+    });
+
+    /** One stale go-ahead is its own row's Refuse; the row offers no yes, and its refusal runs nothing either. */
+    it('offers a lone stale one its refusal alone, which runs nothing', async () => {
+      const notify = settle([stale('a1', 1)]);
+      const word = await screen.findByRole('group', { name: 'Waiting for your word' });
+      expect(within(word).queryByRole('button', { name: /Refuse all/ })).toBeNull();
+      const item = within(word).getByRole('listitem', { name: 'write on production: “configuration 1”' });
+      expect(within(item).getByText('stale go-ahead')).toBeInTheDocument();
+      expect(within(item).queryByRole('button', { name: 'Approve…' })).toBeNull();
+      await userEvent.click(within(item).getByRole('button', { name: 'Refuse…' }));
+      await userEvent.click(within(item).getByRole('button', { name: 'Refuse' }));
+
+      await waitFor(() => expect(notify).toHaveBeenCalledWith('Go-ahead 1 on `#7c1e9a04b2d5` approved.'));
+      expect(posted).toEqual([{ url: '/api/asks/a1/go-aheads/1', body: { answer: 'refused', goesOn: false } }]);
+      expect(asked()).not.toContain('NUDGE');
+    });
+
+    /** A refusal the service gives is said inside the ask, and the ones it took stay taken: each is its own answer. */
+    it('says a go-ahead the service would not refuse inside the ask, the rest refused', async () => {
+      const notify = settle([stale('a1', 1), stale('gone', 2)]);
+      const word = await screen.findByRole('group', { name: 'Waiting for your word' });
+      vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (init?.method === 'POST') {
+          posted.push({ url, body: init.body ? JSON.parse(String(init.body)) : null });
+          return url.includes('/gone/')
+            ? Response.json({ error: 'No ask #gone is held here.' }, { status: 404 })
+            : Response.json({ ask: PROPOSED, message: 'Go-ahead 1 refused.' });
+        }
+        return Response.json([]);
+      }));
+      await userEvent.click(within(word).getByRole('button', { name: 'Refuse all 2…' }));
+      await userEvent.type(within(word).getByRole('textbox', { name: 'why you refuse them' }), 'Done another way.');
+      await userEvent.click(within(word).getByRole('button', { name: 'Refuse 2 go-aheads' }));
+
+      expect(await within(word).findByRole('alert')).toHaveTextContent('No ask #gone is held here.');
+      expect(notify).toHaveBeenCalledWith('Refused 1 stale go-ahead.');
+      expect(posted.map((one) => one.url)).toEqual(['/api/asks/a1/go-aheads/1', '/api/asks/gone/go-aheads/2']);
+    });
+  });
+
   /** A refusal is the service's sentence, verbatim, and the row stays as it was. */
   it('says a refused publish in the service’s words', async () => {
     const notify = settle([proposed], { refused: true });

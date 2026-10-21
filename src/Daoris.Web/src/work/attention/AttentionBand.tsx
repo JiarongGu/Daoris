@@ -34,6 +34,9 @@ const WORKING: ReadonlySet<string> = new Set(['starting', 'working']);
 /** The kinds that are an account's (UX6d): their acts wait while a sign-in of their agent's runs. */
 const ACCOUNT_KINDS: ReadonlySet<Attention['kind']> = new Set(['account-wait', 'signed-out']);
 
+/** What the band's act is on its way for while the stale go-aheads are refused in one press (GOAHEADSTALE1): no row's key. */
+const STALE_KEY = 'stale-go-aheads';
+
 /**
  * Overview's **what needs you**, the page's lead (UX6c, design §6).
  *
@@ -52,7 +55,7 @@ const ACCOUNT_KINDS: ReadonlySet<Attention['kind']> = new Set(['account-wait', '
  * **It settles what one press can** (§6.3): a proposed ask is published to what its declarations named, a parked quest
  * tried again, a departure accepted, each on its record's own route with its sentence said back; a go-ahead's answer, a
  * folder's trust and a widening of the rules ask once under the row. Every other row is a door. **No row starts a process
- * to find out**.
+ * to find out**. The stale go-aheads (GOAHEADSTALE1) are refused together, with one reason, each through its row's own door.
  *
  * **The accounts** (UX6d): *Sign in* runs the agent's own sign-in through the application's one running action (SIGNIN1), the
  * agent page's own, so it outlives leaving Overview and its steps follow under the row; *Read* reads that one account (ROSTER1);
@@ -227,10 +230,14 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
         notify(answer.message);
       }
     }, () => nudge(), answered),
+    // GOAHEADSTALE1: a stale one's refusal sends no park on (`goesOn: false`) and nudges nothing, since no session waits for it: it
+    // runs nothing.
     answer: (item, approved, words, answered) => run(
       item,
-      () => answerGoAhead.mutateAsync({ id: item.ask ?? '', number: item.number ?? 0, approved, words }),
-      (answer) => { notify(answer.message); nudge(); },
+      () => answerGoAhead.mutateAsync({
+        id: item.ask ?? '', number: item.number ?? 0, approved, words, ...(item.stale ? { goesOn: false } : {}),
+      }),
+      (answer) => { notify(answer.message); if (!item.stale) nudge(); },
       answered,
     ),
     acceptDeparture: (item) => run(item, () => accept.mutateAsync(item.id), (answer) => notify(answer.message)),
@@ -373,6 +380,29 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
     return <SignIn id={harnessRun.running!} harness={signing.harness} profile={label} tool={item.account?.product} {...ends} />;
   };
 
+  // GOAHEADSTALE1: every stale go-ahead refused with the person's one reason, each through its own door, the service's answer, as its
+  // row's *Refuse…* sends it: one after another, each its own answer, saying no park goes on, and nothing nudged, since nothing waits
+  // for any of them. What the service refused is said inside the ask, beside how many it took; those it took stay taken.
+  const refuseStale = (items: readonly Attention[], words: string, answered: Answered) => {
+    setActing(STALE_KEY);
+    void (async () => {
+      let refused = 0;
+      const refusals: string[] = [];
+      for (const item of items) {
+        try {
+          await answerGoAhead.mutateAsync({ id: item.ask ?? '', number: item.number ?? 0, approved: false, words, goesOn: false });
+          refused += 1;
+        } catch (error) {
+          refusals.push(sentence(error));
+        }
+      }
+      setActing(null);
+      if (refused > 0) notify(t('work.attention.stale.refused', { count: refused }));
+      if (refusals.length > 0) answered.refused(refusals.join('\n'));
+      else answered.done();
+    })();
+  };
+
   // Each row whose step waits on the person opens its run there (WORKFLOW1c): the session it names, else its quest's newest here.
   const runDoor = (item: Attention) => {
     const named = onRun ? rowRun(item) : null;
@@ -392,6 +422,8 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
         below={below}
         onSessions={onSessions}
         bare={inView}
+        onRefuseStale={refuseStale}
+        refusingStale={acting === STALE_KEY}
       />
     </AttentionRegion>
   );

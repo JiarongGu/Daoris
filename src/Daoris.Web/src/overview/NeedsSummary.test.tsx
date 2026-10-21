@@ -51,6 +51,20 @@ describe("Overview's summary of what needs you", () => {
     expect(within(summary).queryByRole('listitem')).toBeNull();
   });
 
+  /** GOAHEADSTALE1: a stale go-ahead holds no session's act, so it is counted with what waits for the person's word, where it is listed. */
+  it('counts a stale go-ahead with what waits for your word, as Notifications lists it', () => {
+    const stale: PushedAttention = { kind: 'go-ahead', id: 'g2', since: ago(3 * 24 * 60), where: 'game', stale: { since: ago(2 * 24 * 60) } };
+    render(<NeedsSummary attention={{ ...KNOWN, rows: [...ROWS, stale] }} presses={[PRESS]} onNotifications={() => {}} />);
+
+    const lines = within(screen.getByRole('region', { name: 'What needs you' })).getAllByRole('button');
+    expect(lines.map((line) => line.textContent)).toEqual([
+      'Waiting for your confirmation1refused by itself in 1m 40s',
+      'Holding work2the oldest 2h 10m',
+      'Waiting for your word2the oldest 3d 0h',
+      'Ready for you1',
+    ]);
+  });
+
   it('opens Notifications at its group from each line', async () => {
     const onNotifications = vi.fn();
     vi.useRealTimers();

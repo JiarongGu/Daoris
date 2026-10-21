@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A go-ahead that nothing on its ask can use any more is now marked *stale go-ahead* (过时的放行) in *What needs you* and on its ask's
+  page, with how long since its sessions stopped and its quests closed. It is listed under *Waiting for your word* and offers only
+  *Refuse…*. Where two or more are stale, *Refuse all …* refuses them together with one reason you give, each on its own ask. A
+  refusal of a stale go-ahead sends no session on and starts nothing.
 - A version of an agent or a tool that Daoris downloaded and nothing uses now goes by itself seven days after Daoris first finds it
   unused; a pin, Tools' use or a setting naming it again starts the count anew. A version a running session was handed stays while
   that session runs. Settings → This Daoris → *Clear unused downloads…* says the rule and, beside each unused version, the day it

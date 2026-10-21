@@ -583,12 +583,123 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     [Fact]
     public void A_go_ahead_is_a_row_per_waiting_one_with_its_act_its_ask_since_first_asked_and_why_in_the_session_s_words()
     {
-        var rows = Rows(new() { Asks = [Ask($$"""{"state":"Published","goAheads":[{{GoAhead().ToJsonString()}}]}""")] });
+        // Its asker still at work, so it is no stale one (GOAHEADSTALE1).
+        var rows = Rows(new() { Sessions = [Session()], Asks = [Ask($$"""{"state":"Published","goAheads":[{{GoAhead().ToJsonString()}}]}""")] });
 
         Is("""
            {"kind":"go-ahead","id":"7c1e9a04b2d5#1","since":"2026-09-21T09:10:00Z","workspace":"aurora","ask":"7c1e9a04b2d5","number":1,
             "goAhead":{"kind":"push","on":"prod","act":"the report’s menu entries"},"detail":"The menu ships with the release.","session":"s1a2b3c4"}
            """, Assert.Single(rows));
+    }
+
+    // ---- a go-ahead nothing on its ask waits for any more (GOAHEADSTALE1) ----
+
+    /// <summary>The ask's quest, as the service files one an ask asked (D65 §4): its sender names the ask.</summary>
+    private static JsonObject AskedQuest(string over = "{}") => With(Quest("""{"from":"ask #7c1e9a04b2d5","workspace":"aurora"}"""), over);
+
+    /// <summary>
+    /// 🔴 The owner's case (2026-10-21): go-aheads to write production configuration sat in What needs you for days after their asks'
+    /// work was done another way. Its asker ended and its ask's one quest is done, so nothing on the ask can use its answer: the row says
+    /// it is stale, since the last thing on its ask moved, and keeps its workspace (NEEDSSCOPE1).
+    /// </summary>
+    [Fact]
+    public void A_go_ahead_nothing_on_its_ask_waits_for_is_stale_since_the_last_thing_on_its_ask_moved()
+    {
+        var row = Assert.Single(Rows(new()
+        {
+            Sessions = [Session("""{"quest":"7a82cc","state":"completed","updated":"2026-09-23T10:00:00Z"}""")],
+            Quests = [AskedQuest("""{"status":"Done","updated":"2026-09-23T11:00:00Z"}""")],
+            Asks = [Ask($$"""{"state":"Published","goAheads":[{{GoAhead().ToJsonString()}}]}""")],
+        }));
+
+        Is("""{"since":"2026-09-23T11:00:00Z"}""", Assert.IsType<JsonObject>(row["stale"]));
+        Assert.Equal("aurora", row["workspace"]!.GetValue<string>());
+        Assert.Equal("2026-09-21T09:10:00Z", row["since"]!.GetValue<string>());
+    }
+
+    /// <summary>
+    /// Nothing on its ask in hand at all (its asker's record forgotten, no quest of it held): stale since it was last asked, the one moment
+    /// left that says something needed it.
+    /// </summary>
+    [Fact]
+    public void A_go_ahead_whose_ask_holds_nothing_in_hand_is_stale_since_it_was_last_asked()
+    {
+        var again = GoAhead("""
+            {"asked":[{"session":"s1a2b3c4","quest":"7a82cc","at":"2026-09-21T09:10:00Z","why":"first"},
+                      {"session":"c4rry0n0","quest":"7a82cc","at":"2026-09-22T08:00:00+00:00","why":"again"}]}
+            """);
+        var row = Assert.Single(Rows(new() { Asks = [Ask($$"""{"state":"Published","goAheads":[{{again.ToJsonString()}}]}""")] }));
+
+        Is("""{"since":"2026-09-22T08:00:00+00:00"}""", Assert.IsType<JsonObject>(row["stale"]));
+    }
+
+    /// <summary>
+    /// Anything on its ask that could still use its answer keeps a go-ahead current: a session that asked it, the ask's intake, or a
+    /// session of a quest the ask asked, queued, starting, working or parked; or a quest the ask asked still open, taken, or held for the
+    /// person's yes, whose next session would be handed it.
+    /// </summary>
+    [Theory]
+    [InlineData("asker queued")]
+    [InlineData("asker starting")]
+    [InlineData("asker working")]
+    [InlineData("asker parked")]
+    [InlineData("another session of its quest")]
+    [InlineData("its intake")]
+    [InlineData("its quest open")]
+    [InlineData("its quest taken")]
+    [InlineData("its quest held")]
+    public void A_go_ahead_is_not_stale_while_anything_on_its_ask_could_still_use_its_answer(string what)
+    {
+        var ended = Session("""{"quest":"7a82cc","state":"completed"}""");
+        var done = AskedQuest("""{"status":"Done"}""");
+        var facts = what switch
+        {
+            "asker queued" => new AttentionFacts { Sessions = [With(ended, """{"state":"queued"}""")], Quests = [done] },
+            "asker starting" => new AttentionFacts { Sessions = [With(ended, """{"state":"starting"}""")], Quests = [done] },
+            "asker working" => new AttentionFacts { Sessions = [With(ended, """{"state":"working"}""")], Quests = [done] },
+            "asker parked" => new AttentionFacts { Sessions = [With(ended, """{"state":"awaiting-person"}""")], Quests = [done] },
+            "another session of its quest" => new AttentionFacts
+            {
+                Sessions = [ended, Session("""{"id":"c4rry0n0","quest":"q2","state":"working"}""")],
+                Quests = [done, AskedQuest("""{"id":"q2","status":"Taken"}""")],
+            },
+            "its intake" => new AttentionFacts { Sessions = [ended, Intake("""{"state":"working"}""")], Quests = [done] },
+            "its quest open" => new AttentionFacts { Sessions = [ended], Quests = [AskedQuest()] },
+            "its quest taken" => new AttentionFacts { Sessions = [ended], Quests = [AskedQuest("""{"status":"Taken"}""")] },
+            "its quest held" => new AttentionFacts { Sessions = [ended], Quests = [AskedQuest("""{"status":"Done","held":true}""")] },
+            _ => throw new ArgumentOutOfRangeException(nameof(what)),
+        };
+
+        var rows = Rows(facts with { Asks = [Ask($$"""{"state":"Published","goAheads":[{{GoAhead().ToJsonString()}}]}""")] });
+
+        Assert.False(Only(rows, "go-ahead").ContainsKey("stale"), what);
+    }
+
+    /// <summary>
+    /// What is on another ask never keeps it current, and a quest of its ask held and then accepted is one whose next step went on, so it
+    /// waits on nobody.
+    /// </summary>
+    [Fact]
+    public void A_go_ahead_is_stale_whatever_runs_on_another_ask_or_once_its_held_quest_was_accepted()
+    {
+        var rows = Rows(new()
+        {
+            Sessions =
+            [
+                Session("""{"quest":"7a82cc","state":"completed"}"""),
+                Session("""{"id":"0th3r000","quest":"q9","state":"working"}"""),
+                Intake("""{"id":"0th3r1nt","ask":"another","state":"working"}"""),
+            ],
+            Quests =
+            [
+                AskedQuest("""{"status":"Done","held":true,"accepted":"2026-09-23T09:00:00Z"}"""),
+                Quest("""{"id":"q9","from":"ask #another","status":"Taken"}"""),
+                Quest("""{"id":"q8","from":"platform","status":"Open"}"""),
+            ],
+            Asks = [Ask($$"""{"state":"Published","goAheads":[{{GoAhead().ToJsonString()}}]}""")],
+        });
+
+        Assert.True(Only(rows, "go-ahead").ContainsKey("stale"));
     }
 
     [Fact]

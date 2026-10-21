@@ -179,6 +179,7 @@ public static class NeedsAPerson
                 // Why the first session needed it, in its words; and the session that asked it first, whose run its door opens.
                 row["detail"] = Text(first, "why");
                 row["session"] = Text(first, "session");
+                if (Stale(ask, goAhead, facts) is { } stale) row["stale"] = stale;
                 rows.Add(row);
             }
         }
@@ -504,6 +505,59 @@ public static class NeedsAPerson
         }
 
         return folders;
+    }
+
+    /// <summary>
+    /// A go-ahead nothing on its ask could still use (GOAHEADSTALE1, D196's note): no session that asked it, no intake of the ask and no
+    /// session of a quest the ask asked is queued, starting, working or parked, and no quest the ask asked is open, taken or held for the
+    /// person's yes, whose next session would be handed its answer. It is then stale since the last thing on its ask moved: the newest of
+    /// those records' moves and its own askings, so its age says how long nothing has needed it. Null while anything could still use it.
+    /// </summary>
+    /// <remarks>
+    /// A record not in hand is not running: the sessions slice holds every record the service answers, so one it lacks was forgotten. What
+    /// is on another ask never counts. Judged from the records alone, as every row is, so it moves when they do and never with the clock.
+    /// </remarks>
+    private static JsonObject? Stale(JsonObject ask, JsonObject goAhead, AttentionFacts facts)
+    {
+        if (Text(ask, "id") is not { } id) return null;
+        var quests = facts.Quests.Where(quest => AskWords.AskOf(Text(quest, "from")) == id).ToList();
+        if (quests.Any(StillOpen)) return null;
+
+        var requests = Objects(goAhead["asked"]).ToList();
+        var askers = requests.Select(request => Text(request, "session")).OfType<string>().ToHashSet(StringComparer.Ordinal);
+        var asked = quests.Select(quest => Text(quest, "id")).OfType<string>().ToHashSet(StringComparer.Ordinal);
+        var on = facts.Sessions
+            .Where(session => (Text(session, "id") is { } asker && askers.Contains(asker))
+                || Text(session, "ask") == id
+                || (Text(session, "quest") is { } quest && asked.Contains(quest)))
+            .ToList();
+        if (on.Any(session => Active.Contains(Text(session, "state") ?? ""))) return null;
+
+        var moved = on.Select(session => Text(session, "updated"))
+            .Concat(quests.Select(quest => Text(quest, "updated")))
+            .Concat(requests.Select(request => Text(request, "at")));
+        return new JsonObject { ["since"] = Latest(moved) };
+    }
+
+    /// <summary>
+    /// A quest whose next session would still be handed its ask's go-aheads: open or taken, or a done held for the person's yes that no
+    /// acceptance has let on yet (DRIFT1d2), as the page counts a held quest among those not closed.
+    /// </summary>
+    private static bool StillOpen(JsonObject quest) =>
+        Text(quest, "status") is "Open" or "Taken"
+        || (quest["held"] is JsonValue held && held.TryGetValue<bool>(out var yes) && yes && Truthy(quest, "accepted") is null);
+
+    /// <summary>The newest of <paramref name="moments"/> as it was written, by the moment it names; null where none reads.</summary>
+    private static string? Latest(IEnumerable<string?> moments)
+    {
+        (string Text, DateTimeOffset At)? newest = null;
+        foreach (var moment in moments)
+        {
+            if (!DateTimeOffset.TryParse(moment, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal, out var at)) continue;
+            if (newest is null || at > newest.Value.At) newest = (moment!, at);
+        }
+
+        return newest?.Text;
     }
 
     /// <summary>Which requirement a held done departed from first and why, and how many it departed from; null where none.</summary>

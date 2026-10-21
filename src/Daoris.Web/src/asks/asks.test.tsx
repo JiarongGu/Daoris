@@ -691,6 +691,33 @@ describe('the go-aheads on an ask', () => {
     expect(onAnswerGoAhead).toHaveBeenCalledWith(1, false, undefined, answeredByPress);
   });
 
+  /**
+   * GOAHEADSTALE1: a go-ahead nothing on its ask could still use is marked stale where its ask lists it, with how long, and offers its
+   * refusal alone, in each language.
+   */
+  it.each([
+    ['en', 'Go-aheads', 'stale', /^Stale for \d+d \d+h: no session on this ask runs or waits, and none of its quests is open\. Only a refusal is offered, and it runs nothing\.$/, 'Refuse', 'Approve'],
+    ['zh', '放行', '已过时', /^已过时 \d+ 天 \d+ 小时：这个需求上没有会话在运行或等待，也没有仍开放的委托。这里只提供拒绝，拒绝不会运行任何东西。$/, '拒绝', '放行'],
+  ])('marks a stale one with its age and offers only its refusal (%s)', async (language, region, pill, line, refuse, approve) => {
+    await i18n.changeLanguage(language);
+    try {
+      const onAnswerGoAhead = vi.fn();
+      const { page } = record(WITH_GO_AHEADS, { onAnswerGoAhead, staleGoAheads: { 3: { since: '2026-09-20T09:00:00Z' } } });
+      const items = within(within(page).getByRole('region', { name: region })).getAllByRole('listitem');
+      const stale = within(items[2]);
+
+      expect(stale.getByText(pill)).toBeInTheDocument();
+      expect(stale.getByText(line)).toBeInTheDocument();
+      expect(stale.queryByRole('button', { name: approve })).toBeNull();
+      // A go-ahead something still waits for keeps both answers.
+      expect(within(items[3]).getByRole('button', { name: approve })).toBeInTheDocument();
+      await userEvent.click(stale.getByRole('button', { name: refuse }));
+      expect(onAnswerGoAhead).toHaveBeenCalledWith(3, false, undefined, answeredByPress);
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
   it('offers no answer where there is no door to give it', () => {
     const { page } = record(WITH_GO_AHEADS);
 

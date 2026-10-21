@@ -94,5 +94,18 @@
   "work.attention.act.refuseOnce": "拒绝",
   "work.attention.act.refuseAlways": "始终拒绝",
   "work.attention.confirmation": "终端在等你",
-  "work.attention.confirmationWhy": "只有你在通知中它的卡片上确认后它才会运行；到 {{time}} 即被拒绝。"
+  "work.attention.confirmationWhy": "只有你在通知中它的卡片上确认后它才会运行；到 {{time}} 即被拒绝。",
+  "work.attention.goAheadStale": "过时的放行",
+  "work.attention.staleWhy": "已过时 {{span}}：需求 #{{id}} 上没有会话在运行或等待，也没有仍开放的委托。",
+  "work.attention.staleWhyUndated": "已过时：需求 #{{id}} 上没有会话在运行或等待，也没有仍开放的委托。",
+  "work.attention.ask.refuseStale": "它会在需求 #{{id}} 上被拒绝，不会运行任何东西：没有会话在等它，所以不会有会话继续。之后这个需求上的会话会得知你不放行。",
+  "work.attention.stale.lead": "有 {{count}} 个放行已过时：它们的需求上已没有任何东西在等。",
+  "work.attention.stale.lead_other": "有 {{count}} 个放行已过时：它们的需求上已没有任何东西在等。",
+  "work.attention.stale.act": "全部拒绝 {{count}} 个…",
+  "work.attention.stale.ask": "每一个都会在它自己的需求上以下面的理由被拒绝，和在它那一行上拒绝一样：不会有会话继续，也不会运行任何东西。之后这些需求上的会话会得知你不放行。",
+  "work.attention.stale.reason": "你拒绝的理由",
+  "work.attention.stale.meanIt": "拒绝 {{count}} 个放行",
+  "work.attention.stale.meanIt_other": "拒绝 {{count}} 个放行",
+  "work.attention.stale.refused": "已拒绝 {{count}} 个过时的放行。",
+  "work.attention.stale.refused_other": "已拒绝 {{count}} 个过时的放行。"
 }

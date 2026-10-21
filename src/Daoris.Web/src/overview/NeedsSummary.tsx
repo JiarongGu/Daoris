@@ -18,7 +18,8 @@ type Line = { id: 'presses' | AttentionGroup; label: string; count: number; deta
  *
  * @remarks
  * **Counted by group, never the bell's total** (§4): the presses by the confirmation channel, each once, and the rows by
- * `attentionGroup` as .NET judged them, a press's own row being its card. The presses' line says the time left of the one that
+ * `attentionGroup` as .NET judged them (a hand-over ask whose session stands still with what holds work, a stale go-ahead with what
+ * waits for the person's word), a press's own row being its card. The presses' line says the time left of the one that
  * ends first (R2), the others their oldest wait. **R1**: the lines share one label track while the summary is 32rem wide or more,
  * each value beside its words, and stack below it. With nothing waiting, today's one line, *Nothing needs you* and the sessions
  * working; not judged yet, its skeleton (PUSHUX1); in a plain browser, that this is the app's (D47 §4).
