@@ -45,26 +45,26 @@ Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage 
 | `opinion` | `Program.cs:436` | `Daoris.Desktop.Driver.Host/OpinionConsole.cs:8` OpinionConsole | ask `OpinionCommand.cs:68` · show `OpinionCommand.cs:61` · stop `OpinionCommand.cs:61` · anyway `OpinionCommand.cs:66` · myself `OpinionCommand.cs:66` |
 | `brainstorm` | `Program.cs:443` | `Daoris.Desktop.Driver/Brainstorms/BrainstormCommand.cs:11` BrainstormCommand | show `BrainstormCommand.cs:27` · send `BrainstormCommand.cs:27` · clear `BrainstormCommand.cs:27` · list `BrainstormCommand.cs:24` |
 | `meeting` | `Program.cs:450` | `Daoris.Desktop.Driver/Brainstorms/MeetingCommand.cs:13` MeetingCommand | ask `MeetingCommand.cs:42` · show `MeetingCommand.cs:32` · stop `MeetingCommand.cs:38` · clear `MeetingCommand.cs:40` · send `MeetingCommand.cs:34` · list `MeetingCommand.cs:30` |
-| `quest` | `Program.cs:460` | `Daoris.Desktop.Driver.Host/WorkConsole.cs:10` WorkConsole | pause `WorkCommand.cs:39` · resume `WorkCommand.cs:39` · abandon `WorkCommand.cs:39` · delete `Program.cs:515` · accept `Program.cs:515` · done · reopen · go-on · check · review · clear |
-| `answer` | `Program.cs:537` | `Program.cs:537` (inline) | — |
-| `sessions` | `Program.cs:548` | `Daoris.Desktop.Driver.Host/SessionsConsole.cs:8` SessionsConsole | stop `SessionsCommand.cs:228` · finish `SessionsCommand.cs:235` · decline `SessionsCommand.cs:242` · archive `SessionsCommand.cs:247` · unarchive `SessionsCommand.cs:256` · delete `SessionsCommand.cs:261` · say `SessionsCommand.cs:266` · take-back `SessionsCommand.cs:268` · reword `SessionsCommand.cs:276` · go-on-new `SessionsCommand.cs:281` · start-from `SessionsCommand.cs:286` · hand-over `SessionsCommand.cs:291` · helper `SessionsCommand.cs:304` |
-| `help` | `Program.cs:555` | `Daoris.Desktop.Driver.Host/HelpConsole.cs:9` HelpConsole | list `HelpCommand.cs:73` · resume `HelpCommand.cs:73` · rename `HelpCommand.cs:73` · pin `HelpCommand.cs:73` · unpin `HelpCommand.cs:73` · delete `HelpCommand.cs:73` · mode `HelpConsole.cs:23` |
-| `access` | `Program.cs:562` | `Daoris.Desktop.Driver.Host/AccessConsole.cs:8` AccessConsole | — |
-| `heavy` | `Program.cs:586` | `Daoris.Desktop.Driver.Host/HeavyMappingConsole.cs:8` HeavyMappingConsole | — |
-| `checks` | `Program.cs:593` | `Daoris.Desktop.Driver.Host/SessionChecksConsole.cs:7` SessionChecksConsole | heavy-at-end |
-| `history` | `Program.cs:601` | `Daoris.Desktop.Driver.Host/HistoryConsole.cs:11` HistoryConsole | clear `HistoryCommand.cs:54` |
-| `trees` | `Program.cs:608` | `Daoris.Desktop.Driver.Host/TreesConsole.cs:15` TreesConsole | list `TreesConsole.cs:92` · remove `TreesConsole.cs:123` · clean `TreesConsole.cs:139` · land `TreesConsole.cs:247` · hand `TreesConsole.cs:417` · state `TreesConsole.cs:490` · sync `TreesConsole.cs:189` |
-| `work state` | `Program.cs:614` | `Program.cs:614` (inline) | — |
-| `work held` | `Program.cs:620` | `Program.cs:620` (inline) | — |
-| `work recovery drop` | `Program.cs:626` | `Program.cs:626` (inline) | — |
-| `result` | `Program.cs:633` | `Program.cs:633` (inline) | — |
-| `sync` | `Program.cs:639` | `Daoris.Desktop.Driver.Host/SyncConsole.cs:20` SyncConsole | status `SyncConsole.cs:56` · dismiss `SyncConsole.cs:57` · forward |
-| `plugins install` | `Program.cs:646` | `Daoris.Desktop.Driver/Plugins/PluginPackage.cs:134` PluginPackageCommand | — |
-| `update` | `Program.cs:653` | `Daoris.Desktop.Driver/Setup/UpdateCommand.cs:19` UpdateCommand | — |
-| `wiring` | `Program.cs:664` | `Daoris.Desktop.Driver/Platform/WiringCommand.cs:16` WiringCommand | — |
-| `logs` | `Program.cs:672` | `Daoris.Desktop.Driver.Host/LogsConsole.cs:18` LogsConsole | — |
-| `plugins` | `Program.cs:679` | `Daoris.Desktop.Driver/Plugins/PluginsCommand.cs:25` PluginsCommand | install `Program.cs:646` · new `PluginsCommand.cs:49` · try `PluginsCommand.cs:49` · show `PluginsCommand.cs:51` · activity `PluginsCommand.cs:53` · approve `PluginsCommand.cs:57` · withdraw `PluginsCommand.cs:75` |
-| `drive` | `Program.cs:374` | `Daoris.Desktop.Driver/Loop/DriverCommand.cs:290` DriverCommand.Read | — |
+| `quest` | `Program.cs:460` | `Daoris.Desktop.Driver.Host/WorkConsole.cs:10` WorkConsole | pause `WorkCommand.cs:39` · resume `WorkCommand.cs:39` · abandon `WorkCommand.cs:39` · delete `Program.cs:533` · accept `Program.cs:533` · done · reopen · go-on · check · review · workflow `Program.cs:352` · clear |
+| `answer` | `Program.cs:556` | `Program.cs:556` (inline) | — |
+| `sessions` | `Program.cs:567` | `Daoris.Desktop.Driver.Host/SessionsConsole.cs:8` SessionsConsole | stop `SessionsCommand.cs:228` · finish `SessionsCommand.cs:235` · decline `SessionsCommand.cs:242` · archive `SessionsCommand.cs:247` · unarchive `SessionsCommand.cs:256` · delete `SessionsCommand.cs:261` · say `SessionsCommand.cs:266` · take-back `SessionsCommand.cs:268` · reword `SessionsCommand.cs:276` · go-on-new `SessionsCommand.cs:281` · start-from `SessionsCommand.cs:286` · hand-over `SessionsCommand.cs:291` · helper `SessionsCommand.cs:304` |
+| `help` | `Program.cs:574` | `Daoris.Desktop.Driver.Host/HelpConsole.cs:9` HelpConsole | list `HelpCommand.cs:73` · resume `HelpCommand.cs:73` · rename `HelpCommand.cs:73` · pin `HelpCommand.cs:73` · unpin `HelpCommand.cs:73` · delete `HelpCommand.cs:73` · mode `HelpConsole.cs:23` |
+| `access` | `Program.cs:581` | `Daoris.Desktop.Driver.Host/AccessConsole.cs:8` AccessConsole | — |
+| `heavy` | `Program.cs:605` | `Daoris.Desktop.Driver.Host/HeavyMappingConsole.cs:8` HeavyMappingConsole | — |
+| `checks` | `Program.cs:612` | `Daoris.Desktop.Driver.Host/SessionChecksConsole.cs:7` SessionChecksConsole | heavy-at-end |
+| `history` | `Program.cs:620` | `Daoris.Desktop.Driver.Host/HistoryConsole.cs:11` HistoryConsole | clear `HistoryCommand.cs:54` |
+| `trees` | `Program.cs:627` | `Daoris.Desktop.Driver.Host/TreesConsole.cs:15` TreesConsole | list `TreesConsole.cs:92` · remove `TreesConsole.cs:123` · clean `TreesConsole.cs:139` · land `TreesConsole.cs:247` · hand `TreesConsole.cs:417` · state `TreesConsole.cs:490` · sync `TreesConsole.cs:189` |
+| `work state` | `Program.cs:633` | `Program.cs:633` (inline) | — |
+| `work held` | `Program.cs:639` | `Program.cs:639` (inline) | — |
+| `work recovery drop` | `Program.cs:645` | `Program.cs:645` (inline) | — |
+| `result` | `Program.cs:652` | `Program.cs:652` (inline) | — |
+| `sync` | `Program.cs:658` | `Daoris.Desktop.Driver.Host/SyncConsole.cs:20` SyncConsole | status `SyncConsole.cs:56` · dismiss `SyncConsole.cs:57` · forward |
+| `plugins install` | `Program.cs:665` | `Daoris.Desktop.Driver/Plugins/PluginPackage.cs:134` PluginPackageCommand | — |
+| `update` | `Program.cs:672` | `Daoris.Desktop.Driver/Setup/UpdateCommand.cs:19` UpdateCommand | — |
+| `wiring` | `Program.cs:683` | `Daoris.Desktop.Driver/Platform/WiringCommand.cs:16` WiringCommand | — |
+| `logs` | `Program.cs:691` | `Daoris.Desktop.Driver.Host/LogsConsole.cs:18` LogsConsole | — |
+| `plugins` | `Program.cs:698` | `Daoris.Desktop.Driver/Plugins/PluginsCommand.cs:25` PluginsCommand | install `Program.cs:665` · new `PluginsCommand.cs:49` · try `PluginsCommand.cs:49` · show `PluginsCommand.cs:51` · activity `PluginsCommand.cs:53` · approve `PluginsCommand.cs:57` · withdraw `PluginsCommand.cs:75` |
+| `drive` | `Program.cs:374` | `Daoris.Desktop.Driver/Loop/DriverCommand.cs:292` DriverCommand.Read | — |
 
 ## `daoris-devkit`
 

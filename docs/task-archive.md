@@ -19014,3 +19014,14 @@ theory (the stop row reads the end; the others none) and its wake test (none whi
 edit and for their `Forget`, as `landings.json` and `session-branches.json` have since FABRIC-END2; no shape, caller or door changed.
 Proof: `RecordLockStoresTests`, per store an edit and a forget waiting for the lock with the holder's write kept. Detail: D173's
 FABRIC-RECLOCK2 note. On Opus.
+
+## WORKFLOW1e2 — quest-specific choice (2026-10-21, D157)
+
+> - [ ] **WORKFLOW1e2 — quest-specific choice** (service/driver; after e). Field, census, person's door and selection for quests without asks. §4.1/D156.
+
+**Outcome** 2026-10-21: built. A quest no ask published keeps the person's kind and workflow in a new quest operation, `chosen`, placed
+in every census place and applying only while open; the local host's `POST /api/quests/{id}/workflow` is the person's door, refusing a
+quest an ask published; the driver binds it as §4.1's row 1 at the run's first start, a chain's step following its nearest parent's;
+`daoris-driver quest workflow` is the terminal's door. The quest's page offers no choice until WORKFLOW1g. Proof: `QuestOperationKindsTests`,
+`LocalHostTests`, `PersonDoorTableTests`, `WorkflowPortsTests`, `WorkflowRunBindingTests`, `QuestWorkflowCommandTests`. Detail: D157's
+WORKFLOW1e2 note, D68's 2026-10-21 note. On Opus.
