@@ -148,8 +148,8 @@ const tool = await import(
   firstFile: (dir: string, skip?: (path: string, directory: boolean) => boolean) => string | null;
   folderVerdict: (folder: Folder) => { remove: boolean; why: string };
   BASELINE: readonly string[];
-  GENERATED: readonly { folder: string; tool: string }[];
-  isGenerated: (path: string) => boolean;
+  readGenerated: (root: string) => { folder: string; run: string }[];
+  isGenerated: (path: string, generated: readonly { folder: string }[]) => boolean;
   setApart: (text: string) => { text: string; set: { line: number; label: string }[] };
   setApartHeadings: (text: string, sides?: string[]) => { text: string; set: { line: number; label: string }[] };
   noteName: (label: string) => string;
@@ -1237,17 +1237,31 @@ test("the driver's sources the page's twins parse reach the web gate by their na
   }
 });
 
-test('what a merge writes rather than merges is the orientation index, by its folder, and its tool is this repository\'s', () => {
-  assert.equal(tool.isGenerated('docs/index/routes.md'), true);
-  assert.equal(tool.isGenerated('docs/index/outlines/src/Daoris.Web/src/App.tsx.md'), true);
-  assert.equal(tool.isGenerated('docs/index.md'), false);
-  assert.equal(tool.isGenerated('docs/decisions/D1.md'), false);
-  for (const { folder, tool: writer } of tool.GENERATED) {
-    assert.ok(existsSync(join(repoRoot, writer)), `${writer} writes ${folder}/ and is not here`);
+test('what a merge writes rather than merges is the orientation index, by its folder, as daoris.gates.json declares it (GENREGEN1)', () => {
+  const declared = tool.readGenerated(repoRoot);
+  assert.deepEqual(declared, [{ folder: 'docs/index', run: 'node tools/orient-index.mjs' }]);
+  assert.equal(tool.isGenerated('docs/index/routes.md', declared), true);
+  assert.equal(tool.isGenerated('docs/index/outlines/src/Daoris.Web/src/App.tsx.md', declared), true);
+  assert.equal(tool.isGenerated('docs/index.md', declared), false);
+  assert.equal(tool.isGenerated('docs/decisions/D1.md', declared), false);
+  assert.ok(existsSync(join(repoRoot, 'tools/orient-index.mjs')), 'the command that writes docs/index/ runs a tool that is not here');
+  for (const { folder } of declared) {
     // A hand merge meets no textual merge of it either: the attribute keeps one side whole, and the tool writes it again. It is
     // marked generated too (LANDREBASE1), so a landing's replay takes the line's copy of it.
     assert.match(readFileSync(join(repoRoot, '.gitattributes'), 'utf8'), new RegExp(`^${folder.replace(/\//g, '\\/')}/\\*\\* -merge linguist-generated$`, 'm'));
   }
+});
+
+test('a repository declaring no generated folder writes none, and an entry without its command is refused (GENREGEN1)', () => {
+  const fx = makeFixture('merge-branch-generated');
+  assert.deepEqual(tool.readGenerated(fx.root), [], 'no declaration at all');
+  fx.write('daoris.gates.json', JSON.stringify({ gates: [{ name: 'g', run: 'node gate.mjs' }] }));
+  assert.deepEqual(tool.readGenerated(fx.root), []);
+  fx.write('daoris.gates.json', JSON.stringify({ gates: [], generated: [{ paths: 'out/', run: 'node write.mjs' }] }));
+  assert.deepEqual(tool.readGenerated(fx.root), [{ folder: 'out', run: 'node write.mjs' }], 'a trailing slash is the folder');
+  fx.write('daoris.gates.json', JSON.stringify({ gates: [], generated: [{ paths: 'out' }] }));
+  assert.match(refusal(() => tool.readGenerated(fx.root)).message, /every generated entry needs both 'paths' and 'run'/);
+  fx.cleanup();
 });
 
 // MERGEJOIN1: what union leaves when two branches each append a note to one decision, set apart by the merge.
@@ -4396,7 +4410,10 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
       "console.log('orient-index: docs/index/ written, 1 of 1 files changed');",
       '',
     ].join('\n');
-    const repo = scratch('generated', [{ name: 'first', run: 'node gate.mjs first' }], {
+    // The folder and its command are the repository's declaration (GENREGEN1), as this repository's own are.
+    const gates = [{ name: 'first', run: 'node gate.mjs first' }];
+    const repo = scratch('generated', gates, {
+      'daoris.gates.json': `${JSON.stringify({ gates, generated: [{ paths: 'docs/index', run: 'node tools/orient-index.mjs' }] }, null, 2)}\n`,
       '.gitattributes': 'CHANGELOG.md merge=union\ndocs/index/** -merge\n',
       'tools/orient-index.mjs': generator,
       'docs/index/README.md': 'base.txt\n',

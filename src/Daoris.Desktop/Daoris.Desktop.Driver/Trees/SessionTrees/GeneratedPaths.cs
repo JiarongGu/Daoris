@@ -9,8 +9,9 @@ namespace Daoris.Driver;
 /// <para><c>-merge</c> is not read as the declaration, though this repository marks its generated index so: git's <c>binary</c> macro
 /// sets it too, and taking the line's copy of an image both sides changed would drop the session's change without a word, since the
 /// replay's proof allows every file the line brought.</para>
-/// <para>Nothing here runs a repository's generator. The repository declares no command that writes a generated file (this one's merge
-/// tool names its own), so a replay leaves them at the line's copy, and a landing names them.</para>
+/// <para>Nothing here runs a repository's generator. The command that writes a generated folder is a declaration of its own, run only
+/// as the person accepted it (<see cref="GeneratedWriters"/>, GENREGEN1); without one, a replay leaves them at the line's copy, and a
+/// landing names them.</para>
 /// </remarks>
 internal static class GeneratedPaths
 {

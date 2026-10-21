@@ -160,6 +160,19 @@ repository.
   failed the same way, then passed. `InstancePipeTests` and `PipeCensusTests` (77) and `InstanceDoorTests` (39) under both
   elevated PowerShell and Git Bash, the instance-path classes (109), `instance.test.ts` (29).
 
+## 2026-10-21 — A CLI test that passed was failed by its fixture's cleanup
+
+- **Symptom:** the full set on 7ac72cc5a failed the `cli` gate on `gitforwindows.test.ts`'s *the toolchain starts the
+  system's git past the launcher*: `EPERM` removing `_fixtures/gitforwindows-toolchain` after the test's assertions passed. A
+  builder saw the same under load the same day.
+- **Root cause:** the test copies the running `node.exe` twice into its fixture and runs them; a copied program just run is
+  still held past the fixture cleanup's five seconds of retries, by the machine's scanners (DEVDRIVE1), with nothing of the test
+  left running.
+- **Fix:** the shared fixture's `cleanup` leaves a folder still held past its wait for the next run's `makeFixture`, which now
+  clears it with the same retries; any other error still throws. The bridge tests and the deployment rehearsal already do the
+  same.
+- **Verification:** the CLI typecheck; `gitforwindows.test.ts` and `homefiles.test.ts` (23).
+
 ## 2026-10-21 — The roster fix read past the harness override, and a woken-turn test raced its look
 
 - **Symptom:** the full set on 5e8caed81 failed the family rehearsal's account checks (*the record names the account it ran as*,

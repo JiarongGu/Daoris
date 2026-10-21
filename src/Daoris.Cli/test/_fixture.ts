@@ -51,7 +51,8 @@ export function captureError(fn: () => unknown): DaorisError {
 /** A scratch repo under _fixtures/ — never OS temp. */
 export function makeFixture(name: string): Fixture {
   const root = join(FIXTURE_ROOT, name);
-  rmSync(root, { recursive: true, force: true });
+  // A folder an earlier run's cleanup left held is cleared here, waiting as the cleanup does.
+  rmSync(root, { recursive: true, force: true, maxRetries: 20, retryDelay: 250 });
   mkdirSync(root, { recursive: true });
   return {
     root,
@@ -79,8 +80,16 @@ export function makeFixture(name: string): Fixture {
       return body === null ? null : tierRuleBody(body, source);
     },
     // A child the test started (a stub agent, a git) may still be letting go of the folder as the test ends; on Windows
-    // that is EPERM, which failed passing tests in three suites on 2026-10-04 (FLAKE1). Waits as the rehearsals' cleans do.
-    cleanup: () => rmSync(root, { recursive: true, force: true, maxRetries: 20, retryDelay: 250 }),
+    // that is EPERM, which failed passing tests in three suites on 2026-10-04 (FLAKE1). Waits as the rehearsals' cleans do. A
+    // file still held past the wait (a copied program a scanner reads after it ran) leaves the folder for the next run's start,
+    // which clears it: the test has passed by here, so the folder is not its verdict (the full set on 7ac72cc5a).
+    cleanup: () => {
+      try {
+        rmSync(root, { recursive: true, force: true, maxRetries: 20, retryDelay: 250 });
+      } catch (error) {
+        if (!['EPERM', 'EBUSY'].includes((error as NodeJS.ErrnoException).code ?? '')) throw error;
+      }
+    },
   };
 }
 

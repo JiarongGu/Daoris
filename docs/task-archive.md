@@ -18871,3 +18871,14 @@ family rehearsal compares no `LAND_SESSION_TREE` answer whole. Proof: `DriverMod
 facts: when, that it waits for its agent's ready, the person's words quoted as written (or that they gave none), and the session told.
 *Submitted* names the session that said its ready. Proof: `api.test.ts` (both read, neither from an older host) and
 `QuestPage.closure.test.tsx` in en and zh. On Opus, by a driven session. Detail: D173's FABRIC-CLOSE1d3 note.
+
+## GENREGEN1 — a repository declares the command that writes each generated path, so a landing's replay writes it again (2026-10-21, D87)
+
+> - [ ] **GENREGEN1 — a repository declares the command that writes each generated path, so a landing's replay writes it again** (driver, tools; D87's LANDREBASE1 note point 4). A replay takes the line's copy of a conflicting `linguist-generated` file, so a landed branch's `docs/index` can lag its tree until the merge rewrites it; only the merge tool knows the writer. Wanted: one declaration both read, decided with whether a landing may run a repository's command. Proof: a `Process` case whose replayed index reads as its tree's.
+
+**Outcome** 2026-10-21: `daoris.gates.json`'s `generated` declares each folder and the command that writes it (`docs/index` by
+`node tools/orient-index.mjs`); the merge tool reads it in place of its own list. A landing runs a writer only where the person
+accepted that declaration for the repository's landed route (its blob at the commit the replay builds on), read from the line, never
+the session's copy: then a replay that took the line's copy of a generated file writes its folder again in the replay's tree, in a
+commit of its own on top, and the landing says so; otherwise the line's copy stays, as before. Proof: `LandRebaseLandingTests`
+(Process) and `merge-branch.test.ts`. Detail: D87's GENREGEN1 note.
