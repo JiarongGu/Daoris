@@ -300,9 +300,8 @@ export function AttendedSession({
         )
         : <ChainLine chain={chain} onQuest={onQuest} onExpand={() => showChain(true)} />)}
       {/* Who it worked with, folded to a line and opened in place (HEADFIT1); keyed by the record so another one starts folded.
-          🔴 Each fold keyed here says what it is beside the record's id (RELSPAM1): this one and the milestone's were both keyed by
-          the id alone, React matched the one to the other's fiber, and every draw of a running session left a copy of this line
-          in the page, never unmounted (eleven on an installed window). `design/siblingKeys.test.ts` holds every parent to it. */}
+          🔴 Each fold keyed here names its kind beside the record's id (RELSPAM1): keyed by the id alone, this one and the
+          milestone's took each other's fibers, and each draw of a running session left a copy of this line in the page. */}
       {relations && <SessionRelations key={`relations:${session.id}`} relations={relations} onQuest={onQuest} onSession={onSession} />}
       {/* Its ask's channel kept to this line of work, folded to a line (SESSONE2c, D167 points 6 to 8). */}
       {channel && <ChannelPanel {...channel} />}

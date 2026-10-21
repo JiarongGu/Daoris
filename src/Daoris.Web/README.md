@@ -178,7 +178,10 @@ tree-wide gates), `lib/` (helpers no domain owns), `locales/` (the catalogues, i
 declares, a test apart from its source or a folder's top past twenty sources fails it, unless the map's `wide` list
 names that folder until a row cuts it into scopes. A gate that reads the whole tree globs from the project's root and
 names each path from the sources' top (`test/sources.ts`). A view in a folder the presentational boundary covers is an
-organism by name in `design/presentational.test.ts`.
+organism by name in `design/presentational.test.ts`. Two children of one parent never share a key (RELSPAM1): React
+matches keys across all of a parent's slots, and a copy left behind stays in the page at every draw. So a child keyed by
+a record names its kind beside the id (`relations:${session.id}`), and `design/siblingKeys.test.ts` holds every shipped
+parent to it.
 
 A folder past twenty sources keeps its scopes in folders named for what they hold, its tests and stories beside them
 (STRUCT5c-ii, D166):
