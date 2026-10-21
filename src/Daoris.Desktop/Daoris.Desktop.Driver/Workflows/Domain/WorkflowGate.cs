@@ -66,6 +66,13 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
     /// <summary>The bound version's steps; empty under Current, or where the version could not be read.</summary>
     public IReadOnlyList<NamedStep> Steps { get; init; } = [];
 
+    /// <summary>
+    /// The options of the bound graph version's <c>claimed</c> node, each its JSON text as written (FABRIC-PIPELINE1b3; the pipeline design
+    /// §3.1): its sessions' <c>checks</c> and its <c>callMinutes</c>; empty where the graph holds no <c>claimed</c>. Null under Current, under a
+    /// steps version, whose <c>work</c> step says its checks, and where the graph version is not the one its run bound.
+    /// </summary>
+    public IReadOnlyDictionary<string, string>? Claimed { get; init; }
+
     /// <summary>Rows 5 and 6 of D154's table as the version says them; null under Current, where the rule says them, as today.</summary>
     public WorkflowLook? Look { get; init; }
 

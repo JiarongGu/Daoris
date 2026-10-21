@@ -476,6 +476,36 @@ public sealed class WorkflowGateTests : IDisposable
         Assert.Equal("landing branch docs/{quest} plugin - automatic tidy | look none | opinion none", Summary(named));
     }
 
+    /// <summary>
+    /// FABRIC-PIPELINE1b3: a start hands the process read the binding its bind came to, so the read is the run's as that bind left it, and
+    /// neither the service's quests nor the run's file is read again: the same process the file's read gives, Current where the bind named
+    /// no run.
+    /// </summary>
+    [Fact]
+    public void A_start_s_process_is_read_from_the_binding_its_bind_handed_it()
+    {
+        var config = Config(Declared);
+        Save("automatic");
+        var named = WorkflowRunBindings.Plan(Config("""{"workflows":{"web-app":{"default":"docs-to-pr"}}}"""), _home, "q1", "web-app", "work", null, null, [], At);
+        Bind(named);
+        var current = WorkflowRunBindings.Plan(config, _home, "q2", "web-app", "work", null, null, [], At);
+        Bind(current);
+
+        Assert.Equal(Summary(WorkflowProcesses.Read(_home, config, "web-app", "work", "q1")), Summary(WorkflowProcesses.Bound(_home, config, "web-app", "work", "q1", named)));
+        Assert.Equal(named, WorkflowProcesses.Bound(_home, config, "web-app", "work", "q1", named).Binding);
+        Assert.Equal(current, WorkflowProcesses.Bound(_home, config, "web-app", "work", "q2", current).Binding);
+        Assert.False(WorkflowProcesses.Bound(_home, config, "web-app", "work", "q2", current).Named);
+
+        // The binding handed is the one read: its file is not asked again.
+        File.Delete(WorkflowRunBindings.PathOf(_home, "q1"));
+        Assert.True(WorkflowProcesses.Bound(_home, config, "web-app", "work", "q1", named).Named);
+
+        var none = WorkflowProcesses.Bound(_home, config, "web-app", "work", run: null, binding: null);
+        Assert.Equal(Summary(WorkflowProcess.Current(config, "web-app", "work")), Summary(none));
+        Assert.Null(none.Binding);
+        Assert.Null(none.Unread);
+    }
+
     [Fact]
     public void A_bound_workflow_that_cannot_be_read_here_holds_its_run_and_nothing_is_swapped_in()
     {

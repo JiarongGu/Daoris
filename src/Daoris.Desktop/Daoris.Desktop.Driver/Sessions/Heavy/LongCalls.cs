@@ -25,13 +25,39 @@ public sealed record RunningTask(string Id, string Name, DateTimeOffset Since);
 /// the inbox tells it; the call it names is marked <see cref="RunningCall.Told"/>, which the rail says beside its time.</para>
 ///
 /// <para><b>The bound.</b> <c>callMinutes</c> is the development pipeline's option beside <c>checks</c> (design §3.1), 20 by default. Under
-/// Current no rule sets it, so a light session's bound is the default; a graph version's <c>claimed</c> option is read at the bind with its
-/// <c>checks</c> (after FABRIC-CUTOVER1g).</para>
+/// Current no rule sets it, and a steps version's <c>work</c> takes no such field, so their light sessions' bound is the default; a graph
+/// version's <c>claimed</c> option is read from the version its run bound, with its <c>checks</c> (FABRIC-PIPELINE1b3, <see cref="MinutesOf"/>),
+/// and kept beside them by the start, so every run of the session reads the same (<see cref="SessionChecks.HeldMinutes"/>).</para>
 /// </remarks>
 public sealed class LongCalls
 {
     /// <summary><c>callMinutes</c>' default (the pipeline design §3.1): a judgement the install measures (D192's checks).</summary>
     public const int CallMinutes = 20;
+
+    /// <summary>The option's name, on a graph version's <c>claimed</c> node and beside a session's kept checks.</summary>
+    public const string Option = "callMinutes";
+
+    /// <summary>
+    /// The <c>callMinutes</c> a run's bound graph version sets on its <c>claimed</c> node (FABRIC-PIPELINE1b3), as written: a whole number of
+    /// minutes from one; null where it sets none or none that reads, under Current, and under a steps version, whose bound is the default.
+    /// </summary>
+    public static int? MinutesOf(WorkflowProcess? process)
+    {
+        if (process is not { Named: true, Claimed: { } claimed } || !claimed.TryGetValue(Option, out var text)) return null;
+        try
+        {
+            using var document = System.Text.Json.JsonDocument.Parse(text);
+            return Minutes(document.RootElement);
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>A bound as written: a JSON number that is a whole number of minutes from one, else null, the default.</summary>
+    internal static int? Minutes(System.Text.Json.JsonElement value) =>
+        value.ValueKind == System.Text.Json.JsonValueKind.Number && value.TryGetInt32(out var minutes) && minutes >= 1 ? minutes : null;
 
     /// <summary>How often a light session's calls are looked at: a long call is said within this of its bound.</summary>
     public static readonly TimeSpan Every = TimeSpan.FromSeconds(30);
@@ -64,9 +90,12 @@ public sealed class LongCalls
         _door = door;
     }
 
-    /// <summary>The bound a session's run takes: <c>callMinutes</c> under <c>light</c>, and none under any other checks.</summary>
-    public static TimeSpan? BoundOf(string? checks) =>
-        checks == SessionChecks.Light ? TimeSpan.FromMinutes(CallMinutes) : null;
+    /// <summary>
+    /// The bound a session's run takes: its <c>callMinutes</c> under <c>light</c>, <paramref name="minutes"/> where its version set them and
+    /// the default where it did not, and none under any other checks.
+    /// </summary>
+    public static TimeSpan? BoundOf(string? checks, int? minutes = null) =>
+        checks == SessionChecks.Light ? TimeSpan.FromMinutes(minutes ?? CallMinutes) : null;
 
     /// <summary>
     /// One look at <paramref name="now"/>: each call and task past the bound and not yet told, told now at urgent level as Daoris's word.
@@ -121,11 +150,12 @@ public sealed class LongCalls
     /// <summary>
     /// Watch a session's calls while its run lasts, where its run's checks give a bound; null where they give none. Disposing ends it.
     /// </summary>
+    /// <param name="minutes">The <c>callMinutes</c> its start kept beside its checks; null for the default.</param>
     public static IDisposable? Watch(
         string? checks, string session, RunningCalls calls, Func<IReadOnlyList<RunningTask>>? background, DrivenInbox? inbox, ISaidDoor? door,
-        Action<string>? failed = null)
+        Action<string>? failed = null, int? minutes = null)
     {
-        if (inbox is null || BoundOf(checks) is not { } bound) return null;
+        if (inbox is null || BoundOf(checks, minutes) is not { } bound) return null;
 
         var watch = new LongCalls(session, bound, calls, background, inbox, door);
         var stop = new CancellationTokenSource();

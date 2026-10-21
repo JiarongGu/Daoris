@@ -19376,6 +19376,12 @@ fold's table, a raw edit folded, a second receipt beside an unsaid first, *Got i
 older build's reading), `ResumeAccountTests`' own sign-in row, `DriverModuleAccountsTests`' and `DriverModuleAccountNamesTests`'
 rewritten rows, two `rotation-use.json` order rows. No window was looked at. Detail: D197's POOL1a1 note. On Opus.
 
+## FABRIC-PIPELINE1b3 — a run's first session takes its version's checks, a graph's `claimed.checks` with them (2026-10-22, D192)
+
+> - [ ] **FABRIC-PIPELINE1b3 — a run's first session takes its version's checks, a graph's `claimed.checks` with them** (driver; D192's FABRIC-PIPELINE1b2 note, point 5; after FABRIC-CUTOVER1g). 1b2 gave a steps version's `work` its `checks`, which a run's later starts take; its first start still takes Current's rule, since the run is bound in the look after it, and a graph version's `claimed` option is read nowhere. Wanted: once the bind comes before the take, `SessionChecks.Of` (`SessionChecks.cs`) reads the bound version at the first start, and a graph version's `claimed.checks` (and `callMinutes`, 1c's point 2) at the bind. Proof: a run bound to a light named workflow in a repository that sets none starts its first session light; a graph version's `claimed` `checks: light` does the same.
+
+**Outcome** 2026-10-22: a start reads its process from its bind's binding, so a run's first session takes its version's checks, and a graph
+version's `claimed` `checks` and `callMinutes` are read from the version its run bound. Detail: D192's FABRIC-PIPELINE1b3 note. On Opus.
 ## PUSH1f2f — the plugins, and the last census (2026-10-22, D194)
 
 > - [ ] **PUSH1f2f — the plugins, and the last census** (cli, driver, modules; after 2b, 2c and 2e; D194, the alone-path design §5). Read its row in §5 and the sections it names; build it end to end (D187), the family's TypeScript leaving as §4 says. Proof: as §5 names it.

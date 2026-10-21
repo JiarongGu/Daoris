@@ -160,6 +160,10 @@ public sealed class LongCallsTests : IDisposable
         Assert.Equal(Bound, LongCalls.BoundOf(SessionChecks.Light));
         Assert.Null(LongCalls.BoundOf(SessionChecks.HeavyAtEnd));
         Assert.Null(LongCalls.BoundOf(null));
+        // FABRIC-PIPELINE1b3: a graph version's `callMinutes` is the bound where its checks are light, and nothing under any other.
+        Assert.Equal(TimeSpan.FromMinutes(30), LongCalls.BoundOf(SessionChecks.Light, 30));
+        Assert.Equal(Bound, LongCalls.BoundOf(SessionChecks.Light, null));
+        Assert.Null(LongCalls.BoundOf(SessionChecks.HeavyAtEnd, 30));
 
         var calls = RunningCalls.Of(Record());
         var inbox = new Door().Inbox();
