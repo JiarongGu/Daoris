@@ -179,6 +179,61 @@ public sealed partial class DriverChoicesBothWaysTests : DriverModuleBridge
         await BothWaysAsync(module, words, registry: new ChoicesRegistry(rows, null));
     }
 
+    /// <summary>
+    /// KEEP1d (the cleanup design §9's proof): every keep choice this row adds, both ways, from choices that set none and from choices
+    /// that set each kind, so a rule set, replaced and taken back to its default writes the same bytes and says the same words alone as
+    /// through <c>SET_KEEP</c>.
+    /// </summary>
+    [Theory]
+    [InlineData(false, "keep set-aside 30")]
+    [InlineData(false, "keep set-aside whole")]
+    [InlineData(true, "keep set-aside slim")]
+    [InlineData(true, "keep set-aside 1")]
+    [InlineData(true, "keep set-aside default")]
+    [InlineData(false, "keep downloads 0")]
+    [InlineData(false, "keep downloads never")]
+    [InlineData(true, "keep downloads 365")]
+    [InlineData(true, "keep downloads default")]
+    [InlineData(false, "keep logs 7")]
+    [InlineData(true, "keep logs 30")]
+    [InlineData(true, "keep logs default")]
+    public async Task A_keep_rule_says_and_writes_the_same_alone_and_through_its_route(bool set, string words)
+    {
+        var module = Module();
+        var before = set
+            ? Before().WithKeep(new KeepSet("set-aside", Days: 30, Whole: true)).WithKeep(new KeepSet("downloads", Never: true))
+                .WithKeep(new KeepSet("logs", Days: 14))
+            : Before();
+        before.Save(DriverConfigPath);
+        var text = File.ReadAllText(DriverConfigPath);
+        var split = words.Split(' ');
+
+        var alone = await AloneAsync(text, split);
+        var route = await RouteAsync(module, text, split);
+
+        Assert.Equal((0, ""), (alone.Exit, alone.Error));
+        Assert.Equal(alone, route);
+    }
+
+    /// <summary>
+    /// KEEP1d: a value out of its kind's bounds sent to the route is refused in the catalogue's code, naming the kind and its bounds, and
+    /// nothing is written; the terminal refuses it before it asks the window (<c>fixtures/driver-choices-text.json</c>).
+    /// </summary>
+    [Fact]
+    public async Task A_keep_rule_out_of_its_bounds_is_refused_through_the_route_and_nothing_is_written()
+    {
+        var module = Module();
+        Before().Save(DriverConfigPath);
+        var text = File.ReadAllText(DriverConfigPath);
+
+        var past = await RefusalAsync(module, "SET_KEEP", new { kind = "logs", days = 60 });
+        Assert.StartsWith(Refusals.KeepOutOfRange + " ", past, StringComparison.Ordinal);
+        Assert.Contains("kind=logs", past, StringComparison.Ordinal);
+        Assert.Contains("max=30", past, StringComparison.Ordinal);
+        Assert.StartsWith(Refusals.KeepOutOfRange + " ", await RefusalAsync(module, "SET_KEEP", new { kind = "set-aside", never = true }), StringComparison.Ordinal);
+        Assert.Equal(text, File.ReadAllText(DriverConfigPath));
+    }
+
     /// <summary>A service whose registry holds two checkouts in one workspace and a repository in none, with no checkout here.</summary>
     private sealed class Registry(string checkouts) : HttpMessageHandler
     {

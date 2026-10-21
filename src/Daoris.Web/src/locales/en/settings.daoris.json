@@ -333,5 +333,16 @@
   "settings.daoris.space.door.press": "your press",
   "settings.daoris.space.door.terminal": "a terminal",
   "settings.daoris.space.door.floor": "the free-space floor",
-  "settings.daoris.space.older": "This window answers no disk space: it is older than this page."
+  "settings.daoris.space.older": "This window answers no disk space: it is older than this page.",
+  "settings.daoris.button.change": "Change…",
+  "settings.daoris.space.keepTerminal": "Also `daoris driver keep {{kind}} …` at a terminal.",
+  "settings.daoris.space.edit.days": "Days kept",
+  "settings.daoris.space.edit.unit": "days",
+  "settings.daoris.space.edit.bounds": "{{min}} to {{max}} days",
+  "settings.daoris.space.edit.whole": "Keep each folder whole",
+  "settings.daoris.space.edit.never": "Until I remove it",
+  "settings.daoris.space.edit.save": "Save",
+  "settings.daoris.space.edit.default": "The default",
+  "settings.daoris.space.edit.saving": "Saving…",
+  "settings.daoris.space.edit.notADay": "Name a whole number of days."
 }

@@ -220,18 +220,21 @@ export const SPACE: SystemSpace = {
     spaceKind('set-aside', {
       entries: ['trees'], bytes: 37.4 * GB, files: 370_000,
       rule: { kind: 'days', days: 14, whole: false, default: true, whose: null },
+      settable: true, bounds: { min: 1, max: 90, whole: true, never: false },
       next: { at: '2026-10-29T09:00:00.000+00:00', count: 3, bytes: 0.6 * GB },
       last: { at: '2026-10-16T08:10:00.000+00:00', door: 'look', removed: { count: 2, bytes: 1.1 * GB }, kept: {} },
     }),
     spaceKind('downloads', {
       entries: ['toolchain', 'tool-versions'], bytes: 1.4 * GB,
       rule: { kind: 'days', days: 7, whole: null, default: true, whose: null },
+      settable: true, bounds: { min: 0, max: 365, whole: false, never: true },
       next: { at: '2026-10-28T09:00:00.000+00:00', count: 1, bytes: null },
       last: { at: '2026-10-11T08:10:00.000+00:00', door: 'look', removed: { count: 1, bytes: 0.3 * GB }, kept: {} },
     }),
     spaceKind('browser-cache', { entries: ['browser-engine'], bytes: 0.7 * GB, rule: { kind: 'own', days: null, whole: null, default: true, whose: 'browser' } }),
     spaceKind('logs', {
       entries: ['logs'], bytes: 11 * 1024 ** 2, rule: { kind: 'days', days: 30, whole: null, default: true, whose: null },
+      settable: true, bounds: { min: 7, max: 30, whole: false, never: false },
       next: { at: '2026-10-31T00:00:00.000+00:00', count: 2, bytes: 400_000 },
     }),
     spaceKind('history', { entries: ['sessions', 'workflows'], bytes: 62 * 1024 ** 2, rule: { kind: 'press', days: null, whole: null, default: true, whose: null } }),
@@ -259,6 +262,16 @@ export const SPACE_COUNTING: SystemSpace = {
         : kind.id === 'trees' ? { ...kind, partial: true, partialWhy: 'budget' }
           : kind)),
   held: { pid: 4242, since: '2026-10-16T10:40:00.000+00:00', door: 'terminal', gone: false },
+};
+
+/** KEEP1d: the rules as the person set them, each kind's own choice and none the default. */
+export const SPACE_SET: SystemSpace = {
+  ...SPACE,
+  kinds: SPACE.kinds.map((kind) => (
+    kind.id === 'set-aside' ? { ...kind, rule: { ...kind.rule, days: 30, whole: true, default: false } }
+      : kind.id === 'downloads' ? { ...kind, rule: { ...kind.rule, kind: 'never', days: null, default: false } }
+        : kind.id === 'logs' ? { ...kind, rule: { ...kind.rule, days: 14, default: false } }
+          : kind)),
 };
 
 /** A run a crash cut short, said beside the card's rows until the next run ends. */

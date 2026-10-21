@@ -258,6 +258,10 @@ public sealed class SystemSpaceTests : IDisposable
         Assert.Equal(("days", "30", "true", "false"), (Rule("set-aside", "kind"), Rule("set-aside", "days"), Rule("set-aside", "whole"), Rule("set-aside", "default")));
         Assert.Equal(("never", null, "false"), (Rule("downloads", "kind"), Rule("downloads", "days"), Rule("downloads", "default")));
         Assert.Equal(("days", "14", "false"), (Rule("logs", "kind"), Rule("logs", "days"), Rule("logs", "default")));
+        Assert.Equal("{\"min\":1,\"max\":90,\"whole\":true,\"never\":false}", KindOf(space, "set-aside")["bounds"]!.ToJsonString());
+        Assert.Equal("{\"min\":0,\"max\":365,\"whole\":false,\"never\":true}", KindOf(space, "downloads")["bounds"]!.ToJsonString());
+        Assert.Equal("{\"min\":7,\"max\":30,\"whole\":false,\"never\":false}", KindOf(space, "logs")["bounds"]!.ToJsonString());
+        Assert.Null(KindOf(space, "history")["bounds"]);
         Assert.Equal(new DateTimeOffset(2026, 10, 29, 0, 0, 0, TimeSpan.Zero),
             DateTimeOffset.Parse((string)KindOf(space, "logs")["next"]!["at"]!, System.Globalization.CultureInfo.InvariantCulture));
     }

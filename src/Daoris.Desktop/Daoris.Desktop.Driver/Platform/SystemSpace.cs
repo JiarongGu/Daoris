@@ -421,6 +421,10 @@ public static class SystemSpace
             ["rule"] = Rule(kind, policy),
             // KEEP1d: the person sets the rules of the kinds `KeepChoices.Settable` names, on the card's *Change…* and `daoris driver keep`.
             ["settable"] = kind.Keeps is { } settable && KeepChoices.Settable.Contains(settable),
+            // KEEP1d: what the person may set, so the editor offers the kind's own choices and the driver's bounds, never a copy of them.
+            ["bounds"] = kind.Keeps is { } bounded && KeepChoices.Settable.Contains(bounded)
+                ? new JsonObject { ["min"] = bounded.MinDays, ["max"] = bounded.MaxDays, ["whole"] = bounded.MaySetWhole, ["never"] = bounded.MaySetNever }
+                : null,
             ["next"] = next,
             ["nextWhy"] = nextWhy,
             ["last"] = last is null ? null : Last(last),

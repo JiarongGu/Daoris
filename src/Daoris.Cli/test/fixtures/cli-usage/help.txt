@@ -280,6 +280,10 @@ daoris <command> [options]
                          cooloff <minutes>         how long an account cools when
                                                    its agent names no time for
                                                    its limit; 60 by default
+                         keep [<kind> <rule>]      how long Daoris keeps each kind:
+                                                   set-aside <days>|whole|slim,
+                                                   downloads <days>|never, logs
+                                                   <days>, each or default
                          cap <n> · adapter <name>
                        trees list|clean|land, sessions archive|take-back, history
                        clear and update are `daoris-driver`, not verbs here:

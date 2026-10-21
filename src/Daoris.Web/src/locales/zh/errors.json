@@ -46,6 +46,7 @@
   "errors.QUEST_NOT_HELD": "#{{id}} 在本机既没有挂起，也没有被你的停止留住，所以没有可以重试的。",
   "errors.QUEST_PAUSED": "#{{id}} 已随需求 #{{pause}} 暂缓；恢复后会继续。",
   "errors.QUEST_PAUSED_quest": "#{{id}} 已单独暂缓；恢复后会继续。",
+  "errors.KEEP_OUT_OF_RANGE": "此规则可保留 {{min}} 到 {{max}} 天；该值超出范围，未写入任何内容。",
   "errors.WORK_UNKNOWN": "本机没有需求 #{{id}}。",
   "errors.WORK_UNKNOWN_quest": "这里没有委托 #{{id}}。",
   "errors.WORK_REASON": "放弃需要你的原因：每条被谢绝的委托都会留存它。",

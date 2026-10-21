@@ -105,6 +105,7 @@
   "person.route.SET_HEAVY_GATES": "change a repository's heavy gates",
   "person.route.SET_HOLD": "hold a repository's work, or let it go",
   "person.route.SET_INTAKE": "change the agent that reads asks",
+  "person.route.SET_KEEP": "change how long Daoris keeps a kind of thing",
   "person.route.SET_LANDING": "change how a repository's work lands",
   "person.route.SET_LANGUAGE": "change the language sessions write to you in",
   "person.route.SET_LINE": "change a repository's line",

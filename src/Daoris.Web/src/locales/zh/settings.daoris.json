@@ -333,5 +333,16 @@
   "settings.daoris.space.door.press": "你的操作",
   "settings.daoris.space.door.terminal": "终端",
   "settings.daoris.space.door.floor": "可用空间下限",
-  "settings.daoris.space.older": "此窗口不提供磁盘空间信息：它比此页面旧。"
+  "settings.daoris.space.older": "此窗口不提供磁盘空间信息：它比此页面旧。",
+  "settings.daoris.button.change": "更改…",
+  "settings.daoris.space.keepTerminal": "也可在终端用 `daoris driver keep {{kind}} …`。",
+  "settings.daoris.space.edit.days": "保留天数",
+  "settings.daoris.space.edit.unit": "天",
+  "settings.daoris.space.edit.bounds": "{{min}} 到 {{max}} 天",
+  "settings.daoris.space.edit.whole": "完整保留每个文件夹",
+  "settings.daoris.space.edit.never": "保留到我移除为止",
+  "settings.daoris.space.edit.save": "保存",
+  "settings.daoris.space.edit.default": "恢复默认",
+  "settings.daoris.space.edit.saving": "正在保存…",
+  "settings.daoris.space.edit.notADay": "请填写整数天数。"
 }

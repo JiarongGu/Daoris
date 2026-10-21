@@ -120,7 +120,8 @@ export type DownloadCleared = {
  * One kind This Daoris's *Disk space* card shows (KEEP1c, the cleanup design §4.4): `SYSTEM_SPACE`'s row. Its size is its own last
  * walk's (`measured`, null where never counted; `partial` with why where the walk stopped short), its `rule` the one that runs
  * (`days`, `never`, `press`, `proof`, or another's `own` with `whose`), `next` when its rule next takes something (`bytes` null where
- * not counted), and `last` its last clean from `keeping.json`. `volume` and `settable` are KEEP1f's and KEEP1d's.
+ * not counted), and `last` its last clean from `keeping.json`. `volume` is KEEP1f's. KEEP1d: `settable` where the person sets its rule,
+ * with `bounds`, the days and the choices the driver takes (absent from a shell before it, and null for a kind not the person's).
  */
 export type SpaceKind = {
   id: string;
@@ -129,9 +130,13 @@ export type SpaceKind = {
   volume: { path: string; free: number; total: number } | null;
   rule: { kind: 'days' | 'never' | 'press' | 'proof' | 'own'; days: number | null; whole: boolean | null; default: boolean; whose: string | null };
   settable: boolean;
+  bounds?: { min: number; max: number; whole: boolean; never: boolean } | null;
   next: { at: string; count: number; bytes: number | null } | null; nextWhy: Why;
   last: { at: string; door: string; removed: { count: number; bytes: number }; kept: Record<string, number> } | null; lastWhy: Why;
 };
+
+/** One kind's keep rule as the *Disk space* card's *Change…* sets it (KEEP1d, `SET_KEEP`): its days, `never`, `whole` or not, or its default. */
+export type KeepSet = { kind: 'set-aside' | 'downloads' | 'logs'; days?: number; never?: true; whole?: boolean; default?: true };
 
 /**
  * `SYSTEM_SPACE`'s answer (KEEP1c): the Daoris folder's volume (its `floor` none until KEEP1f), each kind in the card's order, the
