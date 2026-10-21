@@ -140,6 +140,11 @@ public sealed class QuestOperationKindsTests
         {
             Submission = new QuestOperationRef("m9", 8), WhileOpen = true,
         },
+        // The person's kind and workflow, with their words, on the quest before it starts (WORKFLOW1e2).
+        [QuestOperationKind.Chosen] = s => Op(QuestOperationKind.Chosen, s) with
+        {
+            Choice = new QuestWorkflowChoice("docs", "docs-to-pr") { Words = "only the documentation" },
+        },
     };
 
     /// <summary>The kind's sample, or a failure saying where a new kind goes before it is given one.</summary>
@@ -271,6 +276,7 @@ public sealed class QuestOperationKindsTests
         [QuestOperationKind.Reopened] = "a reopen",
         [QuestOperationKind.Rebound] = "a rebind",
         [QuestOperationKind.Taken] = "a take's",
+        [QuestOperationKind.Chosen] = "a workflow choice",
     };
 
     /// <summary>
@@ -446,6 +452,7 @@ public sealed class QuestOperationKindsTests
         [QuestOperationKind.Submitted] = [nameof(QuestMoveReading.Session)],
         [QuestOperationKind.Reopened] = [],
         [QuestOperationKind.Rebound] = [],
+        [QuestOperationKind.Chosen] = [],
     };
 
     /// <summary>

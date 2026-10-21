@@ -56,8 +56,30 @@ public static class WorkflowRunBindings
     /// The task's choice an ask carries (design §4.1 row 1, §4.3): its latest, the latest standing; null where it made none, or the
     /// latest names neither a kind nor a workflow, which is a choice cleared.
     /// </summary>
-    public static WorkflowTaskChoice? TaskOf(AskView? ask) =>
-        ask?.WorkflowChoices.LastOrDefault() is { } latest && (latest.Kind ?? latest.Workflow) is not null
+    public static WorkflowTaskChoice? TaskOf(AskView? ask) => Latest(ask?.WorkflowChoices ?? []);
+
+    /// <summary>
+    /// The task's choice of a quest no ask published (WORKFLOW1e2, design §4.1 row 1: <i>its page's before it starts</i>): the latest
+    /// the person made on it, or, where they made none there, on the nearest quest of its chain above it, so a chain's step follows
+    /// what was chosen for the quest its close grew from, as every step of an ask's chain follows the ask's. The nearest quest with
+    /// any choice decides, a clear there included; null where none of them has one.
+    /// </summary>
+    /// <param name="every">The quests a parent is found among; a parent not among them ends the walk.</param>
+    public static WorkflowTaskChoice? TaskOf(QuestView quest, IReadOnlyList<QuestView>? every)
+    {
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        for (var at = quest; at is not null && seen.Add(at.Id);)
+        {
+            if (at.WorkflowChoices.Count > 0) return Latest(at.WorkflowChoices);
+            at = at.Parent is { Length: > 0 } parent ? every?.FirstOrDefault(each => each.Id == parent) : null;
+        }
+
+        return null;
+    }
+
+    /// <summary>The latest of a list of choices, the one standing; null where there is none or it names neither, a choice cleared.</summary>
+    private static WorkflowTaskChoice? Latest(IReadOnlyList<AskWorkflowChoiceView> choices) =>
+        choices.LastOrDefault() is { } latest && (latest.Kind ?? latest.Workflow) is not null
             ? new WorkflowTaskChoice(latest.Kind, latest.Workflow)
             : null;
 

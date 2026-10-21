@@ -1496,6 +1496,47 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// WORKFLOW1e2 (the workflow design §4.1 row 1): a quest published with no ask keeps the person's kind and workflow from its page
+    /// while it is open, the latest standing, and answers them on the quest; one that chose none answers without the field. A shape
+    /// that is not one is 400, an unknown quest 404, and one already taken 409, its run bound at its start. A quest an ask published is
+    /// 409 too: its ask's choice is the task's.
+    /// </summary>
+    [Fact]
+    public async Task A_quests_workflow_door_keeps_its_kind_and_workflow_while_it_is_open()
+    {
+        Assert.Contains(("POST", "/api/quests/{id}/workflow"), host.Routes());
+        var quest = await PublishAsync("Write the guide for the totals column");
+        async Task<JsonElement> Listed() =>
+            (await host.GetAsync("/api/quests")).Json.EnumerateArray().Single(row => row.GetProperty("id").GetString() == quest);
+        Assert.False((await Listed()).TryGetProperty("workflowChoices", out _));
+
+        var chosen = await host.PostAsync($"/api/quests/{quest}/workflow", new { kind = "docs", workflow = "docs-to-pr", words = "docs only" });
+        Assert.Equal(200, chosen.Status);
+        Assert.Contains("is of kind `docs` and follows workflow `docs-to-pr`", chosen.Json.GetProperty("message").GetString());
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/workflow", new { })).Status);
+        var choices = (await Listed()).GetProperty("workflowChoices");
+        Assert.Equal(2, choices.GetArrayLength());
+        Assert.Equal(("docs", "docs-to-pr", "docs only"),
+            (choices[0].GetProperty("kind").GetString(), choices[0].GetProperty("workflow").GetString(), choices[0].GetProperty("words").GetString()));
+        Assert.False(choices[1].TryGetProperty("kind", out var cleared) && cleared.ValueKind != JsonValueKind.Null);
+
+        Assert.Equal(400, (await host.PostAsync($"/api/quests/{quest}/workflow", new { kind = "Docs" })).Status);
+        Assert.Equal(404, (await host.PostAsync("/api/quests/ffffffffffff/workflow", new { kind = "docs" })).Status);
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" })).Status);
+        var taken = await host.PostAsync($"/api/quests/{quest}/workflow", new { kind = "docs" });
+        Assert.Equal(409, taken.Status);
+        Assert.Contains("bound to a workflow at its start", taken.Json.GetProperty("error").GetString());
+        Assert.Equal(2, (await Listed()).GetProperty("workflowChoices").GetArrayLength());
+
+        var asked = await host.PostAsync("/api/asks", new { workspace = "default", sentence = "Write the totals guide.", to = "Keeper" });
+        Assert.Equal(200, asked.Status);
+        var published = asked.Json.GetProperty("quest").GetProperty("id").GetString()!;
+        var refused = await host.PostAsync($"/api/quests/{published}/workflow", new { kind = "docs" });
+        Assert.Equal(409, refused.Status);
+        Assert.Contains("choose them on the ask", refused.Json.GetProperty("error").GetString());
+    }
+
+    /// <summary>
     /// WORKFLOW1i-a (the workflow design §4.3): an intake's publish carries a kind proposal whose reason quotes the person, and the
     /// ask answers it as <c>workflowProposals</c>, beside <c>workflowChoices</c>, which it never touches; an ask with none answers
     /// without the field. A reason the person never said is 409, and a kind that is not a kind's id 400.

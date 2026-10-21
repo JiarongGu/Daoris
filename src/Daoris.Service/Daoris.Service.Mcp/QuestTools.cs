@@ -248,6 +248,17 @@ public sealed class QuestTools(
                 }
 
                 if (quest.SetUpIn is { } environment) text.AppendLine($"  set-up step: shows the work it follows in `{environment}` for the person's review");
+
+                // The person's kind and workflow on a quest no ask published (WORKFLOW1e2): the latest stands, and the driver that
+                // starts it reads it against its workspace's kinds. Only the person sets it.
+                if (quest.WorkflowChoices.LastOrDefault() is { } workflow && (workflow.Kind ?? workflow.Workflow) is not null)
+                {
+                    text.AppendLine("  workflow: "
+                                    + string.Join(", ", new[] { workflow.Kind is { } kind ? $"kind `{kind}`" : null, workflow.Workflow is { } named ? $"`{named}`" : null }
+                                        .OfType<string>())
+                                    + ", the person's choice");
+                }
+
                 foreach (var setUp in quest.SetUps)
                 {
                     text.AppendLine($"  set up at `{Clipped.ShortCommit(setUp.Commit, 7)}`"

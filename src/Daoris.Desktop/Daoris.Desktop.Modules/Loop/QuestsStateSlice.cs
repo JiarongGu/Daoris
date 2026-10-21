@@ -38,6 +38,8 @@ public static class QuestsStateSlice
         "parent", "conflicts", "awaits", "publishedBy", "deletable", "lanes", "requirements", "answers", "held", "accepted", "short", "hold",
         "review", "setUpIn", "setUps", "verdicts", "closure", "submission", "grewFrom", "sourceReopened", "settled", "holder", "here",
         "reopened",
+        // WORKFLOW1e2: the person's kind and workflow on a quest no ask published, which the quest's page draws (WORKFLOW1g).
+        "workflowChoices",
     ];
 
     /// <summary>What the service answers of a quest that no view reads from the list: what was read of its evidence.</summary>

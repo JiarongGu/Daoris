@@ -195,7 +195,7 @@ function said(t: Translate, move: QuestMove, moves: QuestMove[], who: (machine: 
         })
         : t('quests.flow.verdictUnsaid');
     case 'published': case 'taken': case 'done': case 'declined': case 'deleted': case 'accepted': case 'bound': case 'reopened':
-    case 'rebound':
+    case 'rebound': case 'chosen':
       return t(`quests.flow.kind.${move.kind}`);
     default:
       return t('quests.flow.kind.unknown', { kind: move.kind });

@@ -23,6 +23,11 @@ with the version and date at release.
   still waiting, and `--entries` lists them all with what became of them. Its cleanup stays pending while one is still owed or an
   attempt's outcome is unsettled. A removal that keeps failing is said as
   blocked after seven days, with the plugin's words.
+- A quest published with no ask can now be given its own kind of task and workflow before it starts, with `daoris-driver quest
+  workflow <id> --kind <kind>` and/or `--workflow <id>|current` (`--clear` takes it off); the latest stands, and its work follows it
+  from its first start, as an ask's choice is followed. A quest's later steps follow it too, unless one has its own. Only you set it,
+  and a quest an ask published still follows its ask's choice. Every machine of a shared workspace, and its deployment, need this
+  version before one is made: an older one refuses a quest that carries it.
 - A workflow whose work you reopened, once its agent makes it ready again, now says that its next step waits for you to go on with
   it on the new work or abandon it, with a button to that step's page. Before, it said the work waited for your done, which that
   workflow does not take. In English and 中文.

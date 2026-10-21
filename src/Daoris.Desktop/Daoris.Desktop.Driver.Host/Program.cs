@@ -490,6 +490,24 @@ try
             return await Daoris.Driver.Host.QuestReviewConsole.RunAsync(questArgs, log);
         }
 
+        // A quest's own kind and workflow, where no ask published it (WORKFLOW1e2, D157, D156, D50): the person's door, as an ask's
+        // `--set-workflow` is; the quest page's choice is WORKFLOW1g's.
+        if (QuestWorkflowCommand.Asks(questArgs))
+        {
+            if (QuestWorkflowCommand.Read(questArgs, out var workflowProblem) is not { } workflowAsk)
+            {
+                Console.Error.WriteLine($"daoris-driver: {workflowProblem}");
+                Console.Error.WriteLine(QuestWorkflowCommand.Usage);
+                return 2;
+            }
+
+            using var workflowClient = ServiceClient.FromEnvironment();
+            var workflowConfig = DriverConfig.ResolvePath();
+            return await QuestWorkflowCommand.RunAsync(
+                workflowAsk, new AskWorkflowWorld(workflowClient, () => DriverConfig.Load(workflowConfig), DriverConfig.HomeOf(workflowConfig)),
+                Console.Out);
+        }
+
         // The person marks a quest done (QUESTCLOSE1, D126's note, D50): the quest page's *Mark done…* is the other door, and a
         // finish at a checkpoint that left its quest taken names this one.
         if (QuestDoneCommand.Asks(questArgs))
@@ -528,7 +546,8 @@ try
                 + "quest pause <id>  ·  quest resume <id>  ·  "
                 + "quest abandon <id> [--reason \"…\" --yes]  ·  quest clear <id> [--failed] [--yes]  ·  "
                 + "quest check <id> [--commit <sha>]  ·  quest review <id> reviewed|not-yet|skip [\"…\"]  ·  "
-                + "quest review <id> off [\"…\"]  ·  quest review <id> on|<environment>");
+                + "quest review <id> off [\"…\"]  ·  quest review <id> on|<environment>  ·  "
+                + "quest workflow <id> [--kind <kind>] [--workflow <id>|current]|--clear [\"…\"]");
             return 2;
         }
 

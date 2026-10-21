@@ -99,6 +99,13 @@ public enum QuestOperationKind
     /// keeps its id and its history. It moves no status.
     /// </summary>
     Rebound,
+
+    /// <summary>
+    /// The person chose the quest's kind and workflow on its page before it started (WORKFLOW1e2, the workflow design §4.1 row 1,
+    /// §4.3): a quest published with no ask has no ask's choice, so its own is the task's. It applies only while the quest is open,
+    /// since a run is bound at its first start (§4.5); the latest stands, and one naming neither clears it. It moves no status.
+    /// </summary>
+    Chosen,
 }
 
 /// <summary>
@@ -172,6 +179,7 @@ public sealed record QuestOperationRef(string Machine, long Sequence);
 /// on the quest, and a rebase loses it with the take. Null on a plain dismissal, every one from before, and every other kind, which an
 /// older build reads every dismissal as.
 /// </param>
+/// <param name="Choice">For a <see cref="QuestOperationKind.Chosen"/>: the person's kind and workflow (WORKFLOW1e2). Null on every other kind.</param>
 public sealed record QuestOperation(
     string Quest,
     QuestOperationKind Kind,
@@ -193,7 +201,8 @@ public sealed record QuestOperation(
     QuestOperationRef? Submission = null,
     string? Session = null,
     bool LostToTheReopen = false,
-    QuestOperationRef? Forward = null);
+    QuestOperationRef? Forward = null,
+    QuestWorkflowChoice? Choice = null);
 
 /// <summary>
 /// What a graph's close names its Done by (FABRIC-CLOSE1a, the fabric events design §E5): the invocation's key, which the
@@ -428,6 +437,9 @@ public static class QuestLog
         // source-free quest's or a take from before the stamp, is judged as before.
         QuestOperationKind.Taken => quest is { Status: QuestStatus.Open, SourceReopened: null }
                                     && (operation.Submission is not { } found || found == quest.GrewFrom),
+        // The person's choice only before the quest starts (WORKFLOW1e2, design §4.5): a run is bound at its first start, so a
+        // choice that reaches a quest another machine took first is no move. Every choice applies, a second the same as the first.
+        QuestOperationKind.Chosen => quest is { Status: QuestStatus.Open } && operation.Choice is not null,
         _ => quest is not null && QuestTransitions.Target(operation.Kind) is { } target
              && QuestTransitions.Allows(quest.Status, target),
     };
@@ -722,6 +734,11 @@ public static class QuestLog
             Updated = operation.At,
         },
         QuestOperationKind.Bound => quest! with { Closure = operation.Note, Updated = operation.At },
+        // The choice as the quest keeps it: when it was made is the operation's own (WORKFLOW1e2).
+        QuestOperationKind.Chosen => quest! with
+        {
+            WorkflowChoices = [.. quest.WorkflowChoices, operation.Choice! with { At = operation.At }], Updated = operation.At,
+        },
         // The latest submission is the current one, judged again from the start (FABRIC-CLOSE1a, §E5): its answers are the
         // quest's, and a yes or an evidence verdict given on the one before is not given on it. It answers the last reopen, at
         // whatever commit (FABRIC-CLOSE1c4): a submission is named by its machine and sequence, never by its commit.
@@ -791,11 +808,12 @@ public static class QuestLog
         // submission, and the step a submission published goes with it (QuestStore.RebaseAsync). A reopen once the submission it
         // names is gone or closed, or its step closed or lost; a rebind once another let the step go, or it closed (FABRIC-CLOSE1c),
         // and a publication's once another machine's take reached the step first (FABRIC-CLOSE1c15): the person's word lets that one go.
+        // A workflow choice once another machine's take started the quest first (WORKFLOW1e2): its run was bound there, at that start.
         QuestOperationKind.Dismissed or QuestOperationKind.Waited or QuestOperationKind.Deleted
             or QuestOperationKind.Accepted or QuestOperationKind.Evidenced
             or QuestOperationKind.SetUp or QuestOperationKind.Verdict
             or QuestOperationKind.Bound or QuestOperationKind.Submitted
-            or QuestOperationKind.Reopened or QuestOperationKind.Rebound => QuestLoss.Forgotten,
+            or QuestOperationKind.Reopened or QuestOperationKind.Rebound or QuestOperationKind.Chosen => QuestLoss.Forgotten,
         _ => throw new ArgumentOutOfRangeException(
             nameof(kind), kind,
             "A rebase has no rule for this kind of quest operation; .claude/knowledge/quest-operations.md names every place a kind goes."),

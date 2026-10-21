@@ -95,6 +95,8 @@ public sealed class PersonDoorTableTests
         ("POST", "/api/asks", Person),
         ("POST", "/api/asks/{id}/review", Person),
         ("POST", "/api/asks/{id}/workflow", Person),
+        // WORKFLOW1e2: a quest's own kind and workflow, where no ask published it; a local host's alone.
+        ("POST", "/api/quests/{id}/workflow", Person),
         ("POST", "/api/asks/{id}/channel", Person),
         ("POST", "/api/asks/{id}/channel/read", Person),
         ("POST", "/api/quests/{id}/accept", Person),
@@ -157,11 +159,11 @@ public sealed class PersonDoorTableTests
         // three presses: its question, its send and its clear (BRAINSTORM1a3), and the person's bring-forward of a lost take (SYNCMERGE1a),
         // and the mode an Ask Daoris conversation going on runs under, the driver's (HELPMODE1a2), and the setup a resumed driven record now runs under (AUTONOMY1b2),
         // and a quest's moves, a read (FLOWCHART1a2), and a word's attempt, the driver's (COWORK1c), and an entry's acknowledgment of a
-        // channel message, the driver's (COWORK1d).
+        // channel message, the driver's (COWORK1d), and a quest's own kind and workflow, the person's (WORKFLOW1e2).
         Assert.Equal(28, Routes.Count(route => route.Class == Open));
         Assert.Equal(4, Routes.Count(route => route.Class == Agent));
         Assert.Equal(23, Routes.Count(route => route.Class == Driver));
-        Assert.Equal(31, Routes.Count(route => route.Class == Person));
+        Assert.Equal(32, Routes.Count(route => route.Class == Person));
         // And a shared host's two channel doors, a feed and a page (SESSONE2d).
         Assert.Equal(9, Routes.Count(route => route.Class == Shared));
     }

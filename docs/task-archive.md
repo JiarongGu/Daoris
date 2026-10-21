@@ -19062,3 +19062,14 @@ unit's true end, at once for a superseded attempt's, the request and its key per
 after seven days; receipts and unsettled attempts join the unit's inventory, so it retires only once they are terminal, and the session
 branches' traces keep a unit that still owes. Proof: `ResourceCleanupTests` (canaries 34 and 36), `WorkRetirementTests` (canary 35),
 `NodeRuntimeTests`, `WorkSupervisionTests`, `WorkWireTests`. Detail: D173's FABRIC-PERFORM1d note. On Opus: about 110 tool calls.
+
+## WORKFLOW1e2 — quest-specific choice (2026-10-21, D157)
+
+> - [ ] **WORKFLOW1e2 — quest-specific choice** (service/driver; after e). Field, census, person's door and selection for quests without asks. §4.1/D156.
+
+**Outcome** 2026-10-21: built. A quest no ask published keeps the person's kind and workflow in a new quest operation, `chosen`, placed
+in every census place and applying only while open; the local host's `POST /api/quests/{id}/workflow` is the person's door, refusing a
+quest an ask published; the driver binds it as §4.1's row 1 at the run's first start, a chain's step following its nearest parent's;
+`daoris-driver quest workflow` is the terminal's door. The quest's page offers no choice until WORKFLOW1g. Proof: `QuestOperationKindsTests`,
+`LocalHostTests`, `PersonDoorTableTests`, `WorkflowPortsTests`, `WorkflowRunBindingTests`, `QuestWorkflowCommandTests`. Detail: D157's
+WORKFLOW1e2 note, D68's 2026-10-21 note. On Opus.

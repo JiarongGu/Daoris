@@ -160,7 +160,13 @@ public sealed record QuestResponse(
     // SYNCMERGE1b0 (D178 point 7), read from the log, each absent where unset and from a host before it: the conflicts settled on it, in the
     // order they were, each with how it `ended`; the machine whose take holds the step, an id no person gave, while it is taken; and, to a
     // caller on a local host's own machine, that machine's id, which tells a conflict and a take of its own from another machine's.
-    IReadOnlyList<QuestConflictResponse>? Settled = null, string? Holder = null, string? Here = null);
+    IReadOnlyList<QuestConflictResponse>? Settled = null, string? Holder = null, string? Here = null,
+    // WORKFLOW1e2 (the workflow design §4.1 row 1): the person's kind and workflow choices on a quest published with no ask, made on
+    // its page before it started, oldest first, the latest standing, one naming neither a choice cleared; an ask's shape. Absent where
+    // there is none, which is every quest an ask published, and from a host before it.
+    IReadOnlyList<AskWorkflowChoiceResponse>? WorkflowChoices = null);
+// The person's kind and workflow on a quest published with no ask, before it starts (WORKFLOW1e2): either, both, or neither to clear them.
+public sealed record QuestWorkflowRequest(string? Kind = null, string? Workflow = null, string? Words = null);
 // A quest's own reopen (FABRIC-CLOSE1c4), answered only: the reopen by its machine and sequence, the submission it reopened (`Of`),
 // the person's words, and when. FABRIC-CLOSE1c8: and the session that said the reopened submission's ready, a name as
 // `submission.session` is; absent where none did and from a host before it.
@@ -727,6 +733,7 @@ public sealed record ChangesResponse(string Since, IReadOnlyList<string> Moved);
 [JsonSerializable(typeof(QuestCloseResponse))]
 [JsonSerializable(typeof(QuestReviewRequest))]
 [JsonSerializable(typeof(SetUpStepRequest))]
+[JsonSerializable(typeof(QuestWorkflowRequest))]
 [JsonSerializable(typeof(AskReviewRequest))]
 [JsonSerializable(typeof(AskWorkflowRequest))]
 [JsonSerializable(typeof(AskRequestBody))]
