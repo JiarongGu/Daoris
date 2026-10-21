@@ -19135,3 +19135,11 @@ click opens the window whose workspace holds its session or quest (`MainWindowSc
 at its time; the desktop's host holds one such wait (`ServiceConfirmations`) and tells every window `SERVICE_CONFIRMATIONS`, which the
 page reads in place of its five-second poll, kept for an older shell and a browser. A press is said once across two windows. Detail:
 D196's NOTIFY2j note. On Opus.
+
+## NOTIFY2e — an agent's ask to hand its session over waits in What needs you (2026-10-22, D196)
+
+> - [ ] **NOTIFY2e — an agent's ask to hand its session over waits in What needs you** (modules, web-shell; after 2b; D196, the notification design §9). The ask becomes a row with its acts, counted by the bell and the taskbar, in every place `person-waits.md` lists. Proof: as §9 names it.
+
+**Outcome** 2026-10-22: built. The ask the look holds waiting is a `hand-over` row by its own id (`AttentionStateSlice.HandOverWaits`,
+`NeedsAPerson`), with *Hand over to {agent}* and *Not now* through the session's own routes, its door the session, counted by the bell
+and the taskbar; it holds work once its session's turn has ended (`attentionGroup`). Detail: D196's NOTIFY2e note. On Opus.

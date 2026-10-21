@@ -81,6 +81,8 @@
   "work.attention.ask.letRunMachine": "{{account}} joins this machine's list, which {{workspace}} runs on with every workspace that names no account of its own, so Daoris may start their work on it and spend what that account allows. In a terminal: {{command}}",
   "work.attention.helper": "an agent asks for a helper",
   "work.attention.helperWhy": "{{session}} asked for another agent’s help. Nothing is asked until you let it.",
+  "work.attention.hand-over": "an agent asks to hand over",
+  "work.attention.handOverWhy": "Its agent asks to hand {{session}} over to {{agent}}. Nothing goes until you say yes.",
   "work.attention.work": "clean-up is blocked",
   "work.attention.permission": "an agent asks permission",
   "work.attention.permissionWhy": "{{session}} waits on your answer before this tool call runs; it is refused if nobody answers within {{minutes}} minutes.",

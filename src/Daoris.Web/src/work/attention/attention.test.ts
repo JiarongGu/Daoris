@@ -8,7 +8,7 @@ import type { AccountRowFacts, NamedAccount } from './accountWords';
 import type { Attention } from './AttentionRow';
 import type { SessionGrouping } from '../groups';
 import {
-  ASKS_ONCE, ATTENTION_GROUP, attentionActs, attentionGroups, attentionInOrder, attentionOf, attentionOffers, attentionWorded,
+  ASKS_ONCE, ATTENTION_GROUP, attentionActs, attentionGroup, attentionGroups, attentionInOrder, attentionOf, attentionOffers, attentionWorded,
   type AttentionNames, needsListed, type PushedAttention,
 } from './attention';
 import { entryDetail } from '../head/milestone';
@@ -346,8 +346,21 @@ describe('the groups', () => {
       confirmation: 'holding', trust: 'holding',
       'account-wait': 'holding', 'signed-out': 'holding',
       proposal: 'word', intake: 'word', departure: 'word', 'set-up': 'word', opinion: 'word', rule: 'word', helper: 'word',
-      unanswerable: 'word', review: 'ready', work: 'word',
+      'hand-over': 'word', unanswerable: 'word', review: 'ready', work: 'word',
     });
+  });
+
+  /** NOTIFY2e: an agent's ask to hand its session over holds work once its session stands still on it, its turn ended. */
+  it('puts an ask to hand a session over in Holding work once its session stands still on it', () => {
+    expect(attentionGroup(row('hand-over', 'h1', null, { stands: true }))).toBe('holding');
+    expect(attentionGroup(row('hand-over', 'h2', null, { stands: false }))).toBe('word');
+    expect(attentionGroup(row('hand-over', 'h3', null))).toBe('word');
+    const ordered = attentionInOrder([
+      row('hand-over', 'h2', '2026-09-21T08:00:00Z', { stands: false }), row('hand-over', 'h1', '2026-09-21T09:00:00Z', { stands: true }),
+    ]);
+    expect(ordered.map(({ id }) => id)).toEqual(['h1', 'h2']);
+    expect(attentionGroups(attentionOf(ordered)).map(({ group, items }) => [group, items.map(({ id }) => id)]))
+      .toEqual([['holding', ['h1']], ['word', ['h2']]]);
   });
 
   /**
@@ -472,6 +485,35 @@ describe('the groups', () => {
     expect(words(row('helper', 'a2', null, { where: '', session: 'g0n3', title: 'Is the cap right?' })))
       .toMatchObject({ where: '', detail: '#g0n3 asked for another agent’s help. Nothing is asked until you let it.' });
     expect(attentionActs(asked)).toEqual(['let-ask', 'not-now']);
+  });
+
+  /**
+   * NOTIFY2e: an agent's ask to hand its session over, by the ask's own id: its note's first line, the session as Sessions names it,
+   * and the agent as the roster names it, with *Hand over to {agent}* and *Not now*, in each language.
+   */
+  it('words an agent’s ask to hand its session over, with the session, the agent and its presses', async () => {
+    const tools = byTool([{ harness: 'codex-acp', accountOf: 'codex', present: true, product: 'Codex', signsIn: true, profiles: [] }]);
+    const pushed = row('hand-over', 'h1', '2026-09-21T09:30:00Z', {
+      where: 'engine', session: 'c0nv0001', title: 'Near my limit.', agent: 'codex-acp', stands: true,
+    });
+    const names = { sessions: [session({ id: 'c0nv0001', quest: '7a82cc' })], quests: [quest()], tools };
+    const asked = words(pushed, names);
+    expect(asked).toMatchObject({
+      id: 'h1', title: 'Near my limit.', where: 'engine', since: '2026-09-21T09:30:00Z', session: 'c0nv0001', agent: 'Codex', stands: true,
+      detail: 'Its agent asks to hand Expose a streaming budget on the chunk API over to Codex. Nothing goes until you say yes.',
+    });
+    expect(attentionActs(asked)).toEqual(['hand-over', 'keep-agent']);
+    // An agent the roster does not hold is named by its id; a session the page does not hold, by its.
+    expect(words(row('hand-over', 'h2', null, { where: '', session: 'g0n3', title: 'Gone.', agent: 'dsh' })))
+      .toMatchObject({ agent: 'dsh', detail: 'Its agent asks to hand #g0n3 over to dsh. Nothing goes until you say yes.' });
+    // With no agent named there is nobody to hand it to: no yes is offered.
+    expect(attentionActs(words(row('hand-over', 'h3', null, { session: 'g0n3', title: 'Gone.' })))).toEqual([]);
+    await i18n.changeLanguage('zh');
+    try {
+      expect(words(pushed, names).detail).toBe('Expose a streaming budget on the chunk API 的智能体要求把它转交给 Codex。你同意之前不会转交。');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 
   /**
@@ -633,6 +675,8 @@ describe('what a row offers', () => {
     expect(attentionActs(offered('rule'))).toEqual(['accept-rule', 'decline-rule']);
     // MIXAGENT2c: an agent's ask for a helper is answered as its session's page answers it, in one press each.
     expect(attentionActs(offered('helper'))).toEqual(['let-ask', 'not-now']);
+    // NOTIFY2e: an agent's ask to hand its session over, to the agent the look named.
+    expect(attentionActs(offered('hand-over', { agent: 'Codex' }))).toEqual(['hand-over', 'keep-agent']);
   });
 
   /** Answering a park or an intake's question, and accepting a review, need reading: each is its door alone. */

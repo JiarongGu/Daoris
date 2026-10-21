@@ -37,7 +37,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 125 | 2371 |
 | `src/Daoris.Web/src/agents/agents.test.ts` | 47 | 804 |
 | `src/Daoris.Web/src/app/App.test.tsx` | 45 | 866 |
-| `src/Daoris.Web/src/app/App.tsx` | 83 | 1463 |
+| `src/Daoris.Web/src/app/App.tsx` | 83 | 1466 |
 | `src/Daoris.Web/src/app/pushedState.test.tsx` | 63 | 1325 |
 | `src/Daoris.Web/src/bridge/sessions/sessions.ts` | 44 | 868 |
 | `src/Daoris.Web/src/data/api.ts` | 52 | 867 |
@@ -58,8 +58,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 82 | 1564 |
 | `src/Daoris.Web/src/work/WorkFrame.tsx` | 139 | 2454 |
 | `src/Daoris.Web/src/work/WorkFrame.words.test.tsx` | 48 | 888 |
-| `src/Daoris.Web/src/work/attention/AttentionBand.test.tsx` | 41 | 682 |
-| `src/Daoris.Web/src/work/attention/attention.test.ts` | 44 | 742 |
+| `src/Daoris.Web/src/work/attention/AttentionBand.test.tsx` | 44 | 721 |
+| `src/Daoris.Web/src/work/attention/attention.test.ts` | 47 | 786 |
 | `src/Daoris.Web/src/work/conversation/ConversationView.test.tsx` | 71 | 1334 |
 | `src/Daoris.Web/src/work/conversation/ConversationView.tsx` | 42 | 849 |
 | `src/Daoris.Web/src/work/conversation/conversation.test.ts` | 62 | 1173 |
@@ -88,7 +88,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Conversations/ContinuationTests.cs` | 42 | 786 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Conversations/DrivenInboxTests.cs` | 44 | 966 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Conversations/HandOverTests.cs` | 43 | 774 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 125 | 1967 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 125 | 1968 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpFactsTests.cs` | 63 | 1203 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpSettingProposalsTests.cs` | 53 | 784 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/empty.md` | 49 | 361 |
@@ -174,7 +174,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleConversationTests.cs` | 52 | 953 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleLinesTests.cs` | 41 | 682 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleSessionsTests.cs` | 70 | 1187 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Loop/AttentionStateSliceTests.cs` | 85 | 1519 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Loop/AttentionStateSliceTests.cs` | 90 | 1588 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/InstancePipeTests.cs` | 43 | 813 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/StatePublisherTests.cs` | 41 | 804 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/AgentsRoutes.cs` | 44 | 768 |

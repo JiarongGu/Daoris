@@ -968,6 +968,9 @@ export function App() {
     // An agent's ask for a helper opens the session that asked, whose head and foot carry its yes and no with its other waits
     // (MIXAGENT2c, D168). A shell's alone: the asks are this machine's files.
     ...(attached ? { helper: (item: Attention) => { if (item.session) open('sessions', item.session); } } : {}),
+    // An agent's ask to hand its session over opens that session, whose foot carries its note whole with its yes and no (NOTIFY2e).
+    // A shell's alone: the asks are this machine's files.
+    ...(attached ? { 'hand-over': (item: Attention) => { if (item.session) open('sessions', item.session); } } : {}),
     // A tool call a session holds for the person's answer opens that session, whose head and foot carry its presses with its other
     // waits (AUTONOMY1b3c). A shell's alone: the holds are this machine's driver's.
     ...(attached ? { permission: (item: Attention) => { if (item.session) open('sessions', item.session); } } : {}),

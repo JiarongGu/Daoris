@@ -65,6 +65,9 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   // An agent's ask for a helper that waits on the person's yes (MIXAGENT2c, D163 point 3): the session that asked goes on
   // meanwhile, as one that proposed a rule does, so it holds nothing up.
   helper: 'word',
+  // An agent's ask to hand its session over (NOTIFY2e, MIXAGENT1c): while its turn runs it holds nothing up yet; once its turn has
+  // ended the session stands still on the person's yes or no, and the row holds work (`attentionGroup`).
+  'hand-over': 'word',
   // A unit only the person's press settles (FABRIC-MILESTONE1b, the fabric events design §D0; OVERVIEWNOISE1b): one whose owner
   // nothing records, or a tree its session recorded that no branch record follows. Nothing running is held by it, and nothing of it
   // is removed until they press. A guard the look keeps a branch by is said on its session's page, never here.
@@ -72,6 +75,14 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   unanswerable: 'word',
   review: 'ready',
 };
+
+/**
+ * A row's group: its kind's, but an agent's ask to hand its session over whose session stands still on it, which holds work
+ * (NOTIFY2e). The band, its order and Overview's summary read this one answer.
+ */
+export function attentionGroup(row: { kind: AttentionKind; stands?: boolean }): AttentionGroup {
+  return row.kind === 'hand-over' && row.stands ? 'holding' : ATTENTION_GROUP[row.kind] ?? 'word';
+}
 
 /**
  * What *What needs you* lists and the bell counts (NOTIFY2b §2.2; NEEDSSCOPE1): every row of the window's scope but a press's own,
@@ -88,7 +99,7 @@ export function needsListed<T extends { kind: string }>(rows: readonly T[]): T[]
  */
 export function attentionGroups(items: readonly Attention[]): { group: AttentionGroup; items: Attention[] }[] {
   return GROUP_ORDER
-    .map((group) => ({ group, items: items.filter((item) => ATTENTION_GROUP[item.kind] === group) }))
+    .map((group) => ({ group, items: items.filter((item) => attentionGroup(item) === group) }))
     .filter(({ items: held }) => held.length > 0);
 }
 
@@ -118,6 +129,8 @@ export type AttentionActId =
   | 'publish' | 'choose' | 'retry' | 'approve' | 'refuse' | 'trust' | 'accept-departure' | 'accept-rule' | 'decline-rule'
   | 'sign-in' | 'sign-in-new' | 'read' | 'let-run' | 'reviewed' | 'not-yet' | 'show-again' | 'opinion-again' | 'opinion-anyway'
   | 'let-ask' | 'not-now'
+  // NOTIFY2e: the person's yes or no to an agent's ask to hand its session over: *Hand over to {agent}*, *Not now*.
+  | 'hand-over' | 'keep-agent'
   // AUTONOMY1b3c: the person's answer to a tool call held for them, one per choice its agent offered.
   | 'allow-once' | 'refuse-once' | 'refuse-always'
   // COWORK1e: the person's word on a third answer alone held for them: *Go on with this answer*, *Not now*.
@@ -238,6 +251,9 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
     case 'rule': return plain('accept-rule', 'decline-rule');
     // An agent's ask for a helper (MIXAGENT2c): its session's page's own yes and no, each one press, as they are there.
     case 'helper': return plain('let-ask', 'not-now');
+    // An agent's ask to hand its session over (NOTIFY2e): its session's foot's own yes and no, each one press, where the look named
+    // the agent it goes to.
+    case 'hand-over': return item.agent ? plain('hand-over', 'keep-agent') : [];
     // A tool call held for the person (AUTONOMY1b3c): its session's card's own presses, one each, as `PermissionAsks` says why.
     case 'permission': return permissionOffers(item);
     // A third answer alone held for the person (COWORK1e, §8.3): its session's page's own two presses, each one press.
@@ -317,8 +333,12 @@ export type PushedAttention = {
   trust?: TrustHold;
   quest?: string;
   proposal?: RuleProposal;
-  /** A title that is a value: a helper's question's first line, a unit's branch or its tree's folder. */
+  /** A title that is a value: a helper's question's first line, a hand-over ask's note's, a unit's branch or its tree's folder. */
   title?: string;
+  /** The agent an ask to hand a session over goes to, as the driver's look named it (NOTIFY2e). */
+  agent?: string | null;
+  /** Whether the session that asked to be handed over stands still on it, its turn no longer running (NOTIFY2e). */
+  stands?: boolean;
   permission?: PermissionWait;
   /** A third answer alone held for the person (COWORK1e): its wait whole, the agent that answered among it. */
   answer?: AnswerWait;
@@ -364,12 +384,12 @@ export type AttentionPushed = {
 /**
  * Each kind's place among the kinds of its group when two waited as long (design §6.2's order of kinds): the accounts', parks,
  * parked quests, go-aheads, held calls, held answers (COWORK1e), a terminal's presses (CONFIRMSEEN1) and folders; then asks,
- * departures, set-ups, second opinions, widenings, helpers, a unit's blocked clean-up, a held attempt and quests nobody can take;
+ * departures, set-ups, second opinions, widenings, helpers, hand-overs, a unit's blocked clean-up, a held attempt and quests nobody can take;
  * then review.
  */
 const KIND_ORDER: readonly AttentionKind[] = [
   'account-wait', 'signed-out', 'parked', 'parked-quest', 'go-ahead', 'permission', 'answer', 'confirmation', 'trust',
-  'proposal', 'departure', 'set-up', 'opinion', 'rule', 'helper', 'work', 'unanswerable', 'review',
+  'proposal', 'departure', 'set-up', 'opinion', 'rule', 'helper', 'hand-over', 'work', 'unanswerable', 'review',
 ];
 
 /** A row's place among its group's kinds; an intake is an ask's, and a held attempt comes after a unit's blocked clean-up. */
@@ -384,7 +404,7 @@ function kindRank(row: PushedAttention): number {
  * of kinds; then the row's key. A place in the list is never pushed (D182's PUSH1c3a note): one move would push every row after it.
  */
 export function attentionInOrder(rows: readonly PushedAttention[]): PushedAttention[] {
-  const groupOf = (row: PushedAttention) => GROUP_ORDER.indexOf(ATTENTION_GROUP[row.kind] ?? 'word');
+  const groupOf = (row: PushedAttention) => GROUP_ORDER.indexOf(attentionGroup(row));
   const key = (row: PushedAttention) => `${row.kind}:${row.id}`;
   return [...rows].sort((a, b) => groupOf(a) - groupOf(b)
     || (a.since === null || b.since === null ? Number(a.since === null) - Number(b.since === null) : a.since.localeCompare(b.since))
@@ -527,6 +547,18 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         detail: i18n.t('work.attention.helperWhy', { session: named(row.session) }),
         session: row.session ?? null,
       };
+    // NOTIFY2e: its note's first line as the agent wrote it, the session as Sessions names it, and the agent as the roster names it.
+    case 'hand-over': {
+      const agent = row.agent ? agentNamed(row.agent, names.tools) : null;
+      return {
+        ...base,
+        title: row.title ?? row.id,
+        detail: i18n.t('work.attention.handOverWhy', { session: named(row.session), agent: agent ?? '' }),
+        session: row.session ?? null,
+        ...(agent ? { agent } : {}),
+        stands: row.stands === true,
+      };
+    }
     case 'permission': {
       // The bound as the driver answered it for this request (PERMUNTIL1); a host that does not say leaves it out.
       const minutes = row.permission ? boundMinutes(row.permission) : null;
@@ -588,6 +620,12 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
     default:
       return { ...base, title: row.title ?? row.id };
   }
+}
+
+/** An agent's door by what a person calls it (the frame's hand-over roster's): its product, else its tool's, else its id. */
+function agentNamed(harness: string, tools: readonly Tool[] = []): string {
+  const door = tools.flatMap((tool) => tool.doors.map((each) => ({ tool, door: each }))).find((each) => each.door.harness === harness);
+  return door?.door.product || door?.tool.product || harness;
 }
 
 /**

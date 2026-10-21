@@ -390,6 +390,31 @@ describe("The taskbar's count", () => {
   });
 
   /**
+   * NOTIFY2e (D196 point 8): an agent's ask to hand its session over was drawn only on its session's page, and counted nowhere; the
+   * bell and the taskbar count it as the band lists it, in each language.
+   */
+  it('counts an agent’s ask to hand its session over, as the band lists it', async () => {
+    start([...PARKS, { kind: 'hand-over', id: 'h1', since: '2026-10-01T11:00:00Z', where: 'engine', session: 'c4a7c4a7', title: 'Near my limit.', agent: 'codex-acp', stands: true }]);
+
+    // The two parks, and the ask.
+    await waitFor(() => expect(within(bell()).getByText('3')).toBeInTheDocument());
+    await waitFor(() => expect(badges().at(-1)).toEqual(
+      ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 3, description: '3 waiting on you', order: expect.any(Number) } }]));
+  });
+
+  it('counts an agent’s ask to hand its session over in Chinese', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      start([...PARKS, { kind: 'hand-over', id: 'h1', since: '2026-10-01T11:00:00Z', where: 'engine', session: 'c4a7c4a7', title: 'Near my limit.', agent: 'codex-acp' }]);
+
+      await waitFor(() => expect(badges().at(-1)).toEqual(
+        ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 3, description: '3 个等你处理', order: expect.any(Number) } }]));
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
+  /**
    * COWORK1e (D188 point 4; the message-urgency design §8.3): a third answer alone held for the person stands its line still until they
    * answer, so the badge counts it as the band lists it.
    */
