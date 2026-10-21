@@ -35,7 +35,9 @@ public sealed class SecondaryWindowHost(
     WaitingCount? waiting = null,
     // The loop each other main window's focus is told to, as the first one's is (FABRIC-END6a, §A4.3): a moment to ask about an open pull
     // request, bounded by D148's minute in the driver. The container hands it, as it hands the first window its own.
-    DriverLoop? focused = null) : ISecondaryWindows, IDisposable
+    DriverLoop? focused = null,
+    // Which main window's taskbar button a terminal's press waiting unshown lights (NOTIFY2b): each other main window's focus, told.
+    PressFlash? flash = null) : ISecondaryWindows, IDisposable
 {
     private bool _hooked;
 
@@ -118,6 +120,13 @@ public sealed class SecondaryWindowHost(
                 // FABRIC-END6a: another main window's focus is the person looking at the platform, as the first one's is; a utility
                 // window's (the monitor, a detached session) is not. A hint that returns at once, so this window's thread waits on nothing.
                 if (focused is not null && SecondaryWindow.IsMain(name)) form.Activated += (_, _) => focused.Focused();
+                // NOTIFY2b: another main window coming forward is the person at a main window, which stops a lit button and is the
+                // one lit next; going behind leaves none in front. A utility window's focus moves nothing here.
+                if (flash is not null && SecondaryWindow.IsMain(name))
+                {
+                    form.Activated += (_, _) => flash.CameForward(name);
+                    form.Deactivate += (_, _) => flash.WentBehind(name);
+                }
                 // Counted once it is on the screen, since only a window that loaded is ever told closed: one whose making
                 // failed would otherwise keep a put-away first main window hidden with nothing else open (MAINWINDOWS2).
                 form.Load += (_, _) =>

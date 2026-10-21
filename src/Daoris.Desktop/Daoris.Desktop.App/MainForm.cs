@@ -60,7 +60,8 @@ public sealed class MainForm : OptimizedForm
         ILogger<ChromiumView>? viewLog = null,
         UiStallWatch? watch = null,
         Daoris.Driver.MachineLog? log = null,
-        MainWindows? mains = null)
+        MainWindows? mains = null,
+        PressFlash? flash = null)
         : base(new OptimizedFormOptions
         {
             FramelessChrome = true,
@@ -149,6 +150,20 @@ public sealed class MainForm : OptimizedForm
         };
         // FABRIC-END6: the window's focus is a moment to ask about an open pull request (§A4.3); the driver bounds it to D148's minute.
         Activated += (_, _) => _driver.Focused();
+        // NOTIFY2b (the notification design §3.3): a terminal's press waiting unshown lights the taskbar button of the main window last
+        // in front while none is; this window's coming forward stops it. What waits is told by the pipe, on the thread that changed it.
+        if (flash is not null)
+        {
+            Activated += (_, _) => flash.CameForward(MainWindows.First);
+            Deactivate += (_, _) => flash.WentBehind(MainWindows.First);
+            var told = eventBus.Subscribe(StatePublisher.Module, PipeConfirmations.Event, message =>
+            {
+                if (message.Payload is PipeConfirmationsNow now) flash.Told(now);
+                return Task.CompletedTask;
+            });
+            FormClosed += (_, _) => told.Dispose();
+        }
+
         FormClosed += (_, _) => _notifier.Dispose();
         FormClosed += (_, _) => _badge.Dispose();
 
