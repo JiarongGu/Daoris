@@ -698,6 +698,16 @@ try
         return exit;
     }
 
+    // The disk space from a terminal (KEEP1c, D195 point 5, D50): This Daoris's Disk space card is the other door to the same reader.
+    // Reads only, and needs no service: each kind's size is this process's walk, `--measure`'s.
+    if (args is ["space", .. var spaceArgs])
+    {
+        var spaceHome = DaorisHome.Resolve() ?? throw new DriverException(DaorisHome.Sentence);
+        var exit = SpaceCommand.Run(spaceArgs, SpaceWorld.OfThisTerminal(spaceHome), out var spaceSaid);
+        (exit == 2 ? Console.Error : Console.Out).Write(spaceSaid);
+        return exit;
+    }
+
     // The machine log from a terminal (LOG1c, D50): Settings → Logs is the other door to the same reading.
     if (args is ["logs", .. var logsArgs])
     {

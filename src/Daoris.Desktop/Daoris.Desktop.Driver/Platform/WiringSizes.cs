@@ -13,6 +13,12 @@ public sealed record WiringBudget(int Files, TimeSpan Time)
     public static WiringBudget Default { get; } = new(400_000, TimeSpan.FromSeconds(60));
 }
 
+/// <summary>
+/// One kind's places walked (<see cref="WiringSizes.MeasurePlaces"/>): their bytes and files, why the walk stopped short or read only
+/// part (<c>budget</c>, <c>cancelled</c> or <c>unreadable</c>; null where whole), and each group's bytes where groups were asked.
+/// </summary>
+public sealed record PlacesMeasure(long Bytes, int Files, string? Partial, IReadOnlyDictionary<string, long> Groups);
+
 /// <summary>One measure of a Daoris folder: each entry's bytes, each name its table does not hold, and each top folder walked whole.</summary>
 public sealed class SizeReading
 {
@@ -211,6 +217,58 @@ public sealed class WiringSizes
         return (bytes, newest is { } at ? new DateTimeOffset(DateTime.SpecifyKind(at, DateTimeKind.Utc)) : null, failed || walk.Stopped is not null);
     }
 
+    /// <summary>
+    /// One kind's places walked together under one budget (KEEP1c, the cleanup design §4.3): each a folder or a file, none followed
+    /// through a link, a place under <paramref name="skip"/> passed over (another kind's), so one large kind never starves the rest.
+    /// Where <paramref name="groupDepth"/> is more than none, each file's bytes are kept too under its first parts below its place,
+    /// joined by <c>/</c>: the set-aside kind's folders, which its <i>next</i> reads.
+    /// </summary>
+    public static PlacesMeasure MeasurePlaces(
+        IReadOnlyList<string> places, IReadOnlyCollection<string> skip, WiringBudget budget, CancellationToken cancellationToken, int groupDepth = 0)
+    {
+        var skipped = new HashSet<string>(skip.Select(Key), StringComparer.Ordinal);
+        var walk = new Walk(budget, cancellationToken) { Skip = path => skipped.Contains(Key(path)) };
+        var bytes = 0L;
+        var groups = new Dictionary<string, long>(StringComparer.Ordinal);
+        var failed = false;
+        foreach (var place in places)
+        {
+            if (walk.Stopped is not null) break;
+            if (skipped.Contains(Key(place))) continue;
+            try
+            {
+                var file = new FileInfo(place);
+                if (file.Exists)
+                {
+                    // A link is never followed, a file one included.
+                    if (file.Attributes.HasFlag(FileAttributes.ReparsePoint)) continue;
+                    walk.Count();
+                    bytes += file.Length;
+                    continue;
+                }
+
+                if (!Directory.Exists(place) || new DirectoryInfo(place).Attributes.HasFlag(FileAttributes.ReparsePoint)) continue;
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                failed = true;
+                continue;
+            }
+
+            walk.Files(place, (parts, size) =>
+            {
+                bytes += size;
+                if (groupDepth > 0 && parts.Length > groupDepth)
+                {
+                    var group = string.Join('/', parts.Take(groupDepth));
+                    groups[group] = groups.GetValueOrDefault(group) + size;
+                }
+            }, _ => failed = true);
+        }
+
+        return new(bytes, walk.Counted, walk.Stopped ?? (failed ? "unreadable" : null), groups);
+    }
+
     /// <summary>Whether a name at the home's top is held by an entry of the table: a name that is not is left over.</summary>
     public static bool Held(string name) => Patterns().Any(pattern => pattern.Parts[0].IsMatch(name));
 
@@ -299,6 +357,12 @@ public sealed class WiringSizes
         /// <summary>Told each file counted, for a walk that wants more of it than its size (OWNSPACE2's newest file).</summary>
         public Action<FileInfo>? Seen { get; init; }
 
+        /// <summary>A path the walk passes over, folder or file, by its full path (KEEP1c: another kind's place).</summary>
+        public Func<string, bool>? Skip { get; init; }
+
+        /// <summary>A file counted outside <see cref="Files"/>, a place that is itself a file.</summary>
+        public void Count() => Counted++;
+
         /// <summary>Each file under <paramref name="folder"/>, by its parts under it; a folder that cannot be read, by its parts.</summary>
         public void Files(string folder, Action<string[], long> file, Action<string[]> unreadable)
         {
@@ -327,6 +391,7 @@ public sealed class WiringSizes
                     string[] under = [.. parts, child.Name];
                     // 🔴 A link or a junction is never followed: it may lead outside the folder, or back into it.
                     if (child.Attributes.HasFlag(FileAttributes.ReparsePoint)) continue;
+                    if (Skip is { } skip && skip(child.FullName)) continue;
                     if (child is DirectoryInfo)
                     {
                         pending.Push((child.FullName, under));

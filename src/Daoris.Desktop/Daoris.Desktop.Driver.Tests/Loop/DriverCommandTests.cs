@@ -396,6 +396,21 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
+    /// KEEP1c (the cleanup design §4.4, D50): the <i>Disk space</i> card's terminal twin is a door the usage names, routed by the host to
+    /// the library's reader, which <c>SystemSpaceTests</c> holds, over this terminal's world.
+    /// </summary>
+    [Fact]
+    public void The_usage_names_the_space_and_the_host_routes_it_to_the_librarys_reader()
+    {
+        Assert.Contains("\n  space [--json] [--measure]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
+        Assert.Equal("usage: daoris-driver space [--json] [--measure]", SpaceCommand.Usage);
+
+        var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
+        Assert.Contains("if (args is [\"space\", .. var spaceArgs])", program);
+        Assert.Contains("SpaceCommand.Run(spaceArgs, SpaceWorld.OfThisTerminal(", program);
+    }
+
+    /// <summary>
     /// WSSETUP5 (D124 §3.1, §4.5): following each line when the person asks is a door the usage names, routed by the host to
     /// its console with this host's log, and spoken in the library's words, which <c>RegisterCommandTests</c> holds.
     /// </summary>
