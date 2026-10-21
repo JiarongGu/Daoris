@@ -8,21 +8,23 @@ import { withRotation, withUse } from '../src/accounts/rotation.ts';
 import { addKeyAccount, profileHome, readHarnessSettings, replaceKeyAccount, withDefault, writeHarnessSettings } from '../src/agents/toolchain.ts';
 import { homeEntry } from '../src/platform/home.ts';
 import { disablePlugin, enablePlugin } from '../src/plugins/plugins.ts';
+import { readRemoteFile, readRemotes, withoutRemote, withRemote, writeRemoteFile } from '../src/service/remotemap.ts';
 import { makeFixture } from './_fixture.ts';
 
 /**
- * KEEPALL1 and KEEPALL1b (FIX-LOG 2026-10-17): every home file a door edits keeps what its writer does not own, as `driver.json`'s writers do
+ * KEEPALL1, KEEPALL1b and KEEPALL1e (FIX-LOG 2026-10-17): every home file a door edits keeps what its writer does not own, as `driver.json`'s writers do
  * (`driver/configkeeps.test.ts`). One table both twins read, `fixtures/home-files-keep.json`, row for row with the driver's
  * `HomeFilesKeepTests`.
  */
 
 type Edit = {
   op: string; id?: string; scope?: 'machine' | 'workspace' | 'repository'; name?: string; list?: 'allow' | 'ask' | 'deny'; rule?: string; on?: boolean;
-  agent?: string; account?: string; key?: string; workspace?: string; use?: string; version?: string; order?: string[];
+  agent?: string; account?: string; key?: string; workspace?: string; use?: string; version?: string; order?: string[]; url?: string;
 };
 type Change = { from: string[]; to: string[] };
 type Row = {
   name: string; file: string; edit: Edit; changes: Change[]; start?: Change[]; between?: Change[]; crlf?: boolean; refused?: string; only?: 'cli' | 'driver';
+  reads?: Record<string, { url: string; key: string }>;
 };
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -90,6 +92,16 @@ function applied(home: string, row: Row, between: () => void): void {
     writeHarnessSettings(path, edited);
     return;
   }
+  if (row.file === 'remotes.json') {
+    const path = join(home, row.file);
+    const read = readRemoteFile(path);
+    between();
+    const edited = edit.op === 'remote-set' ? withRemote(read, edit.workspace!, { url: edit.url!, key: edit.key! })
+      : edit.op === 'remote-remove' ? withoutRemote(read, edit.workspace!)
+        : assert.fail(`the table names an edit this test does not make: ${edit.op}`);
+    writeRemoteFile(path, edited);
+    return;
+  }
   throw new Error(`the table names a file this test does not edit: ${row.file}`);
 }
 
@@ -107,5 +119,10 @@ TABLE.rows.forEach((row, index) => {
     if (row.refused === undefined) write();
     else assert.throws(write, (error: Error) => error.message.includes(row.refused!), row.name);
     assert.equal(fx.read(row.file), changed(row.file, row.changes, row.crlf));
+    // KEEPALL1e: what the CLI's reader reads from it, as the driver's and the service's do.
+    if (row.reads !== undefined) {
+      const remotes = readRemotes({ DAORIS_REMOTE_CONFIG: join(fx.root, row.file) }).remotes;
+      assert.deepEqual(Object.fromEntries(remotes), row.reads, row.name);
+    }
   });
 });

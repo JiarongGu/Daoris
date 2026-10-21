@@ -60,12 +60,9 @@ public sealed class RemotesModule(IEventBus events, DriverLoop loop) : ModuleBas
                         ("workspace", workspace));
                 }
 
-                var remotes = new Dictionary<string, RemoteTarget>(
-                    RemoteTarget.LoadFile(Path), StringComparer.OrdinalIgnoreCase)
-                {
-                    [workspace] = new(url, key),
-                };
-                RemoteTarget.Save(Path, remotes);
+                // The edit alone, made onto the file as it stands: what the page does not own stays (KEEPALL1e).
+                var path = Path;
+                Kept(() => RemoteFile.Load(path).With(workspace, new(url, key)).Save(path));
 
                 // The loop re-reads the map on its next pass; nudging means the person sees the first
                 // sync of a workspace they just wired, rather than waiting out a poll interval.
@@ -77,17 +74,31 @@ public sealed class RemotesModule(IEventBus events, DriverLoop loop) : ModuleBas
             {
                 var workspace = RemoteTarget.Workspace(
                     PayloadHelper.GetRequiredValue<string>(request.Payload, "workspace"));
-                var remotes = new Dictionary<string, RemoteTarget>(
-                    RemoteTarget.LoadFile(Path), StringComparer.OrdinalIgnoreCase);
-
-                // False is an answer, not an error: the end state is the one that was asked for.
-                if (remotes.Remove(workspace)) RemoteTarget.Save(Path, remotes);
+                // Nothing to take is an answer, not an error: the end state is the one that was asked for, and nothing is written.
+                var path = Path;
+                Kept(() => RemoteFile.Load(path).Without(workspace).Save(path));
                 loop.Nudge();
                 return Task.FromResult<object?>(State());
             }
 
             default:
                 throw UnknownType(request);
+        }
+    }
+
+    /// <summary>
+    /// An edit of the map, its refusal said with its sentence (a file that does not read, a key written twice, a lock held throughout),
+    /// as the driver's other doors say theirs; nothing was written.
+    /// </summary>
+    private static void Kept(Action edit)
+    {
+        try
+        {
+            edit();
+        }
+        catch (Exception error) when (error is DriverException or IOException)
+        {
+            throw Refusals.Because(Refusals.DriverRefused, error.Message, ("message", error.Message));
         }
     }
 

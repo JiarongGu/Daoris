@@ -163,12 +163,133 @@ public sealed record RemoteTarget(string Url, string Key)
     public static IReadOnlyDictionary<string, RemoteTarget> LoadFile(string path) => Load(_ => null, path);
 
     /// <summary>
-    /// Write the map back — atomically, beside-then-rename, like every write in this family: a driver
-    /// tick may read this file at any moment, and a torn read must never be what it finds.
+    /// Write a map built in memory whole — atomically, beside-then-rename, like every write in this family: a driver
+    /// tick may read this file at any moment, and a torn read must never be what it finds. A door that edits the file
+    /// the person has edits it through <see cref="RemoteFile"/>, which keeps what it does not own (KEEPALL1e).
     /// </summary>
     public static void Save(string path, IReadOnlyDictionary<string, RemoteTarget> remotes)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
         AtomicFile.WriteText(path, Json(remotes));
     }
+}
+
+/// <summary>
+/// The map's file as an editor reads it (KEEPALL1e, D173's KEEPALL1e note): every entry as the file holds it, in its order, whole or
+/// not, and whether a file was there. An edit sets or takes one workspace's entry, and <see cref="Save"/> makes only that onto the file
+/// as it stands (<see cref="JsonKeeping.Save"/>), so another key, an entry's own unknown keys, an entry missing half its pair, numbers
+/// as written and CRLF all stay. Rebuilt from the remotes read, the file lost each of them, and one that did not read was written over
+/// with the edit's entry alone. The CLI's twin is <c>remotemap.ts</c>' <c>readRemoteFile</c>; both are held to
+/// <c>test/fixtures/home-files-keep.json</c>, which the service's reader (<c>RemoteConfig</c>) reads too.
+/// </summary>
+public sealed record RemoteFile(
+    bool Found,
+    IReadOnlyList<KeyValuePair<string, JsonElement>> Read,
+    IReadOnlyList<KeyValuePair<string, JsonElement>> Entries)
+{
+    /// <summary>
+    /// The file at <paramref name="path"/> as it stands; no entry for none, or for a text that does not read, which <see cref="Save"/>
+    /// then refuses to write over. A key written twice is read as the reader reads it, its last value in its first place.
+    /// </summary>
+    public static RemoteFile Load(string path)
+    {
+        if (!File.Exists(path)) return new(false, [], []);
+        List<KeyValuePair<string, JsonElement>> entries = [];
+        try
+        {
+            using var document = JsonDocument.Parse(JsonKeeping.Once(File.ReadAllText(path)));
+            if (document.RootElement.ValueKind == JsonValueKind.Object)
+            {
+                entries = [.. document.RootElement.EnumerateObject().Select(entry => KeyValuePair.Create(entry.Name, entry.Value.Clone()))];
+            }
+        }
+        catch (JsonException)
+        {
+        }
+
+        return new(true, entries, entries);
+    }
+
+    /// <summary>The remotes the entries name, as every reader reads them (<see cref="RemoteTarget.Parse"/>).</summary>
+    public IReadOnlyDictionary<string, RemoteTarget> Remotes => RemoteTarget.Parse(Written(Entries));
+
+    /// <summary>
+    /// <paramref name="workspace"/> wired to <paramref name="target"/>: the entry the readers read for it changed where it stands, else the
+    /// last one held under its name in any case (an entry missing half its pair, completed), else a new entry, last. Its own other keys stay.
+    /// </summary>
+    public RemoteFile With(string workspace, RemoteTarget target)
+    {
+        var held = Holding(workspace).ToList();
+        var at = held.LastOrDefault(index => Whole(Entries[index].Value), held.Count > 0 ? held[^1] : -1);
+        var value = Element(writer =>
+        {
+            writer.WriteStartObject();
+            bool url = false, key = false;
+            if (at >= 0 && Entries[at].Value.ValueKind == JsonValueKind.Object)
+            {
+                foreach (var field in Entries[at].Value.EnumerateObject())
+                {
+                    if (field.NameEquals("url"))
+                    {
+                        writer.WriteString("url", target.Url);
+                        url = true;
+                    }
+                    else if (field.NameEquals("key"))
+                    {
+                        writer.WriteString("key", target.Key);
+                        key = true;
+                    }
+                    else field.WriteTo(writer);
+                }
+            }
+
+            if (!url) writer.WriteString("url", target.Url);
+            if (!key) writer.WriteString("key", target.Key);
+            writer.WriteEndObject();
+        });
+
+        var entries = Entries.ToList();
+        if (at >= 0) entries[at] = KeyValuePair.Create(entries[at].Key, value);
+        else entries.Add(KeyValuePair.Create(RemoteTarget.Workspace(workspace), value));
+        return this with { Entries = entries };
+    }
+
+    /// <summary><paramref name="workspace"/> no longer wired: every entry the readers read under its name in any case taken, whole.</summary>
+    public RemoteFile Without(string workspace)
+    {
+        var taken = Holding(workspace).Where(index => Whole(Entries[index].Value)).ToHashSet();
+        return taken.Count == 0 ? this : this with { Entries = [.. Entries.Where((_, index) => !taken.Contains(index))] };
+    }
+
+    /// <summary>
+    /// The edit made onto the file as it stands (<see cref="JsonKeeping.Save"/>): no edit writes nothing.
+    /// </summary>
+    /// <exception cref="DriverException">The file there now does not read or holds a key twice; nothing was written.</exception>
+    public void Save(string path) => JsonKeeping.Save(path, Found, Written(Read), Written(Entries));
+
+    private IEnumerable<int> Holding(string workspace) => Enumerable.Range(0, Entries.Count).Where(index =>
+        string.Equals(RemoteTarget.Workspace(Entries[index].Key), RemoteTarget.Workspace(workspace), StringComparison.OrdinalIgnoreCase));
+
+    private static bool Whole(JsonElement value) =>
+        value.ValueKind == JsonValueKind.Object
+        && !string.IsNullOrWhiteSpace(Text(value, "url"))
+        && !string.IsNullOrWhiteSpace(Text(value, "key"));
+
+    private static JsonElement Element(Action<Utf8JsonWriter> write)
+    {
+        using var document = JsonDocument.Parse(JsonFile.Serialize(write));
+        return document.RootElement.Clone();
+    }
+
+    private static string Written(IReadOnlyList<KeyValuePair<string, JsonElement>> entries) => JsonFile.Serialize(writer =>
+    {
+        writer.WriteStartObject();
+        foreach (var (name, value) in entries)
+        {
+            writer.WritePropertyName(name);
+            value.WriteTo(writer);
+        }
+
+        writer.WriteEndObject();
+    });
 }

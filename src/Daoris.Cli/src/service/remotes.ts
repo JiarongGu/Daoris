@@ -18,10 +18,10 @@ import { createInterface } from 'node:readline';
 import { flagValue, operands } from '../platform/args.ts';
 import { DaorisError } from '../platform/errors.ts';
 import {
-  KEY_VARIABLE, PATH_VARIABLE, URL_VARIABLE, WORKSPACE_VARIABLE,
-  heldAs, normalizeWorkspace, readRemotes, redactKey, remotesPath, remotesPathRequired, writeRemotes,
+  KEY_VARIABLE, URL_VARIABLE, WORKSPACE_VARIABLE,
+  heldAs, normalizeWorkspace, readRemoteFile, readRemotes, redactKey, remotesOf, remotesPath, remotesPathRequired, withoutRemote, withRemote,
+  writeRemoteFile,
 } from './remotemap.ts';
-import type { Remote } from './remotemap.ts';
 import type { CommandArgs } from '../platform/types.ts';
 import type { ExitCode } from '../platform/errors.ts';
 
@@ -117,12 +117,16 @@ export async function commandRemote({ argv, write }: CommandArgs): Promise<ExitC
       write(`daoris: wiring \`${workspace}\` on this machine`);
       const key = await resolveKey(argv, workspace, write);
 
-      const { remotes } = readFile(target);
-      // Held under whatever spelling the map already uses, so `Aurora` and `aurora` stay one row.
+      // Deliberately the FILE, not the live wiring — an edit must land in the map even when the
+      // environment currently outranks it, or a machine that happens to have the env pair set could
+      // never wire a second workspace. `list` is where the person is told which one is live.
+      const file = readRemoteFile(target);
+      const remotes = remotesOf(file);
       const held = heldAs(remotes, workspace);
       const replacing = held === undefined ? undefined : remotes.get(held);
-      remotes.set(held ?? workspace, { url: url.replace(/\/+$/, ''), key });
-      writeRemotes(target, remotes);
+      // Held under whatever spelling the map already uses, so `Aurora` and `aurora` stay one row, and
+      // made onto the file as it stands: what this verb does not own stays (KEEPALL1e).
+      writeRemoteFile(target, withRemote(file, workspace, { url: url.replace(/\/+$/, ''), key }));
 
       write(`  ${workspace}  ${url.replace(/\/+$/, '')}  ${redactKey(key)}`);
       if (replacing) write(`  (replacing ${replacing.url} — the previous key is untouched at its deployment)`);
@@ -134,17 +138,15 @@ export async function commandRemote({ argv, write }: CommandArgs): Promise<ExitC
     case 'remove': {
       const workspace = normalizeWorkspace(requireName(argv, 'remove'));
       const target = remotesPathRequired();
-      const { remotes } = readFile(target);
-      const held = heldAs(remotes, workspace);
-
-      if (held === undefined || !remotes.delete(held)) {
+      const file = readRemoteFile(target);
+      if (heldAs(remotesOf(file), workspace) === undefined) {
         // The end state is the one that was asked for, so a non-zero exit would make an idempotent
         // script look broken — the same judgement `retire` makes.
         write(`daoris: \`${workspace}\` is not wired on this machine — nothing to remove.`);
         return 0;
       }
 
-      writeRemotes(target, remotes);
+      writeRemoteFile(target, withoutRemote(file, workspace));
       write(`daoris: \`${workspace}\` is no longer wired on this machine.`);
       write('  Nothing at the deployment changed: the key stays valid there until an operator revokes');
       write('  it, and what that workspace already fed stays where it is. This workspace now syncs');
@@ -179,13 +181,6 @@ export async function commandRemote({ argv, write }: CommandArgs): Promise<ExitC
     }
 
     return 0;
-  }
-
-  function readFile(target: string): { remotes: Map<string, Remote> } {
-    // Deliberately the FILE, not the live wiring — an edit must land in the map even when the
-    // environment currently outranks it, or a machine that happens to have the env pair set could
-    // never wire a second workspace. `list` is where the person is told which one is live.
-    return { remotes: readRemotes({ [PATH_VARIABLE]: target }).remotes };
   }
 }
 

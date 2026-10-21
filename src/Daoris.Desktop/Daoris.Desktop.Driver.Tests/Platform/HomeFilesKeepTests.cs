@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// KEEPALL1 and KEEPALL1b (FIX-LOG 2026-10-17): every home file a door edits keeps what its writer does not own, as <c>driver.json</c>'s writers do
+/// KEEPALL1, KEEPALL1b and KEEPALL1e (FIX-LOG 2026-10-17): every home file a door edits keeps what its writer does not own, as <c>driver.json</c>'s writers do
 /// (<see cref="DriverConfigKeepsTests"/>). One table both twins read, <c>test/fixtures/home-files-keep.json</c>, row for row with the
 /// CLI's <c>homefileskeep.test.ts</c>: an existing file in the writer's layout with keys neither twin knows at each level, one door's
 /// edit, and the bytes both write.
@@ -13,7 +13,8 @@ public sealed class HomeFilesKeepTests
 {
     [Theory]
     [MemberData(nameof(Rows))]
-    public void An_edit_changes_only_what_it_edits(string name, string file, string edit, string start, string? between, string? refused, string expected)
+    public void An_edit_changes_only_what_it_edits(
+        string name, string file, string edit, string start, string? between, string? refused, string expected, string? reads)
     {
         var home = Path.Combine(Path.GetTempPath(), "daoris-keepall-" + Guid.NewGuid().ToString("N")[..8]);
         var path = Path.Combine(home, file);
@@ -29,6 +30,8 @@ public sealed class HomeFilesKeepTests
             if (refused is null) Assert.Null(error);
             else Assert.Contains(refused, Assert.IsType<DriverException>(error).Message);
             Assert.Equal((name, expected), (name, File.ReadAllText(path)));
+            // KEEPALL1e: what the driver's reader reads from it, as the CLI's and the service's do.
+            if (reads is not null) Assert.Equal((name, reads), (name, Read(RemoteTarget.LoadFile(path))));
         }
         finally
         {
@@ -109,6 +112,17 @@ public sealed class HomeFilesKeepTests
                     _ => throw new InvalidOperationException($"the table names an edit this test does not make: {op}"),
                 }).Save(path);
                 return;
+            case ("remotes.json", var op):
+                var map = Path.Combine(home, file);
+                var remotes = RemoteFile.Load(map);
+                between();
+                (op switch
+                {
+                    "remote-set" => remotes.With(Text("workspace"), new(Text("url"), Text("key"))),
+                    "remote-remove" => remotes.Without(Text("workspace")),
+                    _ => throw new InvalidOperationException($"the table names an edit this test does not make: {op}"),
+                }).Save(map);
+                return;
             default:
                 throw new InvalidOperationException($"the table names an edit this test does not make: {file} {Text("op")}");
         }
@@ -140,9 +154,17 @@ public sealed class HomeFilesKeepTests
         return crlf ? text.Replace("\n", "\r\n", StringComparison.Ordinal) : text;
     }
 
-    public static TheoryData<string, string, string, string, string?, string?, string> Rows()
+    /// <summary>A map of remotes as one line, by workspace in ordinal order, to compare with a row's <c>reads</c>.</summary>
+    private static string Read(IReadOnlyDictionary<string, RemoteTarget> remotes) =>
+        string.Join("; ", remotes.OrderBy(entry => entry.Key, StringComparer.Ordinal).Select(entry => $"{entry.Key} {entry.Value.Url} {entry.Value.Key}"));
+
+    private static string Read(JsonElement reads) =>
+        string.Join("; ", reads.EnumerateObject().OrderBy(entry => entry.Name, StringComparer.Ordinal)
+            .Select(entry => $"{entry.Name} {entry.Value.GetProperty("url").GetString()} {entry.Value.GetProperty("key").GetString()}"));
+
+    public static TheoryData<string, string, string, string, string?, string?, string, string?> Rows()
     {
-        var rows = new TheoryData<string, string, string, string, string?, string?, string>();
+        var rows = new TheoryData<string, string, string, string, string?, string?, string, string?>();
         foreach (var row in Table.RootElement.GetProperty("rows").EnumerateArray())
         {
             // A row another twin alone writes is that twin's.
@@ -153,7 +175,7 @@ public sealed class HomeFilesKeepTests
             var between = row.TryGetProperty("between", out var made) ? Changed(file, made, crlf) : null;
             var refused = row.TryGetProperty("refused", out var said) ? said.GetString() : null;
             rows.Add(row.GetProperty("name").GetString()!, file, row.GetProperty("edit").GetRawText(), start, between, refused,
-                Changed(file, row.GetProperty("changes"), crlf));
+                Changed(file, row.GetProperty("changes"), crlf), row.TryGetProperty("reads", out var reads) ? Read(reads) : null);
         }
 
         return rows;

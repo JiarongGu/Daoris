@@ -109,6 +109,40 @@ public sealed class RemotesModuleTests : Bridge
     }
 
     /// <summary>
+    /// KEEPALL1e: the page's edit is made onto the file as it stands. Rebuilt from the remotes read, the map lost every key no reader
+    /// reads, and one that did not read was written over with the page's entry alone, every other circle's key gone.
+    /// </summary>
+    [Fact]
+    public async Task Wiring_keeps_what_the_page_does_not_own_and_never_writes_over_a_torn_map()
+    {
+        var kept = """
+            {
+              "tools": {
+                "url": "https://tools.example.com",
+                "note": "hand-written",
+                "key": "dk_toolskey00000"
+              },
+              "half": {
+                "url": "https://half.example.com"
+              }
+            }
+
+            """.ReplaceLineEndings("\n");
+        Directory.CreateDirectory(Path.GetDirectoryName(RemotesPath)!);
+        File.WriteAllText(RemotesPath, kept);
+        await AnswerAsync(Module(), "SET", Wiring("aurora", "https://aurora.example.com", Key));
+
+        var written = File.ReadAllText(RemotesPath);
+        Assert.StartsWith(kept[..kept.LastIndexOf('}')].TrimEnd(), written, StringComparison.Ordinal);
+        Assert.Equal(["aurora", "tools"], RemoteTarget.LoadFile(RemotesPath).Keys.Order(StringComparer.Ordinal));
+
+        var torn = "{ \"tools\": { \"url\": \"https://tools.example.com\", \"key\": \"dk_toolskey00000\" }, }";
+        File.WriteAllText(RemotesPath, torn);
+        Assert.Contains("never overwritten", await RefusalAsync(Module(), "SET", Wiring("aurora", "https://aurora.example.com", Key)));
+        Assert.Equal(torn, File.ReadAllText(RemotesPath));
+    }
+
+    /// <summary>
     /// With the environment pair set, no loader reads the file (D48 §5) — so the surface must say which
     /// source decided. Otherwise it reports its own last edit as though it were the machine's wiring.
     /// </summary>
