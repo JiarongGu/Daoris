@@ -551,6 +551,13 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
       // entry worded by its code in the reader's language, the reason said once. An unknown owner says so first only where an entry
       // carries no code (a shell before them), whose own sentence then follows as recorded (FABRIC-UNKNOWN1).
       const recorder = sessionOf(row.session);
+      // FABRIC-UNKNOWN1c: a branch whose owner nothing records may still be named for a session the page holds, by the name the trees
+      // give it (`daoris/` and the tree's folder, as WorkFrame finds a session's own branch); that session is its door.
+      const branch = entries.find((entry) => entry.facts?.branch)?.facts?.branch ?? row.title;
+      const cut = row.blocked?.unknown && !row.session && branch?.startsWith('daoris/')
+        ? names.sessions?.find((one) => one.repository === row.where && one.tree
+          && branch === `daoris/${one.tree.split(/[\\/]/).filter(Boolean).pop()}`)
+        : undefined;
       return {
         ...base,
         title: recorder ? named(row.session) : row.title ?? row.id,
@@ -559,6 +566,7 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
           ...entries.map((entry) => i18n.t('work.milestone.cleanup.blocked', { what: entryName(i18n.t, entry), detail: entryDetail(i18n.t, entry) })),
         ].join(' '),
         session: row.session ?? null,
+        ...(cut ? { cutFor: cut.id } : {}),
       };
     }
     case 'account-wait':
