@@ -250,14 +250,17 @@ own), that version read from the nearest `packageManager` field or the install's
 as written, said.
 A development pipeline says which checks its sessions run (`SessionChecks`, FABRIC-PIPELINE1b, D192 points 4 and 5): under Current,
 `sessionChecks` in `driver.json` by repository, `light` or `heavy-at-end`, absent being today's, set by `daoris-driver checks` and
-Setup's *Sessions' checks*; a named workflow's run takes its version's, which none carries in this build. A driven start composes
+Setup's *Sessions' checks*; a named workflow's run takes its bound version's instead, a steps version's `work` step's or a graph
+version's `claimed` node's option (`WorkflowProcess.Claimed`, FABRIC-PIPELINE1b2, 1b3), its first start reading them from the binding
+its bind came to (`WorkflowProcesses.Bound`). A driven start composes
 its words from them (`HeavyTold.Hand`): under `light` its light gates (those the file does not mark heavy) and the checks its change
 reaches, filtered, its heavy gates as the verification's; under `heavy-at-end` the heavy gates once, at its end, as the pipeline's.
 Where its agent takes Daoris's rules (Claude Code, both doors), each heavy gate's declared command joins its spawn file's deny list
 exactly, `Bash(<run>)`, never as a prefix (a command a light gate also runs, or one with a `*` or a line break, is left to the
 words), and auto mode's classifier is told one sentence beside `no-push`'s; where it takes none (Codex, dsh) no file is written
 and its words say they are said rather than refused. The start keeps the checks by the session's id beside its spawn files
-(`<session>.checks.json`, gone with its run, a history clear's to sweep), and `run-heavy` run from a tree whose git lock names a
+(`<session>.checks.json`, with a graph version's `callMinutes` beside them where set, which the long-call watch reads; gone with its
+run, a history clear's to sweep), and `run-heavy` run from a tree whose git lock names a
 session (read from the tree's `locked` file, never a variable) whose checks are `light` exits 1 at once, taking no slot; a person's
 run from a checkout no such session holds runs as today. A carry-on is handed the rules again under the checks standing now.
 
