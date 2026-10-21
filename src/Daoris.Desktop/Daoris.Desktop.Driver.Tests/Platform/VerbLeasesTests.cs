@@ -200,6 +200,9 @@ public sealed class VerbLeasesTests
     [InlineData("agent settings claude-code --account work")]
     [InlineData("agent trust claude-code D:/work/engine")]
     [InlineData("agent trust claude-code D:/work/engine --yes --dry-run")]
+    // What an agent runs as, read (PUSH1f2e).
+    [InlineData("agent which claude-code")]
+    [InlineData("agent which claude-code-acp --workspace work --json")]
     [InlineData("agent --help")]
     [InlineData("agent rules allow WebFetch --help")]
     [InlineData("agent frobnicate")]

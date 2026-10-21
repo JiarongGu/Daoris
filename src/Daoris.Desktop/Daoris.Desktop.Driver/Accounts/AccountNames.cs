@@ -235,11 +235,19 @@ public static class AccountNames
     /// <param name="accounts">The agent's accounts on this machine, <see cref="HarnessSettings.Profiles"/>.</param>
     /// <returns>The account's name now, or null where it has none.</returns>
     /// <exception cref="AccountNameException">The name is refused, or the file does not read.</exception>
-    public static string? Rename(string home, string agent, IReadOnlyCollection<string> accounts, string account, string? name)
+    /// <param name="read">Called once the file is read, before the edit is written: a test's other writer, held off by the keep lock.</param>
+    /// <remarks>
+    /// 🔴 <b>The file's <see cref="KeepLock"/> is held from the read to the write</b> (PUSH1f2e, the alone-path design §1.4): the file is
+    /// written whole, so another process's name written after this read was lost at this write.
+    /// </remarks>
+    public static string? Rename(
+        string home, string agent, IReadOnlyCollection<string> accounts, string account, string? name, Action? read = null)
     {
         lock (Gate)
         {
+            using var locked = KeepLock.Take(PathOf(home));
             var (root, unreadable) = Load(home);
+            read?.Invoke();
             var names = Of(root, agent);
             if (Problem(accounts, names, account, name) is { } problem)
             {
@@ -286,6 +294,7 @@ public static class AccountNames
     {
         lock (Gate)
         {
+            using var locked = KeepLock.Take(PathOf(home));
             var (root, unreadable) = Load(home);
             if (unreadable || Child(root, agent) is not { } held || Key(held, account) is not { } key) return;
             held.Remove(key);

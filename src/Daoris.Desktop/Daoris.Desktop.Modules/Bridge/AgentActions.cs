@@ -629,8 +629,10 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     internal static IReadOnlyList<AccountPlace> Joined(DriverLoop loop, string owner, string account, IReadOnlyList<string?> joins)
     {
         RefuseJoins(loop, owner, joins);
-        var settings = joins.Aggregate(loop.Harnesses.Settings, (next, workspace) => next.WithJoined(owner, account, workspace));
-        if (joins.Count > 0) settings.Save(loop.Harnesses.SettingsPath);
+        var settings = joins.Count > 0
+            ? HarnessSettings.Change(loop.Harnesses.SettingsPath,
+                read => joins.Aggregate(read, (next, workspace) => next.WithJoined(owner, account, workspace)))
+            : loop.Harnesses.Settings;
         return settings.PlacesOf(owner, account);
     }
 
@@ -731,7 +733,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         var code = await HarnessActions.PinAsync(
             toolchain, _loop.Harnesses.Home, harness, version, stream, ct, started);
 
-        if (code == 0) _loop.Harnesses.Settings.WithVersion(harness, version).Save(_loop.Harnesses.SettingsPath);
+        if (code == 0) HarnessSettings.Change(_loop.Harnesses.SettingsPath, read => read.WithVersion(harness, version));
         return code;
     }
 
@@ -746,6 +748,6 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         HarnessActions.UpdateAsync(
             toolchain, command, _loop.Harnesses.Home, harness,
             _loop.Harnesses.Settings.ResolveVersion(harness, null, null),
-            version => _loop.Harnesses.Settings.WithVersion(harness, version).Save(_loop.Harnesses.SettingsPath),
+            version => HarnessSettings.Change(_loop.Harnesses.SettingsPath, read => read.WithVersion(harness, version)),
             stream, ct, started);
 }

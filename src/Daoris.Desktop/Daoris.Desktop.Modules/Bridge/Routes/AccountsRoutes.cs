@@ -422,19 +422,20 @@ public sealed class AccountsRoutes(DriverLoop loop)
         switch (action)
         {
             case "order":
-                OrderEdited(_loop.Harnesses.Settings, HarnessSettings.Profiles(_loop.Harnesses.Home, owner), owner, InOrder(request, "accounts"), workspace)
-                    .Save(_loop.Harnesses.SettingsPath);
+                var order = InOrder(request, "accounts");
+                HarnessSettings.Change(_loop.Harnesses.SettingsPath,
+                    read => OrderEdited(read, HarnessSettings.Profiles(_loop.Harnesses.Home, owner), owner, order, workspace));
                 break;
             case "use":
-                UseEdited(_loop.Harnesses.Settings, owner, Flag(request, "clear") ? null : UseChangeOf(request), workspace)
-                    .Save(_loop.Harnesses.SettingsPath);
+                var use = Flag(request, "clear") ? null : UseChangeOf(request);
+                HarnessSettings.Change(_loop.Harnesses.SettingsPath, read => UseEdited(read, owner, use, workspace));
                 break;
             case "inherit":
                 var circle = workspace ?? throw Refusals.Because(
                     Refusals.AccountActionUnknown, "returning to this machine's accounts names the workspace that returns.",
                     ("action", action));
-                _loop.Harnesses.Settings.WithWorkspaceDefault(circle, owner, null).WithRotation(owner, null, circle)
-                    .Save(_loop.Harnesses.SettingsPath);
+                HarnessSettings.Change(_loop.Harnesses.SettingsPath,
+                    read => read.WithWorkspaceDefault(circle, owner, null).WithRotation(owner, null, circle));
                 break;
             case "ready":
                 var own = Flag(request, "own");

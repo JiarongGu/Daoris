@@ -201,6 +201,73 @@ public sealed class AgentsCommandTests : IDisposable
         Assert.True(ClaudeTrust.Accepted(Path.Combine(HarnessSettings.ProfileHome(running.Home, "claude-code", "work"), ClaudeTrust.FileName), Folder));
     }
 
+    /// <summary>
+    /// <c>which --json</c> (PUSH1f2e, the alone-path design §4): the program a start resolves, as one object the real-run tools read: the
+    /// binary on <c>PATH</c> with nothing pinned; a pin's executable, the workspace's own pin first; a pin with nothing installed
+    /// <c>missing</c>, exit 0; and the command <c>driver.json</c> names, before any pin. Said from a session's terminal too: a read.
+    /// </summary>
+    [Fact]
+    public async Task Which_answers_the_program_a_start_resolves_as_one_object()
+    {
+        async Task<System.Text.Json.JsonElement> Which(params string[] words)
+        {
+            _out.GetStringBuilder().Clear();
+            Assert.Equal(0, await AgentsCommand.RunAsync(["which", .. words, "--json"], World(Marker), CancellationToken.None));
+            Assert.Equal("", _error.ToString());
+            return System.Text.Json.JsonDocument.Parse(_out.ToString()).RootElement;
+        }
+
+        string[] Run(System.Text.Json.JsonElement answer) => [.. answer.GetProperty("run").EnumerateArray().Select(each => each.GetString()!)];
+        var binary = AdapterSet.Built().Resolve("claude-code-acp").Toolchain!.Binary;
+
+        var path = await Which("claude-code-acp");
+        Assert.Equal("claude-code-acp", path.GetProperty("agent").GetString());
+        Assert.Equal(binary, Run(path));
+        Assert.Equal(System.Text.Json.JsonValueKind.Null, path.GetProperty("managed").ValueKind);
+        Assert.Equal(System.Text.Json.JsonValueKind.Null, path.GetProperty("pinned").ValueKind);
+        Assert.False(path.GetProperty("missing").GetBoolean());
+
+        var wiring = DaorisHome.Entry(Home, HomeEntry.Harnesses);
+        Directory.CreateDirectory(Path.GetDirectoryName(wiring)!);
+        File.WriteAllText(wiring, """{ "versions": { "claude-code-acp": "1.0.0" }, "workspaceVersions": { "work": { "claude-code-acp": "2.0.0" } } }""");
+        var installed = Path.Combine(HarnessSettings.ManagedHome(Home, "claude-code-acp", "2.0.0"), "bin",
+            OperatingSystem.IsWindows() ? binary[0] + ".exe" : binary[0]);
+        Directory.CreateDirectory(Path.GetDirectoryName(installed)!);
+        File.WriteAllText(installed, "");
+
+        var missing = await Which("claude-code-acp");
+        Assert.True(missing.GetProperty("missing").GetBoolean());
+        Assert.Equal("1.0.0", missing.GetProperty("pinned").GetString());
+        Assert.Empty(Run(missing));
+
+        var pinned = await Which("claude-code-acp", "--workspace", "work");
+        Assert.False(pinned.GetProperty("missing").GetBoolean());
+        Assert.Equal("2.0.0", pinned.GetProperty("pinned").GetString());
+        Assert.Equal(installed, pinned.GetProperty("managed").GetString());
+        Assert.Equal(installed, Run(pinned)[0]);
+
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.DriverConfig), """{ "commands": { "claude-code-acp": ["my-acp", "--fast"] } }""");
+        var commanded = await Which("claude-code-acp", "--workspace", "work");
+        Assert.Equal(["my-acp", "--fast"], Run(commanded));
+        Assert.Equal(System.Text.Json.JsonValueKind.Null, commanded.GetProperty("pinned").ValueKind);
+    }
+
+    [Fact]
+    public async Task Which_refuses_an_agent_no_wiring_declares_and_a_wiring_file_that_does_not_read()
+    {
+        Assert.Equal(2, await AgentsCommand.RunAsync(["which", "frobnicate", "--json"], World(), CancellationToken.None));
+        Assert.StartsWith("daoris: unknown agent 'frobnicate'", _error.ToString(), StringComparison.Ordinal);
+        Assert.Equal("", _out.ToString());
+
+        _error.GetStringBuilder().Clear();
+        var wiring = DaorisHome.Entry(Home, HomeEntry.Harnesses);
+        Directory.CreateDirectory(Path.GetDirectoryName(wiring)!);
+        File.WriteAllText(wiring, "{ not json");
+        Assert.Equal(2, await AgentsCommand.RunAsync(["which", "claude-code", "--json"], World(), CancellationToken.None));
+        Assert.StartsWith("daoris: harnesses.json could not be read", _error.ToString(), StringComparison.Ordinal);
+        Assert.Equal("", _out.ToString());
+    }
+
     [Fact]
     public async Task Asked_for_its_usage_it_says_it_and_a_verb_it_lacks_is_refused_with_it()
     {
@@ -219,8 +286,9 @@ public sealed class AgentsCommandTests : IDisposable
     public void The_verb_table_says_which_home_each_verb_writes_and_a_named_wiring_file_isolates_those()
     {
         static string? Named(string name) => name == HarnessSettings.PathVariable ? "X:/elsewhere/harnesses.json" : null;
-        Assert.Equal(AgentsCommand.Verbs.Order(StringComparer.Ordinal),
+        Assert.Equal(AgentsCommand.Verbs.Except(AgentsCommand.Reads).Order(StringComparer.Ordinal),
             AgentRoutes.Verbs.Select(row => row.Verb.Split(' ')[1]).Distinct().Order(StringComparer.Ordinal));
+        Assert.All(AgentsCommand.Reads, verb => Assert.False(AgentsCommand.Isolated([verb], Named)));
         foreach (var (verb, _, _, home) in AgentRoutes.Verbs)
         {
             string[] words = [verb.Split(' ')[1]];

@@ -113,7 +113,7 @@ public static class AgentRoutes
 public static class AgentsCommand
 {
     /// <summary>The verbs this program has, each the CLI hands on (the CLI's allow-list is held to it).</summary>
-    public static IReadOnlyList<string> Verbs { get; } = ["rules", "trust", "settings"];
+    public static IReadOnlyList<string> Verbs { get; } = ["rules", "trust", "settings", "which"];
 
     public const string Usage =
         """
@@ -121,7 +121,8 @@ public static class AgentsCommand
                daoris-driver agent rules default <id> on|off · proposals · accept|decline <id> [--note "…"]
                daoris-driver agent trust <agent> <folder> [--profile <account>] [--yes | --dry-run]
                daoris-driver agent settings <agent> [--account <account>] [model <name>|unset] [effort <level>|unset [--for <model>]]
-        `daoris agent rules|trust|settings …` runs these; the family's other verbs are still `daoris agent`'s own.
+               daoris-driver agent which <agent> [--workspace <name>] [--json]
+        `daoris agent rules|trust|settings|which …` runs these; the family's other verbs are still `daoris agent`'s own.
         """;
 
     private const string Prefix = "daoris";
@@ -158,8 +159,11 @@ public static class AgentsCommand
     /// file's home, with <c>DAORIS_HARNESS_CONFIG</c> set. The rules never do: they are <c>DAORIS_HOME</c>'s.
     /// </summary>
     public static bool Isolated(IReadOnlyList<string> args, Func<string, string?> environment) =>
-        args.Count > 0 && Verbs.Contains(args[0], StringComparer.Ordinal) && AgentRoutes.HomeOf(args[0]) == AgentHome.Wiring
+        args.Count > 0 && AgentRoutes.Verbs.Any(row => row.Verb.Split(' ')[1] == args[0] && row.Home == AgentHome.Wiring)
         && environment(HarnessSettings.PathVariable) is { Length: > 0 };
+
+    /// <summary>The verbs that only read, changing no home, so the verb table has no row for them: <c>which</c>.</summary>
+    public static IReadOnlyList<string> Reads { get; } = ["which"];
 
     /// <summary>The verb's run: a read said, a change pressed (its route where the instance answers, its operation alone), or its usage.</summary>
     public static async Task<int> RunAsync(IReadOnlyList<string> args, AgentsWorld world, CancellationToken ct)
@@ -220,8 +224,68 @@ public static class AgentsCommand
                 ? Proposals([.. args.Skip(1)], world, out exit)
                 : Rules([.. args.Skip(1)], world, out exit),
             "trust" => Trust(args, world, out exit),
+            "which" => Which(args, world, out exit),
             _ => Settings(args, world, out exit),
         };
+    }
+
+    // ——— which
+
+    /// <summary>
+    /// <c>which &lt;agent&gt; [--workspace &lt;name&gt;] [--json]</c> (PUSH1f2e, the alone-path design §4): the program the agent runs as,
+    /// resolved as every start resolves it (<see cref="HarnessProbe.CommandOf"/>, D57 rule 4): the command <c>driver.json</c> names for
+    /// it, then its pin (the workspace's where it pins its own), then its binary on <c>PATH</c>. A read: it holds nothing and sends
+    /// nothing. A pin with nothing installed at it answers <c>missing</c>, exit 0. With <c>--json</c> it is one object on the standard
+    /// output, which the real-run tools read (<c>proof-kit.mjs</c>, <c>acp-trust-probe.mjs</c>).
+    /// </summary>
+    private static AgentPress? Which(IReadOnlyList<string> args, AgentsWorld world, out int exit)
+    {
+        exit = 0;
+        void Say(string line) => world.Instance.Out.WriteLine(line);
+        var path = WiringPath(world);
+        var home = HarnessSettings.HomeOf(path);
+        var (name, toolchain, _, _) = Agent(args, "which", "<agent>", world, path);
+        var settings = HarnessSettings.Load(path);
+        if (settings.Problem is { } problem) throw new AgentWords(problem);
+
+        var named = DriverConfig.Load(DriverConfig.ResolvePath(world.Instance.Environment, home)).Commands.GetValueOrDefault(name);
+        var run = HarnessProbe.CommandOf(name, toolchain, named, settings, home, FlagValue(args, "--workspace"));
+        if (args.Contains("--json"))
+        {
+            Say(new JsonObject
+            {
+                ["agent"] = name,
+                ["run"] = new JsonArray([.. run.Run.Select(word => (JsonNode?)word)]),
+                ["managed"] = run.Managed,
+                ["pinned"] = run.Pinned,
+                ["missing"] = run.Missing,
+            }.ToJsonString());
+            return null;
+        }
+
+        var command = string.Join(' ', run.Run);
+        if (run.Missing)
+        {
+            Say($"`{name}` is pinned to {run.Pinned}, which is not installed on this machine: there is nothing to run. "
+                + $"`daoris agent pin {name} {run.Pinned}` installs it.");
+        }
+        else if (run.Managed is not null)
+        {
+            Say($"`{name}` runs {command}");
+            Say($"  its pin, {run.Pinned}, managed by Daoris.");
+        }
+        else if (named is { Count: > 0 })
+        {
+            Say($"`{name}` runs {command}");
+            Say($"  the command {DriverConfig.FileName} names for it.");
+        }
+        else
+        {
+            Say($"`{name}` runs {command}");
+            Say("  found on PATH: no command is named for it and nothing pins it.");
+        }
+
+        return null;
     }
 
     // ——— rules

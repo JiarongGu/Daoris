@@ -1964,6 +1964,60 @@
       "after": {
         "other/profiles/agents/claude-code/work/settings.json": "{\n  \"model\": \"opus\"\n}\n"
       }
+    },
+    {
+      "name": "which, nothing pinned",
+      "argv": [
+        "which",
+        "claude-code-acp"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 0,
+      "out": [
+        "`claude-code-acp` runs claude-agent-acp",
+        "  found on PATH: no command is named for it and nothing pins it."
+      ],
+      "err": [],
+      "after": {},
+      "changed": "New in PUSH1f2e (the alone-path design §4): the TypeScript had no such verb; the real-run tools imported its resolution."
+    },
+    {
+      "name": "which, pinned with nothing installed, as JSON",
+      "argv": [
+        "which",
+        "claude-code-acp",
+        "--json"
+      ],
+      "folders": [],
+      "before": {
+        "daoris/data/harnesses.json": "{ \"versions\": { \"claude-code-acp\": \"1.0.0\" } }"
+      },
+      "exit": 0,
+      "out": [
+        "{\"agent\":\"claude-code-acp\",\"run\":[],\"managed\":null,\"pinned\":\"1.0.0\",\"missing\":true}"
+      ],
+      "err": [],
+      "after": {
+        "daoris/data/harnesses.json": "{ \"versions\": { \"claude-code-acp\": \"1.0.0\" } }"
+      },
+      "changed": "New in PUSH1f2e (the alone-path design §4): the TypeScript had no such verb; the real-run tools imported its resolution."
+    },
+    {
+      "name": "which, an unknown agent",
+      "argv": [
+        "which",
+        "frobnicate"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: unknown agent 'frobnicate' — one of: claude-code, claude-code-acp, codex, codex-acp, dsh. An agent is added deliberately, never guessed."
+      ],
+      "after": {},
+      "changed": "New in PUSH1f2e (the alone-path design §4): the TypeScript had no such verb; the real-run tools imported its resolution."
     }
   ]
 }

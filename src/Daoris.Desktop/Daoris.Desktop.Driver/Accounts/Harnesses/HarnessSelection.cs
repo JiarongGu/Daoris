@@ -397,18 +397,20 @@ public static class HarnessProbe
 
     /// <summary>
     /// What one of a harness's own commands runs as (D57 rule 4, the order every spawn takes): the command <c>driver.json</c>
-    /// names for <paramref name="adapter"/>, then this machine's pin of it, then its declared binary on <c>PATH</c>. A pin
-    /// with nothing installed at it is <see cref="HarnessCommand.Missing"/>: nobody to run, never <c>PATH</c>'s.
+    /// names for <paramref name="adapter"/>, then this machine's pin of it (<paramref name="workspace"/>'s where it pins its own),
+    /// then its declared binary on <c>PATH</c>. A pin with nothing installed at it is <see cref="HarnessCommand.Missing"/>: nobody
+    /// to run, never <c>PATH</c>'s.
     /// </summary>
     /// <remarks>
     /// The status question and a sign-in both take it (CODEXACCT1), so a sign-in runs the binary its end's question asks:
     /// the screen's ran <c>PATH</c>'s, and a machine whose only <c>codex</c> is the pin could not sign one in.
     /// </remarks>
     public static HarnessCommand CommandOf(
-        string adapter, HarnessToolchain toolchain, IReadOnlyList<string>? command, HarnessSettings settings, string home)
+        string adapter, HarnessToolchain toolchain, IReadOnlyList<string>? command, HarnessSettings settings, string home,
+        string? workspace = null)
     {
         if (command is { Count: > 0 }) return new HarnessCommand(adapter, command, null, null);
-        if (settings.ResolveVersion(adapter, workspace: null, chosen: null) is not { } pinned)
+        if (settings.ResolveVersion(adapter, workspace, chosen: null) is not { } pinned)
         {
             return new HarnessCommand(adapter, toolchain.Binary, null, null);
         }

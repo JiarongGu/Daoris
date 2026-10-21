@@ -7,19 +7,13 @@
  * A proof is not a gate: it spends a login, and it is run by a person on a machine set up for it.
  * Without `--drive` it answers only what the machine has and what is left to do.
  */
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { execGit } from './fsx.mjs';
 import { capture, makeChecker, openTranscript } from './rehearsal-kit.mjs';
-// The real resolution, not a second copy of it (TOOL2/D57): a pinned harness is found exactly the way
-// the CLI and the driver find one, so a proof cannot disagree with them about what would run.
-import {
-  harnessHome, harnessesPath, managedBinary, readHarnessSettings, resolveVersion,
-} from '../src/Daoris.Cli/src/agents/toolchain.ts';
-
 export const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 export const cliBin = join(repoRoot, 'src', 'Daoris.Cli', 'bin', 'daoris.mjs');
 const httpDll = join(
@@ -28,6 +22,26 @@ const httpDll = join(
 const driverDll = join(
   repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Host',
   'bin', 'Debug', 'net10.0', 'daoris-driver.dll');
+// The apphost the build writes beside it, which `daoris-driver agent which` is asked through.
+const driverExe = join(dirname(driverDll), process.platform === 'win32' ? 'daoris-driver.exe' : 'daoris-driver');
+
+/**
+ * The program this machine would actually run for an agent (TOOL2/D57 rule 4), asked of this checkout's driver
+ * (`daoris-driver agent which <agent> --json`, PUSH1f2e): the command `driver.json` names, else its pin, else `PATH`'s, so a proof
+ * cannot disagree with a start about what would run. `{ agent, run, managed, pinned, missing }`, or null where the driver is not
+ * built or refuses (no home named, a wiring file that does not read), which the readiness says on its own lines; its refusal is
+ * written to the error stream.
+ */
+export function agentWhich(agent) {
+  if (!existsSync(driverExe)) return null;
+  const answer = spawnSync(driverExe, ['agent', 'which', agent, '--json'], { encoding: 'utf8', timeout: 60_000 });
+  if (answer.status !== 0) {
+    if (answer.stderr) process.stderr.write(answer.stderr);
+    return null;
+  }
+
+  return JSON.parse(answer.stdout);
+}
 // The connector a session publishes and proposes through. The driver finds it by walking up from its
 // own binary to this workspace's build (`KnowledgeConnector.Candidates`), so without it a session has
 // no voice, and a run would prove nothing about the one thing it exists to prove.
@@ -84,21 +98,11 @@ export function openProof(name, { label, port }) {
     return satisfied;
   };
 
-  /**
-   * Which binary this machine would actually run for a harness: the managed pin, else `PATH` — the
-   * order a spawn resolves (TOOL2's twin rule, minus the explicit command, a driver-config choice no
-   * proof makes). Read when asked, so a machine with no Daoris home has already been told what is
-   * built before the home's own refusal says what to set.
-   */
-  const managed = (harness, binary) => {
-    const settings = readHarnessSettings(harnessesPath());
-    return managedBinary(
-      harnessHome(harnessesPath()), harness, resolveVersion(settings, harness, null, null), [binary]);
-  };
-
   /** Ask a harness about itself the way `daoris agent list` does, tolerating absence. */
   const present = (harness, binary, args = ['--version']) => {
-    const where = managed(harness, binary) ?? binary;
+    const resolved = agentWhich(harness);
+    if (resolved?.missing) return null;
+    const where = resolved?.run[0] ?? binary;
     const found = capture(`"${where}" ${args.join(' ')}`, repoRoot, { timeout: 30_000 });
     return found.code === 0
       ? { version: found.out.trim().split('\n')[0] ?? '', where }
