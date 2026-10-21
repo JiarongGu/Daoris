@@ -112,6 +112,9 @@ test('a handed verb goes to the driver\'s program whole, with nothing written fi
     // PUSH1f2e4: `list`, and so a bare `daoris agent`.
     [['agent'], []],
     [['agent', 'list'], ['list']],
+    // PUSH1f2e5: an agent's install, and an API key's account, whose key the program reads from the terminal's standard input.
+    [['agent', 'install', 'claude-code'], ['install', 'claude-code']],
+    [['agent', 'key', 'claude-code', '--account', 'work key'], ['key', 'claude-code', '--account', 'work key']],
   ] as const) {
     for (const exit of [0, 1, 2] as const) {
       const handed: Handed[] = [];

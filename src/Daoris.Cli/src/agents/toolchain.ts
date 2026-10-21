@@ -47,9 +47,9 @@
 // person gives one (`agent key`, D67 §1). It manages directories and names; login runs the
 // harness's own flow INTO a profile directory, and whatever that obtains the harness stores itself.
 
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { THIS_INSTALL, daorisHome, homeEntry, homeOf, homePlaces, requireHomeFile } from '../platform/home.ts';
-import { commandOnTheSystem, commandThroughTools, handTools, readTools } from '../tools/tools.ts';
+import { commandThroughTools, handTools, readTools } from '../tools/tools.ts';
 import { pastLauncher } from '../tools/gitforwindows.ts';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -82,7 +82,7 @@ import {
 import type { AccountPlace, Orders, Uses } from '../accounts/rotation.ts';
 import {
   accountNames, apartWords, forgetName, nameFor, nameProblem, newAccountId, offeredName, renameAccount,
-  resolveAccount, shownAs, signedInSentence, signInRefusal, signInTarget, takenWayOut, AccountNameError,
+  shownAs, signedInSentence, signInRefusal, signInTarget, takenWayOut, AccountNameError,
 } from '../accounts/accountnames.ts';
 import { forgetRead, keepRead } from '../accounts/accountreads.ts';
 import type { Login } from '../accounts/accountreads.ts';
@@ -697,81 +697,8 @@ function removeKey(home: string, harness: string, profile: string): void {
   writeKeys(home, { ...keys, [harness]: held }, keys);
 }
 
-/**
- * Make an account that is this key: the next free `account-N`, its directory, and the key kept
- * beside it. Said back by its handle only. Refused, before anything is made, for a blank key or an
- * agent that declares no key variable.
- */
-export function addKeyAccount(
-  home: string, door: string, raw: string, write: (line: string) => void,
-): string {
-  // A key given for a door is its owner's account (AGT7), and it takes the owner's variable.
-  const harness = ownerOf(door);
-  const toolchain = TOOLCHAINS[harness];
-  if (!toolchain?.keyVariable) {
-    throw new DaorisError(`\`${door}\` takes no API key from Daoris — sign in with its own login instead.`);
-  }
-
-  const key = raw.trim();
-  if (!key || /\s/.test(key)) throw new DaorisError('that is not an API key — it is blank, or has spaces in it.');
-
-  const account = nextAccount(home, harness);
-  const keys = readKeys(home);
-  // The key first: a `keys.json` it cannot read refuses here, before an account directory exists.
-  writeKeys(home, { ...keys, [harness]: { ...keys[harness], [account]: key } }, keys);
-  mkdirSync(profileHome(home, harness, account), { recursive: true });
-  // A key made into an account ends a cool-off its name still carries (D125 §2.3), as the driver's `HarnessKeys.Add` does,
-  // and is marked as a sign-in is (TOOL6g), so a name a removed account had carries no word that it is signed out.
-  endCooling(home, harness, account, new Date());
-  markSignedIn(home, harness, account, new Date());
-
-  write(`daoris: \`${harness}\` account \`${account}\` is the API key ${keyHandle(key)}.`);
-  write(`  Kept in ${keysPath(home)} — machine-local, tracked by nothing, shown back only as its last four.`);
-  const id = shellWord(account, '<account>');
-  write(`  \`daoris agent profile rename ${harness} ${id} <name>\` gives it a name of yours (ACCT2), and`);
-  write(`  \`daoris agent profile join ${harness} ${id} <workspace>…|--machine\` puts it in a list a start runs on.`);
-  return account;
-}
-
-/**
- * Write a new key into an account that is already a key (KEYREPLACE1a): the repair for a key its provider refused. The account
- * keeps its id, so its name, lists, defaults and order stand (ACCT2); what marked it refused is cleared as the driver's
- * `HarnessKeys.Replace` clears it. Said back by the handle only. The account is an id or a name; refused, before anything is
- * written, for an agent with no key variable, an account not here or not a key, and a blank or spaced key.
- */
-export function replaceKeyAccount(
-  home: string, door: string, given: string, raw: string, write: (line: string) => void,
-): string {
-  const harness = ownerOf(door);
-  if (!TOOLCHAINS[harness]?.keyVariable) {
-    throw new DaorisError(`\`${door}\` takes no API key from Daoris — sign in with its own login instead.`);
-  }
-
-  const account = resolveAccount(profiles(home, harness), accountNames(home, harness), given) ?? given.trim();
-  if (!profiles(home, harness).includes(account)) {
-    throw new DaorisError(
-      `\`${harness}\` has no account \`${given.trim()}\` on this machine — accounts that exist: `
-      + `${profiles(home, harness).join(', ') || '(none)'}`);
-  }
-  const keys = readKeys(home);
-  if (!keys[harness]?.[account]) {
-    throw new DaorisError(`\`${account}\` is not an API key account — it is a sign-in, so sign in again with \`daoris agent login ${harness}\`.`);
-  }
-
-  const key = raw.trim();
-  if (!key || /\s/.test(key)) throw new DaorisError('that is not an API key — it is blank, or has spaces in it.');
-
-  writeKeys(home, { ...keys, [harness]: { ...keys[harness], [account]: key } }, keys);
-  // What marked the account refused: its last reading, its cool-off. Marked signed in, as a key made into an account is.
-  forgetRead(home, harness, account);
-  endCooling(home, harness, account, new Date());
-  markSignedIn(home, harness, account, new Date());
-
-  write(`daoris: \`${harness}\` account \`${account}\` is now the API key ${keyHandle(key)}; its name, lists and defaults are as they were.`);
-  write(`  Kept in ${keysPath(home)} — machine-local, tracked by nothing, shown back only as its last four.`);
-  write('  A running desktop reads the account again at its next press; this terminal cannot tell it sooner.');
-  return account;
-}
+// An account made of a key, and a new key into one, are the driver program's since PUSH1f2e5 (`daoris-driver agent key`, through the
+// driver's `HarnessKeys`); what is left here reads a key, and removes one with its account.
 
 /**
  * A name that will become a directory. Refused rather than normalized: a name carrying a separator or
@@ -1306,8 +1233,9 @@ function endLines(
  * `npm` is the package manager a package pin, and a package pin's update, runs — npm itself, unless a
  * test hands in a stand-in.
  *
- * Every verb left here needs this terminal (an installer, a sign-in, a key on stdin, a pin's download) and acts alone, as `door.ts`'s
- * `AGENT_VERBS` says; the verbs a route takes are Daoris's driver program's since PUSH1f2e3 (`daoris-driver agent`).
+ * Every verb left here needs this terminal (an updater, a sign-in, a pin's download) and acts alone, as `door.ts`'s `AGENT_VERBS`
+ * says; the verbs a route takes are Daoris's driver program's since PUSH1f2e3 (`daoris-driver agent`), and `install` and `key` since
+ * PUSH1f2e5.
  */
 export function commandHarness(
   { argv, write }: CommandArgs, releases: Fetcher | null = null, npm: string[] = ['npm'], ports: PortProbe | null = null,
@@ -1318,19 +1246,7 @@ export function commandHarness(
   const home = harnessHome(path);
 
   switch (verb) {
-    case 'install': {
-      const { name, toolchain } = required(argv, 'install');
-      if (!toolchain.install) {
-        throw new DaorisError(
-          `\`${name}\` declares no installer, so Daoris has no sanctioned way to install it. Install `
-          + 'it with its own tooling; `daoris agent list` will find it afterwards.');
-      }
-
-      write(`daoris: installing \`${name}\` with its own installer — nothing here is automatic (D49 §4).`);
-      // 🔴 On the system's npm (TOOLS5, D121 §2.7), whatever the tools run node as: an install is the agent's own
-      // installer, into the machine. A managed npm's global folder may be its node version's, which the next loses.
-      return relay(commandOnTheSystem(toolchain.install), null, toolchain, write);
-    }
+    // `install` and `key` are the driver program's since PUSH1f2e5 (`daoris-driver agent install|key`).
 
     // USE1a: update does what it says. A pinned agent with a package or a channel moves its pin to
     // the newest release, since running its updater would change a different copy than the one
@@ -1439,30 +1355,6 @@ export function commandHarness(
       }
 
       return pinFromPackage(name, toolchain, version, where, workspace);
-    }
-
-    // An account that is an API key (AGT3, D67 §1). 🔴 Read from STDIN, never from an argument: an
-    // argument is visible in the process list and saved in the shell's history.
-    case 'key': {
-      const { name } = required(argv, 'key');
-      // `--account` names the account whose key is replaced (KEYREPLACE1a); its value is an operand to nothing else.
-      const replacing = flagValue(argv, '--account');
-      const extra = operands(argv, AGENT_VALUED).slice(2);
-      if (extra.length > 0) {
-        throw new DaorisError(
-          'the key goes on stdin, not on the command line — pipe it in, or type it and end the input. '
-          + 'One given as an argument is now in your shell history; revoke it if that matters.');
-      }
-
-      let raw = '';
-      try {
-        raw = readFileSync(0, 'utf8');
-      } catch {
-        // No stdin at all: the same as an empty one, which is refused as not a key.
-      }
-      if (replacing === undefined) addKeyAccount(home, name, raw, write);
-      else replaceKeyAccount(home, name, replacing, raw, write);
-      return 0;
     }
 
     default:

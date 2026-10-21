@@ -1,11 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { commandRemote } from '../src/service/remotes.ts';
 import { readRemotes } from '../src/service/remotemap.ts';
-import {
-  addKeyAccount, keyOf, profileHome, readHarnessSettings, writeHarnessSettings,
-} from '../src/agents/toolchain.ts';
+import { keyOf, readHarnessSettings, writeHarnessSettings } from '../src/agents/toolchain.ts';
 import { disablePlugin, readPluginState } from '../src/plugins/plugins.ts';
 import { readTools } from '../src/tools/tools.ts';
 import { captureError, makeFixture } from './_fixture.ts';
@@ -68,20 +66,13 @@ test('harnesses.json: a BOM reads, and a write over a torn file is refused', () 
   fx.cleanup();
 });
 
-test('keys.json: a BOM reads, and a new key over a torn file is refused', () => {
+// A new key over a torn file is the driver program's since PUSH1f2e5 (`agents-text.json`'s row, refused in `JsonKeeping`'s words).
+test('keys.json: a BOM reads', () => {
   const fx = makeFixture('homefiles-keys');
   const path = fx.entry('keys');
 
   writeFileSync(path, `${BOM}{ "claude-code": { "account-1": "sk-ant-first-key-0001" } }`, 'utf8');
   assert.equal(keyOf(fx.root, 'claude-code', 'account-1'), 'sk-ant-first-key-0001');
-
-  const torn = '{ "claude-code": { "account-1": "sk-ant-first-key-0001" }, }';
-  writeFileSync(path, torn, 'utf8');
-  const error = captureError(() => addKeyAccount(fx.root, 'claude-code', 'sk-ant-second-key-0002', () => {}));
-  assert.match(error.message, /will not overwrite a file it could not understand/);
-  assert.equal(readFileSync(path, 'utf8'), torn);
-  // Refused before anything was made: no account directory for a key that was never kept.
-  assert.equal(existsSync(profileHome(fx.root, 'claude-code', 'account-2')), false);
   fx.cleanup();
 });
 

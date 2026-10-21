@@ -31,11 +31,13 @@ test('the list, the rules, a trust, an account\'s settings, an unpin and every a
     ['profile', 'add', 'claude-code', 'work'], ['profile', 'remove', 'claude-code', 'work'], ['profile', 'default', 'claude-code', '--clear'],
     ['profile', 'order', 'claude-code', 'a', 'b'], ['profile', 'ready', 'claude-code', '--own'], ['profile', 'rename', 'claude-code', 'a', 'b'],
     ['profile', 'join', 'claude-code', 'a', '--machine'], ['profile', 'use', 'claude-code'], ['profile', 'use', 'claude-code', '--clear'],
-    ['profile', 'frobnicate']]) {
+    ['profile', 'frobnicate'],
+    // PUSH1f2e5: an agent's install, and an API key's account, new or into one by `--account`.
+    ['install', 'claude-code'], ['key', 'claude-code'], ['key', 'claude-code', '--account', 'work']]) {
     assert.equal(handed(argv), true, argv.join(' '));
   }
-  for (const argv of [['install', 'claude-code'], ['login', 'claude-code'], ['key', 'claude-code'], ['pin', 'codex', '1.0.0'],
-    ['update', 'codex'], ['frobnicate']]) {
+  for (const argv of [['login', 'claude-code'], ['pin', 'codex', '1.0.0'], ['update', 'codex'], ['update', 'codex', '--workspace', 'work'],
+    ['frobnicate']]) {
     assert.equal(handed(argv), false, argv.join(' ') || '(none)');
   }
 });

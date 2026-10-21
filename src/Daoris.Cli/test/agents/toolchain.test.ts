@@ -1,20 +1,18 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { dirname, join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import {
-  TOOLCHAINS, addKeyAccount, commandHarness, harnessesPath, joinsOf, keyOf, managedBinary, managedHome,
-  nextAccount, portsHeld, profileHome, profiles, probe, readHarnessSettings, removeProfile, replaceKeyAccount, resolveProfile,
+  TOOLCHAINS, commandHarness, harnessesPath, joinsOf, keyOf, managedBinary, managedHome,
+  nextAccount, portsHeld, profileHome, profiles, probe, readHarnessSettings, removeProfile, resolveProfile,
   resolveVersion, signInNew, signInTo, versionFromNpm, withDefault, writeHarnessSettings,
 } from '../../src/agents/toolchain.ts';
 import type { HarnessSettings, PortHold, Toolchain } from '../../src/agents/toolchain.ts';
 import { CLAUDE_LATEST, CODEX_LATEST, CODEX_RELEASES, codexTarget } from '../../src/agents/channels.ts';
 import type { Fetcher } from '../../src/agents/channels.ts';
-import { coolingOf } from '../../src/accounts/cooling.ts';
-import { keepRead, readOf, readsOf } from '../../src/accounts/accountreads.ts';
-import { accountNames, renameAccount } from '../../src/accounts/accountnames.ts';
+import { renameAccount } from '../../src/accounts/accountnames.ts';
 import { homeEntry } from '../../src/platform/home.ts';
 import { makeFixture } from '../_fixture.ts';
 import { captureError } from '../_fixture.ts';
@@ -322,111 +320,29 @@ test('a remove naming somewhere else is refused before anything is deleted', () 
 // ——— Twin rule 6: an account that is an API key keeps its key in `keys.json` under the home
 // (AGT3, D67 §1) — beside the account, never inside it — and shows it only by its last four.
 
-test('an API key makes an account whose key is kept beside it, in the file both twins read', () => {
-  const fx = makeFixture('harness-key');
-  const lines: string[] = [];
+// An account made of a key, and a new key into one, are the driver program's since PUSH1f2e5 (`daoris-driver agent key`): their cases
+// are `agents-text.json`'s rows, and `ApiKeyAccountTests` and `KeyReplaceTests` hold `HarnessKeys`. What is left here reads a key, and
+// removes one with its account; a key account is laid as the driver writes it.
 
-  const account = addKeyAccount(fx.root, 'claude-code', 'sk-ant-api03-cli-test-wxyz\n', (l) => lines.push(l));
-
-  assert.match(account, /^acct-[0-9a-f]{8}$/);
-  assert.deepEqual(readdirSync(profileHome(fx.root, 'claude-code', account)), []);
-  // The file's shape is the twin contract: the driver's HarnessKeys reads exactly this.
-  assert.deepEqual(JSON.parse(readFileSync(homeEntry(fx.root, 'keys'), 'utf8')),
-    { 'claude-code': { [account]: 'sk-ant-api03-cli-test-wxyz' } });
-  assert.equal(keyOf(fx.root, 'claude-code', account), 'sk-ant-api03-cli-test-wxyz');
-  // ACCT2: its id is never what a person has to read; the end offers a name of theirs.
-  assert.match(lines.join('\n'), new RegExp(`daoris agent profile rename claude-code ${account} <name>`));
-  // Said back by its handle only.
-  assert.match(lines.join('\n'), /…wxyz/);
-  assert.doesNotMatch(lines.join('\n'), /sk-ant-api03-cli-test/);
-  fx.cleanup();
-});
-
-/** 🔴 A key typed as an argument is in the shell's history: refused, saying so, and nothing made. */
-test('`agent key` refuses a key on the command line', () => {
-  const fx = makeFixture('harness-key-argv');
-
-  const error = captureError(() => run(['key', 'claude-code', 'sk-ant-api03-in-history-0000'], at(fx)));
-
-  assert.match(error.message, /stdin, not on the command line/);
-  assert.doesNotMatch(error.message, /in-history/);
-  assert.deepEqual(profiles(fx.root, 'claude-code'), []);
-  fx.cleanup();
-});
-
-test('a blank key is refused and makes nothing; an agent with no key variable takes none', () => {
-  const fx = makeFixture('harness-key-refused');
-
-  assert.match(captureError(() => addKeyAccount(fx.root, 'claude-code', '  \n', () => {})).message, /not an API key/);
-  assert.match(captureError(() => addKeyAccount(fx.root, 'dsh', 'sk-x-1234', () => {})).message, /takes no API key/);
-  assert.deepEqual(profiles(fx.root, 'claude-code'), []);
-  assert.deepEqual(profiles(fx.root, 'dsh'), []);
-  fx.cleanup();
-});
+/** A key account laid as the driver's `HarnessKeys.Add` writes it: its folder, and its key in `keys.json` beside it. */
+function keyed(fx: { root: string }, agent: string, account: string, key: string): string {
+  mkdirSync(profileHome(fx.root, agent, account), { recursive: true });
+  const path = homeEntry(fx.root, 'keys');
+  mkdirSync(dirname(path), { recursive: true });
+  const held = existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) as Record<string, Record<string, string>> : {};
+  writeFileSync(path, JSON.stringify({ ...held, [agent]: { ...held[agent], [account]: key } }), 'utf8');
+  return account;
+}
 
 test('removing a key account removes its key, and another account keeps its own', () => {
   const fx = makeFixture('harness-key-remove');
-  const first = addKeyAccount(fx.root, 'claude-code', 'sk-first-1111', () => {});
-  const second = addKeyAccount(fx.root, 'claude-code', 'sk-second-2222', () => {});
+  const first = keyed(fx, 'claude-code', 'acct-00000001', 'sk-first-1111');
+  const second = keyed(fx, 'claude-code', 'acct-00000002', 'sk-second-2222');
 
   removeProfile(fx.root, 'claude-code', first);
 
   assert.equal(keyOf(fx.root, 'claude-code', first), null);
   assert.equal(keyOf(fx.root, 'claude-code', second), 'sk-second-2222');
-  fx.cleanup();
-});
-
-// KEYREPLACE1a: a refused key is replaced in the same account, which keeps its id and so its name, lists and defaults.
-test('a new key replaces an account\'s key in place, ends what marked it refused, and leaves another account alone', () => {
-  const fx = makeFixture('harness-key-replace');
-  const first = addKeyAccount(fx.root, 'claude-code', 'sk-first-1111', () => {});
-  const second = addKeyAccount(fx.root, 'claude-code', 'sk-second-2222', () => {});
-  renameAccount(fx.root, 'claude-code', profiles(fx.root, 'claude-code'), first, 'work-key');
-  defaulted(at(fx), 'claude-code', first, null);
-  keepRead(fx.root, 'claude-code', first, 'out', new Date());
-  writeFileSync(fx.entry('cooling'), JSON.stringify({ 'claude-code': { [first]: { until: '2999-01-01T00:00:00Z' } } }), 'utf8');
-  const lines: string[] = [];
-
-  replaceKeyAccount(fx.root, 'claude-code', 'work-key', 'sk-ant-api03-new-key-abcd\n', (l) => lines.push(l));
-
-  assert.equal(keyOf(fx.root, 'claude-code', first), 'sk-ant-api03-new-key-abcd');
-  assert.equal(keyOf(fx.root, 'claude-code', second), 'sk-second-2222');
-  assert.deepEqual(profiles(fx.root, 'claude-code').sort(), [first, second].sort());
-  assert.equal(readHarnessSettings(at(fx)).defaults['claude-code'], first);
-  assert.equal(accountNames(fx.root, 'claude-code')[first], 'work-key');
-  assert.notEqual(readOf(readsOf(fx.root, 'claude-code'), first)?.login, 'out');
-  assert.equal(coolingOf(fx.root, 'claude-code', first, new Date()), null);
-  const said = lines.join('\n');
-  assert.match(said, /…abcd/);
-  assert.doesNotMatch(said, /sk-ant-api03-new/);
-  assert.match(said, /running desktop reads the account again at its next press/);
-  fx.cleanup();
-});
-
-test('a key is replaced only in an account that exists and is a key, with a key that is one', () => {
-  const fx = makeFixture('harness-key-replace-refused');
-  const kept = addKeyAccount(fx.root, 'claude-code', 'sk-kept-1111', () => {});
-  mkdirSync(profileHome(fx.root, 'claude-code', 'signed-in'), { recursive: true });
-
-  assert.match(captureError(() => replaceKeyAccount(fx.root, 'claude-code', 'nobody', 'sk-x-1234', () => {})).message, /no account/);
-  assert.match(captureError(() => replaceKeyAccount(fx.root, 'claude-code', 'signed-in', 'sk-x-1234', () => {})).message, /not an API key account/);
-  assert.match(captureError(() => replaceKeyAccount(fx.root, 'claude-code', kept, '  \n', () => {})).message, /not an API key/);
-  assert.match(captureError(() => replaceKeyAccount(fx.root, 'claude-code', kept, 'sk a b', () => {})).message, /not an API key/);
-  assert.match(captureError(() => replaceKeyAccount(fx.root, 'dsh', kept, 'sk-x-1234', () => {})).message, /takes no API key/);
-  assert.equal(keyOf(fx.root, 'claude-code', kept), 'sk-kept-1111');
-  fx.cleanup();
-});
-
-// The verb reads stdin, which a test cannot hand it: the argv is judged first, so a key typed beside `--account` is still
-// refused as one in the shell's history, and the account's own value is not mistaken for one.
-test('`agent key <agent> --account` still refuses a key on the command line', () => {
-  const fx = makeFixture('harness-key-replace-argv');
-  const kept = addKeyAccount(fx.root, 'claude-code', 'sk-kept-1111', () => {});
-
-  const error = captureError(() => run(['key', 'claude-code', '--account', kept, 'sk-ant-api03-in-history-0000'], at(fx)));
-
-  assert.match(error.message, /stdin, not on the command line/);
-  assert.equal(keyOf(fx.root, 'claude-code', kept), 'sk-kept-1111');
   fx.cleanup();
 });
 
@@ -437,7 +353,7 @@ test('a key account is asked with its key, and listed by its handle', () => {
     "if (process.argv[2] === '--version') { console.log('keyed 1.0'); process.exit(0); }",
     "console.log(JSON.stringify({ loggedIn: Boolean(process.env.ANTHROPIC_API_KEY), authMethod: 'api_key' }));",
   ].join('\n'), 'utf8');
-  const account = addKeyAccount(fx.root, 'claude-code', 'sk-probe-abcd', () => {});
+  const account = keyed(fx, 'claude-code', 'acct-0000abcd', 'sk-probe-abcd');
 
   const report = probe('claude-code', {
     ...TOOLCHAINS['claude-code']!, binary: [process.execPath, script],
@@ -450,14 +366,14 @@ test('a key account is asked with its key, and listed by its handle', () => {
 // ——— Twin rule 7: a door's accounts are its owner's (AGT7). `accountOf` says whose account a door
 // runs as; its accounts, defaults and keys live under that name. Its pin stays its own.
 
-test('a door lists its owner’s accounts, and a key given for it is the owner’s', () => {
+// A key given for a door being its owner's is `agents-text.json`'s row since PUSH1f2e5.
+test('a door lists its owner’s accounts, a key account among them', () => {
   const fx = makeFixture('harness-door-list');
   mkdirSync(profileHome(fx.root, 'claude-code', 'work'), { recursive: true });
 
-  const account = addKeyAccount(fx.root, 'claude-code-acp', 'sk-door-9999', () => {});
+  const account = keyed(fx, 'claude-code', 'acct-00009999', 'sk-door-9999');
   const report = probe('claude-code-acp', TOOLCHAINS['claude-code-acp']!, fx.root, readHarnessSettings(at(fx)));
 
-  assert.equal(keyOf(fx.root, 'claude-code', account), 'sk-door-9999');
   assert.deepEqual(report.profiles.map((p) => p.home).sort(),
     [profileHome(fx.root, 'claude-code', account), profileHome(fx.root, 'claude-code', 'work')].sort());
   fx.cleanup();
@@ -839,7 +755,7 @@ test('a signed-out home names nobody, and a toolchain that does not ask keeps no
 
 test('an unknown agent errors naming what exists, never a silent fallback', () => {
   const fx = makeFixture('harness-unknown');
-  const error = captureError(() => run(['install', 'not-an-agent'], at(fx)));
+  const error = captureError(() => run(['update', 'not-an-agent'], at(fx)));
 
   assert.match(error.message, /unknown agent 'not-an-agent'/);
   assert.match(error.message, /claude-code/);

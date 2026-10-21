@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { coolingOf, endCooling, readCooling } from '../../src/accounts/cooling.ts';
 import type { CoolingEntry } from '../../src/accounts/cooling.ts';
 import { homeEntry } from '../../src/platform/home.ts';
-import { TOOLCHAINS, addKeyAccount, profileHome, removeProfile, signInNew, signInTo } from '../../src/agents/toolchain.ts';
+import { TOOLCHAINS, profileHome, removeProfile, signInNew, signInTo } from '../../src/agents/toolchain.ts';
 import { driverRows as csharpRows, driverTestFile } from '../_csharp.ts';
 import { makeFixture } from '../_fixture.ts';
 
@@ -164,16 +164,7 @@ test('a finished sign-in into an account ends its cool-off; one that did not fin
   fx.cleanup();
 });
 
-test('a key made into an account takes an id no cool-off names, and leaves the others\'', () => {
-  const fx = makeFixture('cooling-key');
-  cooling(fx, { 'claude-code': { 'account-1': { until: AHEAD(), stated: true } } });
-
-  const account = addKeyAccount(fx.root, 'claude-code', 'sk-test-0000-wxyz', () => {});
-  assert.notEqual(account, 'account-1');
-  assert.equal(coolingOf(fx.root, 'claude-code', account, new Date()), null);
-  assert.notEqual(coolingOf(fx.root, 'claude-code', 'account-1', new Date()), null);
-  fx.cleanup();
-});
+// A key made into an account is the driver program's since PUSH1f2e5: `AccountCoolingTests` holds that it ends no other's cool-off.
 
 test('an account removed takes its cool-off with it, whether its directory was there or not', () => {
   const fx = makeFixture('cooling-remove');
