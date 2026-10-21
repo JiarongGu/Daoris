@@ -344,6 +344,37 @@ describe("a repository's Setup on its page (UX6f)", () => {
     expect(within(repositoryMain()).getByRole('tab', { name: 'Setup' })).toHaveAttribute('aria-selected', 'true');
   });
 
+  /**
+   * FABRIC-GRAPH1d: a landing rule the file keeps that reads as no rule, from the driver's state: its own, matched without case,
+   * else its workspace's where it lands by Daoris's merge, said under its landing's row.
+   */
+  it('names a landing rule that does not read, its own before its workspace\'s', async () => {
+    const unread = (over: Record<string, unknown>) => invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'LINES') return LINES;
+      if (type === 'ACROSS') return ACROSS;
+      if (type === 'RULES') return RULES;
+      if (type === 'PLUGINS') return PLUGINS;
+      return { ...DRIVER_STATE, drivable: ['engine'], workspaceLines: [{ workspace: 'aurora', branch: 'main' }], ...over };
+    });
+    const said = async () => (await within(repositoryMain()).findByText(/keeps a landing rule for/)).closest('[role="note"]');
+
+    unread({ workspaceUnreadLandings: [{ workspace: 'Aurora', why: 'form', said: 'it names no `form`, `merge` or `branch`.' }] });
+    show(<ProjectsView notify={() => {}} />);
+    await chooseRepository('engine');
+    await openSetup('Line and landing');
+    expect(await said()).toHaveTextContent('driver.json keeps a landing rule for Aurora that names no form');
+
+    cleanup();
+    unread({
+      unreadLandings: [{ repository: 'ENGINE', why: 'object', said: "it holds no rule's object." }],
+      workspaceUnreadLandings: [{ workspace: 'aurora', why: 'form', said: 'it names no `form`, `merge` or `branch`.' }],
+    });
+    show(<ProjectsView notify={() => {}} />);
+    await screen.findByRole('heading', { level: 1, name: 'engine' });
+    expect(await said()).toHaveTextContent('driver.json keeps a landing rule for ENGINE that is not a rule');
+    expect(within(repositoryMain()).getAllByText(/keeps a landing rule for/)).toHaveLength(1);
+  });
+
   it("shows its line on Details read-only, whose door opens Setup at Line and landing", async () => {
     show(<ProjectsView notify={() => {}} />);
     const page = await chooseRepository('engine');

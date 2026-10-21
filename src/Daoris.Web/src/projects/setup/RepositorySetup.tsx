@@ -21,7 +21,7 @@ import { type RepositoryReview, type ReviewEdit, ReviewField, reviewRowSays, rev
 import { Button, CheckField, Chip, Icon, Segmented, SelectField, SettingRow } from '../../design/ui';
 import type { Answered } from '../../work/InlineConfirm';
 import { RepositoryRules, type RuleLists } from './RepositoryRules';
-import { Inheritable, landingRowSays, landingSays, SetupSection } from './SetupParts';
+import { Inheritable, landingRowSays, landingSays, SetupSection, type UnreadLanding, UnreadLandingNote } from './SetupParts';
 import { StandingAnswer } from './StandingAnswer';
 
 /**
@@ -89,6 +89,11 @@ export type WorkSetup = {
   /** The plugins here that land work, which a branch rule may hand its branch to (D100). */
   landers?: string[];
   onLanding?: (rule: LandingRule | undefined) => void;
+  /**
+   * A landing rule `driver.json` keeps that reads as no rule (FABRIC-GRAPH1d): its own, or its workspace's where it lands by
+   * Daoris's merge, with the name it is written under; absent where none, and on a shell older than it.
+   */
+  landingUnread?: (UnreadLanding & { name: string }) | null;
   /**
    * Where its work is reviewed before it lands (REVIEWENV1a, D154 point 2), as the driver resolves it: its own, its
    * workspace's, or none set; absent on a shell older than it, and no row is offered.
@@ -293,7 +298,8 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
   // What opens on its own: a section holding a value set for this repository.
   const opensItself: Record<SetupSectionId, boolean> = {
     driving: false,
-    work: lineOwn || landingOwn || commitsOwn || reviewOwn || opinionOwn || landedOwn,
+    // An unread landing rule opens it too (FABRIC-GRAPH1d): the person wrote something nothing reads.
+    work: lineOwn || landingOwn || Boolean(work?.landingUnread) || commitsOwn || reviewOwn || opinionOwn || landedOwn,
     access: accessOwn,
     // This machine's heavy gates are set for this repository alone, so a list set is its own; and so are its sessions' checks.
     heavy: (heavy?.gates.length ?? 0) > 0 || Boolean(heavy?.checks?.set),
@@ -371,6 +377,7 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
               landing={landing}
               above={work.landingAbove ?? { form: 'merge' }}
               landers={work.landers ?? []}
+              unread={work.landingUnread ?? null}
               busy={busy}
               onLanding={work.onLanding}
               onOpenPlugin={onOpenPlugin}
@@ -649,8 +656,9 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
 }
 
 /** How its work lands: an `Inheritable` whose control is the rule's own, and what accepting automatically gives. */
-function LandingSetting({ repository, landing, above, landers, busy, onLanding, onOpenPlugin }: {
+function LandingSetting({ repository, landing, above, landers, unread, busy, onLanding, onOpenPlugin }: {
   repository: string;
+  unread: (UnreadLanding & { name: string }) | null;
   onOpenPlugin?: (plugin: string) => void;
   landing: RepositoryLanding;
   above: LandingRule;
@@ -689,6 +697,7 @@ function LandingSetting({ repository, landing, above, landers, busy, onLanding, 
       )}
     >
       <AcceptingNote accepting={accepting} />
+      {unread && <UnreadLandingNote name={unread.name} unread={unread} />}
     </Inheritable>
   );
 }

@@ -90,6 +90,27 @@ export function SetupSection({ title, summary, startsOpen, children }: {
 }
 
 /**
+ * A landing rule `driver.json` keeps that reads as no rule (FABRIC-GRAPH1d), as the driver's state answers it: why, `object` (no
+ * rule's object), `form` (no `form`) or `refused` (a rule that could not land work), and the driver's sentence.
+ */
+export type UnreadLanding = { why: string; said: string };
+
+/**
+ * An unread landing rule said under the landing's row (FABRIC-GRAPH1d): both readers skip it, so the work there lands as though it
+ * set none, and Setup says so rather than passing over it. `name` is the repository or workspace it is written under; a refused
+ * rule, or a reason a later driver adds, is said in the driver's own sentence.
+ */
+export function UnreadLandingNote({ name, unread }: { name: string; unread: UnreadLanding }) {
+  const { t } = useTranslation();
+  const why = unread.why === 'object' || unread.why === 'form' ? unread.why : 'refused';
+  return (
+    <p className="m-0 mt-2 text-small text-warn" role="note">
+      <Inline text={t(`projects.setup.unreadLanding.${why}`, { name, said: unread.said })} />
+    </p>
+  );
+}
+
+/**
  * A value that is the thing's own or stands from above (§4.2): what it is and what said so, beneath its name; and at the
  * right, its control with *Clear* where it is its own, or *Set for this …* (`setHere`), which opens the control in place
  * with *Never mind* beside it. A `wide` control, the landing rule's several parts, is laid out beneath the row's words at

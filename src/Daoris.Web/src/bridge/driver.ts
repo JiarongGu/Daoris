@@ -11,6 +11,7 @@ import type { SessionChecksValue } from '../settings/repository/SessionChecks';
 import type { HelperRule } from '../settings/repository/Helpers';
 import type { HandOverRule } from '../settings/repository/HandOver';
 import type { LandingRule } from '../settings/repository/Landings';
+import type { UnreadLanding } from '../projects/setup/SetupParts';
 import type { LanguageOption } from '../settings/repository/Languages';
 import type { OpinionRule } from '../settings/repository/Opinions';
 import type { ReviewLook, ReviewRule } from '../settings/repository/Reviews';
@@ -121,6 +122,13 @@ export type DriverState = {
   landings?: ({ repository: string } & LandingRule)[];
   /** And by workspace. */
   workspaceLandings?: ({ workspace: string } & LandingRule)[];
+  /**
+   * The landing rules the file keeps that read as no rule (FABRIC-GRAPH1d), which the rows above skip: by repository — absent on a
+   * shell older than it.
+   */
+  unreadLandings?: ({ repository: string } & UnreadLanding)[];
+  /** And by workspace. */
+  workspaceUnreadLandings?: ({ workspace: string } & UnreadLanding)[];
   /** Reading across as set (D107), by repository — absent on a shell older than it. */
   readAcross?: { repository: string; read: boolean }[];
   /** And by workspace, for each repository there that sets none of its own. */

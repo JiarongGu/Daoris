@@ -72,6 +72,22 @@ describe("a workspace's Setup", () => {
     expect(acts.read).toHaveBeenLastCalledWith(undefined);
   });
 
+  /** FABRIC-GRAPH1d: a rule the file keeps for it that reads as no rule is said under the row, and opens Defaults. */
+  it('names a landing rule that does not read under its row, opening Defaults', () => {
+    at({
+      defaults: {
+        line: { onSet: vi.fn() },
+        landing: { landers: [], onSet: vi.fn(), unread: { why: 'object', said: "it holds no rule's object." } },
+        language: { table: LANGUAGES, onSet: vi.fn() },
+        read: { onSet: vi.fn() },
+      },
+    });
+
+    expect(section('Defaults')).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByText(/keeps a landing rule for/).closest('[role="note"]')).toHaveTextContent(
+      'driver.json keeps a landing rule for aurora that is not a rule, so nothing reads it: work lands as though it set none.');
+  });
+
   /** PLUGUI1c2c: the landing plugin is a door to that plugin's page. */
   it("opens the plugin's page from its name in the landing sentence", async () => {
     const onOpenPlugin = vi.fn();
