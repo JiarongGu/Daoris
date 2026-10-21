@@ -13,9 +13,9 @@ namespace Daoris.Driver;
 /// placeholder naming the argument where no spelling holds, which the person replaces as their own shell spells the value.
 /// </summary>
 /// <remarks>
-/// <para><b>A twin</b> of the CLI's <c>shellword.ts</c> and the page's <c>shellWord.ts</c>, which carry the reasons beside each
-/// kind; <c>ShellWordTests</c> reads their one table, the CLI's <c>test/fixtures/shell-words.json</c>, row for row, and the
-/// CLI's suite holds that table against the shells themselves. The rule is read by code point, as theirs is, so a letter
+/// <para><b>A twin</b> of the page's <c>shellWord.ts</c>, which carries the reasons beside each kind (the CLI's <c>shellword.ts</c>
+/// left with <c>daoris agent</c>'s TypeScript, PUSH1f2e); <c>ShellWordTests</c> reads their one table, <c>fixtures/shell-words.json</c>
+/// among the driver's tests, row for row, and the CLI's suite holds that table against the shells themselves. The rule is read by code point, as theirs is, so a letter
 /// written as two UTF-16 units is one letter.</para>
 /// <para>It changes no naming rule: a name the contract allows is still allowed, and only a command that names it is spelled.</para>
 /// </remarks>

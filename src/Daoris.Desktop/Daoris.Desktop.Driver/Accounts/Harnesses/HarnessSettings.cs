@@ -210,10 +210,11 @@ public sealed record HarnessSettings(
     /// rather than written naming nothing every later start refuses.
     /// </summary>
     /// <param name="home">The home whose managed versions the pin names.</param>
+    /// <param name="workspace">The workspace whose own pin it is (PUSH1f2e: <c>agent pin --workspace</c>), or null for the machine's.</param>
     /// <exception cref="DriverException">Nothing is installed at that version now, or the file does not read; nothing was written.</exception>
-    public static HarnessSettings Pin(string path, string home, string harness, string version) =>
+    public static HarnessSettings Pin(string path, string home, string harness, string version, string? workspace = null) =>
         Change(path, read => Directory.Exists(ManagedHome(home, harness, version))
-            ? read.WithVersion(harness, version)
+            ? workspace is null ? read.WithVersion(harness, version) : read.WithWorkspaceVersion(workspace, harness, version)
             : throw new DriverException(
                 $"`{harness}` {version} is no longer installed where Daoris keeps it — it was removed as the pin waited — so the pin was "
                 + $"not written. `daoris agent pin {harness} {version}` installs it again."));
@@ -830,9 +831,9 @@ public sealed record HarnessSettings(
 
     // How a scope's list is used (TOOL6a; D130 §2, §3.1, §4.6, §14 as §16.6 amends them; D165 point 2 and
     // docs/2026-10-02-account-use-design.md, docs/2026-10-12-account-switch-design.md §2 and §6, SWITCH1a): `rotationUse` for
-    // the machine and `workspaceRotationUse` for one workspace, per agent, beside the lists. A twin of the CLI's rotation.ts
-    // (readUse, curveProblem, resolveScope, withUse, scopeProblem), which `daoris agent profile use` writes; RotationUseTwinTests
-    // and the CLI's rotation-use.test.ts read one table, the CLI's test/fixtures/rotation-use.json, row for row. The rules both keep:
+    // the machine and `workspaceRotationUse` for one workspace, per agent, beside the lists, which `daoris agent profile use` writes
+    // through this program (PUSH1f2e3; the CLI's rotation.ts, its twin, left with PUSH1f2e); RotationUseTwinTests reads one table,
+    // fixtures/rotation-use.json among the driver's tests, row for row. The rules it keeps:
     //  - Read: an entry is an object, kept whole; `prefer` and `parallel`, which §16.6 retired, are read as nothing and said as
     //    nothing, and go at the next write (KEEPALL1b: held as read, so the save's edit takes them out). Each other field is a value this build knows, or one it does not, which reads as today's default and is said
     //    (RotationScope.Unknown); a field this build has no name for is kept and said too, so a newer build's setting outlives

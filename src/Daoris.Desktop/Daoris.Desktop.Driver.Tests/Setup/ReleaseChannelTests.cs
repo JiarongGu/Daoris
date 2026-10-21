@@ -17,8 +17,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <c>test/fixtures/vendor/</c> — one copy of the evidence for both artefacts, kept byte for byte by
 /// <c>.gitattributes</c> — and every request goes to a transport the test holds.</para>
 ///
-/// <para>Codex is the CLI's alone: the driver declares no <c>codex</c> toolchain (its door is
-/// <c>codex-acp</c>, an npm package), so there is no Codex pin for a screen to offer.</para>
+/// <para>Codex's channel is the driver's too since PUSH1f2e (<see cref="CodexReleases"/>): its door is <c>codex-acp</c>, an npm
+/// package, and its accounts' holder, <c>codex</c>, pins from the release's own package. Each run stages under its own process's
+/// name and publishes by one move (<see cref="ReleaseChannels"/>).</para>
 /// </remarks>
 public sealed class ReleaseChannelTests : IDisposable
 {
@@ -294,6 +295,285 @@ public sealed class ReleaseChannelTests : IDisposable
         Assert.Equal(vendor, HarnessSettings.ManagedBinary(_home, "claude-code", "2.1.281", ["claude"]));
     }
 
+    // ——— Codex: the package, by both of its published hashes, unpacked whole (PUSH1f2e, the CLI's `channels.ts` ported).
+
+    private static string Codex(string version, string file) => $"{CodexReleases.Base}/{version}/{file}";
+
+    [Fact]
+    public void Each_machine_maps_to_the_package_codex_publishes_for_it_and_a_version_is_no_tag()
+    {
+        Assert.Equal("x86_64-pc-windows-msvc", CodexReleases.Target("win32", "x64"));
+        Assert.Equal("aarch64-pc-windows-msvc", CodexReleases.Target("win32", "arm64"));
+        Assert.Equal("x86_64-apple-darwin", CodexReleases.Target("darwin", "x64"));
+        Assert.Equal("aarch64-unknown-linux-musl", CodexReleases.Target("linux", "arm64"));
+        Assert.Contains("linux-ia32", Assert.Throws<DriverException>(() => CodexReleases.Target("linux", "ia32")).Message);
+
+        CodexReleases.RefuseVersion("0.156.1");
+        CodexReleases.RefuseVersion("0.157.0-alpha.3");
+        foreach (var version in new[] { "rust-v0.156.1", "latest", "0.156", "0.156.1-rc.1" })
+        {
+            Assert.Contains("version", Assert.Throws<DriverException>(() => CodexReleases.RefuseVersion(version)).Message);
+        }
+    }
+
+    [Fact]
+    public async Task A_verified_codex_package_is_unpacked_whole_and_bin_codex_is_what_runs()
+    {
+        var release = CodexRelease("0.156.1", "x86_64-pc-windows-msvc", windows: true);
+        var transport = new Served(release.Files);
+        var where = HarnessSettings.ManagedHome(_home, "codex", "0.156.1");
+        var said = new List<string>();
+
+        var staged = await ReleaseChannels.StageAsync(
+            CodexReleases.Channel, where, "0.156.1", said.Add, CancellationToken.None, transport, platform: "x86_64-pc-windows-msvc");
+        var (exe, published) = ReleaseChannels.Publish(staged, said.Add);
+
+        Assert.True(published);
+        Assert.Equal(Path.Combine(where, "bin", "codex.exe"), exe);
+        // Whole: the helpers it finds through its own layout came with it.
+        Assert.True(File.Exists(Path.Combine(where, "codex-path", "rg.exe")));
+        Assert.True(File.Exists(Path.Combine(where, "codex-package.json")));
+        Assert.False(Directory.Exists(staged.Staging));
+        // The SUMS file before the package: the package's hash is checked against both.
+        Assert.Equal(
+            [
+                Codex("0.156.1", "release.json"),
+                Codex("0.156.1", CodexReleases.Sums),
+                Codex("0.156.1", "codex-package-x86_64-pc-windows-msvc.tar.gz"),
+            ],
+            transport.Asked);
+    }
+
+    [Fact]
+    public async Task The_vendor_s_real_metadata_and_sums_agree_and_a_package_that_is_neither_s_hash_is_refused()
+    {
+        var transport = new Served(new Dictionary<string, byte[]>
+        {
+            [Codex("0.156.1", "release.json")] = File.ReadAllBytes(Path.Combine(Vendor, "codex", "0.156.1", "release.json")),
+            [Codex("0.156.1", CodexReleases.Sums)] = File.ReadAllBytes(Path.Combine(Vendor, "codex", "0.156.1", CodexReleases.Sums)),
+            [Codex("0.156.1", "codex-package-x86_64-pc-windows-msvc.tar.gz")] = Encoding.UTF8.GetBytes("not the package"),
+        });
+        var where = HarnessSettings.ManagedHome(_home, "codex", "0.156.1");
+
+        var refused = await Assert.ThrowsAsync<DriverException>(() => ReleaseChannels.StageAsync(
+            CodexReleases.Channel, where, "0.156.1", _ => { }, CancellationToken.None, transport, platform: "x86_64-pc-windows-msvc"));
+
+        Assert.Contains("a2e017db9807e6a2269a26fea0e1d9546469cef4d472a33016bc9f3ad7d3b733", refused.Message);
+        // It reached the package, so the real SUMS file matched the real metadata's digest for it.
+        Assert.Equal(3, transport.Asked.Count);
+        Assert.False(Directory.Exists(where));
+        Assert.Empty(Directory.EnumerateDirectories(Path.GetDirectoryName(where)!));
+    }
+
+    [Fact]
+    public async Task A_sums_file_with_one_changed_byte_is_refused_before_the_package_is_fetched()
+    {
+        var sums = File.ReadAllBytes(Path.Combine(Vendor, "codex", "0.156.1", CodexReleases.Sums));
+        sums[0] = sums[0] == (byte)'a' ? (byte)'b' : (byte)'a';
+        var transport = new Served(new Dictionary<string, byte[]>
+        {
+            [Codex("0.156.1", "release.json")] = File.ReadAllBytes(Path.Combine(Vendor, "codex", "0.156.1", "release.json")),
+            [Codex("0.156.1", CodexReleases.Sums)] = sums,
+        });
+
+        var refused = await Assert.ThrowsAsync<DriverException>(() => ReleaseChannels.StageAsync(
+            CodexReleases.Channel, Path.Combine(_home, "v"), "0.156.1", _ => { }, CancellationToken.None, transport,
+            platform: "x86_64-pc-windows-msvc"));
+
+        Assert.Contains("SHA256SUMS", refused.Message);
+        Assert.Equal(2, transport.Asked.Count);
+    }
+
+    [Fact]
+    public async Task Metadata_and_sums_that_disagree_about_the_package_are_refused()
+    {
+        var release = CodexRelease("0.156.1", "x86_64-unknown-linux-musl", windows: false,
+            sums: _ => Encoding.UTF8.GetBytes($"{new string('f', 64)}  codex-package-x86_64-unknown-linux-musl.tar.gz\n"));
+        var transport = new Served(release.Files);
+
+        var refused = await Assert.ThrowsAsync<DriverException>(() => ReleaseChannels.StageAsync(
+            CodexReleases.Channel, Path.Combine(_home, "v"), "0.156.1", _ => { }, CancellationToken.None, transport,
+            platform: "x86_64-unknown-linux-musl"));
+
+        Assert.Contains("disagree", refused.Message);
+        Assert.Equal(2, transport.Asked.Count);
+    }
+
+    [Fact]
+    public async Task With_no_release_json_the_github_release_is_asked_instead_and_verified_the_same_way()
+    {
+        var release = CodexRelease("0.156.1", "aarch64-apple-darwin", windows: false);
+        var files = new Dictionary<string, byte[]>(release.Files);
+        files[$"{CodexReleases.GitHub}/rust-v0.156.1"] = files[Codex("0.156.1", "release.json")];
+        files.Remove(Codex("0.156.1", "release.json"));
+        var transport = new Served(files);
+        var where = HarnessSettings.ManagedHome(_home, "codex", "0.156.1");
+
+        var staged = await ReleaseChannels.StageAsync(
+            CodexReleases.Channel, where, "0.156.1", _ => { }, CancellationToken.None, transport, platform: "aarch64-apple-darwin");
+
+        Assert.Equal("bin/codex", staged.Executable);
+        Assert.Equal([Codex("0.156.1", "release.json"), $"{CodexReleases.GitHub}/rust-v0.156.1"], transport.Asked.Take(2));
+    }
+
+    [Fact]
+    public async Task Metadata_for_another_version_is_refused_as_that_version()
+    {
+        var release = CodexRelease("0.156.1", "x86_64-pc-windows-msvc", windows: true);
+        var transport = new Served(new Dictionary<string, byte[]> { [Codex("0.157.0", "release.json")] = release.Files[Codex("0.156.1", "release.json")] });
+
+        var refused = await Assert.ThrowsAsync<DriverException>(() => ReleaseChannels.StageAsync(
+            CodexReleases.Channel, Path.Combine(_home, "v"), "0.157.0", _ => { }, CancellationToken.None, transport,
+            platform: "x86_64-pc-windows-msvc"));
+
+        Assert.Contains("rust-v0.156.1", refused.Message);
+    }
+
+    [Fact]
+    public async Task A_download_address_that_is_not_https_is_refused_before_anything_is_fetched_from_it()
+    {
+        var release = CodexRelease("0.156.1", "x86_64-pc-windows-msvc", windows: true, address: "http://releases.example.invalid/pkg.tar.gz");
+        var transport = new Served(release.Files);
+
+        var refused = await Assert.ThrowsAsync<DriverException>(() => ReleaseChannels.StageAsync(
+            CodexReleases.Channel, Path.Combine(_home, "v"), "0.156.1", _ => { }, CancellationToken.None, transport,
+            platform: "x86_64-pc-windows-msvc"));
+
+        Assert.Contains("HTTPS", refused.Message);
+        Assert.DoesNotContain("http://releases.example.invalid/pkg.tar.gz", transport.Asked);
+    }
+
+    [Fact]
+    public async Task A_package_with_no_bin_codex_is_refused_and_nothing_is_left_where_the_pin_points()
+    {
+        var release = CodexRelease("0.156.1", "x86_64-pc-windows-msvc", windows: true, entries: "codex-package.json={}");
+        var where = HarnessSettings.ManagedHome(_home, "codex", "0.156.1");
+
+        var refused = await Assert.ThrowsAsync<DriverException>(() => ReleaseChannels.StageAsync(
+            CodexReleases.Channel, where, "0.156.1", _ => { }, CancellationToken.None, new Served(release.Files),
+            platform: "x86_64-pc-windows-msvc"));
+
+        Assert.Contains("bin/codex.exe", refused.Message);
+        Assert.False(Directory.Exists(where));
+        Assert.Empty(Directory.EnumerateDirectories(Path.GetDirectoryName(where)!));
+    }
+
+    [Fact]
+    public async Task The_newest_codex_release_is_read_from_its_metadata_s_tag_and_a_pointer_that_is_no_version_is_refused()
+    {
+        var newest = await ReleaseChannels.LatestAsync(CodexReleases.Channel, CancellationToken.None, new Served(new Dictionary<string, byte[]>
+        {
+            [CodexReleases.Latest] = Encoding.UTF8.GetBytes("""{"tag_name":"rust-v0.160.0"}"""),
+        }));
+        Assert.Equal("0.160.0", newest);
+
+        var refused = await Assert.ThrowsAsync<DriverException>(() => ReleaseChannels.LatestAsync(
+            CodexReleases.Channel, CancellationToken.None, new Served(new Dictionary<string, byte[]>
+            {
+                [CodexReleases.Latest] = Encoding.UTF8.GetBytes("""{"tag_name":"nightly"}"""),
+            })));
+        Assert.Contains("not a version", refused.Message);
+    }
+
+    [Fact]
+    public async Task The_window_pins_codex_from_its_maker_s_channel()
+    {
+        var toolchain = CodexAccounts.Toolchain;
+        Assert.Equal(CodexReleases.Channel, toolchain.Channel);
+        var release = CodexRelease("0.156.1", CodexReleaseDownloads.Current(), windows: OperatingSystem.IsWindows());
+        var transport = new Served(release.Files);
+
+        var code = await HarnessActions.PinAsync(toolchain, _home, "codex", "0.156.1", _ => { }, CancellationToken.None, transport: transport);
+
+        Assert.Equal(0, code);
+        Assert.NotNull(HarnessSettings.ManagedBinary(_home, "codex", "0.156.1", toolchain.Binary));
+    }
+
+    // ——— Each run stages under its own name (the alone-path design §1.4).
+
+    [Fact]
+    public async Task Two_runs_of_one_version_each_stage_their_own_and_the_second_keeps_the_first_s()
+    {
+        using var stranger = Pgp.Stranger();
+        var binary = Encoding.UTF8.GetBytes("MZ-one");
+        var where = HarnessSettings.ManagedHome(_home, "claude-code", "2.1.300");
+        var trust = (stranger.Armoured, stranger.Fingerprint);
+
+        var first = await ReleaseChannels.StageAsync(ClaudeReleases.Channel, where, "2.1.300", _ => { }, CancellationToken.None,
+            new Served(Release(stranger, "2.1.300", "win32-x64", binary)), "win32-x64", trust, process: 101, running: _ => true);
+        var second = await ReleaseChannels.StageAsync(ClaudeReleases.Channel, where, "2.1.300", _ => { }, CancellationToken.None,
+            new Served(Release(stranger, "2.1.300", "win32-x64", binary)), "win32-x64", trust, process: 202, running: _ => true);
+
+        Assert.NotEqual(first.Staging, second.Staging);
+        Assert.True(ReleaseChannels.Publish(first, _ => { }).Published);
+        var said = new List<string>();
+        Assert.False(ReleaseChannels.Publish(second, said.Add).Published);
+        Assert.Contains(said, line => line.Contains("meanwhile"));
+        Assert.Equal([where], Directory.EnumerateDirectories(Path.GetDirectoryName(where)!));
+    }
+
+    [Fact]
+    public async Task A_dead_run_s_staging_is_swept_and_a_living_one_s_kept()
+    {
+        using var stranger = Pgp.Stranger();
+        var where = HarnessSettings.ManagedHome(_home, "claude-code", "2.1.300");
+        var dead = ReleaseChannels.StagingOf(where, 7);
+        var living = ReleaseChannels.StagingOf(HarnessSettings.ManagedHome(_home, "claude-code", "2.1.301"), 8);
+        Directory.CreateDirectory(dead);
+        Directory.CreateDirectory(living);
+
+        await ReleaseChannels.StageAsync(ClaudeReleases.Channel, where, "2.1.300", _ => { }, CancellationToken.None,
+            new Served(Release(stranger, "2.1.300", "win32-x64", [1])), "win32-x64", (stranger.Armoured, stranger.Fingerprint),
+            process: 9, running: process => process == 8);
+
+        Assert.False(Directory.Exists(dead));
+        Assert.True(Directory.Exists(living));
+    }
+
+    [Fact]
+    public async Task A_stop_midway_leaves_no_staging()
+    {
+        using var stranger = Pgp.Stranger();
+        var where = HarnessSettings.ManagedHome(_home, "claude-code", "2.1.300");
+        using var stop = new CancellationTokenSource();
+        var transport = new Served(Release(stranger, "2.1.300", "win32-x64", [1])) { Asking = stop.Cancel };
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => ReleaseChannels.StageAsync(
+            ClaudeReleases.Channel, where, "2.1.300", _ => { }, stop.Token, transport, "win32-x64",
+            (stranger.Armoured, stranger.Fingerprint)));
+
+        Assert.Empty(Directory.EnumerateDirectories(Path.GetDirectoryName(where)!));
+    }
+
+    /// <summary>A Codex release in the vendor's metadata shape, over a package built here.</summary>
+    private static (Dictionary<string, byte[]> Files, byte[] Package) CodexRelease(
+        string version, string target, bool windows, Func<byte[], byte[]>? sums = null, string? address = null, string? entries = null)
+    {
+        var exe = windows ? ".exe" : "";
+        var package = ToolInstallTests.Archive.Build(
+            "tar.gz", entries ?? $"codex-package.json={{\"layout\":1}}; bin/codex{exe}=codex; codex-path/rg{exe}=rg", "");
+        var name = CodexReleases.Package(target);
+        var listed = sums?.Invoke(package)
+            ?? Encoding.UTF8.GetBytes($"{new string('0', 64)}  codex-app-server-package-{target}.tar.gz\n{Sha(package)}  {name}\n");
+        var metadata = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(new
+        {
+            tag_name = $"rust-v{version}",
+            assets = new object[]
+            {
+                new { name, digest = $"sha256:{Sha(package)}", browser_download_url = address ?? Codex(version, name) },
+                new { name = CodexReleases.Sums, digest = $"sha256:{Sha(listed)}", browser_download_url = Codex(version, CodexReleases.Sums) },
+            },
+        });
+        return (new Dictionary<string, byte[]>
+        {
+            [Codex(version, "release.json")] = metadata,
+            [Codex(version, name)] = package,
+            [Codex(version, CodexReleases.Sums)] = listed,
+        }, package);
+    }
+
+    private static string Sha(byte[] bytes) => Convert.ToHexStringLower(SHA256.HashData(bytes));
+
     // ——— Helpers.
 
     private static byte[] Tamper(byte[] manifest)
@@ -330,7 +610,7 @@ public sealed class ReleaseChannelTests : IDisposable
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory is not null)
         {
-            var candidate = Path.Combine(directory.FullName, "src", "Daoris.Cli", "test", "fixtures", "vendor");
+            var candidate = Path.Combine(directory.FullName, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "vendor");
             if (Directory.Exists(candidate)) return candidate;
             directory = directory.Parent;
         }
@@ -343,10 +623,15 @@ public sealed class ReleaseChannelTests : IDisposable
     {
         public List<string> Asked { get; } = [];
 
+        /// <summary>Called as each address is asked: a test's stop midway.</summary>
+        public Action? Asking { get; init; }
+
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             var url = request.RequestUri!.ToString();
             Asked.Add(url);
+            Asking?.Invoke();
+            ct.ThrowIfCancellationRequested();
             return Task.FromResult(files.TryGetValue(url, out var body)
                 ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(body) }
                 : new HttpResponseMessage(HttpStatusCode.NotFound));

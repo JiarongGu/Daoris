@@ -433,8 +433,9 @@ public sealed class AgentsCommandTests : IDisposable
         Assert.Equal(0, await AgentsCommand.RunAsync(["--help"], World(), CancellationToken.None));
         Assert.Contains(AgentsCommand.Usage, _out.ToString(), StringComparison.Ordinal);
 
-        Assert.Equal(2, await AgentsCommand.RunAsync(["pin", "claude-code", "2.1.90"], World(), CancellationToken.None));
-        Assert.StartsWith("daoris-driver agent: `pin` is not a verb of this program's.", _error.ToString(), StringComparison.Ordinal);
+        // Every verb of the family is the program's since PUSH1f2e, `pin` the last: a word none is stands in for one it lacks.
+        Assert.Equal(2, await AgentsCommand.RunAsync(["frobnicate", "claude-code"], World(), CancellationToken.None));
+        Assert.StartsWith("daoris-driver agent: `frobnicate` is not a verb of this program's.", _error.ToString(), StringComparison.Ordinal);
     }
 
     /// <summary>A person typing a key: the read waits until the test answers it, so a test sees what is held meanwhile.</summary>

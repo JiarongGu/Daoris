@@ -1,15 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, parse } from 'node:path';
 import {
   GIT_PREFIXES, LONGEST_VARIABLE, gitBehind, launcherEnvironment, pastLauncher, systemGit,
 } from '../../src/tools/gitforwindows.ts';
 import type { GitBehind } from '../../src/tools/gitforwindows.ts';
 import { onPath } from '../../src/platform/fsx.ts';
-import { homeEntry } from '../../src/platform/home.ts';
-import { probe, readHarnessSettings } from '../../src/agents/toolchain.ts';
-import type { Toolchain } from '../../src/agents/toolchain.ts';
 import { driverRows as csharpRows, driverTestFile } from '../_csharp.ts';
 import { makeFixture } from '../_fixture.ts';
 
@@ -242,45 +239,8 @@ test('a PATH that finds the launcher starts the git behind it; one that finds no
   at.fx.cleanup();
 });
 
-// ——— The toolchain's children (`startChild`): the system's git goes past, the person's named git does not.
-
-test('the toolchain starts the system’s git past the launcher, and a git the person named as named', onWindows, () => {
-  const at = install('gitforwindows-toolchain');
-  // Both are copies of node, so the start can say which file it is and what MSYSTEM it was handed.
-  const launcher = join(at.top, 'cmd', 'git.exe');
-  mkdirSync(dirname(launcher), { recursive: true });
-  copyFileSync(process.execPath, launcher);
-  mkdirSync(join(at.top, 'mingw64', 'bin'), { recursive: true });
-  copyFileSync(process.execPath, at.behind().git);
-  mkdirSync(join(at.top, 'usr', 'bin'), { recursive: true });
-  const script = join(at.root, 'says-which.mjs');
-  writeFileSync(script, "console.log(`${process.execPath}|${process.env.MSYSTEM ?? ''}`);\n");
-  const toolchain: Toolchain = { binary: [launcher, script], version: [], profileVariable: 'FAKE_HOME' };
-  const home = join(at.root, 'data');
-  mkdirSync(home, { recursive: true });
-
-  const said = () => {
-    const saved = process.env.DAORIS_HOME;
-    process.env.DAORIS_HOME = home;
-    try {
-      const report = probe('fake', toolchain, at.root, readHarnessSettings(join(at.root, 'harnesses.json')));
-      assert.ok(report.present, report.problem ?? '');
-      return report.version!.split('|');
-    } finally {
-      if (saved === undefined) delete process.env.DAORIS_HOME;
-      else process.env.DAORIS_HOME = saved;
-    }
-  };
-
-  const [system, msystem] = said();
-  assert.equal(system!.toLowerCase(), at.behind().git.toLowerCase(), 'the system’s git: the real one');
-  assert.equal(msystem, 'MINGW64');
-
-  writeFileSync(homeEntry(home, 'tools'), JSON.stringify({ tools: { git: { use: 'file', file: launcher } } }));
-  const [named] = said();
-  assert.equal(named!.toLowerCase(), launcher.toLowerCase(), 'the person’s named git: as named');
-  at.fx.cleanup();
-});
+// The toolchain's children: an agent's probe, which started the system's git past the launcher, left with `daoris agent`'s
+// TypeScript (PUSH1f2e); the driver's `WorkingTree.GitStart` holds the same start.
 
 // ——— The twin, held: the driver's tables are these tables, row for row and in this order.
 

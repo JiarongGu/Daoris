@@ -313,7 +313,7 @@ public sealed class DoorUpdateTests : IDisposable
         return ["node", script];
     }
 
-    private static string VendorFixtures() => Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "test", "fixtures", "vendor");
+    private static string VendorFixtures() => Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "vendor");
 
     /// <summary>A transport over a table of URLs, and the URLs it was asked for, in order.</summary>
     private sealed class Served(Dictionary<string, byte[]> files) : HttpMessageHandler

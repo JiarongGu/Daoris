@@ -19293,3 +19293,14 @@ No installed window has set one. Detail: D195's KEEP1g note. On Opus.
 
 **Outcome** 2026-10-22: work, history, help, opinion, setup, the channel's post and `plugins approve|withdraw` send their routes, presses confirmed in
 the window and lists read, each route asked for `said` running the verb's own path; `PipeCensusTests` holds who stays alone. Detail: D182's RPC1e note.
+## PUSH1f2e — the agents' tools and accounts (2026-10-22, D194)
+
+> - [ ] **PUSH1f2e — the agents' tools and accounts** (cli, driver, modules, tools; after 2d; D194, the alone-path design §5). Read its row in §5 and the sections it names; build it end to end (D187), the family's TypeScript leaving as §4 says. Built so far: PUSH1f2e1-6 (archived): every verb but `update` and `pin`. Left: (1) Codex's release channel in the driver beside `ClaudeReleaseDownloads` (`channels.ts`' `codex`, its newest and its version check), then `agent pin` and `update` (a pin's move, else the agent's updater at the terminal) with §1.4's publication, a channel pin staged under its process's name, and `daoris agent` handing the family whole; (2) the TypeScript's leaving and the twins rows and tables §4 names; (3) §5's Process proofs through the CLI and the host (a code typed to a stub's sign-in, a key read the same way, a sign-in stopped midway, the probe lock against the host's reads; `install` finding the machine's npm beside a managed node is `ToolsChildrenTests`'). Proof: as §5 names it.
+
+**Outcome** 2026-10-22: built, the last of the row after PUSH1f2e1-6. Codex's release channel ported beside Claude Code's, each pin
+staged under its process's name and published under the lease; `daoris-driver agent pin|update` (no route, refused from a session's
+terminal; a pinned update a pin's move, else the agent's updater at the terminal); `daoris agent` hands the family whole. The 2e
+TypeScript §4 lists left the CLI (1,091 `test(` lines before, 953 after), the shared tables and the vendor's files moved to the
+driver's fixtures with their readers and merge rows, and the twins rows lost the CLI's column. §5's Process proofs through the CLI and
+the host on a stub agent (`AgentSignInProcessTests`); a Ctrl+C through the processes stays in-process. Verbs' shapes unchanged for
+D197. Detail: D194's PUSH1f2e note. On Opus.

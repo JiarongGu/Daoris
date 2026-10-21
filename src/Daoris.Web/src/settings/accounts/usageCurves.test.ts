@@ -10,7 +10,7 @@ import { type CurvePoint, type CurveScope, ownPoints } from './usageCurves';
  * The usage curve on the page (SWITCH1d; D165 point 2; the switch design §2 and §5), since PUSH1e judged in .NET alone (D182 point
  * 6): the driver's `UsageCurves` measures each window and the accounts' answer carries the verdicts, a window's curve now in whole
  * points and whether it is over it, and each scope's accounts whose tightest window is over its curve. The page words them. 🔴 The
- * CLI's `test/fixtures/usage-curves.json` holds the words: every `tightest` row's clause is the page's, given the verdict .NET
+ * driver's `fixtures/usage-curves.json` holds the words: every `tightest` row's clause is the page's, given the verdict .NET
  * pushes for that row (`DriverModuleAccountsTests.The_scopes_verdicts_are_the_shared_tables_rows` holds the verdicts to the rows).
  */
 
@@ -20,7 +20,7 @@ type Said = [window: string, used: number | null, reset: string];
 type Tightest = { window: string; curve: number; room: number } | null;
 
 // From the page's package, where its suite runs, as `shellWord.test.ts` reads its table.
-const TABLE = JSON.parse(readFileSync(join(process.cwd(), '..', 'Daoris.Cli', 'test', 'fixtures', 'usage-curves.json'), 'utf8')) as {
+const TABLE = JSON.parse(readFileSync(join(process.cwd(), '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests', 'fixtures', 'usage-curves.json'), 'utf8')) as {
   now: string;
   tightest: [name: string, switched: Switch, curve: Curve | null, said: Said[], tightest: Tightest, clause: string | null][];
 };
@@ -66,12 +66,12 @@ describe('the usage curve, as .NET judges it and the page words it (PUSH1e)', ()
  * A curve's rules, said by the door (SWITCH1d; the switch design §2; PUSH1e): the point editor saves, and a curve that breaks a rule
  * is refused by the modules' `ACCOUNT_USE_CURVE`, its rule the catalogue's form and its values the window, the point and the numbers.
  * 🔴 The page's half of the refusal's words: each rule's values as the door sends them (the same rows as the modules'
- * `A_curve_that_breaks_a_rule_is_refused_in_its_code_naming_the_rule`) say, in English, the sentence of the CLI's `rotation-use.json`
+ * `A_curve_that_breaks_a_rule_is_refused_in_its_code_naming_the_rule`) say, in English, the sentence of the driver's `rotation-use.json`
  * `refusal` row for that curve, word for word, so the catalogue cannot drift from the terminal's sentence.
  */
 describe('a curve’s rules, as the door refuses them', () => {
   type Row = [why: string, curve: string, refused: string | null];
-  const ROWS = (JSON.parse(readFileSync(join(process.cwd(), '..', 'Daoris.Cli', 'test', 'fixtures', 'rotation-use.json'), 'utf8')) as {
+  const ROWS = (JSON.parse(readFileSync(join(process.cwd(), '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests', 'fixtures', 'rotation-use.json'), 'utf8')) as {
     refusal: Row[];
   }).refusal;
   const refusalOf = (curve: unknown) => ROWS.find(([, written]) => JSON.stringify(JSON.parse(written)) === JSON.stringify(curve))?.[2];

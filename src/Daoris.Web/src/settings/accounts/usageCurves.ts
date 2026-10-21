@@ -5,8 +5,8 @@
 // Judged in .NET alone since PUSH1e (D182 point 6): the driver's `UsageCurves` measures, and the accounts' answer carries what the
 // page shows, each reading's window its start, its curve now in whole points and whether it is over it, and each scope's curve in
 // effect, its list's accounts measured by it and those over it (`AccountsRoutes`). The page words those and draws them; it holds no
-// window's length, no smart curve and no curve's rule of its own. The CLI's `usagecurves.ts` stays the terminal's twin of the
-// driver's until its verbs ask the running Daoris (PUSH1f); the shared table, `test/fixtures/usage-curves.json`, holds both, and the
+// window's length, no smart curve and no curve's rule of its own. The CLI's `usagecurves.ts`, the terminal's twin, left with
+// `daoris agent list` (PUSH1f2e4); the shared table, the driver's `fixtures/usage-curves.json`, holds the driver, and the
 // page's words of the verdicts (`usageCurves.test.ts`).
 
 /** A point of a curve, `[elapsed, used]`, each a whole percent: as `harnesses.json` keeps it. */

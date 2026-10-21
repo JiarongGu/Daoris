@@ -6,37 +6,30 @@ import { delimiter, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 // @ts-expect-error — untyped workspace tooling; see desktop-tool.test.ts for why
 import { CLI_BIN, CLI_ENTRY, CLI_PACKAGE, cliLaunchers } from '../../../../tools/desktop-publish.mjs';
-import { joinRefusal } from '../../src/accounts/rotation.ts';
-import { shellWord, shellWords } from '../../src/platform/shellword.ts';
 import { makeFixture } from '../_fixture.ts';
 
 /**
  * An argument as a terminal hint prints it (ACCTQUOTE1, D125's ACCTQUOTE1 note): bare where every shell reads it as itself,
  * in double quotes where they keep it whole in PowerShell, Command Prompt and a POSIX shell alike, and a placeholder where
- * no spelling does. The CLI's half of a TWIN with the page's `shellWord.ts`: both read `fixtures/shell-words.json`, row for
- * row, so the two doors spell an argument the same way.
+ * no spelling does. The driver's `ShellWord` and the page's `shellWord.ts` read one table, the driver's
+ * `fixtures/shell-words.json`, row for row; the CLI's `shellword.ts` left with `daoris agent`'s TypeScript (PUSH1f2e).
  *
- * The table is a claim about shells, so it is held against them: every spelled row is handed through the install's own
+ * The table is a claim about shells, so it is held against them here, where the install's launchers are: every spelled row is handed through the install's own
  * launchers (D124 §1.2) by the shells this platform has, and must arrive as one argument, itself.
  */
 
-const here = dirname(dirname(fileURLToPath(import.meta.url)));
+const repository = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
 
 type Row = [why: string, value: string, word: string];
-const ROWS = JSON.parse(readFileSync(join(here, 'fixtures', 'shell-words.json'), 'utf8')) as Row[];
+const ROWS = JSON.parse(readFileSync(
+  join(repository, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests', 'fixtures', 'shell-words.json'), 'utf8')) as Row[];
 
 /** The rows a hint prints the value of, and the rows it names a placeholder for. */
 const SPELLED = ROWS.filter(([, , word]) => word !== '<name>');
 const UNSPELLED = ROWS.filter(([, , word]) => word === '<name>');
 
-test('each value is spelled as the table spells it: bare, in double quotes, or the placeholder', () => {
-  for (const [why, value, word] of ROWS) assert.equal(shellWord(value, '<name>'), word, why);
+test('the table holds a spelled row and a placeholder row', () => {
   assert.ok(SPELLED.length > 0 && UNSPELLED.length > 0, 'the table holds both kinds');
-});
-
-test('several values are spelled one by one, a space between', () => {
-  assert.equal(shellWords(['work', 'my team', 'R&D'], '<account>'), 'work "my team" <account>');
-  assert.equal(shellWords([], '<account>'), '');
 });
 
 /**
@@ -99,13 +92,4 @@ test('a line ending in a placeholder, pasted as it is, reaches nothing: each she
     assert.doesNotMatch(out, /"agent"/, `${shell} handed the line on: ${out}`);
   }
   fx.cleanup();
-});
-
-// ——— The hints: every command the CLI prints from an account's name or id, or a workspace's name, spells it.
-
-// The account verbs' own refusals are the driver's program's since PUSH1f2e, held by `AgentsCommandTests`' twin of this test;
-// `agent list`'s *Try now* and join hints since PUSH1f2e4, held by `AgentsTextTests`' rows.
-test('a refusal\'s command names a workspace with a space in double quotes, and an account it cannot spell by a placeholder', () => {
-  assert.match(joinRefusal('claude-code', 'my team'),
-    /`daoris agent profile order claude-code <account>… --workspace "my team"`/);
 });

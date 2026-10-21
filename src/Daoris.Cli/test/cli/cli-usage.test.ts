@@ -94,7 +94,7 @@ test('a handed verb goes to the driver\'s program whole, with nothing written fi
     [['tool', 'download', 'gh', '2.62.0'], ['download', 'gh', '2.62.0']],
     [['tool', 'locations', 'add', 'https://lists.example/r.json'], ['locations', 'add', 'https://lists.example/r.json']],
     [['tool', 'frobnicate'], ['frobnicate']],
-    // PUSH1f2d: `daoris agent`'s rules, trust and settings, its allow-list; the rest of the family stays the CLI's (`handed.test.ts`).
+    // PUSH1f2d: `daoris agent`'s rules, trust and settings, its allow-list until PUSH1f2e handed the family whole.
     [['agent', 'rules'], ['rules']],
     [['agent', 'rules', 'frobnicate'], ['rules', 'frobnicate']],
     [['agent', 'rules', 'decline', 'p0000007', '--note', 'not "now" & 100% 中文'], ['rules', 'decline', 'p0000007', '--note', 'not "now" & 100% 中文']],
@@ -117,6 +117,10 @@ test('a handed verb goes to the driver\'s program whole, with nothing written fi
     [['agent', 'key', 'claude-code', '--account', 'work key'], ['key', 'claude-code', '--account', 'work key']],
     // PUSH1f2e6: an agent's sign-in, whose prompts the agent asks at this terminal.
     [['agent', 'login', 'codex', '--new', '--name', 'R&D seat', '--join', 'Work & play'], ['login', 'codex', '--new', '--name', 'R&D seat', '--join', 'Work & play']],
+    // PUSH1f2e: a pin and an update, and so the family whole, a verb the program lacks among it.
+    [['agent', 'pin', 'codex', '0.156.1', '--workspace', 'Work & play'], ['pin', 'codex', '0.156.1', '--workspace', 'Work & play']],
+    [['agent', 'update', 'claude-code'], ['update', 'claude-code']],
+    [['agent', 'frobnicate'], ['frobnicate']],
   ] as const) {
     for (const exit of [0, 1, 2] as const) {
       const handed: Handed[] = [];

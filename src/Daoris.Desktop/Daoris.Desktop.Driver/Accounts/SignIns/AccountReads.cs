@@ -28,9 +28,9 @@ public sealed record AgentReads(AccountRead? Own, IReadOnlyDictionary<string, Ac
 /// account says its state and when, and who once it is read again. Missing or unreadable is nothing known: never read, never
 /// signed in (D57). Beside <c>cooling.json</c> and <c>windows.json</c>, not in <c>harnesses.json</c>, which is the person's
 /// wiring. Written atomically, LF, keeping what it has no field for. No HTTP route reaches it (D47 §4).</para>
-/// <para><b>A TWIN with the CLI's <c>accountreads.ts</c></b> (AGENTREAD1), which a terminal's reading writes through: both are
-/// held, row for row, to one table, the CLI's <c>test/fixtures/account-reads.json</c>, which <c>AccountReadsTests</c> reads
-/// (AGENTREAD1b). A rule changed here is changed there in the same commit.</para>
+/// <para>Held, row for row, to one table, <c>fixtures/account-reads.json</c> among the driver's tests, which <c>AccountReadsTests</c>
+/// reads (AGENTREAD1b). The CLI's <c>accountreads.ts</c>, its twin, left with <c>daoris agent</c>'s TypeScript (PUSH1f2e): a terminal's
+/// reading is this program's.</para>
 /// <para>The file's shape: <c>{ "&lt;agent&gt;": { "own": { "login": "in", "read": "…Z" }, "accounts": { "&lt;account&gt;":
 /// { "login": "out", "read": "…Z" } } } }</c>.</para>
 /// </remarks>
