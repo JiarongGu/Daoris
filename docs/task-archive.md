@@ -18726,3 +18726,12 @@ while a session of this machine's on the quest, driven for it or a conversation 
 stand anyway keeps its own words. The page shows the 409's words as for any refusal and still offers the press. Proof:
 `QuestShareTests.A_bring_forward_waits_while_the_losing_session_still_runs` and `A_running_session_does_not_hide_why_the_press_cannot_stand`.
 On Opus: about 40 tool calls. Detail: D178's SYNCMERGE1c4 line.
+
+## LANDSYNC1b — the landing's sync, its `Process` cases (2026-10-21, D87)
+
+> - [ ] **LANDSYNC1b — the landing's sync, its `Process` cases** (driver tests; after 1). LANDSYNC1's fast half holds the judgement; over real git still: TREEFOLLOW1's own branch replayed in place, an advance whose line holds some of the commits, and D87's amendment point 3 (the tree moved to what landed). Proof: `Process` cases beside `TreeSyncTests`.
+
+**Outcome** 2026-10-21: tests only, no code changed, all green on the current code. `LandSyncProcessTests` (Process, git): an own
+branch replayed in place leaving out a cherry-pick by its patch id, the tree on it; the same branch on its remote refused with the
+rebase words; an advance moving the chain's branch on by only what neither it nor the line holds, the tree following; and a tree a
+session holds staying while the landing stands. On Opus: about 40 tool calls. Detail: D87's LANDSYNC1b note.
