@@ -76,6 +76,11 @@ export type Attention = {
    * row, the session that asked, whose ask its yes and no answer and whose page its door opens (MIXAGENT2c).
    */
   session?: string | null;
+  /**
+   * A `work` row whose owner nothing records, whose `daoris/<folder>` branch names a session's tree the page holds (FABRIC-UNKNOWN1c):
+   * that session, whose page its door opens, where the branch's Discard branch press is too.
+   */
+  cutFor?: string;
   /** An `opinion` row's work and its gate (XAGENT1g): what its presses act on, and whether a press of the person's is coming. */
   opinion?: OpinionWait;
   /** A `work` row's plugin step's attempt held for the person (FABRIC-PERFORM1g): what their word is on. */

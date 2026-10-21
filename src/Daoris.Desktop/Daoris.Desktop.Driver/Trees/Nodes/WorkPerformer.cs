@@ -918,6 +918,22 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         return null;
     }
 
+    /// <summary>
+    /// The units whose records name any of <paramref name="invocations"/> (FABRIC-PERFORM1p): what a pass reads the tips of before it hears
+    /// their answers, so a completion is judged on the tip the pass reads. One read of the records; none for no invocation.
+    /// </summary>
+    public IReadOnlySet<string> UnitsOf(IReadOnlyCollection<string> invocations)
+    {
+        var units = new HashSet<string>(StringComparer.Ordinal);
+        if (invocations.Count == 0) return units;
+        foreach (var record in records.All().Records)
+        {
+            if (invocations.Any(invocation => record.Invoked(invocation) is not null)) units.Add(record.Unit);
+        }
+
+        return units;
+    }
+
     private bool SentHere(string invocation)
     {
         lock (_sentHere) return _sentHere.Contains(invocation);

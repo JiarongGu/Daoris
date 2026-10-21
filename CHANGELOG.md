@@ -10,6 +10,12 @@ with the version and date at release.
   `.env`, what the session wrote) still waits its fourteen days, and a folder anything was written in after it was set aside keeps
   everything. `daoris-driver work state` and `trees list` name what went, and the look's report says it. A file copied into a folder set
   aside now keeps it as well as one written there. Folders set aside before this version keep their packages until their days.
+- A *What needs you* row for a `daoris/…` branch Daoris has no record of now opens the session it was made for, where you can
+  discard it, if that session is still listed. Otherwise it opens the workspace's Branches as before.
+- `daoris driver workflow apply <id> --as-graph` saves a workflow's newest version of steps as its next version, a graph, one holding
+  checks, stages or a group included. The graph is judged as any graph you save: two checks of one plugin are refused, naming both,
+  and nothing is written. The steps version stays as it was, and a go-ahead is said, since in the graph it holds what follows it until
+  your yes or your skip.
 - A quest whose submission you reopened now says so on its page, under *Reopened*: when, your words as you wrote them (or that
   you gave none), that it waits for its agent to make it ready again, and the session that submitted it, which is told. Before,
   it read as a quest whose agent had not yet said it was ready. A submission also names the session that made it. In English and
@@ -34,6 +40,9 @@ with the version and date at release.
   waited, the review no longer reads it as an ordinary landing. It says the push was held back and no plugin was told, that the
   branch stands, and that you hand it off from the review once you have looked at the quest. Accept… on a session's page says
   the same. In English and 中文.
+- Where work accepted automatically has its push held back by its landing's gate, such as a second opinion or a review it now
+  waits for, the conversation says the gate held it and that the branch is handed on once the gate lets it go. Before, it said
+  its quest was held or taken back, naming the gate only in the sentence beneath. In English and 中文.
 - A plugin's steps, and what they create, are now shown where its other declarations are: its page and an offer's page list each
   step with what it takes, gives and is reached on, in English and 中文; `daoris plugin list` and `plugin add` name each step with
   how it is reached; and an update says each step that changes, whole, so a step changed without a new version still shows.

@@ -1,14 +1,14 @@
-# Notifications: everything that comes to the person in one place the title bar opens, a terminal's press waiting there in plain words and never across the page, and Overview kept to a summary (proposed, 2026-10-21)
+# Notifications: everything that comes to the person in one place the title bar opens, a terminal's press waiting there in plain words and never across the page, and Overview kept to a summary (accepted, 2026-10-21)
 
-**Standing:** proposed under D196 (NOTIFY1), round 2 under D191. Codex read round 1 (twenty-eight findings, eighteen of them
-blocking); the steward checked each against the code, and this round takes them (§11). Nothing here is built; its rows (§9) build
-it in four steps (§0.2): the presentation first, on the transports that exist and changing no store (NOTIFY2a to 2d); then one
-serialized notice record (2e); then the channels' summaries on the service's own marks (2f); and throughout, arrivals said by
-their identity apart from the snapshots that list them (§5). It touches foundations in D191's amendment's classes: the moment a
-press counts as shown and the bound it keeps (§3.4, the person's door, D156's CONFIRMSEEN1 note), a durable record written by two
-processes (§2.5), and a mark the service keeps for a teammate's ask (§2.5, NOTIFY2f). Whether Fable reads, and which sections, is
-the steward's (§11's last paragraph). Nothing here publishes, spends an account, signs in or removes the person's data; §12 names
-the one choice settled by the steward's default and open to the owner.
+**Standing:** accepted under D196 (NOTIFY1), settled under D191 on 2026-10-21 after three rounds, each finding checked against the
+code by the steward (§11). Codex read the first round (twenty-eight findings, eighteen of them blocking, all taken in round 2).
+Since the design touches foundations in D191's amendment's classes (the moment a press counts as shown and the bound it keeps,
+§3.4, the person's door, D156's CONFIRMSEEN1 note; a durable record written by two processes, §2.5; a mark the service keeps for a
+teammate's ask, §2.5), Fable read §2 to §3 and §5 of round 2 (fourteen findings, one blocking, all taken in round 3). Nothing here
+is built; its rows (§9) build it in four steps (§0.2): the presentation first, on the transports that exist and changing no store
+(NOTIFY2a to 2e); then one serialized notice record (2f); then the channels' summaries on the service's own marks (2g); and
+throughout, arrivals said by their identity apart from the snapshots that list them (§5). Nothing here publishes, spends an
+account, signs in or removes the person's data; §12 names the one choice settled by the steward's default and open to the owner.
 
 Read for it: the row NOTIFY1 in `TASKS.md`; CONFIRMSEEN1's archive entry and D156's note on it (lines 237-260); D156 points 4 and
 the person-door design §4.2; the terminal RPC design §4.2 (lines 166-176); D182 points 1-6 and `.claude/knowledge/pushed-slices.md`;
@@ -17,8 +17,8 @@ D188 and the message-urgency design §1, §2, §8; D185 and the UI/UX design §2
 D171's MAINWINDOWS3 notes; `.claude/knowledge/person-waits.md`, `bridge-presses.md` (rows 7, 9, 11), `translation-parity.md` and
 `compatible-builds.md`; the glossary; and for round 2, Codex's read and D195's reads (the cleanup design §11) as the shape to follow.
 Every statement about today was read from the code at `7c2bce824` for round 1 and again at `5e6843642` for round 2 (three of the
-files it cites moved between, and their lines are cited as they stand now), and names its file and line; none was run, and the
-owner's install was not looked at.
+files it cites moved between, and their lines are cited as they stand now), and, where Fable's read touched it, at `3d3dd47de` for
+round 3, and names its file and line; none was run, and the owner's install was not looked at.
 
 ## 0. The case, and what the design rests on
 
@@ -54,7 +54,8 @@ saying `shown` (D156's CONFIRMSEEN1 note). This design keeps the ten minutes, th
 nowhere across the page (§3.1); *shown* is said when the card's decision region is in view there, not when any window draws the
 band (§3.4); the card speaks plain words that keep what tells one session and one file from another, and keeps the route's name
 under *Details* (§3.2); an answer after the bound is refused, as the card says it is (§3.4); and the press is announced by a toast
-in the window in front and, behind it, by a lit taskbar button and a notification in the window's language (§3.3).
+in the window in front and, behind it, by a lit taskbar button and a notification in the window's language, while the bell wears
+the warning hue for as long as a press waits unshown (§3.3).
 
 **What else it rests on.** *What needs you* is judged in .NET once for every window (`NeedsAPerson`, `AttentionStateSlice`, PUSH1d4)
 and keeps every rule `person-waits.md` lists; this design moves where it is drawn, never what it judges. The confirmation channel
@@ -66,14 +67,15 @@ but the person sends *now*. D185: the rules the screens keep (R1-R7). D182: .NET
 
 Codex's smaller shape (§11, 6.1), taken whole:
 
-1. **Presentation first, on the transports that exist** (NOTIFY2a to 2d). The confirmation cards of both sources and *What needs
+1. **Presentation first, on the transports that exist** (NOTIFY2a to 2e). The confirmation cards of both sources and *What needs
    you*'s rows move into one movable view the bell opens; Overview becomes their summary; a press's values stay on the confirmation
-   channel (`bridge/person.ts:55-72`, `:78-95`) and are never copied into a row. It changes no store, and NOTIFY2a alone fixes what
-   the owner hit on 2026-10-21: no bar across the page, no `SESSION_INPUT` as the sentence, a card that cannot run out before it
-   could be seen, and a short Overview. Then a count per window (2b), the announcement behind the window in the person's language
-   (2c), and the hand-over ask as a row (2d).
-2. **Then one serialized notice record** and its projection (2e): what ended, failed or went unanswered, kept a week.
-3. **Then the channels' summaries on the service's own marks** (2f), with the mark a teammate's ask needs added to the service.
+   channel (`bridge/person.ts:55-72`, `:78-95`) and are never copied into a row. It changes no store. The pipe's half lands first on
+   its own tests, with no view (2a): a press answered or shown past its time runs nothing, its event carries its id, its balloon
+   names no route. The view (2b) then fixes the rest of what the owner hit on 2026-10-21: no bar across the page, no
+   `SESSION_INPUT` as the sentence, a card that cannot run out before it could be seen, and a short Overview. Then a count per
+   window (2c), the announcement behind the window in the person's language (2d), and the hand-over ask as a row (2e).
+2. **Then one serialized notice record** and its projection (2f): what ended, failed or went unanswered, kept a week.
+3. **Then the channels' summaries on the service's own marks** (2g), with the mark a teammate's ask needs added to the service.
 4. **Throughout, arrivals are said by their identity**, apart from the snapshots that list and count them (§5): a snapshot read
    again says nothing twice, and no snapshot carries a field saying what to announce.
 
@@ -124,9 +126,11 @@ it is answered. Nothing below lays a scrim or traps the focus; the drawers that 
 
 - **The title bar's *Notifications*.** A button on the strip, in its trailing group before the browser's door: a bell with the
   count of what needs the person (each press of either source once, and every other row of *What needs you*) in open's hue, the
-  badge Overview's icon wears today; and, once something can be unread (2e, 2f), a dot in the accent while anything is. Its tip and
-  its name for a reader say both: *Notifications: 3 need you, 5 unread*. On a narrow window the region toggles leave the strip
-  first (UX7a); this button stays, since it is how anything is found.
+  badge Overview's icon wears today; and, once something can be unread (2f, 2g), a dot in the accent while anything is. **While any
+  press waits unshown** (§3.4), the badge wears the warning hue instead, with the presses' own count (§3.3). Its tip and its name
+  for a reader say what it shows: *Notifications: 3 need you, 5 unread*, or *2 waiting for your confirmation* first while a press
+  waits unshown. On a narrow window the region toggles leave the strip first (UX7a); this button stays, since it is how anything
+  is found.
 - **Pressed, it shows the view where it stands**: the right side bar by default, or the panel where the person moved it
   (`placements.ts:23-29`: a view stands in either), opening that region on the view's tab. Pressed while the view is shown, it
   gives the region back to the view it held, or closes the region where it was closed. It is a view like the others (DOCK1b),
@@ -176,10 +180,10 @@ line does today (`NothingNeedsYou`), and, once anything can be unread, *Nothing 
 
 | Group | What it holds | Read from | Counted in the bell | Leaves when | Row |
 |---|---|---|---|---|---|
-| **Waiting for your confirmation** (`person.label`) | Each press waiting, a terminal's over the pipe and one at the service's door, each as its whole card (§3) | the confirmation channel as built: `CONFIRMATIONS` and `PERSON_CONFIRMATIONS` for the pipe's, the page's poll for the service's (`person.ts:55-95`); never a row's copy | its number | confirmed, refused, withdrawn or refused by its time; an end with no answer becomes a notice in *Done and failed* once 2e keeps them | 2a |
-| **What needs you** (`work.attention.title`) | Today's rows in their three groups and order (`attentionInOrder`), with their acts and doors, but the `confirmation` row, which is its card above; and the hand-over ask (2d) | `NeedsAPerson`, unchanged | its number | what it waits on is settled; never dismissed | 2a |
-| **Messages** | Per ask with items past the person's mark, a teammate's ask among them: the service's own count (the number the ask's row says), the newest message's first line and who wrote it; and each conversation that answered the person's words | the `notices` slice: its `messages` partition over the service's channel reads, and its `news` partition for an answer (§2.5) | the dot | an ask's items read on its page or by *Mark read*; an answer by *Open*, *Mark read* or its conversation read in a window in front | 2f |
-| **Done and failed** | What the person need not answer: a session that ended without them asking, by its end state; a press that ended unanswered; later, the look's news (2g). Newest first | the notice record (§2.5) | the dot | dismissed, or a week old | 2e |
+| **Waiting for your confirmation** (`person.label`) | Each press waiting, a terminal's over the pipe and one at the service's door, each as its whole card (§3) | the confirmation channel as built: `CONFIRMATIONS` and `PERSON_CONFIRMATIONS` for the pipe's, the page's poll for the service's (`person.ts:55-95`); never a row's copy | its number; while one waits unshown, the presses' count in the warning hue | confirmed, refused, withdrawn or refused by its time; an end with no answer becomes a notice in *Done and failed* once 2f keeps them | 2b |
+| **What needs you** (`work.attention.title`) | Today's rows in their three groups and order (`attentionInOrder`), with their acts and doors, but the `confirmation` row, which is its card above; and the hand-over ask (2e) | `NeedsAPerson`, unchanged | its number | what it waits on is settled; never dismissed | 2b |
+| **Messages** | Per ask with items past the person's mark, a teammate's ask among them: the service's own count (the number the ask's row says), the newest message's first line and who wrote it; and each conversation that answered the person's words | the `notices` slice: its `messages` partition over the service's channel reads, and its `news` partition for an answer (§2.5) | the dot | an ask's items read on its page or by *Mark read*; an answer by *Open*, *Mark read* or its conversation read in a window in front | 2g |
+| **Done and failed** | What the person need not answer: a session that ended without them asking, by its end state; a press that ended unanswered; later, the look's news (2h). Newest first | the notice record (§2.5) | the dot | dismissed, or a week old | 2f |
 
 **A park, a parked quest and a start waiting for accounts** are rows of *What needs you* already; their `SESSION_ATTENTION` stays
 the announcement (§5) and adds no second item. **Grouping keeps the length down**: messages are one item per ask, not one per
@@ -187,8 +191,9 @@ message; *Ready for you* keeps its five and its door into Sessions; a group's he
 
 ### 2.3 What an item does in place
 
-- **A press's card**: *Refuse* first, then *Confirm*, as today; a refusal of the answer is said under the card (R3). *Details*
-  opens the route's name and every value raw. The card answers its press by its source and id, never by its words (§3.5).
+- **A press's card**: *Refuse* first, then *Confirm*, as today; a refusal of the answer is said under the card (R3), or by a toast
+  where the card has gone with its press, as a Confirm past its time finds it (§3.4). *Details* opens the route's name and every
+  value raw. The card answers its press by its source and id, never by its words (§3.5).
 - **A row of *What needs you***: its acts as on Overview today (*Publish to …*, *Try again*, *Allow…*, *Trust this folder…*,
   *Accept the departure*, *Sign in*, *Go on with this answer*, a helper's yes and no), each asking once under itself where it asks
   today (`InlineConfirm`); its door (*Answer…*, *Review*, *Open*) opens its place. **It is never dismissed**: a wait nobody sees is
@@ -211,20 +216,23 @@ message; *Ready for you* keeps its five and its door into Sessions; a group's he
   once (`ChannelSection.tsx:52-53`), or by *Mark read* on the item. **A session's channel panel moves no mark**, since it shows only
   the part about its line of work (`:54`), so it leaves the item as it was. Being listed is not reading either: the item shows one
   line of several.
-- **One unread model, the service's.** An ask's count is its channel's `unread`, every item past the person's mark, Daoris's lines
-  among them (`Channel.cs:974-982`): the number its row and the rail already say. The view adds the newest message from someone else
-  beside it, and never counts a second way.
+- **One unread model, the service's.** An ask's count is its channel's `unread`: the number its row and the rail already say. The
+  view adds the newest message from someone else beside it, and never counts a second way. Today that count is every item past
+  the person's mark, the person's own posts and Daoris's lines among them (`Channel.cs:981`), which the view's newest already
+  passes over. 2g changes the person's entry's count in the service, in the lane it already opens for a teammate's mark: past the
+  person's mark, only what an agent or a teammate wrote, never the person's own posts nor Daoris's lines. The ask's row and the
+  rail read the same count, so they say the same new number; a session's entry counts as it does today.
 - **A conversation's answer has no channel and no mark.** It is a notice of the kind `answered` in the record (§2.5), read by *Open*,
   by *Mark read*, or when its conversation is the one attended in a window visible and focused at or after the answer's moment,
   which shows the answer on the page (the condition `ShellSignals.tsx:151-152` already reads to keep a toast off it).
-- **Kept once per machine.** The channels' marks are the service's (D167), a teammate's ask's too once 2f lets the service keep the
+- **Kept once per machine.** The channels' marks are the service's (D167), a teammate's ask's too once 2g lets the service keep the
   person's mark on it (today `Channel.cs:1061-1063` refuses an ask the local store does not hold). The notices and whether each is
   read are the record `data/notices.json` (§2.5). One person, one machine, one read state: a notice read in one window is read in
   every window that shows it, by the slice's push.
 - **Each main window shows its own workspace** (MAINWINDOWS3): an item carries its workspace, a notice the one it was made in, kept
   on it and never read again from a session that may since be gone (`bridge/attention.ts:91` reads an item with none as every
   window's); a window shows its scope's and every machine-wide item (a press, an account, a press's end). Its counts are its scope's,
-  **and so is its taskbar**: each main window wears its own count on its own button and title (2b).
+  **and so is its taskbar**: each main window wears its own count on its own button and title (2c).
 - **What a window keeps of its own** is view state: which group is folded and where it is scrolled, in that window's session
   storage, as its scope is.
 
@@ -233,16 +241,18 @@ message; *Ready for you* keeps its five and its door into Sessions; a group's he
 - **What needs you**: `NeedsAPerson` and `AttentionStateSlice`, unchanged. The `confirmation` row stays as built
   (`NeedsAPerson.cs:333-349`): its route, its asker and its times, never a value.
 - **The presses**: the confirmation channel as built. The pipe's telling gains `named`, the values its sentence names by role
-  (`PipeWording`, §3.2), judged in the modules and added beside `fields`; the service's keeps its own `act`.
-- **A pushed slice, `notices`** (2e, 2f), its owner in the modules (`NoticesStateSlice`), in `pushed-slices.md`'s shape:
+  (`PipeWording`, §3.2), judged in the modules and added beside `fields`; the service's keeps its own `act`. **The service's
+  presses are the one count .NET does not judge**: the page reads them by its own poll (`person.ts:74-95`), so the bell's and the
+  taskbar's counts of them are the page's until the service's door is pushed to the windows, which is NOTIFY2j's (§9).
+- **A pushed slice, `notices`** (2f, 2g), its owner in the modules (`NoticesStateSlice`), in `pushed-slices.md`'s shape:
   - partition `news`, keyed by notice: `{ id, kind, at, read, workspace?, session?, quest?, repository?, state?, route?, act? }`,
     read from the record in memory;
-  - partition `messages` (2f), keyed by ask: `{ ask, workspace, teammate, unread, newest: { id, at, who, line, level, toEveryone }
+  - partition `messages` (2g), keyed by ask: `{ ask, workspace, teammate, unread, newest: { id, at, who, line, level, toEveryone }
     }`, `unread` the service's own, judged from each live ask's channel and the asks elsewhere (`ASKS_ELSEWHERE`) through the
     service's read, woken by the asks' pushes and the channel's presses. The page's per-ask counts (`useChannelUnreads`,
     `asks.ts:44-62`) read it once live; a channel is still pulled where it is read whole;
   - no field says what to announce: arrivals are events (§5).
-- **The record `data/notices.json`** (2e), machine-local and never on a wire to a shared host:
+- **The record `data/notices.json`** (2f), machine-local and never on a wire to a shared host:
   - **Its shape**: `{ "schemaVersion": 1, "notices": { "<id>": { … } } }`, the notices an object keyed by id, each as the partition
     holds it, its workspace with it. An object, not an array: `JsonKeeping` merges an object key by key and keeps a key it did not
     write, but writes an array whole (`JsonKeeping.cs:30-32`), so a field a later build wrote inside a notice is kept only in a map.
@@ -252,18 +262,35 @@ message; *Ready for you* keeps its five and its door into Sessions; a group's he
     conversations work before it holds the lease (`DriverLoop.cs:672-681`, `:728-733`), so the page's reads and dismissals and a
     conversation's answer (`:1025`) are written by the desktop's process whoever drives; a session's ending by the watch of the
     loop that drives (`:776-790`); a press's end by the pipe, which the loop holding the lease serves (`:735-737`).
+  - **A writer pushes its own write.** The process that wrote pushes its `notices` slice itself once the write is renamed in,
+    since a stamp the process marked as its own write wakes nothing on its home watch (`HomeWatch.cs:161-163`).
+  - **A write refused is logged and dropped**: the keep lock not taken within its ten seconds (`KeepLock.cs:35`), or
+    `SaveHolding` refusing a key written twice or a shape changed under the edit (`JsonKeeping.cs:109-121`). The notice is not
+    kept and nothing retries it, since the sessions' records keep what happened and nothing waits on a notice; the machine log
+    says the refusal.
   - **Its readers**: each process's slice reads the record at its start and again at each change a home watch hears, as Ask
     Daoris's proposals are heard by the window's process before the lease (`DriverLoop.cs:707-715`), so a notice the headless host
-    writes reaches the desktop's windows.
+    writes reaches the desktop's windows. A change the watcher misses is read at the topic's deadline, thirty seconds after its
+    last judgement whatever was heard (`HomeWatch.cs:172`). A read that fails (a file half seen, one that does not parse) keeps
+    the last snapshot pushed and waits for the next wake; a reader never sets a record aside.
+  - **Another process's notice is an arrival in the desktop by the desktop host's re-read.** With the headless loop driving, a
+    notice it writes reaches the desktop by no event, so the desktop host's re-read of the record is that notice's arrival source:
+    a notice whose id it has not seen is an arrival, the ids kept bounded, and nothing older than its first read of the record is
+    said (§5).
   - **Its workspace**: stored with the notice when it is made, from the sessions' snapshot then; a notice with none is
     machine-wide.
   - **Its age and its count**: a notice older than seven days is never pushed, from the record's first read on, and is pruned at
     the next write; at most 200 are kept, the oldest going first whether read or not, since nothing in it waits on anyone and the
     sessions' records keep what happened. A restart reads the record whole and prunes nothing until it writes.
-  - **A record it cannot take**: one that does not parse is set aside under a dated name and a new one begun, never written over;
-    one whose `schemaVersion` is newer than the build's is left as it is and read as none, and nothing is written over it.
+  - **A record it cannot take**: one that does not parse is set aside under a dated name and a new one begun, never written over,
+    by the writer holding the file's keep lock alone. `Notices` has its own path for it, since `JsonKeeping.SaveHolding` refuses a
+    file that does not read (`JsonKeeping.cs:101-107`): under the lock it reads the file, sets an unreadable one aside, and only
+    then writes. One whose `schemaVersion` is newer than the build's is left as it is and read as none, and nothing is written
+    over it.
   - **The notify switch governs being told, never recording**: the watch records every notice whether it is on or off, as it
-    already observes either way (`DriverLoop.cs:781-783`).
+    already observes either way (`DriverLoop.cs:781-783`), its `Observe` running before `ticked.Notify` is read (`:783-790`). A
+    conversation's answer likewise: its `answered` notice (2g) is recorded in `AnsweredAsync` before the switch's gate
+    (`:919-932`), so an answer heard with the switch off is still listed.
 - **The presses**: `NOTICES_READ { ids }` and `NOTICE_DISMISS { id | all }`, presses declaring a new `notices` scope; `Person` in the
   pipe's census, since a terminal that marks the person's news read hides it from them; `Exempt` in Ask Daoris's coverage, the
   person's own reading. *Mark read* on an ask is `CHANNEL_MARK` with its moment, as built.
@@ -288,7 +315,8 @@ wrote (the person-door design §4.2). What changes is which values it names and 
   `PipeCensus`) says which values the sentence names and by what role:
   - `session`, named as Sessions names it **and always with its repository and its short id beside**: a session's title can be a
     kind's generic name or another session's (a conversation's or a helper's kind, an intake's ask, a quest's `#id`,
-    `identity.ts:56-67`; two sessions on one quest share its name); `sessions` likewise;
+    `identity.ts:56-67`; two sessions on one quest share its name); **and with its workspace too where a repository of that name
+    is in more than one workspace**, which the attention rows already carry (`AttentionStateSlice.cs:72`); `sessions` likewise;
   - `words`, quoted as written; `level`, D188's level in the composer's words;
   - `files`, **each by its path as sent, whole**, never a file's name alone, since two files share a name;
   - `quest`, `ask`, `repository`, `agent`, each by its name and id;
@@ -322,26 +350,38 @@ wrote (the person-door design §4.2). What changes is which values it names and 
 
 | Where the person is | What says it | Why |
 |---|---|---|
-| At a main window of Daoris, focused | The bell's count, and a toast in that window alone: *A terminal asks to say words to Fix the export feed*, with *Open*, which shows the view at the card | A toast is announced to a reader and takes no focus; its door finds the card; one window speaks so two windows do not say it twice |
+| At a main window of Daoris, focused | The bell in the warning hue with the presses' count while any waits unshown, and a toast in that window alone: *A terminal asks to say words to Fix the export feed*, with *Open*, which shows the view at the card, staying until the view opens or the press ends | A toast is announced to a reader and takes no focus; its door finds the card; one window speaks so two windows do not say it twice; the bell's hue stays when a toast is missed |
 | At a secondary window of Daoris (a detached session, the monitor), focused | A toast there: *A terminal's press waits in Daoris's main window*, with no door, since that window holds no view (`SecondaryWindowRoot.tsx:14-26`); the system says nothing while any window of Daoris is in front (`SessionNotifier.cs:146-157`), so the main window's button is lit, as below | The person is at Daoris, but not where the card is |
-| Daoris visible, another program focused, or minimized | The balloon as today, naming no route from 2a and in the window's language from 2c, naming the act and the terminal and no value: *A terminal waits for your confirmation. It asks to say words to a session as yours. Open Daoris to confirm or refuse it.* Its click brings the main window last in front forward with the view open at the card. **And that window's taskbar button flashes while any press waits unshown** (`FlashWindowEx`, `FLASHW_TRAY \| FLASHW_TIMERNOFG`), stopped when a main window comes forward, or when the last press waiting unshown ends or is shown | The notification passes in seconds into the system's own list; the flash stays lit for the ten minutes a press waits to be found, which is the failure of 2026-10-21. A value stays out of a notification the system keeps in its own history (CONFIRMSEEN1: never a value) |
+| Daoris visible, another program focused, or minimized | The balloon as today, naming no route from 2a and in the window's language from 2d, naming the act and the terminal and no value: *A terminal waits for your confirmation. It asks to say words to a session as yours. Open Daoris to confirm or refuse it.* Its click brings the main window last in front forward with the view open at the card. **And that window's taskbar button flashes while any press waits unshown** (`FlashWindowEx`, `FLASHW_TRAY \| FLASHW_TIMERNOFG`), stopped when a main window comes forward, or when the last press waiting unshown ends or is shown | The notification passes in seconds into the system's own list; the flash stays lit for the ten minutes a press waits to be found, which is the failure of 2026-10-21. A value stays out of a notification the system keeps in its own history (CONFIRMSEEN1: never a value) |
 | Never | Opening the view by itself, moving the focus, changing what a region shows, a modal, a sound | Each takes what the person is doing; the view opens only on their press |
+
+**While a press waits unshown, something says so and stays.** With the focused window's view closed, nothing above would last:
+a toast closes after seven seconds (`ui.tsx:1766`) and the kit's pump may drop it, the bell's count looks like any other row's,
+and the taskbar's flash is only for a window behind. That is how the incident of 2026-10-21 could recur, and a service
+confirmation is exposed the same way. So: **while any press waits unshown, of either source, the bell wears the warning hue**,
+D185's `--warn` token, the one the press's card already wears (`Confirmations.tsx:161`), **with the presses' own count**, not
+what needs the person in all; it goes back to open's hue and the whole count once every press waiting is shown or has ended. A
+service confirmation, which tells its door no word that it is shown, is unshown until the page's own *shown* of its region says
+otherwise (§3.4). And **the press's toast stays until the view opens or the press ends**, never closed by its seven seconds.
+Neither moves the focus, opens the view or covers more than the toast's corner.
 
 **What says it, once.** The toast is said on the event the pipe already tells once, at the press's ask (`SESSION_ATTENTION` of the
 kind `Confirming`, `PipeConfirmations.cs:160-161`, `:305-311`), which gains the press's id, a field added; never judged from
 `CONFIRMATIONS`, a snapshot of every press told again at each change (§5). A window says it only while it is the one focused, and
 keeps the ids it said, so an event delivered twice is said once. A service confirmation has no event, since the service tells no
 window (`person.ts:74-77`): the focused window says it the first time its poll sees the id; a window reloaded while one waits may
-say it once more, and it still waits on the person.
+say it once more, and it still waits on the person. Each window polls on its own clock (`person.ts:83`), so where the focus moves
+from one main window to another between their polls, both may say the same service confirmation once each. That is accepted: it
+is one press, counted once in each window's bell, and it still waits on the person; NOTIFY2j's push ends it.
 
-**The notification speaks the window's language** (2c). The shell's notifier has no catalogue, so the main window's page hands it
+**The notification speaks the window's language** (2d). The shell's notifier has no catalogue, so the main window's page hands it
 the notices' words at load and at each change of language (`SET_NOTICE_WORDS`, the way `SET_BADGE` takes its description): a
 headline and a body per kind, and the acts of the `Person` routes. The notifier words each notification from them with the event's
 facts; what a session wrote (a park's question) is shown as written; a shell handed no words says today's English, with no route's
 constant from 2a on. This holds for every kind it shows (a park, an ending, an answer, a press), not the press's alone.
 
 **A press is announced whatever the notify switch says.** Its terminal waits on the person, so it is an answer they owe, not news;
-the switch's words say so (2c). Every other announcement keeps the switch.
+the switch's words say so (2d). Every other announcement keeps the switch.
 
 ### 3.4 Its time
 
@@ -353,9 +393,15 @@ the switch's words say so (2c). Every other announcement keeps the switch.
 - **Shown is the region in view.** The region is shown when its visible height is at least the smaller of its own height and its
   scroll area's, so a region lying whole in the area is shown and one taller than a short window's area is shown by filling it:
   the view's tab the one its region shows (the side bar's or the panel's), that region open, the card's group not folded, in a
-  window visible and focused (CONFIRMSEEN1's `looking`). Not the toast, the system notification, the bell or Overview's summary,
-  none of which shows its values beside *Confirm*. The window says it by `PERSON_CONFIRM_SHOWN`, as built; the first word of any
-  window starts the two minutes and a later one moves nothing (`PipeConfirmations.cs:169-189`).
+  window visible and focused (CONFIRMSEEN1's `looking`). **Where it is shown by filling its area, the row of *Refuse* and
+  *Confirm* must lie whole in view as well**: a short panel can be filled by the region's head with its buttons below the fold,
+  and two minutes must not start on a card whose answer cannot be seen. The scroll is the person's; the region's scroll is not
+  anchored at its foot, since that would change what a region shows unasked (§3.3). *Shown* is one judgement over all of these,
+  judged again at each change of any: the region's intersection with its area, its group's fold, the region's tab, where the
+  view is docked, the window's size and its focus. A drawer's scrim (D41) over the view counts as not shown. Not the toast, the
+  system notification, the bell or Overview's summary, none of which shows its values beside *Confirm*. The window says it by
+  `PERSON_CONFIRM_SHOWN`, as built; the first word of any window starts the two minutes and a later one moves nothing
+  (`PipeConfirmations.cs:169-189`).
 - **Two minutes still fit.** They are the time to read one card and decide, with the card in front of the person; what the incident
   lacked was being found, which the ten minutes to be found, the toast, the lit button and the notification answer. The card says
   its time left, so the bound is never a surprise (R2). A bound that paused while the card was out of view was weighed and rejected
@@ -365,15 +411,20 @@ the switch's words say so (2c). Every other announcement keeps the switch.
 - **No answer after its time.** Today a Confirm is taken while the press still waits, and only the timer's end reads the clock
   (`PipeConfirmations.cs:191-192`, `:271-283`), so a timer firing late lets a Confirm past its time run; and a word that the card is
   shown, past its ten minutes, gives it two more (`:169-189`). Decided: an answer, or a word that it is shown, at or after its time
-  ends the press as `Expired`, answered `gone`, and nothing runs; the card says it was refused by itself. The bound the card states
-  is the bound kept.
+  ends the press as `Expired`, answered `gone`, and nothing runs. The bound the card states is the bound kept. In `Show` the clock
+  is read before its early return for a card already shown (`:177`), so a word past the two minutes of a card shown before ends it
+  too. **The refusal is toasted**, as R3 allows where the place has gone: `End` removes the press and tells every window before it
+  settles (`:284-292`), so the card is gone by the time its answer returns, and the card's own `setSaid` would run unmounted
+  (`Confirmations.tsx:142-153`). The toast says what the card says today of a press that has gone (`person.gone`: it no longer
+  waits, answered elsewhere, its time passed, or taken back by its terminal); no new words.
 - **A service confirmation's time** is two minutes from its ask, counted by the service, within which its grant is also used
   (`PersonConfirmations.cs:120-121`, `:139-140`). It has no time to be found and no word that it is shown, and gets none here: a
   time to be found would change the person-door protocol and its client, which this design does not. Its card says its time left
-  from the first moment (R2); it is counted in the bell and the taskbar and toasted once in the focused window (§3.3); its terminal
+  from the first moment (R2); it is counted in the bell and the taskbar, by the page until NOTIFY2j (§2.5), and toasted once in
+  the focused window (§3.3); while it waits unshown the bell wears the warning hue, as for the pipe's (§3.3); its terminal
   says it waits for the window (`:136`). Behind the window nothing new says it, as today. The week on the install (§10) says
   whether one runs out unseen.
-- **An end with no answer is said**, at the terminal as today, and once 2e keeps notices, as a notice in *Done and failed* (*A
+- **An end with no answer is said**, at the terminal as today, and once 2f keeps notices, as a notice in *Done and failed* (*A
   terminal's press to say words to Fix the export feed was refused by itself at 14:05*), so a press that ran out is never lost
   silently.
 
@@ -388,8 +439,8 @@ design §4.2). A press is answered by its id, never rebuilt from its sentence (�
 
 **What stays.** Overview stays the landing that answers *is anything sitting* (D40). It leads with a short summary of what needs
 the person: a line per group with its count and its oldest wait (the presses, *Holding work*, *Waiting for your word*, *Ready for
-you*), every line a door that shows *Notifications* at its group (2a). A line for unread messages joins with 2f and one for *Done
-and failed* with 2e, so no line counts what nothing produces yet. Then the tiles, *Outstanding* and the repositories by index size,
+you*), every line a door that shows *Notifications* at its group (2b). A line for unread messages joins with 2g and one for *Done
+and failed* with 2f, so no line counts what nothing produces yet. Then the tiles, *Outstanding* and the repositories by index size,
 as today. With nothing waiting, the summary is today's one line, *Nothing needs you* and the sessions working.
 
 ```
@@ -416,7 +467,7 @@ place that lists the rows is *Notifications* now. The taskbar keeps the same cou
 
 **How everything stays findable.** Every row that left is in *Notifications* with the same words, the same acts and the same order.
 The summary's lines are doors into it. The bell is on every view, and View → *Notifications* and the palette reach it. Ask Daoris's
-room is told the view's name, as each view's is (`placements.ts:11-19`, *The window*). The terminal reads the same (2h). Sessions'
+room is told the view's name, as each view's is (`placements.ts:11-19`, *The window*). The terminal reads the same (2i). Sessions'
 own *Waiting on you* group and its badge's dot stay where they are, and each wait stays in its session's head and foot.
 
 ## 5. Messages, and what is announced how
@@ -429,17 +480,17 @@ desktop, at any level. The desktop is kept for what waits on the person with a c
 
 | What comes | Group | The bell | At a focused window | Behind |
 |---|---|---|---|---|
-| A terminal's press | Waiting for your confirmation | number | toast with *Open* in a main window; in a secondary one, a toast naming where it waits (2a) | the balloon, naming no route (2a), in the window's language (2c); the main window's button lit (2a) |
-| A press at the service's door | Waiting for your confirmation | number | toast with *Open* (2a) | nothing: its terminal says it waits |
-| A park, a parked quest, a start waiting for accounts | What needs you | number | toast with *Open*, as today with a door | notification as today, in the window's language (2c) |
-| A held tool call, which its bound refuses by itself | What needs you | number | toast with *Open* (2c) | notification (2c) |
+| A terminal's press | Waiting for your confirmation | number; the presses' count in the warning hue while one waits unshown (2b) | toast with *Open* in a main window, staying until the view opens or the press ends; in a secondary one, a toast naming where it waits (2b) | the balloon, naming no route (2a), in the window's language (2d); the main window's button lit (2b) |
+| A press at the service's door | Waiting for your confirmation | number, the page's until 2j; the warning hue as above (2b) | toast with *Open*, staying as above (2b) | nothing: its terminal says it waits |
+| A park, a parked quest, a start waiting for accounts | What needs you | number | toast with *Open*, as today with a door | notification as today, in the window's language (2d) |
+| A held tool call, which its bound refuses by itself | What needs you | number | toast with *Open* (2d) | notification (2d) |
 | Every other row (go-ahead, helper, answer alone, proposal, intake, departure, set-up, opinion, rule, unit of work, unanswerable, review, trust, signed-out account, hand-over ask) | What needs you | number | nothing new | nothing |
 | A conversation answered the person's words | Messages | dot | toast with *Open*, but not over that conversation on screen (NOTIFY1c) | notification, as today (NOTIFY1a) |
-| An agent's or a teammate's message, urgent, to everyone | Messages | dot | toast with *Open*, once per message (2f) | nothing |
+| An agent's or a teammate's message, urgent, to everyone | Messages | dot | toast with *Open*, once per message (2g) | nothing |
 | An agent's message, ordinary, or one to a single repository | Messages | dot | nothing | nothing |
-| A session ended without the person asking | Done and failed | dot | toast with *Open*, as today | notification, as today |
-| A press that ended unanswered | Done and failed | dot | toast (2e) | nothing: its terminal says it too |
-| The look's lines | Done and failed where they are news (2g, §5.1); else the log | dot where news | nothing | nothing |
+| A session ended without the person asking | Done and failed | dot | toast with *Open*, as today; with the headless loop driving, from the desktop host's re-read of the record (2f, §2.5) | notification, as today |
+| A press that ended unanswered | Done and failed | dot | toast (2f) | nothing: its terminal says it too |
+| The look's lines | Done and failed where they are news (2h, §5.1); else the log | dot where news | nothing | nothing |
 | The person's own act: its outcome or its refusal | none | — | where it was pressed (R3), or a toast where that place has gone | — |
 
 - **A message to one repository is that session's**, though the person may read it: it counts on its ask, and never announces.
@@ -456,30 +507,37 @@ point 3 lets a snapshot be coalesced, skipped to or read again whole, `D182.md:2
 - **An arrival is an event carrying its identity**, never a field of a slice: a press's id (`Confirming`), a session's park or end
   (`SESSION_ATTENTION`, as today), a notice's id, a message's id as the service keeps it.
 - **The host says each identity once per run.** It keeps the identities it said in memory, bounded, and at its start says nothing
-  older than its first judgement (for each ask, the newest message then is where it starts), so a restart repeats nothing. Each
-  message is judged by its own identity and level, so an urgent message followed by an ordinary one before the next judgement is
-  still said, and a second snapshot says nothing.
+  older than its first judgement, so a restart repeats nothing. Each message is judged by its own identity and level, so an urgent
+  message followed by an ordinary one before the next judgement is still said, and a second snapshot says nothing.
+- **For messages, a watermark per ask in the modules.** The first judgement of an ask records its newest message and says
+  nothing, the way `AttentionWatch.Observe`'s first look is a baseline, never a backlog (`Attention.cs:191-211`); each later
+  judgement says the messages past the ask's watermark and moves it. An ask first seen after the start is a baseline too.
+- **A notice another process wrote is an arrival by the desktop host's re-read** (§2.5): with the headless loop driving, no event
+  of its reaches the desktop, so a notice id the desktop host's re-read of the record has not seen is the arrival, bounded, and
+  nothing older than that host's first read is said.
 - **A window says an arrival when it is the window focused as it hears it**, and keeps the identities it said in memory, so an event
   delivered twice is said once. A window not focused says nothing, and the item is in the view, counted.
 - **An arrival missed is not said later.** The snapshot carries what is there; the voice is for the moment. There is no queue of
-  arrivals waiting to be said and no acknowledgement from the window that said one (§7).
+  arrivals waiting to be said and no acknowledgement from the window that said one (§7). That is accepted for news, which the view
+  keeps and counts. For a press it is accepted only because a press's signal persists while it waits unshown: the bell's warning
+  hue and its toast (§3.3).
 
 ### 5.1 The look's lines, classed
 
 A tick's report is a log (D62): its lines are toasted today (`ShellSignals.tsx:61-62`), printed by a headless host
-(`Driver.Host/Program.cs:887`), and written to no machine log, whose look line is its timing (`DriverWatch.cs:842-851`). 2g first
+(`Driver.Host/Program.cs:887`), and written to no machine log, whose look line is its timing (`DriverWatch.cs:842-851`). 2h first
 writes each line as a declared machine-log event, then stops toasting them, each going where its class says:
 
 | Class | What the line says | Where it goes | The look's own lines |
 |---|---|---|---|
 | `retry` | the look could not read or do something, and tries at the next | the machine log alone | rules (`Driver.cs:603`), reviews (`:669`), landing (`:1076`), registry (`:1157`, `:1161`), setup (`:1181`), hand-over (`DriverHandOvers.cs:51`, `:152`), meeting (`DriverMeetings.cs:97`), brainstorm (`DriverBrainstorms.cs:133`), intake (`DriverIntakes.cs:69`, `:356`), helper (`DriverHelpers.cs:122`), opinion (`OpinionGateLook.cs:70`), workflow (`WorkflowRunStart.cs:77`) |
 | `own` | the person's own act, carried out: a cancel the person pressed is never said back (R3, `ui-ux-design.md:231-232`) | the machine log alone | a meeting or a brainstorm stopped by the person before it ran (`DriverMeetings.cs:63`, `DriverBrainstorms.cs:98`) |
-| `wait` | something now waits on the person | its row of *What needs you*; the line the log's | a helper's ask (`DriverHelpers.cs:107`, a row today), an agent's hand-over ask (`DriverHandOvers.cs:181`, 2d) |
+| `wait` | something now waits on the person | its row of *What needs you*; the line the log's | a helper's ask (`DriverHelpers.cs:107`, a row today), an agent's hand-over ask (`DriverHandOvers.cs:181`, 2e) |
 | `progress` | what moved as it was asked, which its own place says | the machine log alone | a session going on (`Driver.cs:753`), a start not begun beside another (`:847`), a hand-over carried out (`DriverHandOvers.cs:132`, `:215`, `:251`), an intake ended on its ask's answer (`DriverIntakes.cs:360`) |
 | `news` | an end or a failure nobody pressed and nobody must answer | a coded notice in *Done and failed*, and the log | a hand-over that could not be made, refused or dropped (`DriverHandOvers.cs:95`, `:124`, `:170`, `:174`, `:245`), work handed back to this machine's agent (`:70`), a session stopped on a lost claim (`Driver.cs:1310`), a meeting or a brainstorm cut short by a stopped driver (`DriverMeetings.cs:83`, `DriverBrainstorms.cs:119`) |
 
 The lines the look's producers hand it whole (`Driver.cs:590`, `:599`, `:646`, `:653`, `:663`, `:808`, `:1065`, `:1156`, `:1175`,
-`:1207`, `:1213`, `:1246`, `:1265`, `:1450`) are classed in 2g by the same rules, each at its producer; an end the watch already
+`:1207`, `:1213`, `:1246`, `:1265`, `:1450`) are classed in 2h by the same rules, each at its producer; an end the watch already
 announces (`:1246`) is `progress`. The census fails on a line with no class.
 
 ## 6. The rules it keeps
@@ -490,8 +548,10 @@ announces (`:1246`) is `progress`. The census fails on a line with no class.
   the panel alike. The platform's own controls: `Button`, `Pill`, `Dot`, the activity bar's `CountBadge` for the bell, `InlineConfirm`
   for an act that asks once, `AttentionRow` for every row, the toast extended with a door; one new icon, the bell. R1: the summary's
   lines on one label track at 32rem and wider, stacked below it, and the card's facts stacked at the side bar's width
-  (`ui-ux-design.md:168-169`). R2: the press says its age and its time left, and nothing else in the view invents a bound. R3: a
-  refused act is said under its row or card, never as a toast; the person's own cancel is never said back (§5.1). R5: reached from
+  (`ui-ux-design.md:168-169`). R2: the press says its age and its time left, and nothing else in the view invents a bound; the
+  bell's count wears open's hue, and the warning hue with the presses' count while a press waits unshown (§3.3). R3: a refused
+  act is said under its row or card, never as a toast but where that place has gone, as a press's card past its time (§3.4); the
+  person's own cancel is never said back (§5.1). R5: reached from
   the frame (the bell, View, the palette), a door from the summary, Ask Daoris's rows (an `Exempt` for the person's own reading,
   §2.5), and its terminal twin. R6: stories at the side bar's floor (300 px) and at 45% of the install's window, in English and
   中文, light and dark. R7: the view lays out by its own width; the bell is placed against the window, in the strip.
@@ -505,6 +565,7 @@ announces (`:1246`) is `progress`. The census fails on a line with no class.
 | `notifications.open` | button | Notifications | 通知 |
 | `notifications.tip` | sentence | {{count}} need you | {{count}} 个等你处理 |
 | `notifications.tipUnread` | sentence | {{count}} need you, {{unread}} unread | {{count}} 个等你处理，{{unread}} 条未读 |
+| `notifications.tipConfirm` | sentence | {{count}} waiting for your confirmation | {{count}} 个等你确认 |
 | `notifications.group.messages` | section | Messages | 消息 |
 | `notifications.group.news` | section | Done and failed | 完成与失败 |
 | `notifications.unread` | status | {{count}} unread | {{count}} 条未读 |
@@ -514,6 +575,7 @@ announces (`:1246`) is `progress`. The census fails on a line with no class.
 | `notifications.toast.inMain` | sentence | A terminal's press waits in Daoris's main window | 一个终端的请求在 Daoris 主窗口等你确认 |
 | `person.say` | sentence | A terminal asks to say to {{session}}, as your words, {{level}}: | 一个终端请求以你的名义，{{level}}对 {{session}} 说： |
 | `person.session` | label | {{title}} ({{repository}} · {{id}}) | {{title}}（{{repository}} · {{id}}） |
+| `person.sessionIn` | label | {{title}} ({{workspace}} · {{repository}} · {{id}}) | {{title}}（{{workspace}} · {{repository}} · {{id}}） |
 | `person.attach` | sentence | and to attach these files, read from this machine: | 并附上这些文件，从本机读取： |
 | `person.also` | label | It also carries | 它还携带 |
 | `person.asked` | status | asked {{ago}} | {{ago}}发出 |
@@ -574,8 +636,25 @@ announces (`:1246`) is `progress`. The census fails on a line with no class.
 - **A notice's workspace read again from the sessions.** A session gone, its notice would read as every window's (§2.4).
 - **The look's lines in the view as they are.** They are English log lines, most a look's transient failure that the next look
   answers (D62); and their toasts are not stopped before the lines are logged (§5.1).
-- **The whole of *Notifications* before the owner's three reports are fixed.** NOTIFY2a fixes them with no store changed (§0.2).
+- **The whole of *Notifications* before the owner's three reports are fixed.** NOTIFY2a and 2b fix them with no store changed
+  (§0.2).
 - **通知中心 as the name** (§6).
+
+Round 3 added:
+
+- **A seven-second toast, or the bell's ordinary count, as a press's only signal in a window in front.** The toast closes or is
+  dropped unread, and the count looks like any other row's; the bell's warning hue and a toast that stays say it until it is
+  shown or ends (§3.3).
+- **The region's scroll anchored at its foot** so that its buttons show: it changes what a region shows unasked. A region that
+  fills its area is shown only with its buttons' row in view (§3.4).
+- **A late refusal drawn on its card.** The card has gone with its press; the refusal is toasted (§3.4).
+- **A reader setting an unreadable record aside, or a refused write retried.** Only the writer holding the keep lock sets a
+  record aside; a refused write is logged and dropped (§2.5).
+- **A notice another process wrote left unsaid in the desktop**, with the headless loop driving: the desktop host's re-read of the
+  record is its arrival (§2.5, §5).
+- **The person's own posts and Daoris's lines counted as unread** for the person (§2.4).
+- **Coordinating the windows' polls so one window alone says a service confirmation.** Two windows polling on their own clocks
+  may each say it once, which is accepted until NOTIFY2j pushes the service's presses (§3.3).
 
 ## 8. What this amends, once accepted
 
@@ -585,10 +664,13 @@ announces (`:1246`) is `progress`. The census fails on a line with no class.
   the view; §5's *Overview*, the summary.
 - **D185's R5**: "a door from *What needs you*" is a row in the view's *What needs you*; its meaning stands.
 - **D156's CONFIRMSEEN1 note**: the card is drawn in the view, never under the strip; *shown* is the card's decision region in view
-  there; an answer or a word that it is shown at or past its time ends it as expired; the press's notification names no route and
-  is worded by the page's words; the main window's taskbar button is lit for a press. Point 4 and the person-door design §4.2's "on
-  the app strip and in What needs you" hold: the strip's *Notifications* and the view. The service door's two minutes stand.
-- **D167**: the person's mark on a teammate's ask is kept by this machine's service (2f), never synced.
+  there, its buttons' row too where the region fills its area; an answer or a word that it is shown at or past its time ends it as
+  expired, its refusal toasted; the press's notification names no route and is worded by the page's words; the main window's
+  taskbar button is lit for a press; while a press waits unshown the bell wears the warning hue with the presses' count, and its
+  toast stays until the view opens or the press ends. Point 4 and the person-door design §4.2's "on the app strip and in What
+  needs you" hold: the strip's *Notifications* and the view. The service door's two minutes stand.
+- **D167**: the person's mark on a teammate's ask is kept by this machine's service (2g), never synced; and the person's entry's
+  unread count passes over the person's own posts and Daoris's lines (2g, §2.4).
 - **D126's NOTIFY1b note and D171's MAINWINDOWS2b note**: each main window tells and wears its own count.
 - **SURF5b and NOTIFY1a, and D24's verbatim rule for these headlines**: the notification's headline is worded by kind in the window's
   language from the event's facts; what a session wrote stays as written.
@@ -605,49 +687,69 @@ Each is a feature a person can see working (D187), end to end across its lanes. 
 to NOTIFY1d already name rows archived on 2026-10-15 and 2026-10-16 (the answered kind, the taskbar's count, no toast over the
 conversation on screen, the balloon's choice tested), as D195 named its KEEP1 for the same reason. Each runs its own tests and the
 quick checks; the merge and the CI beside run the rest (D180). **Their order** follows §0.2: the presentation on the transports that
-exist, changing no store (2a, the owner's report whole; 2b, a count per window; 2c, behind the window in the person's language; 2d,
-the hand-over ask as a row); then the notice record (2e); then the messages (2f), which keep a conversation's answer in 2e's record;
-then the look's lines (2g), which need 2e's notices and 2d's row; the terminal last (2h).
+exist, changing no store (2a, the pipe's half, on its own tests and with no view; 2b, the view, the rest of the owner's report; 2c,
+a count per window; 2d, behind the window in the person's language; 2e, the hand-over ask as a row); then the notice record (2f);
+then the messages (2g), which keep a conversation's answer in 2f's record; then the look's lines (2h), which need 2f's notices and
+2e's row; the terminal (2i); and the service's presses told to the windows (2j), which needs 2b alone and may be taken whenever
+the service's door is pushed. **Round 3 renamed them** (Fable's F4.2, §11): round 2's 2a split into 2a, the pipe's half, and 2b,
+the view; its 2b is 2c, its 2c 2d, its 2d 2e, its 2e 2f, its 2f 2g, its 2g 2h and its 2h 2i; 2j is new (F4.1). Round 1's letters
+map to round 2's as §11 says.
 
-- **NOTIFY2a — the title bar's Notifications show a terminal's press in plain words, nothing is drawn across the page, a press
-  cannot run out before it could be seen, and Overview keeps a summary** (web-shell, modules; driver for Ask Daoris's room). Changes
-  no store. *What the person sees:* a bell on the title bar counting what needs them; pressed, the view where it stands (the right
-  side bar by default) shows *Notifications*: the presses of both sources first, each worded *A terminal asks to say to Fix the
-  export feed (game · 3f2a91c), as your words, at its next step:* with the words quoted, the files by their paths, every other value
-  listed, its time left, *Refuse* and *Confirm*; then *What needs you* as Overview lists it today; no band under the title bar for
-  any press; at a main window, a toast with *Open* says a press came; behind it, the window's taskbar button stays lit while the
-  press waits unseen; Overview opens with a few lines (each group's count and oldest wait), each opening the view at its group, and
-  lists no row. §2.1, §2.2's first two groups, §2.3, §2.4's first point, §3, §4 but its unread lines. The parts: the view
-  `notifications` (`placements.ts`, the views menu, `help/where.ts`, Ask Daoris's room and its test); the bell with its count (each
-  press of either source once and every other row), View → *Notifications* and the palette; both sources' cards out of
-  `App.tsx:1104-1114`'s band, the adoption notice left there, read from the confirmation channel alone; `PipeWording` in the modules
-  with its census test, and `named` on the pipe's telling; the card's sentence with its references, *It also carries*, *Details*,
-  its age and time left, in its bounded region; *shown* by the region in view; in `PipeConfirmations`, an answer or a shown word at
-  or past its time ending the press as expired, the `Confirming` event gaining the press's id, and its balloon naming no route;
-  `ToastItem` gaining a door, a press's toast said once in the focused window on its event's id, a service confirmation's on its
-  poll's first sight, a secondary window's with no door; `FlashWindowEx` on the main window last in front, by §3.3's rule; *What
-  needs you* drawn in the view, its `confirmation` row as its card; Overview's summary from `useAttention` and the presses (counts by
-  `ATTENTION_GROUP`, the oldest `since`) on R1's track; Overview's activity badge gone (`App.tsx:1132-1139`); the glossary's
-  *notifications* (通知) and `overview` meaning; the accepted budgets that name "Overview's main area" judged again at the view's
-  width; the end-to-end spec that reads *waiting on you* (`person-waits.md`), its hits named for the parent. *Proof:*
-  `PipeConfirmationsTests` seen failing first: a Confirm and a shown word after the press's time, its timer held late on a held
-  clock (`held-clocks.md`), each ending it expired with nothing run; `Confirming` carrying the id; the balloon's words naming no
-  route; the census test failing on a `Person` route with no wording row and no act's words, and `SESSION_INPUT`'s row naming
-  `id`, `text`, `level`, `paths` and `said` as a `form`; `Confirmations` tests in en and zh, seen failing first: no band for a press
-  of either source; `SESSION_INPUT`'s sentence naming the session with its repository and short id, two sessions sharing a title
-  told apart, a conversation's generic title with its id, the words quoted, each path whole, the route only under *Details*, every
-  value no role names listed; a press of 256 values and one of long words each in a bounded region; *shown* said once with the region
-  in view (an `IntersectionObserver` stand-in) in a focused window, never while scrolled out, its group folded, the view's tab not
-  shown or the window unfocused, said when docked in the panel and when a region taller than its area fills it, a second window's
-  word moving nothing, and never by the toast, the bell or Overview; the toast in the focused main window alone, once for an event
-  heard twice, its *Open* showing the view at the card; a service confirmation toasted once per window and counted; a secondary
-  window's toast with no door; a modules test of the flash's judgement (which window, lit while any press waits unshown, stopped at
-  a main window's coming forward and at the last such press's end or showing); the bell's and the taskbar's count, each press once;
-  `OverviewView` tests in en and zh (no row drawn, each group's count and oldest, each door showing the view at its group, *Nothing
-  needs you* with the working count, a browser's line) and `App` tests (no badge on Overview); the view's stories at 300 px and 45%
-  and Overview's at wide, half and narrow, en and 中文, light and dark; `i18n:check`, `names:check -- --strict`; the window with a
-  press from a terminal (the parent's).
-- **NOTIFY2b — every main window counts what needs you in its own workspace** (modules, web-shell). *What the person sees:* with two
+- **NOTIFY2a — a terminal's press answered or shown past its time runs nothing, and its balloon names no route** (modules;
+  web-shell for the refusal's toast; first). The pipe's half, landing first on its own tests, with no view and no store changed.
+  *What the person sees:* a Confirm pressed after a press's time refuses it, said by a toast since its card has gone with it, and
+  nothing runs; a press's balloon behind the window names no route's constant. §3.3, §3.4. The parts: in `PipeConfirmations`, an
+  answer or a word that the card is shown, at or past its time, ending the press as expired and answered `gone`, the clock read in
+  `End` for every answer and in `Show` before its early return for a card shown before (`:177`); the `Confirming` event gaining the
+  press's id, a field added; the balloon's words naming no route; the card, today's band's until 2b moves it, toasting a refusal
+  whose card has gone with its press (R3). *Proof:* `PipeConfirmationsTests` seen failing first, on a held clock with the timer
+  held late (`held-clocks.md`): a Confirm after the press's time, a shown word after its ten minutes, and a shown word for a card
+  shown before, after its two minutes, each ending it expired with nothing run; `Confirming` carrying the id; the balloon's words
+  naming no route; a `Confirmations` test in en and zh, seen failing first, that a Confirm answered `gone` after its press ended is
+  toasted.
+- **NOTIFY2b — the title bar's Notifications show a terminal's press in plain words, nothing is drawn across the page, a press
+  waiting unshown keeps a signal, and Overview keeps a summary** (web-shell, modules; driver for Ask Daoris's room; after 2a).
+  Changes no store. *What the person sees:* a bell on the title bar counting what needs them, in the warning hue with the presses'
+  count while a press waits unshown; pressed, the view where it stands (the right side bar by default) shows *Notifications*: the
+  presses of both sources first, each worded *A terminal asks to say to Fix the export feed (game · 3f2a91c), as your words, at
+  its next step:* with the words quoted, the files by their paths, every other value listed, its time left, *Refuse* and
+  *Confirm*; then *What needs you* as Overview lists it today; no band under the title bar for any press; at a main window, a toast
+  with *Open* says a press came and stays until the view opens or the press ends; behind it, the window's taskbar button stays lit
+  while the press waits unseen; Overview opens with a few lines (each group's count and oldest wait), each opening the view at its
+  group, and lists no row. §2.1, §2.2's first two groups, §2.3, §2.4's first point, §3, §4 but its unread lines. The parts: the
+  view `notifications` (`placements.ts`, the views menu, `help/where.ts`, Ask Daoris's room and its test); the bell with its count
+  (each press of either source once and every other row) and its warning hue with the presses' count while any waits unshown,
+  View → *Notifications* and the palette; both sources' cards out of `App.tsx:1104-1114`'s band, the adoption notice left there,
+  read from the confirmation channel alone; `PipeWording` in the modules with its census test, and `named` on the pipe's telling;
+  the card's sentence with its references (the workspace too where a repository's name is in two), *It also carries*, *Details*,
+  its age and time left, in its bounded region; *shown* by the region in view, its buttons' row in view where the region fills its
+  area, judged again at each change of intersection, fold, tab, dock, size and focus, and not under a drawer's scrim; `ToastItem`
+  gaining a door and a press's toast staying until the view opens or the press ends, said once in the focused window on its
+  event's id, a service confirmation's on its poll's first sight, a secondary window's with no door; `FlashWindowEx` on the main
+  window last in front, by §3.3's rule; *What needs you* drawn in the view, its `confirmation` row as its card; Overview's summary
+  from `useAttention` and the presses (counts by `ATTENTION_GROUP`, the oldest `since`) on R1's track; Overview's activity badge
+  gone (`App.tsx:1132-1139`); the glossary's *notifications* (通知) and `overview` meaning; the accepted budgets that name
+  "Overview's main area" judged again at the view's width; the end-to-end spec that reads *waiting on you* (`person-waits.md`), its
+  hits named for the parent. *Proof:* the census test failing on a `Person` route with no wording row and no act's words, and
+  `SESSION_INPUT`'s row naming `id`, `text`, `level`, `paths` and `said` as a `form`; `Confirmations` tests in en and zh, seen
+  failing first: no band for a press of either source; `SESSION_INPUT`'s sentence naming the session with its repository and short
+  id, two sessions sharing a title told apart, a repository's name in two workspaces said with its workspace, a conversation's
+  generic title with its id, the words quoted, each path whole, the route only under *Details*, every value no role names listed;
+  a press of 256 values and one of long words each in a bounded region; *shown* said once with the region in view (an
+  `IntersectionObserver` stand-in) in a focused window, never while scrolled out, its group folded, the view's tab not shown, the
+  window unfocused or a drawer's scrim over it, said when docked in the panel, said when a region taller than its area fills it
+  with its buttons' row in view and not before, judged again after a resize, a second window's word moving nothing, and never by
+  the toast, the bell or Overview; the bell in the warning hue with the presses' count while a press of either source waits
+  unshown, back to open's hue and the whole count once each is shown or ended; the press's toast staying past seven seconds until
+  the view opens or the press ends; the toast in the focused main window alone, once for an event heard twice, its *Open* showing
+  the view at the card; a service confirmation toasted once per window and counted; a secondary window's toast with no door; a
+  modules test of the flash's judgement (which window, lit while any press waits unshown, stopped at a main window's coming
+  forward and at the last such press's end or showing); the bell's and the taskbar's count, each press once; `OverviewView` tests
+  in en and zh (no row drawn, each group's count and oldest, each door showing the view at its group, *Nothing needs you* with the
+  working count, a browser's line) and `App` tests (no badge on Overview); the view's stories at 300 px and 45% and Overview's at
+  wide, half and narrow, en and 中文, light and dark, the bell's warning hue in both themes; `i18n:check`,
+  `names:check -- --strict`; the window with a press from a terminal, the view closed (the parent's).
+- **NOTIFY2c — every main window counts what needs you in its own workspace** (modules, web-shell; after 2b). *What the person sees:* with two
   windows open, one per workspace, each taskbar button and title wears its own workspace's count, and a notification's click opens
   the window whose workspace holds what it is about. §2.4: `useTaskbarCount` told by every main window with its name; `SET_BADGE`
   taking the name as `SET_TITLE` does, and the order kept per window (`WindowsModule.cs:43-45` keeps one for all); a registry in the
@@ -657,7 +759,7 @@ then the look's lines (2g), which need 2e's notices and 2d's row; the terminal l
   *Proof:* `WaitingBadgeTests` and the windows module's tests: two windows' counts told out of order each kept by its own order; the
   registry's pick with one window holding the workspace, none and two; the page's test that each main window tells its own and a
   secondary one none; the taskbar with two windows (the parent's).
-- **NOTIFY2c — behind the window, what waits on the person is announced in their language** (modules, web-shell, web-settings).
+- **NOTIFY2d — behind the window, what waits on the person is announced in their language** (modules, web-shell, web-settings).
   *What the person sees:* with Daoris behind another program, a press raises a system notification in 中文 or English as the window
   speaks, naming its act and no value, and its click shows the view at the card in the window that holds it; parks, endings and
   answers speak the window's language too; a held tool call is announced as a park is; Settings → Driver's switch says what it
@@ -666,7 +768,7 @@ then the look's lines (2g), which need 2e's notices and 2d's row; the terminal l
   the switch's words. *Proof:* `SessionBalloonTests` per kind with words handed in en and zh and with none, and an end state never
   raw in a sentence; a modules test of the held call announced once, and not with the switch off; the switch's words in both
   languages; a press with the window behind another program (the parent's).
-- **NOTIFY2d — an agent's ask to hand its session over waits in What needs you** (modules, web-shell). *What the person sees:* the
+- **NOTIFY2e — an agent's ask to hand its session over waits in What needs you** (modules, web-shell). *What the person sees:* the
   ask is a row with *Hand over to {agent}* and *Not now*, counted by the bell and the taskbar, where today it is drawn only on its
   session's page, in its head and foot. Every place `person-waits.md` lists: the row judged in `NeedsAPerson` from the asks the look
   holds, carrying the ask's own id (`SessionsRoutes.cs:272-282`) and listed only while the look holds it waiting
@@ -674,76 +776,96 @@ then the look's lines (2g), which need 2e's notices and 2d's row; the terminal l
   coverage row, its words in the glossary's kinds. *Proof:* `AttentionStateSliceTests`' cases (waiting listed with its id; approved,
   taken or refused not listed); the attention, band and badge tests in en and zh; the coverage row (the parent's at the merge where
   the lane does not reach it).
-- **NOTIFY2e — what ended, failed or went unanswered is kept in Notifications, read alike in every window** (driver, modules,
+- **NOTIFY2f — what ended, failed or went unanswered is kept in Notifications, read alike in every window** (driver, modules,
   web-shell). *What the person sees:* *Done and failed* lists each session that ended without them asking and each press refused by
   its time, newest first, the unread marked and a dot on the bell; shown in one window, they are read in every window, the headless
-  host driving or not; *Dismiss* and *Mark all read*; a week later they are gone, the sessions' records keeping what happened;
-  Overview's summary gains its *Done and failed* line. §2.2's fourth group, §2.4, §2.5: the driver library's `Notices` and
-  `data/notices.json` (the map by id, one keep-lock hold from read to rename, the workspace stored, the age and the count, the
-  records it cannot take); a home watch reading it again in every process; the watch recording every notice whatever the switch
+  host driving or not, and what the headless host records is said in the window they look at; *Dismiss* and *Mark all read*; a week
+  later they are gone, the sessions' records keeping what happened; Overview's summary gains its *Done and failed* line. §2.2's
+  fourth group, §2.4, §2.5, §5: the driver library's `Notices` and `data/notices.json` (the map by id, one keep-lock hold from read
+  to rename, the workspace stored, the age and the count, the records it cannot take, set aside by the locked writer alone through
+  `Notices`' own path, a refused write logged and dropped); the writer pushing its own slice after its write; a home watch reading it
+  again in every process, the topic's thirty-second deadline behind a missed event, a failed read keeping the last snapshot; the
+  desktop host's re-read the arrival source of a notice another process wrote; the watch recording every notice whatever the switch
   says, the headless host too; the press's unanswered end recorded by `PipeConfirmations`; the `notices` slice's `news`;
   `NOTICES_READ` and `NOTICE_DISMISS` with their census, publishing and coverage rows; D195's inventory row and D172's layout line.
   *Proof:* driver tests of `Notices` seen failing first: a notice per kind; recorded with the switch off; pruned by age and by count,
   the oldest first whether read or not; a notice older than seven days not read after a restart that wrote nothing; a field a later
-  build wrote inside a notice kept across an add, a read, a dismiss and a prune; a record that does not parse set aside and a new one
-  begun; a newer `schemaVersion` left as it is and read as none; two writers on one home, as two processes and as two threads,
-  adding, reading and dismissing at once and losing none; a notice's workspace kept after its session is gone. The slice's tests:
-  allow-listed fields; a read moving one notice; a write by another process heard and pushed; two windows' scopes. The routes' tests;
-  the page's tests in en and zh; the stories.
-- **NOTIFY2f — an agent's message reaches Notifications by its urgency, a teammate's too, and a conversation's answer is kept**
+  build wrote inside a notice kept across an add, a read, a dismiss and a prune; a record that does not parse set aside by the writer
+  under the lock and a new one begun, and left as it is by a reader; a newer `schemaVersion` left as it is and read as none; a write
+  refused (the keep lock held past its wait, a key written twice, a shape changed under the edit) logged and dropped, the record
+  unchanged; two writers on one home, as two processes and as two threads, adding, reading and dismissing at once and losing none; a
+  notice's workspace kept after its session is gone. The slice's tests: allow-listed fields; a read moving one notice; the writer's
+  own write pushed with no wake; a write by another process heard and pushed, and read at the deadline with the watcher's event
+  missed; a failed read keeping the last snapshot; a notice the headless host wrote said once in the desktop's focused window, none
+  older than the desktop host's first read; two windows' scopes. The routes' tests; the page's tests in en and zh; the stories.
+- **NOTIFY2g — an agent's message reaches Notifications by its urgency, a teammate's too, and a conversation's answer is kept**
   (service, modules, web-shell). *What the person sees:* *Messages* lists each ask with unread items, a teammate's among them (the
   count its row says, the newest message's first line and who wrote it), and each conversation that answered them; an urgent message
   to everyone is toasted once in the window they look at, with *Open*; an ordinary one, or one to a single repository, only counts;
-  nothing an agent says reaches the desktop; reading a teammate's ask clears it; Overview's summary gains its *Messages* line. §2.2's
-  third group, §2.4, §5: in the service, the person's mark kept on an ask its mirror holds (`Channel.cs:1061-1068` finds the local
-  store's alone), the person's entry alone, on this machine and never on the sync wire, its door classed as a local ask's mark is;
-  the slice's `messages` partition with the service's own `unread`, and `useChannelUnreads` reading it once live; the `answered`
-  notice kind in 2e's record, made where the desktop's process hears the answer, with its read rule; arrivals by identity (§5):
+  nothing an agent says reaches the desktop; reading a teammate's ask clears it; their own posts and Daoris's lines count as unread
+  nowhere; Overview's summary gains its *Messages* line. §2.2's third group, §2.4, §5: in the service, the person's mark kept on an
+  ask its mirror holds (`Channel.cs:1061-1068` finds the local store's alone), the person's entry alone, on this machine and never on
+  the sync wire, its door classed as a local ask's mark is; the person's entry's count passing over their own posts and Daoris's
+  lines (`Channel.cs:981`); the slice's `messages` partition with the service's own `unread`, and `useChannelUnreads` reading it
+  once live; a watermark per ask in the modules, its first judgement a baseline; the `answered` notice kind in 2f's record, made
+  where the desktop's process hears the answer, recorded before the switch's gate, with its read rule; arrivals by identity (§5):
   each message said once per run by the host and once by the focused window; *Open* and *Mark read* through `CHANNEL_MARK` with its
-  moment. *Proof:* the service's tests: a teammate's ask marked, an ask nowhere refused, the mark never on the wire; the partition's
-  tests: the same `unread` as the ask's row, a teammate's ask counted and marked, the person's own and Daoris's lines never newest, a
-  message to one repository counted and never announced, an urgent message to everyone said once, also when an ordinary one follows
-  it before the next judgement, a snapshot read again saying nothing, a restart saying nothing older than its first judgement, one
-  from before the levels ordinary; the `answered` notice read by opening its conversation in a window in front, by *Open* and by
-  *Mark read*; the page's tests in en and zh: the toast once in the focused window alone, an event heard twice said once, *Mark read*
-  moving the mark, reading on the ask's page clearing the item, the session's panel leaving it.
-- **NOTIFY2g — the look's lines stop interrupting: they are logged, what is news is a notice, a wait is its row** (driver, modules,
+  moment. *Proof:* the service's tests: a teammate's ask marked, an ask nowhere refused, the mark never on the wire; the person's
+  count passing over their own posts and Daoris's lines, and a session's entry counting as before; the partition's tests: the same
+  `unread` as the ask's row, a teammate's ask counted and marked, the person's own and Daoris's lines never newest, a message to one
+  repository counted and never announced, an urgent message to everyone said once, also when an ordinary one follows it before the
+  next judgement, a snapshot read again saying nothing, an ask's first judgement saying nothing, a restart saying nothing older than
+  its first judgement, one from before the levels ordinary; the `answered` notice recorded with the switch off, and read by opening
+  its conversation in a window in front, by *Open* and by *Mark read*; the page's tests in en and zh: the toast once in the focused
+  window alone, an event heard twice said once, *Mark read* moving the mark, reading on the ask's page clearing the item, the
+  session's panel leaving it.
+- **NOTIFY2h — the look's lines stop interrupting: they are logged, what is news is a notice, a wait is its row** (driver, modules,
   web-shell). *What the person sees:* no English log line toasts in a 中文 window; a hand-over that could not be made, work handed
   back, a session stopped on a lost claim appear in *Done and failed* in the window's language; a meeting or a brainstorm they
   stopped is not said back; a look that could not read something and tries at the next is in Settings → Logs and the console only.
   §5.1: first, each line the look adds written as a declared machine-log event (`look.said`, its class and its family), the
   confirmation's codes-only event kept (`PipeConfirmations.cs:321-322`); then each line classed, a `news` line a coded notice through
-  2e's `Notices`, a `wait` line its row (2d); `ShellSignals` toasting none of them; the headless console as it is. *Proof:* a driver
+  2f's `Notices`, a `wait` line its row (2e); `ShellSignals` toasting none of them; the headless console as it is. *Proof:* a driver
   census over every line the look adds and every producer that hands it lines, an unclassed one failing, and `look.said` written for
   each; a meeting and a brainstorm the person stopped making no notice; the notices' words in en and zh; `ShellSignals.test.tsx` (a
   tick's lines toast nothing).
-- **NOTIFY2h — the terminal reads what came to the person** (driver, modules). *What the person sees:* `daoris-driver notices`
+- **NOTIFY2i — the terminal reads what came to the person** (driver, modules). *What the person sees:* `daoris-driver notices`
   prints what waits for their confirmation (by act and session), what needs them by group, unread messages by ask and *Done and
   failed*, with `--json`; it changes nothing. Through the running Daoris, an `Open` read in the census; alone, the notices' record,
   saying that the presses, what needs them and the messages are the running Daoris's to read and cannot be read without it.
   *Proof:* the verb's text and JSON tests through the instance and alone (the live groups said unread there), its census row, its
   usage line.
+- **NOTIFY2j — a press at the service's door is told to the windows, not polled by each** (modules, web-shell, service where its
+  door must say a change; after 2b). *What the person sees:* the presses waiting at the service's door are counted in every
+  window's bell and taskbar alike, and each is said once in the window they look at. §2.5, §3.3: the desktop's host reads the
+  service's waiting confirmations and tells them to the windows on the confirmation channel beside the pipe's, so their count is
+  judged once in .NET (D182) and each window's five-second poll (`person.ts:74-95`) goes; an older host keeps the poll
+  (`pushed-slices.md`). *Proof:* a modules test of the service's presses told at a change and counted once beside the pipe's; the
+  page's count read from the told list; the toast said once per press across two windows; an older host's poll kept.
 
 ## 10. What this document's gate does not cover
 
-Documents only; nothing is built. The statements about today were read from the code at `7c2bce824` and again at `5e6843642`, and
-none was run; the window was not looked at, and the band's height for five presses is counted from its lines, not measured. Not
-shown by any test: that a row of *What needs you* with its acts (an account's sign-in steps under it above all) reads at the side
-bar's 300 px; that the kit's engine runs `IntersectionObserver` in a window behind others as Chromium documents; that `FlashWindowEx`
-keeps a frameless window's button lit until it comes forward (Windows' documentation); how long Windows shows a notification before
-its own list takes it; and what reading every live ask's channel at each wake costs on the install. NOTIFY2a, 2c and 2f prove them
-or say what they found. A service confirmation's act stays the service's English until that door carries a code, and its two minutes
-stay counted from its ask; no row here changes either. The seven days, the 200 notices, the eight lines of a card's boxes and the two
-minutes kept are judgements, to be read again on the install after a week of NOTIFY2a and 2e, and with them whether a service
-confirmation runs out unseen.
+Documents only; nothing is built. The statements about today were read from the code at `7c2bce824`, again at `5e6843642`, and
+where Fable's read touched them at `3d3dd47de`, and none was run; the window was not looked at, and the band's height for five
+presses is counted from its lines, not measured. Not shown by any test: that a row of *What needs you* with its acts (an account's
+sign-in steps under it above all) reads at the side bar's 300 px; that the kit's engine runs `IntersectionObserver` in a window
+behind others as Chromium documents; that `FlashWindowEx` keeps a frameless window's button lit until it comes forward (Windows'
+documentation); how long Windows shows a notification before its own list takes it; whether the bell's warning hue is seen at a
+glance beside the strip's other controls in both themes; and what reading every live ask's channel at each wake costs on the
+install. NOTIFY2b, 2d and 2g prove them or say what they found. A service confirmation's act stays the service's English until
+that door carries a code, and its two minutes stay counted from its ask; no row here changes either. Its count stays the page's
+until NOTIFY2j, and two windows may each say it once until then (§3.3). The seven days, the 200 notices, the eight lines of a
+card's boxes and the two minutes kept are judgements, to be read again on the install after a week of NOTIFY2b and 2f, and with
+them whether a service confirmation runs out unseen.
 
 ## 11. The reads (D191)
 
 **Codex, 2026-10-21, on round 1.** Every finding was checked against the code at `5e6843642` before it was taken (D160's step 9;
 where a file moved since the read, *Checked at* gives its lines as they stand now). All hold; 4.1 and 5.8 are taken in part, said in the verdict. (B) marks what
-the read called blocking, (N) what it did not. A finding names a row as round 1 named it; *Taken in* names this round's row (§9
-renumbered them: round 1's 2c is 2b, its 2d is 2c, its 2g is 2d, its 2h is 2g, its 2i is 2h, and its 2b joined 2a). The steward's
-own findings from the check follow (S).
+the read called blocking, (N) what it did not. A finding names a row as round 1 named it; *Taken in* names round 2's row (§9
+renumbered them: round 1's 2c is 2b, its 2d is 2c, its 2g is 2d, its 2h is 2g, its 2i is 2h, and its 2b joined 2a). Round 3
+renamed them again (§9 and Fable's table below): round 2's 2a is 2a and 2b, its 2b is 2c, its 2c 2d, its 2d 2e, its 2e 2f, its
+2f 2g, its 2g 2h and its 2h 2i. The steward's own findings from the check follow (S).
 
 | # | Finding | Checked at | Verdict | Taken in |
 |---|---|---|---|---|
@@ -804,10 +926,47 @@ two minutes kept), and §2.4, §2.5 and §5's *Arrivals and snapshots*, before N
 one unread model; the identity rules). §1, §4 and §6 to §9 are presentation and order. Fable, if it reads, is not shown Codex's
 read first (D191 point 1).
 
+**Fable, 2026-10-21, on §2 to §3 and §5 of round 2** (D191's note: a decided rule others rest on, a durable record written by two
+processes, a service mark), not shown Codex's read first. Every finding was checked against the code at `3d3dd47de` before it was
+taken (D160's step 9), and the steward settled each. All fourteen hold, and each is taken in round 3. (B) marks what the read
+called blocking, (N) what it did not. *Taken in* names round 3's rows.
+
+| # | Finding | Checked at | Verdict | Taken in |
+|---|---|---|---|---|
+| F1.1 | (B) With the focused window's view closed, nothing persistent says a terminal's press waits: the toast lasts seven seconds and may be dropped from the kit's pump, the bell's count looks like any other row's, and the taskbar's flash is only for a window behind; so the incident of 2026-10-21 can recur, and a service confirmation is exposed the same way | `ui.tsx:1766`, round 2's §3.3 | holds, taken: while any press waits unshown, the bell wears the warning hue (D185's `--warn`) with the presses' own count, and the press's toast stays until the view opens or the press ends | §2.1, §3.3, §3.4, §5, §6 (R2), §8; 2b and its proof |
+| F1.2 | (N) A late Confirm's refusal cannot be drawn on its card: `End` removes the press before it settles, and the card's `setSaid` runs unmounted. The clock check for a shown word goes before the early return for a card already shown | `PipeConfirmations.cs:177`, `:284-292`; `Confirmations.tsx:142-153` | holds, taken: the refusal is toasted, as R3 allows where the place has gone; `Show` reads the clock first | §2.3, §3.4, §6 (R3), §8; 2a and its proof |
+| F1.3 | (N) *Shown by filling the area* can start the two minutes with *Refuse* and *Confirm* out of view in a short panel: require the buttons' row in view in the fill case, or anchor the region's scroll at its foot. *Shown* combines intersection, fold, tab, dock, resize and focus, and a drawer's scrim (D41) counts as not shown | round 2's §3.4 | holds, taken: the buttons' row whole in view where the region fills its area, the scroll left the person's; *shown* one judgement over all six, under a scrim not shown | §3.4, §7, §8; 2b's proof |
+| F1.4 | (N) Where repository names collide across workspaces, the wording names the workspace, which the attention rows already carry | `AttentionStateSlice.cs:72` | holds, taken | §3.2, §6 (`person.sessionIn`); 2b's proof |
+| F1.5 | (N) A service confirmation can be toasted in two windows, since each polls on its own clock | `person.ts:83` | holds, taken: accepted in words, until 2j's push | §3.3, §7, §10 |
+| F2.1 | (N) Setting an unparseable `notices.json` aside is only the locked writer's act; a watch's failed read keeps the last snapshot and waits for the next wake. `Notices` needs its own path, since `SaveHolding` refuses an unreadable file | `JsonKeeping.cs:101-107` | holds, taken | §2.5, §7; 2f and its proof |
+| F2.2 | (N) A refused write (the keep lock after 10 s; `SaveHolding` on a twice-written key or a changed shape) is logged and dropped, since the session record keeps what happened; prove it in the record's row | `KeepLock.cs:35`, `JsonKeeping.cs:109-121` | holds, taken | §2.5, §7; 2f's proof |
+| F2.3 | (N) The writer in the process pushes the `notices` slice itself after its write, since its own stamp wakes nothing; a missed watcher event is covered by the topic's 30 s deadline | `HomeWatch.cs:161-163`, `:172` | holds, taken | §2.5; 2f and its proof |
+| F2.4 | (N) The service's unread count includes the person's own posts and Daoris's lines; the messages row changes the person's entry's count in the service lane it already opens | `Channel.cs:981` | holds, taken: the person's entry counts what an agent or a teammate wrote alone; a session's entry as it is | §2.4, §7, §8 (D167); 2g and its proof |
+| F3.1 | (N) With a headless loop driving, a notice another process writes is never an arrival in the desktop; the desktop host's re-read of the record is its arrival source: new ids, bounded, nothing older than the first judgement | round 2's §2.5, §5 | holds, taken | §2.5, §5, §7; 2f and its proof |
+| F3.2 | (N) The `answered` notice is recorded before the notify switch's gate, as `Observe` runs before `ticked.Notify` | `DriverLoop.cs:919-932`, `:783-790` | holds, taken | §2.5; 2g and its proof |
+| F3.3 | (N) Messages need a watermark per ask in the modules, the way `AttentionWatch.Observe`'s first look is a baseline. A missed arrival is accepted for news, and for a press only because F1.1's signal persists | `Attention.cs:191-211` | holds, taken | §5; 2g and its proof |
+| F4.1 | (N) The bell's and the taskbar's counts of the service's presses are the page's until the service's door is pushed: say so, and point it to a row | `person.ts:74-95` | holds, taken: said, and the push is NOTIFY2j | §2.5, §3.4, §5, §10; 2j |
+| F4.2 | (N) Split the first view row: a pipe half (the late-answer and late-shown refusal on the held clock, the press's id on `Confirming`, the balloon naming no route) lands first on its own tests with no view; the view row then carries the view, the wording, *shown*, the persistent signal, the toast, the flash and Overview's summary; renumber in build order | round 2's §9 | holds, taken: 2a the pipe's half, with the late refusal's toast so that no refusal goes unsaid before 2b; 2b the view; the rest renamed, the mapping kept | §0.2, §9, §11's mapping |
+
+**The choices this round made**, where two shapes remained: the buttons' row in view where the region fills its area, rather than
+the region's scroll anchored at its foot, which would change what a region shows unasked (F1.3); the late refusal's toast in 2a
+with the refusal itself, rather than waiting for the view (F1.2, F4.2); a service confirmation said twice across two windows,
+accepted, rather than the windows' polls coordinated, since 2j's push ends it (F1.5, F4.1); and the person's unread count passing
+over Daoris's lines as well as their own posts, so the count and the view's newest agree (F2.4).
+
+**Settled.** The steward checked each take against this revision: the bell's warning hue with the presses' count and the press's
+toast staying while a press waits unshown; a late answer and a late shown word refused, the clock read first, the refusal toasted;
+*shown* needing the buttons' row where the region fills its area, judged over every change, never under a scrim; the workspace
+named where repositories share a name; the record set aside only by its locked writer, a refused write logged and dropped, the
+writer pushing its own write, the deadline behind a missed event; the person's count without their own posts and Daoris's lines;
+the desktop host's re-read the arrival of another process's notice; the `answered` notice recorded before the switch; a watermark
+per ask; the service's presses the page's count until NOTIFY2j; and the first row split in two. Every finding of both reads is
+taken. The design is accepted (D196's note of 2026-10-21); its rows are §9's, NOTIFY2a to 2j.
+
 ## 12. For the owner
 
 **What the view is called in Chinese** is settled by the steward's default: 通知, the design's proposal (§6), open to the owner, who
 may reopen it as the names of things have been (the glossary's *ask*). The alternative is the 通知中心 the row used; it is avoided
 because Windows and macOS give that name to the system's own list, into which Daoris's notifications also go. Either answer changes
-only the glossary's term and the words of the view and the button; NOTIFY2a builds 通知 unless the owner says otherwise. Nothing
+only the glossary's term and the words of the view and the button; NOTIFY2b builds 通知 unless the owner says otherwise. Nothing
 else here is the owner's under D191 point 3.

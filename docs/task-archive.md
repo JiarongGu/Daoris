@@ -18901,3 +18901,62 @@ description theories held cell for cell by `plugin-steps.test.ts`, `PluginPageTe
 **Outcome** 2026-10-21: built. The look judges a tree's package folders before its hold, checks them inside it and writes
 `<folder>.slim.json` before the move; the Keeping pass takes them an hour later under the home's run lock, and the purge reads what
 they left. Foundations: `KeepKinds`, `KeepPolicy`, `keeping.json`, `KeepingRun`. Detail: D195's KEEP1a note.
+## NOTIFY1 — a notification center: what comes to the person, in one place that never blocks the page (design) (2026-10-21, D196)
+
+> - [ ] **NOTIFY1 — a notification center: what comes to the person, in one place that never blocks the page** (design, then its rows; the owner's direction, 2026-10-21; D185, D156 §4.2, D188). A terminal's press waiting for the window is drawn across the top of every page and blocks it until answered. It says the route's raw name (`SESSION_INPUT`) under its sentence (一个终端请求以你的名义对会话说话。), and it expires in two minutes. Meanwhile session messages are listed one by one on Overview, which makes Overview long and hides what it is for. Wanted, as a design under D191 (Codex reads; D185 amended):
+>   - one notification center for everything that comes to the person: a terminal's press waiting for Confirm, a session's or an ask's message, a question asked of the person, work done or failed, and *What needs you*;
+>   - unread counts and a badge, opened from the title bar, with each item answered or dismissed in place;
+>   - a terminal's press shown there and announced without blocking the page, worded in plain words that name the session and the words to be sent, never the route's name;
+>   - Overview kept to a short summary that links into the center;
+>   - whether a press's two minutes still fit once it waits in the center.
+>   CONFIRMSEEN1, which the install is building, logs a card as shown and gives it a row; the design takes it as its first slice. Proof: the design accepted and its build rows filed.
+
+**Outcome** 2026-10-21: designed and accepted as D196 (`docs/2026-10-21-notification-design.md`) after three rounds (Codex's read, twenty-eight findings; Fable's of §2 to §3 and §5, fourteen), every finding taken. A *Notifications* view the bell opens; a press there in plain words, its signal kept while unshown; Overview a summary. The build rows are NOTIFY2a-j. On Opus, read by Codex and Fable.
+
+## FABRIC-PERFORM1q — a held event's unit judged first in its pass's turn (2026-10-21, D173)
+
+> - [ ] **FABRIC-PERFORM1q — a held event's unit judged first in its pass's turn** (driver; after PERFORM1o). Past `UnitsPerPass` units, a unit whose event was held for lagging its node can fall outside the turn, and its event is refused `stale`. Proof: the 34-unit case takes the held event in its pass, and the rotation still reaches every other unit.
+
+**Outcome** 2026-10-21: built. `NodeRuntime.Turn` takes the units whose events were held first, inside the bound and outside the
+rotation, which fills the rest of the turn and moves on only by what it took. Proof: `ObservedEventTests`' 34-unit case, seen failing
+first: the held event taken in its pass, the two units the rotation left reached at the next pass and first at the look's deadline.
+Detail: D173's FABRIC-PERFORM1q note.
+
+## FABRIC-PERFORM1p — a branch unit's performed nodes and told tip on the pass's tip too (2026-10-21, D173)
+
+> - [ ] **FABRIC-PERFORM1p — a branch unit's performed nodes and told tip on the pass's tip too** (driver; after PERFORM1m; §C4, §E2). A performed node wired after an observed node reached on a branch's fresh tip starts on the unit's lagging end-fact revision, then runs again when the end fact catches up, and `work/watch` still tells the end fact's tip: bind the unit's performed nodes, the told tip and `WorkBelief.Lapsed` to the pass's one read together. Proof: its notify starts once, on the new tip, and the completion is taken; one read per checkout per pass.
+
+**Outcome** 2026-10-21: built. A branch unit with an observed node binds its performed nodes to the tip its pass reads
+(`NodeRuntime.TipRevisions`), tells its plugins that tip (`Told`, else the tip told before), and judges an answer's lapse on it, the
+checkout of each unit answered read once before the hearing (`WorkPerformer.UnitsOf`); an unread tip sends nothing new. Proof:
+`ObservedEventTests` (the notify sent once on the new tip and its completion taken, the end fact catching up sending nothing, one read a
+pass; a completion while the tip is unread judged on the tip told). Detail: D173's FABRIC-PERFORM1p note.
+
+## FABRIC-UNKNOWN1c — an unknown-owner row has a door (2026-10-21, D173)
+
+> - [ ] **FABRIC-UNKNOWN1c — an unknown-owner row has a door** (driver, web; after UNKNOWN1). Link the row to its session where `daoris/<session>` names one, or open Settings' sweep where the Discard branch press sits. Proof: the attention test and the window.
+
+**Outcome** 2026-10-21: the Branches half was already built by FABRIC-MILESTONEDOOR1 (the sweep has since moved from Settings to the
+workspace's Branches tab, `help/places.ts`). What was added: on the page alone, an unknown owner's `daoris/<folder>` branch is matched
+in its repository to the session whose tree's folder names it, as `WorkFrame` finds a session's own branch, and the row's door opens
+that session, whose head discards the branch; with no match it opens Branches. No driver field. Proof: `attention.test.ts` and
+`sessionsBadge.test.tsx`; the installed window is not yet seen. Detail: D173's FABRIC-UNKNOWN1c note. On Opus.
+
+## FABRIC-CLOSE1h14 — a push held back by its gate said as the gate's in the conversation (2026-10-21, D173)
+
+> - [ ] **FABRIC-CLOSE1h14 — a push held back by its gate said as the gate's in the conversation** (web, driver; after CLOSE1h12). `note.landing.push-held` and `work.trace.try.push-held` lead with "its quest was held or taken back" in en and zh even when CLOSE1h12's gate held the push; only the sentence beneath names the gate. A new code is the stored-shape-safe route; old notes read as before. Proof: a gate-held push's note leads with the gate's words; `i18n:check` and `names:check -- --strict` pass.
+
+**Outcome** 2026-10-21: built. A push its landing's gate held back is noted `landing.push-gated`, which leads with the gate's words in
+en and zh; a quest's hold, and every note from before, keep `landing.push-held` as worded. The try keeps `push-held`, so its recovery
+and the stored shape are unchanged, and its trace word now names the quest or the gate. Proof: `AutoLandingRulesTests`,
+`noteLines.test.ts`; `i18n:check` and `names:check -- --strict` pass. Detail: D173's FABRIC-CLOSE1h14 note.
+
+## FABRIC-GRAPH1j — a steps version saved as a graph, judged as saved (2026-10-21, D190)
+
+> - [ ] **FABRIC-GRAPH1j — a steps version saved as a graph, judged as saved** (cli, driver; after 1b; D190, design §7.2). `daoris driver workflow apply <id> --as-graph` reads the version by its shape (`WorkflowNamed.cs:250-256`), decodes it, materializes synthetic nodes as authored ones (`NodeGraphs.cs:588-589`), judges and saves it; `decodeSteps` judges as the driver's (`workflowgraphs.ts:194-198`). Proof on shape-level input: two checks of one plugin refused naming both; a group's join materialized; rows on `workflow-graphs.json`.
+
+**Outcome** 2026-10-21: `daoris driver workflow apply <id> --as-graph` reads the newest version's steps by their shape, writes the decoder's
+graph with every synthetic node authored (`WorkflowGraphs.Saved`), and saves it through the graph save, which judges it as saved: two
+observed nodes of one plugin step are refused naming both, and nothing is written; the steps version is kept as written, and a go-ahead
+is said as now holding what follows it. The CLI half has no file since PUSH1f2b, so the driver is the one reader. Proof:
+`workflow-graphs.json`'s `saved` rows (`WorkflowGraphsTests`) and `WorkflowAsGraphCommandTests`. Detail: D190's FABRIC-GRAPH1j note.

@@ -439,6 +439,15 @@ public static class AutoLandingNotes
         or AutoLandingCode.Opinion or AutoLandingCode.PushHeld;
 
     /// <summary>
+    /// How the automatic landing's judgement just before the push begins its sentence where its landing's gate held it (FABRIC-CLOSE1h12),
+    /// so its note says the gate's, not its quest's (FABRIC-CLOSE1h14). The try keeps <c>push-held</c> either way: its recovery is one.
+    /// </summary>
+    public const string GateHeld = "its landing's gate held it";
+
+    /// <summary>Whether a push's <see cref="TreeLanding.Withheld"/> sentence is its landing's gate's (<see cref="GateHeld"/>).</summary>
+    public static bool ByGate(string? withheld) => withheld?.StartsWith(GateHeld, StringComparison.Ordinal) == true;
+
+    /// <summary>
     /// The note for one try: its lead-in by its code, then the landing's sentence where there was a landing to say it.
     /// </summary>
     /// <param name="landed">What the landing said, or null where the try never reached one (a hold, uncommitted work, no commits).</param>
@@ -464,8 +473,13 @@ public static class AutoLandingNotes
                 ("branch", named), ("plugin", plugin)),
             AutoLandingCode.PluginFailed => Noted.Of(NoteCodes.LandingPluginFailed,
                 $"{LandingRules.AutoAccepted} its work is on `{named}`, and `{plugin}` did not push it.", ("branch", named), ("plugin", plugin)),
+            // FABRIC-CLOSE1h14: held there by its landing's gate (CLOSE1h12), whose words lead, so it is never said as its quest's.
+            AutoLandingCode.PushHeld when ByGate(landed?.Withheld) => Noted.Of(NoteCodes.LandingPushGated,
+                $"{LandingRules.AutoAccepted} its work is on `{named}`, but its landing's gate held it before `{plugin}` was told, "
+                + "so nothing was pushed. The first look once the gate lets it go hands the branch on.",
+                ("branch", named), ("plugin", plugin)),
             // FABRIC-CLOSE1h2: judged once more just before its plugin was told, and held there; its own sentence beneath says why.
-            AutoLandingCode.PushHeld => Noted.Of(NoteCodes.LandingPushHeld,
+            AutoLandingCode.PushHeld =>Noted.Of(NoteCodes.LandingPushHeld,
                 $"{LandingRules.AutoAccepted} its work is on `{named}`, but its quest was held or taken back before `{plugin}` was told, "
                 + "so nothing was pushed. The first look once it stands again hands the branch on.",
                 ("branch", named), ("plugin", plugin)),

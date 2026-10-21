@@ -155,7 +155,9 @@ public static class NodeRuns
 /// <see cref="WorkObserver"/> before the evaluation, whose tips are read fresh (<see cref="NodeRuntimeLook.Tips"/>). A branch unit's is bound
 /// to its branch's tip read in the pass, not the unit's lagging revision, and rebinds when the branch moves (FABRIC-PERFORM1m,
 /// <see cref="PassTips"/>: one read of each checkout a pass); an event at that tip heard before the rebinding is heard again after it, in
-/// the same pass (FABRIC-PERFORM1o, <see cref="WorkLagging"/>).</para>
+/// the same pass (FABRIC-PERFORM1o, <see cref="WorkLagging"/>). Such a unit's performed nodes bind to that same tip, its plugins are told
+/// it, and an answer lapses on it (FABRIC-PERFORM1p), so a performed node wired after an observed one starts once, on the tip it was
+/// reached on.</para>
 /// <para><b>One pass at a time, one performer per loop:</b> a wake that comes while a look's pass is out waits for it, so a start is never
 /// judged twice on one record; a second loop or a verb holds no lease, and every record edit asks it under the record's lock.</para>
 /// <para><b>A wake runs only what it concerns:</b> the units its answers, reconciliations and retries named, and those owing a start; the
@@ -383,6 +385,7 @@ public sealed class NodeRuntime(
     {
         if (_told) port.Watch(NoneAwaited);
         (_told, _toldText, _governed, _choices, _after, NextDue) = (false, "", null, null, null, null);
+        _tipsTold = new Dictionary<string, string>(StringComparer.Ordinal);
         LastQuests = null;
         QuestReads.Delete(records.Home);
     }
@@ -442,7 +445,15 @@ public sealed class NodeRuntime(
             NodeDeclaration? Performed(string unit, string node) =>
                 governed.TryGetValue(unit, out var each) && each.Dispatchable.Contains(node) ? each.Declared[node] : null;
             var heard = port.TakeSteps();
-            done.AddRange(_performer.Hear([.. heard.Where(each => each.Step.Invocation is not null)], Performed, unit => governed.TryGetValue(unit, out var each) ? each.Watched : null));
+            // FABRIC-PERFORM1p: a branch unit's answer is judged on the tip its pass reads, the one its performed nodes bind to and its plugins
+            // are told, so the checkout of each unit answered is read first, once, for the pass.
+            var answers = heard.Where(each => each.Step.Invocation is not null).ToList();
+            foreach (var unit in _performer.UnitsOf([.. answers.Select(each => each.Step.Invocation!)]))
+            {
+                if (governed.TryGetValue(unit, out var each) && Tipped(each)) await tips.TipAsync(each.Watched.Root, each.Watched.Branch, ct).ConfigureAwait(false);
+            }
+
+            done.AddRange(_performer.Hear(answers, Performed, unit => governed.TryGetValue(unit, out var each) ? Told(each, tips) : null));
             // FABRIC-PERFORM1i: an event naming no invocation is an observed node's, bound to the frame its process was sent and the tips read
             // now, and written before the evaluation below fires its wires. FABRIC-PERFORM1o: one at the tip read now whose node still awaits an
             // older binding is held, and heard again once the evaluation has rebound the node.
@@ -473,7 +484,8 @@ public sealed class NodeRuntime(
                 if (fresh || named.Contains(each.Unit.Id) || OwesStart(each) || await RebindsAsync(each, tips, ct).ConfigureAwait(false)) owing.Add(each);
             }
 
-            var concerned = Turn(owing);
+            // FABRIC-PERFORM1q: a unit whose event was held is judged first, so a turn past UnitsPerPass never leaves its node unrebound.
+            var concerned = Turn(owing, lagging.Select(each => each.Unit).ToHashSet(StringComparer.Ordinal));
             foreach (var each in concerned)
             {
                 if (each.Closes) Settle(each, done, said);
@@ -482,7 +494,7 @@ public sealed class NodeRuntime(
 
             await HearAgainAsync(lagging, governed, concerned, sends, done, said, look.Units, tips, git, ct).ConfigureAwait(false);
             if (fresh || done.Count > 0) Prune();
-            var changed = Tell(governed.Values);
+            var changed = Tell(governed.Values, tips);
             return new NodeRuntimePass(true, done, [.. concerned.Select(each => each.Unit.Id)], said) { AwaitedChanged = changed };
         }
         finally
@@ -502,6 +514,7 @@ public sealed class NodeRuntime(
         var unit = governed.Unit.Id;
         // FABRIC-PERFORM1m: a branch unit's observed plugin nodes bind to its branch's tip read this pass, not to the unit's revision, which is
         // the end fact's and lags a moved branch until the end judgement catches up; the pass's one read of the checkout, null where unread.
+        // FABRIC-PERFORM1p: its performed plugin nodes too, so one wired after an observed node starts on the tip that node was reached on.
         var tipped = Tipped(governed);
         var tip = tipped ? await tips.TipAsync(governed.Watched.Root, governed.Watched.Branch, ct).ConfigureAwait(false) : null;
         for (var round = 0; round <= governed.Graph.Nodes.Count; round++)
@@ -550,7 +563,10 @@ public sealed class NodeRuntime(
                     done.Add(begun);
                     started |= begun.What == PerformedWhat.Begun;
                 }
-                else if (governed.Dispatchable.Contains(node.Id) && sends.Left > 0 && port.GenerationOf(PluginOf(node.Kind)) is not null && sends.Take())
+                // FABRIC-PERFORM1p: a performed node whose branch's tip this pass did not read is left ready, as an observed one is: it is sent
+                // on no guess, and the pass that reads the tip sends it there.
+                else if (governed.Dispatchable.Contains(node.Id) && !(tipped && tip is null) && sends.Left > 0
+                         && port.GenerationOf(PluginOf(node.Kind)) is not null && sends.Take())
                 {
                     // FABRIC-CLOSE1s: a bound quest's revision is its chain's and branches', from the last full read, which a wake reuses: a start
                     // on a wake reads them again first, and a start whose revision moved is not made, so no attempt is bound to an old tip.
@@ -581,8 +597,8 @@ public sealed class NodeRuntime(
 
     /// <summary>
     /// A unit's graph evaluated on its record as it stands (FABRIC-RUN1): each node's status before (the record's, else a fresh one), and
-    /// the evaluation on the unit's revision and the triggers its record has fired; a branch unit's observed plugin nodes on the tip its pass
-    /// read (FABRIC-PERFORM1m), and what git said for its built-ins (FABRIC-RUN1b, <paramref name="git"/>), handed in. Pure: what it moves is
+    /// the evaluation on the unit's revision and the triggers its record has fired; a branch unit's plugin nodes on the tip its pass read
+    /// (FABRIC-PERFORM1m, PERFORM1p), and what git said for its built-ins (FABRIC-RUN1b, <paramref name="git"/>), handed in. Pure: what it moves is
     /// the caller's to keep, and it reads no git itself.
     /// </summary>
     private static (Dictionary<string, NodeStatus> Before, WireEvaluated Evaluated) Evaluate(
@@ -597,7 +613,7 @@ public sealed class NodeRuntime(
             Places = governed.Places,
             Legacy = NodeRuns.Of(unit, governed.GraphDigest),
             Revisions = new Dictionary<string, string?>(StringComparer.Ordinal) { [unit] = governed.Unit.Subject.Revision },
-            NodeRevisions = tipped ? ObservedRevisions(governed, tip, before) : new Dictionary<string, string?>(StringComparer.Ordinal),
+            NodeRevisions = tipped ? TipRevisions(governed, tip, before) : new Dictionary<string, string?>(StringComparer.Ordinal),
             Fired = record.Fired.ToHashSet(StringComparer.Ordinal),
             Units = new Dictionary<string, WorkUnit>(StringComparer.Ordinal) { [unit] = governed.Unit },
             Git = git,
@@ -974,17 +990,21 @@ public sealed class NodeRuntime(
     /// <summary>
     /// The units a pass evaluates, in id order (FABRIC-RUN1e): all of them up to <see cref="UnitsPerPass"/>; past it, the next
     /// <see cref="UnitsPerPass"/> after the last unit the pass before reached, round again from the first, so no unit waits behind the same
-    /// prefix at every pass.
+    /// prefix at every pass. A unit whose event the hearing held (<paramref name="held"/>) is judged first, outside the rotation, so its node
+    /// rebinds in the pass that heard the event (FABRIC-PERFORM1q); the rotation fills what is left of the turn, and moves on only by what
+    /// it took.
     /// </summary>
-    private List<GovernedUnit> Turn(IEnumerable<GovernedUnit> concerned)
+    private List<GovernedUnit> Turn(IEnumerable<GovernedUnit> concerned, IReadOnlySet<string> held)
     {
         var ordered = concerned.OrderBy(each => each.Unit.Id, StringComparer.Ordinal).ToList();
-        if (ordered.Count <= UnitsPerPass) return ordered;
-        var next = _after is null ? 0 : ordered.FindIndex(each => string.CompareOrdinal(each.Unit.Id, _after) > 0);
+        var first = ordered.Where(each => held.Contains(each.Unit.Id)).Take(UnitsPerPass).ToList();
+        var rest = ordered.Where(each => !held.Contains(each.Unit.Id)).ToList();
+        if (ordered.Count <= UnitsPerPass) return [.. first, .. rest];
+        var next = _after is null ? 0 : rest.FindIndex(each => string.CompareOrdinal(each.Unit.Id, _after) > 0);
         if (next < 0) next = 0;
-        var turn = ordered.Skip(next).Concat(ordered.Take(next)).Take(UnitsPerPass).ToList();
-        _after = turn[^1].Unit.Id;
-        return turn;
+        var rotation = rest.Skip(next).Concat(rest.Take(next)).Take(UnitsPerPass - first.Count).ToList();
+        if (rotation.Count > 0) _after = rotation[^1].Unit.Id;
+        return [.. first, .. rotation];
     }
 
     /// <summary>Whether a unit's record holds one of its dispatchable nodes ready: a start owed, judged at a wake as well as at the look.</summary>
@@ -993,10 +1013,24 @@ public sealed class NodeRuntime(
         && governed.Dispatchable.Concat(governed.Observable).Any(node => record.Statuses.GetValueOrDefault(node)?.State == NodeStates.Ready);
 
     /// <summary>
-    /// Whether a unit's observed plugin nodes bind to its branch's tip read in the pass (FABRIC-PERFORM1m): a branch unit's. A quest's revision
-    /// is null by design, and a performed node's is the unit's, as the plugins are told it (<see cref="GovernedUnit.Watched"/>).
+    /// Whether a unit's plugin nodes bind to its branch's tip read in the pass (FABRIC-PERFORM1m), its plugins are told that tip and an answer
+    /// lapses on it (FABRIC-PERFORM1p, <see cref="Told"/>): a branch unit's with an observed node. A quest's revision is null by design; a unit
+    /// observing nothing reads no git, and every node of it is the unit's revision, as told.
     /// </summary>
     private static bool Tipped(GovernedUnit governed) => governed.Unit.Kind == WorkUnitKind.Branch && governed.Observable.Count > 0;
+
+    /// <summary>
+    /// The unit as its plugins are told it now (FABRIC-PERFORM1p; §C4's <c>work/watch</c>, what <see cref="WorkBelief.Lapsed"/> judges an answer
+    /// on): a tipped unit's tip the one this pass read, else the one told before, so nothing lapses on a read that failed or a pass that read
+    /// nothing; else, and for any other unit, its revision.
+    /// </summary>
+    private WatchedUnit Told(GovernedUnit governed, PassTips tips) => TipOf(governed, tips) is { } tip ? governed.Watched with { Tip = tip } : governed.Watched;
+
+    private string? TipOf(GovernedUnit governed, PassTips tips) =>
+        Tipped(governed) ? tips.Known(governed.Watched.Root, governed.Watched.Branch) ?? _tipsTold.GetValueOrDefault(governed.Unit.Id) : null;
+
+    /// <summary>Each tipped unit's tip last told (FABRIC-PERFORM1p), by unit: what a pass that read none tells again.</summary>
+    private Dictionary<string, string> _tipsTold = new(StringComparer.Ordinal);
 
     /// <summary>
     /// Whether a branch unit's observed node awaits its event on a revision its branch's tip, read this pass, has moved off (FABRIC-PERFORM1m):
@@ -1018,7 +1052,8 @@ public sealed class NodeRuntime(
     /// The events the pass's hearing held because their node lagged the tip read this pass (FABRIC-PERFORM1o), heard again after the
     /// evaluations, the five rules and all, on the pass's one read of each checkout, so no git is started for them. A node the evaluation
     /// rebound takes its event, and its unit is evaluated once more so the wires it satisfies fire in this pass; an event whose node was not
-    /// rebound (its unit past the pass's turn) is refused <c>stale</c> and counted, once, as it was before.
+    /// rebound is refused <c>stale</c> and counted, once, as it was before. Its unit is judged first in the turn (FABRIC-PERFORM1q), so that
+    /// is left to a node its evaluation did not rebind, or to more held units than a turn holds.
     /// </summary>
     private async Task HearAgainAsync(
         List<WorkLagging> lagging, IReadOnlyDictionary<string, GovernedUnit> governed, IReadOnlyList<GovernedUnit> concerned, WorkSends sends,
@@ -1035,14 +1070,15 @@ public sealed class NodeRuntime(
     }
 
     /// <summary>
-    /// The revision each of a branch unit's observed plugin nodes is judged on (FABRIC-PERFORM1m): its branch's tip read this pass, so a moved
-    /// branch lapses the old binding and the node is begun again on the new tip. Where the tip was not read, a bound node keeps its binding's
-    /// revision, so nothing lapses on a read that failed; a node not bound is not begun (<see cref="EvaluateAsync"/>).
+    /// The revision each of a branch unit's plugin nodes, observed (FABRIC-PERFORM1m) and performed (FABRIC-PERFORM1p), is judged on: its
+    /// branch's tip read this pass, so a moved branch lapses the old binding and the node is begun again on the new tip. Where the tip was not
+    /// read, a bound node keeps its binding's revision, so nothing lapses on a read that failed; a node not bound is not begun or sent
+    /// (<see cref="EvaluateAsync"/>).
     /// </summary>
-    private static Dictionary<string, string?> ObservedRevisions(GovernedUnit governed, string? tip, IReadOnlyDictionary<string, NodeStatus> statuses)
+    private static Dictionary<string, string?> TipRevisions(GovernedUnit governed, string? tip, IReadOnlyDictionary<string, NodeStatus> statuses)
     {
         var revisions = new Dictionary<string, string?>(StringComparer.Ordinal);
-        foreach (var node in governed.Observable)
+        foreach (var node in governed.Observable.Concat(governed.Dispatchable))
         {
             if (tip is not null) revisions[node] = tip;
             else if (statuses.GetValueOrDefault(node)?.Binding is { } binding) revisions[node] = binding.SubjectRevision;
@@ -1066,11 +1102,12 @@ public sealed class NodeRuntime(
     /// <summary>
     /// The awaited set told (§C4's <c>work/watch</c>, PERFORM1a's supervision): each governed unit with a dispatchable node ready, active or
     /// unknown, or an attempt still waiting for its answer, under that node's plugin and step; and the next timer the records persist.
-    /// Returns whether the set differs from the one told before.
+    /// Returns whether the set differs from the one told before. A tipped unit is told the tip its pass read (FABRIC-PERFORM1p, <see cref="Told"/>).
     /// </summary>
-    private bool Tell(IEnumerable<GovernedUnit> governed)
+    private bool Tell(IEnumerable<GovernedUnit> governed, PassTips tips)
     {
         var awaited = new SortedDictionary<string, List<WatchedUnit>>(StringComparer.Ordinal);
+        var tipsTold = new Dictionary<string, string>(StringComparer.Ordinal);
         DateTimeOffset? due = null;
         void Due(DateTimeOffset? at)
         {
@@ -1079,6 +1116,7 @@ public sealed class NodeRuntime(
 
         foreach (var each in governed)
         {
+            if (TipOf(each, tips) is { } tip) tipsTold[each.Unit.Id] = tip;
             if (records.Read(each.Unit.Id) is not { } record) continue;
             var steps = new SortedDictionary<string, SortedSet<string>>(StringComparer.Ordinal);
             foreach (var id in each.Dispatchable.Concat(each.Observable))
@@ -1096,7 +1134,7 @@ public sealed class NodeRuntime(
             foreach (var (plugin, named) in steps)
             {
                 if (!awaited.TryGetValue(plugin, out var units)) awaited[plugin] = units = [];
-                units.Add(each.Watched with { Awaiting = [.. named] });
+                units.Add(Told(each, tips) with { Awaiting = [.. named] });
             }
 
             foreach (var attempt in record.Attempts)
@@ -1115,6 +1153,7 @@ public sealed class NodeRuntime(
             return false;
         }
 
+        _tipsTold = tipsTold;
         port.Watch(awaited.ToDictionary(each => each.Key, each => (IReadOnlyList<WatchedUnit>)each.Value, StringComparer.Ordinal));
         _told = awaited.Count > 0;
         NextDue = due;

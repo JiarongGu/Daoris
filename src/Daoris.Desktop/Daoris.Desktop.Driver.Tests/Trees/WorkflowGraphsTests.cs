@@ -95,6 +95,43 @@ public sealed class WorkflowGraphsTests : IDisposable
         Assert.Equal((row.GetProperty("identity").GetString(), row.GetProperty("graphDigest").GetString()), (decoded.Identity, decoded.GraphDigest));
     }
 
+    public static TheoryData<string> SavedRows() => new([.. Table().GetProperty("rows").EnumerateArray()
+        .Where(row => row.TryGetProperty("saved", out _)).Select(row => row.GetProperty("name").GetString()!)]);
+
+    /// <summary>
+    /// FABRIC-GRAPH1j (D190 point 8, the cutover design §7.2): a row's steps, read by their shape, saved as a graph are judged as a saved
+    /// graph is, where a schema 2 version is read: refused with the first problem, two observed nodes of one plugin step named both; or
+    /// held, its own digest the row's, the decoded graph's nodes and wires each kept with no node synthetic, so a group's join is authored.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(SavedRows))]
+    public void A_rows_steps_saved_as_a_graph_are_judged_as_saved(string name)
+    {
+        var row = Table().GetProperty("rows").EnumerateArray().Single(each => each.GetProperty("name").GetString() == name);
+        var version = row.GetProperty("version");
+        var number = version.GetProperty("version").GetInt32();
+        var (steps, problem) = WorkflowNamed.ReadShape(version.GetProperty("steps"), number);
+        Assert.Null(problem);
+        var graph = WorkflowGraphs.Saved(steps!);
+        var saved = new JsonObject { ["version"] = number + 1, ["at"] = "2026-10-21T09:00:00Z", ["door"] = "terminal", ["schema"] = WorkflowNamed.GraphSchema, ["graph"] = graph };
+        var read = WorkflowNamed.ReadVersion(WorkflowNamed.ElementOf(saved), number + 1, []);
+        var expected = row.GetProperty("saved");
+        if (expected.TryGetProperty("refused", out var refused))
+        {
+            Assert.Equal((refused.GetString(), (NodeGraph?)null), (read.Problem, read.Graph));
+            return;
+        }
+
+        Assert.Null(read.Problem);
+        Assert.Equal(expected.GetProperty("digest").GetString(), read.Digest);
+        var decoded = WorkflowGraphs.Graph(steps!);
+        Assert.All(read.Graph!.Nodes, node => Assert.False(node.Synthetic));
+        Assert.Equal(decoded.Nodes.Select(node => (node.Id, node.Kind, node.Reach)), read.Graph.Nodes.Select(node => (node.Id, node.Kind, node.Reach)));
+        Assert.Equal(decoded.Wires.Select(wire => wire.Id), read.Graph.Wires.Select(wire => wire.Id));
+        // Every option kept as decoded: the saved graph is the decoded one with its synthetic nodes authored, digest for digest.
+        Assert.Equal(NodeGraphs.Digest(decoded with { Nodes = [.. decoded.Nodes.Select(node => node with { Synthetic = false })] }), read.Digest);
+    }
+
     private static NamedStep Step(string id, string kind, params (string Name, object? Value)[] fields)
     {
         var row = WorkflowKindTable.Of(kind)!;
@@ -272,9 +309,13 @@ public sealed class WorkflowGraphsTests : IDisposable
             .Where(file => Path.GetFileName(file) is not ("WorkflowGraphs.cs" or "WorkflowRunNodes.cs"))
             // FABRICRUN1: the runtime asks which version a quest's run is bound to (`NodeRuntime.BoundIn`), only to leave that unit
             // ungoverned by Current's graph; it evaluates nothing on the version and stores no digest of it, so that one read stays.
-            .Where(file => (Path.GetFileName(file) == "NodeRuntime.cs"
-                    ? File.ReadAllText(file).Replace("WorkflowRunNodes.VersionOf", "", StringComparison.Ordinal)
-                    : File.ReadAllText(file)) is var text
+            // FABRIC-GRAPH1j: `workflow apply --as-graph` writes a decoded graph as a new version, which binds its own digest, never a decoded one.
+            .Where(file => (Path.GetFileName(file) switch
+                {
+                    "NodeRuntime.cs" => File.ReadAllText(file).Replace("WorkflowRunNodes.VersionOf", "", StringComparison.Ordinal),
+                    "DriverWorkflowsCommand.cs" => File.ReadAllText(file).Replace("WorkflowGraphs.Saved", "", StringComparison.Ordinal),
+                    _ => File.ReadAllText(file),
+                }) is var text
                 && (text.Contains("WorkflowGraphs.", StringComparison.Ordinal) || text.Contains("WorkflowRunNodes.", StringComparison.Ordinal)))
             .Select(file => Path.GetRelativePath(driver, file))
             .ToList();
