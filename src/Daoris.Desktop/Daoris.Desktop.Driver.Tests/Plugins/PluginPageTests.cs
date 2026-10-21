@@ -78,6 +78,30 @@ public sealed class PluginPageTests : IDisposable
         Assert.Contains("browser  `browser`; handed to every session beside Daoris's own knowledge host", shown);
     }
 
+    /// <summary>
+    /// FABRIC-UNIT1e (§D9): the page answers the steps a plugin declares and what they create, and the terminal's <c>plugins show</c>
+    /// says each in the words an update's change says it.
+    /// </summary>
+    [Fact]
+    public void The_page_says_each_declared_step_and_what_the_steps_create()
+    {
+        Install("acme.deploy", """
+            { "id": "acme.deploy", "hooks": { "command": ["node", "deploy.mjs"], "points": ["work/perform"] },
+              "steps": [ { "id": "deploy", "version": 2, "reach": "performed", "outputs": { "preview": "acme.deploy/preview@1" } },
+                         { "id": "deployed", "reach": "observed" } ],
+              "resources": [ { "schema": "acme.deploy/preview@1", "cleanup": "work/cleanup" } ] }
+            """);
+
+        var page = PluginPage.Read(Home, "acme.deploy");
+
+        Assert.Equal(["acme.deploy/deploy", "acme.deploy/deployed"], page.Steps.Select(step => step.Kind));
+        Assert.Equal([new PluginResource("acme.deploy/preview@1", "temporary", "work/cleanup")], page.Resources);
+        var shown = PluginsCommand.Show(page);
+        Assert.Contains("  steps      deploy (performed, version 2; outputs preview acme.deploy/preview@1)\n", shown);
+        Assert.Contains("             deployed (observed, version 1)\n", shown);
+        Assert.Contains("  creates    acme.deploy/preview@1 (temporary)\n", shown);
+    }
+
     /// <summary>PLUGINSHOWCHANGED1 (D170's HELPPLUG1c note): an approval the manifest has outgrown reads as changed; one never given does not.</summary>
     [Fact]
     public void A_server_whose_approval_no_longer_matches_is_changed_and_a_never_approved_one_is_not()

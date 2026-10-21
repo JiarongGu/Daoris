@@ -279,6 +279,47 @@ public static class PluginSteps
 
     private static PluginStepsRead Refused(string code, string? name) => new([], [], code, Words(code, name));
 
+    // ——— What a person reads (FABRIC-UNIT1e, §D9): `plugin list`, a package's description and an update's change list say a step
+    // and a resource in these words. Twin: the CLI's `stepName`, `stepSaid` and `resourceSaid`, word for word.
+
+    /// <summary>A step's name as its manifest writes it: its kind past <c>&lt;plugin&gt;/</c>. Twin: the CLI's <c>stepName</c>.</summary>
+    public static string NameOf(NodeDeclaration step) => step.Kind[(step.Kind.IndexOf('/', StringComparison.Ordinal) + 1)..];
+
+    /// <summary>
+    /// A step as an update's change says it: its name, then everything it declares that is not the default, so two declarations that
+    /// differ are never said alike. Twin: the CLI's <c>stepSaid</c>.
+    /// </summary>
+    public static string Said(NodeDeclaration step)
+    {
+        static string Ports(IReadOnlyDictionary<string, string> ports) => string.Join(", ", ports.Select(port => $"{port.Key} {port.Value}"));
+        var parts = new List<string> { $"{step.Reach}, version {step.Version}" };
+        if (step.Inputs.Count > 0) parts.Add($"inputs {Ports(step.Inputs)}");
+        if (step.Outputs.Count > 0) parts.Add($"outputs {Ports(step.Outputs)}");
+        if (step.Evidence is { } evidence) parts.Add($"evidence {evidence}");
+        if (step.Retry is { } retry)
+        {
+            parts.Add($"at most {retry.MaxAttempts} attempt{(retry.MaxAttempts == 1 ? "" : "s")}"
+                + (retry.DelaysSeconds.Count > 0 ? $", waiting {string.Join(", ", retry.DelaysSeconds)} seconds" : ""));
+        }
+
+        if (step.TimeoutSeconds is { } timeout) parts.Add($"timeout {timeout} seconds");
+        if (!step.Skippable) parts.Add("not skippable");
+        if (step.Rejectable) parts.Add("rejectable");
+        if (step.Perform is { } perform)
+        {
+            var said = new List<string>();
+            if (perform.Idempotent) said.Add("idempotent");
+            if (perform.Reconcile) said.Add("reconciled");
+            if (perform.Transient.Count > 0) said.Add($"transient {string.Join(", ", perform.Transient)}");
+            parts.AddRange(said.Count > 0 ? said : ["perform declared"]);
+        }
+
+        return $"{NameOf(step)} ({string.Join("; ", parts)})";
+    }
+
+    /// <summary>A resource as a description and an update's change say it: its schema and its role. Twin: the CLI's <c>resourceSaid</c>.</summary>
+    public static string Said(PluginResource resource) => $"{resource.Schema} ({resource.Role})";
+
     /// <summary>The words each code is said in, naming the step by its manifest's id or the resource by its schema. Twin: <c>steps.ts</c>.</summary>
     public static string Words(string code, string? name) => code switch
     {

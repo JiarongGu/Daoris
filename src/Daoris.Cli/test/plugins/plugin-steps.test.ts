@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { MANIFEST, pluginsRoot, readPlugins } from '../../src/plugins/plugins.ts';
+import { changesBetween, describe, MANIFEST, pluginsRoot, readPlugins } from '../../src/plugins/plugins.ts';
+import type { PluginManifest } from '../../src/plugins/plugins.ts';
 import { stepsDeclared } from '../../src/plugins/steps.ts';
 import type { NodeDeclaration, PluginResource } from '../../src/plugins/steps.ts';
 import { driverRows, driverTestFile } from '../_csharp.ts';
@@ -226,6 +227,70 @@ test('a manifest without steps reads as it did before: no steps, no resources, n
     steps: [], resources: [], icon: null, iconProblem: null, tools: [], toolsProblem: null,
   });
   fx.cleanup();
+});
+
+/** A manifest a row declares, read as the catalogue reads one. Twin: `PluginStepsTests.Parsed`. */
+function parsed(declared: string, at: string): PluginManifest {
+  const fx = makeFixture(`pluginSteps-${at}`);
+  plugin(fx.root, declared);
+  const [entry] = readPlugins(fx.root).plugins;
+  fx.cleanup();
+  assert.equal(entry!.problem, null, at);
+  return entry!.manifest;
+}
+
+const WHOLE_STEP = ', "steps": [{ "id": "deploy", "version": 2, "reach": "performed", "inputs": { "release": "acme.build/artifact@1" }, "outputs": { "preview": "acme.deploy/preview@1", "log": "acme.deploy/log@1" }, "evidence": { "schema": "acme.deploy/receipt@1" }, "retry": { "maxAttempts": 3, "delaysSeconds": [5, 30] }, "timeoutSeconds": 600, "skippable": false, "rejectable": true, "perform": { "idempotent": true, "reconcile": "work/reconcile", "transient": ["unavailable", "rate-limited"] } }] ';
+const WHOLE_SAID = 'deploy (performed, version 2; inputs release acme.build/artifact@1; outputs log acme.deploy/log@1, preview acme.deploy/preview@1; evidence acme.deploy/receipt@1; at most 3 attempts, waiting 5, 30 seconds; timeout 600 seconds; not skippable; rejectable; idempotent; reconciled; transient unavailable, rate-limited)';
+const DEPLOY = ', "steps": [{ "id": "deploy", "reach": "performed" }] ';
+
+/**
+ * FABRIC-UNIT1e (§D9): what an update changes in a plugin's steps and resources, in `stepSaid`'s and `resourceSaid`'s words:
+ * [case, the installed manifest's declarations after its id, the source's, then each change as `what: was → now`, `(none)` for
+ * an empty side, joined by ` | `]. The twin is `PluginStepsTests.An_update_says_its_step_changes_as_the_cli_says_them`.
+ */
+const CHANGE_ROWS: [name: string, was: string, now: string, changes: string][] = [
+  ['the same steps', DEPLOY, DEPLOY, ''],
+  ['a step added', '', DEPLOY, 'steps: (none) → deploy (performed, version 1)'],
+  ['a step taken out', ', "steps": [{ "id": "build", "reach": "performed" }, { "id": "deployed", "reach": "observed" }] ', ', "steps": [{ "id": "deployed", "reach": "observed" }] ', 'steps: build (performed, version 1); deployed (observed, version 1) → deployed (observed, version 1)'],
+  ['a new version', DEPLOY, ', "steps": [{ "id": "deploy", "version": 2, "reach": "performed" }] ', 'steps: deploy (performed, version 1) → deploy (performed, version 2)'],
+  ['a whole step', '', WHOLE_STEP, `steps: (none) → ${WHOLE_SAID}`],
+  ['a retry widened in the same version', ', "steps": [{ "id": "deploy", "reach": "performed", "retry": { "maxAttempts": 2 }, "perform": { "reconcile": "work/reconcile", "transient": ["unavailable"] } }] ', ', "steps": [{ "id": "deploy", "reach": "performed", "retry": { "maxAttempts": 4, "delaysSeconds": [10] }, "perform": { "reconcile": "work/reconcile", "transient": ["unavailable"] } }] ', 'steps: deploy (performed, version 1; at most 2 attempts; reconciled; transient unavailable) → deploy (performed, version 1; at most 4 attempts, waiting 10 seconds; reconciled; transient unavailable)'],
+  ['a retry of one attempt', '', ', "steps": [{ "id": "deploy", "reach": "performed", "retry": { "maxAttempts": 1 } }] ', 'steps: (none) → deploy (performed, version 1; at most 1 attempt)'],
+  ['perform declared with nothing in it', DEPLOY, ', "steps": [{ "id": "deploy", "reach": "performed", "perform": {} }] ', 'steps: deploy (performed, version 1) → deploy (performed, version 1; perform declared)'],
+  ['an observed step made performed', ', "steps": [{ "id": "deploy", "reach": "observed" }] ', DEPLOY, 'steps: deploy (observed, version 1) → deploy (performed, version 1)'],
+  ['a resource kept as the result', ', "resources": [{ "schema": "acme.deploy/preview@1", "cleanup": "work/cleanup" }] ', ', "resources": [{ "schema": "acme.deploy/preview@1", "role": "result", "cleanup": "work/cleanup" }] ', 'resources: acme.deploy/preview@1 (temporary) → acme.deploy/preview@1 (result)'],
+  ['a step and a resource added', '', ', "steps": [{ "id": "deployed", "reach": "observed", "skippable": true, "rejectable": false }], "resources": [{ "schema": "acme.deploy/site@1", "role": "temporary", "cleanup": "work/cleanup" }] ', 'steps: (none) → deployed (observed, version 1) | resources: (none) → acme.deploy/site@1 (temporary)'],
+];
+
+/**
+ * FABRIC-UNIT1e (§D9): a plugin described where its other declarations are (`plugin list`, `plugin add`): [case, the manifest's
+ * declarations after its id, the description]. The twin is `PluginStepsTests.A_plugin_is_described_with_its_steps_as_the_cli_describes_it`.
+ */
+const DESCRIBE_ROWS: [name: string, declared: string, described: string][] = [
+  ['no steps', '', 'speaks on work/perform'],
+  ['one step', DEPLOY, 'speaks on work/perform; declares step deploy (performed)'],
+  ['steps and resources', ', "steps": [{ "id": "build", "reach": "performed" }, { "id": "deployed", "reach": "observed" }], "resources": [{ "schema": "acme.deploy/preview@1", "cleanup": "work/cleanup" }, { "schema": "acme.deploy/site@1", "role": "result", "cleanup": "work/cleanup" }] ', 'speaks on work/perform; declares steps build (performed), deployed (observed); creates acme.deploy/preview@1 (temporary), acme.deploy/site@1 (result)'],
+  ['after a skill', ', "skills": [{ "name": "triage" }], "steps": [{ "id": "deployed", "reach": "observed" }] ', 'speaks on work/perform; hands sessions skill triage; declares step deployed (observed)'],
+];
+
+test('the driver’s tables of an update’s step changes and of a description are these tables, row for row (FABRIC-UNIT1e)', () => {
+  const source = readFileSync(DRIVER_TESTS, 'utf8');
+  assert.deepEqual(driverRows(source, 'An_update_says_its_step_changes_as_the_cli_says_them'), CHANGE_ROWS);
+  assert.deepEqual(driverRows(source, 'A_plugin_is_described_with_its_steps_as_the_cli_describes_it'), DESCRIBE_ROWS);
+});
+
+test('an update says each step and resource that changes, whole, in the driver’s words (FABRIC-UNIT1e)', () => {
+  const side = (said: string) => (said.length > 0 ? said : '(none)');
+  CHANGE_ROWS.forEach(([name, was, now, changes], at) => {
+    const between = changesBetween(parsed(was, `change-was-${at}`), parsed(now, `change-now-${at}`));
+    assert.equal(between.map((change) => `${change.what}: ${side(change.was)} → ${side(change.now)}`).join(' | '), changes, name);
+  });
+});
+
+test('a plugin is described with its steps and what they create, in the driver’s words (FABRIC-UNIT1e)', () => {
+  DESCRIBE_ROWS.forEach(([name, declared, described], at) => {
+    assert.equal(describe(parsed(declared, `describe-${at}`)), described, name);
+  });
 });
 
 test('a step’s problem refuses the plugin, and nothing of it is taken', () => {

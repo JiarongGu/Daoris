@@ -7,7 +7,8 @@ import { PluginSourceLine, PluginUpdatePlan, type PluginUpdatePlanShown, updatab
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import { PageHead, PageSection, ViewMain } from '../work/frame/ViewMain';
 import {
-  type HelpServerShown, type PluginShown, pluginState, shippedChanged, type SkillShown, speaks, takesShipped, updateWaits,
+  type HelpServerShown, type PluginShown, pluginState, type ResourceShown, shippedChanged, type SkillShown, speaks, type StepShown,
+  takesShipped, updateWaits,
 } from './catalog';
 import { PluginIcon } from './PluginIcon';
 import { STATE_WORD } from './PluginList';
@@ -185,6 +186,55 @@ export function SkillRows({ skills }: { skills?: SkillShown[] }) {
   );
 }
 
+/** A step's ports as the page says them: each name, then its schema, in the order the driver sends them. */
+const portsSaid = (ports: Record<string, string>): string =>
+  Object.entries(ports).map(([name, schema]) => `${name} ${schema}`).join(', ');
+
+/**
+ * **The steps a plugin declares and what they create** (FABRIC-UNIT1e, the fabric events design §D9): each step in the mono face
+ * with its reach and version, then what it takes, gives and is reached on, each schema as the manifest writes it; then each
+ * resource with its role. A reach or a role this page does not know is said as the driver sent it. None where it declares none.
+ */
+export function StepRows({ plugin, steps, resources }: { plugin: string; steps?: StepShown[]; resources?: ResourceShown[] }) {
+  const { t } = useTranslation();
+  return (
+    <>
+      {steps && steps.length > 0 && (
+        <PageSection title={t('plugin.section.steps')}>
+          <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
+            {steps.map((step) => (
+              <li key={step.name} className="flex flex-col gap-0.5 text-small text-ink-soft">
+                <span className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                  <code className="font-mono text-meta text-ink">{step.name}</code>
+                  <span>{t(`plugin.steps.reach.${step.reach}`, { defaultValue: step.reach })}</span>
+                  <span className="text-ink-faint">{t('plugin.steps.version', { version: step.version })}</span>
+                </span>
+                {Object.keys(step.inputs).length > 0 && <span>{t('plugin.steps.inputs', { ports: portsSaid(step.inputs) })}</span>}
+                {Object.keys(step.outputs).length > 0 && <span>{t('plugin.steps.outputs', { ports: portsSaid(step.outputs) })}</span>}
+                {step.evidence && <span>{t('plugin.steps.evidence', { schema: step.evidence })}</span>}
+              </li>
+            ))}
+          </ul>
+          <Body className="mt-1.5"><Inline text={t('plugin.steps.body', { id: plugin })} /></Body>
+        </PageSection>
+      )}
+      {resources && resources.length > 0 && (
+        <PageSection title={t('plugin.section.resources')}>
+          <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
+            {resources.map((resource) => (
+              <li key={resource.schema} className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-small">
+                <code className="font-mono text-meta text-ink">{resource.schema}</code>
+                <span className="text-ink-soft">{t(`plugin.resources.role.${resource.role}`, { defaultValue: resource.role })}</span>
+              </li>
+            ))}
+          </ul>
+          <Body className="mt-1.5">{t('plugin.resources.body')}</Body>
+        </PageSection>
+      )}
+    </>
+  );
+}
+
 /** Names in the mono face, one a line: the agents a plugin declares, the servers an offer hands. */
 export function NameRows({ names }: { names: string[] }) {
   return (
@@ -196,7 +246,8 @@ export function NameRows({ names }: { names: string[] }) {
 
 /**
  * **A plugin's page** (D119 §3.2) on today's answers (PLUGUI1b): a header with its switch, *Try*, *Update…* and
- * *Remove…*, then Points, Agents, Ask Daoris and Skills (D170), Tests, Data folder and Source, and its terminal twins at its foot.
+ * *Remove…*, then Points, Agents, Ask Daoris and Skills (D170), Steps and what they create
+ * (FABRIC-UNIT1e), Tests, Data folder and Source, and its terminal twins at its foot.
  *
  * @remarks
  * **A molecule**: every state is reached by its props, the ask and the plan included, and every press goes out.
@@ -362,6 +413,7 @@ export function PluginPage({
 
       <HelpServers plugin={plugin.id} servers={plugin.helpServers} onHelp={onHelp} />
       <SkillRows skills={plugin.skills} />
+      <StepRows plugin={plugin.id} steps={plugin.steps} resources={plugin.resources} />
 
       <PageSection title={t('plugin.section.tests')}>
         <h3 className="m-0 mb-1.5 text-small font-medium text-ink-soft">{t('plugin.tests.trial')}</h3>

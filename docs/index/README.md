@@ -219,7 +219,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `src/Daoris.Cli/src/agents/toolchain.ts` | 177 | 3321 |
 | `src/Daoris.Cli/src/doctrine/materialize.ts` | 47 | 935 |
-| `src/Daoris.Cli/src/plugins/plugins.ts` | 82 | 1598 |
+| `src/Daoris.Cli/src/plugins/plugins.ts` | 83 | 1612 |
 | `src/Daoris.Cli/test/agents/toolchain.test.ts` | 117 | 2206 |
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 47 | 895 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 49 | 851 |
@@ -246,7 +246,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `.claude/knowledge/twins.md` | 119 | 187 |
+| `.claude/knowledge/twins.md` | 120 | 187 |
 | `docs/2026-09-19-platform-ux.md` | 70 | 730 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 54 | 354 |

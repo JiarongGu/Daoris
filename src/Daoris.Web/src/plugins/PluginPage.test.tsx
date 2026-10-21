@@ -349,6 +349,53 @@ describe("a plugin's page", () => {
     expect(screen.queryByRole('region', { name: 'Skills' })).toBeNull();
   });
 
+  /**
+   * FABRIC-UNIT1e (§D9): the page lists each step a plugin declares with its reach, version and ports, and what its steps create
+   * with each role; one that declares none says nothing of them.
+   */
+  it('lists each declared step and what its steps create, in English and in 中文', async () => {
+    const stepped: PluginShown = {
+      ...PLUGIN,
+      steps: [
+        { name: 'deploy', reach: 'performed', version: 2, inputs: { release: 'acme.build/artifact@1' }, outputs: { preview: 'acme.deploy/preview@1' }, evidence: 'acme.deploy/receipt@1' },
+        { name: 'deployed', reach: 'observed', version: 1, inputs: {}, outputs: {}, evidence: null },
+      ],
+      resources: [{ schema: 'acme.deploy/preview@1', role: 'temporary' }, { schema: 'acme.deploy/site@1', role: 'result' }],
+    };
+    const { unmount } = page({ plugin: stepped });
+    const steps = screen.getByRole('region', { name: 'Steps' });
+    expect(within(steps).getByText('deploy')).toBeInTheDocument();
+    expect(within(steps).getByText('performed when Daoris asks')).toBeInTheDocument();
+    expect(within(steps).getByText('version 2')).toBeInTheDocument();
+    expect(within(steps).getByText('Takes release acme.build/artifact@1')).toBeInTheDocument();
+    expect(within(steps).getByText('Gives preview acme.deploy/preview@1')).toBeInTheDocument();
+    expect(within(steps).getByText('Reached on acme.deploy/receipt@1')).toBeInTheDocument();
+    expect(within(steps).getByText('reported by the plugin')).toBeInTheDocument();
+    expect(steps).toHaveTextContent(`as a step of its own kind: ${PLUGIN.id}/<name>`);
+    const created = screen.getByRole('region', { name: 'What its steps create' });
+    expect(within(created).getByText('removed at the end')).toBeInTheDocument();
+    expect(within(created).getByText("kept as the work's result")).toBeInTheDocument();
+    unmount();
+
+    const { default: i18n } = await import('../locales/i18n');
+    await i18n.changeLanguage('zh');
+    try {
+      const shown = page({ plugin: stepped });
+      const zh = screen.getByRole('region', { name: '步骤' });
+      expect(within(zh).getByText('deploy')).toBeInTheDocument();
+      expect(within(zh).getByText('在 Daoris 请求时由插件执行')).toBeInTheDocument();
+      expect(within(zh).getByText('版本 2')).toBeInTheDocument();
+      expect(within(screen.getByRole('region', { name: '其步骤创建的资源' })).getByText('作为工作的结果保留')).toBeInTheDocument();
+      shown.unmount();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+
+    page();
+    expect(screen.queryByRole('region', { name: 'Steps' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'What its steps create' })).toBeNull();
+  });
+
   /** A refused plugin's page: the driver's sentence leads, verbatim, and it has nothing to try (D119 §3.2). */
   it('leads with the driver\'s sentence for a refused plugin, on a warn rail', () => {
     page({ plugin: { ...PLUGIN, problem: 'needs plugin API 99, and this build speaks 1.', points: [], harnesses: [] } });

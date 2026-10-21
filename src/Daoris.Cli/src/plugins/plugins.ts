@@ -68,7 +68,7 @@ import { TOOLCHAINS } from '../agents/toolchain.ts';
 import { TOOLS, isAddress } from '../tools/tools.ts';
 import type { CommandArgs } from '../platform/types.ts';
 import { ALONE, PLUGIN_ROUTES, type VerbDoor } from '../platform/door.ts';
-import { stepsDeclared } from './steps.ts';
+import { resourceSaid, stepName, stepSaid, stepsDeclared } from './steps.ts';
 import type { NodeDeclaration, PluginResource } from './steps.ts';
 
 /** The plugin API this build speaks. Raised only when a plugin written for the new shape cannot work on the old one. */
@@ -1070,7 +1070,11 @@ export function readOffers(home: string, reserved: Iterable<string> = reservedHa
 // ——— Update (PLUG9 c, D103). Twin: `PluginInstall.PlanUpdate` and `PluginInstall.Update`.
 
 /** One thing an update changes, each side said as its manifest writes it; empty is none. */
-export interface PluginChange { what: 'version' | 'command' | 'points' | 'harnesses' | 'servers' | 'skills'; was: string; now: string }
+export interface PluginChange {
+  what: 'version' | 'command' | 'points' | 'harnesses' | 'servers' | 'skills' | 'steps' | 'resources';
+  was: string;
+  now: string;
+}
 
 export interface UpdatePlan {
   id: string;
@@ -1125,10 +1129,13 @@ export function changesBetween(was: PluginManifest, now: PluginManifest): Plugin
     servers: manifest.servers.map((server) => `${server.name} (${line(server.command)})${serverTo(server)}`).join('; '),
     // HELPPLUG1b: each skill and who it is handed to. Twin: `PluginChange.Between`.
     skills: manifest.skills.map((skill) => `${skill.name} to ${skill.to.join(' and ')}`).join('; '),
+    // FABRIC-UNIT1e (§D9): each step and resource in `steps.ts`'s words. Twin: `PluginChange.Between`.
+    steps: manifest.steps.map(stepSaid).join('; '),
+    resources: manifest.resources.map(resourceSaid).join('; '),
   });
   const before = said(was);
   const after = said(now);
-  return (['version', 'command', 'points', 'harnesses', 'servers', 'skills'] as const)
+  return (['version', 'command', 'points', 'harnesses', 'servers', 'skills', 'steps', 'resources'] as const)
     .filter((what) => before[what] !== after[what])
     .map((what) => ({ what, was: before[what], now: after[what] }));
 }
@@ -1264,7 +1271,8 @@ function requireId(argv: string[], verb: string): string {
   return id;
 }
 
-function describe(manifest: PluginManifest): string {
+/** What a plugin declares and speaks, as `list` and `add` say it. Twin: `PluginPackageCommand.Describe`. */
+export function describe(manifest: PluginManifest): string {
   const parts: string[] = [];
   if (manifest.harnesses.length > 0) {
     parts.push(`declares ${manifest.harnesses.map((h) => h.name).join(', ')}`);
@@ -1279,11 +1287,17 @@ function describe(manifest: PluginManifest): string {
     const tools = (s: PluginServer) => [...s.allow, ...s.writes.map((tool) => `${tool}, writes`)];
     parts.push(`offers Ask Daoris ${help.map((s) => (tools(s).length > 0 ? `${s.name} (${tools(s).join('; ')})` : s.name)).join(', ')}`);
   }
-  // HELPPLUG1b (D170 point 4): the skills it hands each. Twin: `PluginPackage.Describe`.
+  // HELPPLUG1b (D170 point 4): the skills it hands each. Twin: `PluginPackageCommand.Describe`.
   for (const [to, who] of [[SERVER_TO.sessions, 'sessions'], [SERVER_TO.help, 'Ask Daoris']] as const) {
     const skills = manifest.skills.filter((skill) => skill.to.includes(to)).map((skill) => skill.name);
     if (skills.length > 0) parts.push(`hands ${who} skill${skills.length === 1 ? '' : 's'} ${skills.join(', ')}`);
   }
+  // FABRIC-UNIT1e (§D9): the steps it declares, each with its reach, and what they create. Twin: `PluginPackageCommand.Describe`.
+  if (manifest.steps.length > 0) {
+    const steps = manifest.steps.map((step) => `${stepName(step)} (${step.reach})`);
+    parts.push(`declares step${steps.length === 1 ? '' : 's'} ${steps.join(', ')}`);
+  }
+  if (manifest.resources.length > 0) parts.push(`creates ${manifest.resources.map(resourceSaid).join(', ')}`);
   return parts.length > 0 ? parts.join('; ') : 'declares nothing and speaks nothing';
 }
 

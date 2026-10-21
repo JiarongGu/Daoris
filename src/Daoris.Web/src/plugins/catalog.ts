@@ -22,6 +22,23 @@ export type HelpServerShown = {
  */
 export type SkillShown = { name: string; to: string[]; problem?: string | null };
 
+/**
+ * A step a plugin declares (FABRIC-UNIT1e, the fabric events design §D9), as the driver's `PLUGINS` answers it: its name as the
+ * manifest writes it (its kind is `<plugin>/<name>`), its reach (`observed`, which the plugin reports, or `performed`, which
+ * Daoris asks it to do), its version, and its ports by name with each one's schema.
+ */
+export type StepShown = {
+  name: string;
+  reach: string;
+  version: number;
+  inputs: Record<string, string>;
+  outputs: Record<string, string>;
+  evidence?: string | null;
+};
+
+/** What a plugin's steps create (FABRIC-UNIT1e, §D3): its schema, and its role, `temporary` or `result`. */
+export type ResourceShown = { schema: string; role: string };
+
 // The Plugins view's list and page as values (PLUGUI1b, D119 §3.1): a plugin's state, its group, and what the list's
 // chosen item names. Pure, so every machine a person could have is an argument, and the list, the strip and the page
 // read one answer.
@@ -45,6 +62,9 @@ export type PluginOfferShown = {
   helpServers?: HelpServerShown[];
   /** The skills it would hand (HELPPLUG1b); an older shell sends none. */
   skills?: SkillShown[];
+  /** The steps it declares and what they create (FABRIC-UNIT1e); an older shell sends none. */
+  steps?: StepShown[];
+  resources?: ResourceShown[];
   needs: string[];
   installed: boolean;
   /** Its declared icon as its own bytes (PLUGUI2, D140 §3.2), never a path; absent until the host answers it. */
@@ -98,6 +118,9 @@ export type PluginShown = {
   helpServers?: HelpServerShown[];
   /** The skills it hands sessions or Ask Daoris (HELPPLUG1b); an older shell sends none. */
   skills?: SkillShown[];
+  /** The steps it declares and what they create (FABRIC-UNIT1e); an older shell sends none. */
+  steps?: StepShown[];
+  resources?: ResourceShown[];
 };
 
 /** One of Daoris's own plugins the install carries (D103), with what its manifest declares and its README needs. */
@@ -115,6 +138,9 @@ export type OfferShown = {
   helpServers?: HelpServerShown[];
   /** The skills it would hand (HELPPLUG1b); an older shell sends none. */
   skills?: SkillShown[];
+  /** The steps it declares and what they create (FABRIC-UNIT1e); an older shell sends none. */
+  steps?: StepShown[];
+  resources?: ResourceShown[];
   needs: string[];
   installed: boolean;
   /** Its declared icon as its bytes (D140 §3.2); none from a shell older than PLUGUI2b. */

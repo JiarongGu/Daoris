@@ -11,7 +11,8 @@ import type { Answered } from '../work/InlineConfirm';
 import { ListMore } from '../work/frame/ListPane';
 import type { ViewLayout } from '../work/frame/ViewFrame';
 import {
-  chosenOf, type HelpServerShown, type OfferShown, pluginGroups, type PluginShown, type SkillShown, takesShipped,
+  chosenOf, type HelpServerShown, type OfferShown, pluginGroups, type PluginShown, type ResourceShown, type SkillShown,
+  type StepShown, takesShipped,
 } from './catalog';
 import { OfferPage } from './OfferPage';
 import { PluginList, PluginStrip } from './PluginList';
@@ -46,6 +47,28 @@ const skillsOf = (raw: unknown): SkillShown[] =>
   list<SkillShown>(raw).filter((skill) => typeof skill?.name === 'string')
     .map((skill) => ({ name: skill.name, to: list<string>(skill.to), problem: typeof skill.problem === 'string' ? skill.problem : null }));
 
+const portsOf = (raw: unknown): Record<string, string> =>
+  raw !== null && typeof raw === 'object' && !Array.isArray(raw)
+    ? Object.fromEntries(Object.entries(raw).filter((port): port is [string, string] => typeof port[1] === 'string'))
+    : {};
+
+/** The steps a plugin declares (FABRIC-UNIT1e), each with its reach, version and ports; none from an older shell. */
+const stepsOf = (raw: unknown): StepShown[] =>
+  list<StepShown>(raw).filter((step) => typeof step?.name === 'string')
+    .map((step) => ({
+      name: step.name,
+      reach: typeof step.reach === 'string' ? step.reach : '',
+      version: typeof step.version === 'number' ? step.version : 1,
+      inputs: portsOf(step.inputs),
+      outputs: portsOf(step.outputs),
+      evidence: typeof step.evidence === 'string' ? step.evidence : null,
+    }));
+
+/** What a plugin's steps create (FABRIC-UNIT1e), each with its role; none from an older shell. */
+const resourcesOf = (raw: unknown): ResourceShown[] =>
+  list<ResourceShown>(raw).filter((resource) => typeof resource?.schema === 'string')
+    .map((resource) => ({ schema: resource.schema, role: typeof resource.role === 'string' ? resource.role : 'temporary' }));
+
 function installedOf(raw: unknown): PluginShown[] {
   return list<PluginShown>(raw).map((plugin) => ({
     ...plugin,
@@ -53,6 +76,8 @@ function installedOf(raw: unknown): PluginShown[] {
     points: list<string>(plugin.points),
     helpServers: helpServersOf(plugin.helpServers),
     skills: skillsOf(plugin.skills),
+    steps: stepsOf(plugin.steps),
+    resources: resourcesOf(plugin.resources),
   }));
 }
 function offersOf(raw: unknown): OfferShown[] {
@@ -63,6 +88,8 @@ function offersOf(raw: unknown): OfferShown[] {
     servers: list<string>(offer.servers),
     helpServers: helpServersOf(offer.helpServers),
     skills: skillsOf(offer.skills),
+    steps: stepsOf(offer.steps),
+    resources: resourcesOf(offer.resources),
     needs: list<string>(offer.needs),
   }));
 }

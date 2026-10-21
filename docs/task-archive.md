@@ -18882,3 +18882,14 @@ accepted that declaration for the repository's landed route (its blob at the com
 the session's copy: then a replay that took the line's copy of a generated file writes its folder again in the replay's tree, in a
 commit of its own on top, and the landing says so; otherwise the line's copy stays, as before. Proof: `LandRebaseLandingTests`
 (Process) and `merge-branch.test.ts`. Detail: D87's GENREGEN1 note.
+
+## FABRIC-UNIT1e — a plugin's steps shown where its other declarations are (2026-10-21, D173)
+
+> - [ ] **FABRIC-UNIT1e — a plugin's steps shown where its other declarations are** (driver, cli, web-shell; after UNIT1d; §D9). `plugin list` and `describe`, the plugin page and an update's change list say a plugin's steps and resources, the same words in both twins. Proof: both twins' tables of an update's step changes; the plugin page lists a declared step, en and zh.
+
+**Outcome** 2026-10-21: built. One set of words in both twins (`PluginSteps.NameOf`/`Said`, `stepName`/`stepSaid`/`resourceSaid`):
+an update's change list gains `steps` and `resources`, each step said whole so a change without a new version still shows; `describe`
+and `plugins install` name each step with its reach and what the steps create. `PLUGINS` answers steps and resources, and the plugin
+page and the offer's page list them in en and zh; `daoris-driver plugins show` says them too. Proof: `PluginStepsTests`' change and
+description theories held cell for cell by `plugin-steps.test.ts`, `PluginPageTests`, `DriverModulePluginPageTests`,
+`PluginPage.test.tsx` in both languages. Detail: D173's FABRIC-UNIT1e note.

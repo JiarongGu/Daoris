@@ -200,6 +200,14 @@ public static class PluginsCommand
             Field(text, index == 0 ? "servers" : "", $"{server.Name}{taken}  `{string.Join(" ", server.Command)}`{environment}; {string.Join("; ", handed)}");
         }
 
+        // FABRIC-UNIT1e (§D9): each step and resource in the words an update's change says them (PluginSteps.Said).
+        foreach (var (step, index) in page.Steps.Select((step, index) => (step, index)))
+        {
+            Field(text, index == 0 ? "steps" : "", PluginSteps.Said(step) + taken);
+        }
+
+        if (page.Resources.Count > 0) Field(text, "creates", string.Join(", ", page.Resources.Select(PluginSteps.Said)));
+
         Field(text, "tests", page.Tests.Count > 0 ? string.Join(", ", page.Tests) : "its folder carries none");
         return text.ToString();
     }
