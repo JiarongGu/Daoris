@@ -20,6 +20,9 @@ public sealed class ToolDownloadsTests : IDisposable
 
     private string Tool => DaorisHome.Entry(Home, HomeEntry.ToolVersions, "gh");
 
+    /// <summary>No session runs here: what a delete asks before it removes a version (KEEP1b).</summary>
+    private static Task<LiveSessions> NoSessions(CancellationToken _) => Task.FromResult(LiveSessions.None);
+
     private static readonly byte[] Bytes = ToolInstallTests.Archive.Build("zip", "bin/gh.exe=gh", "");
 
     private static OfferedVersion Offered(string version) => new(
@@ -120,7 +123,7 @@ public sealed class ToolDownloadsTests : IDisposable
             process: 1001, running: _ => true);
 
         Assert.Empty(ToolInstall.Downloaded(Home, "gh"));
-        Assert.Equal("missing", Assert.Throws<ToolRefusal>(() => ToolInstall.Delete(Home, "gh", "2.62.0")).Check);
-        Assert.Equal("version", Assert.Throws<ToolRefusal>(() => ToolInstall.Delete(Home, "gh", "2.62.0.part-1001")).Check);
+        Assert.Equal("missing", (await Assert.ThrowsAsync<ToolRefusal>(() => ToolInstall.DeleteAsync(Home, "gh", "2.62.0", NoSessions))).Check);
+        Assert.Equal("version", (await Assert.ThrowsAsync<ToolRefusal>(() => ToolInstall.DeleteAsync(Home, "gh", "2.62.0.part-1001", NoSessions))).Check);
     }
 }

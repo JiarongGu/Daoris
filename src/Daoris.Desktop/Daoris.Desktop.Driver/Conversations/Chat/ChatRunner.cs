@@ -1089,6 +1089,9 @@ public sealed class ChatRunner : IDisposable
                     selection.Environment);
             }
 
+            // KEEP1b: what this run is handed of the downloads, on its record before it is spawned, a go-on as a first start.
+            await Driver.KeepHandedAsync(_service, _home, sessionId, info, ct).ConfigureAwait(false);
+
             // HELP5: the helper paid a model round trip to find its own knowledge tools. Which variable
             // stops that is a fact about the harness, so the adapter names it, and nothing here does.
             if (place.ToolsUpFront)

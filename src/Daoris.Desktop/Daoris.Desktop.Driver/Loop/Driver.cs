@@ -2126,6 +2126,7 @@ public sealed class Driver(
             };
             oneLook.Dispose();
             var (info, harnessNotice) = Prepare(adapter, target, selection);
+            await KeepHandedAsync(sessionId, info, ct).ConfigureAwait(false);
 
             // The creating sentence, on the record while the session runs (D51 rule 4): where it grew from and what a fresh
             // tree does not hold. The conclusion's note replaces it — by then the record's Tree field and the evidence say the rest.
@@ -2406,6 +2407,30 @@ public sealed class Driver(
 
         return (info, harnessNotice);
     }
+
+    /// <summary>
+    /// What a start of this session is handed of the downloads, kept on its record before it is spawned (KEEP1b, D195 point 6; the cleanup
+    /// design §3.5, Fable F2.5): the downloads' rule keeps each version while the session runs. Every spawn takes it, a go-on as a first
+    /// start, after <see cref="Prepare"/> or its own preparing; a start handed none of them asks nothing. Best-effort: a record the
+    /// service did not keep it on reads as one from before, which keeps the start-time rule, so the start goes on either way.
+    /// </summary>
+    internal static async Task KeepHandedAsync(ServiceClient service, string home, string sessionId, ProcessStartInfo info, CancellationToken ct)
+    {
+        var handed = DownloadClearing.Handed(home, info);
+        if (handed.Count == 0) return;
+        try
+        {
+            await service.KeepResolvedAsync(sessionId, handed, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or JsonException
+                                          || (error is TaskCanceledException && !ct.IsCancellationRequested))
+        {
+            // Unkept, the record says nothing of what it was handed, and the rule keeps what went unused after it opened.
+        }
+    }
+
+    /// <inheritdoc cref="KeepHandedAsync(ServiceClient, string, string, ProcessStartInfo, CancellationToken)"/>
+    internal Task KeepHandedAsync(string sessionId, ProcessStartInfo info, CancellationToken ct) => KeepHandedAsync(service, home, sessionId, info, ct);
 
     /// <summary>
     /// Whether the rules this session would be handed let it call the connector's <paramref name="tool"/>

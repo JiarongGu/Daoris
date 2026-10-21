@@ -48,22 +48,34 @@ public sealed class SystemRoutes(DriverContext context)
 
     // CACHECLEAR1: the Downloads row's list, the agents' and tools' downloaded versions with what keeps each, sized as they are
     // listed (a walk of each version's folder, off the window's thread). A read: it declares nothing and removes nothing.
+    // KEEP1b: with the rule's days (`days`, null under `never`), and for each version nothing uses when its current unused stretch began
+    // (`unusedSince`) and when the rule takes it (`goes`), from `keeping.json`; both absent where no pass has found it unused yet.
     [DriverRoute("SYSTEM_DOWNLOADS")]
     private Task<object?> DownloadsAsync(IpcRequest request, CancellationToken cancellationToken) =>
-        Task.Run(() => (object?)DownloadsAnswer(DownloadClearing.List(_context.Loop.Home, Uses(), DateTimeOffset.UtcNow, cancellationToken)), cancellationToken);
+        Task.Run(() =>
+        {
+            var home = _context.Loop.Home;
+            return (object?)DownloadsAnswer(
+                DownloadClearing.List(home, Judge().Uses(), DateTimeOffset.UtcNow, cancellationToken), KeepingRecord.Read(home), KeepPolicy.Of(home).Downloads);
+        }, cancellationToken);
 
     // CACHECLEAR1 (D88's shape): the press after the list. `versions` names the rows the page showed, `{ kind, name, version, unfinished }`;
     // each is judged again from the files as they stand right before it goes, and one kept, held by a program or gone since is said in
     // the answer. What it moves: This Daoris's sizes, and the Tools' and agents' pages that say which versions are downloaded.
+    // KEEP1b (D195 point 6): the downloads' one act, each version judged under the use files' locks, held to its rename, and kept while a
+    // running session was handed it.
     [DriverRoute("SYSTEM_DOWNLOADS_CLEAR")]
     [Publishes("SYSTEM_DOWNLOADS_CLEAR", StateScopes.Harnesses | StateScopes.Tools | StateScopes.Wiring)]
     private Task<object?> ClearDownloadsAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var asked = DownloadsAsked(request.Payload);
-        return Task.Run(() =>
+        return Task.Run(async () =>
         {
-            var cleared = DownloadClearing.Clear(
-                _context.Loop.Home, asked, Uses, () => DateTimeOffset.UtcNow, _context.Loop.Log, cancellationToken: cancellationToken);
+            var home = _context.Loop.Home;
+            var record = KeepingRecord.Read(home);
+            var judge = Judge() with { FirstUnused = key => record.Unused.TryGetValue(key, out var since) ? since : null };
+            var cleared = await DownloadClearing.ClearAsync(
+                home, asked, judge, _context.Loop.Log, cancellationToken: cancellationToken, door: KeepingRun.Press).ConfigureAwait(false);
             return (object?)new
             {
                 Cleared = cleared.Select(each => new
@@ -76,13 +88,27 @@ public sealed class SystemRoutes(DriverContext context)
         }, cancellationToken);
     }
 
-    /// <summary>The files that say which downloads are used, as they stand now: the agents' wiring as the roster reads it, this home's tools and choices.</summary>
-    private DownloadUses Uses() => DownloadUses.Read(_context.Loop.Home, _context.Loop.Harnesses.Settings, _context.Loop.ConfigPath);
+    /// <summary>
+    /// How the downloads are judged here (KEEP1b): the agents' wiring as the roster reads it, this home's tools and the loop's choices, each
+    /// read as it stands and locked at a version's judgement, and the home's running sessions.
+    /// </summary>
+    private DownloadJudge Judge()
+    {
+        var loop = _context.Loop;
+        var markers = DaorisHome.Entry(loop.Home, HomeEntry.SessionPids);
+        return DownloadJudge.Of(loop.Home, loop.Harnesses.SettingsPath, loop.ConfigPath, token => LiveSessions.ReadAsync(loop.Service, markers, token));
+    }
 
-    private static object DownloadsAnswer(DownloadListing listing) => new
+    private static object DownloadsAnswer(DownloadListing listing, KeepingFile record, DownloadsPolicy policy) => new
     {
         listing.Why,
-        Versions = listing.Versions.Select(row => new { row.Kind, row.Name, row.Version, row.Path, row.Bytes, row.Partial, row.Keeps, row.By, row.Unfinished }).ToArray(),
+        Days = policy.Days is { } days ? (int?)days.TotalDays : null,
+        Versions = listing.Versions.Select(row => new
+        {
+            row.Kind, row.Name, row.Version, row.Path, row.Bytes, row.Partial, row.Keeps, row.By, row.Unfinished,
+            UnusedSince = row.Keeps is null ? DownloadKeeping.UnusedSince(row, record) : null,
+            Goes = DownloadKeeping.Goes(row, record, policy),
+        }).ToArray(),
     };
 
     /// <summary>The rows a press names; a call naming none, or a row without its kind, name and version, is malformed.</summary>

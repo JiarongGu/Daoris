@@ -733,7 +733,8 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         var code = await HarnessActions.PinAsync(
             toolchain, _loop.Harnesses.Home, harness, version, stream, ct, started);
 
-        if (code == 0) HarnessSettings.Change(_loop.Harnesses.SettingsPath, read => read.WithVersion(harness, version));
+        // KEEP1b: written once the version is found installed again under the file's lock, which the downloads' rule holds to its rename.
+        if (code == 0) HarnessSettings.Pin(_loop.Harnesses.SettingsPath, _loop.Harnesses.Home, harness, version);
         return code;
     }
 
@@ -748,6 +749,6 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         HarnessActions.UpdateAsync(
             toolchain, command, _loop.Harnesses.Home, harness,
             _loop.Harnesses.Settings.ResolveVersion(harness, null, null),
-            version => HarnessSettings.Change(_loop.Harnesses.SettingsPath, read => read.WithVersion(harness, version)),
+            version => HarnessSettings.Pin(_loop.Harnesses.SettingsPath, _loop.Harnesses.Home, harness, version),
             stream, ct, started);
 }

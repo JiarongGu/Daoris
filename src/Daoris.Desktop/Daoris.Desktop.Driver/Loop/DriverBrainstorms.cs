@@ -671,6 +671,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
             Prompt = turn.Instruction,
         };
         var (info, notice) = _driver.Prepare(adapter, target, selection);
+        await _driver.KeepHandedAsync(sessionId, info, ct).ConfigureAwait(false);
         var transcript = files.PathOf(turn.Id, "passes", $"{turn.Turn}.log");
         Directory.CreateDirectory(Path.GetDirectoryName(transcript)!);
         // The protocol door carries the connector on the wire, with the same scope; the pipe door takes a file under the home.

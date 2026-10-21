@@ -1,3 +1,6 @@
+using System.Diagnostics;
+using System.Text.Json;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -8,15 +11,16 @@ namespace Daoris.Driver;
 /// <param name="Name">The agent or the tool, as its folder names it.</param>
 /// <param name="Version">The version, as its folder names it.</param>
 /// <param name="Path">Its folder.</param>
-/// <param name="Bytes">Its size, as far as the walk got.</param>
+/// <param name="Bytes">Its size, as far as the walk got; none where the list did not measure it.</param>
 /// <param name="Partial">Whether any read failed, so the size is not whole.</param>
 /// <param name="Keeps">
 /// Null where nothing uses it, else why it stays: <c>pinned</c> (an agent's pin names it), <c>used</c> (Tools runs it), <c>named</c> (a
-/// setting names a file inside it), <c>unread</c> (a file that says what is used cannot be read), <c>recent</c> (downloaded within
-/// <see cref="DownloadClearing.Settling"/>, so a pin or a use may be on its way), or, at a press, <c>in-use</c> (a program holds it).
+/// setting names a file inside it), <c>unread</c> (a file that says what is used cannot be read, or the running sessions cannot be),
+/// <c>recent</c> (downloaded within <see cref="DownloadClearing.Settling"/>, so a pin or a use may be on its way), <c>running</c> (a running
+/// session was handed it, KEEP1b), or, at a removal, <c>in-use</c> (a program holds it).
 /// </param>
-/// <param name="By">What keeps it: <c>machine</c> or <c>workspace:&lt;name&gt;</c> for a pin, else the file (<c>tools.json</c>,
-/// <c>driver.json</c>, <c>harnesses.json</c>).</param>
+/// <param name="By">What keeps it: <c>machine</c> or <c>workspace:&lt;name&gt;</c> for a pin, <c>session:&lt;id&gt;</c> for a running
+/// session, <c>sessions</c> where they could not be read, else the file (<c>tools.json</c>, <c>driver.json</c>, <c>harnesses.json</c>).</param>
 /// <param name="Unfinished">An earlier clearing moved it aside and could not remove all of it: nothing runs it, and it goes at the next press.</param>
 public sealed record DownloadedVersion(
     string Kind, string Name, string Version, string Path, long Bytes, bool Partial, string? Keeps, IReadOnlyList<string> By,
@@ -30,7 +34,8 @@ public sealed record DownloadAsked(string Kind, string Name, string Version, boo
 
 /// <summary>
 /// What one asked row came to: <c>removed</c>; <c>kept</c>, with the version's <see cref="DownloadedVersion.Keeps"/> as it was judged right
-/// before it would have gone; <c>gone</c>, no longer there; or <c>unfinished</c>, moved aside so nothing runs it, and not all removed.
+/// before it would have gone; <c>gone</c>, no longer there; or <c>unfinished</c>, moved aside so nothing runs it, and not all removed. A
+/// version that went carries its size, measured once moved aside.
 /// </summary>
 public sealed record DownloadCleared(DownloadAsked Asked, string Outcome, DownloadedVersion? Version);
 
@@ -60,15 +65,129 @@ public sealed record DownloadUses(HarnessSettings Harnesses, ToolsRead Tools, Dr
 }
 
 /// <summary>
+/// A session running on this home as the downloads' guard reads it (KEEP1b, D195 point 6; the cleanup design §3.5, Fable F2.5): its id, when
+/// its record was opened, and the downloaded versions its starts were handed, <c>&lt;agent|tool&gt;/&lt;name&gt;/&lt;version&gt;</c>; null
+/// for a record from before that field, which keeps the start-time rule.
+/// </summary>
+public sealed record LiveSession(string Id, DateTimeOffset? Started, IReadOnlyList<string>? Resolved);
+
+/// <summary>The sessions running on this home, read right before a version is judged; <see cref="Problem"/> where they could not be read.</summary>
+public sealed record LiveSessions(IReadOnlyList<LiveSession> Sessions, string? Problem)
+{
+    /// <summary>None runs.</summary>
+    public static LiveSessions None { get; } = new([], null);
+
+    /// <summary>
+    /// The home's running sessions (§3.5): the service's active records, each with what its starts were handed. With no service to ask,
+    /// or one that did not answer, the home's process markers say whether a session runs here at all (<see cref="SessionProcesses"/>):
+    /// none is none, and one that runs keeps every version, since what it was handed cannot be read (§6.7).
+    /// </summary>
+    /// <param name="markers">The home's process markers, <see cref="HomeEntry.SessionPids"/>; null where none are kept.</param>
+    public static async Task<LiveSessions> ReadAsync(ServiceClient? service, string? markers, CancellationToken ct)
+    {
+        string? why = null;
+        if (service is not null)
+        {
+            try
+            {
+                return new(await service.LiveSessionsAsync(ct).ConfigureAwait(false), null);
+            }
+            catch (Exception error) when (error is DriverException or HttpRequestException or JsonException
+                                              || (error is TaskCanceledException && !ct.IsCancellationRequested))
+            {
+                why = error.Message;
+            }
+        }
+
+        if (!SessionProcesses.AnyAlive(markers)) return None;
+        return new([], why is null
+            ? "a session runs on this home, and no service is here to say what it was handed"
+            : $"the service did not say which sessions run ({why.TrimEnd('.')})");
+    }
+}
+
+/// <summary>
+/// How the act judges each version right before it goes (KEEP1b, the cleanup design §3.5): the use files read as they stand, the keep locks
+/// of those files held per version from the judgement to the rename, the running sessions, and the first-unused time of a version's current
+/// stretch, which the start-time rule reads.
+/// </summary>
+/// <param name="Uses">The files that say what is used, read again for each version, under its locks where <see cref="Locked"/> names them.</param>
+/// <param name="Now">What time it is.</param>
+public sealed record DownloadJudge(Func<DownloadUses> Uses, Func<DateTimeOffset> Now)
+{
+    /// <summary>
+    /// The use files whose keep locks are held, in this order, from a version's judgement to its rename, never across the removal that
+    /// follows (Fable F2.2 to F2.4): the harness file the roster reads, <c>tools.json</c>, and <c>driver.json</c> at the loop's path.
+    /// </summary>
+    public IReadOnlyList<string> Locked { get; init; } = [];
+
+    /// <summary>The running sessions, read right before each version's locks are taken.</summary>
+    public Func<CancellationToken, Task<LiveSessions>> Sessions { get; init; } = _ => Task.FromResult(LiveSessions.None);
+
+    /// <summary>When a version's current unused stretch began, by its key (<see cref="DownloadKeeping.Key(string, string, string)"/>); null where unknown, read as now.</summary>
+    public Func<string, DateTimeOffset?> FirstUnused { get; init; } = _ => null;
+
+    /// <summary>
+    /// Whether a version downloaded within <see cref="DownloadClearing.Settling"/> stays (<c>recent</c>): a pin may be on its way. Tools'
+    /// delete names its one version, so the person's word answers that.
+    /// </summary>
+    public bool KeepsRecent { get; init; } = true;
+
+    /// <summary>A test's look under the locks, after the judgement and before the rename.</summary>
+    internal Action<DownloadedVersion>? Judged { get; init; }
+
+    /// <summary>A test's look once a version is moved aside and its locks are let go, before it is removed.</summary>
+    internal Action<DownloadedVersion>? Renamed { get; init; }
+
+    /// <summary>
+    /// The judge the look's pass and the routes use: the harness file the roster reads (<paramref name="harnesses"/>, which
+    /// <c>DAORIS_HARNESS_CONFIG</c> may name), <c>tools.json</c> and <paramref name="configPath"/>, each read as it stands and locked.
+    /// </summary>
+    public static DownloadJudge Of(
+        string home, string harnesses, string? configPath, Func<CancellationToken, Task<LiveSessions>> sessions, Func<DateTimeOffset>? now = null)
+    {
+        string? tools;
+        try
+        {
+            tools = DaorisHome.Entry(home, HomeEntry.Tools);
+        }
+        catch (HomeEntryTwiceException)
+        {
+            // Both places hold one: the tools' read says so, and every version is kept as unread.
+            tools = null;
+        }
+
+        return new(() => DownloadUses.Read(home, HarnessSettings.Load(harnesses), configPath), now ?? (() => DateTimeOffset.UtcNow))
+        {
+            Locked = [.. new[] { harnesses, tools, configPath }.OfType<string>()
+                .DistinctBy(path => Path.GetFullPath(path), OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal)],
+            Sessions = sessions,
+        };
+    }
+}
+
+/// <summary>
 /// Clearing downloads (CACHECLEAR1): the versions the agents and the tools downloaded into <c>cache/</c> that nothing uses, LISTED
 /// first with what keeps each of the rest, then removed by the person's press (D88's shape: listed, pressed, each judged again right
-/// before it goes). The screen's half is Settings → This Daoris's <i>Downloads</i> row.
+/// before it goes). The screen's half is Settings → This Daoris's <i>Downloads</i> row. Since KEEP1b it is the downloads' one act
+/// (D195 point 6, the cleanup design §3.5, §6.6): the look's rule (<see cref="DownloadKeeping"/>) and Tools' delete of one version
+/// (<see cref="ToolInstall.DeleteAsync"/>) remove through it too.
 /// </summary>
 /// <remarks>
 /// <para><b>What uses a version is what would run it.</b> An agent's version is used where a pin names it, this machine's or any
 /// workspace's (<see cref="HarnessSettings.Versions"/>, <see cref="HarnessSettings.WorkspaceVersions"/>), since a start resolves its
 /// workspace's pin first; a tool's where Tools runs it managed at that version. A version a setting names a file inside (a tool's
 /// <c>file</c>, a command in <c>driver.json</c>) is used too. A file that cannot be read keeps everything it would have said.</para>
+///
+/// <para><b>And what a running session was handed</b> (KEEP1b, Fable F2.5): a version holding a file a running session's start was handed
+/// stays (<c>running</c>), both of an ACP session's; a record from before that field keeps the start-time rule, kept while a session that
+/// started before the version's current unused stretch began runs. A pin and an unpin between two passes leave no trace in that
+/// stretch (§2.3), which is why the session's own versions are the guard.</para>
+///
+/// <para><b>Judged under the use files' locks</b> (Fable F2.2 to F2.4): each version is judged holding the keep locks of the files that
+/// say what uses it (<see cref="DownloadJudge.Locked"/>), from its judgement to its rename and never across its removal, so a pin written
+/// meanwhile waits and is then seen, and a pin waiting while another version is deleted is taken at once. A pin's writer looks again
+/// under its lock that its version is there (<see cref="HarnessSettings.Pin"/>).</para>
 ///
 /// <para><b>A download a moment old stays.</b> A pin and a use are written after their download lands (<see cref="HarnessActions"/>,
 /// <see cref="ToolInstall.DownloadAsync"/>), so a version downloaded within <see cref="Settling"/> is kept: it may be the one about to be
@@ -77,7 +196,8 @@ public sealed record DownloadUses(HarnessSettings Harnesses, ToolsRead Tools, Dr
 ///
 /// <para><b>Moved aside, then removed.</b> A version goes by one rename beside itself first, which fails while a program runs from it
 /// (Windows holds a running executable's folder), so a running session's old version is kept as <c>in-use</c> rather than half
-/// deleted. Once moved, nothing resolves it, and what a removal could not take is listed as unfinished and goes at the next press.</para>
+/// deleted; but a rename's success proves nothing (Codex 2.6), an agent run through npm's shims holding no file open. Once moved, nothing
+/// resolves it, and what a removal could not take is listed as unfinished and goes at the next press.</para>
 ///
 /// <para><b>Only what was listed.</b> A press names the rows the page showed; a version downloaded since, or one not listed, is never
 /// touched, and a name is matched to a listed folder, never joined into a path.</para>
@@ -98,7 +218,9 @@ public static class DownloadClearing
     private const int MoveWaitMs = 200;
 
     /// <summary>Every downloaded version under <paramref name="home"/>, agents' first then tools', each with what keeps it.</summary>
-    public static DownloadListing List(string? home, DownloadUses uses, DateTimeOffset now, CancellationToken cancellationToken = default)
+    /// <param name="measure">Whether each version's folder is walked for its size; the look's rule lists without (§3.1) and measures what it removes.</param>
+    public static DownloadListing List(
+        string? home, DownloadUses uses, DateTimeOffset now, CancellationToken cancellationToken = default, bool measure = true)
     {
         if (home is null) return new DownloadListing([], "no-home");
         string agents, tools;
@@ -141,24 +263,21 @@ public static class DownloadClearing
             versions.Add(Measured(new DownloadedVersion(kind, name, folder.Name, folder.FullName, 0, false, keeps, by)));
         }
 
-        DownloadedVersion Measured(DownloadedVersion row)
-        {
-            var (bytes, _, partial) = WiringSizes.MeasureFolder(row.Path, WiringBudget.Default, cancellationToken);
-            return row with { Bytes = bytes, Partial = partial };
-        }
+        DownloadedVersion Measured(DownloadedVersion row) => measure ? MeasuredAt(row, row.Path, cancellationToken) : row;
     }
 
     /// <summary>
-    /// Remove the versions a press names that nothing keeps, each judged again, from the files as they stand, right before it goes.
+    /// Remove the versions a press, the look's rule or Tools' delete names that nothing keeps, each judged again right before it goes, from
+    /// the files as they stand, holding their locks (<paramref name="judge"/>).
     /// </summary>
-    /// <param name="uses">The files that say what is used, read again for each version.</param>
     /// <param name="move">The rename aside; a test hands in one that refuses, as a running program makes Windows refuse.</param>
-    public static IReadOnlyList<DownloadCleared> Clear(
-        string? home, IReadOnlyList<DownloadAsked> asked, Func<DownloadUses> uses, Func<DateTimeOffset> now, MachineLog? log = null,
-        Action<string, string>? move = null, CancellationToken cancellationToken = default)
+    /// <param name="door">Who removed it, for the machine log: <c>press</c>, <c>look</c> (the rule) or <c>tools</c> (Tools' delete).</param>
+    public static async Task<IReadOnlyList<DownloadCleared>> ClearAsync(
+        string? home, IReadOnlyList<DownloadAsked> asked, DownloadJudge judge, MachineLog? log = null,
+        Action<string, string>? move = null, CancellationToken cancellationToken = default, string? door = null)
     {
         log ??= MachineLog.None;
-        var listed = List(home, uses(), now(), cancellationToken).Versions;
+        var listed = List(home, judge.Uses(), judge.Now(), cancellationToken, measure: false).Versions;
         var cleared = new List<DownloadCleared>();
         foreach (var each in asked)
         {
@@ -174,43 +293,94 @@ public static class DownloadClearing
             var aside = row.Path;
             if (!row.Unfinished)
             {
-                var (keeps, by) = Judge(row.Kind, row.Name, row.Version, row.Path, uses(), now());
-                if (keeps is not null)
+                // Read before the locks, so a slow service never holds a person's pin at the lock (F2.3).
+                var sessions = await judge.Sessions(cancellationToken).ConfigureAwait(false);
+                var (moved, kept) = MoveAside(row, judge, sessions, move);
+                if (kept is not null)
                 {
-                    cleared.Add(Kept(each, row with { Keeps = keeps, By = by }, log));
+                    cleared.Add(Kept(each, kept, log, door));
                     continue;
                 }
 
-                aside = $"{row.Path}.{Guid.NewGuid().ToString("N")[..8]}{Aside}";
-                try
-                {
-                    AtomicFile.MoveFolder(row.Path, aside, MoveTries, MoveWaitMs, move);
-                }
-                catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-                {
-                    cleared.Add(Kept(each, row with { Keeps = "in-use", By = [] }, log));
-                    continue;
-                }
+                aside = moved!;
+                judge.Renamed?.Invoke(row);
             }
 
+            var measured = MeasuredAt(row, aside, cancellationToken);
             var removed = Remove(aside);
-            log.Info(removed ? "download.cleared" : "download.unfinished", ("kind", row.Kind), ("name", row.Name), ("version", row.Version));
-            cleared.Add(new DownloadCleared(each, removed ? "removed" : "unfinished", row));
+            log.Info(removed ? "download.cleared" : "download.unfinished", Said(row, door));
+            cleared.Add(new DownloadCleared(each, removed ? "removed" : "unfinished", measured));
             if (removed) RemoveIfEmpty(Directory.GetParent(row.Path)?.FullName);
         }
 
         return cleared;
     }
 
-    private static DownloadCleared Kept(DownloadAsked asked, DownloadedVersion row, MachineLog log)
+    /// <summary>
+    /// One version judged and moved aside, holding the use files' locks from the judgement to the rename and letting them go before anything
+    /// is removed (F2.3): where it went, or the row as judged where it stays.
+    /// </summary>
+    private static (string? Aside, DownloadedVersion? Kept) MoveAside(
+        DownloadedVersion row, DownloadJudge judge, LiveSessions sessions, Action<string, string>? move)
     {
-        log.Info("download.kept", ("kind", row.Kind), ("name", row.Name), ("version", row.Version), ("why", row.Keeps));
+        var held = new List<IDisposable>();
+        try
+        {
+            foreach (var file in judge.Locked)
+            {
+                try
+                {
+                    held.Add(KeepLock.Take(file));
+                }
+                catch (IOException)
+                {
+                    // A writer held it for the whole of the wait: what that file says cannot be read now, so the version stays.
+                    return (null, row with { Keeps = "unread", By = [System.IO.Path.GetFileName(file)] });
+                }
+            }
+
+            var (keeps, by) = Judge(
+                row.Kind, row.Name, row.Version, row.Path, judge.Uses(), judge.Now(), sessions, judge.FirstUnused(DownloadKeeping.Key(row)),
+                judge.KeepsRecent);
+            judge.Judged?.Invoke(row);
+            if (keeps is not null) return (null, row with { Keeps = keeps, By = by });
+
+            var aside = $"{row.Path}.{Guid.NewGuid().ToString("N")[..8]}{Aside}";
+            try
+            {
+                AtomicFile.MoveFolder(row.Path, aside, MoveTries, MoveWaitMs, move);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                return (null, row with { Keeps = "in-use", By = [] });
+            }
+
+            return (aside, null);
+        }
+        finally
+        {
+            for (var at = held.Count - 1; at >= 0; at--) held[at].Dispose();
+        }
+    }
+
+    private static DownloadCleared Kept(DownloadAsked asked, DownloadedVersion row, MachineLog log, string? door)
+    {
+        log.Info("download.kept", [.. Said(row, door), ("why", row.Keeps)]);
         return new DownloadCleared(asked, "kept", row);
     }
 
+    /// <summary>A removal's log line: the version by its names, never its path, and the door only where one is named (an added field).</summary>
+    private static (string Key, object? Value)[] Said(DownloadedVersion row, string? door) => door is null
+        ? [("kind", row.Kind), ("name", row.Name), ("version", row.Version)]
+        : [("kind", row.Kind), ("name", row.Name), ("version", row.Version), ("door", door)];
+
     /// <summary>Why a version stays, and what keeps it; null where nothing uses it.</summary>
+    /// <param name="sessions">The running sessions (KEEP1b); null judges by the files alone, as the list does.</param>
+    /// <param name="firstUnused">When the version's current unused stretch began; null is now, for the start-time rule.</param>
+    /// <param name="settles">Whether a version downloaded within <see cref="Settling"/> stays.</param>
     public static (string? Keeps, IReadOnlyList<string> By) Judge(
-        string kind, string name, string version, string folder, DownloadUses uses, DateTimeOffset now)
+        string kind, string name, string version, string folder, DownloadUses uses, DateTimeOffset now,
+        LiveSessions? sessions = null, DateTimeOffset? firstUnused = null, bool settles = true)
     {
         if (kind == "agent")
         {
@@ -234,7 +404,76 @@ public static class DownloadClearing
         if (uses.Tools.Entries.Values.Any(entry => entry.Way == ToolWay.File && Inside(entry.File, folder))) return ("named", ["tools.json"]);
         if (uses.Config is null) return ("unread", [DriverConfig.FileName]);
         if (uses.Config.Commands.Values.Any(command => command.Count > 0 && Inside(command[0], folder))) return ("named", [DriverConfig.FileName]);
-        return now - Arrived(folder) < Settling ? ("recent", []) : (null, []);
+        if (settles && now - Arrived(folder) < Settling) return ("recent", []);
+        if (sessions is null) return (null, []);
+        if (sessions.Problem is not null) return ("unread", ["sessions"]);
+
+        // A session that says what its starts were handed keeps exactly those; one from before that field keeps what went unused after it
+        // started, since its start may have resolved it (F2.5); one whose start is not known keeps everything.
+        var key = DownloadKeeping.Key(kind, name, version);
+        var since = firstUnused ?? now;
+        var running = sessions.Sessions
+            .Where(session => session.Resolved is { } resolved
+                ? resolved.Contains(key, StringComparer.OrdinalIgnoreCase)
+                : session.Started is not { } started || started < since)
+            .Select(session => "session:" + session.Id)
+            .ToList();
+        return running.Count > 0 ? ("running", running) : (null, []);
+    }
+
+    /// <summary>
+    /// The downloaded versions a start was handed (KEEP1b, F2.5), read off the start itself: every path in what it runs, its arguments (a
+    /// shim's, where a command runs it) and its environment (an ACP adapter's <c>claude</c>, each managed tool's folder on its PATH) that
+    /// lies inside a version under <c>cache/</c>, as <c>&lt;agent|tool&gt;/&lt;name&gt;/&lt;version&gt;</c>, in order. A path elsewhere is none.
+    /// </summary>
+    public static IReadOnlyList<string> Handed(string home, ProcessStartInfo info)
+    {
+        string agents, tools;
+        try
+        {
+            agents = DaorisHome.Entry(home, HomeEntry.Toolchain);
+            tools = DaorisHome.Entry(home, HomeEntry.ToolVersions);
+        }
+        catch (HomeEntryTwiceException)
+        {
+            return [];
+        }
+
+        var keys = new SortedSet<string>(StringComparer.Ordinal);
+        Look(info.FileName);
+        foreach (var argument in info.ArgumentList) Look(argument);
+        foreach (var value in info.Environment.Values) Look(value);
+        return [.. keys];
+
+        void Look(string? text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return;
+            foreach (var part in text.Split(System.IO.Path.PathSeparator))
+            {
+                if (VersionOf(agents, part) is { } agent) keys.Add(DownloadKeeping.Key("agent", agent.Name, agent.Version));
+                if (VersionOf(tools, part) is { } tool) keys.Add(DownloadKeeping.Key("tool", tool.Name, tool.Version));
+            }
+        }
+    }
+
+    /// <summary>The version folder under <paramref name="root"/> a whole path lies in, by whole segments; null for none.</summary>
+    private static (string Name, string Version)? VersionOf(string root, string path)
+    {
+        var trimmed = path.Trim().Trim('"');
+        if (trimmed.Length == 0 || !System.IO.Path.IsPathFullyQualified(trimmed)) return null;
+        try
+        {
+            var under = System.IO.Path.GetRelativePath(System.IO.Path.GetFullPath(root), System.IO.Path.GetFullPath(trimmed));
+            if (System.IO.Path.IsPathRooted(under)) return null;
+            var parts = under.Split(System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar);
+            return parts.Length >= 2 && parts[0] is not ("." or "..") && parts[1] is not ("." or "..") && parts[0].Length > 0 && parts[1].Length > 0
+                ? (parts[0], parts[1])
+                : null;
+        }
+        catch (Exception error) when (error is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return null;
+        }
     }
 
     /// <summary>The version an unfinished folder was, or null where the name is no such folder's.</summary>
@@ -270,6 +509,13 @@ public static class DownloadClearing
             // A time it cannot read is a download it cannot call old.
             return DateTimeOffset.MaxValue;
         }
+    }
+
+    /// <summary>A row with the size of <paramref name="folder"/>, its own or where it was moved aside.</summary>
+    private static DownloadedVersion MeasuredAt(DownloadedVersion row, string folder, CancellationToken cancellationToken)
+    {
+        var (bytes, _, partial) = WiringSizes.MeasureFolder(folder, WiringBudget.Default, cancellationToken);
+        return row with { Bytes = bytes, Partial = partial };
     }
 
     /// <summary>The folders under <paramref name="path"/>, no link among them; none where it is not there or cannot be read.</summary>

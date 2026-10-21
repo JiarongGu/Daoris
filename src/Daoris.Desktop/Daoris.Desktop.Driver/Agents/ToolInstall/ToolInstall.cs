@@ -431,12 +431,21 @@ public static class ToolInstall
     }
 
     /// <summary>
-    /// Delete a downloaded version nothing uses (§3.6, rule 5). The CLI's <c>deleteVersion</c>.
+    /// Delete a downloaded version nothing uses (§3.6, rule 5), through the downloads' one act (KEEP1b, D195 point 6; the cleanup design
+    /// §3.5, §6.6): judged as CACHECLEAR1's press and the look's rule judge it, under the use files' locks and against the running sessions,
+    /// then moved aside before anything of it goes, so a refusal leaves it whole. The person names this one version, so one downloaded within
+    /// the hour is theirs to delete. The CLI's <c>deleteVersion</c> was its twin.
     /// </summary>
+    /// <param name="sessions">The running sessions, read right before the judgement (<see cref="LiveSessions.ReadAsync"/>).</param>
+    /// <param name="harnesses">The harness file the roster reads; this home's resolution where null.</param>
+    /// <param name="config">The person's choices as the loop resolves them; this home's resolution where null.</param>
     /// <returns>The folder deleted.</returns>
     /// <exception cref="ToolRefusal"><c>version</c>, <c>missing</c>, <c>file</c> (which version runs cannot be read),
-    /// <c>in-use</c>, or <c>held</c> with the system's reason when something still holds a file in it.</exception>
-    public static string Delete(string home, string tool, string version)
+    /// <c>in-use</c> (Tools runs it), or <c>held</c> with its reason: a program holds it, a running session was handed it, a setting names a
+    /// file inside it, or what uses it cannot be read now.</exception>
+    public static async Task<string> DeleteAsync(
+        string home, string tool, string version, Func<CancellationToken, Task<LiveSessions>> sessions, string? harnesses = null,
+        string? config = null, MachineLog? log = null, Action<string, string>? move = null, CancellationToken ct = default)
     {
         var declared = Declared(tool);
         if (!Tools.IsExactVersion(version))
@@ -457,25 +466,38 @@ public static class ToolInstall
             throw new ToolRefusal("file", $"{read.Problem} — nothing was deleted, since which version runs cannot be read");
         }
         var entry = read.Entries[tool];
-        if (entry.Way == ToolWay.Managed && entry.Version == version)
+        if (entry.Way == ToolWay.Managed && entry.Version == version) throw RunsIt(declared, tool, version);
+
+        var judge = DownloadJudge.Of(home, harnesses ?? HarnessSettings.ResolvePath(home), config ?? DriverConfig.ResolvePath(home), sessions)
+            with { KeepsRecent = false };
+        var cleared = (await DownloadClearing.ClearAsync(home, [new DownloadAsked("tool", tool, version)], judge, log, move, ct, door: "tools")
+            .ConfigureAwait(false)).Single();
+        switch (cleared.Outcome)
         {
-            throw new ToolRefusal(ToolRefusal.InUse, $"{declared.Name} runs {version} — `daoris tool use {tool} system`, or another version, first; "
-                + "nothing was deleted", named.Item1, named.Item2);
+            case "removed" or "unfinished":
+                return folder;
+            case "gone":
+                throw new ToolRefusal(ToolRefusal.Missing, $"{declared.Name} {version} is not downloaded ({folder}) — nothing was deleted", named.Item1, named.Item2);
         }
 
-        try
+        // Kept, judged again under the use files' locks: said in the act's own terms, the version whole (nothing went before the rename).
+        var row = cleared.Version!;
+        if (row.Keeps == "used") throw RunsIt(declared, tool, version);
+        var why = row.Keeps switch
         {
-            Directory.Delete(folder, recursive: true);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            var said = $"{folder} could not be deleted — {error.Message} A program may be running from it: stop it and delete again; part "
-                + "of it may already be gone";
-            throw new ToolRefusal(ToolRefusal.Held, said, named.Item1, named.Item2, ("reason", said));
-        }
-
-        return folder;
+            "running" => $"a running session was handed it ({string.Join(", ", row.By.Select(by => by.Replace("session:", "", StringComparison.Ordinal)))}); "
+                + "delete it once that session has ended",
+            "named" => $"{row.By.FirstOrDefault()} names a file inside it; change that first",
+            "unread" => $"what uses it cannot be read now ({row.By.FirstOrDefault()}); try again",
+            _ => $"{folder} could not be moved aside, so a program may be running from it: stop it and delete again",
+        };
+        var said = $"{declared.Name} {version} was not deleted — {why}. Nothing of it was removed";
+        throw new ToolRefusal(ToolRefusal.Held, said, named.Item1, named.Item2, ("reason", said));
     }
+
+    private static ToolRefusal RunsIt(ToolDeclaration declared, string tool, string version) =>
+        new(ToolRefusal.InUse, $"{declared.Name} runs {version} — `daoris tool use {tool} system`, or another version, first; nothing was deleted",
+            ("tool", declared.Name), ("version", version));
 
     /// <summary>
     /// Fetch each resource location, in order, each bounded (§3.7, rule 6). A list that reads replaces its copy, the bytes

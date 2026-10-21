@@ -268,6 +268,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 ? null
                 : adapter.PrepareResume(target, config.Commands.GetValueOrDefault(adapter.Name), kept.Conversation, resume.Prompt);
             var (info, harnessNotice) = _driver.Prepare(adapter, target, selection, prepared);
+            await _driver.KeepHandedAsync(sessionId, info, ct).ConfigureAwait(false);
             // A set-up step going on with the person's words shows it again in its own tab (REVIEWENV1d, design §3.4): opened
             // again where the person closed it, and brought forward. Said, never held, where it will not open: the words go on.
             var tabNotice = quest.SetUpIn is not null && _driver.Reviews is { } desk

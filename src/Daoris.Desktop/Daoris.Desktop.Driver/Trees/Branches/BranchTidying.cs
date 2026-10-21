@@ -109,7 +109,7 @@ public sealed class BranchTidying(string home)
                 lines.AddRange(Say([pass with { Strays = strays }], log, met));
             }
 
-            lines.AddRange(Keep(trees, log, met, ct));
+            lines.AddRange(await KeepAsync(trees, service, log, met, ct).ConfigureAwait(false));
             whole = true;
             return lines;
         }
@@ -152,16 +152,35 @@ public sealed class BranchTidying(string home)
     internal TimeSpan Budget { get; init; } = SetAsideKeeping.DefaultBudget;
 
     /// <summary>
+    /// The person's choices as the loop resolves them, which the downloads' rule reads for a command naming a file inside a version and locks
+    /// at its judgement (KEEP1b, the cleanup design §3.5); this home's own resolution unless the watch names the loop's.
+    /// </summary>
+    public string? ConfigPath { get; init; }
+
+    /// <summary>The running sessions, as the downloads' rule reads them; a test hands its own, as it hands a clock.</summary>
+    internal Func<ServiceClient, CancellationToken, Task<LiveSessions>>? Sessions { get; init; }
+
+    // KEEP1b: when the downloads' rule last ran its daily removal in this process, and under which days, so a changed rule runs at once.
+    private DateTimeOffset? _downloadsDaily;
+    private TimeSpan? _downloadsDays;
+
+    /// <summary>How often the downloads' rule removes what is past its days (the cleanup design §3.1, step 5).</summary>
+    public static readonly TimeSpan DownloadsPace = TimeSpan.FromDays(1);
+
+    /// <summary>
     /// The Keeping pass (KEEP1a, D195 point 4; the cleanup design §3.1), in the tidy's task after its repositories, where the purge ran,
     /// so it holds no repository's hold and a start never waits on it: it tries the home's run lock, and held elsewhere removes nothing
     /// this look and names the holder, once; else the set-aside kind's removal, the purge at the policy's days then the slims due, within
-    /// the pass's budget; then <c>keeping.json</c>'s <c>last</c> for the kind, where it removed something or newly kept a path.
+    /// the pass's budget; then <c>keeping.json</c>'s <c>last</c> for the kind, where it removed something or newly kept a path. Then the
+    /// downloads' rule (KEEP1b, <see cref="DownloadKeeping"/>): each version's unused stretch each pass, and once a day, or at once after
+    /// the rule changed, the versions past their days.
     /// </summary>
-    private IReadOnlyList<string> Keep(SessionTrees trees, MachineLog? log, HashSet<string> met, CancellationToken ct)
+    private async Task<IReadOnlyList<string>> KeepAsync(SessionTrees trees, ServiceClient service, MachineLog? log, HashSet<string> met, CancellationToken ct)
     {
         var lines = new List<string>();
-        // Nothing set aside, nothing to keep: the run lock and its holder's file are not written every pace for nothing.
-        if (!Directory.Exists(trees.SetAsideRoot)) return lines;
+        var setAside = Directory.Exists(trees.SetAsideRoot);
+        // Nothing set aside and nothing downloaded, nothing to keep: the run lock and its holder's file are not written every pace for nothing.
+        if (!setAside && !Downloaded()) return lines;
         using var run = KeepingRun.TryTake(home, KeepingRun.Look);
         if (run is null)
         {
@@ -170,14 +189,101 @@ public sealed class BranchTidying(string home)
             {
                 if (First(met, "", "keeping", "held"))
                 {
-                    lines.Add($"tidy  the folders moved aside were not cleaned this look: {holder?.Said ?? "another run"} holds Daoris's "
-                        + "keeping, and a later look tries again.");
+                    lines.Add($"tidy  {(setAside ? "the folders moved aside" : "the downloads")} were not cleaned this look: {holder?.Said ?? "another run"} "
+                        + "holds Daoris's keeping, and a later look tries again.");
                 }
             }
 
             return lines;
         }
 
+        if (setAside) lines.AddRange(KeepSetAside(trees, run, log, met, ct));
+        lines.AddRange(await KeepDownloadsAsync(service, run, log, met, ct).ConfigureAwait(false));
+        return lines;
+    }
+
+    /// <summary>Whether anything is downloaded here to keep: either folder of the downloads, or both places of the layout holding one.</summary>
+    private bool Downloaded()
+    {
+        try
+        {
+            return Directory.Exists(DaorisHome.Entry(home, HomeEntry.Toolchain)) || Directory.Exists(DaorisHome.Entry(home, HomeEntry.ToolVersions));
+        }
+        catch (HomeEntryTwiceException)
+        {
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// The downloads' rule, holding the home's run (KEEP1b): what it removed said in the report, and each version it kept past its days, and a
+    /// record it could not write, said the first look it is met.
+    /// </summary>
+    private async Task<IReadOnlyList<string>> KeepDownloadsAsync(ServiceClient service, KeepingRun run, MachineLog? log, HashSet<string> met, CancellationToken ct)
+    {
+        var lines = new List<string>();
+        var policy = Policy(home).Downloads;
+        var now = Clock();
+        bool daily;
+        lock (_gate) daily = _downloadsDaily is not { } last || now - last >= DownloadsPace || _downloadsDays != policy.Days;
+        var markers = DaorisHome.Entry(home, HomeEntry.SessionPids);
+        var judge = DownloadJudge.Of(
+            home, HarnessSettings.ResolvePath(home), ConfigPath ?? DriverConfig.ResolvePath(home),
+            token => Sessions is { } stand ? stand(service, token) : LiveSessions.ReadAsync(service, markers, token), Clock);
+        var pass = await DownloadKeeping.PassAsync(home, policy, judge, daily, run.Door, run.Id, log, ct).ConfigureAwait(false);
+        lock (_gate)
+        {
+            if (daily && pass.Unwritten is null)
+            {
+                _downloadsDaily = now;
+                _downloadsDays = policy.Days;
+            }
+
+            foreach (var each in pass.Cleared)
+            {
+                var row = each.Version;
+                var named = $"{each.Asked.Name} {each.Asked.Version}";
+                switch (each.Outcome)
+                {
+                    case "removed":
+                        lines.Add($"tidy  removed the download {named}, which nothing had used for {policy.Days?.TotalDays:0} days ({Size(row?.Bytes ?? 0)}); "
+                            + "its next pin or use downloads it again.");
+                        break;
+                    case "unfinished":
+                        lines.Add($"tidy  moved the download {named} aside, unused for {policy.Days?.TotalDays:0} days, and part of it could not be removed yet; "
+                            + "nothing runs it, and a later clearing takes the rest.");
+                        break;
+                    case "kept" when row?.Keeps is { } why && First(met, "", $"download/{named}", "kept-" + why):
+                        lines.Add($"tidy  the download {named} stays past its days, since {DownloadKept(why, row.By)}.");
+                        break;
+                }
+            }
+
+            if (pass.Unwritten is { } unwritten && First(met, "", KeepingRecord.PathOf(home), "unwritten"))
+            {
+                lines.Add($"tidy  {Clause(unwritten)}.");
+            }
+        }
+
+        return lines;
+    }
+
+    /// <summary>Why the downloads' rule kept a version past its days, in a clause (<see cref="DownloadedVersion.Keeps"/>).</summary>
+    private static string DownloadKept(string why, IReadOnlyList<string> by) => why switch
+    {
+        "running" => $"a running session was handed it ({string.Join(", ", by.Select(each => each.Replace("session:", "", StringComparison.Ordinal)))})",
+        "pinned" => "it was pinned since",
+        "used" => "Tools runs it now",
+        "named" => $"{by.FirstOrDefault()} names a file inside it",
+        "in-use" => "a program is running from it",
+        "unread" => $"what uses it cannot be read now ({by.FirstOrDefault()})",
+        _ => why,
+    };
+
+    /// <summary>The set-aside kind's removal, holding the home's run (KEEP1a).</summary>
+    private IReadOnlyList<string> KeepSetAside(SessionTrees trees, KeepingRun run, MachineLog? log, HashSet<string> met, CancellationToken ct)
+    {
+        var lines = new List<string>();
         var read = KeepingRecord.Read(home);
         var done = trees.KeepSetAside(Policy(home), Clock(), Budget, ct);
         lines.AddRange(SayPurged(done.Purged, log, met));
