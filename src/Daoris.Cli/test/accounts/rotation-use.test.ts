@@ -10,6 +10,7 @@ import {
 import type { RotationUse, UseChange } from '../../src/accounts/rotation.ts';
 import { homeEntry } from '../../src/platform/home.ts';
 import { captureError, makeFixture } from '../_fixture.ts';
+import { defaulted, ordered } from '../agents/_wiring.ts';
 
 /**
  * How a scope's list is used (TOOL6a; D130 §2, §3.1, §4.6, §14, as §16.6 amends them; D165 point 2, SWITCH1a):
@@ -181,8 +182,8 @@ function many(n: number): string[] {
 test('`profile use` sets how the machine\'s list is used, and with `--workspace` one workspace\'s; `--early` and `--near` are the old names', () => {
   const fx = makeFixture('rotation-use-verb');
   accounts(fx, 'claude-code', 'account-1', 'account-2', 'account-3');
-  run(['profile', 'order', 'claude-code', 'account-1', 'account-2', 'account-3'], at(fx));
-  run(['profile', 'order', 'claude-code', 'account-2', 'account-1', '--workspace', 'work'], at(fx));
+  ordered(at(fx), 'claude-code', ['account-1', 'account-2', 'account-3'], null);
+  ordered(at(fx), 'claude-code', ['account-2', 'account-1'], 'work');
 
   const machine = run(['profile', 'use', 'claude-code', 'order', '--keep', 'account-3'], at(fx));
   const scoped = run(['profile', 'use', 'claude-code', '--early', 'off', '--near', '85', '--workspace', 'work'], at(fx));
@@ -210,7 +211,7 @@ test('`profile use` sets how the machine\'s list is used, and with `--workspace`
 test('`profile use --switch` and `--curve` set the switch and the person\'s curve, and `--no-curve` takes the curve out', () => {
   const fx = makeFixture('rotation-use-switch');
   accounts(fx, 'claude-code', 'account-1', 'account-2');
-  run(['profile', 'order', 'claude-code', 'account-1', 'account-2'], at(fx));
+  ordered(at(fx), 'claude-code', ['account-1', 'account-2'], null);
 
   const curved = run(['profile', 'use', 'claude-code', '--switch', 'curve', '--curve', 'weekly=0:30,50:70,100:100', '--curve', 'session=0:85'], at(fx));
   assert.equal(curved.code, 0);
@@ -239,7 +240,7 @@ test('`profile use --switch` and `--curve` set the switch and the person\'s curv
 test('`profile use` with no flag prints the scope\'s settings and what each account last said', () => {
   const fx = makeFixture('rotation-use-print');
   accounts(fx, 'claude-code', 'account-1', 'account-2');
-  run(['profile', 'order', 'claude-code', 'account-1', 'account-2'], at(fx));
+  ordered(at(fx), 'claude-code', ['account-1', 'account-2'], null);
   const ahead = new Date(Date.now() + 86_400_000).toISOString().replace(/\.\d+Z$/, 'Z');
   writeFileSync(fx.entry('cooling'), JSON.stringify({ 'claude-code': { 'account-2': { until: ahead, stated: true } } }), 'utf8');
   const before = readFileSync(at(fx), 'utf8');
@@ -261,10 +262,10 @@ test('`profile use` with no flag prints the scope\'s settings and what each acco
 test('`profile use` says the step the next start would follow (TOOL6b), with one account and with many', () => {
   const fx = makeFixture('rotation-use-next');
   accounts(fx, 'claude-code', ...many(3));
-  run(['profile', 'order', 'claude-code', ...many(3)], at(fx));
-  run(['profile', 'order', 'claude-code', 'account-3', 'account-1', '--workspace', 'work'], at(fx));
-  run(['profile', 'default', 'claude-code', 'account-1', '--workspace', 'work'], at(fx));
-  run(['profile', 'order', 'claude-code', 'account-2', '--workspace', 'solo'], at(fx));
+  ordered(at(fx), 'claude-code', [...many(3)], null);
+  ordered(at(fx), 'claude-code', ['account-3', 'account-1'], 'work');
+  defaulted(at(fx), 'claude-code', 'account-1', 'work');
+  ordered(at(fx), 'claude-code', ['account-2'], 'solo');
 
   const goal = run(['profile', 'use', 'claude-code'], at(fx)).out;
   const kept = run(['profile', 'use', 'claude-code', '--keep', 'account-3'], at(fx)).out;
@@ -291,9 +292,9 @@ test('`profile use` shows each account\'s last reading and its age, and says no 
   accounts(fx, 'claude-code', 'account-1', 'account-2');
   accounts(fx, 'codex', 'account-1', 'account-2');
   accounts(fx, 'dsh', 'account-1', 'account-2');
-  run(['profile', 'order', 'claude-code', 'account-1', 'account-2'], at(fx));
-  run(['profile', 'order', 'codex', 'account-1', 'account-2'], at(fx));
-  run(['profile', 'order', 'dsh', 'account-1', 'account-2'], at(fx));
+  ordered(at(fx), 'claude-code', ['account-1', 'account-2'], null);
+  ordered(at(fx), 'codex', ['account-1', 'account-2'], null);
+  ordered(at(fx), 'dsh', ['account-1', 'account-2'], null);
   run(['profile', 'use', 'claude-code', '--near', '85'], at(fx));
   const stamp = (offset: number) => new Date(Date.now() + offset).toISOString().replace(/\.\d+Z$/, 'Z');
   writeFileSync(fx.entry('windows'), JSON.stringify({
@@ -328,7 +329,7 @@ test('`profile use` shows each account\'s last reading and its age, and says no 
 test('`profile use --clear` returns a scope to today\'s defaults, and refuses a setting beside it', () => {
   const fx = makeFixture('rotation-use-clear');
   accounts(fx, 'claude-code', 'account-1', 'account-2');
-  run(['profile', 'order', 'claude-code', 'account-1', 'account-2'], at(fx));
+  ordered(at(fx), 'claude-code', ['account-1', 'account-2'], null);
   run(['profile', 'use', 'claude-code', 'order', '--switch', 'off'], at(fx));
 
   const both = captureError(() => run(['profile', 'use', 'claude-code', 'goal', '--clear'], at(fx)));
@@ -345,13 +346,13 @@ test('`profile use --clear` returns a scope to today\'s defaults, and refuses a 
 test('`profile use` refuses a scope with no list, naming the door that gives it one, and writes nothing', () => {
   const fx = makeFixture('rotation-use-nolist');
   accounts(fx, 'claude-code', 'account-1', 'account-2');
-  run(['profile', 'order', 'claude-code', 'account-1', 'account-2'], at(fx));
-  run(['profile', 'default', 'claude-code', 'account-2', '--workspace', 'work'], at(fx));
+  ordered(at(fx), 'claude-code', ['account-1', 'account-2'], null);
+  defaulted(at(fx), 'claude-code', 'account-2', 'work');
 
   const own = captureError(() => run(['profile', 'use', 'claude-code', 'order', '--workspace', 'work'], at(fx)));
   const borrowed = captureError(() => run(['profile', 'use', 'claude-code', '--switch', 'off', '--workspace', 'home'], at(fx)));
   const look = run(['profile', 'use', 'claude-code', '--workspace', 'work'], at(fx));
-  run(['profile', 'order', 'claude-code', '--clear'], at(fx));
+  ordered(at(fx), 'claude-code', null, null);
   const machine = captureError(() => run(['profile', 'use', 'claude-code', 'order'], at(fx)));
 
   assert.match(own.message, /`work` has no list of its own for `claude-code`.*`daoris agent profile order claude-code <account>… --workspace work` gives it one/);
@@ -365,7 +366,7 @@ test('`profile use` refuses a scope with no list, naming the door that gives it 
 test('`profile use` refuses what is not a setting, naming what is', () => {
   const fx = makeFixture('rotation-use-values');
   accounts(fx, 'claude-code', 'account-1', 'account-2');
-  run(['profile', 'order', 'claude-code', 'account-1', 'account-2'], at(fx));
+  ordered(at(fx), 'claude-code', ['account-1', 'account-2'], null);
   const refused = (...flags: string[]) => captureError(() => run(['profile', 'use', 'claude-code', ...flags], at(fx))).message;
 
   assert.match(refused('fastest'), /`fastest` is not a way to use accounts — goal \(make the most of them\) or order \(one by one, in order\)/);
@@ -399,8 +400,8 @@ test('`profile use` refuses what is not a setting, naming what is', () => {
 test('`profile use --keep` keeps an account of the list, and never the one account driven work would have', () => {
   const fx = makeFixture('rotation-use-keep');
   accounts(fx, 'claude-code', 'account-1', 'account-2', 'account-9');
-  run(['profile', 'order', 'claude-code', 'account-1'], at(fx));
-  run(['profile', 'order', 'claude-code', 'account-1', 'account-2', '--workspace', 'work'], at(fx));
+  ordered(at(fx), 'claude-code', ['account-1'], null);
+  ordered(at(fx), 'claude-code', ['account-1', 'account-2'], 'work');
 
   const outside = captureError(() => run(['profile', 'use', 'claude-code', '--keep', 'account-9', '--workspace', 'work'], at(fx)));
   const alone = captureError(() => run(['profile', 'use', 'claude-code', '--keep', 'account-1'], at(fx)));
@@ -420,7 +421,7 @@ test('`profile use` takes every setting with one account and with many: nothing 
   for (const n of [1, 6]) {
     const fx = makeFixture(`rotation-use-count-${n}`);
     accounts(fx, 'claude-code', ...many(n));
-    run(['profile', 'order', 'claude-code', ...many(n)], at(fx));
+    ordered(at(fx), 'claude-code', [...many(n)], null);
 
     const set = run(['profile', 'use', 'claude-code', 'order', '--switch', 'off', '--curve', 'session=0:50'], at(fx));
 
@@ -433,91 +434,11 @@ test('`profile use` takes every setting with one account and with many: nothing 
 test('`profile use` on a door sets its owner\'s, and says so', () => {
   const fx = makeFixture('rotation-use-door');
   accounts(fx, 'claude-code', 'account-1');
-  run(['profile', 'order', 'claude-code', 'account-1'], at(fx));
+  ordered(at(fx), 'claude-code', ['account-1'], null);
 
   const door = run(['profile', 'use', 'claude-code-acp', 'order'], at(fx));
 
   assert.match(door.out, /runs as `claude-code`/);
-  assert.deepEqual(written(fx, 'rotationUse'), { rotationUse: { 'claude-code': { use: 'order' } } });
-  fx.cleanup();
-});
-
-test('`profile order` refuses a list without its scope\'s default or kept account, naming both and the fix', () => {
-  const fx = makeFixture('rotation-use-order-refused');
-  accounts(fx, 'claude-code', 'account-1', 'account-2', 'account-3');
-  run(['profile', 'default', 'claude-code', 'account-1'], at(fx));
-  run(['profile', 'default', 'claude-code', 'account-2', '--workspace', 'work'], at(fx));
-  run(['profile', 'order', 'claude-code', 'account-1', 'account-2', 'account-3'], at(fx));
-  run(['profile', 'use', 'claude-code', '--keep', 'account-3'], at(fx));
-  const before = readFileSync(at(fx), 'utf8');
-
-  const machine = captureError(() => run(['profile', 'order', 'claude-code', 'account-2', 'account-3'], at(fx)));
-  const scoped = captureError(() => run(['profile', 'order', 'claude-code', 'account-1', 'account-3', '--workspace', 'work'], at(fx)));
-  const kept = captureError(() => run(['profile', 'order', 'claude-code', 'account-1', 'account-2'], at(fx)));
-  const alone = captureError(() => run(['profile', 'order', 'claude-code', 'account-3'], at(fx)));
-
-  assert.match(machine.message, /this machine's default for `claude-code` is `account-1`, and this list does not hold it — the list is every account its starts may run on, and the default is where they begin within it/);
-  assert.match(machine.message, /`daoris agent profile order claude-code account-2 account-3 account-1`.*`daoris agent profile default claude-code account-2`/);
-  assert.match(scoped.message, /`work`'s default for `claude-code` is `account-2`, and this list does not hold it/);
-  assert.match(scoped.message, /`daoris agent profile order claude-code account-1 account-3 account-2 --workspace work`.*`daoris agent profile default claude-code account-1 --workspace work`/);
-  assert.match(kept.message, /`account-3` is kept for conversations on this machine, and this list does not hold it — the kept account is one of the list/);
-  assert.match(kept.message, /`daoris agent profile use claude-code --no-keep`/);
-  assert.match(alone.message, /this machine's default for `claude-code` is `account-1`/, 'the default is said first');
-  assert.equal(readFileSync(at(fx), 'utf8'), before, 'a refusal writes nothing');
-
-  run(['profile', 'default', 'claude-code', '--clear'], at(fx));
-  const keptAlone = captureError(() => run(['profile', 'order', 'claude-code', 'account-3'], at(fx)));
-  assert.match(keptAlone.message, /`account-3` is kept for conversations, and this list holds no other account, so driven work would have none/);
-  fx.cleanup();
-});
-
-test('`profile default` refuses an account its scope\'s list does not hold, naming the list and the fix', () => {
-  const fx = makeFixture('rotation-use-default-refused');
-  accounts(fx, 'claude-code', 'account-1', 'account-2', 'account-3');
-  run(['profile', 'order', 'claude-code', 'account-1', 'account-3'], at(fx));
-  run(['profile', 'order', 'claude-code', 'account-2', '--workspace', 'work'], at(fx));
-
-  const machine = captureError(() => run(['profile', 'default', 'claude-code', 'account-2'], at(fx)));
-  const scoped = captureError(() => run(['profile', 'default', 'claude-code', 'account-1', '--workspace', 'work'], at(fx)));
-  const inList = run(['profile', 'default', 'claude-code', 'account-3'], at(fx));
-  // A workspace with no list of its own takes any account as its own: it is then that account alone.
-  const ownScope = run(['profile', 'default', 'claude-code', 'account-2', '--workspace', 'lab'], at(fx));
-
-  assert.match(machine.message, /`claude-code`'s list on this machine is account-1, then account-3, and `account-2` is not in it — the list is every account its starts may run on, and the default is where they begin within it/);
-  assert.match(machine.message, /`daoris agent profile order claude-code account-1 account-3 account-2` adds it/);
-  assert.match(scoped.message, /`claude-code`'s list in `work` is account-2, and `account-1` is not in it/);
-  assert.match(scoped.message, /`daoris agent profile order claude-code account-2 account-1 --workspace work` adds it/);
-  assert.equal(inList.code, 0);
-  assert.equal(ownScope.code, 0);
-  const settings = readHarnessSettings(at(fx));
-  assert.equal(settings.defaults['claude-code'], 'account-3');
-  assert.equal(settings.workspaces.lab?.['claude-code'], 'account-2');
-  assert.equal(settings.workspaces.work, undefined);
-  fx.cleanup();
-});
-
-test('`profile order` and `profile default` take one account and many alike: no list is refused for its length', () => {
-  for (const n of [1, 6]) {
-    const fx = makeFixture(`rotation-use-length-${n}`);
-    accounts(fx, 'claude-code', ...many(n));
-
-    const ordered = run(['profile', 'order', 'claude-code', ...many(n)], at(fx));
-    const defaulted = run(['profile', 'default', 'claude-code', `account-${n}`], at(fx));
-    const reordered = run(['profile', 'order', 'claude-code', ...many(n).reverse()], at(fx));
-
-    assert.deepEqual([ordered.code, defaulted.code, reordered.code], [0, 0, 0], `${n} accounts`);
-    fx.cleanup();
-  }
-});
-
-test('`profile remove` takes a kept account out of every scope\'s settings', () => {
-  const fx = makeFixture('rotation-use-remove');
-  accounts(fx, 'claude-code', 'account-1', 'account-2');
-  run(['profile', 'order', 'claude-code', 'account-1', 'account-2'], at(fx));
-  run(['profile', 'use', 'claude-code', 'order', '--keep', 'account-2'], at(fx));
-
-  run(['profile', 'remove', 'claude-code', 'account-2'], at(fx));
-
   assert.deepEqual(written(fx, 'rotationUse'), { rotationUse: { 'claude-code': { use: 'order' } } });
   fx.cleanup();
 });
