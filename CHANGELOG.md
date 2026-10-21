@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- A *What needs you* row for a `daoris/…` branch Daoris has no record of now opens the session it was made for, where you can
+  discard it, if that session is still listed. Otherwise it opens the workspace's Branches as before.
 - A quest whose submission you reopened now says so on its page, under *Reopened*: when, your words as you wrote them (or that
   you gave none), that it waits for its agent to make it ready again, and the session that submitted it, which is told. Before,
   it read as a quest whose agent had not yet said it was ready. A submission also names the session that made it. In English and
@@ -29,6 +31,9 @@ with the version and date at release.
   waited, the review no longer reads it as an ordinary landing. It says the push was held back and no plugin was told, that the
   branch stands, and that you hand it off from the review once you have looked at the quest. Accept… on a session's page says
   the same. In English and 中文.
+- Where work accepted automatically has its push held back by its landing's gate, such as a second opinion or a review it now
+  waits for, the conversation says the gate held it and that the branch is handed on once the gate lets it go. Before, it said
+  its quest was held or taken back, naming the gate only in the sentence beneath. In English and 中文.
 - A plugin's steps, and what they create, are now shown where its other declarations are: its page and an offer's page list each
   step with what it takes, gives and is reached on, in English and 中文; `daoris plugin list` and `plugin add` name each step with
   how it is reached; and an update says each step that changes, whole, so a step changed without a new version still shows.

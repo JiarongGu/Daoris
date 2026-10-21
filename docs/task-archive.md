@@ -18905,3 +18905,41 @@ description theories held cell for cell by `plugin-steps.test.ts`, `PluginPageTe
 >   CONFIRMSEEN1, which the install is building, logs a card as shown and gives it a row; the design takes it as its first slice. Proof: the design accepted and its build rows filed.
 
 **Outcome** 2026-10-21: designed and accepted as D196 (`docs/2026-10-21-notification-design.md`) after three rounds (Codex's read, twenty-eight findings; Fable's of §2 to §3 and §5, fourteen), every finding taken. A *Notifications* view the bell opens; a press there in plain words, its signal kept while unshown; Overview a summary. The build rows are NOTIFY2a-j. On Opus, read by Codex and Fable.
+
+## FABRIC-PERFORM1q — a held event's unit judged first in its pass's turn (2026-10-21, D173)
+
+> - [ ] **FABRIC-PERFORM1q — a held event's unit judged first in its pass's turn** (driver; after PERFORM1o). Past `UnitsPerPass` units, a unit whose event was held for lagging its node can fall outside the turn, and its event is refused `stale`. Proof: the 34-unit case takes the held event in its pass, and the rotation still reaches every other unit.
+
+**Outcome** 2026-10-21: built. `NodeRuntime.Turn` takes the units whose events were held first, inside the bound and outside the
+rotation, which fills the rest of the turn and moves on only by what it took. Proof: `ObservedEventTests`' 34-unit case, seen failing
+first: the held event taken in its pass, the two units the rotation left reached at the next pass and first at the look's deadline.
+Detail: D173's FABRIC-PERFORM1q note.
+
+## FABRIC-PERFORM1p — a branch unit's performed nodes and told tip on the pass's tip too (2026-10-21, D173)
+
+> - [ ] **FABRIC-PERFORM1p — a branch unit's performed nodes and told tip on the pass's tip too** (driver; after PERFORM1m; §C4, §E2). A performed node wired after an observed node reached on a branch's fresh tip starts on the unit's lagging end-fact revision, then runs again when the end fact catches up, and `work/watch` still tells the end fact's tip: bind the unit's performed nodes, the told tip and `WorkBelief.Lapsed` to the pass's one read together. Proof: its notify starts once, on the new tip, and the completion is taken; one read per checkout per pass.
+
+**Outcome** 2026-10-21: built. A branch unit with an observed node binds its performed nodes to the tip its pass reads
+(`NodeRuntime.TipRevisions`), tells its plugins that tip (`Told`, else the tip told before), and judges an answer's lapse on it, the
+checkout of each unit answered read once before the hearing (`WorkPerformer.UnitsOf`); an unread tip sends nothing new. Proof:
+`ObservedEventTests` (the notify sent once on the new tip and its completion taken, the end fact catching up sending nothing, one read a
+pass; a completion while the tip is unread judged on the tip told). Detail: D173's FABRIC-PERFORM1p note.
+
+## FABRIC-UNKNOWN1c — an unknown-owner row has a door (2026-10-21, D173)
+
+> - [ ] **FABRIC-UNKNOWN1c — an unknown-owner row has a door** (driver, web; after UNKNOWN1). Link the row to its session where `daoris/<session>` names one, or open Settings' sweep where the Discard branch press sits. Proof: the attention test and the window.
+
+**Outcome** 2026-10-21: the Branches half was already built by FABRIC-MILESTONEDOOR1 (the sweep has since moved from Settings to the
+workspace's Branches tab, `help/places.ts`). What was added: on the page alone, an unknown owner's `daoris/<folder>` branch is matched
+in its repository to the session whose tree's folder names it, as `WorkFrame` finds a session's own branch, and the row's door opens
+that session, whose head discards the branch; with no match it opens Branches. No driver field. Proof: `attention.test.ts` and
+`sessionsBadge.test.tsx`; the installed window is not yet seen. Detail: D173's FABRIC-UNKNOWN1c note. On Opus.
+
+## FABRIC-CLOSE1h14 — a push held back by its gate said as the gate's in the conversation (2026-10-21, D173)
+
+> - [ ] **FABRIC-CLOSE1h14 — a push held back by its gate said as the gate's in the conversation** (web, driver; after CLOSE1h12). `note.landing.push-held` and `work.trace.try.push-held` lead with "its quest was held or taken back" in en and zh even when CLOSE1h12's gate held the push; only the sentence beneath names the gate. A new code is the stored-shape-safe route; old notes read as before. Proof: a gate-held push's note leads with the gate's words; `i18n:check` and `names:check -- --strict` pass.
+
+**Outcome** 2026-10-21: built. A push its landing's gate held back is noted `landing.push-gated`, which leads with the gate's words in
+en and zh; a quest's hold, and every note from before, keep `landing.push-held` as worded. The try keeps `push-held`, so its recovery
+and the stored shape are unchanged, and its trace word now names the quest or the gate. Proof: `AutoLandingRulesTests`,
+`noteLines.test.ts`; `i18n:check` and `names:check -- --strict` pass. Detail: D173's FABRIC-CLOSE1h14 note.

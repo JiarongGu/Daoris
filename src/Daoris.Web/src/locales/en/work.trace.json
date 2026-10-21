@@ -164,7 +164,7 @@
   "work.trace.try.completed": "the chain's branch is already merged, so moving it on would push work no pull request carries",
   "work.trace.try.plugin-unready": "landed; its plugin cannot land work here, so nothing was pushed",
   "work.trace.try.plugin-failed": "landed; its plugin did not push it",
-  "work.trace.try.push-held": "landed; its quest was held or taken back before its plugin was told, so nothing was pushed yet",
+  "work.trace.try.push-held": "landed; its quest or its landing's gate held it back before its plugin was told, so nothing was pushed yet",
   "work.trace.try.already": "its work reached a branch of yours another way",
   "work.trace.try.carried": "its work is already on the line or a branch of yours by content, so it was not landed again",
   "work.trace.try.superseded": "a newer session in its tree stands for it",

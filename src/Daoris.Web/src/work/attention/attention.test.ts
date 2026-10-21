@@ -412,6 +412,27 @@ describe('the groups', () => {
     }
   });
 
+  /**
+   * FABRIC-UNKNOWN1c: an unknown owner's `daoris/<folder>` branch names the session whose tree was cut for it, in the same repository,
+   * which its door opens; a branch no session's tree names, or one in another repository, names none.
+   */
+  it('names the session an unknown owner’s branch was cut for, and none where no tree in its repository names it', () => {
+    const unknown = (branch: string) => row('work', `unknown-branch:engine/${branch}`, null, {
+      where: 'engine', session: null, title: branch,
+      blocked: { unknown: true, entries: [{ kind: 'session-branch', resource: branch, code: 'unrecorded', facts: { branch }, detail: 'as recorded' }] },
+    });
+    const sessions = [
+      session({ id: 'c0nv0001', repository: 'engine', tree: 'trees/engine/s-c0nv0001' }),
+      session({ id: 'c0nv0002', repository: 'game', tree: 'trees\\game\\s-elsewhere' }),
+      session({ id: 'c0nv0003', repository: 'engine', tree: null }),
+    ];
+
+    expect(words(unknown('daoris/s-c0nv0001'), { sessions })).toMatchObject({ title: 'daoris/s-c0nv0001', session: null, cutFor: 'c0nv0001' });
+    expect(words(unknown('daoris/s-elsewhere'), { sessions }).cutFor).toBeUndefined();
+    expect(words(unknown('daoris/s-orphan'), { sessions }).cutFor).toBeUndefined();
+    expect(words(unknown('daoris/s-c0nv0001')).cutFor).toBeUndefined();
+  });
+
   /** OVERVIEWNOISE1b: the tidy's guard said once by its code, and a retry promised only where the guard frees by itself. */
   it('words a guard the clean-up kept a branch by once, promising a retry only where one comes', () => {
     const kept = (why: string) => entryDetail(i18n.t, { detail: 'the driver’s clause', code: 'kept', facts: { why, at: '2026-10-20T09:00:00Z' } });

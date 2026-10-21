@@ -219,13 +219,15 @@ public sealed class ObservedEventTests : IDisposable
 
         // FABRIC-PERFORM1m: the branch moved and the unit's revision, the end fact's, still lags at C1. The next pass, a wake, reads the tip and
         // rebinds the node to it: the old binding lapses under RUN1's rules, and the person is told nothing, no work is sent, nothing kept.
+        // FABRIC-PERFORM1p: the plugins are told the tip the node rebound to.
         _tips["feature/a"] = C2;
         var rebound = await PassAsync(runtime, whole: false);
         var deployed = Record().Statuses["deployed"];
         Assert.Equal((NodeStates.Active, C2), (deployed.State, deployed.Binding!.SubjectRevision));
         Assert.Equal([A], rebound.Evaluated);
         Assert.Empty(rebound.Said);
-        Assert.False(rebound.AwaitedChanged);
+        Assert.True(rebound.AwaitedChanged);
+        Assert.Equal(C2, Assert.Single(_port.SentTo(Plugin, 1)!.Units).Tip);
         Assert.Empty(_port.Sent);
         Assert.Empty(Record().Observations);
 
@@ -237,8 +239,8 @@ public sealed class ObservedEventTests : IDisposable
         Assert.Equal(C2, Assert.Single(reached.Observations).Commit);
         Assert.Empty(_port.Refusals);
 
-        // A performed node is bound as before, to the unit's revision: only the observed node reads the tip.
-        Assert.Equal(C1, Assert.Single(_port.Sent).SubjectRevision);
+        // FABRIC-PERFORM1p: the performed node its wire starts is bound to the same tip, not the unit's lagging revision.
+        Assert.Equal(C2, Assert.Single(_port.Sent).SubjectRevision);
 
         // The end fact catching up reaches nothing again: the observed node keeps its acceptance and its event, its wire fires no more.
         _units = [BranchUnit(A, "feature/a", C2)];
@@ -249,6 +251,67 @@ public sealed class ObservedEventTests : IDisposable
 
         // One read of the checkout's tips a pass, whatever binds or hears.
         Assert.Equal([("checkout", 1), ("checkout", 1), ("checkout", 1), ("checkout", 1)], _tipReads);
+    }
+
+    [Fact]
+    public async Task A_performed_node_after_an_observed_one_reached_on_the_fresh_tip_starts_once_there_and_its_completion_is_taken()
+    {
+        var runtime = Runtime();
+        await PassAsync(runtime);
+        _tips["feature/a"] = C2;
+        await PassAsync(runtime, whole: false);
+
+        // FABRIC-PERFORM1p: the end fact lags at C1 while the deploy is reached on the branch's tip, C2. Its wire starts the notify on C2, and
+        // the plugins are told C2 as the unit's tip.
+        _port.Heard.Enqueue(Event(WorkStates.Reached, "e1", _now, commit: C2));
+        await PassAsync(runtime, whole: false);
+        var call = Assert.Single(_port.Sent);
+        Assert.Equal(C2, call.SubjectRevision);
+        Assert.Equal(C2, Assert.Single(_port.SentTo(Plugin, 1)!.Units).Tip);
+
+        // Its completion is judged on that tip, read in its pass: taken on its binding, not applied as a lapsed attempt's.
+        _port.Heard.Enqueue(new WorkStepHeard(Plugin, 1, new WorkStepFrame("notify", new WorkOutcome(WorkStates.Reached,
+            Evidence: new WorkEvidence(null, "https://notify.example/n1", null, "notified")), _now, "n1", Invocation: call.Invocation)));
+        var answered = await PassAsync(runtime, whole: false);
+        var notify = Record().Statuses["notify"];
+        Assert.Equal((NodeStates.Reached, C2), (notify.State, notify.Acceptance!.SubjectRevision));
+        Assert.Contains(answered.Performed, done => (done.Node, done.What) == ("notify", PerformedWhat.Applied));
+        Assert.Empty(_port.Refusals);
+
+        // The end fact catching up starts nothing again: the notify ran once, on the new tip.
+        var reached = Record();
+        _units = [BranchUnit(A, "feature/a", C2)];
+        await PassAsync(runtime);
+        Assert.Single(_port.Sent);
+        Assert.Equal(NodeRecordFiles.StatusText(reached.Statuses["notify"]), NodeRecordFiles.StatusText(Record().Statuses["notify"]));
+
+        // One read of the checkout's tips a pass: the look's, the rebinding's, the event's, the completion's and the look's again.
+        Assert.Equal(Enumerable.Repeat(("checkout", 1), 5), _tipReads);
+    }
+
+    [Fact]
+    public async Task A_completion_heard_while_the_tip_is_unread_is_judged_on_the_tip_told_not_the_lagging_revision()
+    {
+        _units = [BranchUnit(A, "feature/a", C0)];
+        var runtime = Runtime();
+        await PassAsync(runtime);
+        _port.Heard.Enqueue(Event(WorkStates.Reached, "e1", _now));
+        await PassAsync(runtime, whole: false);
+        var call = Assert.Single(_port.Sent);
+        Assert.Equal(C1, call.SubjectRevision);
+
+        // FABRIC-PERFORM1p: the branch then unread, at a look and at the completion's wake. The plugins are still told the tip they were told,
+        // and the completion is judged on it: taken, never lapsed against the unit's lagging C0.
+        _tips.Remove("feature/a");
+        await PassAsync(runtime);
+        Assert.Equal(C1, Assert.Single(_port.SentTo(Plugin, 1)!.Units).Tip);
+        _port.Heard.Enqueue(new WorkStepHeard(Plugin, 1, new WorkStepFrame("notify", new WorkOutcome(WorkStates.Reached,
+            Evidence: new WorkEvidence(null, "https://notify.example/n1", null, "notified")), _now, "n1", Invocation: call.Invocation)));
+        await PassAsync(runtime, whole: false);
+        var notify = Record().Statuses["notify"];
+        Assert.Equal((NodeStates.Reached, C1), (notify.State, notify.Acceptance!.SubjectRevision));
+        Assert.Single(_port.Sent);
+        Assert.Empty(_port.Refusals);
     }
 
     [Fact]
@@ -294,7 +357,7 @@ public sealed class ObservedEventTests : IDisposable
             [(PerformedWhat.NotTaken, WorkRefusals.Stale), (PerformedWhat.Begun, null), (PerformedWhat.Applied, WorkStates.Reached), (PerformedWhat.Replay, null)],
             pass.Performed.Where(done => done.Node == "deployed").Select(done => (done.What, done.Code)));
         Assert.Equal((Plugin, WorkRefusals.Stale), Assert.Single(_port.Refusals));
-        Assert.Equal(C1, Assert.Single(_port.Sent).SubjectRevision);
+        Assert.Equal(C2, Assert.Single(_port.Sent).SubjectRevision); // FABRIC-PERFORM1p: the notify on the tip the deploy was reached on.
         Assert.Equal([A], pass.Evaluated);
 
         // One read of the checkout a pass: the hearing's, the rebinding's and the second hearing's alike.
@@ -310,11 +373,11 @@ public sealed class ObservedEventTests : IDisposable
     }
 
     [Fact]
-    public async Task An_event_at_the_moved_tip_whose_node_is_not_rebound_in_the_pass_is_still_refused_stale_once()
+    public async Task An_event_held_past_the_units_one_pass_evaluates_is_taken_in_its_pass_and_the_rotation_still_reaches_every_unit()
     {
-        // FABRIC-PERFORM1o: past the units one pass evaluates, a unit heard while its node lags is not rebound in that pass; its event is heard
-        // again after the evaluations, still on the old binding, and refused stale once, as before, with nothing written. Two units more than
-        // a pass's turn: the second look's turn ends on A, so the pass that rebinds begins after it and leaves it for the next.
+        // FABRIC-PERFORM1q: two units more than a pass's turn. The second look's turn ends on A, so the rotation of the pass that rebinds
+        // begins after it; A's event was held for lagging its node, so A is judged first in that turn all the same, rebound, and its event
+        // taken in the pass that heard it. The rotation fills the rest of the turn and reaches the two it left at the next pass.
         _units =
         [
             .. Enumerable.Range(0, NodeRuntime.UnitsPerPass - 3).Select(at => BranchUnit($"engine~a{at:D2}", $"a/{at:D2}")),
@@ -327,18 +390,28 @@ public sealed class ObservedEventTests : IDisposable
         Assert.Equal(A, (await PassAsync(runtime)).Evaluated[^1]);
         Assert.All(_units, unit => Assert.Equal(NodeStates.Active, Record(unit.Id).Statuses["deployed"].State));
 
-        // Every branch moved: each unit owes its rebinding, and the turn that judges them leaves A for the next.
+        // Every branch moved: each unit owes its rebinding, and the turn judges A first though its rotation begins after it.
         foreach (var branch in _tips.Keys.ToList()) _tips[branch] = C2;
         _port.Heard.Enqueue(Event(WorkStates.Reached, "e2", _now, commit: C2));
         var pass = await PassAsync(runtime, whole: false);
         Assert.Equal(NodeRuntime.UnitsPerPass, pass.Evaluated.Count);
-        Assert.DoesNotContain(A, pass.Evaluated);
+        Assert.Equal(A, pass.Evaluated[0]);
+        Assert.Equal(pass.Evaluated.Count, pass.Evaluated.Distinct().Count());
 
-        var refused = Assert.Single(pass.Performed, done => done.Unit == A);
-        Assert.Equal(("deployed", PerformedWhat.NotTaken, WorkRefusals.Stale), (refused.Node, refused.What, refused.Code));
-        Assert.Equal((Plugin, WorkRefusals.Stale), Assert.Single(_port.Refusals));
-        Assert.Equal((NodeStates.Active, C1), (Record().Statuses["deployed"].State, Record().Statuses["deployed"].Binding!.SubjectRevision));
-        Assert.Empty(Record().Observations);
+        var deployed = Record().Statuses["deployed"];
+        Assert.Equal((NodeStates.Reached, C2, C2), (deployed.State, deployed.Binding!.SubjectRevision, deployed.Acceptance!.SubjectRevision));
+        Assert.Equal((C2, "e2"), (Assert.Single(Record().Observations).Commit, Record().Observations[0].Id));
+        Assert.Contains(pass.Performed, done => (done.Unit, done.Node, done.What, done.Code) == (A, "deployed", PerformedWhat.Applied, WorkStates.Reached));
+        Assert.Empty(_port.Refusals);
+
+        // The rotation went on from where the turn before left it, the held unit taking no turn of its own: the two it left are reached next,
+        // and every unit is rebound to the moved tip.
+        var left = _units.Select(unit => unit.Id).Except(pass.Evaluated).ToList();
+        Assert.Equal(2, left.Count);
+        var next = await PassAsync(runtime, whole: false);
+        Assert.Equal(left, next.Evaluated);
+        Assert.Equal(left, (await PassAsync(runtime)).Evaluated.Take(2));
+        Assert.All(_units, unit => Assert.Equal(C2, Record(unit.Id).Statuses["deployed"].Binding!.SubjectRevision));
     }
 
     [Fact]

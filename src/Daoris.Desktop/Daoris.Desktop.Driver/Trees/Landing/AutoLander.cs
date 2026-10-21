@@ -471,7 +471,7 @@ public sealed class AutoLander(
                 if (held is not null)
                 {
                     if (line is not null) log?.Invoke(line);
-                    return "its landing's gate held it before its plugin was told, so its push was not tried: the branch stands, and the first "
+                    return $"{AutoLandingNotes.GateHeld} before its plugin was told, so its push was not tried: the branch stands, and the first "
                         + $"look once the gate lets it go hands it on, or `daoris-driver trees hand {last}` does now. {held.Message}";
                 }
             }

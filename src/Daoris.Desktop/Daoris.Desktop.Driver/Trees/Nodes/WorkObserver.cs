@@ -319,6 +319,12 @@ public sealed class PassTips(
     /// <summary>One branch's tip read this pass, or null where it was not read.</summary>
     public async Task<string?> TipAsync(string root, string branch, CancellationToken ct) =>
         branch.Length == 0 ? null : (await ReadAsync(root, [branch], ct).ConfigureAwait(false)).GetValueOrDefault(branch);
+
+    /// <summary>
+    /// One branch's tip where this pass already read its checkout, else null, reading nothing (FABRIC-PERFORM1p): the tip a pass tells, so
+    /// telling starts no git of its own.
+    /// </summary>
+    public string? Known(string root, string branch) => _read.TryGetValue(root, out var tips) ? tips.GetValueOrDefault(branch) : null;
 }
 
 /// <summary>

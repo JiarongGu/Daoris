@@ -903,8 +903,15 @@ export function App() {
       },
     } : {}),
     // A unit only the clean-up's press settles (OVERVIEWNOISE1b) opens the workspace's Branches, where the session branches' list and
-    // its presses are; a held attempt's presses are on its row. A shell's alone.
-    ...(attached ? { work: (item: Attention) => { if (!item.held) open('projects', null, { workspaceTab: 'branches' }); } } : {}),
+    // its presses are; a held attempt's presses are on its row. An unknown owner's branch named for a session the page holds opens that
+    // session, whose page discards it too (FABRIC-UNKNOWN1c). A shell's alone.
+    ...(attached ? {
+      work: (item: Attention) => {
+        if (item.held) return;
+        if (item.cutFor) open('sessions', item.cutFor);
+        else open('projects', null, { workspaceTab: 'branches' });
+      },
+    } : {}),
     // An account's row opens its agent's page at its accounts (UX6d, D150 §6.2), where every account's act is. A shell's alone.
     ...(attached ? {
       'account-wait': (item: Attention) => open('agents', item.account?.agent ?? null, { agentPart: 'accounts' }),
