@@ -74,12 +74,17 @@ const QUESTS = [{
   filed: '2026-09-30T09:00:00Z', updated: '2026-10-01T09:00:00Z', workspace: 'default',
 }];
 
+/** The tree each session holds, by its id, where a test gives one. */
+let trees: Record<string, string> = {};
+
 function respond(url: string): Response {
   if (url.startsWith('/api/registry')) {
     return Response.json([{ repository: 'engine', workspace: 'default', registered: true, adopted: true, owns: [], accepts: [], packs: [] }]);
   }
   if (url.startsWith('/api/status')) return Response.json({ semantic: false, tier: 'lexical', note: '' });
-  if (url.startsWith('/api/sessions')) return Response.json(url.includes('daoris%3Ahelp') ? [] : SESSIONS);
+  if (url.startsWith('/api/sessions')) {
+    return Response.json(url.includes('daoris%3Ahelp') ? [] : SESSIONS.map((one) => (trees[one.id] ? { ...one, tree: trees[one.id] } : one)));
+  }
   if (url.startsWith('/api/quests')) return Response.json(QUESTS);
   if (url.startsWith('/api/asks')) return Response.json(ASKS);
   if (url.startsWith('/api/sync')) return Response.json({ workspace: 'default', wired: false, ahead: 0, behind: [], conflicts: [] });
@@ -266,6 +271,28 @@ describe("Overview's What needs you, on a machine", () => {
 
     expect(await screen.findByRole('tab', { name: 'Branches' })).toHaveAttribute('aria-selected', 'true');
     expect(window.localStorage.getItem('daoris.list.projects.workspaceTab')).toBe('branches');
+  });
+
+  /**
+   * FABRIC-UNKNOWN1c: an unknown owner's branch named for a session the page holds, by its tree's folder, opens that session, whose
+   * head discards the branch it left; the row stays named by its branch, since nothing records the session as its owner.
+   */
+  it('opens the session an unknown owner’s branch was cut for', async () => {
+    trees = { c4a7c4a7: 'trees/engine/s-c4a7c4a7' };
+    try {
+      start([{
+        kind: 'work', id: 'unknown-branch:engine/daoris/s-c4a7c4a7', since: '2026-10-01T10:00:00Z', workspace: 'default', where: 'engine',
+        title: 'daoris/s-c4a7c4a7', blocked: { unknown: true, entries: [] },
+      }]);
+
+      const row = await screen.findByRole('listitem', { name: 'daoris/s-c4a7c4a7' });
+      await userEvent.click(within(row).getByRole('button', { name: 'Open' }));
+
+      await waitFor(() => expect(window.localStorage.getItem('daoris.view')).toBe('sessions'));
+      expect(window.localStorage.getItem('daoris.list.projects.workspaceTab')).toBeNull();
+    } finally {
+      trees = {};
+    }
   });
 
   it('holds no parked quest where none is pushed', async () => {
