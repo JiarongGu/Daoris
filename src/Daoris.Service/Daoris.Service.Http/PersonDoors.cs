@@ -222,6 +222,8 @@ public static class PersonDoors
         // WORKFLOW1e (the workflow design §4.3): what kind of task an ask is and which workflow it follows is the person's, as what
         // a review is set to is; an agent proposes a kind (WORKFLOW1i) and never sets one.
         new("POST", "/api/asks/{id}/workflow", DoorClass.Person, "an ask's kind and workflow"),
+        // WORKFLOW1e2 (§4.1 row 1): a quest published with no ask has its own, set on its page before it starts, the person's alike.
+        new("POST", "/api/quests/{id}/workflow", DoorClass.Person, "a quest's kind and workflow"),
         // SESSONE2a (D167 point 7): the person's message on the ask's channel is their words, with every reach D137 gives them; an agent
         // posts through the connector's tool, which is marked as its claim. Their read mark is theirs to move, and a driver's, for a part.
         new("POST", "/api/asks/{id}/channel", DoorClass.Person, "a message on an ask's channel"),

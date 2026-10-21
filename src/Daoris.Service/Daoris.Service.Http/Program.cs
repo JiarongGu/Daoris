@@ -885,6 +885,22 @@ if (mode == ServiceMode.Local)
     app.MapPost("/api/quests/{id}/set-up-step", async (
         ComposedService s, HttpContext http, string id, SetUpStepRequest body, CancellationToken ct) =>
         await ReviewAnswer(await s.Exchange.PublishSetUpStepAsync(id, body.Environment, DateTimeOffset.UtcNow, ct), s, http, ct));
+
+    // The person's kind and workflow on a quest published with no ask, before it starts (WORKFLOW1e2, the workflow design §4.1 row 1):
+    // LOCAL mode only, the person's door as an ask's is; no connector tool reaches it. A shape is a bad request, and a quest an ask
+    // published, or one already started or closed, the lock's own 409.
+    app.MapPost("/api/quests/{id}/workflow", async (
+        ComposedService s, HttpContext http, string id, QuestWorkflowRequest body, CancellationToken ct) =>
+    {
+        var outcome = await s.Exchange.ChooseWorkflowAsync(id, body.Kind, body.Workflow, body.Words, DateTimeOffset.UtcNow, ct);
+        return outcome.Refusal switch
+        {
+            QuestRespondRefusal.None => Results.Ok(new QuestActionResponse(await QuestAnswerAsync(s, http, outcome.Quest!, ct), outcome.Message)),
+            QuestRespondRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
+            QuestRespondRefusal.BadWorkflow => Results.BadRequest(new ErrorResponse(outcome.Message)),
+            _ => Results.Conflict(new ErrorResponse(outcome.Message)),
+        };
+    });
 }
 
 // A review door's answer (REVIEWENV1b): a state the review refuses is the lock's own shape, 409, and a shape is a bad request.
@@ -2509,7 +2525,11 @@ static QuestResponse ToQuest(
     // SYNCMERGE1b0 (D178 point 7): the conflicts settled on it, the machine holding its step, and this machine, each only where set.
     taken is { Settled.Count: > 0 } ? taken.Settled.Select(read => ToConflict(read.Conflict, read)).ToList() : null,
     taken?.Holder,
-    here);
+    here,
+    // The person's workflow choices before it started (WORKFLOW1e2): ids and their words, as its note travels; only where there are some.
+    q.WorkflowChoices.Count == 0
+        ? null
+        : q.WorkflowChoices.Select(c => new AskWorkflowChoiceResponse(c.Kind, c.Workflow, c.At ?? q.Updated, c.Words)).ToList());
 
 // Requirements as a door hands them to the exchange (DRIFT1c): a half left out, or a whole one, arrives
 // blank and is refused there naming which — the same sentence every door gives. So does an evidence item

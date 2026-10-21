@@ -35,7 +35,8 @@ public static class QuestWire
         + "commit and, unless it is local, where to look; a review's verdict says reviewed or not-yet, naming the "
         + "set-up's machine, sequence and commit, or skipped, and a not-yet carries the person's words; a reopen and a rebind "
         + "each name a submission's machine and sequence, as a step's grewFrom does where it says one, and a take's submission does where "
-        + "it says one";
+        + "it says one; a workflow choice carries its choice, whose kind, where it names one, is a kind's id, whose workflow, where it "
+        + "names one, is a workflow's id or current, and whose words are at most 2000 characters";
 
     /// <summary>A page of what a remote accepted — the answer to a fetch.</summary>
     public static string Page(QuestFetch page) => Written(writer =>
@@ -187,6 +188,13 @@ public static class QuestWire
         {
             writer.WritePropertyName("verdict");
             Reviews.Write(writer, review);
+        }
+
+        // The person's workflow choice (WORKFLOW1e2), on a choice alone.
+        if (operation is { Kind: QuestOperationKind.Chosen, Choice: { } choice })
+        {
+            writer.WritePropertyName("choice");
+            WorkflowChoices.Write(writer, choice);
         }
 
         if (operation.Attempted is { } attempted) writer.WriteString("attempted", attempted.ToString());
@@ -495,6 +503,15 @@ public static class QuestWire
             return null;
         }
 
+        // A workflow choice is its operation's whole point (WORKFLOW1e2): one missing, or not whole, makes the operation half of one,
+        // which a replay would read as a choice nobody made, or a clear of one somebody did.
+        QuestWorkflowChoice? workflowChoice = null;
+        if (kind == QuestOperationKind.Chosen
+            && (!item.TryGetProperty("choice", out var picked) || (workflowChoice = WorkflowChoices.Judged(picked)) is null))
+        {
+            return null;
+        }
+
         // A note's parts (QUESTCLOSE1b1) are only how it is worded, so parts that are not a list are none, never half an
         // operation: the note is the record, and it crossed whole.
         var note = Text(item, "note");
@@ -533,7 +550,7 @@ public static class QuestWire
         return new QuestOperation(
             quest, kind, machine, sequence, at, note, published, attempted, numbered ? number : null,
             dismisses, answers is { Count: > 0 } ? answers : null, whileOpen, verdict, setUp, review, parts, close, submission, session,
-            lostToTheReopen, forward);
+            lostToTheReopen, forward, workflowChoice);
     }
 
 }
