@@ -63,6 +63,7 @@
   "person.route.RECOVERY_DROP": "drop the commits kept for recovery",
   "person.route.HISTORY_CLEAR": "clear finished work's records from this machine",
   "person.route.SYSTEM_DOWNLOADS_CLEAR": "clear the downloads Daoris kept",
+  "person.route.SYSTEM_SPACE_FREE": "free up space, removing what the list showed",
   "person.route.STOP_OPINION": "stop a second opinion",
   "person.route.STOP_TASK": "stop a task a session runs",
   "person.route.CANCEL_TURN": "stop a session's turn",

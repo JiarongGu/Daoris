@@ -193,7 +193,7 @@ public static class PipeWording
             "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_NEW", "PLUGIN_TRY", "TOOLS_DELETE", "TOOLS_DOWNLOAD", "TOOLS_LOCATION", "TOOLS_STOP",
             "TOOLS_USE", "ASK_OPINION",
             // A look in one form and the person's press in another (a `PipeRule`): worded for the press.
-            "TOOLS_GIT", "PLUGIN_UPDATE");
+            "TOOLS_GIT", "PLUGIN_UPDATE", "SYSTEM_SPACE_FREE");
 
         // The other modules classed route by route: a declaration written into a repository, and the machine's wiring.
         table.Add((Canonical("DAORIS.REGISTRY"), "WRITE_DECLARATION"), None);

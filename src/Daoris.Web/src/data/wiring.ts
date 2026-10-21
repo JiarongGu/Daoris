@@ -134,14 +134,50 @@ export type SpaceKind = {
 };
 
 /**
+ * A run of *Free up space…* (KEEP1e, the cleanup design §3.3): its id and door, when it started and ended, how it ended (`done` every
+ * unit went, `kept` one was kept, `stopped` it ended before its last; null while it runs), and each kind waiting, running or done with
+ * what it removed and kept by why.
+ */
+export type SpaceRun = {
+  id: string; door: string; started: string; ended: string | null; outcome: 'done' | 'kept' | 'stopped' | null;
+  kinds: { id: string; state: 'waiting' | 'running' | 'done'; removed: { count: number; bytes: number }; kept: Record<string, number> }[];
+};
+
+/**
  * `SYSTEM_SPACE`'s answer (KEEP1c): the Daoris folder's volume (its `floor` none until KEEP1f), each kind in the card's order, the
- * press's `run` (KEEP1e's, none yet) and `held`, the run lock's holder elsewhere, or one a crash left (`gone`).
+ * press's `run` (KEEP1e: the current or last run in this window's process) and `held`, the run lock's holder, or one a crash left (`gone`).
  */
 export type SystemSpace = {
   schema: number;
   volume: { path: string; free: number; total: number; floor: { bytes: number; from: string } | null; below: boolean } | null;
   volumeWhy: Why;
   kinds: SpaceKind[];
-  run: unknown;
+  run: SpaceRun | null;
   held: { pid: number; since: string; door: string; gone: boolean } | null;
+};
+
+/**
+ * One thing *Free up space…* lists (KEEP1e): its kind and id, which the press sends back; whether it goes early by the person's word;
+ * `why` the rule takes it now (`past`, `slim`, `unfinished`) or `early`/`kept` for an early one; its size where known; when its rule
+ * takes it; a set-aside folder's workspace and repository, and whether it holds files of its own (`own`).
+ */
+export type SpaceUnit = {
+  kind: string; id: string; early: boolean; why: string | null; bytes: number | null; at: string | null;
+  workspace: string | null; repository: string | null; own: boolean | null;
+};
+
+/** `SYSTEM_SPACE_FREE`'s list (KEEP1e): what each rule takes now, what could go early in groups, the kinds with presses of their own. */
+export type SpacePlan = {
+  schema: number;
+  at: string;
+  now: SpaceUnit[];
+  early: { group: string; count: number; bytes: number | null; own: number; units: SpaceUnit[] }[];
+  doors: string[];
+  unread: Record<string, string>;
+};
+
+/** `SYSTEM_SPACE_FREE`'s answer to a press: the run's id (`joined` where one was under way), or `held` with its holder, nothing done. */
+export type SpaceStarted = {
+  run: string | null; joined: boolean; why?: 'held'; message?: string;
+  held?: { pid: number; since: string; door: string; gone: boolean } | null;
 };

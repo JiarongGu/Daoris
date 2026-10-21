@@ -22,7 +22,7 @@ import { code } from '../test/code';
 import { DRIVER_STATE, respond, show, WIRING } from '../test/shellHarness';
 import type { SystemSpace, SystemWiring } from '../bridge/system';
 import {
-  DEVELOPMENT, DOWNLOADS, MEASURING, SPACE, SPACE_COUNTING, SPACE_STOPPED, SPACE_UNCOUNTED, WIRED,
+  DEVELOPMENT, DOWNLOADS, MEASURING, SPACE, SPACE_COUNTING, SPACE_FREED, SPACE_PLAN, SPACE_RUNNING, SPACE_STOPPED, SPACE_UNCOUNTED, WIRED,
 } from './wiring/wiringFixtures';
 
 const NO_UPDATE = { state: 'none', staged: null, mode: null, driven: 0, turns: 0, problem: null, outcome: null, last: null };
@@ -581,9 +581,10 @@ describe('Settings → This Daoris', () => {
     expect(scope.getByText('kept until you clear it')).toBeTruthy();
     expect(scope.getByText('cleaned up once its work is on the line')).toBeTruthy();
     expect(scope.getByText("the browser's own limit")).toBeTruthy();
-    expect(scope.getByText('nothing removes it by itself; yours to remove')).toBeTruthy();
-    // It sets nothing yet: no rule's editor and no press that frees space (KEEP1d, KEEP1e).
-    expect(scope.queryByRole('button', { name: /Change|Free up space/ })).toBeNull();
+    expect(scope.getByText('removed only by your press')).toBeTruthy();
+    // It sets no rule yet (KEEP1d); its one press frees space, listed first (KEEP1e).
+    expect(scope.queryByRole('button', { name: /Change/ })).toBeNull();
+    expect(scope.getByRole('button', { name: 'Free up space…' })).toBeTruthy();
     await vi.waitFor(() => expect(invoke.mock.calls.some(([, type]) => type === 'SYSTEM_SPACE')).toBe(true));
     expect(invoke.mock.calls.filter(([, type, request]) => type === 'SYSTEM_SPACE' && request?.payload)).toEqual([]);
   });
@@ -619,6 +620,123 @@ describe('Settings → This Daoris', () => {
     const card = within(await screen.findByRole('region', { name: 'Disk space' }));
 
     expect(card.getByText(`The last run, from the look, stopped before its end; it began ${clockOf('2026-10-16T03:00:00.000+00:00')}.`)).toBeTruthy();
+  });
+
+  /** The shell with Free up space's two forms (KEEP1e): its list, and a press answered as `started` says. */
+  const freeing = (started: object = { run: 'r1', joined: false }, space: SystemSpace = SPACE) =>
+    async (module: string, type: string, request?: { payload?: { measure?: boolean; plan?: boolean } }) => {
+      if (module === 'DAORIS.DRIVER' && type === 'SYSTEM_SPACE_FREE') return request?.payload?.plan ? SPACE_PLAN : started;
+      return shell(WIRED, space)(module, type, request);
+    };
+
+  const freeCalls = () => invoke.mock.calls.filter(([, type]) => type === 'SYSTEM_SPACE_FREE').map(([, , request]) => request?.payload);
+
+  it('lists what goes now and what could go early under its head, and presses exactly what goes now', async () => {
+    invoke.mockImplementation(freeing());
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Disk space' }));
+
+    await userEvent.click(card.getByRole('button', { name: 'Free up space…' }));
+    const list = within(await card.findByRole('region', { name: 'Free up space…' }));
+
+    expect(await list.findByText('What goes now, by your rules')).toBeTruthy();
+    expect(list.getByText(`3 items, ${size(0.6 * 1024 ** 3 + 4 * 1024 ** 2)}`)).toBeTruthy();
+    expect(list.getByText(`2 folders past their days, ${size(0.6 * 1024 ** 3)}`)).toBeTruthy();
+    expect(list.getByText(`1 day past 30 days, ${size(4 * 1024 ** 2)}`)).toBeTruthy();
+    expect(list.getByText('What could go early, by your word')).toBeTruthy();
+    expect(list.getByText('2 folders before their date · 1 holds files of its own')).toBeTruthy();
+    expect(list.getByText('kept while the browser runs')).toBeTruthy();
+    expect(list.getByText('2 folders · webview2, browser/profile')).toBeTruthy();
+    expect(list.getByText("With their own press: Clear history… on a workspace's page · Clean up… on its Branches.")).toBeTruthy();
+    expect(freeCalls()).toEqual([{ plan: true }]);
+
+    await userEvent.click(list.getByRole('button', { name: 'Remove 3 now' }));
+
+    await vi.waitFor(() => expect(freeCalls()).toHaveLength(2));
+    expect(freeCalls()[1]).toEqual({
+      units: SPACE_PLAN.now.map((unit) => ({ kind: unit.kind, id: unit.id, why: unit.why, own: false })),
+      early: [],
+    });
+    // Started: the run's line says the rest, and the list closes.
+    await vi.waitFor(() => expect(card.queryByRole('region', { name: 'Free up space…' })).toBeNull());
+  });
+
+  it('says an early group first in its own words, then sends only that group', async () => {
+    invoke.mockImplementation(freeing());
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Disk space' }));
+    await userEvent.click(card.getByRole('button', { name: 'Free up space…' }));
+    const list = within(await card.findByRole('region', { name: 'Free up space…' }));
+    await list.findByText('What could go early, by your word');
+
+    await userEvent.click(list.getAllByRole('button', { name: 'Remove…' })[0]!);
+    expect(list.getByText(/These folders go whole, before their date/)).toBeTruthy();
+    expect(freeCalls()).toHaveLength(1);
+    await userEvent.click(list.getByRole('button', { name: 'Remove 2' }));
+
+    await vi.waitFor(() => expect(freeCalls()).toHaveLength(2));
+    expect(freeCalls()[1]).toEqual({
+      units: [],
+      early: SPACE_PLAN.early[0]!.units.map((unit) => ({ kind: unit.kind, id: unit.id, why: unit.why, own: unit.own === true })),
+    });
+  });
+
+  it('says a press refused while another run holds the keeping where it was pressed, the list kept open', async () => {
+    invoke.mockImplementation(freeing({
+      run: null, joined: false, why: 'held', message: 'held', held: { pid: 7, since: '2026-10-16T10:40:00.000+00:00', door: 'terminal', gone: false },
+    }));
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Disk space' }));
+    await userEvent.click(card.getByRole('button', { name: 'Free up space…' }));
+    const list = within(await card.findByRole('region', { name: 'Free up space…' }));
+    await userEvent.click(await list.findByRole('button', { name: 'Remove 3 now' }));
+
+    expect((await list.findByRole('alert')).textContent).toBe(
+      `A run from a terminal has held Daoris's keeping since ${clockOf('2026-10-16T10:40:00.000+00:00')}, so nothing was removed. Press again once it ends.`);
+    expect(card.getByRole('region', { name: 'Free up space…' })).toBeTruthy();
+  });
+
+  it("says a run's kind under way, as its own line and never as a run held elsewhere, the press held meanwhile", async () => {
+    invoke.mockImplementation(shell(WIRED, SPACE_RUNNING));
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Disk space' }));
+
+    expect(card.getByText(`Freeing space: Machine log, 2 of 2, since ${clockOf('2026-10-16T10:43:00.000+00:00')}`)).toBeTruthy();
+    expect(card.queryByText(/is under way, since/)).toBeNull();
+    expect((card.getByRole('button', { name: 'Free up space…' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('says what an ended run removed and what it kept, by reason', async () => {
+    invoke.mockImplementation(shell(WIRED, SPACE_FREED));
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Disk space' }));
+
+    expect(card.getByText(`Freed ${size(0.4 * 1024 ** 3 + 4 * 1024 ** 2)} at ${clockOf('2026-10-16T10:44:00.000+00:00')}: removed 2 of 3.`)).toBeTruthy();
+    expect(card.getByText('1 kept: changed since the list')).toBeTruthy();
+    expect((card.getByRole('button', { name: 'Free up space…' }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('holds the press while a run from elsewhere holds the keeping', async () => {
+    invoke.mockImplementation(shell(WIRED, SPACE_COUNTING));
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Disk space' }));
+
+    expect((card.getByRole('button', { name: 'Free up space…' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('lists and says the run in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    invoke.mockImplementation(freeing(undefined, SPACE_FREED));
+    open();
+    const card = within(await screen.findByRole('region', { name: '磁盘空间' }));
+
+    expect(card.getByText(`已于 ${clockOf('2026-10-16T10:44:00.000+00:00')} 释放 ${size(0.4 * 1024 ** 3 + 4 * 1024 ** 2)}：3 项中移除了 2 项。`)).toBeTruthy();
+    expect(card.getByText('保留 1 项：列出后已有变化')).toBeTruthy();
+    await userEvent.click(card.getByRole('button', { name: '释放空间…' }));
+    const list = within(await card.findByRole('region', { name: '释放空间…' }));
+    expect(await list.findByText('按你的规则现在移除的')).toBeTruthy();
+    expect(list.getByText('可由你提前移除的')).toBeTruthy();
+    expect(list.getByRole('button', { name: '现在移除 3 项' })).toBeTruthy();
   });
 
   it("opens the downloads' list under its own row", async () => {

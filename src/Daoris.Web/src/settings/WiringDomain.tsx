@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  type DownloadCleared, refusedNoRoute, useClearDownloads, useOpenLogFolder, useSystemDownloads, useSystemSpace, useSystemWiring,
-  useUpdateState,
+  type DownloadCleared, refusedNoRoute, type SpacePlan, type SpaceStarted, useClearDownloads, useOpenLogFolder, useSpaceFree,
+  useSystemDownloads, useSystemSpace, useSystemWiring, useUpdateState,
 } from '../bridge/shell';
 import { failure, useErrorNotify } from '../design/ui';
 import type { StarterDoor } from '../help/starters';
@@ -12,6 +12,7 @@ import { WiringCards } from './wiring/WiringCards';
 import { WiringDownloads } from './wiring/WiringDownloads';
 import { WiringOlder } from './wiring/WiringHead';
 import { WiringSpace } from './wiring/WiringSpace';
+import { WiringSpaceFree } from './wiring/WiringSpaceFree';
 
 /** Where each file's door goes: the read names the place by a word, and the page knows its door (§3.4). */
 const FILE_DOORS: Record<string, StarterDoor> = {
@@ -57,6 +58,11 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   const spaceOlder = space.query.isError && refusedNoRoute(space.query.error);
   useErrorNotify(spaceOlder ? null : space.query.error, notify);
   const clearDownloads = useClearDownloads();
+  // KEEP1e: Free up space…, listed first under the card's head, then pressed; a refusal stays beside the press (R3).
+  const spaceFree = useSpaceFree();
+  const [freeOpen, setFreeOpen] = useState(false);
+  const [plan, setPlan] = useState<SpacePlan | undefined>(undefined);
+  const [freeRefused, setFreeRefused] = useState<SpaceStarted | null>(null);
   useErrorNotify(downloads.error, notify);
   const asked = useRef(false);
   const older = query.isError && refusedNoRoute(query.error);
@@ -115,6 +121,28 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
           onCount={count}
           onDownloads={() => { setCleared(null); setDownloadsOpen('space'); }}
           downloads={downloadsOpen === 'space' ? list : undefined}
+          onFreeUp={() => {
+            setFreeOpen(true);
+            setPlan(undefined);
+            setFreeRefused(null);
+            spaceFree.list.mutate(undefined, { onSuccess: setPlan, onError: failure(notify) });
+          }}
+          freeing={freeOpen ? (
+            <WiringSpaceFree
+              plan={plan}
+              busy={spaceFree.free.isPending || spaceFree.list.isPending}
+              refused={freeRefused}
+              onFree={(units) => spaceFree.free.mutate(units, {
+                // Started: the run's line says the rest, so the list closes; held: said here, the list kept open (R3).
+                onSuccess: (answer) => {
+                  if (answer.run) setFreeOpen(false);
+                  else setFreeRefused(answer);
+                },
+                onError: failure(notify),
+              })}
+              onClose={() => setFreeOpen(false)}
+            />
+          ) : undefined}
         />
       )}
       onOpenLogFolder={() => openLogs.mutate(undefined, {

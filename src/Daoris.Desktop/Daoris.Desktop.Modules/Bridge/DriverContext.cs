@@ -67,6 +67,12 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
     public Func<WiringWorld, WiringWorld>? WiringWorlds { get; set; }
 
     /// <summary>
+    /// What *Free up space…* is handed (KEEP1e), changed: null is the window's own; a test hands a browser host and a clock of its own, so it
+    /// clears nothing of the machine it runs on. Set by <see cref="DriverModule"/>'s initializer, as <see cref="WiringWorlds"/> is.
+    /// </summary>
+    public Func<SpaceFreeWorld, SpaceFreeWorld>? SpaceFreeWorlds { get; set; }
+
+    /// <summary>
     /// This window's wiring world: its process, its account and machine, and what only it knows, from the loop and its
     /// supervisor. 🔴 No status door is asked: the supervisor's last probe is the service's answer (the second opinion's point 3).
     /// </summary>

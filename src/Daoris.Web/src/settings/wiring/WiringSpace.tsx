@@ -4,6 +4,7 @@ import type { SpaceKind, SystemSpace } from '../../data/wiring';
 import { Button, Card, SettingRow, SkeletonRows } from '../../design/ui';
 import { clockOf, dayOf, size } from '../../locales/format';
 import { WiringCard } from './WiringParts';
+import { SpaceRunLine } from './WiringSpaceFree';
 
 /** Each kind's word in `settings.daoris.space.kind.*`, by its id. */
 const KIND_WORD: Record<string, string> = {
@@ -87,14 +88,15 @@ function NextAndLast({ kind }: { kind: SpaceKind }) {
  * Disk space (KEEP1c, D195 point 5; the cleanup design §4.1, §4.2): the free space of the Daoris folder's volume, then each kind Daoris
  * keeps with its size and when it was counted, its rule in words, and its *next* and *last* clean. Every rule it shows already runs; a
  * kind whose rule is not Daoris's says whose it is. A size is counted only when asked (*Count*, *Measure again*) or by the look once a
- * day, never by the page's open. The Downloads row opens the list the Folders card draws (CACHECLEAR1), under its own row here. It
- * sets nothing: each rule's *Change…* and *Free up space…* arrive with the rows that build them (KEEP1d, KEEP1e).
+ * day, never by the page's open. The Downloads row opens the list the Folders card draws (CACHECLEAR1), under its own row here. Each
+ * rule's *Change…* arrives with the row that sets it (KEEP1d). KEEP1e: *Free up space…* in the head lists first, under the head, then
+ * presses; a run's line (R2) says the kind it is on, then what went and what was kept by reason. A run under way elsewhere disables it.
  *
  * @remarks
  * A molecule: drawn from props, so every state is reachable without a shell. `space` absent is the first load; `older` a shell that
  * answers no `SYSTEM_SPACE`.
  */
-export function WiringSpace({ space, older = false, busy = false, onCount, downloads, onDownloads }: {
+export function WiringSpace({ space, older = false, busy = false, onCount, downloads, onDownloads, onFreeUp, freeing }: {
   space?: SystemSpace;
   older?: boolean;
   busy?: boolean;
@@ -103,6 +105,10 @@ export function WiringSpace({ space, older = false, busy = false, onCount, downl
   /** The Downloads row's clearing, open (CACHECLEAR1), drawn under that row in place of its press. */
   downloads?: ReactNode;
   onDownloads?: () => void;
+  /** *Free up space…*'s first press, which lists (KEEP1e); absent draws no press. */
+  onFreeUp?: () => void;
+  /** The list, open, drawn under the card's head. */
+  freeing?: ReactNode;
 }) {
   const { t } = useTranslation();
   const title = t('settings.daoris.card.space');
@@ -122,9 +128,26 @@ export function WiringSpace({ space, older = false, busy = false, onCount, downl
   }
   const counting = space.kinds.some((kind) => kind.counting);
   const door = (named: string) => t(`settings.daoris.space.door.${named}`, { defaultValue: named });
+  // A run of this window's process under way is said by its own line; the lock's holder then is that run.
+  const running = space.run != null && !space.run.outcome;
+  const heldElsewhere = space.held != null && !space.held.gone && !running;
+  const press = onFreeUp && {
+    label: t('settings.daoris.button.freeUp'),
+    disabled: heldElsewhere || running,
+    why: heldElsewhere ? t('settings.daoris.space.held', { door: door(space.held!.door), when: clockOf(space.held!.since) }) : undefined,
+    primary: space.volume?.below === true,
+    onPress: onFreeUp,
+  };
   return (
-    <WiringCard id="settings-daoris-space" title={title} aside={{ label: t('settings.daoris.button.measure'), busy: busy || counting, onPress: () => onCount() }}>
-      {space.held && (
+    <WiringCard
+      id="settings-daoris-space"
+      title={title}
+      press={press || undefined}
+      head={freeing}
+      aside={{ label: t('settings.daoris.button.measure'), busy: busy || counting, onPress: () => onCount() }}
+    >
+      {space.run && <SpaceRunLine run={space.run} />}
+      {space.held && !running && (
         <p className="m-0 border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft" role="status">
           {t(space.held.gone ? 'settings.daoris.space.stopped' : 'settings.daoris.space.held', { door: door(space.held.door), when: clockOf(space.held.since) })}
         </p>

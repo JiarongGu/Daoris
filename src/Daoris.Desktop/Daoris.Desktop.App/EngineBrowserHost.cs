@@ -30,7 +30,7 @@ namespace Daoris.Desktop;
 /// and the person's press asks for it in front. Measured both ways: Windows' own foreground rules
 /// decided, not the ask (CHR3, 2026-09-28).</para>
 /// </remarks>
-public sealed class EngineBrowserHost(string home) : IInAppBrowser
+public sealed class EngineBrowserHost(string home) : IInAppBrowser, IBrowserCaches
 {
     private static readonly TimeSpan BringUpLimit = TimeSpan.FromSeconds(45);
 
@@ -102,6 +102,25 @@ public sealed class EngineBrowserHost(string home) : IInAppBrowser
         // Every build carries Daoris's own, being this executable (CHR8).
         await BringUpAsync(background: true, activate: false, ct).ConfigureAwait(false);
         return InAppBrowser.Endpoint(_port);
+    }
+
+    /// <summary>
+    /// The browser's caches cleared while it is not running (KEEP1e, the cleanup design §3.2): its start gate held through the clear, so
+    /// no browser starts meanwhile, and nothing run where the browser this host started still runs. The clear itself checks the profile's
+    /// lock too, for a browser this host did not start.
+    /// </summary>
+    public async Task<T?> WhileStoppedAsync<T>(Func<T> clear, CancellationToken ct) where T : class
+    {
+        await _gate.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            if (_process is { HasExited: false }) return null;
+            return await Task.Run(clear, ct).ConfigureAwait(false);
+        }
+        finally
+        {
+            _gate.Release();
+        }
     }
 
     private async Task BringUpAsync(bool background, bool activate, CancellationToken ct)
