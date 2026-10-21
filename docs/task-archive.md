@@ -19041,3 +19041,11 @@ row proves the driver's half. A `channel` wake runs the local plan, whose `chann
 waits, so a message is heard without the poll; no second reader was added. Proof: `DriverWatchTopicsTests`' new case (the person's
 message kept on a parked part's record with `pollSeconds` at 60, no nudge, no remote sync), over the stand-in ledger's new channel
 doors. Detail: D173's FABRIC-EVENT3c note. On Opus.
+
+## NEEDSSCOPE1 — a window counts and lists only its workspace's needs and the machine's (2026-10-21)
+
+> - [ ] **NEEDSSCOPE1 — a window counts and lists only its workspace's needs and the machine's** (modules, web). Two windows on one home, each on its own workspace: one's bell and taskbar counted three of the other's sessions to review that its *What needs you* did not list. Every row of a session, a quest or an ask carries that record's workspace; only the machine's carries none. Proof: `AttentionStateSliceTests`, a vitest that another workspace's row is neither counted nor listed.
+
+**Outcome** 2026-10-21: built. Every session's, quest's or ask's row of `NeedsAPerson` (the driver's own lists' too) and the Sessions badge's
+parked quest carry their record's workspace; the machine's carry none, each with its reason; the page's counts and lists read one
+`needsListed`. Detail: FIX-LOG's NEEDSSCOPE1 entry. On Opus.

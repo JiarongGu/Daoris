@@ -36,5 +36,9 @@ badge count. A rule proposal's (D74) is the older one.
   page instead; a unit of work is a row only where the clean-up's press settles it (OVERVIEWNOISE1b, D173's note).
 - **Counted where it holds work.** A wait whose turn stands still until the person answers counts in the badge; a wait nobody
   sees becomes a refusal at its bound, or work that never moves.
+- **Scoped as its record.** A row that is a session's, a quest's or an ask's carries that record's `workspace` in `NeedsAPerson`
+  (`Scope`, `SessionScope`, `UnitScope`), however its wait reaches the judge, the driver's own lists included; only what is the
+  machine's carries none, with a comment saying why. The page keeps a row without one in every window, so a row that forgets it is
+  counted and listed in a window on another workspace (NEEDSSCOPE1).
 - **"waiting on you" is taken.** `work.head.waiting` and `sessionState.awaiting-person` say it of a parked session, and the
   page's end-to-end spec reads the phrase in an intake's region (`e2e/platform.spec.ts`): word a new wait differently.
