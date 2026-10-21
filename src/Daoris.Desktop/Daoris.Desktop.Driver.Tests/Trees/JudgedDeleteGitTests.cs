@@ -463,4 +463,132 @@ public sealed class JudgedDeleteGitTests : LandedFixture
         Assert.Contains("unread", removal.Message, StringComparison.Ordinal);
         Assert.Equal("not a commit\n", await File.ReadAllTextAsync(loose));
     }
+
+    // ——— FABRIC-TIDYHELD-TEST1: the held tidy and the cut-off opening, moved at the delete
+
+    /// <summary>
+    /// A chain of two sessions, the second grown from the first, accepted under <paramref name="rule"/> through <see cref="TreeLands"/>: the
+    /// first's branch is the one more the held tidy judges (<c>TreeTidies.TidyOneAsync</c>). <paramref name="move"/> runs once, right before
+    /// the first's ref delete, after every proof and the trees' read; the pressed session's own delete runs untouched.
+    /// </summary>
+    private async Task<(TreeOpened First, string FirstTip, TreeLanding Landed)> HeldMovedAsync(string root, LandingRule rule, Func<string, Task> move)
+    {
+        DriverConfig.Empty.WithLanding("engine", rule).Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
+        string? target = null;
+        var moved = false;
+        var trees = new SessionTrees(Home)
+        {
+            BeforeRefDeleted = async name =>
+            {
+                if (moved || name != target) return;
+                moved = true;
+                await move(name);
+            },
+        };
+        var first = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(first.Path, "first.txt", "the first step\n", "the first step");
+        var second = await trees.OpenAsync(root, "engine", "aurora", from: first.Branch);
+        await CommitAsync(second.Path, "second.txt", "the verify step\n", "the verify step");
+        var firstTip = (await GitAsync(root, "rev-parse", first.Branch)).Trim();
+        target = first.Branch;
+
+        var landed = await trees.LandAsync(second.Path, new LandingSubject("s2", "0fda18", "Fix the gap"), inUse: InUseAsync);
+
+        Assert.True(landed.Landed, landed.Message);
+        Assert.True(moved, "the held tidy reached the earlier branch's delete");
+        return (first, firstTip, landed);
+    }
+
+    /// <summary>
+    /// 🔴 FABRIC-TIDYHELD-TEST1: the ref the held tidy's proof rested on (the landing's branch, the squash's branch, or the line a merge went
+    /// into) set back before the landing as the earlier branch goes refuses the delete in git's own transaction: the branch stays at its
+    /// tip, and the landing says what moved, never that it went.
+    /// </summary>
+    [Theory]
+    [InlineData(LandingForm.Branch, false)]
+    [InlineData(LandingForm.Branch, true)]
+    [InlineData(LandingForm.Merge, false)]
+    public async Task A_held_branchs_holder_moved_as_it_goes_keeps_it(string form, bool squash)
+    {
+        var root = await RepositoryAsync("engine");
+        var before = (await GitAsync(root, "rev-parse", "main")).Trim();
+        var holder = form == LandingForm.Merge ? "main" : Made;
+        var rule = form == LandingForm.Merge
+            ? new LandingRule(LandingForm.Merge, Tidy: true)
+            : new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Tidy: true, Squash: squash);
+
+        var (first, firstTip, landed) = await HeldMovedAsync(root, rule, async _ => await GitAsync(root, "update-ref", $"refs/heads/{holder}", before));
+
+        Assert.Equal(firstTip, await TipAsync(root, first.Branch));
+        var kept = Assert.Single(landed.Tidied!);
+        Assert.Equal(first.Branch, kept.Branch);
+        Assert.False(kept.Removed);
+        Assert.Contains($"`{holder}` moved as it went", kept.Why, StringComparison.Ordinal);
+        Assert.Contains($"Kept `{first.Branch}`", landed.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("Also removed", landed.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// 🔴 FABRIC-TIDYHELD-TEST1: the earlier branch itself moved on as it goes, to a commit the landing does not hold, is no longer the commit
+    /// judged: git refuses the delete, and the new commit stays on it.
+    /// </summary>
+    [Fact]
+    public async Task A_held_branch_moved_as_it_goes_keeps_its_new_commit()
+    {
+        var root = await RepositoryAsync("engine");
+        var after = "";
+
+        var (first, firstTip, landed) = await HeldMovedAsync(
+            root, new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Tidy: true), async branch =>
+            {
+                after = (await GitAsync(root, "commit-tree", $"{branch}^{{tree}}", "-p", branch, "-m", "a commit made as it went")).Trim();
+                await GitAsync(root, "update-ref", $"refs/heads/{branch}", after);
+            });
+
+        Assert.NotEqual(firstTip, after);
+        Assert.Equal(after, await TipAsync(root, first.Branch));
+        var kept = Assert.Single(landed.Tidied!);
+        Assert.False(kept.Removed);
+        Assert.Equal(ContentHolds.MovedSince, kept.Why);
+    }
+
+    /// <summary>
+    /// 🔴 FABRIC-TIDYHELD-TEST1, the cut-off opening (<c>TreeStrays.CutOffAsync</c>): a tree whose opening a kill cut off, its branch held by
+    /// the line. Its folder is moved aside, and its branch goes in one transaction with the line at the commit judged, so the line rewound
+    /// past it, or the branch moved on, as the branch goes keeps the branch, said beside the move.
+    /// </summary>
+    [Theory]
+    [InlineData("line", "`main` moved as it went")]
+    [InlineData("branch", ContentHolds.MovedSince)]
+    public async Task A_cut_off_openings_branch_moved_at_its_delete_stays(string what, string said)
+    {
+        var root = await RepositoryAsync("engine");
+        await CommitAsync(root, "later.txt", "the line moves on\n", "the line moves on");
+        const string branch = "daoris/s-0031408d";
+        var cut = DaorisHome.Entry(Home, HomeEntry.Trees, RemoteTarget.Workspace(null), "engine", "s-0031408d");
+        await GitAsync(root, "worktree", "add", "--quiet", "-b", branch, cut, "main");
+        await GitAsync(root, "worktree", "lock", "--reason", TreeOpenings.GitsOwn, cut);
+        var tip = (await GitAsync(root, "rev-parse", branch)).Trim();
+        var reached = false;
+        var trees = new SessionTrees(Home)
+        {
+            BeforeRefDeleted = async name =>
+            {
+                if (name != branch) return;
+                reached = true;
+                if (what == "line") await GitAsync(root, "reset", "--hard", "--quiet", "HEAD~1");
+                else await GitAsync(root, "update-ref", $"refs/heads/{branch}", $"{tip}~1");
+            },
+        };
+
+        var results = await trees.TidyStraysAsync(root, "engine", null, InUseAsync, DateTimeOffset.UtcNow);
+
+        Assert.True(reached, "the cut-off opening's branch delete was reached");
+        var result = Assert.Single(results);
+        Assert.Equal((StrayKind.Opening, branch), (result.Kind, result.Branch));
+        Assert.True(result.Moved, result.Message);
+        Assert.False(Directory.Exists(cut));
+        Assert.Contains(said, result.BranchKept, StringComparison.Ordinal);
+        Assert.Equal(what == "line" ? tip : (await GitAsync(root, "rev-parse", $"{tip}~1")).Trim(), await TipAsync(root, branch));
+    }
 }

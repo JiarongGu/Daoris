@@ -18639,3 +18639,13 @@ starts 44 git processes (55), the squash press 46 (51), the merge press 40 (43);
 Fewer than the row's estimate of 20: the rest are each act's own read, `status` (LANDGIT1c) and the tidy's. Proof: `LandGitCountTests`
 with its ceilings lowered, `What_another_process_moves_is_asked_of_git_each_time` green. On Opus: about 90 tool calls. Detail: D173's
 LANDGIT1b note.
+
+## FABRIC-TIDYHELD-TEST1 — race tests for the held tidy and cut-off openings (2026-10-21, D173)
+
+> - [ ] **FABRIC-TIDYHELD-TEST1 — race tests for the held tidy and cut-off openings** (driver; after END4a). `TreeTidies.TidyOneAsync` and `TreeStrays.CutOffAsync` have no line-moved-at-delete test. Proof: Git tests through `TreeLands` and a cut-off opening with `BeforeRefDeleted`.
+
+**Outcome** 2026-10-21: tests only, no code changed, all green on the current code. `JudgedDeleteGitTests` gains a chain landed through
+`TreeLands` whose earlier branch's delete moves under `BeforeRefDeleted`: the holder its proof rested on (the landing's branch, the
+squash's branch, the line a merge went into) set back keeps the branch with "moved as it went", and the branch moved on keeps its new
+commit with `ContentHolds.MovedSince`. A cut-off opening held by the line is moved aside while the line rewound, or its branch moved,
+at the delete keeps the branch, said in `BranchKept`. On Opus: about 40 tool calls.
