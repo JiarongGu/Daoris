@@ -129,7 +129,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-10-16-this-daoris-design.md` | Contract: Settings → This Daoris, every wire and its source, every setting found, the wiring set up | D171's WIRING1a note; WIRING rows in TASKS |
 | `2026-10-20-flowchart-design.md` | Contract (accepted 2026-10-20): processes drawn as flowcharts: one auto-laid layered diagram, each flow from its record and where it is mounted, the rail as its narrow placement, the layout engine chosen on measured fixtures (hand-laid or dagre); the Map stays the map of requests | D186; FLOWCHART1 and MAPUX1 rows proposed |
 | `2026-10-20-ui-ux-design.md` | Contract (accepted 2026-10-20): every screen since UX7 audited; the wide-pane, waiting-step and refusal rules; meetings, brainstorms, sign-in, access, heavy runs and work state designed; the shared parts | D185; UIFIT1b, CLAUDESIGNIN1b, MEETUX1 and the feature rows in its §9 |
-| `2026-10-21-notification-design.md` | Proposed (round 2): everything that comes to the person in one view the title bar opens; a terminal's press there in plain words, never across the page; Overview a summary; presentation first, then a notice record, then channel summaries; arrivals said by identity | D196; NOTIFY2a-h proposed |
+| `2026-10-21-notification-design.md` | Accepted (2026-10-21, after three rounds): everything that comes to the person in one view the title bar opens; a terminal's press there in plain words, never across the page, its signal kept while unshown; Overview a summary; presentation first, then a notice record, then channel summaries; arrivals said by identity | D196; NOTIFY2a-j |
 
 ## Studies and evidence
 

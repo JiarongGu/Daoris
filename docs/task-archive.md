@@ -18894,6 +18894,18 @@ page and the offer's page list them in en and zh; `daoris-driver plugins show` s
 description theories held cell for cell by `plugin-steps.test.ts`, `PluginPageTests`, `DriverModulePluginPageTests`,
 `PluginPage.test.tsx` in both languages. Detail: D173's FABRIC-UNIT1e note.
 
+## NOTIFY1 — a notification center: what comes to the person, in one place that never blocks the page (design) (2026-10-21, D196)
+
+> - [ ] **NOTIFY1 — a notification center: what comes to the person, in one place that never blocks the page** (design, then its rows; the owner's direction, 2026-10-21; D185, D156 §4.2, D188). A terminal's press waiting for the window is drawn across the top of every page and blocks it until answered. It says the route's raw name (`SESSION_INPUT`) under its sentence (一个终端请求以你的名义对会话说话。), and it expires in two minutes. Meanwhile session messages are listed one by one on Overview, which makes Overview long and hides what it is for. Wanted, as a design under D191 (Codex reads; D185 amended):
+>   - one notification center for everything that comes to the person: a terminal's press waiting for Confirm, a session's or an ask's message, a question asked of the person, work done or failed, and *What needs you*;
+>   - unread counts and a badge, opened from the title bar, with each item answered or dismissed in place;
+>   - a terminal's press shown there and announced without blocking the page, worded in plain words that name the session and the words to be sent, never the route's name;
+>   - Overview kept to a short summary that links into the center;
+>   - whether a press's two minutes still fit once it waits in the center.
+>   CONFIRMSEEN1, which the install is building, logs a card as shown and gives it a row; the design takes it as its first slice. Proof: the design accepted and its build rows filed.
+
+**Outcome** 2026-10-21: designed and accepted as D196 (`docs/2026-10-21-notification-design.md`) after three rounds (Codex's read, twenty-eight findings; Fable's of §2 to §3 and §5, fourteen), every finding taken. A *Notifications* view the bell opens; a press there in plain words, its signal kept while unshown; Overview a summary. The build rows are NOTIFY2a-j. On Opus, read by Codex and Fable.
+
 ## FABRIC-PERFORM1q — a held event's unit judged first in its pass's turn (2026-10-21, D173)
 
 > - [ ] **FABRIC-PERFORM1q — a held event's unit judged first in its pass's turn** (driver; after PERFORM1o). Past `UnitsPerPass` units, a unit whose event was held for lagging its node can fall outside the turn, and its event is refused `stale`. Proof: the 34-unit case takes the held event in its pass, and the rotation still reaches every other unit.
