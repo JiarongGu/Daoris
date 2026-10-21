@@ -1,20 +1,22 @@
-# Keeping: each kind of thing Daoris writes kept by one rule the person sets and sees, a set-aside tree's package folders dropped once it has settled, and the rules run by the look, a free-space floor and a press (proposed, 2026-10-21)
+# Keeping: each kind of thing Daoris writes kept by one rule the person sets and sees, a set-aside tree's package folders dropped once it has settled, and the rules run by the look, a free-space floor and a press (accepted, 2026-10-21)
 
-**Standing:** proposed under D195 (CLEANUP1), in its second round under D191. Nothing here is built; its rows (§9) build it.
-Codex read the first round: its fourteen blocking findings and eight others all hold, and each is taken in this round (§11). The
-design meets D191's foundation threshold: it adds durable records (`data/keeping.json` and a manifest beside each set-aside folder
-it slims), removal nobody presses, a lock between processes, and it amends decided rules other designs rest on (D88's fourteen days
-and CACHECLEAR1's judgement). So Fable reads §3 and §5 of this round next, then the steward settles it. The owner decided §3.6
-(D195's note of 2026-10-21): finished history may also go by an age the person sets, the press alone by default. Nothing else
-publishes, spends an account, or removes anything that cannot be made again without the person's rule or press.
+**Standing:** accepted under D195 (CLEANUP1), settled under D191 on 2026-10-21 after three rounds, each finding checked against the
+code by the steward (§11). Codex read the first round (fourteen blocking findings and eight others, all taken in round 2). Since the
+design meets D191's foundation threshold (durable records, `data/keeping.json` and a manifest beside each set-aside folder it slims;
+removal nobody presses; a lock between processes; decided rules other designs rest on, D88's fourteen days and CACHECLEAR1's
+judgement), Fable read §3 and §5 of round 2 (thirteen findings, two blocking, all taken in round 3). Nothing here is built; its rows
+(§9) build it. The owner decided §3.6 (D195's note of 2026-10-21): finished history may also go by an age the person sets, the press
+alone by default. Nothing else publishes, spends an account, or removes anything that cannot be made again without the person's
+rule or press.
 
 Read for it: the row CLEANUP1 in `TASKS.md`; D88 and its notes (AUTOTIDY1 to CACHECLEAR1, lines 37-350); D102's TREEKEEP1 (278-302)
 and CLEANUP1 (360-391); D173's CLEANUP1 note (1595-1684); D172 and the install layout design (§2 to §4); the This Daoris design (§3.1,
 §6, §9); D185's UI/UX design (R1, R2, R3, §3.1) and D187; D153 and the history clearing design (§1.3, §2, §5, §7); D194 (the
 `daoris driver` family handed to the driver's program); `.claude/knowledge/twins.md` (lines 37-52), `setting-doors.md`,
 `bridge-presses.md` (row 11, the pipe's census), `ref-removal-transactions.md` and `git-ref-absence.md`. Every statement about today
-was read from the code at `5e8caed81`, and read again at `1657bd997` for round 2 (the trees' files unchanged between), and names its
-file and line; none was run. The install was measured read-only on 2026-10-21 (§0.2).
+was read from the code at `5e8caed81`, and read again at `1657bd997` for round 2 (the trees' files unchanged between) and, where
+Fable's read touched it, at `2cdc2e8c2` for round 3, and names its file and line; none was run. The install was measured read-only
+on 2026-10-21 (§0.2).
 
 ## 0. The case, and what the design rests on
 
@@ -176,7 +178,7 @@ readers of the constant `BranchTidying.SetAsideFor` among them (`BranchTidying.c
 | Kind | Made again? | Default | The person may set | Its remover |
 |---|---|---|---|---|
 | `set-aside` | its package folders, a `node_modules` beside a `package.json` git tracks, yes (§5); the rest, git's own files, `bin/` and `obj/` included, no | 14 days; its package folders an hour after the move, where nothing was written in it since | 1 to 90 days; `whole`, which keeps every folder whole as today | the slim (§5), the purge |
-| `downloads` | yes | an unused version goes 7 days after a pass first finds it unused | 0 to 365 days, or `never`: the press alone, below the floor too | CACHECLEAR1's act, which Tools' delete of one version takes too (§3.5) |
+| `downloads` | yes | an unused version goes 7 days after a pass first finds it unused, counted from the start of its current unused stretch (§2.3) | 0 to 365 days, or `never`: the press alone, below the floor too | CACHECLEAR1's act, which Tools' delete of one version takes too (§3.5) |
 | `browser-cache` | yes | the engine's own bound; cleared below the floor while the browser does not run | — | new: the cache paths of `browser-engine` in §3.2's table, alone |
 | `logs` | no | 30 days | 7 to 30 days: the processes' own 30 stays the ceiling, since the service would otherwise read the driver's choices | the log's prune; the pass's daily prune at the person's days |
 | `history` | no | `never`: the person's clear alone | `never`, or 30 to 3,650 days (§3.6, decided by the owner) | the clear |
@@ -242,11 +244,17 @@ twins' tables at once. It is a machine record: never synced, no route answers it
   lost the other writer's change (CONFIGLOCK1).
 - **A file that does not read is never written over** (`JsonKeeping.Save` refuses it): the pass says so and writes no `last`, and an
   `unused` it cannot read is no first-unused time, so no download goes by its days until the file reads again (§3.5).
+- **First unused is the start of the current unused stretch** (Fable F2.1). A pass that finds a version pinned, used or named clears
+  its `unused` entry, so the next pass that finds it unused records a new time. Kept once and never reset, a version found unused at
+  T0, pinned at T1, started on at T2 and unpinned at T3 would read at T4 as unused since T0, before the session's start, and be
+  renamed under it; an agent run through npm's shims does not refuse that (`HarnessSettings.cs:509-516`). A pin and an unpin
+  between two passes leave no trace here, which is why a running session's own resolved binary is the guard and its start the rule
+  only for a record without one (§3.5).
 - Every field is added, never renamed (a stored shape). A reader meeting none reads every kind as never cleaned.
 
 **A manifest beside each folder the slim takes** (§5): `trees/.tidied/<ws>/<repo>/<name>-<moment>.slim.json`, the exact paths
-judged before the move and each one's state, written by the look before the move and by the slim after. It lives and goes with its
-folder.
+judged before the move, each one's state and when its removal ended, written by the look before the move and by the slim after. It
+lives and goes with its folder.
 
 ## 3. When it runs
 
@@ -266,18 +274,25 @@ judgement). Each pass:
 6. at most one bounded measure per kind a day (§4.3).
 
 **One run at a time, bounded** (Codex 3.2). A removal of any kind, the pass's, a press's or a terminal's alone, runs under the home's
-run lock, `locks/keeping`, in `RecordLock`'s shape: its handle is the lock, let go with its process, so nothing stale blocks
-(`RecordLock.cs:13-15`). It is tried, never waited for: the pass skips; a press while a run is under way in the same process joins
-it, and from another process is refused, naming the holder. A pass removes for at most 60 seconds, hearing a stop between paths and
+run lock, `locks/keeping`, in `TreeLock.TryOpen`'s shape (`TreeLock.cs:78`): opened at once or not at all, never `RecordLock`'s
+ten-second wait (`RecordLock.cs:23`; Fable F3.1). Its handle is the lock, let go with its process, so nothing stale blocks. Its
+holder writes `{ pid, since, door }` to a sibling file it owns, `locks/keeping.holder`, as the keep lock writes its own
+(`KeepLock.cs:78`), and removes it at the run's end, so a refusal names the holder and the card can say a terminal's run is under
+way; a holder's file whose process is gone is a run a crash cut short (§3.3). It is tried, never waited for: the pass skips; a
+press while a run is under way in the same process joins it, and from another process is refused, naming the holder. A pass removes for at most 60 seconds, hearing a stop between paths and
 never inside one path's delete; a path whose removal failed for the same reason as at its last try is tried again the next day, not
 each pass, and said once. The daily downloads' rule lists the versions without measuring each (`DownloadClearing.cs:143-147, 160`
 measure every one) and measures only those it removes.
 
 ### 3.2 The free-space floor
 
-**Measured** by the operating system's free-space read for the Daoris folder's own path, the bytes this account may use: on
-Windows `GetDiskFreeSpaceExW` on the folder, which answers for the volume that holds it, a mounted folder included (a drive
-letter's read would not), `statvfs` elsewhere. Read at each pass; one read took 0.3 ms on the install. Never a walk.
+**Measured** by the operating system's free-space read, the bytes this account may use, for the Daoris folder's own path and for
+each entry the floor's acts free from: the trees home (`trees`), the downloads (`toolchain`, `tool-versions`) and the browser's
+profile (`browser-engine`). The trees home may sit on another volume through a junction, so the home's read alone could judge the
+wrong disk (Fable F4.3). On Windows `GetDiskFreeSpaceExW` on the folder answers for the volume that holds it, a mounted folder
+included (a drive letter's read would not); `statvfs` elsewhere. Each volume's floor is computed from its own size, each act runs
+where its own entry's volume is below it, and a volume two entries share is said once, compared by the identity the operating
+system gives it. Read at each pass; one read took 0.3 ms on the install. Never a walk.
 
 **Default: the smaller of 10% of the volume and 20 GB.** On the install's 1,024 GB volume that is 20 GB; on a 128 GB one, 12.8 GB.
 **It is a trigger, not a reserve**: the free space at which Daoris starts freeing early what it can make again, and tells the person
@@ -291,7 +306,10 @@ every guard of its own (§3.5):
 1. the slims due (§5): the hour's settle and the read of nothing written since the move still hold;
 2. unused downloads past the hour's `Settling`, their days ignored, **but never one whose rule is `never`**: the person's `never` is
    the press alone, below the floor too (Codex 3.1); every use guard of §3.5 holds;
-3. the browser's caches, **only where the shell's browser host says its browser is not running**, holding that host's start gate
+3. the browser's caches, **once in each stretch below the floor**, from `space.low` to `space.ok`, not each hour (Fable F4.1): caches the
+   browser fills again as it runs would otherwise be cleared each hour the disk stays low, for little beyond what the first clear
+   freed. **Only where the
+   shell's browser host says its browser is not running**, holding that host's start gate
    through the clear so no browser starts meanwhile (`EngineBrowserHost.cs:41-42, 107-113`). The browser closes with its shell
    (`:25-27`), but whether one outlived a shell that stopped cannot be asked with no shell, so with no Daoris running the caches are
    kept and said. Only these paths, relative to `browser-engine`'s root, its active profile being `Default`
@@ -325,7 +343,10 @@ CACHECLEAR1's):
    under way in the same process answers that run's id. The run's state, each kind waiting, running or done with what it removed and
    kept, is part of `SYSTEM_SPACE`'s answer (§4.4) for the current or last run of the process, and its end is the news under the
    `system` scope and each kind's `last` in `keeping.json`. The card shows the run with its count and its time, then its end (R2),
-   and a page opened again reads the same run. The terminal reads it until it ends (§4.4).
+   and a page opened again reads the same run. The terminal reads it until it ends (§4.4). **A run a crash cut short** writes no
+   `last`, so the card's `last` may be older than the folders show (Fable F3.3). Its holder's file, left naming a process that is
+   gone (§3.1), is read as *a run stopped before its end*, with its start and its door, and said on the card until the next run
+   ends; what it removed shows in the next walk's size, and a slim's paths in their manifest (§5).
 4. **Whose press it is** (Codex 4.2; `bridge-presses.md` row 11). The list changes nothing and is `Open`; the removal is the person's
    delete, `Person`. A terminal's removal over the pipe waits for the person's Confirm in the window (RPC1c), worded by its act. With
    no Daoris running, from an environment carrying `DAORIS_SESSION_ID`, the removal is refused, exit 1, and nothing is done (D194
@@ -353,7 +374,7 @@ rename only adds a keep:
 |---|---|---|
 | Live trees | a session running or waiting names it, words wait on it, a review shows from it | `BranchTidying.InUseAsync` (`BranchTidying.cs:133-142`) |
 | Set-aside trees | something in it was written after its move; a link outside a build folder; a delete refused. For the slim also: within the hour after the move; `whole`; a manifest not at `moved` (§5) | `TreeSetAside.Kept`, `purge-failed.json`, the manifest. A tree moves only once no session, review or words hold it, read at the move inside the repository's hold |
-| Downloads | pinned, used, named, unreadable, within the hour; `never`, below the floor too; **a session that started before the version was first found unused is still running**, since a start resolves its version then; the rename refused (`in-use`) | `DownloadClearing.Judge` (`DownloadClearing.cs:211-237`), read again **under the keep locks of `harnesses.json`, `tools.json` and `driver.json`, held from that judgement to the rename** and taken in that order, so a pin or a use written meanwhile waits and is then seen, where today a pin can land between `:176` and `:186`; and a pin's writer looks again under its lock that the version's folder is there, refusing a pin of one gone meanwhile, where today the next start would fall back to `PATH` and say so (`HarnessSettings.cs:496-498`); the home's live sessions (`ServiceClient.ActiveSessionsAsync`, `ServiceClient.cs:335`), each with when it started, read from its record (KEEP1b names the field; not read here); `keeping.json`'s `unused` |
+| Downloads | pinned, used, named, unreadable, within the hour; `never`, below the floor too; **a running session resolved a binary inside it**, or, for a session record older than that field, the session started before the version was first found unused; the rename refused (`in-use`) | `DownloadClearing.Judge` (`DownloadClearing.cs:211-237`), read again under the use files' keep locks (below); the home's live sessions (`ServiceClient.ActiveSessionsAsync`, `ServiceClient.cs:335`), each with the binaries its start resolved, from its record (below); `keeping.json`'s `unused` (§2.3) |
 | The browser's caches | the browser runs, or no Daoris runs to say whether it does | the shell's browser host, its process and its start gate (§3.2) |
 | Logs | today's file | the date in its name. Each process writes only today's file and opens it with delete sharing (`MachineLog.cs:296-300`), so a delete is never refused by its writer: the date is the guard, not the refusal |
 | History | open work, a live session, what waits on the person, unpushed moves | the history clearing design §1.2 |
@@ -361,6 +382,30 @@ rename only adds a keep:
 
 Each kept unit is said with its reason, in the list and in the log. **Tools' delete of one version** (`TOOLS_DELETE`) takes
 CACHECLEAR1's act from KEEP1b: judged the same way, moved aside first, so one removal of a version has one set of guards.
+
+**The downloads' use, judged under the use files' locks** (Fable F2.2 to F2.5):
+
+- **Which files, in which order.** The keep locks of the harness file the roster reads, at `HarnessSettings.ResolvePath(home)`
+  (`HarnessSettings.cs:104`), which `DAORIS_HARNESS_CONFIG` may name elsewhere, never `harnesses.json` by name (F2.4); `tools.json`;
+  and `driver.json` at the path the loop resolves, as `DownloadUses.Read` takes it (`DownloadClearing.cs:45-51`). Taken in that
+  order, so a pin or a use written meanwhile waits and is then seen, where today a pin can land between `:176` and `:186`.
+- **Held per version, from its judgement to its rename only**, never across the removal that follows, so a person's pin or
+  `SET_KEEP` waiting on one is never refused at the keep lock's ten seconds (`KeepLock.cs:35`; F2.3). A pin's writer looks again
+  under its lock that the version's folder is there, refusing a pin of one gone meanwhile, where today the next start would fall
+  back to `PATH` and say so (`HarnessSettings.cs:496-498`).
+- **The guard binds only the writers that take the lock** (F2.2). Today both writers of `driver.json` take it
+  (`DriverConfig.cs:891`, `driverconfig.ts:882`), and both of `tools.json` since KEEPALL1c (`Tools.cs:431-432`, `tools.ts:423-424`).
+  The harness file's two take it on their keeping path, but each still writes wiring built in memory whole and unlocked
+  (`HarnessSettings.cs:188-190`, `toolchain.ts:509`), the CLI's writer a second one until PUSH1f2e retires it. So KEEP1b comes after
+  every writer of the three files is under the keep lock: after PUSH1f2e, whose `HarnessSettings.Change` takes every writer of the
+  harness file through the lock, and after PUSH1f2c, which reshapes `TOOLS_DELETE` and the download's staging and publication that
+  KEEP1b's act takes over (the alone-path design §1.4, §5). A KEEP1b built before them carries the whole-layout write under the lock
+  itself, on both sides, with a proof that a whole-layout write waits.
+- **What a running session may still run is the binary it resolved** (F2.5): at its start the roster resolves the agent's managed
+  binary (`HarnessSelection`, `HarnessRoster.cs:1083, 1137-1143`), two for an ACP session, its adapter and the `claude` it is told to use, and
+  the start records them on the session record, a machine-only field (`session-record-fields.md`). A version holding a binary a
+  running session resolved is kept. A record older than that field keeps the start-time rule: kept while a session that started
+  before the version was first found unused runs (§2.3).
 
 ### 3.6 History by an age (decided by the owner)
 
@@ -383,7 +428,8 @@ was counted as the value; under it, the rule in words with *Change…* where the
 kind whose rule is not Daoris's says whose it is and offers no *Change…*. *Unused downloads* opens the Downloads row's list as it is
 drawn today (`WiringDownloads`, `WiringDownloads.tsx:31`), each version with its date by the rule: the card draws no second list of
 versions (Codex 6.1). Each *Change…* appears with the row that lets the person set that rule (§9), so a build never shows an editor
-for a rule it does not run.
+for a rule it does not run. A kind whose entry lies on another volume than the Daoris folder's says that volume's free space and
+floor on its own row (§3.2).
 
 ```
  wide, Settings → This Daoris, Disk space
@@ -454,6 +500,8 @@ The *Change…* editor is inline under its row (`FormGrid`): a number of days (4
 | Floor off | *no floor: Daoris frees nothing early* |
 | A rule being saved, or refused | the row's editor disabled with its status, or the driver's sentence under it, the editor open (R3) |
 | The press listed, running, done | the list; R2's line with its count and time; what went and what was kept, by reason |
+| A run under way in another process | *A run from a terminal is under way, since …*, from the holder's file; *Free up space…* disabled with that reason (§3.1) |
+| A run stopped before its end | *The last run stopped before its end, at …*, beside *last*, until the next run ends (§3.3) |
 | A shell older than the page | *This window answers no disk space: it is older than this page*, and no card |
 | A development run | the scratch root's volume, said as the development run's |
 | Wide, half, narrow; en, 中文; light, dark | R1's track; stacked below 32rem of card |
@@ -484,11 +532,13 @@ With §5's slim, a set-aside folder of this repository holds about 5,100 files r
 { schema: 1,
   volume: { path, free, total, floor: { bytes, from: default|size|percent|off }, below, freedEarly: { bytes, at } | null },
   kinds:  [ { id, entries, bytes, files, measured, partial, partialWhy, counting,
+              volume: { path, free, total, floor, below } | null,      // only where its entry's volume is not the folder's (§3.2)
               rule: { kind: days|never|own|proof|press, days, whole, default, whose },
               settable, next: { at, count, bytes } | null,
               last: { at, door, removed: { count, bytes }, kept: { <why>: count } } | null } ],
   run:    { id, door, started, ended, outcome: done|kept|stopped,
-            kinds: [ { id, state: waiting|running|done, removed: { count, bytes }, kept: { <why>: count } } ] } | null }
+            kinds: [ { id, state: waiting|running|done, removed: { count, bytes }, kept: { <why>: count } } ] } | null,
+  held:   { pid, since, door, gone } | null }                           // the run lock's holder elsewhere, or one a crash left (§3.1, §3.3)
 ```
 
 - **`SET_KEEP`**, the standing choice's press in the driver's route domain, `{ kind, days | never | whole | default }` or
@@ -578,8 +628,13 @@ same `package.json`, so nothing kept there outlives the next install. It is also
 bytes and at least 77% of its files (§0.2). Git's tracked files (12%) stay because removing them needed three guards of their own
 (§7); `bin/` and `obj/` (35%) stay because no producer of theirs discards them whole (§7, and §11's question for Fable).
 
-**The judgement, before the move.** In the look's last look (`TreeSetAside.LastLookAsync`, `:55-111`), inside the repository's hold,
-after its guards have passed. A folder is droppable where all of these hold:
+**The judgement, before the hold, checked again inside it** (Fable F1.5). Made in `SweepPlanAsync` (`TreeSweeps.cs:30`), which the
+look runs before it takes the repository's hold (`AutoTidies.cs:270`, the hold at `:286`), so the hold gains no `git status
+--ignored` walk beside `NestedRepositories`' own (`TreeSetAside.cs:92, 118`). Inside the hold, the last look
+(`TreeSetAside.LastLookAsync`, `:55-111`), after its guards have passed, checks it again by the reads it already makes: its index
+read still lists each judged folder's `package.json`; a tree with a change to a tracked file, a `.gitignore` among them, never moves;
+and its one walk of the tree's folders, which the judgement's nested and link checks share, finds no repository and no link on the
+way to or inside a judged folder. A folder is droppable where all of these hold:
 
 1. **Git ignores it whole**: one `status --porcelain=v1 -z --ignored=traditional --untracked-files=normal` in the tree names it
    `!! <path>/`. A folder git lists file by file, a tracked file inside it, is not one.
@@ -596,10 +651,11 @@ go, atomically:
 
 ```
 { schema: 1, state: judged|moved, judged, moved, repository, branch,
-  paths: [ { path, state: pending|removing|removed|kept, why, tried } ] }
+  paths: [ { path, state: pending|removing|removed|kept, why, tried, ended } ] }
 ```
 
-Each path is relative to the tree's top in git's spelling. Then it moves the folder. Once `MoveAsideAsync` reports the folder moved
+Each path is relative to the tree's top in git's spelling; `ended` is when its removal ended, written with `removed` (step 4). Then
+it moves the folder. Once `MoveAsideAsync` reports the folder moved
 and git's record let go (`:166-197`), it writes `state: moved` with the moment. A folder put back, or a move refused, removes its
 manifest. Only a manifest at `moved` is ever slimmed: one left at `judged`, where the process stopped between the move and that write,
 is unknown, so its folder is kept whole for its days and the manifest dropped by the next pass. A manifest whose folder is gone is
@@ -615,8 +671,10 @@ nothing of it runs there). It takes each manifest at `moved` whose folder was mo
    included: a write after the move, by an install or a program still running from the folder, keeps the folder whole for its days,
    said as the purge says it, and the manifest's paths are marked `kept: written`. This, and the move's own guards (no session,
    review or words held the tree, read inside the hold), are what is known of the folder's use; the move's rename succeeding is not
-   (§3.5). A program that outlived its session and writes nothing is the residual, the one the purge accepts at its days; here it
-   costs that program its packages, never work.
+   (§3.5). **The residual, exactly** (Fable F1.3): a pure-JavaScript program that outlived its session, holds nothing in the folder
+   open and writes nothing there fails at its next lazy `require`. A program with a native addon loaded from the tree, or its
+   working folder in it, already refuses the move, which keeps the tree as `busy` (`TreeSetAside.cs:219-225`). The purge accepts the
+   same program at its days; here it costs that program its packages, never work.
 2. **Each path checked again right before it goes** (Codex 2.5). Its relative path holds no `..` and is not rooted; joined to the
    folder, its full path lies under the folder by whole segments, compared without case on Windows; no link lies on the way from the
    trees home to it, it included (`TreeWorktrees.LinkBelowTreesRoot`, `:89-110`, which checks links and not containment: a path
@@ -626,16 +684,21 @@ nothing of it runs there). It takes each manifest at `moved` whose folder was mo
    (`TreeSetAside.cs:413-437`), which in this round checks its own argument, and each folder again right before it reads it, and refuses
    one that is a link: today it checks only the children it lists (`:416-418`), so handed a folder that is, or became, a junction it
    would read the junction's target (Codex 2.5). A link inside goes as a link, what it points at untouched (TIDIEDLINK1); a read-only
-   file is made writable first. The path's end is written as it ends: `removed`, or `kept` with why. A stop midway leaves it
+   file is made writable first. The path's end is written as it ends: `removed` with `ended`, or `kept` with why. A stop midway leaves it
    `removing`, and the next pass begins it again from step 1. A path that failed for the same reason as at its last try (`tried`)
    waits a day (§3.1).
 4. **The purge knows what the slim removed.** Removing a folder changes the last-write time of the folder above it, and the purge
    reads every entry's last-write time against the move (`TreeSetAside.cs:390-398`): with nothing more, every folder slimmed would be
    kept at its date for ever as *written after it was moved aside*, each a blocked unit in *What needs you*. So the purge's read, and
-   step 1's, pass over what a manifest marks `removing` or `removed` without reading into it, and do not read the last-write time of
-   the folder directly above it; every file and every other entry of that folder is still read. A file another process writes there
-   still keeps the folder; a removal by another process there is not seen, and loses nothing a person keeps. The purge deletes the
-   manifest with its folder.
+   step 1's, pass over what a manifest marks `removing` or `removed` without reading into it, and read the folder directly above a
+   `removed` path against when that removal ended (`ended`), not against the move; while a path below it is still `removing`, that
+   folder's own time is passed over until the removal ends. Every file and every other entry of that folder is still read against the
+   move. **The read checks each entry's creation time too** (Fable F1.1), as `TreeStrays.WrittenSince` does (`TreeStrays.cs:288`): a
+   copy or a move keeps its source's last-write time, and the purge's read checks `LastWriteTimeUtc` alone (`TreeSetAside.cs:390-398`),
+   so a file copied or moved into that folder after the move was seen by nothing once the folder's own time was passed over. A copy
+   takes a new creation time; a move changes the time of the folder it lands in, read against the removal's end. A file another
+   process writes, copies or moves there afterwards keeps the folder; a removal by another process there is not seen, and loses
+   nothing a person keeps. The purge deletes the manifest with its folder.
 
 The log writes `tidied.slimmed`; the folder's line in the work inventory and in `work state` names what was dropped.
 
@@ -656,7 +719,8 @@ written, a blocked unit the person can remove by the press. It keeps more than i
 1. **Nothing a session uses is removed, by what is known of each thing's use** (§3.5). The live trees keep the look's guards; a
    set-aside folder's packages go only an hour after a move the look made of a tree no session, review or words held, and only where
    nothing in the folder was written since; a downloaded version is kept while a pin, a use or a setting names it, judged under those
-   files' locks, and while a session that started before it was found unused still runs; the browser's caches go only while the
+   files' locks once every writer of them takes the lock, and while a running session resolved a binary in it (for a record older
+   than that field, while a session that started before it was found unused runs); the browser's caches go only while the
    shell says its browser is not running, holding its start. A rename still goes first wherever a program could hold a thing, and its
    refusal still keeps it as *in use* (CACHECLEAR1's rule), but its success proves nothing (Codex 2.6).
 2. **Nothing outside the home is touched.** Every path is the table's entry under the Daoris folder (`DaorisHome.Entry`), or a
@@ -679,8 +743,9 @@ written, a blocked unit the person can remove by the press. It keeps more than i
    fails leaves its path and is said once; a manifest left at `judged` keeps its folder whole; a `keeping.json` that does not read
    lets no download go by its days; a free-space read that fails runs no floor act; a browser whose state no shell can say keeps its
    caches.
-8. **One run at a time, bounded** (§3.1): the run lock between processes, at most 60 seconds of removal a pass, a stop heard between
-   paths, an unchanged failure tried again the next day.
+8. **One run at a time, bounded** (§3.1): the run lock between processes, tried and never waited for, its holder named; at most 60
+   seconds of removal a pass, a stop heard between paths, an unchanged failure tried again the next day; the use files' locks held
+   per version from judgement to rename, never across a removal (§3.5).
 
 ## 7. Rejected
 
@@ -696,11 +761,25 @@ written, a blocked unit the person can remove by the press. It keeps more than i
   folder (Codex 2.7). Kept, the folder is the session's tree as it was but for its packages, and a reinstall makes it whole.
 - **A build folder's shared name as proof it can be made again** (round 1, TREEKEEP1's rule). It is the rule for the person's press;
   for a removal nobody presses, the proof is a producer that discards the folder whole (§5; Codex 2.1).
-- **`bin/` and `obj/` at once**, for now. About 35% of the measured folder, in few files. A program run from `bin/` writes beside
-  itself (a local database), no build discards either whole, and `dotnet clean` removes only the files the build recorded. Taking
-  exactly those files (MSBuild's `*.FileListAbsolute.txt`, each configuration's, its paths absolute at the tree's old place) is
-  precise but a guard of its own; the person's days, the press and the floor's word hold them meanwhile. Whether `obj/` alone, from
-  which no program runs, may join is asked of Fable (§11).
+- **`bin/` in the slim, ever** (Fable F5). A program run from it writes beside itself (a local database), so nothing short of the
+  person's days or press knows it holds nothing a person keeps.
+- **`obj/` at once** (round 2's question to Fable). `bin/` and `obj/` together are about 35% of the measured folder, in few files,
+  never measured apart. No build discards `obj/` whole, and `dotnet clean` removes only the files the build recorded; taking exactly
+  those (MSBuild's `*.FileListAbsolute.txt`, each configuration's, its paths absolute at the tree's old place) is precise but a
+  guard of its own. `obj/`, from which no program runs, may join later on evidence: measured apart in §10's week, then a second
+  producer rule in its own row, KEEP1a2 (§9). The person's days, the press and the floor's word hold it meanwhile.
+- **A first-unused time kept once found** (round 2): a version found unused, then pinned, started on and unpinned, read as unused
+  since before that session's start, and went under it (Fable F2.1). A pass that finds it used clears the time (§2.3).
+- **A session's start as the whole fact of what it may run** (round 2): the binary each session resolved names the version exactly,
+  both of an ACP session's (Fable F2.5); the start stays the rule only for a record older than that field (§3.5).
+- **The use files' locks held across the removal**: a person's pin or `SET_KEEP` would be refused at the keep lock's ten seconds
+  while a large version is deleted (Fable F2.3); they are held per version, from its judgement to its rename.
+- **KEEP1b before every writer of the use files takes the keep lock** (round 2's order): the guard binds only writers that take it,
+  and the harness file's whole-layout write takes none on either side (Fable F2.2, §3.5).
+- **The run lock waited for** (round 2, `RecordLock`'s ten seconds): a run elsewhere is a long one, so a wait holds a pass or a press
+  for nothing, and says nothing of who holds it; it is tried, its holder named (Fable F3.1).
+- **The free space of the Daoris folder alone** (round 2): the trees home may sit on another volume through a junction (Fable F4.3).
+- **The browser's caches cleared each hour below the floor** (round 2): once in each stretch below it (Fable F4.1).
 - **Slimming the folders already set aside** by reading their `.gitignore` files without git: a guess, since git's record of each is
   gone; they go by their date or the person's press.
 - **The slim at once, inside the tidy's pass** (round 1): it ran inside the repository's hold (`AutoTidies.cs:286-292`) and on a rename's
@@ -743,12 +822,14 @@ written, a blocked unit the person can remove by the press. It keeps more than i
 
 - **D88's AUTOTIDY1 note**: a folder the look moves aside drops its package folders an hour after the move, where nothing was written
   in it since (§5); the purge's fourteen days are the person's to set, read by every reader through one policy; the purge's read
-  passes over what the slim removed; the purge runs in the Keeping pass under the run lock. Its guards, the move and *Said once*
-  stand. `DeleteNeverFollowing` checks its own argument too.
+  passes over what the slim removed, reads the folder above a removed path against the removal's end, and checks each entry's
+  creation time as well as its last-write time; the purge runs in the Keeping pass under the run lock. Its guards, the move and
+  *Said once* stand. `DeleteNeverFollowing` checks its own argument too.
 - **D102's TREEKEEP1** stands as it is: its *shared build folder* rule stays the person's press's, and the slim does not use it.
 - **D88's CACHECLEAR1 note**: unused versions also go by a rule the person sets, and below the floor but for `never`; the judgement
-  gains the running session's keep and runs under the use files' keep locks to the rename, and a pin's writer looks again under its
-  lock; Tools' delete of one version takes the same act; the rename first and the press stand; the terminal twin is `daoris-driver
+  gains the keep for a version a running session resolved (its start, for an older record) and runs under the use files' keep locks,
+  per version from the judgement to the rename, and a pin's writer looks again under its lock; Tools' delete of one version takes
+  the same act; the rename first and the press stand; the terminal twin is `daoris-driver
   space free --kind downloads`.
 - **The history clearing design §7**: decided by the owner (§3.6): nothing clears finished history by itself unless the person has set
   an age.
@@ -768,15 +849,20 @@ locked writer, the manifest and the run lock are KEEP1a's. A rule runs before an
 slim and the downloads' rule (1a, 1b) come before the card (1c) and the person's rules (1d); the floor (1f) comes after every act it
 runs (1a, 1b, and the browser's caches in 1e); history's age (1g) brings its choice and its clear in one row. Renumbered from round 1:
 its 1a stays 1a, its 1f is 1b, 1b is 1c, 1c is 1d, 1d is 1e, 1e is 1f, 1h is 1g (the owner's note names it KEEP1h), and its 1g, an
-opinion's packet with its quest's clear, is dropped (§7).
+opinion's packet with its quest's clear, is dropped (§7). **Round 3** (Fable F2.2, F5): KEEP1b comes after PUSH1f2c and PUSH1f2e,
+once every writer of the use files takes the keep lock, or carries the harness file's whole-layout write under it itself (§3.5);
+KEEP1a2, `obj/` on evidence, follows KEEP1a and a week of its measurement.
 
 - **KEEP1a — a tree set aside drops its package folders once it has settled** (driver). §2.1's `KeepKinds` with its set-aside kind,
   and the one effective policy every reader of the set-aside days reads, still fourteen days (`BranchTidying.cs:111, 248, 317`,
   `WorkInventories.cs:59`, `WorkInventory.cs:610`, `TreesConsole.cs:108`); §2.3's `keeping.json` through `JsonKeeping.Save`, with the
   home twins' `keeping` entry, its `last` for the set-aside kind; §3.1's Keeping pass in the tidy's task taking over the purge, the run
-  lock, the budget and the backoff; §5's judgement in the last look, the manifest written before the move and marked `moved` after,
-  the slim, the purge's read knowing the manifest, `DeleteNeverFollowing` checking its own argument and every folder before it reads
-  it, containment checked apart; `tidied.slimmed`; the inventory's and `work state`'s line naming what was dropped. Proof: a `Process`
+  lock tried in `TreeLock.TryOpen`'s shape with its holder's `{ pid, since, door }` file, the budget and the backoff; §5's judgement in
+  `SweepPlanAsync` before the hold, checked again by the last look's own reads inside it, one walk shared; the manifest written before
+  the move and marked `moved` after, each path's `ended`; the slim; the purge's read knowing the manifest, reading the folder above a
+  removed path against its `ended` and every entry's creation time too; `DeleteNeverFollowing` checking its own argument and every
+  folder before it reads it, containment checked apart; `tidied.slimmed`; the inventory's and `work state`'s line naming what was
+  dropped. Proof: a `Process`
   class over real git, seen failing first: a tree holding a `node_modules` beside a tracked `package.json` (a junction inside it to a
   folder outside), a `node_modules` with no tracked `package.json` above it, `bin/`, `obj/`, `dist/`, a `.env`, `local/notes` and tracked
   files, moved aside: before the hour nothing goes; after it only the first `node_modules`, the junction's target untouched; the folder
@@ -784,21 +870,36 @@ opinion's packet with its quest's clear, is dropped (§7).
   `DeleteNeverFollowing` handed a junction refusing it; a manifest path with `..`, or rooted, refused; a write in the folder after the
   move keeping it whole, its paths `kept: written`; a manifest left at `judged` keeping its folder whole and dropped; a slim stopped
   midway taken up by the next pass and never read as a write; a folder git would not let go of put back with no manifest; `whole`
-  read at the slim; a stray and a cut-off opening never slimmed; a second pass meeting the held run lock and removing nothing; a
-  `keeping.json` written by another writer between this one's read and write keeping both.
-- **KEEP1b — unused downloads go by their rule** (driver; the web's Downloads row). §2.1's `downloads` at its default, seven days: the
-  pass's `unused` in `keeping.json`, the daily removal through CACHECLEAR1's act, listing without measuring every version; the act
-  judging under the keep locks of `harnesses.json`, `tools.json` and `driver.json` to the rename, keeping a version a session that
-  started before it was first found unused still runs; a pin's writer looking again under its lock; `TOOLS_DELETE` through the same
+  read at the slim; a stray and a cut-off opening never slimmed; a second pass meeting the held run lock at once, removing nothing
+  and naming the holder; a holder's file whose process is gone read as a run cut short; a `keeping.json` written by another writer
+  between this one's read and write keeping both; a file copied, and one moved, into the folder above a slimmed path after its
+  removal ended keeping the folder at the purge; a `package.json` untracked between the judgement and the last look leaving its
+  `node_modules` out of the manifest.
+- **KEEP1a2 — `obj/` joins the slim, on evidence** (driver; after KEEP1a and a week of its measurement; Fable F5). First `obj/` is
+  measured apart from `bin/` in the folders set aside over §10's week: its share of the bytes and files, and how often one was written
+  after its move. Where that bears it out, a second producer rule beside §5's, written from what the week showed, with every guard of
+  §5 (the judgement before the move, the manifest, the hour, nothing written since, containment, no link); `bin/` never (§7). Proof:
+  the measurement in D195's note; then KEEP1a's `Process` class gaining an `obj/` the rule takes, one it keeps, and `bin/` kept.
+- **KEEP1b — unused downloads go by their rule** (driver, the service's session record; the web's Downloads row; after PUSH1f2c and
+  PUSH1f2e, §3.5). §2.1's `downloads` at its default, seven days: the pass's `unused` in `keeping.json`, cleared by a pass that finds
+  the version used (§2.3); the daily removal through CACHECLEAR1's act, listing without measuring every version; the act judging under
+  the keep locks of the harness file the roster reads, `tools.json` and `driver.json` at the loop's path, held per version from the
+  judgement to the rename; the binaries each session's start resolved, recorded on its record, keeping a version a running session
+  resolved, and a record without them kept by its start; a pin's writer looking again under its lock; `TOOLS_DELETE` through the same
   act; the Downloads row (`WiringDownloads`) saying each version's date by the rule. Proof: `DownloadClearingTests` rows, each seen
-  failing first: first found unused recorded once; removed after its days; a pin written between the judgement and the rename waits on
-  the lock and keeps the version; a session started before the first-unused moment keeps it as `running`, one started after does not;
-  `never` and an unreadable `keeping.json` keep it; Tools' delete of a version a session runs refused the same way; the row's words in
-  both languages.
+  failing first: first found unused recorded once in an unused stretch; found unused at T0, pinned at T1 with a pass seeing it pinned,
+  started on at T2 by a session whose record holds no binaries, unpinned at T3: at T4 its first-unused time is T4's pass, and the
+  session keeps it; removed after its days; a pin written between the judgement and the
+  rename waits on the lock and keeps the version; a pin waiting while another version is removed taken at once, the locks let go at
+  the rename; the harness file named by `DAORIS_HARNESS_CONFIG` the one locked; a version holding a binary a running session resolved
+  kept as `running`, both of an ACP session's; a record with no binaries kept by its start before the first-unused moment, one started
+  after not; `never` and an unreadable `keeping.json` keep it; Tools' delete of a version a session runs refused the same way; the
+  row's words in both languages; and, built before PUSH1f2e, a whole-layout write of the harness file waiting on the held lock.
 - **KEEP1c — This Daoris shows each kind's size, rule, next and last clean** (driver, modules, web). §2.1's presentation, §4.3's walk
   per kind through `WiringSizes`, `SYSTEM_SPACE` (`Open`), `daoris-driver space`, the *Disk space* card with every state of §4.2 but the
-  editors and the floor's, `last` from `keeping.json`, `left-over` naming `webview2/` and `browser/profile/` by path, the keys and the
-  glossary's two terms, WIRING-SIZES-LIVE1's need for these kinds. Every rule it shows already runs (1a, 1b, the log's thirty days,
+  editors and the floor's, `last` from `keeping.json`, `held` from the run lock's holder file (a run under way elsewhere, or one a
+  crash cut short, §3.3), `left-over` naming `webview2/` and `browser/profile/` by path, the keys and the glossary's two terms,
+  WIRING-SIZES-LIVE1's need for these kinds. Every rule it shows already runs (1a, 1b, the log's thirty days,
   history's press). Proof: the read's tests (a kind never measured, a partial count, each kind's *next* from the walk and the policy,
   a `last` from `keeping.json`), the terminal's text and `--json` table, the census's row, the card's tests and stories at wide, half
   and narrow in both languages.
@@ -820,12 +921,15 @@ opinion's packet with its quest's clear, is dropped (§7).
   press joining the run; the terminal's exits by the run's end, and Daoris stopping mid-run said as not known, exit 2; a confirmed
   and a refused press from a terminal; a marked environment refused alone, exit 1.
 - **KEEP1f — below the floor, Daoris frees what it can make again and says the rest** (driver, modules, web). §3.2: the free-space
-  read for the folder's own path, the default, the floor's choice in `keep` with its bounds and its editor, the pass's three early
-  acts at once, at most hourly, the row in *What needs you* with the press as its door (`NeedsAPerson`, `AttentionStateSlice`, the
-  attention words), `space.low` and `space.ok` at the margin. Proof: a stand-in free-space read below and above the floor; the three
-  acts run in order and nothing else, each with its own guards (a slim within its hour not run, a `never` download kept, a running
-  browser's caches kept); said once, and cleared at the margin; a floor out of its bounds refused; a mounted folder's volume read,
-  not its drive's; a failed read running nothing.
+  read for the folder's own path and each entry the acts free from, each volume's floor from its own size and said once, a kind on
+  another volume said on its row (`kinds[].volume`), the default, the floor's choice in `keep` with its bounds and its editor, the
+  pass's three early acts at once, at most hourly, the browser's caches once in each stretch below, the row in *What needs you* with
+  the press as its door (`NeedsAPerson`, `AttentionStateSlice`, the attention words), `space.low` and `space.ok` at the margin. Proof:
+  a stand-in free-space read below and above the floor; the three acts run in order and nothing else, each with its own guards (a
+  slim within its hour not run, a `never` download kept, a running browser's caches kept); the browser's caches cleared once in a
+  stretch below, not an hour later, and again after `space.ok` and a new `space.low`; a trees home on another volume through a
+  junction judged by its own volume's read, the folder's volume above its floor; said once, and cleared at the margin; a floor out
+  of its bounds refused; a mounted folder's volume read, not its drive's; a failed read running nothing.
 - **KEEP1g — finished history by an age the person sets** (driver, modules, web; decided by the owner, D195's note, which names it by
   round 1's id, KEEP1h). §3.6: history's choice in `keep` (`daoris driver keep history`, its row's editor on the card), the daily clear
   through `HistoryClearing`, every refusal holding, `history.cleared`'s `door: rule`; the history clearing design §7 amended. Proof: a
@@ -834,19 +938,33 @@ opinion's packet with its quest's clear, is dropped (§7).
 
 ## 10. What this document's gate does not cover
 
-Documents only; nothing is built. The statements about today were read from the code at `5e8caed81` and again at `1657bd997`, and
-none was run. The sizes are one install's on one day, read with .NET's enumeration and not compared with Explorer's; the owner's
+Documents only; nothing is built. The statements about today were read from the code at `5e8caed81`, again at `1657bd997` and, where
+Fable's read touched them, at `2cdc2e8c2`; none was run.
+
+**What it rests on** (round 3). Two of Fable's findings were blocking, and the design is safe only with both taken. **F2.1**: a
+version's first-unused time is the start of its current unused stretch, cleared by a pass that finds it used (§2.3); kept once and
+never reset, the start-time keep for a running session did not hold. **F2.2**: the downloads' judgement under the use files' locks
+binds only writers that take them, so KEEP1b waits for every writer of the three files to take the keep lock, PUSH1f2c and PUSH1f2e,
+or carries the harness file's whole-layout write under it itself (§3.5, §9). Neither is proved until KEEP1b's rows.
+
+**The residuals, exactly.** At the slim: a pure-JavaScript program that outlived its session, holds nothing in the folder open and
+writes nothing there fails at its next lazy `require`; a program with a native addon loaded or its working folder in the tree
+already refuses the move as `busy` (§5 step 1, Fable F1.3). At the purge after a slim: a file moved, not copied, into the folder
+above a package folder while that folder's removal runs is not seen, since that folder's own time is passed over until the removal
+ends (§5 step 4). After a crash: the card's `last` may be older than the folders, said as a run stopped before its end (§3.3).
+
+**Not shown.** The sizes are one install's on one day, read with .NET's enumeration and not compared with Explorer's; the owner's
 36.7 GB and this reading's 37.4 GB differ by a day's moves and the counting; the split of a set-aside folder (§0.2) is the one
-measured folder's, not the 73's. No test shows `status --ignored=traditional` naming each wholly ignored folder as the slim relies on;
-a folder's last-write time changing when an entry in it is removed, which §5's step 4 answers (NTFS's and POSIX's documented
-behaviour, not run here); `GetDiskFreeSpaceExW` answering a mounted folder's volume; npm's clean install discarding `node_modules`
-whole (its documentation); the cache paths of §3.2's table on the install's profile; or which record of a session gives its start for
-§3.5's downloads guard. KEEP1a, KEEP1b, KEEP1e and KEEP1f prove them. What still crosses: a folder replaced by a junction between
-`DeleteNeverFollowing`'s check of it and its read is not closed by a check, only narrowed to that moment, under a trees home only
-Daoris writes; a program that outlived its session and writes nothing loses its packages at the slim, as it loses its folder at the
-purge. Claude Code's `cleanupPeriodDays` is read from its documentation. The floor's 20 GB and 10%, its bounds, the downloads' 7 days,
-the slim's hour and the margin are judgements, each a default the person sets or a bound, to be read again on the install after a
-week of KEEP1a.
+measured folder's, not the 73's, and `bin/` and `obj/` were not measured apart. No test shows `status --ignored=traditional` naming
+each wholly ignored folder as the slim relies on; a folder's last-write time changing when an entry in it is removed, which §5's step
+4 answers, and a copy taking a new creation time (NTFS's and POSIX's documented behaviour, not run here); `GetDiskFreeSpaceExW`
+answering a mounted folder's volume, or a junction's target's; npm's clean install discarding `node_modules` whole (its
+documentation); the cache paths of §3.2's table on the install's profile; or where a session's record keeps the binaries its start
+resolved (KEEP1b names the field). KEEP1a, KEEP1b, KEEP1e and KEEP1f prove them. What still crosses, besides the residuals above: a
+folder replaced by a junction between `DeleteNeverFollowing`'s check of it and its read is not closed by a check, only narrowed to
+that moment, under a trees home only Daoris writes. Claude Code's `cleanupPeriodDays` is read from its documentation. The floor's
+20 GB and 10%, its bounds, the downloads' 7 days, the slim's hour and the margin are judgements, each a default the person sets or a
+bound, to be read again on the install after a week of KEEP1a; that week also measures `obj/` apart from `bin/`, for KEEP1a2 (§7).
 
 ## 11. The reads (D191)
 
@@ -906,3 +1024,37 @@ leaves), and whether `obj/` alone, from which no program runs, may join; whether
 (the three locks taken in one order, the pin's writer looking again under its lock) and whether a session's start is the right fact
 for a version it may run; and whether §3.1's run lock and §3.3's run id hold when the desktop and a terminal alone meet. Then the
 steward checks Fable's findings and settles the design.
+
+**Fable, 2026-10-21, on §3 and §5 of round 2** (D191's note: durable records, removal nobody presses, a lock between processes, and
+decided rules others rest on), not shown Codex's read first. Every finding was checked against the code at `2cdc2e8c2` before it was
+taken (D160's step 9). All thirteen hold, F2.2 in part, and each is taken in round 3. (B) marks what the read called blocking, (N)
+what it did not.
+
+| # | Finding | Checked at | Verdict | Taken in |
+|---|---|---|---|---|
+| F1.1 | (N) Step 4's exception for the parent's write time hides a file copied or moved into the parent after the move: a copy and a move keep the source's last-write time, and the purge's read checks `LastWriteTimeUtc` only. Record when each path's removal ended and read the parent against that, not the move; check `CreationTimeUtc` too, as `TreeStrays.WrittenSince` does | `TreeSetAside.cs:390-398`, `TreeStrays.cs:287-288` | holds, taken | §2.3 and §5: the manifest's `ended`, step 4; §8; KEEP1a's proof |
+| F1.3 | (N) Name the exact residual: a pure-JavaScript program that outlived its session, holds nothing open and writes nothing, failing at its next lazy `require`; one with a loaded addon or its working folder in the tree already refuses the move | `TreeSetAside.cs:219-225` (`busy`) | holds, taken | §5 step 1; §10 *The residuals, exactly* |
+| F1.5 | (N) The judgement adds a `git status --ignored` walk inside the repository's hold, beside `NestedRepositories`' own: judge before the hold in `SweepPlanAsync` and check again inside it, or at least share one walk | `AutoTidies.cs:270, 286`, `TreeSweeps.cs:30, 152`, `TreeSetAside.cs:92, 118` | holds, taken whole: git's status read before the hold, the check inside it by the last look's own reads, one walk shared | §5 *The judgement*; KEEP1a |
+| F2.1 | (B) The downloads' first-unused time is recorded once and never reset: found unused at T0, pinned at T1, started on at T2 and unpinned at T3, the version reads at T4 as unused since T0 and is renamed under a live session, which an npm-layout agent does not refuse. A pass that finds it used clears its entry | `HarnessSettings.cs:509-516` | holds, taken | §2.1, §2.3, §7, §10; KEEP1b's proof gains the sequence |
+| F2.2 | (B) The keep-lock guard binds only the writers that take the lock: `DriverConfig.Save` and `JsonKeeping.Save` take it; `HarnessSettings.Save` only on its keeping path, writing a whole layout unlocked otherwise; `tools.json`'s writer none, D194 deferring it to PUSH1f2c and 2e; the CLI's `writeHarnessSettings` a second writer until PUSH1f2e. KEEP1b after every writer of the three files is under the lock, naming PUSH1f2c and 2e, or carrying it itself with a proof that a whole-layout write waits | `DriverConfig.cs:891`, `JsonKeeping.cs:71`, `HarnessSettings.cs:188-190`, `toolchain.ts:508-510`, `Tools.cs:431-432`, `tools.ts:423-424` | holds, taken; in part for `tools.json`, whose two writers took the lock with KEEPALL1c after D194's read. The harness file's whole-layout write is unlocked on both sides. PUSH1f2c stays named: it reshapes `TOOLS_DELETE` and the download's staging, which KEEP1b's act takes over | §3.5 *The guard binds only the writers that take the lock*; §7; §9's order and KEEP1b; §10 |
+| F2.3 | (N) Hold the three locks per version, from the judgement to the rename only, never across the removal, so a person's pin or `SET_KEEP` is not refused after the keep lock's ten seconds | `KeepLock.cs:35`, `RecordLock.cs:23` | holds, taken | §3.5, §6.8, §7; KEEP1b's proof |
+| F2.4 | (N) Lock the harness file the roster reads, `HarnessSettings.ResolvePath(home)`, which `DAORIS_HARNESS_CONFIG` may name elsewhere, not `harnesses.json` by name | `HarnessSettings.cs:88, 104` | holds, taken; `driver.json` likewise at the path the loop resolves (`DownloadClearing.cs:45-51`) | §3.5; KEEP1b's proof |
+| F2.5 | (N) Judge whether a session may still run a version by the binary it resolved, recorded on its session record (an ACP session resolves two); keep the start-time rule for older records | `HarnessRoster.cs:1083, 1134-1143` | holds, taken | §3.5, §6.1, §7, §8; KEEP1b, with the service's session record |
+| F3.1 | (N) The run lock is a try, in `TreeLock.TryOpen`'s shape, not `RecordLock`'s ten-second wait; it writes `{ pid, since }` to a sibling file its holder owns, so a refusal names the holder and the card can say a terminal's run is under way | `TreeLock.cs:78`, `RecordLock.cs:23`, `KeepLock.cs:78` | holds, taken, the file naming the door too | §3.1, §4.2, §4.4's `held`, §6.8, §7; KEEP1a, KEEP1c |
+| F3.3 | (N) After a crash, the card's `last` may be older than the folders: say so | round 2's §3.3 | holds, taken: the holder's file a dead process left is read as a run stopped before its end | §3.3, §4.2, §10; KEEP1a, KEEP1c |
+| F4.1 | (N) The browser's caches below the floor once in each stretch below, reset at `space.ok`, not every hour | round 2's §3.2 | holds, taken | §3.2, §7; KEEP1f's proof |
+| F4.3 | (N) Read free space for each kind's own entry path (the trees, the cache), since the trees home may sit on another volume through a junction | round 2's §3.2 | holds, taken | §3.2, §4.1, §4.4's `kinds[].volume`, §7; KEEP1f's proof |
+| F5 | (N) `obj/` may join the slim later, on evidence: measured apart in §10's week, then a second producer rule in a row of its own after KEEP1a; `bin/` never, since a program run from it writes beside itself | round 2's §7 and §11 | holds, taken | §7; §9's KEEP1a2; §10 |
+
+**The choices this round made**, where two shapes remained: the judgement both made before the hold and checked inside it, rather
+than one of the two (F1.5); KEEP1b after PUSH1f2c and PUSH1f2e rather than carrying their locks, the harness file's whole-layout
+write carried only by a KEEP1b built first (F2.2); a session's resolved binaries on its record rather than a lease on the version,
+its start kept for older records (F2.5); and the run lock's holder file naming its door, so the card tells a terminal's run under way
+from one a crash cut short (F3.1, F3.3).
+
+**Settled.** The steward checked each take against this revision: first-unused reset by a pass that finds the version used; KEEP1b
+after every writer of the use files takes the keep lock; the use files' locks held per version, on the path the roster and the loop
+resolve; a running session's resolved binaries kept; the purge reading creation times and the parent against the removal's end; the
+judgement before the hold; the run lock tried with its holder named; the floor per volume and the browser's caches once per stretch
+below; `obj/` on evidence, `bin/` never. Every finding of both reads is taken, and the owner decided §3.6. The design
+is accepted (D195's note of 2026-10-21); its rows are §9's, KEEP1a to 1g and KEEP1a2.
