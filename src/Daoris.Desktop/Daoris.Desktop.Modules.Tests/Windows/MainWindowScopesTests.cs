@@ -158,6 +158,43 @@ public sealed class MainWindowScopesTests
         Assert.Null(MainWindowScopes.WorkspaceOf(null, null, "s1a2b3c4", "q1"));
     }
 
+    /// <summary>
+    /// Held on the application's own source, since no window opens without a desktop session (as <see cref="SecondLaunchTests"/> holds
+    /// MAINWINDOWS2's): every main window's focus and close reach the registry, a balloon's click is picked from it and brings that
+    /// window forward, the attend names it, and each main window's count goes to its own frame.
+    /// </summary>
+    [Fact]
+    public void The_application_tells_the_registry_and_a_balloon_s_click_reads_it()
+    {
+        var app = Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.App");
+        var program = File.ReadAllText(Path.Combine(app, "Program.cs"));
+        var first = File.ReadAllText(Path.Combine(app, "MainForm.cs"));
+        var host = File.ReadAllText(Path.Combine(app, "SecondaryWindowHost.cs"));
+        var tray = File.ReadAllText(Path.Combine(app, "SessionNotifier.cs"));
+
+        Assert.Contains("new MainWindowScopes(sp.GetRequiredService<MainWindows>())", program);
+        Assert.Contains("if (window == MainWindows.First) sp.GetRequiredService<MainForm>().ShowWaiting(count, description);", program);
+        Assert.Contains("else sp.GetRequiredService<SecondaryWindowHost>().ShowWaiting(window);", program);
+        Assert.Contains("Activated += (_, _) => scopes.CameForward(MainWindows.First);", first);
+        Assert.Contains("(session, quest) => scopes.PickFor(driver.Slices, session, quest)", first);
+        Assert.Contains("Payload = new { Session = session, Window = window }", first);
+        Assert.Contains("form.Activated += (_, _) => scopes.CameForward(name);", host);
+        Assert.Contains("scopes?.Closed(name);", host);
+        Assert.Contains("waiting?.Closed(name);", host);
+        Assert.Contains("_icon.BalloonTipClicked += (_, _) => Open(_about, _aboutQuest);", tray);
+    }
+
     private static SliceSnapshot Snapshot(string slice, IReadOnlyList<SliceJudged> judged) =>
         new(slice, "e1", StateSlice.Ready, [.. judged.Select(each => new SlicePartition(each.Partition, 1, StateSlice.Ready, each.Data))]);
+
+    private static string RepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "daoris.json")))
+        {
+            directory = directory.Parent;
+        }
+
+        return directory?.FullName ?? throw new InvalidOperationException("the tests run outside a checkout");
+    }
 }
