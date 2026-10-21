@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  AGENT_ROUTES, AGENT_VERBS, DRIVER_MODULE, DRIVER_ROUTES, DRIVER_VERBS, PLUGIN_ROUTES, PLUGIN_VERBS, TOOL_ROUTES, TOOL_VERBS,
+  AGENT_ROUTES, AGENT_VERBS, DRIVER_MODULE, DRIVER_ROUTES, DRIVER_VERBS, PLUGIN_ROUTES, PLUGIN_VERBS,
   type InstanceRoute, type RouteClass,
 } from '../../src/platform/door.ts';
 import { desktopFile } from '../_csharp.ts';
@@ -36,16 +36,18 @@ function censusClasses(): Map<string, RouteClass> {
 /** The payload field a route classed by its payload is sent with by a verb, as JSON: `plugin update --yes` sends `apply: true`. */
 const PAYLOADS: Record<string, Record<string, string>> = { PLUGIN_UPDATE: { apply: 'true' } };
 
+// `daoris tool`'s are the driver program's since PUSH1f2c: `ToolRoutes`, which the modules' `PipeCensusTests` holds to the census.
 const SENT: readonly InstanceRoute[] = [
-  ...Object.values(DRIVER_ROUTES), ...Object.values(PLUGIN_ROUTES), ...Object.values(TOOL_ROUTES), ...Object.values(AGENT_ROUTES),
+  ...Object.values(DRIVER_ROUTES), ...Object.values(PLUGIN_ROUTES), ...Object.values(AGENT_ROUTES),
 ];
-const VERBS = [...DRIVER_VERBS, ...PLUGIN_VERBS, ...TOOL_VERBS, ...AGENT_VERBS];
+const VERBS = [...DRIVER_VERBS, ...PLUGIN_VERBS, ...AGENT_VERBS];
 
 test('the census is read: its reads are open, its standing choices the person\'s, its pickers the window\'s', () => {
   const classes = censusClasses();
   assert.equal(classes.get('STATE'), 'open');
   assert.equal(classes.get('SET_TREES'), 'person');
   assert.equal(classes.get('TOOLS_PICK'), 'window');
+  assert.equal(classes.get('TOOLS_LOOK'), 'open');
   // A route classed by its payload: an update's preview is open, and the press a verb sends, `apply: true`, the person's.
   assert.equal(classes.get('PLUGIN_UPDATE'), 'person');
   assert.ok(classes.size > 100, `the census read ${classes.size} routes`);

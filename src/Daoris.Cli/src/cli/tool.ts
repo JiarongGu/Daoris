@@ -1,8 +1,5 @@
 import type { CliCommand } from '../platform/types.ts';
-import { LOOK_BOUND_MS, REDIRECTS, commandTool } from '../tools/toolinstall.ts';
-import { isAddress } from '../tools/tools.ts';
-import { daorisHome } from '../platform/home.ts';
-import { instanceDoor, releaseFetcher } from '../service/service.ts';
+import { runDriverProgram } from '../agents/toolchain.ts';
 
 export const command: CliCommand = {
   name: 'tool',
@@ -30,9 +27,8 @@ export const command: CliCommand = {
     '                                                   order, then the one built in',
     '                         look                      fetch every location; say what is newer',
   ],
-  // TOOLS4: a download and a look reach a maker's host and a resource location through the one module that may
-  // reach a network, handed in here with the address rule every hop is held to, so the tools never hold a socket. So is the door
-  // a change goes through (RPC1f): the Tools place's route while Daoris runs on this home, alone under the home's lease when none does.
-  run: (args) => commandTool(args, releaseFetcher({ hop: isAddress, redirects: REDIRECTS, bound: LOOK_BOUND_MS }), process.env,
-    instanceDoor({ home: daorisHome(), write: args.write })),
+  // PUSH1f2c (D194 point 1): the whole family is Daoris's driver program's, `daoris-driver tool` with the same words, the one row
+  // that builds it; this writes nothing before it starts. The program reaches a tool's maker and a resource location itself, its
+  // download staged under its own process and published under the home's lease (the alone-path design §1.4).
+  run: (args) => (args.driverProgram ?? ((family, words) => runDriverProgram(family, words)))('tool', args.argv),
 };

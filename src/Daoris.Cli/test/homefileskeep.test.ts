@@ -10,7 +10,6 @@ import { setBrowser, setExtensions, setLinks } from '../src/browser/browser.ts';
 import { homeEntry } from '../src/platform/home.ts';
 import { disablePlugin, enablePlugin } from '../src/plugins/plugins.ts';
 import { readRemoteFile, readRemotes, withoutRemote, withRemote, writeRemoteFile } from '../src/service/remotemap.ts';
-import { addLocation, removeLocation, useSystem } from '../src/tools/tools.ts';
 import { makeFixture } from './_fixture.ts';
 
 /**
@@ -105,14 +104,6 @@ function applied(home: string, row: Row, between: () => void): void {
     writeRemoteFile(path, edited);
     return;
   }
-  if (row.file === 'tools.json') {
-    between();
-    if (edit.op === 'tool-system') useSystem(home, edit.id!);
-    else if (edit.op === 'location-add') addLocation(home, edit.address!);
-    else if (edit.op === 'location-remove') removeLocation(home, edit.address!);
-    else throw new Error(`the table names an edit this test does not make: ${edit.op}`);
-    return;
-  }
   if (row.file === 'browser/settings.json') {
     between();
     if (edit.op === 'browser-extensions') setExtensions(home, edit.value as 'offer');
@@ -126,7 +117,7 @@ function applied(home: string, row: Row, between: () => void): void {
 
 // A test a row, so each row passes or fails on its own.
 TABLE.rows.forEach((row, index) => {
-  // A row the driver alone writes (`plugin-approvals.json`, KEEPALL1d) has no writer here.
+  // A row the driver alone writes (`plugin-approvals.json`, KEEPALL1d; `tools.json` since PUSH1f2c) has no writer here.
   const skip = row.only !== undefined && row.only !== 'cli' ? `the ${row.only}'s alone` : false;
   test(`homefileskeep: the shared table writes the bytes the driver writes: ${row.name}`, { skip }, () => {
     const fx = makeFixture(`home-files-keep-${index}`);
