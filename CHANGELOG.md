@@ -9,6 +9,13 @@ with the version and date at release.
   page, with how long since its sessions stopped and its quests closed. It is listed under *Waiting for your word* and offers only
   *Refuse…*. Where two or more are stale, *Refuse all …* refuses them together with one reason you give, each on its own ask. A
   refusal of a stale go-ahead sends no session on and starts nothing.
+- Daoris's system notifications, shown while Daoris is behind another program, now speak the window's language: a window in 中文
+  raises them in 中文. A terminal's request for your confirmation is named by what it asks to do, never by its route or a value it
+  carries. A session that parks, ends or answers you, a quest parked on its failed sessions and a start waiting for an account are
+  said in the window's words, an ending by its state in plain words, and what the session wrote as it wrote it; the notices inside
+  the window are worded the same way. A tool call a session holds for your answer is now announced as a parked session is.
+  Settings → Driver's switch, now *Announce what needs you or ended*, says what it turns on and off, and that a terminal's request
+  is announced either way.
 - A version of an agent or a tool that Daoris downloaded and nothing uses now goes by itself seven days after Daoris first finds it
   unused; a pin, Tools' use or a setting naming it again starts the count anew. A version a running session was handed stays while
   that session runs. Settings → This Daoris → *Clear unused downloads…* says the rule and, beside each unused version, the day it

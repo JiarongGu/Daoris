@@ -349,6 +349,28 @@ public sealed class WindowsModuleTests : Bridge
         Assert.Equal([(MainWindows.First, 0, null), (MainWindows.First, 0, null)], _badges);
     }
 
+    /// <summary>
+    /// NOTIFY2d (the notification design §3.3): a main window's page hands the shell's notifier the notices' words in its language, at
+    /// its load and at each change of language, as it tells its count's words; the notifier words each balloon from them.
+    /// </summary>
+    [Fact]
+    public async Task A_page_hands_the_notifier_its_notices_words()
+    {
+        var notices = new NoticeWords();
+        var module = new WindowsModule(Bus, _windows, new PlatformAddress(Service), notices: notices);
+
+        var told = await AnswerAsync(module, "SET_NOTICE_WORDS", new
+        {
+            words = new Dictionary<string, string> { ["notifications.system.parked.title"] = "{{repository}}：一个会话等你处理" },
+        });
+
+        Assert.True(told.GetProperty("applied").GetBoolean());
+        Assert.Equal("{{repository}}：一个会话等你处理", notices.Now!["notifications.system.parked.title"]);
+        // A host with no notifier keeps no words, and says so.
+        var none = await AnswerAsync(Module(), "SET_NOTICE_WORDS", new { words = new Dictionary<string, string> { ["a"] = "b" } });
+        Assert.False(none.GetProperty("applied").GetBoolean());
+    }
+
     /// <summary>A host with no main window (a test, a headless composition) has no button to badge, and says so.</summary>
     [Fact]
     public async Task A_host_with_no_window_to_badge_answers_that_it_did_not()

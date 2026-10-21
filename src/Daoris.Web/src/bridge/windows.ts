@@ -1,12 +1,15 @@
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useMutation } from '@tanstack/react-query';
 import { ColorScheme, getBridge, useShenora } from '@shenora/react';
 import { effectiveDark, subscribeTheme, themeChoice } from '../design/theme';
 import { useScope } from '../data/scope';
+import { noticeWords } from '../notifications/noticeWords';
 import { anotherMainWindow, secondaryWindow } from '../work/window';
 
 // This build's secondary windows (MOD3): opening one, and telling its frame the theme; telling the engine every window
-// renders on the viewer's choice (THEMESCHEME1); and telling each main window's taskbar button what waits (NOTIFY1b, NOTIFY2c).
+// renders on the viewer's choice (THEMESCHEME1); telling each main window's taskbar button what waits (NOTIFY1b, NOTIFY2c); and
+// handing the shell's notifier the notices' words in the page's language (NOTIFY2d).
 
 /**
  * Open one of this build's secondary windows (D55 §b, SURF8): the monitor, or one session detached.
@@ -118,6 +121,32 @@ export function useTaskbarCount(count: number, description: string) {
       payload: name ? { name, count, description, order } : { count, description, order },
     }).catch(() => {});
   }, [isAvailable, count, description]);
+}
+
+/**
+ * A main window's page handing the shell's notifier the notices' words in its language (NOTIFY2d, D196, the notification design §3.3):
+ * at its load and at each change of language, the way the count's words are told. The notifier has no catalogue, so a balloon
+ * behind a window reading 中文 said English until it was handed these; it words each kind from them with the event's facts.
+ *
+ * @remarks
+ * **A main window's.** Every main window speaks the one language this machine chose, and the shell keeps the last words told; a
+ * utility window (the monitor, a detached session) tells none, as it tells no count. Fire and forget: a shell that cannot be told
+ * says English, as before.
+ */
+export function useNoticeWords() {
+  const { isAvailable } = useShenora();
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  useEffect(() => {
+    if (!isAvailable || secondaryWindow(globalThis.location?.search ?? '') !== null) return;
+    try {
+      void getBridge().invoke('DAORIS.WINDOWS', 'SET_NOTICE_WORDS', { payload: { words: noticeWords(t) } }).catch(() => {});
+    } catch {
+      // No bridge at all: a browser has no notifier to tell.
+    }
+    // The language names the change; `t` follows it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAvailable, language]);
 }
 
 /** The order the last count was told in. */

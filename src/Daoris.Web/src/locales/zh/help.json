@@ -262,7 +262,7 @@
   "help.grants.op.housekeeping.clean-up": "清理工作树和分支",
   "help.grants.op.housekeeping.discard-branch": "按名称丢弃会话分支",
   "help.grants.op.housekeeping.drop-recovery": "删除不再被持有的恢复引用",
-  "help.grants.op.settings.notify": "会话挂起时通知",
+  "help.grants.op.settings.notify": "提醒等你处理和已结束的事",
   "help.grants.op.settings.language": "会话语言",
   "help.grants.op.settings.timeout": "单个会话可运行的时长",
   "help.grants.op.settings.cap": "本机同时运行的会话数",

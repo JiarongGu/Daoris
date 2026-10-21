@@ -165,20 +165,34 @@ public static class AttentionStateSlice
         new(PipeConfirmations.Event),
     ];
 
-    /// <summary>The slice the shell's loop owns, judged from what <paramref name="loop"/> holds in memory.</summary>
+    /// <summary>
+    /// The slice the shell's loop owns, judged from what <paramref name="loop"/> holds in memory; a held tool call's row first seen is
+    /// announced while the loop's notify switch is on (NOTIFY2d).
+    /// </summary>
     public static StateSlice Of(DriverLoop loop, IEventBus bus) =>
         Of(ct => FactsAsync(loop, ct), bus,
             [wake => HearSlices(loop.Slices, wake), wake => HearHolds(HeldPermissions.Of(loop.Events), wake), wake => HearRegistry(loop.Facts, wake)],
-            loop.Log);
+            loop.Log, new HeldCallAnnouncements(bus, loop.Notifying));
 
     /// <summary>The slice over <paramref name="facts"/>, read at each judgement, woken where <paramref name="hears"/> hear a move.</summary>
-    public static StateSlice Of(Func<AttentionFacts?> facts, IEventBus bus, IReadOnlyList<Func<Action, IDisposable>> hears, MachineLog? log = null) =>
-        Of(_ => Task.FromResult(facts()), bus, hears, log);
-
-    /// <summary>The slice over what <paramref name="facts"/> reads at each judgement.</summary>
     public static StateSlice Of(
-        Func<CancellationToken, Task<AttentionFacts?>> facts, IEventBus bus, IReadOnlyList<Func<Action, IDisposable>> hears, MachineLog? log = null) =>
-        new(Name, bus, async ct => Judge(await facts(ct).ConfigureAwait(false)))
+        Func<AttentionFacts?> facts, IEventBus bus, IReadOnlyList<Func<Action, IDisposable>> hears, MachineLog? log = null,
+        HeldCallAnnouncements? held = null) =>
+        Of(_ => Task.FromResult(facts()), bus, hears, log, held);
+
+    /// <summary>
+    /// The slice over what <paramref name="facts"/> reads at each judgement; <paramref name="held"/>, where named, told each judgement, so
+    /// a held tool call is announced where its row is first seen (NOTIFY2d).
+    /// </summary>
+    public static StateSlice Of(
+        Func<CancellationToken, Task<AttentionFacts?>> facts, IEventBus bus, IReadOnlyList<Func<Action, IDisposable>> hears, MachineLog? log = null,
+        HeldCallAnnouncements? held = null) =>
+        new(Name, bus, async ct =>
+        {
+            var judged = Judge(await facts(ct).ConfigureAwait(false));
+            if (judged is not null) held?.Judged(judged);
+            return judged;
+        })
         {
             Keyed = true,
             WakesOn = WakesOn,

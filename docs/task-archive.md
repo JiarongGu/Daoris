@@ -19151,3 +19151,10 @@ D196's NOTIFY2j note. On Opus.
 **Outcome** 2026-10-22: built. The ask the look holds waiting is a `hand-over` row by its own id (`AttentionStateSlice.HandOverWaits`,
 `NeedsAPerson`), with *Hand over to {agent}* and *Not now* through the session's own routes, its door the session, counted by the bell
 and the taskbar; it holds work once its session's turn has ended (`attentionGroup`). Detail: D196's NOTIFY2e note. On Opus.
+
+## NOTIFY2d — behind the window, what waits is announced in the person's language (2026-10-22, D196)
+
+> - [ ] **NOTIFY2d — behind the window, what waits is announced in the person's language** (modules, web-shell, web-settings; after 2b; D196, the notification design §9). The shell's notifications are worded from the words the page hands it; a held tool call is announced as a park is; the notify switch says what it governs. Proof: as §9 names it.
+
+**Outcome** 2026-10-22: built. Each balloon is worded from the words a main window hands (`SET_NOTICE_WORDS`, `SessionBalloon`), the
+window's toasts likewise; a held call is `Holding`, said once under the switch; the switch says what it governs. Detail: D196's NOTIFY2d note. On Opus.

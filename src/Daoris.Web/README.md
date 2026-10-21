@@ -231,6 +231,10 @@ NOTIFY1b, NOTIFY2c), another main window by its name, which that frame wears on 
 utility window's page never does. Each count carries a later `order` than the one before, so the frame never wears an
 older count over a newer (SESSBADGE1). Its title carries the workspace it holds as data (`SET_TITLE`'s `workspace`),
 from which the shell picks the window a notification opens, naming it on `ATTEND_SESSION` so that window alone attends.
+A main window's page also hands the shell's notifier the notices' words in its language, at its load and at each change of
+language (`useNoticeWords`, `SET_NOTICE_WORDS`, NOTIFY2d): every key under `notifications.system.` and `person.route.`,
+placeholders kept, so a balloon behind the window speaks as the window does; the window's own toast for the same attention
+is worded from the same keys (`attentionToast` in `notifications/noticeWords.ts`).
 That count includes a plugin step's attempt held for the person, which `WORK_STATE` lists as `held` and its row settles with
 their word (`useResolveHeld` in `bridge/repositories/lines.ts`, `WORK_HELD`, FABRIC-PERFORM1g), a node record that does not read,
 which `WORK_STATE` lists as `unreadable` and its row's press opens the folder of (`useOpenWorkRecords`, `WORK_RECORDS_FOLDER`,

@@ -233,6 +233,9 @@ internal static class Program
         // the notification design §9): the one holding what it is about, or the main window last in front where none or several do.
         builder.Services.AddSingleton(sp => new MainWindowScopes(sp.GetRequiredService<MainWindows>()));
         builder.Services.AddSingleton<BringForward>(sp => window => sp.GetRequiredService<SecondaryWindowHost>().BringForward(window));
+        // The words the notifier says each balloon in, as a main window's page hands them in its language (NOTIFY2d, the notification
+        // design §3.3): told through the windows module, read by the notifier at each balloon.
+        builder.Services.AddSingleton(new NoticeWords());
         // And the workspace each main window's page holds, worn in its title (MAINWINDOWS3b): no name is the first main window.
         builder.Services.AddSingleton<ShowWorkspace>(sp => (name, workspace) =>
         {

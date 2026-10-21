@@ -106,7 +106,7 @@
   "person.route.SET_LANDING": "更改一个仓库的工作如何落地",
   "person.route.SET_LANGUAGE": "更改会话写给你时所用的语言",
   "person.route.SET_LINE": "更改一个仓库的主线",
-  "person.route.SET_NOTIFY": "更改 Daoris 是否告诉你什么已结束",
+  "person.route.SET_NOTIFY": "更改 Daoris 是否提醒等你处理和已结束的事",
   "person.route.SET_OPINION": "更改何时请求第二意见",
   "person.route.SET_READ_ACROSS": "更改一个仓库的会话可以在别处读取什么",
   "person.route.SET_REVIEW": "更改工作落地前如何审阅",

@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import { sentence } from '../locales/format';
+import { type AttentionTold, attentionToast } from '../notifications/noticeWords';
 import { keys } from '../data/queries';
 import {
   accountsSlice, asksSlice, attentionSlice, callsSlice, driverSlice, groupsSlice, linesSlice, notPushed, questsSlice, sessionsSlice,
@@ -44,6 +46,7 @@ export function ShellSignals({ notify, onAttend, attended, onConfirming }: {
   onAttend?: (session: string) => void;
 }) {
   const { isAvailable, bridge } = useShenora();
+  const { t } = useTranslation();
   const client = useQueryClient();
   /** What the last tick said, so an unchanged report is not said again. A ref: it must not re-render. */
   const toldLast = useRef<string[]>([]);
@@ -142,11 +145,14 @@ export function ShellSignals({ notify, onAttend, attended, onConfirming }: {
    * while nobody is looking at the window — so this is the half for when somebody IS, and the two
    * never both fire because the shell tests the foreground before raising one.
    *
-   * The sentence is the driver's own and is rendered verbatim, like every other sentence it
-   * writes (D24): it is composed once in `AttentionWatch` so a toast here and a line on a headless
-   * machine cannot drift.
+   * A held tool call (NOTIFY2d), which its bound refuses by itself, is said as a park is.
+   *
+   * Said in the window's words (NOTIFY2d, the notification design §3.3): each kind's headline as the
+   * shell's balloon says it behind the window, and what a session wrote beside it as written; the
+   * driver's English headline only for a kind this build does not word. A window reading 中文 toasted
+   * the driver's English until then.
    */
-  useShenoraEvent<{ headline?: string; detail?: string; kind?: string; session?: string; id?: string }>(
+  useShenoraEvent<AttentionTold>(
     'DAORIS', 'SESSION_ATTENTION', (item) => {
       // NOTIFY2b (§3.3): a terminal's press is announced by the window in its own words, keyed on the press's id, never in the
       // shell's English; its card is in *Notifications*, and the shell's balloon is for when no window is in front.
@@ -159,11 +165,12 @@ export function ShellSignals({ notify, onAttend, attended, onConfirming }: {
       // so a toast over it is noise. Only that kind: a park or an ending of the attended session still interrupts.
       const reading = item.kind === 'Answered' && attended != null && item.session === attended
         && typeof document !== 'undefined' && document.visibilityState === 'visible';
-      if (!reading) {
+      const said = reading ? null : attentionToast(t, item);
+      if (said) {
         notify(
-          item.detail ? `${item.headline}: ${item.detail}` : item.headline,
-          // A park is the one that is WAITING on somebody; an ending, or an answer, is news.
-          item.kind === 'Parked' || item.kind === 'QuestParked' ? 'error' : 'ok');
+          said,
+          // A park is the one that is WAITING on somebody, as a held tool call is; an ending, or an answer, is news.
+          item.kind === 'Parked' || item.kind === 'QuestParked' || item.kind === 'Holding' ? 'error' : 'ok');
       }
       void client.invalidateQueries({ queryKey: keys.allSessions, predicate: notPushed(client) });
     });

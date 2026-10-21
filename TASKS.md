@@ -62,7 +62,6 @@ holds the detail. The structural changes come first, so the features built after
 
 ## UI/UX first
 
-- [ ] **NOTIFY2d — behind the window, what waits is announced in the person's language** (modules, web-shell, web-settings; after 2b; D196, the notification design §9). The shell's notifications are worded from the words the page hands it; a held tool call is announced as a park is; the notify switch says what it governs. Proof: as §9 names it.
 - [ ] **NOTIFY2f — what ended, failed or went unanswered is kept in Notifications** (driver, modules, web-shell; after 2b; D196, the notification design §9). *Done and failed* from `data/notices.json`, written by any process under its keep lock and read alike in every window, a week and at most 200 kept. Proof: as §9 names it.
 - [ ] **NOTIFY2g — an agent's message reaches Notifications by its urgency** (service, modules, web-shell; after 2f; D196, the notification design §9). *Messages* per ask on the service's own count, a teammate's ask marked on this machine, an urgent message to everyone toasted once, a conversation's answer kept as a notice. Proof: as §9 names it.
 - [ ] **NOTIFY2h — the look's lines are logged, not toasted** (driver, modules, web-shell; after 2e and 2f; D196, the notification design §9). Each line the look says is a declared machine-log event first, then classed: news a coded notice, a wait its row, the rest the log's. Proof: as §9 names it, a census over every line.

@@ -262,7 +262,7 @@
   "help.grants.op.housekeeping.clean-up": "Clean up trees and branches",
   "help.grants.op.housekeeping.discard-branch": "Discard a session branch by name",
   "help.grants.op.housekeeping.drop-recovery": "Delete recovery refs nothing holds",
-  "help.grants.op.settings.notify": "Notify when a session parks",
+  "help.grants.op.settings.notify": "Announce what needs you or ended",
   "help.grants.op.settings.language": "A session’s language",
   "help.grants.op.settings.timeout": "How long one session may run",
   "help.grants.op.settings.cap": "Sessions at once on this machine",
