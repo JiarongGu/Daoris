@@ -80,13 +80,14 @@ public static class AccountCooling
     /// <summary>
     /// Cool an account (a limit read): its entry replaced whole, every passed entry dropped, and the rest kept as written.
     /// </summary>
-    public static void Cool(string home, CoolingEntry entry, DateTimeOffset now) => Edit(home, now, root =>
+    /// <param name="read">Called once the file is read, before the edit is written: a test's other writer, held off by the keep lock.</param>
+    public static void Cool(string home, CoolingEntry entry, DateTimeOffset now, Action? read = null) => Edit(home, now, root =>
     {
         var agent = Made(root, entry.Agent);
         if (Key(agent, entry.Account ?? "") is { } held) agent.Remove(held);
         agent[entry.Account ?? ""] = Written(entry);
         return true;
-    });
+    }, read);
 
     /// <summary>End one account's cool-off early (<i>Try now</i>, a sign-in, a key). True when it was cooling.</summary>
     public static bool End(string home, string agent, string? account, DateTimeOffset now)
@@ -158,11 +159,18 @@ public static class AccountCooling
     }
 
     /// <summary>Read, change and write the file whole, atomically, with every passed entry dropped.</summary>
-    private static void Edit(string home, DateTimeOffset now, Func<JsonObject, bool> change)
+    /// <remarks>
+    /// 🔴 <b>The file's <see cref="KeepLock"/> is held from the read to the write</b> (PUSH1f2e, the alone-path design §1.4): the gate keeps
+    /// this process's writers apart, and the lock another process's, a terminal's sign-in beside the window's limit read among them, so
+    /// neither writes the file whole over an entry the other wrote after its read.
+    /// </remarks>
+    private static void Edit(string home, DateTimeOffset now, Func<JsonObject, bool> change, Action? read = null)
     {
         lock (Gate)
         {
+            using var locked = KeepLock.Take(PathOf(home));
             var root = Load(home);
+            read?.Invoke();
             if (!change(root)) return;
 
             foreach (var (name, accounts) in root.ToList())

@@ -704,7 +704,7 @@ public sealed class HelpRoutes(DriverContext context)
             var owner = AccountsRoutes.OwnerOf(_loop.Harnesses, harness);
             try
             {
-                AccountsRoutes.UseEdited(_loop.Harnesses.Settings, owner, change, workspace).Save(_loop.Harnesses.SettingsPath);
+                HarnessSettings.Change(_loop.Harnesses.SettingsPath, read => AccountsRoutes.UseEdited(read, owner, change, workspace));
             }
             catch (ShenoraException refused)
             {
@@ -720,18 +720,18 @@ public sealed class HelpRoutes(DriverContext context)
         public Task SetAccountOrderAsync(string harness, IReadOnlyList<string> accounts, bool clear, string? workspace, CancellationToken ct)
         {
             var owner = AccountsRoutes.OwnerOf(_loop.Harnesses, harness);
-            var settings = _loop.Harnesses.Settings;
             try
             {
                 if (clear)
                 {
                     var circle = workspace ?? throw new DriverException("returning to this machine's accounts names the workspace that returns.");
-                    settings.WithWorkspaceDefault(circle, owner, null).WithRotation(owner, null, circle).Save(_loop.Harnesses.SettingsPath);
+                    HarnessSettings.Change(_loop.Harnesses.SettingsPath,
+                        read => read.WithWorkspaceDefault(circle, owner, null).WithRotation(owner, null, circle));
                 }
                 else
                 {
-                    AccountsRoutes.OrderEdited(settings, HarnessSettings.Profiles(_loop.Harnesses.Home, owner), owner, accounts, workspace)
-                        .Save(_loop.Harnesses.SettingsPath);
+                    HarnessSettings.Change(_loop.Harnesses.SettingsPath,
+                        read => AccountsRoutes.OrderEdited(read, HarnessSettings.Profiles(_loop.Harnesses.Home, owner), owner, accounts, workspace));
                 }
             }
             catch (ShenoraException refused)

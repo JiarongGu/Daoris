@@ -178,6 +178,34 @@ public sealed record HarnessSettings(
     /// </exception>
     public void Save(string path)
     {
+        using var held = KeepLock.Take(path);
+        SaveHolding(path);
+    }
+
+    /// <summary>
+    /// One change of the wiring under its keep lock (PUSH1f2e, the alone-path design §1.4): the lock, the file read, the edit decided
+    /// from it as it stands, the whole write, so a change another writer lands meanwhile, the window's or a terminal's, waits its turn
+    /// rather than being decided against. Every writer of <c>harnesses.json</c> goes through it: the window's routes, Ask Daoris's apply,
+    /// and the terminal's account verbs.
+    /// </summary>
+    /// <param name="edit">The change, from the wiring as read under the lock; it may throw to refuse it, nothing written.</param>
+    /// <param name="read">Called once the file is read, before the edit is written: a test's other writer, held off by the lock.</param>
+    /// <returns>The wiring as written.</returns>
+    /// <exception cref="DriverException">The file does not read, or the edit is refused; nothing was written.</exception>
+    /// <exception cref="IOException">Another writer held the file's lock for the whole of the wait; nothing was written.</exception>
+    public static HarnessSettings Change(string path, Func<HarnessSettings, HarnessSettings> edit, Action? read = null)
+    {
+        using var held = KeepLock.Take(path);
+        var settings = Load(path);
+        read?.Invoke();
+        var changed = edit(settings);
+        changed.SaveHolding(path);
+        return changed;
+    }
+
+    /// <summary><see cref="Save"/> for a writer already holding the file's <see cref="KeepLock"/>.</summary>
+    private void SaveHolding(string path)
+    {
         if (Problem is not null)
         {
             throw new DriverException(
@@ -185,7 +213,7 @@ public sealed record HarnessSettings(
                 + "Fix the file or remove it, then make the change again.");
         }
 
-        if (Understood is { } understood) JsonKeeping.Save(path, Found, understood, Layout(asRead: false));
+        if (Understood is { } understood) JsonKeeping.SaveHolding(path, Found, understood, Layout(asRead: false));
         // LF on every platform, as the CLI's writer writes it: both write this file, the same wiring as the same bytes.
         else JsonFile.Write(path, writer => Write(writer, asRead: false));
     }
