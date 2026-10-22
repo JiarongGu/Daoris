@@ -23,6 +23,46 @@ public sealed class HelpPublishedTests : HelpProposalsFixture
         Assert.Equal(("p7", "ask", "work", "a1b2c3d4", "q1a2b3c4"), (kept.Proposal, kept.Kind, kept.Workspace, kept.Ask, kept.Quest));
     }
 
+    /// <summary>
+    /// What the conversation is told names the ask and the quest by id, whatever the service's sentence says: an id it names already is
+    /// not said twice. Codex's read of the design (D191): the ids reached the agent only where the sentence happened to name them.
+    /// </summary>
+    [Theory]
+    [InlineData("Asked as `#a1b2c3d4` in `work`.", "Asked as `#a1b2c3d4` in `work`. (quest `#q1a2b3c4`)")]
+    [InlineData("Asked as `#a1b2c3d4` in `work`. Published quest `#q1a2b3c4` to `engine`.", "Asked as `#a1b2c3d4` in `work`. Published quest `#q1a2b3c4` to `engine`.")]
+    [InlineData("Asked.", "Asked. (ask `#a1b2c3d4`, quest `#q1a2b3c4`)")]
+    public async Task An_asks_apply_tells_the_ids_its_sentence_does_not_name(string message, string told)
+    {
+        var doors = new HelpStandInDoors { Asked = new AskAnswer(true, message, "a1b2c3d4", "q1a2b3c4") };
+
+        var (applied, _, _) = await ApplyAsync(
+            new HelpProposal("p7", "ask", "ask", null, "work", null, "start it", "why", "h1", "proposed"), doors);
+
+        Assert.EndsWith($" — {told}", applied.Told);
+    }
+
+    /// <summary>One Apply settles a proposal (HELPAPPLY1's claim), so a second entry for it is never kept.</summary>
+    [Fact]
+    public void A_proposal_kept_already_keeps_its_first_entry()
+    {
+        var kept = new HelpPublished(_home);
+        kept.Keep("h1", new HelpPublishedEntry(At("2026-10-22T09:00:00Z"), "p1", "ask", "work") { Ask = "a1" });
+        kept.Keep("h1", new HelpPublishedEntry(At("2026-10-22T10:00:00Z"), "p1", "ask", "work") { Ask = "a9" });
+
+        Assert.Equal(["a1"], kept.Read("h1").Select(entry => entry.Ask));
+    }
+
+    /// <summary>The entry is kept before the card settles applied, so an applied card never stands without it.</summary>
+    [Fact]
+    public async Task The_entry_is_kept_by_the_time_the_card_is_settled()
+    {
+        var (_, _, _) = await ApplyAsync(new HelpProposal("p7", "ask", "ask", null, "work", null, "start it", "why", "h1", "proposed"),
+            new HelpStandInDoors { Asked = new AskAnswer(true, "Asked.", "a1b2c3d4", null) });
+
+        Assert.Equal("applied", HelpProposals.Find(_home, "p7")!.State);
+        Assert.Equal("a1b2c3d4", Assert.Single(new HelpPublished(_home).Read("h1")).Ask);
+    }
+
     [Fact]
     public async Task A_setups_apply_keeps_its_ask_and_its_quest()
     {

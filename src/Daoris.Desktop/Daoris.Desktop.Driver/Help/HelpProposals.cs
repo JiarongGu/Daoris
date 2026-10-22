@@ -441,14 +441,6 @@ public sealed record HelpApplied(bool Applied, string Told)
     /// the card stays for its press and the page logs no settlement. False for every Apply that settles.
     /// </summary>
     public bool Stands { get; init; }
-
-    // The ask and set-up kinds'.
-
-    /// <summary>
-    /// What the Apply published (ASKQUESTS1): the ask and the quest the service's answer named, kept with the conversation by
-    /// <see cref="HelpProposals.ApplyAsync"/>. Null for an Apply that published nothing.
-    /// </summary>
-    public HelpPublishing? Published { get; init; }
 }
 
 /// <summary>
@@ -642,8 +634,6 @@ public static class HelpProposals
         }
 
         var applied = await ApplyOnceAsync(home, proposal, plan, doors, Later, ct).ConfigureAwait(false);
-        // ASKQUESTS1: what it published is kept with its conversation before the conversation is told, by the ids the service answered.
-        Kept(home, proposal, applied);
         say(applied.Told);
         List<string> early;
         lock (gate)
@@ -657,14 +647,13 @@ public static class HelpProposals
     }
 
     /// <summary>
-    /// Keep what an Apply published with the conversation that proposed it (ASKQUESTS1, <see cref="HelpPublished"/>): an applied card
-    /// whose answer named an ask or a quest, in a conversation of this machine's. A keep that fails loses the list's entry, never the
-    /// Apply, which happened.
+    /// Keep what an Apply published with the conversation that proposed it (ASKQUESTS1, <see cref="HelpPublished"/>), by the ids the
+    /// service's answer named, as soon as it answered and before the card settles (<see cref="HelpApplying.Settled"/>). A keep that
+    /// fails loses the list's entry, never the Apply, which happened: the quest and the ask stand, and Quests lists them.
     /// </summary>
-    private static void Kept(string home, HelpProposal proposal, HelpApplied applied)
+    internal static void KeepPublished(string home, HelpProposal proposal, HelpPublishing made)
     {
-        if (!applied.Applied || applied.Published is not { Names: true } made || proposal.Session is not { } session) return;
-        if (!SessionEventText.IsId(session)) return;
+        if (proposal.Session is not { } session || !SessionEventText.IsId(session)) return;
         try
         {
             new HelpPublished(home).Keep(session, new HelpPublishedEntry(DateTimeOffset.UtcNow, proposal.Id, proposal.Kind, made.Workspace)
@@ -675,7 +664,7 @@ public static class HelpProposals
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            // The quest and the ask stand; only this conversation's list of them is short by one, as a file that does not read is.
+            // Only this conversation's list is short by one, as a file that does not read is.
         }
     }
 

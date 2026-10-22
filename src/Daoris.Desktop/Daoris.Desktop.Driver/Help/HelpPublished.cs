@@ -33,10 +33,13 @@ public sealed record HelpPublishing(string? Workspace, string? Ask, string? Ques
 /// </summary>
 /// <remarks>
 /// <para><b>A file of its own, not a field of <see cref="HelpConversations"/>' file.</b> A build before this one rewrites that file whole
-/// at a rename or a pin, with the four fields it knows, and would drop a fifth (<c>compatible-builds</c>); no such build knows this one.</para>
+/// at a rename or a pin, with the four fields it knows, and would drop a fifth (<c>compatible-builds</c>); no such build knows this one.
+/// What is left: such a build's delete or history clear leaves this file behind, since its inventory does not name it.</para>
 ///
-/// <para><b>Written where the Apply runs, and read there.</b> The desktop host's Apply keeps an entry (<see cref="HelpProposals.ApplyAsync"/>)
-/// and its <c>HELP_PUBLISHED</c> reads them; no terminal door applies a proposal (D89), and neither the service nor a terminal reads it.</para>
+/// <para><b>Written where the Apply runs, and read there.</b> The desktop host's Apply keeps an entry as the service answers, before the
+/// card settles (<see cref="HelpProposals.KeepPublished"/>), and its <c>HELP_PUBLISHED</c> reads them; no terminal door applies a
+/// proposal (D89), and neither the service nor a terminal reads it. A crash between the service's answer and the keep loses the entry,
+/// never the ask or the quest.</para>
 ///
 /// <para><b>A file that does not read is nothing kept</b>, as Ask Daoris's other files are: it lists nothing, and the next keep starts it
 /// again. An entry is read back field by field.</para>
@@ -51,13 +54,14 @@ public sealed class HelpPublished(string home)
     /// <summary>Where a conversation's list is kept, beside its transcript and Ask Daoris's other files for it.</summary>
     public string PathOf(string session) => DaorisHome.Entry(home, HomeEntry.Sessions, Checked(session) + Suffix);
 
-    /// <summary>Add what an Apply published after what is kept.</summary>
+    /// <summary>Add what an Apply published after what is kept; a proposal kept already keeps its first entry (one Apply settles it).</summary>
     /// <exception cref="DriverException">An id that names no session.</exception>
     public void Keep(string session, HelpPublishedEntry entry)
     {
         lock (Gate)
         {
             var kept = Oldest(session);
+            if (kept.Any(each => string.Equals(each.Proposal, entry.Proposal, StringComparison.Ordinal))) return;
             JsonFile.Write(PathOf(session), writer =>
             {
                 writer.WriteStartObject();

@@ -69,10 +69,7 @@ internal sealed class HelpSetupProposals : IHelpProposalKind
         // ASKQUESTS1: the ask and the quest the press published, by id, for the conversation's own list.
         return applying.Settled(outcome.Published,
             $"{(outcome.Published ? "Applied" : "Not applied")}: `#{applying.Id}` (`{applying.Plan.Terminal}`) — {Said(setup, outcome)}",
-            outcome.Message) with
-        {
-            Published = outcome.Published ? new HelpPublishing(setup.Workspace, outcome.AskId, outcome.QuestId) : null,
-        };
+            outcome.Message, outcome.Published ? new HelpPublishing(setup.Workspace, outcome.AskId, outcome.QuestId) : null);
     }
 
     /// <summary>What the press came to, as the terminal says it: the service's sentence, the ask and quest, the rules added.</summary>

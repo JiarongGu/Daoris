@@ -108,7 +108,9 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         text.Append("on a screen or with a terminal command, and the two always do the same thing. When a change would\n");
         text.Append("help, name both — the screen and where on it, and the command — and, where the person wants it made,\n");
         text.Append("propose it with the tool for its kind (below). A proposal is a card with Apply and Not now; nothing\n");
-        text.Append("changes until the person presses Apply, and their answer comes back as their next message. Daoris\n");
+        // ASKQUESTS1: what an Apply did is Daoris's word, never the person's; a Not now is still theirs.
+        text.Append("changes until the person presses Apply. What the Apply did comes back to you as Daoris's word, starting\n");
+        text.Append("`Daoris:` and naming by id any ask or quest it published; a Not now comes back as their next message. Daoris\n");
         text.Append("checks each proposal first by the rules of the screen that makes the same change, and one those rules\n");
         text.Append("would refuse never reaches the person: you are told why instead. Read the family through\n");
         text.Append("`daoris-knowledge` (the registry, its knowledge, its quests) when the question needs more than this page.\n\n");
