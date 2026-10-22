@@ -428,7 +428,10 @@ public enum QuestTakeBind
     /// <summary>Named longer ago than <see cref="QuestStore.TakeBindLife"/> before the take.</summary>
     Expired,
 
-    /// <summary>The quest's circle syncs through a remote now, enabled since the graph was named.</summary>
+    /// <summary>
+    /// The quest's circle syncs through a remote now whose handshake does not say every machine of it knows a bound quest (FABRIC-CLOSE1i):
+    /// enabled, or a machine heard undeclared, since the graph was named.
+    /// </summary>
     Remote,
 }
 
@@ -437,7 +440,10 @@ public enum QuestTakeBind
 /// machine's remotes read at the moment of the take, by circle. What a take needs to judge the bind named for it, inside its write.
 /// </summary>
 /// <param name="Session">The taking session, from its connector's intake (<c>DAORIS_SESSION_ID</c>); null where no session is named.</param>
-/// <param name="Remote">Whether a circle syncs through a remote, by the map sync reads, asked inside the take's write; null reads none.</param>
+/// <param name="Remote">
+/// Whether a circle syncs through a remote, by the map sync reads, that has not said every machine of it knows a bound quest
+/// (FABRIC-CLOSE1i), asked inside the take's write; null reads none.
+/// </param>
 public sealed record QuestTaker(string? Session, Func<string, bool>? Remote = null);
 
 /// <summary>
@@ -750,6 +756,7 @@ public sealed class QuestStore
             var store = new QuestStore(connection, time ?? TimeProvider.System);
             await store.EnsureSchemaAsync(ct).ConfigureAwait(false);
             store.Machine = await store.EnsureMachineAsync(ct).ConfigureAwait(false);
+            await store.LoadClosuresAsync(ct).ConfigureAwait(false);
             await store.GiveHistoriesAsync(ct).ConfigureAwait(false);
             await store.RecacheUnnamedConflictsAsync(ct).ConfigureAwait(false);
             await store.RecacheClosedAwaitsAsync(ct).ConfigureAwait(false);
@@ -858,7 +865,16 @@ public sealed class QuestStore
                   synced    TEXT NULL,
                   tried     TEXT NOT NULL,
                   behind    TEXT NOT NULL,
-                  problem   TEXT NULL
+                  problem   TEXT NULL,
+                  closure   TEXT NULL
+                );
+                -- A remote's half of the workspace's handshake (FABRIC-CLOSE1i): each machine that pushed here, and whether its last
+                -- push declared it knows a bound quest. A push declaring nothing, as a build before it pushes, marks every machine its
+                -- operations name undeclared. Answered beside a page and a push's answer, by id only; never pushed.
+                CREATE TABLE IF NOT EXISTS quest_declared (
+                  machine TEXT PRIMARY KEY,
+                  closure INTEGER NOT NULL,
+                  at      TEXT NOT NULL
                 );
                 -- The quests this machine cleared whose operations a remote had numbered (HIST1b, D153 point 3):
                 -- the absence made a record, since a fetch by cursor cannot carry one. Never pushed or served.
@@ -1041,6 +1057,8 @@ public sealed class QuestStore
             // before needs its log read again.
             ("quests", "workflow_choices", "workflow_choices TEXT NOT NULL DEFAULT '[]'"),
             ("quest_log", "remote", "remote INTEGER NULL"),
+            // The remote's handshake as a circle's last pass heard it (FABRIC-CLOSE1i); a pass from before heard none, which binds nothing.
+            ("quest_passes", "closure", "closure TEXT NULL"),
             // A bind named for a take, owned (FABRIC-CLOSE1o): CLOSE1l's rows named only the quest. `CREATE TABLE IF NOT EXISTS`
             // upgrades nothing, so the columns are added here, on a local store and a shared one alike. FABRIC-CLOSE1w keeps them for
             // the builds between, which write them; this build reads no owner there.
@@ -3526,18 +3544,100 @@ public sealed class QuestStore
             await using var command = _db.Command();
             command.Transaction = transaction;
             command.CommandText = """
-                INSERT INTO quest_passes (workspace, synced, tried, behind, problem)
-                VALUES ($workspace, $synced, $tried, $behind, $problem)
+                INSERT INTO quest_passes (workspace, synced, tried, behind, problem, closure)
+                VALUES ($workspace, $synced, $tried, $behind, $problem, $closure)
                 ON CONFLICT (workspace) DO UPDATE SET
-                  synced = COALESCE($synced, synced), tried = $tried, behind = $behind, problem = $problem
+                  synced = COALESCE($synced, synced), tried = $tried, behind = $behind, problem = $problem, closure = $closure
                 """;
-            command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(workspace));
+            var circle = Workspaces.Normalize(workspace);
+            command.Parameters.AddWithValue("$workspace", circle);
             command.Parameters.AddWithValue("$synced", report.Problem is null ? Moments.Write(at) : DBNull.Value);
             command.Parameters.AddWithValue("$tried", Moments.Write(at));
             // A list of quest ids, kept the way links are: a plain array of strings.
             command.Parameters.AddWithValue("$behind", LinksJson(report.Behind));
             command.Parameters.AddWithValue("$problem", (object?)report.Problem ?? DBNull.Value);
-            return await command.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
+            // FABRIC-CLOSE1i: the undeclared machines, a plain array of ids; none where the pass heard no handshake, a wall's included.
+            command.Parameters.AddWithValue("$closure", report.Closure is { } closure ? LinksJson(closure.Undeclared) : DBNull.Value);
+            var written = await command.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
+            Heard(circle, report.Closure);
+            return written;
+        }, ct);
+
+    /// <summary>
+    /// The remote's handshake as <paramref name="workspace"/>'s last pass heard it (FABRIC-CLOSE1i): null where no pass has, a wall, or a
+    /// remote before it. Read without the store's gate, so a take's own write can ask it: kept beside the row its pass recorded.
+    /// </summary>
+    public QuestClosure? ClosureOf(string workspace) =>
+        _closures.TryGetValue(Workspaces.Normalize(workspace), out var closure) ? closure : null;
+
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, QuestClosure> _closures = new(StringComparer.OrdinalIgnoreCase);
+
+    private void Heard(string circle, QuestClosure? closure)
+    {
+        if (closure is null) _closures.TryRemove(circle, out _);
+        else _closures[circle] = closure;
+    }
+
+    /// <summary>Each circle's handshake as its last pass recorded it (FABRIC-CLOSE1i), read as the store opens.</summary>
+    private async Task LoadClosuresAsync(CancellationToken ct)
+    {
+        await using var command = _db.Command();
+        command.CommandText = "SELECT workspace, closure FROM quest_passes WHERE closure IS NOT NULL";
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        while (await reader.ReadAsync(ct).ConfigureAwait(false))
+        {
+            Heard(reader.GetString(0), new QuestClosure(ReadLinks(reader.GetString(1))));
+        }
+    }
+
+    /// <summary>
+    /// A remote's half of the workspace's handshake (FABRIC-CLOSE1i): what a push said of its machine. A push declaring
+    /// <paramref name="declares"/> marks that machine declared; one declaring none, as a build before it pushes, marks every machine its
+    /// operations name undeclared, so a machine run back to an older build is heard as one. A push declaring one machine says nothing
+    /// of another its operations name.
+    /// </summary>
+    public Task DeclaredAsync(string? declares, IReadOnlyList<QuestOperation> pushed, DateTimeOffset at, CancellationToken ct = default) =>
+        InTransactionAsync(async (transaction, inside) =>
+        {
+            List<(string Machine, bool Closure)> marked = declares is { Length: > 0 } declared
+                ? [(declared, true)]
+                : [.. pushed.Select(o => o.Machine).Where(m => m.Length > 0).Distinct(StringComparer.Ordinal).Select(m => (m, false))];
+            foreach (var (machine, closure) in marked)
+            {
+                await using var command = _db.Command();
+                command.Transaction = transaction;
+                command.CommandText = """
+                    INSERT INTO quest_declared (machine, closure, at) VALUES ($machine, $closure, $at)
+                    ON CONFLICT (machine) DO UPDATE SET closure = excluded.closure, at = excluded.at
+                    """;
+                command.Parameters.AddWithValue("$machine", machine);
+                command.Parameters.AddWithValue("$closure", closure ? 1 : 0);
+                command.Parameters.AddWithValue("$at", Moments.Write(at));
+                await command.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
+            }
+
+            return marked.Count;
+        }, ct);
+
+    /// <summary>
+    /// A remote's answer to the workspace's handshake (FABRIC-CLOSE1i): every machine it holds an operation or a push from, but itself,
+    /// whose last push did not declare <c>closure</c>, ordered by id. A shared host holds one workspace by construction, so these are the
+    /// workspace's machines as far as it has heard them; one that has never pushed has made nothing here to misread.
+    /// </summary>
+    public Task<QuestClosure> ClosureAsync(CancellationToken ct = default) =>
+        InGateAsync(async () =>
+        {
+            await using var command = _db.Command();
+            command.CommandText = """
+                SELECT machine FROM (SELECT DISTINCT machine FROM quest_log UNION SELECT machine FROM quest_declared)
+                WHERE machine <> $self AND machine NOT IN (SELECT machine FROM quest_declared WHERE closure = 1)
+                ORDER BY machine
+                """;
+            command.Parameters.AddWithValue("$self", Machine);
+            var undeclared = new List<string>();
+            await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+            while (await reader.ReadAsync(ct).ConfigureAwait(false)) undeclared.Add(reader.GetString(0));
+            return new QuestClosure(undeclared);
         }, ct);
 
     /// <summary>

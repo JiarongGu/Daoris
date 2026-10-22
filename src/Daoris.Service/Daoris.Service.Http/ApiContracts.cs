@@ -18,9 +18,12 @@ namespace Daoris.Knowledge.Http;
 // doors. A host from before answers none, which a driver reads as not knowing them, and binds nothing there.
 // `CloseOutcome` (CLOSECAP1): this host also answers the outcome door (`POST /api/quests/{id}/close/outcome`, FABRIC-CLOSE1u), the
 // close protocol's recovery. A driver binds only where `Closure` and this are both answered; a host with `Closure` alone binds nothing.
+// `CloseRemote` (FABRIC-CLOSE1i): this host judges a bind in a workspace synced through a remote by the remote's handshake, whether every
+// machine of it declared it knows a bound quest, and refuses it naming those that did not. A host before it refuses every such bind, and a
+// driver asks it none.
 public sealed record StatusResponse(
     bool Semantic, string Tier, string? Note, string? Proof = null, string? Home = null, string? Version = null, bool? Closure = null,
-    bool? CloseOutcome = null);
+    bool? CloseOutcome = null, bool? CloseRemote = null);
 
 /// <summary>This host's informational version, read once: what <c>/api/status</c> answers as <c>version</c> (WIRING1b).</summary>
 public static class HostVersion

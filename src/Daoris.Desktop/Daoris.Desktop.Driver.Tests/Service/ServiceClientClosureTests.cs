@@ -351,4 +351,18 @@ public sealed class ServiceClientClosureTests
 
         Assert.Equal(knows, await client.KnowsClosureAsync());
     }
+
+    /// <summary>FABRIC-CLOSE1i: a host judges a bind through a remote only where it says `closeRemote` beside the closure handshake's two.</summary>
+    [Theory]
+    [InlineData("""{ "semantic": false, "tier": "lexical only", "closure": true, "closeOutcome": true, "closeRemote": true }""", true)]
+    [InlineData("""{ "semantic": false, "tier": "lexical only", "closure": true, "closeOutcome": true }""", false)]
+    [InlineData("""{ "semantic": false, "tier": "lexical only", "closure": true, "closeOutcome": true, "closeRemote": false }""", false)]
+    [InlineData("""{ "semantic": false, "tier": "lexical only", "closure": true, "closeRemote": true }""", false)]
+    [InlineData("""{ "semantic": false, "tier": "lexical only", "closeRemote": true }""", false)]
+    public async Task The_remote_handshake_reads_whether_the_host_judges_a_bind_through_a_remote(string status, bool knows)
+    {
+        using var client = new ServiceClient(new Doors((_, path, _) => path == "/api/status" ? new ServiceReply(200, status) : new ServiceReply(404, "")));
+
+        Assert.Equal(knows, await client.KnowsRemoteClosureAsync());
+    }
 }

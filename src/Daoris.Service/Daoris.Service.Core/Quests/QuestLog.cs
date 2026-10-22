@@ -251,12 +251,32 @@ public sealed record QuestPushRefusal(string Quest, string Reason);
 /// <param name="Behind">Quests something else reached first: fetch, rebase, and push again.</param>
 /// <param name="Refused">Quests whose operations do not apply, or whose publish the exchange refused.</param>
 public sealed record QuestPush(
-    IReadOnlyList<QuestAcceptance> Accepted, IReadOnlyList<string> Behind, IReadOnlyList<QuestPushRefusal> Refused);
+    IReadOnlyList<QuestAcceptance> Accepted, IReadOnlyList<string> Behind, IReadOnlyList<QuestPushRefusal> Refused)
+{
+    /// <summary>The remote's handshake (FABRIC-CLOSE1i), as it stood after this push; null from a remote before it.</summary>
+    public QuestClosure? Closure { get; init; }
+}
 
 /// <param name="Operations">A page of what a remote accepted, in its order, each carrying its number.</param>
 /// <param name="Through">The last number the page covers — where the fetching machine's cursor moves.</param>
 /// <param name="More">Whether another page follows.</param>
-public sealed record QuestFetch(IReadOnlyList<QuestOperation> Operations, long Through, bool More);
+public sealed record QuestFetch(IReadOnlyList<QuestOperation> Operations, long Through, bool More)
+{
+    /// <summary>The remote's handshake (FABRIC-CLOSE1i), as it stood at this fetch; null from a remote before it.</summary>
+    public QuestClosure? Closure { get; init; }
+}
+
+/// <summary>
+/// A remote's answer to whether every machine of its workspace said it knows a bound quest (FABRIC-CLOSE1i, the workspace's handshake;
+/// D173's CLOSE1b note, choice 4): the machines it holds an operation or a push from whose last push declared no <c>closure</c>, by id.
+/// None undeclared is every machine declared, and only then may a quest of that workspace bind to a closure graph. A remote before it
+/// answers nothing, which is never read as all.
+/// </summary>
+public sealed record QuestClosure(IReadOnlyList<string> Undeclared)
+{
+    /// <summary>Whether every machine the remote knows of declared <c>closure</c>.</summary>
+    public bool All => Undeclared.Count == 0;
+}
 
 /// <param name="Cursor">The number this machine has now fetched through.</param>
 /// <param name="Conflicts">The moves the rebase turned into conflicts, as they now stand in the log.</param>

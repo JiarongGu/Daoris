@@ -1737,6 +1737,11 @@ The close's reach and failure authority are §E2's.
 **Cutover.** A quest follows a closure graph only when the graph was bound at its first start. Quests already in flight
 keep today's done. Removing `quest.close` from a graph changes nothing for runs already bound.
 
+**Amended (FABRIC-CLOSE1i, D173's note).** A workspace synced through a remote binds once its remote says every machine of it knows a
+bound quest. Each push declares its machine, and the remote answers, beside a page and a push's answer, the machines it has heard from
+whose last push declared nothing. A pass keeps the answer for its circle, and every bind, the take's own write included, reads it: one
+machine undeclared refuses the bind, naming it, and the quest closes by its done.
+
 This amends D46 and D144's timing of the done, and D65's moment of a chain's advance, **only in graphs that hold
 `quest.close`**. Everywhere else everything is as today.
 
