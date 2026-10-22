@@ -19662,3 +19662,14 @@ writes `local/scratch/ci-<sha7>/status.json`; the light lane is 3 or 5 wide by a
 beside a Process half where MEMGATE1 finds the memory; `publish:desktop --from-gated` stages a CI-green commit holding the tree's lock.
 The dispatch skill's step 6 change is held for the owner (AGENTDEFS1). Detail: D180's CI1 note, commits `ffbea6730`..`e95389f03`.
 The proof run on main's tip beside `--full --beside`'s wall is the parent's. On Opus.
+
+## PROCREACH1 — a change runs only the Process classes it reaches (2026-10-22, D180)
+
+> - **PROCREACH1 — a change runs only the Process classes it reaches** (tools, driver and modules tests; after CI1; D180 point 2). Measured 2026-10-22 at `c557800`: the git half ran 693 tests, 272 minutes of test time in 69 of wall, and the other Process half 666 tests, 130 minutes in 23; a gate the change reaches runs every class in it. Each Process class declares, or a census derives, the source areas it exercises (the code map's modules), and the CI reruns only the classes a change's paths reach, the whole half on a sweep no older than a day and before any release whose last sweep is older. Proof: a change to one module reruns its classes alone and the verdict names the rest as kept; a planted class with no declared reach fails the census; a release refuses a sweep older than its bound.
+
+**Outcome** 2026-10-22: the CI runs, of each Process half it owes, only the classes a change reaches and keeps the rest's verdicts per
+class (`tools/process-reach.mjs`, `local/class-verdicts.json`); a half runs whole once its kept verdicts are a day old, and the stage
+refuses it until then. On SWAPLEASE2, 368 of the 1,359 driver Process tests ran (about 29 of 95 minutes); over 40 desktop merges,
+43,017 of 57,067 (most merges touch a type nearly every class names, so the larger lever is each test's cost, PROCSPEED1b). A test
+helper reaches only the classes that name it, followed through, rather than the whole half (the steward's acceptance of the
+builder's choice; the daily sweep is the backstop). Detail: D180's PROCREACH1 note; commits `c97f939d6`, `66d3dc591`, `28cb7dd52`. On Opus.

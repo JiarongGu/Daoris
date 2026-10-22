@@ -10,6 +10,9 @@ with the version and date at release.
   `--ci --watch` does that each time main moves, and `--ci --stop` ends the watch. Each run's status is
   `local/scratch/ci-<sha7>/status.json`. `publish:desktop --stage --from-gated <commit>` stages a commit the CI passed, and
   holds the gate tree through its build.
+- The CI runs only the `Process` test classes a change reaches, and keeps the rest's verdicts (PROCREACH1). A half whose kept
+  verdicts are more than a day old runs whole again, and a stage refuses it until it has.
+  `node tools/process-reach.mjs census` lists each class's reach.
 - An agent's page now shows its accounts as Daoris's accounts, one set that every workspace's work may run on (D197). Adding an
   account asks only its name, and says the account joined Daoris's accounts; nothing asks which workspaces it may run work in. The
   rows no longer say *Runs for*, and their ⋯ no longer offers a default or a list to add to or take from. *How accounts are used*
