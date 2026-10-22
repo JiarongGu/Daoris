@@ -87,20 +87,36 @@ public sealed class McpChosenSettingsToolTests : McpToolsFixture
     public async Task A_setting_is_a_request_for_the_conversations_own_session_and_says_the_loops_answer()
     {
         var (tools, session) = await ConnectorAsync(AskDaorisAsync);
-        var loop = LoopAsync("""{ "operation": "timeout", "done": true, "code": null, "said": "Set: one session runs up to 45 minutes." }""");
+        var loop = LoopAsync("""{ "operation": "cap", "done": true, "code": null, "said": "Set: at most 4 sessions at once." }""");
 
-        var said = await tools.TimeoutAsync(45);
+        var said = await tools.CapAsync(4);
 
-        Assert.Equal("Set: one session runs up to 45 minutes.", said);
+        Assert.Equal("Set: at most 4 sessions at once.", said);
         var request = await loop;
         Assert.Equal(["session", "move", "at", "by", "key", "operation", "value"], request.EnumerateObject().Select(field => field.Name));
         Assert.Equal(
-            (session, "set", "help", "timeout", "45"),
+            (session, "set", "help", "cap", "4"),
             (request.GetProperty("session").GetString(), request.GetProperty("move").GetString(), request.GetProperty("by").GetString(),
                 request.GetProperty("operation").GetString(), request.GetProperty("value").GetString()));
         Assert.Matches("^[0-9a-f]{12}$", request.GetProperty("key").GetString());
         Assert.True(DateTimeOffset.TryParse(request.GetProperty("at").GetString(), out _));
         Assert.Empty(Directory.GetFiles(Requests));
+    }
+
+    /// <summary>
+    /// SESSWATCH1a (D200, the session-watch design §3): the retired <c>settings_timeout</c> answers why and writes no request, so
+    /// nothing is changed whoever calls it.
+    /// </summary>
+    [Fact]
+    public async Task The_retired_timeout_tool_answers_why_and_writes_nothing()
+    {
+        var (tools, _) = await ConnectorAsync(AskDaorisAsync);
+
+        var said = await tools.TimeoutAsync(45);
+
+        Assert.Equal($"Refused: {SettingsBox.TimeoutRetired}", said);
+        Assert.Contains("no longer limited by time", said);
+        Assert.False(Directory.Exists(Requests) && Directory.GetFiles(Requests).Length > 0);
     }
 
     /// <summary>

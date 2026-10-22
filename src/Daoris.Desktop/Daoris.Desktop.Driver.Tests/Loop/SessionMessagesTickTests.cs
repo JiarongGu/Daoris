@@ -60,7 +60,7 @@ public sealed class SessionMessagesTickTests : IDisposable
             Drivable = ["engine"],
             Trees = ["engine"],
             Adapter = "acp-stub",
-            TimeoutMinutes = 1,
+            TestBound = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = command ?? ["node", Agent(), Log, mode] },
         };
@@ -463,7 +463,7 @@ public sealed class SessionMessagesTickTests : IDisposable
             Drivable = ["engine"],
             Trees = ["engine"],
             Adapter = "claude-code",
-            TimeoutMinutes = 1,
+            TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", NativeHarness(), Log, taken, go] },
         };
         var driver = new Daoris.Driver.Driver(
@@ -646,7 +646,7 @@ public sealed class SessionMessagesTickTests : IDisposable
             Drivable = ["engine"],
             Trees = ["engine"],
             Adapter = "claude-code",
-            TimeoutMinutes = 1,
+            TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", NativeHarness(), Log, Path.Combine(_home, "taken.flag"), go] },
         };
         Daoris.Driver.Driver Native() => new(

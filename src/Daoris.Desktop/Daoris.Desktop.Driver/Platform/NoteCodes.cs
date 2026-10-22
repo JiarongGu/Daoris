@@ -442,6 +442,13 @@ public static class NoteCodes
     public static readonly NoteCode EndedSetupChanged = new("ended.setup-changed", ["from", "to"]);
     public static readonly NoteCode EndedWordsSetup = new("ended.words-setup", []);
     public static readonly NoteCode EndedTimeout = new("ended.timeout", ["minutes"]);
+    // SESSWATCH1a (D200, the session-watch design §2, §5.1): its agent's process exited but something it started held its output, so
+    // Daoris ended what was left and the run concluded by its exit (state E); the person ended a quiet run to carry it on (`minutes`
+    // of nothing heard); and the watcher's own lines, a session gone quiet and the person's *Leave it running*.
+    public static readonly NoteCode EndedGone = new("ended.gone", []);
+    public static readonly NoteCode EndedQuietPressed = new("ended.quiet-pressed", ["minutes"]);
+    public static readonly NoteCode WatchQuiet = new("watch.quiet", ["minutes"]);
+    public static readonly NoteCode WatchLeft = new("watch.left", []);
     public static readonly NoteCode EndedStopped = new("ended.stopped", []);
     public static readonly NoteCode EndedLostClaim = new("ended.lost-claim", []);
     // A take lost to the person's reopen of the work its step grew from (FABRIC-CLOSE1c18), not to another machine's take.

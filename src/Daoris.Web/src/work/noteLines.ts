@@ -60,6 +60,11 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'ended.setup-changed': { values: ['from', 'to'] },
   'ended.words-setup': { values: [] },
   'ended.timeout': { values: ['minutes'] },
+  // SESSWATCH1a (D200): state E's strays ended, the person's end of a quiet run, and the watcher's own lines.
+  'ended.gone': { values: [] },
+  'ended.quiet-pressed': { values: ['minutes'] },
+  'watch.quiet': { values: ['minutes'] },
+  'watch.left': { values: [] },
   'ended.stopped': { values: [] },
   'ended.lost-claim': { values: [] },
   'ended.lost-claim-reopened': { values: [] },

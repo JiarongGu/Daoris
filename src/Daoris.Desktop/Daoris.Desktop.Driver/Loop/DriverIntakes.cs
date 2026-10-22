@@ -263,7 +263,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
                         ? SessionConclusion.Of("stopped", Observation.Stopped)
                         : exitCode is int code
                             ? IntakeObservation.Conclude(code, ask.Quests.Count, after, turnFailed)
-                            : SessionConclusion.Of("failed", Observation.TimedOut(config.TimeoutMinutes));
+                            : SessionConclusion.Of("failed", Observation.TimedOut(config.TestBound ?? 0));
                     conclusion = _driver.AccountRefused(conclusion, adapter, selection, ended);
                     // A refused sign-in reads its account signed out (ROSTER1b), as a driven session's does.
                     conclusion = _driver.AccountSignedOut(conclusion, adapter, selection, turnFailed);

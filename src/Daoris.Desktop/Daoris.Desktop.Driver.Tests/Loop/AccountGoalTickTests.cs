@@ -68,7 +68,7 @@ public sealed class AccountGoalTickTests : IDisposable
             Drivable = Repositories,
             Adapter = "acp-stub",
             Cap = Cap,
-            TimeoutMinutes = 2,
+            TestBound = 2,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", AcpAgent(), Log] },
         };

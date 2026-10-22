@@ -207,6 +207,14 @@ public static class DriverChoicesCommand
         "this change is the person's, and this terminal is a session's (`DAORIS_SESSION_ID`): make it in Daoris's window, through Ask "
         + "Daoris's proposal and its Apply, or from your own terminal; nothing was done.";
 
+    /// <summary>
+    /// What the retired <c>timeout</c> verb, Ask Daoris's <c>timeout</c> door and the service's <c>settings_timeout</c> answer (SESSWATCH1a,
+    /// D200, the session-watch design §3): sessions are no longer limited by time. The service's twin says the same words.
+    /// </summary>
+    public const string TimeoutRetired =
+        "sessions are no longer limited by time: a working session runs as long as it works, and Daoris looks in on one that has gone "
+        + "quiet and brings it to you; nothing was changed.";
+
     private const string Prefix = "daoris";
 
     /// <summary>
@@ -494,24 +502,9 @@ public static class DriverChoicesCommand
             case "retry":
                 return Retry(args, before, world);
 
+            // SESSWATCH1a (D200, the session-watch design §3): retired, changing nothing, and saying why.
             case "timeout":
-            {
-                var value = Number(Named(args, verb));
-                if (!IsWhole(value) || value < 1 || value > int.MaxValue)
-                {
-                    throw new ChoiceWords("`driver timeout` needs a whole number of minutes, at least 1 — e.g. `daoris driver timeout 120`.");
-                }
-
-                var minutes = (int)value;
-                return Change(null, null, config => config with { TimeoutMinutes = minutes }, () =>
-                {
-                    Say($"daoris: a session on this machine may run {minutes} minutes before the driver ends it.");
-                    Say("  One that runs out is recorded as failed, and its quest is carried on in the same tree at a");
-                    Say("  later tick, until the strikes park it.");
-                    Say($"  Written to {path} — the driver re-reads it every tick; a session already running keeps its own.");
-                    return 0;
-                });
-            }
+                throw new ChoiceWords(TimeoutRetired, exit: 1);
 
             case "cooloff":
             {
@@ -939,9 +932,8 @@ public static class DriverChoicesCommand
             }
         }
 
-        Say(Written(choices, "timeoutMinutes")
-            ? $"  timeout    {choices.TimeoutMinutes} minutes a session may run"
-            : $"  timeout    {DriverConfig.Empty.TimeoutMinutes} minutes a session may run  (the default — `daoris driver timeout <minutes>` changes it)");
+        // SESSWATCH1a: a value an older Daoris wrote is said once, as kept for it; nothing reads it for a bound.
+        if (choices.KeptTimeoutMinutes is { } kept) Say($"  timeout    {kept}  (no longer limits a session; kept for an older Daoris)");
         Say(choices.CoolOffMinutes is { } cooloff
             ? $"  cooloff    {cooloff} minutes an account cools when its agent names no time for its limit"
             : $"  cooloff    {(int)AccountLimits.DefaultCoolOff.TotalMinutes} minutes an account cools when its agent names no time for its limit  (the default — "

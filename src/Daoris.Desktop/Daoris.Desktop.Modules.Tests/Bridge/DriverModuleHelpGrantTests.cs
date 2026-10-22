@@ -48,7 +48,7 @@ public sealed class DriverModuleHelpGrantTests : DriverModuleBridge
         var settings = state.GetProperty("helpGrants").EnumerateArray().Single(grant => grant.GetProperty("id").GetString() == "settings");
         Assert.Equal(["cap"], settings.GetProperty("chosen").EnumerateArray().Select(each => each.GetString()));
         Assert.Equal(
-            ["notify", "language", "timeout", "cap", "cooloff"], settings.GetProperty("built").EnumerateArray().Select(each => each.GetString()));
+            ["notify", "language", "cap", "cooloff"], settings.GetProperty("built").EnumerateArray().Select(each => each.GetString()));
         Assert.False(settings.GetProperty("pending").GetBoolean());
         Assert.Equal(["inspect"], Chosen(state));
         Assert.Contains("`mode`", await RefusalAsync(module, "SET_HELP_GRANT", new { grant = "settings", operation = "mode", chosen = true }));

@@ -90,8 +90,9 @@ public sealed record PermissionAnswer(bool Answered, string? Why, string Message
 public sealed class HeldPermissions
 {
     /// <summary>
-    /// How long a request waits for the person before it is refused: half the session's default 30-minute run, so a refusal at the
-    /// bound still leaves the session time to go on with what it can do, and long enough for a person at the window to read and press.
+    /// How long a request waits for the person before it is refused: a request nobody answers is refused so the turn goes on with what
+    /// it can do (D184; its reason its own since SESSWATCH1a took the session's time limit away, D200), and long enough for a person at
+    /// the window to read and press.
     /// </summary>
     public static readonly TimeSpan Bound = TimeSpan.FromMinutes(15);
 

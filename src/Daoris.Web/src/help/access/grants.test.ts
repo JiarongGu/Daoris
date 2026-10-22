@@ -19,7 +19,7 @@ describe('the grants', () => {
     // HELPMODE1c4: one box a checkout, by its repository's name, as the driver serves them.
     expect(spec('checkouts').operations).toEqual([]);
     expect(GRANTS.filter((grant) => grant.served).map((grant) => grant.id)).toEqual(['checkouts']);
-    expect(spec('settings').operations).toEqual(['notify', 'language', 'timeout', 'cap', 'cooloff']);
+    expect(spec('settings').operations).toEqual(['notify', 'language', 'cap', 'cooloff']);
     expect(spec('shell').operations).toEqual([]);
   });
 

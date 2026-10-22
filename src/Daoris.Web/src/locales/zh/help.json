@@ -272,7 +272,6 @@
   "help.grants.op.housekeeping.drop-recovery": "删除不再被持有的恢复引用",
   "help.grants.op.settings.notify": "提醒等你处理和已结束的事",
   "help.grants.op.settings.language": "会话语言",
-  "help.grants.op.settings.timeout": "单个会话可运行的时长",
   "help.grants.op.settings.cap": "本机同时运行的会话数",
   "help.grants.op.settings.cooloff": "未说明时间时的冷却",
   "help.grants.never.housekeeping": "每个目标都按记录的身份和所有者认定，动手前再判定一次；正在运行或等待中的会话保留自己的分支，任何操作都不强制执行。",

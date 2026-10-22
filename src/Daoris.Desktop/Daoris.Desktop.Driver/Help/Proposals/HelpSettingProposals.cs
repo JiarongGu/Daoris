@@ -210,9 +210,10 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                 planned = (strikes == 0 ? "Never park a quest for its failed sessions." : $"Park a quest after {strikes} failed sessions.",
                     $"daoris driver strikes {strikes}", c => c.WithStrikes(strikes));
                 break;
-            case "timeout" when int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var minutes) && minutes >= 1:
-                planned = ($"Let one session run up to {minutes} minutes.", $"daoris driver timeout {minutes}", c => c with { TimeoutMinutes = minutes });
-                break;
+            // SESSWATCH1a (D200, the session-watch design §3): the door is retired and refuses whatever it is given, with the verb's
+            // words, for a helper reading an older room.
+            case "timeout":
+                return Refused(DriverChoicesCommand.TimeoutRetired, "", "");
             case "notify" when value is "on" or "off":
                 planned = (value == "on" ? "Say so when a session parks, or ends without being asked." : "Stop saying so when a session parks.",
                     $"daoris driver notify {value}", c => c.WithNotify(value == "on"));

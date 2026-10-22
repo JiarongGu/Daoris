@@ -78,7 +78,7 @@ public sealed class AccessSwapTickTests : IDisposable
             Drivable = ["engine"],
             Trees = ["engine"],
             Adapter = "acp-stub",
-            TimeoutMinutes = 1,
+            TestBound = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", ProtocolAgent(), Log, Go] },
         }).WithAccess(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Permissions, AccessRules.Asking)] }).Save(ConfigPath);
@@ -141,7 +141,7 @@ public sealed class AccessSwapTickTests : IDisposable
             Drivable = ["engine"],
             Trees = ["engine"],
             Adapter = "claude-code",
-            TimeoutMinutes = 1,
+            TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", NativeHarness(), Log, Taken, Go] },
         }).WithAccess(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Permissions, AccessRules.Asking)] }).Save(ConfigPath);
         await using var service = SaidStandIn.Start(_repository);

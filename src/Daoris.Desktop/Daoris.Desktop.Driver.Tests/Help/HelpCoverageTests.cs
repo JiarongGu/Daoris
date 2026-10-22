@@ -779,7 +779,10 @@ public sealed partial class HelpCoverageTests
         ("helper", new Door("setting", "helper")),
         ("strikes", new Door("setting", "strikes")),
         ("retry", new Door("setting", "retry")),
-        ("timeout", new Door("setting", "timeout")),
+        // SESSWATCH1a (D200, the session-watch design §3): retired; the door is kept only to refuse a helper reading an older room.
+        ("timeout", new Exempt(
+            "it is retired and changes nothing: sessions are no longer limited by time, so the verb, its door and its tool answer why, "
+            + "and the room no longer offers it.")),
         // TOOL4e: the default cool-off's terminal door (D125 §6); TOOL4g built Settings → Driver's control, TOOL4l-b its Ask Daoris door.
         ("cooloff", new Door("setting", "cooloff")),
         // KEEP1d (D195 point 2): each kind's keep rule, the Disk space card's Change… and Ask Daoris's `keep` door.

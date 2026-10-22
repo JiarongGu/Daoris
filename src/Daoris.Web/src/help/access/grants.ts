@@ -49,7 +49,7 @@ export const GRANTS: readonly GrantSpec[] = [
   },
   // The five ordinary settings, each through the existing validation and writer (HELPMODE1c3).
   {
-    id: 'settings', operations: ['notify', 'language', 'timeout', 'cap', 'cooloff'],
+    id: 'settings', operations: ['notify', 'language', 'cap', 'cooloff'],
     byDefault: 'off', needsRules: false, later: false, onPlugin: false, door: 'settings',
   },
   { id: 'shell', operations: [], byDefault: 'off', needsRules: false, later: true, onPlugin: false, door: null },

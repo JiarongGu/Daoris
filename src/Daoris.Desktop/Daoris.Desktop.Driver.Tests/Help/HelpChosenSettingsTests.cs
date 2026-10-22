@@ -65,8 +65,13 @@ public sealed class HelpChosenSettingsTests : IDisposable
         Assert.Empty(read.Housekeeping);
         Assert.Equal(["settings_notify", "settings_cap"], read.SettingsTools);
 
-        Choose("""{ "housekeeping": "inspect", "settings": ["timeout"] }""");
-        Assert.Equal([ConfiguredAccess.Timeout], ConfiguredAccess.Read(_home).Settings);
+        Choose("""{ "housekeeping": "inspect", "settings": ["cooloff"] }""");
+        Assert.Equal([ConfiguredAccess.CoolOff], ConfiguredAccess.Read(_home).Settings);
+
+        // SESSWATCH1a (D200): the timeout is no setting any more, so a grant of it kept in the file grants nothing.
+        Choose("""{ "settings": ["timeout", "cap"] }""");
+        Assert.Equal([ConfiguredAccess.Cap], ConfiguredAccess.Read(_home).Settings);
+        Assert.Contains("`timeout` is no setting", Assert.Throws<DriverException>(() => ConfiguredAccess.Choose(_home, "settings", "timeout", true)).Message);
     }
 
     /// <summary>A choice of one setting edits the settings' list alone, the housekeeping chosen kept as written; one not of the five is refused.</summary>
@@ -98,13 +103,13 @@ public sealed class HelpChosenSettingsTests : IDisposable
         Assert.DoesNotContain(ChatRunner.HelpPlaceIn(_home, HelpRoom.PathOf(_home), []).Rules(file, "h1").Allow,
             rule => rule.Contains("__settings_", StringComparison.Ordinal));
 
-        Choose("""{ "settings": ["timeout", "notify"] }""");
+        Choose("""{ "settings": ["cooloff", "notify"] }""");
         var place = ChatRunner.HelpPlaceIn(_home, HelpRoom.PathOf(_home), []);
 
-        Assert.Equal([ConfiguredAccess.Notify, ConfiguredAccess.Timeout], place.Settings);
+        Assert.Equal([ConfiguredAccess.Notify, ConfiguredAccess.CoolOff], place.Settings);
         var allow = place.Rules(file, "h1").Allow;
         Assert.Contains($"mcp__{KnowledgeConnector.ServerName}__settings_notify", allow);
-        Assert.Contains($"mcp__{KnowledgeConnector.ServerName}__settings_timeout", allow);
+        Assert.Contains($"mcp__{KnowledgeConnector.ServerName}__settings_cooloff", allow);
         Assert.DoesNotContain($"mcp__{KnowledgeConnector.ServerName}__settings_cap", allow);
     }
 
@@ -115,7 +120,6 @@ public sealed class HelpChosenSettingsTests : IDisposable
     [Theory]
     [InlineData(ConfiguredAccess.Notify, "off", null)]
     [InlineData(ConfiguredAccess.Language, "zh", "engine")]
-    [InlineData(ConfiguredAccess.Timeout, "45", null)]
     [InlineData(ConfiguredAccess.Cap, "3", null)]
     [InlineData(ConfiguredAccess.CoolOff, "90", null)]
     public async Task A_grant_off_refuses_each_setting_and_writes_nothing(string setting, string value, string? repository)
@@ -139,14 +143,13 @@ public sealed class HelpChosenSettingsTests : IDisposable
     public async Task A_granted_setting_is_changed_through_its_own_doors_edit()
     {
         File.WriteAllText(ConfigPath, """{ "drivable": ["engine"], "notify": true }""");
-        Choose("""{ "settings": ["notify", "language", "timeout", "cap", "cooloff"] }""");
-        Handed("h1", "notify", "language", "timeout", "cap", "cooloff");
+        Choose("""{ "settings": ["notify", "language", "cap", "cooloff"] }""");
+        Handed("h1", "notify", "language", "cap", "cooloff");
         var ledger = Ledger();
 
         var notify = await AnswerAsync(ledger, Request(ConfiguredAccess.Notify, "off"));
         Assert.Equal((true, (string?)null), (notify.Done, notify.Code));
         Assert.Contains("`daoris driver notify off`", notify.Said);
-        Assert.True((await AnswerAsync(ledger, Request(ConfiguredAccess.Timeout, "45"))).Done);
         Assert.True((await AnswerAsync(ledger, Request(ConfiguredAccess.Cap, "3"))).Done);
         Assert.True((await AnswerAsync(ledger, Request(ConfiguredAccess.CoolOff, "90"))).Done);
         var language = await AnswerAsync(ledger, Request(ConfiguredAccess.Language, "zh", repository: "engine"));
@@ -155,7 +158,7 @@ public sealed class HelpChosenSettingsTests : IDisposable
 
         var config = Config;
         Assert.False(config.Notify);
-        Assert.Equal((45, 3, 90), (config.TimeoutMinutes, config.Cap, config.CoolOffMinutes));
+        Assert.Equal((3, 90), (config.Cap, config.CoolOffMinutes));
         Assert.Equal("zh", config.Languages["engine"]);
         Assert.Equal("en", config.WorkspaceLanguages["aurora"]);
         Assert.Equal(["engine"], config.Drivable);
@@ -165,19 +168,18 @@ public sealed class HelpChosenSettingsTests : IDisposable
     }
 
     /// <summary>
-    /// A value the setting's own door refuses is refused in its words, and nothing is written: a timeout or a cap below one, a
+    /// A value the setting's own door refuses is refused in its words, and nothing is written: a cap below one, a
     /// cool-off below a minute, notify that is neither on nor off, a language this build does not write in.
     /// </summary>
     [Theory]
-    [InlineData(ConfiguredAccess.Timeout, "0", null)]
     [InlineData(ConfiguredAccess.Cap, "none", null)]
     [InlineData(ConfiguredAccess.CoolOff, "0", null)]
     [InlineData(ConfiguredAccess.Notify, "maybe", null)]
     [InlineData(ConfiguredAccess.Language, "fr", "engine")]
     public async Task A_value_its_own_door_refuses_is_refused_and_nothing_is_written(string setting, string value, string? repository)
     {
-        Choose("""{ "settings": ["notify", "language", "timeout", "cap", "cooloff"] }""");
-        Handed("h1", "notify", "language", "timeout", "cap", "cooloff");
+        Choose("""{ "settings": ["notify", "language", "cap", "cooloff"] }""");
+        Handed("h1", "notify", "language", "cap", "cooloff");
 
         var answer = await AnswerAsync(Ledger(), Request(setting, value, repository));
 

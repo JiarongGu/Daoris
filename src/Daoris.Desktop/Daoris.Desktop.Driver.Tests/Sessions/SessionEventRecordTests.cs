@@ -79,7 +79,7 @@ public sealed class SessionEventRecordTests : IDisposable
         {
             Drivable = ["engine"],
             Adapter = "acp-stub",
-            TimeoutMinutes = 1,
+            TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent()] },
         };
         var adapters = AdapterSet.Built();

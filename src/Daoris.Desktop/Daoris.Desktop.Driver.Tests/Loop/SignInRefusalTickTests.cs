@@ -68,7 +68,7 @@ public sealed class SignInRefusalTickTests : IDisposable
             Drivable = ["engine"],
             Trees = ["engine"],
             Adapter = "acp-stub",
-            TimeoutMinutes = 1,
+            TestBound = 1,
             PollSeconds = 1,
             // One failure would park it: a refused sign-in must hold none.
             Strikes = 1,
@@ -135,7 +135,7 @@ public sealed class SignInRefusalTickTests : IDisposable
             Drivable = ["engine"],
             Trees = ["engine"],
             Adapter = "acp-stub",
-            TimeoutMinutes = 1,
+            TestBound = 1,
             PollSeconds = 1,
             Strikes = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>>

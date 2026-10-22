@@ -43,12 +43,15 @@ public sealed class ChosenSettingsTools(IntakeScope? intake = null, SessionLedge
         CancellationToken ct = default) =>
         SetAsync(SettingsBox.Language, language, repository, workspace, ct);
 
+    // SESSWATCH1a (D200, the session-watch design §3): retired. Kept so a helper reading an older room is told why, never applied.
     [McpServerTool(Name = "settings_timeout")]
-    [Description(Granted + "Set how many minutes one session may run on this machine, at least one." + Applies)]
+    [Description(
+        "Retired: sessions are no longer limited by time, so this changes nothing and answers why. A working session runs as long as "
+        + "it works, and Daoris looks in on one that has gone quiet.")]
     public Task<string> TimeoutAsync(
-        [Description("The minutes, a whole number of at least 1.")] int minutes,
+        [Description("Ignored: nothing is changed.")] int minutes,
         CancellationToken ct = default) =>
-        SetAsync(SettingsBox.Timeout, Number(minutes), null, null, ct);
+        Task.FromResult($"Refused: {SettingsBox.TimeoutRetired}");
 
     [McpServerTool(Name = "settings_cap")]
     [Description(Granted + "Set how many sessions run at once on this machine, across every repository, at least one." + Applies)]

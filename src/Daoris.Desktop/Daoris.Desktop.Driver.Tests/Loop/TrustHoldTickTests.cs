@@ -127,7 +127,7 @@ public sealed class TrustHoldTickTests : IDisposable
         {
             Drivable = ["engine"],
             Adapter = "claude-code",
-            TimeoutMinutes = 1,
+            TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", Harness()] },
         };
         var adapters = AdapterSet.Built();

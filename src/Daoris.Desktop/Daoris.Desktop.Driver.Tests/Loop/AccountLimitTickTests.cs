@@ -62,7 +62,7 @@ public sealed class AccountLimitTickTests : IDisposable
         {
             Drivable = ["engine"],
             Adapter = "acp-stub",
-            TimeoutMinutes = 1,
+            TestBound = 1,
             PollSeconds = 1,
             // Two failures park it, and the quest already holds one: were the limit a strike, the carry-on it refused
             // would park the quest, as observation 4's did.

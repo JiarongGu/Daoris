@@ -726,9 +726,10 @@ public sealed class AcpSession(
     /// prompt open, as a fresh turn the adapter answers. Nothing is cancelled: a cancel is the session's, never one turn's, and
     /// would land on the person's words as readily as on Daoris's.</para>
     ///
-    /// <para><b>Bounded by the session's own bounds</b>: the person's stop and the timeout end the process, the reader with
-    /// it, and the wait with that; the driver's shutdown cancels it. Work that never ends (a dev server), and a woken turn whose
-    /// end is never said, are waited for until one of those, as a park would have held its tree for the person (D83).</para>
+    /// <para><b>Bounded by the session's own bounds</b>: the person's stop ends the process, the reader with it, and the wait with
+    /// that; the driver's shutdown cancels it. No time limit ends it (SESSWATCH1a, D200): work that never ends (a dev server), and a
+    /// woken turn whose end is never said, are waited for until the person acts, as a park would have held its tree for them (D83);
+    /// the watcher looks in on such a session once it shows no progress.</para>
     ///
     /// <para><b>And by its quest</b> (DONEEND1): while the work runs the quest is read again every <see cref="BackgroundLook"/>,
     /// and once it no longer waits on that work, with no turn running, the session ends, saying so, and the work ends with it.</para>

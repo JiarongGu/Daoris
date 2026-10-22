@@ -13,7 +13,6 @@
         "  adapter    claude-code",
         "  cap        2 concurrent session(s)",
         "  strikes    3 failed session(s) park a quest",
-        "  timeout    30 minutes a session may run  (the default — `daoris driver timeout <minutes>` changes it)",
         "  cooloff    60 minutes an account cools when its agent names no time for its limit  (the default — `daoris driver cooloff <minutes>` changes it)",
         "  notify     on  (a session parking, or ending without you asking)",
         "  helper     off — Ask Daoris offers its starters; `daoris driver helper <adapter>` names an agent",
@@ -29,7 +28,8 @@
         "  commits    none set — work is committed as it goes; `daoris driver commits <repository> --mode ask|at-end` sets one"
       ],
       "err": [],
-      "after": null
+      "after": null,
+      "changed": "SESSWATCH1a (D200, the session-watch design §3): sessions are no longer limited by time. The default timeout line is gone; a timeout a file holds is said once, as kept for an older Daoris."
     },
     {
       "name": "list, the bare family word",
@@ -41,7 +41,6 @@
         "  adapter    claude-code",
         "  cap        2 concurrent session(s)",
         "  strikes    3 failed session(s) park a quest",
-        "  timeout    30 minutes a session may run  (the default — `daoris driver timeout <minutes>` changes it)",
         "  cooloff    60 minutes an account cools when its agent names no time for its limit  (the default — `daoris driver cooloff <minutes>` changes it)",
         "  notify     on  (a session parking, or ending without you asking)",
         "  helper     off — Ask Daoris offers its starters; `daoris driver helper <adapter>` names an agent",
@@ -57,7 +56,8 @@
         "  commits    none set — work is committed as it goes; `daoris driver commits <repository> --mode ask|at-end` sets one"
       ],
       "err": [],
-      "after": null
+      "after": null,
+      "changed": "SESSWATCH1a (D200, the session-watch design §3): sessions are no longer limited by time. The default timeout line is gone; a timeout a file holds is said once, as kept for an older Daoris."
     },
     {
       "name": "list, a home holding every choice",
@@ -75,7 +75,7 @@
         "  released   #q2  (your stop of session s1a2b3c4)",
         "  paused     ask #a1  (since 2026-10-02T08:00:00Z; its pause stopped #q3's session s9) — resume: daoris-driver ask --resume a1",
         "  paused     quest #q4  (when is not recorded) — resume: daoris-driver quest resume q4",
-        "  timeout    90 minutes a session may run",
+        "  timeout    90  (no longer limits a session; kept for an older Daoris)",
         "  cooloff    45 minutes an account cools when its agent names no time for its limit",
         "  notify     off  (a session parking, or ending without you asking — not said)",
         "  helper     claude-code-acp  (Ask Daoris, full access: it acts on this machine itself, with no asking — `daoris-driver help mode` says and sets it)",
@@ -111,7 +111,8 @@
         "  held       tools  (not drivable anyway — the hold changes nothing)"
       ],
       "err": [],
-      "after": "{\n  \"drivable\": [\n    \"engine\",\n    \"game\"\n  ],\n  \"holds\": [\n    \"game\",\n    \"tools\"\n  ],\n  \"trees\": [\n    \"engine\",\n    \"docs\"\n  ],\n  \"cap\": 3,\n  \"adapter\": \"claude-code-acp\",\n  \"intakeAdapter\": \"claude-code\",\n  \"helperAdapter\": \"claude-code-acp\",\n  \"notify\": false,\n  \"timeoutMinutes\": 90,\n  \"strikes\": 0,\n  \"cooloff\": 45,\n  \"forgiven\": {\n    \"q1\": 3\n  },\n  \"released\": {\n    \"q2\": \"s1a2b3c4\"\n  },\n  \"standing\": {\n    \"engine\": {\n      \"says\": \"dev writes allowed\",\n      \"at\": \"<at>\"\n    }\n  },\n  \"lines\": {\n    \"engine\": \"develop\"\n  },\n  \"workspaceLines\": {\n    \"aurora\": \"main\"\n  },\n  \"languages\": {\n    \"engine\": \"zh\"\n  },\n  \"workspaceLanguages\": {\n    \"aurora\": \"en\"\n  },\n  \"landings\": {\n    \"engine\": {\n      \"form\": \"branch\",\n      \"pattern\": \"feature/{ticket}\",\n      \"key\": \"TK-\\\\d+\",\n      \"tidy\": true,\n      \"autoAccept\": true,\n      \"squash\": true\n    },\n    \"stray\": {\n      \"form\": \"sideways\"\n    }\n  },\n  \"workspaceLandings\": {\n    \"aurora\": {\n      \"form\": \"merge\"\n    }\n  },\n  \"reviews\": {\n    \"legacy\": false,\n    \"storefront\": {\n      \"required\": true,\n      \"environments\": [\n        {\n          \"name\": \"local\",\n          \"kind\": \"local\",\n          \"procedure\": \"README.md\",\n          \"address\": \"http://localhost:4200\"\n        }\n      ]\n    }\n  },\n  \"workspaceReviews\": {\n    \"shop\": {\n      \"environments\": [\n        {\n          \"name\": \"dev\",\n          \"kind\": \"deployed\",\n          \"procedure\": \"docs/deploy.md\"\n        }\n      ]\n    }\n  },\n  \"opinions\": {\n    \"engine\": {\n      \"on\": [\n        \"landing\"\n      ],\n      \"reviewers\": [\n        \"codex-acp\"\n      ],\n      \"required\": true,\n      \"verify\": true\n    },\n    \"legacy\": false\n  },\n  \"workspaceOpinions\": {\n    \"aurora\": {\n      \"on\": [\n        \"landing\",\n        \"steps\"\n      ],\n      \"reviewers\": [\n        \"codex-acp\",\n        \"dsh\"\n      ],\n      \"minutes\": 20,\n      \"recheck\": false\n    }\n  },\n  \"helpers\": {\n    \"engine\": {\n      \"mode\": \"on\",\n      \"agents\": [\n        \"codex-acp\"\n      ]\n    }\n  },\n  \"workspaceHelpers\": {\n    \"aurora\": {\n      \"mode\": \"off\",\n      \"agents\": []\n    }\n  },\n  \"handOver\": {\n    \"engine\": {\n      \"mode\": \"on\"\n    }\n  },\n  \"workspaceHandOver\": {\n    \"aurora\": {\n      \"mode\": \"off\"\n    }\n  },\n  \"brainstorms\": {\n    \"mode\": \"ask\",\n    \"agents\": [\n      \"claude-code\",\n      \"codex-acp\"\n    ],\n    \"minutes\": {\n      \"pass\": 10,\n      \"synthesis\": 10,\n      \"challenge\": 10,\n      \"request\": 30\n    }\n  },\n  \"workspaceBrainstorms\": {\n    \"aurora\": {\n      \"mode\": \"off\",\n      \"agents\": [],\n      \"minutes\": {\n        \"pass\": 10,\n        \"synthesis\": 10,\n        \"challenge\": 10,\n        \"request\": 30\n      }\n    }\n  },\n  \"commits\": {\n    \"engine\": {\n      \"mode\": \"ask\",\n      \"convention\": \"Imperative-subject\"\n    }\n  },\n  \"workspaceCommits\": {\n    \"aurora\": {\n      \"mode\": \"at-end\"\n    }\n  },\n  \"readAcross\": {\n    \"engine\": false\n  },\n  \"workspaceReadAcross\": {\n    \"aurora\": true\n  },\n  \"writeAcross\": {\n    \"game\": [\n      \"engine\"\n    ]\n  },\n  \"helpMode\": \"full\",\n  \"pausedAsks\": {\n    \"a1\": {\n      \"at\": \"<at>\",\n      \"stopped\": {\n        \"q3\": \"s9\"\n      }\n    }\n  },\n  \"pausedQuests\": {\n    \"q4\": {}\n  }\n}\n"
+      "after": "{\n  \"drivable\": [\n    \"engine\",\n    \"game\"\n  ],\n  \"holds\": [\n    \"game\",\n    \"tools\"\n  ],\n  \"trees\": [\n    \"engine\",\n    \"docs\"\n  ],\n  \"cap\": 3,\n  \"adapter\": \"claude-code-acp\",\n  \"intakeAdapter\": \"claude-code\",\n  \"helperAdapter\": \"claude-code-acp\",\n  \"notify\": false,\n  \"timeoutMinutes\": 90,\n  \"strikes\": 0,\n  \"cooloff\": 45,\n  \"forgiven\": {\n    \"q1\": 3\n  },\n  \"released\": {\n    \"q2\": \"s1a2b3c4\"\n  },\n  \"standing\": {\n    \"engine\": {\n      \"says\": \"dev writes allowed\",\n      \"at\": \"<at>\"\n    }\n  },\n  \"lines\": {\n    \"engine\": \"develop\"\n  },\n  \"workspaceLines\": {\n    \"aurora\": \"main\"\n  },\n  \"languages\": {\n    \"engine\": \"zh\"\n  },\n  \"workspaceLanguages\": {\n    \"aurora\": \"en\"\n  },\n  \"landings\": {\n    \"engine\": {\n      \"form\": \"branch\",\n      \"pattern\": \"feature/{ticket}\",\n      \"key\": \"TK-\\\\d+\",\n      \"tidy\": true,\n      \"autoAccept\": true,\n      \"squash\": true\n    },\n    \"stray\": {\n      \"form\": \"sideways\"\n    }\n  },\n  \"workspaceLandings\": {\n    \"aurora\": {\n      \"form\": \"merge\"\n    }\n  },\n  \"reviews\": {\n    \"legacy\": false,\n    \"storefront\": {\n      \"required\": true,\n      \"environments\": [\n        {\n          \"name\": \"local\",\n          \"kind\": \"local\",\n          \"procedure\": \"README.md\",\n          \"address\": \"http://localhost:4200\"\n        }\n      ]\n    }\n  },\n  \"workspaceReviews\": {\n    \"shop\": {\n      \"environments\": [\n        {\n          \"name\": \"dev\",\n          \"kind\": \"deployed\",\n          \"procedure\": \"docs/deploy.md\"\n        }\n      ]\n    }\n  },\n  \"opinions\": {\n    \"engine\": {\n      \"on\": [\n        \"landing\"\n      ],\n      \"reviewers\": [\n        \"codex-acp\"\n      ],\n      \"required\": true,\n      \"verify\": true\n    },\n    \"legacy\": false\n  },\n  \"workspaceOpinions\": {\n    \"aurora\": {\n      \"on\": [\n        \"landing\",\n        \"steps\"\n      ],\n      \"reviewers\": [\n        \"codex-acp\",\n        \"dsh\"\n      ],\n      \"minutes\": 20,\n      \"recheck\": false\n    }\n  },\n  \"helpers\": {\n    \"engine\": {\n      \"mode\": \"on\",\n      \"agents\": [\n        \"codex-acp\"\n      ]\n    }\n  },\n  \"workspaceHelpers\": {\n    \"aurora\": {\n      \"mode\": \"off\",\n      \"agents\": []\n    }\n  },\n  \"handOver\": {\n    \"engine\": {\n      \"mode\": \"on\"\n    }\n  },\n  \"workspaceHandOver\": {\n    \"aurora\": {\n      \"mode\": \"off\"\n    }\n  },\n  \"brainstorms\": {\n    \"mode\": \"ask\",\n    \"agents\": [\n      \"claude-code\",\n      \"codex-acp\"\n    ],\n    \"minutes\": {\n      \"pass\": 10,\n      \"synthesis\": 10,\n      \"challenge\": 10,\n      \"request\": 30\n    }\n  },\n  \"workspaceBrainstorms\": {\n    \"aurora\": {\n      \"mode\": \"off\",\n      \"agents\": [],\n      \"minutes\": {\n        \"pass\": 10,\n        \"synthesis\": 10,\n        \"challenge\": 10,\n        \"request\": 30\n      }\n    }\n  },\n  \"commits\": {\n    \"engine\": {\n      \"mode\": \"ask\",\n      \"convention\": \"Imperative-subject\"\n    }\n  },\n  \"workspaceCommits\": {\n    \"aurora\": {\n      \"mode\": \"at-end\"\n    }\n  },\n  \"readAcross\": {\n    \"engine\": false\n  },\n  \"workspaceReadAcross\": {\n    \"aurora\": true\n  },\n  \"writeAcross\": {\n    \"game\": [\n      \"engine\"\n    ]\n  },\n  \"helpMode\": \"full\",\n  \"pausedAsks\": {\n    \"a1\": {\n      \"at\": \"<at>\",\n      \"stopped\": {\n        \"q3\": \"s9\"\n      }\n    }\n  },\n  \"pausedQuests\": {\n    \"q4\": {}\n  }\n}\n",
+      "changed": "SESSWATCH1a (D200, the session-watch design §3): sessions are no longer limited by time. A timeout the file holds is said as kept for an older Daoris, and nothing reads it for a bound."
     },
     {
       "name": "drive",
@@ -535,15 +536,13 @@
         "120"
       ],
       "before": null,
-      "exit": 0,
-      "out": [
-        "daoris: a session on this machine may run 120 minutes before the driver ends it.",
-        "  One that runs out is recorded as failed, and its quest is carried on in the same tree at a",
-        "  later tick, until the strikes park it.",
-        "  Written to <config> — the driver re-reads it every tick; a session already running keeps its own."
+      "exit": 1,
+      "out": [],
+      "err": [
+        "daoris: sessions are no longer limited by time: a working session runs as long as it works, and Daoris looks in on one that has gone quiet and brings it to you; nothing was changed."
       ],
-      "err": [],
-      "after": "{\n  \"timeoutMinutes\": 120\n}\n"
+      "after": null,
+      "changed": "SESSWATCH1a (D200, the session-watch design §3): sessions are no longer limited by time. The verb is retired: it changes nothing and says why, exit 1."
     },
     {
       "name": "timeout 0",
@@ -552,12 +551,13 @@
         "0"
       ],
       "before": null,
-      "exit": 2,
+      "exit": 1,
       "out": [],
       "err": [
-        "daoris: `driver timeout` needs a whole number of minutes, at least 1 — e.g. `daoris driver timeout 120`."
+        "daoris: sessions are no longer limited by time: a working session runs as long as it works, and Daoris looks in on one that has gone quiet and brings it to you; nothing was changed."
       ],
-      "after": null
+      "after": null,
+      "changed": "SESSWATCH1a (D200, the session-watch design §3): sessions are no longer limited by time. The verb is retired: it changes nothing and says why, exit 1."
     },
     {
       "name": "cooloff",

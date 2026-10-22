@@ -350,7 +350,7 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
         var config = DriverConfig.Load(DriverConfigPath);
         Assert.Equal(4, config.Cap);
         Assert.Equal("stub", config.Adapter);
-        Assert.Equal(45, config.TimeoutMinutes);
+        Assert.Equal(45, config.KeptTimeoutMinutes);
         Assert.Equal(["node", "agent.mjs"], config.Commands["stub"]);
     }
 

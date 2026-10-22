@@ -296,7 +296,7 @@ public sealed class PermissionSpawnTests : IDisposable
         {
             Drivable = ["engine"],
             Adapter = adapter.Name,
-            TimeoutMinutes = 1,
+            TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter.Name] = command },
         };
         config = configure?.Invoke(config) ?? config;

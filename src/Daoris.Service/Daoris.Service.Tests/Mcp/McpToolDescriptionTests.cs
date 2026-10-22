@@ -374,10 +374,14 @@ public sealed partial class McpToolDescriptionTests
         string Said(string tool) => string.Join(" ", Descriptions().Where(d => d.Tool == tool).Select(d => d.Text));
 
         Assert.Equal(["settings_cap", "settings_cooloff", "settings_language", "settings_notify", "settings_timeout"], tools);
-        Assert.All(tools, tool => Assert.Contains("Ask Daoris only", Said(tool)));
-        Assert.All(tools, tool => Assert.Contains("granted", Said(tool)));
-        Assert.All(tools, tool => Assert.Contains("no Apply", Said(tool)));
-        Assert.All(tools, tool => Assert.Contains("recorded", Said(tool)));
+        // SESSWATCH1a (D200): `settings_timeout` is kept only to say it is retired and changes nothing.
+        var live = tools.Where(tool => tool != "settings_timeout").ToList();
+        Assert.All(live, tool => Assert.Contains("Ask Daoris only", Said(tool)));
+        Assert.All(live, tool => Assert.Contains("granted", Said(tool)));
+        Assert.All(live, tool => Assert.Contains("no Apply", Said(tool)));
+        Assert.All(live, tool => Assert.Contains("recorded", Said(tool)));
+        Assert.Contains("Retired", Said("settings_timeout"));
+        Assert.Contains("changes nothing", Said("settings_timeout"));
         Assert.Contains("repository or a workspace", Said("settings_language"));
         Assert.DoesNotContain(ToolNames(), name => name.StartsWith("settings_", StringComparison.Ordinal)
             && (name.Contains("mode") || name.Contains("grant") || name.Contains("account")));

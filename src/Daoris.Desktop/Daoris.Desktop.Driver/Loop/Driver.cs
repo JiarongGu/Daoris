@@ -2387,7 +2387,7 @@ public sealed class Driver(
                                 // FABRIC-CLOSE1h5: a closure graph's submission is its done, so its session is due, never parked.
                                 submitted: QuestResults.Submitted(after))
                             // BGWAIT2: a done this run reached outranks the timeout, as it outranks a messy exit.
-                            : Observation.AfterTimeout(config.TimeoutMinutes, quest.Status, status);
+                            : Observation.AfterTimeout(config.TestBound ?? 0, quest.Status, status);
                     // ACCESSSWAP1b: a run Daoris ended at its turn's end for a changed setup is neither a park nor a failure, and goes on.
                     var swappedOn = stop is null && ended.SetupChanged is not null;
                     if (swappedOn) conclusion = Observation.SetupChanged(conclusion, ended.SetupChanged!);
@@ -3243,17 +3243,18 @@ public sealed class Driver(
         var exitCode = await WaitAsync(
                 process, ct, minutes, timingOut: ending is null ? null : bound => ending.Say(Observation.TimedOut(bound)))
             .ConfigureAwait(false);
-        await capture.ConfigureAwait(false);
+        // 🔴 State E (SESSWATCH1a): a stray its agent started may hold the capture open past the exit; bounded, and concluded by the exit.
+        var drained = await CaptureWithinAsync(capture, sessionId).ConfigureAwait(false);
 
         // What it consumed, where the door reported it (TOOL3/D57 §4). A pipe with only text reports
         // nothing, and a surface then says "not measured" rather than zero.
-        var (outcome, turnFailed, acpLeft) = acp is not null ? await acp.ConfigureAwait(false) : (null, null, []);
+        var (outcome, turnFailed, acpLeft) = acp is not null && drained ? await acp.ConfigureAwait(false) : (null, null, []);
         // DONEEND1: an agent the run ended because it lingered after its session had ended exited as its session did, cleanly: on this
         // door the agent exits 0 once its stdin closes whatever happened, and the kill was Daoris's own, never the agent's end.
         if (ending?.EndedLingering == true && exitCode is not null) exitCode = 0;
         List<ChatMessage> left = [.. acpLeft];
         var used = acp is not null ? outcome?.Usage
-            : structured is not null ? await structured.ConfigureAwait(false)
+            : structured is not null && drained ? await structured.ConfigureAwait(false)
             : null;
 
         // 🔴 SESSCTX1c (D189's amendment, the session-context design §2): a native resume whose harness ended on a failed exit before it
@@ -3377,6 +3378,43 @@ public sealed class Driver(
     }
 
     /// <summary>
+    /// How long a run's capture is waited for once its root exited, G (SESSWATCH1a, D200, the session-watch design §1.5): the door's
+    /// drain and <c>EndedLingeringAsync</c>'s ten seconds fit inside it. Settable for a test, never read from <c>driver.json</c>.
+    /// </summary>
+    internal TimeSpan CaptureBound { get; set; } = TimeSpan.FromSeconds(60);
+
+    /// <summary>
+    /// 🔴 State E (SESSWATCH1a, D200, the session-watch design §2): a run whose root has exited is concluded by what it said, within
+    /// <see cref="CaptureBound"/>. Past it with its capture still held open, by something its agent started holding the harness's
+    /// output, everything left in the run's job is ended, said as a note line (<c>ended.gone</c>), and the capture drains; one still
+    /// open after <see cref="AbandonedWait"/> is abandoned, still observed. Never a cut-off: the caller concludes by the exit, so a
+    /// session that finished its turn and left a dev server holding its pipe (ORPHAN1's case) ends as it finished.
+    /// </summary>
+    /// <returns>Whether the capture finished, so what it read may be awaited; false where it was abandoned.</returns>
+    internal async Task<bool> CaptureWithinAsync(Task capture, string sessionId)
+    {
+        if (await Task.WhenAny(capture, Task.Delay(CaptureBound)).ConfigureAwait(false) == capture)
+        {
+            await capture.ConfigureAwait(false);
+            return true;
+        }
+
+        Context.Processes.JobOf(sessionId)?.Terminate();
+        var gone = Observation.Gone;
+        output?.Append(sessionId, $"— {gone.Note}");
+        Context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = gone.Note, Parts = gone.Parts }, say: null);
+        Log?.Info("session.gone", ("session", sessionId), ("bound", (int)CaptureBound.TotalSeconds));
+        if (await Task.WhenAny(capture, Task.Delay(AbandonedWait)).ConfigureAwait(false) == capture)
+        {
+            await capture.ConfigureAwait(false);
+            return true;
+        }
+
+        await AbandonedAsync(null, capture, sessionId, Log, output, TimeSpan.Zero).ConfigureAwait(false);
+        return false;
+    }
+
+    /// <summary>
     /// What the harness itself said about how its run ended (AGT3c), by its door: the protocol door's failure; the native
     /// door's failed turn and the words it wrote outside its protocol and on its stderr; and for a door that carries only text,
     /// all it gives, its transcript, beside the exit.
@@ -3387,20 +3425,26 @@ public sealed class Driver(
         : HarnessEnding.Transcript(exit, transcript);
 
     /// <summary>
-    /// Exit code, or null when the timeout killed it. Either way the tree dies with it — a timeout
+    /// Exit code, or null when a pass's own minutes ran out and killed it. Either way the tree dies with it — a pass's bound
     /// AND a driver shutdown both end the process, because an orphaned agent session working a quest
     /// nobody is observing is the one thing worse than a failed one.
     /// </summary>
-    /// <param name="minutes">The bound where it is not the machine's session timeout: a reviewer's pass (XAGENT1d).</param>
+    /// <remarks>
+    /// 🔴 No working session is ended on time (SESSWATCH1a, D200): a driven session, an answered park's resumed run, a native go-on and
+    /// an intake wait for their exit with no bound, and the watcher looks in on one gone quiet. Only a pass with minutes of its own (a
+    /// helper's, a reviewer's, a partner's, a brainstorm's turn) passes them, and the tests' one backstop (<see cref="DriverConfig.TestBound"/>)
+    /// rides the same parameter.
+    /// </remarks>
+    /// <param name="minutes">A pass's own minutes (XAGENT1d); null bounds nothing but the tests' backstop.</param>
     /// <param name="timingOut">
-    /// Told the bound, in minutes, when the timeout ends the process, before it is killed (BGWAIT2): what lets the protocol door
-    /// say the stream's end that follows as the timeout's. Never told for a shutdown.
+    /// Told the bound, in minutes, when the bound ends the process, before it is killed (BGWAIT2): what lets the protocol door
+    /// say the stream's end that follows as the bound's. Never told for a shutdown.
     /// </param>
     internal async Task<int?> WaitAsync(Process process, CancellationToken ct, int? minutes = null, Action<int>? timingOut = null)
     {
-        var bound = minutes ?? config.TimeoutMinutes;
+        var bound = minutes ?? config.TestBound;
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        timeout.CancelAfter(TimeSpan.FromMinutes(bound));
+        if (bound is { } within) timeout.CancelAfter(TimeSpan.FromMinutes(within));
         try
         {
             await process.WaitForExitAsync(timeout.Token).ConfigureAwait(false);
@@ -3409,7 +3453,7 @@ public sealed class Driver(
         catch (OperationCanceledException)
         {
             // Said before the kill, since the stream's end can reach the door's reader before anything after it here runs.
-            if (!ct.IsCancellationRequested) timingOut?.Invoke(bound);
+            if (!ct.IsCancellationRequested) timingOut?.Invoke(bound ?? 0);
             process.Kill(entireProcessTree: true);
             await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
             if (ct.IsCancellationRequested) throw; // shutdown: the caller records "stopped"

@@ -298,6 +298,13 @@ public static class Observation
     /// <summary>The person's plain stop, where the door that stopped it said nothing more (the language design §4 row 19).</summary>
     public static Noted Stopped => Noted.Of(NoteCodes.EndedStopped, "the person stopped it.");
 
+    /// <summary>
+    /// State E's note line (SESSWATCH1a, D200): its agent's process exited, something it started held its output, and Daoris ended what
+    /// was left. Never the conclusion: the run concludes by its exit.
+    /// </summary>
+    public static Noted Gone { get; } = Noted.Of(
+        NoteCodes.EndedGone, "its agent's process had ended, but something it started still held its output; Daoris ended what was left.");
+
     /// <summary>A session the timeout killed (row 18).</summary>
     public static Noted TimedOut(int minutes) =>
         Noted.Of(NoteCodes.EndedTimeout, $"timed out after {minutes} minutes and was killed.", ("minutes", minutes));

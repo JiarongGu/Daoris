@@ -89,7 +89,7 @@ public sealed class DoneEndTickTests : IDisposable
         {
             Drivable = ["engine"],
             Adapter = "acp-stub",
-            TimeoutMinutes = 3,
+            TestBound = 3,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), pidFile] },
         };

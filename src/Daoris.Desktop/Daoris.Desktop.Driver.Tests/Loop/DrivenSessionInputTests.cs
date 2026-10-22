@@ -365,7 +365,7 @@ public sealed class DrivenSessionInputTests : IDisposable
         {
             Drivable = ["engine"],
             Adapter = adapter is "acp-turns" or "acp-silent" ? "acp-stub" : adapter,
-            TimeoutMinutes = 1,
+            TestBound = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>>
             {

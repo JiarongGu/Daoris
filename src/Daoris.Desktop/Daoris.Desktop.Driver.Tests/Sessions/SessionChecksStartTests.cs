@@ -107,7 +107,7 @@ public sealed class SessionChecksStartTests : IDisposable
         await using var service = AskAndWaitTickTests.StandIn.Start(checkout);
         var config = choices with
         {
-            Drivable = ["engine"], Trees = ["engine"], Adapter = "stub", TimeoutMinutes = 1, PollSeconds = 1,
+            Drivable = ["engine"], Trees = ["engine"], Adapter = "stub", TestBound = 1, PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Agent(), Log, DaorisHome.Entry(Home, HomeEntry.Spawn)] },
         };
         var adapters = AdapterSet.Built();

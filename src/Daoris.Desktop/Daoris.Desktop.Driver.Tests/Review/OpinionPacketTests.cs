@@ -235,15 +235,16 @@ public sealed class OpinionPacketTests : IDisposable
     // ——— One turn, bounded (§5.6).
 
     [Theory]
-    [InlineData(null, 30, 20)]
-    [InlineData(45, 30, 30)]
-    [InlineData(10, 30, 10)]
-    [InlineData(120, 200, 120)]
-    public void A_pass_is_bounded_by_the_rule_s_minutes_or_the_machine_s_session_timeout_if_that_comes_first(int? minutes, int timeout, int bound)
+    [InlineData(null, null, 20)]
+    [InlineData(45, null, 45)]
+    [InlineData(120, null, 120)]
+    [InlineData(45, 2, 2)]
+    public void A_pass_is_bounded_by_the_rule_s_minutes_never_by_a_session_s_time_only_the_tests_backstop_first(int? minutes, int? testBound, int bound)
     {
+        // SESSWATCH1a (D200): no session timeout caps a reviewer, so it is told the minutes it gets.
         var rule = new OpinionRule(["codex-acp"], [OpinionRules.Landing], Minutes: minutes);
 
-        Assert.Equal(bound, OpinionPass.Bound(rule, DriverConfig.Empty with { TimeoutMinutes = timeout }));
+        Assert.Equal(bound, OpinionPass.Bound(rule, DriverConfig.Empty with { TestBound = testBound }));
     }
 
     [Fact]

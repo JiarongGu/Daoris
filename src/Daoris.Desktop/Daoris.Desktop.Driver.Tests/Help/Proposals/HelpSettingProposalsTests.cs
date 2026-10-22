@@ -15,7 +15,6 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     [InlineData("intake", null, null, "off", "daoris driver intake off", "Stop answering asks")]
     [InlineData("helper", null, null, "claude-code", "daoris driver helper claude-code", "`claude-code`")]
     [InlineData("strikes", null, null, "5", "daoris driver strikes 5", "5 failed sessions")]
-    [InlineData("timeout", null, null, "120", "daoris driver timeout 120", "120 minutes")]
     [InlineData("notify", null, null, "off", "daoris driver notify off", "Stop saying")]
     // HELP9: reading and writing across (D107), and the two dials the terminal alone had.
     [InlineData("across", "engine", null, "read off", "daoris driver across engine read off", "read by no agent outside it")]
@@ -483,11 +482,21 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         var config = DriverConfig.Empty;
         config = HelpProposals.Plan(Setting("drive", "engine"), config, Facts).Apply!(config);
         config = HelpProposals.Plan(Setting("landing", null, "work", "branch feature/{quest}-{slug} --tidy"), config, Facts).Apply!(config);
-        config = HelpProposals.Plan(Setting("timeout", value: "120"), config, Facts).Apply!(config);
 
         Assert.Contains("engine", config.Drivable);
         Assert.Equal(new LandingRule("branch", "feature/{quest}-{slug}", Tidy: true), config.WorkspaceLandings["work"]);
-        Assert.Equal(120, config.TimeoutMinutes);
+    }
+
+    /// <summary>SESSWATCH1a (D200, the session-watch design §3): the retired `timeout` door refuses whatever it is given, in the verb's words.</summary>
+    [Theory]
+    [InlineData("120")]
+    [InlineData("0")]
+    public void The_retired_timeout_door_refuses_saying_sessions_are_no_longer_limited_by_time(string minutes)
+    {
+        var plan = HelpProposals.Plan(Setting("timeout", value: minutes), DriverConfig.Empty, Facts);
+
+        Assert.Null(plan.Apply);
+        Assert.Equal(DriverChoicesCommand.TimeoutRetired, plan.Refusal);
     }
 
     /// <summary>HELP9: across (D107), a cap and an adapter, applied as `SET_READ_ACROSS`, `SET_WRITE_ACROSS` and the terminal make them.</summary>
@@ -582,7 +591,8 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         ];
 
         Assert.Equal(new HelpSettingProposals().Doors, samples.Select(sample => sample.Door));
-        foreach (var (door, target, workspace, value) in samples)
+        // SESSWATCH1a (D200): the retired `timeout` door is kept only to refuse, saying why.
+        foreach (var (door, target, workspace, value) in samples.Where(sample => sample.Door != "timeout"))
         {
             Assert.Null(HelpProposals.Plan(Setting(door, target, workspace, value), DriverConfig.Empty, Facts).Refusal);
         }

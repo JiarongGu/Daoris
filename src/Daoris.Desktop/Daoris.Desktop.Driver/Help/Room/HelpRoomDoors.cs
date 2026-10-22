@@ -167,7 +167,6 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("start a quest its failed sessions parked again", "Quests → the quest's page → Try again", "`daoris driver retry <quest>`"),
         ("start a quest your stop holds again: carry a taken one on in its tree, or plan an open one", "Quests → the quest's page, "
             + "whose *Sitting* names the session", "`daoris driver retry <quest> --session <id>`"),
-        ("bound how long one session runs", "(no screen yet)", "`daoris driver timeout <minutes>`"),
         // TOOL4e: the terminal's door onto the default cool-off; TOOL4g gave it Settings → Driver's control, and TOOL4l-b
         // Ask Daoris's `setting` kind's `cooloff` (HelpCoverageTests).
         ("set how long an account cools when its agent hits a limit and names no time", "Settings → Driver → Cool-off when no time is named",

@@ -355,7 +355,9 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("landing", "engine", null, "merge --auto-accept", "`--auto-accept` for a quest's done")]
     [InlineData("intake", null, null, null, "an agent, or `off`")]
     [InlineData("strikes", null, null, "many", "a whole number")]
-    [InlineData("timeout", null, null, "0", "a whole number of minutes, 1 or more")]
+    // SESSWATCH1a (D200): the retired door is refused whatever it is given.
+    [InlineData("timeout", null, null, "0", "no longer limited by time")]
+    [InlineData("timeout", null, null, "90", "no longer limited by time")]
     [InlineData("notify", null, null, "loud", "`on` or `off`")]
     [InlineData("across", null, null, "read off", "a repository or a workspace")]
     [InlineData("across", "engine", "work", "read off", "a repository or a workspace")]

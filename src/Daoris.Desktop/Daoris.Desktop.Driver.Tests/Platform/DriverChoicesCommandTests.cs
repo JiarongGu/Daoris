@@ -39,7 +39,6 @@ public sealed class DriverChoicesCommandTests : IDisposable
     [Theory]
     [InlineData("drive engine")]
     [InlineData("cap 3")]
-    [InlineData("timeout 90")]
     [InlineData("retry q7 --at 2")]
     public async Task A_persons_press_acting_here_from_a_sessions_terminal_is_refused_and_nothing_is_written(string words)
     {
@@ -70,6 +69,27 @@ public sealed class DriverChoicesCommandTests : IDisposable
         Assert.Equal(0, exit);
         Assert.StartsWith($"daoris: {Config}", _out.ToString(), StringComparison.Ordinal);
         Assert.Equal("", _error.ToString());
+    }
+
+    /// <summary>
+    /// SESSWATCH1a (D200, the session-watch design §3): the retired <c>timeout</c> changes nothing, from any terminal, and says that
+    /// sessions are no longer limited by time, exit 1; a file that holds the key keeps it as written.
+    /// </summary>
+    [Theory]
+    [InlineData(null)]
+    [InlineData("s1a2b3c4")]
+    public async Task The_retired_timeout_changes_nothing_and_says_why(string? session)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(Config)!);
+        const string Kept = """{ "cap": 2, "timeoutMinutes": 90 }""";
+        File.WriteAllText(Config, Kept);
+
+        var exit = await DriverChoicesCommand.RunAsync(["timeout", "120"], session is null ? World() : World(("DAORIS_SESSION_ID", session)), CancellationToken.None);
+
+        Assert.Equal(1, exit);
+        Assert.Equal($"daoris: {DriverChoicesCommand.TimeoutRetired}", _error.ToString().TrimEnd());
+        Assert.Equal(Kept, File.ReadAllText(Config));
+        Assert.Equal(90, DriverConfig.Load(Config).KeptTimeoutMinutes);
     }
 
     [Fact]
