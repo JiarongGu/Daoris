@@ -3822,17 +3822,32 @@ check(
   added.code === 0 && existsSync(profileAt('claude-code', 'work')) && /empty until you log into it/.test(added.out),
   added.out,
 );
-const defaulted = cliHarness('profile default claude-code work --workspace aurora');
+// One set serves every workspace (D197): a workspace's own account, or a default beside the order, is no longer a thing to
+// write, so `profile default` refuses in the set's words (POOL1b, the account-pool design §5.1) and writes nothing, naming
+// the verb that puts an account first: `profile order`, over the agent's one order.
+cliHarness('profile add claude-code spare');
+const beforeDefault = readFileSync(harnessConfig, 'utf8');
+const defaulted = cliHarness('profile default claude-code spare --workspace aurora');
 check(
-  '`daoris agent profile default --workspace` wires one circle’s account',
-  defaulted.code === 0
-    && JSON.parse(readFileSync(harnessConfig, 'utf8')).workspaces?.aurora?.['claude-code'] === 'work',
+  '`daoris agent profile default` is refused, since every account serves every workspace, naming `profile order` instead, and nothing is written',
+  defaulted.code !== 0
+    && defaulted.out.includes('every account of Daoris\'s serves every workspace (D197), and the order says where starts begin')
+    && defaulted.out.includes('`daoris agent profile order claude-code spare` puts one first')
+    && readFileSync(harnessConfig, 'utf8') === beforeDefault,
   defaulted.out,
+);
+const ordered = cliHarness('profile order claude-code spare');
+const afterEdit = JSON.parse(readFileSync(harnessConfig, 'utf8'));
+check(
+  '`daoris agent profile order` puts an account first in the agent’s one order, the rest after it, and names no workspace',
+  ordered.code === 0
+    && JSON.stringify(afterEdit.rotation?.['claude-code']) === JSON.stringify(['spare', 'work'])
+    && !afterEdit.workspaces?.aurora && !afterEdit.defaults?.['claude-code'],
+  `${ordered.out}\n${JSON.stringify(afterEdit)}`,
 );
 // The stub's own set, its order and how it is used, written by hand above, survives the CLI's edit — the CLI is an editor
 // over the file, not its owner. Its edit folds the file first (D197 point 7), and a set already whole has nothing to fold,
 // so nothing is said of it either.
-const afterEdit = JSON.parse(readFileSync(harnessConfig, 'utf8'));
 check(
   '…and the edit left every other agent’s set in the file standing: the stub’s order and its use, with nothing folded',
   JSON.stringify(afterEdit.rotation?.stub) === JSON.stringify(['alpha', 'fresh'])
@@ -3840,19 +3855,19 @@ check(
     && (afterEdit.pooled?.stub ?? []).length === 0,
   readFileSync(harnessConfig, 'utf8'),
 );
-const typo = cliHarness('profile default claude-code typo');
+const typo = cliHarness('profile order claude-code typo');
 check(
-  'a default naming a profile that does not exist is refused, naming the ones that do',
-  typo.code !== 0 && /has no profile `typo`/.test(typo.out) && /work/.test(typo.out),
+  'an order naming an account that does not exist is refused, naming the ones that do',
+  typo.code !== 0 && /has no account `typo`/.test(typo.out) && /work/.test(typo.out) && /spare/.test(typo.out),
   typo.out,
 );
-// Removing an account removes it (D66 §3): un-pointed everywhere, and the directory gone with it.
+// Removing an account removes it (D66 §3): out of the agent's order, and the directory gone with it.
 const removed = cliHarness('profile remove claude-code work');
 check(
-  '`profile remove` un-defaults it everywhere, and the directory goes with it',
+  '`profile remove` takes it out of the agent’s order, and the directory goes with it',
   removed.code === 0 && /are gone/.test(removed.out)
     && !existsSync(profileAt('claude-code', 'work'))
-    && !JSON.parse(readFileSync(harnessConfig, 'utf8')).workspaces?.aurora?.['claude-code'],
+    && JSON.stringify(JSON.parse(readFileSync(harnessConfig, 'utf8')).rotation?.['claude-code']) === JSON.stringify(['spare']),
   removed.out,
 );
 // 🔴 A signed-in one too, sign-in and all — amending SES3's "deletes nothing", on the owner's word
