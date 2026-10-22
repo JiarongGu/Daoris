@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import i18n from '../locales/i18n';
 import type { WorkflowStep } from './current';
 import { BRANCH_AUTOMATIC, FULL, NOTHING_SET, WORK } from './fixtures';
+import { GRAPH_RUN, GRAPH_RUN_ADDED_LOOK } from './runFixtures';
 import { FINISHED, outcomeOf, workflowFlow } from './workflowFlow';
 
 // FLOWCHART1d (D186; the flowchart design §2.4, §2.5, §5.1): a workflow drawn as a flowchart, from what `WORKFLOW_CURRENT` and
@@ -101,11 +102,40 @@ describe('a workflow as a flowchart', () => {
     expect(ended.nodes.at(-1)).toMatchObject({ id: FINISHED, state: { word: 'done', tone: 'done' }, reached: true, settled: true });
   });
 
+  // FABRIC-CUTOVER1e (D186's FLOWCHART1d note): a run bound to a graph version answers its graph's wires, the first read that does, so its
+  // drawing follows them: a fork and its join as the version holds them, a failure's path in its style, the end of the line after its end.
+  it('draws a graph run by its wires, a fork and its join, a failure path, and the end after its end', () => {
+    const { graph, steps } = GRAPH_RUN;
+    const flow = workflowFlow(t, { steps: steps.map((step) => step.step) }, 'engine', undefined, graph);
+    expect(flow.entries).toEqual(['claimed']);
+    expect(flow.nodes.map((node) => node.id)).toEqual(['claimed', 'build', 'lint', 'both', 'halt', 'opinion', 'handed', 'deployed', FINISHED]);
+    expect(flow.nodes.map((node) => node.title)).toEqual(
+      ['The work', 'built by acme.ci', 'linted by acme.ci', 'The join', 'Stop', 'Second opinion', 'Landing on a branch', 'deployed by acme.deploy', 'Finished']);
+    expect(flow.edges.filter((edge) => edge.from === 'claimed').map((edge) => edge.to)).toEqual(['build', 'lint']);
+    expect(flow.edges.filter((edge) => edge.to === 'both').map((edge) => edge.from)).toEqual(['build', 'lint']);
+    expect(flow.edges.find((edge) => edge.to === 'halt')).toMatchObject({ from: 'both', style: 'failed', says: 'if it fails', label: 'on failure' });
+    expect(flow.edges.find((edge) => edge.from === 'handed')).toMatchObject({ to: 'deployed', says: 'once you accept it' });
+    expect(flow.edges.at(-1)).toMatchObject({ from: 'deployed', to: FINISHED, says: 'automatically' });
+    expect(flow.sections).toEqual([{ title: 'Before it lands', from: 'claimed' }, { title: 'After it lands', from: 'deployed' }]);
+    // No outcome is hung on a node by its options: the graph's own wires draw its failure paths.
+    expect(flow.nodes.filter((node) => node.id !== FINISHED && node.id.includes(':'))).toEqual([]);
+  });
+
+  it('draws a look the work added beside a graph as an entry of its own, joined to nothing', () => {
+    const { graph, steps } = GRAPH_RUN_ADDED_LOOK;
+    const flow = workflowFlow(t, { steps: steps.map((step) => step.step) }, 'engine', undefined, graph);
+    expect(flow.entries).toEqual(['claimed', 'look']);
+    expect(flow.edges.some((edge) => edge.from === 'look' || edge.to === 'look')).toBe(false);
+    expect(flow.nodes.find((node) => node.id === 'release')!.title).toBe('Your go-ahead');
+  });
+
   it('is worded in 中文', async () => {
     await i18n.changeLanguage('zh');
     const flow = workflowFlow(t, { steps: [WORK(), BRANCH_AUTOMATIC, CHECK('stop')] }, 'engine');
     expect(flow.sections[0]!.title).toBe('落地之前');
     expect(flow.nodes.find((node) => node.id === 'checks:failed')!.title).toBe('进展就此停止');
     expect(flow.edges[0]!.says).toBe('自动继续');
+    const graph = workflowFlow(t, { steps: GRAPH_RUN.steps.map((step) => step.step) }, 'engine', undefined, GRAPH_RUN.graph);
+    expect(graph.nodes.map((node) => node.title).slice(1, 5)).toEqual(['acme.ci 的 built', 'acme.ci 的 linted', '汇合', '停止']);
   });
 });

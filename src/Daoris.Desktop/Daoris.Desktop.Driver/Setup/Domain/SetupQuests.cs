@@ -27,13 +27,24 @@ public static class SetupQuests
     /// <summary>An adopter on the old layout, or one whose move is unfinished (D117 §6.2).</summary>
     public const string Move = "Move this repository to the agents layout";
 
-    /// <summary>The titles the press composes, before the day.</summary>
-    public static readonly IReadOnlyList<string> Titles = [SetUp, Declare, Move];
+    /// <summary>
+    /// A repository set up and declaring no index of where things are: the index alone, its own quest after the set-up
+    /// (ORIENT2c, D151 point 5), so an index that fails never holds a set-up back.
+    /// </summary>
+    public const string Index = "Give this repository an index of where things are";
 
-    /// <summary>Whether a quest so titled is a set-up.</summary>
-    public static bool IsSetup(string? title) =>
+    /// <summary>The titles the press composes, before the day.</summary>
+    public static readonly IReadOnlyList<string> Titles = [SetUp, Declare, Move, Index];
+
+    /// <summary>Whether a quest so titled is a set-up, the index quest among them.</summary>
+    public static bool IsSetup(string? title) => Titles.Any(stem => Is(title, stem));
+
+    /// <summary>Whether a quest so titled is the index quest (ORIENT2c): a workspace plan paces it after the set-up.</summary>
+    public static bool IsIndex(string? title) => Is(title, Index);
+
+    private static bool Is(string? title, string stem) =>
         title is not null
-        && Titles.Any(stem => title.Length == stem.Length
+        && (title.Length == stem.Length
             ? string.Equals(title, stem, StringComparison.Ordinal)
             : title.StartsWith(stem + " (", StringComparison.Ordinal));
 

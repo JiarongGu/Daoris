@@ -150,7 +150,10 @@ export function NotificationsView({
         {nothing && <NothingNeedsYou working={working} />}
         {nothing && said.items === 0 && unread === 0 && <p className="m-0 text-small text-ink-faint">{t('notifications.nothingUnread')}</p>}
         {said.items > 0 && (
-          <Group id="messages" title={t('notifications.group.messages')} count={said.unread} folded={folded.has('messages')} onFold={fold}>
+          <Group
+            id="messages" title={t('notifications.group.messages')} count={said.unread} folded={folded.has('messages')} onFold={fold}
+            unread={t('notifications.messages.unread', { count: said.unread })}
+          >
             <Messages
               asks={messages}
               answered={answered}
@@ -163,7 +166,10 @@ export function NotificationsView({
           </Group>
         )}
         {notices.length > 0 && (
-          <Group id="done" title={t('notifications.done.title')} count={unread > 0 ? unread : null} folded={folded.has('done')} onFold={fold}>
+          <Group
+            id="done" title={t('notifications.done.title')} count={unread > 0 ? unread : null} folded={folded.has('done')} onFold={fold}
+            unread={t('notifications.done.unreadCount', { count: unread })}
+          >
             <DoneAndFailed notices={notices} onRead={onRead ?? (() => {})} onOpen={onOpenNotice} onDismiss={onDismiss ?? (() => {})} />
           </Group>
         )}
@@ -176,7 +182,7 @@ export function NotificationsView({
 const groupAnchor = (group: NotificationsGroup) => `notifications-${group}`;
 
 /** A group of the view: its head a fold, its name and its count, then what it holds while unfolded (§2.2). */
-function Group({ id, title, count, folded, onFold, warn = false, children }: {
+function Group({ id, title, count, folded, onFold, warn = false, unread, children }: {
   id: NotificationsGroup;
   title: string;
   /** How many it holds; null while not known. */
@@ -185,6 +191,11 @@ function Group({ id, title, count, folded, onFold, warn = false, children }: {
   onFold: (group: NotificationsGroup) => void;
   /** The presses' group wears the warning hue its cards wear (D185 R2: a wait with a clock). */
   warn?: boolean;
+  /**
+   * Its count in words where it counts what is unread, which waits on nobody (BADGEUX1, the UI/UX design §3.10): said in a neutral
+   * ink, never a bare figure in open's, which is a wait's.
+   */
+  unread?: string;
   children: ReactNode;
 }) {
   return (
@@ -198,9 +209,9 @@ function Group({ id, title, count, folded, onFold, warn = false, children }: {
         >
           <Icon name={folded ? 'chevronRight' : 'chevronDown'} size={13} className="text-ink-faint" />
           <span className="min-w-0 flex-1">{title}</span>
-          {count !== null && (
-            <span className={warn ? 'font-mono text-meta tabular-nums text-warn' : 'font-mono text-meta tabular-nums text-ink-open'}>{count}</span>
-          )}
+          {count !== null && (unread
+            ? <span className="text-meta font-normal tabular-nums text-ink-soft">{unread}</span>
+            : <span className={warn ? 'font-mono text-meta tabular-nums text-warn' : 'font-mono text-meta tabular-nums text-ink-open'}>{count}</span>)}
         </button>
       </h2>
       {!folded && children}

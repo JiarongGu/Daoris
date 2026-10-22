@@ -13,8 +13,34 @@ const ticked = (names: readonly string[]) => names.map((name) => `\`${name}\``);
 
 const known = <T extends string>(list: readonly T[], value: string): value is T => (list as readonly string[]).includes(value);
 
-/** A step's title: its kind's name, a landing by its form, the look by its environment. */
+/**
+ * The titles of the kinds a graph run's node may be that no step of today's Current is (FABRIC-CUTOVER1e), a named version's go-ahead
+ * among them, which this page drew as a step it had no words for: the driver's `WorkflowRunWords.Title` says these in the terminal, and
+ * a go-ahead there by its id, as it always has.
+ */
+const NODE_TITLES: Record<string, string> = {
+  'go-ahead': 'workflow.step.goAhead',
+  human: 'workflow.step.task',
+  pushed: 'workflow.step.pushed',
+  line: 'workflow.step.line',
+  'quest.close': 'workflow.step.questClose',
+  all: 'workflow.step.join',
+  stop: 'workflow.step.stop',
+  'wait.unit': 'workflow.step.waitUnit',
+  check: 'workflow.step.check',
+};
+
+/** A plugin's own node's kind, `<plugin>/<node>`, both parts named: the driver's `NodeKinds.IsPlugin`. */
+const pluginNode = (kind: string): { plugin: string; node: string } | null => {
+  const parts = kind.split('/');
+  return parts.length === 2 && parts[0] && parts[1] && !/\s/.test(kind) ? { plugin: parts[0], node: parts[1] } : null;
+};
+
+/** A step's title: its kind's name, a landing by its form, the look by its environment; a graph run's node by its kind or its plugin's. */
 export function stepTitle(t: TFunction, step: WorkflowStep): string {
+  if (NODE_TITLES[step.kind]) return t(NODE_TITLES[step.kind]);
+  const plugin = pluginNode(step.kind);
+  if (plugin) return t('workflow.step.pluginNode', plugin);
   if (!known(KNOWN_KINDS, step.kind)) return t('workflow.step.unknown', { kind: step.kind });
   switch (step.kind) {
     case 'work': return t('workflow.step.work');

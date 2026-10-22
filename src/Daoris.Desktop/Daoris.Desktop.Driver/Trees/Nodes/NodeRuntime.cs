@@ -517,7 +517,7 @@ public sealed class NodeRuntime(
             Quests = work,
             Branch = branch,
             Branches = branches,
-            AfterHanded = AfterHanded(graph),
+            AfterHanded = RunSubjects.AfterHanded(graph),
             GoAheads = goAheads,
             Root = root,
             Identity = identity,
@@ -535,22 +535,6 @@ public sealed class NodeRuntime(
         // When a branch unit's work was opened: its session branch's opening, else its newest landing.
         static DateTimeOffset Opened(WorkUnit unit) =>
             unit.Records.Branch?.At ?? unit.Records.Landings.Select(landing => landing.LandedAt).DefaultIfEmpty(DateTimeOffset.MinValue).Max();
-    }
-
-    /// <summary>The nodes a wire path leads to from <c>handed</c> (the cutover design §2.2): what observes the run's branch at its landing.</summary>
-    private static HashSet<string> AfterHanded(NodeGraph graph)
-    {
-        var after = new HashSet<string>(StringComparer.Ordinal);
-        var next = new Queue<string>(graph.Nodes.Where(node => node.Kind == NodeKinds.Handed).Select(node => node.Id));
-        while (next.TryDequeue(out var from))
-        {
-            foreach (var wire in graph.Wires.Where(wire => wire.From is { Unit: null } source && source.Node == from && wire.To is { Unit: null }))
-            {
-                if (after.Add(wire.To.Node)) next.Enqueue(wire.To.Node);
-            }
-        }
-
-        return after;
     }
 
     /// <summary>
@@ -715,6 +699,10 @@ public sealed class NodeRuntime(
             // FABRIC-CLOSE1q: the person's word on a held close, a close's recovery, before the closer sends any close again below; FABRIC-CLOSE1q2:
             // judged on the quests this pass read, so a word on a close for a submission reopened or replaced since never reaches the next one.
             if (_closer is not null) done.AddRange(_closer.Resolve(Declared, _quests));
+            // FABRIC-CUTOVER1f (the cutover design §3, §5.2): the person's skip or stop of a run's node, kept on its record by their door, applied
+            // before anything on it is judged; a run it names is judged this pass.
+            var worded = Worded(governed.Values);
+            done.AddRange(worded.Done);
             done.AddRange(await _performer.ReconcileAsync(Declared, sends, ct).ConfigureAwait(false));
             done.AddRange(_performer.Due(Declared));
             // FABRIC-PERFORM1d (§D3): what plugins created, asked of them at their unit's true end, or at once for a superseded attempt's,
@@ -722,6 +710,7 @@ public sealed class NodeRuntime(
             done.AddRange(await _cleaner.CleanAsync(Ended, sends, ct).ConfigureAwait(false));
 
             var said = new List<string>(bindings);
+            said.AddRange(worded.Said);
 
             // FABRIC-CLOSE1b, §E5 step 4: a close whose answer was lost is reconciled before anything new starts; FABRIC-CLOSE1u: by asking its
             // door what became of its key, never by sending it again blind, so one never delivered is judged again on what is there now.
@@ -894,6 +883,33 @@ public sealed class NodeRuntime(
     }
 
     /// <summary>
+    /// The person's skips and stops of the governed runs' nodes, kept on each run's record by their door (FABRIC-CUTOVER1f; D190 point 3, the
+    /// cutover design §3, §5.2), applied through the one table under the run's declarations and the scope its starts take, and taken off whether
+    /// applied or not. Each is said, and names its run, so the run is judged this pass. A record that does not read keeps them: the evaluation says it.
+    /// </summary>
+    private (List<WorkPerformed> Done, List<string> Said) Worded(IEnumerable<GovernedUnit> governed)
+    {
+        var done = new List<WorkPerformed>();
+        var said = new List<string>();
+        foreach (var each in governed)
+        {
+            var unit = each.Unit.Id;
+            if (each.Scope is null || records.Read(unit) is not { Pending.Count: > 0 }) continue;
+            var scope = new NodeScope(each.GraphDigest, each.Run);
+            var now = clock();
+            var (refused, applied) = records.Edit(unit, record => RunNodeWords.Apply(record, each.Declared, scope, now));
+            if (refused is not null) continue;
+            foreach (var (word, code) in applied!)
+            {
+                done.Add(new WorkPerformed(unit, word.Node, code is null ? PerformedWhat.Resolved : PerformedWhat.Refused, code ?? word.Act));
+                said.Add(RunNodeWords.AppliedSaid(unit, word, code));
+            }
+        }
+
+        return (done, said);
+    }
+
+    /// <summary>
     /// A run governed again after its end (FABRIC-CUTOVER1c; the cutover design §3): its chain came back here, so the end its record holds lapses
     /// and the run goes on; the new quest moves <c>claimed</c>'s subject, and what rests on it is judged again.
     /// </summary>
@@ -1001,15 +1017,8 @@ public sealed class NodeRuntime(
         return (before, WireEvaluation.Evaluate(nodes, governed.Graph.Wires, before, run));
     }
 
-    /// <summary>The subject a run's node observes (the cutover design §2.2's table): by its kind, and a plugin's or a check's by its place after <c>handed</c>.</summary>
-    private static RunSubject SubjectOf(NodeDeclaration node, RunScope scope) => node.Kind switch
-    {
-        NodeKinds.Claimed or NodeKinds.QuestClose => RunSubject.Quest,
-        NodeKinds.GoAhead or NodeKinds.Human or NodeKinds.WaitUnit or NodeKinds.Stop or NodeKinds.All => RunSubject.Run,
-        NodeKinds.Opinion or NodeKinds.Look or NodeKinds.Handed => RunSubject.Branch,
-        NodeKinds.Pushed or NodeKinds.PullRequest or NodeKinds.Line => RunSubject.Landing,
-        _ => scope.AfterHanded.Contains(node.Id) ? RunSubject.Landing : RunSubject.Branch,
-    };
+    /// <summary>The subject a run's node observes (the cutover design §2.2's table, <see cref="RunSubjects"/>, which the run's view reads too).</summary>
+    private static RunSubject SubjectOf(NodeDeclaration node, RunScope scope) => RunSubjects.Of(node, scope.AfterHanded);
 
     /// <summary>
     /// The landing a run's <c>handed</c> reached on (the cutover design §2.2): the branch unit its reach names and the tip its evidence names, the

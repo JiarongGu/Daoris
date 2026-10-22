@@ -58,7 +58,8 @@ public static class VerbLeases
             "chat" or "answer" => false,
             "drive" or "--once" or "--until-idle" => false,
             "run-heavy" => false,
-            "workflow" => next == "keep",
+            // FABRIC-CUTOVER1f: the person's skip and stop of a run's node keep a word on its record, which only the lease's holder writes.
+            "workflow" => next is "keep" or NodeWordActs.Skip or NodeWordActs.Stop,
             "ask" => args.Skip(1).Any(AskWork.Contains),
             "quest" => next is not null && !ServiceQuests.Contains(next),
             "sessions" => next is not null && !next.StartsWith('-') && next is not ("start-from" or "hand-over"),
@@ -119,7 +120,7 @@ public static class VerbLeases
         "land", "remove", "clean", "sync", "hand", "stop", "finish", "decline", "say", "take-back", "reword", "archive",
         "unarchive", "delete", "go-on-new", "helper", "pause", "resume", "abandon", "clear", "rename", "pin", "unpin", "ask",
         "anyway", "myself", "install", "new", "try", "keep", "dismiss", "forward","--pause", "--resume", "--abandon", "--clear",
-        "--workspace", "--when-idle", "--now", "--cancel", "recovery", "held", "mode",
+        "--workspace", "--when-idle", "--now", "--cancel", "recovery", "held", "mode", "skip",
     };
 
     private static bool IsWord(string value) => value.Length > 0 && value.All(c => c is >= 'a' and <= 'z' or '-');

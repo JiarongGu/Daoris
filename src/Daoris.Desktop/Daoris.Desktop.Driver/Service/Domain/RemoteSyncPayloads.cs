@@ -11,9 +11,13 @@ namespace Daoris.Driver;
 /// <param name="Synced">When a pass last reached the remote; a wall does not move it.</param>
 /// <param name="Tried">When a pass last ran, reaching the remote or not.</param>
 /// <param name="Problem">The wall the last pass hit; null when it reached the remote.</param>
+/// <param name="Undeclared">
+/// The machines of the workspace its remote last said had not declared they know a bound quest (FABRIC-CLOSE1i2), as the last pass
+/// heard them: empty where every one did, null where no pass heard the handshake, a host before it included.
+/// </param>
 public sealed record SyncStanding(
     string Workspace, bool Wired, int Ahead, IReadOnlyList<string> Behind, IReadOnlyList<string> Conflicts,
-    DateTimeOffset? Synced, DateTimeOffset? Tried, string? Problem)
+    DateTimeOffset? Synced, DateTimeOffset? Tried, string? Problem, IReadOnlyList<string>? Undeclared = null)
 {
     /// <summary>
     /// As a terminal prints it: the circle and its counts on one line, then the quests each count
@@ -30,6 +34,7 @@ public sealed record SyncStanding(
         };
         if (Conflicts.Count > 0) lines.Add($"  in conflict: {string.Join(", ", Conflicts.Select(id => $"#{id}"))}");
         if (Behind.Count > 0) lines.Add($"  behind: {string.Join(", ", Behind.Select(id => $"#{id}"))}");
+        if (Undeclared is { Count: > 0 } undeclared) lines.Add($"  not declared a bound quest, so no bind goes through the remote: {string.Join(", ", undeclared)}");
         if (Problem is not null)
         {
             // Only WHEN: the wall is the host's own sentence and already says what went wrong.
@@ -419,7 +424,9 @@ public static class RemoteSyncPayloads
             Strings(root, "conflicts"),
             At("synced"),
             At("tried"),
-            Text(root, "problem"));
+            Text(root, "problem"),
+            // FABRIC-CLOSE1i2: absent where no pass heard the handshake, which is never read as every machine declared.
+            root.TryGetProperty("undeclared", out var undeclared) && undeclared.ValueKind == JsonValueKind.Array ? Strings(root, "undeclared") : null);
     }
 
     /// <summary>Where this machine's claim on a quest stands, as its host answered: none, held, unconfirmed or lost.</summary>

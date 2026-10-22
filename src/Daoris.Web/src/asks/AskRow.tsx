@@ -97,7 +97,8 @@ export function AskRow({ ask, intake = null, unread = 0, chosen = false, onOpen 
         <span className="flex items-baseline justify-between gap-2">
           <Pill tone={ASK_TONE[ask.state]}>{t(`asks.state.${ask.state}`)}</Pill>
           <span className="flex items-baseline gap-2">
-            {unread > 0 && <Pill tone="open">{t('asks.channel.unread', { count: unread })}</Pill>}
+            {/* News waits on nobody, so its count is a neutral pill: open's hue is the person's waits alone (BADGEUX1). */}
+            {unread > 0 && <Pill tone="neutral">{t('asks.channel.unread', { count: unread })}</Pill>}
             <CarriedCount links={ask.links.length} files={ask.attachments.length} />
           </span>
         </span>

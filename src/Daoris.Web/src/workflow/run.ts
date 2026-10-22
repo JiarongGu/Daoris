@@ -43,6 +43,77 @@ export interface RunStep {
   words?: string | null;
   /** A code the record kept: a hold, a landing try's, a pass's failure, an ask's, who accepted. */
   code?: string | null;
+  /**
+   * On a run bound to a graph version (FABRIC-CUTOVER1e), the node's own kind (`claimed`, `handed`, a plugin's `<plugin>/<node>`); its
+   * detail is then its record's state (`GRAPH_DETAILS`). None on a steps run's step, and on a look the work added beside a graph.
+   */
+  node?: string | null;
+  /** What a graph run's node observes: `quest` (its `quest`), `branch` (its `branch` at its `commit`) or `landing`; none for the run itself. */
+  on?: string | null;
+  /**
+   * What the person may say of a graph run's node now (FABRIC-CUTOVER1f), as the driver's one table takes it: `skip`, `stop`. None where it
+   * offers neither, on a steps run's step, and from a shell before it.
+   */
+  acts?: string[] | null;
+  /** The person's word on a graph run's node, kept and not applied yet (FABRIC-CUTOVER1f); none where none waits. */
+  asked?: NodeWordKept | null;
+}
+
+/** What the person may say of a graph run's node (FABRIC-CUTOVER1f): pass it over for the run, or stop it. */
+export type NodeAct = 'skip' | 'stop';
+
+/** A word kept on a run's node, as the driver answers it: the act, the person's words where given, and when. */
+export interface NodeWordKept {
+  node: string;
+  act: string;
+  words?: string | null;
+  at: string;
+}
+
+/** What a press of the person's word sends (`WORKFLOW_NODE`): the run, its node, the act, and their words. */
+export interface NodeWordAsk {
+  run: string;
+  node: string;
+  act: NodeAct;
+  words: string | null;
+}
+
+/** What `WORKFLOW_NODE` answers: kept, or refused by its code with the driver's sentence. */
+export interface NodeWordAnswer {
+  run: string;
+  node: string;
+  act: string;
+  done: boolean;
+  refused?: string | null;
+  message?: string | null;
+}
+
+/** A wire of a graph run's graph: from a node to a node, by its kind (`after`, `failed`, `rejected`, …). */
+export interface GraphWire {
+  from: string;
+  to: string;
+  kind: string;
+}
+
+/**
+ * A run bound to a graph version, drawn from its record (FABRIC-CUTOVER1e; D190 points 2 and 3): its graph's entries, end and wires, the
+ * subjects its nodes observe, and what its record says of it. Its nodes are the run's steps, each with its `node`.
+ */
+export interface GraphRun {
+  run: string;
+  entries: string[];
+  end: string;
+  wires: GraphWire[];
+  /** Its newest work quest here, which `claimed` observes. */
+  quest?: string | null;
+  /** The branch its newest session worked, which its gates and its landing observe. */
+  branch?: string | null;
+  /** Whether Daoris has judged its graph yet. */
+  judged: boolean;
+  /** Its record does not read. */
+  unread: boolean;
+  /** The quest it ended at, where its record keeps its end. */
+  ended?: string | null;
 }
 
 /** A chain's work in one repository, read as steps. */
@@ -67,6 +138,8 @@ export interface WorkflowRun {
     route?: { level: string; kind?: string | null; label?: string | null } | null;
   };
   steps: RunStep[];
+  /** A run bound to a graph version, drawn from its record (FABRIC-CUTOVER1e); none for a steps run, and from a shell before it. */
+  graph?: GraphRun | null;
 }
 
 /** What `WORKFLOW_RUN` answers: the runs, or none with the driver's sentence. */

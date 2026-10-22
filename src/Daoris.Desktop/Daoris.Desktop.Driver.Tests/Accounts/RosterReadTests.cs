@@ -42,6 +42,9 @@ public sealed class RosterReadTests : IDisposable
 
     private string Settings => DaorisHome.Entry(_home, HomeEntry.Harnesses);
 
+    /// <summary>The agent's set as one account, account-1: account-2's folder taken away.</summary>
+    private void OneAccount() => Directory.Delete(HarnessSettings.ProfileHome(_home, "agent", "account-2"));
+
     private string Script => Path.Combine(_home, "agent.mjs");
 
     private string[] Asked => File.Exists(Path.Combine(_home, "asked.log")) ? File.ReadAllLines(Path.Combine(_home, "asked.log")) : [];
@@ -75,7 +78,7 @@ public sealed class RosterReadTests : IDisposable
 
         var report = await roster.ReportAsync("agent", Config);
         await roster.RosterAsync(Config);
-        roster.Next("agent", null);
+        roster.Next("agent");
         await roster.WiringAsync("agent", Config, null);
 
         Assert.Empty(Asked);
@@ -112,9 +115,14 @@ public sealed class RosterReadTests : IDisposable
         Assert.Empty(Asked);
     }
 
+    /// <summary>
+    /// Rewritten by POOL1a2 (D197 point 1): the machine's one named account was the start's only account, account-2 beside it in
+    /// no list. Both are the set now, so the start would pass to account-2; the case is an agent whose set is the one account.
+    /// </summary>
     [Fact]
     public async Task An_account_last_read_signed_out_holds_its_start_naming_the_sign_in_and_asks_nothing()
     {
+        OneAccount();
         new HarnessSettings().WithDefault("agent", "account-1").Save(Settings);
         AccountReads.Keep(_home, "agent", "account-1", LoginState.Out, Ten);
         var roster = Roster();
@@ -123,7 +131,7 @@ public sealed class RosterReadTests : IDisposable
 
         Assert.False(selection.Allowed);
         Assert.Contains("daoris agent login agent --profile account-1", selection.Refusal);
-        Assert.Equal(NextHold.SignedOut, roster.Next("agent", null).Others.Single(held => held.Account == "account-1").Hold);
+        Assert.Equal(NextHold.SignedOut, roster.Next("agent").Others.Single(held => held.Account == "account-1").Hold);
         Assert.Empty(Asked);
     }
 
@@ -201,11 +209,13 @@ public sealed class RosterReadTests : IDisposable
 
     /// <summary>
     /// A person looking again lets a refused account through (AGT3b) and ends the tool's own home's cool-off (D125 §3.7), as an
-    /// account action always has, and asks no account to do it.
+    /// account action always has, and asks no account to do it. Its set is the one account (POOL1a2), as
+    /// <see cref="An_account_last_read_signed_out_holds_its_start_naming_the_sign_in_and_asks_nothing"/> says why.
     /// </summary>
     [Fact]
     public async Task Looking_again_lets_a_refused_account_through_and_asks_nothing()
     {
+        OneAccount();
         new HarnessSettings().WithDefault("agent", "account-1").Save(Settings);
         var roster = Roster();
         roster.Refuse("agent", "account-1", "the provider refused `account-1` (401).");
@@ -215,6 +225,29 @@ public sealed class RosterReadTests : IDisposable
 
         Assert.True((await roster.SelectAsync("agent", Config, null, null)).Allowed);
         Assert.Empty(Asked);
+    }
+
+    /// <summary>
+    /// POOL1a3 (D197 point 3 and its acceptance note): the agent's <i>Read again</i> reads each account of Daoris's and never the
+    /// tool's own sign-in, and still ends that agent's own home's cool-off, nothing asked, so the cool-off's line that sends the
+    /// person to it holds. Another agent's stands until the roster's whole refresh, which asks no own sign-in either.
+    /// </summary>
+    [Fact]
+    public async Task The_agent_s_read_again_ends_its_own_home_s_cool_off_and_asks_the_own_sign_in_nothing()
+    {
+        AccountCooling.Cool(_home, new CoolingEntry("agent", null, Ten.AddHours(2), true, "session", Ten, "s0"), Ten);
+        AccountCooling.Cool(_home, new CoolingEntry("other", null, Ten.AddHours(2), true, "session", Ten, "s1"), Ten);
+        var roster = Roster();
+
+        await roster.ReportAsync("agent", Config, refresh: true);
+
+        Assert.Equal(["--login-state account-1", "--login-state account-2"], Asked.Order(StringComparer.Ordinal));
+        Assert.Equal(["other"], AccountCooling.Read(_home, Ten).Select(entry => entry.Agent));
+
+        await roster.RosterAsync(Config, refresh: true);
+        Assert.Empty(AccountCooling.Read(_home, Ten));
+        Assert.DoesNotContain(Asked, line => line.EndsWith("(own)", StringComparison.Ordinal));
+        Assert.Null(AccountReads.Of(_home, "agent").Own);
     }
 
     /// <summary>One account's read names an account the agent has; another is refused in a sentence, and nothing is asked.</summary>

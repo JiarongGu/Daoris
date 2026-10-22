@@ -1,5 +1,5 @@
 {
-  "note": "PUSH1f2d (D194, the alone-path design §3): what `daoris agent rules|trust|settings` said for each case its tests held, run once through the CLI's TypeScript verb before it retired, alone, on a root of its own (`<root>`): DAORIS_HOME `<root>/daoris` (none where `home` is false), the agent's own home `<root>/user`, a folder to trust under `<root>/work`, and with `harness` DAORIS_HARNESS_CONFIG naming `<root>/other/data/harnesses.json`. Each row: the words after `agent` (`<root>` where a whole path goes), the folders made empty before it, every file under the root before it and after it, the exit, and the lines said on the standard output and on the error stream. A path is spelled with `/`; a proposal's settling moment is `<at>`. The TypeScript said a refusal through its dispatcher, `daoris: ` and the sentence; the driver's command says it on the error stream, as every host verb does. `AgentsTextTests` reads it row for row. A sentence the port changes on purpose is a row changed here, with its reason under `changed`. PUSH1f2e3: a row with `now` was run at that moment, the machine's zone America/New_York, which the test hands the command too. PUSH1f2e4: `list` pins every agent to a version nothing installed, so no tool is asked, as its tests did; a row with `windows` pins Claude Code to a stand-in `claude.cmd` in the managed layout, asked as a start runs it, and runs on Windows alone. PUSH1f2e5: a row with `stdin` was run with that standard input, which the test hands the command (none is an empty one); an account id the run drew (`key`'s new account) is spelled `<id>`; the home's identity file the key's publication mints taking the lease is no file the verb writes. `install`'s rows were run with an empty PATH, as the test hands the command none, so no installer starts. PUSH1f2e6: `login`'s rows are its refusals, each said before any flow starts; a sign-in that runs is `AgentsCommandTests.SignIns`'. PUSH1f2e: `pin`'s and `update`'s rows fetch nothing and start nothing: their refusals, and a pin of a version already installed where Daoris keeps it, whose rows (`onWindows`) lay a Windows binary and run on Windows alone; a download, npm and an updater are `AgentsCommandTests.Pins`'.",
+  "note": "PUSH1f2d (D194, the alone-path design §3): what `daoris agent rules|trust|settings` said for each case its tests held, run once through the CLI's TypeScript verb before it retired, alone, on a root of its own (`<root>`): DAORIS_HOME `<root>/daoris` (none where `home` is false), the agent's own home `<root>/user`, a folder to trust under `<root>/work`, and with `harness` DAORIS_HARNESS_CONFIG naming `<root>/other/data/harnesses.json`. Each row: the words after `agent` (`<root>` where a whole path goes), the folders made empty before it, every file under the root before it and after it, the exit, and the lines said on the standard output and on the error stream. A path is spelled with `/`; a proposal's settling moment is `<at>`. The TypeScript said a refusal through its dispatcher, `daoris: ` and the sentence; the driver's command says it on the error stream, as every host verb does. `AgentsTextTests` reads it row for row. A sentence the port changes on purpose is a row changed here, with its reason under `changed`. PUSH1f2e3: a row with `now` was run at that moment, the machine's zone America/New_York, which the test hands the command too. PUSH1f2e4: `list` pins every agent to a version nothing installed, so no tool is asked, as its tests did; a row with `windows` pins Claude Code to a stand-in `claude.cmd` in the managed layout, asked as a start runs it, and runs on Windows alone. PUSH1f2e5: a row with `stdin` was run with that standard input, which the test hands the command (none is an empty one); an account id the run drew (`key`'s new account) is spelled `<id>`; the home's identity file the key's publication mints taking the lease is no file the verb writes. `install`'s rows were run with an empty PATH, as the test hands the command none, so no installer starts. PUSH1f2e6: `login`'s rows are its refusals, each said before any flow starts; a sign-in that runs is `AgentsCommandTests.SignIns`'. PUSH1f2e: `pin`'s and `update`'s rows fetch nothing and start nothing: their refusals, and a pin of a version already installed where Daoris keeps it, whose rows (`onWindows`) lay a Windows binary and run on Windows alone; a download, npm and an updater are `AgentsCommandTests.Pins`'. POOL1a1 (D197 §6): every write of `harnesses.json` folds the stored accounts into one set before its edit, so a row whose verb writes it finds it folded, each order whole, with a receipt under `pooled` where the fold had anything to say; a receipt's id the run drew is spelled `<id>` and its moment `<at>`; the machine log the fold writes a line to, the home's or a named wiring file's own home's, is no file the verb writes.",
   "rows": [
     {
       "name": "rules, the bare word, an empty home",
@@ -936,7 +936,7 @@
       }
     },
     {
-      "name": "trust, granted in the agent's own home",
+      "name": "trust, every account of Daoris's and never the agent's own home",
       "argv": [
         "trust",
         "claude-code",
@@ -944,26 +944,30 @@
         "--yes"
       ],
       "folders": [
+        "daoris/profiles/agents/claude-code/play/",
         "daoris/profiles/agents/claude-code/work/",
         "work/engine/"
       ],
       "before": {},
       "exit": 0,
       "out": [
-        "daoris: trusting `<root>/work/engine` for `claude-code`, as its own account — in its own file:",
-        "  <root>/user/.claude.json",
+        "daoris: trusting `<root>/work/engine` for `claude-code`, for each of Daoris's accounts (`play`, `work`) — each in its own file:",
+        "  <root>/daoris/profiles/agents/claude-code/play/.claude.json",
+        "  <root>/daoris/profiles/agents/claude-code/work/.claude.json",
         "  This is what the agent asks the first time it runs in a folder. Once it is granted, the",
         "  folder's own settings and `permissions.allow` apply there, and the agent stops asking.",
-        "  Daoris writes that one flag and nothing else in the file.",
+        "  Daoris writes that one flag and nothing else in each file.",
         "  Granted."
       ],
       "err": [],
       "after": {
-        "user/.claude.json": "{\n  \"projects\": {\n    \"<root>/work/engine\": {\n      \"hasTrustDialogAccepted\": true\n    }\n  }\n}\n"
-      }
+        "daoris/profiles/agents/claude-code/play/.claude.json": "{\n  \"projects\": {\n    \"<root>/work/engine\": {\n      \"hasTrustDialogAccepted\": true\n    }\n  }\n}\n",
+        "daoris/profiles/agents/claude-code/work/.claude.json": "{\n  \"projects\": {\n    \"<root>/work/engine\": {\n      \"hasTrustDialogAccepted\": true\n    }\n  }\n}\n"
+      },
+      "changed": "POOL1a3 (D197 point 3): with no account named, every account of the set in its order, each in its own file; the agent's own home's file, which is the person's, is never written."
     },
     {
-      "name": "trust, the machine's default account",
+      "name": "trust, the set in its order, its first first",
       "argv": [
         "trust",
         "claude-code",
@@ -971,6 +975,7 @@
         "--yes"
       ],
       "folders": [
+        "daoris/profiles/agents/claude-code/play/",
         "daoris/profiles/agents/claude-code/work/",
         "work/engine/"
       ],
@@ -979,18 +984,41 @@
       },
       "exit": 0,
       "out": [
-        "daoris: trusting `<root>/work/engine` for `claude-code`, as the account `work` — in its own file:",
+        "daoris: trusting `<root>/work/engine` for `claude-code`, for each of Daoris's accounts (`work`, `play`) — each in its own file:",
         "  <root>/daoris/profiles/agents/claude-code/work/.claude.json",
+        "  <root>/daoris/profiles/agents/claude-code/play/.claude.json",
         "  This is what the agent asks the first time it runs in a folder. Once it is granted, the",
         "  folder's own settings and `permissions.allow` apply there, and the agent stops asking.",
-        "  Daoris writes that one flag and nothing else in the file.",
+        "  Daoris writes that one flag and nothing else in each file.",
         "  Granted."
       ],
       "err": [],
       "after": {
         "daoris/data/harnesses.json": "{\"defaults\":{\"claude-code\":\"work\"}}",
+        "daoris/profiles/agents/claude-code/play/.claude.json": "{\n  \"projects\": {\n    \"<root>/work/engine\": {\n      \"hasTrustDialogAccepted\": true\n    }\n  }\n}\n",
         "daoris/profiles/agents/claude-code/work/.claude.json": "{\n  \"projects\": {\n    \"<root>/work/engine\": {\n      \"hasTrustDialogAccepted\": true\n    }\n  }\n}\n"
-      }
+      },
+      "changed": "POOL1a3 (D197 point 3): the machine's default no longer picks one account; it is the set's first (D197 point 2), read through the projection, and the file is not written."
+    },
+    {
+      "name": "trust, no account of Daoris's",
+      "argv": [
+        "trust",
+        "claude-code",
+        "<root>/work/engine",
+        "--yes"
+      ],
+      "folders": [
+        "work/engine/"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `claude-code` has no account of Daoris's to trust the folder for — Daoris never writes your own sign-in's file. Sign in to one with `daoris agent login claude-code --new`, or trust the folder with the tool itself, at your terminal (run `claude` there once and accept its trust prompt)."
+      ],
+      "after": {},
+      "changed": "POOL1a3 (D197 point 3): refused, where it wrote the agent's own home's file."
     },
     {
       "name": "trust, a door in its owner's account",
@@ -2366,8 +2394,9 @@
       ],
       "err": [],
       "after": {
-        "daoris/data/harnesses.json": "{\n  \"defaults\": {},\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-2\"\n    ]\n  },\n  \"workspaces\": {}\n}\n"
-      }
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {},\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-2\"\n    ]\n  },\n  \"pooled\": {\n    \"claude-code\": [\n      {\n        \"id\": \"<id>\",\n        \"at\": \"<at>\",\n        \"scopes\": [\n          {\n            \"workspace\": null,\n            \"default\": \"account-1\",\n            \"list\": [\n              \"account-1\",\n              \"account-2\"\n            ],\n            \"begins\": \"account-1\"\n          },\n          {\n            \"workspace\": \"work\",\n            \"default\": \"account-1\",\n            \"list\": [],\n            \"begins\": \"account-1\"\n          }\n        ],\n        \"order\": [\n          \"account-1\",\n          \"account-2\"\n        ],\n        \"moved\": [],\n        \"joined\": [],\n        \"inOrder\": null,\n        \"notKept\": [],\n        \"gone\": [],\n        \"said\": false\n      }\n    ]\n  },\n  \"workspaces\": {}\n}\n"
+      },
+      "changed": "The stored accounts fold into one set before the edit (POOL1a1, D197 §6)."
     },
     {
       "name": "profile remove, none of that name",
@@ -2388,7 +2417,10 @@
         "  It is no longer a default for `claude-code` anywhere on this machine: no default and no order names it."
       ],
       "err": [],
-      "after": {}
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {},\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {},\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "changed": "The stored accounts fold into one set before the edit (POOL1a1, D197 §6)."
     },
     {
       "name": "profile remove, by its name",
@@ -2412,8 +2444,10 @@
       ],
       "err": [],
       "after": {
-        "daoris/data/accounts.json": "{}\n"
-      }
+        "daoris/data/accounts.json": "{}\n",
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {},\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {},\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "changed": "The stored accounts fold into one set before the edit (POOL1a1, D197 §6)."
     },
     {
       "name": "profile remove, a door's",
@@ -2435,7 +2469,10 @@
         "  It is no longer a default for `claude-code` anywhere on this machine: no default and no order names it."
       ],
       "err": [],
-      "after": {}
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {},\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {},\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\"\n    ]\n  }\n}\n"
+      },
+      "changed": "The stored accounts fold into one set before the edit (POOL1a1, D197 §6)."
     },
     {
       "name": "profile default",
@@ -2457,8 +2494,9 @@
       ],
       "err": [],
       "after": {
-        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"account-1\"\n  },\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {}\n}\n"
-      }
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"account-1\"\n  },\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {},\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "changed": "The stored accounts fold into one set before the edit (POOL1a1, D197 §6)."
     },
     {
       "name": "profile default, a workspace's",
@@ -2484,8 +2522,9 @@
       ],
       "err": [],
       "after": {
-        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"account-1\"\n  },\n  \"workspaces\": {\n    \"aurora\": {\n      \"claude-code\": \"account-2\"\n    }\n  }\n}\n"
-      }
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {},\n  \"workspaces\": {\n    \"aurora\": {\n      \"claude-code\": \"account-2\"\n    }\n  },\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"use\": \"order\"\n    }\n  },\n  \"pooled\": {\n    \"claude-code\": [\n      {\n        \"id\": \"<id>\",\n        \"at\": \"<at>\",\n        \"scopes\": [\n          {\n            \"workspace\": null,\n            \"default\": \"account-1\",\n            \"list\": [],\n            \"begins\": \"account-1\"\n          }\n        ],\n        \"order\": [\n          \"account-1\",\n          \"account-2\"\n        ],\n        \"moved\": [],\n        \"joined\": [],\n        \"inOrder\": \"account-1\",\n        \"notKept\": [],\n        \"gone\": [],\n        \"said\": false\n      }\n    ]\n  }\n}\n"
+      },
+      "changed": "The stored accounts fold into one set before the edit (POOL1a1, D197 §6)."
     },
     {
       "name": "profile default, by its name",
@@ -2510,8 +2549,9 @@
       "err": [],
       "after": {
         "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"account-2\": {\n      \"name\": \"seat\"\n    }\n  }\n}\n",
-        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"account-2\"\n  },\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {}\n}\n"
-      }
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"account-2\"\n  },\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {},\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "changed": "The stored accounts fold into one set before the edit (POOL1a1, D197 §6)."
     },
     {
       "name": "profile default, a typo",
@@ -2623,8 +2663,9 @@
       ],
       "err": [],
       "after": {
-        "daoris/data/harnesses.json": "{\n  \"defaults\": {}\n}\n"
-      }
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {},\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"use\": \"order\"\n    }\n  },\n  \"pooled\": {\n    \"claude-code\": [\n      {\n        \"id\": \"<id>\",\n        \"at\": \"<at>\",\n        \"scopes\": [\n          {\n            \"workspace\": null,\n            \"default\": \"account-1\",\n            \"list\": [],\n            \"begins\": \"account-1\"\n          }\n        ],\n        \"order\": [\n          \"account-1\",\n          \"account-2\"\n        ],\n        \"moved\": [],\n        \"joined\": [],\n        \"inOrder\": \"account-1\",\n        \"notKept\": [],\n        \"gone\": [],\n        \"said\": false\n      }\n    ]\n  }\n}\n"
+      },
+      "changed": "The stored accounts fold into one set before the edit (POOL1a1, D197 §6)."
     },
     {
       "name": "profile default --clear, a workspace's, the machine's beneath",
@@ -2650,8 +2691,9 @@
       ],
       "err": [],
       "after": {
-        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"account-1\"\n  },\n  \"workspaces\": {}\n}\n"
-      }
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {},\n  \"workspaces\": {},\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"use\": \"order\"\n    }\n  },\n  \"pooled\": {\n    \"claude-code\": [\n      {\n        \"id\": \"<id>\",\n        \"at\": \"<at>\",\n        \"scopes\": [\n          {\n            \"workspace\": null,\n            \"default\": \"account-1\",\n            \"list\": [],\n            \"begins\": \"account-1\"\n          },\n          {\n            \"workspace\": \"aurora\",\n            \"default\": \"account-2\",\n            \"list\": [],\n            \"begins\": \"account-2\"\n          }\n        ],\n        \"order\": [\n          \"account-1\",\n          \"account-2\"\n        ],\n        \"moved\": [\n          {\n            \"workspace\": \"aurora\",\n            \"account\": \"account-2\",\n            \"place\": 2\n          }\n        ],\n        \"joined\": [],\n        \"inOrder\": \"account-1\",\n        \"notKept\": [],\n        \"gone\": [],\n        \"said\": false\n      }\n    ]\n  }\n}\n"
+      },
+      "changed": "The stored accounts fold into one set before the edit (POOL1a1, D197 §6)."
     },
     {
       "name": "profile default --clear, a workspace's, none beneath",
@@ -2677,8 +2719,9 @@
       ],
       "err": [],
       "after": {
-        "daoris/data/harnesses.json": "{\n  \"workspaces\": {}\n}\n"
-      }
+        "daoris/data/harnesses.json": "{\n  \"workspaces\": {},\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-2\",\n      \"account-1\"\n    ]\n  },\n  \"pooled\": {\n    \"claude-code\": [\n      {\n        \"id\": \"<id>\",\n        \"at\": \"<at>\",\n        \"scopes\": [\n          {\n            \"workspace\": \"aurora\",\n            \"default\": \"account-2\",\n            \"list\": [],\n            \"begins\": \"account-2\"\n          }\n        ],\n        \"order\": [\n          \"account-2\",\n          \"account-1\"\n        ],\n        \"moved\": [\n          {\n            \"workspace\": null,\n            \"account\": \"account-1\",\n            \"place\": 2\n          }\n        ],\n        \"joined\": [],\n        \"inOrder\": null,\n        \"notKept\": [],\n        \"gone\": [],\n        \"said\": false\n      }\n    ]\n  }\n}\n"
+      },
+      "changed": "The stored accounts fold into one set before the edit (POOL1a1, D197 §6)."
     },
     {
       "name": "profile default --clear, a door's",
@@ -2703,8 +2746,9 @@
       ],
       "err": [],
       "after": {
-        "daoris/data/harnesses.json": "{\n  \"defaults\": {}\n}\n"
-      }
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {},\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"use\": \"order\"\n    }\n  },\n  \"pooled\": {\n    \"claude-code\": [\n      {\n        \"id\": \"<id>\",\n        \"at\": \"<at>\",\n        \"scopes\": [\n          {\n            \"workspace\": null,\n            \"default\": \"account-1\",\n            \"list\": [],\n            \"begins\": \"account-1\"\n          }\n        ],\n        \"order\": [\n          \"account-1\",\n          \"account-2\"\n        ],\n        \"moved\": [],\n        \"joined\": [],\n        \"inOrder\": \"account-1\",\n        \"notKept\": [],\n        \"gone\": [],\n        \"said\": false\n      }\n    ]\n  }\n}\n"
+      },
+      "changed": "The stored accounts fold into one set before the edit (POOL1a1, D197 §6)."
     },
     {
       "name": "profile default --clear naming an account",
@@ -2766,8 +2810,9 @@
       ],
       "err": [],
       "after": {
-        "other/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"work\"\n  },\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {}\n}\n"
-      }
+        "other/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"work\"\n  },\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {},\n  \"rotation\": {\n    \"claude-code\": [\n      \"work\"\n    ]\n  }\n}\n"
+      },
+      "changed": "The stored accounts fold into one set before the edit (POOL1a1, D197 §6)."
     },
     {
       "name": "profile order",
@@ -2817,8 +2862,9 @@
       ],
       "err": [],
       "after": {
-        "daoris/data/harnesses.json": "{\n  \"defaults\": {},\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {},\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-2\"\n      ]\n    }\n  }\n}\n"
-      }
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {},\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {},\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-2\"\n      ]\n    }\n  }\n}\n"
+      },
+      "changed": "The stored accounts fold into one set before the edit (POOL1a1, D197 §6)."
     },
     {
       "name": "profile order, by names",
@@ -2847,8 +2893,9 @@
       "err": [],
       "after": {
         "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"account-1\": {\n      \"name\": \"you@work.example\"\n    }\n  }\n}\n",
-        "daoris/data/harnesses.json": "{\n  \"defaults\": {},\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {},\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-2\",\n        \"account-1\"\n      ]\n    }\n  }\n}\n"
-      }
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {},\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {},\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-2\",\n        \"account-1\"\n      ]\n    }\n  }\n}\n"
+      },
+      "changed": "The stored accounts fold into one set before the edit (POOL1a1, D197 §6)."
     },
     {
       "name": "profile order, an unknown account",
@@ -3034,8 +3081,9 @@
       ],
       "err": [],
       "after": {
-        "daoris/data/harnesses.json": "{\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-2\"\n      ]\n    }\n  }\n}\n"
-      }
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"pooled\": {\n    \"claude-code\": [\n      {\n        \"id\": \"<id>\",\n        \"at\": \"<at>\",\n        \"scopes\": [\n          {\n            \"workspace\": null,\n            \"default\": null,\n            \"list\": [\n              \"account-1\",\n              \"account-2\"\n            ],\n            \"begins\": \"account-1\"\n          },\n          {\n            \"workspace\": \"work\",\n            \"default\": null,\n            \"list\": [\n              \"account-2\"\n            ],\n            \"begins\": \"account-2\"\n          }\n        ],\n        \"order\": [\n          \"account-1\",\n          \"account-2\"\n        ],\n        \"moved\": [\n          {\n            \"workspace\": \"work\",\n            \"account\": \"account-2\",\n            \"place\": 2\n          }\n        ],\n        \"joined\": [],\n        \"inOrder\": null,\n        \"notKept\": [],\n        \"gone\": [],\n        \"said\": false\n      }\n    ]\n  }\n}\n"
+      },
+      "changed": "The stored accounts fold into one set before the edit (POOL1a1, D197 §6)."
     },
     {
       "name": "profile order --clear, none anywhere",
@@ -3056,7 +3104,10 @@
         "  No account was deleted. Written to <root>/daoris/data/harnesses.json — machine-local, tracked by nothing, like every wiring file here."
       ],
       "err": [],
-      "after": {}
+      "after": {
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {},\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {},\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
+      },
+      "changed": "The stored accounts fold into one set before the edit (POOL1a1, D197 §6)."
     },
     {
       "name": "profile order --clear, a workspace's, the machine's beneath",
@@ -3082,8 +3133,9 @@
       ],
       "err": [],
       "after": {
-        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
-      }
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"pooled\": {\n    \"claude-code\": [\n      {\n        \"id\": \"<id>\",\n        \"at\": \"<at>\",\n        \"scopes\": [\n          {\n            \"workspace\": null,\n            \"default\": null,\n            \"list\": [\n              \"account-1\",\n              \"account-2\"\n            ],\n            \"begins\": \"account-1\"\n          },\n          {\n            \"workspace\": \"work\",\n            \"default\": null,\n            \"list\": [\n              \"account-2\"\n            ],\n            \"begins\": \"account-2\"\n          }\n        ],\n        \"order\": [\n          \"account-1\",\n          \"account-2\"\n        ],\n        \"moved\": [\n          {\n            \"workspace\": \"work\",\n            \"account\": \"account-2\",\n            \"place\": 2\n          }\n        ],\n        \"joined\": [],\n        \"inOrder\": null,\n        \"notKept\": [],\n        \"gone\": [],\n        \"said\": false\n      }\n    ]\n  }\n}\n"
+      },
+      "changed": "The stored accounts fold into one set before the edit (POOL1a1, D197 §6)."
     },
     {
       "name": "profile order --clear, a workspace's, none beneath",
@@ -3109,8 +3161,9 @@
       ],
       "err": [],
       "after": {
-        "daoris/data/harnesses.json": "{}\n"
-      }
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-2\",\n      \"account-1\"\n    ]\n  },\n  \"pooled\": {\n    \"claude-code\": [\n      {\n        \"id\": \"<id>\",\n        \"at\": \"<at>\",\n        \"scopes\": [\n          {\n            \"workspace\": \"work\",\n            \"default\": null,\n            \"list\": [\n              \"account-2\"\n            ],\n            \"begins\": \"account-2\"\n          }\n        ],\n        \"order\": [\n          \"account-2\",\n          \"account-1\"\n        ],\n        \"moved\": [\n          {\n            \"workspace\": null,\n            \"account\": \"account-1\",\n            \"place\": 2\n          }\n        ],\n        \"joined\": [],\n        \"inOrder\": null,\n        \"notKept\": [],\n        \"gone\": [],\n        \"said\": false\n      }\n    ]\n  }\n}\n"
+      },
+      "changed": "The stored accounts fold into one set before the edit (POOL1a1, D197 §6)."
     },
     {
       "name": "profile order --clear naming accounts",
@@ -3482,8 +3535,9 @@
       ],
       "err": [],
       "after": {
-        "daoris/data/harnesses.json": "{\n  \"workspaces\": {\n    \"work\": {\n      \"claude-code\": \"account-1\"\n    }\n  },\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-2\"\n    ]\n  },\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-1\",\n        \"account-2\"\n      ]\n    }\n  }\n}\n"
-      }
+        "daoris/data/harnesses.json": "{\n  \"workspaces\": {},\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-1\",\n        \"account-2\"\n      ]\n    }\n  },\n  \"pooled\": {\n    \"claude-code\": [\n      {\n        \"id\": \"<id>\",\n        \"at\": \"<at>\",\n        \"scopes\": [\n          {\n            \"workspace\": \"work\",\n            \"default\": \"account-1\",\n            \"list\": [],\n            \"begins\": \"account-1\"\n          }\n        ],\n        \"order\": [\n          \"account-1\",\n          \"account-2\"\n        ],\n        \"moved\": [],\n        \"joined\": [],\n        \"inOrder\": null,\n        \"notKept\": [],\n        \"gone\": [],\n        \"said\": false\n      }\n    ]\n  }\n}\n"
+      },
+      "changed": "The stored accounts fold into one set before the edit (POOL1a1, D197 §6)."
     },
     {
       "name": "profile join, by its name",
@@ -3511,8 +3565,9 @@
       "err": [],
       "after": {
         "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"account-2\": {\n      \"name\": \"seat\"\n    }\n  }\n}\n",
-        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
-      }
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"pooled\": {\n    \"claude-code\": [\n      {\n        \"id\": \"<id>\",\n        \"at\": \"<at>\",\n        \"scopes\": [\n          {\n            \"workspace\": null,\n            \"default\": null,\n            \"list\": [\n              \"account-1\"\n            ],\n            \"begins\": \"account-1\"\n          }\n        ],\n        \"order\": [\n          \"account-1\",\n          \"account-2\"\n        ],\n        \"moved\": [],\n        \"joined\": [\n          {\n            \"account\": \"account-2\",\n            \"place\": 2\n          }\n        ],\n        \"inOrder\": null,\n        \"notKept\": [],\n        \"gone\": [],\n        \"said\": false\n      }\n    ]\n  }\n}\n"
+      },
+      "changed": "The stored accounts fold into one set before the edit (POOL1a1, D197 §6)."
     },
     {
       "name": "profile join, a workspace that takes the machine's",
@@ -3625,8 +3680,9 @@
       ],
       "err": [],
       "after": {
-        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\",\n      \"account-3\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"use\": \"order\",\n      \"keep\": \"account-3\"\n    }\n  },\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-2\",\n        \"account-1\"\n      ]\n    }\n  }\n}\n"
-      }
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\",\n      \"account-3\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"use\": \"order\",\n      \"keep\": \"account-3\"\n    }\n  },\n  \"pooled\": {\n    \"claude-code\": [\n      {\n        \"id\": \"<id>\",\n        \"at\": \"<at>\",\n        \"scopes\": [\n          {\n            \"workspace\": null,\n            \"default\": null,\n            \"list\": [\n              \"account-1\",\n              \"account-2\",\n              \"account-3\"\n            ],\n            \"begins\": \"account-1\"\n          },\n          {\n            \"workspace\": \"work\",\n            \"default\": null,\n            \"list\": [\n              \"account-2\",\n              \"account-1\"\n            ],\n            \"begins\": \"account-2\"\n          }\n        ],\n        \"order\": [\n          \"account-1\",\n          \"account-2\",\n          \"account-3\"\n        ],\n        \"moved\": [\n          {\n            \"workspace\": \"work\",\n            \"account\": \"account-2\",\n            \"place\": 2\n          }\n        ],\n        \"joined\": [],\n        \"inOrder\": null,\n        \"notKept\": [],\n        \"gone\": [],\n        \"said\": false\n      }\n    ]\n  }\n}\n"
+      },
+      "changed": "The stored accounts fold into one set before the edit (POOL1a1, D197 §6)."
     },
     {
       "name": "profile use, a workspace's by the old names",
@@ -3666,8 +3722,9 @@
       ],
       "err": [],
       "after": {
-        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\",\n      \"account-3\"\n    ]\n  },\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-2\",\n        \"account-1\"\n      ]\n    }\n  },\n  \"workspaceRotationUse\": {\n    \"work\": {\n      \"claude-code\": {\n        \"switch\": \"off\",\n        \"curve\": {\n          \"session\": [\n            [\n              0,\n              85\n            ]\n          ]\n        }\n      }\n    }\n  }\n}\n"
-      }
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\",\n      \"account-3\"\n    ]\n  },\n  \"workspaceRotationUse\": {\n    \"work\": {\n      \"claude-code\": {\n        \"switch\": \"off\",\n        \"curve\": {\n          \"session\": [\n            [\n              0,\n              85\n            ]\n          ]\n        }\n      }\n    }\n  },\n  \"pooled\": {\n    \"claude-code\": [\n      {\n        \"id\": \"<id>\",\n        \"at\": \"<at>\",\n        \"scopes\": [\n          {\n            \"workspace\": null,\n            \"default\": null,\n            \"list\": [\n              \"account-1\",\n              \"account-2\",\n              \"account-3\"\n            ],\n            \"begins\": \"account-1\"\n          },\n          {\n            \"workspace\": \"work\",\n            \"default\": null,\n            \"list\": [\n              \"account-2\",\n              \"account-1\"\n            ],\n            \"begins\": \"account-2\"\n          }\n        ],\n        \"order\": [\n          \"account-1\",\n          \"account-2\",\n          \"account-3\"\n        ],\n        \"moved\": [\n          {\n            \"workspace\": \"work\",\n            \"account\": \"account-2\",\n            \"place\": 2\n          }\n        ],\n        \"joined\": [],\n        \"inOrder\": null,\n        \"notKept\": [],\n        \"gone\": [],\n        \"said\": false\n      }\n    ]\n  }\n}\n"
+      },
+      "changed": "The stored accounts fold into one set before the edit (POOL1a1, D197 §6)."
     },
     {
       "name": "profile use, a switch and a curve",
@@ -4061,8 +4118,9 @@
       ],
       "err": [],
       "after": {
-        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\",\n      \"account-3\"\n    ]\n  },\n  \"workspaces\": {\n    \"work\": {\n      \"claude-code\": \"account-1\"\n    }\n  },\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-3\",\n        \"account-1\"\n      ]\n    }\n  },\n  \"workspaceRotationUse\": {\n    \"work\": {\n      \"claude-code\": {\n        \"use\": \"order\"\n      }\n    }\n  }\n}\n"
-      }
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\",\n      \"account-3\"\n    ]\n  },\n  \"workspaceRotationUse\": {\n    \"work\": {\n      \"claude-code\": {\n        \"use\": \"order\"\n      }\n    }\n  },\n  \"pooled\": {\n    \"claude-code\": [\n      {\n        \"id\": \"<id>\",\n        \"at\": \"<at>\",\n        \"scopes\": [\n          {\n            \"workspace\": null,\n            \"default\": null,\n            \"list\": [\n              \"account-1\",\n              \"account-2\",\n              \"account-3\"\n            ],\n            \"begins\": \"account-1\"\n          },\n          {\n            \"workspace\": \"work\",\n            \"default\": \"account-1\",\n            \"list\": [\n              \"account-3\",\n              \"account-1\"\n            ],\n            \"begins\": \"account-1\"\n          }\n        ],\n        \"order\": [\n          \"account-1\",\n          \"account-2\",\n          \"account-3\"\n        ],\n        \"moved\": [],\n        \"joined\": [],\n        \"inOrder\": null,\n        \"notKept\": [],\n        \"gone\": [],\n        \"said\": false\n      }\n    ]\n  },\n  \"workspaces\": {}\n}\n"
+      },
+      "changed": "The stored accounts fold into one set before the edit (POOL1a1, D197 §6)."
     },
     {
       "name": "profile use, a list of one",
@@ -5155,8 +5213,9 @@
       ],
       "err": [],
       "after": {
-        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\"\n    ]\n  },\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-1\",\n        \"account-2\"\n      ]\n    }\n  },\n  \"workspaceRotationUse\": {\n    \"work\": {\n      \"claude-code\": {\n        \"keep\": \"account-2\"\n      }\n    }\n  }\n}\n"
-      }
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\",\n      \"account-9\"\n    ]\n  },\n  \"workspaceRotationUse\": {\n    \"work\": {\n      \"claude-code\": {\n        \"keep\": \"account-2\"\n      }\n    }\n  },\n  \"pooled\": {\n    \"claude-code\": [\n      {\n        \"id\": \"<id>\",\n        \"at\": \"<at>\",\n        \"scopes\": [\n          {\n            \"workspace\": null,\n            \"default\": null,\n            \"list\": [\n              \"account-1\"\n            ],\n            \"begins\": \"account-1\"\n          },\n          {\n            \"workspace\": \"work\",\n            \"default\": null,\n            \"list\": [\n              \"account-1\",\n              \"account-2\"\n            ],\n            \"begins\": \"account-1\"\n          }\n        ],\n        \"order\": [\n          \"account-1\",\n          \"account-2\",\n          \"account-9\"\n        ],\n        \"moved\": [],\n        \"joined\": [\n          {\n            \"account\": \"account-2\",\n            \"place\": 2\n          },\n          {\n            \"account\": \"account-9\",\n            \"place\": 3\n          }\n        ],\n        \"inOrder\": null,\n        \"notKept\": [],\n        \"gone\": [],\n        \"said\": false\n      }\n    ]\n  }\n}\n"
+      },
+      "changed": "The stored accounts fold into one set before the edit (POOL1a1, D197 §6)."
     },
     {
       "name": "profile use, none kept in a workspace",
@@ -5192,8 +5251,9 @@
       ],
       "err": [],
       "after": {
-        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\"\n    ]\n  },\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-1\",\n        \"account-2\"\n      ]\n    }\n  }\n}\n"
-      }
+        "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\",\n      \"account-9\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"keep\": \"account-2\"\n    }\n  },\n  \"pooled\": {\n    \"claude-code\": [\n      {\n        \"id\": \"<id>\",\n        \"at\": \"<at>\",\n        \"scopes\": [\n          {\n            \"workspace\": null,\n            \"default\": null,\n            \"list\": [\n              \"account-1\"\n            ],\n            \"begins\": \"account-1\"\n          },\n          {\n            \"workspace\": \"work\",\n            \"default\": null,\n            \"list\": [\n              \"account-1\",\n              \"account-2\"\n            ],\n            \"begins\": \"account-1\"\n          }\n        ],\n        \"order\": [\n          \"account-1\",\n          \"account-2\",\n          \"account-9\"\n        ],\n        \"moved\": [],\n        \"joined\": [\n          {\n            \"account\": \"account-2\",\n            \"place\": 2\n          },\n          {\n            \"account\": \"account-9\",\n            \"place\": 3\n          }\n        ],\n        \"inOrder\": null,\n        \"notKept\": [],\n        \"gone\": [],\n        \"said\": false\n      }\n    ]\n  }\n}\n"
+      },
+      "changed": "The stored accounts fold into one set before the edit (POOL1a1, D197 §6)."
     },
     {
       "name": "profile use, every setting with six accounts",
@@ -5571,7 +5631,7 @@
         "                 `daoris agent install claude-code` installs it, with its own installer",
         "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
         "                 `daoris agent pin claude-code 0.0.0-none` installs it",
-        "                 account-1        unknown  ",
+        "                 account-1        unknown   (machine default)",
         "                 account-2        unknown  ",
         "                 rotation         account-1, then account-2",
         "                                  use accounts: make the most of them",
@@ -5615,7 +5675,8 @@
       "err": [],
       "after": {
         "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"0.0.0-none\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"},\"rotation\":{\"claude-code\":[\"account-1\",\"account-2\"]}}"
-      }
+      },
+      "changed": "POOL1a2 (D197 point 2, the account-pool design §2.2): every reader of the machine's default reads the order's first, so the list's first account, where the set's starts begin, is marked `(machine default)` where no default was named; `agent list` showing the set is POOL1b's."
     },
     {
       "name": "list, the next start's steps beneath the machine's list and a workspace's",
@@ -5640,7 +5701,7 @@
         "                 `daoris agent install claude-code` installs it, with its own installer",
         "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
         "                 `daoris agent pin claude-code 0.0.0-none` installs it",
-        "                 account-1        unknown  ",
+        "                 account-1        unknown   (machine default)",
         "                 account-2        unknown  ",
         "                 account-3        unknown  ",
         "                 rotation         account-1, then account-2, then account-3",
@@ -5691,7 +5752,8 @@
       "err": [],
       "after": {
         "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"0.0.0-none\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"},\"rotation\":{\"claude-code\":[\"account-1\",\"account-2\",\"account-3\"]},\"workspaceRotation\":{\"work\":{\"claude-code\":[\"account-2\",\"account-1\"]}},\"workspaceRotationUse\":{\"work\":{\"claude-code\":{\"use\":\"order\"}}}}"
-      }
+      },
+      "changed": "POOL1a2 (D197 point 2, the account-pool design §2.2): every reader of the machine's default reads the order's first, so the list's first account, where the set's starts begin, is marked `(machine default)` where no default was named; `agent list` showing the set is POOL1b's."
     },
     {
       "name": "list, one account of a list cooling",
@@ -5716,7 +5778,7 @@
         "                 `daoris agent install claude-code` installs it, with its own installer",
         "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
         "                 `daoris agent pin claude-code 0.0.0-none` installs it",
-        "                 account-1        unknown  ",
+        "                 account-1        unknown   (machine default)",
         "                 account-2        unknown  ",
         "                                  cooling until Oct 22, 13:00 (America/New_York), in 5 h 0 min — as the agent said; `daoris agent profile ready claude-code account-2` tries it now",
         "                 rotation         account-1, then account-2",
@@ -5763,7 +5825,8 @@
       "after": {
         "daoris/data/cooling.json": "{\"claude-code\":{\"account-2\":{\"until\":\"2026-10-22T17:00:00Z\",\"stated\":true}}}",
         "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"0.0.0-none\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"},\"rotation\":{\"claude-code\":[\"account-1\",\"account-2\"]}}"
-      }
+      },
+      "changed": "POOL1a2 (D197 point 2, the account-pool design §2.2): every reader of the machine's default reads the order's first, so the list's first account, where the set's starts begin, is marked `(machine default)` where no default was named; `agent list` showing the set is POOL1b's."
     },
     {
       "name": "list, every account of a list cooling",
@@ -5788,7 +5851,7 @@
         "                 `daoris agent install claude-code` installs it, with its own installer",
         "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
         "                 `daoris agent pin claude-code 0.0.0-none` installs it",
-        "                 account-1        unknown  ",
+        "                 account-1        unknown   (machine default)",
         "                                  cooling until Oct 22, 13:00 (America/New_York), in 5 h 0 min — as the agent said; `daoris agent profile ready claude-code account-1` tries it now",
         "                 account-2        unknown  ",
         "                                  cooling until Oct 22, 10:00 (America/New_York), in 2 h 0 min — Daoris's default: the agent named no time; `daoris agent profile ready claude-code account-2` tries it now",
@@ -5837,7 +5900,8 @@
       "after": {
         "daoris/data/cooling.json": "{\"claude-code\":{\"account-1\":{\"until\":\"2026-10-22T17:00:00Z\",\"stated\":true},\"account-2\":{\"until\":\"2026-10-22T14:00:00Z\",\"stated\":false}}}",
         "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"0.0.0-none\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"},\"rotation\":{\"claude-code\":[\"account-1\",\"account-2\"]}}"
-      }
+      },
+      "changed": "POOL1a2 (D197 point 2, the account-pool design §2.2): every reader of the machine's default reads the order's first, so the list's first account, where the set's starts begin, is marked `(machine default)` where no default was named; `agent list` showing the set is POOL1b's."
     },
     {
       "name": "list, every account but the kept one cooling",
@@ -5863,7 +5927,7 @@
         "                 `daoris agent install claude-code` installs it, with its own installer",
         "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
         "                 `daoris agent pin claude-code 0.0.0-none` installs it",
-        "                 account-1        unknown  ",
+        "                 account-1        unknown   (machine default)",
         "                                  cooling until Oct 22, 13:00 (America/New_York), in 5 h 0 min — as the agent said; `daoris agent profile ready claude-code account-1` tries it now",
         "                 account-2        unknown  ",
         "                                  cooling until Oct 22, 10:00 (America/New_York), in 2 h 0 min — as the agent said; `daoris agent profile ready claude-code account-2` tries it now",
@@ -5913,7 +5977,8 @@
       "after": {
         "daoris/data/cooling.json": "{\"claude-code\":{\"account-1\":{\"until\":\"2026-10-22T17:00:00Z\",\"stated\":true},\"account-2\":{\"until\":\"2026-10-22T14:00:00Z\",\"stated\":true}}}",
         "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"0.0.0-none\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"},\"rotation\":{\"claude-code\":[\"account-1\",\"account-2\",\"account-3\"]},\"rotationUse\":{\"claude-code\":{\"keep\":\"account-3\"}}}"
-      }
+      },
+      "changed": "POOL1a2 (D197 point 2, the account-pool design §2.2): every reader of the machine's default reads the order's first, so the list's first account, where the set's starts begin, is marked `(machine default)` where no default was named; `agent list` showing the set is POOL1b's."
     },
     {
       "name": "list, the machine's default and no list",
@@ -6143,7 +6208,7 @@
         "                 `daoris agent install codex` installs it, with its own installer",
         "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
         "                 `daoris agent pin codex 0.0.0-none` installs it",
-        "                 account-1        unknown  ",
+        "                 account-1        unknown   (machine default)",
         "                                  said 20 min ago: 1% of its session limit used, resetting Oct 22, 11:00 (America/New_York); 15% of its weekly limit used, resetting Oct 26, 12:00 (America/New_York)",
         "                 account-2        unknown  ",
         "                 rotation         account-1, then account-2",
@@ -6174,7 +6239,8 @@
       "after": {
         "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"0.0.0-none\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"},\"rotation\":{\"codex\":[\"account-1\",\"account-2\"]}}",
         "daoris/data/windows.json": "{\"codex\":{\"account-1\":{\"session\":{\"reset\":\"2026-10-22T15:00:00Z\",\"used\":0.01,\"seen\":\"2026-10-22T11:40:00Z\"},\"weekly\":{\"reset\":\"2026-10-26T16:00:00Z\",\"used\":0.15,\"seen\":\"2026-10-22T11:40:00Z\"}}}}"
-      }
+      },
+      "changed": "POOL1a2 (D197 point 2, the account-pool design §2.2): every reader of the machine's default reads the order's first, so the list's first account, where the set's starts begin, is marked `(machine default)` where no default was named; `agent list` showing the set is POOL1b's."
     },
     {
       "name": "list, an account no list and no default holds, where the machine names another",
@@ -6198,7 +6264,7 @@
         "                 `daoris agent install claude-code` installs it, with its own installer",
         "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
         "                 `daoris agent pin claude-code 0.0.0-none` installs it",
-        "                 account-1        unknown  ",
+        "                 account-1        unknown   (machine default)",
         "                 account-2        unknown  ",
         "                                  no workspace: no list and no default holds it, so no start runs on it — `daoris agent profile join claude-code account-2 <workspace>…|--machine` puts it in one",
         "                 rotation         account-1",
@@ -6241,7 +6307,8 @@
       "err": [],
       "after": {
         "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"0.0.0-none\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"},\"rotation\":{\"claude-code\":[\"account-1\"]}}"
-      }
+      },
+      "changed": "POOL1a2 (D197 point 2, the account-pool design §2.2): every reader of the machine's default reads the order's first, so the list's first account, where the set's starts begin, is marked `(machine default)` where no default was named; `agent list` showing the set is POOL1b's."
     },
     {
       "name": "list, accounts by their names, the column fitting the longest",
@@ -6528,7 +6595,7 @@
         "                 `daoris agent install claude-code` installs it, with its own installer",
         "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
         "                 `daoris agent pin claude-code 0.0.0-none` installs it",
-        "                 account-1        unknown  ",
+        "                 account-1        unknown   (machine default)",
         "                 account-2        unknown  ",
         "                 account-3        unknown  ",
         "                                  no workspace: no list and no default holds it, so no start runs on it — `daoris agent profile join claude-code account-3 <workspace>…|--machine` puts it in one",
@@ -6574,7 +6641,8 @@
       "err": [],
       "after": {
         "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"0.0.0-none\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"},\"rotation\":{\"claude-code\":[\"account-1\",\"account-2\"]}}"
-      }
+      },
+      "changed": "POOL1a2 (D197 point 2, the account-pool design §2.2): every reader of the machine's default reads the order's first, so the list's first account, where the set's starts begin, is marked `(machine default)` where no default was named; `agent list` showing the set is POOL1b's."
     },
     {
       "name": "list, how each list is used, set, with old names and what this build does not know",
@@ -6599,7 +6667,7 @@
         "                 `daoris agent install claude-code` installs it, with its own installer",
         "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
         "                 `daoris agent pin claude-code 0.0.0-none` installs it",
-        "                 account-1        unknown  ",
+        "                 account-1        unknown   (machine default)",
         "                 account-2        unknown  ",
         "                 account-3        unknown  ",
         "                 rotation         account-1, then account-2, then account-3",
@@ -6654,7 +6722,8 @@
       "err": [],
       "after": {
         "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"0.0.0-none\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"},\"defaults\":{\"claude-code\":\"account-9\"},\"rotation\":{\"claude-code\":[\"account-1\",\"account-2\",\"account-3\"]},\"rotationUse\":{\"claude-code\":{\"use\":\"order\",\"keep\":\"account-3\",\"early\":false,\"near\":85}},\"workspaceRotation\":{\"work\":{\"claude-code\":[\"account-2\"]}},\"workspaceRotationUse\":{\"work\":{\"claude-code\":{\"keep\":\"account-2\",\"weekly\":\"pace\",\"early\":\"no\",\"switch\":\"eager\"}}}}"
-      }
+      },
+      "changed": "POOL1a2 (D197 point 2, the account-pool design §2.2): every reader of the machine's default reads the order's first, so the list's first account, where the set's starts begin, is marked `(machine default)` where no default was named; `agent list` showing the set is POOL1b's."
     },
     {
       "name": "list, a curve of the person's own",
@@ -6678,7 +6747,7 @@
         "                 `daoris agent install claude-code` installs it, with its own installer",
         "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
         "                 `daoris agent pin claude-code 0.0.0-none` installs it",
-        "                 account-1        unknown  ",
+        "                 account-1        unknown   (machine default)",
         "                 account-2        unknown  ",
         "                 rotation         account-1, then account-2",
         "                                  use accounts: make the most of them",
@@ -6723,7 +6792,8 @@
       "err": [],
       "after": {
         "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"0.0.0-none\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"},\"rotation\":{\"claude-code\":[\"account-1\",\"account-2\"]},\"rotationUse\":{\"claude-code\":{\"switch\":\"curve\",\"curve\":{\"session\":[[0,0],[100,90]]}}}}"
-      }
+      },
+      "changed": "POOL1a2 (D197 point 2, the account-pool design §2.2): every reader of the machine's default reads the order's first, so the list's first account, where the set's starts begin, is marked `(machine default)` where no default was named; `agent list` showing the set is POOL1b's."
     },
     {
       "name": "list, a plugin's harness with no version question",
@@ -7084,7 +7154,7 @@
         "                 `daoris agent install claude-code` installs it, with its own installer",
         "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
         "                 `daoris agent pin claude-code 0.0.0-none` installs it",
-        "                 R&D              unknown  ",
+        "                 R&D              unknown   (machine default)",
         "                                  cooling until Oct 22, 12:02 (America/New_York), in 4 h 2 min — as the agent said; `daoris agent profile ready claude-code <account>` tries it now",
         "                 account-2        unknown  ",
         "                 rotation         R&D, then account-2",
@@ -7131,7 +7201,8 @@
       "after": {
         "daoris/data/cooling.json": "{\"claude-code\":{\"R&D\":{\"until\":\"2026-10-22T16:02:00Z\",\"stated\":true}}}",
         "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"0.0.0-none\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"},\"rotation\":{\"claude-code\":[\"R&D\",\"account-2\"]}}"
-      }
+      },
+      "changed": "POOL1a2 (D197 point 2, the account-pool design §2.2): every reader of the machine's default reads the order's first, so the list's first account, where the set's starts begin, is marked `(machine default)` where no default was named; `agent list` showing the set is POOL1b's."
     },
     {
       "name": "list, the join names an account by its name where a shell can take it, and by its id where none can",
@@ -7218,8 +7289,10 @@
       "err": [],
       "after": {
         "daoris/profiles/keys.json": "{\n  \"claude-code\": {\n    \"<id>\": \"sk-ant-api03-cli-test-wxyz\"\n  }\n}\n",
-        "daoris/run/probing/claude-code/<id>.signed-in": "{\"at\":\"<at>\"}\n"
-      }
+        "daoris/run/probing/claude-code/<id>.signed-in": "{\"at\":\"<at>\"}\n",
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {},\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {},\n  \"rotation\": {\n    \"claude-code\": [\n      \"<id>\"\n    ]\n  }\n}\n"
+      },
+      "changed": "The stored accounts fold into one set before the edit (POOL1a1, D197 §6)."
     },
     {
       "name": "key, a door's key is its owner's account",
@@ -7242,8 +7315,10 @@
       "err": [],
       "after": {
         "daoris/profiles/keys.json": "{\n  \"claude-code\": {\n    \"<id>\": \"sk-door-9999\"\n  }\n}\n",
-        "daoris/run/probing/claude-code/<id>.signed-in": "{\"at\":\"<at>\"}\n"
-      }
+        "daoris/run/probing/claude-code/<id>.signed-in": "{\"at\":\"<at>\"}\n",
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {},\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {},\n  \"rotation\": {\n    \"claude-code\": [\n      \"work\",\n      \"<id>\"\n    ]\n  }\n}\n"
+      },
+      "changed": "The stored accounts fold into one set before the edit (POOL1a1, D197 §6)."
     },
     {
       "name": "key, beside an account that is a key",
@@ -7274,11 +7349,12 @@
       "after": {
         "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": {\n      \"name\": \"work-key\"\n    }\n  }\n}\n",
         "daoris/data/cooling.json": "{\"claude-code\":{\"acct-0000aaaa\":{\"until\":\"2999-01-01T00:00:00Z\"}}}",
-        "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"acct-0000aaaa\"\n  },\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {}\n}\n",
+        "daoris/data/harnesses.json": "{\n  \"defaults\": {},\n  \"workspaces\": {},\n  \"versions\": {},\n  \"workspaceVersions\": {},\n  \"rotation\": {\n    \"claude-code\": [\n      \"acct-0000aaaa\",\n      \"acct-0000bbbb\",\n      \"<id>\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"use\": \"order\"\n    }\n  },\n  \"pooled\": {\n    \"claude-code\": [\n      {\n        \"id\": \"<id>\",\n        \"at\": \"<at>\",\n        \"scopes\": [\n          {\n            \"workspace\": null,\n            \"default\": \"acct-0000aaaa\",\n            \"list\": [],\n            \"begins\": \"acct-0000aaaa\"\n          }\n        ],\n        \"order\": [\n          \"acct-0000aaaa\",\n          \"acct-0000bbbb\"\n        ],\n        \"moved\": [],\n        \"joined\": [],\n        \"inOrder\": \"acct-0000aaaa\",\n        \"notKept\": [],\n        \"gone\": [],\n        \"said\": false\n      }\n    ]\n  }\n}\n",
         "daoris/data/reads.json": "{\n  \"claude-code\": {\n    \"accounts\": {\n      \"acct-0000aaaa\": {\n        \"login\": \"out\",\n        \"read\": \"2026-10-01T00:00:00Z\"\n      }\n    }\n  }\n}\n",
         "daoris/profiles/keys.json": "{\n  \"claude-code\": {\n    \"acct-0000aaaa\": \"sk-first-1111\",\n    \"acct-0000bbbb\": \"sk-second-2222\",\n    \"<id>\": \"sk-third-3333\"\n  }\n}\n",
         "daoris/run/probing/claude-code/<id>.signed-in": "{\"at\":\"<at>\"}\n"
-      }
+      },
+      "changed": "The stored accounts fold into one set before the edit (POOL1a1, D197 §6)."
     },
     {
       "name": "key, given on the command line",

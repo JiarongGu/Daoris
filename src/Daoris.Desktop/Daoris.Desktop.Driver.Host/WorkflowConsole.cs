@@ -12,6 +12,7 @@ internal static class WorkflowConsole
     public static async Task<int> RunAsync(string[] args)
     {
         if (args is ["keep", ..]) return await KeepAsync(args).ConfigureAwait(false);
+        if (WorkflowNodeCommand.Asks(args)) return await NodeAsync(args).ConfigureAwait(false);
 
         // The usage before the service is asked for: a mistyped line needs no service to be told so.
         if (WorkflowRunCommand.Read(args, out var problem) is not { } asked)
@@ -40,6 +41,23 @@ internal static class WorkflowConsole
             Console.Error.WriteLine($"workflow: {error.Message}");
             return 2;
         }
+    }
+
+    /// <summary>
+    /// <c>workflow skip|stop &lt;run&gt; &lt;node&gt; ["…"]</c> (FABRIC-CUTOVER1f): the person's word on a run's node, the running Daoris's client where
+    /// one answers, confirmed in its window; alone, kept on the run's record under the lease the host holds for it. It asks no service.
+    /// </summary>
+    private static async Task<int> NodeAsync(string[] args)
+    {
+        if (WorkflowNodeCommand.Read(args, out var problem) is not { } asked)
+        {
+            Console.Error.WriteLine($"workflow: {problem}");
+            Console.Error.WriteLine(WorkflowNodeCommand.Usage);
+            return 2;
+        }
+
+        var home = DriverConfig.HomeOf(DriverConfig.ResolvePath());
+        return await WorkflowNodeCommand.RunAsync(asked, new NodeRecordFiles(home), Console.Out, InstanceHost.World(home, "workflow")).ConfigureAwait(false);
     }
 
     /// <summary><c>workflow keep &lt;session&gt; ["…"]</c>: the person's <i>Keep</i>, through the library's press.</summary>

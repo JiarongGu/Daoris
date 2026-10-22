@@ -122,7 +122,8 @@ public static class OpenRoutes
         // may travel over the local pipe is a decision first; the rest until their route answers them as `said`.
         ("trace", null, "alone: its words are built from the sources the host reads itself; TRACE answers the page's shape only"),
         ("git branches", null, "alone: its words are built from the registry's checkouts the host reads itself; GIT_BRANCHES answers the page's shape only"),
-        ("workflow", null, "alone: WORKFLOW_RUN answers the page's shape only, and `workflow keep` writes its run"),
+        ("workflow", null,
+            "alone: WORKFLOW_RUN answers the page's shape only, and `workflow keep` writes its run; `workflow skip` and `stop` are the person's press (WORKFLOW_NODE)"),
         ("plugins show <id>", null, "alone: its words name the plugin's folders on this machine, which PLUGIN's page answers apart, and no said line carries"),
         ("plugins activity <id>", null, "alone: a read of the machine log this process reads itself; with no log its words name the log's folder"),
         ("plugins try <folder|id>", null, "alone: a trial starts the plugin as this terminal's own child, and its words name the folder it tried"),
@@ -249,6 +250,12 @@ public static class PersonPresses
     /// </summary>
     public static InstanceRoute PluginAction { get; } = Person("PLUGIN_ACTION");
 
+    /// <summary>
+    /// <c>workflow skip &lt;run&gt; &lt;node&gt; "…"</c> and <c>workflow stop &lt;run&gt; &lt;node&gt;</c> (FABRIC-CUTOVER1f): the person's word on a node
+    /// of a run bound to a graph version, kept on the run's record for Daoris's next look.
+    /// </summary>
+    public static InstanceRoute WorkflowNode { get; } = Person("WORKFLOW_NODE");
+
     /// <summary>Each person's press a verb sends over the pipe, in the verb's words, with its route.</summary>
     public static IReadOnlyList<(string Verb, InstanceRoute Route)> Presses { get; } =
     [
@@ -274,6 +281,8 @@ public static class PersonPresses
         ("setup <repository>", SetupPress),
         ("plugins approve <id> <server>", PluginAction),
         ("plugins withdraw <id> <server>", PluginAction),
+        ("workflow skip <run> <node> \"…\"", WorkflowNode),
+        ("workflow stop <run> <node> [\"…\"]", WorkflowNode),
         ("sessions archive <id>…", SessionArchive),
         ("sessions unarchive <id>…", SessionArchive),
         ("sessions stop <id>", SessionStop),

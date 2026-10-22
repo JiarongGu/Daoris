@@ -268,6 +268,11 @@ export type SyncStanding = {
   tried?: string | null;
   /** The wall the last pass hit, in the host's words; null when it reached the remote. */
   problem?: string | null;
+  /**
+   * The machines its remote last said had not declared they know a bound quest (FABRIC-CLOSE1i2), as the last pass heard them: empty
+   * where every one did, absent where no pass heard the handshake. Each holds a bind through the remote off until it declares or is retired.
+   */
+  undeclared?: string[];
 };
 /** One step of a chain. `{parent}` in its words becomes the id of the quest it follows. */
 export type QuestStep = { to: string; title: string; body: string };
@@ -287,6 +292,11 @@ export type CodeMapAnswer = {
   fed?: Provenance;
 };
 export type QuestAction = { quest: Quest; message: string };
+/**
+ * The person's retirement of a machine at a circle's remote (FABRIC-CLOSE1i2): whether the remote retired one (false where it had heard
+ * nothing from it), the machines it still counts undeclared after it, and the host's sentence.
+ */
+export type MachineRetired = { workspace: string; machine: string; retired: boolean; undeclared: string[]; message: string };
 /**
  * An ask (D65 §1a): a sentence entered at a WORKSPACE rather than at a repository, held as a record of
  * what became of it. `tier` names what answered it, on every record (`model-decoupling`); a tier this
@@ -849,6 +859,10 @@ export const api = {
   // The person's *Set it up in `<environment>`* (REVIEWENV1b, design §2.1, §3.6): a set-up step published following a done quest.
   setUpStep: (id: string, environment: string) =>
     asThePerson<QuestAction>(`/api/quests/${encodeURIComponent(id)}/set-up-step`, { environment }),
+  // The person retiring a machine the circle's remote still counts (FABRIC-CLOSE1i2): one whose store was deleted, or that left the
+  // workspace, no longer holds its binds off; a push from it counts it again.
+  retireMachine: (workspace: string, machine: string) =>
+    asThePerson<MachineRetired>(`/api/sync/machines/${encodeURIComponent(machine)}/retire${qs({ workspace })}`, {}),
   // A person dismissing one conflict (SYNC6c), by the name every machine knows it by.
   dismissConflict: (id: string, machine: string, sequence: number) =>
     post<QuestAction>(`/api/quests/${encodeURIComponent(id)}/conflicts/dismiss`, { machine, sequence }),

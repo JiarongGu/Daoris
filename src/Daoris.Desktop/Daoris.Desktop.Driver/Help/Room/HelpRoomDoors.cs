@@ -345,6 +345,13 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "proposes it, and nothing switches by itself)",
             "(no screen yet)",
             "`daoris-driver workflow keep <session> [\"…\"]`"),
+        // FABRIC-CUTOVER1f (D190 point 6, the cutover design §5.2): the person's skip and stop of a node of a run bound to a graph version.
+        // Exempt from Ask Daoris (HelpCoverageTests): passing a step over or stopping it is the person's word on the work, as a held attempt's is.
+        ("pass a step of a run that follows a saved graph over, with your words, such as a go-ahead nobody will raise, or stop it, which "
+            + "ends the run once nothing else of it can move (yours alone: Ask Daoris never proposes it; kept on the run's record, and "
+            + "Daoris's next look applies it)",
+            "Sessions → the session's *Workflow* view, *Pass over…* and *Stop…* under the step",
+            "`daoris-driver workflow skip <run> <node> \"…\"`, `daoris-driver workflow stop <run> <node> [\"…\"]`"),
         // XAGENT1f4 (D155 point 10, design §8.5, §9): the person's presses at the second opinion's gate, the terminal's
         // `daoris-driver opinion` and the screen's (XAGENT1g). Each is exempt from Ask Daoris (HelpCoverageTests): a pass spends an
         // account at the person's choice and a stop is theirs, and going on, or reading it themselves, is their judgement (D110).

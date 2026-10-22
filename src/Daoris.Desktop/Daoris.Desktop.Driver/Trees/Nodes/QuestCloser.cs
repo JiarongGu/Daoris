@@ -881,6 +881,12 @@ public interface IClosureBindPort
     /// <summary>Whether the local host knows a closure graph's operations (<c>bound</c>, <c>submitted</c>) and doors; false from a host before them.</summary>
     Task<bool> KnowsClosureAsync(CancellationToken ct);
 
+    /// <summary>
+    /// Whether the local host judges a bind in a workspace synced through a remote by the remote's handshake (FABRIC-CLOSE1i), refusing it
+    /// where a machine of it has not declared it knows a bound quest; false from a host before it, which is asked no such bind.
+    /// </summary>
+    Task<bool> KnowsRemoteClosureAsync(CancellationToken ct) => Task.FromResult(false);
+
     /// <summary>Names <paramref name="graph"/> for the take of <paramref name="id"/> by <paramref name="session"/>, whose take alone binds it (FABRIC-CLOSE1o).</summary>
     Task<(bool Ok, string Message)> BindQuestAsync(string id, string graph, string session, CancellationToken ct);
 }
@@ -891,8 +897,10 @@ public interface IClosureBindPort
 /// bound quest (FABRIC-CLOSE1e's compatibility).
 /// </summary>
 /// <remarks>
-/// D173's CLOSE1b note, choice 3: no host or machine says yet which builds the other machines of a circle run, so a circle synced through a
-/// remote is never bound, and its quests close by their done as today; the local host is asked (<c>/api/status</c>'s <c>closure</c>).
+/// D173's CLOSE1b note, choice 4: the local host is asked (<c>/api/status</c>'s <c>closure</c>). A circle synced through a remote is bound
+/// only by a host that judges the remote's handshake (<c>closeRemote</c>, FABRIC-CLOSE1i), whose bind refuses it, naming the machines,
+/// until every machine of the workspace declared it knows a bound quest; a host before it is asked nothing there, and its quests close by
+/// their done as today.
 /// </remarks>
 public static class ClosureBinding
 {
@@ -933,13 +941,24 @@ public static class ClosureBinding
         }
 
         var digest = NodeGraphs.Digest(home.Graph!);
-        if (remote)
+        bool knows;
+        try
         {
-            return new(false, $"#{quest.Id} is not bound to its closure graph `{digest}`: its workspace `{workspace}` syncs through a remote, and "
-                              + $"Daoris cannot yet tell that the remote and every machine sharing it run a build that knows a bound quest, {AsToday}");
+            // FABRIC-CLOSE1i: through a remote, the host judges the workspace's handshake in its bind, which names a machine not declared.
+            knows = !remote || await port.KnowsRemoteClosureAsync(ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or JsonException or IOException)
+        {
+            knows = false;
         }
 
-        bool knows;
+        if (!knows)
+        {
+            return new(false, $"#{quest.Id} is not bound to its closure graph `{digest}`: its workspace `{workspace}` syncs through a remote, and "
+                              + $"the service here cannot tell whether every machine sharing it runs a build that knows a bound quest (it is older "
+                              + $"than this driver), {AsToday}");
+        }
+
         try
         {
             knows = await port.KnowsClosureAsync(ct).ConfigureAwait(false);
@@ -998,7 +1017,7 @@ public static class ClosureBinding
               {
                   "expired" => "its naming expired before the take came",
                   "replaced" => "the quest was replaced since it was named",
-                  "remote" => "its workspace syncs through a remote now",
+                  "remote" => "its workspace syncs through a remote, and not every machine sharing it has declared it knows a bound quest",
                   _ => "its answer said why",
               }) + "), so it closes by its done."
             : null;

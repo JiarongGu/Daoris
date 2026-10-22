@@ -235,6 +235,24 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             writer.WriteEndObject();
         }
 
+        // FABRIC-CUTOVER1f: the person's words on a run's nodes not applied yet, written only while one waits, so every other record reads as it
+        // did. A build before them reads past the field and writes the record without it: the word is lost there, never misapplied.
+        if (record.Pending.Count > 0)
+        {
+            writer.WriteStartArray("pending");
+            foreach (var word in record.Pending)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("node", word.Node);
+                writer.WriteString("act", word.Act);
+                if (word.Words is { } words) writer.WriteString("words", words);
+                writer.WriteString("at", Moments.Write(word.At));
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+        }
+
         writer.WriteEndObject();
     });
 
@@ -475,11 +493,30 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
                 ended = new RunEnd(quest, endedAt);
             }
 
+            // FABRIC-CUTOVER1f: the person's words not applied yet, absent in a record written before them and wherever none waits; present,
+            // each reads whole, its act one this build applies.
+            var pending = new List<NodeWord>();
+            if (root.TryGetProperty("pending", out var words))
+            {
+                if (words.ValueKind != JsonValueKind.Array) return null;
+                foreach (var each in words.EnumerateArray())
+                {
+                    if (each.ValueKind != JsonValueKind.Object || Text(each, "node") is not { } node || Text(each, "act") is not { } act
+                        || !NodeWordActs.All.Contains(act, StringComparer.Ordinal) || Moments.Read(each, "at") is not { } at
+                        || (each.TryGetProperty("words", out var said) && said.ValueKind != JsonValueKind.String))
+                    {
+                        return null;
+                    }
+
+                    pending.Add(new NodeWord(node, act, Text(each, "words"), at));
+                }
+            }
+
             return Consistent(unit, statuses, attempts)
                 ? new NodeRecord(unit)
                 {
                     Statuses = statuses.ToImmutableSortedDictionary(StringComparer.Ordinal), Attempts = attempts, Fired = fired, History = history,
-                    Observations = observations, Ended = ended,
+                    Observations = observations, Ended = ended, Pending = pending,
                 }
                 : null;
         }

@@ -183,11 +183,12 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
 
     /// <summary>
     /// UX6e (D150 §5.3): each account and the tool's own sign-in say when they were last read. Nothing has answered for the
-    /// stub's account, so it was never read, and the tool's own sign-in is asked only at a press; one agent's *Read again*
-    /// asks its accounts and its own sign-in, and each then says when.
+    /// stub's account, so it was never read; one agent's *Read again* asks its accounts, and each then says when. 🔴 It never
+    /// asks the tool's own sign-in (POOL1a3, D197 point 3; Fable's F2), and neither does the roster's whole refresh, so the own
+    /// sign-in stays never read.
     /// </summary>
     [Fact]
-    public async Task An_account_says_when_it_was_read_and_one_agents_read_again_dates_its_accounts()
+    public async Task An_account_says_when_it_was_read_and_no_read_again_asks_the_own_sign_in()
     {
         Directory.CreateDirectory(HarnessSettings.ProfileHome(Home, "stub", "work"));
         File.WriteAllText(DriverConfigPath, """
@@ -204,7 +205,12 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
         stub = (await AnswerAsync(module, "HARNESSES_REFRESH", new { agent = "stub" })).GetProperty("harnesses").EnumerateArray()
             .Single(h => h.GetProperty("harness").GetString() == "stub");
         Assert.Equal(JsonValueKind.String, stub.GetProperty("profiles")[0].GetProperty("read").ValueKind);
-        Assert.Equal(JsonValueKind.String, stub.GetProperty("ownRead").ValueKind);
+        Assert.Equal(JsonValueKind.Null, stub.GetProperty("ownRead").ValueKind);
+
+        stub = (await AnswerAsync(module, "HARNESSES_REFRESH")).GetProperty("harnesses").EnumerateArray()
+            .Single(h => h.GetProperty("harness").GetString() == "stub");
+        Assert.Equal(JsonValueKind.Null, stub.GetProperty("ownRead").ValueKind);
+        Assert.Null(AccountReads.Of(Home, "stub").Own);
     }
 
     /// <summary>One agent's *Read again* names an agent this machine has accounts for; another is refused in a sentence.</summary>
@@ -297,8 +303,9 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// ROSTER1: an account's edit asks no account — a default set or cleared, an account made — where each asked every
-    /// account again; a removed account's reading goes with it, so one made later under its name starts never read.
+    /// ROSTER1: an account's edit asks no account — the set's order written or cleared, an account made — where each asked every
+    /// account again; a removed account's reading goes with it, so one made later under its name starts never read. The order is
+    /// the set's edit since POOL1a1 (D197 point 2), where a default, refused now, was.
     /// </summary>
     [Fact]
     public async Task An_accounts_edit_asks_no_account_and_a_removal_forgets_its_reading()
@@ -307,8 +314,8 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
         var module = Module();
         await AnswerAsync(module, "HARNESSES_REFRESH", new { agent = "stub", profile = "work" });
 
-        await AnswerAsync(module, "HARNESS_ACTION", new { harness = "stub", action = "profile-default", profile = "work" });
-        await AnswerAsync(module, "HARNESS_ACTION", new { harness = "stub", action = "profile-default", profile = "work", workspace = "aurora" });
+        await AnswerAsync(module, "ACCOUNT_USE", new { harness = "stub", action = "order", accounts = new[] { "work" } });
+        await AnswerAsync(module, "ACCOUNT_USE", new { harness = "stub", action = "order", accounts = Array.Empty<string>() });
         await AnswerAsync(module, "HARNESS_ACTION", new { harness = "stub", action = "profile-add", profile = "spare" });
         await AnswerAsync(module, "HARNESS_ACTION", new { harness = "stub", action = "profile-remove", profile = "work" });
         await AnswerAsync(module, "HARNESS_ACTION", new { harness = "stub", action = "profile-add", profile = "work" });
@@ -320,40 +327,38 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// 🔴 A work account for the work circle (D49 §4) could be set from a terminal
-    /// (`daoris agent profile default … --workspace`) and not from the screen — D50 in the
-    /// direction nothing tests. The bridge carries the workspace, the roster answers which circles
-    /// use which account, and an action naming no profile CLEARS the default rather than refusing:
-    /// "use the tool's own home again" is a choice, not a missing argument.
+    /// A workspace's default, set or cleared, and the machine's, are refused over the bridge (POOL1a1, D197 points 1, 2 and 6; the
+    /// account-pool design §5.2): every account signed in for Daoris serves every workspace and the order says where starts begin,
+    /// so <c>profile-default</c> names nothing, and nothing is written. It was D49 §4's work account for the work circle, set from
+    /// the screen as from the terminal (D50); D197 retires the default, and the terminal's own refusal is POOL1b's.
     /// </summary>
     [Fact]
-    public async Task A_workspace_s_default_account_is_set_answered_and_cleared_over_the_bridge()
+    public async Task A_workspace_s_default_account_is_refused_over_the_bridge_set_or_cleared_and_nothing_is_written()
     {
         Directory.CreateDirectory(HarnessSettings.ProfileHome(Home, "stub", "work"));
         File.WriteAllText(DriverConfigPath, """
             { "drivable": [], "holds": [], "cap": 1, "adapter": "stub",
               "commands": { "stub": ["node", "agent.mjs"] } }
             """);
+        var wiring = DriverConfigPath.Replace("driver.json", "harnesses.json");
+        string? Wiring() => File.Exists(wiring) ? File.ReadAllText(wiring) : null;
 
-        await AnswerAsync(Module(), "HARNESS_ACTION",
-            new { harness = "stub", action = "profile-default", profile = "work", workspace = "aurora" });
-        var stub = (await AnswerAsync(Module(), "HARNESSES")).GetProperty("harnesses").EnumerateArray()
-            .Single(h => h.GetProperty("harness").GetString() == "stub");
-        var circle = Assert.Single(stub.GetProperty("workspaceDefaults").EnumerateArray().ToList());
-        Assert.Equal("aurora", circle.GetProperty("workspace").GetString());
-        Assert.Equal("work", circle.GetProperty("profile").GetString());
+        foreach (var press in new object[]
+        {
+            new { harness = "stub", action = "profile-default", profile = "work", workspace = "aurora" },
+            new { harness = "stub", action = "profile-default", workspace = "aurora" },
+            new { harness = "stub", action = "profile-default", profile = "work" },
+            new { harness = "stub", action = "profile-default" },
+        })
+        {
+            var module = Module();
+            var before = Wiring();
 
-        // No profile named: the circle goes back to the tool's own home.
-        await AnswerAsync(Module(), "HARNESS_ACTION",
-            new { harness = "stub", action = "profile-default", workspace = "aurora" });
-        stub = (await AnswerAsync(Module(), "HARNESSES")).GetProperty("harnesses").EnumerateArray()
-            .Single(h => h.GetProperty("harness").GetString() == "stub");
-        Assert.Empty(stub.GetProperty("workspaceDefaults").EnumerateArray());
+            var refused = await RefusalAsync(module, "HARNESS_ACTION", press);
 
-        // And the machine's own default clears the same way.
-        await AnswerAsync(Module(), "HARNESS_ACTION", new { harness = "stub", action = "profile-default", profile = "work" });
-        await AnswerAsync(Module(), "HARNESS_ACTION", new { harness = "stub", action = "profile-default" });
-        Assert.Empty(HarnessSettings.Load(DriverConfigPath.Replace("driver.json", "harnesses.json")).Defaults);
+            Assert.StartsWith(Refusals.AccountsOneSet, refused);
+            Assert.True(before == Wiring(), $"{JsonSerializer.Serialize(press)} wrote the wiring");
+        }
     }
 
     /// <summary>

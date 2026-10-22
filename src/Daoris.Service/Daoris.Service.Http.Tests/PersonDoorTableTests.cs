@@ -125,6 +125,7 @@ public sealed class PersonDoorTableTests
         ("POST", "/api/quests/{id}/conflicts/dismiss", Person),
         // SYNCMERGE1a (D178 point 3): the person's bring-forward of their machine's lost take; a local host's alone.
         ("POST", "/api/quests/{id}/conflicts/forward", Person),
+        ("POST", "/api/sync/machines/{machine}/retire", Person),
         ("DELETE", "/api/registry/{repository}", Person),
         ("POST", "/api/registry/{repository}/workspace", Person),
         ("POST", "/api/registry/import", Person),
@@ -140,6 +141,7 @@ public sealed class PersonDoorTableTests
         ("GET", "/api/feed/held", Shared),
         ("GET", "/api/quests/operations", Shared),
         ("POST", "/api/quests/operations", Shared),
+        ("POST", "/api/quests/machines/{machine}/retire", Shared),
     ];
 
     private static IEnumerable<(string Method, string Pattern)> Sorted(IEnumerable<(string Method, string Pattern)> routes) =>
@@ -165,13 +167,13 @@ public sealed class PersonDoorTableTests
         // and a quest's moves, a read (FLOWCHART1a2), and a word's attempt, the driver's (COWORK1c), and an entry's acknowledgment of a
         // channel message, the driver's (COWORK1d), and a quest's own kind and workflow, the person's (WORKFLOW1e2), and the downloaded
         // versions a start of a record was handed, the driver's (KEEP1b), and what waits for confirmation held until it moves, a read
-        // (NOTIFY2j).
+        // (NOTIFY2j), and a machine's retirement at a workspace's remote, the person's (FABRIC-CLOSE1i2).
         Assert.Equal(29, Routes.Count(route => route.Class == Open));
         Assert.Equal(4, Routes.Count(route => route.Class == Agent));
         Assert.Equal(24, Routes.Count(route => route.Class == Driver));
-        Assert.Equal(32, Routes.Count(route => route.Class == Person));
-        // And a shared host's two channel doors, a feed and a page (SESSONE2d).
-        Assert.Equal(9, Routes.Count(route => route.Class == Shared));
+        Assert.Equal(33, Routes.Count(route => route.Class == Person));
+        // And a shared host's two channel doors, a feed and a page (SESSONE2d), and its retirement of a machine (FABRIC-CLOSE1i2).
+        Assert.Equal(10, Routes.Count(route => route.Class == Shared));
     }
 
     /// <summary>Every gated door has its own name, which a refusal says; a read and a shared host's door have none.</summary>

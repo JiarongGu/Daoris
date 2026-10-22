@@ -107,6 +107,72 @@ export function needsListed<T extends { kind: string }>(rows: readonly T[]): T[]
   return rows.filter((row) => row.kind !== 'confirmation');
 }
 
+/** The places of the activity bar a wait can be counted at (BADGEUX1): those a row's door opens. */
+export type AttentionPlace = 'sessions' | 'quests' | 'projects' | 'agents' | 'settings';
+
+/**
+ * The place each kind is counted at (BADGEUX1, the UI/UX design §3.10): the place its door opens (`App.tsx`'s `attentionDoors`),
+ * where its step is taken, so a place's number is what the person finds to do there. A press is the bell's alone, its card in
+ * *Notifications*. Typed over every kind, so a new kind is placed when it is added.
+ */
+export const ATTENTION_PLACE: Readonly<Record<AttentionKind, AttentionPlace | null>> = {
+  // A session's page holds its answer, its review, its gate, its helper's and hand-over's yes and no, its held call and answer.
+  parked: 'sessions',
+  review: 'sessions',
+  opinion: 'sessions',
+  helper: 'sessions',
+  'hand-over': 'sessions',
+  permission: 'sessions',
+  answer: 'sessions',
+  // An ask's page or a quest's: publishing, an intake's question, a quest nobody can take, *Try again*, a go-ahead on its ask, a
+  // departure's yes, a set-up's review, a folder's trust for what it holds.
+  proposal: 'quests',
+  intake: 'quests',
+  unanswerable: 'quests',
+  'parked-quest': 'quests',
+  'go-ahead': 'quests',
+  departure: 'quests',
+  'set-up': 'quests',
+  trust: 'quests',
+  // The workspace's Branches, where the clean-up's press is. Its row's door is the row's own (`placeOf`): a branch cut for a session
+  // the page holds opens that session, and a held attempt's presses are on its row alone.
+  work: 'projects',
+  // What agents may do, and an agent's accounts.
+  rule: 'agents',
+  'account-wait': 'agents',
+  'signed-out': 'agents',
+  // This Daoris's *Disk space* card.
+  space: 'settings',
+  confirmation: null,
+};
+
+/** The sessions a place is judged with: those the page holds, for the branch a unit of work was cut for (`workCutFor`). */
+type PlaceSessions = readonly Pick<Session, 'id' | 'repository' | 'tree'>[] | undefined;
+
+/**
+ * The place a row is counted at (BADGEUX1): its kind's, but a unit of work's, whose door is the row's own (`App.tsx`'s
+ * `attentionDoors.work`, Codex's read of §3.10): a held attempt is settled on its row alone, in the bell's view, so no place counts
+ * it; a branch cut for a session the page holds opens that session; any other opens the workspace's Branches. A kind this build
+ * does not know is counted at none, though the bell counts it.
+ */
+export function placeOf(row: Pick<PushedAttention, 'kind' | 'held' | 'blocked' | 'session' | 'title' | 'where'>, sessions: PlaceSessions): AttentionPlace | null {
+  if (row.kind === 'work') return row.held ? null : workCutFor(row, sessions) ? 'sessions' : 'projects';
+  return (ATTENTION_PLACE as Readonly<Record<string, AttentionPlace | null>>)[row.kind] ?? null;
+}
+
+/**
+ * How many waits each place counts (BADGEUX1): every listed row (`needsListed`) at its place (`placeOf`). A place with none is
+ * absent, so it wears no number.
+ */
+export function placeCounts(rows: readonly PushedAttention[], sessions?: PlaceSessions): Partial<Record<AttentionPlace, number>> {
+  const counted: Partial<Record<AttentionPlace, number>> = {};
+  for (const row of needsListed(rows)) {
+    const place = placeOf(row, sessions);
+    if (place) counted[place] = (counted[place] ?? 0) + 1;
+  }
+  return counted;
+}
+
 /**
  * The rows by group, only the groups that hold any, in `GROUP_ORDER`, each keeping the order `attentionInOrder` gave it.
  * A group with no rows is not shown (design §6.2).
@@ -419,8 +485,9 @@ export type PushedAttention = {
 };
 
 /**
- * The slice's answer composed (`attentionSlice`): the rows in the band's order; the keys of what waits on the person in Sessions,
- * which its badge marks; and the keys of the sessions the driver runs, which the badge and the status bar count (SESSBADGE1).
+ * The slice's answer composed (`attentionSlice`): the rows in the band's order, which the bell and each place count (BADGEUX1); the
+ * keys of what parked on the person; and the keys of the sessions the driver runs, which the status bar counts (SESSBADGE1) and,
+ * less the parks, Sessions' running mark reads (BADGEUX1).
  */
 export type AttentionPushed = {
   rows: PushedAttention[];
@@ -467,6 +534,21 @@ export type AttentionNames = {
   /** The roster by agent (`byTool`), which names an account as the person knows it. */
   tools?: readonly Tool[];
 };
+
+/**
+ * FABRIC-UNKNOWN1c: the session a `work` row's branch was cut for, where nothing records its owner and the page holds a session the
+ * branch is named for, by the name the trees give it (`daoris/` and the tree's folder, as WorkFrame finds a session's own branch).
+ * That session is the row's door, and the place it is counted at (BADGEUX1).
+ */
+export function workCutFor(
+  row: Pick<PushedAttention, 'blocked' | 'session' | 'title' | 'where'>, sessions: readonly Pick<Session, 'id' | 'repository' | 'tree'>[] | undefined,
+) {
+  const branch = (row.blocked?.entries ?? []).find((entry) => entry.facts?.branch)?.facts?.branch ?? row.title;
+  return row.blocked?.unknown && !row.session && branch?.startsWith('daoris/')
+    ? sessions?.find((one) => one.repository === row.where && one.tree
+      && branch === `daoris/${one.tree.split(/[\\/]/).filter(Boolean).pop()}`)
+    : undefined;
+}
 
 /** A go-ahead's act, as its ask's page names it: its kind in the reader's language where the page has a word, and the session's words. */
 function goAheadTitle(goAhead: Pick<GoAhead, 'kind' | 'on' | 'act'>): string {
@@ -652,13 +734,7 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
       // entry worded by its code in the reader's language, the reason said once. An unknown owner says so first only where an entry
       // carries no code (a shell before them), whose own sentence then follows as recorded (FABRIC-UNKNOWN1).
       const recorder = sessionOf(row.session);
-      // FABRIC-UNKNOWN1c: a branch whose owner nothing records may still be named for a session the page holds, by the name the trees
-      // give it (`daoris/` and the tree's folder, as WorkFrame finds a session's own branch); that session is its door.
-      const branch = entries.find((entry) => entry.facts?.branch)?.facts?.branch ?? row.title;
-      const cut = row.blocked?.unknown && !row.session && branch?.startsWith('daoris/')
-        ? names.sessions?.find((one) => one.repository === row.where && one.tree
-          && branch === `daoris/${one.tree.split(/[\\/]/).filter(Boolean).pop()}`)
-        : undefined;
+      const cut = workCutFor(row, names.sessions);
       return {
         ...base,
         title: recorder ? named(row.session) : row.title ?? row.id,

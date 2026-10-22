@@ -219,20 +219,19 @@ public static class HarnessProbe
     /// every account on the install out.</para>
     /// <para><b>Never an account a session of Daoris's runs on</b> (<paramref name="busy"/>): that session's own process
     /// refreshes its token, so the probe keeps out, and says what <paramref name="prior"/> said of it, or unknown.</para>
-    /// <para>🔴 <b>The tool's own sign-in only when asked</b> (<paramref name="own"/>): it is the person's own, which their
-    /// terminal and their other sessions run on, so only a person's press asks it (TOOL6g). Otherwise
-    /// <paramref name="prior"/>'s word stands, or unknown.</para>
+    /// <para>🔴 <b>Never the tool's own sign-in</b> (POOL1a3, D197 point 3; Fable's F2): it is the person's own, which their
+    /// terminal and their other sessions run on, and the agent may refresh their token to answer. Every question runs in an
+    /// account's home under the home; <paramref name="prior"/>'s word on the own sign-in stands, or unknown.</para>
     /// </remarks>
-    /// <param name="busy">Whether a session of Daoris's runs on an account now, by its name, or null for the tool's own sign-in.</param>
-    /// <param name="prior">The last report of this harness, whose word on an account not asked, and on the own sign-in not asked, stands.</param>
-    /// <param name="own">Whether to ask the tool's own sign-in: a person's press, never the loop.</param>
+    /// <param name="busy">Whether a session of Daoris's runs on an account now, by its name.</param>
+    /// <param name="prior">The last report of this harness, whose word on an account not asked, and on the own sign-in, stands.</param>
     /// <param name="asks">
     /// Which accounts to ask, by name; null asks every one (ROSTER1). One not asked keeps <paramref name="prior"/>'s word and
     /// when it was read, so the binary can be asked with no account asked at all.
     /// </param>
     /// <param name="clock">When an answer came, for <see cref="ProfileReport.Read"/>; the system's, unless a roster's.</param>
     /// <param name="answered">
-    /// Told each question that was asked, the account's name or null for the tool's own, with what it said: the roster keeps
+    /// Told each question that was asked, the account's name, with what it said: the roster keeps
     /// the state under the home and who, the organisation and the plan in memory (D66 §3, ACCOUNTID1).
     /// </param>
     public static async Task<HarnessReport> ProbeAsync(
@@ -244,7 +243,6 @@ public static class HarnessProbe
         CancellationToken ct = default,
         Func<string?, bool>? busy = null,
         HarnessReport? prior = null,
-        bool own = true,
         Func<string, bool>? asks = null,
         Func<DateTimeOffset>? clock = null,
         Action<string?, LoginRead, DateTimeOffset>? answered = null)
@@ -268,7 +266,7 @@ public static class HarnessProbe
                 + $"`daoris agent pin {adapter} {run.Pinned}` installs it, and "
                 + $"`daoris agent unpin {adapter}` goes back to PATH",
                 toolchain.ProfileVariable,
-                settings.Defaults.TryGetValue(toolchain.Owner(adapter), out var pinnedDefault) ? pinnedDefault : null,
+                settings.FirstOf(toolchain.Owner(adapter)),
                 []);
         }
 
@@ -303,15 +301,10 @@ public static class HarnessProbe
                 Moment(answer, kept, said?.Read, name), AccountNames.NameOf(home, owner, name), answer.Org, answer.Plan));
         }
 
-        // The tool's own home, asked exactly as a profile is — with the seam UNSET, so the tool
-        // answers about wherever it keeps its own credential. Read-only; Daoris never logs into it, and
-        // asks it only at a person's press (TOOL6g).
+        // 🔴 The tool's own home is never asked (POOL1a3, D197 point 3): its kept word stands. Asked with the seam unset, the
+        // tool answered for the person's own sign-in, and might refresh their token beside their terminal's to do it.
         var keptOwn = new LoginRead(prior?.OwnLogin ?? LoginState.Unknown, prior?.OwnAccount, prior?.OwnOrg, prior?.OwnPlan);
-        var ownAnswer = !present ? new LoginAnswer(LoginState.Unknown, null, false)
-            : !own ? LoginAnswer.Of(keptOwn, asked: false)
-            : await LoginAsync(
-                resolved, toolchain, profileHome: null, isManaged, ct, lockPath: ProbeLock.PathOf(home, owner, null),
-                busy: busy is null ? null : () => busy(null), kept: keptOwn).ConfigureAwait(false);
+        var ownAnswer = !present ? new LoginAnswer(LoginState.Unknown, null, false) : LoginAnswer.Of(keptOwn, asked: false);
 
         return new HarnessReport(
             adapter,
@@ -319,7 +312,8 @@ public static class HarnessProbe
             present ? FirstLine(version.Output) : null,
             present ? null : version.Problem,
             toolchain.ProfileVariable,
-            settings.Defaults.TryGetValue(owner, out var machine) ? machine : null,
+            // The order's first, where the machine's default was (POOL1a2, the account-pool design §2.2).
+            settings.FirstOf(owner),
             profiles,
             ownAnswer.Login,
             ownAnswer.Account,

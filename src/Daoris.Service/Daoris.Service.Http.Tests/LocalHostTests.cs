@@ -1066,6 +1066,22 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.True((await host.GetAsync("/api/status")).Json.GetProperty("closure").GetBoolean());
         // CLOSECAP1: and its outcome door, which a binding also needs.
         Assert.True((await host.GetAsync("/api/status")).Json.GetProperty("closeOutcome").GetBoolean());
+        // FABRIC-CLOSE1i: and judges a bind through a remote by the remote's handshake.
+        Assert.True((await host.GetAsync("/api/status")).Json.GetProperty("closeRemote").GetBoolean());
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1i2: the person's retirement of a machine at a circle's remote is a door of this host, and a circle with no remote here
+    /// has nothing to retire there: refused in words, and its standing names no machines.
+    /// </summary>
+    [Fact]
+    public async Task A_machines_retirement_is_refused_where_the_circle_has_no_remote()
+    {
+        Assert.Contains(("POST", "/api/sync/machines/{machine}/retire"), host.Routes());
+        var refused = await host.PostAsync("/api/sync/machines/m-gone/retire?workspace=nowhere", new { });
+        Assert.Equal(404, refused.Status);
+        Assert.Contains("has no remote on this machine", refused.Json.GetProperty("error").GetString(), StringComparison.Ordinal);
+        Assert.False((await host.GetAsync("/api/sync?workspace=nowhere")).Json.TryGetProperty("undeclared", out _));
     }
 
     /// <summary>

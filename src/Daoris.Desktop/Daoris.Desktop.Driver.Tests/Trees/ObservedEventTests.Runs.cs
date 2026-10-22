@@ -153,4 +153,39 @@ public sealed partial class ObservedEventTests
         Assert.Equal((NodeStates.Active, NodeStates.Active), (Record(RunOf("q7")).Statuses["deployed"].State, Record(RunOf("q8")).Statuses["deployed"].State));
         Assert.Equal([(Plugin, WorkRefusals.NotWatched)], _port.Refusals);
     }
+
+    /// <summary>
+    /// FABRIC-CUTOVER1f (the cutover design §2.4.1, §5.2): what waits on a landing told for neither run is passed over by the person's skip, with
+    /// their words. The next pass applies it on the first run's record alone, that run ends, and the landing is then told for the other run, the
+    /// one it now carries alone. Seen failing first.
+    /// </summary>
+    [Fact]
+    public async Task A_node_after_handed_told_for_two_runs_at_one_tip_is_passed_over_by_the_persons_skip()
+    {
+        var digest = RunHome.SaveGraph(_home, DeployedAfterHanded);
+        RunHome.Bind(_home, "q7", digest, _now);
+        RunHome.Bind(_home, "q8", digest, _now);
+        _tips["release"] = C1;
+        _units =
+        [
+            RunHome.QuestUnit(RunHome.Quest("q7", "Done")), RunHome.QuestUnit(RunHome.Quest("q8", "Done")),
+            RunHome.Branch(A, "feature/a", Opened, ["q7"], RunHome.Landing(A, "release", C1, _now, "q7")),
+            RunHome.Branch(B2, "feature/b", Opened, ["q8"], RunHome.Landing(B2, "release", C1, _now, "q8")),
+        ];
+        var runtime = Runtime();
+        await PassAsync(runtime, "{}");
+        Assert.DoesNotContain(_port.SentTo(Plugin, 1)?.Units ?? [], unit => unit.Branch == "release");
+
+        var worded = RunNodeWords.Word(new NodeRecordFiles(_home, () => true), "q7", "deployed", NodeWordActs.Skip, "q8's deploy carries this work", () => _now);
+        Assert.True(worded.Done, worded.Refused);
+        var pass = await PassAsync(runtime, "{}", whole: false);
+
+        var skipped = Record(RunOf("q7")).Statuses["deployed"];
+        Assert.Equal((NodeStates.Skipped, "q8's deploy carries this work"), (skipped.State, skipped.Words));
+        Assert.Equal("q7", Record(RunOf("q7")).Ended?.Quest);
+        Assert.Equal(NodeStates.Active, Record(RunOf("q8")).Statuses["deployed"].State);
+        Assert.Contains(pass.Said, line => line.Contains("your skip of `deployed`", StringComparison.Ordinal));
+        var told = Assert.Single(_port.SentTo(Plugin, 1)!.Units, unit => unit.Branch == "release");
+        Assert.Equal((B2, C1), (told.Unit!, told.Tip));
+    }
 }

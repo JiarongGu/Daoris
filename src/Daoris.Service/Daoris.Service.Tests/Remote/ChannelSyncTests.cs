@@ -211,7 +211,8 @@ public sealed class ChannelSyncTests : IAsyncLifetime
 
         public Task<QuestFetch> FetchQuestsAsync(long since, CancellationToken ct = default) => throw Gone();
 
-        public Task<QuestPush> PushQuestsAsync(long @base, IReadOnlyList<QuestOperation> operations, CancellationToken ct = default) => throw Gone();
+        public Task<QuestPush> PushQuestsAsync(
+            long @base, IReadOnlyList<QuestOperation> operations, CancellationToken ct = default, string? declares = null) => throw Gone();
 
         public Task PushSessionsAsync(IReadOnlyList<FedSessionRecord> records, CancellationToken ct = default) => throw Gone();
 

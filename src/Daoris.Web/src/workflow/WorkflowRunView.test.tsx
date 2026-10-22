@@ -7,8 +7,8 @@ import i18n from '../locales/i18n';
 import { code } from '../test/code';
 import type { RunStep, WorkflowRun } from './run';
 import {
-  answerOf, FAILED, HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DISPUTED, OPINION_SETTLED, PULL_REQUEST_OPEN, SEVERAL,
-  WAITING_ON_YOU, WORKING,
+  answerOf, FAILED, GRAPH_RUN, GRAPH_RUN_ADDED_LOOK, GRAPH_RUN_GO_AHEAD, GRAPH_RUN_GO_AHEAD_KEPT, GRAPH_RUN_UNJUDGED, HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DISPUTED,
+  OPINION_SETTLED, PULL_REQUEST_OPEN, SEVERAL, WAITING_ON_YOU, WORKING,
 } from './runFixtures';
 import { WorkflowLine } from './WorkflowLine';
 import { WorkflowRunView } from './WorkflowRunView';
@@ -304,6 +304,143 @@ describe("the session's Workflow view", () => {
     expect(row('work')).toHaveTextContent('本会话');
     expect(row('work')).toHaveTextContent('智能体已完成：这里的 1 个委托已完成。');
     expect(row('landing')).toHaveTextContent('未到达');
+  });
+});
+
+// FABRIC-CUTOVER1e (D190 points 2, 3 and 7; the cutover design §2.3, §6): a run bound to a graph version is drawn from its record, its
+// subjects named, its branches said to be its graph's, an opinion or a look not begun until the doors read it said so, a look its work
+// added beside it; its nodes are its graph's, a fork and its join among them.
+describe("a graph run's Workflow view", () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  it("says what its graph observes, that its branches are its graph's and that every landing door holds it, above its nodes", () => {
+    render(<WorkflowRunView answer={answerOf(GRAPH_RUN)} />);
+
+    expect(screen.getByText('engine · docs workflow, version 1')).toBeInTheDocument();
+    expect(screen.getByText('Workflow: working')).toBeInTheDocument();
+    const head = screen.getByRole('list', { name: 'What its graph says' });
+    expect(within(head).getAllByRole('listitem').map((item) => item.textContent)).toEqual([
+      'Its graph observes quest #q1, its newest work here, and daoris/q1-fix-the-header, the branch its newest session worked.',
+      'Its branches are its graph\'s, not the landing rule\'s: a push, a pull request or a deploy happens for this work only where its graph holds one.',
+      'Every landing door still holds this run: this build judges its graph and lands nothing for it yet.',
+    ]);
+    expect(steps().map((item) => item.getAttribute('data-step'))).toEqual(['claimed', 'build', 'lint', 'both', 'halt', 'opinion', 'handed', 'deployed']);
+    expect(row('claimed')).toHaveTextContent('Reached on quest #q1.');
+    expect(row('build')).toHaveTextContent('built by acme.ci');
+    expect(row('build')).toHaveTextContent('Observed on daoris/q1-fix-the-header at 01234567.');
+    expect(row('both')).toHaveTextContent('The join');
+    expect(row('opinion')).toHaveTextContent('cannot start');
+    expect(row('opinion')).toHaveTextContent("Not begun: this build does not ask a graph run's second opinion yet.");
+    expect(row('build')).toHaveAttribute('aria-current', 'step');
+  });
+
+  it('draws a look the work added beside its graph, and a go-ahead that waits on you with its act', () => {
+    render(<WorkflowRunView answer={answerOf(GRAPH_RUN_ADDED_LOOK)} />);
+    expect(row('look')).toHaveTextContent("A look added for this work by its chain's choice.");
+    expect(row('release')).toHaveTextContent('Your go-ahead');
+    expect(row('release')).toHaveTextContent('Waits for your go-ahead: release to prod');
+    expect(screen.getByText('Workflow: waiting on you')).toBeInTheDocument();
+  });
+
+  it('says a run Daoris has not judged yet, and that no session of it has worked a branch', () => {
+    render(<WorkflowRunView answer={answerOf(GRAPH_RUN_UNJUDGED)} />);
+    const head = screen.getByRole('list', { name: 'What its graph says' });
+    expect(within(head).getAllByRole('listitem')[0]).toHaveTextContent('Daoris has not judged its graph yet: its next look does.');
+    expect(within(head).getAllByRole('listitem')[1]).toHaveTextContent('no session of it has worked a branch here yet.');
+    expect(row('claimed')).toHaveTextContent('not reached');
+  });
+
+  it("opens a node's record: its quest, the session whose branch it observes, and the ask where a go-ahead waits", async () => {
+    const quest = vi.fn();
+    const session = vi.fn();
+    const ask = vi.fn();
+    const { unmount } = render(<WorkflowRunView answer={answerOf(GRAPH_RUN)} doors={{ quest, session }} />);
+    await userEvent.click(within(row('claimed')).getByRole('button', { name: 'Open quest #q1' }));
+    expect(quest).toHaveBeenCalledWith('q1');
+    await userEvent.click(within(row('build')).getByRole('button', { name: 'Open its session' }));
+    expect(session).toHaveBeenCalledWith('s1');
+    unmount();
+
+    render(<WorkflowRunView answer={answerOf(GRAPH_RUN_ADDED_LOOK)} doors={{ ask }} />);
+    await userEvent.click(within(row('release')).getByRole('button', { name: 'Open the ask' }));
+    expect(ask).toHaveBeenCalledWith('a1');
+  });
+
+  it('is worded in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    render(<WorkflowRunView answer={answerOf(GRAPH_RUN)} />);
+    const head = screen.getByRole('list', { name: '它的流程图所说的' });
+    expect(within(head).getAllByRole('listitem')[1]).toHaveTextContent('它的分支归它的流程图管，而不归落地规则管');
+    expect(row('build')).toHaveTextContent('在 daoris/q1-fix-the-header 的 01234567 上观察中。');
+    expect(row('opinion')).toHaveTextContent('未开始：本版本还不为按流程图进行的工作征求第二意见。');
+    expect(row('both')).toHaveTextContent('汇合');
+  });
+});
+
+// FABRIC-CUTOVER1f (D190 point 6; the cutover design §5.2): the person's skip and stop of a graph run's node, offered under each node the
+// driver's one table takes them on, a skip asking for words, each press answered in the ask it was pressed in; a word kept is drawn on its
+// node until the driver's next look applies it. Seen failing first.
+describe("the person's skip and stop of a graph run's node", () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  it('offers them under a node the table takes them on, and nowhere else, and none where nothing presses them', () => {
+    const { unmount } = render(<WorkflowRunView answer={answerOf(GRAPH_RUN_GO_AHEAD)} onNodeWord={vi.fn()} />);
+    expect(within(row('release')).getByRole('button', { name: 'Pass over…' })).toBeInTheDocument();
+    expect(within(row('release')).getByRole('button', { name: 'Stop…' })).toBeInTheDocument();
+    expect(within(row('claimed')).queryByRole('button', { name: 'Stop…' })).toBeNull();
+    expect(within(row('handed')).queryByRole('button', { name: 'Stop…' })).toBeNull();
+    unmount();
+
+    render(<WorkflowRunView answer={answerOf(GRAPH_RUN_GO_AHEAD)} />);
+    expect(screen.queryByRole('button', { name: 'Pass over…' })).toBeNull();
+  });
+
+  it('asks for the words a skip keeps before it is pressed, then sends the run, the node, the act and the words', async () => {
+    const onNodeWord = vi.fn().mockResolvedValue({ run: 'q1', node: 'release', act: 'skip', done: true });
+    render(<WorkflowRunView answer={answerOf(GRAPH_RUN_GO_AHEAD)} onNodeWord={onNodeWord} />);
+
+    await userEvent.click(within(row('release')).getByRole('button', { name: 'Pass over…' }));
+    const ask = screen.getByRole('group', { name: 'Pass over release for this run' });
+    expect(within(ask).getByText(/what waits on it goes on without it/)).toBeInTheDocument();
+    expect(within(ask).getByRole('button', { name: 'Pass over' })).toBeDisabled();
+    await userEvent.type(within(ask).getByRole('textbox', { name: 'why you pass it over' }), 'nobody raises it');
+    await userEvent.click(within(ask).getByRole('button', { name: 'Pass over' }));
+
+    expect(onNodeWord).toHaveBeenCalledWith({ run: 'q1', node: 'release', act: 'skip', words: 'nobody raises it' });
+    expect(screen.queryByRole('group', { name: 'Pass over release for this run' })).toBeNull();
+  });
+
+  it('sends a stop with no words, and says a refusal in the ask by its code, the driver\'s sentence for one it has no words for', async () => {
+    const onNodeWord = vi.fn()
+      .mockResolvedValueOnce({ run: 'q1', node: 'release', act: 'stop', done: false, refused: 'worded', message: 'workflow: already has your word.' })
+      .mockResolvedValueOnce({ run: 'q1', node: 'release', act: 'stop', done: false, refused: 'something-new', message: 'workflow: a newer refusal.' });
+    render(<WorkflowRunView answer={answerOf(GRAPH_RUN_GO_AHEAD)} onNodeWord={onNodeWord} />);
+
+    await userEvent.click(within(row('release')).getByRole('button', { name: 'Stop…' }));
+    const ask = screen.getByRole('group', { name: 'Stop release for this run' });
+    await userEvent.click(within(ask).getByRole('button', { name: 'Stop' }));
+    expect(onNodeWord).toHaveBeenCalledWith({ run: 'q1', node: 'release', act: 'stop', words: null });
+    expect(await within(ask).findByRole('alert')).toHaveTextContent("release already has your word, which Daoris's next look applies.");
+
+    await userEvent.click(within(ask).getByRole('button', { name: 'Stop' }));
+    expect(await within(ask).findByRole('alert')).toHaveTextContent('workflow: a newer refusal.');
+  });
+
+  it('draws a word kept on its node, with its words, until it is applied, and offers nothing more there', () => {
+    render(<WorkflowRunView answer={answerOf(GRAPH_RUN_GO_AHEAD_KEPT)} onNodeWord={vi.fn()} />);
+    expect(row('release')).toHaveTextContent("Your skip is kept, and Daoris's next look applies it.");
+    expect(row('release')).toHaveTextContent('“nobody raises it for this work”');
+    expect(within(row('release')).queryByRole('button', { name: 'Pass over…' })).toBeNull();
+  });
+
+  it('is worded in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    const { unmount } = render(<WorkflowRunView answer={answerOf(GRAPH_RUN_GO_AHEAD)} onNodeWord={vi.fn()} />);
+    expect(within(row('release')).getByRole('button', { name: '跳过…' })).toBeInTheDocument();
+    expect(within(row('release')).getByRole('button', { name: '停止…' })).toBeInTheDocument();
+    unmount();
+    render(<WorkflowRunView answer={answerOf(GRAPH_RUN_GO_AHEAD_KEPT)} />);
+    expect(row('release')).toHaveTextContent('你的跳过已保存，Daoris 下次查看时会应用它。');
   });
 });
 

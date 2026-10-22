@@ -36,18 +36,34 @@ internal sealed class StoreRemote(
     /// <summary>The last session feed as it crossed the wire — what a disclosure test reads.</summary>
     public string? LastFeed { get; private set; }
 
+    /// <summary>The pushes as they crossed the wire, the empty ones a declaration alone makes included (FABRIC-CLOSE1i).</summary>
+    public List<string> Pushes { get; } = [];
+
     public async Task<QuestFetch> FetchQuestsAsync(long since, CancellationToken ct = default)
     {
         Calls++;
-        return QuestWire.ReadPage(QuestWire.Page(await remote.OperationsSinceAsync(since, ct: ct)))!;
+        return QuestWire.ReadPage(QuestWire.Page(await remote.OperationsSinceAsync(since, ct: ct) with { Closure = await remote.ClosureAsync(ct) }))!;
     }
 
-    public async Task<QuestPush> PushQuestsAsync(long @base, IReadOnlyList<QuestOperation> operations, CancellationToken ct = default)
+    // As the shared host's door does: the push judged, its declaration heard, and the handshake answered beside it (FABRIC-CLOSE1i).
+    public async Task<QuestPush> PushQuestsAsync(
+        long @base, IReadOnlyList<QuestOperation> operations, CancellationToken ct = default, string? declares = null)
     {
         Calls++;
-        var (sent, pushed) = QuestWire.ReadPush(QuestWire.Push(@base, operations))!.Value;
-        return QuestWire.ReadPushed(QuestWire.Pushed(
-            await remote.ReceiveAsync(sent, pushed, _ => null, _ => Workspaces.Default, ct)))!;
+        var json = QuestWire.Push(@base, operations, declares);
+        Pushes.Add(json);
+        var (sent, pushed) = QuestWire.ReadPush(json)!.Value;
+        var judged = await remote.ReceiveAsync(sent, pushed, _ => null, _ => Workspaces.Default, ct);
+        await remote.DeclaredAsync(QuestWire.Declares(json), pushed, DateTimeOffset.UtcNow, ct);
+        return QuestWire.ReadPushed(QuestWire.Pushed(judged with { Closure = await remote.ClosureAsync(ct) }))!;
+    }
+
+    // As the shared host's door does (FABRIC-CLOSE1i2): the retirement kept, and the handshake answered after it.
+    public async Task<QuestRetirement> RetireMachineAsync(string machine, CancellationToken ct = default)
+    {
+        Calls++;
+        var retired = await remote.RetireMachineAsync(machine, DateTimeOffset.UtcNow, ct);
+        return QuestWire.ReadRetired(QuestWire.Retired(retired, await remote.ClosureAsync(ct)))!;
     }
 
     public async Task PushSessionsAsync(IReadOnlyList<FedSessionRecord> records, CancellationToken ct = default)
@@ -92,7 +108,9 @@ internal sealed class OlderRemote(QuestStore remote, string unknown = "whileOpen
     public async Task<QuestFetch> FetchQuestsAsync(long since, CancellationToken ct = default) =>
         QuestWire.ReadPage(Without(QuestWire.Page(await remote.OperationsSinceAsync(since, ct: ct))))!;
 
-    public async Task<QuestPush> PushQuestsAsync(long @base, IReadOnlyList<QuestOperation> operations, CancellationToken ct = default)
+    // A remote before FABRIC-CLOSE1i hears no declaration and answers no handshake.
+    public async Task<QuestPush> PushQuestsAsync(
+        long @base, IReadOnlyList<QuestOperation> operations, CancellationToken ct = default, string? declares = null)
     {
         var (sent, pushed) = QuestWire.ReadPush(Without(QuestWire.Push(@base, operations)))!.Value;
         return QuestWire.ReadPushed(QuestWire.Pushed(
@@ -131,9 +149,10 @@ internal sealed class InterruptedRemote(IRemote remote, bool reaches) : IRemote
 {
     public Task<QuestFetch> FetchQuestsAsync(long since, CancellationToken ct = default) => remote.FetchQuestsAsync(since, ct);
 
-    public async Task<QuestPush> PushQuestsAsync(long @base, IReadOnlyList<QuestOperation> operations, CancellationToken ct = default)
+    public async Task<QuestPush> PushQuestsAsync(
+        long @base, IReadOnlyList<QuestOperation> operations, CancellationToken ct = default, string? declares = null)
     {
-        if (reaches) await remote.PushQuestsAsync(@base, operations, ct);
+        if (reaches) await remote.PushQuestsAsync(@base, operations, ct, declares);
         throw new RemoteException(reaches ? "the push's answer never came back" : "the remote could not be reached (connection reset)");
     }
 
@@ -162,7 +181,8 @@ internal sealed class RacedRemote(IRemote remote, Func<Task> between) : IRemote
 
     public Task<QuestFetch> FetchQuestsAsync(long since, CancellationToken ct = default) => remote.FetchQuestsAsync(since, ct);
 
-    public async Task<QuestPush> PushQuestsAsync(long @base, IReadOnlyList<QuestOperation> operations, CancellationToken ct = default)
+    public async Task<QuestPush> PushQuestsAsync(
+        long @base, IReadOnlyList<QuestOperation> operations, CancellationToken ct = default, string? declares = null)
     {
         if (!_raced)
         {
@@ -170,7 +190,7 @@ internal sealed class RacedRemote(IRemote remote, Func<Task> between) : IRemote
             await between();
         }
 
-        return await remote.PushQuestsAsync(@base, operations, ct);
+        return await remote.PushQuestsAsync(@base, operations, ct, declares);
     }
 
     public Task PushSessionsAsync(IReadOnlyList<FedSessionRecord> records, CancellationToken ct = default) => throw QuestsOnly();
@@ -201,7 +221,8 @@ internal sealed class UnreachableRemote : IRemote
 
     public Task<QuestFetch> FetchQuestsAsync(long since, CancellationToken ct = default) => throw Wall();
 
-    public Task<QuestPush> PushQuestsAsync(long @base, IReadOnlyList<QuestOperation> operations, CancellationToken ct = default) =>
+    public Task<QuestPush> PushQuestsAsync(
+        long @base, IReadOnlyList<QuestOperation> operations, CancellationToken ct = default, string? declares = null) =>
         throw Wall();
 
     public Task PushSessionsAsync(IReadOnlyList<FedSessionRecord> records, CancellationToken ct = default) => throw Wall();

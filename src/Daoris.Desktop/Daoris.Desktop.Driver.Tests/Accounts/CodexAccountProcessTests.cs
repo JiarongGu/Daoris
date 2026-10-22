@@ -118,30 +118,30 @@ public sealed class CodexAccountProcessTests : IDisposable
     }
 
     /// <summary>
-    /// *Read again* on Agents → Codex reads each account and the tool's own sign-in by <c>codex login status</c>, under each
-    /// account's <c>CODEX_HOME</c> and none for the own, and keeps each reading under <c>codex</c>: the own sign-in read
-    /// *unknown · never read*, since the door has no status question and no press of <c>codex</c>'s exists.
+    /// *Read again* on Agents → Codex reads each account by <c>codex login status</c>, under each account's <c>CODEX_HOME</c>,
+    /// and keeps each reading under <c>codex</c>. 🔴 It never asks the tool's own sign-in (POOL1a3, D197 point 3): no status
+    /// question runs with no <c>CODEX_HOME</c>, and the own sign-in stays *unknown · never read*.
     /// </summary>
     [Fact]
-    public async Task A_press_through_codex_acp_reads_each_account_and_the_own_sign_in_by_codex_s_status_words()
+    public async Task A_press_through_codex_acp_reads_each_account_by_codex_s_status_words_and_never_the_own_sign_in()
     {
         Account("account-1", signedIn: true);
         Account("account-2", signedIn: false);
         File.WriteAllText(Path.Combine(Own, "auth.json"), "{}");
 
-        var report = await Roster().ReportAsync("codex-acp", Config, refresh: true, own: true);
+        var report = await Roster().ReportAsync("codex-acp", Config, refresh: true);
 
         Assert.Equal(LoginState.In, report!.Profiles.Single(p => p.Name == "account-1").Login);
         Assert.Equal(LoginState.Out, report.Profiles.Single(p => p.Name == "account-2").Login);
-        Assert.Equal(LoginState.In, report.OwnLogin);
-        Assert.NotNull(report.OwnRead);
+        Assert.Equal(LoginState.Unknown, report.OwnLogin);
+        Assert.Null(report.OwnRead);
         var kept = AccountReads.Of(_home, "codex");
         Assert.Equal(LoginState.In, kept.Accounts["account-1"].Login);
         Assert.Equal(LoginState.Out, kept.Accounts["account-2"].Login);
-        Assert.Equal(LoginState.In, kept.Own!.Login);
+        Assert.Null(kept.Own);
         Assert.Contains("account-1 login status", Asked);
         Assert.Contains("account-2 login status", Asked);
-        Assert.Contains("own login status", Asked);
+        Assert.DoesNotContain("own login status", Asked);
     }
 
     /// <summary>

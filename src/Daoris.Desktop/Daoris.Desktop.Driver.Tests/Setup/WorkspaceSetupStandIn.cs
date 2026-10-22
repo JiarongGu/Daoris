@@ -110,7 +110,25 @@ internal sealed class WorkspaceSetupStandIn : IWorkspaceSetupWorld
 
     public Task<IReadOnlyList<string>> EntriesAsync(string repository, CancellationToken ct) => Task.FromResult<IReadOnlyList<string>>([]);
 
-    public RepositoryDescription? Describe(string root) => null;
+    /// <summary>What a checkout says it is built with, by its root; a root not here says nothing.</summary>
+    public Dictionary<string, RepositoryDescription> Descriptions { get; } = new(StringComparer.Ordinal);
+
+    public RepositoryDescription? Describe(string root) => Descriptions.GetValueOrDefault(root);
+
+    /// <summary>
+    /// Its line set up, as <see cref="SetUp"/> leaves the row: the agents layout finished, declaring, naming the index given or
+    /// none, and built with Node (ORIENT2c).
+    /// </summary>
+    public void SetUpLine(string repository, string? index = null)
+    {
+        var documents = index is null ? "" : $$""", "documents": { "index": "{{index}}" }""";
+        Lines[repository] = new LineReading(new LayoutReaderTests.Scratch()
+            .File("daoris.json", $$"""{ "harness": "agents", "target": ".agents", "domain": { "summary": "What it owns." }{{documents}} }""")
+            .File("daoris.lock", """{ "harness": "agents", "target": ".agents", "entries": [] }""")
+            .File("AGENTS.md", "<!-- daoris:rules -->\n# Doctrine\n<!-- /daoris:rules -->\n")
+            .Read(), null);
+        Descriptions[Rows.Single(row => row.Repository == repository).Root!] = new(null, ["Node"], null);
+    }
 
     public Task<AskAnswer> PublishAsync(string workspace, string sentence, string to, CancellationToken ct)
     {

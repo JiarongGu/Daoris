@@ -227,8 +227,12 @@ public sealed class CodexUsageRosterTests : IDisposable
         Assert.DoesNotContain($"fake/{first.Profile}", Asked().Skip(2));
     }
 
+    /// <summary>
+    /// Rewritten by POOL1a2 (D197 point 1): an account no list held was asked nothing, being one no start could take. Every account
+    /// of Daoris's is in the set now, so the one the stored list left out is asked as any other ready account the start could take.
+    /// </summary>
     [Fact]
-    public async Task Nothing_is_asked_of_a_cooling_a_key_a_signed_out_or_a_busy_account_nor_of_one_outside_the_list()
+    public async Task Nothing_is_asked_of_a_cooling_a_key_a_signed_out_or_a_busy_account()
     {
         Accounts("cooling", "out", "busy", "listed", "outside");
         // An account that is a key is not a plan's, so it has no windows to read.
@@ -241,7 +245,7 @@ public sealed class CodexUsageRosterTests : IDisposable
 
         await roster.SelectAsync("fake-door", Config, null, null);
 
-        Assert.Equal(["fake/listed"], Asked());
+        Assert.Equal(["fake/listed", "fake/outside"], Asked().Order(StringComparer.Ordinal));
     }
 
     [Fact]
@@ -252,7 +256,7 @@ public sealed class CodexUsageRosterTests : IDisposable
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "quiet", "account-1"));
         var roster = Roster();
 
-        roster.Next("fake", null);
+        roster.Next("fake");
         await roster.WiringAsync("fake-door", Config, null);
         await roster.SelectAsync("fake-door", Config, null, chosen: "account-2");
         await roster.SelectAsync("quiet", DriverConfig.Empty with { Adapter = "quiet" }, null, null);
@@ -281,12 +285,12 @@ public sealed class CodexUsageRosterTests : IDisposable
     }
 
     /// <summary>
-    /// CODEXUSE3: a press for the tool's own sign-in (its row's <i>Read</i>, the agent's <i>Read again</i>, the roster's
-    /// read-all) asks its windows too, of the server started with no account's home, and keeps them under the own sign-in's
-    /// own key, never as an account's. A press for the accounts alone, or for one account, asks it nothing.
+    /// POOL1a3 (D197 point 3, amending CODEXUSE3; Fable's F2): no press reads the tool's own sign-in's windows, an agent's
+    /// <i>Read again</i>, an account's or the roster's read-all; each reads Daoris's accounts alone, and nothing is kept under the
+    /// own sign-in's key. A look asks nothing.
     /// </summary>
     [Fact]
-    public async Task A_press_for_the_own_sign_in_reads_its_windows_and_keeps_them_under_its_own_key()
+    public async Task No_press_reads_the_own_sign_in_s_windows()
     {
         Accounts("account-1");
         Answers("account-1", 0.20, 0.30);
@@ -295,22 +299,12 @@ public sealed class CodexUsageRosterTests : IDisposable
 
         await roster.ReportAsync("fake-door", Config, refresh: true, account: "account-1");
         await roster.ReportAsync("fake-door", Config, refresh: true);
-        Assert.Equal(["fake/account-1", "fake/account-1"], Asked());
-
-        await roster.ReportAsync("fake-door", Config, refresh: true, own: true);
-        Assert.Equal(["fake/", "fake/account-1"], Asked().Skip(2).Order(StringComparer.Ordinal));
-
-        var own = AccountWindows.SaidOf(_home, "fake", AccountWindows.Own, _now)!;
-        Assert.Equal(0.40, own.Of("weekly")!.Used);
-        Assert.Equal(0.05, own.Of("session")!.Used);
-        Assert.Null(own.Of("weekly")!.Session);
-        // The accounts keep their own readings; the own sign-in is none of them.
-        Assert.Equal(0.30, AccountWindows.SaidOf(_home, "fake", "account-1", _now)!.Of("weekly")!.Used);
-        Assert.Null(AccountWindows.SaidOf(_home, "fake", null, _now));
-
-        // The roster's read-all is a press for it too; a look asks nothing.
         await roster.RosterAsync(Config, refresh: true);
-        Assert.Contains("fake/", Asked().Skip(4));
+        Assert.Equal(["fake/account-1", "fake/account-1", "fake/account-1"], Asked());
+
+        Assert.Equal(0.30, AccountWindows.SaidOf(_home, "fake", "account-1", _now)!.Of("weekly")!.Used);
+        Assert.Null(AccountWindows.SaidOf(_home, "fake", AccountWindows.Own, _now));
+
         var asked = Asked().Length;
         await roster.RosterAsync(Config);
         await roster.ReportAsync("fake-door", Config);
@@ -318,30 +312,9 @@ public sealed class CodexUsageRosterTests : IDisposable
     }
 
     /// <summary>
-    /// CODEXUSE3: the own sign-in is asked under its own lock, and not while a session of Daoris's runs on it, as its status
-    /// question is (TOOL6g); one that cannot be had keeps nothing.
-    /// </summary>
-    [Fact]
-    public async Task The_own_sign_in_is_not_asked_while_a_session_runs_on_it_and_a_reading_not_had_keeps_nothing()
-    {
-        var roster = Roster();
-        roster.Look([new SessionStarted("fake-door", null, _now.AddMinutes(-3), Running: true)], roster.Mark());
-
-        await roster.ReportAsync("fake-door", Config, refresh: true, own: true);
-        Assert.Empty(Asked());
-
-        roster.Look([], roster.Mark());
-        _answers[AccountWindows.Own] = null;
-        await roster.ReportAsync("fake-door", Config, refresh: true, own: true);
-        Assert.Equal(["fake/"], Asked());
-        Assert.Null(AccountWindows.SaidOf(_home, "fake", AccountWindows.Own, _now));
-        Assert.False(File.Exists(AccountWindows.PathOf(_home)));
-    }
-
-    /// <summary>
     /// CODEXUSE3: the own sign-in's reading moves nothing. A start's walk never asks it, never weighs it, and never runs on
-    /// it: an account near its limit is still the start's, and one cooling still waits, however much the own sign-in has
-    /// left. And no list is written by reading it.
+    /// it: an account near its limit is still the start's, and one cooling still waits, however much a reading kept from
+    /// before says the own sign-in has left. And no list is written by a press.
     /// </summary>
     [Fact]
     public async Task The_own_sign_in_s_reading_never_moves_a_start_onto_it_and_writes_no_list()
@@ -351,10 +324,14 @@ public sealed class CodexUsageRosterTests : IDisposable
         Answers("account-1", 0.95, 0.95);
         Answers(AccountWindows.Own, 0.01, 0.01);
         var roster = Roster();
-        await roster.ReportAsync("fake-door", Config, refresh: true, own: true);
+        // A reading of the own sign-in kept by an earlier build, which asked it at a press.
+        AccountWindows.Said(
+            _home, "fake", AccountWindows.Own,
+            [new WindowReading("session", 0.01, _now.AddHours(2)), new WindowReading("weekly", 0.01, _now.AddDays(3))],
+            _now, session: null, source: AccountWindows.SourceRead);
+        await roster.ReportAsync("fake-door", Config, refresh: true);
         var wiring = File.ReadAllText(Settings);
         _now += CodexUsage.Fresh + TimeSpan.FromMinutes(1);
-        Answers(AccountWindows.Own, 0.01, 0.01);
 
         var near = await roster.SelectAsync("fake-door", Config, null, null);
         Assert.Equal("account-1", near.Profile);

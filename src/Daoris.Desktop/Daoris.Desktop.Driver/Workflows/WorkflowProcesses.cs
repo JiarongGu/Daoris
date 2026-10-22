@@ -75,10 +75,15 @@ public static class WorkflowProcesses
         {
             // FABRIC-PIPELINE1b3 (D192's FABRIC-PIPELINE1b2 note, point 5): a graph version is held from the steps' gates as before, and its
             // `claimed` node's options are its sessions' (the pipeline design §3.1), read from the version as its file holds it, as GraphRuns
-            // reads it, never decoded, and only where it is the version its run bound.
+            // reads it, never decoded, and only where it is the version its run bound. FABRIC-CUTOVER1e: its graph is carried beside, which the
+            // run's view draws from the run's record.
             var unrun = held with { Problem = $"`{binding.Workflow}` v{number} cannot be read here: {version.Unrun}" };
             return version is { Graph: { } graph, Digest: { } identity } && string.Equals(identity, binding.Digest, StringComparison.Ordinal)
-                ? unrun with { Claimed = graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Claimed)?.Options ?? new Dictionary<string, string>() }
+                ? unrun with
+                {
+                    Claimed = graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Claimed)?.Options ?? new Dictionary<string, string>(),
+                    Graph = graph,
+                }
                 : unrun;
         }
         if (binding.Digest is { } digest && !string.Equals(digest, version.Digest, StringComparison.Ordinal))
@@ -126,6 +131,8 @@ public static class WorkflowProcesses
     /// <summary>
     /// The workflow a run would follow without its task's kind (design §4.4): §4.1 resolved again with the task's kind left out, as
     /// the choices stand now. A named workflow's newest version that reads, or Current drawn; null where the named one does not read.
+    /// A graph version is a version that reads (FABRIC-CUTOVER1e): its steps are its person part, read from its gate and go-ahead nodes
+    /// (<see cref="Involvement.StepsOf(NodeGraph)"/>).
     /// </summary>
     /// <returns>Its name as said, and its steps, or null steps where they could not be read.</returns>
     /// <param name="kind">A kind its workspace declares, to read what a task of that kind would follow (WORKFLOW1i-b's room); null for none.</param>
@@ -145,7 +152,8 @@ public static class WorkflowProcesses
         }
 
         var found = WorkflowNamed.IsId(selected.Workflow) ? store.Load(selected.Workflow) : null;
-        var newest = found?.Read.Versions.LastOrDefault(each => each.Steps is not null);
-        return newest is null ? ($"`{selected.Workflow}`", null) : ($"`{selected.Workflow}` v{newest.Version}", newest.Steps);
+        var newest = found?.Read.Versions.LastOrDefault(each => each.Steps is not null || each.Graph is not null);
+        return newest is null ? ($"`{selected.Workflow}`", null)
+            : ($"`{selected.Workflow}` v{newest.Version}", newest.Steps ?? Involvement.StepsOf(newest.Graph!));
     }
 }

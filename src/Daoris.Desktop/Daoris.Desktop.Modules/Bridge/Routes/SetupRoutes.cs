@@ -88,7 +88,7 @@ public sealed class SetupRoutes(DriverContext context)
     /// <summary>
     /// A plan as the page reads it (LAYOUT8), the page's <c>SetupShown</c>, for the repository's page and Ask Daoris's card:
     /// the repository and its workspace; what was read on its line (the line, its commit to twelve, the layout, adopted,
-    /// declares) and which set-up it asks (<c>whole</c>, <c>move</c>, <c>declare</c>); the agent that carries it and how its
+    /// declares) and which set-up it asks (<c>whole</c>, <c>move</c>, <c>declare</c>, <c>index</c>); the agent that carries it and how its
     /// work lands (<c>merge</c> or <c>branch</c>, with the plugin a branch is handed to); the versions the tools a child finds
     /// answered; the rule the press adds; the quest's title and body; every refusal with its code; and whether a press
     /// publishes. Names and versions only, never a path (D47 §4).
@@ -108,7 +108,7 @@ public sealed class SetupRoutes(DriverContext context)
         LandsWith = plan.Landing?.Rule.Plugin,
         Node = plan.Tools?.NodeVersion?.Trim(),
         Daoris = plan.Tools is { } tools && SetupPressRules.IsVersion(tools.DaorisVersion) ? tools.DaorisVersion!.Trim() : null,
-        Rules = SetupPressRules.Rules,
+        Rules = SetupPressRules.RulesOf(plan),
         plan.Title,
         plan.Body,
         Refusals = plan.Refusals.Select(refusal => new { refusal.Code, refusal.Sentence }).ToArray(),

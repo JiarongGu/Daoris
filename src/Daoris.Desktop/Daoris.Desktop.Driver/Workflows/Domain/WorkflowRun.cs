@@ -265,6 +265,29 @@ public sealed record WorkflowRunStep(WorkflowStep Step, string State, string Det
 
     /// <summary>A code the record kept: a quest's hold, a landing try's, a pass's failure, an ask's, who accepted.</summary>
     public string? Code { get; init; }
+
+    /// <summary>
+    /// On a run bound to a graph version (FABRIC-CUTOVER1e), the node's own kind (<c>claimed</c>, <c>handed</c>, a plugin's
+    /// <c>&lt;plugin&gt;/&lt;node&gt;</c>), its detail one of <see cref="WorkflowGraphDetails"/>, read from the run's record; null on a steps run
+    /// and on a look the work added beside a graph.
+    /// </summary>
+    public string? Node { get; init; }
+
+    /// <summary>
+    /// What a graph run's node observes (FABRIC-CUTOVER1e; the cutover design §2.2), one of <see cref="WorkflowGraphSubjects"/>: its
+    /// <see cref="Quest"/>, or its <see cref="Branch"/> at <see cref="Commit"/>, or its landing there; null for the run itself.
+    /// </summary>
+    public string? On { get; init; }
+
+    /// <summary>
+    /// What the person may say of a graph run's node now (FABRIC-CUTOVER1f, <see cref="RunNodeWords.Acts"/>): its <c>skip</c> and its <c>stop</c>,
+    /// as the one table takes them where it stands; null where it offers neither, on a steps run's step, and where its run ended or its record
+    /// does not read.
+    /// </summary>
+    public IReadOnlyList<string>? Acts { get; init; }
+
+    /// <summary>The person's word on a graph run's node, kept by its door and not applied yet (FABRIC-CUTOVER1f); null where none waits.</summary>
+    public NodeWord? Asked { get; init; }
 }
 
 /// <summary>A chain's work in one repository, read as steps (WORKFLOW1c; D157 point 11, design §5.1).</summary>
@@ -281,8 +304,17 @@ public sealed record WorkflowRun(string Repository, string Workspace, CurrentWor
     /// <summary>The run's newest session: the one its doors attend.</summary>
     public string? Session { get; init; }
 
-    /// <summary>The first unsettled step; null where all settled or no graph could be read. Problem distinguishes the latter.</summary>
-    public string? At => Steps.FirstOrDefault(step => !WorkflowRunStates.Settled(step.State))?.Step.Id;
+    /// <summary>
+    /// The run bound to a graph version, drawn from its record (FABRIC-CUTOVER1e): its wires, its subjects and what its record says of it;
+    /// null for a run D157's steps govern.
+    /// </summary>
+    public WorkflowGraphRun? Graph { get; init; }
+
+    /// <summary>
+    /// The first unsettled step; null where all settled or no graph could be read. Problem distinguishes the latter. A graph run stands
+    /// where its drawing says (<see cref="WorkflowGraphRun.At"/>), since a node only a failure leads to is never settled.
+    /// </summary>
+    public string? At => Graph is { } graph ? graph.At : Steps.FirstOrDefault(step => !WorkflowRunStates.Settled(step.State))?.Step.Id;
 }
 
 /// <summary>
@@ -673,6 +705,21 @@ public static class WorkflowRuns
             },
             _ => on with { State = WorkflowRunStates.NotKnown, Detail = WorkflowRunDetails.Unread, Words = gate.Says },
         };
+    }
+
+    /// <summary>
+    /// The look a work's own choice adds to a run bound to a graph version (FABRIC-CUTOVER1e; D190 point 7, the cutover design §6): D154's
+    /// hold at every landing door, drawn beside the graph and never one of its nodes, where it stands as a steps run's added look stands.
+    /// Null where the work's choice adds none. <paramref name="facts"/>' Current holds the graph's nodes as steps and no look, so the added
+    /// look takes an id none of them has.
+    /// </summary>
+    /// <param name="landed">Whether the graph's landing (<c>handed</c>) is reached: what the look let go.</param>
+    internal static WorkflowRunStep? AddedLook(WorkflowRunFacts facts, bool workDone, bool landed)
+    {
+        var cell = new WorkflowStep(WorkflowKinds.Landing, WorkflowKinds.Landing, WorkflowParticipation.You, WorkflowExecutor.Daoris, WorkflowPress.Accept,
+            new WorkflowSource(null, LandingSource.Default), [], WorkflowRuntime.Built, null);
+        var landing = landed ? new WorkflowRunStep(cell, WorkflowRunStates.Done, WorkflowRunDetails.Branch) : new WorkflowRunStep(cell, WorkflowRunStates.NotReached, "");
+        return Look(facts, workDone, landing) is { Added: not null } added ? added : null;
     }
 
     /// <summary>

@@ -107,14 +107,8 @@ public static class WorkspaceSetupFile
         var workspace = Text(file["workspace"]) is { Length: > 0 } named ? named : throw new InvalidDataException("it names no workspace.");
         if (file["order"] is not JsonArray order) throw new InvalidDataException("it holds no order.");
 
-        var published = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        if (file["published"] is JsonObject asked)
-        {
-            foreach (var (repository, quest) in asked)
-            {
-                if (Text(quest) is { Length: > 0 } id) published[repository] = id;
-            }
-        }
+        var published = Quests(file["published"]);
+        var indexed = Quests(file["indexed"]);
 
         var skipped = new Dictionary<string, SetupSkip>(StringComparer.OrdinalIgnoreCase);
         if (file["skipped"] is JsonObject skips)
@@ -141,8 +135,22 @@ public static class WorkspaceSetupFile
             PilotResumed = file["pilotResumed"]?.GetValueKind() == JsonValueKind.True,
             Stopped = When(file["stopped"]),
             Published = published,
+            Indexed = indexed,
             Skipped = skipped,
         };
+    }
+
+    /// <summary>A record of quests by repository: each id with text, the rest left out.</summary>
+    private static Dictionary<string, string> Quests(JsonNode? node)
+    {
+        var quests = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (node is not JsonObject asked) return quests;
+        foreach (var (repository, quest) in asked)
+        {
+            if (Text(quest) is { Length: > 0 } id) quests[repository] = id;
+        }
+
+        return quests;
     }
 
     private static JsonObject Write(WorkspaceSetupPlan plan)
@@ -155,6 +163,8 @@ public static class WorkspaceSetupFile
 
         var published = new JsonObject();
         foreach (var repository in InOrder([.. plan.Published.Keys])) published[repository] = plan.Published[repository];
+        var indexed = new JsonObject();
+        foreach (var repository in InOrder([.. plan.Indexed.Keys])) indexed[repository] = plan.Indexed[repository];
 
         var skipped = new JsonObject();
         foreach (var repository in InOrder([.. plan.Skipped.Keys]))
@@ -176,6 +186,7 @@ public static class WorkspaceSetupFile
             ["pilotResumed"] = plan.PilotResumed,
             ["stopped"] = plan.Stopped is { } stopped ? Stamp(stopped) : null,
             ["published"] = published,
+            ["indexed"] = indexed,
             ["skipped"] = skipped,
         };
     }

@@ -47,6 +47,7 @@ public static class QuestWire
         writer.WriteStartArray("operations");
         foreach (var operation in page.Operations) Write(writer, operation);
         writer.WriteEndArray();
+        WriteClosure(writer, page.Closure);
         writer.WriteEndObject();
     });
 
@@ -58,14 +59,27 @@ public static class QuestWire
         return new QuestFetch(
             operations,
             root.TryGetProperty("through", out var through) && through.ValueKind == JsonValueKind.Number ? through.GetInt64() : 0,
-            root.TryGetProperty("more", out var more) && more.ValueKind == JsonValueKind.True);
+            root.TryGetProperty("more", out var more) && more.ValueKind == JsonValueKind.True)
+        {
+            Closure = ReadClosure(root),
+        };
     }
 
     /// <summary>A push: what is pending, rebased on <paramref name="base"/>.</summary>
-    public static string Push(long @base, IReadOnlyList<QuestOperation> operations) => Written(writer =>
+    /// <param name="declares">
+    /// The pushing machine, declaring that its build knows a bound quest (FABRIC-CLOSE1i): <c>machine</c> and <c>closure: true</c> beside the
+    /// operations. None declares nothing, as a build before it pushes, and a remote before it reads the push as it always did.
+    /// </param>
+    public static string Push(long @base, IReadOnlyList<QuestOperation> operations, string? declares = null) => Written(writer =>
     {
         writer.WriteStartObject();
         writer.WriteNumber("base", @base);
+        if (declares is { Length: > 0 })
+        {
+            writer.WriteString("machine", declares);
+            writer.WriteBoolean("closure", true);
+        }
+
         writer.WriteStartArray("operations");
         foreach (var operation in operations) Write(writer, operation with { Number = null });
         writer.WriteEndArray();
@@ -80,6 +94,16 @@ public static class QuestWire
         return (root.TryGetProperty("base", out var @base) && @base.ValueKind == JsonValueKind.Number ? @base.GetInt64() : 0,
             operations);
     }
+
+    /// <summary>
+    /// The machine a push declares knows a bound quest (FABRIC-CLOSE1i), or null where it declares none: no <c>machine</c>, or a
+    /// <c>closure</c> that is not true, as a build before it pushes.
+    /// </summary>
+    public static string? Declares(string json) =>
+        ParseObject(json) is { } root && root.TryGetProperty("closure", out var closure) && closure.ValueKind == JsonValueKind.True
+        && Text(root, "machine") is { Length: > 0 } machine
+            ? machine
+            : null;
 
     /// <summary>The remote's answer to a push.</summary>
     public static string Pushed(QuestPush push) => Written(writer =>
@@ -109,8 +133,61 @@ public static class QuestWire
         }
 
         writer.WriteEndArray();
+        WriteClosure(writer, push.Closure);
         writer.WriteEndObject();
     });
+
+    /// <summary>
+    /// The remote's answer to a person's retirement of a machine (FABRIC-CLOSE1i2): whether it retired one, false where it had heard
+    /// nothing from it, and the handshake as it stands after it.
+    /// </summary>
+    public static string Retired(bool retired, QuestClosure closure) => Written(writer =>
+    {
+        writer.WriteStartObject();
+        writer.WriteBoolean("retired", retired);
+        WriteClosure(writer, closure);
+        writer.WriteEndObject();
+    });
+
+    /// <summary>A retirement's answer read back, or null where it carries no whole handshake.</summary>
+    public static QuestRetirement? ReadRetired(string json) =>
+        ParseObject(json) is { } root && ReadClosure(root) is { } closure
+            ? new QuestRetirement(root.TryGetProperty("retired", out var retired) && retired.ValueKind == JsonValueKind.True, closure)
+            : null;
+
+    /// <summary>
+    /// The remote's handshake (FABRIC-CLOSE1i), beside a page or a push's answer: <c>closure: { all, undeclared }</c>. Only where the remote
+    /// answers it, so a remote's answer without it crosses exactly as it did.
+    /// </summary>
+    private static void WriteClosure(Utf8JsonWriter writer, QuestClosure? closure)
+    {
+        if (closure is null) return;
+        writer.WriteStartObject("closure");
+        writer.WriteBoolean("all", closure.All);
+        writer.WriteStartArray("undeclared");
+        foreach (var machine in closure.Undeclared) writer.WriteStringValue(machine);
+        writer.WriteEndArray();
+        writer.WriteEndObject();
+    }
+
+    /// <summary>
+    /// The handshake read back, or null where it is absent or not whole: a list that is not every machine by its id, or an <c>all</c> that
+    /// disagrees with it. Null is never read as every machine declared.
+    /// </summary>
+    private static QuestClosure? ReadClosure(JsonElement root)
+    {
+        if (!root.TryGetProperty("closure", out var closure) || closure.ValueKind != JsonValueKind.Object) return null;
+        if (!closure.TryGetProperty("undeclared", out var listed) || listed.ValueKind != JsonValueKind.Array) return null;
+        var undeclared = new List<string>();
+        foreach (var machine in listed.EnumerateArray())
+        {
+            if (machine.ValueKind != JsonValueKind.String || machine.GetString() is not { Length: > 0 } id) return null;
+            undeclared.Add(id);
+        }
+
+        var all = closure.TryGetProperty("all", out var said) && said.ValueKind == JsonValueKind.True;
+        return all == (undeclared.Count == 0) ? new QuestClosure(undeclared) : null;
+    }
 
     /// <summary>A push's answer read back, or null when it is not one.</summary>
     public static QuestPush? ReadPushed(string json)
@@ -131,7 +208,10 @@ public static class QuestWire
         return new QuestPush(
             accepted,
             Items(root, "behind").Select(b => b.ValueKind == JsonValueKind.String ? b.GetString() : null).OfType<string>().ToList(),
-            Items(root, "refused").Select(r => new QuestPushRefusal(Text(r, "quest") ?? "", Text(r, "reason") ?? "")).ToList());
+            Items(root, "refused").Select(r => new QuestPushRefusal(Text(r, "quest") ?? "", Text(r, "reason") ?? "")).ToList())
+        {
+            Closure = ReadClosure(root),
+        };
     }
 
     private static void Write(Utf8JsonWriter writer, QuestOperation operation)

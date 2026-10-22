@@ -14,8 +14,10 @@ public interface IRemote
     Task<QuestFetch> FetchQuestsAsync(long since, CancellationToken ct = default);
 
     /// <summary>A push of pending operations rebased on <paramref name="base"/>, judged quest by quest.</summary>
+    /// <param name="declares">The pushing machine, declaring it knows a bound quest (FABRIC-CLOSE1i); none declares nothing.</param>
     /// <exception cref="RemoteException">The remote could not be reached, or answered with a wall.</exception>
-    Task<QuestPush> PushQuestsAsync(long @base, IReadOnlyList<QuestOperation> operations, CancellationToken ct = default);
+    Task<QuestPush> PushQuestsAsync(
+        long @base, IReadOnlyList<QuestOperation> operations, CancellationToken ct = default, string? declares = null);
 
     /// <summary>
     /// This machine's own records, fed up — keyed at the remote by the key that carried them, and
@@ -49,6 +51,14 @@ public interface IRemote
     /// <summary>A repository's code map as the remote holds it, with where it came from; null when it holds none.</summary>
     /// <exception cref="RemoteException">The remote could not be reached, or answered with a wall.</exception>
     Task<FedCodeMap?> FetchCodeMapAsync(string repository, CancellationToken ct = default);
+
+    /// <summary>
+    /// A person's retirement of <paramref name="machine"/> there (FABRIC-CLOSE1i2): whether it retired one, and the handshake as it
+    /// stands after it. A remote without it answers as one before the door: a 404.
+    /// </summary>
+    /// <exception cref="RemoteException">The remote could not be reached, has no such door (404), or answered with a wall.</exception>
+    Task<QuestRetirement> RetireMachineAsync(string machine, CancellationToken ct = default) =>
+        throw new RemoteException("the remote answered 404: no door to retire a machine", 404);
 }
 
 /// <param name="Records">The team's records, each keyed `origin/id` and carrying its origin.</param>
@@ -95,8 +105,9 @@ public sealed class HttpRemote(RemoteConfig config) : IRemote
         QuestWire.ReadPage(await SendAsync(HttpMethod.Get, $"/api/quests/operations?since={since}", null, ct).ConfigureAwait(false))
         ?? throw new RemoteException("the remote answered a fetch with something that is not a page of operations");
 
-    public async Task<QuestPush> PushQuestsAsync(long @base, IReadOnlyList<QuestOperation> operations, CancellationToken ct = default) =>
-        QuestWire.ReadPushed(await SendAsync(HttpMethod.Post, "/api/quests/operations", QuestWire.Push(@base, operations), ct)
+    public async Task<QuestPush> PushQuestsAsync(
+        long @base, IReadOnlyList<QuestOperation> operations, CancellationToken ct = default, string? declares = null) =>
+        QuestWire.ReadPushed(await SendAsync(HttpMethod.Post, "/api/quests/operations", QuestWire.Push(@base, operations, declares), ct)
             .ConfigureAwait(false))
         ?? throw new RemoteException("the remote answered a push with something that is not a push's answer");
 
@@ -136,6 +147,11 @@ public sealed class HttpRemote(RemoteConfig config) : IRemote
     public async Task<FedCodeMap?> FetchCodeMapAsync(string repository, CancellationToken ct = default) =>
         CodeMapWire.Read(await SendAsync(
             HttpMethod.Get, $"/api/code-map/{Uri.EscapeDataString(repository)}", null, ct).ConfigureAwait(false));
+
+    public async Task<QuestRetirement> RetireMachineAsync(string machine, CancellationToken ct = default) =>
+        QuestWire.ReadRetired(await SendAsync(
+            HttpMethod.Post, $"/api/quests/machines/{Uri.EscapeDataString(machine)}/retire", "{}", ct).ConfigureAwait(false))
+        ?? throw new RemoteException("the remote answered a retirement with something that is not its handshake");
 
     private async Task<string> SendAsync(HttpMethod method, string path, string? json, CancellationToken ct)
     {

@@ -457,7 +457,9 @@ app.MapGet("/api/status", (ComposedService s, string? prove) => new StatusRespon
     // FABRIC-CLOSE1b's handshake: a driver binds a quest to a closure graph only against a host that says it knows one.
     Closure: true,
     // CLOSECAP1: the outcome door's recovery, which a binding needs beside the graph's doors.
-    CloseOutcome: true));
+    CloseOutcome: true,
+    // FABRIC-CLOSE1i: a circle synced through a remote is judged here by the remote's handshake, so a driver asks this host's bind there.
+    CloseRemote: true));
 
 // Every cross-repository answer below takes `workspace` — the unit of sharing (D48 §4). Absent spans
 // every circle this deployment holds, which for a shared host is one by construction and for a local
@@ -2284,13 +2286,18 @@ if (mode == ServiceMode.Shared)
     // The remote's quest doors (D68, sync design §8): what it accepted after a number, in its order,
     // and a push rebased on one, judged quest by quest through the same table every machine uses. The
     // wire is Core's (QuestWire), the one the machines' client writes — two hands, one shape.
+    // FABRIC-CLOSE1i: both answer the workspace's handshake, which machines here have not declared they know a bound quest.
     app.MapGet("/api/quests/operations", async (ComposedService s, long? since, CancellationToken ct) =>
-        Results.Text(QuestWire.Page(await s.Quests.OperationsSinceAsync(since ?? 0, ct: ct)), "application/json"));
+        Results.Text(QuestWire.Page(await s.Quests.OperationsSinceAsync(since ?? 0, ct: ct) with
+        {
+            Closure = await s.Quests.ClosureAsync(ct),
+        }), "application/json"));
 
     app.MapPost("/api/quests/operations", async (ComposedService s, HttpRequest request, CancellationToken ct) =>
     {
         using var body = new StreamReader(request.Body);
-        if (QuestWire.ReadPush(await body.ReadToEndAsync(ct)) is not var (@base, pushed))
+        var json = await body.ReadToEndAsync(ct);
+        if (QuestWire.ReadPush(json) is not var (@base, pushed))
         {
             return Results.BadRequest(new ErrorResponse(QuestWire.Shape));
         }
@@ -2303,7 +2310,17 @@ if (mode == ServiceMode.Shared)
             asked => s.Exchange.JudgeReceived(asked, registered),
             asked => registered.Named(asked.To)?.InWorkspace ?? Workspaces.Default,
             ct);
-        return Results.Text(QuestWire.Pushed(judged), "application/json");
+        // What the push said of its machine (FABRIC-CLOSE1i), heard whatever was kept of it, since a refused operation's build is still its own.
+        await s.Quests.DeclaredAsync(QuestWire.Declares(json), pushed, DateTimeOffset.UtcNow, ct);
+        return Results.Text(QuestWire.Pushed(judged with { Closure = await s.Quests.ClosureAsync(ct) }), "application/json");
+    });
+
+    // FABRIC-CLOSE1i2: a person's retirement of a machine the handshake counts, asked through their own machine's host. A machine heard
+    // from nothing here is answered `retired: false`, so a 404 stays what a remote before the door answers.
+    app.MapPost("/api/quests/machines/{machine}/retire", async (ComposedService s, string machine, CancellationToken ct) =>
+    {
+        var retired = await s.Quests.RetireMachineAsync(machine, DateTimeOffset.UtcNow, ct);
+        return Results.Text(QuestWire.Retired(retired, await s.Quests.ClosureAsync(ct)), "application/json");
     });
 }
 else
@@ -2351,7 +2368,38 @@ else
         var standing = await QuestSync.StandingAsync(s.Quests, s.Service, circle, ct);
         return Results.Ok(new SyncStandingResponse(
             circle, Wired: true, standing.Ahead, standing.Behind, standing.Conflicts,
-            standing.Synced, standing.Tried, standing.Problem));
+            standing.Synced, standing.Tried, standing.Problem,
+            // FABRIC-CLOSE1i2: the machines the remote last said had not declared, as the last pass heard them; none where it heard none.
+            s.Quests.ClosureOf(circle)?.Undeclared));
+    });
+
+    // The person's retirement of a machine the circle's remote still counts (FABRIC-CLOSE1i2): asked at the remote, and what it answers
+    // kept as a pass keeps it. A wall or a remote before the door is said in the remote's words, and nothing here changes.
+    app.MapPost("/api/sync/machines/{machine}/retire", async (ComposedService s, string machine, string? workspace, CancellationToken ct) =>
+    {
+        var circle = Workspaces.Normalize(workspace);
+        if (s.Remotes?.For(circle) is not { } remote)
+        {
+            return Results.NotFound(new ErrorResponse($"`{circle}` has no remote on this machine, so no machine of it is counted anywhere."));
+        }
+
+        try
+        {
+            var answered = await QuestSync.RetireMachineAsync(s.Quests, remote, circle, machine, ct);
+            return Results.Ok(new MachineRetiredResponse(
+                circle, machine, answered.Retired, answered.Closure.Undeclared,
+                answered.Retired
+                    ? $"`{circle}`'s remote no longer counts machine `{machine}`; a push from it counts it again."
+                    : $"`{circle}`'s remote has heard nothing from machine `{machine}`, so it counts nothing to retire."));
+        }
+        catch (RemoteException wall)
+        {
+            return Results.Json(
+                new ErrorResponse(wall.Status == 404
+                    ? $"`{circle}`'s remote is older than retiring a machine, so nothing was retired ({wall.Message})."
+                    : $"`{circle}`'s remote did not retire machine `{machine}`: {wall.Message}."),
+                statusCode: StatusCodes.Status502BadGateway);
+        }
     });
 
     app.MapGet("/api/quests/{id}/claim", async (ComposedService s, string id, CancellationToken ct) =>

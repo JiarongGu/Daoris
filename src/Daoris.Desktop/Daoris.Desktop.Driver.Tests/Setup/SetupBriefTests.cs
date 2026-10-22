@@ -43,6 +43,7 @@ public sealed partial class SetupBriefTests
     [InlineData(SetupCase.Whole, SetupQuests.SetUp)]
     [InlineData(SetupCase.Move, SetupQuests.Move)]
     [InlineData(SetupCase.Declare, SetupQuests.Declare)]
+    [InlineData(SetupCase.Index, SetupQuests.Index)]
     public void The_title_is_the_press_words_with_the_day_so_the_log_knows_it_for_a_set_up(SetupCase kind, string stem)
     {
         var (title, _) = SetupBrief.Compose(Input(kind));
@@ -126,6 +127,7 @@ public sealed partial class SetupBriefTests
     [InlineData(SetupCase.Whole)]
     [InlineData(SetupCase.Move)]
     [InlineData(SetupCase.Declare)]
+    [InlineData(SetupCase.Index)]
     public void The_body_is_in_the_canons_words(SetupCase kind)
     {
         var (title, body) = SetupBrief.Compose(Input(kind));
@@ -280,9 +282,88 @@ public sealed partial class SetupBriefTests
         Assert.DoesNotContain("**Initialise the knowledge.**", keeping);
     }
 
+    // ---------------------------------------------------------------- the index quest (ORIENT2c)
+
+    /// <summary>
+    /// ORIENT2c (D151 point 5; the orientation design §2.2): what the press grants is what the body asks, the doctrine tool's
+    /// verbs and the generator's two commands, each in code type.
+    /// </summary>
+    [Fact]
+    public void The_index_quest_asks_for_every_command_its_rule_grants()
+    {
+        var (_, body) = SetupBrief.Compose(Input(SetupCase.Index));
+
+        foreach (var verb in SetupPressRules.IndexVerbs.Append(Node.Write).Append(Node.Check)) Assert.Contains($"`{verb}`", body);
+        Assert.Contains("Run `daoris --version`. It prints `0.0.1`.", body);
+    }
+
+    /// <summary>The design §2.2–§2.3: the inventory first, every index already kept left whole, and only these things written.</summary>
+    [Fact]
+    public void The_index_quest_takes_the_inventory_first_and_writes_only_its_own_things()
+    {
+        var (_, body) = SetupBrief.Compose(Input(SetupCase.Index));
+        var steps = body.Split('\n').Where(line => Regex.IsMatch(line, @"^\d+\. ")).ToList();
+
+        Assert.StartsWith("2. **The inventory first.**", steps[1]);
+        Assert.Contains("nothing is moved, rewritten or deleted", steps[1]);
+        Assert.Contains("before the first change", steps[1]);
+        foreach (var step in new[] { "**The generator**, at `tools/index.mjs`", "**The check**", "**The marks.**", "**The declaration.**", "**Verify.**", "**Commit**" })
+        {
+            Assert.Contains(steps, line => line.Contains(step, StringComparison.Ordinal));
+        }
+
+        Assert.Contains("*Kept by hand*", body);
+        Assert.Contains("`-merge`", body);
+        Assert.Contains("`linguist-generated`", body);
+        Assert.Contains("`documents.index`", body);
+        foreach (var never in new[]
+        {
+            "Never move, rewrite or delete an index this repository already keeps", "never change another source, build or CI file",
+            "push, merge or open a pull request", "write outside this tree", "publish a request to another repository",
+            "run `daoris connect` or `daoris upstream`",
+        })
+        {
+            Assert.Contains(never, body);
+        }
+
+        Assert.DoesNotContain("daoris init", body);
+        Assert.DoesNotContain("**Initialise the knowledge.**", body);
+    }
+
+    /// <summary>The design §2.4 and the close (D129 §5 as D151 amends it): each index already kept is named with how the new one differs.</summary>
+    [Fact]
+    public void The_index_quests_close_names_each_index_kept_and_what_was_read_names_them()
+    {
+        var facts = new LayoutReaderTests.Scratch()
+            .File("daoris.json", """{ "documents": { "router": "./guide/README.md" } }""")
+            .File("guide/INDEX.md", "# Index\n").File("src/index.ts", "export {};\n").File("map/code-map.json", "{}")
+            .Read();
+
+        var (_, body) = SetupBrief.Compose(Input(SetupCase.Index) with { Facts = facts });
+
+        Assert.Contains("- Its router: `guide/README.md`, declared as `documents.router`.", body);
+        Assert.Contains("- Files whose name says they are an index: `guide/INDEX.md`, `map/code-map.json`.", body);
+        Assert.Contains("each index this repository already kept, what it answers, and how the generated one differs from it", body);
+    }
+
+    /// <summary>A .NET generator is a file-based program: the body says what that needs, and the decline it earns.</summary>
+    [Fact]
+    public void A_dotnet_generator_says_it_needs_an_sdk_that_runs_a_file_based_program()
+    {
+        var dotnet = new IndexForm(".NET", "tools/index.cs", "dotnet run tools/index.cs", "dotnet run tools/index.cs -- --check");
+        var (_, body) = SetupBrief.Compose(Input(SetupCase.Index) with { Index = dotnet });
+        var (_, node) = SetupBrief.Compose(Input(SetupCase.Index));
+
+        Assert.Contains("a file-based program", body);
+        Assert.Contains("*the generator's toolchain cannot run here*", body);
+        Assert.DoesNotContain("file-based program", node);
+    }
+
     private static SetupBriefInput Input(SetupCase kind) => new(
         kind, Day, "reports", new LayoutReaderTests.Scratch().File("README.md", "# Reports\n").Read(), "0.0.1",
-        Description: null, Entries: [], Neighbours: []);
+        Description: null, Entries: [], Neighbours: [], Index: kind == SetupCase.Index ? Node : null);
+
+    private static readonly IndexForm Node = new("Node", "tools/index.mjs", "node tools/index.mjs", "node tools/index.mjs --check");
 
     private static string PlaybookPath()
     {

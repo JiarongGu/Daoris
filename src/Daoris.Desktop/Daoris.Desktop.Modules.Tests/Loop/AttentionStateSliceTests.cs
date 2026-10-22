@@ -272,6 +272,22 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.Equal(2, rows.Select(row => row["id"]!.GetValue<string>()).Distinct().Count());
     }
 
+    /// <summary>
+    /// POOL1a3 (D197 point 3; the account-pool design §3 point 4): a hold whose file is the own sign-in's carries <c>own</c> on its
+    /// row's trust, so the page draws its sentence with no press; any other hold carries none.
+    /// </summary>
+    [Fact]
+    public void A_hold_on_the_own_sign_in_s_file_carries_own_and_another_carries_none()
+    {
+        var own = With(Hold, """{"quest":"q1","trustFile":"X:/person/.claude.json","own":true}""");
+        var rows = Rows(new() { Quests = [Quest("""{"id":"q1"}""")], Registry = [Registration("engine")], Untrusted = [own, With(Hold, """{"quest":"q1","own":false}""")] })
+            .Where(row => row["kind"]!.GetValue<string>() == "trust").ToList();
+
+        Assert.Equal(2, rows.Count);
+        Assert.True(rows.Single(row => row["trust"]!["trustFile"]!.GetValue<string>() == "X:/person/.claude.json")["trust"]!["own"]!.GetValue<bool>());
+        Assert.False(rows.Single(row => row["trust"]!["trustFile"]!.GetValue<string>() != "X:/person/.claude.json")["trust"]!.AsObject().ContainsKey("own"));
+    }
+
     /// <summary>An intake's room is named by its ask, which the page words; it waits since the ask was asked.</summary>
     [Fact]
     public void An_intake_s_room_carries_its_ask_since_the_ask_was_asked()
@@ -393,7 +409,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.Null(unnamed["since"]);
     }
 
-    // ---- what the Sessions badge counts (UX5 U20, D126 §2.5) ----
+    // ---- what parked on the person (UX5 U20's set, D126 §2.5), kept out of Sessions' running mark (BADGEUX1) ----
 
     private static int InSessions(AttentionFacts facts) => NeedsAPerson.WaitingInSessions(facts).Count;
 
@@ -492,7 +508,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
             counted.Select(each => $"{each.Key}={each.Value.ToJsonString()}").Order(StringComparer.Ordinal));
     }
 
-    // ---- the sessions the driver runs, which the Sessions badge and the status bar count (SESSBADGE1, D76's note) ----
+    // ---- the sessions the driver runs, which the status bar counts (SESSBADGE1, D76's note) and Sessions' mark reads (BADGEUX1) ----
 
     /// <summary>
     /// One count, the cap's (CAPCOUNT1, <see cref="ActiveSessions.HoldsSlot(SessionView)"/>): this machine's active sessions the driver
@@ -1600,9 +1616,9 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// Three partitions, each keyed: <c>rows</c>, each row under its kind and id as the band keys it; <c>sessions</c>, what waits on the
-    /// person in Sessions, which the badge marks; and <c>working</c>, the sessions the driver runs, which the badge and the status bar
-    /// count (SESSBADGE1). Judged empty, each is pushed empty, never gone. Not judged before every input it reads was judged (PUSHUX1).
+    /// Three partitions, each keyed: <c>rows</c>, each row under its kind and id as the band keys it; <c>sessions</c>, what parked on the
+    /// person; and <c>working</c>, the sessions the driver runs, which the status bar counts (SESSBADGE1) and, less the parks, Sessions'
+    /// running mark reads (BADGEUX1). Judged empty, each is pushed empty, never gone. Not judged before every input it reads was judged (PUSHUX1).
     /// </summary>
     [Fact]
     public void The_slice_is_three_keyed_partitions_judged_empty_as_empty_and_not_judged_before_its_inputs()

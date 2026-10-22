@@ -72,6 +72,15 @@ public interface IWorkflowRunRecords
 
     /// <summary>Whether a session's tree still stands on this machine.</summary>
     bool Stands(string tree);
+
+    /// <summary>
+    /// A run's node record, <c>run:&lt;run&gt;</c>, read and never written (FABRIC-CUTOVER1e): an empty one where Daoris has not judged the run
+    /// yet, null where its file does not read.
+    /// </summary>
+    NodeRecord? Record(string unit);
+
+    /// <summary>This machine's session branches (<see cref="SessionBranches"/>), which name a branch unit by its branch (FABRIC-CUTOVER1e).</summary>
+    IReadOnlyList<GrownBranch> Branches();
 }
 
 /// <summary>

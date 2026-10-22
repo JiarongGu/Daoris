@@ -382,6 +382,67 @@ public sealed class WorkflowGateTests : IDisposable
             Involvement.Lowers(docs, current));
     }
 
+    /// <summary>
+    /// A named version's graph (schema 2) holding <paramref name="nodes"/> as written, each wired after the one before, and the
+    /// <paramref name="extra"/> wires beside (a gate wired straight into the landing, as `protected-wire` asks).
+    /// </summary>
+    private static NodeGraph Graph(string nodes, params (string From, string To)[] extra)
+    {
+        var declared = JsonNode.Parse(nodes)!.AsArray();
+        var ids = declared.Select(node => (string)node!["id"]!).ToList();
+        var wires = new JsonArray([.. ids.Skip(1).Select((id, at) => (ids[at], id)).Concat(extra).Select(wire => (JsonNode)new JsonObject
+        {
+            ["id"] = $"{wire.Item1}>{wire.Item2}", ["kind"] = "after", ["from"] = wire.Item1, ["to"] = wire.Item2,
+        })]);
+        var json = new JsonObject
+        {
+            ["schemaVersion"] = 2, ["entries"] = new JsonArray(ids[0]), ["end"] = ids[^1], ["nodes"] = declared.DeepClone(), ["wires"] = wires,
+        };
+        var (graph, problems) = NodeGraphs.Read(json.ToJsonString());
+        Assert.True(graph is not null, string.Join("; ", problems.Select(problem => problem.Words)));
+        return graph;
+    }
+
+    /// <summary>
+    /// FABRIC-CUTOVER1e (D190 point 4; the cutover design §4, §11.1): a graph version's person part is read from its gate and go-ahead nodes
+    /// where <see cref="Involvement.Lowers"/> reads steps, each node's options as its step's fields, so the one table judges a graph as it
+    /// judges steps: the work's checks, the opinion's switch, the look and its environment, the landing's press, the pull request and each
+    /// go-ahead's act. Every other node (a plugin's, a person's task, a stop) is no part of it.
+    /// </summary>
+    [Fact]
+    public void A_graph_versions_person_part_is_read_from_its_gate_and_go_ahead_nodes()
+    {
+        var graph = Graph("""
+            [{"id":"claim","kind":"claimed","version":1,"reach":"observed","options":{"checks":"light"}},
+             {"id":"read","kind":"opinion","version":1,"reach":"observed","options":{"required":true}},
+             {"id":"see","kind":"look","version":1,"reach":"observed","options":{"environment":"local"}},
+             {"id":"ok","kind":"go-ahead","version":1,"reach":"pressed","options":{"act":"write dev's settings","on":"dev"}},
+             {"id":"deploy","kind":"acme.deploy/deploy","version":1,"reach":"performed"},
+             {"id":"land","kind":"handed","version":1,"reach":"observed","options":{"form":"branch","accept":"automatic","pattern":"w/{quest}"}},
+             {"id":"pr","kind":"pull-request","version":1,"reach":"observed"}]
+            """, ("read", "land"), ("see", "land"));
+
+        var steps = Involvement.StepsOf(graph);
+
+        Assert.Equal(
+            [("claim", "work"), ("read", "opinion"), ("see", "look"), ("ok", "go-ahead"), ("land", "landing"), ("pr", "pull-request")],
+            steps.Select(step => (step.Id, step.Kind)));
+        Assert.Equal(("light", true, "local", "write dev's settings"),
+            ((string?)steps[0].Field("checks"), (bool?)steps[1].Field("required"), (string?)steps[2].Field("environment"), (string?)steps[3].Field("act")));
+        Assert.Equal(("branch", "automatic", "w/{quest}"), ((string?)steps[4].Field("form"), (string?)steps[4].Field("accept"), (string?)steps[4].Field("pattern")));
+
+        // The one table, both ways: the graph against Current's steps, and a plainer graph against this one.
+        var current = Involvement.StepsOf(Graph("""
+            [{"id":"work","kind":"claimed","version":1,"reach":"observed"},{"id":"land","kind":"handed","version":1,"reach":"observed","options":{"form":"merge","accept":"you"}}]
+            """));
+        Assert.Equal(["it lands with no press of yours", "its sessions leave the heavy gates to a verification nothing here runs"],
+            Involvement.Lowers(steps, Steps("""[{"id":"work","kind":"work"},{"id":"land","kind":"landing","form":"merge","accept":"you"}]""")));
+        Assert.Equal(
+            ["it drops your look", "it drops the second opinion", "it skips the pull request", "it removes the go-ahead \"write dev's settings\""],
+            Involvement.Lowers(current, steps));
+        Assert.Empty(Involvement.Lowers(steps, steps));
+    }
+
     private static WorkflowProcess Kind(WorkflowKept? kept = null) =>
         WorkflowProcess.Of(Config(Declared), "web-app", "work",
             Binding(WorkflowLevels.WorkspaceKind, ["docs/**", "**/*.md"]) with { Kept = kept },

@@ -113,7 +113,7 @@ public sealed class WorkspaceTrustTests : IDisposable
     [Fact]
     public void The_refusal_names_the_path_and_the_fix()
     {
-        var said = ClaudeTrust.Refusal(@"D:\fam\engine");
+        var said = ClaudeTrust.Refusal(@"D:\fam\engine", "work");
 
         Assert.Contains(@"D:\fam\engine", said);
         Assert.Contains("claude", said, StringComparison.OrdinalIgnoreCase);
@@ -121,6 +121,22 @@ public sealed class WorkspaceTrustTests : IDisposable
         Assert.Contains("quest", said, StringComparison.OrdinalIgnoreCase);
         // And Daoris's own door onto the same grant (D73), which is still the person's to give.
         Assert.Contains("daoris agent trust claude-code", said);
+    }
+
+    /// <summary>
+    /// 🔴 POOL1a3 (D197 point 3; the account-pool design §3 point 4, §4.4): a hold with no account is a conversation going on in
+    /// the person's own sign-in, whose trust file Daoris never writes, by a door or a press. Its sentence names the tool itself
+    /// at their terminal, and never Daoris's door, which no longer writes the own home.
+    /// </summary>
+    [Fact]
+    public void A_hold_on_the_own_sign_in_names_the_tool_itself_and_never_daoris_s_door()
+    {
+        var said = ClaudeTrust.Refusal(@"D:\fam\engine");
+
+        Assert.Contains(@"D:\fam\engine", said);
+        Assert.Contains("goes on in your own sign-in, outside Daoris's accounts: trust the folder with the tool itself, at your terminal", said);
+        Assert.Contains("run `claude` there once and accept its trust prompt", said);
+        Assert.DoesNotContain("daoris agent trust", said);
     }
 
     /// <summary>
@@ -147,7 +163,7 @@ public sealed class WorkspaceTrustTests : IDisposable
 
         Assert.DoesNotContain("Run `claude`", said);
         Assert.Contains("daoris agent trust claude-code \"D:\\fam\\engine\" --profile work --yes", said);
-        Assert.Contains("Run `claude`", ClaudeTrust.Refusal(@"D:\fam\engine"));
+        Assert.Contains("run `claude` there", ClaudeTrust.Refusal(@"D:\fam\engine"));
     }
 
     /// <summary>

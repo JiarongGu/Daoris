@@ -19402,9 +19402,103 @@ which `browser.ts` and `remotemap.ts` still write through; the seam is `platform
 1,168 after). Unproven until the install: a plugin added and switched from a terminal beside the open window. Detail: D194's PUSH1f2f
 note. On Opus.
 
+## FABRIC-CUTOVER1e — a graph run's selection, involvement and drawing from its record (2026-10-22, D190)
+
+> - [ ] **FABRIC-CUTOVER1e — a graph run's selection, involvement and drawing from its record** (driver, cli, web-shell; after 1c; D190, design §2.3, §4, §6). `Otherwise` takes a graph newest (`WorkflowProcesses.cs:125`); a graph version's person part read from its gate and go-ahead nodes where `Involvement.Lowers` reads steps (`WorkflowGate.cs:240`); the run's Workflow view and `daoris driver workflow run` draw a schema-2 run from its record, its subjects named, its branches said to be its graph's, an opinion or look not begun until 1d said so, an added look beside it (WORKFLOW2c). Proof: both twins' tests; the window's Workflow view of a schema-2 run.
+
+**Outcome** 2026-10-22: built, the cli lane untouched (its verb is the driver program's): a graph's person part read from its nodes, and a
+graph run drawn from its record, a fork and its join by its wires. No window was looked at. Detail: D190's CUTOVER1e note. On Opus.
 ## LEASEHOME2 — one home for the loop's lease and a verb's (2026-10-22, D171)
 
 > - [ ] **LEASEHOME2 — one home for the loop's lease and a verb's** (driver). The headless loop takes its lease in the driver config's folder (`DriverConfig.HomeOf`), a verb in `DAORIS_HOME`; with `DAORIS_DRIVER_CONFIG` elsewhere the two never meet, and a verb run with another `DAORIS_HOME` is unseen by the swap. The RPC design §5. Proof: a `DriverHostTests` row with the config elsewhere.
 
 **Outcome** 2026-10-22: a verb takes the lease in the home the loop drives, the folder the driver's config is in (`DriverConfig.FindHome`),
 `DAORIS_HOME` wherever no override names a file elsewhere, so an install is unchanged. Detail: D171's LEASEHOME2 note. On Opus.
+## POOL1a3 — the person's own sign-in never asked or written (2026-10-22, D197)
+
+> - [ ] **POOL1a3 — the person's own sign-in never asked or written** (driver, modules; after POOL1a1; D197 point 3). The `own` parameter leaving `ReportAsync`, `PressAsync`, `PressUsageAsync` and `HarnessProbe.ProbeAsync`, so `HARNESSES_REFRESH` with no agent and the driver's `agent list` ask no own sign-in; the own-home trust hold carrying `own` with no press and `TRUST_FOLDER` refusing it as `TRUST_OWN_HOME` before anything is written; `agent trust` with no account named trusting every account of the set and never the own home; and the own cool-off's *Read again* line settled (D197's acceptance note), as design §3 and §11 say. Proof: §11's rows for these, with a test that every sign-in action's spawn sets the configuration home under the home.
+
+**Outcome** 2026-10-22: built. `own` left the roster's report, press and usage read and the probe; a usage read takes an account,
+never none, and `HarnessActions.PrepareLogin` refuses a home outside the account homes. The agent's *Read again* ends that agent's
+own cool-off unasked, so `waits.read-again` stands unchanged. `TrustHold.Own` marks a hold with no account home, the attention row
+carries `trust.own`, and `TRUST_FOLDER` refuses it as `TRUST_OWN_HOME` (en, zh); `ClaudeTrust.Refusal` with no account names the
+tool itself. `agent trust` with none named grants each account of the set in its order, and with none refuses. Proof:
+`HarnessProbeTests`, `CodexAccountTests`, `CodexAccountProcessTests`, `CodexUsageRosterTests`, `CodexUsageProcessTests`,
+`RosterReadTests`, `ProbeRaceTests`, `WorkspaceTrustTests`, `AgentsTextTests`' trust rows, `DriverModuleDriverTests`,
+`AttentionStateSliceTests`, `DriverModuleAgentsTests`. Not seen failing first, and no window was looked at. Detail: D197's POOL1a3
+note. On Opus.
+
+## SWAPLEASE2 — a crashed swap's recovery under the lease (2026-10-22, D171)
+
+> - [ ] **SWAPLEASE2 — a crashed swap's recovery under the lease** (desktop launcher). `InstallSwap.Recover` rolls a crashed swap back outside the lease; only `Run` holds it. The RPC design §5. Proof: a source-reading row and a `StagedBuildTests` row.
+
+**Outcome** 2026-10-22: a roll-back from the journal holds the install home's lease as a swap (`InstallSwap.LeaseHome`), at the
+launcher's start and after its error; an act holding it past the wait leaves the journal for the next start, and the launcher starts
+nothing on `app/` and names the holder (`HeldBy`). Finishing a confirmed swap takes none. Detail: D171's SWAPLEASE2 note. On Opus.
+
+## BADGEUX1 — one meaning for a number: what waits on you (2026-10-22, D185)
+
+> - [ ] **BADGEUX1 — one meaning for a number: what waits on you** (web-shell; the owner's direction while using Daoris, 2026-10-22). A number on a session, a quest or a list place counts only what needs the person's step, the same things the taskbar button and the title bar's bell count (`needsListed`, NEEDSSCOPE1); running work is not counted, and is shown in a quieter style. Today Sessions' badge counts the sessions the driver runs (SESSBADGE1) and Quests' every outstanding quest. Proof: a design under D185 read by Codex; a test that each place's number equals the bell's for the same rows, scoped; a test that a running-only place shows the mark and no number; stories in light and dark; the window.
+
+**Outcome** 2026-10-22: each place of the activity bar counts the bell's rows its door opens, and work under way is a still dot in
+taken's hue (Sessions the driver's work less its parks, Quests a quest taken); unread is said in words in a neutral ink. Detail: the
+UI/UX design §3.10 with Codex's read, D185's BADGEUX1 note. On Opus.
+
+## FABRIC-CUTOVER1f — the person's skip and stop of a run's node (2026-10-22, D190)
+
+> - [ ] **FABRIC-CUTOVER1f — the person's skip and stop of a run's node** (driver, modules, web-shell, cli; after 1c, 1e; built before 1d; D190, design §5.2). Given with their words at the run's view and the terminal, kept on the run's record by the door under the lock and the lease in a field of its own that a record from before reads as none (as `WorkPerformer.cs:421-447` keeps a held attempt's word), applied by the next pass. Proof: a go-ahead nobody raised, skipped with words, lets `handed` begin; a stop ends the run, said; a skip with no words refused; a node after `handed` told for two runs at one tip, skipped with words; the door or exemption row in `HelpCoverageTests`.
+
+**Outcome** 2026-10-22: built, the cli lane untouched: *Pass over…* and *Stop…* under a graph run's node and `daoris-driver workflow skip|stop`,
+kept in `NodeRecord.Pending` and applied by the next pass; no window was looked at. Detail: D190's CUTOVER1f note. On Opus.
+## FABRIC-CLOSE1i — the workspace's handshake through its remote (2026-10-22, D173)
+
+> - [ ] **FABRIC-CLOSE1i — the workspace's handshake through its remote** (service, driver). Each push declares its machine's `closure`, and the remote answers whether every machine of the workspace did. Proof: all declared allows the bind; one older machine refuses it, saying why.
+
+**Outcome** 2026-10-22: each push declares its machine; the remote keeps each machine's last word and answers, beside a page and a push's
+answer, the machines whose last push declared nothing; a pass keeps that per circle, and every bind through a remote (the take's own write
+included) binds only where none is undeclared, refused otherwise naming the machines. The host says `closeRemote`, and the driver asks its
+bind there. Retiring a machine the remote still counts is a row (FABRIC-CLOSE1i2). Detail: D173's FABRIC-CLOSE1i note. On Opus.
+## GITSTART5 — a managed git past its launcher (2026-10-22, D121)
+
+> - [ ] **GITSTART5 — a managed git past its launcher** (driver; D121 §2.3). A managed git is laid out alike (`resources.json`: `cmd/git.exe`) and still starts through its launcher. Proof: `ToolsChildrenTests`' managed row expecting `<version>/mingw64/bin/git.exe` with the launcher's variables.
+
+**Outcome** 2026-10-22: built. `WorkingTree.GitStart` starts a managed git past its launcher as it does the system's, with
+the launcher's variables over the tools' environment; a git named as a file still starts as it is. Proof: `ToolsChildrenTests`'
+new managed row (`<version>/package/mingw64/bin/git.exe`, `MSYSTEM`, the launcher's folders before the tools' `PATH`) and a row
+for a named file laid out as an install; the driver's fast half. The built-in MinGit 2.56.0 holds its git under `ucrt64/`,
+which the rule does not name, so it is GITSTART6's. On Opus. Detail: D121's GITSTART5 note.
+## ORIENT2c — repository index quest (2026-10-22, D151)
+
+> - [ ] **ORIENT2c — repository index quest** (driver). Inventory/generator/granted commands/check/declaration only. D151 §2/§5; brief/family tests.
+
+**Outcome** 2026-10-22: built. A repository set up on its line and naming no `documents.index` is asked *Give this
+repository an index of where things are* (`SetupCase.Index`, a fourth `SetupQuests` title): the inventory first, a
+generator at the path the press names from its stack (`tools/index.mjs`, `.cs` as a file-based program, or `.py`; never
+over a file on the line), its two commands granted exactly beside four doctrine verbs, its check, the marks and the
+declaration. An unknown stack is refused (`no-index-form`). The workspace plan asks a set-up repository its index in its
+turn, recorded under `indexed`; the page names `asks: 'index'` (en, zh). The family rehearsal was not run, and no session
+has carried the body. Detail: D151's ORIENT2c note. On Opus.
+
+## FABRIC-CLOSE1i2 — a machine the remote still counts, seen and retired (2026-10-22, D173)
+
+> - [ ] **FABRIC-CLOSE1i2 — a machine the remote still counts, seen and retired** (service, web-settings; after CLOSE1i; D173's FABRIC-CLOSE1i note). The remote counts every machine it has heard from, so a machine whose store was deleted, or that left the workspace, holds its binds off for ever if its last push declared nothing. Show which machines of a workspace have not declared (the pass's `closure`), and let the person retire one at the remote. Proof: a retired machine no longer refuses a bind; one that pushes again is counted again; the words in en and zh.
+
+**Outcome** 2026-10-22: built. The remote keeps the machines a person retired in a table of its own and counts them no more until a
+push marks them again, declared or not as it says; its door (`POST /api/quests/machines/{machine}/retire`) answers whether it retired
+one. This machine asks it at the person's door (`POST /api/sync/machines/{machine}/retire`) and keeps the answer, so a bind reads it at
+once. `/api/sync` names the undeclared machines, pushed to the window, where Setup's *Remote and reach* lists them with *Retire* (注销),
+en and zh; `sync status` prints them. Proof: `QuestClosureHandshakeTests`, `SharedHostTests`, `LocalHostTests`, `PersonDoorTableTests`,
+`RemoteSyncTests`, `SyncStateSliceTests`, `WorkspaceSetup.test.tsx`; the service's, driver's and modules' fast halves. On Opus. Detail:
+D173's FABRIC-CLOSE1i2 note.
+
+## POOL1a2 — every reader on the set, and the bridge's answers (2026-10-22, D197)
+
+> - [ ] **POOL1a2 — every reader on the set, and the bridge's answers** (driver, modules; after POOL1a1, archived; D197). `HarnessRoster.Settings` read through `HarnessSettings.LoadSet` (built, unread by the roster), with the walk's tests of per-workspace scopes it turns (`AccountRotationTests`, `AccountRotationGoalTests`, `AccountNextStartTests`, `AccountCoolingTests`, `RosterReadTests`, `CodexUsageRosterTests`, `ReviewerChoiceTests`, one of `ResumeAccountTests`) rewritten to the set; `AccountAttention`'s twins, `WiringAsync` behind `STARTS`, `InheritsDaorisAccounts` and `ACCOUNTS`' `inherited`, `PlacesSaid`, `HARNESSES`' `places`, `nowhere` and defaults, `HARNESS_ENDED`'s `places`, the default's readers on the order's first, and `ResolveScope`, `JoinProblemOf`, `WithJoined`, `PlacesOf`, `DefaultAllowed` and `DefaultStanding` leaving with their last callers (Ask Daoris's and the terminal's are POOL1b's), with `AccountJoinTwinTests` and `ProfileDefaultTwinTests`, as design §2.4, §5.2 and §11 say. Proof: §11's rows for these.
+
+**Outcome** 2026-10-22: built. The roster reads the projection, so every start, look and door reads the agent's one set whatever an
+older build wrote, through `HarnessSettings.Set`, and the default's readers in the roster read the order's first; `HARNESSES`,
+`HARNESS_ENDED`, `ACCOUNTS` and `STARTS` answer the set, and *What needs you* reads it. `InheritsDaorisAccounts`, `PlacesSaid` and
+`DefaultStanding` left; `ResolveScope`, `JoinProblemOf`, `WithJoined`, `PlacesOf`, `DefaultAllowed` and `DefaultEdited` keep only
+the terminal's and Ask Daoris's callers, so they and the two twin tables stay for POOL1b. The listed classes rewritten to the set,
+with `OwnSpaceTests`, `HelpPlaceWorkspaceTests`, the modules' account classes and eleven `agents-text.json` rows; the driver's and
+the modules' fast halves pass. Not seen failing first, and no window was looked at. Detail: D197's POOL1a2 note. On Opus.

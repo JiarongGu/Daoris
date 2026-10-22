@@ -108,7 +108,13 @@ export function NeedsSummary({ attention, presses, notices = [], messages = [], 
         const cells = (
           <>
             <span className="min-w-0 text-body text-ink">{line.label}</span>
-            <span className={cn('font-mono text-meta tabular-nums', line.id === 'presses' ? 'text-warn' : 'text-ink-open')}>{line.count}</span>
+            {/* A wait's figure wears open's ink, the bell's, a press's the warning hue; Messages' and Done and failed's count items and
+                notices, which wait on nobody, so theirs is neutral (BADGEUX1, the UI/UX design §3.10). */}
+            <span className={cn('font-mono text-meta tabular-nums', line.id === 'presses' ? 'text-warn'
+              : line.id === 'messages' || line.id === 'done' ? 'text-ink-soft' : 'text-ink-open')}
+            >
+              {line.count}
+            </span>
             <span className={cn('min-w-0 text-small text-ink-faint @max-[32rem]:col-span-2', line.id === 'presses' && 'text-warn')}>
               {line.detail}
             </span>

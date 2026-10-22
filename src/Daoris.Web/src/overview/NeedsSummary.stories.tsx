@@ -20,7 +20,7 @@ const ROWS: PushedAttention[] = [
   { kind: 'proposal', id: 'a1', since: ago(24 * 60), where: 'default' },
   { kind: 'review', id: 'r1', since: null, where: '' },
 ];
-const KNOWN: AttentionRead = { state: 'known', rows: ROWS, sessions: 0, working: 2, resyncing: false };
+const KNOWN: AttentionRead = { state: 'known', rows: ROWS, working: 2, running: 2, resyncing: false };
 const PRESS: Confirmation = { source: 'pipe', id: 'c1', route: 'STOP_SESSION', fields: [], shown: true, expires: new Date(Date.now() + 100_000).toISOString() };
 
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;

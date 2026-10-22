@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import { knownState, type RunStep, standsAt, type WorkflowRun } from './run';
+import { type GraphRun, knownState, type RunStep, standsAt, type WorkflowRun } from './run';
 
 // What a run says in the reader's language (WORKFLOW1c, the workflow design §5.2's *Said*, §7): each step's state and the row
 // of its table, composed from the step's typed fields, so it cannot drift from what the driver read. A name from a record (an
@@ -47,6 +47,7 @@ export function stateSaid(t: TFunction, state: string): string {
 export function runSaid(t: TFunction, step: RunStep): string | null {
   const { kind } = step.step;
   if (step.state === 'not-reached') return null;
+  if (step.node) return nodeSaid(t, step, step.node);
   if (step.state === 'cannot-start' && step.words) return t('workflow.run.said.cannotStart', { why: step.words });
   if (!knownState(step.state) || !(DETAILS[kind] ?? []).includes(step.detail)) {
     return t('workflow.run.said.recorded', { state: step.state, detail: step.detail || '—' });
@@ -102,6 +103,72 @@ export function runSaid(t: TFunction, step: RunStep): string | null {
   }
 }
 
+/** The details a graph run's node is said by (FABRIC-CUTOVER1e, the driver's `WorkflowGraphDetails`): its record's state, and one more. */
+export const GRAPH_DETAILS = [
+  'blocked', 'ready', 'not-begun', 'active', 'reached', 'failed', 'rejected', 'unknown', 'skipped', 'stopped', 'invalidated',
+] as const;
+
+/** What a graph run's node observes, named (the cutover design §2.2): its quest, its branch at its tip, or its landing there; null for the run. */
+function onSaid(t: TFunction, step: RunStep): string | null {
+  if (step.on === 'quest' && step.quest) return t('workflow.run.graph.on.quest', { quest: step.quest });
+  const where = step.on === 'branch' ? 'branch' : step.on === 'landing' ? 'landing' : null;
+  if (!where || !step.branch) return null;
+  return step.commit
+    ? t(`workflow.run.graph.on.${where}At`, { branch: step.branch, commit: short(step.commit) })
+    : t(`workflow.run.graph.on.${where}`, { branch: step.branch });
+}
+
+/**
+ * What a graph run's node says (FABRIC-CUTOVER1e): its record's state on the subject it observes, named; the person's words are shown under
+ * it, never in it. A state or a detail this page has no words for is said as recorded.
+ */
+function nodeSaid(t: TFunction, step: RunStep, node: string): string | null {
+  if (!knownState(step.state) || !(GRAPH_DETAILS as readonly string[]).includes(step.detail)) {
+    return t('workflow.run.said.recorded', { state: step.state, detail: step.detail || '—' });
+  }
+  const on = onSaid(t, step);
+  switch (step.detail) {
+    case 'ready': return t('workflow.run.graph.said.ready');
+    // FABRIC-CUTOVER1c's guards: CUTOVER1d begins these on a graph run, and these words go with them.
+    case 'not-begun':
+      return t(node === 'opinion' ? 'workflow.run.graph.said.notBegun.opinion'
+        : node === 'look' ? 'workflow.run.graph.said.notBegun.look' : 'workflow.run.graph.said.notBegun.plugin');
+    case 'active':
+      if (node === 'go-ahead') {
+        return step.words ? t('workflow.run.graph.said.goAhead', { act: step.words }) : t('workflow.run.graph.said.goAheadNone');
+      }
+      if (node === 'human') return t('workflow.run.graph.said.task');
+      return on ? t('workflow.run.graph.said.active', { on }) : t('workflow.run.graph.said.activeRun');
+    case 'reached': return on ? t('workflow.run.graph.said.reached', { on }) : t('workflow.run.graph.said.reachedRun');
+    case 'skipped': return t(step.code === 'person' ? 'workflow.run.graph.said.skippedByYou' : 'workflow.run.graph.said.skippedByRecord');
+    case 'failed': return step.code ? t('workflow.run.graph.said.failed', { code: step.code }) : t('workflow.run.graph.said.failedNone');
+    case 'rejected': return t('workflow.run.graph.said.rejected');
+    case 'stopped': return t('workflow.run.graph.said.stopped');
+    case 'unknown': return t('workflow.run.graph.said.unknown');
+    case 'invalidated': return t('workflow.run.graph.said.invalidated');
+    default: return t('workflow.run.said.recorded', { state: step.state, detail: step.detail || '—' });
+  }
+}
+
+/**
+ * What a run bound to a graph version says of itself, above its nodes (FABRIC-CUTOVER1e; the cutover design §2.3, §3): what its record says
+ * where it says something, the subjects its nodes observe, that its branches are its graph's, and that every landing door still holds it,
+ * which CUTOVER1d's doors take away. The driver's `WorkflowRunWords.GraphSaid`, line for line.
+ */
+export function graphSaid(t: TFunction, graph: GraphRun): string[] {
+  const said: string[] = [];
+  if (graph.unread) said.push(t('workflow.run.graph.unread'));
+  else if (graph.ended) said.push(t('workflow.run.graph.ended', { quest: graph.ended }));
+  else if (!graph.judged) said.push(t('workflow.run.graph.unjudged'));
+  if (graph.quest) {
+    said.push(graph.branch
+      ? t('workflow.run.graph.subjects', { quest: graph.quest, branch: graph.branch })
+      : t('workflow.run.graph.subjectsNoBranch', { quest: graph.quest }));
+  }
+  said.push(t('workflow.run.graph.branches'), t('workflow.run.graph.held'));
+  return said;
+}
+
 /** Why a step Current does not draw is in this run (design §4.6): a look the work's own choice added. */
 export function addedSaid(t: TFunction, step: RunStep): string | null {
   if (!step.added) return null;
@@ -125,6 +192,9 @@ export function runShort(t: TFunction, run: WorkflowRun): string {
     }
     return t('workflow.run.short.finished.done');
   }
+
+  // FABRIC-CUTOVER1e: a graph run's node is its record's state, which the steps' short words do not read; its state's word says it.
+  if (at.node) return stateSaid(t, at.state);
 
   const kind = at.step.kind;
   if (kind === 'work' && at.state === 'waiting-on-you' && ['park', 'go-ahead', 'held', 'unclosed', 'go-on'].includes(at.detail)) {

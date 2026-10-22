@@ -337,10 +337,55 @@ public sealed class ToolsChildrenTests : IDisposable
 
         var (info, refusal) = WorkingTree.GitStart(_root, ["status"], Home);
 
+        // The fixture's package has no git behind its launcher, so the record's file starts (GITSTART5 below has one).
         Assert.Null(refusal);
         Assert.Equal(Folder("managed:git/cmd/git.exe", null), info!.FileName);
         Assert.Equal(["-c", "core.longpaths=true", "status"], info.ArgumentList);
         Assert.StartsWith(Folder("managed:git/cmd", null) + Path.PathSeparator, info.Environment[Tools.PathVariable]);
+    }
+
+    [Fact]
+    public void A_managed_git_laid_out_as_Git_for_Windows_starts_past_its_launcher_with_the_launchers_variables()
+    {
+        // GITSTART5: the version's package as Git for Windows lays it out, its record naming the launcher.
+        Touch(Folder("managed:git/mingw64/bin/git.exe", null));
+        Directory.CreateDirectory(Folder("managed:git/usr/bin", null));
+        Write("""{"tools":{"git":{"use":"managed","version":"2.51.0"}}}""");
+
+        var (info, refusal) = WorkingTree.GitStart(_root, ["status"], Home);
+
+        Assert.Null(refusal);
+        Assert.Equal(["-c", "core.longpaths=true", "status"], info!.ArgumentList);
+        var tools = Folder("managed:git/cmd", null) + Path.PathSeparator + Folder("managed:git/mingw64/bin", null) + Path.PathSeparator;
+        if (!Windows)
+        {
+            // Off Windows there is no launcher to start past: the record's file, as before.
+            Assert.Equal(Folder("managed:git/cmd/git.exe", null), info.FileName);
+            Assert.StartsWith(tools, info.Environment[Tools.PathVariable]);
+            return;
+        }
+
+        Assert.Equal(Folder("managed:git/mingw64/bin/git.exe", null), info.FileName);
+        Assert.Equal("MINGW64", info.Environment["MSYSTEM"]);
+        var path = info.Environment[Tools.PathVariable]!;
+        Assert.StartsWith(Folder("managed:git/mingw64/bin", null) + ";" + Folder("managed:git/usr/bin", null) + ";", path);
+        // The launcher's folders go before the PATH the tools hand every child, which is kept after them whole.
+        Assert.Contains(";" + tools, path);
+    }
+
+    [Fact]
+    public void A_git_named_as_a_file_starts_as_it_is_even_where_it_is_Git_for_Windows_launcher()
+    {
+        var install = Path.Combine(_root, "install");
+        Touch(Path.Combine(install, "cmd", "git.exe"));
+        Touch(Path.Combine(install, "mingw64", "bin", "git.exe"));
+        Directory.CreateDirectory(Path.Combine(install, "usr", "bin"));
+        File.WriteAllText(ToolsFile, """{"tools":{"git":{"use":"file","file":""" + JsonSerializer.Serialize(Path.Combine(install, "cmd", "git.exe")) + "}}}");
+
+        var (info, refusal) = WorkingTree.GitStart(_root, ["status"], Home);
+
+        Assert.Null(refusal);
+        Assert.Equal(Path.Combine(install, "cmd", "git.exe"), info!.FileName);
     }
 
     [Fact]

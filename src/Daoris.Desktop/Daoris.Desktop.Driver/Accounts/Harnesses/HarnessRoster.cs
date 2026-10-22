@@ -328,11 +328,12 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     public string Home => HarnessSettings.HomeOf(SettingsPath);
 
     /// <summary>
-    /// The person's harness wiring, as it stands on disk right now. The come-up folds it to one set of Daoris's accounts per agent
-    /// (<see cref="Pool"/>), and every later write folds first; reading it through <see cref="HarnessSettings.LoadSet"/>, so a file an
-    /// older build wrote meanwhile is read as the set too, is POOL1a2's, with the walk's tests of the per-workspace scopes it rewrites.
+    /// The person's harness wiring as every reader takes it (POOL1a2, the account-pool design §2.4): the file on disk right now,
+    /// projected to one set of Daoris's accounts per agent (<see cref="HarnessSettings.LoadSet"/>), so a file an older build wrote
+    /// meanwhile is read as the set too and no start reads a workspace's scope. The come-up folds the file itself (<see cref="Pool"/>),
+    /// and every later write folds first.
     /// </summary>
-    public HarnessSettings Settings => HarnessSettings.Load(SettingsPath);
+    public HarnessSettings Settings => HarnessSettings.LoadSet(SettingsPath);
 
     private bool _pooled;
 
@@ -392,14 +393,14 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// and never of an account's home (§5.3).</para>
     /// <para>🔴 <b>One press of a harness at a time</b> (TOOL6g): a caller that finds one in flight takes its answer. Each
     /// account inside it is asked under its <see cref="ProbeLock"/>, and one a session of Daoris's runs on is not asked and
-    /// keeps its word and its time. The tool's own sign-in is asked only where <paramref name="own"/> says a person pressed
-    /// for it. A press is a person looking again, so it lets a refused account of that agent through (AGT3b).</para>
+    /// keeps its word and its time. A press is a person looking again, so it lets a refused account of that agent through
+    /// (AGT3b), and ends the tool's own home's cool-off (D125 §3.7) without asking it.</para>
+    /// <para>🔴 <b>The tool's own sign-in is never asked</b> (POOL1a3, D197 point 3): it is the person's, and the agent may
+    /// refresh their token to answer, beside their own terminal's. Its kept reading is said as it was.</para>
     /// </remarks>
-    /// <param name="own">Whether a press asks the tool's own sign-in too: an agent's *Read again*, never the loop.</param>
     /// <param name="account">With <paramref name="refresh"/>, the one account a press reads: an account's own *Read again*.</param>
     public async Task<HarnessReport?> ReportAsync(
-        string adapter, DriverConfig config, bool refresh = false, CancellationToken ct = default, bool own = false,
-        string? account = null)
+        string adapter, DriverConfig config, bool refresh = false, CancellationToken ct = default, string? account = null)
     {
         var resolved = adapters.Resolve(adapter);
         if (resolved.Toolchain is not { } toolchain) return null;
@@ -426,7 +427,10 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
                 _refused.TryRemove(refused, out _);
             }
 
-            await Fly($"{name}/press/{(own ? "own" : "")}", () => PressAsync(name, toolchain, owner, config, own), ct).ConfigureAwait(false);
+            // The own home's cool-off ends at the agent's *Read again* as at the roster's (D197's acceptance note): a sign-in
+            // there happens at the person's terminal, which Daoris does not see, and the cool-off's line sends them here.
+            EndOwnCooling(owner);
+            await Fly($"{name}/press", () => PressAsync(name, toolchain, owner, config), ct).ConfigureAwait(false);
         }
 
         return Composed(name, toolchain, await BinaryOfAsync(name, toolchain, config, again: false, ct).ConfigureAwait(false));
@@ -443,17 +447,17 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         await BinaryOfAsync(resolved.Name, toolchain, config, again: true, ct).ConfigureAwait(false);
     }
 
-    /// <summary>The person's press on one agent: every account asked one at a time, its own sign-in where asked, each answer kept.</summary>
-    private async Task PressAsync(string name, HarnessToolchain toolchain, string owner, DriverConfig config, bool own)
+    /// <summary>The person's press on one agent: every account of Daoris's asked one at a time, each answer kept; never the own sign-in.</summary>
+    private async Task PressAsync(string name, HarnessToolchain toolchain, string owner, DriverConfig config)
     {
         var prior = Composed(name, toolchain, new Binary(true, null, null));
         // 🔴 A door onto an agent this build carries no door of (CODEXACCT1: `codex-acp`, `codex`) asks its binary as itself,
-        // and its accounts and the tool's own sign-in as that agent asks them, with the agent's own binary: no press of the
-        // agent's would, and the door has no status question. Its press read nothing, so the own sign-in said *never read*.
+        // and its accounts as that agent asks them, with the agent's own binary: no press of the agent's would, and the door
+        // has no status question.
         var holder = HolderOf(name, toolchain);
         var report = await HarnessProbe.ProbeAsync(
             name, toolchain, config.Commands.GetValueOrDefault(name), Settings, Home, CancellationToken.None,
-            busy: account => Busy(owner, account), prior: prior, own: own && holder is null,
+            busy: account => Busy(owner, account), prior: prior,
             asks: holder is null ? null : _ => false, clock: Clock,
             answered: (account, said, at) => Keep(owner, account, said, at)).ConfigureAwait(false);
         _binaries[name] = new Binary(report.Present, report.Version, report.Problem);
@@ -461,12 +465,11 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         {
             await HarnessProbe.ProbeAsync(
                 agent.Name, agent.Toolchain, config.Commands.GetValueOrDefault(agent.Name), Settings, Home, CancellationToken.None,
-                busy: account => Busy(owner, account), prior: prior, own: own, clock: Clock,
+                busy: account => Busy(owner, account), prior: prior, clock: Clock,
                 answered: (account, said, at) => Keep(owner, account, said, at)).ConfigureAwait(false);
         }
-        // And each account's windows, where its agent's server is asked them (CODEXUSE1), and the own sign-in's where the
-        // press was for it too (CODEXUSE3).
-        await PressUsageAsync(name, owner, config, own, CancellationToken.None).ConfigureAwait(false);
+        // And each account's windows, where its agent's server is asked them (CODEXUSE1); the own sign-in's never (D197 point 3).
+        await PressUsageAsync(name, owner, config, CancellationToken.None).ConfigureAwait(false);
     }
 
     /// <summary>What the binary last answered, asked once a process, or again where <paramref name="again"/>; never an account.</summary>
@@ -478,7 +481,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         {
             var report = await HarnessProbe.ProbeAsync(
                 name, toolchain, config.Commands.GetValueOrDefault(name), Settings, Home, CancellationToken.None,
-                asks: _ => false, own: false).ConfigureAwait(false);
+                asks: _ => false).ConfigureAwait(false);
             _binaries[name] = new Binary(report.Present, report.Version, report.Problem);
         }, ct).ConfigureAwait(false);
         return _binaries.TryGetValue(name, out var asked) ? asked : new Binary(false, null, null);
@@ -519,7 +522,8 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             binary.Present ? binary.Version : null,
             binary.Present ? null : binary.Problem,
             toolchain.ProfileVariable,
-            Settings.Defaults.TryGetValue(owner, out var machine) ? machine : null,
+            // The order's first, where the machine's default was (POOL1a2, the account-pool design §2.2).
+            Settings.FirstOf(owner),
             profiles,
             reads.Own?.Login ?? LoginState.Unknown,
             own?.Account,
@@ -604,6 +608,22 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             // A cool-off that could not be ended costs a start's wait, never the roster.
+        }
+    }
+
+    /// <summary>
+    /// The agent's *Read again* (POOL1a3, D197's acceptance note): <paramref name="owner"/>'s own home's cool-off ends, nothing asked,
+    /// as <see cref="LookedAgain"/> ends every agent's.
+    /// </summary>
+    private void EndOwnCooling(string owner)
+    {
+        try
+        {
+            AccountCooling.End(Home, owner, account: null, Clock());
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // A cool-off that could not be ended costs a start's wait, never the press.
         }
     }
 
@@ -821,9 +841,9 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
                 continue;
             }
 
-            // The tool's own sign-in is asked only at the person's press (TOOL6g): it is theirs, and their terminal and
-            // their other sessions run on it.
-            if (await ReportAsync(name, config, refresh, ct, own: refresh).ConfigureAwait(false) is { } report)
+            // The tool's own sign-in is never asked, at a press either (POOL1a3, D197 point 3; Fable's F2): it is theirs, and
+            // their terminal and their other sessions run on it.
+            if (await ReportAsync(name, config, refresh, ct).ConfigureAwait(false) is { } report)
             {
                 reports.Add(report);
             }
@@ -838,21 +858,20 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// <b>names the action that fixes it</b> rather than failing bare.
     /// </summary>
     /// <remarks>
-    /// <para><b>One scope</b> (TOOL6b, D130 §2 rule 1, §3.1): the start's workspace's, when it names a default or a list
-    /// of its own for the agent, else the machine's (<see cref="HarnessSettings.ResolveScope"/>). Its list is the whole set
-    /// of accounts its starts may run on, begun at its default or else its first. A pick is the one account, never moved;
-    /// a scope that names one account and no list is that account; a scope that names none is the tool's own sign-in.</para>
+    /// <para><b>One set</b> (POOL1a2, D197 points 1 and 2; the account-pool design §2.4): every workspace's start reads the agent's
+    /// set (<see cref="HarnessSettings.Set"/>), its whole order begun at the order's first. A pick is the one account, never moved;
+    /// an agent with no account of Daoris's holds its start for a sign-in.</para>
     /// <para><b>The walk</b>: <see cref="AccountRotation.Order"/>, by <c>use</c> — the goal's (the default) or D125's —
     /// and the first account still ready runs: not cooling, not refused, not signed out. It says which step chose it
     /// (<see cref="HarnessSelection.Choice"/>) and, where it ran somewhere other than where its scope begins, why
     /// (<see cref="HarnessSelection.Rotated"/>). When no account is ready the start waits: before any probe while each is
-    /// cooling or refused, with one sentence naming the first reset, and the accounts the scope does not list.</para>
+    /// cooling or refused, with one sentence naming the first reset.</para>
     /// <para><b>Counted as chosen</b>: the goal reads Daoris's sessions as of the driver's last look (<see cref="Look"/>)
     /// and every start chosen since, so starts in one look spread. A start's choice and its count are made one at a time,
     /// under a gate no question is asked under (PARALLEL1c, D181 point 3): a question on one account never holds a start on
     /// another, and an account whose lock stays held past its patience is left unknown for that walk, never counted.</para>
     /// </remarks>
-    /// <param name="workspace">The repository's circle, for the per-workspace default (D49 §4).</param>
+    /// <param name="workspace">The repository's circle, for its pinned version (D49 §4); every workspace reads the one set.</param>
     /// <param name="chosen">The person's pick for this session, when they made one.</param>
     /// <param name="kind">Driven work or a conversation: driven work never starts on the scope's kept account (§4.6).</param>
     public Task<HarnessSelection> SelectAsync(
@@ -909,9 +928,9 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
 
         var owner = toolchain.Owner(resolved.Name);
         var named = string.IsNullOrWhiteSpace(account) ? null : account.Trim();
-        // A record on a Daoris account is judged against the scope a start walks, the agent's accounts where the person named none;
-        // one that began in the tool's own home against the settings' own, which with nothing named is that home (OWNSPACE1a).
-        var settled = Settings.ResolveScope(owner, string.IsNullOrWhiteSpace(workspace) ? null : workspace.Trim());
+        // A record on a Daoris account is judged against the set a start walks (POOL1a2, the account-pool design §2.4), whatever its
+        // workspace; one that began in the tool's own home is judged against no scope (F1, ResumeAccount.Judge).
+        var settled = Settings.Set(owner);
         var scope = named is null ? settled : Walked(settled, owner, toolchain);
         IReadOnlyCollection<string> present;
         try
@@ -1009,17 +1028,6 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     }
 
     /// <summary>
-    /// Whether a scope's accounts are inherited (OWNSPACE1b-A, D175 settlement 5): it names no account, and the agent never starts
-    /// in the person's own home, so the agent's Daoris accounts are its list, in turn, or the wait where it has none.
-    /// </summary>
-    public bool InheritsDaorisAccounts(string agent, string? workspace)
-    {
-        var circle = string.IsNullOrWhiteSpace(workspace) ? null : workspace.Trim();
-        var scope = Settings.ResolveScope(agent, circle);
-        return OwnersToolchain(agent) is { StartsInOwnHome: false } && scope.List.Count == 0 && scope.Begins is null;
-    }
-
-    /// <summary>
     /// The hold of a start with no Daoris account of the agent's signed in (OWNSPACE1a, D175 point 2): one sentence, and a wait
     /// for a sign-in naming the accounts it passed signed out, none where the agent has none, so a look reports it as a wait and
     /// says it once (D125 point 6).
@@ -1046,8 +1054,8 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         // the owner's login question and key. The pin below stays the door's own — a door is a
         // different package at a different version (ACP2).
         var owner = toolchain.Owner(resolved.Name);
-        var circle = string.IsNullOrWhiteSpace(workspace) ? null : workspace.Trim();
-        var named = settings.ResolveScope(owner, circle);
+        // The agent's one set, whatever the workspace (POOL1a2, the account-pool design §2.4): no start reads a workspace's scope.
+        var named = settings.Set(owner);
         var picked = string.IsNullOrWhiteSpace(chosen) ? null : chosen.Trim();
         // Where the person named no account, the agent's Daoris accounts are the start's (OWNSPACE1a), and none signed in holds it.
         var ours = picked is null && !ownHome && named.List.Count == 0 && named.Begins is null && !toolchain.StartsInOwnHome;
@@ -1082,7 +1090,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         if (!states.Any(state => state.IsReady))
         {
             // A pick is the person's (§3.3): refused, never rotated, naming what they could pick instead.
-            if (picked is null || states[0].Cooling is not { } pick) return Unready(owner, states, picked is null ? scope : null, circle, kind, now, names);
+            if (picked is null || states[0].Cooling is not { } pick) return Unready(owner, states, picked is null ? scope : null, kind, now, names);
 
             var refusal = RotationWords.PickedOf(
                 pick, await ReadyAsync(resolved.Name, toolchain, config, pick.Account, now, ct).ConfigureAwait(false), Zone, names);
@@ -1174,11 +1182,11 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         {
             if (counts)
             {
-                lock (_walking) pass = Pass(owner, scope, kind, picked, circle, ours, counts, names, walk);
+                lock (_walking) pass = Pass(owner, scope, kind, picked, ours, counts, names, walk);
             }
             else
             {
-                pass = Pass(owner, scope, kind, picked, circle, ours, counts, names, walk);
+                pass = Pass(owner, scope, kind, picked, ours, counts, names, walk);
             }
 
             if (pass.Held is { } hold) return hold;
@@ -1243,7 +1251,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         var choice = AccountRotation.Chose(scope, kind, states, at, facts, now);
         var passed = states.FirstOrDefault(state => string.Equals(state.Account, begins, StringComparison.OrdinalIgnoreCase));
         // Each step by code beside its English (UX7d-1): the choice's clause joins them, and a rotation's is the first alone.
-        var steps = RotationWords.Steps(choice, owner, runs, scope, scope.From == ChoiceFrom.Workspace ? circle : null, passed, facts, kind, now, Zone);
+        var steps = RotationWords.Steps(choice, owner, runs, scope, null, passed, facts, kind, now, Zone);
         // Over its curve is the log's `near`, the word for an account passed (SWITCH1b-ii).
         string? Standing(string account) => AccountReadings.Standing(facts.GetValueOrDefault(account)?.Said, scope.Use, now);
         var walked = scope.List.Where(account => order.Contains(account, StringComparer.OrdinalIgnoreCase)).ToList();
@@ -1258,7 +1266,8 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
                 : new RotatedStart(begins, passed?.Cooling, steps[0].Text)
                 {
                     Step = choice.Step,
-                    Scope = scope.From == ChoiceFrom.Workspace ? circle : null,
+                    // The set's, for every start now (the account-pool design §2.4); a line written before keeps the workspace it named.
+                    Scope = null,
                     FromSaid = Standing(begins),
                     ToSaid = Standing(runs),
                 },
@@ -1324,7 +1333,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// held on it, for the next start to try again.
     /// </remarks>
     private WalkPass Pass(
-        string owner, RotationScope scope, StartKind kind, string? picked, string? circle, bool ours, bool counts,
+        string owner, RotationScope scope, StartKind kind, string? picked, bool ours, bool counts,
         IReadOnlyDictionary<string, string> names, WalkMemory walk)
     {
         var now = Clock();
@@ -1388,7 +1397,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             // Every Daoris account the person never named said signed out: none is signed in, so the same sentence (OWNSPACE1a).
             return new WalkPass(Held: ours && states.All(state => state.Readiness == AccountReadiness.SignedOut)
                 ? NoAccount(owner, RotationWords.SignedOut(states), names)
-                : Unready(owner, states, picked is null ? scope : null, circle, kind, now, names));
+                : Unready(owner, states, picked is null ? scope : null, kind, now, names));
         }
 
         return new WalkPass
@@ -1446,8 +1455,9 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     }
 
     /// <summary>
-    /// Which account the next start on <paramref name="agent"/>'s accounts in <paramref name="workspace"/> would take, the
-    /// step that chose it, and what holds each other account (TOOL6e, D130 §3–§4): what the agent's page in Agents says.
+    /// Which account the next start on <paramref name="agent"/>'s accounts would take, in any workspace since every one reads the
+    /// set (POOL1a2, D197 point 1), the step that chose it, and what holds each other account (TOOL6e, D130 §3–§4): what the agent's
+    /// page in Agents says.
     /// </summary>
     /// <remarks>
     /// 🔴 <b>The walk's own pieces, never a second judgement</b>, as <see cref="WiringAsync"/> holds: the one scope
@@ -1457,13 +1467,11 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// is said by a press, or by the start that asks again.
     /// </remarks>
     /// <param name="agent">Whose accounts: the accounts' owner (AGT7), a door's being its owner's.</param>
-    /// <param name="workspace">The workspace, or null for this machine's scope.</param>
     /// <param name="kind">Driven work, which drops the kept account, or a conversation (§4.6).</param>
-    public NextStart Next(string agent, string? workspace, StartKind kind = StartKind.Driven)
+    public NextStart Next(string agent, StartKind kind = StartKind.Driven)
     {
-        var circle = string.IsNullOrWhiteSpace(workspace) ? null : workspace.Trim();
-        // The scope a start walks (OWNSPACE1a): with nothing named, the agent's Daoris accounts, and with none, a wait.
-        var scope = Settings.ResolveScope(agent, circle);
+        // The set a start walks (POOL1a2): its whole order; with no account, a wait.
+        var scope = Settings.Set(agent);
         var toolchain = OwnersToolchain(agent);
         if (toolchain is not null) scope = Walked(scope, agent, toolchain);
         if (toolchain is { StartsInOwnHome: false } && scope.List.Count == 0 && scope.Begins is null) return new NextStart(null, NextReason.NoAccount, []);
@@ -1549,15 +1557,13 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// </summary>
     /// <remarks>
     /// A wait for a time also says what the person could do (TOOL6b, D130 §3.3, §4.6), where it applies: a driven start
-    /// whose kept account is ready says it is kept for conversations; and a scope that names accounts of its own names the
-    /// agent's other accounts that are neither cooling nor refused, with the door that adds one. Read from the cool-offs
-    /// and the refusals alone, as a waiting look starts no process. Daoris never takes one itself. A machine that names no
-    /// list keeps its sentence byte for byte (D125 §3.1's none).
+    /// whose kept account is ready says it is kept for conversations. No account is outside the set (POOL1a2, D197 point 1), so
+    /// none is named as one a list could add. Read from the cool-offs and the refusals alone, as a waiting look starts no process.
     /// </remarks>
     /// <param name="scope">The start's scope, or null for a pick, which says nothing more.</param>
     /// <param name="names">The owner's names by id, which the sentence says each account by (ACCT2b), and its facts carry.</param>
     private HarnessSelection Unready(
-        string owner, IReadOnlyList<AccountState> states, RotationScope? scope, string? workspace, StartKind kind, DateTimeOffset now,
+        string owner, IReadOnlyList<AccountState> states, RotationScope? scope, StartKind kind, DateTimeOffset now,
         IReadOnlyDictionary<string, string> names)
     {
         var first = states.Where(state => state.Cooling is not null).Select(state => state.Cooling!).MinBy(cooling => cooling.Until);
@@ -1595,23 +1601,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             note = note?.Then(" ", aside);
         }
 
-        if (scope.From == ChoiceFrom.Workspace || scope.List.Count > 0)
-        {
-            IReadOnlyList<string> listed = scope.List.Count > 0 ? scope.List : [scope.Begins];
-            // Not one the agent last said is not signed in (TOOL6g): adding it to the list would start nothing.
-            var reads = AccountReads.Of(Home, owner);
-            var outside = HarnessSettings.Profiles(Home, owner)
-                .Where(name => !listed.Contains(name, StringComparer.OrdinalIgnoreCase) && Before(owner, name, now).IsReady
-                               && !SaidOut(reads, name))
-                .ToList();
-            if (outside.Count > 0)
-            {
-                var elsewhere = RotationWords.OutsideOf(owner, scope.From == ChoiceFrom.Workspace ? workspace : null, listed, outside, names);
-                sentence += " " + elsewhere.Note;
-                note = note?.Then(" ", elsewhere);
-            }
-        }
-
+        // No account outside the set to name (POOL1a2, D197 point 1): every account of Daoris's is in the order the start walked.
         return held with { Refusal = sentence, RefusalNote = note };
     }
 
@@ -1761,8 +1751,8 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// <remarks>
     /// 🔴 <b>Read through <see cref="SelectAsync"/>, never beside it.</b> The design's rule is that the
     /// picture cannot disagree with the loop, and a second resolution is exactly how it would: the
-    /// account is the selection's — its scope is <see cref="HarnessSettings.ResolveScope"/>, the function
-    /// <see cref="SelectAsync"/> reads (TOOL6b) — and whether the start happens, and at which version, is the
+    /// account is the selection's — its scope is the agent's one set (<see cref="HarnessSettings.Set"/>, POOL1a2), which
+    /// <see cref="SelectAsync"/> reads — and whether the start happens, and at which version, is the
     /// selection itself, asked without being counted as a start chosen. Nothing from the selection's
     /// machine-local half (the home, the binary, the key) is kept.
     /// </remarks>
@@ -1774,10 +1764,10 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         var owner = toolchain?.Owner(resolved.Name) ?? resolved.Name;
         var settings = Settings;
 
-        // The start's one scope (TOOL6b, D130 §2 rule 1): where it begins, and whose rung named it; the tool's own sign-in
-        // where it names no account.
-        var scope = toolchain is null ? null : settings.ResolveScope(owner, workspace);
-        var profileFrom = scope?.Begins is null ? ChoiceFrom.Unset : scope.From;
+        // The start's one set (POOL1a2, the account-pool design §2.4): where it begins, the order's first, read as the machine's
+        // and never a workspace's (`StartWiring.ProfileFrom`); unset where the agent has no account.
+        var scope = toolchain is null ? null : settings.Set(owner);
+        var profileFrom = scope?.Begins is null ? ChoiceFrom.Unset : ChoiceFrom.Machine;
         // The same precedence `SelectAsync` applies: a command `driver.json` names has the last word.
         var commanded = config.Commands.GetValueOrDefault(resolved.Name) is { Count: > 0 };
         var (pinned, versionFrom) = commanded || toolchain is null
@@ -2029,39 +2019,41 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// Ask one account's windows of its agent's server, and keep what it answered (CODEXUSE1): null where nothing was asked or
     /// nothing could be had, and then nothing is kept. Never throws but for the caller's own stop.
     /// </summary>
-    /// <param name="account">The account, or null for the tool's own sign-in (CODEXUSE3), asked only at a person's press.</param>
+    /// <param name="account">
+    /// The account of Daoris's whose home its server runs in: never none, so the tool's own sign-in is never read (POOL1a3, D197
+    /// point 3, amending CODEXUSE3).
+    /// </param>
     private async Task<IReadOnlyList<WindowReading>?> AskUsageAsync(
-        string adapter, string owner, string? account, DriverConfig config, CancellationToken ct)
+        string adapter, string owner, string account, DriverConfig config, CancellationToken ct)
     {
         if (UsageOf(adapter) is not { } question) return null;
         try
         {
-            // An account that is a key is billed by the key, not a plan's windows (AGT3): nothing to read. The tool's own
-            // sign-in holds no key of Daoris's.
-            if (account is not null && HarnessKeys.Of(Home, owner, account) is not null) return null;
+            // An account that is a key is billed by the key, not a plan's windows (AGT3): nothing to read.
+            if (HarnessKeys.Of(Home, owner, account) is not null) return null;
             _usageAsked[AccountKey(owner, account)] = Clock();
 
-            // One question per account at a time, and none while a session of Daoris's runs on it (TOOL6g): the own sign-in's
-            // lock is its own, as its status question's is.
+            // One question per account at a time, and none while a session of Daoris's runs on it (TOOL6g).
             await using var held = await ProbeLock.TakeAsync(ProbeLock.PathOf(Home, owner, account), ct: ct).ConfigureAwait(false);
             if (held is null || Busy(owner, account)) return null;
 
             IReadOnlyList<WindowReading>? readings;
             if (AskingUsage is { } standIn)
             {
-                readings = await standIn(owner, account ?? AccountWindows.Own, ct).ConfigureAwait(false);
+                readings = await standIn(owner, account, ct).ConfigureAwait(false);
             }
             else
             {
                 if (UsageCommand(question, config) is not { } command) return null;
                 var toolchain = AccountToolchain(adapter) ?? Toolchain(adapter)!;
-                // The own sign-in's server is started with no account's home: the agent answers for its own (D63).
-                var profileHome = account is null ? null : HarnessSettings.ProfileHome(Home, owner, account);
+                // 🔴 Its server is started in the account's home, never with none, where the agent would answer for the
+                // person's own sign-in and might refresh their token (D197 point 3).
+                var profileHome = HarnessSettings.ProfileHome(Home, owner, account);
                 if (question.Kind == UsageKind.Claude)
                 {
                     // Run in an empty folder of the home's own, never the repository or OS temp: the CLI keys its project
                     // state by its working directory, and a read is no project's.
-                    var folder = profileHome is null ? DaorisHome.Entry(Home, HomeEntry.UsageRead) : Path.Combine(profileHome, "usage-read");
+                    var folder = Path.Combine(profileHome, "usage-read");
                     Directory.CreateDirectory(folder);
                     var asking = CodexUsage.Prepare(command.Run, toolchain, profileHome, command.Managed, folder);
                     var at = Clock();
@@ -2080,7 +2072,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             // Every window it said kept in the usage history first (USAGECAP1a1): the reader's own parse where it answered one,
             // else the walk's readings as they are (a stand-in's, reader 0).
             var now = Clock();
-            var key = account ?? AccountWindows.Own;
+            var key = account;
             var door = Adapters.Resolve(adapter).Name;
             if (readings is UsageAnswer answer)
             {
@@ -2121,23 +2113,22 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     }
 
     /// <summary>
-    /// A press (ROSTER1): each of the agent's accounts asked, one at a time per account, whatever its last reading's age; and
-    /// the tool's own sign-in where the press was for it too (<paramref name="own"/>, CODEXUSE3).
+    /// A press (ROSTER1): each of the agent's accounts asked, one at a time per account, whatever its last reading's age; never
+    /// the tool's own sign-in (POOL1a3, D197 point 3, amending CODEXUSE3).
     /// </summary>
-    private async Task PressUsageAsync(string adapter, string owner, DriverConfig config, bool own, CancellationToken ct)
+    private async Task PressUsageAsync(string adapter, string owner, DriverConfig config, CancellationToken ct)
     {
         if (UsageOf(adapter) is null) return;
-        IReadOnlyList<string?> accounts;
+        IReadOnlyList<string> accounts;
         try
         {
-            accounts = [.. HarnessSettings.Profiles(Home, owner)];
+            accounts = HarnessSettings.Profiles(Home, owner);
         }
         catch (DriverException)
         {
             accounts = [];
         }
 
-        if (own) accounts = [.. accounts, null];
         await Task.WhenAll(accounts.Select(account => AskUsageAsync(adapter, owner, account, config, ct))).ConfigureAwait(false);
     }
 }

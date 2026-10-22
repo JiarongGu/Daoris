@@ -18,9 +18,12 @@ namespace Daoris.Knowledge.Http;
 // doors. A host from before answers none, which a driver reads as not knowing them, and binds nothing there.
 // `CloseOutcome` (CLOSECAP1): this host also answers the outcome door (`POST /api/quests/{id}/close/outcome`, FABRIC-CLOSE1u), the
 // close protocol's recovery. A driver binds only where `Closure` and this are both answered; a host with `Closure` alone binds nothing.
+// `CloseRemote` (FABRIC-CLOSE1i): this host judges a bind in a workspace synced through a remote by the remote's handshake, whether every
+// machine of it declared it knows a bound quest, and refuses it naming those that did not. A host before it refuses every such bind, and a
+// driver asks it none.
 public sealed record StatusResponse(
     bool Semantic, string Tier, string? Note, string? Proof = null, string? Home = null, string? Version = null, bool? Closure = null,
-    bool? CloseOutcome = null);
+    bool? CloseOutcome = null, bool? CloseRemote = null);
 
 /// <summary>This host's informational version, read once: what <c>/api/status</c> answers as <c>version</c> (WIRING1b).</summary>
 public static class HostVersion
@@ -648,10 +651,15 @@ public sealed record SyncResponse(
 // Where a circle stands on this machine (SYNC6a): what it has not pushed, the quests the last pass
 // left behind, the quests carrying a conflict, when a pass last reached the remote and last tried, and
 // the wall it hit. A circle with no remote here answers `wired: false` and nothing else, because
-// "unpushed" means nothing where there is nowhere to push.
+// "unpushed" means nothing where there is nowhere to push. The machines of the workspace its remote last said had not declared they
+// know a bound quest (FABRIC-CLOSE1i2), as the last pass heard them: empty where every one did, absent where no pass heard the handshake.
 public sealed record SyncStandingResponse(
     string Workspace, bool Wired, int Ahead, IReadOnlyList<string> Behind, IReadOnlyList<string> Conflicts,
-    DateTimeOffset? Synced, DateTimeOffset? Tried, string? Problem);
+    DateTimeOffset? Synced, DateTimeOffset? Tried, string? Problem, IReadOnlyList<string>? Undeclared = null);
+// A person's retirement of a machine at a circle's remote (FABRIC-CLOSE1i2): whether the remote retired one, false where it had heard
+// nothing from it, and the machines it still counts undeclared after it.
+public sealed record MachineRetiredResponse(
+    string Workspace, string Machine, bool Retired, IReadOnlyList<string> Undeclared, string Message);
 // Where this machine's claim on one quest stands: none, held, unconfirmed or lost (D68 §4). Why a lost one lost, where its take lost to
 // the person's reopen of the work the step grew from (FABRIC-CLOSE1c18): `source-reopened`; null otherwise, as an older host answers.
 // `Forward` (SYNCMERGE1b0): the take this machine holds the quest by, where the person's bring-forward made it, the one take a stood-down
@@ -814,6 +822,7 @@ public sealed record ChangesResponse(string Since, IReadOnlyList<string> Moved);
 [JsonSerializable(typeof(FeedHeldResponse))]
 [JsonSerializable(typeof(SyncResponse))]
 [JsonSerializable(typeof(SyncStandingResponse))]
+[JsonSerializable(typeof(MachineRetiredResponse))]
 [JsonSerializable(typeof(QuestClaimResponse))]
 [JsonSerializable(typeof(QuestMovesResponse))]
 [JsonSerializable(typeof(FeedResponse))]

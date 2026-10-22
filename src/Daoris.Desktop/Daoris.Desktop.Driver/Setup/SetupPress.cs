@@ -106,7 +106,23 @@ public static class SetupPress
         {
             refusals.Add(new(SetupRefusals.AlreadySetUp,
                 $"`{row.Repository}` is already set up: on its line it has taken up the doctrine on the agents layout, "
-                + "finished, and declares what it owns."));
+                + $"finished, declares what it owns, and names its index of where things are, `{facts!.DeclaredIndex}`."));
+        }
+
+        // ORIENT2c: the index quest names its generator from what the repository is built with, or there is none to ask.
+        var description = row.Root is { } root ? world.Describe(root) : null;
+        IndexForm? form = null;
+        if (kind == SetupCase.Index)
+        {
+            var (found, problem) = IndexForms.For(description?.Stack ?? [], facts!.ToolFiles.Contains);
+            form = found;
+            if (problem is not null)
+            {
+                refusals.Add(new(SetupRefusals.NoIndexForm,
+                    $"`{row.Repository}` is set up and names no index of where things are, and the press cannot name its "
+                    + $"generator: {problem}. Ask it by hand, *{SetupQuests.Index}*, naming the generator's path and its two "
+                    + "commands, and add those commands to its rules."));
+            }
         }
 
         var open = (await world.QuestsAsync(ct).ConfigureAwait(false)).FirstOrDefault(quest =>
@@ -119,8 +135,8 @@ public static class SetupPress
                 $"a set-up is already {open.Status.ToLowerInvariant()} for `{row.Repository}`: `#{open.Id}`, {open.Title}."));
         }
 
-        plan = plan with { Facts = facts, Tools = tools, Case = kind, Refusals = refusals };
-        if (facts is null || kind is null or SetupCase.Done) return plan;
+        plan = plan with { Facts = facts, Tools = tools, Case = kind, Index = form, Refusals = refusals };
+        if (facts is null || kind is null or SetupCase.Done || (kind == SetupCase.Index && form is null)) return plan;
 
         var neighbours = registry
             .Where(repo => repo.Workspace == row.Workspace && !string.Equals(repo.Repository, row.Repository, StringComparison.OrdinalIgnoreCase))
@@ -129,7 +145,7 @@ public static class SetupPress
             .ToList();
         var (title, body) = SetupBrief.Compose(new SetupBriefInput(
             kind.Value, day, row.Repository, facts, tools.DaorisVersion is { Length: > 0 } version ? version : "(no version was found)",
-            world.Describe(row.Root), await world.EntriesAsync(row.Repository, ct).ConfigureAwait(false), neighbours));
+            description, await world.EntriesAsync(row.Repository, ct).ConfigureAwait(false), neighbours, form));
         return plan with { Title = title, Body = body };
     }
 
@@ -151,7 +167,7 @@ public static class SetupPress
             .Where(pair => string.Equals(pair.Key.Trim(), plan.Repository, StringComparison.OrdinalIgnoreCase))
             .SelectMany(pair => pair.Value.Allow)
             .ToHashSet(StringComparer.Ordinal);
-        var added = SetupPressRules.Rules.Where(rule => !held.Contains(rule)).ToList();
+        var added = SetupPressRules.RulesOf(plan).Where(rule => !held.Contains(rule)).ToList();
         PermissionRules.Save(home, added.Aggregate(file, (rules, rule) => PermissionRules.Add(rules, RuleScope.Repository, plan.Repository, RuleList.Allow, rule)));
 
         var asked = await PublishAsync(plan, world, ct).ConfigureAwait(false);

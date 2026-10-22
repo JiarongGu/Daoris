@@ -924,13 +924,15 @@ public sealed class DriverLoop(
                         Events = report.Events,
                         Considered = sitting,
                         // The trust holds as facts (D73): machine-local paths, so over this bridge only.
-                        // A hold's `quest` or `ask`, whichever it is not, is left out by the bridge.
+                        // A hold's `quest` or `ask`, whichever it is not, is left out by the bridge, and so is `own` but
+                        // where its file is the own sign-in's (POOL1a3, D197 point 3).
                         Untrusted = report.Untrusted.Select(hold => new
                         {
                             hold.Folder,
                             hold.TrustFile,
                             hold.Quest,
                             hold.Ask,
+                            Own = hold.Own ? true : (bool?)null,
                         }).ToArray(),
                         // The starts held on cooling accounts, one per account, an ask's intake among them (UX6d): what
                         // *What needs you* says waits for an account, from the look's own wait and nothing asked.

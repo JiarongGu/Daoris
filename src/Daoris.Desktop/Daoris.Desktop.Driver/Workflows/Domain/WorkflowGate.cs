@@ -73,6 +73,14 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
     /// </summary>
     public IReadOnlyDictionary<string, string>? Claimed { get; init; }
 
+    /// <summary>
+    /// The bound graph version's graph, as its file holds it and never decoded (FABRIC-CUTOVER1e; D190 point 4, the cutover design §4: the
+    /// process carries the graph beside the steps its gates read): what the run's view draws from the run's record. The gates still hold the
+    /// version as one this build does not run (<see cref="Problem"/>) until CUTOVER1d reads them from its nodes. Null under Current, under a
+    /// steps version, and where the graph version is not the one its run bound.
+    /// </summary>
+    public NodeGraph? Graph { get; init; }
+
     /// <summary>Rows 5 and 6 of D154's table as the version says them; null under Current, where the rule says them, as today.</summary>
     public WorkflowLook? Look { get; init; }
 
@@ -320,6 +328,32 @@ public static class Involvement
             };
             return new NamedStep(step.Id, step.Kind, fields);
         }),
+    ];
+
+    /// <summary>
+    /// A graph version's person part as the steps <see cref="Lowers"/> reads (FABRIC-CUTOVER1e; D190 point 4, the cutover design §11.1): its
+    /// gate and go-ahead nodes in the graph's order, each as the step of its kind, its options as that step's fields (the work's checks, the
+    /// opinion's switches, the look's environment, the landing's form and press, each go-ahead's act). A plugin's node, a person's task, a
+    /// stop and every other node is no part of it, as no step stood for one. An option absent is a field absent, so a graph that leaves the
+    /// landing's press to the repository's rule lowers nothing by it, as 1d reads that press from the rule.
+    /// </summary>
+    public static IReadOnlyList<NamedStep> StepsOf(NodeGraph graph) =>
+    [
+        .. graph.Nodes.Select(node =>
+        {
+            var kind = node.Kind switch
+            {
+                NodeKinds.Claimed => WorkflowKinds.Work,
+                NodeKinds.Opinion => WorkflowKinds.Opinion,
+                NodeKinds.Look => WorkflowKinds.Look,
+                NodeKinds.Handed => WorkflowKinds.Landing,
+                NodeKinds.PullRequest => WorkflowKinds.PullRequest,
+                NodeKinds.GoAhead => WorkflowKinds.GoAhead,
+                _ => null,
+            };
+            return kind is null ? null
+                : new NamedStep(node.Id, kind, [.. node.Options.Select(option => new WorkflowSetting(option.Key, NodeOptions.Value(option.Value)))]);
+        }).OfType<NamedStep>(),
     ];
 
     private static IEnumerable<NamedStep> All(IReadOnlyList<NamedStep> steps) => steps.Concat(steps.SelectMany(step => step.Members));
