@@ -205,6 +205,33 @@ export const ProposingEveryKind: Story = {
   },
 };
 
+/**
+ * ASKDISMISS1: the block a published quest leaves in the conversation, once a session has taken the quest: a go card, its
+ * sentence the driver's saying the quest is taken, *Go there* beside *Dismiss*, which only takes the card away.
+ */
+export const ProposingAGoToATakenQuest: Story = {
+  args: {
+    ...Talking.args,
+    conversation: {
+      ...Talking.args!.conversation!,
+      proposals: (
+        <ul className="m-0 mt-3 grid list-none gap-2.5 p-0">
+          <ProposalCard
+            proposal={{
+              id: 'g6t7k8n9', kind: 'go', describe: 'Open Quests → quest `#q2taken0` “Stream the tiles”, taken.', terminal: '',
+              why: 'you asked where the quest went',
+            }}
+            onApply={() => {}}
+            onDismiss={() => {}}
+          />
+        </ul>
+      ),
+    },
+  },
+};
+
+export const ProposingAGoToATakenQuestChinese: Story = { args: ProposingAGoToATakenQuest.args, decorators: [chinese] };
+
 // WORKFLOW1h-d: a workflow version's card (design §8.2): a new one, an edit, and a draft that offers only Not now.
 const WORKFLOW_SHOWN = {
   id: 'docs-to-pr', name: 'Documentation to a pull request', base: 1, version: 2, scope: 'web-app',
