@@ -356,10 +356,12 @@ public sealed class SessionWatch
 
         if (watched.LeftAt is not null) return;
 
-        // State C's moving work keeps it working (§1.2): its quiet is only work that shows nothing.
+        // State C's moving work keeps it working (§1.2), and its count starts again from it: its quiet is three times its bound with no
+        // moving work (§1.5), never since the turn's last line.
         if (waitsOnWork && busy == true)
         {
             if (watched.Episode is { } moving) steps.Add(Over(watched, moving, "moving", now));
+            Interlocked.CompareExchange(ref watched.HeardTicks, now.Ticks, heard);
             return;
         }
 

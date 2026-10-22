@@ -85,4 +85,46 @@ internal static class WatchStandIn
             """);
         return script;
     }
+
+    /// <summary>
+    /// Write the protocol door's stand-in into <paramref name="folder"/>, run with <c>node</c> under an <c>acp-stub</c> adapter. Its one cue,
+    /// <c>background-compute &lt;for&gt;</c>: it takes its quest, starts a child beside itself that writes a line and computes for
+    /// <c>for</c>, announces it as the adapter does, says it will pick up when it finishes and ends its turn; once the child ends it
+    /// finishes its quest. It answers every request after, and never exits on its own (state C, then DONEEND1's end).
+    /// </summary>
+    public static string WriteAcp(string folder)
+    {
+        var script = Path.Combine(folder, "watch-acp-stand-in.mjs");
+        File.WriteAllText(script, """
+            import { createInterface } from 'node:readline';
+            import { spawn } from 'node:child_process';
+            if (process.argv.includes('--version')) { console.log('stub-harness 1.0.0'); process.exit(0); }
+            if (process.argv.includes('--login-state')) { console.log('logged-in'); process.exit(0); }
+            const [cue = 'background-compute', computeFor = '15000'] = process.argv.slice(2);
+            const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
+            const update = (body) => send({ jsonrpc: '2.0', method: 'session/update', params: { sessionId: 'acp-1', update: body } });
+            const respond = (body) => fetch(`${process.env.DAORIS_SERVICE_URL}/api/quests/q1/respond`, {
+              method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+            setInterval(() => {}, 1000);
+            for await (const line of createInterface({ input: process.stdin })) {
+              const frame = JSON.parse(line);
+              if (frame.method === 'initialize') {
+                send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, agentCapabilities: {} } });
+              } else if (frame.method === 'session/new') {
+                send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: 'acp-1' } });
+              } else if (frame.method === 'session/prompt') {
+                await respond({ action: 'take' });
+                const work = spawn(process.execPath, ['-e',
+                  `console.log('computing'); const end = Date.now() + ${Number(computeFor)}; while (Date.now() < end) {}`], { stdio: 'ignore' });
+                work.on('exit', () => { respond({ action: 'done', reason: 'landed' }); });
+                update({ sessionUpdate: 'async_task_spawned', asyncTaskId: 't1', name: 'Run the tests', taskType: 'shell', canStop: true });
+                update({ sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: `${cue}: the tests run in the background; I'll pick up when they finish.` } });
+                send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } });
+              } else if (frame.id !== undefined && frame.method) {
+                send({ jsonrpc: '2.0', id: frame.id, result: {} });
+              }
+            }
+            """);
+        return script;
+    }
 }

@@ -115,6 +115,56 @@ public sealed class SessionWatchProcessTests : IDisposable
         Assert.DoesNotContain("\"watch.quiet\"", Events(), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Case 8's first half (state C): a protocol-door session backgrounds a child that writes and computes and ends its turn, waiting on
+    /// its own work: past 5Q, nothing, since its work moves. Its quest done, it ends as it finished.
+    /// </summary>
+    [Fact]
+    public async Task A_session_waiting_on_its_own_background_work_that_moves_is_left_alone_past_five_times_its_bound()
+    {
+        await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
+        service.Took = true;
+        var config = DriverConfig.Empty with
+        {
+            Drivable = ["engine"],
+            Adapter = "acp-stub",
+            TestBound = 3,
+            PollSeconds = 1,
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", WatchStandIn.WriteAcp(_home), "background-compute", "60000"] },
+        };
+        var adapters = AdapterSet.Built();
+        var driver = new Daoris.Driver.Driver(
+            new ServiceClient(service.Url, null), config, adapters, _home, processes: new SessionProcesses(),
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+        // The machine's clock, its bounds short: a moved clock would read a second of CPU over minutes of it as idle. Q is ten
+        // seconds, so its work computing for a minute is past five times it, and its end once its quest is done comes within 3Q.
+        driver.Watch.Quiet = TimeSpan.FromSeconds(10);
+        driver.Watch.Window = TimeSpan.FromSeconds(1);
+        var row = false;
+        using var watching = new CancellationTokenSource();
+        var looking = Task.Run(async () =>
+        {
+            while (!watching.IsCancellationRequested)
+            {
+                row |= driver.Watch.RowOf("s1") is not null;
+                await Task.Delay(200);
+            }
+        });
+
+        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(180));
+        await watching.CancelAsync();
+        await looking;
+
+        Assert.Equal("completed", service.Session("s1")["state"]!.GetValue<string>());
+        Assert.False(row, "a row came for work that moved");
+        // No mark while its work moved: one may come only once the session is winding down after its quest's done, quiet for Q there.
+        var lines = Events().Split('\n');
+        var ended = Array.FindIndex(lines, line => line.Contains("its quest no longer waits on its background work", StringComparison.Ordinal));
+        var marked = Array.FindIndex(lines, line => line.Contains("\"watch.quiet\"", StringComparison.Ordinal));
+        Assert.True(ended >= 0, "the session never said its work's end");
+        Assert.True(marked < 0 || marked > ended, "it was marked quiet while its work moved");
+    }
+
     private string Events()
     {
         var path = DaorisHome.Entry(_home, HomeEntry.Sessions, "s1.events.jsonl");
