@@ -2250,6 +2250,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             Ask = Text(session, "ask"),
             // What a helper may be asked of, and where its rule resolves (MIXAGENT2a-ii): served on loopback with the record.
             Serves = Text(session, "serves"),
+            // A partner's piece (COAGENT1b, the co-agent design §7.3): served on loopback beside its serves.
+            Piece = Text(session, "piece") is { Length: > 0 } piece ? piece : null,
             Opinion = Text(session, "opinion"),
             // The session it continues, why and who asked (MIXAGENT1a-iii): served on loopback with the record, for the head to say.
             From = Text(session, "from"),

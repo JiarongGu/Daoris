@@ -380,6 +380,12 @@ public sealed record PriorSession(
     /// <summary>The session this one answers, when it is a helper's record (MIXAGENT2a-i's <c>serves</c>); null for every other.</summary>
     public string? Serves { get; init; }
 
+    /// <summary>
+    /// The piece this one writes, the ask's id, when it is a partner's record (COAGENT1b, the co-agent design §7.3): beside its
+    /// <see cref="Serves"/>, which names its lead; null for every other, and from a host before the field.
+    /// </summary>
+    public string? Piece { get; init; }
+
     /// <summary>The second opinion this one reads for, when it is a reviewer's record; null for every other.</summary>
     public string? Opinion { get; init; }
 

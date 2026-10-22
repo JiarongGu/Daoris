@@ -95,16 +95,21 @@ public sealed class CapCountTickTests : IDisposable
         Assert.Equal(["q1"], runs.Started);
     }
 
-    /// <summary>What the driver started still counts: a running intake, a helper and a reviewer each hold the place of a quest.</summary>
+    /// <summary>
+    /// What the driver started still counts: a running intake, a helper, a partner (COAGENT1b: its record serves its lead and carries
+    /// its piece) and a reviewer each hold the place of a quest.
+    /// </summary>
     [Theory]
     [InlineData("intake")]
     [InlineData("helper")]
+    [InlineData("partner")]
     [InlineData("reviewer")]
     public async Task A_running_intake_helper_or_reviewer_still_takes_a_slot_from_the_quests_a_look_starts(string kind)
     {
         _ledger.Working(
             "x1", kind == "intake" ? "ask #a1" : "tools", Tree("held"),
-            ask: kind == "intake" ? "a1" : null, serves: kind == "helper" ? "s9" : null, opinion: kind == "reviewer" ? "o1" : null);
+            ask: kind == "intake" ? "a1" : null, serves: kind is "helper" or "partner" ? "s9" : null, opinion: kind == "reviewer" ? "o1" : null,
+            piece: kind == "partner" ? "pc000001" : null);
         _ledger.Publish("q1", "engine");
         var (driver, runs) = Driver(Config(cap: 1));
 

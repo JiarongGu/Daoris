@@ -467,6 +467,11 @@ export type Session = {
    */
   serves?: string | null;
   /**
+   * The piece a partner's record writes, the ask's id (COAGENT1b, D199 point 1): kept only beside `serves`, which names its lead.
+   * This machine's own, as `serves` is: a teammate's record and a browser have none.
+   */
+  piece?: string | null;
+  /**
    * The session this one continues (MIXAGENT1a-iii, D163's note): a conversation handed over, or a quest's carry-on of a session
    * handed over or cut off by a limit. Why (`press`, `near`, `limit`, `agent` or `curve`) and who asked (`person`, `daoris` or
    * `agent`) come with it, the three kept together or not at all. This machine's own, as the opinion is: null on any other

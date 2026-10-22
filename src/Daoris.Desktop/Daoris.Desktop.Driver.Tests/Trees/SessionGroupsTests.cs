@@ -1102,6 +1102,30 @@ public sealed class SessionGroupsTests
         Assert.Equal(["ask:a/app", "session:s2/engine", "session:s3/engine"], records.Select(record => record.EntryKey));
     }
 
+    /// <summary>
+    /// COAGENT1b (the co-agent design §7.3): a record's <c>serves</c> and <c>piece</c> as the service answers them on loopback. A
+    /// partner carries both; a helper serves alone; a piece with no lead is no partner, as the service keeps a piece only beside
+    /// <c>serves</c>; a host from before, or a teammate's record, answers neither.
+    /// </summary>
+    [Fact]
+    public void The_records_carry_a_partners_lead_and_piece_kept_together()
+    {
+        var partner = Record("s1", "working", kind: "chat");
+        partner["serves"] = "lead1";
+        partner["piece"] = "pc000001";
+        var helper = Record("s2", "completed", kind: "chat");
+        helper["serves"] = "lead1";
+        var stray = Record("s3", "completed", kind: "chat");
+        stray["piece"] = "pc000002";
+        var json = new JsonArray(partner, helper, stray, Record("s4", "completed", "q1")).ToJsonString();
+
+        var records = SessionRecords.Parse(json);
+
+        Assert.Equal<string?>(["lead1", "lead1", null, null], records.Select(record => record.Serves));
+        Assert.Equal<string?>(["pc000001", null, null, null], records.Select(record => record.Piece));
+        Assert.Equal([true, false, false, false], records.Select(record => record.Partner));
+    }
+
     [Fact]
     public void The_evidences_ask_reads_as_two_entries_and_its_intake_is_off_the_list()
     {
