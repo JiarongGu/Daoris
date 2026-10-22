@@ -19546,3 +19546,12 @@ failing first, and no window was looked at. Detail: D197's POOL1b note. On Opus.
 **Outcome** 2026-10-22: each conversation keeps what its Applies published by id (`HELP_PUBLISHED`), shown under its head with each
 one's live state from the pushed lists, a row opening its record on Quests; an Apply's result is Daoris's word, never the person's.
 Detail: the Ask Daoris design §9 item 12 (with Codex's read), D89's ASKQUESTS1 note. On Opus.
+
+## BINDRACE1 — the run binding's race behind a FLAKE1 sighting (2026-10-22)
+
+> From FLAKE1: `WorkflowRunBindingTests.Two_starts_of_one_run_at_once_both_take_under_one_binding` (FABRIC-CUTOVER1g's race, once in the whole fast half beside three builders, green alone six times; again 2026-10-22 in POOL1b's fast half on the install).
+
+**Outcome** 2026-10-22: fixed in the product. The losing start read the winner's binding while Windows' move still held it open for
+deletion, and `File.ReadAllText` was refused, so it said `Unread` and held. Every read of a binding file now goes through
+`AtomicFile.ReadText`, which shares deletion. Reproduced every run by `MoveHold`; three tests seen failing first. The driver's other
+plain readers are READSHARE1. Detail: FIX-LOG 2026-10-22 (BINDRACE1). On Opus.
