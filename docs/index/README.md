@@ -50,7 +50,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/help/AskConversation.tsx` | 57 | 1062 |
 | `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 96 | 1933 |
 | `src/Daoris.Web/src/menus/commands.ts` | 43 | 824 |
-| `src/Daoris.Web/src/projects/ProjectsView.test.tsx` | 103 | 1807 |
+| `src/Daoris.Web/src/projects/ProjectsView.test.tsx` | 103 | 1809 |
 | `src/Daoris.Web/src/projects/ProjectsView.tsx` | 44 | 781 |
 | `src/Daoris.Web/src/projects/setup/RepositorySetup.test.tsx` | 45 | 787 |
 | `src/Daoris.Web/src/quests/QuestPage.tsx` | 59 | 1062 |
