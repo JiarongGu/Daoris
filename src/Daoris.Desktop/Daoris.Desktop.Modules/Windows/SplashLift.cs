@@ -29,9 +29,17 @@ public sealed class SplashLift
 
     private readonly TaskCompletionSource _said = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly Stopwatch _up = Stopwatch.StartNew();
+    private readonly StartStages? _stages;
+
+    /// <param name="stages">The start's timer (STARTFAST1), told the page's word and the lift; none by default.</param>
+    public SplashLift(StartStages? stages = null) => _stages = stages;
 
     /// <summary>The page's word: its first screen has its data. From any thread, any number of times.</summary>
-    public void PageSaid() => _said.TrySetResult();
+    public void PageSaid()
+    {
+        _stages?.Mark(StartStages.Page);
+        _said.TrySetResult();
+    }
 
     /// <summary>
     /// Wait for the page's word or <paramref name="bound"/>, whichever comes first, and write which lifted the splash
@@ -46,6 +54,7 @@ public sealed class SplashLift
         var said = first == _said.Task;
         if (said) log.Info("splash.lifted", ("by", "page"), ("ms", _up.ElapsedMilliseconds));
         else log.Warn("splash.lifted", ("by", "bound"), ("ms", _up.ElapsedMilliseconds));
+        _stages?.Lifted(said ? "page" : "bound");
         return said;
     }
 }

@@ -30,6 +30,9 @@ internal static class Program
     [STAThread]
     private static void Main(string[] args)
     {
+        // The start, timed stage by stage from the process's start (STARTFAST1): one `start.stages` line, a stopwatch's cost.
+        var stages = StartStages.Begin();
+
         // Out of `app/` before anything is started (APPCWD1, D139 §5): every child that names no working folder inherits this
         // process's, and one standing in `app/` holds the swap's move of it for as long as it lives.
         if (InstallHome.WorkingFolder(AppContext.BaseDirectory, Environment.CurrentDirectory) is { } stand)
@@ -52,6 +55,7 @@ internal static class Program
         // scratch home stays the dev loop's. An install's older home is moved into D172's places here too
         // (HOMELAYOUT3), before anything resolves a path: the log and the window's memory among them.
         var home = InstallHome.Establish(AppContext.BaseDirectory);
+        stages.Mark(StartStages.Home);
 
         // The machine log (LOG1, D94), opened as soon as there is a home to put it in, so an exception
         // nothing else catches is written before the process ends; with no home it writes nothing. Then
@@ -59,6 +63,7 @@ internal static class Program
         using var log = Daoris.Driver.MachineLog.Open("desktop");
         log.WatchUnhandled();
         InstallHome.Log(home, log);
+        stages.Log = log;
         var started = DateTimeOffset.UtcNow;
 
         // 🔴 No home is a sentence, not a silent exit (REV3). A workspace build started with no
@@ -140,6 +145,7 @@ internal static class Program
         // single-instance guard and the engine say as information: the engine's line is the only trace of a launch the guard
         // let through and Chromium's own singleton turned away.
         builder.Services.AddSingleton(log);
+        builder.Services.AddSingleton(stages);
         builder.Services.AddMachineLog(log,
             typeof(SingleInstanceGuard).FullName!, typeof(Shenora.Chromium.ChromiumEngine).FullName!);
 
@@ -298,6 +304,7 @@ internal static class Program
             var pipe = app.Services.GetRequiredService<InstancePipe>();
             pipe.Draining = () => updater.Draining;
             loop.Pipe = pipe;
+            loop.Stages = stages;
             // Its look may start the launcher for a build said *now*: through the start gate, off this thread
             // (UPDATERELAUNCH1). The drain is set before that wait, so before the loop starts; a failed look is said as the
             // updater's own loop says one.
@@ -314,10 +321,13 @@ internal static class Program
                 if (change.Mode == Microsoft.Win32.PowerModes.Resume) power.Raise();
             };
             loop.Start();
+            stages.Mark(StartStages.Driver);
         });
         builder.OnStopping(app =>
         {
             log.Info("app.stopped", ("uptimeSeconds", (long)(DateTimeOffset.UtcNow - started).TotalSeconds));
+            // A start whose stages never all came (a host that never answered, a pipe another loop's lease kept) is said by now.
+            stages.Write();
             // The secondary windows first, and disposed rather than abandoned: their threads are
             // BACKGROUND, so an unwaited exit kills them before the geometry saves their own
             // FormClosed handlers run. Bounded, so a wedged window cannot hang shutdown.
