@@ -75,6 +75,9 @@ public sealed class SensitiveGate(
         (new Regex(@"[A-Za-z]:(?:\\{1,2}|/)Users(?:\\{1,2}|/)[A-Za-z0-9._-]+", RegexOptions.IgnoreCase), "Windows user-home absolute path"),
         (new Regex(@"/(?:home|Users)/[a-z][a-z0-9._-]+", RegexOptions.IgnoreCase), "Unix home absolute path"),
         (new Regex(@"\b(?:ghp|gho|ghs|ghu)_[A-Za-z0-9]{20,}"), "GitHub token"),
+        // GITAUTH1a (the git-auth design §10): GitHub's fine-grained token and GitLab's personal one, which git's words are cut of too.
+        (new Regex(@"\bgithub_pat_[A-Za-z0-9_]{20,}"), "GitHub fine-grained token"),
+        (new Regex(@"\bglpat-[A-Za-z0-9_\-]{20,}"), "GitLab token"),
         (new Regex(@"\bsk-[A-Za-z0-9]{20,}"), "API secret key"),
         (new Regex(@"\bAKIA[0-9A-Z]{16}\b"), "AWS access key id"),
         (new Regex(@"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"), "private key block"),
