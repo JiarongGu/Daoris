@@ -26,10 +26,11 @@
     {
       "id": "driver",
       "title": "Driver library",
-      "summary": "The driver library, its headless host and their tests: the loop and planner, trees and landing, plugins and hooks, help, the toolchain.",
+      "summary": "The driver library, its headless host, its git doors' program and their tests: the loop and planner, trees and landing, plugins and hooks, help, the toolchain.",
       "paths": [
         "src/Daoris.Desktop/Daoris.Desktop.Driver/**",
         "src/Daoris.Desktop/Daoris.Desktop.Driver.Host/**",
+        "src/Daoris.Desktop/Daoris.Desktop.GitDoor/**",
         "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/**"
       ]
     },

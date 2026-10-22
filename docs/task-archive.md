@@ -19651,3 +19651,14 @@ captured whole refuses the ask in a `capture-*` code, said on the page in en and
 capture; `helper_ask`, its receipt and the co-working skill say the helper reads at the turn's end. Proof with stand-ins only:
 `HelperCaptureTests`, `HelperCaptureProcessTests` (git half), `HelperLookTests`, `HelperProcessTests`, the web's `HelperAsks` test.
 The install proof (Codex as a Claude Code session's helper, M1 and M4) is the parent's after the republish. Detail: D199's COAGENT1a note.
+
+## CI1 — the local CI runner (2026-10-22, D180)
+
+> - **CI1 — the local CI runner** (tools; after GATESLIM1; D180 point 6). `node tools/merge-branch.mjs --ci [<commit>]` gates main's tip in `local/gate-tree`, never the main checkout: the gates reached by the paths changed since the last green CI commit (kept under `local/`), the light lane wider when the machine is idle (measured, not guessed), the `Process` lane by class group; a newer tip supersedes a run not yet started; a status file (`local/scratch/ci-<sha7>/status.json`) with each gate's verdict and log, which the parent reads and a later page may. Proof: the merge test's cases (the reach since the last green run; a superseded tip; the status file's shape), and one run on main's tip with its wall beside `--full --beside`'s.
+
+**Outcome** 2026-10-22: `node tools/merge-branch.mjs --ci [<commit>]`, `--ci --watch` and `--ci --stop` gate main's tip in the gate
+tree, running only what its verdicts lack (each gate's own last pass is its base; a failure stays owed until it passes); each run
+writes `local/scratch/ci-<sha7>/status.json`; the light lane is 3 or 5 wide by a measured idle reading, and heavy light gates run
+beside a Process half where MEMGATE1 finds the memory; `publish:desktop --from-gated` stages a CI-green commit holding the tree's lock.
+The dispatch skill's step 6 change is held for the owner (AGENTDEFS1). Detail: D180's CI1 note, commits `ffbea6730`..`e95389f03`.
+The proof run on main's tip beside `--full --beside`'s wall is the parent's. On Opus.
