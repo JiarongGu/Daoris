@@ -50,7 +50,30 @@ internal sealed class TreeGates(TreeContext context)
         var review = await ReviewGate.ReadAsync(world, config, full, repository, workspace, quest, ct, process, tip).ConfigureAwait(false);
         var opinion = await OpinionAsync(full, repository, workspace, quest, session, world, review, OpinionRules.Landing, ct, process, tip)
             .ConfigureAwait(false);
-        return new LandingGate(opinion, review) { Workflow = workflow };
+        var gate = new LandingGate(opinion, review) { Workflow = workflow };
+        return await GraphAsync(gate, full, repository, process, tip, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// The graph's part of the gate for a run bound to a graph version (FABRIC-CUTOVER1d; D190 point 4, the cutover design §4): the run's record
+    /// read as the runtime keeps it, with no lease and never written, and judged against the door's tree, the commit it would land (the tip it
+    /// pinned, else its <c>HEAD</c>) and the opinion and look parts it read a moment before (<see cref="GraphGate"/>). Where it lets the work go,
+    /// the gate is pinned to the commit <c>handed</c> is bound to, so every landing path lands that commit or nothing. Any other run's gate is
+    /// returned as it is.
+    /// </summary>
+    private async Task<LandingGate> GraphAsync(LandingGate gate, string full, string repository, WorkflowProcess process, string? tip, CancellationToken ct)
+    {
+        if (process is not { Graph: { } graph, Run: { } run, Binding.Digest: { } digest, Problem: null, Unread: null }) return gate;
+        var commit = tip ?? await ReviewGit.HeadAsync(full, ct).ConfigureAwait(false);
+        var branches = context.Grown.Entries();
+        var unit = branches.LastOrDefault(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(Path.GetFullPath(Path.Combine(context.TreesRoot, entry.Workspace, entry.Repository, Path.GetFileName(entry.Branch))),
+                Path.TrimEndingDirectorySeparator(full), StringComparison.OrdinalIgnoreCase))?.Unit;
+        var judged = GraphGate.Judge(new GraphGateFacts(run, graph, digest, new NodeRecordFiles(context.Home, () => false).Read(RunUnits.IdOf(run)))
+        {
+            Unit = unit, Commit = commit, Branches = branches, OpinionLetsGo = gate.Opinion.LetsGo, ReviewLetsGo = gate.Review.LetsGo,
+        });
+        return gate with { Graph = judged, Tip = judged.LetsGo ? judged.Commit : gate.Tip };
     }
 
     /// <summary>

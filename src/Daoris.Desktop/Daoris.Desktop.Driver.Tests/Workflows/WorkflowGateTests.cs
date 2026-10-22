@@ -731,6 +731,116 @@ public sealed class WorkflowGateTests : IDisposable
         Assert.Equal((WorkflowGateStates.CannotStart, false), (held.State, held.LetsGo));
     }
 
+    // ——— the landing gate's graph part, read from the run's record (FABRIC-CUTOVER1d; the cutover design §4's table)
+
+    private const string Commit = "1111111111111111111111111111111111111111";
+
+    private const string Moved = "2222222222222222222222222222222222222222";
+
+    private static readonly string RunUnit = RunUnits.IdOf("q7");
+
+    /// <summary>A person's task, a go-ahead and the look before the landing, the claim first: a run's graph as its record holds it.</summary>
+    private static readonly NodeGraph Before = Graph("""
+        [{"id":"claim","kind":"claimed","version":1,"reach":"observed"},
+         {"id":"qa","kind":"human","version":1,"reach":"pressed","options":{"brief":"Try the release"}},
+         {"id":"see","kind":"look","version":1,"reach":"observed"},
+         {"id":"land","kind":"handed","version":1,"reach":"observed"}]
+        """);
+
+    private static readonly string BeforeDigest = NodeGraphs.Digest(Before);
+
+    /// <summary>A status of the run's record, bound where <paramref name="observes"/> is given to that branch unit at <paramref name="at"/>.</summary>
+    private static NodeStatus Status(string node, string state, string? observes = null, string? at = Commit, string? digest = null) =>
+        new(RunUnit, node, state)
+        {
+            Attempt = observes is null ? 0 : 1,
+            Binding = observes is null ? null : new NodeAcceptance(RunUnit, at, digest ?? BeforeDigest, node, 1, 1) { Subject = observes },
+        };
+
+    private static NodeRecord Record(params NodeStatus[] statuses) =>
+        new(RunUnit) { Statuses = statuses.ToDictionary(status => status.Node, StringComparer.Ordinal) };
+
+    /// <summary>The door's facts: the run's record, its tree on branch unit <c>unit-b1</c> at <see cref="Commit"/>, and its own gates letting go.</summary>
+    private static GraphGateFacts Door(NodeRecord? record) => new("q7", Before, BeforeDigest, record)
+    {
+        Unit = "unit-b1", Commit = Commit,
+        Branches = [new GrownBranch("web-app", "work", "daoris/s1", "main", "base", null, At) { Unit = "unit-b1" },
+                    new GrownBranch("web-app", "work", "daoris/s2", "main", "base", null, At.AddHours(1)) { Unit = "unit-b2" }],
+        OpinionLetsGo = true, ReviewLetsGo = true,
+    };
+
+    private static NodeRecord Settled(NodeStatus handed) => Record(
+        Status("claim", NodeStates.Reached, "quest:q7"), Status("qa", NodeStates.Skipped), Status("see", NodeStates.Reached, "unit-b1"), handed);
+
+    /// <summary>
+    /// FABRIC-CUTOVER1d (the cutover design §4): the door lands only where the record holds <c>handed</c> active in this run's scope, bound to the
+    /// branch the door lands and, as its revision, the commit it would land; it never evaluates the record itself. Each other row holds with its
+    /// sentence, and only a judgement not made yet asks the loop for a whole pass that the press waits for.
+    /// </summary>
+    [Fact]
+    public void The_graph_part_lands_only_where_the_last_pass_made_handed_active_at_the_doors_commit()
+    {
+        var lands = GraphGate.Judge(Door(Settled(Status("land", NodeStates.Active, "unit-b1"))));
+        Assert.Equal((GraphGateStates.Lands, true, Commit), (lands.State, lands.LetsGo, lands.Commit));
+        Assert.False(lands.AsksPass);
+
+        // Active at another commit (a commit made since the pass judged it), or ready, or a record not judged yet, or another run's scope.
+        foreach (var record in new[]
+                 {
+                     Settled(Status("land", NodeStates.Active, "unit-b1", at: Moved)), Settled(Status("land", NodeStates.Ready)), Record(),
+                     Settled(Status("land", NodeStates.Active, "unit-b1", digest: "gph-another")),
+                 })
+        {
+            var notJudged = GraphGate.Judge(Door(record));
+            Assert.Equal((GraphGateStates.NotJudged, false, true, true), (notJudged.State, notJudged.LetsGo, notJudged.AsksPass, notJudged.PressWaits));
+            Assert.Equal("Daoris has not judged run q7's graph at `11111111` yet: its next look does, and this asks for it now.", notJudged.Says);
+        }
+
+        var unread = GraphGate.Judge(Door(null));
+        Assert.Equal((GraphGateStates.Unread, false, false), (unread.State, unread.LetsGo, unread.AsksPass));
+        Assert.Equal("Run q7's node record does not read, so its graph is judged by nobody until a person mends it, and nothing lands for it.", unread.Says);
+
+        var stopped = GraphGate.Judge(Door(Settled(Status("land", NodeStates.Stopped) with { By = NodeCause.Person, Words = "not this release" })));
+        Assert.Equal((GraphGateStates.Stopped, false, false), (stopped.State, stopped.LetsGo, stopped.AsksPass));
+        Assert.Equal("You stopped `land` with your words, \"not this release\", so run q7 does not land.", stopped.Says);
+
+        // The door's tree is an earlier session's: the run's newest session's branch is the one its graph judges.
+        var elsewhere = GraphGate.Judge(Door(Settled(Status("land", NodeStates.Active, "unit-b2"))));
+        Assert.Equal((GraphGateStates.Elsewhere, false, false), (elsewhere.State, elsewhere.LetsGo, elsewhere.AsksPass));
+        Assert.Equal("This work is carried by run q7's newest session, on `daoris/s2`, whose branch its graph judges, and lands with it.", elsewhere.Says);
+
+        // A tree opened after the branch the record judged is newer work its next pass reads.
+        Assert.Equal(GraphGateStates.NotJudged, GraphGate.Judge(Door(Settled(Status("land", NodeStates.Active, "unit-b1"))) with { Unit = "unit-b2" }).State);
+    }
+
+    /// <summary>
+    /// FABRIC-CUTOVER1d: a person's task before <c>handed</c> holds the landing, *Accept…* included, naming it in the words the run's view gives
+    /// its state and the door that passes it over; the loop is asked for a pass, but the press does not wait on one. A look the record has not seen
+    /// answered, where the door's own gate now lets it go, is a judgement not made yet.
+    /// </summary>
+    [Fact]
+    public void A_node_before_handed_holds_the_landing_naming_it_and_a_gate_answered_since_the_pass_asks_for_one()
+    {
+        var task = GraphGate.Judge(Door(Record(Status("claim", NodeStates.Reached, "quest:q7"), Status("qa", NodeStates.Ready),
+            Status("see", NodeStates.Reached, "unit-b1"), Status("land", NodeStates.Blocked))));
+        Assert.Equal((GraphGateStates.Waits, false, true, false), (task.State, task.LetsGo, task.AsksPass, task.PressWaits));
+        Assert.Equal(("qa", NodeKinds.Human), (task.Node, task.Kind));
+        Assert.Equal("Run q7's graph waits on `qa` (human) before `land`: Ready: nothing before it holds it. "
+            + "`daoris-driver workflow skip q7 qa \"…\"` passes it over with your words.", task.Says);
+
+        var gate = new LandingGate(new OpinionGateState(OpinionGateStates.None, "web-app"),
+            new ReviewGateState(ReviewStates.None, new ReviewDecision(ReviewLevels.Nothing, null) { Repository = "web-app" })) { Graph = task };
+        Assert.Equal((AutoLandingCode.Refused, task.Says), (gate.Refusal!.Refusal, gate.Refusal.Message));
+        Assert.Equal([$"trees: {task.Says}"], LandingGateWords.Plan(gate));
+
+        // The look still active on the record while the door's review now lets it go: the person's Reviewed came after the last pass.
+        var looked = Record(Status("claim", NodeStates.Reached, "quest:q7"), Status("qa", NodeStates.Skipped),
+            Status("see", NodeStates.Active, "unit-b1"), Status("land", NodeStates.Blocked));
+        Assert.Equal(GraphGateStates.NotJudged, GraphGate.Judge(Door(looked)).State);
+        var waiting = GraphGate.Judge(Door(looked) with { ReviewLetsGo = false });
+        Assert.Equal((GraphGateStates.Waits, "see"), (waiting.State, waiting.Node));
+    }
+
     [Theory]
     [InlineData("not JSON")]
     [InlineData("{}")]

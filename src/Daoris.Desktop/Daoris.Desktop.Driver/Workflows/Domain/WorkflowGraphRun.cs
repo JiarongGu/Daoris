@@ -253,6 +253,23 @@ public static class WorkflowGraphRuns
     }
 
     /// <summary>
+    /// What the run's view says of one node standing at <paramref name="status"/>, its subject unnamed (FABRIC-CUTOVER1d): the words a landing door
+    /// holds with where <c>handed</c> waits on it (<see cref="GraphGate"/>). Not reached says so.
+    /// </summary>
+    public static string Said(NodeDeclaration node, NodeStatus status)
+    {
+        var (state, detail) = StateOf(node, status.State);
+        var step = new WorkflowRunStep(Cell(node, null), state, detail)
+        {
+            Node = node.Kind,
+            Code = status.State == NodeStates.Skipped ? status.By : status.Code,
+            Words = status.State is NodeStates.Skipped or NodeStates.Rejected or NodeStates.Stopped ? status.Words
+                : node.Kind == NodeKinds.GoAhead ? NodeOptions.Text(node, "act") : null,
+        };
+        return WorkflowRunWords.Said(step) ?? "Not reached yet.";
+    }
+
+    /// <summary>
     /// A node's state on the record as a run's step says it, and its detail (<see cref="WorkflowGraphDetails"/>): the one table the drawing
     /// reads, held by <c>WorkflowGraphRunTests</c>. A state this build does not know is said as recorded.
     /// </summary>
