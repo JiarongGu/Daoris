@@ -1086,11 +1086,12 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         """[{"code":"helper.refused-by","values":{"agent":"codex-acp","why":"no-answer"},"text":"Helper codex-acp did not answer."},"""
         + """{"code":"ended.parked-transcript","values":{},"text":"It stopped to ask you."}]""";
 
-    /// <summary>A session that ended waiting on its own helper, as the driver concludes one (HELPERWAIT1).</summary>
-    private async Task<Session> WaitingOnHelper()
+    /// <summary>A session that took its quest and ended waiting on its own helper, as the driver concludes one (HELPERWAIT1).</summary>
+    private async Task<Session> WaitingOnHelper(bool taken = true)
     {
-        var quest = await Publish(title: "Waits on its helper");
+        var quest = await Publish(title: taken ? "Waits on its helper" : "Waits on its helper, untaken");
         var session = await Working(quest, Now);
+        if (taken) await _quests.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddMinutes(1));
         var ended = await _ledger.AdvanceAsync(
             session.Id, "completed", "It asked a helper.", "abc123 landed", null, Now.AddMinutes(10), noteParts: AwaitsHelperParts);
         Assert.Equal(SessionAdvanceRefusal.None, ended.Refusal);
@@ -1143,6 +1144,12 @@ public sealed class SessionLedgerTests : IAsyncLifetime
             (SessionAdvanceRefusal.Terminal, $"Session `{waiting.Id}` has words waiting: it goes on with them, and does not park."),
             (words.Refusal, words.Message));
         Assert.Equal(SessionState.Completed, (await _sessions.FindAsync(waiting.Id))!.State);
+
+        // A park holds its quest (D83): one no longer taken has nothing to park for.
+        var open = await WaitingOnHelper(taken: false);
+        var untaken = await _ledger.AdvanceAsync(open.Id, "awaiting-person", "It stopped to ask you.", null, null, Now.AddMinutes(20));
+        Assert.Equal(SessionAdvanceRefusal.Terminal, untaken.Refusal);
+        Assert.Contains("no longer taken", untaken.Message);
     }
 
     /// <summary>

@@ -784,6 +784,39 @@ public sealed class HelperLookTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 One hand per ask (Fable's read of COWORKUX1, F3): a restart that cut the look between the keep and the state's mark finds the
+    /// answer already handed, its word still waiting on the asker or a turn of the asker's already opened with it, and marks it handed
+    /// without handing it twice.
+    /// </summary>
+    [Theory]
+    [InlineData("waiting")]
+    [InlineData("taken")]
+    public async Task An_answer_handed_before_a_restart_cut_its_mark_is_never_handed_twice(string where)
+    {
+        Ask("a1");
+        Answered();
+        var host = Host();
+        if (where == "waiting")
+        {
+            host.Set("s1", "said", new JsonArray(new JsonObject
+            {
+                ["id"] = "hp-w9", ["text"] = "Another agent answered.", ["at"] = At.ToString("O"), ["files"] = new JsonArray(), ["reopens"] = true,
+                ["helper"] = Helper,
+            }));
+        }
+        else
+        {
+            new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).Append(
+                "s1", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Helper = Helper, Id = "hp-w9", Text = "Another agent answered." });
+        }
+
+        await Look(Driver(host, pass: null));
+
+        Assert.Empty(host.HelperHands);
+        Assert.Equal("hp-w9", Files.ReadState("a1")!.Handed);
+    }
+
+    /// <summary>
     /// Point 1's input: a turn that ends holding its quest waits on its helper where its agent has an ask of its own still open, and no
     /// question its last turn asked the person; an ask of the person's, another session's, or one refused or handed is no such ask.
     /// </summary>

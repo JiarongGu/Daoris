@@ -207,6 +207,17 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
             : $"helper  ask `{ask.Id}` is answered, and waits for session {ask.Asker}'s turn to end: never into a step in flight.");
     }
 
+    /// <summary>
+    /// The word <paramref name="helper"/>'s answer was handed to <paramref name="asker"/> as already, or null: one waiting on its record, else
+    /// the newest <c>user</c> event of its conversation that names the helper (a turn took it). Read only where a hand is about to be made.
+    /// </summary>
+    private string? HandedBefore(PriorSession asker, string helper) =>
+        asker.Said?.FirstOrDefault(word => string.Equals(word.Helper, helper, StringComparison.Ordinal))?.Id
+        ?? (_context.Events.After(asker.Session, 0).Events
+                .LastOrDefault(each => each.Kind == SessionEventKind.User && string.Equals(each.Helper, helper, StringComparison.Ordinal)) is { } taken
+            ? taken.Id ?? "handed"
+            : null);
+
     private void Forget(string ask)
     {
         lock (_heldGate) _held.Remove(ask);
@@ -558,6 +569,17 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         var inbox = ask.Urgent && !conversation && record.Running ? _context.Processes.InboxOf(ask.Asker) : null;
         var nextStep = inbox?.ReachAt(MessageLevel.Urgent) == DrivenReach.NextStep;
         if (!open && !nextStep && (record.Running || record.Parked)) return Held(ask, record, seen);
+
+        // 🔴 One hand per ask (HELPERWAIT1; Fable's F3 on COWORKUX1): the state is marked handed only after the keep, so a restart between
+        // the two finds an answer already handed. Its word is then still waiting on the asker, or a turn of the asker's opened with it
+        // (the go-on's opening and the urgent and conversation doors each keep a `user` event naming the helper before the word leaves
+        // the record): marked handed, never handed twice. Neither found, the keep never happened, and it is handed now.
+        if (HandedBefore(record, state.Helper!) is { } kept)
+        {
+            files.WriteState(state with { Handed = kept });
+            Forget(ask.Id);
+            return Helper(LookClass.Progress, $"helper  ask `{ask.Id}` was handed to session {ask.Asker} already, as word `{kept}`: it is not handed again.");
+        }
 
         var text = state.LastWords
             ? state.Words ?? ""

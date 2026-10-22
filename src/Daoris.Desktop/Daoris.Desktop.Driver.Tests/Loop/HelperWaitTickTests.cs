@@ -97,10 +97,11 @@ public sealed class HelperWaitTickTests : IDisposable
     public async Task A_session_that_asked_a_helper_and_ended_its_turn_waits_on_it_and_goes_on_with_its_answer()
     {
         await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
-        service.Helper(HelperId, "s1");
         var driver = Driver(service, "asks");
 
         await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        // The helper's record, as the host opens it for the pass the stand-in makes (after the asker's, which the stand-in numbers first).
+        service.Helper(HelperId, "s1");
         var waiting = service.Record("s1");
         Assert.True(service.State("s1") == "completed", waiting);
         Assert.Contains("\"code\":\"ended.awaits-helper\"", waiting);
@@ -133,12 +134,12 @@ public sealed class HelperWaitTickTests : IDisposable
     public async Task A_session_parked_on_its_own_helper_before_the_rule_is_handed_the_answer_and_goes_on()
     {
         await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
-        service.Helper(HelperId, "s1");
         var driver = Driver(service, "parks");
 
         var asked = DateTimeOffset.UtcNow;
         await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         Assert.True(service.State("s1") == "awaiting-person", service.Record("s1"));
+        service.Helper(HelperId, "s1");
 
         // What the install held: the agent's ask, made before its turn ended, answered by the helper that read it.
         WriteAsk(asked);

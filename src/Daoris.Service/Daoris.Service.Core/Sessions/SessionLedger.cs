@@ -1522,13 +1522,21 @@ public sealed class SessionLedger(
         };
         if (refused is not null) return new SessionAdvanceOutcome(SessionAdvanceRefusal.Terminal, refused, Session: null);
 
+        // A park holds its quest (D83): one closed or taken elsewhere since it ended has nothing to wait on the person for.
+        if (await quests.FindAsync(session.Quest!, inside).ConfigureAwait(false) is not { Status: QuestStatus.Taken })
+        {
+            return new SessionAdvanceOutcome(
+                SessionAdvanceRefusal.Terminal, $"Session `{id}`'s quest `#{session.Quest}` is no longer taken, so it has nothing to park for.", Session: null);
+        }
+
         if (await sessions.ActiveForAsync(session.Repository, session.Tree, inside).ConfigureAwait(false) is { } holder)
         {
             return new SessionAdvanceOutcome(SessionAdvanceRefusal.Busy, Busy(session.Repository, holder), Session: null);
         }
 
+        // Nothing waits on it (refused above), and this move never clears a word kept meanwhile, as a park's own end would.
         var moved = await sessions
-            .SetStateAsync(id, SessionState.AwaitingPerson, note, evidence: null, transcript: null, now, inside, clearSaid: true, noteParts: noteParts)
+            .SetStateAsync(id, SessionState.AwaitingPerson, note, evidence: null, transcript: null, now, inside, clearSaid: false, noteParts: noteParts)
             .ConfigureAwait(false);
         return new SessionAdvanceOutcome(
             SessionAdvanceRefusal.None,
