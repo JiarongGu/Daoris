@@ -354,7 +354,7 @@ public sealed class RefSnapshotTests
     private static string[][] ByIds =>
     [
         ["merge-base", "--is-ancestor", Main, Work],
-        ["diff", "--no-ext-diff", "--no-renames", "--ignore-submodules=none", "--name-only", "-z", Main, Work],
+        ["--no-optional-locks", "diff", "--no-ext-diff", "--no-renames", "--ignore-submodules=none", "--name-only", "-z", Main, Work],
         ["rev-list", "--count", Work, "--not", Main, Origin],
         ["rev-list", "--count", $"{Main}..{Work}"],
     ];

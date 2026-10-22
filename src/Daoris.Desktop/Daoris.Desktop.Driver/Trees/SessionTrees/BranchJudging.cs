@@ -120,7 +120,7 @@ internal sealed class BranchJudging(TreeContext context, LandedCleanups cleanups
             if (landed || !context.Holds(tree)) return Item(RebaseKind.CheckedOut, tip);
             if (busy.Contains(Normal(tree))) return Item(RebaseKind.InUse, tip);
             if (!Directory.Exists(tree)) return Item(RebaseKind.Unknown, tip, detail: "its tree is gone from disk, and git still names it (`git worktree prune` forgets it)");
-            var (_, dirty, _) = await WorkingTree.GitAsync(tree, ["status", "--porcelain"], ct).ConfigureAwait(false);
+            var (_, dirty, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "status", "--porcelain"], ct).ConfigureAwait(false);
             if (!string.IsNullOrWhiteSpace(dirty)) return Item(RebaseKind.Dirty, tip, detail: $"{dirty.Trim().Split('\n').Length} path(s) uncommitted");
         }
 

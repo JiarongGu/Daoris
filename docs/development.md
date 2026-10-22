@@ -117,6 +117,7 @@ change can reach before handing it back:
 | opens a listener in a test | `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter FullyQualifiedName~LoopbackListensTests` |
 | writes a string that names a workspace, or a `partial` class | `node --test src/Daoris.Cli/test/one-word.test.ts`, and `node tools/partials.mjs` |
 | reads or writes a file in the driver | `node tools/read-shares.mjs` (read a file `AtomicFile` writes through `AtomicFile.ReadText`, `ReadBytes` or `OpenRead`) |
+| asks git for a `status` or a `diff` in the driver | `node tools/optional-locks.mjs` (pass `--no-optional-locks` before the command, so a read takes no `index.lock` in a session's tree) |
 | names an agent's command, a login, or a driver config's `commands` in a test | `node tools/live-logins.mjs` (a script or a stub at a path, never the agent's binary from PATH) |
 
 `node --test` alone is not the workspace's done command. The root `npm test` delegates to the CLI

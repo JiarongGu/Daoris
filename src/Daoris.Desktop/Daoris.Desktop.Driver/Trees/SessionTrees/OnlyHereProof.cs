@@ -70,7 +70,7 @@ internal sealed class OnlyHereProof(TreeContext context, TreeRemovals removals)
 
         if (treeHere)
         {
-            var (statusCode, porcelain, _) = await WorkingTree.GitAsync(full, ["status", "--porcelain", "-z"], ct).ConfigureAwait(false);
+            var (statusCode, porcelain, _) = await WorkingTree.GitAsync(full, ["--no-optional-locks", "status", "--porcelain", "-z"], ct).ConfigureAwait(false);
             if (statusCode == 0)
             {
                 var paths = Changed(porcelain);

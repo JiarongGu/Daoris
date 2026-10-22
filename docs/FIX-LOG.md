@@ -5,6 +5,31 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-23 — Opening Review could take the index lock in a tree its session was writing in (REVIEWLOCK1)
+
+- **Symptom:** found by Fable's GITAPP1 proposal, not seen on a machine. Review reads a session's tree while its agent may be
+  writing there. A read that took the tree's `index.lock` at the moment the agent's `git add` or `git commit` wanted it failed
+  the agent's write with git's "index.lock: File exists".
+- **Root cause:** a `git status`, and a `git diff` against the working tree, refresh the index's stat data. They take
+  `index.lock` to write it back. Review's status (`WorkingTree.UncommittedDiffAsync`), the offer's (`TreeWorkReads.UncommittedOfAsync`)
+  and `WorkingTree.CleanAsync` asked without `--no-optional-locks`, as did 19 other statuses and diffs in the driver. Only the
+  helper capture and the help door passed it. A second cause showed up in a probe with git 2.53: a `git diff` against the
+  working tree refreshes and writes the index whatever `--no-optional-locks` says. `diff --cached` and a diff of two commits do not.
+- **Fix:** all 24 statuses and diffs in the driver pass `--no-optional-locks` before the command. Review's range read
+  (`WorkingTree.RangeAsync`, whose uncommitted range is `HEAD`) also passes `-c diff.autoRefreshIndex=false`. Unrefreshed,
+  git lists a file whose stat data alone moved as `M` in `--raw`, with no `--numstat` count and no patch. `RangeSplit` drops
+  that file: a file that changed always has a count, a binary one `-`. `tools/optional-locks.mjs`, run by `npm run verify`,
+  refuses a status or diff in the driver's sources asked without the flag before its command. A read meant to write marks
+  its line; none does. One worktree diff still refreshes the index: `BranchReplays`' conflict listing (`diff --diff-filter=U`).
+  It runs inside a replay the driver makes in the tree itself, not in a read of a running session's tree.
+- **Verification:** `ReviewLockTests` (real git, a session tree in scratch) makes Review's reads in `SESSION_DIFF`'s order.
+  In one case a stand-in holds the tree's `index.lock`: each read answers, the lock is still the stand-in's, and the
+  stand-in's own commit succeeds once it lets the lock go. In the other the index's stat data is stale: the index's bytes and
+  time are unchanged and no lock is left. With the offer's status flag removed again, that case and the census both fail.
+  `TreeDiffSplitTests` holds the stat-only drop and the read's arguments. The census's test refuses planted cases and passes on
+  the tree. Also green: `TreeDiffTests`, `ReviewBaseTests`, `LandGitCountTests`, and the fast classes whose git stand-ins
+  match on the command (190).
+
 ## 2026-10-23 — The account fold read a stray folder under the agent homes as an agent (POOLSTRAY1)
 
 - **Symptom:** POOL1d found this on the install. The fold at the 13:42 UTC update wrote
