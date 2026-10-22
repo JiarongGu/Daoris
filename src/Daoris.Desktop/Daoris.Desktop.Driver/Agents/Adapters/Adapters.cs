@@ -59,6 +59,12 @@ public sealed record SessionTarget(
     public string? Helper { get; init; }
 
     /// <summary>
+    /// The piece this session writes as a partner (COAGENT1b, D199 point 1): a one-turn session on another agent that serves its lead,
+    /// and no quest, no ask and no opinion. Its spawn carries its own session and its instruction, as a helper's does. Null otherwise.
+    /// </summary>
+    public string? Piece { get; init; }
+
+    /// <summary>
     /// The home the start's tools are read from (ENVSEAM1, D63's seam, TOOLS5): the one the driver's environment names, as the
     /// driver hands it. Null reads this process's <c>DAORIS_HOME</c>.
     /// </summary>
@@ -1449,7 +1455,7 @@ internal static class Spawning
 
         // A reviewer (XAGENT1d) serves another session's work and no quest: its own record, so its connector says its opinion as
         // that session, and its instruction; the quest variables absent, as an intake's are.
-        if (target.Opinion is not null || target.Helper is not null)
+        if (target.Opinion is not null || target.Helper is not null || target.Piece is not null)
         {
             if (target.Session is { } reviewer) info.Environment[IntakeRoom.SessionVariable] = reviewer;
             info.Environment["DAORIS_TARGET"] = TargetPrompt.Compose(target);

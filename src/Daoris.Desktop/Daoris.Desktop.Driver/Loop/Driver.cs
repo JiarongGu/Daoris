@@ -302,6 +302,14 @@ public sealed class Driver(
 
     private DriverHelpers Helpers => LazyInitializer.EnsureInitialized(ref _helpers, () => new DriverHelpers(Context, this));
 
+    private DriverPartners? _partners;
+
+    private DriverPartners Partners => LazyInitializer.EnsureInitialized(ref _partners, () => new DriverPartners(Context, this));
+
+    /// <summary>The pieces on file at a look (COAGENT1b): <see cref="DriverPartners.PiecesAsync"/>.</summary>
+    internal Task<int> PiecesAsync(Snapshot snapshot, int taken, List<string> events, CancellationToken ct) =>
+        Partners.PiecesAsync(snapshot, taken, events, ct);
+
     private DriverIntakes Intakes => LazyInitializer.EnsureInitialized(ref _intakes, () => new DriverIntakes(Context, this));
 
     /// <summary>
@@ -343,6 +351,34 @@ public sealed class Driver(
     {
         get => Context.HelperChoices;
         init => Context.HelperChoices = value;
+    }
+
+    /// <summary>How a piece's agent is chosen and admitted (COAGENT1b): <see cref="PartnerChoice.ChooseAsync"/>, unless a test hands in a choice. Written through to the context.</summary>
+    internal Func<PartnerAsk, PriorSession, CancellationToken, Task<ReviewerChoice>>? PartnerChoices
+    {
+        get => Context.PartnerChoices;
+        init => Context.PartnerChoices = value;
+    }
+
+    /// <summary>How a partner's pass is run (COAGENT1b): <see cref="DriverPartners.PartnerPassAsync"/>, unless a test hands in a stand-in.</summary>
+    internal Func<PartnerPassAsk, ReviewerChoice, CancellationToken, Task<PartnerPassRun>>? PartnerPasses
+    {
+        get => Context.PartnerPasses;
+        init => Context.PartnerPasses = value;
+    }
+
+    /// <summary>How a piece is kept and imported (COAGENT1b): <see cref="PieceKeeper.KeepAsync"/>, unless a test hands in a stand-in.</summary>
+    internal Func<PartnerAsk, PartnerState, CancellationToken, Task<PieceKept>>? PartnerKeeps
+    {
+        get => Context.PartnerKeeps;
+        init => Context.PartnerKeeps = value;
+    }
+
+    /// <summary>How a lead's repository's checkout is read (COAGENT1b), unless a test hands in a stand-in.</summary>
+    internal Func<string, CancellationToken, Task<string?>>? PartnerTrees
+    {
+        get => Context.PartnerTrees;
+        init => Context.PartnerTrees = value;
     }
 
     /// <summary>How a brainstorm's turn is run (BRAINSTORM1a): <see cref="DriverBrainstorms.TurnAsync"/>, unless a test hands in a stand-in.</summary>
@@ -754,6 +790,11 @@ public sealed class Driver(
         var judged = snapshot;
         var taken = passes;
         passes += await Stages.TimeAsync("helpers", () => HelpersAsync(judged, taken, events, ct)).ConfigureAwait(false);
+
+        // The pieces asked of partners (COAGENT1b, D199 points 2 to 4): judged and reserved in the common admission, each started beside
+        // the look in its copy and its strict job, and carried from where it stands to its answer.
+        taken = passes;
+        passes += await Stages.TimeAsync("partners", () => PiecesAsync(judged, taken, events, ct)).ConfigureAwait(false);
 
         // The brainstorms on file (BRAINSTORM1a, D176): each request frozen into its packet for the person to read, and each one the
         // person sent run beside the look, taking a slot under the cap as a pass does.
@@ -3104,7 +3145,7 @@ public sealed class Driver(
         // What the target was composed of, kept beside it on its event with the rules handed beside it (CONTEXT1, D143 point 1);
         // a resume composes nothing, so its record keeps none. Nor a reviewer's (XAGENT1d): its instruction is its own
         // composer's, which the account's sections do not name yet, and an intake's section would say it was one.
-        var account = composed is null || target.Opinion is not null || target.Helper is not null || target.Brainstorm is not null ? null
+        var account = composed is null || target.Opinion is not null || target.Helper is not null || target.Piece is not null || target.Brainstorm is not null ? null
             : rules.Handed is { } rulesHanded ? composed.Account.Beside(rulesHanded)
             : composed.Account;
         // A quest's session keeps the id its harness names, which an answer to a park resumes (ANSWER1a). Never an

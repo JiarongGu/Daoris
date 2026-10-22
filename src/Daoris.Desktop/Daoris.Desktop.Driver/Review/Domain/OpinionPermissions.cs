@@ -40,7 +40,7 @@ public static class OpinionPermissions
     private static readonly string[] Acting =
     [
         "quest_respond", "quest_publish", "go_ahead_ask", "permission_propose", "review_serve", "review_ready", "opinion_answer",
-        "helper_ask", "helper_answer", "channel_post", "channel_read", "handover_propose", "line_read", "knowledge_refresh",
+        "helper_ask", "helper_answer", "partner_answer", "channel_post", "channel_read", "handover_propose", "line_read", "knowledge_refresh",
         "question_ask",
     ];
 

@@ -158,6 +158,13 @@ public sealed record Session(
     public string? Serves { get; init; }
 
     /// <summary>
+    /// The piece this record writes, as a partner (COAGENT1b, D199 point 1): the ask's id under the home's <c>partners</c> box, beside
+    /// <see cref="Serves"/>, which names its lead. Null for every other record, a helper's included.
+    /// </summary>
+    /// <remarks><b>This machine's own, as <see cref="Serves"/> is</b> (D47 §4): no wire carries it, and a caller off this machine is never answered it.</remarks>
+    public string? Piece { get; init; }
+
+    /// <summary>
     /// The session this one continues (MIXAGENT1a-iii, D163 point 4): a conversation handed over, a quest's session carried on
     /// after a hand-over or onto another account after a limit — null for every other session, and for a record from before.
     /// </summary>
@@ -553,6 +560,10 @@ public sealed class SessionStore
         // MIXAGENT2a-i (D163 point 2): the session a helper's record answers. This machine's own, as `opinion` is.
         await SchemaColumns.EnsureAsync(_db, "sessions", "serves", "serves TEXT NULL", ct).ConfigureAwait(false);
 
+        // COAGENT1b (D199 point 1): the piece a partner's record writes. This machine's own, as `serves` is, and a record from
+        // before says none, which is the old reading.
+        await SchemaColumns.EnsureAsync(_db, "sessions", "piece", "piece TEXT NULL", ct).ConfigureAwait(false);
+
         // MIXAGENT1a-iii (D163 point 4): the session a record continues, why and who asked. This machine's own, as `opinion` is,
         // and a record from before says none, which is the old reading. `from_session`, since FROM is SQL's own word (as `limited`).
         await SchemaColumns.EnsureAsync(_db, "sessions", "from_session", "from_session TEXT NULL", ct).ConfigureAwait(false);
@@ -751,7 +762,7 @@ public sealed class SessionStore
         string? baseCommit = null, CancellationToken ct = default, string? ask = null, string? opinion = null,
         string? serves = null, string? from = null, string? fromWhy = null, string? fromBy = null,
         string? entryOrigin = null, string? entryPart = null, bool ownEntry = false, string? helpMode = null,
-        IReadOnlyDictionary<string, string>? access = null) => _db.RunAsync<Session>(async () =>
+        IReadOnlyDictionary<string, string>? access = null, string? piece = null) => _db.RunAsync<Session>(async () =>
     {
         // A why or an asker with no session continued is no link (MIXAGENT1a-iii): the three are kept together or not at all.
         var continues = Blank(from);
@@ -766,6 +777,8 @@ public sealed class SessionStore
             Ask = Blank(ask),
             Opinion = Blank(opinion),
             Serves = Blank(serves),
+            // A piece means nothing without the lead it serves (COAGENT1b): kept together or not at all.
+            Piece = Blank(serves) is null ? null : Blank(piece),
             From = continues,
             FromWhy = continues is null ? null : Blank(fromWhy),
             FromBy = continues is null ? null : Blank(fromBy),
@@ -780,14 +793,15 @@ public sealed class SessionStore
 
         await using var command = _db.Command();
         command.CommandText = $"""
-            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, base_commit, ask, opinion, serves, from_session, from_why, from_by, entry, help_mode, access, revision)
-            VALUES ($id, $quest, $repository, $adapter, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind, $harnessVersion, $profile, $tree, $baseCommit, $ask, $opinion, $serves, $from, $fromWhy, $fromBy, $entry, $helpMode, $access, {NextRevision})
+            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, base_commit, ask, opinion, serves, piece, from_session, from_why, from_by, entry, help_mode, access, revision)
+            VALUES ($id, $quest, $repository, $adapter, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind, $harnessVersion, $profile, $tree, $baseCommit, $ask, $opinion, $serves, $piece, $from, $fromWhy, $fromBy, $entry, $helpMode, $access, {NextRevision})
             """;
         command.Parameters.AddWithValue("$entry", (object?)session.Entry ?? DBNull.Value);
         command.Parameters.AddWithValue("$access", (object?)SessionAccess.Written(session.Access) ?? DBNull.Value);
         // What it was told only: a record told none keeps none, and reads as one from before.
         command.Parameters.AddWithValue("$helpMode", (object?)Blank(helpMode) ?? DBNull.Value);
         command.Parameters.AddWithValue("$serves", (object?)session.Serves ?? DBNull.Value);
+        command.Parameters.AddWithValue("$piece", (object?)session.Piece ?? DBNull.Value);
         command.Parameters.AddWithValue("$from", (object?)session.From ?? DBNull.Value);
         command.Parameters.AddWithValue("$fromWhy", (object?)session.FromWhy ?? DBNull.Value);
         command.Parameters.AddWithValue("$fromBy", (object?)session.FromBy ?? DBNull.Value);
@@ -925,6 +939,19 @@ public sealed class SessionStore
         await using var command = _db.Command();
         command.CommandText = "SELECT * FROM sessions WHERE id = $id";
         command.Parameters.AddWithValue("$id", id);
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
+    }, ct);
+
+    /// <summary>
+    /// This machine's record writing <paramref name="piece"/> (COAGENT1b, D199 point 2): the partner's open is idempotent by the piece's
+    /// id, so a record already open for it is that one. The oldest first, should two ever be.
+    /// </summary>
+    public Task<Session?> ForPieceAsync(string piece, CancellationToken ct = default) => _db.RunAsync<Session?>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = "SELECT * FROM sessions WHERE piece = $piece AND origin IS NULL ORDER BY created LIMIT 1";
+        command.Parameters.AddWithValue("$piece", piece);
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
     }, ct);
@@ -1279,6 +1306,7 @@ public sealed class SessionStore
         Ask = reader.IsDBNull(reader.GetOrdinal("ask")) ? null : reader.GetString(reader.GetOrdinal("ask")),
         Opinion = reader.IsDBNull(reader.GetOrdinal("opinion")) ? null : reader.GetString(reader.GetOrdinal("opinion")),
         Serves = reader.IsDBNull(reader.GetOrdinal("serves")) ? null : reader.GetString(reader.GetOrdinal("serves")),
+        Piece = reader.IsDBNull(reader.GetOrdinal("piece")) ? null : reader.GetString(reader.GetOrdinal("piece")),
         From = reader.IsDBNull(reader.GetOrdinal("from_session")) ? null : reader.GetString(reader.GetOrdinal("from_session")),
         FromWhy = reader.IsDBNull(reader.GetOrdinal("from_why")) ? null : reader.GetString(reader.GetOrdinal("from_why")),
         FromBy = reader.IsDBNull(reader.GetOrdinal("from_by")) ? null : reader.GetString(reader.GetOrdinal("from_by")),

@@ -253,6 +253,22 @@ public sealed partial class McpToolDescriptionTests
     }
 
     /// <summary>
+    /// COAGENT1b: what a partner reads of `partner_answer` says it answers once, that its files are its piece and Daoris reads them, that
+    /// its words are a claim, and that nobody asks it anything after; it names no decision.
+    /// </summary>
+    [Fact]
+    public void The_partner_tool_says_its_files_are_its_piece_and_its_answer_a_claim_said_once()
+    {
+        var answer = string.Join(" ", Descriptions().Where(d => d.Tool == "partner_answer").Select(d => d.Text));
+
+        Assert.Contains("once", answer);
+        Assert.Contains("files you leave", answer);
+        Assert.Contains("claim", answer);
+        Assert.Contains("Nobody can ask you anything after", answer);
+        Assert.DoesNotContain("D199", answer);
+    }
+
+    /// <summary>
     /// MIXAGENT1c: what a session reads of `handover_propose` says its note is its own claim, that the person's rule settles it, and
     /// that it does not end the turn; and Ask Daoris's `hand_propose`, a different tool, says nothing of it.
     /// </summary>
