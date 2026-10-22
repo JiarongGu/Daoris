@@ -26,7 +26,7 @@ public sealed class LaunchedSessionJobProcessTests : IDisposable
 
     public void Dispose()
     {
-        try { Directory.Delete(_root, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(_root);
     }
 
     private static string Cmd => Path.Combine(Environment.SystemDirectory, "cmd.exe");
