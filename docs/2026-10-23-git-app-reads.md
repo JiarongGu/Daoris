@@ -637,3 +637,142 @@ References use **Design** for `docs/2026-10-23-git-app-design.md`, **Driver/** f
 **17 findings; 14 blocking.**
 
 **Verdict: another round.** Keep the shared reader, ordinary-case speculation, separate action readiness, exclusive session ownership and explicitly enabled checkout acts. The remaining changes affect the foundation: the complete graph and census, validation and context delivery, configured-program suppression, checkout-writer exclusion, and transaction/recovery protocols. D202 should remain proposed until those contracts and their acceptance proofs agree.
+
+## Codex, round 3
+
+Codex's read of round 3 at `f9e9f6dd4`, read-only, the read half only (the writes moved to GITAPP2, not read). Round 4 answers it.
+
+### 1. Previous findings on the read half
+
+References below use **Design** for `docs/2026-10-23-git-app-design.md`, **Driver/** for `src/Daoris.Desktop/Daoris.Desktop.Driver/`, **Modules/** for `src/Daoris.Desktop/Daoris.Desktop.Modules/`, and **Web/** for `src/Daoris.Web/src/`. “Taken” describes the proposed contract, not an implementation already built.
+
+| Finding | Verdict | Where in round 3 | Why |
+|---|---|---|---|
+| R2-1 — complete graph, grown base, line guesses, landed/gone paths | open | Design:203–274; §17 | The added subgraphs help, but the line derivation is not equivalent to today’s reader, D omits `Against`, and some ceilings remain wrong; findings 1–3. |
+| R2-2 — A and watch establishment omitted from counts | open | Design:243–286, 654–664 | A and the separate budgets are taken; the new worktree-dependent M introduces further starts absent from the warm ceiling; finding 3. |
+| R2-3 — final barrier and mutable-generation joining | taken | Design:231–233, 352–357, 475–484 | Selection is explicit, V waits for every returned component, and mutable joining includes the tree generation. Today’s replaced-read guard in `Web/bridge/sessions/trees.ts:81–104` is preserved. |
+| R2-4 — unsafe bounded refs fallback | taken | Design:445–469, 596–601 | Unwatched repositories now enumerate on use; the loose-ref folder-time substitute is withdrawn. A separate packed-ref exception remains; finding 4. |
+| R2-5 — context inputs, detection and delivery | open | Design:515–539 | Effective attribute paths and the page revision are supplied, but context construction and binary replacement still have gaps; findings 5, 6 and 11. |
+| R2-6 — empty attributes neither suppress drivers nor preserve semantics | taken | Design:118–137 | Refusing configured drivers and renormalization with configured filters is a conservative, buildable policy. Keeping ordinary merge attributes preserves today’s `ReviewRanges.MergedAsync` semantics. |
+| R2-7 — incorrect version floors | taken | Design:550–570 | The installed release notes support 2.41, 2.42 and 2.45. The explicit no-lazy-fetch option and pre-start refusal answer the network issue; frontend cache fallback is a separate remaining defect. |
+| R2-8 — broken held-reader protocol | deferred | Design:393–417 | Deferral holds: today’s commit reader already works with two dependent starts (`Driver/Trees/GitReads/GitReads.cs:290–313`). The protocol corrections are recorded without requiring that reader here. |
+| R2-9 — index changes invalidate exclusions | taken | Design:650–664 | The actual per-tree index is watched, index moves publish `diff`, and exclusions are revoked before reuse. The force-add-then-edit proof addresses the original hole. |
+| R2-10 — priority described as reservation | taken | Design:377–386 | Unattended reads are explicitly limited to seven of eight places, matching `ProcessStarts.cs:37–42`’s distinction between priority and reservation. |
+| R2-17 — contradictory linked-tree and start expectations | taken | Design:541–544, 674, 871–877 | Frozen object reads now agree across equal contexts, and the commit page is correctly assigned two dependent starts. |
+| R1 Codex 5 — dependency depth | open | Design:218–286 | Depth is now a graph property, but some path qualifications and warm counts still fail; findings 2–3. |
+| R1 Codex 10 — read effects and census | taken | Design:100–137 | The policy distinguishes commands and configured programs. REVIEWLOCK1 on `main` supplies the measured index-refresh rule; custom merge programs are now refused rather than supposedly suppressed. |
+| R1 Codex 11 — timestamps cannot make refs authoritative | open | Design:451–461 | Review’s claimed whole-content validation still excludes a sufficiently large `packed-refs`; finding 4. |
+| R1 Codex 12 — context and frontend caches | open | Design:491–570 | The revision mechanism is useful, but unsupported-context answers can still survive in the frontend, and C lacks a stable-construction rule; findings 5–6. |
+| R1 Codex 13 — partial-clone fallback fetches | taken | Design:550–559 | Unsupported partial-clone object reads are refused before starting; supported reads pass the explicit global option and child environment variable. |
+| R1 Codex 14 — mixed HEADs and joining | taken | Design:352–357, 475–489 | Both halves use `h`, status checks it, V covers the complete answer, and joining distinguishes mutable generations. |
+| R1 Codex 15 — ended trees and watch fallback | taken | Design:640–664 | Attended ended trees are included; watch loss prevents retention and requires validation, including A. Finding 3 corrects the remaining count consequence of M. |
+| R1 Codex 16 — invalidation and publication | open | Design:574–601 | Git dependencies and context publication are named, but changes to Daoris’s own line choices and grown-base records lack an invalidation contract; finding 7. |
+| R1 Codex 18 — held-process protocol and ownership | deferred | Design:393–429 | The held process is genuinely removed from these rows. Page-close cancellation for the remaining reads still needs its own bridge mechanism; finding 8. |
+| R1 Codex 28 — complete census and build order | open | Design:840–858 | One seam beneath all three runners is correct, but the first and graph rows have contradictory acceptance requirements; findings 9–10. |
+| R1 Fable N12 — unbounded stamp walk | taken | Design:445–469 | The full loose-ref walk and folder-time fallback are removed; an unwatched repository pays R instead. |
+
+**R2-11–16:** no read-side dependency on their checkout lock, ref transactions, rollback, stash deletion or write-outcome protocols remains. Moving those mechanisms away does not block building the reads; this is not an assessment of GITAPP2.
+
+### 2. Findings on the read mechanisms
+
+1. **Blocking — D discards REVIEWBASE3’s merged comparison tree.**
+
+   **Rests on:** Design:230–232; `Driver/Trees/Domain/ReviewBase.cs:9–12`; `Modules/Bridge/Routes/TreesRoutes.cs:82–84`.
+
+   Σ computes both `from` and `against`, but D explicitly reads `<from>..h`. Today the route reads `range.Reads`, meaning `Against ?? From`, while returning `From` as the displayed base. These are observably different: `ReviewBaseTests.cs:179–183` expects only `own.txt` from the merged tree and also gets `parent.txt` from `From`.
+
+   **Smallest fix:** define D’s comparison endpoint as `against ?? from`, include that endpoint in its key, and exercise the graph executor through the existing chain-step fixture. Keeping the old range tests unchanged does not prove that the new executor uses their result correctly.
+
+2. **Blocking — R cannot reproduce the promised line guess for dangling symbolic refs.**
+
+   **Rests on:** Design:207–211, 744–745; `Driver/Trees/WorkingTree.cs:105–123`; `.claude/knowledge/git-ref-absence.md:24–29`.
+
+   Today the first question reads the symbolic ref itself. A dangling `refs/remotes/origin/HEAD` can still name its target, while `for-each-ref` omits broken or dangling entries. Its omitted `%(symref)` therefore cannot distinguish “no symbolic ref” from “symbolic ref naming a missing branch.” Falling back to local `main` changes today’s answer. The proposed dangling-HEAD equality fixture exposes this distinction.
+
+   **Smallest fix:** read that symbolic ref, including its chain, independently of enumeration—through validated disk contents for a supported layout or a counted `symbolic-ref` fallback. Preserve today’s shortening rule and amend the affected ceilings.
+
+3. **Blocking — several advertised ceilings do not follow from the new graph.**
+
+   **Rests on:** Design:251–258, 284–286, 497; `Driver/Trees/SessionTrees/ReviewRanges.cs:63–79,101–108`.
+
+   M is now correctly keyed by the tree generation and retained only under its watch. Consequently, after watch loss or an attribute change, unchanged commit IDs do not eliminate M. A changed merged tree can also require D again. The warm promise of only S, W and optional A therefore omits necessary starts.
+
+   Other rows also need qualification: no line plus a displaced recorded base and a distinct valid grown base requires K′ and a replacement D, exceeding the stated five-start case. “After a commit” is not universally depth two: distinct or incomparable candidates still require I and possibly M before D.
+
+   **Smallest fix:** generate counts from both semantic conditions and cache-validity conditions, including M’s generation. Qualify the ordinary-only rows, publish the resulting warm ceilings, and include a lost-watch or changed-attributes REVIEWBASE3 case.
+
+4. **Blocking — large packed refs retain the validation hole that Review claims to exclude.**
+
+   **Rests on:** Design:451–461, 468; `Driver/Platform/ChangeWatch.cs:174–175,594–598,747–773`.
+
+   Only loose review refs are read whole. Above 1 MiB, `packed-refs` falls back to its stamp and watch generation. A same-size, timestamp-preserving change to a packed line ref can therefore pass validation before the debounced watch judgement arrives. Status’s HEAD check does not detect a changed line ref. The allowance for stale branch decorations does not justify the stronger “never in a review” sentence.
+
+   **Smallest fix:** validate the actual values of every packed ref a review uses, or stop retaining its observation when that validation is unavailable. Specify immediate dirty-generation invalidation separately from debounced reconciliation. Add a packed-line-ref case whose stamp remains equal while notification delivery is held.
+
+5. **Blocking — C has no stable-construction barrier.**
+
+   **Rests on:** Design:218, 522–532; `Driver/Platform/LineGuesses.cs:33–37`.
+
+   C combines separate `var`, configuration and attribute-file reads, but unlike R it has no specified before/after construction rule. For example, `var -l` can discover attribute file A, configuration can then change to name B, and `config --list` can return the new setting. Stamping the files afterward can validate that mixed capture indefinitely while B’s contents and watch root were never captured.
+
+   Validating an already-constructed context before lookup does not establish that its constituent reads belonged to that context.
+
+   **Smallest fix:** give C an explicit capture-and-validation protocol covering configuration discovery, discovered dependencies and their contents. Reject or retry a capture changed during construction, count those starts, and test a configuration change between the two git answers.
+
+6. **Blocking — “not kept” does not reach the frontend fallback.**
+
+   **Rests on:** Design:529–539, 567–568; `Web/bridge/repositories/git.ts:262–310`; `Driver/Trees/GitReads/GitReads.cs:465–478`.
+
+   Below the attribute/context floors, the design stops keeping backend object answers. The page still keeps commit, history, blame and compare answers indefinitely, now under a context revision that cannot describe the missing inputs. Below `--attr-source`, an object diff can depend on worktree attributes that are absent from C; below `git var`’s floor, the effective global attribute file is unknown. Neither event necessarily changes the page’s key.
+
+   The existing backend already avoids caching shallow answers while the frontend independently uses `Infinity`, demonstrating why backend retention alone is insufficient.
+
+   **Smallest fix:** carry cacheability/context capability to the page and apply it to retention, joining and refetch policy, or refuse these unsupported reads. Cover the older-Git fallback through the page cache, not only the launch stand-in.
+
+7. **Blocking — retained reviews omit non-Git inputs from invalidation.**
+
+   **Rests on:** Design:203–204, 238–241, 574–601; `Driver/Trees/SessionTrees/TreeContext.cs:67–75`; `Driver/Trees/Branches/SessionBranches.cs:97–105`; `Modules/Bridge/Routes/LinesRoutes.cs:28–50`.
+
+   The selected line comes from Daoris’s choices, and K′ comes from its grown-branch record. Neither is a Git configuration input in C. The invalidation table handles line *refs* moving, but does not say what changing the configured line or grown base does to a held review.
+
+   Today `SET_LINE` publishes `StateScopes.Driver`; `Web/bridge/state/stateHub.ts:40–41` maps that to the driver key, not the separately keyed diff. A line choice can thus change while Git and tree generations stay unchanged. A grown-base record written after its associated ref notification has the same missing wake.
+
+   **Smallest fix:** include the resolved line choice, recorded/grown bases and their revisions in whole-review identity and validation. Wire their existing record/configuration wakes to dependent reviews, including terminal edits. Test each change with HEAD and all refs held fixed.
+
+8. **Blocking — page-close cancellation has no route to the process owner.**
+
+   **Rests on:** Design:352–357, 423–429, 686; `Web/bridge/call.ts:10–15`; `Web/bridge/sessions/trees.ts:32–35,67–75`.
+
+   The ownership table promises that closing a long-read page ends its Git process. The bridge helper carries only payload and timeout, and the existing Review code explicitly distinguishes cancelling the page’s wait from cancelling host work. A reader job token does not connect those two sides. Without a cancellation door, abandoned searches can continue occupying the process-wide long-read places until their backstop.
+
+   **Smallest fix:** specify a request/waiter cancellation mechanism across the bridge, with one waiter leaving independently and the last waiter cancelling the job. Assign it to the relevant row and prove page closure through the real route boundary. Alternatively, explicitly defer page-close process cancellation and remove the stronger lifecycle promise.
+
+### 3. Findings on rows and proof
+
+9. **Blocking — the first row cannot both apply the new effect controls and preserve today’s answers.**
+
+   **Rests on:** Design:840–847; `Driver/Trees/WorkingTree.cs:459–476`, including REVIEWLOCK1’s version on `main`.
+
+   GITAPP1a-i promises “No answer changes” while asserting §1.1’s per-command controls. Today the range reader disables external diff but does not disable textconv. Adding `--no-textconv` changes configured repositories’ displayed answers. Merge-driver refusal additionally depends on C, which does not arrive until 1a-ii.
+
+   **Smallest fix:** make 1a-i instrumentation plus REVIEWLOCK1’s existing flags only. Assign the new effect-policy behavior and its semantic fixtures to the later rows that have the required context, preserving a genuine before-bench.
+
+10. **Blocking — the graph row requires the later untracked implementation’s proof.**
+
+    **Rests on:** Design:734–743, 853–858; `Driver/Trees/WorkingTree.cs:341–360`.
+
+    GITAPP1a-iii explicitly retains today’s per-file untracked starts, but requires §10.1’s generated census, which covers untracked combinations under the final graph ceilings. Fifty eligible untracked files cannot satisfy those ceilings until 1a-iv replaces those starts with A and U.
+
+    **Smallest fix:** give 1a-iii an explicit interim untracked subgraph and ceiling, then replace both in 1a-iv; alternatively move A/U into 1a-iii. Its acceptance must count the implementation that actually lands.
+
+11. **Non-blocking — binary identity detects selection changes but omits replacement in place.**
+
+    **Rests on:** Design:520; `Driver/Trees/WorkingTree.cs:933–946`.
+
+    A Git executable can be updated at the same path without a Tools selection event. “Version once per binary per process” needs a rule identifying that replacement; otherwise cached answers and capability decisions remain associated with the old binary. Today `GitInUse` already includes the file’s write time specifically for this case.
+
+    **Smallest fix:** define the binary fingerprint from the resolved executable and its replacement stamp, re-probe version when it changes, and invalidate dependent contexts. Include replacement without a Tools press in 1a-ii’s lifecycle proof.
+
+**11 findings; 10 blocking.**
+
+**Verdict: another round.** The read/write split holds, the corrected version floors hold, and deferring the held reader is justified. The remaining changes affect the accepted foundation: which tree D compares, equivalence of line resolution, generated ceilings, validation of retained observations and contexts, invalidation of Daoris-owned inputs, cancellation across the bridge, and independently satisfiable row proofs. D202 should remain proposed until those contracts agree.
