@@ -19703,3 +19703,15 @@ identity and git grants among them; `tools/read-shares.mjs` (in `npm run verify`
 90 tests meet each moved reader with `MoveHold` (83 failed with the readers plain again). `SessionRequests.TakeAt` keeps its
 plain read on purpose (REQTAKE1: its refusal is the sign another loop has the request). The rest is READSHARE1b. Detail: FIX-LOG
 2026-10-23 (READSHARE1). On Opus.
+
+## HELPERWAIT1 — a session waiting on its own helper is not shown as waiting on the person (2026-10-23)
+
+> - [ ] **HELPERWAIT1 — a session waiting on its own helper is not shown as waiting on the person** (driver, modules, web; found 2026-10-23 on the install, GITAPP1's design session). A driven session that asked a Codex helper and ended its turn so the helper could start was recorded `awaiting-person`, its note reading that it stopped "to ask you", while the helper it asked (`serves` it) was working; the person's *What needs you* and the place's count showed it as theirs. A session whose turn ended on its own open helper ask (or a partner's piece, D199) is shown waiting on that helper, by name, and reaches the person only if the helper ends without an answer or the ask's bound passes (BGWAIT3's rule for its own background command). Proof: a stand-in that asks a helper and ends its turn reads as waiting on the helper, not on the person, and goes on when the answer comes; a helper that ends unanswered brings it to the person.
+
+**Outcome** 2026-10-23: a turn that ends on its agent's own open helper ask, asking the person nothing, concludes `completed` by
+`ended.awaits-helper` (*Resumes later*, awaiting helper), keeps its tree, and goes on once with the answer, handed to its line's newest
+record; a helper with no answer brings it to the person through a new guarded ledger move (D46's note). Codex's round-2 findings 1-5,
+7 and 8 on COWORKUX1 are built: an answered park takes the helper's answer beside the person's in one prompt, an older park is never
+converted, an unread question parks, a failed move back is retried, and an attempt mark makes the hand once-only (`hand-uncertain`).
+The partner's piece is not built here (COAGENT1d's `partner_ask` does not exist yet). Detail: FIX-LOG 2026-10-23 (HELPERWAIT1), D188's
+HELPERWAIT1 note. On Opus.
