@@ -34,12 +34,11 @@ Daoris's rules, the person's own denies still hold.
   Applying a write-to is the person's standing say-so for writing across, and its card says so.
 - `ask_propose`: something to start, as an ask at a workspace, with an optional short title (at most 40 characters,
   the few words that tell it apart in a list, the person's own where they gave one).
-- `agent_propose`: an agent's Update or a pin to one version, as Agents → the agent's page → Ways in offers them,
-  or which of its accounts it runs as by default, for the machine or one workspace (`default`,
-  the account one the room lists under that agent).
-  `use` sets how an agent's list of accounts is used (`use` goal or order, `keep` one account of the list or none,
-  `switch` smart, curve or off, and `curve` the person's own points a window, or `no_curve`); `order` writes the
-  list in walk order, or with `clear` sends a workspace back to this machine's accounts; `ready` ends an account's
+- `agent_propose`: an agent's Update or a pin to one version, as Agents → the agent's page → Ways in offers them.
+  Daoris's accounts for an agent are one set that serves every workspace, in one order, so these name no workspace:
+  `use` sets how they are used (`use` goal or order, `keep` one of them or none,
+  `switch` smart, curve or off, and `curve` the person's own points a window, or `no_curve`); `order` puts the
+  accounts named first, in that order, the rest after, or with `clear` returns to the ids' order; `ready` ends an account's
   cool-off, as *Try now* does (`own` ends only an old cool-off of the tool's own sign-in).
   Update moves a pinned agent's pin to its newest release, or runs an unpinned one's own updater, and is
   offered only where that screen shows Update; a pin names one exact release, like 2.1.300, never `latest`.
@@ -205,12 +204,10 @@ plugin, see whether one of these does the job: propose installing it with `plugi
 | let agents read a repository's checkout, or not; let one repository's sessions write into another | Repositories → the repository's page → Setup → Reach; a workspace's reading, Repositories → the workspace's page → Setup → Defaults → Read by agents outside | `daoris driver across <repository> read on|off|--clear` (`--workspace <name>` for a whole workspace), `daoris driver across <repository> write-to <other> [--clear]` |
 | keep a standing answer for a repository, handed to every session there: which writes are allowed, where to test | Repositories → the repository's page → Setup → Sessions | `daoris driver standing <repository> "…"|--clear` |
 | set the language a repository's sessions write to you in, or a workspace's: their questions, closing notes, decline reasons and last words (the window's own language is Settings → Appearance, and neither sets the other) | Repositories → the repository's page → Setup → Sessions; a workspace's, Repositories → the workspace's page → Setup → Defaults → Session language | `daoris driver language <repository> en|zh|--clear` (`--workspace <name>` for a whole workspace) |
-| sign an agent in, or add an account | Agents → the agent's page → Accounts | `daoris agent login <agent> --profile <account>` (an account that is here, never a new one), `daoris agent login <agent> --new [--name <name>] [--join <workspace>] [--join-machine]`, either with `--device-code` for Codex's device code in place of its browser |
+| sign an agent in, or add an account | Agents → the agent's page → Accounts | `daoris agent login <agent> --profile <account>` (an account that is here, never a new one), `daoris agent login <agent> --new [--name <name>]` (it joins Daoris's accounts, which serve every workspace), either with `--device-code` for Codex's device code in place of its browser |
 | name an account: its id stays, so every list, default and record keeps it | (no screen yet) | `daoris agent profile rename <agent> <account> <name>` |
-| put an account in a workspace's list, or this machine's, so starts run on it | (no screen yet) | `daoris agent profile join <agent> <account> <workspace>…|--machine` |
-| choose which account an agent's sessions use, for the machine or a workspace | Agents → the agent's page → an account's ⋯ → Use by default, Use by default in a workspace | `daoris agent profile default <agent> <profile>|--clear [--workspace <name>]` (`--clear` names none again: Daoris's accounts serve again, or for a workspace the machine's default) |
-| choose the accounts rotation may use, in order, for the machine or a workspace (an account not listed never rotates) | Agents → the agent's page → How accounts are used → Use, up and down; and Workspaces → Its own accounts | `daoris agent profile order <agent> <profile>…|--clear [--workspace <name>]` |
-| choose how a list is used, for the machine or a workspace: make the most of its accounts (`goal`) or one by one in order (`order`), one kept for conversations, and when to switch accounts, by Daoris's usage curve, your own, or not while a session runs | Agents → the agent's page → How accounts are used → Use accounts, Keep for conversations, Switch accounts | `daoris agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off] [--curve <window>=<elapsed>:<used>,…] [--no-curve] [--workspace <name>]` (no flag prints them; `--clear` returns to today's defaults) |
+| choose the order of Daoris's accounts, one set for every workspace: where starts begin one by one, and the last tie otherwise | Agents → the agent's page → How accounts are used → Use, up and down | `daoris agent profile order <agent> <profile>…|--clear` (the accounts named first, the rest after; `--clear` returns to the ids' order) |
+| choose how Daoris's accounts are used, for every workspace: make the most of them (`goal`) or one by one in order (`order`), one kept for conversations, and when to switch accounts, by Daoris's usage curve, your own, or not while a session runs | Agents → the agent's page → How accounts are used → Use accounts, Keep for conversations, Switch accounts | `daoris agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off] [--curve <window>=<elapsed>:<used>,…] [--no-curve]` (no flag prints them; `--clear` returns to today's defaults) |
 | end an account's cool-off now, after its agent hit a limit | Agents → the agent's page → the account's Try now | `daoris agent profile ready <agent> <profile>|--own` (`--own` only ends an old cool-off of the tool's own sign-in, which Daoris no longer starts sessions in) |
 | update an agent, or pin it to one version | Agents → the agent's page → Ways in → Update, Pin a version | `daoris agent update <agent>`, `daoris agent pin <agent> <version>` |
 | set an account's own model and effort | Agents → the agent's page → Model and effort | `daoris agent settings <agent> --account <name> model <model> effort <effort>` |
@@ -257,7 +254,6 @@ design.
 - apply a workflow's version from a file, import a workflow whole, or declare a workspace's kind of task: `daoris driver workflow apply <id> <file>|--as-graph [--base <v>]`, `daoris driver workflow import <file>`, `daoris driver workflow kind <name> <kind> --label "…" [--paths <p,…>]`
 - choose which version of a tool Daoris runs: the one on the PATH, or one kept in the home (Settings → Tools): `daoris tool use <tool> system`, `daoris tool use <tool> managed [<version>]`
 - remove a location tool versions are offered from (Settings → Tools): `daoris tool locations [add|remove <address>]`
-- clear an account's default, back to Daoris's accounts: `daoris agent profile default <agent> <profile>|--clear`
 
 A landing pattern may say `{quest}`, `{session}`, `{slug}` (the quest's title, as words) and
 `{repository}`. It needs `{quest}` or `{session}`, or every session's work would land on one branch,

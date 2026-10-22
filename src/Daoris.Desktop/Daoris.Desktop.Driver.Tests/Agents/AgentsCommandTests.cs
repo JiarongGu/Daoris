@@ -55,25 +55,24 @@ public sealed class AgentsCommandTests : IDisposable
         Directory.CreateDirectory(HarnessSettings.ProfileHome(home, "claude-code", name));
 
     /// <summary>
-    /// A refusal's command names a workspace with a space in double quotes, and an account a shell cannot take by a placeholder
-    /// (<see cref="ShellWord"/>): the CLI's <c>shellword.test.ts</c> held these through its TypeScript verbs until PUSH1f2e handed them here.
+    /// A refusal's command names an account a shell cannot take by a placeholder (<see cref="ShellWord"/>): the CLI's
+    /// <c>shellword.test.ts</c> held these through its TypeScript verbs until PUSH1f2e handed them here. Before POOL1b it also held a
+    /// workspace with a space in double quotes, through <c>profile default</c> and <c>profile join</c>'s refusals, which name no workspace
+    /// now (D197 point 6); <c>profile default</c>'s refusal names the account it would put first by a placeholder too.
     /// </summary>
     [Fact]
-    public async Task A_refusals_command_names_a_workspace_with_a_space_in_double_quotes_and_an_account_it_cannot_spell_by_a_placeholder()
+    public async Task A_refusals_command_names_an_account_it_cannot_spell_by_a_placeholder()
     {
         foreach (var name in new[] { "account-1", "account-2", "R&D" }) Account(Home, name);
-        Assert.Equal(0, await AgentsCommand.RunAsync(
-            ["profile", "order", "claude-code", "account-1", "--workspace", "my team"], World(), CancellationToken.None));
 
-        Assert.Contains("`daoris agent profile order claude-code account-1 account-2 --workspace \"my team\"` adds it",
-            await Refused("profile", "default", "claude-code", "account-2", "--workspace", "my team"));
-        Assert.Contains("`daoris agent profile order claude-code <account> account-1` sets it",
+        Assert.Contains("`daoris agent profile order claude-code <account>` puts one first",
+            await Refused("profile", "default", "claude-code", "R&D"));
+        Assert.Contains("`daoris agent profile order claude-code <account> account-1` puts those first",
             await Refused("profile", "order", "claude-code", "R&D", "account-1", "--clear"));
         Assert.Contains("`daoris agent profile ready claude-code <account>` is that account",
             await Refused("profile", "ready", "claude-code", "R&D", "--own"));
         Assert.Contains("`daoris agent profile rename claude-code <account> work`; naming it `R&D` gives it none",
             await Refused("profile", "rename", "claude-code", "R&D"));
-        Assert.Contains("`daoris agent profile join claude-code <account> work`", await Refused("profile", "join", "claude-code", "R&D"));
 
         async Task<string> Refused(params string[] words)
         {
@@ -138,11 +137,11 @@ public sealed class AgentsCommandTests : IDisposable
     [InlineData("unpin claude-code")]
     [InlineData("unpin claude-code --workspace work")]
     [InlineData("profile remove claude-code work")]
-    [InlineData("profile default claude-code work")]
+    // `profile default` and `profile join` left these rows with POOL1b (D197 point 6): each is refused on any terminal, saying why, with
+    // nothing written, before a session's terminal is asked about (`fixtures/agents-text.json`).
     [InlineData("profile order claude-code work")]
     [InlineData("profile ready claude-code --own")]
     [InlineData("profile rename claude-code work seat")]
-    [InlineData("profile join claude-code work --machine")]
     [InlineData("profile use claude-code --clear")]
     // The long verbs (PUSH1f2e5): no route takes them, so a session's terminal is refused them before a word is said or a key read.
     [InlineData("install claude-code")]
@@ -269,7 +268,8 @@ public sealed class AgentsCommandTests : IDisposable
     /// <summary>
     /// An account's change beside the running Daoris is the Accounts place's own press (PUSH1f2e2): <c>profile order</c> sends
     /// <c>ACCOUNT_USE</c>'s order, confirmed in its window, and this process writes nothing; a workspace's unpin, which no route takes, is
-    /// written here and nothing is sent.
+    /// written here and nothing is sent. Since POOL1b the order is the set's and its press names no workspace (D197 point 6); it named
+    /// <c>aurora</c> before. The stand-in window writes nothing, so the order said is the file's, the accounts' ids'.
     /// </summary>
     [Fact]
     public async Task Beside_the_running_Daoris_an_order_is_its_route_and_a_workspace_s_unpin_is_written_here()
@@ -282,8 +282,7 @@ public sealed class AgentsCommandTests : IDisposable
         Account(running.Home, "seat");
         var wiring = DaorisHome.Entry(running.Home, HomeEntry.Harnesses);
 
-        var exit = await AgentsCommand.RunAsync(["profile", "order", "claude-code-acp", "seat", "work", "--workspace", "aurora"], Beside(running),
-            CancellationToken.None);
+        var exit = await AgentsCommand.RunAsync(["profile", "order", "claude-code-acp", "seat", "work"], Beside(running), CancellationToken.None);
 
         Assert.Equal(0, exit);
         var press = Assert.Single(standIn.Presses);
@@ -292,8 +291,8 @@ public sealed class AgentsCommandTests : IDisposable
         Assert.Equal("order", payload.GetProperty("action").GetString());
         Assert.Equal("claude-code", payload.GetProperty("harness").GetString());
         Assert.Equal(["seat", "work"], payload.GetProperty("accounts").EnumerateArray().Select(each => each.GetString()));
-        Assert.Equal("aurora", payload.GetProperty("workspace").GetString());
-        Assert.Contains("daoris: in `aurora`, `claude-code`'s rotation is seat, then work.", running.Out.ToString(), StringComparison.Ordinal);
+        Assert.False(payload.TryGetProperty("workspace", out _));
+        Assert.Contains("daoris: `claude-code`'s order is seat, then work.", running.Out.ToString(), StringComparison.Ordinal);
         Assert.False(File.Exists(wiring));
 
         File.WriteAllText(wiring, """{"workspaceVersions":{"aurora":{"claude-code":"2.1.0"}},"versions":{"claude-code":"2.1.0"}}""");
@@ -309,7 +308,8 @@ public sealed class AgentsCommandTests : IDisposable
     /// <summary>
     /// How a list is used beside the running Daoris is the Accounts place's own press (PUSH1f2e3): <c>profile use</c> sends
     /// <c>ACCOUNT_USE</c>'s <c>use</c> with each setting as the page sends it, a curve as its windows' points, confirmed in its window, and
-    /// this process writes nothing.
+    /// this process writes nothing. Since POOL1b the settings are the set's and the press names no workspace (D197 point 6); it named
+    /// <c>aurora</c>'s list before. A file an older build wrote, a workspace's list, is read as the set.
     /// </summary>
     [Fact]
     public async Task Beside_the_running_Daoris_a_use_is_its_route()
@@ -326,7 +326,7 @@ public sealed class AgentsCommandTests : IDisposable
         var before = File.ReadAllText(wiring);
 
         var exit = await AgentsCommand.RunAsync(
-            ["profile", "use", "claude-code-acp", "order", "--keep", "seat", "--switch", "curve", "--curve", "weekly=0:30,100:100", "--workspace", "aurora"],
+            ["profile", "use", "claude-code-acp", "order", "--keep", "seat", "--switch", "curve", "--curve", "weekly=0:30,100:100"],
             Beside(running), CancellationToken.None);
 
         Assert.Equal(0, exit);
@@ -335,12 +335,12 @@ public sealed class AgentsCommandTests : IDisposable
         var payload = press.GetProperty("payload");
         Assert.Equal("use", payload.GetProperty("action").GetString());
         Assert.Equal("claude-code", payload.GetProperty("harness").GetString());
-        Assert.Equal("aurora", payload.GetProperty("workspace").GetString());
+        Assert.False(payload.TryGetProperty("workspace", out _));
         Assert.Equal("order", payload.GetProperty("use").GetString());
         Assert.Equal("seat", payload.GetProperty("keep").GetString());
         Assert.Equal("curve", payload.GetProperty("switch").GetString());
         Assert.Equal("""{"weekly":[[0,30],[100,100]]}""", payload.GetProperty("curve").GetRawText());
-        Assert.Contains("daoris: in `aurora`, `claude-code`'s list is work, then seat.", running.Out.ToString(), StringComparison.Ordinal);
+        Assert.Contains("daoris: `claude-code`'s accounts, for every workspace, in order: ", running.Out.ToString(), StringComparison.Ordinal);
         Assert.Equal(before, File.ReadAllText(wiring));
     }
 
@@ -636,11 +636,15 @@ public sealed class AgentsCommandTests : IDisposable
                 new Dictionary<string, HarnessToolchain> { ["stand-in"] = toolchain });
         }
 
+        /// <summary>
+        /// A new account is kept, named, placed in the set's order and said to have joined Daoris's accounts (POOL1b, D197 point 4). Before
+        /// POOL1b this ran with <c>--join-machine</c>, now refused, and ended saying the machine's list held it.
+        /// </summary>
         [Fact]
         public async Task A_finished_sign_in_is_kept_named_joined_and_said_and_the_home_let_go()
         {
             var exit = await AgentsCommand.RunAsync(
-                ["login", "stand-in", "--new", "--name", "Seat", "--join-machine"], _held.World(adapters: StandIn(0), path: ""), CancellationToken.None);
+                ["login", "stand-in", "--new", "--name", "Seat"], _held.World(adapters: StandIn(0), path: ""), CancellationToken.None);
 
             Assert.Equal(0, exit);
             var account = Assert.Single(HarnessSettings.Profiles(_held.Home, "stand-in"));
@@ -650,9 +654,29 @@ public sealed class AgentsCommandTests : IDisposable
             var said = _held._out.ToString().Replace("\r\n", "\n", StringComparison.Ordinal);
             Assert.StartsWith("daoris: signing in to a new `stand-in` account, with its own login flow.\n", said, StringComparison.Ordinal);
             Assert.Contains("daoris: signed in as seat@work.example — this machine lists it as `Seat`.\n", said, StringComparison.Ordinal);
-            Assert.EndsWith("  `Seat` runs work in this machine's list.\n", said, StringComparison.Ordinal);
+            Assert.EndsWith("  `Seat` joined Daoris's accounts: every workspace's work may run on it.\n", said, StringComparison.Ordinal);
             Assert.Equal("", _held._error.ToString());
             Assert.False(File.Exists(HomeLease.PathIn(_held.Home)), "the publication let the home go");
+        }
+
+        /// <summary>
+        /// <c>login</c> naming no account signs in to the set's first (POOL1b, the account-pool design §5.1), where it read the machine's
+        /// default; a sign-back-in says nothing of joining.
+        /// </summary>
+        [Fact]
+        public async Task A_sign_in_naming_no_account_reaches_the_order_s_first()
+        {
+            foreach (var account in new[] { "account-1", "account-2" }) Directory.CreateDirectory(HarnessSettings.ProfileHome(_held.Home, "stand-in", account));
+            HarnessSettings.Change(DaorisHome.Entry(_held.Home, HomeEntry.Harnesses), read => read.WithRotation("stand-in", ["account-2"]));
+
+            var exit = await AgentsCommand.RunAsync(["login", "stand-in"], _held.World(adapters: StandIn(0), path: ""), CancellationToken.None);
+
+            Assert.Equal(0, exit);
+            var said = _held._out.ToString().Replace("\r\n", "\n", StringComparison.Ordinal);
+            Assert.StartsWith("daoris: running `stand-in`'s own login flow into the account `account-2`.\n", said, StringComparison.Ordinal);
+            Assert.DoesNotContain("joined Daoris's accounts", said, StringComparison.Ordinal);
+            Assert.NotNull(ProbeLock.SignedIn(_held.Home, "stand-in", "account-2"));
+            Assert.Null(ProbeLock.SignedIn(_held.Home, "stand-in", "account-1"));
         }
 
         [Fact]

@@ -11,6 +11,11 @@ namespace Daoris.Driver;
 /// unpin has no route and acts alone. Every check the window would refuse by is said here first, in today's words
 /// (<c>fixtures/agents-text.json</c>), so a refusal costs nothing on either path.
 /// </summary>
+/// <remarks>
+/// An agent's accounts are one set (POOL1b, D197 point 6, the account-pool design §5.1): <c>order</c> and <c>use</c> act on it and refuse
+/// <c>--workspace</c>, and <c>default</c> and <c>join</c>, kept as verbs so a script is told rather than shown the verb list, refuse in
+/// <see cref="OneSetWords"/>'s words with nothing written.
+/// </remarks>
 internal static class AgentAccountsCommand
 {
     private const string Prefix = "daoris";
@@ -78,7 +83,8 @@ internal static class AgentAccountsCommand
         var action = args.Count > 1 ? args[1] : "list";
         var path = AgentsCommand.WiringPath(world);
         var home = HarnessSettings.HomeOf(path);
-        var settings = HarnessSettings.Load(path);
+        // Read as the set (POOL1b, the account-pool design §2.4), so a file an older build wrote is the set here too.
+        var settings = HarnessSettings.LoadSet(path);
         var context = new Context(args, world, path, home, settings, $"profile {action}");
 
         switch (action)
@@ -96,7 +102,11 @@ internal static class AgentAccountsCommand
             case "remove":
                 return Remove(context);
             case "default":
-                return Default(context);
+            {
+                // Refused with nothing written (POOL1b, §5.1): the account named, by its id, is the one the order would put first.
+                var owner = context.Owner();
+                throw new AgentWords(OneSetWords.Default(owner, context.Operand(3) is { } named ? context.Account(owner, named) : null));
+            }
             case "order":
                 return Order(context);
             case "ready":
@@ -106,7 +116,8 @@ internal static class AgentAccountsCommand
             case "rename":
                 return Rename(context);
             case "join":
-                return Join(context);
+                context.Owner();
+                throw new AgentWords(OneSetWords.Join);
             default:
                 throw new AgentWords(
                     $"unknown agent profile verb '{action}' — one of: list, add, remove, default, order, ready, use, rename, join");
@@ -145,31 +156,18 @@ internal static class AgentAccountsCommand
         /// <summary>An account by its id or its name (ACCT2): its id, or what was given where it names none, for the verb to refuse.</summary>
         public string Account(string owner, string given) => AgentsCommand.AccountNamed(Home, owner, given);
 
-        public string? Workspace() => AgentsCommand.FlagValue(Args, "--workspace")?.Trim() is { Length: > 0 } named ? named : null;
+        /// <summary>
+        /// <c>--workspace</c> refused, named or not (POOL1b, D197 point 6, §5.1): the set serves every workspace, so the flag names nothing,
+        /// and a script told so never believes it set a workspace's.
+        /// </summary>
+        public void NoWorkspace()
+        {
+            if (Args.Contains("--workspace")) throw new AgentWords(OneSetWords.Workspace("--workspace"));
+        }
 
-        /// <summary>A scope's own list: the machine's, or the workspace's own, never the machine's standing in for it.</summary>
-        public IReadOnlyList<string> OwnList(string owner, string? workspace) =>
-            workspace is null
-                ? Settings.Rotation.GetValueOrDefault(owner) ?? []
-                : Settings.WorkspaceRotation.TryGetValue(workspace, out var lists) ? lists.GetValueOrDefault(owner) ?? [] : [];
-
-        public string? OwnDefault(string owner, string? workspace) =>
-            (workspace is null
-                ? Settings.Defaults.GetValueOrDefault(owner)
-                : Settings.Workspaces.TryGetValue(workspace, out var defaults) ? defaults.GetValueOrDefault(owner) : null) is { Length: > 0 } named
-                ? named.Trim()
-                : null;
-
-        public string? OwnKeep(string owner, string? workspace) =>
-            RotationUse.Read(workspace is null
-                ? Settings.Uses.GetValueOrDefault(owner)
-                : Settings.WorkspaceUses.TryGetValue(workspace, out var uses) ? uses.GetValueOrDefault(owner) : null).Use.Keep;
+        /// <summary>The set's order as written now: every account of the agent's, read again after a write on either path.</summary>
+        public IReadOnlyList<string> Order(string owner) => HarnessSettings.LoadSet(Path).Rotation.GetValueOrDefault(owner) ?? [];
     }
-
-    private static string Where(string? workspace) => workspace is null ? "on this machine" : $"in `{workspace}`";
-
-    private static string Scoped(string? workspace) =>
-        workspace is null ? "" : $" --workspace {ShellWord.Of(workspace, ShellWord.Workspace)}";
 
     private static Task<object?> Done(object? done = null) => Task.FromResult(done);
 
@@ -243,207 +241,81 @@ internal static class AgentAccountsCommand
                 at.Say(done is true
                     ? $"{Prefix}: removed the `{owner}` account `{profile}` — the directory and the sign-in in it are gone: {where}"
                     : $"{Prefix}: `{owner}` has no account `{profile}` on this machine — there was nothing to remove.");
-                at.Say($"  It is no longer a default for `{owner}` anywhere on this machine: no default and no order names it.");
+                at.Say($"  It is out of `{owner}`'s order: Daoris's accounts no longer hold it, and no start runs on it.");
                 return 0;
             });
     }
 
     /// <summary>
-    /// <c>profile default &lt;agent&gt; &lt;profile&gt;|--clear [--workspace &lt;name&gt;]</c> (D49 §4, LEFT3): the account a scope's starts
-    /// begin on, refused where it is not here or its scope's own list does not hold it (D130 §3.1); <c>--clear</c> names none again.
-    /// </summary>
-    private static AgentPress Default(Context at)
-    {
-        var owner = at.Owner();
-        var workspace = at.Workspace();
-        HarnessSettings Edited(HarnessSettings read, string? profile) =>
-            workspace is not null ? read.WithWorkspaceDefault(workspace, owner, profile) : read.WithDefault(owner, profile);
-        JsonObject Payload(string? profile)
-        {
-            var payload = new JsonObject { ["action"] = "profile-default", ["harness"] = owner };
-            if (profile is not null) payload["profile"] = profile;
-            if (workspace is not null) payload["workspace"] = workspace;
-            return payload;
-        }
-
-        if (at.Args.Contains("--clear"))
-        {
-            if (at.Operand(3) is { } named)
-            {
-                throw new AgentWords($"`--clear` names no account — `daoris agent profile default {owner} --clear` clears the default, "
-                    + $"and `daoris agent profile default {owner} {ShellWord.Of(named, ShellWord.Account)}` sets it.");
-            }
-
-            var after = Edited(at.Settings, null);
-            return new AgentPress(at.Verb, AgentRoutes.Harness, at.Isolated, Payload(null),
-                _ =>
-                {
-                    HarnessSettings.Change(at.Path, read => Edited(read, null));
-                    return Done();
-                },
-                _ => null,
-                _ =>
-                {
-                    var fallback = after.ResolveFrom(owner, workspace, null).Value;
-                    at.Say(workspace is null
-                        ? $"{Prefix}: this machine names no default for `{owner}` now: Daoris takes its accounts in turn."
-                        : fallback is not null
-                            ? $"{Prefix}: `{workspace}` names no account for `{owner}` now: its sessions run as the machine's default, `{fallback}`."
-                            : $"{Prefix}: `{workspace}` names no account for `{owner}` now: its sessions take Daoris's accounts in turn.");
-                    at.Say($"  No account was deleted. Written to {at.Path} — {Written}");
-                    return 0;
-                });
-        }
-
-        var profile = at.Account(owner, at.Bare(3, "<agent> <profile>|--clear [--workspace <name>]"));
-        // Refused rather than created: a default that does not exist is a typo every start in that scope would refuse.
-        var existing = HarnessSettings.Profiles(at.Home, owner);
-        if (!existing.Contains(profile, StringComparer.Ordinal))
-        {
-            throw new AgentWords($"`{owner}` has no profile `{profile}` on this machine — `daoris agent profile add {owner} "
-                + $"{ShellWord.Of(profile, ShellWord.Account)}` creates it. Profiles that exist: "
-                + (existing.Count > 0 ? string.Join(", ", existing) : "(none)"));
-        }
-
-        // A scope's default is where its starts begin within its list, so one the list does not hold is refused (D130 §3.1).
-        var list = at.OwnList(owner, workspace);
-        if (ScopeProblem.Of(profile, list, null) is { Kind: ScopeProblemKind.Default })
-        {
-            throw new AgentWords($"`{owner}`'s list {Where(workspace)} is {string.Join(", then ", list)}, and `{profile}` is not in it — the "
-                + "list is every account its starts may run on, and the default is where they begin within it. "
-                + $"`daoris agent profile order {owner} {ShellWord.Words([.. list, profile], ShellWord.Account)}{Scoped(workspace)}` adds it, "
-                + "or make one of the list the default.");
-        }
-
-        return new AgentPress(at.Verb, AgentRoutes.Harness, at.Isolated, Payload(profile),
-            _ =>
-            {
-                HarnessSettings.Change(at.Path, read => Edited(read, profile));
-                return Done();
-            },
-            _ => null,
-            _ =>
-            {
-                at.Say(workspace is not null
-                    ? $"{Prefix}: sessions in `{workspace}` run `{owner}` as `{profile}`."
-                    : $"{Prefix}: this machine runs `{owner}` as `{profile}` by default.");
-                at.Say($"  Written to {at.Path} — {Written}");
-                return 0;
-            });
-    }
-
-    /// <summary>
-    /// <c>profile order &lt;agent&gt; &lt;profile&gt;…|--clear [--workspace &lt;name&gt;]</c> (TOOL4e, D125 §3.1): the accounts rotation may
-    /// use, in order, each here and once, holding the scope's default and its kept account (D130 §3.1, §4.6); <c>--clear</c> names none.
+    /// <c>profile order &lt;agent&gt; &lt;account&gt;…|--clear</c> (TOOL4e, D125 §3.1; POOL1b, D197 point 2, §5.1): the set's order, the
+    /// accounts named first, in that order, each here and once, and the rest after in their order (<see cref="HarnessSettings.Change"/>
+    /// writes it whole); <c>--clear</c> returns to the ids' order and clears no setting. <c>--workspace</c> is refused.
     /// </summary>
     private static AgentPress Order(Context at)
     {
         var owner = at.Owner();
-        var workspace = at.Workspace();
-        // An account by its id or its name (ACCT2); the list holds ids, so a rename leaves it standing.
+        at.NoWorkspace();
+        // An account by its id or its name (ACCT2); the order holds ids, so a rename leaves it standing.
         string[] named = [.. AgentsCommand.Operands(at.Args, AgentsCommand.Valued).Skip(3).Select(given => at.Account(owner, given))];
-        JsonObject Payload(IEnumerable<string> accounts)
+        JsonObject Payload(IEnumerable<string> accounts) => new()
         {
-            var payload = new JsonObject
-            {
-                ["action"] = "order", ["harness"] = owner, ["accounts"] = new JsonArray([.. accounts.Select(each => (JsonNode?)each)]),
-            };
-            if (workspace is not null) payload["workspace"] = workspace;
-            return payload;
-        }
+            ["action"] = "order", ["harness"] = owner, ["accounts"] = new JsonArray([.. accounts.Select(each => (JsonNode?)each)]),
+        };
 
+        // Each account by the person's name for it, else its id (ACCT2).
+        string Spelled(IEnumerable<string> order) => string.Join(", then ", order.Select(account => AccountNames.Shown(at.Home, owner, account)));
         if (at.Args.Contains("--clear"))
         {
             if (named.Length > 0)
             {
-                throw new AgentWords($"`--clear` names no account — `daoris agent profile order {owner} --clear` clears the order, and "
-                    + $"`daoris agent profile order {owner} {ShellWord.Words(named, ShellWord.Account)}` sets it.");
+                throw new AgentWords($"`--clear` names no account — `daoris agent profile order {owner} --clear` returns the order to the "
+                    + $"accounts' ids, and `daoris agent profile order {owner} {ShellWord.Words(named, ShellWord.Account)}` puts those first.");
             }
 
-            var after = at.Settings.WithRotation(owner, null, workspace);
             return new AgentPress(at.Verb, AgentRoutes.Account, at.Isolated, Payload([]),
                 _ =>
                 {
-                    HarnessSettings.Change(at.Path, read => read.WithRotation(owner, null, workspace));
+                    HarnessSettings.Change(at.Path, read => read.WithRotation(owner, null));
                     return Done();
                 },
                 _ => null,
                 _ =>
                 {
-                    if (workspace is not null)
-                    {
-                        var machine = after.Rotation.GetValueOrDefault(owner) ?? [];
-                        at.Say(machine.Count > 0
-                            ? $"{Prefix}: `{workspace}` names no order for `{owner}` now: the machine's applies there, {string.Join(", then ", machine)}."
-                            : $"{Prefix}: `{workspace}` names no order for `{owner}` now, and neither does this machine.");
-                    }
-                    else
-                    {
-                        at.Say($"{Prefix}: `{owner}` has no order on this machine now.");
-                        string[] scoped = [.. after.WorkspaceRotation.Where(pair => pair.Value.ContainsKey(owner)).Select(pair => pair.Key)];
-                        if (scoped.Length > 0) at.Say($"  A workspace's own still applies there: {string.Join(", ", scoped)}.");
-                    }
-
-                    at.Say($"  No account was deleted. Written to {at.Path} — {Written}");
+                    var order = at.Order(owner);
+                    at.Say(order.Count > 0
+                        ? $"{Prefix}: `{owner}`'s order is its accounts' ids' again: {Spelled(order)}."
+                        : $"{Prefix}: `{owner}` has no account of Daoris's, so its order names none.");
+                    at.Say($"  No account was deleted and no setting cleared. Written to {at.Path} — {Written}");
                     return 0;
                 });
         }
 
         if (named.Length == 0)
         {
-            throw new AgentWords($"`agent profile order` needs the accounts, in order, or --clear — e.g. `daoris agent profile order {owner} "
-                + "account-1 account-2`.");
+            throw new AgentWords($"`agent profile order` needs the accounts to put first, in order, or --clear — e.g. `daoris agent profile "
+                + $"order {owner} account-2`.");
         }
 
-        // Refused rather than written, as `profile default` refuses a name that does not exist: a typo in an order is an account
-        // rotation would walk past without saying why.
+        // Refused rather than written: a typo in an order is an account the walk would pass without saying why.
         var existing = HarnessSettings.Profiles(at.Home, owner);
         if (HarnessSettings.OrderProblem(existing, named) is { } problem) throw new AgentWords(problem.Sentence(owner, existing));
 
-        string[] list = [.. named.Select(account => account.Trim())];
-        if (ScopeProblem.Of(at.OwnDefault(owner, workspace), list, at.OwnKeep(owner, workspace)) is { } bound)
-        {
-            throw new AgentWords(OrderRefusal(owner, workspace, bound, list));
-        }
-
-        return new AgentPress(at.Verb, AgentRoutes.Account, at.Isolated, Payload(list),
+        string[] first = [.. named.Select(account => account.Trim())];
+        return new AgentPress(at.Verb, AgentRoutes.Account, at.Isolated, Payload(first),
             _ =>
             {
-                HarnessSettings.Change(at.Path, read => read.WithRotation(owner, list, workspace));
+                HarnessSettings.Change(at.Path, read => read.WithRotation(owner, first));
                 return Done();
             },
             _ => null,
             _ =>
             {
-                var spelled = string.Join(", then ", list);
-                at.Say(workspace is not null
-                    ? $"{Prefix}: in `{workspace}`, `{owner}`'s rotation is {spelled}."
-                    : $"{Prefix}: on this machine, `{owner}`'s rotation is {spelled}.");
-                at.Say("  An account not in it is never rotated into, and work resolved to it never moves (D125 §3.1).");
+                at.Say($"{Prefix}: `{owner}`'s order is {Spelled(at.Order(owner))}.");
+                at.Say("  Every account of Daoris's serves every workspace (D197): one by one, in order, begins at the first, and make the");
+                at.Say("  most of them uses the order only to break a tie.");
                 at.Say($"  Written to {at.Path} — {Written}");
                 return 0;
             });
-    }
-
-    /// <summary><c>profile order</c>'s refusal for a list that leaves out its scope's default or kept account (D130 §3.1, §4.6).</summary>
-    private static string OrderRefusal(string owner, string? workspace, ScopeProblem problem, IReadOnlyList<string> list)
-    {
-        var named = $"`daoris agent profile order {owner} {ShellWord.Words([.. list, problem.Account], ShellWord.Account)}{Scoped(workspace)}`";
-        var noKeep = $"`daoris agent profile use {owner} --no-keep{Scoped(workspace)}`";
-        return problem.Kind switch
-        {
-            ScopeProblemKind.Default =>
-                $"{(workspace is not null ? $"`{workspace}`'s" : "this machine's")} default for `{owner}` is `{problem.Account}`, and "
-                + "this list does not hold it — the list is every account its starts may run on, and the default is where they "
-                + $"begin within it. Name it in the list ({named}), or first make one of the list the default "
-                + $"(`daoris agent profile default {owner} {ShellWord.Of(list[0], ShellWord.Account)}{Scoped(workspace)}`).",
-            ScopeProblemKind.Keep =>
-                $"`{problem.Account}` is kept for conversations {Where(workspace)}, and this list does not hold it — the "
-                + $"kept account is one of the list. Name it in the list ({named}), or first keep none ({noKeep}).",
-            _ =>
-                $"`{problem.Account}` is kept for conversations, and this list holds no other account, so driven work "
-                + $"would have none — name another account in it, or first keep none ({noKeep}).",
-        };
     }
 
     /// <summary>
@@ -499,7 +371,7 @@ internal static class AgentAccountsCommand
     /// <summary><c>profile use</c>'s flags (TOOL6a, D130 §16.6; D165 §6, SWITCH1a); any other is refused rather than read as a choice.</summary>
     private static readonly HashSet<string> UseFlags = new(StringComparer.Ordinal)
     {
-        "--keep", "--no-keep", "--switch", "--curve", "--no-curve", "--early", "--near", "--workspace", "--clear",
+        "--keep", "--no-keep", "--switch", "--curve", "--no-curve", "--early", "--near", "--clear",
     };
 
     /// <summary>What the terminal says for each <i>use accounts</i> choice (D130 §16.6): its name, and what it costs where the screen says so.</summary>
@@ -518,7 +390,7 @@ internal static class AgentAccountsCommand
     /// <summary><c>profile use</c>'s shape, as a refusal names it.</summary>
     private static readonly string UseShape =
         $"[{string.Join('|', RotationUse.Modes)}] [--keep <account>|--no-keep] [--switch {string.Join('|', RotationUse.Switches)}] "
-        + "[--curve <window>=<elapsed>:<used>,…]… [--no-curve] [--workspace W], or --clear (--early on|off and --near <percent> "
+        + "[--curve <window>=<elapsed>:<used>,…]… [--no-curve], or --clear (--early on|off and --near <percent> "
         + "are the old names)";
 
     /// <summary>How a curve is given at the terminal (the switch design §5), as a refusal shows it.</summary>
@@ -530,17 +402,18 @@ internal static class AgentAccountsCommand
 
     /// <summary>
     /// <c>profile use &lt;agent&gt; [goal|order] [--keep &lt;account&gt;|--no-keep] [--switch smart|curve|off] [--curve
-    /// &lt;window&gt;=&lt;elapsed&gt;:&lt;used&gt;,…]… [--no-curve] [--workspace &lt;name&gt;]</c>, or <c>--clear</c> (TOOL6a, D130 §16.6;
-    /// D165 §6, the switch design §5): how a scope's list is used, the Accounts place's <c>ACCOUNT_USE</c> <c>use</c>. With no flag it
-    /// prints the scope's settings, the step the next start would follow and what each account last said. A scope with no list of its
-    /// own has nothing to use and is refused, naming the door that gives it one; a kept account is one of the list and leaves driven
-    /// work another (§4.6); a curve is refused in the sentence the driver says. <c>--early</c> and <c>--near</c> are the old names.
+    /// &lt;window&gt;=&lt;elapsed&gt;:&lt;used&gt;,…]… [--no-curve]</c>, or <c>--clear</c> (TOOL6a, D130 §16.6; D165 §6, the switch design §5;
+    /// POOL1b, D197 point 2, §5.1): how the set is used, its one entry of settings, the Accounts place's <c>ACCOUNT_USE</c> <c>use</c>. With
+    /// no flag it prints the settings, the step the next start would follow and what each account last said. An agent with no account of
+    /// Daoris's has nothing to use and is refused, naming the sign-in; a kept account is one of the set and leaves driven work another
+    /// (§4.6); a curve is refused in the sentence the driver says; <c>--workspace</c> is refused. <c>--early</c> and <c>--near</c> are the old
+    /// names.
     /// </summary>
     private static AgentPress? Use(Context at, out int exit)
     {
         exit = 0;
         var owner = at.Owner();
-        var workspace = at.Workspace();
+        at.NoWorkspace();
         if (at.Args.Skip(2).FirstOrDefault(word => word.StartsWith("--", StringComparison.Ordinal) && !UseFlags.Contains(word)) is { } stray)
         {
             throw new AgentWords($"`{stray}` is not a flag of `agent profile use` — it takes {UseShape}.");
@@ -566,17 +439,12 @@ internal static class AgentAccountsCommand
             named = true;
         }
 
-        JsonObject Payload()
-        {
-            var payload = new JsonObject { ["action"] = "use", ["harness"] = owner };
-            if (workspace is not null) payload["workspace"] = workspace;
-            return payload;
-        }
+        JsonObject Payload() => new() { ["action"] = "use", ["harness"] = owner };
 
         var clear = at.Args.Contains("--clear");
         if (clear && named)
         {
-            throw new AgentWords($"`--clear` sets no setting beside it — `daoris agent profile use {owner} --clear` returns the scope to "
+            throw new AgentWords($"`--clear` sets no setting beside it — `daoris agent profile use {owner} --clear` returns the settings to "
                 + "today's defaults, and the setting is set on its own.");
         }
 
@@ -587,13 +455,13 @@ internal static class AgentAccountsCommand
             return new AgentPress(at.Verb, AgentRoutes.Account, at.Isolated, cleared,
                 _ =>
                 {
-                    HarnessSettings.Change(at.Path, read => read.WithUse(owner, null, workspace));
+                    HarnessSettings.Change(at.Path, read => read.WithUse(owner, null));
                     return Done();
                 },
                 _ => null,
                 _ =>
                 {
-                    at.Say($"{Prefix}: {Where(workspace)}, `{owner}` sets nothing of its own about how its list is used: today's defaults apply.");
+                    at.Say($"{Prefix}: `{owner}` sets nothing of its own about how its accounts are used: today's defaults apply.");
                     at.Say($"  Written to {at.Path} — {Written}");
                     return 0;
                 });
@@ -601,20 +469,15 @@ internal static class AgentAccountsCommand
 
         if (!named)
         {
-            exit = UsePrinted(at, owner, workspace, at.Settings.ResolveScope(owner, workspace));
+            exit = UsePrinted(at, owner, at.Settings.Set(owner));
             return null;
         }
 
-        var list = at.OwnList(owner, workspace);
+        var list = at.Settings.Set(owner).List;
         if (list.Count == 0)
         {
-            var borrowed = workspace is not null && at.Settings.ResolveScope(owner, workspace).From == ChoiceFrom.Machine;
-            throw new AgentWords(workspace is not null
-                ? $"`{workspace}` has no list of its own for `{owner}`, so there is nothing to use there — `daoris agent profile order {owner} "
-                    + $"<account>…{Scoped(workspace)}` gives it one"
-                    + (borrowed ? ", and until then it uses this machine's, which is set without --workspace." : ".")
-                : $"`{owner}` has no list on this machine, so there is nothing to use yet — `daoris agent profile order {owner} <account>…` "
-                    + "sets one, and how it is used is set beside it.");
+            throw new AgentWords($"`{owner}` has no account of Daoris's, so there is nothing to use yet — `daoris agent login {owner} --new` "
+                + "signs in to one, and how its accounts are used is set beside them.");
         }
 
         if (change.Keep is { } keep)
@@ -622,13 +485,11 @@ internal static class AgentAccountsCommand
             switch (ScopeProblem.Of(null, list, keep))
             {
                 case { Kind: ScopeProblemKind.Keep } problem:
-                    throw new AgentWords($"`{problem.Account}` is not in `{owner}`'s list {Where(workspace)} ({string.Join(", then ", list)}) — the "
-                        + $"kept account is one of the list. Name it in the list first (`daoris agent profile order {owner} "
-                        + $"{ShellWord.Words([.. list, problem.Account], ShellWord.Account)}{Scoped(workspace)}`), or keep one of it.");
+                    throw new AgentWords($"`{problem.Account}` is not one of `{owner}`'s accounts ({string.Join(", then ", list)}) — the kept "
+                        + "account is one of Daoris's accounts; keep one of them.");
                 case { Kind: ScopeProblemKind.Alone } problem:
-                    throw new AgentWords($"`{owner}`'s list {Where(workspace)} holds no account but `{problem.Account}`, so keeping it for "
-                        + $"conversations would leave driven work none — `daoris agent profile order {owner} "
-                        + $"{ShellWord.Words(list, ShellWord.Account)} <account>…{Scoped(workspace)}` adds one.");
+                    throw new AgentWords($"`{owner}` has no account of Daoris's but `{problem.Account}`, so keeping it for conversations would leave "
+                        + $"driven work none — `daoris agent login {owner} --new` signs in to another.");
             }
         }
 
@@ -642,17 +503,16 @@ internal static class AgentAccountsCommand
         else if (change.Curve is { } curve) sent["curve"] = CurveNode(curve);
         if (change.Early is { } early) sent["early"] = early;
         if (change.Near is { } near) sent["near"] = near;
-        var after = at.Settings.WithUse(owner, change, workspace);
         return new AgentPress(at.Verb, AgentRoutes.Account, at.Isolated, sent,
             _ =>
             {
-                HarnessSettings.Change(at.Path, read => read.WithUse(owner, change, workspace));
+                HarnessSettings.Change(at.Path, read => read.WithUse(owner, change));
                 return Done();
             },
             _ => null,
             _ =>
             {
-                UsePrinted(at, owner, workspace, after.ResolveScope(owner, workspace));
+                UsePrinted(at, owner, HarnessSettings.LoadSet(at.Path).Set(owner));
                 at.Say($"  Written to {at.Path} — {Written}");
                 return 0;
             });
@@ -784,31 +644,20 @@ internal static class AgentAccountsCommand
     }
 
     /// <summary>
-    /// <c>profile use</c>'s print: whose scope it is, its list, how it is used, the step the next start would follow, and what each of
-    /// its accounts last said.
+    /// <c>profile use</c>'s print: the set's order, how it is used, the step the next start would follow, and what each of its accounts
+    /// last said.
     /// </summary>
-    private static int UsePrinted(Context at, string owner, string? workspace, RotationScope scope)
+    private static int UsePrinted(Context at, string owner, RotationScope scope)
     {
-        var borrowed = workspace is not null && scope.From == ChoiceFrom.Machine;
         if (scope.List.Count == 0)
         {
-            at.Say(workspace is null
-                ? $"{Prefix}: `{owner}` has no list on this machine, so it has no settings — `daoris agent profile order {owner} <account>…` sets one."
-                : borrowed
-                    ? $"{Prefix}: `{workspace}` names no account of its own for `{owner}`, and this machine has no list, so there are no settings — "
-                        + $"`daoris agent profile order {owner} <account>…` sets the machine's."
-                    : $"{Prefix}: `{workspace}` names its own account for `{owner}`, `{scope.Default}`, and no list of its own, so it has no "
-                        + $"settings — `daoris agent profile order {owner} {ShellWord.Of(scope.Default ?? "", ShellWord.Account)} <account>…"
-                        + $"{Scoped(workspace)}` gives it a list.");
+            at.Say($"{Prefix}: `{owner}` has no account of Daoris's, so it has no settings — `daoris agent login {owner} --new` signs in to one.");
             return 0;
         }
 
         // Each account by the person's name for it, else its id (ACCT2).
         string Shown(string account) => AccountNames.Shown(at.Home, owner, account);
-        var spelled = string.Join(", then ", scope.List.Select(Shown));
-        at.Say(borrowed
-            ? $"{Prefix}: `{workspace}` names no account of its own for `{owner}`, so it uses this machine's: {spelled}."
-            : $"{Prefix}: {Where(workspace)}, `{owner}`'s list is {spelled}.");
+        at.Say($"{Prefix}: `{owner}`'s accounts, for every workspace, in order: {string.Join(", then ", scope.List.Select(Shown))}.");
 
         var toolchain = Toolchain(at, owner);
         var says = Says(at, owner);
@@ -896,7 +745,7 @@ internal static class AgentAccountsCommand
                 notes.Add($"its default, `{shown(problem.Account)}`, is not in this list: name it in the list, or make one of the list the default");
                 break;
             case { Kind: ScopeProblemKind.Alone } problem:
-                notes.Add($"`{shown(problem.Account)}` is kept for conversations, and this list holds no other account for driven work");
+                notes.Add($"`{shown(problem.Account)}` is kept for conversations, and it is the one account of Daoris's, so driven work has none");
                 break;
         }
 
@@ -933,7 +782,7 @@ internal static class AgentAccountsCommand
     /// </summary>
     internal static (string Row, string? Note) NextStartLines(RotationScope scope, bool says, bool anySaid, Func<string, string> shown)
     {
-        if (scope.List.Count == 1) return ($"`{shown(scope.List[0])}`, the one account this list holds", null);
+        if (scope.List.Count == 1) return ($"`{shown(scope.List[0])}`, the one account of Daoris's", null);
 
         var begins = scope.Begins is null ? null : shown(scope.Begins);
         var from = $"from `{begins}`{(scope.Default is not null && scope.Default == scope.Begins ? ", its default" : "")}";
@@ -945,7 +794,7 @@ internal static class AgentAccountsCommand
         var last = says
             ? $"; one whose limit is reached, that draws on usage credits or whose use is over {(off ? "Daoris's smart curve" : "its curve")} goes last"
             : "";
-        if (scope.Use.Use != "goal") return ($"the first ready account of this list, {from}{passes}{last}", null);
+        if (scope.Use.Use != "goal") return ($"the first ready account of the order, {from}{passes}{last}", null);
 
         // Step 4 weighs what would lapse (D165's USAGERESET1 note): only a read week's room, so an agent that says nothing has none.
         var lapses = !says ? "" : "then the one whose week would lapse the most: within its last day, its room under "
@@ -953,7 +802,7 @@ internal static class AgentAccountsCommand
         var room = !says ? "" : off ? "then the one furthest behind its week's pace; " : "then the one with the most room under its curve; ";
         return (
             $"the ready account running the fewest of Daoris's sessions; {lapses}{room}then the one Daoris started on least recently; "
-                + $"then this list's order, {from}{passes}{last}{(says ? ", the least over first" : "")}",
+                + $"then the order, {from}{passes}{last}{(says ? ", the least over first" : "")}",
             anySaid ? null : "no account has said what it has left yet: Daoris spreads starts across them by its own sessions");
     }
 
@@ -1043,66 +892,6 @@ internal static class AgentAccountsCommand
                 at.Say($"  Written to {AccountNames.PathOf(at.Home)} — machine-local, tracked by nothing.");
                 return 0;
             });
-    }
-
-    /// <summary>
-    /// <c>profile join &lt;agent&gt; &lt;account&gt; [&lt;workspace&gt;…] [--machine]</c> (ACCT1): an account put into the lists a start runs
-    /// on, each workspace's own and with <c>--machine</c> this machine's; a workspace that takes this machine's list is refused, naming it.
-    /// </summary>
-    private static AgentPress Join(Context at)
-    {
-        var owner = at.Owner();
-        var account = at.Account(owner, at.Bare(3, "<agent> <account> <workspace>…|--machine"));
-        List<string?> joins = [.. at.Args.Contains("--machine") ? [null] : Array.Empty<string?>(),
-            .. AgentsCommand.Operands(at.Args, AgentsCommand.Valued).Skip(4).Select(each => (string?)each.Trim())];
-        var existing = HarnessSettings.Profiles(at.Home, owner);
-        if (!existing.Contains(account, StringComparer.Ordinal))
-        {
-            throw new AgentWords($"`{owner}` has no account `{account}` on this machine — accounts that exist: "
-                + (existing.Count > 0 ? string.Join(", ", existing.Select(id => AccountNames.Shown(at.Home, owner, id))) : "(none)"));
-        }
-
-        if (joins.Count == 0)
-        {
-            throw new AgentWords("`agent profile join` needs the lists — a workspace's name, or `--machine` for this machine's: e.g. "
-                + $"`daoris agent profile join {owner} {ShellWord.Of(account, ShellWord.Account)} work`.");
-        }
-
-        foreach (var workspace in joins)
-        {
-            if (at.Settings.JoinProblemOf(owner, workspace) is { } problem) throw new AgentWords(problem.Sentence(owner));
-        }
-
-        HarnessSettings Joined(HarnessSettings read) => joins.Aggregate(read, (next, workspace) => next.WithJoined(owner, account, workspace));
-        var after = Joined(at.Settings);
-        var shown = AccountNames.Shown(at.Home, owner, account);
-        return new AgentPress(at.Verb, AgentRoutes.Harness, at.Isolated,
-            new JsonObject
-            {
-                ["action"] = "profile-join", ["harness"] = owner, ["profile"] = account,
-                ["join"] = new JsonArray([.. joins.Select(each => (JsonNode?)each)]),
-            },
-            _ =>
-            {
-                HarnessSettings.Change(at.Path, Joined);
-                return Done();
-            },
-            _ => null,
-            _ =>
-            {
-                at.Say($"{Prefix}: `{owner}`'s account `{shown}` is in "
-                    + $"{string.Join(", ", joins.Select(workspace => workspace is null ? "this machine's list" : $"`{workspace}`'s list"))}.");
-                at.Say($"  `{shown}` runs work in {string.Join(", ", after.PlacesOf(owner, account).Select(PlaceWords))}.");
-                at.Say($"  Written to {at.Path} — {Written}");
-                return 0;
-            });
-    }
-
-    /// <summary>One scope an account runs in, as a person reads it: <c>this machine's list, as its default</c>, <c>`work`'s default</c>.</summary>
-    private static string PlaceWords(AccountPlace place)
-    {
-        var scope = place.Workspace is null ? "this machine's" : $"`{place.Workspace}`'s";
-        return place.List && place.Default ? $"{scope} list, as its default" : $"{scope} {(place.List ? "list" : "default")}";
     }
 
     private static int? Number(JsonElement element, string name) =>

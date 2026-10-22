@@ -630,41 +630,6 @@ public sealed class AgentsRoutes(DriverContext context)
         return 0;
     }
 
-    /// <summary>
-    /// Which profile this harness runs as — the machine's, or one workspace's (D49 §4). 🔴 No profile
-    /// named CLEARS it: "use the tool's own home again" is a choice a person makes, not an argument
-    /// they forgot, and the file's own rule is that absence means the harness's own home.
-    /// </summary>
-    /// <remarks>
-    /// One method the route and Ask Daoris's door both called (HELP10), so the two could not drift. A default outside its scope's
-    /// own list is refused before anything is written, as the terminal refuses it since TOOL6a (TOOL4g, D130 §3.1). The route
-    /// refuses <c>profile-default</c> since POOL1a (D197); Ask Daoris's <c>default</c> door is its last caller, which POOL1b retires
-    /// with it, <see cref="AccountsRoutes.DefaultAllowed"/> and <see cref="DefaultEdited"/>.
-    /// </remarks>
-    internal static int ProfileDefault(DriverLoop loop, string harness, string? profile, string? workspace)
-    {
-        HarnessSettings.Change(loop.Harnesses.SettingsPath, settings =>
-        {
-            AccountsRoutes.DefaultAllowed(settings, harness, profile, workspace);
-            return DefaultEdited(settings, harness, profile, workspace);
-        });
-        return 0;
-    }
-
-    /// <summary>
-    /// An account's default set, or cleared by naming none (D49 §4): the machine's, or one workspace's — what
-    /// <c>profile-default</c> writes. A workspace left naming no account is dropped.
-    /// </summary>
-    /// <remarks>
-    /// 🔴 <b>A twin</b> of <c>daoris agent profile default … [--clear]</c> (LEFT3), the CLI's <c>withDefault</c>: each side's
-    /// table holds the same rows (<c>ProfileDefaultTwinTests</c>, <c>toolchain.test.ts</c>). Public for that table, which
-    /// the fast half runs without the roster the route asks again.
-    /// </remarks>
-    public static HarnessSettings DefaultEdited(HarnessSettings settings, string owner, string? profile, string? workspace) =>
-        workspace is { Length: > 0 }
-            ? settings.WithWorkspaceDefault(workspace, owner, profile)
-            : settings.WithDefault(owner, profile);
-
     /// <summary>Back to `PATH`. Nothing is deleted — re-pinning that version needs no download.</summary>
     private int Unpin(string harness)
     {

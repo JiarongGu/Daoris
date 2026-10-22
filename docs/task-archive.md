@@ -19524,3 +19524,17 @@ older build wrote, through `HarnessSettings.Set`, and the default's readers in t
 the terminal's and Ask Daoris's callers, so they and the two twin tables stay for POOL1b. The listed classes rewritten to the set,
 with `OwnSpaceTests`, `HelpPlaceWorkspaceTests`, the modules' account classes and eleven `agents-text.json` rows; the driver's and
 the modules' fast halves pass. Not seen failing first, and no window was looked at. Detail: D197's POOL1a2 note. On Opus.
+
+## POOL1b — the terminal and Ask Daoris on one set (2026-10-22, D197)
+
+> - [ ] **POOL1b — the terminal and Ask Daoris on one set** (driver, service; after POOL1a2, archived; D197). The account verbs PUSH1f2e builds turned into D197's refusals, and the `set` mark on Ask Daoris's account proposals, as design §5.1, §5.3 and §11 say; `agent list`, `login` and `settings` on the set, and `ResolveScope`, `JoinProblemOf`, `WithJoined`, `PlacesOf`, `DefaultAllowed`, `DefaultEdited` and `ProfileDefault` leaving with these, their last callers, `AccountJoinTwinTests` and `ProfileDefaultTwinTests` with them (D197's POOL1a2 note). Proof: as §11 names it.
+
+**Outcome** 2026-10-22: built. `profile order` and `use` write the set; `profile default`, `profile join`, `--workspace` and
+`login --join`/`--join-machine` are refused in `OneSetWords`' sentences before any press is built, nothing written. `login` and
+`settings` naming no account take the order's first; `agent list` shows the set, the own sign-in apart and the unsaid receipts. Ask
+Daoris's service writes `set: true` and no workspace, `default` left both sides' doors, and an unmarked stored proposal is refused at
+its plan and Apply. The named helpers and both twin tables left. `HarnessProfileTests`' four default cases now press the order or are
+refused in D197's sentence, each saying why; `AgentAccountsBothWaysTests`' one-set theory holds the terminal's refusal. Proof: the
+driver's and the modules' fast halves pass; `HarnessProfileTests`, `DriverModuleAgentsTests`, `HelpDoorsTests` and
+`AgentsCommandTests` (Process) and the service's `HelpAgentProposalTests` pass filtered. No real sign-in was started; not seen
+failing first, and no window was looked at. Detail: D197's POOL1b note. On Opus.

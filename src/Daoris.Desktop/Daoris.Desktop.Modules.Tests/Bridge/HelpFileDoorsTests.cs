@@ -11,26 +11,13 @@ public sealed class HelpFileDoorsTests : Bridge
 {
     private DriverModule Module() => new(Bus, new DriverLoop(Bus, new HostSupervisor("http://localhost:0"), "http://localhost:0"));
 
-    /// <summary>
-    /// A default on the protocol stub is written as its owner's, as one on <c>claude-code-acp</c> is (AGT7): since
-    /// TOOL4j the stub's door runs as the stub's accounts, so no built-in agent is left without a toolchain.
-    /// </summary>
-    [Fact]
-    public async Task A_default_on_the_protocol_stub_is_written_as_the_stubs()
-    {
-        await Module().HelpDoors(null).SetDefaultAccountAsync("acp-stub", "work", null, CancellationToken.None);
-
-        var settings = HarnessSettings.Load(HarnessSettingsPath);
-        Assert.Equal("work", settings.Defaults["stub"]);
-        Assert.False(settings.Defaults.ContainsKey("acp-stub"));
-    }
+    // HELP10's default door, written as the stub's owner's (AGT7, TOOL4j), left with POOL1b (D197 point 6): no door writes a default.
 
     /// <summary>
-    /// TOOL4l-b: an order is <c>ACCOUNT_USE</c>'s own <c>order</c> and <c>inherit</c> — the set's order written whole as its owner's
-    /// (AGT7; POOL1a1, D197 point 2: the accounts named first, the rest after), refused in the screen's words where an account is none,
-    /// and a workspace sent back to the machine's accounts with its list cleared. A workspace's list, which the screen's route refuses
-    /// since POOL1a1, is still written here until POOL1b refuses it too; a default laid raw beside it is folded away by the next edit
-    /// (D197 §6), so no list is refused for dropping it.
+    /// TOOL4l-b: an order is <c>ACCOUNT_USE</c>'s own <c>order</c> — the set's order written whole as its owner's (AGT7; POOL1a1, D197
+    /// point 2: the accounts named first, the rest after), refused in the screen's words where an account is none, and cleared back to
+    /// the ids' order with no setting cleared (POOL1b, §5.3). Before POOL1b this also wrote a workspace's list and sent a workspace back
+    /// to the machine's accounts (<c>inherit</c>); the door takes no workspace now.
     /// </summary>
     [Fact]
     public async Task An_order_is_written_and_refused_as_the_accounts_screens_route_writes_and_refuses_it()
@@ -38,31 +25,21 @@ public sealed class HelpFileDoorsTests : Bridge
         foreach (var account in new[] { "work", "play", "spare" }) Directory.CreateDirectory(HarnessSettings.ProfileHome(Home, "claude-code", account));
         var doors = Module().HelpDoors(null);
 
-        await doors.SetAccountOrderAsync("claude-code-acp", ["work", "play"], false, null, CancellationToken.None);
-        await doors.SetAccountOrderAsync("claude-code", ["spare", "play"], false, "lab", CancellationToken.None);
-        HarnessSettings.Load(HarnessSettingsPath).WithWorkspaceDefault("lab", "claude-code", "play").Save(HarnessSettingsPath);
+        await doors.SetAccountOrderAsync("claude-code-acp", ["work", "play"], false, CancellationToken.None);
+        await doors.SetAccountUseAsync("claude-code", new UseChange(Use: "order"), CancellationToken.None);
 
-        var settings = HarnessSettings.Load(HarnessSettingsPath);
-        Assert.Equal(["work", "play", "spare"], settings.Rotation["claude-code"]);
-        Assert.Equal(["spare", "play"], settings.WorkspaceRotation["lab"]["claude-code"]);
+        Assert.Equal(["work", "play", "spare"], HarnessSettings.Load(HarnessSettingsPath).Rotation["claude-code"]);
         Assert.Contains("no account `gone`", (await Assert.ThrowsAsync<DriverException>(() =>
-            doors.SetAccountOrderAsync("claude-code", ["work", "gone"], false, null, CancellationToken.None))).Message);
+            doors.SetAccountOrderAsync("claude-code", ["work", "gone"], false, CancellationToken.None))).Message);
 
-        await doors.SetAccountOrderAsync("claude-code", ["spare"], false, "lab", CancellationToken.None);
+        await doors.SetAccountOrderAsync("claude-code", ["spare"], false, CancellationToken.None);
+        Assert.Equal(["spare", "work", "play"], HarnessSettings.Load(HarnessSettingsPath).Rotation["claude-code"]);
 
-        var folded = HarnessSettings.Load(HarnessSettingsPath);
-        Assert.False(folded.Workspaces.ContainsKey("lab"));
-        Assert.Equal(["spare"], folded.WorkspaceRotation["lab"]["claude-code"]);
-        Assert.Contains(folded.Pooled["claude-code"], receipt => receipt.Scopes.Any(scope => scope is { Workspace: "lab", Default: "play" }));
-
-        await doors.SetAccountOrderAsync("claude-code", [], true, "lab", CancellationToken.None);
+        await doors.SetAccountOrderAsync("claude-code", [], true, CancellationToken.None);
 
         var back = HarnessSettings.Load(HarnessSettingsPath);
-        Assert.False(back.WorkspaceRotation.ContainsKey("lab"));
-        Assert.False(back.Workspaces.ContainsKey("lab"));
-        Assert.Equal(["work", "play", "spare"], back.Rotation["claude-code"]);
-        Assert.Contains("names the workspace", (await Assert.ThrowsAsync<DriverException>(() =>
-            doors.SetAccountOrderAsync("claude-code", [], true, null, CancellationToken.None))).Message);
+        Assert.Equal(["play", "spare", "work"], back.Rotation["claude-code"]);
+        Assert.Equal("order", HarnessSettings.LoadSet(HarnessSettingsPath).Set("claude-code").Use.Use);
     }
 
     /// <summary>

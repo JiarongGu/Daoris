@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <para>A scope is written as its list, <c>@name</c> for its default, <c>keep=name</c>, and <c>order</c> for D125's
 /// walk, <c>switch=smart|curve|off</c> and a person's curve a window each, <c>curve=session=85</c> flat or
 /// <c>curve=weekly=0:10,100:60</c> as points (D165 point 2), and the old names <c>early=on|off</c> and <c>near=85</c>,
-/// read on; it is read through the file's own reader (<see cref="HarnessSettings.ResolveScope"/>), so a default outside its
+/// read on; it is read through the file's own reader (<see cref="HarnessSettings.Set"/>), so a default outside its
 /// list is read with the list winning, as a start reads it. What Daoris knows is <c>name:flags</c>, each flag one of
 /// <c>r&lt;n&gt;</c> sessions running, <c>s&lt;offset&gt;</c> last started that long from now and <c>c&lt;n&gt;</c> chosen
 /// by this look as its n-th start; what its agent said is <c>S</c>, <c>W</c>, <c>N</c>, <c>X</c> and <c>C</c> (step 2's
@@ -44,7 +44,7 @@ public sealed class AccountRotationWalkTests
                 Use: use, Keep: keep, Early: early, Near: near, Switch: @switch, Curve: curve.Count > 0 ? AccountReadingsTests.Curve(curve) : null));
         }
 
-        return settings.ResolveScope("fake", null);
+        return settings.Set("fake");
     }
 
     internal static Dictionary<string, AccountFacts> Facts(string written)
@@ -162,7 +162,7 @@ public sealed class AccountRotationWalkTests
     {
         // A door refuses it (§4.6); a file edited by hand that holds it is read with the list winning, as a default is.
         var scope = new HarnessSettings().WithRotation("fake", ["account-1"]).WithUse("fake", new UseChange(Keep: "account-1"))
-            .ResolveScope("fake", null);
+            .Set("fake");
 
         Assert.Equal(["account-1"], AccountRotation.Order(scope, StartKind.Driven, ["account-1"], Facts(""), Now));
     }
@@ -462,7 +462,7 @@ public sealed class AccountRotationWalkTests
     public void While_every_account_is_ready_none_runs_more_than_its_share_of_the_cap(int accounts)
     {
         var names = Enumerable.Range(1, accounts).Select(n => $"account-{n}").ToList();
-        var scope = new HarnessSettings().WithRotation("fake", names).ResolveScope("fake", null);
+        var scope = new HarnessSettings().WithRotation("fake", names).Set("fake");
 
         for (var cap = 1; cap <= 9; cap++)
         {

@@ -563,8 +563,11 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         stream(JoinedSaid(AccountNames.Shown(_loop.Harnesses.Home, owner, account)));
     }
 
-    /// <summary>What a sign-in's end says of a new account (the account-pool design §4.4, <c>agents.add.joined</c>'s English).</summary>
-    public static string JoinedSaid(string shown) => $"`{shown}` joined Daoris's accounts: every workspace's work may run on it.";
+    /// <summary>
+    /// What a sign-in's end says of a new account (the account-pool design §4.4, <c>agents.add.joined</c>'s English), the terminal's
+    /// <c>login</c>'s words too (POOL1b).
+    /// </summary>
+    public static string JoinedSaid(string shown) => OneSetWords.Joined(shown);
 
     /// <summary>A name given at a sign-in's end, or null where none was asked or it could not be kept, which is said.</summary>
     private static string? Kept(Func<string?> rename, bool asked, Action<string> stream)

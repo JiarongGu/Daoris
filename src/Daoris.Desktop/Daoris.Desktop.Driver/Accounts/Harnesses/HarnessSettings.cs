@@ -625,7 +625,7 @@ public sealed record HarnessSettings(
     /// or a screen edit would delete the person's order. <c>RotationTwinTests</c> and the CLI's <c>rotation.test.ts</c>
     /// hold the reading, the edits, the refusals and the file both write, row for row.</para>
     /// <para>An account the order does not list is never rotated into (§3.1): one list, not a list and a mark. A start
-    /// reads its one scope instead (<see cref="ResolveScope"/>, TOOL6b, D130 §3.1), where a workspace that names a default
+    /// reads its one scope instead (<see cref="Set"/>, TOOL6b, D130 §3.1), where a workspace that names a default
     /// and no list takes no list at all; this is D125's reading of the file, held by its twin.</para>
     /// </remarks>
     public (IReadOnlyList<string> Order, ChoiceFrom From) ResolveRotationFrom(string agent, string? workspace)
@@ -650,7 +650,7 @@ public sealed record HarnessSettings(
     /// <remarks>
     /// The set's settings are the agent's and no list's (POOL1a, the account-pool design §2.3): clearing the machine's order clears none
     /// of them, and <see cref="Change"/> writes the order whole again, by id. A workspace's list cleared still takes its settings with it
-    /// (TOOL6a, D130 §2), until the doors that write one are refused (POOL1b).
+    /// (TOOL6a, D130 §2); since POOL1b (D197) no door writes one, and the next change folds one an older build wrote.
     /// </remarks>
     public HarnessSettings WithRotation(string agent, IReadOnlyList<string>? order, string? workspace = null)
     {
@@ -1056,9 +1056,9 @@ public sealed record HarnessSettings(
     //    and since a save is measured from each entry as the file held it (KEEPALL1b, D173's note), every save does so.
     //  - HarnessRoster.SelectAsync reads them through Set on the projection (POOL1a2, the account-pool design §2.4), the agent's one
     //    entry: `use` and `keep` choose a start's account, and the switch and the curve pass an account whose use is over the curve
-    //    now (SWITCH1b-ii). ResolveScope's per-workspace reading is the terminal's alone until POOL1b.
+    //    now (SWITCH1b-ii). The per-workspace reading left with the terminal's last callers (POOL1b), so every reader reads Set.
 
-    /// <summary>Agent → how this machine's list is used, as the file holds it. See <see cref="ResolveScope"/>.</summary>
+    /// <summary>Agent → how this machine's list is used, as the file holds it. See <see cref="Set"/>.</summary>
     public IReadOnlyDictionary<string, UseEntry> Uses { get; init; } =
         new Dictionary<string, UseEntry>(StringComparer.OrdinalIgnoreCase);
 
@@ -1067,38 +1067,20 @@ public sealed record HarnessSettings(
         new Dictionary<string, IReadOnlyDictionary<string, UseEntry>>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// The scope a start for <paramref name="agent"/> reads (D130 §2 rule 1): the workspace's, when it names a default or a
-    /// list of its own for the agent, else the machine's — its own default, its list, where it begins, and how it is used.
-    /// </summary>
-    /// <remarks>
-    /// A start reads <see cref="Set"/> on the projection (POOL1a2), which has no workspace's scope; this per-workspace reading is left
-    /// to the terminal's last callers, which POOL1b moves, and leaves with them (the account-pool design §2.4).
-    /// </remarks>
-    public RotationScope ResolveScope(string agent, string? workspace)
-    {
-        var circle = workspace?.Trim();
-        if (!string.IsNullOrEmpty(circle))
-        {
-            var own = Workspaces.TryGetValue(circle, out var defaults) && defaults.TryGetValue(agent, out var named)
-                && !string.IsNullOrWhiteSpace(named) ? named.Trim() : null;
-            IReadOnlyList<string> list = WorkspaceRotation.TryGetValue(circle, out var orders) && orders.TryGetValue(agent, out var order)
-                ? order : [];
-            if (own is not null || list.Count > 0)
-            {
-                return ScopeOf(ChoiceFrom.Workspace, own, list, WorkspaceUses.TryGetValue(circle, out var uses) ? uses.GetValueOrDefault(agent) : null);
-            }
-        }
-
-        var machine = Defaults.TryGetValue(agent, out var held) && !string.IsNullOrWhiteSpace(held) ? held.Trim() : null;
-        return ScopeOf(ChoiceFrom.Machine, machine, Rotation.TryGetValue(agent, out var mine) ? mine : [], Uses.GetValueOrDefault(agent));
-    }
-
-    /// <summary>
     /// The agent's one set as a start reads it (POOL1a2, the account-pool design §2.4): its whole order, begun at the order's first,
     /// and its one entry of settings. Read on the projection (<see cref="LoadSet"/>), which holds no default and no workspace's scope,
     /// so every workspace reads this one; on a raw file it is the machine's scope.
     /// </summary>
-    public RotationScope Set(string agent) => ResolveScope(agent, workspace: null);
+    /// <remarks>
+    /// The per-workspace reading, <c>ResolveScope</c> (D130 §2 rule 1: a workspace's scope where it named a default or a list of its own,
+    /// else the machine's), left with its last callers, the terminal's, in POOL1b (D197); an older build's reading of a file is the
+    /// tests' own rule now (<c>AccountSetTests</c>).
+    /// </remarks>
+    public RotationScope Set(string agent)
+    {
+        var machine = Defaults.TryGetValue(agent, out var held) && !string.IsNullOrWhiteSpace(held) ? held.Trim() : null;
+        return ScopeOf(ChoiceFrom.Machine, machine, Rotation.TryGetValue(agent, out var mine) ? mine : [], Uses.GetValueOrDefault(agent));
+    }
 
     /// <summary>
     /// Where the set's starts begin (the account-pool design §2.2): the order's first, which every reader of the machine's default
@@ -1240,66 +1222,7 @@ public sealed record HarnessSettings(
         }
     }
 
-    // An account put into a scope's list at a person's word, and where each account runs (ACCT1, D125's ACCT1 note; D130 §3.1):
-    // a new account's sign-in ends by saying which lists and defaults hold it, both doors can add it to a list in the same step,
-    // and an account no list and no default holds says so where it is listed. A twin of the CLI's rotation.ts (joinProblem,
-    // withJoined, placesOf); AccountJoinTwinTests and the CLI's account-join.test.ts hold the same tables, row for row.
-    // Accounts compare exactly, as the wiring compares a default or a list's names with a folder.
-    // Found on the install, 2026-10-04: a person signed in to re-enable a signed-out account, got a new account no list held,
-    // and the work kept starting on the empty one. A new account in no list is now said at its sign-in's end, with the list it
-    // may join, and listed as running nowhere.
-    // Since POOL1a2 (D197) the window's sign-in says the account joined Daoris's accounts and no answer carries places: the
-    // terminal's `login --join`, `profile join` and `agent list` are these helpers' last callers, and POOL1b retires them.
-
-    /// <summary>
-    /// Why an account cannot join <paramref name="workspace"/>'s list, or null where it can: a workspace that names no default
-    /// and no list of its own for the agent takes this machine's scope (D130 §2 rule 1), so its list is this machine's, and a
-    /// list of its own would move its starts off every account the machine's holds. Null is this machine's list, which any
-    /// account may join.
-    /// </summary>
-    public JoinProblem? JoinProblemOf(string agent, string? workspace) =>
-        workspace?.Trim() is { Length: > 0 } circle && ResolveScope(agent, circle).From != ChoiceFrom.Workspace
-            ? new JoinProblem(circle)
-            : null;
-
-    /// <summary>
-    /// The wiring with <paramref name="account"/> in the scope's own list (D130 §3.1): appended where the list lacks it, a list
-    /// begun at the scope's default where it has none, or of the account alone where the scope names nobody. The list's
-    /// settings stay. Whether the scope may be joined is <see cref="JoinProblemOf"/>'s question, which a door asks first.
-    /// </summary>
-    public HarnessSettings WithJoined(string agent, string account, string? workspace)
-    {
-        var scope = ResolveScope(agent, workspace);
-        IReadOnlyList<string> list = scope.List.Count > 0
-            ? scope.List.Contains(account, StringComparer.Ordinal) ? scope.List : [.. scope.List, account]
-            : scope.Default is { } begins && begins != account ? [begins, account] : [account];
-        return WithRotation(agent, list, workspace?.Trim() is { Length: > 0 } circle ? circle : null);
-    }
-
-    /// <summary>
-    /// Where <paramref name="account"/> runs: each scope whose own list holds it or whose own default names it, this machine
-    /// first and then each workspace by name. None is an account no start runs on, which both doors say.
-    /// </summary>
-    public IReadOnlyList<AccountPlace> PlacesOf(string agent, string account)
-    {
-        var places = new List<AccountPlace>();
-        Add(null, Rotation.GetValueOrDefault(agent), Defaults.GetValueOrDefault(agent));
-
-        foreach (var workspace in Workspaces.Keys.Concat(WorkspaceRotation.Keys).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.Ordinal))
-        {
-            Add(
-                workspace,
-                WorkspaceRotation.TryGetValue(workspace, out var orders) ? orders.GetValueOrDefault(agent) : null,
-                Workspaces.TryGetValue(workspace, out var defaults) ? defaults.GetValueOrDefault(agent) : null);
-        }
-
-        return places;
-
-        void Add(string? workspace, IReadOnlyList<string>? list, string? named)
-        {
-            var listed = list?.Contains(account, StringComparer.Ordinal) == true;
-            var defaulted = named?.Trim() == account;
-            if (listed || defaulted) places.Add(new AccountPlace(workspace, listed, defaulted));
-        }
-    }
+    // ACCT1's joins (D125's ACCT1 note: a person who signed in to re-enable an account got a new one no list held, and work kept
+    // starting on the empty one) left with POOL1b (D197): every account of Daoris's is one of the set, placed last in its order at its
+    // sign-in, so none can run nowhere, and `JoinProblemOf`, `WithJoined` and `PlacesOf` left with their last callers.
 }
