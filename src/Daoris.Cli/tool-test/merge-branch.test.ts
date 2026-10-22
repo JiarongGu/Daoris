@@ -29,6 +29,8 @@ interface Options {
   full: boolean; gated: boolean; rerun: string[]; passed: boolean; stale: boolean; oneAtATime: boolean;
   /** GATEWT1: the full set in a worktree of its own, at this commit (main's tip when null). */
   beside: boolean; besideCommit: string | null;
+  /** CI1: the CI runner on this commit (main's tip when null), its watch, and the stop asked of the watch. */
+  ci: boolean; ciCommit: string | null; watch: boolean; stop: boolean;
 }
 /** GATEWT1: what the prune knows of the gate tree: git lists it, the commit it holds, its changes, its run's lock and its stage. */
 interface GateTreeFacts {
@@ -113,6 +115,8 @@ const tool = await import(
     print?: (line: string) => void;
     halt?: () => boolean;
     memory?: MemoryOptions | null;
+    /** CI1: a Process gate waits only for what builds its component, the heavy light gates beside it as memory allows. */
+    byMemory?: boolean;
   }) => Promise<GateResult[]>;
   /** MEMGATE1: a heavy gate waits for memory rather than failing for want of it. */
   memoryNeed: (gate: { name: string; run: string; memoryGb?: number }) => number;
@@ -135,7 +139,7 @@ const tool = await import(
   runsBesideGitHalf: (gate: { name: string; run: string }) => boolean;
   dotnetComponent: (run: string) => string | null;
   isHeavyGate: (gate: { name: string; run: string }) => boolean;
-  laneSchedule: (gates: Gate[], options?: { scripts?: Record<string, string> }) => Schedule;
+  laneSchedule: (gates: Gate[], options?: { scripts?: Record<string, string>; byMemory?: boolean }) => Schedule;
   LIGHT_WIDTH: number;
   gateComponents: (gate: { name: string; run: string }, scripts?: Record<string, string>) => string[];
   testBuild: (run: string) => string | null;
@@ -210,8 +214,10 @@ const tool = await import(
   verdictsHome: (root: string) => string;
   readVerdicts: (root: string) => { schema: number; verdicts: Verdict[] };
   addVerdicts: (root: string, entries: Verdict[], options?: { keep?: number }) => void;
-  readGateLock: (home: string, alive?: (pid: number) => boolean) => { pid: number; commit: string; at: string; running: boolean } | null;
-  takeGateLock: (home: string, options: { commit: string; alive?: (pid: number) => boolean; now?: () => string; end?: (pid: number, since: number) => number[]; endStrays?: (folder: string, since: number) => number[] }) => { stale: { pid: number; commit: string; at: string; ended: number[] } | null };
+  readGateLock: (home: string, alive?: (pid: number) => boolean) => { pid: number; commit: string; at: string; running: boolean; holder: string } | null;
+  takeGateLock: (home: string, options: {
+    commit: string; holder?: string; alive?: (pid: number) => boolean; now?: () => string; end?: (pid: number, since: number) => number[]; endStrays?: (folder: string, since: number) => number[];
+  }) => { stale: { pid: number; commit: string; at: string; ended: number[] } | null };
   releaseGateLock: (home: string) => void;
   gateTreeVerdict: (facts: GateTreeFacts, options?: { atMerge?: boolean }) => { remove: boolean; why: string; said?: string };
   staleDependencies: (tree: string) => string[];
@@ -242,7 +248,41 @@ const tool = await import(
   descendants: (listing: string, pid: number) => number[];
   stoppedLines: (ran: string[], left: string[], ended?: string[]) => string[];
   stopOnInterrupt: (trees: Trees, options?: { on?: { once: (event: string, listener: () => void) => unknown; off: (event: string, listener: () => void) => unknown }; say?: (line: string) => void }) => () => void;
+  /** CI1: the local CI runner, its record, its watch and the stop it is asked by. */
+  CI_RECORD: string;
+  CI_WATCH: string;
+  CI_STOP: string;
+  CI_IDLE: Readonly<{ busy: number; freeGb: number; width: number; sampleMs: number }>;
+  ciPlan: (facts: Omit<Judging, 'isRecord'> & { plan: string[]; verdicts: Verdict[] }) => { run: string[]; kept: { name: string; verdict: Verdict; standing: Standing }[]; gates: Judged[] };
+  cpuBusy: (before: CpuTimes[], after: CpuTimes[]) => number | null;
+  measureLoad: (options?: { cpus?: () => CpuTimes[]; sleep?: (ms: number) => Promise<void>; read?: () => Reading; ms?: number }) => Promise<Load>;
+  ciWidth: (load: Load) => { width: number; idle: boolean; why: string };
+  ciStatus: (facts: {
+    commit: string; tree: string; plan: Gate[]; chosen: { run: string[]; kept: { name: string; verdict: Verdict; standing: Standing }[] };
+    since: { commit: string | null; at: string | null; paths: number | null }; light: { width: number; idle: boolean; why: string };
+    pid: number; at: string; logOf: (gate: string, commit: string | null) => string | null;
+  }) => CiStatus;
+  watchCi: (seams: {
+    tip: () => string | null; gated: (commit: string) => boolean; holder: () => string | null; run: () => Promise<number>;
+    stopAsked: () => boolean; sleep: (ms: number) => Promise<void>; say: (line: string) => void; pollMs?: number; tickMs?: number; now?: () => number;
+  }) => Promise<number>;
 };
+/** CI1: what `os.cpus()` answers of a processor, the times it spent by kind since the machine started. */
+interface CpuTimes { times: { user: number; nice: number; sys: number; idle: number; irq: number } }
+/** CI1: the machine's load as a CI run measures it before its gates start: the share of its processors busy, its free memory. */
+interface Load { busy: number | null; physical: number | null; commit: number | null }
+/** CI1: one gate in a CI run's status file. */
+interface CiGate {
+  name: string; kind: string; lane: 'light' | 'process'; state: 'kept' | 'waiting' | 'running' | 'done' | 'not run';
+  verdict: string | null; at: string | null; ms: number | null; log: string | null; note: string | null;
+  kept: { commit: string | null; tree: string | null; standing: string } | null;
+}
+/** CI1: a CI run's status file, `local/scratch/ci-<sha7>/status.json`, which the parent reads and a later page may. */
+interface CiStatus {
+  schema: number; commit: string; tree: string; state: string; pid: number; started: string; updated: string; ended: string | null;
+  since: { commit: string | null; at: string | null; paths: number | null }; light: { width: number; idle: boolean; why: string };
+  gates: CiGate[]; error?: string;
+}
 
 // The stage's own question (GATE6b's proof): the publish asks the merge tool's `--passed` before it builds.
 const publish = await import(
@@ -268,6 +308,7 @@ test('the arguments name one branch, or several after --batch, and the flags', (
   assert.deepEqual(tool.parseArgs(['mod9']), {
     branches: ['mod9'], keepGoing: false, commitCheck: true, resume: false, dropBatch: false, plan: false, prune: false, autoPrune: true,
     full: false, gated: false, rerun: [], passed: false, stale: false, oneAtATime: false, beside: false, besideCommit: null,
+    ci: false, ciCommit: null, watch: false, stop: false,
   });
   assert.equal(tool.parseArgs(['a', '--gated']).gated, true);
   assert.equal(tool.parseArgs(['--continue', '--gated']).gated, true);
@@ -368,6 +409,194 @@ test('--full --beside gates a commit in a worktree of its own, main\'s tip when 
   }
 });
 
+// ---------------------------------------------------------------------------------------------------
+// CI1: the local CI runner, main's tip gated after each merge so a release waits only for the last delta
+
+test("--ci gates a commit in the gate tree, main's tip unless named; --watch follows main's tip, --stop ends the watch", () => {
+  const plain = tool.parseArgs(['--ci']);
+  assert.deepEqual([plain.ci, plain.ciCommit, plain.watch, plain.stop, plain.branches, plain.full], [true, null, false, false, [], false]);
+  const named = tool.parseArgs(['--ci', 'abc1234', '--one-at-a-time']);
+  assert.deepEqual([named.ci, named.ciCommit, named.oneAtATime], [true, 'abc1234', true]);
+  assert.equal(tool.parseArgs(['--ci', '--keep-going']).ci, true, 'a CI run keeps going anyway: the flag is taken and changes nothing');
+  const watch = tool.parseArgs(['--ci', '--watch']);
+  assert.deepEqual([watch.ci, watch.watch, watch.ciCommit], [true, true, null]);
+  assert.equal(tool.parseArgs(['--watch', '--ci']).watch, true);
+  assert.deepEqual([tool.parseArgs(['--ci', '--stop']).stop], [true]);
+  const cases: [string[], RegExp][] = [
+    [['--watch'], /--watch is the CI's: --ci --watch/],
+    [['--stop'], /--stop is the CI watch's: --ci --stop/],
+    [['--ci', 'abc1234', 'b'], /--ci takes no branch/],
+    [['a', '--ci'], /--ci takes no branch/],
+    [['--ci', '--watch', 'abc1234'], /--ci --watch gates main's tip as it moves: it takes no commit/],
+    [['--ci', '--stop', 'abc1234'], /--ci --stop takes nothing else/],
+    [['--ci', '--stop', '--watch'], /--ci --stop takes nothing else/],
+    [['--ci', '--full'], /--ci takes only a commit, --watch, --stop, --keep-going and --one-at-a-time/],
+    [['--ci', '--beside'], /--ci takes only/],
+    [['--ci', '--no-prune'], /--ci takes only/],
+    [['--ci', '--ci'], /--ci is given once/],
+    [['--passed', '--ci'], /one of|--ci takes only/],
+    [['--prune', '--ci'], /one of|--ci takes only/],
+  ];
+  for (const [argv, message] of cases) {
+    const error = refusal(() => tool.parseArgs(argv));
+    assert.equal(error.exitCode, 2, argv.join(' '));
+    assert.match(error.message, message, argv.join(' '));
+  }
+});
+
+test('a CI run and a stage hold the gate tree as a full set does, and a refusal names which holds it', () => {
+  const fx = makeFixture('merge-branch-gate-holders');
+  const sha = 'a'.repeat(40);
+  tool.takeGateLock(fx.root, { commit: sha, holder: 'ci', alive: () => true, now: () => '2026-10-22T10:00:00Z' });
+  assert.equal(tool.readGateLock(fx.root, () => true)!.holder, 'ci');
+  let error = refusal(() => tool.takeGateLock(fx.root, { commit: 'b'.repeat(40), alive: () => true }));
+  assert.equal(error.exitCode, 2);
+  assert.match(error.message, new RegExp(`a CI run holds the gate tree already: on aaaaaaa since 2026-10-22 10:00 UTC \\(pid ${process.pid}, local/gate-tree\\); one runs at a time`));
+  assert.equal((error as unknown as { busy?: boolean }).busy, true, 'the watch reads a held tree as one to wait for, never a failure');
+  tool.releaseGateLock(fx.root);
+  // A stage from the gate tree (publish:desktop --from-gated) holds it through its build.
+  writeFileSync(join(fx.root, tool.GATE_TREE_LOCK), `${JSON.stringify({ pid: process.pid, commit: sha, at: '2026-10-22T11:00:00Z', holder: 'stage' })}\n`);
+  error = refusal(() => tool.takeGateLock(fx.root, { commit: 'b'.repeat(40), holder: 'ci', alive: () => true }));
+  assert.match(error.message, new RegExp(`a stage of aaaaaaa is building from the gate tree since 2026-10-22 11:00 UTC \\(pid ${process.pid}, local/gate-tree\\): it holds the tree until its build ends`));
+  // The prune keeps it while it builds, saying whose it is.
+  const lock = tool.readGateLock(fx.root, () => true);
+  assert.match(tool.gateTreeVerdict({ listed: true, head: sha, changes: [], lock, staged: null }).why, /its stage is building/);
+  fx.cleanup();
+});
+
+test("a CI run gates what this tree's verdicts lack: a gate with none, or whose last pass a changed path reaches; a failure stays owed; the records are no excuse", () => {
+  const plan = ['universal', 'service', 'web', 'cli'];
+  const verdict = (gate: string, tree: string, value = 'PASS'): Verdict => ({ gate, verdict: value, tree, at: '2026-10-22T10:00:00Z', commit: `${tree}-commit`, branch: null });
+  const drifts: Record<string, string[]> = { t1: ['src/Daoris.Web/src/a.ts'], t0: ['src/Daoris.Web/src/a.ts', 'TASKS.md'] };
+  const facts = {
+    tree: 't2',
+    drift: (from: string) => drifts[from] ?? null,
+    // The lane table, stood in: every path reaches the baseline, a page source the web gate, the backlog the service suite.
+    reaching: (gate: string, paths: string[]) => paths.filter((path) => ['universal', 'cli'].includes(gate)
+      || (gate === 'web' && path.startsWith('src/Daoris.Web/')) || (gate === 'service' && path === 'TASKS.md')),
+  };
+  // No verdict at all, a machine's first run: every gate runs.
+  assert.deepEqual(tool.ciPlan({ ...facts, plan, verdicts: [] }).run, plan);
+  // Every gate passed on t1, and t2 differs from it by a page source: the gates it reaches run, the service suite is kept.
+  let chosen = tool.ciPlan({ ...facts, plan, verdicts: plan.map((gate) => verdict(gate, 't1')) });
+  assert.deepEqual(chosen.run, ['universal', 'web', 'cli']);
+  assert.deepEqual(chosen.kept.map((kept) => `${kept.name} ${kept.verdict.verdict} ${kept.standing.standing}`), ['service PASS unreached']);
+  // The stage forgives the records (GATE6); the CI does not: a backlog edit since reaches the service suite, which runs.
+  chosen = tool.ciPlan({ ...facts, plan, verdicts: plan.map((gate) => verdict(gate, 't0')) });
+  assert.deepEqual(chosen.run, plan);
+  // A failure stays owed whatever changed since: the service suite failed on t1, nothing since reaches it, and it runs again.
+  chosen = tool.ciPlan({ ...facts, plan, verdicts: plan.map((gate) => verdict(gate, 't1', gate === 'service' ? 'FAIL' : 'PASS')) });
+  assert.deepEqual(chosen.run, plan);
+  // A pass on this very tree is kept, and so is a flake: nothing to run.
+  chosen = tool.ciPlan({ ...facts, plan, verdicts: plan.map((gate) => verdict(gate, 't2', gate === 'web' ? 'FLAKE' : 'PASS')) });
+  assert.deepEqual([chosen.run, chosen.kept.map((kept) => kept.standing.standing)], [[], ['exact', 'exact', 'exact', 'exact']]);
+  // A tree git can no longer compare is no pass: its gates run.
+  assert.deepEqual(tool.ciPlan({ ...facts, plan, verdicts: plan.map((gate) => verdict(gate, 'gone')) }).run, plan);
+});
+
+test('a CI run measures the machine before its gates start, and runs the light lane wider only when it is idle', async () => {
+  const gb = 2 ** 30;
+  const idle = tool.ciWidth({ busy: 0.1, physical: 40 * gb, commit: 50 * gb });
+  assert.deepEqual([idle.width, idle.idle], [tool.CI_IDLE.width, true]);
+  assert.match(idle.why, /idle: 10% of its processors busy, 50\.0 GB free commit and 40\.0 GB free physical memory/);
+  assert.ok(tool.CI_IDLE.width > tool.LIGHT_WIDTH, 'wider than a merge\'s light lane');
+  for (const load of [
+    { busy: 0.4, physical: 40 * gb, commit: 50 * gb }, { busy: 0.1, physical: 8 * gb, commit: 50 * gb },
+    { busy: 0.1, physical: 40 * gb, commit: 4 * gb }, { busy: null, physical: 40 * gb, commit: 50 * gb }, { busy: 0.1, physical: null, commit: null },
+  ]) {
+    const chosen = tool.ciWidth(load);
+    assert.deepEqual([chosen.width, chosen.idle], [tool.LIGHT_WIDTH, false], JSON.stringify(load));
+  }
+  assert.match(tool.ciWidth({ busy: 0.4, physical: 40 * gb, commit: 50 * gb }).why, /not idle: 40% of its processors busy/);
+  assert.match(tool.ciWidth({ busy: 0.1, physical: 8 * gb, commit: 50 * gb }).why, /not idle: .*8\.0 GB free physical memory/);
+  assert.match(tool.ciWidth({ busy: null, physical: 40 * gb, commit: 50 * gb }).why, /its processors' load could not be measured/);
+  // Where the platform keeps no commit to read, the free physical memory judges alone.
+  assert.equal(tool.ciWidth({ busy: 0.1, physical: 40 * gb, commit: null }).width, tool.CI_IDLE.width);
+
+  // The share busy is the processors' own times between two readings, across all of them.
+  const cpu = (user: number, idleTime: number): CpuTimes => ({ times: { user, nice: 0, sys: 0, idle: idleTime, irq: 0 } });
+  assert.equal(tool.cpuBusy([cpu(100, 100), cpu(100, 100)], [cpu(130, 170), cpu(110, 190)]), 0.25);
+  assert.equal(tool.cpuBusy([cpu(1, 1)], [cpu(1, 1)]), null, 'no time passed: not measured');
+  assert.equal(tool.cpuBusy([cpu(1, 1)], []), null, 'a count of processors that changed is not measured');
+  let slept = 0;
+  const readings = [[cpu(0, 0)], [cpu(50, 50)]];
+  const load = await tool.measureLoad({ cpus: () => readings.shift()!, sleep: async (ms) => { slept = ms; }, read: () => ({ physical: 3, commit: 4 }), ms: 750 });
+  assert.deepEqual([load, slept], [{ busy: 0.5, physical: 3, commit: 4 }, 750]);
+});
+
+test("a CI run's status names each gate of the plan: those it runs waiting, the rest kept with the verdict that stands and where", () => {
+  const plan: Gate[] = [
+    { name: 'universal', run: 'node u.mjs', kind: 'check' },
+    { name: 'driver-process', run: 'dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/process.runsettings', kind: 'suite' },
+    { name: 'web', run: 'npm run test:web:e2e', kind: 'rehearsal' },
+  ];
+  const kept: Verdict = { gate: 'web', verdict: 'PASS', tree: 't1', at: '2026-10-22T09:00:00Z', commit: 'c'.repeat(40), branch: null };
+  const status = tool.ciStatus({
+    commit: 'a'.repeat(40), tree: 't2', plan,
+    chosen: { run: ['universal', 'driver-process'], kept: [{ name: 'web', verdict: kept, standing: { standing: 'unreached', paths: ['docs/a.md'], records: [] } }] },
+    since: { commit: 'b'.repeat(40), at: '2026-10-22T08:00:00Z', paths: 3 },
+    light: { width: 5, idle: true, why: 'idle' }, pid: 42, at: '2026-10-22T10:00:00Z',
+    logOf: (gate, commit) => (commit === kept.commit ? `local/scratch/ci-ccccccc/${gate}.log` : null),
+  });
+  assert.deepEqual(Object.keys(status), ['schema', '_why', 'commit', 'tree', 'state', 'pid', 'started', 'updated', 'ended', 'since', 'light', 'gates']);
+  assert.deepEqual([status.schema, status.commit, status.tree, status.state, status.pid, status.started, status.updated, status.ended],
+    [1, 'a'.repeat(40), 't2', 'running', 42, '2026-10-22T10:00:00Z', '2026-10-22T10:00:00Z', null]);
+  assert.deepEqual(status.since, { commit: 'b'.repeat(40), at: '2026-10-22T08:00:00Z', paths: 3 });
+  assert.deepEqual(status.light, { width: 5, idle: true, why: 'idle' });
+  assert.deepEqual(status.gates[0], {
+    name: 'universal', kind: plan[0]!.kind, lane: 'light', state: 'waiting', verdict: null, at: null, ms: null, log: null, note: null, kept: null,
+  });
+  assert.equal(status.gates[1]!.lane, 'process');
+  assert.deepEqual(status.gates[2], {
+    name: 'web', kind: plan[2]!.kind, lane: 'light', state: 'kept', verdict: 'PASS', at: '2026-10-22T09:00:00Z', ms: null,
+    log: 'local/scratch/ci-ccccccc/web.log', note: null, kept: { commit: 'c'.repeat(40), tree: 't1', standing: 'unreached' },
+  });
+});
+
+test("the CI watch gates main's tip when it moves and the gate tree is idle: once each, the newest only, and it ends when asked", async () => {
+  let tip: string | null = 'aaa';
+  let held: string | null = null;
+  let stop = false;
+  let clock = 0;
+  let turn = 0;
+  const gated = new Set<string>();
+  const ran: string[] = [];
+  const said: string[] = [];
+  const failing = new Map<string, Error>();
+  // What happens while the watch sleeps, by its turn: each turn is a tick of its own clock.
+  const script: Record<number, () => void> = {
+    1: () => { tip = 'ddd'; held = 'a stage of ccc is building from the gate tree'; },
+    3: () => { held = null; },
+    5: () => { tip = 'eee'; failing.set('eee', new Error('npm ci failed in the gate tree')); },
+    8: () => { tip = 'fff'; },
+    10: () => { stop = true; },
+  };
+  const code = await tool.watchCi({
+    tip: () => tip,
+    gated: (commit) => gated.has(commit),
+    holder: () => held,
+    run: async () => {
+      const at = tip!;
+      ran.push(at);
+      const error = failing.get(at);
+      if (error) throw error;
+      // Two merges land while the first run goes: bbb, then ccc. The next run takes the newest; bbb is never gated alone.
+      if (at === 'aaa') tip = 'ccc';
+      gated.add(at);
+      return 0;
+    },
+    stopAsked: () => stop,
+    sleep: async (ms) => { clock += ms; turn += 1; script[turn]?.(); },
+    say: (line) => said.push(line),
+    pollMs: 1000, tickMs: 1000, now: () => clock,
+  });
+  assert.equal(code, 0);
+  assert.deepEqual(ran, ['aaa', 'ccc', 'ddd', 'eee', 'fff'], 'each tip once, a superseded one never, a failed one not again');
+  assert.equal(said.filter((line) => /ddd waits: a stage of ccc is building from the gate tree/.test(line)).length, 1, `said once while it waits:\n${said.join('\n')}`);
+  assert.equal(said.filter((line) => /npm ci failed in the gate tree/.test(line)).length, 1, `a failure said once:\n${said.join('\n')}`);
+  assert.match(said.at(-1)!, /asked to stop/);
+});
+
 test('the gate tree, its lock and its record are under local/, and the publish names the same three', async () => {
   assert.deepEqual([tool.GATE_TREE, tool.GATE_TREE_LOCK, tool.GATE_TREE_RECORD], ['local/gate-tree', 'local/gate-tree.lock', 'local/gate-tree.json']);
   const named = await import(
@@ -383,7 +612,7 @@ test('one full set beside at a time: a second is refused naming the run that hol
   const first = tool.takeGateLock(fx.root, { commit: sha, alive: () => true, now: () => '2026-10-18T10:00:00Z' });
   assert.equal(first.stale, null);
   const held = tool.readGateLock(fx.root, () => true);
-  assert.deepEqual(held, { pid: process.pid, commit: sha, at: '2026-10-18T10:00:00Z', running: true });
+  assert.deepEqual(held, { pid: process.pid, commit: sha, at: '2026-10-18T10:00:00Z', running: true, holder: 'full' });
 
   const error = refusal(() => tool.takeGateLock(fx.root, { commit: 'b'.repeat(40), alive: () => true }));
   assert.equal(error.exitCode, 2);
@@ -2514,6 +2743,20 @@ test("this repository's light lane runs the desktop suites' fast halves first, a
   }
 });
 
+test('a CI run schedules by memory: a Process half waits only for the gates that build its component, and the heavy light gates run beside it (CI1)', () => {
+  const schedule = tool.laneSchedule(repoPlan, { byMemory: true });
+  for (const name of ['driver-process', 'driver-process-git', 'modules-process']) {
+    assert.deepEqual(schedule.waits[name], { after: ['driver', 'modules'], component: 'src/Daoris.Desktop' }, name);
+  }
+  // The rehearsals still wait for the whole light lane: what they build and stage is state, not load.
+  for (const name of ['rehearse', 'rehearse-family', 'deployment']) {
+    assert.deepEqual(schedule.waits[name]!.after, schedule.light.map((gate) => gate.name), name);
+  }
+  // The rest is the merge's and the full set's schedule: the lanes, the pairs beside the git half, the builds reused.
+  const plain = tool.laneSchedule(repoPlan);
+  assert.deepEqual([schedule.light, schedule.process, schedule.beside, schedule.reuses, schedule.width], [plain.light, plain.process, plain.beside, plain.reuses, plain.width]);
+});
+
 /** A promise resolved from outside. */
 function signal(): { promise: Promise<void>; resolve: () => void } {
   let resolve!: () => void;
@@ -2585,6 +2828,19 @@ test("the light lane runs beside the Process lane: both at once, each verdict it
   assert.deepEqual(summary(printed), ['PASS a', 'PASS b', 'PASS p', 'PASS q']);
   assert.equal(lanes.heard['a']!.settled, undefined, 'a light gate waits for nothing beside it');
   assert.equal(typeof lanes.heard['p']!.settled, 'function', "a Process gate is handed the light lane's end, for its re-run alone");
+});
+
+test('scheduled by memory, a Process gate starts beside a heavy light gate once the gate that builds its component has ended (CI1)', async () => {
+  // a builds p's component; h is a heavy light gate of none, which a merge's Process gate waits for (GATEORDER1).
+  const gates = [planned('a', 'dotnet build fake/P.Tests'), planned('h', 'npm run verify'), planned('p', processRun('fake/P.Tests'))];
+  const lanes = laneRun(['a', 'h', 'p']);
+  lanes.until['h'] = () => lanes.started['p']!.promise;
+  const printed: string[] = [];
+  await tool.runGates('root', gates, 'logs', { run: lanes.run, print: (line) => printed.push(line), byMemory: true });
+  assert.ok(lanes.events.indexOf('start p') > lanes.events.indexOf('end a'), `p waits for the gate that builds its component: ${lanes.events.join(', ')}`);
+  assert.ok(lanes.events.indexOf('start p') < lanes.events.indexOf('end h'), `p runs beside the heavy light gate: ${lanes.events.join(', ')}`);
+  assert.match(printed.join('\n'), /p starts once a has ended: a builds fake\/P\.Tests first/);
+  assert.match(printed.join('\n'), /the heavy light gates run beside the Process lane, each once its free memory allows \(CI1, MEMGATE1\)/);
 });
 
 test('a failure in either lane starts nothing more in either; the gate running beside it ends and keeps its verdict', async () => {
@@ -4492,6 +4748,26 @@ const GATE = [
   '',
 ].join('\n');
 
+// CI1: a gate for the CI's runs, which write their logs in the main checkout and leave the gate tree's `local/` unmade: it
+// makes its own, notes its name, and fails where CI_FAIL names it, as a change that broke it would.
+const CI_GATE = [
+  "import { appendFileSync, mkdirSync } from 'node:fs';",
+  'const name = process.argv[2];',
+  "mkdirSync('local', { recursive: true });",
+  "appendFileSync('local/ran.txt', name + '\\n');",
+  'for (let i = 1; i <= 3; i++) console.log(`${name} line ${i}`);',
+  "process.exit((process.env.CI_FAIL ?? '').split(',').includes(name) ? 1 : 0);",
+  '',
+].join('\n');
+
+/** CI1: what a test waits for, read again until it holds, failing rather than hanging when it never does. */
+async function waitFor(holds: () => boolean, what: string, ms = 120_000): Promise<void> {
+  for (const end = Date.now() + ms; !holds();) {
+    if (Date.now() > end) throw new Error(`never happened: ${what}`);
+    await new Promise((done) => setTimeout(done, 100));
+  }
+}
+
 // `dotnet`, faked: `run` is a check, `build-server shutdown` is noted, and `test` prints what the real one
 // prints. With FAKE_DOTNET=flake a real-process test fails in the suite and passes when filtered to itself,
 // so the re-run's command line is proven to survive the platform shell's quoting.
@@ -4564,7 +4840,7 @@ function scratch(name: string, gates: { name: string; run: string }[], files: Re
       env['PATH'] = `${bin}${delimiter}${process.env['PATH'] ?? process.env['Path'] ?? ''}`;
       // GATESLIM1: a merge blocks on the checks alone by default, so the tests that watch gates run read the merge with --gated;
       // `BY_DEFAULT` in `extra` is the default itself, and the verbs that name their own gates take no flag.
-      const named = args.some((arg) => ['--full', '--rerun', '--stale', '--passed', '--prune', '--gated'].includes(arg));
+      const named = args.some((arg) => ['--full', '--rerun', '--stale', '--passed', '--prune', '--gated', '--ci'].includes(arg));
       const given = named || extra['BY_DEFAULT'] !== undefined ? args : [...args, '--gated'];
       // MEMGATE1: a scratch's heavy gates never read the machine's memory, so no test here waits on what the machine holds.
       const child = spawn(process.execPath, [TOOL, ...given], { cwd, env: { ...env, ...GIT_ENV, MERGE_BRANCH_MEMORY: 'off', ...extra } });
@@ -5743,6 +6019,179 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.equal(result.status, 0, result.out);
     assert.equal(existsSync(gateTree), false);
     assert.match(readFileSync(join(kept, 'needs.log'), 'utf8'), /read bad/, 'the newest run\'s log outlives the tree');
+    repo.cleanup();
+  });
+
+  // CI1's proof: a release's verification ran 20 gates for 2 h 48 min at publish time, since nothing verified main between.
+  test("--ci gates main's tip in the gate tree: every gate at first, then what the paths since reach; a failure stays owed; its status and logs are the main checkout's, and the stage reads its verdicts", async () => {
+    const repo = scratch('ci', [
+      { name: 'universal', run: 'node ci-gate.mjs universal' },
+      { name: 'service', run: 'node ci-gate.mjs service' },
+      { name: 'tool-tests', run: 'node ci-gate.mjs tool-tests' },
+    ], { 'ci-gate.mjs': CI_GATE, 'docs/a.md': 'a\n' });
+    const gateTree = join(repo.root, 'local', 'gate-tree');
+    const ranFile = join(gateTree, 'local', 'ran.txt');
+    const ranThere = () => (existsSync(ranFile) ? unordered(readFileSync(ranFile, 'utf8').split('\n').filter(Boolean)) : []);
+    const statusOf = (sha: string) => JSON.parse(readFileSync(join(repo.root, 'local', 'scratch', `ci-${sha.slice(0, 7)}`, 'status.json'), 'utf8')) as CiStatus;
+    const states = (status: CiStatus) => status.gates.map((gate) => `${gate.name} ${gate.state} ${gate.verdict}`);
+    const commit = (path: string, text: string) => {
+      mkdirSync(dirname(join(repo.root, path)), { recursive: true });
+      writeFileSync(join(repo.root, path), text);
+      git(repo.root, 'add', '-A');
+      git(repo.root, 'commit', '--quiet', '-m', `change ${path}${TRAILER}`);
+      rmSync(ranFile, { force: true });
+      return git(repo.root, 'rev-parse', 'HEAD');
+    };
+    const first = git(repo.root, 'rev-parse', 'HEAD');
+
+    // The first run: no gate has a verdict, so every gate runs.
+    let result = await repo.run(['--ci']);
+    assert.equal(result.status, 0, result.out);
+    assert.deepEqual(ranThere(), ['service', 'tool-tests', 'universal']);
+    assert.match(result.out, new RegExp(`the gate tree: made at ${first.slice(0, 7)} \\(local/gate-tree\\)`));
+    assert.match(result.out, /no green CI run is recorded here/);
+    assert.match(result.out, new RegExp(`PASS\\s+service\\s+.*local/scratch/ci-${first.slice(0, 7)}/service\\.log`), 'its logs are named from the main checkout');
+    assert.match(result.out, new RegExp(`merge-branch: CI green on ${first.slice(0, 7)}`));
+    assert.match(result.out, new RegExp(`npm run publish:desktop -- --to <install> --service --stage --from-gated ${first.slice(0, 7)}`));
+    assert.match(result.out, new RegExp(`status: local/scratch/ci-${first.slice(0, 7)}/status\\.json`));
+    let status = statusOf(first);
+    assert.deepEqual([status.state, status.commit, status.tree, status.pid > 0, typeof status.ended], ['green', first, git(repo.root, 'rev-parse', `${first}^{tree}`), true, 'string']);
+    assert.deepEqual(states(status), ['universal done PASS', 'service done PASS', 'tool-tests done PASS']);
+    assert.match(readFileSync(join(repo.root, status.gates[1]!.log!), 'utf8'), /service line 3/);
+    assert.equal(status.light.width > 0 && /MERGE_BRANCH_MEMORY=off/.test(status.light.why), true, status.light.why);
+    const record = () => JSON.parse(readFileSync(join(repo.root, 'local', 'ci.json'), 'utf8')) as { lastGreen: { commit: string } | null; runs: { commit: string; state: string }[] };
+    assert.equal(record().lastGreen!.commit, first);
+    assert.equal(existsSync(join(repo.root, 'local', 'gate-tree.lock')), false, 'the lock is let go');
+    assert.deepEqual(git(repo.root, 'status', '--porcelain'), '', 'the main checkout is untouched: only its ignored local/ was written');
+
+    // A change to the docs reaches the service suite and the baseline: the tool tests keep their verdict.
+    const second = commit('docs/a.md', 'changed\n');
+    result = await repo.run(['--ci']);
+    assert.equal(result.status, 0, result.out);
+    assert.deepEqual(ranThere(), ['service', 'universal']);
+    assert.match(result.out, new RegExp(`since the last green run \\(${first.slice(0, 7)}, [^)]+\\): 1 path changed`));
+    assert.match(result.out, /tool-tests\s+PASS .*on a tree that differs from this one only by paths it does not reach \(docs\/a\.md\)/);
+    status = statusOf(second);
+    assert.deepEqual(states(status), ['universal done PASS', 'service done PASS', 'tool-tests kept PASS']);
+    assert.deepEqual(status.gates[2]!.kept, { commit: first, tree: git(repo.root, 'rev-parse', `${first}^{tree}`), standing: 'unreached' });
+    assert.equal(status.gates[2]!.log, `local/scratch/ci-${first.slice(0, 7)}/tool-tests.log`);
+    assert.deepEqual([status.since.commit, status.since.paths], [first, 1]);
+
+    // The stage asks the gate tree, which holds what the CI gated: its verdicts pass it, the kept one among them.
+    result = await repo.run(['--passed'], {}, gateTree);
+    assert.equal(result.status, 0, result.out);
+    assert.equal(publish.ungatedRefusal(join(dirname(repo.root), 'install'), gateTree).refusal, null);
+
+    // Again on the same commit: nothing is owed and nothing runs.
+    rmSync(ranFile, { force: true });
+    result = await repo.run(['--ci', second.slice(0, 7)]);
+    assert.equal(result.status, 0, result.out);
+    assert.deepEqual(ranThere(), []);
+    assert.match(result.out, /nothing to run: every gate's verdict stands on this tree/);
+
+    // A failure: the run goes on to every gate, says it, and the stage refuses the commit.
+    const third = commit('docs/b.md', 'b\n');
+    result = await repo.run(['--ci'], { CI_FAIL: 'universal' });
+    assert.equal(result.status, 1, result.out);
+    assert.deepEqual(ranThere(), ['service', 'universal'], 'a CI run keeps going past a failure');
+    assert.match(result.out, new RegExp(`merge-branch: CI did NOT pass ${third.slice(0, 7)}: universal failed`));
+    assert.equal(statusOf(third).state, 'failed');
+    assert.equal(record().lastGreen!.commit, second, 'the last green run is still the one before');
+    result = await repo.run(['--passed'], {}, gateTree);
+    assert.equal(result.status, 1, 'a failed commit is still refused at the stage');
+
+    // A change that reaches only the tool tests: the failed gate runs with it, owed whatever the change.
+    const fourth = commit('tools/merge-branch.mjs', '// the scratch repository\'s own\n');
+    result = await repo.run(['--ci']);
+    assert.equal(result.status, 0, result.out);
+    assert.deepEqual(ranThere(), ['tool-tests', 'universal']);
+    assert.deepEqual(states(statusOf(fourth)), ['universal done PASS', 'service kept PASS', 'tool-tests done PASS']);
+    assert.deepEqual(record().runs.map((run) => `${run.commit.slice(0, 7)} ${run.state}`),
+      [first, second, second, third, fourth].map((sha, i) => `${sha.slice(0, 7)} ${i === 3 ? 'failed' : 'green'}`));
+    repo.cleanup();
+  });
+
+  test("--ci of main's tip gates the newest tip when main moved before its gates started", async () => {
+    const repo = scratch('ci-newest', [{ name: 'universal', run: 'node ci-gate.mjs universal' }], {
+      'ci-gate.mjs': CI_GATE, '.gitignore': 'local/\nnode_modules/\n', 'package-lock.json': '{"lockfileVersion":3}\n',
+    });
+    const first = git(repo.root, 'rev-parse', 'HEAD');
+    // `npm ci`, faked: it lays node_modules where it runs, and a merge lands on main while it installs.
+    const npmBin = join(dirname(repo.root), 'npm-bin');
+    mkdirSync(npmBin, { recursive: true });
+    writeFileSync(join(npmBin, 'fake-npm.mjs'), [
+      "import { mkdirSync, writeFileSync } from 'node:fs';",
+      "import { execFileSync } from 'node:child_process';",
+      "import { join } from 'node:path';",
+      "mkdirSync('node_modules', { recursive: true });",
+      'const main = process.env.MAIN_CHECKOUT;',
+      "writeFileSync(join(main, 'landed.txt'), 'landed\\n');",
+      "execFileSync('git', ['add', '-A'], { cwd: main });",
+      `execFileSync('git', ['commit', '--quiet', '-m', ${JSON.stringify(`landed${TRAILER}`)}], { cwd: main });`,
+      '',
+    ].join('\n'));
+    if (process.platform === 'win32') writeFileSync(join(npmBin, 'npm.cmd'), '@echo off\r\nnode "%~dp0fake-npm.mjs" %*\r\n');
+    else {
+      writeFileSync(join(npmBin, 'npm'), '#!/bin/sh\nexec node "$(dirname "$0")/fake-npm.mjs" "$@"\n');
+      chmodSync(join(npmBin, 'npm'), 0o755);
+    }
+    const PATH = `${npmBin}${delimiter}${join(dirname(repo.root), 'bin')}${delimiter}${process.env['PATH'] ?? process.env['Path'] ?? ''}`;
+    const result = await repo.run(['--ci'], { PATH, MAIN_CHECKOUT: repo.root });
+    assert.equal(result.status, 0, result.out);
+    const landed = git(repo.root, 'rev-parse', 'HEAD');
+    assert.notEqual(landed, first);
+    assert.match(result.out, new RegExp(`main moved from ${first.slice(0, 7)} to ${landed.slice(0, 7)} before this run started: it gates ${landed.slice(0, 7)}, the newest`));
+    assert.equal(git(join(repo.root, 'local', 'gate-tree'), 'rev-parse', 'HEAD'), landed);
+    assert.equal((JSON.parse(readFileSync(join(repo.root, 'local', 'scratch', `ci-${landed.slice(0, 7)}`, 'status.json'), 'utf8')) as CiStatus).state, 'green');
+    assert.equal(existsSync(join(repo.root, 'local', 'scratch', `ci-${first.slice(0, 7)}`)), false, 'the tip it gave way to has no run of its own');
+    repo.cleanup();
+  });
+
+  test('--ci --watch gates main\'s tip as it moves, once each; a second watch has nothing to do; --ci --stop ends it', async () => {
+    const repo = scratch('ci-watch', [{ name: 'universal', run: 'node ci-gate.mjs universal' }], { 'ci-gate.mjs': CI_GATE });
+    const ranFile = join(repo.root, 'local', 'gate-tree', 'local', 'ran.txt');
+    const ran = () => (existsSync(ranFile) ? readFileSync(ranFile, 'utf8').split('\n').filter(Boolean) : []);
+    const green = (sha: string) => {
+      const file = join(repo.root, 'local', 'scratch', `ci-${sha.slice(0, 7)}`, 'status.json');
+      try {
+        return (JSON.parse(readFileSync(file, 'utf8')) as CiStatus).state === 'green';
+      } catch {
+        return false;
+      }
+    };
+    const first = git(repo.root, 'rev-parse', 'HEAD');
+    const watch = repo.run(['--ci', '--watch'], { MERGE_BRANCH_CI_WATCH_MS: '200' });
+    let stopped = { status: null as number | null, out: '' };
+    try {
+      await waitFor(() => green(first), 'the watch gating main\'s tip');
+      let result = await repo.run(['--ci', '--watch']);
+      assert.equal(result.status, 0, result.out);
+      assert.match(result.out, /a CI watch runs here already \(pid \d+, since [^)]+\): this one has nothing to do/);
+      writeFileSync(join(repo.root, 'next.txt'), 'next\n');
+      git(repo.root, 'add', '-A');
+      git(repo.root, 'commit', '--quiet', '-m', `next${TRAILER}`);
+      const second = git(repo.root, 'rev-parse', 'HEAD');
+      await waitFor(() => green(second), 'the watch gating the tip main moved to');
+      // A few of its polls more: a tip it gated is never gated again.
+      await new Promise((done) => setTimeout(done, 1500));
+      assert.deepEqual(ran(), ['universal', 'universal'], 'once each tip');
+      result = await repo.run(['--ci']);
+      assert.equal(result.status, 0, result.out);
+      assert.match(result.out, /nothing to run/);
+    } finally {
+      stopped = await repo.run(['--ci', '--stop']);
+    }
+    assert.equal(stopped.status, 0, stopped.out);
+    assert.match(stopped.out, /asked the CI watch \(pid \d+\) to stop/);
+    assert.match(stopped.out, /the CI watch has ended/);
+    const done = await watch;
+    assert.equal(done.status, 0, done.out);
+    assert.match(done.out, /the CI watch: asked to stop, so it ends/);
+    assert.equal(existsSync(join(repo.root, 'local', 'ci-watch.json')), false, 'the watch lets its record go');
+    assert.equal(existsSync(join(repo.root, 'local', 'ci-watch.stop')), false, 'and the stop it was asked');
+    const none = await repo.run(['--ci', '--stop']);
+    assert.equal(none.status, 0, none.out);
+    assert.match(none.out, /no CI watch is running here: nothing to stop/);
     repo.cleanup();
   });
 });

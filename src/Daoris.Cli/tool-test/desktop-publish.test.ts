@@ -283,7 +283,8 @@ test('a stage from the gate tree builds the commit it holds, refuses another or 
   const to = join(fx.root, 'install');
 
   let source = gatedSource(repo, gated);
-  assert.match(source.refusal!, /no gate tree at local\/gate-tree: node tools\/merge-branch\.mjs --full --beside makes one and gates it/);
+  // CI1: the CI gates a commit in the gate tree, running there only what its verdicts lack.
+  assert.match(source.refusal!, new RegExp(`no gate tree at local/gate-tree: node tools/merge-branch\\.mjs --ci ${gated.slice(0, 7)} makes one and gates it`));
 
   const tree = join(repo, 'local', 'gate-tree');
   git('worktree', 'add', '--quiet', '--detach', tree, gated);
@@ -293,7 +294,7 @@ test('a stage from the gate tree builds the commit it holds, refuses another or 
   const moved = git('rev-parse', 'HEAD');
 
   source = gatedSource(repo, 'main');
-  assert.match(source.refusal!, new RegExp(`the gate tree holds ${gated.slice(0, 7)}, not ${moved.slice(0, 7)}`));
+  assert.match(source.refusal!, new RegExp(`the gate tree holds ${gated.slice(0, 7)}, not ${moved.slice(0, 7)}: node tools/merge-branch\\.mjs --ci ${moved.slice(0, 7)} gates that one there`));
   source = gatedSource(repo, gated.slice(0, 7));
   assert.equal(source.refusal, null, source.refusal ?? '');
   assert.equal(source.commit, gated);
@@ -329,6 +330,69 @@ test('a stage from the gate tree builds the commit it holds, refuses another or 
   assert.deepEqual(noted.staged, { commit: gated, to, at: '2026-10-18T12:00:00Z' });
   assert.equal(noted.passed, true, 'the rest of the record is kept');
   git('worktree', 'remove', tree);
+  fx.cleanup();
+});
+
+// CI1: a CI watch moves the gate tree to main's tip as main moves, so a stage that only looked at the lock first would build a
+// tree moved under it. The pipeline design's §4.6 shape: the stage holds the gate tree's lock through its build, a holder of its own kind.
+test('a stage from the gate tree holds its lock through the build, so no CI run moves the tree under it, and is refused while a run holds it (CI1)', async () => {
+  const fx = makeFixture('publish-gated-hold');
+  const repo = join(fx.root, 'repo');
+  mkdirSync(repo, { recursive: true });
+  const env = {
+    ...process.env, GIT_TERMINAL_PROMPT: '0', GIT_AUTHOR_NAME: 'Fixture', GIT_AUTHOR_EMAIL: 'fixture@example.test',
+    GIT_COMMITTER_NAME: 'Fixture', GIT_COMMITTER_EMAIL: 'fixture@example.test',
+  };
+  const git = (...args: string[]): string => {
+    const result = spawnSync('git', args, { cwd: repo, encoding: 'utf8', env });
+    assert.equal(result.status, 0, `git ${args.join(' ')}: ${result.stderr}`);
+    return result.stdout.trim();
+  };
+  git('init', '--quiet', '--template=', '-b', 'main');
+  assert.equal(git('rev-parse', '--show-toplevel').toLowerCase().replace(/\\/g, '/'), repo.toLowerCase().replace(/\\/g, '/'));
+  writeFileSync(join(repo, '.gitignore'), 'local/\n');
+  writeFileSync(join(repo, 'code.txt'), 'gated\n');
+  git('add', '-A');
+  git('commit', '--quiet', '-m', 'gated');
+  const gated = git('rev-parse', 'HEAD');
+  const short = gated.slice(0, 7);
+  git('worktree', 'add', '--quiet', '--detach', join(repo, 'local', 'gate-tree'), gated);
+  const lock = join(repo, GATE_TREE_LOCK);
+
+  // A CI run holds the tree: no stage, and the refusal says whose it is.
+  writeFileSync(lock, `${JSON.stringify({ pid: process.pid, commit: gated, at: '2026-10-22T10:00:00Z', holder: 'ci' })}\n`);
+  let source = gatedSource(repo, gated, { alive: () => true, hold: true });
+  assert.match(source.refusal!, new RegExp(`a CI run is gating it \\(pid ${process.pid}, since 2026-10-22 10:00 UTC, on ${short}\\): its verdicts are not in yet`));
+  // Another stage building from it.
+  writeFileSync(lock, `${JSON.stringify({ pid: 4242, commit: gated, at: '2026-10-22T10:30:00Z', holder: 'stage' })}\n`);
+  source = gatedSource(repo, gated, { alive: () => true, hold: true });
+  assert.match(source.refusal!, new RegExp(`another stage of ${short} is building from it \\(pid 4242, since 2026-10-22 10:30 UTC\\)`));
+
+  // One whose process ended holds nothing: the stage takes the lock as its own, until its build ends.
+  source = gatedSource(repo, gated, { alive: () => false, hold: true, now: () => '2026-10-22T11:00:00Z' });
+  assert.equal(source.refusal, null, source.refusal ?? '');
+  assert.deepEqual(JSON.parse(readFileSync(lock, 'utf8')), { pid: process.pid, commit: gated, at: '2026-10-22T11:00:00Z', holder: 'stage' });
+  // A CI run started meanwhile is refused by it, as the merge tool reads the lock.
+  const mergeTool = await import(
+    // @ts-expect-error — untyped workspace tooling; see above
+    '../../../tools/merge-branch.mjs') as { takeGateLock: (home: string, options: { commit: string; holder?: string }) => unknown };
+  assert.throws(() => mergeTool.takeGateLock(repo, { commit: gated, holder: 'ci' }), new RegExp(`a stage of ${short} is building from the gate tree`));
+  source.release!();
+  assert.equal(existsSync(lock), false, 'let go once its build has ended');
+  source.release!();
+  // Asked without holding, as its test above asks, nothing is taken.
+  assert.equal(gatedSource(repo, gated).refusal, null);
+  assert.equal(existsSync(lock), false);
+
+  // A refused stage from the gate tree names the CI's command, which runs there what the commit's verdicts lack.
+  const missing = 'merge-branch: the full set has NOT passed this checkout (tree 1a2b3c4, HEAD abc1234): 2 of 3 gates.\n  web  stale  PASS\n';
+  const refused = ungatedRefusal(join(fx.root, 'install'), join(repo, 'local', 'gate-tree'), {
+    ask: () => ({ code: 1, out: `${missing}  Run the stale gate on it: node tools/merge-branch.mjs --stale\n` }),
+    remedy: { what: "what this commit's verdicts lack", where: 'in the gate tree', command: `node tools/merge-branch.mjs --ci ${short}` },
+  });
+  assert.match(refused.refusal!, new RegExp(`run what this commit's verdicts lack in the gate tree: node tools/merge-branch\\.mjs --ci ${short}\\n`));
+  assert.doesNotMatch(refused.refusal!, /--stale/);
+  git('worktree', 'remove', join(repo, 'local', 'gate-tree'));
   fx.cleanup();
 });
 
