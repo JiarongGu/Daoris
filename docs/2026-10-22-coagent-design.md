@@ -1,6 +1,6 @@
-# Agents of different makers in one session: a lead, its partners, and one sheet per provider (COAGENT1, proposed, round 3, 2026-10-22)
+# Agents of different makers in one session: a lead, its partners, and one sheet per provider (COAGENT1, accepted, round 3, 2026-10-22)
 
-**Standing:** proposed, with D199, in round 3. Round 1 was a synthesis of three independent proposals written from one brief
+**Standing:** accepted with D199 by the steward on 2026-10-22, in round 3. Round 1 was a synthesis of three independent proposals written from one brief
 (Claude's, Codex's and Fable's, under D191), each difference settled by the steward in §1. Codex read round 1 (twenty-one findings,
 eighteen blocking) and Fable read it as a foundation (ten findings, four blocking); round 2 answered all of them. Codex read round 2
 (eleven of its round-1 findings held, ten held in part; thirteen new findings, twelve blocking), and round 3 answers those (§12). Every
