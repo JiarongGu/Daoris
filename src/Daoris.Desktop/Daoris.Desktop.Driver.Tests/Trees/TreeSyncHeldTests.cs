@@ -144,14 +144,7 @@ public sealed class TreeSyncHeldTests : TreeSyncFixture
         Assert.Equal("", (await GitAsync(tree.Path, "status", "--porcelain")).Trim());
     }
 
-    /// <summary>The platform's side: a clone of the bare origin commits <paramref name="files"/> as one commit on `main`, and pushes.</summary>
-    private async Task PlatformAsync(string origin, string message, params (string File, string Content)[] files)
-    {
-        var platform = Path.Combine(Scratch, $"platform-{Guid.NewGuid():N}"[..20]);
-        await GitAsync(Scratch, "clone", "--quiet", origin, platform);
-        foreach (var (file, content) in files) await File.WriteAllTextAsync(Path.Combine(platform, file), content);
-        await GitAsync(platform, "add", "-A");
-        await GitAsync(platform, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "commit", "-m", message);
-        await GitAsync(platform, "push", "--quiet", "origin", "main");
-    }
+    /// <summary>The platform's side: <paramref name="files"/> as one commit on origin's `main`, made in the bare origin itself (PROCSPEED1b).</summary>
+    private static Task PlatformAsync(string origin, string message, params (string File, string Content)[] files) =>
+        CommitOnOriginAsync(origin, message, files);
 }

@@ -108,10 +108,7 @@ public sealed class ReviewBaseTests : LandedFixture
         await CommitAsync(tree.Path, "own.txt", "mine\n", "its own work");
         await LineMovesAsync(root);
         // Origin moves once more, and this checkout's last fetch saw it; its own `main` did not take it.
-        var platform = Path.Combine(Scratch, "platform");
-        await GitAsync(Scratch, "clone", "--quiet", origin, platform);
-        await CommitAsync(platform, "later.txt", "later\n", "the line moves on again");
-        await GitAsync(platform, "push", "--quiet", "origin", "main");
+        await CommitOnOriginAsync(origin, "the line moves on again", ("later.txt", "later\n"));
         await GitAsync(root, "fetch", "--quiet", "origin");
         var refs = await GitAsync(root, "for-each-ref");
 

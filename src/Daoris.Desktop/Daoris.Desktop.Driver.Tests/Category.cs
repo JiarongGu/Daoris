@@ -32,8 +32,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// landing's default patience may; three seconds may not, so <c>LandingPluginPatienceTests</c> is a class of its own,
 /// PROC1f), starts no stub, tick, host or
 /// listener, and neither it nor its base sets or reads a variable of the process's environment, which the classes
-/// beside it share: <c>CategoryTests</c> holds the trait and the environment. The longest class is the run's wall,
-/// so a long one is split, as <c>TreeSyncTests</c> was.
+/// beside it share: <c>CategoryTests</c> holds the trait and the environment. The git half's wall is its summed time
+/// over four while more classes wait than run (PROCSPEED1b, <c>git.process.runsettings</c> says the measure); a class is the
+/// wall only once it is longer than that share, so a class is split only then, and a run is shortened by fewer git starts.
 /// </remarks>
 internal static class Category
 {

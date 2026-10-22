@@ -160,19 +160,31 @@ public abstract class BranchTidyingFixture : IDisposable
         await GitAsync(root, "worktree", "remove", place);
     }
 
-    /// <summary>A repository on <c>main</c> that ignores a database and a build's output, and holds a build's output itself.</summary>
+    /// <summary>
+    /// A repository on <c>main</c> that ignores a database and a build's output, and holds a build's output itself: a copy of the run's
+    /// seed of that shape (<see cref="GitSeed"/>, PROCSPEED1b), five git starts a test fewer. The copy is outside the home's trees, so
+    /// the strays' quiet (<see cref="TreeStrays.Quiet"/>), which reads the times of what is written under them, never reads its files'
+    /// times; no test here reads its first commit's id or time.
+    /// </summary>
     protected async Task<string> RepositoryAsync(string name)
     {
+        var seed = await GitSeed.SeedAsync($"tidying:{name}", folder => BuildRepositoryAsync(Path.Combine(folder, name), name));
         var root = Path.Combine(_scratch, name);
+        GitSeed.Copy(Path.Combine(seed, name), root);
+        return root;
+    }
+
+    private static async Task BuildRepositoryAsync(string root, string name)
+    {
         Directory.CreateDirectory(root);
         await GitAsync(root, "init", "--quiet", "-b", "main");
         await GitAsync(root, "config", "user.email", "fixture@example.test");
         await GitAsync(root, "config", "user.name", "Fixture");
+        await GitSeed.NoMaintenanceAsync(root);
         await File.WriteAllTextAsync(Path.Combine(root, ".gitignore"), "*.db\nbuild/\n");
         await CommitAsync(root, "README.md", $"# {name}\n", "first");
         Directory.CreateDirectory(Path.Combine(root, "build"));
         await File.WriteAllTextAsync(Path.Combine(root, "build", "out.txt"), "the checkout's own build\n");
-        return root;
     }
 
     protected static async Task CommitAsync(string tree, string file, string content, string message)

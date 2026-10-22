@@ -83,16 +83,8 @@ public sealed class SessionTreeWorkTests : IDisposable
         Assert.Null(await trees.WorkAsync(Path.Combine(trees.TreesRoot, "aurora", "engine", "s-gone")));
     }
 
-    private async Task<string> RepositoryAsync(string name)
-    {
-        var root = Path.Combine(_scratch, name);
-        Directory.CreateDirectory(root);
-        await GitAsync(root, "init", "--quiet", "-b", "main");
-        await GitAsync(root, "config", "user.email", "fixture@example.test");
-        await GitAsync(root, "config", "user.name", "Fixture");
-        await CommitAsync(root, "README.md", $"# {name}");
-        return root;
-    }
+    /// <summary>A copy of the run's plain seed (<see cref="GitSeed.PlainAsync"/>, PROCSPEED1b): no test here reads its first commit.</summary>
+    private Task<string> RepositoryAsync(string name) => GitSeed.PlainAsync(Path.Combine(_scratch, name), name);
 
     private static async Task CommitAsync(string tree, string file, string content)
     {

@@ -5,11 +5,12 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// What the tree sync's classes share (WSR6): one repository's list, the chain a landed branch and its next step make, a
 /// commit someone else pushed, and the reads they assert with. One class until PROC1b split it four ways, by the time each
-/// takes: the git-only classes run four at once, a class is the unit they run by, and the longest is the run's wall.
+/// takes: the git-only classes run four at once and a class is the unit they run by (the whole half's wall is its summed time
+/// over four, PROCSPEED1b).
 /// </summary>
 /// <remarks>
 /// 🔴 <b>Nothing here reaches a network</b>: `origin` is a bare repository under the scratch folder, and the
-/// platform's squash merge is a second clone of it (<see cref="LandedFixture"/>).
+/// platform's squash merge and commits are made in it (<see cref="LandedFixture"/>).
 /// </remarks>
 public abstract class TreeSyncFixture : LandedFixture
 {
@@ -37,14 +38,9 @@ public abstract class TreeSyncFixture : LandedFixture
         return (parent, landed.Branch!, step);
     }
 
-    /// <summary>A commit someone else pushed to origin's line — the platform's side, through a clone of the bare origin.</summary>
-    protected async Task PlatformCommitAsync(string origin, string file, string content, string message)
-    {
-        var platform = Path.Combine(Scratch, $"platform-{Guid.NewGuid():N}"[..20]);
-        await GitAsync(Scratch, "clone", "--quiet", origin, platform);
-        await CommitAsync(platform, file, content, message);
-        await GitAsync(platform, "push", "--quiet", "origin", "main");
-    }
+    /// <summary>A commit someone else pushed to origin's line — the platform's side, made in the bare origin itself (PROCSPEED1b).</summary>
+    protected static Task PlatformCommitAsync(string origin, string file, string content, string message) =>
+        CommitOnOriginAsync(origin, message, (file, content));
 
     protected static async Task<string> RevAsync(string root, string revision) => (await GitAsync(root, "rev-parse", revision)).Trim();
 

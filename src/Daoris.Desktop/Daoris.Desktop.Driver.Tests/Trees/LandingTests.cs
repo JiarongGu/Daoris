@@ -764,25 +764,10 @@ public sealed class LandingTests : IDisposable
             .Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
 
     /// <summary>
-    /// A repository on `main` with one commit, its README: a copy of the run's seed of this shape (<see cref="GitSeed"/>, PROC1h;
-    /// PROCSPEED1), five git starts a test fewer. No test here reads the first commit's id or time.
+    /// A repository on `main` with one commit, its README: a copy of the run's plain seed (<see cref="GitSeed.PlainAsync"/>, PROC1h;
+    /// PROCSPEED1, PROCSPEED1b), five git starts a test fewer. No test here reads the first commit's id or time.
     /// </summary>
-    private async Task<string> RepositoryAsync(string name)
-    {
-        var seed = await GitSeed.SeedAsync($"landing:{name}", folder => BuildRepositoryAsync(Path.Combine(folder, name), name));
-        var root = Path.Combine(_scratch, name);
-        GitSeed.Copy(Path.Combine(seed, name), root);
-        return root;
-    }
-
-    private static async Task BuildRepositoryAsync(string root, string name)
-    {
-        Directory.CreateDirectory(root);
-        await GitAsync(root, "init", "--quiet", "-b", "main");
-        await GitAsync(root, "config", "user.email", "fixture@example.test");
-        await GitAsync(root, "config", "user.name", "Fixture");
-        await CommitAsync(root, "README.md", $"# {name}", "first");
-    }
+    private Task<string> RepositoryAsync(string name) => GitSeed.PlainAsync(Path.Combine(_scratch, name), name);
 
     private static async Task CommitAsync(string tree, string file, string content, string message)
     {

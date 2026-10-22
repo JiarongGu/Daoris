@@ -101,20 +101,28 @@ public abstract class LandingPluginFixture : IDisposable
         (workspace ? DriverConfig.Empty.WithWorkspaceLanding("aurora", rule) : DriverConfig.Empty.WithLanding("engine", rule))
             .Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
 
-    /// <summary>A repository whose `origin` is a bare repository beside it — somewhere a push lands without leaving the machine.</summary>
+    /// <summary>
+    /// A repository whose `origin` is a bare repository beside it, nothing pushed there yet — somewhere a push lands without leaving the
+    /// machine. A copy of the run's seed of that shape (<see cref="GitSeed"/>, PROCSPEED1b), its origin url repaired to the copy's own
+    /// bare repository; seven git starts a test fewer. No test here reads the first commit's id or time.
+    /// </summary>
     protected async Task<(string Root, string Origin)> RepositoryWithOriginAsync(string name)
     {
+        var seed = await GitSeed.SeedAsync($"plugin-origin:{name}", async folder =>
+        {
+            var seeded = Path.Combine(folder, $"{name}-origin.git");
+            Directory.CreateDirectory(seeded);
+            await GitAsync(seeded, "init", "--quiet", "--bare", "-b", "main");
+            await GitSeed.NoMaintenanceAsync(seeded);
+            var repository = Path.Combine(folder, name);
+            await GitSeed.BuildPlainAsync(repository, name);
+            await GitAsync(repository, "remote", "add", "origin", seeded);
+        });
         var origin = Path.Combine(Scratch, $"{name}-origin.git");
-        Directory.CreateDirectory(origin);
-        await GitAsync(origin, "init", "--quiet", "--bare", "-b", "main");
-
         var root = Path.Combine(Scratch, name);
-        Directory.CreateDirectory(root);
-        await GitAsync(root, "init", "--quiet", "-b", "main");
-        await GitAsync(root, "config", "user.email", "fixture@example.test");
-        await GitAsync(root, "config", "user.name", "Fixture");
-        await CommitAsync(root, "README.md", $"# {name}", "first");
-        await GitAsync(root, "remote", "add", "origin", origin);
+        GitSeed.Copy(Path.Combine(seed, $"{name}-origin.git"), origin);
+        GitSeed.Copy(Path.Combine(seed, name), root);
+        GitSeed.RepairOrigin(root, origin);
         return (root, origin);
     }
 

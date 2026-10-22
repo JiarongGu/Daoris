@@ -87,8 +87,12 @@ classes, marked `Parallel=Git` beside `Category=Process`, run four at once in on
 `src/Daoris.Desktop/git.process.runsettings` (gate `driver-process-git`, PROC1c): four at once is load, so
 that half runs after the other one, never beside it, and a class marked so is run alone with that file, not
 the other, whose filter leaves it out. A git test copies its
-repositories from a seed (`GitSeed`, PROC1h) unless it reads the first commit's id or time, and removes its scratch with
-`GitSeed.Remove`: git writes its objects read-only, which `Directory.Delete` refuses on Windows (PROCSPEED1). Rehearsals also run
+repositories from a seed (`GitSeed`, PROC1h; the plain one is `GitSeed.PlainAsync`) unless it reads the first commit's id or
+time, and removes its scratch with `GitSeed.Remove`: git writes its objects read-only, which `Directory.Delete` refuses on
+Windows (PROCSPEED1). A seed's repositories start no maintenance git behind a commit, a fetch or a push
+(`GitSeed.NoMaintenanceAsync`), and a platform's moves on a bare origin are git's plumbing in the origin, never a clone that
+pushes (`LandedFixture.SquashOnPlatformAsync`, `CommitOnOriginAsync`): on this machine a git start costs about half a second,
+and the git half is its starts (PROCSPEED1b). Rehearsals also run
 serially, use repository scratch and record transcripts there; the merge tool runs the release, family and deployment
 rehearsals beside the git half, one after the other, each building what the Process halves build only into an output of
 its own (REHLANE1, REHLANE2, REHLANE2b). Do not overlap them with another full gate run.

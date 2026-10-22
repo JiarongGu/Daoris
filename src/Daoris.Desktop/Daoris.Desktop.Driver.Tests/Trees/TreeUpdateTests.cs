@@ -285,14 +285,12 @@ public sealed class TreeUpdateTests : LandedFixture
         Assert.Equal(tree.Branch, (await GitAsync(tree.Path, "rev-parse", "--abbrev-ref", "HEAD")).Trim());
     }
 
-    /// <summary>A commit on origin's line from a second clone, as a platform's merge leaves it: nothing here knows of it until a fetch.</summary>
-    private async Task PlatformCommitAsync(string origin, string file, string content, string message)
-    {
-        var platform = Path.Combine(Scratch, $"platform-{Guid.NewGuid():N}"[..20]);
-        await GitAsync(Scratch, "clone", "--quiet", origin, platform);
-        await CommitAsync(platform, file, content, message);
-        await GitAsync(platform, "push", "--quiet", "origin", "main");
-    }
+    /// <summary>
+    /// A commit on origin's line, as a platform's merge leaves it: nothing here knows of it until a fetch. Made in the bare origin
+    /// itself (PROCSPEED1b).
+    /// </summary>
+    private static Task PlatformCommitAsync(string origin, string file, string content, string message) =>
+        CommitOnOriginAsync(origin, message, (file, content));
 
     private static async Task<string> RevAsync(string cwd, string revision) => (await GitAsync(cwd, "rev-parse", revision)).Trim();
 }
