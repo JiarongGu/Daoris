@@ -303,7 +303,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-21-alone-path-design.md` | 74 | 545 |
 | `docs/2026-10-21-cleanup-design.md` | 112 | 1063 |
 | `docs/2026-10-21-notification-design.md` | 114 | 972 |
-| `docs/2026-10-22-coagent-design.md` | 53 | 596 |
+| `docs/2026-10-22-coagent-design.md` | 72 | 739 |
 | `docs/2026-10-22-git-auth-design.md` | 111 | 1133 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `src/Daoris.Desktop/README.md` | 153 | 768 |
