@@ -91,6 +91,21 @@ public sealed record SessionRecord(string Id, string Repository, string State)
     public string? HelpMode { get; init; }
 
     /// <summary>
+    /// The session it serves (MIXAGENT2a-i's <c>serves</c>): a helper's or a partner's lead, as the service answers it to this machine;
+    /// null for every other record, from a host before the field and for a teammate's record.
+    /// </summary>
+    public string? Serves { get; init; }
+
+    /// <summary>
+    /// The piece a partner's record writes, the ask's id (COAGENT1b, the co-agent design §7.3), kept only beside <see cref="Serves"/>;
+    /// null for every other record. What the landing's eligibility refuses at every door (§2.4).
+    /// </summary>
+    public string? Piece { get; init; }
+
+    /// <summary>Whether it is a partner's record: one carrying a piece, which lands only through its lead (D199 point 3).</summary>
+    public bool Partner => Piece is not null;
+
+    /// <summary>
     /// The key it is grouped by: the service's, else the record its own line of work, as the service derives a record whose
     /// facts are gone (<c>session:&lt;id&gt;/&lt;repository&gt;</c>, SESSONE1b), so a host from before still lists every record.
     /// </summary>
@@ -150,6 +165,9 @@ public static class SessionRecords
                 FromWhy = Text(session, "fromWhy") is { Length: > 0 } why ? why : null,
                 // HELPMODE1a2: an Ask Daoris record's mode, answered on loopback alone; absent from a host before it.
                 HelpMode = Text(session, "helpMode") is { Length: > 0 } mode ? mode : null,
+                // COAGENT1b: a helper's or a partner's lead, and a partner's piece, kept only beside it, as the service keeps them.
+                Serves = Text(session, "serves") is { Length: > 0 } serves ? serves : null,
+                Piece = Text(session, "serves") is { Length: > 0 } && Text(session, "piece") is { Length: > 0 } piece ? piece : null,
             });
         }
 
