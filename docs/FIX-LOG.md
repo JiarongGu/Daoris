@@ -5,6 +5,28 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-22 — The modules suite's account tests on `main` still asked for the scopes the fold retires, and the push missed `pooled` (POOL1a1)
+
+- **Symptom:** red on `main` after POOL1a1: `AgentAccountsBothWaysTests` 20 of 29, `AccountsStateSliceTests` 2, `HelpFileDoorsTests`'
+  order case, and the Process class `DriverModuleAgentsTests`' two cases that press `profile-default`.
+- **Root cause:** three things POOL1a1 changed, none of them a path that skips the fold.
+  - Both paths of an account press fold through `HarnessSettings.Change`. Ten rows still matched once a receipt's random id and
+    its clock moment were spelled.
+  - Ten rows are a default, a join or a workspace, which the bridge refuses as `ACCOUNTS_ONE_SET` since POOL1a1 (design §5.2).
+    The terminal's verb still acts on them until POOL1b.
+  - The two Process cases pressed the refused `profile-default`. The order Ask Daoris's door writes is now whole, and a raw-laid
+    workspace default is folded before its next edit.
+  - `ACCOUNTS` came to answer `pooled` (§5.2), but the accounts slice did not class it, so the push dropped what the pull answered.
+- **Fix:**
+  - `AccountsStateSlice.AgentFields` pushes `pooled`.
+  - The both-ways comparison spells a receipt's id and moment, and the ten one-set rows moved to a case that holds the route's
+    refusal with nothing written; POOL1b returns them.
+  - ROSTER1's case edits the set's order where it set a default.
+  - The workspace-default case now holds the refusal, set or cleared, with nothing written.
+  - Ask Daoris's order case expects the order whole and the raw default folded.
+- **Verification:** the four classes green. The two Process cases ran filtered with `process.runsettings`. The modules' and the
+  driver's fast halves are green.
+
 ## 2026-10-22 — The agents' text table on `main` still held the account files as written before the fold (POOL1a1)
 
 - **Symptom:** `AgentsTextTests` red on `main` since POOL1a1 merged (`23ef46849`): 28 of its 306 cases, each a terminal account verb
