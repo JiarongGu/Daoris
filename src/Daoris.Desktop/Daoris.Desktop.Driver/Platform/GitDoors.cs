@@ -83,11 +83,17 @@ public static class GitDoors
             return Refuse(error, "daoris-git-ssh: was started outside Daoris's wiring, with no home to act for.");
 
         var act = GitAccessRules.ClassOf(call.Program, call.Operation)!.Value;
-        var verdict = Judge(home, act, GitAddressKeys.Of(call.Host, call.Path), variable);
+        var host = call.Host[(call.Host.LastIndexOf('@') + 1)..];
+        var verdict = Judge(home, act, GitAddressKeys.Of(call.Host, call.Path), variable, remote: null, host);
         if (!verdict.Allowed) return Refuse(error, verdict.Line!);
 
         var (file, prefix, problem) = SshCommand(folder, variable);
-        if (problem is not null) return Refuse(error, problem);
+        if (problem is not null)
+        {
+            // A command that is not OpenSSH is the repository's own input the door cannot carry; no ssh at all, an act not reached.
+            GitLog.Refused(home, variable, file is null && problem.Contains("plink", StringComparison.Ordinal) ? "own-input" : "unreached", act, null, host);
+            return Refuse(error, problem);
+        }
 
         // Not the tools' environment (TOOLS5): the door is git's child, and its ssh takes git's environment as git would have handed it.
         var info = new ProcessStartInfo(file!)
@@ -230,7 +236,13 @@ public static class GitDoors
         if (transport is null) return Refuse(error, "git-remote-daoris: carries only http:// and https:// addresses.");
         if (variable(GitRouting.HomeVariable) is not { Length: > 0 } home)
             return Refuse(error, "git-remote-daoris: was started outside Daoris's wiring, with no home to act for.");
-        if (Find(transport, variable("PATH")) is not { } file) return Refuse(error, $"git-remote-daoris: finds no {transport} on git's PATH.");
+        var remote = RemoteName(arguments[0]);
+        var host = Uri.TryCreate(address, UriKind.Absolute, out var parsed) ? parsed.Authority[(parsed.Authority.LastIndexOf('@') + 1)..] : null;
+        if (Find(transport, variable("PATH")) is not { } file)
+        {
+            GitLog.Refused(home, variable, "unreached", act: null, remote, host);
+            return Refuse(error, $"git-remote-daoris: finds no {transport} on git's PATH.");
+        }
 
         // Not the tools' environment (TOOLS5): git's own transport, with git's environment less Daoris's routing (§4.3).
         // The relay reads and writes the streams' bytes (BaseStream); the encodings are named for the census, and change no byte.
@@ -264,7 +276,7 @@ public static class GitDoors
                     var text = Encoding.UTF8.GetString(line).TrimEnd('\n', '\r');
                     if (ClassOfHelperCommand(text) is { } act)
                     {
-                        if (!judged.TryGetValue(act, out var verdict)) judged[act] = verdict = Judge(home, act, key, variable);
+                        if (!judged.TryGetValue(act, out var verdict)) judged[act] = verdict = Judge(home, act, key, variable, remote, host);
                         if (!verdict.Allowed)
                         {
                             Volatile.Write(ref refused, verdict.Line);
@@ -313,12 +325,24 @@ public static class GitDoors
 
     // ---- Shared ----
 
-    private static GitVerdict Judge(string home, GitAct act, string? key, Func<string, string?> variable)
+    /// <summary>The judge asked for one act, its grant's use and its refusal each a coded line (§11).</summary>
+    private static GitVerdict Judge(string home, GitAct act, string? key, Func<string, string?> variable, string? remote, string? host)
     {
-        if (act == GitAct.Read) return GitAccessRules.Judge(act, pushesHere: false, granted: false);
-        var granted = GitGrants.Take(home, variable(GitRouting.GrantVariable), key, DateTimeOffset.UtcNow);
-        return GitAccessRules.Judge(act, granted || GitAccessRules.PushesHere(home), granted);
+        var granted = act == GitAct.Write && GitGrants.Take(home, variable(GitRouting.GrantVariable), key, DateTimeOffset.UtcNow);
+        var verdict = act == GitAct.Read
+            ? GitAccessRules.Judge(act, pushesHere: false, granted: false)
+            : GitAccessRules.Judge(act, granted || GitAccessRules.PushesHere(home), granted);
+        if (granted) GitLog.GrantUsed(home, variable, remote, host);
+        if (!verdict.Allowed) GitLog.Refused(home, variable, "denied", act, remote, host);
+        return verdict;
     }
+
+    /// <summary>
+    /// The remote's name git handed the helper, for the log: git hands the address itself for a push or fetch to an address with no
+    /// remote, which is never logged, so such an act's remote is none.
+    /// </summary>
+    internal static string? RemoteName(string name) =>
+        name.Length == 0 || name.Contains("://", StringComparison.Ordinal) || name.Contains('@') || name.Contains(':') ? null : name;
 
     private static int Refuse(TextWriter error, string line)
     {

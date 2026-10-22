@@ -21,6 +21,9 @@
     <Compile Include="..\Daoris.Desktop.Driver\Platform\GitAccessRules.cs" Link="GitAccessRules.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Platform\GitRouting.cs" Link="GitRouting.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Platform\GitFailures.cs" Link="GitFailures.cs" />
+    <!-- Each refusal and each grant taken, a coded line in the driver's machine log of the day (GITAUTH1b, the git-auth design §11). -->
+    <Compile Include="..\Daoris.Desktop.Driver\Platform\GitLog.cs" Link="GitLog.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Platform\MachineLog.cs" Link="MachineLog.cs" />
     <!-- The home's table, where the grants and the permissions file are, with the error its refusal is. -->
     <Compile Include="..\Daoris.Desktop.Driver\Platform\DaorisHome.cs" Link="DaorisHome.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Platform\DriverException.cs" Link="DriverException.cs" />
