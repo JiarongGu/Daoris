@@ -189,9 +189,18 @@ public static class GitHolds
     /// A session's Git section for its repository's held remotes (the design §5.3), or null where none is held: what is held and why,
     /// and that it is not to try, beside the boundary of its instruction.
     /// </summary>
-    public static string? Told(IReadOnlyList<GitHold> holds)
+    public static string? Told(IReadOnlyList<GitHold> holds) => Told(holds, rewritten: false, origin: null);
+
+    /// <summary>
+    /// A session's Git section (the design §5.3): where <paramref name="rewritten"/> says the remote helper is laid out for its start,
+    /// what <c>git remote -v</c> shows under the <c>daoris::</c> rewrite and what to name a tool with, <paramref name="origin"/>'s
+    /// address (as <see cref="GitRemotes.AddressOf"/> reads it) as the example where it is an HTTP or HTTPS one; then its repository's
+    /// held remotes. Null where there is neither.
+    /// </summary>
+    public static string? Told(IReadOnlyList<GitHold> holds, bool rewritten, string? origin)
     {
-        if (holds.Count == 0) return null;
+        var rewrite = rewritten ? Rewrite(origin) : null;
+        if (holds.Count == 0) return rewrite is null ? null : "**Git.** " + rewrite;
         var lines = holds.OrderBy(hold => hold.Remote, StringComparer.Ordinal).Select(hold => hold.Holds == Writes
             ? $"`{hold.Remote}` ({hold.Host ?? hold.Address}) refused a push with the sign-in git has on this machine. You may fetch it; "
               + "pushing is not yours in any case."
@@ -201,7 +210,25 @@ public static class GitHolds
             : $"`{hold.Remote}` ({hold.Host ?? hold.Address}) cannot be reached with the sign-in git has on this machine "
               + $"({Why(hold)}), so neither you nor Daoris can reach it now. Do not fetch, pull or push it: work from the line as this "
               + $"checkout has it, and say in your closing note that `{hold.Remote}` was not fetched.");
-        return "**Git.** " + string.Join(" ", lines) + " The person sees it in What needs you, where Try again lifts it.";
+        return "**Git.** " + (rewrite is null ? "" : rewrite + " ") + string.Join(" ", lines)
+            + " The person sees it in What needs you, where Try again lifts it.";
+    }
+
+    /// <summary>What <c>git remote -v</c> shows under the rewrite (§4.4, §5.3), and that <c>gh</c> and <c>az</c> are the person's (§10).</summary>
+    private static string Rewrite(string? origin)
+    {
+        var address = GitWords.Redact(origin?.Trim());
+        var http = address is not null && (address.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+            || address.StartsWith("http://", StringComparison.OrdinalIgnoreCase));
+        var example = http
+            ? $" `origin` shows as `{GitRouting.Prefix}{address}`, and its address is `{address}`."
+            : "";
+        return $"Daoris's git door stands in front of this repository's HTTP and HTTPS remotes, so `git remote -v` shows each as "
+            + $"`{GitRouting.Prefix}` followed by its address.{example} `{GitRouting.Prefix}` is the door, not part of the address: a "
+            + "tool that reads remotes cannot parse it, so name the repository to it (`gh --repo <owner>/<name>`; `az repos` with "
+            + "`--organization`, `--project`, `--repository` and `--detect false`) rather than letting it read the remote, and never "
+            + "rewrite the remote to take the prefix off. `gh` and `az` here act as the person's own sign-ins and are not Daoris's git: "
+            + "do not use them to push or to change the remote.";
     }
 
     /// <summary>Why a repository is held as <c>own-input</c> (<see cref="GitOwnInput"/>), naming the setting and never its value.</summary>
