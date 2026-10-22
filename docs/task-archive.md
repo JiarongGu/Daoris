@@ -19714,3 +19714,17 @@ commits are plumbing in the bare origin (three starts a squash, from about twent
 showed where the seconds went: the start's own cost on this machine, and the product's repeated asks (left to PROC1d-v). On
 main, the 18 changed classes' 242 git cases ran in 14 min 6 s, about 3.5 s a test from 24. The whole half's time comes with CI1's
 next run on main. Detail: FIX-LOG 2026-10-23 (PROCSPEED1b). On Opus.
+
+## TERMTRUST1a part (ii) — the standing confirmation for stop, finish, hold and resume (2026-10-23, D201)
+
+> - **(ii) the confirmation**: the judge and its table, the caller's handle, the job search with its `-open` events, older instances and
+>   elevation, the ledger's expected state and `running-here` for a finish, `SET_STANDING_CONFIRMATION` (`Window`) and `STATE`'s
+>   `standingConfirmation`, the record and its home entry in the three twins, the hold's memory, `STANDING` and `CONFIRMING`'s `standing`
+>   on the wire and in `InstanceDoor.Told`, the note part, the log lines and the machine log design's rows, This Daoris's row with its ask,
+>   the line in *Notifications*, the glossary, both catalogues. Proof: §8 cases 1, 3 and 5 to 12, and 14.
+>   (the terminal-trust design §9 row 1; it had no row of its own in the backlog, which holds TERMTRUST1)
+
+**Outcome** 2026-10-23: built beside part (i), on its own branch, under D201's note on order; the grant is not offered by this build
+(`StandingConfirmation.OfferedInThisBuild` false), so nothing a person can feel changes until part (i) lands and its case 4 is looked
+at on the install. §8 cases 1, 3 and 5 to 12 hold by class; case 3's elevation is not measured, and case 14 is the parent's look once
+the grant is offered. Detail: D201's TERMTRUST1a part (ii) note. On Opus.
