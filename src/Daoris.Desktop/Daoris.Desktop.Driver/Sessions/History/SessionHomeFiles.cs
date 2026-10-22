@@ -27,7 +27,7 @@ public sealed record SessionFilesRemoved(
 /// <remarks>
 /// <para><b>What goes, by name</b>, in this order: its conversation, its transcript, its files (the whole
 /// <c>sessions/&lt;id&gt;/</c>, its native children's lineage among them, <see cref="ChildLineage"/>), its harness conversation id, a leftover process marker, its go-on mark and its reopen mark (<see cref="ReopenMarks"/>, both named <c>mark</c>), its choice of a new
-/// session, the spawn files a crash left, Ask Daoris's name and pin for it (ASKHIST1) and its receipts (HELPWIRED1), its held words, its closed automatic
+/// session, the spawn files a crash left, Ask Daoris's name and pin for it (ASKHIST1), its receipts (HELPWIRED1) and what it published (ASKQUESTS1), its held words, its closed automatic
 /// landing and its archive mark. Until HIST1c the
 /// delete took the first five and the mark, and left the mark, the choice, the held words and the landing behind.</para>
 ///
@@ -54,8 +54,8 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     public const string Spawn = "spawn";
 
     /// <summary>
-    /// Ask Daoris's conversation's name, pin and start (ASKHIST1, <see cref="HelpConversations"/>), and what each of its starts handed
-    /// (HELPWIRED1, <see cref="HelpWired"/>).
+    /// Ask Daoris's conversation's name, pin and start (ASKHIST1, <see cref="HelpConversations"/>), what each of its starts handed
+    /// (HELPWIRED1, <see cref="HelpWired"/>), and what its Applies published (ASKQUESTS1, <see cref="HelpPublished"/>).
     /// </summary>
     public const string Help = "help";
     public const string Held = "held";
@@ -113,6 +113,8 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         new(Help, Place.Sessions, HelpConversations.Suffix, false, Beside),
         // HELPWIRED1: what each of its starts handed, Ask Daoris's too, so it goes under the same name.
         new(Help, Place.Sessions, HelpWired.Suffix, false, Beside),
+        // ASKQUESTS1: the asks and quests its Applies published, Ask Daoris's too.
+        new(Help, Place.Sessions, HelpPublished.Suffix, false, Beside),
     ];
 
     /// <summary>

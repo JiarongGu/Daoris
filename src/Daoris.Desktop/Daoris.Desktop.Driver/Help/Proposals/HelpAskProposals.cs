@@ -70,7 +70,9 @@ internal sealed class HelpAskProposals : IHelpProposalKind
         var review = AskReviewCommand.Compose(proposal.Review, proposal.ReviewWords, out _)!;
         var answer = await applying.Doors.AskAsync(proposal.Workspace!.Trim(), proposal.Sentence!.Trim(), review.Choice, review.Words, ct,
                 string.IsNullOrWhiteSpace(proposal.ShortTitle) ? null : proposal.ShortTitle.Trim()).ConfigureAwait(false);
-        return applying.Settled(answer.Ok, $"{(answer.Ok ? "Applied" : "Not applied")}: `#{applying.Id}` (`{applying.Plan.Terminal}`) — {answer.Message}", answer.Message);
+        // ASKQUESTS1: the ask and the quest the door's answer named, by id, for the conversation's own list.
+        return applying.Settled(answer.Ok, $"{(answer.Ok ? "Applied" : "Not applied")}: `#{applying.Id}` (`{applying.Plan.Terminal}`) — {answer.Message}", answer.Message)
+            with { Published = answer.Ok ? new HelpPublishing(proposal.Workspace!.Trim(), answer.AskId, answer.QuestId) : null };
     }
 
     /// <summary>The terminal's <c>--review</c> and <c>--review-words</c>, as the proposal holds them: none for <c>rule</c> or nothing said.</summary>

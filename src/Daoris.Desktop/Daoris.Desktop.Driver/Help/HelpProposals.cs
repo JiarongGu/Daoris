@@ -441,6 +441,14 @@ public sealed record HelpApplied(bool Applied, string Told)
     /// the card stays for its press and the page logs no settlement. False for every Apply that settles.
     /// </summary>
     public bool Stands { get; init; }
+
+    // The ask and set-up kinds'.
+
+    /// <summary>
+    /// What the Apply published (ASKQUESTS1): the ask and the quest the service's answer named, kept with the conversation by
+    /// <see cref="HelpProposals.ApplyAsync"/>. Null for an Apply that published nothing.
+    /// </summary>
+    public HelpPublishing? Published { get; init; }
 }
 
 /// <summary>
@@ -634,6 +642,8 @@ public static class HelpProposals
         }
 
         var applied = await ApplyOnceAsync(home, proposal, plan, doors, Later, ct).ConfigureAwait(false);
+        // ASKQUESTS1: what it published is kept with its conversation before the conversation is told, by the ids the service answered.
+        Kept(home, proposal, applied);
         say(applied.Told);
         List<string> early;
         lock (gate)
@@ -644,6 +654,29 @@ public static class HelpProposals
 
         foreach (var text in early) say(text);
         return applied;
+    }
+
+    /// <summary>
+    /// Keep what an Apply published with the conversation that proposed it (ASKQUESTS1, <see cref="HelpPublished"/>): an applied card
+    /// whose answer named an ask or a quest, in a conversation of this machine's. A keep that fails loses the list's entry, never the
+    /// Apply, which happened.
+    /// </summary>
+    private static void Kept(string home, HelpProposal proposal, HelpApplied applied)
+    {
+        if (!applied.Applied || applied.Published is not { Names: true } made || proposal.Session is not { } session) return;
+        if (!SessionEventText.IsId(session)) return;
+        try
+        {
+            new HelpPublished(home).Keep(session, new HelpPublishedEntry(DateTimeOffset.UtcNow, proposal.Id, proposal.Kind, made.Workspace)
+            {
+                Ask = made.Ask,
+                Quest = made.Quest,
+            });
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // The quest and the ask stand; only this conversation's list of them is short by one, as a file that does not read is.
+        }
     }
 
     private static async Task<HelpApplied> ApplyOnceAsync(
