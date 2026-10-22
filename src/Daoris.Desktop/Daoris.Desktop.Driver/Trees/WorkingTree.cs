@@ -921,6 +921,7 @@ public static class WorkingTree
         info.ArgumentList.Add("core.longpaths=true");
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
         if (read is not null) Tools.Hand(info, read, home!);
+        else GitWiring.Hand(info); // with no home there is no tools' file, and still nothing may prompt (GITAUTH1a)
         // GITSTART1: the system's git, where it is Git for Windows' launcher, starts as the git behind it with the
         // launcher's variables, one process where it was two. A managed git is laid out alike (its record names
         // cmd/git.exe) and goes the same way (GITSTART5). A git the person named as a file starts as it is.
