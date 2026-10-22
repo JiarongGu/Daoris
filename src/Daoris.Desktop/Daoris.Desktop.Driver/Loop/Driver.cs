@@ -2454,7 +2454,9 @@ public sealed class Driver(
                     var where = opened is not null ? $" [own tree: {opened.Path}]"
                         : resumedIn is not null ? $" [own tree, resumed: {resumedIn}]"
                         : "";
-                    holdsTree = SessionStates.IsParked(conclusion.State) || swappedOn;
+                    // HELPERWAIT1: a session waiting on its own helper goes on in this tree with the answer, so it keeps it, as a park does.
+                    var waitsOnHelper = HelperWaits.Ended(conclusion.Parts);
+                    holdsTree = SessionStates.IsParked(conclusion.State) || swappedOn || waitsOnHelper;
                     // FABRIC-CLOSE1o: a take its start named a graph for that went unbound (an expired bind, a remote since) is said
                     // here once, beside its take's own answer, since its next start reads it unbound and names nothing.
                     return new StartRun(
@@ -2470,8 +2472,8 @@ public sealed class Driver(
                         // one that outranks the observation above. Read once, used for both. A park is
                         // not an ending (STANDDOWN2): the record waits on the person, and the attention
                         // watch says so from the active list, as it does for a parked intake. Nor is a run ended for a changed setup,
-                        // whose record goes on at the next look (ACCESSSWAP1b).
-                        SessionStates.IsParked(conclusion.State) || swappedOn
+                        // whose record goes on at the next look (ACCESSSWAP1b), nor one waiting on its own helper (HELPERWAIT1).
+                        SessionStates.IsParked(conclusion.State) || swappedOn || waitsOnHelper
                             ? null
                             : new SessionEnded(
                                 sessionId, quest.To, conclusion.State,

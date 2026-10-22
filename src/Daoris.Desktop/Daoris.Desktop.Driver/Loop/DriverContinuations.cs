@@ -594,7 +594,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         return (new StartRun(
             $"{conclusion.State}  session {sessionId} (#{quest.Id} → {quest.To}) [resumed its conversation]: {conclusion.Note}",
             true,
-            SessionStates.IsParked(conclusion.State) || swappedOn
+            // HELPERWAIT1: a session waiting on its own helper is no ending, and keeps its tree (the caller's TREELOCK1), as a park does.
+            SessionStates.IsParked(conclusion.State) || swappedOn || HelperWaits.Ended(conclusion.Parts)
                 ? null
                 : new SessionEnded(
                     sessionId, quest.To, conclusion.State,

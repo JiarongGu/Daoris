@@ -155,18 +155,38 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         var files = new HelperFiles(_context.Home);
         if (HelperWaits.Open(session, files.Asks(), files.ReadState).Count == 0) return false;
         if (new QuestionFiles(_context.Home).Read(session) is { } asked && asked.At >= since) return false;
-        return !HelperWaits.AskedGoAhead(session, await AskWords.ReadAsync(_context.Service, quest.From, ct).ConfigureAwait(false));
+        return await AskedGoAheadAsync(session, quest.From, ct).ConfigureAwait(false) == false;
     }
 
     /// <summary>
     /// Whether a park asks the person something besides its helper (HELPERWAIT1, point 3): its question on file, which is its last turn's
-    /// while it is parked (PARKVIEW1), or a go-ahead it asked that still waits on them.
+    /// while it is parked (PARKVIEW1), or a go-ahead it asked that still waits on them; null where the go-aheads could not be read.
     /// </summary>
-    private async Task<bool> AsksThePersonAsync(PriorSession park, CancellationToken ct)
+    private async Task<bool?> AsksThePersonAsync(PriorSession park, CancellationToken ct)
     {
         if (new QuestionFiles(_context.Home).Read(park.Session) is not null) return true;
         var quest = park.Quest is { } id ? await _context.Service.FindQuestAsync(id, ct).ConfigureAwait(false) : null;
-        return HelperWaits.AskedGoAhead(park.Session, await AskWords.ReadAsync(_context.Service, quest?.From, ct).ConfigureAwait(false));
+        return await AskedGoAheadAsync(park.Session, quest?.From, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Whether <paramref name="session"/> asked a go-ahead on its work's ask that still waits on the person (HELPERWAIT1): an ask
+    /// the service does not hold, or a quest on no ask, has none; one the service did not answer is unread, null, and its caller parks as
+    /// before rather than read a question as absent.
+    /// </summary>
+    private async Task<bool?> AskedGoAheadAsync(string session, string? from, CancellationToken ct)
+    {
+        if (AskWords.AskOf(from) is not { } id) return false;
+        try
+        {
+            return await _context.Service.FindAskAsync(id, ct).ConfigureAwait(false) is { } ask
+                   && HelperWaits.AskedGoAhead(session, AskWords.Of(ask));
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or JsonException or InvalidOperationException
+                                          || (error is OperationCanceledException && !ct.IsCancellationRequested))
+        {
+            return null;
+        }
     }
 
     // The hands held, by ask, with how the look's own list showed the asker when each was held (point 6), null where it showed none, and
@@ -203,8 +223,8 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         }
 
         return Helper(LookClass.Progress, asker.Parked
-            ? $"helper  ask `{ask.Id}` is answered, and waits for the person's answer to session {ask.Asker}, then for its turn to end: never into a step in flight."
-            : $"helper  ask `{ask.Id}` is answered, and waits for session {ask.Asker}'s turn to end: never into a step in flight.");
+            ? $"helper  ask `{ask.Id}` is answered, and waits for the person's answer to session {asker.Session}, then for its turn to end: never into a step in flight."
+            : $"helper  ask `{ask.Id}` is answered, and waits for session {asker.Session}'s turn to end: never into a step in flight.");
     }
 
     /// <summary>
@@ -535,12 +555,15 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     {
         var service = _context.Service;
         var output = _context.Output;
-        var record = await service.RecordAsync(ask.Asker, ct).ConfigureAwait(false);
-        var never = record switch
+        // HELPERWAIT1 (D189 point 6): the newest record of the asker's line, as the hand door resolves it, so a left conversation is never
+        // reopened and the answer goes to the part that continues it.
+        var (asker, record) = await LineAsync(ask.Asker, ct).ConfigureAwait(false);
+        var never = (asker, record) switch
         {
-            null => HelperWhy.AskerGone,
-            { Serves: not null } or { Opinion: not null } or { Ask.Length: > 0 } => HelperWhy.AskerUnfit,
-            _ when string.Equals(record.State, "stood-down", StringComparison.OrdinalIgnoreCase) => HelperWhy.CannotTake,
+            (null, _) or (_, null) => HelperWhy.AskerGone,
+            ({ Serves: not null } or { Opinion: not null } or { Ask.Length: > 0 }, _) => HelperWhy.AskerUnfit,
+            (_, { Serves: not null } or { Opinion: not null } or { Ask.Length: > 0 }) => HelperWhy.AskerUnfit,
+            _ when string.Equals(record!.State, "stood-down", StringComparison.OrdinalIgnoreCase) => HelperWhy.CannotTake,
             _ => null,
         };
         if (never is not null)
@@ -549,13 +572,15 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
             return await RefuseAsync(ask, never, state.Agent, files, ct).ConfigureAwait(false);
         }
 
+        var to = record!.Session;
+
         // 🔴 HELPERWAIT1 (point 3): a park the install made before the rule, while this ask's helper read, is no question of the
         // person's: its agent asked this ask, ended its turn so the helper could read, and parked on the clean exit. It is completed as
         // the wait on its helper it was, and handed the answer as such a session is, at once. A park that asks the person anything else
         // (its question, a go-ahead), one made before the ask or one the person answered is theirs, and holds the answer as before.
-        if (record!.Parked && HelperWaits.ParkedOn(record, ask) && !await AsksThePersonAsync(record, ct).ConfigureAwait(false))
+        if (record.Parked && HelperWaits.ParkedOn(record, ask) && await AsksThePersonAsync(record, ct).ConfigureAwait(false) == false)
         {
-            await service.AdvanceAsync(ask.Asker, "completed", Observation.AwaitsHelper, ct: ct).ConfigureAwait(false);
+            await service.AdvanceAsync(to, "completed", Observation.AwaitsHelper, ct: ct).ConfigureAwait(false);
             record = record with { State = "completed" };
         }
 
@@ -566,11 +591,11 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         // where its door takes words then, kept on its record for its run and held in its inbox under the record's id.
         var conversation = record.Kind == "chat";
         var open = conversation && string.Equals(record.State, "working", StringComparison.OrdinalIgnoreCase);
-        var inbox = ask.Urgent && !conversation && record.Running ? _context.Processes.InboxOf(ask.Asker) : null;
+        var inbox = ask.Urgent && !conversation && record.Running ? _context.Processes.InboxOf(to) : null;
         var nextStep = inbox?.ReachAt(MessageLevel.Urgent) == DrivenReach.NextStep;
         if (!open && !nextStep && (record.Running || record.Parked)) return Held(ask, record, seen);
 
-        // 🔴 One hand per ask (HELPERWAIT1; Fable's F3 on COWORKUX1): the state is marked handed only after the keep, so a restart between
+        // 🔴 One hand per ask (HELPERWAIT1, D188 point 4): the state is marked handed only after the keep, so a restart between
         // the two finds an answer already handed. Its word is then still waiting on the asker, or a turn of the asker's opened with it
         // (the go-on's opening and the urgent and conversation doors each keep a `user` event naming the helper before the word leaves
         // the record): marked handed, never handed twice. Neither found, the keep never happened, and it is handed now.
@@ -578,7 +603,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         {
             files.WriteState(state with { Handed = kept });
             Forget(ask.Id);
-            return Helper(LookClass.Progress, $"helper  ask `{ask.Id}` was handed to session {ask.Asker} already, as word `{kept}`: it is not handed again.");
+            return Helper(LookClass.Progress, $"helper  ask `{ask.Id}` was handed to session {to} already, as word `{kept}`: it is not handed again.");
         }
 
         var text = state.LastWords
@@ -589,7 +614,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         var (handed, message, word) = await service.Helpers
             .HandAsync(state.Helper!, composed, ct, running: nextStep, level: ask.Urgent ? MessageLevels.Spelled(MessageLevel.Urgent) : null)
             .ConfigureAwait(false);
-        if (!handed) return Helper(LookClass.Retry, $"helper  ask `{ask.Id}` is answered, and waits to be handed to session {ask.Asker}: {message}");
+        if (!handed) return Helper(LookClass.Retry, $"helper  ask `{ask.Id}` is answered, and waits to be handed to session {to}: {message}");
 
         // Held where the run takes it at its next step; one the inbox no longer takes stays on the record, which goes on with it once.
         var atNextStep = nextStep && word is not null && inbox!.HoldKept(
@@ -598,12 +623,12 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                 Id = word, Level = MessageLevel.Urgent,
                 Helped = new SaidWordView(word, composed, DateTimeOffset.UtcNow, [], true) { Helper = state.Helper, Level = MessageLevel.Urgent },
             },
-            new SaidDoor(service, ask.Asker));
+            new SaidDoor(service, to));
         files.WriteState(state with { Handed = word ?? "handed" });
         Forget(ask.Id);
         var noted = HelperNotes.Answered(agent, state.Helper!, state.LastWords);
-        output?.Append(ask.Asker, $"— {noted.Note}");
-        _context.Events.Keep(ask.Asker, new SessionEvent { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts }, say: null);
+        output?.Append(to, $"— {noted.Note}");
+        _context.Events.Keep(to, new SessionEvent { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts }, say: null);
 
         // The shell's chat runner hears this event, as it hears the person's words to an ended conversation (D137 §3.1), after the
         // note above so the turn it makes reads beneath it: the origin is Daoris's own (`target`), never the person's, and an
@@ -611,14 +636,39 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         if (conversation && word is not null)
         {
             _context.Events.Keep(
-                ask.Asker,
+                to,
                 new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Helper = state.Helper, Id = word, Text = composed, Reaches = "resume" },
                 say: null);
         }
 
         return Helper(LookClass.Progress, atNextStep
-            ? $"helper  ask `{ask.Id}` answered by {agent}: its answer reaches session {ask.Asker} at its next step, marked as the helper's."
-            : $"helper  ask `{ask.Id}` answered by {agent}: its answer is session {ask.Asker}'s next turn, marked as the helper's, at the driver's next look.");
+            ? $"helper  ask `{ask.Id}` answered by {agent}: its answer reaches session {to} at its next step, marked as the helper's."
+            : $"helper  ask `{ask.Id}` answered by {agent}: its answer is session {to}'s next turn, marked as the helper's, at the driver's next look.");
+    }
+
+    /// <summary>
+    /// The asker's record and the newest record of its line (HELPERWAIT1, D189 point 6): the asker itself, or the newest record continuing it
+    /// by <c>from</c> (a hand-over, a move, a carry-on), followed as the hand door follows it, at most sixteen links. Nulls where the asker
+    /// is no record of this machine's.
+    /// </summary>
+    private async Task<(PriorSession? Asker, PriorSession? Newest)> LineAsync(string asker, CancellationToken ct)
+    {
+        var records = await _context.Service.RecordsAsync(ct).ConfigureAwait(false);
+        if (records.FirstOrDefault(record => string.Equals(record.Session, asker, StringComparison.Ordinal)) is not { } first) return (null, null);
+        var newest = first;
+        for (var hops = 0; hops < 16; hops++)
+        {
+            var at = newest;
+            if (records.Where(record => string.Equals(record.From, at.Session, StringComparison.Ordinal))
+                    .OrderByDescending(record => record.Created).FirstOrDefault() is not { } next)
+            {
+                break;
+            }
+
+            newest = next;
+        }
+
+        return (first, newest);
     }
 
     /// <summary>

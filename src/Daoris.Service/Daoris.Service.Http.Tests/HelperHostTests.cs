@@ -107,6 +107,30 @@ public sealed class HelperHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// HELPERWAIT1 (D189 point 6): an asker its line has left (a hand-over, a move, a carry-on) is never reopened by its helper's answer: the
+    /// answer goes to the newest record continuing it, as a partner's piece does, and is keyed by its helper; the record left keeps nothing.
+    /// </summary>
+    [Fact]
+    public async Task The_hand_door_follows_the_askers_line_to_its_newest_record_and_keys_the_word()
+    {
+        var sessions = host.Composed.Sessions;
+        var asker = await sessions.CreateAsync(null, "Relay", "stub", DateTimeOffset.UtcNow, kind: Daoris.Knowledge.SessionKind.Driven, tree: "trees/default/Relay/s-11111111");
+        var helper = await sessions.CreateAsync(null, "Relay", "codex-acp", DateTimeOffset.UtcNow, kind: Daoris.Knowledge.SessionKind.Chat, serves: asker.Id);
+        await sessions.SetStateAsync(asker.Id, Daoris.Knowledge.SessionState.Stopped, "handed over.", null, null, DateTimeOffset.UtcNow);
+        var successor = await sessions.CreateAsync(
+            null, "Relay", "codex-acp", DateTimeOffset.UtcNow.AddSeconds(1), kind: Daoris.Knowledge.SessionKind.Driven, tree: "trees/default/Relay/s-11111111",
+            from: asker.Id);
+        await sessions.SetStateAsync(successor.Id, Daoris.Knowledge.SessionState.Completed, "done.", null, null, DateTimeOffset.UtcNow);
+
+        var handed = await host.PostAsync($"/api/helpers/{helper.Id}/hand", new { text = "Helper says five." });
+
+        Assert.Equal(200, handed.Status);
+        var word = Assert.Single((await sessions.FindAsync(successor.Id))!.Said);
+        Assert.Equal((helper.Id, $"helper:{helper.Id}"), (word.Helper, word.Key));
+        Assert.Empty((await sessions.FindAsync(asker.Id))!.Said);
+    }
+
+    /// <summary>
     /// MIXAGENT2a-iii: a conversation that asked is handed the answer while it is open (working, between turns), since the chat
     /// runner says it as the conversation's next turn; a conversation still being started, an intake, a helper and a stood-down
     /// record keep their refusals.

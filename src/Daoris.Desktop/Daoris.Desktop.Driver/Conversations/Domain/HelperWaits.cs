@@ -25,9 +25,20 @@ public static class HelperWaits
     /// Whether <paramref name="record"/> is a session of this machine's that ended waiting on its own helper: completed by that code,
     /// with nothing waiting on it, since words waiting go on (the helper's answer among them).
     /// </summary>
-    public static bool Waits(PriorSession record) =>
+    public static bool Waits(PriorSession record) => HoldsTree(record) && !record.WordsWaiting;
+
+    /// <summary>
+    /// Whether <paramref name="record"/> ended waiting on its own helper and so still holds its tree (HELPERWAIT1; Codex's #5 on COWORKUX1):
+    /// completed by that code, a record of this machine's, words waiting or not, since it goes on in that tree with them. What the tidy,
+    /// the lock's let-go and the planner's further part read beside the live sessions, so no other part writes there and nothing clears it
+    /// while its helper reads.
+    /// </summary>
+    public static bool HoldsTree(PriorSession record) =>
         !record.Teammate && string.Equals(record.State, "completed", StringComparison.OrdinalIgnoreCase)
-        && Carries(record.NoteParts, NoteCodes.EndedAwaitsHelper) && !record.WordsWaiting;
+        && Carries(record.NoteParts, NoteCodes.EndedAwaitsHelper);
+
+    /// <summary>Whether a run's conclusion is the wait on its own helper (<see cref="Observation.AwaitsHelper"/>): its note's code.</summary>
+    public static bool Ended(IReadOnlyList<NotePart>? parts) => Carries(parts, NoteCodes.EndedAwaitsHelper);
 
     /// <summary>
     /// Whether <paramref name="park"/> is the park a session made, before the rule, waiting on <paramref name="ask"/> (HELPERWAIT1 point 3):

@@ -137,7 +137,15 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
                 return Refused(HelperRefusal.NotFound, $"There is no helper session `{helperId.Trim()}` on this machine");
             }
 
+            // HELPERWAIT1 (D189 point 6): the newest live record of the asker's line, as a partner's piece is handed (PartnerDesk): a hand-over,
+            // a move or a carry-on takes the asker's helpers with it, and a left conversation is never reopened.
             var asker = await sessions.FindAsync(served, inside).ConfigureAwait(false);
+            for (var hops = 0; asker is { Origin: null } && hops < 16; hops++)
+            {
+                if (await sessions.ContinuedByAsync(asker.Id, inside).ConfigureAwait(false) is not { } next) break;
+                asker = next;
+            }
+
             string? cannot = asker switch
             {
                 null or { Origin: not null } => $"There is no session `{served}` of this machine's to hand the answer to",
@@ -163,9 +171,10 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
                 return Refused(HelperRefusal.NotHanded, $"Helper `{helper.Id}`'s answer went to session `{asker.Id}` already: it goes once");
             }
 
+            // Keyed by its helper (HELPERWAIT1), one helper per ask: the word's own identity wherever it waits, as a piece's is (PartnerDesk).
             var word = new SaidWord(
                 Guid.NewGuid().ToString("N")[..8], text.Trim(), now, [], Reopens: true, Helper: helper.Id,
-                Level: level is { } said && SaidLevel.Known(said) ? said : null);
+                Level: level is { } said && SaidLevel.Known(said) ? said : null, Key: KeyOf(helper.Id));
             var kept = await sessions.KeepSaidAsync(asker.Id, word, ct: inside).ConfigureAwait(false);
             return new HelperOutcome(
                 HelperRefusal.None,
@@ -177,6 +186,9 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
             };
         }, ct).ConfigureAwait(false);
     }
+
+    /// <summary>A helper's answer's stable key, the producer key its word carries (HELPERWAIT1): one per helper, and so one per ask.</summary>
+    public static string KeyOf(string helper) => $"helper:{helper}";
 
     private static HelperOutcome Refused(HelperRefusal refusal, string why) => new(refusal, $"{why}. Nothing was kept.");
 }
