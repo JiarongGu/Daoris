@@ -33,10 +33,12 @@ D75), where its own rules live; this is what a view may assume of it.
   conversation's answer in *Messages* (NOTIFY2g); pressed, it shows
   the *Notifications* view where it stands. **The
   activity bar** (48px) is the one navigation, a place per icon and Settings alone at its foot (UX6j),
-  and a badge counts what its place holds: Sessions the sessions the driver runs, the cap's
-  count, with its list's *Waiting on you* marked beside it by a dot in the waiting hue, a parked quest there too (UX5 U20 as
-  SESSBADGE1 amended it in D76's note, D126 §2.5); and Agents the signed-out accounts a list or a default holds (UX6e, D150 §2.1).
-  **The status bar** states the machine's standing facts: the driver, the sessions the driver runs (the Sessions badge's count),
+  and **a badge means one thing, what waits on the person** (BADGEUX1, the UI/UX design §3.10): a place's number is the bell's rows
+  whose door opens it, in open's hue, so each place's number is the bell's for the same rows; work under way there is a still dot
+  in taken's hue at the lower corner, never a number (Sessions the driver's work under way, Quests a quest taken), said in words in
+  the place's tip and description. A count said with its noun is words, and wears open's hue only where it counts waits: what is
+  unread is said *N unread* in a neutral ink.
+  **The status bar** states the machine's standing facts: the driver, the sessions the driver runs (the cap's count, SESSBADGE1),
   the workspace, the remote, the index and the recall tier (D24, stated on every screen). Global state
   lives in exactly one place; views never restate it.
 - **The content column is the window's whole width** (UX5 U59, the owner: under a 72rem cap a

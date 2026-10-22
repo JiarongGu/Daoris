@@ -159,11 +159,10 @@ under the status bar).
 
 **A count is a circle**, `CountBadge`: one fixed height and the same minimum width, since a count
 drawn as a pill of its own line height measured 14 × 17px on the window. Zero wears nothing. **A
-badge counts what its place holds** (UX5 U20, amended by SESSBADGE1, D76's note): Overview counts all
-of *What needs you*, beside the band that lists it, a status in open's hue. Sessions counts the
-sessions the driver runs and outstanding quests count themselves, both quantities in the accent;
-what waits on the person in Sessions is a dot in the waiting hue at the icon's other corner, shown
-with no count too, and the place's tip says both counts in words.
+badge counts only what waits on the person** (BADGEUX1, the UI/UX design §3.10, replacing UX5 U20 and
+SESSBADGE1's rule): a place's number is the title bar's bell's rows whose door opens it, in open's
+hue; work under way there is a still dot in taken's hue at the icon's other corner, never a number;
+and the place's tip says both in words.
 
 ### c. The rail — a header, and `＋` behind one control
 

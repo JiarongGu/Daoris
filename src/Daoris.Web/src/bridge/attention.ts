@@ -6,9 +6,9 @@ import { type AttentionPushed, attentionInOrder, type PushedAttention } from '..
 import { readSlice } from './driver';
 import { mergeKeyed, readPushed, type SliceSpec, usePushedResyncing } from './state/slices';
 
-// Who needs the person, as the shell pushes it (PUSH1d4, D182 points 2-4 and 6): *What needs you*'s rows, what waits on the person in
-// Sessions and the sessions the driver runs (SESSBADGE1), judged in .NET once for every window (`AttentionStateSlice`). The page orders
-// the rows, words them and keeps their acts.
+// Who needs the person, as the shell pushes it (PUSH1d4, D182 points 2-4 and 6): *What needs you*'s rows, the sessions parked on the
+// person, and the sessions the driver runs (SESSBADGE1), judged in .NET once for every window (`AttentionStateSlice`). The page orders
+// the rows, words them and keeps their acts; the bell and each place count the rows, and the parks are kept out of what runs (BADGEUX1).
 
 /** The partition of the rows, each under its kind and id; of what waits on the person in Sessions; and of the sessions the driver runs. */
 const ROWS = 'rows';
@@ -33,7 +33,7 @@ function rowOf(value: unknown): PushedAttention | null {
 
 /**
  * The slice's partitions composed into one entry (PUSH1d4): the rows in the band's order (`attentionInOrder`, D182's PUSH1d4
- * note), the keys of what waits on the person in Sessions, and the keys of the sessions the driver runs (SESSBADGE1). Nothing until
+ * note), the keys of what parked on the person, and the keys of the sessions the driver runs (SESSBADGE1). Nothing until
  * the owner judged and the rows and the waits are held, so a window never reads half a judgement as the whole: before, the band
  * draws its skeleton (PUSHUX1). A shell from before the sessions the driver runs pushes none, read as none.
  */
@@ -59,14 +59,15 @@ export const attentionSlice: SliceSpec = {
 
 /**
  * What a window knows of who needs the person: in a plain browser, nothing, since the judgement is the app's (`app`); in a shell,
- * nothing yet until the owner has judged (`reading`), never an empty band (PUSHUX1); then, in its scope, the rows, how many things
- * wait on the person in Sessions (`sessions`), and how many sessions the driver runs (`working`, SESSBADGE1); and whether the
- * slice is being read again whole, which holds those rows dimmed (`resyncing`).
+ * nothing yet until the owner has judged (`reading`), never an empty band (PUSHUX1); then, in its scope, the rows, how many sessions
+ * the driver runs (`working`, SESSBADGE1: the cap's count, the status bar's), and how many of those are under way, not parked on
+ * the person (`running`, BADGEUX1: Sessions' running mark); and whether the slice is being read again whole, which holds those rows
+ * dimmed (`resyncing`).
  */
 export type AttentionRead =
   | { state: 'app' }
   | { state: 'reading' }
-  | { state: 'known'; rows: PushedAttention[]; sessions: number; working: number; resyncing: boolean };
+  | { state: 'known'; rows: PushedAttention[]; working: number; running: number; resyncing: boolean };
 
 /**
  * Who needs the person in this window (PUSH1d4): the pushed rows, read from memory and never pulled, since no route answers them;
@@ -89,11 +90,15 @@ export const useAttention = (): AttentionRead => {
   if (!isAvailable) return { state: 'app' };
   if (!read.data) return { state: 'reading' };
   const scoped = <T extends { workspace?: string | null }>(each: T) => each.workspace == null || inCircle(each.workspace, workspace);
+  const working = read.data.working.filter(scoped);
+  // BADGEUX1: what the driver runs less what parked on the person, both partitions judged in .NET and keyed alike (`session:<id>`),
+  // so the page subtracts keys and judges nothing; a park is a wait, counted, and never running work.
+  const parked = new Set(read.data.sessions.map((each) => each.key));
   return {
     state: 'known',
     rows: read.data.rows.filter(scoped),
-    sessions: read.data.sessions.filter(scoped).length,
-    working: read.data.working.filter(scoped).length,
+    working: working.length,
+    running: working.filter((each) => !parked.has(each.key)).length,
     resyncing,
   };
 };

@@ -372,9 +372,9 @@ window that holds it; and how each agent's accounts are used the twelfth (`Accou
 (`AccountsRoutes.AccountsAnswer`) once per wake for every window, a partition per agent, the curve's verdicts judged beside each
 reading, woken by the roster's scope, a harness action's end, a session's end and a running count the records slice moved
 (`StateSlice.Pushed`), so a tick and a focus read `ACCOUNTS` in no window and a probe's result moves every window by one push; and
-who needs the person the thirteenth (`AttentionStateSlice`, PUSH1d4), *What needs you*'s rows, what waits on the person in Sessions
-and the sessions the driver runs (`working`, the cap's own count by `ActiveSessions.HoldsSlot`, which the Sessions badge and the status
-bar count, SESSBADGE1) judged in .NET (`NeedsAPerson`, `AccountAttention`) from the other slices' snapshots, the registry the machine's facts hold and what the
+who needs the person the thirteenth (`AttentionStateSlice`, PUSH1d4), *What needs you*'s rows (which the bell and each place of the
+activity bar count, BADGEUX1), the sessions parked on the person, and the sessions the driver runs (`working`, the cap's own count by
+`ActiveSessions.HoldsSlot`, which the status bar counts, SESSBADGE1, and, less the parks, Sessions' running mark reads) judged in .NET (`NeedsAPerson`, `AccountAttention`) from the other slices' snapshots, the registry the machine's facts hold and what the
 driver's look kept, read from memory once every input slice has judged, woken by their pushes (the sessions' only where what the judge
 reads of them moved), each look, a held tool call's move and the rules', sessions', driver's and roster's scopes, so no window judges
 who needs the person and a tick reads none of what the band was judged from. A unit of work is a row there only where the person's

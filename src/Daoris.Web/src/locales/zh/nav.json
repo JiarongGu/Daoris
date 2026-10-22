@@ -12,5 +12,6 @@
   "nav.plugins": "插件",
   "nav.settings": "设置",
   "nav.waiting": "{{count}} 个等你处理",
-  "nav.active": "{{count}} 个进行中"
+  "nav.underWay": "{{count}} 个进行中",
+  "nav.taken": "{{count}} 个已接下"
 }

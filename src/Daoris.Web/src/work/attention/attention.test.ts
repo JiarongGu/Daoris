@@ -8,8 +8,8 @@ import type { AccountRowFacts, NamedAccount } from './accountWords';
 import type { Attention } from './AttentionRow';
 import type { SessionGrouping } from '../groups';
 import {
-  ASKS_ONCE, ATTENTION_GROUP, attentionActs, attentionGroup, attentionGroups, attentionInOrder, attentionOf, attentionOffers, attentionWorded,
-  type AttentionNames, needsListed, type PushedAttention, staleGoAheads,
+  ASKS_ONCE, ATTENTION_GROUP, ATTENTION_PLACE, attentionActs, attentionGroup, attentionGroups, attentionInOrder, attentionOf, attentionOffers,
+  attentionWorded, type AttentionNames, needsListed, placeCounts, placeOf, type PushedAttention, staleGoAheads,
 } from './attention';
 import { entryDetail } from '../head/milestone';
 
@@ -729,6 +729,66 @@ describe('the groups', () => {
     expect(needsListed([row('review', 'r1', null), row('confirmation', 'c1', at), row('parked', 'p1', at)]).map((each) => `${each.kind}:${each.id}`))
       .toEqual(['review:r1', 'parked:p1']);
     expect(needsListed([])).toEqual([]);
+  });
+});
+
+/**
+ * BADGEUX1 (the UI/UX design §3.10): a number on a place counts only what waits on the person, the bell's rows, each at the one place
+ * its door opens, where its step is taken; so the places' numbers sum to what the bell counts of the rows, and a press is the bell's.
+ */
+describe('the place each wait is counted at', () => {
+  it('is the place its door opens, for every kind', () => {
+    expect(ATTENTION_PLACE).toEqual({
+      parked: 'sessions', review: 'sessions', opinion: 'sessions', helper: 'sessions', 'hand-over': 'sessions',
+      permission: 'sessions', answer: 'sessions',
+      proposal: 'quests', intake: 'quests', unanswerable: 'quests', 'parked-quest': 'quests', 'go-ahead': 'quests',
+      departure: 'quests', 'set-up': 'quests', trust: 'quests',
+      work: 'projects',
+      rule: 'agents', 'account-wait': 'agents', 'signed-out': 'agents',
+      space: 'settings',
+      confirmation: null,
+    });
+  });
+
+  it('counts every listed row at one place, so the places sum to what the bell counts of them', () => {
+    const at = '2026-09-21T09:00:00Z';
+    const rows = [
+      row('parked', 'p1', at), row('review', 'r1', null), row('permission', 'p1#9', at), row('proposal', 'a1', at),
+      row('parked-quest', 'q1', at), row('work', 'u1', at), row('rule', 'r9', at), row('signed-out', 'claude-code/a', at),
+      row('space', 'D:', at), row('confirmation', 'c1', at),
+    ];
+    const counted = placeCounts(rows);
+    expect(counted).toEqual({ sessions: 3, quests: 2, projects: 1, agents: 2, settings: 1 });
+    expect(Object.values(counted).reduce((sum, each) => sum + each, 0)).toBe(needsListed(rows).length);
+    expect(placeCounts([])).toEqual({});
+  });
+
+  it('counts a kind this build does not know at no place, though the bell counts it', () => {
+    const later = { kind: 'later-kind', id: 'x1', since: null } as unknown as PushedAttention;
+    expect(placeCounts([later])).toEqual({});
+    expect(needsListed([later])).toHaveLength(1);
+  });
+
+  /**
+   * Codex's read (§3.10.8): a unit of work's door is the row's, not its kind's. A held attempt's presses are on its row alone, which the
+   * bell's view holds; a branch cut for a session the page holds opens that session (FABRIC-UNKNOWN1c); any other opens Branches.
+   */
+  it('places a unit of work where its own door opens', () => {
+    const at = '2026-09-21T09:00:00Z';
+    const sessions = [session({ id: 'c4a7c4a7', repository: 'engine', tree: 'trees/engine/s-c4a7c4a7' })];
+    const cut = row('work', 'unknown-branch:engine/daoris/s-c4a7c4a7', at, {
+      where: 'engine', title: 'daoris/s-c4a7c4a7', blocked: { unknown: true, entries: [] },
+    });
+    const held = row('work', 'u1#deploy#2', at, { held: { unit: 'u1' } as PushedAttention['held'] });
+    const plain = row('work', 'u-orphan', at, { where: 'engine', title: 'daoris/s-orphan', blocked: { unknown: true, entries: [] } });
+
+    expect(placeOf(cut, sessions)).toBe('sessions');
+    expect(placeOf(cut, [])).toBe('projects');
+    expect(placeOf(held, sessions)).toBeNull();
+    expect(placeOf(plain, sessions)).toBe('projects');
+    expect(placeCounts([cut, held, plain], sessions)).toEqual({ sessions: 1, projects: 1 });
+    // The door the band draws is the same judgement.
+    expect(attentionWorded(cut, { sessions }).cutFor).toBe('c4a7c4a7');
   });
 });
 

@@ -11,7 +11,7 @@ import { type MessageNames, messagesCount, whoWords } from '../notifications/Mes
 import { HELP_REPOSITORY } from '../data/api';
 import { askName, sessionTitle } from '../work/identity';
 import { AttentionBand } from '../work/attention/AttentionBand';
-import { needsListed } from '../work/attention/attention';
+import { needsListed, placeCounts } from '../work/attention/attention';
 import { useScope } from '../data/scope';
 import { AskDaoris } from '../help/AskDaoris';
 import type { AskOpening } from '../help/AskConversation';
@@ -89,7 +89,7 @@ import { store, stored } from '../lib/stored';
 import { figure } from '../locales/format';
 import { HarnessRuns } from '../agents/harnessRuns';
 import { usePluginsView } from '../plugins/PluginsView';
-import { useAgentsView, useAgentsWaiting } from '../agents/AgentsView';
+import { useAgentsView } from '../agents/AgentsView';
 import type { AgentPart } from '../agents/agents';
 
 /** The views are `commands.ts`'s one list (D66); the activity bar and the palette read the same. */
@@ -118,6 +118,19 @@ function rememberedView(): Tab {
 // The activity bar: every view but Settings, which has its own gear. Sessions — what the Work frame
 // was (D66) — is absent in a browser rather than disabled.
 const NAV = VIEWS.filter(({ view }) => view !== 'settings');
+
+/**
+ * A place's marks (BADGEUX1, the UI/UX design §3.10): its number, what waits on the person there; its running mark, work under way
+ * there; and both in words for its tip and its description, the waits first, as the taskbar says them. Sessions says its work under
+ * way, Quests its quests taken; no other place runs work.
+ */
+function placeMarks(place: View, waits: number, running: number, t: (key: string, values?: Record<string, unknown>) => string) {
+  const said = [
+    waits > 0 ? t('nav.waiting', { count: waits }) : null,
+    running > 0 ? t(place === 'quests' ? 'nav.taken' : 'nav.underWay', { count: running }) : null,
+  ].filter(Boolean).join(' · ');
+  return { waits, running: running > 0, ...(said ? { detail: said } : {}) };
+}
 
 /**
  * The views drawn with a list pane (D118 §2), each naming it in `layout.list.<view>` and
@@ -235,7 +248,7 @@ export function App() {
 
   const status = useStatus();
   const repositories = useRepositories();
-  // The badge shares the Quests view's cache — one fetch, two readers.
+  // Quests' running mark, a quest taken (BADGEUX1), shares the Quests view's cache — one fetch, two readers.
   const outstanding = useQuests(null, false);
   const refresh = useRefreshIndex();
   // The same "is a shell here" answer every control uses — one detection path, not two that drift.
@@ -288,9 +301,9 @@ export function App() {
   // the frames already fill, so neither is a second fetch — and both are absent in a browser, which is what the bar then says.
   const running = useSessions(null, false);
   const remotes = useRemotes();
-  // Who needs the person, as the shell pushes it (PUSH1d4): Overview's badge counts the band's rows, and Sessions' the sessions the
-  // driver runs with what waits there marked (SESSBADGE1), all judged in .NET once for every window, so the badge and the band are
-  // one judgement, and the status bar's count is the badge's. A browser has none.
+  // Who needs the person, as the shell pushes it (PUSH1d4): the bell counts the band's rows and each place of the activity bar the rows
+  // its door opens (BADGEUX1), the status bar the sessions the driver runs (SESSBADGE1), all judged in .NET once for every window, so
+  // the numbers and the band are one judgement. A browser has none.
   const attention = useAttention();
   // Done and failed (NOTIFY2f, D196 point 6): the notices of this window's scope, as the shell pushes them, and the person's read and
   // dismissal of them, written by the shell and pushed to every window.
@@ -399,8 +412,6 @@ export function App() {
     onAnchored: () => setAgentPart(null),
     onOpenPlugin: (plugin) => open('plugins', plugin),
   });
-  // Its badge (D150 §2.1): the accounts a list or a default holds that read signed out, in open's hue. A browser has none.
-  const agentsWaiting = useAgentsWaiting();
 
   // Whether the view in front has a list pane (D118 §3a), whose four doors — the strip's toggle, the View
   // menu's item, Ctrl+B and a press on its place — are absent where it has none, never disabled. A browser
@@ -482,7 +493,6 @@ export function App() {
   });
 
   const indexed = (repositories.data ?? []).reduce((sum, r) => sum + r.total, 0);
-  const outstandingCount = outstanding.data?.length ?? 0;
 
   // Ready once the driver's service is up, not merely its file (LOOK2a); a shell older than the field says nothing, and reads ready.
   const presence: DriverPresence = driver.data
@@ -504,12 +514,17 @@ export function App() {
   const allSessions = useSessions(null, true, attached);
   const machineRegistry = useRegistry('machine');
   // 🔴 One count of the sessions the driver runs (SESSBADGE1, D76's note), the cap's own (CAPCOUNT1), judged in .NET beside the rows:
-  // Sessions' badge counts it and the status bar says it, so the two never disagree; neither counts a conversation the person holds.
-  // What waits on the person in Sessions (the sessions parked asking, the quests parked on their failed sessions) is marked beside it.
+  // the status bar says it, a standing fact with its noun, never a conversation the person holds. It is no badge (BADGEUX1).
   const working = attention.state === 'known' ? attention.working : 0;
-  const sessionsWaiting = attention.state === 'known' ? attention.sessions : 0;
   // The status bar's: not judged yet is no count, never a zero (PUSHUX1); a plain browser has no driver here, so none it runs.
   const workingSaid = attention.state === 'reading' ? null : working;
+  // 🔴 One meaning for a number (BADGEUX1, the UI/UX design §3.10): a place counts only what waits on the person there, the bell's rows
+  // whose door opens it (`placeOf`), so each place's number is the bell's for the same rows and the places sum to the bell's rows.
+  // Running work is a mark, never a number: Sessions' while the driver's work is under way and not parked on the person, Quests'
+  // while a quest is taken. The sessions the page holds judge where a unit of work's door goes, as the band's door does.
+  const placed = attention.state === 'known' ? placeCounts(attention.rows, allSessions.data) : {};
+  const sessionsRunning = attention.state === 'known' ? attention.running : 0;
+  const questsTaken = (outstanding.data ?? []).filter((quest) => quest.status === 'Taken').length;
   // Where this circle stands with its remote (SYNC6b), from this machine's own host — so a browser on
   // the machine reads it too, and it says for itself whether the circle is wired. Before it answers,
   // the shell's map says; a browser with neither is not asked.
@@ -1261,27 +1276,19 @@ export function App() {
             tab: target,
             label: t(`nav.${target}`),
             icon,
-            // 🔴 A badge counts what its place holds (UX5 U20, as SESSBADGE1 amended it in D76's note). Sessions the sessions the
-            // driver runs, a quantity in the accent as outstanding quests are, with what waits on the person there marked beside it in
-            // the waiting hue. What needs the person is the title bar's bell's since NOTIFY2b (the notification design §4): a count
-            // lives in one place, and Overview lists no row.
-            badge: target === 'quests' ? outstandingCount
-              : target === 'sessions' ? working
-                : target === 'agents' ? agentsWaiting : undefined,
-            tone: target === 'agents' ? 'open' as const : undefined,
-            waiting: target === 'sessions' && sessionsWaiting > 0,
-            detail: target === 'sessions' && (working > 0 || sessionsWaiting > 0)
-              ? [
-                working > 0 ? t('nav.active', { count: working }) : null,
-                sessionsWaiting > 0 ? t('nav.waiting', { count: sessionsWaiting }) : null,
-              ].filter(Boolean).join(' · ')
-              : undefined,
+            // 🔴 A place's number is what waits on the person there and nothing else (BADGEUX1, the UI/UX design §3.10, replacing
+            // SESSBADGE1's count of the sessions the driver runs and the outstanding quests): the bell's rows its door opens, in the
+            // bell's hue. Running work is its mark, never a number; Overview holds no wait of its own, its lines being doors.
+            ...placeMarks(target, placed[target as keyof typeof placed] ?? 0,
+              target === 'sessions' ? sessionsRunning : target === 'quests' ? questsTaken : 0, t),
             // Its key from the table, as Go prints it (UX7a); none in a browser, which keeps Ctrl+1–8.
             keys: entries.find((entry) => entry.id === `go.${target}`)?.keys[0]?.combo,
           }))}
           // Settings is everywhere now (D66) — a browser has appearance to set, if nothing of a machine.
           end={[{
             tab: 'settings', label: t('nav.settings'), icon: 'settings',
+            // A volume below its floor waits on the person at This Daoris's *Disk space* card (KEEP1f, BADGEUX1).
+            ...placeMarks('settings', placed.settings ?? 0, 0, t),
             keys: entries.find((entry) => entry.id === 'workspace.settings')?.keys[0]?.combo,
           }]}
           active={view}

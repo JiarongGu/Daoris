@@ -100,6 +100,22 @@ describe("Quests' list", () => {
     expect(onChoose).toHaveBeenCalledWith('ask:7e6f51');
   });
 
+  /**
+   * BADGEUX1 (the UI/UX design §3.10): open's hue is the person's waits alone, and news waits on nobody (D196 point 6), so an ask's
+   * unread is said with its word in a neutral pill, this machine's ask's and a teammate's alike.
+   */
+  it('says an ask’s unread with its word, never in open’s hue', () => {
+    list({
+      asks: [{ ask: PROPOSED, unread: 3 }],
+      teammates: [{ id: '7e6f51', workspace: 'default', origins: ['key-a'], latest: '2026-10-15T09:05:00Z', messages: 3, unread: 2 }],
+    });
+
+    for (const said of ['3 unread', '2 unread']) {
+      expect(screen.getByText(said).className).not.toMatch(/st-open|ink-open/);
+      expect(screen.getByText(said).className).toContain('text-ink-soft');
+    }
+  });
+
   it('puts the asks first, then the quests by state, each group counted, each row a row of its list', () => {
     list({ asks: [{ ask: PROPOSED }] });
 

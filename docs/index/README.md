@@ -37,7 +37,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 125 | 2371 |
 | `src/Daoris.Web/src/agents/agents.test.ts` | 47 | 804 |
 | `src/Daoris.Web/src/app/App.test.tsx` | 45 | 866 |
-| `src/Daoris.Web/src/app/App.tsx` | 87 | 1521 |
+| `src/Daoris.Web/src/app/App.tsx` | 88 | 1528 |
 | `src/Daoris.Web/src/app/pushedState.test.tsx` | 63 | 1325 |
 | `src/Daoris.Web/src/bridge/sessions/sessions.ts` | 44 | 868 |
 | `src/Daoris.Web/src/data/api.ts` | 53 | 882 |
@@ -45,7 +45,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/design/Flow.tsx` | 45 | 890 |
 | `src/Daoris.Web/src/design/tokens.test.ts` | 48 | 856 |
 | `src/Daoris.Web/src/design/ui.test.tsx` | 60 | 1200 |
-| `src/Daoris.Web/src/design/ui.tsx` | 89 | 1877 |
+| `src/Daoris.Web/src/design/ui.tsx` | 89 | 1886 |
 | `src/Daoris.Web/src/help/AskConversation.tsx` | 55 | 1017 |
 | `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 88 | 1778 |
 | `src/Daoris.Web/src/menus/commands.ts` | 41 | 800 |
@@ -60,13 +60,13 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/WorkFrame.tsx` | 139 | 2454 |
 | `src/Daoris.Web/src/work/WorkFrame.words.test.tsx` | 48 | 888 |
 | `src/Daoris.Web/src/work/attention/AttentionBand.test.tsx` | 49 | 800 |
-| `src/Daoris.Web/src/work/attention/attention.test.ts` | 52 | 865 |
-| `src/Daoris.Web/src/work/attention/attention.ts` | 43 | 786 |
+| `src/Daoris.Web/src/work/attention/attention.test.ts` | 55 | 925 |
+| `src/Daoris.Web/src/work/attention/attention.ts` | 46 | 862 |
 | `src/Daoris.Web/src/work/conversation/ConversationView.test.tsx` | 71 | 1334 |
 | `src/Daoris.Web/src/work/conversation/ConversationView.tsx` | 42 | 849 |
 | `src/Daoris.Web/src/work/conversation/conversation.test.ts` | 62 | 1173 |
 | `src/Daoris.Web/src/work/conversation/conversation.ts` | 43 | 847 |
-| `src/Daoris.Web/src/work/frame/frame.tsx` | 42 | 897 |
+| `src/Daoris.Web/src/work/frame/frame.tsx` | 42 | 894 |
 | `src/Daoris.Web/src/work/head/SessionHead.test.tsx` | 67 | 1274 |
 | `src/Daoris.Web/src/work/noteLines.test.ts` | 83 | 1223 |
 | `src/Daoris.Web/src/work/noteLines.ts` | 43 | 774 |
@@ -200,7 +200,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/SessionsRoutes.cs` | 53 | 865 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/TreesRoutes.cs` | 64 | 1099 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverLoop.cs` | 76 | 1340 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/NeedsAPerson.cs` | 44 | 732 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/NeedsAPerson.cs` | 44 | 733 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/SessionWords.cs` | 53 | 1089 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/InstancePipe.cs` | 48 | 1053 |
 
@@ -263,7 +263,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | File | KB | Lines |
 |---|---|---|
 | `.claude/knowledge/twins.md` | 121 | 190 |
-| `docs/2026-09-19-platform-ux.md` | 72 | 741 |
+| `docs/2026-09-19-platform-ux.md` | 72 | 743 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 54 | 354 |
 | `docs/2026-09-25-rev3-review.md` | 51 | 407 |
@@ -295,10 +295,10 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-20-message-urgency-design.md` | 67 | 661 |
 | `docs/2026-10-20-pipeline-design.md` | 97 | 848 |
 | `docs/2026-10-20-session-context-design.md` | 45 | 478 |
-| `docs/2026-10-20-ui-ux-design.md` | 106 | 1115 |
+| `docs/2026-10-20-ui-ux-design.md` | 126 | 1303 |
 | `docs/2026-10-21-account-pool-design.md` | 80 | 776 |
 | `docs/2026-10-21-alone-path-design.md` | 74 | 545 |
 | `docs/2026-10-21-cleanup-design.md` | 112 | 1063 |
 | `docs/2026-10-21-notification-design.md` | 114 | 972 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
-| `src/Daoris.Desktop/README.md` | 150 | 766 |
+| `src/Daoris.Desktop/README.md` | 151 | 766 |

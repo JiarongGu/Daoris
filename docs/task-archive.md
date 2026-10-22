@@ -19436,6 +19436,13 @@ note. On Opus.
 launcher's start and after its error; an act holding it past the wait leaves the journal for the next start, and the launcher starts
 nothing on `app/` and names the holder (`HeldBy`). Finishing a confirmed swap takes none. Detail: D171's SWAPLEASE2 note. On Opus.
 
+## BADGEUX1 — one meaning for a number: what waits on you (2026-10-22, D185)
+
+> - [ ] **BADGEUX1 — one meaning for a number: what waits on you** (web-shell; the owner's direction while using Daoris, 2026-10-22). A number on a session, a quest or a list place counts only what needs the person's step, the same things the taskbar button and the title bar's bell count (`needsListed`, NEEDSSCOPE1); running work is not counted, and is shown in a quieter style. Today Sessions' badge counts the sessions the driver runs (SESSBADGE1) and Quests' every outstanding quest. Proof: a design under D185 read by Codex; a test that each place's number equals the bell's for the same rows, scoped; a test that a running-only place shows the mark and no number; stories in light and dark; the window.
+
+**Outcome** 2026-10-22: each place of the activity bar counts the bell's rows its door opens, and work under way is a still dot in
+taken's hue (Sessions the driver's work less its parks, Quests a quest taken); unread is said in words in a neutral ink. Detail: the
+UI/UX design §3.10 with Codex's read, D185's BADGEUX1 note. On Opus.
 ## FABRIC-CLOSE1i — the workspace's handshake through its remote (2026-10-22, D173)
 
 > - [ ] **FABRIC-CLOSE1i — the workspace's handshake through its remote** (service, driver). Each push declares its machine's `closure`, and the remote answers whether every machine of the workspace did. Proof: all declared allows the bind; one older machine refuses it, saying why.
