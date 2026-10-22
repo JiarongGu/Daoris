@@ -302,3 +302,119 @@ already carries, the team as a read over `serves` and the entry, the structures 
 chosen by the door pressed, the reviewer joined by `serves`, and a lead that waits on its co-worker as a held `completed` record rather
 than a park or a `working` record with no process. What is wrong is in §5's mechanisms and the delivery (F1 to F5), each fixable without
 moving the shape; none asks for a rethink.
+
+## Codex, round 2
+
+Codex's read of round 2 at `c2bddc515`, read-only, with HELPERWAIT1's unfinished branch (`worktree-agent-ae0f5a97b787af377`, cited as H) beside it. Round 3 answers it.
+
+### 1. Round-1 findings
+
+References below use **design** for `docs/2026-10-23-coworker-design.md`; **Core** for `src/Daoris.Service/Daoris.Service.Core`; **Driver** for `src/Daoris.Desktop/Daoris.Desktop.Driver`; and **Tests** for `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`. **H** identifies the committed, unfinished HELPERWAIT1 tip `d054392a6`; round 2 inspected its earlier commit `8b87af2be`.
+
+| Finding | Verdict | Where in round 2 | Why |
+|---|---|---|---|
+| 1 — unjudged ask omitted | taken | §5.1, lines 294–304 | `HelperWaits.Open` includes an ask with no state, as required. |
+| 2 — conclusion does not read person questions | open | §5.1, lines 298–304 | Sources and freshness are specified, but unread question files still mean absent; new finding 3. |
+| 3 — `Reopens: false` does not hold a park | open | §5.5, lines 329–336 | The unsafe keep is withdrawn, but the replacement cannot deliver beside the person's answer with unchanged guards; new finding 1. |
+| 4 — refused ledger transition and missing service lane | taken | §5.4; §12 row 2 | The guarded transition, retained words, service lane and D46 amendment are explicit. |
+| 5 — completed lead releases its tree | taken | §5.3, lines 308–318 | The required predicate reaches exclusion, locks, alongside selection and cleanup, with cap-one proof. Its unfinished implementation is acknowledged. |
+| 6 — role confinement and Ask Daoris admission | taken | §2.1; §4.1; §12 row 4 | Server allow-lists, tool censuses and both admission refusals replace the unsupported claims. |
+| 7 — once-only hand lacks a mechanism | wrong | §1 row 15; §5.6 | The proposed evidence check assumes durable evidence the existing event path does not guarantee; new finding 2. |
+| 8 — delivery can reopen a left conversation | taken | §2.2; §5.7 | Delivery follows explicit `from` successors and otherwise retains the answer for the person; replay evidence must follow that lineage too. |
+| 9 — recheck findings sent to the lead | taken | §7, line 440; §14 | Recheck findings now go to the person and gate, preserving D155. |
+| 10 — insufficient exchange projection | taken | §6.3, lines 389–398 | The extended read includes whole-entry asks, bodies, identities and delivery evidence, including member-side resolution. |
+| 11 — missing answers-alone reset writer | taken | §7, lines 449–455 | Both person doors write `helper.person-asked`; passing writes the existing reset note without changing authorship. |
+| 12 — build and proof dependencies | taken | §4.3; §6.4; §11–12 | Follow-up controls move to row 5, installed proofs are staged, and partner pieces may remain separate rows. |
+| 13 — channel acknowledgment contract | deferred | §3.5, lines 202–208; §12 row 8 | The separate design must settle per-part identity, compatibility, receipts, expiry and bounds. This is a justified foundation boundary. |
+| 14 — several-reviewer gate unspecified | deferred | §3.5, lines 210–217; §12 rows 9–10 | Selection, aggregation, rechecks and delivery bounds remain explicit requirements of a separate design. |
+| 15 — nesting already precedes truncation | taken | §0.2.2; §6.1 | The incorrect ordering claim is withdrawn; retaining a lead with live members is the actual change. |
+| 16 — person-only answers inherit wrong destination text | taken | §8.3, lines 503–508 | Both catalogues gain destination-aware explanations, success messages and answer sentences. |
+| 17 — only the person stops a member | taken | §7, lines 458–459 | Declared pass bounds remain valid; agents and message levels cannot stop another member. |
+| F1 — ledger move, words, lanes and older service | open | §5.4; §12 row 2 | Choice (a) is specified, but failed transitions have neither reliable recovery nor the requested person-facing fallback; new finding 5. |
+| F2 — helper-only words resume a park | open | §5.5 | Holding outside `said` fixes premature continuation; unchanged guards still prevent the promised combined delivery; new finding 1. |
+| F3 — deterministic duplicate after restart | wrong | §5.6 | `HandedBefore` covers two positive examples, not every way delivery evidence can disappear; new finding 2. |
+| F4 — person-question guard reads nothing | open | §5.1 | It now reads the correct stores, but an unread question can still bypass the guard; new finding 3. |
+| F5 — person ask both resets and counts | taken | §7, lines 442–455 | The current behavior is corrected and the two explicit reset writers are named. |
+| F6 — a truncated lead hides its children | taken | §6.1, lines 359–364 | Leads with working, waiting or failed members remain above the cut. |
+| F7 — two event writers | taken | §4.2 | Both writers are acknowledged; their events still need distinct receipt meanings, new finding 7. |
+| F8 — completed delivery needs no changed park guard or planner mark | taken | §0.2.3; §5.3, §5.6 | Plain completed records are neither parked nor automatic carry-ons; `Planner.CarriesOn` supports this narrower claim. |
+| F9 — restart outcome and older drivers | taken | §4.3; §5.4 | Unsupported mixed builds are stated; the restart sentence needs the saved-answer qualification in new finding 8. |
+| F10 — hand/pass naming collision | taken | §4.5; §8.3 | *Pass to the lead* / 转给主导 and `sessions pass` avoid the existing hand-off vocabulary. |
+| F11 — destination rule and older reader | taken | §1 row 10; §4.3; §7 | Origin determines the default destination, overrides are explicit, and older drivers' behavior is disclosed. |
+| F12 — reviewer independence with two makers | deferred | §3.5, lines 215–217 | The several-reviewer design must settle the mixed-maker candidate case rather than promise unavailable independence. |
+| F13 — reviewer link, extra readers and pass membership | taken | §4.1 | Both additional readers and separate membership for each review pass are named. |
+| F14 — existing facts that hold | answered | §0.2; §4–5; §15.2 | The retained facts need no change; their acknowledgment does not establish the new delivery guarantees. |
+
+### 2. Findings on round 2's mechanism
+
+1. **Blocking — unchanged guards cannot deliver the helper beside the person's answer.**
+
+   **Where:** design `:332–334`; `Core/Sessions/HelperDesk.cs:148`; `Core/Sessions/SessionLedger.cs:732`, `:754`; H `Driver/Loop/DriverHelpers.cs:596`. The earlier branch's `Tests/Loop/HelperLookTests.cs:685` explicitly expects no hand for an already-answered park.
+
+   Answering keeps the record `awaiting-person` and appends the person's word. Both delivery guards reject that state unconditionally. The planner therefore starts with the person's answer alone; the helper waits until a later turn ends, potentially producing another turn or another park. “Unanswered” is a new condition the cited code does not contain.
+
+   **Smallest fix:** Permit delivery to a parked record only when its own person-answer predicate holds, in both driver and service, before continuation selects its words. Prove that an unanswered park remains held and an answered park takes both words in one prompt.
+
+2. **Blocking — `said` plus conversation events is not a complete, durable delivery receipt.**
+
+   **Where:** design `:79`, `:337–345`; `Driver/Sessions/Events/SessionEventLog.cs:84`; `Driver/Conversations/DrivenInbox.cs:1126`; H `Driver/Loop/DriverHelpers.cs:234`, `:560`, `:602`; `8b87af2be` `Tests/Loop/HelperLookTests.cs:794`.
+
+   `SessionEvents.Keep` deliberately swallows failed event writes, and the inbox allows delivery to continue when its recording callback fails. Consequently, a word can leave `said` without the promised durable `user` evidence. A crash before `Handed` then permits another hand. The restart test seeds either waiting words or a successfully appended event; it does not prove the asserted ordering invariant.
+
+   Following successors introduces another gap: H checks only the resolved recipient's words and events. Evidence left on the commissioner or an earlier successor is missed after a relay. Adding a producer key to a waiting word, as H now does, does not preserve evidence after that word leaves.
+
+   **Smallest fix:** Define an authoritative receipt keyed once per commission, retained across consumption and recipient changes, with an interrupted attempt held as uncertain. Alternatively, make the proposed record evidence mandatory and durable before delivery can progress. Prove failed event recording and a relay between delivery and recovery, as well as the two existing positive examples.
+
+3. **Blocking — an unread person-question file still authorizes helper-only continuation.**
+
+   **Where:** design `:299–304`; `Driver/Sessions/Questions/QuestionFiles.cs:43`, `:61`, `:99`; H `Driver/Loop/DriverHelpers.cs:150`, `:165`.
+
+   Round 2 distinguishes unread from absent for go-aheads only. `QuestionFiles.Read` returns null for both absence and read failure. A temporarily unreadable current question therefore allows `awaits-helper`; settling that completed conclusion can subsequently remove the question. The same failure can authorize conversion of an existing park.
+
+   **Smallest fix:** Give the conclusion and park-conversion guards a question read that distinguishes absent, present and unread. Unread must retain the person wait and its question. Add both conclusion-path and recovery cases.
+
+4. **Blocking — the legacy-park conversion cannot establish that the park asked the person nothing.**
+
+   **Where:** design `:335–336`; H `Driver/Conversations/Domain/HelperWaits.cs:50`; H `Driver/Loop/DriverHelpers.cs:581`; baseline `Driver/Sessions/Domain/Observation.cs:150`; `docs/2026-10-22-park-ask-design.md:22`, `:92`.
+
+   `ParkedOn` establishes an agent ask, a clean-exit park, and relative timing. Neither those facts nor absence of a structured question proves why the old run parked. Existing parks can carry their real question only in closing prose; the structured tool is an instruction, not an enforced prerequisite. Such a park can satisfy this predicate and be reopened with a helper's claim over its outstanding question.
+
+   **Smallest fix:** Keep ambiguous legacy parks parked. Offer the person an explicit continuation with the helper's answer, or require positive recorded evidence of a helper wait before converting automatically. Test a park made after the helper ask whose person question exists only in its closing message.
+
+5. **Blocking — a failed return-to-person transition can leave the lead held indefinitely.**
+
+   **Where:** design `:319–328`, `:428`, `:533`; H `Driver/Loop/DriverHelpers.cs:256`, `:264`, `:274`, `:289`.
+
+   The branch suppresses subsequent attempts after any caught transition failure until the record's update changes. That includes transient service failures, not just an older service's unsupported transition. Nothing in this state necessarily changes the record: the helper has finished, the planner leaves the completed lead alone, and no park reaches *What needs you*. The loop's retry line does not supply F1's requested person-facing fallback.
+
+   **Smallest fix:** Separate unsupported/permanent refusals from transient failures. Retry transient failures on service recovery without requiring the held record to change; expose an actionable existing wait when the transition cannot be supported. Prove one failed request followed by recovery, and a permanently unsupported transition.
+
+### 3. Findings on rows, proof and presentation
+
+6. **Blocking — row 6 assigns the partner wait without its service changes or sufficient proof.**
+
+   **Where:** design `:305–307`, `:314–324`, `:537`, `:572–573`; H `Core/Sessions/SessionLedger.cs:1392`, `:1492–1496`; baseline `Core/Sessions/Sessions.cs:1115`.
+
+   Row 6 adds `ended.awaits-partner` “on the same contract,” but names only web and driver lanes. The required service transition recognizes exactly `ended.awaits-helper`; the tree-holding contract likewise names helper waits. An observation test showing the new ending cannot prove tree ownership, refusal recovery, continuation or restart behavior for a partner.
+
+   **Smallest fix:** Separate the presentation change from the partner-wait change. Give the latter the required service/modules scope and the corresponding tree, cap-one, no-answer, delivery and restart proofs, or defer it explicitly until that contract is specified.
+
+7. **Not blocking — the conversation notification is not evidence that the answer was taken.**
+
+   **Where:** design `:245–248`, `:395–398`; `Driver/Loop/DriverHelpers.cs:439–445`; `Driver/Conversations/Chat/ChatRunner.cs:1770`; `Driver/Conversations/Domain/AnswersAlone.cs:94`.
+
+   The cited conversation writer emits `user` with `Reaches: "resume"` to notify the runner that words wait. The actual prompt event is separate. A card that treats any helper-marked event as taking can announce *taken as the next turn* before that turn occurs.
+
+   **Smallest fix:** Specify that taking requires the corresponding event with `Reaches` absent; the resume notification represents waiting. Add a projection case where only the notification exists.
+
+8. **Not blocking — restart does not always refuse the interrupted helper's ask.**
+
+   **Where:** design `:327–328`; H `Driver/Loop/DriverHelpers.cs:507`, `:512`, `:534`.
+
+   Settlement first accepts a saved `helper_answer`, regardless of the helper record's interrupted ending. A restart after that file was written but before the turn ended therefore delivers the saved answer rather than necessarily bringing the lead to the person.
+
+   **Smallest fix:** Qualify the sentence with “without a saved answer,” and distinguish the saved-answer and no-answer restart cases in the proof.
+
+**8 findings: 6 blocking, 2 not blocking.**
+
+**Verdict: another round.** The co-worker model, naming corrections and explicit foundation deferrals hold. Findings 1–6 still require changes to the delivery, recovery and build contracts before acceptance; assigning those obligations to unfinished HELPERWAIT1 does not resolve them. The next read should check the revised contracts and their evidence requirements, including the corresponding claims in D203.
