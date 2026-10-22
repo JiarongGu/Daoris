@@ -124,6 +124,45 @@ public sealed class ClaudeUsageProcessTests : IDisposable
         Assert.Equal(AccountWindows.SourceRead, said.Of("weekly")!.Source);
     }
 
+    /// <summary>The agent's set, its accounts' homes made as a sign-in leaves them.</summary>
+    private void Set(params string[] accounts)
+    {
+        foreach (var account in accounts) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "door", account));
+        new HarnessSettings().WithRotation("door", [.. accounts]).Save(Settings);
+    }
+
+    /// <summary>
+    /// 🔴 USAGEONE1: a start on a set of one runs where it runs whatever its account would say, so its walk asks the CLI nothing,
+    /// though the account was never read: the hour's backstop and a person's look read it.
+    /// </summary>
+    [Fact]
+    public async Task A_start_on_a_set_of_one_runs_no_usage_read()
+    {
+        Set("account-1");
+
+        var selection = await Roster().SelectAsync("door", Config, null, null);
+
+        Assert.True(selection.Allowed, selection.Refusal);
+        Assert.Equal("account-1", selection.Profile);
+        Assert.Empty(AskedLines());
+    }
+
+    /// <summary>USAGEONE1: a set of two is a choice a reading can change, so its start still reads the one never read.</summary>
+    [Fact]
+    public async Task A_start_on_a_set_of_two_still_reads_the_account_never_read()
+    {
+        Set("account-1", "account-2");
+        AccountWindows.Said(
+            _home, "door", "account-1",
+            [new WindowReading("session", 0.10, DateTimeOffset.UtcNow.AddHours(3)), new WindowReading("weekly", 0.20, DateTimeOffset.UtcNow.AddDays(4))],
+            DateTimeOffset.UtcNow, session: null, source: AccountWindows.SourceRead);
+
+        var selection = await Roster().SelectAsync("door", Config, null, null);
+
+        Assert.True(selection.Allowed, selection.Refusal);
+        Assert.Equal([$"account-2 usage-read {Arguments}"], AskedLines());
+    }
+
     [Fact]
     public async Task A_CLI_that_hangs_is_unknown_once_its_patience_is_spent_and_its_process_is_ended()
     {

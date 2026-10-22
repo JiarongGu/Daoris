@@ -245,8 +245,10 @@ public sealed class UsageProbeRosterTests : IDisposable
     [Fact]
     public async Task A_stale_account_is_asked_once_at_its_interval()
     {
-        Accounts(_home, "account-1");
+        // The second read later, so the first alone is stale at its interval.
+        Accounts(_home, "account-1", "account-2");
         Read("account-1", 0.10, 0.20, minutesAgo: 1);
+        Read("account-2", 0.20, 0.30, minutesAgo: 0);
         Answers("account-1", 0.10, 0.20);
         var roster = Roster();
 
@@ -260,7 +262,29 @@ public sealed class UsageProbeRosterTests : IDisposable
 
         _now += CodexUsage.Fresh + TimeSpan.FromMinutes(1);
         await StartAsync(roster);
-        Assert.Single(Asked());
+        Assert.Single(Asked(), asked => asked == "fake/account-1");
+    }
+
+    /// <summary>
+    /// USAGEONE1: a set of one has no choice a reading could change, so its start asks nothing, never read or stale; a
+    /// resume held to the tool's own home neither.
+    /// </summary>
+    [Fact]
+    public async Task A_set_of_one_and_a_resume_in_its_own_home_ask_nothing()
+    {
+        Accounts(_home, "account-1");
+        var roster = Roster();
+
+        Assert.Equal("account-1", (await StartAsync(roster)).Profile);
+        _now += UsageProjection.Interval + TimeSpan.FromMinutes(1);
+        await StartAsync(roster);
+        Assert.Empty(Asked());
+
+        // Two accounts, neither read: a resume of a record begun in the tool's own home goes on there, and reads neither.
+        Accounts(_home, "account-1", "account-2");
+        var resumed = await Roster().ResumeAsync("fake-door", Config, null, account: null, StartKind.Driven);
+        Assert.Empty(Asked());
+        Assert.True(resumed.Selection.Allowed, resumed.Selection.Refusal);
     }
 
     [Fact]
