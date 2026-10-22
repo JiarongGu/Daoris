@@ -370,6 +370,7 @@ public static class NoteCodes
         new(OpeningWhy.DefaultHere, [], "note.opening.why.default-here"),
         new(OpeningWhy.First, ["workspace"], "note.opening.why.first"),
         new(OpeningWhy.FirstHere, [], "note.opening.why.first-here"),
+        new(OpeningWhy.FirstOrder, [], "note.opening.why.first-order"),
     ]);
 
     /// <summary>
@@ -1219,14 +1220,23 @@ public static class OpeningWhy
     /// <summary>It is a workspace's default.</summary>
     public const string Default = "default";
 
-    /// <summary>It is this machine's default.</summary>
+    /// <summary>
+    /// It was the default its start read: this machine's, before the fold into one set. No start writes it since POOL1c (D197); a
+    /// note written before keeps it, said without the machine's list's name (the account-pool design §4.3).
+    /// </summary>
     public const string DefaultHere = "default-here";
 
     /// <summary>It comes first in a workspace's list.</summary>
     public const string First = "first";
 
-    /// <summary>It comes first in this machine's list.</summary>
+    /// <summary>
+    /// It came first in the list its start read: this machine's, before the fold into one set. No start writes it since POOL1c
+    /// (D197); a note written before keeps it, said without the machine's list's name (the account-pool design §4.3).
+    /// </summary>
     public const string FirstHere = "first-here";
+
+    /// <summary>It comes first in the order of Daoris's accounts, the set every workspace's start reads (POOL1c, D197 point 2).</summary>
+    public const string FirstOrder = "first-order";
 }
 
 /// <summary>Why a cool-off lasts until then, by code (TOOL4d): the page's <c>harness.cooling.why.*</c>.</summary>

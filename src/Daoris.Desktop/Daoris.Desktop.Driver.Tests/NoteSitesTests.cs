@@ -192,10 +192,16 @@ public sealed class NoteSitesTests
         Assert.Equal("claude-code", Assert.Single(named.Parts[0].Values, value => value.Key == "owner").Value);
         Assert.Single(named.Parts[0].Values);
 
+        // POOL1c (D197 point 3; the account-pool design §4.4): the own sign-in is the person's, outside Daoris's accounts, so its
+        // line sends them to the tool itself at their terminal, never to Daoris to sign it in again.
         Line(RefusedAccounts.RefusedNote("claude-code", null),
-            "Its provider refused `claude-code`'s own sign-in (401). Replace the key or sign in again — on Settings, or "
-            + "`daoris agent` — and Daoris will start sessions on it again.",
+            "Its provider refused `claude-code`'s own sign-in (401). It is your own, outside Daoris's accounts: sign it in again with "
+            + "the tool itself, at your terminal.",
             "account.refused-own");
+        Line(RefusedAccounts.RefusedHold("claude-code", null, null),
+            "an earlier session found that its provider refused `claude-code`'s own sign-in (401). It is your own, outside Daoris's "
+            + "accounts: sign it in again with the tool itself, at your terminal.",
+            "held.refused-own");
     }
 
     /// <summary>ROSTER1b: a refused sign-in's line names its owner as a value and its account, with its sign-in, only in the English.</summary>
