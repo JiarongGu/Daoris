@@ -454,7 +454,7 @@ public sealed partial class SessionRequests(string home)
             string text;
             try
             {
-                text = AtomicFile.ReadText(taking);
+                text = File.ReadAllText(taking); // read-shares: refused while another loop's rename holds it, which must stay so (REQTAKE1)
             }
             catch (Exception error) when (error is FileNotFoundException or DirectoryNotFoundException)
             {

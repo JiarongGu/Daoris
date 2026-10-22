@@ -16,7 +16,8 @@
  *    `HomeEntry.Remotes`).
  *
  * The census works per source, not per path, so a writer that also reads a file nothing moves into place (a git `HEAD`, a transcript
- * appended to) marks that read's line `// read-shares: <what it reads>`, and the clean line counts the marks. A read inside a comment
+ * appended to) marks that read's line `// read-shares: <what it reads>`, as does a read whose refusal is its point (a take's
+ * read of what it renamed aside, REQTAKE1), and the clean line counts the marks. A read inside a comment
  * or a string is not a read. A reader handed its path by its caller, naming no place, is not found: the census is a net under the
  * readers, and `AtomicFile.ReadText`'s own remarks are the rule. There is no .NET build.
  */
@@ -129,7 +130,7 @@ function main() {
     const { problems, marked } = checkReadShares(root);
     for (const p of problems) console.error(`read-shares: ${p}`);
     if (problems.length) return 1;
-    console.log(`read-shares: clean (${marked} marked reads of files nothing moves into place)`);
+    console.log(`read-shares: clean (${marked} marked plain reads)`);
     return 0;
   } catch (e) {
     console.error(`read-shares: ${e.message}`);

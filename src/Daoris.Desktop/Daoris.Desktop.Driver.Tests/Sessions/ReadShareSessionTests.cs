@@ -139,27 +139,28 @@ public sealed class ReadShareSessionTests : IDisposable
         Assert.Equal(("s1", SessionMove.Decline, "Not this way; 中文 too."), (read.Session, read.Move, read.Note));
     }
 
-    /// <summary>READSHARE1: <see cref="SessionRequests.Take(string)"/> reads what it moved aside while the move into place still holds it.</summary>
+    /// <summary>
+    /// READSHARE1's one exception (REQTAKE1): a take reads what it moved aside without sharing its deletion, since a hold on it is
+    /// another loop's rename about to move it on. Held, it is put back unread and not taken, and the next look takes it.
+    /// </summary>
     [Fact]
-    public void A_request_is_taken_while_its_move_into_place_still_holds_it()
+    public void A_request_whose_move_aside_is_still_held_is_put_back_not_taken_twice()
     {
         if (!OperatingSystem.IsWindows()) return;
         var requests = new SessionRequests(_home);
-        var now = DateTimeOffset.UtcNow;
-        requests.Write(new SessionRequest("s1", SessionMove.Finish, now) { Parked = true });
+        requests.Write(new SessionRequest("s1", SessionMove.Finish, DateTimeOffset.UtcNow) { Parked = true });
         var path = requests.PathOf("s1");
 
         SessionRequest? taken;
         using (MoveHold.Take(path))
         {
-            Assert.Throws<IOException>(() => File.ReadAllText(path));
             // The take's rename carries the hold with the file, so what it moved aside is still held as it reads it.
             taken = requests.Take("s1");
         }
 
-        Assert.NotNull(taken);
-        Assert.Equal(("s1", SessionMove.Finish, true), (taken.Session, taken.Move, taken.Parked));
-        Assert.False(requests.IsPending("s1"));
+        Assert.Null(taken);
+        Assert.True(requests.IsPending("s1"));
+        Assert.Equal(("s1", SessionMove.Finish, true), requests.Take("s1") is { } again ? (again.Session, again.Move, again.Parked) : default);
     }
 
     /// <summary>READSHARE1: <see cref="SessionRequests.AnswerOf"/> reads a say's answer while the move that put it in place still holds it.</summary>

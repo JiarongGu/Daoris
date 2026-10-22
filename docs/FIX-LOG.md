@@ -29,15 +29,18 @@ repository.
   counted alive, a lease read as busy, a stamp read as moved so every tree was walked again.
 - **Root cause:** BINDRACE1's (its entry of 2026-10-22): a reader's share mode. Nothing held the readers to `AtomicFile.ReadText`; the
   shared read was a convention of four call sites.
-- **Fix:** 86 reads in 64 driver files go through `AtomicFile.ReadText`, `ReadBytes` or `OpenRead` (the latter two new). That takes
+- **Fix:** 85 reads in 63 driver files go through `AtomicFile.ReadText`, `ReadBytes` or `OpenRead` (the latter two new). That takes
   in the home's lease and identity and the git grants, which the driver moves into place itself, and the launcher and the git door
   compile `AtomicFile.cs` for the readers they share. `tools/read-shares.mjs`, run by `npm run verify`, refuses a plain read in a
   driver source that writes through `AtomicFile` (or `JsonFile.Write`, `JsonKeeping.Save`, `RecordList`), or that names where one
-  lands (a writer type's path member, a home entry a writer names). A read of a file nothing moves is marked on its line; ten are.
-- **Verification:** 91 tests hold each moved reader's file with `MoveHold`, assert a plain read is refused, and read it through
+  lands (a writer type's path member, a home entry a writer names). A read of a file nothing moves is marked on its line; ten are. The eleventh mark keeps one
+  read plain on purpose: `SessionRequests.TakeAt` (REQTAKE1) reads what it renamed aside, and its refusal is what tells it another
+  loop's rename still holds the file and will move it on. Shared, both loops read it and one request was honoured twice
+  (`SessionRequestsTests.Two_loops_taking_twenty_at_once_honour_each_exactly_once`, seen failing with the read shared).
+- **Verification:** 90 tests hold each moved reader's file with `MoveHold`, assert a plain read is refused, and read it through
   the product's reader (five `ReadShare…Tests` classes, and `HelpTreesReadTests`' stamp case, which is real git). With the fix commit
-  reversed, its reads plain again, 84 of those tests failed; the other seven cover readers a separate commit moved. All
-  91 pass with the fix, with `AtomicFileTests` and `WorkflowRunBindingTests`. The census's own test plants each shape it refuses
+  reversed, its reads plain again, 83 of those tests failed; the other seven cover readers a separate commit moved. A 91st
+  holds the exception: a take whose moved-aside file is held is put back, not taken. All pass with the fix, with `AtomicFileTests` and `WorkflowRunBindingTests`. The census's own test plants each shape it refuses
   and passes on the tree. Writers that read and then write over a held file see the hold released mid-call, as a real move's is.
 
 ## 2026-10-22 — A folder held on the own sign-in's file would have reached *What needs you* without its `own` (POOL1c)
