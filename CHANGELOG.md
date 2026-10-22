@@ -21,6 +21,14 @@ with the version and date at release.
   *Dismiss*. *Dismiss* only takes the card out of the conversation: Ask Daoris is told nothing, and the quest is left as it is. It
   was *Not now*, which Ask Daoris was told as your answer. A card about a quest a session has taken says it is taken. In English
   and 中文.
+- The terminal and Ask Daoris now treat an agent's accounts as one set for every workspace (D197). `daoris agent profile order`
+  puts the accounts you name first and keeps the rest after them, and `--clear` returns to the accounts' ids' order without clearing
+  how they are used; `profile use` sets how the whole set is used. `profile default`, `profile join`, `--workspace` on `order` and
+  `use`, and `login --join` or `--join-machine` are refused, saying why, with nothing changed. `daoris agent login` and `settings`
+  with no account named use the first account of the order. `daoris agent list` shows the order for every workspace, your own
+  sign-in apart from Daoris's accounts, and what the move to one set changed until you press *Got it*. Ask Daoris no longer
+  proposes a default account or a workspace's accounts, and a proposal it made before for a workspace's list is refused when
+  applied, asking it to propose again.
 - A machine that left a workspace you share through a remote, or whose Daoris store was deleted, no longer keeps its workflows from
   closing their quests. The workspace's *Setup*, under *Remote and reach*, now lists *Machines not declared*: each machine the remote
   counts that has not said it knows a workflow that closes its quests. *Retire* takes one out of what the remote counts, and the
@@ -42,8 +50,7 @@ with the version and date at release.
   list or default: each workspace's work starts in the one order, an account no list held carries work, and a start that waits no
   longer names accounts outside a list for you to add. *What needs you* shows every signed-out account of Daoris's that no waiting
   start already names, and no longer offers to let an account into a list. A new account's sign-in ends by saying it joined Daoris's
-  accounts and goes last in the order. `daoris agent list` marks the order's first account as the machine default, where starts
-  begin. A sign-in in the window that names no account is refused, as before.
+  accounts and goes last in the order. A sign-in in the window that names no account is refused, as before.
 - An update that stopped part way is now put back only while nothing else acts on Daoris's home: a terminal's `daoris-driver`
   command changing it is waited for, up to thirty seconds. If it still holds the home, Daoris does not start on a half-replaced
   application; it says which command held the home and asks you to start it again once that has finished.
