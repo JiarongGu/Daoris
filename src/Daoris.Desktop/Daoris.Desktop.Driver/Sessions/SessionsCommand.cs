@@ -9,7 +9,8 @@ namespace Daoris.Driver;
 /// </summary>
 /// <param name="Verb">
 /// <c>list</c>, <c>stop</c>, <c>finish</c>, <c>decline</c>, <c>archive</c>, <c>unarchive</c>, <c>delete</c>, <c>say</c>,
-/// <c>take-back</c>, <c>reword</c>, <c>go-on-new</c> or <c>start-from</c>.
+/// <c>take-back</c>, <c>reword</c>, <c>go-on-new</c> or <c>start-from</c>; COAGENT1b's <c>partner</c>, <c>partner-list</c> and
+/// <c>partner-stop</c>.
 /// </param>
 public sealed record SessionsAsk(string Verb)
 {

@@ -38,9 +38,9 @@ public sealed record PartnerPassRun(string? Session, string Line)
 /// it (<see cref="PartnerStates"/>); a piece no pass of this process holds is reconciled from what is observed (<see cref="PartnerReconcile"/>).
 /// </summary>
 /// <remarks>
-/// <para><b>Not yet here</b> (D199's COAGENT1b notes, in the design's order): the notes, the landing doors' refusal, the measurements table and the person's press and verb. Until the measurements
-/// table holds a row, <see cref="PartnerChoice"/> admits no production start: every piece is refused <see cref="PartnerWhy.NotMeasured"/>
-/// unless a test hands in its choice.</para>
+/// <para>The person's ask is written by <see cref="PartnerPersonAsk"/>, from the page's press and <c>daoris-driver sessions partner</c>.
+/// Until the measurements table holds a row, <see cref="PartnerChoice"/> admits no production start: every piece is refused
+/// <see cref="PartnerWhy.NotMeasured"/> unless a test hands in its rows.</para>
 /// </remarks>
 internal sealed class DriverPartners(LoopContext context, Driver driver)
 {
