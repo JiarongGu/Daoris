@@ -393,6 +393,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry EdgeRecord = new("edge-record", HomeCategory.Run, "run/edge.json", "browser/edge.json");
     public static readonly HomeEntry Pipe = new("pipe", HomeCategory.Run, "run/pipe", "pipe");
     public static readonly HomeEntry HomeMove = new("home-move", HomeCategory.Run, "run/home-move.json", "run/home-move.json");
+    public static readonly HomeEntry GitHeld = new("git-held", HomeCategory.Run, "run/git/held.json", "run/git/held.json");
     public static readonly HomeEntry Logs = new("logs", HomeCategory.Logs, "logs", "logs");
 
     /// <summary>Every entry, in the table's order, which the twins hold in the same order.</summary>
@@ -407,7 +408,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
         Trees, HelpRoom, HelpRooms, Intake, OpinionPackets, QuestFiles, AskFiles, SessionFiles, Proof, UsageRead, BrainstormRooms,
         Toolchain, ToolVersions, Bin,
         HomeLease, DriverLock, Running, Locks, Spawn, Starts, Hooks, Probing, SessionPids, Requests, EdgeRecord, Pipe, HomeMove,
-        Logs,
+        GitHeld, Logs,
     ];
 
     /// <summary>The entry of this name, or null where the table holds none.</summary>

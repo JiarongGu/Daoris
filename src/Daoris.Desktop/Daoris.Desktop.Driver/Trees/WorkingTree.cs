@@ -930,6 +930,22 @@ public static class WorkingTree
     }
 
     /// <summary>
+    /// The git Daoris's own git runs, as a held remote names it (GITAUTH1a, the git-auth design §5.2): its file, and when that file
+    /// was last written, so a git the person chooses in Tools, or one updated in place, is another git and a held remote is tried
+    /// again. Null where no git resolves.
+    /// </summary>
+    internal static string? GitInUse(string? home)
+    {
+        var read = home is null ? null : Tools.Read(home);
+        var git = read is null
+            ? new ToolResolution("git", ToolWay.System, null, CommandPresence.Resolve("git", startable: true), false, null)
+            : Tools.Resolve(read, home!, "git");
+        if (git.Refused || git.File is not { } path) return null;
+        var file = new FileInfo(path);
+        return file.Exists ? $"{file.FullName}|{file.LastWriteTimeUtc.Ticks}" : file.FullName;
+    }
+
+    /// <summary>
     /// The test seam (PROC1d-i): called with the arguments of each git this flow starts through <see cref="GitAsync(string, IReadOnlyList{string}, CancellationToken)"/>,
     /// so a test counts the product's starts. Null in production; an async local, so classes running in parallel never see
     /// each other's starts. A callback must be safe to call from several threads, as a flow's fetches run side by side.
