@@ -729,14 +729,28 @@ public static class SessionGroups
 
     /// <summary>The look with each tree <see cref="TreesToJudge"/> names judged once (D88's proof): a tree the judge cannot speak for holds nothing to review.</summary>
     /// <param name="judge"><see cref="SessionTrees.WorkAsync"/>, the git walk; a test hands in its own.</param>
+    /// <param name="atOnce">How many trees are judged at once (TREELOOK1); one after another unless a caller says more.</param>
     public static async Task<SessionLook> JudgeAsync(
         SessionLook look, Func<string, bool> held, Func<string, CancellationToken, Task<TreeWork?>> judge,
-        IReadOnlyCollection<string>? only = null, CancellationToken ct = default)
+        IReadOnlyCollection<string>? only = null, CancellationToken ct = default, int atOnce = 1)
     {
-        var judged = new Dictionary<string, TreeWork>(look.Trees, StringComparer.OrdinalIgnoreCase);
-        foreach (var tree in TreesToJudge(look, held, only))
+        var trees = TreesToJudge(look, held, only);
+        var works = new TreeWork?[trees.Count];
+        if (atOnce <= 1)
         {
-            if (await judge(tree, ct).ConfigureAwait(false) is { } work) judged[Normal(tree)] = work;
+            for (var at = 0; at < trees.Count; at++) works[at] = await judge(trees[at], ct).ConfigureAwait(false);
+        }
+        else
+        {
+            // Each tree's judgement is its own git, so a few at once overlap their runs; the starts still pass the one gate.
+            await Parallel.ForAsync(0, trees.Count, new ParallelOptions { MaxDegreeOfParallelism = atOnce, CancellationToken = ct },
+                async (at, token) => works[at] = await judge(trees[at], token).ConfigureAwait(false)).ConfigureAwait(false);
+        }
+
+        var judged = new Dictionary<string, TreeWork>(look.Trees, StringComparer.OrdinalIgnoreCase);
+        for (var at = 0; at < trees.Count; at++)
+        {
+            if (works[at] is { } work) judged[Normal(trees[at])] = work;
         }
 
         return look with { Trees = judged };

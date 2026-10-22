@@ -72,7 +72,7 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
     }
 
     /// <summary>One <c>git status</c> of the tree, counted: null where git cannot say.</summary>
-    private static async Task<int?> UncommittedOfAsync(string tree, CancellationToken ct)
+    internal static async Task<int?> UncommittedOfAsync(string tree, CancellationToken ct)
     {
         var (code, porcelain, _) = await WorkingTree.GitAsync(tree, ["status", "--porcelain"], ct).ConfigureAwait(false);
         return code != 0
