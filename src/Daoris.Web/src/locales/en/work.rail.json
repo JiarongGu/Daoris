@@ -49,6 +49,7 @@
   "work.rail.archived": "archived",
   "work.rail.archivedTip": "Archived on this machine: kept whole, and out of the list unless Show archived, in the list’s ⋯, is ticked.",
   "work.rail.calling": "running {{title}} for {{elapsed}}",
+  "work.rail.quiet": "quiet · {{time}}",
   "work.rail.callingTip": "The tool call its agent is inside, and how long it has run, as the driver last said.",
   "work.rail.callingLong": "running {{title}} for {{elapsed}}, past its bound: told",
   "work.rail.callingLongTip": "The tool call its agent is inside ran past its pipeline’s bound for one call, so Daoris told the session once, in its conversation, that a suite run whole is the verification pipeline’s. Daoris does not end the call: Stop is yours.",

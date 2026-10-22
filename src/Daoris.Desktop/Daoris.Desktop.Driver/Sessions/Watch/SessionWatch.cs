@@ -172,6 +172,20 @@ public sealed class SessionWatch
         }
     }
 
+    /// <summary>
+    /// Every session marked quiet now, with when it was last heard by the wall clock (§5.1): what the rail and the head say as
+    /// <i>quiet · 14 min</i> while its episode lasts, a busy row's session among them once it is brought to the person.
+    /// </summary>
+    public IReadOnlyDictionary<string, DateTimeOffset> QuietNow()
+    {
+        lock (_gate)
+        {
+            return _watched.Values
+                .Where(watched => watched.Episode is { Marked: true } or { Row: not null })
+                .ToDictionary(watched => watched.Session, watched => watched.Episode!.Since, StringComparer.OrdinalIgnoreCase);
+        }
+    }
+
     /// <summary>The minutes a headless <c>--quiet-end</c> ended a run after, read by its conclusion; null where the watcher ended nothing.</summary>
     public int? EndedMinutes(string session) =>
         _watched.TryGetValue(session, out var watched) ? watched.EndedMinutes : null;

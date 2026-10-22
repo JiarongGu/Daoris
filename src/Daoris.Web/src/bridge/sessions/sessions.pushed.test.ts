@@ -35,6 +35,15 @@ describe('the running calls, pushed (WAITSAY1c2)', () => {
     expect(withCall({ session: 'a', calling: call } as never, { a: held })?.calling).toEqual(held);
   });
 
+  // SESSWATCH1a (the session-watch design §5.1): the watcher's mark laid over a quiet session's call, or a call of no title.
+  it("lays the watcher's quiet mark over a session's call, or over a call of no title where it makes none", () => {
+    const call = { title: 'npm test', since: '2026-10-20T08:00:00+00:00' };
+    const since = '2026-10-20T07:50:00+00:00';
+    expect(callsSlice.compose(new Map<string, unknown>([['calling', { a: call }], ['quiet', { a: { since }, b: { since } }]]), true))
+      .toEqual({ a: { ...call, quiet: since }, b: { title: '', since, quiet: since } });
+    expect(callsSlice.compose(new Map<string, unknown>([['calling', {}], ['quiet', {}]]), true)).toEqual({});
+  });
+
   it("overlays the pushed call on a session's grouping, and clears what the pull still says once none runs", () => {
     const call = { title: 'npm test', since: '2026-10-20T08:00:00+00:00' };
     const old = { title: 'old', since: '2026-10-20T07:00:00+00:00' };
