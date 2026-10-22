@@ -620,6 +620,198 @@ public sealed class HelperLookTests : IDisposable
         Assert.Single(host.HelperHands);
     }
 
+    // ——— HELPERWAIT1 (D163's and D188's notes): a session waiting on its own helper is not waiting on the person.
+
+    /// <summary>An answer on file, as <c>helper_answer</c> writes it, and the ask answered by the helper that wrote it.</summary>
+    private void Answered(string id = "a1", string answer = "The window is exclusive at src/report.ts:42.")
+    {
+        File.WriteAllText(Files.PathOf(id, "answer"),
+            new JsonObject { ["id"] = id, ["helper"] = Helper, ["answer"] = answer, ["at"] = At.ToString("O") }.ToJsonString());
+        Files.WriteState(new HelperState(id, HelperStates.Answered, null, Helper, At) { Agent = "codex-acp" });
+    }
+
+    private static JsonArray Parts(params string[] codes) =>
+        new([.. codes.Select(code => (JsonNode)new JsonObject { ["code"] = code, ["values"] = new JsonObject(), ["text"] = "a line." })]);
+
+    /// <summary>
+    /// The asker parked as the install parked it before the rule: the clean-exit park, its quest taken, made at <paramref name="minute"/>
+    /// after the look's clock (the ask <c>a1</c> was made at its first minute).
+    /// </summary>
+    private OpinionStandIn ParkedHost(int minute = 5, string code = "ended.parked-asked", string? answer = null)
+    {
+        var host = Host(state: "awaiting-person").Quest("q1", "Taken");
+        host.Set("s1", "noteParts", Parts(code));
+        host.Set("s1", "note", "It stopped with its quest still taken, to ask you:\n\nI asked a helper.");
+        host.Set("s1", "updated", At.AddMinutes(minute).ToString("O"));
+        host.Set("s1", "answer", answer);
+        return host;
+    }
+
+    private static SessionView Active(string state) => new("s1", "reports", state) { Quest = "q1" };
+
+    /// <summary>
+    /// 🔴 The install's case (point 3): a session parked before the rule because it ended its turn on its own helper ask, whose ask is now
+    /// answered, is handed its answer at the next look: its park is completed as the wait on its helper it was, never as an answer of the
+    /// person's, and the helper's composed words go to it once, which the planner's go-on takes as its next turn.
+    /// </summary>
+    [Fact]
+    public async Task A_session_parked_waiting_on_its_own_helper_is_handed_the_answer_at_the_next_look()
+    {
+        Ask("a1");
+        Answered();
+        var host = ParkedHost();
+
+        var events = await Look(Driver(host, pass: null), active: [Active("awaiting-person")]);
+
+        Assert.Equal([("s1", "completed", "ended.awaits-helper")], host.Moves);
+        var (to, text) = Assert.Single(host.HelperHands);
+        Assert.Equal(Helper, to);
+        Assert.StartsWith("Another agent, `codex-acp` (helper session `h1000001`), answered the question you asked it", text);
+        Assert.Equal(Helper, Assert.Single(host.Said("s1"))!["helper"]!.GetValue<string>());
+        Assert.NotNull(Files.ReadState("a1")!.Handed);
+        Assert.Contains(events, line => line.Contains("answered by codex-acp", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// A park for a real question is unchanged: its question on file (<c>question_ask</c>), a park made before the ask, one the person
+    /// answered, a park for another reason, and an ask the person made each keep the helper's answer for the turn's end after theirs.
+    /// </summary>
+    [Theory]
+    [InlineData("question")]
+    [InlineData("before")]
+    [InlineData("answered")]
+    [InlineData("other")]
+    [InlineData("person")]
+    public async Task A_park_for_a_real_question_keeps_the_helpers_answer_until_its_turn_ends(string row)
+    {
+        Ask("a1", by: row == "person" ? "person" : "agent");
+        Answered();
+        var host = row switch
+        {
+            "before" => ParkedHost(minute: 0),
+            "answered" => ParkedHost(answer: "Port 8080."),
+            "other" => ParkedHost(code: "ended.parked-short"),
+            _ => ParkedHost(),
+        };
+        if (row == "question")
+        {
+            Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
+            File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Sessions, "s1.question.json"),
+                new JsonObject { ["id"] = "k1", ["question"] = "Which port?", ["at"] = At.AddMinutes(4).ToString("O") }.ToJsonString());
+        }
+
+        await Look(Driver(host, pass: null), active: [Active("awaiting-person")]);
+
+        Assert.Empty(host.Moves);
+        Assert.Empty(host.HelperHands);
+        Assert.Null(Files.ReadState("a1")!.Handed);
+    }
+
+    /// <summary>
+    /// 🔴 Point 4: a helper that ends with no answer brings the session that waited on it back to the person as its turn's end would have,
+    /// parked, the reason first (the refusal by its code and agent) and the park's own line after it; a session with another of its own
+    /// asks still open goes on waiting.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_helper_that_ends_with_no_answer_brings_its_waiting_asker_back_to_the_person(bool another)
+    {
+        Ask("a1");
+        var host = Host().Quest("q1", "Taken");
+        host.Set("s1", "noteParts", Parts("ended.awaits-helper"));
+        if (another)
+        {
+            // Its second helper still reads.
+            Ask("a2");
+            Files.WriteState(new HelperState("a2", HelperStates.Started, null, "h-2", At) { Agent = "codex-acp" });
+            host.Session("h-2", "working");
+        }
+
+        var driver = Driver(host, new Pass(Files) { Ended = "completed" });
+
+        await Look(driver);
+        await Until(() => Files.ReadState("a1") is { State: HelperStates.Refused });
+        var waiting = new PriorSession("s1", "trees/default/reports/s-1", "completed")
+        {
+            Quest = "q1", NoteParts = [NoteCodes.EndedAwaitsHelper.Part("a line.", [])], Said = [],
+        };
+        await driver.HelpersAsync(
+            new Snapshot([new QuestView("q1", "ask #a1", "reports", "The work", "", "Taken")], [], [])
+            {
+                LastRun = new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase) { ["q1"] = waiting },
+            },
+            0, [], CancellationToken.None);
+
+        if (another)
+        {
+            Assert.Empty(host.Moves);
+            return;
+        }
+
+        var (session, state, code) = Assert.Single(host.Moves);
+        Assert.Equal(("s1", "awaiting-person", "helper.refused-by"), (session, state, code));
+        var note = host.Note("s1");
+        Assert.StartsWith("Helper codex-acp did not answer this question: the helper ended without an answer.\n\nIt stopped with its quest still taken", note);
+    }
+
+    /// <summary>
+    /// 🔴 Point 6, the cost: a hand held while its asker runs is said once, and while the look's own list shows the asker as it was when
+    /// the hand was held nothing is read again for it; once the asker moves, the next look hands it.
+    /// </summary>
+    [Fact]
+    public async Task A_held_hand_is_said_once_and_read_again_only_once_its_asker_moves()
+    {
+        Ask("a1");
+        Answered();
+        var host = Host(state: "working");
+        var driver = Driver(host, pass: null);
+
+        var first = await Look(driver, active: [Active("working")]);
+        var reads = host.RecordReads;
+        var second = await Look(driver, active: [Active("working")]);
+        var third = await Look(driver, active: [Active("working")]);
+
+        Assert.Contains("waits for session s1's turn to end", Assert.Single(first));
+        Assert.Empty(second);
+        Assert.Empty(third);
+        Assert.Equal(reads, host.RecordReads);
+        Assert.Empty(host.HelperHands);
+
+        host.Move("s1", "completed");
+        await Look(driver);
+        Assert.Single(host.HelperHands);
+    }
+
+    /// <summary>
+    /// Point 1's input: a turn that ends holding its quest waits on its helper where its agent has an ask of its own still open, and no
+    /// question its last turn asked the person; an ask of the person's, another session's, or one refused or handed is no such ask.
+    /// </summary>
+    [Fact]
+    public async Task A_turn_waits_on_its_helper_only_with_an_open_ask_of_its_own_and_no_question()
+    {
+        var driver = Driver(Host(state: "working").Quest("q1", "Taken"), pass: null);
+        var quest = new QuestView("q1", "ask #a1", "reports", "The work", "", "Taken");
+        var since = At;
+
+        Assert.False(await driver.WaitsOnOwnHelperAsync("s1", quest, since, CancellationToken.None));
+
+        Ask("a1", by: "person");
+        Ask("a2", asker: "s2");
+        Ask("a3");
+        Files.WriteState(new HelperState("a3", HelperStates.Refused, HelperWhy.Off, null, At));
+        Assert.False(await driver.WaitsOnOwnHelperAsync("s1", quest, since, CancellationToken.None));
+
+        Ask("a4");
+        Assert.True(await driver.WaitsOnOwnHelperAsync("s1", quest, since, CancellationToken.None));
+
+        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Sessions, "s1.question.json"),
+            new JsonObject { ["id"] = "k1", ["question"] = "Which port?", ["at"] = At.AddMinutes(1).ToString("O") }.ToJsonString());
+        Assert.False(await driver.WaitsOnOwnHelperAsync("s1", quest, since, CancellationToken.None));
+        Assert.True(await driver.WaitsOnOwnHelperAsync("s1", quest, At.AddMinutes(2), CancellationToken.None));
+    }
+
     // ——— The choice of agent.
 
     [Fact]

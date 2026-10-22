@@ -1068,14 +1068,44 @@ public sealed class SessionMessagesTickTests : IDisposable
             }
         }
 
-        /// <summary>A record as the wire answers it to this machine: its words waiting, and them joined as `answer`.</summary>
+        /// <summary>
+        /// A record as the wire answers it to this machine: its words waiting, and the person's joined as `answer` (a helper's answer is
+        /// never the person's, as the service's <c>Answer</c> reads it).
+        /// </summary>
         private static JsonObject Wire(JsonObject session)
         {
             var copy = (JsonObject)session.DeepClone();
-            var said = copy["said"]!.AsArray();
-            copy["answer"] = said.Count == 0 ? null : string.Join("\n\n", said.Select(word => word!["text"]!.GetValue<string>()));
+            var persons = copy["said"]!.AsArray().Where(word => word!["helper"] is null).ToList();
+            copy["answer"] = persons.Count == 0 ? null : string.Join("\n\n", persons.Select(word => word!["text"]!.GetValue<string>()));
             return copy;
         }
+
+        /// <summary>
+        /// HELPERWAIT1: a helper's record that serves <paramref name="serves"/>, as the host opened it for a pass (the pass itself is the
+        /// test's stand-in), so its answer can be handed to the session it serves.
+        /// </summary>
+        public void Helper(string id, string serves)
+        {
+            lock (_sessions)
+            {
+                _sessions.Add(new JsonObject
+                {
+                    ["id"] = id, ["repository"] = "engine", ["state"] = "completed", ["kind"] = "chat", ["serves"] = serves,
+                    ["created"] = DateTimeOffset.UtcNow.ToString("O"), ["said"] = new JsonArray(),
+                });
+            }
+        }
+
+        /// <summary>The states a record moved to, every one, in order (HELPERWAIT1).</summary>
+        public IReadOnlyList<string> States(string id)
+        {
+            lock (_sessions) return [.. _states.GetValueOrDefault(id) ?? []];
+        }
+
+        private readonly Dictionary<string, List<string>> _states = [];
+
+        /// <summary>Each helper's answer handed, by the helper's session, with the words as the driver composed them (HELPERWAIT1).</summary>
+        public List<(string Helper, string Text)> HelperHands { get; } = [];
 
         private (int, string) Answer(HttpListenerRequest request)
         {
@@ -1182,9 +1212,35 @@ public sealed class SessionMessagesTickTests : IDisposable
                         }
 
                         session["state"] = to;
+                        // When it moved, as the service keeps it (HELPERWAIT1: a park made before its helper's ask was asked is not one made on it).
+                        session["updated"] = DateTimeOffset.UtcNow.ToString("O");
                         if (to == "awaiting-person") session["said"] = new JsonArray();
                         if (_moves.TryGetValue(id, out var since)) since.Add(to);
+                        if (!_states.TryGetValue(id, out var states)) _states[id] = states = [];
+                        states.Add(to);
                         return (200, new JsonObject { ["session"] = Wire(session), ["message"] = "moved" }.ToJsonString());
+                    }
+
+                    // HELPERWAIT1: a helper's answer, handed to the session its record serves as a word marked `helper`, once, and refused as
+                    // the desk refuses it where the asker is parked, running or stood down.
+                    case ("POST", _) when path.StartsWith("/api/helpers/", StringComparison.Ordinal) && path.EndsWith("/hand", StringComparison.Ordinal):
+                    {
+                        var id = path["/api/helpers/".Length..^"/hand".Length];
+                        var served = Find(id)["serves"]!.GetValue<string>();
+                        var asker = Find(served);
+                        var state = asker["state"]!.GetValue<string>();
+                        if (Live.Contains(state)) return (409, $$"""{"error":"Session `{{served}}` is {{state}}. Nothing was kept."}""");
+                        if (asker["said"]!.AsArray().Any(word => word!["helper"]?.GetValue<string>() == id)) return (409, """{"error":"it goes once"}""");
+
+                        var text = Body()["text"]!.GetValue<string>();
+                        var word = new JsonObject
+                        {
+                            ["id"] = $"w{++_words}", ["text"] = text, ["at"] = DateTimeOffset.UtcNow.ToString("O"), ["files"] = new JsonArray(),
+                            ["reopens"] = true, ["helper"] = id,
+                        };
+                        asker["said"]!.AsArray().Add(word);
+                        HelperHands.Add((id, text));
+                        return (200, new JsonObject { ["message"] = "Handed.", ["session"] = Wire(asker), ["said"] = word.DeepClone() }.ToJsonString());
                     }
 
                     case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/say", StringComparison.Ordinal):
