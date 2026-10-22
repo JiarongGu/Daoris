@@ -145,7 +145,10 @@ export function AppStrip({
       }}
       // 🔴 One line, by rule: a Chinese label may break between any two characters, so without this
       // 中文's menus wrapped onto two lines each (道 / 衍) once the sides shared the strip (UX5 U15).
-      className={cn('relative flex h-9 shrink-0 items-center gap-3 whitespace-nowrap border-b border-line bg-raised', FRAME_HELD)}
+      className={cn(
+        'relative flex h-9 shrink-0 items-center gap-3 whitespace-nowrap border-b-[length:var(--frame-rule)] border-line bg-raised',
+        FRAME_HELD,
+      )}
     >
       <FrameHeld.Provider value>
       {/* The frameless technique hands the top edge to the client, so the top resize border is
@@ -303,7 +306,7 @@ export function ActivityBar<T extends string>({
       // the wheel and the keyboard still reach every place.
       // It keeps its size while the window zooms, and so do its tips (ZOOM1): a place stays where the hand learned it.
       className={cn(
-        'flex min-h-0 w-12 shrink-0 flex-col items-center gap-0.5 overflow-x-hidden overflow-y-auto border-r border-line py-1.5 [scrollbar-width:none]',
+        'flex min-h-0 w-12 shrink-0 flex-col items-center gap-0.5 overflow-x-hidden overflow-y-auto border-r-[length:var(--frame-rule)] border-line py-1.5 [scrollbar-width:none]',
         FRAME_HELD,
       )}
     >
@@ -405,7 +408,10 @@ export function StatusBar({
          the reference console's bar feel like a bar. */
       // It keeps its size while the window zooms, and so do its tips and menus (ZOOM1): the zoom it says never grows under the
       // pointer that presses it back.
-      className={cn('flex h-6 shrink-0 items-stretch overflow-hidden border-t border-line bg-raised text-meta text-ink-soft', FRAME_HELD)}
+      className={cn(
+        'flex h-6 shrink-0 items-stretch overflow-hidden border-t-[length:var(--frame-rule)] border-line bg-raised text-meta text-ink-soft',
+        FRAME_HELD,
+      )}
     >
       <FrameHeld.Provider value>
       <StatusItem

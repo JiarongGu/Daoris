@@ -242,6 +242,9 @@
    they open wear this, a CSS zoom of the level's inverse, which the same module sets beside the root's size. 1 at 100%. */
 @utility frame-held {
   zoom: var(--frame-zoom, 1);
+  /* The bars' own rule, one pixel at every level: the inverse would draw a 1 px border at 2 px at 50%, and the strip's caption
+     slots a pixel short of the room the window paints its buttons into (measured, `measured/zoom.spec.ts`). */
+  --frame-rule: calc(1px / var(--frame-zoom, 1));
 }
 
 @keyframes drawer-in {
