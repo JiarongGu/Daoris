@@ -424,6 +424,14 @@ public sealed class AcpSession(
     /// <summary>The background work its harness says still runs, with when each began (FABRIC-PIPELINE1c, <see cref="LongCalls"/>).</summary>
     public IReadOnlyList<RunningTask> BackgroundRunning => _background.RunningSince;
 
+    private bool _waitsOnOwnWork;
+
+    /// <summary>
+    /// Whether no turn runs and the session waits on its own background work (BGWAIT1, the watcher's state C; SESSWATCH1a, the
+    /// session-watch design §1.4): its quiet is judged by whether that work moves, on longer bounds.
+    /// </summary>
+    public bool WaitsOnOwnWork => Volatile.Read(ref _waitsOnOwnWork);
+
     /// <summary>The turns its harness starts by itself when that work ends (BGWAIT2), read from the session's opening.</summary>
     private readonly AcpWake _wake = new();
 
@@ -773,6 +781,9 @@ public sealed class AcpSession(
         }
 
         Note(BackgroundNotes.Waits(running));
+        // SESSWATCH1a: no turn runs while it waits on its own work, which the watcher reads as state C (the session-watch design §1.4).
+        Volatile.Write(ref _waitsOnOwnWork, true);
+        using var waitingOn = new Disposer(() => Volatile.Write(ref _waitsOnOwnWork, false));
 
         // 🔴 DONEEND1: the quest is read again while the work runs, never only at the turn's end. Read once, a quest that closed
         // done during the wait (its agent closing it in a turn its harness woke for one piece of work, while a long test run went

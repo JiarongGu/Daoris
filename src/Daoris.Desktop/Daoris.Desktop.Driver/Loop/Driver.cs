@@ -704,6 +704,10 @@ public sealed class Driver(
             events.Add(Lines.Retry("rules", $"rules  the proposals could not be settled this tick: {error.Message}"));
         }
 
+        // SESSWATCH1a (D200, the session-watch design §2): the watcher looks in on every running driven session, from memory, reading a
+        // job only for one unheard for half its bound; each step it takes is said, and nothing quiet is ended but under --quiet-end.
+        using (Stages.Begin("watch")) events.AddRange(LookIn(Lines));
+
         // The lines Daoris moved since each was last followed (WSSETUP5, D124 §3.1), registered from the line before this
         // look reads the registry, so a set-up that just landed is planned by what it now declares. Nothing is read with
         // git, or asked of the service, unless a line moved.
@@ -1575,7 +1579,9 @@ public sealed class Driver(
         var settled = Context.Runs.SettledAsync();
         try
         {
-            while (sync is not null && !settled.IsCompleted && !ct.IsCancellationRequested)
+            // SESSWATCH1a (the session-watch design §2): woken at the pace whether or not a remote syncs, so the watcher judges the
+            // sessions it waits for, and a --quiet-end ends one nobody watches; with no remote, the watcher's look alone.
+            while (!settled.IsCompleted && !ct.IsCancellationRequested)
             {
                 using var pace = CancellationTokenSource.CreateLinkedTokenSource(ct);
                 var first = await Task.WhenAny(settled, Task.Delay(_syncBeside, pace.Token)).ConfigureAwait(false);
@@ -1584,8 +1590,12 @@ public sealed class Driver(
 
                 try
                 {
-                    await SyncAsync(pending, ct).ConfigureAwait(false);
-                    await StopLostClaimsAsync(pending, ct).ConfigureAwait(false);
+                    lock (pending) pending.AddRange(LookIn(Lines));
+                    if (sync is not null)
+                    {
+                        await SyncAsync(pending, ct).ConfigureAwait(false);
+                        await StopLostClaimsAsync(pending, ct).ConfigureAwait(false);
+                    }
                 }
                 catch (OperationCanceledException) when (ct.IsCancellationRequested)
                 {
@@ -2387,7 +2397,10 @@ public sealed class Driver(
                                 // FABRIC-CLOSE1h5: a closure graph's submission is its done, so its session is due, never parked.
                                 submitted: QuestResults.Submitted(after))
                             // BGWAIT2: a done this run reached outranks the timeout, as it outranks a messy exit.
-                            : Observation.AfterTimeout(config.TestBound ?? 0, quest.Status, status);
+                            // SESSWATCH1a: the watcher's end (a headless --quiet-end) reads as its own cause, never as a bound's.
+                            : Watch.EndedMinutes(sessionId) is { } quietMinutes
+                                ? Observation.AfterQuiet(quietMinutes, quest.Status, status)
+                                : Observation.AfterTimeout(config.TestBound ?? 0, quest.Status, status);
                     // ACCESSSWAP1b: a run Daoris ended at its turn's end for a changed setup is neither a park nor a failure, and goes on.
                     var swappedOn = stop is null && ended.SetupChanged is not null;
                     if (swappedOn) conclusion = Observation.SetupChanged(conclusion, ended.SetupChanged!);
@@ -3139,6 +3152,13 @@ public sealed class Driver(
         // Kept beside the process, so who is driving Daoris's browser lasts exactly as long as it (BRW8).
         using var tracked = Context.Processes.Track(sessionId, process, refusesInput, drivesBrowser);
         using var reaper = new Disposer(() => SessionProcesses.EndIfRunning(process));
+        // SESSWATCH1a (D200): a quest's session and an intake are watched while they run, never ended on time; a pass keeps minutes of
+        // its own and is not watched (the session-watch design §2.4).
+        using var watched = minutes is null && target.Opinion is null && target.Helper is null && target.Brainstorm is null && target.Piece is null
+            ? Watch.Watch(
+                sessionId,
+                new WatchedRun(target.Ask is null ? SessionWatch.Quest : SessionWatch.Intake, target.Ask is null ? target.QuestId : null, adapter.Name))
+            : null;
         using var servers = new Disposer(() => SpawnServers.Remove(handed));
         using var ruled = new Disposer(() => SpawnSettings.Remove(rules.File));
         // The runs a native session goes on in with the person's words (MSG1b), each kept tracked until the record has
@@ -3241,7 +3261,9 @@ public sealed class Driver(
         working?.Invoke();
 
         var exitCode = await WaitAsync(
-                process, ct, minutes, timingOut: ending is null ? null : bound => ending.Say(Observation.TimedOut(bound)))
+                process, ct, minutes, timingOut: ending is null ? null : bound => ending.Say(Observation.TimedOut(bound)),
+                quiet: watched?.Ending ?? default,
+                quietEnding: ending is null ? null : () => ending.Say(Observation.Quiet(watched!.EndedMinutes ?? 0)))
             .ConfigureAwait(false);
         // 🔴 State E (SESSWATCH1a): a stray its agent started may hold the capture open past the exit; bounded, and concluded by the exit.
         var drained = await CaptureWithinAsync(capture, sessionId).ConfigureAwait(false);
@@ -3440,10 +3462,17 @@ public sealed class Driver(
     /// Told the bound, in minutes, when the bound ends the process, before it is killed (BGWAIT2): what lets the protocol door
     /// say the stream's end that follows as the bound's. Never told for a shutdown.
     /// </param>
-    internal async Task<int?> WaitAsync(Process process, CancellationToken ct, int? minutes = null, Action<int>? timingOut = null)
+    /// <param name="quiet">
+    /// The watcher's end of the run (SESSWATCH1a): a headless <c>--quiet-end</c>, its own cause, never a registry stop. Its exit is null
+    /// as a bound's is, and the conclusion reads the watcher's minutes.
+    /// </param>
+    /// <param name="quietEnding">Told before the watcher's kill, as <paramref name="timingOut"/> is before a bound's (BGWAIT2).</param>
+    internal async Task<int?> WaitAsync(
+        Process process, CancellationToken ct, int? minutes = null, Action<int>? timingOut = null, CancellationToken quiet = default,
+        Action? quietEnding = null)
     {
         var bound = minutes ?? config.TestBound;
-        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct, quiet);
         if (bound is { } within) timeout.CancelAfter(TimeSpan.FromMinutes(within));
         try
         {
@@ -3453,7 +3482,11 @@ public sealed class Driver(
         catch (OperationCanceledException)
         {
             // Said before the kill, since the stream's end can reach the door's reader before anything after it here runs.
-            if (!ct.IsCancellationRequested) timingOut?.Invoke(bound ?? 0);
+            if (!ct.IsCancellationRequested)
+            {
+                if (quiet.IsCancellationRequested) quietEnding?.Invoke();
+                else timingOut?.Invoke(bound ?? 0);
+            }
             process.Kill(entireProcessTree: true);
             await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
             if (ct.IsCancellationRequested) throw; // shutdown: the caller records "stopped"
@@ -3472,7 +3505,57 @@ public sealed class Driver(
     /// </remarks>
     private Task CaptureAsync(
         Process process, string transcript, string sessionId, CancellationToken ct, string? preamble = null) =>
-        HarnessCapture.CaptureAsync(process, transcript, sessionId, output, ct, preamble);
+        HarnessCapture.CaptureAsync(
+            Hearing(process.StandardOutput, sessionId), Hearing(process.StandardError, sessionId), transcript, sessionId, output, ct, preamble);
+
+    /// <summary>
+    /// The watcher's look (SESSWATCH1a, D200, the session-watch design §2): its steps this look, each said as a line, which is the
+    /// headless host's row, since it has no <i>What needs you</i>; the window's row is <c>NeedsAPerson</c>'s.
+    /// </summary>
+    /// <param name="said">The look's classing, each step's line classed as it is made (NOTIFY2h2).</param>
+    internal IReadOnlyList<string> LookIn(LookSaid said)
+    {
+        var watch = Watch;
+        watch.Log = Log;
+        var lines = new LookLines(said, "watch");
+        var steps = watch.Look(
+            id => Context.Processes.JobOf(id) is { } job ? new JobRead(job.Holds, job.Cpu) : null, TimeSpan.FromSeconds(config.PollSeconds));
+        foreach (var step in steps)
+        {
+            var who = step.Kind == SessionWatch.Intake ? $"intake {step.Session}" : $"session {step.Session}";
+            switch (step)
+            {
+                case { Step: SessionWatch.Marked }:
+                    lines.Progress($"watch  {who} is quiet: nothing heard from it for {step.Minutes} minutes, and nothing it runs uses the machine; "
+                        + "Daoris looked in and ended nothing.");
+                    break;
+                case { Step: SessionWatch.Brought }:
+                    var row = watch.RowOf(step.Session);
+                    lines.Wait($"watch  {who} has said nothing for {step.Minutes} minutes"
+                        + (row is { Busy: true } ? ", while something it runs keeps the machine busy" : ", and nothing it runs uses the machine")
+                        + ": it needs you. Daoris ends nothing; stop it or leave it running from Daoris's window, or end this run with Ctrl-C."
+                        + (watch.EndAfter is null ? " A headless run nobody watches takes --quiet-end <minutes>." : ""));
+                    break;
+                case { Step: SessionWatch.Ended }:
+                    lines.Progress($"watch  {who} said nothing for {step.Minutes} minutes: --quiet-end ends its run, and its work goes on in the same tree.");
+                    break;
+                case { Outcome: "heard" or "busy" or "moving" or "waits" }:
+                    lines.Progress($"watch  {who} is no longer quiet ({step.Outcome}).");
+                    break;
+            }
+        }
+
+        return lines.Said;
+    }
+
+    /// <summary>The watcher (SESSWATCH1a): every running driven session's, shared by every look's driver through the record.</summary>
+    internal SessionWatch Watch => SessionWatch.Of(Context.Events);
+
+    /// <summary>
+    /// A capture's stream, stamping its session heard at each line read (SESSWATCH1a, the session-watch design §1.2): every line and
+    /// frame, a subagent's and stderr's among them, the time alone. A session the watcher does not watch is stamped nothing.
+    /// </summary>
+    internal TextReader Hearing(TextReader reader, string sessionId) => Watch.Hearing(reader, sessionId);
 
     /// <summary>
     /// The structured capture for a pipe-door harness whose adapter reads its stdout (CONV3), or null
@@ -3490,8 +3573,8 @@ public sealed class Driver(
         IReadOnlyList<SaidWordView>? handed = null) =>
         adapter.StructuredOutput() is { } mapper
             ? KeepingAsync(mapper, HarnessCapture.CaptureStructuredAsync(
-                process.StandardOutput, process.StandardError, transcript, sessionId, output, Context.Events, mapper,
-                resume is null ? prompt : null, ct, preamble, personSaid: personSaid, handed: handed,
+                Hearing(process.StandardOutput, sessionId), Hearing(process.StandardError, sessionId), transcript, sessionId, output,
+                Context.Events, mapper, resume is null ? prompt : null, ct, preamble, personSaid: personSaid, handed: handed,
                 opened: resume?.Opening(), append: resume is not null, said: said, account: account, own: own, lineageHome: home),
                 sessionId, keepAs, resume)
             : null;
@@ -3596,7 +3679,7 @@ public sealed class Driver(
             Event(new SessionEvent { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts.Count > 0 ? noted.Parts : null });
         }
 
-        var errors = HarnessCapture.PumpAsync(process.StandardError, file, sessionId, output, ct);
+        var errors = HarnessCapture.PumpAsync(Hearing(process.StandardError, sessionId), file, sessionId, output, ct);
         AcpSession? session = null;
 
         try
@@ -3641,7 +3724,7 @@ public sealed class Driver(
             // What it runs beside itself, each its own console stream (CONSOLE2) — kept wherever the
             // session's own console is — and stoppable from its tab while the session runs (CONSOLE3a).
             session = new AcpSession(
-                process.StandardOutput, process.StandardInput, Line, closeTimeout: null, posture, meta, Event,
+                Hearing(process.StandardOutput, sessionId), process.StandardInput, Line, closeTimeout: null, posture, meta, Event,
                 streams: output is null ? null : new SessionStreams(output, sessionId),
                 onConversation: keepAs is null ? null : conversation => Context.Conversations.Keep(sessionId, keepAs, conversation))
             {
@@ -3651,6 +3734,9 @@ public sealed class Driver(
                 BackgroundLook = BackgroundLook, // DONEEND1: its quest read again while it waits on its own background work
             };
             ending?.Open(session);
+            // SESSWATCH1a: whether it waits on its own background work, the watcher's state C.
+            var waitsOn = session;
+            Watch.OwnWork(sessionId, () => waitsOn.WaitsOnOwnWork);
             // What it says about its account's windows, kept as it says it (TOOL6c).
             if (said is not null) session.LimitsSaid += said;
             using var stops = output is null ? null : Context.Processes.OpenTaskStops(sessionId, session.StopTaskAsync);

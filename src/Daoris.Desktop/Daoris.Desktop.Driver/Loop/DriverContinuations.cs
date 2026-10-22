@@ -534,7 +534,9 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                     // FABRIC-CLOSE1h5: a closure graph's submission is its done, as at a first run's end.
                     submitted: !closed && QuestResults.Submitted(after))
                 // BGWAIT2: a done this run reached outranks the timeout; a quest closed before it went on is not this run's.
-                : Observation.AfterTimeout(config.TestBound ?? 0, quest.Status, status);
+                : _driver.Watch.EndedMinutes(sessionId) is { } quietMinutes
+                    ? Observation.AfterQuiet(quietMinutes, quest.Status, status)
+                    : Observation.AfterTimeout(config.TestBound ?? 0, quest.Status, status);
         // ACCESSSWAP1b: a run Daoris ended at its turn's end for a changed setup is neither a park nor a failure, and goes on again.
         var swappedOn = stop is null && ended.SetupChanged is not null;
         if (swappedOn) conclusion = Observation.SetupChanged(conclusion, ended.SetupChanged!);
@@ -991,7 +993,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
 
             var capture = adapter.StructuredOutput() is { } mapper
                 ? _driver.KeepingAsync(mapper, HarnessCapture.CaptureStructuredAsync(
-                    process.StandardOutput, process.StandardError, transcript, sessionId, _context.Output, _context.Events, mapper,
+                    _driver.Hearing(process.StandardOutput, sessionId), _driver.Hearing(process.StandardError, sessionId), transcript, sessionId,
+                    _context.Output, _context.Events, mapper,
                     prompt: null, ct, opened: NativeWords.Opening(adapter.Name, words), append: true, said: said, own: own,
                     lineageHome: _context.Home),
                     sessionId, adapter.Name, resume: null)
@@ -1030,7 +1033,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
 
         var capture = adapter.StructuredOutput() is { } mapper
             ? _driver.KeepingAsync(mapper, HarnessCapture.CaptureStructuredAsync(
-                process.StandardOutput, process.StandardError, transcript, sessionId, _context.Output, _context.Events, mapper,
+                _driver.Hearing(process.StandardOutput, sessionId), _driver.Hearing(process.StandardError, sessionId), transcript, sessionId,
+                _context.Output, _context.Events, mapper,
                 prompt: null, ct, append: true, said: said, own: own, lineageHome: _context.Home),
                 sessionId, keepAs, resume)
             : null;

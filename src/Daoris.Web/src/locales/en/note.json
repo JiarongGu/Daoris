@@ -25,6 +25,7 @@
   "note.ended.words-setup": "Your words go on at the next look, in the same conversation under the new setup.",
   "note.ended.timeout": "Timed out after {{minutes}} minutes and was killed.",
   "note.ended.gone": "Its agent's process had ended, but something it started still held its output; Daoris ended what was left.",
+  "note.ended.quiet": "Nothing came from its agent for {{minutes}} minutes. Daoris ended this run, and the work goes on in the same tree.",
   "note.ended.quiet-pressed": "You ended this run after {{minutes}} minutes with nothing from its agent, and the work goes on in the same tree.",
   "note.watch.quiet": "Nothing came from its agent for {{minutes}} minutes. Daoris looked in.",
   "note.watch.left": "You left it running. Daoris looks in again once it is heard from.",

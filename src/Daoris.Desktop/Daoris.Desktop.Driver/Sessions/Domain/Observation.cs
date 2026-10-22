@@ -305,6 +305,19 @@ public static class Observation
     public static Noted Gone { get; } = Noted.Of(
         NoteCodes.EndedGone, "its agent's process had ended, but something it started still held its output; Daoris ended what was left.");
 
+    /// <summary>A run the watcher ended after <paramref name="minutes"/> with nothing heard (SESSWATCH1a): a headless <c>--quiet-end</c>.</summary>
+    public static Noted Quiet(int minutes) =>
+        Noted.Of(NoteCodes.EndedQuiet, $"nothing came from its agent for {minutes} minutes. Daoris ended this run, and the work goes on in the same tree.", ("minutes", minutes));
+
+    /// <summary>
+    /// How a driven run the watcher ended ends (SESSWATCH1a, the session-watch design §2.2): failed, saying the quiet, a strike as a timeout
+    /// was, unless this run brought its quest to done (<see cref="AfterTimeout"/>'s rule).
+    /// </summary>
+    public static SessionConclusion AfterQuiet(int minutes, string? startedOn, string questStatus) =>
+        questStatus == "Done" && startedOn is ("Open" or "Taken")
+            ? SessionConclusion.Of("completed", Noted.Of(NoteCodes.EndedDone, "the quest reached done.").Then(" ", Quiet(minutes)))
+            : SessionConclusion.Of("failed", Quiet(minutes));
+
     /// <summary>A session the timeout killed (row 18).</summary>
     public static Noted TimedOut(int minutes) =>
         Noted.Of(NoteCodes.EndedTimeout, $"timed out after {minutes} minutes and was killed.", ("minutes", minutes));

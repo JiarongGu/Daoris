@@ -446,6 +446,8 @@ public static class NoteCodes
     // Daoris ended what was left and the run concluded by its exit (state E); the person ended a quiet run to carry it on (`minutes`
     // of nothing heard); and the watcher's own lines, a session gone quiet and the person's *Leave it running*.
     public static readonly NoteCode EndedGone = new("ended.gone", []);
+    // The watcher's own end of a quiet run (`minutes` unheard): a headless run's --quiet-end in this build.
+    public static readonly NoteCode EndedQuiet = new("ended.quiet", ["minutes"]);
     public static readonly NoteCode EndedQuietPressed = new("ended.quiet-pressed", ["minutes"]);
     public static readonly NoteCode WatchQuiet = new("watch.quiet", ["minutes"]);
     public static readonly NoteCode WatchLeft = new("watch.left", []);

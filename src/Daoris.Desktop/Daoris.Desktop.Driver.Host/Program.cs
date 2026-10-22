@@ -17,10 +17,12 @@ using Daoris.Driver;
 //   DAORIS_REMOTE_WORKSPACE  for the workspace named here — absent: `default`)
 //   DAORIS_REMOTE_CONFIG   where the map is                    (default: $DAORIS_HOME/remotes.json)
 //
-//   drive [--once | --until-idle] [--share]
+//   drive [--once | --until-idle] [--quiet-end <minutes>] [--share]
 //                 the loop, asked for by name (DRV8a, D104): watch, ticking pollSeconds apart until
 //                 Ctrl+C; --once ticks once; --until-idle ticks until nothing starts, the deterministic
-//                 mode a gate drives. A bare --once or --until-idle is the same ask. It takes the home's
+//                 mode a gate drives. No session is ended on time (SESSWATCH1a, D200): a quiet one is said on
+//                 the console, and --quiet-end, for --once and --until-idle alone, ends one of this run
+//                 unheard that long and carries it on. A bare --once or --until-idle is the same ask. It takes the home's
 //                 lease first (home.lease, HOMELEASE1), and a home another live driver holds is refused, naming it
 //                 (exit 1) — unless --share, which runs beside it on purpose. A verb, the first-start move or an
 //                 update's swap holding it is waited for up to thirty seconds first.
@@ -827,6 +829,16 @@ try
     // client's opens and moves and the record's events, so the record is handed to every driver below.
     var events = new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
     using var sessionLog = new SessionLog(log, service, events);
+    // SESSWATCH1a (D200): no session is ended on time; --quiet-end ends one of this run unheard that long, and says so.
+    if (loop.QuietEnd is { } quietEnd)
+    {
+        SessionWatch.Of(events).EndAfter = TimeSpan.FromMinutes(quietEnd);
+        Console.WriteLine($"driver: --quiet-end {quietEnd}: a session of this run unheard for {quietEnd} minutes is ended and carried on.");
+    }
+    else if (once || untilIdle)
+    {
+        Console.WriteLine("driver: no session is ended on time; a quiet one is said here, and this run waits for it (--quiet-end <minutes> ends one).");
+    }
 
     // The watch, once it runs, so a terminal's words a loop keeps are taken up at once rather than at its next look (MSG1e).
     DriverWatch? watching = null;
