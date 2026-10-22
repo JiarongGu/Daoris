@@ -183,20 +183,24 @@ public sealed class CodexUsageRosterTests : IDisposable
     [Fact]
     public async Task A_Claude_kind_question_is_asked_again_after_its_minute_floor_not_Codex_s_five_minutes()
     {
-        Accounts("account-1");
-        Wire(s => s.WithRotation("fake", ["account-1"]));
+        // A set of two, which a reading can choose between (USAGEONE1); the second far from its curve, so asked once.
+        Accounts("account-1", "account-2");
+        Wire(s => s.WithRotation("fake", ["account-1", "account-2"]));
         // Within the margin of its session's curve, so a start past the floor asks it again (USAGEPROBE1).
         Answers("account-1", 0.85, 0.10);
+        Answers("account-2", 0.10, 0.10);
         var roster = Roster(new UsageQuestion("fake", ["fake-agent"], CodexUsage.Question.Recorded, UsageKind.Claude));
+        int FirstAsked() => Asked().Count(asked => asked == "fake/account-1");
 
         await StartAsync(roster);
         _now += ClaudeUsage.Floor - TimeSpan.FromSeconds(1);
         await StartAsync(roster);
-        Assert.Single(Asked());
+        Assert.Equal(1, FirstAsked());
 
         _now += TimeSpan.FromSeconds(2);
         await StartAsync(roster);
-        Assert.Equal(2, Asked().Length);
+        Assert.Equal(2, FirstAsked());
+        Assert.Single(Asked(), asked => asked == "fake/account-2");
     }
 
     /// <summary>

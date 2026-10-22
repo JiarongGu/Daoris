@@ -1,6 +1,7 @@
 import type { KnowledgeMode } from '../knowledge/modes';
 import type { ThemeChoice } from '../design/theme';
 import type { IconName } from '../design/ui';
+import { ZOOM_DEFAULT, ZOOM_LEVELS } from '../design/zoom';
 
 // The one table of verbs (UX7a, D152 §2; SURF9 before it). The menus, the palette, the key handler and the *Keyboard
 // shortcuts* drawer read it, so the four never disagree: before it the menus were two lists, the palette a third and the
@@ -125,6 +126,8 @@ export type CommandState = {
    * activity bar's button did before UX6j moved it here (D150 §2.1).
    */
   refreshing: boolean;
+  /** The window's zoom, in percent (ZOOM1): what View's zoom may step to, and whether there is a level to go back from. */
+  zoom: number;
 };
 
 /** What each verb runs: the application's doors, handed in, so this module reaches no hook and no bridge. */
@@ -153,6 +156,8 @@ export type CommandDoors = {
   browser: () => void;
   theme: (choice: ThemeChoice) => void;
   language: (language: 'en' | 'zh') => void;
+  /** The window's zoom a step in, a step out, or back to 100% (ZOOM1). */
+  zoom: (step: 'in' | 'out' | 'reset') => void;
   refresh: () => void;
   go: (view: View) => void;
   /** Knowledge in one of its modes (UX6i), as a door into Search or Convergence opened that place. */
@@ -414,6 +419,25 @@ export const COMMANDS: readonly CommandSpec[] = [
   {
     id: 'view.browser', menu: 'view', group: 'windows', label: 'work.menu.browser', icon: 'browser', shell: true,
     keywords: 'browser web page sign in login ticket chrome jira', run: (doors) => doors.browser(),
+  },
+  // The window's zoom (ZOOM1, the UI/UX design §3.11): VS Code's View › Appearance rows and keys, after the look. The content
+  // scales and the frame keeps its size; each key is the window's wherever the focus is, a field and the terminal included,
+  // since neither means anything by it. A shell's alone: a browser zooms its page itself, and keeps the keys.
+  {
+    id: 'view.zoomIn', menu: 'view', group: 'zoom', label: 'menu.view.zoomIn', icon: 'zoomIn', shell: true,
+    // Ctrl++ beside Ctrl+=: the plus is Shift+= on a US board, a key of its own on others, and the numpad's.
+    keys: ['Ctrl+=', 'Ctrl++'], keywords: 'zoom in larger bigger text size font scale 放大 缩放 字号',
+    applies: (state) => state.zoom < ZOOM_LEVELS[ZOOM_LEVELS.length - 1]!, run: (doors) => doors.zoom('in'),
+  },
+  {
+    id: 'view.zoomOut', menu: 'view', group: 'zoom', label: 'menu.view.zoomOut', icon: 'zoomOut', shell: true,
+    keys: ['Ctrl+-'], keywords: 'zoom out smaller text size font scale 缩小 缩放 字号',
+    applies: (state) => state.zoom > ZOOM_LEVELS[0], run: (doors) => doors.zoom('out'),
+  },
+  {
+    id: 'view.zoomReset', menu: 'view', group: 'zoom', label: 'menu.view.zoomReset', icon: 'refresh', shell: true,
+    keys: ['Ctrl+0'], keywords: 'zoom reset actual size 100% default 重置 缩放 实际大小',
+    applies: (state) => state.zoom !== ZOOM_DEFAULT, run: (doors) => doors.zoom('reset'),
   },
   {
     // The index's refresh, with the language above it, left the activity bar's foot for here and the palette (UX6j, D150

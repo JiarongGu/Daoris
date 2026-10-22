@@ -242,7 +242,7 @@ public sealed class AccountNamesTwinTests : IDisposable
         var missing = HarnessSettings.ProfileHome(_home, "claude-code", "account-3");
 
         var refused = await Assert.ThrowsAsync<DriverException>(
-            () => HarnessActions.LoginAsync(toolchain, new HarnessCommand("agent", toolchain.Binary, null, null), missing, _ => { }));
+            () => HarnessActions.LoginAsync(toolchain, new HarnessCommand("agent", ["no-such-agent-binary"], null, null), missing, _ => { }));
 
         Assert.Contains("nothing was signed in and no account was made", refused.Message);
         Assert.False(Directory.Exists(missing));

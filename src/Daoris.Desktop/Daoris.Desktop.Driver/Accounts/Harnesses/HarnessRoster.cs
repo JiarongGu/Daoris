@@ -1065,7 +1065,9 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         // the start could take that a set point owes a question (CODEXUSE1, USAGEPROBE1): never read, unread for the interval,
         // projected near its curve, or a limit or a credit said of it. A start, never a look or a panel, which count nothing.
         // Each under its own account's lock and under no gate of the walk's (PARALLEL1c), so another start never waits on them.
-        if (counts && picked is null && scope.List.Count > 0)
+        // Only where there is a choice for a reading to change (USAGEONE1): a set of one, and a resume held to its own account,
+        // run where they run whatever they would say, so the hour's backstop and a person's look read them instead.
+        if (counts && picked is null && !ownHome && scope.List.Count > 1)
         {
             await FreshenAsync(resolved.Name, owner, scope.List, config, ct, scope.Use).ConfigureAwait(false);
         }

@@ -163,6 +163,27 @@ public sealed class PullRequestMomentsTests : IDisposable
     }
 
     /// <summary>
+    /// GITAUTH1a: a moment reads its fetch's answer. One that failed (a held origin's sentence, which connected nothing) still asks the
+    /// plugin, which asks the host's own service, and the next moment past the minute calls the fetch again only for the hold to answer
+    /// it: the hold, not the moment, keeps it from connecting (<c>GitHoldsProcessTests</c>).
+    /// </summary>
+    [Fact]
+    public async Task A_moment_whose_fetch_failed_still_asks_and_takes_the_fetchs_answer()
+    {
+        _world.Entries.Add(Landing("engine", "feature/a"));
+        _world.Registry.Add(Repository("engine"));
+        _world.Origin["engine"] = "a1";
+        _world.Failing = "`origin` is held: ssh.dev.azure.com refused the sign-in git has here";
+        await using var moments = await Opened();
+
+        moments.Focused();
+        await Step(moments);
+
+        Assert.Equal(["engine"], _world.Fetches);
+        Assert.Equal(["feature/a"], _world.Asked);
+    }
+
+    /// <summary>
     /// FABRIC-END6b: origin's line moving inside a pull request's minute stays a moment. Nothing is asked inside the minute, at the move
     /// or at a wake after it; the first wake past the minute asks once, fetching nothing the person's fetch brought within it; a wake after
     /// that asks nothing more, the move having been asked about.
@@ -448,12 +469,15 @@ public sealed class PullRequestMomentsTests : IDisposable
 
         public void HeardFetched(RefRepository repository, string line, DateTimeOffset at) => FetchedAt[repository.Repository] = at;
 
-        public Task FetchAsync(RefRepository repository, string line, CancellationToken ct)
+        /// <summary>What the fetch answers: null where it fetched, else why not (GITAUTH1a).</summary>
+        public string? Failing { get; set; }
+
+        public Task<string?> FetchAsync(RefRepository repository, string line, CancellationToken ct)
         {
             Fetches.Add(repository.Repository);
             Order.Add($"fetch {repository.Repository}");
             FetchedAt[repository.Repository] = clock();
-            return Task.CompletedTask;
+            return Task.FromResult(Failing);
         }
 
         public Task<int> AskAsync(RefRepository repository, IReadOnlyList<LandedBranch> entries, CancellationToken ct)

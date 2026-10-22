@@ -211,11 +211,9 @@ public sealed class ProbeRaceTests : IDisposable
     [Fact]
     public async Task A_signed_out_account_is_asked_again_on_its_own_once_per_sign_out()
     {
+        // Both signed out: under D197 a start passes a signed-out account for the set's next, so it is held only where none may run.
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "agent", "account-1"));
-        var two = HarnessSettings.ProfileHome(_home, "agent", "account-2");
-        Directory.CreateDirectory(two);
-        File.WriteAllText(Path.Combine(two, ".credentials.json"),
-            JsonSerializer.Serialize(new { claudeAiOauth = new { accessToken = "a1", refreshToken = "r1", expired = false } }));
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "agent", "account-2"));
         new HarnessSettings().WithDefault("agent", "account-1").Save(Settings);
         var now = DateTimeOffset.UtcNow;
         var roster = new HarnessRoster(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
@@ -235,14 +233,14 @@ public sealed class ProbeRaceTests : IDisposable
         for (var look = 0; look < 3; look++) Assert.False((await roster.SelectAsync("agent", Config, null, null)).Allowed);
         Assert.Equal((2, 1, 0), (TimesAsked("account-1"), TimesAsked("account-2"), TimesAsked("(own)")));
 
-        // The backstop, for a sign-in no door of Daoris's made.
+        // The backstop, for a sign-in no door of Daoris's made: each signed-out account of the set once more.
         now += HarnessRoster.SignedOutAskedAgain;
         for (var look = 0; look < 3; look++) Assert.False((await roster.SelectAsync("agent", Config, null, null)).Allowed);
-        Assert.Equal((3, 1, 0), (TimesAsked("account-1"), TimesAsked("account-2"), TimesAsked("(own)")));
+        Assert.Equal((3, 2, 0), (TimesAsked("account-1"), TimesAsked("account-2"), TimesAsked("(own)")));
 
         // The person's press asks the roster again, and never the own sign-in (POOL1a3, D197 point 3; Fable's F2).
         await roster.RosterAsync(Config, refresh: true);
-        Assert.Equal((4, 2, 0), (TimesAsked("account-1"), TimesAsked("account-2"), TimesAsked("(own)")));
+        Assert.Equal((4, 3, 0), (TimesAsked("account-1"), TimesAsked("account-2"), TimesAsked("(own)")));
     }
 
     /// <summary>

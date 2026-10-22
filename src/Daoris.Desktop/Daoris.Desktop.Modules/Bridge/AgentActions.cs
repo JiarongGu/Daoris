@@ -222,6 +222,11 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         {
             // The way asked is one the agent has (CODEXLOGIN1), refused before anything starts where it is not.
             SignInWays.Arguments(owner, signingToolchain, way);
+            // 🔴 LIVELOGIN1: never the real agent under a scratch home, refused as the press is (HarnessActions.PrepareLogin's backstop).
+            if (signingRun is not null && ScratchSignIns.Refusal(signingToolchain, signingRun, profileHome) is { } scratch)
+            {
+                throw new DriverException(scratch);
+            }
             // 🔴 Its browser's answer needs a port of this machine (CODEXLOGIN1): each it tries is taken for a moment, once per
             // press, and where none can be the sign-in is refused in plain words, the device code offered, nothing made and the
             // running one left as it is. Never read from Windows' table alone: a range is not the only holder.

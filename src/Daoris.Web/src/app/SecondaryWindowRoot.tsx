@@ -12,6 +12,9 @@ import { DetachedSession } from '../work/console/DetachedSession';
 import { MonitorWindow } from '../work/console/MonitorWindow';
 import { useLinkOpener, useOpenBrowser, useSecondaryWindowTheme } from '../bridge/shell';
 import { MONITOR_WINDOW, type SecondaryWindow, sessionWindowName } from '../work/window';
+import { useZoom } from '../design/zoom';
+import { ZoomReadout } from '../work/frame/ZoomReadout';
+import { useZoomKeys, useZoomWheel } from './windowZoom';
 
 /**
  * The root of a window that is not the application (D55 §b, SURF8).
@@ -46,6 +49,11 @@ export function SecondaryWindowRoot({ window: which }: { window: SecondaryWindow
     words: (arrived) => t('notifications.messages.toast', { who: whoWords(arrived.newest, t), line: arrived.newest.line }),
     openLabel: t('notifications.toast.open'),
   });
+  // The machine's one zoom (ZOOM1), here too: its native frame is the OS's, so all of this page is content, and the wheel and
+  // the keys step the same level the main window's do, the engine's own zoom never beside it.
+  const zoom = useZoom();
+  useZoomWheel(isAvailable);
+  useZoomKeys(isAvailable);
 
   if (!isAvailable) return <App />;
 
@@ -66,6 +74,7 @@ export function SecondaryWindowRoot({ window: which }: { window: SecondaryWindow
         ? <MonitorWindow notify={notify} />
         : <DetachedSession id={which.id} notify={notify} />}
 
+      <ZoomReadout level={zoom} />
       <Toasts items={[...messages.toasts, ...toasts]} onClose={(id) => { if (!messages.close(id)) dismiss(id); }} />
       {/* The right-click menu here too (CTX1, D138 §6): no Search and no Quick Ask in this window, so a selection is
           offered its copy alone; a link opens in Daoris's browser as the application's does. */}

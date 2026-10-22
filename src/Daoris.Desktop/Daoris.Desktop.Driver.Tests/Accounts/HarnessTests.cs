@@ -1094,18 +1094,23 @@ public sealed class HarnessSelectionTests : IDisposable
     }
 
     /// <summary>
-    /// The wiring file is re-read, never held — same rule as `driver.json` (D50): a default changed
-    /// from a terminal takes effect on the next spawn, because the FILE is the truth.
+    /// The wiring file is re-read, never held — same rule as `driver.json` (D50): an order changed
+    /// from a terminal takes effect on the next spawn, because the FILE is the truth. Under D197 every
+    /// account of Daoris's is in the set, so what a change on disk moves is which comes first.
     /// </summary>
     [Fact]
     public async Task A_default_changed_on_disk_takes_effect_without_a_restart()
     {
-        var work = HarnessSettings.ProfileHome(_home, "fake", "work");
-        Directory.CreateDirectory(work);
-        File.WriteAllText(Path.Combine(work, "credentials.json"), "{}");
+        foreach (var account in new[] { "first", "work" })
+        {
+            var folder = HarnessSettings.ProfileHome(_home, "fake", account);
+            Directory.CreateDirectory(folder);
+            File.WriteAllText(Path.Combine(folder, "credentials.json"), "{}");
+        }
 
+        new HarnessSettings().WithDefault("fake", "first").Save(Settings);
         var roster = new HarnessRoster(Set(Toolchain(Present())), Settings);
-        Assert.Null((await roster.SelectAsync("fake", Config(), null, null)).Profile);
+        Assert.Equal("first", (await roster.SelectAsync("fake", Config(), null, null)).Profile);
 
         new HarnessSettings().WithDefault("fake", "work").Save(Settings);
 

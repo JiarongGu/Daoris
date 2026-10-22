@@ -664,20 +664,32 @@ public static class Tools
 
     /// <summary>
     /// Hand a start the tools' environment, read now from <c>$DAORIS_HOME</c>'s file (D63's one seam), over the
-    /// <c>PATH</c> the start holds. A process with no home changes nothing.
+    /// <c>PATH</c> the start holds. A process with no home is handed the prompt variables alone.
     /// </summary>
     public static void Hand(ProcessStartInfo info) => Hand(info, DaorisHome.Resolve());
 
-    /// <summary>Hand a start the tools' environment, read now from <paramref name="home"/>'s file; null changes nothing.</summary>
+    /// <summary>
+    /// Hand a start the tools' environment, read now from <paramref name="home"/>'s file; null hands the prompt variables alone
+    /// (<see cref="GitWiring"/>), which need no home.
+    /// </summary>
     public static void Hand(ProcessStartInfo info, string? home)
     {
-        if (home is null) return;
+        if (home is null)
+        {
+            GitWiring.Hand(info);
+            return;
+        }
+
         Hand(info, Read(home), home);
     }
 
-    /// <summary>Hand a start the tools' environment from a read the caller already holds.</summary>
+    /// <summary>
+    /// Hand a start the tools' environment from a read the caller already holds, with the prompt variables every child takes
+    /// (GITAUTH1a, <see cref="GitWiring"/>): never the terminal's, which builds its block from <see cref="ChildEnvironment"/>.
+    /// </summary>
     public static void Hand(ProcessStartInfo info, ToolsRead read, string home)
     {
+        GitWiring.Hand(info);
         var inherited = info.Environment.TryGetValue(PathVariable, out var path) ? path : null;
         foreach (var (name, value) in ChildEnvironment(read, home, inherited)) info.Environment[name] = value;
     }

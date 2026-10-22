@@ -109,6 +109,9 @@ public sealed class LandingPlugins(
             where = HookPoints.Land;
             took.Restart();
             var answer = await channel.LandAsync(HookFrames.Land(frame), ct).ConfigureAwait(false);
+            // GITAUTH1a (the git-auth design §10): a plugin's message is often git's last line, so it passes the one redaction before
+            // the driver says or keeps it.
+            answer = answer with { Message = GitWords.Redact(answer.Message)! };
             _log.Called(id, HookPoints.Land, answer.Pushed ? PluginEvents.Pushed : PluginEvents.NotPushed, took.ElapsedMilliseconds);
             Say(id, $"landed `{frame.Branch}`: {(answer.Pushed ? "pushed" : "not pushed")}"
                 + (answer.PullRequest is { } pr ? $", {pr}" : "") + $" — {answer.Message}");
@@ -118,7 +121,7 @@ public sealed class LandingPlugins(
         {
             var kind = PluginFailures.KindOf(error, where == PluginEvents.AtStart ? PluginEvents.Unstartable : PluginEvents.Errored);
             _log.Failed(id, where, kind, kind == PluginEvents.Exited ? channel?.ExitCode : null, took.ElapsedMilliseconds, by);
-            return Failed(id, error.Message);
+            return Failed(id, GitWords.Redact(error.Message)!);
         }
         finally
         {

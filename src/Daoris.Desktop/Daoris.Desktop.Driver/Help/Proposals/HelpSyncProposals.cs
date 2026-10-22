@@ -242,7 +242,7 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
         })]);
         node["notFetched"] = new JsonArray([.. listed.Lines.Where(pull => pull.Fetch is not null).Select(pull => (JsonNode)new JsonObject
         {
-            ["repository"] = pull.Repository, ["fetch"] = pull.Fetch,
+            ["repository"] = pull.Repository, ["fetch"] = GitWords.Redact(pull.Fetch),
             ["lastFetch"] = Moments.Write(pull.LastFetch), ["reach"] = pull.Reach,
         })]);
         node["apart"] = new JsonArray([.. listed.Apart.Select(each => (JsonNode)JsonValue.Create(each.Repository))]);

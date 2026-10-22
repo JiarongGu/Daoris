@@ -55,7 +55,10 @@ the person sends. A browser has no composer: Ask Daoris is its door.
 **Settings** is everywhere: Get started, Appearance and AI in a browser; the desktop also offers
 Driver, Tools, Browser and Logs. Plugins has its own view. Agent accounts live in Agents; workspace controls live in
 Repositories. The desktop's seven menus share one command table, with shortcuts and a command palette
-(D152). Help → Update opens the update card in Driver.
+(D152). Help → Update opens the update card in Driver. The desktop's zoom (ZOOM1, the UI/UX design §3.11) scales the content by
+the page's root size in an editor's steps, from View's rows, their keys and Ctrl+wheel, while the title strip, the activity bar,
+the status bar and what they open wear `frame-held` and keep their size; the level is `design/zoom.ts`'s, kept per machine as the
+theme is, and said by `work/frame/ZoomReadout.tsx` and the status bar. Glyphs are drawn in rem (`Icon`, `glyphSize`) so they follow it.
 
 Each Settings domain is `src/settings/<Name>Domain.tsx`, with its tests beside it, and
 `src/settings/domains.ts` lists them: the one place a domain is added, since the frame

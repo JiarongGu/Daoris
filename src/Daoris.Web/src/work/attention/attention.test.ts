@@ -143,6 +143,48 @@ describe('what needs a person, worded', () => {
     }
   });
 
+  /**
+   * GITAUTH1a (the git auth design §5.2, §7.4): a held git remote, said once: its host and why as its title, per class; its repositories,
+   * that Daoris does not try it again until *Try again* or a change, and git's own words, as written; *Try again* its one act; listed
+   * with what waits for the person's word, after a volume below its floor, in each language.
+   */
+  it('names a held git remote by its host and why, says its repositories and git’s words, and offers Try again', async () => {
+    const git: NonNullable<PushedAttention['git']> = {
+      host: 'github.com', class: 'refused', holds: 'all', remote: 'origin', repositories: ['engine', 'game'],
+      words: 'git@github.com: Permission denied (publickey).',
+    };
+    const held = row('git-held', 'default|github.com|refused|all', '2026-10-22T09:00:00Z', { workspace: 'default', git });
+    const item = words(held);
+    expect(item).toMatchObject({
+      kind: 'git-held', title: 'github.com refused the sign-in git has here', where: 'origin', git, workspace: 'default',
+      detail: 'engine, game: Daoris does not try this git remote again until you press Try again, or its address or the git Daoris runs '
+        + 'changes. git said: git@github.com: Permission denied (publickey).',
+    });
+    expect(attentionActs(item)).toEqual(['git-try-again']);
+    expect(attentionGroup(item)).toBe('word');
+    const titled = (each: typeof git.class) => words(row('git-held', each, null, { git: { ...git, class: each } })).title;
+    expect(titled('write-refused')).toBe('github.com refused a push with the sign-in git has here');
+    expect(titled('host-unknown')).toBe("ssh does not know github.com's key yet");
+    expect(titled('host-changed')).toBe("github.com's key changed since ssh last trusted it");
+    // A row from a shell that sent no group offers nothing to lift.
+    expect(attentionActs(words(row('git-held', 'bare', null)))).toEqual([]);
+    // After a volume below its floor, before a quest nobody can take, where they waited as long.
+    const at = '2026-10-22T09:00:00Z';
+    expect(keyed([row('unanswerable', 'q', at), held, row('space', 'D:', at)]))
+      .toEqual(['space:D:', `git-held:${held.id}`, 'unanswerable:q']);
+    await i18n.changeLanguage('zh');
+    try {
+      expect(words(held).title).toBe('github.com 拒绝了这里 Git 的登录');
+      expect(titled('write-refused')).toBe('github.com 拒绝了用这里 Git 的登录推送');
+      expect(titled('host-unknown')).toBe('ssh 还不认识 github.com 的主机密钥');
+      expect(titled('host-changed')).toBe('github.com 的主机密钥自 ssh 上次信任后已改变');
+      expect(words(held).detail).toBe('engine, game：在你按“重试”、或它的地址或 Daoris 运行的 Git 改变之前，Daoris 不会再尝试这个远程仓库。'
+        + 'Git 的原话：git@github.com: Permission denied (publickey).');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
   it('explains an unanswerable quest, in the active language', async () => {
     const pushed = row('unanswerable', '7a82cc', '2026-09-14T09:00:00Z', { where: 'retired' });
     expect(words(pushed).detail).toContain('retired');
@@ -440,7 +482,7 @@ describe('the groups', () => {
       confirmation: 'holding', trust: 'holding',
       'account-wait': 'holding', 'signed-out': 'holding',
       proposal: 'word', intake: 'word', departure: 'word', 'set-up': 'word', opinion: 'word', rule: 'word', helper: 'word',
-      'hand-over': 'word', unanswerable: 'word', review: 'ready', work: 'word', space: 'word',
+      'hand-over': 'word', unanswerable: 'word', review: 'ready', work: 'word', space: 'word', 'git-held': 'word',
     });
   });
 
@@ -762,6 +804,7 @@ describe('the place each wait is counted at', () => {
       rule: 'agents', 'account-wait': 'agents', 'signed-out': 'agents',
       space: 'settings',
       confirmation: null,
+      'git-held': null,
     });
   });
 
@@ -776,6 +819,14 @@ describe('the place each wait is counted at', () => {
     expect(counted).toEqual({ sessions: 3, quests: 2, projects: 1, agents: 2, settings: 1 });
     expect(Object.values(counted).reduce((sum, each) => sum + each, 0)).toBe(needsListed(rows).length);
     expect(placeCounts([])).toEqual({});
+  });
+
+  /** GITAUTH1a: a held git remote's one act is on its row, so no place counts it until Settings → Git holds it (GITAUTH1e); the bell does. */
+  it('counts a held git remote at no place, though the bell counts it', () => {
+    const held = row('git-held', 'default|github.com|refused|all', '2026-10-22T09:00:00Z');
+    expect(placeOf(held, undefined)).toBeNull();
+    expect(placeCounts([held, row('space', 'D:', null)])).toEqual({ settings: 1 });
+    expect(needsListed([held])).toHaveLength(1);
   });
 
   it('counts a kind this build does not know at no place, though the bell counts it', () => {

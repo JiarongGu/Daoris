@@ -26,5 +26,8 @@
   "work.status.sessions_other": "{{count}} sessions",
   "work.status.setup": "setup: {{done}} of {{of}}",
   "work.status.setupLabel": "setup",
-  "work.status.setupTip": "how many of the steps this machine needs are done. Opens Get started."
+  "work.status.setupTip": "how many of the steps this machine needs are done. Opens Get started.",
+  "work.status.zoom": "zoom",
+  "work.status.zoomLevel": "{{percent}}%",
+  "work.status.zoomTip": "the window's content is shown at {{percent}}%, and the bars around it keep their size. Goes back to 100%, as Ctrl+0 does."
 }

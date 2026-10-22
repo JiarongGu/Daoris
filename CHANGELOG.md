@@ -16,12 +16,30 @@ with the version and date at release.
   workspace's page lists Daoris's accounts in their order. A start that takes the order's first says so, the next start's line
   speaks of the order and of Daoris's accounts rather than of a list or *here*, and *This machine's list* is said nowhere. In
   English and 中文.
+- A start on an agent with one Daoris account no longer asks that account's usage first, which ran the agent once more and took
+  about two seconds, though it could not change where the start ran; nor does a conversation going on in your own sign-in. With two
+  accounts or more a start still asks one it has no recent reading of, since the reading can choose between them. The account's
+  usage is still read when you press *Read again* on the agent or on that account.
+- The window zooms as a code editor's does. Ctrl+wheel, Ctrl+= (or Ctrl++), Ctrl+- and Ctrl+0, and View's *Zoom in*, *Zoom out*
+  and *Reset zoom*, make the content larger or smaller in steps from 50% to 200%, while the title bar, its menus and window
+  buttons, the bar of places on the left and the status bar keep their size. The level shows for a moment over the content as it
+  changes, and stays on the status bar's right end while it is not 100%; pressing it goes back to 100%. Daoris keeps the level
+  for this machine, in every Daoris window, across restarts. The Map keeps its own Ctrl+wheel. Before, Ctrl+wheel scaled the
+  whole window, the title bar included, and said no level. In English and 中文.
 - Ask Daoris now keeps the asks and quests each conversation published. Under the conversation's head, *Published from this
   conversation* says what stands (open, taken, done, declined, and what waits on you first); opened, each ask lists the quests it
   became, a taken quest names its session's state, and each row opens its record on Quests in one press. Their states move as the
   quests do, with nothing asked again on a timer, and the list is kept across a restart. What an Apply did is now said in the
   conversation as Daoris's word, naming what it published, never as yours; *Not now* is still yours. A *Go there* card is drawn
   again when its quest is taken, so its press no longer answers that the plan changed. In English and 中文.
+- A git remote that refuses the sign-in git has on your machine is now said once and left alone. When Daoris's fetch of a
+  repository's line is refused (the key or the credential refused, a push refused, a host whose key ssh does not know or whose key
+  changed), Daoris holds that remote: no look, press, start or pull request's moment tries it again, and *What needs you* shows one row
+  for each host and reason, naming the repositories, with *Try again*. Changing the remote's address, or the git Daoris runs, tries it
+  again too. A session started on a held repository is told not to fetch, pull or push it, and to work from the line it has. A host
+  that cannot be reached at all holds nothing, and is tried again as before. Nothing Daoris starts asks for a sign-in any more: git
+  never prompts, and Git Credential Manager no longer opens a window for a session's HTTPS fetch or push, so a missing credential
+  fails at once. What git says is cut of any token, password or key before Daoris keeps or shows it. In English and 中文.
 - Work that follows a workflow saved as a graph now lands. Its second opinion, your look and a plugin's steps start as its graph
   reaches them, and *Accept…*, `daoris-driver trees land` and the automatic landing land its work only where Daoris has judged the
   graph at that very commit, and only that commit, a merge included: a commit made after the judgement lands nothing. Where the graph

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { sentence } from '../../locales/format';
 import { Button } from '../../design/ui';
 import { effectiveDark, subscribeTheme } from '../../design/theme';
+import { subscribeZoom } from '../../design/zoom';
 import { createScreen, type Screen, type ScreenLook } from './terminalScreen';
 import { readToken, terminalTheme } from './terminalTheme';
 import { folderName, type OpenTerminal, terminalNames, type Terminals } from './terminals';
@@ -111,9 +112,16 @@ export function TerminalView({ terminals, cwd }: {
     const typed = running ? screen.onData((data) => input(shownId, data)) : () => {};
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => fit());
     observer?.observe(element);
+    // The window's zoom (ZOOM1): the type is read from the page's root size, and the region keeps its size, so the screen
+    // takes the new type and the shell is told its new rows and columns.
+    const stopZoom = subscribeZoom(() => {
+      screen.look(lookOf(root.current));
+      fit();
+    });
     return () => {
       typed();
       observer?.disconnect();
+      stopZoom();
     };
   }, [shownId, running, input, resize]);
 
@@ -143,8 +151,11 @@ export function TerminalView({ terminals, cwd }: {
     const media = typeof window.matchMedia === 'function' ? window.matchMedia('(prefers-color-scheme: dark)') : null;
     media?.addEventListener?.('change', relook);
     const stop = subscribeTheme(relook);
+    // And the window's zoom (ZOOM1), for the screens not shown: the one shown is fitted again above.
+    const stopZoom = subscribeZoom(relook);
     return () => {
       stop();
+      stopZoom();
       media?.removeEventListener?.('change', relook);
     };
   }, [ids]);

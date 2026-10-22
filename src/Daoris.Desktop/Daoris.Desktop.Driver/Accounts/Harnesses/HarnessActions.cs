@@ -404,7 +404,8 @@ public static class HarnessActions
     /// The sign-in's start, prepared and not started (CODEXACCT1): the agent's own flow on the binary <paramref name="run"/>
     /// names, its pin's environment where it is the pin (AGT2), the account's folder made and named in the agent's variable.
     /// Refused, with nothing made, for an agent with no sign-in flow, a device code asked of one that has none (CODEXLOGIN1), an
-    /// account that is not here (ACCT1), and a pin with nothing installed at it, which is never <c>PATH</c>'s instead (D57).
+    /// account that is not here (ACCT1), a pin with nothing installed at it, which is never <c>PATH</c>'s instead (D57), and the real
+    /// agent under a scratch home (LIVELOGIN1, <see cref="ScratchSignIns"/>).
     /// </summary>
     /// <remarks>
     /// 🔴 <b>Only into an account's folder under the home</b> (POOL1a3, D197 point 3): a folder outside the account homes is
@@ -438,6 +439,9 @@ public static class HarnessActions
                 + $"nothing was signed in — `daoris agent pin {run.Harness} {run.Pinned}` installs it, and "
                 + $"`daoris agent unpin {run.Harness}` goes back to PATH.");
         }
+
+        // 🔴 LIVELOGIN1: never the real agent under a scratch home, which signs the person's browser in on their real account.
+        if (ScratchSignIns.Refusal(toolchain, run, profileHome) is { } scratch) throw new DriverException(scratch);
 
         return Prepare([.. run.Run, .. login], toolchain, profileHome, run.Managed);
     }

@@ -74,7 +74,7 @@ public static class AttentionStateSlice
             "kind", "id", "since", "workspace", "where", "note", "detail", "publishTo", "choices", "ask", "number", "goAhead", "session",
             "departed", "setUp", "local", "environment", "shows", "opinion", "placed", "sitting", "trust", "quest", "proposal", "title",
             "permission", "blocked", "held", "unreadable", "wholeWorkspace", "holding", "read", "account", "answer", "ended",
-            "confirmation", "agent", "stands", "stale", "space",
+            "confirmation", "agent", "stands", "stale", "space", "git",
         ],
         ["waiting"] = ["kind", "workspace"],
         ["working"] = ["workspace"],
@@ -117,6 +117,8 @@ public static class AttentionStateSlice
         ["asker"] = ["process", "pid"],
         // KEEP1f: a volume still below its free-space floor once the floor's acts ran.
         ["space"] = ["root", "free", "total", "floor", "freed", "could"],
+        // GITAUTH1a: a held group of git remotes that cannot authenticate.
+        ["git"] = ["host", "class", "holds", "remote", "repositories", "words"],
     };
 
     /// <summary>Which shape a field holds, as <c>shape.field</c>, an object of it or a list of them; every other field is a value.</summary>
@@ -150,6 +152,7 @@ public static class AttentionStateSlice
         ["row.confirmation"] = "confirmation",
         ["confirmation.asker"] = "asker",
         ["row.space"] = "space",
+        ["row.git"] = "git",
     };
 
     /// <summary>
@@ -175,7 +178,7 @@ public static class AttentionStateSlice
         Of(ct => FactsAsync(loop, ct), bus,
             [
                 wake => HearSlices(loop.Slices, wake), wake => HearHolds(HeldPermissions.Of(loop.Events), wake), wake => HearRegistry(loop.Facts, wake),
-                wake => HearFloors(SpaceFloors.Shared, wake),
+                wake => HearFloors(SpaceFloors.Shared, wake), wake => HearGitHolds(loop.Home, wake),
             ],
             loop.Log, new HeldCallAnnouncements(bus, loop.Notifying));
 
@@ -280,6 +283,8 @@ public static class AttentionStateSlice
             Confirmations = Written(ConfirmationWaits(loop.Pipe?.Confirmations)),
             // KEEP1f: each volume the look's floor pass said is still below its floor, from the process's memory.
             Space = Written(SpaceWaits(SpaceFloors.Shared, loop.Home)),
+            // GITAUTH1a: each remote held since it could not authenticate, from the home's run/git/held.json.
+            Git = Written(GitWaits(loop.Home)),
         };
     }
 
@@ -482,6 +487,36 @@ public static class AttentionStateSlice
         void Heard(string _) => wake();
         holds.Changed += Heard;
         return new Hearing(() => holds.Changed -= Heard);
+    }
+
+    /// <summary>
+    /// Each remote the home holds since it could not authenticate (GITAUTH1a, the git-auth design §5.2), oldest first: its repository,
+    /// workspace, remote, host, class, what it holds, what the transport said (redacted when it was kept) and since when. No machine path:
+    /// the checkout it is keyed by stays in the file.
+    /// </summary>
+    public static IReadOnlyList<object> GitWaits(string home) =>
+    [
+        .. GitHolds.Read(home)
+            .OrderBy(each => each.Since).ThenBy(each => each.Repository, StringComparer.Ordinal)
+            .Select(each => (object)new
+            {
+                each.Repository,
+                Workspace = each.Workspace ?? RemoteTarget.DefaultWorkspace,
+                each.Remote, each.Host, each.Class, each.Holds, each.Words,
+                Since = Moments.Write(each.Since),
+            }),
+    ];
+
+    /// <summary>Wake the slice where a hold on a git remote of <paramref name="home"/>'s is kept or lifted (GITAUTH1a, <see cref="GitHolds.Changed"/>).</summary>
+    public static IDisposable HearGitHolds(string home, Action wake)
+    {
+        void Heard(string changed)
+        {
+            if (string.Equals(Path.GetFullPath(changed), Path.GetFullPath(home), StringComparison.OrdinalIgnoreCase)) wake();
+        }
+
+        GitHolds.Changed += Heard;
+        return new Hearing(() => GitHolds.Changed -= Heard);
     }
 
     /// <summary>Wake the slice where a stretch below the free-space floor is said or ends (KEEP1f, <see cref="SpaceFloors.Changed"/>).</summary>

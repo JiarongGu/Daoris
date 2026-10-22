@@ -50,6 +50,7 @@ vi.mock('./terminalScreen', () => ({ createScreen }));
 import '../../locales/i18n';
 import { useTerminals } from '../../bridge/shell';
 import { setThemeChoice } from '../../design/theme';
+import { setZoom } from '../../design/zoom';
 import { TerminalView } from './TerminalView';
 
 /** The view as the frame holds it: the terminals above, outliving the view. */
@@ -174,6 +175,23 @@ describe('the terminal view (CONSOLE4b)', () => {
     act(() => setThemeChoice('system'));
 
     expect(screens[0]!.looks).toBe(2);
+  });
+
+  /**
+   * ZOOM1: the window zooms by the page's root size, which the screen's type is read from, while its panel keeps its size, so
+   * the type is read again and the shell told its new rows and columns.
+   */
+  it("follows the window's zoom: its type read again, the shell told its new size", async () => {
+    render(<Held />);
+    await waitFor(() => expect(calls('RESIZE')).toHaveLength(1));
+    const looks = screens[0]!.looks;
+
+    screens[0]!.size = { cols: 80, rows: 24 };
+    act(() => setZoom(125));
+    act(() => setZoom(100));
+
+    expect(screens[0]!.looks).toBeGreaterThan(looks);
+    expect(calls('RESIZE').at(1)).toEqual(['DAORIS.TERMINAL', 'RESIZE', { payload: { id: answer.id, cols: 80, rows: 24 } }]);
   });
 
   describe('more than one (CONSOLE4c)', () => {

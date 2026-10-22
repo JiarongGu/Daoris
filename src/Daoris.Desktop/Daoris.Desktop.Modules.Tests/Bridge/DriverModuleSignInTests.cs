@@ -157,4 +157,32 @@ public sealed class DriverModuleSignInTests : DriverModuleBridge
         Assert.Contains("`codex` is pinned to 0.160.0 on this machine, and nothing is installed at that version", refusal);
         Assert.Empty(HarnessSettings.Profiles(Home, "codex"));
     }
+
+    /// <summary>
+    /// 🔴 LIVELOGIN1: *Add an account…* on Agents → Claude Code and Codex, under this test's temporary home with nothing named or
+    /// pinned, would run PATH's <c>claude auth login</c> or <c>codex login</c> on the person's real account. Each press is refused
+    /// naming the stub adapters, with no account made and nothing started: every start of the flow is held by a stand-in that
+    /// records it.
+    /// </summary>
+    [Fact]
+    public async Task A_sign_in_under_a_scratch_home_with_the_real_binary_is_refused_with_nothing_started()
+    {
+        var started = new List<string>();
+        using (ProcessStarts.Within(info => { started.Add(info.FileName); return null; }))
+        {
+            var module = Module(_ => PortHold.Free);
+            foreach (var (door, binary) in new[] { ("claude-code", "claude"), ("codex-acp", "codex") })
+            {
+                var refusal = await RefusalAsync(module, "HARNESS_ACTION", new { harness = door, action = "login-new" });
+
+                Assert.Contains($"would have run the `{binary}` on PATH, so nothing was started", refusal);
+                Assert.Contains("the stub adapters (`stub`, `acp-stub`)", refusal);
+            }
+        }
+
+        Assert.Empty(started);
+        Assert.Empty(HarnessSettings.Profiles(Home, "claude-code"));
+        Assert.Empty(HarnessSettings.Profiles(Home, "codex"));
+        Assert.DoesNotContain(Raised.Select(Line), line => line.StartsWith("$ ", StringComparison.Ordinal));
+    }
 }

@@ -166,6 +166,7 @@ export const HOME_ENTRIES = [
   row('edge-record', 'run', 'run/edge.json', 'browser/edge.json'),
   row('pipe', 'run', 'run/pipe', 'pipe'),
   row('home-move', 'run', 'run/home-move.json', 'run/home-move.json'),
+  row('git-held', 'run', 'run/git/held.json', 'run/git/held.json'),
   row('logs', 'logs', 'logs', 'logs'),
 ] as const;
 

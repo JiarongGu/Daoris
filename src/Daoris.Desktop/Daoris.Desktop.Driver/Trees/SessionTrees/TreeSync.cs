@@ -109,7 +109,7 @@ internal sealed class TreeSync(
         {
             var line = (await context.LineAsync(each.Root, each.Repository, RemoteTarget.Workspace(each.Space), token).ConfigureAwait(false)).Branch;
             if (!fetch) return new Fetched(line);
-            var (failed, url) = await FetchAsync(each.Root, line, token).ConfigureAwait(false);
+            var (failed, url) = await FetchAsync(each.Root, line, token, each.Repository, RemoteTarget.Workspace(each.Space)).ConfigureAwait(false);
             return failed is null
                 ? new Fetched(line)
                 : new Fetched(line, failed, await LastFetchAsync(each.Root, line, token).ConfigureAwait(false), ReachOf(url));

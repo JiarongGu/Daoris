@@ -237,6 +237,16 @@
   --animate-pulse: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) 3;
 }
 
+/* The window's frame at its own size while the content zooms (ZOOM1, the UI/UX design §3.11). The window zooms by the root's
+   size (`design/zoom.ts`), which everything drawn in rem follows; the title strip, the activity bar, the status bar and what
+   they open wear this, a CSS zoom of the level's inverse, which the same module sets beside the root's size. 1 at 100%. */
+@utility frame-held {
+  zoom: var(--frame-zoom, 1);
+  /* The bars' own rule, one pixel at every level: the inverse would draw a 1 px border at 2 px at 50%, and the strip's caption
+     slots a pixel short of the room the window paints its buttons into (measured, `measured/zoom.spec.ts`). */
+  --frame-rule: calc(1px / var(--frame-zoom, 1));
+}
+
 @keyframes drawer-in {
   from { transform: translateX(1.5rem); opacity: 0.6; }
   to { transform: none; opacity: 1; }

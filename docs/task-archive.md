@@ -19565,3 +19565,69 @@ over `NodeRuntimeFixture` (the last two over `NodeRunFixture`, the run helpers t
 D166's PART6 fixtures do; no test body changed. Test cases listed before and after: 52 and 52 (32 + 13 + 7), 25 and 25 (20 + 5), the
 same names. `node tools/partials.mjs` is clean and `tools/partials.json` is unchanged. The driver's fast half passes (13,258); none of
 the five classes is a Process class, so `process.runsettings` with their filter selects no test. On Opus.
+
+## POOLREH1 — the family rehearsal's account and set-up checks stated in D197's and ORIENT2c's terms (2026-10-22)
+
+> From the full set at `cb9211d88`: `rehearse-family` failed six account checks and one set-up check after POOL1a's one-set fold.
+
+**Outcome** 2026-10-22: the family rehearsal passes again (435 ok). Phase 15 states D197 and POOL1b: a signed-out account is passed,
+a hold comes only when no account of the set may run, the refused account's hold names every account, `profile default` is refused
+for `profile order`, and the CLI's edits leave the stub's set standing. 17c and 17d state ORIENT2c: a set-up repository is asked its
+index next. No product defect; detail in commits 40361f317 and cc57d8259. On Opus.
+
+## ZOOM1 — the window's zoom, its level shown and its frame kept (2026-10-22, D185)
+
+> - **ZOOM1 — the window's zoom, its level shown and its frame kept** (app shell, web-shell; the owner's report, 2026-10-22). Ctrl+wheel today is WebView2's own browser zoom: nothing in the source handles it, it scales the whole page with the title strip, its menus and the window controls, and nothing says the level. Wanted, as an editor does: zoom in, out and reset from Ctrl+wheel, Ctrl+= / Ctrl+- / Ctrl+0 and the View menu; the level said as it changes and kept visible while it is not 100%, with a press back to 100%; the frame (title strip, menus, window controls, the rail's chrome as the UI contract places it) kept at its size while the content scales; the level kept for the machine across restarts; a surface that zooms itself on Ctrl+wheel (the Map) keeps its own. Proof: web tests for the keys, the menu and the level's word in English and Chinese; the frame's measured height unchanged across levels; the shell's own zoom off; installed-window proof after the republish.
+
+**Outcome** 2026-10-22: the content zooms by the page's root font size in steps from 50% to 200%, from View's *Zoom in* / *Zoom out* /
+*Reset zoom* (Ctrl+= and Ctrl++, Ctrl+-, Ctrl+0) and Ctrl+wheel. The title strip with its menus and caption room, the activity bar,
+the status bar and what they open keep their size (measured in Chromium at 50-200%). The level shows for a moment as it changes and
+stays at the status bar's right end until it is back at 100%; pressing it resets. It is kept per machine in every Daoris window, the
+Map keeps its own Ctrl+wheel, and the engine's zoom is prevented in the page. Detail: the UI/UX design §3.11 and D185's ZOOM1 note;
+the installed-window look follows the republish. On Opus.
+## GITAUTH1a — a remote that cannot authenticate is said once and left alone (2026-10-22, D198)
+
+> - [ ] **GITAUTH1a — a remote that cannot authenticate is said once and left alone** (driver, modules, web-shell; D198 points 6, 7, 16; design §5, §4.1's prompt variables, §10, §14 row 1). Failures classed by the transport's words, a hold keyed by repository, address, server and reads-or-writes, lifted by *Try again*, a changed address or a changed git; the moments read their fetch's answer; one *What needs you* row per held group in en and zh; no child prompts through git or GCM; one redaction boundary; a session told not to try. Proof: as §14 row 1 names it, including the empty `GIT_ASKPASS` measured through Windows' environment block.
+
+**Outcome** 2026-10-22: built. Every child handed the tools' environment takes the prompt variables (`GitWiring`), the terminal's
+shells none; `GitFailures` classes a failure by the transport's words; Daoris's one fetch of the line holds origin in
+`run/git/held.json` (`GitHolds`) and connects nothing while held, every look, press, start and moment answered by the hold's
+sentence; *Try again* (`GIT_TRY_AGAIN`), a changed address or a changed git lifts it; the moments read their fetch's answer;
+`git-held` rows in *What needs you*, one per workspace, host, class and holds, in en and zh; `GitWords.Redact` over the fetch, the
+hold, Ask Daoris's kept sync text and a landing plugin's message, and the sensitive gate refuses `github_pat_` and `glpat-`; a
+session's instruction carries a Git section for a held remote. Proof, real git and OpenSSH on the loopback only: the empty
+`GIT_ASKPASS` measured through the environment block (`GitPromptsProcessTests`), the words of each class (`GitFailuresProcessTests`,
+`GitWordsTests`), held once with no second connection across three moments over HTTP (`GitHoldsProcessTests`) and over SSH against a
+portable `sshd` (`GitSshHoldsProcessTests`, which holds nothing where `DAORIS_TEST_SSHD` names none). Not built here: the terminal's
+`git held` and `git try-again`. Not seen: the owner's SSH remote on the install (screenshot), owed after the republish. Detail:
+D198's GITAUTH1a note. On Opus.
+
+## BRAINSTORM1a3 — `daoris brainstorm` and the family rehearsal's phase (2026-10-19, D176)
+
+> - **BRAINSTORM1a3 — `daoris brainstorm` and the family rehearsal's phase** (service, cli, tools; after BRAINSTORM1a; D176 points 1 and 8). The CLI twin reaches this machine's Daoris through `service/service.ts`, by a machine-only local-host door that writes the request and answers show/send/clear (never on a shared host); `ACP_STUB_AGENT` answers a brainstorm turn; a family-rehearsal phase asserts no quest operation, no commit or change in the asker's checkout, no landing record, and the rooms gone. Proof: the CLI command tests against a stand-in host; the rehearsal phase.
+
+**Outcome** 2026-10-19 (archived 2026-10-22, when the row was found still open): `daoris brainstorm` (ask, show, send, clear, list)
+reaches the local host's machine-only door `/api/brainstorms` (BrainstormDesk, the twin of the driver's BrainstormFiles); `ACP_STUB_AGENT`
+answers brainstorm turns; the family rehearsal's phase 17f passed with no quest, commit or landing. Detail: merge `98e0b11d8`. On Opus.
+
+## LIVELOGIN1 — no test, probe or session starts a real sign-in (2026-10-22)
+
+> - [ ] **LIVELOGIN1 — no test, probe or session starts a real sign-in** (driver, cli, tools; found 2026-10-21 twice). A builder ran `codex login` four times while building CODEXLOGIN1, and a driven session transcribing PUSH1f2e6's words ran `claude auth login` under a scratch home in `_fixtures/`: each opened the person's browser on their real account. The rule is in `docs/development.md`; wanted is a guard that holds it: the sign-in actions refuse the real agent binary where the home is a scratch one (under `_fixtures/` or a test's), saying to use the stub adapters, and a census finds a test that names a real login command outside a stub. Proof: a sign-in under a scratch home with the real binary is refused with nothing started; the census fails on a planted case. Seen again 2026-10-22: a change in POOL1a2 let `DriverModuleAccountNamesTests`' no-account sign-in through for one run, which runs `claude` from PATH under the test's home; that test now names a missing command (D197's POOL1a2 note). Seen again 2026-10-22 and widened to any real agent binary: `HelpChatTests`' ACP rows named no `claude-code` command, so the start's usage read ran the `claude` on PATH in the test's account home (RESUMEOWN1's fix-log entry); the census also finds a test whose agent command falls back to PATH.
+
+**Outcome** 2026-10-22: `ScratchSignIns` refuses the agent's own binary from PATH where the account's home lies under `_fixtures/`
+or the OS's temporary folder, naming the stub adapters, before a folder is made or anything starts: in `HarnessActions.PrepareLogin`,
+the bridge's press and `daoris agent login`. A stub at a path, such as a pin's managed binary under the scratch home, still signs
+in. `node tools/live-logins.mjs`, run in verify beside partials, finds a test with a real login command or an agent command that
+falls back to PATH. Proved with a stub named `claude` and every start recorded (`ScratchSignInsTests`, `AgentsCommandTests`,
+`DriverModuleSignInTests`); no real login ran. On Opus.
+
+## USAGEONE1 — a start reads no usage it cannot choose by (2026-10-22, D197)
+
+> - [ ] **USAGEONE1 — a start reads no usage it cannot choose by** (driver; after POOL1b; D197, USAGEPROBE1). Since the fold, a default with no list is a set of one under `use: order`, so a start's walk freshens that never-read account's usage (`HarnessRoster.WalkAsync`'s `FreshenAsync`, `HarnessRoster.cs:1070`): one agent process and about two seconds per start that cannot change which account runs. A set of one, and a resume held to its own account, skip the walk's read; the hour's backstop and a person's look still read it. Proof: a start on a set of one runs no usage process (a stub that counts its runs), and a set of two still reads the unread one.
+
+**Outcome** 2026-10-22: built. The walk asks usage only where its set has two accounts or more and the start is not held to the
+tool's own home; a pick and a resume on its own account already asked nothing. `ClaudeUsageProcessTests` counts the stand-in CLI's
+runs: none on a set of one (seen failing with the guard reverted), one for the unread account of a set of two. The driver's fast half
+passes (13,276), and the Process classes RESUMEOWN1's entry lists, with `HelpChat`, `TurnStop`, `ChatAttachment`, `OwnSpace` and
+`ClaudeUsageProcess`, 175 of 176 filtered with `process.runsettings`; the one, a `SessionMessagesTickTests` row, passed 19 of 19 alone.
+Detail: D197's USAGEONE1 note. On Opus.

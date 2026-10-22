@@ -141,6 +141,7 @@ internal static class AgentLoginCommand
             }
 
             var where = HarnessSettings.ProfileHome(home, agent, id);
+            RefuseScratch(where);
             // Made for the sign-in, before the flow, and never moved after: an agent's own store may be keyed to its path.
             Directory.CreateDirectory(where);
             Say($"{Prefix}: signing in to a new `{agent}` account, with its own login flow.");
@@ -198,6 +199,7 @@ internal static class AgentLoginCommand
             if (target.Account is not { } account) throw new AgentWords(AccountNames.SignInRefusal(agent, target, accounts, names));
 
             var where = HarnessSettings.ProfileHome(home, agent, account);
+            RefuseScratch(where);
             Say($"{Prefix}: running `{agent}`'s own login flow into the account `{AccountNames.Said(names, account)}`.");
             Say($"  {where}");
             Say("  Daoris chose the directory and nothing else: whatever you sign in with is stored by");
@@ -209,6 +211,15 @@ internal static class AgentLoginCommand
             return await EndAsync(account, await AskAsync(where, account).ConfigureAwait(false), wanted: null, fresh: false).ConfigureAwait(false)
                 ? 0
                 : 2;
+        }
+
+        /// <summary>
+        /// 🔴 LIVELOGIN1: never the real agent under a scratch home, which signs the person's browser in on their real account. Refused
+        /// after the verb's own refusals, which start nothing and say the better reason, and before the account's folder is made.
+        /// </summary>
+        private void RefuseScratch(string where)
+        {
+            if (ScratchSignIns.Refusal(toolchain, binary, where) is { } scratch) throw new AgentWords(scratch);
         }
 
         /// <summary>The flow at this terminal (<see cref="HarnessActions.TerminalRunAsync"/>), its exit mapped as the CLI's relay: 0, else 2.</summary>

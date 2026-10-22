@@ -41,6 +41,13 @@ that `git worktree list` does not list and that holds no `.git` is a half-remove
 without following a reparse point. A process holding either is named with its pid, never stopped.
 Other registered worktrees use their owning lifecycle tool.
 
+A worktree with no commit of its own counts as merged. So the prune removes it, gitignored
+`local/scratch/` with it, even while a worker still uses it, and the agent harness removes a worker's
+isolated worktree when it ends without a tracked change. A docs-only or read-only dispatch whose product
+is scratch (a brief, a proposal, a read's answer) writes it under the main checkout's
+`local/scratch/`, or commits it early; otherwise it is lost with the worktree (2026-10-22, COAGENT1's
+design, twice).
+
 Use literal targets and one shell throughout; verify absence afterward. If execution is rejected,
 record the action and exact reason, leave the task open, and resolve the actual permission setting
 or surface it to the owner. Retry after new authorization or a real permission change through the
@@ -89,7 +96,9 @@ its own (REHLANE1, REHLANE2, REHLANE2b). Do not overlap them with another full g
 development instance can hold its assemblies. Identify the owner before stopping a process; do not
 stop an installed application or an unrelated host merely to unblock a build. Never start a real sign-in (`claude auth login`,
 `codex login`, an agent's own login) from a test, a probe or a transcription of today's words, even under a scratch home: it opens
-the person's browser on their real account. Take the words from the code, or run the stub adapters (LIVELOGIN1).
+the person's browser on their real account. Take the words from the code, or run the stub adapters (LIVELOGIN1). The sign-in
+actions refuse the agent's binary from PATH where the home lies under `_fixtures/` or the OS's temporary folder, with nothing
+started, and `node tools/live-logins.mjs` finds a test that names a real login command or lets an agent's command fall back to PATH.
 
 A branch that runs only its own classes still owes the censuses that read every source, since no merge runs them
 before the CI beside: each is quick, and on 2026-10-20 each failed a full set its branch never ran. Run the ones a
@@ -103,6 +112,7 @@ change can reach before handing it back:
 | joins a home path in a test or a source | `node --test src/Daoris.Cli/test/platform/home-census.test.ts` (ask `DaorisHome.Entry` or `homeEntry`) |
 | opens a listener in a test | `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter FullyQualifiedName~LoopbackListensTests` |
 | writes a string that names a workspace, or a `partial` class | `node --test src/Daoris.Cli/test/one-word.test.ts`, and `node tools/partials.mjs` |
+| names an agent's command, a login, or a driver config's `commands` in a test | `node tools/live-logins.mjs` (a script or a stub at a path, never the agent's binary from PATH) |
 
 `node --test` alone is not the workspace's done command. The root `npm test` delegates to the CLI
 workspace; `npm run verify` also runs types, doctrine and document/tooling checks. Installed proof

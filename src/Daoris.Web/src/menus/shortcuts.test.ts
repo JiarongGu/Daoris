@@ -28,6 +28,24 @@ describe('a key, read as its menu prints it', () => {
     expect(isPress(press('p', { ctrl: true }), 'Ctrl+Shift+P')).toBe(false);
     expect(isPress(press('`', { ctrl: true, shift: true }, 'Backquote'), 'Ctrl+`')).toBe(false);
   });
+
+  /**
+   * ZOOM1: the plus is the one key a menu prints after a `+`, and it is typed with Shift on some layouts (Shift+= on a US
+   * board) and without it on others and on the numpad, so it is read by what it says, Shift or none.
+   */
+  it('reads the plus by what it says, Shift or none, and the equals, the minus and the zero as printed', () => {
+    expect(isPress(press('+', { ctrl: true, shift: true }, 'Equal'), 'Ctrl++')).toBe(true);
+    expect(isPress(press('+', { ctrl: true }, 'NumpadAdd'), 'Ctrl++')).toBe(true);
+    expect(isPress(press('+', { ctrl: true }, 'BracketRight'), 'Ctrl++')).toBe(true);
+    expect(isPress(press('+', {}, 'NumpadAdd'), 'Ctrl++')).toBe(false);
+    expect(isPress(press('+', { ctrl: true, alt: true }, 'NumpadAdd'), 'Ctrl++')).toBe(false);
+    expect(isPress(press('=', { ctrl: true }, 'Equal'), 'Ctrl+=')).toBe(true);
+    expect(isPress(press('+', { ctrl: true, shift: true }, 'Equal'), 'Ctrl+=')).toBe(false);
+    expect(isPress(press('-', { ctrl: true }, 'Minus'), 'Ctrl+-')).toBe(true);
+    expect(isPress(press('-', { ctrl: true }, 'NumpadSubtract'), 'Ctrl+-')).toBe(true);
+    expect(isPress(press('0', { ctrl: true }, 'Numpad0'), 'Ctrl+0')).toBe(true);
+    expect(isPress(press('=', { ctrl: true }, 'Equal'), 'Ctrl++')).toBe(false);
+  });
 });
 
 describe("the frame's keys, everywhere", () => {
@@ -45,6 +63,11 @@ describe("the frame's keys, everywhere", () => {
     expect(frameShortcut(press(',', { ctrl: true }, 'Comma'))).toBe('workspace.settings');
     expect(frameShortcut(press('`', { ctrl: true }, 'Backquote'))).toBe('terminal.show');
     expect(frameShortcut(press('U', { ctrl: true, shift: true }, 'KeyU'))).toBe('view.console');
+    // ZOOM1: the window's zoom, as VS Code's terminal leaves it to the workbench.
+    expect(frameShortcut(press('=', { ctrl: true }, 'Equal'))).toBe('view.zoomIn');
+    expect(frameShortcut(press('+', { ctrl: true, shift: true }, 'Equal'))).toBe('view.zoomIn');
+    expect(frameShortcut(press('-', { ctrl: true }, 'Minus'))).toBe('view.zoomOut');
+    expect(frameShortcut(press('0', { ctrl: true }, 'Digit0'))).toBe('view.zoomReset');
   });
 
   it('leaves every other key to whatever has focus: a shell\'s interrupt, its line keys, the palette\'s key in a field', () => {
@@ -66,7 +89,7 @@ describe('which command a press runs', () => {
   const state = (over: Partial<CommandState> = {}): CommandState => ({
     attached: true, view: 'quests', list: { shown: true }, panelShown: true, sideShown: false, moved: false, workspaces: [],
     scope: null, circle: null, wired: false, theme: 'system', language: 'en', agents: [], domains: [], knowledge: 'search',
-    session: null, quest: null, record: false, find: true, field: false, refreshing: false, ...over,
+    session: null, quest: null, record: false, find: true, field: false, refreshing: false, zoom: 100, ...over,
   });
   const doors = new Proxy({}, { get: () => vi.fn() }) as never;
   const entries = (over: Partial<CommandState> = {}) => commandTable(state(over), doors, (key) => key);
@@ -92,11 +115,23 @@ describe('which command a press runs', () => {
     expect(commandForKey(entries(), press('N', { ctrl: true, shift: true }, 'KeyN'), inTerminal)).toBeNull();
     // The frame's own keys stay the frame's in both.
     expect(commandForKey(entries(), press('2', { ctrl: true }, 'Digit2'), inTerminal)?.id).toBe('go.sessions');
+    // The zoom too (ZOOM1): a field and a shell have no meaning of their own for it.
+    expect(commandForKey(entries(), press('=', { ctrl: true }, 'Equal'), inField)?.id).toBe('view.zoomIn');
+    expect(commandForKey(entries(), press('-', { ctrl: true }, 'Minus'), inTerminal)?.id).toBe('view.zoomOut');
+    expect(commandForKey(entries({ zoom: 125 }), press('0', { ctrl: true }, 'Digit0'), inTerminal)?.id).toBe('view.zoomReset');
   });
 
   it('takes no key for what does not apply, so the press goes where it would have', () => {
     expect(commandForKey(entries({ find: false }), press('f', { ctrl: true }, 'KeyF'), outside)).toBeNull();
     expect(commandForKey(entries({ list: null }), press('b', { ctrl: true }), outside)).toBeNull();
+  });
+
+  /** ZOOM1: a browser zooms its page itself, so it is left the keys, and the page claims none of them. */
+  it("leaves a browser its own zoom's keys", () => {
+    const browser = entries({ attached: false, zoom: 125 });
+    expect(commandForKey(browser, press('=', { ctrl: true }, 'Equal'), outside)).toBeNull();
+    expect(commandForKey(browser, press('-', { ctrl: true }, 'Minus'), outside)).toBeNull();
+    expect(commandForKey(browser, press('0', { ctrl: true }, 'Digit0'), outside)).toBeNull();
   });
 
   it('claims no key in a browser that a browser keeps for itself', () => {

@@ -29,6 +29,7 @@ const state = (over: Partial<CommandState> = {}): CommandState => ({
   find: false,
   field: false,
   refreshing: false,
+  zoom: 100,
   ...over,
 });
 
@@ -36,6 +37,7 @@ const doors = (): CommandDoors => ({
   ask: vi.fn(), quest: vi.fn(), scope: vi.fn(), add: vi.fn(), import: vi.fn(), workspaceSetup: vi.fn(), sync: vi.fn(),
   wire: vi.fn(), settings: vi.fn(), edit: vi.fn(), find: vi.fn(), searchKnowledge: vi.fn(), copyId: vi.fn(), palette: vi.fn(),
   toggle: vi.fn(), reset: vi.fn(), frame: vi.fn(), notifications: vi.fn(), monitor: vi.fn(), browser: vi.fn(), theme: vi.fn(), language: vi.fn(),
+  zoom: vi.fn(),
   refresh: vi.fn(), go: vi.fn(), knowledge: vi.fn(), agent: vi.fn(), agentPart: vi.fn(), region: vi.fn(), sessionAct: vi.fn(), questAct: vi.fn(), help: vi.fn(),
   quickAsk: vi.fn(), setup: vi.fn(), shortcuts: vi.fn(), update: vi.fn(), about: vi.fn(),
 });
@@ -54,9 +56,10 @@ describe('the menu bar (D152 §1)', () => {
     expect(MENUS.map((menu) => menu.letter).join('')).toBe('WEVGRTH');
   });
 
-  it('gives 30 of its items a key on a shell (the design §6.2)', () => {
+  it('gives 33 of its items a key on a shell (the design §6.2)', () => {
     const onQuests = table({ view: 'quests', list: { shown: true } }).filter((each) => each.menuItem);
-    expect(onQuests.filter((each) => each.keys.length > 0)).toHaveLength(30);
+    // The 31st to the 33rd, View's zoom (ZOOM1).
+    expect(onQuests.filter((each) => each.keys.length > 0)).toHaveLength(33);
   });
 });
 
@@ -78,11 +81,11 @@ describe('each menu (the design §3.2)', () => {
     ]);
   });
 
-  it('View: Commands, the regions, the views, the windows, Theme and Language, Refresh the index', () => {
+  it('View: Commands, the regions, the views, the windows, Theme and Language, the zoom, Refresh the index', () => {
     expect(ids(inMenu(table({ view: 'sessions', list: { shown: true } }), 'view'))).toEqual([
       'view.commands', 'view.list', 'view.panel', 'view.side', 'view.reset', 'view.notifications', 'view.timeline', 'view.workflow',
       'view.console', 'view.monitor', 'view.browser', 'view.theme:system', 'view.theme:light', 'view.theme:dark', 'view.language:en',
-      'view.language:zh', 'view.refresh',
+      'view.language:zh', 'view.zoomIn', 'view.zoomOut', 'view.zoomReset', 'view.refresh',
     ]);
     // NOTIFY2b (the notification design §2.1): *Notifications* is reached from the one table, the menu and the palette alike.
     const notifications = entry(table(), 'view.notifications');
@@ -95,6 +98,30 @@ describe('each menu (the design §3.2)', () => {
     expect(theme.map((each) => [each.id, each.checked])).toEqual([
       ['view.theme:system', false], ['view.theme:light', false], ['view.theme:dark', true],
     ]);
+  });
+
+  /**
+   * ZOOM1 (the UI/UX design §3.11): the window zooms as an editor's does, by VS Code's keys, each the window's wherever the
+   * focus is, a field and the terminal included; a step past either end, and 100% at 100%, is off.
+   */
+  it("View: the zoom, in, out and back to 100%, by an editor's keys", () => {
+    const zoom = (over: Partial<CommandState> = {}) => table(over).filter((each) => each.group === 'zoom');
+    expect(zoom().map((each) => [each.id, each.label, each.keys.map((key) => key.combo)])).toEqual([
+      ['view.zoomIn', 'menu.view.zoomIn', ['Ctrl+=', 'Ctrl++']],
+      ['view.zoomOut', 'menu.view.zoomOut', ['Ctrl+-']],
+      ['view.zoomReset', 'menu.view.zoomReset', ['Ctrl+0']],
+    ]);
+    expect(zoom().flatMap((each) => each.keys).every((key) => key.reach === 'everywhere')).toBe(true);
+    // At 100% there is nothing to reset; at either end, no step past it.
+    expect(zoom().map((each) => each.enabled)).toEqual([true, true, false]);
+    expect(zoom({ zoom: 200 }).map((each) => each.enabled)).toEqual([false, true, true]);
+    expect(zoom({ zoom: 50 }).map((each) => each.enabled)).toEqual([true, false, true]);
+    // The palette lists what applies now, so it offers no reset at 100%.
+    expect(paletteCommands(table()).map((each) => each.id)).not.toContain('view.zoomReset');
+
+    const on = doors();
+    for (const each of commandTable(state({ zoom: 110 }), on, t).filter((row) => row.group === 'zoom')) each.run();
+    expect(vi.mocked(on.zoom).mock.calls).toEqual([['in'], ['out'], ['reset']]);
   });
 
   it('Go: every place but Settings, Ctrl+1 to Ctrl+8 in the bar\'s order, then the regions', () => {
@@ -135,6 +162,7 @@ describe('in a browser (D152 §3.6, D47 §4)', () => {
       'workspace.newAsk', 'workspace.newQuest', 'workspace.scope:*', 'workspace.scope:work', 'workspace.scope:forge',
       'workspace.settings',
     ]);
+    // No zoom (ZOOM1): a browser has its own, which scales its page and never its own frame.
     expect(ids(inMenu(browser, 'view'))).toEqual([
       'view.commands', 'view.list', 'view.theme:system', 'view.theme:light', 'view.theme:dark', 'view.language:en',
       'view.language:zh', 'view.refresh',
@@ -438,13 +466,17 @@ describe('the keys (D152 §3)', () => {
     expect(keysOf('workspace.newConversation')).toEqual(['Ctrl+N']);
     expect(keysOf('workspace.newAsk')).toEqual(['Ctrl+Shift+N']);
     expect(keysOf('help.ask')).toEqual(['F1', 'Ctrl+Alt+I']);
+    // ZOOM1: View › Appearance's zoom in VS Code, Ctrl++ beside Ctrl+= for the layouts and the numpad that type the plus.
+    expect(keysOf('view.zoomIn')).toEqual(['Ctrl+=', 'Ctrl++']);
+    expect(keysOf('view.zoomOut')).toEqual(['Ctrl+-']);
+    expect(keysOf('view.zoomReset')).toEqual(['Ctrl+0']);
   });
 
   it('prints every key by menu for the Keyboard shortcuts drawer, in the reader\'s language', () => {
     const groups = shortcutGroups(table({ view: 'quests', list: { shown: true } }), t);
     // Run prints no key since its *Start a session…* became Workspace's *New conversation…* (NEW1b), so it lists none.
     expect(groups.map((group) => group.menu)).toEqual(['menu.workspace', 'menu.edit', 'menu.view', 'menu.go', 'menu.terminal', 'menu.help']);
-    expect(groups.flatMap((group) => group.rows).length).toBe(30);
+    expect(groups.flatMap((group) => group.rows).length).toBe(33);
     expect(groups[0]!.rows[0]).toEqual({ label: 'menu.workspace.newConversation', keys: ['Ctrl+N'] });
     expect(groups[0]!.rows[1]).toEqual({ label: 'menu.workspace.newAsk', keys: ['Ctrl+Shift+N'] });
   });
