@@ -380,6 +380,12 @@ test('a stage from the gate tree holds its lock through the build, so no CI run 
   source.release!();
   assert.equal(existsSync(lock), false, 'let go once its build has ended');
   source.release!();
+  // A lock that does not read is no run's, as the merge tool reads it.
+  writeFileSync(lock, 'not json');
+  source = gatedSource(repo, gated, { hold: true });
+  assert.equal(source.refusal, null, source.refusal ?? '');
+  assert.equal(JSON.parse(readFileSync(lock, 'utf8')).holder, 'stage');
+  source.release!();
   // Asked without holding, as its test above asks, nothing is taken.
   assert.equal(gatedSource(repo, gated).refusal, null);
   assert.equal(existsSync(lock), false);

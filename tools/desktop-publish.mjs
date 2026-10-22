@@ -945,7 +945,8 @@ export function gatedSource(repoRoot, commit, { alive = pidAlive, hold = false, 
   const lock = readTreeLock(lockFile);
   if (lock && alive(Number(lock.pid))) return { refusal: heldSaid(lock) };
   if (!hold) return { refusal: null, tree, commit: want, home };
-  if (lock) rmSync(lockFile, { force: true });
+  // A lock whose process ended, or that does not read, is no run's, as the merge tool reads it: taken over.
+  rmSync(lockFile, { force: true });
   let fd;
   try {
     mkdirSync(dirname(lockFile), { recursive: true });
