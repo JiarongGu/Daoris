@@ -73,6 +73,9 @@ public sealed class McpHelperToolTests : McpToolsFixture
 
         Assert.Contains("at your next step", urgent);
         Assert.Contains("as your next turn", ordinary);
+        // COAGENT1a (D199 point 5): either is started once the asker's turn has ended, reading its uncommitted work.
+        Assert.All([urgent, ordinary], said => Assert.Contains("starts it once your turn has ended", said));
+        Assert.All([urgent, ordinary], said => Assert.Contains("what you have not committed included", said));
         var kept = Directory.GetFiles(Helpers(), "*.ask.json").Select(file => JsonDocument.Parse(File.ReadAllText(file)).RootElement).ToList();
         var asked = kept.Single(root => root.GetProperty("question").GetString() == "Is the cap read before the loop?");
         Assert.True(asked.GetProperty("urgent").GetBoolean());

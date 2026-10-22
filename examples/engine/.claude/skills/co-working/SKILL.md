@@ -92,11 +92,12 @@ again what is still waiting.
 ## Asking a helper or another agent
 
 - **A helper** is a second reading of *this* repository by another agent: an explanation, a check of your reasoning,
-  a place to look. It reads and changes nothing, takes one turn, and cannot ask anyone itself. The person's rule
-  decides whether it starts at once, waits for their yes, or is refused. Say in your last message what you asked,
-  and end your turn: the answer comes back as your next turn, marked as the helper's claim, to check before relying
-  on it. Ask for it **urgent** only where you keep working and the answer would change the work in flight; then it
-  reaches your next step instead of your turn's end.
+  a place to look. It reads and changes nothing, takes one turn, and cannot ask anyone itself. It reads your work as
+  it stands when your turn ends, what you have not committed included, so it starts only then, and the person's rule
+  decides whether it starts, waits for their yes, or is refused. Say in your last message what you asked, and end
+  your turn: the answer comes back as your next turn, marked as the helper's claim and naming the state of the work it
+  read, to check before relying on it. Asked **urgent**, an answer that comes while a later turn of yours is working
+  reaches its next step instead of that turn's end.
 - **Answering as a helper.** A session started to answer says its answer once, before it ends: what it found, where
   it looked, and what it did not read or could not tell.
 - **Another repository** is asked through a quest, never a post and never an edit: what is needed and why, with the

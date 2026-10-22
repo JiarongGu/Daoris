@@ -80,10 +80,11 @@ public sealed class HelperBox(string? home)
         });
 
         return (id,
-            $"Asked `#{id}`: the driver takes it at its next look. The person's rule for helpers decides whether it starts at once "
+            $"Asked `#{id}`: the driver takes it at its next look, and starts it once your turn has ended, since it reads your work "
+            + "as it stands then, what you have not committed included. The person's rule for helpers decides whether it starts "
             + "or waits for their yes, or is refused; whichever it is, the answer, or the reason there is none, comes back to you "
             + (urgent
-                ? "at your next step while you work, where your door takes words then, and otherwise as your next turn, marked as another agent's."
+                ? "at your next step where a later turn of yours is working when it comes, where your door takes words then, and otherwise as your next turn, marked as another agent's."
                 : "as your next turn, marked as another agent's."));
     }
 
