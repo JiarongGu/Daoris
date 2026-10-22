@@ -17,8 +17,8 @@ namespace Daoris.Driver;
 ///
 /// <para>Text is written as BOM-less UTF-8, and what it says (LF, a final newline) is the caller's.</para>
 ///
-/// <para>A file these writes keep is read beside its writer through <see cref="ReadText"/> (BINDRACE1) or <see cref="ReadBytes"/>, never
-/// plainly: <c>tools/read-shares.mjs</c> finds a plain read of one (READSHARE1).</para>
+/// <para>A file these writes keep is read beside its writer through <see cref="ReadText"/> (BINDRACE1), <see cref="ReadBytes"/> or
+/// <see cref="OpenRead"/>, never plainly: <c>tools/read-shares.mjs</c> finds a plain read of one (READSHARE1).</para>
 /// </remarks>
 public static class AtomicFile
 {
