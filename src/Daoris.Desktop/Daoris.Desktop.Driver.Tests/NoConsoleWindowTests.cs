@@ -19,6 +19,7 @@ public sealed class NoConsoleWindowTests
     {
         var root = SourceRoot();
         var spawns = 0;
+        var inherits = 0;
         var missing = new List<string>();
 
         foreach (var project in Projects)
@@ -42,6 +43,16 @@ public sealed class NoConsoleWindowTests
                     // a call. A spawn without one has no chance to say it.
                     var end = Regex.Match(source[spawn.Index..], @"\}\s*[;)]");
                     var initializer = end.Success ? source.Substring(spawn.Index, end.Index) : "";
+                    // The one exemption, said where it is taken: a console program's child that relays the stdio it was handed
+                    // (the git doors' ssh). With nothing redirected and no window, Windows gives a child a console of its own,
+                    // which cuts that stdio, so the spawn names its reason beside an explicit `false`.
+                    if (initializer.Contains("CreateNoWindow = false", StringComparison.Ordinal)
+                        && initializer.Contains("// inherits its console:", StringComparison.Ordinal))
+                    {
+                        inherits++;
+                        continue;
+                    }
+
                     if (!initializer.Contains("CreateNoWindow = true", StringComparison.Ordinal))
                     {
                         missing.Add($"{Path.GetRelativePath(root, file)} at offset {spawn.Index}");
@@ -51,6 +62,8 @@ public sealed class NoConsoleWindowTests
         }
 
         Assert.True(spawns >= 6, $"expected to find the desktop's spawn sites, found {spawns}");
+        // A second inheriting spawn is a new case to judge, not a pattern to copy.
+        Assert.True(inherits <= 1, $"{inherits} spawns inherit their console; the git doors' ssh is the one exemption");
         Assert.True(missing.Count == 0, "a spawn without CreateNoWindow opens a console from the window:\n" + string.Join('\n', missing));
     }
 

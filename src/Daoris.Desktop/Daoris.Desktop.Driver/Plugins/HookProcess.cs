@@ -104,12 +104,20 @@ public sealed class HookProcess : IHookChannel
         info.Environment["DAORIS_PLUGIN_DATA"] = plugin.Data;
         info.Environment[DaorisHome.Variable] = home;
         Tools.Hand(info, tools, home);
+        // GITAUTH1b (the git-auth design §6.7): the landing's grant goes to the one plugin process started for its push, and no other.
+        if (Granting.Value is { } grant) info.Environment[GitRouting.GrantVariable] = grant;
         // What Windows can start, by the agents' resolver and on the child's own PATH: a `.cmd` (an `az`, an `npm`)
         // is held to the shim rule about its arguments rather than started bare and not found (USE1f).
         info.FileName = HarnessActions.WindowsShim(
             info.FileName, info.ArgumentList, info.Environment.TryGetValue(Tools.PathVariable, out var path) ? path : null);
         return info;
     }
+
+    /// <summary>
+    /// The landing's grant for the plugin process a landing starts (GITAUTH1b; <see cref="GitGrants"/>), set by
+    /// <see cref="LandingPlugins"/> around that one start, so only its process carries <see cref="GitRouting.GrantVariable"/>.
+    /// </summary>
+    internal static readonly AsyncLocal<string?> Granting = new();
 
     /// <summary>
     /// The longest frame read from the plugin's stdout (FABRIC-PERFORM1a, round 2): a plugin that speaks a work point is held to the work

@@ -27,7 +27,9 @@ public sealed class ProcessStartsCensusTests
     private static readonly Dictionary<string, (int Count, string Why)> Allowed = new(StringComparer.Ordinal)
     {
         ["Daoris.Desktop.Driver/Platform/ProcessStarts.cs"] = (1, "the gate itself: the one place the runtime's start is handed in"),
-        ["Daoris.Desktop.Launcher/Program.cs"] = (1, "the launcher is a program of its own, with no window and no bridge: it starts the application once and exits"),
+        ["Daoris.Desktop.Driver/Platform/GitDoors.cs"] = (3, "the git doors (GITAUTH1b), compiled into a program of their own that git starts, "
+            + "with no window and no bridge: the repository's ssh setting asked of git, the ssh, and git's own transport"),
+        ["Daoris.Desktop.Launcher/Program.cs"] = (1,"the launcher is a program of its own, with no window and no bridge: it starts the application once and exits"),
         ["Daoris.Desktop.Driver/Agents/Consoles/PseudoConsole.cs"] = (2, "a terminal's shell under a pseudo-console, which .NET cannot start: "
             + "CreateProcessW, declared and called once; the terminal module runs that start through the gate's RunAsync"),
         ["Daoris.Desktop.Driver/Sessions/Heavy/HeavyStep.cs"] = (3, "a heavy run's gate (HEAVYRUN1a), in the verb's own process, "

@@ -143,6 +143,7 @@ public static class HookFrames
         pullRequest = frame.PullRequest,
         acceptedBy = frame.AcceptedBy,
         tip = frame.Tip,
+        origin = frame.Origin,
     };
 
     /// <summary>

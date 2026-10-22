@@ -337,10 +337,16 @@ public sealed record LandingCommit(string Sha, string Subject);
 /// its own (TREEFOLLOW1) has no ref made for it, so a commit made there after the judgement would otherwise ride the push unseen.
 /// Null in a frame from before it, where a plugin pushes the branch by name.
 /// </param>
+/// <param name="Origin">
+/// <c>origin</c>'s address as the one reader gives it (GITAUTH1b, the git-auth design §4.4 and §6.7; <see cref="GitRemotes"/>): Daoris's
+/// own <c>daoris::</c> prefix taken off. A plugin's tool that reads the checkout's remotes (<c>gh</c>, <c>az</c>) cannot parse the address
+/// git shows under the doors, so the plugin names its repository from this. Filled by the landing before the plugin starts; null where
+/// the checkout has no <c>origin</c>.
+/// </param>
 public sealed record LandingFrame(
     string Repository, string Workspace, string Root, string Branch, string? Base, string? Title,
     string? Quest, string Session, IReadOnlyList<LandingCommit> Commits, string? PullRequest = null,
-    string AcceptedBy = Daoris.Driver.AcceptedBy.Person, string? Tip = null);
+    string AcceptedBy = Daoris.Driver.AcceptedBy.Person, string? Tip = null, string? Origin = null);
 
 /// <summary>
 /// What an advance of a standing branch is judged by (LAND2c, D149 points 2–3), read from git at the press or the look: the

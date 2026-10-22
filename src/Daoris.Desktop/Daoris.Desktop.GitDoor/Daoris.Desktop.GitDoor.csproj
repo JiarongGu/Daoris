@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Daoris's two git doors (GITAUTH1b, D198 point 2; the git-auth design §4.2 and §4.3): one program, `daoris-git-ssh.exe`, which
+       git starts as its ssh, laid out a second time as `git-remote-daoris.exe`, which git runs for a `daoris::` address; `Program`
+       answers by its own file's name. A console program, since git talks to it on its standard streams. Framework-dependent and
+       referencing nothing, as the launcher is, so a door starts small on every remote act: the driver library's own files are
+       compiled in, each using the base library alone. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Daoris.Desktop.GitDoor</RootNamespace>
+    <AssemblyName>daoris-git-ssh</AssemblyName>
+    <Product>Daoris</Product>
+    <Description>Daoris's git doors: the ssh door and the remote helper git starts, judging each remote act</Description>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The doors, the judge, the grants and the routing's names (GITAUTH1b): `GitDoorsTests` holds them. -->
+    <Compile Include="..\Daoris.Desktop.Driver\Platform\GitDoors.cs" Link="GitDoors.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Platform\GitAccessRules.cs" Link="GitAccessRules.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Platform\GitRouting.cs" Link="GitRouting.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Platform\GitFailures.cs" Link="GitFailures.cs" />
+    <!-- The home's table, where the grants and the permissions file are, with the error its refusal is. -->
+    <Compile Include="..\Daoris.Desktop.Driver\Platform\DaorisHome.cs" Link="DaorisHome.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Platform\DriverException.cs" Link="DriverException.cs" />
+  </ItemGroup>
+
+</Project>

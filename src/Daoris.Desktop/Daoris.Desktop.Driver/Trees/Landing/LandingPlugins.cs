@@ -92,12 +92,27 @@ public sealed class LandingPlugins(
         var entry = catalog.Plugins.First(p => string.Equals(p.Manifest.Id, plugin, StringComparison.OrdinalIgnoreCase));
         var id = entry.Manifest.Id;
 
+        // GITAUTH1b (the git-auth design §4.4 and §6.7): the frame names origin as the one reader gives it, and the push its plugin
+        // makes on the person's yes carries a grant for origin's push address, through the door, once, within the bound.
+        frame = frame with { Origin = frame.Origin ?? await GitRemotes.AddressOf(frame.Root, "origin", ct: ct).ConfigureAwait(false) };
+        var pushTo = await GitRemotes.AddressOf(frame.Root, "origin", push: true, ct: ct).ConfigureAwait(false) ?? frame.Origin;
+        var grant = pushTo is null ? null : GitGrants.Write(home, pushTo, _clock());
+
         IHookChannel? channel = null;
         var where = PluginEvents.AtStart;
         var took = System.Diagnostics.Stopwatch.StartNew();
         try
         {
-            channel = await _start(entry, line => Say(id, line), ct).ConfigureAwait(false);
+            HookProcess.Granting.Value = grant;
+            try
+            {
+                channel = await _start(entry, line => Say(id, line), ct).ConfigureAwait(false);
+            }
+            finally
+            {
+                HookProcess.Granting.Value = null;
+            }
+
             _log.Started(id, channel.Points, took.ElapsedMilliseconds, by);
             if (!channel.Points.Contains(HookPoints.Land, StringComparer.Ordinal))
             {
@@ -130,6 +145,8 @@ public sealed class LandingPlugins(
                 await channel.DisposeAsync().ConfigureAwait(false);
                 _log.Stopped(id, PluginEvents.Ended, by);
             }
+
+            GitGrants.Drop(home, grant);
         }
     }
 

@@ -27,6 +27,11 @@
       "summary": "the driver's tests"
     },
     {
+      "id": "Daoris.Desktop.GitDoor",
+      "path": "src/Daoris.Desktop/Daoris.Desktop.GitDoor",
+      "summary": "Daoris's git doors: the ssh door and the remote helper git starts, judging each remote act"
+    },
+    {
       "id": "Daoris.Desktop.Launcher",
       "path": "src/Daoris.Desktop/Daoris.Desktop.Launcher",
       "summary": "Daoris"
@@ -121,6 +126,11 @@
     {
       "from": "Daoris.Desktop.Driver.Tests",
       "to": "Daoris.Desktop.Driver.Host",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Desktop.Driver.Tests",
+      "to": "Daoris.Desktop.GitDoor",
       "kind": "project"
     },
     {

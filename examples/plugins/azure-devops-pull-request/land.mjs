@@ -10,8 +10,9 @@
 // completed and with which commit, asked only at a look that may remove the branch. A squash leaves git no
 // ancestor to see; Azure DevOps knows, and Daoris acts on the answer only where git confirms it.
 //
-// The organization, project and repository are the ones `az` detects from the checkout's own `origin`
-// (`--detect`, on by default), so nothing here names any of them.
+// The organization, project and repository are named from the frame's `origin` (GITAUTH1b, D198), the address Daoris's one
+// reader gives, with `--detect false`: under Daoris's doors the checkout's own remotes read `daoris::https://…`, which `az`
+// cannot parse. An `origin` that is no Azure DevOps address leaves `az` to detect from the remotes, run without Daoris's routing.
 //
 // The wire is JSON-RPC 2.0, one frame per line, on this process's stdin and stdout. Nothing else is on
 // stdout; stderr is the plugin's own console, shown under its name.
@@ -47,7 +48,7 @@ function which(command) {
  * cmd can start (`az` is one). cmd reads the line again, so every argument is quoted, and one holding
  * what cmd would still act on inside quotes (a double quote, a percent sign, a line break) is refused.
  */
-function run(command, args, cwd) {
+function run(command, args, cwd, env = process.env) {
   const found = which(command);
   if (found === null) return { ok: false, out: '', why: `\`${command}\` is not on this machine's PATH` };
 
@@ -59,9 +60,9 @@ function run(command, args, cwd) {
     }
     const line = [found, ...args].map((arg) => `"${arg.replace(/(\\+)$/, '$1$1')}"`).join(' ');
     result = spawnSync(process.env.ComSpec ?? 'cmd.exe', ['/d', '/s', '/c', `"${line}"`],
-      { cwd, encoding: 'utf8', windowsVerbatimArguments: true });
+      { cwd, encoding: 'utf8', windowsVerbatimArguments: true, env });
   } else {
-    result = spawnSync(found, args, { cwd, encoding: 'utf8' });
+    result = spawnSync(found, args, { cwd, encoding: 'utf8', env });
   }
 
   if (result.error) return { ok: false, out: '', why: `\`${command}\` could not run: ${result.error.message}` };
@@ -70,6 +71,50 @@ function run(command, args, cwd) {
     out: result.stdout ?? '',
     why: lastLine(result.stderr) || lastLine(result.stdout) || `it exited ${result.status}`,
   };
+}
+
+/**
+ * This environment without Daoris's routing (GITAUTH1b, D198 point 2; the git-auth design §4.4): under Daoris's doors git shows every
+ * HTTP and HTTPS remote as `daoris::<address>`, which `az`'s detection cannot parse. Where the frame names no repository `az` can be
+ * told, it detects from the checkout's remotes as they are written, run so.
+ */
+function unrouted() {
+  const env = { ...process.env };
+  for (const name of Object.keys(env)) if (/^GIT_CONFIG_(COUNT|KEY_\d+|VALUE_\d+)$/i.test(name)) delete env[name];
+  return env;
+}
+
+/**
+ * The Azure DevOps repository `origin` names (GITAUTH1b): the frame's `origin`, as Daoris's one reader gives it, read in each form
+ * Azure DevOps serves — `https://[user@]dev.azure.com/<org>/<project>/_git/<repo>`, `https://<org>.visualstudio.com/[DefaultCollection/]
+ * <project>/_git/<repo>`, and SSH's `…:v3/<org>/<project>/<repo>`. Null for any other, where `az` detects as before, unrouted.
+ */
+function azureOf(origin) {
+  if (typeof origin !== 'string') return null;
+  const text = origin.trim().replace(/^daoris::/, '');
+  const decode = (part) => { try { return decodeURIComponent(part); } catch { return part; } };
+  let m = /^https?:\/\/(?:[^@/]+@)?dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/?#]+?)\/?$/i.exec(text);
+  if (m) return { organization: `https://dev.azure.com/${m[1]}`, project: decode(m[2]), repository: decode(m[3]) };
+  m = /^https?:\/\/(?:[^@/]+@)?([^./]+)\.visualstudio\.com\/(?:DefaultCollection\/)?([^/]+)\/_git\/([^/?#]+?)\/?$/i.exec(text);
+  if (m) return { organization: `https://${m[1]}.visualstudio.com`, project: decode(m[2]), repository: decode(m[3]) };
+  m = /^(?:ssh:\/\/)?(?:[^@/]+@)?(ssh\.dev\.azure\.com|vs-ssh\.visualstudio\.com)[:/]v3\/([^/]+)\/([^/]+)\/([^/]+?)\/?$/i.exec(text);
+  if (m) {
+    const organization = m[1].toLowerCase() === 'ssh.dev.azure.com' ? `https://dev.azure.com/${m[2]}` : `https://${m[2]}.visualstudio.com`;
+    return { organization, project: decode(m[3]), repository: decode(m[4]) };
+  }
+  return null;
+}
+
+/**
+ * How an `az repos` call is told its repository (GITAUTH1b, the plugin contract): named from `origin` with detection off, the whole
+ * repository where the call takes it (`create`, `list`) and the organization alone where it does not (`show`); else run unrouted.
+ */
+function azure(p, whole) {
+  const named = azureOf(p.origin);
+  if (named === null) return { args: [], env: unrouted() };
+  const args = ['--organization', named.organization, '--detect', 'false'];
+  if (whole) args.push('--project', named.project, '--repository', named.repository);
+  return { args, env: process.env };
 }
 
 /** Words cmd can carry on Windows: quotes made single, percent signs spelled, one line. */
@@ -118,10 +163,12 @@ function address(out) {
  * The state of the pull request at an address, as `az` reads it by the number the address ends in: open (`active`), or the
  * word Azure DevOps gives it, or why it could not say.
  */
-function state(pullRequest, root) {
+function state(p) {
+  const pullRequest = p.pullRequest;
+  const named = azure(p, false);
   const id = /\/pullrequest\/(\d+)\/?$/i.exec(pullRequest)?.[1];
   if (id === undefined) return { error: `${pullRequest} does not end in a pull request's number` };
-  const read = run('az', ['repos', 'pr', 'show', '--id', id, '--output', 'json'], root);
+  const read = run('az', ['repos', 'pr', 'show', '--id', id, '--output', 'json', ...named.args], p.root, named.env);
   if (!read.ok) return { error: read.why };
   try {
     const word = String(JSON.parse(read.out).status ?? '');
@@ -137,7 +184,7 @@ function state(pullRequest, root) {
  * would ride none, and a second one from this branch would carry the first's work again.
  */
 function advance(p) {
-  const read = state(p.pullRequest, p.root);
+  const read = state(p);
   if (read.error) {
     return {
       pushed: false,
@@ -205,7 +252,7 @@ class Failed extends Error {}
 function query(p) {
   let id = typeof p.pullRequest === 'string' ? /\/pullrequest\/(\d+)\/?$/i.exec(p.pullRequest)?.[1] : undefined;
   if (id === undefined) {
-    const listed = run('az', ['repos', 'pr', 'list', '--source-branch', p.branch, '--status', 'all', '--output', 'json'], p.root);
+    const listed = run('az', ['repos', 'pr', 'list', '--source-branch', p.branch, '--status', 'all', '--output', 'json', ...azure(p, true).args], p.root, azure(p, true).env);
     if (!listed.ok) throw new Failed(listed.why);
     const found = json(listed);
     if (found.error) throw new Failed(found.error);
@@ -214,7 +261,7 @@ function query(p) {
     id = String(chosen.pullRequestId);
   }
 
-  const shown = run('az', ['repos', 'pr', 'show', '--id', id, '--output', 'json'], p.root);
+  const shown = run('az', ['repos', 'pr', 'show', '--id', id, '--output', 'json', ...azure(p, false).args], p.root, azure(p, false).env);
   if (!shown.ok) throw new Failed(shown.why);
   const read = json(shown);
   if (read.error) throw new Failed(read.error);
@@ -256,9 +303,11 @@ function land(p) {
 
   const args = ['repos', 'pr', 'create', '--source-branch', p.branch, '--title', safe(p.title ?? p.branch), '--output', 'json'];
   if (p.base) args.push('--target-branch', p.base);
+  const named = azure(p, true);
+  args.push(...named.args);
   // Last, because its values run on to the end of the line.
   args.push('--description', ...description(p));
-  const opened = run('az', args, p.root);
+  const opened = run('az', args, p.root, named.env);
   if (!opened.ok) {
     return {
       pushed: true,

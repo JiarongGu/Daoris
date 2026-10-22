@@ -87,7 +87,8 @@ const POINTS = {
       ],
       "pullRequest": null,
       "acceptedBy": "person",
-      "tip": "3f2a9c1e5b7d4a6f8e0c2b4d6f8a0c2e4b6d8f0a"
+      "tip": "3f2a9c1e5b7d4a6f8e0c2b4d6f8a0c2e4b6d8f0a",
+      "origin": null
     }
   },
   "work/state": {
