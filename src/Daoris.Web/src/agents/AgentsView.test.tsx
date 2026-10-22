@@ -2139,7 +2139,7 @@ describe('how accounts are used', () => {
     await unfold('How accounts are used');
     const fold = screen.getByRole('region', { name: 'How accounts are used' });
     // An account is named by its name everywhere on the page (ACCT2), an old `account-N`-like id where the person gave none.
-    expect(await within(fold).findByText('The next start takes work: it is the only account here that is ready.')).toBeTruthy();
+    expect(await within(fold).findByText("The next start takes work: it is the only one of Daoris's accounts that is ready.")).toBeTruthy();
     expect(within(fold).getByText(/^personal is cooling until .+\.$/)).toBeTruthy();
     expect(within(fold).getByText(/^Claude Code's own sign-in, the account it uses at your terminal, carries none of these starts/)).toBeTruthy();
   });
@@ -2162,7 +2162,7 @@ describe('how accounts are used', () => {
     place();
 
     const accounts = await screen.findByRole('region', { name: 'Accounts' });
-    const said = await within(accounts).findByText('The next start takes work: it is the only account here that is ready.');
+    const said = await within(accounts).findByText("The next start takes work: it is the only one of Daoris's accounts that is ready.");
     // Above the list, beneath its head: the question a person comes with, before the rows that answer it in parts.
     expect(said.compareDocumentPosition(within(accounts).getByRole('list')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(accounts).getByText(/^personal is cooling until .+\.$/)).toBeTruthy();
@@ -2190,7 +2190,7 @@ describe('how accounts are used', () => {
     show(<WorkspaceScopeProvider initial="orbit"><Place notify={() => {}} /></WorkspaceScopeProvider>);
 
     const accounts = await screen.findByRole('region', { name: 'Accounts' });
-    const said = await within(accounts).findByText('The next start takes work: it is the only account here that is ready.');
+    const said = await within(accounts).findByText("The next start takes work: it is the only one of Daoris's accounts that is ready.");
     expect(said.parentElement!.textContent).not.toMatch(/orbit/);
   });
 

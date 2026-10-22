@@ -317,9 +317,9 @@ describe('the next start', () => {
 
     const row = screen.getByText('Next start').closest('div.\\@container') as HTMLElement;
     expect(row).toBeTruthy();
-    expect(within(row).getByText(/^The next start takes work@example\.invalid: it comes first in the list\. Its cool-off ended at .+\.$/)).toBeTruthy();
+    expect(within(row).getByText(/^The next start takes work@example\.invalid: it comes first in the order\. Its cool-off ended at .+\.$/)).toBeTruthy();
     expect(within(row).getByText(/^spare@example\.invalid is cooling until .+\.$/)).toBeTruthy();
-    expect(within(row).getByText(/^Claude Code's own sign-in, the account it uses at your terminal, carries none of these starts/)).toBeTruthy();
+    expect(within(row).getByText("Claude Code's own sign-in, the account it uses at your terminal, carries none of these starts, which run only on Daoris's accounts.")).toBeTruthy();
     // Its terminal twin: `profile use` names the steps, since the CLI reads no session record to name the account; no workspace.
     expect(row.textContent).toContain('daoris agent profile use claude-code');
     expect(row.textContent).not.toContain('--workspace');
@@ -332,7 +332,7 @@ describe('the next start', () => {
     unmount();
 
     wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ next: { account: null, reason: 'waits', when: OWN_COOLING.until, others: [{ account: null, hold: 'cooling', until: OWN_COOLING.until }] } })} accounts={CHOICES} acts={acts()} />);
-    expect(screen.getByText(/^No account here is ready, so the next start waits until .+\.$/)).toBeTruthy();
+    expect(screen.getByText(/^None of Daoris's accounts is ready, so the next start waits until .+\.$/)).toBeTruthy();
     expect(screen.getByText(/^the tool's own sign-in is cooling until .+\.$/)).toBeTruthy();
     expect(screen.queryByText(/carries none of these starts/)).toBeNull();
   });
@@ -347,7 +347,7 @@ describe('the next start', () => {
   it('says a list\'s wait with the sentence that the tool\'s own sign-in carries none of its starts', () => {
     wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ list: ['account-1'], begins: 'account-1', next: { account: null, reason: 'waits', when: OWN_COOLING.until, others: [{ account: 'account-1', hold: 'cooling', until: OWN_COOLING.until }] } })} accounts={CHOICES} acts={acts()} />);
 
-    expect(screen.getByText(/^No account here is ready, so the next start waits until .+\.$/)).toBeTruthy();
+    expect(screen.getByText(/^None of Daoris's accounts is ready, so the next start waits until .+\.$/)).toBeTruthy();
     expect(screen.getByText(/^work@example\.invalid is cooling until .+\.$/)).toBeTruthy();
     expect(screen.getByText(/carries none of these starts/)).toBeTruthy();
   });

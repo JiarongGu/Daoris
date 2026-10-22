@@ -384,7 +384,7 @@ describe('the next start, above the accounts', () => {
       },
     });
     expect(nextStartSaid(scope, labelOf)).toEqual({
-      takes: `No account here is ready, so the next start waits until ${moment(until)}. Signing in to account-2 starts it sooner.`,
+      takes: `None of Daoris's accounts is ready, so the next start waits until ${moment(until)}. Signing in to account-2 starts it sooner.`,
       held: null,
     });
   });

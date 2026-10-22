@@ -24,7 +24,6 @@
   "harness.doors": "Ways in",
   "harness.wire.pipe": "direct",
   "harness.wire.acp": "protocol",
-  "harness.profile.signInNew": "Sign in to another account",
   "harness.profile.addKey": "Add an API key",
   "harness.profile.keyLabel": "API key for {{tool}}",
   "harness.profile.keyPlaceholder": "paste the key",

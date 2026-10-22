@@ -795,6 +795,40 @@ export const TrustAsking: StoryObj = {
   ),
 };
 
+/**
+ * A hold on your own sign-in's file (POOL1c, D197 point 3; the account-pool design §4.3): a conversation that began there goes
+ * on there, and Daoris writes nothing in that file, so the question shows the folder and one sentence, with no grant.
+ */
+export const TrustOnYourOwnSignIn: StoryObj = {
+  render: () => (
+    <div className="max-w-xl">
+      <TrustAsk hold={{ ...HOLD, trustFile: 'C:/somewhere/home/.claude.json', own: true }} onGrant={() => {}} onCancel={() => {}} />
+    </div>
+  ),
+};
+
+/** The same in 中文, in dark. */
+export const TrustOnYourOwnSignInChineseDark: StoryObj = { ...TrustOnYourOwnSignIn, decorators: [chinese, dark] };
+
+/** Its row in What needs you: the sentence, and nothing to press but its door. */
+export const TrustRowOnYourOwnSignIn: StoryObj = {
+  render: () => (
+    <Main width={720}>
+      <ul className="m-0 grid list-none gap-1 border border-line bg-raised p-0 py-2">
+        <AttentionRow
+          item={{
+            ...TRUST_ROW, id: 'own',
+            detail: "This conversation goes on in your own sign-in, outside Daoris's accounts, so Daoris writes nothing in its file: trust the folder with the tool itself, at your terminal.",
+            trust: { folder: HOLD.folder, trustFile: 'C:/somewhere/home/.claude.json', own: true },
+          }}
+          acts={ACTS}
+          onOpen={() => {}}
+        />
+      </ul>
+    </Main>
+  ),
+};
+
 /** An intake's room held for trust, with the grant being written: the press is held. */
 export const TrustGranting: StoryObj = {
   render: () => (

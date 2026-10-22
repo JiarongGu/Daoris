@@ -378,7 +378,8 @@ function passedBy(near: AccountScope['near'], account: string | null | undefined
 
 /**
  * Why the next start takes its account, as a clause (TOOL6e): the walk's step, naming the account it weighed it against as a
- * person calls it. The list's order says the default, the list's first, or the account it comes before. An account passed
+ * person calls it. The order says its first or the account it comes before (the set's, D197 §4; an older answer's default
+ * is said as one). An account passed
  * says what passed it (SWITCH1b-iii); step 5 is the most room under the curve, and the week's pace only with the switch off
  * (the switch design §3), where the page's `early` is false.
  */

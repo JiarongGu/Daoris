@@ -24,7 +24,6 @@
   "harness.doors": "接入方式",
   "harness.wire.pipe": "直连",
   "harness.wire.acp": "协议",
-  "harness.profile.signInNew": "登录另一个账户",
   "harness.profile.addKey": "添加 API 密钥",
   "harness.profile.keyLabel": "{{tool}} 的 API 密钥",
   "harness.profile.keyPlaceholder": "粘贴密钥",

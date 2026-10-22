@@ -135,9 +135,9 @@ describe('what is said', () => {
       .toBe('The next start takes work@example.invalid: Daoris started on it less recently than account-2.');
     expect(nextLine(next({}), list, labelOf)).toBe('The next start takes work@example.invalid: it is the default here.');
     expect(nextLine(next({}), scope({ list: ['account-1', 'account-2'], begins: 'account-1' }), labelOf))
-      .toBe('The next start takes work@example.invalid: it comes first in the list.');
+      .toBe('The next start takes work@example.invalid: it comes first in the order.');
     expect(nextLine(next({ account: 'account-3', over: 'account-2' }), list, labelOf))
-      .toBe('The next start takes account-3: it comes before account-2 in the list.');
+      .toBe('The next start takes account-3: it comes before account-2 in the order.');
     expect(nextLine(next({ account: 'account-2', reason: 'fewest', over: 'account-1' }), list, labelOf))
       .toBe('The next start takes account-2: it runs fewer of Daoris\'s sessions than work@example.invalid.');
     // What passes an account (SWITCH1b-iii, D165 point 2): its own near entry says which, else all three are named.
@@ -161,19 +161,26 @@ describe('what is said', () => {
     expect(nextLine(next({ account: 'account-3', reason: 'notStarted' }), list, labelOf))
       .toBe('The next start takes account-3: Daoris has not started on it yet.');
     expect(nextLine(next({ account: 'account-2', reason: 'onlyReady', over: null }), list, labelOf))
-      .toBe('The next start takes account-2: it is the only account here that is ready.');
+      .toBe("The next start takes account-2: it is the only one of Daoris's accounts that is ready.");
     expect(nextLine(next({ account: 'account-2', reason: 'named', over: null }), list, labelOf))
-      .toBe('The next start takes account-2: it is the one account used here.');
+      .toBe("The next start takes account-2: it is the only one of Daoris's accounts.");
     expect(nextLine(next({ account: null, reason: 'own', over: null }), scope(), labelOf))
       .toBe("The next start runs in the tool's own home, which is nobody's sign-in: nothing here names an account.");
     expect(nextLine(next({ account: null, reason: 'noAccount', over: null }), scope(), labelOf))
       .toBe('No Daoris account is signed in for it; its starts wait until you sign in.');
     expect(nextLine(next({ account: null, reason: 'waits', over: null, when: '2026-10-03T16:02:00Z' }), list, labelOf))
-      .toMatch(/^No account here is ready, so the next start waits until .+\.$/);
+      .toMatch(/^None of Daoris's accounts is ready, so the next start waits until .+\.$/);
     expect(nextLine(next({ account: null, reason: 'waits', over: null }), list, labelOf))
-      .toBe('No account here is ready, and none comes ready by itself: the next start waits for you.');
+      .toBe("None of Daoris's accounts is ready, and none comes ready by itself: the next start waits for you.");
 
     await i18n.changeLanguage('zh');
+    // POOL1c (D197 §4): the order is the set's, said as the order, never a list a scope holds.
+    expect(nextLine(next({}), scope({ list: ['account-1', 'account-2'], begins: 'account-1' }), labelOf))
+      .toBe('下一次启动使用 work@example.invalid：它在顺序中排第一。');
+    expect(nextLine(next({ account: 'account-2', reason: 'onlyReady', over: null }), list, labelOf))
+      .toBe('下一次启动使用 account-2：它是 Daoris 的账户中唯一就绪的。');
+    expect(nextLine(next({ account: null, reason: 'waits', over: null }), list, labelOf))
+      .toBe('Daoris 的账户都没有就绪，也不会自行就绪：下一次启动在等你处理。');
     expect(nextLine(next({ reason: 'leastRecent' }), list, labelOf))
       .toBe('下一次启动使用 work@example.invalid：Daoris 在它上面启动的时间比 account-2 更早。');
     expect(nextLine(next({ account: 'account-2', reason: 'near', over: 'account-1' }), near('number'), labelOf))
@@ -224,9 +231,9 @@ describe('what is said', () => {
     ];
 
     expect(nextLine(waits('2026-10-06T09:00:00Z', passed), list, labelOf)).toMatch(
-      /^No account here is ready, so the next start waits until .+\. Signing in to work@example\.invalid, account-2 starts it sooner\.$/);
+      /^None of Daoris's accounts is ready, so the next start waits until .+\. Signing in to work@example\.invalid, account-2 starts it sooner\.$/);
     expect(nextLine(waits(null, passed.slice(1)), list, labelOf)).toBe(
-      'No account here is ready, and none comes ready by itself: the next start waits for you. Signing in to '
+      "None of Daoris's accounts is ready, and none comes ready by itself: the next start waits for you. Signing in to "
       + 'work@example.invalid, account-2 starts it.');
     expect(nextLine(waits('2026-10-06T09:00:00Z', passed.slice(0, 1)), list, labelOf)).not.toMatch(/Signing in/);
 
@@ -246,7 +253,7 @@ describe('what is said', () => {
     const waits = (when: string | null, held: NextStart['others']): NextStart => ({ account: null, reason: 'waits', over: null, when, others: held });
 
     expect(nextLine(waits(null, others), list, labelOf, isKey)).toBe(
-      'No account here is ready, and none comes ready by itself: the next start waits for you. '
+      "None of Daoris's accounts is ready, and none comes ready by itself: the next start waits for you. "
       + 'Signing in to account-2 starts it. A new API key in place of key-1 starts it.');
     expect(nextLine(waits(null, others.slice(0, 1)), list, labelOf, isKey)).not.toMatch(/Signing in/);
     expect(nextLine(waits('2026-10-06T09:00:00Z', others.slice(0, 1)), list, labelOf, isKey)).toMatch(
