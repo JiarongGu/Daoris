@@ -353,6 +353,13 @@ public sealed class Driver(
         init => Context.HelperChoices = value;
     }
 
+    /// <summary>The measurements a test's stand-in agents are admitted by (COAGENT1b), never a production start's. Written through to the context.</summary>
+    internal IReadOnlyList<PartnerMeasurement>? PartnerMeasured
+    {
+        get => Context.PartnerMeasured;
+        init => Context.PartnerMeasured = value;
+    }
+
     /// <summary>How a piece's agent is chosen and admitted (COAGENT1b): <see cref="PartnerChoice.ChooseAsync"/>, unless a test hands in a choice. Written through to the context.</summary>
     internal Func<PartnerAsk, PriorSession, CancellationToken, Task<ReviewerChoice>>? PartnerChoices
     {

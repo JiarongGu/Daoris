@@ -47,7 +47,7 @@ public sealed class PartnerJudgeTests
     [Fact]
     public async Task Nothing_is_admitted_without_a_measured_row_and_an_unnamed_agent_is_never_substituted()
     {
-        var admitted = PartnerChoice.Admit(new ReviewerChoice("codex-acp", "another-maker", null, "codex-acp reads it."));
+        var admitted = PartnerChoice.Admit(new ReviewerChoice("codex-acp", "another-maker", null, "codex-acp reads it."), PartnerMeasurements.Rows, production: true);
         Assert.Equal((false, PartnerWhy.NotMeasured), (admitted.Chosen, admitted.Code));
 
         var unnamed = await PartnerChoice.ChooseAsync(null!, Ask(agent: null), "claude-code-acp", DriverConfig.Empty, null);

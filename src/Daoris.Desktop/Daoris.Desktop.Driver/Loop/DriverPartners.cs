@@ -165,7 +165,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
 
         var choice = _context.PartnerChoices is { } choose
             ? await choose(ask, lead, ct).ConfigureAwait(false)
-            : await PartnerChoice.ChooseAsync(_context.Harnesses, ask, lead.Adapter, _context.Config, lead.Workspace, ct).ConfigureAwait(false);
+            : await PartnerChoice.ChooseAsync(_context.Harnesses, ask, lead.Adapter, _context.Config, lead.Workspace, _context.PartnerMeasured, ct).ConfigureAwait(false);
         if (!choice.Chosen)
         {
             // A cool-off or a sign-in waits, tried again at a later look; a refusal by the sheet is said and ends the piece.
@@ -287,7 +287,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         if (root is null) return Refuse(ask, PartnerWhy.CopyFailed, state.Agent, files);
         var choice = _context.PartnerChoices is { } choose
             ? await choose(ask, lead, ct).ConfigureAwait(false)
-            : await PartnerChoice.ChooseAsync(_context.Harnesses, ask, lead.Adapter, _context.Config, lead.Workspace, ct).ConfigureAwait(false);
+            : await PartnerChoice.ChooseAsync(_context.Harnesses, ask, lead.Adapter, _context.Config, lead.Workspace, _context.PartnerMeasured, ct).ConfigureAwait(false);
         if (!choice.Chosen) return Refuse(ask, choice.Code ?? PartnerWhy.NotMeasured, ask.Agent, files);
         return await RunPieceAsync(ask, lead, root, choice, files, ct).ConfigureAwait(false);
     }
@@ -497,6 +497,15 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
             return new PartnerPassRun(null, $"held  partner for piece `{piece}`: {error.Message}") { Code = PartnerWhy.NotMeasured };
         }
 
+        // Admission at the start (D199 point 4): the whole effective configuration this start would hand, held to a measured row, before
+        // anything of the partner's is made. A production start reads no stand-in's row.
+        var (rules, hardDeny, guarded) = _driver.PartnerHanded(ask.Lead.Workspace, ask.Lead.Repository ?? "");
+        var configuration = PartnerConfigurations.Of(adapter, selection.Version, ask.Copy, rules, hardDeny, guarded, ThisSystem());
+        if (PartnerMeasurements.Admitting(_context.PartnerMeasured ?? PartnerMeasurements.Rows, configuration, production: _context.PartnerMeasured is null) is null)
+        {
+            return new PartnerPassRun(null, $"refused  partner for piece `{piece}`: {PartnerMeasurements.Refused(configuration)}") { Code = PartnerWhy.NotMeasured };
+        }
+
         if (await PieceCopy.MakeAsync(ask.Root, ask.Copy, ask.Ask.Base, ct).ConfigureAwait(false) is { } failed)
         {
             return new PartnerPassRun(null, $"held  partner for piece `{piece}`: {failed.Why}") { Code = failed.Code };
@@ -522,7 +531,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         ask.Opened?.Invoke(sessionId, PieceJobs.NameOf(piece));
         try
         {
-            return await TurnAsync(ask, adapter, selection, agent, sessionId, job, launcher, ct).ConfigureAwait(false);
+            return await TurnAsync(ask, adapter, selection, agent, sessionId, job, launcher, configuration, ct).ConfigureAwait(false);
         }
         finally
         {
@@ -534,7 +543,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
 
     private async Task<PartnerPassRun> TurnAsync(
         PartnerPassAsk ask, ISessionAdapter adapter, HarnessSelection selection, string agent, string sessionId, ProcessJob job, string launcher,
-        CancellationToken ct)
+        PartnerConfiguration configuration, CancellationToken ct)
     {
         var service = _context.Service;
         var home = _context.Home;
@@ -576,9 +585,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
             // What it may do: the person's composition for its repository under the partner's rules (`PartnerPermissions`), held to its
             // copy by the tree guard; the connector's host refuses the same tools by the record's role whatever rules its agent takes.
             var handedRules = _driver.HandRules(adapter, info, sessionId, ask.Lead.Workspace, repository, tree: ask.Copy, kept: null, partner: true);
-            // The effective configuration it was handed (§3.3): what M2 measures in, and what admission compares with a measured row.
-            var (rules, hardDeny, guarded) = _driver.PartnerHanded(ask.Lead.Workspace, repository);
-            var configuration = PartnerConfigurations.Of(adapter, selection.Version, ask.Copy, rules, hardDeny, guarded, ThisSystem());
+            // The effective configuration it was handed (§3.3), admitted by a measured row before the copy was made: what M2 measures in.
             _driver.Log?.Info(
                 "partner.started", ("session", sessionId), ("piece", piece), ("agent", configuration.Agent),
                 ("version", configuration.HarnessVersion ?? ""), ("posture", configuration.Posture ?? ""), ("roots", configuration.WritableRoots),
