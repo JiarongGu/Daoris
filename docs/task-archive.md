@@ -19421,3 +19421,11 @@ tool itself. `agent trust` with none named grants each account of the set in its
 `RosterReadTests`, `ProbeRaceTests`, `WorkspaceTrustTests`, `AgentsTextTests`' trust rows, `DriverModuleDriverTests`,
 `AttentionStateSliceTests`, `DriverModuleAgentsTests`. Not seen failing first, and no window was looked at. Detail: D197's POOL1a3
 note. On Opus.
+
+## SWAPLEASE2 — a crashed swap's recovery under the lease (2026-10-22, D171)
+
+> - [ ] **SWAPLEASE2 — a crashed swap's recovery under the lease** (desktop launcher). `InstallSwap.Recover` rolls a crashed swap back outside the lease; only `Run` holds it. The RPC design §5. Proof: a source-reading row and a `StagedBuildTests` row.
+
+**Outcome** 2026-10-22: a roll-back from the journal holds the install home's lease as a swap (`InstallSwap.LeaseHome`), at the
+launcher's start and after its error; an act holding it past the wait leaves the journal for the next start, and the launcher starts
+nothing on `app/` and names the holder (`HeldBy`). Finishing a confirmed swap takes none. Detail: D171's SWAPLEASE2 note. On Opus.

@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- An update that stopped part way is now put back only while nothing else acts on Daoris's home: a terminal's `daoris-driver`
+  command changing it is waited for, up to thirty seconds. If it still holds the home, Daoris does not start on a half-replaced
+  application; it says which command held the home and asks you to start it again once that has finished.
 - A workflow version saved as a graph now says which checks its sessions run: its `claimed` node's `checks` (`light` or
   `heavy-at-end`) is taken by every session of a run bound to it, its first included, in place of the repository's choice, and its
   `callMinutes` sets how long one call may run under *Light* before the session is told (20 by default). A value written another

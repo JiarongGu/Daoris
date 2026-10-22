@@ -18,7 +18,7 @@ public sealed class HeldMoveException(SwapHold hold, Exception refusal)
 /// <remarks>
 /// <para>Every effect on a process is handed in, so the tests move real folders in a scratch install and start nothing.</para>
 ///
-/// <para><b>Compiled into the launcher too</b>, beside <see cref="StagedBuild"/> (<c>Daoris.Desktop.Launcher.csproj</c>): so it uses nothing but the base library.</para>
+/// <para><b>Compiled into the launcher too</b>, beside <see cref="StagedBuild"/> and <see cref="HomeLease"/> (<c>Daoris.Desktop.Launcher.csproj</c>): so it uses nothing but the base library and those.</para>
 /// </remarks>
 public sealed class InstallSwap(
     string install,
@@ -49,6 +49,21 @@ public sealed class InstallSwap(
 
     /// <summary>The move itself, from and to full paths, and whether a file may be written over; a test hands in one that refuses.</summary>
     public Action<string, string, bool>? Mover { get; init; }
+
+    /// <summary>
+    /// The home whose lease a roll-back from the journal holds while it moves (SWAPLEASE2, the terminal RPC design §5), as the
+    /// launcher holds it around <see cref="Run"/>: the install's <c>data/</c>. Null takes none, as a scratch install's tests do.
+    /// </summary>
+    public string? LeaseHome { get; init; }
+
+    /// <summary>How long a roll-back waits for another act's hold on <see cref="LeaseHome"/>; the lease's own wait.</summary>
+    public TimeSpan LeaseWithin { get; init; } = HomeLease.Wait;
+
+    /// <summary>
+    /// Who held <see cref="LeaseHome"/> for the whole of the wait when the last <see cref="Recover"/> had a swap to put back,
+    /// and put nothing back; null when none did.
+    /// </summary>
+    public LeaseHolder? HeldBy { get; private set; }
 
     /// <summary>Every move this swap found held, journalled with each write (SWAP2): the measurement the wait is sized by.</summary>
     private readonly List<SwapHold> _holds = [];
@@ -144,29 +159,55 @@ public sealed class InstallSwap(
     /// was nothing to put right; either way the launcher goes on as it would have. A roll-back that stopped part way left
     /// its reason in the journal, and is finished with it (SWAP2).
     /// </summary>
+    /// <remarks>
+    /// A roll-back moves <c>app/</c> as the swap does, so it holds <see cref="LeaseHome"/>'s lease as the swap does (SWAPLEASE2),
+    /// and an act holding the home for the whole of the wait leaves it to the next start, said in <see cref="HeldBy"/>. Finishing
+    /// a confirmed swap moves nothing, and waits for no one: the new application holds the home for its life. A start with
+    /// nothing to put right takes no lease.
+    /// </remarks>
     public string? Recover(bool appRunning)
     {
-        var record = StagedBuild.ReadJournal(install);
-        _holds.Clear();
-        _holds.AddRange(record?.Holds ?? []);
-        switch (record?.Phase)
+        HeldBy = null;
+        var phase = StagedBuild.ReadJournal(install)?.Phase;
+        if (phase is not (SwapPhase.Swapping or SwapPhase.Started or SwapPhase.Confirmed)
+            || (phase is SwapPhase.Started && appRunning))
         {
-            case SwapPhase.Swapping:
-                Undo(record, record.Reason ?? "interrupted",
-                    record.Detail ?? "the launcher stopped while it was swapping; the moves it made were put back.");
-                return SwapPhase.RolledBack;
+            return null;
+        }
 
-            case SwapPhase.Started when !appRunning:
-                Undo(record, record.Reason ?? "exited",
-                    record.Detail ?? "the new build never said it came up, and nothing of it runs; the build before it was put back.");
-                return SwapPhase.RolledBack;
+        HomeLease? lease = null;
+        if (phase is not SwapPhase.Confirmed && LeaseHome is { } home
+            && (lease = HomeLease.Await(home, LeaseKind.Swap, null, LeaseWithin, out var holder, sleep: Sleep, clock: () => Now)) is null)
+        {
+            HeldBy = holder;
+            return null;
+        }
 
-            case SwapPhase.Confirmed:
-                Finish(record);
-                return SwapPhase.Installed;
+        using (lease)
+        {
+            // Read again under the lease: what another launcher put right while this one waited is not put right twice.
+            var record = StagedBuild.ReadJournal(install);
+            _holds.Clear();
+            _holds.AddRange(record?.Holds ?? []);
+            switch (record?.Phase)
+            {
+                case SwapPhase.Swapping:
+                    Undo(record, record.Reason ?? "interrupted",
+                        record.Detail ?? "the launcher stopped while it was swapping; the moves it made were put back.");
+                    return SwapPhase.RolledBack;
 
-            default:
-                return null;
+                case SwapPhase.Started when !appRunning:
+                    Undo(record, record.Reason ?? "exited",
+                        record.Detail ?? "the new build never said it came up, and nothing of it runs; the build before it was put back.");
+                    return SwapPhase.RolledBack;
+
+                case SwapPhase.Confirmed:
+                    Finish(record);
+                    return SwapPhase.Installed;
+
+                default:
+                    return null;
+            }
         }
     }
 
