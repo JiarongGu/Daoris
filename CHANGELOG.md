@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- Ask Daoris now keeps the asks and quests each conversation published. Under the conversation's head, *Published from this
+  conversation* says what stands (open, taken, done, declined, and what waits on you first); opened, each ask lists the quests it
+  became, a taken quest names its session's state, and each row opens its record on Quests in one press. Their states move as the
+  quests do, with nothing asked again on a timer, and the list is kept across a restart. What an Apply did is now said in the
+  conversation as Daoris's word, naming what it published, never as yours; *Not now* is still yours. A *Go there* card is drawn
+  again when its quest is taken, so its press no longer answers that the plan changed. In English and 中文.
 - A machine that left a workspace you share through a remote, or whose Daoris store was deleted, no longer keeps its workflows from
   closing their quests. The workspace's *Setup*, under *Remote and reach*, now lists *Machines not declared*: each machine the remote
   counts that has not said it knows a workflow that closes its quests. *Retire* takes one out of what the remote counts, and the
