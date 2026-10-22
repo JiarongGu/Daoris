@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A start on an agent with one Daoris account no longer asks that account's usage first, which ran the agent once more and took
+  about two seconds, though it could not change where the start ran; nor does a conversation going on in your own sign-in. With two
+  accounts or more a start still asks one it has no recent reading of, since the reading can choose between them. The account's
+  usage is still read when you press *Read again* on the agent or on that account.
 - The window zooms as a code editor's does. Ctrl+wheel, Ctrl+= (or Ctrl++), Ctrl+- and Ctrl+0, and View's *Zoom in*, *Zoom out*
   and *Reset zoom*, make the content larger or smaller in steps from 50% to 200%, while the title bar, its menus and window
   buttons, the bar of places on the left and the status bar keep their size. The level shows for a moment over the content as it
