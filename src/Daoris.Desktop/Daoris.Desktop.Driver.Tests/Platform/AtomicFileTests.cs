@@ -94,6 +94,23 @@ public sealed class AtomicFileTests : IDisposable
         Assert.Throws<FileNotFoundException>(() => AtomicFile.ReadText(Path.Combine(_folder, "q2.json")));
     }
 
+    /// <summary>READSHARE1: a file's bytes are read whole while the move that landed it still holds it.</summary>
+    [Fact]
+    public void A_file_s_bytes_are_read_whole_while_its_move_into_place_still_holds_it()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var path = Path.Combine(_folder, "upload.bin");
+        AtomicFile.WriteBytes(path, [1, 2, 3]);
+
+        using (MoveHold.Take(path))
+        {
+            Assert.Throws<IOException>(() => File.ReadAllBytes(path));
+            Assert.Equal([1, 2, 3], AtomicFile.ReadBytes(path));
+        }
+
+        Assert.Throws<FileNotFoundException>(() => AtomicFile.ReadBytes(Path.Combine(_folder, "missing.bin")));
+    }
+
     [Fact]
     public void Text_is_written_without_a_byte_order_mark()
     {
