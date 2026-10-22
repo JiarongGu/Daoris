@@ -6,35 +6,11 @@ namespace Daoris.Desktop.Driver.Tests;
 /// FABRIC-PERFORM1i (the fabric events design §C4, §E2, §E10): an observed plugin node reached by its believed event, over a stand-in port and
 /// a stand-in read of the tips. The event is bound to the frame actually sent to its process and to one observed node of its unit's graph,
 /// believed by the five rules with its tip read fresh, accepted on the node's binding and written before its wire fires; a replay mints
-/// nothing, an older or conflicting word is late, and the person's stop or skip stands.
+/// nothing, an older or conflicting word is late, and the person's stop or skip stands. A graph run's observed node is
+/// <see cref="ObservedRunEventTests"/>'.
 /// </summary>
-public sealed partial class ObservedEventTests : IDisposable
+public sealed class ObservedEventTests : ObservedEventFixture
 {
-    private const string Plugin = "acme.deploy";
-    private const string A = "engine~feature-a";
-    private const string B = "engine~feature-b";
-    private const string C0 = "0000000000000000000000000000000000000000";
-    private const string C1 = "1111111111111111111111111111111111111111";
-    private const string C2 = "2222222222222222222222222222222222222222";
-
-    /// <summary>The plugin's observed step, and a performed one a wire starts after it.</summary>
-    private static readonly NodeDeclaration Deployed = new(Plugin + "/deployed", Plugin + "/deployed", 1, NodeReach.Observed);
-
-    private static readonly NodeDeclaration Notify = new(Plugin + "/notify", Plugin + "/notify", 1, NodeReach.Performed)
-    {
-        Perform = new NodePerform(Idempotent: true, Reconcile: true, Transient: []),
-    };
-
-    /// <summary>A repository's branches under a landing rule whose cycle observes the deploy and then notifies.</summary>
-    private const string Observing = """
-        { "landings": { "engine": { "form": "merge", "cycle": {
-            "schemaVersion": 2, "entries": ["deployed"], "end": "notify",
-            "nodes": [
-              { "id": "deployed", "kind": "acme.deploy/deployed", "version": 1, "reach": "observed" },
-              { "id": "notify", "kind": "acme.deploy/notify", "version": 1, "reach": "performed" } ],
-            "wires": [{ "id": "w1", "kind": "after", "from": "deployed", "to": "notify" }] } } } }
-        """;
-
     /// <summary>Observed work alone: the deploy and nothing performed.</summary>
     private const string ObservedOnly = """
         { "landings": { "engine": { "form": "merge", "cycle": {
@@ -51,52 +27,6 @@ public sealed partial class ObservedEventTests : IDisposable
               { "id": "deployed", "kind": "acme.deploy/deployed", "version": 1, "reach": "observed" } ],
             "wires": [{ "id": "w1", "kind": "after", "from": "again", "to": "deployed" }] } } } }
         """;
-
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-observed-" + Guid.NewGuid().ToString("N")[..8]);
-
-    private readonly ObservedPort _port = new();
-
-    private readonly Dictionary<string, string> _tips = new(StringComparer.Ordinal) { ["feature/a"] = C1, ["feature/b"] = C1 };
-
-    private readonly List<(string Root, int Branches)> _tipReads = [];
-
-    private DateTimeOffset _now = new(2026, 10, 18, 9, 0, 0, TimeSpan.Zero);
-
-    private IReadOnlyList<WorkUnit> _units = [BranchUnit(A, "feature/a")];
-
-    public void Dispose()
-    {
-        if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
-    }
-
-    private NodeRecordFiles Files => new(_home, () => true);
-
-    private NodeRuntime Runtime() => new(Files, _port, () => _now, () => true);
-
-    /// <summary>A branch unit as the inventory gives it: its revision the end fact's (<paramref name="revision"/>), which may lag the branch.</summary>
-    private static WorkUnit BranchUnit(string id, string branch, string revision = C1) => new(id, WorkUnitKind.Branch,
-        new WorkOwner("engine", "default", "session-branches.json", WorkRecord.DriverWriter), new WorkSubject(branch, revision),
-        new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "open"), []);
-
-    private NodeRuntimeLook Look(string config, bool whole = true) => new(DriverConfig.Parse(config), whole)
-    {
-        Units = _ => Task.FromResult(new NodeUnitsRead(_units, new Dictionary<string, string> { ["engine"] = "checkout" })),
-        Steps = () => [Deployed, Notify],
-        Tips = (root, branches, _) =>
-        {
-            _tipReads.Add((root, branches.Count));
-            return Task.FromResult<IReadOnlyDictionary<string, string>>(branches.Where(_tips.ContainsKey).ToDictionary(branch => branch, branch => _tips[branch]));
-        },
-    };
-
-    private Task<NodeRuntimePass> PassAsync(NodeRuntime runtime, string config = Observing, bool whole = true) =>
-        runtime.PassAsync(Look(config, whole), CancellationToken.None);
-
-    private NodeRecord Record(string unit = A) => Files.Read(unit)!;
-
-    private WorkStepHeard Event(string state, string id, DateTimeOffset at, string commit = C1, string branch = "feature/a", string step = "deployed") =>
-        new(Plugin, _port.Generation!.Value, new WorkStepFrame(step, new WorkOutcome(state, Code: state == WorkStates.Failed ? "broken" : null,
-            Evidence: state == WorkStates.Reached ? new WorkEvidence(null, "https://deploy.example/" + id, "staging", "deployed") : null), at, id, "engine", branch, commit));
 
     /// <summary>The person's stop or skip, as their door makes it: one locked edit through the one table, on the status as it stands then.</summary>
     private string Press(string unit, string state)
