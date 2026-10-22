@@ -66,6 +66,8 @@ public static class GitWiring
     {
         foreach (var name in Removed) info.Environment.Remove(name);
         foreach (var (name, value) in Prompts) info.Environment[name] = value;
+        // A grant is handed by its one start alone (§6.7), never inherited.
+        info.Environment.Remove(GitRouting.GrantVariable);
         if (home is null) return;
 
         info.Environment[GitRouting.HomeVariable] = Path.GetFullPath(home);

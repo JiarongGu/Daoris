@@ -103,9 +103,9 @@ internal static class TreeRefs
     private static async Task<(string? Failed, string? Url)> FetchingAsync(
         string root, string line, string repository, string? workspace, CancellationToken ct)
     {
-        var (remote, url, _) = await WorkingTree.GitAsync(root, ["remote", "get-url", "origin"], ct).ConfigureAwait(false);
-        if (remote != 0) return ("there is no `origin` remote here", null);
-        var address = url.Trim();
+        // GITAUTH1b: the one reader, which takes Daoris's own prefix off the address the rewrite shows (the git-auth design §4.4).
+        if (await GitRemotes.AddressOf(root, "origin", ct: ct).ConfigureAwait(false) is not { } address)
+            return ("there is no `origin` remote here", null);
         var home = DaorisHome.Resolve();
         var git = home is null ? null : WorkingTree.GitInUse(home);
         if (home is not null && GitHolds.Holding(home, root, "origin", address, git, GitAct.Read) is { } held)

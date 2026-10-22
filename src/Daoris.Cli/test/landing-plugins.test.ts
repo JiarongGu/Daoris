@@ -62,7 +62,7 @@ function fakes(fx: Fixture): string {
   writeFileSync(join(bin, 'fake.mjs'), [
     "import { appendFileSync } from 'node:fs';",
     'const [tool, ...args] = process.argv.slice(2);',
-    "appendFileSync(process.env.FAKE_LOG, JSON.stringify({ tool, args, cwd: process.cwd() }) + '\\n');",
+    "appendFileSync(process.env.FAKE_LOG, JSON.stringify({ tool, args, cwd: process.cwd(), routed: process.env.GIT_CONFIG_COUNT ?? null }) + '\\n');",
     "if (process.env.FAKE_FAIL === tool) { console.error(tool + ': not signed in, the fake says'); process.exit(1); }",
     "const web = 'https://example.test/example-org/project/_git/engine';",
     "if (tool === 'gh' && args[1] === 'view') console.log(JSON.stringify({ state: process.env.FAKE_STATE ?? 'OPEN' }));",
@@ -468,5 +468,48 @@ test('the Azure DevOps plugin answers unknown where no pull request is from the 
   const failed = await ask('azure-devops-pull-request', fx, bin, stateFrame(root), { FAKE_FAIL: 'az' });
   assert.equal(failed.answer, undefined);
   assert.match(String(failed.error?.message), /az: not signed in, the fake says/);
+  fx.cleanup();
+});
+
+/** Daoris's routing, as a landing plugin's process is handed it under the doors (GITAUTH1b, the git-auth design §4.1). */
+const ROUTED: Record<string, string> = {
+  GIT_CONFIG_COUNT: '3',
+  GIT_CONFIG_KEY_0: 'url.daoris::https://.insteadOf', GIT_CONFIG_VALUE_0: 'https://',
+  GIT_CONFIG_KEY_1: 'url.daoris::http://.insteadOf', GIT_CONFIG_VALUE_1: 'http://',
+  GIT_CONFIG_KEY_2: 'protocol.daoris.allow', GIT_CONFIG_VALUE_2: 'always',
+};
+
+test('GITAUTH1b: each plugin names its repository from the frame\'s origin, which its tool cannot read from routed remotes', async () => {
+  const fx = makeFixture('landing-plugin-origin');
+  const { root } = repository(fx);
+  const bin = fakes(fx);
+
+  await land('github-pull-request', fx, bin, { ...frame(root), origin: 'https://github.com/example-org/engine.git' }, ROUTED);
+  const [gh] = calls(fx);
+  assert.deepEqual(gh!.args.slice(-2), ['--repo', 'example-org/engine'], gh!.args.join(' '));
+
+  git(fx.root, '-C', join(fx.root, 'origin.git'), 'branch', '-D', BRANCH);
+  await land('azure-devops-pull-request', fx, bin,
+    { ...frame(root), origin: 'https://example-org@dev.azure.com/example-org/proj/_git/engine' }, ROUTED);
+  const az = calls(fx)[1]!;
+  const named = az.args.slice(az.args.indexOf('--target-branch') + 2, az.args.indexOf('--description'));
+  assert.deepEqual(named, ['--organization', 'https://dev.azure.com/example-org', '--detect', 'false', '--project', 'proj', '--repository', 'engine']);
+  fx.cleanup();
+});
+
+test('GITAUTH1b: with an origin no tool can be told, each plugin\'s tool runs without Daoris\'s routing and finds the remotes as written', async () => {
+  const fx = makeFixture('landing-plugin-unrouted');
+  const { root, origin } = repository(fx);
+  const bin = fakes(fx);
+
+  await land('github-pull-request', fx, bin, { ...frame(root), origin }, ROUTED);
+  git(fx.root, '-C', origin, 'branch', '-D', BRANCH);
+  await land('azure-devops-pull-request', fx, bin, { ...frame(root), origin }, ROUTED);
+
+  const [gh, az] = calls(fx) as { tool: string; args: string[]; routed: string | null }[];
+  assert.ok(!gh!.args.includes('--repo'), gh!.args.join(' '));
+  assert.ok(!az!.args.includes('--detect'), az!.args.join(' '));
+  assert.equal(gh!.routed, null);
+  assert.equal(az!.routed, null);
   fx.cleanup();
 });

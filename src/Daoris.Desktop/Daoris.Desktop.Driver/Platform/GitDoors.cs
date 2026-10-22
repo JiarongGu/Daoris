@@ -230,43 +230,52 @@ public static class GitDoors
         environment?.Invoke(info.Environment);
 
         var key = GitAddressKeys.Of(address);
-        var judged = new Dictionary<GitAct, GitVerdict>();
         using var process = Process.Start(info)!;
-        var answers = process.StandardOutput.BaseStream.CopyToAsync(output);
-        var to = process.StandardInput.BaseStream;
-        try
+        string? refused = null;
+        // git's side, on a thread of its own: the conversation ends when the transport's answers end, which may be before git closes
+        // its side (an empty repository's clone), and a door still reading git then would hold git waiting on its answers.
+        _ = Task.Run(() =>
         {
-            while (ReadLine(input) is { } line)
+            var judged = new Dictionary<GitAct, GitVerdict>();
+            var to = process.StandardInput.BaseStream;
+            try
             {
-                var text = Encoding.UTF8.GetString(line).TrimEnd('\n', '\r');
-                if (ClassOfHelperCommand(text) is { } act)
+                while (ReadLine(input) is { } line)
                 {
-                    if (!judged.TryGetValue(act, out var verdict)) judged[act] = verdict = Judge(home, act, key, variable);
-                    if (!verdict.Allowed)
+                    var text = Encoding.UTF8.GetString(line).TrimEnd('\n', '\r');
+                    if (ClassOfHelperCommand(text) is { } act)
                     {
-                        Stop(process);
-                        return Refuse(error, verdict.Line!);
+                        if (!judged.TryGetValue(act, out var verdict)) judged[act] = verdict = Judge(home, act, key, variable);
+                        if (!verdict.Allowed)
+                        {
+                            Volatile.Write(ref refused, verdict.Line);
+                            Stop(process);
+                            return;
+                        }
+                    }
+
+                    to.Write(line);
+                    to.Flush();
+                    if (text.StartsWith("stateless-connect ", StringComparison.Ordinal) || text.StartsWith("connect ", StringComparison.Ordinal))
+                    {
+                        // From here the conversation is the protocol's packets, not lines, each awaited by the other side: relayed as
+                        // they come, flushed each time, since a pipe's buffered write would hold a request its answer waits on.
+                        Relay(input, to);
+                        break;
                     }
                 }
-
-                to.Write(line);
-                to.Flush();
-                if (text.StartsWith("stateless-connect ", StringComparison.Ordinal) || text.StartsWith("connect ", StringComparison.Ordinal))
-                {
-                    // From here the conversation is the protocol's packets, not lines.
-                    input.CopyTo(to);
-                    break;
-                }
             }
-        }
-        catch (IOException)
-        {
-            // The transport went first; its exit says why.
-        }
+            catch (IOException)
+            {
+                // The transport went first; its exit says why.
+            }
 
-        try { to.Close(); } catch (IOException) { }
+            try { to.Close(); } catch (IOException) { }
+        });
+
+        Relay(process.StandardOutput.BaseStream, output);
         process.WaitForExit();
-        answers.GetAwaiter().GetResult();
+        if (Volatile.Read(ref refused) is { } line) return Refuse(error, line);
         output.Flush();
         return process.ExitCode;
     }
@@ -316,6 +325,25 @@ public static class GitDoors
     private static void Stop(Process process)
     {
         try { process.Kill(entireProcessTree: true); } catch (InvalidOperationException) { }
+    }
+
+    /// <summary>Copy until <paramref name="from"/> ends, flushing each read on: either side may wait on what the last read held.</summary>
+    private static void Relay(Stream from, Stream to)
+    {
+        var buffer = new byte[64 * 1024];
+        try
+        {
+            int read;
+            while ((read = from.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                to.Write(buffer, 0, read);
+                to.Flush();
+            }
+        }
+        catch (IOException)
+        {
+            // The other side went; its process's exit says why.
+        }
     }
 
     /// <summary>One line of git's conversation, with its line feed; null at its end.</summary>
