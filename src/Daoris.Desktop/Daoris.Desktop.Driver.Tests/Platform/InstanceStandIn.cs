@@ -86,6 +86,12 @@ internal sealed class InstanceStandIn : IAsyncDisposable
     /// </summary>
     public bool Confirming { get; set; }
 
+    /// <summary>With <see cref="Confirming"/>, why the person's standing confirmation did not cover the press (TERMTRUST1a), or null for none.</summary>
+    public string? StandingWhy { get; set; }
+
+    /// <summary>Whether a press is told it runs under the person's standing confirmation (TERMTRUST1a, <c>STANDING</c>) before it is answered.</summary>
+    public bool Standing { get; set; }
+
     /// <summary><c>RESULT</c>'s state for a press it was asked about: <c>answered</c> (with <see cref="Data"/>), <c>running</c>, <c>unknown</c>, or <c>id-taken</c>, the refusal of another key's id.</summary>
     public string Result { get; set; } = "answered";
 
@@ -185,7 +191,26 @@ internal sealed class InstanceStandIn : IAsyncDisposable
                     {
                         category = "notification",
                         id = Guid.NewGuid().ToString("N"),
-                        payload = new[] { new { module = "DAORIS.PIPE", type = "CONFIRMING", payload = new { id, expires = DateTimeOffset.UtcNow.AddMinutes(2) } } },
+                        payload = new[]
+                        {
+                            new
+                            {
+                                module = "DAORIS.PIPE", type = "CONFIRMING",
+                                payload = (object)(StandingWhy is { } why
+                                    ? new { id, expires = DateTimeOffset.UtcNow.AddMinutes(2), standing = why }
+                                    : new { id, expires = DateTimeOffset.UtcNow.AddMinutes(2) }),
+                            },
+                        },
+                    }));
+                }
+
+                if (Standing)
+                {
+                    await WriteAsync(server, JsonSerializer.Serialize(new
+                    {
+                        category = "notification",
+                        id = Guid.NewGuid().ToString("N"),
+                        payload = new[] { new { module = "DAORIS.PIPE", type = "STANDING", payload = new { id } } },
                     }));
                 }
 
