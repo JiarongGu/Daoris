@@ -12,6 +12,8 @@
  *   node tools/desktop-publish.mjs --to <install> --service --stage
  *                                                           …beside a running install, in update/staged/,
  *                                                           which the desktop installs when idle (D139)
+ *   … --git-doors                                           …with Daoris's two git doors in app/bin/ (GITAUTH1b,
+ *                                                           D198), left out until their owed measurements pass
  *   … --force-ungated                                       …a tree the full set of gates has not passed
  *                                                           (GATE3, below): the person's call
  *   node tools/desktop-publish.mjs --to <install> --service --stage --from-gated <commit>
@@ -56,7 +58,7 @@
  * own example plugins sit beside them in `app/plugin-offers/`, offered and never installed (D103), and so
  * does the list of where each tool's versions download from, `app/resources.json` (D121). And Daoris's
  * doctrine tool (WSSETUP2, D124 §1.2): the CLI packed as the release packs it, unpacked under `app/cli/`,
- * with a launcher for each shell in `app/bin/`.
+ * with a launcher for each shell in `app/bin/`, beside the driver's launchers and Daoris's two git doors (GITAUTH1b, D198).
  *
  * **What a deployed shell finds.** Nothing is wired into it: with no `DAORIS_*` overrides it makes
  * the install's `data/` the Daoris home (D63) — the machine's registry, quests, drivable set and profiles
@@ -441,6 +443,35 @@ export function layDriverLaunchers(install) {
   const bin = join(install, ...CLI_BIN);
   mkdirSync(bin, { recursive: true });
   for (const [name, text] of Object.entries(driverLaunchers())) writeFileSync(join(bin, name), text, { mode: 0o755 });
+}
+
+/**
+ * Daoris's two git doors (GITAUTH1b, D198 point 2; the git-auth design §4.2-§4.3): one program, published framework-dependent and
+ * laid out in `app/bin/` whole (its executable, its library and the runtime's two files beside them), then its executable a second
+ * time as the remote helper, which loads the same library, since the apphost names its library inside. Twins of
+ * `GitWiring.SshDoor` and `GitWiring.RemoteHelper`, which hand a start a door only where it is laid out here: until this lays them
+ * out, nothing an install starts is routed. The shape `GitDoorsProcessTests` lays out from the build and proves.
+ */
+export const GIT_DOOR_PROJECT = 'src/Daoris.Desktop/Daoris.Desktop.GitDoor';
+export const GIT_DOORS = Object.freeze(['daoris-git-ssh.exe', 'git-remote-daoris.exe']);
+
+/** The doors' publish into `folder`: framework-dependent, the shape the launcher and the driver have; its builds into `artifacts` when given. */
+export function gitDoorPublishCommand(folder, artifacts = null) {
+  return builtInto(`dotnet publish "${GIT_DOOR_PROJECT}" -c Release -r ${INSTALL_RID} --self-contained false `
+    + `-p:DebugType=none -p:AllowedReferenceRelatedFileExtensions=none -o "${folder}" --nologo`, artifacts);
+}
+
+/**
+ * Lay the doors' publish in `published` out in `<install>/app/bin/`, beside the launchers (which {@link layCli} replaces whole, so
+ * this runs after it), the ssh door copied as the remote helper. Throws naming what the publish did not make.
+ */
+export function layGitDoors(published, install) {
+  const [ssh, helper] = GIT_DOORS;
+  if (!existsSync(join(published, ssh))) throw new Error(`desktop-publish: the publish of the git doors made no ${ssh}.`);
+  const bin = join(install, ...CLI_BIN);
+  mkdirSync(bin, { recursive: true });
+  for (const name of readdirSync(published)) cpSync(join(published, name), join(bin, name), { recursive: true });
+  cpSync(join(published, ssh), join(bin, helper));
 }
 
 /**
@@ -1267,6 +1298,24 @@ async function main() {
     process.exit(1);
   }
   layDriverLaunchers(root);
+
+  // The git doors (GITAUTH1b, D198 point 2), in `app/bin/` beside the launchers, laid after `layCli` replaced the folder: every
+  // process Daoris starts is routed through them from the next start (`GitWiring.Hand`). Only with `--git-doors` until D198's owed
+  // measurements (a real sshd, `gh` and `az` under the rewrite, git-lfs) pass on the install: a publish without it leaves the doors
+  // out, and since `layCli` replaced `app/bin/` whole, an install that had them goes back to git as it was (D198's GITAUTH1b note).
+  if (flag('--git-doors')) {
+    console.log(`desktop-publish: publishing the git doors into ${CLI_BIN.join('/')}/…`);
+    const doorStage = join(stages, 'git-doors');
+    run(gitDoorPublishCommand(doorStage, artifacts));
+    try {
+      layGitDoors(doorStage, root);
+    } catch (error) {
+      console.error(error.message);
+      process.exit(1);
+    }
+  } else {
+    console.log('desktop-publish: the git doors are left out (--git-doors lays them; D198\'s owed measurements first).');
+  }
   rmSync(stages, { recursive: true, force: true });
 
   // Daoris's own example plugins, as offers beside the application (PLUG9 d, D103): the Plugins place

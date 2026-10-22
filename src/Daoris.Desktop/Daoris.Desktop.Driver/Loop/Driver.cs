@@ -2192,8 +2192,14 @@ public sealed class Driver(
                 InFlight = carryingOn || joinedIn is not null ? await WorkingTree.UncommittedAsync(workTree, ct: ct).ConfigureAwait(false) : [],
                 // What its start did against the line in the tree it goes on in (LANDSYNC2).
                 InSync = inSync?.Told,
-                // Its repository's remotes Daoris holds, so it does not try them (GITAUTH1a): read after its start's own fetch above.
-                Git = GitHolds.Told(GitHolds.OfRepository(home, quest.To, RemoteTarget.Workspace(start.Workspace))),
+                // Its repository's remotes Daoris holds, so it does not try them (GITAUTH1a): read after its start's own fetch above. And,
+                // where the remote helper is laid out for it, what `git remote -v` shows under the rewrite (GITAUTH1b, the design §5.3).
+                Git = GitHolds.Told(
+                    GitHolds.OfRepository(home, quest.To, RemoteTarget.Workspace(start.Workspace)),
+                    rewritten: GitWiring.DoorPath(home, GitWiring.RemoteHelper) is not null,
+                    origin: GitWiring.DoorPath(home, GitWiring.RemoteHelper) is null
+                        ? null
+                        : await GitRemotes.AddressOf(workTree, "origin", ct: ct).ConfigureAwait(false)),
                 // What its tree's open copied of the checkout's dependencies, so it skips the `npm ci` that would delete them (TREEDEPS1).
                 Dependencies = opened?.Dependencies,
                 // Its repository's heavy gates, once at its end through `run-heavy`, where its PATH finds the verb (HEAVYRUN1b1). Looked up

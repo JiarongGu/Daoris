@@ -297,6 +297,23 @@ public sealed class DriverWatch(
     }
 
     /// <summary>
+    /// Say how this home's git is wired (<see cref="GitLog.Wired"/>): which git Tools runs, and the doors laid out beside it. Never a
+    /// reason to fail, as the log is not.
+    /// </summary>
+    internal static void Wired(string home)
+    {
+        try
+        {
+            var git = Tools.Resolve(Tools.Read(home), home, "git");
+            GitLog.Wired(home, git.Way?.ToString().ToLowerInvariant(), git.Version, GitWiring.SshForm(home),
+                GitWiring.DoorPath(home, GitWiring.RemoteHelper) is not null);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
+        {
+        }
+    }
+
+    /// <summary>
     /// Tick until cancelled. <paramref name="onReport"/> receives every tick's report with the config
     /// that produced it; <paramref name="onError"/> decides what a failed tick means — the shell says
     /// so and keeps watching (an unattended loop outlives its service's restarts), while a null lets
@@ -320,6 +337,9 @@ public sealed class DriverWatch(
         CancellationToken ct,
         Action<TickReport>? said = null)
     {
+        // Once, as the loop starts: how its git is wired, a coded line (GITAUTH1b, the git-auth design §11).
+        Wired(home);
+
         // Once, before the first tick: what the last run left `working` with nothing behind it — a
         // crash, a kill, a power cut — ended before this tick counts it against the cap and its
         // repository's lock (2026-09-25). Retried each tick until the service has answered it once.

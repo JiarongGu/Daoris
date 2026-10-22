@@ -148,7 +148,8 @@ public static class HookFrames
 
     /// <summary>
     /// <see cref="HookPoints.State"/>: a landed branch, asked about (PLUGHOOK1a, design §2.2): where it is, the line, and the pull
-    /// request and the commit the record holds, so a plugin finds the pull request by its address, else by its source branch.
+    /// request and the commit the record holds, so a plugin finds the pull request by its address, else by its source branch; and
+    /// <c>origin</c>, as the land frame carries it (GITAUTH1b).
     /// </summary>
     public static object State(StateFrame frame) => new
     {
@@ -159,6 +160,7 @@ public static class HookFrames
         line = frame.Line,
         pullRequest = frame.PullRequest,
         pushedTip = frame.PushedTip,
+        origin = frame.Origin,
     };
 
     /// <summary>

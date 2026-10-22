@@ -990,6 +990,14 @@ public static class WorkingTree
         string root, IReadOnlyList<string> arguments, string input, CancellationToken ct) =>
         GitAsync(root, arguments, environment: null, timeout: null, input, ct);
 
+    /// <summary>
+    /// git with variables of its own reading <paramref name="input"/> (COAGENT1b): the piece keeper's <c>update-index --index-info</c>
+    /// fills a temporary index named by <c>GIT_INDEX_FILE</c>, never the repository's own.
+    /// </summary>
+    internal static Task<(int Code, string Stdout, string Stderr)> GitAsync(
+        string root, IReadOnlyList<string> arguments, IReadOnlyDictionary<string, string> environment, string input, CancellationToken ct) =>
+        GitAsync(root, arguments, environment, timeout: null, input, ct);
+
     private static Task<(int Code, string Stdout, string Stderr)> GitAsync(
         string root, IReadOnlyList<string> arguments, IReadOnlyDictionary<string, string>? environment, TimeSpan? timeout,
         string? input, CancellationToken ct)

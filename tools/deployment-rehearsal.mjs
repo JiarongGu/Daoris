@@ -83,7 +83,7 @@ import {
 } from './rehearsal-kit.mjs';
 // The install's layout, from the script that makes it (REV3 CLEAN1) — never a second spelling of it.
 import {
-  BUILD_MANIFEST, CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_LAUNCHERS, CLI_PACKAGE, DRIVER_EXE, DRIVER_HOME, DRIVER_LAUNCHERS, CONNECTOR_EXE, CONNECTOR_HOME, HOME, HOST_EXE, HOST_HOME, KEPT_LOCALES,
+  BUILD_MANIFEST, CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_LAUNCHERS, CLI_PACKAGE, DRIVER_EXE, DRIVER_HOME, DRIVER_LAUNCHERS, CONNECTOR_EXE, CONNECTOR_HOME, GIT_DOORS, HOME, HOST_EXE, HOST_HOME, KEPT_LOCALES,
   LAUNCHER, MARKER, OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RESOURCES, RETIRED_BROWSER_EXE, RETIRED_IN_APP, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES,
   SHELL_HOME, STAGE, STAGED, SWAP_JOURNAL, promoteStage, unstage, writeManifest,
 } from './desktop-publish.mjs';
@@ -191,6 +191,28 @@ export function cliProblems(install, version) {
     if (said !== version) problems.push(`${where}/${file} says ${said}, not ${version}`);
   }
   return problems;
+}
+
+/**
+ * What is wrong with the install's git doors (GITAUTH1b, D198 point 2), as sentences: a door not in `app/bin/`, or the library both
+ * load not beside them. Empty when the publish laid them out, which is what routes every process the install starts through them.
+ */
+export function doorProblems(install) {
+  const bin = join(install, ...CLI_BIN);
+  const problems = GIT_DOORS.filter((name) => !existsSync(join(bin, name))).map((name) => `${CLI_BIN.join('/')}/${name} is not there`);
+  const library = GIT_DOORS[0].replace(/\.exe$/i, '.dll');
+  if (!existsSync(join(bin, library))) problems.push(`${CLI_BIN.join('/')}/${library}, which both doors load, is not there`);
+  return problems;
+}
+
+/**
+ * Whether a door started with no arguments answered as itself (GITAUTH1b): git's exit for a refused remote, 128, and a refusal
+ * naming the door by its own file's name, which is how the one program knows the ssh door from the remote helper. A copy that
+ * answered as the other, or did not start, is not the door git would be handed.
+ */
+export function doorAnswered(door, { status, stderr }) {
+  const name = door.replace(/\.exe$/i, '');
+  return status === 128 && new RegExp(`^${name}: `, 'm').test(stderr ?? '');
 }
 
 /**
@@ -681,7 +703,8 @@ async function main() {
   rmSync(scratch, { recursive: true, force: true, maxRetries: 20, retryDelay: 500 });
   mkdirSync(scratch, { recursive: true });
 
-  const published = publishDesktop(install, '--service', 15 * 60_000);
+  // --git-doors: the doors ship only on request until D198's owed measurements pass (GITAUTH1b), and the rehearsal proves their layout.
+  const published = publishDesktop(install, '--service --git-doors', 15 * 60_000);
   check('publish:desktop --service exits 0', published.code === 0,
     published.out.split('\n').slice(-12).join('\n'));
 
@@ -770,6 +793,17 @@ async function main() {
   check(`the install carries the doctrine tool: daoris ${canonVersion} in ${CLI_PACKAGE.join('/')}/, `
     + `with ${CLI_LAUNCHERS.join(' and ')} in ${CLI_BIN.join('/')}/`, toolProblems.length === 0, toolProblems.join('; '));
 
+  // The git doors (GITAUTH1b, D198 point 2): laid out in app/bin/, and each, started with nothing, answers as itself, so the copy
+  // that is the remote helper is the same program and knows its name. No git and no remote: the door refuses before it reads either.
+  const doorsLaid = doorProblems(install);
+  check(`the install carries Daoris's git doors, ${GIT_DOORS.join(' and ')}, in ${CLI_BIN.join('/')}/`,
+    doorsLaid.length === 0, doorsLaid.join('; '));
+  for (const door of GIT_DOORS) {
+    const answer = spawnSync(join(install, ...CLI_BIN, door), [], { encoding: 'utf8', windowsHide: true, timeout: 30_000 });
+    check(`…and ${door}, started with nothing, refuses as itself (exit 128)`, doorAnswered(door, answer),
+      `exit ${answer.status}; ${(answer.stderr ?? answer.error?.message ?? '').trim()}`);
+  }
+
   // -------------------------------------------------------------- 2. the publish guard
 
   section('2. The publish refuses a folder it did not write');
@@ -846,7 +880,7 @@ async function main() {
   const neighbour = join(install, 'a-neighbours-notes.txt');
   writeFileSync(neighbour, 'not the application’s\n');
 
-  const republished = publishDesktop(install, '--service', 15 * 60_000);
+  const republished = publishDesktop(install, '--service --git-doors', 15 * 60_000);
   check('a second publish into its own install is accepted', republished.code === 0,
     republished.out.split('\n').slice(-8).join('\n'));
   check('…and it left no bundle from the publish before it', !existsSync(decoy),
@@ -859,6 +893,9 @@ async function main() {
   check(`…nor a file the doctrine tool's last layout had, in ${CLI_HOME.join('/')}/ or ${CLI_BIN.join('/')}/`,
     staleTool.every((path) => !existsSync(path)) && cliProblems(install, canonVersion).length === 0,
     [...staleTool.filter(existsSync), ...cliProblems(install, canonVersion)].join('; '));
+  // `layCli` replaces app/bin/ whole, so the doors must be laid again after it on every publish.
+  check(`…and the git doors laid out again in ${CLI_BIN.join('/')}/ after it`, doorProblems(install).length === 0,
+    doorProblems(install).join('; '));
   check(`…nor anything of the connector before it, in ${CONNECTOR_HOME.join('/')}/, which it laid down again`,
     !existsSync(staleConnector) && existsSync(installedConnector),
     [staleConnector].filter(existsSync).concat(existsSync(installedConnector) ? [] : [`no ${installedConnector}`]).join('; '));

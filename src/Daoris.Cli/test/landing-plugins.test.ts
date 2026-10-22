@@ -151,7 +151,7 @@ function frame(root: string, title = 'Fix the API gap'): Record<string, unknown>
   };
 }
 
-function calls(fx: Fixture): { tool: string; args: string[]; cwd: string }[] {
+function calls(fx: Fixture): { tool: string; args: string[]; cwd: string; routed: string | null }[] {
   const log = join(fx.root, 'calls.jsonl');
   return existsSync(log) ? readFileSync(log, 'utf8').trim().split('\n').map((line) => JSON.parse(line)) : [];
 }
@@ -506,10 +506,28 @@ test('GITAUTH1b: with an origin no tool can be told, each plugin\'s tool runs wi
   git(fx.root, '-C', origin, 'branch', '-D', BRANCH);
   await land('azure-devops-pull-request', fx, bin, { ...frame(root), origin }, ROUTED);
 
-  const [gh, az] = calls(fx) as { tool: string; args: string[]; routed: string | null }[];
+  const [gh, az] = calls(fx);
   assert.ok(!gh!.args.includes('--repo'), gh!.args.join(' '));
   assert.ok(!az!.args.includes('--detect'), az!.args.join(' '));
   assert.equal(gh!.routed, null);
   assert.equal(az!.routed, null);
+  fx.cleanup();
+});
+
+test('GITAUTH1b: the Azure DevOps plugin\'s state query names its repository from the state frame\'s origin, as its landing does', async () => {
+  const fx = makeFixture('state-azure-origin');
+  const { root } = repository(fx);
+  const bin = fakes(fx);
+  const origin = 'https://dev.azure.com/example-org/proj/_git/engine';
+  const completed = pr(6, 'completed', { lastMergeCommit: { commitId: MERGE }, lastMergeSourceCommit: { commitId: SOURCE } });
+
+  const spoken = await ask('azure-devops-pull-request', fx, bin, { ...stateFrame(root, null), origin },
+    { ...ROUTED, FAKE_PRS: JSON.stringify([completed]), FAKE_PR: JSON.stringify(completed) });
+
+  assert.equal(spoken.answer.state, 'completed', String(spoken.answer.message));
+  const [list, show] = calls(fx);
+  assert.deepEqual(list!.args.slice(list!.args.indexOf('json') + 1),
+    ['--organization', 'https://dev.azure.com/example-org', '--detect', 'false', '--project', 'proj', '--repository', 'engine']);
+  assert.deepEqual(show!.args.slice(show!.args.indexOf('json') + 1), ['--organization', 'https://dev.azure.com/example-org', '--detect', 'false']);
   fx.cleanup();
 });

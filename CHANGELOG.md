@@ -38,6 +38,13 @@ with the version and date at release.
   quests do, with nothing asked again on a timer, and the list is kept across a restart. What an Apply did is now said in the
   conversation as Daoris's word, naming what it published, never as yours; *Not now* is still yours. A *Go there* card is drawn
   again when its quest is taken, so its press no longer answers that the plan changed. In English and 中文.
+- Every git Daoris starts now passes Daoris's own git doors, which the install carries in `app/bin/`: an ssh door and a door for
+  HTTP and HTTPS remotes, each using the sign-ins git already has. A session's push is refused at the door whatever form it takes,
+  on Claude and on Codex alike, with one line; a landing still pushes and opens its pull request. Under the doors `git remote -v`
+  shows an HTTP or HTTPS remote as `daoris::` followed by its address, and a session is told what that means and to name a tool
+  such as `gh` or `az` with its repository. Where the install's folder holds a space, a repository that names its own ssh command
+  (`core.sshCommand`) would pass the door by, so Daoris does not reach that remote, and *What needs you* says so until the setting
+  is removed. Each refusal at a door is written to the machine log. In English and 中文.
 - A git remote that refuses the sign-in git has on your machine is now said once and left alone. When Daoris's fetch of a
   repository's line is refused (the key or the credential refused, a push refused, a host whose key ssh does not know or whose key
   changed), Daoris holds that remote: no look, press, start or pull request's moment tries it again, and *What needs you* shows one row

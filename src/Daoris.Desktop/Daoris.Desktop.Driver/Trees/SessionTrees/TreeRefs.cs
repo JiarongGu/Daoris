@@ -108,6 +108,12 @@ internal static class TreeRefs
             return ("there is no `origin` remote here", null);
         var home = DaorisHome.Resolve();
         var git = home is null ? null : WorkingTree.GitInUse(home);
+        // GITAUTH1b: a repository whose own ssh command would pass round the door is held before it connects (the git-auth design §4.2).
+        if (home is not null && await GitOwnInput.HeldAsync(home, root, repository, workspace, "origin", address, git, ct).ConfigureAwait(false) is { } own)
+        {
+            return (GitHolds.Said(own), GitWords.Redact(address));
+        }
+
         if (home is not null && GitHolds.Holding(home, root, "origin", address, git, GitAct.Read) is { } held)
         {
             return (GitHolds.Said(held), GitWords.Redact(address));

@@ -5,6 +5,7 @@ import { InTheme } from '../../plugins/storyIcons';
 import { chinese, readerIn } from '../../design/storyLanguage';
 import { AnsweredPark } from '../waits/AnsweredPark';
 import { type Attention, type AttentionActs, AttentionRow } from './AttentionRow';
+import { gitHeldDetailKey } from './attention';
 import { AttentionList, type AttentionDoors, AttentionRegion, NothingNeedsYou } from './AttentionList';
 import { AwaitingIntake } from '../waits/AwaitingIntake';
 import { RunningIntake } from '../head/RunningIntake';
@@ -602,6 +603,7 @@ const GIT_HELD: Attention[] = ([
   ['write-refused', 'dev.azure.com', ['reports'], "remote: TF401027: You need the Git 'GenericContribute' permission to perform this action."],
   ['host-unknown', 'git.example.org', ['tools'], 'Host key verification failed.'],
   ['host-changed', 'gitlab.com', ['engine', 'game', 'tools'], 'WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!'],
+  ['own-input', 'ssh.dev.azure.com', ['site'], ''],
 ] as const).map(([held, host, repositories, words], index): Attention => ({
   id: `default|${host}|${held}|all`, kind: 'git-held', where: 'origin', since: at(15 + index * 20), workspace: 'default',
   title: '', git: { host, class: held, holds: held === 'write-refused' ? 'writes' : 'all', remote: 'origin', repositories: [...repositories], words },
@@ -614,7 +616,7 @@ function gitHeldRows(language: 'en' | 'zh'): Attention[] {
   return GIT_HELD.map((item) => ({
     ...item,
     title: t(`work.attention.gitHeld.title.${item.git!.class}`, { host: item.git!.host }),
-    detail: t('work.attention.gitHeld.detail', { repositories: item.git!.repositories.join(', '), words: item.git!.words }),
+    detail: t(gitHeldDetailKey(item.git!), { repositories: item.git!.repositories.join(', '), words: item.git!.words }),
   }));
 }
 
