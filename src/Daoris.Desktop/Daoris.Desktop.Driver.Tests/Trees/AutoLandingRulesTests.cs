@@ -52,6 +52,26 @@ public sealed class AutoLandingRulesTests : IDisposable
     }
 
     /// <summary>
+    /// TERMTRUST1a (the terminal-trust design §2.1's <c>stop</c> row, §8 case 8): a stop under the standing confirmation concludes
+    /// <c>stopped</c>, as the person's stop does, its note only gaining a part; the rule reads the state and the quest's status and never
+    /// the note, so a covered stop of a run whose quest its agent already closed done is due exactly as that run's own end would be, and
+    /// one not done is never due.
+    /// </summary>
+    [Fact]
+    public void A_covered_stop_is_due_exactly_as_its_own_end_would_be()
+    {
+        Assert.Equal(AutoLandingRules.Concluded(Automatic, "Done", true, "completed"), AutoLandingRules.Concluded(Automatic, "Done", true, "stopped"));
+        Assert.Equal(AutoConcluded.Due, AutoLandingRules.Concluded(Automatic, "Done", true, "stopped"));
+        Assert.Equal(AutoConcluded.NotDone, AutoLandingRules.Concluded(Automatic, "Taken", true, "stopped"));
+        Assert.Equal(AutoConcluded.NotDone, AutoLandingRules.Concluded(Automatic, "Open", true, "stopped"));
+        // The rule is handed no note at all: the part a covered stop adds cannot move it.
+        Assert.DoesNotContain(
+            typeof(AutoLandingRules).GetMethod(nameof(AutoLandingRules.Concluded), [typeof(LandingRule), typeof(string), typeof(bool), typeof(string)])!
+                .GetParameters(),
+            parameter => parameter.ParameterType == typeof(Noted) || parameter.Name == "note");
+    }
+
+    /// <summary>
     /// The conclusion acts on its verdict: due, the session joins the due list keyed on the tree's layout; a done in the
     /// repository's own checkout, and an end that is not a done, are said in its conversation by code; under a rule with the
     /// switch off nothing is written anywhere.
