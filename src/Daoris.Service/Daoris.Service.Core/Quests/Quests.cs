@@ -876,6 +876,12 @@ public sealed class QuestStore
                   closure INTEGER NOT NULL,
                   at      TEXT NOT NULL
                 );
+                -- The machines a person retired at this remote (FABRIC-CLOSE1i2): no longer counted by the handshake, until a push heard
+                -- from one again marks it as that push says. A table of its own, so a remote before it counts them as it always did.
+                CREATE TABLE IF NOT EXISTS quest_retired (
+                  machine TEXT PRIMARY KEY,
+                  at      TEXT NOT NULL
+                );
                 -- The quests this machine cleared whose operations a remote had numbered (HIST1b, D153 point 3):
                 -- the absence made a record, since a fetch by cursor cannot carry one. Never pushed or served.
                 CREATE TABLE IF NOT EXISTS quest_forgotten (
@@ -3594,7 +3600,7 @@ public sealed class QuestStore
     /// A remote's half of the workspace's handshake (FABRIC-CLOSE1i): what a push said of its machine. A push declaring
     /// <paramref name="declares"/> marks that machine declared; one declaring none, as a build before it pushes, marks every machine its
     /// operations name undeclared, so a machine run back to an older build is heard as one. A push declaring one machine says nothing
-    /// of another its operations name.
+    /// of another its operations name. A machine it marks is counted again where a person had retired it (FABRIC-CLOSE1i2).
     /// </summary>
     public Task DeclaredAsync(string? declares, IReadOnlyList<QuestOperation> pushed, DateTimeOffset at, CancellationToken ct = default) =>
         InTransactionAsync(async (transaction, inside) =>
@@ -3607,6 +3613,7 @@ public sealed class QuestStore
                 await using var command = _db.Command();
                 command.Transaction = transaction;
                 command.CommandText = """
+                    DELETE FROM quest_retired WHERE machine = $machine;
                     INSERT INTO quest_declared (machine, closure, at) VALUES ($machine, $closure, $at)
                     ON CONFLICT (machine) DO UPDATE SET closure = excluded.closure, at = excluded.at
                     """;
@@ -3622,7 +3629,8 @@ public sealed class QuestStore
     /// <summary>
     /// A remote's answer to the workspace's handshake (FABRIC-CLOSE1i): every machine it holds an operation or a push from, but itself,
     /// whose last push did not declare <c>closure</c>, ordered by id. A shared host holds one workspace by construction, so these are the
-    /// workspace's machines as far as it has heard them; one that has never pushed has made nothing here to misread.
+    /// workspace's machines as far as it has heard them; one that has never pushed has made nothing here to misread. A machine a person
+    /// retired here is not counted until a push marks it again (FABRIC-CLOSE1i2).
     /// </summary>
     public Task<QuestClosure> ClosureAsync(CancellationToken ct = default) =>
         InGateAsync(async () =>
@@ -3631,6 +3639,7 @@ public sealed class QuestStore
             command.CommandText = """
                 SELECT machine FROM (SELECT DISTINCT machine FROM quest_log UNION SELECT machine FROM quest_declared)
                 WHERE machine <> $self AND machine NOT IN (SELECT machine FROM quest_declared WHERE closure = 1)
+                  AND machine NOT IN (SELECT machine FROM quest_retired)
                 ORDER BY machine
                 """;
             command.Parameters.AddWithValue("$self", Machine);
@@ -3638,6 +3647,48 @@ public sealed class QuestStore
             await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
             while (await reader.ReadAsync(ct).ConfigureAwait(false)) undeclared.Add(reader.GetString(0));
             return new QuestClosure(undeclared);
+        }, ct);
+
+    /// <summary>
+    /// A person's retirement of <paramref name="machine"/> at a remote (FABRIC-CLOSE1i2): a machine whose store was deleted, or that
+    /// left the workspace, no longer counted by <see cref="ClosureAsync"/>, until a push marks it again (<see cref="DeclaredAsync"/>).
+    /// False, and nothing kept, where the remote has heard nothing from it: no operation and no push, or the remote itself.
+    /// </summary>
+    public Task<bool> RetireMachineAsync(string machine, DateTimeOffset at, CancellationToken ct = default) =>
+        InTransactionAsync(async (transaction, inside) =>
+        {
+            await using var command = _db.Command();
+            command.Transaction = transaction;
+            command.CommandText = """
+                INSERT INTO quest_retired (machine, at)
+                SELECT $machine, $at
+                WHERE $machine <> $self
+                  AND (EXISTS (SELECT 1 FROM quest_log WHERE machine = $machine) OR EXISTS (SELECT 1 FROM quest_declared WHERE machine = $machine))
+                ON CONFLICT (machine) DO UPDATE SET at = excluded.at
+                """;
+            command.Parameters.AddWithValue("$machine", machine);
+            command.Parameters.AddWithValue("$self", Machine);
+            command.Parameters.AddWithValue("$at", Moments.Write(at));
+            return await command.ExecuteNonQueryAsync(inside).ConfigureAwait(false) > 0;
+        }, ct);
+
+    /// <summary>
+    /// The remote's handshake as a retirement there answered it (FABRIC-CLOSE1i2), kept as <paramref name="workspace"/>'s last pass keeps
+    /// what it heard, so a bind reads it at once rather than at the next pass. Nothing where no pass has recorded the circle yet: its
+    /// first pass hears the remote for itself.
+    /// </summary>
+    public Task HeardClosureAsync(string workspace, QuestClosure closure, CancellationToken ct = default) =>
+        InTransactionAsync(async (transaction, inside) =>
+        {
+            var circle = Workspaces.Normalize(workspace);
+            await using var command = _db.Command();
+            command.Transaction = transaction;
+            command.CommandText = "UPDATE quest_passes SET closure = $closure WHERE workspace = $workspace";
+            command.Parameters.AddWithValue("$workspace", circle);
+            command.Parameters.AddWithValue("$closure", LinksJson(closure.Undeclared));
+            var written = await command.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
+            if (written > 0) Heard(circle, closure);
+            return written;
         }, ct);
 
     /// <summary>

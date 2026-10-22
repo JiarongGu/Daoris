@@ -19464,3 +19464,15 @@ over a file on the line), its two commands granted exactly beside four doctrine 
 declaration. An unknown stack is refused (`no-index-form`). The workspace plan asks a set-up repository its index in its
 turn, recorded under `indexed`; the page names `asks: 'index'` (en, zh). The family rehearsal was not run, and no session
 has carried the body. Detail: D151's ORIENT2c note. On Opus.
+
+## FABRIC-CLOSE1i2 — a machine the remote still counts, seen and retired (2026-10-22, D173)
+
+> - [ ] **FABRIC-CLOSE1i2 — a machine the remote still counts, seen and retired** (service, web-settings; after CLOSE1i; D173's FABRIC-CLOSE1i note). The remote counts every machine it has heard from, so a machine whose store was deleted, or that left the workspace, holds its binds off for ever if its last push declared nothing. Show which machines of a workspace have not declared (the pass's `closure`), and let the person retire one at the remote. Proof: a retired machine no longer refuses a bind; one that pushes again is counted again; the words in en and zh.
+
+**Outcome** 2026-10-22: built. The remote keeps the machines a person retired in a table of its own and counts them no more until a
+push marks them again, declared or not as it says; its door (`POST /api/quests/machines/{machine}/retire`) answers whether it retired
+one. This machine asks it at the person's door (`POST /api/sync/machines/{machine}/retire`) and keeps the answer, so a bind reads it at
+once. `/api/sync` names the undeclared machines, pushed to the window, where Setup's *Remote and reach* lists them with *Retire* (注销),
+en and zh; `sync status` prints them. Proof: `QuestClosureHandshakeTests`, `SharedHostTests`, `LocalHostTests`, `PersonDoorTableTests`,
+`RemoteSyncTests`, `SyncStateSliceTests`, `WorkspaceSetup.test.tsx`; the service's, driver's and modules' fast halves. On Opus. Detail:
+D173's FABRIC-CLOSE1i2 note.

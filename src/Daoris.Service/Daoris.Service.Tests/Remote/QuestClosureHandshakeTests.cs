@@ -180,6 +180,76 @@ public sealed class QuestClosureHandshakeTests : IAsyncLifetime
         Assert.Null(QuestWire.ReadPushed("""{ "accepted": [], "behind": [], "refused": [], "closure": { "all": false, "undeclared": [7] } }""")!.Closure);
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1i2: a machine the remote still counts, retired by the person through their own machine. The bind it held off binds at
+    /// once, before any pass; a pass hears the remote say every machine declared; and a push from the retired machine counts it again.
+    /// </summary>
+    [Fact]
+    public async Task A_retired_machine_no_longer_refuses_a_bind_and_one_that_pushes_again_is_counted_again()
+    {
+        await PublishAsync("Seed A");
+        await _older.PublishAsync("Asker", "reports", "From an older build", "why", Now);
+        await SyncAsync(_a);
+        await OlderSyncAsync(_older);
+        Assert.Equal([_older.Machine], (await SyncAsync(_a)).Closure!.Undeclared);
+        var held = await PublishAsync("Held off by the older machine");
+        Assert.Equal(QuestRespondRefusal.NotInGraph, (await _exchange.BindAsync(held.Id, Graph, Now, atTake: true, session: Session)).Refusal);
+
+        // Its store deleted: the person retires it at the remote, and what the remote answers is kept here at once.
+        var retired = await QuestSync.RetireMachineAsync(_a, new StoreRemote(_remote), Workspaces.Default, _older.Machine);
+        Assert.True(retired.Retired);
+        Assert.True(retired.Closure.All);
+        Assert.True(_a.ClosureOf(Workspaces.Default)!.All);
+        Assert.Equal(QuestRespondRefusal.None, (await _exchange.BindAsync(held.Id, Graph, Now, atTake: true, session: Session)).Refusal);
+        Assert.True((await SyncAsync(_a)).Closure!.All);
+
+        // The machine pushes again, still of the older build: counted again, undeclared, and the next bind refused naming it.
+        await _older.PublishAsync("Asker", "reports", "Back again", "why", Now);
+        await OlderSyncAsync(_older);
+        Assert.Equal([_older.Machine], (await SyncAsync(_a)).Closure!.Undeclared);
+        var refused = await _exchange.BindAsync((await PublishAsync("After it came back")).Id, Graph, Now, atTake: true, session: Session);
+        Assert.Equal(QuestRespondRefusal.NotInGraph, refused.Refusal);
+        Assert.Contains($"machine `{_older.Machine}`", refused.Message, StringComparison.Ordinal);
+
+        // Retired again, then pushing from this build: counted again as declared, so the binds go on.
+        await QuestSync.RetireMachineAsync(_a, new StoreRemote(_remote), Workspaces.Default, _older.Machine);
+        await SyncAsync(_older);
+        Assert.True((await SyncAsync(_a)).Closure!.All);
+    }
+
+    [Fact]
+    public async Task A_machine_the_remote_never_heard_is_not_retired_and_a_remote_before_the_door_retires_nothing()
+    {
+        await PublishAsync("Seed A");
+        await _older.PublishAsync("Asker", "reports", "From an older build", "why", Now);
+        await SyncAsync(_a);
+        await OlderSyncAsync(_older);
+        Assert.False((await SyncAsync(_a)).Closure!.All);
+
+        // A machine it never heard from, and the remote itself: nothing kept, the handshake answered as it stands.
+        foreach (var unknown in new[] { "never-pushed", _remote.Machine })
+        {
+            var answered = await QuestSync.RetireMachineAsync(_a, new StoreRemote(_remote), Workspaces.Default, unknown);
+            Assert.False(answered.Retired);
+            Assert.Equal([_older.Machine], answered.Closure.Undeclared);
+        }
+
+        // A remote before the door answers 404, and what this machine last heard stays.
+        var wall = await Assert.ThrowsAsync<RemoteException>(() =>
+            QuestSync.RetireMachineAsync(_a, new OlderRemote(_remote), Workspaces.Default, _older.Machine));
+        Assert.Equal(404, wall.Status);
+        Assert.Equal([_older.Machine], _a.ClosureOf(Workspaces.Default)!.Undeclared);
+        Assert.Equal([_older.Machine], (await _remote.ClosureAsync()).Undeclared);
+
+        // The answer's wire: whole, or none.
+        var read = QuestWire.ReadRetired(QuestWire.Retired(true, new(["m2"])))!;
+        Assert.True(read.Retired);
+        Assert.Equal(["m2"], read.Closure.Undeclared);
+        Assert.False(QuestWire.ReadRetired(QuestWire.Retired(false, new([])))!.Retired);
+        Assert.Null(QuestWire.ReadRetired("""{ "retired": true }"""));
+        Assert.Null(QuestWire.ReadRetired("""{ "retired": true, "closure": { "all": true, "undeclared": ["m2"] } }"""));
+    }
+
     /// <summary>The wire of a build before FABRIC-CLOSE1i: its pushes name no machine and declare nothing.</summary>
     private sealed class UndeclaringRemote(IRemote remote) : IRemote
     {

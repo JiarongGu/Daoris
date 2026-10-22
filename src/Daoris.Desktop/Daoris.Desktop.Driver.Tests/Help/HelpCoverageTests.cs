@@ -526,10 +526,6 @@ public sealed partial class HelpCoverageTests
         ("app", "useRefreshIndex", null, new Exempt(
             "it reads the repositories again into the index and changes nothing of the work or the machine's settings, as reading "
             + "the roster again is exempt, so there is nothing to propose.")),
-        ("app", "useSyncNow", null, new Exempt(
-            "it runs now the pass with the workspace's remote that the loop's next tick runs anyway (SYNC6b), and changes nothing "
-            + "the person has not set; whether a workspace syncs is its remote's wiring, the person's own (D89). It is not the "
-            + "`sync` kind's door, which brings branches up to date (D109).")),
         ("app", "useSay", null, Own("sessions",
             "the words an *Accept* on the Agents page sends to the session that proposed the rule tell that session its own "
             + "proposal was kept (PROPOSEHERE1c), said to it as its box would (D137 §5.4)")),
@@ -937,6 +933,17 @@ public sealed partial class HelpCoverageTests
         ("projects", "useWireRemote", null, new Exempt("wiring a workspace to a remote takes that remote's key; " + Key)),
         ("projects", "useUnwireRemote", null, new Exempt(
             "unwiring drops the remote's key from this machine, which only the person can give back (D89).")),
+        // FABRIC-CLOSE1i2 (D173's note): a person-only door, which no agent's call may reach.
+        ("projects", "useRetireMachine", null, new Exempt(
+            "retiring a machine at a workspace's remote is the person's word that it left the workspace or lost its store, which "
+            + "lets binds through the remote that it held off; only they know it, so it is a person-only door pressed under the "
+            + "workspace's remote, and nothing is proposed.")),
+        // The status bar's *Sync now* is answered here too: a domain's control answers the same act on every page (FABRIC-CLOSE1i2).
+        ("projects", "useSyncNow", null, new Exempt(
+            "it runs now the pass with the workspace's remote that the loop's next tick runs anyway (SYNC6b), and changes nothing "
+            + "the person has not set; whether a workspace syncs is its remote's wiring, the person's own (D89). It is not the "
+            + "`sync` kind's door, which brings branches up to date (D109). The status bar's *Sync now* presses it, and so does a "
+            + "machine's retirement, so every window hears where the workspace stands after it.")),
 
         ("plugins", "usePluginAction", "enable", new Door("plugin", "enable")),
         ("plugins", "usePluginAction", "disable", new Door("plugin", "disable")),

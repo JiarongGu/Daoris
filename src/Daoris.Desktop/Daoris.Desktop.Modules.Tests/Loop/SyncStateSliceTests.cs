@@ -95,7 +95,7 @@ public sealed partial class SyncStateSliceTests : DriverModuleBridge
         var driver = typeof(SyncStanding).GetProperties().Select(each => char.ToLowerInvariant(each.Name[0]) + each.Name[1..]);
 
         Assert.Equal("workspace", service[0]);
-        Assert.Equal("problem", service[^1]);
+        Assert.Equal("undeclared", service[^1]);
         Assert.Contains("tried", page);
         Assert.Equal(page.Order(StringComparer.Ordinal), SyncStateSlice.Fields.Order(StringComparer.Ordinal));
         Assert.Empty(SyncStateSlice.Fields.Intersect(SyncStateSlice.PulledOnly));

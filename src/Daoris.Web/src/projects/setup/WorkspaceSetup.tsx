@@ -66,6 +66,16 @@ export type WorkspaceRemote = {
     onAdd: (list: RuleListName, rule: string, added: () => void) => void;
     onRemove: (rule: string) => void;
   } | null;
+  /**
+   * The machines its remote last said had not declared they know a bound quest (FABRIC-CLOSE1i2), as the last pass heard them, each
+   * with *Retire*; absent where no pass heard the handshake, or where it is not wired.
+   */
+  machines?: {
+    undeclared: string[];
+    /** The machine whose retirement is on its way, its press held meanwhile. */
+    retiring?: string | null;
+    onRetire: (machine: string) => void;
+  } | null;
 };
 
 export type WorkspaceSetupProps = {
@@ -345,6 +355,7 @@ export function WorkspaceSetup({
           {remote.wiring && (
             <Wiring workspace={workspace} wiring={remote.wiring} busy={busy} startOpen={startWiring} />
           )}
+          {wired && remote.machines && <Undeclared machines={remote.machines} busy={busy} />}
           {remote.rules && (
             <SettingRow
               label={t('projects.setup.rules')}
@@ -515,6 +526,33 @@ function Wiring({ workspace, wiring, busy, startOpen }: {
           </div>
         </form>
       )}
+    </SettingRow>
+  );
+}
+
+/**
+ * The machines its remote counts that have not declared they know a bound quest (FABRIC-CLOSE1i2): while one is listed, no quest of the
+ * workspace binds through the remote. Each carries *Retire*, for a machine whose store was deleted or that left the workspace; a push
+ * from it counts it again, so the press is said as reversible and asks nothing more.
+ */
+function Undeclared({ machines, busy }: { machines: NonNullable<WorkspaceRemote['machines']>; busy: boolean }) {
+  const { t } = useTranslation();
+  return (
+    <SettingRow label={t('projects.workspace.machines.label')} why={t('projects.workspace.machines.why')}>
+      {machines.undeclared.length === 0
+        ? <p className="m-0 text-small text-ink-soft">{t('projects.workspace.machines.none')}</p>
+        : (
+          <ul className="m-0 grid list-none gap-1 p-0">
+            {machines.undeclared.map((machine) => (
+              <li key={machine} className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <span className="font-mono text-small">{machine}</span>
+                <Button variant="ghost" disabled={busy || Boolean(machines.retiring)} onClick={() => machines.onRetire(machine)}>
+                  {t('projects.workspace.machines.retire')}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
     </SettingRow>
   );
 }
