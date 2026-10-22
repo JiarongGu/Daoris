@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- Main is verified between releases, so a release waits only for what changed since the last run (CI1).
+  `node tools/merge-branch.mjs --ci` gates main's tip in the gate tree, running only the gates its verdicts lack.
+  `--ci --watch` does that each time main moves, and `--ci --stop` ends the watch. Each run's status is
+  `local/scratch/ci-<sha7>/status.json`. `publish:desktop --stage --from-gated <commit>` stages a commit the CI passed, and
+  holds the gate tree through its build.
 - An agent's page now shows its accounts as Daoris's accounts, one set that every workspace's work may run on (D197). Adding an
   account asks only its name, and says the account joined Daoris's accounts; nothing asks which workspaces it may run work in. The
   rows no longer say *Runs for*, and their ⋯ no longer offers a default or a list to add to or take from. *How accounts are used*

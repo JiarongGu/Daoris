@@ -132,6 +132,9 @@ node tools/merge-branch.mjs --stale
 node tools/merge-branch.mjs --rerun <gate>
 node tools/merge-branch.mjs --full
 node tools/merge-branch.mjs --full --beside [<commit>]
+node tools/merge-branch.mjs --ci [<commit>]
+node tools/merge-branch.mjs --ci --watch
+node tools/merge-branch.mjs --ci --stop
 ```
 
 The last form runs the full set on the current checkout, including the long gates. The gates that
@@ -158,8 +161,8 @@ page's sources or its compiler's configuration: two sides that each typecheck ma
 its paths reach the page's sources or its test configuration, the web's design and structure checks (`web-rules`, `npm
 run check:web-rules`: `design/tokens.test.ts` and `test/structure.test.ts` alone, a minute or two), which a story or a
 module broke twice before the CI beside's `web-unit` reached it (MERGEWEBRULES1). Every other
-gate its paths reach is listed and skipped, "in the CI beside": run `--full --beside` on main's
-tip after a merge or batch and fix what it reports. `--gated` runs what the paths reach, for a risky merge; the full set
+gate its paths reach is listed and skipped, "in the CI beside": the CI (`--ci`, below) gates main's
+tip after a merge or batch; fix what it reports. `--gated` runs what the paths reach, for a risky merge; the full set
 is still required before any stage (GATESLIM1, D115).
 
 The tests of the tools only the parent runs (the merge tool, the install's publisher and the family rehearsal's set-up
@@ -177,6 +180,42 @@ Each run copies the private files a gate reads under `local/` (the declared `sen
 `local/sensitive-patterns.txt`) from the main checkout into the tree, refreshed, and keeps the run's logs in the main
 checkout's `local/scratch/beside-<sha7>/` when it ends, pass, fail or error, so a prune loses none (GATEWT1b, GATEWT1c).
 A run killed outright leaves its logs in the tree; the next run keeps them there before it clears them.
+
+### The CI between releases
+
+`--ci [<commit>]` is the local CI (CI1, D180's CI1 note). It gates main's tip, or the named commit, in the same
+`local/gate-tree`, holding its lock, and never touches the main checkout's tree. It runs only the gates that commit's
+verdicts lack. A gate runs again when it has no verdict, when a path changed since its last pass reaches it, or when its
+last verdict failed, whatever changed since. Every other gate keeps the verdict that stands, and the first run on a machine
+runs every gate. The records are not forgiven here as the stage forgives them. A run keeps going past a failure, runs at
+below normal priority with its Process lane at normal, and measures the machine before its gates start: the light lane
+runs five wide when the machine is idle, three otherwise. It is scheduled by memory: a `Process` half waits only for the
+fast half that builds its project, and the heavy light gates run beside it, each once its free memory allows (MEMGATE1).
+A run of main's tip moves to the newest tip if a merge lands before its gates start. Once they start, it runs to its
+verdict, and what lands meanwhile is the next run's.
+
+Each run writes `local/scratch/ci-<sha7>/status.json` and its gates' logs beside it, and notes itself in `local/ci.json`
+(its last green run, its runs). Read the status for:
+
+- `state`: `running`, `green`, `failed`, `stopped` or `error`;
+- `since`: the last green commit and how many paths changed since;
+- `light`: the width and why;
+- each gate of the plan with its `lane`, its `state` (`kept`, `waiting`, `running`, `done`, `not run`), its `verdict`,
+  `ms`, `log` and `note`; a kept gate also names the commit and tree its verdict was given on and how it stands
+  (`exact`, `unreached`).
+
+`--ci --watch` is the form to leave running. When main's tip moves and the gate tree is idle, it gates the newest tip. It
+never gates again a tip a run gave a verdict on (green, failed or an error); a stopped run's tip it gates again. A second
+watch says the first runs and exits. `--ci --stop` asks it to end: it
+ends the gates it is running, each with its whole tree, keeps every finished verdict, and lets its records go. A watch
+killed outright leaves a stale lock, which the next run takes over, ending what the dead run started (CIPRIO1d, CIPRIO1e).
+
+A release then waits only for the last delta. Once the status of the commit to release says `green` and the gate tree
+holds it, stage it: `npm run publish:desktop -- --to <install> --service --stage --from-gated <commit>`. The stage holds
+the gate tree's lock through its build, so no CI run moves the tree meanwhile. It still refuses a commit the tree does
+not hold, a tree a run holds, and a commit whose verdicts do not pass (`--passed`, GATE6). Its refusal names
+`--ci <commit>`, which gates that commit there again, running only what it lacks. `--full --beside` remains the run of
+every gate, for a release that wants a fresh full set.
 
 Commits are local work and follow green gates (D37). Push, publish, release, history rewrites and
 destructive actions retain their human boundary. Do not bypass provenance checks or hooks to make

@@ -142,17 +142,21 @@ once three batches hold the targets (MODELROLE1).
      orientation index's check. Every other gate the paths reach (the suites, `verify`, `tool-tests`, the rehearsals) is
      listed and skipped, "in the CI beside"; the `Process` halves and the deployment rehearsal say "in the full set before
      staging" (GATE5). `--gated` runs what the paths reach by the tool's lane table (GATE3), for a merge you judge risky.
-     **After a merge, or a batch, start the CI beside on main's tip with `--full --beside`** and route its failures as fixes
-     (a worker, or you for a record); do not wait on it to dispatch. Every run and `--plan` prints why each gate runs or is skipped. `--full` runs every gate `daoris.gates.json` declares and
+     **Leave the CI watch running (`node tools/merge-branch.mjs --ci --watch`, CI1)**: it gates main's tip in `local/gate-tree`
+     after each merge, running only what that tip's verdicts lack, and its status is `local/scratch/ci-<sha7>/status.json`.
+     Without the watch, run `--ci` after a merge or a batch. Route its failures as fixes (a worker, or you for a record); do
+     not wait on it to dispatch. `--ci --stop` ends the watch, its finished verdicts kept. Every run and `--plan` prints why each gate runs or is skipped. `--full` runs every gate `daoris.gates.json` declares and
      every rehearsal the release workflow adds. The light gates run beside the serial Process lane
      (GATELANES1); add `--one-at-a-time` on a loaded machine. Each gate's whole log goes to
      `local/scratch/merge-<branch>/`; a Process half also leaves a `.trx` there, with its ten slowest
      classes printed after it (PROC1). The lane report names lanes by id and title. Look harder at the
      diff of a branch that crossed lanes or touched the steward's records.
    - **The full set is owed before the install is built**, the long halves with it. `publish:desktop`
-     refuses a tree no full set passed (`merge-branch --passed`). Run `node tools/merge-branch.mjs --full`
-     on the checkout, or `--full` on the day's last merge, or `--full --beside` to gate main's tip in `local/gate-tree`
-     while the merges go on, then stage it with `--from-gated <commit>` (GATEWT1); it copies `local/sensitive-patterns.txt` into the tree and keeps its logs in `local/scratch/beside-<sha7>/`. 🔴 Never `--full` on a `--batch`: it runs every gate,
+     refuses a tree no full set passed (`merge-branch --passed`). Once the CI is green on the commit to release (its status
+     says `green`, and the gate tree holds it), stage it with `--from-gated <commit>` (GATEWT1): the CI's verdicts are the
+     full set's, each kept verdict one no path since reaches. A commit the gate tree no longer holds is gated there again by
+     `--ci <commit>`, which runs only what its verdicts lack. `--full --beside` still runs every gate, for a release that
+     wants a fresh full set; `--full` runs it on the checkout. Either copies `local/sensitive-patterns.txt` into the tree. 🔴 Never `--full` on a `--batch`: it runs every gate,
      the long halves included, for EVERY merge in the batch (a docs-only design paid forty minutes of the driver's
      Process half, 2026-10-09). Merge the batch plain, then `--stale` once. A verdict stands until a path its gate reaches
      changes (GATE6), and records written after the gates are forgiven; a refusal names each stale gate and
@@ -166,7 +170,7 @@ once three batches hold the targets (MODELROLE1).
      reach, keeping the other verdicts; outside `--full` it runs a long half only when named), or
      `--continue` to gate the merge again whole, or run `git merge --abort`.
    - For several branches, run `<first> --batch <second> …`. Each merge gets the blocking checks.
-     Commit it, then `--continue` merges the next. The CI beside runs once, after the last, and the full set before any stage.
+     Commit it, then `--continue` merges the next. The CI runs once, on the tip after the last, and is green before any stage.
      **Two or more branches ready merge as one batch**, never one after another: a service branch alone paid 11
      minutes of light gates and 27 of the family rehearsal (CLOSE1c24, 2026-10-19), and a batch pays the light gates once.
    - Bisecting a failure, run the test five times at each commit: one pass proves nothing of a test that fails some of
