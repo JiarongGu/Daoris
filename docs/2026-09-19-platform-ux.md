@@ -150,6 +150,10 @@ D75), where its own rules live; this is what a view may assume of it.
   one box, as text inside which no line breaks before such a mark, in either language. A command's last box is inside
   its code and the marks are not code, so it sits alone in a group that does not wrap, which leaves the break after it
   to the same rules, and it breaks inside at its line less an em a mark, so its marks are never pushed past the edge.
+- **A size is drawn in rem, so it zooms** (ZOOM1, the UI/UX design §3.11): the window zooms by the root's size, so a type step,
+  a space, a glyph (`Icon`'s pixels become rem through `glyphSize`) and an indent that lines up under a glyph follow it, and a
+  pixel size does not. The frame (`frame-held`) wears the level's inverse, so a pixel inside a bar shrinks or grows as the content
+  zooms; a bar's own rule is `--frame-rule`. A new region of the frame, or a popup it opens, wears `frame-held` or reads `FrameHeld`.
 - **Motion**: 140ms ease-out on overlays and hovers; `prefers-reduced-motion` disables it. No shimmer
   anywhere — loading placeholders are static two-tone. **Nothing at rest moves for ever** (FREEZE1): the live mark
   pulses three times as it turns live and settles, since an endless pulse kept the window drawing at the display's rate.
