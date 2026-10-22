@@ -300,8 +300,9 @@ No file under the install's home was opened, and no sign-in was run.
   - Its last update is 16:29:22, before the helper started.
   - `HelperDesk.HandAsync` refuses a lead that is `AwaitingPerson`: *"waits on the person's answer: a helper's answer
     reaches it at a turn's end, once it is answered"* (`Core/Sessions/HelperDesk.cs:141-159`, the state at `:148`).
-  - So the helper's finished answer waits, unseen in the lead's conversation, until the person answers a question the
-    lead never asked.
+  - The driver keeps the answered ask and tries the hand again at each look (`Driver/Loop/DriverHelpers.cs:418-421`, *is
+    answered, and waits to be handed*). So the answer is kept, not lost, but it waits, unseen in the lead's conversation,
+    until the person answers a question the lead never asked and the lead reaches a state that takes words.
 - **In the terminal's list** the helper is its own entry in *Ended* (`shown: completed`), and no field of that list names
   the session it served. The lead is in *You*. The page's rail nests a serving record under its asker (`nestServing`,
   `Web/src/work/groups.ts:304-330`), but only where both are drawn: here the lead is in *You* and the helper in *Ended*.
