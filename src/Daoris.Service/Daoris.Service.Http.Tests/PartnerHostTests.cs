@@ -56,6 +56,54 @@ public sealed class PartnerHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// 🔴 The hand (the design §2.3 step 9, §7.6): a running lead takes the answer at its turn's end (409); an ended one keeps it as a word
+    /// marked with the partner's record and the piece's key, reopening it, never the person's; a second hand answers the word waiting
+    /// under the key and keeps none; a lead handed over passes it to its newest successor by `from`; a record that is no partner is not found.
+    /// </summary>
+    [Fact]
+    public async Task The_hand_door_keeps_one_word_under_the_pieces_key_on_the_newest_record_of_the_leads_line()
+    {
+        var sessions = host.Composed.Sessions;
+        var lead = await sessions.CreateAsync(null, "Handing", "stub", DateTimeOffset.UtcNow, workspace: "default", tree: "trees/default/Handing/s-cccccccc");
+        Ask("h1a2b3c4", lead.Id);
+        var partner = (await host.Composed.Partners.OpenAsync(
+            new PartnerOpen(lead.Id, "h1a2b3c4", "codex-acp", "trees/default/Handing/p-h1a2b3c4"), DateTimeOffset.UtcNow)).Session!;
+
+        var running = await host.PostAsync($"/api/partners/{partner.Id}/hand", new { text = "Partner made it seven." });
+        Assert.Equal(409, running.Status);
+        Assert.Contains("never into a step in flight", running.Error);
+
+        await sessions.SetStateAsync(lead.Id, SessionState.Completed, "done.", null, null, DateTimeOffset.UtcNow);
+        var handed = await host.PostAsync($"/api/partners/{partner.Id}/hand", new { text = "Partner made it seven." });
+        Assert.Equal(200, handed.Status);
+        var word = handed.Json.GetProperty("said");
+        Assert.Equal((partner.Id, "partner:h1a2b3c4", true), (
+            word.GetProperty("helper").GetString(), word.GetProperty("key").GetString(), word.GetProperty("reopens").GetBoolean()));
+        var kept = Assert.Single((await sessions.FindAsync(lead.Id))!.Said);
+        Assert.False(kept.Persons);
+
+        var twice = await host.PostAsync($"/api/partners/{partner.Id}/hand", new { text = "Partner made it seven." });
+        Assert.Equal((200, kept.Id), (twice.Status, twice.Json.GetProperty("said").GetProperty("id").GetString()));
+        Assert.Single((await sessions.FindAsync(lead.Id))!.Said);
+
+        // A lead handed over: its line's newest record takes the next piece's answer.
+        var moved = await sessions.CreateAsync(null, "Handing", "stub", DateTimeOffset.UtcNow, workspace: "default", tree: "trees/default/Handing/s-dddddddd");
+        Ask("h2a2b3c4", moved.Id);
+        var second = (await host.Composed.Partners.OpenAsync(
+            new PartnerOpen(moved.Id, "h2a2b3c4", "codex-acp", "trees/default/Handing/p-h2a2b3c4"), DateTimeOffset.UtcNow)).Session!;
+        var successor = await sessions.CreateAsync(
+            null, "Handing", "stub", DateTimeOffset.UtcNow, workspace: "default", tree: "trees/default/Handing/s-dddddddd", from: moved.Id);
+        await sessions.SetStateAsync(moved.Id, SessionState.Completed, "handed over.", null, null, DateTimeOffset.UtcNow);
+        await sessions.SetStateAsync(successor.Id, SessionState.Completed, "done.", null, null, DateTimeOffset.UtcNow);
+        Assert.Equal(200, (await host.PostAsync($"/api/partners/{second.Id}/hand", new { text = "Partner made it eight." })).Status);
+        Assert.Empty((await sessions.FindAsync(moved.Id))!.Said);
+        Assert.Equal("partner:h2a2b3c4", Assert.Single((await sessions.FindAsync(successor.Id))!.Said).Key);
+
+        Assert.Equal(404, (await host.PostAsync($"/api/partners/{lead.Id}/hand", new { text = "x" })).Status);
+        Assert.Equal(404, (await host.PostAsync($"/api/partners/{partner.Id}/hand", new { text = "x" }, DaorisHost.OffMachine)).Status);
+    }
+
+    /// <summary>
     /// A piece not on file, a lead other than the ask's, a lead that serves another itself, the lead's own tree and a shape with a part
     /// missing are each refused in a sentence, and nothing is kept.
     /// </summary>

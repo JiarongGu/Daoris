@@ -135,6 +135,74 @@ public sealed class PartnerLookTests : IDisposable
         Assert.Equal(("Changed the window.", true), (answer.Summary, answer.LastWords));
     }
 
+    /// <summary>
+    /// 🔴 The hand (the design §2.3 step 9, §7.6): a running lead takes nothing; once it ended, the answered piece is handed once, its
+    /// receipt claimed for the lead and taken naming it, the state `handed`, in fixed words naming the agent, the facts and the line that
+    /// takes it in; a later look hands nothing again.
+    /// </summary>
+    [Fact]
+    public async Task An_answered_piece_is_handed_once_to_its_ended_lead_by_its_receipt()
+    {
+        Ask("p1", paths: ["src"]);
+        var host = Host().Session(Partner, "completed", tree: "trees/default/reports/p-p1", adapter: "codex-acp", kind: "chat");
+        host.Set(Partner, "serves", "s1");
+        host.Set(Partner, "piece", "p1");
+        var driver = Driver(host, new Pass(Files) { LastWords = "Changed the window." });
+
+        await Look(driver);
+        await Until(() => Files.ReadState("p1") is { State: PartnerStates.Answered });
+        Assert.Empty(host.PartnerHands);
+        Assert.Null(Files.ReadReceipt("p1"));
+
+        host.Move("s1", "completed");
+        var (_, events) = await Look(driver);
+        await Until(() => Files.ReadState("p1") is { State: PartnerStates.Handed });
+
+        var (partner, to, text) = Assert.Single(host.PartnerHands);
+        Assert.Equal((Partner, "s1"), (partner, to));
+        Assert.Contains("`codex-acp`", text);
+        Assert.Contains("Changed the window.", text);
+        Assert.Contains("claim to check against the commit", text);
+        Assert.Contains("2 beyond its piece's paths: `README.md`, `old.md`", text);
+        Assert.Contains($"git merge --no-ff {PieceRefs.Of("p1")}", text);
+        var receipt = Files.ReadReceipt("p1")!;
+        Assert.Equal(("s1", PartnerDelivery.KeyOf("p1"), PartnerDelivery.Taken), (receipt.To, receipt.Key, receipt.Outcome));
+        Assert.Contains(events, line => line.Contains("is handed to session s1"));
+
+        await Look(driver);
+        Assert.Single(host.PartnerHands);
+
+        // Notes on the lead and the partner, never words (the design §7.8).
+        var kept = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
+        var lead = kept.After("s1", 0).Events.Where(e => e.Kind == SessionEventKind.Note).SelectMany(note => NoteAssert.Codes(note.Parts!));
+        Assert.Equal(["partner.asked", "partner.started", "partner.answered", "partner.beyond"], lead);
+        Assert.Equal(["partner.working"], kept.After(Partner, 0).Events.Where(e => e.Kind == SessionEventKind.Note).SelectMany(note => NoteAssert.Codes(note.Parts!)));
+        Assert.DoesNotContain(kept.After("s1", 0).Events, e => e.Kind == SessionEventKind.User);
+    }
+
+    /// <summary>
+    /// 🔴 A hand a restart cut (its receipt attempted, the state still `answered`) may have reached the lead: it is uncertain, waits for
+    /// the person, and nothing hands it again by itself.
+    /// </summary>
+    [Fact]
+    public async Task A_hand_a_restart_cut_is_uncertain_and_never_handed_again_by_itself()
+    {
+        Ask("p1");
+        Files.WriteState(new PartnerState("p1", PartnerStates.Answered, null, At) { Partner = Partner, Commit = "c0ffee", Agent = "codex-acp", CopyRemoved = true });
+        Files.WriteReceipt(new PartnerReceipt("p1", "s1", PartnerDelivery.KeyOf("p1"), PartnerDelivery.Attempted, At));
+        var host = new OpinionStandIn().Session("s1", "completed", tree: "trees/default/reports/s-1").Session(Partner, "completed", kind: "chat");
+        host.Set(Partner, "serves", "s1");
+        host.Set(Partner, "piece", "p1");
+        var driver = Driver(host, pass: null);
+
+        await Look(driver);
+        await Look(driver);
+
+        Assert.Empty(host.PartnerHands);
+        Assert.Equal(PartnerDelivery.Uncertain, Files.ReadReceipt("p1")!.Outcome);
+        Assert.Equal(PartnerStates.Answered, Files.ReadState("p1")!.State);
+    }
+
     /// <summary>A lead the host does not know, and one that serves another itself, are refused by their codes and nothing starts.</summary>
     [Fact]
     public async Task A_gone_or_unfit_lead_is_refused_and_nothing_starts()

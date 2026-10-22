@@ -957,6 +957,19 @@ public sealed class SessionStore
     }, ct);
 
     /// <summary>
+    /// The newest of this machine's records continuing <paramref name="id"/> by <c>from</c> (a hand-over, a move, a carry-on), or null where
+    /// none does: a piece's answer goes to its lead's newest successor (COAGENT1b; the co-agent design §2.3 step 9).
+    /// </summary>
+    public Task<Session?> ContinuedByAsync(string id, CancellationToken ct = default) => _db.RunAsync<Session?>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = "SELECT * FROM sessions WHERE from_session = $id AND origin IS NULL ORDER BY created DESC LIMIT 1";
+        command.Parameters.AddWithValue("$id", id);
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
+    }, ct);
+
+    /// <summary>
     /// The record a quest's <c>PublishedBy</c> names (SESSONE1a): this machine's by that id, else a teammate's mirror, keyed
     /// <c>origin/id</c>, since the publisher's own machine wrote the id it knew the session by. Ids are random and 32 bits wide, so the
     /// first match stands; this machine's own is preferred.

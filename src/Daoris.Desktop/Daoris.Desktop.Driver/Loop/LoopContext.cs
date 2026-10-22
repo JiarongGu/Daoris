@@ -84,6 +84,12 @@ internal sealed class LoopContext(
     /// <summary>How a piece's agent is chosen and admitted (COAGENT1b), unless a test hands in a choice: never a production start.</summary>
     public Func<PartnerAsk, PriorSession, CancellationToken, Task<ReviewerChoice>>? PartnerChoices { get; set; }
 
+    /// <summary>
+    /// The measurements a test's stand-in agents are admitted by (COAGENT1b), in place of <see cref="PartnerMeasurements.Rows"/>; a start
+    /// that reads them is never a production start. Null for every production start, which reads the code's table and no stand-in's row.
+    /// </summary>
+    public IReadOnlyList<PartnerMeasurement>? PartnerMeasured { get; set; }
+
     /// <summary>How a partner's pass is run (the copy, the job, the record, the turn), unless a test hands in a stand-in, since a real pass spawns git and an agent (MOD8).</summary>
     public Func<PartnerPassAsk, ReviewerChoice, CancellationToken, Task<PartnerPassRun>>? PartnerPasses { get; set; }
 

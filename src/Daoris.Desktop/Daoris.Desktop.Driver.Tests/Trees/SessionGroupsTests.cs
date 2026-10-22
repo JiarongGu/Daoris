@@ -852,6 +852,29 @@ public sealed class SessionGroupsTests
     }
 
     /// <summary>
+    /// 🔴 COAGENT1b (D199 point 3; the co-agent design §2.4): a partner's ended record is never eligible to land, so no tree of its is
+    /// judged and neither its own Accept nor an entry's offers it; a helper's ended record keeps its old reading; the press and the
+    /// terminal's verb refuse it in words naming the lead's merge.
+    /// </summary>
+    [Fact]
+    public void A_partners_record_is_never_eligible_to_land_at_any_door()
+    {
+        const string copy = "X:/daoris/trees/aurora/engine/p-pc000001";
+        var partner = Record("pt1", "completed", kind: "chat", tree: copy);
+        partner["serves"] = "lead1";
+        partner["piece"] = "pc000001";
+        var helper = Record("hp1", "completed", kind: "chat", tree: Tree);
+        helper["serves"] = "lead1";
+        var look = Look([partner, helper]);
+
+        Assert.Equal([SessionGroups.Normal(Tree)], SessionGroups.TreesToJudge(look, _ => true).Select(SessionGroups.Normal));
+        var refused = TreesWords.PartnerLands(look.Records, "pt1")!;
+        Assert.Equal(1, refused.Code);
+        Assert.Contains("git merge --no-ff refs/daoris/pieces/pc000001", Assert.Single(refused.Error));
+        Assert.Null(TreesWords.PartnerLands(look.Records, "hp1"));
+    }
+
+    /// <summary>
     /// ACCEPTFOOT1b: which open conversations of this machine's are between turns. The word of the runner that holds a conversation
     /// first, as the page's foot reads it (CONV4a); where nothing in this process holds it (a terminal's listing, or a conversation
     /// another process runs), its own record of its turns, which its runner writes as each ends. Only a live conversation of this

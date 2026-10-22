@@ -47,6 +47,9 @@ internal sealed class OpinionStandIn : HttpMessageHandler
     /// <summary>Each helper's answer handed, by the helper's session, with the words as the driver composed them (MIXAGENT2a-ii).</summary>
     public List<(string Helper, string Text)> HelperHands { get; } = [];
 
+    /// <summary>Each piece's answer handed, by the partner's session, with the record it went to and the words (COAGENT1b).</summary>
+    public List<(string Partner, string To, string Text)> PartnerHands { get; } = [];
+
     /// <summary>A client over this host, as a driver is handed one.</summary>
     public ServiceClient Client() => new(Url, null, new HttpClient(this, disposeHandler: false));
 
@@ -235,6 +238,40 @@ internal sealed class OpinionStandIn : HttpMessageHandler
                     asker["said"]!.AsArray().Add(word);
                     HelperHands.Add((id, text));
                     return Answer(HttpStatusCode.OK, new JsonObject { ["message"] = "Handed.", ["session"] = asker.DeepClone(), ["said"] = word.DeepClone() });
+                }
+
+                // COAGENT1b: a piece's answer, kept under the piece's key on its lead (the stand-in knows no successor), once per key,
+                // and refused as the desk refuses it where the lead is gone, stood down, parked or running.
+                case ("POST", _) when path.StartsWith("/api/partners/", StringComparison.Ordinal) && path.EndsWith("/hand", StringComparison.Ordinal):
+                {
+                    var id = Uri.UnescapeDataString(path["/api/partners/".Length..^"/hand".Length]);
+                    var partner = Find(id);
+                    if (partner?["serves"]?.GetValue<string>() is not { } served || partner["piece"]?.GetValue<string>() is not { } piece)
+                    {
+                        return Refuse(HttpStatusCode.NotFound, $"There is no partner session `{id}`");
+                    }
+
+                    var lead = Find(served);
+                    var state = lead?["state"]!.GetValue<string>();
+                    if (lead is null) return Refuse(HttpStatusCode.Conflict, "there is no such session to hand the answer to");
+                    if (state == "stood-down") return Refuse(HttpStatusCode.Conflict, "it stood down");
+                    if (state == "awaiting-person") return Refuse(HttpStatusCode.Conflict, "it waits on the person's answer");
+                    if (Running.Contains(state!)) return Refuse(HttpStatusCode.Conflict, "a partner's answer reaches a running session at its turn's end");
+                    var key = $"partner:{piece}";
+                    if (lead["said"]!.AsArray().FirstOrDefault(each => each!["key"]?.GetValue<string>() == key) is { } waiting)
+                    {
+                        return Answer(HttpStatusCode.OK, new JsonObject { ["message"] = "Waits already.", ["session"] = lead.DeepClone(), ["said"] = waiting.DeepClone() });
+                    }
+
+                    var text = JsonNode.Parse(body!)!["text"]!.GetValue<string>();
+                    var word = new JsonObject
+                    {
+                        ["id"] = $"pt-w{++_words}", ["text"] = text, ["at"] = "2026-10-22T10:15:00Z", ["files"] = new JsonArray(), ["reopens"] = true,
+                        ["helper"] = id, ["key"] = key,
+                    };
+                    lead["said"]!.AsArray().Add(word);
+                    PartnerHands.Add((id, served, text));
+                    return Answer(HttpStatusCode.OK, new JsonObject { ["message"] = "Handed.", ["session"] = lead.DeepClone(), ["said"] = word.DeepClone() });
                 }
 
                 default:

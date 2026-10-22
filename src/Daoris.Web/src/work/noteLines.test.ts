@@ -801,6 +801,20 @@ describe('noteLines', () => {
       expect(noteLines(zh, { parts: [helping] }, 'zh')[0].text).toBe('这个会话正在为会话 ab12cd34 充当助手：它只阅读、只回答一个问题，不改动任何内容。');
     });
 
+    it('words a piece’s course on its lead and its partner, its reasons by their family (COAGENT1b)', () => {
+      const refused = coded('partner.refused', 'The piece was refused: …', { why: 'not-measured' });
+      expect(noteLines(t, { parts: [refused] }, 'en')[0].text).toBe('The piece was refused: the agent’s confinement as a partner is not measured.'.replace('’', "'"));
+      expect(noteLines(zh, { parts: [refused] }, 'zh')[0].text).toBe('分项被拒绝：这个智能体作为搭档的隔离尚未测量。');
+      const answered = coded('partner.answered', 'Partner …', { agent: 'codex-acp', session: 'pt000001' });
+      expect(noteLines(t, { parts: [answered] }, 'en')[0].text)
+        .toBe('Partner codex-acp (session pt000001) answered: its work is a commit to take in, and its words are claims to check.');
+      const uncertain = coded('partner.uncertain', 'The piece is uncertain: …', { why: 'hand-cut' });
+      expect(noteLines(zh, { parts: [uncertain] }, 'zh')[0].text).toBe('分项状态不确定：交付它的答复时 Daoris 重启了。等你处理。');
+      expect(noteLines(t, { parts: [coded('partner.refused', '…', { why: 'moved-on' })] }, 'en')[0].kind).toBe('recorded');
+      const working = coded('partner.working', 'This session is a partner …', { session: 's1' });
+      expect(noteLines(t, { parts: [working] }, 'en')[0].text).toBe('This session is a partner working one piece for session s1, in a clone of its own.');
+    });
+
     it('words a take that failed and leaves the service’s message as written', () => {
       const parts = [coded('words.not-taken', '— your words could not be taken off its record:'), words('no record at D:/x', 'program')];
       expect(noteLines(zh, { parts }, 'zh')).toEqual([

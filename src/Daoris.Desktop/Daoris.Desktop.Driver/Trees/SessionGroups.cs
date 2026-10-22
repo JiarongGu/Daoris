@@ -1155,7 +1155,8 @@ public static class SessionGroups
         /// </summary>
         public string? LandableTree(SessionRecord record)
         {
-            if ((record.Live && !_look.Between.Contains(record.Id)) || record.Teammate || record.Tree is not { } tree) return null;
+            // COAGENT1b (the co-agent design §2.4): a partner's record never lands; its piece reaches the line through its lead alone.
+            if ((record.Live && !_look.Between.Contains(record.Id)) || record.Teammate || record.Partner || record.Tree is not { } tree) return null;
             var key = Normal(tree);
             return _newestOnTree.TryGetValue(key, out var newest) && newest == record.Id && !_liveTrees.Contains(key) ? tree : null;
         }

@@ -38,8 +38,7 @@ public sealed record PartnerPassRun(string? Session, string Line)
 /// it (<see cref="PartnerStates"/>); a piece no pass of this process holds is reconciled from what is observed (<see cref="PartnerReconcile"/>).
 /// </summary>
 /// <remarks>
-/// <para><b>Not yet here</b> (D199's COAGENT1b notes, in the design's order): the hand to the lead and its word, the notes, the role's
-/// allow-list on the server, the landing doors' refusal, the measurements table and the person's press and verb. Until the measurements
+/// <para><b>Not yet here</b> (D199's COAGENT1b notes, in the design's order): the notes, the landing doors' refusal, the measurements table and the person's press and verb. Until the measurements
 /// table holds a row, <see cref="PartnerChoice"/> admits no production start: every piece is refused <see cref="PartnerWhy.NotMeasured"/>
 /// unless a test hands in its choice.</para>
 /// </remarks>
@@ -84,6 +83,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
                     state = write;
                     if (write.State == PartnerStates.Uncertain)
                     {
+                        Note(ask.Asker, PartnerNotes.Uncertain(write.Code ?? PartnerWhy.StateUnreadable));
                         events.Add(_context.Said.Say(Line(LookClass.Progress, $"partner  piece `{ask.Id}` is uncertain ({write.Code}): its copy is kept untouched for the person.")));
                     }
                 }
@@ -111,7 +111,15 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
                         break;
                     case PartnerAct.Answer:
                         handedOff = true;
-                        Beside(ask.Id, token => Task.FromResult(Answer(ask, files.ReadState(ask.Id)!, files, null)), ct);
+                        Beside(ask.Id, async token =>
+                        {
+                            var answered = Answer(ask, files.ReadState(ask.Id)!, files, null);
+                            return await HandAsync(ask, files, token).ConfigureAwait(false) ?? answered;
+                        }, ct);
+                        break;
+                    case PartnerAct.Hand:
+                        // Quick, one door: in the look, said only where it moved or waits for the person.
+                        if (await HandAsync(ask, files, ct).ConfigureAwait(false) is { } hand) events.Add(_context.Said.Say(hand));
                         break;
                 }
             }
@@ -157,7 +165,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
 
         var choice = _context.PartnerChoices is { } choose
             ? await choose(ask, lead, ct).ConfigureAwait(false)
-            : await PartnerChoice.ChooseAsync(_context.Harnesses, ask, lead.Adapter, _context.Config, lead.Workspace, ct).ConfigureAwait(false);
+            : await PartnerChoice.ChooseAsync(_context.Harnesses, ask, lead.Adapter, _context.Config, lead.Workspace, _context.PartnerMeasured, ct).ConfigureAwait(false);
         if (!choice.Chosen)
         {
             // A cool-off or a sign-in waits, tried again at a later look; a refusal by the sheet is said and ends the piece.
@@ -176,6 +184,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         switch (PartnerReservations.TryReserve(files, ask.Id, snapshot.Active, fromOf, _context.Config.Cap, taken, DateTimeOffset.UtcNow))
         {
             case PieceAdmitted.Reserved:
+                Note(ask.Asker, PartnerNotes.Asked(choice.Reviewer!));
                 return new Go(lead, root, choice);
             case PieceAdmitted.TooMany:
                 events.Add(_context.Said.Say(Refuse(ask, PartnerWhy.TooMany, choice.Reviewer, files)));
@@ -212,9 +221,14 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         files.WriteState(new PartnerState(ask.Id, PartnerStates.Waiting, code, DateTimeOffset.UtcNow));
     }
 
-    /// <summary>A piece refused: its state <see cref="PartnerStates.Refused"/> with the code, which releases any reservation it held.</summary>
-    private static LookLine Refuse(PartnerAsk ask, string code, string? agent, PartnerFiles files, string? detail = null)
+    /// <summary>
+    /// A piece refused: its state <see cref="PartnerStates.Refused"/> with the code, which releases any reservation it held, and a note on
+    /// the lead, never a word.
+    /// </summary>
+    private LookLine Refuse(PartnerAsk ask, string code, string? agent, PartnerFiles files, string? detail = null)
     {
+        // A lead this machine does not hold has no conversation to note on.
+        if (code != PartnerWhy.AskerGone) Note(ask.Asker, PartnerNotes.Refused(code));
         var kept = files.ReadState(ask.Id);
         files.WriteState((kept ?? new PartnerState(ask.Id, PartnerStates.Refused, code, DateTimeOffset.UtcNow)) with
         {
@@ -226,6 +240,13 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
     }
 
     private static LookLine Line(LookClass @class, string line) => new(line, new LookClassed(@class, "partner"));
+
+    /// <summary>A note on a record's conversation and its transcript: never a word, so it reaches no prompt and resets no count (§4.2).</summary>
+    private void Note(string session, Noted noted)
+    {
+        _context.Output?.Append(session, $"— {noted.Note}");
+        _context.Events.Keep(session, new SessionEvent { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts }, say: null);
+    }
 
     /// <summary>A piece's work beside the look, as a helper's is: told opened at once, its line joining a later look's report, its claim released at its end.</summary>
     private void Beside(string piece, Func<CancellationToken, Task<LookLine>> work, CancellationToken ct) =>
@@ -266,7 +287,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         if (root is null) return Refuse(ask, PartnerWhy.CopyFailed, state.Agent, files);
         var choice = _context.PartnerChoices is { } choose
             ? await choose(ask, lead, ct).ConfigureAwait(false)
-            : await PartnerChoice.ChooseAsync(_context.Harnesses, ask, lead.Adapter, _context.Config, lead.Workspace, ct).ConfigureAwait(false);
+            : await PartnerChoice.ChooseAsync(_context.Harnesses, ask, lead.Adapter, _context.Config, lead.Workspace, _context.PartnerMeasured, ct).ConfigureAwait(false);
         if (!choice.Chosen) return Refuse(ask, choice.Code ?? PartnerWhy.NotMeasured, ask.Agent, files);
         return await RunPieceAsync(ask, lead, root, choice, files, ct).ConfigureAwait(false);
     }
@@ -288,10 +309,12 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         var pass = new PartnerPassAsk(ask, lead, root, copy)
         {
             // 🔴 Started, naming the record and the job, BEFORE its turn: `partner_answer` finds its piece by this state.
-            Opened = (partner, job) => files.WriteState(files.ReadState(ask.Id)! with
+            Opened = (partner, job) =>
             {
-                State = PartnerStates.Started, Partner = partner, Job = job, At = DateTimeOffset.UtcNow,
-            }),
+                files.WriteState(files.ReadState(ask.Id)! with { State = PartnerStates.Started, Partner = partner, Job = job, At = DateTimeOffset.UtcNow });
+                Note(ask.Asker, PartnerNotes.Started(agent, partner));
+                Note(partner, PartnerNotes.Working(ask.Asker));
+            },
         };
         var run = await (_context.PartnerPasses ?? PartnerPassAsync)(pass, choice, ct).ConfigureAwait(false);
         if (run.Session is null)
@@ -304,6 +327,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         // The job is empty: no process of the partner's, nor a child, can still write the copy. The keeper's moment dates its commit.
         var now = DateTimeOffset.UtcNow;
         files.WriteState(files.ReadState(ask.Id)! with { State = PartnerStates.Ending, End = run.End ?? PartnerEnds.Answered, Kept = now, At = now });
+        if (PartnerNotes.Ended(run.End, agent) is { } ended) Note(ask.Asker, ended);
         return await KeepAsync(ask, files, run.LastWords, ct).ConfigureAwait(false);
     }
 
@@ -318,6 +342,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         if (state.Copy is not { } copy || state.Kept is not { } moment)
         {
             files.WriteState(state with { State = PartnerStates.Uncertain, Code = PartnerWhy.StateUnreadable, At = DateTimeOffset.UtcNow });
+            Note(ask.Asker, PartnerNotes.Uncertain(PartnerWhy.StateUnreadable));
             return Line(LookClass.Progress, $"partner  piece `{ask.Id}` is uncertain: its state names no copy or no keeper's moment.");
         }
 
@@ -331,17 +356,21 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
                 files.WriteState(state with { State = PartnerStates.Imported, Code = null, Commit = kept.Commit, At = DateTimeOffset.UtcNow });
                 var left = await OpinionTree.RemoveAsync(_context.Home, copy, PartnerPass.Prefix).ConfigureAwait(false);
                 if (left is null) files.WriteState(files.ReadState(ask.Id)! with { CopyRemoved = true });
-                return Answer(ask, files.ReadState(ask.Id)!, files, kept.Judged);
+                var answered = Answer(ask, files.ReadState(ask.Id)!, files, kept.Judged);
+                return await HandAsync(ask, files, ct).ConfigureAwait(false) ?? answered;
             case PartnerStates.Held:
                 files.WriteState(state with { State = PartnerStates.Held, Code = kept.Code, At = DateTimeOffset.UtcNow });
                 if (kept.Judged is { } held) files.WriteFacts(Facts(ask, "", held));
+                Note(ask.Asker, PartnerNotes.Kept(kept.Code ?? PartnerWhy.ImportRefused));
                 return Line(LookClass.Progress, $"partner  piece `{ask.Id}` is held ({kept.Code}): its import was refused, and its copy is kept for the person.");
             case null:
                 await OpinionTree.RemoveAsync(_context.Home, copy, PartnerPass.Prefix).ConfigureAwait(false);
                 files.WriteState(state with { State = PartnerStates.Refused, Code = PartnerWhy.NoWork, CopyRemoved = !Directory.Exists(copy), At = DateTimeOffset.UtcNow });
+                Note(ask.Asker, PartnerNotes.Refused(PartnerWhy.NoWork));
                 return Line(LookClass.Progress, $"partner  piece `{ask.Id}` left no work in its copy.");
             default:
                 files.WriteState(state with { State = PartnerStates.Uncertain, Code = kept.Code, At = DateTimeOffset.UtcNow });
+                Note(ask.Asker, PartnerNotes.Uncertain(kept.Code ?? PartnerWhy.StateUnreadable));
                 return Line(LookClass.Progress, $"partner  piece `{ask.Id}` is uncertain ({kept.Code}): {kept.Why}");
         }
     }
@@ -363,8 +392,8 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
     }
 
     /// <summary>
-    /// The answer (the design §2.3 step 8): the facts written beside the partner's own words, then <see cref="PartnerStates.Answered"/>. The
-    /// hand to the lead is the next sub-feature's; until it lands, an answered piece waits at <c>answered</c>.
+    /// The answer (the design §2.3 step 8): the facts written beside the partner's own words, then <see cref="PartnerStates.Answered"/>,
+    /// from which <see cref="HandAsync"/> hands it.
     /// </summary>
     private static LookLine Answer(PartnerAsk ask, PartnerState state, PartnerFiles files, PieceImport.Judged? judged)
     {
@@ -379,6 +408,70 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         var said = files.ReadAnswer(ask.Id) is { } answer ? (answer.LastWords ? "its last words stand as its answer" : "it answered through its tool") : "it gave no answer";
         return Line(LookClass.Progress,
             $"partner  piece `{ask.Id}` by {state.Agent ?? "a partner"} is answered: {TextBounds.ShortCommit(state.Commit ?? "", 7)} frozen at {PieceRefs.Of(ask.Id)}, {said}.");
+    }
+
+    /// <summary>
+    /// The hand (the design §2.3 step 9, §7.6): an answered piece's word, in <see cref="PartnerWords"/>' fixed words, handed through the
+    /// local host's door under the piece's key to the newest record of the lead's line, by the delivery receipt. The receipt is claimed,
+    /// then marked attempted before the door, then taken naming the record the door kept it on, and the state <c>handed</c>. A running
+    /// or parked lead takes it at its turn's end, so nothing is tried or said while it runs; a door that refuses puts the receipt back to
+    /// waiting. A receipt found attempted was cut by a restart: it is uncertain and waits for the person, never handed again by itself.
+    /// Null where nothing moved worth saying.
+    /// </summary>
+    private async Task<LookLine?> HandAsync(PartnerAsk ask, PartnerFiles files, CancellationToken ct)
+    {
+        var state = files.ReadState(ask.Id);
+        if (state is not { State: PartnerStates.Answered, Partner: { } partner }) return null;
+        var receipt = files.ReadReceipt(ask.Id);
+        switch (receipt?.Outcome)
+        {
+            case PartnerDelivery.Attempted:
+                files.WriteReceipt(PartnerDelivery.Found(receipt, DateTimeOffset.UtcNow));
+                Note(ask.Asker, PartnerNotes.Uncertain(PartnerWhy.HandCut));
+                return Line(LookClass.Progress, $"partner  piece `{ask.Id}`'s answer may have reached its lead before Daoris stopped: it waits for the person, and is never handed again by itself.");
+            case PartnerDelivery.Uncertain:
+                return null;
+            case PartnerDelivery.Taken:
+                files.WriteState(state with { State = PartnerStates.Handed, At = DateTimeOffset.UtcNow });
+                return null;
+        }
+
+        // Never into a step in flight (D136): a running or parked lead takes it at its turn's end. Said nowhere, as a helper's.
+        var lead = await _context.Service.RecordAsync(ask.Asker, ct).ConfigureAwait(false);
+        if (lead is { Running: true } or { Parked: true }) return null;
+
+        var now = DateTimeOffset.UtcNow;
+        receipt = PartnerDelivery.Claim(receipt, ask.Id, ask.Asker, now);
+        files.WriteReceipt(receipt);
+        var facts = files.ReadFacts(ask.Id) ?? new PartnerFacts(ask.Id, state.Commit ?? "", [], [], [], now);
+        var text = PartnerWords.Compose(ask, state, facts, files.ReadAnswer(ask.Id), PieceRefs.Of(ask.Id));
+
+        // 🔴 Attempted before the door: a restart between the two finds it so, and never hands it twice.
+        files.WriteReceipt(PartnerDelivery.Attempt(receipt, now));
+        var (handed, message, word, to) = await _context.Service.Partners.HandAsync(partner, text, ct).ConfigureAwait(false);
+        if (!handed)
+        {
+            files.WriteReceipt(PartnerDelivery.Refused(files.ReadReceipt(ask.Id) ?? receipt, DateTimeOffset.UtcNow));
+            return Line(LookClass.Retry, $"partner  piece `{ask.Id}` is answered, and waits to be handed to session {ask.Asker}'s line: {message}");
+        }
+
+        var destination = to ?? ask.Asker;
+        files.WriteReceipt(PartnerDelivery.Took(receipt, destination, DateTimeOffset.UtcNow));
+        files.WriteState(state with { State = PartnerStates.Handed, At = DateTimeOffset.UtcNow });
+        Note(destination, PartnerNotes.Answered(state.Agent ?? "a partner", partner));
+        if (facts.Beyond.Count > 0) Note(destination, PartnerNotes.Beyond(facts.Beyond.Count));
+
+        // A conversation hears it as its next turn, as a helper's answer: the shell's chat runner hears this event (D137 §3.1).
+        if (word is not null && await _context.Service.RecordAsync(destination, ct).ConfigureAwait(false) is { Kind: "chat" })
+        {
+            _context.Events.Keep(
+                destination,
+                new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Helper = partner, Id = word, Text = text, Reaches = "resume" },
+                say: null);
+        }
+
+        return Line(LookClass.Progress,
+            $"partner  piece `{ask.Id}` by {state.Agent ?? "a partner"} is handed to session {destination}: it takes it in with `git merge --no-ff {PieceRefs.Of(ask.Id)}`.");
     }
 
     /// <summary>
@@ -402,6 +495,15 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         catch (DriverException error)
         {
             return new PartnerPassRun(null, $"held  partner for piece `{piece}`: {error.Message}") { Code = PartnerWhy.NotMeasured };
+        }
+
+        // Admission at the start (D199 point 4): the whole effective configuration this start would hand, held to a measured row, before
+        // anything of the partner's is made. A production start reads no stand-in's row.
+        var (rules, hardDeny, guarded) = _driver.PartnerHanded(ask.Lead.Workspace, ask.Lead.Repository ?? "");
+        var configuration = PartnerConfigurations.Of(adapter, selection.Version, ask.Copy, rules, hardDeny, guarded, ThisSystem());
+        if (PartnerMeasurements.Admitting(_context.PartnerMeasured ?? PartnerMeasurements.Rows, configuration, production: _context.PartnerMeasured is null) is null)
+        {
+            return new PartnerPassRun(null, $"refused  partner for piece `{piece}`: {PartnerMeasurements.Refused(configuration)}") { Code = PartnerWhy.NotMeasured };
         }
 
         if (await PieceCopy.MakeAsync(ask.Root, ask.Copy, ask.Ask.Base, ct).ConfigureAwait(false) is { } failed)
@@ -429,7 +531,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         ask.Opened?.Invoke(sessionId, PieceJobs.NameOf(piece));
         try
         {
-            return await TurnAsync(ask, adapter, selection, agent, sessionId, job, launcher, ct).ConfigureAwait(false);
+            return await TurnAsync(ask, adapter, selection, agent, sessionId, job, launcher, configuration, ct).ConfigureAwait(false);
         }
         finally
         {
@@ -441,7 +543,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
 
     private async Task<PartnerPassRun> TurnAsync(
         PartnerPassAsk ask, ISessionAdapter adapter, HarnessSelection selection, string agent, string sessionId, ProcessJob job, string launcher,
-        CancellationToken ct)
+        PartnerConfiguration configuration, CancellationToken ct)
     {
         var service = _context.Service;
         var home = _context.Home;
@@ -483,9 +585,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
             // What it may do: the person's composition for its repository under the partner's rules (`PartnerPermissions`), held to its
             // copy by the tree guard; the connector's host refuses the same tools by the record's role whatever rules its agent takes.
             var handedRules = _driver.HandRules(adapter, info, sessionId, ask.Lead.Workspace, repository, tree: ask.Copy, kept: null, partner: true);
-            // The effective configuration it was handed (§3.3): what M2 measures in, and what admission compares with a measured row.
-            var (rules, hardDeny, guarded) = _driver.PartnerHanded(ask.Lead.Workspace, repository);
-            var configuration = PartnerConfigurations.Of(adapter, selection.Version, ask.Copy, rules, hardDeny, guarded, ThisSystem());
+            // The effective configuration it was handed (§3.3), admitted by a measured row before the copy was made: what M2 measures in.
             _driver.Log?.Info(
                 "partner.started", ("session", sessionId), ("piece", piece), ("agent", configuration.Agent),
                 ("version", configuration.HarnessVersion ?? ""), ("posture", configuration.Posture ?? ""), ("roots", configuration.WritableRoots),

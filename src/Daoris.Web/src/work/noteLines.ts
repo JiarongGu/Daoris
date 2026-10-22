@@ -15,7 +15,7 @@ type Translate = (key: string, options?: Record<string, unknown>) => string;
  * the step that chose a conversation's account (`note.opening.why.*`, UX7d-1), or whose words a resumed conversation goes on
  * with (`note.resumed.why.*`, CONVNOTE2a), or why the person's words never reached it (`note.words.why.*`, CONVNOTE2d1).
  */
-type Why = 'continue' | 'cooling' | 'opening' | 'resumed' | 'unreached' | 'handed' | 'helper' | 'handover';
+type Why = 'continue' | 'cooling' | 'opening' | 'resumed' | 'unreached' | 'handed' | 'helper' | 'handover' | 'partner';
 
 /**
  * A code the page words: the values its sentence says, its key where it is not `note.<code>`, the reasons a `why` names, and
@@ -269,6 +269,18 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'helper.refused': { values: ['why'], why: 'helper' },
   'helper.refused-by': { values: ['agent', 'why'], why: 'helper' },
   'helper.helping': { values: ['session'] },
+  // A partner's piece (COAGENT1b, D199 point 8): on the lead its course, on the partner whose session it works for. Notes, never words.
+  'partner.asked': { values: ['agent'] },
+  'partner.started': { values: ['agent', 'session'] },
+  'partner.answered': { values: ['agent', 'session'] },
+  'partner.refused': { values: ['why'], why: 'partner' },
+  'partner.stopped': { values: ['agent'] },
+  'partner.out-of-time': { values: ['agent'] },
+  'partner.limited': { values: ['agent'] },
+  'partner.uncertain': { values: ['why'], why: 'partner' },
+  'partner.beyond': { values: ['count'] },
+  'partner.kept': { values: ['why'], why: 'partner' },
+  'partner.working': { values: ['session'] },
   // The answers-alone bound (COWORK1e, D188 point 4): a third answer in a row with nobody between held for the person, by the agent that
   // answered; their *Go on with this answer*, which counts as their word; their *Not now*.
   'answers.held': { values: ['agent'] },
@@ -404,6 +416,31 @@ export const HANDED_REASONS: Readonly<Record<string, { key: string; values: read
   resume: { key: 'note.handed.why.resume', values: [] },
   'carry-on': { key: 'note.handed.why.carry-on', values: [] },
   retry: { key: 'note.handed.why.retry', values: [] },
+};
+
+/**
+ * Why a piece was refused, held or uncertain (COAGENT1b; the driver's `NoteCodes.Partner`), each its entry; none carries a value of
+ * its own. `locales/note.test.ts` holds this map to the driver's declaration key for key.
+ */
+export const PARTNER_REASONS: Readonly<Record<string, { key: string; values: readonly string[] }>> = {
+  'asker-unfit': { key: 'note.partner.why.asker-unfit', values: [] },
+  'asker-gone': { key: 'note.partner.why.asker-gone', values: [] },
+  blank: { key: 'note.partner.why.blank', values: [] },
+  'path-outside': { key: 'note.partner.why.path-outside', values: [] },
+  'no-commit': { key: 'note.partner.why.no-commit', values: [] },
+  'base-missing': { key: 'note.partner.why.base-missing', values: [] },
+  'too-many': { key: 'note.partner.why.too-many', values: [] },
+  'not-listed': { key: 'note.partner.why.not-listed', values: [] },
+  'no-connector': { key: 'note.partner.why.no-connector', values: [] },
+  'not-measured': { key: 'note.partner.why.not-measured', values: [] },
+  'copy-failed': { key: 'note.partner.why.copy-failed', values: [] },
+  'no-job': { key: 'note.partner.why.no-job', values: [] },
+  'state-unreadable': { key: 'note.partner.why.state-unreadable', values: [] },
+  'job-unknown': { key: 'note.partner.why.job-unknown', values: [] },
+  'ref-moved': { key: 'note.partner.why.ref-moved', values: [] },
+  'import-refused': { key: 'note.partner.why.import-refused', values: [] },
+  'no-work': { key: 'note.partner.why.no-work', values: [] },
+  'hand-cut': { key: 'note.partner.why.hand-cut', values: [] },
 };
 
 /**
@@ -652,6 +689,7 @@ function said(
       if (code.why === 'unreached') return UNREACHED_REASONS[why] ? t(UNREACHED_REASONS[why].key) : null;
       if (code.why === 'handed') return HANDED_REASONS[why] ? t(HANDED_REASONS[why].key) : null;
       if (code.why === 'helper') return HELPER_REASONS[why] ? t(HELPER_REASONS[why].key) : null;
+      if (code.why === 'partner') return PARTNER_REASONS[why] ? t(PARTNER_REASONS[why].key) : null;
       if (code.why === 'handover') return HAND_OVER_ASK_REASONS[why] ? t(HAND_OVER_ASK_REASONS[why].key) : null;
       return reasonOf(t, why, {
         from: text(values.from), to: text(values.to), adapter: text(values.adapter), agent: text(values.agent),

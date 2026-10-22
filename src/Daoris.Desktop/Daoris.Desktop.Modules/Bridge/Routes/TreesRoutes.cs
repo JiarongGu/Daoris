@@ -567,6 +567,12 @@ public sealed class TreesRoutes(DriverLoop loop)
 
         var questId = await service.SessionQuestAsync(id, cancellationToken);
         var records = await service.SessionRecordsAsync(cancellationToken);
+        // COAGENT1b (D199 point 3): a partner's record lands nothing, at the press, the plan and the verb alike.
+        if (TreesWords.PartnerLands(records, id) is { } partner)
+        {
+            if (press || terminal) return Refused(id, partner);
+            throw Refusals.Because(Refusals.SessionNotReviewable, partner.Error[0]["trees: ".Length..], ("session", id));
+        }
         // A rule's plugin says its lines on the console under its name, as a hook's do (D64 §4, D100); what the
         // landing did with it goes to the machine log and the loop's record of its health (PLUGUI1d).
         // RPC1b3: the lines also go into the answer (`said`), so a terminal that sent the press prints them as the alone path does.

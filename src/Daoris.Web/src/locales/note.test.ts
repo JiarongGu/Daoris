@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { BACKGROUND_STATES, HAND_OVER_ASK_REASONS, HANDED_REASONS, HELPER_REASONS, NOTE_CODES, NOTE_VALUES, OPENING_REASONS, RESUMED_REASONS, UNREACHED_REASONS } from '../work/noteLines';
+import { BACKGROUND_STATES, HAND_OVER_ASK_REASONS, HANDED_REASONS, HELPER_REASONS, NOTE_CODES, PARTNER_REASONS, NOTE_VALUES, OPENING_REASONS, RESUMED_REASONS, UNREACHED_REASONS } from '../work/noteLines';
 import { driverSource } from '../test/driverSource';
 import { REASONS } from '../work/say';
 import { en, zh } from '.';
@@ -86,7 +86,7 @@ describe('a session note’s codes, held to both catalogues', () => {
 
   it.each([['en', en], ['zh', zh]] as const)('keeps no `note.*` entry in %s that no writer declares', (_, catalogue) => {
     // A reason a `why` names is declared by its writer too (UX7d-1: the opening's, `note.opening.why.*`).
-    const keys = new Set([...codes.map((code) => code.key), ...['Continue', 'Cooling', 'Opening', 'Resumed', 'Unreached', 'Handed', 'Helper', 'HandOver'].flatMap((family) => reasons(family).map((reason) => reason.key)), ...backgroundStates().map((state) => `note.background.state.${state}`)]);
+    const keys = new Set([...codes.map((code) => code.key), ...['Continue', 'Cooling', 'Opening', 'Resumed', 'Unreached', 'Handed', 'Helper', 'HandOver', 'Partner'].flatMap((family) => reasons(family).map((reason) => reason.key)), ...backgroundStates().map((state) => `note.background.state.${state}`)]);
     const orphans = Object.keys(catalogue).filter((key) => key.startsWith('note.') && !keys.has(key));
     expect(orphans).toEqual([]);
   });
@@ -217,6 +217,20 @@ describe('the page’s map of a note’s codes, held to both writers', () => {
     expect(page.sort(byKey)).toEqual([...helper].sort(byKey));
     for (const catalogue of [en, zh]) {
       for (const { key, values } of helper) {
+        expect(placeholders(catalogue[key] ?? ''), `\`${key}\``).toEqual([...values].sort());
+      }
+    }
+  });
+
+  /** COAGENT1b: why a piece was refused, held or uncertain is a reason family of its own, held key for key. */
+  it('words every reason a piece was refused, held or uncertain', () => {
+    const partner = reasons('Partner');
+    expect(partner.length).toBe(18);
+    const page = Object.values(PARTNER_REASONS).map(({ key, values }) => ({ key, values: [...values] }));
+    const byKey = (a: { key: string }, b: { key: string }) => a.key.localeCompare(b.key);
+    expect(page.sort(byKey)).toEqual([...partner].sort(byKey));
+    for (const catalogue of [en, zh]) {
+      for (const { key, values } of partner) {
         expect(placeholders(catalogue[key] ?? ''), `\`${key}\``).toEqual([...values].sort());
       }
     }
