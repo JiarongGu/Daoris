@@ -19703,3 +19703,14 @@ identity and git grants among them; `tools/read-shares.mjs` (in `npm run verify`
 90 tests meet each moved reader with `MoveHold` (83 failed with the readers plain again). `SessionRequests.TakeAt` keeps its
 plain read on purpose (REQTAKE1: its refusal is the sign another loop has the request). The rest is READSHARE1b. Detail: FIX-LOG
 2026-10-23 (READSHARE1). On Opus.
+
+## PROCSPEED1b — the remaining step-by-step repository builds copied from seeds (2026-10-23)
+
+> - [ ] **PROCSPEED1b — the remaining step-by-step repository builds copied from seeds** (driver tests; after PROCSPEED1). These classes still build their own repositories, 5 to 8 git starts a test: `BranchTidyingFixture` (26 tests), `LandingPluginFixture` (8), `SweepTests`, `SessionTreeOnlyHereTests`, `GitReadsTests`, `SessionTreeWorkTests`, `CanonicalLineTests`, `CloseFenceGitTests`, `LandGitCountTests`, `AutoLandingFixture`/`AutoLandingWakesTests`. Contract: PROC1h's FIX-LOG note, PROCSPEED1's; check each class for reads of a commit's age (BranchTidying reads `TreeStrays.Quiet`). Proof: per class, git starts and time before and after, each class run on its own by the parent (a worker never runs the git half).
+
+**Outcome** 2026-10-23: every listed class and PROCSPEED1's five copy a seed (`GitSeed.PlainAsync`; shapes of their own for the
+tidy, plugin and reads fixtures), each seed's repositories with `maintenance.auto` and `receive.autogc` off, and the platform's
+commits are plumbing in the bare origin (three starts a squash, from about twenty); no product line changed. The traced half
+showed where the seconds went: the start's own cost on this machine, and the product's repeated asks (left to PROC1d-v). On
+main, the 18 changed classes' 242 git cases ran in 14 min 6 s, about 3.5 s a test from 24. The whole half's time comes with CI1's
+next run on main. Detail: FIX-LOG 2026-10-23 (PROCSPEED1b). On Opus.
