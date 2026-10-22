@@ -63,6 +63,7 @@
   "projects.setUp.asks.whole": "the whole setup",
   "projects.setUp.asks.move": "the move to the `agents` layout",
   "projects.setUp.asks.declare": "its declaration and knowledge alone",
+  "projects.setUp.asks.index": "its index of where things are",
   "projects.setUp.agent": "Carried by",
   "projects.setUp.lands": "Lands",
   "projects.setUp.landsMerge": "merged into its line, where the landed history is the review",

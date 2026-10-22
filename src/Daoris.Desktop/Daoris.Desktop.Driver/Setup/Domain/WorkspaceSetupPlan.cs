@@ -72,6 +72,13 @@ public sealed record WorkspaceSetupPlan(string Workspace, IReadOnlyList<string> 
     public IReadOnlyDictionary<string, string> Published { get; init; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// Each repository's index quest (ORIENT2c), by the repository's name, as the plan published it once the repository was
+    /// set up: the plan asks it after the set-up, one at a time with the set-ups.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> Indexed { get; init; } =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Each repository the press refused at its turn, with why, by the repository's name.</summary>
     public IReadOnlyDictionary<string, SetupSkip> Skipped { get; init; } =
         new Dictionary<string, SetupSkip>(StringComparer.OrdinalIgnoreCase);
