@@ -119,7 +119,7 @@ internal static class AgentListCommand
     {
         var owner = toolchain.Owner(name);
         var report = await HarnessProbe.ProbeAsync(
-            name, toolchain, command: null, settings, home, ct, own: false,
+            name, toolchain, command: null, settings, home, ct,
             // A door asks no account: its list is its owner's, said under the owner.
             asks: owner == name ? null : _ => false,
             clock: () => now,

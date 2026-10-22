@@ -406,10 +406,22 @@ public static class HarnessActions
     /// Refused, with nothing made, for an agent with no sign-in flow, a device code asked of one that has none (CODEXLOGIN1), an
     /// account that is not here (ACCT1), and a pin with nothing installed at it, which is never <c>PATH</c>'s instead (D57).
     /// </summary>
+    /// <remarks>
+    /// 🔴 <b>Only into an account's folder under the home</b> (POOL1a3, D197 point 3): a folder outside the account homes is
+    /// refused before the agent's flow is resolved, so no sign-in can start with the agent's configuration home anywhere else,
+    /// the person's own above all, which Daoris never signs in or out.
+    /// </remarks>
     /// <param name="way">The tool's own sign-in, first, or its device code (CODEXLOGIN1).</param>
     public static ProcessStartInfo PrepareLogin(
         HarnessToolchain toolchain, HarnessCommand run, string profileHome, bool fresh, SignInWay way = SignInWay.Browser)
     {
+        if (string.IsNullOrWhiteSpace(profileHome) || HarnessSettings.AccountAt(profileHome) is null)
+        {
+            throw new DriverException(
+                $"a sign-in runs only into one of Daoris's accounts, a folder under its account homes, so nothing was signed in — "
+                + $"your own `{run.Harness}` sign-in is yours, signed in with the tool itself at your terminal.");
+        }
+
         var login = SignInWays.Arguments(run.Harness, toolchain, way);
 
         if (!fresh && !Directory.Exists(profileHome))
