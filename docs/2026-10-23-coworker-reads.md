@@ -497,3 +497,46 @@ Codex's read of round 3 at `3a928e71c`, read-only, with HELPERWAIT1 as built mer
 **6 findings: 5 blocking, 1 not blocking.**
 
 **Verdict: another round.** The answered-park correction, conservative treatment of legacy parks, notice/taking distinction and partner-wait deferral hold. Keeping the receipt on the ask and retrying failed returns at each look are also reasonable choices. Acceptance still rests on guarantees the built paths do not keep: unread-question retention, preservation of uncertain delivery outcomes, tree protection during recovery and delivery beyond the lineage traversal bound. Correct those contracts and their proofs, and make the remaining person-facing fallback a prerequisite of the first showing.
+
+## Codex, round 4
+
+Codex's read of round 4 with HELPERWAIT1b's fixes, read-only. HELPERWAIT1b2 answers its one blocking finding; then the steward accepts D203.
+
+### 1. Round-3 findings
+
+Paths: **Driver** = `src/Daoris.Desktop/Daoris.Desktop.Driver`; **Tests** = its sibling `Daoris.Desktop.Driver.Tests`; **Core** = `src/Daoris.Service/Daoris.Service.Core`; **Http.Tests** = its sibling `Daoris.Service.Http.Tests`; **design** = `docs/2026-10-23-coworker-design.md`.
+
+| Finding | Verdict | Where: code and test | Why |
+|---|---|---|---|
+| 1 — conclusion deletes its unread question | taken | `Driver/Sessions/Questions/QuestionFiles.cs:115`; callers `Driver/Loop/Driver.cs:2452`, `Driver/Loop/DriverContinuations.cs:583`; `Tests/Sessions/QuestionFilesTests.cs:221` | A parked settlement now retains an unread file. The test exercises the shared settler with first-run and resumed-run event histories; both actual conclusions call it. |
+| 2 — ambiguous hand clears duplicate protection | taken | `Driver/Conversations/Helpers/HelperDoors.cs:96`; `Driver/Loop/DriverHelpers.cs:668`, `:674`, `:683`; `Tests/Loop/HelperLookTests.cs:976` | Lost responses retain `Attempted`; read-back finds the word or settles uncertainty without another hand. Local dispatch remains incomplete, as finding 1 below explains. |
+| 3 — cleanup releases the tree during failed-return recovery | taken | `Driver/Trees/Branches/BranchTidying.cs:103`, `:163`; `Driver/Help/HelpHousekeeping.cs:193`; `Tests/Trees/BranchTidyingTests.cs:694`; `Tests/Trees/SessionLocksTests.cs:94` | Protection now depends on the completed helper wait and a taken quest, independently of open asks; lock release consumes that protected set. |
+| 4 — successor limit delivers to a left part | taken | `Core/Sessions/HelperDesk.cs:143`; `Driver/Loop/DriverHelpers.cs:605`, `:733`; `Http.Tests/HelperHostTests.cs:141`; `Tests/Loop/HelperLookTests.cs:1012` | Both resolutions detect a seventeenth successor and refuse delivery; the boundary tests distinguish sixteen links from seventeen. |
+| 5 — cap-one progress unproved | taken | `Tests/Loop/HelperWaitTickTests.cs:68`, `:90`, `:120` | The driver explicitly runs at cap one, and the test checks that the helper starts after its asker becomes completed, then verifies continuation with the answer. |
+| 6 — row 11 follows the first showing | taken | design:642, :648, :664, :698; `docs/decisions/D203.md:160` | HELPERWAIT1c explicitly precedes row 1’s landing and installed proof, retaining the refusal/unreachable and bilingual cases. Its claimed backlog filing is missing; finding 2 below. |
+
+### 2. Findings on HELPERWAIT1b’s code
+
+1. **Blocking — recovering a committed hand can leave a conversation’s answer undelivered.**
+
+   **Where:** `Driver/Loop/DriverHelpers.cs:683` returns on uncertainty; read-back at `:649` records `Handed` and returns without the conversation notification at `:707`. The consumer requires that notification at `Driver/Conversations/Chat/ChatGoOn.cs:240`. The new regression is `Tests/Loop/HelperLookTests.cs:976`.
+
+   A working conversation can receive a committed word followed by a 500, unreadable response or timeout. The new branch preserves the attempt correctly. On the next look, `HandedBefore` finds the waiting word and marks delivery finished, but nothing emits the `reaches: resume` event that tells its runner to take it. Startup’s `TakeUpAsync` is not a recurring recovery mechanism (`Daoris.Desktop.Modules/Loop/DriverLoop.cs:1114`). The answer can therefore remain waiting until another notification or restart.
+
+   The urgent driven path similarly skips `HoldKept` at `DriverHelpers.cs:691`, losing its promised next-step delivery. The new test checks hand count and saved state against a completed driven record; it proves neither dispatch.
+
+   **Smallest fix:** When read-back finds a waiting word, complete the idempotent local dispatch for that word’s actual recipient and id before finalizing recovery: notify the chat runner or enqueue the urgent inbox handoff, without posting another hand. Add lost-response cases proving one actual chat turn and urgent next-step delivery. Preserve the separate consumed-without-event uncertainty case.
+
+### 3. Findings on rows and records
+
+2. **Not blocking — HELPERWAIT1c is described as filed, but has no backlog entry.**
+
+   **Where:** design:698–703 says it is filed in `TASKS.md` now; §15.4’s finding-6 answer cites that entry. `TASKS.md:327` and `:343` contain the two COWORKUX1 entries, but the file contains neither HELPERWAIT1c nor its former HELPERWAIT1b fallback task.
+
+   The design’s prerequisite is now clear, so the ordering defect is resolved. The claimed durable task record is absent, however, leaving already-needed recovery work discoverable only through the proposal.
+
+   **Smallest fix:** File HELPERWAIT1c with row 11’s scope and proofs, explicitly making it a prerequisite of COWORKUX1a’s landing and installed proof; correct the table’s citation to that entry.
+
+**2 findings: 1 blocking, 1 not blocking.**
+
+**Verdict: accept after the named changes.** The six round-3 corrections hold within their stated scope. Before accepting D203, restore local dispatch after uncertain-hand recovery, prove the chat and urgent delivery cases while retaining once-only protection, and file HELPERWAIT1c with its prerequisite. These are bounded changes the steward can check against the targeted regressions and records without another design read.
