@@ -5,6 +5,22 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-22 — The agents' text table on `main` still held the account files as written before the fold (POOL1a1)
+
+- **Symptom:** `AgentsTextTests` red on `main` since POOL1a1 merged (`23ef46849`): 28 of its 306 cases, each a terminal account verb
+  (`profile remove|default|order|join|use`, `key`) whose `harnesses.json` after the run was not the table's. No verb's words or exit
+  differed.
+- **Root cause:** POOL1a1 made every `HarnessSettings.Change` fold the stored accounts into one set before its edit (D197 §6), so
+  each verb that writes the file now writes it folded: each order whole, the defaults and workspace sections gone, a `pooled`
+  receipt where the fold had anything to say. The table (`fixtures/agents-text.json`) was not among POOL1a1's proofs and kept the
+  unfolded files. Two things the fold adds were also not yet spelled by the test: a receipt's id, drawn at random, and the machine
+  log a named wiring file's fold writes under that file's own home.
+- **Fix:** each of the 28 rows' `after` is the run's, normalized and reviewed as the fold alone, with its reason under `changed`;
+  `AgentsTextTests` spells a receipt's id `<id>` inside `pooled` alone where the row did not lay it (its moment was already `<at>`),
+  and sets aside the wiring file's home's log as it does the home's.
+- **Verification:** `AgentsTextTests` 306 of 306; with the id's spelling switched off, the 17 rows that write a receipt were seen
+  failing. `AgentsCommandTests`' fast classes, the driver's censuses and the driver's fast half green.
+
 ## 2026-10-22 — A verb and the loop took the home's lease in two homes when the driver's config was named elsewhere (LEASEHOME2)
 
 - **Symptom:** none seen on an install, which names no override; found after HOMELEASE1. With `DAORIS_DRIVER_CONFIG` naming a file
