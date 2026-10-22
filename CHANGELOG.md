@@ -5,6 +5,13 @@ with the version and date at release.
 
 ## Unreleased
 
+- Every agent Daoris starts now runs inside a job that belongs to the Daoris process that started it (TERMTRUST1a part (i), D201).
+  This covers sessions, carry-ons, conversations, helpers, reviewers, brainstorm passes, workflow nodes and partners, and also a
+  plugin's processes. Each one starts through Daoris's own small launcher, so even its first child process starts inside that
+  job. A stop still ends the agent and everything it started, and closing Daoris still leaves none running. Each start adds about
+  a tenth of a second. A start that cannot be contained (in a development build that has no launcher) runs as before. Each start
+  is noted in the machine log as `agent.contained`. Nothing else changes until a later release lets you trust this machine's
+  terminal.
 - A folder under Daoris's account homes that no agent or plugin names is no longer taken for an agent (POOLSTRAY1). An earlier
   start could leave such a folder, and its subfolders were folded in as accounts. Such a folder is now noted once in the machine
   log and otherwise left alone. If an earlier fold already wrote one into the account order, the next change of the accounts
