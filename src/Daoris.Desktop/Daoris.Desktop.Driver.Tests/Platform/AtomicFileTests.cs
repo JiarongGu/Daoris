@@ -77,6 +77,26 @@ public sealed class AtomicFileTests : IDisposable
         Assert.False(Directory.Exists(from));
     }
 
+    /// <summary>
+    /// BINDRACE1: a file moved into place is held a moment after for its deletion by the move itself (<see cref="MoveHold"/>), and a reader
+    /// that does not share deletion is refused then. The reading half shares it, so the file is read whole in that moment.
+    /// </summary>
+    [Fact]
+    public void A_file_is_read_whole_while_its_move_into_place_still_holds_it()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var path = Path.Combine(_folder, "q1.json");
+        Assert.True(AtomicFile.TryCreateText(path, "{\"run\": \"q1\"}\n"));
+
+        using (MoveHold.Take(path))
+        {
+            Assert.Throws<IOException>(() => File.ReadAllText(path));
+            Assert.Equal("{\"run\": \"q1\"}\n", AtomicFile.ReadText(path));
+        }
+
+        Assert.Throws<FileNotFoundException>(() => AtomicFile.ReadText(Path.Combine(_folder, "q2.json")));
+    }
+
     [Fact]
     public void Text_is_written_without_a_byte_order_mark()
     {

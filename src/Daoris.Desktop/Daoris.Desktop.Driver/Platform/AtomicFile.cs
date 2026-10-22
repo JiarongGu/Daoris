@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The one way this library writes a file that something else may be reading: beside, then renamed,
-/// so a reader never meets half of it.
+/// so a reader never meets half of it; and the way such a file is read beside its writer.
 /// </summary>
 /// <remarks>
 /// <para><b>The beside file is named per write, and the rename waits out a busy target.</b> Fifteen
@@ -16,10 +16,33 @@ namespace Daoris.Driver;
 /// it <c>failed</c> (REV3).</para>
 ///
 /// <para>Text is written as BOM-less UTF-8, and what it says (LF, a final newline) is the caller's.</para>
+///
+/// <para><b>A reader beside these writes shares deletion</b> (<see cref="ReadText"/>, BINDRACE1). Windows' move opens the file it
+/// moves for deletion and closes it only after the file is in place, so for a moment the file is there and whole and still held. A
+/// reader opening it then without sharing deletion, as <c>File.ReadAllText</c> does, is refused, and a start of a run that lost the
+/// race for its binding read the winner's as unread and held.</para>
 /// </remarks>
 public static class AtomicFile
 {
     private static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
+
+    /// <summary>
+    /// A file these writes keep, read whole, sharing its writing and deletion with a writer, so the moment a move or a replace still
+    /// holds it never refuses the read (BINDRACE1).
+    /// </summary>
+    /// <remarks>
+    /// 🔴 Measured (BINDRACE1): a reader that waited for a file moved into place without overwriting and read it as it appeared, under
+    /// one spinning thread per core, was refused with a sharing violation in 478 reads of 700 through <c>File.ReadAllText</c>, and in none
+    /// of 700 sharing deletion. Nothing was ever missing or partial: the move lands a whole file, and only its own open handle refused.
+    /// </remarks>
+    /// <exception cref="FileNotFoundException">No file is there.</exception>
+    /// <exception cref="IOException">It could not be read.</exception>
+    public static string ReadText(string path)
+    {
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        using var reader = new StreamReader(stream, Utf8);
+        return reader.ReadToEnd();
+    }
 
     /// <summary>Write <paramref name="text"/> to <paramref name="path"/> whole, or not at all.</summary>
     public static void WriteText(string path, string text) =>

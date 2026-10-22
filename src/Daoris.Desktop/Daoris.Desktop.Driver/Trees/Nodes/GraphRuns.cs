@@ -88,7 +88,8 @@ public sealed class GraphRuns(NodeRecordFiles records)
                     WorkflowRunBinding? binding;
                     try
                     {
-                        binding = WorkflowRunFiles.Parse(File.ReadAllText(file.FullName));
+                        // Shared as the run's own read is (BINDRACE1): a binding landing now is a run here, not one skipped this look.
+                        binding = WorkflowRunFiles.Parse(AtomicFile.ReadText(file.FullName));
                     }
                     catch (Exception error) when (error is IOException or UnauthorizedAccessException)
                     {

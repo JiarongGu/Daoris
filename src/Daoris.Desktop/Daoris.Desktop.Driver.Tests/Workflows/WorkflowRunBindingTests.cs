@@ -272,6 +272,63 @@ public sealed class WorkflowRunBindingTests : IDisposable
         }
     }
 
+    /// <summary>
+    /// BINDRACE1: the start that loses the race reads the winner's binding as it lands, while Windows' move still holds the file open for
+    /// its deletion (<see cref="MoveHold"/>), a moment in which a reader not sharing deletion is refused. Every read of a binding shares it,
+    /// so the start takes under the binding there, where it read as kept and unread and held; the version it names stays kept, and another
+    /// bind is told the run is bound.
+    /// </summary>
+    [Fact]
+    public async Task A_start_reads_the_binding_its_move_into_place_still_holds()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        Save("docs-to-pr", Steps("automatic"));
+        var config = Config("""{"workflows":{"web-app":{"default":"docs-to-pr"}}}""");
+        // The chain's first quest names its run without the chain being read, so the gate is never met.
+        var quest = new QuestView("q1", "daoris", "web-app", "Docs", "", "Open");
+        var world = new Gated([quest]);
+        Task<WorkflowBind> Start() =>
+            WorkflowRunStart.AtStartAsync(new WorkflowStarted(quest, "work"), world, _home, config, [], () => At, CancellationToken.None);
+        var first = await Start();
+        Assert.Equal(WorkflowBindCame.Bound, first.Came);
+        var path = WorkflowRunBindings.PathOf(_home, "q1");
+
+        WorkflowBind second;
+        bool again;
+        IReadOnlyList<int> kept;
+        using (MoveHold.Take(path))
+        {
+            Assert.Throws<IOException>(() => File.ReadAllText(path));
+            second = await Start();
+            again = WorkflowRunBindings.Bind(_home, first.Binding! with { Label = "later" });
+            kept = WorkflowRunBindings.KeptVersions(_home, "docs-to-pr");
+        }
+
+        Assert.Equal(WorkflowBindCame.Already, second.Came);
+        Assert.Equal(("q1", "docs-to-pr", (int?)1, first.Binding!.Label), (second.Run, second.Binding!.Workflow, second.Binding.Version, second.Binding.Label));
+        Assert.False(again);
+        Assert.Equal([1], kept);
+        Assert.Single(world.Said);
+    }
+
+    /// <summary>BINDRACE1: arming's read of the runs bound to graph versions finds a run whose binding its move into place still holds.</summary>
+    [Fact]
+    public void A_graph_run_is_found_while_the_move_into_place_still_holds_its_binding()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var digest = RunHome.SaveGraph(_home, """
+            {"schemaVersion":2,"entries":["claimed"],"end":"handed",
+             "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+             "wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"}]}
+            """);
+        RunHome.Bind(_home, "q1", digest, At);
+
+        using (MoveHold.Take(WorkflowRunBindings.PathOf(_home, "q1")))
+        {
+            Assert.Equal(digest, new GraphRuns(new NodeRecordFiles(_home)).Find("q1")?.Binding.Digest);
+        }
+    }
+
     [Fact]
     public void A_Current_binding_reads_back_its_graph()
     {
