@@ -19694,3 +19694,11 @@ the wiring, and the fold folds only those agents. A stray folder is said once to
 folded. A wiring naming a stray agent loses its `rotation` and `pooled` entries at the next change, and its
 `accounts.strayDropped` line is the receipt. Proven on a scratch home in `AccountSetTests`. The install's next fold is POOL1d's to
 see. Detail: D197's POOLSTRAY1 note; the fix log. On Opus.
+## READSHARE1 — every read of a record moved into place shares its deletion (2026-10-23)
+
+> - [ ] **READSHARE1 — every read of a record moved into place shares its deletion** (driver; found 2026-10-22 by BINDRACE1). Windows' move keeps a file open for deletion for a moment after it lands, and a plain `File.ReadAllText` is refused then (error 32); BINDRACE1 moved the run binding's four reads onto `AtomicFile.ReadText`, and the driver's other readers of files `AtomicFile` writes still read plainly, each failing its own way in that moment. Proof: a census (beside the sensitive and partials ones) finds a plain read of a path `AtomicFile` writes; each moved reader meets `MoveHold` in a test.
+
+**Outcome** 2026-10-23: 86 driver reads in 64 files go through `AtomicFile.ReadText`, `ReadBytes` or `OpenRead`, the home's lease,
+identity and git grants among them; `tools/read-shares.mjs` (in `npm run verify`) refuses a plain read where `AtomicFile` writes, and
+91 tests meet each moved reader with `MoveHold` (84 failed with the readers plain again). The rest is READSHARE1b. Detail: FIX-LOG
+2026-10-23 (READSHARE1). On Opus.
