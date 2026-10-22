@@ -5,7 +5,44 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
-## 2026-10-22 — A folder held on the own sign-in's file would have reached *What needs you* without its `own` (POOL1c)
+## 2026-10-23 — The git half's fixtures built repositories, cloned origins and let git start its maintenance, a start each (PROCSPEED1b)
+
+- **Symptom:** `driver-process-git` on the full set at `c557800`: 693 tests, 16,326 s of test time in 4,135 s of wall (69 min) at
+  four classes at once, about 24 s a test, with builders loading the machine.
+- **Where the seconds go (measured):**
+  - *The wall is the summed time over four.* At `c557800` four tests ran for 4,036 of the 4,135 s, and the longest class
+    (`PullRequestStateTests`) took 914 s: no class was the wall, so splitting one shortens nothing. Slowed 2.2 times (the traced
+    run below), its 2,729 s did pass its share (2,443 s), and 1,060 s of that run's end had fewer than four running.
+  - *A test is its git starts.* The slowest test of each of fifteen slow classes, traced one at a time (`GIT_TRACE2_EVENT`, a
+    file a process; the machine at a mean 45% with other sessions' work): 3,023 starts in 1,274 s. git itself ran 0.1 to 0.2 s a
+    start, and for about half of each test no git ran at all: the start's own cost. A `git rev-parse` from node took 439 ms at the
+    median with the CPU at 6% (a bare `cmd /c exit` 74 ms, and 1.3 s at its 90th percentile): the security products hook every
+    start (DEVDRIVE1). No fixed wait was found: no gap between two starts reached 5 s, and the longest, 2 to 4.4 s, were starts.
+  - *Who starts them.* The whole half on its base (`7794ad49`), traced, four at once: 37,353 starts, the product's 27,370 (73%),
+    the fixtures' 5,503 (15%: `commit` 1,286, `add` 1,203, `rev-parse` 662, `config` 558, `init` 314, `push` 146) and git's own
+    4,480 (12%): `maintenance run --auto` after every commit, merge and fetch 1,692, `worktree add`'s `reset` 738 and `branch` 658
+    (the product's), and each push's receive side (`receive-pack`, `pack-objects`, `unpack-objects`, `rev-list`).
+  - *The product's own.* In the slowest test (`PullRequestStateTests`' clean-up case, 691 product starts) 459 repeat an earlier
+    start's arguments in the same checkout: each flow, a landing, a plan, a look, asks afresh by design (D88, LANDGIT1). Of the
+    fifteen tests' 284 `merge-base --is-ancestor`, 76 ask a commit against itself, and 19 `rev-list --count` count a commit
+    `--not` itself. Left to PROC1d-v, the owner's call on D88.
+- **Fix (the fixtures only; no product line changed):** every remaining step-by-step build copies a seed: `GitSeed.PlainAsync`
+  (on `main`, its identity, `README.md` committed as `first`) for `AutoLandingFixture` and `AutoLandingWakesTests`, `SweepTests`,
+  `SessionTreeOnlyHereTests`, `SessionTreeWorkTests`, `CanonicalLineTests`, `CloseFenceGitTests`, `LandGitCountTests` and
+  PROCSPEED1's five; shapes of their own for `BranchTidyingFixture` (its ignores and build output), `LandingPluginFixture` (an
+  origin nothing was pushed to) and `GitReadsTests` (the whole dated history, whose ids every build shares). Each seed's
+  repositories, bare origins too, set `maintenance.auto` and `receive.autogc` off (`GitSeed.NoMaintenanceAsync`), so a commit,
+  a merge, a fetch or a push in a copy or a tree opened from it is one git. `LandedFixture.SquashOnPlatformAsync` and the
+  platform's commits (`CommitOnOriginAsync`, which `TreeSyncFixture`, `TreeUpdateTests`, `TreeSyncHeldTests`,
+  `TreeStartSyncTests` and `ReviewBaseTests` now call) are git's plumbing in the bare origin (`merge-tree --write-tree`,
+  `commit-tree`, `mktree`, one `update-ref --stdin`): three starts for a squash, where a clone that merged, committed and pushed
+  twice made about twenty. A test that reads the first commit reads the seed's, the same in every copy, and none reads its time
+  (the strays' quiet reads only what is under the home's trees, and no copy is). Not copied: `SessionTreesTests`, `TreeMergeTests`, `SessionLocksTests`, `TreeDiffTests` and
+  `TreeFilesTests` init on git's own default branch on purpose, and `GitStreamEndsTests`' two 5 s waits (10 s of the half) are
+  negative waits a shell's kill cannot signal.
+- **Verification:** red first: `FixtureGitTests` did not compile without `GitSeed.PlainAsync`, then failed two cases on the old
+  fixtures (a landed copy's commit started `maintenance run --auto --quiet --detach`; the squash left a `platform-*` clone),
+  then all six passed.
 
 - **Symptom:** found in POOL1c's build, before any window showed it: the attention row of a trust hold on the person's own
   sign-in's file would have offered *Trust this folder*, which `TRUST_FOLDER` refuses as `TRUST_OWN_HOME`.
