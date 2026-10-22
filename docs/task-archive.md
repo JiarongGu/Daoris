@@ -19601,3 +19601,11 @@ session's instruction carries a Git section for a held remote. Proof, real git a
 portable `sshd` (`GitSshHoldsProcessTests`, which holds nothing where `DAORIS_TEST_SSHD` names none). Not built here: the terminal's
 `git held` and `git try-again`. Not seen: the owner's SSH remote on the install (screenshot), owed after the republish. Detail:
 D198's GITAUTH1a note. On Opus.
+
+## BRAINSTORM1a3 — `daoris brainstorm` and the family rehearsal's phase (2026-10-19, D176)
+
+> - **BRAINSTORM1a3 — `daoris brainstorm` and the family rehearsal's phase** (service, cli, tools; after BRAINSTORM1a; D176 points 1 and 8). The CLI twin reaches this machine's Daoris through `service/service.ts`, by a machine-only local-host door that writes the request and answers show/send/clear (never on a shared host); `ACP_STUB_AGENT` answers a brainstorm turn; a family-rehearsal phase asserts no quest operation, no commit or change in the asker's checkout, no landing record, and the rooms gone. Proof: the CLI command tests against a stand-in host; the rehearsal phase.
+
+**Outcome** 2026-10-19 (archived 2026-10-22, when the row was found still open): `daoris brainstorm` (ask, show, send, clear, list)
+reaches the local host's machine-only door `/api/brainstorms` (BrainstormDesk, the twin of the driver's BrainstormFiles); `ACP_STUB_AGENT`
+answers brainstorm turns; the family rehearsal's phase 17f passed with no quest, commit or landing. Detail: merge `98e0b11d8`. On Opus.
