@@ -1133,6 +1133,8 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         var other = await _ledger.AdvanceAsync(done.Id, "awaiting-person", "It stopped to ask you.", null, null, Now.AddMinutes(20));
         Assert.Equal((SessionAdvanceRefusal.Terminal, $"Session `{done.Id}` is completed — a finished session does not move."), (other.Refusal, other.Message));
 
+        // Opened first, since the one waiting below keeps the tree they share.
+        var open = await WaitingOnHelper(taken: false);
         var waiting = await WaitingOnHelper();
         var failed = await _ledger.AdvanceAsync(waiting.Id, "failed", "no.", null, null, Now.AddMinutes(20));
         Assert.Equal(SessionAdvanceRefusal.Terminal, failed.Refusal);
@@ -1146,10 +1148,36 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Equal(SessionState.Completed, (await _sessions.FindAsync(waiting.Id))!.State);
 
         // A park holds its quest (D83): one no longer taken has nothing to park for.
-        var open = await WaitingOnHelper(taken: false);
         var untaken = await _ledger.AdvanceAsync(open.Id, "awaiting-person", "It stopped to ask you.", null, null, Now.AddMinutes(20));
         Assert.Equal(SessionAdvanceRefusal.Terminal, untaken.Refusal);
         Assert.Contains("no longer taken", untaken.Message);
+    }
+
+    /// <summary>
+    /// 🔴 HELPERWAIT1 (Codex's #5 on COWORKUX1): a session waiting on its own helper keeps its tree, as a park does, though it is completed:
+    /// no other session opens there while its helper reads, and it goes on there itself with the answer, or parks for the person. Once its
+    /// quest is no longer taken it holds nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_session_waiting_on_its_own_helper_keeps_its_tree()
+    {
+        // A quest no longer taken holds no tree: the next opens in the same one.
+        var untaken = await WaitingOnHelper(taken: false);
+        var waiting = await WaitingOnHelper();
+        var tree = waiting.Tree;
+        Assert.Equal(untaken.Tree, tree);
+        var other = await Publish(title: "Another ask");
+
+        var refused = await _ledger.OpenAsync(other.Id, "stub", Now.AddMinutes(11), tree: tree);
+        var chat = await _ledger.OpenChatAsync("Owner", "stub", Now.AddMinutes(11), tree: tree);
+        Assert.Equal((SessionOpenRefusal.RepositoryBusy, SessionOpenRefusal.RepositoryBusy), (refused.Refusal, chat.Refusal));
+        Assert.Contains(waiting.Id, refused.Message);
+
+        // It is no holder against itself: it goes on there with the answer.
+        await _sessions.KeepSaidAsync(
+            waiting.Id, new SaidWord("w0helper", "A helper answered your question.", Now.AddMinutes(12), [], Reopens: true, Helper: "h1a2b3c4"));
+        var went = await _ledger.AdvanceAsync(waiting.Id, "working", null, null, null, Now.AddMinutes(13));
+        Assert.Equal(SessionAdvanceRefusal.None, went.Refusal);
     }
 
     /// <summary>
