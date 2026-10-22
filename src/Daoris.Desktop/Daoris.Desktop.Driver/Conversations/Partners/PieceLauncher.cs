@@ -18,7 +18,9 @@ namespace Daoris.Driver;
 /// <para><b>Its own job</b> (TERMTRUST1a): the driver's tracking would hold the launcher in a job of its own after the start (ORPHAN1's
 /// <see cref="ProcessJob.Hold(Process)"/>), which races the launcher's joins: a launcher already held in a fresh job cannot then join the
 /// agents' job, which other agents hold and which is not beneath it. So the tracking holds none over a start made through here
-/// (<see cref="Carries"/>), and the launcher makes the job that ends the harness's tree with it, empty and beneath the jobs it joined.</para>
+/// (<see cref="Carries"/>), and the launcher makes the job that ends the harness's tree with it, empty and beneath the jobs it joined.
+/// Named by the launcher's own process id (<see cref="OwnJobOf"/>, CONTAINCPU1), so the driver opens that job afterwards, never racing a
+/// join, and reads and ends the session through it as it did through the job it held before.</para>
 /// <para>The base library alone: the launcher compiles this in with <see cref="ProcessJob"/>, as the git doors compile theirs.</para>
 /// </remarks>
 public static class PieceLauncher
@@ -38,7 +40,18 @@ public static class PieceLauncher
     /// </summary>
     public const string AgentsPrefix = "Local\\daoris-agents-";
 
+    /// <summary>
+    /// What each launcher's own job is named from, the launcher's process id after it (CONTAINCPU1, D200 §1.2): the driver opens it by that
+    /// name for the session's CPU and count and to end its tree (<c>SessionProcesses.JobOf</c>, which the launcher does not compile), since the tracking holds none of its
+    /// own over a launcher. Its own id, never a session's: the driver knows it from the start it made, a session's run tried again finds no
+    /// launcher before it still holding the name, and the driver's handle on the process keeps the id from naming another while it reads.
+    /// </summary>
+    public const string OwnPrefix = "Local\\daoris-launched-";
+
     private const string JobOption = "--job";
+
+    /// <summary>The name of the own job of the launcher whose process id is <paramref name="launcher"/>.</summary>
+    public static string OwnJobOf(int launcher) => OwnPrefix + launcher.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
     /// <summary>The launcher's words for a start of <paramref name="harness"/> in <paramref name="job"/>.</summary>
     public static IReadOnlyList<string> Arguments(string job, string harness, IEnumerable<string> arguments) =>
@@ -137,8 +150,10 @@ public static class PieceLauncher
             return Refuse(error, $"daoris-piece-start: starts a harness named by its full path, and {info.FileName} is not one.");
         }
 
-        // Held, never disposed: its handle closes as this process ends, which ends what the job still holds (kill-on-close).
-        s_own ??= ProcessJob.Create();
+        // Held, never disposed: its handle closes as this process ends, which ends what the job still holds (kill-on-close), unless the
+        // driver holds it open too, which then ends it as the session's tracking lets go. Named for the driver (CONTAINCPU1); where the
+        // name will not take, unnamed, which still contains the tree and leaves the driver nothing to read.
+        s_own ??= ProcessJob.Create(OwnJobOf(Environment.ProcessId)) ?? ProcessJob.Create();
         s_own?.JoinThis();
         try
         {
