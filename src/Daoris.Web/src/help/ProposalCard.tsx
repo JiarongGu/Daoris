@@ -301,7 +301,8 @@ function SyncApart({ apart }: { apart: string[] }) {
  *
  * **Each kind says what its press does** (HELP6): a delete is titled as one, says it cannot be undone as
  * the drawer's own confirmation does, and its press is *delete*; a go is a suggestion, not a change, so
- * it carries no command and its press is *go there*. A plugin (PLUG9) shows what will run before Apply,
+ * it carries no command and its press is *go there*, and its second press *dismiss* only takes the card away, told to nobody
+ * (ASKDISMISS1); a go to a quest says, in the driver's sentence, whether it is taken. A plugin (PLUG9) shows what will run before Apply,
  * and an add says its folder is copied in and that nothing starts at the press. A hand-off (WSR5b) says
  * before Apply that its plugin pushes the branch as the person, the one card whose press leads to a push.
  *
@@ -421,7 +422,11 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
                   : accepting ? 'help.proposal.accept' : 'help.proposal.apply')}
           </Button>
         )}
-        <Button variant="ghost" disabled={pending} onClick={() => onDismiss(proposal.id)}>{t('help.proposal.dismiss')}</Button>
+        {/* ASKDISMISS1: a go's second press only takes the card away and is told to nobody, so it is worded as that, never as
+            Not now, the answer to a change that the agent hears. */}
+        <Button variant="ghost" disabled={pending} onClick={() => onDismiss(proposal.id)}>
+          {t(going ? 'help.proposal.dismissGo' : 'help.proposal.dismiss')}
+        </Button>
       </div>
     </li>
   );
