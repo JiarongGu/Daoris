@@ -30,6 +30,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         _base = doors.BaseUrl;
         Opinions = new OpinionDoors(this);
         Helpers = new HelperDoors(this);
+        Partners = new PartnerDoors(this);
         Confirmations = new ConfirmationDoors(this);
     }
 
@@ -44,6 +45,9 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
 
     /// <summary>The local host's helper doors (MIXAGENT2a-ii), over this client.</summary>
     public HelperDoors Helpers { get; }
+
+    /// <summary>The local host's partner door (COAGENT1b), over this client.</summary>
+    public PartnerDoors Partners { get; }
 
     /// <summary>The local host's confirmation doors, read for the windows (NOTIFY2j), over this client.</summary>
     public ConfirmationDoors Confirmations { get; }

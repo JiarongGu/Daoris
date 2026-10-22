@@ -91,4 +91,37 @@ public sealed class PartnerFilesTests : IDisposable
         File.WriteAllText(files.PathOf("p1", "answer"), "{\n  \"id\": \"p1\",\n  \"summary\": \"Done.\",\n  \"left\": null,\n  \"at\": \"2026-10-22T12:00:00.0000000+00:00\"\n}\n");
         Assert.Equal(new PartnerAnswer("p1", "Done.", null, At), files.ReadAnswer("p1"));
     }
+
+    /// <summary>
+    /// The twin (<c>twins.md</c>): the ask as this side writes it is the text the service's <c>PartnerBoxShapeTests.TheAsk</c> reads, and
+    /// the answer as the service's <c>partner_answer</c> writes it (its `+` escaped, its partner named) reads here.
+    /// </summary>
+    [Fact]
+    public void The_ask_is_the_services_text_and_the_services_answer_reads_here()
+    {
+        var files = new PartnerFiles(_home);
+        files.WriteAsk(new PartnerAsk("p1a2b3c4", "lead0001", "Make the window seven days.", ["src"], "codex-acp", "abc123", [], PartnerAsk.ByPerson, At));
+        Assert.Equal(TheAsk, File.ReadAllText(files.PathOf("p1a2b3c4", "ask")));
+
+        File.WriteAllText(files.PathOf("p1a2b3c4", "answer"),
+            "{\n  \"id\": \"p1a2b3c4\",\n  \"partner\": \"part0001\",\n  \"summary\": \"Seven days now.\",\n  \"left\": \"No test for the edge.\",\n"
+            + "  \"at\": \"2026-10-22T12:00:00.0000000\\u002B00:00\"\n}\n");
+        var answer = files.ReadAnswer("p1a2b3c4")!;
+        Assert.Equal(("Seven days now.", "No test for the edge.", "part0001", false, At), (answer.Summary, answer.Left, answer.Partner, answer.LastWords, answer.At));
+    }
+
+    /// <summary>The driver's own copy of a partner's last words is written once, marked, and never over the tool's answer.</summary>
+    [Fact]
+    public void Last_words_are_kept_once_marked_and_never_over_an_answer()
+    {
+        var files = new PartnerFiles(_home);
+        Assert.True(files.WriteAnswer(new PartnerAnswer("p1", "I changed two files.", null, At) { LastWords = true }));
+        Assert.False(files.WriteAnswer(new PartnerAnswer("p1", "Again.", null, At) { LastWords = true }));
+        Assert.Equal(("I changed two files.", true), (files.ReadAnswer("p1")!.Summary, files.ReadAnswer("p1")!.LastWords));
+    }
+
+    /// <summary>The service's <c>PartnerBoxShapeTests.TheAsk</c>, the same text.</summary>
+    private const string TheAsk =
+        "{\n  \"id\": \"p1a2b3c4\",\n  \"asker\": \"lead0001\",\n  \"piece\": \"Make the window seven days.\",\n  \"paths\": [\n    \"src\"\n  ],\n"
+        + "  \"agent\": \"codex-acp\",\n  \"base\": \"abc123\",\n  \"uncommitted\": [],\n  \"askedBy\": \"person\",\n  \"at\": \"2026-10-22T12:00:00.0000000+00:00\"\n}\n";
 }

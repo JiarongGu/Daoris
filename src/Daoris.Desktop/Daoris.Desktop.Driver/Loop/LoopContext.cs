@@ -81,6 +81,18 @@ internal sealed class LoopContext(
     /// <summary>How a helper's agent is chosen, unless a test hands in a choice.</summary>
     public Func<HelperAsk, HelperRule, PriorSession, CancellationToken, Task<ReviewerChoice>>? HelperChoices { get; set; }
 
+    /// <summary>How a piece's agent is chosen and admitted (COAGENT1b), unless a test hands in a choice: never a production start.</summary>
+    public Func<PartnerAsk, PriorSession, CancellationToken, Task<ReviewerChoice>>? PartnerChoices { get; set; }
+
+    /// <summary>How a partner's pass is run (the copy, the job, the record, the turn), unless a test hands in a stand-in, since a real pass spawns git and an agent (MOD8).</summary>
+    public Func<PartnerPassAsk, ReviewerChoice, CancellationToken, Task<PartnerPassRun>>? PartnerPasses { get; set; }
+
+    /// <summary>How a piece's copy is kept and imported, unless a test hands in a stand-in, since the keeper spawns git (MOD8).</summary>
+    public Func<PartnerAsk, PartnerState, CancellationToken, Task<PieceKept>>? PartnerKeeps { get; set; }
+
+    /// <summary>How a lead's repository's checkout is read from its tree, unless a test hands in a stand-in (MOD8).</summary>
+    public Func<string, CancellationToken, Task<string?>>? PartnerTrees { get; set; }
+
     /// <summary>How a brainstorm's turn is run, unless a test hands in a stand-in, since a real turn spawns an agent (MOD8).</summary>
     public Func<BrainstormTurn, CancellationToken, Task<BrainstormTurnRun>>? BrainstormTurns { get; set; }
 

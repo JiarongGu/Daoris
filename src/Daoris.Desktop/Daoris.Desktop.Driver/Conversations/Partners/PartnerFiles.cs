@@ -146,8 +146,34 @@ public sealed class PartnerFiles(string home)
             var element = root.RootElement;
             return Text(element, "summary") is { Length: > 0 } summary
                 ? new PartnerAnswer(Text(element, "id") ?? id, summary, Text(element, "left"), Moments.Read(element, "at") ?? DateTimeOffset.UtcNow)
+                {
+                    Partner = Text(element, "partner"),
+                    LastWords = element.TryGetProperty("lastWords", out var last) && last.ValueKind == JsonValueKind.True,
+                }
                 : null;
         }
+    }
+
+    /// <summary>
+    /// Keep the partner's last words as its answer, where it gave none through <c>partner_answer</c> (the service's <c>PartnerBox</c> writes
+    /// that one). Never over an answer on file: the tool's answer stands.
+    /// </summary>
+    public bool WriteAnswer(PartnerAnswer answer)
+    {
+        if (File.Exists(PathOf(answer.Id, "answer"))) return false;
+        JsonFile.Write(PathOf(answer.Id, "answer"), writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("id", answer.Id);
+            Optional(writer, "partner", answer.Partner);
+            writer.WriteString("summary", answer.Summary);
+            if (answer.Left is null) writer.WriteNull("left");
+            else writer.WriteString("left", answer.Left);
+            if (answer.LastWords) writer.WriteBoolean("lastWords", true);
+            writer.WriteString("at", Moments.Write(answer.At));
+            writer.WriteEndObject();
+        });
+        return true;
     }
 
     public void WriteFacts(PartnerFacts facts)

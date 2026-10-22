@@ -214,6 +214,15 @@ public sealed record PartnerState(string Id, string State, string? Code, DateTim
 public sealed record PartnerAnswer(string Id, string Summary, string? Left, DateTimeOffset At)
 {
     public const int SummaryLimit = 20_000;
+
+    /// <summary>The partner's record that wrote it through <c>partner_answer</c>; null for the driver's own copy of its last words.</summary>
+    public string? Partner { get; init; }
+
+    /// <summary>
+    /// Its last words, kept by the driver where the partner gave no answer through its tool and its turn completed: written only once its
+    /// job is empty, so no tool of the partner's can still write the file.
+    /// </summary>
+    public bool LastWords { get; init; }
 }
 
 /// <summary>

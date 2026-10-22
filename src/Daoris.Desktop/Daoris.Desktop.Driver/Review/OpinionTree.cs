@@ -115,7 +115,8 @@ public static class OpinionTree
     /// Remove a copy, and only a copy: a folder named as one under the home's trees. Null where it is gone; otherwise why it
     /// stays, in a sentence a line can carry.
     /// </summary>
-    public static async Task<string?> RemoveAsync(string home, string path)
+    /// <param name="prefix">The copy's own prefix: an opinion's or a helper's <see cref="Prefix"/>, a partner's <c>p-</c> (COAGENT1b).</param>
+    public static async Task<string?> RemoveAsync(string home, string path, string prefix = Prefix)
     {
         string full;
         try
@@ -128,7 +129,7 @@ public static class OpinionTree
         }
 
         var trees = Path.GetFullPath(DaorisHome.Entry(home, HomeEntry.Trees)) + Path.DirectorySeparatorChar;
-        if (!full.StartsWith(trees, StringComparison.OrdinalIgnoreCase) || !Path.GetFileName(full).StartsWith(Prefix, StringComparison.Ordinal))
+        if (!full.StartsWith(trees, StringComparison.OrdinalIgnoreCase) || !Path.GetFileName(full).StartsWith(prefix, StringComparison.Ordinal))
         {
             return $"{path} is not a second opinion's copy under {trees}, so it was not removed.";
         }
