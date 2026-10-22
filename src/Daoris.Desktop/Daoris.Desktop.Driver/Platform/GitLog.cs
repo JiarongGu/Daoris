@@ -49,7 +49,8 @@ public static class GitLog
     /// GITAUTH1c and 1d.
     /// </summary>
     public static void Wired(string home, string? way, string? version, string? sshForm, bool helper) =>
-        Write(home, "git.wired", ("way", way), ("version", version), ("ssh", sshForm), ("helper", helper), ("identities", 0), ("pointers", 0));
+        Write(home, "git.wired", ("way", way), ("version", version), ("ssh", sshForm), ("helper", helper),
+            ("identities", GitIdentities.Read(home).Count), ("pointers", GitIdentityUse.Read(home).Count));
 
     /// <summary>A class's name, as the judge and the log say it.</summary>
     public static string ClassName(GitAct act) => act == GitAct.Write ? "write" : "read";
