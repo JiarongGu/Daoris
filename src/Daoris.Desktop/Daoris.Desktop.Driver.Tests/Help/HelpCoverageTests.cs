@@ -1014,6 +1014,11 @@ public sealed partial class HelpCoverageTests
             "it opens the log's folder in the system's file browser and changes nothing; a go reaches Settings → Logs.")),
         ("wiring", "useOpenLogFolder", null, new Exempt(
             "This Daoris's Logs card opens the same folder and changes nothing; a go reaches Settings → This Daoris (WIRING1c-ii).")),
+        // TERMTRUST1a (D201 point 5, the terminal-trust design §4.1, bridge-presses row 7): the standing confirmation's grant and revoke.
+        ("wiring", "useSetStandingConfirmation", null, new Exempt(
+            "it grants or revokes the person's standing confirmation, which lets a terminal's presses run without the card; it is made "
+            + "only in the window, with the person's own press, and no verb, door or setting grant reaches it, since an agent that could "
+            + "propose it would be one command from the grant (D201 point 5). Turning it off asks nothing, and is the person's too.")),
         // CACHECLEAR1: the Downloads row's clearing, listed first and then pressed (D88's shape).
         // KEEP1d: each kind's keep rule from the Disk space card's Change…, as `setting keep` proposes it.
         ("wiring", "useSetKeep", null, new Door("setting", "keep")),

@@ -7,7 +7,7 @@ import { type AttentionTold, attentionToast } from '../notifications/noticeWords
 import { keys } from '../data/queries';
 import {
   accountsSlice, asksSlice, attentionSlice, callsSlice, driverSlice, groupsSlice, linesSlice, noticeOf, noticesSlice, notPushed,
-  questsSlice, sessionsSlice, sweepSlice, syncSlice, usageSlice, useDriverReady, useStateHub, useStateSlices, workSlice,
+  questsSlice, sessionsSlice, sweepSlice, syncSlice, usageSlice, useDriverReady, useStandingUsed, useStateHub, useStateSlices, workSlice,
 } from '../bridge/shell';
 import type { AccountWaitTick, Consideration, TrustHold } from '../data/signals';
 import type { Notify } from '../design/ui';
@@ -123,6 +123,9 @@ export function ShellSignals({ notify, onAttend, attended, onConfirming, onMessa
 
   // The driver's service is up (LOOK2a): what it refused while it came up is asked again now, not at the first tick.
   useDriverReady();
+
+  // A terminal's press ran under the standing confirmation (TERMTRUST1a): the driver's state, whose count Notifications says, read again.
+  useStandingUsed();
 
   // What a press changed, wherever it was pressed (STATEHUB1b, D169): asked again here at the one place, in every window.
   useStateHub();

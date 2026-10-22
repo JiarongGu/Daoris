@@ -1913,7 +1913,7 @@ app.MapPost("/api/sessions/{id}/state", async (
         id, body.State ?? "", body.Note, body.Evidence, body.Transcript, DateTimeOffset.UtcNow, ct,
         interrupted: body.Interrupted == true, limit: body.Limit == true,
         // The note's lines by code (LANG1a), kept only as what a part is; none with no note.
-        noteParts: body.Note is null ? null : NoteParts.Normalize(body.NoteParts));
+        noteParts: body.Note is null ? null : NoteParts.Normalize(body.NoteParts), expected: body.Expected);
 
     return outcome.Refusal switch
     {

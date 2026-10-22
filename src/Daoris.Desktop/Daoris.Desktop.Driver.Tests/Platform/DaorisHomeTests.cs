@@ -351,6 +351,21 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
+    /// TERMTRUST1a (D201 point 6, the terminal-trust design §4.2): the standing confirmation, a data file of its own, after the git
+    /// identities, as the three twins hold it; new since the layout, so its old place is its new one.
+    /// </summary>
+    [Fact]
+    public void The_standing_confirmation_is_a_data_file_after_the_git_identities()
+    {
+        Assert.Same(HomeEntry.StandingConfirmation, HomeEntry.Named("standing-confirmation"));
+        Assert.Equal(
+            (HomeCategory.Data, "data/standing-confirmation.json", "data/standing-confirmation.json"),
+            (HomeEntry.StandingConfirmation.Category, HomeEntry.StandingConfirmation.New, HomeEntry.StandingConfirmation.Old));
+        var table = HomeEntry.Table.ToList();
+        Assert.Equal(table.IndexOf(HomeEntry.GitIdentities) + 1, table.IndexOf(HomeEntry.StandingConfirmation));
+    }
+
+    /// <summary>
     /// HELPMODE1c2a (D183's note): Ask Daoris's configured access, a data file of the person's choices at the home's root, named
     /// with no <c>help-</c> prefix, since a workspace's room folder is matched by <c>help-*</c>.
     /// </summary>

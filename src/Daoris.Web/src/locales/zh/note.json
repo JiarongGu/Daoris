@@ -100,6 +100,7 @@
   "note.stopped.checkpoint-stopped": "已在检查点手动停止。",
   "note.stopped.checkpoint-moved": "已在检查点手动移动。",
   "note.stopped.orphan": "本机已没有任何东西在运行它：进程随启动它的应用一起结束，而记录没有被告知。",
+  "note.standing.terminal": "由终端发出，按长期确认执行，没有逐次询问。",
   "note.chat.closed": "对话进行中应用被关闭，进程随之结束。",
   "note.chat.ended-by-person": "对话已被手动结束。",
   "note.chat.ended": "对话已结束；它的提交就是它的记录。",

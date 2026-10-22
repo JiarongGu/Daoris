@@ -695,6 +695,8 @@ public static class NoteCodes
     public static readonly NoteCode StoppedCheckpointStopped = new("stopped.checkpoint-stopped", []);
     public static readonly NoteCode StoppedCheckpointMoved = new("stopped.checkpoint-moved", []);
     public static readonly NoteCode StoppedOrphan = new("stopped.orphan", []);
+    // TERMTRUST1a (D201 point 7, the terminal-trust design §7.1): a stop or a finish run under the standing confirmation, after the move's own note.
+    public static readonly NoteCode StandingTerminal = new("standing.terminal", []);
     public static readonly NoteCode ChatClosed = new("chat.closed", []);
     public static readonly NoteCode ChatEndedByPerson = new("chat.ended-by-person", []);
     public static readonly NoteCode ChatEnded = new("chat.ended", []);

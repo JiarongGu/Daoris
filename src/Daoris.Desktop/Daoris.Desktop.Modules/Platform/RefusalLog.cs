@@ -82,19 +82,34 @@ public static class PipeDoor
 
     private static readonly AsyncLocal<string?> Current = new();
 
+    private static readonly AsyncLocal<bool> Granted = new();
+
     /// <summary>The door the request this call runs for came in by, or null for the page's.</summary>
     public static string? Now => Current.Value;
 
+    /// <summary>
+    /// Whether the request this call runs for came in by the terminal's door and was admitted under the person's standing confirmation
+    /// (TERMTRUST1a, D201 point 7, the terminal-trust design §5 step 4), with no card: its door is still <see cref="Terminal"/>, so every
+    /// handler that refuses the terminal refuses it too, and the press's route writes the record's mark from this.
+    /// </summary>
+    public static bool Standing => Current.Value == Terminal && Granted.Value;
+
     /// <summary>What the pipe holds around a dispatch: the request came in by the terminal's door until disposed.</summary>
-    internal static IDisposable Enter()
+    internal static IDisposable Enter() => Enter(standing: false);
+
+    /// <summary>The same, for a press the standing confirmation admitted (<see cref="Standing"/>).</summary>
+    internal static IDisposable EnterStanding() => Enter(standing: true);
+
+    private static IDisposable Enter(bool standing)
     {
-        var before = Current.Value;
+        var before = (Current.Value, Granted.Value);
         Current.Value = Terminal;
+        Granted.Value = standing;
         return new Restore(before);
     }
 
-    private sealed class Restore(string? before) : IDisposable
+    private sealed class Restore((string? Door, bool Standing) before) : IDisposable
     {
-        public void Dispose() => Current.Value = before;
+        public void Dispose() => (Current.Value, Granted.Value) = before;
     }
 }

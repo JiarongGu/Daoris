@@ -253,6 +253,29 @@ public static class InstanceDoor
     public const string Confirming = "CONFIRMING";
 
     /// <summary>
+    /// The notification that tells this terminal its press runs under the person's standing confirmation, with no card
+    /// (<c>InstancePipe.Standing</c>, TERMTRUST1a, D201 point 7).
+    /// </summary>
+    public const string Standing = "STANDING";
+
+    /// <summary>What the terminal says on its error stream as its press runs under the standing confirmation (the terminal-trust design §6.2).</summary>
+    public const string RanStanding = "ran under your standing confirmation; nothing was asked in Daoris's window";
+
+    /// <summary>
+    /// Why a press the person's standing confirmation names still waits for the window (the terminal-trust design §5 step 5), by the code
+    /// <c>CONFIRMING</c>'s <c>standing</c> carries; null for a code this build does not know, which says the plain wait.
+    /// </summary>
+    public static string? StandingWhy(string? code) => code switch
+    {
+        "in-agent-job" => "its standing confirmation does not cover a press from inside an agent Daoris runs",
+        "untold" => "Daoris could not tell this terminal is outside every agent it runs, so its standing confirmation does not cover it",
+        "form" => "its standing confirmation covers only the verb's own form of this press",
+        "not-held-here" => "its standing confirmation resumes only a hold a terminal made under it since Daoris started",
+        "running-here" => "it runs here now, and its standing confirmation finishes only a session with nothing of it running",
+        _ => null,
+    };
+
+    /// <summary>
     /// Which of §7.2's rows a press that goes several routes in one run is in, asked once before the first: the connection it made is
     /// closed, since each press of <see cref="PressAsync"/> finds its own. A press then refused (<see cref="InstanceFound.Silent"/> or
     /// <see cref="InstanceFound.Refused"/>) is said by <see cref="RefusedAsync(InstanceLook, InstanceWorld)"/> and is exit 2.
@@ -427,7 +450,16 @@ public static class InstanceDoor
             if (!each.TryGetProperty("payload", out var status) || InstanceClient.Text(status, "id") != id) continue;
             if (InstanceClient.Text(each, "module") == InstanceClient.PipeModule && InstanceClient.Text(each, "type") == Confirming)
             {
-                world.Error.WriteLine($"{world.Verb}: waiting for you to confirm this in Daoris's window…");
+                // TERMTRUST1a: where the person's standing confirmation names this press and did not cover it, the wait says why.
+                world.Error.WriteLine(StandingWhy(InstanceClient.Text(status, "standing")) is { } why
+                    ? $"{world.Verb}: waiting for you to confirm this in Daoris's window ({why})…"
+                    : $"{world.Verb}: waiting for you to confirm this in Daoris's window…");
+                continue;
+            }
+
+            if (InstanceClient.Text(each, "module") == InstanceClient.PipeModule && InstanceClient.Text(each, "type") == Standing)
+            {
+                world.Error.WriteLine($"{world.Verb}: {RanStanding}.");
                 continue;
             }
 

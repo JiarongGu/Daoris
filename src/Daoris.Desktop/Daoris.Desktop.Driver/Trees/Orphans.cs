@@ -53,14 +53,16 @@ public static class Orphans
 
     /// <param name="only">One record the person asked to stop, or null for the sweep.</param>
     /// <returns>The records ended, in the order the service listed them.</returns>
+    /// <param name="noted">What the record says in place of <see cref="Noted"/>: a stop under the standing confirmation's (TERMTRUST1a).</param>
     public static Task<IReadOnlyList<OrphanEnded>> EndAsync(
-        ServiceClient service, SessionProcesses processes, string? only = null, CancellationToken ct = default) =>
-        EndAsync(service, processes, WorkingTree.ReadGitAsync, only, ct);
+        ServiceClient service, SessionProcesses processes, string? only = null, CancellationToken ct = default, Daoris.Driver.Noted? noted = null) =>
+        EndAsync(service, processes, WorkingTree.ReadGitAsync, only, ct, noted);
 
-    /// <inheritdoc cref="EndAsync(ServiceClient, SessionProcesses, string?, CancellationToken)"/>
+    /// <inheritdoc cref="EndAsync(ServiceClient, SessionProcesses, string?, CancellationToken, Daoris.Driver.Noted?)"/>
     /// <param name="git">How a lost done's tree is read (EVID1b): the review's seam, which a test stands git in at.</param>
     internal static async Task<IReadOnlyList<OrphanEnded>> EndAsync(
-        ServiceClient service, SessionProcesses processes, WorkingTree.GitRead git, string? only = null, CancellationToken ct = default)
+        ServiceClient service, SessionProcesses processes, WorkingTree.GitRead git, string? only = null, CancellationToken ct = default,
+        Daoris.Driver.Noted? noted = null)
     {
         var ended = new List<OrphanEnded>();
         foreach (var session in await service.ActiveSessionsAsync(ct).ConfigureAwait(false))
@@ -76,7 +78,7 @@ public static class Orphans
             var evidence = await LostDoneAsync(service, session, git, ct).ConfigureAwait(false);
             try
             {
-                await service.AdvanceAsync(session.Id, "stopped", Noted, evidence: evidence, ct: ct, interrupted: only is null).ConfigureAwait(false);
+                await service.AdvanceAsync(session.Id, "stopped", noted ?? Noted, evidence: evidence, ct: ct, interrupted: only is null).ConfigureAwait(false);
                 ended.Add(new OrphanEnded(session.Id, session.Repository) { Quest = session.Quest, Tree = session.Tree });
             }
             catch (DriverException)

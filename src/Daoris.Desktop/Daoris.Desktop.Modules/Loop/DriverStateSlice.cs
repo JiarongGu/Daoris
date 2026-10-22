@@ -38,6 +38,8 @@ public static class DriverStateSlice
             "languages", "workspaceLanguages", "languageTable", "reviews", "workspaceReviews", "opinions", "workspaceOpinions",
             "helpers", "workspaceHelpers", "handOver", "workspaceHandOver", "commits", "workspaceCommits", "access", "workspaceAccess", "machineAccess", "heavyGates",
             "sessionChecks", "unreadLandings", "workspaceUnreadLandings",
+            // TERMTRUST1a (D201): the standing confirmation, as This Daoris's row, Notifications' line and the hold's mark read it.
+            "standingConfirmation",
         ],
         ["running"] = ["running", "drivingBrowser", "inReview", "helpSwapping"],
     };
@@ -59,6 +61,8 @@ public static class DriverStateSlice
             && changed.Scopes.Any(scope => scope is "driver" or "sessions" or "harnesses")),
         new(DriverLoop.EndedType),
         new("DRIVER_READY"),
+        // TERMTRUST1a: a press the standing confirmation covered moves its count.
+        new(StandingConfirmation.UsedEvent),
     ];
 
     /// <summary>The slice the shell's loop owns, judging <paramref name="loop"/>'s state.</summary>

@@ -14,6 +14,9 @@ namespace Daoris.Driver;
 /// </param>
 public sealed record SessionsAsk(string Verb)
 {
+    /// <summary>The code a finish under the standing confirmation answers where a process for the session runs here (TERMTRUST1a).</summary>
+    public const string RunningHere = "running-here";
+
     /// <summary>The sessions a verb names.</summary>
     public IReadOnlyList<string> Ids { get; init; } = [];
 
@@ -61,6 +64,13 @@ public sealed record SessionsAsk(string Verb)
 
     /// <summary>A piece's paths (COAGENT1b, <c>sessions partner … --paths</c>), each repository-relative as the person named it.</summary>
     public IReadOnlyList<string> Paths { get; init; } = [];
+
+    /// <summary>
+    /// That the press runs under the person's standing confirmation (TERMTRUST1a, D201 points 2 and 7): the pipe admitted it with no
+    /// card. A stop's records gain <see cref="NoteCodes.StandingTerminal"/>; a finish never takes the request folder, answering
+    /// <c>running-here</c> where a process for the session runs here, and is moved by the ledger only from <c>awaiting-person</c>.
+    /// </summary>
+    public bool Standing { get; init; }
 }
 
 /// <summary>
@@ -438,7 +448,7 @@ public static class SessionsCommand
                     world, PersonPresses.SessionStop, Body(("id", partner)), () => StopAsync(world, partner, output, ct), output, ct).ConfigureAwait(false)
                 : 1,
             "stop" => await ThroughAsync(
-                world, PersonPresses.SessionStop, Body(("id", ask.Ids[0])), () => StopAsync(world, ask.Ids[0], output, ct), output, ct).ConfigureAwait(false),
+                world, PersonPresses.SessionStop, Body(("id", ask.Ids[0])), () => StopAsync(world, ask.Ids[0], output, ct, ask.Standing), output, ct).ConfigureAwait(false),
             "stop-turn" => await ThroughAsync(
                 world, PersonPresses.SessionStopTurn, Body(("id", ask.Ids[0]), ("keep", true)), () => StopTurnAsync(world, ask.Ids[0], output, ct), output, ct)
                 .ConfigureAwait(false),
@@ -898,7 +908,11 @@ public static class SessionsCommand
         return came == KeepingStops.Stopped ? 0 : 1;
     }
 
-    private static async Task<int> StopAsync(SessionsWorld world, string id, TextWriter output, CancellationToken ct)
+    /// <param name="standing">
+    /// That the pipe admitted this stop under the person's standing confirmation (TERMTRUST1a, D201 point 7): every record it ends,
+    /// by whichever path, keeps its own note and gains <see cref="NoteCodes.StandingTerminal"/> after it.
+    /// </param>
+    private static async Task<int> StopAsync(SessionsWorld world, string id, TextWriter output, CancellationToken ct, bool standing = false)
     {
         var record = await RecordAsync(world, id, output, ct).ConfigureAwait(false);
         if (record is null) return 1;
@@ -911,7 +925,9 @@ public static class SessionsCommand
         var parked = record.State == "awaiting-person";
         if (world.Processes.AliveOnThisMachine(id))
         {
-            return await AskAsync(world, record, new SessionRequest(id, SessionMove.Stop, DateTimeOffset.UtcNow) { Parked = parked }, "stopped", output, ct)
+            return await AskAsync(
+                    world, record, new SessionRequest(id, SessionMove.Stop, DateTimeOffset.UtcNow) { Parked = parked, Standing = standing }, "stopped",
+                    output, ct)
                 .ConfigureAwait(false);
         }
 
@@ -919,7 +935,10 @@ public static class SessionsCommand
         {
             try
             {
-                await SessionMoves.ResolveAsync(_ => false, world.Service, id, "stopped", note: null, ct).ConfigureAwait(false);
+                await SessionMoves.ResolveAsync(
+                        _ => false, world.Service, id, "stopped",
+                        noted: standing ? SessionMoves.Standing(SessionMoves.ByThePersonNoted("stopped")) : null, ct)
+                    .ConfigureAwait(false);
             }
             catch (DriverException refused)
             {
@@ -932,7 +951,7 @@ public static class SessionsCommand
             return 0;
         }
 
-        var answer = await SessionMoves.StopAsync(world.Processes, world.Service, id, ct).ConfigureAwait(false);
+        var answer = await SessionMoves.StopAsync(world.Processes, world.Service, id, ct, standing: standing).ConfigureAwait(false);
         if (answer.Orphan)
         {
             output.WriteLine($"sessions: stopped {id}: nothing on this machine ran it any more, so its record is ended as your stop.");
@@ -967,7 +986,30 @@ public static class SessionsCommand
             ? (SessionMove.Finish, "completed", "finished")
             : (SessionMove.Decline, "declined", "declined");
         int exit;
-        if (world.Processes.AliveOnThisMachine(id))
+        if (ask.Standing && move == SessionMove.Finish)
+        {
+            // TERMTRUST1a (D201 point 2, the terminal-trust design §2.1): a finish under the standing confirmation never takes the request
+            // folder, whose path ends the process before the ledger moves; one that finds a process for the session here asks again.
+            if (world.Processes.AliveOnThisMachine(id))
+            {
+                output.WriteLine(
+                    $"sessions: {id} runs here now, so it was not finished under your standing confirmation; ask again, or confirm it in Daoris's window. ({SessionsAsk.RunningHere})");
+                return 1;
+            }
+
+            try
+            {
+                var said = await SessionMoves.FinishStandingAsync(world.Service, id, ct).ConfigureAwait(false);
+                output.WriteLine($"sessions: {past} {id}: {said}");
+                exit = 0;
+            }
+            catch (DriverException refused)
+            {
+                output.WriteLine($"sessions: {refused.Message}");
+                return 1;
+            }
+        }
+        else if (world.Processes.AliveOnThisMachine(id))
         {
             exit = await AskAsync(world, record, new SessionRequest(id, move, DateTimeOffset.UtcNow) { Note = ask.Note, Parked = true }, past, output, ct)
                 .ConfigureAwait(false);

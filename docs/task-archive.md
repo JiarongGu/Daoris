@@ -19784,3 +19784,17 @@ desk's own refusal clears it. The tidy, the lock's let-go and Ask Daoris's house
 taken, as the service does. A line past sixteen links is refused on both sides. `HelperWaitTickTests` runs at a cap of one. The
 round-3 row that shows a refused return in *What needs you* stays open as HELPERWAIT1c, now before COWORKUX1a. Detail: FIX-LOG
 2026-10-23 (HELPERWAIT1b), COWORKUX1's design §15.4, D203's round-4 note. On Opus.
+
+## TERMTRUST1a part (ii) — the standing confirmation for stop, finish, hold and resume (2026-10-23, D201)
+
+> - **(ii) the confirmation**: the judge and its table, the caller's handle, the job search with its `-open` events, older instances and
+>   elevation, the ledger's expected state and `running-here` for a finish, `SET_STANDING_CONFIRMATION` (`Window`) and `STATE`'s
+>   `standingConfirmation`, the record and its home entry in the three twins, the hold's memory, `STANDING` and `CONFIRMING`'s `standing`
+>   on the wire and in `InstanceDoor.Told`, the note part, the log lines and the machine log design's rows, This Daoris's row with its ask,
+>   the line in *Notifications*, the glossary, both catalogues. Proof: §8 cases 1, 3 and 5 to 12, and 14.
+>   (the terminal-trust design §9 row 1; it had no row of its own in the backlog, which holds TERMTRUST1)
+
+**Outcome** 2026-10-23: built beside part (i), on its own branch, under D201's note on order; the grant is not offered by this build
+(`StandingConfirmation.OfferedInThisBuild` false), so nothing a person can feel changes until part (i) lands and its case 4 is looked
+at on the install. §8 cases 1, 3 and 5 to 12 hold by class; case 3's elevation is not measured, and case 14 is the parent's look once
+the grant is offered. Detail: D201's TERMTRUST1a part (ii) note. On Opus.

@@ -128,6 +128,7 @@ service's own, read when it started*.
 | What a new terminal runs | the first `daoris` and `daoris-driver` the account's then the machine's `PATH` finds, by `PATHEXT` | *this install's*, *another* (its path), or *none* |
 | The address file | `run/running.json` (D171, D172), read as a terminal reads it | its address, process and since, and whether a terminal takes it: *taken*, or why not (*its process has ended*, *not a loopback address*, *not answering as this home's service*) |
 | The account's `DAORIS_HOME` and `DAORIS_SERVICE_URL` | §3.5 | the two rows again, since a terminal reads them first (D171 point 1) |
+| The standing confirmation (TERMTRUST1a, D201) | `data/standing-confirmation.json`, as the instance read it at its start and each grant since (`STATE`'s `standingConfirmation`) | *Off*, or *On since …* naming the granted presses, *Turn on…* with its inline ask and *Turn off*; *Off* with why where its record is not honoured (another machine's, unreadable, a newer Daoris's); *not offered yet* until this build offers it (D201's note on order). The terminal-trust design §6.1 |
 
 ### 3.8 The knowledge store
 

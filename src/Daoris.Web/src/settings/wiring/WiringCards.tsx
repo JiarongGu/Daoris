@@ -28,7 +28,7 @@ export type WiringDoors = {
  * shell's one answer. The domain (`WiringDomain`) holds the hooks and hands the answer here; a story hands a fixture, so
  * the whole domain is drawn at the frame's widths (the UI/UX design R6, UIFIT1). A molecule: every state by props.
  */
-export function WiringCards({ wiring, update, busy = false, onMeasure, onOpenLogFolder, doors, downloads, onDownloads, space }: {
+export function WiringCards({ wiring, update, busy = false, onMeasure, onOpenLogFolder, doors, downloads, onDownloads, space, standing }: {
   wiring: SystemWiring;
   /** The install's update, the shell's own state (UPDATE1b): the Versions card's line. */
   update?: UpdateState;
@@ -41,6 +41,8 @@ export function WiringCards({ wiring, update, busy = false, onMeasure, onOpenLog
   onDownloads?: () => void;
   /** The Disk space card (KEEP1c), after Folders: the domain draws it from its own read (`WiringSpace`). */
   space?: ReactNode;
+  /** The Terminal card's standing confirmation row (TERMTRUST1a): the domain draws it from the driver's state (`WiringStanding`). */
+  standing?: ReactNode;
 }) {
   return (
     <>
@@ -58,7 +60,7 @@ export function WiringCards({ wiring, update, busy = false, onMeasure, onOpenLog
         onTools={doors.tools}
         onDriver={doors.driver}
       />
-      <WiringTerminal terminal={wiring.terminal} variables={wiring.variables} />
+      <WiringTerminal terminal={wiring.terminal} variables={wiring.variables} standing={standing} />
       <WiringKnowledge knowledge={wiring.knowledge} tier={wiring.service.tier} tierWhy={wiring.service.tierWhy} onAi={doors.ai} />
       <WiringLogs logs={wiring.logs} onOpenFolder={onOpenLogFolder} onLog={doors.logs} />
       {wiring.toolHome && <WiringToolHome toolHome={wiring.toolHome} measuring={wiring.measuring} />}

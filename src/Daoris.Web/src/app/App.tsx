@@ -53,6 +53,8 @@ import {
   useAnswerConfirmation, useConfirmationShown, usePersonKey, useServiceConfirmations, useTerminalConfirmations, useUnkeyedHost,
   useDismissNotice, useMarkChannel, useMarkNoticesRead, useMessages, useNotices,
 } from '../bridge/shell';
+// TERMTRUST1a (D201 point 7): the standing confirmation's line in Notifications while it is on, and its *Turn off*.
+import { NotificationsStanding } from '../notifications/NotificationsStanding';
 import { AdoptionNotice, type Confirmation, type PressNames, routeKey } from '../person/Confirmations';
 import { byTool } from '../agents/tools';
 import { useSay } from '../bridge/sessions/conversation';
@@ -1364,6 +1366,7 @@ export function App() {
                   onOpenAsk={(entry) => openAsk(entry.ask)}
                   onMarkAsk={(entry) => markChannel.mutate({ ask: entry.ask, through: entry.newest?.at })}
                   onOpenAnswer={(notice) => { if (notice.session) openAnswer(notice.session, notice.repository); }}
+                  standing={<NotificationsStanding notify={notify} onOpen={() => openSettings('wiring', 'daoris-terminal')} />}
                 />
               )}
               notificationsShow={notificationsShow}

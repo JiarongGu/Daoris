@@ -280,6 +280,16 @@ public sealed class DaorisHomeTests
         Assert.Equal((HomeCategory.Data, "data/notices.json"), (HomeEntry.Notices.Category, HomeEntry.Notices.New));
     }
 
+    /// <summary>TERMTRUST1a (D201 point 6): the standing confirmation, a data file the service's table names as its twins do, and never reads.</summary>
+    [Fact]
+    public void The_standing_confirmation_is_a_data_file()
+    {
+        Assert.Same(HomeEntry.StandingConfirmation, HomeEntry.Named("standing-confirmation"));
+        Assert.Equal(
+            (HomeCategory.Data, "data/standing-confirmation.json"),
+            (HomeEntry.StandingConfirmation.Category, HomeEntry.StandingConfirmation.New));
+    }
+
     /// <summary>HELPMODE1c2a (D183's note): Ask Daoris's configured access, a data file the service's table names as its twin does.</summary>
     [Fact]
     public void Ask_Daoris_configured_access_is_a_data_file()

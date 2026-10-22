@@ -100,6 +100,7 @@
   "note.stopped.checkpoint-stopped": "The person stopped this at a checkpoint.",
   "note.stopped.checkpoint-moved": "The person moved this at a checkpoint.",
   "note.stopped.orphan": "Nothing on this machine was running it any more: its process ended with the application that started it, and the record had not been told.",
+  "note.standing.terminal": "Sent from a terminal and run under the person's standing confirmation, without asking.",
   "note.chat.closed": "The application closed while this conversation ran; its process was ended with it.",
   "note.chat.ended-by-person": "The person ended the conversation.",
   "note.chat.ended": "The conversation ended; its commits are its record.",

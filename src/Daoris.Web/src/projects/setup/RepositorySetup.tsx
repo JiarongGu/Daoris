@@ -75,6 +75,11 @@ export type Driving = {
   onTrees: (ownTree: boolean) => void;
   /** What driving here does that the choice alone does not say: a direct door leaves a quest here sitting (INT3c). */
   note?: string;
+  /**
+   * That its hold was made from a terminal under the person's standing confirmation (TERMTRUST1a, the terminal-trust design §6.2),
+   * for as long as this run remembers it: said beside the hold.
+   */
+  heldStanding?: boolean;
 };
 
 /** Its line and how its work lands (WSR1, WSR2), as the driver resolves them, and the presses that set or clear them. */
@@ -327,7 +332,11 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
               label={t('projects.driver.hold')}
               hint={t('projects.setup.twin.hold', { repository })}
               control={<CheckField checked={driving.held} disabled={busy} onChange={driving.onHold} label={t('projects.driver.hold')} hideLabel />}
-            />
+            >
+              {driving.held && driving.heldStanding && (
+                <p className="m-0 text-small text-ink-soft">{t('projects.setup.heldStanding')}</p>
+              )}
+            </SettingRow>
           )}
           {/* Session trees (D51): its sessions open their own worktree, so the person's uncommitted work in the
               checkout stops holding the driver. */}

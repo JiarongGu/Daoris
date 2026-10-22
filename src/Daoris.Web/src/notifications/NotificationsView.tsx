@@ -55,8 +55,10 @@ function foldedHere(): Set<NotificationsGroup> {
  */
 export function NotificationsView({
   presses, needs, working, attention, onAnswer, notify, onShown, names, at = null, onVisible, notices = [], onRead, onOpenNotice, onDismiss,
-  messages = [], answered = [], messageNames, onOpenAsk, onMarkAsk, onOpenAnswer,
+  messages = [], answered = [], messageNames, onOpenAsk, onMarkAsk, onOpenAnswer, standing,
 }: {
+  /** The standing confirmation's line while it is on (TERMTRUST1a, `StandingLine`), at the head of the presses' group. */
+  standing?: ReactNode;
   presses: Confirmation[];
   /** How many rows *What needs you* holds but the presses' own; null while not judged, which draws the band's own skeleton. */
   needs: number | null;
@@ -137,6 +139,9 @@ export function NotificationsView({
   return (
     <div ref={area} data-notifications="" className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
       <PressArea.Provider value={area}>
+        {/* The standing confirmation's line heads the presses' group while it is on (TERMTRUST1a), drawn whether or not a
+            press waits, so it can be turned off here at any time; a line, counted by no group and never by the bell. */}
+        {standing}
         {presses.length > 0 && (
           <Group id="presses" title={t('person.label')} count={presses.length} folded={folded.has('presses')} onFold={fold} warn>
             <Confirmations waiting={presses} onAnswer={onAnswer} notify={notify} onShown={onShown} names={names} />

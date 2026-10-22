@@ -229,6 +229,9 @@ internal sealed class PipeClient : IAsyncDisposable
         }
     }
 
+    /// <summary>Every notification kept while an answer was awaited, in the order told (TERMTRUST1a: what a covered press was told).</summary>
+    public IReadOnlyList<JsonElement> Told => _notifications;
+
     /// <summary>The first notification told, waiting up to <paramref name="within"/>; null where none came.</summary>
     public async Task<JsonElement?> NotificationAsync(TimeSpan within)
     {

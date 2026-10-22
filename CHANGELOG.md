@@ -51,6 +51,10 @@ with the version and date at release.
   (HELPERWAIT1b). Before, the tidy could take that tree as soon as the helper's ask was refused. A question to you that Daoris could
   not read now stays with the session waiting on your answer. A helper's answer whose handing got no clear reply is checked at the
   next look and never handed twice.
+- Settings → This Daoris has a **Standing confirmation** row under *A terminal* (TERMTRUST1a, D201). Once offered, it lets a terminal
+  outside the agents Daoris runs stop a session, finish one that waits on you, and hold or resume a repository without a card in the
+  window, each use said on what it acted on and counted in *Notifications*, where it can be turned off. This build does not offer it
+  yet: it waits for Daoris to hold every agent it runs apart from your terminals, so every press still asks as before.
 - A folder under Daoris's account homes that no agent or plugin names is no longer taken for an agent (POOLSTRAY1). An earlier
   start could leave such a folder, and its subfolders were folded in as accounts. Such a folder is now noted once in the machine
   log and otherwise left alone. If an earlier fold already wrote one into the account order, the next change of the accounts

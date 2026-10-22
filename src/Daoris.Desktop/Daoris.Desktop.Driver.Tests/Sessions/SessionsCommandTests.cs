@@ -757,6 +757,124 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.Equal(("completed", "Merged by hand."), (ledger.State("p4rk3d00"), ledger.Note("p4rk3d00")));
     }
 
+    private async Task<(int Exit, string Said)> StandingAsync(Ledger ledger, string[] args)
+    {
+        using var service = ledger.Client();
+        var output = new StringWriter();
+        var ask = SessionsCommand.Read(args, out var problem);
+        Assert.True(problem is null, problem);
+        var exit = await SessionsCommand.RunAsync(ask! with { Standing = true }, World(ledger, service), output);
+        return (exit, output.ToString().ReplaceLineEndings("\n"));
+    }
+
+    /// <summary>
+    /// TERMTRUST1a (D201 point 7, the terminal-trust design §7.1 and §8 case 11): a stop under the standing confirmation, of a parked
+    /// session and of an orphan, keeps the move's own note and adds <c>standing.terminal</c> after it; the plain stop adds nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_stop_under_the_standing_confirmation_keeps_its_note_and_says_so_after_it()
+    {
+        var ledger = Family();
+
+        var (parked, _) = await StandingAsync(ledger, ["stop", "p4rk3d00"]);
+        var (orphan, _) = await StandingAsync(ledger, ["stop", "0rphan00"]);
+
+        Assert.Equal((0, 0), (parked, orphan));
+        Assert.Equal("stopped", ledger.State("p4rk3d00"));
+        Assert.Equal(
+            "The person stopped this at a checkpoint. " + SessionMoves.StandingText, ledger.Note("p4rk3d00"));
+        Assert.Equal([NoteCodes.StoppedCheckpointStopped.Code, NoteCodes.StandingTerminal.Code], ledger.Codes("p4rk3d00"));
+        Assert.Equal(("stopped", false), (ledger.State("0rphan00"), ledger.Interrupted("0rphan00")));
+        Assert.Equal([NoteCodes.StoppedOrphan.Code, NoteCodes.StandingTerminal.Code], ledger.Codes("0rphan00"));
+
+        var plain = Family();
+        await RunAsync(plain, ["stop", "p4rk3d00"]);
+        Assert.Equal([NoteCodes.StoppedCheckpointStopped.Code], plain.Codes("p4rk3d00"));
+    }
+
+    /// <summary>
+    /// TERMTRUST1a (§8 case 11): a live session's stop under the standing confirmation goes through the request its loop honours, which
+    /// carries the flag, so the loop's stop writes the person's stop and the part after it.
+    /// </summary>
+    [Fact]
+    public async Task A_live_stop_under_the_standing_confirmation_hands_its_loop_the_note_part()
+    {
+        var ledger = Family();
+        Alive("w0rk1ng0");
+        Noted? noted = null;
+        await using var loop = new SessionRequestWatch(
+            _home, runsHere: id => id == "w0rk1ng0",
+            stop: (id, note) => { noted = note; ledger.Move(id, "stopped", note?.Note ?? "the person stopped it."); return true; },
+            service: () => null);
+        using var honouring = new CancellationTokenSource();
+        var honour = Task.Run(async () =>
+        {
+            while (!honouring.IsCancellationRequested)
+            {
+                await loop.HonourAsync();
+                await Task.Delay(20);
+            }
+        });
+
+        var (exit, _) = await StandingAsync(ledger, ["stop", "w0rk1ng0"]);
+        honouring.Cancel();
+        await honour;
+
+        Assert.Equal(0, exit);
+        Assert.Equal([NoteCodes.EndedStopped.Code, NoteCodes.StandingTerminal.Code], noted!.Parts.Select(part => part.Code));
+        Assert.Equal("the person stopped it. " + SessionMoves.StandingText, noted.Note);
+    }
+
+    /// <summary>
+    /// TERMTRUST1a (D201 point 2, §8 cases 7 and 11): a finish under the standing confirmation of a parked session with no process here
+    /// is the ledger's alone, sent with its expected state, its note the person's finish and the part after it, and its quest left as it was.
+    /// </summary>
+    [Fact]
+    public async Task A_finish_under_the_standing_confirmation_moves_only_from_awaiting_person()
+    {
+        var ledger = Family();
+
+        var (exit, said) = await StandingAsync(ledger, ["finish", "p4rk3d00"]);
+
+        Assert.Equal(0, exit);
+        Assert.Contains("finished p4rk3d00", said);
+        Assert.Equal(("completed", "awaiting-person"), (ledger.State("p4rk3d00"), ledger.Expected("p4rk3d00")));
+        Assert.Equal([NoteCodes.StoppedCheckpointFinished.Code, NoteCodes.StandingTerminal.Code], ledger.Codes("p4rk3d00"));
+        Assert.Equal("Taken", ledger.QuestStatus("q1"));
+    }
+
+    /// <summary>TERMTRUST1a (§8 case 7): a session the driver resumed between the verb's read and the move is not ended.</summary>
+    [Fact]
+    public async Task A_standing_finish_of_a_session_resumed_since_the_verbs_read_ends_nothing()
+    {
+        var ledger = Family();
+        ledger.BeforeMove = record => record["state"] = "working";
+
+        var (exit, said) = await StandingAsync(ledger, ["finish", "p4rk3d00"]);
+
+        Assert.Equal(1, exit);
+        Assert.Contains("not awaiting-person", said);
+        Assert.Equal("working", ledger.State("p4rk3d00"));
+    }
+
+    /// <summary>
+    /// TERMTRUST1a (D201 point 2, Fable's F3, §8 case 7): a finish under the standing confirmation that finds a process for the session
+    /// here answers <c>running-here</c>, exit 1, and writes nothing to the request folder, whose path would end the process first.
+    /// </summary>
+    [Fact]
+    public async Task A_standing_finish_of_a_session_running_here_answers_running_here_and_asks_no_loop()
+    {
+        var ledger = Family();
+        Alive("p4rk3d00");
+
+        var (exit, said) = await StandingAsync(ledger, ["finish", "p4rk3d00"]);
+
+        Assert.Equal(1, exit);
+        Assert.Contains(SessionsAsk.RunningHere, said);
+        Assert.Equal("awaiting-person", ledger.State("p4rk3d00"));
+        Assert.Empty(new SessionRequests(_home).Pending(DateTimeOffset.UtcNow));
+    }
+
     /// <summary>Archive through the screen's owner: what ended is marked, what needs you or runs is kept and said; the log counts.</summary>
     [Fact]
     public async Task Archive_marks_what_ended_and_keeps_what_needs_you_and_the_log_counts_it()
@@ -883,6 +1001,18 @@ public sealed class SessionsCommandTests : IDisposable
 
         public bool Interrupted(string id) { lock (_gate) return (bool?)Of(id)["interrupted"] ?? false; }
 
+        /// <summary>The codes of the note parts the last move sent, in order (TERMTRUST1a); none where no move came.</summary>
+        public IReadOnlyList<string?> Codes(string id)
+        {
+            lock (_gate) return Of(id)["codes"] is JsonArray codes ? [.. codes.Select(code => (string?)code)] : [];
+        }
+
+        /// <summary>The state the last move said it expected, or null.</summary>
+        public string? Expected(string id) { lock (_gate) return (string?)Of(id)["expected"]; }
+
+        /// <summary>What happens to a record just before a move is judged: another door's move between the verb's read and its own.</summary>
+        public Action<JsonObject>? BeforeMove { get; set; }
+
         private JsonObject QuestOf(string id) => _quests.Single(each => (string?)each["id"] == id);
 
         public string QuestStatus(string id) { lock (_gate) return (string)QuestOf(id)["status"]!; }
@@ -955,7 +1085,20 @@ public sealed class SessionsCommandTests : IDisposable
                 if (request.Method == HttpMethod.Post && rest.EndsWith("/state", StringComparison.Ordinal))
                 {
                     var moved = Of(Uri.UnescapeDataString(rest[..^"/state".Length]));
-                    moved["state"] = body!["state"]!.GetValue<string>();
+                    BeforeMove?.Invoke(moved);
+                    // TERMTRUST1a: the ledger's expected state, compared as the store compares it in its step.
+                    if (body!["expected"] is { } expected && expected.GetValue<string>() != (string)moved["state"]!)
+                    {
+                        return Answer(HttpStatusCode.Conflict, new JsonObject
+                        {
+                            ["error"] = $"Session `{moved["id"]}` is {moved["state"]}, not {expected} as this move expected, so it was not moved.",
+                        });
+                    }
+
+                    moved["expected"] = body["expected"]?.GetValue<string>();
+                    moved["codes"] = new JsonArray([.. (body["noteParts"] as JsonArray ?? [])
+                        .Select(part => (JsonNode?)JsonValue.Create((string?)part?["code"]))]);
+                    moved["state"] = body["state"]!.GetValue<string>();
                     if (body["note"] is { } note) moved["note"] = note.GetValue<string>();
                     moved["interrupted"] = body["interrupted"]?.GetValue<bool>() ?? false;
                     return Answer(HttpStatusCode.OK, new JsonObject { ["session"] = moved.DeepClone(), ["message"] = $"Session is now {moved["state"]}." });

@@ -3,7 +3,9 @@ import { useShenora, useShenoraEvent } from '@shenora/react';
 import { api, holdPersonKey, type ServiceConfirmation } from '../data/api';
 import { keys } from '../data/queries';
 import type { Confirmation, ConfirmationAnswer, ConfirmationField, ConfirmationNamed } from '../person/Confirmations';
+import type { StandingAnswer, StandingConfirmationNow, StandingUnread } from '../person/standing';
 import { call, refusedNoRoute } from './call';
+import { notPushed } from './state/slices';
 
 // The person's door in the window (PERSONDOOR1f, RPC1c; D156 points 2 and 4, the person-door design §2.2 and §4.2): the person
 // key the shell holds for its host, kept in memory; the presses a terminal sent over the pipe that wait for the person's Confirm;
@@ -191,6 +193,61 @@ export function useConfirmationShown() {
       const answer = await call<{ shown?: boolean }>('PERSON_CONFIRM_SHOWN', { id: waiting.id });
       return answer?.shown === true;
     },
+  });
+}
+
+const UNREAD: readonly StandingUnread[] = ['unread', 'newer', 'other-machine'];
+
+const strings = (value: unknown): string[] =>
+  (Array.isArray(value) ? value.filter((each): each is string => typeof each === 'string') : []);
+
+/**
+ * `STATE`'s `standingConfirmation`, read field by field: the bridge leaves a null out, so each field is read defensively. Null where
+ * the shell says none, an older shell's or one that serves no pipe, which draws no row.
+ */
+export function standingOf(raw: unknown): StandingConfirmationNow | null {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null;
+  const shaped = raw as Record<string, unknown>;
+  const presses = strings(shaped.presses);
+  return {
+    offered: shaped.offered === true,
+    // On names a press, or it is not on: a grant of nothing reads as off, as the shell's own `IsOn` does.
+    on: shaped.on === true && presses.length > 0,
+    presses,
+    built: strings(shaped.built),
+    since: typeof shaped.since === 'string' && shaped.since.length > 0 ? shaped.since : null,
+    unread: UNREAD.find((why) => why === shaped.unread) ?? null,
+    unwritten: shaped.unwritten === true,
+    used: typeof shaped.used === 'number' && Number.isFinite(shaped.used) ? shaped.used : 0,
+    held: strings(shaped.held),
+  };
+}
+
+/**
+ * The person's grant or revoke of the standing confirmation (TERMTRUST1a, D201 point 5; the terminal-trust design §4.1): the presses
+ * ticked, `[]` to turn it off, sent from the window alone (the census refuses it to a terminal). The answer is read field by field, so
+ * a refusal keeps its code; a revoke `done` with `unwritten` is off for this run, its record unwritten. The route declares `driver`, so
+ * the state hub reads the driver's state again (D169 point 6): this asks nothing again itself.
+ */
+export function useSetStandingConfirmation() {
+  return useMutation({
+    mutationFn: async (presses: readonly string[]): Promise<StandingAnswer> => {
+      const answer = await call<{ done?: boolean; why?: string | null; message?: string | null }>(
+        'SET_STANDING_CONFIRMATION', { presses: [...presses] });
+      return { done: answer?.done === true, why: answer?.why ?? null, message: answer?.message ?? '' };
+    },
+  });
+}
+
+/**
+ * Hear a press run under the standing confirmation (`STANDING_USED`, the terminal-trust design §5 step 4), and read the driver's
+ * state again, whose `used` the *Notifications* line counts. Where the shell pushes that state (PUSH1a) its push carries the count, and
+ * nothing is asked here.
+ */
+export function useStandingUsed() {
+  const client = useQueryClient();
+  useShenoraEvent('DAORIS', 'STANDING_USED', () => {
+    void client.invalidateQueries({ queryKey: keys.driver, predicate: notPushed(client) });
   });
 }
 

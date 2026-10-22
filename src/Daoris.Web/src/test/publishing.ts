@@ -98,6 +98,8 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   SESSION_QUIET_CARRY_ON: { scopes: ['sessions', 'driver'], session: 'id' },
   SESSION_QUIET_LEAVE: { scopes: ['sessions'], session: 'id' },
   SET_ACCESS: { scopes: ['driver'] },
+  // TERMTRUST1a (D201 point 5): the person's grant or revoke of the standing confirmation, in the window alone.
+  SET_STANDING_CONFIRMATION: { scopes: ['driver'] },
   SET_READ_ACROSS: { scopes: ['driver'] },
   SET_WRITE_ACROSS: { scopes: ['driver'] },
   SESSION_GO_AHEAD: { scopes: ['sessions', 'asks'], session: 'id' },

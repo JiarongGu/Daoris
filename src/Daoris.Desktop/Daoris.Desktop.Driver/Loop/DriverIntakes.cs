@@ -260,7 +260,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
                     var after = await service.FindAskAsync(ask.Id, ct).ConfigureAwait(false);
                     var byPerson = _context.Processes.WasStopRequested(sessionId);
                     var conclusion = byPerson
-                        ? SessionConclusion.Of("stopped", Observation.Stopped)
+                        ? SessionConclusion.Of("stopped", _context.Processes.StopNote(sessionId) ?? Observation.Stopped)
                         : exitCode is int code
                             ? IntakeObservation.Conclude(code, ask.Quests.Count, after, turnFailed)
                             : SessionConclusion.Of("failed", _driver.Watch.EndedMinutes(sessionId) is { } quietMinutes
