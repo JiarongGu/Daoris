@@ -131,8 +131,8 @@ const BRANCH = 'daoris/q1-fix-the-header';
 
 /**
  * A run bound to a graph version, drawn from its record (FABRIC-CUTOVER1e): the claim reached on its quest, then a fork, the build observed
- * on the run's branch while the lint is reached there, joined before the second opinion, which this build does not begin on a graph run;
- * the landing and the deploy after it not reached; a failure of the join stops the run.
+ * on the run's branch while the lint is reached there, joined before the second opinion, not reached behind the join (FABRIC-CUTOVER1d begins
+ * it as any node once its wires let it start); the landing and the deploy after it not reached; a failure of the join stops the run.
  */
 export const GRAPH_RUN = run([
   at(nodeCell('claimed', 'work', 'agent', 'agent'), 'done', 'reached', { node: 'claimed', on: 'quest', quest: 'q1' }),
@@ -142,7 +142,7 @@ export const GRAPH_RUN = run([
     { node: 'acme.ci/linted', on: 'branch', branch: BRANCH, commit: COMMIT, session: 's1' }),
   at(nodeCell('both', 'all', 'automatic', 'daoris'), 'not-reached', 'blocked', { node: 'all' }),
   at(nodeCell('halt', 'stop', 'automatic', 'daoris'), 'not-reached', 'blocked', { node: 'stop' }),
-  at(nodeCell('opinion', 'opinion', 'agent', 'agent'), 'cannot-start', 'not-begun', { node: 'opinion', on: 'branch', branch: BRANCH, session: 's1' }),
+  at(nodeCell('opinion', 'opinion', 'agent', 'agent'), 'not-reached', 'blocked', { node: 'opinion', on: 'branch', branch: BRANCH, session: 's1' }),
   at(nodeCell('handed', 'landing', 'you', 'daoris', 'accept', { form: 'branch', accept: 'you' }), 'not-reached', 'blocked',
     { node: 'handed', on: 'branch', branch: BRANCH, session: 's1' }),
   at(nodeCell('deployed', 'acme.deploy/deployed', 'automatic', 'plugin', null, { plugin: 'acme.deploy' }), 'not-reached', 'blocked',
