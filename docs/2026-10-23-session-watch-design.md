@@ -1,6 +1,6 @@
 # No time limit on a working session; a watcher supports one that is stuck (SESSWATCH1, 2026-10-23)
 
-**Status: proposed (D200), round 3.** Written by Claude Opus at `360b27bc6`; revised after Codex's read (D191), whose fourteen findings
+**Status: accepted (D200, by the steward 2026-10-23), round 3.** Written by Claude Opus at `360b27bc6`; revised after Codex's read (D191), whose fourteen findings
 were each checked against the code and taken, and after Fable's foundation read, whose twelve findings (four blocking) were checked and
 taken (§10). The steward accepts after reading this round. Nothing is built.
 
