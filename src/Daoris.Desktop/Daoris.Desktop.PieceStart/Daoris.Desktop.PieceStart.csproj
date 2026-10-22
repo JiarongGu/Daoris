@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The partner's launcher (COAGENT1b; D199's note on how a partner starts in its strict job): `daoris-piece-start.exe`, laid out in
+       the install's `app/bin/` beside the git doors and started for a partner alone. It joins the piece's named job, then starts the
+       harness as its child with the stdio it was handed, and refuses to start it where the job cannot be joined. A console program,
+       since the doors read the harness's protocol over its standard streams. Framework-dependent and referencing nothing, as the git
+       doors are: the driver library's own files are compiled in, each using the base library alone. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Daoris.Desktop.PieceStart</RootNamespace>
+    <AssemblyName>daoris-piece-start</AssemblyName>
+    <Product>Daoris</Product>
+    <Description>Daoris's partner launcher: joins a piece's job, then starts the partner's harness inside it</Description>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The launcher's words, its join and its start (COAGENT1b): `PieceLauncherTests` holds them. -->
+    <Compile Include="..\Daoris.Desktop.Driver\Conversations\Partners\PieceLauncher.cs" Link="PieceLauncher.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Agents\Consoles\ProcessJob.cs" Link="ProcessJob.cs" />
+  </ItemGroup>
+
+</Project>

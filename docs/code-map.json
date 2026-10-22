@@ -47,6 +47,11 @@
       "summary": "the shell modules' tests"
     },
     {
+      "id": "Daoris.Desktop.PieceStart",
+      "path": "src/Daoris.Desktop/Daoris.Desktop.PieceStart",
+      "summary": "Daoris's partner launcher: joins a piece's job, then starts the partner's harness inside it"
+    },
+    {
       "id": "Daoris.Devkit.Cli",
       "path": "src/Daoris.Devkit/Daoris.Devkit.Cli",
       "summary": "`daoris-devkit`, the AOT binary: the universal gates and the code map"
@@ -136,6 +141,11 @@
     {
       "from": "Daoris.Desktop.Driver.Tests",
       "to": "Daoris.Desktop.Launcher",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Desktop.Driver.Tests",
+      "to": "Daoris.Desktop.PieceStart",
       "kind": "project"
     },
     {

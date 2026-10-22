@@ -148,6 +148,26 @@ public sealed class ProcessJob : IDisposable
     }
 
     /// <summary>
+    /// Put this process into the job by that name, which another process made and holds (COAGENT1b: the partner's launcher joining its
+    /// piece's job, D199's note on the strict start): every process this one starts afterwards is born in it. False off Windows, where no
+    /// name answers, and where the job would not take this process: the launcher then starts nothing.
+    /// </summary>
+    internal static bool JoinNamed(string name)
+    {
+        if (!OperatingSystem.IsWindows()) return false;
+        var handle = OpenJobObject(JobAssignProcess | JobQuery, false, name);
+        if (handle == IntPtr.Zero) return false;
+        try
+        {
+            return AssignProcessToJobObject(handle, GetCurrentProcess());
+        }
+        finally
+        {
+            CloseHandle(handle);
+        }
+    }
+
+    /// <summary>
     /// End the job a dead holder of a heavy-run slot named, if it is still there, and wait until it holds nothing (HEAVYRUN1a): true
     /// where it was. A name no job answers to is a job whose last handle closed, which ended what it held as it closed.
     /// </summary>
@@ -191,6 +211,7 @@ public sealed class ProcessJob : IDisposable
     private const uint KillOnJobClose = 0x2000;
     private const int BasicAccountingInformation = 1;
     private const int ExtendedLimitInformation = 9;
+    private const uint JobAssignProcess = 0x0001;
     private const uint JobQuery = 0x0004;
     private const uint JobTerminate = 0x0008;
     private const int FileNotFound = 2;
@@ -273,4 +294,7 @@ public sealed class ProcessJob : IDisposable
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool CloseHandle(IntPtr handle);
+
+    [DllImport("kernel32.dll")]
+    private static extern IntPtr GetCurrentProcess();
 }

@@ -14,12 +14,25 @@ public sealed class NoConsoleWindowTests
     private static readonly string[] Projects =
         ["Daoris.Desktop.Driver", "Daoris.Desktop.Driver.Host", "Daoris.Desktop.Modules", "Daoris.Desktop.App"];
 
+    /// <summary>
+    /// The spawns that inherit their console, by file, each with its reason (D199's note on the strict start made the one a list of
+    /// two): a console program's child that relays the stdio it was handed. With nothing redirected and no window, Windows gives a child
+    /// a console of its own, which cuts that stdio, so each spawn names its reason beside an explicit <c>false</c>.
+    /// </summary>
+    private static readonly Dictionary<string, string> Inheriting = new(StringComparer.Ordinal)
+    {
+        ["Daoris.Desktop.Driver/Platform/GitDoors.cs"] =
+            "the git doors' ssh: the door is git's console child, and its ssh speaks git's protocol over the stdio git handed it",
+        ["Daoris.Desktop.Driver/Conversations/Partners/PieceLauncher.cs"] =
+            "the partner's launcher: it joins the piece's job, then starts the harness, which speaks its protocol over the stdio the driver handed the launcher",
+    };
+
     [Fact]
     public void Every_process_the_desktop_starts_is_started_without_a_console_window()
     {
         var root = SourceRoot();
         var spawns = 0;
-        var inherits = 0;
+        var inherits = new List<string>();
         var missing = new List<string>();
 
         foreach (var project in Projects)
@@ -43,13 +56,11 @@ public sealed class NoConsoleWindowTests
                     // a call. A spawn without one has no chance to say it.
                     var end = Regex.Match(source[spawn.Index..], @"\}\s*[;)]");
                     var initializer = end.Success ? source.Substring(spawn.Index, end.Index) : "";
-                    // The one exemption, said where it is taken: a console program's child that relays the stdio it was handed
-                    // (the git doors' ssh). With nothing redirected and no window, Windows gives a child a console of its own,
-                    // which cuts that stdio, so the spawn names its reason beside an explicit `false`.
+                    // An exemption of the named list, said where it is taken as well (`Inheriting`).
                     if (initializer.Contains("CreateNoWindow = false", StringComparison.Ordinal)
                         && initializer.Contains("// inherits its console:", StringComparison.Ordinal))
                     {
-                        inherits++;
+                        inherits.Add(Path.GetRelativePath(root, file).Replace('\\', '/'));
                         continue;
                     }
 
@@ -62,8 +73,11 @@ public sealed class NoConsoleWindowTests
         }
 
         Assert.True(spawns >= 6, $"expected to find the desktop's spawn sites, found {spawns}");
-        // A second inheriting spawn is a new case to judge, not a pattern to copy.
-        Assert.True(inherits <= 1, $"{inherits} spawns inherit their console; the git doors' ssh is the one exemption");
+        // Another inheriting spawn is a new case to judge, not a pattern to copy: one per named file, and each name still needed.
+        var unnamed = inherits.Where(file => !Inheriting.ContainsKey(file)).ToList();
+        Assert.True(unnamed.Count == 0, "a spawn inherits its console outside the named list:\n" + string.Join('\n', unnamed));
+        Assert.All(Inheriting.Keys, file => Assert.True(inherits.Count(each => each == file) == 1,
+            $"{file} is named as inheriting its console once, and found {inherits.Count(each => each == file)} times"));
         Assert.True(missing.Count == 0, "a spawn without CreateNoWindow opens a console from the window:\n" + string.Join('\n', missing));
     }
 
