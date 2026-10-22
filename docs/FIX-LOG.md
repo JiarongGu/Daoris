@@ -68,8 +68,6 @@ repository.
   holds the exception: a take whose moved-aside file is held is put back, not taken. All pass with the fix, with `AtomicFileTests` and `WorkflowRunBindingTests`. The census's own test plants each shape it refuses
   and passes on the tree. Writers that read and then write over a held file see the hold released mid-call, as a real move's is.
 
-## 2026-10-22 — A folder held on the own sign-in's file would have reached *What needs you* without its `own` (POOL1c)
-
 ## 2026-10-23 — The git half's fixtures built repositories, cloned origins and let git start its maintenance, a start each (PROCSPEED1b)
 
 - **Symptom:** `driver-process-git` on the full set at `c557800`: 693 tests, 16,326 s of test time in 4,135 s of wall (69 min) at

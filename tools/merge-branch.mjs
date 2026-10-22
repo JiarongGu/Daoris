@@ -1127,11 +1127,15 @@ export const REACH = Object.freeze([
     why: "the driver's own, and the page's note, conversation, handed, trace and say vitests parse their declarations (MOD9e, MSG1g3)",
   },
   // BRAINSTORM1a2: the service's McpToolRegistrationTests holds the brainstorm posture's list of the connector's tools to its
-  // host's, reading the driver's file by its name; a path rule replaces its lane's, so the driver's readers stay.
+  // host's, reading the driver's file by its name; a path rule replaces its lane's, so the driver's readers stay. COAGENT1b: the
+  // service's McpRoleFilterTests reads the partner's rules the same way (`PartnerPermissions.Offered`).
   {
-    paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver/**/BrainstormPermissions.cs'],
+    paths: [
+      'src/Daoris.Desktop/Daoris.Desktop.Driver/**/BrainstormPermissions.cs',
+      'src/Daoris.Desktop/Daoris.Desktop.Driver/**/PartnerPermissions.cs',
+    ],
     gates: [...DRIVER_READERS, 'service'],
-    why: "the driver's own, and the service's McpToolRegistrationTests reads the brainstorm posture's list of the connector's tools (BRAINSTORM1a2)",
+    why: "the driver's own, and the service's McpToolRegistrationTests and McpRoleFilterTests read the brainstorm posture's and the partner's lists of the connector's tools (BRAINSTORM1a2, COAGENT1b)",
   },
   // GATESLIM1: desktop-publish.test.ts (the tool-tests) imports the tarball reader from the CLI's sources; a path rule replaces the cli lane's.
   { paths: ['src/Daoris.Cli/src/**/tarball.ts'], gates: [...CLI_READERS, 'tool-tests'], why: "the CLI's own readers (the lane's), and the publish's tool-tests import it (GATESLIM1)" },
