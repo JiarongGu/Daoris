@@ -376,6 +376,17 @@ describe('a row as the list shows it', () => {
     expect(shownOf(session({ id: 'w1', state: 'working', answer: 'also cap it' }), null, undefined)).toBe('going-on');
   });
 
+  /**
+   * HELPERWAIT1: a session that ended its turn on its own helper's ask shows *awaiting helper* by the reader's word, resuming later, and
+   * nothing about it waits on the person.
+   */
+  it('shows a session waiting on its own helper as awaiting helper, never as waiting on the person', () => {
+    const waiting = session({ id: 'h1', state: 'completed' });
+    const placed = grouping({ session: 'h1', group: 'later', shown: 'awaiting-helper' });
+    expect(shownOf(waiting, placed, undefined)).toBe('awaiting-helper');
+    expect(waitsOnYou(waiting, placed)).toBe(false);
+  });
+
   it('says what waits on the person: a session parked to ask, or a parked quest\'s last session', () => {
     expect(waitsOnYou(session({ id: 'p1', state: 'awaiting-person' }), null)).toBe(true);
     expect(waitsOnYou(session({ id: 'f1', state: 'failed' }), grouping({ session: 'f1', group: 'you', shown: 'parked' }))).toBe(true);

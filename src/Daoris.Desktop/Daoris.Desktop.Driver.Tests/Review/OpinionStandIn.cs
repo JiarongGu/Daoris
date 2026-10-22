@@ -50,6 +50,24 @@ internal sealed class OpinionStandIn : HttpMessageHandler
     /// <summary>Each piece's answer handed, by the partner's session, with the record it went to and the words (COAGENT1b).</summary>
     public List<(string Partner, string To, string Text)> PartnerHands { get; } = [];
 
+    /// <summary>Each move asked of a record's state door (HELPERWAIT1), in order: the record, the state, its note's first code.</summary>
+    public List<(string Session, string State, string? Code)> Moves { get; } = [];
+
+    /// <summary>How many times the records were read whole (HELPERWAIT1: a held hand reads none until its asker moves).</summary>
+    public int RecordReads { get; private set; }
+
+    /// <summary>How many times a helper's hand was asked, taken or refused (HELPERWAIT1: a hand the host refuses is not asked again until its asker moves).</summary>
+    public int HelperHandsAsked { get; private set; }
+
+    /// <summary>How many moves were asked of the state door, made or not (HELPERWAIT1).</summary>
+    public int MovesAsked { get; private set; }
+
+    /// <summary>Where set, the state door fails every move (HELPERWAIT1): <c>unreachable</c> as a transport failure, <c>refused</c> as a refusal.</summary>
+    public string? StateFailure { get; set; }
+
+    /// <summary>Where set, every helper's hand is refused with this reason (HELPERWAIT1), as an older or a failing desk refuses one.</summary>
+    public string? HelperHandRefusal { get; set; }
+
     /// <summary>A client over this host, as a driver is handed one.</summary>
     public ServiceClient Client() => new(Url, null, new HttpClient(this, disposeHandler: false));
 
@@ -78,6 +96,12 @@ internal sealed class OpinionStandIn : HttpMessageHandler
     public void Set(string id, string field, JsonNode? value)
     {
         lock (_gate) Find(id)![field] = value;
+    }
+
+    /// <summary>A record's note as it now reads (HELPERWAIT1).</summary>
+    public string? Note(string id)
+    {
+        lock (_gate) return Find(id)!["note"]?.GetValue<string>();
     }
 
     /// <summary>The words waiting on a record, as the wire answers them.</summary>
@@ -164,10 +188,43 @@ internal sealed class OpinionStandIn : HttpMessageHandler
             switch (request.Method.Method, path)
             {
                 case ("GET", "/api/sessions"):
+                    RecordReads++;
                     return Answer(HttpStatusCode.OK, new JsonArray([.. _sessions.Select(session => session.DeepClone())]));
 
                 case ("GET", "/api/quests"):
                     return Answer(HttpStatusCode.OK, new JsonArray([.. _quests.Select(quest => quest.DeepClone())]));
+
+                // HELPERWAIT1: the ledger's moves as far as a helper's asker reaches them: a live record moves as the ledger lets it, and a
+                // finished one only where it ended waiting on its own helper, back to the person; the note and its parts kept.
+                case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/state", StringComparison.Ordinal):
+                {
+                    var id = Uri.UnescapeDataString(path["/api/sessions/".Length..^"/state".Length]);
+                    MovesAsked++;
+                    // HELPERWAIT1 (Codex's round-2 #5): a door that cannot be reached, or one that refuses the move.
+                    if (StateFailure == "unreachable") throw new HttpRequestException("the service did not answer");
+                    if (StateFailure == "refused") return Refuse(HttpStatusCode.Conflict, "this service does not make that move");
+                    var record = Find(id);
+                    if (record is null) return Refuse(HttpStatusCode.NotFound, "no such session");
+                    var asked = JsonNode.Parse(body!)!;
+                    var from = record["state"]!.GetValue<string>();
+                    var to = asked["state"]!.GetValue<string>();
+                    var waited = from == "completed"
+                                 && record["noteParts"] is JsonArray kept && kept.Any(part => part?["code"]?.GetValue<string>() == "ended.awaits-helper");
+                    string[] moves = from switch
+                    {
+                        "queued" or "starting" or "working" => ["awaiting-person", "completed", "declined", "stood-down", "failed", "stopped", "working"],
+                        "awaiting-person" => ["working", "completed", "declined", "stopped"],
+                        _ when waited => ["awaiting-person"],
+                        _ => [],
+                    };
+                    if (!moves.Contains(to)) return Refuse(HttpStatusCode.Conflict, $"Session `{id}` cannot move {from} → {to}");
+
+                    record["state"] = to;
+                    if (asked["note"] is { } note) record["note"] = note.GetValue<string>();
+                    if (asked["note"] is not null) record["noteParts"] = asked["noteParts"]?.DeepClone();
+                    Moves.Add((id, to, asked["noteParts"]?[0]?["code"]?.GetValue<string>()));
+                    return Answer(HttpStatusCode.OK, new JsonObject { ["session"] = record.DeepClone(), ["message"] = "moved" });
+                }
 
                 case ("GET", _) when path.StartsWith("/api/opinions/", StringComparison.Ordinal):
                 {
@@ -215,13 +272,16 @@ internal sealed class OpinionStandIn : HttpMessageHandler
                 case ("POST", _) when path.StartsWith("/api/helpers/", StringComparison.Ordinal) && path.EndsWith("/hand", StringComparison.Ordinal):
                 {
                     var id = Uri.UnescapeDataString(path["/api/helpers/".Length..^"/hand".Length]);
+                    HelperHandsAsked++;
+                    if (HelperHandRefusal is { } refusal) return Refuse(HttpStatusCode.Conflict, refusal);
                     var helper = Find(id);
                     if (helper?["serves"]?.GetValue<string>() is not { } served) return Refuse(HttpStatusCode.NotFound, $"There is no helper session `{id}`");
                     var asker = Find(served);
                     var state = asker?["state"]!.GetValue<string>();
                     if (asker is null) return Refuse(HttpStatusCode.Conflict, "there is no such session to hand the answer to");
                     if (state == "stood-down") return Refuse(HttpStatusCode.Conflict, "it stood down");
-                    if (state == "awaiting-person") return Refuse(HttpStatusCode.Conflict, "it waits on the person's answer");
+                    // HELPERWAIT1: a park the person answered takes it beside their answer, as the desk lets it.
+                    if (state == "awaiting-person" && asker["answer"] is null) return Refuse(HttpStatusCode.Conflict, "it waits on the person's answer");
                     // An open conversation between turns (MIXAGENT2a-iii) takes it, as the desk lets it; and a driven asker working, where
                     // the driver that runs it asks with `running` (COWORK1d), its answer kept with its level.
                     var asked = JsonNode.Parse(body!)!;

@@ -8,6 +8,10 @@ with the version and date at release.
 - Opening Review no longer writes to a session tree's git index (REVIEWLOCK1). Before, Review could hold the index's lock just
   as the session's agent tried to stage or commit there, and the agent's git then failed. Review's reads, and every status
   Daoris asks of a tree, now leave the index alone.
+- A session that asks a helper and ends its turn so the helper can read now waits on that helper, not on you (HELPERWAIT1).
+  It no longer shows in *What needs you*; it shows under *Resumes later* as awaiting its helper, keeps its working tree, and goes
+  on by itself with the helper's answer. If the helper ends with no answer, the session comes to you with the reason. A session
+  waiting on your answer keeps waiting for it: once you answer, it goes on with your answer and its helper's together.
 - A folder under Daoris's account homes that no agent or plugin names is no longer taken for an agent (POOLSTRAY1). An earlier
   start could leave such a folder, and its subfolders were folded in as accounts. Such a folder is now noted once in the machine
   log and otherwise left alone. If an earlier fold already wrote one into the account order, the next change of the accounts
