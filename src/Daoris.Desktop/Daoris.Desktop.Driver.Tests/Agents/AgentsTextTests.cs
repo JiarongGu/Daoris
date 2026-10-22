@@ -136,13 +136,27 @@ public sealed partial class AgentsTextTests
                 foreach (Match id in Drawn().Matches(text)) known.Add(id.Value);
             }
 
-            string Spelled(string text) => Drawn().Replace(Settled().Replace(text
-                .Replace(JsonEncodedText.Encode(root).ToString(), "<root>", StringComparison.Ordinal)
-                .Replace(root, "<root>", StringComparison.Ordinal)
-                .Replace(slashed, "<root>", StringComparison.Ordinal)
-                .Replace("\\\\", "/", StringComparison.Ordinal)
-                .Replace('\\', '/')
-                .Replace($"({Why})", "(<why>)", StringComparison.Ordinal), "$1\"<at>\""), id => known.Contains(id.Value) ? id.Value : "<id>");
+            // So is a fold's receipt's (POOL1a1, D197 §6.3: drawn at random, as an account's is), read inside `pooled` alone; its moment
+            // is a settling moment like a proposal's, `<at>`.
+            foreach (var file in row.GetProperty("before").EnumerateObject()) known.UnionWith(Receipts(file.Value.GetString()!));
+
+            string Spelled(string text)
+            {
+                var spelled = Drawn().Replace(Settled().Replace(text
+                    .Replace(JsonEncodedText.Encode(root).ToString(), "<root>", StringComparison.Ordinal)
+                    .Replace(root, "<root>", StringComparison.Ordinal)
+                    .Replace(slashed, "<root>", StringComparison.Ordinal)
+                    .Replace("\\\\", "/", StringComparison.Ordinal)
+                    .Replace('\\', '/')
+                    .Replace($"({Why})", "(<why>)", StringComparison.Ordinal), "$1\"<at>\""), id => known.Contains(id.Value) ? id.Value : "<id>");
+                foreach (var id in Receipts(spelled).Where(id => !known.Contains(id)))
+                {
+                    spelled = Regex.Replace(spelled, $"(\"id\": ?)\"{Regex.Escape(id)}\"", "$1\"<id>\"");
+                }
+
+                return spelled;
+            }
+
             static IReadOnlyList<string> Lines(string text) =>
                 text.Length == 0 ? [] : text.Replace("\r\n", "\n", StringComparison.Ordinal).TrimEnd('\n').Split('\n');
             string[] said = [.. Lines(output.ToString()).Select(Spelled)];
@@ -156,11 +170,13 @@ public sealed partial class AgentsTextTests
             var identity = home is null || row.GetProperty("before").TryGetProperty(Spelled(Path.GetRelativePath(root, HomeIdentity.PathIn(home))), out _)
                 ? null
                 : Path.GetFullPath(HomeIdentity.PathIn(home));
-            // Nor is the machine log (POOL1a1's fold says what it changed there, D197 §6.2): a dated file the home appends to, never the verb's.
-            var logs = home is null ? null : Path.GetFullPath(DaorisHome.Entry(home, HomeEntry.Logs)) + Path.DirectorySeparatorChar;
+            // Nor is the machine log (POOL1a1's fold says what it changed there, D197 §6.2): a dated file the home appends to, never the verb's;
+            // a named wiring file's fold writes it under that file's own home (`HarnessSettings.Change`), so that home's is set aside too.
+            string[] logs = [.. new[] { home, wiring is null ? null : HarnessSettings.HomeOf(wiring) }.OfType<string>()
+                .Select(each => Path.GetFullPath(DaorisHome.Entry(each, HomeEntry.Logs)) + Path.DirectorySeparatorChar)];
             var written = Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories)
                 .Where(path => !string.Equals(Path.GetFullPath(path), identity, StringComparison.OrdinalIgnoreCase))
-                .Where(path => logs is null || !Path.GetFullPath(path).StartsWith(logs, StringComparison.OrdinalIgnoreCase))
+                .Where(path => !logs.Any(log => Path.GetFullPath(path).StartsWith(log, StringComparison.OrdinalIgnoreCase)))
                 .ToDictionary(path => Spelled(Path.GetRelativePath(root, path).Replace('\\', '/')), path => Spelled(File.ReadAllText(path)), StringComparer.Ordinal);
             var after = row.GetProperty("after").EnumerateObject().ToDictionary(file => file.Name, file => file.Value.GetString()!, StringComparer.Ordinal);
             Assert.True(after.Keys.Order(StringComparer.Ordinal).SequenceEqual(written.Keys.Order(StringComparer.Ordinal)),
@@ -199,7 +215,18 @@ public sealed partial class AgentsTextTests
         }
     }
 
-    /// <summary>A proposal's settling moment, the run's own: the table spells it <c>&lt;at&gt;</c>.</summary>
+    /// <summary>
+    /// The ids of the fold's receipts in a <c>harnesses.json</c> (POOL1a1, D197 §6.3: <c>pooled</c>, agent → receipts), none where the
+    /// text is no such file: the run's own where the row did not lay them, the table spells them <c>&lt;id&gt;</c>.
+    /// </summary>
+    private static IEnumerable<string> Receipts(string text) =>
+        text.Contains("\"pooled\"", StringComparison.Ordinal) && JsonNodeOf(text) is JsonObject file && file["pooled"] is JsonObject pooled
+            ? pooled.Select(agent => agent.Value).OfType<JsonArray>().SelectMany(receipts => receipts.OfType<JsonObject>())
+                .Select(receipt => receipt["id"]).OfType<JsonValue>()
+                .Where(id => id.GetValueKind() == JsonValueKind.String).Select(id => id.GetValue<string>())
+            : [];
+
+    /// <summary>A proposal's settling moment, or a fold's receipt's, the run's own: the table spells it <c>&lt;at&gt;</c>.</summary>
     [GeneratedRegex("(\"at\": ?)\"\\d{4}-\\d\\d-\\d\\dT[^\"]*\"")]
     private static partial Regex Settled();
 

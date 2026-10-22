@@ -5,6 +5,43 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-22 — The modules suite's account tests on `main` still asked for the scopes the fold retires, and the push missed `pooled` (POOL1a1)
+
+- **Symptom:** red on `main` after POOL1a1: `AgentAccountsBothWaysTests` 20 of 29, `AccountsStateSliceTests` 2, `HelpFileDoorsTests`'
+  order case, and the Process class `DriverModuleAgentsTests`' two cases that press `profile-default`.
+- **Root cause:** three things POOL1a1 changed, none of them a path that skips the fold.
+  - Both paths of an account press fold through `HarnessSettings.Change`. Ten rows still matched once a receipt's random id and
+    its clock moment were spelled.
+  - Ten rows are a default, a join or a workspace, which the bridge refuses as `ACCOUNTS_ONE_SET` since POOL1a1 (design §5.2).
+    The terminal's verb still acts on them until POOL1b.
+  - The two Process cases pressed the refused `profile-default`. The order Ask Daoris's door writes is now whole, and a raw-laid
+    workspace default is folded before its next edit.
+  - `ACCOUNTS` came to answer `pooled` (§5.2), but the accounts slice did not class it, so the push dropped what the pull answered.
+- **Fix:**
+  - `AccountsStateSlice.AgentFields` pushes `pooled`.
+  - The both-ways comparison spells a receipt's id and moment, and the ten one-set rows moved to a case that holds the route's
+    refusal with nothing written; POOL1b returns them.
+  - ROSTER1's case edits the set's order where it set a default.
+  - The workspace-default case now holds the refusal, set or cleared, with nothing written.
+  - Ask Daoris's order case expects the order whole and the raw default folded.
+- **Verification:** the four classes green. The two Process cases ran filtered with `process.runsettings`. The modules' and the
+  driver's fast halves are green.
+
+## 2026-10-22 — The agents' text table on `main` still held the account files as written before the fold (POOL1a1)
+
+- **Symptom:** `AgentsTextTests` red on `main` since POOL1a1 merged (`23ef46849`): 28 of its 306 cases, each a terminal account verb
+  (`profile remove|default|order|join|use`, `key`) whose `harnesses.json` after the run was not the table's. No verb's words or exit
+  differed.
+- **Root cause:** POOL1a1 made every `HarnessSettings.Change` fold the stored accounts into one set before its edit (D197 §6), so
+  each verb that writes the file now writes it folded: each order whole, the defaults and workspace sections gone, a `pooled`
+  receipt where the fold had anything to say. The table (`fixtures/agents-text.json`) was not among POOL1a1's proofs and kept the
+  unfolded files. Two things the fold adds were also not yet spelled by the test: a receipt's id, drawn at random, and the machine
+  log a named wiring file's fold writes under that file's own home.
+- **Fix:** each of the 28 rows' `after` is the run's, normalized and reviewed as the fold alone, with its reason under `changed`;
+  `AgentsTextTests` spells a receipt's id `<id>` inside `pooled` alone where the row did not lay it (its moment was already `<at>`),
+  and sets aside the wiring file's home's log as it does the home's.
+- **Verification:** `AgentsTextTests` 306 of 306; with the id's spelling switched off, the 17 rows that write a receipt were seen
+  failing. `AgentsCommandTests`' fast classes, the driver's censuses and the driver's fast half green.
 ## 2026-10-22 — A crashed swap was rolled back outside the home's lease (SWAPLEASE2)
 
 - **Symptom:** none seen; found reading HOMELEASE1 against the RPC design's §5. A launcher putting back a swap a dead launcher left

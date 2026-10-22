@@ -279,13 +279,13 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     [Fact]
     public void A_hold_on_the_own_sign_in_s_file_carries_own_and_another_carries_none()
     {
-        var own = With(Hold, """{"quest":"q1","trustFile":"C:/Users/someone/.claude.json","own":true}""");
+        var own = With(Hold, """{"quest":"q1","trustFile":"X:/person/.claude.json","own":true}""");
         var rows = Rows(new() { Quests = [Quest("""{"id":"q1"}""")], Registry = [Registration("engine")], Untrusted = [own, With(Hold, """{"quest":"q1","own":false}""")] })
             .Where(row => row["kind"]!.GetValue<string>() == "trust").ToList();
 
         Assert.Equal(2, rows.Count);
-        Assert.True(rows.Single(row => row["trust"]!["trustFile"]!.GetValue<string>() == "C:/Users/someone/.claude.json")["trust"]!["own"]!.GetValue<bool>());
-        Assert.False(rows.Single(row => row["trust"]!["trustFile"]!.GetValue<string>() != "C:/Users/someone/.claude.json")["trust"]!.AsObject().ContainsKey("own"));
+        Assert.True(rows.Single(row => row["trust"]!["trustFile"]!.GetValue<string>() == "X:/person/.claude.json")["trust"]!["own"]!.GetValue<bool>());
+        Assert.False(rows.Single(row => row["trust"]!["trustFile"]!.GetValue<string>() != "X:/person/.claude.json")["trust"]!.AsObject().ContainsKey("own"));
     }
 
     /// <summary>An intake's room is named by its ask, which the page words; it waits since the ask was asked.</summary>
