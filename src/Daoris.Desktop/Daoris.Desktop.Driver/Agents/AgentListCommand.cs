@@ -26,8 +26,8 @@ internal static class AgentListCommand
         var home = HarnessSettings.HomeOf(path);
         // A wiring file that does not read is no wiring, as a start reads it (D21): the list says what is there. Read as the set (POOL1b,
         // the account-pool design §2.4), as a start reads it; the receipts of what the fold changed are the projection's too.
-        var settings = HarnessSettings.LoadSet(path);
         var set = world.Adapters(home);
+        var settings = HarnessSettings.LoadSet(path, set.Agents);
         var now = world.Now();
         Say($"{Prefix}: {path}");
 

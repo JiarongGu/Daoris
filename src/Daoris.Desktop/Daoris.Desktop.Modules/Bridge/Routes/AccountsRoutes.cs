@@ -404,17 +404,18 @@ public sealed class AccountsRoutes(DriverLoop loop)
             case "order":
                 var order = InOrder(request, "accounts");
                 HarnessSettings.Change(_loop.Harnesses.SettingsPath,
-                    read => OrderEdited(read, HarnessSettings.Profiles(_loop.Harnesses.Home, owner), owner, order, workspace));
+                    read => OrderEdited(read, HarnessSettings.Profiles(_loop.Harnesses.Home, owner), owner, order, workspace),
+                    agents: _loop.Harnesses.Agents);
                 break;
             case "use":
                 var use = Flag(request, "clear") ? null : UseChangeOf(request);
-                HarnessSettings.Change(_loop.Harnesses.SettingsPath, read => UseEdited(read, owner, use, workspace));
+                HarnessSettings.Change(_loop.Harnesses.SettingsPath, read => UseEdited(read, owner, use, workspace), agents: _loop.Harnesses.Agents);
                 break;
             case "said":
                 // Got it (POOL1a, the account-pool design §6.3; Fable's F13): the receipts the page showed, by id, marked said; one
                 // appended after it drew is not among them, and stays.
                 var ids = InOrder(request, "ids");
-                HarnessSettings.Change(_loop.Harnesses.SettingsPath, read => read.WithSaid(owner, ids));
+                HarnessSettings.Change(_loop.Harnesses.SettingsPath, read => read.WithSaid(owner, ids), agents: _loop.Harnesses.Agents);
                 break;
             case "ready":
                 var own = Flag(request, "own");

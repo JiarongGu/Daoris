@@ -551,7 +551,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         Phase(life, SignInPhase.Lists);
         // An account signed back in keeps its place in the order and joins nothing (POOL1a2); a stored order an older build wrote
         // without it places it last.
-        HarnessSettings.Placed(_loop.Harnesses.SettingsPath, owner, account);
+        HarnessSettings.Placed(_loop.Harnesses.SettingsPath, owner, account, _loop.Harnesses.Agents);
         life.Joined = life.Now;
         return code;
     }
@@ -564,7 +564,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     private void Placed(string owner, string account, Action<string> stream)
     {
         // A new account goes last in the order, whatever its id (POOL1a, the account-pool design §2.2).
-        HarnessSettings.Placed(_loop.Harnesses.SettingsPath, owner, account);
+        HarnessSettings.Placed(_loop.Harnesses.SettingsPath, owner, account, _loop.Harnesses.Agents);
         stream(JoinedSaid(AccountNames.Shown(_loop.Harnesses.Home, owner, account)));
     }
 
@@ -698,7 +698,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
             toolchain, _loop.Harnesses.Home, harness, version, stream, ct, started);
 
         // KEEP1b: written once the version is found installed again under the file's lock, which the downloads' rule holds to its rename.
-        if (code == 0) HarnessSettings.Pin(_loop.Harnesses.SettingsPath, _loop.Harnesses.Home, harness, version);
+        if (code == 0) HarnessSettings.Pin(_loop.Harnesses.SettingsPath, _loop.Harnesses.Home, harness, version, agents: _loop.Harnesses.Agents);
         return code;
     }
 
@@ -713,6 +713,6 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         HarnessActions.UpdateAsync(
             toolchain, command, _loop.Harnesses.Home, harness,
             _loop.Harnesses.Settings.ResolveVersion(harness, null, null),
-            version => HarnessSettings.Pin(_loop.Harnesses.SettingsPath, _loop.Harnesses.Home, harness, version),
+            version => HarnessSettings.Pin(_loop.Harnesses.SettingsPath, _loop.Harnesses.Home, harness, version, agents: _loop.Harnesses.Agents),
             stream, ct, started);
 }

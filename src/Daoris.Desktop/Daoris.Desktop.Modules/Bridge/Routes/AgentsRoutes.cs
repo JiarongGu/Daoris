@@ -625,7 +625,9 @@ public sealed class AgentsRoutes(DriverContext context)
         // No default, list or kept account names it afterwards (TOOL4g, TOOL4e's note), as the terminal's `profile remove`
         // leaves the wiring: the next account made takes the first free name, which may be this one's, and so starts never
         // read (ROSTER1).
-        HarnessSettings.Change(_loop.Harnesses.SettingsPath, read => read.WithoutAccount(harness, profile), account: new AccountChange(harness, profile, Added: false));
+        HarnessSettings.Change(
+            _loop.Harnesses.SettingsPath, read => read.WithoutAccount(harness, profile), account: new AccountChange(harness, profile, Added: false),
+            agents: _loop.Harnesses.Agents);
         _loop.Harnesses.Removed(harness, profile);
         return 0;
     }
@@ -633,7 +635,7 @@ public sealed class AgentsRoutes(DriverContext context)
     /// <summary>Back to `PATH`. Nothing is deleted — re-pinning that version needs no download.</summary>
     private int Unpin(string harness)
     {
-        HarnessSettings.Change(_loop.Harnesses.SettingsPath, read => read.WithVersion(harness, null));
+        HarnessSettings.Change(_loop.Harnesses.SettingsPath, read => read.WithVersion(harness, null), agents: _loop.Harnesses.Agents);
         return 0;
     }
 }

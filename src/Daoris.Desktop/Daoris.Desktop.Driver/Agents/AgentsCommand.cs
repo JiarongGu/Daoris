@@ -643,6 +643,12 @@ public static class AgentsCommand
     /// <summary>The agents a verb may name, in the roster's order: each door that names a real program, and each agent a door runs as.</summary>
     internal static IReadOnlyList<string> Named(AgentsWorld world, string path) => Named(world.Adapters(HarnessSettings.HomeOf(path)));
 
+    /// <summary>
+    /// The agents whose accounts this terminal's set knows (POOLSTRAY1, <see cref="AdapterSet.Agents"/>): what every read and write of the
+    /// wiring here hands <see cref="HarnessSettings"/>, so a stray folder under the account homes is never read as an agent.
+    /// </summary>
+    internal static IReadOnlyList<string> Agents(AgentsWorld world, string path) => world.Adapters(HarnessSettings.HomeOf(path)).Agents;
+
     private static List<string> Named(AdapterSet set)
     {
         bool Door(string each) => set.Names.Contains(each, StringComparer.OrdinalIgnoreCase);
@@ -736,7 +742,7 @@ public static class AgentsCommand
     private static List<string> SetOf(string path, string home, string owner)
     {
         var here = HarnessSettings.Profiles(home, owner);
-        var order = HarnessSettings.LoadSet(path).Rotation.GetValueOrDefault(owner) ?? [];
+        var order = HarnessSettings.LoadSet(path, [owner]).Rotation.GetValueOrDefault(owner) ?? [];
         return [.. order.Where(account => here.Contains(account, StringComparer.Ordinal)).Distinct(StringComparer.Ordinal),
             .. here.Where(account => !order.Contains(account, StringComparer.Ordinal))];
     }
@@ -779,7 +785,7 @@ public static class AgentsCommand
         var given = FlagValue(args, "--account") ?? FlagValue(args, "--profile");
         // With none named, the order's first (POOL1b, the account-pool design §5.1), where the machine's default was.
         var account = (given is not null ? AccountNamed(home, owner, given) : null)
-            ?? HarnessSettings.LoadSet(path).FirstOf(owner)
+            ?? HarnessSettings.LoadSet(path, [owner]).FirstOf(owner)
             ?? throw new AgentWords(
                 $"`{owner}` has no Daoris account named here — Daoris never works in the tool's own configuration home. "
                 + "Name one of Daoris's accounts with `--account <name>` (`daoris agent list` shows them), sign in to one with "

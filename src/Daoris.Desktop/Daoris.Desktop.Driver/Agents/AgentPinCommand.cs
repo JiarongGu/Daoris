@@ -146,7 +146,7 @@ internal static class AgentPinCommand
                     staged = null;
                 }
 
-                HarnessSettings.Pin(path, home, name, version, named);
+                HarnessSettings.Pin(path, home, name, version, named, AgentsCommand.Agents(world, path));
             }
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
