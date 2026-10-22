@@ -57,9 +57,12 @@ export default meta;
 
 type Story = StoryObj<typeof WaitStrip>;
 
-/** Parked asking: its question is the box's to answer, and its go-ahead still open is answered here. */
+/**
+ * Parked asking where no box below takes its answer: its question is read at the top, and its go-ahead still open is answered here.
+ * Where the box below answers the park, the box draws both with their presses (PARKVIEW1) and the strip draws neither.
+ */
 export const ParkedWithAGoAhead: Story = {
-  args: { session: PARKED, onResolve: nothing, answerBelow: true, goAheads: GO_AHEADS, onGoAhead: nothing },
+  args: { session: PARKED, onResolve: nothing, goAheads: GO_AHEADS, onGoAhead: nothing },
 };
 
 /** The same in 中文. */

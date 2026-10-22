@@ -1,6 +1,7 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import type { Session } from '../../data/api';
+import type { GoAhead, Session } from '../../data/api';
+import type { ParkQuestion } from '../waits/parkQuestion';
 import { InTheme } from '../../plugins/storyIcons';
 import { chinese } from '../../design/storyLanguage';
 import { sessionWidths } from '../../design/storyWidths';
@@ -8,7 +9,7 @@ import { NATIVE_WORDS_LIMIT } from '../say';
 import { SessionBox } from './SessionBox';
 
 // Every state of the box at the foot of a session's page (MSG1f, D137 §5.1): the running door at its next step and at its
-// turn's end, the park's answer, a session that ended going on, words held while one winds up, the native door's bound,
+// turn's end, the park's answer with what it asks as presses (PARKVIEW1), a session that ended going on, words held while one winds up, the native door's bound,
 // and the line for each code nothing takes words for — the states a real session rarely shows at will. Drawn at the
 // frame's widths (the UI/UX design R6, STORYGAP1): half by default, then wide, narrow and dark.
 
@@ -71,6 +72,77 @@ export const RunningWithControls: Story = {
 
 /** Parked to ask the person: the box is the answer (D126 §3.1). */
 export const Parked: Story = { args: { box: { kind: 'say', mode: 'answer' } } };
+
+// PARKVIEW1 (the park's ask design §3-§4): what a park asks, in its box above the words, every answer a press the words go with.
+const ASKED: ParkQuestion = {
+  id: 'q5t10n00',
+  question: 'Which quarterly target should the dashboard tile show? The ticket says "the new quarterly target" without a number.',
+  choices: [
+    { label: '1,200', does: 'Write 1,200, the planning sheet\'s value, which the ticket links; development already holds it.' },
+    { label: '1,350', does: 'Write 1,350, the value in the last stand-up note.' },
+    { label: 'Leave it for now', does: 'Ship the tile reading the configuration, and leave the value as it is.' },
+  ],
+  recommend: 1,
+  by: 'before Friday\'s release window',
+  at: '2026-10-22T09:05:00Z',
+};
+
+const PRODUCTION: GoAhead = {
+  number: 1, kind: 'write', on: 'production', act: 'dashboard configuration', state: 'asked',
+  asked: [{ session: 's1a2b3c4', quest: '7a82cc', at: '2026-10-22T09:04:00Z', why: 'The tile reads its target from it, and production still holds last quarter\'s value.' }],
+};
+
+const PARK = {
+  quest: '7a82cc', tree: 's-1a2b3c4', since: new Date(Date.now() - 12 * 60_000).toISOString(),
+  onChoice: () => {}, onGoAhead: () => {},
+};
+
+/** Parked on a question its agent asked through the connector: each answer a press beside what it does, one recommended. */
+export const ParkedAsking: Story = {
+  args: { box: { kind: 'say', mode: 'answer' }, park: { ...PARK, question: ASKED, goAheads: [] } },
+};
+
+/** The same across a maximized window's main area. */
+export const ParkedAskingWide: Story = { ...ParkedAsking, decorators: [sessionWidths.wide] };
+
+/** The same at the main area's 400 px floor, where each answer's words wrap under its press. */
+export const ParkedAskingNarrow: Story = { ...ParkedAsking, decorators: [sessionWidths.narrow] };
+
+/** The same in 中文: the chrome translated, the agent's question and answers as written. */
+export const ParkedAskingChinese: Story = { ...ParkedAsking, decorators: [chinese] };
+
+/** The same in dark. */
+export const ParkedAskingDark: Story = { ...ParkedAsking, decorators: [dark] };
+
+/**
+ * The owner's case, in neutral words: parked on a production go-ahead beside its question, with the person's words in the box. The
+ * go-ahead comes first and its press takes the words; the question's presses wait for it, said so.
+ */
+export const ParkedOnAProductionGoAhead: Story = {
+  args: {
+    box: { kind: 'say', mode: 'answer' }, draft: 'only the menu entry, not the report', onDraft: () => {},
+    park: { ...PARK, question: ASKED, goAheads: [PRODUCTION] },
+  },
+};
+
+/** The same at the floor. */
+export const ParkedOnAProductionGoAheadNarrow: Story = { ...ParkedOnAProductionGoAhead, decorators: [sessionWidths.narrow] };
+
+/** The same in 中文 at the floor. */
+export const ParkedOnAProductionGoAheadChineseNarrow: Story = {
+  ...ParkedOnAProductionGoAhead, decorators: [sessionWidths.narrow, chinese],
+};
+
+/** The same in dark, across the wide main area. */
+export const ParkedOnAProductionGoAheadDarkWide: Story = { ...ParkedOnAProductionGoAhead, decorators: [sessionWidths.wide, dark] };
+
+/** Parked on the go-ahead alone, its question asked only in its last message: the go-ahead's presses, and the free answer. */
+export const ParkedOnAGoAheadAlone: Story = {
+  args: { box: { kind: 'say', mode: 'answer' }, park: { ...PARK, tree: null, question: null, goAheads: [PRODUCTION] } },
+};
+
+/** The same in 中文. */
+export const ParkedOnAGoAheadAloneChinese: Story = { ...ParkedOnAGoAheadAlone, decorators: [chinese] };
 
 /** Ended, and the same session goes on with the words (D137 §2.2): written to after its review, the next day. */
 export const EndedGoingOn: Story = {

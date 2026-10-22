@@ -636,6 +636,18 @@ public sealed record SaidWordView(string? Id, string Text, DateTimeOffset At, IR
     /// </summary>
     public DateTimeOffset? Attempt { get; init; }
 
+    /// <summary>
+    /// The answer of its park's question the person pressed (PARKVIEW1, the park's ask design §4), read from the event its words were
+    /// shown under (<see cref="SessionEvent.Choice"/>), since the record keeps words alone. Null for every other word.
+    /// </summary>
+    public string? Choice { get; init; }
+
+    /// <summary>
+    /// What the session is handed of these words: a pressed answer as <c>chose: &lt;label&gt;</c>, then the person's own words after a
+    /// blank line, so the agent tells the answer it offered from words it did not (PARKVIEW1); every other word as kept.
+    /// </summary>
+    public string Handed => QuestionWords.Handed(Text, Choice);
+
     /// <summary>Whether these are Daoris's own words (COWORK1b): read from its mark, never its sentence.</summary>
     public bool Daoris => From == DaorisWords.From;
 

@@ -1,4 +1,4 @@
-import { type KeyboardEvent, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { type KeyboardEvent, type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MAX_FILE_BYTES, MAX_FILES } from '../../compose/attachments';
 import { type Carry, NO_CARRY, useCarry, useFileChooser } from '../../compose/carry';
@@ -94,8 +94,13 @@ export function Composer({
   live, sending = false, refusal, endings = true, draft, onDraft, carried, onCarry,
   queued = [], queuedLabel, taking = false, opening = false, stoppable = false, stopping = false, mentions, onMentioning, context, placeholder,
   attachments = true, sendLabel, stopTurnLabel, stopTurnTip, offered, optionsBusy = false, onOption, onSend, onFinish, onStop, onStopTurn,
-  levels, onLevel, onKeepingStop, focus = 0, accepts, onRemove, onEdit, going, fold = false,
+  levels, onLevel, onKeepingStop, focus = 0, accepts, onRemove, onEdit, going, fold = false, answers,
 }: {
+  /**
+   * What a parked session asks, drawn above the field, its answers as presses (PARKVIEW1, the park's ask design §3): the box's
+   * words go with the press. Absent, nothing is drawn there.
+   */
+  answers?: ReactNode;
   /**
    * What the session's door does with a word while a turn runs (COWORK1a; the message-urgency design §3.0, §8.1), which the
    * composer offers the levels by: `nextStep`, it takes words at the turn's next step; `steers`, its agent steers, so *now* cuts
@@ -567,6 +572,7 @@ export function Composer({
       )}
 
       {editing && <p role="status" className="m-0 text-small text-ink-soft">{t('work.composer.editing')}</p>}
+      {answers}
       {writing && <div className="relative grid">
         {mention && open && mentions && (
           <MentionList

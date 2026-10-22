@@ -1,5 +1,7 @@
+import type { ComponentProps } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Session } from '../../data/api';
+import { ParkAnswer } from '../waits/ParkAnswer';
 import { Composer } from './Composer';
 import type { ChatMessage, Level } from './conversation';
 import type { Answered } from '../InlineConfirm';
@@ -16,7 +18,8 @@ import type { HeadLink } from '../head/SessionHead';
  *   word with its level's menu, and *Send* sends the box's words at the person's default, the level menu beside it at
  *   another (COWORK1a). Where words wait for the turn's end on a door that can stop a turn keeping the session, the keeping
  *   stop stands beside them, its own press; never on the native door's run, which has no such stop.
- * - **The park's answer** (D126 §3.1): its box is the answer, as *Answer…* opens it; a second word joins the first.
+ * - **The park's answer** (D126 §3.1): its box is the answer, as *Answer…* opens it; a second word joins the first. What the park
+ *   asks stands above its words, each answer a press the words go with (PARKVIEW1, `ParkAnswer`).
  * - **A session that ended**: the same session goes on with the words. Nothing to attach: the resumed run is handed the
  *   words alone (MSG1d), so a file would be promised and never read.
  * - **Words waiting on the record** (SAIDBACK1b, D76): on a park or a session that ended, the words it will go on with wait
@@ -31,8 +34,13 @@ import type { HeadLink } from '../head/SessionHead';
  */
 export function SessionBox({
   box, quest, draft, onDraft, sending = false, refusal, held, ending = [], waiting = [], stopping = false, focus = 0, accepts, onSend,
-  levels, onLevel, onKeepingStop, onRemove, onEdit, going, continued, onOpenSession,
+  levels, onLevel, onKeepingStop, onRemove, onEdit, going, continued, onOpenSession, park,
 }: {
+  /**
+   * What a park asks, drawn in its answer's box above the words (PARKVIEW1, the park's ask design §3): its question with each answer
+   * a press, the go-aheads it waits on, by when and what it holds. Absent, the box is the answer alone, as before.
+   */
+  park?: ComponentProps<typeof ParkAnswer>;
   /** What the running door does with a word while its turn runs (COWORK1a), which the box offers the levels by; absent, none. */
   levels?: { nextStep: boolean; steers: boolean };
   /** A held word's level changed by its id (COWORK1a); absent, none is offered. */
@@ -139,7 +147,9 @@ export function SessionBox({
         {...resting}
         // One box with its waiting words folded to a line (WAITFOOT2c).
         fold
-        placeholder={t('work.awaiting.answerPlaceholder')}
+        // What it asks, its answers as presses the box's words go with (PARKVIEW1, the park's ask design §3).
+        answers={park ? <ParkAnswer {...park} /> : undefined}
+        placeholder={t(park ? 'work.park.placeholder' : 'work.awaiting.answerPlaceholder')}
         sendLabel={t('work.awaiting.answerConfirm')}
       />
     );

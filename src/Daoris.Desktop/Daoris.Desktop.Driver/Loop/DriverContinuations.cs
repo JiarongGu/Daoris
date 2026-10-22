@@ -253,6 +253,9 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             // Every word waiting once it moved, as the move left them (SAIDBACK1d): none can be taken back from a record that runs.
             var words = Continuations.HandedAfterMove(park.Waiting, await ReadAgainAsync(service, sessionId, ct).ConfigureAwait(false));
             if (words.Count == 0) return await PutBackAsync(quest, park).ConfigureAwait(false);
+            // PARKVIEW1 (Fable's read, Q4): a word pressed as an answer of its park's question carries the mark it was shown under, so it
+            // is handed as that answer chosen and recorded as one.
+            words = Continuations.Marked(words, _context.Events.ChoicesOf(sessionId));
 
             // Each word's files where they were kept as it was said (MSG1d3, D137 §2.4), handed with the words; what its start did with
             // its tree against the line first after them (LANDSYNC2), since that is where its next commit goes.
@@ -306,6 +309,9 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
 
             onOpened();
             var openedAt = DateTimeOffset.UtcNow;
+            // PARKVIEW1 (the park's ask design §2; Fable's read, Q2): the park's question is over as its record goes on, so a press another
+            // window still shows it with is refused as changed at once; one the disk keeps is logged.
+            _driver.Questions(sessionId, new QuestionFiles(_context.Home).Clear(sessionId));
             _context.Runs.Live[quest.Id] = sessionId;
             using var live = new Disposer(() => _context.Runs.Live.TryRemove(quest.Id, out var _));
 
@@ -488,6 +494,9 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             // completed, as an answer it could not take always ended it (D131 §2). SESSCTX1c: where another client holds its
             // conversation it waits for the person (the caller marks its words), so its note says it cannot go on, as a closed quest's.
             var held = closed || refused.Holds;
+            // PARKVIEW1: a resume refused parks nothing, so no question is kept for it.
+            _driver.Questions(
+                sessionId, new QuestionFiles(_context.Home).SettleRun(sessionId, park.Parked ? "completed" : park.State, openedAt, _context.Events));
             await service.AdvanceAsync(
                     sessionId, park.Parked ? "completed" : park.State,
                     held ? Continuations.CannotNote(park, refused)
@@ -560,6 +569,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         }
 
         var evidence = await WorkingTree.CommitsSinceAsync(workTree, park.BaseCommit ?? before, ct).ConfigureAwait(false);
+        // PARKVIEW1 (the park's ask design §2): its question kept only for the park this resumed run ends in, asked in its last turn.
+        _driver.Questions(sessionId, new QuestionFiles(_context.Home).SettleRun(sessionId, conclusion.State, openedAt, _context.Events));
         await service.AdvanceAsync(
                 sessionId, conclusion.State, note: conclusion.Note, evidence: evidence, ct: ct, limit: limited, parts: conclusion.Parts)
             .ConfigureAwait(false);

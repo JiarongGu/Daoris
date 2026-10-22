@@ -1,0 +1,90 @@
+{
+  "_why": "PARKVIEW1 (the park's ask design §2; Fable's read, Q6): a park's question as `question_ask` writes `<session>.question.json`, and what each reader takes of it. The driver's QuestionFilesTests reads each row's `file` as the file, the page's parkQuestion.test.ts as SESSION_QUESTION's answer, which carries the same fields. `widen` sets a field to that many `x` before it is read, so a bound is held without a page of letters: `question`, `by`, or `choices.<n>.label` and `choices.<n>.does`; a number in `read` stands for that field so widened. `read` is what both take, or null for no question; neither reader keeps more than the writer would (QuestionBox's bounds: the question 1000, six answers, a label 80, what it does 300, by when 200, no two labels alike in any case).",
+  "rows": [
+    {
+      "name": "a question whole: its answers in order, the one recommended and by when",
+      "file": {
+        "id": "a1b2c3d4", "session": "s1", "question": "Which quarterly target should the dashboard tile show?",
+        "choices": [
+          { "label": "1,200", "does": "Write 1,200, the planning sheet's value." },
+          { "label": "1,350", "does": "Write 1,350, the stand-up note's value." }
+        ],
+        "recommend": 1, "by": "before Friday's release", "at": "2026-10-22T09:05:00.0000000+00:00"
+      },
+      "read": {
+        "id": "a1b2c3d4", "question": "Which quarterly target should the dashboard tile show?",
+        "choices": [
+          { "label": "1,200", "does": "Write 1,200, the planning sheet's value." },
+          { "label": "1,350", "does": "Write 1,350, the stand-up note's value." }
+        ],
+        "recommend": 1, "by": "before Friday's release"
+      }
+    },
+    {
+      "name": "a free question: no answers, none recommended, no deadline",
+      "file": { "id": "c1", "session": "s1", "question": "Which environment?", "choices": [], "recommend": null, "by": null, "at": "2026-10-22T09:05:00Z" },
+      "read": { "id": "c1", "question": "Which environment?", "choices": [], "recommend": null, "by": null }
+    },
+    {
+      "name": "an answer with no label is passed over, and a recommendation that names no answer is none",
+      "file": { "id": "c2", "session": "s1", "question": "Free?", "choices": [{ "does": "no label" }, { "label": "Yes" }], "recommend": 5, "at": "2026-10-22T09:05:00Z" },
+      "read": { "id": "c2", "question": "Free?", "choices": [{ "label": "Yes", "does": "" }], "recommend": null, "by": null }
+    },
+    {
+      "name": "no id is no question",
+      "file": { "session": "s1", "question": "Which one?", "choices": [], "at": "2026-10-22T09:05:00Z" },
+      "read": null
+    },
+    {
+      "name": "a blank question is none",
+      "file": { "id": "c3", "session": "s1", "question": "   ", "choices": [], "at": "2026-10-22T09:05:00Z" },
+      "read": null
+    },
+    {
+      "name": "a question past its bound is none",
+      "file": { "id": "c4", "session": "s1", "question": "?", "choices": [], "at": "2026-10-22T09:05:00Z" },
+      "widen": { "question": 1001 },
+      "read": null
+    },
+    {
+      "name": "a question at its bound is read",
+      "file": { "id": "c5", "session": "s1", "question": "?", "choices": [], "at": "2026-10-22T09:05:00Z" },
+      "widen": { "question": 1000 },
+      "read": { "id": "c5", "question": 1000, "choices": [], "recommend": null, "by": null }
+    },
+    {
+      "name": "seven answers are none",
+      "file": {
+        "id": "c6", "session": "s1", "question": "Which?", "at": "2026-10-22T09:05:00Z",
+        "choices": [
+          { "label": "1", "does": "a" }, { "label": "2", "does": "b" }, { "label": "3", "does": "c" }, { "label": "4", "does": "d" },
+          { "label": "5", "does": "e" }, { "label": "6", "does": "f" }, { "label": "7", "does": "g" }
+        ]
+      },
+      "read": null
+    },
+    {
+      "name": "a label past its bound is none",
+      "file": { "id": "c7", "session": "s1", "question": "Which?", "choices": [{ "label": "x", "does": "Do it." }], "at": "2026-10-22T09:05:00Z" },
+      "widen": { "choices.0.label": 81 },
+      "read": null
+    },
+    {
+      "name": "what an answer does past its bound is none",
+      "file": { "id": "c8", "session": "s1", "question": "Which?", "choices": [{ "label": "Yes", "does": "x" }], "at": "2026-10-22T09:05:00Z" },
+      "widen": { "choices.0.does": 301 },
+      "read": null
+    },
+    {
+      "name": "by when past its bound is none",
+      "file": { "id": "c9", "session": "s1", "question": "Which?", "choices": [], "by": "x", "at": "2026-10-22T09:05:00Z" },
+      "widen": { "by": 201 },
+      "read": null
+    },
+    {
+      "name": "two answers alike, case aside, are none",
+      "file": { "id": "c10", "session": "s1", "question": "Which?", "choices": [{ "label": "Yes", "does": "a" }, { "label": "yes", "does": "b" }], "at": "2026-10-22T09:05:00Z" },
+      "read": null
+    }
+  ]
+}

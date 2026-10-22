@@ -113,6 +113,21 @@ public sealed class ConversationRoutes(DriverContext context)
                 .ConfigureAwait(false);
         }
 
+        // PARKVIEW1 (the park's ask design §4): a press answering a park's question names it, and words for a question the park no
+        // longer asks (answered and asked anew in another window, or gone as its record went on) are kept nowhere, said by their code,
+        // so a label never answers a question it was not offered for. Fable's read, Q4: words that begin with one of its answers, as
+        // the page composes a press, are marked with it, so the conversation draws a choice and the session is handed one.
+        string? choice = null;
+        if (Optional(request, "question") is { } question)
+        {
+            if (new QuestionFiles(_loop.Home).Read(id) is not { } asked || asked.Id != question)
+            {
+                return new { Sent = false, Reaches = (string?)null, Why = "question-changed", To = (string?)null, Now = false };
+            }
+
+            choice = QuestionWords.Pressed(asked, text);
+        }
+
         // What the person attached, kept for its session before the words go (CONV4c).
         var files = request.Payload is { } payload ? FilesOf(payload) : [];
         // Where the person is (HELP1b), which a conversation's agent is handed ahead of the words; absent for most. `now` is the
@@ -120,7 +135,7 @@ public sealed class ConversationRoutes(DriverContext context)
         // COWORK1c: `key`, the press's own where the page names one, so a press that arrives twice keeps one word; the shell gives each
         // press one otherwise.
         var said = await _loop.Words
-            .SayAsync(id, text, files, Optional(request, "preface"), door: "screen", cancellationToken, level, Optional(request, "key"))
+            .SayAsync(id, text, files, Optional(request, "preface"), door: "screen", cancellationToken, level, Optional(request, "key"), choice)
             .ConfigureAwait(false) ?? throw NotReady();
         // Words a running session took are kept on its ask now (DRIFT1a2); words kept on a record are kept there once a
         // session takes them (MSG1a's taken door), so they are never posted twice.
@@ -212,6 +227,8 @@ public sealed class ConversationRoutes(DriverContext context)
     // join a *carry on.* that was never theirs (GOAHEAD2). A refused go-ahead answers nothing else, in the service's sentence.
     // `{ message, sent, reaches, why, waits }`: the go-ahead's sentence, what became of the park as `SESSION_INPUT` says it,
     // and whether it still waits on the person. It moves the ask and the park (STATEHUB1h, D169).
+    // PARKVIEW1 (the park's ask design §4): `goesOn: false` where the page answers the park itself, with the answer to the question the
+    // park also asked (GOAHEAD2's provision for such a caller): the go-ahead is kept and the park waits for that answer. Absent is true.
     [DriverRoute("SESSION_GO_AHEAD")]
     [Publishes("SESSION_GO_AHEAD", StateScopes.Sessions | StateScopes.Asks, Session = "id")]
     private async Task<object?> SessionGoAheadAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -223,9 +240,10 @@ public sealed class ConversationRoutes(DriverContext context)
             ? (int)named
             : throw new DriverException("a go-ahead is named by its number on its ask, a whole number from 1; nothing was answered.");
         var words = Optional(request, "words")?.Trim() is { Length: > 0 } said ? said : null;
+        var goesOn = !(request.Payload is { } payload && payload.TryGetProperty("goesOn", out var flag) && flag.ValueKind == JsonValueKind.False);
         var service = _loop.Service ?? throw NotReady();
 
-        var (answered, message) = await service.AnswerGoAheadAsync(ask, number, approved, words, cancellationToken, goesOn: true)
+        var (answered, message) = await service.AnswerGoAheadAsync(ask, number, approved, words, cancellationToken, goesOn: goesOn)
             .ConfigureAwait(false);
         if (!answered) throw new DriverException(message);
 

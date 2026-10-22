@@ -69,6 +69,11 @@ export type SessionEvent = {
    */
   channel?: string | null;
   /**
+   * For `user`: the answer of its park's question the person pressed (PARKVIEW1; Fable's read, Q4), as the question offered it: the
+   * words begin with this label, then the person's own after a blank line. Drawn as that answer chosen. Absent on every other.
+   */
+  choice?: string | null;
+  /**
    * For `user`: on the brief a new part is handed as its first prompt (SESSCTX1b, the session-context design §3.4), the session it
    * continues. Its origin is `target` and it carries its account, as an instruction does. Absent on every other.
    */
@@ -233,6 +238,8 @@ export type Block = {
   level?: Level;
   /** For `held`: Daoris's own words, never the person's (COWORK1b); absent on the person's. */
   from?: 'daoris';
+  /** For `held`: the answer of its park's question the words were pressed as (PARKVIEW1); absent on any other. */
+  choice?: string;
   /** For `held`: the names of what the person attached. */
   files?: string[];
   /** For `held`: the session ended without taking the words (STEER1) — said, never left waiting for ever. */
@@ -299,6 +306,8 @@ export type Ask = {
   from?: 'daoris';
   /** The ask's channel message these words carry, by its id (SESSCTX1b): another session's claim where the origin is `target`. */
   channel?: string;
+  /** The answer of its park's question the person's words were pressed as (PARKVIEW1), drawn as that answer chosen. */
+  choice?: string;
   /** For Daoris's brief of the line a new part continues (SESSCTX1b): the session it continues. A target, with its account. */
   continues?: string;
   /**
@@ -433,6 +442,8 @@ export function toTurns(
     ...(event.files?.length ? { files: event.files } : {}),
     // A channel's message by its own mark (SESSCTX1b), never by Daoris's words around it.
     ...(event.channel ? { channel: event.channel } : {}),
+    // PARKVIEW1: an answer of its park's question pressed, by its mark, never read out of the words.
+    ...(event.choice && (event.origin ?? 'person') === 'person' ? { choice: event.choice } : {}),
     ...(event.origin === 'target' && event.continues ? { continues: event.continues } : {}),
     // What a target was composed of (CONTEXT1), or null where its record keeps none: said missing, never left out. Another
     // agent's findings are no composed target (XAGENT1g): they name the opinion they are from instead. Nor are Daoris's own words
@@ -490,6 +501,7 @@ export function toTurns(
             key, kind: 'held', at: event.at, text: event.text ?? '', id: event.id, reaches: event.reaches,
             ...(level ? { level } : {}),
             ...(event.origin === 'target' && event.from === 'daoris' ? { from: 'daoris' as const } : {}),
+            ...(event.choice && (event.origin ?? 'person') === 'person' ? { choice: event.choice } : {}),
             ...(event.files?.length ? { files: event.files } : {}),
           };
           turn.items.push(block);
@@ -506,6 +518,8 @@ export function toTurns(
         // Taken: the words are this turn's ask now, and wait no longer where they were said.
         const was = event.id ? waiting.get(event.id) : undefined;
         if (was) {
+          // PARKVIEW1: the answer the words were pressed as stays theirs where the session took them.
+          if (was.block.choice && opened.ask && !opened.ask.choice) opened.ask.choice = was.block.choice;
           const at = was.turn.items.findIndex((item) => item.key === was.key);
           was.turn.items = was.turn.items.filter((item) => item.key !== was.key);
           where[was.seq] = key;
