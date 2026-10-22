@@ -40,7 +40,9 @@ public sealed class MainForm : OptimizedForm
     private readonly TaskbarBadge _badge;
     private readonly Daoris.Driver.MachineLog _log;
     // When the splash comes down (SPLASHDATA1): the page's word that its first screen has its data, or the bound.
-    private readonly SplashLift _lift = new();
+    private readonly SplashLift _lift;
+    // The start, timed stage by stage (STARTFAST1): the window's shown, its page's browser made, and through the lift the rest.
+    private readonly StartStages? _stages;
     // Whether a close puts this window away or ends the application (MAINWINDOWS2): the others' count, and a close from code
     // that is for good, since the kit reports one as the person's.
     private readonly MainWindows? _mains;
@@ -64,7 +66,8 @@ public sealed class MainForm : OptimizedForm
         PressFlash? flash = null,
         MainWindowScopes? scopes = null,
         BringForward? forward = null,
-        NoticeWords? notices = null)
+        NoticeWords? notices = null,
+        StartStages? stages = null)
         : base(new OptimizedFormOptions
         {
             FramelessChrome = true,
@@ -87,6 +90,8 @@ public sealed class MainForm : OptimizedForm
         _log = log ?? Daoris.Driver.MachineLog.None;
         _mains = mains;
         _palette = StartingPalette(colorScheme);
+        _stages = stages;
+        _lift = new SplashLift(stages);
 
         // Still set: it is the taskbar's label and the caption of the one MessageBox left. While anything
         // waits on the person it leads with the count (NOTIFY1b, ShowWaiting).
@@ -152,6 +157,7 @@ public sealed class MainForm : OptimizedForm
             new EventMessage { Module = "DAORIS", Type = "ATTEND_SESSION", Payload = new { Session = session, Window = window } });
 
         Load += async (_, _) => await BringUpAsync();
+        Shown += (_, _) => _stages?.Mark(StartStages.Shown);
         // Shown again while put away, by the kit's bringing it forward for a later launch: that launch's window (MAINWINDOWS2).
         VisibleChanged += (_, _) =>
         {
@@ -440,6 +446,7 @@ public sealed class MainForm : OptimizedForm
             _splash.BringToFront();
 
             if (view.Browser is { } browser) await browser.Created;
+            _stages?.Mark(StartStages.Browser);
 
             // Down once the page says its first screen has its data (SPLASHDATA1), not as its browser is made, which
             // lifted it onto an empty frame; at the bound, said in the log, when the page never says.

@@ -593,6 +593,9 @@ public sealed class DriverLoop(
     /// </summary>
     public InstancePipe? Pipe { get; set; }
 
+    /// <summary>The start's timer (STARTFAST1), told when the host answers and the pipe is served; none in a headless loop or a test.</summary>
+    public StartStages? Stages { get; set; }
+
     /// <summary>How long a stop lets the presses the pipe runs answer before it goes on (the terminal RPC design §6.3).</summary>
     public TimeSpan PipeDrain { get; init; } = TimeSpan.FromSeconds(15);
 
@@ -634,6 +637,7 @@ public sealed class DriverLoop(
         }
         finally
         {
+            if (up) Stages?.Mark(StartStages.Host);
             _hostReady.TrySetResult(up);
         }
 
@@ -780,7 +784,11 @@ public sealed class DriverLoop(
         // then named in the address, so a terminal that reads it finds it served. A name already held serves none, said in the log.
         // NOTIFY2f: a press that ends unanswered is kept in Done and failed.
         if (Pipe is { } served) served.Confirmations.Unanswered = Notices.Unanswered;
-        if (Pipe?.Serve() is { } pipe) AnnouncePipe(pipe);
+        if (Pipe?.Serve() is { } pipe)
+        {
+            AnnouncePipe(pipe);
+            Stages?.Mark(StartStages.Pipe);
+        }
 
         var attention = new AttentionWatch();
         // A quest's park is said with its last session's facts, and Overview's row waits from its end (SESSUX1i).

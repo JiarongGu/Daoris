@@ -459,6 +459,10 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
 - **The splash lifts on the page's word** (SPLASHDATA1, D56's note): the main window's page says over the kit's
   `CLOSE_SPLASH` when its first screen has its data, and the window lifts the splash then, or ten seconds after the
   page's browser is made when the page never says (`SplashLift`), writing `splash.lifted` either way.
+- **The start is timed stage by stage** (STARTFAST1): `StartStages`, begun at the top of `Main`, writes one
+  `start.stages` line per start, each stage in ms from the process's start (the home, the driver, the pipe, the
+  host, the window shown, the page's browser, the page's first data, the splash). It times only; what starts is
+  unchanged. `docs/2026-10-23-start-path-design.md` reads the path to the first page.
 - **Each main window's taskbar button counts what waits on the person in its workspace** (NOTIFY1b, D126's note;
   NOTIFY2c, D196): each main window's page tells its own frame its *What needs you* count over `DAORIS.WINDOWS
   SET_BADGE`, another main window by its name, and that window wears it as its button's overlay (`TaskbarBadge`, a
