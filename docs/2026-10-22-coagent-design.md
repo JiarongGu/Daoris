@@ -10,8 +10,8 @@ Read for it: the row COAGENT1; D45, D46, D51, D53, D64, D72, D125, D130, D131, D
 D177, D187, D188, D189, D191, D193, D197, D198; the mixed-agents design, the second-agent design, the message-urgency design, the
 session-context design and the cross-agent brainstorming design; `.claude/knowledge/session-record-fields.md`, `person-waits.md`,
 `connector-tools.md`, `bridge-presses.md`, `session-words.md`, `model-decoupling.md`, `translation-parity.md`, `twins.md`; the
-co-working skill; the glossary. The facts in §0 were read from the code at `6dc4d7803` and checked again at `56f47f123`; a line
-that moved between the two is cited at the later.
+co-working skill; the glossary. The facts in §0 were read from the code at `6dc4d7803` and checked again at `11bfe3f70`, this
+branch's base; a line that moved between the two is cited at the later.
 
 ## 0. The direction, and what is true today
 
@@ -27,17 +27,17 @@ Daoris. It is taken first among the features because most of its foundation exis
 
 | Fact | Where | Standing |
 |---|---|---|
-| One adapter seam, `ISessionAdapter`, over the pipe door (stream-json) and the protocol door (ACP) | `Agents/Adapters/Adapters.cs:1218-1410` | built |
-| The registry: `stub`, `acp-stub`, `claude-code`, `claude-code-acp`, `dsh`, `codex-acp`; `codex` is only the holder of Codex's accounts, not an adapter | `Adapters.cs:2401-2424`; `Accounts/SignIns/CodexAccounts.cs:30-52` | built |
+| One adapter seam, `ISessionAdapter`, over the pipe door (stream-json) and the protocol door (ACP) | `Agents/Adapters/Adapters.cs:1227-1419` | built |
+| The registry: `stub`, `acp-stub`, `claude-code`, `claude-code-acp`, `dsh`, `codex-acp`; `codex` is only the holder of Codex's accounts, not an adapter | `Adapters.cs:2410-2433`; `Accounts/SignIns/CodexAccounts.cs:30-52` | built |
 | A plugin's harness, declared by its manifest with `product` and `maker`, always over ACP | `Plugins/Domain/PluginManifest.cs:25-36`; `Plugins/DeclaredAcpAdapter.cs:21-63` | built |
 | A maker never declared is never another maker | `PluginManifest.cs:16-18`; `Review/Domain/ReviewerChoice.cs:17-38` (`AgentFamily.Same`) | built |
 | The tool's facts: binary, profile variable, sign-in, usage question, limits, windows, turn report, product, maker, mark | `Accounts/Harnesses/Harnesses.cs:176-277` (`HarnessToolchain`) | built |
 | What the protocol door negotiates at `initialize`: words at the next step (`promptQueueing`), steering, resume | `Agents/Acp/Acp.cs:962-987`, `:2619-2637` | built; declared nowhere |
 | No capability table: no `CanSteer`, `SupportsResume` or `*Capabilit*` type | searched | missing |
 | Codex over ACP takes words only at its turn's end, and its steer waits for STEER3 | `Acp.cs:962-965`, `:975-981`; `TASKS.md` STEER3 | built; measurement open |
-| Codex takes no rules file, so the person's denies and the tree guard do not reach it | `Adapters.cs:1962-1963`; `Sessions/Domain/DrivenAccess.cs:93-95` | built |
-| Codex's `read-only` mode has two readings, neither measured: the adapter's "asks for everything", D155 point 5's workspace-write sandbox | `Adapters.cs:1925-1930`, `:1966-1972`; D155 point 5 | unmeasured |
-| Codex reports no usage per turn, and its windows are not carried during a session | `Adapters.cs:2004-2007` (`TurnReport` null); `Accounts/Usage/UsageHistory.cs:151-152` | built; measurement open |
+| Codex takes no rules file, so the person's denies and the tree guard do not reach it | `Adapters.cs:1971-1972`; `Sessions/Domain/DrivenAccess.cs:93-95` | built |
+| Codex's `read-only` mode has two readings, neither measured: the adapter's "asks for everything", D155 point 5's workspace-write sandbox | `Adapters.cs:1934-1939`, `:1975-1981`; D155 point 5 | unmeasured |
+| Codex reports no usage per turn, and its windows are not carried during a session | `Adapters.cs:2013-2016` (`TurnReport` null); `Accounts/Usage/UsageHistory.cs:151-152` | built; measurement open |
 | A session is an entry; each part is one conversation and one record; a part that would run beside a live one gets a tree of its own | D167:14-30, :73-82; `Agents/Adapters/SessionParts.cs:34-35, 111-115`; `Quests/Domain/Planner.cs:1559-1594` | built |
 | A further part's tree may grow from a named branch | `Trees/SessionTrees/SessionTrees.cs:250-331` (`OpenAsync`'s `from`) | built |
 | An entry's parts land in ledger order on one branch with one press; a part alongside joins by replay | D167:330 (ACCEPTALL1); `Trees/SessionTrees/EntryLands.cs` | built |
@@ -259,11 +259,11 @@ Safety rests only on a tree or copy of its own and on measured rows; a declared 
 | A stop that keeps the conversation | declared (`FrameInterrupt`) or `session/cancel` | yes | a conversation's only | yes | yes | *Stop* ends the part |
 | Postures | declared, in the harness's own words | `auto`/`acceptEdits`, `default`, `bypassPermissions` | the same | `agent`, `read-only`, `agent-full-access` | `posture`; from COAGENT1d also `fullPosture`, `askingPosture` | a full or asking start is refused naming the agent |
 | Takes Daoris's rules | declared (`TakesSettings`) | yes | yes | no | no | the tree is the floor; the page says the person's denies do not reach it |
-| A held request reaches the person | protocol, under the asking posture | yes | no | yes | yes | refused under any other posture |
+| A held request reaches the person | protocol, under the asking posture | yes | no | yes | from COAGENT1d, where it declares `askingPosture` | refused under any other posture |
 | The connector | protocol on the wire; pipe by `--mcp-config` and the repository's `.mcp.json` | yes | yes | yes | yes | never a partner (`no-connector`) |
 | Connector calls joined to their session | measured (FABRIC-ACP1) | measured | not measured | not measured (M1) | not measured | read as a child's: reading tools only (C2a) |
 | Instruction files | measured per harness (the entry-point evidence) | `CLAUDE.md`, else `AGENTS.md` | the same | `AGENTS.md`, 32,768 bytes for the chain | unknown | the role's instruction carries what the part needs |
-| Usage per turn | declared (`TurnReport`), measured | per turn | per turn | none (M5) | none | *not measured*, never zero (D57) |
+| Usage per turn | declared (`TurnReport`), measured | per turn | per turn | none (M4) | none | *not measured*, never zero (D57) |
 | Account windows | declared (`Usage`, `Limits`) | asked and forwarded | asked | asked of its server between turns | none | the walk has no reading for it |
 | Accounts | declared on the toolchain | `claude-code`'s set | `claude-code`'s set | `codex`'s set | `accountOf`, `profileVariable` | its own home: no walk, no cool-off, a limit reads as a failure |
 | Model and effort | declared (settings file) or negotiated (`configOptions`) | both | the settings file | `configOptions` | `configOptions` | the provider's default, said as unknown |
@@ -281,7 +281,7 @@ Safety rests only on a tree or copy of its own and on measured rows; a declared 
 ### 3.4 What a plugin's manifest may say
 
 It gains `fullPosture` and `askingPosture`, in the harness's own words (today both are refused for every plugin's harness,
-`Adapters.cs:1257-1258, 1270-1271`), so a declared provider may run under a repository's unrestricted or asking setup once its author
+`Adapters.cs:1266-1267, 1279-1280`), so a declared provider may run under a repository's unrestricted or asking setup once its author
 measured them; the CLI's `plugins.ts` reads them by the same rules, the twins' table extended. It may not claim words at the next
 step, steering or resume (the wire answers those), nor rules, limit words or child lineage (claims about another program that only a
 measurement with a recorded sentence may make, D125, D53). A later maker over ACP joins with a manifest and nothing else; a maker over
@@ -336,7 +336,7 @@ needed a landing design. §2.4 is that landing: a partner writes in its own tree
   conversation lead still holds none.
 - **Usage is each part's**, summed by `SessionEvents.Spent` and answered by `SESSION_SPENT`; the head sums the parts per maker. A count
   no turn said stays unknown, never zero (D57). Codex reports no turn usage on its door today, so its figure reads *not measured* until
-  M5 says otherwise; its account's windows still come from its server between turns (`HarnessRoster.AskUsageAsync`).
+  M4 says otherwise; its account's windows still come from its server between turns (`HarnessRoster.AskUsageAsync`).
 - **The tier that ran**: the record names the agent, account and harness version, never a model (`Sessions.cs:63, 80-88`); a piece's
   answer and a helper's say the agent, the account's name and the version, and the model where the door reported one (the pipe door's
   `result`, `Agents/Streams/StructuredOutput.cs:146-166`). Where no agent could take a piece, it says so and nothing claims the piece
@@ -506,7 +506,7 @@ With COAGENT1a's install proof, in this order:
 - **M2** Codex's confinement as a partner under `agent`: the lead's tree's files and refs hashed before and after the piece; whether any
   write left the partner's tree; whether `git push` was refused, and by what.
 - **M3** the cost per maker: the brief's characters, each part's tokens as reported, the lead's wait, the files beyond the piece.
-- **M5** what codex-acp reports of a turn's usage, so the sheet can state it.
+- **M4** what codex-acp reports of a turn's usage, so the sheet can state it.
 - **Then the reverse** (COAGENT1f): Codex leading and Claude Code as the partner, so a turn-end lead is measured receiving an answer at
   its end; a Codex conversation resumed after its process ended (SESSCTX1a's Codex half); Codex's `turn/steer` (STEER3) where ready.
 
@@ -532,7 +532,7 @@ Each is one feature a person can see working (D187).
    `partner_answer` and the partner's rules; the record's `piece`; the facts from git; the delivery; §2.4's landing; the Pieces section,
    the head, the *Parts* strip, the notes and the log, in English and Chinese. Its eligibility reads today's facts (a door, the
    connector, a maker). Proof: §8.2 and §8.3's cases filtered; the window on the install with Claude Code leading and Codex as the
-   partner, carrying M1, M2, M3 and M5. Large for one builder: it may split at dispatch into the service's and driver's half (the
+   partner, carrying M1 to M4. Large for one builder: it may split at dispatch into the service's and driver's half (the
    terminal verb) and the page's half, landed together.
 2. **COAGENT1b — the lead asks for a piece** (service, driver, modules, web-settings, web-shell; after 1a). `partner_ask` under the
    `partners` rule (`ask`, `on`, `off`; the agents; the minutes), its wait in *What needs you* and every place `person-waits.md` lists,
@@ -582,7 +582,7 @@ about; Daoris choosing a maker the person's rule did not list; a token or money 
 
 ## 11. What is not known
 
-- **Codex as a partner** (M1, M2, M5): whether its connector calls join, whether its writes stay in its tree under `agent`, whether it
+- **Codex as a partner** (M1, M2, M4): whether its connector calls join, whether its writes stay in its tree under `agent`, whether it
   can push, what it reports of a turn's usage. Until M2, the first `on` waits.
 - **The brief's cost per piece**, and whether 45 minutes and two open pieces are the right first values (M3, COAGENT1f).
 - **The capture's cost** on this repository on this machine, where a program starts slowly (COAGENT1c).
