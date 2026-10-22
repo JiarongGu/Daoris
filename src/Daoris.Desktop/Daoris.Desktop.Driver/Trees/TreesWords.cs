@@ -231,6 +231,18 @@ public static class TreesWords
         new([$"trees: {LandedReviewWords.NotAgain(session, review, treeGone)}"], [], 1);
 
     /// <summary>A press to land a session whose record names no tree here: a sentence on the error, exit 1.</summary>
+    /// <summary>
+    /// A partner's record never lands (COAGENT1b, D199 point 3; the co-agent design §2.4): its piece reaches the line only through its
+    /// lead, which merges the frozen ref in its own tree. Every landing door asks this of the record before anything lands: the
+    /// session's press and the terminal's verb here, and the page's and an entry's Accept by <see cref="SessionGroups"/>' eligibility.
+    /// Null for every record that is no partner's.
+    /// </summary>
+    public static TreesSaid? PartnerLands(IReadOnlyList<SessionRecord> records, string session) =>
+        records.FirstOrDefault(record => record.Id == session) is { Partner: true, Piece: { } piece } partner
+            ? new([], [$"trees: session `{session}` is a partner writing piece `{piece}` for session `{partner.Serves}`, and lands nothing: "
+                       + $"a piece lands only through its lead, which takes it in with `git merge --no-ff {PieceRefs.Of(piece)}` in its own tree."], 1)
+            : null;
+
     public static TreesSaid NoTreeToLand(string session) =>
         new([], [$"trees: session `{session}` names no working tree on this machine, so there is nothing here to land."], 1);
 

@@ -358,6 +358,13 @@ internal static class TreesConsole
                     return none.Code;
                 }
 
+                // COAGENT1b (D199 point 3): a partner's record lands nothing; its piece lands through its lead.
+                if (TreesWords.PartnerLands(await service.SessionRecordsAsync().ConfigureAwait(false), session) is { } partner)
+                {
+                    partner.Print(Console.Out, Console.Error);
+                    return partner.Code;
+                }
+
                 var questId = await service.SessionQuestAsync(session).ConfigureAwait(false);
                 var events = new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
                 // A plugin's own lines, said as they come, under its name — as the console says them (D64 §4).

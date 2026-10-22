@@ -72,6 +72,33 @@ public sealed class DriverModuleTreesReadsTests : DriverModuleBridge
         Assert.Contains("no working tree", await RefusalAsync(module, "LANDING", new { id = "s1a2b3c4" }));
     }
 
+    /// <summary>
+    /// 🔴 COAGENT1b (D199 point 3; the co-agent design §2.4): a partner's record lands nothing at the press, the plan or the verb; each
+    /// refuses it in the words that name its lead's merge of the frozen ref.
+    /// </summary>
+    [Fact]
+    public async Task A_partners_record_is_refused_at_the_press_the_plan_and_the_verb()
+    {
+        const string sessions = """
+            [{ "id": "pt1a2b3c", "repository": "engine", "state": "completed", "kind": "chat", "adapter": "codex-acp",
+               "tree": "X:/daoris/trees/aurora/engine/p-pc000001", "serves": "s1a2b3c4", "piece": "pc000001", "said": [] }]
+            """;
+        var loop = Loop();
+        var module = new DriverModule(Bus, loop);
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandInService(sessions))));
+        var refused = TreesWords.PartnerLands(
+            [new SessionRecord("pt1a2b3c", "engine", "completed") { Serves = "s1a2b3c4", Piece = "pc000001" }], "pt1a2b3c")!;
+
+        var verb = await AnswerAsync(module, "LANDING", new { id = "pt1a2b3c", said = true });
+        var press = await AnswerAsync(module, "LAND_SESSION_TREE", new { id = "pt1a2b3c" });
+
+        Assert.Equal(refused.Error, Said(verb).Error);
+        Assert.Equal(1, Said(verb).Code);
+        Assert.False(press.GetProperty("done").GetBoolean());
+        Assert.Equal(refused.Error, Said(press).Error);
+        Assert.Contains("lands nothing", await RefusalAsync(module, "LANDING", new { id = "pt1a2b3c" }));
+    }
+
     [Fact]
     public async Task A_plan_of_a_landing_the_review_reads_as_landed_says_why_and_lands_nothing_again()
     {
@@ -135,12 +162,13 @@ public sealed class DriverModuleTreesReadsTests : DriverModuleBridge
         Assert.Equal(SessionsCommand.Json([], []), Said(written).Out.Single());
     }
 
-    private sealed class StandInService : HttpMessageHandler
+    /// <summary>A service that answers every read with <paramref name="answer"/>: no records, or the records a case names.</summary>
+    private sealed class StandInService(string answer = "[]") : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>
             Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
             {
-                Content = new StringContent("[]", System.Text.Encoding.UTF8, "application/json"),
+                Content = new StringContent(answer, System.Text.Encoding.UTF8, "application/json"),
             });
     }
 }
