@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// Sessions' badge on the activity bar (SESSUX1c, D126 §2.5), the way the application holds it: the whole window over a
+// The activity bar's places and the bell (BADGEUX1; SESSUX1c, D126 §2.5 before it), the way the application holds them: the whole window over a
 // mocked shell that pushes who needs the person (PUSH1d4: judged in .NET, `AttentionStateSliceTests` holds what is counted),
 // since the badge is only drawn where Sessions is, and Sessions is the shell's alone (D47 §4). `App.test.tsx` holds the window
 // in a browser, where there is no Sessions to badge. And Overview's *What needs you* with the quest the driver parked, and its

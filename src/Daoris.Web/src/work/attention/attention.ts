@@ -485,8 +485,9 @@ export type PushedAttention = {
 };
 
 /**
- * The slice's answer composed (`attentionSlice`): the rows in the band's order; the keys of what waits on the person in Sessions,
- * which its badge marks; and the keys of the sessions the driver runs, which the badge and the status bar count (SESSBADGE1).
+ * The slice's answer composed (`attentionSlice`): the rows in the band's order, which the bell and each place count (BADGEUX1); the
+ * keys of what parked on the person; and the keys of the sessions the driver runs, which the status bar counts (SESSBADGE1) and,
+ * less the parks, Sessions' running mark reads (BADGEUX1).
  */
 export type AttentionPushed = {
   rows: PushedAttention[];

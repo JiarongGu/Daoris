@@ -33,7 +33,7 @@ function rowOf(value: unknown): PushedAttention | null {
 
 /**
  * The slice's partitions composed into one entry (PUSH1d4): the rows in the band's order (`attentionInOrder`, D182's PUSH1d4
- * note), the keys of what waits on the person in Sessions, and the keys of the sessions the driver runs (SESSBADGE1). Nothing until
+ * note), the keys of what parked on the person, and the keys of the sessions the driver runs (SESSBADGE1). Nothing until
  * the owner judged and the rows and the waits are held, so a window never reads half a judgement as the whole: before, the band
  * draws its skeleton (PUSHUX1). A shell from before the sessions the driver runs pushes none, read as none.
  */

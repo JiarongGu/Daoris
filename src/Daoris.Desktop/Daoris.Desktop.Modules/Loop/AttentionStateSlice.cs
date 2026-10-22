@@ -13,8 +13,9 @@ namespace Daoris.Desktop;
 /// </summary>
 /// <remarks>
 /// <para><b>Three keyed partitions.</b> <see cref="Rows"/>, each row under its kind and id as the band keys it, its wait and the values
-/// the page words it from; <see cref="Sessions"/>, each thing that waits on the person in Sessions, which the badge marks; and
-/// <see cref="Working"/>, each session the driver runs, which the badge and the status bar count (SESSBADGE1). A row's move pushes that
+/// the page words it from, which the bell and each place of the activity bar count (BADGEUX1); <see cref="Sessions"/>, each session parked
+/// on the person and each quest parked on its failures; and <see cref="Working"/>, each session the driver runs, which the status bar
+/// counts (SESSBADGE1) and, less the parks, lights Sessions' running mark (BADGEUX1). A row's move pushes that
 /// row alone. A row holds no place in the list: the page orders by group, then by wait, then by kind (D182's PUSH1d4 note, its PUSH1c3a
 /// rule).</para>
 ///
@@ -47,14 +48,14 @@ public static class AttentionStateSlice
     public const string Rows = "rows";
 
     /// <summary>
-    /// What waits on the person in Sessions, which the badge marks in the waiting hue (SESSBADGE1; its count before, UX5 U20): each session
-    /// parked to ask and each quest parked on its failed sessions, by a key of its own.
+    /// Each session parked to ask and each quest parked on its failed sessions, by a key of its own (UX5 U20's set): the page keeps the
+    /// parks out of Sessions' running mark by their keys (BADGEUX1); what a place counts is the rows.
     /// </summary>
     public const string Sessions = "sessions";
 
     /// <summary>
-    /// The sessions the driver runs (SESSBADGE1, D76's note), each by its key: what the Sessions badge counts as a quantity and the status
-    /// bar beside it, the cap's own count (<see cref="NeedsAPerson.Working"/>).
+    /// The sessions the driver runs (SESSBADGE1, D76's note), each by its key, the cap's own count (<see cref="NeedsAPerson.Working"/>):
+    /// what the status bar says, and, less the parks of <see cref="Sessions"/>, Sessions' running mark (BADGEUX1).
     /// </summary>
     public const string Working = "working";
 
@@ -209,7 +210,7 @@ public static class AttentionStateSlice
         };
 
     /// <summary>
-    /// One judgement: the rows and what the badge counts, each keyed and picked to the allow-list; null where an input was never judged,
+    /// One judgement: the rows, the parks and the sessions the driver runs, each keyed and picked to the allow-list; null where an input was never judged,
     /// which judges nothing. Judged empty, each partition is pushed empty, never gone.
     /// </summary>
     public static IReadOnlyList<SliceJudged>? Judge(AttentionFacts? facts)

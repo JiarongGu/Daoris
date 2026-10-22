@@ -409,7 +409,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.Null(unnamed["since"]);
     }
 
-    // ---- what the Sessions badge counts (UX5 U20, D126 §2.5) ----
+    // ---- what parked on the person (UX5 U20's set, D126 §2.5), kept out of Sessions' running mark (BADGEUX1) ----
 
     private static int InSessions(AttentionFacts facts) => NeedsAPerson.WaitingInSessions(facts).Count;
 
@@ -508,7 +508,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
             counted.Select(each => $"{each.Key}={each.Value.ToJsonString()}").Order(StringComparer.Ordinal));
     }
 
-    // ---- the sessions the driver runs, which the Sessions badge and the status bar count (SESSBADGE1, D76's note) ----
+    // ---- the sessions the driver runs, which the status bar counts (SESSBADGE1, D76's note) and Sessions' mark reads (BADGEUX1) ----
 
     /// <summary>
     /// One count, the cap's (CAPCOUNT1, <see cref="ActiveSessions.HoldsSlot(SessionView)"/>): this machine's active sessions the driver
@@ -1616,9 +1616,9 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// Three partitions, each keyed: <c>rows</c>, each row under its kind and id as the band keys it; <c>sessions</c>, what waits on the
-    /// person in Sessions, which the badge marks; and <c>working</c>, the sessions the driver runs, which the badge and the status bar
-    /// count (SESSBADGE1). Judged empty, each is pushed empty, never gone. Not judged before every input it reads was judged (PUSHUX1).
+    /// Three partitions, each keyed: <c>rows</c>, each row under its kind and id as the band keys it; <c>sessions</c>, what parked on the
+    /// person; and <c>working</c>, the sessions the driver runs, which the status bar counts (SESSBADGE1) and, less the parks, Sessions'
+    /// running mark reads (BADGEUX1). Judged empty, each is pushed empty, never gone. Not judged before every input it reads was judged (PUSHUX1).
     /// </summary>
     [Fact]
     public void The_slice_is_three_keyed_partitions_judged_empty_as_empty_and_not_judged_before_its_inputs()

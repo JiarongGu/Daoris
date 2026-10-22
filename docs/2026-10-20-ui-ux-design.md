@@ -902,10 +902,10 @@ says a state and has no verb.
 ### 3.10 One meaning for a number: what waits on you (BADGEUX1)
 
 **Standing: built 2026-10-22 under D185 (BADGEUX1), revised after Codex's read, every blocking finding taken (§3.10.8); the
-steward's to accept under D191.** The owner's direction of 2026-10-22, given while using
-Daoris: a number on a session, a quest or a list place counts only what needs the person's step, the same things the window's
-taskbar button and the title bar's bell count; work that is running is not counted, and is shown in another, quieter style. The
-whole window then has one meaning for a number: *this waits on you*. Read for it: D196 and the notification design §2 and §3.3;
+steward's to accept under D191.** The owner's direction of 2026-10-22, given while using Daoris: a number on a session, a quest
+or a list place counts only what needs the person's step, the same things the window's taskbar button and the title bar's bell
+count; work that is running is not counted, and is shown in another, quieter style. The whole window then has one meaning for a
+number: *this waits on you*. Read for it: D196 and the notification design §2 and §3.3;
 this design's §2 and §4; the platform language §2 and §3; D76's SESSBADGE1 note and D130's CAPCOUNT1 note; NEEDSSCOPE1's and
 GOAHEADSTALE1's entries; `person-waits.md` and `translation-parity.md`; the glossary. Every statement about today was read from
 the code at `662151ce1`.
@@ -1211,6 +1211,8 @@ by `Dot`'s tones and folded to `MilestoneLine` (§3.7): it is no `PhaseList`, si
 - **UX7 §4.5** (D152): the sign-in step's phases (§3.2).
 - **D183 point 2**: the place is *Settings → AI features*.
 - **D176 and D177**: their page is §3.6, in Sessions; BRAINSTORM1d keeps its caller.
+- **§3.10 (BADGEUX1, 2026-10-22)**: the platform language §2 (the activity bar's numbers and running marks, the status bar's count);
+  D76's SESSBADGE1 note (Sessions' badge); D150 §2.1 (Agents' badge is the rows').
 
 D41's character, tokens and accessibility, D118's regions, D150's rule that a setting lives on its thing, D152's menus and
 heads, and D173's milestone's facts stand.
