@@ -57,6 +57,9 @@ public sealed class DriverRoutes(DriverContext context)
     {
         var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
         var held = PayloadHelper.GetRequiredValue<bool>(request.Payload, "held");
+        // TERMTRUST1a (the terminal-trust design §4.2): a hold changed by anything but the standing confirmation (the window's press, a
+        // confirmed press) is no longer one a covered resume may release; the confirmation remembers its own as it admits them.
+        if (!PipeDoor.Standing) _loop.Pipe?.StandingConfirmation.Forget(repository);
         _context.Change(config => config.WithHold(repository, held));
         return State(_loop);
     }
@@ -509,6 +512,10 @@ public sealed class DriverRoutes(DriverContext context)
             loop.HostNotice,
             config.Drivable,
             config.Holds,
+            // TERMTRUST1a (D201, the terminal-trust design §6.1): the person's standing confirmation as This Daoris's row and the line in
+            // Notifications read it: offered, on, the presses granted and built, since, a record not honoured, its count this run, and
+            // the holds a terminal made under it. None where this shell serves no pipe.
+            StandingConfirmation = loop.Pipe?.StandingConfirmation.Now(),
             config.Trees,
             config.Cap,
             config.Adapter,

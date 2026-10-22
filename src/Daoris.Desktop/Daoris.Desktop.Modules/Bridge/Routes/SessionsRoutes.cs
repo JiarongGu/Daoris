@@ -24,7 +24,8 @@ public sealed class SessionsRoutes(DriverContext context)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
         // RPC1d: `sessions stop` sent over the pipe asks for the verb's own words; the page asks for none and its answer keeps its shape.
-        if (Flag(request, "said")) return await SaidAsync(new SessionsAsk("stop") { Ids = [id] }, cancellationToken).ConfigureAwait(false);
+        // TERMTRUST1a: a stop the standing confirmation admitted says so on each record it ends.
+        if (Flag(request, "said")) return await SaidAsync(new SessionsAsk("stop") { Ids = [id], Standing = PipeDoor.Standing }, cancellationToken).ConfigureAwait(false);
 
         // False is an answer, not an error: the session already finished, and its record says how.
         // 🔴 Unless the record says it still runs and nothing on this machine runs it — a chat
@@ -94,7 +95,9 @@ public sealed class SessionsRoutes(DriverContext context)
         // RPC1d: `sessions finish` and `decline` sent over the pipe ask for the verb's own words (`stopped` is the page's alone).
         if (Flag(request, "said") && state != "stopped")
         {
-            return await SaidAsync(new SessionsAsk(state == "completed" ? "finish" : "decline") { Ids = [id], Note = note }, cancellationToken)
+            // TERMTRUST1a: a finish the standing confirmation admitted never takes the request folder, and is moved only from awaiting-person.
+            return await SaidAsync(
+                    new SessionsAsk(state == "completed" ? "finish" : "decline") { Ids = [id], Note = note, Standing = PipeDoor.Standing }, cancellationToken)
                 .ConfigureAwait(false);
         }
 

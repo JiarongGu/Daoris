@@ -257,7 +257,10 @@ public sealed class PipeCensus
             // NOTIFY2j: and what waits at the service's door, told to the windows, read beside the pipe's.
             "SERVICE_CONFIRMATIONS",
             // CONFIRMSEEN1: that a card is in front of the person is the window's to say; a terminal saying it would start its two minutes.
-            "PERSON_CONFIRM_SHOWN");
+            "PERSON_CONFIRM_SHOWN",
+            // TERMTRUST1a (D201 point 5): the standing confirmation is granted and revoked in the window alone; no card offers it, since a
+            // person used to confirming a terminal's presses would confirm that one too.
+            "SET_STANDING_CONFIRMATION");
         // One route, two forms. What a switch of git would change compares programs Daoris already knows (the PATH's, a
         // managed version), and with `way: "file"` runs whatever file the payload names: that form is the person's.
         table.Add("TOOLS_GIT", PipeRule.Of("way", PipeClass.Open, PipeClass.Person, "\"system\"", "\"managed\""));

@@ -151,8 +151,12 @@ public sealed class PipeConfirmations : IDisposable
     /// Show the window <paramref name="route"/> of <paramref name="module"/> with <paramref name="fields"/>, asked by
     /// <paramref name="asker"/>: the confirmation, and how it ends; null where <see cref="Bound"/> already wait, and nothing is asked.
     /// </summary>
+    /// <param name="standing">
+    /// Why the person's standing confirmation, on and naming this press, did not cover it (TERMTRUST1a, the terminal-trust design §7.2):
+    /// written on the <c>asked</c> line as <c>standing</c>; null while it is off or names no such press, which writes no field.
+    /// </param>
     public (PipeConfirmation Shown, Task<PipeConfirmationEnd> Ended)? Ask(
-        string module, string route, IReadOnlyList<PipeConfirmationField> fields, PipeAsker asker)
+        string module, string route, IReadOnlyList<PipeConfirmationField> fields, PipeAsker asker, string? standing = null)
     {
         Held held;
         PipeConfirmationsNow told;
@@ -168,7 +172,7 @@ public sealed class PipeConfirmations : IDisposable
             // away (never zero), so it finds the confirmation held.
             var id = held.Shown.Id;
             held.Timer = _clock.CreateTimer(_ => Expire(id), null, _find, Timeout.InfiniteTimeSpan);
-            Write("asked", held.Shown);
+            Write("asked", held.Shown, standing);
             _waiting.Add(held);
             _seq++;
             told = Telling();
@@ -384,8 +388,20 @@ public sealed class PipeConfirmations : IDisposable
     };
 
     // Codes only (design §5.1): what happened, the route, and the door it came in by.
-    private void Write(string state, PipeConfirmation confirmation) =>
-        _log.Info(LogEvent, ("state", state), ("route", $"{confirmation.Module}.{confirmation.Route}"), ("door", PipeDoor.Terminal));
+    private void Write(string state, PipeConfirmation confirmation, string? standing = null)
+    {
+        if (standing is null)
+        {
+            _log.Info(LogEvent, ("state", state), ("route", $"{confirmation.Module}.{confirmation.Route}"), ("door", PipeDoor.Terminal));
+        }
+        else
+        {
+            // TERMTRUST1a (the terminal-trust design §7.2): a press the standing confirmation names that asked anyway, and why, by code.
+            _log.Info(
+                LogEvent, ("state", state), ("route", $"{confirmation.Module}.{confirmation.Route}"), ("door", PipeDoor.Terminal),
+                ("standing", standing));
+        }
+    }
 
     private sealed class Held(PipeConfirmation shown)
     {

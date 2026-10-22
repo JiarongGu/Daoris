@@ -115,6 +115,12 @@ public sealed class InstancePipe : IDisposable
     /// <summary>The notification that tells a terminal its press waits for the person in the window (RPC1c), naming its request.</summary>
     public const string Confirming = "CONFIRMING";
 
+    /// <summary>
+    /// The notification that tells a terminal its press runs under the person's standing confirmation, with no card (TERMTRUST1a, D201
+    /// point 7, the terminal-trust design §5 step 4), naming its request.
+    /// </summary>
+    public const string Standing = "STANDING";
+
     /// <summary>The person refused the press in the window: nothing ran.</summary>
     public const string Refused = "refused";
 
@@ -178,9 +184,10 @@ public sealed class InstancePipe : IDisposable
     /// <param name="version">The build, as the hello names it.</param>
     /// <param name="limits">The bounds (<see cref="PipeLimits"/>'s where none are named).</param>
     /// <param name="clock">The clock a confirmation's two minutes are read by: the system's, or a test's.</param>
+    /// <param name="standing">The person's standing confirmation (TERMTRUST1a): this home's where none is named; a test hands its own.</param>
     public InstancePipe(
         IMessageDispatcher dispatcher, IEventBus bus, string home, MachineLog? log = null, PipeCensus? census = null,
-        string? version = null, PipeLimits? limits = null, TimeProvider? clock = null)
+        string? version = null, PipeLimits? limits = null, TimeProvider? clock = null, StandingConfirmation? standing = null)
     {
         _dispatcher = dispatcher;
         _bus = bus;
@@ -190,7 +197,17 @@ public sealed class InstancePipe : IDisposable
         _version = version ?? typeof(InstancePipe).Assembly.GetName().Version?.ToString() ?? "0";
         _limits = limits ?? new PipeLimits();
         Confirmations = new PipeConfirmations(bus, _log, clock, _limits.Waiting, _limits.Confirm);
+        StandingConfirmation = standing ?? new StandingConfirmation(home, _log, clock: clock);
+        // Every window is told a use (§5 step 4), which the line in Notifications counts; never a value, only the count and its moment.
+        StandingConfirmation.Used ??= (seq, at) => _bus.Emit(StatePublisher.Module, StandingConfirmation.UsedEvent, new { Seq = seq, At = at });
+        if (StandingConfirmation.Caller is StandingCaller look) look.OwnPipe = () => Name;
     }
+
+    /// <summary>
+    /// The person's standing confirmation (TERMTRUST1a, D201): read as the pipe is first served, judged before a person's press is shown
+    /// to the window, granted and revoked only by the window's <c>SET_STANDING_CONFIRMATION</c>.
+    /// </summary>
+    public StandingConfirmation StandingConfirmation { get; }
 
     /// <summary>
     /// The person's presses a terminal sent, waiting for the window (RPC1c): the bridge's <c>PERSON_CONFIRMATIONS</c> reads them and
@@ -238,6 +255,8 @@ public sealed class InstancePipe : IDisposable
             }
 
             _homeId = id;
+            // TERMTRUST1a (§4.2): the standing confirmation's record is read before the pipe serves, and kept in memory.
+            StandingConfirmation.Load();
             // The journal's folder is D172's `pipe` entry, asked of the table as every home path is (HOMELAYOUT2).
             _journal = new PipeJournal(DaorisHome.Entry(_home, HomeEntry.Pipe), _limits.Kept);
             _slots = new SemaphoreSlim(_limits.Connections - 1, _limits.Connections);
@@ -581,9 +600,23 @@ public sealed class InstancePipe : IDisposable
             return (null, answer);
         }
 
+        // TERMTRUST1a (D201, the terminal-trust design §5 step 3): the person's standing confirmation is judged first, under its lock, and a
+        // press it covers is admitted there, once: run as a confirmed press is, said to the log and the terminal, with no card. A revoke
+        // after the admission does not recall it; a press it does not cover asks as before, saying why where the grant names it.
+        var judged = StandingConfirmation.Judge(request.Module, request.Type, request.Payload, connection.Client);
+        if (judged.Covered)
+        {
+            _log.Info(PipeConfirmations.LogEvent, ("state", "standing"), ("route", $"{request.Module}.{request.Type}"), ("door", PipeDoor.Terminal));
+            _ = connection.WriteAsync(Told(Standing, new { id }));
+            _ = RunAsync(request, id, binding, mine, standing: true);
+            return (null, answer);
+        }
+
+        var why = judged.Said ? judged.Why : null;
+
         // RPC1c (D156 §4.2): the person's press waits for the window, which shows it naming this terminal, and runs on Confirm alone.
         // The id is bound above before the window is asked, so the same id sent again meanwhile joins this one and asks nothing.
-        if (Confirmations.Ask(request.Module, request.Type, fields, connection.Asker) is not { } asked)
+        if (Confirmations.Ask(request.Module, request.Type, fields, connection.Asker, why) is not { } asked)
         {
             var bound = Confirmations.Bound == 5 ? "Five" : Confirmations.Bound.ToString(System.Globalization.CultureInfo.InvariantCulture);
             var full = IpcJson.Serialize(Refuse(request, Full,
@@ -603,18 +636,27 @@ public sealed class InstancePipe : IDisposable
             _waitingFor[id] = asked.Shown.Id;
         }
 
-        _ = connection.WriteAsync(Waits(id, asked.Shown));
+        _ = connection.WriteAsync(Waits(id, asked.Shown, why));
         _ = ConfirmThenRunAsync(request, id, binding, mine, asked.Ended);
         return (null, answer);
     }
 
-    /// <summary>The notification that tells the terminal its press waits for the person in the window, and until when (RPC1c).</summary>
-    private static string Waits(string id, PipeConfirmation shown) => JsonSerializer.Serialize(
+    /// <summary>
+    /// The notification that tells the terminal its press waits for the person in the window, and until when (RPC1c); with
+    /// <c>standing</c>, why the person's standing confirmation, on and naming the press, did not cover it (TERMTRUST1a, §5 step 5), a field
+    /// an older terminal ignores.
+    /// </summary>
+    private static string Waits(string id, PipeConfirmation shown, string? standing) => standing is null
+        ? Told(Confirming, new { id, expires = shown.Expires })
+        : Told(Confirming, new { id, expires = shown.Expires, standing });
+
+    /// <summary>A notification of the pipe's own to the terminal that sent a press.</summary>
+    private static string Told(string type, object payload) => JsonSerializer.Serialize(
         new
         {
             category = IpcCategories.Notification,
             id = Guid.NewGuid().ToString("N"),
-            payload = new[] { new { module = Module, type = Confirming, payload = new { id, expires = shown.Expires } } },
+            payload = new[] { new { module = Module, type, payload } },
             timestamp = DateTimeOffset.UtcNow,
         },
         IpcJson.Options);
@@ -685,7 +727,9 @@ public sealed class InstancePipe : IDisposable
     /// A press, run on the instance's lifetime and never the connection's (§6.1), its lines kept either side. One whose first
     /// line cannot be written is refused and never dispatched, so no id runs that the journal does not hold.
     /// </summary>
-    private async Task RunAsync(IpcRequest request, string id, PipeBinding binding, TaskCompletionSource<string> answered)
+    /// <param name="standing">That the person's standing confirmation admitted it (TERMTRUST1a): run inside <see cref="PipeDoor.EnterStanding"/>.</param>
+    private async Task RunAsync(
+        IpcRequest request, string id, PipeBinding binding, TaskCompletionSource<string> answered, bool standing = false)
     {
         string text;
         try
@@ -698,7 +742,7 @@ public sealed class InstancePipe : IDisposable
             else
             {
                 IpcResponse response;
-                using (PipeDoor.Enter())
+                using (standing ? PipeDoor.EnterStanding() : PipeDoor.Enter())
                 {
                     response = await _dispatcher.DispatchAsync(request, _lifetime.Token).ConfigureAwait(false);
                 }
@@ -836,6 +880,12 @@ public sealed class InstancePipe : IDisposable
         /// read once as the connection is taken, never from what the terminal says of itself.
         /// </summary>
         public PipeAsker Asker { get; } = AskerOf(stream);
+
+        /// <summary>
+        /// The terminal's process, held by a handle opened as the connection is taken and kept for its life (TERMTRUST1a, the
+        /// terminal-trust design §3.3 point 3): what the standing confirmation's judge asks the jobs about.
+        /// </summary>
+        public PipeClientProcess Client { get; } = PipeClientProcess.Of(stream);
 
         /// <summary>Whether a press this connection sent has not been answered yet.</summary>
         public bool Answering => Volatile.Read(ref _underWay) > 0;
@@ -1020,6 +1070,7 @@ public sealed class InstancePipe : IDisposable
         {
             if (Interlocked.Exchange(ref _closed, 1) == 1) return;
             stream.Dispose();
+            Client.Dispose();
         }
 
         private static PipeAsker AskerOf(NamedPipeServerStream stream)

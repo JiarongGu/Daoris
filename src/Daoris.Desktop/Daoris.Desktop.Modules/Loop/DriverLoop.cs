@@ -773,7 +773,15 @@ public sealed class DriverLoop(
         // The terminal's pipe (RPC1a, the terminal RPC design §6.3): served once this loop holds the home, the one writer, and only
         // then named in the address, so a terminal that reads it finds it served. A name already held serves none, said in the log.
         // NOTIFY2f: a press that ends unanswered is kept in Done and failed.
-        if (Pipe is { } served) served.Confirmations.Unanswered = Notices.Unanswered;
+        if (Pipe is { } served)
+        {
+            served.Confirmations.Unanswered = Notices.Unanswered;
+            // TERMTRUST1a (D201 point 2): a finish runs here where this machine's registry says so, and a resume is of a hold the file holds now.
+            served.StandingConfirmation.RunsHere = Processes.AliveOnThisMachine;
+            served.StandingConfirmation.HeldNow = repository =>
+                DriverConfig.Load(ConfigPath).Holds.Contains(repository, StringComparer.OrdinalIgnoreCase);
+        }
+
         if (Pipe?.Serve() is { } pipe) AnnouncePipe(pipe);
 
         var attention = new AttentionWatch();
