@@ -45,7 +45,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
         if (!File.Exists(path)) return new NodeRecord(unit);
         try
         {
-            return Parse(File.ReadAllText(path)) is { } record && string.Equals(record.Unit, unit, StringComparison.Ordinal) ? record : null;
+            return Parse(AtomicFile.ReadText(path)) is { } record && string.Equals(record.Unit, unit, StringComparison.Ordinal) ? record : null;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -65,7 +65,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             NodeRecord? record = null;
             try
             {
-                record = Parse(File.ReadAllText(path));
+                record = Parse(AtomicFile.ReadText(path));
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {
@@ -98,7 +98,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
     {
         try
         {
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             return document.RootElement.ValueKind == JsonValueKind.Object && Text(document.RootElement, "unit") is { } unit
                 && string.Equals(KeyOf(unit) + ".json", name, StringComparison.Ordinal)
                 ? unit
