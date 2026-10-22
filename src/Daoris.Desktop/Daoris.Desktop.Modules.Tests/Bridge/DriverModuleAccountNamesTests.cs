@@ -156,6 +156,11 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
     [Fact]
     public async Task A_sign_in_into_an_account_that_is_not_here_is_refused_and_makes_no_folder()
     {
+        // A refusal this test expects that comes no more starts a sign-in: named for a command no machine has, it starts nothing,
+        // never the agent on PATH, which would open the person's browser on their real account (docs/development.md, LIVELOGIN1).
+        File.WriteAllText(DriverConfigPath, """
+            { "drivable": [], "holds": [], "cap": 1, "adapter": "claude-code", "commands": { "claude-code": ["daoris-no-such-sign-in"] } }
+            """);
         Accounts("claude-code", "account-1");
         AccountNames.Rename(Home, "claude-code", ["account-1"], "account-1", "seat");
 
@@ -168,6 +173,11 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
         var none = await RefusalAsync(Module(), "HARNESS_ACTION", new { harness = "claude-code", action = "login" });
         Assert.Contains("name the `claude-code` account to sign in to", none);
         Assert.False(Directory.Exists(HarnessSettings.ProfileHome(Home, "claude-code", "default")));
+
+        // POOL1a2: the window reads the set, which holds no default, so an older build's default is no account to sign in to either.
+        Wiring("""{ "defaults": { "claude-code": "account-1" } }""");
+        var defaulted = await RefusalAsync(Module(), "HARNESS_ACTION", new { harness = "claude-code", action = "login" });
+        Assert.Contains("name the `claude-code` account to sign in to", defaulted);
         Assert.Equal(["account-1"], HarnessSettings.Profiles(Home, "claude-code"));
     }
 
@@ -192,34 +202,23 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// ACCT1, ACCT2: one account on the roster says its id, the person's name for it, and where it runs; an account no list
-    /// and no default holds says <c>nowhere</c>, which the page shows as *no workspace*.
+    /// ACCT1, ACCT2: one account on the roster says its id and the person's name for it. Rewritten by POOL1a2 (D197; the account-pool
+    /// design §5.2): it said where the account ran, its <c>places</c>, and <c>nowhere</c> where no list held it; every account of
+    /// Daoris's serves every workspace now, so neither is answered.
     /// </summary>
     [Fact]
-    public void An_account_on_the_roster_says_its_name_and_where_it_runs_or_that_it_runs_nowhere()
+    public void An_account_on_the_roster_says_its_name_and_no_place()
     {
-        var settings = HarnessSettings.Load(Path.Combine(Home, "none.json"))
-            .WithRotation("claude-code", ["account-1"])
-            .WithDefault("claude-code", "account-1");
+        var named = JsonSerializer.SerializeToElement(AgentsRoutes.ProfileShown(
+            new ProfileReport("account-1", Path.Combine(Home, "a"), LoginState.In, DisplayName: "seat"), settingsFile: null));
+        var unnamed = JsonSerializer.SerializeToElement(AgentsRoutes.ProfileShown(
+            new ProfileReport("acct-3f9c2a71", Path.Combine(Home, "b"), LoginState.Unknown), settingsFile: null));
 
-        var placed = JsonSerializer.SerializeToElement(AgentsRoutes.ProfileShown(
-            new ProfileReport("account-1", Path.Combine(Home, "a"), LoginState.In, DisplayName: "seat"),
-            settings.PlacesOf("claude-code", "account-1"), settingsFile: null));
-        var nowhere = JsonSerializer.SerializeToElement(AgentsRoutes.ProfileShown(
-            new ProfileReport("acct-3f9c2a71", Path.Combine(Home, "b"), LoginState.Unknown),
-            settings.PlacesOf("claude-code", "acct-3f9c2a71"), settingsFile: null));
-
-        Assert.Equal("account-1", placed.GetProperty("Name").GetString());
-        Assert.Equal("seat", placed.GetProperty("DisplayName").GetString());
-        Assert.False(placed.GetProperty("Nowhere").GetBoolean());
-        var place = Assert.Single(placed.GetProperty("Places").EnumerateArray());
-        Assert.Equal(JsonValueKind.Null, place.GetProperty("Workspace").ValueKind);
-        Assert.True(place.GetProperty("List").GetBoolean());
-        Assert.True(place.GetProperty("Default").GetBoolean());
-
-        Assert.True(nowhere.GetProperty("Nowhere").GetBoolean());
-        Assert.Empty(nowhere.GetProperty("Places").EnumerateArray());
-        Assert.Equal(JsonValueKind.Null, nowhere.GetProperty("DisplayName").ValueKind);
+        Assert.Equal("account-1", named.GetProperty("Name").GetString());
+        Assert.Equal("seat", named.GetProperty("DisplayName").GetString());
+        Assert.False(named.TryGetProperty("Places", out _));
+        Assert.False(named.TryGetProperty("Nowhere", out _));
+        Assert.Equal(JsonValueKind.Null, unnamed.GetProperty("DisplayName").ValueKind);
     }
 
     /// <summary>
@@ -229,14 +228,11 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
     [Fact]
     public void An_account_on_the_roster_says_its_organisation_and_plan_or_none()
     {
-        var settings = HarnessSettings.Load(Path.Combine(Home, "none.json"));
-
         var said = JsonSerializer.SerializeToElement(AgentsRoutes.ProfileShown(
             new ProfileReport("acct-0000000b", Path.Combine(Home, "b"), LoginState.In, Account: "person@example.invalid", Org: "Org B", Plan: "max"),
-            settings.PlacesOf("claude-code", "acct-0000000b"), settingsFile: null));
+            settingsFile: null));
         var none = JsonSerializer.SerializeToElement(AgentsRoutes.ProfileShown(
-            new ProfileReport("acct-0000000c", Path.Combine(Home, "c"), LoginState.In, Account: "person@example.invalid"),
-            settings.PlacesOf("claude-code", "acct-0000000c"), settingsFile: null));
+            new ProfileReport("acct-0000000c", Path.Combine(Home, "c"), LoginState.In, Account: "person@example.invalid"), settingsFile: null));
 
         Assert.Equal(("Org B", "max"), (said.GetProperty("Org").GetString(), said.GetProperty("Plan").GetString()));
         Assert.Equal((JsonValueKind.Null, JsonValueKind.Null), (none.GetProperty("Org").ValueKind, none.GetProperty("Plan").ValueKind));
