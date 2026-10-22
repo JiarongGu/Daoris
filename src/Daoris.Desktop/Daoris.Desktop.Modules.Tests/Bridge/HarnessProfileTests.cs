@@ -185,8 +185,12 @@ public sealed class HarnessProfileTests : Bridge
         Assert.Equal("someone@example.invalid", ended.GetProperty("Account").GetString());
         Assert.True(ended.GetProperty("Kept").GetBoolean());
         Assert.True(File.Exists(Path.Combine(ProfileAt("stub", made), "credentials.json")));
-        // ACCT1: no list holds the new account, and the end says so; who signed in is offered, never written (D66 §3).
-        Assert.Empty(ended.GetProperty("Places").EnumerateArray());
+        // Rewritten by POOL1a2 (D197 point 4; the account-pool design §4.4, §5.2): the end said where the account ran, `Places`,
+        // none where no list held it (ACCT1). It joins Daoris's accounts now, last in the order, and the end says that; who signed
+        // in is offered, never written (D66 §3).
+        Assert.False(ended.TryGetProperty("Places", out _));
+        Assert.Contains(Raised.Select(Line), line => line.Contains($"`{made}` joined Daoris's accounts"));
+        Assert.Equal(["account-1", made], HarnessSettings.LoadSet(HarnessSettingsPath).Rotation["stub"]);
         Assert.Null(AccountNames.NameOf(Home, "stub", made));
     }
 

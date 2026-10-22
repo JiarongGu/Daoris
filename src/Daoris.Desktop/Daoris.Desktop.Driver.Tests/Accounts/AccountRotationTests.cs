@@ -140,8 +140,13 @@ public sealed class AccountRotationTests : IDisposable
         Assert.Equal("account-2", selection.Rotated!.From);
     }
 
+    /// <summary>
+    /// Rewritten by POOL1a2 (D197 points 1 and 2; the account-pool design §2.4, §6.1): a workspace's own order once carried its
+    /// starts on its accounts while another workspace waited on the machine's. An older build's file is read as the set now, one
+    /// order (the machine's first and list, then the workspace's), so every workspace's start walks it alike.
+    /// </summary>
     [Fact]
-    public async Task A_workspace_s_order_applies_to_its_starts_and_the_machine_s_to_the_rest()
+    public async Task A_workspace_s_order_is_read_as_the_set_so_every_workspace_starts_alike()
     {
         Accounts("account-1", "account-2", "account-3");
         Wire(s => s
@@ -154,11 +159,9 @@ public sealed class AccountRotationTests : IDisposable
         var work = await roster.SelectAsync("fake", Config, "work", null);
         var home = await roster.SelectAsync("fake", Config, "home", null);
 
-        // A work circle rotates among its own accounts.
-        Assert.Equal(("account-3", "account-2"), (work.Profile, work.Rotated!.From));
-        // The machine's order holds nothing ready: the start waits, for the first reset.
-        Assert.False(home.Allowed);
-        Assert.Null(home.Rotated);
+        // The set's order is account-1, account-2, account-3, begun at the machine's first: both pass the two cooling to the third.
+        Assert.Equal(("account-3", "account-1"), (work.Profile, work.Rotated!.From));
+        Assert.Equal(("account-3", "account-1"), (home.Profile, home.Rotated!.From));
     }
 
     [Fact]
@@ -316,17 +319,21 @@ public sealed class AccountRotationTests : IDisposable
         Assert.Equal(("account-2", "account-1"), (selection.Profile, selection.Rotated?.From));
     }
 
+    /// <summary>
+    /// Rewritten by POOL1a2 (D197 points 1 and 7; the account-pool design §6.1 rule 3): a machine that named one account and no list
+    /// once ran on that account alone, so its cool-off held the start byte for byte as before TOOL4f. Read as the set now, that
+    /// account is the order's first under <c>use: order</c>, and the start passes to the next account of the set.
+    /// </summary>
     [Fact]
-    public async Task With_no_order_a_cooling_default_waits_byte_for_byte_as_before()
+    public async Task With_no_order_a_cooling_default_passes_to_the_next_account_of_the_set()
     {
         Accounts("account-1", "account-2");
         Wire(s => s.WithDefault("fake", "account-1"));
-        var cooling = Cool("account-1");
+        Cool("account-1");
 
         var selection = await Present().SelectAsync("fake", Config, null, null);
 
-        Assert.Equal(CoolingWords.Hold(cooling, Zone), selection.Refusal);
-        Assert.Equal(cooling, selection.Cooling);
+        Assert.Equal(("account-2", "account-1"), (selection.Profile, selection.Rotated?.From));
     }
 
     // ——— When no account is ready (§4): the start waits for the first reset, with nothing probed.

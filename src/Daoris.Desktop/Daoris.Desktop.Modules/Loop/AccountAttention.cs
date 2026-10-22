@@ -4,9 +4,10 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// <i>What needs you</i>'s accounts (UX6d, D150 §6.2–§6.3; TOOL4m's row), judged in .NET (PUSH1d4, D182 point 6): a start waiting for
-/// accounts, and a signed-out account a list or a default holds that no waiting start names, with the states of the Agents place the
-/// rows read (<c>accountState</c>, <c>heldBy</c>, <c>runsFor</c>, <c>joinChoices</c> on the page), each over the roster's doors as
-/// <c>HARNESSES</c> answers them, each agent's accounts as <c>ACCOUNTS</c> answers them and the look's waits as the tick hands them.
+/// accounts, and a signed-out account of Daoris's that no waiting start names, with the states of the Agents place the rows read
+/// (<c>accountState</c> on the page), each over the roster's doors as <c>HARNESSES</c> answers them, each agent's accounts as
+/// <c>ACCOUNTS</c> answers them and the look's waits as the tick hands them. Every account is in its agent's one set (POOL1a2, D197;
+/// the account-pool design §2.4): each holds work, none runs only somewhere, and none is outside a start's list.
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>No row starts a process to find out</b> (§6.3, D150 point 5): the waits are the look's own, an account's state the
@@ -14,7 +15,8 @@ namespace Daoris.Desktop;
 /// <i>unknown, never read</i>, and never guessed signed in or out.</para>
 ///
 /// <para><b>What a row carries</b>: the ids of the accounts it names, each with its state, when it was read, its cool-off's end and the
-/// name the look read beside it; what the start holds; and the one account outside its list it may let in or read first. An account's
+/// name the look read beside it; and what the start holds. Its <c>outside</c> and <c>readFirst</c> are null, kept for the page's
+/// shape until POOL1c: no account is outside the set. An account's
 /// name, the row's title and its line of why are the page's words, named from the roster it holds (D182's PUSH1d4 note).</para>
 ///
 /// <para><b>A signed-out account's row has no wait</b> (UXFIX3): only when it was read is known, so it carries its reading and no
@@ -32,8 +34,8 @@ internal static class AccountAttention
 
     /// <summary>One agent as the page grouped its doors (<c>byTool</c>): the account-owning door first, one account list.</summary>
     private sealed record Tool(
-        string Name, string? Product, IReadOnlyList<JsonObject> Doors, IReadOnlyList<JsonObject> Accounts, string? MachineDefault,
-        bool Present, string OwnLogin, string? OwnRead, IReadOnlyList<(string Workspace, string Profile)> WorkspaceDefaults);
+        string Name, string? Product, IReadOnlyList<JsonObject> Doors, IReadOnlyList<JsonObject> Accounts, bool Present, string OwnLogin,
+        string? OwnRead);
 
     /// <summary>An account's state as last known (D150 §5.3), when it was read, its cool-off, and whether it holds work.</summary>
     private sealed record State(string Name, string? Read, JsonObject? Cooling, bool HoldsWork)
@@ -54,7 +56,9 @@ internal static class AccountAttention
         {
             var tool = ToolOf(held.Agent);
             var use = AgentOf(facts.Use, held.Agent);
-            var scope = use is not null && held.Workspace is not null ? WorkspaceScope(use, held.Workspace) ?? MachineScope(use) : null;
+            // The agent's one set, whatever the start's workspace (POOL1a2): every start reads it. A cool-off of the tool's own sign-in
+            // holds a conversation begun there, which the set never serves (D197 point 3), so it names no account of the set.
+            var scope = use is not null && held.Cooling is not { Account: null } ? SetScope(use) : null;
             var accounts = ServingIds(scope, held).Select(id => NamedAccount(id, tool, use, scope, held)).ToList();
             foreach (var account in accounts) named.Add($"{held.Agent}/{Text(account, "id") ?? ""}");
 
@@ -68,9 +72,9 @@ internal static class AccountAttention
 
             var whose = RowFacts(held.Agent, tool);
             whose["named"] = new JsonArray([.. accounts]);
-            var (outside, readFirst) = OutsideOf(tool, use, scope, held, accounts);
-            whose["outside"] = outside;
-            whose["readFirst"] = readFirst;
+            // No account is outside the set (POOL1a2), so none is offered to let in or read first.
+            whose["outside"] = null;
+            whose["readFirst"] = null;
             if (held.NoAccount) whose["noAccount"] = true;
 
             var row = new JsonObject
@@ -89,8 +93,8 @@ internal static class AccountAttention
             rows.Add(row);
         }
 
-        // A signed-out account a list or a default holds, which no waiting start names; never the tool's own sign-in, which holds no
-        // work (D175 point 1, OWNSPACE1b-A). No workspace, deliberately (NEEDSSCOPE1): an account is the machine's, whichever lists hold it.
+        // A signed-out account of Daoris's, which no waiting start names; never the tool's own sign-in, which holds no work (D175 point
+        // 1, OWNSPACE1b-A). No workspace, deliberately (NEEDSSCOPE1): an account of the set serves every workspace (POOL1a2).
         foreach (var tool in tools.Where(tool => tool.Present))
         {
             var use = AgentOf(facts.Use, tool.Name);
@@ -114,8 +118,6 @@ internal static class AccountAttention
                     ["since"] = null,
                     ["read"] = state.Read,
                     ["where"] = tool.Product ?? tool.Name,
-                    // Where it runs, each a workspace or null for this machine, which the page says.
-                    ["runs"] = new JsonArray([.. RunsFor(tool, use, id).Select(workspace => (JsonNode?)workspace)]),
                     ["account"] = whose,
                 });
             }
@@ -247,29 +249,6 @@ internal static class AccountAttention
         new() { ["id"] = id, ["name"] = name, ["state"] = state, ["read"] = read, ["until"] = until };
 
     /// <summary>
-    /// The account outside the list the start reads that the person may let run the work (D130 §3.3): one the join would take, known
-    /// ready (read signed in, or a key); else one never read, offered to read first (UXFIX3). None where the wait spans workspaces.
-    /// </summary>
-    private static (JsonObject? Outside, JsonObject? ReadFirst) OutsideOf(Tool? tool, JsonObject? use, JsonObject? scope, Held held, IReadOnlyList<JsonObject> named)
-    {
-        if (tool is null || use is null || scope is null || held.Workspace is null) return (null, null);
-        var target = Text(scope, "workspace");
-        var states = AccountStates(tool, use);
-        var candidates = tool.Accounts.Where(account =>
-        {
-            var name = Text(account, "name") ?? "";
-            if (named.Any(one => Text(one, "id") == name)) return false;
-            if (!states.TryGetValue(name, out var state) || state.WaitsOnPerson || state.Name == "cooling") return false;
-            return JoinChoices(tool, use, name).Contains(target);
-        }).ToList();
-
-        var ready = candidates.FirstOrDefault(account => states[Text(account, "name") ?? ""].Name is "in" or "keyed");
-        if (ready is not null) return (new JsonObject { ["id"] = Text(ready, "name"), ["list"] = target, ["workspace"] = held.Workspace }, null);
-        var unread = candidates.FirstOrDefault(account => states[Text(account, "name") ?? ""] is { Name: "unknown", Read: null or "" });
-        return (null, unread is null ? null : new JsonObject { ["id"] = Text(unread, "name") });
-    }
-
-    /// <summary>
     /// Since when it has waited: since what it holds was asked for (the oldest quest filed, the oldest ask asked), or since the limit
     /// that held it where that came later; the limit's where nothing it holds is in hand, and null where neither is known.
     /// </summary>
@@ -307,7 +286,7 @@ internal static class AccountAttention
 
     /// <summary>
     /// The roster grouped into the agents a person has (<c>byTool</c>): by the account a door runs as, the account-owning door first;
-    /// one account list per agent, by its home; the first door to name a workspace's account speaks for it.
+    /// one account list per agent, by its home.
     /// </summary>
     private static List<Tool> ByTool(IReadOnlyList<JsonObject> doors)
     {
@@ -336,25 +315,15 @@ internal static class AccountAttention
                 accounts.Add(profile);
             }
 
-            var workspaceDefaults = new List<(string, string)>();
-            foreach (var circle in inOrder.SelectMany(door => Objects(door["workspaceDefaults"])))
-            {
-                var workspace = Text(circle, "workspace") ?? "";
-                if (workspaceDefaults.Any(held => held.Item1 == workspace)) continue;
-                workspaceDefaults.Add((workspace, Text(circle, "profile") ?? ""));
-            }
-
             static bool Definite(JsonObject door) => Truthy(door, "ownLogin") is { } login && login != "unknown";
             return new Tool(
                 name,
                 inOrder.Select(door => Truthy(door, "product")).FirstOrDefault(product => product is not null),
                 inOrder,
                 accounts,
-                inOrder.Select(door => Truthy(door, "machineDefault")).FirstOrDefault(chosen => chosen is not null),
                 inOrder.Any(door => Flag(door, "present")),
                 inOrder.Where(Definite).Select(door => Text(door, "ownLogin")).FirstOrDefault() ?? "unknown",
-                Text(inOrder.FirstOrDefault(Definite) ?? inOrder.FirstOrDefault(door => Truthy(door, "ownRead") is not null), "ownRead"),
-                workspaceDefaults);
+                Text(inOrder.FirstOrDefault(Definite) ?? inOrder.FirstOrDefault(door => Truthy(door, "ownRead") is not null), "ownRead"));
         })];
     }
 
@@ -362,14 +331,10 @@ internal static class AccountAttention
     private static JsonObject? AgentOf(JsonObject? answer, string agent) =>
         Objects(answer?["agents"]).FirstOrDefault(each => Text(each, "agent") == agent);
 
-    /// <summary>The machine's scope, which every agent answers: its default where none was answered.</summary>
-    private static JsonObject MachineScope(JsonObject agent) =>
+    /// <summary>The agent's one set as <c>ACCOUNTS</c> answers it (POOL1a2): its one scope, or an empty one where none was answered.</summary>
+    private static JsonObject SetScope(JsonObject agent) =>
         Objects(agent["scopes"]).FirstOrDefault(scope => Truthy(scope, "workspace") is null)
         ?? new JsonObject { ["workspace"] = null, ["default"] = null, ["list"] = new JsonArray(), ["use"] = new JsonObject() };
-
-    /// <summary>A workspace's own scope, or null where it names neither a default nor a list of its own.</summary>
-    private static JsonObject? WorkspaceScope(JsonObject agent, string workspace) =>
-        Objects(agent["scopes"]).FirstOrDefault(scope => Text(scope, "workspace") == workspace);
 
     private static JsonObject? Cooling(JsonObject? use, string account) =>
         Objects(use?["accounts"]).FirstOrDefault(facts => Text(facts, "name") == account)?["cooling"] as JsonObject;
@@ -393,12 +358,6 @@ internal static class AccountAttention
         return StateOf(new JsonObject { ["login"] = login, ["read"] = tool.OwnRead }, (use?["own"] as JsonObject)?["cooling"] as JsonObject, holdsWork: false);
     }
 
-    /// <summary>Whether a default or a list names the account: the machine's or a workspace's (D130 §3.1).</summary>
-    private static bool HeldBy(Tool tool, JsonObject? use, string name) =>
-        tool.MachineDefault == name
-        || tool.WorkspaceDefaults.Any(circle => circle.Profile == name)
-        || Objects(use?["scopes"]).Any(scope => Text(scope, "default") == name || StringsOf(scope["list"]).Contains(name));
-
     /// <summary>Each named account's state on this agent, by its directory.</summary>
     private static Dictionary<string, State> AccountStates(Tool tool, JsonObject? use)
     {
@@ -406,74 +365,11 @@ internal static class AccountAttention
         foreach (var account in tool.Accounts)
         {
             var name = Text(account, "name") ?? "";
-            states.TryAdd(name, StateOf(account, Cooling(use, name), HeldBy(tool, use, name)));
+            // Every account of Daoris's is in the set, so each holds work (POOL1a2).
+            states.TryAdd(name, StateOf(account, Cooling(use, name), holdsWork: true));
         }
 
         return states;
-    }
-
-    /// <summary>The workspaces with a default or a list of their own, whose starts take neither this machine's default nor its list.</summary>
-    private static HashSet<string> OwnScopes(Tool tool, JsonObject? use) =>
-    [
-        .. Objects(use?["scopes"]).Select(scope => Truthy(scope, "workspace")).OfType<string>(),
-        .. tool.WorkspaceDefaults.Select(circle => circle.Workspace),
-    ];
-
-    /// <summary>
-    /// Where an account runs (ACCT1's <c>runsFor</c>): each scope whose own list holds it or whose own default names it, this machine (a
-    /// null workspace) first. The roster says it where it answers its places; else it is worked out from the same lists and defaults.
-    /// </summary>
-    private static List<string?> RunsFor(Tool tool, JsonObject? use, string name)
-    {
-        var account = tool.Accounts.FirstOrDefault(each => Text(each, "name") == name);
-        IEnumerable<string?> places;
-        if (account?["places"] is JsonArray answered)
-        {
-            places = answered.OfType<JsonObject>().Select(place => Text(place, "workspace"));
-        }
-        else
-        {
-            var found = new List<string?>();
-            void Add(string? workspace)
-            {
-                if (!found.Contains(workspace)) found.Add(workspace);
-            }
-
-            var machine = use is null ? null : MachineScope(use);
-            if (tool.MachineDefault == name || Text(machine, "default") == name || StringsOf(machine?["list"]).Contains(name)) Add(null);
-            foreach (var circle in tool.WorkspaceDefaults.Where(circle => circle.Profile == name)) Add(circle.Workspace);
-            foreach (var scope in Objects(use?["scopes"]))
-            {
-                if (Truthy(scope, "workspace") is { } workspace && (Text(scope, "default") == name || StringsOf(scope["list"]).Contains(name))) Add(workspace);
-            }
-
-            places = found;
-        }
-
-        return [.. places.OrderBy(place => place is not null).ThenBy(place => place, StringComparer.InvariantCulture)];
-    }
-
-    /// <summary>
-    /// The lists an account may join (D152 §4.5, <c>joinChoices</c>), by workspace, null for this machine's: each workspace with its own
-    /// list or default that does not hold it, then this machine's where it does not hold it.
-    /// </summary>
-    private static List<string?> JoinChoices(Tool tool, JsonObject use, string account)
-    {
-        var choices = new List<string?>();
-        foreach (var workspace in OwnScopes(tool, use).Order(StringComparer.Ordinal))
-        {
-            var scope = WorkspaceScope(use, workspace);
-            var list = StringsOf(scope?["list"]);
-            var named = Text(scope, "default") ?? tool.WorkspaceDefaults.FirstOrDefault(circle => circle.Workspace == workspace).Profile;
-            if (list.Contains(account) || (list.Count == 0 && named == account)) continue;
-            choices.Add(workspace);
-        }
-
-        var machine = MachineScope(use);
-        var machineList = StringsOf(machine["list"]);
-        var chosen = Text(machine, "default") ?? tool.MachineDefault;
-        if (!machineList.Contains(account) && !(machineList.Count == 0 && chosen == account)) choices.Add(null);
-        return choices;
     }
 
     private static IEnumerable<JsonObject> Objects(JsonNode? node) => node is JsonArray items ? items.OfType<JsonObject>() : [];

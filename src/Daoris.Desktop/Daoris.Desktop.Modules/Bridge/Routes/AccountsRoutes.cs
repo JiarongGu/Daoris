@@ -7,11 +7,11 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// How each agent's accounts are used, the page's `bridge/accounts.ts` (TOOL4g; D125 §2.4, §3.7, §6; D130 §3.2, §9,
-/// §16.6): each scope's list and how it is used, which account its next start would take and why (TOOL6e), each account's
-/// cool-off or when it was offered again, what its agent last said and its learned week, and Daoris's sessions running on
-/// it (<c>ACCOUNTS</c>); each account's use read again, <i>Read now</i> (<c>ACCOUNTS_READ</c>, SWITCH1d); and the edits the
-/// Agents place makes (<c>ACCOUNT_USE</c>), an account's row being on its agent's page (Agents → agent) —
-/// a list written whole, how it is used, <i>Try now</i>, and a workspace returned to this machine's accounts.
+/// §16.6; one set since POOL1a2, D197): the set's order and how it is used, which account its next start would take and why
+/// (TOOL6e), each account's cool-off or when it was offered again, what its agent last said and its learned week, and Daoris's
+/// sessions running on it (<c>ACCOUNTS</c>); each account's use read again, <i>Read now</i> (<c>ACCOUNTS_READ</c>, SWITCH1d);
+/// and the edits the Agents place makes (<c>ACCOUNT_USE</c>), an account's row being on its agent's page (Agents → agent) —
+/// the order written whole, how it is used, and <i>Try now</i>.
 /// </summary>
 /// <remarks>
 /// <para><b>The files are the terminal's</b> (D50): <c>harnesses.json</c>'s lists and settings, which
@@ -36,7 +36,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
     /// <summary>
     /// Every agent with accounts this build knows, by its accounts' owner (AGT7): whether its sessions say how near their
     /// limits are, the tool's own sign-in's cool-off and what it last said of its windows (CODEXUSE3), each account's facts,
-    /// and each scope — the machine's first, then each workspace that names a default or a list of its own.
+    /// and its one set (POOL1a2, D197): the order, how it is used and its next start, every workspace's.
     /// </summary>
     /// <param name="running">Daoris's sessions running now per <c>owner/account</c>, lower case; null where none were read.</param>
     public static object AccountsAnswer(HarnessRoster roster, IReadOnlyDictionary<string, int>? running, DateTimeOffset now)
@@ -65,7 +65,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
                     foreach (var account in accounts) said[account] = Safe(() => AccountWindows.SaidOf(roster.Home, agent, account, now));
                     // The person's name for each account (ACCT2), by its id; the lists below name ids.
                     var names = Safe(() => AccountNames.Of(roster.Home, agent)) ?? new Dictionary<string, string>();
-                    var scopes = ScopesOf(settings, agent).ToList();
+                    var scope = SetOf(settings, agent);
                     return new
                     {
                         Agent = agent,
@@ -92,8 +92,8 @@ public sealed class AccountsRoutes(DriverLoop loop)
                             Offered = offered.FirstOrDefault(entry => Same(entry.Agent, agent) && Same(entry.Account, account))?.Until,
                             // Each window's projection beside its reading (USAGEPROBE1b): the roster's own, over its ledger held in
                             // memory and read on as the history grows, so a tick re-parses no month.
-                            // Each window against the curve of the scope its row is measured by (PUSH1e): judged here, worded on the page.
-                            Said = SaidShown(said[account], now, Safe(() => roster.ProjectionOf(agent, account, said[account], now)), MeasuredBy(scopes, account)),
+                            // Each window against the set's curve (PUSH1e, POOL1a2): judged here, worded on the page.
+                            Said = SaidShown(said[account], now, Safe(() => roster.ProjectionOf(agent, account, said[account], now)), scope.Scope.Use),
                             // The weekly reset known for it: told by a limit, or by the agent's own word (TOOL6b, TOOL6c).
                             Week = Safe(() => AccountWindows.WeekOf(roster.Home, agent, account, now, fixedWeek)),
                             Running = running is null ? (int?)null : running.GetValueOrDefault(Key(agent, account)),
@@ -101,55 +101,31 @@ public sealed class AccountsRoutes(DriverLoop loop)
                         // What the fold into one set changed (POOL1a, the account-pool design §6.3), each receipt unsaid by its id, its
                         // lines' kinds and values; the page words them (POOL1c).
                         Pooled = PooledShown(settings, agent),
-                        Scopes = scopes
-                            .Select(scope => ScopeShown(
-                                scope.Workspace, scope.Scope, scope.Keep, said, NextOf(roster, agent, scope.Workspace), now,
-                                Safe(() => roster.InheritsDaorisAccounts(agent, scope.Workspace)),
-                                RoomOf(roster, agent, scope.Scope, now)))
-                            .ToArray(),
+                        // The set's one scope (POOL1a2, the account-pool design §5.2), in the list the page reads: every workspace's.
+                        Scopes = new[]
+                        {
+                            ScopeShown(scope.Scope, scope.Keep, said, NextOf(roster, agent), now, RoomOf(roster, agent, scope.Scope, now)),
+                        },
                     };
                 })
                 .ToArray(),
         };
     }
 
-    /// <summary>The machine's scope, then each workspace's that names a default or a list of its own, by name.</summary>
-    private static IEnumerable<(string? Workspace, RotationScope Scope, string? Keep)> ScopesOf(HarnessSettings settings, string agent)
-    {
-        yield return (null, settings.ResolveScope(agent, null), RotationUse.Read(settings.Uses.GetValueOrDefault(agent)).Use.Keep);
-
-        var workspaces = settings.Workspaces.Keys.Concat(settings.WorkspaceRotation.Keys)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Order(StringComparer.Ordinal);
-        foreach (var workspace in workspaces)
-        {
-            var scope = settings.ResolveScope(agent, workspace);
-            if (scope.From != ChoiceFrom.Workspace) continue;
-            var entry = settings.WorkspaceUses.TryGetValue(workspace, out var uses) ? uses.GetValueOrDefault(agent) : null;
-            yield return (workspace, scope, RotationUse.Read(entry).Use.Keep);
-        }
-    }
+    /// <summary>
+    /// The agent's one set (POOL1a2, the account-pool design §2.4), read from the projection the roster answers: its order, its first
+    /// and its settings, with the <c>keep</c> as its entry names it, which the scope's own drops where its order lacks the account.
+    /// </summary>
+    private static (RotationScope Scope, string? Keep) SetOf(HarnessSettings settings, string agent) =>
+        (settings.Set(agent), RotationUse.Read(settings.Uses.GetValueOrDefault(agent)).Use.Keep);
 
     /// <summary>
-    /// How the list an account's row is measured by is used (PUSH1e; the page's <c>useOf</c> before it): this machine's where its list
-    /// holds the account or no workspace's own list does, else the first workspace's whose own list holds it. An account in two lists
-    /// is measured by this machine's, the scope its row's next start says first.
+    /// Which account the set's next driven start would take, in any workspace, why, and what holds the others (TOOL6e): the roster's
+    /// own walk, asked without probing or counting (<see cref="HarnessRoster.Next"/>). A file that cannot be read says nothing.
     /// </summary>
-    private static RotationUse MeasuredBy(IReadOnlyList<(string? Workspace, RotationScope Scope, string? Keep)> scopes, string account)
+    private static object? NextOf(HarnessRoster roster, string agent)
     {
-        var machine = scopes[0].Scope;
-        if (machine.List.Contains(account, StringComparer.Ordinal)) return machine.Use;
-        return scopes.Skip(1).Select(each => each.Scope).FirstOrDefault(scope => scope.List.Contains(account, StringComparer.Ordinal))?.Use
-            ?? machine.Use;
-    }
-
-    /// <summary>
-    /// Which account the scope's next driven start would take, why, and what holds the others (TOOL6e): the roster's own
-    /// walk, asked without probing or counting (<see cref="HarnessRoster.Next"/>). A file that cannot be read says nothing.
-    /// </summary>
-    private static object? NextOf(HarnessRoster roster, string agent, string? workspace)
-    {
-        var next = Safe(() => roster.Next(agent, workspace));
+        var next = Safe(() => roster.Next(agent));
         return next is null ? null : new
         {
             next.Account,
@@ -181,13 +157,11 @@ public sealed class AccountsRoutes(DriverLoop loop)
         ];
 
     private static object ScopeShown(
-        string? workspace, RotationScope scope, string? keep, IReadOnlyDictionary<string, AccountSaid?> said, object? next, DateTimeOffset now,
-        bool inherited, string[] room) => new
+        RotationScope scope, string? keep, IReadOnlyDictionary<string, AccountSaid?> said, object? next, DateTimeOffset now, string[] room) => new
     {
-        Workspace = workspace,
-        // OWNSPACE1b-A: nothing is named here, so Daoris's accounts are the list (D175 point 2); the page says so in place of
-        // the tool's own sign-in. A new field beside the old ones: a shell older than this answers none and reads false.
-        Inherited = inherited,
+        // The set's, every workspace's: no workspace of its own, and no `inherited` (POOL1a2, the account-pool design §5.2), since
+        // the order names every account of Daoris's.
+        Workspace = (string?)null,
         scope.Default,
         scope.List,
         scope.Begins,
