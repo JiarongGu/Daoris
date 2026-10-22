@@ -656,7 +656,10 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         }
     }
 
-    /// <summary>The machine's system as a partner's configuration names it, read here so the configuration's domain stays pure.</summary>
-    private static string ThisSystem() =>
+    /// <summary>
+    /// The machine's system as a partner's configuration names it, read here so the configuration's domain stays pure; a test's
+    /// stand-in row reads it too (<c>PartnerStandIns</c>).
+    /// </summary>
+    internal static string ThisSystem() =>
         $"{(OperatingSystem.IsWindows() ? "windows" : OperatingSystem.IsMacOS() ? "macos" : "linux")} {Environment.OSVersion.Version}";
 }
