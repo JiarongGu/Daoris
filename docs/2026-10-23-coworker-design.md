@@ -1,16 +1,17 @@
-# Co-workers: a session's team, the structures co-working takes, shown and driven like sessions (COWORKUX1, proposed, round 2, 2026-10-23)
+# Co-workers: a session's team, the structures co-working takes, shown and driven like sessions (COWORKUX1, proposed, round 3, 2026-10-23)
 
-**Standing:** proposed with D203, round 2: the synthesis of the three independent proposals in
+**Standing:** proposed with D203, round 3: the synthesis of the three independent proposals in
 `docs/2026-10-23-coworker-proposals.md` (Claude's, Codex's through Daoris's helper, Fable's), written from the brief
 `docs/2026-10-23-coworker-brief.md` and the owner's direction on structures that reached the steward after the brief. Each
 difference is settled in §1, by choosing one proposal's answer and saying what the others' answers lose. Round 1 (`2bdc8f5eb`)
 was read by Codex (17 findings, 14 blocking, *revise and read again*) and by Fable as a foundation (F1-F14, F1-F5 blocking,
 *accept after them*), both in `docs/2026-10-23-coworker-reads.md`. Round 2 checks every finding against the code and takes or
-answers it; §15 is the table. The lead's wait on its own helper (§5) is not designed a second time here: it is the mechanism
-HELPERWAIT1 builds, and §5 states the contract this design rests on and what of it HELPERWAIT1's branch already holds. Two
+answers it; §15 is the table. Codex read round 2 (8 findings, 6 blocking, *another round*): the wait's contracts were assigned to
+an unfinished HELPERWAIT1, which resolves nothing. HELPERWAIT1 has since landed, so round 3 states §5 as built, each point with its
+code and tests by file and line, and takes or answers Codex's round-2 findings against that code (§15.3). Two
 structures the owner named are not yet specified enough to build, so their rows wait on a design of their own, with the reason
-(§12 rows 8 and 9). D203 stays proposed until the steward accepts. Nothing here is built, publishes, signs in or spends an
-account.
+(§12 rows 8 and 9), and the partner's wait waits on COAGENT1d's `partner_ask` (§12 row 12). D203 stays proposed until the steward
+accepts. Nothing here is built, publishes, signs in or spends an account; §5's mechanism is HELPERWAIT1's, already built.
 
 Read for it: the brief and the three proposals whole; D51, D155, D163, D167, D188, D191, D193, D199 and D200 at the points this
 cites; `.claude/knowledge/person-waits.md` and `session-record-fields.md`; the glossary. Facts marked *checked* were read in the
@@ -66,7 +67,7 @@ rests on the reason given, not the count (D191 point 2).
 | 2 | How a reviewer joins | joined through its candidate to the entry | joined through `Opinion.Working`; adding `serves` would misclassify | **the reviewer's record gains `serves`** | **`serves` on the reviewer** (Fable). §0.2's first correction is a confinement gap, not a drawing one: only `serves` puts the record under the server's filter. Codex's misclassification is answered by reading `opinion` before `serves` wherever a role is told, which `HandAsync` already does (`HelperDesk.cs:145-146`, *checked*). The join stays only as the reader of records from before (§4.1). |
 | 3 | Stored role, team record | none | none, a projection | none | **None**, all three. The role is read from `serves`, `piece`, `opinion`; the team is a read over `serves` and the entry (D173's guard against a second store). |
 | 4 | The lead while a member works | stays `working`, the planner holds it, no ledger state | stays parked in the ledger, with a durable *awaiting-member* cause every reader must tell apart | ends `completed` with `ended.awaits-helper`, the planner holds it from the box, the answer reopens it | **Fable's**, with Codex's guard that a bound question to the person wins and Codex's rule for a partner (§5). A `working` record with no process is what D200's watcher reads as quiet and the come-up reads as cut off, so Claude needs an exception in each (C4.3 already names one). A parked record keeps every `awaiting-person` reader (the bell, *What needs you*, PARKVIEW1's answer box) wrong until each learns the cause: the leak Codex itself names. An ended record held by the planner is the shape a D79 wait and a held word already have (*Resumes later*, `Driver/Trees/SessionGroups.cs:1094, 1116`, *checked*). |
-| 5 | When no answer comes | the exchange ends, a note reopens the lead | the wait settles visibly, no fabricated answer | a reader's rule places the record in *You*, or one ledger move | **One ledger move** `completed → awaiting-person` at the refusal, with its own coded note (Fable's alternative). A reader's rule over `completed` would have to be taught to every place that keys on `awaiting-person` (person-waits.md: "waiting on you is taken"), the leak row 4 rejects. Round 2: the move is a new, guarded transition in the service, not one the ledger already makes (Codex 4, Fable F1); HELPERWAIT1 builds it (§5 point 4). |
+| 5 | When no answer comes | the exchange ends, a note reopens the lead | the wait settles visibly, no fabricated answer | a reader's rule places the record in *You*, or one ledger move | **One ledger move** `completed → awaiting-person` at the refusal, with its own coded note (Fable's alternative). A reader's rule over `completed` would have to be taught to every place that keys on `awaiting-person` (person-waits.md: "waiting on you is taken"), the leak row 4 rejects. Round 2: the move is a new, guarded transition in the service, not one the ledger already makes (Codex 4, Fable F1); HELPERWAIT1 built it (§5 point 4). |
 | 6 | The list | one nested row per member, the lead's row with marks | children with role, agent, activity, delivery; nest before truncating *Ended*; finished fold behind a count | nesting stays; the row says its role; ended members fold; the parent counts | **Fable's**. Round 1 took Codex's ordering as a change; it is already the code's (§0.2's second point, corrected). The change is the fold, and that a lead with a live member is never cut (§6.1). |
 | 7 | The head | a strip of chips; replaces *Helpers*; presses move to the card | a *Team* section | a *Team* section in the parts strip's shape; pending asks keep their presses | **Fable's section, titled *Co-workers* / 同事**. Claude was right that *Team* is taken (§0.2), wrong that the presses can leave the head: a wait the person answers is drawn in the head with `data-wait-section` (person-waits.md). |
 | 8 | The card | one per exchange, updated in place, answer folded | one per commission, keyed by id, open, receipts | one per exchange, open, body from the box, never *The target Daoris composed* | **Fable's**, with Codex's three separate facts on it: the run (working, ended, refused), the delivery (waits, handed, taken) and, for a piece, the taking-in. The body comes from the ask's box, never from parsed prompt text, which on a driven door is a whole composed instruction. |
@@ -76,7 +77,7 @@ rests on the reason given, not the count (D191 point 2).
 | 12 | The helper's role word | *reader* / 读 on chips; 助手 stays the term | keep *helper* 助手 | keep *helper* 助手 | **Keep 助手** (Codex, Fable). 读 sits beside 阅读者, the reviewer's word, and the owner's complaint was where the helper is drawn, which §6 changes. |
 | 13 | Structures | not answered | not answered | two links and a channel; named first-class; each door starts one; no chooser, no stored structure | **Fable's model, with one place that offers them** (§3.3): the person chooses a structure by the door they press, and *Bring in another agent…* gathers the doors in one dialog. Fable rejected a chooser because each door decides; a dialog of the doors decides nothing new, and it is what makes "chosen by the person" visible. |
 | 14 | The terminal | `sessions team`, `sessions ask <member>`, `sessions hand` | `team`, `exchange`, `follow-up`, `forward-answer` | `team`, the role verbs with `--after` | **Fable's** (the role verbs stay, a person types the role), with `--to-me` and `sessions pass <helper>` for row 10's choice (round 2: *pass*, not *hand*, which the glossary's *hand off* already reads, Fable F10). Codex's `exchange` is `team --json`'s member; Claude's member address `<entry>:<role>:<agent>` is row 1's rejected key. |
-| 15 | Delivery identity | not raised | a stable key and a durable receipt; a restart mid-hand is *uncertain*, never sent twice | not raised | **A mechanism, HELPERWAIT1's** (round 2; Codex 7, Fable F3 showed round 1's "taken as a proof" named none). The box records `Handed` after the keep, so before it hands the driver now reads whether the word was kept already: still on the asker's `said`, or a `user` event of the asker's naming the helper (a turn opened with it); either found, it marks `Handed` with that word and hands nothing (§5 point 6). |
+| 15 | Delivery identity | not raised | a stable key and a durable receipt; a restart mid-hand is *uncertain*, never sent twice | not raised | **A mechanism, HELPERWAIT1's, as built** (round 2; Codex 7, Fable F3 showed round 1's "taken as a proof" named none; round 3, Codex round-2 2). An attempt mark on the ask's own state, written before the door: before a hand the driver reads the asker's whole line for the word still waiting or a `user` event that took it, and marks `Handed` with it; an attempt with nothing found settles `hand-uncertain`, never handed twice (§5 point 6). Codex's *uncertain* is taken; its receipt is the mark. |
 | 16 | First row | the lead's state (HELPERWAIT1's mechanism) | authorship of the answer | today's helper in the team, no stored change | **Fable's first row**, the quest's order; HELPERWAIT1 keeps its own row and id, second, in another lane, built beside (§12). |
 
 ## 2. The model
@@ -119,8 +120,8 @@ handed over: its one turn ends or is stopped.
 it served, along `from`, as a partner's already does (`Core/Sessions/PartnerDesk.cs:114-120`); today `HandAsync` resolves `serves`
 alone (`HelperDesk.cs:140`), so an answer could reopen a part that was handed over, against D189 point 6. Where no part is
 eligible, the answer stays on the box, shown to the person on the card, never handed to an ended part. The member's `serves` keeps
-naming the part that asked (the commissioner), and the hand stays one per ask (§5 point 6). This is part of the wait's mechanism,
-HELPERWAIT1's to build (§5 point 7).
+naming the part that asked (the commissioner), and the hand stays one per ask (§5 point 6). Round 3: HELPERWAIT1 built it, in the
+door (`HelperDesk.cs:143-147`) and the driver (§5 point 7).
 
 ### 2.3 A thread
 
@@ -245,7 +246,9 @@ D155 point 6 stays true: `serves` is a link, and the reviewer is handed no conve
 `SessionEvent` (`Web/work/conversation/conversation.ts:45`) gains `helper?: string | null`, which the driver already writes on the
 answer's event: for a conversation asker at `DriverHelpers.cs:439-445`, and for a driven asker at the go-on's opening (COWORK1e,
 D188's note) (round 2, Fable F7: both writers). The card uses it to place the answer's taking; the body and the delivery come from
-the exchange read (§6.3). This is MIXAGENT3a-iii's block half.
+the exchange read (§6.3). This is MIXAGENT3a-iii's block half. **The conversation writer's event is a notice, not a taking** (round 3,
+Codex round-2 7): it carries `reaches: resume` to tell the chat runner that words wait (`DriverHelpers.cs:689-694`), and the turn that
+takes them writes its own event with `reaches` absent. Only the latter is a taking, as `HandedBefore` reads it (§5 point 6).
 
 ### 4.3 The helper's ask gains `after` and `to`
 
@@ -279,75 +282,129 @@ otherwise hold the section.
   ask|show|stop`, `sessions hand-over`. `sessions pass <helper>` passes a person-only answer to the lead (§7; round 2's word, Fable
   F10, since `hand` sits beside `hand-over`, `hand_propose` and the glossary's *hand off*).
 
-## 5. The lead while its co-workers work: the mechanism this design rests on, built as HELPERWAIT1
+## 5. The lead while its co-workers work: the mechanism this design rests on, as HELPERWAIT1 built it
 
 **The rule: a lead that ended its turn on its own open ask waits on that co-worker, by name, and on the person only where it also
 asked the person, or the co-worker ends with no answer.**
 
-Round 1 designed this mechanism here. Both reads found it unbuildable as written (Codex 1-5, 7, 8; Fable F1-F4), and it is being
-built now as HELPERWAIT1 by another builder (TASKS.md; its branch at `8b87af2be` read for this round). This design does not design a
-second one. It states the contract the co-worker rows rest on, point by point, says which reading each point answers and what
-HELPERWAIT1's branch already holds, and leaves the build, its tests and its Process cases to HELPERWAIT1. Where the contract asks for
-more than that branch holds (points 3, 7 and the unread case of point 1), the point says so; it is HELPERWAIT1's to build or to
-answer, and a co-worker row that needs it waits for it.
+Round 1 designed this mechanism here, and both reads found it unbuildable as written (Codex 1-5, 7, 8; Fable F1-F4). Round 2 stated it
+as a contract for HELPERWAIT1, then unfinished; Codex's round-2 read answered that a contract assigned to an unfinished row resolves
+nothing (`docs/2026-10-23-coworker-reads.md`, *Codex, round 2*, verdict). **Round 3 states each point as built**: HELPERWAIT1 landed
+(archived 2026-10-23; FIX-LOG's HELPERWAIT1 entry; D188's and D46's HELPERWAIT1 notes), and this branch reads it at `2323abccc`. Each
+point names its code and its tests by file and line, and where the built choice differs from what Codex's round 2 asked, says why it
+holds or names the row that closes the gap (§12 row 11). Paths: `Driver/` and `Core/` as above; `Tests/` is
+`Daoris.Desktop/Daoris.Desktop.Driver.Tests/`, `Core.Tests/` is `Daoris.Service/Daoris.Service.Tests/`, `Http.Tests/` is
+`Daoris.Service/Daoris.Service.Http.Tests/`. *Process* marks a real-process class.
 
-1. **The reading** (Codex 1, 2; Fable F4). A driven run that ends cleanly holding its quest, where it would park, concludes
-   `completed` with the coded note `ended.awaits-helper` instead, when two inputs read beside the conclusion hold: **its agent has an
-   ask of its own still open**, and **its last turn asked the person nothing**. *Open* is every ask of the agent's (`AskedBy` agent)
-   that is neither refused nor handed: one not yet judged, with no state file at all, is open (Codex 1's ordinary case, a lead that
-   asks and exits before the driver's next helper look). *Asked the person* is not `Parks`'s awaits, which are D79's question to
-   another repository (Codex 2, Fable F4 corrected round 1): it is the session's PARKVIEW1 question on file, asked since the later
-   of the run's opening and the words it was last handed (the freshness a park binds its question by, `QuestionFiles.SettleRun`),
-   or a go-ahead on its work's ask that names the session and is unanswered. Either one parks, whatever helper it asked too. *The
-   contract asks one thing more:* a go-ahead read that fails is not "asked nothing"; it parks, the safe side. HELPERWAIT1's branch
-   reads the first two (`HelperWaits.Open`, `DriverHelpers.WaitsOnOwnHelperAsync`) and reads an unread go-ahead as none
-   (`HelperWaits.AskedGoAhead`), which is the case to settle there. Its last words are never read for intent (Codex X4).
-2. **A partner only where the lead yielded for it.** `ended.awaits-partner` is read only where the lead itself asked the piece
-   (`partner_ask`, COAGENT1d) in the turn that ended; a piece the person asked does not hold its lead (Codex X4). Not in HELPERWAIT1;
-   it is row 6's, after COAGENT1d, on the same contract.
+1. **The reading** (Codex 1, 2, round-2 3; Fable F4). A driven run that ends cleanly holding its quest, where it would park, concludes
+   `completed` with the coded note `ended.awaits-helper` (`Driver/Sessions/Domain/Observation.cs:154-155`), when the driver reads
+   beside the conclusion that its agent has an ask of its own still open and its last turn asked the person nothing
+   (`Driver/Loop/Driver.cs:2382-2384`, and a carry-on's run at `Driver/Loop/DriverContinuations.cs:525-528`).
+   - *Open* is every ask the agent made (`AskedBy` agent) that is neither refused nor handed, one with no state file included
+     (`Driver/Conversations/Domain/HelperWaits.cs:20-22`). An ask the person made is no wait of the session's.
+   - *Asked the person* is the session's PARKVIEW1 question asked since the later of the run's opening and the words it was last
+     handed (`Driver/Loop/Driver.cs:461-463`), or an unanswered go-ahead on its work's ask that names it (`HelperWaits.cs:47-49`).
+   - **Unread is told from absent** (Codex round-2 3). `QuestionFiles.AskedSince` answers `false` only where no question file exists,
+     and `null` where one exists and does not read (`Driver/Sessions/Questions/QuestionFiles.cs:68-72`); the reading waits on the
+     helper only on `false` (`Driver/Loop/DriverHelpers.cs:169-170`). A go-ahead read the service does not answer is `null` too
+     (`DriverHelpers.cs:179-194`), and only `false` waits (`:171`). Either unread, the turn parks with its question kept: nothing
+     settles a completed conclusion over an unread question, and no park is converted (point 5), so there is no conversion guard to
+     give the same read.
+   - Its last words are never read for intent (Codex X4).
+   - *Tests:* `Tests/Conversations/HelperWaitsTests.cs:26` (open), `:54` (the go-ahead); `Tests/Sessions/ObservationTests.cs:401`;
+     `Tests/Loop/HelperLookTests.cs:970` (own ask only, a question since, and a question file that does not read parks). **Not
+     proved:** the go-ahead read the service does not answer; its code parks, and its case is row 11's.
+2. **A partner only where the lead yielded for it: deferred** (Codex round-2 6). `ended.awaits-partner` is not built. HELPERWAIT1
+   built the helper's wait alone, since a piece is asked today by the person of a working lead and the lead's own `partner_ask` is
+   COAGENT1d's, not yet built (D188's HELPERWAIT1 note, *The partner*). The service's half recognizes the helper's code by its spelling
+   and nothing else (`Core/Sessions/SessionLedger.cs:1492-1496`, read by the tree's holder at `:1504-1514` and the move back at
+   `:1529-1560`), so a partner wait needs the service, not only the web and the driver. It is §12 row 12, deferred until
+   `partner_ask` exists, with its own service, driver, modules and web scope and the proofs this section's points 3-7 have for the
+   helper, a partner's way (§11).
 3. **It is held, and it keeps its tree** (Codex 5). The planner carries a plain `completed` record on from nothing
-   (`Planner.CarriesOn`, `Quests/Domain/Planner.cs:1910-1919`), so the waiting lead gets no carry-on and no strike, and the groups read
-   it as *Resumes later*, *awaiting helper* (HELPERWAIT1's `ShownState.AwaitingHelper`). It takes no running slot. **It still holds
-   its tree, as a park does.** A completed record does not: `Session.Active` counts queued, starting, working and awaiting-person
-   alone (`Core/Sessions/Sessions.cs:309`), so `ActiveForAsync` (`:1115-1128`) lets another writer into the tree, the run's end lets
-   go of the git lock for anything not parked (`Loop/Driver.cs:2445`, `:2539`), and the planner's alongside check reads only
-   `snapshot.Active` (`Planner.cs:1595`). The contract: one predicate, *holds its tree*, true of an active record and of a record
-   waiting on its own helper, read by the service's tree exclusion, the run's lock release, the planner's alongside choice and the
-   tidy, and distinct from the running-slot count. HELPERWAIT1's branch refuses the move back to the person while another holds the
-   tree (`SessionLedger.BackToPersonAsync`), but does not yet hold the tree while the lead waits: that is the contract's to add
-   there, with a cap-one case in which a second writer and the tidy are refused while the helper reads.
-4. **No answer brings it to the person** (Codex 4; Fable F1, its choice (a)). Where none of the lead's own asks is open any more and
-   none was handed, the look moves the record `completed → awaiting-person`, the reason first (the newest refusal's code and agent,
-   else *no answer*), then the park's own note. The move is **a new transition in the service**, not one the ledger makes today
-   (`SessionLedger.cs:1388`, `:1726`), guarded to that ending alone: completed by `ended.awaits-helper`, a driven record of this
-   machine's, no intake, pass or helper, its quest still taken, no words waiting, its tree free; `clearSaid` false, so a word kept
-   meanwhile is not lost. HELPERWAIT1's branch builds it (`SessionLedger.BackToPersonAsync`, `DriverHelpers.BackToPersonAsync`).
-   A service from before it refuses the move, and the look says so once and tries again only when the record moves. Fable F1's
-   choice (b), Daoris's own keyed word reopening the lead, is not taken: it spends a turn to tell an agent what the person needs to
-   know. A restart during the helper's turn reads the same way (Fable F9): the sweep ends the helper interrupted, its ask is refused,
-   and the lead comes to the person.
-5. **A lead parked on the person keeps its park, and its helper's answer waits** (Codex 3; Fable F2). Round 1 kept the answer on
-   the park with `Reopens: false`; no reader honours `Reopens` (`Planner.cs:609`), and the planner reads any waiting word as words to
-   go on with (`:350`, `:1442-1449`), so the park would have gone on with the helper's claim alone. Withdrawn. The answer is **not**
-   kept on a park: `HandAsync` keeps refusing an unanswered `awaiting-person` asker (`HelperDesk.cs:148-149`, unchanged), the driver
-   holds the hand and says it once, trying again when the record moves (HELPERWAIT1's `Held`), and once the person answers it is
-   handed beside their answer, the `words-and-helper` case. The card and the member's thread read the answer from the box and say
-   *waits until you answer {lead}*. A park made before the rule while its ask's helper read, asking the person nothing else, is
-   completed as the wait it was (HELPERWAIT1's `HelperWaits.ParkedOn`).
-6. **The answer reopens it once** (Codex 7; Fable F3, F8). A waiting lead is `completed`, so the hand is not skipped and
-   `HandAsync`'s `_ => null` arm keeps the word with `Reopens: true` (no change there); the next look goes on with it, one go-on under
-   D188 point 4. **Once per ask across a restart:** the box marks `Handed` only after the keep, so before handing, the driver reads
-   whether the word was kept already, on the asker's `said` or as a `user` event of the asker's naming the helper (the go-on's
-   opening and the urgent and conversation doors each write that event before the word leaves the record); either found, it marks
-   `Handed` with that word and hands nothing (HELPERWAIT1's `HandedBefore`, `8b87af2be`). The invariant it rests on, the event
-   written before the word leaves `said`, is what HELPERWAIT1's restart case proves. The partner's receipt shape (`attempted`,
-   `taken`, `uncertain`, `PartnerPieces.cs:252-300`) is not copied: the record itself carries the evidence the receipt would, and a
-   second store of it could disagree with the record.
-7. **It goes to the line's live part** (Codex 8). Delivery resolves along `from` to the newest live part, as §2.2 says; where none
-   is eligible the answer stays on the box for the person. HELPERWAIT1's branch still resolves `serves` alone
-   (`HelperDesk.cs:140`), so this is the contract's to add there, with a case that hands the line over while its helper reads.
+   (`Planner.CarriesOn`), so the waiting lead gets no carry-on and no strike, takes no running slot, and reads as *Resumes later*,
+   awaiting helper (`Driver/Trees/SessionGroups.cs:1148`). It holds its tree as a park does, read by one predicate in each place
+   (`HelperWaits.HoldsTree`, `HelperWaits.cs:36-38`, and its service twin):
+   - the service's tree exclusion: `SessionLedger.HolderAsync` (`Core/Sessions/SessionLedger.cs:1504-1514`), an active record, else
+     a record waiting on its own helper whose quest is still taken, never against itself, read at the start, the take and the move
+     (`:609`, `:1306`, `:1462`);
+   - the run's lock, kept at its end (`Driver/Loop/Driver.cs:2457-2459`, `:2475`; `DriverContinuations.cs:600`);
+   - the planner's further part and go-back-in (`Driver/Quests/Domain/Planner.cs:1605`, `:1842`, `Planner.WaitingInTree` at `:2051`);
+   - the tidy and Ask Daoris's housekeeping (`Driver/Trees/Branches/BranchTidying.cs:147`, `:158`; `Driver/Help/HelpHousekeeping.cs:193`).
+
+   *Tests:* `Core.Tests/Sessions/SessionLedgerTests.cs:1162` (a second writer refused while it waits); `Tests/Quests/EntryPartsPlanTests.cs:117`
+   (the planner); `Tests/Trees/BranchTidyingTests.cs:692` (the tidy); `Tests/Loop/HelperWaitTickTests.cs:97` (*Process*, the cap of
+   one: the helper starts in the slot the lead freed).
+4. **No answer brings it to the person; a failed move is tried again at every look** (Codex 4, round-2 5; Fable F1, its choice (a)).
+   Where none of the lead's own asks is open and the look reads it waiting (`HelperWaits.Waits`, `HelperWaits.cs:28`), the driver moves
+   it `completed → awaiting-person`, the reason first (the newest refusal's code and agent, else *no answer*, `HelperWaits.cs:55-65`),
+   then the park's own note (`Observation.HelperGone`, `Observation.cs:238`), only while its quest is taken
+   (`DriverHelpers.cs:305-341`). The service's move is new and guarded (`SessionLedger.cs:1393`, `:1529-1560`): refused for another
+   machine's record, an intake, a pass, a helper, a record with no quest, words waiting (it goes on with them), a quest no longer
+   taken, and a tree another holds; `clearSaid` false.
+   - **A failed move is tried again at every look, and said once** (`DriverHelpers.cs:323-337`), where Codex round-2 5 asked to tell
+     a transient failure from a permanent refusal and retry only the first. **Why it holds:** nothing else moves the record, so any
+     wait for it to move holds the lead for good, which was Codex's own finding. Every refusal the ledger gives either clears by
+     itself, or never reaches the move. A tree another holds clears when its holder ends. Words waiting go on instead. A quest
+     closed meanwhile is filtered before the move (`DriverHelpers.cs:310`). The record kinds the ledger refuses are not read as
+     waiting (`HelperWaits.cs:36-38`). An older service is not met, since the local host ships with the driver in one install
+     (D46's note). Retrying costs one service call a look for a record in this state alone. The transient half is said as a retry;
+     a refusal is said to the person.
+   - **The gap that remains** is Codex's second half, *an actionable existing wait*. The refusal is said as a `Wait` look line
+     (`DriverHelpers.cs:336`). That class promises a row of *What needs you* (`Driver/Platform/LookSaid.cs:12`). But the record stays
+     `completed`, and no row says it. It is filed as §12 row 11 rather than answered here.
+   - **A restart during the helper's turn** (Fable F9; Codex round-2 8): the next look settles the started ask from what the helper
+     kept. A `helper_answer` saved before the cut is delivered, whatever the helper's ending (`DriverHelpers.cs:556-559`). With no
+     saved answer, the ask is refused `no-answer` (`:564-567`), and the lead comes to the person. Round 2's sentence that a restart
+     always brings the lead to the person is withdrawn: it does so **without a saved answer**.
+   - *Tests:* `Core.Tests/Sessions/SessionLedgerTests.cs:1107`, `:1130` (the move and its guards); `Tests/Sessions/ObservationTests.cs:438`;
+     `Tests/Conversations/HelperWaitsTests.cs:41`, `:74`; `Tests/Loop/HelperLookTests.cs:748` (back to the person, or still waiting on
+     a second ask), `:795` (unreachable and refused, each tried again with nothing moved, said once, then moved once the service
+     takes it), `:615` (the saved-answer and no-answer restarts).
+5. **A lead parked on the person keeps its park, and takes its helper's answer beside the person's** (Codex 3, round-2 1 and 4;
+   Fable F2). An unanswered park still refuses the hand: `HandAsync` refuses `AwaitingPerson` with no answer
+   (`Core/Sessions/HelperDesk.cs:156-157`), and the driver holds it, saying it once (`DriverHelpers.cs:634`, `Held`).
+   - **Beside the person's answer** (Codex round-2 1): a park the person answered takes it. The service's door lets an answered park
+     through (`HelperDesk.cs:158-160`). The driver's guard holds only `AnsweredPark: false` (`DriverHelpers.cs:634`;
+     `Planner.cs:296`), and the go-on's opening reads the words on the record after its move, the helper's word among them
+     (`DriverContinuations.cs:265-268`), so both reach the lead in one prompt. Both guards Codex named changed, in the driver and the
+     service, as its smallest fix asked.
+   - **Parks from before the rule stay parked** (Codex round-2 4). Round 2's conversion of such a park (`HelperWaits.ParkedOn`) was
+     not built: nothing on a park proves it asked the person nothing, since its question may stand in its closing words alone. The
+     helper's word alone never moves a park. A park's helper answer waits, said once, and is handed beside the person's answer when
+     they give it.
+   - *Tests:* `Http.Tests/HelperHostTests.cs:138` (the door: refused unanswered, taken answered);
+     `Tests/Loop/HelperLookTests.cs:679` (Codex's case: a park whose question stands only in its closing words, held and said once,
+     never moved, then handed beside the answer), `:716` (a question on file, a park from before the ask, a park for another reason,
+     the person's own ask: each held); `Tests/Loop/HelperWaitTickTests.cs:135` (*Process*: both answers in one prompt).
+6. **The answer reopens it once, by an attempt mark** (Codex 7, round-2 2 and 7; Fable F3, F8). A waiting lead is `completed`, so
+   `HandAsync` keeps the word with `Reopens: true`, and the next look goes on with it: one go-on under D188 point 4.
+   - **Once per ask** (Codex round-2 2): before the door, the driver writes an attempt mark, `attempted`, on the ask's own state file
+     (`Driver/Conversations/Domain/HelperAsks.cs:143`; `Driver/Conversations/Helpers/HelperFiles.cs:59`, `:81`;
+     `DriverHelpers.cs:657-660`), clears it where the door refused (`:664-668`), and writes `Handed` with it cleared once the door kept
+     the word (`:680`). Before any hand, it reads the asker's **whole line**, the commissioner and each successor, for the word still
+     waiting or a `user` event that took it (`HandedBefore`, `DriverHelpers.cs:260-274`). Either found, it marks `Handed` and hands
+     nothing (`:641-645`). An attempt mark with nothing found is never handed again: the ask settles `hand-uncertain`
+     (`:648-652`; `HelperAsks.cs:61`, `:103`). The helper's conversation keeps the answer, and a lead waiting on it comes to the
+     person with that reason (point 4).
+   - **Why a mark and not a receipt store** (Codex round-2 2 offered either): the mark *is* the receipt Codex's first fix describes.
+     It is keyed once per commission (the ask's id, one state file per ask). It is kept on the helper's side, so neither the word's
+     consumption nor a relay of the lead's line touches it. An interrupted attempt is held as uncertain, never retried. A second store
+     would hold the same fact in two places that could disagree. The cost is one case: a crash after the mark but before the request
+     left settles `hand-uncertain` though nothing was handed. The answer is not lost there (the helper's conversation and the card
+     hold it), and the person is told. The safe side is chosen: never twice, sometimes the person.
+   - **A notice is not a taking** (Codex round-2 7): a conversation's `user` event with `reaches: resume` tells its runner that words
+     wait (`DriverHelpers.cs:689-694`). `HandedBefore` counts only an event with `Reaches` absent (`:266`), and §6.3's card reads
+     taking the same way.
+   - *Tests:* `Tests/Loop/HelperLookTests.cs:890` (found waiting, found taken), `:923` (an attempt with nothing, and with only the
+     notice, settles uncertain and hands nothing), `:949` (taken by the commissioner, then relayed: found on the line, not handed to
+     the successor), `:858` (a refused hand clears its mark, is said once, and is tried again once the asker moves).
+7. **It goes to the line's live part** (Codex 8). The service's door follows `from` from the commissioner to the newest record of
+   its line, at most sixteen links (`Core/Sessions/HelperDesk.cs:143-147`), and the driver resolves the same line
+   (`DriverHelpers.cs:603`, `LineAsync` at `:707`). A line whose newest record cannot take it refuses with the reason, and the answer
+   stays in the box for the person. *Tests:* `Http.Tests/HelperHostTests.cs:114`; `Tests/Loop/HelperLookTests.cs:949`.
 8. **Where it shows.** *Resumes later*, its line *waits for {{agent}}'s answer* (等 {{agent}} 答复), the *Co-workers* section
-   showing the member working; *What needs you* lists nothing for it until point 4.
+   showing the member working; *What needs you* lists nothing for it until point 4 parks it.
 9. **A conversation lead** stays `working` between turns and takes the answer as its next turn (MIXAGENT2a-iii): no change.
 
 ## 6. The page
@@ -398,7 +455,8 @@ mark). Spend per maker is shown only where measured; *not measured* is never zer
   the lead's line); updated in place; the answer's event with `helper` (§4.2) gives the moment the lead took it.
 - **Its head**: *Codex, as helper* (Codex，作为助手) with the mark, then three facts kept apart: the run (*reading your work as of
   16:29 · running `rg` · 4 min*, *answered*, *refused: out of time*), the delivery (*waits for the turn's end*, *taken as the next
-  turn*, *to you*), and for a piece its taking-in.
+  turn*, *to you*), and for a piece its taking-in. *Taken as the next turn* is said only from a `user` event naming the helper with
+  `reaches` absent; an event with `reaches: resume` alone says *waits for the turn* (round 3, Codex round-2 7; §4.2).
 - **Its body**: the question as written, then the answer as written from the box (the head's helper read gains the answer's text,
   bounded as last words are, *Show all* past it), under *a claim to check, not your words*. A last-words answer says so.
 - **Its doors**: *Open conversation* (打开对话); for a person-only answer (row 5), *Pass to the lead* (转给主导; round 2's words,
@@ -496,8 +554,8 @@ Keys stay, values move, both languages, `names:check -- --strict` and `i18n:chec
 - `work.life.cannot.serves` → *a co-worker takes one turn* / 同事只答一轮.
 
 New: `work.team.*` (the section, the rows, the thread head, *Back to lead* 返回主导, *Open conversation* 打开对话, *Pass to the lead*
-转给主导 as a `button` (20/8), *Ask again…* 再问…, *Bring in another agent…* 请另一个智能体…), `work.conversation.helper`, and the notes
-`ended.awaits-partner` and `helper.person-asked` (§7). `ended.awaits-helper` and the unanswered line are HELPERWAIT1's (its
+转给主导 as a `button` (20/8), *Ask again…* 再问…, *Bring in another agent…* 请另一个智能体…), `work.conversation.helper`, and the note
+`helper.person-asked` (§7); `ended.awaits-partner` is row 12's (§5 point 2). `ended.awaits-helper` and the unanswered line are HELPERWAIT1's (its
 `note.ended.awaits-helper`, and the refusal's own line before the park's, §5 point 4), not new here.
 
 **Destination-aware helper words** (round 2, Codex 16). `work.helper.says`, `work.helper.asked` and `work.helper.state.answered`
@@ -529,14 +587,16 @@ Fast halves by row, both languages wherever words are drawn; Process cases where
 
 | Row | Tests |
 |---|---|
-| 1 | `identity.test.ts` (roles from the fields, in §2.1's order); `groups.test.ts` (three roles nested; the order nest-then-cut kept as a regression case; an ended lead with a live member never cut; the fold; a working member never folded); `CoWorkers.test.tsx` (the lead's row, a member per state, a pending ask with its presses and `data-wait-section`, the mark, nothing for a session alone); `ConversationView.helper.test.tsx` (placed at the call, else at the box's `at`; updated by the answer's event; body from the exchange read; last words said; never *The target Daoris composed*); the bridge's exchange read (every part's asks on the line, answer text bounded, the handed word and its taking; a member resolving it through `serves`); `SessionRow.coworker.test.tsx`; stories per state at 888 px, both themes; `SessionsCommandTests` (`team`, the JSON fields); `glossary.test.ts`, `names:check -- --strict`, `i18n:check` |
-| 2 (HELPERWAIT1) | HELPERWAIT1's own, on its branch. What this design asks them to show (§5): an ask not yet judged holds the lead; a question on file or a go-ahead parks, and an unread go-ahead parks; the waiting lead keeps its tree (a second writer and the tidy refused, cap one); the move back to the person at a refusal, refused by an older service and said once; the parked lead's answer held until the person answers; one hand per ask across a restart between the keep and `Handed`; a hand-over while the helper reads hands the answer to the newest live part, and an ended line keeps it for the person |
+| 1 | the exchange read's taking (round 3, Codex round-2 7): an answer with only the `reaches: resume` notice reads *waits for the turn*, one with the turn's own event *taken as the next turn*; `identity.test.ts` (roles from the fields, in §2.1's order); `groups.test.ts` (three roles nested; the order nest-then-cut kept as a regression case; an ended lead with a live member never cut; the fold; a working member never folded); `CoWorkers.test.tsx` (the lead's row, a member per state, a pending ask with its presses and `data-wait-section`, the mark, nothing for a session alone); `ConversationView.helper.test.tsx` (placed at the call, else at the box's `at`; updated by the answer's event; body from the exchange read; last words said; never *The target Daoris composed*); the bridge's exchange read (every part's asks on the line, answer text bounded, the handed word and its taking; a member resolving it through `serves`); `SessionRow.coworker.test.tsx`; stories per state at 888 px, both themes; `SessionsCommandTests` (`team`, the JSON fields); `glossary.test.ts`, `names:check -- --strict`, `i18n:check` |
+| 2 (HELPERWAIT1, built) | Built and run with HELPERWAIT1 (FIX-LOG's entry); each case is cited under its point in §5: `HelperWaitsTests`, `ObservationTests`, `HelperLookTests`, `EntryPartsPlanTests`, `BranchTidyingTests`, `SessionLedgerTests`, `HelperHostTests`, and the *Process* class `HelperWaitTickTests`. The one case of §5 not proved, a go-ahead read the service does not answer, is row 11's |
 | 3 | `WorkFrame.thread.test.tsx` (into a member and back to its card; the detached window's head; the confinement line; the delivery facts as today's records hold them); `sessionLife` (the sentence) |
 | 4 | `SessionStoreTests` (a reviewer's `serves` written and read; null before and on a mirror); `OpinionHostTests` (loopback only); `McpRoleFilterTests` (the helper's and the reviewer's allow-lists; every tool of the server placed on each or refused by name, the census row per role; `permission_propose` refused to both); the helper box's judge (`HelperBox`'s tests) and `HelperJudgeTests` (Ask Daoris refused at both admission judges); the three stand-ins; the page's nesting without the join and with it for an older record |
 | 5 | `HelperFilesTests`, `HelperBoxShapeTests` (the twin shape with `after` and `to`); `SessionsHelperCommandTests` (`--after`, `--to-me`, `pass`); `HelperDeskTests` (a person-only answer kept on the member, passed once by the press); `AnswersAloneTests` (`helper.person-asked` resets, from both doors; the press's `answers.passed` resets; a person-only answer counts nowhere); the destination-aware strings in both catalogues; `WorkFrame.thread.test.tsx` (*Ask again…* and the follow-up strip); `HelpCoverageTests`; a Process case: a follow-up on a fresh copy, answered to the person, then passed |
-| 6 | the Pieces tests moved under *Co-workers*; `ObservationTests` for `awaits-partner` |
+| 6 | the Pieces tests moved under *Co-workers*; no wait of the lead's, which is row 12's |
 | 7 | the dialog's choices each judged by its door, a choice turned off with its reason, `HelpCoverageTests` |
 | 8, 9, 10 | with their designs (§3.5) |
+| 11 | `HelperLookTests`: a refused move back to the person puts the lead in *What needs you* with the refusal, and an unreachable service does not; `HelperLookTests` (or `HelperWaitsTests`): a go-ahead read the service does not answer parks the turn; *What needs you*'s row for it, en and zh |
+| 12 | §5's proofs, a partner's way, written with its design: `ObservationTests` (`awaits-partner` only where the lead asked the piece in that turn, never a piece the person asked); `SessionLedgerTests` (the service's tree exclusion and the move back read the partner's code; a second writer refused, cap one); `BranchTidyingTests` and `EntryPartsPlanTests` (the tree kept); the no-answer move back, a failed one tried again; the piece taken once across a restart, and a piece saved before a restart delivered; an answered park takes the piece beside the person's answer; a *Process* case with a stand-in partner |
 
 **The install's proofs**, one per landing row (round 2, Codex 12), by the parent after the republish, with the owner's yes where an
 account is spent, shots at 888 px in both themes and languages:
@@ -557,10 +617,9 @@ Each row is one feature a person can see working (D187). Filed in TASKS.md when 
    The terms (§8.1), `subagent` narrowed; `SessionEvent.helper`; *Co-workers* replacing *Helpers*, the pending asks' presses kept; the
    line's exchange read and the card drawn from it; the nested row's role, the lead's count, a lead with a live member never cut, the
    fold; `sessions --json`'s fields and `sessions team`. Closes MIXAGENT3a-iii's block half. **The first showing.**
-2. **HELPERWAIT1 — a session waiting on its own helper is not shown as waiting on the person** (driver, service, modules, web; its
-   own row, kept, built by another builder). The mechanism §5 states, with the service's guarded move (round 2: the service lane,
-   Codex 4, Fable F1). Built beside row 1; row 1's install proof waits for both, since every live state on the page reads wrong until
-   the lead's own state is right.
+2. **HELPERWAIT1 — a session waiting on its own helper is not shown as waiting on the person** (driver, service, modules, web;
+   **built**, archived 2026-10-23). The mechanism §5 states as built, with the service's guarded move. Row 1's install proof waits for
+   HELPERWAIT1 to reach the install beside it, since every live state on the page reads wrong until the lead's own state is right.
 3. **COWORKUX1b — the member's conversation as a thread** (web). §6.4's navigation, thread head, confinement and the delivery facts
    that exist today; not *Ask again* or the follow-up strip, which are row 5's (round 2, Codex 12).
 4. **COWORKUX1c — the reviewer joins the team, and each role's tools are the server's to bound** (service, driver, modules, web).
@@ -569,8 +628,9 @@ Each row is one feature a person can see working (D187). Filed in TASKS.md when 
 5. **COWORKUX1d — talking to a helper: *Ask again* and *Pass to the lead*** (service box twins, driver, modules, web, Ask Daoris
    coverage). §4.3, §6.4's follow-ups, §7, §8.3's destination-aware words, `helper.person-asked`; amends D163 point 2 for the
    person's follow-ups.
-6. **COWORKUX1e — the partner as a member** (web, driver; after COAGENT1b, `awaits-partner` after COAGENT1d). D199 §6.1's Pieces
-   drawn as *Co-workers* rows and cards; how a follow-up piece links to the one it follows, or each piece its own row (§4.3).
+6. **COWORKUX1e — the partner as a member** (web, driver's read; after COAGENT1b). D199 §6.1's Pieces drawn as *Co-workers* rows and
+   cards; how a follow-up piece links to the one it follows, or each piece its own row (§4.3). Presentation only (round 3, Codex
+   round-2 6): the lead's wait on its partner is row 12.
 7. **COWORKUX1f — *Bring in another agent…*: the structures chosen by the person in one place** (web, Ask Daoris). §6.2's dialog.
 
 **Deferred behind a design of their own** (round 2, Codex 13, 14; §3.5). Each changes a foundation, so each is written and read under
@@ -584,13 +644,26 @@ D191 before it is filed; the structure stays named and shown in §3.2 meanwhile:
     a helper, a piece or several reviewers; its several-reviewers half waits with row 9, and its helper and piece halves may be filed
     alone once COAGENT1d lands.
 
+**Round 3's two rows** (Codex round-2 5 and 6):
+
+11. **HELPERWAIT1b — a move back to the person the service refuses shows in *What needs you*** (driver, modules, web; filed in
+    TASKS.md now, since it closes a gap in built code and waits on no acceptance). The lead whose helper ended unanswered and whose move
+    back the service refused stays `completed`, said by a `Wait` line no row of *What needs you* carries (§5 point 4). It gains that
+    row, with the refusal and the press to look at it; and the go-ahead read the service does not answer gains its case (§5 point 1).
+12. **COWORKUX1i — a lead waits on its own partner's piece** (service, driver, modules, web; **deferred until COAGENT1d's
+    `partner_ask` exists**, then designed and read under D191 before it is filed). `ended.awaits-partner`, read only where the lead
+    asked the piece in the turn that ended; the service's tree holder, its move back to the person and their guards taught the partner's
+    code beside the helper's (`SessionLedger.cs:1492-1514`, `:1529-1560`); delivery once per piece through D199's piece receipts
+    (`PartnerPieces.cs:252-300`) rather than the helper's mark, which the design must settle; §11 row 12's proofs.
+
 ## 13. Not built, and unmeasured
 
 - **Not built:** a composer on a member's page, a resumed or steered member (SESSCTX1a, STEER3 first); member-to-member messages; a
   coordinator; a stored structure; a team on a teammate's mirror; the Agents page's co-worker facts (COAGENT1e's sheet); a native
   subagent as a member (FABRIC-C1b).
 - **Unmeasured:** the window was not seen, so the rows' and thread head's budgets and the fold's reading are the install's; §5 was read
-  on HELPERWAIT1's branch at `8b87af2be`, not run here, and its Process cases are that row's; a real partner's confinement and usage
+  in HELPERWAIT1's landed code at `2323abccc` and its tests read, not run here (they ran with HELPERWAIT1, FIX-LOG's entry); no real
+  agent has yet asked a real helper with it on the install; a real partner's confinement and usage
   are COAGENT1a's; what a real lead does with a passed follow-up is the install's.
 
 ## 14. What it amends, once accepted
@@ -602,7 +675,7 @@ D191 before it is filed; the structure stays named and shown in §3.2 meanwhile:
 - **D199 §6.6**: *co-worker* 同事 and *team* 团队 join the names; the head's partners line becomes *Co-workers* rows. Points 1-10 stand.
 - **D167, D188**: CHANPART1's own design amends D167's SESSONE2b note and D188's COWORK1d note (§3.5). Points 1-8 of D167 stand.
 - **D46**: the ledger's second move out of an ended state, `completed → awaiting-person` for a lead whose helper ended with no
-  answer (§5 point 4), is HELPERWAIT1's, noted there.
+  answer (§5 point 4), is HELPERWAIT1's, built and noted there (D46's note of 2026-10-23); row 12 extends it to the partner's code.
 - **D116's glossary**: *subagent* narrowed; *co-worker*, *lead*, *partner*, *piece* become terms.
 - **D51, D137, D177, D188, D189, D193** stand. D193's rejection of agents directing agents is what §3.4 rejects a coordinator by.
 
@@ -614,7 +687,8 @@ against the code at this branch (`fe4809b75` with the design merged) and, for th
 `8b87af2be`. Every finding held as a fact about the code; where a finding said a claim of round 1's was wrong, it was. *Taken* means
 the design changed as the finding asked, or as close as said; *answered* means the design keeps its course and says why, or points
 to where the finding is built. The findings about the wait (Codex 1-5, 7, 8; Fable F1-F4) are taken as a contract and built by
-HELPERWAIT1, not designed a second time (§5).
+HELPERWAIT1, not designed a second time (§5). Round 3 (§15.3) reads Codex's round-2 read against HELPERWAIT1 as it landed; the round-1
+tables below keep round 2's wording, and where they say *not yet on HELPERWAIT1's branch*, §5 now cites where it was built.
 
 ### 15.1 Codex
 
@@ -660,3 +734,27 @@ HELPERWAIT1, not designed a second time (§5).
 Fable's names read (§8, D203 point 9) agreed with the names but F10; its cost and rows read asked for F1's lane and F3's mechanism,
 both taken. Neither read disagreed with the other on a choice the steward had to settle: where both named the wait's defects, they
 named the same ones.
+
+### 15.3 Codex, round 2, answered against HELPERWAIT1 as built (round 3)
+
+Codex read round 2 at `c2bddc515` beside HELPERWAIT1's unfinished branch (8 findings, 6 blocking, *another round*; the read whole is
+`docs/2026-10-23-coworker-reads.md`, *Codex, round 2*). Its table of the round-1 findings (taken 20, open 5, wrong 2, deferred 3,
+answered 1) carries each open and wrong verdict into its own findings 1-5, so only findings 1-8 are tabled here. Each was checked against the code at
+`2323abccc`, this branch with HELPERWAIT1 merged; every one held as a fact about round 2's text. *Taken* means the built code does what
+the finding asked; *answered* means it chose otherwise, and the row says why that holds or which row closes what remains.
+
+| # | Finding | Blocking | Taken or answered | Code and tests | Where |
+|---|---|---|---|---|---|
+| 1 | unchanged guards cannot hand the helper's answer beside the person's | yes | taken: an answered park takes it in the door and the driver, and its go-on reads both words in one prompt; an unanswered park still refuses | `HelperDesk.cs:156-160`; `DriverHelpers.cs:634`; `DriverContinuations.cs:265-268`; `HelperHostTests.cs:138`, `HelperLookTests.cs:679`, `HelperWaitTickTests.cs:135` (*Process*) | §5 point 5 |
+| 2 | `said` plus events is no durable receipt; a relay hides the evidence | yes | answered: Codex's first fix, built as an attempt mark on the ask's own state rather than a receipt store. Keyed once per ask, on the helper's side so consumption and relays leave it, an interrupted attempt settled `hand-uncertain`, the evidence read along the whole line. It holds, since a second store would hold the same fact twice; its one cost, a crash before the request left, tells the person rather than hand twice | `HelperAsks.cs:143`; `DriverHelpers.cs:260-274`, `:641-652`, `:657-680`; `HelperLookTests.cs:890`, `:923`, `:949`, `:858` | §1 row 15; §5 point 6 |
+| 3 | an unread person-question file authorizes helper-only continuation | yes | taken: `AskedSince` tells absent (`false`) from unread (`null`), and only `false` waits; an unanswered go-ahead read likewise. No park is converted, so no conversion guard needs the read. The go-ahead's unread case has no test, so it is row 11's | `QuestionFiles.cs:68-72`; `DriverHelpers.cs:169-171`, `:179-194`; `HelperLookTests.cs:970` | §5 point 1; §12 row 11 |
+| 4 | a legacy park cannot be proved to have asked the person nothing | yes | taken: legacy parks stay parked, never converted (round 2's `ParkedOn` not built); the helper's answer waits and is handed beside the person's answer, Codex's first option. The case it asked for, a question in the closing words alone, is the test | `DriverHelpers.cs:634`; `HelperLookTests.cs:679`, `:716`; `HelperWaitTickTests.cs:135` (*Process*) | §5 point 5 |
+| 5 | a failed return-to-person move can hold the lead for good | yes | answered: every failure is tried again at each look, said once, rather than permanent and transient told apart. It holds: nothing else moves the record, every refusal the ledger gives clears by itself or never reaches the move, and an older service is not met in one install. What remains, a refusal said as a `Wait` line that no row of *What needs you* carries, is filed as row 11 | `DriverHelpers.cs:305-337`; `SessionLedger.cs:1529-1560`; `HelperLookTests.cs:795`; `SessionLedgerTests.cs:1107`, `:1130` | §5 point 4; §12 row 11 |
+| 6 | row 6 assigns the partner wait without its service scope or proofs | yes | taken: row 6 is presentation alone; the partner's wait is row 12, deferred until `partner_ask` exists, with the service, driver, modules and web scope and §5's proofs a partner's way | `SessionLedger.cs:1492-1514` (the helper's code alone) | §5 point 2; §11 rows 6, 12; §12 rows 6, 12 |
+| 7 | a resume notification is not the answer taken | no | taken: only a `user` event with `reaches` absent is a taking, in `HandedBefore` and on the card; row 1 gains the notice-only case | `DriverHelpers.cs:266`, `:689-694`; `HelperLookTests.cs:923` (the notice case) | §4.2; §6.3; §11 row 1 |
+| 8 | a restart does not always refuse the interrupted helper's ask | no | taken: the sentence qualified, *without a saved answer*; both cases proved | `DriverHelpers.cs:556-567`; `HelperLookTests.cs:615` | §5 point 4 |
+
+Two of Codex's choices were made differently, and both are said above: finding 2's receipt is a mark rather than a store, and
+finding 5's recovery is a retry each look rather than a split by failure. Neither is withdrawn. Row 11 carries the part of finding 5
+the retry does not cover, and the untested half of finding 3. Codex's verdict asked the next read to check the revised contracts and
+their evidence, and D203's corresponding claims; both are revised (D203's round-3 note).
