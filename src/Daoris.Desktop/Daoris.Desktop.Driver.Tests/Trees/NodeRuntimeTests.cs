@@ -6,20 +6,11 @@ namespace Daoris.Desktop.Driver.Tests;
 /// FABRIC-RUN1 (the fabric events design §E2, §E3, §E7, §D6, §A3): the evaluation runtime in the lease's loop, over a stand-in port. An
 /// install whose choices name no plugin's performed node reads, writes and starts nothing; a governed unit's performed node is started once
 /// across wakes, its outcome heard and kept, its declared retry started after its persisted delay; a restart reconciles before any new start;
-/// two wakes at once start nothing twice.
+/// two wakes at once start nothing twice. A graph run's own record is <see cref="NodeRuntimeRunTests"/>'s, and the person's word on its
+/// nodes <see cref="RunNodeWordsTests"/>'.
 /// </summary>
-public sealed partial class NodeRuntimeTests : IDisposable
+public sealed class NodeRuntimeTests : NodeRuntimeFixture
 {
-    private const string Plugin = "acme.deploy";
-    private const string Unit = "quest:q7";
-
-    /// <summary>The plugin's step as its manifest declares it: the contract a graph's node of its kind is performed under.</summary>
-    private static readonly NodeDeclaration Step = new(Plugin + "/deploy", Plugin + "/deploy", 1, NodeReach.Performed)
-    {
-        Retry = new NodeRetry(3, [30, 60]),
-        Perform = new NodePerform(Idempotent: true, Reconcile: true, Transient: ["unavailable"]),
-    };
-
     /// <summary>A repository's quests governed by a work cycle of one performed node, the plugin's deploy.</summary>
     private const string Governed = """
         { "workCycles": { "engine": { "quest": {
@@ -43,149 +34,6 @@ public sealed partial class NodeRuntimeTests : IDisposable
             "nodes": [{ "id": "deploy", "kind": "acme.deploy/deploy", "version": 1, "reach": "performed" }],
             "wires": [] } } } }
         """;
-
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-runtime-" + Guid.NewGuid().ToString("N")[..8]);
-
-    private readonly Port _port = new();
-
-    private DateTimeOffset _now = new(2026, 10, 17, 9, 0, 0, TimeSpan.Zero);
-
-    private int _unitsRead;
-
-    private int _stepsRead;
-
-    public void Dispose()
-    {
-        if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
-    }
-
-    /// <summary>The plugins' work processes as the runtime sees them: each call counted.</summary>
-    private sealed class Port : IWorkRuntimePort
-    {
-        public int? Generation { get; set; } = 1;
-
-        public List<WorkPerformCall> Sent { get; } = [];
-
-        public List<WorkReconcileCall> Asked { get; } = [];
-
-        public List<IReadOnlyDictionary<string, IReadOnlyList<WatchedUnit>>> Told { get; } = [];
-
-        public Queue<WorkStepHeard> Heard { get; } = new();
-
-        public int Taken { get; private set; }
-
-        public Func<WorkPerformCall, Task>? OnPerform { get; set; }
-
-        public Func<WorkReconcileCall, WorkReconcileAnswer> Answer { get; set; } = _ => new(ReconcileStates.Unknown);
-
-        public async Task<int> PerformAsync(string plugin, WorkPerformCall call, CancellationToken ct)
-        {
-            Assert.Equal(Plugin, plugin);
-            if (OnPerform is { } before) await before(call);
-            var generation = Generation ?? throw new DriverException("not running");
-            lock (Sent) Sent.Add(call);
-            return generation;
-        }
-
-        public Task<(WorkReconcileAnswer Answer, int Generation)> ReconcileStepAsync(string plugin, WorkReconcileCall call, CancellationToken ct)
-        {
-            var generation = Generation ?? throw new DriverException("not running");
-            lock (Asked) Asked.Add(call);
-            return Task.FromResult((Answer(call), generation));
-        }
-
-        public int? GenerationOf(string plugin) => Generation;
-
-        /// <summary>The cleanups asked (FABRIC-PERFORM1d), and what each is answered.</summary>
-        public List<WorkCleanupCall> Cleaned { get; } = [];
-
-        public Func<WorkCleanupCall, WorkCleanupAnswer> Cleanup { get; set; } = _ => new(CleanupDispositions.Removed);
-
-        /// <summary>The plugins told owed a cleanup, each time (FABRIC-PERFORM1d).</summary>
-        public List<IReadOnlySet<string>> Owed { get; } = [];
-
-        public Task<(WorkCleanupAnswer Answer, int Generation)> CleanupAsync(string plugin, WorkCleanupCall call, CancellationToken ct)
-        {
-            Assert.Equal(Plugin, plugin);
-            lock (Cleaned) Cleaned.Add(call);
-            return Task.FromResult((Cleanup(call), Generation ?? throw new DriverException("not running")));
-        }
-
-        public void Owe(IReadOnlySet<string> plugins)
-        {
-            lock (Owed) Owed.Add(plugins);
-        }
-
-        public void Watch(IReadOnlyDictionary<string, IReadOnlyList<WatchedUnit>> awaited)
-        {
-            lock (Told) Told.Add(awaited);
-        }
-
-        public IReadOnlyList<WorkStepHeard> TakeSteps()
-        {
-            lock (Heard)
-            {
-                Taken++;
-                var taken = Heard.ToList();
-                Heard.Clear();
-                return taken;
-            }
-        }
-    }
-
-    private NodeRecordFiles Files => new(_home, () => true);
-
-    /// <summary>A new runtime over the same home: what a loop holds, and what a loop started again after a restart holds.</summary>
-    private NodeRuntime Runtime() => new(Files, _port, () => _now, () => true);
-
-    private static WorkUnit Quest => QuestOf(Unit);
-
-    private static WorkUnit QuestOf(string id) => new(id, WorkUnitKind.Quest, new WorkOwner("engine", "default", WorkRecord.Quests, WorkRecord.ServiceWriter),
-        new WorkSubject("#" + id[(id.IndexOf(':') + 1)..], null), new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "open"), []);
-
-    /// <summary>The engine's quests a pass reads: the one quest, unless a test names more.</summary>
-    private IReadOnlyList<WorkUnit> _units = [Quest];
-
-    private NodeRuntimeLook Look(string config, bool whole = true) => new(DriverConfig.Parse(config), whole)
-    {
-        Units = _ =>
-        {
-            Interlocked.Increment(ref _unitsRead);
-            return Task.FromResult(new NodeUnitsRead(_units, new Dictionary<string, string> { ["engine"] = "checkout" }));
-        },
-        Steps = () =>
-        {
-            Interlocked.Increment(ref _stepsRead);
-            return [Step, Build];
-        },
-        // FABRIC-RUN1b, RUN1c: every git read and gate read the runtime may make, counted, so an install with no graph is seen to make none.
-        Tips = (_, _, _) =>
-        {
-            Interlocked.Increment(ref _gitRead);
-            return Task.FromResult<IReadOnlyDictionary<string, string>>(new Dictionary<string, string>());
-        },
-        Remotes = (_, _, _) =>
-        {
-            Interlocked.Increment(ref _gitRead);
-            return Task.FromResult<IReadOnlyDictionary<string, string>>(new Dictionary<string, string>());
-        },
-        Holds = (_, _, _, _) =>
-        {
-            Interlocked.Increment(ref _gitRead);
-            return Task.FromResult<bool?>(null);
-        },
-        Gates = (_, _, _) =>
-        {
-            Interlocked.Increment(ref _gitRead);
-            return Task.FromResult<(OpinionGateState?, ReviewGateState?)>((null, null));
-        },
-    };
-
-    /// <summary>The git and gate reads a pass made (FABRIC-RUN1b, RUN1c).</summary>
-    private int _gitRead;
-
-    /// <summary>The plugin's build step (FABRIC-PERFORM1c): a pipeline's producer, its artifact a deploy's release.</summary>
-    private static readonly NodeDeclaration Build = Step with { Id = Plugin + "/build", Kind = Plugin + "/build" };
 
     /// <summary>
     /// A repository's quests governed by a build whose artifact the deploy takes (FABRIC-PERFORM1c): a <c>data</c> wire, read from the build's

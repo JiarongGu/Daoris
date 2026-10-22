@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// record by their door under its lock and the lease, in a field of its own, and applied by the runtime's next pass through the one table.
 /// Each seen failing first.
 /// </summary>
-public sealed partial class NodeRuntimeTests
+public sealed class RunNodeWordsTests : NodeRunFixture
 {
     /// <summary>The go-ahead waits on an ask that raised none: nobody will answer it.</summary>
     private WorkUnit NobodyRaised() =>
