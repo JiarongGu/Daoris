@@ -59,7 +59,7 @@ public sealed class ScratchSignInsTests : IDisposable
         var started = new List<ProcessStartInfo>();
         using (ProcessStarts.Within(info => { started.Add(info); return null; }))
         {
-            var real = new HarnessCommand("claude-code", ["claude"], null, null);
+            var real = new HarnessCommand("claude-code", ["claude"], null, null); // live-logins: refused, never started
             var refused = await Assert.ThrowsAsync<DriverException>(
                 () => HarnessActions.LoginAsync(Claude, real, fresh, _ => { }, fresh: true));
 
@@ -86,6 +86,8 @@ public sealed class ScratchSignInsTests : IDisposable
         var home = Path.Combine(WorkspaceRoot.Folder, "local", "scratch-sign-ins-unused");
         var account = HarnessSettings.ProfileHome(home, "claude-code", "acct-0000aaaa");
 
-        Assert.Null(ScratchSignIns.Refusal(Claude, new HarnessCommand("claude-code", ["claude"], null, null), account));
+        var real = new HarnessCommand("claude-code", ["claude"], null, null); // live-logins: refused, never started
+
+        Assert.Null(ScratchSignIns.Refusal(Claude, real, account));
     }
 }

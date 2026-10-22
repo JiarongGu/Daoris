@@ -206,7 +206,7 @@ public sealed class CodexAccountTests : IDisposable
     public void A_device_code_asked_of_an_agent_with_none_is_refused_and_makes_nothing()
     {
         var claude = Roster().AccountToolchain("claude-code")!;
-        var run = new HarnessCommand("claude-code", ["claude"], null, null);
+        var run = new HarnessCommand("claude-code", [Path.Combine(_home, "claude")], null, null);
 
         var refusal = Assert.Throws<DriverException>(() =>
             HarnessActions.PrepareLogin(claude, run, Fresh, fresh: true, SignInWay.DeviceCode));

@@ -405,7 +405,7 @@ public sealed class AgentsCommandTests : IDisposable
         Assert.Equal(installed, pinned.GetProperty("managed").GetString());
         Assert.Equal(installed, Run(pinned)[0]);
 
-        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.DriverConfig), """{ "commands": { "claude-code-acp": ["my-acp", "--fast"] } }""");
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.DriverConfig), """{ "commands": { "claude-code-acp": ["my-acp", "--fast"], "claude-code": ["my-claude"] } }""");
         var commanded = await Which("claude-code-acp", "--workspace", "work");
         Assert.Equal(["my-acp", "--fast"], Run(commanded));
         Assert.Equal(System.Text.Json.JsonValueKind.Null, commanded.GetProperty("pinned").ValueKind);
