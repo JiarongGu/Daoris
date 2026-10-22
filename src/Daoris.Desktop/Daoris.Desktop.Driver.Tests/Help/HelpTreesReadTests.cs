@@ -140,6 +140,33 @@ public sealed class HelpTreesReadTests : IDisposable
         Assert.Equal(1, starts);
     }
 
+    /// <summary>
+    /// READSHARE1: the home's stamp reads the landings while the move that landed them still holds them, so a tree nothing moved in
+    /// is still asked its status alone; a stamp that could not read them is a stamp of its own, and walked every tree again.
+    /// </summary>
+    [Fact]
+    public async Task The_home_s_stamp_reads_the_landings_while_their_move_into_place_still_holds_them()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var root = await RepositoryAsync("engine");
+        var sessionTrees = new SessionTrees(_home);
+        var tree = (await sessionTrees.OpenAsync(root, "engine", "default")).Path;
+        var part = Part([tree]);
+        var landings = sessionTrees.LandingsPath;
+        Directory.CreateDirectory(Path.GetDirectoryName(landings)!);
+        AtomicFile.WriteText(landings, "{}\n");
+        await HelpFacts.ReadTreesAsync(_home, part, CancellationToken.None);
+
+        int starts;
+        using (MoveHold.Take(landings))
+        {
+            Assert.Throws<IOException>(() => File.ReadAllText(landings));
+            (_, _, starts) = await TimedAsync(ct => HelpFacts.ReadTreesAsync(_home, part, ct));
+        }
+
+        Assert.Equal(1, starts);
+    }
+
     /// <summary>The fixture's trees: every third with a commit of its own, every fifth with a file uncommitted.</summary>
     private async Task<(string Root, HelpTreesPart Part, IReadOnlyList<(string Tree, int Commits, int Uncommitted)> Trees)> KeptAsync(int count)
     {
