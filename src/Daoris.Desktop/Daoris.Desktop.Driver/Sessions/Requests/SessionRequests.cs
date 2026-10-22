@@ -96,6 +96,12 @@ public sealed record SessionRequest(string Session, string Move, DateTimeOffset 
     /// </summary>
     public bool Parked { get; init; }
 
+    /// <summary>
+    /// That a stop runs under the person's standing confirmation (TERMTRUST1a, D201 point 7): the record the loop ends keeps its own
+    /// note and gains <see cref="NoteCodes.StandingTerminal"/>. An older loop reads none, and writes the plain stop.
+    /// </summary>
+    public bool Standing { get; init; }
+
     /// <summary>Who asked, one of <see cref="RequestDoor"/>.</summary>
     public string By { get; init; } = RequestDoor.Terminal;
 
@@ -664,6 +670,7 @@ public sealed partial class SessionRequests(string home)
                 Note = Text("note"),
                 NoteParts = NotePart.Read(root),
                 Parked = root.TryGetProperty("parked", out var parked) && parked.ValueKind == JsonValueKind.True,
+                Standing = root.TryGetProperty("standing", out var standing) && standing.ValueKind == JsonValueKind.True,
                 By = Text("by") ?? RequestDoor.Terminal,
                 Text = Text("text"),
                 Files = root.TryGetProperty("files", out var files) && files.ValueKind == JsonValueKind.Array
@@ -727,6 +734,7 @@ public sealed partial class SessionRequests(string home)
         }
 
         writer.WriteBoolean("parked", request.Parked);
+        if (request.Standing) writer.WriteBoolean("standing", true);
         writer.WriteString("by", request.By);
         writer.WriteString("at", Moments.Write(request.At));
         if (request.Text is not null) writer.WriteString("text", request.Text);

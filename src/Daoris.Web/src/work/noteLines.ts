@@ -140,6 +140,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'stopped.checkpoint-stopped': { values: [] },
   'stopped.checkpoint-moved': { values: [] },
   'stopped.orphan': { values: [] },
+  'standing.terminal': { values: [] },
   'chat.closed': { values: [] },
   'chat.ended-by-person': { values: [] },
   'chat.ended': { values: [] },

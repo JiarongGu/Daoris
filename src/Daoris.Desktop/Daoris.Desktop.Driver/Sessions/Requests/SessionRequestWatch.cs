@@ -347,6 +347,12 @@ public sealed class SessionRequestWatch : IAsyncDisposable
             // A stop's note is a pause's words for the record (PAUSE1b), or none for the plain stop: the driver's line,
             // with its codes, or carried whole where an older door wrote none (LANG1a).
             var line = request.Note is null ? null : Noted.From(request.Note, request.NoteParts);
+            // TERMTRUST1a (D201 point 7): a stop under the standing confirmation keeps its own line and says so after it.
+            if (request.Standing && request.Move == SessionMove.Stop)
+            {
+                line = SessionMoves.Standing(line ?? (resolves ? SessionMoves.ByThePersonNoted("stopped") : Observation.Stopped));
+            }
+
             if (!resolves) _stop(request.Session, line);
             else if (request.Move == SessionMove.Stop && line is not null)
             {

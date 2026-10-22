@@ -1673,9 +1673,14 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// The note's parts beside its English (LANG1a, D142 point 2), sent only with a note: a note sent without them clears the
     /// record's parts, so an older driver's note never sits beside stale ones. A host older than the field ignores it.
     /// </param>
+    /// <param name="expected">
+    /// The state the record must be in, which the ledger compares in its step (TERMTRUST1a, D201 point 2): a finish under the standing
+    /// confirmation sends <c>awaiting-person</c>. A host older than the field ignores it, which the verb's own read guards first.
+    /// </param>
     public async Task<string> AdvanceAsync(
         string id, string state, string? note = null, string? evidence = null, string? transcript = null,
-        CancellationToken ct = default, bool interrupted = false, bool limit = false, IReadOnlyList<NotePart>? parts = null)
+        CancellationToken ct = default, bool interrupted = false, bool limit = false, IReadOnlyList<NotePart>? parts = null,
+        string? expected = null)
     {
         var body = WriteJson(writer =>
         {
@@ -1692,6 +1697,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             if (transcript is not null) writer.WriteString("transcript", transcript);
             if (interrupted) writer.WriteBoolean("interrupted", true);
             if (limit) writer.WriteBoolean("limit", true);
+            if (expected is not null) writer.WriteString("expected", expected);
             writer.WriteEndObject();
         });
 
@@ -1714,8 +1720,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// <summary>Move a session's record with a composed note: its English and its parts together (LANG1a).</summary>
     public Task<string> AdvanceAsync(
         string id, string state, Noted noted, string? evidence = null, string? transcript = null,
-        CancellationToken ct = default, bool interrupted = false, bool limit = false) =>
-        AdvanceAsync(id, state, noted.Note, evidence, transcript, ct, interrupted, limit, noted.Parts);
+        CancellationToken ct = default, bool interrupted = false, bool limit = false, string? expected = null) =>
+        AdvanceAsync(id, state, noted.Note, evidence, transcript, ct, interrupted, limit, noted.Parts, expected);
 
     /// <summary>The state an answer's session record is in now, or null when it carries none.</summary>
     private static string? StateOf(JsonElement answer) =>
