@@ -17,7 +17,7 @@ import {
 } from '../../../tools/deployment-rehearsal.mjs';
 // The install's layout, from the script that makes it: the gate reads the same constants.
 import {
-  CLI_BIN, CLI_ENTRY, CLI_LAUNCHERS, CLI_PACKAGE, DRIVER_EXE, DRIVER_HOME, DRIVER_LAUNCHERS, CONNECTOR_EXE, CONNECTOR_HOME, GIT_DOORS, HOST_EXE, HOST_HOME, OFFERED_PLUGINS, PLUGIN_OFFERS, layGitDoors,
+  CLI_BIN, CLI_ENTRY, CLI_LAUNCHERS, CLI_PACKAGE, DRIVER_EXE, DRIVER_HOME, DRIVER_LAUNCHERS, CONNECTOR_EXE, CONNECTOR_HOME, GIT_DOORS, HOST_EXE, HOST_HOME, OFFERED_PLUGINS, PIECE_START, PLUGIN_OFFERS, layGitDoors, layPieceStart,
   // @ts-expect-error — untyped workspace tooling; the same seam desktop-tool.test.ts documents
 } from '../../../tools/desktop-publish.mjs';
 // The protocol stub both rehearsals run (DEPLOY5): one copy, where the family rehearsal's used to be.
@@ -171,6 +171,20 @@ test('the publish lays the git doors out under the names GitWiring hands, and th
   assert.equal(readText(join(install, ...CLI_BIN, GIT_DOORS[1])), 'daoris-git-ssh.exe', 'the remote helper is the ssh door\'s executable');
   assert.equal(readText(join(install, ...CLI_BIN, 'daoris-git-ssh.runtimeconfig.json')), 'daoris-git-ssh.runtimeconfig.json');
   assert.throws(() => layGitDoors(join(fx.root, 'nothing'), install), /made no daoris-git-ssh\.exe/);
+  fx.cleanup();
+});
+
+test('the publish lays the partner\'s launcher out under the name PieceLauncher starts, and names what is missing (COAGENT1b)', () => {
+  const launcher = readText(driverFile('PieceLauncher.cs'));
+  assert.ok(launcher.includes(`Program = "${PIECE_START}"`), `PieceLauncher.Program is not ${PIECE_START}`);
+
+  const fx = makeFixture('deploy-piece-start');
+  for (const file of ['daoris-piece-start.exe', 'daoris-piece-start.dll', 'daoris-piece-start.runtimeconfig.json']) fx.write(`published/${file}`, file);
+  const install = join(fx.root, 'install');
+  layPieceStart(join(fx.root, 'published'), install);
+  assert.equal(readText(join(install, ...CLI_BIN, PIECE_START)), 'daoris-piece-start.exe');
+  assert.equal(readText(join(install, ...CLI_BIN, 'daoris-piece-start.dll')), 'daoris-piece-start.dll');
+  assert.throws(() => layPieceStart(join(fx.root, 'nothing'), install), /made no daoris-piece-start\.exe/);
   fx.cleanup();
 });
 

@@ -475,6 +475,28 @@ export function layGitDoors(published, install) {
 }
 
 /**
+ * The partner's launcher (COAGENT1b; D199's note on the strict start): one program, published framework-dependent and laid out in
+ * `app/bin/` whole beside the git doors. The driver starts it for a partner alone; it joins the piece's job, then starts the harness
+ * inside it. A twin of `PieceLauncher.Program`, which `PieceLauncherTests` holds to this name.
+ */
+export const PIECE_START_PROJECT = 'src/Daoris.Desktop/Daoris.Desktop.PieceStart';
+export const PIECE_START = 'daoris-piece-start.exe';
+
+/** The launcher's publish into `folder`, in the git doors' shape; its builds into `artifacts` when given. */
+export function pieceStartPublishCommand(folder, artifacts = null) {
+  return builtInto(`dotnet publish "${PIECE_START_PROJECT}" -c Release -r ${INSTALL_RID} --self-contained false `
+    + `-p:DebugType=none -p:AllowedReferenceRelatedFileExtensions=none -o "${folder}" --nologo`, artifacts);
+}
+
+/** Lay the launcher's publish in `published` out in `<install>/app/bin/`, after {@link layCli}. Throws naming what the publish did not make. */
+export function layPieceStart(published, install) {
+  if (!existsSync(join(published, PIECE_START))) throw new Error(`desktop-publish: the publish of the partner's launcher made no ${PIECE_START}.`);
+  const bin = join(install, ...CLI_BIN);
+  mkdirSync(bin, { recursive: true });
+  for (const name of readdirSync(published)) cpSync(join(published, name), join(bin, name), { recursive: true });
+}
+
+/**
  * What is wrong with an unpacked package as the doctrine tool an install carries, or null when it is the
  * release's `daoris`: named `daoris`, its bin entry, its built dispatcher (without `dist/` the entry falls
  * back to sources a package does not ship), its canon at the package's own version (`release-prep` holds the
@@ -1316,6 +1338,17 @@ async function main() {
     }
   } else {
     console.log('desktop-publish: the git doors are left out (--git-doors lays them; D198\'s owed measurements first).');
+  }
+
+  // The partner's launcher (COAGENT1b), beside the doors: a partner's start goes through it alone, and none starts until M2 admits one.
+  console.log(`desktop-publish: publishing the partner's launcher into ${CLI_BIN.join('/')}/…`);
+  const pieceStartStage = join(stages, 'piece-start');
+  run(pieceStartPublishCommand(pieceStartStage, artifacts));
+  try {
+    layPieceStart(pieceStartStage, root);
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
   }
   rmSync(stages, { recursive: true, force: true });
 

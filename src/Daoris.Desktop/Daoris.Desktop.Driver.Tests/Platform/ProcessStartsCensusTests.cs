@@ -29,6 +29,9 @@ public sealed class ProcessStartsCensusTests
         ["Daoris.Desktop.Driver/Platform/ProcessStarts.cs"] = (1, "the gate itself: the one place the runtime's start is handed in"),
         ["Daoris.Desktop.Driver/Platform/GitDoors.cs"] = (3, "the git doors (GITAUTH1b), compiled into a program of their own that git starts, "
             + "with no window and no bridge: the repository's ssh setting asked of git, the ssh, and git's own transport"),
+        ["Daoris.Desktop.Driver/Conversations/Partners/PieceLauncher.cs"] = (1, "the partner's launcher (COAGENT1b), compiled into a "
+            + "program of its own that the driver starts for a partner alone, with no window and no bridge: the harness, once the "
+            + "launcher is in the piece's job"),
         ["Daoris.Desktop.Launcher/Program.cs"] = (1,"the launcher is a program of its own, with no window and no bridge: it starts the application once and exits"),
         ["Daoris.Desktop.Driver/Agents/Consoles/PseudoConsole.cs"] = (2, "a terminal's shell under a pseudo-console, which .NET cannot start: "
             + "CreateProcessW, declared and called once; the terminal module runs that start through the gate's RunAsync"),

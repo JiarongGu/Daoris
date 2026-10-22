@@ -250,7 +250,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | File | KB | Lines |
 |---|---|---|
 | `tools/deployment-rehearsal.mjs` | 105 | 1815 |
-| `tools/desktop-publish.mjs` | 80 | 1402 |
+| `tools/desktop-publish.mjs` | 82 | 1435 |
 | `tools/desktop.mjs` | 54 | 1090 |
 | `tools/family-rehearsal.mjs` | 359 | 6228 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
@@ -305,4 +305,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-22-coagent-design.md` | 89 | 870 |
 | `docs/2026-10-22-git-auth-design.md` | 111 | 1133 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
-| `src/Daoris.Desktop/README.md` | 154 | 769 |
+| `src/Daoris.Desktop/README.md` | 154 | 770 |

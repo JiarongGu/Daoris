@@ -23,6 +23,9 @@
     <!-- Built first and never referenced (GITAUTH1b): the git doors compile driver files in by link, and `GitDoorsProcessTests`
          lays the built program out as an install's doors and has git start it. -->
     <ProjectReference Include="..\Daoris.Desktop.GitDoor\Daoris.Desktop.GitDoor.csproj" ReferenceOutputAssembly="false" />
+    <!-- Built first and never referenced (COAGENT1b): the partner's launcher compiles driver files in by link, and
+         `PieceLauncherProcessTests` starts the built program in a piece's job. -->
+    <ProjectReference Include="..\Daoris.Desktop.PieceStart\Daoris.Desktop.PieceStart.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>

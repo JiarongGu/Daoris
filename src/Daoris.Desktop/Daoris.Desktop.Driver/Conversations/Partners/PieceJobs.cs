@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 public static class PieceJobs
 {
     /// <summary>The job's name for a piece, in this sign-in's own namespace: what the state's <c>job</c> keeps.</summary>
-    public static string NameOf(string piece) => $"Local\\daoris-piece-{piece}";
+    public static string NameOf(string piece) => PieceLauncher.JobPrefix + piece;
 
     /// <summary>A piece's job, made empty and wholly this one's; null where there is none to be had, which refuses the piece.</summary>
     internal static ProcessJob? Create(string piece) => ProcessJob.Create(NameOf(piece));
