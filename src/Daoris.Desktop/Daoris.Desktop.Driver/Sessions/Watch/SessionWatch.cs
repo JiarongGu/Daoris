@@ -64,7 +64,7 @@ public sealed record QuietStep(string Session, string Kind, string Adapter, stri
 /// (<see cref="Hearing"/>), the time alone, in memory.</para>
 ///
 /// <para><b>Busy by window</b> (§1.2): the job's CPU is cumulative, so busy is the CPU between the newest read and the newest one at least
-/// <see cref="Window"/> before it, over that time, above <see cref="IdleFloor"/> a minute. A job is read only for a session unheard for half
+/// <see cref="DefaultWindow"/> before it, over that time, above <see cref="IdleFloor"/> a minute. A job is read only for a session unheard for half
 /// its bound, so a session heard costs a look no system call. Where the root did not join (or off Windows) busy is unknown, which marks
 /// and brings the row as quiet does, and never ends anything.</para>
 ///
@@ -85,8 +85,11 @@ public sealed class SessionWatch
     /// <summary>The idle floor (§1.5): 0.2 seconds of CPU a minute, a third of a percent of one core.</summary>
     public static readonly TimeSpan IdleFloor = TimeSpan.FromMilliseconds(200);
 
-    /// <summary>The shortest window busy is read over (§1.2).</summary>
-    public static readonly TimeSpan Window = TimeSpan.FromMinutes(1);
+    /// <summary>The shortest window busy is read over (§1.2), a minute.</summary>
+    public static readonly TimeSpan DefaultWindow = TimeSpan.FromMinutes(1);
+
+    /// <summary>The shortest window busy is read over: <see cref="DefaultWindow"/>, shorter only in a test on a real process.</summary>
+    public TimeSpan Window { get; set; } = DefaultWindow;
 
     /// <summary>A quest's session: marked, brought to the person, and ended by the person's press or a headless <c>--quiet-end</c>.</summary>
     public const string Quest = "quest";
@@ -395,7 +398,7 @@ public sealed class SessionWatch
     }
 
     // Busy by window (§1.2): the CPU between the newest read and the newest at least a window before it, over their time.
-    private static bool? Busy(Watched watched, TimeSpan now, Func<string, JobRead?> jobs)
+    private bool? Busy(Watched watched, TimeSpan now, Func<string, JobRead?> jobs)
     {
         if (jobs(watched.Session) is not { Holds: true, Cpu: { } cpu }) return null;
         watched.Reads.Add((now, cpu));
@@ -414,7 +417,8 @@ public sealed class SessionWatch
         var (since, before) = watched.Reads[reference];
         if (reference > 0) watched.Reads.RemoveRange(0, reference);
         var used = cpu - before;
-        return used.Ticks * Window.Ticks / Math.Max(1, (now - since).Ticks) > IdleFloor.Ticks;
+        // CPU a minute over the window, against the floor's 0.2 s a minute.
+        return used.Ticks * TimeSpan.TicksPerMinute / Math.Max(1, (now - since).Ticks) > IdleFloor.Ticks;
     }
 
     private void Forget(Watched watched)
