@@ -116,6 +116,8 @@ public static class WiringVariables
         ["DAORIS_PLUGIN_ID"] = "handed to a plugin's process by the driver",
         ["DAORIS_PLUGIN_FOLDER"] = "handed to a plugin's process by the driver",
         ["DAORIS_PLUGIN_DATA"] = "handed to a plugin's process by the driver",
+        [GitRouting.HomeVariable] = "handed to every child but the terminal's shells by the driver (GITAUTH1b): the home git's doors act for",
+        [GitRouting.GrantVariable] = "handed to the one plugin process a landing starts for its push (GITAUTH1b): the grant the door takes once",
         [PluginCycles.World] = "handed to a plugin's process by the kit's trial and cycle alone (FABRIC-PERFORM1e): the stand-in world it answers from in its platform's place",
         ["DAORIS_RULES_HOME"] = "handed to a session's connector by the driver: the home its rule proposals go to",
         ["DAORIS_STOP_ON_INPUT_END"] = "handed to the service host the desktop starts: its stop",

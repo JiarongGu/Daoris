@@ -35,8 +35,10 @@ What it pushes is the commit Daoris judged and landed, the frame's `tip`, never 
 at the push: a commit made on the branch after the landing judged it (an agent's, in a tree on a branch
 of its own) stays behind for the next landing. A frame from a Daoris before `tip` pushes `<branch>`.
 
-The organization, project and repository are the ones `az` detects from the checkout's `origin`
-(`--detect`, on by default), so nothing here names them. The title is the quest's (or what you first
+The organization, project and repository are named from the frame's `origin` (`--organization`,
+`--project`, `--repository`, with `--detect false`): under Daoris's git doors the checkout's remotes read
+`daoris::https://…`, which `az` cannot detect from. An `origin` in none of Azure DevOps' forms leaves
+`az` to detect them from the remotes as before, run without Daoris's routing. The title is the quest's (or what you first
 said in a conversation); the description names the quest, the session, who accepted the work (the
 person who reviewed it, or automatically when its quest was done, as the frame's `acceptedBy` says)
 and the commits, one line per value, as `--description` takes them. `--target-branch` is the line the

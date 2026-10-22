@@ -24,8 +24,12 @@ In the repository's own checkout, after Daoris has made the branch:
 
 ```sh
 git push --quiet origin <tip>:refs/heads/<branch>
-gh pr create --head <branch> --title <title> --body-file <file> --base <base>
+gh pr create --head <branch> --title <title> --body-file <file> --base <base> --repo <owner>/<repo>
 ```
+
+`gh` is told its repository from the frame's `origin` (`[host/]owner/repo`, the host left off for github.com):
+under Daoris's git doors the checkout's remotes read `daoris::https://…`, which `gh` cannot parse. Where
+`origin` names no GitHub repository, `gh` finds it from the remotes as before, run without Daoris's routing.
 
 What it pushes is the commit Daoris judged and landed, the frame's `tip`, never the branch as it stands
 at the push: a commit made on the branch after the landing judged it (an agent's, in a tree on a branch
@@ -46,7 +50,7 @@ frame's `pullRequest`. Then it opens no second one. It reads that pull request's
 while it is open:
 
 ```sh
-gh pr view <pullRequest> --json state
+gh pr view <pullRequest> --json state --repo <owner>/<repo>
 git push --quiet origin <tip>:refs/heads/<branch>
 ```
 

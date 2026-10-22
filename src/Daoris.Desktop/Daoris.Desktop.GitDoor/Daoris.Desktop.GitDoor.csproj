@@ -10,6 +10,7 @@
     <RootNamespace>Daoris.Desktop.GitDoor</RootNamespace>
     <AssemblyName>daoris-git-ssh</AssemblyName>
     <Product>Daoris</Product>
+    <Description>Daoris's git doors: the ssh door and the remote helper git starts, judging each remote act</Description>
     <InvariantGlobalization>true</InvariantGlobalization>
     <UseSystemResourceKeys>true</UseSystemResourceKeys>
   </PropertyGroup>
