@@ -1142,7 +1142,7 @@ describe('a park\'s go-aheads', () => {
       id: 'q5t10n00', question: 'Which target should the tile show?', recommend: 1, by: null, at: '2026-09-21T11:20:00Z',
       choices: [{ label: '1,200', does: 'Write 1,200.' }, { label: '1,350', does: 'Write 1,350.' }],
     };
-    render(<SessionHead session={session(parked)} onResolve={vi.fn()} goAheads={ASKED} onGoAhead={vi.fn()} answerBelow question={question} />);
+    render(<SessionHead session={session(parked)} onResolve={vi.fn()} goAheads={ASKED} onGoAhead={vi.fn()} parkBox question={question} />);
 
     const section = screen.getByRole('region', { name: 'Go-aheads it asked' });
     expect(within(section).getAllByRole('listitem')).toHaveLength(2);

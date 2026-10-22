@@ -104,7 +104,7 @@ export function SessionHead({
   onAnswerSession, branch, ownBranch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
   ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest,
   continues, helps, onOpenSession, heavy, process, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek, helpers, permissions, answers,
-  question = null, answerBelow = false,
+  question = null, parkBox = false,
 }: {
   /**
    * Its question as its agent asked it (PARKVIEW1, the park's ask design §3), which its waiting card shows in place of its whole last
@@ -112,10 +112,10 @@ export function SessionHead({
    */
   question?: ParkQuestion | null;
   /**
-   * The box below answers the park, and carries every press of what it asks (PARKVIEW1): its go-aheads are listed here with none,
-   * so the person answers in one place. False where nothing below takes the answer, and the head keeps their presses.
+   * The box below is the park's answer box, and carries every press of what it asks (PARKVIEW1): its go-aheads are listed here with
+   * none, so the person answers in one place. False where no such box is below, and the head keeps their presses.
    */
-  answerBelow?: boolean;
+  parkBox?: boolean;
   /**
    * The answers the answers-alone bound holds for the person (COWORK1e, D188 point 4; the message-urgency design §8.3), the frame's,
    * handed to the foot's strip alike: every one the shell read, its own drawn, the agents' names, the answer's door and its pending.
@@ -351,8 +351,8 @@ export function SessionHead({
             goAheads={goAheads}
             busy={resolving}
             // PARKVIEW1: where the box below answers the park, its presses are the box's, so the person answers in one place.
-            onAnswer={answerBelow ? undefined : onGoAhead}
-            lead={t(answerBelow ? 'work.park.inTheBox' : 'work.awaiting.goAheadsLead')}
+            onAnswer={parkBox ? undefined : onGoAhead}
+            lead={t(parkBox ? 'work.park.inTheBox' : 'work.awaiting.goAheadsLead')}
             inConversation={toEvent?.goAheads}
             marked={sought?.startsWith('goAhead:') ? Number(sought.slice('goAhead:'.length)) : undefined}
           />

@@ -104,8 +104,9 @@ at 40% of the main area and scrolls within, as the strip does. In order:
 Then the text field, whose placeholder says its words go with the answer pressed, or alone as the answer, and *Carry on with this
 answer*, the free answer, as today.
 
-**One place to answer.** Where the box below takes the park's answer, the strip draws no park wait (today its question; now its
-go-aheads too), and the head lists them without presses: its card shows the recorded question and its answers in place of the
+**One place to answer.** Where the box below is a driven park's answer box, the strip draws no park wait (today its question; now its
+go-aheads too), and the head lists them without presses (a parked conversation's composer draws none of the ask, so there both keep
+theirs): its card shows the recorded question and its answers in place of the
 whole last message (the note as today where none was recorded), and its go-ahead list says each is answered in the box below.
 The head keeps every press where no box below takes the answer (a teammate's park draws none, as today). One set of handlers
 still backs every press (D168 point 3). The question and each go-ahead carry *In the conversation* (WAITFOOT1c), and a raising

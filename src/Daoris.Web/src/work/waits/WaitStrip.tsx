@@ -40,10 +40,10 @@ export type WaitProps = {
    */
   question?: ParkQuestion | null;
   /**
-   * The box below answers the park (a driven park's answer box, or a parked chat's composer), and draws what it asks with every
-   * press (PARKVIEW1): the strip draws none of the park's waits, and the head lists its go-aheads with no press.
+   * The box below is a driven park's answer box, which draws what the park asks with every press (PARKVIEW1): the strip draws none
+   * of the park's waits, and the head lists its go-aheads with no press. A parked chat's composer draws none of it, so is no such box.
    */
-  answerBelow?: boolean;
+  parkBox?: boolean;
   /**
    * The tool calls it holds for the person's answer under asking (AUTONOMY1b3c, D184 point 3): every request this machine's sessions
    * hold as the shell read them, its own drawn, the answer's one door and its pending. Absent where nothing reads them (a browser).
@@ -118,6 +118,8 @@ export type WaitProps = {
  * A molecule: no hook beyond its own fold, focus and sought line.
  */
 export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, aside = false, ...props }: WaitProps & {
+  /** The foot's box takes the park's answer: a driven park's answer box, or a parked chat's composer. */
+  answerBelow?: boolean;
   /** Where the work's ask is open, the frame's, so it is open here or in the head (D168 point 3). */
   workAsk?: WorkAsk;
   /** Where a rule's *Allow…* is open, the frame's, so it is open here or in the head (D168 point 3). */
@@ -146,7 +148,7 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, 
   // ask design §3), are its go-aheads: the box draws what the park asks, each answer a press the box's words go with, so a line here
   // would be a second place to answer the same ask. Neither is counted: the strip's count is what it draws (the look of 2026-10-22
   // read *2 waiting on you* over one). With nothing else to draw, no strip.
-  const boxBelow = (wait: Wait) => (wait.kind === 'question' && wait.below) || (wait.kind === 'goAhead' && answerBelow);
+  const boxBelow = (wait: Wait) => (wait.kind === 'question' && wait.below) || (wait.kind === 'goAhead' && Boolean(props.parkBox));
   const waits = waitsOf({ ...props, answerBelow }).filter((wait) => !boxBelow(wait));
   if (waits.length === 0) return null;
   // Never from under the person (WAITFOOT2a): an ask open here, or the focus, a line a press led to's among it, holds it up.

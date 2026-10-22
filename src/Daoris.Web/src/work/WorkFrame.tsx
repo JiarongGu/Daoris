@@ -1716,10 +1716,10 @@ export function WorkFrame({
     // The go-aheads it asked, answerable only where this machine can answer the park (KNOWUSE1a2).
     goAheads,
     onGoAhead: here ? onGoAhead : undefined,
-    // Its question (PARKVIEW1), and whether the box below answers the park and carries every press of what it asks: then the strip
-    // draws none of the park's waits, and the head lists them with no press.
+    // Its question (PARKVIEW1), and whether the box below is the park's answer box, which carries every press of what it asks: then
+    // the strip draws none of the park's waits, and the head lists them with no press. A parked chat's composer draws none of it.
     question,
-    answerBelow: answering || (talking && box.kind === 'chat'),
+    parkBox: answering,
     // The rules it proposed (PROPOSEHERE1b): settled through the band's own door, then, on an *Allow*, the session told so as its
     // next turn, which is composed with the rule. One that takes no words now (its box's line, an intake) is not told, and says so.
     rules: {

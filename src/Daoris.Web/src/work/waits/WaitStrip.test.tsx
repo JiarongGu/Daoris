@@ -48,22 +48,27 @@ describe('the strip of what waits on the person, at the foot', () => {
     expect(within(strip()).queryByRole('textbox')).toBeNull();
   });
 
-  // PARKVIEW1 (the park's ask design §3): where the box right below answers the park, it draws what the park asks with every press,
-  // its go-aheads among them, so the strip draws none of them and counts none: it counted *2 waiting on you* over one line.
-  it('draws and counts none of a park\'s waits where its box right below answers them', () => {
+  // PARKVIEW1 (the park's ask design §3): where the box right below is the park's answer box, it draws what the park asks with every
+  // press, its go-aheads among them, so the strip draws none of them and counts none: it counted *2 waiting on you* over one line.
+  it('draws and counts none of a park\'s waits where its answer box right below draws them', () => {
     const { container } = render(
-      <WaitStrip session={parked} onResolve={vi.fn()} answerBelow goAheads={GO_AHEADS} onGoAhead={vi.fn()} onTop={vi.fn()} />,
+      <WaitStrip session={parked} onResolve={vi.fn()} answerBelow parkBox goAheads={GO_AHEADS} onGoAhead={vi.fn()} onTop={vi.fn()} />,
     );
     expect(container).toBeEmptyDOMElement();
 
-    render(
+    const { unmount } = render(
       <WaitStrip
-        session={parked} onResolve={vi.fn()} answerBelow goAheads={GO_AHEADS} onGoAhead={vi.fn()}
+        session={parked} onResolve={vi.fn()} answerBelow parkBox goAheads={GO_AHEADS} onGoAhead={vi.fn()}
         rules={{ proposals: [RULE], onAnswer: vi.fn() }} onTop={vi.fn()}
       />,
     );
     expect(strip()).toHaveAccessibleName('Waiting on you');
     expect(strip()).not.toHaveTextContent('dashboard configuration');
+    unmount();
+
+    // A parked chat's composer below takes the answer and draws none of the ask: its go-aheads stay here.
+    render(<WaitStrip session={parked} onResolve={vi.fn()} answerBelow goAheads={GO_AHEADS} onGoAhead={vi.fn()} onTop={vi.fn()} />);
+    expect(within(strip()).getByRole('button', { name: 'Approve' })).toBeInTheDocument();
   });
 
   it('answers a go-ahead still open through the head\'s own door where no box below answers the park, and lists none answered', async () => {

@@ -69,12 +69,12 @@ export function AttendedSession({
   chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, ownBranch, onDiscardBranch, discardingBranch,
   headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind,
   opinion, continues, helps, heavy, process, parts, entryAccept, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek, helpers, permissions,
-  answers, milestone, onOpenBranch, question, answerBelow,
+  answers, milestone, onOpenBranch, question, parkBox,
 }: {
   /** Passed straight through to the head: its park's question as its agent asked it, its waiting card's (PARKVIEW1). */
   question?: ParkQuestion | null;
-  /** Passed straight through to the head: the box below answers the park, and carries the presses of what it asks (PARKVIEW1). */
-  answerBelow?: boolean;
+  /** Passed straight through to the head: the box below is the park's answer box, with the presses of what it asks (PARKVIEW1). */
+  parkBox?: boolean;
   /** Passed straight through to the head: the answers the answers-alone bound holds for the person, with their two presses (COWORK1e). */
   answers?: AnswerWaits | null;
   /** Passed straight through to the head: the process its own tree runs under, *Details*' rows (PROCESS1e). */
@@ -265,7 +265,7 @@ export function AttendedSession({
         goAheads={goAheads}
         onGoAhead={onGoAhead}
         question={question}
-        answerBelow={answerBelow}
+        parkBox={parkBox}
         ownSignIn={ownSignIn}
         nameOf={nameOf}
         lands={lands}

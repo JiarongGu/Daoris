@@ -174,7 +174,7 @@ export const ParkedOnAQuestionAnsweredBelow: Story = {
   args: {
     ...ParkedAskingGoAheads.args,
     goAheads: [GO_AHEADS[0]!],
-    answerBelow: true,
+    parkBox: true,
     question: {
       id: 'q5t10n00',
       question: 'Where should the streaming budget live?',
