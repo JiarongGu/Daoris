@@ -5,6 +5,32 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-22 — One slow service answer froze the window's sessions list for the rest of its life (SLICESTALL1)
+
+- **Symptom:** the owner reported work in a workspace looking stuck. On the install, the window's `sessions` slice still held a
+  driven session as *working* 90 minutes after the service ended it (timed out, then carried on and completed). It held no record
+  created after about 05:02 UTC, while the `quests` slice beside it was current to the minute. The service's own answer of the
+  same records was right, and the machine log said nothing about the slice.
+- **Root cause:** `StateSlice.JudgeAsync` (`Platform/StateSlices.cs`) took every `OperationCanceledException` from its read for the
+  worker's own stop, and `RunAsync` caught one only when its token was cancelled.
+  - The sessions slice reads the service through `DriverHttp`, whose `HttpClient` times out at 30 s by throwing
+    `TaskCanceledException`.
+  - The machine was under heavy load at the time, with four builders and the gates beside the install. One answer past 30 s
+    therefore left `RunAsync` as a faulted task that `StateSlices.RunAsync`'s `Task.WhenAll` never observes alone.
+  - So the slice stopped judging, its wakes went unread, and every window kept what it last held. A throw past the read
+    (`Moved`, `Tell`) would have ended it the same way.
+- **Fix:**
+  - A judgement's failure now includes any cancellation that is not the worker's stop: said once until one succeeds, with what
+    was judged kept.
+  - Each turn of the worker (a judgement, the manifest) runs through `SurvivingAsync`. That says anything thrown past the
+    judgement, once until a turn succeeds, and goes on to the next wake.
+- **Verification:**
+  - `StateSlicesTests.A_read_that_times_out_is_a_failed_judgement_and_the_worker_judges_again_at_the_next_wake` and
+    `A_judgement_that_throws_past_its_read_is_said_once_and_the_worker_goes_on` failed on the old code: the first at once, the
+    second hung to its bound because the worker had ended. Both pass with the fix.
+  - The modules' fast half passed, 2242 of 2242.
+  - An installed window held by this fault is freed by a restart, and the next release carries the fix.
+
 ## 2026-10-22 — Ask Daoris's *Go there* answered that its plan changed once its quest was taken (ASKQUESTS1)
 
 - **Symptom:** reported to the steward from ASKDISMISS1's build: a go card about a quest Ask Daoris had published, pressed after a
@@ -19,6 +45,41 @@ repository.
   never a pull and never on a clock). The conversation's list of what it published (ASKQUESTS1) opens a quest with no judge at all.
 - **Verification:** `AskDaoris.test.tsx`'s *draws a go card again when a push moves where a quest stands*, seen failing with the
   redraw taken out, then green; it holds that no quest or ask list was pulled.
+
+## 2026-10-22 — The start that lost the race for its run's binding read the winner's as unread and held (BINDRACE1)
+
+- **Symptom:** `WorkflowRunBindingTests.Two_starts_of_one_run_at_once_both_take_under_one_binding` (FABRIC-CUTOVER1g) failed in
+  every full driver fast half run beside other builders on 2026-10-21 and 2026-10-22, the install's own build among them, with
+  `[Bound, Unread]` where both starts should take under one binding. It passed alone every time. On a machine, two starts of one run
+  at once could hold the second as if its binding did not read.
+- **Root cause:** a reader's share mode, not a missing or partial file. Windows' move (`File.Move`, MoveFileEx) opens the file it
+  moves for deletion and closes it only after the file is in place, so for a moment the binding is there and whole and still held.
+  The losing start reads it in exactly that moment: its own bind finds the file there (`WorkflowRunFiles.Bind`), and its read
+  (`WorkflowRunFiles.Read`) opened it through `File.ReadAllText`, which shares reading only. Windows refused it with a sharing
+  violation, the read answered null, and the start said `Unread` and held. Under load the loser lands in that moment far more often.
+  - A probe of `File.Move` without overwriting beside a reader waiting for the file and reading it as it appeared, under one spinning
+    thread per core in the probe's own process, refused 478 reads of 700 through `File.ReadAllText`, every one error 32 (sharing
+    violation), none missing. Sharing deletion, none of 700 was refused.
+  - The product's two starts in a loop, each pair's reads of the chain released together as the test releases them, came to
+    `[Bound, Unread]` in 45 rounds of 300 under that load, and in none of 300 without it.
+  - `KeptVersions` and arming's `GraphRuns` read the same files the same way. A refused read named no version, so a workflow saved
+    past its newest 20 in that moment could drop the version a run had just bound, and the run was missing from that look's graph runs.
+- **Fix:** `AtomicFile.ReadText` reads a file sharing its writing and deletion with a writer, as `KeepLock`, `HeavySlot` and
+  `QuestionFiles` already read theirs. Every read of a binding goes through it: `WorkflowRunFiles`' `Read`, `AnyNamed` and
+  `KeptVersions`, and `GraphRuns`. The writer is unchanged. A retry would only wait out the same refusal, which sharing deletion never
+  meets. `File.Replace` needs a file already there, so it cannot create a first binding without overwriting, and its own handle is
+  held the same way. The binding is created without a lock and its writer takes none, so a lock on the read would make every gate's
+  read wait on writes for nothing.
+- **Verification:** the tests hold a file as the move does (`MoveHold`, a handle open for deletion that shares everything). Three
+  new tests were seen failing before the change, two at runtime and one as a compile error.
+  - `WorkflowRunBindingTests.A_start_reads_the_binding_its_move_into_place_still_holds` reads it as unread before the fix. The
+    kept versions of the held run are empty.
+  - `A_graph_run_is_found_while_the_move_into_place_still_holds_its_binding` finds no graph run.
+  - `AtomicFileTests.A_file_is_read_whole_while_its_move_into_place_still_holds_it` fails to compile, and each test also holds that
+    `File.ReadAllText` is refused in that moment.
+  - After the change, the product's loop came to `[Bound, Already]` in 1300 of 1300 rounds under the same load.
+  - `WorkflowRunBindingTests` passed 20 runs of 20 in a loop, 16 of 16 each, and the driver's fast half passed 13288 of 13288.
+
 ## 2026-10-22 — The driver's Process tests on `main` still held the scopes the fold retires (POOL1a1, POOL1a2)
 
 - **Symptom:** the full set at `cb9211d88` failed `driver-process`, and these four failed alone too. `OpinionResumeTickTests`' and

@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The one way this library writes a file that something else may be reading: beside, then renamed,
-/// so a reader never meets half of it.
+/// so a reader never meets half of it; and the way such a file is read beside its writer.
 /// </summary>
 /// <remarks>
 /// <para><b>The beside file is named per write, and the rename waits out a busy target.</b> Fifteen
@@ -16,10 +16,28 @@ namespace Daoris.Driver;
 /// it <c>failed</c> (REV3).</para>
 ///
 /// <para>Text is written as BOM-less UTF-8, and what it says (LF, a final newline) is the caller's.</para>
+///
+/// <para>A file these writes keep is read beside its writer through <see cref="ReadText"/> (BINDRACE1).</para>
 /// </remarks>
 public static class AtomicFile
 {
     private static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
+
+    /// <summary>A file these writes keep, read whole, sharing its writing and deletion with a writer.</summary>
+    /// <remarks>
+    /// 🔴 Measured (BINDRACE1): Windows' move opens the file it moves for deletion and closes it only once the file is in place, so for a
+    /// moment the file is there, whole, and still held. A reader that does not share deletion, as <c>File.ReadAllText</c> does not, is
+    /// refused in that moment with a sharing violation: 478 reads of 700 that read a file as it appeared under load, and none of 700 that
+    /// shared deletion. A start that lost the race for its run's binding read the winner's as unread, and held.
+    /// </remarks>
+    /// <exception cref="FileNotFoundException">No file is there.</exception>
+    /// <exception cref="IOException">It could not be read.</exception>
+    public static string ReadText(string path)
+    {
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        using var reader = new StreamReader(stream, Utf8);
+        return reader.ReadToEnd();
+    }
 
     /// <summary>Write <paramref name="text"/> to <paramref name="path"/> whole, or not at all.</summary>
     public static void WriteText(string path, string text) =>
