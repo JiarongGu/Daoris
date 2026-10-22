@@ -345,6 +345,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry Knowledge = new("knowledge", HomeCategory.Data, "data/knowledge.db", "knowledge.db");
     public static readonly HomeEntry Sessions = new("sessions", HomeCategory.Data, "data/sessions", "sessions");
     public static readonly HomeEntry Helpers = new("helpers", HomeCategory.Data, "data/helpers", "helpers");
+    public static readonly HomeEntry Partners = new("partners", HomeCategory.Data, "data/partners", "partners");
     public static readonly HomeEntry Handed = new("handed", HomeCategory.Data, "data/handed", "handed");
     public static readonly HomeEntry Setup = new("setup", HomeCategory.Data, "data/setup", "setup");
     public static readonly HomeEntry Workflows = new("workflows", HomeCategory.Data, "data/workflows", "workflows");
@@ -402,7 +403,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     [
         DriverConfig, Harnesses, Accounts, Cooling, Windows, Reads, Permissions, RuleProposals, Tools, PluginState, Plugins,
         PluginApprovals, Usage,
-        Landings, SessionBranches, LinesMoved, RegistryFollowed, Abandoned, Update, Knowledge, Sessions, Helpers, Handed, Setup,
+        Landings, SessionBranches, LinesMoved, RegistryFollowed, Abandoned, Update, Knowledge, Sessions, Helpers, Partners, Handed, Setup,
         Workflows, HelpProposals, ConfiguredAccess, OpinionGates, OpinionDues, BrowserSettings, BrowserFavorites, HomeId, Brainstorms,
         UsageHistory, Keeping, Notices,
         Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, Window,
