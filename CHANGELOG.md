@@ -5,6 +5,13 @@ with the version and date at release.
 
 ## Unreleased
 
+- A number on the activity bar now means one thing, what waits on you there, as the title bar's bell and the taskbar count it:
+  Sessions counts what waits in a session (a question, work to review, a held call or answer, a helper's or hand-over ask), Quests
+  what an ask or a quest waits on, Repositories a branch to clean up, Agents a rule proposal or an account, Settings a disk below
+  its floor; together they make the bell's number. Work under way is a small still blue dot instead of a number: Sessions while the
+  driver's sessions run, Quests while a quest is taken, said in words in the place's tip. Sessions no longer counts the sessions
+  the driver runs (the status bar still does), nor Quests every outstanding quest. What is unread is said *N unread* in a quiet
+  ink, no longer in the colour of what waits on you. In English and 中文.
 - An update that stopped part way is now put back only while nothing else acts on Daoris's home: a terminal's `daoris-driver`
   command changing it is waited for, up to thirty seconds. If it still holds the home, Daoris does not start on a half-replaced
   application; it says which command held the home and asks you to start it again once that has finished.

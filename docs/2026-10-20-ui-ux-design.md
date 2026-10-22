@@ -901,7 +901,8 @@ says a state and has no verb.
 
 ### 3.10 One meaning for a number: what waits on you (BADGEUX1)
 
-**Standing: built 2026-10-22 under D185, read by Codex (§3.10.8).** The owner's direction of 2026-10-22, given while using
+**Standing: built 2026-10-22 under D185 (BADGEUX1), revised after Codex's read, every blocking finding taken (§3.10.8); the
+steward's to accept under D191.** The owner's direction of 2026-10-22, given while using
 Daoris: a number on a session, a quest or a list place counts only what needs the person's step, the same things the window's
 taskbar button and the title bar's bell count; work that is running is not counted, and is shown in another, quieter style. The
 whole window then has one meaning for a number: *this waits on you*. Read for it: D196 and the notification design §2 and §3.3;
@@ -922,12 +923,15 @@ the code at `662151ce1`.
 | Activity bar: Repositories, Map, Knowledge, Plugins, Settings | nothing | — |
 | *Notifications*' group heads | the presses (warning), *What needs you*'s rows (open's ink), **Messages' unread and Done and failed's unread, bare figures in open's ink** | `NotificationsView.tsx:141-169`, `:201-203` |
 | Overview's summary lines | the presses, each group's rows, **Messages' asks and every notice, in open's ink** | `NeedsSummary.tsx:82-98`, `:111` |
-| Sessions' list (the rail): rows | a dot and its word per row (the live mark pulses while a turn runs); facts in words; no figure alone | `SessionRow.tsx:236` |
+| Sessions' list (the rail): rows | a dot and its word per row (the live mark pulses three times as a turn begins and settles, `tokens.css:233-237`); facts in words; no figure alone | `SessionRow.tsx:236` |
+| Sessions' list closed to its strip | each session's initial and its dot, its state its accessible name and tip | `SessionRow.tsx:33-38`, `ui.tsx:449-497` |
 | Sessions' list: headings | the rows each group heads, in its words (*Working (3)*); an ask's heading *· 2 unread* | `SessionList.tsx:219-224`, `:244` |
+| The console's tabs | each stream's dot, its state in the tab's accessible name | `frame.tsx:863-880` |
+| The strip's browser chip | *browser driven by 2 sessions*, a count with its noun | `BrowserDoor.tsx:90-101` |
 | Quests' list: rows | pills in words; **an ask's *2 unread* pill in open's hue**, a teammate's ask's too; a quest's carried links and files, an icon and a faint figure each | `AskRow.tsx:100`, `TeammateAskRow.tsx:30`, `QuestList.tsx:189` |
 | Quests' list: headings | the rows each group heads (*Asks (2)*) | `QuestList.tsx:92`, `:107` |
 | An ask's channel; an item of *Messages* | **its *N unread* in open's hue** | `ChannelSection.tsx:171`, `Messages.tsx:116-118` |
-| The status bar | *N sessions*: the cap's count, the same as Sessions' badge, its tip saying *working, or waiting on you* | `frame.tsx:410-419`, `work.status.json` |
+| The status bar | *N sessions*: the cap's count, the same as Sessions' badge, its tip saying *working, or waiting on you*; *setup: n of 5* until the setup is done; the index's entries, a faint figure with its tip | `frame.tsx:410-419`, `:449-472`, `work.status.json` |
 | The Workspace menu's scope rows | each workspace's repositories, a faint figure | `commands.ts:545` |
 
 There is no *Asks* place: an ask is a row of Quests' list. So two of the activity bar's three numbers counted work that was
@@ -936,33 +940,41 @@ hue the platform language keeps for the person's waits (§3: *open's hue is the 
 
 #### 3.10.2 The rule
 
-- **A badge counts only what waits on the person.** A badge is a figure drawn as a mark of its own: on a place of the activity
-  bar, on the bell, on the taskbar. It counts the rows `needsListed` returns, in the window's workspace as NEEDSSCOPE1 scopes
-  them, and on the bell and the taskbar alone the presses as well, since a press is the bell's own (§2.1 of the notification
-  design). It wears open's hue, the bell's unshown presses the warning hue as now. Nothing else is ever a badge.
-- **Each wait is counted at one place: the place its door opens** (`App.tsx:976-1038`), where its step is taken. So the bell's
-  number is the presses plus the places' numbers, and a place's number is the bell's for the same rows.
+- **A badge counts only what waits on the person.** A badge is a figure drawn as a mark of its own, standing for its count
+  without a noun: on a place of the activity bar, on the bell, on the taskbar. It counts the rows `needsListed` returns, in the
+  window's workspace as NEEDSSCOPE1 scopes them, and on the bell and the taskbar alone the presses as well, since a press is the
+  bell's own (§2.1 of the notification design). It wears open's hue, the bell's unshown presses the warning hue as now. Nothing
+  else is ever a badge. A count said with its noun (*3 unread*, *2 sessions*, *Working (3)*) is words, and the rule asks of it only
+  that it never wear open's hue unless it counts waits; so the window's one meaning is the badge's.
+- **Each wait is counted at one place: the place its row's door opens** (`App.tsx:976-1038`), where its step is taken. So a
+  place's number is the bell's for the same rows, and the places' numbers, the presses and the rows only the bell's view settles
+  sum to the bell's count of what needs the person: the figure the bell shows while no press waits unshown (while one does, it
+  shows the presses' count in the warning hue, §3.3 of the notification design), and the taskbar's always.
 
   | Place | Its waits, by kind |
   |---|---|
-  | Sessions | `parked`, `review`, `opinion`, `helper`, `hand-over`, `permission`, `answer` |
+  | Sessions | `parked`, `review`, `opinion`, `helper`, `hand-over`, `permission`, `answer`; a `work` row whose branch was cut for a session the page holds, which opens that session (FABRIC-UNKNOWN1c) |
   | Quests | `proposal`, `intake`, `unanswerable`, `parked-quest`, `go-ahead`, `departure`, `set-up`, `trust` |
-  | Repositories | `work` (the workspace's Branches, where the clean-up's press is; a branch cut for a session the page holds also opens that session, whose page discards it too, and is still counted here, by its kind) |
+  | Repositories | every other `work` row (the workspace's Branches, where the clean-up's press is) |
   | Agents | `rule`, `account-wait`, `signed-out` |
   | Settings | `space` |
-  | none | `confirmation` (its press is the bell's alone); a kind this build does not know (the bell counts it, no place does) |
+  | none, the bell's view alone | `confirmation` (its press is the bell's); a held attempt (`work` with `held`), whose presses are on its row alone and whose door opens nothing; a kind this build does not know |
 
-  The table is `ATTENTION_PLACE` beside `ATTENTION_GROUP` (`work/attention/attention.ts`), typed over every kind, so a new kind
-  fails the typecheck until it is placed. Overview and *Notifications*' tab wear none: Overview holds no wait of its own, its lines
-  being doors into the view, and the view's count is the bell.
+  The kinds' table is `ATTENTION_PLACE` beside `ATTENTION_GROUP` (`work/attention/attention.ts`), typed over every kind, so a new
+  kind fails the typecheck until it is placed; `placeOf` reads a `work` row's own door, judging the cut session by the same
+  `workCutFor` the band's door reads, over the sessions the page holds. Overview and *Notifications*' tab wear none: Overview
+  holds no wait of its own, its lines being doors into the view, and the view's count is the bell.
 - **Running work is a mark, never a number.** An 8 px dot at the place's lower corner, in taken's hue (`--st-taken`, the status
   palette's *in progress*, which a working session's pill and a taken quest's already wear), ringed in the page's colour so it
-  stands off the icon, still. It is lit at:
-  - **Sessions**, while a session the driver runs in the window's workspace is under way and not parked on the person: the
-    attention slice's `working` keys less its `sessions` keys, both judged in .NET (`NeedsAPerson.Working`, `.WaitingInSessions`)
-    and keyed alike (`session:<id>`), so the page subtracts keys and judges nothing. A person's own conversation is not counted
-    here, as it is not under the cap (CAPCOUNT1).
-  - **Quests**, while a quest of the window's workspace is taken.
+  stands off the icon, still. It says what its source holds, and no more:
+  - **Sessions: the driver's work under way.** The sessions the driver runs in the window's workspace, the cap's count
+    (`NeedsAPerson.Working`: queued, starting, working and parked, never a person's own conversation, CAPCOUNT1), less those
+    parked on the person (`.WaitingInSessions`' `session:` keys), both judged in .NET and keyed alike, so the page subtracts keys
+    and judges nothing. So a park already answered and waiting for the driver's next look is under way, and a session holding a
+    tool call for the person is both under way and a wait, its number beside the mark. A person's own conversation, whose turn may
+    be running, lights nothing here: its row in the list says it. Its words are *under way*, never *working*, which is a turn's.
+  - **Quests: a quest taken.** Its status, whoever took it, a taken quest waiting on another repository's answer among them
+    (`QuestList.tsx:192-194`): its words are *taken*.
   - nowhere else: no other place holds work that runs.
 - **Both at once**: the number at the upper corner, as the bell's, and the mark at the lower; they differ in shape (a figure in
   a ring, a filled dot), in place and in hue, and the place's words say both, the waits first.
@@ -979,10 +991,13 @@ Computed from the tokens by WCAG's relative luminance, not measured on a screen.
 - **Not green.** Green is done's hue, an outcome, and the platform language keeps a liveness mark off an outcome's hue (§3,
   POLISH2: *ended* wore done's green beside a failure). A place lit green would read *done*.
 - **Not the accent, the rows' live mark.** At badge size the accent and open's amber read alike (UX5 U24, why SESSBADGE1 put its
-  wait in a dot), and the mark sits beside an open number. Taken's blue is the palette's other side. The rail's rows keep their
-  pulsing accent dot: it is one turn's liveness beside its word, where a place's mark is a standing fact.
-- **Still, not pulsing.** It stands for hours while the driver works; motion that never stops is noise, and the place is not
-  where a turn is watched.
+  wait in a dot), and the mark sits beside an open number; the accent is also the interactive identity, never a status (§3).
+  Taken's blue is the palette's other side. The rail's rows keep their accent dot: it is one turn's liveness beside its word,
+  where a place's mark is a standing fact about the driver's work.
+- **Still.** It stands for hours while the driver works, and a mark at rest is still (FREEZE1, `tokens.css:233-237`); the place
+  is not where a turn is watched.
+- **A dot, not a stroke** (Codex's 6.2). Once Sessions' waiting dot leaves, a dot on a place means one thing; the accent's dots
+  are on the rows and the bell, never on a place; and the direction named a dot.
 - **Not a quieter number.** Two figures on one 36 px place (D76's note) and a figure that means something other than a wait are
   what the direction removes.
 
@@ -994,44 +1009,52 @@ says what its marks show, the waits first, joined by ` · `:
 | Mark | English | 中文 | Key |
 |---|---|---|---|
 | The number | *2 waiting on you* | 2 个等你处理 | `nav.waiting`, the taskbar's own words, so the place and the button say one sentence |
-| Sessions' mark | *3 working* | 3 个工作中 | `nav.working` (new), 工作中 as `sessionState.working` and the rail's *Working* group say it |
-| Quests' mark | *1 taken* | 1 个已接下 | `nav.taken` (new), the glossary's *take* (接下), never 进行中, which it avoids |
+| Sessions' mark | *3 under way* | 3 个进行中 | `nav.underWay` (new): the driver's work under way, never *working* (工作中), which is a turn's, and which a queued or answered session is not |
+| Quests' mark | *1 taken* | 1 个已接下 | `nav.taken` (new), the glossary's *take* (接下), never 进行中, which it avoids for a taken quest |
 
 `nav.active` (*N active*), the count SESSBADGE1 said, is retired from both catalogues. A place with neither says nothing beyond
-its name.
+its name. 进行中 names the driver's sessions under way and a taken quest is 已接下, so the two places never share a word.
 
 #### 3.10.5 What changes elsewhere
 
 - **Sessions' badge (SESSBADGE1).** Its count of the sessions the driver runs leaves the badge: the running mark shows that work
-  runs and its words say how many, and the status bar keeps the cap's count. Its waiting dot leaves too, since what waits is now
-  the number. The `sessions` partition stays, read only to keep parks out of the running mark; a quest parked on its failures is
-  counted on Quests, where its *Try again* is, and no longer in Sessions (U20 read it there).
+  is under way and its words say how many, and the status bar keeps the cap's count. Its waiting dot leaves too, since what waits
+  is now the number. The `sessions` partition stays, read only to keep parks out of the running mark (`useAttention`'s `running`);
+  a quest parked on its failures is counted on Quests, where its *Try again* is, and no longer in Sessions (U20 read it there).
 - **Quests' badge.** Outstanding quests are no longer counted: a taken quest lights the mark, an open one sitting is neither a wait
   nor running work. The quests are still read for the mark.
 - **Agents' badge** is the rows' judgement (`signed-out`, `account-wait`, `rule`), not the page's own count of signed-out accounts
   (`useAgentsWaiting` goes), so it is the bell's judgement and scoped as the bell's is.
-- **The status bar keeps *N sessions*:** the cap's count (D76's note), a standing fact with its noun beside it, never a badge, its
-  tip unchanged. It is the mark's *working* plus the driver's parked sessions.
+- **The status bar keeps *N sessions*:** the cap's count (D76's note), how much of the cap is held, a standing fact with its noun
+  beside it, never a badge, its tip unchanged. It is Sessions' *under way* plus the driver's sessions parked on the person.
 - **Unread is said in words, in a neutral ink.** News waits on nobody (D196 point 6; the notification design §2.4), so wherever a
   figure counts it, the figure carries its word (*3 unread*) in the neutral ink, never open's: *Notifications*' Messages and Done
-  and failed heads, Overview's lines for them, an ask's row, a teammate's ask's row, an ask's channel and an item of Messages. The
-  bell keeps its accent dot, never a count.
+  and failed heads, an ask's row, a teammate's ask's row, an ask's channel and an item of Messages. Overview's lines for Messages
+  and Done and failed count their items and notices, not what is unread, which their detail says: their figures keep what they
+  count and leave open's ink for the neutral one. The bell keeps its accent dot, never a count.
 - **Kept as they are, each read against the rule:** a list heading's tally of its rows, written in its words (*Working (3)*); a
-  row's dot and its word; a quest's carried links and files (an icon and a faint figure); the Workspace menu's repository count (a
-  faint figure on a menu row). None is a mark on a place, and none wears open's hue.
+  row's dot and its word, in the list and closed to its strip; the console's tabs' dots; a quest's carried links and files (an
+  icon and a faint figure); the strip's *browser driven by 2 sessions*; the status bar's *setup: n of 5* and the index's entries;
+  the Workspace menu's repository count (a faint figure on a menu row). Each is a count with its noun or a state with its word, none
+  is a badge on a place, and none wears open's hue for anything but a wait (the setup's mark waits on the person).
 - **A browser** has no rows, so no place carries a number there; Quests' mark still lights from the service's quests.
 
 #### 3.10.6 What holds it
 
-- `attention.test.ts`: every kind's place; every listed row counted at one place, the places summing to `needsListed`.
-- `app/sessionsBadge.test.tsx`, over the window and a shell that pushes the attention slice: each place's number is the bell's
-  for the same rows, in a window on one workspace and on every one; a place with running work alone wears the mark and no figure;
-  both at once; the words in English and 中文; the status bar's count unchanged.
-- `chrome.test.tsx`: the bar draws a number in open's hue, the mark, both and neither, and says each in words.
-- `NotificationsView`, `NeedsSummary`, `ChannelSection` and `QuestList` tests: unread said with its word, never in open's ink.
-- Stories: `Chrome/AppStrip`'s bar with waits, running alone, both, a long count, in light and dark.
-- Not covered: the installed window. The parent's look: the bar while sessions run and nothing waits (a blue dot, no figure),
-  a park arriving (the figure beside the dot), the bell's number equal to the places' sum, in both themes.
+- `attention.test.ts`: every kind's place; every listed row counted at one place, the places summing to `needsListed`; a kind this
+  build does not know at none; a unit of work by its own door (cut for a session, held, neither), the band's `cutFor` the same.
+- `app/sessionsBadge.test.tsx`, over the window and a shell that pushes the attention slice: at each of the five places, its
+  number is the bell's for the same rows and no other place counts them; every wait at one place, the places summing to the bell;
+  in a window on one workspace and on every one; running work alone, the mark and no figure, at Sessions and at Quests; both at
+  once; a parked session never running, the status bar's count still holding it; the words in English and 中文.
+- `chrome.test.tsx`: the bar draws every number in open's hue, the mark in taken's, both and neither, and says each in words.
+- `NotificationsView`, `NeedsSummary`, `ChannelSection` and `QuestList` tests: unread said with its word, never in open's ink; a
+  wait's figure in it.
+- Stories: `Chrome/AppStrip`'s bar with waits and running work, running alone, waits alone with a count past 99 and the gear's,
+  each in light and dark; and in a browser, no number.
+- Not covered: the installed window, and the contrast seen rather than computed. The parent's look: the bar while sessions run
+  and nothing waits (a blue dot, no figure), a park arriving (the figure beside the dot), the bell's number equal to the places'
+  sum, *Notifications*' and Overview's unread in the neutral ink, in both themes.
 
 #### 3.10.7 Rejected
 
@@ -1039,15 +1062,28 @@ its name.
 - **A grey or smaller number for running**: a figure that means anything but a wait is what the direction removes.
 - **Parked quests counted in Sessions** (U20): a wait is counted where its step is taken, and *Try again* is on the quest's page.
 - **The running mark judged on the page from the sessions' list**: a second rule SESSBADGE1 rejected for the count; the page only
-  subtracts two partitions .NET judged.
+  subtracts two partitions .NET judged. **A new .NET judgement of turns in flight** (Codex's 3, its second way): the mark says the
+  driver's work under way, which its source holds exactly, and a person's own turn is said on its row; no count needs a new
+  source, so the modules are left as they are.
+- **A fixed place per kind for a unit of work** (round 1 of this section): its door is its row's, so its place is too.
 - **The status bar counting only what runs**: its count is the cap's, the number the cap spends (CAPCOUNT1).
 - **A badge on Overview or on *Notifications*' tab**: neither holds a wait of its own; the bell is that count.
 
 #### 3.10.8 The read (D191)
 
-Codex read this section before the build: the prompt and its output are under `local/scratch/codex/` (`badgeux-read.*`).
-Fable did not read: the section changes no record, protocol, concurrency or decided rule others rest on, only what the page draws
-from what .NET already judges.
+Codex read the first version of this section on 2026-10-22, before its build, read-only in this repository, told not to read
+`local/`; its prompt and answer are kept in the machine's scratch. Six findings, three marked blocking; each was checked against
+the code at `662151ce1` before it was taken. Fable did not read: the section changes no record, protocol, concurrency or decided
+rule others rest on, only what the page draws from what .NET already judges.
+
+| # | Finding | Verdict | What changed |
+|---|---|---|---|
+| 1 | The inventory missed the strip's browser chip, the list's strip marks, the console's tabs and the status bar's other figures; the live dot pulses three times, not while a turn runs (blocks a claim of completeness) | holds | §3.10.1 gains the four rows and the pulse's truth; §3.10.5 classes each as kept |
+| 2 | A unit of work's door is its row's (held, cut for a session, or Branches), so a kind's place is not its door's; the bell's shown figure is the presses' alone while one waits unshown (blocking) | holds | `placeOf` reads a `work` row's own door through the band's own `workCutFor`; a held attempt is the bell's view's alone; the sum is stated against the bell's count of what needs the person and the taskbar's |
+| 3 | Taken's hue is right; but `working` less parks holds queued sessions, answered parks and held calls, and no person's turn, so it is no turn's liveness; a taken quest may wait on another repository (blocking for the predicates) | holds in part | the hue stands; the marks are named by what their sources hold: *the driver's work under way* and *a quest taken*; a held call's session is said to be both; no new .NET judgement (§3.10.7) |
+| 4 | 工作中 and 已接下 fit the glossary, the name and description shape is right, but *working* overstates its source; perhaps *2 waits* | holds in part | *under way* (进行中) for Sessions; *waiting on you* kept, being the taskbar's and the bell's sentence |
+| 5 | Unread in a neutral ink with its word is right; Overview's Messages and Done figures count items and notices, not unread | holds | those two figures go neutral and keep what they count; their details still say the unread |
+| 6 | The promise is broader than the result: keep *one meaning for a badge*; a stroke would tell progress by shape | holds in part | §3.10.2 binds the badge and says what a count with its noun keeps; the dot stands (§3.10.3) |
 
 ## 4. The component catalogue
 
