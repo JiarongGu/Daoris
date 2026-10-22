@@ -218,7 +218,8 @@ public sealed class AgentStartsTests : IDisposable
         using var start = jobs.Contain(info, ContainedKind.Agent, Launcher);
 
         Assert.True(start.Contained);
-        Assert.Equal(PieceLauncher.Arguments([jobs.Name], Program, ["/d"]), info.ArgumentList);
+        // As the system's search found it: its extension's casing is the file system's.
+        Assert.Equal(PieceLauncher.Arguments([jobs.Name], Program, ["/d"]), info.ArgumentList, StringComparer.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -239,16 +240,16 @@ public sealed class AgentStartsTests : IDisposable
     public void Each_start_is_said_on_the_machine_log_by_codes_alone()
     {
         using var jobs = new AgentJobs(StandInId());
-        using var log = new MachineLog(_home, "driver");
         using var uncontained = jobs.Contain(Harness(), ContainedKind.Plugin, launcher: null);
 
-        AgentStarts.Said(uncontained, _home, log);
+        using (var log = new MachineLog(_home, "driver")) AgentStarts.Said(uncontained, _home, log);
         AgentStarts.Said(new AgentStart(jobs, ContainedKind.Piece, null), _home, log: null);
 
         var lines = Directory.EnumerateFiles(DaorisHome.Entry(_home, HomeEntry.Logs), "*.jsonl")
             .SelectMany(File.ReadAllLines)
             .Select(line => System.Text.Json.JsonDocument.Parse(line).RootElement)
             .Where(line => line.GetProperty("event").GetString() == "agent.contained")
+            .Select(line => line.GetProperty("data"))
             .ToList();
         Assert.Equal(2, lines.Count);
         Assert.Contains(lines, line => line.GetProperty("kind").GetString() == "plugin"

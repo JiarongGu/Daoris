@@ -113,18 +113,18 @@ public sealed class AgentJobs : IDisposable
             var (call, _) = PieceLauncher.Read(info.ArgumentList);
             return call is { } read && read.Jobs.Contains(Name, StringComparer.Ordinal)
                 ? new AgentStart(this, kind, null)
-                : Uncontained(kind, ContainedWhy.JobRefused);
+                : Open(kind, ContainedWhy.JobRefused);
         }
 
         if (launcher is null)
         {
             if (piece is not null) throw new DriverException($"the partner's launcher ({PieceLauncher.Program}) is not laid out in this install, so the partner was not started.");
-            return Uncontained(kind, ContainedWhy.NoLauncher);
+            return Open(kind, ContainedWhy.NoLauncher);
         }
 
         var (job, why) = Job();
         List<string> jobs = [.. job is null ? Array.Empty<string>() : [Name], .. piece is null ? Array.Empty<string>() : [piece]];
-        if (jobs.Count == 0) return Uncontained(kind, why!);
+        if (jobs.Count == 0) return Open(kind, why!);
 
         // The launcher starts a harness named by its full path alone (it would search the session's tree first): the driver names it, from
         // the start's own PATH, then this process's, as a direct start would have found it.
@@ -139,10 +139,10 @@ public sealed class AgentJobs : IDisposable
         if (!Path.IsPathFullyQualified(info.FileName) || !File.Exists(info.FileName) || PieceStarts.Through(info, launcher, jobs) is not null)
         {
             if (piece is not null) throw new DriverException("the partner's start could not be handed to its launcher whole, so the partner was not started.");
-            return Uncontained(kind, ContainedWhy.NotHanded);
+            return Open(kind, ContainedWhy.NotHanded);
         }
 
-        return job is null ? Uncontained(kind, why!) : new AgentStart(this, kind, null);
+        return job is null ? Open(kind, why!) : new AgentStart(this, kind, null);
     }
 
     /// <summary>
@@ -160,7 +160,7 @@ public sealed class AgentJobs : IDisposable
         }
     }
 
-    private AgentStart Uncontained(ContainedKind kind, string why)
+    private AgentStart Open(ContainedKind kind, string why)
     {
         lock (_gate)
         {

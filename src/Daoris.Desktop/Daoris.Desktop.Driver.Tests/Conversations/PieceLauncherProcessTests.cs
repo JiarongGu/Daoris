@@ -24,8 +24,8 @@ public sealed class PieceLauncherProcessTests : IDisposable
 
     private static string Cmd => Path.Combine(Environment.SystemDirectory, "cmd.exe");
 
-    /// <summary>The launcher's build beside this test's own.</summary>
-    private static string Launcher()
+    /// <summary>The launcher's build beside this test's own (<see cref="AgentStartsProcessTests"/> lays it out too).</summary>
+    internal static string Launcher()
     {
         var build = new DirectoryInfo(AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
         var desktop = build.Parent!.Parent!.Parent!.Parent!.FullName;
@@ -111,7 +111,7 @@ public sealed class PieceLauncherProcessTests : IDisposable
         };
         foreach (var word in new[] { "/d", "/c", "echo %PIECE_WORD%& set /p line=" }) info.ArgumentList.Add(word);
         info.Environment["PIECE_WORD"] = "handed down";
-        Assert.Null(PieceStarts.Through(info, PieceStarts.LauncherPath(home), job, piece));
+        Assert.Null(PieceStarts.Through(info, PieceStarts.LauncherPath(home), [PieceJobs.NameOf(piece)]));
 
         using var process = Process.Start(info)!;
         Assert.Equal("handed down", await process.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(30)));

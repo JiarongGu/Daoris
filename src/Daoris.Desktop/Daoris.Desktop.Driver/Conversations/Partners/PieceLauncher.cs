@@ -105,7 +105,11 @@ public static class PieceLauncher
         if (call is not { } taken) return Refuse(error, problem!);
         foreach (var job in taken.Jobs)
         {
-            if (!join(job)) return Refuse(error, $"daoris-piece-start: could not join the job {job}, so the harness was not started.");
+            if (!join(job))
+            {
+                var whose = IsAgentsJob(job) ? "this Daoris's agents' job" : "the piece's job";
+                return Refuse(error, $"daoris-piece-start: could not join {whose} {job}, so the harness was not started.");
+            }
         }
 
         // Not the tools' environment (TOOLS5): the launcher's own, which the driver built for the harness and handed the launcher whole.
