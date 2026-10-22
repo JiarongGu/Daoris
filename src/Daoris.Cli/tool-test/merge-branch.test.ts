@@ -88,7 +88,18 @@ interface Trees { ended: string | null; hold: (pid: number) => void; release: (p
 type Step = (command: string, cwd: string, fd: number, options?: { raise?: ((pid: number) => void) | null; trees?: Trees | null }) => Promise<number>;
 interface Rule { paths?: string[]; lane?: string; gates: string[] | '*'; why: string }
 interface Selected { gate: Gate; run: boolean; reached: boolean; why: string }
-interface Verdict { gate: string; verdict: string; tree: string | null; at: string; commit?: string | null; branch?: string | null }
+interface Verdict {
+  gate: string; verdict: string; tree: string | null; at: string; commit?: string | null; branch?: string | null;
+  /** PROCREACH1: a Process half's classes: how many ran, how many it kept by reach, and the oldest verdict it kept (its own start when none). */
+  classes?: { ran: number | null; kept: number; sweep: string };
+}
+/** PROCREACH1: one class's verdict, kept with the tree it ran on. */
+interface ClassVerdict { verdict: string; tree: string | null; at: string; commit?: string | null }
+/** PROCREACH1: what a CI run does with a Process half it owes: the whole half and why, or the classes it runs and those it keeps. */
+interface ClassPlan {
+  whole: string | null; run: { name: string; why: string }[]; kept: { name: string; verdict: ClassVerdict; standing: string }[]; sweep: string | null;
+}
+type Reached = { whole: { path: string; why: string }[]; classes: string[]; by: Map<string, string> };
 /** GATE6: how a verdict given on one tree stands for another, for its gate, and the paths that say so. */
 interface Standing { standing: 'exact' | 'records' | 'unreached' | 'stale'; paths: string[]; records: string[] }
 /** What a stage judges by: this tree, the paths another differs by (null when git cannot say), which are records, which reach a gate. */
@@ -197,7 +208,7 @@ const tool = await import(
   };
   VERDICTS_FILE: string;
   verdictStanding: (facts: Judging & { from: string | null; gate: string }) => Standing;
-  stageJudgement: (facts: Judging & { plan: string[]; verdicts: Verdict[] }) => { passed: boolean; missing: string[]; gates: Judged[] };
+  stageJudgement: (facts: Judging & { plan: string[]; verdicts: Verdict[]; now?: number; bound?: number }) => { passed: boolean; missing: string[]; gates: Judged[] };
   stageRemedy: (gates: Judged[]) => { command: string; what: string; runs: string[] } | null;
   checkoutRerun: (gates: Judged[], named: string[]) => {
     run: string[]; kept: { name: string; verdict: string; at: string }[]; stale: { name: string; verdict: string; at: string; paths: string[] }[]; none: string[];
@@ -253,7 +264,7 @@ const tool = await import(
   CI_WATCH: string;
   CI_STOP: string;
   CI_IDLE: Readonly<{ busy: number; freeGb: number; width: number; sampleMs: number }>;
-  ciPlan: (facts: Omit<Judging, 'isRecord'> & { plan: string[]; verdicts: Verdict[] }) => { run: string[]; kept: { name: string; verdict: Verdict; standing: Standing }[]; gates: Judged[] };
+  ciPlan: (facts: Omit<Judging, 'isRecord'> & { plan: string[]; verdicts: Verdict[]; now?: number; bound?: number }) => { run: string[]; kept: { name: string; verdict: Verdict; standing: Standing }[]; gates: Judged[] };
   cpuBusy: (before: CpuTimes[], after: CpuTimes[]) => number | null;
   measureLoad: (options?: { cpus?: () => CpuTimes[]; sleep?: (ms: number) => Promise<void>; read?: () => Reading; ms?: number }) => Promise<Load>;
   ciWidth: (load: Load) => { width: number; idle: boolean; why: string };
@@ -266,6 +277,17 @@ const tool = await import(
     tip: () => string | null; gated: (commit: string) => boolean; holder: () => string | null; run: () => Promise<number>;
     stopAsked: () => boolean; sleep: (ms: number) => Promise<void>; say: (line: string) => void; pollMs?: number; tickMs?: number; now?: () => number;
   }) => Promise<number>;
+  /** PROCREACH1: a Process half run by the classes a change reaches, each class's verdict kept with its tree, a whole half at least daily. */
+  CLASS_VERDICTS_FILE: string;
+  SWEEP_BOUND_MS: number;
+  classResults: (trx: string) => Map<string, { tests: number; failed: string[] }>;
+  classVerdictsOf: (trx: string, result: { verdict: string; flakes?: string[] }) => { name: string; verdict: string }[];
+  readClassVerdicts: (home: string) => { schema: number; gates: Record<string, Record<string, ClassVerdict[]>> };
+  addClassVerdicts: (home: string, gate: string, entries: ({ name: string } & ClassVerdict)[], options?: { keep?: number }) => void;
+  classPlan: (facts: {
+    classes: string[]; verdicts: Record<string, ClassVerdict[]>; tree: string; drift: (from: string) => string[] | null;
+    reached: (paths: string[]) => Reached; now?: number; bound?: number;
+  }) => ClassPlan;
 };
 /** CI1: what `os.cpus()` answers of a processor, the times it spent by kind since the machine started. */
 interface CpuTimes { times: { user: number; nice: number; sys: number; idle: number; irq: number } }
@@ -4167,6 +4189,139 @@ test('a Process gate writes its trx beside its log, and the slowest classes are 
 });
 
 // ---------------------------------------------------------------------------------------------------
+// PROCREACH1: a Process half run by the classes a change reaches, each class's verdict kept with its tree
+
+test("a Process half's trx gives each class's verdict: a failed test fails its class, and one that passed alone is its class's flake", () => {
+  assert.deepEqual([...tool.classResults(TRX)].map(([name, result]) => `${name} ${result.tests} ${result.failed.join(',')}`),
+    ['N.SlowTests 2 N.SlowTests.B', 'N.QuickTests 1 ', 'N.Outer+InnerTests 1 ', 'N.SkippedTests 1 ']);
+  assert.deepEqual(tool.classVerdictsOf(TRX, { verdict: 'FAIL' }), [
+    { name: 'N.SlowTests', verdict: 'FAIL' }, { name: 'N.QuickTests', verdict: 'PASS' },
+    { name: 'N.Outer+InnerTests', verdict: 'PASS' }, { name: 'N.SkippedTests', verdict: 'PASS' },
+  ]);
+  assert.deepEqual(tool.classVerdictsOf(TRX, { verdict: 'FLAKE', flakes: ['N.SlowTests.B'] })[0], { name: 'N.SlowTests', verdict: 'FLAKE' });
+  assert.deepEqual(tool.classVerdictsOf(TRX, { verdict: 'ENDED' }), [], 'a gate the run ended gives no verdict');
+  assert.deepEqual(tool.classVerdictsOf('not a trx', { verdict: 'PASS' }), []);
+});
+
+test("each class's verdicts are kept beside the gates', keyed by gate and class with the tree each ran on, the newest last and a few each", () => {
+  const fx = makeFixture('merge-branch-class-verdicts');
+  const at = (hour: number) => `2026-10-22T${String(hour).padStart(2, '0')}:00:00Z`;
+  assert.equal(tool.CLASS_VERDICTS_FILE, 'local/class-verdicts.json', "under local/, outside local/scratch/: it outlives a run's logs");
+  assert.deepEqual(tool.readClassVerdicts(fx.root), { schema: 1, gates: {} });
+  tool.addClassVerdicts(fx.root, 'driver-process', [
+    { name: 'N.ATests', verdict: 'PASS', tree: 't1', at: at(1), commit: 'c1' },
+    { name: 'N.BTests', verdict: 'FAIL', tree: 't1', at: at(1), commit: 'c1' },
+  ]);
+  tool.addClassVerdicts(fx.root, 'driver-process', [{ name: 'N.ATests', verdict: 'PASS', tree: 't2', at: at(2), commit: 'c2' }]);
+  tool.addClassVerdicts(fx.root, 'driver-process', [{ name: 'N.ATests', verdict: 'FLAKE', tree: 't3', at: at(3), commit: 'c3' }], { keep: 2 });
+  tool.addClassVerdicts(fx.root, 'modules-process', [{ name: 'N.ATests', verdict: 'PASS', tree: 't3', at: at(3), commit: 'c3' }]);
+  const store = tool.readClassVerdicts(fx.root);
+  assert.deepEqual(store.gates['driver-process']!['N.ATests']!.map((each) => `${each.verdict} ${each.tree}`), ['PASS t2', 'FLAKE t3']);
+  assert.deepEqual(store.gates['driver-process']!['N.BTests'], [{ verdict: 'FAIL', tree: 't1', at: at(1), commit: 'c1' }]);
+  assert.equal(store.gates['modules-process']!['N.ATests']!.length, 1, 'one gate\'s class is not another\'s');
+  writeFileSync(join(fx.root, tool.CLASS_VERDICTS_FILE), '{ not json');
+  assert.deepEqual(tool.readClassVerdicts(fx.root), { schema: 1, gates: {} }, 'a store that does not read is none: every class runs');
+  fx.cleanup();
+});
+
+test('a half the CI owes runs the classes a change reaches and keeps the rest; a path every class reads runs it whole; a class with no reach, a failure or none runs', () => {
+  const at = (hour: number) => `2026-10-22T${String(hour).padStart(2, '0')}:00:00Z`;
+  const now = Date.parse(at(12));
+  const classes = ['N.AlphaTests', 'N.BetaTests', 'N.LonelyTests', 'N.ToolTests'];
+  const drifts: Record<string, string[]> = {
+    t1: ['src/Core/Alpha/AlphaThing.cs'],
+    t0: ['src/Core/Alpha/AlphaThing.cs', 'src/Tests/GlobalUsings.cs'],
+  };
+  // The census, stood in: Alpha's class reads Alpha, Beta's and the tool's read Beta, the lonely class's sources place nothing,
+  // and the global usings act on every test.
+  const reached = (paths: string[]): Reached => {
+    const whole = paths.filter((path) => path.endsWith('GlobalUsings.cs')).map((path) => ({ path, why: `${path} acts on every test unnamed` }));
+    const by = new Map<string, string>();
+    for (const path of paths) {
+      for (const [name, area] of [['N.AlphaTests', 'Alpha'], ['N.BetaTests', 'Beta'], ['N.ToolTests', 'Beta'], ['N.LonelyTests', '']] as const) {
+        if (path.startsWith(`src/Core/${area}`) && !by.has(name)) by.set(name, path);
+      }
+    }
+    return { whole, classes: whole.length ? classes : [...by.keys()], by };
+  };
+  const facts = { classes, tree: 't2', drift: (from: string) => drifts[from] ?? null, reached, now };
+  const pass = (tree: string, hour = 10, verdict = 'PASS'): ClassVerdict => ({ verdict, tree, at: at(hour), commit: `${tree}-commit` });
+  const every = (entry: ClassVerdict) => Object.fromEntries(classes.map((name) => [name, [entry]]));
+
+  // One module changed since every class passed: its class and the planted class with no reach run, the rest are kept.
+  let plan = tool.classPlan({ ...facts, verdicts: every(pass('t1')) });
+  assert.equal(plan.whole, null);
+  assert.deepEqual(plan.run, [
+    { name: 'N.AlphaTests', why: 'src/Core/Alpha/AlphaThing.cs changed since its pass, which reaches it' },
+    { name: 'N.LonelyTests', why: 'src/Core/Alpha/AlphaThing.cs changed since its pass, which reaches it' },
+  ]);
+  assert.deepEqual(plan.kept.map((kept) => `${kept.name} ${kept.verdict.verdict} ${kept.verdict.tree} ${kept.standing}`),
+    ['N.BetaTests PASS t1 unreached', 'N.ToolTests PASS t1 unreached']);
+  assert.equal(plan.sweep, at(10), 'the oldest verdict it keeps');
+
+  // A file every class reads without naming it changed since: the whole half.
+  plan = tool.classPlan({ ...facts, verdicts: every(pass('t0')) });
+  assert.match(plan.whole ?? '', /src\/Tests\/GlobalUsings\.cs acts on every test unnamed/);
+  assert.deepEqual([plan.run.length, plan.kept, plan.sweep], [4, [], null]);
+
+  // A failure stays owed whatever changed; a class with no verdict runs; a pass on this very tree is kept.
+  plan = tool.classPlan({ ...facts, verdicts: {
+    'N.AlphaTests': [pass('t1')],
+    'N.BetaTests': [pass('t1', 9), pass('t1', 10, 'FAIL')],
+    'N.LonelyTests': [pass('t2', 11, 'FLAKE')],
+  } });
+  assert.deepEqual(plan.run.map((run) => `${run.name}: ${run.why}`), [
+    'N.AlphaTests: src/Core/Alpha/AlphaThing.cs changed since its pass, which reaches it',
+    'N.BetaTests: it failed on 2026-10-22 10:00 UTC, and a failure runs until it passes',
+    'N.ToolTests: it has no verdict of its own yet',
+  ]);
+  assert.deepEqual(plan.kept.map((kept) => `${kept.name} ${kept.standing}`), ['N.LonelyTests exact']);
+
+  // Past the bound, the oldest kept verdict makes the run a sweep: the whole half.
+  plan = tool.classPlan({ ...facts, verdicts: every(pass('t1')), now: Date.parse(at(10)) + tool.SWEEP_BOUND_MS + 60_000 });
+  assert.match(plan.whole ?? '', /its oldest kept class verdict \(N\.BetaTests, 2026-10-22 10:00 UTC\) is older than 24 hours: a sweep runs the whole half/);
+  assert.equal(tool.SWEEP_BOUND_MS, 24 * 60 * 60 * 1000);
+  assert.match(tool.classPlan({ ...facts, verdicts: every(pass('t1')), now: Date.parse(at(11)), bound: 30 * 60_000 }).whole ?? '', /older than 0\.5 hours/);
+
+  // Every class kept while the half is owed (it failed outside a test): the whole half, for a verdict of its own.
+  plan = tool.classPlan({ ...facts, verdicts: every(pass('t2')) });
+  assert.match(plan.whole ?? '', /every class is kept, but the half owes a verdict/);
+  // No class with a pass that stands (a tree git cannot compare): the whole half.
+  plan = tool.classPlan({ ...facts, verdicts: every(pass('gone')) });
+  assert.match(plan.whole ?? '', /no class has a pass that stands on this tree/);
+});
+
+test('the stage refuses a Process half that kept classes on verdicts older than the sweep bound, and the CI owes it; a whole pass of any age stands', () => {
+  const now = Date.parse('2026-10-23T12:00:00Z');
+  const verdicts: Verdict[] = [
+    // A pass that kept 75 classes, the oldest of them from 27 hours before: past the bound.
+    { gate: 'driver-process-git', verdict: 'PASS', tree: 'T', at: '2026-10-23T11:00:00Z', classes: { ran: 5, kept: 75, sweep: '2026-10-22T09:00:00Z' } },
+    // One whose oldest kept class is 11 hours old: within it.
+    { gate: 'driver-process', verdict: 'PASS', tree: 'T', at: '2026-10-23T11:00:00Z', classes: { ran: 5, kept: 95, sweep: '2026-10-23T01:00:00Z' } },
+    // The whole half, three days ago, on a tree this one differs from by paths it does not reach: a sweep stands whatever its age.
+    { gate: 'modules-process', verdict: 'PASS', tree: 'S', at: '2026-10-20T11:00:00Z', classes: { ran: 19, kept: 0, sweep: '2026-10-20T11:00:00Z' } },
+    // A whole pass, then a newer one that kept classes past the bound: the whole one still stands and counts.
+    { gate: 'other-process', verdict: 'PASS', tree: 'S', at: '2026-10-20T11:00:00Z' },
+    { gate: 'other-process', verdict: 'PASS', tree: 'T', at: '2026-10-23T10:00:00Z', classes: { ran: 1, kept: 3, sweep: '2026-10-21T10:00:00Z' } },
+  ];
+  const judging = { tree: 'T', drift: (from: string) => (from === 'S' ? ['docs/a.md'] : null), isRecord: () => false, reaching: () => [] };
+  const plan = ['driver-process-git', 'driver-process', 'modules-process', 'other-process'];
+  const judged = tool.stageJudgement({ ...judging, plan, verdicts, now });
+  assert.deepEqual(judged.missing, ['driver-process-git']);
+  const git = judged.gates[0] as Judged & { swept?: { verdict: Verdict; sweep: string } };
+  assert.deepEqual([git.verdict, git.swept?.sweep, git.swept?.verdict.at], [null, '2026-10-22T09:00:00Z', '2026-10-23T11:00:00Z']);
+  assert.equal(judged.gates[3]!.verdict!.tree, 'S', 'the older whole pass counts');
+  assert.deepEqual(tool.stageRemedy(judged.gates), { command: 'node tools/merge-branch.mjs --rerun driver-process-git', what: 'the gate it lacks', runs: ['driver-process-git'] });
+  assert.deepEqual(tool.ciPlan({ ...judging, plan, verdicts, now }).run, ['driver-process-git'], 'the CI owes it: its next run sweeps it');
+  // Within the bound it passes; with no clock given, the stage reads the machine's.
+  assert.equal(tool.stageJudgement({ ...judging, plan, verdicts, now: Date.parse('2026-10-23T08:00:00Z') }).passed, true);
+  const old: Verdict = { gate: 'old-process', verdict: 'PASS', tree: 'T', at: '2020-01-02T00:00:00Z', classes: { ran: 1, kept: 1, sweep: '2020-01-01T00:00:00Z' } };
+  assert.equal(tool.stageJudgement({ ...judging, plan: ['old-process'], verdicts: [old] }).passed, false);
+  assert.equal(tool.stageJudgement({ ...judging, plan: ['old-process'], verdicts: [{ ...old, classes: { ran: 1, kept: 1, sweep: 'never' } }] }).passed, false,
+    'a sweep whose time does not read is no sweep within the bound');
+});
+
+// ---------------------------------------------------------------------------------------------------
 // CIPRIO1: a full set beside the merges is a guest on the machine
 
 test('a full set beside lowers its own priority to below normal at its start, and says so when it cannot', () => {
@@ -4759,6 +4914,52 @@ const CI_GATE = [
   "process.exit((process.env.CI_FAIL ?? '').split(',').includes(name) ? 1 : 0);",
   '',
 ].join('\n');
+
+/**
+ * PROCREACH1: `dotnet test`, faked for a Process half run by reach. It reads the filter of the settings it is handed, runs each
+ * class of the project's `*Tests.cs` that no `FullyQualifiedName!~<class>.` keeps out, notes which in `local/ran.txt`, and writes
+ * the trx the merge tool asked for, a test a class, as the real one does.
+ */
+const FAKE_DOTNET_REACH = [
+  "import { appendFileSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';",
+  "import { join } from 'node:path';",
+  'const args = process.argv.slice(2);',
+  "if (args[0] !== 'test') process.exit(0);",
+  'const project = args[1];',
+  "const settings = readFileSync(args[args.indexOf('--settings') + 1], 'utf8');",
+  "const trx = /LogFileName=(.+)$/.exec(args[args.indexOf('--logger') + 1] ?? '')?.[1];",
+  "const filter = (/<TestCaseFilter>([^<]*)</.exec(settings)?.[1] ?? '').replace(/&amp;/g, '&');",
+  "const kept = [...filter.matchAll(/FullyQualifiedName!~([^&]+)\\./g)].map((m) => m[1]);",
+  'const classes = [];',
+  "for (const file of readdirSync(project).filter((name) => name.endsWith('Tests.cs'))) {",
+  "  const text = readFileSync(join(project, file), 'utf8');",
+  '  const space = /namespace ([\\w.]+);/.exec(text)[1];',
+  '  for (const m of text.matchAll(/class (\\w+Tests)\\b/g)) classes.push(`${space}.${m[1]}`);',
+  '}',
+  'const run = classes.filter((name) => !kept.includes(name)).sort();',
+  "mkdirSync('local', { recursive: true });",
+  "appendFileSync('local/ran.txt', `dotnet-test ${run.map((name) => name.split('.').at(-1)).join(' ')}\\n`);",
+  'const results = run.map((name, i) => `<UnitTestResult testId="t${i}" testName="${name}.Runs" duration="00:00:01" outcome="Passed" />`).join(\'\');',
+  'const tests = run.map((name, i) => `<UnitTest id="t${i}" name="${name}.Runs"><TestMethod className="${name}" name="Runs" /></UnitTest>`).join(\'\');',
+  'if (trx) writeFileSync(trx, `<TestRun><Results>${results}</Results><TestDefinitions>${tests}</TestDefinitions></TestRun>`);',
+  'console.log(`Passed!  - Failed:     0, Passed:  ${run.length}, Skipped:     0, Total:  ${run.length}, Duration: 1 s - Desk.Tests.dll (net10.0)`);',
+  '',
+].join('\n');
+
+/** PROCREACH1: a desktop of its own for the CI's runs by reach: a test project compiling against two areas, and three Process classes. */
+const DESK_FILES: Record<string, string> = {
+  'src/Desk/process.runsettings': '<RunSettings><RunConfiguration><TestCaseFilter>Category=Process</TestCaseFilter></RunConfiguration></RunSettings>\n',
+  'src/Desk/Desk.Tests/Desk.Tests.csproj': '<Project Sdk="Microsoft.NET.Sdk"><ItemGroup><ProjectReference Include="..\\Desk.Core\\Desk.Core.csproj" /></ItemGroup></Project>\n',
+  'src/Desk/Desk.Core/Desk.Core.csproj': '<Project Sdk="Microsoft.NET.Sdk" />\n',
+  'src/Desk/Desk.Core/Alpha/AlphaThing.cs': 'namespace Desk;\npublic sealed class AlphaThing { }\n',
+  'src/Desk/Desk.Core/Beta/BetaThing.cs': 'namespace Desk;\npublic sealed class BetaThing { }\n',
+  'src/Desk/Desk.Tests/GlobalUsings.cs': 'global using Xunit;\n',
+  'src/Desk/Desk.Tests/Shared.cs': 'namespace Desk.Tests;\ninternal static class Shared { public const int Seed = 1; }\n',
+  'src/Desk/Desk.Tests/AlphaTests.cs': 'namespace Desk.Tests;\n[Trait("Category", "Process")]\npublic sealed class AlphaTests { [Fact] public void Runs() { _ = new AlphaThing(); _ = Shared.Seed; } }\n',
+  'src/Desk/Desk.Tests/BetaTests.cs': 'namespace Desk.Tests;\n[Trait("Category", "Process")]\npublic sealed class BetaTests { [Fact] public void Runs() { _ = new BetaThing(); _ = Shared.Seed; } }\n',
+  // Planted: its sources name nothing the census places, so every change that reaches its half runs it.
+  'src/Desk/Desk.Tests/LonelyTests.cs': 'namespace Desk.Tests;\n[Trait("Category", "Process")]\npublic sealed class LonelyTests { [Fact] public void Runs() { _ = Shared.Seed; } }\n',
+};
 
 /** CI1: what a test waits for, read again until it holds, failing rather than hanging when it never does. */
 async function waitFor(holds: () => boolean, what: string, ms = 120_000): Promise<void> {
@@ -6108,6 +6309,100 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.deepEqual(states(statusOf(fourth)), ['universal done PASS', 'service kept PASS', 'tool-tests done PASS']);
     assert.deepEqual(record().runs.map((run) => `${run.commit.slice(0, 7)} ${run.state}`),
       [first, second, second, third, fourth].map((sha, i) => `${sha.slice(0, 7)} ${i === 3 ? 'failed' : 'green'}`));
+    repo.cleanup();
+  });
+
+  test('--ci runs a Process half by reach: the classes a change reaches, the rest kept and named; a file every class reads, every class; one read unnamed, the whole half; a sweep past its bound before a stage', async () => {
+    const repo = scratch('ci-reach', [
+      { name: 'universal', run: 'node ci-gate.mjs universal' },
+      { name: 'desk-process', run: 'dotnet test src/Desk/Desk.Tests --settings src/Desk/process.runsettings' },
+    ], { 'ci-gate.mjs': CI_GATE, ...DESK_FILES });
+    const reachBin = join(dirname(repo.root), 'reach-bin');
+    mkdirSync(reachBin, { recursive: true });
+    writeFileSync(join(reachBin, 'fake-dotnet.mjs'), FAKE_DOTNET_REACH);
+    if (process.platform === 'win32') writeFileSync(join(reachBin, 'dotnet.cmd'), '@echo off\r\nnode "%~dp0fake-dotnet.mjs" %*\r\n');
+    else {
+      writeFileSync(join(reachBin, 'dotnet'), '#!/bin/sh\nexec node "$(dirname "$0")/fake-dotnet.mjs" "$@"\n');
+      chmodSync(join(reachBin, 'dotnet'), 0o755);
+    }
+    const env = { PATH: `${reachBin}${delimiter}${process.env['PATH'] ?? process.env['Path'] ?? ''}` };
+    const gateTree = join(repo.root, 'local', 'gate-tree');
+    const ranFile = join(gateTree, 'local', 'ran.txt');
+    const dotnetRan = () => (existsSync(ranFile) ? readFileSync(ranFile, 'utf8').split('\n').filter((line) => line.startsWith('dotnet-test')) : []);
+    type ReachGate = CiGate & { classes?: { census: number | null; run: { name: string; why: string }[]; kept: { name: string; at: string; commit: string | null; standing: string }[]; whole: string | null; sweep: string | null } };
+    const halfOf = (sha: string) => (JSON.parse(readFileSync(join(repo.root, 'local', 'scratch', `ci-${sha.slice(0, 7)}`, 'status.json'), 'utf8')) as CiStatus)
+      .gates.find((gate) => gate.name === 'desk-process') as ReachGate;
+    const commit = (path: string, text: string) => {
+      writeFileSync(join(repo.root, path), text);
+      git(repo.root, 'add', '-A');
+      git(repo.root, 'commit', '--quiet', '-m', `change ${path}${TRAILER}`);
+      rmSync(ranFile, { force: true });
+      return git(repo.root, 'rev-parse', 'HEAD');
+    };
+    const verdictsFile = join(repo.root, 'local', 'gate-verdicts.json');
+    const halfVerdicts = () => (JSON.parse(readFileSync(verdictsFile, 'utf8')) as { verdicts: Verdict[] }).verdicts.filter((each) => each.gate === 'desk-process');
+    const first = git(repo.root, 'rev-parse', 'HEAD');
+
+    // The first run: no class has a verdict, so the half runs whole, and each class's verdict is kept with its tree.
+    let result = await repo.run(['--ci'], env);
+    assert.equal(result.status, 0, result.out);
+    assert.deepEqual(dotnetRan(), ['dotnet-test AlphaTests BetaTests LonelyTests']);
+    assert.match(result.out, /desk-process: the whole half runs \(3 classes\): no class has a pass that stands on this tree/);
+    let half = halfOf(first);
+    assert.deepEqual([half.state, half.verdict, half.classes!.census, half.classes!.run.length, half.classes!.kept.length], ['done', 'PASS', 3, 3, 0]);
+    assert.deepEqual(halfVerdicts().at(-1)!.classes, { ran: 3, kept: 0, sweep: halfVerdicts().at(-1)!.at });
+    const store = () => tool.readClassVerdicts(repo.root).gates['desk-process'] ?? {};
+    assert.deepEqual(Object.keys(store()).sort(), ['Desk.Tests.AlphaTests', 'Desk.Tests.BetaTests', 'Desk.Tests.LonelyTests']);
+
+    // One area changed: its class and the planted class with no reach run; the rest is kept, named with its verdict.
+    const second = commit('src/Desk/Desk.Core/Alpha/AlphaThing.cs', 'namespace Desk;\npublic sealed class AlphaThing { public int Two => 2; }\n');
+    result = await repo.run(['--ci'], env);
+    assert.equal(result.status, 0, result.out);
+    assert.deepEqual(dotnetRan(), ['dotnet-test AlphaTests LonelyTests']);
+    assert.match(result.out, /desk-process: 2 of 3 classes run by reach \(AlphaTests, LonelyTests\); 1 kept \(BetaTests\), each with a pass that stands on this tree/);
+    half = halfOf(second);
+    assert.deepEqual(half.classes!.run, [
+      { name: 'Desk.Tests.AlphaTests', why: 'src/Desk/Desk.Core/Alpha/AlphaThing.cs changed since its pass, which reaches it' },
+      { name: 'Desk.Tests.LonelyTests', why: 'src/Desk/Desk.Core/Alpha/AlphaThing.cs changed since its pass, which reaches it' },
+    ]);
+    assert.deepEqual(half.classes!.kept.map((kept) => `${kept.name} ${kept.commit} ${kept.standing}`), [`Desk.Tests.BetaTests ${first} unreached`]);
+    assert.equal(halfVerdicts().at(-1)!.classes!.kept, 1);
+    const narrowed = readFileSync(join(repo.root, 'local', 'scratch', `ci-${second.slice(0, 7)}`, 'desk-process.process.runsettings'), 'utf8');
+    assert.match(narrowed, /<TestCaseFilter>\(Category=Process\)&amp;FullyQualifiedName!~Desk\.Tests\.BetaTests\.<\/TestCaseFilter>/, 'the half\'s filter ANDed with the kept class kept out');
+    result = await repo.run(['--passed'], env, gateTree);
+    assert.equal(result.status, 0, result.out);
+
+    // The stage refuses a half that kept classes on verdicts older than the bound, and the next CI run sweeps it whole.
+    const aged = (iso: string) => new Date(Date.parse(iso) - 2 * tool.SWEEP_BOUND_MS).toISOString();
+    const verdicts = JSON.parse(readFileSync(verdictsFile, 'utf8')) as { verdicts: Verdict[] };
+    for (const entry of verdicts.verdicts) if (entry.classes) entry.classes.sweep = aged(entry.classes.sweep);
+    writeFileSync(verdictsFile, JSON.stringify(verdicts));
+    const classFile = join(repo.root, tool.CLASS_VERDICTS_FILE);
+    const classStore = JSON.parse(readFileSync(classFile, 'utf8')) as { gates: Record<string, Record<string, ClassVerdict[]>> };
+    for (const entries of Object.values(classStore.gates['desk-process']!)) for (const entry of entries) entry.at = aged(entry.at);
+    writeFileSync(classFile, JSON.stringify(classStore));
+    result = await repo.run(['--passed'], env, gateTree);
+    assert.equal(result.status, 1, result.out);
+    assert.match(result.out, /desk-process\s+swept\s+PASS .*kept 1 class on verdicts from .*, older than the 24 hours a sweep stands/);
+    rmSync(ranFile, { force: true });
+    result = await repo.run(['--ci', second.slice(0, 7)], env);
+    assert.equal(result.status, 0, result.out);
+    assert.deepEqual(dotnetRan(), ['dotnet-test AlphaTests BetaTests LonelyTests']);
+    assert.match(result.out, /desk-process: the whole half runs \(3 classes\): its oldest kept class verdict \(Desk\.Tests\.BetaTests, [^)]+\) is older than 24 hours: a sweep runs the whole half/);
+    result = await repo.run(['--passed'], env, gateTree);
+    assert.equal(result.status, 0, result.out);
+
+    // A helper every class reads reaches every class: the whole half. So does a file read unnamed (a global using).
+    commit('src/Desk/Desk.Tests/Shared.cs', 'namespace Desk.Tests;\ninternal static class Shared { public const int Seed = 2; }\n');
+    result = await repo.run(['--ci'], env);
+    assert.equal(result.status, 0, result.out);
+    assert.deepEqual(dotnetRan(), ['dotnet-test AlphaTests BetaTests LonelyTests']);
+    assert.match(result.out, /desk-process: the whole half runs \(3 classes\): no class has a pass that stands on this tree/);
+    const fifth = commit('src/Desk/Desk.Tests/GlobalUsings.cs', 'global using Xunit;\nglobal using System.IO;\n');
+    result = await repo.run(['--ci'], env);
+    assert.equal(result.status, 0, result.out);
+    assert.deepEqual(dotnetRan(), ['dotnet-test AlphaTests BetaTests LonelyTests']);
+    assert.match(halfOf(fifth).classes!.whole ?? '', /src\/Desk\/Desk\.Tests\/GlobalUsings\.cs acts on every test unnamed/);
     repo.cleanup();
   });
 

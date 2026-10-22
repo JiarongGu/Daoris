@@ -27,7 +27,7 @@
  * - Only what the files name is followed, not what the named types use in turn: the driver's modules name each other nearly
  *   all, so a closure over them would reach every class from every change. What that misses is the sweep's (the merge tool
  *   runs a whole half at least daily, and a release refuses older), and a hand-written `[Reaches]` with its reason.
- * - **A class with no reach** is reached by every path that reaches its half: an unknown runs.
+ * - **A class with no reach** is reached by every source path that reaches its half: an unknown runs.
  *
  * ## What a changed path reaches (`pathReach`)
  *
@@ -765,10 +765,11 @@ export function pathReach(path, census) {
   if (source) return { whole: `${path} is at ${source}'s root (its project file)` };
   const program = programs.find((each) => path.startsWith(`${each.folder}/`));
   if (program) return { areas: [program.folder] };
-  // Another project beside the test project's: nothing compiles against it, so only a test naming it reads it.
+  // Another project beside the test project's, its project file too: nothing compiles against it and the tests start nothing
+  // of it, so only a test naming it reads it.
   const beside = folderOf(half.project);
   const rest = path.startsWith(`${beside}/`) ? path.slice(beside.length + 1).split('/') : [];
-  if (rest.length > 1 && !isProjectFile(path)) {
+  if (rest.length > 1) {
     const classes = among((each) => names(each.strings, rest[0]));
     return classes.length ? { classes } : { none: `no class of the half compiles against, starts or names ${rest[0]}` };
   }
@@ -788,13 +789,15 @@ export function classesReached(paths, census) {
       whole.push({ path, why: placed.whole });
       continue;
     }
-    // A path no class reads, by what every class's files name and say, reaches none: one with no reach was read too.
+    // A path no class reads, by what every class's files name and say, reaches none: one with no reach was read too. A file
+    // of the test project reaches the classes that read it, the same reading. A source area is where a class with no reach,
+    // whose sources the census could not place, is reached.
     if (placed.none) continue;
     for (const each of census.classes) {
       if (by.has(each.full)) continue;
-      const hit = !each.reach.length
-        || (placed.areas && (each.reach.includes('*') || placed.areas.some((area) => each.reach.includes(area))))
-        || (placed.classes && placed.classes.includes(each.full));
+      const hit = placed.classes
+        ? placed.classes.includes(each.full)
+        : !each.reach.length || each.reach.includes('*') || placed.areas.some((area) => each.reach.includes(area));
       if (hit) by.set(each.full, path);
     }
   }

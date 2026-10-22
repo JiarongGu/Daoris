@@ -245,7 +245,7 @@ const DESK: Record<string, string> = {
   'src/Desk/Desk.Tests/FastTests.cs': 'namespace Desk.Tests;\npublic sealed class FastTests { [Fact] public void Quick() { _ = new BetaThing(); } }\n',
 };
 const deskCensus = () => reach.censusOf({ project: 'src/Desk/Desk.Tests', settings: 'src/Desk/process.runsettings' }, Object.keys(DESK), (file) => DESK[file] ?? '');
-const short = (names: string[]) => names.map((name) => name.split('.').at(-1)).sort();
+const short = (names: string[]): string[] => names.map((name) => name.split('.').at(-1) ?? name).sort();
 
 test("the census reads a half's classes from its sources: their traits, a test's own, a base's files, and each one's reach", () => {
   const census = deskCensus();
@@ -270,7 +270,7 @@ test("the census reads a half's classes from its sources: their traits, a test's
 
 test('a changed path reaches the classes whose reach holds it; what acts unnamed or cannot be placed reaches the whole half', () => {
   const census = deskCensus();
-  const at = (path: string) => {
+  const at = (path: string): Placed => {
     const placed = reach.pathReach(path, census);
     return placed.classes ? { classes: short(placed.classes) } : placed;
   };
@@ -281,6 +281,8 @@ test('a changed path reaches the classes whose reach holds it; what acts unnamed
   assert.deepEqual(at('src/Desk/Desk.Tests/FastTests.cs'), { none: 'no class of the half reads src/Desk/Desk.Tests/FastTests.cs' });
   assert.deepEqual(at('src/Desk/Desk.Tool/Program.cs'), { areas: ['src/Desk/Desk.Tool'] });
   assert.deepEqual(at('src/Desk/Desk.App/Window.cs'), { none: 'no class of the half compiles against, starts or names Desk.App' });
+  assert.deepEqual(at('src/Desk/Desk.App/Desk.App.csproj'), { none: 'no class of the half compiles against, starts or names Desk.App' });
+  assert.deepEqual(at('src/Desk/Desk.Tool/Desk.Tool.csproj'), { areas: ['src/Desk/Desk.Tool'] }, "a program's project file reaches the classes that start it");
   assert.match(at('src/Desk/Desk.Tests/GlobalUsings.cs').whole ?? '', /acts on every test unnamed/);
   assert.match(at('src/Desk/Desk.Tests/Desk.Tests.csproj').whole ?? '', /project file/);
   assert.match(at('src/Desk/Desk.Tests/Gone.cs').whole ?? '', /does not hold/);
@@ -302,6 +304,8 @@ test('one module changed reaches its classes and the planted class with no reach
   assert.deepEqual(reached.whole.map((each) => each.path), ['src/Desk/Desk.Tests/GlobalUsings.cs']);
   reached = reach.classesReached(['src/Desk/Desk.App/Window.cs'], census);
   assert.deepEqual(reached.classes, [], 'a path that places nothing reaches nothing, not even the class with no reach');
+  reached = reach.classesReached(['src/Desk/Desk.Tests/BetaFixture.cs', 'src/Desk/Desk.Tests/fixtures/alpha-rows.json'], census);
+  assert.deepEqual(short(reached.classes), ['AlphaTests', 'BetaTests'], "a test project's file reaches the classes that read it, read as every class is");
 });
 
 test("this repository's census: every class carrying the Process trait is read into one half, each declared half reads, and no hand-written reach lacks its reason", () => {

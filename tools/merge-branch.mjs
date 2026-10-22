@@ -174,6 +174,27 @@
  * - **The stage** reads the CI's verdicts from the one store (`--passed` in the gate tree), and holds the tree's lock through
  *   its build (`publish:desktop`'s `gatedSource`, a `stage` holder), so no CI run moves the tree under it.
  *
+ * ## A Process half by the classes a change reaches (PROCREACH1)
+ *
+ * A gate a change reaches ran every class in it, so a driver or modules change cost the Process halves' 95 minutes. A CI run
+ * now runs, of each Process half it owes, the classes the change reaches, and keeps the rest. D180's PROCREACH1 note has what
+ * it settles and what it rejected.
+ *
+ * - **Reach** is the census's (`tools/process-reach.mjs`): read from each class's sources, the source folders the types it and
+ *   the helpers it reads name are defined in, and the programs it starts. A path the census cannot place, or a file that acts
+ *   on every test unnamed (a global using, the project file, `Directory.Build.props`, the run settings), reaches the whole half.
+ * - **Verdicts per class** (`CLASS_VERDICTS_FILE`, `addClassVerdicts`): every Process half's run, by reach or whole, in a CI
+ *   run or a full set, keeps each class's verdict from its trx with the tree it ran on. A class whose newest verdict that
+ *   stands on the tree passed is kept (`classPlan`); a failure runs until it passes.
+ * - **The run**: the half's own run settings with each kept class kept out (`reachSettings`, written beside its log, its name
+ *   still a Process half's), so a class the census never saw runs too. Its re-run of a failure alone is unchanged.
+ * - **The sweep**: the whole half runs when no class's pass stands, and when its oldest kept verdict is older than
+ *   `SWEEP_BOUND_MS` (a day). The half's verdict carries `classes` (how many ran, how many were kept, the oldest kept verdict's
+ *   time), and a pass that kept classes past the bound stands no more (`sweptOut`): the stage refuses it, and the next CI run
+ *   sweeps it.
+ * - **The status** names, for each Process half, its census's count, whether it ran whole and why, each class it ran with why,
+ *   and each it kept with its verdict's time, commit and standing.
+ *
  * ## The prune (GATE2)
  *
  * Every subagent leaves a branch and a worktree, and so does every integration: 36 of 41 local branches
@@ -391,6 +412,7 @@ import { constants as osConstants, cpus as osCpus, freemem as osFreemem, setPrio
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fenced, gluedLabels, records } from './doc-duplicates.mjs';
 import { isMain, renameHeld, spawnGit, stagedTree, writeAtomic } from './fsx.mjs';
+import { censusOf, classesReached, halfOf, reachSettings, repository, withSettings } from './process-reach.mjs';
 import { endOrphans, endStranded } from './processes.mjs';
 
 export const MAIN = 'main';
@@ -945,9 +967,9 @@ export const REACH = Object.freeze([
   // GATESLIM1: the tests of the tools only the parent runs (the merge tool, the install's publisher, the family rehearsal's kit) are
   // the tool-tests gate, no longer part of verify. These rules come first and keep what each path reached before.
   {
-    paths: ['tools/merge-branch.mjs', 'tools/doc-duplicates.mjs', 'src/Daoris.Cli/tool-test/**', 'src/Daoris.Cli/test/_fixture.ts'],
+    paths: ['tools/merge-branch.mjs', 'tools/doc-duplicates.mjs', 'tools/process-reach.mjs', 'src/Daoris.Cli/tool-test/**', 'src/Daoris.Cli/test/_fixture.ts'],
     gates: ['tool-tests'],
-    why: "the merge tool's, the publisher's and the set-up kit's tests, which `tool-tests` runs and verify does not (GATESLIM1): the merge tool and what it imports, the tests, and the fixture they share",
+    why: "the merge tool's, the publisher's and the set-up kit's tests, which `tool-tests` runs and verify does not (GATESLIM1): the merge tool and what it imports (the Process census, PROCREACH1, among them), the tests, and the fixture they share",
   },
   {
     paths: ['tools/rehearsal-kit.mjs'],
@@ -1712,6 +1734,50 @@ export function addVerdicts(root, entries, { keep = 400 } = {}) {
 }
 
 /**
+ * PROCREACH1: which classes of a Process half passed which tree, beside the gates' verdicts and kept the same way: under the
+ * main checkout's ignored `local/`, outside `local/scratch/`, under a lock beside the file. A CI run keeps a class whose newest
+ * verdict that stands on its tree passed (`classPlan`), so a run that ran some classes leaves the rest's verdicts as they were.
+ */
+export const CLASS_VERDICTS_FILE = 'local/class-verdicts.json';
+
+/** How many verdicts each class keeps, the newest last: the newest that stands decides, and a few are enough for a run or two back. */
+export const CLASS_VERDICTS_KEPT = 6;
+
+/** The class verdicts' store, `{ schema, gates: { <gate>: { <class>: [verdict…] } } }`, or an empty one where there is none or it does not read. */
+export function readClassVerdicts(home) {
+  try {
+    const parsed = JSON.parse(readFileSync(join(home, CLASS_VERDICTS_FILE), 'utf8'));
+    const gates = {};
+    for (const [gate, classes] of Object.entries(parsed?.gates ?? {})) {
+      if (!classes || typeof classes !== 'object') continue;
+      gates[gate] = Object.fromEntries(Object.entries(classes)
+        .filter(([, entries]) => Array.isArray(entries))
+        .map(([name, entries]) => [name, entries.filter((entry) => typeof entry?.verdict === 'string')]));
+    }
+    return { schema: 1, gates };
+  } catch {
+    return { schema: 1, gates: {} };
+  }
+}
+
+/** Each class's verdict (`{ name, verdict, tree, at, commit }`) added for `gate`, the oldest of a class dropped past `keep`. */
+export function addClassVerdicts(home, gate, entries, { keep = CLASS_VERDICTS_KEPT } = {}) {
+  if (!entries.length) return;
+  const file = join(home, CLASS_VERDICTS_FILE);
+  holdingLock(file, () => {
+    const { gates } = readClassVerdicts(home);
+    const classes = gates[gate] ?? {};
+    for (const { name, ...verdict } of entries) classes[name] = [...(classes[name] ?? []), verdict].slice(-keep);
+    gates[gate] = classes;
+    writeAtomic(file, `${JSON.stringify({
+      schema: 1,
+      _why: 'Written by tools/merge-branch.mjs (PROCREACH1): each Process class\'s verdicts with the tree each ran on, the newest last. A CI run keeps a class whose newest verdict that stands passed.',
+      gates,
+    }, null, 2)}\n`);
+  });
+}
+
+/**
  * The checkout's content as a tree id, as `git add -A` would stage it (`stagedTree`, which `as-merged.mjs`
  * builds its commit on too): the person's index and a merge in progress untouched. Null when git cannot say.
  */
@@ -1789,13 +1855,40 @@ export function verdictStanding({ from, tree, gate, drift, isRecord, reaching })
 }
 
 /**
+ * PROCREACH1: how long a Process half's pass that kept classes by reach stands from its oldest kept class verdict: a day. The
+ * census follows what a class's files name, not what the named code uses in turn, so a change can reach a class it does not
+ * see; the whole half run again once what it keeps is a day old (a sweep) bounds how long that can go unseen, and a release
+ * past the bound waits for one.
+ */
+export const SWEEP_BOUND_MS = 24 * 60 * 60 * 1000;
+
+/** The bound in hours, as a sentence says it. */
+const hoursOf = (ms) => `${Number((ms / 3_600_000).toFixed(2))}`;
+
+/**
+ * Whether a verdict is a Process half's pass that kept classes on a verdict older than `bound` (PROCREACH1): the stage
+ * refuses it and the CI owes the half a sweep. A pass that kept none (the whole half, or a verdict before PROCREACH1) never is;
+ * one whose sweep does not read is.
+ */
+export function sweptOut(entry, now = Date.now(), bound = SWEEP_BOUND_MS) {
+  if (!passing(entry?.verdict) || !(Number(entry?.classes?.kept) > 0)) return false;
+  const sweep = Date.parse(entry.classes.sweep ?? '');
+  return !Number.isFinite(sweep) || now - sweep > bound;
+}
+
+/**
  * Whether the full set passed `tree`: for each gate of the plan, its newest verdict that still stands for this tree
  * (`verdictStanding`: on it, or on one that differs from it only by the records and by paths that gate cannot reach)
  * must pass. `missing` names each gate that has no such passing verdict. Each gate carries the verdict that counts
  * and how it stands; a gate that does not pass, when a newer verdict no longer stands, carries that one as `stale`,
  * with the paths that made it so.
+ *
+ * PROCREACH1: a Process half's pass that kept classes by reach (`classes.kept`) stands only while its oldest kept class verdict
+ * (`classes.sweep`) is within `bound` of `now` (`sweptOut`): past it, a sweep of the whole half is owed, so the stage refuses
+ * the gate (`swept` says why) and the CI runs it. An older pass that still stands counts instead, and a whole half's of any
+ * age stands as every verdict does.
  */
-export function stageJudgement({ plan, verdicts, tree, drift, isRecord, reaching }) {
+export function stageJudgement({ plan, verdicts, tree, drift, isRecord, reaching, now = Date.now(), bound = SWEEP_BOUND_MS }) {
   const drifts = new Map();
   const driftOf = (from) => {
     if (!drifts.has(from)) drifts.set(from, drift(from));
@@ -1805,18 +1898,24 @@ export function stageJudgement({ plan, verdicts, tree, drift, isRecord, reaching
     let newest = null;
     let standing = null;
     let stale = null;
+    let swept = null;
     for (const entry of verdicts) {
       if (entry.gate !== name) continue;
       const how = verdictStanding({ from: entry.tree, tree, gate: name, drift: driftOf, isRecord, reaching });
-      if (how.standing !== 'stale') {
+      if (how.standing !== 'stale' && sweptOut(entry, now, bound)) {
+        if (!swept || String(entry.at) >= String(swept.verdict.at)) swept = { verdict: entry, sweep: entry.classes.sweep, standing: how };
+      } else if (how.standing !== 'stale') {
         if (!newest || String(entry.at) >= String(newest.at)) [newest, standing] = [entry, how];
       } else if (!stale || String(entry.at) >= String(stale.verdict.at)) {
         stale = { ...how, verdict: entry };
       }
     }
-    // A newer verdict that no longer stands explains a gate that does not count; one that counts needs no excuse.
-    const said = stale && (!newest || (String(stale.verdict.at) > String(newest.at) && !passing(newest.verdict)));
-    return { name, verdict: newest, exact: standing?.standing === 'exact', standing, stale: said ? stale : null };
+    // A newer verdict that no longer stands explains a gate that does not count; one that counts needs no excuse. Of a stale
+    // verdict and one past the sweep's bound, the newer explains it.
+    const sweptSaid = swept && (!newest || (String(swept.verdict.at) > String(newest.at) && !passing(newest.verdict)));
+    const said = stale && (!newest || (String(stale.verdict.at) > String(newest.at) && !passing(newest.verdict)))
+      && !(sweptSaid && String(swept.verdict.at) >= String(stale.verdict.at));
+    return { name, verdict: newest, exact: standing?.standing === 'exact', standing, stale: said ? stale : null, ...(sweptSaid ? { swept } : {}) };
   });
   const missing = gates.filter((gate) => !gate.verdict || !passing(gate.verdict.verdict)).map((gate) => gate.name);
   return { passed: missing.length === 0, missing, gates };
@@ -1960,6 +2059,43 @@ export function slowestClasses(trx, count = 10) {
     classes.set(name, entry);
   }
   return [...classes.values()].sort((a, b) => b.ms - a.ms || a.name.localeCompare(b.name)).slice(0, count);
+}
+
+/** A trx outcome that is no failure: a pass, or a test not run (skipped). */
+const notFailed = (outcome) => outcome === 'Passed' || outcome === 'NotExecuted';
+
+/**
+ * PROCREACH1: each class a trx ran, by its full name (`N.Outer+Inner` for a nested one, as `FullyQualifiedName` names it), in
+ * the order its results came: its tests' count and the tests that failed. A class is its definition's `TestMethod className`.
+ */
+export function classResults(trx) {
+  const classOf = new Map();
+  for (const [, id, body] of trx.matchAll(/<UnitTest\b[^>]*?\bid="([^"]+)"[^>]*>([\s\S]*?)<\/UnitTest>/g)) {
+    const method = /<TestMethod\b[^>]*>/.exec(body);
+    if (method) classOf.set(id, attributes(method[0]).className ?? '');
+  }
+  const classes = new Map();
+  for (const [tag] of trx.matchAll(/<UnitTestResult\b[^>]*>/g)) {
+    const result = attributes(tag);
+    const name = classOf.get(result.testId) || (result.testName ?? '').replace(/\(.*$/, '').split('.').slice(0, -1).join('.');
+    if (!name) continue;
+    const entry = classes.get(name) ?? { tests: 0, failed: [] };
+    entry.tests += 1;
+    if (!notFailed(result.outcome)) entry.failed.push((result.testName ?? '').replace(/\(.*$/, ''));
+    classes.set(name, entry);
+  }
+  return classes;
+}
+
+/**
+ * PROCREACH1: each class's verdict from a Process half's trx and the gate's result: a class with a failed test FAIL, or FLAKE
+ * where the gate is a flake (its failures passed alone), every other PASS. A gate the run ended gives none.
+ */
+export function classVerdictsOf(trx, result) {
+  if (result.verdict === 'ENDED') return [];
+  return [...classResults(trx)].map(([name, { failed }]) => ({
+    name, verdict: !failed.length ? 'PASS' : result.verdict === 'FLAKE' ? 'FLAKE' : 'FAIL',
+  }));
 }
 
 /** A re-run passes only when a test ran and none failed: a filter that matches nothing exits 0 too. */
@@ -3126,6 +3262,7 @@ const shown = (root, file) => {
 };
 const pad = (text, width) => (text.length >= width ? `${text} ` : text.padEnd(width));
 const count = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+const classCount = (n) => `${n} class${n === 1 ? '' : 'es'}`;
 
 function duration(ms) {
   const seconds = Math.round(ms / 1000);
@@ -3876,7 +4013,17 @@ function runRecorded(root, gates, dir, {
       // GATEBUILD1: a Process half runs its fast half's build when that passed in this run on this same tree.
       const result = await runGate(where, gate, logs, { ...beside, noBuild: reuseBuild(beside?.built, tree), trees });
       Object.assign(result, { tree, at: started });
-      if (result.verdict !== 'ENDED') addVerdicts(verdictsHome(where), [{ gate: gate.name, verdict: result.verdict, tree, at: started, commit, branch }]);
+      if (result.verdict !== 'ENDED') {
+        const home = verdictsHome(where);
+        // PROCREACH1: a Process half's classes, each with its verdict, and the half's: how many ran, how many it kept by reach,
+        // and the oldest verdict it kept (its own start when it ran whole), which the stage holds to the sweep's bound.
+        const found = isProcessGate(gate) && result.trx && existsSync(result.trx) ? classVerdictsOf(readFileSync(result.trx, 'utf8'), result) : [];
+        const classes = isProcessGate(gate)
+          ? { classes: { ran: result.trx ? found.length : null, kept: gate.reach?.kept.length ?? 0, sweep: gate.reach?.kept.length ? gate.reach.sweep : started } }
+          : {};
+        addVerdicts(home, [{ gate: gate.name, verdict: result.verdict, tree, at: started, commit, branch, ...classes }]);
+        addClassVerdicts(home, gate.name, found.map((each) => ({ ...each, tree, at: started, commit })));
+      }
       onResult(result);
       return result;
     },
@@ -4096,6 +4243,11 @@ function stageLines(gates) {
       const { verdict, paths } = gate.stale;
       const why = paths.length ? `on a tree before ${listed(paths, 4)} changed, which reaches it` : 'on a tree that cannot be compared with this one';
       return `${head('stale')} ${verdict.verdict} ${when(verdict.at)}, ${why}`;
+    }
+    // PROCREACH1: a pass that kept classes on verdicts past the sweep's bound: the whole half is owed before a stage.
+    if (gate.swept) {
+      const { verdict, sweep } = gate.swept;
+      return `${head('swept')} ${verdict.verdict} ${when(verdict.at)}: it kept ${classCount(verdict.classes.kept)} on verdicts from ${when(sweep)}, older than the ${hoursOf(SWEEP_BOUND_MS)} hours a sweep stands; the whole half runs again`;
     }
     if (!gate.verdict) return `${head('none')} no verdict on this tree`;
     const { standing, paths, records } = gate.standing;
@@ -4908,10 +5060,145 @@ export const CI_IDLE = Object.freeze({ busy: 0.25, freeGb: 16, width: 5, sampleM
  * install carries none of; the CI runs what they reach (the universal gates, the CLI's verify), so a records commit is
  * checked too. Every other gate is kept, with the verdict that stands and how it stands.
  */
-export function ciPlan({ plan, verdicts, tree, drift, reaching }) {
-  const judged = stageJudgement({ plan, verdicts, tree, drift, reaching, isRecord: () => false });
+export function ciPlan({ plan, verdicts, tree, drift, reaching, now = Date.now(), bound = SWEEP_BOUND_MS }) {
+  const judged = stageJudgement({ plan, verdicts, tree, drift, reaching, isRecord: () => false, now, bound });
   const kept = judged.gates.filter((gate) => !judged.missing.includes(gate.name)).map((gate) => ({ name: gate.name, verdict: gate.verdict, standing: gate.standing }));
   return { run: judged.missing, kept, gates: judged.gates };
+}
+
+// ---------------------------------------------------------------------------------------------------
+// PROCREACH1: a Process half the CI owes, run by the classes a change reaches
+
+/**
+ * Which classes of a Process half the CI owes it runs, and which it keeps (PROCREACH1, D180 point 2). `classes` are the half's
+ * by its census (`tools/process-reach.mjs`), `verdicts` each class's kept ones (`readClassVerdicts`, the newest last), `drift`
+ * the paths another tree differs from this one by (null where git cannot say), and `reached` which classes those paths reach
+ * (the lane table's paths for the gate, then the census's `classesReached`). Each class is judged as a gate is (GATE6): its
+ * newest verdict that stands on this tree decides, on this tree (`exact`) or on one whose changes since reach it not
+ * (`unreached`). A pass is kept; a failure runs until a run passes it; a class with no verdict that stands runs, and so does
+ * one the census never saw, since the half keeps out only the classes it keeps (`reachSettings`).
+ *
+ * The whole half runs (`whole` says why) when no class's pass stands; when its oldest kept verdict is older than `bound` (a
+ * sweep: the census sees what a class's files name, not what the named code uses, and the sweep bounds how long a change it
+ * misses goes unseen); or when every class is kept while the half is owed (it failed outside a test). `sweep` is the oldest
+ * kept verdict's time, which the half's verdict carries for the stage (`sweptOut`).
+ */
+export function classPlan({ classes, verdicts, tree, drift, reached, now = Date.now(), bound = SWEEP_BOUND_MS }) {
+  const judged = new Map();
+  const judge = (from) => {
+    if (!judged.has(from)) {
+      const paths = drift(from);
+      judged.set(from, paths === null ? null : reached(paths));
+    }
+    return judged.get(from);
+  };
+  const run = [];
+  const kept = [];
+  let wholeWhy = null;
+  for (const name of classes) {
+    const entries = verdicts[name] ?? [];
+    let counted = null;
+    let why = null;
+    for (let i = entries.length - 1; i >= 0 && !counted; i -= 1) {
+      const entry = entries[i];
+      const since = `since its ${passing(entry.verdict) ? 'pass' : 'failure'}`;
+      if (!entry.tree) why ??= 'its verdict has no tree to compare with this one';
+      else if (entry.tree === tree) counted = { entry, standing: 'exact' };
+      else {
+        const by = judge(entry.tree);
+        if (by === null) why ??= 'its tree cannot be compared with this one';
+        else if (by.whole.length) {
+          why ??= `${by.whole[0].why}, ${since}`;
+          wholeWhy ??= `${by.whole[0].why}, which reaches the whole half`;
+        } else if (by.classes.includes(name)) why ??= `${by.by.get(name)} changed ${since}, which reaches it`;
+        else counted = { entry, standing: 'unreached' };
+      }
+    }
+    if (counted && passing(counted.entry.verdict)) kept.push({ name, verdict: counted.entry, standing: counted.standing });
+    else if (counted) run.push({ name, why: `it failed on ${when(counted.entry.at)}, and a failure runs until it passes` });
+    else run.push({ name, why: why ?? 'it has no verdict of its own yet' });
+  }
+  const whole = (reason) => ({
+    whole: reason,
+    run: classes.map((name) => run.find((each) => each.name === name) ?? { name, why: 'the whole half runs' }),
+    kept: [],
+    sweep: null,
+  });
+  if (!kept.length) return whole(wholeWhy ?? 'no class has a pass that stands on this tree');
+  const oldest = kept.reduce((a, b) => (String(b.verdict.at) < String(a.verdict.at) ? b : a));
+  const age = now - Date.parse(oldest.verdict.at ?? '');
+  if (!(age <= bound)) {
+    return whole(`its oldest kept class verdict (${oldest.name}, ${when(oldest.verdict.at)}) is older than ${hoursOf(bound)} hours: a sweep runs the whole half`);
+  }
+  if (!run.length) return whole('every class is kept, but the half owes a verdict: it runs whole for one of its own');
+  return { whole: null, run, kept, sweep: oldest.verdict.at };
+}
+
+/**
+ * PROCREACH1: what a CI run does with each Process half it owes (`gates`, those of the plan it runs), on the gate tree at `tree`
+ * (`treeId` its content): the census read from the tree, each class judged by `classPlan` against the store's verdicts (`home`'s)
+ * and the lane table's paths for the gate (`standing.reaching`). A half run by reach is handed run settings of its own, written
+ * into the run's `dir` beside its log (`reachSettings`, named so the merge tool still reads it as the half it is), and its plan
+ * as `reach`; a whole half keeps its command and is handed its plan too, so its verdict says it kept none. A census that cannot
+ * be read, or a half whose command names no settings, runs whole and says why.
+ */
+function reachedHalves({ tree, treeId, gates, standing, home, dir, now = Date.now() }) {
+  const plans = new Map();
+  let read = null;
+  const store = readClassVerdicts(home).gates;
+  const out = gates.map((gate) => {
+    if (!isProcessGate(gate)) return gate;
+    const half = halfOf(gate.run);
+    let plan;
+    let census = null;
+    try {
+      if (!half) throw new Error('its command names no project and run settings to narrow');
+      read ??= repository(tree);
+      const found = censusOf(half, read.files, read.read);
+      census = found.classes.length;
+      if (!census) throw new Error(`its census found no class in ${half.project}`);
+      plan = classPlan({
+        classes: found.classes.map((each) => each.full),
+        verdicts: store[gate.name] ?? {},
+        tree: treeId,
+        drift: standing.drift,
+        reached: (paths) => classesReached(standing.reaching(gate.name, paths), found),
+        now,
+      });
+    } catch (error) {
+      plan = { whole: `its classes could not be read (${error.message}), so it runs whole`, run: [], kept: [], sweep: null };
+    }
+    plans.set(gate.name, { ...plan, census });
+    if (plan.whole) return { ...gate, reach: plan };
+    const file = join(dir, `${gate.name}.${basename(half.settings)}`);
+    writeAtomic(file, reachSettings(readFileSync(join(tree, half.settings), 'utf8'), plan.kept.map((each) => each.name)));
+    return { ...gate, run: withSettings(gate.run, file), reach: plan };
+  });
+  return { gates: out, plans };
+}
+
+/**
+ * PROCREACH1: a Process half's plan in its CI run's status: how many classes its census read, the whole half and why or null, the
+ * oldest verdict it keeps, each class it runs with why, and each it keeps with the verdict's time and commit and how it stands.
+ */
+function reachStatus(plan) {
+  return {
+    census: plan.census ?? null,
+    whole: plan.whole,
+    sweep: plan.sweep,
+    run: plan.run,
+    kept: plan.kept.map((each) => ({ name: each.name, at: each.verdict.at ?? null, commit: each.verdict.commit ?? null, standing: each.standing })),
+  };
+}
+
+/** PROCREACH1: a Process half's plan as its CI run says it, a line and the classes it runs or keeps. */
+function reachLines(name, plan) {
+  const names = (list) => list.map((each) => each.name.split('.').at(-1));
+  if (plan.whole) return [`  ${name}: the whole half runs${plan.census ? ` (${classCount(plan.census)})` : ''}: ${plan.whole}`];
+  const shownNames = (list) => `${names(list).slice(0, 8).join(', ')}${list.length > 8 ? `, and ${list.length - 8} more` : ''}`;
+  return [
+    `  ${name}: ${plan.run.length} of ${classCount(plan.census)} run by reach (${shownNames(plan.run)}); ${plan.kept.length} kept (${shownNames(plan.kept)}), each with a pass that stands on this tree, the oldest from ${when(plan.sweep)}`,
+  ];
 }
 
 /** CI1: the share of the processors' time that was busy between two `os.cpus()` readings, across all of them; null when not measured. */
@@ -5109,12 +5396,13 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
     if (!treeId) throw new Refusal("git could not write the gate tree's tree, so which verdicts stand on it cannot be told");
     const standing = standingFor(tree, treeId);
     const chosen = ciPlan({ ...standing, plan: plan.map((gate) => gate.name), verdicts: readVerdicts(home).verdicts });
-    const gates = plan.filter((gate) => chosen.run.includes(gate.name));
     const dir = join(home, SCRATCH, `ci-${sha}`);
     mkdirSync(dir, { recursive: true });
-    for (const gate of gates) {
+    for (const gate of plan.filter((each) => chosen.run.includes(each.name))) {
       for (const suffix of ['.log', '.rerun.log', '.trx', '.partial']) rmSync(join(dir, `${gate.name}${suffix}`), { force: true });
     }
+    // PROCREACH1: each Process half it owes runs the classes a change reaches, the rest kept, or whole, and says which.
+    const { gates, plans: reach } = reachedHalves({ tree, treeId, gates: plan.filter((gate) => chosen.run.includes(gate.name)), standing, home, dir });
     statusFile = join(dir, 'status.json');
     const record = readCiRecord(home);
     const since = { commit: record.lastGreen?.commit ?? null, at: record.lastGreen?.at ?? null, paths: null };
@@ -5131,6 +5419,10 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
       return file && existsSync(file) ? fromHome(home, file) : null;
     };
     status = ciStatus({ commit, tree: treeId, plan, chosen, since, light, pid: process.pid, at: started, logOf });
+    for (const [name, half] of reach) {
+      const gate = status.gates.find((each) => each.name === name);
+      if (gate) gate.classes = reachStatus(half);
+    }
     writeStatus();
     writeGateRecord(home, { commit, started, ended: null, passed: null, staged: null, by: 'ci' });
 
@@ -5140,6 +5432,7 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
       ? `  since the last green run (${since.commit.slice(0, 7)}, ${when(since.at)}): ${since.paths === null ? 'what changed could not be read' : `${count(since.paths, 'path')} changed`}`
       : '  no green CI run is recorded here: every gate without a verdict that stands on this tree runs');
     console.log(`  light lane: ${light.why}`);
+    for (const [name, half] of reach) for (const line of reachLines(name, half)) console.log(line);
     for (const line of stageLines(kept)) console.log(line);
     console.log(`  status: ${fromHome(home, statusFile)}`);
 
