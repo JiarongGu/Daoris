@@ -1,7 +1,10 @@
 # Daoris's git, as comprehensive as a git management app, and Review fast: the design (GITAPP1, 2026-10-23)
 
-**Status: proposed (D202), round 4, in two parts.** Round 4, by Claude Opus at `8fbeef346` with round 3 and Codex's read of it
-merged, answers that read (`docs/2026-10-23-git-app-reads.md`, "Codex, round 3") in §18. The steward narrowed again so Review gets
+**Status: proposed (D202), round 5, in two parts.** Round 5, by Claude Opus at `49948558a` with round 4 and Codex's read of it
+merged, answers that read (`docs/2026-10-23-git-app-reads.md`, "Codex, round 4": five findings, all against part one) in §19, each
+at its file and line; part one below is revised in place where they land (P1.1-P1.8), and part two is untouched. Round 4, by Claude
+Opus at `8fbeef346` with round 3 and Codex's read of it merged, answered that read (`docs/2026-10-23-git-app-reads.md`, "Codex,
+round 3") in §18. The steward narrowed again so Review gets
 faster now. **Part one** (below, before §0) is all D202 settles: **GITAPP1a**, an uncached parallel dependency graph whose answers are
 exactly today's, every start counted through one seam under the existing gate, cancellation on the page's close reaching the
 process's owner, and a test holding the graph's answer equal to today's chain on the same fixtures. **Part two** is everything that
@@ -9,13 +12,13 @@ keeps or reuses an answer across opens: round 3's text, §0 to §17, follows as 
 proposed and read later; its open questions are listed in part two's head (P2). Where part one and round 3's text differ, part one
 holds.
 
-## Part one (round 4): GITAPP1a, Review as a graph of today's reads
+## Part one (rounds 4 and 5): GITAPP1a, Review as a graph of today's reads
 
 ### P1.1 What changes, and what does not
 
 Review's route today asks its reads one after another (`Modules/Bridge/Routes/TreesRoutes.cs:56-100`): the uncommitted diff
 (`WorkingTree.UncommittedDiffAsync`, `WorkingTree.cs:326-370`), the range (`ReviewRanges.ReviewRangeAsync`, `ReviewRanges.cs:35-82`),
-the committed diff over `range.Reads`, the standing landing's review (`LandedReviews.cs:33-129`), the branch's name
+the committed diff over `range.Reads`, the standing landing's review (`LandedReviews.cs:33-101`), the branch's name
 (`WorkingTree.BranchAsync`, `:84-91`), then the Accept offer; a landed or gone session reads `LandedReviews` and `LandedProofs`
 instead. Measured, `12 + I + M + Uᵣ` serial starts before the offer (§1).
 
@@ -41,10 +44,41 @@ nodes whose answers it needs, started the moment they have answered. **Nothing c
 - **The existing gate.** Every start is `WorkingTree.GitStart` through `ProcessStarts` as `StartClass.Background`, unchanged. The graph
   has no run bound of its own beyond its width and the untracked window (P1.3).
 
-**Speculation, and its one rule.** A node may start before the condition that decides whether its answer is used, **only where the
-command it runs is the one today's chain would run if the condition went that way**, with the same arguments: so a used speculative
-answer is today's answer, and an unused one is a wasted start, counted and named. A node never starts a command today's chain would
-never run. `rev-parse --show-toplevel` of the tree, asked twice today (once by each diff reader), is asked once and answers both.
+**Reads that can run a program keep today's order, one at a time (round 5, Codex R4-1).** Part one keeps every configured program
+git runs today, since suppressing one changes an answer (part two's effect policy). So it parts the nodes in two:
+
+- **Π, the program-capable reads**: every read of file content through git's diff or merge machinery. On Tools' git 2.53, probed
+  with a textconv and a clean filter that log each call: **S** (`status`) ran the clean filter; **W** (the diff against `HEAD`,
+  `WorkingTree.cs:331` through `RangeAsync`'s arguments at `:466-480`) ran the clean filter and textconv on both sides; each **Uᵢ**
+  (`diff --no-index`, `:385-392`) ran the clean filter and textconv; **D** (the committed range, `:304` through `:466-480`) ran
+  textconv on both blobs. **M** (`merge-tree --write-tree`, `ReviewRanges.cs:92`) runs a configured merge driver. **The offer's chain**
+  (`TreeWorkReads.cs:37-61`) reads `status` (`:77`), `git cherry` and `log --cherry-mark` (`LineHolds.cs:98,231,286`) and `merge-tree`
+  (`LineHolds.cs:142`); **the landed review's changes** (`LandedReviews.cs:33`, past `:55`) a diff. `--no-ext-diff`
+  (`WorkingTree.cs:388,479`) already keeps a configured external diff and a `diff.<driver>.command` from running, today and in the
+  graph alike; textconv, the clean and process filters and merge drivers are not kept from running, and `core.fsmonitor`'s hook
+  runs on a read of the index.
+- **The rest run no configured program**: T, P, K, E, K′, G₁₋₃, B₁, B₂, N↑, N↓, I and H (`rev-parse`, `merge-base`, `rev-list
+  --count`, `symbolic-ref`) read refs and the commit graph only; the same probe logged no call from any of them.
+
+**Identical commands are not independent reads.** A configured program is a process of its own with state git does not see: a file
+it appends to, a counter, a cache, a lock, a server it asks. Its output may depend on what it was asked before and how often, and git
+promises nothing about either; so W's and D's conversions swapped, or run at once, can change a patch with no ref and no file moved,
+and a speculative read that is then unused runs a program today's chain never ran on that path. Equality of command and arguments
+says the read is the same question; it does not say asking it earlier, beside another, or needlessly leaves every later answer the
+same. **So in part one Π is one chain in today's order, one read at a time, and nothing in Π is speculative**: W → S → U₁ … Uᵣ → M →
+D → the landed review's changes → the offer, each started only where today's chain would start it (`TreesRoutes.cs:70`, then `:77`'s
+range, then `:80`, then `:100-104` or `:91-94`), after the one before it in Π has answered and after its own inputs. Round 4's D₀
+(the committed range started before Σ) is **withdrawn**, and the offer no longer starts beside D. The parallel set is the rest:
+plain ref, ancestry and count questions, which run at once and ahead. A Π read and a non-Π read may run together, since the non-Π
+read runs no program to interact with. Part two may widen Π's parallelism once its context proves no program applies to a read's
+paths (P2).
+
+**Speculation, and its one rule.** A node **outside Π** may start before the condition that decides whether its answer is used,
+**only where the command it runs is the one today's chain would run if the condition went that way**, with the same arguments: so a
+used speculative answer is today's answer, and an unused one is a wasted start, counted and named. A node never starts a command
+today's chain would never run on any path, and a speculative node's failure is surfaced only where today's chain would have asked it
+(H's refusal at `TreesRoutes.cs:88,113`, P1.7's branch list). `rev-parse --show-toplevel` of the tree, asked twice today (once by
+each diff reader, `WorkingTree.cs:302,328`), is asked once and answers both.
 
 **What it does not fix.** Today's chain names `HEAD` in each command, so a tree moving during the read can mix two heads, today and in
 the graph alike; one head id and a final barrier are part two's (§5.2), since they need the refs observation. A graph that answers
@@ -52,7 +86,8 @@ faster narrows that window and does not close it.
 
 ### P1.2 The nodes
 
-`HEAD` is the name, as today. "Spec." marks a node started speculatively under P1.1's rule.
+`HEAD` is the name, as today. "Spec." marks a node started speculatively under P1.1's rule; **Π** marks a program-capable read
+(P1.1), never speculative, started in Π's order after the Π read before it.
 
 | Node | Command (today's) | Today at | Needs | Spec. |
 |---|---|---|---|---|
@@ -65,16 +100,16 @@ faster narrows that window and does not close it.
 | **B₁ B₂** | `merge-base HEAD refs/heads/<line>`, `… refs/remotes/origin/<line>` | `ReviewRanges.cs:53-60` | the line (set: no start; guessed: G), and P answered | where the line is set, beside P |
 | **N↑ N↓** | `rev-list --count <known…> --not HEAD` and its converse | `:125-126` | B₁, B₂ (`known`) | yes, beside B on both refs; used where both B answered, else run again on `known` |
 | **I** | `merge-base --independent <candidates>` | `:114` | B₁, B₂, K (K′) where two or more distinct candidates | |
-| **M** | `merge-tree --write-tree <line base> <record base>`, **as today** | `:92` | I, where incomparable | |
-| **D₀** | the committed range `<recorded>..HEAD` (`RangeAsync`) | `WorkingTree.cs:294-305` | nothing, where the record is an id | yes, used where Σ's `Reads` is the record's base and T says top |
-| **D** | the committed range `<Against ?? From>..HEAD`, `Base = From` | `TreesRoutes.cs:77-80` | Σ; not started where D₀ is that command | used where T says top |
-| **W** | the tracked uncommitted diff against `HEAD` (`RangeAsync("HEAD", "HEAD")`) | `WorkingTree.cs:331` | nothing (an own tree that is here) | used where T says top |
-| **S** | `--no-optional-locks status --porcelain -z --untracked-files=all` | `:335-336` | nothing | used where T says top |
-| **Uᵢ** | an untracked file's `diff --no-index /dev/null <path>` (`UntrackedPatchAsync`) | `:373-401` | S; the window and the fold, P1.3 | yes, past the fold |
-| **H** | `symbolic-ref --short -q HEAD` (`BranchAsync`) | `TreesRoutes.cs:88` | nothing; used where the diff answered, its failure thrown there as today | yes |
+| **M** | `merge-tree --write-tree <line base> <record base>`, **as today** | `:92` | I, where incomparable; Π after S and the last U | **Π** |
+| ~~D₀~~ | withdrawn in round 5 (Codex R4-1): a speculative committed range runs textconv today's chain may never run | | | |
+| **D** | the committed range `<Against ?? From>..HEAD`, `Base = From` | `TreesRoutes.cs:77-80`; `WorkingTree.cs:298-305` | Σ, T saying top (`WorkingTree.cs:302`), a base that is not blank (`TreesRoutes.cs:72`, `WorkingTree.cs:300`); Π after M, else after the last U, else after S | **Π** |
+| **W** | the tracked uncommitted diff against `HEAD` (`RangeAsync("HEAD", "HEAD")`) | `WorkingTree.cs:331` | T saying top (`:328`), an own tree that is here (`TreesRoutes.cs:70`); first in Π | **Π** |
+| **S** | `--no-optional-locks status --porcelain -z --untracked-files=all` | `:334-337` | W answered (`:332`) | **Π** |
+| **Uᵢ** | an untracked file's `diff --no-index /dev/null <path>` (`UntrackedPatchAsync`) | `:373-401` | S answered (`:337`); W's spent budget; the window and the fold, P1.3 | **Π** |
+| **H** | `symbolic-ref --short -q HEAD` (`BranchAsync`) | `TreesRoutes.cs:88,113`; `WorkingTree.cs:84-91` | nothing; used where D answered (`:88`) or on the dirty-only path (`:113`), its failure thrown only there, as today | yes |
 | **Σ** | today's selection (P1.1) on the answers | `ReviewRanges.cs:63-81` | B, K, K′, I, M where they ran | no process |
-| **Offer** | today's offer chain (`TreeWorkReads`, `TreeFollows`, the content holds), its own order unchanged | `TreesRoutes.cs:91-94` | Σ and N (ahead > 0), no landing, an own tree | |
-| **Landed, gone** | `LandedReviews`' and `LandedProofs`' starts, each a node with its own needs (T of the checkout, the tip's `rev-parse`, `--is-ancestor`s, the recorded `From`'s expansion, the line's guess there, `merge-base`, the range; `cat-file -e`, each line form's `rev-parse`, `--is-ancestor`, `merge-base`, `rev-list --count`, the names) | `LandedReviews.cs:33-129`, `LandedProofs.cs:54-190` | as today's code reads each from another | where P1.1 allows |
+| **Offer** | today's offer chain (`TreeWorkReads`, `TreeFollows`, the content holds), its own order unchanged | `TreesRoutes.cs:91-94` | D answered and H answered (`:81,88`), Σ and N (ahead > 0), no landing, an own tree; Π last | **Π**, never speculative |
+| **Landed, gone** | `LandedReviews`' and `LandedProofs`' starts, each a node with its own needs (T of the checkout, the tip's `rev-parse`, `--is-ancestor`s, the recorded `From`'s expansion, the line's guess there, `merge-base`, the range; `cat-file -e`, each line form's `rev-parse`, `--is-ancestor`, `merge-base`, `rev-list --count`, the names) | `LandedReviews.cs:33-101`, `LandedProofs.cs:54-187` | as today's code reads each from another; the landed path only where D did not answer or the base is blank (`TreesRoutes.cs:72,81,100`) | where P1.1 allows; the range read **Π** |
 
 **The line's guess stays git's own** (Codex R3-2): `symbolic-ref` reads a dangling `refs/remotes/origin/HEAD` that `for-each-ref`
 omits (`.claude/knowledge/git-ref-absence.md`), so round 3's derivation from the refs observation is withdrawn. Its three questions are
@@ -82,26 +117,45 @@ asked together and chosen in today's order; where a line is set in the person's 
 (`CanonicalLine.cs:83-90`). A look (`TreeContext.OneLook`) still shares the guess within its flow.
 
 **The offer stays in the answer.** Moving it out of `SESSION_DIFF` (round 3's 1a-v) changes the route's answer, so it is part two's
-(P2). In part one its chain starts the moment Σ and N have answered, beside D, and its starts are counted in a budget of their own:
-the bench reports the review's depth and the offer's apart, since the offer's own serial chain (six starts, then one per eligible
-branch, §1) can now be the longer.
+(P2). In part one its chain starts where today's does, **after D and H have answered** (round 5: it runs `status`, `cherry`,
+`log --cherry-mark` and `merge-tree`, so it is Π and is never started beside D or ahead of D's success), and its starts are counted
+in a budget of their own: the bench reports the review's depth and the offer's apart, since the offer's own serial chain (six
+starts, then one per eligible branch, §1) can be the longer.
 
 ### P1.3 Untracked files: today's reads, in a window
 
 Each untracked file stays one start of today's command (Codex R3-10): the display addition (§6.2) is part two's. Today they run one
-after another, each read only while the patch budget is unspent (`WorkingTree.cs:353-365`). In the graph, **the reads start in the
-order `status` lists them, at most w at once** (provisional w = 4, measured in the row), as soon as S has answered; **the budget is
-folded in that order** once W's patches and each file's answer are in, by today's rule (`PatchBudget` spent over the tracked patches
-and each read patch; a file past it listed without a patch, counted in the truncation's words); and **no read is started past the
-point the fold has reached the budget**. So the answer is today's, the files read are today's `Uᵣ`, and at most `w − 1` more are
-wasted, counted. The size check before a read (`UntrackedPatchLimit`) is today's and costs no start.
+after another, each read only while the patch budget is unspent (`WorkingTree.cs:340-364`: `spent` starts at W's patches, `:341`;
+a file past the budget is listed with no read, `:353-357`; each read adds its patch, `:360-361`). **Round 5 (Codex R4-2) bounds the
+window by the fold, not by running reads:**
+
+- **Opened only after W and S have answered.** W's success and its spent budget (`:331-332,341`) and S's success (`:334-337`) are
+  the window's prerequisites; W or S failing opens no window (the uncommitted answer is null, `:332,337`), and W's patches spending
+  the whole budget starts **no** untracked read, as today.
+- **Bounded by files started and not yet folded.** At most w files are started ahead of the fold; a slot is given back only when
+  the ordered fold advances past a file, never when a later file's read completes first. A held first answer therefore holds the
+  window at w, whatever completes behind it.
+- **Stopped by the fold.** The fold takes each answer in `status`'s order by today's rule (`PatchBudget` over W's patches and each
+  read patch, a file past it listed with no patch and counted in the truncation's words, `:366-368`); once it reaches the budget no
+  further file is started, and each file started ahead of it is stopped and counted wasted. A cancelled read stops the window.
+- **So the wasted starts are at most w − 1**, the files started ahead of the one whose patch reached the budget, and **zero where W
+  spent it**. The size check before a read (`UntrackedPatchLimit`, `:377`) is today's and costs no start.
+
+**Part one's w is 1** (P1.1: each Uᵢ runs the clean filter and textconv, so it is Π, read in today's order one at a time). With w = 1
+the protocol is today's loop exactly: the files read are today's `Uᵣ` and **no untracked start is wasted**. The protocol is written
+for any w so the census can hold it now; **w > 1 is part two's**, once its context shows no textconv or filter applies to the
+untracked paths (P2). So part one does not shorten the untracked tail: the 50-untracked case (§1's 44.1 s) gains only the parallel
+ref reads and the shared T, and the bench says so.
 
 ### P1.4 The census: depth and starts generated from the graph
 
 **The counts are generated, not written** (Codex R3-3). `ReviewGraph` is built from a review's conditions: own tree, landed or gone;
 the line set, guessed (origin's `HEAD` set, dangling, `main`, `master`, none) or absent; the recorded base an ancestor, displaced with a
 grown base that is or is not, displaced with none, or not an id; the candidates one, two comparable, or incomparable (M, or M's
-conflict); untracked files none, under the budget, past it; T saying top or not; the offer asked or not. The census enumerates every
+conflict); untracked files none, under the budget, past it; T saying top or not; the offer asked or not; **and, from round 5, every
+route branch P1.7 lists** (a tree outside this home, a blank base, W, S, D or H failing, the landed and dirty-only fallbacks, the
+refusal) **and the untracked window's held cases** (W held, W spending the whole budget, the first Uᵢ held while later ones could
+complete, the fold reaching the budget mid-window; Codex R4-2). The census enumerates every
 combination, builds the graph, runs it through the executor with held completions (a stand-in under the seam holds every answer until
 the test releases it), and holds each path's **depth** (the longest chain of dependent starts) and **starts** (used, speculative,
 wasted) to what the graph's data computes. A node started before its inputs answered, or not started once they had, fails; so does
@@ -110,16 +164,18 @@ any command the graph runs that today's chain would not run on that path, outsid
 The table below is **provisional**: it is what part one expects the generator to give for the named paths, and **where the generated
 number differs, the generated one stands** and the row corrects this table. The offer and the untracked tail are beside it.
 
-| Path, cold (nothing kept, ever) | Today: serial starts | Graph: depth | Graph: starts |
+| Path, cold (nothing kept, ever); round 5's Π chain | Today: serial starts | Graph: depth | Graph: starts |
 |---|---|---|---|
-| Ordinary: own tree; the line set; both its refs here; the record an ancestor; one distinct candidate | 12 | 1 | 12: T, P, K, E (wasted), B₁, B₂, N×2, D₀, W, S, H |
-| The same, the line guessed from origin's `HEAD` | 13 | 3 (P → G → B, N) | 15: and G₁₋₃, G₂ and G₃ wasted |
-| Two comparable candidates | 13 | 3 (B → I → D) | 14: and I, D; D₀ wasted |
-| Incomparable (REVIEWBASE3), M answering | 14 | 4 (B → I → M → D) | 15 |
-| The record displaced, a grown base an ancestor, incomparable | 16 | 5 (E → K′ → I → M → D) | 16: and K′, I, M, D; D₀ wasted |
-| **The general ceiling**: the line guessed, the record displaced and grown, incomparable | 19 | 6 (P → G → B → I → M → D) | 19 |
-| The untracked tail, Uᵣ files read | + Uᵣ, serial | + ⌈Uᵣ / w⌉ after S | + Uᵣ, ≤ w − 1 wasted |
-| The offer, where asked | + 6 + e, serial | its chain's own, after Σ and N | + 6 + e |
+| Ordinary: own tree; the line set; both its refs here; the record an ancestor; one distinct candidate | 12 | 4 (T → W → S → D) | 12: T, P, K, E (wasted), H, B₁, B₂, N×2, W, S, D |
+| The same, the line guessed from origin's `HEAD` | 13 | 4 (T → W → S → D; P → G → B beside it) | 15: and G₁₋₃, G₂ and G₃ wasted |
+| Two comparable candidates | 13 | 4 (T → W → S → D; P → B → I beside it) | 13: and I |
+| Incomparable (REVIEWBASE3), M answering | 14 | 5 (T → W → S → M → D) | 14: and I, M |
+| The record displaced, a grown base an ancestor, incomparable | 16 | 5 (T → W → S → M → D; E → K′ → I beside it) | 15: and K′, I, M |
+| **The general ceiling**: the line guessed by `master`, the record displaced and grown, incomparable | 19 | 6 (P → G → B → I → M → D) | 18 |
+| A blank base, dirty work only (`TreesRoutes.cs:72,109-113`) | 4: T, W, S, H | 3 (T → W → S) | 4: H speculative and used |
+| A tree outside this home (`ReviewRanges.cs:37`; no W, no S, `TreesRoutes.cs:70`) | 3: T, D, H | 2 (T → D) | 3 |
+| The untracked tail, Uᵣ files read | + Uᵣ, serial | + Uᵣ, in Π after S (w = 1) | + Uᵣ, none wasted |
+| The offer, where asked | + 6 + e, serial | + its chain's own, in Π after D and H | + 6 + e |
 
 Landed and gone paths are generated alike, from `LandedReviews`' and `LandedProofs`' own needs, with no table written ahead of the
 generator. The **ceilings stay provisional** (Codex R3-3), and none of part one's numbers is a time: the bench reports times beside them.
@@ -154,16 +210,75 @@ door between them:
   flight's key), so two windows on one review start one graph, and each window's leaving is its own.
 - **`READ_LEAVE { read }`**, a route that cancels that id's source: its caller stops waiting, and the flight stops only where no other
   caller waits. A leave for an id already answered or unknown is answered `{ left: false }` and does nothing.
-- **The graph's executor runs under the flight's token**: cancelled, it starts no further node, and every running node's process is
-  killed and waited for by the runner, as today; nothing of a cancelled read is answered or kept.
+- **The graph's executor runs under the flight's token**: cancelled, it starts no further node, every running node's runner kills
+  its process and waits for its exit (below: **added by row 1a-iii, not today's**), and nothing of a cancelled read is answered or
+  kept.
 - **The page sends it when its last waiter leaves.** `readDiff`'s entry counts the page's waiters; when the last leaves (the review
   unmounted, the session page left), it waits a **grace of 10 s** (provisional: REVIEW4's return to a read still running joins it),
   then sends `READ_LEAVE` and drops the entry, so a return after the grace asks afresh. A read answered within the grace is kept as
-  REVIEW4 keeps it today.
-- **The window's exit** ends the host's routes as the host's own shutdown does today; part one adds nothing there.
+  REVIEW4 keeps it today. This is the door for **navigation inside a living page** only.
 
-The process's owner is the flight: one per review being read, holding the token every node's runner hears. The ownership table of
-§4.4 is part two's beyond this.
+**Bound to the window that asked, never to the host's shutdown (round 5, Codex R4-4).** Round 4's last bullet, that a window's exit
+ends the host's routes as shutdown does, is **withdrawn**: the application outlives a main window while another is open
+(`Modules/Windows/MainWindows.cs:4-12,88-99`), the first main window is hidden rather than closed when the person closes it with
+another open (`MainWindows.cs:64-82`; `Daoris.Desktop.App/MainForm.cs:204-211`), and a secondary window's close only forgets that
+window (`Daoris.Desktop.App/SecondaryWindowHost.cs:154-166`). What binds a read to its window is the token the route is already
+handed, read in the window kit at the version Daoris pins (`Shenora` 0.22.0, `src/Daoris.Desktop/Directory.Packages.props:26-31`;
+paths in the kit's repository at its tag `v0.22.0`):
+
+- each window's page has a bridge of its own: `ChromiumView` makes its browser (`src/Shenora.Windows/WebView/ChromiumView.cs`), whose
+  `ChromiumIpcBridge` makes an `IpcHostBridge` (`src/Shenora.Chromium/Host/ChromiumIpcBridge.cs:72-80`, `CancelInFlightOnDispose`
+  left at its default, true, `src/Shenora/Core/Ipc/IpcHostBridge.cs:42`);
+- that bridge hands **its own lifetime token** to every dispatch it makes (`IpcHostBridge.cs:71-74,133`: "the CALLER's lifetime, not
+  per-request client cancellation"), passed unchanged through `PageModuleDispatcher`
+  (`src/Shenora.Chromium/Host/PageModuleDispatcher.cs:26-28`) and `ModuleBase.HandleMessageAsync`
+  (`src/Shenora/Core/Ipc/ModuleBase.cs:39,58`) to `DriverModule.RouteMessageAsync` (`Modules/Bridge/DriverModule.cs:126-131`) and
+  the route, or to `RouteFlights.JoinAsync` for a joined read (`DriverModule.cs:172-175`);
+- the window's destruction cancels it, with no page script: the view's handle destroyed (`ChromiumView.cs:139-143`) disposes the
+  browser (`src/Shenora.Chromium/ChromiumChildBrowser.cs:165-171`), whose close (`:297-301`) finishes it (`:232-235`), disposing the
+  bridge (`ChromiumIpcBridge.cs:166-173`), which cancels the lifetime (`IpcHostBridge.cs:170-183`).
+
+So in row 1a-iii **each `read` id's source is linked to the route's own token** (the asking window's bridge lifetime), and the read's
+`RouteFlights` join waits under that linked token. **A window destroyed** cancels its bridge's lifetime, which leaves every read that
+window asked (`RouteFlights.cs:47-54`, then `Leave`, `:93-103`) with no JavaScript; the flight stops only where that window was the
+last waiter, so **another window still waiting keeps the read**. **The first main window hidden** destroys no handle: its page, its
+bridge and its reads live on, and its page's own leave door is the only one that applies, as for any living page. **The host's
+shutdown** stays what it is, and part one relies on it for nothing. This is a reading of the kit: row 1a-iii's proof demonstrates it
+(P1.7) before anything relies on it, and a kit that stopped cancelling on a window's destruction fails that proof.
+
+**The runners today, and the row that makes them kill and wait (round 5, Codex R4-5).** Round 4 said every process is "killed and
+waited for by the runner, as today"; **that is not today's code**:
+
+- `ChildProcess.RunAsync` (`Driver/Platform/ChildProcess.cs:54-92`, under `RunGitAsync`, `Driver/Trees/WorkingTree.cs:1069-1070`):
+  on cancellation it calls `KillTree` (`:82`), then awaits the two output reads, which were started under the cancelled token
+  (`:73-74,85`), and throws (`:86`); it **never awaits the process's exit** after the kill, and disposes it (`:68`).
+- `ReadGitAsync` and `GitBytesAsync` (`WorkingTree.cs:1198-1248`, `:1104-1159`): the token's registration kills git's tree
+  (`Ending`, `:1165-1166`, registered at `:1213` and `:1120`); a cancelled read lands in `EndAsync` (`:1236`, `:1147`), which kills
+  again and lets stderr's read finish (`:1172-1176`); **no exit wait**, and the process is disposed in `finally` (`:1246`, `:1157`).
+- `KillTree` (`ChildProcess.cs:112-122`) **swallows a failed termination** (`Win32Exception`, `InvalidOperationException`,
+  `NotSupportedException`, `:118`) as "it ended as it was stopped", so a kill that failed reads as one that worked.
+- **Cancellation during creation** is seen through (`Driver/Platform/ProcessStarts.cs:114-116,136-147`): a start under way returns its
+  process, whose runner's registration on the already-cancelled token kills it at once (`WorkingTree.cs:1213`, `:1120`); in
+  `ChildProcess` the first wait throws and the kill follows (`ChildProcess.cs:78-82`). Again no exit wait.
+- **`RouteFlights.JoinAsync` releases a cancelled caller before the flight's cleanup**: the caller's wait throws
+  (`RouteFlights.cs:47-54`), and the flight's stop is cancelled on another thread (`:102`) while `FlyAsync` (`:64-82`) still unwinds.
+- **What today's tests observe** is that the tree was ended, by a marker a grandchild would have written after a delay
+  (`Driver.Tests/Platform/ChildProcessTests.cs:62-73,113-124`; `Driver.Tests/Trees/GitStreamEndsTests.cs:39-72`); never that the
+  runner returned after the process's exit.
+
+**Row 1a-iii adds it** (driver, beside its modules and web halves; P1.8): each of the three runners, on cancellation or past its
+bound, kills the tree and then **awaits the process's exit** under a bound of its own (provisional 5 s), disposing the process only
+after; a kill that failed, or an exit not seen within that bound, is **said, never swallowed**: the runner logs `git.unended` (the
+node, the pid, the reason, no path), throws its cancellation with that fact attached, and the executor counts the node *unended*.
+**The owner is the graph's executor under the flight**: it keeps every started node until that node's runner has returned, and the
+flight completes (`FlyAsync`'s `Done`, `RouteFlights.cs:68-81`) only once every node it started has returned. So **three milestones
+are told apart**: a caller's wait released (at once, as today), the flight's stop (`:102`), and the owner's cleanup (every started
+process exited, or said unended). **An unused speculative node** (outside Π, P1.1) is stopped as soon as the condition deciding it
+goes the other way, its runner killing it and waiting for its exit like any other, and counted *wasted, stopped*; one that has
+already answered is dropped. The answer is published after the owner's cleanup, so no node the answer did not use outlives it.
+
+The process's owner is the flight's executor: one per review being read, holding the token every node's runner hears. The ownership
+table of §4.4 is part two's beyond this.
 
 ### P1.7 The proof
 
@@ -172,14 +287,67 @@ The process's owner is the flight: one per review being read, holding the token 
   variant, a dangling `refs/remotes/origin/HEAD` (Codex R3-2), `main` only, `master` only, neither, a displaced record with and without
   a grown base, two comparable candidates, untracked files under and past the budget and over 200 KiB, a folder that is no top, and a
   landed branch standing, not holding its `From`, not ours, and gone. On each it answers once through **today's chain** (kept as the
-  oracle until part two retires it) and once through **the graph**, and asserts the two `SESSION_DIFF` answers equal field by field,
-  the patches byte for byte, and the multiset of commands each ran equal but for the speculative starts the graph names and the one
-  `--show-toplevel` it shares. Nothing moves the tree between the two reads.
-- **The census** (P1.4), with held completions through the seam, in the fast half.
+  oracle until part two retires it) and once through **the graph**, and asserts the two outcomes equal: **an answer** field by field,
+  the patches byte for byte, **or a refusal** by its code and its words (round 5, Codex R4-3), and the multiset of commands each ran
+  equal but for the speculative starts the graph names and the one `--show-toplevel` it shares. Nothing moves the tree between the
+  two reads. **The comparison runs through the route** (`TreesRoutes.DiffAsync`, `Modules/Bridge/Routes/TreesRoutes.cs:56-117`)
+  with only its reads swapped, so its guards and its fallbacks' precedence are the route's own and stay around the graph, and **every
+  branch below has its fixture**, each named by the line that decides it:
+  1. **The session unknown**: `SessionGroundAsync` refuses (`TreesRoutes.cs:62`) before any git; no node starts.
+  2. **The tree gone** (`:66`; `TreeFolders.cs:13-25`: no path, no folder, an empty one, one nobody may list): no W, S or U
+     (`TreesRoutes.cs:70`), no committed range (`:72`); with a landing, the landed review with its changes (`:100-104`); without one,
+     the refusal (`:116`).
+  3. **A tree outside this home** (`OwnTree`, `:120-`; the range's `context.Holds`, `ReviewRanges.cs:37`): no W, S or U (`TreesRoutes.cs:70`);
+     the range answered as the record's base with no line and **no start** (`ReviewRanges.cs:37`), so no P, K, E, G, B, N, I or M; the
+     committed review read (`TreesRoutes.cs:80`) and H (`:88`); **no offer** (`:91`, `OwnTree`).
+  4. **W's T not top** (`WorkingTree.cs:328`), **W failing** (`:332`), **S failing** (`:338`): the uncommitted part null, and no S, U
+     after the failure; no window opens (P1.3), so no status or untracked answer can make dirty work.
+  5. **A blank base** (`TreesRoutes.cs:72`): no range, no D, no standing review, no offer; then the landing's review (`:100-104`), else
+     **dirty work only** with H asked there (`:109-113`), else the refusal (`:116`). H, speculative, is used here and its refusal
+     thrown here (`WorkingTree.cs:90`); on the landing and refusal paths it is wasted and its failure dropped.
+  6. **The range's own branches** (`ReviewRanges.cs:35-82`): P failing, so no line and no counts (`:42-46,81`); the record an id and an
+     ancestor (`:104`), not an id (no K, `:103-104`), displaced with a grown base that is (`:106-108`), is not, or is no id (`:107`);
+     the line set, guessed by origin's `HEAD` (dangling too), `main`, `master`, or none (`WorkingTree.cs:105-124`); either line ref
+     absent or failing (`ReviewRanges.cs:55-56`); fewer than two candidates (`:66-69`), two comparable, I failing (`:114-115`, so
+     `Newest` over none, `:73`), incomparable with M answering, conflicting or failing (`:75-78,92-94`); N with no known refs
+     (`:124`) or a count failing (`:127`).
+  7. **D not answering**: its T not top (`WorkingTree.cs:302`) or git refusing the range (`:484`): the committed branch falls through
+     (`TreesRoutes.cs:81`) to the landing's review with its changes (`:100-104`), else dirty work only (`:109-113`), else the refusal
+     (`:116`); the offer, which follows D (P1.2), is not started.
+  8. **D answering with a landing standing**: the standing review without its changes (`:83-85`; `LandedReviews.cs:55`), H, no offer
+     (`TreesRoutes.cs:91`).
+  9. **D answering, no landing**: H's refusal thrown as today (`:88`; `WorkingTree.cs:90`), a detached `HEAD` named null (`:89`); the
+     offer only where ahead > 0 and the tree is its own (`TreesRoutes.cs:91`), and none where its chain answers nothing (`:92`).
+  10. **Dirty work with no files** (`:109`): the refusal (`:116`), not an empty review.
+  11. **The landed and gone reviews' own branches** (`LandedReviews.cs:33-101`, `LandedProofs.cs:54-187`): standing, not holding its
+      `From`, not ours, and gone, as round 4 listed.
+- **Program-capable reads in today's order** (round 5, Codex R4-1): a fixture whose `.gitattributes` gives its tracked, committed
+  and untracked files a textconv and a clean filter that append each call to a log in the fixture and **write a count of their calls
+  into their output**, and a merge driver on the REVIEWBASE3 chain step. The log and the counter are reset identically before the
+  chain's read and the graph's; the two answers equal byte for byte and **the two logs equal line for line**, so the graph ran the
+  same programs, as often, in the same order. A variant whose committed range would have been read speculatively under round 4
+  (the record displaced) holds that no conversion runs that the chain did not run.
+- **The census** (P1.4), with held completions through the seam, in the fast half; round 5 adds the untracked window's held cases:
+  W held, W spending the whole budget (no Uᵢ started), the first Uᵢ held while later ones could complete (no slot given back), and
+  the fold reaching the budget mid-window, each with its generated depth and waste, run at w = 1 (part one) and at w = 4 (the
+  protocol part two would widen), the waste never above w − 1.
 - **The seam** (P1.5): every runner raises one count; each kind's arguments equal today's; the source census.
 - **Cancellation** (P1.6): through the real route boundary, a stand-in git that waits for a signal: the page's leave after its grace
   kills the stand-in and the route answers nothing; a second window still waiting keeps the read alive until it leaves too; a leave
   for an answered id does nothing; a return within the grace joins the read. A Vitest of `readDiff` holds the grace and the last waiter.
+- **Bound to the window** (round 5, Codex R4-4): two of the kit's own `IpcHostBridge`s, one per window, dispatching to the real
+  `DriverModule`: one window's `SESSION_DIFF` held on the stand-in git; **disposing that bridge** (what the window's destruction
+  does, P1.6) cancels its wait and kills the stand-in, with no `READ_LEAVE` sent; **a shared read**, both bridges waiting, survives
+  the first bridge's disposal and answers the second; a third case holds that the first main window **hidden** leaves its read
+  running. The installed window shows it apart (row 1i): a secondary main window closed mid-read while the first stays open, and
+  `review.read` saying the read left by its window.
+- **Kill and wait, observed** (round 5, Codex R4-5): for each of the three runners (`ChildProcess.RunAsync` under `RunGitAsync`,
+  `ReadGitAsync`, `GitBytesAsync`), a stand-in that records its pid and ignores its input, cancelled **during creation** (the gate
+  held, the token cancelled as the start is under way) and **while running**; and the graph with **several running nodes** and an
+  unused speculative one. Each asserts that when the runner (or the flight) returns, **every recorded pid has exited**
+  (`Process.GetProcessById` refusing it, or its handle signalled), not only that the route's wait was cancelled; that the caller's
+  release, the flight's stop and the owner's cleanup happen in that order; and, with a stand-in that cannot be ended (a kill refused
+  by a stub under the runner), that the runner says `git.unended` instead of returning as if it had ended.
 - `ReviewBaseTests`, `TreeUpdateTests` and `ReviewLockTests` unchanged.
 - **The bench** (§10.3's three cases through the verb), before on today's chain and after on the graph, reported, never failing.
 
@@ -193,10 +361,16 @@ Each is satisfiable on its own, with no part-two mechanism (Codex R3-9, R3-10):
    `12 + I + M + Uᵣ` per path through the seam, the line's guesses and both `--show-toplevel`s included; the argument and source
    censuses; the before-bench.
 2. **GITAPP1a-ii — Review as a graph of today's reads** (driver; after 1a-i). P1.1-P1.4: `ReviewGraph`, its executor, the pure
-   selections lifted out of today's chain, the untracked window, the landed and gone subgraphs; the route reading through it. **Proof**:
-   P1.7's comparison on every fixture; the generated census; the after-bench.
-3. **GITAPP1a-iii — leaving Review stops its git** (modules, web; after 1a-i, apart from 1a-ii). P1.6 on today's chain or the graph,
-   whichever is landed. **Proof**: P1.7's cancellation cases through the real route boundary and the page's Vitest.
+   selections lifted out of today's chain, the program-capable reads Π kept in today's order and never speculative, the untracked
+   window bounded by the fold at w = 1, the landed and gone subgraphs; the route reading through it, its guards and fallbacks its
+   own. **Proof**: P1.7's comparison on every fixture and every branch it lists, answers and refusals; the order-sensitive textconv
+   fixture; the generated census with the window's held cases; the after-bench.
+3. **GITAPP1a-iii — leaving Review stops its git** (driver, modules, web; after 1a-i, apart from 1a-ii). P1.6 on today's chain or the
+   graph, whichever is landed: the `read` id, the join by session, `READ_LEAVE` and the page's grace; each `read` bound to the
+   asking window's bridge lifetime, a window's destruction leaving its reads with no script; **in the driver, the three runners
+   killing and then awaiting each process's exit, a failed kill said as `git.unended`, and the flight's executor owning every started
+   node until its runner returns** (round 5). **Proof**: P1.7's cancellation, window and kill-and-wait cases through the real route
+   boundary and the kit's own bridge, the page's Vitest, and the installed window's secondary-window close in row 1i.
 
 ## Part two: proposed, read later (P2)
 
@@ -218,6 +392,10 @@ one; it is revised and read under D191 after part one is accepted. **Its open qu
 - **One head id and the final barrier** (§5.2), on the observation.
 - **The effect policy** (§1.1): `--no-textconv` and the merge-driver refusal change today's answers, so they are part two's, with the
   context that tells when they apply.
+- **Parallelism inside Π** (round 5, Codex R4-1, R4-2): part one keeps every program-capable read in today's order, one at a time,
+  and the untracked window at w = 1. Running W, S, Uᵢ, M or D together, or speculatively, or the window at w > 1, needs the context
+  to show that no textconv, filter, merge driver or `core.fsmonitor` hook applies to the paths a read touches, or the effect policy
+  to keep them from running.
 - **The untracked display addition** (§6.2) and its attributes node A.
 - **The tree watch** (§6.3), the reader's run places (§4.2), the reader and its registry (§4.1), and process ownership beyond P1.6
   (§4.4).
@@ -1305,3 +1483,24 @@ R1 Codex 11, 12 and 16 are part two's; R1 Codex 5 and 28 are met for the cold pa
 part two's text as round 3 wrote them; those it marks deferred (R2-8, R1 Codex 18) stay deferred, R1 Codex 18's page cancellation now
 P1.6. **Kept as Codex's verdict keeps it**: the read/write split (D204), the corrected version floors (part two's), the held reader
 deferred.
+
+## 19. Round 5: Codex's round-4 read, answered
+
+Checked by Claude Opus at `49948558a`, each finding at the lines it cites and at the lines below. Every one held as Codex stated it.
+All five are part one's; part two and GITAPP2 are untouched. **Kept as Codex's verdict keeps it**: the narrower scope, the merged
+comparison (R3-1), git's own line guess (R3-2), the first row's unchanged flags (R3-9) and the separation from retained answers.
+Paths are as in part one; the kit's are in its repository at its tag `v0.22.0`, the version `src/Daoris.Desktop/Directory.Packages.props:26-31`
+pins.
+
+| # | Finding | Checked at | Answer | Where |
+|---|---|---|---|---|
+| R4-1 | Identical commands do not make program-capable reads independent | `WorkingTree.cs:331,385-392,466-480` (W, Uᵢ and D through `RangeAsync`: `--no-ext-diff` only, textconv and filters left on); `ReviewRanges.cs:92` (M); `TreeWorkReads.cs:77`, `LineHolds.cs:98,142,231,286` (the offer); a probe on Tools' git 2.53 in which S ran the clean filter, W and each Uᵢ the clean filter and textconv, D textconv, and T, P, K, E, B, N, I, G and H no program | **Taken**: Π, the program-capable reads (W, S, Uᵢ, M, D, the landed review's changes, the offer), run as one chain in today's order, one at a time, and are never speculative; round 4's D₀ is withdrawn and the offer follows D and H; only ref, ancestry and count reads run in parallel or ahead. Why equality is not enough: a configured program keeps state git does not see, so order, concurrency and an unneeded call can each change a later answer | P1.1, P1.2, P1.4's table; P1.7's order-sensitive textconv fixture; P2 |
+| R4-2 | The untracked window does not imply at most three wasted starts | `WorkingTree.cs:331-332,334-338` (W and S before any untracked read), `:341` (the budget starts at W's patches), `:353-357,360-361` (the fold) | **Taken**: the window opens only after W and S have answered, holds at most w files started and not yet folded, gives a slot back only as the ordered fold advances, and stops at the budget, on a failure or a cancellation; waste is at most w − 1 and zero where W spent the budget. **Part one's w is 1**, since each Uᵢ is Π (R4-1): today's loop exactly, no untracked start wasted; w > 1 is part two's | P1.3, P1.4; P1.7's held cases |
+| R4-3 | The equivalence proof omits route branches that decide the answer | `TreesRoutes.cs:62,66,70,72,77-81,83-85,88,91-94,100-104,109-113,116,120`; `ReviewRanges.cs:37,42-46,55-56,66-79,103-108,114-115,124-127`; `WorkingTree.cs:89-90,300,302,328,332,338,484`; `TreeFolders.cs:13-25` | **Taken**: the comparison runs through the route with only its reads swapped, so its guards and fallbacks are its own around the graph; eleven branches listed one by one, each with its deciding line and a fixture, the fallbacks among them (a tree outside this home, a blank base, W, S, D or H failing, the landed and dirty-only paths, dirty work with no files, the refusal); outcomes compared as answers **or refusals**; the offer is Π and follows D's success, so it is never speculative; H's failure surfaced only where the chain asks it | P1.1, P1.2, P1.4, P1.7 |
+| R4-4 | Closing one window is treated as host shutdown | `MainWindows.cs:4-12,64-82,88-99`; `MainForm.cs:204-211`; `SecondaryWindowHost.cs:154-166`; `RouteFlights.cs:32-56,93-103`; `DriverModule.cs:126-131,172-175`; the kit: `ChromiumView.cs:139-143`, `ChromiumChildBrowser.cs:165-171,232-235,297-301`, `ChromiumIpcBridge.cs:72-80,166-173`, `IpcHostBridge.cs:42,71-74,133,170-183`, `PageModuleDispatcher.cs:26-28`, `ModuleBase.cs:39,58` | **Taken**: round 4's window-exit bullet withdrawn. Each window's bridge hands its own lifetime token to every dispatch and cancels it when the window's view is destroyed; each `read` id's source is linked to that token, so a destroyed window leaves its reads with no script, another window's wait keeps a shared read, and the first main window hidden keeps its page and its reads. Demonstrated by a test over two of the kit's bridges before it is relied on, and in the installed window | P1.6, P1.7, row 1a-iii |
+| R4-5 | The runners do not kill and wait | `ChildProcess.cs:54-92` (`:68,73-74,82,85-86`), `:112-122` (`:118`); `WorkingTree.cs:1069-1070,1104-1159,1165-1166,1172-1176,1198-1248`; `ProcessStarts.cs:114-116,136-147`; `RouteFlights.cs:47-54,64-82,102`; today's tests `ChildProcessTests.cs:62-73,113-124`, `GitStreamEndsTests.cs:39-72` (a marker, not an exit) | **Taken as the second option**: the design now says what the runners do today (kill, observe the output reads, dispose; no exit wait; a failed kill swallowed; a cancelled caller released before the flight's cleanup), and **row 1a-iii adds** the kill-then-await-exit in all three runners, `git.unended` for a failed kill or an unseen exit, and the executor owning every started node until its runner returns, unused speculative nodes stopped and waited for; P1.7 observes each recorded pid's exit for each runner, during creation and while running, and the three milestones in order | P1.6, P1.7, P1.8 row 3 |
+
+**Two corrections of round 4's citations**, found while checking: `LandedReviews.cs:33-129` and `LandedProofs.cs:54-190` named lines
+past those files' ends (102 and 187 lines); part one now reads `LandedReviews.cs:33-101` and `LandedProofs.cs:54-187`, and round 3's
+text keeps its own as written. The census table's numbers changed with R4-1 (the ordinary path depth 4, not 1; no D₀ starts) and
+stay provisional, the generator correcting them.
