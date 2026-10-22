@@ -205,10 +205,13 @@ describe('the page’s map of a note’s codes, held to both writers', () => {
     }
   });
 
-  /** MIXAGENT2a-ii: why no helper answered a question is a reason family of its own, held key for key; HELPERNO1 added the no. */
+  /**
+   * MIXAGENT2a-ii: why no helper answered a question is a reason family of its own, held key for key; HELPERNO1 added the no, and
+   * COAGENT1a the six ways the asker's work in progress could not be captured whole.
+   */
   it('words every reason no helper answered a question', () => {
     const helper = reasons('Helper');
-    expect(helper.length).toBe(10);
+    expect(helper.length).toBe(16);
     const page = Object.values(HELPER_REASONS).map(({ key, values }) => ({ key, values: [...values] }));
     const byKey = (a: { key: string }, b: { key: string }) => a.key.localeCompare(b.key);
     expect(page.sort(byKey)).toEqual([...helper].sort(byKey));

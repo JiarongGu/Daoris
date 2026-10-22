@@ -8,7 +8,11 @@ namespace Daoris.Driver;
 /// <param name="Tip">The asker's last commit, which the helper's copy stands at.</param>
 /// <param name="Question">The question, verbatim.</param>
 /// <param name="Minutes">The bound of its one turn.</param>
-public sealed record HelperPacket(string Asker, string Repository, string Tip, string Question, int Minutes);
+public sealed record HelperPacket(string Asker, string Repository, string Tip, string Question, int Minutes)
+{
+    /// <summary>The asker's work in progress laid over the copy (COAGENT1a); null where the copy holds the last commit alone.</summary>
+    public HelperCaptured? Capture { get; init; }
+}
 
 /// <summary>
 /// The helper's instruction (MIXAGENT2a-ii, D163 point 2; the mixed agents design §3): the question as its asker wrote it, what
@@ -36,8 +40,22 @@ public static class HelperInstruction
         text.Append($"You are helping another session that is working in `{packet.Repository}`. ")
             .Append("It asked you one question, below. You did not do its work, and you will not change anything: you read, and you answer.\n\n")
             .Append("You are in a copy of the repository made for this question, checked out at the asking session's last commit, ")
-            .Append($"`{packet.Tip}`. What it has not committed is not in your copy. ")
-            .Append("Nothing in the copy is taken back: no file you write and no commit or branch you make there reaches the work or the person.\n");
+            .Append($"`{packet.Tip}`. ");
+        if (packet.Capture is { } capture)
+        {
+            // COAGENT1a (D199 point 5): the work in progress, laid over that commit, so git's status and diff in the copy show it.
+            text.Append(capture.Clean
+                    ? $"It had nothing uncommitted when its work was captured at {Moment(capture)} (capture `{capture.Id}`), so the copy is its work as it stood then. "
+                    : $"Its work in progress, as captured at {Moment(capture)} (capture `{capture.Id}`: {HelperCaptures.Counted(capture)}), is laid over that commit "
+                      + "and left uncommitted, so `git status` and `git diff` in your copy show what it has not committed. ")
+                .Append("Files its repository ignores were not carried, and its work may have moved since. ");
+        }
+        else
+        {
+            text.Append("What it has not committed is not in your copy. ");
+        }
+
+        text.Append("Nothing in the copy is taken back: no file you write and no commit or branch you make there reaches the work or the person.\n");
 
         text.Append("\n## The question\n\n")
             .Append("The session wrote it as follows, and it is all you were told:\n\n")
@@ -59,6 +77,8 @@ public static class HelperInstruction
             .Append($"You have one turn, and at most {packet.Minutes} minutes. An answer not given through `helper_answer` before you end is not given.\n");
         return text.ToString();
     }
+
+    private static string Moment(HelperCaptured capture) => $"{capture.At.UtcDateTime:yyyy-MM-dd HH:mm} UTC";
 
     /// <summary>Words quoted line by line, ending with a line break.</summary>
     private static string Quoted(string words) =>

@@ -67,7 +67,13 @@ public sealed class HelperLookTests : IDisposable
         }
     }
 
-    private Daoris.Driver.Driver Driver(OpinionStandIn host, Pass? pass, HelperRule? rule = null, int cap = 3, ReviewerChoice? choice = null) =>
+    /// <summary>The asker's work in progress as the stand-in capture hands it (COAGENT1a): one changed file and one deletion.</summary>
+    private static readonly HelperCaptured Captured = new(
+        "c0ffee123456", OpinionStandIn.Tip, At, [new CapturedFile("src/report.ts", new string('a', 64), 12)], ["old.md"], []);
+
+    private Daoris.Driver.Driver Driver(
+        OpinionStandIn host, Pass? pass, HelperRule? rule = null, int cap = 3, ReviewerChoice? choice = null,
+        Func<string, CancellationToken, Task<HelperCaptureRead>>? capture = null) =>
         new(host.Client(), DriverConfig.Empty with
         {
             Adapter = "claude-code-acp", Cap = cap,
@@ -76,6 +82,7 @@ public sealed class HelperLookTests : IDisposable
         {
             HelperPasses = pass is null ? (_, _, _) => throw new InvalidOperationException("no helper starts here") : pass.RunAsync,
             HelperTrees = (_, _) => Task.FromResult<(string?, string?)>((OpinionStandIn.Tip, "D:/checkouts/reports")),
+            HelperCaptures = capture ?? ((_, _) => Task.FromResult(new HelperCaptureRead(Captured))),
             HelperChoices = (_, _, _, _) => Task.FromResult(choice ?? new ReviewerChoice("codex-acp", "another-maker", null, "codex-acp reads it.")),
         };
 
@@ -111,6 +118,13 @@ public sealed class HelperLookTests : IDisposable
         await driver.HelpersAsync(new Snapshot([], [], active ?? []), taken, events, CancellationToken.None);
         return events;
     }
+
+    /// <summary>
+    /// The asker's newest turn has ended (COAGENT1a): a running asker is between turns, so its work in progress may be captured and
+    /// its helper started; what happens to the answer after is what the test holds.
+    /// </summary>
+    private void TurnEnded(string asker = "s1") =>
+        new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).Append(asker, new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
 
     // ——— The rule, and the judge's refusals.
 
@@ -435,6 +449,7 @@ public sealed class HelperLookTests : IDisposable
         {
             HelperPasses = (_, _, _) => Task.FromResult(new HelperPassRun(null, "refused  helper") { Code = HelperWhy.NotStarted }),
             HelperTrees = (_, _) => Task.FromResult<(string?, string?)>((OpinionStandIn.Tip, "D:/checkouts/reports")),
+            HelperCaptures = (_, _) => Task.FromResult(new HelperCaptureRead(Captured)),
             HelperChoices = (_, _, _, _) => Task.FromResult(new ReviewerChoice("codex-acp", "another-maker", null, "x")),
         };
 
@@ -455,6 +470,7 @@ public sealed class HelperLookTests : IDisposable
         var host = Host(state: "working");
         var pass = new Pass(Files) { Answer = "Line 42." };
         var driver = Driver(host, pass);
+        TurnEnded();
 
         await Look(driver);
         await Until(() => Files.ReadState("a1") is { State: HelperStates.Answered });
@@ -491,6 +507,7 @@ public sealed class HelperLookTests : IDisposable
             return Task.FromResult("end_turn");
         });
         inbox.Flow();
+        TurnEnded();
 
         await Look(driver);
         await Until(() => Files.ReadState("a1") is { Handed: not null });
@@ -516,6 +533,7 @@ public sealed class HelperLookTests : IDisposable
         var host = Host(state: "working");
         var driver = Driver(host, new Pass(Files) { Answer = "Line 42." });
         driver.Context.Processes.OpenInbox("s1").Attach(interrupt: null);
+        TurnEnded();
 
         await Look(driver);
         await Until(() => Files.ReadState("a1") is { State: HelperStates.Answered });
@@ -554,6 +572,7 @@ public sealed class HelperLookTests : IDisposable
         Ask("a1");
         var host = Host(state: state, kind: "chat");
         var pass = new Pass(Files) { Answer = "Line 42." };
+        TurnEnded();
 
         await Look(Driver(host, pass));
         await Until(() => Files.ReadState("a1") is { State: HelperStates.Answered, Handed: not null });
@@ -573,6 +592,7 @@ public sealed class HelperLookTests : IDisposable
         Ask("a1");
         var host = Host(state: "starting", kind: "chat");
         var driver = Driver(host, new Pass(Files) { Answer = "Line 42." });
+        TurnEnded();
 
         await Look(driver);
         await Until(() => Files.ReadState("a1") is { State: HelperStates.Answered });
@@ -619,5 +639,93 @@ public sealed class HelperLookTests : IDisposable
         Assert.Contains("codex-acp", others);
         Assert.DoesNotContain("claude-code", others);
         Assert.DoesNotContain("claude-code-acp", others);
+    }
+
+    // ——— COAGENT1a (D199 point 5; the co-agent design §2.5): the asker's work in progress, captured at its turn boundary.
+
+    /// <summary>
+    /// An asker mid-turn is not captured: the ask waits `turn`, nothing is read of its tree, and the look after its turn's end
+    /// starts the helper.
+    /// </summary>
+    [Fact]
+    public async Task An_asker_mid_turn_waits_for_its_turns_end_and_is_captured_after_it()
+    {
+        Ask("a1");
+        var host = Host(state: "working");
+        var pass = new Pass(Files) { Answer = "Line 42." };
+        var captures = 0;
+        var driver = Driver(host, pass, capture: (_, _) =>
+        {
+            captures++;
+            return Task.FromResult(new HelperCaptureRead(Captured));
+        });
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
+        events.Append("s1", new SessionEvent { Kind = SessionEventKind.Tool, Text = "helper_ask" });
+
+        await Look(driver);
+
+        Assert.Equal((HelperStates.Waiting, HelperVerdict.Turn), (Files.ReadState("a1")!.State, Files.ReadState("a1")!.Code));
+        Assert.Equal(0, captures);
+        Assert.Empty(pass.Asked);
+
+        events.Append("s1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
+        await Look(driver);
+        await Until(() => Files.ReadState("a1") is { State: HelperStates.Answered });
+
+        Assert.Equal(1, captures);
+        Assert.Single(pass.Asked);
+    }
+
+    /// <summary>
+    /// The capture is handed to the pass, whose copy stands at the capture's commit, and its manifest is kept beside the ask before
+    /// the helper starts; the answer the asker reads names that capture and says the work may have moved since.
+    /// </summary>
+    [Fact]
+    public async Task The_pass_reads_the_capture_its_manifest_is_kept_and_the_answer_names_it()
+    {
+        Ask("a1");
+        var host = Host();
+        var pass = new Pass(Files) { Answer = "Line 42." };
+        var moved = Captured with { Commit = "3333333333333333333333333333333333333333" };
+
+        await Look(Driver(host, pass, capture: (_, _) => Task.FromResult(new HelperCaptureRead(moved))));
+        await Until(() => host.HelperHands.Count == 1);
+
+        var asked = Assert.Single(pass.Asked);
+        Assert.Same(moved, asked.Capture);
+        Assert.Equal(moved.Commit, asked.Tip);
+        var kept = Files.ReadCapture("a1")!;
+        Assert.Equal(("c0ffee123456", moved.Commit, "src/report.ts", "old.md"), (kept.Id, kept.Commit, Assert.Single(kept.Files).Path, Assert.Single(kept.Deleted)));
+        var text = host.HelperHands[0].Text;
+        Assert.Contains("capture `c0ffee123456`: commit `3333333` with 1 changed or new file and 1 deletion", text);
+        Assert.Contains("Your work may have moved since.", text);
+    }
+
+    /// <summary>
+    /// A work in progress that cannot be captured whole refuses the ask in its code, a coded note on the asker naming no path, and
+    /// the log's line naming what refused it; no helper starts and no manifest is kept.
+    /// </summary>
+    [Theory]
+    [InlineData(HelperWhy.CaptureMerge)]
+    [InlineData(HelperWhy.CaptureLink)]
+    [InlineData(HelperWhy.CaptureSubmodule)]
+    [InlineData(HelperWhy.CaptureUnreadable)]
+    [InlineData(HelperWhy.CaptureBound)]
+    [InlineData(HelperWhy.CaptureMoved)]
+    public async Task A_work_in_progress_not_captured_whole_refuses_the_ask_in_its_code(string code)
+    {
+        Ask("a1");
+        var host = Host();
+        var pass = new Pass(Files) { Answer = "Line 42." };
+
+        await Look(Driver(host, pass, capture: (_, _) => Task.FromResult(HelperCaptureRead.Refused(code, "src/escape"))));
+        await Until(() => Files.ReadState("a1") is { State: HelperStates.Refused });
+
+        Assert.Equal(code, Files.ReadState("a1")!.Code);
+        Assert.Empty(pass.Asked);
+        Assert.Null(Files.ReadCapture("a1"));
+        var note = Assert.Single(new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After("s1", 0).Events, e => e.Kind == SessionEventKind.Note);
+        Assert.Equal(code, note.Parts![0].Value("why"));
+        Assert.DoesNotContain("src/escape", note.Text);
     }
 }

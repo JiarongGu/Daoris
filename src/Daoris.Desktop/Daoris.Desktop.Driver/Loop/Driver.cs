@@ -325,6 +325,16 @@ public sealed class Driver(
     }
 
     /// <summary>
+    /// How an asker's work in progress is captured for its helper (COAGENT1a): <see cref="HelperCapture.TakeAsync"/>, which spawns
+    /// git, unless a test hands in a stand-in (MOD8). Written through to the context.
+    /// </summary>
+    internal Func<string, CancellationToken, Task<HelperCaptureRead>>? HelperCaptures
+    {
+        get => Context.HelperCaptures;
+        init => Context.HelperCaptures = value;
+    }
+
+    /// <summary>
     /// How a helper's agent is chosen: <see cref="HelperChoice.ChooseAsync"/>, whose account walk reads this machine's installs and
     /// sign-ins, unless a test hands in a choice (the walk itself is <see cref="ReviewerChoice"/>'s, held by its own suite). Written
     /// through to the context.

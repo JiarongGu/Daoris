@@ -422,6 +422,13 @@ export const HELPER_REASONS: Readonly<Record<string, { key: string; values: read
   'cannot-take': { key: 'note.helper.why.cannot-take', values: [] },
   // The person's no to an agent's ask (HELPERNO1), added after the nine.
   declined: { key: 'note.helper.why.declined', values: [] },
+  // The asker's work in progress that could not be captured whole for its helper (COAGENT1a, D199 point 5).
+  'capture-merge': { key: 'note.helper.why.capture-merge', values: [] },
+  'capture-link': { key: 'note.helper.why.capture-link', values: [] },
+  'capture-submodule': { key: 'note.helper.why.capture-submodule', values: [] },
+  'capture-unreadable': { key: 'note.helper.why.capture-unreadable', values: [] },
+  'capture-bound': { key: 'note.helper.why.capture-bound', values: [] },
+  'capture-moved': { key: 'note.helper.why.capture-moved', values: [] },
 };
 
 /**

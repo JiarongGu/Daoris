@@ -1,6 +1,6 @@
 {
   "work.helper.title": "问另一个智能体",
-  "work.helper.says": "另一个智能体会阅读这个会话的工作并回答你的问题，它不做任何改动。它的回答会作为这个会话的下一轮送回，并标明是助手说的。",
+  "work.helper.says": "另一个智能体会阅读这个会话的工作（包括尚未提交的部分）并回答你的问题，它不做任何改动。它的回答会作为这个会话的下一轮送回，并标明是助手说的。",
   "work.helper.question": "你的问题",
   "work.helper.agent": "哪个智能体",
   "work.helper.anyAgent": "由 Daoris 选择",
@@ -15,6 +15,7 @@
   "work.helper.state.yours": "等你同意",
   "work.helper.state.approved": "你已同意",
   "work.helper.state.cap": "等一个运行中的会话结束",
+  "work.helper.state.turn": "等这个会话的这一轮结束，以便完整读到它的工作",
   "work.helper.state.agent": "等一个能接手的智能体",
   "work.helper.state.started": "{{agent}} 正在回答",
   "work.helper.state.answered": "{{agent}} 已回答：回答是这个会话的下一轮",

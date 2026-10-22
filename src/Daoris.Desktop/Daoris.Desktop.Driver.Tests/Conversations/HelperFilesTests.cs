@@ -60,6 +60,36 @@ public sealed class HelperFilesTests : IDisposable
     }
 
     /// <summary>
+    /// COAGENT1a (the co-agent design §2.5): the capture's manifest, the driver's alone, is kept whole with each file's hash, the
+    /// deletions and what was left out and why, never a byte of the work, and read back; an ask with none reads none.
+    /// </summary>
+    [Fact]
+    public void A_captures_manifest_is_kept_without_its_bytes_and_read_back()
+    {
+        var files = new HelperFiles(_home);
+        var capture = new HelperCaptured(
+            "0123456789ab", "2222222222222222222222222222222222222222", DateTimeOffset.Parse("2026-10-22T09:30:00Z"),
+            [new CapturedFile("src/a.ts", new string('a', 64), 11)], ["gone.md"], [new CaptureLeftOut("docs/link", HelperCaptures.LeftLink)])
+        {
+            Bytes = new Dictionary<string, byte[]> { ["src/a.ts"] = "secret-body"u8.ToArray() },
+        };
+
+        files.WriteCapture("a1", capture);
+
+        var text = File.ReadAllText(files.PathOf("a1", "capture"));
+        Assert.DoesNotContain("secret-body", text);
+        Assert.DoesNotContain("\r", text);
+        Assert.Contains("\"ignoredLeftOut\": true", text);
+        var kept = files.ReadCapture("a1")!;
+        Assert.Equal(("0123456789ab", capture.Commit, capture.At), (kept.Id, kept.Commit, kept.At));
+        Assert.Equal(capture.Files, kept.Files);
+        Assert.Equal(["gone.md"], kept.Deleted);
+        Assert.Equal(capture.LeftOut, kept.LeftOut);
+        Assert.Empty(kept.Bytes);
+        Assert.Null(files.ReadCapture("a2"));
+    }
+
+    /// <summary>
     /// 🔴 COWORK1d (the message-urgency design §9): an ask `helper_ask` wrote urgent (the service's suite, <c>HelperBoxShapeTests</c>,
     /// holds the same text) reads urgent; an ask with no level, every ask from before among them, reads ordinary, today's delivery.
     /// </summary>

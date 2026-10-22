@@ -19641,3 +19641,13 @@ changes show above the accounts until *Got it*; the own sign-in is never asked; 
 machine's list* is gone from every screen in en and zh; the page's default, join and inherit presses and three refusals are retired;
 *What needs you*'s trust row now carries `own`, which the attention slice had dropped since POOL1a3 (FIX-LOG). Detail: D197's POOL1c
 note, the fix log's POOL1c entry, commits 84eab5d75..32d2f7241. The windows are looked at in POOL1d. On Opus.
+## COAGENT1a — another maker reads the work in progress (2026-10-22, D199)
+
+> - [ ] **COAGENT1a — another maker reads the work in progress** (driver, modules; D199 point 5, accepted; the co-agent design §2.5, §9 row 1). Every helper's copy carries the asker's uncommitted bytes, captured at a turn boundary with a manifest and refused where it cannot be captured whole; the helper's answer names its capture; *Ask another agent…* (MIXAGENT2b) now reads the work in progress. Proof: §8.2 and §8.3's capture cases; on the install, Codex reading a Claude Code session's work in progress, carrying M1 (Codex's connector join) and M4 (what its turn counts mean).
+
+**Outcome** 2026-10-22: built. A helper starts once its asker's turn has ended (a `turn` wait), its copy the clone at the captured
+commit with the asker's uncommitted bytes laid over it, the manifest kept as `<ask>.capture.json`; a work in progress that cannot be
+captured whole refuses the ask in a `capture-*` code, said on the page in en and zh; the instruction and the delivered answer name the
+capture; `helper_ask`, its receipt and the co-working skill say the helper reads at the turn's end. Proof with stand-ins only:
+`HelperCaptureTests`, `HelperCaptureProcessTests` (git half), `HelperLookTests`, `HelperProcessTests`, the web's `HelperAsks` test.
+The install proof (Codex as a Claude Code session's helper, M1 and M4) is the parent's after the republish. Detail: D199's COAGENT1a note.

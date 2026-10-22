@@ -121,7 +121,7 @@
       "source": "core/skills/co-working/SKILL.md",
       "target": "skills/co-working/SKILL.md",
       "canonVersion": "0.0.1",
-      "sha256": "00bac3dad785d91f2c21df07697809488b0cb348d4a717853a472fcc7535b174"
+      "sha256": "72d18311f7f87a788b47af74c0b3cde6c47696f59923fb52561fd7818e23ba77"
     },
     {
       "pack": "core",

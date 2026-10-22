@@ -10,6 +10,12 @@ public sealed record HelperPassAsk(HelperAsk Ask, string Repository, string Root
     public string? Workspace { get; init; }
 
     /// <summary>
+    /// The asker's work in progress (COAGENT1a), laid over the copy once it stands at <see cref="Tip"/>, which is the capture's
+    /// commit; null for a pass handed none.
+    /// </summary>
+    public HelperCaptured? Capture { get; init; }
+
+    /// <summary>
     /// Told the helper's session the moment the host opens it, before its turn: the driver keeps the ask <c>started</c> naming it
     /// then, which <c>helper_answer</c> finds its ask by.
     /// </summary>

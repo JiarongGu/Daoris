@@ -16,6 +16,12 @@ with the version and date at release.
   workspace's page lists Daoris's accounts in their order. A start that takes the order's first says so, the next start's line
   speaks of the order and of Daoris's accounts rather than of a list or *here*, and *This machine's list* is said nowhere. In
   English and 中文.
+- A helper now reads the work in progress. When a session, or you with *Ask another agent…*, asks another agent a question, the
+  helper's copy holds what the session has not committed yet (changed, new and deleted files, never the ones the repository
+  ignores), read once the session's turn has ended; until then the ask says it *waits for this session's turn to end*. The answer
+  names the state of the work it read and says the work may have moved since. Where the work cannot be copied whole (an unfinished
+  merge, a link out of its folder, a submodule, an unreadable file, or too much of it), no helper is started and the ask says why.
+  Nothing the helper does in its copy comes back. A second opinion still reads the committed work only. In English and 中文.
 - A start on an agent with one Daoris account no longer asks that account's usage first, which ran the agent once more and took
   about two seconds, though it could not change where the start ran; nor does a conversation going on in your own sign-in. With two
   accounts or more a start still asks one it has no recent reading of, since the reading can choose between them. The account's

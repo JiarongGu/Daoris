@@ -141,6 +141,28 @@ describe('the helpers a session asked for', () => {
     expect(open).toHaveBeenCalledWith('h1');
   });
 
+  /** COAGENT1a (D199 point 5): an ask waits for its session's turn to end, and one whose work could not be captured whole says why. */
+  it('says an ask waiting for the turn to end, and a work in progress not captured whole, in both languages', async () => {
+    const asks = [
+      row({ id: 'a1', question: 'Waits on the turn.', state: 'waiting', code: 'turn' }),
+      row({ id: 'a2', question: 'Not captured.', state: 'refused', code: 'capture-link' }),
+    ];
+    render(<HelperAsks nameOf={nameOf} asks={asks} />);
+    expect(lineOf('Waits on the turn.').getByText('The agent asked · waits for this session’s turn to end, so it reads the work whole')).toBeInTheDocument();
+    expect(lineOf('Not captured.').getByText(
+      'The agent asked · no helper answered: a link in its work leads out of its tree, so it could not be captured whole')).toBeInTheDocument();
+    cleanup();
+
+    await i18n.changeLanguage('zh');
+    try {
+      render(<HelperAsks nameOf={nameOf} asks={asks} />);
+      expect(lineOf('Waits on the turn.').getByText('智能体问的 · 等这个会话的这一轮结束，以便完整读到它的工作')).toBeInTheDocument();
+      expect(lineOf('Not captured.').getByText(/它的工作中有指向工作树之外的链接，无法完整取下/)).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
   it('says it in 中文', async () => {
     await i18n.changeLanguage('zh');
     try {

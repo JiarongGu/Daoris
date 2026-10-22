@@ -28,6 +28,28 @@ public sealed class HelperPromptGoldenTests
         Assert.Equal(File.ReadAllText(GoldenPath("asked.md")), HelperInstruction.Compose(Asked));
     }
 
+    /// <summary>The asker's work in progress laid over its copy (COAGENT1a, D199 point 5), as a helper is told of it.</summary>
+    internal static readonly HelperCaptured Captured = new(
+        "0123456789ab", "2222222222222222222222222222222222222222", DateTimeOffset.Parse("2026-10-22T09:30:00Z"),
+        [new CapturedFile("src/report.ts", new string('a', 64), 120), new CapturedFile("src/window.ts", new string('b', 64), 40)], ["old.md"], []);
+
+    /// <summary>
+    /// COAGENT1a: a helper handed a capture is told its copy holds the asker's uncommitted work, by the capture's name, its moment and
+    /// what it holds, that git's status and diff show it, that ignored files were not carried and that the work may have moved; one
+    /// with nothing uncommitted is told so. Neither is told its copy lacks the uncommitted work.
+    /// </summary>
+    [Fact]
+    public void A_helper_handed_a_capture_is_told_its_copy_holds_the_work_in_progress()
+    {
+        var text = HelperInstruction.Compose(Asked with { Capture = Captured });
+
+        Assert.Equal(File.ReadAllText(GoldenPath("captured.md")), text);
+        Assert.DoesNotContain("What it has not committed is not in your copy", text);
+        var clean = HelperInstruction.Compose(Asked with { Capture = Captured with { Files = [], Deleted = [] } });
+        Assert.Contains("It had nothing uncommitted when its work was captured at 2026-10-22 09:30 UTC (capture `0123456789ab`)", clean);
+        Assert.DoesNotContain("What it has not committed is not in your copy", clean);
+    }
+
     /// <summary>The question reaches the helper as the asker wrote it, quoted line by line and never changed or summarised.</summary>
     [Fact]
     public void The_question_is_quoted_as_the_asker_wrote_it()

@@ -12,6 +12,10 @@ network.
 
 ## Unreleased
 
+- **`co-working` says a helper reads the work in progress.** A helper now reads the asking session's work as it
+  stands when its turn ends, what it has not committed included, so it starts only then, and its answer names
+  the state of the work it read; an urgent ask's answer reaches a later turn's next step rather than the turn that
+  asked. **Adopting repositories:** run `daoris sync`; nothing else.
 - **A new skill, `co-working`, teaches a working agent to talk to the other sessions on its ask.** When to
   post on the ask's channel and at which level (ordinary by default, urgent only where the reader's work in
   flight is wrong without it, never now, which is the person's), when to read it (at each natural point,
