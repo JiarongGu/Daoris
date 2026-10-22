@@ -64,7 +64,7 @@ export function QuestFlow({ quest, moves, className }: { quest: QuestOfLife; mov
         </span>
       </button>
       {open && (
-        <div className="mt-2 grid min-w-0 gap-2 pl-[18px]">
+        <div className="mt-2 grid min-w-0 gap-2 pl-[1.125rem]">
           <p className="m-0 text-small text-ink-faint">{said}</p>
           <QuestLifeFlow quest={quest} moves={read} />
         </div>

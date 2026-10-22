@@ -19574,3 +19574,14 @@ the five classes is a Process class, so `process.runsettings` with their filter 
 a hold comes only when no account of the set may run, the refused account's hold names every account, `profile default` is refused
 for `profile order`, and the CLI's edits leave the stub's set standing. 17c and 17d state ORIENT2c: a set-up repository is asked its
 index next. No product defect; detail in commits 40361f317 and cc57d8259. On Opus.
+
+## ZOOM1 — the window's zoom, its level shown and its frame kept (2026-10-22, D185)
+
+> - **ZOOM1 — the window's zoom, its level shown and its frame kept** (app shell, web-shell; the owner's report, 2026-10-22). Ctrl+wheel today is WebView2's own browser zoom: nothing in the source handles it, it scales the whole page with the title strip, its menus and the window controls, and nothing says the level. Wanted, as an editor does: zoom in, out and reset from Ctrl+wheel, Ctrl+= / Ctrl+- / Ctrl+0 and the View menu; the level said as it changes and kept visible while it is not 100%, with a press back to 100%; the frame (title strip, menus, window controls, the rail's chrome as the UI contract places it) kept at its size while the content scales; the level kept for the machine across restarts; a surface that zooms itself on Ctrl+wheel (the Map) keeps its own. Proof: web tests for the keys, the menu and the level's word in English and Chinese; the frame's measured height unchanged across levels; the shell's own zoom off; installed-window proof after the republish.
+
+**Outcome** 2026-10-22: the content zooms by the page's root font size in steps from 50% to 200%, from View's *Zoom in* / *Zoom out* /
+*Reset zoom* (Ctrl+= and Ctrl++, Ctrl+-, Ctrl+0) and Ctrl+wheel. The title strip with its menus and caption room, the activity bar,
+the status bar and what they open keep their size (measured in Chromium at 50-200%). The level shows for a moment as it changes and
+stays at the status bar's right end until it is back at 100%; pressing it resets. It is kept per machine in every Daoris window, the
+Map keeps its own Ctrl+wheel, and the engine's zoom is prevented in the page. Detail: the UI/UX design §3.11 and D185's ZOOM1 note;
+the installed-window look follows the republish. On Opus.

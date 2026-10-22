@@ -32,6 +32,7 @@ export const MENU_STATE: CommandState = {
   find: true,
   field: false,
   refreshing: false,
+  zoom: 100,
 };
 
 /** A session attended on Sessions, working: its header offers its stop and its own window; its card takes no answer. */

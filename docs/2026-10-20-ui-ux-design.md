@@ -1085,6 +1085,83 @@ rule others rest on, only what the page draws from what .NET already judges.
 | 5 | Unread in a neutral ink with its word is right; Overview's Messages and Done figures count items and notices, not unread | holds | those two figures go neutral and keep what they count; their details still say the unread |
 | 6 | The promise is broader than the result: keep *one meaning for a badge*; a stroke would tell progress by shape | holds in part | §3.10.2 binds the badge and says what a count with its noun keeps; the dot stands (§3.10.3) |
 
+### 3.11 The window's zoom (ZOOM1)
+
+**Standing: built 2026-10-22 under D185 (ZOOM1); the installed window's look follows the republish.** The owner's report of
+2026-10-22: Ctrl+wheel zoomed the window as the embedded browser does, the title bar, its menus and the window's buttons with
+the content, and nothing said the level; wanted, an editor's zoom, its level shown, the frame kept at its size, as VS Code's.
+Read for it: the desktop frame design §3 (D56, D66), the frame model (D118), the platform language §2 and §3, D152's menus,
+the theme's store (`design/theme.ts`), `translation-parity.md` and the glossary. Every statement about today was read from the
+code at `662151ce1`.
+
+**What was there.** Nothing in the page or the shell handled zoom. The engine is the install's Chromium (D92) with an Alloy page,
+and its own Ctrl+wheel zoom scaled the whole page; the kit (Shenora 0.22) offers no zoom setting, so the shell cannot turn it off.
+
+**What counts as the frame, and why.** The frame is what the desktop frame design §3 calls the window's own furniture, and what
+it opens:
+
+| Part | Held at its size | Why |
+|---|---|---|
+| The title strip: the mark, the menu bar, the command center, the scope, the bell, the toggles, the caption room | yes | The window paints its caption buttons into the strip's 44 px slots (§3a, SURF7); a strip that grew left the buttons a different size from their room. The owner named it. |
+| The menu bar's menus, and every menu, tip and list the three bars open | yes | They are the strip's and the bars' own, read at the bars' size; a menu that grew from a strip that did not is two sizes for one control. |
+| The activity bar | yes | §3b: the one navigation, identical on every view; a place stays where the hand learned it. |
+| The status bar | yes | §3e: the facts on every screen; it carries the zoom's own level, which must not grow under the pointer that presses it back. |
+| The regions' sizes: the list's width, the side bar's, the panel's height | yes | The frame's layout (D118), set by the person in pixels; zooming changes what is read in a region, never where the regions stand. |
+| What each region draws: the view's list and main area, the side bar's and the panel's views (Ask Daoris, the console, the terminal), the banners under the strip, a drawer, a dialog, the palette, Quick Ask, a toast | no: they scale | What a person zooms to read. |
+
+VS Code holds its title bar alone and scales the activity bar and the status bar with the content; the owner's *the frame and
+the other frame layout* keeps the bars too, and Daoris's bars carry the zoom's own control, so they are held.
+
+**How.** `design/zoom.ts` keeps the level and applies it to the page's root size (`font-size: <level>%`), which every rem the
+page draws in follows, overlays included, each positioned on real geometry. The frame wears `frame-held`, a CSS zoom of the
+level's inverse (`--frame-zoom`), so its rem are its own again at every level; `FrameHeld`, a context the three bars provide,
+puts the same class on a menu, a tip or a list they open, its cap read back through the frame's zoom. Glyphs are drawn in rem
+(`Icon`, `glyphSize`, the mark), so they grow beside the words and keep their size in the frame; the few pixel indents that
+line up under a glyph went to rem too. The terminal reads its type from the page and fits its rows and columns again.
+
+**The levels.** 50, 67, 75, 80, 90, 100, 110, 125, 150, 175 and 200%: a browser's and an editor's familiar steps, bounded at
+half and double.
+
+**The doors.** View's *Zoom in* (Ctrl+= and Ctrl++), *Zoom out* (Ctrl+-) and *Reset zoom* (Ctrl+0), a group of their own after
+the look, in the one table (D152), so the palette and *Keyboard shortcuts* list them; each key is the window's in a field and
+the terminal too, as VS Code's are; a step past either end, and the reset at 100%, is off. Ctrl+wheel steps once a notch, a
+touchpad's small travel gathered into a step, its default prevented so the engine's zoom never runs beside it. A shell's alone:
+a browser zooms its page itself and keeps its keys. The plus is read by what it says, Shift or none (`isPress`).
+
+**The level said.** As it changes, over the content under the strip, for a moment (`ZoomReadout`, *110%*, its noun for a
+reader: *zoom 110%*, 缩放 110%), at 100% too; and while it is not 100%, at the status bar's right end with its glyph, pressed
+back to 100% (*zoom*, 缩放; its tip says the content's level and that the bars keep their size). No new name: *zoom* is the
+Map's verb already, and 放大, 缩小, 重置缩放 are VS Code's zh-CN rows.
+
+**Kept for the machine.** In the window's own storage (`daoris.zoom`), as the theme is: the engine's profile is this machine's.
+Applied before the first paint in every Daoris window; another window follows a change, as the theme does (WINDOW1). A detached
+session and the monitor have a native frame, so their whole page is content; they step the same level by the wheel and the keys.
+
+**A surface that zooms itself keeps its own.** The window hears the wheel after every surface under the pointer, and leaves a
+wheel already taken: the Map's Ctrl+wheel and its focused `+` `-` `0` stay the Map's.
+
+**What holds it.** `zoom.test.ts` (the steps, the store, the arithmetic that keeps the frame at one, the wheel); `ui.test.tsx`
+(glyphs in rem, what the frame opens held); `commands.test.ts`, `shortcuts.test.ts`, `appMenus.test.ts`, `KeyboardShortcuts.test.tsx`
+(the rows, the keys everywhere, 70 items and 33 keys); `chrome.test.tsx` (the bars held, the status bar's level in English and
+中文); `ZoomReadout.test.tsx` (said as it changes, in both languages, then gone); `windowZoom.test.tsx` (the wheel, the Map's
+own, the keys in a window without the table); `zoomed.test.tsx` (the window: keys, wheel, View's row, the status bar's press,
+the level kept, the frame at one); `TerminalView.test.tsx` (the terminal refitted); `measured/zoom.spec.ts` (Chromium: the strip
+36 px, its slots 44 px, the bar 48 px and the status bar 24 px at 50, 100, 110 and 200%, the heading the level's share of 18 px);
+the `Chrome/Zoom` stories. The measured run on Chromium: at 50, 100, 110 and 200% the strip 36 px, its slots 44 × 35 px, the bar
+48 px, a place's glyph 17 px and the status bar 24 px; the view's heading 9, 18, 19.8 and 36 px.
+
+**Not covered.** The installed window: the caption buttons painted over the held slots at each level, the engine's zoom never
+running, and whether Chromium's profile kept an engine zoom from before this build (a window that opens zoomed with no level on
+its status bar is that, and Ctrl+0 no longer reaches it). Pixel decorations inside the bars (a 3 px radius, a 2 px ring) wear the
+inverse too, so at 50% they draw at twice their pixels; the bars' own rules are held at 1 px (`--frame-rule`), since a 2 px strip
+rule left the caption slots a pixel short (measured). A drawing in an SVG's own units (the Map, a flowchart) keeps its size, its
+own sizing being its zoom.
+
+**Rejected.** *The engine's zoom with the frame counter-zoomed*, VS Code's way: the kit sets no zoom level, and the caption slots
+would then be reported in zoomed pixels. *A CSS zoom on the regions*: what opens in a portal (a menu, a drawer, a toast) would
+stay small, and a menu positioned in a zoomed region opens off its trigger. *Holding the title strip alone*, as VS Code does:
+the bars carry the zoom's level and the places. *A level per window*: one machine, one level, as the theme.
+
 ## 4. The component catalogue
 
 The method holds (D55): a story first, a molecule imports no hook from `./queries` or `./shell` (a clock like `useNow` is its
@@ -1213,6 +1290,8 @@ by `Dot`'s tones and folded to `MilestoneLine` (§3.7): it is no `PhaseList`, si
 - **D176 and D177**: their page is §3.6, in Sessions; BRAINSTORM1d keeps its caller.
 - **§3.10 (BADGEUX1, 2026-10-22)**: the platform language §2 (the activity bar's numbers and running marks, the status bar's count);
   D76's SESSBADGE1 note (Sessions' badge); D150 §2.1 (Agents' badge is the rows').
+- **§3.11 (ZOOM1, 2026-10-22)**: the desktop frame design §3 (the strip, the activity bar and the status bar held at their size
+  while the content zooms; the status bar's zoom item); D152's View menu (its zoom group, three keys).
 
 D41's character, tokens and accessibility, D118's regions, D150's rule that a setting lives on its thing, D152's menus and
 heads, and D173's milestone's facts stand.

@@ -1,6 +1,6 @@
 import { type PointerEvent as ReactPointerEvent, type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, CountBadge, Dot, DotMark, Icon, type IconName, Tip } from '../../design/ui';
+import { Button, CountBadge, Dot, DotMark, FRAME_HELD, FrameHeld, Icon, type IconName, Tip } from '../../design/ui';
 import { CAPTION_ATTRIBUTE, CAPTION_SLOTS } from '../strip/caption';
 import { cn } from '../../lib/cn';
 import { Mark } from '../../design/Mark';
@@ -92,6 +92,9 @@ function useCaptionPress(onDragStart: (() => void) | undefined) {
  * **It is presentational, and the window wiring arrives as props** — `useWindowChrome` holds the
  * bridge, so every state of this strip is still reachable by passing props, including in a browser
  * where there is no window to command and none of them are passed at all.
+ *
+ * **It keeps its size while the window zooms** (ZOOM1, the UI/UX design §3.11): it wears the level's inverse, and so does
+ * what it opens, a menu or a tip, so the caption room stays the rectangles the window paints its buttons into.
  */
 export function AppStrip({
   scope, center, menus, trailing, captionRoom,
@@ -142,8 +145,12 @@ export function AppStrip({
       }}
       // 🔴 One line, by rule: a Chinese label may break between any two characters, so without this
       // 中文's menus wrapped onto two lines each (道 / 衍) once the sides shared the strip (UX5 U15).
-      className="relative flex h-9 shrink-0 items-center gap-3 whitespace-nowrap border-b border-line bg-raised"
+      className={cn(
+        'relative flex h-9 shrink-0 items-center gap-3 whitespace-nowrap border-b-[length:var(--frame-rule)] border-line bg-raised',
+        FRAME_HELD,
+      )}
     >
+      <FrameHeld.Provider value>
       {/* The frameless technique hands the top edge to the client, so the top resize border is
           re-added by a sliver that asks the OS for a size loop. Above the strip's own contents in
           z-order, and 4px tall — enough to hit, small enough not to steal the wordmark's clicks. */}
@@ -197,6 +204,7 @@ export function AppStrip({
           </div>
         )}
       </div>
+      </FrameHeld.Provider>
     </header>
   );
 }
@@ -296,15 +304,21 @@ export function ActivityBar<T extends string>({
       // window's least height the places shrank until they touched, the counts sat over their
       // neighbours and Settings went under the status bar. No scrollbar is drawn in a 48px bar;
       // the wheel and the keyboard still reach every place.
-      className="flex min-h-0 w-12 shrink-0 flex-col items-center gap-0.5 overflow-x-hidden overflow-y-auto border-r border-line py-1.5 [scrollbar-width:none]"
-    >
-      {items.map(place)}
-
-      {end.length > 0 && (
-        <div className="mt-auto flex shrink-0 flex-col items-center gap-0.5">
-          {end.map(place)}
-        </div>
+      // It keeps its size while the window zooms, and so do its tips (ZOOM1): a place stays where the hand learned it.
+      className={cn(
+        'flex min-h-0 w-12 shrink-0 flex-col items-center gap-0.5 overflow-x-hidden overflow-y-auto border-r-[length:var(--frame-rule)] border-line py-1.5 [scrollbar-width:none]',
+        FRAME_HELD,
       )}
+    >
+      <FrameHeld.Provider value>
+        {items.map(place)}
+
+        {end.length > 0 && (
+          <div className="mt-auto flex shrink-0 flex-col items-center gap-0.5">
+            {end.map(place)}
+          </div>
+        )}
+      </FrameHeld.Provider>
     </nav>
   );
 }
@@ -336,7 +350,7 @@ export type DriverPresence = 'running' | 'starting' | 'stopped' | 'absent';
  * the service's label and note were English on a Chinese page, and the page never read a word of them but the flag.
  */
 export function StatusBar({
-  driver, sessions, workspace, remote, sync, tier, indexed, scope, setup,
+  driver, sessions, workspace, remote, sync, tier, indexed, scope, setup, zoom,
   onDriver, onSessions, onRemote, onIndex, onTier, onSetup,
 }: {
   driver: DriverPresence;
@@ -374,6 +388,11 @@ export function StatusBar({
   setup?: { done: number; of: number };
   /** Where the setup is done: Get started, on Settings. */
   onSetup?: () => void;
+  /**
+   * The window's zoom (ZOOM1, the UI/UX design §3.11): said at the bar's right end while it is not 100%, as VS Code's bar says
+   * it, and pressed, back to 100%. Absent where the window has no zoom of its own: a browser zooms its page itself.
+   */
+  zoom?: { level: number; onReset: () => void };
 }) {
   const { t } = useTranslation();
   const tone = driver === 'running' ? 'live' : driver === 'stopped' ? 'parked' : 'idle';
@@ -387,8 +406,14 @@ export function StatusBar({
          target that stops short of the bar's edges reads as a word that lit up rather than as a
          control. Every item fills the bar's full height; that single property is most of what makes
          the reference console's bar feel like a bar. */
-      className="flex h-6 shrink-0 items-stretch overflow-hidden border-t border-line bg-raised text-meta text-ink-soft"
+      // It keeps its size while the window zooms, and so do its tips and menus (ZOOM1): the zoom it says never grows under the
+      // pointer that presses it back.
+      className={cn(
+        'flex h-6 shrink-0 items-stretch overflow-hidden border-t-[length:var(--frame-rule)] border-line bg-raised text-meta text-ink-soft',
+        FRAME_HELD,
+      )}
     >
+      <FrameHeld.Provider value>
       <StatusItem
         onPress={driver === 'absent' ? undefined : onDriver}
         tip={t('work.status.driverTip')}
@@ -482,7 +507,20 @@ export function StatusBar({
             </span>
           </StatusItem>
         )}
+        {/* The zoom, last, at the bar's right end, as VS Code's bar keeps it (ZOOM1): only while it is not 100%, since an
+            always-there 100% is not read, and pressed, back to 100% as Ctrl+0 goes. */}
+        {zoom && zoom.level !== 100 && (
+          <StatusItem
+            onPress={zoom.onReset}
+            tip={t('work.status.zoomTip', { percent: zoom.level })}
+            label={t('work.status.zoom')}
+          >
+            <Icon name={zoom.level > 100 ? 'zoomIn' : 'zoomOut'} size={12} />
+            <span className="tabular-nums text-ink">{t('work.status.zoomLevel', { percent: zoom.level })}</span>
+          </StatusItem>
+        )}
       </span>
+      </FrameHeld.Provider>
     </footer>
   );
 }

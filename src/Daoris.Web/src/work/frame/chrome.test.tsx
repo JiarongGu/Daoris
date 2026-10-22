@@ -7,7 +7,7 @@ import i18n from '../../locales/i18n';
 import { en, zh } from '../../locales';
 import { SessionConsole } from '../console/SessionConsole';
 import { layTabs } from '../../test/tabRoom';
-import { SESSION_ACTIVE } from '../../design/ui';
+import { FRAME_HELD, SESSION_ACTIVE } from '../../design/ui';
 import { ActivityBar, AppStrip, OutputPanel, type PanelTab, Splitter, StatusBar } from './frame';
 
 /** The provider the application mounts once (`main.tsx`); a tooltip outside one throws. */
@@ -455,6 +455,68 @@ describe('StatusBar', () => {
 
     expect(screen.getByRole('button', { name: 'switch circle' })).toBeTruthy();
     expect(screen.queryByText('default')).toBeNull();
+  });
+
+  /**
+   * ZOOM1 (the UI/UX design §3.11): the zoom is said on the bar while it is not 100%, as VS Code's status bar says it, at the
+   * bar's right end, and pressing it goes back to 100%.
+   */
+  it('says the zoom while it is not 100%, and goes back to 100% when pressed', async () => {
+    const onReset = vi.fn();
+    const { rerender } = render(<StatusBar driver="running" sessions={0} workspace={null} remote={null} zoom={{ level: 100, onReset }} />);
+    expect(screen.queryByRole('button', { name: 'zoom' })).toBeNull();
+
+    rerender(<StatusBar driver="running" sessions={0} workspace={null} remote={null} zoom={{ level: 125, onReset }} />);
+    const item = screen.getByRole('button', { name: 'zoom' });
+    expect(item).toHaveTextContent('125%');
+    // At the bar's right end, after the facts.
+    const status = screen.getByRole('contentinfo');
+    expect([...status.querySelectorAll('button')].at(-1)).toBe(item);
+    await userEvent.hover(item);
+    expect((await screen.findAllByText(/shown at 125%, and the bars around it keep their size/)).length).toBeGreaterThan(0);
+    await userEvent.click(item);
+    expect(onReset).toHaveBeenCalledTimes(1);
+  });
+
+  it('says the zoom in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      render(<StatusBar driver="running" sessions={0} workspace={null} remote={null} zoom={{ level: 90, onReset: () => {} }} />);
+      const item = screen.getByRole('button', { name: '缩放' });
+      expect(item).toHaveTextContent('90%');
+      await userEvent.hover(item);
+      expect((await screen.findAllByText(/窗口内容按 90% 显示/)).length).toBeGreaterThan(0);
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+});
+
+/**
+ * ZOOM1 (the UI/UX design §3.11): the window zooms by the root's size, and the frame (the title strip, the activity bar, the
+ * status bar and what each opens) wears the level's inverse, so it keeps its size. jsdom lays nothing out: the bars' class is
+ * held here, the arithmetic in `zoom.test.ts`, and the measured sizes in `measured/zoom.spec.ts`.
+ */
+describe('the frame, as the window zooms', () => {
+  it('holds the title strip, the activity bar and the status bar at their size', () => {
+    const { container } = render(
+      <>
+        <AppStrip captionRoom />
+        <ActivityBar label="Views" items={VIEWS} end={SETTINGS} active="overview" onSelect={() => {}} />
+        <StatusBar driver="running" sessions={0} workspace={null} remote={null} />
+      </>,
+    );
+    expect(container.querySelector('header')).toHaveClass(FRAME_HELD);
+    expect(screen.getByRole('navigation', { name: 'Views' })).toHaveClass(FRAME_HELD);
+    expect(screen.getByRole('contentinfo')).toHaveClass(FRAME_HELD);
+    // The mark in rem, so the strip's inverse keeps it at its 18 px.
+    expect(container.querySelector('header svg')).toHaveAttribute('width', '1.125rem');
+  });
+
+  it('holds what the frame opens at its size too: a place’s tip', async () => {
+    render(<ActivityBar label="Views" items={VIEWS} end={SETTINGS} active="overview" onSelect={() => {}} />);
+    await userEvent.hover(screen.getByRole('button', { name: 'Quests' }));
+    expect((await screen.findByRole('tooltip')).closest(`.${FRAME_HELD}`)).not.toBeNull();
   });
 });
 

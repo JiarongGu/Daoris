@@ -10,14 +10,18 @@ const PLACE: Record<string, string> = { '`': 'Backquote', ',': 'Comma' };
  * Whether a press is the key a menu prints (UX7a, D152 §3.4): every modifier it names held and no other, Ctrl standing
  * for ⌘ too, and the key by what it says or by its place, since under Shift and Alt what `key` says differs by layout
  * (Quick Ask's L, DOCK1d) and Shift turns ` into ~ and 1 into !.
+ *
+ * @remarks
+ * **The plus is the one key printed after a `+`** (`Ctrl++`, zoom in's second key, ZOOM1), and it is read by what it says
+ * whether Shift is held or not: a US board types it as Shift+=, another layout and the numpad without Shift.
  */
 export function isPress(event: Pressed, combo: string): boolean {
-  const parts = combo.split('+');
-  // The key itself may be `+`-free text only: none of the table's keys is the plus.
-  const key = parts.pop()!;
+  const plus = combo.endsWith('++') || combo === '+';
+  const parts = plus ? combo.slice(0, -1).split('+').filter(Boolean) : combo.split('+');
+  const key = plus ? '+' : parts.pop()!;
   const mods = new Set(parts);
   if ((event.ctrlKey || event.metaKey) !== mods.has('Ctrl')) return false;
-  if (event.shiftKey !== mods.has('Shift')) return false;
+  if (!plus && event.shiftKey !== mods.has('Shift')) return false;
   if (event.altKey !== mods.has('Alt')) return false;
 
   if (/^F\d{1,2}$/.test(key)) return event.key === key;

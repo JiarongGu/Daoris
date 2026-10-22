@@ -45,7 +45,7 @@ function Row({ item, glyphs }: { item: MenuItem; glyphs: boolean }) {
       {item.icon
         ? <Icon name={item.icon} size={13} className="shrink-0 opacity-70" />
         // The glyphs' column is kept for a row with none, so every name in the menu starts at one edge.
-        : glyphs && <span aria-hidden className="w-[13px] shrink-0" />}
+        : glyphs && <span aria-hidden className="w-[0.8125rem] shrink-0" />}
       <span className="truncate">{item.label}</span>
       {item.badge !== undefined && item.badge > 0 && (
         <span className="ml-auto shrink-0 font-mono text-meta tabular-nums text-ink-faint">{item.badge}</span>
@@ -121,7 +121,7 @@ function MenuRows({ items, choose }: { items: readonly MenuItem[]; choose: (id: 
             ) : item.sub ? (
               <Menu.Sub>
                 <Menu.SubTrigger>
-                  {glyphs && <span aria-hidden className="w-[13px] shrink-0" />}
+                  {glyphs && <span aria-hidden className="w-[0.8125rem] shrink-0" />}
                   <span className="truncate">{item.label}</span>
                 </Menu.SubTrigger>
                 <Menu.SubContent className="min-w-40">

@@ -17,7 +17,7 @@ import {
   Monitor, Network,
   PanelBottom, PanelLeft, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose, Paperclip, Pause, Play, Plug, Plus, Redo2, Reply,
   RotateCw, Scissors, Search, Settings, Shield, Square, SquareArrowOutUpRight, SquareTerminal, Terminal, TextSelect, Trash2, TriangleAlert,
-  Undo2, Workflow, Wrench, WrapText, X,
+  Undo2, Workflow, Wrench, WrapText, X, ZoomIn, ZoomOut,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { type Quest, SESSION_ACTIVE, type SessionState } from '../data/api';
@@ -164,14 +164,35 @@ const ICONS = {
   wrap: WrapText,
   // Notifications (NOTIFY2b, the notification design §6): the title bar's button and the view's tab, the one new glyph.
   bell: Bell,
+  // The window's zoom (ZOOM1): View's rows and the status bar's level, larger or smaller than the page as drawn.
+  zoomIn: ZoomIn,
+  zoomOut: ZoomOut,
 } as const;
 
 export type IconName = keyof typeof ICONS;
 
+/**
+ * A glyph's size, given in the pixels it has at 100%, as rem (ZOOM1, the UI/UX design §3.11): the window zooms by the root's
+ * size, so a glyph grows with the words beside it, and in the frame, which wears the level's inverse, it keeps its size.
+ */
+export const glyphSize = (pixels: number) => `${pixels / 16}rem`;
+
 export function Icon({ name, size = 16, className }: { name: IconName; size?: number; className?: string }) {
   const Glyph = ICONS[name];
-  return <Glyph size={size} strokeWidth={1.7} aria-hidden className={cn('shrink-0', className)} />;
+  return <Glyph size={glyphSize(size)} strokeWidth={1.7} aria-hidden className={cn('shrink-0', className)} />;
 }
+
+/**
+ * The class that keeps the window's frame at its own size while the content zooms (ZOOM1, the UI/UX design §3.11): a CSS
+ * zoom of the level's inverse (`--frame-zoom`, set by `design/zoom.ts`), declared in `tokens.css`.
+ */
+export const FRAME_HELD = 'frame-held';
+
+/**
+ * Whether what opens here opens from the frame (ZOOM1): the title strip, the activity bar and the status bar provide it, so a
+ * menu, a tip or a list they open keeps the frame's size too. Read through a portal, as React's context is.
+ */
+export const FrameHeld = createContext(false);
 
 /* ---------------------------------------------------------------- buttons */
 
@@ -1044,6 +1065,7 @@ export function SelectField({ value, onChange, options, placeholder, ariaLabel, 
    */
   bar?: boolean;
 }) {
+  const held = useContext(FrameHeld);
   return (
     <RadixSelect.Root value={value || undefined} onValueChange={onChange} required={required} disabled={disabled}>
       <RadixSelect.Trigger
@@ -1052,19 +1074,26 @@ export function SelectField({ value, onChange, options, placeholder, ariaLabel, 
           ? 'flex h-full items-center gap-1.5 px-2 text-meta text-ink transition-colors duration-[var(--speed)] hover:bg-accent-soft focus-visible:bg-accent-soft focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent'
           : 'inline-flex min-h-[1.9rem] min-w-0 max-w-full items-center justify-between gap-2 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink data-[placeholder]:text-ink-faint data-[disabled]:opacity-60'}
       >
-        {bar && <Layers size={12} aria-hidden className="shrink-0 text-ink-soft" />}
+        {bar && <Layers size={glyphSize(12)} aria-hidden className="shrink-0 text-ink-soft" />}
         <span className="min-w-0 truncate"><RadixSelect.Value placeholder={placeholder} /></span>
-        <ChevronDown size={bar ? 12 : 14} aria-hidden className="text-ink-faint" />
+        <ChevronDown size={glyphSize(bar ? 12 : 14)} aria-hidden className="text-ink-faint" />
       </RadixSelect.Trigger>
       <RadixSelect.Portal>
         {/* SELECT1: a long list is capped at the room the popper measured on its side, and scrolls inside it.
             The viewport hides its own scrollbar, so the arrows at each end are what says there is more. */}
         <RadixSelect.Content
           position="popper" sideOffset={4} collisionPadding={8}
-          className="z-30 max-h-[var(--radix-select-content-available-height)] min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-card border border-line bg-overlay shadow-[0_6px_24px_rgb(15_12_8/0.12)]"
+          className={cn(
+            'z-30 overflow-hidden rounded-card border border-line bg-overlay shadow-[0_6px_24px_rgb(15_12_8/0.12)]',
+            // Opened from the frame, it keeps the frame's size (ZOOM1); the room the popper measured is the window's, so it is
+            // read back through the frame's zoom.
+            held
+              ? cn(FRAME_HELD, 'max-h-[calc(var(--radix-select-content-available-height)/var(--frame-zoom,1))] min-w-[calc(var(--radix-select-trigger-width)/var(--frame-zoom,1))]')
+              : 'max-h-[var(--radix-select-content-available-height)] min-w-[var(--radix-select-trigger-width)]',
+          )}
         >
           <RadixSelect.ScrollUpButton className="flex h-5 shrink-0 cursor-default items-center justify-center text-ink-soft">
-            <ChevronUp size={14} aria-hidden />
+            <ChevronUp size={glyphSize(14)} aria-hidden />
           </RadixSelect.ScrollUpButton>
           <RadixSelect.Viewport className="p-1">
             {selectRuns(options).map((run, at) => {
@@ -1075,7 +1104,7 @@ export function SelectField({ value, onChange, options, placeholder, ariaLabel, 
                   className="flex cursor-pointer items-center justify-between gap-3 rounded-[4px] px-2 py-1.5 text-body outline-none data-[highlighted]:bg-accent-soft data-[highlighted]:text-ink"
                 >
                   <RadixSelect.ItemText>{option.label}</RadixSelect.ItemText>
-                  <RadixSelect.ItemIndicator><Check size={14} aria-hidden /></RadixSelect.ItemIndicator>
+                  <RadixSelect.ItemIndicator><Check size={glyphSize(14)} aria-hidden /></RadixSelect.ItemIndicator>
                 </RadixSelect.Item>
               ));
               return run.group ? (
@@ -1090,7 +1119,7 @@ export function SelectField({ value, onChange, options, placeholder, ariaLabel, 
             })}
           </RadixSelect.Viewport>
           <RadixSelect.ScrollDownButton className="flex h-5 shrink-0 cursor-default items-center justify-center text-ink-soft">
-            <ChevronDown size={14} aria-hidden />
+            <ChevronDown size={glyphSize(14)} aria-hidden />
           </RadixSelect.ScrollDownButton>
         </RadixSelect.Content>
       </RadixSelect.Portal>
@@ -1116,7 +1145,7 @@ export function CheckField({ checked, onChange, label, hideLabel, disabled, clas
         onCheckedChange={(state) => onChange(state === true)}
         className="grid size-4 shrink-0 place-items-center rounded-[4px] border border-line-strong bg-raised data-[state=checked]:border-accent data-[state=checked]:bg-accent data-[state=checked]:text-accent-ink"
       >
-        <Checkbox.Indicator><Check size={12} strokeWidth={2.2} aria-hidden /></Checkbox.Indicator>
+        <Checkbox.Indicator><Check size={glyphSize(12)} strokeWidth={2.2} aria-hidden /></Checkbox.Indicator>
       </Checkbox.Root>
       <span className={cn(hideLabel && 'sr-only')}>{label}</span>
     </label>
@@ -1232,6 +1261,14 @@ function MenuRoot(props: ComponentProps<typeof DropdownMenu.Root>) {
   return <DropdownMenu.Root modal={false} {...props} />;
 }
 
+/** A menu's layer and cap, its own size or the frame's (ZOOM1), as `MenuContent` says. */
+const menuCap = (held: boolean) => cn(
+  'z-30 overflow-y-auto overflow-x-hidden',
+  held
+    ? cn(FRAME_HELD, 'max-h-[calc(var(--radix-dropdown-menu-content-available-height)/var(--frame-zoom,1))]')
+    : 'max-h-[var(--radix-dropdown-menu-content-available-height)]',
+);
+
 /**
  * A menu's content, in its portal: the overlay surface, the control's radius and the menus' shadow, 4px off its
  * trigger and 8px off the window's edges. Its width is the caller's (`className`), since a menu bar's and a status
@@ -1241,22 +1278,22 @@ function MenuRoot(props: ComponentProps<typeof DropdownMenu.Root>) {
  * **Capped at the room the popper measured on its side, and scrolled inside it** (MENU1, as SELECT1 for the select):
  * a long menu (a receiver filter, a long workspace list) ran off the window with nothing to scroll it by. The bar is
  * the theme's (`tokens.css`), and the keys still reach every row, since focusing one scrolls it into view.
+ *
+ * **Opened from the frame, it keeps the frame's size** (ZOOM1): the room the popper measured is the window's, so its cap is
+ * read back through the frame's zoom.
  */
 function MenuContent({ highlight = 'raised', className, children, ...props }: ComponentProps<typeof DropdownMenu.Content> & {
   /** What its rows light with: the raised surface by default, the accent's field for a list's own menus. */
   highlight?: MenuHighlight;
 }) {
+  const held = useContext(FrameHeld);
   return (
     <DropdownMenu.Portal>
       <DropdownMenu.Content
         sideOffset={4}
         collisionPadding={8}
         {...props}
-        className={cn(
-          'z-30 max-h-[var(--radix-dropdown-menu-content-available-height)] overflow-y-auto overflow-x-hidden',
-          'rounded-control border border-line bg-overlay p-1 text-small shadow-lg',
-          className,
-        )}
+        className={cn(menuCap(held), 'rounded-control border border-line bg-overlay p-1 text-small shadow-lg', className)}
       >
         <MenuHighlightContext.Provider value={highlight}>{children}</MenuHighlightContext.Provider>
       </DropdownMenu.Content>
@@ -1329,17 +1366,14 @@ function MenuSubRow({ className, children, ...props }: ComponentProps<typeof Dro
 /** The menu a sub-row opens, in its portal, with a parent's surface and cap, 4px off the row. */
 function MenuSubContent({ className, children, ...props }: ComponentProps<typeof DropdownMenu.SubContent>) {
   const highlight = useContext(MenuHighlightContext);
+  const held = useContext(FrameHeld);
   return (
     <DropdownMenu.Portal>
       <DropdownMenu.SubContent
         sideOffset={4}
         collisionPadding={8}
         {...props}
-        className={cn(
-          'z-30 max-h-[var(--radix-dropdown-menu-content-available-height)] overflow-y-auto overflow-x-hidden',
-          'rounded-control border border-line bg-overlay p-1 text-small shadow-lg',
-          className,
-        )}
+        className={cn(menuCap(held), 'rounded-control border border-line bg-overlay p-1 text-small shadow-lg', className)}
       >
         <MenuHighlightContext.Provider value={highlight}>{children}</MenuHighlightContext.Provider>
       </DropdownMenu.SubContent>
@@ -1693,6 +1727,8 @@ export function Tip({ content, children, side = 'bottom' }: {
   // Typed as the button Radix's trigger renders; with `asChild` the ref lands on whatever the child
   // is, and only `contains` is asked of it.
   const trigger = useRef<HTMLButtonElement>(null);
+  // A tip on the frame keeps the frame's size while the content zooms (ZOOM1).
+  const held = useContext(FrameHeld);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -1735,7 +1771,10 @@ export function Tip({ content, children, side = 'bottom' }: {
           // control it describes and swallow the click — which is exactly what happened when the
           // workspace scope moved into the app strip (D56) and its tooltip landed on top of its own
           // options list. The rule belongs here rather than at that one call site.
-          className="pointer-events-none z-30 max-w-[22rem] rounded-card border border-line bg-overlay px-3 py-2 text-small text-ink-soft shadow-[0_6px_24px_rgb(15_12_8/0.12)]"
+          className={cn(
+            'pointer-events-none z-30 max-w-[22rem] rounded-card border border-line bg-overlay px-3 py-2 text-small text-ink-soft shadow-[0_6px_24px_rgb(15_12_8/0.12)]',
+            held && FRAME_HELD,
+          )}
         >
           <Inline text={content} />
         </Tooltip.Content>

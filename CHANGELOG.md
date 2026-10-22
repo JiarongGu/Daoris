@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- The window zooms as a code editor's does. Ctrl+wheel, Ctrl+= (or Ctrl++), Ctrl+- and Ctrl+0, and View's *Zoom in*, *Zoom out*
+  and *Reset zoom*, make the content larger or smaller in steps from 50% to 200%, while the title bar, its menus and window
+  buttons, the bar of places on the left and the status bar keep their size. The level shows for a moment over the content as it
+  changes, and stays on the status bar's right end while it is not 100%; pressing it goes back to 100%. Daoris keeps the level
+  for this machine, in every Daoris window, across restarts. The Map keeps its own Ctrl+wheel. Before, Ctrl+wheel scaled the
+  whole window, the title bar included, and said no level. In English and 中文.
 - Ask Daoris now keeps the asks and quests each conversation published. Under the conversation's head, *Published from this
   conversation* says what stands (open, taken, done, declined, and what waits on you first); opened, each ask lists the quests it
   became, a taken quest names its session's state, and each row opens its record on Quests in one press. Their states move as the

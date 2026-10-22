@@ -45,7 +45,7 @@ export function SessionFlow({ session, shown, className }: { session: SessionOfL
         </span>
       </button>
       {!folded && (
-        <div className="mt-2 grid min-w-0 gap-2 pl-[18px]">
+        <div className="mt-2 grid min-w-0 gap-2 pl-[1.125rem]">
           <p className="m-0 text-small text-ink-faint">{t('work.life.hint')}</p>
           <SessionLifeFlow session={session} shown={word} />
         </div>

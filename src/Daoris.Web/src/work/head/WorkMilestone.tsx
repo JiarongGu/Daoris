@@ -116,7 +116,7 @@ function Facts({ id, unit }: { id: string; unit: MilestoneUnit }) {
   const blocked = waits.some((entry) => entry.disposition === 'blocked');
   const unworded = (unit.held ?? []).some((held) => !held.resolution);
   return (
-    <dl id={id} className="m-0 mt-2 grid min-w-0 gap-1 pl-[18px] @container">
+    <dl id={id} className="m-0 mt-2 grid min-w-0 gap-1 pl-[1.125rem] @container">
       <Row label={t('work.milestone.end.label')} tone={END_TONE[unit.end.state] ?? 'waits'}>
         <span>{endSentence(t, unit)}</span>
       </Row>

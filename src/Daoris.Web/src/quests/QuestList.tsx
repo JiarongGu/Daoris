@@ -237,7 +237,7 @@ function QuestRow({ facts, ask, chosen, resuming, onChoose, onResume }: {
       </ListRowDoor>
       {/* The hold is the person's own and one press lifts it, here where it is read: beside the row's door. */}
       {resume && (
-        <div className="pb-1.5 pl-[13px] pr-2.5">
+        <div className="pb-1.5 pl-[0.8125rem] pr-2.5">
           <Button
             variant="ghost"
             className="px-1.5 py-0.5 text-small"
