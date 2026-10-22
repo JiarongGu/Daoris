@@ -232,6 +232,12 @@ public sealed class Driver(
     internal Action<string>? RunReturned { get; init; }
 
     /// <summary>
+    /// Asks the loop's runtime for a whole pass (FABRIC-CUTOVER1d; the cutover design §4): the look's automatic landing held by a run's graph for a
+    /// judgement its next pass makes asks it, and tries again at its next look. Null asks nobody.
+    /// </summary>
+    internal Action? PassAsked { get; init; }
+
+    /// <summary>
     /// What completes once something else wants the loop (PARALLEL1b, D181 point 3): a nudge, an ending, the <c>look</c> topic's
     /// deadline. Handed by the watch, whose looks then leave beside them the work no part of the look waits on (the remote sync and the
     /// lost-claim stop after it, the sync after an ending), and wait for a start that has not yet opened its record only until this
@@ -1099,7 +1105,7 @@ public sealed class Driver(
             var lander = new AutoLander(
                 home, new ServiceAutoLandingWorld(service),
                 new SessionTrees(home, new LandingPlugins(home, say: (plugin, line) => output?.Append($"plugin:{plugin}", line), pluginLog: Context.Hooks?.Log)),
-                Context.Events, service.LandingSaid) { Look = Lines };
+                Context.Events, service.LandingSaid) { Look = Lines, PassAsked = PassAsked };
             if (Context.Beside)
             {
                 SelectBeside(lander, ct);

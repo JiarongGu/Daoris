@@ -201,3 +201,39 @@ public static class GraphGate
 
     private static string Short(string? commit) => commit is null ? "" : TextBounds.ShortCommit(commit, 8);
 }
+
+/// <summary>
+/// The person's press on a run held by its graph (FABRIC-CUTOVER1d; the cutover design §4): the press keeps its order, its answer kept first and
+/// the gate read with the graph's part; where that part holds for a judgement not made yet, the press asks the loop for a whole pass, waits for
+/// it within <see cref="Bound"/>, and reads the gate again, so it lands at the same press where that pass made <c>handed</c> active at the commit.
+/// Past the bound it is refused as read, its answer kept, and the next press or look lands it.
+/// </summary>
+public static class GraphPasses
+{
+    /// <summary>
+    /// How long a press waits for the pass it asked: a whole pass reads the units afresh (the service's quests and the inventory) and judges every
+    /// governed run, a few seconds at most on an install; twenty leaves a slow one room, and holds a press no longer than a landing's own git.
+    /// </summary>
+    public static readonly TimeSpan Bound = TimeSpan.FromSeconds(20);
+
+    /// <summary>
+    /// The gate a press lands with: <paramref name="answer"/> keeps the press's answer and reads the gate; where the graph's part is what holds it
+    /// and the next pass may move it, a pass is asked (<paramref name="pass"/>), and waited for within <see cref="Bound"/> only for a judgement not
+    /// made yet, after which the gate is read again (<paramref name="read"/>). A press with no loop to ask (a terminal's alone) is refused as read.
+    /// </summary>
+    /// <param name="pass">Asks the loop for a whole pass and waits for it within the bound given (none: asks and waits for nothing); true where it came.</param>
+    public static async Task<LandingGate> PressAsync(
+        Func<CancellationToken, Task<LandingGate>> answer, Func<CancellationToken, Task<LandingGate>> read,
+        Func<TimeSpan, CancellationToken, Task<bool>>? pass, CancellationToken ct)
+    {
+        var gate = await answer(ct).ConfigureAwait(false);
+        if (pass is null || !gate.GraphHolds || gate.Graph is not { AsksPass: true } graph) return gate;
+        if (!graph.PressWaits)
+        {
+            await pass(TimeSpan.Zero, ct).ConfigureAwait(false);
+            return gate;
+        }
+
+        return await pass(Bound, ct).ConfigureAwait(false) ? await read(ct).ConfigureAwait(false) : gate;
+    }
+}

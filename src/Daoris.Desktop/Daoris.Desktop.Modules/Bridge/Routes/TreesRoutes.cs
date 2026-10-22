@@ -608,8 +608,13 @@ public sealed class TreesRoutes(DriverLoop loop)
         }
 
         // The press answers what it showed beside Accept (the second-agent design §8.2–§8.3): a dispute or commits nobody read,
-        // drawn with the gate's token, which the press sends back; a gate that moved since answers nothing.
-        gate = await new OpinionPresses(_loop.Home, service).PressedAsync(id, gate, Optional(request, "answers"), tree, questId, cancellationToken);
+        // drawn with the gate's token, which the press sends back; a gate that moved since answers nothing. FABRIC-CUTOVER1d (the cutover
+        // design §4): its answer kept, a run's graph that holds it for a judgement not made yet asks the loop for that pass and waits for it
+        // within a bound, so it lands at this press where the pass makes it ready; past the bound it is refused as read.
+        var shown = gate;
+        gate = await GraphPasses.PressAsync(
+            token => new OpinionPresses(_loop.Home, service).PressedAsync(id, shown, Optional(request, "answers"), tree, questId, token),
+            token => trees.GateAsync(tree, questId, new ServiceReviewWorld(service), id, token), _loop.PassWholeAsync, cancellationToken);
         // FABRIC-CLOSE1h3 (D173's note): the result the press is made on, its quest as read for its name, judged again under the tree's
         // hold and before the push, so a press that waited behind another landing makes nothing where that result moved meanwhile.
         var pressed = await quests.PressedAsync(id, questId, ct: cancellationToken);

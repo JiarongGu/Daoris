@@ -210,6 +210,17 @@ public sealed class DriverWatch(
 
     private void WakeNodes(ChainEvent wake) => Volatile.Read(ref _nodesWake)?.Invoke(wake);
 
+    /// <summary>The doors' asks for a whole pass of link 8 (FABRIC-CUTOVER1d, <see cref="PassAsks"/>): set while the runtime runs, null otherwise.</summary>
+    private PassAsks? _passAsks;
+
+    /// <summary>
+    /// Ask link 8 for a pass that reads the units afresh and judges every governed run (FABRIC-CUTOVER1d; the cutover design §4): what a landing
+    /// door held by a run's graph for a judgement not made yet asks, and a press waits for within <paramref name="bound"/>. True where a pass that
+    /// took the ask ended in time; false past the bound, where it failed, and where this loop runs no runtime.
+    /// </summary>
+    public Task<bool> PassWholeAsync(TimeSpan bound, CancellationToken ct) =>
+        Volatile.Read(ref _passAsks) is { } asks ? asks.WaitAsync(bound, ct) : Task.FromResult(false);
+
     /// <summary>
     /// Look now, because a terminal's words for <paramref name="session"/> were kept (FABRIC-EVENT2b): the requests topic's wake,
     /// so <c>watch.looked</c> says the words woke it, not that something nudged.
@@ -460,6 +471,9 @@ public sealed class DriverWatch(
             HookSet supervised = hooks!;
             var wholeAsked = 0;
             var superviseAsked = 0;
+            // FABRIC-CUTOVER1d: a landing door's ask for a whole pass wakes link 8 alone, as the runtime's own wakes do; the pass that begins after
+            // it takes it, reading the units afresh, and answers it once it ends.
+            var asks = new PassAsks(() => NodesWoken("door"));
             chain.Bind(ChainRanks.Nodes, (heard, token) =>
             {
                 if (heard.Any(cause => cause.Key == Whole)) Interlocked.Exchange(ref wholeAsked, 1);
@@ -486,11 +500,13 @@ public sealed class DriverWatch(
                 }
             }, CancellationToken.None));
             supervised.StepArrived = plugin => WakeNodes(new ChainEvent(ChainEvents.PluginStep, plugin, ChangeTopics.Nodes));
+            Volatile.Write(ref _passAsks, asks);
 
             // One pass, on the choices the latest look read. What it says joins the next look's report; what it acted on is in the records.
             async Task<IReadOnlyList<string>> PassAsync(CancellationToken token)
             {
-                var whole = Interlocked.Exchange(ref wholeAsked, 0) == 1;
+                var asked = asks.Take();
+                var whole = (Interlocked.Exchange(ref wholeAsked, 0) == 1) | asked.Asked;
                 var lines = new List<string>();
                 NodeRuntimePass pass;
                 try
@@ -523,9 +539,17 @@ public sealed class DriverWatch(
                 catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException
                                                   or UnauthorizedAccessException)
                 {
+                    PassAsks.Done(asked, passed: false);
                     return [.. lines, $"work  the plugins' steps were not judged this time, and are judged again at the next look: {error.Message}"];
                 }
+                catch
+                {
+                    PassAsks.Done(asked, passed: false);
+                    throw;
+                }
 
+                // FABRIC-CUTOVER1d: the doors that asked this pass read the runs' records it kept.
+                PassAsks.Done(asked, passed: true);
                 NodesDue(nodesDue, runtime.NextDue);
                 Passed?.Invoke(pass);
 
@@ -558,6 +582,8 @@ public sealed class DriverWatch(
                     {
                         if (_nodes?.Return(run) == true) NodesWoken("returned");
                     },
+                    // FABRIC-CUTOVER1d: the look's automatic landing held by a run's graph asks for a whole pass, waiting for none.
+                    PassAsked = () => _ = PassWholeAsync(TimeSpan.Zero, CancellationToken.None),
                     // ACCESSSWAP1b: a session outlives this look's reading of the file, so its run reads the file again at its turn's end.
                     ConfigPath = configPath,
                 };
@@ -752,8 +778,10 @@ public sealed class DriverWatch(
         }
         finally
         {
-            // FABRIC-RUN1d: no wake of the runtime's fires link 8 once the loop closes.
+            // FABRIC-RUN1d: no wake of the runtime's fires link 8 once the loop closes; FABRIC-CUTOVER1d: nor does a door's ask, and one asked is
+            // answered as not passed, so no press waits on a loop that closed.
             Volatile.Write(ref _nodesWake, null);
+            if (Interlocked.Exchange(ref _passAsks, null) is { } unasked) PassAsks.Done(unasked.Take(), passed: false);
             if (hooks is not null) hooks.StepArrived = null;
 
             // The change stream's wait ends with the loop, and is waited for, so no ask outlives it.
