@@ -19555,3 +19555,13 @@ Detail: the Ask Daoris design §9 item 12 (with Codex's read), D89's ASKQUESTS1 
 deletion, and `File.ReadAllText` was refused, so it said `Unread` and held. Every read of a binding file now goes through
 `AtomicFile.ReadText`, which shares deletion. Reproduced every run by `MoveHold`; three tests seen failing first. The driver's other
 plain readers are READSHARE1. Detail: FIX-LOG 2026-10-22 (BINDRACE1). On Opus.
+## PARTWHOLE1 — the two test classes split by hand made whole classes again (2026-10-22, D166)
+
+> - [ ] **PARTWHOLE1 — the two test classes split by hand made whole classes again** (driver tests; found 2026-10-22, it fails `npm run verify` and so the `cli` gate on main). FABRIC-CUTOVER1c and 1f split `NodeRuntimeTests` over `NodeRuntimeTests.cs`, `.Runs.cs` and `.Words.cs`, and `ObservedEventTests` over `ObservedEventTests.cs` and `.Runs.cs` (`src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/`), as hand-written `partial` classes, which PART1's census (`tools/partials.mjs`, D166's note) refuses. Each split file becomes a class of its own named for what it tests, over a shared fixture class for the helpers they share, with no test lost or renamed in substance; `tools/partials.json` gains nothing. Proof: `node tools/partials.mjs` exits 0; the three classes' and two classes' test counts before equal the counts after; the driver's fast half and these Process classes pass.
+
+**Outcome** 2026-10-22: built. `NodeRuntimeTests` is three classes, `NodeRuntimeTests`, `NodeRuntimeRunTests` and `RunNodeWordsTests`,
+over `NodeRuntimeFixture` (the last two over `NodeRunFixture`, the run helpers they share); `ObservedEventTests` is two,
+`ObservedEventTests` and `ObservedRunEventTests`, over `ObservedEventFixture`. A fixture holds only what more than one class uses, as
+D166's PART6 fixtures do; no test body changed. Test cases listed before and after: 52 and 52 (32 + 13 + 7), 25 and 25 (20 + 5), the
+same names. `node tools/partials.mjs` is clean and `tools/partials.json` is unchanged. The driver's fast half passes (13,258); none of
+the five classes is a Process class, so `process.runsettings` with their filter selects no test. On Opus.
