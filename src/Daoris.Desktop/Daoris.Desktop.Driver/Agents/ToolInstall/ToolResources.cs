@@ -246,7 +246,7 @@ public static class ToolResources
                 origin, integrity, path, false, null, new SortedDictionary<string, ResourceTool>(StringComparer.Ordinal), [], [], null);
         }
 
-        var bytes = File.ReadAllBytes(path);
+        var bytes = AtomicFile.ReadBytes(path);
         return Parse(Encoding.UTF8.GetString(bytes), origin) with
         {
             Integrity = integrity,

@@ -1072,7 +1072,7 @@ public static class SessionsCommand
                 return 2;
             }
 
-            uploads.Add(new ChatUpload(Path.GetFileName(full), await File.ReadAllBytesAsync(full, ct).ConfigureAwait(false)));
+            uploads.Add(new ChatUpload(Path.GetFileName(full), await File.ReadAllBytesAsync(full, ct).ConfigureAwait(false))); // read-shares: the person's own file
         }
 
         // What never goes on is judged from the record before anything is asked (D137 §2.2), by the one table.

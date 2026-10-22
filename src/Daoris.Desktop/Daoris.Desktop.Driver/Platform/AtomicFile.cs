@@ -17,7 +17,8 @@ namespace Daoris.Driver;
 ///
 /// <para>Text is written as BOM-less UTF-8, and what it says (LF, a final newline) is the caller's.</para>
 ///
-/// <para>A file these writes keep is read beside its writer through <see cref="ReadText"/> (BINDRACE1).</para>
+/// <para>A file these writes keep is read beside its writer through <see cref="ReadText"/> (BINDRACE1), <see cref="ReadBytes"/> or
+/// <see cref="OpenRead"/>, never plainly: <c>tools/read-shares.mjs</c> finds a plain read of one (READSHARE1).</para>
 /// </remarks>
 public static class AtomicFile
 {
@@ -38,6 +39,23 @@ public static class AtomicFile
         using var reader = new StreamReader(stream, Utf8);
         return reader.ReadToEnd();
     }
+
+    /// <summary>A file these writes keep, read whole as bytes, sharing as <see cref="ReadText"/> does (READSHARE1).</summary>
+    /// <exception cref="FileNotFoundException">No file is there.</exception>
+    /// <exception cref="IOException">It could not be read.</exception>
+    public static byte[] ReadBytes(string path)
+    {
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        using var copy = new MemoryStream();
+        stream.CopyTo(copy);
+        return copy.ToArray();
+    }
+
+    /// <summary>A file these writes keep, opened to read as a stream, sharing as <see cref="ReadText"/> does (READSHARE1).</summary>
+    /// <exception cref="FileNotFoundException">No file is there.</exception>
+    /// <exception cref="IOException">It could not be opened.</exception>
+    public static FileStream OpenRead(string path) =>
+        new(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
 
     /// <summary>Write <paramref name="text"/> to <paramref name="path"/> whole, or not at all.</summary>
     public static void WriteText(string path, string text) =>

@@ -756,7 +756,7 @@ public static class ClosureGraphs
         if (!IsDigest(digest) || !File.Exists(PathOf(home, digest))) return null;
         try
         {
-            return NodeGraphs.Read(File.ReadAllText(PathOf(home, digest))).Graph is { } graph && NodeGraphs.Digest(graph) == digest ? graph : null;
+            return NodeGraphs.Read(AtomicFile.ReadText(PathOf(home, digest))).Graph is { } graph && NodeGraphs.Digest(graph) == digest ? graph : null;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -837,7 +837,7 @@ public static class QuestReads
         try
         {
             if (!File.Exists(PathOf(home))) return null;
-            using var document = System.Text.Json.JsonDocument.Parse(File.ReadAllText(PathOf(home)));
+            using var document = System.Text.Json.JsonDocument.Parse(AtomicFile.ReadText(PathOf(home)));
             if (document.RootElement.ValueKind != System.Text.Json.JsonValueKind.Object
                 || !document.RootElement.TryGetProperty("quests", out var kept) || kept.ValueKind != System.Text.Json.JsonValueKind.Object) return null;
             var read = new Dictionary<string, QuestView>(StringComparer.Ordinal);

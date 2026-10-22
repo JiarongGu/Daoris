@@ -84,7 +84,7 @@ public static class JsonKeeping
         string? current = null;
         try
         {
-            if (File.Exists(path)) current = File.ReadAllText(path);
+            if (File.Exists(path)) current = AtomicFile.ReadText(path);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

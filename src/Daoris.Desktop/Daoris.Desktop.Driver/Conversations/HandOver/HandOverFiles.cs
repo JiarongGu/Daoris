@@ -39,7 +39,7 @@ internal static class HandOverFiles
         try
         {
             if (!File.Exists(path)) return null;
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object
                 || Text(root, "agent") is not { Length: > 0 } agent
@@ -82,7 +82,7 @@ internal static class HandOverFiles
         try
         {
             if (!File.Exists(path)) return null;
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object
                 || Text(root, "agent") is not { Length: > 0 } agent

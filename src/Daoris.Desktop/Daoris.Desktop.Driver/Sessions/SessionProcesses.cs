@@ -424,7 +424,7 @@ public sealed class SessionProcesses(string? markers = null)
         string[] fields;
         try
         {
-            fields = File.ReadAllText(marker).Trim().Split(' ');
+            fields = AtomicFile.ReadText(marker).Trim().Split(' ');
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -508,7 +508,7 @@ public sealed class SessionProcesses(string? markers = null)
         string[] fields;
         try
         {
-            fields = File.ReadAllText(marker).Trim().Split(' ');
+            fields = AtomicFile.ReadText(marker).Trim().Split(' ');
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

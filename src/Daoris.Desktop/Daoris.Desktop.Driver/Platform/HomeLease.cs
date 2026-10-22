@@ -364,7 +364,7 @@ public sealed class HomeLease : IDisposable
         busy = false;
         try
         {
-            return File.ReadAllText(path, Utf8);
+            return AtomicFile.ReadText(path);
         }
         catch (Exception error) when (error is FileNotFoundException or DirectoryNotFoundException)
         {

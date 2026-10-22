@@ -63,7 +63,7 @@ public sealed class StartRequests(string home)
         {
             var path = PathOf(id);
             if (!File.Exists(path)) return null;
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object
                 || Moments.Read(root, "at") is not { } at

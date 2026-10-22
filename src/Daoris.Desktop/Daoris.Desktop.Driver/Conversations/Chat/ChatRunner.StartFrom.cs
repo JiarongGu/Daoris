@@ -176,7 +176,7 @@ public static class StartFrom
         {
             try
             {
-                uploads.Add(new ChatUpload(kept.Name, File.ReadAllBytes(kept.Path)));
+                uploads.Add(new ChatUpload(kept.Name, AtomicFile.ReadBytes(kept.Path)));
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {

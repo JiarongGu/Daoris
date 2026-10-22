@@ -284,7 +284,7 @@ public sealed class BrainstormFiles(string home)
     {
         try
         {
-            return File.Exists(path) ? File.ReadAllBytes(path) : null;
+            return File.Exists(path) ? AtomicFile.ReadBytes(path) : null;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -298,7 +298,7 @@ public sealed class BrainstormFiles(string home)
     {
         try
         {
-            return File.Exists(path) ? JsonDocument.Parse(File.ReadAllText(path)) : null;
+            return File.Exists(path) ? JsonDocument.Parse(AtomicFile.ReadText(path)) : null;
         }
         catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
         {

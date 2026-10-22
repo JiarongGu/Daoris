@@ -201,7 +201,7 @@ public sealed record ConfiguredAccess(IReadOnlyList<string> Housekeeping)
         try
         {
             return File.Exists(path)
-                ? JsonNode.Parse(File.ReadAllText(path)) as JsonObject ?? throw new DriverException($"`{path}` holds no object, so it was left as it is.")
+                ? JsonNode.Parse(AtomicFile.ReadText(path)) as JsonObject ?? throw new DriverException($"`{path}` holds no object, so it was left as it is.")
                 : [];
         }
         catch (JsonException error)
@@ -226,7 +226,7 @@ public sealed record ConfiguredAccess(IReadOnlyList<string> Housekeeping)
         {
             var path = PathOf(home);
             if (!File.Exists(path)) return None;
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             if (document.RootElement.ValueKind != JsonValueKind.Object) return None;
             var root = document.RootElement;
             return new ConfiguredAccess(Chosen(root, HousekeepingGrant, HousekeepingBuilt))

@@ -142,7 +142,7 @@ public sealed record RemoteTarget(string Url, string Key)
     /// (<see cref="FromEnvironment"/>), else the file's (<see cref="Parse"/>).
     /// </summary>
     public static IReadOnlyDictionary<string, RemoteTarget> Load(Func<string, string?> environment, string? path) =>
-        FromEnvironment(environment) ?? Parse(File.Exists(path) ? File.ReadAllText(path) : null);
+        FromEnvironment(environment) ?? Parse(File.Exists(path) ? AtomicFile.ReadText(path) : null);
 
     /// <summary>
     /// This machine's remotes as sync reads them, for the loop of <paramref name="home"/> (FABRIC-CLOSE1l): the environment's pair, else the
@@ -197,7 +197,7 @@ public sealed record RemoteFile(
         List<KeyValuePair<string, JsonElement>> entries = [];
         try
         {
-            using var document = JsonDocument.Parse(JsonKeeping.Once(File.ReadAllText(path)));
+            using var document = JsonDocument.Parse(JsonKeeping.Once(AtomicFile.ReadText(path)));
             if (document.RootElement.ValueKind == JsonValueKind.Object)
             {
                 entries = [.. document.RootElement.EnumerateObject().Select(entry => KeyValuePair.Create(entry.Name, entry.Value.Clone()))];

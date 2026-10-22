@@ -143,7 +143,7 @@ public static class HarnessKeys
 
         try
         {
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             if (document.RootElement.ValueKind != JsonValueKind.Object) return keys;
             foreach (var agent in document.RootElement.EnumerateObject())
             {

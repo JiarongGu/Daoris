@@ -42,7 +42,7 @@ internal static class PluginFolders
     {
         try
         {
-            return (File.ReadAllText(path), null);
+            return (AtomicFile.ReadText(path), null);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -51,7 +51,7 @@ internal static class PluginFolders
     }
 
     /// <summary>A file's text, or null where there is no such file; a file there that cannot be read throws.</summary>
-    public static string? TextIfThere(string path) => File.Exists(path) ? File.ReadAllText(path) : null;
+    public static string? TextIfThere(string path) => File.Exists(path) ? AtomicFile.ReadText(path) : null;
 
     /// <summary>A file written beside and renamed over, its folder made first.</summary>
     public static void WriteText(string folder, string path, string text)
@@ -78,7 +78,7 @@ internal static class PluginFolders
         {
             var (a, b) = (Files(left), Files(right));
             return a.SequenceEqual(b, StringComparer.Ordinal)
-                && a.All(relative => File.ReadAllBytes(Path.Combine(left, relative)).AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(right, relative))));
+                && a.All(relative => File.ReadAllBytes(Path.Combine(left, relative)).AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(right, relative)))); // read-shares: two plugin folders, laid whole
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -126,7 +126,7 @@ internal static class PluginFolders
         if (file.Length > most) return (true, file.Length, null);
         try
         {
-            return (true, file.Length, File.ReadAllBytes(path));
+            return (true, file.Length, File.ReadAllBytes(path)); // read-shares: a plugin's icon, laid with its folder
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

@@ -126,7 +126,7 @@ public static class RegistryFollowing
         return moved;
     }
 
-    private static string? TextIfThere(string path) => File.Exists(path) ? File.ReadAllText(path) : null;
+    private static string? TextIfThere(string path) => File.Exists(path) ? AtomicFile.ReadText(path) : null;
 
     private static JsonNode? Load(string path)
     {

@@ -33,7 +33,7 @@ internal static class TraceReads
 
         try
         {
-            return new TraceRulesRead(File.ReadAllText(path));
+            return new TraceRulesRead(AtomicFile.ReadText(path));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

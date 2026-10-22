@@ -51,7 +51,7 @@ public static class HomeIdentity
         {
             try
             {
-                text = File.ReadAllText(path, Utf8);
+                text = AtomicFile.ReadText(path);
             }
             catch (Exception error) when (error is FileNotFoundException or DirectoryNotFoundException)
             {

@@ -203,7 +203,7 @@ public static class AgentSettings
     {
         if (!File.Exists(path)) return (new JsonObject(), null, null);
 
-        var text = File.ReadAllText(path).ReplaceLineEndings("\n");
+        var text = AtomicFile.ReadText(path).ReplaceLineEndings("\n");
         try
         {
             return JsonNode.Parse(text) is JsonObject root

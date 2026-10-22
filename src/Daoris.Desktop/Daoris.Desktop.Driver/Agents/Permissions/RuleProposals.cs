@@ -305,7 +305,7 @@ public static class RuleProposals
     {
         try
         {
-            if (JsonNode.Parse(File.ReadAllText(path)) is not JsonObject root) return null;
+            if (JsonNode.Parse(AtomicFile.ReadText(path)) is not JsonObject root) return null;
             if (Json.Trimmed(root["id"]) is not { } id || root["change"] is not JsonObject change) return null;
 
             var by = root["by"] as JsonObject;
@@ -353,7 +353,7 @@ public static class RuleProposals
     /// <summary>Rewrite the file's state and settling, keeping every other key the session wrote.</summary>
     private static void Mark(string path, ProposalState state, string by, string? note, DateTimeOffset at)
     {
-        var root = JsonNode.Parse(File.ReadAllText(path)) as JsonObject ?? [];
+        var root = JsonNode.Parse(AtomicFile.ReadText(path)) as JsonObject ?? [];
         root["state"] = state.ToString().ToLowerInvariant();
         root["settled"] = new JsonObject { ["at"] = Moments.Write(at), ["by"] = by, ["note"] = note };
 

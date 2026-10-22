@@ -123,7 +123,7 @@ public sealed class ResourceRecordFiles(string home, Func<bool>? holdsLease = nu
         if (!File.Exists(path)) return new ResourceRecord(unit);
         try
         {
-            return Parse(File.ReadAllText(path)) is { } record && string.Equals(record.Unit, unit, StringComparison.Ordinal) ? record : null;
+            return Parse(AtomicFile.ReadText(path)) is { } record && string.Equals(record.Unit, unit, StringComparison.Ordinal) ? record : null;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -143,7 +143,7 @@ public sealed class ResourceRecordFiles(string home, Func<bool>? holdsLease = nu
             ResourceRecord? record = null;
             try
             {
-                record = Parse(File.ReadAllText(path));
+                record = Parse(AtomicFile.ReadText(path));
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {

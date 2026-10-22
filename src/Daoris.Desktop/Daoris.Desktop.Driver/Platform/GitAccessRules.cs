@@ -55,7 +55,7 @@ public static class GitAccessRules
         {
             var path = DaorisHome.Entry(home, HomeEntry.Permissions);
             if (!File.Exists(path)) return false;
-            return JsonNode.Parse(File.ReadAllText(path)) is JsonObject root
+            return JsonNode.Parse(AtomicFile.ReadText(path)) is JsonObject root
                 && root["defaultsOff"] is JsonArray off
                 && off.Any(each => each is JsonValue value && value.TryGetValue<string>(out var id) && id == NoPush);
         }
@@ -174,7 +174,7 @@ public static class GitGrants
         {
             var path = Path.Combine(DaorisHome.Entry(home, HomeEntry.GitGrants), id + ".json");
             if (!File.Exists(path)) return false;
-            if (JsonNode.Parse(File.ReadAllText(path)) is not JsonObject record) return false;
+            if (JsonNode.Parse(AtomicFile.ReadText(path)) is not JsonObject record) return false;
             if (!string.Equals((string?)record["address"], key, StringComparison.OrdinalIgnoreCase)) return false;
 
             // Taken by its move: of two acts carrying it, one moves it and the other finds it gone.

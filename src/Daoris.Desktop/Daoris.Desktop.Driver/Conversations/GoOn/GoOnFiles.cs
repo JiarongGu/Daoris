@@ -40,7 +40,7 @@ internal static class GoOnFiles
         try
         {
             if (!File.Exists(path)) return null;
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object
                 || !root.TryGetProperty("said", out var said) || said.ValueKind != JsonValueKind.Array
@@ -82,7 +82,7 @@ internal static class GoOnFiles
         try
         {
             if (!File.Exists(path)) return null;
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object
                 || !root.TryGetProperty("said", out var said) || said.ValueKind != JsonValueKind.Array
@@ -127,7 +127,7 @@ internal static class GoOnFiles
         try
         {
             if (!File.Exists(path)) return [];
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("told", out var told) || told.ValueKind != JsonValueKind.Array)
             {
@@ -172,7 +172,7 @@ internal static class GoOnFiles
         try
         {
             if (!File.Exists(path)) return null;
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object) return null;
             return Json.Text(root, "adapter")?.Trim() is { Length: > 0 } adapter

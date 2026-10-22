@@ -43,7 +43,7 @@ internal sealed record SlimManifest(
         try
         {
             if (!File.Exists(path)) return (null, null);
-            text = File.ReadAllText(path);
+            text = AtomicFile.ReadText(path);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

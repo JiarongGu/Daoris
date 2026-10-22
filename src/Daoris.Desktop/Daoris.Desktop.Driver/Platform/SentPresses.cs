@@ -46,7 +46,7 @@ public sealed class SentPresses(string home)
             Prune(now);
             var path = PathOf(id);
             if (!File.Exists(path)) return null;
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             var root = document.RootElement;
             if (Text(root, "id") != id || Text(root, "key") is not { Length: > 0 } key || Text(root, "route") is not { } route) return null;
             return root.TryGetProperty("at", out var at) && at.TryGetDateTimeOffset(out var sent) && now - sent <= Kept

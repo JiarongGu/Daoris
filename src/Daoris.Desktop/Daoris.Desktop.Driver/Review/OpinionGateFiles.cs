@@ -21,7 +21,7 @@ internal static class OpinionGateFiles
         try
         {
             if (!File.Exists(path)) return [];
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             if (!document.RootElement.TryGetProperty("due", out var due) || due.ValueKind != JsonValueKind.Array) return [];
             return [.. due.EnumerateArray().Select(DueOf).OfType<OpinionDue>()];
         }
@@ -44,7 +44,7 @@ internal static class OpinionGateFiles
         if (!File.Exists(path)) return all;
         try
         {
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             if (!document.RootElement.TryGetProperty("repositories", out var repositories) || repositories.ValueKind != JsonValueKind.Object) return all;
             foreach (var repository in repositories.EnumerateObject())
             {

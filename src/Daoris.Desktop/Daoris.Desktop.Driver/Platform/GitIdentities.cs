@@ -359,7 +359,7 @@ public static class GitKeys
         var info = new FileInfo(file);
         if (!info.Exists) throw new DriverException($"git: no file at {file} (import-missing)");
         if (info.Length > ImportLimit) throw new DriverException($"git: {file} is larger than a private key (import-format)");
-        var bytes = File.ReadAllBytes(file);
+        var bytes = File.ReadAllBytes(file); // read-shares: the key file the person names to import, never one Daoris moves into place
         var (publicBlob, problem) = ReadPrivate(Encoding.ASCII.GetString(bytes));
         if (problem is not null) throw new DriverException($"git: {problem}");
         var described = Describe(publicBlob!) ?? throw new DriverException("git: the key's type is not one ssh hosts take: ed25519, RSA or ECDSA (import-format)");

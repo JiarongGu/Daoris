@@ -150,7 +150,7 @@ public static class ToolHomeLeftovers
         if (!SessionEventText.IsLocalId(session)) return null;
         try
         {
-            using var _ = File.OpenRead(conversations.PathOf(session));
+            using var _ = AtomicFile.OpenRead(conversations.PathOf(session));
         }
         catch (Exception error) when (error is FileNotFoundException or DirectoryNotFoundException)
         {

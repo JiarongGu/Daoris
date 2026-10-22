@@ -454,7 +454,7 @@ public sealed class HelpWired(string home)
         {
             var path = PathOf(session);
             if (!File.Exists(path)) return [];
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             return [.. Json.Items(document.RootElement, "receipts").Select(ReadReceipt).OfType<HelpReceipt>()];
         }
         catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)

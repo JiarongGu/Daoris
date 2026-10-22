@@ -354,7 +354,7 @@ internal static class LandingHolds
     {
         try
         {
-            using var read = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var read = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite); // read-shares: a key's lock, written in place
             return Read(read).Holder;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)

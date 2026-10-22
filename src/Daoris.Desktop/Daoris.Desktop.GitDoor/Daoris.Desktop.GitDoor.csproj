@@ -35,6 +35,8 @@
     <!-- The home's table, where the grants and the permissions file are, with the error its refusal is. -->
     <Compile Include="..\Daoris.Desktop.Driver\Platform\DaorisHome.cs" Link="DaorisHome.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Platform\DriverException.cs" Link="DriverException.cs" />
+    <!-- AtomicFile, linked above for the identities, is also the shared read of a file moved into place (READSHARE1): the
+         permissions file is read beside its writer. -->
   </ItemGroup>
 
 </Project>

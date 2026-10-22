@@ -83,7 +83,7 @@ public sealed record HomePart(string Folder, bool Subfolders, Func<string, Chang
     {
         try
         {
-            using var document = JsonDocument.Parse(System.IO.File.ReadAllText(file));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(file));
             return document.RootElement.ValueKind == JsonValueKind.Object
                 && document.RootElement.TryGetProperty("state", out var state)
                 && state.ValueKind == JsonValueKind.String

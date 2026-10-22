@@ -33,7 +33,7 @@ public static class KeepingRecord
         try
         {
             if (!File.Exists(path)) return new(false, null, new Dictionary<string, KeepingLast>(), new Dictionary<string, string>(), null);
-            text = File.ReadAllText(path);
+            text = AtomicFile.ReadText(path);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

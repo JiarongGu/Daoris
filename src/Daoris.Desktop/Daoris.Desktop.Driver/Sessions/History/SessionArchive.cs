@@ -132,7 +132,7 @@ public sealed class SessionArchive(string home)
         try
         {
             if (!File.Exists(FilePath)) return [];
-            using var document = JsonDocument.Parse(File.ReadAllText(FilePath));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(FilePath));
             if (!document.RootElement.TryGetProperty("archived", out var archived) || archived.ValueKind != JsonValueKind.Array) return [];
             return [.. Sorted(archived.EnumerateArray()
                 .Select(Read)

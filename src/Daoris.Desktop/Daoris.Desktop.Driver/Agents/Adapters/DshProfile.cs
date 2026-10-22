@@ -74,7 +74,7 @@ public static class DshProfile
         Directory.CreateDirectory(profileHome);
         var path = Path.Combine(profileHome, PatchFile);
 
-        if (File.Exists(path) && !File.ReadAllText(path).StartsWith(Header, StringComparison.Ordinal))
+        if (File.Exists(path) && !AtomicFile.ReadText(path).StartsWith(Header, StringComparison.Ordinal))
         {
             throw new DriverException(
                 $"`{path}` already exists and daoris did not write it, so it is not daoris's to "
