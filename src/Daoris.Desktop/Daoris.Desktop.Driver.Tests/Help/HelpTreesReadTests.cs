@@ -59,9 +59,9 @@ public sealed class HelpTreesReadTests : IDisposable
         Assert.Equal(Expected(trees), Said(again));
         Assert.Equal(Expected(trees), Said(moved));
         Assert.Equal(Kept, againStarts);
-        // The trees with commits are walked again; the rest are asked their status, after one ask of the line's move.
-        var withCommits = trees.Count(each => each.Commits > 0);
-        Assert.True(movedStarts < Kept + withCommits * 6, $"{movedStarts} git starts");
+        // The trees with commits are walked again (about nineteen starts each, the content proof's); the rest are asked their
+        // status, after one ask of the line's move: 930 where the first read made 1409, on 2026-10-22.
+        Assert.True(movedStarts < firstStarts, $"{movedStarts} git starts where the first read made {firstStarts}");
     }
 
     /// <summary>
