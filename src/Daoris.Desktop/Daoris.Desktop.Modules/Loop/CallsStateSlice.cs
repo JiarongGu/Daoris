@@ -34,14 +34,21 @@ public static class CallsStateSlice
     /// <summary>Its one partition, named for the field of a session's row it stands beside.</summary>
     public const string Partition = "calling";
 
+    /// <summary>
+    /// SESSWATCH1a's partition (D200, the session-watch design §5.1): each session the watcher marks quiet, keyed by session, with when
+    /// it was last heard, which the rail and the head say as <i>quiet · 14 min</i>. Judged empty, pushed empty.
+    /// </summary>
+    public const string QuietPartition = "quiet";
+
     /// <summary>The slice the shell's loop owns, judging the calls heard from <paramref name="loop"/>'s record.</summary>
     public static StateSlice Of(DriverLoop loop, IEventBus bus)
     {
         var calls = RunningCalls.Of(loop.Events);
-        return new(Name, bus, _ => Task.FromResult<IReadOnlyList<SliceJudged>?>(Judge(calls.Now())))
+        var watch = SessionWatch.Of(loop.Events);
+        return new(Name, bus, _ => Task.FromResult<IReadOnlyList<SliceJudged>?>([.. Judge(calls.Now()), Quiet(watch.QuietNow())]))
         {
             Keyed = true,
-            Hears = [wake => HearCalls(calls, wake)],
+            Hears = [wake => HearCalls(calls, wake), wake => HearQuiet(watch, wake)],
             Failed = error => loop.Log?.Warn("state.slice", ("slice", Name), ("message", error.Message)),
         };
     }
@@ -60,6 +67,27 @@ public static class CallsStateSlice
         }
 
         return [new SliceJudged(Partition, part)];
+    }
+
+    /// <summary>The watcher's marks (SESSWATCH1a): each quiet session under its id as <c>{since}</c>, when it was last heard.</summary>
+    public static SliceJudged Quiet(IReadOnlyDictionary<string, DateTimeOffset> quiet)
+    {
+        var part = new JsonObject();
+        foreach (var (session, since) in quiet.OrderBy(each => each.Key, StringComparer.Ordinal))
+        {
+            part[session] = JsonSerializer.SerializeToNode(new { Since = since }, IpcJson.Options);
+        }
+
+        return new SliceJudged(QuietPartition, part);
+    }
+
+    /// <summary>Wake the slice where the watcher's mark moved (<see cref="SessionWatch.Changed"/>).</summary>
+    public static IDisposable HearQuiet(SessionWatch watch, Action wake)
+    {
+        void Heard(string _) => wake();
+
+        watch.Changed += Heard;
+        return new Hearing(() => watch.Changed -= Heard);
     }
 
     /// <summary>

@@ -41,6 +41,9 @@ public sealed record AttentionFacts
     /// <summary>The agents' asks for a helper that wait on the person's yes, as <c>HELPER_WAITS</c> answers them.</summary>
     public IReadOnlyList<JsonObject> Helpers { get; init; } = [];
 
+    /// <summary>The sessions the watcher brings to the person (SESSWATCH1a), as its memory holds them.</summary>
+    public IReadOnlyList<JsonObject> Quiet { get; init; } = [];
+
     /// <summary>The agents' asks to hand their sessions over that wait on the person's yes or no (NOTIFY2e), as the look holds them.</summary>
     public IReadOnlyList<JsonObject> HandOvers { get; init; } = [];
 
@@ -321,6 +324,29 @@ public static class NeedsAPerson
             row["title"] = line.Length > 0 ? line : note;
             row["agent"] = Text(wait, "agent");
             row["stands"] = record is not null && !TurnRuns.Contains(Text(record, "state") ?? "");
+            rows.Add(row);
+        }
+
+        // A session the watcher brings to the person (SESSWATCH1a, D200, the session-watch design §2.3, §5.2): keyed by the session, since
+        // when it was last heard, its repository, its quest, and the minutes, whether it is busy (then offered no end), whether it is an
+        // intake and whether the person's words wait to reach it. Its turn stands still on the person while it is quiet.
+        foreach (var wait in facts.Quiet)
+        {
+            var session = Text(wait, "session");
+            var record = sessions.GetValueOrDefault(session ?? "");
+            var row = Row("quiet", session, Truthy(wait, "since"), SessionScope(session));
+            row["where"] = Text(record, "repository") ?? "";
+            row["session"] = session;
+            row["quest"] = Text(wait, "quest");
+            row["quiet"] = new JsonObject
+            {
+                ["minutes"] = wait["minutes"]?.DeepClone(),
+                ["busy"] = wait["busy"]?.DeepClone(),
+                ["intake"] = Text(wait, "kind") == SessionWatch.Intake,
+                ["words"] = wait["words"]?.DeepClone(),
+            };
+            // It waits for its repository's heavy-run slot behind a holder, named by the holder's session, empty for a terminal's run.
+            if (wait["heavy"] is JsonValue heavy) row["quiet"]!["heavy"] = heavy.DeepClone();
             rows.Add(row);
         }
 

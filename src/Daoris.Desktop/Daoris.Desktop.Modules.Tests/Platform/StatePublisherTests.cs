@@ -461,6 +461,8 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     // MIXAGENT1c: the person's yes and no to a session's agent's own ask to hand it over, and the ask's read.
     [InlineData("SESSION_HAND_OVER_APPROVE", "sessions,driver", "session")]
     [InlineData("SESSION_HAND_OVER_DECLINE", "sessions,driver", "session")]
+    [InlineData("SESSION_QUIET_CARRY_ON", "sessions,driver", "id")]
+    [InlineData("SESSION_QUIET_LEAVE", "sessions", "id")]
     [InlineData("SESSION_HAND_OVER_ASK", "", null)]
     // PARKVIEW1: a parked session's question, a read of the file its agent asked it in.
     [InlineData("SESSION_QUESTION", "", null)]

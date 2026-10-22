@@ -37,6 +37,12 @@ public sealed class SessionProcesses(string? markers = null)
 
         /// <summary>Whether it was handed a server that drives Daoris's browser (BRW8).</summary>
         public bool DrivesBrowser;
+
+        /// <summary>
+        /// The job it joined as it was tracked (ORPHAN1), held here too since SESSWATCH1a so the watcher reads its CPU and state E ends
+        /// what holds its capture; the disposer <see cref="Track"/> returns still owns it and closes it.
+        /// </summary>
+        public ProcessJob? Job;
     }
 
     private readonly object _gate = new();
@@ -63,7 +69,8 @@ public sealed class SessionProcesses(string? markers = null)
                 }
             },
             // COWORK1c: the person's stop ends what was kept for the run with it; any other end leaves it on the record to go on.
-            personStopped: () => StopMade(sessionId) is { Reason: null },
+            // SESSWATCH1a: the person's End and carry on keeps them, for the carry-on it starts (the session-watch design §2.3).
+            personStopped: () => StopMade(sessionId) is { Reason: null } stop && !Observation.IsQuietPressed(stop.Note?.Parts),
             left: words => KeptLeft?.Invoke(sessionId, words));
         lock (_gate) _inboxes[sessionId] = inbox;
         return inbox;
@@ -372,9 +379,18 @@ public sealed class SessionProcesses(string? markers = null)
     public IDisposable Track(string sessionId, Process process, string? refusesInput = null, bool drivesBrowser = false)
     {
         var job = ProcessJob.Hold(process);
-        lock (_gate) _running[sessionId] = new Entry { Process = process, RefusesInput = refusesInput, DrivesBrowser = drivesBrowser };
+        lock (_gate) _running[sessionId] = new Entry { Process = process, RefusesInput = refusesInput, DrivesBrowser = drivesBrowser, Job = job };
         Mark(sessionId, process);
         return new Untrack(this, sessionId, job);
+    }
+
+    /// <summary>
+    /// The job a running session's process joined (SESSWATCH1a): what the watcher reads its CPU from, where its accounting holds
+    /// (<see cref="ProcessJob.Holds"/>). Null where the session runs no process here.
+    /// </summary>
+    public ProcessJob? JobOf(string sessionId)
+    {
+        lock (_gate) return _running.TryGetValue(sessionId, out var entry) ? entry.Job : null;
     }
 
     /// <summary>

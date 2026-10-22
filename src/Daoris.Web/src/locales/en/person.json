@@ -80,6 +80,8 @@
   "person.route.SESSION_PERMISSION_ANSWER": "answer a tool call a session holds for you",
   "person.route.SESSION_HAND_OVER_APPROVE": "say yes to an agent's ask to hand its session over",
   "person.route.SESSION_HAND_OVER_DECLINE": "say no to an agent's ask to hand its session over",
+  "person.route.SESSION_QUIET_CARRY_ON": "end a quiet session's run and carry its work on",
+  "person.route.SESSION_QUIET_LEAVE": "leave a quiet session running",
   "person.route.SESSION_ANSWER_ALONE": "let a session's answer go on alone, or keep it",
   "person.route.RETRY_QUEST": "try a parked quest again",
   "person.route.HELP_APPLY": "apply a proposal of Ask Daoris",

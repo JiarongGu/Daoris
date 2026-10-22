@@ -442,6 +442,19 @@ public static class NoteCodes
     public static readonly NoteCode EndedSetupChanged = new("ended.setup-changed", ["from", "to"]);
     public static readonly NoteCode EndedWordsSetup = new("ended.words-setup", []);
     public static readonly NoteCode EndedTimeout = new("ended.timeout", ["minutes"]);
+    // SESSWATCH1a (D200, the session-watch design §2, §5.1): its agent's process exited but something it started held its output, so
+    // Daoris ended what was left and the run concluded by its exit (state E); the person ended a quiet run to carry it on (`minutes`
+    // of nothing heard); and the watcher's own lines, a session gone quiet and the person's *Leave it running*.
+    public static readonly NoteCode EndedGone = new("ended.gone", []);
+    // The watcher's own end of a quiet run (`minutes` unheard): a headless run's --quiet-end in this build.
+    public static readonly NoteCode EndedQuiet = new("ended.quiet", ["minutes"]);
+    public static readonly NoteCode EndedQuietPressed = new("ended.quiet-pressed", ["minutes"]);
+    public static readonly NoteCode WatchQuiet = new("watch.quiet", ["minutes"]);
+    // The same mark naming what it was doing (the session-watch design §5.1): the call its agent was inside, or the background work it
+    // waited on that showed nothing (`works`, a list).
+    public static readonly NoteCode WatchQuietCall = new("watch.quiet-call", ["minutes", "call"]);
+    public static readonly NoteCode WatchQuietWork = new("watch.quiet-work", ["minutes", "works"]);
+    public static readonly NoteCode WatchLeft = new("watch.left", []);
     public static readonly NoteCode EndedStopped = new("ended.stopped", []);
     public static readonly NoteCode EndedLostClaim = new("ended.lost-claim", []);
     // A take lost to the person's reopen of the work its step grew from (FABRIC-CLOSE1c18), not to another machine's take.

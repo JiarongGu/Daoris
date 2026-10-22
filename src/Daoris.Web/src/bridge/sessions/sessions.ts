@@ -57,7 +57,7 @@ export const sessionsSlice: SliceSpec = {
  * the person's answer to its permission request (AUTONOMY1b3b), and whether Daoris told the session it ran past its pipeline's bound
  * (FABRIC-PIPELINE1c), each absent from a host older than the mark.
  */
-export type PushedCall = { title: string; since: string; waiting?: boolean; told?: boolean };
+export type PushedCall = { title: string; since: string; waiting?: boolean; told?: boolean; quiet?: string };
 
 const isCall = (value: unknown): value is PushedCall =>
   typeof value === 'object' && value !== null
@@ -75,9 +75,17 @@ export const callsSlice: SliceSpec = {
   compose: (partitions, judged) => {
     if (!judged) return undefined;
     const calls: Record<string, PushedCall> = {};
-    for (const part of partitions.values()) {
-      if (typeof part !== 'object' || part === null || Array.isArray(part)) continue;
+    for (const [name, part] of partitions) {
+      if (name === 'quiet' || typeof part !== 'object' || part === null || Array.isArray(part)) continue;
       for (const [session, call] of Object.entries(part)) if (isCall(call)) calls[session] = call;
+    }
+    // SESSWATCH1a: the watcher's mark laid over each quiet session's call, or a call of no title where it makes none (§5.1).
+    const quiet = partitions.get('quiet');
+    if (typeof quiet === 'object' && quiet !== null && !Array.isArray(quiet)) {
+      for (const [session, mark] of Object.entries(quiet)) {
+        const since = (mark as { since?: unknown } | null)?.since;
+        if (typeof since === 'string') calls[session] = { ...(calls[session] ?? { title: '', since }), quiet: since };
+      }
     }
     return calls;
   },
@@ -149,6 +157,38 @@ export const stopNotice = (answer: StopAnswer) =>
 
 export const useStopSession = () => useMutation({
   mutationFn: (id: string) => call<StopAnswer>('STOP_SESSION', { id }),
+});
+
+/**
+ * A quiet row's press answered (SESSWATCH1a): whether it moved, and where it did not, its code (`not-quiet`, `not-quest`, `gone`) and the
+ * driver's sentence.
+ */
+export type QuietAnswer = { done: boolean; why: string | null; message: string };
+
+const quietOf = (answer: unknown, field: 'stopped' | 'left'): QuietAnswer => {
+  const said = answer as { stopped?: unknown; left?: unknown; why?: unknown; message?: unknown } | null | undefined;
+  return {
+    done: said?.[field] === true,
+    why: typeof said?.why === 'string' && said.why ? said.why : null,
+    message: typeof said?.message === 'string' ? said.message : '',
+  };
+};
+
+/**
+ * *End and carry on* on a quiet quest session's row (SESSWATCH1a, D200, the session-watch design §2.3): the person's stop, released in
+ * the same press, the run ending `stopped` with no strike and the work going on in a new part in the same tree, handed the person's
+ * waiting words. `SESSION_QUIET_CARRY_ON`; a refusal is the answer, by its code.
+ */
+export const useQuietCarryOn = () => useMutation({
+  mutationFn: async (id: string) => quietOf(await call<unknown>('SESSION_QUIET_CARRY_ON', { id }), 'stopped'),
+});
+
+/**
+ * *Leave it running* on a quiet session's row (SESSWATCH1a): the watcher stands down for it until it is heard again, and the row goes.
+ * `SESSION_QUIET_LEAVE`; a refusal is the answer, by its code.
+ */
+export const useQuietLeave = () => useMutation({
+  mutationFn: async (id: string) => quietOf(await call<unknown>('SESSION_QUIET_LEAVE', { id }), 'left'),
 });
 
 /**

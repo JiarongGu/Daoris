@@ -170,7 +170,7 @@ public sealed class ReviewTreeTests : IDisposable
         var config = DriverConfig.Empty with
         {
             Adapter = "claude-code",
-            TimeoutMinutes = 2,
+            TestBound = 2,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Agent()] },
         };
         var adapters = AdapterSet.Built();
@@ -240,7 +240,7 @@ public sealed class ReviewTreeTests : IDisposable
         var config = DriverConfig.Empty with
         {
             Adapter = adapter,
-            TimeoutMinutes = 2,
+            TestBound = 2,
             Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter] = SkillsSpawnProbe.Command(_home, adapter) },
         };
         var adapters = AdapterSet.Built();

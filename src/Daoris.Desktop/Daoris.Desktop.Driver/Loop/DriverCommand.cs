@@ -16,7 +16,14 @@ public enum LoopMode
 /// <summary>A loop, asked for by name.</summary>
 /// <param name="Mode">How it runs.</param>
 /// <param name="Share">Run beside a live driver on the same home, on purpose, rather than be refused (D104).</param>
-public sealed record LoopRequest(LoopMode Mode, bool Share);
+public sealed record LoopRequest(LoopMode Mode, bool Share)
+{
+    /// <summary>
+    /// <c>--quiet-end &lt;minutes&gt;</c> (SESSWATCH1a, D200, the session-watch design §2): a session of this run unheard that long, busy or
+    /// not, is ended and carried on, for a run nobody watches that must return. Only with <c>--once</c> or <c>--until-idle</c>; null waits.
+    /// </summary>
+    public int? QuietEnd { get; init; }
+}
 
 /// <summary>
 /// What <c>daoris-driver</c> was asked for (DRV8a, D104): a loop only by its verb, and anything else the
@@ -31,10 +38,12 @@ public static class DriverCommand
         """
         usage: daoris-driver <verb> …
 
-          drive [--once | --until-idle] [--share]
+          drive [--once | --until-idle] [--quiet-end <minutes>] [--share]
               drive this home: start a session for each quest a repository opted in here can take, and
               watch until Ctrl+C. --once ticks once; --until-idle ticks until nothing starts. A home
-              another live driver drives is refused, naming it; --share runs beside it on purpose.
+              another live driver drives is refused, naming it; --share runs beside it on purpose. No
+              session is ended on time: a quiet one is said, and --quiet-end ends one of this run
+              unheard that long and carries it on, for a run nobody watches.
           chat --repository <name> [--adapter <name>] [--profile <name>] [--own-tree]
               a conversation in a repository: stdin is you, stdout the session.
           ask [--workspace <name>] [--to <repo>] [--file <path>]… [--url <address>]… "…"
@@ -324,15 +333,29 @@ public static class DriverCommand
         }
 
         bool once = false, untilIdle = false, share = false;
-        foreach (var flag in flags)
+        int? quietEnd = null;
+        using var words = flags.GetEnumerator();
+        while (words.MoveNext())
         {
+            var flag = words.Current;
             switch (flag)
             {
                 case "--once": once = true; break;
                 case "--until-idle": untilIdle = true; break;
                 case "--share": share = true; break;
+                // SESSWATCH1a: a whole number of minutes, at least one.
+                case "--quiet-end":
+                    if (!words.MoveNext() || !int.TryParse(words.Current, System.Globalization.NumberStyles.None,
+                            System.Globalization.CultureInfo.InvariantCulture, out var minutes) || minutes < 1)
+                    {
+                        problem = "`--quiet-end` takes a whole number of minutes, at least 1 — e.g. `--quiet-end 30`.";
+                        return null;
+                    }
+
+                    quietEnd = minutes;
+                    break;
                 default:
-                    problem = $"`drive` takes --once, --until-idle and --share, not `{flag}`.";
+                    problem = $"`drive` takes --once, --until-idle, --quiet-end and --share, not `{flag}`.";
                     return null;
             }
         }
@@ -343,7 +366,13 @@ public static class DriverCommand
             return null;
         }
 
-        return new LoopRequest(once ? LoopMode.Once : untilIdle ? LoopMode.UntilIdle : LoopMode.Watch, share);
+        if (quietEnd is not null && !once && !untilIdle)
+        {
+            problem = "`--quiet-end` is for a run that must return, `--once` or `--until-idle`; the watch waits for the person.";
+            return null;
+        }
+
+        return new LoopRequest(once ? LoopMode.Once : untilIdle ? LoopMode.UntilIdle : LoopMode.Watch, share) { QuietEnd = quietEnd };
     }
 
     /// <summary>

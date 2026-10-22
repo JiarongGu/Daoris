@@ -40,6 +40,7 @@
   "work.handOver.working": "先停止它这一轮，再在同一个文件夹里，用你选的智能体开一段新对话继续。Daoris 会把它保留的这段对话交给那个智能体：你的请求、计划、最后的话和未提交的改动。智能体自己的上下文不会带过去。",
   "work.handOver.nobody": "本机没有其他可转交的智能体。",
   "work.handOver.kept": "这一轮结束后，会在新的对话里用 {{agent}} 继续。",
+  "work.handOver.keptQuest": "下次查看时会停止它，然后在同一工作树中由 {{agent}} 接着做。",
   "work.handOver.open": "打开对话 {{session}}",
   "work.handOver.unbriefed": "新对话已开启，但 Daoris 保留的这段对话内容没有送达它的智能体：请告诉它你之前进行到哪里。",
   "work.handOver.offer.label": "转交提议",

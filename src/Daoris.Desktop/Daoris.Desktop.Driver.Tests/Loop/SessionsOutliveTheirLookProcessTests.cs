@@ -149,7 +149,7 @@ public sealed class SessionsOutliveTheirLookProcessTests : IDisposable
             Drivable = ["engine", "tools"],
             Adapter = "stub",
             Cap = 3,
-            TimeoutMinutes = 2,
+            TestBound = 2,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Holding()] },
         };

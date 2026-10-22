@@ -272,7 +272,6 @@
   "help.grants.op.housekeeping.drop-recovery": "Delete recovery refs nothing holds",
   "help.grants.op.settings.notify": "Announce what needs you or ended",
   "help.grants.op.settings.language": "A session’s language",
-  "help.grants.op.settings.timeout": "How long one session may run",
   "help.grants.op.settings.cap": "Sessions at once on this machine",
   "help.grants.op.settings.cooloff": "Cool-off when no time is named",
   "help.grants.never.housekeeping": "Each target by its recorded identity and owner, judged again before it acts; a running or waiting session keeps its own branch, and nothing is forced.",

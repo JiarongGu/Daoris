@@ -55,7 +55,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
             Drivable = ["engine"],
             Trees = ["engine"],
             Adapter = "acp-stub",
-            TimeoutMinutes = 1,
+            TestBound = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Log, mode] },
         };
@@ -334,7 +334,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
         Drivable = ["engine"],
         Trees = ["engine"],
         Adapter = "acp-stub",
-        TimeoutMinutes = 1,
+        TestBound = 1,
         PollSeconds = 1,
         Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", agent, Log, mode] },
     }).WithAccess(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Permissions, permissions)] });

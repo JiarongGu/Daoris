@@ -40,6 +40,7 @@
   "work.handOver.working": "Its turn is stopped, then it goes on in a new conversation with the agent you choose, in the same folder. Daoris hands that agent what it kept of this one: your request, its plan, its last words and what is uncommitted. The agent’s own context does not carry over.",
   "work.handOver.nobody": "No other agent is set up on this machine to hand it over to.",
   "work.handOver.kept": "It goes on with {{agent}} when its turn ends, in a conversation of its own.",
+  "work.handOver.keptQuest": "It is stopped at the driver’s next look, then goes on in the same tree with {{agent}}.",
   "work.handOver.open": "Open conversation {{session}}",
   "work.handOver.unbriefed": "The new conversation opened, but what Daoris kept of this one did not reach its agent: tell it where you were.",
   "work.handOver.refused.notConversation": "This is a quest’s session, which is handed over from a terminal for now: daoris-driver sessions hand-over.",

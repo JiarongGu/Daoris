@@ -605,7 +605,7 @@ public sealed class IntakeTests : IDisposable
         var config = DriverConfig.Empty with
         {
             Adapter = adapter,
-            TimeoutMinutes = 1,
+            TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter] = SkillsSpawnProbe.Command(_home, adapter) },
         };
         await using var service = StandInService.Start(Circle, Ask());
@@ -658,7 +658,7 @@ public sealed class IntakeTests : IDisposable
         var config = (DriverConfig.Empty with
         {
             Adapter = "claude-code",
-            TimeoutMinutes = 1,
+            TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", claude] },
         }).WithIntake("claude-code");
 
@@ -754,7 +754,7 @@ public sealed class IntakeTests : IDisposable
     private DriverConfig Config() => DriverConfig.Empty with
     {
         Adapter = "stub",
-        TimeoutMinutes = 1,
+        TestBound = 1,
         Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Agent()] },
     };
 

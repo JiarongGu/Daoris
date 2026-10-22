@@ -1,6 +1,6 @@
 {
   "settings.checks.label": "Sessions' checks",
-  "settings.checks.why": "What a driven session here may run of the repository's checks. Light keeps whole suites out of its sessions, so a session ends when its work does, not at its timeout.",
+  "settings.checks.why": "What a driven session here may run of the repository's checks. Light keeps whole suites out of its sessions, so a session is not held by a suite it never needed.",
   "settings.checks.twin": "`daoris-driver checks {{repository}} light|heavy-at-end|--clear`",
   "settings.checks.mode": "Sessions' checks in {{name}}",
   "settings.checks.value.today": "As before",

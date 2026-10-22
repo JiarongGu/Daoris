@@ -144,7 +144,7 @@ public sealed class WorkflowBindStartTickTests : IDisposable
             Drivable = ["engine"],
             Adapter = "claude-code",
             Cap = 4,
-            TimeoutMinutes = 1,
+            TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", Harness()] },
         };
         var adapters = AdapterSet.Built();

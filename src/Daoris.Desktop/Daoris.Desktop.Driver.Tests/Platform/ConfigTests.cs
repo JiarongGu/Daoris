@@ -124,6 +124,43 @@ public sealed class ConfigTests
     }
 
 
+    /// <summary>
+    /// 🔴 SESSWATCH1a (D200, the session-watch design §3, case 15): <c>timeoutMinutes</c> is kept, never read for a bound. A loaded file
+    /// keeps it as stored through a save that changes something else, so an older build finds the person's value after a rollback; a
+    /// configuration built in memory writes none, and the tests' bound is never written or read.
+    /// </summary>
+    [Fact]
+    public void A_timeout_is_kept_as_stored_and_never_written_from_memory()
+    {
+        var dir = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "config-kept-timeout", Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(dir);
+        using var cleaned = new Disposer(() => GitSeed.Remove(dir));
+        var path = Path.Combine(dir, "driver.json");
+        File.WriteAllText(path, """
+            {
+              "cap": 2,
+              "timeoutMinutes": 90,
+              "pollSeconds": 15
+            }
+
+            """);
+
+        var loaded = DriverConfig.Load(path);
+        Assert.Equal(90, loaded.KeptTimeoutMinutes);
+        Assert.Null(loaded.TestBound);
+        loaded.WithCap(4).Save(path);
+
+        var text = File.ReadAllText(path);
+        Assert.Contains("\"timeoutMinutes\": 90", text);
+        Assert.Contains("\"cap\": 4", text);
+        Assert.Equal(90, DriverConfig.Load(path).KeptTimeoutMinutes);
+
+        var built = (DriverConfig.Empty with { TestBound = 2 }).WithCap(3).ToJson();
+        Assert.DoesNotContain("timeoutMinutes", built);
+        Assert.Null(DriverConfig.Parse(built).KeptTimeoutMinutes);
+        Assert.Null(DriverConfig.Parse("""{ "testBound": 2 }""").TestBound);
+    }
+
     [Fact]
     public void A_full_config_round_trips()
     {
@@ -143,7 +180,7 @@ public sealed class ConfigTests
         Assert.Equal(["Tools"], config.Holds);
         Assert.Equal(3, config.Cap);
         Assert.Equal("stub", config.Adapter);
-        Assert.Equal(10, config.TimeoutMinutes);
+        Assert.Equal(10, config.KeptTimeoutMinutes);
         Assert.Equal(5, config.PollSeconds);
         Assert.Equal(["node", "local/agent.mjs"], config.Commands["stub"]);
     }
@@ -252,7 +289,7 @@ public sealed class ConfigTests
         }
         finally
         {
-            Directory.Delete(Path.GetDirectoryName(path)!, recursive: true);
+            GitSeed.Remove(Path.GetDirectoryName(path)!);
         }
     }
 }

@@ -111,7 +111,7 @@ public sealed class OpinionResumeTickTests : IDisposable
             Drivable = ["engine"],
             Trees = ["engine"],
             Adapter = "claude-code",
-            TimeoutMinutes = 1,
+            TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", NativeHarness(), Log] },
         };
         var driver = new Daoris.Driver.Driver(
@@ -165,7 +165,7 @@ public sealed class OpinionResumeTickTests : IDisposable
             Drivable = ["engine"],
             Trees = ["engine"],
             Adapter = "acp-stub",
-            TimeoutMinutes = 1,
+            TestBound = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Log, mode] },
         };

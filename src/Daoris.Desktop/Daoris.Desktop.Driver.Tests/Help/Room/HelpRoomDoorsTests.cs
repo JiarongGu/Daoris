@@ -19,7 +19,7 @@ public sealed class HelpRoomDoorsTests
             "daoris driver drive|undrive <repository>", "daoris driver hold|resume <repository>",
             "daoris driver trees <repository> on|off", "daoris driver line <repository> <branch>|--clear",
             "daoris driver landing <repository> merge|branch <pattern>|--clear", "daoris driver intake <agent>|off",
-            "daoris driver helper <agent>|off", "daoris driver strikes <n>", "daoris driver timeout <minutes>",
+            "daoris driver helper <agent>|off", "daoris driver strikes <n>",
             "daoris driver notify on|off", "daoris agent rules", "daoris-driver ask --workspace <name>",
             // BRSCOPE1a: the clean-up and bringing up to date take one workspace's checkouts with `--workspace`.
             "daoris-driver trees clean [--workspace <name>]",

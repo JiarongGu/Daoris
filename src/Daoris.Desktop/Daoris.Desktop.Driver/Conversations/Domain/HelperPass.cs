@@ -43,8 +43,11 @@ public static class HelperPass
     /// <summary>The door a helper's record is opened by, as the session log's <c>session.started</c> names it.</summary>
     public const string OpenedKind = "helper";
 
-    /// <summary>How long one helper's turn may run: its own bound, or the machine's session timeout if that comes first.</summary>
-    public static int Bound(DriverConfig config) => Math.Max(1, Math.Min(HelperInstruction.DefaultMinutes, config.TimeoutMinutes));
+    /// <summary>
+    /// How long one helper's turn may run: its own bound, never capped by a session's time (SESSWATCH1a, D200); only the tests' backstop
+    /// (<see cref="DriverConfig.TestBound"/>) comes first.
+    /// </summary>
+    public static int Bound(DriverConfig config) => Math.Max(1, Math.Min(HelperInstruction.DefaultMinutes, config.TestBound ?? int.MaxValue));
 
     /// <summary>
     /// What a helper's transcript says where this machine has no connector: it can read, but its answer is said only through the

@@ -223,7 +223,6 @@ plugin, see whether one of these does the job: propose installing it with `plugi
 | park a quest after failed sessions | Settings → Driver | `daoris driver strikes <n>` |
 | start a quest its failed sessions parked again | Quests → the quest's page → Try again | `daoris driver retry <quest>` |
 | start a quest your stop holds again: carry a taken one on in its tree, or plan an open one | Quests → the quest's page, whose *Sitting* names the session | `daoris driver retry <quest> --session <id>` |
-| bound how long one session runs | (no screen yet) | `daoris driver timeout <minutes>` |
 | set how long an account cools when its agent hits a limit and names no time | Settings → Driver → Cool-off when no time is named | `daoris driver cooloff <minutes>` |
 | set how long Daoris keeps set-aside trees, unused downloads, the machine log or finished work's records | Settings → This Daoris → Disk space → Change… | `daoris driver keep <kind> <rule>` |
 | bound how many sessions run at once | Settings → Driver → Sessions at once on this machine | `daoris driver cap <n>` |

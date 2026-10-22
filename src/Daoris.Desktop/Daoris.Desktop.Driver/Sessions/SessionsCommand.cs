@@ -1602,7 +1602,7 @@ public static class SessionsCommand
     }
 
     /// <summary>This build's adapters with the home's plugins, as the loop lays them for a look (D64): what a terminal with no roster of its own judges by.</summary>
-    private static Func<string, HandOverAgent?> DrivesBy(string home)
+    public static Func<string, HandOverAgent?> DrivesBy(string home)
     {
         var built = AdapterSet.Built();
         return QuestHandOver.Roster(built.WithPlugins(PluginCatalog.Load(home, built.Names)), home);

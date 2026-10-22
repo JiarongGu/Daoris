@@ -8,7 +8,9 @@ import { Button, Dot, Icon, Inline, SelectField } from '../../design/ui';
 import type { AccountRowFacts } from './accountWords';
 import type { RuleProposal } from '../../settings/repository/AgentRules';
 import type { GraphEnd, HeldAttempt, HeldResolution, UnreadableRecord } from '../head/milestone';
-import { ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers, type GitHeld, type StaleSince } from './attention';
+import {
+  ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers, type GitHeld, type QuietWait, type StaleSince,
+} from './attention';
 import { Note } from '../Note';
 import { type Answered, InlineConfirm } from '../InlineConfirm';
 import { hasNote, type NoteRecord } from '../noteLines';
@@ -22,7 +24,8 @@ import { TrustAsk } from '../waits/TrustAsk';
 export type AttentionKind =
   | 'parked' | 'parked-quest' | 'go-ahead' | 'trust' | 'account-wait' | 'signed-out'
   | 'proposal' | 'intake' | 'departure' | 'set-up' | 'rule' | 'unanswerable'
-  | 'review' | 'opinion' | 'helper' | 'hand-over' | 'work' | 'permission' | 'answer' | 'confirmation' | 'space' | 'git-held';
+  | 'review' | 'opinion' | 'helper' | 'hand-over' | 'work' | 'permission' | 'answer' | 'confirmation' | 'space' | 'git-held'
+  | 'quiet';
 
 /**
  * One thing that is waiting on a person, as Overview's band shows it.
@@ -56,6 +59,10 @@ export type AttentionKind =
  *
  * **KEEP1f added `space`**: a volume still below its free-space floor once Daoris freed what it can make again (the cleanup design
  * §3.2). What else goes is the person's to choose, so its door, *Free up space…*, is its one control: it opens the *Disk space* card.
+ *
+ * **SESSWATCH1a added `quiet`**: a running session the watcher brings to the person (D200, the session-watch design §2.3, §5.2), quiet
+ * with nothing running, or busy with nothing heard. Daoris ended nothing: its presses are the person's, *End and carry on* (a quiet
+ * quest session's alone), *Hand over…* (a quest session's), *Stop…* and *Leave it running*.
  *
  * **GITAUTH1a added `git-held`**: a git remote held because it could not authenticate (D198, the git auth design §5.2), said once.
  * Nothing connects for it until a change lifts it or the person's *Try again*, its one act, on the row itself.
@@ -145,6 +152,8 @@ export type Attention = {
   read?: string | null;
   /** The sentence explaining what the person is being asked to settle. */
   detail?: string | null;
+  /** A `quiet` row's watch (SESSWATCH1a): its minutes, whether it is busy (offered no end), an intake, and whether the person's words wait. */
+  quiet?: QuietWait;
   /** A `git-held` row's held group (GITAUTH1a): the repositories its *Try again* lifts, and why, which its mark's ink says. */
   git?: GitHeld;
   /** The workspace a `git-held` row was judged in, which its *Try again* names; absent where .NET scoped it to none. */
@@ -206,6 +215,11 @@ export type AttentionActs = {
   answerAlone?: (item: Attention, goOn: boolean) => void;
   /** A held git remote's *Try again* (GITAUTH1a): its repositories' holds lifted, so the next act connects once. */
   gitTryAgain?: (item: Attention) => void;
+  /**
+   * A quiet session's presses (SESSWATCH1a): *End and carry on*, *Hand over…* (its page's hand-over asked), *Stop…* and *Leave it
+   * running*, each told how it ended where it asked once.
+   */
+  quiet?: (item: Attention, act: 'carry-on' | 'hand-over' | 'stop' | 'leave', answered?: Answered) => void;
 };
 
 /** Which handler each act needs. */
@@ -246,6 +260,10 @@ const HANDLER: Record<AttentionActId, keyof AttentionActs> = {
   'again-step': 'held',
   'stop-partial': 'held',
   'git-try-again': 'gitTryAgain',
+  'quiet-carry-on': 'quiet',
+  'quiet-hand-over': 'quiet',
+  'quiet-stop': 'quiet',
+  'quiet-leave': 'quiet',
 };
 
 /** The kinds that wait in a circle rather than in a repository. */
@@ -350,6 +368,8 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
     else if (act === 'open-records') acts.openRecords?.(item);
     else if (act === 'again-step') acts.held?.(item, 'again');
     else if (act === 'git-try-again') acts.gitTryAgain?.(item);
+    else if (act === 'quiet-hand-over') acts.quiet?.(item, 'hand-over');
+    else if (act === 'quiet-leave') acts.quiet?.(item, 'leave');
   };
   const label = (act: AttentionActId, account?: string): string => {
     switch (act) {
@@ -404,6 +424,11 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
       case 'stop-partial': return t('work.milestone.closed.act.stop');
       // GITAUTH1a: a held git remote's one act, *Try again*, the word a quest's retry is.
       case 'git-try-again': return t('work.attention.act.retry');
+      // SESSWATCH1a: the quiet row's own presses, and the session page's own *Hand over…* and *Stop…*.
+      case 'quiet-carry-on': return t('work.attention.act.carryOn');
+      case 'quiet-hand-over': return t('work.attention.act.handOver');
+      case 'quiet-stop': return t('work.act.stop');
+      case 'quiet-leave': return t('work.attention.act.leave');
     }
   };
 
@@ -425,7 +450,11 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
           {/* A host key changed since ssh trusted it (GITAUTH1a, the git auth design §7.4) wears danger's ink: it may be another host. */}
           <Dot
             tone={item.git?.class === 'host-changed' ? 'failed' : 'parked'}
-            label={t(item.kind === 'go-ahead' && item.stale ? 'work.attention.goAheadStale' : `work.attention.${item.kind}`)}
+            label={t(
+              item.kind === 'go-ahead' && item.stale ? 'work.attention.goAheadStale'
+                : item.kind === 'quiet' && item.quiet?.busy ? 'work.attention.quietBusy'
+                  : `work.attention.${item.kind}`,
+            )}
           />
           <span
             id={titleId}
@@ -514,6 +543,8 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
               else if (asking === 'accept-rule') acts.acceptRule?.(item, answered);
               else if (asking === 'not-yet') acts.notYet?.(item, words.trim(), answered);
               else if (asking === 'opinion-anyway') acts.opinionAnyway?.(item, words.trim() || undefined, answered);
+              else if (asking === 'quiet-carry-on') acts.quiet?.(item, 'carry-on', answered);
+              else if (asking === 'quiet-stop') acts.quiet?.(item, 'stop', answered);
               else answered.done();
             }}
             // The question closes once the grant is written; a refusal stays in it (UXFIX2b3b).
@@ -563,7 +594,13 @@ function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onC
   const notYet = act === 'not-yet';
   // *Go on anyway…* says what stays unsettled, and takes words the person may give (XAGENT1g, the second-agent design §8.5).
   const anyway = act === 'opinion-anyway' && item.opinion ? item.opinion.opinion : null;
-  const sentence = anyway
+  // SESSWATCH1a: what ending a quiet session does, and that the person's waiting words go to the next part (§5.2).
+  const quietAsk = act === 'quiet-carry-on' || act === 'quiet-stop';
+  const quietSays = act === 'quiet-carry-on' ? 'work.attention.ask.carryOn'
+    : item.quiet?.intake ? 'work.attention.ask.quietStopIntake' : 'work.attention.ask.quietStop';
+  const sentence = quietAsk
+    ? [t(quietSays), ...(act === 'quiet-carry-on' && item.quiet?.words ? [t('work.attention.quietWords')] : [])].join(' ')
+    : anyway
     ? t('opinion.ask.anyway', { unsettled: unsettledWords(t, opinionState(anyway.state), anyway) })
     : notYet
     ? t(item.session ? 'review.ask.notYet' : 'review.ask.notYetOwn', { quest: item.id })
@@ -575,7 +612,11 @@ function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onC
         : act === 'accept-rule'
           ? t('work.attention.ask.acceptRule', { change: item.title })
           : t('work.attention.ask.choose', { workspace: item.where });
-  const move = anyway
+  const move = act === 'quiet-carry-on'
+    ? t('work.attention.act.carryOn')
+    : act === 'quiet-stop'
+    ? t('work.act.stopMeanIt')
+    : anyway
     ? t('opinion.ask.anywayMeanIt')
     : notYet
     ? t('review.ask.notYetMeanIt')
@@ -592,7 +633,7 @@ function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onC
     // Only a refusal ends or removes something (platform UX §4): every other ask here is outward and loses nothing.
     <InlineConfirm
       className="mt-2"
-      tone={act === 'refuse' ? 'danger' : 'primary'}
+      tone={act === 'refuse' || quietAsk ? 'danger' : 'primary'}
       label={label}
       says={<Inline text={sentence} />}
       meanIt={move}

@@ -98,7 +98,7 @@ public sealed class HandOverQuestTickTests : IDisposable
         Drivable = ["engine"],
         Trees = ["engine"],
         Adapter = "acp-stub",
-        TimeoutMinutes = 1,
+        TestBound = 1,
         PollSeconds = 1,
         Commands = new Dictionary<string, IReadOnlyList<string>>
         {

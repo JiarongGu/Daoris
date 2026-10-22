@@ -178,9 +178,13 @@ export function SessionRow({
   // timed from its start whenever this window opened; said only while it works, never of a chat between turns.
   // HEAVYSLOT1: a heavy run it holds or waits for is said in place of its call, read from the slot's records, never its output.
   const heavyPart = running ? heavy ?? null : null;
-  const calling = shown === 'working' && !heavyPart ? grouping?.calling : null;
+  const pushed = shown === 'working' ? grouping?.calling ?? null : null;
+  // SESSWATCH1a (the session-watch design §5.1): quiet since it was last heard, neutral, after a heavy run's line where both hold. A
+  // quiet session making no call carries a call of no title, which says nothing of its own.
+  const quiet = pushed?.quiet ?? null;
+  const calling = pushed && !heavyPart && (pushed.title || pushed.waiting) ? pushed : null;
   // WAITSAY1c2: a pushed call moves no tick, so its elapsed time steps by its own clock while it is said.
-  useNow(calling || heavyPart ? 15_000 : null);
+  useNow(calling || heavyPart || quiet ? 15_000 : null);
 
   // One line of secondary facts, each absent when it has nothing to say — `MetaLine`'s rule, and
   // what keeps a rail of a dozen rows readable at 18rem. What the two absences MEAN is on the
@@ -193,6 +197,7 @@ export function SessionRow({
     placed ? t(placed.line, placed.values) : null,
     calling ? callLine(t, calling) : null,
     heavyPart ? heavyLine(t, heavyPart, (id) => heavyBehind || id) : null,
+    quiet ? t('work.rail.quiet', { time: elapsed(quiet) }) : null,
     // An intake is a chat only by the way it was opened (INT4b); it says what it is (INT4g). So is a second opinion's reviewer,
     // marked as one (XAGENT1g, the second-agent design §9).
     t(isIntake(session) ? 'work.intake.kind' : isOpinion(session) ? 'opinion.session.kind'

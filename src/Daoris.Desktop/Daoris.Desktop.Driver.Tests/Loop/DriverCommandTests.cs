@@ -37,6 +37,33 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
+    /// SESSWATCH1a (D200, the session-watch design §2, case 12): <c>--quiet-end &lt;minutes&gt;</c> gives a run that must return its end, on
+    /// <c>--once</c> and <c>--until-idle</c> alone; the watch waits for the person, and a value that is no whole number of minutes is refused.
+    /// </summary>
+    [Theory]
+    [InlineData(new[] { "drive", "--once", "--quiet-end", "30" }, LoopMode.Once, 30, null)]
+    [InlineData(new[] { "--until-idle", "--quiet-end", "5", "--share" }, LoopMode.UntilIdle, 5, null)]
+    [InlineData(new[] { "drive", "--once" }, LoopMode.Once, null, null)]
+    [InlineData(new[] { "drive", "--quiet-end", "30" }, null, null, "the watch waits for the person")]
+    [InlineData(new[] { "drive", "--once", "--quiet-end", "0" }, null, null, "at least 1")]
+    [InlineData(new[] { "drive", "--once", "--quiet-end" }, null, null, "whole number of minutes")]
+    public void Quiet_end_is_for_a_run_that_must_return(string[] args, LoopMode? mode, int? minutes, string? refused)
+    {
+        var asked = DriverCommand.Read(args, out var problem);
+
+        if (refused is not null)
+        {
+            Assert.Null(asked);
+            Assert.Contains(refused, problem);
+            return;
+        }
+
+        Assert.Null(problem);
+        Assert.Equal(mode, asked!.Mode);
+        Assert.Equal(minutes, asked.QuietEnd);
+    }
+
+    /// <summary>
     /// Anything else starts nothing, and says what was not understood — a word nobody answers used to fall
     /// through to the watch loop, which is how reading the usage became driving.
     /// </summary>

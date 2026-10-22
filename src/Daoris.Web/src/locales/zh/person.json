@@ -80,6 +80,8 @@
   "person.route.SESSION_PERMISSION_ANSWER": "答复一个会话为你保留的工具调用",
   "person.route.SESSION_HAND_OVER_APPROVE": "同意某个智能体转交其会话的请求",
   "person.route.SESSION_HAND_OVER_DECLINE": "拒绝某个智能体转交其会话的请求",
+  "person.route.SESSION_QUIET_CARRY_ON": "结束一个无动静会话的这次运行，并让它的工作接着做",
+  "person.route.SESSION_QUIET_LEAVE": "让一个无动静的会话继续运行",
   "person.route.SESSION_ANSWER_ALONE": "让一个会话的答复独自继续，或将其保留",
   "person.route.RETRY_QUEST": "重试一个已挂起的委托",
   "person.route.HELP_APPLY": "应用问道衍的一项提议",

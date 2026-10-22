@@ -148,7 +148,7 @@ describe.each(['en', 'zh'])('configured access in %s', (language) => {
     expect(row('checkouts').querySelectorAll('code').length).toBeGreaterThan(0);
     expect(row('checkouts').textContent).not.toContain('`');
     expect(within(row('settings')).getAllByRole('checkbox')).toEqual(
-      ['notify', 'language', 'timeout', 'cap', 'cooloff'].map((setting) => box('settings', setting)),
+      ['notify', 'language', 'cap', 'cooloff'].map((setting) => box('settings', setting)),
     );
     expect(within(row('settings')).getByText(i18n.t('help.grants.never.settings'))).toBeInTheDocument();
   });

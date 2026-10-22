@@ -8,6 +8,18 @@ with the version and date at release.
 - Opening Review no longer writes to a session tree's git index (REVIEWLOCK1). Before, Review could hold the index's lock just
   as the session's agent tried to stage or commit there, and the agent's git then failed. Review's reads, and every status
   Daoris asks of a tree, now leave the index alone.
+- No working session is ended for running long any more (SESSWATCH1a, D200). A driven session, an intake and a resumed answer
+  run until they finish. A session that says nothing for ten minutes, with nothing it runs using the machine, is marked
+  *quiet · 10 min* on its row and head. At thirty minutes it is a row in *What needs you*: *quiet, nothing running*, or *busy,
+  nothing heard* where something it runs keeps the machine busy. Daoris ends nothing quiet by itself. The row offers *End and carry
+  on* (your stop, released at once: the work goes on in a new part in the same tree, your waiting words go with it, and no strike
+  counts), *Hand over…*, *Stop…* and *Leave it running*. A busy row never offers *End and carry on*. A quest's own session can now
+  be handed over from its page. A finished run whose leftover process held its output is ended a minute after it exited, as it
+  finished. `daoris-driver drive --once` and `--until-idle` say a quiet session on the console, and `--quiet-end <minutes>` ends
+  and carries on one of that run unheard that long. `daoris driver timeout`, Ask Daoris's `timeout` door and `settings_timeout`
+  now say sessions are no longer limited by time and change nothing. A `timeoutMinutes` in `driver.json` is kept for an older
+  Daoris, and `driver list` says so. A reviewer's, a helper's and a partner's pass keep their own minutes, no longer cut by it.
+
 - A folder under Daoris's account homes that no agent or plugin names is no longer taken for an agent (POOLSTRAY1). An earlier
   start could leave such a folder, and its subfolders were folded in as accounts. Such a folder is now noted once in the machine
   log and otherwise left alone. If an earlier fold already wrote one into the account order, the next change of the accounts

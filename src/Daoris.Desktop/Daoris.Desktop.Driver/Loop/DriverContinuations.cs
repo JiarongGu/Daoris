@@ -534,7 +534,9 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                     // FABRIC-CLOSE1h5: a closure graph's submission is its done, as at a first run's end.
                     submitted: !closed && QuestResults.Submitted(after))
                 // BGWAIT2: a done this run reached outranks the timeout; a quest closed before it went on is not this run's.
-                : Observation.AfterTimeout(config.TimeoutMinutes, quest.Status, status);
+                : _driver.Watch.EndedMinutes(sessionId) is { } quietMinutes
+                    ? Observation.AfterQuiet(quietMinutes, quest.Status, status)
+                    : Observation.AfterTimeout(config.TestBound ?? 0, quest.Status, status);
         // ACCESSSWAP1b: a run Daoris ended at its turn's end for a changed setup is neither a park nor a failure, and goes on again.
         var swappedOn = stop is null && ended.SetupChanged is not null;
         if (swappedOn) conclusion = Observation.SetupChanged(conclusion, ended.SetupChanged!);
@@ -991,13 +993,16 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
 
             var capture = adapter.StructuredOutput() is { } mapper
                 ? _driver.KeepingAsync(mapper, HarnessCapture.CaptureStructuredAsync(
-                    process.StandardOutput, process.StandardError, transcript, sessionId, _context.Output, _context.Events, mapper,
+                    _driver.Hearing(process.StandardOutput, sessionId), _driver.Hearing(process.StandardError, sessionId), transcript, sessionId,
+                    _context.Output, _context.Events, mapper,
                     prompt: null, ct, opened: NativeWords.Opening(adapter.Name, words), append: true, said: said, own: own,
                     lineageHome: _context.Home),
                     sessionId, adapter.Name, resume: null)
                 : null;
             exitCode = await _driver.WaitAsync(process, ct).ConfigureAwait(false);
-            if (capture is not null && await capture.ConfigureAwait(false) is { } reported) used = reported;
+            // State E (SESSWATCH1a): the capture bounded past the exit, as the first run's is.
+            if (capture is not null && await _driver.CaptureWithinAsync(capture, sessionId).ConfigureAwait(false)
+                && await capture.ConfigureAwait(false) is { } reported) used = reported;
         }
 
         // Words held when it could go on no more: a stop, a timeout. Said, never dropped without a trace.
@@ -1028,12 +1033,15 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
 
         var capture = adapter.StructuredOutput() is { } mapper
             ? _driver.KeepingAsync(mapper, HarnessCapture.CaptureStructuredAsync(
-                process.StandardOutput, process.StandardError, transcript, sessionId, _context.Output, _context.Events, mapper,
+                _driver.Hearing(process.StandardOutput, sessionId), _driver.Hearing(process.StandardError, sessionId), transcript, sessionId,
+                _context.Output, _context.Events, mapper,
                 prompt: null, ct, append: true, said: said, own: own, lineageHome: _context.Home),
                 sessionId, keepAs, resume)
             : null;
         var exitCode = await _driver.WaitAsync(process, ct).ConfigureAwait(false);
-        return (exitCode, capture is null ? null : await capture.ConfigureAwait(false));
+        // State E (SESSWATCH1a): the capture bounded past the exit, as the first run's is.
+        return (exitCode, capture is null || !await _driver.CaptureWithinAsync(capture, sessionId).ConfigureAwait(false)
+            ? null : await capture.ConfigureAwait(false));
     }
 
     /// <summary>The driver's line in the record for words the person said that never reached the session, and why.</summary>

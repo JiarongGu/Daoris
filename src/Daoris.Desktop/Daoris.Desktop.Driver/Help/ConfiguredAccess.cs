@@ -52,9 +52,6 @@ public sealed record ConfiguredAccess(IReadOnlyList<string> Housekeeping)
     /// <summary>A repository's or a workspace's session language: <c>daoris driver language</c>.</summary>
     public const string Language = "language";
 
-    /// <summary>How long one session may run: <c>daoris driver timeout</c>.</summary>
-    public const string Timeout = "timeout";
-
     /// <summary>How many sessions run at once on this machine: <c>daoris driver cap</c>.</summary>
     public const string Cap = "cap";
 
@@ -63,9 +60,10 @@ public sealed record ConfiguredAccess(IReadOnlyList<string> Housekeeping)
 
     /// <summary>
     /// The settings this build changes under the grant, in the page's order: the five ordinary ones, and never the mode, the grants,
-    /// accounts or a safeguard (the design's §4.1 table).
+    /// accounts or a safeguard (the design's §4.1 table). The timeout left it with SESSWATCH1a (D200): a grant of it kept in the file
+    /// is read as none.
     /// </summary>
-    public static readonly IReadOnlyList<string> SettingsBuilt = [Notify, Language, Timeout, Cap, CoolOff];
+    public static readonly IReadOnlyList<string> SettingsBuilt = [Notify, Language, Cap, CoolOff];
 
     /// <summary>The settings chosen, in <see cref="SettingsBuilt"/>'s order, once each; none by default.</summary>
     public IReadOnlyList<string> Settings { get; init; } = [];

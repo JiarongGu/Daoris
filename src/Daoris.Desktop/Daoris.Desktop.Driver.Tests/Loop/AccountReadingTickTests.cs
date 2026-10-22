@@ -69,7 +69,7 @@ public sealed class AccountReadingTickTests : IDisposable
             Drivable = ["engine"],
             Adapter = "acp-stub",
             Cap = 1,
-            TimeoutMinutes = 2,
+            TestBound = 2,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", AcpAgent(), Frame()] },
         };

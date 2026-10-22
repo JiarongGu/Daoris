@@ -14,7 +14,6 @@ namespace Daoris.Driver;
 /// </param>
 /// <param name="Cap">Concurrent sessions across all repositories.</param>
 /// <param name="Adapter">Which adapter spawns sessions. The supported harness by default (D23).</param>
-/// <param name="TimeoutMinutes">How long a session may run before the driver concludes it failed.</param>
 /// <param name="PollSeconds">How often the watch loop ticks.</param>
 /// <param name="Commands">Per-adapter command configuration — what the stub runs.</param>
 /// <param name="Trees">
@@ -32,7 +31,6 @@ public sealed record DriverConfig(
     IReadOnlyList<string> Holds,
     int Cap,
     string Adapter,
-    int TimeoutMinutes,
     int PollSeconds,
     IReadOnlyDictionary<string, IReadOnlyList<string>> Commands,
     IReadOnlyList<string> Trees,
@@ -54,10 +52,25 @@ public sealed record DriverConfig(
     public IReadOnlyDictionary<string, int> Forgiven { get; init; } =
         Forgiven ?? new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// The <c>timeoutMinutes</c> a file holds, read only to be said (SESSWATCH1a, D200, the session-watch design §3): no session is
+    /// limited by time any more, and nothing reads it for a bound. Never written: a loaded file's save keeps the key as stored, since
+    /// this build no longer owns it (<see cref="JsonKeeping"/>), so a build before SESSWATCH1a finds the person's value after a
+    /// rollback; a configuration built in memory writes none. Null where the file holds none.
+    /// </summary>
+    public int? KeptTimeoutMinutes { get; init; }
+
+    /// <summary>
+    /// The tests' one bound on a driven run, in minutes (SESSWATCH1a, the session-watch design §7): a backstop so a hung stand-in fails
+    /// a fast suite in minutes, handed to <c>Driver.WaitAsync</c> as a pass's own minutes are. Never read from <c>driver.json</c> and
+    /// never written; null, as every real configuration is, bounds nothing.
+    /// </summary>
+    internal int? TestBound { get; init; }
+
     /// <summary>Drives nothing, holds nothing — the safe shape silence takes.</summary>
     public static DriverConfig Empty { get; } = new(
         Drivable: [], Holds: [], Cap: 2, Adapter: "claude-code",
-        TimeoutMinutes: 30, PollSeconds: 15,
+        PollSeconds: 15,
         Commands: new Dictionary<string, IReadOnlyList<string>>(),
         Trees: []);
 
@@ -977,7 +990,6 @@ public sealed record DriverConfig(
             // Written only while full (HELPMODE1a1): absent is restricted, and the CLI twin writes it the same way.
             if (HelpMode == HelpModes.Full) writer.WriteString("helpMode", HelpMode);
             writer.WriteBoolean("notify", Notify);
-            writer.WriteNumber("timeoutMinutes", TimeoutMinutes);
             writer.WriteNumber("pollSeconds", PollSeconds);
             writer.WriteNumber("strikes", Strikes);
             // Written only when set (TOOL4e): absent is the default, and an edit elsewhere must not pin today's default.
@@ -1419,7 +1431,6 @@ public sealed record DriverConfig(
             Holds: Json.Strings(root,"holds"),
             Cap: Math.Max(1, Int(root, "cap") ?? Empty.Cap),
             Adapter: Json.NonEmpty(root,"adapter") ?? Empty.Adapter,
-            TimeoutMinutes: Math.Max(1, Int(root, "timeoutMinutes") ?? Empty.TimeoutMinutes),
             PollSeconds: Math.Max(1, Int(root, "pollSeconds") ?? Empty.PollSeconds),
             Commands: CommandMap(root),
             Trees: Json.Strings(root,"trees"),
@@ -1436,6 +1447,8 @@ public sealed record DriverConfig(
         {
             // The text read, which the writer keeps every key it does not own from (FABRIC-GRAPH1's review, finding 1).
             Source = json,
+            // Read only to be said (SESSWATCH1a): no bound is ever read from it.
+            KeptTimeoutMinutes = Int(root, "timeoutMinutes"),
             // 🔴 Absent means OFF — see IntakeAdapter for why this is the opposite of `notify`.
             IntakeAdapter = Json.NonEmpty(root,"intakeAdapter")?.Trim() is { Length: > 0 } intake ? intake : null,
             // Absent means OFF, as the intake's does (D89).

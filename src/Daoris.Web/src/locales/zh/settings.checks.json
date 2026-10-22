@@ -1,6 +1,6 @@
 {
   "settings.checks.label": "会话的检查",
-  "settings.checks.why": "这里被驱动的会话可以运行仓库的哪些检查。轻量让整套测试不在会话中运行，所以会话在工作完成时结束，而不是等到超时。",
+  "settings.checks.why": "这里被驱动的会话可以运行仓库的哪些检查。轻量让整套测试不在会话中运行，所以会话不会被它用不到的整套测试拖住。",
   "settings.checks.twin": "`daoris-driver checks {{repository}} light|heavy-at-end|--clear`",
   "settings.checks.mode": "{{name}} 中会话的检查",
   "settings.checks.value.today": "照旧",

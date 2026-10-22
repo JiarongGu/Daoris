@@ -315,7 +315,6 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
     {
         ConfiguredAccess.Notify => "whether Daoris says so when a session parks, or ends without being asked",
         ConfiguredAccess.Language => "the language a repository's or a workspace's sessions write to the person in",
-        ConfiguredAccess.Timeout => "how many minutes one session may run",
         ConfiguredAccess.Cap => "how many sessions run at once on this machine",
         _ => "how long an account whose limit names no time cools before it is offered again",
     };

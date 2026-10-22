@@ -108,6 +108,29 @@ public sealed class ProcessJob : IDisposable
         }
     }
 
+    /// <summary>
+    /// Whether the process was joined, so the job's accounting counts it and everything it starts (SESSWATCH1a, the session-watch design
+    /// §1.2): false where the join failed and off Windows, where the watcher reads busy as unknown.
+    /// </summary>
+    public bool Holds => Volatile.Read(ref _handle) != IntPtr.Zero;
+
+    /// <summary>
+    /// The CPU every process that ever joined the job has used, user and kernel, cumulative (SESSWATCH1a, the session-watch design §1.2):
+    /// busy is read as the difference between two reads, never from one. Null where there is no job or the accounting did not read.
+    /// </summary>
+    public TimeSpan? Cpu
+    {
+        get
+        {
+            var handle = Volatile.Read(ref _handle);
+            if (handle == IntPtr.Zero) return null;
+            return QueryInformationJobObject(
+                handle, BasicAccountingInformation, out var accounting, (uint)Marshal.SizeOf<JobObjectBasicAccountingInformation>(), IntPtr.Zero)
+                ? TimeSpan.FromTicks(accounting.TotalUserTime + accounting.TotalKernelTime)
+                : null;
+        }
+    }
+
     /// <summary>Have every process in the job end now, the job left open: <see cref="WaitEmptyAsync"/> waits until they have.</summary>
     public void Terminate(uint exitCode = 1)
     {

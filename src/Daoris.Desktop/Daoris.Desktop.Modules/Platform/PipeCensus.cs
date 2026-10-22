@@ -218,6 +218,8 @@ public sealed class PipeCensus
             "SESSION_GO_AHEAD", "RESOLVE_SESSION", "SESSION_HELPER_APPROVE", "SESSION_HELPER_DECLINE", "SESSION_HELPER_ASK", "SESSION_PERMISSION_ANSWER",
             // MIXAGENT1c: the yes and the no to a session's agent's own ask to hand it over.
             "SESSION_HAND_OVER_APPROVE", "SESSION_HAND_OVER_DECLINE",
+            // SESSWATCH1a: the person's word on a quiet session, its end and carry-on or its stand-down, which only they may give.
+            "SESSION_QUIET_CARRY_ON", "SESSION_QUIET_LEAVE",
             // COWORK1e: the person's word on a third answer alone held for them, which only they may let go on.
             "SESSION_ANSWER_ALONE",
             "RETRY_QUEST", "HELP_APPLY",

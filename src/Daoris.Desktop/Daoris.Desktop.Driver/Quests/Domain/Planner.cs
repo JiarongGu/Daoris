@@ -1445,8 +1445,11 @@ public static class Planner
             if (snapshot.NamedByReopen.TryGetValue(quest.Id, out var named) && Waits(named) && StopHolding(quest) is null) return named;
             return snapshot.LastRun.TryGetValue(quest.Id, out var written) && Waits(written) ? written : null;
 
+            // SESSWATCH1a: never the record the person ended with End and carry on: its words go to the carry-on, never to a resume of
+            // the run that hung (the session-watch design §2.3).
             bool Waits(PriorSession record) =>
-                record.WordsWaiting && !GoOnMarks.Judged(record, snapshot.Unable.GetValueOrDefault(record.Session));
+                record.WordsWaiting && !GoOnMarks.Judged(record, snapshot.Unable.GetValueOrDefault(record.Session))
+                && !Observation.IsQuietPressed(record.NoteParts);
         }
 
         // Words going on in the record they were said to (MSG1b, D137 §2.2), `continuing` it: a park is still an active record

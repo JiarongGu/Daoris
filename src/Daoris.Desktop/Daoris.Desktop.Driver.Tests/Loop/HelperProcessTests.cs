@@ -65,7 +65,7 @@ public sealed class HelperProcessTests : IDisposable
         {
             Adapter = "claude-code",
             Cap = 3,
-            TimeoutMinutes = 2,
+            TestBound = 2,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", agent] },
             Helpers = new Dictionary<string, HelperRule> { ["reports"] = new(HelperRules.On, ["stub"]) },
         };
@@ -149,7 +149,7 @@ public sealed class HelperProcessTests : IDisposable
         {
             Adapter = adapter,
             Cap = 3,
-            TimeoutMinutes = 2,
+            TestBound = 2,
             Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter] = SkillsSpawnProbe.Command(_home, adapter) },
             Helpers = new Dictionary<string, HelperRule> { ["reports"] = new(HelperRules.On, [adapter]) },
         };

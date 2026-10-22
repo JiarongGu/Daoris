@@ -28,7 +28,8 @@ public sealed class CallsStateSliceTests : DriverModuleBridge
     private IReadOnlyList<SlicePush> Pushes() =>
     [
         .. Raised.Where(each => each.Type == StateSlice.PushType).Select(each => (SlicePush)each.Payload!)
-            .Where(push => push.Slice == CallsStateSlice.Name),
+            // The calls' partition: the watcher's marks beside it are SESSWATCH1a's own test's.
+            .Where(push => push.Slice == CallsStateSlice.Name && push.Partition == CallsStateSlice.Partition),
     ];
 
     private static JsonObject Written(object? data) => JsonSerializer.SerializeToNode(data, IpcJson.Options)!.AsObject();
@@ -37,6 +38,36 @@ public sealed class CallsStateSliceTests : DriverModuleBridge
     private static void Running(DriverLoop loop, params string[] sessions)
     {
         for (var i = 0; i < sessions.Length; i++) loop.Events.Append(sessions[i], Call("c1", "in_progress", "npm test", at: i));
+    }
+
+    /// <summary>
+    /// SESSWATCH1a (D200, the session-watch design §5.1): a session the watcher marks quiet is pushed under its id with when it was last
+    /// heard, which the rail and the head say as <i>quiet · 14 min</i>; heard again, it is pushed gone. Woken by the watcher's move.
+    /// </summary>
+    [Fact]
+    public async Task A_quiet_session_is_pushed_with_when_it_was_last_heard_and_gone_once_heard_again()
+    {
+        var (loop, slice) = Up();
+        var now = TimeSpan.FromHours(1);
+        var watch = SessionWatch.Of(loop.Events);
+        watch.Clock = new QuietClock(() => now, stopsInSleep: true);
+        using var run = watch.Watch("s1", new WatchedRun(SessionWatch.Quest, "q1", "stub"));
+        for (var minute = 0; minute < 11; minute++)
+        {
+            now += TimeSpan.FromMinutes(1);
+            watch.Look(_ => null, TimeSpan.FromSeconds(15));
+        }
+
+        await slice.JudgeAsync();
+        var quiet = Written(slice.Snapshot().Partitions.Single(each => each.Partition == CallsStateSlice.QuietPartition).Data);
+        Assert.Equal(["s1"], quiet.Select(each => each.Key));
+        Assert.True(DateTimeOffset.TryParse(quiet["s1"]!["since"]!.GetValue<string>(), out _));
+
+        watch.Heard("s1");
+        now += TimeSpan.FromMinutes(1);
+        watch.Look(_ => null, TimeSpan.FromSeconds(15));
+        await slice.JudgeAsync();
+        Assert.Empty(Written(slice.Snapshot().Partitions.Single(each => each.Partition == CallsStateSlice.QuietPartition).Data));
     }
 
     [Fact]
@@ -51,8 +82,10 @@ public sealed class CallsStateSliceTests : DriverModuleBridge
 
         Assert.Null(loop.Service);
         Assert.Equal((CallsStateSlice.Name, StateSlice.Ready), (snapshot.Slice, snapshot.Status));
-        Assert.Equal([CallsStateSlice.Partition], snapshot.Partitions.Select(each => each.Partition));
+        // SESSWATCH1a: the watcher's marks beside the calls, judged empty and pushed so.
+        Assert.Equal([CallsStateSlice.Partition, CallsStateSlice.QuietPartition], snapshot.Partitions.Select(each => each.Partition));
         Assert.Empty(Written(snapshot.Partitions[0].Data));
+        Assert.Empty(Written(snapshot.Partitions[1].Data));
         // The snapshot route finds it in the loop's slices.
         Assert.Equal(CallsStateSlice.Partition, answered.GetProperty("partitions")[0].GetProperty("partition").GetString());
     }
@@ -139,7 +172,7 @@ public sealed class CallsStateSliceTests : DriverModuleBridge
         var emptied = Pushes()[^1];
         Assert.Equal((StateSlice.Ready, (long?)null), (emptied.Status, emptied.BaseSeq));
         Assert.Empty(Written(emptied.Data));
-        Assert.Empty(Written(slice.Snapshot().Partitions.Single().Data));
+        Assert.Empty(Written(slice.Snapshot().Partitions.Single(each => each.Partition == CallsStateSlice.Partition).Data));
     }
 
     /// <summary>

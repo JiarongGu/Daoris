@@ -107,6 +107,12 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     /// </summary>
     internal SaidWordView? Helped { get; init; }
 
+    /// <summary>
+    /// Whether these are the person's own words: not Daoris's, not another session's claim on the ask's channel, not a helper's answer
+    /// (SESSWATCH1a: a quiet row says their words wait, which ending it hands on).
+    /// </summary>
+    public bool Persons => Daoris is null && Channel is not { Person: false } && Helped is null;
+
     /// <summary>Told once this message's turn is on the wire: a helper's answer comes off the record then (MIXAGENT2a-iii).</summary>
     internal Action? Delivered { get; init; }
 

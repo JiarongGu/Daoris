@@ -47,7 +47,7 @@ export type SessionFactsOf = {
    * The call its agent is inside, and since when, as its conversation reads it (`runningCall`, WAITSAY1); absent where none is
    * open. Said only where the reader's `grouping` carries no call of its own (RAILLINE1).
    */
-  calling?: { title: string; since: string } | null;
+  calling?: { title: string; since: string; quiet?: string } | null;
   /**
    * Its heavy run's line (HEAVYSLOT1, the UI/UX design §3.5): the gate it runs, the gate it failed at, or whom it waits behind, as
    * the rail's line says it (`heavyLine`), in place of the call, which is that run. Absent where it holds and waits for no slot.
@@ -107,7 +107,7 @@ function callFact(t: TFunction, calling: { title: string; since: string; waiting
  * the two never disagree; the conversation's open call only where no reader answered (a browser) or its host is older than the
  * fact.
  */
-function headCall(of: SessionFactsOf): { title: string; since: string; waiting?: boolean } | null {
+function headCall(of: SessionFactsOf): { title: string; since: string; waiting?: boolean; quiet?: string } | null {
   const heard = of.grouping?.calling;
   return heard !== undefined ? heard : of.calling ?? null;
 }
@@ -170,7 +170,9 @@ function factsOf(t: TFunction, of: SessionFactsOf, whole: boolean): string[] {
     // waited for is the call, said by its gate or whom it waits behind; a held permission still first.
     const calling = headCall(of);
     if (of.heavy && !calling?.waiting) facts.push(of.heavy);
-    else if (calling && session.state === 'working') facts.push(callFact(t, calling, whole));
+    else if (calling && (calling.title || calling.waiting) && session.state === 'working') facts.push(callFact(t, calling, whole));
+    // SESSWATCH1a (the session-watch design §5.1): quiet since it was last heard, neutral, after a heavy run's line where both hold.
+    if (calling?.quiet && session.state === 'working') facts.push(t('work.rail.quiet', { time: elapsed(calling.quiet) }));
     return facts.filter((fact): fact is string => Boolean(fact));
   }
 

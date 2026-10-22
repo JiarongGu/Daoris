@@ -97,10 +97,10 @@ public static class OpinionPass
     public const string OpenedKind = "opinion";
 
     /// <summary>
-    /// How long one pass may run (§5.6): the rule's minutes, or the machine's session timeout if that comes first. The opinion
-    /// keeps the rule's own minutes; this is when its process is stopped.
+    /// How long one pass may run (§5.6): the rule's minutes, never capped by a session's time (SESSWATCH1a, D200), so the reviewer is
+    /// told the minutes it gets; only the tests' backstop (<see cref="DriverConfig.TestBound"/>) comes first.
     /// </summary>
-    public static int Bound(OpinionRule rule, DriverConfig config) => Math.Max(1, Math.Min(rule.Bound, config.TimeoutMinutes));
+    public static int Bound(OpinionRule rule, DriverConfig config) => Math.Max(1, Math.Min(rule.Bound, config.TestBound ?? int.MaxValue));
 
     /// <summary>
     /// What a reviewer's transcript says where this machine has no connector, the install's command first, as

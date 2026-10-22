@@ -424,6 +424,14 @@ public sealed class AcpSession(
     /// <summary>The background work its harness says still runs, with when each began (FABRIC-PIPELINE1c, <see cref="LongCalls"/>).</summary>
     public IReadOnlyList<RunningTask> BackgroundRunning => _background.RunningSince;
 
+    private bool _waitsOnOwnWork;
+
+    /// <summary>
+    /// Whether no turn runs and the session waits on its own background work (BGWAIT1, the watcher's state C; SESSWATCH1a, the
+    /// session-watch design §1.4): its quiet is judged by whether that work moves, on longer bounds.
+    /// </summary>
+    public bool WaitsOnOwnWork => Volatile.Read(ref _waitsOnOwnWork);
+
     /// <summary>The turns its harness starts by itself when that work ends (BGWAIT2), read from the session's opening.</summary>
     private readonly AcpWake _wake = new();
 
@@ -726,9 +734,10 @@ public sealed class AcpSession(
     /// prompt open, as a fresh turn the adapter answers. Nothing is cancelled: a cancel is the session's, never one turn's, and
     /// would land on the person's words as readily as on Daoris's.</para>
     ///
-    /// <para><b>Bounded by the session's own bounds</b>: the person's stop and the timeout end the process, the reader with
-    /// it, and the wait with that; the driver's shutdown cancels it. Work that never ends (a dev server), and a woken turn whose
-    /// end is never said, are waited for until one of those, as a park would have held its tree for the person (D83).</para>
+    /// <para><b>Bounded by the session's own bounds</b>: the person's stop ends the process, the reader with it, and the wait with
+    /// that; the driver's shutdown cancels it. No time limit ends it (SESSWATCH1a, D200): work that never ends (a dev server), and a
+    /// woken turn whose end is never said, are waited for until the person acts, as a park would have held its tree for them (D83);
+    /// the watcher looks in on such a session once it shows no progress.</para>
     ///
     /// <para><b>And by its quest</b> (DONEEND1): while the work runs the quest is read again every <see cref="BackgroundLook"/>,
     /// and once it no longer waits on that work, with no turn running, the session ends, saying so, and the work ends with it.</para>
@@ -772,6 +781,9 @@ public sealed class AcpSession(
         }
 
         Note(BackgroundNotes.Waits(running));
+        // SESSWATCH1a: no turn runs while it waits on its own work, which the watcher reads as state C (the session-watch design §1.4).
+        Volatile.Write(ref _waitsOnOwnWork, true);
+        using var waitingOn = new Disposer(() => Volatile.Write(ref _waitsOnOwnWork, false));
 
         // 🔴 DONEEND1: the quest is read again while the work runs, never only at the turn's end. Read once, a quest that closed
         // done during the wait (its agent closing it in a turn its harness woke for one piece of work, while a long test run went

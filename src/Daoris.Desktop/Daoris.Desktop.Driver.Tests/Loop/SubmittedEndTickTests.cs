@@ -79,7 +79,7 @@ public sealed class SubmittedEndTickTests : IDisposable
             Drivable = ["engine"],
             Trees = ["engine"],
             Adapter = "stub",
-            TimeoutMinutes = 1,
+            TestBound = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Agent()] },
         }).WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", AutoAccept: true));

@@ -72,8 +72,11 @@ public static class PartnerInstruction
 /// <summary>The partner's pass's own words and bounds (COAGENT1b), each said once for every door.</summary>
 public static class PartnerPass
 {
-    /// <summary>How long one partner's turn may run: its own bound, or the machine's session timeout if that comes first.</summary>
-    public static int Bound(DriverConfig config) => Math.Max(1, Math.Min(PartnerInstruction.DefaultMinutes, config.TimeoutMinutes));
+    /// <summary>
+    /// How long one partner's turn may run: its own bound, never capped by a session's time (SESSWATCH1a, D200); only the tests' backstop
+    /// (<see cref="DriverConfig.TestBound"/>) comes first.
+    /// </summary>
+    public static int Bound(DriverConfig config) => Math.Max(1, Math.Min(PartnerInstruction.DefaultMinutes, config.TestBound ?? int.MaxValue));
 
     /// <summary>What a copy's folder name starts with, beside a session tree's <c>s-</c> and an opinion's <c>o-</c> (the design §2.2).</summary>
     public const string Prefix = "p-";

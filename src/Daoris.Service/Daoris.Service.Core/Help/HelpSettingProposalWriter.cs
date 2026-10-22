@@ -89,10 +89,9 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
                 return !named || circle || !string.IsNullOrWhiteSpace(value) || Word(change.Target!.Trim(), "a quest") is not null
                     ? "`retry` names the quest its failed sessions parked or the person's stop holds, by id, as the target — and nothing else."
                     : null;
+            // SESSWATCH1a (D200): retired, refused whatever it is given, for a helper reading an older room.
             case "timeout":
-                return int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var minutes) && minutes >= 1
-                    ? null
-                    : "`timeout` is a whole number of minutes, 1 or more.";
+                return SettingsBox.TimeoutRetired;
             case "across":
                 return AcrossShape(named, circle, value);
             case "standing":

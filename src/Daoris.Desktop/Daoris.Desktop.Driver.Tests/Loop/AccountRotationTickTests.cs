@@ -71,7 +71,7 @@ public sealed class AccountRotationTickTests : IDisposable
         Drivable = ["engine"],
         Trees = ["engine"],
         Adapter = "stub",
-        TimeoutMinutes = 1,
+        TestBound = 1,
         PollSeconds = 1,
         // Two failures park it, and the quest already holds one: a limit must hold none.
         Strikes = 2,
@@ -188,7 +188,7 @@ public sealed class AccountRotationTickTests : IDisposable
             Drivable = ["engine"],
             Trees = ["engine"],
             Adapter = "acp-stub",
-            TimeoutMinutes = 1,
+            TestBound = 1,
             PollSeconds = 1,
             // One failure would park it: the limit must hold none.
             Strikes = 1,
@@ -318,7 +318,7 @@ public sealed class AccountRotationTickTests : IDisposable
         Drivable = ["engine"],
         Trees = ["engine"],
         Adapter = "acp-stub",
-        TimeoutMinutes = 1,
+        TestBound = 1,
         PollSeconds = 1,
         Commands = new Dictionary<string, IReadOnlyList<string>>
         {
