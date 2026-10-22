@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (241)
+## Files over 40 KB (242)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -257,7 +257,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/merge-branch.mjs` | 324 | 5693 |
 | `tools/orient-index.mjs` | 66 | 1425 |
 | `tools/process-reach.mjs` | 43 | 906 |
-| `tools/rehearsal-kit.mjs` | 47 | 912 |
+| `tools/rehearsal-kit.mjs` | 55 | 1071 |
+| `tools/rehearsal-kit.test.mjs` | 44 | 915 |
 | `tools/usage-report.mjs` | 60 | 1308 |
 
 ### No lane

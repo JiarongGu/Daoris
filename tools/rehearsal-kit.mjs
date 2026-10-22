@@ -473,6 +473,9 @@ const commitHere = async (author, message) => {
  *
  * Every commit it makes is `STUB_COMMIT`'s (REHEARSEGIT1): in the folder it was started in, and only where that is the top of
  * a repository of its own. A turn refused that way fails, as any turn whose work throws does.
+ *
+ * With `DAORIS_STUB_QUEUEING=1` in its environment it declares `promptQueueing` at `initialize` (COAGENT1b; the co-agent design
+ * §8.1), as claude-agent-acp does; without it, it declares nothing of the kind, as before.
  */
 export const ACP_STUB_AGENT = `
 import { execSync, spawn } from 'node:child_process';
@@ -817,8 +820,13 @@ const handle = async (line) => {
 
   switch (frame.method) {
     case 'initialize':
-      // session/resume, in the shape the real adapter advertises it (ANSWER1b): the driver resumes only what is offered.
-      send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, agentCapabilities: { sessionCapabilities: { resume: {} } } } });
+      // session/resume, in the shape the real adapter advertises it (ANSWER1b): the driver resumes only what is offered. With
+      // DAORIS_STUB_QUEUEING=1 it also declares promptQueueing as claude-agent-acp does (COAGENT1b), so a lead that takes words
+      // during its turn and one that takes them only at its end are the same script.
+      send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, agentCapabilities: {
+        sessionCapabilities: { resume: {} },
+        ...(process.env.DAORIS_STUB_QUEUEING === '1' ? { _meta: { claudeCode: { promptQueueing: true } } } : {}),
+      } } });
       break;
     case 'session/resume':
       // The conversation the driver kept, resumed rather than opened (D131 §1). Nothing is replayed, as the real
@@ -910,3 +918,154 @@ lines.on('close', () => {
   process.stdin.destroy();
 });
 `;
+
+/**
+ * The turn-end stand-in, shaped on codex-acp (COAGENT1b; the co-agent design §8.1), as source for a rehearsal or a test to write into
+ * its scratch and name as an agent's command. It speaks ACP on stdout and nothing else, as `ACP_STUB_AGENT` does, and differs from it
+ * where codex-acp differs from claude-agent-acp, so a test reads a door that takes words only at its turn's end:
+ *
+ * - `initialize` declares no `promptQueueing`, and offers the steering extension (the top-level `_meta.steering.supported`), which it
+ *   never uses: a `_session/steering` asked of it is answered, said on stderr, and changes nothing;
+ * - `session/new` offers the modes `read-only`, `agent` and `agent-full-access`, starting in `read-only`, and `session/set_mode`
+ *   moves it;
+ * - each prompt is one turn that writes one file in the folder it was started in, `stand-in-<n>.md` holding the prompt's first line.
+ *   In `read-only` it asks `session/request_permission` before the write, and writes only where the answer allows it;
+ * - its answer is its last words, and its turn's result carries no counts (codex-acp reports none, M4).
+ *
+ * It commits nothing and asks no service: a partner's work is its files, which Daoris keeps (the design §7.9). No model, no account and
+ * no credential anywhere in it. Its input closed is its ending, never `process.exit` (STUB1).
+ */
+export const ACP_TURN_END_AGENT = `
+import { writeFileSync } from 'node:fs';
+import { createInterface } from 'node:readline';
+const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\\n');
+const say = (...parts) => console.error('turn-end-agent:', ...parts);
+
+const MODES = [
+  { id: 'read-only', name: 'Read Only' },
+  { id: 'agent', name: 'Agent' },
+  { id: 'agent-full-access', name: 'Agent (full access)' },
+];
+let mode = 'read-only';
+let session = null;
+let turns = 0;
+let nextId = 7000;
+const pending = new Map();
+const ask = (method, params) => new Promise((resolve) => {
+  const id = nextId++;
+  pending.set(id, resolve);
+  send({ jsonrpc: '2.0', id, method, params });
+});
+const update = (body) => send({ jsonrpc: '2.0', method: 'session/update', params: { sessionId: session, update: body } });
+
+async function turn(frame) {
+  const words = (frame.params?.prompt ?? []).map((block) => block.text ?? '').join('\\n');
+  const first = words.split('\\n').find((line) => line.trim().length > 0) ?? '';
+  const file = 'stand-in-' + (++turns) + '.md';
+  if (mode === 'read-only') {
+    const answer = await ask('session/request_permission', {
+      sessionId: session,
+      toolCall: { toolCallId: 'w' + turns, title: 'Write ' + file, kind: 'edit' },
+      options: [
+        { optionId: 'allow', name: 'Allow', kind: 'allow_once' },
+        { optionId: 'reject', name: 'Reject', kind: 'reject_once' },
+      ],
+    });
+    const chosen = answer?.outcome?.optionId;
+    if (chosen !== 'allow') {
+      say('the write was not allowed in read-only:', JSON.stringify(answer?.outcome ?? answer));
+      update({ sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'I was not allowed to write ' + file + '.' } });
+      return 'end_turn';
+    }
+  }
+
+  update({ sessionUpdate: 'tool_call', toolCallId: 'w' + turns, title: 'Write ' + file, kind: 'edit', status: 'in_progress' });
+  writeFileSync(file, '# written by the turn-end stand-in\\n\\n' + first + '\\n');
+  update({ sessionUpdate: 'tool_call_update', toolCallId: 'w' + turns, status: 'completed' });
+  update({ sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'Wrote ' + file + ' in ' + mode + '.' } });
+  say('wrote', file, 'in', mode);
+  return 'end_turn';
+}
+
+const handle = async (line) => {
+  if (!line.trim()) return;
+  let frame;
+  try { frame = JSON.parse(line); } catch { say('not a frame:', line); return; }
+  if (frame.method === undefined && frame.id !== undefined) {
+    const waiting = pending.get(frame.id);
+    if (waiting) { pending.delete(frame.id); waiting(frame.result ?? frame.error); }
+    return;
+  }
+
+  switch (frame.method) {
+    case 'initialize':
+      send({ jsonrpc: '2.0', id: frame.id, result: {
+        protocolVersion: 1,
+        agentCapabilities: { loadSession: false, promptCapabilities: { image: false, embeddedContext: true } },
+        _meta: { steering: { supported: true } },
+      } });
+      break;
+    case 'session/new':
+      session = 'turn-end-session-1';
+      say('session on', frame.params?.cwd, 'in', mode);
+      send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: session, modes: { currentModeId: mode, availableModes: MODES } } });
+      break;
+    case 'session/set_mode': {
+      const asked = frame.params?.modeId;
+      if (!MODES.some((each) => each.id === asked)) {
+        send({ jsonrpc: '2.0', id: frame.id, error: { code: -32602, message: 'no mode ' + asked } });
+        break;
+      }
+      mode = asked;
+      say('mode set to', mode);
+      send({ jsonrpc: '2.0', id: frame.id, result: {} });
+      break;
+    }
+    case 'session/prompt':
+      try {
+        const stopReason = await turn(frame);
+        // No counts on the result: codex-acp reports none (M4).
+        send({ jsonrpc: '2.0', id: frame.id, result: { stopReason } });
+      } catch (error) {
+        say('turn failed:', error.message);
+        send({ jsonrpc: '2.0', id: frame.id, error: { code: -32000, message: error.message } });
+      }
+      break;
+    case '_session/steering':
+      // Offered and never used: answered, said, and nothing in the turn changes.
+      say('steering asked and not used');
+      if (frame.id !== undefined) send({ jsonrpc: '2.0', id: frame.id, result: {} });
+      break;
+    case 'session/cancel':
+      say('turn cancelled');
+      break;
+    default:
+      if (frame.id !== undefined) send({ jsonrpc: '2.0', id: frame.id, error: { code: -32601, message: 'no ' + frame.method } });
+  }
+};
+
+const lines = createInterface({ input: process.stdin });
+lines.on('line', (line) => { handle(line).catch((error) => say('handler failed:', error.message)); });
+lines.on('close', () => {
+  say('input closed; exiting');
+  process.exitCode = 0;
+  process.stdin.destroy();
+});
+`;
+
+/**
+ * A second maker, declared by a file (COAGENT1b; the co-agent design §8.1): a plugin manifest whose one harness, `stub-b`, names
+ * `maker: "Stub Two"` and `product: "Stub B"` over the script at `script`, as the family rehearsal declares its `gate-agent`. A
+ * rehearsal writes it as `plugin.json` under its scratch home's `plugins/rehearsal.stub-two/`, so a partner of another maker than the
+ * kit's own stub joins with no Daoris code. The measurements rows that admit it as a partner are the tests' stand-in rows alone.
+ */
+export function stubTwoManifest(script) {
+  return {
+    id: 'rehearsal.stub-two',
+    apiVersion: 1,
+    name: 'Stub Two',
+    version: '1.0.0',
+    description: 'Declares a stub agent of a second maker, for a partner of another maker than the lead.',
+    harnesses: [{ name: 'stub-b', command: ['node', script], maker: 'Stub Two', product: 'Stub B' }],
+  };
+}
