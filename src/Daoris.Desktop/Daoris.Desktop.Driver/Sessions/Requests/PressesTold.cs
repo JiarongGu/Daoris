@@ -160,7 +160,7 @@ public sealed partial class PressesTold(string home)
     {
         try
         {
-            return Parse(File.ReadAllText(path));
+            return Parse(AtomicFile.ReadText(path));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

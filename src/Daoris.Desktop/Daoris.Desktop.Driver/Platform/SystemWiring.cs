@@ -579,7 +579,7 @@ public static class SystemWiring
         if (path is null || !File.Exists(path)) return new(new Dictionary<string, RemoteTarget>(), "file", null);
         try
         {
-            var text = File.ReadAllText(path);
+            var text = AtomicFile.ReadText(path);
             try
             {
                 using var _ = JsonDocument.Parse(text);
@@ -770,7 +770,7 @@ public static class SystemWiring
         if (!File.Exists(path)) return (null, "folder");
         try
         {
-            using var stream = File.OpenRead(path);
+            using var stream = AtomicFile.OpenRead(path);
             using var _ = JsonDocument.Parse(stream);
             return (true, null);
         }
@@ -866,7 +866,7 @@ public static class SystemWiring
         try
         {
             if (!File.Exists(path)) return null;
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(File.ReadAllText(path)); // read-shares: the install's package.json, laid with it
             return document.RootElement.ValueKind == JsonValueKind.Object
                 && document.RootElement.TryGetProperty("version", out var version) && version.ValueKind == JsonValueKind.String
                     ? version.GetString()

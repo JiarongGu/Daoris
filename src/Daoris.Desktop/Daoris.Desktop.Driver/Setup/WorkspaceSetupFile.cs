@@ -93,7 +93,7 @@ public static class WorkspaceSetupFile
     {
         try
         {
-            return (Read(JsonNode.Parse(File.ReadAllText(path))), null);
+            return (Read(JsonNode.Parse(AtomicFile.ReadText(path))), null);
         }
         catch (Exception error) when (error is JsonException or InvalidDataException or IOException or UnauthorizedAccessException)
         {

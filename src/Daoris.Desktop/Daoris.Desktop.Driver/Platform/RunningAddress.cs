@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Text;
 using System.Text.Json;
 
 namespace Daoris.Driver;
@@ -31,8 +30,6 @@ public sealed record RunningEntry(string Url, int Pid, long Started, string? Hom
 /// </remarks>
 public sealed class RunningAddress : IDisposable
 {
-    private static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
-
     private readonly string _path;
     private readonly string _written;
     private int _removed;
@@ -92,7 +89,7 @@ public sealed class RunningAddress : IDisposable
         string text;
         try
         {
-            text = File.ReadAllText(PathIn(home), Utf8);
+            text = AtomicFile.ReadText(PathIn(home));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -133,7 +130,7 @@ public sealed class RunningAddress : IDisposable
         if (Interlocked.Exchange(ref _removed, 1) == 1) return;
         try
         {
-            if (File.ReadAllText(_path, Utf8) == _written) File.Delete(_path);
+            if (AtomicFile.ReadText(_path) == _written) File.Delete(_path);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

@@ -16,7 +16,7 @@ internal static class AccountFileNodes
         if (!File.Exists(path)) return (new JsonObject(), false);
         try
         {
-            return JsonNode.Parse(File.ReadAllText(path)) is JsonObject root ? (root, false) : (new JsonObject(), true);
+            return JsonNode.Parse(AtomicFile.ReadText(path)) is JsonObject root ? (root, false) : (new JsonObject(), true);
         }
         catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
         {

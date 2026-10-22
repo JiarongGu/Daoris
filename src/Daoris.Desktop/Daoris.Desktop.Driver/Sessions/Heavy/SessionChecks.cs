@@ -144,7 +144,7 @@ public static class SessionChecks
         try
         {
             if (!File.Exists(path)) return null;
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             return document.RootElement.ValueKind == JsonValueKind.Object ? document.RootElement.Clone() : null;
         }
         catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)

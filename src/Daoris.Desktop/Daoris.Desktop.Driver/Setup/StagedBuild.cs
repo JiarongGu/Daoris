@@ -43,7 +43,7 @@ public static class UpdateRequests
         if (!File.Exists(path)) return null;
         try
         {
-            if (JsonNode.Parse(File.ReadAllText(path)) is not JsonObject root) return null;
+            if (JsonNode.Parse(AtomicFile.ReadText(path)) is not JsonObject root) return null;
             var mode = root["mode"] is JsonValue value && value.TryGetValue<string>(out var text) ? text.Trim() : null;
             if (mode is null || !UpdateMode.All.Contains(mode, StringComparer.Ordinal)) return null;
             var build = root["build"] is JsonValue named && named.TryGetValue<string>(out var id) && !string.IsNullOrWhiteSpace(id)
@@ -243,7 +243,7 @@ public static class StagedBuild
 
         try
         {
-            var root = JsonNode.Parse(File.ReadAllText(path)) as JsonObject;
+            var root = JsonNode.Parse(File.ReadAllText(path)) as JsonObject; // read-shares: a staged build's own build.json, laid with it
             if (root is null)
             {
                 problem = new("manifest", $"{Folder}/{Staged}/{Manifest} is not a JSON object.");
@@ -351,7 +351,7 @@ public static class StagedBuild
     /// <summary>A file's SHA-256, lower-case hex.</summary>
     public static string Sha256Of(string path)
     {
-        using var stream = File.OpenRead(path);
+        using var stream = File.OpenRead(path); // read-shares: a staged build's file, laid with it
         return Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
     }
 

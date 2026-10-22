@@ -460,7 +460,7 @@ internal sealed class TreeSetAside(TreeContext context)
                 writer.WriteEndArray();
                 writer.WriteEndObject();
             });
-            if (File.Exists(FailedPath) && File.ReadAllText(FailedPath) == text) return;
+            if (File.Exists(FailedPath) && AtomicFile.ReadText(FailedPath) == text) return;
             AtomicFile.WriteText(FailedPath, text);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -483,7 +483,7 @@ internal sealed class TreeSetAside(TreeContext context)
         try
         {
             if (!File.Exists(FailedPath)) return found;
-            using var document = System.Text.Json.JsonDocument.Parse(File.ReadAllText(FailedPath));
+            using var document = System.Text.Json.JsonDocument.Parse(AtomicFile.ReadText(FailedPath));
             if (!document.RootElement.TryGetProperty("folders", out var folders) || folders.ValueKind != System.Text.Json.JsonValueKind.Array) return found;
             foreach (var each in folders.EnumerateArray())
             {

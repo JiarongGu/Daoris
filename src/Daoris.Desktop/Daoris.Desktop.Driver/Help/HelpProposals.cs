@@ -492,7 +492,7 @@ public static class HelpProposals
         {
             try
             {
-                using var document = JsonDocument.Parse(File.ReadAllText(path));
+                using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
                 var root = document.RootElement;
                 var proposal = Read(root, Path.GetFileNameWithoutExtension(path));
                 if (proposal.State != "proposed" || !string.Equals(proposal.Session, session, StringComparison.OrdinalIgnoreCase)) continue;
@@ -512,7 +512,7 @@ public static class HelpProposals
     public static void Settle(string home, string id, string state, string? note)
     {
         var path = Path.Combine(FolderOf(home), $"{id}.json");
-        var node = JsonNode.Parse(File.ReadAllText(path))!.AsObject();
+        var node = JsonNode.Parse(AtomicFile.ReadText(path))!.AsObject();
         node["state"] = state;
         node["note"] = note;
         JsonFile.Write(path, node);
@@ -577,7 +577,7 @@ public static class HelpProposals
     {
         var path = Path.Combine(FolderOf(home), $"{Path.GetFileName(id)}.json");
         if (!File.Exists(path)) return null;
-        using var document = JsonDocument.Parse(File.ReadAllText(path));
+        using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
         return Read(document.RootElement, id);
     }
 

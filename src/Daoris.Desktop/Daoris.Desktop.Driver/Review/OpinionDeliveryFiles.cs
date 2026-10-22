@@ -18,7 +18,7 @@ internal static class OpinionDeliveryFiles
         if (!File.Exists(path)) return OpinionDelivered.None;
         try
         {
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object) return OpinionDelivered.None;
             return new OpinionDelivered(Text(root, "person"), Moment(root, "personAt"), Reading(root))

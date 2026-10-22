@@ -19,7 +19,7 @@ public sealed class WorkflowFiles(string home) : IWorkflowStore
         JsonNode? file;
         try
         {
-            file = JsonNode.Parse(File.ReadAllText(path));
+            file = JsonNode.Parse(AtomicFile.ReadText(path));
         }
         catch (JsonException)
         {

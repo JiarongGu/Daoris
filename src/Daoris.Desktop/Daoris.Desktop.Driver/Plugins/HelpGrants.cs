@@ -159,7 +159,7 @@ public static class HelpGrants
         if (!File.Exists(path)) return [];
         try
         {
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             if (!document.RootElement.TryGetProperty("help", out var help) || help.ValueKind != JsonValueKind.Array) return null;
             var approvals = new List<HelpApproval>();
             foreach (var row in help.EnumerateArray())

@@ -66,7 +66,7 @@ public static class Notices
         try
         {
             if (!File.Exists(path)) return [];
-            text = File.ReadAllText(path);
+            text = AtomicFile.ReadText(path);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -168,7 +168,7 @@ public static class Notices
             var begun = false;
             if (File.Exists(path))
             {
-                record = Parse(File.ReadAllText(path));
+                record = Parse(AtomicFile.ReadText(path));
                 if (record is null)
                 {
                     SetAside(path, now);

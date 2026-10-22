@@ -1009,7 +1009,7 @@ public static class DriverWorkflowsCommand
             if (!File.Exists(path)) throw new ChoiceWords($"there is no file `{path}`.");
             try
             {
-                return JsonNode.Parse(File.ReadAllText(path));
+                return JsonNode.Parse(File.ReadAllText(path)); // read-shares: the person's own file, named on the command line
             }
             catch (JsonException)
             {

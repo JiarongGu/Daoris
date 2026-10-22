@@ -259,7 +259,7 @@ public static class GitHolds
         if (!File.Exists(path)) return [];
         try
         {
-            if (JsonNode.Parse(File.ReadAllText(path))?["held"] is not JsonArray held) return [];
+            if (JsonNode.Parse(AtomicFile.ReadText(path))?["held"] is not JsonArray held) return [];
             return [.. held.OfType<JsonObject>().Select(Of).OfType<GitHold>()];
         }
         catch (Exception error) when (error is IOException or JsonException or UnauthorizedAccessException)

@@ -35,7 +35,7 @@ public static class SpawnSkills
     {
         var file = Path.Combine(pluginFolder, "skills", skill, SkillFile);
         if (!File.Exists(file)) return $"its folder holds no `skills/{skill}/{SkillFile}`, so it is not handed.";
-        return AllowsItselfTools(File.ReadAllText(file))
+        return AllowsItselfTools(File.ReadAllText(file)) // read-shares: a plugin's own SKILL.md, laid with its folder
             ? $"its `{SkillFile}` declares `allowed-tools`, which would let it run tools nobody allowed, so Daoris hands it nowhere (D170)."
             : null;
     }

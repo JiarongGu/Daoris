@@ -103,7 +103,7 @@ public sealed class KeepingRun : IDisposable
         {
             var path = HolderPathOf(home);
             if (!File.Exists(path)) return null;
-            text = File.ReadAllText(path);
+            text = AtomicFile.ReadText(path);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -136,7 +136,7 @@ public sealed class KeepingRun : IDisposable
     {
         try
         {
-            if (File.Exists(_holder) && File.ReadAllText(_holder) == _written) File.Delete(_holder);
+            if (File.Exists(_holder) && AtomicFile.ReadText(_holder) == _written) File.Delete(_holder);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

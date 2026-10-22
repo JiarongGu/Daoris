@@ -11,12 +11,14 @@
  *  - a writer: a source that writes through `AtomicFile` (`WriteText`, `WriteBytes`, `TryCreateText`) or through one of the driver's
  *    writers that ends in it (`JsonFile.Write`, `JsonKeeping.Save`, `RecordList<…>`, `PluginFolders.WriteFile`). The types it
  *    declares are writer types, and their members whose names say where they keep a file (`PathOf`, `FilePath`, `FolderOf`, any name
- *    holding `Path` or `Folder`) are the places those writes land;
- *  - a breach: a plain read in a writer, or in a source that names one of those places (`WorkflowRunBindings.PathOf(`).
+ *    holding `Path` or `Folder`) are the places those writes land, as are the home's entries a writer names (`HomeEntry.Remotes`);
+ *  - a breach: a plain read in a writer, or in a source that names one of those places (`WorkflowRunBindings.PathOf(`,
+ *    `HomeEntry.Remotes`).
  *
  * The census works per source, not per path, so a writer that also reads a file nothing moves into place (a git `HEAD`, a transcript
  * appended to) marks that read's line `// read-shares: <what it reads>`, and the clean line counts the marks. A read inside a comment
- * or a string is not a read. There is no .NET build.
+ * or a string is not a read. A reader handed its path by its caller, naming no place, is not found: the census is a net under the
+ * readers, and `AtomicFile.ReadText`'s own remarks are the rule. There is no .NET build.
  */
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -86,12 +88,13 @@ function read(root, dir) {
     });
 }
 
-/** The places writes land: `Type.Member` for each path-naming member of a type a writer declares. */
+/** The places writes land: `Type.Member` for each path-naming member of a type a writer declares, and each `HomeEntry.Name` a writer names. */
 export function places(files) {
   const found = new Set();
   for (const { text } of files.filter((f) => WRITES.test(f.text))) {
     const members = [...text.matchAll(MEMBERS)].map((m) => m[1]).filter((name) => PLACE.test(name));
     for (const type of text.matchAll(TYPES)) for (const member of members) found.add(`${type[1]}.${member}`);
+    for (const entry of text.matchAll(/\bHomeEntry\s*\.\s*([A-Za-z_]\w*)/g)) found.add(`HomeEntry.${entry[1]}`);
   }
   return found;
 }

@@ -126,7 +126,7 @@ public sealed class SessionUsage(string home)
 
         try
         {
-            using var document = JsonDocument.Parse(File.ReadAllText(_path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(_path));
             if (document.RootElement.ValueKind != JsonValueKind.Array) return [];
 
             var entries = new List<UsageEntry>();

@@ -235,7 +235,7 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
     private static void Keep(string home, string id, IReadOnlyList<HelpSyncRow> rows, SyncPlan listed)
     {
         var path = Path.Combine(FolderOf(home), $"{id}.json");
-        var node = JsonNode.Parse(File.ReadAllText(path))!.AsObject();
+        var node = JsonNode.Parse(AtomicFile.ReadText(path))!.AsObject();
         node["listed"] = new JsonArray([.. rows.Select(row => (JsonNode)new JsonObject
         {
             ["key"] = row.Key, ["step"] = row.Step, ["moves"] = row.Moves, ["says"] = row.Says,

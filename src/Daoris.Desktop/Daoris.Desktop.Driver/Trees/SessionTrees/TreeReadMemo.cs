@@ -243,7 +243,7 @@ internal sealed class TreeReadPass(TreeReadMemo memo, SessionTrees trees)
     {
         try
         {
-            return File.Exists(path) ? Hash(File.ReadAllText(path)) : "none";
+            return File.Exists(path) ? Hash(AtomicFile.ReadText(path)) : "none";
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

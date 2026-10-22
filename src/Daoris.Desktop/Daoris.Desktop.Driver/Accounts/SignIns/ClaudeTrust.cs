@@ -97,7 +97,7 @@ public static class ClaudeTrust
         JsonElement root;
         try
         {
-            root = JsonDocument.Parse(File.ReadAllText(configPath)).RootElement;
+            root = JsonDocument.Parse(AtomicFile.ReadText(configPath)).RootElement;
         }
         catch (JsonException)
         {
@@ -163,7 +163,7 @@ public static class ClaudeTrust
     /// </remarks>
     public static TrustGrant Grant(string configPath, string folder)
     {
-        string? original = File.Exists(configPath) ? File.ReadAllText(configPath) : null;
+        string? original = File.Exists(configPath) ? AtomicFile.ReadText(configPath) : null;
 
         JsonObject root;
         if (original is null)

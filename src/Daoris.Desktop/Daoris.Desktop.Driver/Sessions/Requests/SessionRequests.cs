@@ -454,7 +454,7 @@ public sealed partial class SessionRequests(string home)
             string text;
             try
             {
-                text = File.ReadAllText(taking);
+                text = AtomicFile.ReadText(taking);
             }
             catch (Exception error) when (error is FileNotFoundException or DirectoryNotFoundException)
             {
@@ -608,7 +608,7 @@ public sealed partial class SessionRequests(string home)
         try
         {
             if (!File.Exists(path)) return null;
-            text = File.ReadAllText(path);
+            text = AtomicFile.ReadText(path);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -638,7 +638,7 @@ public sealed partial class SessionRequests(string home)
     {
         try
         {
-            return Parse(File.ReadAllText(path));
+            return Parse(AtomicFile.ReadText(path));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

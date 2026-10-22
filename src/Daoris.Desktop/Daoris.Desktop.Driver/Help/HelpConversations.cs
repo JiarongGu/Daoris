@@ -147,7 +147,7 @@ public sealed class HelpConversations(string home)
         {
             var path = PathOf(session);
             if (!File.Exists(path)) return HelpKept.None;
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object) return HelpKept.None;
             return new HelpKept(

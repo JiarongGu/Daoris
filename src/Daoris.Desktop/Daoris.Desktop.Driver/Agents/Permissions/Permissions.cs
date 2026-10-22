@@ -262,7 +262,7 @@ public static class PermissionRules
 
         try
         {
-            if (JsonNode.Parse(File.ReadAllText(path)) is not JsonObject root)
+            if (JsonNode.Parse(AtomicFile.ReadText(path)) is not JsonObject root)
             {
                 return PermissionFile.Empty with { Problem = $"{FileName} is not a JSON object, so no rule of it applies." };
             }

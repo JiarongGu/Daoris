@@ -313,7 +313,7 @@ public static class HeldWordsFile
         JsonObject? root;
         try
         {
-            root = JsonNode.Parse(File.ReadAllText(path)) as JsonObject;
+            root = JsonNode.Parse(AtomicFile.ReadText(path)) as JsonObject;
         }
         catch (JsonException)
         {

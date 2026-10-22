@@ -286,7 +286,7 @@ public static class DaorisHome
         if (!place.EndsWith(".json", StringComparison.OrdinalIgnoreCase)) return true;
         try
         {
-            using var stream = System.IO.File.OpenRead(place);
+            using var stream = AtomicFile.OpenRead(place);
             // Strict JSON, a byte-order mark aside, as the CLI's twin reads it: the twins judge a file alike.
             using var parsed = JsonDocument.Parse(stream);
             return true;

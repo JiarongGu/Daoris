@@ -83,7 +83,7 @@ public sealed class HelpPublished(string home)
         {
             var path = PathOf(session);
             if (!File.Exists(path)) return [];
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             if (document.RootElement.ValueKind != JsonValueKind.Object) return [];
             return [.. Json.Items(document.RootElement, "published").Select(ReadEntry).OfType<HelpPublishedEntry>()];
         }

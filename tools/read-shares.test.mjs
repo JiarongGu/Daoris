@@ -77,6 +77,17 @@ test('a plain read in another source naming where the write lands is refused', (
   assert.match(problems[0], /Loop\/Reader\.cs:3: .* which names Kept\.PathOf, where AtomicFile writes/);
 });
 
+test('a plain read in another source naming a home entry a writer keeps is refused', () => {
+  const dir = tree({
+    'Platform/Remotes.cs': 'public static class Remotes\n{\n    public static void Keep(string home) => JsonFile.Write(DaorisHome.Entry(home, HomeEntry.Remotes), node);\n}\n',
+    'Loop/Reader.cs': 'public static class Reader\n{\n    public static string Read(string home)\n        => File.ReadAllText(DaorisHome.Entry(home, HomeEntry.Remotes));\n}\n',
+    'Loop/Other.cs': 'public static class Other\n{\n    public static string Read(string home) => File.ReadAllText(DaorisHome.Entry(home, HomeEntry.Logs));\n}\n',
+  });
+  const { problems } = checkReadShares(dir);
+  assert.equal(problems.length, 1);
+  assert.match(problems[0], /Loop\/Reader\.cs:4: .* which names HomeEntry\.Remotes, where AtomicFile writes/);
+});
+
 test('a source that neither writes nor names a write reads plainly', () => {
   const dir = tree({ 'Trees/Heads.cs': 'public static class Heads\n{\n    public static string Head(string git) => File.ReadAllText(Path.Combine(git, "HEAD"));\n}\n' });
   assert.deepEqual(checkReadShares(dir).problems, []);

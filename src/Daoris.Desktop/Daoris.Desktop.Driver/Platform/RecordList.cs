@@ -35,7 +35,7 @@ internal sealed class RecordList<T>(
         try
         {
             if (!File.Exists(path)) return [];
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             if (!document.RootElement.TryGetProperty(array, out var entries) || entries.ValueKind != JsonValueKind.Array) return [];
             return [.. entries.EnumerateArray().Select(read).OfType<T>()];
         }

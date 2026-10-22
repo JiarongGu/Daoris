@@ -105,7 +105,7 @@ internal sealed class HelpClearProposals : IHelpProposalKind
         var path = Path.Combine(FolderOf(home), $"{Path.GetFileName(proposal.Id)}.json");
         if (!File.Exists(path)) return;
 
-        var node = JsonNode.Parse(File.ReadAllText(path))!.AsObject();
+        var node = JsonNode.Parse(AtomicFile.ReadText(path))!.AsObject();
         // A second draw keeps the first list: the card the person read first is the one its Apply sends.
         if (node.ContainsKey("units")) return;
         node["units"] = new JsonArray([.. clear.Units.Select(unit => (JsonNode)new JsonObject { ["kind"] = unit.Kind, ["id"] = unit.Id })]);

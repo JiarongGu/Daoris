@@ -51,6 +51,12 @@ public static class AtomicFile
         return copy.ToArray();
     }
 
+    /// <summary>A file these writes keep, opened to read as a stream, sharing as <see cref="ReadText"/> does (READSHARE1).</summary>
+    /// <exception cref="FileNotFoundException">No file is there.</exception>
+    /// <exception cref="IOException">It could not be opened.</exception>
+    public static FileStream OpenRead(string path) =>
+        new(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+
     /// <summary>Write <paramref name="text"/> to <paramref name="path"/> whole, or not at all.</summary>
     public static void WriteText(string path, string text) =>
         Write(path, beside => File.WriteAllText(beside, text, Utf8));

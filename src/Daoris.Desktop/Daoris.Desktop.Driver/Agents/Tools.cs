@@ -570,7 +570,7 @@ public static class Tools
         JsonNode? parsed;
         try
         {
-            parsed = JsonNode.Parse(JsonKeeping.Once(File.ReadAllText(path)));
+            parsed = JsonNode.Parse(JsonKeeping.Once(AtomicFile.ReadText(path)));
         }
         catch (JsonException error)
         {

@@ -92,7 +92,7 @@ public sealed class HandOverAskFiles(string home)
     {
         try
         {
-            return File.Exists(path) ? JsonDocument.Parse(File.ReadAllText(path)) : null;
+            return File.Exists(path) ? JsonDocument.Parse(AtomicFile.ReadText(path)) : null;
         }
         catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
         {

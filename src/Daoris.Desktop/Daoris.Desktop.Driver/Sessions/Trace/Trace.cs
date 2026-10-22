@@ -344,7 +344,7 @@ public static class Trace
         try
         {
             if (!File.Exists(path)) return null;
-            using var _ = JsonDocument.Parse(File.ReadAllText(path));
+            using var _ = JsonDocument.Parse(AtomicFile.ReadText(path));
             return null;
         }
         catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)

@@ -130,7 +130,7 @@ public sealed record HarnessSettings(
 
         try
         {
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             // A file that is no object reads as none, and an edit over it is refused at the write, as the CLI refuses it.
             if (document.RootElement.ValueKind != JsonValueKind.Object) return nothing with { Understood = nothing.Layout(asRead: true), Found = true };
 
