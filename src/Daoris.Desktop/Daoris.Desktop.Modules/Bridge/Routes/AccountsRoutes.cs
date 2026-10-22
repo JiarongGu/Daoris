@@ -524,7 +524,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
 
         if (change.Keep?.Trim() is { Length: > 0 } keep && ScopeProblem.Of(null, list, keep) is { } problem)
         {
-            throw ScopeRefusal(problem, owner, workspace);
+            throw ScopeRefusal(problem);
         }
 
         return settings.WithUse(owner, change, workspace);
@@ -536,44 +536,21 @@ public sealed class AccountsRoutes(DriverLoop loop)
             ? settings.Rotation.GetValueOrDefault(owner) ?? []
             : settings.WorkspaceRotation.TryGetValue(workspace, out var lists) ? lists.GetValueOrDefault(owner) ?? [] : [];
 
-    private static string? OwnDefault(HarnessSettings settings, string owner, string? workspace) =>
-        (workspace is null
-            ? settings.Defaults.GetValueOrDefault(owner)
-            : settings.Workspaces.TryGetValue(workspace, out var defaults) ? defaults.GetValueOrDefault(owner) : null) is { Length: > 0 } named
-            ? named.Trim()
-            : null;
-
-    /// <summary>A scope's kept account as its settings name it, whether or not its list holds it.</summary>
-    private static string? OwnKeep(HarnessSettings settings, string owner, string? workspace) =>
-        RotationUse.Read(workspace is null
-            ? settings.Uses.GetValueOrDefault(owner)
-            : settings.WorkspaceUses.TryGetValue(workspace, out var uses) ? uses.GetValueOrDefault(owner) : null).Use.Keep;
-
-    /// <summary>What binds a scope, refused in a code the page translates; the sentence is the fallback, naming both sides.</summary>
-    private static ShenoraException ScopeRefusal(ScopeProblem problem, string owner, string? workspace)
-    {
-        var where = workspace is null ? "this machine's" : $"`{workspace}`'s";
-        return problem.Kind switch
-        {
-            ScopeProblemKind.Default => Refusals.Because(
-                Refusals.AccountScopeDefault,
-                $"{where} default for `{owner}` is `{problem.Account}`, and the list would not hold it — the default is where starts "
-                + "begin within the list. Make one of the list the default first.",
-                Scoped(workspace, ("agent", owner), ("account", problem.Account))),
-            ScopeProblemKind.Keep => Refusals.Because(
+    /// <summary>
+    /// What binds the set's kept account, refused in a code the page translates; the sentence is the fallback. No default is asked
+    /// of (POOL1c, D197 point 2: the order has none beside it), so a problem is the kept account's alone, outside the order or
+    /// alone in it.
+    /// </summary>
+    private static ShenoraException ScopeRefusal(ScopeProblem problem) =>
+        problem.Kind == ScopeProblemKind.Keep
+            ? Refusals.Because(
                 Refusals.AccountScopeKeep,
                 $"`{problem.Account}` is kept for conversations, and the list does not hold it — the kept account is one of the list.",
-                ("account", problem.Account)),
-            _ => Refusals.Because(
+                ("account", problem.Account))
+            : Refusals.Because(
                 Refusals.AccountScopeAlone,
                 $"`{problem.Account}` is kept for conversations, and the list would hold no other account, so driven work would have none.",
-                ("account", problem.Account)),
-        };
-    }
-
-    /// <summary>A refusal's values with the workspace and the catalogue's context where a workspace is named.</summary>
-    private static (string Key, string Value)[] Scoped(string? workspace, params (string Key, string Value)[] values) =>
-        workspace is null ? values : [.. values, ("workspace", workspace), ("context", "workspace")];
+                ("account", problem.Account));
 
     /// <summary>
     /// The settings a <c>use</c> names: a field left out is no change; <c>noKeep</c> keeps none; <c>switch</c> and <c>curve</c>

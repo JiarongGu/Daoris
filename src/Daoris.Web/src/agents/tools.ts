@@ -76,7 +76,6 @@ export interface ToolDoor {
    * where a door onto it is (UX6e, D150 §5.1). Absent from an older shell.
    */
   takesRules?: boolean;
-  machineDefault?: string | null;
   profiles?: Account[];
   /** What the tool says about logging in to its OWN configuration home — the account a person has before naming any. */
   ownLogin?: string | null;
@@ -87,8 +86,6 @@ export interface ToolDoor {
   ownPlan?: string | null;
   /** When that home's state was last read (UX6e): only at a person's press (TOOL6g), so null before one. */
   ownRead?: string | null;
-  /** Which circles run this door as which account (D49 §4). */
-  workspaceDefaults?: { workspace: string; profile: string }[];
   /** The plugin this door was declared by (D64), or null for one the build carries. */
   plugin?: string | null;
   /**
@@ -146,16 +143,6 @@ export interface AccountSettingsChange {
 }
 
 /**
- * One scope an account runs in (ACCT1): a workspace, or null for this machine's; whether its own list holds the account,
- * and whether its own default names it.
- */
-export interface AccountPlace {
-  workspace: string | null;
-  list: boolean;
-  default: boolean;
-}
-
-/**
  * One account: the directory's name, where it is, its state — and who is signed in there, by the
  * tool's own answer (D66 §3). A person knows an account by its name (ACCT2); `name` is its id, what a terminal types.
  */
@@ -164,10 +151,6 @@ export interface Account {
   name: string;
   /** The person's name for it (ACCT2), null where they gave none; absent from a shell older than that. */
   displayName?: string | null;
-  /** Where it runs (ACCT1): each scope whose own list holds it or whose own default names it; absent from an older shell. */
-  places?: AccountPlace[] | null;
-  /** No list and no default holds it, so no start runs on it (ACCT1); absent from an older shell. */
-  nowhere?: boolean;
   home: string;
   /** Asked of the tool, and one of three answers (SES3): only a definite `out` refuses. */
   login: 'in' | 'out' | 'unknown';
@@ -200,8 +183,6 @@ export interface Tool {
   doors: ToolDoor[];
   /** The accounts, deduplicated: every door onto one tool reads one configuration home. */
   accounts: Account[];
-  /** Which account the next session runs as, where any door says so. */
-  machineDefault: string | null;
   /** Whether any door onto this tool is installed — "have I got this tool" in one word. */
   present: boolean;
   /**
@@ -218,8 +199,6 @@ export interface Tool {
   ownRead: string | null;
   /** Whether any door onto it is handed Daoris's rules file (UX6e, D150 §5.1). */
   takesRules: boolean;
-  /** Which circles use which account, once per circle however many doors report it. */
-  workspaceDefaults: { workspace: string; profile: string }[];
   /**
    * What the tool offers for an account's model and effort (AGT6), from the first door that says; null
    * where the doors say none, and a surface then offers nothing and says so; undefined from an older
@@ -310,23 +289,12 @@ export function byTool(doors: readonly ToolDoor[]): Tool[] {
       }
     }
 
-    // One circle, one answer: the doors read one file, so the first door to name a circle speaks
-    // for it — like the accounts above, the second door saying it again is the same fact.
-    const workspaceDefaults: Tool['workspaceDefaults'] = [];
-    for (const door of doorsInOrder) {
-      for (const circle of door.workspaceDefaults ?? []) {
-        if (workspaceDefaults.some((held) => held.workspace === circle.workspace)) continue;
-        workspaceDefaults.push(circle);
-      }
-    }
-
     return {
       name,
       product: doorsInOrder.map((door) => door.product).find(Boolean) ?? null,
       maker: doorsInOrder.map((door) => door.maker).find(Boolean) ?? null,
       doors: doorsInOrder,
       accounts,
-      machineDefault: doorsInOrder.find((door) => door.machineDefault)?.machineDefault ?? null,
       present: doorsInOrder.some((door) => door.present),
       // The account-owning door's word; any door's definite answer beats every door's silence.
       ownLogin: doorsInOrder.map((door) => door.ownLogin).find((state) => state && state !== 'unknown')
@@ -339,7 +307,6 @@ export function byTool(doors: readonly ToolDoor[]): Tool[] {
       ownRead: (doorsInOrder.find((door) => door.ownLogin && door.ownLogin !== 'unknown')
         ?? doorsInOrder.find((door) => door.ownRead))?.ownRead ?? null,
       takesRules: doorsInOrder.some((door) => door.takesRules === true),
-      workspaceDefaults,
       // One file per account whichever door reads it (AGT7), so the first door to offer choices speaks for
       // all; a door that said none says none, and a shell that never said leaves it unsaid.
       settingsChoices: doorsInOrder.map((door) => door.settingsChoices).find(Boolean)

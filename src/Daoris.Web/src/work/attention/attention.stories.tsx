@@ -25,7 +25,7 @@ const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 /** Every act handed, as a shell's band hands them; a story reports nothing. */
 const ACTS: Required<AttentionActs> = {
   publish: () => {}, retry: () => {}, answer: () => {}, trust: () => {}, acceptDeparture: () => {}, acceptRule: () => {},
-  declineRule: () => {}, signIn: () => {}, signInNew: () => {}, read: () => {}, letRun: () => {}, reviewed: () => {}, notYet: () => {},
+  declineRule: () => {}, signIn: () => {}, signInNew: () => {}, read: () => {}, reviewed: () => {}, notYet: () => {},
   showAgain: () => {}, opinionAgain: () => {}, opinionAnyway: () => {}, helper: () => {}, held: () => {}, permission: () => {},
   openRecords: () => {},
   answerAlone: () => {},
@@ -56,7 +56,7 @@ const ACCOUNT_WAIT: Attention = {
   id: 'wait:claude-code/account-2', kind: 'account-wait', title: 'Intake for 2 asks', where: 'work', circle: true, since: at(25),
   detail: `home cools until ${resetSaid}; account-1 and account-3 read signed out at ${readSaid}.`,
   account: {
-    ...CLAUDE, outside: null,
+    ...CLAUDE,
     named: [
       { id: 'account-2', label: 'home', state: 'cooling', read: READ, until: RESET },
       { id: 'account-1', label: 'account-1', state: 'out', read: READ, until: null },
@@ -66,10 +66,10 @@ const ACCOUNT_WAIT: Attention = {
 };
 
 /**
- * A quest whose only account cools, with a ready account outside `work`'s list (D130 §3.3) and one no read answered:
- * *Let … run …*, which asks once, and *Read* for that one account.
+ * A quest whose only account cools, with one no read answered: *Read* for that one account. No account is outside a start's
+ * list, since every account of Daoris's serves every workspace (POOL1c), so no row offers to let one run.
  */
-const LET_IN: Attention = {
+const UNREAD: Attention = {
   id: 'quest:claude-code/account-2', kind: 'account-wait', title: 'Read the media field names from config', where: 'engine',
   since: at(70), detail: `home cools until ${resetSaid}; spare unknown, never read.`,
   account: {
@@ -78,27 +78,18 @@ const LET_IN: Attention = {
       { id: 'account-2', label: 'home', state: 'cooling', read: READ, until: RESET },
       { id: 'acct-3f9c1a2b', label: 'spare', state: 'unknown', read: null, until: null },
     ],
-    outside: { id: 'account-4', label: 'account-4', list: 'work', workspace: 'work' },
   },
 };
 
 /**
- * The same quest where the one account outside `work`'s list was never read (UXFIX3): it may be signed out, so the row reads
- * it first, in *Let … run …*'s place, and offers to let it run once it reads ready.
- */
-const READ_FIRST: Attention = {
-  ...LET_IN, id: 'quest:claude-code/account-2:read-first', detail: `home cools until ${resetSaid}.`,
-  account: { ...CLAUDE, named: [LET_IN.account!.named[0]!], outside: null, readFirst: { id: 'acct-5e6f7a8b', label: 'team seat' } },
-};
-
-/**
- * A signed-out account a list holds that no waiting start names: its own row, its sign-in, its agent's page. It says when
- * it was read, never how long it waited, since nobody knows when it began to hold work (UXFIX3).
+ * A signed-out account of Daoris's that no waiting start names: its own row, its sign-in, its agent's page. It says when it was
+ * read, never how long it waited, since nobody knows when it began to hold work (UXFIX3), and never where it runs, since every
+ * account serves every workspace (POOL1c).
  */
 const SIGNED_OUT: Attention = {
   id: 'signed-out:claude-code/account-5', kind: 'signed-out', title: 'you@work.example', where: 'Claude Code', since: null,
-  read: READ, detail: 'It runs work in this machine and aurora.',
-  account: { ...CLAUDE, outside: null, named: [{ id: 'acct-7d01e3aa', label: 'you@work.example', state: 'out', read: READ, until: null }] },
+  read: READ, detail: null,
+  account: { ...CLAUDE, named: [{ id: 'acct-7d01e3aa', label: 'you@work.example', state: 'out', read: READ, until: null }] },
 };
 
 /** Overview's main area: the container the row's layout follows, at the width a story gives it. */
@@ -238,7 +229,7 @@ export default meta;
  * two counted.
  */
 const BAND: Attention[] = [
-  TRUST_ROW, LET_IN, PARKED_QUEST, GO_AHEAD, PARKED, ACCOUNT_WAIT, SIGNED_OUT,
+  TRUST_ROW, UNREAD, PARKED_QUEST, GO_AHEAD, PARKED, ACCOUNT_WAIT, SIGNED_OUT,
   PROPOSAL, { ...PROPOSAL, id: '1b2c3d4e5f6a', title: 'Fix the pipeline’s knowledge check', since: at(170), publishTo: ['engine'], detail: 'The declarations propose engine. Nothing is published until you choose.' },
   DEPARTURE, SET_UP_ROW, OPINION_ROW, OPINION_NONE, RULE,
   ...REVIEWS,
@@ -340,23 +331,19 @@ export const BandWithRunsNarrowChinese: StoryObj = {
 
 /**
  * An intake held on an account read signed out with none cooling (UX6d1, UX6d2): a wait for a sign-in, never a reset, so its
- * line names no time and never the tool's own sign-in. Its sign-in, and *Read* first for the account outside `work`'s list
- * no read answered (UXFIX3), whose readiness nobody knows.
+ * line names no time and never the tool's own sign-in. Its sign-in.
  */
 const SIGNED_OUT_WAIT: Attention = {
   id: 'wait:claude-code/:signed-out', kind: 'account-wait', title: 'Intake for ask #0fda18', where: 'work', circle: true,
   since: at(42), detail: `account-1 read signed out at ${readSaid}.`,
-  account: {
-    ...CLAUDE, outside: null, readFirst: { id: 'acct-5e6f7a8b', label: 'team seat' },
-    named: [{ id: 'account-1', label: 'account-1', state: 'out', read: READ, until: null }],
-  },
+  account: { ...CLAUDE, named: [{ id: 'account-1', label: 'account-1', state: 'out', read: READ, until: null }] },
 };
 
 /** Beside it, a cool-off of the tool's own sign-in for the same agent: no account named either, and a row of its own. */
 const OWN_COOLING: Attention = {
   id: 'wait:claude-code/', kind: 'account-wait', title: 'Expose a streaming budget on the chunk API', where: 'engine',
   since: at(33), detail: `Your own sign-in cools until ${resetSaid}.`,
-  account: { ...CLAUDE, outside: null, named: [{ id: null, label: 'Your own sign-in', state: 'cooling', read: null, until: RESET }] },
+  account: { ...CLAUDE, named: [{ id: null, label: 'Your own sign-in', state: 'cooling', read: null, until: RESET }] },
 };
 
 /**
@@ -384,15 +371,15 @@ export const BandSignedOutWaitDark: StoryObj = { ...BandSignedOutWait, decorator
  */
 const KEY_REFUSED: Attention = {
   id: 'signed-out:claude-code/acct-0a1b2c3d', kind: 'signed-out', title: 'API key …k3y9', where: 'Claude Code', since: null,
-  read: READ, detail: "Key refused: put a new API key into it on Claude Code's page. It runs work in this machine.",
-  account: { ...CLAUDE, outside: null, named: [{ id: 'acct-0a1b2c3d', label: 'API key …k3y9', state: 'refused', read: READ, until: null }] },
+  read: READ, detail: "Key refused: put a new API key into it on Claude Code's page.",
+  account: { ...CLAUDE, named: [{ id: 'acct-0a1b2c3d', label: 'API key …k3y9', state: 'refused', read: READ, until: null }] },
 };
 
 const WAIT_ON_REFUSED: Attention = {
   id: 'wait:claude-code/:signed-out', kind: 'account-wait', title: 'Intake for ask #0fda18', where: 'work', circle: true,
   since: at(42), detail: `account-1 read signed out at ${readSaid}; API key …k3y9: key refused.`,
   account: {
-    ...CLAUDE, outside: null,
+    ...CLAUDE,
     named: [
       { id: 'account-1', label: 'account-1', state: 'out', read: READ, until: null },
       { id: 'acct-0a1b2c3d', label: 'API key …k3y9', state: 'refused', read: READ, until: null },
@@ -456,14 +443,6 @@ export const Asking: StoryObj = {
         <AttentionRow item={SET_UP_ROW} acts={ACTS} onOpen={() => {}} opened="not-yet" />
         {/* XAGENT1g: a second opinion's *Go on anyway…*, saying what stays unsettled, with the person's words. */}
         <AttentionRow item={OPINION_ROW} acts={ACTS} onOpen={() => {}} opened="opinion-anyway" />
-        {/* UX6d: an account let into the workspace's list, and into this machine's, each saying what it lets Daoris spend. */}
-        <AttentionRow item={LET_IN} acts={ACTS} onOpen={() => {}} opened="let-run" />
-        <AttentionRow
-          item={{ ...LET_IN, id: 'machine', account: { ...LET_IN.account!, outside: { ...LET_IN.account!.outside!, list: null } } }}
-          acts={ACTS}
-          onOpen={() => {}}
-          opened="let-run"
-        />
       </ul>
     </Main>
   ),
@@ -471,24 +450,23 @@ export const Asking: StoryObj = {
 
 /**
  * The accounts' rows (UX6d, design §6.2–§6.3): the intake waiting behind a cooling account with a sign-in for each account it
- * passed signed out; a quest whose one account cools, letting a ready one in and reading one never read; the same where the
- * one outside its list was never read, read first (UXFIX3); a signed-out account a list holds, saying when it was read; the
- * tool's own sign-in cooling, which only the person signs in; three signed out, two pressed and the third said; the tick's
- * word before the roster answers, nothing to press; a row held while a sign-in runs; a long 中文 name.
+ * passed signed out; a quest whose one account cools, reading one never read; a signed-out account of Daoris's, saying when it
+ * was read and never where it runs (POOL1c); the tool's own sign-in cooling, which only the person signs in; three signed out,
+ * two pressed and the third said; the tick's word before the roster answers, nothing to press; a row held while a sign-in
+ * runs; a long 中文 name.
  */
 export const AccountRows: StoryObj = {
   render: () => (
     <Main width={1180}>
       <ul className="m-0 grid list-none gap-1 border border-line bg-raised p-0 py-2">
         <AttentionRow item={ACCOUNT_WAIT} acts={ACTS} onOpen={() => {}} />
-        <AttentionRow item={LET_IN} acts={ACTS} onOpen={() => {}} />
-        <AttentionRow item={READ_FIRST} acts={ACTS} onOpen={() => {}} />
+        <AttentionRow item={UNREAD} acts={ACTS} onOpen={() => {}} />
         <AttentionRow item={SIGNED_OUT} acts={ACTS} onOpen={() => {}} />
         <AttentionRow
           item={{
             ...ACCOUNT_WAIT, id: 'own', title: 'Expose a streaming budget on the chunk API', where: 'engine', circle: false,
             detail: `Your own sign-in cools until ${resetSaid}.`,
-            account: { ...CLAUDE, outside: null, named: [{ id: null, label: 'Your own sign-in', state: 'cooling', read: null, until: RESET }] },
+            account: { ...CLAUDE, named: [{ id: null, label: 'Your own sign-in', state: 'cooling', read: null, until: RESET }] },
           }}
           acts={ACTS}
           onOpen={() => {}}
@@ -498,7 +476,7 @@ export const AccountRows: StoryObj = {
             ...ACCOUNT_WAIT, id: 'three', title: '2 quests', where: 'game', circle: false,
             detail: `account-1, account-3, and account-6 read signed out at ${readSaid}.`,
             account: {
-              ...CLAUDE, outside: null,
+              ...CLAUDE,
               named: ['account-1', 'account-3', 'account-6'].map((id) => ({ id, label: id, state: 'out' as const, read: READ, until: null })),
             },
           }}
@@ -518,7 +496,7 @@ export const AccountRows: StoryObj = {
           item={{
             ...ACCOUNT_WAIT, id: 'no-account', title: 'Intake for 2 asks',
             detail: 'No Daoris account is signed in for Claude Code, so its starts wait until you sign in.',
-            account: { ...CLAUDE, outside: null, named: [], noAccount: true },
+            account: { ...CLAUDE, named: [], noAccount: true },
           }}
           acts={ACTS}
           onOpen={() => {}}
@@ -527,8 +505,7 @@ export const AccountRows: StoryObj = {
         <AttentionRow
           item={{
             ...SIGNED_OUT, id: 'cjk', title: '工作账户（团队席位，周额度）',
-            detail: 'It runs work in 世界流式加载引擎.',
-            account: { ...CLAUDE, outside: null, named: [{ id: 'acct-1a2b3c4d', label: '工作账户（团队席位，周额度）', state: 'out', read: READ, until: null }] },
+            account: { ...CLAUDE, named: [{ id: 'acct-1a2b3c4d', label: '工作账户（团队席位，周额度）', state: 'out', read: READ, until: null }] },
           }}
           acts={ACTS}
           onOpen={() => {}}
@@ -541,7 +518,7 @@ export const AccountRows: StoryObj = {
 /**
  * The rows as 中文 words them (`accountWords` words each from the catalogue, in the reader's language): the titles and
  * the lines in 中文, the accounts' names and the reset's moment as the reader's language writes them. A signed-out account's
- * reading is the row's own words (*… 读取*), so its line says only where it runs (UXFIX3).
+ * reading is the row's own words (*… 读取*) (UXFIX3), and it has no line: every account serves every workspace (POOL1c).
  */
 function chineseRows(): Attention[] {
   const t = zh.t.bind(zh);
@@ -554,34 +531,27 @@ function chineseRows(): Attention[] {
       detail: line(cooling, t('work.attention.accounts.out', { accounts: list(['account-1', 'account-3'], 'zh'), when: read })),
     },
     {
-      ...LET_IN, title: '从配置读取媒体字段名',
+      ...UNREAD, title: '从配置读取媒体字段名',
       detail: line(cooling, t('work.attention.accounts.never', { accounts: 'spare' })),
     },
-    {
-      ...SIGNED_OUT,
-      detail: t('work.attention.signedOut.runs', { runs: list([t('agents.runs.machine'), 'aurora'], 'zh') }),
-    },
-    {
-      ...READ_FIRST, title: '从配置读取媒体字段名', detail: line(cooling),
-      account: { ...READ_FIRST.account!, readFirst: { id: 'acct-5e6f7a8b', label: '团队席位' } },
-    },
+    SIGNED_OUT,
     {
       ...ACCOUNT_WAIT, id: 'own', title: '在区块 API 上暴露流式预算', where: 'engine', circle: false,
       detail: line(t('work.attention.accounts.cooling', { account: t('agents.account.own'), when: moment(RESET, 'zh') })),
-      account: { ...CLAUDE, outside: null, named: [{ id: null, label: t('agents.account.own'), state: 'cooling', read: null, until: RESET }] },
+      account: { ...CLAUDE, named: [{ id: null, label: t('agents.account.own'), state: 'cooling', read: null, until: RESET }] },
     },
     {
       // OWNSPACE1b-B: the hold for no Daoris account signed in, whose one press is *Sign in for Daoris*.
       ...ACCOUNT_WAIT, id: 'no-account', title: t('work.attention.held.intakes', { count: 2 }),
       detail: t('work.attention.accounts.noAccount', { product: 'Claude Code' }),
-      account: { ...CLAUDE, outside: null, named: [], noAccount: true },
+      account: { ...CLAUDE, named: [], noAccount: true },
     },
   ];
 }
 
 /**
- * The accounts' rows in 中文, each title and line as 中文 says it: a signed-out account saying when it was read, an account
- * outside the list read first, and the tool's own sign-in read signed out, with no press.
+ * The accounts' rows in 中文, each title and line as 中文 says it: a signed-out account saying when it was read, and the tool's
+ * own sign-in read signed out, with no press.
  */
 export const AccountRowsChinese: StoryObj = {
   decorators: [chinese],
@@ -603,7 +573,7 @@ export const AccountRowsNarrow: StoryObj = {
     <Main width={600}>
       <ul className="m-0 grid list-none gap-1 border border-line bg-raised p-0 py-2">
         <AttentionRow item={ACCOUNT_WAIT} acts={ACTS} onOpen={() => {}} />
-        <AttentionRow item={LET_IN} acts={ACTS} onOpen={() => {}} />
+        <AttentionRow item={UNREAD} acts={ACTS} onOpen={() => {}} />
         <AttentionRow item={SIGNED_OUT} acts={ACTS} onOpen={() => {}} />
       </ul>
     </Main>
@@ -871,6 +841,40 @@ export const TrustAsking: StoryObj = {
     <div className="max-w-xl">
       <TrustAsk hold={HOLD} onGrant={() => {}} onCancel={() => {}} />
     </div>
+  ),
+};
+
+/**
+ * A hold on your own sign-in's file (POOL1c, D197 point 3; the account-pool design §4.3): a conversation that began there goes
+ * on there, and Daoris writes nothing in that file, so the question shows the folder and one sentence, with no grant.
+ */
+export const TrustOnYourOwnSignIn: StoryObj = {
+  render: () => (
+    <div className="max-w-xl">
+      <TrustAsk hold={{ ...HOLD, trustFile: 'C:/somewhere/home/.claude.json', own: true }} onGrant={() => {}} onCancel={() => {}} />
+    </div>
+  ),
+};
+
+/** The same in 中文, in dark. */
+export const TrustOnYourOwnSignInChineseDark: StoryObj = { ...TrustOnYourOwnSignIn, decorators: [chinese, dark] };
+
+/** Its row in What needs you: the sentence, and nothing to press but its door. */
+export const TrustRowOnYourOwnSignIn: StoryObj = {
+  render: () => (
+    <Main width={720}>
+      <ul className="m-0 grid list-none gap-1 border border-line bg-raised p-0 py-2">
+        <AttentionRow
+          item={{
+            ...TRUST_ROW, id: 'own',
+            detail: "This conversation goes on in your own sign-in, outside Daoris's accounts, so Daoris writes nothing in its file: trust the folder with the tool itself, at your terminal.",
+            trust: { folder: HOLD.folder, trustFile: 'C:/somewhere/home/.claude.json', own: true },
+          }}
+          acts={ACTS}
+          onOpen={() => {}}
+        />
+      </ul>
+    </Main>
   ),
 };
 

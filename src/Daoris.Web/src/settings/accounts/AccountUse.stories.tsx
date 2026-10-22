@@ -5,17 +5,17 @@ import { USE_DEFAULTS } from './accounts';
 import {
   AHEAD, CHOICES, MACHINE_NEAR, OFFERED_AGAIN, OWN_COOLING, scopeOf, SILENT, SIX_AGENT, SIX_CHOICES, THREE,
 } from './accountsFixtures';
-import { AccountFactsLines, OwnSignInLine, type ScopeActs, ScopeEditor, TermsLine, WorkspaceScope } from './AccountUse';
+import { AccountFactsLines, type ScopeActs, ScopeEditor, TermsLine } from './AccountUse';
 
-// How an agent's accounts are used (TOOL4g; D125 §2.4, §3.7, §6; D130 §3.2, §9, §16.6), in every state Settings → Agents
-// shows: an account cooling until a stated reset, by Daoris's default, or in this machine's zone; what an agent last said;
-// its pace warning, in English and 中文 (USAGEREAD3b); nothing said yet; the tool's own sign-in shared with the person; the terms; a scope with three accounts, one over
-// the person's own curve and one kept, its charts and points (SWITCH1d), in 中文, refused, and the switch off; six accounts and nothing said; no list yet; a default outside the list; one by one; an agent that says nothing of
-// its limits; a workspace on this machine's accounts and on its own; a 中文 account; and which account the next start takes
-// and why (TOOL6e): offered again after a cool-off, waiting, and waiting on the tool's own sign-in.
+// How an agent's accounts are used (TOOL4g; D125 §2.4, §3.7, §6; D130 §9, §16.6; POOL1c, D197), in every state its page shows:
+// an account cooling until a stated reset, by Daoris's default, or in this machine's zone; what an agent last said; its pace
+// warning, in English and 中文 (USAGEREAD3b); nothing said yet; the terms; the one set of three accounts, every workspace's,
+// one over the person's own curve and one kept, its charts and points (SWITCH1d), in 中文, refused, and the switch off; six
+// accounts and nothing said; one by one; an agent that says nothing of its limits; a 中文 account; and which account the next
+// start takes and why (TOOL6e): offered again after a cool-off, waiting, and waiting on the tool's own sign-in.
 
 const nothing = () => {};
-const ACTS: ScopeActs = { onOrder: nothing, onUse: nothing, onInherit: nothing };
+const ACTS: ScopeActs = { onOrder: nothing, onUse: nothing };
 
 const meta: Meta<typeof ScopeEditor> = {
   title: 'Settings/AccountUse',
@@ -74,16 +74,19 @@ export const OwnCurveRefused: Story = {
 /** Six accounts, none of which has said what it has left: the walk spreads by Daoris's own sessions, and says so. */
 export const SixAccountsNothingSaid: Story = { args: { agent: SIX_AGENT, scope: SIX_AGENT.scopes[0]!, accounts: SIX_CHOICES } };
 
-/** No account used yet: no settings, and where its starts run instead. */
-export const NoListYet: Story = { args: { scope: scopeOf() } };
+/** An order the answer has not named yet: every account of Daoris's still drawn, in the agent's order, with its settings. */
+export const OrderNotNamedYet: Story = { args: { scope: scopeOf() } };
 
-/** A hand-edited default outside the list, read with the list winning and said. */
-export const DefaultOutsideTheList: Story = {
-  args: { scope: scopeOf({ default: 'account-3', list: ['account-1'], begins: 'account-1', problem: { kind: 'default', account: 'account-3' } }) },
+/** A hand-edited kept account the order does not hold, read with the order winning and said. */
+export const KeptOutsideTheOrder: Story = {
+  args: { scope: scopeOf({ list: ['account-1', 'account-2'], begins: 'account-1', problem: { kind: 'keep', account: 'account-3' } }) },
 };
 
 /** One by one, in order, and what it costs. */
-export const OneByOne: Story = { args: { scope: THREE.scopes[1]!, workspace: 'work' } };
+export const OneByOne: Story = { args: { scope: { ...THREE.scopes[0]!, use: { ...THREE.scopes[0]!.use, use: 'order' } } } };
+
+/** The same in 中文, at the main area's 400 px floor. */
+export const OneByOneNarrowChinese: Story = { ...OneByOne, decorators: [storyWidths.narrow, chinese] };
 
 /** An agent whose sessions say nothing of their limits: the switch is kept, and waits for that word. */
 export const AgentSaysNothing: Story = {
@@ -93,16 +96,6 @@ export const AgentSaysNothing: Story = {
 /** A 中文 account name in the list. */
 export const ChineseAccount: Story = {
   args: { accounts: [{ name: 'account-1', label: '工作账户@example.invalid', login: 'in' }, ...CHOICES.slice(1)] },
-};
-
-/** A workspace on this machine's accounts: which those are. */
-export const WorkspaceOnThisMachine: Story = {
-  render: () => <WorkspaceScope agent={THREE} product="Claude Code" workspace="lab" scope={null} machine={THREE.scopes[0]!} accounts={CHOICES} acts={ACTS} />,
-};
-
-/** A workspace on its own accounts, one by one in its own order. */
-export const WorkspaceOwnList: Story = {
-  render: () => <WorkspaceScope agent={THREE} product="Claude Code" workspace="work" scope={THREE.scopes[1]!} machine={THREE.scopes[0]!} accounts={CHOICES} acts={ACTS} />,
 };
 
 /** An account cooling until the reset its agent named, with *Try now*, its sessions and its learned week. */
@@ -150,36 +143,28 @@ export const AccountNothingSaid: Story = {
   render: () => <AccountFactsLines facts={THREE.accounts[2]!} label="spare@example.invalid" onTryNow={nothing} />,
 };
 
-/** The tool's own sign-in, who it is, cooling by Daoris's default, with *Sign in to another account*. */
-export const OwnSignInShared: Story = {
-  render: () => <OwnSignInLine who="someone@example.invalid" cooling={OWN_COOLING} signsIn onSignIn={nothing} />,
-};
-
-/** The tool's own sign-in where the tool does not say who. */
-export const OwnSignInUnnamed: Story = { render: () => <OwnSignInLine signsIn onSignIn={nothing} /> };
-
 /** Each account's own plan and terms apply. */
 export const Terms: Story = { render: () => <TermsLine /> };
 
 /**
- * TOOL6e, the owner's case: the workspace's default came out of its cool-off and nothing runs, so the next start takes it,
- * Daoris having started on it least recently; another account cools; the tool's own sign-in carries none of these starts.
+ * TOOL6e, the owner's case: the order's first came out of its cool-off and nothing runs, so the next start takes it; another
+ * account cools; the tool's own sign-in carries none of these starts.
  */
 export const NextStartOfferedAgain: Story = {
-  args: { agent: OFFERED_AGAIN, scope: OFFERED_AGAIN.scopes[1]!, workspace: 'work' },
+  args: { agent: OFFERED_AGAIN, scope: OFFERED_AGAIN.scopes[0]! },
 };
 
-/** The next start waits: every account the list uses is held, the first offered again at its reset. */
+/** The next start waits: every account of the set is held, the first offered again at its reset. */
 export const NextStartWaits: Story = {
   args: {
     scope: scopeOf({
-      list: ['account-1', 'account-2'], begins: 'account-1',
+      list: ['account-1', 'account-2', 'account-3'], begins: 'account-1',
       next: {
         account: null, reason: 'waits', when: THREE.accounts[0]!.cooling!.until,
         others: [
           { account: 'account-1', hold: 'cooling', until: THREE.accounts[0]!.cooling!.until },
           { account: 'account-2', hold: 'refused' },
-          { account: 'account-3', hold: 'outside' },
+          { account: 'account-3', hold: 'signedOut' },
         ],
       },
     }),

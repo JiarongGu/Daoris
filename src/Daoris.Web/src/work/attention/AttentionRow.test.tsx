@@ -3,7 +3,6 @@ import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { clockOf } from '../../locales/format';
 import i18n from '../../locales/i18n';
-import { code } from '../../test/code';
 import { type Attention, type AttentionActs, AttentionRow } from './AttentionRow';
 
 const PARKED: Attention = {
@@ -63,7 +62,7 @@ const ACCOUNT_WAIT: Attention = {
   id: 'wait:claude-code/account-2', kind: 'account-wait', title: 'Intake for 2 asks', where: 'work', circle: true,
   since: '2026-09-21T11:35:00Z', detail: 'home cools until Oct 6, 04:42; account-1 and account-3 read signed out at 10:42.',
   account: {
-    agent: 'claude-code', product: 'Claude Code', harness: 'claude-code', signsIn: true, outside: null,
+    agent: 'claude-code', product: 'Claude Code', harness: 'claude-code', signsIn: true,
     named: [
       { id: 'account-2', label: 'home', state: 'cooling', read: null, until: '2026-10-06T04:42:00Z' },
       { id: 'account-1', label: 'account-1', state: 'out', read: '2026-09-21T10:42:00Z', until: null },
@@ -72,32 +71,25 @@ const ACCOUNT_WAIT: Attention = {
   },
 };
 
-/** The same wait with nothing signed out, and a ready account outside `work`'s list (D130 §3.3). */
-const LET_IN: Attention = {
+/** The same wait with nothing signed out, and an account no read answered. */
+const UNREAD: Attention = {
   ...ACCOUNT_WAIT,
   detail: 'home cools until Oct 6, 04:42.',
   account: {
     ...ACCOUNT_WAIT.account!,
     named: [ACCOUNT_WAIT.account!.named[0]!, { id: 'account-5', label: 'spare', state: 'unknown', read: null, until: null }],
-    outside: { id: 'account-4', label: 'account-4', list: 'work', workspace: 'work' },
   },
 };
 
-/** The same wait, where the one account outside `work`'s list no read answered: it is read before it is let in (UXFIX3). */
-const READ_FIRST: Attention = {
-  ...LET_IN,
-  account: { ...LET_IN.account!, named: [ACCOUNT_WAIT.account!.named[0]!], outside: null, readFirst: { id: 'account-4', label: 'spare' } },
-};
-
 /**
- * A signed-out account a list holds, which no waiting start names: when it was read is known, since when it holds work is
+ * A signed-out account of Daoris's, which no waiting start names: when it was read is known, since when it holds work is
  * not (UXFIX3).
  */
 const SIGNED_OUT: Attention = {
   id: 'signed-out:claude-code/account-1', kind: 'signed-out', title: 'account-1', where: 'Claude Code',
-  since: null, read: '2026-09-21T10:42:00Z', detail: 'It runs work in aurora.',
+  since: null, read: '2026-09-21T10:42:00Z', detail: null,
   account: {
-    agent: 'claude-code', product: 'Claude Code', harness: 'claude-code', signsIn: true, outside: null,
+    agent: 'claude-code', product: 'Claude Code', harness: 'claude-code', signsIn: true,
     named: [{ id: 'account-1', label: 'account-1', state: 'out', read: '2026-09-21T10:42:00Z', until: null }],
   },
 };
@@ -109,7 +101,7 @@ const answeredByAct = { done: expect.any(Function), refused: expect.any(Function
 const everyAct = (): Required<AttentionActs> => ({
   publish: vi.fn(), retry: vi.fn(), answer: vi.fn(), trust: vi.fn(),
   acceptDeparture: vi.fn(), acceptRule: vi.fn(), declineRule: vi.fn(),
-  signIn: vi.fn(), signInNew: vi.fn(), read: vi.fn(), letRun: vi.fn(), reviewed: vi.fn(), notYet: vi.fn(), showAgain: vi.fn(),
+  signIn: vi.fn(), signInNew: vi.fn(), read: vi.fn(), reviewed: vi.fn(), notYet: vi.fn(), showAgain: vi.fn(),
   opinionAgain: vi.fn(), opinionAnyway: vi.fn(), helper: vi.fn(), held: vi.fn(), permission: vi.fn(), answerAlone: vi.fn(),
   openRecords: vi.fn(), handOver: vi.fn(), gitTryAgain: vi.fn(),
 });
@@ -523,7 +515,7 @@ describe('settling one where it stands', () => {
 
   /** Design §9.3's budget: a row holds three controls at most, folded, whatever its kind. */
   it('holds three controls at most, door included', () => {
-    for (const item of [PARKED, PROPOSAL, PARKED_QUEST, GO_AHEAD, TRUST, DEPARTURE, RULE, REVIEW, ACCOUNT_WAIT, LET_IN, SIGNED_OUT]) {
+    for (const item of [PARKED, PROPOSAL, PARKED_QUEST, GO_AHEAD, TRUST, DEPARTURE, RULE, REVIEW, ACCOUNT_WAIT, UNREAD, SIGNED_OUT]) {
       const { unmount } = render(<AttentionRow item={item} acts={everyAct()} onOpen={vi.fn()} />);
       expect(screen.getAllByRole('button').length, item.kind).toBeLessThanOrEqual(3);
       unmount();
@@ -559,49 +551,23 @@ describe('an account’s row', () => {
     expect(open).toHaveBeenCalledWith(ACCOUNT_WAIT);
   });
 
-  /** D130 §3.3: letting an account run a workspace widens what Daoris may spend, so it asks once, naming its terminal twin. */
-  it('lets a ready account run the workspace only after saying what that lets Daoris spend', async () => {
-    const acts = everyAct();
-    render(<AttentionRow item={LET_IN} acts={acts} onOpen={vi.fn()} />);
-
-    await userEvent.click(screen.getByRole('button', { name: 'Let account-4 run work…' }));
-    const asking = screen.getByRole('group', { name: 'Let account-4 run work…' });
-    expect(within(asking).getByText(/account-4 joins work's list, so Daoris may start work's work on it/)).toBeInTheDocument();
-    expect(within(asking).getByText(code('daoris agent profile join claude-code account-4 work'))).toBeInTheDocument();
-    expect(acts.letRun).not.toHaveBeenCalled();
-    await userEvent.click(within(asking).getByRole('button', { name: "Add to work's list" }));
-    expect(acts.letRun).toHaveBeenCalledWith(LET_IN, 'account-4', answeredByAct);
-  });
-
-  it('says a join to this machine’s list is one, for every workspace that runs on it', async () => {
-    const item: Attention = { ...LET_IN, account: { ...LET_IN.account!, outside: { ...LET_IN.account!.outside!, list: null } } };
-    render(<AttentionRow item={item} acts={everyAct()} />);
-
-    await userEvent.click(screen.getByRole('button', { name: 'Let account-4 run work…' }));
-    const asking = screen.getByRole('group', { name: 'Let account-4 run work…' });
-    expect(within(asking).getByText(/joins this machine's list, which work runs on with every workspace/)).toBeInTheDocument();
-    expect(within(asking).getByText(code('daoris agent profile join claude-code account-4 --machine'))).toBeInTheDocument();
-    expect(within(asking).getByRole('button', { name: "Add to this machine's list" })).toBeInTheDocument();
-  });
-
   /** §6.3: an account no read answered gets *Read* for that one account, the reading the person asks for. */
   it('reads an account no read answered, on the press', async () => {
     const acts = everyAct();
-    render(<AttentionRow item={LET_IN} acts={acts} />);
+    render(<AttentionRow item={UNREAD} acts={acts} />);
     await userEvent.click(screen.getByRole('button', { name: 'Read spare' }));
-    expect(acts.read).toHaveBeenCalledWith(LET_IN, 'account-5');
+    expect(acts.read).toHaveBeenCalledWith(UNREAD, 'account-5');
   });
 
-  /** UXFIX3: an account no read answered may be signed out, so letting it run waits for a reading that says it is ready. */
-  it('reads an unread account outside the list before it offers to let it run', async () => {
-    const acts = everyAct();
-    render(<AttentionRow item={READ_FIRST} acts={acts} onOpen={vi.fn()} />);
-
+  /**
+   * POOL1c (the account-pool design §4.3): every account of Daoris's serves every workspace, so a wait offers to let none run,
+   * and never names this machine's list, whatever an older answer carries beside it.
+   */
+  it('offers to let no account run, and never names this machine’s list', () => {
+    const older = { ...UNREAD, account: { ...UNREAD.account!, outside: { id: 'account-4', label: 'account-4', list: null, workspace: 'work' } } };
+    render(<AttentionRow item={older as Attention} acts={everyAct()} onOpen={vi.fn()} />);
     expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(['Read spare', 'Claude Code']);
-    expect(screen.queryByRole('button', { name: /^Let / })).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Read spare' }));
-    expect(acts.read).toHaveBeenCalledWith(READ_FIRST, 'account-4');
-    expect(acts.letRun).not.toHaveBeenCalled();
+    expect(document.body.textContent).not.toMatch(/Let account-4|this machine's list/);
   });
 
   /**
@@ -615,7 +581,6 @@ describe('an account’s row', () => {
       const { unmount } = render(<AttentionRow item={SIGNED_OUT} />);
       expect(screen.getByText(`read ${clockOf('2026-09-21T10:42:00Z', new Date())}`)).toBeInTheDocument();
       expect(screen.queryByText(/waiting/)).not.toBeInTheDocument();
-      expect(screen.getByText('It runs work in aurora.')).toBeInTheDocument();
       unmount();
 
       await i18n.changeLanguage('zh');
@@ -724,7 +689,6 @@ describe('an ask under the row answers inside itself', () => {
       },
     },
     { name: 'accept-rule', item: RULE, open: 'Allow…', move: 'Allow', handler: 'acceptRule' },
-    { name: 'let-run', item: LET_IN, open: 'Let account-4 run work…', move: "Add to work's list", handler: 'letRun' },
     {
       name: 'not-yet', item: SET_UP, open: 'Not yet…', move: 'Send not yet', handler: 'notYet',
       prepare: async (ask) => { await userEvent.type(within(ask).getByRole('textbox'), 'the chart is empty'); },

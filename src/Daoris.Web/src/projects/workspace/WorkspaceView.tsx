@@ -203,7 +203,7 @@ function DetailsPart({ workspace, repositories, notify, onOpenRepository, onOpen
         repositories={repositories}
         onOpen={onOpenRepository}
         starts={starts && { list: starts, nameOf }}
-        accounts={roster.data ? accountsHere(byTool(harnesses), accounts.data, workspace, nameOf) : null}
+        accounts={roster.data ? accountsHere(byTool(harnesses), accounts.data, nameOf) : null}
         onOpenAgent={onOpenAgent}
       />
       <KeptHistory

@@ -56,7 +56,8 @@ public sealed class OpeningNoteTests : IDisposable
         { "account-2", WalkStep.LeastRecent, null, "work", "account-2:s-1d", OpeningWhy.LeastRecent, "" },
         { "account-2", WalkStep.LeastRecent, null, "work", "", OpeningWhy.NotStarted, "" },
         { "account-1", WalkStep.List, null, "work", "", OpeningWhy.First, "workspace=work" },
-        { "account-1", WalkStep.List, null, null, "", OpeningWhy.FirstHere, "" },
+        // POOL1c (D197; the account-pool design §4.3): a start reads the set's one scope, so the order's first is said as that.
+        { "account-1", WalkStep.List, null, null, "", OpeningWhy.FirstOrder, "" },
         { "account-1", WalkStep.Kept, null, "work", "", OpeningWhy.KeptSelf, "" },
         { "account-2", WalkStep.Kept, null, "work", "", OpeningWhy.Kept, "over=account-1" },
     };
@@ -134,7 +135,13 @@ public sealed class OpeningNoteTests : IDisposable
             Assert.Single(RotationWords.Steps(new WalkChoice(step), "claude-code", ran, scope, workspace, passed, new Dictionary<string, AccountFacts>(), kind, Now, TimeZoneInfo.Utc));
 
         Assert.Equal((OpeningWhy.Default, "workspace=work"), (One(WalkStep.List, "account-2", Scope("account-2"), "work").Why, Values(One(WalkStep.List, "account-2", Scope("account-2"), "work"))));
-        Assert.Equal(("it is this machine's default", OpeningWhy.DefaultHere), (One(WalkStep.List, "account-2", Scope("account-2"), null).Text, One(WalkStep.List, "account-2", Scope("account-2"), null).Why));
+        // POOL1c: the set's scope has no default beside its order (D197 point 2), so its first is the order's first, never
+        // *this machine's default*; `default-here` and `first-here` stay declared for the notes already on machines.
+        Assert.Equal(
+            ("it comes first in the order of Daoris's accounts", OpeningWhy.FirstOrder),
+            (One(WalkStep.List, "account-2", Scope("account-2"), null).Text, One(WalkStep.List, "account-2", Scope("account-2"), null).Why));
+        Assert.Contains(NoteCodes.Opening.All, reason => reason.Code == OpeningWhy.DefaultHere);
+        Assert.Contains(NoteCodes.Opening.All, reason => reason.Code == OpeningWhy.FirstHere);
         var last = One(WalkStep.Kept, "account-2", Scope(), "work", kind: StartKind.Conversation);
         Assert.Equal(("`account-1` is kept for conversations, which take it last", OpeningWhy.KeptLast, "over=account-1"), (last.Text, last.Why, Values(last)));
 

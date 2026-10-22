@@ -41,17 +41,6 @@ export type AccountRowFacts = {
   /** The accounts the row names, in the order a start would walk them. */
   named: NamedAccount[];
   /**
-   * A ready account outside the list the waiting start reads, which the person may let run the work (D130 §3.3): the list
-   * the join adds it to (a workspace's, or null for this machine's) and the workspace that waits. Null where none is known
-   * ready: read signed in, or a key (UXFIX3).
-   */
-  outside?: { id: string; label: string; list: string | null; workspace: string } | null;
-  /**
-   * Where none outside the list is known ready, one the join would take that has never been read (UXFIX3): it may be signed
-   * out, so the row offers to read it, in *Let … run …*'s place, and lets it run only once a reading says it is ready.
-   */
-  readFirst?: { id: string; label: string } | null;
-  /**
    * The start is held because no Daoris account of the agent's is signed in (OWNSPACE1b-B, D175): the row names no account and
    * offers *Sign in for Daoris*, which runs the add flow's sign-in in place.
    */
@@ -61,12 +50,12 @@ export type AccountRowFacts = {
 /** One account a pushed row names (PUSH1d4): its id, the name the look read beside it (null where none), its state as judged. */
 export type PushedNamed = Omit<NamedAccount, 'label'> & { name?: string | null };
 
-/** An account row's facts as pushed (PUSH1d4): every value of `AccountRowFacts` but the names, which the page gives. */
-export type PushedAccountFacts = Omit<AccountRowFacts, 'named' | 'outside' | 'readFirst'> & {
-  named: PushedNamed[];
-  outside?: { id: string; list: string | null; workspace: string } | null;
-  readFirst?: { id: string } | null;
-};
+/**
+ * An account row's facts as pushed (PUSH1d4): every value of `AccountRowFacts` but the names, which the page gives. An account
+ * outside a start's list, and one to read first, went with POOL1c (the account-pool design §4.3): every account serves every
+ * workspace, and the page reads neither.
+ */
+export type PushedAccountFacts = Omit<AccountRowFacts, 'named'> & { named: PushedNamed[] };
 
 /**
  * An account's name as the row says it (ACCT2, ACCOUNTID1b): the roster's, where it holds the account; the tool's own sign-in as
@@ -81,12 +70,11 @@ function labelOf(tool: Tool | undefined, id: string | null, name?: string | null
 /** A pushed row's account facts, each account named as the roster names it. */
 export function accountFactsWorded(facts: PushedAccountFacts, tools: readonly Tool[] = []): AccountRowFacts {
   const tool = tools.find((each) => each.name === facts.agent);
-  const { named, outside, readFirst, ...whose } = facts;
+  const { agent, product, harness, signsIn, named, noAccount } = facts;
   return {
-    ...whose,
+    agent, product, harness, signsIn,
     named: named.map(({ name, ...one }) => ({ ...one, label: labelOf(tool, one.id, name) })),
-    outside: outside ? { ...outside, label: labelOf(tool, outside.id) } : null,
-    ...(readFirst ? { readFirst: { ...readFirst, label: labelOf(tool, readFirst.id) } } : {}),
+    ...(noAccount !== undefined ? { noAccount } : {}),
   };
 }
 
@@ -142,8 +130,8 @@ export function heldTitle(holding: { quests: readonly string[]; asks: readonly s
 /**
  * An account's row worded (UX6d, D150 §6.2): a start waiting for accounts, named by what it holds, its line saying the accounts
  * that would serve it as last known with when each was read, or that no Daoris account is signed in (OWNSPACE1b-B); a signed-out
- * account, named as the roster names it, its line saying a key refused and where it runs. A signed-out account's row has no wait
- * (UXFIX3): it says when it was read.
+ * account, named as the roster names it, its line saying a key refused. Where it runs is not said: every account of Daoris's
+ * serves every workspace (POOL1c). A signed-out account's row has no wait (UXFIX3): it says when it was read.
  */
 export function accountRowWorded(row: PushedAttention, names: AttentionNames, now: Date): Attention {
   const pushed = row.account ?? { agent: '', product: '', harness: null, signsIn: false, named: [] };
@@ -161,11 +149,7 @@ export function accountRowWorded(row: PushedAttention, names: AttentionNames, no
     };
   }
   const [one] = account.named;
-  const runs = (row.runs ?? []).map((workspace) => workspace ?? i18n.t('agents.runs.machine'));
   // A key its provider refused says so, and where it is repaired: its agent's page, where a new key is added (ACCTUX1).
-  const detail = [
-    ...(one?.state === 'refused' ? [i18n.t('work.attention.signedOut.refused', { product: account.product })] : []),
-    ...(runs.length > 0 ? [i18n.t('work.attention.signedOut.runs', { runs: list(runs) })] : []),
-  ].join(i18n.t('harness.said.sentences'));
-  return { ...base, title: one?.label ?? row.id, read: row.read ?? null, detail: detail || null };
+  const detail = one?.state === 'refused' ? i18n.t('work.attention.signedOut.refused', { product: account.product }) : null;
+  return { ...base, title: one?.label ?? row.id, read: row.read ?? null, detail };
 }

@@ -135,6 +135,11 @@ export interface TrustHold {
   trustFile: string;
   quest?: string;
   ask?: string;
+  /**
+   * Its file is the person's own sign-in's (POOL1a3, D197 point 3): a conversation that began there goes on there. Daoris writes
+   * nothing in it, so the question offers no grant and `TRUST_FOLDER` refuses one as `TRUST_OWN_HOME`. Sent only where true.
+   */
+  own?: boolean;
 }
 
 /**

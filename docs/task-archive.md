@@ -19631,3 +19631,13 @@ runs: none on a set of one (seen failing with the guard reverted), one for the u
 passes (13,276), and the Process classes RESUMEOWN1's entry lists, with `HelpChat`, `TurnStop`, `ChatAttachment`, `OwnSpace` and
 `ClaudeUsageProcess`, 175 of 176 filtered with `process.runsettings`; the one, a `SessionMessagesTickTests` row, passed 19 of 19 alone.
 Detail: D197's USAGEONE1 note. On Opus.
+
+## POOL1c — the page shows one set (2026-10-22, D197)
+
+> - **POOL1c — the page shows one set** (web; after POOL1a2, POOL1a3 and POOL1b, archived; D197). The add-account dialog asks only a name, the agent page shows the set, its receipts (`ACCOUNTS`' `pooled`, *Got it* as `ACCOUNT_USE` `said`, both built) and an own-home trust hold with no press (the attention row's `trust.own`, and `errors.TRUST_OWN_HOME`, both built), and *This machine's list* leaves every screen, in English and Chinese, as design §4 and §11 say (the two refused-own notes reworded with their .NET English in `RefusedAccounts.cs`, D197's POOL1a3 note); the page's `profile-join`, `profile-default`, `inherit` and a sign-in's `join`, refused on the bridge as `ACCOUNTS_ONE_SET` since POOL1a1, leave with their coverage rows (`HelpCoverageTests`' `DefaultPress` for `profile-default`, whose Ask Daoris door left with POOL1b), and `Refusals.AccountDefaultOutsideList` with its catalogue keys, unused since POOL1b. Proof: as §11 names it.
+
+**Outcome** 2026-10-22: built. The agents page shows Daoris's accounts as one set: adding an account asks only a name; the fold's
+changes show above the accounts until *Got it*; the own sign-in is never asked; the own-home trust hold has no press; *This
+machine's list* is gone from every screen in en and zh; the page's default, join and inherit presses and three refusals are retired;
+*What needs you*'s trust row now carries `own`, which the attention slice had dropped since POOL1a3 (FIX-LOG). Detail: D197's POOL1c
+note, the fix log's POOL1c entry, commits 84eab5d75..32d2f7241. The windows are looked at in POOL1d. On Opus.

@@ -1,10 +1,9 @@
 import i18n from '../locales/i18n';
 import { ago, clockOf, moment } from '../locales/format';
-import type { Account, AccountPlace, Tool } from './tools';
+import type { Account, Tool } from './tools';
 import {
-  type AccountCooling, type AccountFacts, type AccountSaid, type AccountScope, type AccountsAnswer, type AgentAccounts, agentOf,
-  coolingLine, heldLine, machineScope, nextLine, nextWhy, offeredLine, orderedWindows, percent, type WindowSaid, windowName,
-  workspaceScope,
+  type AccountCooling, type AccountFacts, type AccountScope, type AccountsAnswer, type AgentAccounts, agentOf, coolingLine,
+  heldLine, machineScope, nextLine, offeredLine, orderedWindows, percent, type PoolReceipt, type WindowSaid, windowName,
 } from '../settings/accounts/accounts';
 import type { AgentRulesState } from '../settings/repository/AgentRules';
 import { OPEN_STATES } from '../settings/repository/proposals';
@@ -33,7 +32,7 @@ export type AccountState = {
   read: string | null;
   /** Its cool-off, where it cools. */
   cooling: AccountCooling | null;
-  /** A list or a default holds it, or the starts run on it: a signed-out one then holds work, and wears open's hue. */
+  /** The starts run on it, as on every account of Daoris's (D197): a signed-out one then holds work, and wears open's hue. */
   holdsWork: boolean;
 };
 
@@ -58,49 +57,25 @@ export function waitsOnPerson(state: Pick<AccountState, 'state'>): boolean {
   return state.state === 'out' || state.state === 'refused';
 }
 
-/** Whether a default or a list names the account: the machine's or a workspace's (D130 §3.1). */
-export function heldBy(tool: Tool, use: AgentAccounts | null | undefined, name: string): boolean {
-  if (tool.machineDefault === name) return true;
-  if (tool.workspaceDefaults.some((circle) => circle.profile === name)) return true;
-  return (use?.scopes ?? []).some((scope) => scope.default === name || scope.list.includes(name));
-}
-
 /**
- * Whether any start runs on the tool's own sign-in: never, for a real agent (D175 point 1, OWNSPACE1b-A). Where nothing names an
- * account Daoris's own accounts are taken in turn, or the start waits for a sign-in; the own sign-in is shown read-only, holds no
- * work and is never loud. A test double that runs in its own home is the driver's concern, and says so by `inherited: false`.
+ * Whether the starts run on the account (POOL1c, D197 point 1): every account of Daoris's does, one set serving every workspace,
+ * whatever its order names, so a signed-out one holds work wherever it is. The tool's own sign-in is none of them (point 3).
  */
-export function sharesOwn(_tool: Tool, _use: AgentAccounts | null | undefined): boolean {
-  return false;
-}
-
-/** The tool's own sign-in's state: its word only at a person's press (TOOL6g), its cool-off where it cools. */
-export function ownState(tool: Tool, use: AgentAccounts | null | undefined): AccountState {
-  const login = tool.ownLogin === 'in' || tool.ownLogin === 'out' ? tool.ownLogin : 'unknown';
-  return accountState({ login, read: tool.ownRead }, { cooling: use?.own.cooling ?? null }, sharesOwn(tool, use));
-}
-
-/**
- * What the tool's own sign-in last said of its windows (CODEXUSE3): read at a person's press by its agent's own server and
- * answered beside the accounts as `own.said`, never as one of them; null where nothing was said. Read defensively, as a shell
- * older than that answers none.
- */
-export function ownSaid(use: AgentAccounts | null | undefined): AccountSaid | null {
-  const said = use?.own?.said;
-  return said && Array.isArray(said.windows) ? said : null;
+export function heldBy(tool: Tool, name: string): boolean {
+  return tool.accounts.some((account) => account.name === name);
 }
 
 /** Each named account's state on this agent, by its directory. */
 export function accountStates(tool: Tool, use: AgentAccounts | null | undefined): Map<string, AccountState> {
   return new Map(tool.accounts.map((account) => [
     account.name,
-    accountState(account, use?.accounts.find((facts) => facts.name === account.name) ?? null, heldBy(tool, use, account.name)),
+    accountState(account, use?.accounts.find((facts) => facts.name === account.name) ?? null, heldBy(tool, account.name)),
   ]));
 }
 
 /**
- * The accounts the person must act on (D150 §2.1, the activity bar's badge): each signed out or with its key refused where it
- * holds work. The tool's own sign-in is never among them: no start runs on it (D175 point 1).
+ * The accounts the person must act on (D150 §2.1, the activity bar's badge): each signed out or with its key refused, since
+ * each holds work (D197). The tool's own sign-in is never among them: no start runs on it (D175 point 1).
  */
 export function signedOutHeld(tool: Tool, use: AgentAccounts | null | undefined): number {
   return [...accountStates(tool, use).values()].filter((state) => waitsOnPerson(state) && state.holdsWork).length;
@@ -392,67 +367,14 @@ export function versionOnly(version: string): string {
   return version.match(/^(.+?)\s+\([^)]*\)$/)?.[1] ?? version;
 }
 
-/** One scope an account runs in, as its row says it: a workspace, or null for this machine, and whether it starts there first. */
-export type RunsFor = { workspace: string | null; first: boolean };
-
-/** The workspaces with a default or a list of their own, whose starts take neither this machine's default nor its list. */
-function ownScopes(tool: Tool, use: AgentAccounts | null | undefined): Set<string> {
-  return new Set([
-    ...(use?.scopes ?? []).map((scope) => scope.workspace).filter((name): name is string => Boolean(name)),
-    ...tool.workspaceDefaults.map((circle) => circle.workspace),
-  ]);
-}
-
-const byPlace = (a: RunsFor, b: RunsFor) =>
-  (a.workspace === null ? -1 : b.workspace === null ? 1 : a.workspace.localeCompare(b.workspace));
+/** The set's next start as the page says it above the accounts (ACCTUX4b): the sentence, then what holds the others. */
+export type NextStartSaid = { takes: string; held: string | null };
 
 /**
- * Where an account runs (D152 §4.2's *Runs for*, ACCT1): each scope whose own list holds it or whose own default names it,
- * this machine first. The roster says it where the shell does (`places`); an older shell's is worked out from the same lists
- * and defaults. *First* marks the scope whose next start takes it (ACCTUX4b): the driver's own walk (`scope.next`), never
- * the default or the list's head, which a cooling or signed-out account still is. A scope whose answer names no next start,
- * from a shell older than TOOL6e or a workspace with no scope of its own, marks none.
- */
-export function runsFor(tool: Tool, use: AgentAccounts | null | undefined, name: string): RunsFor[] {
-  const account = tool.accounts.find((each) => each.name === name);
-  const scopeOf = (workspace: string | null) => (use?.scopes ?? []).find((scope) => (scope.workspace ?? null) === workspace);
-  const takes = (workspace: string | null) => scopeOf(workspace)?.next?.account === name;
-  if (Array.isArray(account?.places)) {
-    return account.places.map((place: AccountPlace) => ({
-      workspace: place.workspace ?? null, first: takes(place.workspace ?? null),
-    })).sort(byPlace);
-  }
-  const places = new Set<string | null>();
-  const machine = use ? machineScope(use) : null;
-  if (tool.machineDefault === name || machine?.default === name || machine?.list.includes(name)) places.add(null);
-  for (const circle of tool.workspaceDefaults) if (circle.profile === name) places.add(circle.workspace);
-  for (const scope of use?.scopes ?? []) {
-    if (scope.workspace && (scope.default === name || scope.list.includes(name))) places.add(scope.workspace);
-  }
-  return [...places].map((workspace) => ({ workspace, first: takes(workspace) })).sort(byPlace);
-}
-
-/**
- * *Runs for*, in words: *this machine · work (first)*, and *no workspace* where nothing runs on it, said rather than left blank.
- * The mark is said where it runs in one place too (ACCTUX4b): it says that scope's next start takes it, a fact of the row
- * whatever its other places, and the account the sentence above the list names would otherwise go unmarked.
- */
-export function runsForLine(runs: readonly RunsFor[]): string {
-  if (runs.length === 0) return i18n.t('agents.runs.none');
-  return runs.map((place) => {
-    const name = place.workspace ?? i18n.t('agents.runs.machine');
-    return place.first ? i18n.t('agents.runs.first', { scope: name }) : name;
-  }).join(' · ');
-}
-
-/** This machine's next start as the page says it above the accounts (ACCTUX4b): the sentence, then what holds the others. */
-export type NextStartSaid = { takes: string; held: string | null; workspace?: string };
-
-/**
- * Which account this machine's next start takes and why, above the account list (ACCTUX4b; the second opinion's lines
- * 128-133, D152 §4.2): the fold's words (`nextLine`, `heldLine`, TOOL6e), so the two never say it differently. Nothing where
- * the scope runs on the tool's own sign-in, which the list's own row and the fold say already (as `NextStartRow` does), nor
- * where the answer names no next start, a shell older than TOOL6e, rather than a guess from the list's head.
+ * Which account the set's next start takes and why, in any workspace, above the account list (ACCTUX4b; the second opinion's
+ * lines 128-133, D152 §4.2; POOL1c: one set, so no workspace is named): the fold's words (`nextLine`, `heldLine`, TOOL6e), so
+ * the two never say it differently. Nothing where the answer names no next start, a shell older than TOOL6e, rather than a
+ * guess from the order's first.
  *
  * Of the holds, only the one on the account the list begins on: it is the account a person expects the start to take, and
  * the second opinion's line 125 is that the row said it did. Every other hold is on its own row, and the fold keeps the
@@ -470,93 +392,87 @@ export function nextStartSaid(
   return { takes: nextLine(next, scope, labelOf, isKey), held: passed ? heldLine(head, labelOf, isKey, scope.near) : null };
 }
 
-/**
- * The next start of the workspace in view where it has a scope of its own that names one, else this machine's (ACCTUX4c).
- * On the install every account serves the workspace the window shows, and this machine's scope starts on the tool's own
- * sign-in, which says nothing: the sentence was never drawn. The workspace is named, since the sentence speaks for it
- * (joined into the sentence where it takes an account, a lead-in `workspace` where it waits).
- */
-export function nextStartSaidFor(
-  use: AgentAccounts | null | undefined, workspace: string | null, labelOf: (name: string) => string,
-  isKey: (name: string) => boolean = () => false,
-): NextStartSaid | null {
-  if (!use) return null;
-  const own = workspace ? workspaceScope(use, workspace) : null;
-  if (workspace && own?.next) {
-    const said = nextStartSaid(own, labelOf, isKey);
-    if (!said) return null;
-    const next = own.next;
-    // ACCTUX4d: a start that takes an account is one sentence with the workspace joined in, by keys of its own; a wait
-    // keeps the workspace as a lead-in, since its sentences are the fold's own.
-    if (next.reason !== 'waits' && next.account) {
-      return {
-        ...said,
-        takes: i18n.t('harness.next.takesIn', { workspace, account: labelOf(next.account), why: nextWhy(next, own, labelOf) }),
-      };
-    }
-    return { workspace, ...said };
-  }
-  return nextStartSaid(machineScope(use), labelOf, isKey);
-}
-
 /** The one act a row's state asks for (D152 §4.2): its name, and whether it is loud, which is where it holds work. */
-export type AccountAct = { act: 'signIn' | 'read' | 'tryNow' | 'place' | 'newKey'; loud: boolean };
+export type AccountAct = { act: 'signIn' | 'read' | 'tryNow' | 'newKey'; loud: boolean };
 
 /**
  * An account's one act by its state (D152 §4.2): *Sign in* when signed out, *Read* (that account alone) when unknown, *Try
- * now* when cooling, *Use in a workspace…* when nothing runs on it; none once a workspace runs on it. Unknown gets an act:
- * on the install the account a list held read unknown, offered nothing, and the person reached for the header instead.
- * A key its provider refused is repaired by a key (ACCTUX1): *New API key*, where the agent takes one, which puts it
- * into the same account (`key-replace`, KEYREPLACE1b).
+ * now* when cooling; none when signed in, since every account serves every workspace (POOL1c, the account-pool design §4.2:
+ * *Use in a workspace…* went). Unknown gets an act: on the install the account a list held read unknown, offered nothing, and
+ * the person reached for the header instead. A key its provider refused is repaired by a key (ACCTUX1): *New API key*, where
+ * the agent takes one, which puts it into the same account (`key-replace`, KEYREPLACE1b).
  */
 export function accountAct(
-  state: AccountState, agent: { signsIn: boolean; present: boolean; runs: number; takesKey?: boolean },
+  state: AccountState, agent: { signsIn: boolean; present: boolean; takesKey?: boolean },
 ): AccountAct | null {
   switch (state.state) {
     case 'out': return agent.signsIn && agent.present ? { act: 'signIn', loud: state.holdsWork } : null;
     case 'refused': return agent.takesKey && agent.present ? { act: 'newKey', loud: state.holdsWork } : null;
     case 'unknown': return agent.present ? { act: 'read', loud: state.holdsWork } : null;
     case 'cooling': return { act: 'tryNow', loud: false };
-    default: return agent.runs === 0 ? { act: 'place', loud: false } : null;
+    default: return null;
   }
 }
 
 /**
- * One list an account may join (D152 §4.5): a workspace with a list or a default of its own, or this machine's (null); who
- * it holds now, by name; whether that is a list or a default alone; the workspaces this machine's runs; and whether joining
- * moves where its starts begin, which is only where it names nobody and so takes Daoris's accounts in turn.
+ * How a setting the fold did not keep is named in its line (POOL1c; the account-pool design §4.2's `agents.pooled.notKept`):
+ * by what it does, and its value as the page names that value (a way by its word, an account by its name, a curve by its
+ * windows); a setting this build does not know is said as written.
  */
-export type JoinChoice = { workspace: string | null; holds: string[]; listed: boolean; usedBy: string[]; moves: boolean };
+function settingSaid(setting: string, raw: string, labelOf: (name: string) => string): { setting: string; value: string } {
+  let value: unknown = raw;
+  try {
+    value = JSON.parse(raw);
+  } catch {
+    // Kept as written: the driver hands each value's JSON whole.
+  }
+  const named = i18n.t(`agents.pooled.setting.${setting}`, { defaultValue: setting });
+  if (typeof value === 'string') {
+    if (setting === 'use') return { setting: named, value: i18n.t(`harness.use.mode.${value}`, { defaultValue: value }) };
+    if (setting === 'switch') return { setting: named, value: i18n.t(`harness.use.switch.${value}`, { defaultValue: value }) };
+    if (setting === 'keep') return { setting: named, value: labelOf(value) };
+    return { setting: named, value };
+  }
+  if (setting === 'curve' && value && typeof value === 'object') {
+    return { setting: named, value: Object.keys(value).map((window) => windowName(window)).join(i18n.t('harness.next.comma')) };
+  }
+  return { setting: named, value: raw };
+}
 
 /**
- * The lists an account may join (D152 §4.5, ACCT1's `profile-join`): each workspace with its own list or default, then this
- * machine's, used by every workspace naming none of its own. A workspace on this machine's list is not offered alone: the
- * driver refuses that join, naming this machine's list. A list that holds the account already is left out.
+ * What the fold into one set changed (POOL1c, D197 point 7; the account-pool design §4.2, §6.3), one receipt's lines in the
+ * reader's language from its kinds and values, in the order the terminal's `agent list` says them
+ * (`AgentListCommand.PoolLines`): each scope that named fewer accounts than the set, the machine's as the workspaces that named
+ * none, never *this machine*; that their starts still begin where they did; each first moved; each account placed; each
+ * setting not kept; each name gone.
  */
-export function joinChoices(
-  tool: Tool, use: AgentAccounts | null | undefined, workspaces: readonly string[], labelOf: (name: string) => string,
-  account: string,
-): JoinChoice[] {
-  if (!use) return [];
-  const own = ownScopes(tool, use);
-  const choices: JoinChoice[] = [...own].sort().flatMap((workspace) => {
-    const scope = workspaceScope(use, workspace);
-    const list = scope?.list ?? [];
-    const named = scope?.default ?? tool.workspaceDefaults.find((circle) => circle.workspace === workspace)?.profile ?? null;
-    if (list.includes(account) || (list.length === 0 && named === account)) return [];
-    const holds = list.length > 0 ? list : named ? [named] : [];
-    return [{ workspace, holds: holds.map(labelOf), listed: list.length > 0, usedBy: [], moves: holds.length === 0 }];
-  });
-  const machine = machineScope(use);
-  const named = machine.default ?? tool.machineDefault;
-  if (!machine.list.includes(account) && !(machine.list.length === 0 && named === account)) {
-    const holds = machine.list.length > 0 ? machine.list : named ? [named] : [];
-    choices.push({
-      workspace: null, holds: holds.map(labelOf), listed: machine.list.length > 0,
-      usedBy: workspaces.filter((workspace) => !own.has(workspace)), moves: holds.length === 0,
-    });
+export function pooledLines(receipt: PoolReceipt, labelOf: (name: string) => string): string[] {
+  const count = receipt.order.length;
+  const lines: string[] = [];
+  for (const scope of receipt.scopes) {
+    const had = scope.list.length > 0 ? scope.list : scope.default ? [scope.default] : [];
+    if (had.length === 0 || had.length >= count) continue;
+    const one = had.length === 1;
+    const accounts = had.map(labelOf).join(i18n.t('harness.next.comma'));
+    lines.push(scope.workspace
+      ? i18n.t(one ? 'agents.pooled.oneAccount' : 'agents.pooled.ownList', { workspace: scope.workspace, account: accounts, accounts, count })
+      : i18n.t(one ? 'agents.pooled.unnamedOne' : 'agents.pooled.unnamed', { account: accounts, accounts, count }));
   }
-  return choices;
+  if (receipt.inOrder) lines.push(i18n.t('agents.pooled.inOrder', { account: labelOf(receipt.inOrder) }));
+  for (const moved of receipt.moved) {
+    lines.push(moved.workspace
+      ? i18n.t('agents.pooled.moved', { workspace: moved.workspace, account: labelOf(moved.account), place: moved.place })
+      : i18n.t('agents.pooled.unnamedMoved', { account: labelOf(moved.account), place: moved.place }));
+  }
+  for (const joined of receipt.joined) lines.push(i18n.t('agents.pooled.joined', { account: labelOf(joined.account), place: joined.place }));
+  for (const kept of receipt.notKept) {
+    const said = settingSaid(kept.setting, kept.value, labelOf);
+    lines.push(kept.workspace
+      ? i18n.t('agents.pooled.notKept', { workspace: kept.workspace, ...said })
+      : i18n.t('agents.pooled.notKeptUnnamed', said));
+  }
+  for (const gone of receipt.gone) lines.push(i18n.t('agents.pooled.gone', { account: gone }));
+  return lines;
 }
 
 /** One agent as the list shows it (§5.1). */
@@ -654,31 +570,12 @@ export function agentRows(tools: readonly Tool[], answer: AccountsAnswer | null 
 // ---------------------------------------------------------------- each folded section's line (D150 §1 rule 4, §5.2)
 
 /**
- * How accounts are used, folded (D152 §4.4): each scope and what its starts run on, this machine first, *This machine: your
- * own sign-in · work: its own list of 3*, rather than the machine's alone as if it were every start's.
+ * How accounts are used, folded (D152 §4.4; POOL1c, the account-pool design §4.2's `agents.use.summary.all`): the one set's,
+ * every account for every workspace, and the way the set is used: *All 3 accounts, for every workspace · Make the most of them*.
  */
-export function useSummary(use: AgentAccounts, labelOf: (name: string) => string): string {
-  const what = (scope: AccountScope, own: boolean) => {
-    if (scope.list.length > 0) return i18n.t(own ? 'agents.use.summary.ownList' : 'agents.use.summary.list', { count: scope.list.length });
-    return scope.default ? labelOf(scope.default) : i18n.t('agents.use.summary.own');
-  };
-  return [
-    i18n.t('agents.use.summary.machine', { what: what(machineScope(use), false) }),
-    ...use.scopes.filter((scope) => scope.workspace).map((scope) => i18n.t('agents.use.summary.workspace', {
-      workspace: scope.workspace, what: what(scope, true),
-    })),
-  ].join(' · ');
-}
-
-/** Each workspace, folded: on its own accounts with its list, or on this machine's. */
-export function workspacesSummary(use: AgentAccounts | null | undefined, workspaces: readonly string[], labelOf: (name: string) => string): string {
-  if (workspaces.length === 0) return i18n.t('agents.workspaces.none');
-  return workspaces.map((workspace) => {
-    const own = use ? workspaceScope(use, workspace) : null;
-    if (!own) return i18n.t('agents.workspaces.machine', { workspace });
-    const named = own.list.length > 0 ? own.list : own.default ? [own.default] : [];
-    return i18n.t('agents.workspaces.own', { workspace, accounts: named.map(labelOf).join(', ') });
-  }).join(' · ');
+export function useSummary(use: AgentAccounts, count: number): string {
+  const mode = i18n.t(machineScope(use).use.use === 'order' ? 'harness.use.mode.order' : 'harness.use.mode.goal');
+  return i18n.t('agents.use.summary.all', { count, mode });
 }
 
 /** The ways in, folded: each door's word and version, and the one driven work starts on (`driver.json`'s adapter). */

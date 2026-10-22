@@ -131,22 +131,20 @@ export type ScopeUse = { use: 'goal' | 'order'; keep?: string | null; early: boo
  */
 export type NearBy = 'refused' | 'credits' | 'number';
 
-/** A scope (D130 §2 rule 1): the machine's, or one workspace that names a default or a list of its own. */
+/**
+ * The set's one scope (POOL1a2, D197; the account-pool design §2.4), every workspace's: its order and its one entry of settings.
+ * It was a scope per workspace or the machine (D130 §2 rule 1) before the fold into one set; the answer keeps that shape, its
+ * workspace null.
+ */
 export type AccountScope = {
-  /** The workspace, or null for this machine's scope. */
+  /** Null: the set serves every workspace. */
   workspace?: string | null;
-  /** Its own default, or null. */
+  /** None since the fold: the order's first is where starts begin (D197 point 2). */
   default?: string | null;
-  /** Its list: every account its starts may run on, in the person's order; empty is none. */
+  /** The order: every account of Daoris's, in the person's order. */
   list: string[];
-  /** Where its starts begin: its default where its list holds it, else its list's first; with no list, its default. */
+  /** Where its starts begin: the order's first, under *One by one, in order*. */
   begins?: string | null;
-  /**
-   * Whether it names nothing, so Daoris's accounts on this machine are its list, in turn (OWNSPACE1b-A, D175 point 2): the page
-   * says that where it said the tool's own sign-in. False for a test double that runs in its own home; absent from a shell older
-   * than that.
-   */
-  inherited?: boolean;
   use: ScopeUse;
   /** Settings it holds that this build does not know, by name. */
   unknown: string[];
@@ -179,6 +177,26 @@ export type CurveMeasured = { account: string; window: string; curve: number; ov
 /** An account's tightest window over its scope's curve, and the curve's value there now in whole points (PUSH1e). */
 export type CurveOver = { account: string; window: string; curve: number };
 
+/**
+ * One receipt of the fold into one set (POOL1a, D197 point 7; the account-pool design §6.3), as `ACCOUNTS`' `pooled` answers it
+ * while it is unsaid: its id, which *Got it* marks said, and each line's kind and values, never words, which the page words
+ * (`pooledLines`). A setting not kept carries its value's JSON as written.
+ */
+export type PoolReceipt = {
+  id: string;
+  at: string;
+  /** Each scope as it was before the fold: a workspace's, or null for the machine's, which the workspaces naming none read. */
+  scopes: { workspace?: string | null; default?: string | null; list: string[]; begins?: string | null }[];
+  /** The set's order the fold wrote: its count is the line's *all {{count}}*. */
+  order: string[];
+  moved: { workspace?: string | null; account: string; place: number }[];
+  joined: { account: string; place: number }[];
+  /** Where the fold set `use: order` so the machine scope's starts keep beginning at its one account (§6.1 rule 3). */
+  inOrder?: string | null;
+  notKept: { workspace?: string | null; setting: string; value: string }[];
+  gone: string[];
+};
+
 /** One agent's accounts, by the accounts' owner (AGT7): a door's accounts are its owner's. */
 export type AgentAccounts = {
   agent: string;
@@ -195,8 +213,10 @@ export type AgentAccounts = {
    */
   own: { cooling?: AccountCooling | null; offered?: string | null; said?: AccountSaid | null };
   accounts: AccountFacts[];
-  /** The machine's scope first, then each workspace's own. */
+  /** The set's one scope, every workspace's (POOL1a2, D197): the order, how it is used and its next start. */
   scopes: AccountScope[];
+  /** What the fold into one set changed, each receipt still unsaid (POOL1a); absent or empty where nothing waits to be said. */
+  pooled?: PoolReceipt[];
 };
 
 export type AccountsAnswer = { agents: AgentAccounts[] };
@@ -238,21 +258,19 @@ export function agentOf(answer: AccountsAnswer | undefined | null, agent: string
   return agents.find((each) => each.agent === agent) ?? null;
 }
 
-/** The machine's scope, which every agent answers. */
+/** The set's one scope, every workspace's (POOL1a2, D197), which every agent answers with no workspace. */
 export function machineScope(agent: AgentAccounts): AccountScope {
   return agent.scopes.find((scope) => !scope.workspace) ?? {
     workspace: null, default: null, list: [], begins: null, use: USE_DEFAULTS, unknown: [], problem: null, near: [],
   };
 }
 
-/** A workspace's own scope, or null where it names neither a default nor a list of its own: it runs on this machine's. */
+/**
+ * A workspace's own scope, or null: since the fold into one set (D197) the answer names none, so every reader falls back to the
+ * set's (`machineScope`).
+ */
 export function workspaceScope(agent: AgentAccounts, workspace: string): AccountScope | null {
   return agent.scopes.find((scope) => scope.workspace === workspace) ?? null;
-}
-
-/** The workspaces whose own list holds an account (D130 §3.2: each account's row names the workspaces that may run on it). */
-export function listedIn(agent: AgentAccounts, account: string): string[] {
-  return agent.scopes.filter((scope) => scope.workspace && scope.list.includes(account)).map((scope) => scope.workspace!);
 }
 
 /** A list with an account moved one place, up (-1) or down (+1); the list as it was at either end. */
@@ -263,29 +281,6 @@ export function moved(list: readonly string[], account: string, by: -1 | 1): str
   const next = [...list];
   [next[at], next[to]] = [next[to]!, next[at]!];
   return next;
-}
-
-/**
- * A list with an account's *Use* turned on or off (D130 §9): on appends it, last, as the terminal names a list in order;
- * off takes it out where it was. Nothing counts accounts: a list of one, or of many, is a list.
- */
-export function used(list: readonly string[], account: string, on: boolean): string[] {
-  if (on) return list.includes(account) ? [...list] : [...list, account];
-  return list.filter((name) => name !== account);
-}
-
-/**
- * What *Use* off would break (D130 §3.1, §4.6), before the press: the scope's default or its kept account taken out of the
- * list, or a kept account left alone in it. The terminal refuses each, so the screen offers the press only where it would
- * not be refused, and says why where it would. Taking the last account out clears the list, which is never refused.
- */
-export function cannotLeave(scope: AccountScope, account: string): 'default' | 'keep' | 'alone' | null {
-  const rest = scope.list.filter((name) => name !== account);
-  if (rest.length === 0) return scope.use.keep ? 'alone' : null;
-  if (scope.default === account) return 'default';
-  if (scope.use.keep === account) return 'keep';
-  if (scope.use.keep && rest.length === 1 && rest[0] === scope.use.keep) return 'alone';
-  return null;
 }
 
 /** Whether no account of a list has said what it has left (D130 §16.4): the walk then needs none of their word. */
@@ -383,7 +378,8 @@ function passedBy(near: AccountScope['near'], account: string | null | undefined
 
 /**
  * Why the next start takes its account, as a clause (TOOL6e): the walk's step, naming the account it weighed it against as a
- * person calls it. The list's order says the default, the list's first, or the account it comes before. An account passed
+ * person calls it. The order says its first or the account it comes before (the set's, D197 §4; an older answer's default
+ * is said as one). An account passed
  * says what passed it (SWITCH1b-iii); step 5 is the most room under the curve, and the week's pace only with the switch off
  * (the switch design §3), where the page's `early` is false.
  */
@@ -479,10 +475,11 @@ export function offeredLine(offered: string): string {
 }
 
 /**
- * The tool's own sign-in's line (D175 point 1, settlement 1 of OWNSPACE1b): who it is, that Daoris starts no session in it and
- * conversations begun there go on there, and an old cool-off where it holds one. Read-only: nothing waits on it.
+ * The tool's own sign-in's line, its row's ⓘ (D175 point 1; POOL1c, D197 point 3, the account-pool design §3 and §4.2's
+ * `harness.own.shared`): the account the tool uses at the person's own terminal, outside Daoris's accounts, which Daoris never
+ * signs in or out, never asks, starts no session in and never changes by adding an account; a conversation begun there goes on
+ * there. No who and no cool-off: nothing of it is read, and a reading kept from before would only age.
  */
-export function ownLine(who: string | null | undefined, cooling: AccountCooling | null | undefined): string {
-  const shared = who ? i18n.t('harness.own.shared', { who }) : i18n.t('harness.own.sharedUnknown');
-  return cooling ? `${shared}${i18n.t('harness.said.sentences')}${i18n.t('harness.own.cooling', { when: moment(cooling.until) })}` : shared;
+export function ownLine(): string {
+  return i18n.t('harness.own.shared');
 }

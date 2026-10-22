@@ -81,3 +81,31 @@ describe('the grant, answered in the question (UXFIX2b3b)', () => {
     expect(screen.getByRole('button', { name: 'Trust this folder' })).toBeEnabled();
   });
 });
+
+/**
+ * POOL1c (D197 point 3; the account-pool design §3 point 4, §4.3): a hold whose file is your own sign-in's offers no press,
+ * since Daoris writes nothing there; it shows the folder and says to trust it with the tool itself, at your terminal.
+ */
+describe('a hold on your own sign-in’s file', () => {
+  const OWN = { folder: 'C:/somewhere/engine', trustFile: 'C:/somewhere/home/.claude.json', quest: 'q1', own: true };
+
+  it('shows the folder and one sentence, with no grant and no file Daoris would write', async () => {
+    const onGrant = vi.fn();
+    show({ hold: OWN, onGrant });
+    expect(screen.getByText('C:/somewhere/engine')).toBeInTheDocument();
+    expect(screen.getByText(
+      "This conversation goes on in your own sign-in, outside Daoris's accounts, so Daoris writes nothing in its file: trust the folder with the tool itself, at your terminal.",
+    )).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Trust this folder' })).toBeNull();
+    expect(screen.queryByText(OWN.trustFile)).toBeNull();
+    expect(screen.queryByText(/one flag in the agent's own file/)).toBeNull();
+    expect(onGrant).not.toHaveBeenCalled();
+  });
+
+  it('can still be put down', async () => {
+    const onCancel = vi.fn();
+    show({ hold: OWN, onCancel });
+    await userEvent.click(screen.getByRole('button', { name: 'Not now' }));
+    expect(onCancel).toHaveBeenCalled();
+  });
+});

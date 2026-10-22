@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import { keys, USAGE_SLICE } from '../../data/queries';
-import type { AccountPlace, AccountSettings, AccountSettingsChange, ToolDoor } from '../../agents/tools';
+import type { AccountSettings, AccountSettingsChange, ToolDoor } from '../../agents/tools';
 import type { WiringAnswer } from '../../map/wiring';
 import { call } from '../call';
 import { readSlice } from '../driver';
@@ -134,18 +134,6 @@ export const useHarnesses = () => {
 };
 
 /**
- * What sessions run as where a default was just set or cleared (LOOK2c): the workspace, or null for the machine; the
- * account, or null for the agent's own configuration home; and which rung answered — the workspace's own account, the
- * machine's default (a workspace naming none falls back to it), or the agent's own home. The same fact `daoris agent
- * profile default … [--clear]` prints.
- */
-export type DefaultStanding = {
-  workspace?: string | null;
-  account?: string | null;
-  from: 'workspace' | 'machine' | 'own';
-};
-
-/**
  * Install, update, or log a profile in — each by that harness's OWN mechanism.
  *
  * @remarks
@@ -153,23 +141,20 @@ export type DefaultStanding = {
  * moving target nobody diffed. The output arrives as `SESSION_OUTPUT` under `<harness>:<action>`, so
  * the same console component renders it.
  *
- * What it changed at once (a key, a name, a join, a default: the roster and the accounts' files) is published by its route, and
- * the state hub asks the roster's key again in every window (STATEHUB1h, D169); an action that runs on ends as `HARNESS_ENDED`.
+ * What it changed at once (a key, a name: the roster and the accounts' files) is published by its route, and the state hub asks
+ * the roster's key again in every window (STATEHUB1h, D169); an action that runs on ends as `HARNESS_ENDED`. A default and a
+ * list to join left with POOL1c (D197): the bridge refuses `profile-default`, `profile-join` and a sign-in's `join` as
+ * `ACCOUNTS_ONE_SET`, since every account serves every workspace.
  */
 export const useHarnessAction = () =>
   useMutation({
     mutationFn: (action: {
       harness: string;
       action: 'install' | 'update' | 'login' | 'login-new' | 'key-add' | 'key-replace' | 'pin' | 'unpin'
-      | 'profile-add' | 'profile-remove' | 'profile-default' | 'profile-rename' | 'profile-join';
+      | 'profile-add' | 'profile-remove' | 'profile-rename';
       profile?: string;
       /** An account's name (ACCT2) — `profile-rename` only; its own id, or none, clears it. */
       name?: string;
-      /**
-       * The lists an account joins (ACCT1) — `profile-join`, and a sign-in's: each a workspace's name, or null for this
-       * machine's list.
-       */
-      join?: (string | null)[];
       /**
        * An API key — `key-add`, and `key-replace` into `profile` (KEYREPLACE1b) (AGT3, D67 §1). It crosses the bridge once, inward; the answer
        * and the roster name it only by its last four characters.
@@ -177,8 +162,6 @@ export const useHarnessAction = () =>
       key?: string;
       /** Which version to install and pin to — `pin` only (TOOL2/D57). */
       version?: string;
-      /** Which circle a default is for — `profile-default` only (D49 §4); absent means the machine's. */
-      workspace?: string;
       /**
        * A sign-in's way (CODEXLOGIN1): `browser`, the agent's own and the first, or `device-code`; absent is the first. The
        * terminal's `--device-code`.
@@ -190,15 +173,11 @@ export const useHarnessAction = () =>
       harness: string; action: string; exitCode?: number; started?: boolean;
       /**
        * For `key-add`: the account made, and the key's handle; for a sign-in, the account it reaches (ACCT1); for
-       * `profile-rename` and `profile-join`, the account named.
+       * `profile-rename`, the account named.
        */
       profile?: string; key?: string;
       /** For `profile-rename`: its name now, null where it has none (ACCT2). */
       name?: string | null;
-      /** For `profile-join`: where it runs now (ACCT1). */
-      places?: AccountPlace[];
-      /** For `profile-default`: what sessions there run as now (LOOK2c). Absent on a shell older than it. */
-      default?: DefaultStanding;
     }>('HARNESS_ACTION', action),
   });
 
@@ -223,8 +202,6 @@ export type HarnessEnded = {
   offered?: string | null;
   /** For a sign-in to another account: whether it left one behind — only when it finished. */
   kept?: boolean | null;
-  /** For a sign-in: where the account runs now (ACCT1), none where no list or default holds it; absent from an older shell. */
-  places?: AccountPlace[] | null;
   /** Whether the person's *Cancel* stopped it (SIGNIN1), so its end is no failure to say; absent from an older shell. */
   cancelled?: boolean | null;
   /**

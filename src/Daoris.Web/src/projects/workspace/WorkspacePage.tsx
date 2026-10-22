@@ -130,9 +130,10 @@ export function WorkspaceDetails({ repositories, onOpen, starts, accounts, onOpe
               <li key={each.agent} aria-label={each.product} className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                 <span className="text-body font-medium text-ink">{each.product}</span>
                 <span className="min-w-0 flex-1 text-small text-ink-soft">
-                  {t(each.own ? 'projects.workspace.accounts.own' : 'projects.workspace.accounts.machine', {
-                    accounts: each.accounts.join(t('projects.setup.summary.listJoin')),
-                  })}
+                  {/* Daoris's accounts, one set serving every workspace, in its order (POOL1c, D197). */}
+                  {each.accounts.length > 0
+                    ? t('projects.workspace.accounts.set', { accounts: each.accounts.join(t('projects.setup.summary.listJoin')) })
+                    : t('harness.next.noAccount')}
                 </span>
                 {onOpenAgent && (
                   <Button variant="ghost" className="text-small" onClick={() => onOpenAgent(each.agent)}>

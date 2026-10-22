@@ -2,8 +2,9 @@ import { type AccountFacts, type AccountScope, type AgentAccounts, USE_DEFAULTS 
 import type { AccountChoice } from './AccountUse';
 
 // How an agent's accounts are used, as the stories and the molecules' tests hand it (TOOL4g): one account, three, and six,
-// since nothing counts accounts; a cooling one, one near by its number, one its agent says is ahead of its pace, one that
-// said nothing, and a workspace on its own list. Names are neutral, as every fixture's are.
+// since nothing counts accounts; a cooling one, one near by its number, one its agent says is ahead of its pace and one that
+// said nothing; each agent's accounts one set in one order, every workspace's (POOL1c, D197). Names are neutral, as every
+// fixture's are.
 
 const minutesFrom = (minutes: number) => new Date(Date.now() + minutes * 60_000).toISOString();
 
@@ -64,19 +65,12 @@ export const THREE: AgentAccounts = {
     { name: 'account-3', running: 1 },
   ],
   scopes: [
-    // Its default cooling: of the rest, the one running fewer of Daoris's sessions (TOOL6e).
+    // The order's first cooling: of the rest, the one running fewer of Daoris's sessions (TOOL6e).
     scopeOf({
-      default: 'account-1', list: ['account-1', 'account-2', 'account-3'], begins: 'account-1', near: [], measured: UNDER_SMART,
+      list: ['account-1', 'account-2', 'account-3'], begins: 'account-1', near: [], measured: UNDER_SMART,
       next: {
         account: 'account-3', reason: 'fewest', over: 'account-2',
         others: [{ account: 'account-1', hold: 'cooling', until: minutesFrom(190) }, { account: 'account-2', hold: 'ready' }],
-      },
-    }),
-    scopeOf({
-      workspace: 'work', list: ['account-2', 'account-1'], begins: 'account-2', use: { ...USE_DEFAULTS, use: 'order' }, measured: UNDER_SMART,
-      next: {
-        account: 'account-2', reason: 'onlyReady',
-        others: [{ account: 'account-1', hold: 'cooling', until: minutesFrom(190) }, { account: 'account-3', hold: 'outside' }],
       },
     }),
   ],
@@ -104,11 +98,11 @@ export const AHEAD: AccountFacts = {
 };
 
 /**
- * The machine's list on the person's own curve, its five-hour window flat at 85 (SWITCH1d; the old `near` derived from it):
- * account-2's five-hour window at 88% is over it, as .NET judges it (PUSH1e).
+ * The set on the person's own curve, its five-hour window flat at 85 (SWITCH1d; the old `near` derived from it): account-2's
+ * five-hour window at 88% is over it, as .NET judges it (PUSH1e).
  */
 export const MACHINE_NEAR = scopeOf({
-  default: 'account-1', list: ['account-1', 'account-2', 'account-3'], begins: 'account-1',
+  list: ['account-1', 'account-2', 'account-3'], begins: 'account-1',
   use: { ...USE_DEFAULTS, keep: 'account-3', near: 85, switch: 'curve', curve: { session: [[0, 85]] } },
   near: [{ account: 'account-2', window: 'session', by: 'number' }],
   curves: { ...SMART_CURVES, session: [[0, 85]] },
@@ -135,9 +129,8 @@ export const SILENT: AgentAccounts = {
 };
 
 /**
- * TOOL6e, the owner's case: the work workspace's default came out of its cool-off 58 minutes ago, nothing runs, and the
- * others started since, so the next start takes it; account-3 cools until a stated reset. This machine's list begins at
- * account-1 too, by the list's order.
+ * TOOL6e, the owner's case: the order's first came out of its cool-off 58 minutes ago, nothing runs, and the others started
+ * since, so the next start takes it; account-3 cools until a stated reset.
  */
 export const OFFERED_AGAIN: AgentAccounts = {
   agent: 'claude-code',
@@ -156,13 +149,6 @@ export const OFFERED_AGAIN: AgentAccounts = {
       list: ['account-1', 'account-2', 'account-3'], begins: 'account-1',
       next: {
         account: 'account-1', reason: 'list', over: 'account-2',
-        others: [{ account: 'account-2', hold: 'ready' }, { account: 'account-3', hold: 'cooling', until: minutesFrom(190) }],
-      },
-    }),
-    scopeOf({
-      workspace: 'work', default: 'account-1', list: ['account-1', 'account-2', 'account-3'], begins: 'account-1',
-      next: {
-        account: 'account-1', reason: 'leastRecent', over: 'account-2',
         others: [{ account: 'account-2', hold: 'ready' }, { account: 'account-3', hold: 'cooling', until: minutesFrom(190) }],
       },
     }),

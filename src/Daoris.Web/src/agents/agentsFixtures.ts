@@ -1,11 +1,12 @@
 import { byTool, type Tool, type ToolDoor } from './tools';
-import { type AccountSaid, type AgentAccounts, USE_DEFAULTS } from '../settings/accounts/accounts';
+import { type AccountSaid, type AgentAccounts, type PoolReceipt, USE_DEFAULTS } from '../settings/accounts/accounts';
 import type { AgentRulesState } from '../settings/repository/AgentRules';
 import { scopeOf } from '../settings/accounts/accountsFixtures';
 
 // The Agents place as its stories and molecules' tests hand it (UX6e, D150 §5): the design's machine, three Claude Code
 // accounts of which two read signed out, one cooling, the tool's own sign-in never read; Codex with one account; DeepSeek
-// Harness (`dsh`) not installed; and an agent a plugin declares. Names are neutral, as every fixture's are.
+// Harness (`dsh`) not installed; and an agent a plugin declares. Each agent's accounts are one set in one order, every
+// workspace's (POOL1c, D197). Names are neutral, as every fixture's are.
 
 const minutesFrom = (minutes: number) => new Date(Date.now() + minutes * 60_000).toISOString();
 
@@ -15,8 +16,7 @@ export const READ = minutesFrom(-75);
 const CLAUDE: ToolDoor = {
   harness: 'claude-code', product: 'Claude Code', maker: 'Anthropic', present: true, version: '2.1.4 (Claude Code)',
   wire: 'pipe', structured: true, takesRules: true, signsIn: true, takesKey: true, pinnable: true, updates: 'tool',
-  machineDefault: 'account-1', ownLogin: 'unknown', ownRead: null, ownAccount: null,
-  workspaceDefaults: [{ workspace: 'forge', profile: 'account-1' }],
+  ownLogin: 'unknown', ownRead: null, ownAccount: null,
   settingsChoices: { models: ['default', 'sonnet', 'opus'], efforts: ['low', 'medium', 'high'] },
   profiles: [
     { name: 'account-1', home: 'C:/somewhere/data/harnesses/claude-code/account-1', login: 'out', account: 'you@work.example', read: READ,
@@ -34,18 +34,18 @@ const CLAUDE_ACP: ToolDoor = {
 
 const CODEX: ToolDoor = {
   harness: 'codex-acp', accountOf: 'codex', product: 'Codex', maker: 'OpenAI', present: true, version: '0.159.3', wire: 'acp',
-  signsIn: true, pinnable: true, machineDefault: null, ownLogin: 'unknown', settingsChoices: null, workspaceDefaults: [],
+  signsIn: true, pinnable: true, ownLogin: 'unknown', settingsChoices: null,
   profiles: [{ name: 'account-1', home: 'C:/somewhere/data/harnesses/codex/account-1', login: 'in', account: 'codex@example.invalid', read: READ }],
 };
 
 const DSH: ToolDoor = {
   harness: 'dsh', product: 'DeepSeek Harness', maker: 'DeepSeek', present: false, version: null, wire: 'acp', pinnable: true,
-  problem: '`dsh` is not on this machine\'s PATH — `daoris agent install dsh` installs it', profiles: [], workspaceDefaults: [],
+  problem: '`dsh` is not on this machine\'s PATH — `daoris agent install dsh` installs it', profiles: [],
 };
 
 const DECLARED: ToolDoor = {
   harness: 'acme-agent', product: 'Acme agent', maker: 'Acme', present: true, version: '(not asked)', wire: 'acp',
-  plugin: 'acme.gate', pinnable: false, signsIn: false, profiles: [], workspaceDefaults: [],
+  plugin: 'acme.gate', pinnable: false, signsIn: false, profiles: [],
 };
 
 /** The roster as the place reads it, a door a row, and the agents a person has, each once. */
@@ -62,7 +62,7 @@ export const DSH_TOOL = TOOLS.find((tool) => tool.name === 'dsh')!;
  */
 const ORGS_HOME = 'C:/somewhere/data/harnesses/claude-code';
 export const ORGS_TOOL: Tool = byTool([{
-  ...CLAUDE, machineDefault: null, workspaceDefaults: [], ownLogin: 'in', ownAccount: 'person@example.invalid', ownOrg: 'Org A',
+  ...CLAUDE, ownLogin: 'in', ownAccount: 'person@example.invalid', ownOrg: 'Org A',
   ownPlan: 'max',
   profiles: [
     { name: 'acct-0000000b', home: `${ORGS_HOME}/acct-0000000b`, login: 'in', account: 'person@example.invalid', org: 'Org B', plan: 'max', read: READ },
@@ -72,8 +72,8 @@ export const ORGS_TOOL: Tool = byTool([{
 }])[0]!;
 
 /**
- * How Claude Code's accounts are used: this machine's list of three, `work` on its own two, account-2 cooling. No account is
- * ready, so each next start waits for account-2's reset, sooner for a sign-in (TOOL6e), and no row is marked first (ACCTUX4b).
+ * How Claude Code's accounts are used: the set's order of three, every workspace's (D197), account-2 cooling. No account is
+ * ready, so the next start waits for account-2's reset, sooner for a sign-in (TOOL6e).
  */
 export const CLAUDE_USE: AgentAccounts = {
   agent: 'claude-code',
@@ -93,7 +93,7 @@ export const CLAUDE_USE: AgentAccounts = {
   ],
   scopes: [
     scopeOf({
-      default: 'account-1', list: ['account-1', 'account-2', 'account-3'], begins: 'account-1', use: USE_DEFAULTS,
+      list: ['account-1', 'account-2', 'account-3'], begins: 'account-1', use: USE_DEFAULTS,
       next: {
         account: null, reason: 'waits', when: minutesFrom(60 * 40),
         others: [
@@ -102,26 +102,47 @@ export const CLAUDE_USE: AgentAccounts = {
         ],
       },
     }),
-    scopeOf({
-      workspace: 'work', list: ['account-2', 'account-1'], begins: 'account-2', use: USE_DEFAULTS,
-      next: {
-        account: null, reason: 'waits', when: minutesFrom(60 * 40),
-        others: [
-          { account: 'account-2', hold: 'cooling', until: minutesFrom(60 * 40) }, { account: 'account-1', hold: 'signedOut' },
-          { account: 'account-3', hold: 'outside' },
-        ],
-      },
-    }),
   ],
 };
+
+/**
+ * What the fold into one set changed, unsaid (POOL1a, D197 point 7; the account-pool design §4.2): `work` had its own two accounts
+ * and `forge` ran on account-1 alone; the machine's scope named account-1 and no list, so the set is used *One by one, in order*
+ * and its starts still begin there; `work`'s first moved; account-3 no order held is placed; `work`'s kept account is not kept;
+ * a name the file held is no account here. Two receipts, the second an older build's file folded again.
+ */
+export const POOLED: PoolReceipt[] = [
+  {
+    id: 'a1b2c3d4e5f6', at: minutesFrom(-60 * 26),
+    scopes: [
+      { workspace: null, default: 'account-1', list: [], begins: 'account-1' },
+      { workspace: 'forge', default: 'account-1', list: [], begins: 'account-1' },
+      { workspace: 'work', default: null, list: ['account-2', 'account-1'], begins: 'account-2' },
+    ],
+    order: ['account-1', 'account-2', 'account-3'],
+    moved: [{ workspace: 'work', account: 'account-2', place: 2 }],
+    joined: [{ account: 'account-3', place: 3 }],
+    inOrder: 'account-1',
+    notKept: [{ workspace: 'work', setting: 'keep', value: '"account-2"' }],
+    gone: ['old-seat'],
+  },
+  {
+    id: 'f6e5d4c3b2a1', at: minutesFrom(-30),
+    scopes: [{ workspace: 'lab', default: null, list: ['account-2'], begins: 'account-2' }],
+    order: ['account-1', 'account-2', 'account-3'], moved: [], joined: [], inOrder: null, notKept: [], gone: [],
+  },
+];
+
+/** Claude Code's accounts with what the fold changed still unsaid, above the rows until *Got it*. */
+export const CLAUDE_POOLED_USE: AgentAccounts = { ...CLAUDE_USE, pooled: POOLED };
 
 export const CODEX_USE: AgentAccounts = {
   agent: 'codex', speaks: false, own: {}, accounts: [{ name: 'account-1', running: 0 }], scopes: [scopeOf()],
 };
 
 /**
- * Codex with no account of Daoris's, its starts on your own sign-in, whose windows a press read of Codex's own server
- * (CODEXUSE3): five hours nearly unused, its week at 15%.
+ * Codex with no account of Daoris's, and your own sign-in's windows read at a press before POOL1c (CODEXUSE3): a reading kept
+ * that the page no longer shows, since Daoris never asks your own sign-in (D197 point 3).
  */
 export const CODEX_OWN_TOOL: Tool = byTool([{ ...CODEX, profiles: [] }])[0]!;
 
@@ -189,27 +210,24 @@ export const CODEX_READ_USE: AgentAccounts = {
 };
 
 /**
- * The install's shape, as the UX7 design §4.7 draws it (UX7b): account-1 signed in with a session on it, first in work's
- * list; account-2 a list holds, unknown and never read; *personal*, named by the person (ACCT2), cooling; a new account
- * (`acct-…`, ACCT2's fresh id) signed in and in no list (ACCT1); your own sign-in never read, which forge starts on since
- * neither it nor this machine names an account.
+ * The install's shape, as the UX7 design §4.7 draws it (UX7b), on one set (D197): account-1 signed in with a session on it,
+ * first in the order; account-2 unknown and never read; *personal*, named by the person (ACCT2), cooling; a new account
+ * (`acct-…`, ACCT2's fresh id) signed in, last in the order as every new account is; your own sign-in, outside them.
  */
 const INSTALL_DOOR: ToolDoor = {
-  ...CLAUDE, machineDefault: null, workspaceDefaults: [], version: '2.1.288 (Claude Code)',
+  ...CLAUDE, version: '2.1.288 (Claude Code)',
   profiles: [
-    { name: 'account-1', home: 'C:/somewhere/data/harnesses/claude-code/account-1', login: 'in', account: 'you@work.example', read: READ,
-      places: [{ workspace: 'work', list: true, default: false }], nowhere: false },
-    { name: 'account-2', home: 'C:/somewhere/data/harnesses/claude-code/account-2', login: 'unknown', read: null,
-      places: [{ workspace: 'work', list: true, default: false }], nowhere: false },
+    { name: 'account-1', home: 'C:/somewhere/data/harnesses/claude-code/account-1', login: 'in', account: 'you@work.example', read: READ },
+    { name: 'account-2', home: 'C:/somewhere/data/harnesses/claude-code/account-2', login: 'unknown', read: null },
     { name: 'account-4', displayName: 'personal', home: 'C:/somewhere/data/harnesses/claude-code/account-4', login: 'in',
-      account: 'you@home.example', read: READ, places: [{ workspace: 'work', list: true, default: false }], nowhere: false },
+      account: 'you@home.example', read: READ },
     { name: 'acct-5e1f0a2b', home: 'C:/somewhere/data/harnesses/claude-code/acct-5e1f0a2b', login: 'in', account: 'spare@example.invalid',
-      read: READ, places: [], nowhere: true },
+      read: READ },
   ],
 };
 
 export const INSTALL_TOOL: Tool = byTool([
-  INSTALL_DOOR, { ...CLAUDE_ACP, version: '0.84.0', profiles: INSTALL_DOOR.profiles, machineDefault: null, workspaceDefaults: [] },
+  INSTALL_DOOR, { ...CLAUDE_ACP, version: '0.84.0', profiles: INSTALL_DOOR.profiles },
 ])[0]!;
 
 export const INSTALL_USE: AgentAccounts = {
@@ -226,22 +244,18 @@ export const INSTALL_USE: AgentAccounts = {
     { name: 'acct-5e1f0a2b', running: 0 },
   ],
   scopes: [
-    scopeOf(),
-    scopeOf({ workspace: 'work', list: ['account-1', 'account-2', 'account-4'], begins: 'account-1', use: USE_DEFAULTS }),
+    scopeOf({ list: ['account-1', 'account-2', 'account-4', 'acct-5e1f0a2b'], begins: 'account-1', use: USE_DEFAULTS }),
   ],
 };
 
-/** The install's two workspaces. */
-export const INSTALL_WORKSPACES = ['forge', 'work'];
-
 /**
- * What an account's row knows (ACCTUX1), each in this machine's list so each holds work: a key its provider refused; *reserve*
+ * What an account's row knows (ACCTUX1), each in the set's order, as every account is: a key its provider refused; *reserve*
  * cooling for Daoris's default hour, since its agent named no reset; *team* cooling until the reset its agent named, its two
  * windows read; and an account the owner named for the email it signs in as, its windows read, said once. The next start
  * takes that one, the list's first and the only one ready (ACCTUX4b).
  */
 const READINGS_DOOR: ToolDoor = {
-  ...CLAUDE, machineDefault: null, workspaceDefaults: [], version: '2.1.288 (Claude Code)',
+  ...CLAUDE, version: '2.1.288 (Claude Code)',
   profiles: [
     { name: 'acct-0a1b2c3d', home: 'C:/somewhere/data/harnesses/claude-code/acct-0a1b2c3d', login: 'out', key: '…k3y9', read: READ },
     { name: 'acct-1b2c3d4e', displayName: 'reserve', home: 'C:/somewhere/data/harnesses/claude-code/acct-1b2c3d4e', login: 'in',
@@ -375,5 +389,3 @@ export const USAGE = [
   { harness: 'claude-code', profile: 'account-2', sessions: 4, used: 412_000 },
   { harness: 'claude-code-acp', profile: 'account-1', sessions: 2, used: 96_000 },
 ];
-
-export const WORKSPACES = ['forge', 'work'];

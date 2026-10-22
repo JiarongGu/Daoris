@@ -1048,8 +1048,7 @@ export function SelectField({ value, onChange, options, placeholder, ariaLabel, 
   value: string;
   onChange: (value: string) => void;
   /**
-   * The choices in order. An option's `group` names the heading it falls under, said once above the first option of it,
-   * as the conversation picker sets apart the accounts a workspace's list does not hold (D130 §3.2).
+   * The choices in order. An option's `group` names the heading it falls under, said once above the first option of it.
    */
   options: { value: string; label: string; group?: string }[];
   placeholder?: string;

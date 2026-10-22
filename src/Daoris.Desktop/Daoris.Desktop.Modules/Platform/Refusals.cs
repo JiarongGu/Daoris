@@ -60,12 +60,6 @@ public static class Refusals
     /// <summary>A list naming one account twice, in any case (D125 §3.1, TOOL4g).</summary>
     public const string AccountOrderTwice = "ACCOUNT_ORDER_TWICE";
 
-    /// <summary>
-    /// A list that would leave out its scope's default (D130 §3.1, TOOL4g): the default is where starts begin within the list.
-    /// A workspace's carries the catalogue's <c>context</c>, so the sentence names it.
-    /// </summary>
-    public const string AccountScopeDefault = "ACCOUNT_SCOPE_DEFAULT";
-
     /// <summary>A kept account that the list does not hold (D130 §4.6, TOOL4g).</summary>
     public const string AccountScopeKeep = "ACCOUNT_SCOPE_KEEP";
 
@@ -86,9 +80,6 @@ public static class Refusals
     /// </summary>
     public const string TrustOwnHome = "TRUST_OWN_HOME";
 
-    /// <summary>How a list is used, asked of a scope with no list of its own (D130 §16.6, TOOL4g): there is nothing to use. No door asks it since POOL1a; its words leave with POOL1c.</summary>
-    public const string AccountUseNoList = "ACCOUNT_USE_NO_LIST";
-
     /// <summary>
     /// A setting's value this build does not take (D130 §16.6, TOOL4g): a way to use accounts, when to switch (SWITCH1d), or a near
     /// out of range.
@@ -101,12 +92,6 @@ public static class Refusals
     /// terminal's sentence, which a page with no form for a newer rule says as it is.
     /// </summary>
     public const string AccountUseCurve = "ACCOUNT_USE_CURVE";
-
-    /// <summary>
-    /// A default outside its scope's own list (D130 §3.1; TOOL6a's terminal refusal, the screen's since TOOL4g): the default is
-    /// where starts begin within the list.
-    /// </summary>
-    public const string AccountDefaultOutsideList = "ACCOUNT_DEFAULT_OUTSIDE_LIST";
 
     /// <summary>
     /// The driver itself refused, in its own words — an unknown adapter, a harness with no toolchain,

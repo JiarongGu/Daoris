@@ -159,8 +159,8 @@ function Page({ tab: first, setup = DEFAULTS_DAORIS, browser = false, wired = tr
           nameOf: (_owner, profile) => (profile ? `${profile === 'account-2' ? 'home' : 'work'}@example.invalid` : 'own@example.invalid'),
         }}
         accounts={browser ? null : [
-          { agent: 'claude-code', product: 'Claude Code', own: true, accounts: ['home@example.invalid', 'work@example.invalid'] },
-          { agent: 'codex', product: 'Codex', own: false, accounts: ['me@example.invalid'] },
+          { agent: 'claude-code', product: 'Claude Code', accounts: ['home@example.invalid', 'work@example.invalid'] },
+          { agent: 'codex', product: 'Codex', accounts: ['me@example.invalid'] },
         ]}
         onOpenAgent={nothing}
       />

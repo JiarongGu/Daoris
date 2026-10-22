@@ -506,7 +506,8 @@ public sealed class AccountRotationGoalTests : IDisposable
         Cool("account-2");
         var cooled = await roster.SelectAsync("fake", Config, null, null);
 
-        Assert.Equal(("account-2", "it comes first in this machine's list"), (machine.Profile, machine.Choice?.Clause));
+        // POOL1c (D197; the account-pool design §4.3): the order's first, said as that, never as this machine's list.
+        Assert.Equal(("account-2", "it comes first in the order of Daoris's accounts"), (machine.Profile, machine.Choice?.Clause));
         // The workspace's start is the set's second, counted beside the first: it spreads as any start in the same look does.
         Assert.Equal(("account-1", "it runs the fewest of Daoris's sessions"), (work.Profile, work.Rotated?.Why));
         Assert.Equal(

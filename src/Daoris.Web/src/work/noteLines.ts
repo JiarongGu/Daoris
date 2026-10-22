@@ -481,10 +481,13 @@ export const OPENING_REASONS: Readonly<Record<string, { key: string; values: rea
   ahead: { key: 'note.opening.why.ahead', values: ['over', 'used', 'gone'] },
   'not-started': { key: 'note.opening.why.not-started', values: [] },
   'least-recent': { key: 'note.opening.why.least-recent', values: [] },
+  // No longer written (POOL1c, D197: every start reads the one set, whose first is `first-order`); a line written before keeps
+  // them, `default-here` and `first-here` said without the machine's list's name (the account-pool design §4.3).
   default: { key: 'note.opening.why.default', values: ['workspace'] },
   'default-here': { key: 'note.opening.why.default-here', values: [] },
   first: { key: 'note.opening.why.first', values: ['workspace'] },
   'first-here': { key: 'note.opening.why.first-here', values: [] },
+  'first-order': { key: 'note.opening.why.first-order', values: [] },
 };
 
 /**

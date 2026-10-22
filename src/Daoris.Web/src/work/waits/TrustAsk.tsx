@@ -25,6 +25,10 @@ import { type Answered, Refused } from '../InlineConfirm';
  * press, so it is not an `InlineConfirm`. It takes the same `Answered`: it waits saying so while the grant is written, and a
  * refusal is said inside it (not toasted) with the grant pressable again. The caller puts it down once the grant landed.
  * Trust is outward and loses nothing, so the grant stays the primary's hue.
+ *
+ * **A hold on your own sign-in's file offers no grant** (POOL1c, D197 point 3; the account-pool design §3 point 4, §4.3): a
+ * conversation that began there goes on there, and Daoris writes nothing in that file, so the question shows the folder and
+ * says to trust it with the tool itself, at the person's terminal, with no *Trust this folder* and no file named.
  */
 export function TrustAsk({ hold, busy = false, onGrant, onCancel }: {
   hold: TrustHold;
@@ -61,6 +65,20 @@ export function TrustAsk({ hold, busy = false, onGrant, onCancel }: {
     });
   };
   const waiting = busy || pending;
+
+  if (hold.own) {
+    return (
+      <WaitingCard title={t('trust.title')}>
+        <p className="m-0 mt-1.5 text-meta text-ink"><PathText path={hold.folder} /></p>
+        <p className="m-0 mt-2 text-body leading-relaxed">{t('trust.ownHome')}</p>
+        {onCancel && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button variant="ghost" onClick={onCancel}>{t('trust.cancel')}</Button>
+          </div>
+        )}
+      </WaitingCard>
+    );
+  }
 
   return (
     <WaitingCard title={t('trust.title')}>

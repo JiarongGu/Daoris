@@ -106,19 +106,13 @@ public sealed partial class HelpCoverageTests
         + "their own press (D66 §3), so Ask Daoris never proposes one.");
 
     /// <summary>
-    /// ACCT1's <c>daoris agent profile join</c> and the route's <c>profile-join</c>: putting an account in a list widens what
-    /// Daoris may spend, as <c>order</c> does, so it is the <c>agent</c> kind's <c>order</c> door (TOOL4l-b): the list with the
-    /// account added. The agent's page presses it (UX7b), and this is its control's row.
+    /// <i>Got it</i> on what the fold into one set changed (POOL1c, D197 point 7; the account-pool design §5.2), the route's
+    /// <c>ACCOUNT_USE</c> <c>said</c>: the person's acknowledgement of what they read, which changes nothing a start reads, so Ask
+    /// Daoris proposes none.
     /// </summary>
-    private static readonly Door JoinDoor = new("agent", "order");
-
-    /// <summary>
-    /// The page's <i>Use by default</i> (<c>profile-default</c>), refused on the bridge as <c>ACCOUNTS_ONE_SET</c> since POOL1a1 and
-    /// left in the page until POOL1c (D197): Ask Daoris's <c>default</c> door left with POOL1b, so the press answers to no door.
-    /// </summary>
-    private static readonly Exempt DefaultPress = new(
-        "Daoris's accounts are one set and its order says where starts begin (D197), so the bridge refuses a default as "
-        + "ACCOUNTS_ONE_SET and Ask Daoris proposes `order` instead; the page's press leaves with POOL1c.");
+    private static readonly Exempt PooledSaid = new(
+        "Got it marks what the fold into one set changed as read by the person, by the receipts they saw (D197 point 7); it is "
+        + "their own acknowledgement and changes nothing a start reads, so Ask Daoris never proposes it.");
 
     /// <summary>
     /// The driver lock's <c>--share</c> (DRV8, D104), decided: a flag on the start of a headless loop, not a setting.
@@ -823,12 +817,12 @@ public sealed partial class HelpCoverageTests
         // functions were; UPDATE1f gave the room its row.
         ("driver", "useSayUpdate", null, UpdateDoor),
 
-        // TOOL4g: how an agent's accounts are used; TOOL4l-b gave each its door. Returning a workspace to this machine's accounts
-        // (`inherit`) is the `order` door's `clear`.
+        // TOOL4g: how an agent's accounts are used; TOOL4l-b gave each its door. POOL1c (D197): one set, so a workspace returned to
+        // this machine's accounts (`inherit`) left the page; *Got it* on the fold's receipts (`said`) is the person's own.
         ("agents", "useAccountUse", "order", new Door("agent", "order")),
         ("agents", "useAccountUse", "use", new Door("agent", "use")),
         ("agents", "useAccountUse", "ready", new Door("agent", "ready")),
-        ("agents", "useAccountUse", "inherit", new Door("agent", "order")),
+        ("agents", "useAccountUse", "said", PooledSaid),
 
         ("agents", "useHarnessAction", "install", new Exempt(
             "an install fetches a maker's release and runs its installer on this machine, the person's own press (HELP6).")),
@@ -843,10 +837,9 @@ public sealed partial class HelpCoverageTests
         ("agents", "useHarnessAction", "profile-add", new Exempt("an account is made by its own sign-in; " + SignIn)),
         ("agents", "useHarnessAction", "profile-remove", new Exempt(
             "it deletes an account with its sign-in, which only the person can make again (D89).")),
-        ("agents", "useHarnessAction", "profile-default", DefaultPress),
-        // UX7b: the agent's page presses ACCT2's rename and ACCT1's join, at a new account's end and from a row.
+        // UX7b: the agent's page presses ACCT2's rename, at a new account's end and from a row. ACCT1's join and the default
+        // left the page with POOL1c (D197): the bridge refuses both as ACCOUNTS_ONE_SET.
         ("agents", "useHarnessAction", "profile-rename", RenameDoor),
-        ("agents", "useHarnessAction", "profile-join", JoinDoor),
         ("agents", "useSetAgentSettings", null, new Door("account", "settings")),
         ("agents", "useRefreshHarnesses", null, new Exempt("it reads the roster again and changes nothing.")),
         // SWITCH1d: *Read now*, and the read as an agent's page opens, ask each account's use with no prompt (D165 point 1).
@@ -1796,7 +1789,8 @@ public sealed partial class HelpCoverageTests
     /// ACCT2: the terminal's account name door, <c>profile rename</c>, and a sign-in's <c>--name</c>, are answered for while the CLI's
     /// usage spells them, and the room names each, so the helper points the person at them before any screen presses them. A sign-in
     /// stays exempt (D89). ACCT1's <c>profile join</c> and a sign-in's <c>--join</c> and <c>--join-machine</c>, which this held spelled
-    /// too, are refused since POOL1b (D197 point 6), so neither the usage nor the room names them, nor <c>profile default</c>.
+    /// too, are refused since POOL1b (D197 point 6), so neither the usage nor the room names them, nor <c>profile default</c>; and
+    /// since POOL1c the page presses neither, so neither is a control's row.
     /// </summary>
     [Fact]
     public void The_account_name_door_is_answered_for_and_named_in_the_room_and_the_join_doors_are_gone()
@@ -1815,12 +1809,12 @@ public sealed partial class HelpCoverageTests
         }
 
         Assert.Contains("D66", RenameDoor.Reason);
-        // Joining is the list with the account added (TOOL4l-b), so it is the `order` door.
-        Assert.Equal(new Door("agent", "order"), JoinDoor);
         Assert.IsType<Exempt>(Controls.Single(row => row.Hook == "useHarnessAction" && row.Action == "login-new").Answer);
-        // UX7b: the page presses both, so each is its control's row.
+        // UX7b: the page presses the rename, so it is its control's row; POOL1c: the join and the default are no row.
         Assert.Same(RenameDoor, Controls.Single(row => row.Hook == "useHarnessAction" && row.Action == "profile-rename").Answer);
-        Assert.Same(JoinDoor, Controls.Single(row => row.Hook == "useHarnessAction" && row.Action == "profile-join").Answer);
+        Assert.DoesNotContain(Controls, row => row.Hook == "useHarnessAction" && row.Action is "profile-join" or "profile-default");
+        Assert.DoesNotContain(Controls, row => row.Hook == "useAccountUse" && row.Action == "inherit");
+        Assert.Contains("D197", PooledSaid.Reason);
     }
 
     /// <summary>DRV8's <c>--share</c>, decided (D110): exempt, while the headless loop's usage still names it.</summary>

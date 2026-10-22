@@ -7,7 +7,7 @@ import type { Tool } from '../agents/tools';
 
 const tool = (over: Partial<Tool> = {}): Tool => ({
   name: 'claude-code', product: 'Claude Code', maker: 'Anthropic', doors: [], accounts: [],
-  machineDefault: null, present: true, ownLogin: 'in', ownAccount: null, ownRead: null, takesRules: false, workspaceDefaults: [], ...over,
+  present: true, ownLogin: 'in', ownAccount: null, ownRead: null, takesRules: false, ...over,
   // A signed-in account of Daoris's, which the other starters' machines need to be quiet about the agent (OWNSPACE1b-C).
   ...(over.accounts ? {} : { accounts: [{ name: 'work', home: '', login: 'in' }] as Tool['accounts'] }),
 });

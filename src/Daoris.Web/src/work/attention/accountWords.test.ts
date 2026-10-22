@@ -16,7 +16,7 @@ const UNTIL = '2026-10-06T04:42:00Z';
 
 const door = (over: Partial<ToolDoor> = {}): ToolDoor => ({
   harness: 'claude-code', present: true, product: 'Claude Code', maker: 'Anthropic', signsIn: true, wire: 'pipe',
-  machineDefault: null, ownLogin: 'unknown', ownRead: null, workspaceDefaults: [],
+  ownLogin: 'unknown', ownRead: null,
   profiles: [
     { name: 'account-1', home: 'H/account-1', login: 'out', read: READ, account: 'you@work.example' },
     { name: 'account-2', home: 'H/account-2', login: 'in', read: '2026-10-05T09:00:00Z', displayName: 'home' },
@@ -30,7 +30,7 @@ const named = (id: string | null, state: PushedNamed['state'], over: Partial<Pus
   ({ id, name: null, state, read: id === 'account-2' ? '2026-10-05T09:00:00Z' : READ, until: state === 'cooling' ? UNTIL : null, ...over });
 
 const facts = (over: Partial<PushedAccountFacts> = {}): PushedAccountFacts => ({
-  agent: 'claude-code', product: 'Claude Code', harness: 'claude-code', signsIn: true, named: [], outside: null, readFirst: null, ...over,
+  agent: 'claude-code', product: 'Claude Code', harness: 'claude-code', signsIn: true, named: [], ...over,
 });
 
 /** A start waiting on its accounts, as the shell pushes it. */
@@ -108,15 +108,16 @@ describe('a start waiting for accounts, worded', () => {
     expect(row.account!.named.map(({ label }) => label)).toEqual(['home', 'account-1', 'account-3']);
   });
 
-  /** D130 §3.3, UXFIX3: the one outside the list to let in, or to read first, named as the roster names it. */
-  it('names the account outside the list it may let in, or read first', () => {
-    const outside = worded(waiting({ account: facts({ named: [named('account-2', 'cooling')], outside: { id: 'account-4', list: 'work', workspace: 'work' } }) }));
-    expect(outside.account!.outside).toEqual({ id: 'account-4', label: 'account-4', list: 'work', workspace: 'work' });
-    expect(attentionOffers(outside)).toEqual([{ act: 'let-run', account: 'account-4' }]);
-
-    const first = worded(waiting({ account: facts({ named: [named('account-1', 'out')], readFirst: { id: 'account-4' } }) }));
-    expect(first.account!.readFirst).toEqual({ id: 'account-4', label: 'account-4' });
-    expect(attentionOffers(first)).toEqual([{ act: 'sign-in', account: 'account-1' }, { act: 'read', account: 'account-4' }]);
+  /**
+   * POOL1c (the account-pool design §4.3): no account is outside the set, so an older answer's account outside a list, or one to
+   * read first, is read as nothing: the row neither names it nor offers to let it run.
+   */
+  it('reads no account outside a list, nor one to read first: every account serves every workspace', () => {
+    const older = { ...facts({ named: [named('account-1', 'out')] }), outside: { id: 'account-4', list: 'work', workspace: 'work' }, readFirst: { id: 'account-4' } };
+    const row = worded(waiting({ account: older as PushedAccountFacts }));
+    expect(row.account).not.toHaveProperty('outside');
+    expect(row.account).not.toHaveProperty('readFirst');
+    expect(attentionOffers(row)).toEqual([{ act: 'sign-in', account: 'account-1' }]);
   });
 
   /** OWNSPACE1b-B (D175 point 3): no Daoris account signed in names no account, says why, and offers *Sign in for Daoris*. */
@@ -132,17 +133,20 @@ describe('a start waiting for accounts, worded', () => {
   });
 });
 
-describe('a signed-out account a list holds, worded', () => {
+describe('a signed-out account of Daoris’s, worded', () => {
   const signedOut = (account: string, over: Partial<PushedAttention> = {}): PushedAttention => ({
-    kind: 'signed-out', id: `signed-out:claude-code/${account}`, since: null, read: READ, where: 'Claude Code', runs: ['work'],
+    kind: 'signed-out', id: `signed-out:claude-code/${account}`, since: null, read: READ, where: 'Claude Code',
     account: facts({ named: [named(account, 'out')] }),
     ...over,
   });
 
-  /** UXFIX3: only when it was read is known, so the row says *read …* and no wait. */
-  it('names the account, where it runs, and when it was read, never how long it waited', () => {
-    const row = worded(signedOut('account-1'));
-    expect(row).toMatchObject({ kind: 'signed-out', title: 'account-1', where: 'Claude Code', since: null, read: READ, detail: 'It runs work in work.' });
+  /**
+   * UXFIX3: only when it was read is known, so the row says *read …* and no wait. POOL1c: where it runs is not said, since every
+   * account serves every workspace, and never *this machine*, whatever an older answer carries.
+   */
+  it('names the account and when it was read, never how long it waited, nor where it runs', () => {
+    const row = worded(signedOut('account-1', { runs: [null, 'work'] } as Partial<PushedAttention>));
+    expect(row).toMatchObject({ kind: 'signed-out', title: 'account-1', where: 'Claude Code', since: null, read: READ, detail: null });
     expect(row.account!.named).toEqual([expect.objectContaining({ id: 'account-1', state: 'out' })]);
     expect(attentionOffers(row)).toEqual([{ act: 'sign-in', account: 'account-1' }]);
   });
@@ -151,15 +155,8 @@ describe('a signed-out account a list holds, worded', () => {
   it('says a key its provider refused, and where it is repaired', () => {
     const doors = [door({ profiles: door().profiles!.map((profile) => (profile.name === 'account-3' ? { ...profile, key: '…abcd' } : profile)) })];
     const row = worded(signedOut('account-3', { account: facts({ named: [named('account-3', 'refused')] }) }), doors);
-    expect(row).toMatchObject({
-      title: 'API key …abcd', detail: "Key refused: put a new API key into it on Claude Code's page. It runs work in work.",
-    });
+    expect(row).toMatchObject({ title: 'API key …abcd', detail: "Key refused: put a new API key into it on Claude Code's page." });
     expect(attentionOffers(row)).toEqual([]);
-  });
-
-  /** A signed-out account where no list names a workspace runs on this machine's, said as the Agents place says it. */
-  it('says where it runs on this machine', () => {
-    expect(worded(signedOut('account-1', { runs: [null] })).detail).toBe('It runs work in this machine.');
   });
 
   /** ACCOUNTID1b: two accounts signed in as one email in two organisations read alike; each row says its own. */

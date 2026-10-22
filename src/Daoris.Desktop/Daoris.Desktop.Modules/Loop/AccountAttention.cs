@@ -15,9 +15,9 @@ namespace Daoris.Desktop;
 /// <i>unknown, never read</i>, and never guessed signed in or out.</para>
 ///
 /// <para><b>What a row carries</b>: the ids of the accounts it names, each with its state, when it was read, its cool-off's end and the
-/// name the look read beside it; and what the start holds. Its <c>outside</c> and <c>readFirst</c> are null, kept for the page's
-/// shape until POOL1c: no account is outside the set. An account's
-/// name, the row's title and its line of why are the page's words, named from the roster it holds (D182's PUSH1d4 note).</para>
+/// name the look read beside it; and what the start holds. No account is outside the set, so none is offered to let in or read
+/// first (POOL1c). An account's name, the row's title and its line of why are the page's words, named from the roster it holds
+/// (D182's PUSH1d4 note).</para>
 ///
 /// <para><b>A signed-out account's row has no wait</b> (UXFIX3): only when it was read is known, so it carries its reading and no
 /// <c>since</c>. A start whose work no record in hand names waits since its limit, or since nothing known: never the clock's now.</para>
@@ -72,9 +72,6 @@ internal static class AccountAttention
 
             var whose = RowFacts(held.Agent, tool);
             whose["named"] = new JsonArray([.. accounts]);
-            // No account is outside the set (POOL1a2), so none is offered to let in or read first.
-            whose["outside"] = null;
-            whose["readFirst"] = null;
             if (held.NoAccount) whose["noAccount"] = true;
 
             var row = new JsonObject
@@ -109,7 +106,6 @@ internal static class AccountAttention
                 {
                     ["id"] = id, ["name"] = null, ["state"] = state.Name == "refused" ? "refused" : "out", ["read"] = state.Read, ["until"] = null,
                 });
-                whose["outside"] = null;
                 rows.Add(new JsonObject
                 {
                     ["kind"] = "signed-out",

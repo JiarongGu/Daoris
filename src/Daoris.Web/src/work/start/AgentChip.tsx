@@ -15,8 +15,9 @@ export type AgentAccounts = Readonly<Record<string, Pick<Account, 'name' | 'logi
 
 /**
  * The agent and account chip (NEW1b, D162; factored out for MIXAGENT1b-i, D163): one chip, and a menu of the agents, then the
- * chosen agent's accounts in the scope's order (D130 §3.2). *New conversation* leaves both to the driver by default; *Go on with
- * another agent…* names the agent, so it has no default row (`named`) and lists only the agents handed in.
+ * chosen agent's accounts of Daoris's in the set's order, every workspace's (POOL1c, D197; the account-pool design §4.3), with
+ * no group of accounts outside a list. *New conversation* leaves both to the driver by default; *Go on with another agent…*
+ * names the agent, so it has no default row (`named`) and lists only the agents handed in.
  *
  * @remarks
  * A molecule: the rosters arrive as props. An account is an agent's own: choosing another agent drops a chosen account the new
@@ -24,7 +25,7 @@ export type AgentAccounts = Readonly<Record<string, Pick<Account, 'name' | 'logi
  * key is repaired by a new key (ACCTNAME1, D152 §4.2).
  */
 export function AgentChip({
-  value, onChange, harnesses, labels = {}, names = {}, defaultHarness = '', accounts, repository, scopeOf, named = false, disabled = false,
+  value, onChange, harnesses, labels = {}, names = {}, defaultHarness = '', accounts, orderOf, named = false, disabled = false,
 }: {
   value: AgentChoice;
   onChange: (next: AgentChoice) => void;
@@ -37,10 +38,8 @@ export function AgentChip({
   /** The driver's own agent, whose accounts are offered while no other is chosen. */
   defaultHarness?: string;
   accounts: AgentAccounts;
-  /** The repository the accounts are scoped to. */
-  repository?: string | null;
-  /** The accounts a start in this repository may run on, for this agent (D130 §3.2); null where neither names a list. */
-  scopeOf?: (repository: string, harness: string) => { workspace: string | null; list: string[] } | null;
+  /** The set's order of this agent's accounts of Daoris's, every workspace's (D197 point 2); null where it was not answered. */
+  orderOf?: (harness: string) => readonly string[] | null;
   /** The agent is the person's to name: no *driver's default* row, and the agents are listed even where there is one. */
   named?: boolean;
   disabled?: boolean;
@@ -50,16 +49,12 @@ export function AgentChip({
   const label = (id: string) => labels[id] ?? names[id] ?? id;
   const profiles = accounts[agent] ?? [];
   const account = profiles.find((choice) => choice.name === value.profile) ?? null;
-  // The scope's accounts first, in its list's order, then every other under *not in its list* (D130 §3.2).
-  const scope = repository && agent ? scopeOf?.(repository, agent) ?? null : null;
-  const listed = scope && scope.list.length > 0 ? scope.list : null;
-  const ordered = listed
-    ? [
-      ...listed.map((name) => profiles.find((choice) => choice.name === name)).filter((choice) => choice !== undefined),
-      ...profiles.filter((choice) => !listed.includes(choice.name)),
-    ]
-    : profiles;
-  const outside = scope?.workspace ? t('work.start.outside', { workspace: scope.workspace }) : t('work.start.outsideMachine');
+  // The set's accounts in its order, then any it does not name yet, as the next change would place them (D197 point 2).
+  const order = agent ? orderOf?.(agent) ?? [] : [];
+  const ordered = [
+    ...order.map((name) => profiles.find((choice) => choice.name === name)).filter((choice) => choice !== undefined),
+    ...profiles.filter((choice) => !order.includes(choice.name)),
+  ];
 
   const chooseAgent = (next: string) => {
     const harness = next === DEFAULT ? '' : next;
@@ -116,17 +111,13 @@ export function AgentChip({
               onValueChange={(next) => onChange({ adapter: value.adapter, profile: next === DEFAULT ? '' : next })}
             >
               <Menu.RadioItem value={DEFAULT}>{t('work.start.profileDefault')}</Menu.RadioItem>
-              {ordered.map((choice, index) => {
+              {ordered.map((choice) => {
                 const who = accountWho(choice, among);
                 const name = who ? `${accountName(choice)} · ${who}` : accountName(choice);
-                const first = listed && !listed.includes(choice.name) && (index === 0 || listed.includes(ordered[index - 1]!.name));
                 return (
-                  <div key={choice.name}>
-                    {first && <Menu.Label className="pt-2">{outside}</Menu.Label>}
-                    <Menu.RadioItem value={choice.name}>
-                      {choice.login === 'out' ? t(choice.key ? 'harness.profileRefused' : 'harness.profileOut', { name }) : name}
-                    </Menu.RadioItem>
-                  </div>
+                  <Menu.RadioItem key={choice.name} value={choice.name}>
+                    {choice.login === 'out' ? t(choice.key ? 'harness.profileRefused' : 'harness.profileOut', { name }) : name}
+                  </Menu.RadioItem>
                 );
               })}
             </Menu.RadioGroup>

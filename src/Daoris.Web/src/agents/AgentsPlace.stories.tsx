@@ -6,16 +6,16 @@ import { ViewFrame } from '../work/frame/ViewFrame';
 import { agentRows } from './agents';
 import { AgentList, AgentStrip } from './AgentList';
 import { type AgentActs, AgentPage } from './AgentPage';
-import { CLAUDE_TOOL, CLAUDE_USE, CODEX_USE, RULES, TOOLS, USAGE, WORKSPACES } from './agentsFixtures';
+import { CLAUDE_TOOL, CLAUDE_USE, CODEX_USE, RULES, TOOLS, USAGE } from './agentsFixtures';
 
 // The Agents place whole (UX6e, D150 §5): its list pane and the chosen agent's page in the frame, as the window draws it,
 // at whatever width the story is given: the design's 1546 px with the list open, and 680 px, where the list is a strip.
 
 const nothing = () => {};
 const ACTS: AgentActs = {
-  onReadAgain: nothing, onReadOne: nothing, onReadNow: nothing, onSignInNew: nothing, onAddKey: nothing, onReplaceKey: nothing, onSignIn: nothing, onTryNow: nothing, onDefault: nothing,
-  onRemove: nothing, onRename: nothing, onJoin: nothing, onAddedAnswer: nothing, onSaveSettings: nothing, onDoor: nothing, onPin: nothing,
-  scope: { onOrder: nothing, onUse: nothing, onInherit: nothing },
+  onReadAgain: nothing, onReadOne: nothing, onReadNow: nothing, onSignInNew: nothing, onAddKey: nothing, onReplaceKey: nothing, onSignIn: nothing, onTryNow: nothing,
+  onRemove: nothing, onRename: nothing, onAddedAnswer: nothing, onPooledSaid: nothing, onSaveSettings: nothing, onDoor: nothing, onPin: nothing,
+  scope: { onOrder: nothing, onUse: nothing },
   rules: { onSwitchDefault: nothing, onRemove: nothing, onAdd: nothing, onAnswer: nothing },
 };
 
@@ -43,7 +43,6 @@ function Place() {
               use={CLAUDE_USE}
               rules={{ ...RULES, proposals: [] }}
               usage={USAGE}
-              workspaces={WORKSPACES}
               adapter="claude-code"
               acts={ACTS}
             />

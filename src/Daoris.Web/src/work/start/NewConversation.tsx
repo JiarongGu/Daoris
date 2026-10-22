@@ -118,10 +118,10 @@ export function openingRepository(
  * @remarks
  * **It replaced the *Start session* drawer** (D55's), which started an empty conversation the person typed into after. What
  * the drawer knew is the chips': repositories with a checkout here, a busy checkout and what lets it start, the agents by the
- * names Settings gives them (UX5 U67), and the accounts in the workspace's list's order (D130 §3.2).
+ * names Settings gives them (UX5 U67), and the accounts in the set's order (D197 point 2).
  *
  * **Every chip may be left alone.** Silence resolves the way a driven session resolves (D49 §4, D51): the agent from
- * `driver.json`, the account from the workspace's default then the machine's, the tree from the repository's standing opt-in.
+ * `driver.json`, the account the walk of the agent's set takes (D197), the tree from the repository's standing opt-in.
  * So the defaults say *driver's*, and send nothing.
  *
  * **Enter starts; Shift+Enter is a new line; an input method's Enter is its own** (IME1). Files go with the words, through
@@ -138,7 +138,7 @@ export function openingRepository(
  */
 export function NewConversation({
   attached = true, repositories, busy = {}, recent = [], remembered, attended, onChoose, harnesses, labels = {}, names = {},
-  defaultHarness = '', accounts, scopeOf, draft, onDraft, carried, onCarry, pending = false, refusal, focus = 0, onFocused, onStart,
+  defaultHarness = '', accounts, orderOf, draft, onDraft, carried, onCarry, pending = false, refusal, focus = 0, onFocused, onStart,
   onOpenSession, onAdd, onImport, pick, reveal, pickerOpen = false, openingTree = 'driver', readCheckout = UNREAD, onMakeTask,
 }: {
   /** Whether a shell is here; false is a browser. */
@@ -164,11 +164,8 @@ export function NewConversation({
   defaultHarness?: string;
   /** Each agent's accounts, with their sign-in state (D49 §4), by agent: the accounts follow the agent chosen (REV3). */
   accounts: Readonly<Record<string, Pick<Account, 'name' | 'login' | 'account' | 'displayName' | 'key'>[]>>;
-  /**
-   * The list of accounts a start in this repository may run on, for this agent (D130 §3.2): its workspace's own, or this
-   * machine's, with the workspace it is, or null for this machine's. Null where neither names a list.
-   */
-  scopeOf?: (repository: string, harness: string) => { workspace: string | null; list: string[] } | null;
+  /** Each agent's accounts of Daoris's in the set's order, every workspace's (POOL1c, D197); null where it was not answered. */
+  orderOf?: (harness: string) => readonly string[] | null;
   /** The words, where the holder keeps them across a visit elsewhere. Absent, the composer holds its own. */
   draft?: string;
   onDraft?: (text: string) => void;
@@ -376,8 +373,7 @@ export function NewConversation({
           names={names}
           defaultHarness={defaultHarness}
           accounts={accounts}
-          repository={repository}
-          scopeOf={scopeOf}
+          orderOf={orderOf}
         />
 
         <Tip content={t('work.composer.attachTip')}>

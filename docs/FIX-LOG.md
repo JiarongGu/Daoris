@@ -5,6 +5,18 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-22 — A folder held on the own sign-in's file would have reached *What needs you* without its `own` (POOL1c)
+
+- **Symptom:** found in POOL1c's build, before any window showed it: the attention row of a trust hold on the person's own
+  sign-in's file would have offered *Trust this folder*, which `TRUST_FOLDER` refuses as `TRUST_OWN_HOME`.
+- **Root cause:** POOL1a3 set `own` on the row's `trust` in `NeedsAPerson`, and its test read the rows as judged. The slice
+  pushes each row picked to `AttentionStateSlice.Fields`, whose `trust` named `folder` and `trustFile` alone, so the pick
+  dropped `own` and no test read a row as pushed.
+- **Fix:** `own` joins the allow-list's `trust`. The account row's `outside` and `readFirst`, null since POOL1a2, and the row's
+  `runs` leave the allow-list with the page's types, which the twin test holds equal both ways.
+- **Verification:** `AttentionStateSliceTests`' own-hold test now reads the row through `Picked`, seen failing before the
+  allow-list changed, then green, with the twin test and `AccountAttentionSliceTests`.
+
 ## 2026-10-22 — One slow service answer froze the window's sessions list for the rest of its life (SLICESTALL1)
 
 - **Symptom:** the owner reported work in a workspace looking stuck. On the install, the window's `sessions` slice still held a

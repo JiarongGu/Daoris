@@ -57,13 +57,16 @@ internal static class RefusedAccounts
             $"{char.ToUpperInvariant(reason[0])}{reason[1..]}", ("owner", owner));
     }
 
-    /// <summary>What a refused credential says (AGT3b): the account by its owner and name, or the tool's own sign-in.</summary>
-    private static string RefusedReason(string owner, string? profile)
-    {
-        var account = profile is { } named ? $"the `{owner}` account `{named}`" : $"`{owner}`'s own sign-in";
-        return $"its provider refused {account} (401). Replace the key or sign in again — "
-            + $"on Settings, or `daoris agent` — and Daoris will start sessions on it again.";
-    }
+    /// <summary>
+    /// What a refused credential says (AGT3b): the account by its owner and name, or the tool's own sign-in, which is the person's,
+    /// outside Daoris's accounts (POOL1c, D197 point 3; the account-pool design §4.4), so it is signed in again with the tool itself
+    /// at their terminal, never through Daoris. The catalogues' `note.account.refused-own` and `note.held.refused-own` say the same.
+    /// </summary>
+    private static string RefusedReason(string owner, string? profile) => profile is { } named
+        ? $"its provider refused the `{owner}` account `{named}` (401). Replace the key or sign in again — "
+          + "on Settings, or `daoris agent` — and Daoris will start sessions on it again."
+        : $"its provider refused `{owner}`'s own sign-in (401). It is your own, outside Daoris's accounts: sign it in again with the "
+          + "tool itself, at your terminal.";
 
     /// <summary>
     /// What a later start held on a refused credential says (AGT3b, ROSTERREFUSE2), by code beside its English: the account by its

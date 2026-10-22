@@ -25,11 +25,14 @@ judged from the machine's facts, a partition per repository (PUSH1b1); `linesSli
 | Answers | A press answering the slice's data writes it only where the slice is pulled (`writeAnswered` is the driver's), or where the pushes compose nothing yet (`pushedOf(client).data(name) === undefined`), so a press made before the first judgement is not lost | the press's own test; `useSweepLook` (PUSH1c4b) |
 | The records | The README's `STATE_SLICE` row names the slice and its partitions; D182 gets the row's note | `DriverModuleRoutesTests`' README check |
 
-**Three traps.** A window's views whose effects run before `ShellSignals` pull beside the snapshot, so a root mounts it first
+**Four traps.** A window's views whose effects run before `ShellSignals` pull beside the snapshot, so a root mounts it first
 (`SecondaryWindowRoot`). A delta is never coalesced: only a whole replacement carries the pump's coalesce key, which
 `StateSlice` sets itself. And a judge reading what the chat runner holds per conversation reads it at `SESSION_ENDED`, which
 `ChatRunner.Conclude` tells before `WatchAsync`'s disposer clears the conversation's maps: forget what the slice reads in `Conclude`
-first, as `ForgetAccess` does for `helpSwapping` (ACCESSSWAP1), or the end's judgement still sees it running.
+first, as `ForgetAccess` does for `helpSwapping` (ACCESSSWAP1), or the end's judgement still sees it running. And a field a
+judge writes into a nested shape reaches the window only once that shape's allow-list names it: a test reading the judge's rows
+(`NeedsAPerson.Rows`) sees the field the pick then drops, so test a field added through the pick (`AttentionStateSlice.Picked`;
+a trust hold's `own`, POOL1c).
 
 ## A family read under many keys, and a large one
 

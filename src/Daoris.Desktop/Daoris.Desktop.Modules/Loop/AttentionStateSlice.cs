@@ -73,7 +73,7 @@ public static class AttentionStateSlice
         [
             "kind", "id", "since", "workspace", "where", "note", "detail", "publishTo", "choices", "ask", "number", "goAhead", "session",
             "departed", "setUp", "local", "environment", "shows", "opinion", "placed", "sitting", "trust", "quest", "proposal", "title",
-            "permission", "blocked", "held", "unreadable", "wholeWorkspace", "holding", "read", "runs", "account", "answer", "ended",
+            "permission", "blocked", "held", "unreadable", "wholeWorkspace", "holding", "read", "account", "answer", "ended",
             "confirmation", "agent", "stands", "stale", "space", "git",
         ],
         ["waiting"] = ["kind", "workspace"],
@@ -95,7 +95,8 @@ public static class AttentionStateSlice
         ["pausedBy"] = ["scope", "id"],
         ["wordsHeld"] = ["why", "reason", "repository", "until"],
         ["sitting"] = ["quest", "repository", "verdict", "reason", "strikes", "since"],
-        ["trust"] = ["folder", "trustFile"],
+        // POOL1c: `own`, a hold on the own sign-in's file, which the page draws with no grant (D197 point 3).
+        ["trust"] = ["folder", "trustFile", "own"],
         ["proposal"] =
         [
             "id", "state", "action", "scope", "name", "list", "rule", "default", "on", "why", "session", "ask", "proposed", "settled",
@@ -110,10 +111,8 @@ public static class AttentionStateSlice
         ["unreadable"] = WorkStateSlice.Fields["unreadable"],
         ["graphEnd"] = WorkStateSlice.Fields["graphEnd"],
         ["holding"] = ["quests", "asks"],
-        ["account"] = ["agent", "product", "harness", "signsIn", "named", "outside", "readFirst", "noAccount"],
+        ["account"] = ["agent", "product", "harness", "signsIn", "named", "noAccount"],
         ["named"] = ["id", "name", "state", "read", "until"],
-        ["outside"] = ["id", "list", "workspace"],
-        ["readFirst"] = ["id"],
         ["confirmation"] = ["module", "route", "asker", "expires", "shownAt"],
         ["asker"] = ["process", "pid"],
         // KEEP1f: a volume still below its free-space floor once the floor's acts ran.
@@ -150,8 +149,6 @@ public static class AttentionStateSlice
         ["row.holding"] = "holding",
         ["row.account"] = "account",
         ["account.named"] = "named",
-        ["account.outside"] = "outside",
-        ["account.readFirst"] = "readFirst",
         ["row.confirmation"] = "confirmation",
         ["confirmation.asker"] = "asker",
         ["row.space"] = "space",

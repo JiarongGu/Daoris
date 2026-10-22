@@ -81,8 +81,8 @@ describe("a workspace's Details", () => {
         onOpen={() => {}}
         starts={{ list: [START], nameOf: (_owner, profile) => profile ?? 'own' }}
         accounts={[
-          { agent: 'claude-code', product: 'Claude Code', own: true, accounts: ['work@example.invalid', 'home@example.invalid'] },
-          { agent: 'codex', product: 'Codex', own: false, accounts: ['me@example.invalid'] },
+          { agent: 'claude-code', product: 'Claude Code', accounts: ['work@example.invalid', 'home@example.invalid'] },
+          { agent: 'codex', product: 'Codex', accounts: [] },
         ]}
         onOpenAgent={onOpenAgent}
       />,
@@ -90,9 +90,12 @@ describe("a workspace's Details", () => {
 
     const start = screen.getByRole('listitem', { name: 'a start in aurora' });
     expect(within(start).getByText('personal')).toBeInTheDocument();
-    expect(within(screen.getByRole('listitem', { name: 'Claude Code' })).getByText('its own: work@example.invalid, home@example.invalid'))
-      .toBeInTheDocument();
-    expect(within(screen.getByRole('listitem', { name: 'Codex' })).getByText("this machine's: me@example.invalid")).toBeInTheDocument();
+    // POOL1c (D197): Daoris's accounts, one set for every workspace, in its order; never *its own* nor *this machine's*.
+    expect(within(screen.getByRole('listitem', { name: 'Claude Code' }))
+      .getByText("Daoris's accounts, in order: work@example.invalid, home@example.invalid")).toBeInTheDocument();
+    expect(within(screen.getByRole('listitem', { name: 'Codex' }))
+      .getByText('No Daoris account is signed in for it; its starts wait until you sign in.')).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/this machine's|its own:/);
     await userEvent.click(screen.getByRole('button', { name: 'Open Codex' }));
     expect(onOpenAgent).toHaveBeenCalledWith('codex');
   });

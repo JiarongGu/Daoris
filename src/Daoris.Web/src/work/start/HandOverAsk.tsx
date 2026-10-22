@@ -4,20 +4,21 @@ import { type AgentAccounts, type AgentChoice, AgentChip } from './AgentChip';
 import { InlineConfirm } from '../InlineConfirm';
 import type { HandOverTold } from '../sessionActs';
 
-/** The roster a hand-over chooses from, as *New conversation* holds it: each agent's names and accounts, and the scope's order. */
+/** The roster a hand-over chooses from, as *New conversation* holds it: each agent's names and accounts, and the set's order. */
 export type HandOverRoster = {
   /** The agents present on this machine, the conversation's own among them: it is left out here. */
   harnesses: readonly string[];
   labels?: Readonly<Record<string, string>>;
   names?: Readonly<Record<string, string>>;
   accounts: AgentAccounts;
-  scopeOf?: (repository: string, harness: string) => { workspace: string | null; list: string[] } | null;
+  /** Each agent's accounts of Daoris's in the set's order, every workspace's (POOL1c, D197). */
+  orderOf?: (harness: string) => readonly string[] | null;
 };
 
 /**
  * **A hand-over's ask** (MIXAGENT1b-i, D163 §2, the mixed-agents design §5): *Go on with another agent…* opens it under the
  * page header as the stop's ask opens, on the primary's hue since nothing is destroyed. It says what goes on and what carries
- * over, the agent and account chip (the agents other than the conversation's own, and the chosen one's accounts in the scope's
+ * over, the agent and account chip (the agents other than the conversation's own, and the chosen one's accounts in the set's
  * order), then *Hand over* and *Never mind*. A refusal is said inside it and keeps the choice (UX5 U68). While the conversation
  * works the move is *Stop and hand over…*'s: the turn is stopped after the ask is kept, and the ask says where it goes on.
  *
@@ -26,13 +27,11 @@ export type HandOverRoster = {
  * as it opens; with none, it says so and offers only *Close*. A kept ask with no new conversation yet is said in place of the
  * move (`kept`), with only *Close* left, since a second press would ask the same twice.
  */
-export function HandOverAsk({ from, first, repository, working = false, roster, initial, busy = false, refused = null, onHandOver, onClose }: {
+export function HandOverAsk({ from, first, working = false, roster, initial, busy = false, refused = null, onHandOver, onClose }: {
   /** The conversation's own agent, which is not offered. */
   from?: string | null;
   /** The harnesses of other tools, listed first (the offer's candidates); the rest follow in the roster's order. */
   first?: readonly string[];
-  /** Its repository, whose scope orders the accounts. */
-  repository?: string | null;
   /** It works: the move stops its turn. */
   working?: boolean;
   roster: HandOverRoster;
@@ -87,8 +86,7 @@ export function HandOverAsk({ from, first, repository, working = false, roster, 
           labels={labels}
           names={names}
           accounts={roster.accounts}
-          repository={repository}
-          scopeOf={roster.scopeOf}
+          orderOf={roster.orderOf}
           named
           disabled={busy}
         />

@@ -29,8 +29,6 @@
   "work.start.profile": "账户",
   "work.start.profileDefault": "由驱动决定",
   "work.start.accountDriver": "驱动默认",
-  "work.start.outside": "不在 {{workspace}} 的列表中",
-  "work.start.outsideMachine": "不在本机的列表中",
   "work.start.go": "开启",
   "work.start.going": "正在开启…",
   "work.start.task": "请道衍把它整理成任务…",

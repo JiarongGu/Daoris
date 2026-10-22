@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { moment } from '../../locales/format';
 import i18n from '../../locales/i18n';
 import {
-  type AccountScope, type AgentAccounts, agentOf, cannotLeave, coolingLine, heldLine, listedIn, machineScope, moved, nextLine,
-  type NextStart, nothingSaid, offeredLine, ownLine, saidLine, used, USE_DEFAULTS, windowName, workspaceScope,
+  type AccountScope, type AgentAccounts, agentOf, coolingLine, heldLine, machineScope, moved, nextLine,
+  type NextStart, nothingSaid, offeredLine, ownLine, saidLine, USE_DEFAULTS, windowName,
 } from './accounts';
 
 // How each agent's accounts are used, read and said (TOOL4g; D125 §2.4, §3.7; D130 §3.1, §4.6, §5.2, §16.4): the pure half
@@ -27,16 +27,12 @@ describe('the answer, read', () => {
     expect(agentOf({} as never, 'claude-code')).toBeNull();
   });
 
-  it('reads the machine\'s scope, and a workspace\'s only where it names one of its own', () => {
-    const work = scope({ workspace: 'work', list: ['account-2'] });
-    const held = agent({ scopes: [scope({ list: SIX }), work] });
+  /** POOL1a2, POOL1c (D197): the set's one scope, every workspace's; an answer with none reads the defaults. */
+  it('reads the set’s one scope, and the defaults where an answer has none', () => {
+    const held = agent({ scopes: [scope({ list: SIX })] });
 
     expect(machineScope(held).list).toEqual(SIX);
-    expect(workspaceScope(held, 'work')).toBe(work);
-    expect(workspaceScope(held, 'lab')).toBeNull();
     expect(machineScope(agent({ scopes: [] })).use).toEqual(USE_DEFAULTS);
-    expect(listedIn(held, 'account-2')).toEqual(['work']);
-    expect(listedIn(held, 'account-6')).toEqual([]);
   });
 });
 
@@ -47,23 +43,6 @@ describe('a list, edited', () => {
     expect(moved(['account-1'], 'account-1', -1)).toEqual(['account-1']);
   });
 
-  it('turns Use on last, and off where it was', () => {
-    expect(used(['account-2'], 'account-1', true)).toEqual(['account-2', 'account-1']);
-    expect(used(SIX, 'account-4', false)).toEqual(['account-1', 'account-2', 'account-3', 'account-5', 'account-6']);
-    expect(used(['account-1'], 'account-1', false)).toEqual([]);
-  });
-
-  /** What the terminal refuses, the screen does not offer (D130 §3.1, §4.6). */
-  it('says what Use off would break: the default, the kept account, or a kept account left alone', () => {
-    const kept = (keep: string, list: string[]) => scope({ list, use: { ...USE_DEFAULTS, keep } });
-
-    expect(cannotLeave(scope({ list: SIX, default: 'account-2' }), 'account-2')).toBe('default');
-    expect(cannotLeave(kept('account-3', SIX), 'account-3')).toBe('keep');
-    expect(cannotLeave(kept('account-2', ['account-1', 'account-2']), 'account-1')).toBe('alone');
-    expect(cannotLeave(scope({ list: SIX, default: 'account-2' }), 'account-5')).toBeNull();
-    // The last account out clears the list, its settings with it, which is never refused.
-    expect(cannotLeave(scope({ list: ['account-1'], default: 'account-1' }), 'account-1')).toBeNull();
-  });
 });
 
 describe('what is said', () => {
@@ -156,9 +135,9 @@ describe('what is said', () => {
       .toBe('The next start takes work@example.invalid: Daoris started on it less recently than account-2.');
     expect(nextLine(next({}), list, labelOf)).toBe('The next start takes work@example.invalid: it is the default here.');
     expect(nextLine(next({}), scope({ list: ['account-1', 'account-2'], begins: 'account-1' }), labelOf))
-      .toBe('The next start takes work@example.invalid: it comes first in the list.');
+      .toBe('The next start takes work@example.invalid: it comes first in the order.');
     expect(nextLine(next({ account: 'account-3', over: 'account-2' }), list, labelOf))
-      .toBe('The next start takes account-3: it comes before account-2 in the list.');
+      .toBe('The next start takes account-3: it comes before account-2 in the order.');
     expect(nextLine(next({ account: 'account-2', reason: 'fewest', over: 'account-1' }), list, labelOf))
       .toBe('The next start takes account-2: it runs fewer of Daoris\'s sessions than work@example.invalid.');
     // What passes an account (SWITCH1b-iii, D165 point 2): its own near entry says which, else all three are named.
@@ -182,19 +161,26 @@ describe('what is said', () => {
     expect(nextLine(next({ account: 'account-3', reason: 'notStarted' }), list, labelOf))
       .toBe('The next start takes account-3: Daoris has not started on it yet.');
     expect(nextLine(next({ account: 'account-2', reason: 'onlyReady', over: null }), list, labelOf))
-      .toBe('The next start takes account-2: it is the only account here that is ready.');
+      .toBe("The next start takes account-2: it is the only one of Daoris's accounts that is ready.");
     expect(nextLine(next({ account: 'account-2', reason: 'named', over: null }), list, labelOf))
-      .toBe('The next start takes account-2: it is the one account used here.');
+      .toBe("The next start takes account-2: it is the only one of Daoris's accounts.");
     expect(nextLine(next({ account: null, reason: 'own', over: null }), scope(), labelOf))
       .toBe("The next start runs in the tool's own home, which is nobody's sign-in: nothing here names an account.");
     expect(nextLine(next({ account: null, reason: 'noAccount', over: null }), scope(), labelOf))
       .toBe('No Daoris account is signed in for it; its starts wait until you sign in.');
     expect(nextLine(next({ account: null, reason: 'waits', over: null, when: '2026-10-03T16:02:00Z' }), list, labelOf))
-      .toMatch(/^No account here is ready, so the next start waits until .+\.$/);
+      .toMatch(/^None of Daoris's accounts is ready, so the next start waits until .+\.$/);
     expect(nextLine(next({ account: null, reason: 'waits', over: null }), list, labelOf))
-      .toBe('No account here is ready, and none comes ready by itself: the next start waits for you.');
+      .toBe("None of Daoris's accounts is ready, and none comes ready by itself: the next start waits for you.");
 
     await i18n.changeLanguage('zh');
+    // POOL1c (D197 §4): the order is the set's, said as the order, never a list a scope holds.
+    expect(nextLine(next({}), scope({ list: ['account-1', 'account-2'], begins: 'account-1' }), labelOf))
+      .toBe('下一次启动使用 work@example.invalid：它在顺序中排第一。');
+    expect(nextLine(next({ account: 'account-2', reason: 'onlyReady', over: null }), list, labelOf))
+      .toBe('下一次启动使用 account-2：它是 Daoris 的账户中唯一就绪的。');
+    expect(nextLine(next({ account: null, reason: 'waits', over: null }), list, labelOf))
+      .toBe('Daoris 的账户都没有就绪，也不会自行就绪：下一次启动在等你处理。');
     expect(nextLine(next({ reason: 'leastRecent' }), list, labelOf))
       .toBe('下一次启动使用 work@example.invalid：Daoris 在它上面启动的时间比 account-2 更早。');
     expect(nextLine(next({ account: 'account-2', reason: 'near', over: 'account-1' }), near('number'), labelOf))
@@ -245,9 +231,9 @@ describe('what is said', () => {
     ];
 
     expect(nextLine(waits('2026-10-06T09:00:00Z', passed), list, labelOf)).toMatch(
-      /^No account here is ready, so the next start waits until .+\. Signing in to work@example\.invalid, account-2 starts it sooner\.$/);
+      /^None of Daoris's accounts is ready, so the next start waits until .+\. Signing in to work@example\.invalid, account-2 starts it sooner\.$/);
     expect(nextLine(waits(null, passed.slice(1)), list, labelOf)).toBe(
-      'No account here is ready, and none comes ready by itself: the next start waits for you. Signing in to '
+      "None of Daoris's accounts is ready, and none comes ready by itself: the next start waits for you. Signing in to "
       + 'work@example.invalid, account-2 starts it.');
     expect(nextLine(waits('2026-10-06T09:00:00Z', passed.slice(0, 1)), list, labelOf)).not.toMatch(/Signing in/);
 
@@ -267,7 +253,7 @@ describe('what is said', () => {
     const waits = (when: string | null, held: NextStart['others']): NextStart => ({ account: null, reason: 'waits', over: null, when, others: held });
 
     expect(nextLine(waits(null, others), list, labelOf, isKey)).toBe(
-      'No account here is ready, and none comes ready by itself: the next start waits for you. '
+      "None of Daoris's accounts is ready, and none comes ready by itself: the next start waits for you. "
       + 'Signing in to account-2 starts it. A new API key in place of key-1 starts it.');
     expect(nextLine(waits(null, others.slice(0, 1)), list, labelOf, isKey)).not.toMatch(/Signing in/);
     expect(nextLine(waits('2026-10-06T09:00:00Z', others.slice(0, 1)), list, labelOf, isKey)).toMatch(
@@ -329,12 +315,17 @@ describe('what is said', () => {
     expect(offeredLine('2026-10-03T10:17:00Z')).toMatch(/^自 .+ 起重新可用$/);
   });
 
-  /** D175 point 1: who the tool's own sign-in is, that Daoris starts nothing in it, and an old cool-off where it holds one. */
-  it('says the tool\'s own sign-in, who it is, that Daoris starts no session in it, and its old cool-off', () => {
-    expect(ownLine('someone@example.invalid', null)).toBe(
-      'Your own sign-in, someone@example.invalid: the account this tool uses at your own terminal. Daoris does not start sessions in it; conversations that began there go on there.',
+  /**
+   * D175 point 1, POOL1c (D197 point 3; the account-pool design §4.2's `harness.own.shared`): the tool's own sign-in is outside
+   * Daoris's accounts, never signed in or out, asked or started in by Daoris, and never changed by adding an account; no who.
+   */
+  it('says the tool\'s own sign-in is outside Daoris’s accounts, never asked, and never changed by adding one', async () => {
+    expect(ownLine()).toBe(
+      "Your own sign-in: the account this tool uses at your own terminal. It is not one of Daoris's accounts: Daoris never signs it in or out, never asks it anything, and starts no session in it, and adding an account never changes it. A conversation that began there before goes on there.",
     );
-    expect(ownLine(null, null)).toMatch(/^Your own sign-in: .+ Daoris does not start sessions in it; conversations that began there go on there\.$/);
-    expect(ownLine(null, cooling)).toMatch(/It was cooling until .+: an old cool-off, which nothing of Daoris's waits on\. If you have signed in to another account since, look again\.$/);
+    await i18n.changeLanguage('zh');
+    expect(ownLine()).toBe(
+      '你自己的登录：这是该工具在你自己的终端里使用的账户。它不是 Daoris 的账户：Daoris 从不让它登录或退出，从不向它询问任何信息，也不在其中启动会话；添加账户也不会改变它。此前在那里开始的对话仍在那里继续。',
+    );
   });
 });

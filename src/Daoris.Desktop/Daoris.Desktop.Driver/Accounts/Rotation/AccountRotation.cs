@@ -1127,17 +1127,14 @@ public static class RotationWords
     private static (string Name, object? Value)[] Paced(AccountSaid said, DateTimeOffset now) =>
         [("used", Whole(said.Of(AccountWindows.Weekly)!.Used!.Value)), ("gone", Whole(AccountReadings.Gone(said, now)!.Value))];
 
-    /// <summary>The scope's default or its list's first, a workspace's by name or this machine's.</summary>
-    private static StepSaid Listed(string? workspace, bool named)
-    {
-        var text = named ? $"it is {Whose(workspace)} default" : $"it comes first in {Whose(workspace)} list";
-        return workspace is { } name
-            ? Reason(text, named ? OpeningWhy.Default : OpeningWhy.First, ("workspace", name))
-            : Reason(text, named ? OpeningWhy.DefaultHere : OpeningWhy.FirstHere);
-    }
-
-    /// <summary>A scope's possessive: a workspace by name, or this machine.</summary>
-    private static string Whose(string? workspace) => workspace is { } name ? $"`{name}`'s" : "this machine's";
+    /// <summary>
+    /// The order's first (POOL1c, D197 point 2; the account-pool design §4.3): the set every workspace's start reads, which has no
+    /// default beside its order, so its first is said as that, never as this machine's list or default. A workspace's own default
+    /// or list's first, which no start reads since the fold, keeps its words for a scope that still names one.
+    /// </summary>
+    private static StepSaid Listed(string? workspace, bool named) => workspace is { } name
+        ? Reason(named ? $"it is `{name}`'s default" : $"it comes first in `{name}`'s list", named ? OpeningWhy.Default : OpeningWhy.First, ("workspace", name))
+        : Reason("it comes first in the order of Daoris's accounts", OpeningWhy.FirstOrder);
 
     /// <summary>
     /// What a driven start's wait adds where the one account its kept-for-conversations rule passed is ready (§4.6).

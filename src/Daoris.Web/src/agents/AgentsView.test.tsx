@@ -25,6 +25,7 @@ vi.mock('@shenora/react', () => ({
   },
 }));
 
+import i18n from '../locales/i18n';
 import { HarnessRuns } from './harnessRuns';
 import { ContextMenus } from '../menus/ContextMenu';
 import { menuActs, rightClick } from '../test/contextMenu';
@@ -82,9 +83,8 @@ describe('the Agents place', () => {
       {
         harness: 'claude-code', product: 'Claude Code', maker: 'Anthropic',
         present: true, version: 'claude 9.9.9', problem: null,
-        machineDefault: 'personal', pinned: null, managed: null, pinnable: true,
+        pinned: null, managed: null, pinnable: true,
         ownLogin: 'in', ownRead: READ,
-        workspaceDefaults: [{ workspace: 'orbit', profile: 'work' }],
         profiles: [
           { name: 'personal', home: 'C:/somewhere/.daoris/harnesses/claude-code/personal', login: 'in', read: READ },
           { name: 'work', home: 'C:/somewhere/.daoris/harnesses/claude-code/work', login: 'out', read: READ },
@@ -92,7 +92,7 @@ describe('the Agents place', () => {
       },
       {
         harness: 'codex', present: false, version: null,
-        problem: '`codex` is not on this machine\'s PATH', machineDefault: null,
+        problem: '`codex` is not on this machine\'s PATH',
         pinned: null, managed: null, pinnable: false, profiles: [],
       },
     ],
@@ -163,15 +163,16 @@ describe('the Agents place', () => {
     place();
 
     const work = await screen.findByRole('listitem', { name: 'work' });
-    // `work` reads signed out, and a workspace's default names it, so it holds work and wears open's hue. Beside the word,
-    // the time alone (D152 §4.2): the column and the list's head say what it is.
+    // `work` reads signed out, and every account of Daoris's holds work (D197), so it wears open's hue. Beside the word, the
+    // time alone (D152 §4.2): the column and the list's head say what it is.
     expect(within(work).getByText('signed out')).toBeTruthy();
     expect(within(work).getByText(/\d{2}:\d{2}$/)).toBeTruthy();
     expect(within(screen.getByRole('listitem', { name: 'spare' })).getByText('never read')).toBeTruthy();
-    // Your own sign-in is asked only at a press (TOOL6g): unknown, never read, never signed in.
+    // POOL1c (D197 point 3): your own sign-in is never asked, so its row says no state and no reading; its ⓘ says why.
     const own = screen.getByRole('listitem', { name: 'Your own sign-in' });
-    expect(within(own).getByText('unknown')).toBeTruthy();
-    expect(within(own).getByText('never read')).toBeTruthy();
+    expect(within(own).queryByText('unknown')).toBeNull();
+    expect(within(own).queryByText('never read')).toBeNull();
+    expect(within(own).queryByText(/signed in|signed out/)).toBeNull();
   });
 
   /**
@@ -384,45 +385,44 @@ describe('the Agents place', () => {
 
   /**
    * 🔴 The account a person actually has — the tool's own configuration home — is the last row (D152 §4.3), named *Your own
-   * sign-in*, its explanation on its ⓘ; Daoris never signs into it: its ⋯ names no sign-in, and *Use by default* clears the
-   * machine's default.
+   * sign-in*, its explanation on its ⓘ. POOL1c (D197 point 3; the account-pool design §4.2): it is outside Daoris's accounts and
+   * never asked, so its row shows no state, no who, no reading and no press, and has no ⋯: no default, no read, no sign-in.
    */
-  it('your own sign-in is the last row, takes no sign-in from here, and Use by default clears the default', async () => {
+  it('your own sign-in is the last row, outside Daoris’s accounts, with its ⓘ alone and nothing to press', async () => {
     place();
 
     const own = await screen.findByRole('listitem', { name: 'Your own sign-in' });
     const rows = within(own.closest('ul')!).getAllByRole('listitem');
     expect(rows.at(-1)).toBe(own);
-    expect(within(own).getByText('signed in')).toBeTruthy();
-    expect(within(own).queryByRole('button', { name: /^Sign in/ })).toBeNull();
-    expect(within(own).getByRole('note', { name: /Daoris does not start sessions in it; conversations that began there go on there\.$/ })).toBeTruthy();
-    const menu = await more('Your own sign-in');
-    expect(within(menu).queryByRole('menuitem', { name: /Sign in/ })).toBeNull();
-    await userEvent.click(within(menu).getByRole('menuitem', { name: 'Use by default' }));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
-      payload: { harness: 'claude-code', action: 'profile-default' },
-    });
+    expect(within(own).queryByText('signed in')).toBeNull();
+    expect(within(own).queryByRole('button', { name: /^Sign in|^Read/ })).toBeNull();
+    expect(within(own).queryByRole('button', { name: 'More for Your own sign-in' })).toBeNull();
+    expect(within(own).getByRole('note', {
+      name: /It is not one of Daoris's accounts: Daoris never signs it in or out, never asks it anything, and starts no session in it, and adding an account never changes it\. A conversation that began there before goes on there\.$/,
+    })).toBeTruthy();
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', expect.anything());
   });
 
-  /** D175 point 1 (it was D152 §4.3's *Runs for*): no workspace runs on your own sign-in, whatever nothing names. */
-  it('says no workspace runs on your own sign-in when nothing is named', async () => {
-    invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
-      ? { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0], machineDefault: null, profiles: [] }] }
-      : WIRING));
+  /** POOL1c (the account-pool design §4.2): no row says where an account runs, every account serving every workspace. */
+  it('says no workspace an account runs for, and no default, on any row', async () => {
     place();
 
-    const own = await screen.findByRole('listitem', { name: 'Your own sign-in' });
-    expect(within(own).queryByText('Runs for')).toBeNull();
-    expect(within(own).queryByText('default')).toBeNull();
-    expect(screen.queryByText('used by sessions')).toBeNull();
+    await screen.findByRole('listitem', { name: 'Your own sign-in' });
+    expect(screen.queryByText('Runs for')).toBeNull();
+    expect(screen.queryByText(/no workspace|this machine/)).toBeNull();
+    for (const account of ['personal', 'work']) {
+      const menu = await more(account);
+      expect(within(menu).queryByRole('menuitem', { name: /default|list/i })).toBeNull();
+      await userEvent.keyboard('{Escape}');
+    }
   });
 
   /**
    * 🔴 An account is made by SIGNING IN (D66 §3), from *Add an account…* (D152 §4.5): where an account reads signed out, its
-   * own *Sign in* is offered first, so the lists that hold it keep it (ACCT1); *Add a new account* starts the sign-in; its
-   * end names who signed in and asks the account's name, who signed in offered, and the lists it joins.
+   * own *Sign in* is offered first, so it stays the same account (ACCT1); *Add a new account* starts the sign-in; its end names
+   * who signed in, says it joined Daoris's accounts, and asks only its name, who signed in offered (POOL1c, D197 point 4).
    */
-  it('Add an account… offers a signed-out account’s own sign-in first, then makes a new one and asks its name and lists', async () => {
+  it('Add an account… offers a signed-out account’s own sign-in first, then makes a new one and asks only its name', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'HARNESS_ACTION') return { harness: 'claude-code', action: 'login-new', started: true };
       return type === 'HARNESSES' ? ROSTER : WIRING;
@@ -446,16 +446,18 @@ describe('the Agents place', () => {
     await act(async () => {
       eventHandlers.get('DAORIS.HARNESS_ENDED')!({
         harness: 'claude-code', action: 'login-new', profile: 'acct-1a2b3c4d', exitCode: 0, problem: null,
-        account: 'someone@example.invalid', kept: true, places: [],
+        account: 'someone@example.invalid', kept: true,
       });
     });
 
-    expect(notify).toHaveBeenCalledWith(
-      "Signed in as someone@example.invalid. No list holds it yet: its agent's page asks where it runs.");
+    expect(notify).toHaveBeenCalledWith('Signed in as someone@example.invalid — sessions can run as it.');
     await waitFor(() => expect(screen.queryByText('Signing in to another Claude Code account')).toBeNull());
     const asking = screen.getByRole('region', { name: 'Add an account' });
     expect(within(asking).getByText('Signed in as someone@example.invalid.')).toBeTruthy();
+    expect(within(asking).getByText("someone@example.invalid joined Daoris's accounts: every workspace's work may run on it.")).toBeTruthy();
     expect((within(asking).getByRole('textbox', { name: /Its name/ }) as HTMLInputElement).value).toBe('someone@example.invalid');
+    expect(within(asking).queryByRole('checkbox')).toBeNull();
+    expect(within(asking).queryByRole('button', { name: 'Not now' })).toBeNull();
   });
 
   /**
@@ -542,30 +544,16 @@ describe('the Agents place', () => {
   });
 
   /**
-   * D152 §4.5's last step: the name in its field is kept (ACCT2's `profile-rename`), then the lists ticked are joined
-   * (ACCT1's `profile-join`, null for this machine's list), each the terminal's twin, and the question goes.
+   * D152 §4.5's last step (POOL1c, the account-pool design §4.1): the name in its field is kept (ACCT2's `profile-rename`), the
+   * terminal's twin under it, and the question goes. Nothing joins a list: the account serves every workspace as it is made.
    */
-  it('keeps the new account’s name and puts it in the lists ticked, at the add flow’s end', async () => {
-    const ACCOUNTS = {
-      agents: [{
-        agent: 'claude-code', speaks: true, own: {},
-        accounts: [{ name: 'personal', running: 0 }, { name: 'work', running: 0 }],
-        scopes: [
-          { workspace: null, default: 'personal', list: [], begins: 'personal', use: { use: 'goal', keep: null, early: true, near: 90 }, unknown: [], problem: null, near: [] },
-          { workspace: 'orbit', default: 'work', list: ['work'], begins: 'work', use: { use: 'goal', keep: null, early: true, near: 90 }, unknown: [], problem: null, near: [] },
-        ],
-      }],
-    };
+  it('keeps the new account’s name at the add flow’s end, and joins it to no list', async () => {
     invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) => {
       if (type === 'HARNESS_ACTION') {
         const action = options?.payload?.action;
         if (action === 'profile-rename') return { harness: 'claude-code', action, exitCode: 0, profile: 'acct-1a2b3c4d', name: 'spare' };
-        if (action === 'profile-join') {
-          return { harness: 'claude-code', action, exitCode: 0, profile: 'acct-1a2b3c4d', places: [{ workspace: 'orbit', list: true, default: false }] };
-        }
         return { harness: 'claude-code', action, started: true };
       }
-      if (type === 'ACCOUNTS') return ACCOUNTS;
       return type === 'HARNESSES' ? ROSTER : WIRING;
     });
     const notify = vi.fn();
@@ -576,7 +564,7 @@ describe('the Agents place', () => {
     await act(async () => {
       eventHandlers.get('DAORIS.HARNESS_ENDED')!({
         harness: 'claude-code', action: 'login-new', profile: 'acct-1a2b3c4d', exitCode: 0, problem: null,
-        account: 'spare@example.invalid', kept: true, places: [],
+        account: 'spare@example.invalid', kept: true,
       });
     });
 
@@ -584,27 +572,23 @@ describe('the Agents place', () => {
     const name = within(asking).getByRole('textbox', { name: /Its name/ });
     await userEvent.clear(name);
     await userEvent.type(name, 'spare');
-    expect(within(asking).getByRole('button', { name: 'Add to the lists' })).toBeDisabled();
-    await userEvent.click(within(asking).getByRole('checkbox', { name: 'orbit' }));
-    // The terminal's twin under the buttons, a word a box (`CodeText`), so read whole from the code span.
+    // The terminal's twin under the button, a word a box (`CodeText`), so read whole from the code span.
     const twins = [...asking.querySelectorAll('code')].map((code) => code.textContent);
-    expect(twins).toEqual([
-      'daoris agent profile rename claude-code acct-1a2b3c4d spare', 'daoris agent profile join claude-code acct-1a2b3c4d orbit',
-    ]);
-    await userEvent.click(within(asking).getByRole('button', { name: 'Add to the lists' }));
+    expect(twins).toEqual(['daoris agent profile rename claude-code acct-1a2b3c4d spare']);
+    await userEvent.click(within(asking).getByRole('button', { name: 'Done' }));
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
-      payload: { harness: 'claude-code', action: 'profile-join', profile: 'acct-1a2b3c4d', join: ['orbit'] },
-    }));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
       payload: { harness: 'claude-code', action: 'profile-rename', profile: 'acct-1a2b3c4d', name: 'spare' },
-    });
-    await waitFor(() => expect(notify).toHaveBeenCalledWith('spare runs work in orbit now.'));
+    }));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('acct-1a2b3c4d is called spare now.'));
     await waitFor(() => expect(screen.queryByRole('region', { name: 'Add an account' })).toBeNull());
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', expect.objectContaining({
+      payload: expect.objectContaining({ action: 'profile-join' }),
+    }));
   });
 
-  /** ACCTEDIT1: the add flow's last step, refused, stays up with the name and the lists as they were and says why in it. */
-  it('keeps the add flow’s last step up with its name and lists when its rename is refused, and says why in it', async () => {
+  /** ACCTEDIT1: the add flow's last step, refused, stays up with the name as it was and says why in it. */
+  it('keeps the add flow’s last step up with its name when its rename is refused, and says why in it', async () => {
     invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) => {
       if (type === 'HARNESS_ACTION') {
         const action = options?.payload?.action;
@@ -625,14 +609,14 @@ describe('the Agents place', () => {
     await act(async () => {
       eventHandlers.get('DAORIS.HARNESS_ENDED')!({
         harness: 'claude-code', action: 'login-new', profile: 'acct-1a2b3c4d', exitCode: 0, problem: null,
-        account: 'spare@example.invalid', kept: true, places: [],
+        account: 'spare@example.invalid', kept: true,
       });
     });
     const asking = await screen.findByRole('region', { name: 'Add an account' });
     const name = within(asking).getByRole('textbox', { name: /Its name/ });
     await userEvent.clear(name);
     await userEvent.type(name, 'work');
-    await userEvent.click(within(asking).getByRole('button', { name: 'Not now' }));
+    await userEvent.click(within(asking).getByRole('button', { name: 'Done' }));
 
     expect(await within(asking).findByRole('alert')).toHaveProperty(
       'textContent', 'work already names work — each claude-code account has a name of its own.');
@@ -640,63 +624,70 @@ describe('the Agents place', () => {
     expect(notify).not.toHaveBeenCalledWith(expect.anything(), 'error');
   });
 
-  /** *Not now* joins nothing, keeps the name in the field, and the account says *no workspace* with *Use in a workspace…*. */
-  it('Not now leaves the new account in no list, which its row says, with Use in a workspace… as its act', async () => {
-    let roster: unknown = ROSTER;
+  /**
+   * POOL1c (D197 point 7; the account-pool design §4.2, §6.3): what the fold into one set changed is one block above the rows
+   * while any of it is unsaid, a line per change in the reader's language; *Got it* marks the receipts shown said, by id, over
+   * `ACCOUNT_USE` `said`; a new account signed in has nothing to place, and no row offers *Use in a workspace…*.
+   */
+  it('says what the fold into one set changed above the rows, and Got it marks those receipts said by id', async () => {
     const ACCOUNTS = {
       agents: [{
-        agent: 'claude-code', speaks: true, own: {}, accounts: [],
-        scopes: [{ workspace: null, default: 'personal', list: ['personal'], begins: 'personal', use: { use: 'goal', keep: null, early: true, near: 90 }, unknown: [], problem: null, near: [] }],
-      }],
-    };
-    invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) => {
-      if (type === 'HARNESS_ACTION') {
-        const action = options?.payload?.action;
-        if (action === 'profile-rename') return { harness: 'claude-code', action, exitCode: 0, profile: 'acct-1a2b3c4d', name: 'spare@example.invalid' };
-        if (action === 'profile-join') return { harness: 'claude-code', action, exitCode: 0, profile: 'acct-1a2b3c4d', places: [{ workspace: null, list: true, default: false }] };
-        return { harness: 'claude-code', action, started: true };
-      }
-      if (type === 'ACCOUNTS') return ACCOUNTS;
-      return type === 'HARNESSES' ? roster : WIRING;
-    });
-    place();
-
-    await userEvent.click(await screen.findByRole('button', { name: 'Add an account…' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Add a new account' }));
-    roster = {
-      ...ROSTER,
-      harnesses: [{
-        ...ROSTER.harnesses[0],
-        profiles: [...ROSTER.harnesses[0]!.profiles!, {
-          name: 'acct-1a2b3c4d', home: 'C:/somewhere/.daoris/harnesses/claude-code/acct-1a2b3c4d', login: 'in',
-          account: 'spare@example.invalid', read: READ, places: [], nowhere: true,
+        agent: 'claude-code', speaks: true, own: {},
+        accounts: [{ name: 'personal', running: 0 }, { name: 'work', running: 0 }],
+        scopes: [{ workspace: null, default: null, list: ['personal', 'work'], begins: 'personal', use: { use: 'order', keep: null, early: true, near: 90 }, unknown: [], problem: null, near: [] }],
+        pooled: [{
+          id: 'r1', at: READ, order: ['personal', 'work'],
+          scopes: [{ workspace: 'orbit', default: 'work', list: [], begins: 'work' }, { workspace: null, default: 'personal', list: [], begins: 'personal' }],
+          moved: [{ workspace: 'orbit', account: 'work', place: 2 }], joined: [], inOrder: 'personal', notKept: [], gone: [],
         }],
       }],
     };
-    await act(async () => {
-      eventHandlers.get('DAORIS.HARNESS_ENDED')!({
-        harness: 'claude-code', action: 'login-new', profile: 'acct-1a2b3c4d', exitCode: 0, problem: null,
-        account: 'spare@example.invalid', kept: true, places: [],
-      });
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'ACCOUNTS') return ACCOUNTS;
+      if (type === 'ACCOUNT_USE') return { harness: 'claude-code', action: 'said' };
+      return type === 'HARNESSES' ? ROSTER : WIRING;
     });
+    place();
 
-    const asking = await screen.findByRole('region', { name: 'Add an account' });
-    await userEvent.click(within(asking).getByRole('button', { name: 'Not now' }));
-    await waitFor(() => expect(screen.queryByRole('region', { name: 'Add an account' })).toBeNull());
-    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', expect.objectContaining({
-      payload: expect.objectContaining({ action: 'profile-join' }),
+    const said = await screen.findByRole('region', { name: 'Your Claude Code accounts now serve every workspace.' });
+    expect([...said.querySelectorAll('li')].map((line) => line.textContent)).toEqual([
+      'orbit ran on work alone; it now runs on all 2.',
+      'Workspaces that named no accounts ran on personal alone; they now run on all 2.',
+      'Their starts still begin at personal, since the accounts are now used One by one, in order.',
+      "orbit's starts began at work; it is number 2 in the order now.",
+    ]);
+    await userEvent.click(within(said).getByRole('button', { name: 'Got it' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ACCOUNT_USE', {
+      payload: { harness: 'claude-code', action: 'said', ids: ['r1'] },
     }));
+    expect(screen.queryByRole('button', { name: /in a workspace…$/ })).toBeNull();
+    expect(document.body.textContent).not.toMatch(/this machine's list|no workspace/);
+  });
 
-    // A fresh id never leads its row: who signed in stands for it until the person names it.
-    const spare = await screen.findByRole('listitem', { name: 'spare@example.invalid' });
-    expect(within(spare).getByText('no workspace')).toBeTruthy();
-    await userEvent.click(within(spare).getByRole('button', { name: 'Use spare@example.invalid in a workspace…' }));
-    const where = within(spare).getByRole('region', { name: 'Where spare@example.invalid runs work' });
-    await userEvent.click(within(where).getByRole('checkbox', { name: "This machine's list" }));
-    await userEvent.click(within(where).getByRole('button', { name: 'Add to the lists' }));
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
-      payload: { harness: 'claude-code', action: 'profile-join', profile: 'acct-1a2b3c4d', join: [null] },
-    }));
+  it('says what the fold changed in 中文, never this machine', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      invoke.mockImplementation(async (_module: string, type: string) => {
+        if (type === 'ACCOUNTS') {
+          return {
+            agents: [{
+              agent: 'claude-code', speaks: true, own: {}, accounts: [{ name: 'personal' }, { name: 'work' }],
+              scopes: [{ workspace: null, default: null, list: ['personal', 'work'], begins: 'personal', use: { use: 'goal', keep: null, early: true, near: 90 }, unknown: [], problem: null, near: [] }],
+              pooled: [{ id: 'r1', at: READ, order: ['personal', 'work'], scopes: [{ workspace: null, default: null, list: ['personal'], begins: 'personal' }], moved: [], joined: [], inOrder: null, notKept: [], gone: [] }],
+            }],
+          };
+        }
+        return type === 'HARNESSES' ? ROSTER : WIRING;
+      });
+      place();
+
+      const said = await screen.findByRole('region', { name: '你的 Claude Code 账户现在为所有工作区服务。' });
+      expect(within(said).getByText('没有指定账户的工作区原来只在 personal 上运行；现在它们可以在全部 2 个账户上运行。')).toBeTruthy();
+      expect(within(said).getByRole('button', { name: '知道了' })).toBeTruthy();
+      expect(document.body.textContent).not.toMatch(/本机的列表|本机账户/);
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 
   /**
@@ -764,7 +755,7 @@ describe('the Agents place', () => {
    * CODEXACCT1: Codex's one door is `codex-acp`, which signs its accounts in with `codex login` (the roster's `signsIn`, its
    * agent's flow, AGT7), so Agents → Codex offers *Add an account…* as the terminal's `daoris agent login codex --new` does:
    * a signed-out account's own sign-in first, then a new account on the door, whose end asks its name, since Codex names
-   * nobody. Its own sign-in reads as `codex login status` answered it.
+   * nobody. Its own sign-in says no state, since Daoris never asks it (POOL1c, D197 point 3).
    */
   it('Agents → Codex adds an account through its one door, as the terminal does, and asks its name at the end', async () => {
     const CODEX = {
@@ -772,8 +763,8 @@ describe('the Agents place', () => {
       adapter: 'claude-code',
       harnesses: [{
         harness: 'codex-acp', accountOf: 'codex', product: 'Codex', maker: 'OpenAI', wire: 'acp',
-        present: true, version: 'codex-acp 1.12.0', problem: null, machineDefault: null, pinned: null, managed: null, pinnable: true,
-        signsIn: true, takesKey: false, ownLogin: 'in', ownRead: READ, workspaceDefaults: [],
+        present: true, version: 'codex-acp 1.12.0', problem: null, pinned: null, managed: null, pinnable: true,
+        signsIn: true, takesKey: false, ownLogin: 'in', ownRead: READ,
         profiles: [{ name: 'account-1', home: 'C:/somewhere/.daoris/harnesses/codex/account-1', login: 'out', read: READ }],
       }],
     };
@@ -785,7 +776,7 @@ describe('the Agents place', () => {
     place(notify, { first: 'codex' });
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Codex' })).toBeTruthy();
-    expect(within(screen.getByRole('listitem', { name: 'Your own sign-in' })).getByText('signed in')).toBeTruthy();
+    expect(within(screen.getByRole('listitem', { name: 'Your own sign-in' })).queryByText('signed in')).toBeNull();
     // No key: Daoris holds none Codex is measured to take (D67 §1).
     expect(screen.queryByRole('button', { name: 'Add an API key' })).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'Add an account…' }));
@@ -801,14 +792,14 @@ describe('the Agents place', () => {
     await act(async () => {
       eventHandlers.get('DAORIS.HARNESS_ENDED')!({
         harness: 'codex-acp', action: 'login-new', profile: 'acct-5e6f7a8b', exitCode: 0, problem: null,
-        account: null, kept: true, places: [],
+        account: null, kept: true,
       });
     });
 
-    expect(notify).toHaveBeenCalledWith(
-      "Signed in — the tool did not say who, so the account is listed as acct-5e6f7a8b. No list holds it yet: its agent's page asks where it runs.");
+    expect(notify).toHaveBeenCalledWith('Signed in — the tool did not say who, so the account is listed as acct-5e6f7a8b.');
     const asking = await screen.findByRole('region', { name: 'Add an account' });
     expect(within(asking).getByText('Signed in — the tool did not say who.')).toBeTruthy();
+    expect(within(asking).getByText("acct-5e6f7a8b joined Daoris's accounts: every workspace's work may run on it.")).toBeTruthy();
     expect(within(asking).getByRole('textbox', { name: /Its name/ })).toBeTruthy();
   });
 
@@ -920,7 +911,8 @@ describe('the Agents place', () => {
     expect(within(screen.getByRole('listitem', { name: 'lab' })).getByText('lab@example.invalid')).toBeTruthy();
     expect(screen.getByRole('listitem', { name: 'new@example.invalid' })).toBeTruthy();
     expect(screen.queryByText('acct-9f8e7d6c')).toBeNull();
-    expect(within(screen.getByRole('listitem', { name: 'Your own sign-in' })).getByText('owner@example.invalid')).toBeTruthy();
+    // POOL1c (D197 point 3): your own sign-in is never asked, so a who kept from before is not said; it would only age.
+    expect(within(screen.getByRole('listitem', { name: 'Your own sign-in' })).queryByText('owner@example.invalid')).toBeNull();
   });
 
   /** ACCOUNTID1b: one email signed in to two organisations, and the agent's own sign-in in a third, each row told apart. */
@@ -948,7 +940,8 @@ describe('the Agents place', () => {
     const b = screen.getByRole('listitem', { name: 'person@example.invalid·Org-B' });
     expect(within(b).queryByText(/Org B/)).toBeNull();
     expect(within(screen.getByRole('listitem', { name: 'work' })).getByText('person@example.invalid · Org D')).toBeTruthy();
-    expect(within(screen.getByRole('listitem', { name: 'Your own sign-in' })).getByText('person@example.invalid · Org C')).toBeTruthy();
+    // POOL1c: your own sign-in says no who, never asked; the accounts of Daoris's are still told apart from it.
+    expect(within(screen.getByRole('listitem', { name: 'Your own sign-in' })).queryByText(/person@example\.invalid/)).toBeNull();
   });
 
   /** ACCOUNTID1b: the add flow's last step offers the name the driver offered at the sign-in's end, and no third copy of its rule. */
@@ -971,7 +964,7 @@ describe('the Agents place', () => {
     };
 
     expect(await signIn('person@example.invalid·Org-B')).toHaveValue('person@example.invalid·Org-B');
-    await userEvent.click(screen.getByRole('button', { name: 'Not now' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Done' }));
     await waitFor(() => expect(screen.queryByRole('region', { name: 'Add an account' })).toBeNull());
     expect(await signIn(null)).toHaveValue('');
   });
@@ -1188,10 +1181,10 @@ describe('the Agents place', () => {
   });
 
   /**
-   * 🔴 A work account for the work circle (D49 §4): the row's *Runs for* says the workspaces that run on it, and a workspace's
-   * default is chosen from the ones this machine has, in the account's ⋯.
+   * POOL1c (D197; the account-pool design §4.2): with workspaces on this machine, no row says where it runs and no ⋯ offers a
+   * default in any of them, nor a list to join or leave: every account serves every workspace. The bridge refuses each.
    */
-  it('an account can be made one workspace’s default, and the row says which workspaces run on it', async () => {
+  it('offers no default and no list in any workspace, from any account’s ⋯', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.startsWith('/api/registry')) {
@@ -1205,47 +1198,17 @@ describe('the Agents place', () => {
     place();
 
     const work = await screen.findByRole('listitem', { name: 'work' });
-    expect(within(work).getByText('orbit')).toBeTruthy();
-    expect(within(screen.getByRole('listitem', { name: 'personal' })).getByText('this machine')).toBeTruthy();
-
-    await userEvent.click(within(await more('personal')).getByRole('menuitem', { name: 'Use by default in lab' }));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
-      payload: { harness: 'claude-code', action: 'profile-default', profile: 'personal', workspace: 'lab' },
-    });
+    expect(within(work).queryByText('orbit')).toBeNull();
+    const menu = await more('personal');
+    expect(within(menu).getAllByRole('menuitem').map((item) => item.textContent)).toEqual(['Rename…', 'Sign in again', 'Read again', 'Remove…']);
+    expect(within(menu).queryByRole('menuitem', { name: /default|list|workspace/i })).toBeNull();
   });
 
   /**
-   * LOOK2c (found by LEFT3): clearing a workspace's default from the tool's own row runs it on the machine's default where
-   * one is set, and the press says so, as `daoris agent profile default … --clear --workspace` prints.
+   * ACCTNAME1 (D152 §4.2, D125's ACCT2 note): a sign-in's end says the account by the person's name, looked up on the roster
+   * as it is said, never who signed in or its id.
    */
-  it('clearing a workspace’s default from the tool’s own row says what its sessions run as now', async () => {
-    const notify = vi.fn();
-    invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) => {
-      if (type === 'HARNESSES') return ROSTER;
-      if (type === 'HARNESS_ACTION' && options?.payload?.action === 'profile-default') {
-        return {
-          harness: 'claude-code', action: 'profile-default', exitCode: 0,
-          default: { workspace: 'orbit', account: 'personal', from: 'machine' },
-        };
-      }
-      return WIRING;
-    });
-    place(notify);
-
-    await userEvent.click(within(await more('Your own sign-in')).getByRole('menuitem', { name: 'Clear the default in orbit' }));
-
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
-      payload: { harness: 'claude-code', action: 'profile-default', workspace: 'orbit' },
-    });
-    await waitFor(() => expect(notify).toHaveBeenCalledWith(
-      "orbit names no account for claude-code now: its sessions run as this machine's default, personal."));
-  });
-
-  /**
-   * ACCTNAME1 (D152 §4.2, D125's ACCT2 note): a sign-in's end and a default's edit say the account by the person's name,
-   * looked up on the roster as it is said, never who signed in or its id.
-   */
-  it('says a sign-in’s end and a default’s edit by the account’s name', async () => {
+  it('says a sign-in’s end by the account’s name', async () => {
     const notify = vi.fn();
     const named = {
       ...ROSTER,
@@ -1260,9 +1223,6 @@ describe('the Agents place', () => {
     invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) => {
       if (type === 'HARNESSES') return named;
       if (type === 'HARNESS_ACTION' && options?.payload?.action === 'login') return { harness: 'claude-code', action: 'login', started: true };
-      if (type === 'HARNESS_ACTION' && options?.payload?.action === 'profile-default') {
-        return { harness: 'claude-code', action: 'profile-default', exitCode: 0, default: { workspace: null, account: 'acct-3f9c1a2b', from: 'machine' } };
-      }
       return WIRING;
     });
     place(notify);
@@ -1275,9 +1235,6 @@ describe('the Agents place', () => {
       });
     });
     expect(notify).toHaveBeenCalledWith('lab is signed in — sessions can run as it.');
-
-    await userEvent.click(within(await more('lab')).getByRole('menuitem', { name: 'Use by default' }));
-    await waitFor(() => expect(notify).toHaveBeenCalledWith('This machine runs claude-code as lab by default.'));
   });
 
   /**
@@ -1366,26 +1323,12 @@ describe('the Agents place', () => {
    * ACCTUX3, the UX7 design §4.5: *a key added asks the same question* as a sign-in's last step, its name and the lists it
    * joins; it ended in a toast, and the account in no list. Left empty, it is called by its key's handle.
    */
-  it('asks a key added its name and lists, and keeps them, as a sign-in’s last step does', async () => {
-    const ACCOUNTS = {
-      agents: [{
-        agent: 'claude-code', speaks: true, own: {},
-        accounts: [{ name: 'personal', running: 0 }, { name: 'work', running: 0 }],
-        scopes: [
-          { workspace: null, default: 'personal', list: [], begins: 'personal', use: { use: 'goal', keep: null, early: true, near: 90 }, unknown: [], problem: null, near: [] },
-          { workspace: 'orbit', default: 'work', list: ['work'], begins: 'work', use: { use: 'goal', keep: null, early: true, near: 90 }, unknown: [], problem: null, near: [] },
-        ],
-      }],
-    };
+  it('asks a key added its name, and keeps it, as a sign-in’s last step does', async () => {
     invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) => {
-      if (type === 'ACCOUNTS') return ACCOUNTS;
       if (type === 'HARNESS_ACTION') {
         const action = options?.payload?.action;
         if (action === 'key-add') return { harness: 'claude-code', action, exitCode: 0, profile: 'acct-9c8d7e6f', key: '…wxyz' };
         if (action === 'profile-rename') return { harness: 'claude-code', action, exitCode: 0, profile: 'acct-9c8d7e6f', name: 'spare-key' };
-        if (action === 'profile-join') {
-          return { harness: 'claude-code', action, exitCode: 0, profile: 'acct-9c8d7e6f', places: [{ workspace: 'orbit', list: true, default: false }] };
-        }
       }
       return type === 'HARNESSES'
         ? { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0], takesKey: true }, ROSTER.harnesses[1]] }
@@ -1403,17 +1346,16 @@ describe('the Agents place', () => {
     expect(name).toHaveProperty('value', '');
     expect(name).toHaveProperty('placeholder', 'API key …wxyz');
     expect(within(asking).queryByText(/Signed in/)).toBeNull();
+    // POOL1c (the account-pool design §4.1): a key added says the same sentence a sign-in does, and asks nothing about where.
+    expect(within(asking).getByText("API key …wxyz joined Daoris's accounts: every workspace's work may run on it.")).toBeTruthy();
+    expect(within(asking).queryByRole('checkbox')).toBeNull();
     await userEvent.type(name, 'spare-key');
-    await userEvent.click(within(asking).getByRole('checkbox', { name: 'orbit' }));
-    await userEvent.click(within(asking).getByRole('button', { name: 'Add to the lists' }));
+    await userEvent.click(within(asking).getByRole('button', { name: 'Done' }));
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
-      payload: { harness: 'claude-code', action: 'profile-join', profile: 'acct-9c8d7e6f', join: ['orbit'] },
-    }));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
       payload: { harness: 'claude-code', action: 'profile-rename', profile: 'acct-9c8d7e6f', name: 'spare-key' },
-    });
-    await waitFor(() => expect(notify).toHaveBeenCalledWith('spare-key runs work in orbit now.'));
+    }));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('acct-9c8d7e6f is called spare-key now.'));
     await waitFor(() => expect(screen.queryByRole('region', { name: 'Add an API key' })).toBeNull());
   });
 
@@ -1933,9 +1875,9 @@ describe('what it may do', () => {
 });
 
 /**
- * How each agent's accounts are used (TOOL4g; D125 §2.4, §3.7, §6; D130 §3.2, §9, §16.6), on the agent's page: each
- * account's cool-off with *Try now*, its list with *Use*, a default the list would refuse not offered, the tool's own
- * sign-in said while starts run on it, and the terms. Each press is the terminal's `daoris agent profile order|use|ready`.
+ * How each agent's accounts are used (TOOL4g; D125 §2.4, §3.7, §6; D130 §9, §16.6; POOL1c, D197), on the agent's page: each
+ * account's cool-off with *Try now*, the set's one order with up and down, its one entry of settings, and the terms. Each press
+ * is the terminal's `daoris agent profile order|use|ready`, naming no workspace.
  */
 describe('how accounts are used', () => {
   const until = new Date(Date.now() + 190 * 60_000).toISOString();
@@ -1944,15 +1886,16 @@ describe('how accounts are used', () => {
     adapter: 'claude-code',
     harnesses: [{
       harness: 'claude-code', product: 'Claude Code', maker: 'Anthropic', present: true, version: 'claude 9.9.9', problem: null,
-      machineDefault: 'personal' as string | null, pinned: null, managed: null, pinnable: true, ownLogin: 'in', signsIn: true,
+      pinned: null, managed: null, pinnable: true, ownLogin: 'in', signsIn: true,
       profiles: [
         { name: 'personal', home: 'C:/somewhere/.daoris/harnesses/claude-code/personal', login: 'in' },
         { name: 'work', home: 'C:/somewhere/.daoris/harnesses/claude-code/work', login: 'in' },
       ],
     }],
   };
+  /** The set's one scope (POOL1a2): every account in its order, no default, every workspace's. */
   const MACHINE = {
-    workspace: null, default: 'personal' as string | null, list: ['personal'], begins: 'personal' as string | null,
+    workspace: null, default: null as string | null, list: ['personal', 'work'], begins: 'personal' as string | null,
     use: { use: 'goal', keep: null, early: true, near: 90 }, unknown: [], problem: null, near: [],
   };
   const ACCOUNTS = {
@@ -2002,105 +1945,53 @@ describe('how accounts are used', () => {
     await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringMatching(/^personal is offered again\./)));
   });
 
-  it('turns Use on through the terminal\'s profile order, and offers no default the list would refuse', async () => {
+  /**
+   * POOL1c (D197 point 2; the account-pool design §4.2): the order moves an account up or down, written whole through the
+   * terminal's profile order with no workspace, and no row has a *Use* switch; the summary says the set's, every workspace's.
+   */
+  it('moves an account in the one order through the terminal\'s profile order, with no Use switch and no workspace', async () => {
     invoke.mockImplementation(answer(ROSTER, ACCOUNTS));
     place();
 
+    expect(await screen.findByText('All 2 accounts, for every workspace · Make the most of them')).toBeTruthy();
     await unfold('How accounts are used');
-    await userEvent.click(await screen.findByRole('checkbox', { name: 'use work for This machine' }));
+    expect(screen.queryByRole('checkbox')).toBeNull();
+    await userEvent.click(await screen.findByRole('button', { name: 'Move up · work' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ACCOUNT_USE', {
-      payload: { harness: 'claude-code', action: 'order', accounts: ['personal', 'work'] },
+      payload: { harness: 'claude-code', action: 'order', accounts: ['work', 'personal'] },
     });
-    // `work` is outside the machine's list, so *Use by default* is not offered on it.
-    expect(within(await more('work')).queryByRole('menuitem', { name: 'Use by default' })).toBeNull();
+    // No ⋯ offers a default or a list: the order says where starts begin.
+    expect(within(await more('work')).queryByRole('menuitem', { name: /default|list/i })).toBeNull();
     await userEvent.keyboard('{Escape}');
     // The plans and terms fold to one line at the list's foot, which opens the paragraph (D152 §4.4).
     expect(screen.queryByText(/^Each account's own plan and terms apply\./)).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: "Each account's own plan and terms" }));
     expect(screen.getByText(/^Each account's own plan and terms apply\./)).toBeTruthy();
-    expect(screen.queryByText(/^Sessions run on your own sign-in/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Show Workspaces' })).toBeNull();
   });
 
-  /** D152 §4.2: an account's ⋯ puts it in a list that does not hold it, and takes it out of one that does. */
-  it('adds an account to a list and takes it out of one from its ⋯, each the terminal’s door', async () => {
-    invoke.mockImplementation(async (module: string, type: string, args?: { payload?: { action?: string } }) => {
-      if (type === 'HARNESS_ACTION') return { harness: 'claude-code', action: args?.payload?.action, exitCode: 0, profile: 'work', places: [] };
-      return answer(ROSTER, { agents: [{ ...ACCOUNTS.agents[0]!, scopes: [{ ...MACHINE, list: ['personal', 'work'] }, { ...MACHINE, workspace: 'orbit', default: null, list: ['personal'], begins: 'personal' }] }] })(module, type, args);
-    });
+  /** Each setting is the set's one entry, through the terminal's profile use, which names no workspace either. */
+  it('changes how the set is used through the terminal\'s profile use, naming no workspace', async () => {
+    invoke.mockImplementation(answer(ROSTER, ACCOUNTS));
     place();
 
-    await userEvent.click(within(await more('work')).getByRole('menuitem', { name: "Add to orbit's list" }));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
-      payload: { harness: 'claude-code', action: 'profile-join', profile: 'work', join: ['orbit'] },
-    });
-    await userEvent.click(within(await more('work')).getByRole('menuitem', { name: "Remove from this machine's list" }));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ACCOUNT_USE', {
-      payload: { harness: 'claude-code', action: 'order', accounts: ['personal'] },
-    });
+    await unfold('How accounts are used');
+    await userEvent.click(await screen.findByRole('radio', { name: 'One by one, in order' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ACCOUNT_USE', {
+      payload: { harness: 'claude-code', action: 'use', use: 'order' },
+    }));
   });
 
   /**
-   * ACCTEDIT1: a row's *Use in a workspace…* stays open until its join lands. Refused, it keeps the lists ticked and says why
-   * under them, whole; a retry that lands closes it.
-   */
-  it('keeps a refused Use in a workspace… open with its lists ticked, says why in it, and closes once a retry lands', async () => {
-    const nowhere = {
-      agents: [{ ...ACCOUNTS.agents[0]!, scopes: [MACHINE, { ...MACHINE, workspace: 'orbit', list: ['personal'] }] }],
-    };
-    let refuse = true;
-    invoke.mockImplementation(async (module: string, type: string, args?: { payload?: { action?: string } }) => {
-      if (type === 'HARNESS_ACTION') {
-        if (refuse) {
-          refuse = false;
-          throw Object.assign(new Error('refused'), {
-            code: 'DRIVER_REFUSED',
-            parameters: { message: '`orbit` names no `claude-code` account or list of its own, so its starts take this machine\'s list.' },
-          });
-        }
-        // Its default there: the toast still marks no place first, since *first* is a next start the join's answer never names (ACCTUX4b).
-        return { harness: 'claude-code', action: 'profile-join', exitCode: 0, profile: 'work', places: [{ workspace: 'orbit', list: true, default: true }] };
-      }
-      return answer(ROSTER, nowhere)(module, type, args);
-    });
-    const notify = vi.fn();
-    place(notify);
-
-    const work = await screen.findByRole('listitem', { name: 'work' });
-    await userEvent.click(await within(work).findByRole('button', { name: 'Use work in a workspace…' }));
-    const where = within(work).getByRole('region', { name: 'Where work runs work' });
-    await userEvent.click(within(where).getByRole('checkbox', { name: 'orbit' }));
-    await userEvent.click(within(where).getByRole('button', { name: 'Add to the lists' }));
-
-    expect(await within(where).findByRole('alert')).toHaveProperty(
-      'textContent', 'orbit names no claude-code account or list of its own, so its starts take this machine\'s list.');
-    expect(within(where).getByRole('checkbox', { name: 'orbit' }).getAttribute('aria-checked')).toBe('true');
-    expect(notify).not.toHaveBeenCalledWith(expect.anything(), 'error');
-
-    await userEvent.click(within(where).getByRole('button', { name: 'Add to the lists' }));
-    await waitFor(() => expect(within(work).queryByRole('region', { name: 'Where work runs work' })).toBeNull());
-    expect(notify).toHaveBeenCalledWith('work runs work in orbit now.');
-  });
-
-  /**
-   * ACCTQUOTE1 (D125's ACCTQUOTE1 note): a twin is a command a person pastes into whichever shell they have, so a workspace
-   * with a space is in double quotes, a name a shell can take is printed, and one no spelling holds in every shell (`R&D`) is
-   * a placeholder rather than a command that runs something else.
+   * ACCTQUOTE1 (D125's ACCTQUOTE1 note): a twin is a command a person pastes into whichever shell they have, so a name a shell
+   * can take is printed, and one no spelling holds in every shell (`R&D`) is a placeholder rather than a command that runs
+   * something else.
    */
   it('spells each argument of the terminal twins for a shell, a name none can take a placeholder', async () => {
-    const spaced = {
-      agents: [{ ...ACCOUNTS.agents[0]!, scopes: [MACHINE, { ...MACHINE, workspace: 'my team', list: ['personal'] }] }],
-    };
-    invoke.mockImplementation(answer(ROSTER, spaced));
+    invoke.mockImplementation(answer(ROSTER, ACCOUNTS));
     place();
 
     const work = await screen.findByRole('listitem', { name: 'work' });
-    await userEvent.click(await within(work).findByRole('button', { name: 'Use work in a workspace…' }));
-    const where = within(work).getByRole('region', { name: 'Where work runs work' });
-    await userEvent.click(within(where).getByRole('checkbox', { name: 'my team' }));
-    expect([...where.querySelectorAll('code')].map((each) => each.textContent))
-      .toEqual(['daoris agent profile join claude-code work "my team"']);
-    await userEvent.click(within(where).getByRole('button', { name: 'Never mind' }));
-
     await userEvent.click(within(await more('work')).getByRole('menuitem', { name: 'Rename…' }));
     const form = within(work).getByRole('form', { name: 'Rename work' });
     const twin = () => [...form.querySelectorAll('code')].map((each) => each.textContent);
@@ -2111,14 +2002,16 @@ describe('how accounts are used', () => {
     expect(twin()).toEqual(['daoris agent profile rename claude-code work "O\'Brien"']);
   });
 
-  /** OWNSPACE1b-A (D175 point 1): read-only, so its old cool-off is said and no *Try now* is offered. */
-  it('says the own sign-in is read-only while the machine names no account, with its old cool-off and no Try now', async () => {
-    const shared = { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0]!, machineDefault: null, ownAccount: 'someone@example.invalid' }] };
+  /**
+   * OWNSPACE1b-A (D175 point 1), POOL1c (D197 point 3): never asked, so an old cool-off and who it is are not said and no *Try
+   * now* is offered; its ⓘ says it is outside Daoris's accounts.
+   */
+  it('says the own sign-in is outside Daoris’s accounts, with no old cool-off, no who and no Try now', async () => {
+    const shared = { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0]!, ownAccount: 'someone@example.invalid' }] };
     const cooling = {
       agents: [{
         ...ACCOUNTS.agents[0]!,
         own: { cooling: { until, stated: false, window: null, seen: until, assumedZone: false, notBelieved: false } },
-        scopes: [{ ...MACHINE, default: null, list: [], begins: null }],
       }],
     };
     invoke.mockImplementation(answer(shared, cooling));
@@ -2126,17 +2019,18 @@ describe('how accounts are used', () => {
 
     // Its explanation is its row's ⓘ, kept whole, one press away (D152 §4.3), and no longer a callout before the accounts.
     const own = await screen.findByRole('listitem', { name: 'Your own sign-in' });
-    expect(within(own).getByRole('note', { name: /^Your own sign-in, someone@example\.invalid: .+ Daoris does not start sessions in it; .+ It was cooling until / })).toBeTruthy();
-    expect(within(own).getByText('cooling')).toBeTruthy();
+    expect(within(own).getByRole('note', { name: /^Your own sign-in: the account this tool uses at your own terminal\. It is not one of Daoris's accounts/ })).toBeTruthy();
+    expect(within(own).queryByText('cooling')).toBeNull();
+    expect(within(own).queryByText('someone@example.invalid')).toBeNull();
     expect(within(own).queryByRole('button', { name: 'try Your own sign-in now' })).toBeNull();
     expect(within(own).queryByText('Runs for')).toBeNull();
   });
 
   /**
-   * CODEXUSE3: what your own sign-in last said of its windows, read at a press, is its row's second line, as an account's
-   * reading is on its row; and its ⋯ reads it again with the agent's accounts, since the driver has no read of it alone.
+   * CODEXUSE3, POOL1c (D197 point 3; the account-pool design §3 point 3): a reading of your own sign-in kept from before is not
+   * shown, since nothing reads it again and it would only age; its row has no ⋯ to read it, and the accounts say their own.
    */
-  it('says what your own sign-in last said of its windows, and reads it again from its ⋯', async () => {
+  it('says nothing your own sign-in said before, and offers no read of it', async () => {
     const reset = new Date(Date.now() + 3 * 3_600_000).toISOString();
     const week = new Date(Date.now() + 100 * 3_600_000).toISOString();
     const seen = new Date(Date.now() - 20 * 60_000).toISOString();
@@ -2158,19 +2052,13 @@ describe('how accounts are used', () => {
     place();
 
     const own = await screen.findByRole('listitem', { name: 'Your own sign-in' });
-    // A cell a window (ACCTUX4): its name, then its exact share.
-    expect((await within(own).findByText('1% used')).closest('[data-window]')).toHaveAttribute('data-window', 'session');
-    expect(within(own).getByText('15% used').closest('[data-window]')).toHaveAttribute('data-window', 'weekly');
-    // It is none of the accounts: their rows say only their own readings, here none, so each window unknown and no share.
-    const work = screen.getByRole('listitem', { name: 'work' });
+    // Its accounts' rows are drawn, each window unknown, before its own row is looked at.
+    const work = await screen.findByRole('listitem', { name: 'work' });
+    expect(await within(work).findAllByText('unknown')).toHaveLength(2);
+    expect(own.querySelector('[data-window]')).toBeNull();
+    expect(within(own).queryByText(/% used/)).toBeNull();
     expect(within(work).queryByText(/% used/)).toBeNull();
-    expect(within(work).getAllByText('unknown')).toHaveLength(2);
-
-    // The press reads its windows again; the accounts' files are asked again by the state hub, which the route's mark feeds
-    // (`stateHub.presses.test`), not by the hook (HARNESSREFRESH1).
-    await userEvent.click(within(await more('Your own sign-in')).getByRole('menuitem', { name: 'Read again' }));
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith(
-      'DAORIS.DRIVER', 'HARNESSES_REFRESH', { payload: { agent: 'claude-code' } }));
+    expect(within(own).queryByRole('button', { name: 'More for Your own sign-in' })).toBeNull();
   });
 
   /**
@@ -2251,16 +2139,16 @@ describe('how accounts are used', () => {
     await unfold('How accounts are used');
     const fold = screen.getByRole('region', { name: 'How accounts are used' });
     // An account is named by its name everywhere on the page (ACCT2), an old `account-N`-like id where the person gave none.
-    expect(await within(fold).findByText('The next start takes work: it is the only account here that is ready.')).toBeTruthy();
+    expect(await within(fold).findByText("The next start takes work: it is the only one of Daoris's accounts that is ready.")).toBeTruthy();
     expect(within(fold).getByText(/^personal is cooling until .+\.$/)).toBeTruthy();
     expect(within(fold).getByText(/^Claude Code's own sign-in, the account it uses at your terminal, carries none of these starts/)).toBeTruthy();
   });
 
   /**
-   * ACCTUX4b (the second opinion's lines 125, 128-133): this machine's next start is said above the accounts, in the fold's
-   * words and with no fold opened, and *first* on a row marks the account it takes, not the list's head.
+   * ACCTUX4b (the second opinion's lines 125, 128-133): the set's next start, in any workspace, is said above the accounts, in
+   * the fold's words and with no fold opened; no row says where it runs or that it comes first (POOL1c: *Runs for* went).
    */
-  it('says above the accounts which account the next start takes and why, and marks that account’s row first', async () => {
+  it('says above the accounts which account the next start takes and why, and marks no row', async () => {
     const next = {
       agents: [{
         ...ACCOUNTS.agents[0]!,
@@ -2274,50 +2162,46 @@ describe('how accounts are used', () => {
     place();
 
     const accounts = await screen.findByRole('region', { name: 'Accounts' });
-    const said = await within(accounts).findByText('The next start takes work: it is the only account here that is ready.');
+    const said = await within(accounts).findByText("The next start takes work: it is the only one of Daoris's accounts that is ready.");
     // Above the list, beneath its head: the question a person comes with, before the rows that answer it in parts.
     expect(said.compareDocumentPosition(within(accounts).getByRole('list')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(accounts).getByText(/^personal is cooling until .+\.$/)).toBeTruthy();
     // The fold's third sentence, on the tool's own sign-in, stays in the fold: the list's own row says it there.
     expect(within(accounts).queryByText(/carries none of these starts/)).toBeNull();
-    // *personal* heads the list and is the default, and cools: the row marked first is the one the next start takes.
-    expect(within(screen.getByRole('listitem', { name: 'work' })).getByText('this machine (first)')).toBeTruthy();
-    expect(within(screen.getByRole('listitem', { name: 'personal' })).queryByText(/\(first\)/)).toBeNull();
+    // No row says a scope or *first*: one set serves every workspace.
+    expect(within(accounts).queryByText(/\(first\)|this machine/)).toBeNull();
   });
 
   /**
-   * ACCTUX4c: on the install this machine's scope starts on your own sign-in and says nothing, while every account serves the
-   * workspace in view, so that workspace's next start is the one said above the accounts, named.
+   * ACCTUX4c, POOL1c: with a workspace in view, the next start said above the accounts is still the set's, never named for a
+   * workspace, since every workspace's start reads the one set.
    */
-  it('says above the accounts the next start of the workspace in view, named, where this machine runs on your own sign-in', async () => {
+  it('says the set’s next start above the accounts with a workspace in view, naming no workspace', async () => {
     const next = {
       agents: [{
         ...ACCOUNTS.agents[0]!,
-        scopes: [
-          { ...MACHINE, default: null, list: [], begins: null, next: { account: null, reason: 'own', others: [] } },
-          {
-            ...MACHINE, workspace: 'orbit', list: ['personal', 'work'],
-            next: { account: 'work', reason: 'onlyReady', over: null, when: null, others: [{ account: 'personal', hold: 'cooling', until }] },
-          },
-        ],
+        scopes: [{
+          ...MACHINE,
+          next: { account: 'work', reason: 'onlyReady', over: null, when: null, others: [{ account: 'personal', hold: 'cooling', until }] },
+        }],
       }],
     };
     invoke.mockImplementation(answer(ROSTER, next));
     show(<WorkspaceScopeProvider initial="orbit"><Place notify={() => {}} /></WorkspaceScopeProvider>);
 
     const accounts = await screen.findByRole('region', { name: 'Accounts' });
-    const said = await within(accounts).findByText('In orbit, the next start takes work: it is the only account here that is ready.');
-    expect(said.parentElement!.textContent).toMatch(/^In orbit, the next start takes work/);
+    const said = await within(accounts).findByText("The next start takes work: it is the only one of Daoris's accounts that is ready.");
+    expect(said.parentElement!.textContent).not.toMatch(/orbit/);
   });
 
   it('says no next start above the accounts where it runs on your own sign-in, or where the answer names none', async () => {
     const own = {
       agents: [{
         ...ACCOUNTS.agents[0]!,
-        scopes: [{ ...MACHINE, default: null, list: [], begins: null, next: { account: null, reason: 'own', others: [] } }],
+        scopes: [{ ...MACHINE, next: { account: null, reason: 'own', others: [] } }],
       }],
     };
-    invoke.mockImplementation(answer({ ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0]!, machineDefault: null }] }, own));
+    invoke.mockImplementation(answer(ROSTER, own));
     const { unmount } = place();
     const accounts = await screen.findByRole('region', { name: 'Accounts' });
     await within(accounts).findByRole('listitem', { name: 'work' });
@@ -2333,20 +2217,14 @@ describe('how accounts are used', () => {
     expect(within(older).queryByText(/\(first\)/)).toBeNull();
   });
 
-  /** Each workspace on this machine's accounts or its own (D130 §3.2), moved here from Settings (D150 §3.1). */
-  it('says each workspace on this machine’s accounts or its own, folded to a line', async () => {
-    const own = {
-      agents: [{
-        ...ACCOUNTS.agents[0]!,
-        scopes: [MACHINE, { ...MACHINE, workspace: 'orbit', default: 'work', list: ['work'], begins: 'work' }],
-      }],
-    };
-    invoke.mockImplementation(answer(ROSTER, own));
+  /** POOL1c (the account-pool design §4.2): the *Workspaces* fold went, since every workspace reads the one set. */
+  it('draws no Workspaces fold: there is one set to say', async () => {
+    invoke.mockImplementation(answer(ROSTER, ACCOUNTS));
     place();
 
-    expect(await screen.findByText("default: this machine's · orbit: its own (work)")).toBeTruthy();
-    await unfold('Workspaces');
-    expect(screen.getByRole('radiogroup', { name: 'Accounts it may use · orbit' })).toBeTruthy();
+    await screen.findByText('All 2 accounts, for every workspace · Make the most of them');
+    expect(screen.queryByRole('button', { name: 'Show Workspaces' })).toBeNull();
+    expect(screen.queryByText(/this machine's|its own \(/)).toBeNull();
   });
 
   /** A refusal reads as the terminal's, in the reader's language (REV2): the host's code, from the catalogue. */
@@ -2355,7 +2233,7 @@ describe('how accounts are used', () => {
     invoke.mockImplementation(async (module: string, type: string) => {
       if (type === 'ACCOUNT_USE') {
         throw Object.assign(new Error('refused'), {
-          code: 'ACCOUNT_SCOPE_DEFAULT', parameters: { agent: 'claude-code', account: 'personal' },
+          code: 'ACCOUNTS_ONE_SET', parameters: { agent: 'claude-code' },
         });
       }
       return answered(module, type);
@@ -2364,8 +2242,8 @@ describe('how accounts are used', () => {
     place(notify);
 
     await unfold('How accounts are used');
-    await userEvent.click(await screen.findByRole('checkbox', { name: 'use work for This machine' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Move up · work' }));
     await waitFor(() => expect(notify).toHaveBeenCalledWith(
-      expect.stringMatching(/^This machine's default for claude-code is personal, and the list would not hold it/), 'error'));
+      expect.stringMatching(/^Every account signed in for Daoris serves every workspace/), 'error'));
   });
 });

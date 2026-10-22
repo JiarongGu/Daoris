@@ -284,8 +284,11 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
             .Where(row => row["kind"]!.GetValue<string>() == "trust").ToList();
 
         Assert.Equal(2, rows.Count);
-        Assert.True(rows.Single(row => row["trust"]!["trustFile"]!.GetValue<string>() == "X:/person/.claude.json")["trust"]!["own"]!.GetValue<bool>());
+        var ownRow = rows.Single(row => row["trust"]!["trustFile"]!.GetValue<string>() == "X:/person/.claude.json");
+        Assert.True(ownRow["trust"]!["own"]!.GetValue<bool>());
         Assert.False(rows.Single(row => row["trust"]!["trustFile"]!.GetValue<string>() != "X:/person/.claude.json")["trust"]!.AsObject().ContainsKey("own"));
+        // POOL1c: and pushed so, the allow-list naming it, or the page would offer the grant the bridge refuses as TRUST_OWN_HOME.
+        Assert.True(AttentionStateSlice.Picked(ownRow)["trust"]!["own"]!.GetValue<bool>());
     }
 
     /// <summary>An intake's room is named by its ask, which the page words; it waits since the ask was asked.</summary>
