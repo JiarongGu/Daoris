@@ -95,6 +95,8 @@ public sealed class PersonDoorTableTests
         ("POST", "/api/helpers/{helper}/hand", Driver),
         // COAGENT1b: a partner's record, opened by the driver for one piece.
         ("POST", "/api/partners", Driver),
+        // COAGENT1b: a piece's answer, handed to its lead's line by the driver.
+        ("POST", "/api/partners/{partner}/hand", Driver),
 
         ("POST", "/api/quests/{id}/review", Person),
         ("POST", "/api/quests/{id}/set-up-step", Person),
@@ -172,7 +174,7 @@ public sealed class PersonDoorTableTests
         // (NOTIFY2j), and a machine's retirement at a workspace's remote, the person's (FABRIC-CLOSE1i2).
         Assert.Equal(29, Routes.Count(route => route.Class == Open));
         Assert.Equal(4, Routes.Count(route => route.Class == Agent));
-        Assert.Equal(25, Routes.Count(route => route.Class == Driver));
+        Assert.Equal(26, Routes.Count(route => route.Class == Driver));
         Assert.Equal(33, Routes.Count(route => route.Class == Person));
         // And a shared host's two channel doors, a feed and a page (SESSONE2d), and its retirement of a machine (FABRIC-CLOSE1i2).
         Assert.Equal(10, Routes.Count(route => route.Class == Shared));

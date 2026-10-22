@@ -90,5 +90,74 @@ public sealed class PartnerDesk(SessionStore sessions, PartnerBox? box = null, b
         }, ct).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Hand a piece's answer (the co-agent design §2.3 step 9, §7.6): a word marked as the partner's (<see cref="SaidWord.Helper"/> names
+    /// its record, so every reader of a solicited word reads it as it reads a helper's) under the piece's stable key, kept on the newest
+    /// record continuing the lead by <c>from</c>, or the lead itself. Ordinary, never urgent, and reopening an ended record once. The
+    /// key makes it idempotent: a word already waiting under it is answered as this hand. A running record takes it at its turn's end,
+    /// never into a step in flight, so the driver hands it then; a record that stood down takes nothing.
+    /// </summary>
+    /// <param name="text">The words as Daoris composed them around the partner's claim (the driver's <c>PartnerWords</c>).</param>
+    public async Task<HelperOutcome> HandAsync(string partnerId, string text, DateTimeOffset now, CancellationToken ct = default)
+    {
+        if (!local) return new(HelperRefusal.Shared, Shared);
+        if (string.IsNullOrWhiteSpace(text)) return Refused(HelperRefusal.BadShape, "The words handed are blank");
+
+        return await sessions.ExclusiveAsync(async inside =>
+        {
+            var partner = await sessions.FindAsync(partnerId.Trim(), inside).ConfigureAwait(false);
+            if (partner is not { Origin: null, Serves: { } lead, Piece: { } piece })
+            {
+                return Refused(HelperRefusal.NotFound, $"There is no partner session `{partnerId.Trim()}` on this machine");
+            }
+
+            // The newest live record of the lead's line: a hand-over, a move or a carry-on takes the lead's pieces with it.
+            var to = await sessions.FindAsync(lead, inside).ConfigureAwait(false);
+            for (var hops = 0; to is { Origin: null } && hops < 16; hops++)
+            {
+                if (await sessions.ContinuedByAsync(to.Id, inside).ConfigureAwait(false) is not { } next) break;
+                to = next;
+            }
+
+            string? cannot = to switch
+            {
+                null or { Origin: not null } => $"There is no session `{lead}` of this machine's to hand piece `{piece}`'s answer to",
+                { Serves: not null } or { Opinion: not null } or { Ask: not null } => $"Session `{to.Id}` cannot lead a piece: it takes no partner's answer",
+                { State: SessionState.StoodDown } => $"Session `{to.Id}` stood down, so piece `{piece}`'s answer waits for the next part of its line",
+                { State: SessionState.AwaitingPerson } =>
+                    $"Session `{to.Id}` waits on the person's answer: a partner's answer reaches it at a turn's end, once it is answered",
+                { Kind: SessionKind.Chat, State: SessionState.Working } => null,
+                { Active: true } =>
+                    $"Session `{to.Id}` is {Session.Spell(to.State)}: a partner's answer reaches a running session at its turn's end, never into a step in flight",
+                _ => null,
+            };
+            if (cannot is not null) return Refused(HelperRefusal.CannotTake, cannot);
+
+            var key = KeyOf(piece);
+            if (to!.Said.FirstOrDefault(word => string.Equals(word.Key, key, StringComparison.Ordinal)) is { } waiting)
+            {
+                return new HelperOutcome(HelperRefusal.None, $"Piece `{piece}`'s answer waits on session `{to.Id}` already, under its key.")
+                {
+                    Session = to,
+                    Word = waiting,
+                };
+            }
+
+            var word = new SaidWord(Guid.NewGuid().ToString("N")[..8], text.Trim(), now, [], Reopens: true, Helper: partner.Id, Key: key);
+            var kept = await sessions.KeepSaidAsync(to.Id, word, ct: inside).ConfigureAwait(false);
+            return new HelperOutcome(
+                HelperRefusal.None,
+                $"Handed piece `{piece}`'s answer to session `{to.Id}`: it waits on its record as partner `{partner.Id}`'s claim, never the person's words, "
+                + "and it goes on with it at the driver's next look.")
+            {
+                Session = kept,
+                Word = word,
+            };
+        }, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>A piece's stable key, the producer key its word carries (the driver's <c>PartnerDelivery.KeyOf</c>, the same text).</summary>
+    public static string KeyOf(string piece) => $"partner:{piece}";
+
     private static HelperOutcome Refused(HelperRefusal refusal, string why) => new(refusal, $"{why}. Nothing was kept.");
 }

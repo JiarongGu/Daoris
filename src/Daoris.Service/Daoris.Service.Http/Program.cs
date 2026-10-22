@@ -1661,6 +1661,12 @@ if (mode == ServiceMode.Local)
                 s, http)
             : OffMachineOpinion());
 
+    // A piece's answer, handed to its lead's line (the co-agent design §2.3 step 9): ordinary, under the piece's key, never urgent.
+    app.MapPost("/api/partners/{partner}/hand", async (ComposedService s, HttpContext http, string partner, HelperHandRequest body, CancellationToken ct) =>
+        MachineLocal(http)
+            ? await HelperReply(await s.Partners.HandAsync(partner, body.Text ?? "", DateTimeOffset.UtcNow, ct), s, http)
+            : OffMachineOpinion());
+
     app.MapPost("/api/helpers/{helper}/hand", async (ComposedService s, HttpContext http, string helper, HelperHandRequest body, CancellationToken ct) =>
         MachineLocal(http)
             ? await HelperReply(await s.Helpers.HandAsync(
