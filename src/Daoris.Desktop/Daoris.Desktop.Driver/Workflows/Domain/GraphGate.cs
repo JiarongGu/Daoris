@@ -134,8 +134,8 @@ public static class GraphGate
                 : said with { State = GraphGateStates.Elsewhere, Branch = BranchName(bound.Observes, facts.Branches) };
         }
 
-        if (ours && status.State is NodeStates.Active or NodeStates.Reached && facts.Unit is not null && facts.Commit is { } commit
-            && string.Equals(bound!.SubjectRevision, commit, StringComparison.OrdinalIgnoreCase))
+        if (ours && status.State is NodeStates.Active or NodeStates.Reached && facts.Unit is { } tree && facts.Commit is { } commit
+            && string.Equals(bound!.Observes, tree, StringComparison.Ordinal) && string.Equals(bound.SubjectRevision, commit, StringComparison.OrdinalIgnoreCase))
         {
             return said with { State = GraphGateStates.Lands };
         }

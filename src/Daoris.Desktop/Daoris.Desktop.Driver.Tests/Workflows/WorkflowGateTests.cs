@@ -809,8 +809,15 @@ public sealed class WorkflowGateTests : IDisposable
         Assert.Equal((GraphGateStates.Elsewhere, false, false), (elsewhere.State, elsewhere.LetsGo, elsewhere.AsksPass));
         Assert.Equal("This work is carried by run q7's newest session, on `daoris/s2`, whose branch its graph judges, and lands with it.", elsewhere.Says);
 
-        // A tree opened after the branch the record judged is newer work its next pass reads.
+        // A tree opened after the branch the record judged is newer work its next pass reads; a reach on another branch at the same commit
+        // lands nothing here either.
         Assert.Equal(GraphGateStates.NotJudged, GraphGate.Judge(Door(Settled(Status("land", NodeStates.Active, "unit-b1"))) with { Unit = "unit-b2" }).State);
+        var reached = Status("land", NodeStates.Reached) with
+        {
+            Attempt = 1, Acceptance = new NodeAcceptance(RunUnit, Commit, BeforeDigest, "land", 1, 1) { Subject = "unit-b2" },
+        };
+        Assert.Equal(GraphGateStates.NotJudged, GraphGate.Judge(Door(Settled(reached))).State);
+        Assert.Equal(GraphGateStates.Lands, GraphGate.Judge(Door(Settled(reached)) with { Unit = "unit-b2" }).State);
     }
 
     /// <summary>
