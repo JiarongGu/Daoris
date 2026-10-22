@@ -19453,3 +19453,14 @@ the launcher's variables over the tools' environment; a git named as a file stil
 new managed row (`<version>/package/mingw64/bin/git.exe`, `MSYSTEM`, the launcher's folders before the tools' `PATH`) and a row
 for a named file laid out as an install; the driver's fast half. The built-in MinGit 2.56.0 holds its git under `ucrt64/`,
 which the rule does not name, so it is GITSTART6's. On Opus. Detail: D121's GITSTART5 note.
+## ORIENT2c — repository index quest (2026-10-22, D151)
+
+> - [ ] **ORIENT2c — repository index quest** (driver). Inventory/generator/granted commands/check/declaration only. D151 §2/§5; brief/family tests.
+
+**Outcome** 2026-10-22: built. A repository set up on its line and naming no `documents.index` is asked *Give this
+repository an index of where things are* (`SetupCase.Index`, a fourth `SetupQuests` title): the inventory first, a
+generator at the path the press names from its stack (`tools/index.mjs`, `.cs` as a file-based program, or `.py`; never
+over a file on the line), its two commands granted exactly beside four doctrine verbs, its check, the marks and the
+declaration. An unknown stack is refused (`no-index-form`). The workspace plan asks a set-up repository its index in its
+turn, recorded under `indexed`; the page names `asks: 'index'` (en, zh). The family rehearsal was not run, and no session
+has carried the body. Detail: D151's ORIENT2c note. On Opus.
