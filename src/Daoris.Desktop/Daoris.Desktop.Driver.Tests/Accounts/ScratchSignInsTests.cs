@@ -36,7 +36,7 @@ public sealed class ScratchSignInsTests : IDisposable
     [Fact]
     public void The_real_binary_is_the_agent_s_own_name_on_PATH_and_nothing_else()
     {
-        var stub = Path.Combine(Home, "bin", OperatingSystem.IsWindows() ? "claude.cmd" : "claude");
+        var stub = Path.Combine(_root, "bin", OperatingSystem.IsWindows() ? "claude.cmd" : "claude");
 
         Assert.True(ScratchSignIns.IsReal(Claude, ["claude"]));
         Assert.True(ScratchSignIns.IsReal(Claude, ["claude.exe", "--x"]));
@@ -50,7 +50,7 @@ public sealed class ScratchSignInsTests : IDisposable
 
     /// <summary>
     /// The window's sign-in, PATH's <c>claude</c> into a new account under the scratch home: refused naming LIVELOGIN1 and the stub
-    /// adapters, no folder made and nothing started. A stub laid under the home by its path, named like the real one, is prepared.
+    /// adapters, no folder made and nothing started. A stub laid in the scratch folder by its path, named like the real one, is prepared.
     /// </summary>
     [Fact]
     public async Task A_sign_in_under_a_scratch_home_with_the_real_binary_is_refused_with_nothing_started()
@@ -73,7 +73,7 @@ public sealed class ScratchSignInsTests : IDisposable
 
         Assert.Empty(started);
 
-        var stub = Path.Combine(Home, "bin", OperatingSystem.IsWindows() ? "claude.cmd" : "claude");
+        var stub = Path.Combine(_root, "bin", OperatingSystem.IsWindows() ? "claude.cmd" : "claude");
         var info = HarnessActions.PrepareLogin(Claude, new HarnessCommand("claude-code", [stub], null, null), fresh, fresh: true);
         Assert.Equal(stub, info.FileName);
         Assert.Equal(["auth", "login"], info.ArgumentList);
