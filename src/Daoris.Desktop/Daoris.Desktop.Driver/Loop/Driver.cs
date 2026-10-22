@@ -2638,7 +2638,7 @@ public sealed class Driver(
         ISessionAdapter adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository,
         string tree, string? kept, IReadOnlyList<string>? job = null, AcrossReach? across = null, string? said = null,
         bool opinion = false, bool helper = false, IReadOnlyList<string>? plugins = null, string? brainstorm = null,
-        IReadOnlyList<string>? continued = null, HeavyHanded? heavy = null)
+        IReadOnlyList<string>? continued = null, HeavyHanded? heavy = null, bool partner = false)
     {
         // A harness a Claude Code rule means nothing to is handed nothing, and no file is written.
         if (!adapter.TakesSettings) return (null, null, RulesHanded(takes: false, PermissionFile.Empty, RuleLists.Empty, workspace, repository));
@@ -2665,6 +2665,10 @@ public sealed class Driver(
         // A helper's session (MIXAGENT2a-ii) is the reviewer's shape with its own one tool.
         if (opinion || helper) composed = OpinionPermissions.Shape(composed, helper);
 
+        // A partner's session (COAGENT1b) writes its copy and calls its reading tools and its answer: `PartnerPermissions`, the server's
+        // refusals by role beside it.
+        if (partner) composed = PartnerPermissions.Shape(composed);
+
         // A brainstorm's pass (BRAINSTORM1a2) reads its room and gives its one answer: the `brainstorm` posture, never the reviewer's.
         if (brainstorm is not null) composed = BrainstormPermissions.Shape(composed, tree, brainstorm);
 
@@ -2676,9 +2680,11 @@ public sealed class Driver(
         var file = SpawnSettings.Write(
             home, sessionId, composed,
             brainstorm is not null ? [.. PermissionRules.HardDeny(rules), BrainstormPermissions.HardDeny]
+            : partner ? [.. PermissionRules.HardDeny(rules), PartnerPermissions.HardDeny]
             : helper ? [.. PermissionRules.HardDeny(rules), OpinionPermissions.HelperHardDeny]
             : opinion ? [.. PermissionRules.HardDeny(rules), OpinionPermissions.HardDeny] : [.. PermissionRules.HardDeny(rules), .. heavyTold],
-            PermissionRules.GuardsTree(rules) ? TreeGuard.For(home, tree, across?.Writes.Select(target => target.Path)) : null,
+            // A partner is held to its copy whatever the person's defaults say (COAGENT1b, the co-agent design §7.4).
+            PermissionRules.GuardsTree(rules) || partner ? TreeGuard.For(home, tree, across?.Writes.Select(target => target.Path)) : null,
             // Which agent made each call, and each subagent's start and stop (FABRIC-C1a): the part's children bound by its lineage.
             ChildLineage.HookFor(home, sessionId));
         var handed = RulesHanded(takes: true, rules, composed, workspace, repository);
@@ -2691,6 +2697,18 @@ public sealed class Driver(
         }
 
         return (file, adapter.AcpSessionMeta(file, plugins ?? []), handed);
+    }
+
+    /// <summary>
+    /// What a partner's start hands its agent beside the instruction (COAGENT1b, the co-agent design §3.3): the rules
+    /// <see cref="HandRules"/> writes for it with <c>partner</c>, its classifier's hard denials and its tree guard, which always holds it.
+    /// What its effective configuration's digest is taken over (<see cref="PartnerConfigurations"/>).
+    /// </summary>
+    internal (RuleLists Rules, IReadOnlyList<string> HardDeny, bool Guarded) PartnerHanded(string? workspace, string? repository)
+    {
+        var rules = PermissionRules.Load(home);
+        return (PartnerPermissions.Shape(PermissionRules.Compose(rules, workspace, repository)),
+            [.. PermissionRules.HardDeny(rules), PartnerPermissions.HardDeny], true);
     }
 
     /// <summary>

@@ -59,6 +59,24 @@ public sealed class McpRoleFilterTests : McpToolsFixture
         Assert.All(ConnectorRoles.ServingRefused, name => Assert.Contains(name, ConnectorRoles.PartnerRefused));
     }
 
+    /// <summary>
+    /// The driver's rules for a partner offer what this host allows it, by name (<c>PartnerPermissions.Offered</c>), so the two layers
+    /// never disagree on what a partner may call.
+    /// </summary>
+    [Fact]
+    public void The_drivers_partner_rules_offer_what_this_host_allows()
+    {
+        var at = new DirectoryInfo(AppContext.BaseDirectory);
+        while (at is not null && !File.Exists(Path.Combine(at.FullName, "daoris.json"))) at = at.Parent;
+        var source = File.ReadAllText(Path.Combine(
+            at!.FullName, "src", "Daoris.Desktop", "Daoris.Desktop.Driver", "Conversations", "Domain", "PartnerPermissions.cs"));
+
+        var list = System.Text.RegularExpressions.Regex.Match(source, @"Offered\s*=\s*\[(?<names>[^\]]*)\]").Groups["names"].Value;
+        var named = System.Text.RegularExpressions.Regex.Matches(list, "\"([a-z_]+)\"").Select(match => match.Groups[1].Value);
+
+        Assert.Equal(ConnectorRoles.PartnerAllowed.Order(StringComparer.Ordinal), named.Order(StringComparer.Ordinal));
+    }
+
     /// <summary>A partner reads, reads its lead's line and answers; it publishes, asks, proposes and posts nothing.</summary>
     [Theory]
     [InlineData("knowledge_search", true)]

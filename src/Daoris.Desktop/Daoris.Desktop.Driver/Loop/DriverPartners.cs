@@ -480,9 +480,16 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
                 handed = SpawnServers.Hand(adapter, info, home, sessionId, connector is null ? [] : [connector]);
             }
 
-            // What it may do: the person's composition for its repository, held to its copy by the tree guard. The partner's own rules
-            // (`PartnerPermissions`) and the server's allow-list are the role's sub-feature.
-            var handedRules = _driver.HandRules(adapter, info, sessionId, ask.Lead.Workspace, repository, tree: ask.Copy, kept: null);
+            // What it may do: the person's composition for its repository under the partner's rules (`PartnerPermissions`), held to its
+            // copy by the tree guard; the connector's host refuses the same tools by the record's role whatever rules its agent takes.
+            var handedRules = _driver.HandRules(adapter, info, sessionId, ask.Lead.Workspace, repository, tree: ask.Copy, kept: null, partner: true);
+            // The effective configuration it was handed (§3.3): what M2 measures in, and what admission compares with a measured row.
+            var (rules, hardDeny, guarded) = _driver.PartnerHanded(ask.Lead.Workspace, repository);
+            var configuration = PartnerConfigurations.Of(adapter, selection.Version, ask.Copy, rules, hardDeny, guarded);
+            _driver.Log?.Info(
+                "partner.started", ("session", sessionId), ("piece", piece), ("agent", configuration.Agent),
+                ("version", configuration.HarnessVersion ?? ""), ("posture", configuration.Posture ?? ""), ("roots", configuration.WritableRoots),
+                ("network", configuration.Network), ("system", configuration.System), ("digest", configuration.SettingsDigest));
             var opening = PartnerPass.Opening(repository, ask.Ask.Base);
 
             return await _driver.HoldAsync(
