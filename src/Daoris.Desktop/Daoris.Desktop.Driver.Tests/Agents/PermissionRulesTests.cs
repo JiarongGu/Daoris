@@ -104,8 +104,8 @@ public sealed class PermissionRulesTests : IDisposable
     {
         Assert.Equal("Read(//c/somewhere/data/asks/a1b2c3/**)", PermissionRules.ReadRule(@"C:\somewhere\data\asks\a1b2c3"));
         Assert.Equal("Read(//c/somewhere/data/asks/a1b2c3/**)", PermissionRules.ReadRule("C:/somewhere/data/asks/a1b2c3/"));
-        Assert.Equal("Read(//d/Games/Daoris/data/quests/q1/attachments/**)",
-            PermissionRules.ReadRule(@"D:\Games\Daoris\data\quests\q1\attachments"));
+        Assert.Equal("Read(//x/daoris/data/quests/q1/attachments/**)",
+            PermissionRules.ReadRule(@"X:\daoris\data\quests\q1\attachments"));
         Assert.Equal("Read(//srv/daoris/asks/a1/**)", PermissionRules.ReadRule("/srv/daoris/asks/a1"));
     }
 
