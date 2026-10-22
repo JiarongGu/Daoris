@@ -231,11 +231,15 @@ public sealed class AnswerContinuesTickTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A different account never resumes (D131 §1): the park ran on stub account 1, and the person's default moved to stub
-    /// account 2 with no list, so account 1 is no longer an account this work may use (MSG1g asks for the park's own account,
-    /// and finds it off the scope) and the stub is never asked to resume. The park ends saying why, the reason's line then its
-    /// own, naming no account, and the carry-on runs on account 2 in the same tree.
+    /// 🔴 A different account never resumes (D131 §1): the park ran on stub account 1, and the person removed account 1 before
+    /// answering, so it has left Daoris's accounts (D197 point 1: only a removal takes an account out of the set; MSG1g asks for
+    /// the park's own account, and finds it gone) and the stub is never asked to resume. The park ends saying why, the reason's
+    /// line then its own, naming no account, and the carry-on runs on account 2 in the same tree.
     /// </summary>
+    /// <remarks>
+    /// A default moved to account 2 takes no account out (POOL1a1; D197 points 1 and 2): it is the set's first, account 1 stays in
+    /// the set, and the park would rightly resume there.
+    /// </remarks>
     [Fact]
     public async Task An_answer_on_another_account_never_resumes_and_is_carried_on_saying_why()
     {
@@ -250,8 +254,10 @@ public sealed class AnswerContinuesTickTests : IDisposable
         var parked = await ParkedAsync(service, Driver(service, "resumes"));
         Assert.Equal("account-1", parked["profile"]!.GetValue<string>());
 
-        // The person's default moves to account 2 before they answer: the next start runs there.
-        new HarnessSettings().WithDefault("stub", "account-2").Save(settings);
+        // The person removes account 1 before they answer, as `profile remove` does: the next start runs on account 2.
+        Assert.True(HarnessSettings.RemoveProfile(_home, "stub", "account-1"));
+        HarnessSettings.Change(
+            settings, read => read.WithoutAccount("stub", "account-1"), account: new AccountChange("stub", "account-1", Added: false));
         await new ServiceClient(service.Url, null).AnswerSessionAsync("s1", "Port 8080.");
 
         await Driver(service, "resumes").RunOnceAsync().WaitAsync(Poll.Patience);
@@ -260,7 +266,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
         Assert.Equal("completed", park["state"]!.GetValue<string>());
         Assert.EndsWith(
             "Carried on in a new session, because its conversation stays with the account it ran on, and this start runs on another. "
-            + "This work no longer uses that account.",
+            + "That account is not on this machine any more.",
             park["note"]!.GetValue<string>());
         var carried = service.Session("s2");
         Assert.Equal(("completed", "account-2"), (carried["state"]!.GetValue<string>(), carried["profile"]!.GetValue<string>()));
