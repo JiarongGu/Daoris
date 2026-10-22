@@ -418,3 +418,82 @@ References below use **design** for `docs/2026-10-23-coworker-design.md`; **Core
 **8 findings: 6 blocking, 2 not blocking.**
 
 **Verdict: another round.** The co-worker model, naming corrections and explicit foundation deferrals hold. Findings 1–6 still require changes to the delivery, recovery and build contracts before acceptance; assigning those obligations to unfinished HELPERWAIT1 does not resolve them. The next read should check the revised contracts and their evidence requirements, including the corresponding claims in D203.
+
+## Codex, round 3
+
+Codex's read of round 3 at `3a928e71c`, read-only, with HELPERWAIT1 as built merged in. HELPERWAIT1b and round 4 answer it.
+
+### 1. Round-2 findings
+
+**References:** `design` = `docs/2026-10-23-coworker-design.md`; `Driver` = `src/Daoris.Desktop/Daoris.Desktop.Driver`; `Tests` = `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`; `Core` = `src/Daoris.Service/Daoris.Service.Core`; `Http` = `src/Daoris.Service/Daoris.Service.Http`.
+
+| Finding | Verdict | Where | Why |
+|---|---|---|---|
+| 1 — answered parks cannot take both answers | taken | design:364–379; `Core/Sessions/HelperDesk.cs:156`; `Driver/Loop/DriverHelpers.cs:634`; `Tests/Loop/HelperWaitTickTests.cs:135` | Both guards changed; the Process case checks both answers in one prompt. |
+| 2 — no durable receipt; relay hides evidence | open | design:380–401; `Driver/Loop/DriverHelpers.cs:660`; `Driver/Conversations/Helpers/HelperDoors.cs:86` | The ask’s state file is a sound receipt location, and lineage evidence is now read, but ambiguous HTTP failures can erase the attempt mark; finding 2 below. |
+| 3 — unread question authorizes continuation | open | design:307–316; `Driver/Sessions/Questions/QuestionFiles.cs:68`, `:115` | The guard now parks, but settlement can delete the unread question; finding 1 below. |
+| 4 — legacy park conversion cannot prove absence of a question | taken | design:372–379; `Tests/Loop/HelperLookTests.cs:679` | Conversion is withdrawn, including the closing-prose-only question case; the person’s answer remains necessary. |
+| 5 — failed return can hold indefinitely | open | design:345–355, `:649`; `Tests/Loop/HelperLookTests.cs:795` | Retrying every look is valid and recovery is tested; the person-facing fallback remains unfinished, without a prerequisite on the first showing; finding 6 below. |
+| 6 — partner wait lacks service scope and proof | deferred | design:317–323, `:631–657` | Presentation is separated from the wait; row 12 waits for `partner_ask`, then a design with service scope and corresponding proofs. |
+| 7 — resume notice is not taking | taken | design:249–251, `:458–459`; `Driver/Loop/DriverHelpers.cs:266`; `Tests/Loop/HelperLookTests.cs:923` | Recovery excludes resume notices, and row 1 explicitly requires the same distinction in the exchange projection. |
+| 8 — restart may deliver a saved answer | taken | design:356–363; `Driver/Loop/DriverHelpers.cs:557`; `Tests/Loop/HelperLookTests.cs:615` | Saved-answer delivery and interrupted-without-answer refusal are distinguished and tested. |
+
+### 2. Findings on round 3’s built mechanism
+
+1. **Blocking — the unread question is still deleted during conclusion.**
+
+   **Where:** design:307–312 claims that unread questions park “with its question kept”; `Driver/Sessions/Questions/QuestionFiles.cs:115` keeps only a successfully read, fresh question and otherwise calls `Delete`. Both conclusion paths invoke this settlement: `Driver/Loop/Driver.cs:2436` and `Driver/Loop/DriverContinuations.cs:581`.
+
+   The malformed question planted by `Tests/Loop/HelperLookTests.cs:994` makes the new guard return false, but that test never runs settlement. Through the actual conclusion path, the record parks and its unread question disappears. The cited test therefore does not establish the retention claim.
+
+   **Smallest fix:** Specify that a parked conclusion preserves an existing question whose contents or freshness cannot be read. Apply that rule in settlement and prove retention through first-run and resumed-run conclusions. Correct §15.3’s finding-3 answer accordingly.
+
+2. **Blocking — an ambiguous hand response can remove the protection against duplicate delivery.**
+
+   **Where:** design:382–395 and `docs/decisions/D203.md:130` claim once-only delivery through the attempt mark. `Driver/Conversations/Helpers/HelperDoors.cs:87–88` returns the same `Handed: false` for an unreadable response or any unsuccessful HTTP status as for a definite refusal. `Driver/Loop/DriverHelpers.cs:666–668` then clears the mark.
+
+   An unsuccessful response does not prove that nothing was kept. `Core/Sessions/HelperDesk.cs:181` keeps the word before the HTTP response is constructed; `Http/Program.cs:1729` subsequently awaits `ToSessionAsync`, and the exception handler at `:271` can answer 500. Thus a committed hand can clear its attempt mark. If the word is consumed and its event write fails—the original round-2 failure—the next attempt has neither evidence nor a mark and can hand again.
+
+   The mark’s location holds; this failure classification does not. The cited tests cover definite refusal and interrupted attempts, not a committed hand followed by an unsuccessful response.
+
+   **Smallest fix:** Distinguish confirmed domain refusals from unknown outcomes. Clear the mark only for a confirmed refusal that guarantees nothing was kept; preserve uncertainty for unexpected statuses and unreadable success responses. Add a case that commits the word, fails the response, then consumes it without event evidence.
+
+3. **Blocking — cleanup releases protection before a failed return to the person has recovered.**
+
+   **Where:** design:324–337 claims the waiting lead keeps its tree across exclusion, locks, planning and cleanup. `Driver/Trees/Branches/BranchTidying.cs:164–165` additionally requires an open helper ask, unlike `Core/Sessions/SessionLedger.cs:1507–1510`, which protects the completed wait while its quest remains taken.
+
+   Once the last ask is refused, a failed return leaves the lead completed with no waiting words and no open ask. It falls out of cleanup’s active, waiting-word and helper sets. Cleanup can then release its retained lock (`BranchTidying.cs:103`; `Driver/Trees/SessionTrees/SessionLocks.cs:108–110`) and tidy an otherwise eligible tree while the ledger still considers that tree held.
+
+   The cited regression actually expects protection to disappear immediately upon refusal (`Tests/Trees/BranchTidyingTests.cs:715–716`), without establishing that the lead has parked. Ask Daoris’s housekeeping inherits the same helper predicate (`Driver/Help/HelpHousekeeping.cs:193`).
+
+   **Smallest fix:** Keep cleanup protection until the lead has successfully parked, continued or ceased holding its quest. Align this with the service’s predicate and test a refused ask followed by a failed return, including lock retention.
+
+4. **Blocking — the sixteen-link limit can deliver to a part the line has already left.**
+
+   **Where:** design:402–405 says delivery reaches the newest part, with a sixteen-link bound. `Core/Sessions/HelperDesk.cs:143–147` and `Driver/Loop/DriverHelpers.cs:713–726` stop after sixteen links and use the resulting intermediate record without checking whether it has another successor.
+
+   With seventeen successor links, both sides select a left part. A stopped intermediate record passes the service’s delivery switch (`HelperDesk.cs:149–168`), so the answer can be kept on precisely the conversation D189 forbids reopening. Neither cited test exercises exhaustion of the traversal bound.
+
+   **Smallest fix:** Retain the bound, but refuse delivery when it is exhausted and another successor exists. Keep the answer available to the person, and test a chain beyond the bound in both resolutions.
+
+### 3. Findings on build order and proof
+
+5. **Not blocking — the cited Process case does not prove cap-one progress.**
+
+   **Where:** design:335–337 calls `HelperWaitTickTests.cs:97` a cap-one proof. Its driver uses `DriverConfig.Empty with` without setting `Cap` (`Tests/Loop/HelperWaitTickTests.cs:59–71`); `Driver/Platform/DriverConfig.cs:59` defaults that cap to **two**.
+
+   The case proves continuation with a helper answer, but cannot establish that freeing the lead’s sole slot permits the helper to start.
+
+   **Smallest fix:** Set `Cap = 1` explicitly in the existing case and verify the claimed sequence before retaining the cap-one citation.
+
+6. **Blocking — row 11 is acknowledged work but is not a prerequisite of the first live showing.**
+
+   **Where:** design:353–355 acknowledges that a refused return has no actionable wait. Row 11 specifies the missing fallback at `:649–652`, but the build order and first installed proof require only rows 1 and 2 (`:604–606`, `:616–622`). `docs/decisions/D203.md:134–136` likewise leaves the fallback to row 11.
+
+   Retrying each look is a reasonable recovery choice; it fixes the earlier dependence on an unchanged record. It does not make a refusal visible in *What needs you*. Filing HELPERWAIT1b leaves that half of round-2 finding 5 open, and the stated order permits the first co-worker showing to land with it still open.
+
+   **Smallest fix:** Make HELPERWAIT1b’s fallback a prerequisite of row 1’s installed proof and landing, or incorporate it into that row. Keep its specified refused-versus-unreachable cases and both-language proof.
+
+**6 findings: 5 blocking, 1 not blocking.**
+
+**Verdict: another round.** The answered-park correction, conservative treatment of legacy parks, notice/taking distinction and partner-wait deferral hold. Keeping the receipt on the ask and retrying failed returns at each look are also reasonable choices. Acceptance still rests on guarantees the built paths do not keep: unread-question retention, preservation of uncertain delivery outcomes, tree protection during recovery and delivery beyond the lineage traversal bound. Correct those contracts and their proofs, and make the remaining person-facing fallback a prerequisite of the first showing.
