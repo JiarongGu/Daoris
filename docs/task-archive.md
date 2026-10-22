@@ -19609,3 +19609,14 @@ D198's GITAUTH1a note. On Opus.
 **Outcome** 2026-10-19 (archived 2026-10-22, when the row was found still open): `daoris brainstorm` (ask, show, send, clear, list)
 reaches the local host's machine-only door `/api/brainstorms` (BrainstormDesk, the twin of the driver's BrainstormFiles); `ACP_STUB_AGENT`
 answers brainstorm turns; the family rehearsal's phase 17f passed with no quest, commit or landing. Detail: merge `98e0b11d8`. On Opus.
+
+## LIVELOGIN1 — no test, probe or session starts a real sign-in (2026-10-22)
+
+> - [ ] **LIVELOGIN1 — no test, probe or session starts a real sign-in** (driver, cli, tools; found 2026-10-21 twice). A builder ran `codex login` four times while building CODEXLOGIN1, and a driven session transcribing PUSH1f2e6's words ran `claude auth login` under a scratch home in `_fixtures/`: each opened the person's browser on their real account. The rule is in `docs/development.md`; wanted is a guard that holds it: the sign-in actions refuse the real agent binary where the home is a scratch one (under `_fixtures/` or a test's), saying to use the stub adapters, and a census finds a test that names a real login command outside a stub. Proof: a sign-in under a scratch home with the real binary is refused with nothing started; the census fails on a planted case. Seen again 2026-10-22: a change in POOL1a2 let `DriverModuleAccountNamesTests`' no-account sign-in through for one run, which runs `claude` from PATH under the test's home; that test now names a missing command (D197's POOL1a2 note). Seen again 2026-10-22 and widened to any real agent binary: `HelpChatTests`' ACP rows named no `claude-code` command, so the start's usage read ran the `claude` on PATH in the test's account home (RESUMEOWN1's fix-log entry); the census also finds a test whose agent command falls back to PATH.
+
+**Outcome** 2026-10-22: `ScratchSignIns` refuses the agent's own binary from PATH where the account's home lies under `_fixtures/`
+or the OS's temporary folder, naming the stub adapters, before a folder is made or anything starts: in `HarnessActions.PrepareLogin`,
+the bridge's press and `daoris agent login`. A stub at a path, such as a pin's managed binary under the scratch home, still signs
+in. `node tools/live-logins.mjs`, run in verify beside partials, finds a test with a real login command or an agent command that
+falls back to PATH. Proved with a stub named `claude` and every start recorded (`ScratchSignInsTests`, `AgentsCommandTests`,
+`DriverModuleSignInTests`); no real login ran. On Opus.

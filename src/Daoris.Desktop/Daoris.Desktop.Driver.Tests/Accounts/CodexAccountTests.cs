@@ -54,8 +54,8 @@ public sealed class CodexAccountTests : IDisposable
     /// <summary>
     /// 🔴 POOL1a3 (D197 point 3; the account-pool design §3 point 1): every sign-in action's spawn, each door's agent and each
     /// way it signs in, sets the agent's configuration-home variable to an account's folder under the home; a folder anywhere
-    /// else, the person's own profile folder among them, is refused before anything is made. Prepared, never started: no test
-    /// starts a real sign-in (LIVELOGIN1).
+    /// else, the person's own profile folder among them, is refused before anything is made. Prepared, never started, on a named
+    /// stub: no test starts a real sign-in (LIVELOGIN1).
     /// </summary>
     [Fact]
     public void Every_sign_in_s_spawn_sets_the_configuration_home_under_the_home_and_none_runs_elsewhere()
@@ -65,7 +65,9 @@ public sealed class CodexAccountTests : IDisposable
         foreach (var door in AdapterSet.Built().Names)
         {
             if (roster.AccountAgentOf(door) is not { Toolchain.LoginArguments: not null } agent) continue;
-            var run = roster.SignInCommand(door, DriverConfig.Empty)!;
+            // A command named for the agent, so the binary prepared is never PATH's, which a scratch home refuses (LIVELOGIN1).
+            var named = DriverConfig.Empty with { Commands = new Dictionary<string, IReadOnlyList<string>> { [agent.Name] = ["node", "stub.mjs"] } };
+            var run = roster.SignInCommand(door, named)!;
             SignInWay[] ways = agent.Toolchain.DeviceLoginArguments is null ? [SignInWay.Browser] : [SignInWay.Browser, SignInWay.DeviceCode];
             foreach (var way in ways)
             {
@@ -204,7 +206,7 @@ public sealed class CodexAccountTests : IDisposable
     public void A_device_code_asked_of_an_agent_with_none_is_refused_and_makes_nothing()
     {
         var claude = Roster().AccountToolchain("claude-code")!;
-        var run = new HarnessCommand("claude-code", ["claude"], null, null);
+        var run = new HarnessCommand("claude-code", [Path.Combine(_home, "claude")], null, null);
 
         var refusal = Assert.Throws<DriverException>(() =>
             HarnessActions.PrepareLogin(claude, run, Fresh, fresh: true, SignInWay.DeviceCode));
