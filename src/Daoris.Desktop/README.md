@@ -39,6 +39,10 @@ tick, and once the quest no longer waits on that work and no turn runs, the sess
 that does not exit within ten seconds with that work still running has its tree ended (D83's DONEEND1 note). A timeout is said
 to the door before the kill, and a run that brought its quest to done before it concludes completed (`Observation.AfterTimeout`).
 
+The accounts are one set per agent (D197): `HarnessSettings` folds the wiring to one order per agent, and only the agents the
+adapters and plugin harnesses name are folded (`HarnessSettings.AgentsKnown`, POOLSTRAY1). A stray folder under the agent homes is
+said once in the machine log and never read as an agent, and a stray entry already in the wiring is dropped at the next fold.
+
 An account's use is measured against a curve by `Accounts/Domain/UsageCurves.cs` (D165, SWITCH1b-i): the share of a window
 passed at a given moment, the person's or the smart curve's value there, and each account's room in points on its tightest
 window (none where no window is read). It is pure, the first file in an onion layer folder. A start's walk ranks by it
