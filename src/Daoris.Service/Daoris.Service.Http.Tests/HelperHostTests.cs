@@ -131,6 +131,46 @@ public sealed class HelperHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// 🔴 HELPERWAIT1b (Codex's round-3 #4 on COWORKUX1): the door follows the line sixteen links at most, and a line longer than that is
+    /// refused with its reason, nothing kept on any part, rather than handed to the part where the bound stopped, which the line has left.
+    /// A line of exactly sixteen links reaches its newest part.
+    /// </summary>
+    [Theory]
+    [InlineData(16)]
+    [InlineData(17)]
+    public async Task The_hand_door_refuses_a_line_past_its_bound_and_keeps_nothing_on_a_part_it_left(int links)
+    {
+        var sessions = host.Composed.Sessions;
+        var now = DateTimeOffset.UtcNow;
+        var asker = await sessions.CreateAsync(null, "Relay", "stub", now, kind: Daoris.Knowledge.SessionKind.Driven, tree: "trees/default/Relay/s-11111111");
+        var helper = await sessions.CreateAsync(null, "Relay", "codex-acp", now, kind: Daoris.Knowledge.SessionKind.Chat, serves: asker.Id);
+        var parts = new List<string> { asker.Id };
+        for (var link = 1; link <= links; link++)
+        {
+            await sessions.SetStateAsync(parts[^1], Daoris.Knowledge.SessionState.Stopped, "handed over.", null, null, now);
+            var next = await sessions.CreateAsync(
+                null, "Relay", "stub", now.AddSeconds(link), kind: Daoris.Knowledge.SessionKind.Driven, tree: "trees/default/Relay/s-11111111",
+                from: parts[^1]);
+            parts.Add(next.Id);
+        }
+
+        await sessions.SetStateAsync(parts[^1], Daoris.Knowledge.SessionState.Completed, "done.", null, null, now);
+
+        var handed = await host.PostAsync($"/api/helpers/{helper.Id}/hand", new { text = "Helper says five." });
+
+        if (links == 16)
+        {
+            Assert.Equal(200, handed.Status);
+            Assert.Single((await sessions.FindAsync(parts[^1]))!.Said);
+            return;
+        }
+
+        Assert.Equal(409, handed.Status);
+        Assert.Contains("sixteen", handed.Json.GetProperty("error").GetString());
+        foreach (var part in parts) Assert.Empty((await sessions.FindAsync(part))!.Said);
+    }
+
+    /// <summary>
     /// HELPERWAIT1 (Codex's round-2 #1 on COWORKUX1): a park waits on the person, so its helper's answer is refused while they have not
     /// answered, and kept beside their answer once they have: its go-on then hands both in one prompt, the person's answer still theirs.
     /// </summary>

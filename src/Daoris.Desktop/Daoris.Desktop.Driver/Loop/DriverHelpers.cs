@@ -239,16 +239,16 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     /// A hand the host refused (HELPERWAIT1): kept as a held hand is, said once for each refusal, and not asked again while the look shows its
     /// asker as it did; a transient refusal is then asked again once the asker moves, as a held one is.
     /// </summary>
-    private LookLine? Unhanded(HelperAsk ask, string? seen, string line)
+    private LookLine? Unhanded(HelperAsk ask, string? seen, LookLine line)
     {
         lock (_heldGate)
         {
-            var said = !_held.TryGetValue(ask.Id, out var was) || !string.Equals(was.State, line, StringComparison.Ordinal);
-            _held[ask.Id] = (seen, line);
+            var said = !_held.TryGetValue(ask.Id, out var was) || !string.Equals(was.State, line.Text, StringComparison.Ordinal);
+            _held[ask.Id] = (seen, line.Text);
             if (!said) return null;
         }
 
-        return Helper(LookClass.Retry, line);
+        return line;
     }
 
     /// <summary>
@@ -323,17 +323,17 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
             catch (Exception error) when (error is HttpRequestException or DriverException or JsonException
                                               || (error is OperationCanceledException && !ct.IsCancellationRequested))
             {
-                var refused = error is DriverException;
-                var line = refused
-                    ? $"helper  session {record.Session} waited on its own helper, which ended with no answer; the service refused bringing it back to the person, so it is yours to look at: {error.Message}"
-                    : $"helper  session {record.Session} waited on its own helper, which ended with no answer, and could not be brought back to the person yet; it is tried again at the next look: {error.Message}";
+                // Classed where it is made (NOTIFY2h2's census): a refusal is the person's to look at, an unreachable service a retry.
+                var line = error is DriverException
+                    ? Helper(LookClass.Wait, $"helper  session {record.Session} waited on its own helper, which ended with no answer; the service refused bringing it back to the person, so it is yours to look at: {error.Message}")
+                    : Helper(LookClass.Retry, $"helper  session {record.Session} waited on its own helper, which ended with no answer, and could not be brought back to the person yet; it is tried again at the next look: {error.Message}");
                 lock (_heldGate)
                 {
-                    if (_backFailed.TryGetValue(record.Session, out var said) && said == line) continue;
-                    _backFailed[record.Session] = line;
+                    if (_backFailed.TryGetValue(record.Session, out var said) && said == line.Text) continue;
+                    _backFailed[record.Session] = line.Text;
                 }
 
-                events.Add(refused ? _context.Said.Wait("helper", line) : _context.Said.Retry("helper", line));
+                events.Add(_context.Said.Say(line));
             }
         }
     }
@@ -602,7 +602,15 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         var output = _context.Output;
         // HELPERWAIT1 (D189 point 6): the newest record of the asker's line, as the hand door resolves it, so a left conversation is never
         // reopened and the answer goes to the part that continues it.
-        var (asker, record, line) = await LineAsync(ask.Asker, ct).ConfigureAwait(false);
+        var (asker, record, line, beyond) = await LineAsync(ask.Asker, ct).ConfigureAwait(false);
+        if (beyond)
+        {
+            Forget(ask.Id);
+            return await RefuseAsync(ask, HelperWhy.CannotTake, state.Agent, files, ct,
+                    $"session {ask.Asker}'s line runs past sixteen links, so its newest part is not read and no part it left is handed the answer; the helper's conversation keeps it")
+                .ConfigureAwait(false);
+        }
+
         var never = (asker, record) switch
         {
             (null, _) or (_, null) => HelperWhy.AskerGone,
@@ -663,10 +671,20 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
             .ConfigureAwait(false);
         // HELPERWAIT1: a hand the host refused kept nothing, so its mark goes; it is said once, and asked again only once the look shows
         // its asker moved, never at every look.
-        if (!handed)
+        if (handed == HelperHanded.Refused)
         {
             files.WriteState(state with { Attempted = null });
-            return Unhanded(ask, seen, $"helper  ask `{ask.Id}` is answered, and waits to be handed to session {to}: {message}");
+            return Unhanded(ask, seen, Helper(LookClass.Retry, $"helper  ask `{ask.Id}` is answered, and waits to be handed to session {to}: {message}"));
+        }
+
+        // 🔴 HELPERWAIT1b (Codex's round-3 #2 on COWORKUX1): an answer lost after the door may have kept the word, so the mark stays and the
+        // outcome is uncertain until the next look reads the line back: the word found there marks it handed (above), and nothing found
+        // settles it uncertain for the person. It is never handed again.
+        if (handed == HelperHanded.Uncertain)
+        {
+            Forget(ask.Id);
+            return Helper(LookClass.Retry,
+                $"helper  ask `{ask.Id}`'s hand to session {to} is uncertain: {message}. The next look reads session {to}'s line for it, and never hands it twice.");
         }
 
         // Held where the run takes it at its next step; one the inbox no longer takes stays on the record, which goes on with it once.
@@ -702,15 +720,17 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     /// <summary>
     /// The asker's record, the newest record of its line and the line itself, oldest first (HELPERWAIT1, D189 point 6): the asker, then each
     /// newest record continuing it by <c>from</c> (a hand-over, a move, a carry-on), followed as the hand door follows it, at most sixteen
-    /// links. Nulls and none where the asker is no record of this machine's.
+    /// links. Nulls and none where the asker is no record of this machine's. 🔴 HELPERWAIT1b (Codex's round-3 #4 on COWORKUX1): a line that
+    /// goes on past the bound is <c>Beyond</c>, its newest part unread, so the record where the bound stopped, which the line has left, is
+    /// never taken for it.
     /// </summary>
-    private async Task<(PriorSession? Asker, PriorSession? Newest, IReadOnlyList<PriorSession> Line)> LineAsync(string asker, CancellationToken ct)
+    private async Task<(PriorSession? Asker, PriorSession? Newest, IReadOnlyList<PriorSession> Line, bool Beyond)> LineAsync(string asker, CancellationToken ct)
     {
         var records = await _context.Service.RecordsAsync(ct).ConfigureAwait(false);
-        if (records.FirstOrDefault(record => string.Equals(record.Session, asker, StringComparison.Ordinal)) is not { } first) return (null, null, []);
+        if (records.FirstOrDefault(record => string.Equals(record.Session, asker, StringComparison.Ordinal)) is not { } first) return (null, null, [], false);
         var newest = first;
         var line = new List<PriorSession> { first };
-        for (var hops = 0; hops < 16; hops++)
+        for (var hops = 0; hops <= LineBound; hops++)
         {
             var at = newest;
             if (records.Where(record => string.Equals(record.From, at.Session, StringComparison.Ordinal))
@@ -719,12 +739,17 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                 break;
             }
 
+            // One more successor than the bound follows: the line is longer than it reads.
+            if (hops == LineBound) return (first, null, line, true);
             newest = next;
             line.Add(next);
         }
 
-        return (first, newest, line);
+        return (first, newest, line, false);
     }
+
+    /// <summary>How many links of an asker's line the look and the hand door follow, at most (HELPERWAIT1; the service's <c>HelperDesk</c>).</summary>
+    internal const int LineBound = 16;
 
     /// <summary>
     /// The helper's pass (MIXAGENT2a-ii; the reviewer's machinery, <see cref="PassAsync"/>): a read-only clone of the asker's

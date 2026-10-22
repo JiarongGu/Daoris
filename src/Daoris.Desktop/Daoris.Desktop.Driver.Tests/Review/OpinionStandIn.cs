@@ -68,6 +68,12 @@ internal sealed class OpinionStandIn : HttpMessageHandler
     /// <summary>Where set, every helper's hand is refused with this reason (HELPERWAIT1), as an older or a failing desk refuses one.</summary>
     public string? HelperHandRefusal { get; set; }
 
+    /// <summary>
+    /// Where set, a helper's hand keeps its word and then its answer is lost (HELPERWAIT1b; Codex's round-3 #2 on COWORKUX1): <c>500</c> as
+    /// the host's exception handler answers, <c>unreadable</c> as a success that does not read, <c>timeout</c> as a client that gave up.
+    /// </summary>
+    public string? HelperHandLost { get; set; }
+
     /// <summary>A client over this host, as a driver is handed one.</summary>
     public ServiceClient Client() => new(Url, null, new HttpClient(this, disposeHandler: false));
 
@@ -297,6 +303,13 @@ internal sealed class OpinionStandIn : HttpMessageHandler
                     if (asked["level"]?.GetValue<string>() is { } level) word["level"] = level;
                     asker["said"]!.AsArray().Add(word);
                     HelperHands.Add((id, text));
+                    switch (HelperHandLost)
+                    {
+                        case "500": return Answer(HttpStatusCode.InternalServerError, new JsonObject { ["error"] = "An unexpected error." });
+                        case "unreadable": return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("<html>", Encoding.UTF8, "text/html") };
+                        case "timeout": throw new TaskCanceledException("The request was canceled due to the configured HttpClient.Timeout.");
+                    }
+
                     return Answer(HttpStatusCode.OK, new JsonObject { ["message"] = "Handed.", ["session"] = asker.DeepClone(), ["said"] = word.DeepClone() });
                 }
 

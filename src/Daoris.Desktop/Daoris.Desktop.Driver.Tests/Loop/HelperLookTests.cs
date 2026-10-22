@@ -963,6 +963,82 @@ public sealed class HelperLookTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 HELPERWAIT1b (Codex's round-3 #2 on COWORKUX1): a hand whose answer was lost (the host's 500 after its keep, a success that does not
+    /// read, a client that gave up) proves nothing was kept no more than that it was, so its attempt mark stays and the outcome is held as
+    /// uncertain until the next look reads the line back: the word found waiting marks it handed; the word consumed with no event left
+    /// settles it uncertain. Either way it is never handed twice.
+    /// </summary>
+    [Theory]
+    [InlineData("500", false)]
+    [InlineData("500", true)]
+    [InlineData("unreadable", true)]
+    [InlineData("timeout", true)]
+    public async Task A_hand_whose_answer_was_lost_keeps_its_mark_and_is_read_back_never_handed_twice(string lost, bool consumed)
+    {
+        Ask("a1");
+        Answered();
+        var host = Host();
+        host.HelperHandLost = lost;
+        var driver = Driver(host, pass: null);
+
+        var first = await Look(driver);
+
+        Assert.Equal(1, host.HelperHandsAsked);
+        Assert.Contains("uncertain", Assert.Single(first));
+        var held = Files.ReadState("a1")!;
+        Assert.NotNull(held.Attempted);
+        Assert.Null(held.Handed);
+
+        // The word was kept; the asker's run then took it off its record, the event of its taking never written.
+        var word = host.Said("s1")[0]!["id"]!.GetValue<string>();
+        if (consumed) host.Take("s1");
+        host.HelperHandLost = null;
+        await Look(driver);
+
+        Assert.Equal(1, host.HelperHandsAsked);
+        var settled = Files.ReadState("a1")!;
+        if (consumed) Assert.Equal((HelperStates.Refused, HelperWhy.HandUncertain), (settled.State, settled.Code));
+        else Assert.Equal(word, settled.Handed);
+    }
+
+    /// <summary>
+    /// 🔴 HELPERWAIT1b (Codex's round-3 #4 on COWORKUX1): the line is followed sixteen links at most, and one longer is refused with its reason,
+    /// never handed to the part where the bound stopped, which the line has left; the answer stays with the helper for the person. A line of
+    /// exactly sixteen links reaches its newest part.
+    /// </summary>
+    [Theory]
+    [InlineData(16, true)]
+    [InlineData(17, false)]
+    public async Task A_line_past_sixteen_links_is_refused_never_handed_to_a_part_it_left(int links, bool handed)
+    {
+        Ask("a1");
+        Answered();
+        var host = Host(state: "stopped");
+        var previous = "s1";
+        for (var link = 1; link <= links; link++)
+        {
+            var part = $"p{link}";
+            host.Session(part, link == links ? "completed" : "stopped", tree: "trees/default/reports/s-1");
+            host.Set(part, "from", previous);
+            host.Set(part, "created", At.AddMinutes(link).ToString("O"));
+            previous = part;
+        }
+
+        var events = await Look(Driver(host, pass: null));
+
+        if (handed)
+        {
+            Assert.Equal(1, host.HelperHandsAsked);
+            return;
+        }
+
+        Assert.Equal(0, host.HelperHandsAsked);
+        var state = Files.ReadState("a1")!;
+        Assert.Equal((HelperStates.Refused, HelperWhy.CannotTake), (state.State, state.Code));
+        Assert.Contains("sixteen", Assert.Single(events));
+    }
+
+    /// <summary>
     /// Point 1's input: a turn that ends holding its quest waits on its helper where its agent has an ask of its own still open, and no
     /// question its last turn asked the person; an ask of the person's, another session's, or one refused or handed is no such ask.
     /// </summary>

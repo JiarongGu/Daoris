@@ -13,8 +13,8 @@ namespace Daoris.Driver;
 /// <remarks>
 /// <para><b>Gone as each run of its record opens</b> (<see cref="Clear"/>), so while a resumed run works no question of the park
 /// before it stands, and a press another window made on it is refused as changed; <b>bound to its park as the run concludes</b>
-/// (<see cref="SettleRun"/>): kept only where the run parks and the question was asked since the run last handed its agent words,
-/// deleted otherwise. So a question on file while its record is parked is its last turn's. The connector writes during the run, and
+/// (<see cref="SettleRun"/>): kept only where the run parks and the question was asked since the run last handed its agent words, or
+/// does not read (HELPERWAIT1b), deleted otherwise. So a question on file while its record is parked is its last turn's. The connector writes during the run, and
 /// these clear before it and settle after it, so two never write at once.</para>
 ///
 /// <para><b>Read sharing the file's delete</b>, so a page reading it never holds a settle's delete back; a delete the disk still
@@ -107,12 +107,17 @@ public sealed class QuestionFiles(string home)
     /// Bind the session's question to the park its run ended in (the design §2): kept where <paramref name="state"/> parks and the
     /// question was asked at or after <paramref name="since"/>; deleted otherwise, and said where the disk would not let it go.
     /// </summary>
+    /// <remarks>
+    /// 🔴 HELPERWAIT1b (Codex's round-3 #1 on COWORKUX1): a park keeps a file that does not read (busy, broken, past a bound) too. Neither its
+    /// question nor when it was asked can be read, so nothing proves it was not this turn's; it is what made the turn park rather than wait
+    /// on its helper (<see cref="AskedSince"/> null), and a park never shows it, since a read of it is none. The next run's opening clears it.
+    /// </remarks>
     public QuestionSettle Settle(string session, string state, DateTimeOffset since)
     {
         if (!SessionEventText.IsLocalId(session)) return QuestionSettle.None;
         var path = PathOf(session);
         if (!File.Exists(path)) return QuestionSettle.None;
-        if (SessionStates.IsParked(state) && Read(session) is { } asked && asked.At >= since) return QuestionSettle.Kept;
+        if (SessionStates.IsParked(state) && (Read(session) is not { } asked || asked.At >= since)) return QuestionSettle.Kept;
         return Delete(path);
     }
 

@@ -28,6 +28,9 @@ public sealed class HelperWaitTickTests : IDisposable
 
     private readonly string _repository;
 
+    /// <summary>The asker's state as each helper started (HELPERWAIT1b): at a cap of one, the slot its run held is free by then.</summary>
+    private readonly List<string> _askerAtHelperStart = [];
+
     public HelperWaitTickTests()
     {
         Directory.CreateDirectory(_home);
@@ -61,7 +64,9 @@ public sealed class HelperWaitTickTests : IDisposable
             Drivable = ["engine"],
             Trees = ["engine"],
             Adapter = "acp-stub",
-            TimeoutMinutes = 1,
+            // HELPERWAIT1b (Codex's round-3 #5 on COWORKUX1): one running slot, as the design's cap-one claim says; the default is two.
+            Cap = 1,
+            TestBound = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>>
             {
@@ -81,6 +86,7 @@ public sealed class HelperWaitTickTests : IDisposable
             {
                 // The helper reads and answers through `helper_answer`'s file, named BEFORE its turn as the real pass names it.
                 ask.Opened?.Invoke(HelperId);
+                _askerAtHelperStart.Add(service.State(ask.Ask.Asker));
                 File.WriteAllText(Files.PathOf(ask.Ask.Id, "answer"),
                     new JsonObject { ["id"] = ask.Ask.Id, ["helper"] = HelperId, ["answer"] = Answer, ["at"] = DateTimeOffset.UtcNow.ToString("O") }.ToJsonString());
                 return Task.FromResult(new HelperPassRun(HelperId, $"completed  helper {HelperId}") { State = "completed" });
@@ -109,6 +115,9 @@ public sealed class HelperWaitTickTests : IDisposable
 
         await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         Assert.True(Files.ReadState(AskId) is { State: HelperStates.Answered, Handed: not null }, service.Record("s1"));
+        // 🔴 HELPERWAIT1b (Codex's round-3 #5): at a cap of one, the helper started once the asker had ended its turn waiting on it, in the
+        // one slot its run freed; the waiting asker holds none.
+        Assert.Equal(["completed"], _askerAtHelperStart);
         var (helper, text) = Assert.Single(service.HelperHands);
         Assert.Equal(HelperId, helper);
         Assert.Contains(Answer, text);

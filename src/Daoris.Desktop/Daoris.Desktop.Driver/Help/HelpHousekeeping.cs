@@ -190,7 +190,7 @@ public sealed partial class HelpHousekeeping(string home, Func<ServiceClient?> s
     {
         var held = (await ledger.ActiveSessionsAsync(ct).ConfigureAwait(false))
             .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        held.UnionWith(await BranchTidying.WaitingOnHelpersAsync(home, ledger, ct).ConfigureAwait(false));
+        held.UnionWith(await BranchTidying.WaitingOnHelpersAsync(ledger, ct).ConfigureAwait(false));
         return held;
     }
 

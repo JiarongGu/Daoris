@@ -140,9 +140,17 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
             // HELPERWAIT1 (D189 point 6): the newest live record of the asker's line, as a partner's piece is handed (PartnerDesk): a hand-over,
             // a move or a carry-on takes the asker's helpers with it, and a left conversation is never reopened.
             var asker = await sessions.FindAsync(served, inside).ConfigureAwait(false);
-            for (var hops = 0; asker is { Origin: null } && hops < 16; hops++)
+            for (var hops = 0; asker is { Origin: null } && hops <= LineBound; hops++)
             {
                 if (await sessions.ContinuedByAsync(asker.Id, inside).ConfigureAwait(false) is not { } next) break;
+                // 🔴 HELPERWAIT1b (Codex's round-3 #4 on COWORKUX1): a line that goes on past the bound is refused, its newest part unread,
+                // never handed to the record where the bound stopped, which the line has left; the helper's conversation keeps the answer.
+                if (hops == LineBound)
+                {
+                    return Refused(HelperRefusal.CannotTake,
+                        $"Session `{served}`'s line runs past sixteen links, so its newest part is not read and no part it left takes the answer");
+                }
+
                 asker = next;
             }
 
@@ -189,6 +197,9 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
             };
         }, ct).ConfigureAwait(false);
     }
+
+    /// <summary>How many links of an asker's line the hand follows, at most (HELPERWAIT1); the driver's look follows as many.</summary>
+    internal const int LineBound = 16;
 
     /// <summary>A helper's answer's stable key, the producer key its word carries (HELPERWAIT1): one per helper, and so one per ask.</summary>
     public static string KeyOf(string helper) => $"helper:{helper}";
