@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTidiedBranches } from '../../bridge/log';
 import { sentence } from '../../locales/format';
-import { useSessions, useSyncStanding } from '../../data/queries';
+import { useRetireMachine, useSessions, useSyncStanding } from '../../data/queries';
 import { sessionTitle } from '../../work/identity';
 import { accessToast, isFull, resolveAccess } from '../../settings/repository/Access';
 import { commitToast } from '../../settings/repository/Commits';
@@ -18,7 +18,7 @@ import {
   stoppedWaiting, useAccounts, useAcross, useDriver, useHarnesses, useHistoryPlan, usePlugins, useRemotes, useRuleAction, useRules,
   useDiscardSessionBranch, useDropRecoveries, useSetAccess, useSetCommits, useSetHandOver, useSetHelpers, useSetLanding, useSetLanguage, useSetLine, useSetOpinion,
   useSetReadAcross,
-  useSetReview, useStarts,
+  useSetReview, useStarts, useSyncNow,
   useSweep, useSweepLook, useSweepPlan, useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote, useWorkflowCurrent,
   useWorkState,
 } from '../../bridge/shell';
@@ -384,6 +384,11 @@ function SetupPart({ workspace, notify, open, wiring, onOpenPlugin }: {
   const remotes = useRemotes();
   const wire = useWireRemote();
   const unwire = useUnwireRemote();
+  // FABRIC-CLOSE1i2: the machines its remote counts undeclared, as the last pass heard them, and the person's retirement of one. The pass
+  // after it hears the remote for itself, and its end pushes where the circle stands to every window.
+  const standing = useSyncStanding(workspace);
+  const retire = useRetireMachine();
+  const syncNow = useSyncNow();
   const setLine = useSetLine();
   const setLanding = useSetLanding();
   const setLanguage = useSetLanguage();
@@ -417,7 +422,7 @@ function SetupPart({ workspace, notify, open, wiring, onOpenPlugin }: {
     wiring,
     busy: setLine.isPending || setLanding.isPending || setLanguage.isPending || setReview.isPending || setOpinion.isPending
       || setCommits.isPending || setHelpers.isPending || setHandOver.isPending || setAccess.isPending || setRead.isPending || act.isPending || wire.isPending
-      || unwire.isPending,
+      || unwire.isPending || retire.isPending,
     // The access its repositories' sessions start under (AUTONOMY1d): the workspace's over this machine's, resolved on the page from
     // the levels as set, since the driver resolves only a repository's; a shell older than it answers none, and nothing is drawn.
     access: state && Array.isArray(state.workspaceAccess)
@@ -560,6 +565,19 @@ function SetupPart({ workspace, notify, open, wiring, onOpenPlugin }: {
           onError,
         }),
       },
+      machines: standing.data?.wired && Array.isArray(standing.data.undeclared)
+        ? {
+            undeclared: standing.data.undeclared,
+            retiring: retire.isPending ? retire.variables?.machine : null,
+            onRetire: (machine) => retire.mutate({ workspace, machine }, {
+              onSuccess: (done) => {
+                notify(t(done.retired ? 'projects.workspace.machines.retired' : 'projects.workspace.machines.unknown', { workspace, machine }));
+                syncNow.mutate(workspace);
+              },
+              onError,
+            }),
+          }
+        : null,
       rules: answered && {
         lists: { allow: scope?.allow ?? [], ask: scope?.ask ?? [], deny: scope?.deny ?? [] },
         onAdd: (list, rule, added) => act.mutate({ action: 'add', list, rule, scope: 'workspace', name: workspace }, {
