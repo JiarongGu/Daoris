@@ -13,6 +13,9 @@ with the version and date at release.
   watches, a fork and its join drawn as the graph holds them, its branches said to be its graph's and not the landing rule's, a second
   opinion or a look not begun yet said so, every landing door still holding it said, and a look your chain or ask added drawn beside it.
   What a kind of task would ask of you now reads a workflow whose newest version is a graph. In English and 中文.
+- A workflow that closes its quests now applies in a workspace you share through a remote, once every machine of it runs a Daoris
+  that knows it: each sync says so to the remote, and the remote answers which machines have not. Until all have, a quest there
+  closes by its done as before, and its session's start says which machine is older.
 - A workflow version saved as a graph now says which checks its sessions run: its `claimed` node's `checks` (`light` or
   `heavy-at-end`) is taken by every session of a run bound to it, its first included, in place of the repository's choice, and its
   `callMinutes` sets how long one call may run under *Light* before the session is told (20 by default). A value written another

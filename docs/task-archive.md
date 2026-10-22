@@ -19435,3 +19435,12 @@ note. On Opus.
 **Outcome** 2026-10-22: a roll-back from the journal holds the install home's lease as a swap (`InstallSwap.LeaseHome`), at the
 launcher's start and after its error; an act holding it past the wait leaves the journal for the next start, and the launcher starts
 nothing on `app/` and names the holder (`HeldBy`). Finishing a confirmed swap takes none. Detail: D171's SWAPLEASE2 note. On Opus.
+
+## FABRIC-CLOSE1i — the workspace's handshake through its remote (2026-10-22, D173)
+
+> - [ ] **FABRIC-CLOSE1i — the workspace's handshake through its remote** (service, driver). Each push declares its machine's `closure`, and the remote answers whether every machine of the workspace did. Proof: all declared allows the bind; one older machine refuses it, saying why.
+
+**Outcome** 2026-10-22: each push declares its machine; the remote keeps each machine's last word and answers, beside a page and a push's
+answer, the machines whose last push declared nothing; a pass keeps that per circle, and every bind through a remote (the take's own write
+included) binds only where none is undeclared, refused otherwise naming the machines. The host says `closeRemote`, and the driver asks its
+bind there. Retiring a machine the remote still counts is a row (FABRIC-CLOSE1i2). Detail: D173's FABRIC-CLOSE1i note. On Opus.
