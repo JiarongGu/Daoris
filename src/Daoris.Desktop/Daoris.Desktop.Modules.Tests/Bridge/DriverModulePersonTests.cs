@@ -121,6 +121,56 @@ public sealed class DriverModulePersonTests : DriverModuleBridge
         Assert.Equal("gone", gone.GetProperty("why").GetString());
     }
 
+    /// <summary>
+    /// TERMTRUST1a (D201 point 5, the terminal-trust design §4.1 and §8 case 9): the window grants the standing confirmation for the
+    /// presses ticked and turns it off with none; the record is written and read back as STATE's `standingConfirmation`; a press the
+    /// build does not name is refused as data and writes nothing; and a grant this build does not offer yet is refused `not-offered`.
+    /// </summary>
+    [Fact]
+    public async Task The_window_grants_and_revokes_the_standing_confirmation_and_STATE_says_it()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<Shenora.Core.Events.IEventBus>(Bus);
+        services.UseMessageDispatcher((_, _) => { });
+        using var provider = services.BuildServiceProvider();
+        var loop = Loop();
+        using var pipe = new InstancePipe(
+            provider.GetRequiredService<IMessageDispatcher>(), Bus, Home,
+            standing: new StandingConfirmation(Home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside), offered: true));
+        loop.Pipe = pipe;
+        var module = new DriverModule(Bus, loop);
+
+        var unknown = await AnswerAsync(module, "SET_STANDING_CONFIRMATION", new { presses = new[] { "stop", "decline" } });
+        Assert.Equal((false, "unknown-press"), (unknown.GetProperty("done").GetBoolean(), unknown.GetProperty("why").GetString()));
+        Assert.False(File.Exists(pipe.StandingConfirmation.RecordPath));
+
+        var granted = await AnswerAsync(module, "SET_STANDING_CONFIRMATION", new { presses = new[] { "hold", "stop" } });
+        Assert.True(granted.GetProperty("done").GetBoolean());
+        Assert.True(File.Exists(pipe.StandingConfirmation.RecordPath));
+        var state = (await AnswerAsync(module, "STATE")).GetProperty("standingConfirmation");
+        Assert.True(state.GetProperty("offered").GetBoolean());
+        Assert.True(state.GetProperty("on").GetBoolean());
+        Assert.Equal(["stop", "hold"], state.GetProperty("presses").EnumerateArray().Select(each => each.GetString()));
+        Assert.Equal(StandingPresses.Built, state.GetProperty("built").EnumerateArray().Select(each => each.GetString()!));
+        Assert.Equal(0, state.GetProperty("used").GetInt32());
+
+        // Read back as the next start reads it.
+        var next = new StandingConfirmation(Home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside), offered: true);
+        next.Load();
+        Assert.Equal([StandingPresses.Stop, StandingPresses.Hold], next.Now().Presses);
+
+        var revoked = await AnswerAsync(module, "SET_STANDING_CONFIRMATION", new { presses = Array.Empty<string>() });
+        Assert.True(revoked.GetProperty("done").GetBoolean());
+        Assert.False((await AnswerAsync(module, "STATE")).GetProperty("standingConfirmation").GetProperty("on").GetBoolean());
+
+        // This build does not offer it yet (D201's note on order).
+        using var unoffered = new InstancePipe(provider.GetRequiredService<IMessageDispatcher>(), Bus, Home);
+        loop.Pipe = unoffered;
+        var refused = await AnswerAsync(module, "SET_STANDING_CONFIRMATION", new { presses = new[] { "stop" } });
+        Assert.Equal((false, StandingConfirmation.NotOffered), (refused.GetProperty("done").GetBoolean(), refused.GetProperty("why").GetString()));
+        Assert.False((await AnswerAsync(module, "STATE")).GetProperty("standingConfirmation").GetProperty("offered").GetBoolean());
+    }
+
     [Fact]
     public async Task A_shell_with_no_pipe_reads_none_waiting_and_answers_none()
     {
