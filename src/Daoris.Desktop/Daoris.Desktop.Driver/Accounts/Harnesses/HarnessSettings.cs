@@ -1054,8 +1054,9 @@ public sealed record HarnessSettings(
     //  - Written as chosen: a choice equal to today's default is still written, so a later default never overturns a person's
     //    choice; absence alone means RotationUse.Default. The old names are never written: a writer writes `switch` and `curve`,
     //    and since a save is measured from each entry as the file held it (KEEPALL1b, D173's note), every save does so.
-    //  - HarnessRoster.SelectAsync reads them through ResolveScope (TOOL6b): `use` and `keep` choose a start's account, and the
-    //    switch and the curve pass an account whose use is over the curve now (SWITCH1b-ii).
+    //  - HarnessRoster.SelectAsync reads them through Set on the projection (POOL1a2, the account-pool design §2.4), the agent's one
+    //    entry: `use` and `keep` choose a start's account, and the switch and the curve pass an account whose use is over the curve
+    //    now (SWITCH1b-ii). ResolveScope's per-workspace reading is the terminal's alone until POOL1b.
 
     /// <summary>Agent → how this machine's list is used, as the file holds it. See <see cref="ResolveScope"/>.</summary>
     public IReadOnlyDictionary<string, UseEntry> Uses { get; init; } =
@@ -1069,7 +1070,10 @@ public sealed record HarnessSettings(
     /// The scope a start for <paramref name="agent"/> reads (D130 §2 rule 1): the workspace's, when it names a default or a
     /// list of its own for the agent, else the machine's — its own default, its list, where it begins, and how it is used.
     /// </summary>
-    /// <remarks>What <see cref="HarnessRoster.SelectAsync"/> reads for every start but a pick (TOOL6b).</remarks>
+    /// <remarks>
+    /// A start reads <see cref="Set"/> on the projection (POOL1a2), which has no workspace's scope; this per-workspace reading is left
+    /// to the terminal's last callers, which POOL1b moves, and leaves with them (the account-pool design §2.4).
+    /// </remarks>
     public RotationScope ResolveScope(string agent, string? workspace)
     {
         var circle = workspace?.Trim();
@@ -1088,6 +1092,19 @@ public sealed record HarnessSettings(
         var machine = Defaults.TryGetValue(agent, out var held) && !string.IsNullOrWhiteSpace(held) ? held.Trim() : null;
         return ScopeOf(ChoiceFrom.Machine, machine, Rotation.TryGetValue(agent, out var mine) ? mine : [], Uses.GetValueOrDefault(agent));
     }
+
+    /// <summary>
+    /// The agent's one set as a start reads it (POOL1a2, the account-pool design §2.4): its whole order, begun at the order's first,
+    /// and its one entry of settings. Read on the projection (<see cref="LoadSet"/>), which holds no default and no workspace's scope,
+    /// so every workspace reads this one; on a raw file it is the machine's scope.
+    /// </summary>
+    public RotationScope Set(string agent) => ResolveScope(agent, workspace: null);
+
+    /// <summary>
+    /// Where the set's starts begin (the account-pool design §2.2): the order's first, which every reader of the machine's default
+    /// reads now; none where the agent has no account.
+    /// </summary>
+    public string? FirstOf(string agent) => Set(agent).Begins;
 
     /// <summary>
     /// This machine's scope for <paramref name="agent"/> with <paramref name="accounts"/> as its list (OWNSPACE1a, D175's
@@ -1231,6 +1248,8 @@ public sealed record HarnessSettings(
     // Found on the install, 2026-10-04: a person signed in to re-enable a signed-out account, got a new account no list held,
     // and the work kept starting on the empty one. A new account in no list is now said at its sign-in's end, with the list it
     // may join, and listed as running nowhere.
+    // Since POOL1a2 (D197) the window's sign-in says the account joined Daoris's accounts and no answer carries places: the
+    // terminal's `login --join`, `profile join` and `agent list` are these helpers' last callers, and POOL1b retires them.
 
     /// <summary>
     /// Why an account cannot join <paramref name="workspace"/>'s list, or null where it can: a workspace that names no default

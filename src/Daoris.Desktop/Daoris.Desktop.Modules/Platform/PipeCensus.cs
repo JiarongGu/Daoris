@@ -205,6 +205,8 @@ public sealed class PipeCensus
             "STOP_SESSION", "STOP_OPINION", "STOP_TASK", "CANCEL_TURN", "END_CHAT", "WORK_ABANDON", "WORK_PAUSE", "WORK_RESUME",
             // FABRIC-PERFORM1g: the person's word on a plugin step's attempt held for them, which settles what nothing else can.
             "WORK_HELD",
+            // FABRIC-CUTOVER1f: the person's skip or stop of a run's node, their word on what the run does next.
+            "WORKFLOW_NODE",
             "HELP_DISMISS", "CHANNEL_MARK",
             // NOTIFY2f: the person's news read or dismissed, which a terminal marking would hide from them.
             "NOTICES_READ", "NOTICE_DISMISS",

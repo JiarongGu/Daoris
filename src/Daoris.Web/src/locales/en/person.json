@@ -103,6 +103,7 @@
   "person.route.SET_HELP_MODE": "change Ask Daoris's access",
   "person.route.SET_HELP_GRANT": "change what Ask Daoris's housekeeping may do",
   "person.route.WORKFLOW_LANDED": "change a repository's landed route and its gates",
+  "person.route.WORKFLOW_NODE": "pass over or stop a step of a run's workflow",
   "person.route.SET_HEAVY_GATES": "change a repository's heavy gates",
   "person.route.SET_HOLD": "hold a repository's work, or let it go",
   "person.route.SET_INTAKE": "change the agent that reads asks",

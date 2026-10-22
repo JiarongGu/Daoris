@@ -20,7 +20,7 @@ import type { ScopeActs } from '../settings/accounts/AccountUse';
 import { proposalChange } from '../settings/repository/proposals';
 import { AgentList, AgentStrip } from './AgentList';
 import { type AgentActs, AgentMainNotice, AgentPage, type Answered } from './AgentPage';
-import { type AgentPart, accountLabel, agentRows, runsForLine, signedOutHeld } from './agents';
+import { type AgentPart, accountLabel, agentRows, runsForLine } from './agents';
 
 /** What a door runs, and so what streams under it in *Ways in* (D49 §2). */
 const DOOR_ACTIONS = ['install', 'update', 'pin', 'unpin'] as const;
@@ -132,17 +132,6 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
       </WithHarnessRuns>
     ),
   };
-}
-
-/**
- * The activity bar's badge for Agents (D150 §2.1): the accounts a list or a default holds that read signed out, the tool's
- * own sign-in among them while the starts run on it. From the roster the frame holds and the accounts' files; nothing asked.
- */
-export function useAgentsWaiting(): number {
-  const roster = useHarnesses();
-  const accounts = useAccounts();
-  const harnesses = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
-  return byTool(harnesses).reduce((sum, tool) => sum + (tool.present ? signedOutHeld(tool, agentOf(accounts.data, tool.name)) : 0), 0);
 }
 
 /**

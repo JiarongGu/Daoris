@@ -366,6 +366,16 @@ public sealed partial class HelpCoverageTests
         + "`daoris-driver workflow keep`.");
 
     /// <summary>
+    /// FABRIC-CUTOVER1f's <c>daoris-driver workflow skip|stop</c> (D190 point 6, the cutover design §5.2), a verb of the headless host, and the
+    /// run's view's <i>Pass over…</i> and <i>Stop…</i> (<c>useRunNodeWord</c>): exempt, since passing a step over or stopping it is the person's
+    /// word on the work, as their word on a held attempt is.
+    /// </summary>
+    private static readonly Exempt WorkflowNodeDoor = new(
+        "passing a step of a run over, with your words, or stopping it is your word on that work, standing in for a go-ahead or a step's "
+        + "proof nobody gave (D190 point 6), a judgement Ask Daoris cannot have made, as the word on a held attempt is; it can name "
+        + "`daoris-driver workflow skip` and `stop`, and the run's Workflow view.");
+
+    /// <summary>
     /// EVID1b's <c>daoris-driver quest check</c> (D144 §5), a verb of the headless host: a door Ask Daoris owes, until EVID1c
     /// builds the check card beside the quest page's <i>Check again</i>.
     /// </summary>
@@ -696,6 +706,8 @@ public sealed partial class HelpCoverageTests
             "it records the person's own word on what became of a plugin step's attempt nothing else can establish, or on how a held "
             + "close of a quest goes on, which no helper can know: a proposal would stand in for the person (§D6), so it stays the "
             + "person's own press, as a discard does.")),
+        // FABRIC-CUTOVER1f (D190 point 6): the run's Workflow view's *Pass over…* and *Stop…* under a graph run's node, `workflow skip|stop`'s twin.
+        ("work", "useRunNodeWord", null, WorkflowNodeDoor),
         ("work", "useDiscardSessionTree", null, new Exempt(
             "it discards a session's tree and its work for good, a discard, which stays the person's own press (D89), as the "
             + "clean-up and a failed attempt's branch do.")),
@@ -1140,6 +1152,7 @@ public sealed partial class HelpCoverageTests
             .Append(WiringDoor)
             .Append(SpaceDoor)
             .Append(WorkflowKeepDoor)
+            .Append(WorkflowNodeDoor)
             .Append(CheckDoor)
             .Append(GitBranchesDoor)
             .Append(TreesStateDoor)
@@ -1584,6 +1597,20 @@ public sealed partial class HelpCoverageTests
         Assert.DoesNotContain("keep", HelpProposalKinds.Find("workflow")?.Doors ?? []);
         Assert.Contains("say-so", WorkflowKeepDoor.Reason);
         Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver workflow keep <session> [\"…\"]`", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// FABRIC-CUTOVER1f: the headless host's <c>workflow skip</c> and <c>stop</c> are exempt from Ask Daoris (D190 point 6, D110) while its usage
+    /// spells them and the room names them: the person's word on the work, never a card's.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_workflow_skip_and_stop_are_exempt_since_they_are_the_persons_word()
+    {
+        Assert.Contains("workflow skip <run> <node> \"…\"", DriverCommand.Usage);
+        Assert.Contains("workflow stop <run> <node> [\"…\"]", DriverCommand.Usage);
+        Assert.DoesNotContain("skip", HelpProposalKinds.Find("workflow")?.Doors ?? []);
+        Assert.Contains("your word", WorkflowNodeDoor.Reason);
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver workflow skip <run> <node> \"…\"`", StringComparison.Ordinal));
     }
 
     /// <summary>

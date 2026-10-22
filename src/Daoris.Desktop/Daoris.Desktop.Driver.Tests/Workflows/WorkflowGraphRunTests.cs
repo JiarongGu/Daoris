@@ -245,4 +245,36 @@ public sealed class WorkflowGraphRunTests
         Assert.Contains($"● {"The landing",-16}  {"failed",-19}  Failed: `refused`.\n", said);
         Assert.Contains("○ deployed by `acme.deploy`  not reached\n", said);
     }
+
+    /// <summary>
+    /// FABRIC-CUTOVER1f (the cutover design §5.2): each node says what the person may say of it now, by the one table: a go-ahead under way its skip
+    /// and its stop, the landing under way its stop alone (its kind is never passed over), a node not reached or settled neither. A word kept and not
+    /// applied yet is drawn on its node, which then offers nothing more; a run that ended, or whose record does not read, offers nothing. The
+    /// terminal names the run's own commands under each node, and the word waiting with its words.
+    /// </summary>
+    [Fact]
+    public void Each_node_offers_the_persons_skip_and_stop_the_table_takes_and_a_word_kept_is_drawn_until_applied()
+    {
+        var record = Record(
+            Status(NodeKinds.Claimed, NodeStates.Reached, "quest:q1", "q1-moment"),
+            Status("go", NodeStates.Active, Self),
+            Status("handed", NodeStates.Active, "unit-b", Tip));
+
+        var run = Derive(Records(Quest("q1")), GoAheadAndADeployAfter, record);
+
+        Assert.Equal(
+            [("claimed", (IReadOnlyList<string>?)null), ("go", [NodeWordActs.Skip, NodeWordActs.Stop]), ("handed", [NodeWordActs.Stop]), ("deployed", null)],
+            run.Steps.Select(step => (step.Step.Id, step.Acts)));
+        var said = WorkflowRunWords.Say([run], null);
+        Assert.Contains("`daoris-driver workflow skip q1 go \"…\"` passes it over for this run; `daoris-driver workflow stop q1 go` stops it.", said);
+        Assert.Contains("`daoris-driver workflow stop q1 handed` stops it.", said);
+
+        var kept = Derive(Records(Quest("q1")), GoAheadAndADeployAfter, record with { Pending = [new NodeWord("go", NodeWordActs.Skip, "nobody raises it", T)] });
+        var go = Step(kept, "go");
+        Assert.Equal((new NodeWord("go", NodeWordActs.Skip, "nobody raises it", T), (IReadOnlyList<string>?)null), (go.Asked, go.Acts));
+        Assert.Contains("Your skip is kept, and Daoris's next look applies it: “nobody raises it”", WorkflowRunWords.Say([kept], null));
+
+        Assert.All(Derive(Records(Quest("q1")), GoAheadAndADeployAfter, record with { Ended = new RunEnd("q1", T) }).Steps, step => Assert.Null(step.Acts));
+        Assert.All(Derive(Records(Quest("q1")), GoAheadAndADeployAfter, null).Steps, step => Assert.Null(step.Acts));
+    }
 }

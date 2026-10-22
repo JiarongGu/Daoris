@@ -5631,7 +5631,7 @@
         "                 `daoris agent install claude-code` installs it, with its own installer",
         "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
         "                 `daoris agent pin claude-code 0.0.0-none` installs it",
-        "                 account-1        unknown  ",
+        "                 account-1        unknown   (machine default)",
         "                 account-2        unknown  ",
         "                 rotation         account-1, then account-2",
         "                                  use accounts: make the most of them",
@@ -5675,7 +5675,8 @@
       "err": [],
       "after": {
         "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"0.0.0-none\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"},\"rotation\":{\"claude-code\":[\"account-1\",\"account-2\"]}}"
-      }
+      },
+      "changed": "POOL1a2 (D197 point 2, the account-pool design §2.2): every reader of the machine's default reads the order's first, so the list's first account, where the set's starts begin, is marked `(machine default)` where no default was named; `agent list` showing the set is POOL1b's."
     },
     {
       "name": "list, the next start's steps beneath the machine's list and a workspace's",
@@ -5700,7 +5701,7 @@
         "                 `daoris agent install claude-code` installs it, with its own installer",
         "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
         "                 `daoris agent pin claude-code 0.0.0-none` installs it",
-        "                 account-1        unknown  ",
+        "                 account-1        unknown   (machine default)",
         "                 account-2        unknown  ",
         "                 account-3        unknown  ",
         "                 rotation         account-1, then account-2, then account-3",
@@ -5751,7 +5752,8 @@
       "err": [],
       "after": {
         "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"0.0.0-none\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"},\"rotation\":{\"claude-code\":[\"account-1\",\"account-2\",\"account-3\"]},\"workspaceRotation\":{\"work\":{\"claude-code\":[\"account-2\",\"account-1\"]}},\"workspaceRotationUse\":{\"work\":{\"claude-code\":{\"use\":\"order\"}}}}"
-      }
+      },
+      "changed": "POOL1a2 (D197 point 2, the account-pool design §2.2): every reader of the machine's default reads the order's first, so the list's first account, where the set's starts begin, is marked `(machine default)` where no default was named; `agent list` showing the set is POOL1b's."
     },
     {
       "name": "list, one account of a list cooling",
@@ -5776,7 +5778,7 @@
         "                 `daoris agent install claude-code` installs it, with its own installer",
         "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
         "                 `daoris agent pin claude-code 0.0.0-none` installs it",
-        "                 account-1        unknown  ",
+        "                 account-1        unknown   (machine default)",
         "                 account-2        unknown  ",
         "                                  cooling until Oct 22, 13:00 (America/New_York), in 5 h 0 min — as the agent said; `daoris agent profile ready claude-code account-2` tries it now",
         "                 rotation         account-1, then account-2",
@@ -5823,7 +5825,8 @@
       "after": {
         "daoris/data/cooling.json": "{\"claude-code\":{\"account-2\":{\"until\":\"2026-10-22T17:00:00Z\",\"stated\":true}}}",
         "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"0.0.0-none\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"},\"rotation\":{\"claude-code\":[\"account-1\",\"account-2\"]}}"
-      }
+      },
+      "changed": "POOL1a2 (D197 point 2, the account-pool design §2.2): every reader of the machine's default reads the order's first, so the list's first account, where the set's starts begin, is marked `(machine default)` where no default was named; `agent list` showing the set is POOL1b's."
     },
     {
       "name": "list, every account of a list cooling",
@@ -5848,7 +5851,7 @@
         "                 `daoris agent install claude-code` installs it, with its own installer",
         "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
         "                 `daoris agent pin claude-code 0.0.0-none` installs it",
-        "                 account-1        unknown  ",
+        "                 account-1        unknown   (machine default)",
         "                                  cooling until Oct 22, 13:00 (America/New_York), in 5 h 0 min — as the agent said; `daoris agent profile ready claude-code account-1` tries it now",
         "                 account-2        unknown  ",
         "                                  cooling until Oct 22, 10:00 (America/New_York), in 2 h 0 min — Daoris's default: the agent named no time; `daoris agent profile ready claude-code account-2` tries it now",
@@ -5897,7 +5900,8 @@
       "after": {
         "daoris/data/cooling.json": "{\"claude-code\":{\"account-1\":{\"until\":\"2026-10-22T17:00:00Z\",\"stated\":true},\"account-2\":{\"until\":\"2026-10-22T14:00:00Z\",\"stated\":false}}}",
         "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"0.0.0-none\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"},\"rotation\":{\"claude-code\":[\"account-1\",\"account-2\"]}}"
-      }
+      },
+      "changed": "POOL1a2 (D197 point 2, the account-pool design §2.2): every reader of the machine's default reads the order's first, so the list's first account, where the set's starts begin, is marked `(machine default)` where no default was named; `agent list` showing the set is POOL1b's."
     },
     {
       "name": "list, every account but the kept one cooling",
@@ -5923,7 +5927,7 @@
         "                 `daoris agent install claude-code` installs it, with its own installer",
         "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
         "                 `daoris agent pin claude-code 0.0.0-none` installs it",
-        "                 account-1        unknown  ",
+        "                 account-1        unknown   (machine default)",
         "                                  cooling until Oct 22, 13:00 (America/New_York), in 5 h 0 min — as the agent said; `daoris agent profile ready claude-code account-1` tries it now",
         "                 account-2        unknown  ",
         "                                  cooling until Oct 22, 10:00 (America/New_York), in 2 h 0 min — as the agent said; `daoris agent profile ready claude-code account-2` tries it now",
@@ -5973,7 +5977,8 @@
       "after": {
         "daoris/data/cooling.json": "{\"claude-code\":{\"account-1\":{\"until\":\"2026-10-22T17:00:00Z\",\"stated\":true},\"account-2\":{\"until\":\"2026-10-22T14:00:00Z\",\"stated\":true}}}",
         "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"0.0.0-none\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"},\"rotation\":{\"claude-code\":[\"account-1\",\"account-2\",\"account-3\"]},\"rotationUse\":{\"claude-code\":{\"keep\":\"account-3\"}}}"
-      }
+      },
+      "changed": "POOL1a2 (D197 point 2, the account-pool design §2.2): every reader of the machine's default reads the order's first, so the list's first account, where the set's starts begin, is marked `(machine default)` where no default was named; `agent list` showing the set is POOL1b's."
     },
     {
       "name": "list, the machine's default and no list",
@@ -6203,7 +6208,7 @@
         "                 `daoris agent install codex` installs it, with its own installer",
         "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
         "                 `daoris agent pin codex 0.0.0-none` installs it",
-        "                 account-1        unknown  ",
+        "                 account-1        unknown   (machine default)",
         "                                  said 20 min ago: 1% of its session limit used, resetting Oct 22, 11:00 (America/New_York); 15% of its weekly limit used, resetting Oct 26, 12:00 (America/New_York)",
         "                 account-2        unknown  ",
         "                 rotation         account-1, then account-2",
@@ -6234,7 +6239,8 @@
       "after": {
         "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"0.0.0-none\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"},\"rotation\":{\"codex\":[\"account-1\",\"account-2\"]}}",
         "daoris/data/windows.json": "{\"codex\":{\"account-1\":{\"session\":{\"reset\":\"2026-10-22T15:00:00Z\",\"used\":0.01,\"seen\":\"2026-10-22T11:40:00Z\"},\"weekly\":{\"reset\":\"2026-10-26T16:00:00Z\",\"used\":0.15,\"seen\":\"2026-10-22T11:40:00Z\"}}}}"
-      }
+      },
+      "changed": "POOL1a2 (D197 point 2, the account-pool design §2.2): every reader of the machine's default reads the order's first, so the list's first account, where the set's starts begin, is marked `(machine default)` where no default was named; `agent list` showing the set is POOL1b's."
     },
     {
       "name": "list, an account no list and no default holds, where the machine names another",
@@ -6258,7 +6264,7 @@
         "                 `daoris agent install claude-code` installs it, with its own installer",
         "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
         "                 `daoris agent pin claude-code 0.0.0-none` installs it",
-        "                 account-1        unknown  ",
+        "                 account-1        unknown   (machine default)",
         "                 account-2        unknown  ",
         "                                  no workspace: no list and no default holds it, so no start runs on it — `daoris agent profile join claude-code account-2 <workspace>…|--machine` puts it in one",
         "                 rotation         account-1",
@@ -6301,7 +6307,8 @@
       "err": [],
       "after": {
         "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"0.0.0-none\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"},\"rotation\":{\"claude-code\":[\"account-1\"]}}"
-      }
+      },
+      "changed": "POOL1a2 (D197 point 2, the account-pool design §2.2): every reader of the machine's default reads the order's first, so the list's first account, where the set's starts begin, is marked `(machine default)` where no default was named; `agent list` showing the set is POOL1b's."
     },
     {
       "name": "list, accounts by their names, the column fitting the longest",
@@ -6588,7 +6595,7 @@
         "                 `daoris agent install claude-code` installs it, with its own installer",
         "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
         "                 `daoris agent pin claude-code 0.0.0-none` installs it",
-        "                 account-1        unknown  ",
+        "                 account-1        unknown   (machine default)",
         "                 account-2        unknown  ",
         "                 account-3        unknown  ",
         "                                  no workspace: no list and no default holds it, so no start runs on it — `daoris agent profile join claude-code account-3 <workspace>…|--machine` puts it in one",
@@ -6634,7 +6641,8 @@
       "err": [],
       "after": {
         "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"0.0.0-none\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"},\"rotation\":{\"claude-code\":[\"account-1\",\"account-2\"]}}"
-      }
+      },
+      "changed": "POOL1a2 (D197 point 2, the account-pool design §2.2): every reader of the machine's default reads the order's first, so the list's first account, where the set's starts begin, is marked `(machine default)` where no default was named; `agent list` showing the set is POOL1b's."
     },
     {
       "name": "list, how each list is used, set, with old names and what this build does not know",
@@ -6659,7 +6667,7 @@
         "                 `daoris agent install claude-code` installs it, with its own installer",
         "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
         "                 `daoris agent pin claude-code 0.0.0-none` installs it",
-        "                 account-1        unknown  ",
+        "                 account-1        unknown   (machine default)",
         "                 account-2        unknown  ",
         "                 account-3        unknown  ",
         "                 rotation         account-1, then account-2, then account-3",
@@ -6714,7 +6722,8 @@
       "err": [],
       "after": {
         "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"0.0.0-none\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"},\"defaults\":{\"claude-code\":\"account-9\"},\"rotation\":{\"claude-code\":[\"account-1\",\"account-2\",\"account-3\"]},\"rotationUse\":{\"claude-code\":{\"use\":\"order\",\"keep\":\"account-3\",\"early\":false,\"near\":85}},\"workspaceRotation\":{\"work\":{\"claude-code\":[\"account-2\"]}},\"workspaceRotationUse\":{\"work\":{\"claude-code\":{\"keep\":\"account-2\",\"weekly\":\"pace\",\"early\":\"no\",\"switch\":\"eager\"}}}}"
-      }
+      },
+      "changed": "POOL1a2 (D197 point 2, the account-pool design §2.2): every reader of the machine's default reads the order's first, so the list's first account, where the set's starts begin, is marked `(machine default)` where no default was named; `agent list` showing the set is POOL1b's."
     },
     {
       "name": "list, a curve of the person's own",
@@ -6738,7 +6747,7 @@
         "                 `daoris agent install claude-code` installs it, with its own installer",
         "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
         "                 `daoris agent pin claude-code 0.0.0-none` installs it",
-        "                 account-1        unknown  ",
+        "                 account-1        unknown   (machine default)",
         "                 account-2        unknown  ",
         "                 rotation         account-1, then account-2",
         "                                  use accounts: make the most of them",
@@ -6783,7 +6792,8 @@
       "err": [],
       "after": {
         "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"0.0.0-none\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"},\"rotation\":{\"claude-code\":[\"account-1\",\"account-2\"]},\"rotationUse\":{\"claude-code\":{\"switch\":\"curve\",\"curve\":{\"session\":[[0,0],[100,90]]}}}}"
-      }
+      },
+      "changed": "POOL1a2 (D197 point 2, the account-pool design §2.2): every reader of the machine's default reads the order's first, so the list's first account, where the set's starts begin, is marked `(machine default)` where no default was named; `agent list` showing the set is POOL1b's."
     },
     {
       "name": "list, a plugin's harness with no version question",
@@ -7144,7 +7154,7 @@
         "                 `daoris agent install claude-code` installs it, with its own installer",
         "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
         "                 `daoris agent pin claude-code 0.0.0-none` installs it",
-        "                 R&D              unknown  ",
+        "                 R&D              unknown   (machine default)",
         "                                  cooling until Oct 22, 12:02 (America/New_York), in 4 h 2 min — as the agent said; `daoris agent profile ready claude-code <account>` tries it now",
         "                 account-2        unknown  ",
         "                 rotation         R&D, then account-2",
@@ -7191,7 +7201,8 @@
       "after": {
         "daoris/data/cooling.json": "{\"claude-code\":{\"R&D\":{\"until\":\"2026-10-22T16:02:00Z\",\"stated\":true}}}",
         "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"0.0.0-none\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"},\"rotation\":{\"claude-code\":[\"R&D\",\"account-2\"]}}"
-      }
+      },
+      "changed": "POOL1a2 (D197 point 2, the account-pool design §2.2): every reader of the machine's default reads the order's first, so the list's first account, where the set's starts begin, is marked `(machine default)` where no default was named; `agent list` showing the set is POOL1b's."
     },
     {
       "name": "list, the join names an account by its name where a shell can take it, and by its id where none can",

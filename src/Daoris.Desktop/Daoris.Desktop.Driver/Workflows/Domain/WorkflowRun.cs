@@ -278,6 +278,16 @@ public sealed record WorkflowRunStep(WorkflowStep Step, string State, string Det
     /// <see cref="Quest"/>, or its <see cref="Branch"/> at <see cref="Commit"/>, or its landing there; null for the run itself.
     /// </summary>
     public string? On { get; init; }
+
+    /// <summary>
+    /// What the person may say of a graph run's node now (FABRIC-CUTOVER1f, <see cref="RunNodeWords.Acts"/>): its <c>skip</c> and its <c>stop</c>,
+    /// as the one table takes them where it stands; null where it offers neither, on a steps run's step, and where its run ended or its record
+    /// does not read.
+    /// </summary>
+    public IReadOnlyList<string>? Acts { get; init; }
+
+    /// <summary>The person's word on a graph run's node, kept by its door and not applied yet (FABRIC-CUTOVER1f); null where none waits.</summary>
+    public NodeWord? Asked { get; init; }
 }
 
 /// <summary>A chain's work in one repository, read as steps (WORKFLOW1c; D157 point 11, design §5.1).</summary>

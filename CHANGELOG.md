@@ -16,6 +16,24 @@ with the version and date at release.
   counts that has not said it knows a workflow that closes its quests. *Retire* takes one out of what the remote counts, and the
   workspace's next bind goes through. A retired machine that syncs again is counted again. `daoris-driver sync status` names the
   machines too. In English and 中文.
+- A number on the activity bar now means one thing, what waits on you there, as the title bar's bell and the taskbar count it:
+  Sessions counts what waits in a session (a question, work to review, a held call or answer, a helper's or hand-over ask), Quests
+  what an ask or a quest waits on, Repositories a branch to clean up, Agents a rule proposal or an account, Settings a disk below
+  its floor; together they make the bell's number. Work under way is a small still blue dot instead of a number: Sessions while the
+  driver's sessions run, Quests while a quest is taken, said in words in the place's tip. Sessions no longer counts the sessions
+  the driver runs (the status bar still does), nor Quests every outstanding quest. What is unread is said *N unread* in a quiet
+  ink, no longer in the colour of what waits on you. In English and 中文.
+- A step of a run that follows a workflow saved as a graph can now be passed over or stopped by you: *Pass over…* and *Stop…*
+  under the step in the side bar's *Workflow* view, and `daoris-driver workflow skip <run> <node> "…"` and `workflow stop <run>
+  <node>` at a terminal, which Daoris's window confirms. A skip keeps your words, so a go-ahead nobody will raise no longer strands
+  the run; a stop ends the run once nothing else of it can move. Your word is kept on the run and applied at Daoris's next look,
+  said there until then. In English and 中文.
+- Every start now reads an agent's accounts as one set (D197), even where a file an older Daoris wrote still names a workspace's own
+  list or default: each workspace's work starts in the one order, an account no list held carries work, and a start that waits no
+  longer names accounts outside a list for you to add. *What needs you* shows every signed-out account of Daoris's that no waiting
+  start already names, and no longer offers to let an account into a list. A new account's sign-in ends by saying it joined Daoris's
+  accounts and goes last in the order. `daoris agent list` marks the order's first account as the machine default, where starts
+  begin. A sign-in in the window that names no account is refused, as before.
 - An update that stopped part way is now put back only while nothing else acts on Daoris's home: a terminal's `daoris-driver`
   command changing it is waited for, up to thirty seconds. If it still holds the home, Daoris does not start on a half-replaced
   application; it says which command held the home and asks you to start it again once that has finished.

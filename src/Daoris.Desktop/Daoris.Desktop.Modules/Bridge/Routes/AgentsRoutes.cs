@@ -79,7 +79,6 @@ public sealed class AgentsRoutes(DriverContext context)
                 // The tool's own settings file under an account (AGT6, D98), where this build
                 // knows it: a door's is its owner's (AGT7), and null offers nothing.
                 var settingsFile = harnesses.AccountToolchain(report.Adapter)?.SettingsFile;
-                var owner = toolchain?.Owner(report.Adapter) ?? report.Adapter;
                 var accountActs = AccountActs(harnesses, report.Adapter);
                 return new
                 {
@@ -87,7 +86,6 @@ public sealed class AgentsRoutes(DriverContext context)
                     report.Present,
                     report.Version,
                     report.Problem,
-                    report.MachineDefault,
                     // The managed toolchain (TOOL2/D57). `Pinned` is what the machine asked for
                     // and `Managed` is what is actually there — they differ exactly when a pin
                     // names a version nobody installed, which the surface must say rather than
@@ -145,7 +143,7 @@ public sealed class AgentsRoutes(DriverContext context)
                     // The profile HOME is a machine path, and this bridge is the one surface
                     // allowed to carry one (D47 §4) — the page renders it so a person can find
                     // the directory they were told Daoris owns.
-                    Profiles = report.Profiles.Select(profile => ProfileShown(profile, settings.PlacesOf(owner, profile.Name), settingsFile)).ToArray(),
+                    Profiles = report.Profiles.Select(profile => ProfileShown(profile, settingsFile)).ToArray(),
                     // What the tool itself offers for those two keys (AGT6, D98): its aliases and
                     // the efforts its settings keep. Null where Daoris does not know its settings,
                     // and the page then offers nothing and says so.
@@ -165,39 +163,24 @@ public sealed class AgentsRoutes(DriverContext context)
                     report.OwnPlan,
                     // When the tool's own sign-in was last read: only at a person's press (TOOL6g), so null before one.
                     report.OwnRead,
-                    // Which circles run this harness as which account (D49 §4): the terminal
-                    // could set it and the page could not even see it. A door's are its
-                    // owner's (AGT7).
-                    WorkspaceDefaults = settings.Workspaces
-                        .Select(circle => (Workspace: circle.Key, Map: circle.Value,
-                            Owner: toolchain?.Owner(report.Adapter) ?? report.Adapter))
-                        .Where(circle => circle.Map.TryGetValue(circle.Owner, out var chosen)
-                            && !string.IsNullOrWhiteSpace(chosen))
-                        .OrderBy(circle => circle.Workspace, StringComparer.Ordinal)
-                        .Select(circle => new { circle.Workspace, Profile = circle.Map[circle.Owner] })
-                        .ToArray(),
+                    // No machine's default and no workspace's (POOL1a2, the account-pool design §5.2): the order's first says where
+                    // starts begin, and `ACCOUNTS` answers the order.
                 };
             })];
     }
 
     /// <summary>
-    /// One account on the roster (<c>HARNESSES</c>): its id and the person's name for it, where it runs, its home, its state
-    /// as last read, who signed in, its key's handle and its own model and effort. Public for the fast half's table, which
-    /// reads it without the roster the route asks.
+    /// One account on the roster (<c>HARNESSES</c>): its id and the person's name for it, its home, its state as last read, who
+    /// signed in, its key's handle and its own model and effort. No places (POOL1a2, the account-pool design §5.2): every account
+    /// of Daoris's serves every workspace. Public for the fast half's table, which reads it without the roster the route asks.
     /// </summary>
-    /// <param name="places">Where it runs (ACCT1, <see cref="HarnessSettings.PlacesOf"/>).</param>
     /// <param name="settingsFile">The tool's own settings file under an account (AGT6), or null where this build knows none.</param>
-    public static object ProfileShown(ProfileReport profile, IReadOnlyList<AccountPlace> places, string? settingsFile) => new
+    public static object ProfileShown(ProfileReport profile, string? settingsFile) => new
     {
         // The account's stable id (ACCT2): its folder's name, and what every list, default, reading and record names.
         // `DisplayName` is the person's name for it, null where they gave none and it reads as its id.
         profile.Name,
         profile.DisplayName,
-        // Where it runs (ACCT1): each scope whose own list holds it or whose own default names it, this machine (a null
-        // workspace) first; `Nowhere` where none does. That is a fact about lists, not a claim that no start runs on it:
-        // a scope naming nothing takes Daoris's accounts in turn (OWNSPACE1b-A's `inherited`), which the page says beside it.
-        Places = PlacesShown(places),
-        Nowhere = places.Count == 0,
         // The profile HOME is a machine path, and this bridge is the one surface allowed to carry one (D47 §4) — the page
         // renders it so a person can find the directory they were told Daoris owns.
         profile.Home,
@@ -231,10 +214,6 @@ public sealed class AgentsRoutes(DriverContext context)
             ? (agent.LoginArguments is { Count: > 0 }, agent.KeyVariable is { Length: > 0 },
                agent.LoginArguments is { Count: > 0 } && agent.DeviceLoginArguments is { Count: > 0 })
             : (false, false, false);
-
-    /// <summary>Where an account runs, as the page reads it: each scope, a null workspace for this machine, its list and default.</summary>
-    internal static object[] PlacesShown(IReadOnlyList<AccountPlace> places) =>
-        [.. places.Select(place => (object)new { place.Workspace, place.List, place.Default })];
 
     /// <summary>
     /// The door an agent's accounts are read through (AGT7, UX6e): the one named for it, else the first door onto its
@@ -657,8 +636,10 @@ public sealed class AgentsRoutes(DriverContext context)
     /// they forgot, and the file's own rule is that absence means the harness's own home.
     /// </summary>
     /// <remarks>
-    /// One method the route and Ask Daoris's door both call (HELP10), so the two cannot drift. A default outside its scope's
-    /// own list is refused before anything is written, as the terminal refuses it since TOOL6a (TOOL4g, D130 §3.1).
+    /// One method the route and Ask Daoris's door both called (HELP10), so the two could not drift. A default outside its scope's
+    /// own list is refused before anything is written, as the terminal refuses it since TOOL6a (TOOL4g, D130 §3.1). The route
+    /// refuses <c>profile-default</c> since POOL1a (D197); Ask Daoris's <c>default</c> door is its last caller, which POOL1b retires
+    /// with it, <see cref="AccountsRoutes.DefaultAllowed"/> and <see cref="DefaultEdited"/>.
     /// </remarks>
     internal static int ProfileDefault(DriverLoop loop, string harness, string? profile, string? workspace)
     {
@@ -684,51 +665,10 @@ public sealed class AgentsRoutes(DriverContext context)
             ? settings.WithWorkspaceDefault(workspace, owner, profile)
             : settings.WithDefault(owner, profile);
 
-    /// <summary>
-    /// What sessions run as where a default was just edited (LOOK2c): the machine's, or one workspace's — an account, the
-    /// machine's default a workspace naming none falls back to, or the agent's own configuration home. The screen says it
-    /// after its press, as <c>daoris agent profile default … [--clear]</c> prints it, from the same resolution a start
-    /// takes (<see cref="HarnessSettings.ResolveFrom"/>).
-    /// </summary>
-    /// <remarks>
-    /// Found by LEFT3: the tool's own row's *use for a workspace* clears the workspace's entry, and with a machine default
-    /// set its sessions then run as that default, not in the tool's own home the row names.
-    /// </remarks>
-    public static DefaultStandingAnswer DefaultStanding(HarnessSettings settings, string owner, string? workspace)
-    {
-        var scope = workspace is { Length: > 0 } ? workspace : null;
-        var (account, from) = settings.ResolveFrom(owner, scope, null);
-        return new DefaultStandingAnswer(scope, account, from switch
-        {
-            ChoiceFrom.Workspace => DefaultFrom.Workspace,
-            ChoiceFrom.Machine => DefaultFrom.Machine,
-            _ => DefaultFrom.Own,
-        });
-    }
-
     /// <summary>Back to `PATH`. Nothing is deleted — re-pinning that version needs no download.</summary>
     private int Unpin(string harness)
     {
         HarnessSettings.Change(_loop.Harnesses.SettingsPath, read => read.WithVersion(harness, null));
         return 0;
     }
-}
-
-/// <summary>
-/// What sessions run as where a default was edited (LOOK2c): the workspace, or null for the machine; the account, or
-/// null for the agent's own configuration home; and which rung answered, <see cref="DefaultFrom"/>.
-/// </summary>
-public sealed record DefaultStandingAnswer(string? Workspace, string? Account, string From);
-
-/// <summary>Which rung a default's standing came from, as the page spells it.</summary>
-public static class DefaultFrom
-{
-    /// <summary>The workspace names an account of its own.</summary>
-    public const string Workspace = "workspace";
-
-    /// <summary>The machine's default: the machine's own edit, or a workspace naming none that falls back to it.</summary>
-    public const string Machine = "machine";
-
-    /// <summary>No account at all: the agent's own configuration home.</summary>
-    public const string Own = "own";
 }

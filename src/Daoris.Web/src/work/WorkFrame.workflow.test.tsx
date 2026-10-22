@@ -20,7 +20,7 @@ vi.mock('@shenora/react', () => ({
 
 import '../locales/i18n';
 import type { FrameIntent } from '../menus/commands';
-import { answerOf, IN_REVIEW, WORKING } from '../workflow/runFixtures';
+import { answerOf, GRAPH_RUN_GO_AHEAD, IN_REVIEW, WORKING } from '../workflow/runFixtures';
 import { WorkFrame } from './WorkFrame';
 
 const REGISTRY = [{
@@ -135,5 +135,28 @@ describe("the session's Workflow view", () => {
     expect(await within(side).findByText('Workflow: waits for your look')).toBeInTheDocument();
     const look = within(side).getAllByRole('listitem').find((item) => item.getAttribute('data-step') === 'look')!;
     expect(look).toHaveAttribute('aria-current', 'step');
+  });
+
+  // FABRIC-CUTOVER1f: a graph run's go-ahead nobody raised is passed over from the view, the press the driver's `WORKFLOW_NODE`.
+  it("passes a graph run's go-ahead over from the view, with the person's words, through the driver's press", async () => {
+    RUN = answerOf(GRAPH_RUN_GO_AHEAD);
+    const previous = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, ...args: unknown[]) => {
+      if (type === 'WORKFLOW_NODE') return { run: 'q1', node: 'release', act: 'skip', done: true };
+      return previous(module, type, ...args);
+    });
+    render(<QueryClientProvider client={client()}><Tooltip.Provider>
+      <WorkFrame selected="s1" onSelect={vi.fn()} notify={() => {}} />
+    </Tooltip.Provider></QueryClientProvider>);
+    const side = await screen.findByRole('complementary', { name: 'right side bar' });
+    await userEvent.click(within(side).getByRole('tab', { name: 'Workflow' }));
+    const release = await waitFor(() => within(side).getAllByRole('listitem').find((item) => item.getAttribute('data-step') === 'release')!);
+
+    await userEvent.click(within(release).getByRole('button', { name: 'Pass over…' }));
+    await userEvent.type(within(side).getByRole('textbox', { name: 'why you pass it over' }), 'nobody raises it');
+    await userEvent.click(within(side).getByRole('button', { name: 'Pass over' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE',
+      { payload: { run: 'q1', node: 'release', act: 'skip', words: 'nobody raises it' } }));
   });
 });
