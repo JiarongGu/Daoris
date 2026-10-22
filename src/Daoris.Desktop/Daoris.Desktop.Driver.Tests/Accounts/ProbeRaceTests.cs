@@ -240,9 +240,9 @@ public sealed class ProbeRaceTests : IDisposable
         for (var look = 0; look < 3; look++) Assert.False((await roster.SelectAsync("agent", Config, null, null)).Allowed);
         Assert.Equal((3, 1, 0), (TimesAsked("account-1"), TimesAsked("account-2"), TimesAsked("(own)")));
 
-        // The person's press asks the roster again, the own sign-in with it.
+        // The person's press asks the roster again, and never the own sign-in (POOL1a3, D197 point 3; Fable's F2).
         await roster.RosterAsync(Config, refresh: true);
-        Assert.Equal((4, 2, 1), (TimesAsked("account-1"), TimesAsked("account-2"), TimesAsked("(own)")));
+        Assert.Equal((4, 2, 0), (TimesAsked("account-1"), TimesAsked("account-2"), TimesAsked("(own)")));
     }
 
     /// <summary>

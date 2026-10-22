@@ -19402,6 +19402,12 @@ which `browser.ts` and `remotemap.ts` still write through; the seam is `platform
 1,168 after). Unproven until the install: a plugin added and switched from a terminal beside the open window. Detail: D194's PUSH1f2f
 note. On Opus.
 
+## FABRIC-CUTOVER1e — a graph run's selection, involvement and drawing from its record (2026-10-22, D190)
+
+> - [ ] **FABRIC-CUTOVER1e — a graph run's selection, involvement and drawing from its record** (driver, cli, web-shell; after 1c; D190, design §2.3, §4, §6). `Otherwise` takes a graph newest (`WorkflowProcesses.cs:125`); a graph version's person part read from its gate and go-ahead nodes where `Involvement.Lowers` reads steps (`WorkflowGate.cs:240`); the run's Workflow view and `daoris driver workflow run` draw a schema-2 run from its record, its subjects named, its branches said to be its graph's, an opinion or look not begun until 1d said so, an added look beside it (WORKFLOW2c). Proof: both twins' tests; the window's Workflow view of a schema-2 run.
+
+**Outcome** 2026-10-22: built, the cli lane untouched (its verb is the driver program's): a graph's person part read from its nodes, and a
+graph run drawn from its record, a fork and its join by its wires. No window was looked at. Detail: D190's CUTOVER1e note. On Opus.
 ## LEASEHOME2 — one home for the loop's lease and a verb's (2026-10-22, D171)
 
 > - [ ] **LEASEHOME2 — one home for the loop's lease and a verb's** (driver). The headless loop takes its lease in the driver config's folder (`DriverConfig.HomeOf`), a verb in `DAORIS_HOME`; with `DAORIS_DRIVER_CONFIG` elsewhere the two never meet, and a verb run with another `DAORIS_HOME` is unseen by the swap. The RPC design §5. Proof: a `DriverHostTests` row with the config elsewhere.
@@ -19416,3 +19422,53 @@ note. On Opus.
 **Outcome** 2026-10-22: a park's question is recorded by its agent (`question_ask`) and bound to its park by the driver, and its box draws
 it with every answer a press (a choice, a go-ahead's yes or no, the free answer) through the box's own doors. Detail: the park's ask
 design (`docs/2026-10-22-park-ask-design.md`, its §8 Codex's read) and D185's PARKVIEW1 note. On Opus.
+## POOL1a3 — the person's own sign-in never asked or written (2026-10-22, D197)
+
+> - [ ] **POOL1a3 — the person's own sign-in never asked or written** (driver, modules; after POOL1a1; D197 point 3). The `own` parameter leaving `ReportAsync`, `PressAsync`, `PressUsageAsync` and `HarnessProbe.ProbeAsync`, so `HARNESSES_REFRESH` with no agent and the driver's `agent list` ask no own sign-in; the own-home trust hold carrying `own` with no press and `TRUST_FOLDER` refusing it as `TRUST_OWN_HOME` before anything is written; `agent trust` with no account named trusting every account of the set and never the own home; and the own cool-off's *Read again* line settled (D197's acceptance note), as design §3 and §11 say. Proof: §11's rows for these, with a test that every sign-in action's spawn sets the configuration home under the home.
+
+**Outcome** 2026-10-22: built. `own` left the roster's report, press and usage read and the probe; a usage read takes an account,
+never none, and `HarnessActions.PrepareLogin` refuses a home outside the account homes. The agent's *Read again* ends that agent's
+own cool-off unasked, so `waits.read-again` stands unchanged. `TrustHold.Own` marks a hold with no account home, the attention row
+carries `trust.own`, and `TRUST_FOLDER` refuses it as `TRUST_OWN_HOME` (en, zh); `ClaudeTrust.Refusal` with no account names the
+tool itself. `agent trust` with none named grants each account of the set in its order, and with none refuses. Proof:
+`HarnessProbeTests`, `CodexAccountTests`, `CodexAccountProcessTests`, `CodexUsageRosterTests`, `CodexUsageProcessTests`,
+`RosterReadTests`, `ProbeRaceTests`, `WorkspaceTrustTests`, `AgentsTextTests`' trust rows, `DriverModuleDriverTests`,
+`AttentionStateSliceTests`, `DriverModuleAgentsTests`. Not seen failing first, and no window was looked at. Detail: D197's POOL1a3
+note. On Opus.
+
+## SWAPLEASE2 — a crashed swap's recovery under the lease (2026-10-22, D171)
+
+> - [ ] **SWAPLEASE2 — a crashed swap's recovery under the lease** (desktop launcher). `InstallSwap.Recover` rolls a crashed swap back outside the lease; only `Run` holds it. The RPC design §5. Proof: a source-reading row and a `StagedBuildTests` row.
+
+**Outcome** 2026-10-22: a roll-back from the journal holds the install home's lease as a swap (`InstallSwap.LeaseHome`), at the
+launcher's start and after its error; an act holding it past the wait leaves the journal for the next start, and the launcher starts
+nothing on `app/` and names the holder (`HeldBy`). Finishing a confirmed swap takes none. Detail: D171's SWAPLEASE2 note. On Opus.
+
+## FABRIC-CLOSE1i — the workspace's handshake through its remote (2026-10-22, D173)
+
+> - [ ] **FABRIC-CLOSE1i — the workspace's handshake through its remote** (service, driver). Each push declares its machine's `closure`, and the remote answers whether every machine of the workspace did. Proof: all declared allows the bind; one older machine refuses it, saying why.
+
+**Outcome** 2026-10-22: each push declares its machine; the remote keeps each machine's last word and answers, beside a page and a push's
+answer, the machines whose last push declared nothing; a pass keeps that per circle, and every bind through a remote (the take's own write
+included) binds only where none is undeclared, refused otherwise naming the machines. The host says `closeRemote`, and the driver asks its
+bind there. Retiring a machine the remote still counts is a row (FABRIC-CLOSE1i2). Detail: D173's FABRIC-CLOSE1i note. On Opus.
+## GITSTART5 — a managed git past its launcher (2026-10-22, D121)
+
+> - [ ] **GITSTART5 — a managed git past its launcher** (driver; D121 §2.3). A managed git is laid out alike (`resources.json`: `cmd/git.exe`) and still starts through its launcher. Proof: `ToolsChildrenTests`' managed row expecting `<version>/mingw64/bin/git.exe` with the launcher's variables.
+
+**Outcome** 2026-10-22: built. `WorkingTree.GitStart` starts a managed git past its launcher as it does the system's, with
+the launcher's variables over the tools' environment; a git named as a file still starts as it is. Proof: `ToolsChildrenTests`'
+new managed row (`<version>/package/mingw64/bin/git.exe`, `MSYSTEM`, the launcher's folders before the tools' `PATH`) and a row
+for a named file laid out as an install; the driver's fast half. The built-in MinGit 2.56.0 holds its git under `ucrt64/`,
+which the rule does not name, so it is GITSTART6's. On Opus. Detail: D121's GITSTART5 note.
+## ORIENT2c — repository index quest (2026-10-22, D151)
+
+> - [ ] **ORIENT2c — repository index quest** (driver). Inventory/generator/granted commands/check/declaration only. D151 §2/§5; brief/family tests.
+
+**Outcome** 2026-10-22: built. A repository set up on its line and naming no `documents.index` is asked *Give this
+repository an index of where things are* (`SetupCase.Index`, a fourth `SetupQuests` title): the inventory first, a
+generator at the path the press names from its stack (`tools/index.mjs`, `.cs` as a file-based program, or `.py`; never
+over a file on the line), its two commands granted exactly beside four doctrine verbs, its check, the marks and the
+declaration. An unknown stack is refused (`no-index-form`). The workspace plan asks a set-up repository its index in its
+turn, recorded under `indexed`; the page names `asks: 'index'` (en, zh). The family rehearsal was not run, and no session
+has carried the body. Detail: D151's ORIENT2c note. On Opus.

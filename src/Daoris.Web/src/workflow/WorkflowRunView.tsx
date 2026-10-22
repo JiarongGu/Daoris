@@ -6,7 +6,7 @@ import { Button, Icon, Inline, Pill, Prose, SkeletonRows } from '../design/ui';
 import type { CurrentWorkflow } from './current';
 import { type RunStep, runTone, type WorkflowRun, type WorkflowRunAnswer } from './run';
 import { whySaid } from './routeSaid';
-import { addedSaid, runSaid, runShort, stateSaid } from './runSaid';
+import { addedSaid, graphSaid, runSaid, runShort, stateSaid } from './runSaid';
 import { type RunMarks, WorkflowChart } from './WorkflowChart';
 import { WorkflowHold } from './WorkflowHold';
 
@@ -37,6 +37,9 @@ export const runWorkflow = (run: WorkflowRun): CurrentWorkflow => ({
 /** The person's words a step keeps, shown as written: a skip's and a *not yet*'s (D154). */
 const QUOTES: ReadonlySet<string> = new Set(['look.skip', 'look.not-yet']);
 
+/** The person's words a graph run's node keeps (FABRIC-CUTOVER1e): a skip's, a refusal's and a stop's, by its record's state. */
+const NODE_QUOTES: ReadonlySet<string> = new Set(['skipped', 'rejected', 'stopped']);
+
 /**
  * One step's place in its run (design §5.2, §7): its state on its pill, *this session* where the attended session is its own,
  * when it came to stand there, what that state says, the person's words where it keeps them, why a step Current does not draw is
@@ -55,7 +58,8 @@ function StepMark({ run, step, here, doors, control, pill = true }: {
   const said = runSaid(t, step);
   const added = addedSaid(t, step);
   const kind = step.step.kind;
-  const quoted = QUOTES.has(`${kind}.${step.detail}`) && step.words ? step.words : null;
+  // A graph run's node keeps the person's words of a skip, a refusal or a stop (FABRIC-CUTOVER1e); a go-ahead's act is its sentence's.
+  const quoted = (step.node ? NODE_QUOTES.has(step.detail) : QUOTES.has(`${kind}.${step.detail}`)) && step.words ? step.words : null;
   const door = doorFor(t, run, step, doors);
   // The second opinion's gate holding the work on the person (XAGENT1f): its owner's control draws *Go on anyway…* under the step
   // (XAGENT1g), where the frame hands it, the attended session's own run; elsewhere its twins are said, the session's own page
@@ -112,6 +116,24 @@ function DoorPress({ door }: { door: Door }) {
 function doorFor(t: ReturnType<typeof useTranslation>['t'], run: WorkflowRun, step: RunStep, doors?: RunDoors): Door | null {
   if (step.state === 'not-reached') return null;
   const kind = step.step.kind;
+
+  // A graph run's node (FABRIC-CUTOVER1e): where the record of what it observes is. A go-ahead's ask, where it is answered; its quest; the
+  // landed branch's page for what follows the landing; the session whose branch it observes.
+  if (step.node) {
+    if (step.node === 'go-ahead' && step.state === 'waiting-on-you' && run.ask && doors?.ask) {
+      return { label: t('workflow.run.door.ask'), open: () => doors.ask?.(run.ask!) };
+    }
+    if (step.on === 'quest' && step.quest && doors?.quest) {
+      return { label: t('workflow.run.door.quest', { id: step.quest }), open: () => doors.quest?.(step.quest!) };
+    }
+    if (step.on === 'landing' && step.branch && doors?.branch) {
+      return { label: t('landing.door', { branch: step.branch }), open: () => doors.branch?.(run.repository, step.branch!) };
+    }
+    if (step.on === 'branch' && step.session && doors?.session) {
+      return { label: t('workflow.run.door.session'), open: () => doors.session?.(step.session!) };
+    }
+    return null;
+  }
 
   if (kind === 'work' && step.detail === 'go-ahead' && run.ask && doors?.ask) {
     return { label: t('workflow.run.door.ask'), open: () => doors.ask?.(run.ask!) };
@@ -198,6 +220,15 @@ function Run({ run, here, doors, controls, named }: {
           })}</p>
         )}
       </div>
+      {/* FABRIC-CUTOVER1e: a graph run says what its record says, what its graph observes, that its branches are its graph's and that
+          every landing door still holds it, before its nodes. */}
+      {run.graph && (
+        <ul aria-label={t('workflow.run.graph.says')} className="m-0 grid list-none gap-1 p-0">
+          {graphSaid(t, run.graph).map((line) => (
+            <li key={line} className="m-0 text-small text-ink-soft"><Inline text={line} /></li>
+          ))}
+        </ul>
+      )}
       {run.workflowGate?.holds && <WorkflowHold gate={run.workflowGate} />}
       {run.problem ? <Prose className="text-small"><Inline text={run.problem} /></Prose> : <WorkflowChart
         workflow={runWorkflow(run)}
@@ -206,6 +237,7 @@ function Run({ run, here, doors, controls, named }: {
         run={marks}
         end={at === null ? <Pill tone="done">{stateSaid(t, 'done')}</Pill> : undefined}
         finished={at === null}
+        graph={run.graph ?? null}
       />}
     </div>
   );

@@ -11,6 +11,23 @@ with the version and date at release.
   answer; where it waits on a go-ahead and a question both, the go-ahead comes first and its answer waits for the question's, so the
   session goes on once with both. Sessions ask through Daoris's new `question_ask` tool; one that asked only in its message is
   answered in words as before. In English and 中文.
+- An update that stopped part way is now put back only while nothing else acts on Daoris's home: a terminal's `daoris-driver`
+  command changing it is waited for, up to thirty seconds. If it still holds the home, Daoris does not start on a half-replaced
+  application; it says which command held the home and asks you to start it again once that has finished.
+- A run bound to a workflow version saved as a graph is now drawn from what Daoris has judged of it, in the side bar's *Workflow* view
+  and `daoris-driver workflow run`, where it was said not to run: each node of its graph where it stands, on the quest or the branch it
+  watches, a fork and its join drawn as the graph holds them, its branches said to be its graph's and not the landing rule's, a second
+  opinion or a look not begun yet said so, every landing door still holding it said, and a look your chain or ask added drawn beside it.
+  What a kind of task would ask of you now reads a workflow whose newest version is a graph. In English and 中文.
+- A workflow that closes its quests now applies in a workspace you share through a remote, once every machine of it runs a Daoris
+  that knows it: each sync says so to the remote, and the remote answers which machines have not. Until all have, a quest there
+  closes by its done as before, and its session's start says which machine is older.
+- A repository already set up for agents that keeps no index of where things are is now asked for one: *Set up for agents*
+  (or `daoris-driver setup <repository>`) asks *Give this repository an index of where things are*, naming a generator in
+  the repository's own Node, .NET or Python toolchain and adding its two commands to the repository's rules beside the
+  doctrine tool's. Its session lists the indexes it keeps already and leaves each whole, writes the generator, its check
+  and its folder, and declares it. A workspace's set-up plan asks each repository for its index once its set-up has landed,
+  one at a time with the set-ups. A stack the press does not know is refused, saying how to ask by hand. In English and 中文.
 - A workflow version saved as a graph now says which checks its sessions run: its `claimed` node's `checks` (`light` or
   `heavy-at-end`) is taken by every session of a run bound to it, its first included, in place of the repository's choice, and its
   `callMinutes` sets how long one call may run under *Light* before the session is told (20 by default). A value written another
@@ -72,6 +89,12 @@ with the version and date at release.
   said *harness*; an add whose manifest does not read is said as the window says it, and an add from a folder inside your `DAORIS_HOME`, or
   one holding it, is refused with nothing copied; a remove of a plugin whose folder something holds is refused and takes nothing; and a change refused
   because `plugins.json` does not read is said with its code.
+- Daoris no longer asks your own sign-in anything (D197): *Read again*, on an agent's page or for every agent, reads Daoris's
+  accounts alone, neither your own sign-in's state nor its usage, since asking ran the agent where it might refresh your token beside
+  your own terminal's. *Read again* still ends your own sign-in's cool-off. `daoris agent trust <agent> <folder>` with no account named
+  now trusts the folder for each of Daoris's accounts, each in its own file, and with none is refused; it never writes your own
+  sign-in's file. A conversation going on in your own sign-in that is held for a folder's trust says to trust it with the tool itself,
+  at your terminal, and Daoris refuses to grant it there.
 - You may now set an age for finished work's records: on the *Disk space* card's *Conversations and records* row (*Change…*), with
   `daoris driver keep history <days>|never|default`, or through Ask Daoris's proposal you apply. Between 30 and 3,650 days; by default
   none, and nothing clears your history by itself, as before. With an age set, once a day each workspace's finished work whose last

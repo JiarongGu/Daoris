@@ -121,6 +121,80 @@ export const GO_AHEAD_REFUSAL = run([
   at(GO_AHEAD_WAIT, 'not-reached', ''),
 ], { workflow: { version: '5d1c0e7a92b4', startHolds: [], limits: limitsOf([at(OPINION, '', ''), at(LOOK, '', ''), at(GO_AHEAD_WAIT, '', '')]), id: 'release', boundVersion: 2 } });
 
+/** A graph run's node's cell, as `WorkflowGraphRuns.Derive` reads a node as a step (FABRIC-CUTOVER1e): bound by the version, run whole. */
+const nodeCell = (
+  id: string, kind: string, participation: WorkflowStep['participation'], executor: WorkflowStep['executor'],
+  press: WorkflowStep['press'] = null, settings: WorkflowStep['settings'] = {},
+): WorkflowStep => ({ id, kind, participation, executor, press, source: { rule: 'workflow', level: 'repository' }, settings, runtime: 'built', limit: null });
+
+const BRANCH = 'daoris/q1-fix-the-header';
+
+/**
+ * A run bound to a graph version, drawn from its record (FABRIC-CUTOVER1e): the claim reached on its quest, then a fork, the build observed
+ * on the run's branch while the lint is reached there, joined before the second opinion, which this build does not begin on a graph run;
+ * the landing and the deploy after it not reached; a failure of the join stops the run.
+ */
+export const GRAPH_RUN = run([
+  at(nodeCell('claimed', 'work', 'agent', 'agent'), 'done', 'reached', { node: 'claimed', on: 'quest', quest: 'q1' }),
+  at(nodeCell('build', 'acme.ci/built', 'automatic', 'plugin', null, { plugin: 'acme.ci' }), 'working', 'active',
+    { node: 'acme.ci/built', on: 'branch', branch: BRANCH, commit: COMMIT, session: 's1' }),
+  at(nodeCell('lint', 'acme.ci/linted', 'automatic', 'plugin', null, { plugin: 'acme.ci' }), 'done', 'reached',
+    { node: 'acme.ci/linted', on: 'branch', branch: BRANCH, commit: COMMIT, session: 's1' }),
+  at(nodeCell('both', 'all', 'automatic', 'daoris'), 'not-reached', 'blocked', { node: 'all' }),
+  at(nodeCell('halt', 'stop', 'automatic', 'daoris'), 'not-reached', 'blocked', { node: 'stop' }),
+  at(nodeCell('opinion', 'opinion', 'agent', 'agent'), 'cannot-start', 'not-begun', { node: 'opinion', on: 'branch', branch: BRANCH, session: 's1' }),
+  at(nodeCell('handed', 'landing', 'you', 'daoris', 'accept', { form: 'branch', accept: 'you' }), 'not-reached', 'blocked',
+    { node: 'handed', on: 'branch', branch: BRANCH, session: 's1' }),
+  at(nodeCell('deployed', 'acme.deploy/deployed', 'automatic', 'plugin', null, { plugin: 'acme.deploy' }), 'not-reached', 'blocked',
+    { node: 'acme.deploy/deployed' }),
+], {
+  at: 'build',
+  workflow: { version: 'gph-5d1c0e7a92b4f0e1', startHolds: [], limits: {}, id: 'docs', boundVersion: 1, route: { level: 'repository' } },
+  graph: {
+    run: 'q1', entries: ['claimed'], end: 'deployed',
+    wires: [
+      { from: 'claimed', to: 'build', kind: 'after' }, { from: 'claimed', to: 'lint', kind: 'after' },
+      { from: 'build', to: 'both', kind: 'after' }, { from: 'lint', to: 'both', kind: 'after' }, { from: 'both', to: 'halt', kind: 'failed' },
+      { from: 'both', to: 'opinion', kind: 'after' }, { from: 'opinion', to: 'handed', kind: 'after' }, { from: 'handed', to: 'deployed', kind: 'after' },
+    ],
+    quest: 'q1', branch: BRANCH, judged: true, unread: false, ended: null,
+  },
+});
+
+/**
+ * A graph run whose go-ahead waits on the person, with a look the chain's choice added beside its graph (D190 point 7), which holds the
+ * landing as D154's gate does; the version's own graph holds no look.
+ */
+export const GRAPH_RUN_ADDED_LOOK = run([
+  at(nodeCell('claimed', 'work', 'agent', 'agent'), 'done', 'reached', { node: 'claimed', on: 'quest', quest: 'q1' }),
+  at(nodeCell('release', 'go-ahead', 'you', 'daoris', null, { act: 'release to prod' }), 'waiting-on-you', 'active', { node: 'go-ahead', words: 'release to prod' }),
+  at(LOOK, 'waiting-on-you', 'not-shown', { added: 'chain', environment: 'dev' }),
+  at(nodeCell('handed', 'landing', 'you', 'daoris', 'accept', { form: 'merge', accept: 'you' }), 'not-reached', 'blocked',
+    { node: 'handed', on: 'branch', branch: BRANCH, session: 's1' }),
+], {
+  at: 'release',
+  workflow: { version: 'gph-0a2b4c6d8e0f1a2b', startHolds: [], limits: {}, id: 'release', boundVersion: 3 },
+  graph: {
+    run: 'q1', entries: ['claimed'], end: 'handed',
+    wires: [{ from: 'claimed', to: 'release', kind: 'after' }, { from: 'release', to: 'handed', kind: 'after' }],
+    quest: 'q1', branch: BRANCH, judged: true, unread: false, ended: null,
+  },
+});
+
+/** A graph run Daoris has not judged yet: every node not reached, standing at its entry; no session of it has a branch yet. */
+export const GRAPH_RUN_UNJUDGED = run([
+  at(nodeCell('claimed', 'work', 'agent', 'agent'), 'not-reached', 'blocked', { node: 'claimed', on: 'quest', quest: 'q1' }),
+  at(nodeCell('handed', 'landing', 'you', 'daoris', 'accept', { form: 'merge', accept: 'you' }), 'not-reached', 'blocked', { node: 'handed' }),
+], {
+  at: 'claimed',
+  session: null,
+  workflow: { version: 'gph-0a2b4c6d8e0f1a2b', startHolds: [], limits: {}, id: 'release', boundVersion: 3 },
+  graph: {
+    run: 'q1', entries: ['claimed'], end: 'handed', wires: [{ from: 'claimed', to: 'handed', kind: 'after' }],
+    quest: 'q1', branch: null, judged: false, unread: false, ended: null,
+  },
+});
+
 /** An ask's work in two repositories, each its own run at its own step (design §3.8). */
 export const SEVERAL = answerOf(
   IN_REVIEW,

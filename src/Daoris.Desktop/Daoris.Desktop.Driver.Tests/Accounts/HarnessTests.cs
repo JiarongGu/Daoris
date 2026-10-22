@@ -414,20 +414,37 @@ public sealed class HarnessProbeTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 The account a person actually has is the tool's OWN configuration home, and the roster
-    /// never said a word about it: a machine with no named profile read "No accounts" while its
-    /// owner was logged in. The probe asks the harness about its own home exactly as it asks about
-    /// each profile — read-only, one boolean — and reports it beside them.
+    /// 🔴 POOL1a3 (D197 point 3; Fable's F2): the tool's own configuration home is the person's own sign-in, and the probe never
+    /// asks it. Asked with the seam unset, the tool answered for it, and could refresh the person's token beside their own
+    /// terminal's to do so. Every login question runs with the seam set to an account's folder under the home; the version is a
+    /// question of the binary alone. The own sign-in keeps the word a report before said, or unknown.
     /// </summary>
     [Fact]
-    public async Task The_tool_s_own_home_is_asked_about_logging_in_like_any_profile()
+    public async Task The_tool_s_own_home_is_never_asked_and_every_login_question_runs_in_an_account_s_home()
     {
-        var report = await HarnessProbe.ProbeAsync(
-            "fake", Toolchain(FakeBinary()), command: null, new HarnessSettings(), _home);
+        var script = FakeBinary();
+        var log = Path.Combine(_home, "asked.log");
+        File.WriteAllText(script, File.ReadAllText(script).Replace(
+            "const home = process.env.FAKE_HARNESS_HOME;",
+            $"const home = process.env.FAKE_HARNESS_HOME;\n(await import('node:fs')).appendFileSync({System.Text.Json.JsonSerializer.Serialize(log)}, (home ?? '(none)') + ' ' + process.argv.slice(2).join(' ') + '\\n');"));
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "fake", "account-1"));
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "fake", "account-2"));
+        var prior = new HarnessReport("fake", true, "fake-harness 9.9.9", null, "FAKE_HARNESS_HOME", null, [], LoginState.In, "person@example.invalid");
 
-        // The fake answers from FAKE_HARNESS_HOME, which the probe leaves unset for the tool's own
-        // home — so the tool answers about wherever IT keeps its credential, and here that is "out".
-        Assert.Equal(LoginState.Out, report.OwnLogin);
+        var report = await HarnessProbe.ProbeAsync(
+            "fake", Toolchain(script), command: null, new HarnessSettings(), _home, prior: prior);
+
+        var asked = File.ReadAllLines(log);
+        var questions = asked.Where(line => line.EndsWith(" auth status", StringComparison.Ordinal)).ToList();
+        Assert.Equal(
+            [HarnessSettings.ProfileHome(_home, "fake", "account-1"), HarnessSettings.ProfileHome(_home, "fake", "account-2")],
+            questions.Select(line => line[..^" auth status".Length]).Order(StringComparer.Ordinal));
+        Assert.All(asked.Except(questions), line => Assert.Equal("(none) --version", line));
+        Assert.Equal((LoginState.In, "person@example.invalid"), (report.OwnLogin, report.OwnAccount));
+        Assert.Null(report.OwnRead);
+
+        var unread = await HarnessProbe.ProbeAsync("fake", Toolchain(script), command: null, new HarnessSettings(), _home);
+        Assert.Equal(LoginState.Unknown, unread.OwnLogin);
     }
 
     [Fact]
@@ -571,8 +588,8 @@ public sealed class HarnessProbeTests : IDisposable
 
         var profile = report.Profiles.Single();
         Assert.Equal((LoginState.In, "person@example.invalid", "Org A", "max"), (profile.Login, profile.Account, profile.Org, profile.Plan));
-        // The tool's own home is asked the same way, so it is named the same way.
-        Assert.Equal(("person@example.invalid", "Org A", "max"), (report.OwnAccount, report.OwnOrg, report.OwnPlan));
+        // The tool's own home is never asked (POOL1a3), so it names nobody.
+        Assert.Equal(((string?)null, (string?)null, (string?)null), (report.OwnAccount, report.OwnOrg, report.OwnPlan));
         Assert.DoesNotContain("claude.ai", Everything(report));
     }
 

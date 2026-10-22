@@ -50,8 +50,10 @@ internal sealed class HelpSetupProposals : IHelpProposalKind
         var carried = setup.Adapter is { } adapter ? $", carried by its own session on `{adapter}`" : ", carried by its own session";
         var lands = setup.Landing is { } landing ? $" and landed {SetupPressRules.LandsAs(landing)}" : "";
         return new HelpPlan(null,
-            $"Set `{setup.Repository}` up for every agent: publish one quest to it in workspace `{setup.Workspace}`, as your ask, "
-            + $"“{setup.Title}”{carried}{lands}; and add the {SetupPressRules.Rules.Count} doctrine commands its session runs to "
+            (setup.Index is null ? $"Set `{setup.Repository}` up for every agent" : $"Give `{setup.Repository}` an index of where things are")
+            + $": publish one quest to it in workspace `{setup.Workspace}`, as your ask, "
+            + $"“{setup.Title}”{carried}{lands}; and add the {SetupPressRules.RulesOf(setup).Count} "
+            + $"{(setup.Index is null ? "doctrine commands" : "commands, the doctrine tool's and its index generator's,")} its session runs to "
             + $"`{setup.Repository}`'s rules. Daoris writes nothing into `{setup.Repository}`: its session does the work on a branch "
             + "of its own.",
             terminal, null)

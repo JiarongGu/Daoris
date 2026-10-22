@@ -179,6 +179,65 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
         Assert.False(string.IsNullOrWhiteSpace(look.GetProperty("words").GetString()));
     }
 
+    /// <summary>
+    /// FABRIC-CUTOVER1e (D190 points 2 and 3): a run bound to a graph version is answered from its record, never as a problem: its nodes as its
+    /// steps, each with its own kind, its detail its record's state and the subject it observes; its graph's entries, end and wires, a fork and its
+    /// join among them; and what its record says of it. The page draws it whole, so every field is named here.
+    /// </summary>
+    [Fact]
+    public async Task A_run_bound_to_a_graph_version_is_answered_from_its_record_with_its_wires()
+    {
+        WorkflowStore.Add(Home, new WorkflowVersionAdded("docs", "Docs", "terminal", T.ToString("O"), null, System.Text.Json.Nodes.JsonNode.Parse("""
+            {"schemaVersion":2,"entries":["claimed"],"end":"handed",
+             "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
+                      {"id":"build","kind":"acme.ci/built","version":1,"reach":"observed"},{"id":"lint","kind":"acme.ci/linted","version":1,"reach":"observed"},
+                      {"id":"both","kind":"all","version":1,"reach":"observed"},
+                      {"id":"handed","kind":"handed","version":1,"reach":"observed","options":{"form":"merge","accept":"you"}}],
+             "wires":[{"id":"c>b","kind":"after","from":"claimed","to":"build"},{"id":"c>l","kind":"after","from":"claimed","to":"lint"},
+                      {"id":"b>a","kind":"after","from":"build","to":"both"},{"id":"l>a","kind":"after","from":"lint","to":"both"},
+                      {"id":"a>h","kind":"after","from":"both","to":"handed"}]}
+            """)), kept: []);
+        var binding = WorkflowRunBindings.Plan(DriverConfig.Empty, Home, "q1", "engine", "aurora", null, new WorkflowTaskChoice(null, "docs"), [], T);
+        Assert.StartsWith("gph-", binding.Digest);
+        Assert.True(WorkflowRunBindings.Bind(Home, binding));
+        var unit = RunUnits.IdOf("q1");
+        new NodeRecordFiles(Home, () => true).Write(new NodeRecord(unit)
+        {
+            Statuses = new Dictionary<string, NodeStatus>
+            {
+                ["claimed"] = new(unit, "claimed", NodeStates.Reached)
+                {
+                    Attempt = 1, Acceptance = new NodeAcceptance(unit, "moment", binding.Digest!, "claimed", 1, 1) { Subject = "quest:q1" },
+                },
+            },
+        });
+        var (module, _) = await UpAsync();
+
+        var answer = await AnswerAsync(module, "WORKFLOW_RUN", new { quest = "q1" });
+
+        var run = Assert.Single(answer.GetProperty("runs").EnumerateArray());
+        Assert.Equal(JsonValueKind.Null, run.GetProperty("problem").ValueKind);
+        Assert.Equal(("docs", 1), (run.GetProperty("workflow").GetProperty("id").GetString(), run.GetProperty("workflow").GetProperty("boundVersion").GetInt32()));
+        var steps = run.GetProperty("steps").EnumerateArray().ToList();
+        Assert.Equal(
+            [("claimed", "work", "claimed", "done", "reached"), ("build", "acme.ci/built", "acme.ci/built", "not-reached", "blocked"),
+             ("lint", "acme.ci/linted", "acme.ci/linted", "not-reached", "blocked"), ("both", "all", "all", "not-reached", "blocked"),
+             ("handed", "landing", "handed", "not-reached", "blocked")],
+            steps.Select(step => (step.GetProperty("step").GetProperty("id").GetString(), step.GetProperty("step").GetProperty("kind").GetString(),
+                step.GetProperty("node").GetString(), step.GetProperty("state").GetString(), step.GetProperty("detail").GetString())));
+        Assert.Equal(("quest", "q1"), (steps[0].GetProperty("on").GetString(), steps[0].GetProperty("quest").GetString()));
+        Assert.Equal("build", run.GetProperty("at").GetString());
+
+        var graph = run.GetProperty("graph");
+        Assert.Equal(("q1", "handed", "q1", true, false), (graph.GetProperty("run").GetString(), graph.GetProperty("end").GetString(),
+            graph.GetProperty("quest").GetString(), graph.GetProperty("judged").GetBoolean(), graph.GetProperty("unread").GetBoolean()));
+        Assert.Equal(["claimed"], graph.GetProperty("entries").EnumerateArray().Select(entry => entry.GetString()));
+        Assert.Equal(
+            [("claimed", "build", "after"), ("claimed", "lint", "after"), ("build", "both", "after"), ("lint", "both", "after"), ("both", "handed", "after")],
+            graph.GetProperty("wires").EnumerateArray().Select(wire => (wire.GetProperty("from").GetString(), wire.GetProperty("to").GetString(), wire.GetProperty("kind").GetString())));
+        Assert.Equal(JsonValueKind.Null, graph.GetProperty("ended").ValueKind);
+    }
+
     [Theory]
     [InlineData("opinion")]
     [InlineData("landing")]

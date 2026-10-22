@@ -67,8 +67,15 @@ public static class Launcher
         {
             if (updating) WaitForClose(after, Path.Combine(root, AppFolder));
             var running = StagedBuild.RunningFrom(Path.Combine(root, AppFolder)).Count > 0;
-            var swap = new InstallSwap(root, start: arguments => Start(shell, arguments), alive: Alive);
+            // A swap a launcher left part way is put back under the home's lease (SWAPLEASE2), as the swap below holds it. An
+            // act holding the home for the whole of the wait leaves it to the next start, and `app/` may be half moved: nothing
+            // is started on it, and the person is told who held it.
+            var swap = new InstallSwap(root, start: arguments => Start(shell, arguments), alive: Alive)
+            {
+                LeaseHome = Path.Combine(root, "data"),
+            };
             swap.Recover(running);
+            if (swap.HeldBy is { } holding) return Refuse(Unrecovered(holding));
             if (updating && running)
             {
                 // Asked for, and still held once the wait is over: refused, so the build before it, started below, does not
@@ -106,8 +113,9 @@ public static class Launcher
             // closed for the same build again.
             try
             {
-                var settled = new InstallSwap(root, start: _ => null, alive: Alive)
-                    .AfterError(StagedBuild.RunningFrom(Path.Combine(root, AppFolder)).Count > 0, updating);
+                var putRight = new InstallSwap(root, start: _ => null, alive: Alive) { LeaseHome = Path.Combine(root, "data") };
+                var settled = putRight.AfterError(StagedBuild.RunningFrom(Path.Combine(root, AppFolder)).Count > 0, updating);
+                if (putRight.HeldBy is { } holding) return Refuse(Unrecovered(holding));
                 if (!settled.StartOld) return 0;
             }
             catch (Exception)
@@ -218,6 +226,11 @@ public static class Launcher
             return false;
         }
     }
+
+    /// <summary>A swap left part way that an act's hold on the home kept from being put back (SWAPLEASE2).</summary>
+    private static string Unrecovered(LeaseHolder holder) =>
+        $"Daoris could not put back an update that stopped part way: {holder.Named} held its home. "
+        + "Start Daoris again once that has finished.";
 
     private static int Refuse(string sentence)
     {

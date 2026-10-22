@@ -42,4 +42,10 @@ public sealed class WorkflowRunRecords(string home) : IWorkflowRunRecords
 
     /// <summary>Whether a session's tree still stands on this machine.</summary>
     public bool Stands(string tree) => Directory.Exists(tree);
+
+    /// <summary>A run's node record, read as the runtime reads it and never written: this read holds no lease, so it edits nothing.</summary>
+    public NodeRecord? Record(string unit) => new NodeRecordFiles(home, () => false).Read(unit);
+
+    /// <summary>This machine's session branches, standing and traces.</summary>
+    public IReadOnlyList<GrownBranch> Branches() => new SessionBranches(home).Entries();
 }

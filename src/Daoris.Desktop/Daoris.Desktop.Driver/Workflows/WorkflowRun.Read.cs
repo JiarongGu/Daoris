@@ -132,6 +132,11 @@ public static class WorkflowRunReader
         var process = WorkflowProcesses.Read(sources.Home, sources.Config, repository, sources.WorkspaceOf(repository),
             WorkflowRunBindings.RunOf(chain, repository));
         current = WorkflowRunGraph.Read(process, current, sources.Plugins);
+
+        // FABRIC-CUTOVER1e (D190 points 2 and 3): a run bound to a graph version is the runtime's, so it is drawn from its record, though its
+        // gates still hold the version as one this build does not run (CUTOVER1d reads them).
+        if (process is { Graph: { } graph, Run: { } run }) return await GraphRunAsync(chain, repository, part, mine, workspace, current, process, graph, run, reads).ConfigureAwait(false);
+
         if (process.Problem is not null || process.Unread is not null)
             return new WorkflowRun(repository, workspace, current, [.. part.Select(quest => quest.Id)], [])
             {
@@ -182,6 +187,39 @@ public static class WorkflowRunReader
             AutoLandings = [.. reads.AutoLandings.Where(entry => sessionIds.Contains(entry.Session))],
         };
         return WorkflowRuns.Derive(facts, workspace, askId);
+    }
+
+    /// <summary>
+    /// A run bound to a graph version (FABRIC-CUTOVER1e; D190 points 2, 3 and 7, the cutover design §2, §6): its graph's nodes drawn from its
+    /// record, <c>run:&lt;run&gt;</c>, read and never written, each on the subject its binding names; and the review's gate read for a look the
+    /// work's own choice adds, whose rows the graph replaces with none of the rule's (D154's rows 5 and 6 are its graph's).
+    /// </summary>
+    private static async Task<WorkflowRun> GraphRunAsync(
+        IReadOnlyList<QuestView> chain, string repository, IReadOnlyList<QuestView> part, IReadOnlyList<TracedSession> mine, string workspace,
+        CurrentWorkflow current, WorkflowProcess process, NodeGraph graph, string run, Reads reads)
+    {
+        var askId = chain.Select(quest => AskWords.AskOf(quest.From)).FirstOrDefault(id => id is not null);
+        var (ask, askUnread) = askId is null ? (null, null) : await reads.AskAsync(askId).ConfigureAwait(false);
+        var sessionIds = new HashSet<string>(mine.Select(session => session.Id), StringComparer.OrdinalIgnoreCase);
+        var work = new HashSet<string>(part.Where(quest => quest.SetUpIn is null).Select(quest => quest.Id), StringComparer.OrdinalIgnoreCase);
+        var standing = mine
+            .Where(session => session.Quest is { } quest && work.Contains(quest) && !session.Teammate && session.Tree is { Length: > 0 })
+            .OrderBy(session => session.Created ?? DateTimeOffset.MinValue)
+            .LastOrDefault(session => reads.Records.Stands(session.Tree!));
+        var review = await ReviewAsync(chain, repository, ask, askUnread, standing?.Tree, reads, process with { Review = null, Look = null }).ConfigureAwait(false);
+        var facts = new WorkflowRunFacts(repository, current)
+        {
+            Quests = part,
+            Chain = chain,
+            Sessions = mine,
+            GoAheads = ask?.GoAheads ?? [],
+            Review = review,
+            Process = process,
+            Landings = [.. reads.Landings.Where(entry => sessionIds.Any(entry.Names))],
+            AutoLandings = [.. reads.AutoLandings.Where(entry => sessionIds.Contains(entry.Session))],
+        };
+        var record = reads.Records.Record(RunUnits.IdOf(run));
+        return WorkflowGraphRuns.Derive(new WorkflowGraphRunFacts(facts, run, graph, record) { Branches = reads.Branches }, workspace, askId);
     }
 
     /// <summary>
@@ -244,6 +282,11 @@ public static class WorkflowRunReader
         public IReadOnlyList<LandedBranch> Landings { get; } = records.Landings();
 
         public IReadOnlyList<AutoLanding> AutoLandings { get; } = records.AutoLandings();
+
+        private IReadOnlyList<GrownBranch>? _branches;
+
+        /// <summary>This machine's session branches, read once a read and only where a graph run names a branch by them (FABRIC-CUTOVER1e).</summary>
+        public IReadOnlyList<GrownBranch> Branches => _branches ??= records.Branches();
 
         public async Task<(AskView? Ask, string? Unread)> AskAsync(string id)
         {

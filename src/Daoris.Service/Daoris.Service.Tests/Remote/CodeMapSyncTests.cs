@@ -227,7 +227,8 @@ public sealed class CodeMapSyncTests : IAsyncLifetime, IDisposable
 
         public Task<QuestFetch> FetchQuestsAsync(long since, CancellationToken ct = default) => throw new NotSupportedException();
 
-        public Task<QuestPush> PushQuestsAsync(long @base, IReadOnlyList<QuestOperation> operations, CancellationToken ct = default) =>
+        public Task<QuestPush> PushQuestsAsync(
+            long @base, IReadOnlyList<QuestOperation> operations, CancellationToken ct = default, string? declares = null) =>
             throw new NotSupportedException();
 
         public Task PushSessionsAsync(IReadOnlyList<FedSessionRecord> records, CancellationToken ct = default) =>

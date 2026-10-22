@@ -1400,6 +1400,17 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     }
 
     /// <summary>
+    /// Whether this client's host judges a bind in a workspace synced through a remote by the remote's handshake (FABRIC-CLOSE1i):
+    /// <c>/api/status</c>'s <c>closeRemote</c>, beside the two <see cref="KnowsClosureAsync"/> reads. A host before it answers none, and is
+    /// asked no bind there.
+    /// </summary>
+    public async Task<bool> KnowsRemoteClosureAsync(CancellationToken ct = default)
+    {
+        using var document = JsonDocument.Parse(await GetAsync("/api/status", ct).ConfigureAwait(false));
+        return Flag(document.RootElement, "closure") && Flag(document.RootElement, "closeOutcome") && Flag(document.RootElement, "closeRemote");
+    }
+
+    /// <summary>
     /// The driver binds a quest it took to the graph that closes it (FABRIC-CLOSE1a's <c>POST /api/quests/{id}/bind</c>), at its take. The
     /// service's sentence comes back verbatim, a refusal included, and a host older than the door is said to be.
     /// </summary>

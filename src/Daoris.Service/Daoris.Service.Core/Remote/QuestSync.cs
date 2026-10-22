@@ -10,7 +10,14 @@ namespace Daoris.Knowledge;
 /// <param name="Problem">The wall, when the remote could not be reached or refused the conversation; null otherwise.</param>
 public sealed record QuestSyncReport(
     int Pushed, IReadOnlyList<QuestOperation> Conflicts, IReadOnlyList<QuestPushRefusal> Refused,
-    IReadOnlyList<string> Behind, string? Problem);
+    IReadOnlyList<string> Behind, string? Problem)
+{
+    /// <summary>
+    /// The remote's handshake as this pass last heard it (FABRIC-CLOSE1i): which machines of the workspace did not declare they know a
+    /// bound quest. Null where it heard none: a wall, or a remote before it.
+    /// </summary>
+    public QuestClosure? Closure { get; init; }
+}
 
 /// <summary>Where a circle stands on this machine (SYNC6a) — what the status bar and `daoris-driver sync status` read.</summary>
 /// <param name="Ahead">Operations this machine made that the circle's remote has not numbered yet.</param>
@@ -104,6 +111,7 @@ public static class QuestSync
         var conflicts = new List<QuestOperation>();
         var refused = new List<QuestPushRefusal>();
         IReadOnlyList<string> behind = [];
+        QuestClosure? closure = null;
         try
         {
             for (var round = 1; round <= Rounds; round++)
@@ -116,6 +124,7 @@ public static class QuestSync
                     var page = await remote.FetchQuestsAsync(through, ct).ConfigureAwait(false);
                     fetched.AddRange(page.Operations);
                     through = Math.Max(through, page.Through);
+                    closure = page.Closure;
                     if (!page.More) break;
                 }
 
@@ -123,17 +132,29 @@ public static class QuestSync
                 conflicts.AddRange(integrated.Conflicts);
 
                 var pending = await store.PendingAsync(circle, shared, ct).ConfigureAwait(false);
-                if (pending.Count == 0) return new(pushed, conflicts, refused, [], null);
+                if (pending.Count == 0)
+                {
+                    // FABRIC-CLOSE1i: a remote that knows the handshake and has not heard this machine's declaration hears it once, by a
+                    // push of nothing; a remote before it, or one that has heard it, is asked nothing more.
+                    if (closure is { } heard && heard.Undeclared.Contains(store.Machine, StringComparer.Ordinal))
+                    {
+                        closure = (await remote.PushQuestsAsync(integrated.Cursor, [], ct, declares: store.Machine).ConfigureAwait(false)).Closure;
+                    }
 
-                var push = await remote.PushQuestsAsync(integrated.Cursor, pending, ct).ConfigureAwait(false);
+                    return new(pushed, conflicts, refused, [], null) { Closure = closure };
+                }
+
+                // Each push declares this machine's build knows a bound quest (FABRIC-CLOSE1i), and its answer says whether every one did.
+                var push = await remote.PushQuestsAsync(integrated.Cursor, pending, ct, declares: store.Machine).ConfigureAwait(false);
+                closure = push.Closure;
                 await store.AcceptedAsync(push.Accepted, ct).ConfigureAwait(false);
                 pushed += push.Accepted.Count(a => pending.Any(p => p.Machine == a.Machine && p.Sequence == a.Sequence));
                 refused.AddRange(push.Refused);
                 behind = push.Behind;
-                if (behind.Count == 0) return new(pushed, conflicts, refused, [], null);
+                if (behind.Count == 0) return new(pushed, conflicts, refused, [], null) { Closure = closure };
             }
 
-            return new(pushed, conflicts, refused, behind, null);
+            return new(pushed, conflicts, refused, behind, null) { Closure = closure };
         }
         catch (RemoteException wall)
         {

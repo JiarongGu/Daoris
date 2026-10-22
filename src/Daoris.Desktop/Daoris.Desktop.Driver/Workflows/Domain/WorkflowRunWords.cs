@@ -50,7 +50,10 @@ public static class WorkflowRunWords
         ],
     };
 
-    /// <summary>A step's title, as <c>daoris driver workflow show</c> names it.</summary>
+    /// <summary>
+    /// A step's title, as <c>daoris driver workflow show</c> names it; a graph run's node of a kind no step has (FABRIC-CUTOVER1e) by its
+    /// kind, a plugin's by its node and its plugin.
+    /// </summary>
     public static string Title(WorkflowStep step) => step.Kind switch
     {
         WorkflowKinds.Work => "The work",
@@ -58,6 +61,15 @@ public static class WorkflowRunWords
         WorkflowKinds.Look => "Your look",
         WorkflowKinds.Landing => "The landing",
         WorkflowKinds.PullRequest => "The pull request",
+        NodeKinds.Human => "Your task",
+        NodeKinds.Pushed => "The push",
+        NodeKinds.Line => "On the line",
+        NodeKinds.QuestClose => "The quest's close",
+        NodeKinds.All => "The join",
+        NodeKinds.Stop => "Stop",
+        NodeKinds.WaitUnit => "Other work",
+        NodeKinds.Check => "The checks",
+        var plugin when NodeKinds.IsPlugin(plugin) => $"{plugin[(plugin.IndexOf('/') + 1)..]} by `{plugin[..plugin.IndexOf('/')]}`",
         _ => step.Id,
     };
 
@@ -91,6 +103,7 @@ public static class WorkflowRunWords
     {
         var kind = step.Step.Kind;
         if (step.State == WorkflowRunStates.NotReached) return null;
+        if (step.Node is { } node) return NodeSaid(step, node);
         if (step.State == WorkflowRunStates.CannotStart && step.Words is { Length: > 0 } cannotStartWords) return $"Cannot start: {cannotStartWords}";
         if (!States.Contains(step.State) || !Details.TryGetValue(kind, out var details) || !details.Contains(step.Detail))
         {
@@ -219,6 +232,74 @@ public static class WorkflowRunWords
         };
     }
 
+    /// <summary>
+    /// What a graph run's node says (FABRIC-CUTOVER1e): its record's state (<see cref="WorkflowGraphDetails"/>) on the subject it observes,
+    /// named; the person's own words are shown under it, never in it. A detail these words do not hold is said as recorded.
+    /// </summary>
+    private static string NodeSaid(WorkflowRunStep step, string node)
+    {
+        if (!States.Contains(step.State) || !WorkflowGraphDetails.All.Contains(step.Detail)) return $"Shown as recorded: {step.State}, {step.Detail}.";
+        var on = On(step);
+        return step.Detail switch
+        {
+            WorkflowGraphDetails.Ready => "Ready: nothing before it holds it.",
+            // FABRIC-CUTOVER1c's guards; CUTOVER1d begins these on a graph run, and these three sentences go with them.
+            WorkflowGraphDetails.NotBegun => node switch
+            {
+                NodeKinds.Opinion => "Not begun: this build does not ask a graph run's second opinion yet.",
+                NodeKinds.Look => "Not begun: this build does not set up your look on a graph run yet.",
+                _ => "Not started: this build starts no plugin's step on a graph run yet.",
+            },
+            WorkflowGraphDetails.Active => node switch
+            {
+                NodeKinds.GoAhead => step.Words is { Length: > 0 } act ? $"Waits for your go-ahead: {act}" : "Waits for your go-ahead.",
+                NodeKinds.Human => "Waits for your task.",
+                _ => on is null ? "Under way." : $"Observed on {on}.",
+            },
+            WorkflowGraphDetails.Reached => on is null ? "Reached." : $"Reached on {on}.",
+            WorkflowGraphDetails.Skipped => step.Code == NodeSource.Person ? "Passed over for this work, by you." : "Passed over for this work by its record.",
+            WorkflowGraphDetails.Failed => step.Code is { Length: > 0 } code ? $"Failed: `{code}`." : "Failed.",
+            WorkflowGraphDetails.Rejected => "You refused it.",
+            WorkflowGraphDetails.Stopped => "You stopped it.",
+            WorkflowGraphDetails.Unknown => "Its outcome could not be established yet; Daoris asks after it before it starts anything new.",
+            WorkflowGraphDetails.Invalidated => "What it rested on moved, so Daoris judges it again at its next look.",
+            _ => $"Shown as recorded: {step.State}, {step.Detail}.",
+        };
+    }
+
+    /// <summary>What a graph run's node observes, named (the cutover design §2.2): its quest, its branch at its tip, or its landing there; null for the run itself.</summary>
+    private static string? On(WorkflowRunStep step) => step.On switch
+    {
+        WorkflowGraphSubjects.Quest when step.Quest is { } quest => $"quest #{quest}",
+        WorkflowGraphSubjects.Branch when step.Branch is { } branch => step.Commit is { } commit ? $"`{branch}` at `{Short(commit)}`" : $"`{branch}`",
+        WorkflowGraphSubjects.Landing when step.Branch is { } landed =>
+            step.Commit is { } tip ? $"its landing on `{landed}` at `{Short(tip)}`" : $"its landing on `{landed}`",
+        _ => null,
+    };
+
+    /// <summary>
+    /// What a run bound to a graph version says of itself, above its nodes (FABRIC-CUTOVER1e; the cutover design §2.3, §3): what its record says
+    /// where it says something (it does not read, it ended, Daoris has not judged it yet), the subjects its nodes observe, that its branches are its
+    /// graph's, and that every landing door still holds it, which CUTOVER1d's doors take away.
+    /// </summary>
+    public static IReadOnlyList<string> GraphSaid(WorkflowGraphRun graph)
+    {
+        var said = new List<string>();
+        if (graph.Unread) said.Add("Its node record does not read, so nothing on it is judged or started until a person mends it.");
+        else if (graph.Ended is { } ended) said.Add($"It ended at quest #{ended}: nothing of its graph moves again until its chain comes back here.");
+        else if (!graph.Judged) said.Add("Daoris has not judged its graph yet: its next look does.");
+        if (graph.Quest is { } quest)
+        {
+            said.Add(graph.Branch is { } branch
+                ? $"Its graph observes quest #{quest}, its newest work here, and `{branch}`, the branch its newest session worked."
+                : $"Its graph observes quest #{quest}, its newest work here; no session of it has worked a branch here yet.");
+        }
+
+        said.Add("Its branches are its graph's, not the landing rule's: a push, a pull request or a deploy happens for this work only where its graph holds one.");
+        said.Add("Every landing door still holds this run: this build judges its graph and lands nothing for it yet.");
+        return said;
+    }
+
     /// <summary>Why a step Current does not draw is in this run (design §4.6): a look the work's own choice added.</summary>
     public static string? Added(WorkflowRunStep step) => step.Added switch
     {
@@ -251,6 +332,10 @@ public static class WorkflowRunWords
             said.Append('\n');
             if (run.Problem is { } problem) said.Append($"  Cannot read this run: {problem}\n");
             if (run.WorkflowGate is { LetsGo: false } held) said.Append($"  {held.Says}\n");
+            if (run.Graph is { } graph)
+            {
+                foreach (var line in GraphSaid(graph)) said.Append($"  {line}\n");
+            }
 
             foreach (var step in run.Steps)
             {
@@ -276,10 +361,16 @@ public static class WorkflowRunWords
     private static IEnumerable<string> Under(WorkflowRunStep step)
     {
         var kind = step.Step.Kind;
-        // The person's words a step keeps, shown as written: a skip's and a not yet's (D154).
-        if (kind == WorkflowKinds.Look && step.Detail is WorkflowRunDetails.Skip or WorkflowRunDetails.NotYet && step.Words is { Length: > 0 } words)
+        // The person's words a step keeps, shown as written: a skip's and a not yet's (D154), and a graph run's node's skip, refusal or stop.
+        if (kind == WorkflowKinds.Look && step.Node is null && step.Detail is WorkflowRunDetails.Skip or WorkflowRunDetails.NotYet && step.Words is { Length: > 0 } words)
         {
             yield return $"“{words}”";
+        }
+
+        if (step.Node is not null && step.Detail is WorkflowGraphDetails.Skipped or WorkflowGraphDetails.Rejected or WorkflowGraphDetails.Stopped
+            && step.Words is { Length: > 0 } nodeWords)
+        {
+            yield return $"“{nodeWords}”";
         }
 
         if (Added(step) is { } added) yield return added;

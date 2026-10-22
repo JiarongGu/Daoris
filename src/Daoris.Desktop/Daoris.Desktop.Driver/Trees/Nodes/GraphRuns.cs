@@ -216,6 +216,39 @@ public enum RunSubject
 }
 
 /// <summary>
+/// The cutover design §2.2's table, one for the runtime that binds a run's nodes and the run's view that names what each observes
+/// (FABRIC-CUTOVER1c, CUTOVER1e): a node's subject by its kind, and a plugin's or a check's by its place after <c>handed</c>.
+/// </summary>
+public static class RunSubjects
+{
+    /// <summary>The subject <paramref name="node"/> observes, <paramref name="afterHanded"/> being the nodes a wire path leads to from <c>handed</c>.</summary>
+    public static RunSubject Of(NodeDeclaration node, IReadOnlySet<string> afterHanded) => node.Kind switch
+    {
+        NodeKinds.Claimed or NodeKinds.QuestClose => RunSubject.Quest,
+        NodeKinds.GoAhead or NodeKinds.Human or NodeKinds.WaitUnit or NodeKinds.Stop or NodeKinds.All => RunSubject.Run,
+        NodeKinds.Opinion or NodeKinds.Look or NodeKinds.Handed => RunSubject.Branch,
+        NodeKinds.Pushed or NodeKinds.PullRequest or NodeKinds.Line => RunSubject.Landing,
+        _ => afterHanded.Contains(node.Id) ? RunSubject.Landing : RunSubject.Branch,
+    };
+
+    /// <summary>The nodes a wire path leads to from <c>handed</c> (the cutover design §2.2): what observes the run's branch at its landing.</summary>
+    public static HashSet<string> AfterHanded(NodeGraph graph)
+    {
+        var after = new HashSet<string>(StringComparer.Ordinal);
+        var next = new Queue<string>(graph.Nodes.Where(node => node.Kind == NodeKinds.Handed).Select(node => node.Id));
+        while (next.TryDequeue(out var from))
+        {
+            foreach (var wire in graph.Wires.Where(wire => wire.From is { Unit: null } source && source.Node == from && wire.To is { Unit: null }))
+            {
+                if (after.Add(wire.To.Node)) next.Enqueue(wire.To.Node);
+            }
+        }
+
+        return after;
+    }
+}
+
+/// <summary>
 /// Who owns each quest and branch a pass reads, between Current's graphs and the runs bound to graph versions (FABRIC-CUTOVER1c; the cutover
 /// design §2.3): a quest whose run is a graph run is that run's; a branch is a run's where every quest that produced it is of that one run, held
 /// where they name two runs and one of them is a graph run, and Current's otherwise. While the work's attribution is not read, no branch of a

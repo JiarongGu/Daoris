@@ -65,8 +65,8 @@ public static class SetupCommand
             output.WriteLine($"a press publishes this to `{setup.Repository}`, as your ask, in `{setup.Workspace}`:");
             output.WriteLine();
             output.WriteLine(setup.Sentence);
-            output.WriteLine($"and adds to `{setup.Repository}`'s rules, so its session may run the doctrine tool:");
-            foreach (var rule in SetupPressRules.Rules) output.WriteLine($"  {rule}");
+            output.WriteLine($"and adds to `{setup.Repository}`'s rules, so its session may run {Runs(setup)}:");
+            foreach (var rule in SetupPressRules.RulesOf(setup)) output.WriteLine($"  {rule}");
             output.WriteLine("--plan: nothing was published, and no rule was added.");
             return 0;
         }
@@ -83,7 +83,7 @@ public static class SetupCommand
 
         if (outcome.Added.Count > 0)
         {
-            output.WriteLine($"added to `{setup.Repository}`'s rules, so its session may run the doctrine tool:");
+            output.WriteLine($"added to `{setup.Repository}`'s rules, so its session may run {Runs(setup)}:");
             foreach (var rule in outcome.Added) output.WriteLine($"  {rule}");
             // HELPSETUP1: a repository's rules are on its Setup → Reach since UX6f (D150 §3.1).
             output.WriteLine("  taken back in Repositories → the repository's page → Setup → Reach, or "
@@ -127,6 +127,11 @@ public static class SetupCommand
     {
         SetupCase.Whole => "the whole set-up",
         SetupCase.Move => "the move to the agents layout",
+        SetupCase.Index => "its index of where things are",
         _ => "the knowledge alone",
     };
+
+    /// <summary>What the rule lets its session run: the doctrine tool, and an index quest's generator too (ORIENT2c).</summary>
+    private static string Runs(SetupPlan setup) =>
+        setup.Index is { } form ? $"the doctrine tool and its index generator, `{form.Generator}`" : "the doctrine tool";
 }

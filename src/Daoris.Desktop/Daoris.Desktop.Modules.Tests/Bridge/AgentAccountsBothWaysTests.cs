@@ -1,4 +1,6 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -9,6 +11,8 @@ namespace Daoris.Desktop.Modules.Tests;
 /// <c>profile-*</c>, <c>ACCOUNT_USE</c>'s <c>order</c> and <c>ready</c>), its answer said by the same words function, over one home from the
 /// same files. The wiring, the accounts' names, the cool-offs, the accounts' folders, the text and the exit are equal: red where a route
 /// and its operation disagree, or where the payload the command writes does not read back through the route as the command meant it.
+/// Both fold the laid home's scopes into one set before their edit (POOL1a1, D197 §6), so a receipt's id and moment, each run's own,
+/// are spelled.
 /// </summary>
 public sealed class AgentAccountsBothWaysTests : DriverModuleBridge
 {
@@ -78,7 +82,39 @@ public sealed class AgentAccountsBothWaysTests : DriverModuleBridge
             ? string.Join(", ", Directory.EnumerateFileSystemEntries(Agents, "*", SearchOption.AllDirectories)
                 .Select(path => Path.GetRelativePath(Agents, path).Replace('\\', '/')).Order(StringComparer.Ordinal))
             : "";
-        return new(exit, output.ToString(), error.ToString(), Read(Wiring), Read(Names), Read(Cooling), accounts);
+        return new(exit, output.ToString(), error.ToString(), Spelled(Read(Wiring)), Read(Names), Read(Cooling), accounts);
+    }
+
+    /// <summary>
+    /// The wiring with each fold receipt's id spelled <c>&lt;id&gt;</c> and its moment <c>&lt;at&gt;</c> (POOL1a1, D197 §6.3): both
+    /// paths fold the home as laid, and a receipt's id is drawn at random and its moment read from the clock, so they differ there alone.
+    /// </summary>
+    private static string? Spelled(string? wiring)
+    {
+        if (wiring is null || !wiring.Contains("\"pooled\"", StringComparison.Ordinal)) return wiring;
+        JsonNode? read;
+        try
+        {
+            read = JsonNode.Parse(wiring);
+        }
+        catch (JsonException)
+        {
+            return wiring;
+        }
+
+        if (read?["pooled"] is not JsonObject pooled) return wiring;
+        foreach (var receipt in pooled.Select(agent => agent.Value).OfType<JsonArray>().SelectMany(receipts => receipts.OfType<JsonObject>()))
+        {
+            foreach (var (field, spelling) in new[] { ("id", "<id>"), ("at", "<at>") })
+            {
+                if (receipt[field] is JsonValue value && value.GetValueKind() == JsonValueKind.String)
+                {
+                    wiring = Regex.Replace(wiring, $"(\"{field}\": ?)\"{Regex.Escape(value.GetValue<string>())}\"", $"$1\"{spelling}\"");
+                }
+            }
+        }
+
+        return wiring;
     }
 
     private async Task<Said> AloneAsync(string[] words)
@@ -122,28 +158,18 @@ public sealed class AgentAccountsBothWaysTests : DriverModuleBridge
     [InlineData("profile remove claude-code account-1")]
     [InlineData("profile remove claude-code seat")]
     [InlineData("profile remove claude-code nobody")]
-    [InlineData("profile default claude-code account-2")]
-    [InlineData("profile default claude-code account-2 --workspace aurora")]
-    [InlineData("profile default claude-code --clear")]
-    [InlineData("profile default claude-code --clear --workspace work")]
     [InlineData("profile order claude-code account-1 seat account-2")]
-    [InlineData("profile order claude-code account-2 seat --workspace work")]
     [InlineData("profile order claude-code --clear")]
-    [InlineData("profile order claude-code --clear --workspace WORK")]
     [InlineData("profile ready claude-code account-2")]
     [InlineData("profile ready claude-code account-1")]
     [InlineData("profile ready claude-code --own")]
     [InlineData("profile ready claude-code-acp account-2")]
     [InlineData("profile rename claude-code account-1 you@work.example")]
     [InlineData("profile rename claude-code seat account-3")]
-    [InlineData("profile join claude-code seat work --machine")]
-    [InlineData("profile join claude-code account-3 --machine")]
     [InlineData("profile use claude-code order --keep account-1")]
     [InlineData("profile use claude-code --keep account-2 --switch curve --curve weekly=0:30,100:100 --curve session=0:80")]
     [InlineData("profile use claude-code-acp --near 85 --early off")]
-    [InlineData("profile use claude-code --no-keep --no-curve --workspace work")]
     [InlineData("profile use claude-code --clear")]
-    [InlineData("profile use claude-code --clear --workspace work")]
     /// <remarks>
     /// Not here: <c>unpin codex</c>. The window's <c>HARNESS_ACTION</c> refuses an agent no door of its roster runs (<c>codex</c> is
     /// one a door runs as), which the TypeScript verb met the same way through the route; alone, the pin is taken back.
@@ -157,5 +183,38 @@ public sealed class AgentAccountsBothWaysTests : DriverModuleBridge
 
         Assert.NotEqual("", alone.Out + alone.Error);
         Assert.Equal(alone, route);
+    }
+
+    /// <summary>
+    /// What one set leaves nothing to name (POOL1a1, D197 point 6; the account-pool design §5.2): the route refuses a default, a list
+    /// to join and a workspace as <c>ACCOUNTS_ONE_SET</c>, writing nothing, while the terminal's verb alone still acts as PUSH1f2e
+    /// built it. POOL1b turns each into §5.1's refusal, and its row returns to the case above, the same both ways.
+    /// </summary>
+    [Theory]
+    [InlineData("profile default claude-code account-2")]
+    [InlineData("profile default claude-code account-2 --workspace aurora")]
+    [InlineData("profile default claude-code --clear")]
+    [InlineData("profile default claude-code --clear --workspace work")]
+    [InlineData("profile order claude-code account-2 seat --workspace work")]
+    [InlineData("profile order claude-code --clear --workspace WORK")]
+    [InlineData("profile join claude-code seat work --machine")]
+    [InlineData("profile join claude-code account-3 --machine")]
+    [InlineData("profile use claude-code --no-keep --no-curve --workspace work")]
+    [InlineData("profile use claude-code --clear --workspace work")]
+    public async Task What_one_set_names_nothing_for_is_refused_on_the_route_and_written_nothing(string text)
+    {
+        var words = text.Split(' ');
+
+        var alone = await AloneAsync(words);
+        var route = await RouteAsync(words);
+        Laid(own: false);
+        var laid = Now(new StringWriter(), new StringWriter(), 0);
+
+        Assert.Equal(0, alone.Exit);
+        Assert.Equal(2, route.Exit);
+        Assert.Equal("", route.Out);
+        Assert.StartsWith("daoris: every account signed in for Daoris serves every workspace (D197)", route.Error);
+        Assert.EndsWith($"({Refusals.AccountsOneSet}){Environment.NewLine}", route.Error);
+        Assert.Equal(laid with { Exit = 2, Error = route.Error }, route);
     }
 }

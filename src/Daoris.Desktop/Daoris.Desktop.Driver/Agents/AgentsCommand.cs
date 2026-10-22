@@ -656,8 +656,10 @@ public static class AgentsCommand
 
     /// <summary>
     /// <c>trust &lt;agent&gt; &lt;folder&gt; [--profile &lt;account&gt;] --yes</c> (D73): the agent's trust in a folder, asked, then written on
-    /// the person's word. Without <c>--yes</c> the question is the command: it names the folder, the account's file and what trusting
-    /// means, grants nothing, and exits 1. The account is the one named, else the machine's default, else the agent's own home.
+    /// the person's word. Without <c>--yes</c> the question is the command: it names the folder, each account's file and what
+    /// trusting means, grants nothing, and exits 1. The account is the one named; with none named, every account of Daoris's for the
+    /// agent, each in its own file (POOL1a3, D197 point 3: one set serves every workspace, so a folder trusted for Daoris is trusted
+    /// for each account that may run its work); with none at all, refused. 🔴 Never the tool's own trust file, which is the person's.
     /// </summary>
     private static AgentPress? Trust(IReadOnlyList<string> args, AgentsWorld world, out int exit)
     {
@@ -677,18 +679,25 @@ public static class AgentsCommand
 
         var owner = toolchain.Owner(name);
         if (owner != name) Say($"{Prefix}: `{name}` runs as `{owner}`'s accounts — this is one of them.");
-        var profile = (FlagValue(args, "--profile") is { } named ? AccountNamed(home, owner, named) : null)
-            ?? (HarnessSettings.Load(path).Defaults.TryGetValue(owner, out var fallback) ? fallback : null);
-        // The file the driver's hold reads (OWNSPACE1a): the account's, else the agent's own home, its own variable's where set.
-        var own = toolchain.ProfileVariable is { Length: > 0 } variable ? world.Instance.Environment(variable) : null;
-        var file = Path.Combine(
-            profile is not null ? HarnessSettings.ProfileHome(home, owner, profile) : own is { Length: > 0 } ? own : world.UserHome, trustFile);
+        var profile = FlagValue(args, "--profile") is { } named ? AccountNamed(home, owner, named) : null;
+        // With no account named, the set in its order (the account-pool design §5.1): the order's accounts that are here, then the rest.
+        IReadOnlyList<string> accounts = profile is not null ? [profile] : SetOf(path, home, owner);
+        if (accounts.Count == 0)
+        {
+            throw new AgentWords(
+                $"`{owner}` has no account of Daoris's to trust the folder for — Daoris never writes your own sign-in's file. Sign in to "
+                + $"one with `daoris agent login {owner} --new`, or trust the folder with the tool itself, at your terminal (run `claude` "
+                + "there once and accept its trust prompt).");
+        }
 
-        Say($"{Prefix}: trusting `{folder}` for `{owner}`, {(profile is not null ? $"as the account `{profile}`" : "as its own account")} — in its own file:");
-        Say($"  {file}");
+        var files = accounts.Select(account => Path.Combine(HarnessSettings.ProfileHome(home, owner, account), trustFile)).ToList();
+        Say(profile is not null
+            ? $"{Prefix}: trusting `{folder}` for `{owner}`, as the account `{profile}` — in its own file:"
+            : $"{Prefix}: trusting `{folder}` for `{owner}`, for each of Daoris's accounts ({string.Join(", ", accounts.Select(each => $"`{each}`"))}) — each in its own file:");
+        foreach (var file in files) Say($"  {file}");
         Say("  This is what the agent asks the first time it runs in a folder. Once it is granted, the");
         Say("  folder's own settings and `permissions.allow` apply there, and the agent stops asking.");
-        Say("  Daoris writes that one flag and nothing else in the file.");
+        Say($"  Daoris writes that one flag and nothing else in {(files.Count == 1 ? "the file" : "each file")}.");
 
         if (args.Contains("--dry-run")) return null;
         if (!args.Contains("--yes"))
@@ -698,7 +707,7 @@ public static class AgentsCommand
             return null;
         }
 
-        return new AgentPress("trust", null, false, null, _ => Task.FromResult<object?>(ClaudeTrust.Grant(file, folder)), _ => null, done =>
+        return new AgentPress("trust", null, false, null, _ => Task.FromResult<object?>(Granted(files, folder)), _ => null, done =>
         {
             var grant = (TrustGrant)done!;
             if (!grant.Changed)
@@ -718,6 +727,28 @@ public static class AgentsCommand
 
             return 0;
         });
+    }
+
+    /// <summary>
+    /// <paramref name="owner"/>'s accounts of Daoris's in the set's order (POOL1a, the account-pool design §2.2): the order's that are on
+    /// this machine, then the rest by id. None where it has none.
+    /// </summary>
+    private static List<string> SetOf(string path, string home, string owner)
+    {
+        var here = HarnessSettings.Profiles(home, owner);
+        var order = HarnessSettings.LoadSet(path).Rotation.GetValueOrDefault(owner) ?? [];
+        return [.. order.Where(account => here.Contains(account, StringComparer.Ordinal)).Distinct(StringComparer.Ordinal),
+            .. here.Where(account => !order.Contains(account, StringComparer.Ordinal))];
+    }
+
+    /// <summary>
+    /// The folder granted in each file, one after another: changed where any was written, verified where every re-read shows it.
+    /// A file this build cannot read refuses as <see cref="ClaudeTrust.Grant"/> does, the ones before it written.
+    /// </summary>
+    private static TrustGrant Granted(IReadOnlyList<string> files, string folder)
+    {
+        var grants = files.Select(file => ClaudeTrust.Grant(file, folder)).ToList();
+        return new TrustGrant(grants[0].Key, grants.Any(grant => grant.Changed), grants.All(grant => grant.Verified));
     }
 
     /// <summary>

@@ -190,7 +190,8 @@ lock (`driver.lock`, DRV8a) grown to cover every writer rather than a second fil
 
 - **Who holds it.** An instance (the desktop's loop, a headless `drive`) for its life; a verb acting alone (§7.2) for its
   mutation only, never for a read; the desktop's first-start migration (D63); and the launcher's swap of `app/` (D139 §5), so no
-  verb the install carries runs alone from a folder being replaced.
+  verb the install carries runs alone from a folder being replaced. Its roll-back of a swap a launcher left part way (D139 §6)
+  holds it too; finishing a confirmed one moves nothing and holds none (SWAPLEASE2, D171's note).
 - **How it is taken.** As the driver's lock is today: written beside, moved into place with no overwrite, released only while it
   still says what its holder wrote, a holder whose process is gone or whose start differs replaced. It names its holder's kind
   (`desktop`, `headless`, `verb`, `migration`, `swap`), process and start, so a refusal says who holds it.

@@ -144,8 +144,9 @@ landing doors do not read its record. Its end is kept on its record, and its cha
 (`NodeRuntime.Return`) or a restart's first look, arms it again.
 A graph holding `quest.close` arms it too (`QuestCloser.cs`, FABRIC-CLOSE1b), and so does a closure graph the home keeps (`ClosureGraphs`,
 FABRIC-CLOSE1l). An open quest's first start names its graph for the take, which binds it in its own write, and its session says `ready`
-(`ClosureBinding.AtStartAsync`, never against a host whose status does not say `closure`, nor in a workspace synced through a remote by
-the map sync reads). The graph named is the one its run is bound to (FABRIC-CUTOVER1g, D190's binding moment): the start binds its run
+(`ClosureBinding.AtStartAsync`, never against a host whose status does not say `closure`; in a workspace synced through a remote by
+the map sync reads, only against a host that says `closeRemote`, whose bind refuses it, naming the machines, until the remote's handshake
+says every machine of the workspace declared it knows a bound quest, FABRIC-CLOSE1i). The graph named is the one its run is bound to (FABRIC-CUTOVER1g, D190's binding moment): the start binds its run
 first, once its tree is open (`WorkflowRunStart.AtStartAsync`, the binding moved into place without overwriting), and holds where the
 bind is not made; under Current the take names Current's work cycle, under a named version none. A bound quest is closed by the graph it was bound to, its chain walked whole and read again right before the send, each quest a close
 names waiting until its own node record reaches its close (FABRIC-CLOSE1t); a bound
