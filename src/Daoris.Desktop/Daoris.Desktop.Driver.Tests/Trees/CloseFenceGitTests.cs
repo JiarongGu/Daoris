@@ -257,18 +257,8 @@ public sealed class CloseFenceGitTests : IDisposable
         };
     }
 
-    private async Task<string> RepositoryAsync(string name)
-    {
-        var root = Path.Combine(_scratch, name);
-        Directory.CreateDirectory(root);
-        await GitAsync(root, "init", "--quiet", "-b", "main");
-        await GitAsync(root, "config", "user.email", "fixture@example.test");
-        await GitAsync(root, "config", "user.name", "Fixture");
-        await File.WriteAllTextAsync(Path.Combine(root, "README.md"), $"# {name}\n");
-        await GitAsync(root, "add", "-A");
-        await GitAsync(root, "commit", "-q", "-m", "first");
-        return root;
-    }
+    /// <summary>A copy of the run's plain seed (<see cref="GitSeed.PlainAsync"/>, PROCSPEED1b): its first commit is read, never its time.</summary>
+    private Task<string> RepositoryAsync(string name) => GitSeed.PlainAsync(Path.Combine(_scratch, name), name);
 
     /// <summary>One commit on <paramref name="branch"/>, made without checking it out: its tip moves, and nothing else.</summary>
     private static async Task CommitAsync(string root, string branch, string file)

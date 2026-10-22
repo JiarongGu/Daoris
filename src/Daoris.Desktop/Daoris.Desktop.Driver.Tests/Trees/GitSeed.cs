@@ -83,6 +83,52 @@ internal static class GitSeed
             return folder;
         })).Value;
 
+    /// <summary>
+    /// The repository most git classes make (PROCSPEED1b): on <c>main</c>, its identity in its config, and one commit named
+    /// <c>first</c> holding <c>README.md</c>, <c># name</c>. A copy of the run's seed of <paramref name="name"/> as <paramref name="root"/>,
+    /// five git starts a test fewer; its first commit is the seed's, so a test that reads a fresh repository's commit ids or times
+    /// builds its own (<see cref="BuildPlainAsync"/>).
+    /// </summary>
+    public static async Task<string> PlainAsync(string root, string name)
+    {
+        var seed = await SeedAsync($"plain:{name}", folder => BuildPlainAsync(Path.Combine(folder, name), name)).ConfigureAwait(false);
+        Copy(Path.Combine(seed, name), root);
+        return root;
+    }
+
+    /// <summary>The same repository made step by step: a seed's build, and a test's own where it reads its first commit.</summary>
+    public static async Task BuildPlainAsync(string root, string name)
+    {
+        Directory.CreateDirectory(root);
+        await GitAsync(root, "init", "--quiet", "-b", "main").ConfigureAwait(false);
+        await GitAsync(root, "config", "user.email", "fixture@example.test").ConfigureAwait(false);
+        await GitAsync(root, "config", "user.name", "Fixture").ConfigureAwait(false);
+        await NoMaintenanceAsync(root).ConfigureAwait(false);
+        await File.WriteAllTextAsync(Path.Combine(root, "README.md"), $"# {name}\n").ConfigureAwait(false);
+        await GitAsync(root, "add", "-A").ConfigureAwait(false);
+        await GitAsync(root, "commit", "--quiet", "-m", "first").ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// A test repository's git starts no second git behind a commit, a merge, a fetch or a push it receives (PROCSPEED1b): git runs
+    /// <c>maintenance run --auto</c> as a process of its own after each (and a bare repository's push after <c>receive.autogc</c>),
+    /// which in a test's repository only looks and finds nothing to do, its thresholds being thousands of objects, yet is a start like
+    /// any other: 107 of the 3,023 git starts in the slowest test of each of fifteen slow git classes. Set in the repository's own config, so the
+    /// copies of a seed and the trees opened from them carry it; a test that runs <c>gc</c> runs it itself.
+    /// </summary>
+    public static async Task NoMaintenanceAsync(string repository)
+    {
+        await GitAsync(repository, "config", "maintenance.auto", "false").ConfigureAwait(false);
+        await GitAsync(repository, "config", "receive.autogc", "false").ConfigureAwait(false);
+    }
+
+    /// <summary>git for a seed's build: a failed step fails the build, which every copy of it would carry.</summary>
+    private static async Task GitAsync(string cwd, params string[] arguments)
+    {
+        var run = await GitFixture.RunAsync(cwd, arguments).ConfigureAwait(false);
+        if (run.ExitCode != 0) throw new InvalidOperationException($"git {string.Join(' ', arguments)} failed in {cwd}: {run.Stderr.Trim()}");
+    }
+
     /// <summary>A plain copy of <paramref name="from"/> as <paramref name="to"/>, files with their times, and no linked-worktree metadata.</summary>
     public static void Copy(string from, string to)
     {

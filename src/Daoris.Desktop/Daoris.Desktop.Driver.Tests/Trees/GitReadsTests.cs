@@ -36,9 +36,32 @@ public sealed class GitReadsTests : IDisposable
     /// </summary>
     private sealed record History(string Root, string First, string Topic, string MainB, string Merge, string Renamed);
 
+    /// <summary>
+    /// The history, a copy of the run's seed of it (<see cref="GitSeed"/>, PROCSPEED1b), twenty-seven git starts a test fewer: its
+    /// commits are dated and its identity fixed, so every build of it holds the same ids, and the ids the seed's build read are the copy's.
+    /// </summary>
     private async Task<History> HistoryAsync()
     {
-        var root = await RepositoryAsync("engine");
+        var seed = await GitSeed.SeedAsync("git-reads:history", async folder =>
+        {
+            var built = Path.Combine(folder, "engine");
+            Directory.CreateDirectory(built);
+            _seeded = await new GitReadsTests(built).BuildHistoryAsync(built);
+        });
+        var root = Path.Combine(_scratch, "engine");
+        GitSeed.Copy(Path.Combine(seed, "engine"), root);
+        return _seeded! with { Root = root };
+    }
+
+    // The ids of the run's history seed, read once as it was built; null until then.
+    private static History? _seeded;
+
+    /// <summary>A builder for the seed: its scratch is the seed's folder, which the seed's own cleanup removes.</summary>
+    private GitReadsTests(string scratch) => _scratch = scratch;
+
+    private async Task<History> BuildHistoryAsync(string root)
+    {
+        await InitAsync(root);
         var first = await CommitAsync(root, "first", ("a.txt", "one\ntwo\n"));
         await GitAsync(root, "switch", "-q", "-c", "topic");
         var topic = await CommitAsync(root, "topic: three", ("a.txt", "one\ntwo\nthree\n"));
@@ -288,11 +311,16 @@ public sealed class GitReadsTests : IDisposable
     {
         var root = Path.Combine(_scratch, name);
         Directory.CreateDirectory(root);
+        await InitAsync(root);
+        return root;
+    }
+
+    private static async Task InitAsync(string root)
+    {
         await GitAsync(root, "init", "--quiet", "-b", "main");
         await GitAsync(root, "config", "user.email", "fixture@example.test");
         await GitAsync(root, "config", "user.name", "Fixture");
         await GitAsync(root, "config", "core.autocrlf", "false");
-        return root;
     }
 
     /// <summary>A commit of every change in the tree, dated a second after the last, so date order is the same on every run.</summary>

@@ -115,22 +115,72 @@ public abstract class LandedFixture : IDisposable
     }
 
     /// <summary>
-    /// The platform's side: a clone of the bare origin squash-merges the branch onto `main`, pushes, and deletes the branch there.
-    /// <paramref name="then"/> is a later change on `main` after it (the line moving on, PLUGHOOK1a), pushed with it.
+    /// The platform's side, as its "squash and merge" leaves the bare origin: `main` one squash commit on, whose tree is the branch
+    /// merged onto it, and the branch deleted there. <paramref name="then"/> is a later change on `main` after it (the line moving on,
+    /// PLUGHOOK1a), a commit of its own. Made in the origin by git's plumbing (PROCSPEED1b): three git starts, seven with
+    /// <paramref name="then"/>, where a clone that squash-merged, committed and pushed twice made about twenty, most of them the
+    /// clone's and the pushes' own.
     /// </summary>
     /// <returns>The squash commit: what a platform answers as the pull request's merge commit.</returns>
-    protected async Task<string> SquashOnPlatformAsync(
+    protected static async Task<string> SquashOnPlatformAsync(
         string origin, string branch, bool deleteBranch = true, (string File, string Content)? then = null)
     {
-        var platform = Path.Combine(Scratch, $"platform-{Guid.NewGuid():N}"[..20]);
-        await GitAsync(Scratch, "clone", "--quiet", origin, platform);
-        await GitAsync(platform, "merge", "--squash", $"origin/{branch}");
-        await GitAsync(platform, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "commit", "-m", "Squashed (#7)");
-        var squash = (await GitAsync(platform, "rev-parse", "HEAD")).Trim();
-        if (then is { } change) await CommitAsync(platform, change.File, change.Content, "the line moves on");
-        await GitAsync(platform, "push", "--quiet", "origin", "main");
-        if (deleteBranch) await GitAsync(platform, "push", "--quiet", "origin", "--delete", branch);
+        // The branch merged onto the line as git merges, its tree written and nothing checked out; a conflict fails here.
+        var merged = await PlumbingAsync(origin, null, "merge-tree", "--write-tree", "refs/heads/main", $"refs/heads/{branch}");
+        var squash = await CommitTreeAsync(origin, "refs/heads/main", merged, "Squashed (#7)", []);
+        var line = then is { } change ? await CommitTreeAsync(origin, squash, merged, "the line moves on", [change]) : squash;
+        await RefsAsync(origin, $"update refs/heads/main {line}\n" + (deleteBranch ? $"delete refs/heads/{branch}\n" : ""));
         return squash;
+    }
+
+    /// <summary>
+    /// Someone else's commit on the bare origin's <c>main</c>, as a platform's edit or merge leaves it: <paramref name="files"/> written at
+    /// the top of the line's tree, one commit on it. Made in the origin by git's plumbing (PROCSPEED1b): five git starts for one file, where
+    /// a clone that committed and pushed made about twelve, most of them the clone's and the push's own.
+    /// </summary>
+    /// <returns>The commit.</returns>
+    protected static async Task<string> CommitOnOriginAsync(string origin, string message, params (string File, string Content)[] files)
+    {
+        var commit = await CommitTreeAsync(origin, "refs/heads/main", "refs/heads/main", message, files);
+        await RefsAsync(origin, $"update refs/heads/main {commit}\n");
+        return commit;
+    }
+
+    /// <summary>
+    /// A commit on <paramref name="parent"/> in a bare <paramref name="repository"/>, whose tree is <paramref name="tree"/>'s with
+    /// <paramref name="files"/> written at its top, made by git's plumbing: no working tree, no checkout. A file is at the top only.
+    /// </summary>
+    private static async Task<string> CommitTreeAsync(
+        string repository, string parent, string tree, string message, IReadOnlyList<(string File, string Content)> files)
+    {
+        if (files.Count > 0)
+        {
+            var written = new List<string>();
+            foreach (var (file, content) in files)
+            {
+                Assert.True(file.IndexOfAny(['/', '\\']) < 0, $"`{file}` is written at the tree's top only");
+                written.Add($"100644 blob {await PlumbingAsync(repository, content, "hash-object", "-w", "--stdin")}\t{file}");
+            }
+
+            var names = files.Select(each => each.File).ToHashSet(StringComparer.Ordinal);
+            var kept = (await PlumbingAsync(repository, null, "ls-tree", "-z", tree)).Split('\0', StringSplitOptions.RemoveEmptyEntries)
+                .Where(entry => !names.Contains(entry[(entry.IndexOf('\t') + 1)..]));
+            tree = await PlumbingAsync(repository, string.Concat(kept.Concat(written).Select(entry => entry + "\0")), "mktree", "-z");
+        }
+
+        return await PlumbingAsync(
+            repository, null, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "commit-tree", tree, "-p", parent, "-m", message);
+    }
+
+    /// <summary>The refs of a bare repository moved as one transaction (<c>update-ref --stdin</c>), as a platform's push moves them.</summary>
+    private static async Task RefsAsync(string repository, string moves) => await PlumbingAsync(repository, moves, "update-ref", "--stdin");
+
+    /// <summary>One git of the platform's plumbing: its first line, which a step that fails never answers.</summary>
+    private static async Task<string> PlumbingAsync(string repository, string? input, params string[] arguments)
+    {
+        var run = await GitFixture.RunWithAsync(repository, null, input, arguments);
+        Assert.True(run.ExitCode == 0, $"git {string.Join(' ', arguments)} failed: {run.Stdout}{run.Stderr}");
+        return run.Stdout.Split('\n')[0].Trim();
     }
 
     /// <summary>
@@ -178,6 +228,7 @@ public abstract class LandedFixture : IDisposable
         await GitAsync(root, "init", "--quiet", "-b", "main");
         await GitAsync(root, "config", "user.email", "fixture@example.test");
         await GitAsync(root, "config", "user.name", "Fixture");
+        await GitSeed.NoMaintenanceAsync(root);
         await File.WriteAllTextAsync(Path.Combine(root, "README.md"), $"# {name}\n");
         await CommitAsync(root, "shared.txt", "one\n", "first");
         return root;
@@ -194,6 +245,7 @@ public abstract class LandedFixture : IDisposable
             var seeded = Path.Combine(folder, $"{name}-origin.git");
             Directory.CreateDirectory(seeded);
             await GitAsync(seeded, "init", "--quiet", "--bare", "-b", "main");
+            await GitSeed.NoMaintenanceAsync(seeded);
             var repository = await BuildRepositoryAsync(Path.Combine(folder, name), name);
             await GitAsync(repository, "remote", "add", "origin", seeded);
             await GitAsync(repository, "push", "--quiet", "-u", "origin", "main");

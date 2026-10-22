@@ -9,7 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// 🔴 <b>Nothing here reaches a network</b>: `origin` is a bare repository under the scratch folder, and the
-/// platform's squash merge is a second clone of it (<see cref="LandedFixture"/>).
+/// platform's squash merge and commits are made in it (<see cref="LandedFixture"/>).
 /// </remarks>
 public abstract class TreeSyncFixture : LandedFixture
 {
@@ -37,14 +37,9 @@ public abstract class TreeSyncFixture : LandedFixture
         return (parent, landed.Branch!, step);
     }
 
-    /// <summary>A commit someone else pushed to origin's line — the platform's side, through a clone of the bare origin.</summary>
-    protected async Task PlatformCommitAsync(string origin, string file, string content, string message)
-    {
-        var platform = Path.Combine(Scratch, $"platform-{Guid.NewGuid():N}"[..20]);
-        await GitAsync(Scratch, "clone", "--quiet", origin, platform);
-        await CommitAsync(platform, file, content, message);
-        await GitAsync(platform, "push", "--quiet", "origin", "main");
-    }
+    /// <summary>A commit someone else pushed to origin's line — the platform's side, made in the bare origin itself (PROCSPEED1b).</summary>
+    protected static Task PlatformCommitAsync(string origin, string file, string content, string message) =>
+        CommitOnOriginAsync(origin, message, (file, content));
 
     protected static async Task<string> RevAsync(string root, string revision) => (await GitAsync(root, "rev-parse", revision)).Trim();
 

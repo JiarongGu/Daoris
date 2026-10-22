@@ -329,16 +329,11 @@ public abstract class AutoLandingFixture : IDisposable
     protected static async Task<bool> BranchAsync(string root, string branch) =>
         (await GitAsync(root, "branch", "--list", branch)).Trim().Length > 0;
 
-    protected async Task<string> RepositoryAsync(string name)
-    {
-        var root = Path.Combine(_scratch, name);
-        Directory.CreateDirectory(root);
-        await GitAsync(root, "init", "--quiet", "-b", "main");
-        await GitAsync(root, "config", "user.email", "fixture@example.test");
-        await GitAsync(root, "config", "user.name", "Fixture");
-        await CommitAsync(root, "README.md", $"# {name}", "first");
-        return root;
-    }
+    /// <summary>
+    /// A repository on <c>main</c> with one commit, its README: a copy of the run's plain seed (<see cref="GitSeed.PlainAsync"/>,
+    /// PROCSPEED1b), five git starts a test fewer. No test here reads the first commit's id or time.
+    /// </summary>
+    protected Task<string> RepositoryAsync(string name) => GitSeed.PlainAsync(Path.Combine(_scratch, name), name);
 
     protected static async Task CommitAsync(string tree, string file, string content, string message)
     {

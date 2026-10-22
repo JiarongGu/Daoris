@@ -237,15 +237,8 @@ public sealed class SweepTests : IDisposable
         return tree;
     }
 
-    private async Task<string> RepositoryAsync(string name)
-    {
-        var root = Path.Combine(_scratch, name);
-        Directory.CreateDirectory(root);
-        await GitAsync(root, "init", "--quiet", "-b", "main");
-        await IdentityAsync(root);
-        await CommitAsync(root, "README.md", $"# {name}", "first");
-        return root;
-    }
+    /// <summary>A copy of the run's plain seed (<see cref="GitSeed.PlainAsync"/>, PROCSPEED1b): no test here reads its first commit.</summary>
+    private Task<string> RepositoryAsync(string name) => GitSeed.PlainAsync(Path.Combine(_scratch, name), name);
 
     private static async Task IdentityAsync(string root)
     {
