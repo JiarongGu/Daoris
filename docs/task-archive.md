@@ -19673,3 +19673,13 @@ refuses it until then. On SWAPLEASE2, 368 of the 1,359 driver Process tests ran 
 43,017 of 57,067 (most merges touch a type nearly every class names, so the larger lever is each test's cost, PROCSPEED1b). A test
 helper reaches only the classes that name it, followed through, rather than the whole half (the steward's acceptance of the
 builder's choice; the daily sweep is the backstop). Detail: D180's PROCREACH1 note; commits `c97f939d6`, `66d3dc591`, `28cb7dd52`. On Opus.
+## TREELOOK1 — the trees fact reads a hundred trees in a minute and a half (2026-10-22, D181)
+
+> - [ ] **TREELOOK1 — the trees fact reads a hundred trees in a minute and a half** (driver; found 2026-10-22 on the install's machine log). Each repository's part of Ask Daoris's trees fact (`help.room.look` with its trees step alone, FACTSPLIT1b) took 45-110 s for this repository's 143-145 kept session trees, past its 120 s bound (`facts.late help.trees`), every few minutes. Measure where a tree's read goes (git status per tree, serial or bounded), then read only what changed since the last read or in parallel within a bound, and let CLEANUP1's retention keep fewer trees. Proof: the step's milliseconds at 145 trees before and after on a loaded machine; a tree that changed is still read.
+
+**Outcome** 2026-10-22: a tree's walk was 1409 git starts for 145 trees, one after another. `HelpFacts.ReadTreesAsync(home, …)`
+now reads through `TreeReadMemo`, four trees at once: a tree whose stamp (its link, `HEAD` and branch commit, its repository's
+counted refs, the home's landings and choices, all read from files) stands is asked one `git status`; a tree that counted no commit
+stays at none while the refs only moved forward; anything else is walked. At 145 trees on a loaded machine: 696 s before, 278 s
+first, 21 s with nothing moved, 209 s after the line moved. `HelpTreesReadTests` proves a changed tree is read again (a commit, an
+edit, a landing, a holding branch deleted). Fewer kept trees is TREELOOK1b. Detail: D181's TREELOOK1 note. On Opus.

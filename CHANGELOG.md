@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- Ask Daoris's trees fact no longer reads every kept session tree whole each time (TREELOOK1). A tree where nothing its read
+  rests on has moved is asked for its status alone, and its edits are always read fresh. Four trees are read at once. A
+  repository with about 145 kept trees answered in minutes before. With nothing moved it now answers in about twenty seconds
+  on a loaded machine. A first read, and a tree with new commits, is still read whole.
 - Main is verified between releases, so a release waits only for what changed since the last run (CI1).
   `node tools/merge-branch.mjs --ci` gates main's tip in the gate tree, running only the gates its verdicts lack.
   `--ci --watch` does that each time main moves, and `--ci --stop` ends the watch. Each run's status is
