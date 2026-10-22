@@ -1,6 +1,6 @@
 import type { TFunction } from 'i18next';
 import type { Quest, Session } from '../../data/api';
-import { ago, elapsed, moment } from '../../locales/format';
+import { ago, elapsed, list, moment } from '../../locales/format';
 import type { Consideration } from '../../data/signals';
 import type { SweepBranch } from '../../settings/Sweep';
 import type { AccountNamer } from '../../agents/tools';
@@ -41,6 +41,11 @@ export type SessionFactsOf = {
   leadingAgent?: string | null;
   /** The title of the session a helper helps (`serves`, MIXAGENT3a-i), where the frame holds it; absent, another session. */
   helping?: string | null;
+  /**
+   * Its partners (COAGENT1b; the co-agent design §6.1): the agents its pieces went to, by the roster's names, and how many work now
+   * (`partnersOf`). Absent where it asked none.
+   */
+  partners?: { agents: readonly string[]; working: number } | null;
   /** When the turn its agent is on was asked, while it has answered nothing (`firstAnswerWait`, WAITSHOWN1); absent otherwise. */
   waitingSince?: string | null;
   /**
@@ -78,14 +83,22 @@ export function leadingAgentOf(
  * words (`HANDED_REASONS`, the timeline's, `curve` among them since SWITCH1c-i), and whom a helper helps. A why the page has no
  * words for says nothing, never a guess.
  */
-function linkFacts(t: TFunction, session: Session, { continuesAgent, helping }: SessionFactsOf): string[] {
+function linkFacts(t: TFunction, session: Session, { continuesAgent, helping, partners }: SessionFactsOf): string[] {
   const facts: string[] = [];
   if (session.from) {
     facts.push(continuesAgent ? t('work.facts.continues', { agent: continuesAgent }) : t('work.facts.continuesAnother'));
     const why = session.fromWhy && Object.hasOwn(HANDED_REASONS, session.fromWhy) ? HANDED_REASONS[session.fromWhy] : null;
     if (why) facts.push(t(why.key));
   }
-  if (session.serves) facts.push(helping ? t('work.facts.helping', { title: helping }) : t('work.facts.helpingAnother'));
+  // COAGENT1b: a partner works for its lead, a piece's; a helper helps.
+  if (session.serves && session.piece) facts.push(helping ? t('work.facts.partnerFor', { title: helping }) : t('work.facts.partnerForAnother'));
+  else if (session.serves) facts.push(helping ? t('work.facts.helping', { title: helping }) : t('work.facts.helpingAnother'));
+  if (partners && partners.agents.length > 0) {
+    const agents = list(partners.agents);
+    facts.push(partners.working > 0
+      ? t('work.facts.partnersWorking', { agents, count: partners.working })
+      : t('work.facts.partners', { agents }));
+  }
   return facts;
 }
 

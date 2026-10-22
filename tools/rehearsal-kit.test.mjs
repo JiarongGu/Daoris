@@ -20,8 +20,9 @@ import { fileURLToPath } from 'node:url';
 import { createServer as createTcpServer } from 'node:net';
 import { portIsFree } from './cdp.mjs';
 import {
-  ACP_STUB_AGENT, PORT_BAND, STUB_COMMIT, capture, checkFolderName, evidenceFolder, gitRefusal, keepEvidence, makeChecker, ownBuild,
-  ownBuildRoot, ownBuilt, portHolder, portRefusal, rehearsalRun, restartBetweenRequests, takePorts, waitFor,
+  ACP_STUB_AGENT, ACP_TURN_END_AGENT, PORT_BAND, STUB_COMMIT, capture, checkFolderName, evidenceFolder, gitRefusal, keepEvidence,
+  makeChecker, ownBuild, ownBuildRoot, ownBuilt, portHolder, portRefusal, rehearsalRun, restartBetweenRequests, stubTwoManifest,
+  takePorts, waitFor,
 } from './rehearsal-kit.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -786,4 +787,129 @@ test('a command that ends answers as it always did: standard output alone on suc
   assert.deepEqual(capture(`node "${sayer}" 3`, at), { code: 3, out: 'outerr' });
   assert.deepEqual(capture(`node "${sayer}" 0`, at, { input: 'handed' }), { code: 0, out: 'outhanded' });
   assert.deepEqual(capture(`node "${sayer}" 0`, at, { env: { REHEARSAL_KIT_WORD: 'set' } }), { code: 0, out: 'outset' });
+});
+
+// ——— COAGENT1b's stand-ins (the co-agent design §8.1): the kit's queueing switch, the turn-end stand-in shaped on codex-acp, and a
+// second maker declared by a file.
+
+/**
+ * One process of an ACP agent spoken to frame by frame: each of `frames` sent once the one before it is answered, a permission it asks
+ * answered by `allow` (true allows it), its input closed after the last answer. Every frame it wrote, and what it said on stderr.
+ */
+function acpExchange(script, { cwd, env = {}, frames, allow = true }) {
+  return new Promise((resolve, reject) => {
+    const ambient = Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.toUpperCase().startsWith('DAORIS_')));
+    const child = spawn(process.execPath, [script], { cwd, env: { ...ambient, ...env }, stdio: ['pipe', 'pipe', 'pipe'] });
+    const heard = [];
+    let buffered = '';
+    let said = '';
+    let at = 0;
+    const timer = setTimeout(() => { child.kill(); reject(new Error(`the agent did not finish within 30s:\n${said}`)); }, 30_000);
+    const next = () => {
+      if (at < frames.length) child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id: at + 1, ...frames[at++] })}\n`);
+      else child.stdin.end();
+    };
+    child.stdout.on('data', (chunk) => {
+      buffered += chunk;
+      let cut;
+      while ((cut = buffered.indexOf('\n')) >= 0) {
+        const frame = JSON.parse(buffered.slice(0, cut));
+        buffered = buffered.slice(cut + 1);
+        heard.push(frame);
+        if (frame.method === 'session/request_permission') {
+          const optionId = allow ? 'allow' : 'reject';
+          child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id: frame.id, result: { outcome: { outcome: 'selected', optionId } } })}\n`);
+        } else if (frame.method === undefined && frame.id === at) {
+          next();
+        }
+      }
+    });
+    child.stderr.on('data', (chunk) => { said += chunk; });
+    child.on('close', () => { clearTimeout(timer); resolve({ heard, said, answer: (id) => heard.find((frame) => frame.id === id && !frame.method) }); });
+    next();
+  });
+}
+
+test('the ACP stub declares promptQueueing only under the kit switch, and its resume either way', async () => {
+  const at = folder('stub-queueing');
+  const stub = join(at, 'acp-agent.mjs');
+  writeFileSync(stub, ACP_STUB_AGENT);
+  const initialize = { method: 'initialize', params: { protocolVersion: 1 } };
+
+  const plain = await acpExchange(stub, { cwd: at, frames: [initialize] });
+  const queues = await acpExchange(stub, { cwd: at, env: { DAORIS_STUB_QUEUEING: '1' }, frames: [initialize] });
+
+  assert.deepEqual(plain.answer(1).result.agentCapabilities, { sessionCapabilities: { resume: {} } });
+  assert.deepEqual(queues.answer(1).result.agentCapabilities,
+    { sessionCapabilities: { resume: {} }, _meta: { claudeCode: { promptQueueing: true } } });
+});
+
+test('the turn-end stand-in is shaped on codex-acp: no queueing, steering offered, three modes from read-only, and no counts', async () => {
+  const at = folder('turn-end-shape');
+  const agent = join(at, 'turn-end-agent.mjs');
+  writeFileSync(agent, ACP_TURN_END_AGENT);
+  const copy = join(at, 'copy');
+  mkdirSync(copy);
+
+  const { answer, heard, said } = await acpExchange(agent, {
+    cwd: copy,
+    frames: [
+      { method: 'initialize', params: { protocolVersion: 1 } },
+      { method: 'session/new', params: { cwd: copy, mcpServers: [] } },
+      { method: 'session/set_mode', params: { sessionId: 'turn-end-session-1', modeId: 'agent' } },
+      { method: '_session/steering', params: { sessionId: 'turn-end-session-1', prompt: [{ type: 'text', text: 'now' }] } },
+      { method: 'session/prompt', params: { sessionId: 'turn-end-session-1', prompt: [{ type: 'text', text: 'Make the window seven days.' }] } },
+    ],
+  });
+
+  const initialized = answer(1).result;
+  assert.equal(initialized.agentCapabilities._meta, undefined, 'it declares no promptQueueing');
+  assert.deepEqual(initialized._meta, { steering: { supported: true } });
+  const opened = answer(2).result;
+  assert.deepEqual([opened.modes.currentModeId, opened.modes.availableModes.map((mode) => mode.id)],
+    ['read-only', ['read-only', 'agent', 'agent-full-access']]);
+  assert.deepEqual(answer(3).result, {});
+  assert.match(said, /steering asked and not used/);
+  assert.deepEqual(answer(5).result, { stopReason: 'end_turn' }, 'its turn ends with no counts');
+  assert.equal(heard.some((frame) => frame.method === 'session/request_permission'), false, 'in agent it asks nothing before it writes');
+  assert.equal(readFileSync(join(copy, 'stand-in-1.md'), 'utf8'), '# written by the turn-end stand-in\n\nMake the window seven days.\n');
+  assert.ok(heard.some((frame) => frame.params?.update?.content?.text === 'Wrote stand-in-1.md in agent.'), said);
+});
+
+test('the turn-end stand-in in read-only asks before each write, and writes nothing where it is refused', async () => {
+  const at = folder('turn-end-read-only');
+  const agent = join(at, 'turn-end-agent.mjs');
+  writeFileSync(agent, ACP_TURN_END_AGENT);
+  const frames = (copy) => [
+    { method: 'initialize', params: { protocolVersion: 1 } },
+    { method: 'session/new', params: { cwd: copy, mcpServers: [] } },
+    { method: 'session/prompt', params: { sessionId: 'turn-end-session-1', prompt: [{ type: 'text', text: 'Write it.' }] } },
+  ];
+  const allowed = join(at, 'allowed');
+  const refused = join(at, 'refused');
+  mkdirSync(allowed);
+  mkdirSync(refused);
+
+  const yes = await acpExchange(agent, { cwd: allowed, frames: frames(allowed), allow: true });
+  const no = await acpExchange(agent, { cwd: refused, frames: frames(refused), allow: false });
+
+  for (const run of [yes, no]) {
+    const asked = run.heard.filter((frame) => frame.method === 'session/request_permission');
+    assert.equal(asked.length, 1, run.said);
+    assert.deepEqual([asked[0].params.toolCall.kind, asked[0].params.toolCall.title], ['edit', 'Write stand-in-1.md']);
+    assert.deepEqual(run.answer(3).result, { stopReason: 'end_turn' });
+  }
+
+  assert.deepEqual(readdirSync(allowed), ['stand-in-1.md']);
+  assert.deepEqual(readdirSync(refused), []);
+});
+
+test("a second maker is declared by a file: one harness, stub-b, of maker Stub Two and product Stub B, over the script it names", () => {
+  const manifest = stubTwoManifest('D:/scratch/turn-end-agent.mjs');
+
+  assert.equal(manifest.id, 'rehearsal.stub-two');
+  assert.equal(manifest.apiVersion, 1);
+  assert.deepEqual(manifest.harnesses, [
+    { name: 'stub-b', command: ['node', 'D:/scratch/turn-end-agent.mjs'], maker: 'Stub Two', product: 'Stub B' },
+  ]);
 });

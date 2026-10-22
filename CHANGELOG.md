@@ -20,6 +20,16 @@ with the version and date at release.
   now say sessions are no longer limited by time and change nothing. A `timeoutMinutes` in `driver.json` is kept for an older
   Daoris, and `driver list` says so. A reviewer's, a helper's and a partner's pass keep their own minutes, no longer cut by it.
 
+- You can ask another agent to write one piece of a driven session's work (COAGENT1b, D199). A session's head has a *Pieces*
+  section (分项). *Ask another agent to work on a piece…* takes the piece, the paths it is about and the agent. The terminal's
+  twin is `daoris-driver sessions partner <id> "<piece>" --agent <name> [--paths <path>…]`. The partner (搭档) works in a clone
+  of its own from the commit the session stands at, and changes nothing in the session's tree. Daoris keeps what it wrote as
+  one commit at `refs/daoris/pieces/<id>`, and its answer comes back to the session naming the merge that takes it in. The
+  section lists each piece with where it stands, its commit and its files, those beyond its paths among them. A working piece
+  has a door to its partner's page and *Stop…*, which keeps what it wrote; `sessions partner <piece> --stop` is the terminal's.
+  `sessions partner <id> --list` lists the pieces. The head says *Partners: Codex, 1 piece working*, and a partner's own head
+  names the session it works for. No agent is admitted as a partner until its confinement is measured on this machine. Until
+  then each piece is refused, and says so.
 - A folder under Daoris's account homes that no agent or plugin names is no longer taken for an agent (POOLSTRAY1). An earlier
   start could leave such a folder, and its subfolders were folded in as accounts. Such a folder is now noted once in the machine
   log and otherwise left alone. If an earlier fold already wrote one into the account order, the next change of the accounts

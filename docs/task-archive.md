@@ -19722,3 +19722,17 @@ next run on main. Detail: FIX-LOG 2026-10-23 (PROCSPEED1b). On Opus.
 refuses one without it. A working-tree diff ignores the flag, so Review's range read also passes `diff.autoRefreshIndex=false`.
 `ReviewLockTests` opens Review while a stand-in holds `index.lock`, and over a stale index. Detail: FIX-LOG 2026-10-23
 (REVIEWLOCK1). On Opus.
+
+## COAGENT1b — a partner writes one piece for a driven session, asked by the person (2026-10-23, D199)
+
+> - [ ] **COAGENT1b — a partner writes one piece for a driven session, asked by the person** (service, driver, modules, web-shell; after 1a; D199 points 1-4 and 8-10; design §2.3, §2.4, §7.9, §9 row 2). The box and its states, the clone with no remote in a strict job, the keeper's one-commit import and its frozen ref, `serves` and `piece`, the role's allow-list and census, admission by a measured row, the Pieces section in en and zh. One feature, split only by sub-feature. Proof: §8.2 and §8.3's partner cases; M2 in a disposable repository before its first use on the install, then the first real piece carrying M3. Built so far (D199's COAGENT1b note): the states and their reconciliation, the receipt, the box's files, the copy, the keeper's import and the frozen ref with its classing, the reservation in the common admission, the strict job made and observed, the partner's launcher (`daoris-piece-start.exe`, which joins the job before the harness runs) and the start's driver half (`PieceStarts`), and the start itself (`DriverPartners`, `POST /api/partners` with `PartnerDesk` and `PartnerBox`, the record's `piece`), which admits no agent until the measurements table holds a row, and `partner_answer`; the record's `serves` and `piece` through the rest of their places; the role on the server (`RoleFilter`, its census) with `PartnerPermissions` and the effective configuration on `partner.started`; and M2's run written in D199's part-five note; the hand door and the word, the notes that reset nothing, every landing door's refusal and admission by a measured row (D199's part-six note). Next are the stand-ins and the kit's queueing switch, then the rest in that note's order.
+
+**Outcome** 2026-10-23: built in seven parts, each committed with its tests: the box, its states and their reconciliation, the
+keeper's one-commit import frozen at `refs/daoris/pieces/<id>`, the reservation, the strict job and its launcher
+(`daoris-piece-start`), the start, `serves` and `piece`, the role on the server, the hand door and the word, notes that reset
+nothing, every landing door's refusal, admission by a measured row; then the stand-ins and the kit's queueing switch,
+`PartnerProcessTests` through the launcher, the person's ask with `daoris-driver sessions partner` and `SESSION_PARTNER_ASK`, and
+the Pieces section and the head in en and zh. No agent is admitted until M2 writes its row; D199's part-seven note says what the
+parent runs for M2 on a disposable repository and then for the first real piece (M3). What part seven left (taken in, the opinion's
+families, *Discard…*, *Hand over what it left*, `PartnerLandingTests` and the remaining process cases) is COAGENT1b2. Detail: D199's
+COAGENT1b notes, parts one to seven. On Opus.

@@ -10,6 +10,7 @@ import type { PartSpent, SessionEntry } from '../../work/entries';
 import { GROUP_ORDER, type SessionGroupName, type SessionGrouping } from '../../work/groups';
 import type { HelperAskRow, HelperWait } from '../../work/waits/HelperAsks';
 import type { HandOverAskRow } from '../../work/waits/HandOverAgentAsk';
+import { readPieces } from '../../work/pieces/pieceRows';
 import { type ParkQuestion, readQuestion } from '../../work/waits/parkQuestion';
 import type { PermissionAnswered, PermissionChoice, PermissionWait } from '../../work/waits/PermissionAsks';
 import type { AnswerAloneAnswered, AnswerWait } from '../../work/waits/AnswerAlone';
@@ -596,6 +597,40 @@ export const useSessionHelpers = (session: string | null | undefined) => {
   return useQuery({
     queryKey: helpersKey(session ?? ''),
     queryFn: async () => readHelpers(await call<unknown>('SESSION_HELPERS', { id: session })),
+    enabled: isAvailable && Boolean(session),
+    refetchOnWindowFocus: false,
+  });
+};
+
+/** What *Ask another agent to work on a piece…* answered (COAGENT1b): the piece's id where it was written, else why not by its code. */
+export type PartnerAsked = { asked: string | null; why: string | null; message: string };
+
+/**
+ * *Ask another agent to work on a piece…* (COAGENT1b, D199 point 2; the co-agent design §2.3 step 1, §6.1): the person's own ask of a
+ * piece for a session, the file `daoris-driver sessions partner` writes at the commit the session's tree stands at, for the driver's
+ * next look to judge. The piece as written, the agent the person named and the paths it is about. Read field by field, so a refusal
+ * keeps its code for the page to word. The sessions and the driver are asked again by the state hub (D169), and with the sessions the
+ * session's pieces, which sit under their key.
+ */
+export const useAskPartner = () => useMutation({
+  mutationFn: async (ask: { session: string; piece: string; agent: string; paths?: readonly string[] }): Promise<PartnerAsked> => {
+    const answer = await call<{ asked?: unknown; why?: unknown; message?: unknown } | null>('SESSION_PARTNER_ASK', {
+      id: ask.session, piece: ask.piece, agent: ask.agent, ...(ask.paths && ask.paths.length > 0 ? { paths: ask.paths } : {}),
+    });
+    return { asked: word(answer?.asked), why: word(answer?.why), message: typeof answer?.message === 'string' ? answer.message : '' };
+  },
+});
+
+/**
+ * The pieces a session asked (COAGENT1b; the co-agent design §6.1), oldest first, each as the driver's look left it, read off this
+ * machine's own files: shell-only, and asked only for a session of this machine's. Under the sessions' key, so a look's tick and the
+ * session's moves ask them again, as its helpers' asks are.
+ */
+export const useSessionPartners = (session: string | null | undefined) => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: ['sessions', 'partners', session ?? ''] as const,
+    queryFn: async () => readPieces(await call<unknown>('SESSION_PARTNERS', { id: session })),
     enabled: isAvailable && Boolean(session),
     refetchOnWindowFocus: false,
   });

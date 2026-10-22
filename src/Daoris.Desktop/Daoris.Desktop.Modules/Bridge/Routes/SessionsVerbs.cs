@@ -41,6 +41,8 @@ internal static class SessionsVerbs
                     onEnded: (session, state) => DriverLoop.Ended(context.Events, session, state), token).ConfigureAwait(false);
                 return SessionsCommand.HandedOver(handed, output) ?? 0;
             },
+            // COAGENT1b: `sessions partner`'s read of the lead's tree, the loop's, as the page's press reads it.
+            PieceBase = loop.PieceBases,
             // COWORK1a: `sessions stop <id> --turn`, the keeping stop, on the turns this Daoris's loop holds.
             StopTurn = (id, _) => ConversationRoutes.KeepingStopAsync(loop, id),
         };

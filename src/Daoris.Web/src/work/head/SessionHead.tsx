@@ -25,6 +25,7 @@ import type { SayRebase } from '../review/LandingSync';
 import { Discards, type HeadOpinion, type HeadReview, type LandingPlan, Lands, type WorkAsk } from '../review/Lands';
 import { Note } from '../Note';
 import { HelperAsks, type HelperWaits, openAsks, waitsOnWord } from '../waits/HelperAsks';
+import { type PieceSection, Pieces } from '../pieces/Pieces';
 import { hasNote, noteBlocks, noteLines } from '../noteLines';
 import { processCommitsSays, processLandingSays, type SessionProcess } from './process';
 import { heldFor, PermissionAsks, type PermissionWaits } from '../waits/PermissionAsks';
@@ -104,8 +105,13 @@ export function SessionHead({
   onAnswerSession, branch, ownBranch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
   ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest,
   continues, helps, onOpenSession, heavy, process, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek, helpers, permissions, answers,
-  question = null, parkBox = false,
+  question = null, parkBox = false, pieces,
 }: {
+  /**
+   * Its pieces (COAGENT1b, D199; the co-agent design §6.1), the frame's: what it asked other agents to write, where each stands, the
+   * ask's press and each piece's door and stop. Absent, a browser, a teammate's record or a session that cannot lead one, none is drawn.
+   */
+  pieces?: PieceSection | null;
   /**
    * Its question as its agent asked it (PARKVIEW1, the park's ask design §3), which its waiting card shows in place of its whole last
    * message; null where it asked none through the connector.
@@ -428,6 +434,9 @@ export function SessionHead({
           />
         </section>
       )}
+
+      {/* Its pieces (COAGENT1b, D199): what other agents write for it, each in a clone of its own, and the ask of one. */}
+      {pieces && (pieces.pieces.length > 0 || pieces.ask) && <Pieces section={pieces} headingId={`pieces-${session.id}`} />}
 
       {!headed && (
         /* A window with no header (a detached session): the title and its word are said here; its id is its *Details*'

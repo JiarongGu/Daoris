@@ -179,6 +179,12 @@ public sealed class DriverLoop(
     public Func<CancellationToken, Task<HelpMachine?>>? DescribeHelp { get; set; }
 
     /// <summary>
+    /// How a piece's lead's tree is read at the person's ask (COAGENT1b, <c>SESSION_PARTNER_ASK</c>): its commit and uncommitted paths,
+    /// git's, or a test's without a process (MOD8).
+    /// </summary>
+    public Func<string, CancellationToken, Task<PieceBase>> PieceBases { get; set; } = PartnerPersonAsk.ReadTreeAsync;
+
+    /// <summary>
     /// The service this loop drives, once the host answers — null before, like <see cref="Chat"/>
     /// and for the same reason.
     /// </summary>

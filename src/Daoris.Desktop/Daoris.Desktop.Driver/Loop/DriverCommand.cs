@@ -176,6 +176,12 @@ public static class DriverCommand
           sessions helper --approve|--decline <ask>
               your yes or no to an agent's ask for a helper that waits on you (the `helpers` rule's `ask`), as its
               session's page takes it: a yes starts it at the driver's next look; a no refuses it and says so.
+          sessions partner <id> "<piece>" --agent <name> [--paths <path>…]
+              ask another agent to write one piece for a session in a clone of its own (D199): the driver judges it
+              at its next look and starts it only where that agent's confinement was measured; its answer comes back
+              to that session naming the commit to merge.
+          sessions partner <id> --list  ·  sessions partner <piece> --stop
+              a session's pieces and where each stands; a working piece's stop, which keeps its work.
           help list [--search "…"] [--json] [--offset <n>] [--limit <n>] [--workspace <name> | --all]
           help resume <id> "…" [--file <path>]…  ·  help rename <id> "…" | --clear  ·  help pin <id>  ·  help unpin <id>
           help delete <id> [--yes]

@@ -188,7 +188,7 @@ public sealed class PipeCensus
             "GIT_BLAME", "GIT_BRANCHES", "GIT_COMMIT", "GIT_COMPARE", "GIT_GRAPH", "GIT_HISTORY", "HANDOFF_PLAN", "HARNESSES",
             "HELPER_WAITS", "HELP_CONVERSATIONS", "HELP_PROPOSALS", "HELP_PUBLISHED", "HELP_WIRED", "HEAVY_MARKS", "HEAVY_SLOT", "HISTORY_PLAN", "LANDING", "LINES", "OPINION_GATE",
             "OPINION_WAITS", "PERMISSION_WAITS", "PLUGIN", "PLUGINS", "PLUGIN_ACTIVITY", "PLUGIN_READ", "RULES", "SESSION_DIFF", "SESSION_FILE",
-            "SESSION_FILES", "SESSION_GROUPS", "SESSION_HAND_OVER_ASK", "SESSION_HELPERS", "SESSION_HISTORY", "SESSION_OPENINGS", "SESSION_OPTIONS",
+            "SESSION_FILES", "SESSION_GROUPS", "SESSION_HAND_OVER_ASK", "SESSION_HELPERS", "SESSION_PARTNERS", "SESSION_HISTORY", "SESSION_OPENINGS", "SESSION_OPTIONS",
             "SESSION_PROCESS", "SESSION_QUESTION", "SESSION_QUEUE", "SESSION_SEARCH", "SESSION_SPENT", "SESSION_STREAMS", "SESSION_WHERE", "SETUP_PLAN", "STARTS",
             "STATE", "STATE_SLICE", "SWEEP_PLAN", "SYSTEM_DOWNLOADS", "SYSTEM_SPACE", "SYSTEM_WIRING", "TAIL_SESSION", "TOOLS_LIST", "TRACE", "TREES_SYNC_PLAN", "TREES_SYNC_SCOPE",
             "UNDER_WAY", "USAGE", "WORKFLOW_CURRENT", "WORKFLOW_RUN", "WORK_PLAN", "WORK_STATE",
@@ -216,6 +216,8 @@ public sealed class PipeCensus
             // A go-ahead's answer, a parked session's yes or no, a helper's, a quest retried after its strikes, and the answer to a
             // permission a session holds for the person (AUTONOMY1b3a), whose allow is the person's alone.
             "SESSION_GO_AHEAD", "RESOLVE_SESSION", "SESSION_HELPER_APPROVE", "SESSION_HELPER_DECLINE", "SESSION_HELPER_ASK", "SESSION_PERMISSION_ANSWER",
+            // COAGENT1b: the person's ask of a piece, which another agent writes for one of their sessions.
+            "SESSION_PARTNER_ASK",
             // MIXAGENT1c: the yes and the no to a session's agent's own ask to hand it over.
             "SESSION_HAND_OVER_APPROVE", "SESSION_HAND_OVER_DECLINE",
             // SESSWATCH1a: the person's word on a quiet session, its end and carry-on or its stand-down, which only they may give.

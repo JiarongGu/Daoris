@@ -305,6 +305,42 @@ describe('the acts on a session', () => {
     await waitFor(() => expect(told.refused).toHaveBeenLastCalledWith('The driver’s own sentence.'));
   });
 
+  /**
+   * COAGENT1b (D199 point 2): *Ask another agent to work on a piece…*'s press asks `SESSION_PARTNER_ASK` with the piece, the agent and
+   * the paths, and says where it goes; a refusal is said inside the ask in the page's words by its code, or the driver's sentence for
+   * a code the page does not know. A working piece's stop is its partner's record's stop.
+   */
+  it('asks a piece by the person’s press, says a refusal by its code, and stops a piece’s partner', async () => {
+    invoke.mockImplementationOnce(async () => ({ asked: 'p1a2b3c4', why: null, message: 'Asked.' }));
+    const { result, notify } = acts();
+    const told = { done: vi.fn(), refused: vi.fn() };
+
+    act(() => result.current.askPartnerNow(session(), { piece: 'Make the window seven days.', agent: 'codex-acp', paths: ['src'] }, told));
+
+    await waitFor(() => expect(told.done).toHaveBeenCalled());
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_PARTNER_ASK', {
+      payload: { id: 's1a2b3c4', piece: 'Make the window seven days.', agent: 'codex-acp', paths: ['src'] },
+    });
+    expect(notify).toHaveBeenCalledWith(
+      'Asked: the driver judges the piece at its next look, and starts it only where that agent’s confinement as a partner was measured.');
+
+    invoke.mockImplementationOnce(async () => ({ asked: null, why: 'unfit', message: 'x' }));
+    act(() => result.current.askPartnerNow(session(), { piece: 'Write it.', agent: 'codex-acp', paths: [] }, told));
+    await waitFor(() => expect(told.refused).toHaveBeenCalledWith(
+      'This session cannot lead a piece: only a session working in a tree of its own does.'));
+    expect(invoke).toHaveBeenLastCalledWith('DAORIS.DRIVER', 'SESSION_PARTNER_ASK', { payload: { id: 's1a2b3c4', piece: 'Write it.', agent: 'codex-acp' } });
+
+    invoke.mockImplementationOnce(async () => ({ asked: null, why: 'tomorrow', message: 'The driver’s own sentence.' }));
+    act(() => result.current.askPartnerNow(session(), { piece: 'Write it.', agent: 'codex-acp', paths: [] }, told));
+    await waitFor(() => expect(told.refused).toHaveBeenLastCalledWith('The driver’s own sentence.'));
+
+    invoke.mockImplementationOnce(async () => ({ stopped: true, orphan: false, elsewhere: false }));
+    const stopped = { done: vi.fn(), refused: vi.fn() };
+    act(() => result.current.stopPartnerNow('pt1', stopped));
+    await waitFor(() => expect(stopped.done).toHaveBeenCalled());
+    expect(invoke).toHaveBeenLastCalledWith('DAORIS.DRIVER', 'STOP_SESSION', { payload: { id: 'pt1' } });
+  });
+
   /** MIXAGENT2b (D163 point 3): the person's yes to an agent's ask, by the session and the ask; a refusal by its code. */
   it('says yes to an agent’s ask by its session and its id, and a refusal by its code', async () => {
     invoke.mockImplementationOnce(async () => ({ approved: true, why: null, message: 'yes' }));

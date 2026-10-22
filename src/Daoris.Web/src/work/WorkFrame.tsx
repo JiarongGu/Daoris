@@ -13,7 +13,7 @@ import {
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, useGoOnBrief, type WordsAnswer,
   useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree, useSessionDiff,
   useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun, useRules, useSessionEvents, stoppedWaiting, useUnderWay,
-  useEntryLanding, useLandEntry, useSessionHelpers, useUnderWaySubject, useSessionProcess, useWorkState, usePushedCalls, withCall,
+  useEntryLanding, useLandEntry, useSessionHelpers, useSessionPartners, useUnderWaySubject, useSessionProcess, useWorkState, usePushedCalls, withCall,
   useAnswerPermission, usePermissionWaits, useSessionHandOverAsk, useApproveHandOver, useDeclineHandOver, type HandOverWord,
   useAnswerWaits, useAnswerAlone, useRunNodeWord, useSessionQuestion,
 } from '../bridge/shell';
@@ -80,6 +80,8 @@ import type { Answered } from './InlineConfirm';
 import type { AgentChoice } from './start/AgentChip';
 import { HandOverAsk, type HandOverRoster } from './start/HandOverAsk';
 import { AskHelper } from './start/AskHelper';
+import { partnersOf } from './pieces/pieceRows';
+import type { PieceSection } from './pieces/Pieces';
 import { handOverOffer, otherToolDoors } from './start/handOverOffer';
 import { HandOverOfferLine } from './start/HandOverOfferLine';
 import { DeleteAsk, SessionPageHead, StopAsk } from './head/SessionPageHead';
@@ -1419,6 +1421,11 @@ export function WorkFrame({
   // The helpers the attended session asked for (MIXAGENT2b, D163): this machine's own files, so only for its own record. Its head
   // lists those still on their way, with the person's yes to an agent's ask that waits on it and a door to each helper.
   const helperAsks = useSessionHelpers(attended && here ? attended.id : null);
+  // The pieces it asked other agents to write (COAGENT1b, D199): this machine's own files, so only for its own record. A driven session
+  // working in a tree of its own leads them; a conversation's lead is COAGENT1c's, and a partner, a helper, a reviewer or an intake
+  // leads none.
+  const leads = Boolean(attended && here && attended.kind !== 'chat' && !attended.serves && !attended.opinion && !attended.ask && attended.tree);
+  const partnerPieces = useSessionPartners(attended && here ? attended.id : null);
   // Its agent's own ask to hand it over (MIXAGENT1c, D163 point 3): this machine's own files, so only for its own record.
   const handOverAsk = useSessionHandOverAsk(attended && here ? attended.id : null);
   const approveHandOver = useApproveHandOver();
@@ -1525,6 +1532,24 @@ export function WorkFrame({
       attend(helper);
     },
     busy: actions.approvingHelper,
+  } : null;
+  // Its pieces (COAGENT1b, D199; the co-agent design §6.1): the pieces read above, the ask where it may lead one, a door to each
+  // partner and a working piece's stop, through the acts' one owner.
+  const pieceSection: PieceSection | null = attended && here && (leads || (partnerPieces.data?.length ?? 0) > 0) ? {
+    pieces: partnerPieces.data ?? [],
+    nameOf: (agent: string) => agentRoster.names?.[agent] ?? agent,
+    ask: leads ? {
+      from: attended.adapter,
+      roster: agentRoster,
+      busy: actions.askingPartner,
+      onAsk: (asked, answered) => actions.askPartnerNow(attended, asked, answered),
+    } : undefined,
+    onOpen: (partner: string) => {
+      chosen();
+      attend(partner);
+    },
+    onStop: (partner: string, answered: Answered) => actions.stopPartnerNow(partner, answered),
+    stopping: actions.stopping,
   } : null;
   // Its agent's own ask to hand it over (MIXAGENT1c, D163 point 3), with the person's yes and no: a wait at the foot while the look
   // holds it on their word. A refusal is said beside the presses, in the page's words for its code.
@@ -1921,6 +1946,8 @@ export function WorkFrame({
       : null,
     leadingAgent: leadingAgentOf(attendedEntry, sessions.data ?? [], roster),
     helping: helps?.title,
+    // COAGENT1b: its partners, the agents its pieces went to by the roster's names, and how many work now.
+    partners: partnersOf(partnerPieces.data ?? [], (agent) => agentRoster.names?.[agent] ?? agent),
     waitingSince: waiting?.session === attended.id ? waiting.since : undefined,
     calling: waiting?.session === attended.id ? waiting.calling : undefined,
     // HEAVYSLOT1: its heavy run said in place of the call, by its gate or whom it waits behind.
@@ -2210,6 +2237,8 @@ export function WorkFrame({
           {attended && waits && <AttendedSession
             // What waits on the person, and every press on it: the strip at the foot is handed the same (D168 point 3).
             {...waits}
+            // Its pieces (COAGENT1b): what other agents write for it, and the ask of one; no wait of the person's.
+            pieces={pieceSection}
             workAsk={workAskAt('head')}
             ruleAsk={ruleAskAt('head')}
             toEvent={toEvent}
