@@ -104,6 +104,12 @@ internal static class AgentLoginCommand
             }
         }
 
+        // 🔴 LIVELOGIN1: never the real agent under a scratch home, refused before the account's folder is made.
+        if (ScratchSignIns.Refusal(toolchain, binary, HarnessSettings.ProfileHome(home, name, "account")) is { } scratch)
+        {
+            throw new AgentWords(scratch);
+        }
+
         var signIn = new SignIn(world, name, toolchain, home, path, settings, binary, login, ct);
         var code = fresh
             ? await signIn.NewAsync(AgentsCommand.FlagValue(args, "--name")).ConfigureAwait(false)

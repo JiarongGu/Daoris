@@ -613,6 +613,37 @@ public sealed class AgentsCommandTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 LIVELOGIN1: <c>daoris agent login claude-code --new</c> under this scratch home, nothing named or pinned, would run PATH's
+    /// <c>claude auth login</c> and open the person's browser on their real account. It is refused before the account's folder is made,
+    /// naming the stub adapters, and nothing starts: PATH is a folder holding only a stub named like the real one, which would leave its
+    /// mark had it run, and every start of the flow is held by a stand-in that records it.
+    /// </summary>
+    [Fact]
+    public async Task A_sign_in_under_a_scratch_home_with_the_real_binary_is_refused_with_nothing_started()
+    {
+        var bin = Path.Combine(_root, "bin");
+        var mark = Path.Combine(_root, "ran");
+        Directory.CreateDirectory(bin);
+        if (OperatingSystem.IsWindows()) File.WriteAllText(Path.Combine(bin, "claude.cmd"), $"@echo ran > \"{mark}\"\r\n");
+        else File.WriteAllText(Path.Combine(bin, "claude"), $"#!/bin/sh\necho ran > '{mark}'\n");
+        var started = new List<string>();
+
+        int exit;
+        using (ProcessStarts.Within(info => { started.Add(info.FileName); return null; }))
+        {
+            exit = await AgentsCommand.RunAsync(["login", "claude-code", "--new"], World(path: bin), CancellationToken.None);
+        }
+
+        Assert.Equal(2, exit);
+        Assert.Contains("`claude-code`'s would have run the `claude` on PATH, so nothing was started", _error.ToString());
+        Assert.Contains("the stub adapters (`stub`, `acp-stub`)", _error.ToString());
+        Assert.Empty(started);
+        Assert.False(File.Exists(mark));
+        Assert.Empty(HarnessSettings.Profiles(Home, "claude-code"));
+        Assert.Equal("", _out.ToString());
+    }
+
+    /// <summary>
     /// <c>login</c> (PUSH1f2e6, the alone-path design §1.1, §1.4): a stand-in agent's own sign-in run at this terminal into a folder made
     /// first, then its end published under the lease. A real process: the suite's Process half runs it.
     /// </summary>
