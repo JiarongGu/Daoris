@@ -166,16 +166,22 @@ public static class WorkflowGraphRuns
 
         var cells = graph.Nodes.Select(node => Cell(node, run.Process)).ToList();
         var steps = new List<WorkflowRunStep>();
+        // FABRIC-CUTOVER1f: a run that ended, or whose record does not read, takes no word; a node holding one waiting offers nothing more.
+        var open = facts.Record is { Ended: null };
         foreach (var (node, cell) in graph.Nodes.Zip(cells))
         {
             var status = StatusOf(node.Id);
             var (state, detail) = StateOf(node, status.State);
+            var asked = facts.Record?.Pending.LastOrDefault(word => word.Node == node.Id);
+            var acts = open && asked is null ? RunNodeWords.Acts(node, status) : [];
             var step = new WorkflowRunStep(cell, state, detail)
             {
                 Node = node.Kind,
                 Code = status.State == NodeStates.Skipped ? status.By : status.Code,
                 Words = status.State is NodeStates.Skipped or NodeStates.Rejected or NodeStates.Stopped ? status.Words
                     : node.Kind == NodeKinds.GoAhead ? NodeOptions.Text(node, "act") : null,
+                Acts = acts.Count > 0 ? acts : null,
+                Asked = asked,
             };
             steps.Add(Observing(step, node, Bound(status), RunSubjects.Of(node, afterHanded)));
         }
