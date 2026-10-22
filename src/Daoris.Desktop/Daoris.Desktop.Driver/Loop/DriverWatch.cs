@@ -819,13 +819,14 @@ public sealed class DriverWatch(
     /// One pass's reads of D157's gates for the evaluation runtime (FABRIC-RUN1c, link 8's <see cref="NodeRuntimeLook.Gates"/>): a unit's work
     /// read as a landing door reads it (<see cref="SessionTrees.GateAsync"/>), at its newest session's tree here: a branch unit's newest executor,
     /// a quest unit's newest session serving it. The sessions are read once a pass, at the first unit asked. A unit with no such tree here (a
-    /// teammate's work, a tree tidied), or a read that failed, reads nothing, and its nodes wait.
+    /// teammate's work, a tree tidied), or a read that failed, reads nothing, and its nodes wait. FABRIC-CUTOVER1d (the cutover design §2.2): at the
+    /// commit given, a run's branch at the tip its pass read, as a landing door judges at a commit it pins; else at that tree's <c>HEAD</c>.
     /// </summary>
     internal sealed class NodeGates(string home, ServiceClient service)
     {
         private Task<IReadOnlyList<SessionRecord>>? _sessions;
 
-        public async Task<(OpinionGateState? Opinion, ReviewGateState? Review)> ReadAsync(WorkUnit unit, CancellationToken ct)
+        public async Task<(OpinionGateState? Opinion, ReviewGateState? Review)> ReadAsync(WorkUnit unit, string? tip, CancellationToken ct)
         {
             try
             {
@@ -838,7 +839,7 @@ public sealed class DriverWatch(
                     return (null, null);
                 }
 
-                var gate = await new SessionTrees(home).GateAsync(newest.Tree!, newest.Quest, new ServiceReviewWorld(service), newest.Id, ct).ConfigureAwait(false);
+                var gate = await new SessionTrees(home).GateAsync(newest.Tree!, newest.Quest, new ServiceReviewWorld(service), newest.Id, ct, tip: tip).ConfigureAwait(false);
                 return (gate.Opinion, gate.Review);
             }
             catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException
