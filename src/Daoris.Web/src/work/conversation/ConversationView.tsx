@@ -414,9 +414,11 @@ function AskView({ ask }: { ask: Ask }) {
         )}
       </div>
       {/* A word wider than the column, a pasted URL, breaks inside it rather than scrolling the region sideways (ASKHIST1b). */}
-      {ask.text && (
-        <p className={cn('m-0 mt-0.5 whitespace-pre-wrap wrap-anywhere text-body text-ink', !open && 'line-clamp-2')}>{ask.text}</p>
-      )}
+      {ask.choice
+        ? <ChoiceWords choice={ask.choice} text={ask.text ?? ''} className="text-ink" />
+        : ask.text && (
+          <p className={cn('m-0 mt-0.5 whitespace-pre-wrap wrap-anywhere text-body text-ink', !open && 'line-clamp-2')}>{ask.text}</p>
+        )}
       <Attached files={ask.files} />
       {ask.receipts && <ReceiptsLine receipts={ask.receipts} />}
       {/* What the target was composed of, section by section (CONTEXT1), beside the words it composed. */}
@@ -501,10 +503,31 @@ function HeldAsk({ block }: { block: Block }) {
             neutral chip, never a hue, and never a wait's. */}
         {block.level === 'now' && <Chip>{t('work.level.now')}</Chip>}
       </span>
-      {block.text && <p className="m-0 mt-0.5 whitespace-pre-wrap wrap-anywhere text-body text-ink-soft">{block.text}</p>}
+      {block.choice
+        ? <ChoiceWords choice={block.choice} text={block.text ?? ''} className="text-ink-soft" />
+        : block.text && <p className="m-0 mt-0.5 whitespace-pre-wrap wrap-anywhere text-body text-ink-soft">{block.text}</p>}
       <Attached files={block.files} />
       {when && <p className="m-0 mt-1 text-meta text-ink-faint">{when}</p>}
     </div>
+  );
+}
+
+/**
+ * Words the person pressed as an answer of its park's question (PARKVIEW1; Fable's read, Q4): *Chose* and the answer as its question
+ * offered it, then the person's own words, so a press reads as a choice and never as words they typed. The words begin with the label,
+ * as the page composes a press; where a record says otherwise they are drawn whole beneath the mark.
+ */
+function ChoiceWords({ choice, text, className }: { choice: string; text: string; className: string }) {
+  const { t } = useTranslation();
+  const own = text === choice ? '' : text.startsWith(`${choice}\n\n`) ? text.slice(choice.length + 2) : text;
+  return (
+    <>
+      <p className="m-0 mt-0.5 flex min-w-0 flex-wrap items-baseline gap-x-1.5 text-body">
+        <Chip>{t('work.conversation.chose')}</Chip>
+        <span className={cn('wrap-anywhere font-semibold', className)}>{choice}</span>
+      </p>
+      {own && <p className={cn('m-0 mt-0.5 whitespace-pre-wrap wrap-anywhere text-body', className)}>{own}</p>}
+    </>
   );
 }
 

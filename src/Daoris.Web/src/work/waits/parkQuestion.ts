@@ -20,15 +20,22 @@ export type ParkQuestion = {
 const text = (value: unknown): string | null => (typeof value === 'string' && value.trim() ? value : null);
 
 /**
- * `SESSION_QUESTION`'s answer read defensively: an older shell's none, a question with no id or words, an answer with no label and a
- * recommendation that names no answer are each nothing; a null the bridge left out is absent.
+ * The writer's bounds (`QuestionBox`), held on read too (Fable's read, Q6): the question, its answers, each label and what each does,
+ * and by when; a question past any of them, or with two answers alike in any case, is none, as the connector never keeps one.
+ */
+export const QUESTION_BOUNDS = { question: 1000, choices: 6, label: 80, does: 300, by: 200 } as const;
+
+/**
+ * `SESSION_QUESTION`'s answer read defensively: an older shell's none, a question with no id or words, one past a bound the writer keeps,
+ * an answer with no label and a recommendation that names no answer are each nothing; a null the bridge left out is absent. The driver
+ * reads the file by the same table (`Daoris.Desktop.Driver.Tests/fixtures/park-question.json`).
  */
 export function readQuestion(answer: unknown): ParkQuestion | null {
   const asked = (answer as { question?: unknown } | null)?.question as Record<string, unknown> | null | undefined;
   if (!asked || typeof asked !== 'object') return null;
   const id = text(asked.id);
   const question = text(asked.question);
-  if (!id || !question) return null;
+  if (!id || !question || question.length > QUESTION_BOUNDS.question) return null;
   const choices = Array.isArray(asked.choices)
     ? asked.choices.flatMap((choice) => {
       const label = text((choice as { label?: unknown } | null)?.label);
@@ -36,9 +43,16 @@ export function readQuestion(answer: unknown): ParkQuestion | null {
       return label ? [{ label, does: typeof does === 'string' ? does : '' }] : [];
     })
     : [];
+  const by = text(asked.by);
+  const labels = new Set(choices.map((choice) => choice.label.toLocaleUpperCase('en-US')));
+  if (choices.length > QUESTION_BOUNDS.choices || labels.size < choices.length
+    || choices.some((choice) => choice.label.length > QUESTION_BOUNDS.label || choice.does.length > QUESTION_BOUNDS.does)
+    || (by !== null && by.length > QUESTION_BOUNDS.by)) {
+    return null;
+  }
   const recommend = typeof asked.recommend === 'number' && Number.isInteger(asked.recommend)
     && asked.recommend >= 1 && asked.recommend <= choices.length ? asked.recommend : null;
-  return { id, question, choices, recommend, by: text(asked.by), at: typeof asked.at === 'string' ? asked.at : '' };
+  return { id, question, choices, recommend, by, at: typeof asked.at === 'string' ? asked.at : '' };
 }
 
 /**

@@ -1,36 +1,48 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { GoAhead } from '../../data/api';
 import { afterPress, choiceWords, openGoAheads, readQuestion } from './parkQuestion';
 
-// PARKVIEW1 (the park's ask design §2, §4): the park's question as SESSION_QUESTION answers it, read defensively; the words a
-// choice sends; the go-aheads it still waits on; and what the box keeps once a press took its words.
+// PARKVIEW1 (the park's ask design §2, §4): the park's question as SESSION_QUESTION answers it, read defensively by the table the
+// driver reads the file by; the words a choice sends; the go-aheads it still waits on; and what the box keeps once a press took its words.
+
+type Row = { name: string; file: Record<string, unknown>; widen?: Record<string, number>; read: Record<string, unknown> | null };
+
+/** The driver's shared table (Fable's read, Q6): each row's `file` is what SESSION_QUESTION answers for it, the same fields. */
+const ROWS = (JSON.parse(readFileSync(
+  join(process.cwd(), '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests', 'fixtures', 'park-question.json'), 'utf8',
+)) as { rows: Row[] }).rows;
+
+/** A row's file with its widened fields set to that many `x`, as the driver's test sets them. */
+function widened(row: Row): Record<string, unknown> {
+  const file = structuredClone(row.file);
+  for (const [path, length] of Object.entries(row.widen ?? {})) {
+    const parts = path.split('.');
+    const at = parts.length === 1 ? file : (file[parts[0]!] as Record<string, unknown>[])[Number(parts[1])]!;
+    at[parts.at(-1)!] = 'x'.repeat(length);
+  }
+  return file;
+}
 
 describe('readQuestion', () => {
-  it('reads the question whole, each answer and the one recommended', () => {
-    expect(readQuestion({
-      question: {
-        id: 'a1b2c3d4', question: 'Which target?', at: '2026-10-22T09:05:00Z', recommend: 2, by: 'before Friday',
-        choices: [{ label: '1,200', does: 'Write 1,200.' }, { label: '1,350', does: 'Write 1,350.' }],
-      },
-    })).toEqual({
-      id: 'a1b2c3d4', question: 'Which target?', at: '2026-10-22T09:05:00Z', recommend: 2, by: 'before Friday',
-      choices: [{ label: '1,200', does: 'Write 1,200.' }, { label: '1,350', does: 'Write 1,350.' }],
+  it.each(ROWS.map((row) => [row.name, row] as const))('reads the shared table\'s row: %s', (_name, row) => {
+    const read = readQuestion({ question: widened(row) });
+
+    if (row.read === null) {
+      expect(read).toBeNull();
+      return;
+    }
+    const words = (value: unknown) => (typeof value === 'number' ? 'x'.repeat(value) : value);
+    expect(read).toEqual({
+      id: row.read.id, question: words(row.read.question), choices: row.read.choices, recommend: row.read.recommend,
+      by: row.read.by, at: row.file.at,
     });
   });
 
-  it('reads none from an older shell, a question with no id or words, and nothing at all', () => {
+  it('reads none from an older shell, and nothing at all', () => {
     expect(readQuestion(null)).toBeNull();
     expect(readQuestion({})).toBeNull();
-    expect(readQuestion({ question: { id: 'a1', question: '  ' } })).toBeNull();
-    expect(readQuestion({ question: { question: 'Which?' } })).toBeNull();
-  });
-
-  it('passes over an answer with no label, and a recommendation that names no answer', () => {
-    const read = readQuestion({ question: { id: 'a1', question: 'Which?', choices: [{ does: 'x' }, { label: 'Yes' }, null], recommend: 3 } });
-
-    expect(read?.choices).toEqual([{ label: 'Yes', does: '' }]);
-    expect(read?.recommend).toBeNull();
-    expect(read?.by).toBeNull();
   });
 });
 

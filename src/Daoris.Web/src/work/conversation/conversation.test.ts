@@ -41,6 +41,29 @@ afterEach(() => {
 const e = (seq: number, over: Partial<SessionEvent>): SessionEvent => ({ seq, at: `2026-09-25T00:00:0${seq % 10}Z`, kind: 'message', ...over });
 
 describe('toTurns', () => {
+  /**
+   * PARKVIEW1 (Fable's read, Q4): words pressed as an answer of the park's question carry the answer by their mark, waiting at the
+   * foot and where the session took them, the mark kept from the waiting words where the taking event names none; another origin's
+   * mark is never read as the person's choice.
+   */
+  it('carries a pressed answer\'s mark on the waiting words and on the turn that took them', () => {
+    const waiting = toTurns([
+      e(1, { kind: 'turn', stopReason: 'end_turn' }),
+      e(2, { kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: '1,200\n\nonly the menu entry', choice: '1,200' }),
+    ]).turns;
+    expect(waiting.at(-1)!.items[0]).toMatchObject({ kind: 'held', choice: '1,200' });
+
+    const taken = toTurns([
+      e(1, { kind: 'turn', stopReason: 'end_turn' }),
+      e(2, { kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: '1,200', choice: '1,200' }),
+      e(3, { kind: 'user', origin: 'person', id: 'w1', text: '1,200' }),
+    ]).turns;
+    expect(taken.at(-1)!.ask).toMatchObject({ text: '1,200', choice: '1,200' });
+
+    const target = toTurns([e(1, { kind: 'user', origin: 'target', text: '1,200', choice: '1,200' })]).turns;
+    expect(target[0]!.ask!.choice).toBeUndefined();
+  });
+
   it('opens a turn at what was asked, joins chunks into one message, and closes it at the turn\'s end', () => {
     const { turns } = toTurns([
       e(1, { kind: 'user', origin: 'person', text: 'cap the hydration' }),

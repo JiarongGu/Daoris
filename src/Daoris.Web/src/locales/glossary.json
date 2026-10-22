@@ -302,7 +302,7 @@
         "asks.goAhead.state.*", "asks.goAhead.stale.pill", "asks.record.paused", "asks.state.*", "chain.ask", "chain.attempt", "chain.current", "chain.thisSession",
         "work.head.copied",
         "console.live", "harness.absent",
-        "harness.cooling.pill", "harness.use.begins", "harness.use.kept", "harness.use.passed.*", "work.waitsForAccount", "work.park.recommended",
+        "harness.cooling.pill", "harness.use.begins", "harness.use.kept", "harness.use.passed.*", "work.waitsForAccount", "work.park.recommended", "work.conversation.chose",
         "harness.declaredBy", "harness.installed", "harness.login.in", "harness.login.keyed",
         "harness.login.out", "harness.login.refused", "harness.login.unknown", "harness.own",
         "harness.pin.fromPath", "harness.pin.fromPathAbsent", "harness.pin.missing", "harness.pin.pinned",
