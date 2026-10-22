@@ -380,12 +380,43 @@ public sealed class SessionEvents(string directory)
     public DateTimeOffset? LastAt(string sessionId) => Newest<DateTimeOffset>(sessionId, e => e.At);
 
     /// <summary>
-    /// When its record last shows words handed to its agent (PARKVIEW1, the park's ask design §2): the newest prompt or word recorded as
-    /// said to it (a <c>user</c> event) or written to its harness (a <c>sent</c> receipt), read from the file's end. What a question it
-    /// asked must come after to be its last turn's. Null for none, no record, an unreadable one, or an id that is not one.
+    /// When its record last shows words handed to its agent (PARKVIEW1, the park's ask design §2): the newest prompt Daoris composed (a
+    /// <c>user</c> event of origin <c>target</c>), word kept under an id (a <c>user</c> event with one), or word written to its harness (a
+    /// <c>sent</c> receipt), read from the file's end. Never the protocol door's echo of the prompt it was handed, which carries no id
+    /// and says nothing new was handed (Fable's read, Q3). What a question it asked must come after to be its last turn's. Null for
+    /// none, no record, an unreadable one, or an id that is not one.
     /// </summary>
     public DateTimeOffset? LastHandedAt(string sessionId) => Newest<DateTimeOffset>(sessionId, e =>
-        e.Kind == SessionEventKind.User || (e.Kind == SessionEventKind.Receipt && e.Receipt == Receipts.Sent) ? e.At : null);
+        (e.Kind == SessionEventKind.User && (e.Id is { Length: > 0 } || e.Origin == "target"))
+        || (e.Kind == SessionEventKind.Receipt && e.Receipt == Receipts.Sent)
+            ? e.At
+            : null);
+
+    /// <summary>
+    /// The answer each word was pressed as (PARKVIEW1; Fable's read, Q4), by the word's id: the <see cref="SessionEvent.Choice"/> the
+    /// person's word was shown under as it was kept. Empty for none, no record, an unreadable one, or an id that is not one.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> ChoicesOf(string sessionId)
+    {
+        var choices = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (!SessionEventText.IsId(sessionId)) return choices;
+        try
+        {
+            var path = PathOf(sessionId);
+            if (!File.Exists(path)) return choices;
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            using var reader = new StreamReader(stream, Utf8);
+            while (reader.ReadLine() is { } line)
+            {
+                if (Event(line) is { Kind: SessionEventKind.User, Id: { Length: > 0 } id, Choice: { Length: > 0 } choice }) choices[id] = choice;
+            }
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+        }
+
+        return choices;
+    }
 
     /// <summary>
     /// Whether a conversation's last turn has ended with nothing said since (ACCEPTFOOT1b), read from its record's end as

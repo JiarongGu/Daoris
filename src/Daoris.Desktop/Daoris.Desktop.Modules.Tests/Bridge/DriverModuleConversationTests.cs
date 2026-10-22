@@ -104,8 +104,35 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
         var sent = await AnswerAsync(module, "SESSION_INPUT", new { id = "s1", text = "1,200", question = "a1b2c3d4" });
 
         Assert.Equal((true, "resume"), (sent.GetProperty("sent").GetBoolean(), sent.GetProperty("reaches").GetString()));
-        Assert.Equal("/api/sessions/s1/say", Assert.Single(ledger.Posts).Path);
+        var (_, path, body) = Assert.Single(ledger.Posts);
+        Assert.Equal("/api/sessions/s1/say", path);
+        Assert.Equal("1,200", JsonDocument.Parse(body).RootElement.GetProperty("text").GetString());
         Assert.Equal(1, loop.Nudges);
+        // Fable's read, Q4: shown as that answer chosen, the mark the resumed run hands it by.
+        Assert.Equal("1,200", Assert.Single(loop.Events.Page("s1").Events, e => e.Kind == SessionEventKind.User).Choice);
+    }
+
+    /// <summary>
+    /// Fable's read, Q4: words naming the question that begin with none of its answers are the person's own words to it, kept and shown
+    /// with no mark.
+    /// </summary>
+    [Fact]
+    public async Task Words_naming_the_question_that_press_none_of_its_answers_carry_no_mark()
+    {
+        AskedQuestion("s1", "a1b2c3d4");
+        var ledger = new Ledger
+        {
+            Records = Records(Record("s1", "awaiting-person")),
+            Say = id => (HttpStatusCode.OK, $$$"""
+                {"session":{"id":"{{{id}}}","state":"awaiting-person"},"message":"Kept for session `{{{id}}}` to go on with.",
+                 "said":{"id":"w1","text":"1,250 instead","at":"2026-10-22T09:10:00+00:00","files":[],"reopens":false}}
+                """),
+        };
+        var (loop, module) = await UpAsync(ledger);
+
+        await AnswerAsync(module, "SESSION_INPUT", new { id = "s1", text = "1,250 instead", question = "a1b2c3d4" });
+
+        Assert.Null(Assert.Single(loop.Events.Page("s1").Events, e => e.Kind == SessionEventKind.User).Choice);
     }
 
     /// <summary>

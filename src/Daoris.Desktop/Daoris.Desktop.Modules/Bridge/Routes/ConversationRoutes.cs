@@ -114,11 +114,18 @@ public sealed class ConversationRoutes(DriverContext context)
         }
 
         // PARKVIEW1 (the park's ask design §4): a press answering a park's question names it, and words for a question the park no
-        // longer asks (answered and asked anew in another window) are kept nowhere, said by their code, so a label never answers a
-        // question it was not offered for.
-        if (Optional(request, "question") is { } question && new QuestionFiles(_loop.Home).Read(id)?.Id != question)
+        // longer asks (answered and asked anew in another window, or gone as its record went on) are kept nowhere, said by their code,
+        // so a label never answers a question it was not offered for. Fable's read, Q4: words that begin with one of its answers, as
+        // the page composes a press, are marked with it, so the conversation draws a choice and the session is handed one.
+        string? choice = null;
+        if (Optional(request, "question") is { } question)
         {
-            return new { Sent = false, Reaches = (string?)null, Why = "question-changed", To = (string?)null, Now = false };
+            if (new QuestionFiles(_loop.Home).Read(id) is not { } asked || asked.Id != question)
+            {
+                return new { Sent = false, Reaches = (string?)null, Why = "question-changed", To = (string?)null, Now = false };
+            }
+
+            choice = QuestionWords.Pressed(asked, text);
         }
 
         // What the person attached, kept for its session before the words go (CONV4c).
@@ -128,7 +135,7 @@ public sealed class ConversationRoutes(DriverContext context)
         // COWORK1c: `key`, the press's own where the page names one, so a press that arrives twice keeps one word; the shell gives each
         // press one otherwise.
         var said = await _loop.Words
-            .SayAsync(id, text, files, Optional(request, "preface"), door: "screen", cancellationToken, level, Optional(request, "key"))
+            .SayAsync(id, text, files, Optional(request, "preface"), door: "screen", cancellationToken, level, Optional(request, "key"), choice)
             .ConfigureAwait(false) ?? throw NotReady();
         // Words a running session took are kept on its ask now (DRIFT1a2); words kept on a record are kept there once a
         // session takes them (MSG1a's taken door), so they are never posted twice.

@@ -125,8 +125,8 @@ public sealed class QuestionBox(string? home)
             $"Asked `#{id}`. The person sees your question at the end of this session's conversation, each answer you offered a press "
             + "beside their own words, with what you said each does. A go-ahead for an act is asked with `go_ahead_ask`, never here. Now "
             + "say in your last message that the work waits on this question, commit what you have, and end your turn with your quest "
-            + "still taken. Their answer is your next prompt, in their words: an answer they pressed as its label, as you wrote it, then "
-            + "any words of theirs.");
+            + "still taken. Their answer is your next prompt: an answer they pressed as `chose: ` and its label, as you wrote it, then any "
+            + "words of theirs after a blank line; or their words alone.");
     }
 
     /// <summary>
@@ -159,7 +159,15 @@ public sealed class QuestionBox(string? home)
         {
             var path = PathOf(home, session);
             if (!File.Exists(path)) return null;
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            string text;
+            // Shared for a delete, as the driver reads it, so its settle is never held back by a read here.
+            using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+            using (var reader = new StreamReader(stream, Encoding.UTF8))
+            {
+                text = reader.ReadToEnd();
+            }
+
+            using var document = JsonDocument.Parse(text);
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object) return null;
             string? Text(JsonElement element, string name) =>
