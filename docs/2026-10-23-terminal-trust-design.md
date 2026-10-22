@@ -1,9 +1,9 @@
 # A terminal's standing confirmation: the person's one press for named management presses (TERMTRUST1, 2026-10-23)
 
-**Status: proposed (D201), round 2.** Written by Claude Opus from the code at `f506863e7`; revised after Codex's read (D191), whose twelve
-findings (eight blocking) were each checked against the code and taken, and after the author's own check found one more and measured
-one fact (§11). Nothing is built. The design changes a decided rule other designs rest on (D156 point 4, as RPC1c and CONFIRMSEEN1 built
-it) and adds a containment every agent start rests on, so it asks for Fable's foundation read (D191's amendment).
+**Status: proposed (D201), round 3.** Written by Claude Opus from the code at `f506863e7`; revised after Codex's read (D191), whose twelve
+findings (eight blocking) were each checked against the code and taken, after the author's own check found one more and measured one
+fact, and after Fable's foundation read (D191's amendment: the design changes D156 point 4 and the containment every agent start rests
+on), whose ten findings (three blocking) were each checked and taken or answered (§11). Nothing is built.
 
 This design serves two parts of D193's company: **management** (the steward runs the owner's install for development and testing, and
 should not stop at the owner's desk for each routine act) and **the owner's attention** (D37: the person sets the target and verifies
@@ -112,8 +112,9 @@ The person turns on a **standing confirmation** in the window, with their own pr
 Daoris runs, a terminal's press that the confirmation names, sent in exactly its verb's form, from a process that is in **no job any
 Daoris on this Windows session made for an agent**, runs without a card: the pipe admits it as a confirmed press, tells the terminal so,
 writes `person.confirmation` with `state: standing`, and the record it acted on says it was sent from a terminal under the standing
-confirmation. Every agent any Daoris starts is held in such a job from its first instruction (TERMTRUST1a's first part), so a session's
-own shell and everything it starts never ride the grant. It names four presses now: stop a session, finish a parked session with no
+confirmation. Every agent any Daoris starts is held in such a job from its first instruction, through a small launcher of Daoris's own
+(TERMTRUST1a's first part); a start that cannot be held is still made, and while it lives every judge covers nothing. So a session's own
+shell and everything it starts never ride the grant. It names four presses now: stop a session, finish a parked session with no
 process here and no words of the person's, hold a repository, and resume a repository a terminal held under it during this run;
 TERMTRUST1b adds closing a quest as done in a narrow form, once that press is on the pipe. Everything else asks as today. The person turns
 it off at once from the same row or from *Notifications*. Its record is a file of its own under `data/`, bound to this machine and
@@ -130,17 +131,17 @@ verb through the stand-in instance (§8).
 
 | Name | Route | Form and conditions | Why it is safe to name | Taken back by |
 |---|---|---|---|---|
-| `stop` | `STOP_SESSION` | `{ id: string, said: true }` | It only ends work: the record concludes `stopped` as the person's stop, which holds its quest until *Try again* (D126 §3.3), never a strike (D58), a done or a carry-on. It makes no work due for landing that the agent's own done did not already make due at its end (§0.3); one not done is never due | the person's *Try again*, the tree kept |
-| `finish` | `RESOLVE_SESSION` | `{ id: string, state: "completed", said: true }`, no `note`; and no process for the session on this machine (`AliveOnThisMachine` false) | It ends a session that already waits on the person, with nothing of it running, and writes none of their words. `said: true` runs the verb's path, which refuses an intake and a record not waiting; the move is then the ledger's alone, made **only from `awaiting-person`**: the advance gains an expected state that the store compares in the same transaction (a resume that moved it to `working` meanwhile is refused, nothing ended). A parked session whose process still lives here asks | not by a press: the quest sits until the person marks it done (QUESTCLOSE1), the tree and the conversation kept for *Start from* |
+| `stop` | `STOP_SESSION` | `{ id: string, said: true }` | It only ends work: the record concludes `stopped` as the person's stop, which holds its quest until *Try again* (D126 §3.3), never a strike (D58), a done or a carry-on. It makes no work due for landing that the agent's own done did not already make due at its end (§0.3); one not done is never due. Where it is due, the stop fixes the moment: the landing reads the tree as the stop left it, not as the agent's own end would have, so committed but unfinished work can land; uncommitted work is held by the landing's own check (`AutoLandingCode.Uncommitted`) | the person's *Try again*, the tree kept |
+| `finish` | `RESOLVE_SESSION` | `{ id: string, state: "completed", said: true }`, no `note`; and no process for the session on this machine (`AliveOnThisMachine` false) | It ends a session that already waits on the person, with nothing of it running, and writes none of their words. `said: true` runs the verb's path, which refuses an intake and a record not waiting. **Under the standing confirmation the verb never takes the request folder**: where it finds a process for the session here when it reads again (`SessionsCommand.cs:946`), it answers refused, `running-here`, exit 1 (*it runs here now; ask again, or confirm it in Daoris's window*), since the folder's path stops the process before the ledger moves (`SessionRequestWatch.cs:356-364`, `SessionMoves.cs:45-49`) and a resume between would leave a killed session reading `working`. The move is then the ledger's alone, made **only from `awaiting-person`**: the advance gains an expected state that the store compares in the same transaction, the second guard. What a finish ends beyond the session: a workflow node's run waits on the person (`WorkflowRun.cs:548-551`); a helper's last words, or a `no-answer` refusal where it said none, reach its asker, which goes on at its turn's end (`DriverHelpers.cs:342-362`); a record with the person's words already waiting on it is carried on by the planner as its park would have been (`Planner.cs:1377-1380`); a driven quest otherwise sits | not by a press: the quest sits until the person marks it done (QUESTCLOSE1), the tree and the conversation kept for *Start from* |
 | `hold` | `SET_HOLD` | `{ repository: string, held: true }` | It only stops new starts in one repository; what runs runs on | `resume` |
 | `resume` | `SET_HOLD` | `{ repository: string, held: false }`, the repository one a covered `hold` held during this run of Daoris and no other press has touched since | It undoes only a hold a terminal made under the confirmation in this run; a hold the person made, one made alone, and every hold from before this start ask. It changes no permission, cap, strike count, landing rule or drivability | `hold` |
-| `done` (TERMTRUST1b) | `QUEST_DONE`, a new route (§9) | `{ quest: string, said: true }`, no `note`; judged **in the service's own transaction**, not by a snapshot: the quest open or taken, bound to no graph version and under no closure graph, neither held nor withdrawn by a source's reopen, no session of it queued, starting, working or waiting on the person on this machine, and its last session here the one the relay names, ended `completed` by a finish | It closes what a finish left sitting, in the one case QUESTCLOSE1 built the person's done for. It writes none of the person's words; its note says it came from a terminal under the confirmation. A graph's override and a reopen's hold stay the person's per press (D173) | nothing: a closed quest does not move |
+| `done` (TERMTRUST1b) | `QUEST_DONE`, a new route (§9) | `{ quest: string, said: true }`, no `note`; judged **in the service's own transaction**, not by a snapshot: the quest open or taken, bound to no graph version and under no closure graph, neither held nor withdrawn by a source's reopen, no session of it queued, starting, working or waiting on the person on this machine, and its last session here the one the relay names, ended `completed` by a finish, which the service reads by the record's note code `stopped.checkpoint-finished` (`NoteCodes.StoppedCheckpointFinished`, `SessionMoves.cs:57`), never by its English words | It closes what a finish left sitting, in the one case QUESTCLOSE1 built the person's done for. It writes none of the person's words; its note says it came from a terminal under the confirmation. A graph's override and a reopen's hold stay the person's per press (D173) | nothing: a closed quest does not move |
 
 **Why `done` waits for its own row.** Its door is the service's (§0.3), which no pipe judge sees and which waits for nothing today. To be
 judged where every other terminal press is judged (its terminal's process placed, §3.3), TERMTRUST1b moves the verb onto the pipe as a
 `Person` route the instance relays with its key; until then the verb keeps acting alone, and the standing confirmation changes nothing
 for it. Moved onto the pipe, a `quest done` that is not covered (with a note, say) waits for the card where today it waits for nothing:
-stricter, as D156 meant. It is the one press in the set that is not a narrowing: it ends a quest for good and lets a chain go on.
+stricter, as D156 meant, though the service's door behind it still takes any process's POST until PERSONDOOR1g, so it is no worse. It is the one press in the set that is not a narrowing: it ends a quest for good and lets a chain go on.
 
 ### 2.2 What it never names
 
@@ -186,27 +187,48 @@ purpose. The grant's ask says so in plain words (§6.1).
    not already allow. `done`, from TERMTRUST1b, is the exception §2.1 says, its conditions judged where the move is made.
 2. **The forms.** Only the verb's own payload; anything more asks.
 3. **The caller: never an agent any Daoris runs.**
-   - **Contained from the first instruction** (TERMTRUST1a's first part). `ProcessStarts` gains a contained start: the process created
-     suspended, joined to its jobs, then let go, as `HeavyStep` and `PseudoConsole` already start theirs. Every agent start (§0.6's driven
-     run, carry-ons and conversations), a plugin's process (a performed step runs a repository's own commands) and a partner's piece use
-     it; a start that cannot be contained is not made, as a heavy gate that cannot join is not run (`HeavyStep.cs:15-17`).
    - **One named job per Daoris process that runs agents.** Each such process (a desktop instance, a headless loop, a terminal's
-     `chat`) makes `Local\daoris-agents-<home id>-<process id>` at its start, empty, and every agent it starts is joined to it first, then
-     to its own kill-on-close job, which nests inside. The judge finds every job of that prefix in this Windows session's object
-     namespace, its own home's and every other home's, and asks each whether the client's process is in it (`IsProcessInJob` with that
-     job's handle, never `NULL`, §0.6).
+     `chat`) makes `Local\daoris-agents-<process id>` at its start, empty, and holds it for its life. No home id is in the name: the judge
+     asks each job by its handle, so the home adds nothing, and a home whose id is not minted yet (HOMEID1) would have none to give. A
+     name lives only while a handle to it is open, so a reused process id meets no stale one.
+   - **Contained from the first instruction, through the launcher** (TERMTRUST1a's first part). `.NET`'s `Process` cannot be built around
+     a handle `CreateProcessW` returned with its streams, and every agent start uses its `Process` and redirected streams (`Driver.cs:3143-3147`,
+     `ChatRunner.cs:1180`, `DriverContinuations.cs:970`, :1023-1026, `HookProcess.cs:144-156`, `PluginTrialProcess.cs:43-55`,
+     `SessionProcesses.cs:351`, :372-378). So the containment is the partner's launcher, generalized: `daoris-piece-start`
+     (`PieceLauncher.cs:57-77`, `ProcessJob.JoinNamed` at `ProcessJob.cs:155-168`) takes several `--job` in order, the agents' job first and
+     then a piece's, which nests beneath, and accepts the agents' prefix beside the piece's (`PieceLauncher.cs:43-46` accepts a piece's alone
+     today); it joins them, then starts the harness inheriting the stdio it was handed. The driver rewrites each agent's start in place, as
+     `PieceStarts.Through` does for a piece (`PieceStarts.cs:25-36`): the launcher becomes the program, the job and the harness its words,
+     the environment, folder, streams and their encodings kept, so the doors read the launcher as they read any session's process, and
+     `ProcessJob.Hold` nests the per-agent kill-on-close job beneath. Every agent start (§0.6's driven run, carry-ons and conversations), a
+     plugin's process (a performed step runs a repository's own commands) and a partner's piece go through it. **Two costs, said**: a
+     workspace build lays out no launcher (`PieceStarts.LauncherPath` is null there, `PieceStarts.cs:14-17`), so a development run that does
+     not lay it beside its build starts uncontained, as below; and `Process.Kill` reaches the launcher, the job ending the harness, as for a
+     piece.
+   - **Best effort for the start, published for every judge.** A start that cannot be contained (no launcher laid out, a job the system
+     refuses, a name already held) is made as today and logged `agent.contained: false`: an install that never grants changes nothing it
+     can feel. While any uncontained agent of a Daoris process lives, that process holds a second named object of the prefix, an event
+     `Local\daoris-agents-<process id>-open`, which every judge's listing finds and answers `untold`. Its own judge answers `untold` too.
    - **The client, by a handle.** The pipe opens the client's process as it takes the connection (`GetNamedPipeClientProcessId`, then a
      handle with its creation time) and keeps that handle for the connection's life; a process that would not open, or was created
      after the connection was taken, is unknown.
-   - **The answer**: in any of those jobs, not covered (it asks, and the card names the terminal as today); in none, with every job
-     found readable and every agent this process runs contained from its start, covered; anything the judge cannot tell (a job it cannot
-     open or read, the namespace not read, an agent of its own whose containment failed, the client unknown, not Windows), not covered,
-     and said why.
+   - **An older build beside it.** The judge lists this Windows session's instance pipes (`daoris-<home id>-<session>`, `InstancePipe.cs:234`)
+     and asks each pipe's server process (`GetNamedPipeServerProcessId`); a server with no job of the prefix under its process id is a
+     Daoris from before TERMTRUST1a, whose agents are in no job, and while one serves the judge answers `untold`. An older headless loop
+     serves no pipe and is not seen (§3.4).
+   - **The answer**: the client in any job of the prefix, not covered (it asks, and the card names the terminal as today); in none, with
+     every job found readable, no `-open` object, no older instance and every agent this process runs contained, covered; anything the judge
+     cannot tell (a job it cannot open or read, the namespace not read, an `-open` object, an older instance, the client unknown, not
+     Windows), not covered, and said why.
    This only ever adds a card. Being in none of those jobs never makes a caller the person (D156 §2.4 rejected an OS identity): the
-   person's grant covers the press, and the jobs only take the cover from an agent.
+   person's grant covers the press, and the jobs only take the cover from an agent. **Measured** (Fable's read, 2026-10-23, one read-only
+   probe): a child of a process already in a job joined a fresh `Local\` named job, a second empty job nested beneath it for the same child,
+   the named job opened by name for query, and `IsProcessInJob` answered by that handle, true for the child and false for the probe. A
+   grandchild born after the join was not measured; part (i)'s proof is.
 4. **A session's own record cannot be stopped into anything.** A stop of itself concludes `stopped` as the person's stop, which holds its
    quest for the person's *Try again*: no strike escaped into a done, no carry-on, no landing its own done had not made due. A finish needs
-   a record waiting on the person with no process here, moved only from that state. A hold stops starts. And by point 3, a session's own
+   a record waiting on the person with no process here, never takes the request folder, and is moved only from that state. A hold stops
+   starts. And by point 3, a session's own
    process tree, its background work included, is not covered at all.
 5. **Admitted once.** The judgement is made under the judge's lock and admits the press there; a revoke after it does not recall it, and
    a covered `hold`'s memory of what it held is written under the same lock, so no press restores an earlier grant (§4.3).
@@ -216,17 +238,28 @@ purpose. The grant's ask says so in plain words (§6.1).
 ### 3.4 What it does not bound
 
 - **An agent the person runs by hand outside Daoris** rides it, by design; the grant's ask says so.
+- **Ordinary reach the containment does not hold against.** D156 point 7 counts every command an agent runs as its ordinary reach, and
+  one command starts a process outside its job: `explorer.exe <program>` hands the start to the running shell, `wsl.exe <a Windows
+  program>` starts it through WSL's service, a scheduled task, WMI and an out-of-process COM server start it from theirs. Such a process
+  is a caller in no agent job, and is covered. What holds there is the presses' own bounds (points 1, 2 and 4): each only narrows, nothing
+  is lost, and §0.5 already gives an agent each of these acts by one file write, so the grant adds no act. The grant's ask says the limit
+  in plain words (§6.1).
 - **Code an agent wrote that Daoris itself runs outside an agent's job.** A repository's git hooks run under Daoris's own git acts (a
   landing's commit in a session's tree; no `--no-verify` or `core.hooksPath` is set, read at `f506863e7`), and a sign-in's or a usage read's
-  process: these are Daoris's starts, not an agent's, and are in no agent job. A plugin's process is contained (point 3). What holds there
-  is the presses' own bounds (points 1, 2 and 4).
-- **An older build.** A Daoris from before TERMTRUST1a makes no named job, so its agents are in none: while one runs agents on this
-  Windows session, its agents are covered like any terminal. Said, not detected.
+  process: these are Daoris's starts, not an agent's, and are in no agent job. A plugin's process is contained (point 3). Running Daoris's
+  own git in a session's tree (`WorkingTree.cs:1106`) through the launcher would close the hook route for the common case; it is not taken
+  here, since the look runs git in the trees often and each run would cost a launcher's start; a later row may weigh it. What holds is the
+  presses' own bounds.
+- **Elevation.** A Daoris that is not elevated cannot open an elevated one's named job (the elevated token's default DACL), so its judge
+  answers `untold` for every press while an elevated Daoris runs agents: safe, and the cover is dead in that layout until both run alike
+  (D171's PIPEOWNER1 note: the install has run elevated). The reverse works. Measured by §8 case 3.
+- **An older headless loop.** A Daoris from before TERMTRUST1a makes no named job; an older desktop instance is seen by its pipe (point
+  3), an older headless loop or terminal `chat` serves none and is not: while one runs agents on this Windows session, its agents are
+  covered like any terminal. Said.
 - **The account's reach** (D156 point 7, PERSONDOOR2): an agent that writes the record while Daoris is down is read at the next start
-  (§4.2); one that starts a process outside its job through a system service (the task scheduler, WMI, a COM server) is a caller in no
-  agent job; one that makes a job of the prefix and puts the person's terminal in it takes the person's cover away, which asks; UI
-  automation of the window, a development run's debug port and the request folder (§0.5) reach the same acts with no grant at all. The
-  standing confirmation adds no act the account's reach lacks today.
+  (§4.2); one that makes a job or an event of the prefix and puts the person's terminal in it, or holds an `-open` object, takes the
+  person's cover away, which asks; UI automation of the window, a development run's debug port and the request folder (§0.5) reach the
+  same acts with no grant at all. The standing confirmation adds no act the account's reach lacks today.
 - **Denial.** A covered caller can stop or finish the person's sessions and hold repositories. Nothing is lost by it: trees, branches
   and conversations are kept, a stopped quest waits for *Try again*, a finished one sits, and each use is said where the person looks.
 - **The service's doors** stay ungated until PERSONDOOR1g, whatever this says.
@@ -290,7 +323,8 @@ changes keeps its card: a grant confirms no press already asked.
 4. **Covered:** the pipe writes `person.confirmation` `{ state: "standing", route, door: "terminal" }`, tells the terminal `DAORIS.PIPE`
    `STANDING` `{ id }`, and runs the press through `RunAsync` (journal, `RESULT`, the dispatcher) inside `PipeDoor.EnterStanding()`, a door
    the handlers read as `PipeDoor.Standing`. The route writes the record's mark (§7.1) and answers its `said` lines as today; a finish
-   sends the ledger its expected state. Every window is told `STANDING_USED` `{ seq, at }`, which the line in *Notifications* counts.
+   under `PipeDoor.Standing` answers `running-here` where the verb's own read finds a process for the session here, never writing the
+   request folder, and otherwise sends the ledger its expected state. Every window is told `STANDING_USED` `{ seq, at }`, which the line in *Notifications* counts.
 5. **Asks:** as today, the card; `CONFIRMING` gains `standing` (the why, where the grant is on and names the route), so the terminal says
    *waiting for you to confirm this in Daoris's window (its standing confirmation does not cover a press from inside an agent Daoris
    runs)*; the `asked` line gains `standing` with the same code.
@@ -318,11 +352,11 @@ A row beside the launchers and the address file (the This Daoris design §3.7):
 *Turn on…* asks once, under the row (`InlineConfirm`), with each press ticked:
 
 - **en:** *Let a terminal on this machine do these without asking you each time. Daoris cannot tell whether you ran a terminal's press
-  or an agent did, so an agent you run yourself outside Daoris can do them too; the agents Daoris runs cannot. Everything else still asks
-  you. Each one is logged and said on what it acted on. Turn it off here or in Notifications at any time.* Buttons **Turn on** and
-  **Never mind**.
+  or an agent did, so an agent you run yourself outside Daoris can do them too. Daoris keeps the agents it runs from using this, unless
+  one breaks out of Daoris's hold. Everything else still asks you. Each one is logged and said on what it acted on. Turn it off here or in
+  Notifications at any time.* Buttons **Turn on** and **Never mind**.
 - **zh:** *允许本机的终端无需每次问你即可执行这些操作。Daoris 无法分辨终端的操作是你运行的还是智能体运行的，所以你自己在 Daoris
-  之外运行的智能体也能执行；Daoris 运行的智能体不能。其他一切仍会问你。每一次都会记入日志，并写在它作用的对象上。你可以随时在这里或在通知中关闭。*
+  之外运行的智能体也能执行。Daoris 不让它运行的智能体使用这一设置，除非某个智能体脱离了 Daoris 的控制。其他一切仍会问你。每一次都会记入日志，并写在它作用的对象上。你可以随时在这里或在通知中关闭。*
   Buttons **开启** and **取消**.
 
 A record not honoured is said under the row: *Off: its record is from another machine* / *关闭：它的记录来自另一台机器*; *Off: its
@@ -370,7 +404,7 @@ of the person's own, in the panel or outside Daoris*.
 | `person.confirmation` | `state: standing`, `route`, `door: terminal` | a covered press, as it is admitted |
 | `person.confirmation` | `state: asked`, `route`, `door`, `standing` (`form`, `not-held-here`, `running-here`, `in-agent-job`, `untold`) | a press the grant names that asked anyway; no `standing` field while it is off or names no such press |
 | `person.standing` | `state` (`granted`, `revoked`, `found`, `unread`, `newer`, `other-machine`, `unwritten`), `presses` | a grant or revoke in the window; at the start, what the record said |
-| `agent.contained` | `kind` (`agent`, `plugin`, `piece`), `contained` (`true`, `false`), `why` | a start the contained start could not contain, which is not made (TERMTRUST1a's first part) |
+| `agent.contained` | `kind` (`agent`, `plugin`, `piece`), `contained: false`, `why` (`no-launcher`, `job-refused`, `name-held`) | a start the launcher could not contain, made as today, its `-open` object held while it lives (TERMTRUST1a's first part) |
 
 Codes only, as D156 §5.1 has it: never a value, an id, a repository, the asker's name or its process.
 
@@ -383,55 +417,73 @@ Each case seen failing first, as `held-clocks.md` and `bridge-presses.md` ask. F
    extra field; a name twice in two casings; `CANCEL_TURN`, `WORK_RESUME`, `RETRY_QUEST` and every other `Person` route (a census sweep);
    a resume of a repository this run did not hold, of one held before the start, of one the window held and released since; the grant
    off; a grant naming fewer presses; a build press the record does not name.
-2. **Containment** (`ProcessStartsContainedTests`, driver, Windows, `Process` category): a stand-in harness that starts a child in its
-   first instruction leaves that child in its session's job and in the named job; a start that cannot join is not made and logs
-   `agent.contained`; every start site of §0.6 classed (contained, or Daoris's own with its reason), a census that fails on a new site.
+2. **Containment** (`PieceLauncherTests` grown, `AgentStartsTests`, driver, Windows, `Process` category): the launcher takes two `--job`
+   in order and the agents' prefix, and refuses any other name; a stand-in harness started through it that starts a child in its first
+   instruction leaves that child in the agents' job and in its own nested job; a start with no launcher laid out, and one whose job the
+   system refuses, is made, logs `agent.contained: false` and holds its `-open` event until it ends; every start site of §0.6 classed
+   (through the launcher, or Daoris's own with its reason), a census that fails on a new site; `Kill` of the launcher ends the harness.
 3. **The caller** (`StandingCallerTests`, modules, Windows): a child of a contained stand-in asks (`in-agent-job`); a process outside
-   every job of the prefix is covered; a job of another home's prefix found and read (two homes, two named jobs); a job of the prefix
-   that cannot be opened, a namespace not read, an own agent whose containment failed, a client gone and a client process created after
-   the connection each ask (`untold`); the terminal panel's job is no agent's.
-4. **Over the real pipe** (`PipeConfirmTests`): a covered stop runs with no `CONFIRMING` and the terminal hears `STANDING`; its journal
+   every job of the prefix is covered; another process's named job found and read (two homes, two processes); a job of the prefix that
+   cannot be opened, a namespace not read, an `-open` event, an instance pipe whose server has no job of the prefix, an own agent left
+   uncontained, a client gone and a client process created after the connection each ask (`untold`); the terminal panel's job is no
+   agent's. **Elevation measured**: an elevated stand-in's job opened, or not, from a judge that is not elevated, and the reverse, each
+   answer recorded in the case.
+4. **Part (i) on the install, before part (ii)** (the parent's): with part (i) alone, each door run end to end on the install and its
+   harness seen in the agents' job: a driven session, a carry-on, a conversation, an intake, a helper, a reviewer, a brainstorm pass, a
+   workflow node, a plugin hook, a plugin trial and a partner; nothing else changed on an install with no grant.
+5. **Over the real pipe** (`PipeConfirmTests`): a covered stop runs with no `CONFIRMING` and the terminal hears `STANDING`; its journal
    answers `RESULT`; a revoke between the judgement and the run lets the admitted press run and makes the next ask; a press asked before a
    grant keeps its card; the log lines of §7.2 and none of a value.
-5. **The forms against the verbs** (`StandingFormTests`, driver and modules): `sessions stop`, `sessions finish` and `driver hold|resume`
+6. **The forms against the verbs** (`StandingFormTests`, driver and modules): `sessions stop`, `sessions finish` and `driver hold|resume`
    sent through `InstanceStandIn` are covered as they send them, so a verb that grows a field fails here.
-6. **The finish's race** (`SessionLedgerTests`, service; `SessionsCommandTests`, driver): an advance with an expected `awaiting-person`
-   refused once the record is `working`; a covered finish of a session resumed between the verb's read and the move ends nothing.
-7. **The landing** (`AutoLandingRulesTests`, driver): a covered stop of a session whose quest is `Done`, and of one whose closure graph
-   took its submission, is due exactly as its own completion would be; one not done is never due.
-8. **The grant's route** (`DriverModulePersonTests`): `window-only` over the pipe; the handler's own refusal of `PipeDoor.Terminal`; the
+7. **The finish's race** (`SessionLedgerTests`, service; `SessionsCommandTests`, driver): an advance with an expected `awaiting-person`
+   refused once the record is `working`; a covered finish of a session resumed between the verb's read and the move ends nothing; a covered
+   finish whose verb finds a process for the session here answers `running-here`, exit 1, and writes nothing to the request folder.
+8. **The landing** (`AutoLandingRulesTests`, driver): a covered stop of a session whose quest is `Done`, and of one whose closure graph
+   took its submission, is due exactly as its own completion would be, reading the tree as the stop left it; one not done is never due.
+9. **The grant's route** (`DriverModulePersonTests`): `window-only` over the pipe; the handler's own refusal of `PipeDoor.Terminal`; the
    record written and read back; a press the build does not name refused as data; the revoke's memory cleared before a failed write;
    `PipeCensusTests` holds it `Window`, `StatePublisherTests` its mark.
-9. **The record** (`StandingRecordTests`, driver): another machine's, an unreadable one, a newer one each off and left; `DaorisHomeTests`
-   in the three twins.
-10. **The note** (`SessionsCommandTests`, `SessionRequestWatchTests`, `NoteCodesTests`): a covered stop of a live, a parked and an
-    orphaned session, and a covered finish, each keep the move's note and add `standing.terminal`; `Planner` still holds the stopped
-    quest (`PersonStopped`); the code worded in en and zh.
-11. **The page** (web): the row off, on and not honoured; the inline ask's ticks and words in en and zh; *Turn off* in the row and in
+10. **The record** (`StandingRecordTests`, driver): another machine's, an unreadable one, a newer one each off and left; `DaorisHomeTests`
+    in the three twins.
+11. **The note and what a finish ends** (`SessionsCommandTests`, `SessionRequestWatchTests`, `NoteCodesTests`, `WorkflowRunTests`,
+    `HelperLookTests`, `PlannerTests`): a covered stop of a live, a parked and an orphaned session, and a covered finish, each keep the
+    move's note and add `standing.terminal`; `Planner` still holds the stopped quest (`PersonStopped`); the code worded in en and zh. A
+    covered finish of a workflow node's session leaves its run waiting on the person and starts nothing; of a helper's, delivers its last
+    words, or `no-answer` where it said none, to its asker at the asker's turn's end; of a record with the person's words waiting on it,
+    is carried on by the planner as its park would have been.
+12. **The page** (web): the row off, on and not honoured; the inline ask's ticks and words in en and zh; *Turn off* in the row and in
     *Notifications*; the granted presses only named; the hold's mark; `i18n:check` and `names:check -- --strict` with §6.3's terms;
     `HelpCoverageTests`' `Exempt` row.
-12. **TERMTRUST1b**: `QUEST_DONE`'s places (bridge-presses rows 1 to 11), the verb's client path held to the alone path's words; the
+13. **TERMTRUST1b**: `QUEST_DONE`'s places (bridge-presses rows 1 to 11), the verb's client path held to the alone path's words; the
     service's standing form and note part (`QuestPersonDoneTests`); each condition of §2.1 refusing on its own inside the transaction: a
     graph-bound quest, a closure graph, a source reopen's hold and withdrawal, a session started or resumed between the relay's read and the
-    move, a last session other than the one named.
-13. **The parent's look on the install**: the grant made in the window; the steward's `sessions stop` and `driver hold` run with no card and
+    move, a last session other than the one named, and one that ended `completed` with any note code but `stopped.checkpoint-finished`
+    (its English words alone never pass).
+14. **The parent's look on the install**: the grant made in the window; the steward's `sessions stop` and `driver hold` run with no card and
     say so; a press from inside a driven session still raises the card, naming why; the session's page and the hold say it in 中文 too; the
     line in *Notifications*; *Turn off*, then the next press asks.
 
 ## 9. The rows
 
 1. **TERMTRUST1a — a terminal's standing confirmation for stop, finish, hold and resume** (driver, modules, service, web; the row to
-   build). In two parts a dispatch may split, the first landing first: **(i) containment**: `ProcessStarts`' contained start, the named
-   agent job per Daoris process, every agent start, plugin process and piece through it, the census of start sites, `agent.contained`;
-   **(ii) the confirmation**: the judge and its table, the caller's handle and the job search, the ledger's expected state for a finish,
-   `SET_STANDING_CONFIRMATION` (`Window`) and `STATE`'s `standingConfirmation`, the record and its home entry in the three twins, the
-   hold's memory, `STANDING` and `CONFIRMING`'s `standing` on the wire and in `InstanceDoor.Told`, the note part, the log lines and the
-   machine log design's rows, This Daoris's row with its ask, the line in *Notifications*, the glossary, both catalogues. Until (i) has
-   landed, (ii)'s judge finds its own agents uncontained and covers nothing. Proof: §8 cases 1 to 11 and 13. Contract: §1 to §8.
+   build). In two parts a dispatch may split, the first landing and proved on the install first:
+   - **(i) containment**: `daoris-piece-start` generalized (several `--job`, the agents' prefix), laid out with the install; the driver's
+     rewrite of every agent start, plugin process and piece through it, as `PieceStarts.Through` does; the named agent job per Daoris
+     process; the best-effort start with its `-open` event and `agent.contained`; the census of start sites. Proof: §8 case 2, and case 4
+     on the install before part (ii) is built. An install with no grant changes nothing it can feel.
+   - **(ii) the confirmation**: the judge and its table, the caller's handle, the job search with its `-open` events, older instances and
+     elevation, the ledger's expected state and `running-here` for a finish, `SET_STANDING_CONFIRMATION` (`Window`) and `STATE`'s
+     `standingConfirmation`, the record and its home entry in the three twins, the hold's memory, `STANDING` and `CONFIRMING`'s `standing`
+     on the wire and in `InstanceDoor.Told`, the note part, the log lines and the machine log design's rows, This Daoris's row with its ask,
+     the line in *Notifications*, the glossary, both catalogues. Proof: §8 cases 1, 3 and 5 to 12, and 14.
+   Contract: §1 to §8. Until (i) has landed, every agent of this process is uncontained, so (ii)'s judge answers `untold` and covers
+   nothing.
 2. **TERMTRUST1b — closing a quest as done under it** (driver, modules, service, web; after 1a). `QUEST_DONE` over the pipe in every
    bridge-presses place, the verb a client of it, the instance relaying to the service's door with the expected last session, the
-   service's standing form judged in its transaction with §2.1's conditions and its note part, the press `done` in the judge, the grant's
-   ask offering it. Amends the terminal RPC design §7.1 for `quest done`. Proof: §8 case 12, and case 13 for a done.
+   service's standing form judged in its transaction with §2.1's conditions (the finish by its note code) and its note part, the press
+   `done` in the judge, the grant's ask offering it. Amends the terminal RPC design §7.1 for `quest done`. Proof: §8 case 13, and case 14 for
+   a done.
 
 ## 10. What D201 amends, what stands, and what it rejects
 
@@ -440,8 +492,10 @@ Each case seen failing first, as `held-clocks.md` and `bridge-presses.md` ask. F
   names it in its verb's form and conditions and the terminal's process is in no job any Daoris made for an agent.
 - **D156 §5.1** (*no field says the act came from a terminal*). An act under the standing confirmation carries one coded note part saying
   so, on that act's record alone; nothing is added to every operation.
-- **ORPHAN1's join** (`ProcessJob.Hold` after the start): an agent's process is contained from its first instruction, and a start that
-  cannot be contained is not made, as a heavy gate's is not.
+- **ORPHAN1's join** (`ProcessJob.Hold` after the start): an agent's process is contained from its first instruction through the
+  launcher, its own job nesting beneath; a start the launcher cannot contain is still made, as ORPHAN1's best effort is, and said.
+- **COAGENT1b's launcher** (D199's note on the strict start): `daoris-piece-start` takes the agents' prefix and several `--job`; a piece
+  keeps its strict start (no job, no piece).
 - **The session ledger's advance** gains an expected state, which a finish under the confirmation sends.
 - **The terminal RPC design §4.3** (the key presented only after Confirm): or under the standing confirmation; **§7.1** for `quest done`
   (TERMTRUST1b).
@@ -467,6 +521,12 @@ to 3, 5 to 7 and the service door's two minutes; D196 and CONFIRMSEEN1 for every
 - **The home's own jobs only** (Codex's finding 2): an agent another home runs is in none of them, and the steward's own development runs
   are other homes.
 - **The join after the start, as `ProcessJob.Hold` makes it** (Codex's finding 1): a child started before it is outside the job.
+- **A contained start built on `CreateProcessW`** (Fable's finding 1, its route a): the three pipes rebuilt with the handle list, the
+  environment block, each site's window flag, the exit watch, and a `Process`-shaped type every adapter, stand-in and test would move to.
+  The launcher is built and proven for a partner and touches no adapter.
+- **A start that cannot be contained refused** (Fable's finding 2): it would make an install that never grants pay for the grant; the
+  judge already answers `untold` for an uncontained agent, and the `-open` event tells every other judge.
+- **The home id in the job's name** (Fable's finding 7): the judge asks each job by handle, and a home with no id yet would have none.
 - **A process id for the caller** (Codex's finding 8): one read again later may name another process.
 - **Persisted provenance for `resume`** (Codex's finding 5): no file can tell a person's hold made alone while Daoris was down from the
   terminal's it replaced.
@@ -487,8 +547,9 @@ to 3, 5 to 7 and the service door's two minutes; D196 and CONFIRMSEEN1 for every
 - **Stopping the automatic landing after a covered stop** (Codex's finding 3's other remedy): the landing is the agent's done under the
   person's rule (D145 point 2), which the stop did not make and would only delay.
 
-**What is left.** The account's reach, Daoris's own runs of an agent's code, and an older build's agents (§3.4). A finish cannot be taken
-back by a press. Off Windows there is no pipe, so nothing here applies.
+**What is left.** The one-command escapes from a job, Daoris's own runs of an agent's code, an older headless loop's agents, an elevated
+Daoris beside one that is not, and the account's reach (§3.4). A development run with no launcher laid out covers nothing while it runs
+agents. A finish cannot be taken back by a press. Off Windows there is no pipe, so nothing here applies.
 
 ## 11. The reads
 
@@ -501,15 +562,15 @@ were taken.
 
 | # | Finding | Checked at | Verdict | What changed |
 |---|---|---|---|---|
-| 1 | Blocking: a harness starts before it is joined, so a child it starts at once escapes its job | `Driver.cs:3143`, :3147; `ChatRunner.cs:1180`, :1980; `HeavyStep.cs:13-17` | taken | Every agent start, plugin process and piece contained from its first instruction by a contained start in `ProcessStarts`, a start that cannot be contained not made; TERMTRUST1a part (i) (§3.3 point 3, §9; case 2) |
-| 2 | Blocking: another home's agents are in none of this home's jobs | `SessionProcesses.cs:389`, `InstancePipe.cs:234` | taken | One named job per Daoris process that runs agents, `Local\daoris-agents-<home id>-<pid>`, found by prefix in the session's namespace and asked by handle; an older build said as a limit (§3.3, §3.4; case 3) |
-| 3 | Blocking: a covered stop can leave work due for an automatic landing | `AutoLanding.cs:202-207`, `Driver.cs:2373`, :2436 | taken as a correction | The claim was wrong as worded. A stopped run is due only where its agent's own done (or a closure's submission) already made it due, exactly as its end would have; the stop adds none. Stated in §0.3, §2.1 and §3.3, held by case 7; preventing the landing rejected (§10) |
-| 4 | Blocking: a finish's state is read before the move, which neither the folder nor the ledger reads again | `SessionsCommand.cs:935`, `SessionRequestWatch.cs:331-345`, `SessionLedger.cs:1726` | taken | A covered finish only of a session with no process here, moved by the ledger only from `awaiting-person` through an expected state compared in the store's transaction (§2.1; case 6) |
+| 1 | Blocking: a harness starts before it is joined, so a child it starts at once escapes its job | `Driver.cs:3143`, :3147; `ChatRunner.cs:1180`, :1980; `HeavyStep.cs:13-17` | taken | Every agent start, plugin process and piece contained from its first instruction; TERMTRUST1a part (i) (§3.3 point 3, §9; case 2). Round 3 named the start (the launcher) and made it best effort (Fable's findings 1 and 2) |
+| 2 | Blocking: another home's agents are in none of this home's jobs | `SessionProcesses.cs:389`, `InstancePipe.cs:234` | taken | One named job per Daoris process that runs agents, found by prefix in the session's namespace and asked by handle (§3.3, §3.4; case 3). Round 3 dropped the home id from its name (Fable's finding 7) and saw an older instance by its pipe |
+| 3 | Blocking: a covered stop can leave work due for an automatic landing | `AutoLanding.cs:202-207`, `Driver.cs:2373`, :2436 | taken as a correction | The claim was wrong as worded. A stopped run is due only where its agent's own done (or a closure's submission) already made it due, exactly as its end would have; the stop adds none. Stated in §0.3, §2.1 and §3.3, held by case 8; preventing the landing rejected (§10) |
+| 4 | Blocking: a finish's state is read before the move, which neither the folder nor the ledger reads again | `SessionsCommand.cs:935`, `SessionRequestWatch.cs:331-345`, `SessionLedger.cs:1726` | taken | A covered finish only of a session with no process here, moved by the ledger only from `awaiting-person` through an expected state compared in the store's transaction (§2.1; case 7). Round 3 closed the folder's path (Fable's finding 3) |
 | 5 | Blocking: persisted `holds` cannot tell who holds a repository after a restart | `DriverChoicesCommand.cs:371`, `DriverConfig.cs:1384` | taken | The provenance is the instance's memory for its run, forgotten at a start and at any other change of that hold; the file keeps none (§4.2) |
 | 6 | Blocking: a person's done overrides a closure graph and closes a step a reopen held | `Quests.cs:1742-1752`; D173's notes | taken | `done` excludes graph-bound quests, closure graphs and a reopen's hold or withdrawal (§2.1) |
-| 7 | Blocking: `done`'s conditions were a snapshot before an unconditioned write | `QuestExchange.cs:2261`, `Program.cs:706` | taken | The relay names the expected last session and the service judges every condition in its own transaction (§2.1; case 12) |
+| 7 | Blocking: `done`'s conditions were a snapshot before an unconditioned write | `QuestExchange.cs:2261`, `Program.cs:706` | taken | The relay names the expected last session and the service judges every condition in its own transaction (§2.1; case 13) |
 | 8 | Blocking: the asker is a cached process id | `InstancePipe.cs:838`, :1025-1047 | taken | The pipe keeps a handle to the client's process opened as the connection is taken, with its creation time; a client it cannot hold is unknown, which asks (§3.3) |
-| 9 | Revocation needs an admission point | `InstancePipe.cs:688` | taken | Admitted once under the judge's lock; a revoke after it does not recall it; the hold's memory written under the same lock (§3.3 point 5, §4.3; case 4) |
+| 9 | Revocation needs an admission point | `InstancePipe.cs:688` | taken | Admitted once under the judge's lock; a revoke after it does not recall it; the hold's memory written under the same lock (§3.3 point 5, §4.3; case 5) |
 | 10 | `DAORIS_DRIVER_CONFIG` lets a verb load and save the record | `DriverConfig.cs:738` | taken as a correction | §4.1 says it: the account's reach over the file, which can set nothing the record is read for now that `holds` left it |
 | 11 | The UI's off sentence overstates, the on sentences name ungranted presses, and *terminal* means the panel's shell | `PipeCensus.cs:199`, `glossary.json:641` | taken | §6.1's off words; the granted presses only, on the row and in *Notifications*; §6.3's glossary change |
 | 12 | §0.2 said all four window routes refuse the terminal in their handlers | `PersonRoutes.cs:20`, :26, :45, :64 | taken | §0.2: the census refuses all four; the two that answer also check the door |
@@ -521,5 +582,22 @@ were taken.
 | S1 | Daoris itself runs code an agent wrote outside every agent job: a repository's git hooks under its own git acts, and a plugin's performed step | `ProcessStarts` callers (§0.6), `HookProcess.cs:144`; no `--no-verify` or `core.hooksPath` in the driver library | A plugin's process is contained with the agents; Daoris's own git acts are said as a limit, the presses' own bounds holding there (§3.4) |
 | S2 | Whether a terminal outside Daoris is in no job | measured: `IsProcessInJob(…, NULL)` on explorer, Windows Terminal and the steward's process chain, each in a job | The judge asks only the jobs Daoris made for agents, by handle; "no job at all" rejected (§0.6, §10) |
 
-**Fable's foundation read** is the parent's, under D191's amendment: the design changes D156 point 4, a rule others rest on, and the
-containment every agent start rests on.
+**Fable's foundation read, round 2** (the parent's, under D191's amendment, on this branch at `94b2b866b`, 2026-10-23). Verdict: the shape
+holds (a named job per Daoris process found by prefix and asked by handle, the caller held by a handle, four presses that only narrow, the
+grant the window's alone, one admission lock); accept once three blocking findings are answered. Ten findings, three blocking; every line
+the design cited held, and the reader confirmed by its process-start census (`ProcessStartsCensusTests.cs:26-40`) that §0.6's list of
+direct starts is whole, and that an orphan stopped by `sessions stop` is the person's with no carry-on. One read-only probe measured job
+nesting (§3.3 point 3). Each finding was checked by the author at the lines it cites; all held, and each was taken or answered.
+
+| # | Finding | Checked at | Verdict | What changed |
+|---|---|---|---|---|
+| F1 | Blocking: the contained start was unsized; `Process.Start` cannot be built around a `CreateProcessW` handle with streams, and every agent start uses its `Process` and redirected streams | `ProcessStarts.cs:57`, :119-123; the sites of §3.3 point 3; `HeavyStep.cs:141-168`; `PieceLauncher.cs:43-46`, :57-77; `PieceStarts.cs:14-36`; `ProcessJob.cs:155-168` | taken | The launcher route: `daoris-piece-start` generalized (several `--job`, the agents' prefix, today a piece's alone at `PieceLauncher.cs:43-46`), each start rewritten in place as `PieceStarts.Through` does; its two costs said (a workspace build lays out no launcher; `Kill` reaches the launcher); part (i) proved on the install on every door before part (ii) (§3.3 point 3, §9; cases 2 and 4). `CreateProcessW` rejected (§10) |
+| F2 | Blocking: refusing a start that cannot be contained makes an install with no grant pay for it | `ProcessJob.cs:19-21`, :55-63, :78; `HeavyStep.cs:15-18` | taken | The start made as today and logged `agent.contained: false`; while an uncontained agent of a process lives, that process holds `Local\daoris-agents-<pid>-open`, which every judge's listing reads as `untold` (§3.3 point 3, §7.2; case 2) |
+| F3 | Blocking: a covered finish could still kill a running session, since the verb reads `AliveOnThisMachine` again and takes the folder, which stops before the ledger moves | `SessionsCommand.cs:946-948`, `SessionRequestWatch.cs:356-364`, `SessionMoves.cs:45-49`, `Driver.cs:3120-3122` | taken | Under the standing confirmation the verb never takes the folder: a process found here answers `running-here`, exit 1; the ledger's expected state stays the second guard (§2.1, §3.3 point 4, §5; case 7) |
+| F4 | The containment's limits were filed under the account's reach, and two one-command escapes went unnamed | D156 point 7; §3.4; §6.1 | taken; the option answered | §3.4 names `explorer.exe <program>`, `wsl.exe`, a scheduled task, WMI and an out-of-process COM server as ordinary reach the containment does not hold against; the ask's words softened. Running Daoris's own git in a session's tree through the launcher not taken now: the look runs git in the trees often, and each run would cost a launcher's start (§3.4) |
+| F5 | `finish` ends more than its session: a workflow node's run waits on the person, a helper's last words or `no-answer` reach its asker, a record with the person's words waiting is carried on | `WorkflowRun.cs:548-551`, `DriverHelpers.cs:342-362`, `Planner.cs:1377-1386` | taken | Named in §2.1's `finish` row; each in case 11 |
+| F6 | A covered stop fixes the moment of a landing that is due | `AutoLanding.cs:202-207` | taken | §2.1's `stop` row: the landing reads the tree as the stop left it; uncommitted work held by `AutoLandingCode.Uncommitted`, committed but unfinished work can land (case 8) |
+| F7 | The named job needs no home id, and a home with no id would make none | §3.3; HOMEID1 | taken | `Local\daoris-agents-<process id>` (§3.3 point 3) |
+| F8 | Elevation splits the judge: one not elevated cannot open an elevated Daoris's job | D171's PIPEOWNER1 note | taken | Said in §3.4 (safe, and dead in that layout); measured both ways in case 3 |
+| F9 | An older build beside the new one, as during the build itself, is covered like any terminal | §3.4, §9 | taken | The judge lists the session's instance pipes and answers `untold` while one's server has no job of the prefix; an older headless loop stays said (§3.3 point 3, §3.4; case 3) |
+| F10 | `done` must judge "ended completed by a finish" by its code, never its English | `SessionMoves.cs:57` | taken | The service reads `NoteCodes.StoppedCheckpointFinished` (§2.1; case 13); the card in front of a door any process can still POST to until PERSONDOOR1g said as stricter and no worse (§2.1) |
