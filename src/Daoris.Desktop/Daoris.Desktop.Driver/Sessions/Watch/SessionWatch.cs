@@ -272,11 +272,8 @@ public sealed class SessionWatch
         if (watched.Episode is { } heardOver && heard > heardOver.HeardAt) steps.Add(Over(watched, heardOver, "heard", now));
         if (watched.LeftAt is { } left && heard > left) watched.LeftAt = null;
 
-        if (unheard < markAt / 2)
-        {
-            watched.Reads.Clear();
-            return;
-        }
+        var state = waitsOnWork ? "C" : "A";
+        var minutes = (int)unheard.TotalMinutes;
 
         // A call held for the person's answer to its permission request is their wait, never the agent's (§1.3).
         if (_calls.Calling(watched.Session) is { Waiting: true })
@@ -285,19 +282,24 @@ public sealed class SessionWatch
             return;
         }
 
-        var busy = Busy(watched, now, jobs);
-        var state = waitsOnWork ? "C" : "A";
-        var minutes = (int)unheard.TotalMinutes;
-
-        // A headless run's --quiet-end: unheard that long, busy or not, the run is ended and carried on (§2).
+        // A headless run's --quiet-end: unheard that long, busy or not, the run is ended and carried on (§2), on its own bound, which
+        // may be shorter than Q's.
         if (EndAfter is { } endAfter && unheard >= endAfter && watched.EndedMinutes is null)
         {
-            var episode = watched.Episode ??= Begin(watched, heard, now, unheard, busy: busy == true);
+            var episode = watched.Episode ??= Begin(watched, heard, now, unheard, busy: false);
             watched.EndedMinutes = minutes;
             steps.Add(new QuietStep(watched.Session, watched.Run.Kind, watched.Run.Adapter, state, minutes, Ended, "ended", episode.Number));
             watched.End.Cancel();
             return;
         }
+
+        if (unheard < markAt / 2)
+        {
+            watched.Reads.Clear();
+            return;
+        }
+
+        var busy = Busy(watched, now, jobs);
 
         if (watched.LeftAt is not null) return;
 
