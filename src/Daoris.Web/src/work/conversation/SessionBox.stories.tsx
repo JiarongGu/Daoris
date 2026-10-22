@@ -144,6 +144,31 @@ export const ParkedOnAGoAheadAlone: Story = {
 /** The same in 中文. */
 export const ParkedOnAGoAheadAloneChinese: Story = { ...ParkedOnAGoAheadAlone, decorators: [chinese] };
 
+/**
+ * PARKWORDS1: parked since five hours ago, its question asked only in its last message. One line says where it asked and how long
+ * it has waited; what it holds and how the answer travels stay folded under *While it waits*.
+ */
+export const ParkedLongAbove: Story = {
+  args: {
+    box: { kind: 'say', mode: 'answer' },
+    park: { ...PARK, since: new Date(Date.now() - (5 * 60 + 6) * 60_000).toISOString(), question: null, goAheads: [] },
+  },
+};
+
+/** The same in 中文. */
+export const ParkedLongAboveChinese: Story = { ...ParkedLongAbove, decorators: [chinese] };
+
+/** The same with its disclosure opened: no deadline, its quest and tree held, and where the answer goes. */
+export const ParkedLongAboveOpened: Story = {
+  ...ParkedLongAbove,
+  play: async ({ canvasElement }) => {
+    canvasElement.querySelectorAll('details').forEach((details) => { details.open = true; });
+  },
+};
+
+/** The same opened, in 中文 at the floor. */
+export const ParkedLongAboveOpenedChineseNarrow: Story = { ...ParkedLongAboveOpened, decorators: [sessionWidths.narrow, chinese] };
+
 /** Ended, and the same session goes on with the words (D137 §2.2): written to after its review, the next day. */
 export const EndedGoingOn: Story = {
   args: { box: { kind: 'say', mode: 'goOn' }, draft: 'also say so in the release notes', onDraft: () => {} },

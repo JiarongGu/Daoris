@@ -7,8 +7,9 @@ import { ParkAnswer } from './ParkAnswer';
 import type { ParkQuestion } from './parkQuestion';
 
 // PARKVIEW1 (the park's ask design §3-§4): what a parked session asks, in its box above the words: its question with each answer a
-// press beside what the agent does on it, the go-aheads it still waits on with *Approve* and *Refuse*, by when, what it holds
-// meanwhile and what an answer does. A molecule: props in, presses out.
+// press beside what the agent does on it, the go-aheads it still waits on with *Approve* and *Refuse*, one line saying where its
+// question is and how long it has waited, and folded under it what it holds meanwhile and what an answer does (PARKWORDS1). A
+// molecule: props in, presses out.
 
 const QUESTION: ParkQuestion = {
   id: 'a1b2c3d4',
@@ -46,19 +47,23 @@ describe('a park\'s ask in its box', () => {
     expect(onChoice).toHaveBeenLastCalledWith('1,200');
   });
 
-  it('says what it holds meanwhile, that no deadline runs, and by when the agent says it needs the answer', () => {
-    vi.useFakeTimers({ now: new Date('2026-10-22T09:18:00Z'), shouldAdvanceTime: true });
+  // PARKWORDS1: one line says where its question is and how long it has waited; what it holds and how the answer travels fold.
+  it('says in one line where its question is and how long it has waited, and folds what it holds meanwhile', async () => {
+    vi.useFakeTimers({ now: new Date('2026-10-22T14:12:00Z'), shouldAdvanceTime: true });
     try {
       render(<ParkAnswer {...SESSION} question={QUESTION} goAheads={[]} onChoice={vi.fn()} />);
 
-      expect(screen.getByText('No deadline here: it has waited 12m, and waits until you answer.')).toBeInTheDocument();
-      expect(screen.getByText('It says it needs your answer by: before Friday\'s release')).toBeInTheDocument();
-      expect(screen.getByText(
+      expect(screen.getByText('It asks this, waiting 5h 6m: answer below.')).toBeVisible();
+      expect(screen.getByText('It says it needs your answer by: before Friday\'s release')).toBeVisible();
+      const held = [
+        'No deadline here: it waits until you answer.',
         'Meanwhile its quest #7a82cc stays taken, its tree s-1a2b3c4 is kept, and it runs nothing until you answer.',
-      )).toBeInTheDocument();
-      expect(screen.getByText(
         'Your answer goes to the same session as your words, and it goes on with it at the driver\'s next look.',
-      )).toBeInTheDocument();
+      ];
+      for (const line of held) expect(screen.getByText(line)).not.toBeVisible();
+
+      await userEvent.click(screen.getByText('While it waits'));
+      for (const line of held) expect(screen.getByText(line)).toBeVisible();
     } finally {
       vi.useRealTimers();
     }
@@ -83,11 +88,16 @@ describe('a park\'s ask in its box', () => {
     expect(onChoice).not.toHaveBeenCalled();
   });
 
-  it('with no question recorded, says it asked in its last message, and answers its go-aheads as before', async () => {
+  it('with no question recorded, says in its one line that it asked above, and answers its go-aheads as before', async () => {
+    vi.useFakeTimers({ now: new Date('2026-10-22T09:18:00Z'), shouldAdvanceTime: true });
     const onGoAhead = vi.fn();
-    render(<ParkAnswer {...SESSION} tree={null} question={null} goAheads={[GO_AHEAD]} onGoAhead={onGoAhead} />);
+    try {
+      render(<ParkAnswer {...SESSION} tree={null} question={null} goAheads={[GO_AHEAD]} onGoAhead={onGoAhead} />);
+    } finally {
+      vi.useRealTimers();
+    }
 
-    expect(screen.getByText('It asked in its last message, above: answer it below.')).toBeInTheDocument();
+    expect(screen.getByText('It asked above, waiting 12m: answer below.')).toBeVisible();
     expect(screen.getByText('Meanwhile its quest #7a82cc stays taken, and it runs nothing until you answer.')).toBeInTheDocument();
     expect(screen.queryByText(/Answer its go-aheads first/)).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'Approve' }));
@@ -112,6 +122,23 @@ describe('a park\'s ask in its box', () => {
     expect(screen.getByText('Which quarterly target should the dashboard tile show?')).toBeInTheDocument();
     expect(screen.getByText('推荐')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '放行' })).toBeInTheDocument();
-    expect(screen.getByText(/^在此期间，它的委托 #7a82cc 仍由它接下/)).toBeInTheDocument();
+    expect(screen.getByText(/^在此期间，它的委托 #7a82cc 仍由它接下/)).not.toBeVisible();
+    await userEvent.click(screen.getByText('等待期间'));
+    expect(screen.getByText(/^在此期间，它的委托 #7a82cc 仍由它接下/)).toBeVisible();
+  });
+
+  it('says its one line in 中文, where its question is and how long it has waited', async () => {
+    await i18n.changeLanguage('zh');
+    vi.useFakeTimers({ now: new Date('2026-10-22T14:12:00Z'), shouldAdvanceTime: true });
+    try {
+      const { unmount } = render(<ParkAnswer {...SESSION} question={null} goAheads={[]} />);
+      expect(screen.getByText('它在上面提了问，已等 5 小时 6 分：在下面回答。')).toBeVisible();
+      unmount();
+      render(<ParkAnswer {...SESSION} question={QUESTION} goAheads={[]} onChoice={vi.fn()} />);
+      expect(screen.getByText('它在问这个，已等 5 小时 6 分：在下面回答。')).toBeVisible();
+      expect(screen.getByText('这里没有期限：它会一直等到你回答。')).not.toBeVisible();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
