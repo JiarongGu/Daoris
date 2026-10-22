@@ -1,9 +1,9 @@
 # A parked session's ask at its conversation's end, with its answers as presses (PARKVIEW1, 2026-10-22)
 
-**Standing:** settled under D191 on 2026-10-22 after Codex's read (§8), each finding checked against the code before it was taken;
-built by PARKVIEW1 on the same branch, and recorded in D185's dated note. Codex holds that the question's file (§2) is a protocol
-between two processes, which D191's amendment counts as a foundation for Fable's read; the builder had no Fable reader, so that read
-is named for the steward to run or waive (§8). Nothing here publishes, spends an account, signs in or removes the person's data.
+**Standing:** settled under D191 on 2026-10-22 after Codex's read and then Fable's (§8), each finding checked against the code before
+it was taken; built by PARKVIEW1 on the same branch, and recorded in D185's dated notes. Fable read the question's file (§2), a
+protocol between two processes, as D191's amendment asks: nothing blocks, and its findings the steward named are taken. Nothing
+here publishes, spends an account, signs in or removes the person's data.
 
 Read for it: the row PARKVIEW1; D131 (an answer continues the session), D135 (go-aheads: KNOWUSE1a, KNOWUSE1c, KNOWUSE1a2, GOAHEAD2,
 GOAHEAD2b), D137 (words to a session, MSG1f), D126 §9, D168's waits at the foot (WAITFOOT1-2), D196 and the UI/UX design's R1-R7;
@@ -64,23 +64,31 @@ alone judges only the first four of these, so the question's box judges every on
 
 **Kept** as `<home>/sessions/<session>.question.json` `{ id, session, question, choices: [{ label, does }], recommend, by, at }`,
 written whole and atomically by the connector (`QuestionBox`, the service), one per session: a later ask replaces it under a new
-id. The driver's `QuestionFiles` reads it; the two share no code and each side's tests hold the shape, as the hand-over ask's two
-files do (`HandOverAskBox.cs`, `HandOverAskFiles.cs`). It is machine-local: no wire carries it, and a teammate's page has none. It
-goes with the session's history under `mark` (`SessionHomeFiles`), so a clear or a delete takes it.
+id. The driver's `QuestionFiles` reads it; the two share no code, as the hand-over ask's two files do (`HandOverAskBox.cs`,
+`HandOverAskFiles.cs`). Every reader opens it sharing its delete, so a page reading it never holds a settle back, and holds the
+writer's bounds on read: a file past any of them, or with two labels alike in any case, is no question. The driver's reader and the
+page's reader of `SESSION_QUESTION`'s answer read one table, `Daoris.Desktop.Driver.Tests/fixtures/park-question.json` (`twins.md`).
+The page reads it through `SESSION_QUESTION`, which answers none for a record that is not parked, whatever a file says. It is
+machine-local: no wire carries it, and a teammate's page has none. It goes with the session's history under `mark`
+(`SessionHomeFiles`), so a clear or a delete takes it.
 
 **Bound to its park by the driver.** At each conclusion of a run of the record, the first run's (`Driver.cs:2273-2337`), a resumed
 run's (`DriverContinuations.cs:461-565`) and a refused resume's (`:485-499`), with its final state (a stop's, a hand-over's and an
 account's ending included) and before the record moves, the driver keeps the file only where that state parks (`awaiting-person`)
 and the question was asked at or after the run's last handing: the later of the run's opening (`openedAt`) and the newest moment
-the record shows words handed to the agent (a prompt or a word recorded as said to it, or a `sent` receipt). Otherwise it deletes
-it. So a question on file while the record is parked is the one its last turn asked: one asked in an earlier park, or in a turn
-that held words then went on in the same record on either door (MSG1b), is gone. A word steered in after the question, at the
-turn's next step, deletes it too: the safe side, since that word may have answered it. A restart between the settle and the record's
-move leaves a record the orphan sweep ends, so nothing parked shows a question it did not ask.
+the record shows words handed to the agent (a prompt Daoris composed, a word kept under an id, or a `sent` receipt; never the protocol
+door's id-less echo of the prompt it was handed). Otherwise it deletes it. So a question on file while the record is parked is the
+one its last turn asked: one asked in an earlier park, or in a turn that held words then went on in the same record on either door
+(MSG1b), is gone. A word steered in after the question, at the turn's next step, deletes it too: the safe side, since that word may
+have answered it. A restart between the settle and the record's move leaves a record the orphan sweep ends, so nothing parked shows
+a question it did not ask. **And gone as each run of the record opens** (both sites, at `openedAt`), so while a resumed run works no
+question of the park before it stands, and a press another window still shows it with is refused `question-changed` at once. A
+delete the disk refuses is tried again for about a second, as a busy rename is; one that stays is the machine log's `question.stayed`
+(warn), since its park could show it.
 
 **What the agent is told.** The tool answers: the person sees the question at the end of the session's conversation with each answer
 a press; say in your last message that the work waits on it, commit what you have and end your turn with the quest still taken;
-the answer comes back as your next prompt, in the person's words, a choice as its label, then any words of theirs. Every driven
+the answer comes back as your next prompt: a choice as `chose: ` and its label, then any words of theirs; or their words alone. Every driven
 instruction's closing paragraph (`TargetPrompt.Closing`) gains one sentence: where the connector offers `question_ask`, ask there
 what only the person can decide before ending the turn on it, with the answers offered and the one recommended.
 
@@ -125,7 +133,7 @@ is unchanged. Where no question is recorded, a go-ahead answers as today: the la
 
 | Answer | Door | What is kept, and what goes on |
 |---|---|---|
-| A choice | `SESSION_INPUT` `{ id, text, question }`, `text` the label, then the words after a blank line | refused `{ sent: false, why: 'question-changed' }`, keeping nothing, where the session's question on file is not `question` (answered and replaced in another window); else as any word: kept on the record's `said` as the person's (D137), the park's answer |
+| A choice | `SESSION_INPUT` `{ id, text, question }`, `text` the label, then the words after a blank line | refused `{ sent: false, why: 'question-changed' }`, keeping nothing, where the session's question on file is not `question` (answered and replaced in another window, or gone as its record went on); else kept on the record's `said` as the person's words (D137), the park's answer, and **marked as that answer chosen**: the event it is shown under carries `choice`, the label its words begin with (`QuestionWords.Pressed`), so the conversation draws *chose* and the answer, then the person's own words; the resumed run reads the mark off that event (`SessionEvents.ChoicesOf`) and is handed `chose: <label>`, then the words, its own record of the words keeping the mark |
 | A free answer | `SESSION_INPUT` `{ id, text }` | as today |
 | A go-ahead | `SESSION_GO_AHEAD` `{ id, ask, number, approved, words, goesOn }` | the answer kept on the ask with the words (GOAHEAD2b); `goesOn: false` where a question is recorded, else absent, read as `true` |
 
@@ -163,7 +171,11 @@ answer as before; the question's presses waiting while a go-ahead is open; a ref
 (`DriverModuleGoAheadTests` for `goesOn: false`; `DriverModuleSessionQuestionTests` for the read and the `question-changed`
 refusal; `McpQuestionToolTests` for the tool; `QuestionFilesTests` for the file and its settle). The stories draw the box at the
 frame's three widths in English, 中文 and dark, the owner's case among them in neutral words: a session parked on a production
-go-ahead with the person's words in the box.
+go-ahead with the person's words in the box. After Fable's read: `QuestionFilesTests` reads the shared table row for row, holds a
+reader sharing the delete and one holding it, the clear at a run's opening, the echo that is no handing, and a pressed word handed as
+chosen; `parkQuestion.test.ts` reads the same table; `DriverModuleSessionQuestionTests` holds none unless parked;
+`DriverModuleConversationTests` the mark on the shown word; `conversation.test.ts` and `ConversationView.test.tsx` the choice drawn,
+and `ConversationView` *ParkAnsweredWithAChoice* its stories.
 
 ## 8. The reads
 
@@ -181,3 +193,10 @@ go-ahead with the person's words in the box.
 | | 5.1 `HandOverAskBox.Unfit` admits conversations and records on no quest (blocking) | taken: §2 lists every refusal, the box judges each |
 | | 5.2 the build's checklist (non-blocking) | taken: the permission lists and their tests, the route's places, the catalogues (built) |
 | | 5.3 a smaller shape: the ask and its presses in the box, the head read-only (non-blocking) | taken: §3 |
+| Fable, the question's file under D191 (a protocol between processes), 2026-10-22, at `b76790d2f`; nothing blocking, safe to ship once Q1 is taken | Q1 a delete refused at the settle is swallowed, its answer unused, and a reader's `File.ReadAllText` refuses a concurrent delete on Windows | taken: every reader shares the delete, the delete is tried again briefly, and one that stays is answered and logged `question.stayed` (§2); `QuestionFilesTests` holds a sharing reader and a holding one |
+| | Q2 the park before's file stands through the resumed run, so another window's press with its id passes | taken: cleared as each run opens, at both sites (§2) |
+| | Q3 `LastHandedAt` counts the protocol door's id-less echo of its prompt as a handing | taken: only Daoris's prompts, words with an id and `sent` receipts count (§2), with its test |
+| | Q4 a pressed label is handed and recorded as the person's free words | taken: the word is marked with the answer on the event it is shown under, drawn as a choice, and handed `chose: <label>` then the words (§4); the press's shape is unchanged |
+| | Q6 only the writer bounds the question | taken: both readers hold the bounds, and one table both read replaces their two literals (§2) |
+| | Q7 `SESSION_QUESTION` answers for any record | taken: none unless the record is parked (§2) |
+| | Q5 | not among the findings the steward named for this round |
