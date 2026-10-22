@@ -106,6 +106,9 @@ public sealed class StateSlice
     /// <summary>Whether the last judgement failed; read and written only within a judgement's turn.</summary>
     private bool _failing;
 
+    /// <summary>Whether the worker's last turn threw past its judgement; read and written only by the worker.</summary>
+    private bool _turnFailing;
+
     /// <param name="Keys">A keyed partition's keys, each as the wire writes it, which the next judgement's delta is read against.</param>
     private sealed record Held(long Seq, string Status, object? Data, string Json, IReadOnlyDictionary<string, string>? Keys = null);
 
@@ -201,9 +204,10 @@ public sealed class StateSlice
             {
                 judged = await _judge(ct).ConfigureAwait(false);
             }
-            catch (Exception error) when (error is not OperationCanceledException)
+            catch (Exception error) when (error is not OperationCanceledException || !ct.IsCancellationRequested)
             {
-                // Said once until a judgement succeeds again: a file that stays unreadable is not a line at every look.
+                // Said once until a judgement succeeds again: a file that stays unreadable is not a line at every look. A read's own
+                // timeout is a cancellation too (the service client's, SLICESTALL1), and only the worker's stop is not a failure.
                 if (!_failing) Failed?.Invoke(error);
                 _failing = true;
                 return;
@@ -279,7 +283,7 @@ public sealed class StateSlice
         {
             var clock = Stopwatch.StartNew();
             var due = ManifestEvery;
-            await JudgeAsync(ct).ConfigureAwait(false);
+            await SurvivingAsync(JudgeAsync, ct).ConfigureAwait(false);
             while (!ct.IsCancellationRequested)
             {
                 var wait = due - clock.Elapsed;
@@ -297,10 +301,10 @@ public sealed class StateSlice
                     }
                 }
 
-                await JudgeAsync(ct).ConfigureAwait(false);
+                await SurvivingAsync(JudgeAsync, ct).ConfigureAwait(false);
                 if (clock.Elapsed >= due)
                 {
-                    await TellManifestAsync(ct).ConfigureAwait(false);
+                    await SurvivingAsync(TellManifestAsync, ct).ConfigureAwait(false);
                     due = clock.Elapsed + ManifestEvery;
                 }
             }
@@ -312,6 +316,25 @@ public sealed class StateSlice
         finally
         {
             foreach (var subscription in heard) subscription.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// One turn of the worker (SLICESTALL1): anything it throws but the worker's own stop is said, once until a turn succeeds again,
+    /// and the worker goes on to its next wake. A throw that left the worker ended the slice for the window's life: nothing observed
+    /// the task, so nothing said it, and every view kept what it last held.
+    /// </summary>
+    private async Task SurvivingAsync(Func<CancellationToken, Task> turn, CancellationToken ct)
+    {
+        try
+        {
+            await turn(ct).ConfigureAwait(false);
+            _turnFailing = false;
+        }
+        catch (Exception error) when (!ct.IsCancellationRequested)
+        {
+            if (!_turnFailing) Failed?.Invoke(error);
+            _turnFailing = true;
         }
     }
 

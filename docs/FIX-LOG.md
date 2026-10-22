@@ -5,6 +5,32 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-22 — One slow service answer froze the window's sessions list for the rest of its life (SLICESTALL1)
+
+- **Symptom:** the owner reported work in a workspace looking stuck. On the install, the window's `sessions` slice still held a
+  driven session as *working* 90 minutes after the service ended it (timed out, then carried on and completed). It held no record
+  created after about 05:02 UTC, while the `quests` slice beside it was current to the minute. The service's own answer of the
+  same records was right, and the machine log said nothing about the slice.
+- **Root cause:** `StateSlice.JudgeAsync` (`Platform/StateSlices.cs`) took every `OperationCanceledException` from its read for the
+  worker's own stop, and `RunAsync` caught one only when its token was cancelled.
+  - The sessions slice reads the service through `DriverHttp`, whose `HttpClient` times out at 30 s by throwing
+    `TaskCanceledException`.
+  - The machine was under heavy load at the time, with four builders and the gates beside the install. One answer past 30 s
+    therefore left `RunAsync` as a faulted task that `StateSlices.RunAsync`'s `Task.WhenAll` never observes alone.
+  - So the slice stopped judging, its wakes went unread, and every window kept what it last held. A throw past the read
+    (`Moved`, `Tell`) would have ended it the same way.
+- **Fix:**
+  - A judgement's failure now includes any cancellation that is not the worker's stop: said once until one succeeds, with what
+    was judged kept.
+  - Each turn of the worker (a judgement, the manifest) runs through `SurvivingAsync`. That says anything thrown past the
+    judgement, once until a turn succeeds, and goes on to the next wake.
+- **Verification:**
+  - `StateSlicesTests.A_read_that_times_out_is_a_failed_judgement_and_the_worker_judges_again_at_the_next_wake` and
+    `A_judgement_that_throws_past_its_read_is_said_once_and_the_worker_goes_on` failed on the old code: the first at once, the
+    second hung to its bound because the worker had ended. Both pass with the fix.
+  - The modules' fast half passed, 2242 of 2242.
+  - An installed window held by this fault is freed by a restart, and the next release carries the fix.
+
 ## 2026-10-22 — Ask Daoris's *Go there* answered that its plan changed once its quest was taken (ASKQUESTS1)
 
 - **Symptom:** reported to the steward from ASKDISMISS1's build: a go card about a quest Ask Daoris had published, pressed after a

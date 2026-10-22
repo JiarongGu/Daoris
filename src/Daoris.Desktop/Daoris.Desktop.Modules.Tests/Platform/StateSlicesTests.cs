@@ -297,6 +297,67 @@ public sealed class StateSlicesTests
         Assert.Equal(2, failures.Count);
     }
 
+    /// <summary>
+    /// SLICESTALL1: the service client's read times out by cancelling, and the worker took that for its own stop, so one slow answer
+    /// ended the slice for the window's life and every view kept what it last held. A read's timeout is a failure like any other.
+    /// </summary>
+    [Fact]
+    public async Task A_read_that_times_out_is_a_failed_judgement_and_the_worker_judges_again_at_the_next_wake()
+    {
+        var failures = new List<Exception>();
+        var timesOut = true;
+        var slice = new StateSlice("test", _bus, _ => timesOut
+            ? throw new TaskCanceledException("The request was canceled due to the configured HttpClient.Timeout of 30 seconds elapsing.")
+            : Task.FromResult(Judged()), "e1")
+        {
+            Failed = failures.Add,
+        };
+        using var stop = new CancellationTokenSource();
+        var running = slice.RunAsync(stop.Token);
+        await UntilAsync(() => slice.Judgements == 1);
+        Assert.IsType<TaskCanceledException>(Assert.Single(failures));
+        Assert.False(running.IsCompleted);
+
+        timesOut = false;
+        slice.Wake();
+        await UntilAsync(() => Pushes().Count == 2);
+        Assert.Equal("a@1:ready,b@1:ready", Versions(slice.Snapshot()));
+        await stop.CancelAsync();
+        await running;
+    }
+
+    /// <summary>SLICESTALL1: a throw past the judgement itself, here in writing a partition down, is said and the worker goes on.</summary>
+    [Fact]
+    public async Task A_judgement_that_throws_past_its_read_is_said_once_and_the_worker_goes_on()
+    {
+        var failures = new List<Exception>();
+        var throws = true;
+        var slice = new StateSlice("test", _bus, _ => Task.FromResult<IReadOnlyList<SliceJudged>?>(
+            throws ? [new SliceJudged("a", new Unwritable())] : Judged()), "e1")
+        {
+            Failed = failures.Add,
+        };
+        using var stop = new CancellationTokenSource();
+        var running = slice.RunAsync(stop.Token);
+        await UntilAsync(() => slice.Judgements == 1);
+        slice.Wake();
+        await UntilAsync(() => slice.Judgements == 2);
+        await Task.Delay(50);
+        Assert.Single(failures);
+        Assert.False(running.IsCompleted);
+
+        throws = false;
+        slice.Wake();
+        await UntilAsync(() => Pushes().Count == 2);
+        await stop.CancelAsync();
+        await running;
+    }
+
+    private sealed class Unwritable
+    {
+        public string Value => throw new InvalidOperationException("not written");
+    }
+
     [Fact]
     public async Task Judgements_made_at_once_tell_each_partition_in_the_order_they_numbered_it()
     {
