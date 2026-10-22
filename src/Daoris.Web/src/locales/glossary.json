@@ -100,7 +100,9 @@
         "review.title", "review.setUp.newest", "review.setUp.older", "asks.record.review", "asks.record.kind", "opinion.title", "opinion.recheckTitle",
         "workflow.head.title", "workflow.section.*", "workflow.finished", "workflow.step.work", "workflow.step.opinion",
         "workflow.step.look", "workflow.step.lookAnywhere", "workflow.step.landingMerge", "workflow.step.landingBranch",
-        "workflow.step.pullRequest", "workflow.repositories.title", "settings.daoris.card.*", "quests.flow.title"
+        "workflow.step.pullRequest", "workflow.step.goAhead", "workflow.step.task", "workflow.step.pushed", "workflow.step.line",
+        "workflow.step.questClose", "workflow.step.join", "workflow.step.stop", "workflow.step.waitUnit", "workflow.step.check",
+        "workflow.step.pluginNode", "workflow.repositories.title", "settings.daoris.card.*", "quests.flow.title"
       ]
     },
     "field": {

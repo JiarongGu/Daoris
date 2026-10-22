@@ -6,7 +6,7 @@ import { Button, Icon, Inline, Tip } from '../design/ui';
 import { aroundTheLanding, setupDoorOf, textOf, type CurrentWorkflow, type WorkflowParticipation, type WorkflowStep } from './current';
 import { stateSaid } from './runSaid';
 import { edgeSaid, executorSaid, holdsSaid, limitSaid, sourceSaid, stepSet, stepTitle } from './said';
-import { type FlowLit, glyphOf, outcomeOf, outcomeSaid, WORKFLOW_TRACK, workflowFlow } from './workflowFlow';
+import { type FlowGraph, type FlowLit, glyphOf, outcomeOf, outcomeSaid, WORKFLOW_TRACK, workflowFlow } from './workflowFlow';
 
 /** Where a step's door leads: this page's own Setup at a section, the workspace's Setup, or a repository's own workflow. */
 export type WorkflowDoors = {
@@ -348,7 +348,8 @@ function WorkflowRail({ workflow, page, name, doors, run, end }: {
  * shape and word and who acts, then what it is set to and where, its limit whole; each edge the move its step names, in the
  * node's foot. A step that names what follows its failure or its refusal hangs that outcome on a dashed failure path. *Before it
  * lands* heads the drawing, with the plugins that may hold a start, and *After it lands* divides it where the landing hands on.
- * Today's answer holds no group, so none is drawn until a decoded graph is read.
+ * A Current's answer holds no group, so none is drawn for it; a run bound to a graph version answers its graph's wires and is drawn by
+ * them, a fork and its join among them (FABRIC-CUTOVER1e).
  *
  * **Read-only.** Current is the rules as they stand, so a step's door opens the Setup that sets it (design §4.7), Enter on its
  * node too, and nothing here edits.
@@ -359,7 +360,7 @@ function WorkflowRail({ workflow, page, name, doors, run, end }: {
  *
  * A molecule: the workflow arrives answered, and every door goes out.
  */
-export function WorkflowChart({ workflow, page, name, doors, run, end, finished = false }: {
+export function WorkflowChart({ workflow, page, name, doors, run, end, finished = false, graph = null }: {
   workflow: CurrentWorkflow;
   page: 'repository' | 'workspace';
   /** The repository or the workspace whose work it draws, which names the chart for a reader. */
@@ -371,6 +372,8 @@ export function WorkflowChart({ workflow, page, name, doors, run, end, finished 
   end?: ReactNode;
   /** A run's: it finished, so its end is reached. */
   finished?: boolean;
+  /** A run bound to a graph version's own graph (FABRIC-CUTOVER1e): the flowchart follows its wires, a fork and its join among them. */
+  graph?: FlowGraph | null;
 }) {
   const { t } = useTranslation();
   const lit: FlowLit | undefined = run && {
@@ -383,7 +386,7 @@ export function WorkflowChart({ workflow, page, name, doors, run, end, finished 
     })),
     finished: finished ? { word: stateSaid(t, 'done'), tone: 'done' } : null,
   };
-  const flow = workflowFlow(t, workflow, name, lit);
+  const flow = workflowFlow(t, workflow, name, lit, graph);
   const steps = new Map(workflow.steps.map((step) => [step.id, step]));
   const nodes = flow.nodes.map((node): FlowNode => {
     const step = steps.get(node.id);

@@ -3,8 +3,8 @@ import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../design/storyLanguage';
 import { Button } from '../design/ui';
 import {
-  answerOf, FAILED, GO_AHEAD_REFUSAL, HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DISPUTED, OPINION_SETTLED, PULL_REQUEST_OPEN,
-  SEVERAL, WAITING_ON_YOU, WORKING,
+  answerOf, FAILED, GO_AHEAD_REFUSAL, GRAPH_RUN, GRAPH_RUN_ADDED_LOOK, GRAPH_RUN_UNJUDGED, HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED,
+  OPINION_DISPUTED, OPINION_SETTLED, PULL_REQUEST_OPEN, SEVERAL, WAITING_ON_YOU, WORKING,
 } from './runFixtures';
 import { OpinionGate } from '../work/gates/OpinionGate';
 import { DETAIL, GATES } from '../work/gates/opinionFixtures';
@@ -169,6 +169,31 @@ export const PassedOverAtHalfTheWindow: Story = { ...PassedOver, decorators: [si
 
 /** Passed over, at the floor in 中文: the rail, the refusal said under its step. */
 export const PassedOverAtTheFloorChinese: Story = { ...PassedOver, decorators: [sideAt(300), chinese] };
+
+/**
+ * **A run bound to a graph version** (FABRIC-CUTOVER1e), drawn from its record: what its graph observes, that its branches are its
+ * graph's and that every landing door still holds it, above its nodes; the claim reached on its quest, a fork of a build observed on the
+ * run's branch and a lint reached there, joined before the second opinion, which this build does not begin on a graph run.
+ */
+export const GraphRun: Story = { args: { answer: answerOf(GRAPH_RUN), here: null } };
+
+/** A graph run at 45% of the window: its fork and its join drawn as its graph's wires hold them, a failure's path to its stop. */
+export const GraphRunAtHalfTheWindow: Story = { ...GraphRun, decorators: [sideAt(696)] };
+
+/** A graph run at 45% of the window, in 中文 and dark. */
+export const GraphRunAtHalfTheWindowChineseDark: Story = { ...GraphRun, decorators: [sideAt(696), chinese, dark] };
+
+/** A graph run at the side bar's floor, in 中文: the rail, each node in its graph's order. */
+export const GraphRunAtTheFloorChinese: Story = { ...GraphRun, decorators: [sideAt(300), chinese] };
+
+/** A graph run whose go-ahead waits on you, with a look the chain's choice added beside its graph (D190 point 7). */
+export const GraphRunWithAnAddedLook: Story = { args: { answer: answerOf(GRAPH_RUN_ADDED_LOOK), here: null } };
+
+/** The same at 45% of the window, in 中文: the added look an entry of its own, joined to nothing in the graph. */
+export const GraphRunWithAnAddedLookAtHalfTheWindowChinese: Story = { ...GraphRunWithAnAddedLook, decorators: [sideAt(696), chinese] };
+
+/** A graph run Daoris has not judged yet: every node not reached, standing at its entry, no session of it with a branch yet. */
+export const GraphRunNotJudgedYet: Story = { args: { answer: answerOf(GRAPH_RUN_UNJUDGED), here: null } };
 
 /** **The one line** a quest's page carries among its head's facts, and an ask's for each of its runs, each a door into the run. */
 export const OneLine: StoryObj<typeof WorkflowLine> = {

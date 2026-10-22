@@ -7,8 +7,8 @@ import i18n from '../locales/i18n';
 import { code } from '../test/code';
 import type { RunStep, WorkflowRun } from './run';
 import {
-  answerOf, FAILED, HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DISPUTED, OPINION_SETTLED, PULL_REQUEST_OPEN, SEVERAL,
-  WAITING_ON_YOU, WORKING,
+  answerOf, FAILED, GRAPH_RUN, GRAPH_RUN_ADDED_LOOK, GRAPH_RUN_UNJUDGED, HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DISPUTED,
+  OPINION_SETTLED, PULL_REQUEST_OPEN, SEVERAL, WAITING_ON_YOU, WORKING,
 } from './runFixtures';
 import { WorkflowLine } from './WorkflowLine';
 import { WorkflowRunView } from './WorkflowRunView';
@@ -304,6 +304,76 @@ describe("the session's Workflow view", () => {
     expect(row('work')).toHaveTextContent('本会话');
     expect(row('work')).toHaveTextContent('智能体已完成：这里的 1 个委托已完成。');
     expect(row('landing')).toHaveTextContent('未到达');
+  });
+});
+
+// FABRIC-CUTOVER1e (D190 points 2, 3 and 7; the cutover design §2.3, §6): a run bound to a graph version is drawn from its record, its
+// subjects named, its branches said to be its graph's, an opinion or a look not begun until the doors read it said so, a look its work
+// added beside it; its nodes are its graph's, a fork and its join among them.
+describe("a graph run's Workflow view", () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  it("says what its graph observes, that its branches are its graph's and that every landing door holds it, above its nodes", () => {
+    render(<WorkflowRunView answer={answerOf(GRAPH_RUN)} />);
+
+    expect(screen.getByText('engine · docs workflow, version 1')).toBeInTheDocument();
+    expect(screen.getByText('Workflow: working')).toBeInTheDocument();
+    const head = screen.getByRole('list', { name: 'What its graph says' });
+    expect(within(head).getAllByRole('listitem').map((item) => item.textContent)).toEqual([
+      'Its graph observes quest #q1, its newest work here, and daoris/q1-fix-the-header, the branch its newest session worked.',
+      'Its branches are its graph\'s, not the landing rule\'s: a push, a pull request or a deploy happens for this work only where its graph holds one.',
+      'Every landing door still holds this run: this build judges its graph and lands nothing for it yet.',
+    ]);
+    expect(steps().map((item) => item.getAttribute('data-step'))).toEqual(['claimed', 'build', 'lint', 'both', 'halt', 'opinion', 'handed', 'deployed']);
+    expect(row('claimed')).toHaveTextContent('Reached on quest #q1.');
+    expect(row('build')).toHaveTextContent('built by acme.ci');
+    expect(row('build')).toHaveTextContent('Observed on daoris/q1-fix-the-header at 01234567.');
+    expect(row('both')).toHaveTextContent('The join');
+    expect(row('opinion')).toHaveTextContent('cannot start');
+    expect(row('opinion')).toHaveTextContent("Not begun: this build does not ask a graph run's second opinion yet.");
+    expect(row('build')).toHaveAttribute('aria-current', 'step');
+  });
+
+  it('draws a look the work added beside its graph, and a go-ahead that waits on you with its act', () => {
+    render(<WorkflowRunView answer={answerOf(GRAPH_RUN_ADDED_LOOK)} />);
+    expect(row('look')).toHaveTextContent("A look added for this work by its chain's choice.");
+    expect(row('release')).toHaveTextContent('Your go-ahead');
+    expect(row('release')).toHaveTextContent('Waits for your go-ahead: release to prod');
+    expect(screen.getByText('Workflow: waiting on you')).toBeInTheDocument();
+  });
+
+  it('says a run Daoris has not judged yet, and that no session of it has worked a branch', () => {
+    render(<WorkflowRunView answer={answerOf(GRAPH_RUN_UNJUDGED)} />);
+    const head = screen.getByRole('list', { name: 'What its graph says' });
+    expect(within(head).getAllByRole('listitem')[0]).toHaveTextContent('Daoris has not judged its graph yet: its next look does.');
+    expect(within(head).getAllByRole('listitem')[1]).toHaveTextContent('no session of it has worked a branch here yet.');
+    expect(row('claimed')).toHaveTextContent('not reached');
+  });
+
+  it("opens a node's record: its quest, the session whose branch it observes, and the ask where a go-ahead waits", async () => {
+    const quest = vi.fn();
+    const session = vi.fn();
+    const ask = vi.fn();
+    const { unmount } = render(<WorkflowRunView answer={answerOf(GRAPH_RUN)} doors={{ quest, session }} />);
+    await userEvent.click(within(row('claimed')).getByRole('button', { name: 'Open quest #q1' }));
+    expect(quest).toHaveBeenCalledWith('q1');
+    await userEvent.click(within(row('build')).getByRole('button', { name: 'Open its session' }));
+    expect(session).toHaveBeenCalledWith('s1');
+    unmount();
+
+    render(<WorkflowRunView answer={answerOf(GRAPH_RUN_ADDED_LOOK)} doors={{ ask }} />);
+    await userEvent.click(within(row('release')).getByRole('button', { name: 'Open the ask' }));
+    expect(ask).toHaveBeenCalledWith('a1');
+  });
+
+  it('is worded in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    render(<WorkflowRunView answer={answerOf(GRAPH_RUN)} />);
+    const head = screen.getByRole('list', { name: '它的流程图所说的' });
+    expect(within(head).getAllByRole('listitem')[1]).toHaveTextContent('它的分支归它的流程图管，而不归落地规则管');
+    expect(row('build')).toHaveTextContent('在 daoris/q1-fix-the-header 的 01234567 上观察中。');
+    expect(row('opinion')).toHaveTextContent('未开始：本版本还不为按流程图进行的工作征求第二意见。');
+    expect(row('both')).toHaveTextContent('汇合');
   });
 });
 
