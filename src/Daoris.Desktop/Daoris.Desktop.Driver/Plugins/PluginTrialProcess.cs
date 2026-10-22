@@ -23,7 +23,7 @@ internal sealed class PluginTrialProcess : IDisposable
     /// <exception cref="Win32Exception">The program did not start.</exception>
     /// <remarks>
     /// Through the start gate (PROCSTART2): the plugin page's trial is a press, so a person's start (PARALLEL1d), and the
-    /// trial's token ends its wait for a place (PARALLEL1e).
+    /// trial's token ends its wait for a place (PARALLEL1e). Through the launcher where one is laid out beside the home (TERMTRUST1a).
     /// </remarks>
     /// <param name="world">
     /// The kit's stand-in world (FABRIC-PERFORM1e, <see cref="PluginCycles.World"/>): a file answering in a working plugin's platform's place,
@@ -40,7 +40,8 @@ internal sealed class PluginTrialProcess : IDisposable
 
         if (world is not null) info.Environment[PluginCycles.World] = world;
 
-        return new(await ProcessStarts.Shared.StartAsync(info, ct).ConfigureAwait(false)
+        // Through the launcher (TERMTRUST1a, D201 point 4), as the driver starts the plugin: born in this process's agents' job.
+        return new(await AgentStarts.StartAsync(info, ContainedKind.Plugin, StartClass.Person, home, log: null, ct).ConfigureAwait(false)
             ?? throw new Win32Exception("the process did not start"));
     }
 

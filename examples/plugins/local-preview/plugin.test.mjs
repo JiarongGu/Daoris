@@ -101,7 +101,8 @@ const POINTS = {
       "branch": "feature/0fda18-expose-a-streaming-budget",
       "line": "main",
       "pullRequest": "https://example.test/example-org/engine/pull/7",
-      "pushedTip": "3f2a9c1e5b7d4a6f8e0c2b4d6f8a0c2e4b6d8f0a"
+      "pushedTip": "3f2a9c1e5b7d4a6f8e0c2b4d6f8a0c2e4b6d8f0a",
+      "origin": null
     }
   },
   "state/changed": {

@@ -49,7 +49,7 @@
     {
       "id": "Daoris.Desktop.PieceStart",
       "path": "src/Daoris.Desktop/Daoris.Desktop.PieceStart",
-      "summary": "Daoris's partner launcher: joins a piece's job, then starts the partner's harness inside it"
+      "summary": "Daoris's agents' launcher: joins this Daoris's agents' job and any piece's, then starts the harness inside them"
     },
     {
       "id": "Daoris.Devkit.Cli",

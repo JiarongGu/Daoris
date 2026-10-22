@@ -531,7 +531,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         ask.Opened?.Invoke(sessionId, PieceJobs.NameOf(piece));
         try
         {
-            return await TurnAsync(ask, adapter, selection, agent, sessionId, job, launcher, configuration, ct).ConfigureAwait(false);
+            return await TurnAsync(ask, adapter, selection, agent, sessionId, configuration, ct).ConfigureAwait(false);
         }
         finally
         {
@@ -542,7 +542,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
     }
 
     private async Task<PartnerPassRun> TurnAsync(
-        PartnerPassAsk ask, ISessionAdapter adapter, HarnessSelection selection, string agent, string sessionId, ProcessJob job, string launcher,
+        PartnerPassAsk ask, ISessionAdapter adapter, HarnessSelection selection, string agent, string sessionId,
         PartnerConfiguration configuration, CancellationToken ct)
     {
         var service = _context.Service;
@@ -565,8 +565,6 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
                 Prompt = PartnerInstruction.Compose(packet),
             };
             var (info, harnessNotice) = _driver.Prepare(adapter, target, selection);
-            // 🔴 The start made the launcher's (D199's note on the strict start): it joins the piece's job before the harness runs.
-            if (PieceStarts.Through(info, launcher, job, piece) is { } unjoined) throw new DriverException(unjoined);
             await _driver.KeepHandedAsync(sessionId, info, ct).ConfigureAwait(false);
             await service.AdvanceAsync(sessionId, "starting", ct: ct).ConfigureAwait(false);
 
@@ -596,6 +594,9 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
                 adapter, info, target, sessionId, transcript, ask.Copy, Driver.JoinNotices(harnessNotice, opening), handedRules, handed,
                 refusesInput: PartnerPass.TakesNoWords(piece),
                 ct: ct,
+                // 🔴 The start made the launcher's at the start itself (D199's note on the strict start, TERMTRUST1a): it joins this
+                // process's agents' job, then the piece's beneath it, before the harness runs, and is never started outside the piece's.
+                piece: PieceJobs.NameOf(piece),
                 preamble: Driver.JoinNotices(preamble, opening),
                 handedServers: [],
                 said: _driver.Said(adapter, selection, sessionId),

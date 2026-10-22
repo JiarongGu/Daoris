@@ -24,6 +24,10 @@ namespace Daoris.Driver;
 /// (<see cref="Create"/>), each gate started suspended and joined before it runs, its count read (<see cref="Active"/>), and
 /// everything in it ended and waited for (<see cref="Terminate"/>, <see cref="WaitEmptyAsync"/>) before the run lets go of its
 /// slot. A gate that could not join is not run.</para>
+///
+/// <para>An agent started through the launcher (TERMTRUST1a, D201 point 4) is held by none of these after its start: the launcher joins
+/// this process's agents' job (<see cref="AgentJobs"/>), then any piece's, then a job of its own that ends its harness's tree with it,
+/// all before the harness runs (<see cref="PieceLauncher"/>).</para>
 /// </remarks>
 public sealed class ProcessJob : IDisposable
 {
@@ -69,19 +73,31 @@ public sealed class ProcessJob : IDisposable
     /// holder of the run's slot can find one a dead holder left (<see cref="EndNamedAsync"/>). Null off Windows, where there is no
     /// job, and where the system refused one or the name is already another's: a job that is not wholly this one's holds nothing.
     /// </summary>
-    internal static ProcessJob? Create(string? name = null)
+    internal static ProcessJob? Create(string? name = null) => CreateNamed(name).Job;
+
+    /// <summary>
+    /// <see cref="Create"/>, saying why there is none (TERMTRUST1a, D201 point 4: the agents' job's <c>name-held</c> and <c>job-refused</c>):
+    /// <c>NameHeld</c> where another process already holds a job of that name, which is never this one's.
+    /// </summary>
+    internal static (ProcessJob? Job, bool NameHeld) CreateNamed(string? name)
     {
-        if (!OperatingSystem.IsWindows()) return null;
+        if (!OperatingSystem.IsWindows()) return (null, false);
 
         var job = CreateJobObject(IntPtr.Zero, name);
-        if (job == IntPtr.Zero) return null;
-        if (Marshal.GetLastWin32Error() == AlreadyExists || !KillOnClose(job))
+        if (job == IntPtr.Zero) return (null, Marshal.GetLastWin32Error() is AlreadyExists or InvalidHandle);
+        if (Marshal.GetLastWin32Error() == AlreadyExists)
         {
             CloseHandle(job);
-            return null;
+            return (null, true);
         }
 
-        return new ProcessJob(job);
+        if (!KillOnClose(job))
+        {
+            CloseHandle(job);
+            return (null, false);
+        }
+
+        return (new ProcessJob(job), false);
     }
 
     /// <summary>Put a process this library started suspended into the job, before it can start anything. False where it could not.</summary>
@@ -89,6 +105,35 @@ public sealed class ProcessJob : IDisposable
     {
         var handle = Volatile.Read(ref _handle);
         return handle != IntPtr.Zero && AssignProcessToJobObject(handle, processHandle);
+    }
+
+    /// <summary>
+    /// Put this process into the job (TERMTRUST1a: the launcher's own, made empty after it joined the jobs it was named, so it nests beneath
+    /// them), so every process it starts afterwards is born in it. False where there is no job or it would not take this process.
+    /// </summary>
+    internal bool JoinThis()
+    {
+        var handle = Volatile.Read(ref _handle);
+        return handle != IntPtr.Zero && AssignProcessToJobObject(handle, GetCurrentProcess());
+    }
+
+    /// <summary>
+    /// Whether the job by that name holds <paramref name="process"/> (TERMTRUST1a; the judge's question of D201 point 4, asked by a handle):
+    /// null off Windows, where no name answers, or where the job or the answer would not open.
+    /// </summary>
+    internal static bool? NamedHolds(string name, IntPtr process)
+    {
+        if (!OperatingSystem.IsWindows()) return null;
+        var handle = OpenJobObject(JobQuery, false, name);
+        if (handle == IntPtr.Zero) return null;
+        try
+        {
+            return IsProcessInJob(process, handle, out var held) ? held : null;
+        }
+        finally
+        {
+            CloseHandle(handle);
+        }
     }
 
     /// <summary>
@@ -240,6 +285,8 @@ public sealed class ProcessJob : IDisposable
     private const int FileNotFound = 2;
     private const int InvalidName = 123;
     private const int AlreadyExists = 183;
+    // What CreateJobObject answers where the name is held by an object of another kind (an event, a mutex).
+    private const int InvalidHandle = 6;
 
     [StructLayout(LayoutKind.Sequential)]
     private struct JobObjectBasicAccountingInformation
@@ -313,6 +360,10 @@ public sealed class ProcessJob : IDisposable
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool TerminateJobObject(IntPtr job, uint exitCode);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool IsProcessInJob(IntPtr process, IntPtr job, [MarshalAs(UnmanagedType.Bool)] out bool result);
 
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]

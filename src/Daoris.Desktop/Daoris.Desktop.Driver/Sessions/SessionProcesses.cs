@@ -375,10 +375,13 @@ public sealed class SessionProcesses(string? markers = null)
     /// still in it — a dev server a session started from a background shell, found running after its
     /// session had ended. Called straight after the spawn by every site, so the job is joined before
     /// the harness has had time to start anything.
+    /// <para>A start made through the launcher (TERMTRUST1a) is held by no job here: its harness was born in this process's agents' job
+    /// and in the launcher's own, which ends its tree as the launcher ends; and a job taken over the launcher now could win the race with
+    /// its joins, and leave it unable to join the agents' job other agents hold (<see cref="PieceLauncher"/>).</para>
     /// </remarks>
     public IDisposable Track(string sessionId, Process process, string? refusesInput = null, bool drivesBrowser = false)
     {
-        var job = ProcessJob.Hold(process);
+        var job = ThroughLauncher(process) ? null : ProcessJob.Hold(process);
         lock (_gate) _running[sessionId] = new Entry { Process = process, RefusesInput = refusesInput, DrivesBrowser = drivesBrowser, Job = job };
         Mark(sessionId, process);
         return new Untrack(this, sessionId, job);
@@ -590,14 +593,27 @@ public sealed class SessionProcesses(string? markers = null)
         }
     }
 
-    private sealed class Untrack(SessionProcesses owner, string sessionId, ProcessJob job) : IDisposable
+    /// <summary>Whether <paramref name="process"/> was started as the launcher's (TERMTRUST1a); one whose start cannot be read is not.</summary>
+    private static bool ThroughLauncher(Process process)
+    {
+        try
+        {
+            return PieceLauncher.Carries(process.StartInfo);
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
+    }
+
+    private sealed class Untrack(SessionProcesses owner, string sessionId, ProcessJob? job) : IDisposable
     {
         public void Dispose()
         {
             lock (owner._gate) owner._running.Remove(sessionId);
             owner.Unmark(sessionId);
-            // Last: whatever the session started and left running ends with it (ORPHAN1).
-            job.Dispose();
+            // Last: whatever the session started and left running ends with it (ORPHAN1); through the launcher, its own job did as it ended.
+            job?.Dispose();
         }
     }
 }

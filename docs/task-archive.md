@@ -19752,3 +19752,13 @@ quest and tree held and where the answer goes fold under *While it waits* (a nat
 process's start, `by` and `missing`; once every stage came, a minute after the splash, or at the stop. Nothing that starts changed.
 `StartStagesTests` holds every stage once and in order, and each marked once in the sources. The reading and the proposed cut are
 `docs/2026-10-23-start-path-design.md`; the cut is STARTFAST1b. On Opus.
+
+## TERMTRUST1 — the person may trust this machine's terminal for management presses (2026-10-23, D201)
+
+> - [ ] **TERMTRUST1 — the person may trust this machine's terminal for management presses, once, in the window** (design, then a row; driver, modules, web; the owner's direction, 2026-10-23; amends D156). Every terminal press of the person's door waits for the window's Confirm (D156 point 4, PERSONDOOR1), so the steward driving the install for the owner waits on a click to stop or finish a session; the owner asked that such management need no click. Wanted: a standing grant the person turns on in the window with their own press, scoped to named management presses (stop or finish a session, hold or resume driving, close a quest), never words said as the person, go-aheads, sign-ins, access widenings, landings' pushes or a setting that widens; each use logged and said on the session's record; revocable at once; a grant on this machine alone, never carried by a sync. Designed under D191 with Codex's and Fable's reads (D156 is a foundation). Proof: with the grant, a terminal stop needs no Confirm and is said; without it, it waits as today; a press outside the scope always waits.
+
+**Outcome** 2026-10-23: designed and accepted as D201 (`docs/2026-10-23-terminal-trust-design.md`), with its rows TERMTRUST1a
+and TERMTRUST1b filed. TERMTRUST1a part (i), the containment, is built. Every agent, plugin process and piece starts through
+`daoris-piece-start` in its Daoris process's agents' job (`AgentStarts`, `AgentJobs`). A start the launcher cannot contain is still
+made, logged `agent.contained` and holds the `-open` event. The census of start sites holds the route. The launcher adds about
+110 ms per start. Its installed proof and part (ii) stay open under TERMTRUST1a. Detail: D201's part (i) note. On Opus.
