@@ -90,6 +90,57 @@ public sealed class PieceLauncherTests
         Assert.False(seen.RedirectStandardInput || seen.RedirectStandardOutput || seen.RedirectStandardError);
     }
 
+    /// <summary>The driver's half (<see cref="PieceStarts"/>): the harness's start made the launcher's, everything else of it kept.</summary>
+    [Fact]
+    public void The_harnesss_start_is_made_the_launchers_with_its_environment_folder_and_streams_kept()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var piece = Guid.NewGuid().ToString("N")[..12];
+        using var job = PieceJobs.Create(piece);
+        var info = new ProcessStartInfo(@"C:\agents\codex-acp.exe")
+        {
+            WorkingDirectory = @"C:\trees\p-1",
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            CreateNoWindow = true,
+        };
+        info.ArgumentList.Add("--x");
+        info.Environment["PIECE_WORD"] = "s1";
+
+        Assert.Null(PieceStarts.Through(info, @"C:\Daoris\app\bin\daoris-piece-start.exe", job, piece));
+
+        Assert.Equal(@"C:\Daoris\app\bin\daoris-piece-start.exe", info.FileName);
+        Assert.Equal(PieceLauncher.Arguments(PieceJobs.NameOf(piece), @"C:\agents\codex-acp.exe", ["--x"]), info.ArgumentList);
+        Assert.Equal((@"C:\trees\p-1", true, true, true), (info.WorkingDirectory, info.RedirectStandardInput, info.RedirectStandardOutput, info.CreateNoWindow));
+        Assert.Equal("s1", info.Environment["PIECE_WORD"]);
+    }
+
+    [Fact]
+    public void With_no_job_or_no_launcher_the_start_is_refused_and_left_as_it_was()
+    {
+        var info = new ProcessStartInfo(@"C:\agents\codex-acp.exe");
+        info.ArgumentList.Add("--x");
+
+        Assert.Contains("job could not be made", PieceStarts.Through(info, @"C:\bin\daoris-piece-start.exe", job: null, "p1"));
+        if (OperatingSystem.IsWindows())
+        {
+            var piece = Guid.NewGuid().ToString("N")[..12];
+            using var job = PieceJobs.Create(piece);
+            Assert.Contains("launcher", PieceStarts.Through(info, launcher: null, job, piece));
+        }
+
+        Assert.Equal((@"C:\agents\codex-acp.exe", "--x"), (info.FileName, info.ArgumentList.Single()));
+    }
+
+    [Fact]
+    public void A_home_with_no_install_beside_it_has_no_launcher()
+    {
+        var home = Path.Combine(Path.GetTempPath(), "daoris-no-launcher-" + Guid.NewGuid().ToString("N")[..8]);
+
+        Assert.Null(PieceStarts.LauncherPath(home));
+        Assert.Null(PieceStarts.LauncherPath(null));
+    }
+
     [Fact]
     public void A_pieces_job_is_named_under_the_launchers_prefix()
     {

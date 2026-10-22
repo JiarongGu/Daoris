@@ -78,6 +78,51 @@ public sealed class PieceLauncherProcessTests : IDisposable
         Assert.Equal(0, job.Active);
     }
 
+    /// <summary>
+    /// The driver's half: a harness's start built as a session's is (every stream redirected, no window), made the launcher's laid out in
+    /// an install beside the home (<see cref="PieceStarts"/>), runs in the piece's job and is read as any session's process.
+    /// </summary>
+    [Fact]
+    public async Task A_start_made_through_the_launcher_laid_out_beside_the_home_runs_in_the_pieces_job()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var home = Path.Combine(_root, "data");
+        Directory.CreateDirectory(home);
+        File.WriteAllText(Path.Combine(_root, DaorisHome.InstallMarker), "# Daoris — installed desktop\n");
+        var bin = Path.Combine([_root, .. Tools.InstallBinLayout]);
+        Directory.CreateDirectory(bin);
+        var built = Path.GetDirectoryName(Launcher())!;
+        foreach (var file in Directory.EnumerateFiles(built)) File.Copy(file, Path.Combine(bin, Path.GetFileName(file)));
+        Assert.Equal(Path.Combine(bin, PieceLauncher.Program), PieceStarts.LauncherPath(home));
+
+        var piece = Guid.NewGuid().ToString("N")[..12];
+        using var job = PieceJobs.Create(piece);
+        var info = new ProcessStartInfo(Cmd)
+        {
+            UseShellExecute = false,
+            WorkingDirectory = _root,
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            StandardInputEncoding = new UTF8Encoding(false),
+            StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8,
+            CreateNoWindow = true,
+        };
+        foreach (var word in new[] { "/d", "/c", "echo %PIECE_WORD%& set /p line=" }) info.ArgumentList.Add(word);
+        info.Environment["PIECE_WORD"] = "handed down";
+        Assert.Null(PieceStarts.Through(info, PieceStarts.LauncherPath(home), job, piece));
+
+        using var process = Process.Start(info)!;
+        Assert.Equal("handed down", await process.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(30)));
+        Assert.Equal(2, job!.Active);
+
+        await process.StandardInput.WriteLineAsync("done");
+        await process.StandardInput.FlushAsync();
+        await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30));
+        Assert.Equal(0, process.ExitCode);
+    }
+
     [Fact]
     public async Task Where_no_job_answers_to_the_name_the_harness_is_never_started()
     {
