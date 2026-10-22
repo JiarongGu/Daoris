@@ -782,7 +782,7 @@ describe("a workspace's page (UX6g)", () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STARTS', { payload: { workspaces: ['aurora'] } });
 
     // Its repositories are doors, and its accounts' agent opens its page, where they are set (UX6e).
-    expect(within(page).getByRole('listitem', { name: 'Claude Code' })).toHaveTextContent("this machine's: personal");
+    expect(within(page).getByRole('listitem', { name: 'Claude Code' })).toHaveTextContent("Daoris's accounts, in order: personal");
     await userEvent.click(within(page).getByRole('button', { name: 'Open Claude Code' }));
     expect(onOpenAgent).toHaveBeenCalledWith('claude-code');
     await userEvent.click(within(page).getByRole('button', { name: 'Open game' }));
@@ -873,8 +873,10 @@ describe("a workspace's page (UX6g)", () => {
     await userEvent.click(within(remote).getByRole('button', { name: 'Unwire' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.REMOTES', 'REMOVE', { payload: { workspace: 'aurora' } });
     await vi.waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('Nothing at the deployment changed')));
-    // Only what every browser is given goes over the service: the registry and the index's counts the list reads.
-    expect(serviceCalls().filter((url) => !url.startsWith('/api/repositories'))).toEqual([]);
+    // Only what every browser is given goes over the service: the registry and the index's counts the list reads, and where the
+    // shell pushes no standing, the circle's sync standing the machines' list reads (FABRIC-CLOSE1i2), which a browser on this
+    // machine reads too (`useSyncStanding`). The remote's address and key never do.
+    expect(serviceCalls().filter((url) => !url.startsWith('/api/repositories') && !url.startsWith('/api/sync?'))).toEqual([]);
   });
 
   it('wires a workspace from its header, and lets the key go once it has landed', async () => {

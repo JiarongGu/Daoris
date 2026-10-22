@@ -18,7 +18,8 @@ describe('AskHelper', () => {
     const ask = vi.fn();
     render(<AskHelper from="claude-code" roster={roster} onAsk={ask} onClose={vi.fn()} />);
 
-    expect(screen.getByText(/Another agent reads this session’s work and answers your question/)).toBeInTheDocument();
+    expect(screen.getByText(/Another agent reads this session’s work, what it has not committed included, and answers your question/))
+      .toBeInTheDocument();
     const move = screen.getByRole('button', { name: 'Ask' });
     expect(move).toBeDisabled();
 

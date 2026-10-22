@@ -118,7 +118,7 @@ describe('how this came to be', () => {
       'accepted automatically when its quest was done · under the workspace\'s rule · naming the plugin github · accepting automatically');
     const due = within(session).getByText('Due to land automatically').parentElement!;
     expect(due).toHaveTextContent(`due since ${at('2026-10-03T10:00:00Z')} · closed ${at('2026-10-03T10:05:00Z')}`);
-    expect(due).toHaveTextContent("from this machine's list of work due to land");
+    expect(due).toHaveTextContent('from the work this machine has due to land');
     expect(due).toHaveTextContent(`${at('2026-10-03T10:01:00Z')} · its tree holds uncommitted work · 2 uncommitted paths · at 9f8e7d6`);
     expect(due).toHaveTextContent(`${at('2026-10-03T10:05:00Z')} · landed · branch feature/q1-fix-the-dashboard-figure · 2 commits · at 1a2b3c4`);
   });
