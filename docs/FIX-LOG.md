@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-23 — The account fold read a stray folder under the agent homes as an agent (POOLSTRAY1)
+
+- **Symptom:** POOL1d found this on the install. The fold at the 13:42 UTC update wrote
+  `rotation["claude-code$a"] = ["backups", "sessions"]` into `harnesses.json`, with a `pooled` receipt under it.
+  `claude-code$a` is a folder that a start with an unexpanded `$a` in its config path left on 2026-10-12.
+- **Root cause:** `HarnessSettings.AccountsOf` enumerated every folder under the account homes as an agent. It read each
+  folder's subfolders as that agent's accounts (`Profiles`). `AccountSet.Fold` then folded every agent the accounts or the
+  wiring named. Nothing asked whether any adapter or plugin named the folder.
+- **Fix:** the agents Daoris knows are `AdapterSet.Agents`: the build's names, each door's owner, and every installed plugin's
+  harnesses, disabled ones included. They are handed to `AccountsOf` and every path-level read and write of the wiring. The
+  fold folds only an agent the accounts name. A stray folder is said once to the machine log (`accounts.stray`). A stray
+  agent's `rotation` and `pooled` entries are dropped at the next change, with an `accounts.strayDropped` line. D197's
+  POOLSTRAY1 note has the detail.
+- **Verification:** three new `AccountSetTests` cases run on a scratch home. A stray folder folds to the known agent alone and
+  is said once. A wiring naming the stray loses its order and receipt, with its line. A disabled plugin's agent stays known.
+  Also green: the class's other 16, and the covering driver (815) and modules (73) classes, outside the Process half.
+
 ## 2026-10-22 — A folder held on the own sign-in's file would have reached *What needs you* without its `own` (POOL1c)
 
 - **Symptom:** found in POOL1c's build, before any window showed it: the attention row of a trust hold on the person's own

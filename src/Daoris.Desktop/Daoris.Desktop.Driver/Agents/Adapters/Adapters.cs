@@ -2349,11 +2349,30 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
 /// The agents whose accounts a door runs as (<see cref="HarnessToolchain.AccountOf"/>) where this set carries no door of that
 /// agent, each by its toolchain (CODEXACCT1): see <see cref="Holder"/>. None by default, so a set a test builds asks nobody.
 /// </param>
+/// <param name="declared">
+/// Every agent an installed plugin's harness names, enabled or not (POOLSTRAY1): see <see cref="Agents"/>. None by default.
+/// </param>
 public sealed class AdapterSet(
-    IReadOnlyDictionary<string, ISessionAdapter> adapters, IReadOnlyDictionary<string, HarnessToolchain>? holders = null)
+    IReadOnlyDictionary<string, ISessionAdapter> adapters, IReadOnlyDictionary<string, HarnessToolchain>? holders = null,
+    IReadOnlyCollection<string>? declared = null)
 {
     /// <summary>Every adapter this build has, in a stable order — what a roster enumerates.</summary>
     public IReadOnlyList<string> Names => [.. adapters.Keys.OrderBy(k => k, StringComparer.Ordinal)];
+
+    /// <summary>
+    /// The agents whose accounts Daoris keeps (POOLSTRAY1, D197): each name this set runs as a harness, each agent a door runs as,
+    /// and each an installed plugin's harness names, a disabled one's too, so turning a plugin off loses none of its wiring. A
+    /// folder under the account homes naming none of these is no agent, and the fold, every reader and the page pass it over
+    /// (<see cref="HarnessSettings.AccountsOf"/>).
+    /// </summary>
+    public IReadOnlyList<string> Agents =>
+    [
+        .. Reserved
+            .Concat(adapters.Select(each => each.Value.Toolchain?.Owner(each.Key) ?? each.Key))
+            .Concat(declared ?? [])
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(k => k, StringComparer.Ordinal),
+    ];
 
     /// <summary>
     /// Every name this set runs as a harness, in a stable order (PLUGINRESERVE1): each door it carries and each agent a door
@@ -2403,7 +2422,11 @@ public sealed class AdapterSet(
             }
         }
 
-        return new AdapterSet(joined, holders);
+        var named = catalog.Plugins.SelectMany(plugin => plugin.Manifest.Harnesses)
+            .SelectMany(harness => new[] { harness.Name, harness.AccountOf })
+            .OfType<string>()
+            .Where(name => name.Trim().Length > 0);
+        return new AdapterSet(joined, holders, [.. (declared ?? []).Concat(named).Distinct(StringComparer.OrdinalIgnoreCase)]);
     }
 
     public ISessionAdapter Resolve(string name)

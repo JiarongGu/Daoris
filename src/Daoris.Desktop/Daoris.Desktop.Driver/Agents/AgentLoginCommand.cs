@@ -66,7 +66,7 @@ internal static class AgentLoginCommand
 
         // CODEXACCT1b: the binary `agent list` asks, the pin before PATH's, refused before anything is made where the pin has nothing
         // installed at it; the sign-in and its end's question both run it.
-        var settings = HarnessSettings.LoadSet(path);
+        var settings = HarnessSettings.LoadSet(path, AgentsCommand.Agents(world, path));
         var binary = HarnessProbe.CommandOf(name, toolchain, command: null, settings, home);
         if (binary.Missing)
         {
@@ -312,7 +312,7 @@ internal static class AgentLoginCommand
                     }
 
                     // A new account goes last in the order, whatever its id (POOL1a, the account-pool design §2.2).
-                    if (fresh) HarnessSettings.Placed(path, agent, account);
+                    if (fresh) HarnessSettings.Placed(path, agent, account, AgentsCommand.Agents(world, path));
                 }
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)

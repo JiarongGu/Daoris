@@ -68,7 +68,9 @@ internal static class AgentAccountsCommand
             new JsonObject { ["action"] = "unpin", ["harness"] = name },
             _ =>
             {
-                HarnessSettings.Change(path, read => circle is null ? read.WithVersion(name, null) : read.WithWorkspaceVersion(circle, name, null));
+                HarnessSettings.Change(
+                    path, read => circle is null ? read.WithVersion(name, null) : read.WithWorkspaceVersion(circle, name, null),
+                    agents: AgentsCommand.Agents(world, path));
                 return Task.FromResult<object?>(null);
             },
             _ => null, Said);
@@ -84,7 +86,7 @@ internal static class AgentAccountsCommand
         var path = AgentsCommand.WiringPath(world);
         var home = HarnessSettings.HomeOf(path);
         // Read as the set (POOL1b, the account-pool design §2.4), so a file an older build wrote is the set here too.
-        var settings = HarnessSettings.LoadSet(path);
+        var settings = HarnessSettings.LoadSet(path, AgentsCommand.Agents(world, path));
         var context = new Context(args, world, path, home, settings, $"profile {action}");
 
         switch (action)
@@ -166,7 +168,10 @@ internal static class AgentAccountsCommand
         }
 
         /// <summary>The set's order as written now: every account of the agent's, read again after a write on either path.</summary>
-        public IReadOnlyList<string> Order(string owner) => HarnessSettings.LoadSet(Path).Rotation.GetValueOrDefault(owner) ?? [];
+        public IReadOnlyList<string> Order(string owner) => HarnessSettings.LoadSet(Path, [owner]).Rotation.GetValueOrDefault(owner) ?? [];
+
+        /// <summary>The agents this terminal's set knows, which every write here hands the wiring's change (POOLSTRAY1).</summary>
+        public IReadOnlyList<string> Agents => AgentsCommand.Agents(World, Path);
     }
 
     private static Task<object?> Done(object? done = null) => Task.FromResult(done);
@@ -225,7 +230,8 @@ internal static class AgentAccountsCommand
             _ =>
             {
                 var removed = HarnessSettings.RemoveProfile(at.Home, owner, profile);
-                HarnessSettings.Change(at.Path, read => read.WithoutAccount(owner, profile), account: new AccountChange(owner, profile, Added: false));
+                HarnessSettings.Change(
+                    at.Path, read => read.WithoutAccount(owner, profile), account: new AccountChange(owner, profile, Added: false), agents: at.Agents);
                 return Done(removed);
             },
             answer => Number(answer, "exitCode") == 1 ? failed : existed,
@@ -275,7 +281,7 @@ internal static class AgentAccountsCommand
             return new AgentPress(at.Verb, AgentRoutes.Account, at.Isolated, Payload([]),
                 _ =>
                 {
-                    HarnessSettings.Change(at.Path, read => read.WithRotation(owner, null));
+                    HarnessSettings.Change(at.Path, read => read.WithRotation(owner, null), agents: at.Agents);
                     return Done();
                 },
                 _ => null,
@@ -304,7 +310,7 @@ internal static class AgentAccountsCommand
         return new AgentPress(at.Verb, AgentRoutes.Account, at.Isolated, Payload(first),
             _ =>
             {
-                HarnessSettings.Change(at.Path, read => read.WithRotation(owner, first));
+                HarnessSettings.Change(at.Path, read => read.WithRotation(owner, first), agents: at.Agents);
                 return Done();
             },
             _ => null,
@@ -455,7 +461,7 @@ internal static class AgentAccountsCommand
             return new AgentPress(at.Verb, AgentRoutes.Account, at.Isolated, cleared,
                 _ =>
                 {
-                    HarnessSettings.Change(at.Path, read => read.WithUse(owner, null));
+                    HarnessSettings.Change(at.Path, read => read.WithUse(owner, null), agents: at.Agents);
                     return Done();
                 },
                 _ => null,
@@ -506,13 +512,13 @@ internal static class AgentAccountsCommand
         return new AgentPress(at.Verb, AgentRoutes.Account, at.Isolated, sent,
             _ =>
             {
-                HarnessSettings.Change(at.Path, read => read.WithUse(owner, change));
+                HarnessSettings.Change(at.Path, read => read.WithUse(owner, change), agents: at.Agents);
                 return Done();
             },
             _ => null,
             _ =>
             {
-                UsePrinted(at, owner, HarnessSettings.LoadSet(at.Path).Set(owner));
+                UsePrinted(at, owner, HarnessSettings.LoadSet(at.Path, [owner]).Set(owner));
                 at.Say($"  Written to {at.Path} — {Written}");
                 return 0;
             });

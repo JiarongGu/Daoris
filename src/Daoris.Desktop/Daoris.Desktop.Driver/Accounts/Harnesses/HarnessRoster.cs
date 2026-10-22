@@ -333,7 +333,13 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// meanwhile is read as the set too and no start reads a workspace's scope. The come-up folds the file itself (<see cref="Pool"/>),
     /// and every later write folds first.
     /// </summary>
-    public HarnessSettings Settings => HarnessSettings.LoadSet(SettingsPath);
+    public HarnessSettings Settings => HarnessSettings.LoadSet(SettingsPath, Agents);
+
+    /// <summary>
+    /// The agents whose accounts this roster answers for (POOLSTRAY1, <see cref="AdapterSet.Agents"/>): what every write of the wiring
+    /// through it hands <see cref="HarnessSettings.Change"/>, so a folder under the account homes none of them names is never folded.
+    /// </summary>
+    public IReadOnlyList<string> Agents => adapters.Agents;
 
     private bool _pooled;
 
@@ -344,7 +350,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     public void Pool(MachineLog? log)
     {
         if (_pooled) return;
-        _pooled = HarnessSettings.FoldNow(SettingsPath, log);
+        _pooled = HarnessSettings.FoldNow(SettingsPath, log, agents: Agents);
     }
 
     /// <summary>The harnesses this build knows, whether or not they are installed.</summary>

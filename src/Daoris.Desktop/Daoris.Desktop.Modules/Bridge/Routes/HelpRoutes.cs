@@ -692,7 +692,8 @@ public sealed class HelpRoutes(DriverContext context)
             var owner = AccountsRoutes.OwnerOf(_loop.Harnesses, harness);
             try
             {
-                HarnessSettings.Change(_loop.Harnesses.SettingsPath, read => AccountsRoutes.UseEdited(read, owner, change, workspace: null));
+                HarnessSettings.Change(
+                    _loop.Harnesses.SettingsPath, read => AccountsRoutes.UseEdited(read, owner, change, workspace: null), agents: _loop.Harnesses.Agents);
             }
             catch (ShenoraException refused)
             {
@@ -712,7 +713,8 @@ public sealed class HelpRoutes(DriverContext context)
             {
                 HarnessSettings.Change(_loop.Harnesses.SettingsPath, clear
                     ? read => read.WithRotation(owner, null)
-                    : read => AccountsRoutes.OrderEdited(read, HarnessSettings.Profiles(_loop.Harnesses.Home, owner), owner, accounts, workspace: null));
+                    : read => AccountsRoutes.OrderEdited(read, HarnessSettings.Profiles(_loop.Harnesses.Home, owner), owner, accounts, workspace: null),
+                    agents: _loop.Harnesses.Agents);
             }
             catch (ShenoraException refused)
             {

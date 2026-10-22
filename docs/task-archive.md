@@ -19683,3 +19683,14 @@ counted refs, the home's landings and choices, all read from files) stands is as
 stays at none while the refs only moved forward; anything else is walked. At 145 trees on a loaded machine: 696 s before, 278 s
 first, 21 s with nothing moved, 209 s after the line moved. `HelpTreesReadTests` proves a changed tree is read again (a commit, an
 edit, a landing, a holding branch deleted). Fewer kept trees is TREELOOK1b. Detail: D181's TREELOOK1 note. On Opus.
+
+## POOLSTRAY1 — the fold takes only agents Daoris knows (2026-10-23, D197)
+
+> - [ ] **POOLSTRAY1 — the fold takes only agents Daoris knows** (driver; found 2026-10-22 by POOL1d on the install). The install's fold at the update (13:42 UTC) wrote `rotation["claude-code$a"] = ["backups", "sessions"]`: a stray folder under the agent homes, left on 2026-10-12 by a start whose config path carried an unexpanded `$a`, was read as an agent and its subfolders as accounts (`HarnessSettings.AccountsOf` enumerates every folder under the agent homes). The fold, the readers and the page take only the agents the adapters and plugin harnesses name, and a stray folder is said once in the machine log, never folded; an install's stray entry is dropped from `rotation` with a receipt. Proof: a home holding such a folder folds to the known agents alone; the install's next fold drops it.
+
+**Outcome** 2026-10-23: built. The agents Daoris knows are `AdapterSet.Agents`: the build's, each door's owner, and every
+installed plugin's harnesses, disabled ones too. The roster, the routes and the terminal verbs hand them to every read and write of
+the wiring, and the fold folds only those agents. A stray folder is said once to the machine log (`accounts.stray`) and never
+folded. A wiring naming a stray agent loses its `rotation` and `pooled` entries at the next change, and its
+`accounts.strayDropped` line is the receipt. Proven on a scratch home in `AccountSetTests`. The install's next fold is POOL1d's to
+see. Detail: D197's POOLSTRAY1 note; the fix log. On Opus.

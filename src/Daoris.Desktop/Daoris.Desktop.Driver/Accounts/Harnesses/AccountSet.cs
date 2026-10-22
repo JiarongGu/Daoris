@@ -52,6 +52,18 @@ public static class AccountSet
             .Order(StringComparer.Ordinal)];
 
     /// <summary>
+    /// The agents the wiring's <c>rotation</c> or <c>pooled</c> names that are none of <paramref name="agents"/> (POOLSTRAY1), by name:
+    /// what a fold that read a stray folder as an agent wrote, each with how many accounts its order named and how many receipts it held.
+    /// </summary>
+    public static IReadOnlyList<StrayAgent> Strays(HarnessSettings settings, IReadOnlyCollection<string> agents) =>
+        [.. settings.Rotation.Keys.Concat(settings.Pooled.Keys)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Where(agent => !agents.Contains(agent, StringComparer.OrdinalIgnoreCase))
+            .Order(StringComparer.Ordinal)
+            .Select(agent => new StrayAgent(
+                agent, settings.Rotation.GetValueOrDefault(agent)?.Count ?? 0, settings.Pooled.GetValueOrDefault(agent)?.Count ?? 0))];
+
+    /// <summary>
     /// Whether <paramref name="agent"/>'s wiring has anything to fold (design §6.1 rule 1): a default, any workspace entry, no stored
     /// order while it has accounts, or a stored order that leaves out an account or names one that is gone.
     /// </summary>
@@ -99,10 +111,10 @@ public static class AccountSet
     {
         var folded = settings;
         var counts = new List<FoldCount>();
+        // Only an agent the accounts name is folded (POOLSTRAY1): one they do not is none Daoris knows, and its wiring is not its.
         foreach (var agent in AgentsOf(settings, accounts))
         {
-            var mine = accounts.GetValueOrDefault(agent) ?? [];
-            if (!Unfolded(settings, agent, mine)) continue;
+            if (!accounts.TryGetValue(agent, out var mine) || !Unfolded(settings, agent, mine)) continue;
             var (next, receipt, count) = FoldAgent(folded, agent, mine);
             folded = next;
             counts.Add(count);
@@ -305,6 +317,12 @@ public sealed record PlacedAccount(string Account, int Place);
 
 /// <summary>A setting a fold did not keep: whose it was (a workspace, or null for the machine's entry), its name and its value as written.</summary>
 public sealed record NotKeptSetting(string? Workspace, string Setting, JsonElement Value);
+
+/// <summary>
+/// An agent Daoris does not know that the wiring names (POOLSTRAY1), for the machine log's <c>accounts.strayDropped</c> line: never an
+/// account's name.
+/// </summary>
+public sealed record StrayAgent(string Agent, int Accounts, int Receipts);
 
 /// <summary>A fold's counts for the machine log's <c>accounts.pooled</c> line (design §6.2): never a name.</summary>
 public sealed record FoldCount(string Agent, int Accounts, int Scopes, int NotKept);

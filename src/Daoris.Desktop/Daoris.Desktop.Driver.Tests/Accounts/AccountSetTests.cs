@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class AccountSetTests : IDisposable
 {
-    private const string Agent = "claude";
+    private const string Agent = "claude-code";
 
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-account-set-tests", Guid.NewGuid().ToString("N")[..8]);
 
@@ -48,10 +48,10 @@ public sealed class AccountSetTests : IDisposable
     public void The_order_is_the_union_of_every_scope_and_every_account_and_the_scopes_go()
     {
         var raw = Raw("""
-            { "rotation": { "claude": ["b", "a"] },
-              "workspaceRotation": { "work": { "claude": ["c", "a"] } },
-              "workspaces": { "personal": { "claude": "d" } },
-              "workspaceRotationUse": { "work": { "claude": { "switch": "off" } } } }
+            { "rotation": { "claude-code": ["b", "a"] },
+              "workspaceRotation": { "work": { "claude-code": ["c", "a"] } },
+              "workspaces": { "personal": { "claude-code": "d" } },
+              "workspaceRotationUse": { "work": { "claude-code": { "switch": "off" } } } }
             """);
 
         var (folded, receipt) = Folded(raw, Accounts("a", "b", "c", "d", "e"));
@@ -77,7 +77,7 @@ public sealed class AccountSetTests : IDisposable
     [Fact]
     public void A_scope_s_first_is_where_its_starts_began_and_a_default_outside_its_list_is_any_other_account()
     {
-        var raw = Raw("""{ "defaults": { "claude": "b" }, "rotation": { "claude": ["a", "b"] }, "workspaces": { "w": { "claude": "x" } }, "workspaceRotation": { "w": { "claude": ["c"] } } }""");
+        var raw = Raw("""{ "defaults": { "claude-code": "b" }, "rotation": { "claude-code": ["a", "b"] }, "workspaces": { "w": { "claude-code": "x" } }, "workspaceRotation": { "w": { "claude-code": ["c"] } } }""");
 
         var (folded, receipt) = Folded(raw, Accounts("a", "b", "c", "x"));
 
@@ -91,7 +91,7 @@ public sealed class AccountSetTests : IDisposable
     [Fact]
     public void A_machine_scope_of_one_account_is_used_one_by_one_in_order_and_says_so()
     {
-        var raw = Raw("""{ "defaults": { "claude": "b" }, "rotationUse": { "claude": { "use": "goal", "switch": "off" } } }""");
+        var raw = Raw("""{ "defaults": { "claude-code": "b" }, "rotationUse": { "claude-code": { "use": "goal", "switch": "off" } } }""");
 
         var (folded, receipt) = Folded(raw, Accounts("a", "b"));
 
@@ -109,7 +109,7 @@ public sealed class AccountSetTests : IDisposable
     [Fact]
     public void The_machine_s_dormant_entry_is_the_set_s_and_unsaid()
     {
-        var raw = Raw("""{ "rotationUse": { "claude": { "switch": "off", "later": 3 } }, "workspaceRotation": { "w": { "claude": ["a"] } } }""");
+        var raw = Raw("""{ "rotationUse": { "claude-code": { "switch": "off", "later": 3 } }, "workspaceRotation": { "w": { "claude-code": ["a"] } } }""");
 
         var (folded, receipt) = Folded(raw, Accounts("a", "b"));
 
@@ -124,8 +124,8 @@ public sealed class AccountSetTests : IDisposable
     public void Workspace_settings_are_compared_normalized_and_taken_only_where_they_agree()
     {
         var agree = Raw("""
-            { "workspaceRotation": { "v": { "claude": ["a"] }, "w": { "claude": ["b"] } },
-              "workspaceRotationUse": { "v": { "claude": { "early": false } }, "w": { "claude": { "switch": "off", "use": "order" } } } }
+            { "workspaceRotation": { "v": { "claude-code": ["a"] }, "w": { "claude-code": ["b"] } },
+              "workspaceRotationUse": { "v": { "claude-code": { "early": false } }, "w": { "claude-code": { "switch": "off", "use": "order" } } } }
             """);
 
         var (taken, said) = Folded(agree, Accounts("a", "b"));
@@ -134,8 +134,8 @@ public sealed class AccountSetTests : IDisposable
         Assert.Empty(said!.NotKept);
 
         var differ = Raw("""
-            { "workspaceRotation": { "v": { "claude": ["a"] }, "w": { "claude": ["b"] } },
-              "workspaceRotationUse": { "v": { "claude": { "use": "goal" } }, "w": { "claude": { "use": "order" } } } }
+            { "workspaceRotation": { "v": { "claude-code": ["a"] }, "w": { "claude-code": ["b"] } },
+              "workspaceRotationUse": { "v": { "claude-code": { "use": "goal" } }, "w": { "claude-code": { "use": "order" } } } }
             """);
 
         var (defaulted, receipt) = Folded(differ, Accounts("a", "b"));
@@ -147,7 +147,7 @@ public sealed class AccountSetTests : IDisposable
     [Fact]
     public void A_dormant_workspace_entry_is_said_and_not_taken()
     {
-        var raw = Raw("""{ "workspaces": { "w": { "claude": "a" } }, "workspaceRotationUse": { "w": { "claude": { "switch": "off" } } } }""");
+        var raw = Raw("""{ "workspaces": { "w": { "claude-code": "a" } }, "workspaceRotationUse": { "w": { "claude-code": { "switch": "off" } } } }""");
 
         var (folded, receipt) = Folded(raw, Accounts("a", "b"));
 
@@ -159,12 +159,12 @@ public sealed class AccountSetTests : IDisposable
     [Fact]
     public void A_keep_naming_no_account_or_alone_is_dropped_and_said()
     {
-        var gone = Raw("""{ "rotation": { "claude": ["a", "b"] }, "rotationUse": { "claude": { "keep": "ghost" } }, "defaults": { "claude": "a" } }""");
+        var gone = Raw("""{ "rotation": { "claude-code": ["a", "b"] }, "rotationUse": { "claude-code": { "keep": "ghost" } }, "defaults": { "claude-code": "a" } }""");
         var (folded, receipt) = Folded(gone, Accounts("a", "b"));
         Assert.Null(RotationUse.Read(folded.Uses.GetValueOrDefault(Agent)).Use.Keep);
         Assert.Contains(receipt!.NotKept, each => each.Workspace is null && each.Setting == "keep");
 
-        var alone = Raw("""{ "defaults": { "claude": "a" }, "rotationUse": { "claude": { "keep": "a" } } }""");
+        var alone = Raw("""{ "defaults": { "claude-code": "a" }, "rotationUse": { "claude-code": { "keep": "a" } } }""");
         var (one, said) = Folded(alone, Accounts("a"));
         Assert.Null(RotationUse.Read(one.Uses.GetValueOrDefault(Agent)).Use.Keep);
         Assert.Contains(said!.NotKept, each => each.Setting == "keep");
@@ -174,7 +174,7 @@ public sealed class AccountSetTests : IDisposable
     [Fact]
     public void A_name_that_is_no_account_is_left_out_and_said()
     {
-        var raw = Raw("""{ "rotation": { "claude": ["a", "ghost"] } }""");
+        var raw = Raw("""{ "rotation": { "claude-code": ["a", "ghost"] } }""");
 
         var (folded, receipt) = Folded(raw, Accounts("a", "b"));
 
@@ -187,7 +187,7 @@ public sealed class AccountSetTests : IDisposable
     [Fact]
     public void A_folded_file_folds_to_itself_and_a_first_order_is_silent()
     {
-        var raw = Raw("""{ "versions": { "claude": "2.0.0" } }""");
+        var raw = Raw("""{ "versions": { "claude-code": "2.0.0" } }""");
 
         var (once, receipt) = Folded(raw, Accounts("b", "a"));
         Assert.Equal(["a", "b"], once.Rotation[Agent]);
@@ -207,7 +207,7 @@ public sealed class AccountSetTests : IDisposable
     public void Every_change_folds_first_and_a_second_fold_keeps_the_unsaid_first()
     {
         Signed("a", "b", "c");
-        Raw("""{ "rotation": { "claude": ["a"] }, "workspaceRotation": { "w": { "claude": ["b"] } } }""");
+        Raw("""{ "rotation": { "claude-code": ["a"] }, "workspaceRotation": { "w": { "claude-code": ["b"] } } }""");
 
         var changed = HarnessSettings.Change(File_, read => read.WithVersion(Agent, "2.0.0"));
 
@@ -221,7 +221,7 @@ public sealed class AccountSetTests : IDisposable
 
         // An older build writes a workspace's list again; the next change folds it with a receipt of its own.
         var older = JsonDocument.Parse(File.ReadAllText(File_)).RootElement.GetRawText()
-            .Replace("\"rotation\"", "\"workspaceRotation\":{\"w\":{\"claude\":[\"c\"]}},\"rotation\"", StringComparison.Ordinal);
+            .Replace("\"rotation\"", "\"workspaceRotation\":{\"w\":{\"claude-code\":[\"c\"]}},\"rotation\"", StringComparison.Ordinal);
         File.WriteAllText(File_, older);
         HarnessSettings.Change(File_, read => read);
 
@@ -241,9 +241,9 @@ public sealed class AccountSetTests : IDisposable
     public void Got_it_marks_only_the_receipts_it_names()
     {
         Signed("a", "b");
-        Raw("""{ "rotation": { "claude": ["a"] } }""");
+        Raw("""{ "rotation": { "claude-code": ["a"] } }""");
         var id = HarnessSettings.Change(File_, read => read).Pooled[Agent][0].Id;
-        File.WriteAllText(File_, File.ReadAllText(File_).Replace("\"rotation\"", "\"workspaces\":{\"w\":{\"claude\":\"b\"}},\"rotation\"", StringComparison.Ordinal));
+        File.WriteAllText(File_, File.ReadAllText(File_).Replace("\"rotation\"", "\"workspaces\":{\"w\":{\"claude-code\":\"b\"}},\"rotation\"", StringComparison.Ordinal));
         HarnessSettings.Change(File_, read => read);
 
         HarnessSettings.Change(File_, read => read.WithSaid(Agent, [id, "nobody"]));
@@ -273,7 +273,7 @@ public sealed class AccountSetTests : IDisposable
     public void An_order_edited_is_written_whole_and_cleared_keeps_its_settings()
     {
         Signed("a", "b", "c");
-        Raw("""{ "rotation": { "claude": ["c", "b", "a"] }, "rotationUse": { "claude": { "switch": "off" } } }""");
+        Raw("""{ "rotation": { "claude-code": ["c", "b", "a"] }, "rotationUse": { "claude-code": { "switch": "off" } } }""");
 
         HarnessSettings.Change(File_, read => read.WithRotation(Agent, ["a"]));
         Assert.Equal(["a", "c", "b"], HarnessSettings.Load(File_).Rotation[Agent]);
@@ -288,7 +288,7 @@ public sealed class AccountSetTests : IDisposable
     [Fact]
     public void An_older_build_reads_a_folded_file_as_every_workspace_on_the_same_accounts()
     {
-        var raw = Raw("""{ "rotation": { "claude": ["a"] }, "workspaceRotation": { "w": { "claude": ["b"] } }, "workspaceRotationUse": { "w": { "claude": { "use": "order" } } } }""");
+        var raw = Raw("""{ "rotation": { "claude-code": ["a"] }, "workspaceRotation": { "w": { "claude-code": ["b"] } }, "workspaceRotationUse": { "w": { "claude-code": { "use": "order" } } } }""");
         var (folded, _) = Folded(raw, Accounts("a", "b"));
 
         foreach (var workspace in new string?[] { null, "w", "other" })
@@ -308,7 +308,7 @@ public sealed class AccountSetTests : IDisposable
     public void The_projection_answers_the_set_and_writes_nothing()
     {
         Signed("a", "b");
-        var text = """{ "workspaces": { "w": { "claude": "b" } } }""";
+        var text = """{ "workspaces": { "w": { "claude-code": "b" } } }""";
         Raw(text);
 
         var set = HarnessSettings.LoadSet(File_);
@@ -322,7 +322,7 @@ public sealed class AccountSetTests : IDisposable
     public void A_come_up_a_held_lock_refuses_is_logged_and_folded_at_the_next_look()
     {
         Signed("a", "b");
-        Raw("""{ "defaults": { "claude": "b" } }""");
+        Raw("""{ "defaults": { "claude-code": "b" } }""");
         var log = new MachineLog(_home, "driver-test");
 
         bool refused;
@@ -341,5 +341,106 @@ public sealed class AccountSetTests : IDisposable
         var lines = Directory.EnumerateFiles(DaorisHome.Entry(_home, HomeEntry.Logs)).SelectMany(File.ReadAllLines).ToList();
         Assert.Contains(lines, line => line.Contains("\"accounts.pooled\"") && line.Contains("\"held\":true"));
         Assert.Contains(lines, line => line.Contains("\"accounts.pooled\"") && line.Contains("\"scopes\":1"));
+    }
+
+    /// <summary>The folder the install held (POOLSTRAY1): a start whose path carried an unexpanded <c>$a</c> left it beside the agents.</summary>
+    private const string Stray = "claude-code$a";
+
+    private void StrayFolder()
+    {
+        foreach (var name in new[] { "backups", "sessions" }) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, Stray, name));
+    }
+
+    private List<string> Lines(MachineLog log)
+    {
+        log.Dispose();
+        return [.. Directory.EnumerateFiles(DaorisHome.Entry(_home, HomeEntry.Logs)).SelectMany(File.ReadAllLines)];
+    }
+
+    /// <summary>
+    /// POOLSTRAY1: a scratch home holding a folder no agent Daoris knows names folds to the known agents alone, every reader passing
+    /// it over; the folder is said once to the machine log, however many folds see it, and is never touched.
+    /// </summary>
+    [Fact]
+    public void A_stray_folder_under_the_agent_homes_folds_to_the_known_agents_alone_and_is_said_once()
+    {
+        Signed("a", "b");
+        StrayFolder();
+        var log = new MachineLog(_home, "driver-test");
+
+        Assert.True(HarnessSettings.FoldNow(File_, log));
+        HarnessSettings.Change(File_, read => read.WithVersion(Agent, "2.0.0"), log: log);
+        Assert.True(HarnessSettings.FoldNow(File_, log));
+
+        var written = HarnessSettings.Load(File_);
+        Assert.Equal([Agent], written.Rotation.Keys);
+        Assert.Equal(["a", "b"], written.Rotation[Agent]);
+        Assert.False(written.Pooled.ContainsKey(Stray));
+        Assert.False(HarnessSettings.AccountsOf(_home, written).ContainsKey(Stray));
+        Assert.False(HarnessSettings.LoadSet(File_).Rotation.ContainsKey(Stray));
+        Assert.Equal([Stray], HarnessSettings.StrayAgents(_home, HarnessSettings.AgentsKnown(_home)));
+        Assert.True(Directory.Exists(HarnessSettings.ProfileHome(_home, Stray, "backups")));
+
+        var said = Lines(log).Where(line => line.Contains("\"accounts.stray\"")).ToList();
+        var line = Assert.Single(said);
+        Assert.Contains("\"folders\":2", line);
+        Assert.Contains("\"folded\":false", line);
+    }
+
+    /// <summary>
+    /// POOLSTRAY1: a wiring a fold wrote over a stray folder, its order and its receipt under the stray agent, loses both at the next
+    /// fold, with its <c>accounts.strayDropped</c> line as the receipt; the known agent's order, and what a person wrote for the stray
+    /// agent elsewhere, stay; a second fold writes nothing.
+    /// </summary>
+    [Fact]
+    public void A_wiring_that_already_names_a_stray_agent_loses_it_with_its_receipt()
+    {
+        Signed("a", "b");
+        StrayFolder();
+        Raw("""
+            { "rotation": { "claude-code": ["a", "b"], "claude-code$a": ["backups", "sessions"] },
+              "rotationUse": { "claude-code$a": { "switch": "off" } },
+              "pooled": { "claude-code$a": [ { "id": "r1", "at": "2026-10-22T13:42:00Z", "scopes": [], "order": ["backups", "sessions"],
+                "moved": [], "joined": [], "inOrder": null, "notKept": [], "gone": [], "said": false } ] } }
+            """);
+        var log = new MachineLog(_home, "driver-test");
+
+        Assert.True(HarnessSettings.FoldNow(File_, log));
+
+        var written = HarnessSettings.Load(File_);
+        Assert.Equal([Agent], written.Rotation.Keys);
+        Assert.Equal(["a", "b"], written.Rotation[Agent]);
+        Assert.Empty(written.Pooled);
+        Assert.True(written.Uses.ContainsKey(Stray));
+        var dropped = Assert.Single(Lines(log), line => line.Contains("\"accounts.strayDropped\""));
+        Assert.Contains($"\"agent\":\"{Stray}\"", dropped);
+        Assert.Contains("\"accounts\":2", dropped);
+        Assert.Contains("\"receipts\":1", dropped);
+
+        var text = File.ReadAllText(File_);
+        Assert.True(HarnessSettings.FoldNow(File_));
+        Assert.Equal(text, File.ReadAllText(File_));
+    }
+
+    /// <summary>
+    /// POOLSTRAY1: the agents Daoris knows are the build's, each agent a door runs as, and every installed plugin's harness, a disabled
+    /// one's too, so turning a plugin off drops none of its wiring.
+    /// </summary>
+    [Fact]
+    public void The_known_agents_are_the_builds_and_every_installed_plugins_disabled_or_not()
+    {
+        var folder = DaorisHome.Entry(_home, HomeEntry.Plugins, "acme.agent");
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "plugin.json"),
+            """{ "id": "acme.agent", "harnesses": [ { "name": "acme-agent", "command": ["acme"], "accountOf": "acme" } ] }""");
+        PluginState.Disable(_home, "acme.agent");
+
+        var known = HarnessSettings.AgentsKnown(_home);
+
+        Assert.Contains("claude-code", known);
+        Assert.Contains("codex", known);
+        Assert.Contains("acme-agent", known);
+        Assert.Contains("acme", known);
+        Assert.DoesNotContain(Stray, known);
     }
 }

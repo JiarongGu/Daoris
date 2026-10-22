@@ -39,7 +39,7 @@ public static class SessionsStateSlice
     public static readonly IReadOnlyList<string> Fields =
     [
         "id", "quest", "repository", "adapter", "state", "kind", "note", "evidence", "created", "updated", "workspace", "harnessVersion",
-        "profile", "tree", "baseCommit", "ask", "opinion", "serves", "from", "fromWhy", "fromBy", "answer", "access", "noteParts",
+        "profile", "tree", "baseCommit", "ask", "opinion", "serves", "from", "fromWhy", "fromBy", "answer", "access", "noteParts", "piece",
     ];
 
     /// <summary>

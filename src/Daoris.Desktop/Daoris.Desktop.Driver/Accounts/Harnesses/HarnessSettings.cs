@@ -214,9 +214,15 @@ public sealed record HarnessSettings(
     /// order left out or as a name gone: an added one is placed last by the edit's whole order, a removed one taken out by the edit.
     /// </param>
     /// <param name="log">Where the fold's line goes; the driver's log under the file's home where none is handed.</param>
+    /// <param name="agents">The agents Daoris knows (<see cref="AdapterSet.Agents"/>); the home's (<see cref="AgentsKnown"/>) where none is handed.</param>
+    /// <remarks>
+    /// An agent the wiring's <c>rotation</c> or <c>pooled</c> names that Daoris does not know (POOLSTRAY1) is dropped from both before
+    /// the fold, which an older fold wrote over a stray folder, and its <c>accounts.strayDropped</c> line is the receipt; its other
+    /// sections are the person's and stay.
+    /// </remarks>
     public static HarnessSettings Change(
         string path, Func<HarnessSettings, HarnessSettings> edit, Action? read = null, AccountChange? account = null, MachineLog? log = null,
-        TimeSpan? within = null)
+        TimeSpan? within = null, IReadOnlyCollection<string>? agents = null)
     {
         using var held = KeepLock.Take(path, within);
         var settings = Load(path);
@@ -229,11 +235,15 @@ public sealed record HarnessSettings(
         }
 
         var home = HomeOf(path);
-        var accounts = AccountsOf(home, settings);
+        // An agent whose account the change adds or removes is one a door named.
+        IReadOnlyCollection<string> known = account is null ? agents ?? AgentsKnown(home) : [.. agents ?? AgentsKnown(home), account.Agent];
+        var dropped = AccountSet.Strays(settings, known);
+        foreach (var stray in dropped) settings = settings.WithoutStray(stray.Agent);
+        var accounts = AccountsOf(home, settings, known);
         var (folded, counts) = AccountSet.Fold(settings, Hinted(settings, accounts, account), DateTimeOffset.UtcNow, PoolReceipts.NewId);
-        var changed = AccountSet.Whole(folded, edit(folded), AccountsOf(home, folded)).WithSaidKept();
+        var changed = AccountSet.Whole(folded, edit(folded), AccountsOf(home, folded, known)).WithSaidKept();
         changed.SaveHolding(path);
-        if (counts.Count > 0) Logged(home, log, counts);
+        Logged(home, log, Unsaid(home, known), dropped, counts);
         return changed;
     }
 
@@ -242,11 +252,12 @@ public sealed record HarnessSettings(
     /// makes; nothing is said of it. Never the reason the account is not kept: a file that does not read, or a lock held, leaves it
     /// for the next change, which places it and says so.
     /// </summary>
-    public static void Placed(string path, string agent, string account)
+    /// <param name="agents">The agents Daoris knows (<see cref="AdapterSet.Agents"/>); the home's (<see cref="AgentsKnown"/>) where none is handed.</param>
+    public static void Placed(string path, string agent, string account, IReadOnlyCollection<string>? agents = null)
     {
         try
         {
-            Change(path, read => read, account: new AccountChange(agent, account, Added: true));
+            Change(path, read => read, account: new AccountChange(agent, account, Added: true), agents: agents);
         }
         catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
         {
@@ -258,10 +269,11 @@ public sealed record HarnessSettings(
     /// The wiring as every reader takes it (POOL1a, the account-pool design §2.4): the file at <paramref name="path"/> read raw and
     /// projected to one set per agent (<see cref="AccountSet.Of"/>), nothing written.
     /// </summary>
-    public static HarnessSettings LoadSet(string path)
+    /// <param name="agents">The agents Daoris knows (<see cref="AdapterSet.Agents"/>); the home's (<see cref="AgentsKnown"/>) where none is handed.</param>
+    public static HarnessSettings LoadSet(string path, IReadOnlyCollection<string>? agents = null)
     {
         var settings = Load(path);
-        return settings.Problem is not null ? settings : AccountSet.Of(settings, AccountsOf(HomeOf(path), settings));
+        return settings.Problem is not null ? settings : AccountSet.Of(settings, AccountsOf(HomeOf(path), settings, agents));
     }
 
     /// <summary>
@@ -269,19 +281,28 @@ public sealed record HarnessSettings(
     /// so a file nobody edits is folded too. True when the file is folded now, or had nothing to fold; false where its lock was held
     /// for the whole wait, which is logged once and tried again at the next look (Fable's F11).
     /// </summary>
-    public static bool FoldNow(string path, MachineLog? log = null, TimeSpan? within = null)
+    /// <remarks>
+    /// A folder under the account homes no known agent names is said once to the machine log (<c>accounts.stray</c>, POOLSTRAY1) and
+    /// never folded; a wiring that names such an agent in <c>rotation</c> or <c>pooled</c> has something to fold, and drops it.
+    /// </remarks>
+    /// <param name="agents">The agents Daoris knows (<see cref="AdapterSet.Agents"/>); the home's (<see cref="AgentsKnown"/>) where none is handed.</param>
+    public static bool FoldNow(string path, MachineLog? log = null, TimeSpan? within = null, IReadOnlyCollection<string>? agents = null)
     {
         var settings = Load(path);
         if (settings.Problem is not null) return true;
-        var accounts = AccountsOf(HomeOf(path), settings);
-        if (!AccountSet.AgentsOf(settings, accounts).Any(agent => AccountSet.Unfolded(settings, agent, accounts.GetValueOrDefault(agent) ?? [])))
+        var home = HomeOf(path);
+        var known = agents ?? AgentsKnown(home);
+        var accounts = AccountsOf(home, settings, known);
+        if (AccountSet.Strays(settings, known).Count == 0
+            && !AccountSet.AgentsOf(settings, accounts).Any(agent => accounts.TryGetValue(agent, out var mine) && AccountSet.Unfolded(settings, agent, mine)))
         {
+            Logged(home, log, Unsaid(home, known), [], []);
             return true;
         }
 
         try
         {
-            Change(path, read => read, log: log, within: within);
+            Change(path, read => read, log: log, within: within, agents: known);
             return true;
         }
         catch (IOException error)
@@ -291,21 +312,19 @@ public sealed record HarnessSettings(
         }
     }
 
-    /// <summary>Each agent's accounts on this machine, for every agent the wiring names or whose account homes exist.</summary>
-    public static IReadOnlyDictionary<string, IReadOnlyList<string>> AccountsOf(string home, HarnessSettings settings)
+    /// <summary>
+    /// Each agent's accounts on this machine, for every agent Daoris knows that the wiring names or whose account homes exist
+    /// (POOLSTRAY1): a folder under the account homes no known agent names is no agent, and its folders no accounts.
+    /// </summary>
+    /// <param name="agents">The agents Daoris knows (<see cref="AdapterSet.Agents"/>); the home's (<see cref="AgentsKnown"/>) where none is handed.</param>
+    public static IReadOnlyDictionary<string, IReadOnlyList<string>> AccountsOf(
+        string home, HarnessSettings settings, IReadOnlyCollection<string>? agents = null)
     {
-        var agents = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var place in DaorisHome.Places(home, HomeEntry.AgentHomes, "_"))
-        {
-            if (Path.GetDirectoryName(place) is { } holder && Directory.Exists(holder))
-            {
-                foreach (var folder in Directory.EnumerateDirectories(holder)) agents.Add(Path.GetFileName(folder));
-            }
-        }
-
-        foreach (var agent in AccountSet.AgentsOf(settings, new Dictionary<string, IReadOnlyList<string>>())) agents.Add(agent);
+        var known = new HashSet<string>(agents ?? AgentsKnown(home), StringComparer.OrdinalIgnoreCase);
+        var named = new HashSet<string>(AgentFolders(home), StringComparer.OrdinalIgnoreCase);
+        foreach (var agent in AccountSet.AgentsOf(settings, new Dictionary<string, IReadOnlyList<string>>())) named.Add(agent);
         var accounts = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
-        foreach (var agent in agents.Where(agent => !NotAnAccount(agent)))
+        foreach (var agent in named.Where(agent => known.Contains(agent) && !NotAnAccount(agent)))
         {
             try
             {
@@ -318,6 +337,55 @@ public sealed record HarnessSettings(
         }
 
         return accounts;
+    }
+
+    /// <summary>
+    /// The agents Daoris knows on <paramref name="home"/> (POOLSTRAY1): the build's and every installed plugin's
+    /// (<see cref="AdapterSet.Agents"/>), for a writer or reader handed no set of its own.
+    /// </summary>
+    public static IReadOnlyList<string> AgentsKnown(string home)
+    {
+        var built = AdapterSet.Built();
+        return built.WithPlugins(PluginCatalog.Load(home, built.Names)).Agents;
+    }
+
+    /// <summary>
+    /// The folders under the account homes, in both places, that no agent in <paramref name="agents"/> names (POOLSTRAY1), sorted:
+    /// a folder a start whose path carried an unexpanded variable left, say. Never read as an agent, never touched.
+    /// </summary>
+    public static IReadOnlyList<string> StrayAgents(string home, IReadOnlyCollection<string> agents) =>
+        [.. AgentFolders(home).Where(name => !NotAnAccount(name) && !agents.Contains(name, StringComparer.OrdinalIgnoreCase))];
+
+    /// <summary>Every folder directly under the account homes, in both places, by name, sorted.</summary>
+    private static IEnumerable<string> AgentFolders(string home) =>
+        DaorisHome.Places(home, HomeEntry.AgentHomes, "_")
+            .Select(Path.GetDirectoryName)
+            .OfType<string>()
+            .Where(Directory.Exists)
+            .SelectMany(Directory.EnumerateDirectories)
+            .Select(Path.GetFileName)
+            .OfType<string>()
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(name => name, StringComparer.Ordinal);
+
+    /// <summary>Each stray folder already said to the machine log in this process, by home and name: said once (POOLSTRAY1).</summary>
+    private static readonly HashSet<string> StraysSaid = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>The stray folders under <paramref name="home"/> not yet said in this process, each marked said.</summary>
+    private static IReadOnlyList<(string Agent, int Folders)> Unsaid(string home, IReadOnlyCollection<string> agents)
+    {
+        var unsaid = new List<(string, int)>();
+        foreach (var stray in StrayAgents(home, agents))
+        {
+            lock (StraysSaid)
+            {
+                if (!StraysSaid.Add($"{Path.GetFullPath(home)}|{stray}")) continue;
+            }
+
+            unsaid.Add((stray, Folders(home, stray).Count()));
+        }
+
+        return unsaid;
     }
 
     private static IReadOnlyDictionary<string, IReadOnlyList<string>> Hinted(
@@ -334,11 +402,29 @@ public sealed record HarnessSettings(
         return hinted;
     }
 
-    private static void Logged(string home, MachineLog? log, IReadOnlyList<FoldCount> counts)
+    /// <summary>
+    /// The machine log's lines of one fold (design §6.2, POOLSTRAY1): each stray folder not said before (<c>accounts.stray</c>), each
+    /// stray agent dropped from the wiring with what it held, by count (<c>accounts.strayDropped</c>, the drop's receipt), and each
+    /// agent folded (<c>accounts.pooled</c>). Nothing to say opens no log.
+    /// </summary>
+    private static void Logged(
+        string home, MachineLog? log, IReadOnlyList<(string Agent, int Folders)> unsaid, IReadOnlyList<StrayAgent> dropped,
+        IReadOnlyList<FoldCount> counts)
     {
+        if (unsaid.Count == 0 && dropped.Count == 0 && counts.Count == 0) return;
         var own = log is null ? new MachineLog(home, "driver") : null;
         try
         {
+            foreach (var (agent, folders) in unsaid)
+            {
+                (log ?? own!).Warn("accounts.stray", ("agent", agent), ("folders", folders), ("folded", false));
+            }
+
+            foreach (var stray in dropped)
+            {
+                (log ?? own!).Warn("accounts.strayDropped", ("agent", stray.Agent), ("accounts", stray.Accounts), ("receipts", stray.Receipts));
+            }
+
             foreach (var count in counts)
             {
                 (log ?? own!).Info("accounts.pooled", ("agent", count.Agent), ("accounts", count.Accounts), ("scopes", count.Scopes), ("notKept", count.NotKept));
@@ -358,6 +444,20 @@ public sealed record HarnessSettings(
         Pooled.GetValueOrDefault(agent) is { } receipts
             ? WithPooled(agent, [.. receipts.Select(receipt => ids.Contains(receipt.Id) ? receipt with { Said = true } : receipt)])
             : this;
+
+    /// <summary>
+    /// An agent Daoris does not know taken out of what a fold writes (POOLSTRAY1): its <c>rotation</c> order and its <c>pooled</c>
+    /// receipts, which a fold that read a stray folder as an agent wrote. Its other sections were written by a person or another build,
+    /// and stay.
+    /// </summary>
+    internal HarnessSettings WithoutStray(string agent)
+    {
+        var rotation = new Dictionary<string, IReadOnlyList<string>>(Rotation, StringComparer.OrdinalIgnoreCase);
+        rotation.Remove(agent);
+        var pooled = new Dictionary<string, IReadOnlyList<PoolReceipt>>(Pooled, StringComparer.OrdinalIgnoreCase);
+        pooled.Remove(agent);
+        return this with { Rotation = rotation, Pooled = pooled };
+    }
 
     /// <summary>An agent's receipts replaced; none takes its entry out.</summary>
     internal HarnessSettings WithPooled(string agent, IReadOnlyList<PoolReceipt> receipts)
@@ -417,12 +517,14 @@ public sealed record HarnessSettings(
     /// <param name="home">The home whose managed versions the pin names.</param>
     /// <param name="workspace">The workspace whose own pin it is (PUSH1f2e: <c>agent pin --workspace</c>), or null for the machine's.</param>
     /// <exception cref="DriverException">Nothing is installed at that version now, or the file does not read; nothing was written.</exception>
-    public static HarnessSettings Pin(string path, string home, string harness, string version, string? workspace = null) =>
+    /// <param name="agents">The agents Daoris knows (<see cref="AdapterSet.Agents"/>); the home's (<see cref="AgentsKnown"/>) where none is handed.</param>
+    public static HarnessSettings Pin(
+        string path, string home, string harness, string version, string? workspace = null, IReadOnlyCollection<string>? agents = null) =>
         Change(path, read => Directory.Exists(ManagedHome(home, harness, version))
             ? workspace is null ? read.WithVersion(harness, version) : read.WithWorkspaceVersion(workspace, harness, version)
             : throw new DriverException(
                 $"`{harness}` {version} is no longer installed where Daoris keeps it — it was removed as the pin waited — so the pin was "
-                + $"not written. `daoris agent pin {harness} {version}` installs it again."));
+                + $"not written. `daoris agent pin {harness} {version}` installs it again."), agents: agents);
 
     /// <summary><see cref="Save"/> for a writer already holding the file's <see cref="KeepLock"/>.</summary>
     private void SaveHolding(string path)
