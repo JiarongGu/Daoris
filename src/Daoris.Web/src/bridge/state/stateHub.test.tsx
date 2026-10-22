@@ -24,7 +24,7 @@ import { keys } from '../../data/queries';
 import { useHarnesses } from '../agents/agents';
 import { useBrowserSettings } from '../browser';
 import { useDriver } from '../driver';
-import { HELP_HISTORY, HELP_PROPOSALS, HELP_WIRED, useHelpConversations } from '../help';
+import { HELP_HISTORY, HELP_PROPOSALS, HELP_PUBLISHED, HELP_WIRED, useHelpConversations } from '../help';
 import { historyKey, useHistoryPlan } from '../sessions/history';
 import { treesSyncScopeKey } from '../repositories/lines';
 import { usePlugins } from '../plugins';
@@ -131,8 +131,9 @@ describe('the state hub (STATE_CHANGED)', () => {
     // The remaining presses' families (STATEHUB1h): the tools, with what a switch of git would change; Ask Daoris's history and
     // what each conversation proposed; the browser's settings.
     ['tools', [[...ALL_TOOLS, 'list', false], [...ALL_TOOLS, 'git', 'system', '', '']]],
-    // HELPWIREDLIVE1: and the receipts *What it has* shows, which a resume or a change of mode adds while it is open.
-    ['help', [[...HELP_HISTORY, ''], [...HELP_HISTORY, 'pinned'], [...HELP_PROPOSALS, 's1'], [...HELP_WIRED, 'h1']]],
+    // HELPWIREDLIVE1: and the receipts *What it has* shows, which a resume or a change of mode adds while it is open. ASKQUESTS1: and
+    // what a conversation published, which an Apply adds.
+    ['help', [[...HELP_HISTORY, ''], [...HELP_HISTORY, 'pinned'], [...HELP_PROPOSALS, 's1'], [...HELP_WIRED, 'h1'], [...HELP_PUBLISHED, 'h1']]],
     ['browser', [keys.browserSettings]],
     // FABRIC-EVENT5b: How this Daoris is wired, told as a walk starts and as its sizes land.
     ['wiring', [keys.systemWiring, keys.systemSpace]],
