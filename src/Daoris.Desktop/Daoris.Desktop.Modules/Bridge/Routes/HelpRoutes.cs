@@ -531,7 +531,8 @@ public sealed class HelpRoutes(DriverContext context)
         applied.Stands,
     };
 
-    // The person's Not now: nothing changes but the proposal, and the agent is told so.
+    // The person's Not now: nothing changes but the proposal, and the agent is told so. A go's Dismiss (ASKDISMISS1) takes its card
+    // away and is told to nobody: a go changes nothing, so its dismiss is no word on the quest or ask it names.
     [DriverRoute("HELP_DISMISS")]
     [Publishes("HELP_DISMISS", StateScopes.Help)]
     private async Task<object?> HelpDismissAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -541,11 +542,10 @@ public sealed class HelpRoutes(DriverContext context)
             ?? throw new DriverException($"there is no proposal `#{id}` on this machine.");
         if (proposal.State != "proposed") throw new DriverException($"proposal `#{id}` is already {proposal.State}.");
 
-        HelpProposals.Settle(_loop.Home, id, "dismissed", null);
-        var told = $"Not now: the person did not apply `#{id}`.";
-        if (proposal.Session is { } said) _loop.Chat?.Say(said, InPersonsWords(told));
+        var told = HelpProposals.Dismiss(_loop.Home, proposal);
+        if (told is not null && proposal.Session is { } said) _loop.Chat?.Say(said, InPersonsWords(told));
         await Task.CompletedTask.ConfigureAwait(false);
-        return new { Message = told };
+        return new { Message = told ?? $"Dismissed `#{id}`: its card left the conversation, nothing was said to Ask Daoris, and nothing else changed." };
     }
 
     /// <summary>

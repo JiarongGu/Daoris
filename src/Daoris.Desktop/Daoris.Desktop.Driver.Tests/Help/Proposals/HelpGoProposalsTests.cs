@@ -138,6 +138,9 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     [InlineData("ask:#A2NONE00", "ask:a2none00", "Open Quests → ask `#a2none00` “a test ask”.")]
     [InlineData("q3done00", "q3done00", "Open Quests → quest `#q3done00` “Fix the stall”, done.")]
     [InlineData("q4declin", "q4declin", "Open Quests → quest `#q4declin` “Rewrite it all”, declined.")]
+    // ASKDISMISS1: a quest a session has taken is said taken, and an ask by the quest it became that is.
+    [InlineData("q2taken0", "q2taken0", "Open Quests → quest `#q2taken0` “Stream the tiles”, taken.")]
+    [InlineData("ask:a3kept00", "ask:a3kept00", "Open Quests → ask `#a3kept00` “stream the tiles”, its quest `#q2taken0` taken.")]
     public void A_go_may_name_one_quest_or_ask_the_machine_holds(string item, string handed, string says)
     {
         var plan = HelpProposals.Plan(Go("quests", item: item), DriverConfig.Empty, Machine);
@@ -156,6 +159,25 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
         var plan = HelpProposals.Plan(Go("quests", item: "ask:a4shut00"), DriverConfig.Empty, facts);
 
         Assert.Equal("Open Quests → ask `#a4shut00` “an ask set aside”, closed.", plan.Describe);
+    }
+
+    /// <summary>
+    /// ASKDISMISS1: a go changes nothing (HELP6), so its dismiss only takes the card out of the conversation. The proposal is
+    /// settled, so no window draws it again, and nothing is said into the conversation: no turn starts in which the agent could
+    /// read the press as the person's word on the quest or ask the card names. A change's Not now is still the person's answer,
+    /// told as their next message (D89).
+    /// </summary>
+    [Fact]
+    public void A_gos_dismiss_settles_its_card_and_tells_the_conversation_nothing()
+    {
+        File("g1", "go", "go", target: "quests");
+        File("a1", "setting", "drive", target: "engine");
+
+        Assert.Null(HelpProposals.Dismiss(_home, HelpProposals.Find(_home, "g1")!));
+        Assert.Equal("Not now: the person did not apply `#a1`.", HelpProposals.Dismiss(_home, HelpProposals.Find(_home, "a1")!));
+
+        Assert.Equal(("dismissed", "dismissed"), (HelpProposals.Find(_home, "g1")!.State, HelpProposals.Find(_home, "a1")!.State));
+        Assert.Empty(HelpProposals.Pending(_home, "h1"));
     }
 
     /// <summary>

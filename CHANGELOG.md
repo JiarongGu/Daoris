@@ -11,6 +11,10 @@ with the version and date at release.
   answer; where it waits on a go-ahead and a question both, the go-ahead comes first and its answer waits for the question's, so the
   session goes on once with both. Sessions ask through Daoris's new `question_ask` tool; one that asked only in its message is
   answered in words as before. In English and 中文.
+- In Ask Daoris, a card that suggests a screen, such as the one that takes you to a quest it published, now reads *Go there* and
+  *Dismiss*. *Dismiss* only takes the card out of the conversation: Ask Daoris is told nothing, and the quest is left as it is. It
+  was *Not now*, which Ask Daoris was told as your answer. A card about a quest a session has taken says it is taken. In English
+  and 中文.
 - A machine that left a workspace you share through a remote, or whose Daoris store was deleted, no longer keeps its workflows from
   closing their quests. The workspace's *Setup*, under *Remote and reach*, now lists *Machines not declared*: each machine the remote
   counts that has not said it knows a workflow that closes its quests. *Retire* takes one out of what the remote counts, and the

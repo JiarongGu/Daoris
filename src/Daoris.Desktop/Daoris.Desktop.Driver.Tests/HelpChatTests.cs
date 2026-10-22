@@ -238,9 +238,12 @@ public sealed class HelpChatTests : IDisposable
     {
         await using var service = StandInService.Start(Path.Combine(_home, "engine"));
         var seen = Path.Combine(_home, "environment.txt");
+        IReadOnlyList<string> agent = ["node", EnvironmentAgent(), seen];
         var config = DriverConfig.Empty with
         {
-            Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter] = ["node", EnvironmentAgent(), seen] },
+            // Claude's own command too: a door onto it asks the account's usage with that command (CODEXUSE1, USAGEPROBE1), which
+            // with none named would run the `claude` on this machine's PATH.
+            Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter] = agent, ["claude-code"] = agent },
         };
         var adapters = AdapterSet.Built();
         using var client = new ServiceClient(service.Url, null);
@@ -299,6 +302,9 @@ public sealed class HelpChatTests : IDisposable
             if (argv.includes('--version')) { console.log('2.1.281 (Claude Code)'); process.exit(0); }
             if (argv.includes('auth')) { console.log('{"loggedIn": true}'); process.exit(0); }
             if (argv.includes('--login-state')) { console.log('logged-in'); process.exit(0); }
+            // Claude's usage read, which a start's walk asks the account first (USAGEPROBE1; POOL1a2): stream-json with no prompt.
+            // It says nothing, so the account reads as unknown (D57), and it never writes over the run's environment.
+            if (argv.includes('--input-format') && !argv.includes('-p')) process.exit(0);
             // Written beside, then renamed, so the test never reads it half-written.
             writeFileSync(argv[0] + '.part', process.env.ENABLE_TOOL_SEARCH ?? '(unset)');
             renameSync(argv[0] + '.part', argv[0]);

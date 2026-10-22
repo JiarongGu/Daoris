@@ -15,7 +15,9 @@ public sealed class HelpRoomMayProposeTests
         var agents = HelpRoom.Render(HelpRoomFixture.Machine);
 
         Assert.Contains("every other card reads **apply** and **not now**", agents);
-        Assert.Contains("a go card reads **go there** and **not now**", agents);
+        // ASKDISMISS1: a go card's second press only takes the card away, and the room says nothing comes back of it.
+        Assert.Contains("a go card reads **go there** and **dismiss** (in 中文 **前往** and **移除**)", agents);
+        Assert.Contains("dismissing a go card only takes it out of the conversation: nothing comes back to you", agents);
         Assert.Contains("**应用**", agents);
         Assert.Contains("**前往**", agents);
         // HELP10: a delete's press is its own word, as its card labels it, and a bring-up-to-date card's first is the look.

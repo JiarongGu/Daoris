@@ -184,12 +184,22 @@ internal sealed class HelpGoProposals : IHelpProposalKind
             return (null, $"`{item}` is no item of `quests` — a quest by its id, or an ask as `{HelpPlaces.AskItem}<id>`.");
         }
 
+        // ASKDISMISS1: a quest a session has taken is said taken too, and an ask by each quest it became that is, so a card about
+        // one already taken says so.
         static string Closed(string status) =>
-            status.ToLowerInvariant() is var word && word is "done" or "declined" or "closed" ? $", {word}" : "";
+            status.ToLowerInvariant() is var word && word is "done" or "declined" or "closed" or "taken" ? $", {word}" : "";
+        string Taken(HelpAskFacts ask)
+        {
+            var taken = ask.Quests.Where(quest => facts.Quests.Any(each =>
+                string.Equals(each.Id, quest, StringComparison.OrdinalIgnoreCase) && string.Equals(each.Status, "Taken", StringComparison.OrdinalIgnoreCase))).ToList();
+            return taken.Count == 0 ? ""
+                : $", its quest{(taken.Count == 1 ? "" : "s")} {string.Join(" and ", taken.Select(quest => $"`#{quest}`"))} taken";
+        }
+
         if (asked)
         {
             return facts.Asks.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase)) is { } ask
-                ? (($"{HelpPlaces.AskItem}{ask.Id}", $" → ask `#{ask.Id}` “{ask.Sentence}”{Closed(ask.State)}"), null)
+                ? (($"{HelpPlaces.AskItem}{ask.Id}", $" → ask `#{ask.Id}` “{ask.Sentence}”{Closed(ask.State)}{Taken(ask)}"), null)
                 : (null, $"there is no ask `#{id}` on this machine.");
         }
 
