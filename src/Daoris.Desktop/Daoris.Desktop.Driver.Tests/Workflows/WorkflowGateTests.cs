@@ -388,19 +388,24 @@ public sealed class WorkflowGateTests : IDisposable
     /// </summary>
     private static NodeGraph Graph(string nodes, params (string From, string To)[] extra)
     {
+        var (graph, problems) = NodeGraphs.Read(GraphJson(nodes, extra));
+        Assert.True(graph is not null, string.Join("; ", problems.Select(problem => problem.Words)));
+        return graph;
+    }
+
+    /// <summary>The JSON of <see cref="Graph"/>'s graph, as a version's file holds it.</summary>
+    private static string GraphJson(string nodes, params (string From, string To)[] extra)
+    {
         var declared = JsonNode.Parse(nodes)!.AsArray();
         var ids = declared.Select(node => (string)node!["id"]!).ToList();
         var wires = new JsonArray([.. ids.Skip(1).Select((id, at) => (ids[at], id)).Concat(extra).Select(wire => (JsonNode)new JsonObject
         {
             ["id"] = $"{wire.Item1}>{wire.Item2}", ["kind"] = "after", ["from"] = wire.Item1, ["to"] = wire.Item2,
         })]);
-        var json = new JsonObject
+        return new JsonObject
         {
             ["schemaVersion"] = 2, ["entries"] = new JsonArray(ids[0]), ["end"] = ids[^1], ["nodes"] = declared.DeepClone(), ["wires"] = wires,
-        };
-        var (graph, problems) = NodeGraphs.Read(json.ToJsonString());
-        Assert.True(graph is not null, string.Join("; ", problems.Select(problem => problem.Words)));
-        return graph;
+        }.ToJsonString();
     }
 
     /// <summary>
@@ -592,6 +597,138 @@ public sealed class WorkflowGateTests : IDisposable
         file["versions"]![0]!["steps"]![1]!["accept"] = "you";
         File.WriteAllText(path, file.ToJsonString());
         Assert.StartsWith("`docs-to-pr` v1 is not the version its run was bound to", WorkflowProcesses.Read(_home, config, "web-app", "work", "q1").Problem);
+    }
+
+    // ——— a graph version read as a process (FABRIC-CUTOVER1d; D190 point 4, the cutover design §4)
+
+    /// <summary>
+    /// The run <c>q1</c> bound to <c>docs-to-pr</c> v1, a graph version holding <paramref name="nodes"/> each wired after the one before and the
+    /// <paramref name="extra"/> wires beside; its process as every gate reads it.
+    /// </summary>
+    private WorkflowProcess GraphProcess(string config, string nodes, params (string From, string To)[] extra) => GraphProcess("q1", config, nodes, extra);
+
+    /// <summary>The run <paramref name="run"/> so bound, the version written over whatever the file held, and its process.</summary>
+    private WorkflowProcess GraphProcess(string run, string config, string nodes, params (string From, string To)[] extra)
+    {
+        Directory.CreateDirectory(WorkflowStore.FolderOf(_home));
+        File.WriteAllText(WorkflowStore.PathOf(_home, "docs-to-pr"),
+            $$"""{"id":"docs-to-pr","name":"Docs","versions":[{"version":1,"at":"2026-10-21T09:00:00Z","door":"terminal","schema":2,"graph":{{GraphJson(nodes, extra)}}}]}""");
+        var version = Assert.Single(new WorkflowFiles(_home).Load("docs-to-pr")!.Read.Versions);
+        Assert.True(version.Problem is null, version.Problem);
+        Assert.Null(version.Unrun);
+        Bind(new WorkflowRunBinding(run, "web-app", "work", "docs-to-pr", WorkflowLevels.Repository, At) { Version = 1, Digest = version.Digest });
+        return WorkflowProcesses.Read(_home, Config(config), "web-app", "work", run);
+    }
+
+    public static TheoryData<string, string, string, string> GraphRows => new()
+    {
+        {
+            "each gate node's options the version's, among the declared reviewers and environments", Declared,
+            """
+            [{"id":"claim","kind":"claimed","version":1,"reach":"observed"},
+             {"id":"read","kind":"opinion","version":1,"reach":"observed","options":{"reviewers":["DSH"],"required":true,"steps":true,"recheck":false}},
+             {"id":"see","kind":"look","version":1,"reach":"observed","options":{"environment":"dev"}},
+             {"id":"land","kind":"handed","version":1,"reach":"observed","options":{"form":"merge","accept":"you"}}]
+            """,
+            "landing merge you tidy | look dev | opinion dsh on landing,steps required no-recheck verify 30min"
+        },
+        {
+            "a landing that leaves its form and its press out lands by the rule's; absent options read the declarations", Declared,
+            """
+            [{"id":"claim","kind":"claimed","version":1,"reach":"observed"},{"id":"read","kind":"opinion","version":1,"reach":"observed"},{"id":"see","kind":"look","version":1,"reach":"observed"},
+             {"id":"land","kind":"handed","version":1,"reach":"observed"}]
+            """,
+            "landing branch feature/{quest} plugin example.pull-request you tidy | look local | opinion codex-acp,dsh on landing verify 30min"
+        },
+        {
+            "the rule's press is its branch's: a landing the graph makes a merge is yours to press",
+            """{"landings":{"web-app":{"form":"branch","pattern":"w/{quest}","autoAccept":true}}}""",
+            """[{"id":"claim","kind":"claimed","version":1,"reach":"observed"},{"id":"land","kind":"handed","version":1,"reach":"observed","options":{"form":"merge"}}]""",
+            "landing merge you | look none | opinion none"
+        },
+        {
+            "the rule's press, where the graph leaves the landing to it",
+            """{"landings":{"web-app":{"form":"branch","pattern":"w/{quest}","autoAccept":true}}}""",
+            """[{"id":"claim","kind":"claimed","version":1,"reach":"observed"},{"id":"land","kind":"handed","version":1,"reach":"observed"}]""",
+            "landing branch w/{quest} plugin - automatic | look none | opinion none"
+        },
+        {
+            "nothing declared: the opinion and the look cannot start, nor a branch with no pattern", "{}",
+            """
+            [{"id":"claim","kind":"claimed","version":1,"reach":"observed"},{"id":"read","kind":"opinion","version":1,"reach":"observed"},{"id":"see","kind":"look","version":1,"reach":"observed"},
+             {"id":"land","kind":"handed","version":1,"reach":"observed","options":{"form":"branch","accept":"you"}}]
+            """,
+            "landing branch - plugin - you | look cannot | opinion cannot | landing cannot"
+        },
+    };
+
+    /// <summary>
+    /// FABRIC-CUTOVER1d (the cutover design §4): a graph version is read as a process from its gate nodes' options, each choosing among what the
+    /// repository declares, as a version of steps is; the gate follows it, and the landing record names it.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(GraphRows))]
+    public void A_graph_versions_process_is_read_from_its_gate_nodes_over_what_is_declared(string name, string config, string nodes, string expected)
+    {
+        // Each gate wired straight into the landing too, as `protected-wire` asks, where the chain does not already.
+        var graph = JsonNode.Parse(nodes)!.AsArray();
+        var land = (string)graph[^1]!["id"]!;
+        (string, string)[] gates = [.. graph.Take(graph.Count - 2).Where(node => (string)node!["kind"]! is "opinion" or "look").Select(node => ((string)node!["id"]!, land))];
+        var process = GraphProcess(config, nodes, gates);
+
+        Assert.True(expected == Summary(process), $"{name}\n  expected {expected}\n  actual   {Summary(process)}");
+        Assert.True(process.Named);
+        Assert.Null(process.Problem);
+        Assert.NotNull(process.Graph);
+        Assert.Equal(WorkflowGateStates.Follows, WorkflowGate.Judge(process).State);
+        Assert.Equal(new LandingWorkflow("docs-to-pr", 1, WorkflowLevels.Repository), process.Record);
+    }
+
+    /// <summary>
+    /// FABRIC-CUTOVER1d: the process carries the graph and its person part as its steps (what a kind's paths are judged on), and its
+    /// <c>claimed</c> node's options for its sessions, as FABRIC-PIPELINE1b3 read them.
+    /// </summary>
+    [Fact]
+    public void A_graph_versions_process_carries_its_graph_its_person_part_and_its_claimed_options()
+    {
+        var process = GraphProcess(Declared, """
+            [{"id":"claim","kind":"claimed","version":1,"reach":"observed","options":{"checks":"light"}},
+             {"id":"ok","kind":"go-ahead","version":1,"reach":"pressed","options":{"act":"write dev's settings","on":"dev"}},
+             {"id":"land","kind":"handed","version":1,"reach":"observed","options":{"form":"branch","accept":"automatic"}},
+             {"id":"pr","kind":"pull-request","version":1,"reach":"observed"}]
+            """);
+
+        Assert.Equal(["claim", "ok", "land", "pr"], process.Graph!.Nodes.Select(node => node.Id));
+        Assert.Equal([("claim", "work"), ("ok", "go-ahead"), ("land", "landing"), ("pr", "pull-request")], process.Steps.Select(step => (step.Id, step.Kind)));
+        Assert.Equal("\"light\"", process.Claimed!["checks"]);
+        Assert.Equal("light", SessionChecks.Of(Config(Declared), "web-app", process));
+        Assert.Equal("landing branch feature/{quest} plugin example.pull-request automatic tidy | look none | opinion none", Summary(process));
+    }
+
+    /// <summary>
+    /// FABRIC-CUTOVER1d: a gate node whose option does not read holds its run, saying which, and nothing is read in its place; a graph that
+    /// closes its quests holds its run until a run's close is built (FABRIC-CUTOVER1h), saying so.
+    /// </summary>
+    [Fact]
+    public void A_graph_whose_gate_option_does_not_read_or_that_closes_its_quests_holds_its_run()
+    {
+        var sideways = GraphProcess(Declared, """[{"id":"claim","kind":"claimed","version":1,"reach":"observed"},{"id":"land","kind":"handed","version":1,"reach":"observed","options":{"form":"sideways"}}]""");
+        Assert.Equal("`docs-to-pr` v1 cannot be read here: v1, node `land`: its `form` is `merge` or `branch`.", sideways.Problem);
+        Assert.Null(sideways.Opinion);
+        Assert.Equal(WorkflowGateStates.CannotStart, WorkflowGate.Judge(sideways).State);
+
+        var merging = GraphProcess("q2", Declared, """[{"id":"claim","kind":"claimed","version":1,"reach":"observed"},{"id":"land","kind":"handed","version":1,"reach":"observed","options":{"form":"merge","accept":"automatic"}}]""");
+        Assert.StartsWith("`docs-to-pr` v1 cannot be read here: v1, node `land`: only a branch lands with no press", merging.Problem);
+
+        var closing = GraphProcess("q3", Declared, """
+            [{"id":"land","kind":"handed","version":1,"reach":"observed"},{"id":"close","kind":"quest.close","version":1,"reach":"performed"}]
+            """);
+        Assert.Equal(
+            "`docs-to-pr` v1's graph closes its quests at `close` (`quest.close`), and this build does not close a run's quests yet, so it cannot start a run of it.",
+            closing.Problem);
+        Assert.NotNull(closing.Graph);
+        var held = WorkflowGate.Judge(closing);
+        Assert.Equal((WorkflowGateStates.CannotStart, false), (held.State, held.LetsGo));
     }
 
     [Theory]

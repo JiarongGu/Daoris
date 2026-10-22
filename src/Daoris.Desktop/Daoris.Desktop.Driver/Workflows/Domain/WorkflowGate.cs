@@ -75,9 +75,9 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
 
     /// <summary>
     /// The bound graph version's graph, as its file holds it and never decoded (FABRIC-CUTOVER1e; D190 point 4, the cutover design §4: the
-    /// process carries the graph beside the steps its gates read): what the run's view draws from the run's record. The gates still hold the
-    /// version as one this build does not run (<see cref="Problem"/>) until CUTOVER1d reads them from its nodes. Null under Current, under a
-    /// steps version, and where the graph version is not the one its run bound.
+    /// process carries the graph beside the steps its gates read): what the run's view draws from the run's record, and the landing gate's
+    /// graph part reads it from (FABRIC-CUTOVER1d). Null under Current, under a steps version, and where the graph
+    /// version is not the one its run bound.
     /// </summary>
     public NodeGraph? Graph { get; init; }
 
