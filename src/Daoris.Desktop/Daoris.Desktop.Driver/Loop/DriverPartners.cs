@@ -83,6 +83,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
                     state = write;
                     if (write.State == PartnerStates.Uncertain)
                     {
+                        Note(ask.Asker, PartnerNotes.Uncertain(write.Code ?? PartnerWhy.StateUnreadable));
                         events.Add(_context.Said.Say(Line(LookClass.Progress, $"partner  piece `{ask.Id}` is uncertain ({write.Code}): its copy is kept untouched for the person.")));
                     }
                 }
@@ -183,6 +184,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         switch (PartnerReservations.TryReserve(files, ask.Id, snapshot.Active, fromOf, _context.Config.Cap, taken, DateTimeOffset.UtcNow))
         {
             case PieceAdmitted.Reserved:
+                Note(ask.Asker, PartnerNotes.Asked(choice.Reviewer!));
                 return new Go(lead, root, choice);
             case PieceAdmitted.TooMany:
                 events.Add(_context.Said.Say(Refuse(ask, PartnerWhy.TooMany, choice.Reviewer, files)));
@@ -219,9 +221,14 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         files.WriteState(new PartnerState(ask.Id, PartnerStates.Waiting, code, DateTimeOffset.UtcNow));
     }
 
-    /// <summary>A piece refused: its state <see cref="PartnerStates.Refused"/> with the code, which releases any reservation it held.</summary>
-    private static LookLine Refuse(PartnerAsk ask, string code, string? agent, PartnerFiles files, string? detail = null)
+    /// <summary>
+    /// A piece refused: its state <see cref="PartnerStates.Refused"/> with the code, which releases any reservation it held, and a note on
+    /// the lead, never a word.
+    /// </summary>
+    private LookLine Refuse(PartnerAsk ask, string code, string? agent, PartnerFiles files, string? detail = null)
     {
+        // A lead this machine does not hold has no conversation to note on.
+        if (code != PartnerWhy.AskerGone) Note(ask.Asker, PartnerNotes.Refused(code));
         var kept = files.ReadState(ask.Id);
         files.WriteState((kept ?? new PartnerState(ask.Id, PartnerStates.Refused, code, DateTimeOffset.UtcNow)) with
         {
@@ -233,6 +240,13 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
     }
 
     private static LookLine Line(LookClass @class, string line) => new(line, new LookClassed(@class, "partner"));
+
+    /// <summary>A note on a record's conversation and its transcript: never a word, so it reaches no prompt and resets no count (§4.2).</summary>
+    private void Note(string session, Noted noted)
+    {
+        _context.Output?.Append(session, $"— {noted.Note}");
+        _context.Events.Keep(session, new SessionEvent { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts }, say: null);
+    }
 
     /// <summary>A piece's work beside the look, as a helper's is: told opened at once, its line joining a later look's report, its claim released at its end.</summary>
     private void Beside(string piece, Func<CancellationToken, Task<LookLine>> work, CancellationToken ct) =>
@@ -295,10 +309,12 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         var pass = new PartnerPassAsk(ask, lead, root, copy)
         {
             // 🔴 Started, naming the record and the job, BEFORE its turn: `partner_answer` finds its piece by this state.
-            Opened = (partner, job) => files.WriteState(files.ReadState(ask.Id)! with
+            Opened = (partner, job) =>
             {
-                State = PartnerStates.Started, Partner = partner, Job = job, At = DateTimeOffset.UtcNow,
-            }),
+                files.WriteState(files.ReadState(ask.Id)! with { State = PartnerStates.Started, Partner = partner, Job = job, At = DateTimeOffset.UtcNow });
+                Note(ask.Asker, PartnerNotes.Started(agent, partner));
+                Note(partner, PartnerNotes.Working(ask.Asker));
+            },
         };
         var run = await (_context.PartnerPasses ?? PartnerPassAsync)(pass, choice, ct).ConfigureAwait(false);
         if (run.Session is null)
@@ -311,6 +327,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         // The job is empty: no process of the partner's, nor a child, can still write the copy. The keeper's moment dates its commit.
         var now = DateTimeOffset.UtcNow;
         files.WriteState(files.ReadState(ask.Id)! with { State = PartnerStates.Ending, End = run.End ?? PartnerEnds.Answered, Kept = now, At = now });
+        if (PartnerNotes.Ended(run.End, agent) is { } ended) Note(ask.Asker, ended);
         return await KeepAsync(ask, files, run.LastWords, ct).ConfigureAwait(false);
     }
 
@@ -325,6 +342,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         if (state.Copy is not { } copy || state.Kept is not { } moment)
         {
             files.WriteState(state with { State = PartnerStates.Uncertain, Code = PartnerWhy.StateUnreadable, At = DateTimeOffset.UtcNow });
+            Note(ask.Asker, PartnerNotes.Uncertain(PartnerWhy.StateUnreadable));
             return Line(LookClass.Progress, $"partner  piece `{ask.Id}` is uncertain: its state names no copy or no keeper's moment.");
         }
 
@@ -343,13 +361,16 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
             case PartnerStates.Held:
                 files.WriteState(state with { State = PartnerStates.Held, Code = kept.Code, At = DateTimeOffset.UtcNow });
                 if (kept.Judged is { } held) files.WriteFacts(Facts(ask, "", held));
+                Note(ask.Asker, PartnerNotes.Kept(kept.Code ?? PartnerWhy.ImportRefused));
                 return Line(LookClass.Progress, $"partner  piece `{ask.Id}` is held ({kept.Code}): its import was refused, and its copy is kept for the person.");
             case null:
                 await OpinionTree.RemoveAsync(_context.Home, copy, PartnerPass.Prefix).ConfigureAwait(false);
                 files.WriteState(state with { State = PartnerStates.Refused, Code = PartnerWhy.NoWork, CopyRemoved = !Directory.Exists(copy), At = DateTimeOffset.UtcNow });
+                Note(ask.Asker, PartnerNotes.Refused(PartnerWhy.NoWork));
                 return Line(LookClass.Progress, $"partner  piece `{ask.Id}` left no work in its copy.");
             default:
                 files.WriteState(state with { State = PartnerStates.Uncertain, Code = kept.Code, At = DateTimeOffset.UtcNow });
+                Note(ask.Asker, PartnerNotes.Uncertain(kept.Code ?? PartnerWhy.StateUnreadable));
                 return Line(LookClass.Progress, $"partner  piece `{ask.Id}` is uncertain ({kept.Code}): {kept.Why}");
         }
     }
@@ -406,6 +427,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         {
             case PartnerDelivery.Attempted:
                 files.WriteReceipt(PartnerDelivery.Found(receipt, DateTimeOffset.UtcNow));
+                Note(ask.Asker, PartnerNotes.Uncertain(PartnerWhy.HandCut));
                 return Line(LookClass.Progress, $"partner  piece `{ask.Id}`'s answer may have reached its lead before Daoris stopped: it waits for the person, and is never handed again by itself.");
             case PartnerDelivery.Uncertain:
                 return null;
@@ -436,6 +458,8 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         var destination = to ?? ask.Asker;
         files.WriteReceipt(PartnerDelivery.Took(receipt, destination, DateTimeOffset.UtcNow));
         files.WriteState(state with { State = PartnerStates.Handed, At = DateTimeOffset.UtcNow });
+        Note(destination, PartnerNotes.Answered(state.Agent ?? "a partner", partner));
+        if (facts.Beyond.Count > 0) Note(destination, PartnerNotes.Beyond(facts.Beyond.Count));
 
         // A conversation hears it as its next turn, as a helper's answer: the shell's chat runner hears this event (D137 §3.1).
         if (word is not null && await _context.Service.RecordAsync(destination, ct).ConfigureAwait(false) is { Kind: "chat" })

@@ -68,7 +68,7 @@ public sealed class NoteCodesTests
     public void Every_reason_a_why_may_name_has_an_entry_that_says_its_own_values(string language)
     {
         var catalogue = Catalogue(language);
-        foreach (var reasons in new[] { NoteCodes.Continue, NoteCodes.Cooling, NoteCodes.Opening, NoteCodes.Resumed, NoteCodes.Unreached, NoteCodes.Handed, NoteCodes.Helper })
+        foreach (var reasons in new[] { NoteCodes.Continue, NoteCodes.Cooling, NoteCodes.Opening, NoteCodes.Resumed, NoteCodes.Unreached, NoteCodes.Handed, NoteCodes.Helper, NoteCodes.Partner })
         {
             foreach (var reason in reasons.All)
             {
@@ -92,6 +92,18 @@ public sealed class NoteCodesTests
 
         Assert.Contains(HelperWhy.Declined, reasons);
         Assert.Equal(reasons, NoteCodes.Helper.All.Select(reason => reason.Code).Order(StringComparer.Ordinal));
+    }
+
+    /// <summary>COAGENT1b: every reason a piece is refused, held or uncertain (<see cref="PartnerWhy"/>) is one the partner's <c>why</c> declares, once.</summary>
+    [Fact]
+    public void Every_partner_reason_is_declared_once()
+    {
+        var reasons = typeof(PartnerWhy).GetFields()
+            .Where(field => field.IsLiteral && field.FieldType == typeof(string))
+            .Select(field => (string)field.GetRawConstantValue()!)
+            .Order(StringComparer.Ordinal);
+
+        Assert.Equal(reasons, NoteCodes.Partner.All.Select(reason => reason.Code).Order(StringComparer.Ordinal));
     }
 
     /// <summary>Every reason the driver can give (MSG1f's <see cref="ContinueWhy"/>) is one a <c>why</c> declares, and only those.</summary>

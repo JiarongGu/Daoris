@@ -65,6 +65,28 @@ public sealed class AnswersAloneTests
         Assert.True(AnswersAlone.Holds([Finding(), Answer()], twice));
     }
 
+    /// <summary>
+    /// COAGENT1b (the co-agent design §4.2): a piece's answer counts as a helper's, by its mark; and a piece's notes on the lead (refused,
+    /// no work, out of time, uncertain, answered) reset nothing, whether beside an answer in its prompt or between two answers.
+    /// </summary>
+    [Fact]
+    public void A_pieces_answer_counts_and_its_notes_reset_nothing()
+    {
+        static SessionEvent Noted(Noted noted) => new() { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts };
+        var piece = new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Helper = "pt1", Id = "w5", Text = "A partner's answer." };
+        IEnumerable<SessionEvent> line =
+        [
+            .. Turn(Started()),
+            .. Turn(Noted(PartnerNotes.Refused(PartnerWhy.NoWork)), piece),
+            Noted(PartnerNotes.Ended(PartnerEnds.OutOfTime, "codex-acp")!),
+            Noted(PartnerNotes.Uncertain(PartnerWhy.JobUnknown)),
+            .. Turn(Noted(PartnerNotes.Answered("codex-acp", "pt2")), Helper("w6")),
+        ];
+
+        Assert.Equal(2, AnswersAlone.Count(line));
+        Assert.True(AnswersAlone.Holds([new SaidWordView("w7", "A partner's answer.", At, [], true) { Helper = "pt3", Key = "partner:p3" }], line));
+    }
+
     /// <summary>Only a word of the person's or Daoris's resets it, whether it prompted a turn or was taken inside one.</summary>
     [Fact]
     public void A_word_of_the_persons_or_of_Daoriss_on_the_line_resets_the_count()

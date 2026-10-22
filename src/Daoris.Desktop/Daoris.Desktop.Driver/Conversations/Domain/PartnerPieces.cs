@@ -149,6 +149,9 @@ public static class PartnerWhy
 
     /// <summary>The partner left no work in its copy.</summary>
     public const string NoWork = "no-work";
+
+    /// <summary>A restart cut the hand of its answer after the door was asked: the word may be on the lead's record.</summary>
+    public const string HandCut = "hand-cut";
 }
 
 /// <summary>

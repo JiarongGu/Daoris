@@ -555,6 +555,29 @@ public static class NoteCodes
         new(HelperWhy.CaptureMoved, [], "note.helper.why.capture-moved"),
     ]);
 
+    /// <summary>Why a piece was refused, held or uncertain (COAGENT1b, <see cref="PartnerWhy"/>): the page's <c>note.partner.why.*</c>.</summary>
+    public static readonly NoteReasons Partner = new(
+    [
+        new(PartnerWhy.AskerUnfit, [], "note.partner.why.asker-unfit"),
+        new(PartnerWhy.AskerGone, [], "note.partner.why.asker-gone"),
+        new(PartnerWhy.Blank, [], "note.partner.why.blank"),
+        new(PartnerWhy.PathOutside, [], "note.partner.why.path-outside"),
+        new(PartnerWhy.NoCommit, [], "note.partner.why.no-commit"),
+        new(PartnerWhy.BaseMissing, [], "note.partner.why.base-missing"),
+        new(PartnerWhy.TooMany, [], "note.partner.why.too-many"),
+        new(PartnerWhy.NotListed, [], "note.partner.why.not-listed"),
+        new(PartnerWhy.NoConnector, [], "note.partner.why.no-connector"),
+        new(PartnerWhy.NotMeasured, [], "note.partner.why.not-measured"),
+        new(PartnerWhy.CopyFailed, [], "note.partner.why.copy-failed"),
+        new(PartnerWhy.NoJob, [], "note.partner.why.no-job"),
+        new(PartnerWhy.StateUnreadable, [], "note.partner.why.state-unreadable"),
+        new(PartnerWhy.JobUnknown, [], "note.partner.why.job-unknown"),
+        new(PartnerWhy.RefMoved, [], "note.partner.why.ref-moved"),
+        new(PartnerWhy.ImportRefused, [], "note.partner.why.import-refused"),
+        new(PartnerWhy.NoWork, [], "note.partner.why.no-work"),
+        new(PartnerWhy.HandCut, [], "note.partner.why.hand-cut"),
+    ]);
+
     /// <summary>Why an agent's ask to hand its session over came to nothing (MIXAGENT1c, <see cref="HandOverAskWhy"/>): the page's <c>note.handover.why.*</c>.</summary>
     public static readonly NoteReasons HandOver = new(
     [
@@ -581,6 +604,22 @@ public static class NoteCodes
     public static readonly NoteCode HelperRefused = new("helper.refused", ["why"]) { Why = Helper };
     public static readonly NoteCode HelperRefusedBy = new("helper.refused-by", ["agent", "why"]) { Why = Helper };
     public static readonly NoteCode HelperHelping = new("helper.helping", ["session"]);
+
+    // ——— A partner's piece (COAGENT1b, D199 point 8; the co-agent design §7.8): on the lead, a piece asked of an agent, started, answered,
+    // refused, ended by a stop, its minutes or a limit with its work kept, uncertain, its files beyond its paths and its work held; on the
+    // partner, whose session it works for. Notes, never words: none reaches a prompt or resets the answers-alone count. Facts only: never
+    // an account's name or a path.
+    public static readonly NoteCode PartnerAsked = new("partner.asked", ["agent"]);
+    public static readonly NoteCode PartnerStarted = new("partner.started", ["agent", "session"]);
+    public static readonly NoteCode PartnerAnswered = new("partner.answered", ["agent", "session"]);
+    public static readonly NoteCode PartnerRefused = new("partner.refused", ["why"]) { Why = Partner };
+    public static readonly NoteCode PartnerStopped = new("partner.stopped", ["agent"]);
+    public static readonly NoteCode PartnerOutOfTime = new("partner.out-of-time", ["agent"]);
+    public static readonly NoteCode PartnerLimited = new("partner.limited", ["agent"]);
+    public static readonly NoteCode PartnerUncertain = new("partner.uncertain", ["why"]) { Why = Partner };
+    public static readonly NoteCode PartnerBeyond = new("partner.beyond", ["count"]);
+    public static readonly NoteCode PartnerKept = new("partner.kept", ["why"]) { Why = Partner };
+    public static readonly NoteCode PartnerWorking = new("partner.working", ["session"]);
 
     // ——— The answers-alone bound (COWORK1e, D188 point 4; the message-urgency design §2.3, §8.3): a third answer in a row with nobody
     // between held for the person, by the agent that answered; their *Go on with this answer*, which counts as their word; their *Not

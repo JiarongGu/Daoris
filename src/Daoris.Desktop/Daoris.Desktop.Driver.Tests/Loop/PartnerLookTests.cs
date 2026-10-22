@@ -171,6 +171,13 @@ public sealed class PartnerLookTests : IDisposable
 
         await Look(driver);
         Assert.Single(host.PartnerHands);
+
+        // Notes on the lead and the partner, never words (the design §7.8).
+        var kept = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
+        var lead = kept.After("s1", 0).Events.Where(e => e.Kind == SessionEventKind.Note).SelectMany(note => NoteAssert.Codes(note.Parts!));
+        Assert.Equal(["partner.asked", "partner.started", "partner.answered", "partner.beyond"], lead);
+        Assert.Equal(["partner.working"], kept.After(Partner, 0).Events.Where(e => e.Kind == SessionEventKind.Note).SelectMany(note => NoteAssert.Codes(note.Parts!)));
+        Assert.DoesNotContain(kept.After("s1", 0).Events, e => e.Kind == SessionEventKind.User);
     }
 
     /// <summary>
