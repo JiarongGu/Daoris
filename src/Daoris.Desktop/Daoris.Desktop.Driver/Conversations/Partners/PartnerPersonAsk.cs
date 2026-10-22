@@ -96,7 +96,7 @@ public static class PartnerPersonAsk
         if (!Directory.Exists(tree)) return new PieceBase(null, []);
         var (headCode, head, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "--verify", "-q", "HEAD"], ct).ConfigureAwait(false);
         var (statusCode, status, _) = await WorkingTree.GitAsync(
-            tree, ["-c", "core.quotePath=false", "status", "--porcelain", "-z", "--untracked-files=all"], ct).ConfigureAwait(false);
+            tree, ["--no-optional-locks", "-c", "core.quotePath=false", "status", "--porcelain", "-z", "--untracked-files=all"], ct).ConfigureAwait(false);
         return new PieceBase(headCode == 0 ? head.Trim() : null, statusCode == 0 ? Porcelain(status) : []);
     }
 
