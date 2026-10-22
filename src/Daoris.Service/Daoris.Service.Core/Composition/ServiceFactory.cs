@@ -185,6 +185,9 @@ public sealed record ComposedService(
     /// <summary>A helper's record and its answer's return (MIXAGENT2a-ii, D163 point 2): a local host's two doors; a shared host's refuse.</summary>
     public HelperDesk Helpers { get; init; } = null!;
 
+    /// <summary>A partner's record (COAGENT1b, D199 point 2): a local host's door, idempotent by the piece; a shared host's refuses.</summary>
+    public PartnerDesk Partners { get; init; } = null!;
+
     /// <summary>An ask's channel (SESSONE2a, D167 point 8): the messages beside the asks they are on. Composed on every host; only a local host maps its doors.</summary>
     public ChannelDesk Channel { get; init; } = null!;
 
@@ -396,6 +399,7 @@ public static class ServiceFactory
             History = new HistoryDesk(quests, sessions, asks, service, remotes, files, proposals, channel),
             Opinions = new OpinionDesk(opinions, sessions, local: mode == ServiceMode.Local),
             Helpers = new HelperDesk(sessions, local: mode == ServiceMode.Local),
+            Partners = new PartnerDesk(sessions, local: mode == ServiceMode.Local),
         };
     }
 

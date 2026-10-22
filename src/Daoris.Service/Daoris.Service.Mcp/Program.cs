@@ -133,6 +133,8 @@ builder.Services.AddSingleton(RuleProposalBox.FromEnvironment());
 builder.Services.AddSingleton(HelpProposalBox.FromEnvironment());
 // And a working session's ask for a helper, and a helper's answer (MIXAGENT2a-i), under the same home: a file each.
 builder.Services.AddSingleton(HelperBox.FromEnvironment());
+// And a partner's answer for its piece (COAGENT1b), under the same home: one file, beside the driver's ask and state.
+builder.Services.AddSingleton(PartnerBox.FromEnvironment());
 // And the event files a session's line is read back from (SESSCTX1f), under the same home: read on this machine, never served.
 builder.Services.AddSingleton(LineEvents.FromEnvironment());
 // And a brainstorm pass's answer (BRAINSTORM1a2): the one file the driver names on the connector it offers the pass, else none.

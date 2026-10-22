@@ -23,8 +23,7 @@ public static class PieceStarts
     /// </summary>
     public static string? Through(ProcessStartInfo harness, string? launcher, ProcessJob? job, string piece)
     {
-        if (job is null) return $"the piece's job could not be made ({PieceJobs.NameOf(piece)}), so the partner was not started.";
-        if (launcher is null) return $"the partner's launcher ({PieceLauncher.Program}) is not laid out in this install, so the partner was not started.";
+        if (Missing(launcher, job, piece) is { } missing) return missing;
         if (!string.IsNullOrEmpty(harness.Arguments)) return "the harness's start carries its words as one string, which the launcher cannot hand on whole.";
 
         var file = harness.FileName;
@@ -34,4 +33,10 @@ public static class PieceStarts
         foreach (var word in PieceLauncher.Arguments(PieceJobs.NameOf(piece), file, words)) harness.ArgumentList.Add(word);
         return null;
     }
+
+    /// <summary>Why a partner cannot be started through its launcher before any start is built: no job, or no launcher; null where both are.</summary>
+    public static string? Missing(string? launcher, ProcessJob? job, string piece) =>
+        job is null ? $"the piece's job could not be made ({PieceJobs.NameOf(piece)}), so the partner was not started."
+        : launcher is null ? $"the partner's launcher ({PieceLauncher.Program}) is not laid out in this install, so the partner was not started."
+        : null;
 }

@@ -216,6 +216,7 @@ public static class PersonDoors
         new("POST", "/api/opinions/{id}/hand", DoorClass.Driver, "a second opinion's findings, handed to the working session"),
         new("POST", "/api/helpers", DoorClass.Driver, "a helper's record, opened for the session that asked"),
         new("POST", "/api/helpers/{helper}/hand", DoorClass.Driver, "a helper's answer, handed to the session that asked"),
+        new("POST", "/api/partners", DoorClass.Driver, "a partner's record, opened for one piece of the session that asked"),
 
         // The person's alone (19, and the forms above): the review, what a review is set to, the yes and the done, a
         // go-ahead's answer, their words, closing and deleting, and the registry's verbs (D48 §3).

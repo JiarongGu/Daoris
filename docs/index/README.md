@@ -139,7 +139,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Rotation/AccountRotation.cs` | 74 | 1200 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Usage/UsageHistory.cs` | 47 | 925 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Acp/Acp.cs` | 142 | 2800 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Adapters/Adapters.cs` | 141 | 2436 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Adapters/Adapters.cs` | 141 | 2442 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/AgentAccountsCommand.cs` | 48 | 901 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/AgentsCommand.cs` | 53 | 979 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatGoOn.cs` | 40 | 750 |
@@ -149,7 +149,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/DrivenInbox.cs` | 50 | 1150 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpFacts.cs` | 54 | 920 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSettingProposals.cs` | 53 | 939 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 243 | 3829 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 245 | 3870 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverContinuations.cs` | 69 | 1098 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverWatch.cs` | 62 | 1039 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/DriverChoicesCommand.cs` | 120 | 2155 |
@@ -160,7 +160,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Hooks.cs` | 62 | 1216 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Quests/Domain/Planner.cs` | 123 | 2023 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Review/Domain/OpinionGate.cs` | 42 | 734 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs` | 165 | 2899 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs` | 165 | 2903 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Domain/Trace.Chain.cs` | 65 | 1420 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Domain/Trace.Words.cs` | 41 | 760 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/SessionsCommand.cs` | 91 | 1721 |
@@ -217,11 +217,11 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Quests/QuestLog.cs` | 54 | 847 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 270 | 4592 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs` | 100 | 1819 |
-| `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 99 | 1672 |
+| `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 101 | 1700 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 56 | 989 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 161 | 2642 |
-| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 72 | 831 |
-| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 170 | 2861 |
+| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 72 | 839 |
+| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 171 | 2877 |
 | `src/Daoris.Service/Daoris.Service.Tests/Asks/HistoryDeskTests.cs` | 46 | 864 |
 | `src/Daoris.Service/Daoris.Service.Tests/Knowledge/IndexEntriesTests.cs` | 50 | 983 |
 | `src/Daoris.Service/Daoris.Service.Tests/Mcp/McpToolsTests.cs` | 51 | 870 |
@@ -231,7 +231,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Tests/Remote/QuestSyncTests.cs` | 107 | 2111 |
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionLedgerTests.cs` | 101 | 1951 |
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionStoreTests.cs` | 42 | 842 |
-| `src/Daoris.Service/README.md` | 109 | 811 |
+| `src/Daoris.Service/README.md` | 109 | 812 |
 
 ### CLI (`cli`)
 

@@ -151,7 +151,7 @@ public sealed class OpinionPacketTests : IDisposable
         foreach (var tool in new[]
                  {
                      "quest_respond", "quest_publish", "go_ahead_ask", "permission_propose", "review_serve", "review_ready",
-                     "opinion_answer", "helper_ask", "helper_answer", "channel_post", "channel_read", "handover_propose", "line_read",
+                     "opinion_answer", "helper_ask", "helper_answer", "partner_answer", "channel_post", "channel_read", "handover_propose", "line_read",
                      "question_ask",
                  })
         {
