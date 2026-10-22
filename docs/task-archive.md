@@ -19620,3 +19620,14 @@ the bridge's press and `daoris agent login`. A stub at a path, such as a pin's m
 in. `node tools/live-logins.mjs`, run in verify beside partials, finds a test with a real login command or an agent command that
 falls back to PATH. Proved with a stub named `claude` and every start recorded (`ScratchSignInsTests`, `AgentsCommandTests`,
 `DriverModuleSignInTests`); no real login ran. On Opus.
+
+## USAGEONE1 — a start reads no usage it cannot choose by (2026-10-22, D197)
+
+> - [ ] **USAGEONE1 — a start reads no usage it cannot choose by** (driver; after POOL1b; D197, USAGEPROBE1). Since the fold, a default with no list is a set of one under `use: order`, so a start's walk freshens that never-read account's usage (`HarnessRoster.WalkAsync`'s `FreshenAsync`, `HarnessRoster.cs:1070`): one agent process and about two seconds per start that cannot change which account runs. A set of one, and a resume held to its own account, skip the walk's read; the hour's backstop and a person's look still read it. Proof: a start on a set of one runs no usage process (a stub that counts its runs), and a set of two still reads the unread one.
+
+**Outcome** 2026-10-22: built. The walk asks usage only where its set has two accounts or more and the start is not held to the
+tool's own home; a pick and a resume on its own account already asked nothing. `ClaudeUsageProcessTests` counts the stand-in CLI's
+runs: none on a set of one (seen failing with the guard reverted), one for the unread account of a set of two. The driver's fast half
+passes (13,276), and the Process classes RESUMEOWN1's entry lists, with `HelpChat`, `TurnStop`, `ChatAttachment`, `OwnSpace` and
+`ClaudeUsageProcess`, 175 of 176 filtered with `process.runsettings`; the one, a `SessionMessagesTickTests` row, passed 19 of 19 alone.
+Detail: D197's USAGEONE1 note. On Opus.
