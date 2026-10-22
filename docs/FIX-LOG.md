@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-22 — Ask Daoris's *Go there* answered that its plan changed once its quest was taken (ASKQUESTS1)
+
+- **Symptom:** reported to the steward from ASKDISMISS1's build: a go card about a quest Ask Daoris had published, pressed after a
+  session took the quest, answered that the plan had changed and applied nothing; pressed again on the card drawn anew, it went.
+- **Root cause:** a go card's sentence says where its quest, ask or session stands (ASKDISMISS1 adds *taken*), and the card's
+  revision is a digest of that sentence (HELPAPPLY1), so a take moves the plan the Apply judges. The cards were asked only when an
+  Apply or a Not now published `help`, or every 4 s in a window with no bus, so the card on the window stood for the plan before
+  the take, and `HELP_APPLY` answered `changed`, as it must for a plan the person did not see. Reasoned from the code; the window
+  was not looked at.
+- **Fix:** while a go card is shown, the proposals are asked again at each push that moves a quest's status, an ask's state or its
+  quests, or a session's state (`useStandingsMark` in `data/queries.ts`, read only while the quests, asks and sessions are pushed,
+  never a pull and never on a clock). The conversation's list of what it published (ASKQUESTS1) opens a quest with no judge at all.
+- **Verification:** `AskDaoris.test.tsx`'s *draws a go card again when a push moves where a quest stands*, seen failing with the
+  redraw taken out, then green; it holds that no quest or ask list was pulled.
+
 ## 2026-10-22 — The modules suite's account tests on `main` still asked for the scopes the fold retires, and the push missed `pooled` (POOL1a1)
 
 - **Symptom:** red on `main` after POOL1a1: `AgentAccountsBothWaysTests` 20 of 29, `AccountsStateSliceTests` 2, `HelpFileDoorsTests`'
