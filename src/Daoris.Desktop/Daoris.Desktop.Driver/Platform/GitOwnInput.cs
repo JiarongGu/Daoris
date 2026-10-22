@@ -33,10 +33,17 @@ public static class GitOwnInput
     public static async Task<GitHold?> HeldAsync(
         string home, string root, string repository, string? workspace, string remote, string address, string? git, CancellationToken ct)
     {
-        if (await FindsAsync(home, root, address, ct).ConfigureAwait(false))
+        // GITAUTH1c (§3.3): where the person chose their own sign-ins for this remote, its own ssh command is theirs to run.
+        if (!ChoseOwn(home, repository, workspace, remote, address) && await FindsAsync(home, root, address, ct).ConfigureAwait(false))
             return GitHolds.Hold(home, root, repository, workspace, remote, address, git, GitFailureClass.OwnInput, words: null, DateTimeOffset.UtcNow);
 
         GitHolds.Lift(home, root, remote, "setting", hold => hold.Class == GitFailures.Code(GitFailureClass.OwnInput));
         return null;
     }
+
+    /// <summary>Whether <paramref name="remote"/>'s SSH address resolves to <c>own</c> (§3.2): then nothing of the person's is held from it.</summary>
+    public static bool ChoseOwn(string home, string repository, string? workspace, string remote, string address) =>
+        GitIdentityActs.GitAddressHost(address) is { } host
+        && GitIdentityUse.Resolve(GitIdentities.Read(home), GitIdentityUse.Read(home), repository, workspace, [remote], host, GitIdentity.Ssh).Kind
+            == GitServeKind.Own;
 }

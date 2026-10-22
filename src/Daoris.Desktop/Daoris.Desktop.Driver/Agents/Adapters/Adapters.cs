@@ -1554,6 +1554,9 @@ internal static class Spawning
         Tools.Hand(info, home);
         // GITAUTH1b (the git-auth design §4.1): a session's gh or az acts with no token the desktop inherited.
         GitWiring.Untoken(info.Environment);
+        // GITAUTH1c (the git-auth design §3.6): a session's commits carry origin's identity's author where its repository names none,
+        // read at the start. Off the caller's thread: a home where no identity commits as anyone starts no git for it.
+        GitAuthor.Hand(info.Environment, Task.Run(() => GitAuthor.OfAsync(home ?? DaorisHome.Resolve(), root, CancellationToken.None)).GetAwaiter().GetResult());
 
         return info;
     }

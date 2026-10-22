@@ -182,6 +182,10 @@ content outright, and the relay's signature has no field for it. A quest carries
 transcript's rule), and the driver hands a session that directory as `DAORIS_QUEST_ATTACHMENTS`. With
 no Daoris home, files are refused, and links still travel.
 
+The service's home table (`Platform/DaorisHome.cs`, a twin of the driver's and the CLI's) names every place a home holds,
+the git identities' among them (D198): the list in `data/`, the keys, ssh files and git file under `profiles/git/`, and
+what the doors used under `run/git/`. The service reads none of them; it names them so a census of the home counts them.
+
 **A quest can name what comes next** (D65 §4). `then` is an ordered list of steps (`to`, `title`,
 `body`, at most 5). Closing the quest `done` publishes the first step **in the same transaction**,
 asked on behalf of the same asker, carrying the rest and naming its `parent`. `{parent}` in a step's

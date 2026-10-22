@@ -204,7 +204,10 @@ A folder past twenty sources keeps its scopes in folders named for what they hol
   the registry's machine half and the remotes), `agents/` (the agents, their accounts, rules and tools) and `state/`
   (the state hub, the pushed slices and what the driver publishes).
 - `work/` (Sessions): its view (`WorkFrame`), the attended session, the acts on a session and the model every scope
-  and place reads (identity, the list's groups and entries, an ask's channel, a note's words, the one ask) at its top;
+  and place reads (identity, the list's groups and entries, an ask's channel, a note's words, the one ask) at its top.
+  A note's words come from one map per reason family (`noteLines.ts`), each held key for key to the driver's `NoteCodes` by
+  `locales/note.test.ts`: a helper's, a hand-over's, and a partner's piece (COAGENT1b), whose notes on the lead and the
+  partner are notes, never words, and reset nothing;
   `frame/` (the window's frame: regions, lists, the dock, a page's header, the status bar), `strip/` (the app strip:
   its menus, command center and palette, the browser's door), `rail/` (Sessions' list), `head/` (a session's head,
   timeline, trace and milestone), `conversation/` (the conversation, its composer and box), `review/` (a session's

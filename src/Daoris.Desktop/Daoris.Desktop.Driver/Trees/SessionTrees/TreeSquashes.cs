@@ -20,7 +20,9 @@ internal sealed class TreeSquashes(TreeContext context)
     internal static async Task<(string? Commit, string? Why)> SquashAsync(
         string root, string tip, string parent, string message, CancellationToken ct)
     {
-        var (code, made, err) = await WorkingTree.GitAsync(root, ["commit-tree", $"{tip}^{{tree}}", "-p", parent, "-m", message], ct)
+        // GITAUTH1c (the git-auth design §3.6): origin's identity's author where the repository names none of its own.
+        var author = GitAuthor.Arguments(await GitAuthor.OfAsync(DaorisHome.Resolve(), root, ct).ConfigureAwait(false));
+        var (code, made, err) = await WorkingTree.GitAsync(root, [.. author, "commit-tree", $"{tip}^{{tree}}", "-p", parent, "-m", message], ct)
             .ConfigureAwait(false);
         return code == 0 && made.Trim().Length > 0 ? (made.Trim(), null) : (null, FirstLine(err));
     }
@@ -32,6 +34,7 @@ internal sealed class TreeSquashes(TreeContext context)
     /// </summary>
     internal static async Task<string?> IdentityProblemAsync(string root, string repository, CancellationToken ct)
     {
+        if (await GitAuthor.OfAsync(DaorisHome.Resolve(), root, ct).ConfigureAwait(false) is not null) return null;
         var (_, name, _) = await WorkingTree.GitAsync(root, ["config", "--get", "user.name"], ct).ConfigureAwait(false);
         var (_, email, _) = await WorkingTree.GitAsync(root, ["config", "--get", "user.email"], ct).ConfigureAwait(false);
         var missing = (name.Trim().Length == 0, email.Trim().Length == 0) switch

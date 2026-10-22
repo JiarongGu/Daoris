@@ -856,6 +856,8 @@ public sealed class DriverWatch(
         var unlinked = new List<string>();
         var units = await WorkUnits.ReadAsync(home, new Dictionary<string, string>(), new HashSet<string>(), service, unread, token, unlinked).ConfigureAwait(false);
         var registry = await service.RegistryAsync(token).ConfigureAwait(false);
+        // GITAUTH1c: the doors find a checkout's repository from the files alone, so the registry's roots are kept for them.
+        GitFolders.Remember(home, registry.Where(repo => repo.Root is { Length: > 0 }).Select(repo => (repo.Root!, repo.Repository, repo.Workspace)));
         var roots = registry.Where(repo => repo.Root is { Length: > 0 }).GroupBy(repo => repo.Repository, StringComparer.Ordinal)
             .ToDictionary(group => group.Key, group => group.First().Root!, StringComparer.Ordinal);
         // FABRIC-CUTOVER1c (the cutover design §2.3): why the work's attribution was not read travels with the units, so a run's branch is never

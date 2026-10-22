@@ -10,6 +10,34 @@ internal static class GitConsole
 {
     public static async Task<int> RunAsync(string[] args)
     {
+        // The identities, the defaults and the pointers (GITAUTH1c): the library's words, with the home, the registry asked only by
+        // `git use` of a repository, and the window looked for only before a widening.
+        if (GitIdentityCommand.Answers(args))
+        {
+            try
+            {
+                var configPath = DriverConfig.ResolvePath();
+                var home = DriverConfig.HomeOf(configPath);
+                var world = new GitIdentityWorld(
+                    home,
+                    async () =>
+                    {
+                        using var service = ServiceClient.FromEnvironment();
+                        var registry = await service.RegistryAsync().ConfigureAwait(false);
+                        return [.. registry.Where(row => row.Root is { Length: > 0 }).Select(row => (row.Root!, row.Repository, row.Workspace))];
+                    },
+                    async () => (await InstanceDoor.PeekAsync(new InstanceWorld { Home = home, Verb = "git" }).ConfigureAwait(false)).Found
+                        is not (InstanceFound.None or InstanceFound.Headless),
+                    Environment.GetEnvironmentVariable);
+                return await GitIdentityCommand.RunAsync(args, world, Console.Out, Console.Error).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException)
+            {
+                Console.Error.WriteLine($"git: {error.Message}");
+                return 2;
+            }
+        }
+
         // The usage before the service is asked for: a mistyped line needs no service to be told so.
         if (GitBranchesCommand.Read(args, out var problem) is not { } asked)
         {

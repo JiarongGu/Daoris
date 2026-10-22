@@ -104,6 +104,12 @@ agent last said of its windows, and the tool's own sign-in's once a press on its
 session reported (D165). Two sign-ins of one email in different organisations list apart, the organisation after the email
 (D125). `agent profile use` says what passes an account at a start, its limit reached, usage credits or
 its use over its curve, and marks a reading over the scope's curve with the curve's value now (D165).
+
+**Git identities of Daoris's own** (D198). `daoris-driver git identity add-ssh <host>` makes an SSH key in
+`profiles/git/keys/`, its folder limited to your account before a key byte is written; `git identity test` reads the host's
+greeting and a host key is trusted only at your press; `git use <repository> <identity>` points a repository at one. The list
+(`data/git-identities.json`) holds no secret. They take effect only on an install published with Daoris's git doors, which
+are left out until their measurements pass on an install; until then a remote keeps your own git as it was.
 `docs/2026-09-22-toolchain-design.md` is the contract.
 
 **`connect`, `retire` and `import` are the management commands** — opt-in, they talk to a service, and
