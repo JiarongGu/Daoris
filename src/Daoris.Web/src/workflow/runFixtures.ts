@@ -181,6 +181,34 @@ export const GRAPH_RUN_ADDED_LOOK = run([
   },
 });
 
+/**
+ * A graph run whose go-ahead nobody raised (FABRIC-CUTOVER1f; the cutover design §5.2): the go-ahead under way offers the person's skip and
+ * stop, the landing behind it not reached offers neither.
+ */
+export const GRAPH_RUN_GO_AHEAD = run([
+  at(nodeCell('claimed', 'work', 'agent', 'agent'), 'done', 'reached', { node: 'claimed', on: 'quest', quest: 'q1' }),
+  at(nodeCell('release', 'go-ahead', 'you', 'daoris', null, { act: 'release to prod' }), 'waiting-on-you', 'active',
+    { node: 'go-ahead', words: 'release to prod', acts: ['skip', 'stop'] }),
+  at(nodeCell('handed', 'landing', 'you', 'daoris', 'accept', { form: 'merge', accept: 'you' }), 'not-reached', 'blocked',
+    { node: 'handed', on: 'branch', branch: BRANCH, session: 's1' }),
+], {
+  at: 'release',
+  workflow: { version: 'gph-0a2b4c6d8e0f1a2b', startHolds: [], limits: {}, id: 'release', boundVersion: 3 },
+  graph: {
+    run: 'q1', entries: ['claimed'], end: 'handed',
+    wires: [{ from: 'claimed', to: 'release', kind: 'after' }, { from: 'release', to: 'handed', kind: 'after' }],
+    quest: 'q1', branch: BRANCH, judged: true, unread: false, ended: null,
+  },
+});
+
+/** The same run once the person passed its go-ahead over: their word kept, which the driver's next look applies. */
+export const GRAPH_RUN_GO_AHEAD_KEPT: WorkflowRun = {
+  ...GRAPH_RUN_GO_AHEAD,
+  steps: GRAPH_RUN_GO_AHEAD.steps.map((step) => step.step.id === 'release'
+    ? { ...step, acts: null, asked: { node: 'release', act: 'skip', words: 'nobody raises it for this work', at: AT } }
+    : step),
+};
+
 /** A graph run Daoris has not judged yet: every node not reached, standing at its entry; no session of it has a branch yet. */
 export const GRAPH_RUN_UNJUDGED = run([
   at(nodeCell('claimed', 'work', 'agent', 'agent'), 'not-reached', 'blocked', { node: 'claimed', on: 'quest', quest: 'q1' }),

@@ -332,6 +332,91 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
         Assert.Equal("session `c1` serves no quest, so no workflow runs for it.", answer.GetProperty("problem").GetString());
     }
 
+    /// <summary>Run <c>q1</c> bound to v1 of a workflow whose graph holds a go-ahead before its landing, its claim reached and its go-ahead under way.</summary>
+    private NodeRecordFiles BoundWithAGoAhead()
+    {
+        WorkflowStore.Add(Home, new WorkflowVersionAdded("docs", "Docs", "terminal", T.ToString("O"), null, System.Text.Json.Nodes.JsonNode.Parse("""
+            {"schemaVersion":2,"entries":["claimed"],"end":"handed",
+             "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
+                      {"id":"go","kind":"go-ahead","version":1,"reach":"pressed","options":{"act":"deploy the release"}},
+                      {"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+             "wires":[{"id":"c>g","kind":"after","from":"claimed","to":"go"},{"id":"g>h","kind":"after","from":"go","to":"handed"}]}
+            """)), kept: []);
+        var binding = WorkflowRunBindings.Plan(DriverConfig.Empty, Home, "q1", "engine", "aurora", null, new WorkflowTaskChoice(null, "docs"), [], T);
+        Assert.True(WorkflowRunBindings.Bind(Home, binding));
+        var unit = RunUnits.IdOf("q1");
+        var files = new NodeRecordFiles(Home, () => true);
+        files.Write(new NodeRecord(unit)
+        {
+            Statuses = new Dictionary<string, NodeStatus>
+            {
+                ["claimed"] = new(unit, "claimed", NodeStates.Reached)
+                {
+                    Attempt = 1, Acceptance = new NodeAcceptance(unit, "moment", binding.Digest!, "claimed", 1, 1) { Subject = "quest:q1" },
+                },
+                ["go"] = new(unit, "go", NodeStates.Active) { Attempt = 1, Binding = new NodeAcceptance(unit, null, binding.Digest!, "go", 1, 1) },
+            },
+        });
+        return files;
+    }
+
+    /// <summary>
+    /// FABRIC-CUTOVER1f, additive: each graph run's node answers what the person may say of it now, <c>acts</c>, and the word kept on it and not
+    /// applied yet, <c>asked</c>, which then takes the place of its acts. A steps run's steps carry neither. Seen failing first.
+    /// </summary>
+    [Fact]
+    public async Task A_graph_runs_nodes_answer_the_persons_acts_and_a_word_kept_on_one()
+    {
+        var files = BoundWithAGoAhead();
+        var (module, _) = await UpAsync();
+
+        var steps = Assert.Single((await AnswerAsync(module, "WORKFLOW_RUN", new { quest = "q1" })).GetProperty("runs").EnumerateArray())
+            .GetProperty("steps").EnumerateArray().ToList();
+        Assert.Equal(
+            [("claimed", JsonValueKind.Null), ("go", JsonValueKind.Array), ("handed", JsonValueKind.Null)],
+            steps.Select(step => (step.GetProperty("step").GetProperty("id").GetString(), step.GetProperty("acts").ValueKind)));
+        Assert.Equal(["skip", "stop"], steps[1].GetProperty("acts").EnumerateArray().Select(act => act.GetString()));
+        Assert.Equal(JsonValueKind.Null, steps[1].GetProperty("asked").ValueKind);
+
+        files.Write(files.Read(RunUnits.IdOf("q1"))! with { Pending = [new NodeWord("go", NodeWordActs.Skip, "nobody raises it", T)] });
+        var go = Assert.Single((await AnswerAsync(module, "WORKFLOW_RUN", new { quest = "q1" })).GetProperty("runs").EnumerateArray())
+            .GetProperty("steps").EnumerateArray().Single(step => step.GetProperty("step").GetProperty("id").GetString() == "go");
+        var asked = go.GetProperty("asked");
+        Assert.Equal(("go", "skip", "nobody raises it", T), (asked.GetProperty("node").GetString(), asked.GetProperty("act").GetString(),
+            asked.GetProperty("words").GetString(), asked.GetProperty("at").GetDateTimeOffset()));
+        Assert.Equal(JsonValueKind.Null, go.GetProperty("acts").ValueKind);
+    }
+
+    /// <summary>
+    /// FABRIC-CUTOVER1f: <c>WORKFLOW_NODE</c>, the person's skip or stop of a run's node. Before the driver is up it is the cold-start sentence; a
+    /// call naming no node is malformed; a process that does not hold the home keeps nothing and says so, as an answer with its code. Asked for its
+    /// words (<c>said: true</c>) by <c>workflow skip</c> sent over the pipe, it answers the lines and the exit code the alone path prints over the
+    /// same home. Seen failing first.
+    /// </summary>
+    [Fact]
+    public async Task A_word_on_a_runs_node_is_refused_cold_malformed_or_without_the_home_and_its_said_is_the_alone_paths()
+    {
+        var asked = new { run = "q1", node = "go", act = "skip", words = "nobody raises it" };
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "WORKFLOW_NODE", asked));
+        BoundWithAGoAhead();
+        var (module, _) = await UpAsync();
+        await Assert.ThrowsAnyAsync<Exception>(() => AnswerAsync(module, "WORKFLOW_NODE", new { run = "q1", act = "stop" }));
+
+        var answer = await AnswerAsync(module, "WORKFLOW_NODE", asked);
+
+        Assert.Equal(("q1", "go", "skip", false, "not-held"), (answer.GetProperty("run").GetString(), answer.GetProperty("node").GetString(),
+            answer.GetProperty("act").GetString(), answer.GetProperty("done").GetBoolean(), answer.GetProperty("refused").GetString()));
+        Assert.Contains("does not hold the home", answer.GetProperty("message").GetString());
+        Assert.Empty(new NodeRecordFiles(Home, () => true).Read(RunUnits.IdOf("q1"))!.Pending);
+
+        var said = (await AnswerAsync(module, "WORKFLOW_NODE", new { asked.run, asked.node, asked.act, asked.words, said = true })).GetProperty("said");
+        var output = new StringWriter { NewLine = "\n" };
+        var code = await WorkflowNodeCommand.RunAsync(new("skip", "q1", "go", "nobody raises it"), new NodeRecordFiles(Home), output, instance: null, _ => null);
+        Assert.Equal((output.ToString().TrimEnd('\n'), code),
+            (string.Join("\n", said.GetProperty("out").EnumerateArray().Select(line => line.GetString())), said.GetProperty("code").GetInt32()));
+        Assert.Equal(1, code);
+    }
+
     [Fact]
     public async Task A_refusal_names_what_to_name_and_a_run_waits_for_the_driver()
     {

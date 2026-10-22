@@ -17,6 +17,11 @@ with the version and date at release.
   driver's sessions run, Quests while a quest is taken, said in words in the place's tip. Sessions no longer counts the sessions
   the driver runs (the status bar still does), nor Quests every outstanding quest. What is unread is said *N unread* in a quiet
   ink, no longer in the colour of what waits on you. In English and 中文.
+- A step of a run that follows a workflow saved as a graph can now be passed over or stopped by you: *Pass over…* and *Stop…*
+  under the step in the side bar's *Workflow* view, and `daoris-driver workflow skip <run> <node> "…"` and `workflow stop <run>
+  <node>` at a terminal, which Daoris's window confirms. A skip keeps your words, so a go-ahead nobody will raise no longer strands
+  the run; a stop ends the run once nothing else of it can move. Your word is kept on the run and applied at Daoris's next look,
+  said there until then. In English and 中文.
 - An update that stopped part way is now put back only while nothing else acts on Daoris's home: a terminal's `daoris-driver`
   command changing it is waited for, up to thirty seconds. If it still holds the home, Daoris does not start on a half-replaced
   application; it says which command held the home and asks you to start it again once that has finished.

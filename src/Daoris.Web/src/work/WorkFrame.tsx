@@ -15,7 +15,7 @@ import {
   useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun, useRules, useSessionEvents, stoppedWaiting, useUnderWay,
   useEntryLanding, useLandEntry, useSessionHelpers, useUnderWaySubject, useSessionProcess, useWorkState, usePushedCalls, withCall,
   useAnswerPermission, usePermissionWaits, useSessionHandOverAsk, useApproveHandOver, useDeclineHandOver, type HandOverWord,
-  useAnswerWaits, useAnswerAlone,
+  useAnswerWaits, useAnswerAlone, useRunNodeWord,
 } from '../bridge/shell';
 import { handOverRefused, type HandOverAskWait } from './waits/HandOverAgentAsk';
 import { permissionSaid, type PermissionWaits } from './waits/PermissionAsks';
@@ -1002,6 +1002,8 @@ export function WorkFrame({
     ? !collapsed && panelView === 'workflow'
     : !dockClosed && dock === 'workflow');
   const workflowRun = useWorkflowRun(following ? { session: following.id } : null, { enabled: workflowShown });
+  // FABRIC-CUTOVER1f: the person's skip or stop of a graph run's node, pressed under the node in the view, kept for the driver's next look.
+  const runNodeWord = useRunNodeWord();
   // The person opening the dock on a surface — from its strip.
   const openDock = (tab: DockTab) => {
     setDock(tab);
@@ -1278,6 +1280,7 @@ export function WorkFrame({
                 ...(onOpenBranch ? { branch: onOpenBranch } : {}),
               }}
               controls={lookControl || opinionControl ? controls : undefined}
+              onNodeWord={runNodeWord.mutateAsync}
             />
           </div>,
         )

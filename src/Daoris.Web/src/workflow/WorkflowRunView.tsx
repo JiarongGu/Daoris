@@ -4,7 +4,8 @@ import { ago } from '../locales/format';
 import { ExternalLink } from '../design/links';
 import { Button, Icon, Inline, Pill, Prose, SkeletonRows } from '../design/ui';
 import type { CurrentWorkflow } from './current';
-import { type RunStep, runTone, type WorkflowRun, type WorkflowRunAnswer } from './run';
+import { NodeWord } from './NodeWord';
+import { type NodeWordAnswer, type NodeWordAsk, type RunStep, runTone, type WorkflowRun, type WorkflowRunAnswer } from './run';
 import { whySaid } from './routeSaid';
 import { addedSaid, graphSaid, runSaid, runShort, stateSaid } from './runSaid';
 import { type RunMarks, WorkflowChart } from './WorkflowChart';
@@ -46,13 +47,14 @@ const NODE_QUOTES: ReadonlySet<string> = new Set(['skipped', 'rejected', 'stoppe
  * here, the owner's control where it waits, and the door to where its record is. On the flowchart (FLOWCHART1d) the node wears
  * the state's pill itself, so its mark is drawn without it.
  */
-function StepMark({ run, step, here, doors, control, pill = true }: {
+function StepMark({ run, step, here, doors, control, pill = true, onNodeWord }: {
   run: WorkflowRun;
   step: RunStep;
   here: boolean;
   doors?: RunDoors;
   control?: ReactNode;
   pill?: boolean;
+  onNodeWord?: (ask: NodeWordAsk) => Promise<NodeWordAnswer>;
 }) {
   const { t } = useTranslation();
   const said = runSaid(t, step);
@@ -83,6 +85,8 @@ function StepMark({ run, step, here, doors, control, pill = true }: {
       {said && <p className="m-0 text-small text-ink-soft"><Inline text={said} /></p>}
       {quoted && <p className="m-0 text-small text-ink">{t('workflow.run.quoted', { words: quoted })}</p>}
       {added && <p className="m-0 text-meta text-ink-faint">{added}</p>}
+      {/* FABRIC-CUTOVER1f: the person's skip and stop of a graph run's node, wherever the driver's table takes them, and a word kept. */}
+      {step.node && run.graph && <NodeWord run={run.graph.run} step={step} onWord={onNodeWord} />}
       {control}
       {twin && <p className="m-0 text-meta text-ink-faint"><Inline text={twin} /></p>}
       {door && <div className="flex flex-wrap items-center gap-1.5"><DoorPress door={door} /></div>}
@@ -164,13 +168,14 @@ function doorFor(t: ReturnType<typeof useTranslation>['t'], run: WorkflowRun, st
 }
 
 /** One run: what it follows, where it stands in a few words, then its chart with each step's place. */
-function Run({ run, here, doors, controls, named }: {
+function Run({ run, here, doors, controls, named, onNodeWord }: {
   run: WorkflowRun;
   here?: string | null;
   doors?: RunDoors;
   controls?: Partial<Record<string, ReactNode>>;
   /** Several runs are drawn, so each says its repository first. */
   named: boolean;
+  onNodeWord?: (ask: NodeWordAsk) => Promise<NodeWordAnswer>;
 }) {
   const { t } = useTranslation();
   const at = run.at ?? null;
@@ -184,6 +189,7 @@ function Run({ run, here, doors, controls, named }: {
         doors={doors}
         control={step.step.id === at ? controls?.[step.step.id] : undefined}
         pill={pill}
+        onNodeWord={onNodeWord}
       />
     );
     const door = doorFor(t, run, step, doors);
@@ -264,7 +270,7 @@ function Run({ run, here, doors, controls, named }: {
  *
  * A molecule: the answer arrives as a prop, and every door goes out.
  */
-export function WorkflowRunView({ answer, reading = false, refusal = null, here = null, doors, controls }: {
+export function WorkflowRunView({ answer, reading = false, refusal = null, here = null, doors, controls, onNodeWord }: {
   /** What the shell answered; absent while it is read, or where it was refused. */
   answer?: WorkflowRunAnswer | null;
   reading?: boolean;
@@ -275,6 +281,11 @@ export function WorkflowRunView({ answer, reading = false, refusal = null, here 
   doors?: RunDoors;
   /** Each owner's control where the step the run stands at waits on a press, by the step's id. */
   controls?: Partial<Record<string, ReactNode>>;
+  /**
+   * The person's skip or stop of a graph run's node (FABRIC-CUTOVER1f), answered by the driver; absent where nothing presses it, and only a
+   * word kept is drawn.
+   */
+  onNodeWord?: (ask: NodeWordAsk) => Promise<NodeWordAnswer>;
 }) {
   const { t } = useTranslation();
 
@@ -302,6 +313,7 @@ export function WorkflowRunView({ answer, reading = false, refusal = null, here 
           doors={doors}
           controls={controls}
           named={answer.runs.length > 1}
+          onNodeWord={onNodeWord}
         />
       ))}
     </div>

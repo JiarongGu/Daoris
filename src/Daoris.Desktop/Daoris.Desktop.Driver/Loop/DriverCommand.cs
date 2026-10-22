@@ -261,6 +261,10 @@ public static class DriverCommand
           workflow keep <session> ["…"]
               keep the workflow a kind of task chose for a session's work that changed paths outside the kind's, where
               it asks less of you than the one it would follow without the kind: your say-so, with your words.
+          workflow skip <run> <node> "…"
+          workflow stop <run> <node> ["…"]
+              pass a node of a run bound to a graph version over, with your words, or stop it: kept on the run's record,
+              and Daoris's next look applies it. `workflow run` names the run and its nodes. Daoris's window confirms it.
           git branches [--repository <name>] [--all] [--json]
               each repository's line and branches: the sessions', the landed (on origin or not, their pull
               request), yours, and how many only origin holds, each against the line; and the git each read

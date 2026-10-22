@@ -142,6 +142,33 @@ public sealed class NodeRecordFilesTests : IDisposable
         Assert.Null(NodeRecordFiles.Parse(before)!.Ended);
     }
 
+    /// <summary>
+    /// FABRIC-CUTOVER1f (the cutover design §3, §5.2): the person's skip and stop of a run's node, kept in a field of their own, written only where
+    /// one waits, so a record written before reads with none and every other record reads as it did; one that does not hold its parts does not read.
+    /// </summary>
+    [Fact]
+    public void The_persons_words_on_a_runs_nodes_read_back_and_a_record_written_before_reads_with_none()
+    {
+        const string Run = "run:q7";
+        var record = new NodeRecord(Run)
+        {
+            Pending = [new NodeWord("go", NodeWordActs.Skip, "nobody will raise it", Then), new NodeWord("deployed", NodeWordActs.Stop, null, Then.AddMinutes(1))],
+        };
+        Files().Write(record);
+
+        var read = Files().Read(Run)!;
+        Assert.Equal(NodeRecordFiles.ToJson(record), NodeRecordFiles.ToJson(read));
+        Assert.Equal(record.Pending, read.Pending);
+
+        var before = NodeRecordFiles.ToJson(Full());
+        Assert.DoesNotContain("\"pending\"", before, StringComparison.Ordinal);
+        Assert.Empty(NodeRecordFiles.Parse(before)!.Pending);
+
+        var broken = NodeRecordFiles.ToJson(record).Replace("\"act\": \"skip\"", "\"act\": 3", StringComparison.Ordinal);
+        Assert.NotEqual(NodeRecordFiles.ToJson(record), broken);
+        Assert.Null(NodeRecordFiles.Parse(broken));
+    }
+
     [Fact]
     public void A_unit_with_no_record_reads_empty_and_a_file_that_does_not_read_is_never_taken_for_empty()
     {

@@ -7,7 +7,7 @@ import i18n from '../locales/i18n';
 import { code } from '../test/code';
 import type { RunStep, WorkflowRun } from './run';
 import {
-  answerOf, FAILED, GRAPH_RUN, GRAPH_RUN_ADDED_LOOK, GRAPH_RUN_UNJUDGED, HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DISPUTED,
+  answerOf, FAILED, GRAPH_RUN, GRAPH_RUN_ADDED_LOOK, GRAPH_RUN_GO_AHEAD, GRAPH_RUN_GO_AHEAD_KEPT, GRAPH_RUN_UNJUDGED, HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DISPUTED,
   OPINION_SETTLED, PULL_REQUEST_OPEN, SEVERAL, WAITING_ON_YOU, WORKING,
 } from './runFixtures';
 import { WorkflowLine } from './WorkflowLine';
@@ -374,6 +374,73 @@ describe("a graph run's Workflow view", () => {
     expect(row('build')).toHaveTextContent('在 daoris/q1-fix-the-header 的 01234567 上观察中。');
     expect(row('opinion')).toHaveTextContent('未开始：本版本还不为按流程图进行的工作征求第二意见。');
     expect(row('both')).toHaveTextContent('汇合');
+  });
+});
+
+// FABRIC-CUTOVER1f (D190 point 6; the cutover design §5.2): the person's skip and stop of a graph run's node, offered under each node the
+// driver's one table takes them on, a skip asking for words, each press answered in the ask it was pressed in; a word kept is drawn on its
+// node until the driver's next look applies it. Seen failing first.
+describe("the person's skip and stop of a graph run's node", () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  it('offers them under a node the table takes them on, and nowhere else, and none where nothing presses them', () => {
+    const { unmount } = render(<WorkflowRunView answer={answerOf(GRAPH_RUN_GO_AHEAD)} onNodeWord={vi.fn()} />);
+    expect(within(row('release')).getByRole('button', { name: 'Pass over…' })).toBeInTheDocument();
+    expect(within(row('release')).getByRole('button', { name: 'Stop…' })).toBeInTheDocument();
+    expect(within(row('claimed')).queryByRole('button', { name: 'Stop…' })).toBeNull();
+    expect(within(row('handed')).queryByRole('button', { name: 'Stop…' })).toBeNull();
+    unmount();
+
+    render(<WorkflowRunView answer={answerOf(GRAPH_RUN_GO_AHEAD)} />);
+    expect(screen.queryByRole('button', { name: 'Pass over…' })).toBeNull();
+  });
+
+  it('asks for the words a skip keeps before it is pressed, then sends the run, the node, the act and the words', async () => {
+    const onNodeWord = vi.fn().mockResolvedValue({ run: 'q1', node: 'release', act: 'skip', done: true });
+    render(<WorkflowRunView answer={answerOf(GRAPH_RUN_GO_AHEAD)} onNodeWord={onNodeWord} />);
+
+    await userEvent.click(within(row('release')).getByRole('button', { name: 'Pass over…' }));
+    const ask = screen.getByRole('group', { name: 'Pass over release for this run' });
+    expect(within(ask).getByText(/what waits on it goes on without it/)).toBeInTheDocument();
+    expect(within(ask).getByRole('button', { name: 'Pass over' })).toBeDisabled();
+    await userEvent.type(within(ask).getByRole('textbox', { name: 'why you pass it over' }), 'nobody raises it');
+    await userEvent.click(within(ask).getByRole('button', { name: 'Pass over' }));
+
+    expect(onNodeWord).toHaveBeenCalledWith({ run: 'q1', node: 'release', act: 'skip', words: 'nobody raises it' });
+    expect(screen.queryByRole('group', { name: 'Pass over release for this run' })).toBeNull();
+  });
+
+  it('sends a stop with no words, and says a refusal in the ask by its code, the driver\'s sentence for one it has no words for', async () => {
+    const onNodeWord = vi.fn()
+      .mockResolvedValueOnce({ run: 'q1', node: 'release', act: 'stop', done: false, refused: 'worded', message: 'workflow: already has your word.' })
+      .mockResolvedValueOnce({ run: 'q1', node: 'release', act: 'stop', done: false, refused: 'something-new', message: 'workflow: a newer refusal.' });
+    render(<WorkflowRunView answer={answerOf(GRAPH_RUN_GO_AHEAD)} onNodeWord={onNodeWord} />);
+
+    await userEvent.click(within(row('release')).getByRole('button', { name: 'Stop…' }));
+    const ask = screen.getByRole('group', { name: 'Stop release for this run' });
+    await userEvent.click(within(ask).getByRole('button', { name: 'Stop' }));
+    expect(onNodeWord).toHaveBeenCalledWith({ run: 'q1', node: 'release', act: 'stop', words: null });
+    expect(await within(ask).findByRole('alert')).toHaveTextContent("release already has your word, which Daoris's next look applies.");
+
+    await userEvent.click(within(ask).getByRole('button', { name: 'Stop' }));
+    expect(await within(ask).findByRole('alert')).toHaveTextContent('workflow: a newer refusal.');
+  });
+
+  it('draws a word kept on its node, with its words, until it is applied, and offers nothing more there', () => {
+    render(<WorkflowRunView answer={answerOf(GRAPH_RUN_GO_AHEAD_KEPT)} onNodeWord={vi.fn()} />);
+    expect(row('release')).toHaveTextContent("Your skip is kept, and Daoris's next look applies it.");
+    expect(row('release')).toHaveTextContent('“nobody raises it for this work”');
+    expect(within(row('release')).queryByRole('button', { name: 'Pass over…' })).toBeNull();
+  });
+
+  it('is worded in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    const { unmount } = render(<WorkflowRunView answer={answerOf(GRAPH_RUN_GO_AHEAD)} onNodeWord={vi.fn()} />);
+    expect(within(row('release')).getByRole('button', { name: '跳过…' })).toBeInTheDocument();
+    expect(within(row('release')).getByRole('button', { name: '停止…' })).toBeInTheDocument();
+    unmount();
+    render(<WorkflowRunView answer={answerOf(GRAPH_RUN_GO_AHEAD_KEPT)} />);
+    expect(row('release')).toHaveTextContent('你的跳过已保存，Daoris 下次查看时会应用它。');
   });
 });
 

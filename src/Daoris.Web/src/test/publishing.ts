@@ -24,6 +24,8 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   TREES_SYNC: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'] },
   // FABRIC-PERFORM1g: the person's word on a held attempt; the work state, which lists what is held, asks again with the sessions.
   WORK_HELD: { scopes: ['sessions'] },
+  // FABRIC-CUTOVER1f: the person's skip or stop of a run's node; the run's view, read under the driver's key, asks again.
+  WORKFLOW_NODE: { scopes: ['driver'] },
   // The second opinion's presses, the landing's setting, the sessions' and work's moves, the rules' presses, a history clear and
   // a sync (PUBLISHTWIN2: every mark has its copy here, held two ways by `StatePublisherTests`).
   ASK_OPINION: { scopes: ['sessions', 'landing'], session: 'id' },
