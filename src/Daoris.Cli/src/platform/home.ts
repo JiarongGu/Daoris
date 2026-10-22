@@ -118,6 +118,7 @@ export const HOME_ENTRIES = [
   row('knowledge', 'data', 'data/knowledge.db', 'knowledge.db'),
   row('sessions', 'data', 'data/sessions', 'sessions'),
   row('helpers', 'data', 'data/helpers', 'helpers'),
+  row('partners', 'data', 'data/partners', 'partners'),
   row('handed', 'data', 'data/handed', 'handed'),
   row('setup', 'data', 'data/setup', 'setup'),
   row('workflows', 'data', 'data/workflows', 'workflows'),

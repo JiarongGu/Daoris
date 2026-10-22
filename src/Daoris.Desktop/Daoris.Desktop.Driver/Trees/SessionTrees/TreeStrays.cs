@@ -211,7 +211,8 @@ internal sealed class TreeStrays(TreeContext context, TreeSetAside setAside, Con
         if (code != 0) return null;
         var others = refs.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(row => row.Split(' ', 2))
-            .Where(parts => parts.Length == 2 && parts[1] != $"refs/heads/{branch}")
+            // A recovery ref or a piece's frozen ref holds nothing of the branch's (COAGENT1b, the co-agent design §2.4).
+            .Where(parts => parts.Length == 2 && parts[1] != $"refs/heads/{branch}" && ContentHolds.AnyRef(parts[1]))
             .Select(parts => (Ref: parts[1], Commit: parts[0]))
             .ToList();
         // A branch of the person's first: another session branch may go in this same look, and the delete verifies the holder it names.
