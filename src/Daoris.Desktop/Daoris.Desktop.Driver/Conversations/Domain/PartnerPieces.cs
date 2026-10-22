@@ -271,6 +271,25 @@ public static class PartnerDelivery
     /// <summary>Whether a hand may go now on this receipt: only a waiting one, never one attempted, uncertain or taken.</summary>
     public static bool MayHand(PartnerReceipt receipt) => receipt.Outcome == Waiting;
 
+    /// <summary>
+    /// The hand's own order (the design §7.6): the receipt is marked <see cref="Attempted"/> before the door is called, <see cref="Taken"/>
+    /// naming the record the door kept the word on once it answers, and back to <see cref="Waiting"/> where the door refused to take it
+    /// now. A look that finds a receipt <see cref="Attempted"/> with no hand of its own in flight met a hand a restart cut: the word may
+    /// be on a record, so it is <see cref="Uncertain"/> and waits for the person, never handed again by itself.
+    /// </summary>
+    public static PartnerReceipt Attempt(PartnerReceipt receipt, DateTimeOffset at) => receipt with { Outcome = Attempted, At = at };
+
+    /// <inheritdoc cref="Attempt"/>
+    public static PartnerReceipt Took(PartnerReceipt receipt, string to, DateTimeOffset at) => receipt with { To = to, Outcome = Taken, At = at };
+
+    /// <inheritdoc cref="Attempt"/>
+    public static PartnerReceipt Refused(PartnerReceipt receipt, DateTimeOffset at) =>
+        receipt.Outcome == Attempted ? receipt with { Outcome = Waiting, At = at } : receipt;
+
+    /// <inheritdoc cref="Attempt"/>
+    public static PartnerReceipt Found(PartnerReceipt receipt, DateTimeOffset at) =>
+        receipt.Outcome == Attempted ? receipt with { Outcome = Uncertain, At = at } : receipt;
+
     /// <summary>An attempt a restart settles as uncertain (<c>UncertainWords</c>) marks the receipt so; a taken one stays taken.</summary>
     public static PartnerReceipt Settle(PartnerReceipt receipt, bool taken, DateTimeOffset at) => receipt.Outcome switch
     {

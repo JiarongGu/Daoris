@@ -38,8 +38,7 @@ public sealed record PartnerPassRun(string? Session, string Line)
 /// it (<see cref="PartnerStates"/>); a piece no pass of this process holds is reconciled from what is observed (<see cref="PartnerReconcile"/>).
 /// </summary>
 /// <remarks>
-/// <para><b>Not yet here</b> (D199's COAGENT1b notes, in the design's order): the hand to the lead and its word, the notes, the role's
-/// allow-list on the server, the landing doors' refusal, the measurements table and the person's press and verb. Until the measurements
+/// <para><b>Not yet here</b> (D199's COAGENT1b notes, in the design's order): the notes, the landing doors' refusal, the measurements table and the person's press and verb. Until the measurements
 /// table holds a row, <see cref="PartnerChoice"/> admits no production start: every piece is refused <see cref="PartnerWhy.NotMeasured"/>
 /// unless a test hands in its choice.</para>
 /// </remarks>
@@ -111,7 +110,15 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
                         break;
                     case PartnerAct.Answer:
                         handedOff = true;
-                        Beside(ask.Id, token => Task.FromResult(Answer(ask, files.ReadState(ask.Id)!, files, null)), ct);
+                        Beside(ask.Id, async token =>
+                        {
+                            var answered = Answer(ask, files.ReadState(ask.Id)!, files, null);
+                            return await HandAsync(ask, files, token).ConfigureAwait(false) ?? answered;
+                        }, ct);
+                        break;
+                    case PartnerAct.Hand:
+                        // Quick, one door: in the look, said only where it moved or waits for the person.
+                        if (await HandAsync(ask, files, ct).ConfigureAwait(false) is { } hand) events.Add(_context.Said.Say(hand));
                         break;
                 }
             }
@@ -331,7 +338,8 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
                 files.WriteState(state with { State = PartnerStates.Imported, Code = null, Commit = kept.Commit, At = DateTimeOffset.UtcNow });
                 var left = await OpinionTree.RemoveAsync(_context.Home, copy, PartnerPass.Prefix).ConfigureAwait(false);
                 if (left is null) files.WriteState(files.ReadState(ask.Id)! with { CopyRemoved = true });
-                return Answer(ask, files.ReadState(ask.Id)!, files, kept.Judged);
+                var answered = Answer(ask, files.ReadState(ask.Id)!, files, kept.Judged);
+                return await HandAsync(ask, files, ct).ConfigureAwait(false) ?? answered;
             case PartnerStates.Held:
                 files.WriteState(state with { State = PartnerStates.Held, Code = kept.Code, At = DateTimeOffset.UtcNow });
                 if (kept.Judged is { } held) files.WriteFacts(Facts(ask, "", held));
@@ -363,8 +371,8 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
     }
 
     /// <summary>
-    /// The answer (the design §2.3 step 8): the facts written beside the partner's own words, then <see cref="PartnerStates.Answered"/>. The
-    /// hand to the lead is the next sub-feature's; until it lands, an answered piece waits at <c>answered</c>.
+    /// The answer (the design §2.3 step 8): the facts written beside the partner's own words, then <see cref="PartnerStates.Answered"/>,
+    /// from which <see cref="HandAsync"/> hands it.
     /// </summary>
     private static LookLine Answer(PartnerAsk ask, PartnerState state, PartnerFiles files, PieceImport.Judged? judged)
     {
@@ -379,6 +387,67 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         var said = files.ReadAnswer(ask.Id) is { } answer ? (answer.LastWords ? "its last words stand as its answer" : "it answered through its tool") : "it gave no answer";
         return Line(LookClass.Progress,
             $"partner  piece `{ask.Id}` by {state.Agent ?? "a partner"} is answered: {TextBounds.ShortCommit(state.Commit ?? "", 7)} frozen at {PieceRefs.Of(ask.Id)}, {said}.");
+    }
+
+    /// <summary>
+    /// The hand (the design §2.3 step 9, §7.6): an answered piece's word, in <see cref="PartnerWords"/>' fixed words, handed through the
+    /// local host's door under the piece's key to the newest record of the lead's line, by the delivery receipt. The receipt is claimed,
+    /// then marked attempted before the door, then taken naming the record the door kept it on, and the state <c>handed</c>. A running
+    /// or parked lead takes it at its turn's end, so nothing is tried or said while it runs; a door that refuses puts the receipt back to
+    /// waiting. A receipt found attempted was cut by a restart: it is uncertain and waits for the person, never handed again by itself.
+    /// Null where nothing moved worth saying.
+    /// </summary>
+    private async Task<LookLine?> HandAsync(PartnerAsk ask, PartnerFiles files, CancellationToken ct)
+    {
+        var state = files.ReadState(ask.Id);
+        if (state is not { State: PartnerStates.Answered, Partner: { } partner }) return null;
+        var receipt = files.ReadReceipt(ask.Id);
+        switch (receipt?.Outcome)
+        {
+            case PartnerDelivery.Attempted:
+                files.WriteReceipt(PartnerDelivery.Found(receipt, DateTimeOffset.UtcNow));
+                return Line(LookClass.Progress, $"partner  piece `{ask.Id}`'s answer may have reached its lead before Daoris stopped: it waits for the person, and is never handed again by itself.");
+            case PartnerDelivery.Uncertain:
+                return null;
+            case PartnerDelivery.Taken:
+                files.WriteState(state with { State = PartnerStates.Handed, At = DateTimeOffset.UtcNow });
+                return null;
+        }
+
+        // Never into a step in flight (D136): a running or parked lead takes it at its turn's end. Said nowhere, as a helper's.
+        var lead = await _context.Service.RecordAsync(ask.Asker, ct).ConfigureAwait(false);
+        if (lead is { Running: true } or { Parked: true }) return null;
+
+        var now = DateTimeOffset.UtcNow;
+        receipt = PartnerDelivery.Claim(receipt, ask.Id, ask.Asker, now);
+        files.WriteReceipt(receipt);
+        var facts = files.ReadFacts(ask.Id) ?? new PartnerFacts(ask.Id, state.Commit ?? "", [], [], [], now);
+        var text = PartnerWords.Compose(ask, state, facts, files.ReadAnswer(ask.Id), PieceRefs.Of(ask.Id));
+
+        // 🔴 Attempted before the door: a restart between the two finds it so, and never hands it twice.
+        files.WriteReceipt(PartnerDelivery.Attempt(receipt, now));
+        var (handed, message, word, to) = await _context.Service.Partners.HandAsync(partner, text, ct).ConfigureAwait(false);
+        if (!handed)
+        {
+            files.WriteReceipt(PartnerDelivery.Refused(files.ReadReceipt(ask.Id) ?? receipt, DateTimeOffset.UtcNow));
+            return Line(LookClass.Retry, $"partner  piece `{ask.Id}` is answered, and waits to be handed to session {ask.Asker}'s line: {message}");
+        }
+
+        var destination = to ?? ask.Asker;
+        files.WriteReceipt(PartnerDelivery.Took(receipt, destination, DateTimeOffset.UtcNow));
+        files.WriteState(state with { State = PartnerStates.Handed, At = DateTimeOffset.UtcNow });
+
+        // A conversation hears it as its next turn, as a helper's answer: the shell's chat runner hears this event (D137 §3.1).
+        if (word is not null && await _context.Service.RecordAsync(destination, ct).ConfigureAwait(false) is { Kind: "chat" })
+        {
+            _context.Events.Keep(
+                destination,
+                new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Helper = partner, Id = word, Text = text, Reaches = "resume" },
+                say: null);
+        }
+
+        return Line(LookClass.Progress,
+            $"partner  piece `{ask.Id}` by {state.Agent ?? "a partner"} is handed to session {destination}: it takes it in with `git merge --no-ff {PieceRefs.Of(ask.Id)}`.");
     }
 
     /// <summary>
