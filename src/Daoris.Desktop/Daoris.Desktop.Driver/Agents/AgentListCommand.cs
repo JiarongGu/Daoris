@@ -24,8 +24,9 @@ internal static class AgentListCommand
         void Say(string line) => world.Instance.Out.WriteLine(line);
         var path = AgentsCommand.WiringPath(world);
         var home = HarnessSettings.HomeOf(path);
-        // A wiring file that does not read is no wiring, as a start reads it (D21): the list says what is there.
-        var settings = HarnessSettings.Load(path);
+        // A wiring file that does not read is no wiring, as a start reads it (D21): the list says what is there. Read as the set (POOL1b,
+        // the account-pool design §2.4), as a start reads it; the receipts of what the fold changed are the projection's too.
+        var settings = HarnessSettings.LoadSet(path);
         var set = world.Adapters(home);
         var now = world.Now();
         Say($"{Prefix}: {path}");
@@ -178,16 +179,11 @@ internal static class AgentListCommand
         // OWNSPACE1d (D175): Daoris starts nothing in the tool's own home, so with no account its starts wait for a sign-in.
         if (report.Profiles.Count == 0) lines.Add($"{Under}{NoAccounts(owner)}");
 
-        var machine = settings.ResolveScope(owner, null);
+        // POOL1b (D197, the account-pool design §5.1): every account is one of the set, so none is marked a default or said to run nowhere.
+        var scope = settings.Set(owner);
         foreach (var profile in report.Profiles)
         {
-            List<string> marks =
-            [
-                .. Shown(profile.Name) != profile.Name ? [$"id {profile.Name}"] : Array.Empty<string>(),
-                .. report.MachineDefault == profile.Name ? ["machine default"] : Array.Empty<string>(),
-                .. settings.Workspaces.Where(pair => pair.Value.TryGetValue(owner, out var named) && named == profile.Name)
-                    .Select(pair => $"default in {pair.Key}"),
-            ];
+            List<string> marks = [.. Shown(profile.Name) != profile.Name ? [$"id {profile.Name}"] : Array.Empty<string>()];
 
             // 🔴 A key account is never "in": the tool says so for any key, a wrong one included (AGT3).
             lines.Add($"{Under}{Shown(profile.Name).PadRight(col)} {(profile.Key is not null ? "unchecked" : Word(profile.Login)),-9}"
@@ -201,66 +197,93 @@ internal static class AgentListCommand
             {
                 lines.Add($"{Under}{gap} {AgentAccountsCommand.SaidLine(said, now, zone, use: null)}");
             }
-
-            // ACCT1: an account no list and no default holds runs nowhere, where the machine names another; where it names nothing,
-            // Daoris takes its accounts in turn, so this one runs (OWNSPACE1d, D175).
-            if (settings.PlacesOf(owner, profile.Name).Count == 0 && (machine.Default is not null || machine.List.Count > 0))
-            {
-                lines.Add($"{Under}{gap} no workspace: no list and no default holds it, so no start runs on it — "
-                    + $"`daoris agent profile join {owner} {ShellWord.Of(Shown(profile.Name), ShellWord.Of(profile.Name, ShellWord.Account))} "
-                    + "<workspace>…|--machine` puts it in one");
-            }
         }
 
-        if (CoolingOf(null) is { } ownCooling) lines.Add($"{Under}its own sign-in: {AgentAccountsCommand.CoolingLine(ownCooling, now, zone)}");
-        // What the tool's own sign-in last said, read by its agent's server at a person's press (CODEXUSE3): beside the accounts, never one.
-        if (AccountWindows.SaidOf(home, owner, AccountWindows.Own, now) is { } ownSaid)
-        {
-            lines.Add($"{Under}its own sign-in: {AgentAccountsCommand.SaidLine(ownSaid, now, zone, use: null)}");
-        }
-
-        // Each list, how it is used beneath it (TOOL6a) and its next start (TOOL6f): the machine's, then each workspace's own. The machine
-        // with no list says its next start where its default names the one account it uses.
+        // The set (POOL1b, the account-pool design §5.1): its order, how it is used beneath it (TOOL6a) and its next start (TOOL6f), one
+        // for every workspace.
         var says = AgentAccountsCommand.Says(set, owner);
         var product = ToolchainOf(set, owner)?.Product ?? owner;
-        void Beneath(RotationScope scope)
+        if (scope.List.Count > 0)
         {
+            lines.Add($"{Under}{"order".PadRight(col)} {string.Join(", then ", scope.List.Select(Shown))}, for every workspace");
             var (rows, notes) = AgentAccountsCommand.UseLines(scope, product, says, Shown);
             foreach (var (label, value) in rows) lines.Add($"{Under}{gap} {label}: {value}");
             foreach (var note in notes) lines.Add($"{Under}{gap} {note}");
             foreach (var line in NextStartBeneath(scope, owner, home, now, zone, says, Shown)) lines.Add($"{Under}{gap} {line}");
         }
 
-        if (settings.Rotation.TryGetValue(owner, out var order) && order.Count > 0)
+        // Then the person's own sign-in, outside the set (D197 point 3, §3): no state, never asked. Its cool-off is Daoris's own record of a
+        // conversation begun there, which `profile ready --own` still ends.
+        if (toolchain.AccountOf is null && toolchain.LoginArguments is not null && report.Present)
         {
-            lines.Add($"{Under}{"rotation".PadRight(col)} {string.Join(", then ", order.Select(Shown))}");
-            Beneath(machine);
-        }
-        else if (machine.Default is { } only)
-        {
-            lines.Add($"{Under}{"next start".PadRight(col)} `{Shown(only)}`, this machine's default — with no list, the one account its starts run on");
-            foreach (var line in NextStartBeneath(machine, owner, home, now, zone, says, Shown)) lines.Add($"{Under}{gap} {line}");
-        }
-
-        foreach (var (circle, orders) in settings.WorkspaceRotation)
-        {
-            if (!orders.TryGetValue(owner, out var own) || own.Count == 0) continue;
-            lines.Add($"{Under}{$"rotation in {circle}".PadRight(col)} {string.Join(", then ", own.Select(Shown))}");
-            Beneath(settings.ResolveScope(owner, circle));
-        }
-
-        if (toolchain.AccountOf is null && toolchain.LoginArguments is not null && report.Present && report.MachineDefault is null)
-        {
-            string[] named = [.. settings.Workspaces.Where(pair => pair.Value.TryGetValue(owner, out var account) && account is { Length: > 0 })
-                .Select(pair => pair.Key)];
             // OWNSPACE1d (D175): Daoris never starts in it; what began there is read where it is and goes on there.
-            lines.Add($"{Under}Daoris starts no session on your own sign-in, the account `{name}` uses at your own terminal"
-                + $"{(named.Length > 0 ? $" (outside {string.Join(", ", named)})" : "")}:");
-            lines.Add($"{Under}a conversation begun there goes on there, and new starts take Daoris's accounts in turn —");
-            lines.Add($"{Under}`daoris agent login {name} --new` signs in to one");
+            lines.Add($"{Under}your own sign-in, the account `{name}` uses at your own terminal, is not one of Daoris's accounts:");
+            lines.Add($"{Under}Daoris never asks it, signs it in or out, or starts a session on it; a conversation begun there goes on there —");
+            lines.Add($"{Under}`daoris agent login {name} --new` signs in to one of Daoris's");
+        }
+
+        if (CoolingOf(null) is { } ownCooling) lines.Add($"{Under}its own sign-in: {AgentAccountsCommand.CoolingLine(ownCooling, now, zone)}");
+
+        // What the fold changed while it is unsaid (D197 point 7, §6.3), until *Got it* on the agent's page marks it said.
+        string[] unsaid = [.. (settings.Pooled.GetValueOrDefault(owner) ?? []).Where(receipt => !receipt.Said).SelectMany(receipt => PoolLines(receipt, Shown))];
+        if (unsaid.Length > 0)
+        {
+            lines.Add($"{Under}your {product} accounts now serve every workspace:");
+            foreach (var line in unsaid) lines.Add($"{Under}  {line}");
+            lines.Add($"{Under}  Agents → the agent's page → Got it marks this said.");
         }
 
         return lines;
+    }
+
+    /// <summary>
+    /// One receipt of the fold in the terminal's words (D197 point 7, the account-pool design §4.2's <c>agents.pooled.*</c> English): each
+    /// scope that named fewer accounts than the set, each first moved, an account placed, the way of use set, each setting not kept and
+    /// each name gone.
+    /// </summary>
+    internal static IEnumerable<string> PoolLines(PoolReceipt receipt, Func<string, string> shown)
+    {
+        var count = receipt.Order.Count;
+        string Named(FoldedScope scope) => scope.Workspace is { } workspace ? $"`{workspace}`" : "";
+        foreach (var scope in receipt.Scopes)
+        {
+            IReadOnlyList<string> had = scope.List.Count > 0 ? scope.List : scope.Default is { } only ? [only] : [];
+            if (had.Count == 0 || had.Count >= count) continue;
+            var accounts = string.Join(", ", had.Select(shown));
+            yield return (scope.Workspace is not null, had.Count == 1) switch
+            {
+                (true, true) => $"{Named(scope)} ran on {accounts} alone; it now runs on all {count}.",
+                (true, false) => $"{Named(scope)} had its own accounts ({accounts}); it now runs on all {count}.",
+                (false, true) => $"Workspaces that named no accounts ran on {accounts} alone; they now run on all {count}.",
+                _ => $"Workspaces that named no accounts ran on {accounts}; they now run on all {count}.",
+            };
+        }
+
+        if (receipt.InOrder is { } begins)
+        {
+            yield return $"Their starts still begin at {shown(begins)}, since the accounts are now used one by one, in order.";
+        }
+
+        foreach (var moved in receipt.Moved)
+        {
+            yield return moved.Workspace is { } workspace
+                ? $"`{workspace}`'s starts began at {shown(moved.Account)}; it is number {moved.Place} in the order now."
+                : $"Starts of workspaces that named no accounts began at {shown(moved.Account)}; it is number {moved.Place} in the order now.";
+        }
+
+        foreach (var joined in receipt.Joined)
+        {
+            yield return $"{shown(joined.Account)} was not in the order; it is number {joined.Place} now, and every workspace's work may run on it.";
+        }
+
+        foreach (var setting in receipt.NotKept)
+        {
+            yield return setting.Workspace is { } workspace
+                ? $"Not kept: `{workspace}`'s {setting.Setting} ({setting.Value.GetRawText()})."
+                : $"Not kept: {setting.Setting} ({setting.Value.GetRawText()}), set for workspaces that named no accounts.";
+        }
+
+        foreach (var gone in receipt.Gone) yield return $"{gone} was named but is no account here, so it was left out.";
     }
 
     /// <summary>
@@ -307,7 +330,7 @@ internal static class AgentListCommand
                 lines.Add($"held now: {each}");
                 if (held.Count == uses.Count)
                 {
-                    lines.Add($"every account of this list is cooling, so the next start waits until {Soonest(held)}");
+                    lines.Add($"every account of Daoris's is cooling, so the next start waits until {Soonest(held)}");
                 }
                 else if (keep is not null && driven.Count == uses.Count - 1)
                 {

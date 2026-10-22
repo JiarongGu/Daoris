@@ -16,8 +16,8 @@ internal static class AgentLoginCommand
     private const string Prefix = "daoris";
 
     /// <summary>
-    /// <c>login &lt;agent&gt; [--profile &lt;account&gt;] [--join &lt;workspace&gt;] [--join-machine] [--device-code]</c>, or <c>--new [--name
-    /// &lt;name&gt;]</c> (D66 §3, ACCT1, ACCT2, CODEXLOGIN1): every check that needs no flow is made first, the browser's ports tried once
+    /// <c>login &lt;agent&gt; [--profile &lt;account&gt;] [--device-code]</c>, or <c>--new [--name &lt;name&gt;]</c> (D66 §3, ACCT1, ACCT2,
+    /// CODEXLOGIN1; <c>--join</c> and <c>--join-machine</c> refused since POOL1b, D197): every check that needs no flow is made first, the browser's ports tried once
     /// where the agent waits on them, then the binary a start runs signs in (CODEXACCT1b, D57 rule 4), its pin before <c>PATH</c>'s.
     /// </summary>
     internal static async Task<int> LoginAsync(IReadOnlyList<string> args, AgentsWorld world, CancellationToken ct)
@@ -46,8 +46,9 @@ internal static class AgentLoginCommand
 
         var login = SignInWays.Arguments(name, toolchain, byCode ? SignInWay.DeviceCode : SignInWay.Browser);
 
-        // ACCT1: the lists a sign-in joins at its end, refused before anything starts where one cannot be joined.
-        var joins = JoinsOf(args);
+        // POOL1b (D197 point 6, the account-pool design §5.1): there are no lists to join, and a new account joins Daoris's accounts by
+        // itself, so `--join` and `--join-machine` are refused before anything starts.
+        if (args.Contains("--join") || args.Contains("--join-machine")) throw new AgentWords(OneSetWords.Join);
         var fresh = args.Contains("--new");
         if (fresh && args.Contains("--profile"))
         {
@@ -65,7 +66,7 @@ internal static class AgentLoginCommand
 
         // CODEXACCT1b: the binary `agent list` asks, the pin before PATH's, refused before anything is made where the pin has nothing
         // installed at it; the sign-in and its end's question both run it.
-        var settings = HarnessSettings.Load(path);
+        var settings = HarnessSettings.LoadSet(path);
         var binary = HarnessProbe.CommandOf(name, toolchain, command: null, settings, home);
         if (binary.Missing)
         {
@@ -103,7 +104,7 @@ internal static class AgentLoginCommand
             }
         }
 
-        var signIn = new SignIn(world, name, toolchain, home, path, settings, binary, login, joins, ct);
+        var signIn = new SignIn(world, name, toolchain, home, path, settings, binary, login, ct);
         var code = fresh
             ? await signIn.NewAsync(AgentsCommand.FlagValue(args, "--name")).ConfigureAwait(false)
             : await signIn.ToAsync(AgentsCommand.FlagValue(args, "--profile")).ConfigureAwait(false);
@@ -111,46 +112,14 @@ internal static class AgentLoginCommand
         return code;
     }
 
-    /// <summary>
-    /// The lists a sign-in is asked to join (ACCT1): each <c>--join &lt;workspace&gt;</c>, repeated or comma-separated, in the order named,
-    /// and <c>--join-machine</c> for this machine's list (null), each once. A <c>--join</c> with no workspace after it is refused.
-    /// </summary>
-    internal static IReadOnlyList<string?> JoinsOf(IReadOnlyList<string> args)
-    {
-        var joins = new List<string?>();
-        for (var at = 0; at < args.Count; at++)
-        {
-            if (args[at] == "--join-machine") joins.Add(null);
-            if (args[at] != "--join") continue;
-            var value = at + 1 < args.Count ? args[at + 1] : null;
-            if (value is not { Length: > 0 } || value.StartsWith("--", StringComparison.Ordinal))
-            {
-                throw new AgentWords("`--join` needs a workspace — e.g. `--join work`, or `--join-machine` for this machine's list.");
-            }
-
-            joins.AddRange(value.Split(',').Select(each => each.Trim()).Where(each => each.Length > 0));
-            at++;
-        }
-
-        return [.. joins.Where((join, index) => joins.IndexOf(join) == index)];
-    }
-
     /// <summary>One sign-in's run: the flow at this terminal, then its end published under the home's lease.</summary>
     private sealed class SignIn(
         AgentsWorld world, string agent, HarnessToolchain toolchain, string home, string path, HarnessSettings before, HarnessCommand binary,
-        IReadOnlyList<string> login, IReadOnlyList<string?> joins, CancellationToken ct)
+        IReadOnlyList<string> login, CancellationToken ct)
     {
         private void Say(string line) => world.Instance.Out.WriteLine(line);
 
         private void Told(string line) => world.Instance.Error.WriteLine(line);
-
-        private void RefuseJoins()
-        {
-            foreach (var workspace in joins)
-            {
-                if (before.JoinProblemOf(agent, workspace) is { } problem) throw new AgentWords(problem.Sentence(agent));
-            }
-        }
 
         /// <summary>
         /// A new account (D66 §3, ACCT2): the flow into a folder of a fresh id, kept only where the sign-in finished — the agent exited 0
@@ -159,7 +128,6 @@ internal static class AgentLoginCommand
         /// </summary>
         public async Task<int> NewAsync(string? named)
         {
-            RefuseJoins();
             var id = AccountNames.NewId(home, agent);
             var wanted = named?.Trim() is { Length: > 0 } trimmed ? trimmed : null;
             if (wanted is not null
@@ -212,16 +180,22 @@ internal static class AgentLoginCommand
         }
 
         /// <summary>
-        /// An account that is here (ACCT1): the one named, by its id or its name, else the machine's default — never a new folder. At its
-        /// end it joins the lists named and says where it runs.
+        /// An account that is here (ACCT1): the one named, by its id or its name, else the order's first (POOL1b, the account-pool design
+        /// §5.1) — never a new folder, and with no account of Daoris's refused, never the tool's own home.
         /// </summary>
         public async Task<int> ToAsync(string? named)
         {
             var accounts = HarnessSettings.Profiles(home, agent);
             var names = AccountNames.Of(home, agent);
-            var target = AccountNames.SignInTarget(accounts, names, before, agent, named);
+            var given = named?.Trim() is { Length: > 0 } spelled ? spelled : before.FirstOf(agent);
+            if (given is null)
+            {
+                throw new AgentWords($"`{agent}` has no account of Daoris's to sign in to, and a sign-in into an account never makes one — "
+                    + $"`daoris agent login {agent} --new` signs in to a new account.");
+            }
+
+            var target = AccountNames.SignInTarget(accounts, names, before, agent, given);
             if (target.Account is not { } account) throw new AgentWords(AccountNames.SignInRefusal(agent, target, accounts, names));
-            RefuseJoins();
 
             var where = HarnessSettings.ProfileHome(home, agent, account);
             Say($"{Prefix}: running `{agent}`'s own login flow into the account `{AccountNames.Said(names, account)}`.");
@@ -277,14 +251,13 @@ internal static class AgentLoginCommand
 
         /// <summary>
         /// The sign-in's end, published under the home's lease (the alone-path design §1.4): the cool-off ended (D125 §2.3) and the mark
-        /// (TOOL6g), the reading kept (ROSTER1), its name where the person named it (ACCT2) and its joins (ACCT1); then who signed in and where
-        /// it runs. A Ctrl+C while the publication waits keeps the account, signed in, and says what was not written and how to finish it.
+        /// (TOOL6g), the reading kept (ROSTER1), its name where the person named it (ACCT2) and a new account placed last in the order (POOL1a);
+        /// then who signed in, and for a new account that it joined Daoris's accounts. A Ctrl+C while the publication waits keeps the account, signed in, and says what was not written and how to finish it.
         /// </summary>
         private async Task<bool> EndAsync(string account, HarnessProbe.LoginAnswer said, string? wanted, bool fresh)
         {
             var where = HarnessSettings.ProfileHome(home, agent, account);
             string? called = null;
-            var settings = before;
             try
             {
                 using (await HomeLease.ForPublicationAsync(home, "daoris-driver agent login",
@@ -327,18 +300,17 @@ internal static class AgentLoginCommand
                         }
                     }
 
-                    settings = Joined(account);
+                    // A new account goes last in the order, whatever its id (POOL1a, the account-pool design §2.2).
+                    if (fresh) HarnessSettings.Placed(path, agent, account);
                 }
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
-                var finish = string.Join(" and ", new[]
-                {
-                    wanted is null ? null : $"`daoris agent profile rename {agent} {ShellWord.Of(account, ShellWord.Account)} {ShellWord.Of(wanted, ShellWord.Name)}`",
-                    joins.Count == 0 ? null : $"`daoris agent profile join {agent} {ShellWord.Of(account, ShellWord.Account)} <workspace>…|--machine`",
-                }.OfType<string>());
+                // The order places it at the next change of the file (POOL1a1), so only a name is left to finish.
                 Told($"{Prefix}: stopped at your Ctrl+C — the account `{account}` was kept, signed in, and its end was not written"
-                    + (finish.Length > 0 ? $": {finish} finishes it." : "."));
+                    + (wanted is null
+                        ? "."
+                        : $": `daoris agent profile rename {agent} {ShellWord.Of(account, ShellWord.Account)} {ShellWord.Of(wanted, ShellWord.Name)}` finishes it."));
                 return false;
             }
 
@@ -368,65 +340,10 @@ internal static class AgentLoginCommand
                 Say($"  `daoris agent profile rename {agent} {ShellWord.Of(account, ShellWord.Account)} <name>` gives it a name of yours.");
             }
 
-            foreach (var line in PlaceLines(agent, account, settings, names)) Say(line);
+            // A new account's end says it joined, in the bridge's words for the page (POOL1a2, the account-pool design §4.4); a sign-back-in
+            // says nothing of it.
+            if (fresh) Say($"  {OneSetWords.Joined(AccountNames.Said(names, account))}");
             return true;
         }
-
-        /// <summary>The lists joined, in the order named, written once under the file's lock; a list not written is said, the sign-in standing.</summary>
-        private HarnessSettings Joined(string account)
-        {
-            // A new account goes last in the order, whatever its id (POOL1a, the account-pool design §2.2).
-            HarnessSettings.Placed(path, agent, account);
-            if (joins.Count == 0) return HarnessSettings.Load(path);
-            try
-            {
-                HarnessSettings.Change(path, read => joins.Aggregate(read, (next, workspace) => next.WithJoined(agent, account, workspace)));
-            }
-            catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
-            {
-                Say($"{Prefix}: the account was kept, and joined no list — {error.Message}");
-            }
-
-            return HarnessSettings.Load(path);
-        }
-    }
-
-    /// <summary>
-    /// Where an account runs, said at a sign-in's end (ACCT1): each list and default that holds it, or that none does, with the lists it
-    /// could join and the command that joins them. Where the machine's scope names nothing, Daoris takes its accounts in turn (OWNSPACE1d,
-    /// D175); only where it names another does the account run nowhere. The CLI's <c>placeLines</c>, ported whole.
-    /// </summary>
-    internal static IReadOnlyList<string> PlaceLines(string agent, string account, HarnessSettings settings, IReadOnlyDictionary<string, string> names)
-    {
-        var places = settings.PlacesOf(agent, account);
-        var shown = AccountNames.Said(names, account);
-        if (places.Count > 0) return [$"  `{shown}` runs work in {string.Join(", ", places.Select(PlaceWords))}."];
-
-        string Listed(IEnumerable<string> ids) => string.Join(", ", ids.Select(id => AccountNames.Said(names, id)));
-        List<string> lists = [
-            .. settings.Rotation.TryGetValue(agent, out var machineList) ? [$"this machine's ({Listed(machineList)})"] : Array.Empty<string>(),
-            .. settings.WorkspaceRotation
-                .Where(each => each.Value.ContainsKey(agent))
-                .Select(each => $"`{each.Key}`'s own ({Listed(each.Value[agent])})"),
-        ];
-        var machine = settings.ResolveScope(agent, null);
-        var listedHere = lists.Count > 0 ? [$"  The lists here: {string.Join("; ", lists)}."] : Array.Empty<string>();
-        if (machine.Default is null && machine.List.Count == 0)
-        {
-            return [$"  no list and no default names `{shown}`, and none names another, so Daoris takes its accounts in turn.", .. listedHere];
-        }
-
-        return [
-            $"  no list and no default holds `{shown}`, so no start runs on it.",
-            .. listedHere,
-            $"  `daoris agent profile join {agent} {ShellWord.Of(shown, ShellWord.Of(account, ShellWord.Account))} <workspace>…|--machine` puts it in one.",
-        ];
-    }
-
-    /// <summary>One scope an account runs in, as a person reads it: <c>this machine's list, as its default</c>, <c>`work`'s default</c>.</summary>
-    private static string PlaceWords(AccountPlace place)
-    {
-        var scope = place.Workspace is null ? "this machine's" : $"`{place.Workspace}`'s";
-        return place.List && place.Default ? $"{scope} list, as its default" : $"{scope} {(place.List ? "list" : "default")}";
     }
 }
