@@ -50,6 +50,31 @@ public sealed class SessionMessagesPlanTests
     }
 
     /// <summary>
+    /// SESSWATCH1a (D200, the session-watch design §2.3): the person's *End and carry on* ends a quiet run as their stop released in the
+    /// same press, and the words they wrote to it go to the part that carries it on, never to a resume of the run that hung. Without the
+    /// press's note, the same stopped and released record with words waiting goes on in itself, as before.
+    /// </summary>
+    [Fact]
+    public void Words_on_a_run_the_person_ended_with_end_and_carry_on_go_to_the_carry_on_never_a_resume()
+    {
+        var pressed = Written("stopped") with { NoteParts = Observation.QuietPressed(31).Parts };
+        var config = Config().WithReleased("q1", "s1");
+        Snapshot With(PriorSession last) => new([Quest("q1", "Taken")], [Repo], [])
+        {
+            LastRun = new Dictionary<string, PriorSession> { ["q1"] = last },
+        };
+
+        var carried = Assert.Single(Planner.Plan(With(pressed), config), each => each.Quest.Id == "q1");
+
+        Assert.Equal(StartVerdict.Start, carried.Verdict);
+        Assert.False(carried.GoesOn);
+        Assert.Equal(pressed, carried.Resumes);
+
+        var wrote = Assert.Single(Planner.Plan(With(Written("stopped")), config), each => each.Quest.Id == "q1");
+        Assert.True(wrote.GoesOn);
+    }
+
+    /// <summary>
     /// 🔴 The owner's case of 2026-10-15: a quest that once waited on another repository's answer and then closed still names
     /// the question it waited on (`awaits`), and the person's words to its last session sat unplanned. A closed quest waits on
     /// nothing: the words go on in that session as any closed quest's do. A taken quest waiting on its question still waits.

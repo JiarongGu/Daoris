@@ -670,6 +670,13 @@ public sealed partial class HelpCoverageTests
         // MIXAGENT1c (D163 point 3): the person's yes and no to a session's agent's own ask to hand it over, at the foot of its page.
         ("work", "useApproveHandOver", null, HandOverAnswerDoor),
         ("work", "useDeclineHandOver", null, HandOverAnswerDoor),
+        // SESSWATCH1a (D200, the session-watch design §2.3): the person's presses on a quiet session's row in What needs you.
+        ("work", "useQuietCarryOn", null, new Exempt(
+            "it ends a quiet session's run as the person's stop and releases it in the same press, so its work goes on in a new part: "
+            + "the person's own stop of a live run, as Stop is, never a proposal, and Daoris ends nothing quiet by itself (D200).")),
+        ("work", "useQuietLeave", null, new Exempt(
+            "it tells the watcher to stand down for one quiet session until it is heard again, which changes nothing of the work or "
+            + "the machine's settings: the person's own word on a live session, as leaving a row unanswered would be.")),
         // AUTONOMY1b3c (D184 point 3): the person's answer to a tool call a session holds for them under asking, on the session's page
         // and What needs you.
         ("work", "useAnswerPermission", null, new Exempt(

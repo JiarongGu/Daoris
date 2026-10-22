@@ -371,6 +371,50 @@ public sealed class SessionsRoutes(DriverContext context)
         return new { Declined = answer.Stands, answer.Why, answer.Message };
     }
 
+    // The person's *Leave it running* on a quiet session's row (SESSWATCH1a, D200, the session-watch design §2.3): the watcher stands down
+    // for it until it is heard again, its episode ends `left` with its coded note, and the row goes. `{ left, why, message }`; a session
+    // that brings no row is `left: false`, `why: not-quiet`. A move of the watcher's memory alone, which wakes the attention slice.
+    [DriverRoute("SESSION_QUIET_LEAVE")]
+    [Publishes("SESSION_QUIET_LEAVE", StateScopes.Sessions, Session = "id")]
+    private Task<object?> SessionQuietLeaveAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var left = SessionWatch.Of(_loop.Events).Leave(id);
+        return Task.FromResult<object?>(left
+            ? new { Left = true, Why = (string?)null, Message = "Daoris looks in again once it is heard from." }
+            : new { Left = false, Why = (string?)QuietNot, Message = $"{id} is not quiet now: nothing was changed." });
+    }
+
+    // The person's *End and carry on* on a quiet quest session's row (SESSWATCH1a, D200, the session-watch design §2.3; D126 §3.4, D58): their
+    // stop released in the same press, *Stop* and *Try again* at once. The release is written first, then the run ends as the person's
+    // stop ends one, concluding `stopped` with `ended.quiet-pressed` and no strike; the look its ending wakes carries the line on in a new
+    // part handed the brief, and the person's words that waited for it go to that part, never to a resume of the run that hung.
+    // `{ stopped, why, message }`: refused `not-quiet` where it brings no quiet row (a busy one is offered no end), `not-quest` for an
+    // intake, `gone` where its run ended first, each with nothing changed.
+    [DriverRoute("SESSION_QUIET_CARRY_ON")]
+    [Publishes("SESSION_QUIET_CARRY_ON", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
+    private Task<object?> SessionQuietCarryOnAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var watch = SessionWatch.Of(_loop.Events);
+        object Refused(string why, string message) => new { Stopped = false, Why = (string?)why, Message = message };
+        if (watch.RowOf(id) is not { Busy: false } row) return Task.FromResult<object?>(Refused(QuietNot, $"{id} is not quiet now, or something it runs keeps the machine busy: nothing was changed."));
+        if (row is not { Kind: SessionWatch.Quest, Quest: { } quest }) return Task.FromResult<object?>(Refused(QuietNotQuest, $"{id} is an intake: it is stopped, never carried on."));
+
+        StandingChoices.Write(_loop.ConfigPath, config => config.WithReleased(quest, id));
+        if (!_loop.Processes.Stop(id, note: Observation.QuietPressed(row.Minutes)))
+        {
+            return Task.FromResult<object?>(Refused(QuietGone, $"{id}'s run had already ended; its quest is released for the next look."));
+        }
+
+        watch.Pressed(id);
+        _loop.Nudge();
+        return Task.FromResult<object?>(new { Stopped = true, Why = (string?)null, Message = "Its run ends, and the work goes on in the same tree at the next look." });
+    }
+
+    /// <summary>A quiet row's press refused (SESSWATCH1a): the session brings no quiet row, is an intake, or ended first.</summary>
+    internal const string QuietNot = "not-quiet", QuietNotQuest = "not-quest", QuietGone = "gone";
+
     // What this machine's driven sessions hold for the person under their repository's asking permission prompts (AUTONOMY1b3a, D184
     // point 3), oldest first: each request with its session, its call as the agent named it, and what the person may choose (never a
     // standing allow), and when its bound releases it (`until`, PERMUNTIL1: the page's one source for the bound). A read off the

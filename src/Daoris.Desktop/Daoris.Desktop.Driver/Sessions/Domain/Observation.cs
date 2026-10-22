@@ -318,6 +318,16 @@ public static class Observation
             ? SessionConclusion.Of("completed", Noted.Of(NoteCodes.EndedDone, "the quest reached done.").Then(" ", Quiet(minutes)))
             : SessionConclusion.Of("failed", Quiet(minutes));
 
+    /// <summary>
+    /// The person's <i>End and carry on</i> of a quiet run (SESSWATCH1a, the session-watch design §2.3): their stop, released in the same
+    /// press, its record <c>stopped</c> with this note; no strike, and the words that waited for it go to the next part.
+    /// </summary>
+    public static Noted QuietPressed(int minutes) =>
+        Noted.Of(NoteCodes.EndedQuietPressed, $"You ended this run after {minutes} minutes with nothing from its agent, and the work goes on in the same tree.", ("minutes", minutes));
+
+    /// <summary>Whether a record's note is the person's <i>End and carry on</i> (<see cref="QuietPressed"/>), by its code, never its English.</summary>
+    public static bool IsQuietPressed(IReadOnlyList<NotePart>? parts) => parts?.Any(part => part.Code == NoteCodes.EndedQuietPressed.Code) == true;
+
     /// <summary>A session the timeout killed (row 18).</summary>
     public static Noted TimedOut(int minutes) =>
         Noted.Of(NoteCodes.EndedTimeout, $"timed out after {minutes} minutes and was killed.", ("minutes", minutes));

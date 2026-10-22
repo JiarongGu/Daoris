@@ -69,7 +69,8 @@ public sealed class SessionProcesses(string? markers = null)
                 }
             },
             // COWORK1c: the person's stop ends what was kept for the run with it; any other end leaves it on the record to go on.
-            personStopped: () => StopMade(sessionId) is { Reason: null },
+            // SESSWATCH1a: the person's End and carry on keeps them, for the carry-on it starts (the session-watch design §2.3).
+            personStopped: () => StopMade(sessionId) is { Reason: null } stop && !Observation.IsQuietPressed(stop.Note?.Parts),
             left: words => KeptLeft?.Invoke(sessionId, words));
         lock (_gate) _inboxes[sessionId] = inbox;
         return inbox;

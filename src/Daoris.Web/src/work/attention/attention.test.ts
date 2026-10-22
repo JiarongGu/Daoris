@@ -9,7 +9,7 @@ import type { Attention } from './AttentionRow';
 import type { SessionGrouping } from '../groups';
 import {
   ASKS_ONCE, ATTENTION_GROUP, ATTENTION_PLACE, attentionActs, attentionGroup, attentionGroups, attentionInOrder, attentionOf, attentionOffers,
-  attentionWorded, type AttentionNames, needsListed, placeCounts, placeOf, type PushedAttention, staleGoAheads,
+  attentionWorded, type AttentionNames, needsListed, placeCounts, placeOf, type PushedAttention, type QuietWait, staleGoAheads,
 } from './attention';
 import { entryDetail } from '../head/milestone';
 
@@ -483,7 +483,7 @@ describe('the groups', () => {
   it('puts each kind in its group', () => {
     expect(ATTENTION_GROUP).toEqual({
       parked: 'holding', 'parked-quest': 'holding', 'go-ahead': 'holding', permission: 'holding', answer: 'holding',
-      confirmation: 'holding', trust: 'holding',
+      confirmation: 'holding', trust: 'holding', quiet: 'holding',
       'account-wait': 'holding', 'signed-out': 'holding',
       proposal: 'word', intake: 'word', departure: 'word', 'set-up': 'word', opinion: 'word', rule: 'word', helper: 'word',
       'hand-over': 'word', unanswerable: 'word', review: 'ready', work: 'word', space: 'word', 'git-held': 'word',
@@ -801,7 +801,7 @@ describe('the place each wait is counted at', () => {
   it('is the place its door opens, for every kind', () => {
     expect(ATTENTION_PLACE).toEqual({
       parked: 'sessions', review: 'sessions', opinion: 'sessions', helper: 'sessions', 'hand-over': 'sessions',
-      permission: 'sessions', answer: 'sessions',
+      permission: 'sessions', answer: 'sessions', quiet: 'sessions',
       proposal: 'quests', intake: 'quests', unanswerable: 'quests', 'parked-quest': 'quests', 'go-ahead': 'quests',
       departure: 'quests', 'set-up': 'quests', trust: 'quests',
       work: 'projects',
@@ -896,7 +896,22 @@ describe('what a row offers', () => {
 
   it('asks once before what widens what Daoris may do, and before a choice', () => {
     expect([...ASKS_ONCE].sort())
-      .toEqual(['accept-rule', 'approve', 'choose', 'not-yet', 'opinion-anyway', 'refuse', 'trust']);
+      .toEqual(['accept-rule', 'approve', 'choose', 'not-yet', 'opinion-anyway', 'quiet-carry-on', 'quiet-stop', 'refuse', 'trust']);
+  });
+
+  /**
+   * SESSWATCH1a (D200, the session-watch design §2.3, §5.2): a quiet quest session offers *End and carry on*, *Hand over…*, *Stop…* and
+   * *Leave it running*; a busy one nothing is heard from never *End and carry on*; an intake *Stop…* and *Leave it running* alone.
+   */
+  it('offers a quiet row the person\'s presses, never an end to a busy one, and an intake no carry-on or hand-over', () => {
+    const quiet = (watch: Partial<QuietWait>) => ({
+      id: 's1', kind: 'quiet' as const, title: 's1', where: 'engine', since: null,
+      quiet: { minutes: 30, busy: false, intake: false, words: false, ...watch },
+    });
+    expect(attentionActs(quiet({}))).toEqual(['quiet-carry-on', 'quiet-hand-over', 'quiet-stop', 'quiet-leave']);
+    expect(attentionActs(quiet({ busy: true }))).toEqual(['quiet-hand-over', 'quiet-stop', 'quiet-leave']);
+    expect(attentionActs(quiet({ intake: true }))).toEqual(['quiet-stop', 'quiet-leave']);
+    expect(attentionActs({ ...quiet({}), quiet: undefined })).toEqual([]);
   });
 });
 

@@ -32,12 +32,13 @@ const ACTS: Required<AttentionActs> = {
   answerAlone: () => {},
   handOver: () => {},
   gitTryAgain: () => {},
+  quiet: () => {},
 };
 /** Every door, as a shell's Overview hands them. */
 const DOORS: AttentionDoors = {
   parked: () => {}, 'parked-quest': () => {}, 'go-ahead': () => {}, trust: () => {}, proposal: () => {}, intake: () => {},
   departure: () => {}, rule: () => {}, unanswerable: () => {}, review: () => {}, 'account-wait': () => {}, 'signed-out': () => {},
-  'set-up': () => {}, opinion: () => {}, helper: () => {}, answer: () => {}, 'hand-over': () => {},
+  'set-up': () => {}, opinion: () => {}, helper: () => {}, answer: () => {}, 'hand-over': () => {}, quiet: () => {},
 };
 
 /** A reset tomorrow early, and a reading at this morning's clock: what the account rows say their times from. */
@@ -637,6 +638,64 @@ export const GitHeldRowsNarrowChinese: StoryObj = {
     <Main width={600}>
       <ul className="m-0 grid list-none gap-1 border border-line bg-raised p-0 py-2">
         {gitHeldRows('zh').map((item) => <AttentionRow key={item.id} item={item} acts={ACTS} />)}
+      </ul>
+    </Main>
+  ),
+};
+
+/**
+ * SESSWATCH1a (D200, the session-watch design §5.2): the sessions the watcher brings to the person. A quiet quest session offers *End
+ * and carry on*, *Hand over…*, *Stop…* and *Leave it running*, and says the person's waiting words go to the next part; a busy one
+ * nothing is heard from is offered no end; an intake *Stop…* and *Leave it running* alone. Worded by the reader's language.
+ */
+const QUIET: readonly [string, Attention['quiet'], string | undefined][] = [
+  ['s1a2b3c4', { minutes: 31, busy: false, intake: false, words: true }, 'q1'],
+  ['s5d6e7f8', { minutes: 42, busy: true, intake: false, words: false }, 'q2'],
+  ['i9a8b7c6', { minutes: 30, busy: false, intake: true, words: false }, undefined],
+];
+
+/** The quiet rows, each worded by a reader of `language`, as `attentionWorded` words them. */
+function quietRows(language: 'en' | 'zh'): Attention[] {
+  const reader = readerIn(language);
+  const t = reader.t.bind(reader);
+  return QUIET.map(([session, quiet, quest], index): Attention => ({
+    id: session, kind: 'quiet', where: 'engine', since: at(30 + index * 6), session, title: `Session ${session}`,
+    ...(quest ? { quest } : {}), quiet,
+    detail: [
+      t(quiet!.busy ? 'work.attention.quietBusyWhy' : 'work.attention.quietWhy', { session: `Session ${session}`, minutes: quiet!.minutes }),
+      ...(quiet!.words && !quiet!.busy ? [t('work.attention.quietWords')] : []),
+    ].join(' '),
+  }));
+}
+
+export const QuietRows: StoryObj = {
+  render: () => (
+    <Main width={1180}>
+      <ul className="m-0 grid list-none gap-1 border border-line bg-raised p-0 py-2">
+        {quietRows('en').map((item) => <AttentionRow key={item.id} item={item} acts={ACTS} onOpen={() => {}} />)}
+      </ul>
+    </Main>
+  ),
+};
+
+/** The quiet rows in 中文, at 680 px. */
+export const QuietRowsNarrowChinese: StoryObj = {
+  decorators: [chinese],
+  render: () => (
+    <Main width={600}>
+      <ul className="m-0 grid list-none gap-1 border border-line bg-raised p-0 py-2">
+        {quietRows('zh').map((item) => <AttentionRow key={item.id} item={item} acts={ACTS} onOpen={() => {}} />)}
+      </ul>
+    </Main>
+  ),
+};
+
+/** *End and carry on* asked once under a quiet row, saying where the person's waiting words go. */
+export const QuietCarryOnAsked: StoryObj = {
+  render: () => (
+    <Main width={1180}>
+      <ul className="m-0 list-none border border-line bg-raised p-0">
+        <AttentionRow item={quietRows('en')[0]} acts={ACTS} onOpen={() => {}} opened="quiet-carry-on" />
       </ul>
     </Main>
   ),

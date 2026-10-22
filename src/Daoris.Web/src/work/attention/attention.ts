@@ -85,6 +85,9 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   // A git remote held because it could not authenticate (GITAUTH1a, D198; the git auth design §5.2, §7.4): nothing connects for it
   // until the person's *Try again* or a change lifts it, and nothing already running is held by this row.
   'git-held': 'word',
+  // A session the watcher brings to the person (SESSWATCH1a, D200, the session-watch design §5.2): it holds its slot and its tree, and
+  // its work stands still until they press, or it is heard again.
+  quiet: 'holding',
   unanswerable: 'word',
   review: 'ready',
 };
@@ -127,6 +130,8 @@ export const ATTENTION_PLACE: Readonly<Record<AttentionKind, AttentionPlace | nu
   'hand-over': 'sessions',
   permission: 'sessions',
   answer: 'sessions',
+  // SESSWATCH1a: a quiet session's page holds its presses too.
+  quiet: 'sessions',
   // An ask's page or a quest's: publishing, an intake's question, a quest nobody can take, *Try again*, a go-ahead on its ask, a
   // departure's yes, a set-up's review, a folder's trust for what it holds.
   proposal: 'quests',
@@ -252,7 +257,9 @@ export type AttentionActId =
   // FABRIC-CLOSE1j: the stop of a close found closed only in part, its node waiting again.
   | 'stop-partial'
   // GITAUTH1a: a git remote held because it could not authenticate, tried again on the person's press.
-  | 'git-try-again';
+  | 'git-try-again'
+  // SESSWATCH1a: a quiet session's presses: *End and carry on*, *Hand over…*, *Stop…*, *Leave it running*.
+  | 'quiet-carry-on' | 'quiet-hand-over' | 'quiet-stop' | 'quiet-leave';
 
 /** The act each word offered on a held attempt is pressed by (FABRIC-PERFORM1g, FABRIC-CLOSE1q): a close's stop is not a step's. */
 export function heldActs(held: HeldAttempt): AttentionActId[] {
@@ -303,6 +310,8 @@ export const ASKS_ONCE: ReadonlySet<AttentionActId> = new Set([
   'not-yet',
   // *Go on anyway…* says what stays unsettled and takes the person's words (XAGENT1g, the second-agent design §8.5).
   'opinion-anyway',
+  // SESSWATCH1a: ending a quiet session asks once, saying what it does and where the person's waiting words go.
+  'quiet-carry-on', 'quiet-stop',
 ]);
 
 /** How many acts an account's row offers beside its door: three controls a row at most (design §9.3). */
@@ -380,6 +389,9 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
     case 'signed-out': return accountOffers(item);
     // A held git remote (GITAUTH1a, the git auth design §5.2): *Try again*, one press, which lifts its holds and connects nothing itself.
     case 'git-held': return item.git ? plain('git-try-again') : [];
+    // SESSWATCH1a (the session-watch design §2.3, §5.2): *End and carry on* for a quiet quest session alone, never a busy one; *Hand
+    // over…* for a quest session; *Stop…* and *Leave it running* for every one, an intake's among them.
+    case 'quiet': return item.quiet ? quietOffers(item.quiet) : [];
     default: return [];
   }
 }
@@ -395,6 +407,22 @@ function opinionOffers(item: Attention): AttentionOffer[] {
   if (!wait) return [];
   const anyway = wait.auto || opinionState(wait.opinion.state) === 'unavailable';
   return [...(anyway ? [{ act: 'opinion-anyway' as const }] : []), { act: 'opinion-again' as const }];
+}
+
+/**
+ * A quiet row's watch (SESSWATCH1a, D200): the minutes nothing was heard from its session, whether something it runs keeps the machine
+ * busy (the *busy, nothing heard* row, offered no end), whether it is an intake, and whether the person's words wait to reach it.
+ */
+export type QuietWait = { minutes: number; busy: boolean; intake: boolean; words: boolean };
+
+/** What a quiet row offers (§2.3, §5.2), in its order. */
+function quietOffers(quiet: QuietWait): AttentionOffer[] {
+  const acts: AttentionActId[] = [
+    ...(!quiet.busy && !quiet.intake ? ['quiet-carry-on' as const] : []),
+    ...(!quiet.intake ? ['quiet-hand-over' as const] : []),
+    'quiet-stop', 'quiet-leave',
+  ];
+  return acts.map((act) => ({ act }));
 }
 
 /** The acts a row offers, without the accounts they are for: what each kind's rule says, read by the tests. */
@@ -489,6 +517,8 @@ export type PushedAttention = {
   space?: { root: string | null; free: number; total: number; floor: number | null; freed: number; could?: number | null };
   /** A git remote held because it could not authenticate (GITAUTH1a): one row per held group, as .NET groups them. */
   git?: GitHeld;
+  /** A session the watcher brings to the person (SESSWATCH1a): its watch, which its words and its presses read. */
+  quiet?: QuietWait;
 };
 
 /**
@@ -538,7 +568,8 @@ export type AttentionPushed = {
  */
 const KIND_ORDER: readonly AttentionKind[] = [
   'account-wait', 'signed-out', 'parked', 'parked-quest', 'go-ahead', 'permission', 'answer', 'confirmation', 'trust',
-  'proposal', 'departure', 'set-up', 'opinion', 'rule', 'helper', 'hand-over', 'work', 'space', 'git-held', 'unanswerable', 'review',
+  'quiet', 'proposal', 'departure', 'set-up', 'opinion', 'rule', 'helper', 'hand-over', 'work', 'space', 'git-held', 'unanswerable',
+  'review',
 ];
 
 /** A row's place among its group's kinds; an intake is an ask's, and a held attempt comes after a unit's blocked clean-up. */
@@ -727,6 +758,23 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         detail: i18n.t('work.attention.helperWhy', { session: named(row.session) }),
         session: row.session ?? null,
       };
+    // SESSWATCH1a (the session-watch design §5.2): the session as Sessions names it, what happened, and, where the person's words wait,
+    // that ending it hands them on. Its words say only what happened, so they hold before and after Daoris's word is built.
+    case 'quiet': {
+      const quiet = row.quiet;
+      const values = { session: named(row.session ?? row.id), minutes: quiet?.minutes ?? 0 };
+      return {
+        ...base,
+        title: named(row.session ?? row.id),
+        detail: [
+          i18n.t(quiet?.busy ? 'work.attention.quietBusyWhy' : 'work.attention.quietWhy', values),
+          ...(quiet?.words && !quiet.busy ? [i18n.t('work.attention.quietWords')] : []),
+        ].join(' '),
+        session: row.session ?? row.id,
+        ...(row.quest ? { quest: row.quest } : {}),
+        ...(quiet ? { quiet } : {}),
+      };
+    }
     // NOTIFY2e: its note's first line as the agent wrote it, the session as Sessions names it, and the agent as the roster names it.
     case 'hand-over': {
       const agent = row.agent ? agentNamed(row.agent, names.tools) : null;

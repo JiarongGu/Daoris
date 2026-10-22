@@ -108,7 +108,7 @@ public sealed class SessionWatch
     public static SessionWatch Of(SessionEvents events) => Watches.GetValue(events, each => new SessionWatch(each));
 
     /// <summary>The clock quiet is counted on; a test hands one it moves.</summary>
-    internal QuietClock Clock { get; set; } = QuietClock.System;
+    public QuietClock Clock { get; set; } = QuietClock.System;
 
     /// <summary>Q, how long a session may say nothing before Daoris looks in (§1.5): <see cref="DefaultQuiet"/> until SESSWATCH1c sets it.</summary>
     public TimeSpan Quiet { get; set; } = DefaultQuiet;

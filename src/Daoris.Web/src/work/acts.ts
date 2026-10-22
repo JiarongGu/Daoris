@@ -137,6 +137,9 @@ export function offeredActs(facts: ActFacts, door: 'row' | 'header'): SessionAct
     if (session.kind === 'chat' && !session.quest && !intake && !isHelp(session) && !wordless) offered.add('handOver');
     if (door === 'header' && !intake && !isHelp(session) && !wordless) offered.add('askHelper');
     const driven = live && Boolean(session.quest) && session.kind !== 'chat' && !intake && !isHelp(session) && !wordless;
+    // SESSWATCH1a (the session-watch design §2.3): a live quest's own session is handed over from its page too, through the judge
+    // `sessions hand-over` answers it by; the look takes it, stops it and carries its quest on with the agent chosen.
+    if (driven && door === 'header') offered.add('handOver');
     if (driven && !pausedBy) {
       offered.add('pauseQuest');
       if (askOf(facts.quest)) offered.add('pauseAsk');

@@ -164,7 +164,11 @@ describe('the acts a session is offered', () => {
    */
   it('offers Ask another agent… in the header of a session of this machine’s that may ask, and nowhere else', () => {
     const driven = { session: session(), grouping: placed({ group: 'working', shown: 'working' }), root: ROOT };
-    expect(offeredActs(driven, 'header')).toEqual(['stop', 'askHelper', 'pauseQuest', 'review', 'openFolder', 'terminal', 'detach', 'copy']);
+    // SESSWATCH1a: a live quest session's head offers *Hand over…* too, through the judge its terminal's verb shares.
+    expect(offeredActs(driven, 'header'))
+      .toEqual(['stop', 'handOver', 'askHelper', 'pauseQuest', 'review', 'openFolder', 'terminal', 'detach', 'copy']);
+    expect(offeredActs(driven, 'row')).not.toContain('handOver');
+    expect(offeredActs({ ...driven, session: session({ state: 'completed' }) }, 'header')).not.toContain('handOver');
     expect(offeredActs({ ...driven, session: session({ state: 'completed' }) }, 'header')).toContain('askHelper');
     expect(offeredActs(driven, 'row')).not.toContain('askHelper');
 

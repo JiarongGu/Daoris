@@ -152,6 +152,38 @@ export const useStopSession = () => useMutation({
 });
 
 /**
+ * A quiet row's press answered (SESSWATCH1a): whether it moved, and where it did not, its code (`not-quiet`, `not-quest`, `gone`) and the
+ * driver's sentence.
+ */
+export type QuietAnswer = { done: boolean; why: string | null; message: string };
+
+const quietOf = (answer: unknown, field: 'stopped' | 'left'): QuietAnswer => {
+  const said = answer as { stopped?: unknown; left?: unknown; why?: unknown; message?: unknown } | null | undefined;
+  return {
+    done: said?.[field] === true,
+    why: typeof said?.why === 'string' && said.why ? said.why : null,
+    message: typeof said?.message === 'string' ? said.message : '',
+  };
+};
+
+/**
+ * *End and carry on* on a quiet quest session's row (SESSWATCH1a, D200, the session-watch design §2.3): the person's stop, released in
+ * the same press, the run ending `stopped` with no strike and the work going on in a new part in the same tree, handed the person's
+ * waiting words. `SESSION_QUIET_CARRY_ON`; a refusal is the answer, by its code.
+ */
+export const useQuietCarryOn = () => useMutation({
+  mutationFn: async (id: string) => quietOf(await call<unknown>('SESSION_QUIET_CARRY_ON', { id }), 'stopped'),
+});
+
+/**
+ * *Leave it running* on a quiet session's row (SESSWATCH1a): the watcher stands down for it until it is heard again, and the row goes.
+ * `SESSION_QUIET_LEAVE`; a refusal is the answer, by its code.
+ */
+export const useQuietLeave = () => useMutation({
+  mutationFn: async (id: string) => quietOf(await call<unknown>('SESSION_QUIET_LEAVE', { id }), 'left'),
+});
+
+/**
  * What the person first said in each of these sessions (RAIL1): a conversation's identity, as
  * `sessionTitle` takes it — read from this machine's own record, never from the session record, which
  * travels (D47 §4).

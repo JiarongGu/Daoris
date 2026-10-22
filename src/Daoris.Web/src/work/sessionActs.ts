@@ -248,6 +248,12 @@ export function useSessionActs({ notify, doors = {}, entries }: {
           told.refused(said ?? answer.message);
           return;
         }
+        // SESSWATCH1a: a quest's own session is kept for the driver's next look, which stops it and carries its quest on: no turn of
+        // a conversation to stop here.
+        if (session.kind !== 'chat') {
+          told.kept(t('work.handOver.keptQuest', { agent: choice.name }));
+          return;
+        }
         // Kept for the turn's end: while it works, stop the turn, so that its end takes the ask.
         const keptSaid = t('work.handOver.kept', { agent: choice.name });
         if (!SESSION_ACTIVE.has(session.state)) {

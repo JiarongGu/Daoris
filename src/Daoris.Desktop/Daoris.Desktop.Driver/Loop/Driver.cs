@@ -1829,7 +1829,10 @@ public sealed class Driver(
 
         // 🔴 SAYHELD1 (A), the owner's case on the install: the words kept on the session that asked while its quest waited, which it never
         // took, go to the session this resume opens, read as the record holds them now (SAIDBACK1f), so one taken back never goes.
-        var handsOn = answered is not null ? await GoOns.ResumeWordsAsync(start.Resumes!, ct).ConfigureAwait(false) : null;
+        // SESSWATCH1a: and the person's words that waited for a run they ended with End and carry on go to the part that carries it on.
+        var handsOn = answered is not null || (carryingOn && Observation.IsQuietPressed(start.Resumes!.NoteParts))
+            ? await GoOns.ResumeWordsAsync(start.Resumes!, ct).ConfigureAwait(false)
+            : null;
 
         // LANDSYNC2 (D87's 2026-10-15 amendment point 7): a session going on in a tree that stands — a resume, words going on, a
         // carry-on, a further part gone into its session's tree — starts from the line where the line came to hold some of its commits,

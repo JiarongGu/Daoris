@@ -5,7 +5,7 @@ import { useAcceptQuest, useAnswerGoAhead, useAsks, usePublishAsk, useQuests, us
 import {
   retryNotice, useApproveHelper, useAttention, useDeclineHelper, useHarnesses, useNudge, useRefreshHarnesses,
   useOpenWorkRecords, useResolveHeld, useRetryQuest, useTrustFolder, useAnswerPermission, useAnswerAlone, useApproveHandOver,
-  useDeclineHandOver, useGitTryAgain,
+  useDeclineHandOver, useGitTryAgain, useQuietCarryOn, useQuietLeave, useStopSession,
 } from '../../bridge/shell';
 import { permissionSaid } from '../waits/PermissionAsks';
 import { answerAloneSaid } from '../waits/AnswerAlone';
@@ -112,6 +112,9 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
   const resolveHeld = useResolveHeld();
   const openRecords = useOpenWorkRecords();
   const gitTryAgain = useGitTryAgain();
+  const quietCarryOn = useQuietCarryOn();
+  const quietLeave = useQuietLeave();
+  const stopSession = useStopSession();
 
   const publish = usePublishAsk();
   const answerGoAhead = useAnswerGoAhead();
@@ -314,6 +317,21 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
         if (answer.answered) notify(t(allows ? 'work.wait.permission.answered.allow' : 'work.wait.permission.answered.refuse'));
         else notify(permissionSaid(t, answer.why, answer.message), 'error');
       });
+    },
+    // A quiet session's presses (SESSWATCH1a, the session-watch design §2.3): *End and carry on* and *Stop…* asked once under the row,
+    // *Leave it running* one press, *Hand over…* its session's page, whose head asks it; a refusal said in its words.
+    quiet: (item, act, answered) => {
+      const session = item.session ?? item.id;
+      if (act === 'hand-over') { doors.quiet?.(item); return; }
+      if (act === 'stop') {
+        run(item, () => stopSession.mutateAsync(session), () => notify(t('work.attention.quietStopped')), answered && releasing(answered));
+        return;
+      }
+      const press = act === 'carry-on' ? quietCarryOn : quietLeave;
+      run(item, () => press.mutateAsync(session), (answer) => {
+        if (answer.done) notify(t(act === 'carry-on' ? 'work.attention.quietCarried' : 'work.attention.quietLeft'));
+        else notify(answer.message || t('work.attention.quietGone'), 'error');
+      }, answered && releasing(answered));
     },
     // A third answer alone held for the person let go on or kept, as its session's page answers it (COWORK1e, §8.3): its answer said
     // in the page's words, a refusal by its code in the error's tone.

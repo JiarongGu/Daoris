@@ -1038,6 +1038,9 @@ export function App() {
     // A third answer alone held for the person opens the session whose line it would take on, whose head and foot carry its two presses
     // with its other waits (COWORK1e). A shell's alone: the marks are this machine's driver's.
     ...(attached ? { answer: (item: Attention) => { if (item.session) open('sessions', item.session); } } : {}),
+    // A session the watcher brings to the person (SESSWATCH1a) opens that session, whose head carries *Hand over…* and *Stop…*. A
+    // shell's alone: the watch is this machine's driver's.
+    ...(attached ? { quiet: (item: Attention) => open('sessions', item.session ?? item.id) } : {}),
     // A terminal's press waiting for the window (CONFIRMSEEN1) opens its card in *Notifications* (NOTIFY2b), where every value it
     // carries is read beside its Confirm. Brought into view, never pressed: the card's default stays no. A shell's alone.
     ...(attached ? { confirmation: (item: Attention) => showNotifications({ press: item.id }) } : {}),

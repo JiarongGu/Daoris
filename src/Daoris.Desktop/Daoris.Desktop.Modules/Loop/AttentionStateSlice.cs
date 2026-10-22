@@ -74,7 +74,7 @@ public static class AttentionStateSlice
             "kind", "id", "since", "workspace", "where", "note", "detail", "publishTo", "choices", "ask", "number", "goAhead", "session",
             "departed", "setUp", "local", "environment", "shows", "opinion", "placed", "sitting", "trust", "quest", "proposal", "title",
             "permission", "blocked", "held", "unreadable", "wholeWorkspace", "holding", "read", "account", "answer", "ended",
-            "confirmation", "agent", "stands", "stale", "space", "git",
+            "confirmation", "agent", "stands", "stale", "space", "git", "quiet",
         ],
         ["waiting"] = ["kind", "workspace"],
         ["working"] = ["workspace"],
@@ -119,6 +119,8 @@ public static class AttentionStateSlice
         ["space"] = ["root", "free", "total", "floor", "freed", "could"],
         // GITAUTH1a: a held group of git remotes that cannot authenticate.
         ["git"] = ["host", "class", "holds", "remote", "repositories", "words"],
+        // SESSWATCH1a: a quiet session brought to the person, or a busy one nothing is heard from.
+        ["quiet"] = ["minutes", "busy", "intake", "words"],
     };
 
     /// <summary>Which shape a field holds, as <c>shape.field</c>, an object of it or a list of them; every other field is a value.</summary>
@@ -148,6 +150,7 @@ public static class AttentionStateSlice
         ["row.ended"] = "graphEnd",
         ["row.holding"] = "holding",
         ["row.account"] = "account",
+        ["row.quiet"] = "quiet",
         ["account.named"] = "named",
         ["row.confirmation"] = "confirmation",
         ["confirmation.asker"] = "asker",
@@ -179,6 +182,7 @@ public static class AttentionStateSlice
             [
                 wake => HearSlices(loop.Slices, wake), wake => HearHolds(HeldPermissions.Of(loop.Events), wake), wake => HearRegistry(loop.Facts, wake),
                 wake => HearFloors(SpaceFloors.Shared, wake), wake => HearGitHolds(loop.Home, wake),
+                wake => HearQuiet(SessionWatch.Of(loop.Events), wake),
             ],
             loop.Log, new HeldCallAnnouncements(bus, loop.Notifying));
 
@@ -285,6 +289,8 @@ public static class AttentionStateSlice
             Space = Written(SpaceWaits(SpaceFloors.Shared, loop.Home)),
             // GITAUTH1a: each remote held since it could not authenticate, from the home's run/git/held.json.
             Git = Written(GitWaits(loop.Home)),
+            // SESSWATCH1a: each session the watcher brings to the person, from its memory.
+            Quiet = Written(QuietWaits(SessionWatch.Of(loop.Events), loop.Processes)),
         };
     }
 
@@ -479,6 +485,29 @@ public static class AttentionStateSlice
         }
 
         return new Hearing(() => stops.ForEach(stop => stop()));
+    }
+
+    /// <summary>
+    /// The sessions the watcher brings to the person (SESSWATCH1a, D200, the session-watch design §2.3, §5.2), oldest heard first, from its
+    /// memory: each with its kind and quest, the minutes nothing was heard from it, whether something it runs keeps the machine busy (a row
+    /// offered no end), when it was last heard, and whether the person's words wait to reach it, which ending it hands to the next part.
+    /// </summary>
+    public static IReadOnlyList<object> QuietWaits(SessionWatch watch, SessionProcesses processes) =>
+    [
+        .. watch.Rows().Select(row => (object)new
+        {
+            row.Session, row.Kind, row.Quest, row.Minutes, row.Busy,
+            Since = Moments.Write(row.Since),
+            Words = processes.InboxOf(row.Session)?.State.Queued.Any(word => word.Persons) == true,
+        }),
+    ];
+
+    /// <summary>Wake the slice where the watcher's mark or row moved (<see cref="SessionWatch.Changed"/>), which no bus event tells.</summary>
+    public static IDisposable HearQuiet(SessionWatch watch, Action wake)
+    {
+        void Heard(string _) => wake();
+        watch.Changed += Heard;
+        return new Hearing(() => watch.Changed -= Heard);
     }
 
     /// <summary>Wake the slice where a held tool call started or ended (<see cref="HeldPermissions.Changed"/>), which no bus event tells.</summary>
