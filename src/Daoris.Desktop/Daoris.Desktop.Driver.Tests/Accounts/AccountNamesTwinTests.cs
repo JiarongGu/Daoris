@@ -286,16 +286,17 @@ public sealed class AccountNamesTwinTests : IDisposable
         AccountNames.Rename(_home, "claude-code", HarnessSettings.Profiles(_home, "claude-code"), "account-1", "you@work.example");
 
         Assert.Equal(before, File.ReadAllText(wiring));
-        var settings = HarnessSettings.Load(wiring);
-        Assert.Equal("account-1", settings.ResolveScope("claude-code", null).Begins);
-        Assert.Equal(["account-1"], settings.ResolveScope("claude-code", "work").List);
-        Assert.Equal("account-1", settings.Resolve("claude-code", "work", null));
+        // Read as the set (POOL1b, D197): it held each scope's own list and where this account ran (`PlacesOf`) before, which left with
+        // the terminal's last callers.
+        var settings = HarnessSettings.LoadSet(wiring);
+        Assert.Equal("account-1", settings.FirstOf("claude-code"));
+        Assert.Equal(["account-1", "account-2"], settings.Set("claude-code").List);
+        Assert.Equal("account-1", HarnessSettings.Load(wiring).Resolve("claude-code", "work", null));
         Assert.Equal(LoginState.Out, AccountReads.Of(_home, "claude-code").Accounts["account-1"].Login);
         Assert.NotNull(AccountCooling.Of(_home, "claude-code", "account-1", now));
         Assert.Equal(1200, usage.ByAccount().Single(each => each.Profile == "account-1").Used);
         // The name the person types reaches the account. (A session record's count by its id is the modules' table.)
         Assert.Equal("account-1", AccountNames.Resolve(HarnessSettings.Profiles(_home, "claude-code"), AccountNames.Of(_home, "claude-code"), "You@Work.example"));
-        Assert.Equal(new AccountPlace(null, List: true, Default: true), settings.PlacesOf("claude-code", "account-1")[0]);
     }
 
     [Fact]

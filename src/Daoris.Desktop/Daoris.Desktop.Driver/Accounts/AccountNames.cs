@@ -117,8 +117,8 @@ public static class AccountNames
     /// </summary>
     /// <remarks>
     /// The window reads the set (POOL1a2, the account-pool design §2.4), which holds no default, so a sign-in there that names no
-    /// account is refused before anything starts. The terminal's <c>login</c> with none named taking the order's first is
-    /// POOL1b's (§5.1); until then it reads the raw file's default.
+    /// account is refused before anything starts. The terminal's <c>login</c> with none named hands the order's first here (POOL1b,
+    /// §5.1), so neither door reaches a default through this.
     /// </remarks>
     public static AccountTarget SignInTarget(
         IReadOnlyCollection<string> accounts, IReadOnlyDictionary<string, string> names, HarnessSettings settings, string agent,

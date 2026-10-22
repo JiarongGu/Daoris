@@ -46,8 +46,8 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
         Assert.Equal(wiring, File.ReadAllText(HarnessSettingsPath));
         Assert.Equal("you@work.example", AccountNames.NameOf(Home, "claude-code", "account-1"));
         var settings = HarnessSettings.Load(HarnessSettingsPath);
-        Assert.Equal("account-1", settings.ResolveScope("claude-code", null).Begins);
-        Assert.Equal(["account-2", "account-1"], settings.ResolveScope("claude-code", "work").List);
+        Assert.Equal("account-1", settings.Set("claude-code").Begins);
+        Assert.Equal(["account-2", "account-1"], settings.WorkspaceRotation["work"]["claude-code"]);
 
         var accounts = await AnswerAsync(Module(), "ACCOUNTS");
         Assert.Equal("you@work.example", Account(accounts, "claude-code", "account-1").GetProperty("displayName").GetString());

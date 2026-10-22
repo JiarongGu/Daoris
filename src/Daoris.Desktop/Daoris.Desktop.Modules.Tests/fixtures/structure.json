@@ -62,7 +62,6 @@
     "HelpSessionDoorTests.cs": "Bridge",
     "HelpWorkflowDoorTests.cs": "Bridge",
     "PluginRecordWiringTests.cs": "Bridge",
-    "ProfileDefaultTwinTests.cs": "Bridge",
     "SessionOptionsModuleTests.cs": "Bridge",
     "StartWiringRouteTests.cs": "Bridge",
     "BrowserFavoritesTests.cs": "Browser",

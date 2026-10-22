@@ -200,33 +200,26 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         // Codex's device code, in place of its browser, by `--device-code`.
         ("sign an agent in, or add an account", Agent + "Accounts",
             "`daoris agent login <agent> --profile <account>` (an account that is here, never a new one), "
-            + "`daoris agent login <agent> --new [--name <name>] [--join <workspace>] [--join-machine]`, "
+            + "`daoris agent login <agent> --new [--name <name>]` (it joins Daoris's accounts, which serve every workspace), "
             + "either with `--device-code` for Codex's device code in place of its browser"),
-        // ACCT2: an account's name is the person's, its id the folder's; ACCT1: an account in no list is put in one. UX7b
-        // builds the screen's halves.
+        // ACCT2: an account's name is the person's, its id the folder's. UX7b builds the screen's halves. ACCT1's join and HELP10's
+        // default left with POOL1b (D197 point 6): Daoris's accounts are one set, and its order says where starts begin.
         ("name an account: its id stays, so every list, default and record keeps it", "(no screen yet)",
             "`daoris agent profile rename <agent> <account> <name>`"),
-        ("put an account in a workspace's list, or this machine's, so starts run on it", "(no screen yet)",
-            "`daoris agent profile join <agent> <account> <workspace>…|--machine`"),
-        // HELP9 named it while Ask Daoris owed it (D110); HELP10 proposes it as an agent's `default`. LEFT3 gave the
-        // screen's clear its terminal door, which Ask Daoris still owes (HelpCoverageTests' Forms).
-        ("choose which account an agent's sessions use, for the machine or a workspace",
-            Agent + "an account's ⋯ → Use by default, Use by default in a workspace",
-            "`daoris agent profile default <agent> <profile>|--clear [--workspace <name>]` (`--clear` names none again: "
-            + "Daoris's accounts serve again, or for a workspace the machine's default)"),
         // TOOL4e (D125 §6): the order and *Try now*, the terminal's doors; TOOL4g gave them the screen, and TOOL4l-b Ask Daoris's
-        // `order` and `ready` (HelpCoverageTests).
-        ("choose the accounts rotation may use, in order, for the machine or a workspace (an account not listed never "
-            + "rotates)", Agent + "How accounts are used → Use, up and down; and Workspaces → Its own accounts",
-            "`daoris agent profile order <agent> <profile>…|--clear [--workspace <name>]`"),
-        // TOOL6a (D130 §16.6): how a list is used, the terminal's door; TOOL4g gave it the screen's controls, and judges Ask
-        // Daoris's `use` door (`use`, `keep`, since SWITCH1d `switch` and `curve`), listed since TOOL4l-b.
-        ("choose how a list is used, for the machine or a workspace: make the most of its accounts (`goal`) or one by one "
+        // `order` and `ready` (HelpCoverageTests); one set's since POOL1b.
+        ("choose the order of Daoris's accounts, one set for every workspace: where starts begin one by one, and the last tie "
+            + "otherwise", Agent + "How accounts are used → Use, up and down",
+            "`daoris agent profile order <agent> <profile>…|--clear` (the accounts named first, the rest after; `--clear` "
+            + "returns to the ids' order)"),
+        // TOOL6a (D130 §16.6): how the accounts are used, the terminal's door; TOOL4g gave it the screen's controls, and judges Ask
+        // Daoris's `use` door (`use`, `keep`, since SWITCH1d `switch` and `curve`), listed since TOOL4l-b; one set's since POOL1b.
+        ("choose how Daoris's accounts are used, for every workspace: make the most of them (`goal`) or one by one "
             + "in order (`order`), one kept for conversations, and when to switch accounts, by Daoris's usage curve, your own, "
             + "or not while a session runs",
             Agent + "How accounts are used → Use accounts, Keep for conversations, Switch accounts",
             "`daoris agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off] "
-            + "[--curve <window>=<elapsed>:<used>,…] [--no-curve] [--workspace <name>]` (no flag prints them; `--clear` returns "
+            + "[--curve <window>=<elapsed>:<used>,…] [--no-curve]` (no flag prints them; `--clear` returns "
             + "to today's defaults)"),
         ("end an account's cool-off now, after its agent hit a limit", Agent + "the account's Try now",
             "`daoris agent profile ready <agent> <profile>|--own` (`--own` only ends an old cool-off of the tool's own sign-in, which Daoris no longer starts sessions in)"),
