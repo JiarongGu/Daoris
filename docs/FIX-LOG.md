@@ -5,6 +5,33 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-22 — Four of the driver's Process tests on `main` still held the scopes the fold retires (POOL1a1)
+
+- **Symptom:** the full set at `cb9211d88` failed `driver-process`, and these four failed alone too. `OpinionResumeTickTests`' and
+  `SessionMessagesTickTests`' native cases heard three runs where two were meant. `AccessSwapTickTests`' native case heard two runs
+  where its first look meant one. `AnswerContinuesTickTests`' answer on another account resumed on the park's own account, its note
+  ending *the quest reached done.* where it was to be carried on. All four were green at `49d02de5f` and red at the POOL1a1 merge
+  `23ef46849`, each run filtered with `process.runsettings`.
+- **Root cause:** POOL1a1's come-up fold (`HarnessRoster.Pool`, called at `Driver.cs:626`; D197 points 1, 2 and 7), not the resume.
+  Every record in these tests ran on an account of Daoris's (`work`, `account-1`), never the person's own sign-in, so
+  `ResumeAccount.Judge`'s F1 branch was never reached.
+  - The three native cases wrote `{"defaults":{"claude-code":"work"}}`. The fold makes that a set of one under `use: order`, so
+    `ResolveScope` answers a list, and a start's walk first asks the never-read account its usage (`HarnessRoster.cs:1078`,
+    USAGEPROBE1). The read runs the configured `claude-code` command, the stub, with no `-p` (`ClaudeUsage.Question`), and each
+    stub logged it as a run. Before the fold a default with no list was a scope of one account, which the walk never freshened.
+  - `AnswerContinuesTickTests` moved the default from account 1 to account 2 to take account 1 off the work's accounts. Under D197
+    the default folds in as the set's first and account 1 stays in the set, so `Judge` finds it ready and the park resumes on it,
+    as D131 §1 wants.
+- **Fix:** tests only. The three native stubs exit on a run with no `-p`, saying nothing, so the account reads as unknown (D57) and
+  the read is no run. `AnswerContinuesTickTests`' account leaves the set the one way D197 point 1 leaves: it is removed, as `profile
+  remove` writes it (`RemoveProfile`, then `Change` with `WithoutAccount`). The park is carried on, its note ending *That account is
+  not on this machine any more.* `OwnSpaceTests` gains a guard: a record begun in the own sign-in resumes there after the come-up's
+  fold (D197 point 3, Fable's F1). With F1 reverted, its driven row was seen failing (`Outside`, moved to `daoris-1`).
+- **Verification:** each of the four passed alone, filtered with `process.runsettings`. So did 21 Process classes that resume, carry on
+  or start on a set's account, 129 of 129, none of them a git class: the four's, `ChatGoesOn`, `ChatGoesOnInSync`, `ChatWordsRestart`,
+  `CurveMove`, `StartInSync`, `SignedOutLooks`, `Pause`, `DrivenSessionInput`, `RetryWork`, `HandOverQuest`, the four `Account*Tick`
+  classes, `TrustHold`, `WorkflowBindStart` and `Intake`. `OwnSpaceTests` passed 28 of 28, and the driver's fast half 13230 of 13230.
+
 ## 2026-10-22 — The modules suite's account tests on `main` still asked for the scopes the fold retires, and the push missed `pooled` (POOL1a1)
 
 - **Symptom:** red on `main` after POOL1a1: `AgentAccountsBothWaysTests` 20 of 29, `AccountsStateSliceTests` 2, `HelpFileDoorsTests`'
