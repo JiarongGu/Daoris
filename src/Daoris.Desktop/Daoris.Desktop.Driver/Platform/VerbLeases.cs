@@ -35,7 +35,7 @@ namespace Daoris.Driver;
 /// </remarks>
 public static class VerbLeases
 {
-    private static readonly HashSet<string> Reading = new(StringComparer.Ordinal) { "trace", "git", "logs" };
+    private static readonly HashSet<string> Reading = new(StringComparer.Ordinal) { "trace", "logs" };
 
     private static readonly HashSet<string> ServiceQuests = new(StringComparer.Ordinal)
     {
@@ -91,6 +91,9 @@ public static class VerbLeases
             // from the top; the list, an update's plan, the kit's pointers and the usage none.
             "plugin" => PluginCommand.Changes([.. args.Skip(1)]),
             "update" => args.Skip(1).Any(arg => arg is "--when-idle" or "--now" or "--cancel"),
+            // `git branches`, `git identity list` and `public-key` are reads; an identity's change, a default and a pointer write the
+            // home's identities or the driver's file (GITAUTH1c).
+            "git" => GitIdentityCommand.Changes([.. args.Skip(1)]),
             _ => true,
         };
     }
