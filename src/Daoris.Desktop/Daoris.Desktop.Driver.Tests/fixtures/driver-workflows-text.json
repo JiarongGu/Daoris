@@ -1514,7 +1514,7 @@
       },
       "exit": 0,
       "out": [
-        "daoris: `docs` v1 → v2 — Docs: a graph (schema 2) of 3 nodes and 2 wires, ending at `close`, digest gph-7ed55499a2b6fe782cc27570c157e552, which this build reads and does not run yet.",
+        "daoris: `docs` v1 → v2 — Docs: a graph (schema 2) of 3 nodes and 2 wires, ending at `close`, digest gph-7ed55499a2b6fe782cc27570c157e552.",
         "  --plan: nothing was written.",
         "  A choice names a workflow (`daoris driver workflow use <id> --repository <name>|--workspace <name> [--kind <kind>]`), and work binds its newest version at its first start; every gate then reads that version."
       ],
@@ -1536,7 +1536,7 @@
       },
       "exit": 0,
       "out": [
-        "daoris: `docs` v1 → v2 — Docs: a graph (schema 2) of 3 nodes and 2 wires, ending at `close`, digest gph-7ed55499a2b6fe782cc27570c157e552, which this build reads and does not run yet.",
+        "daoris: `docs` v1 → v2 — Docs: a graph (schema 2) of 3 nodes and 2 wires, ending at `close`, digest gph-7ed55499a2b6fe782cc27570c157e552.",
         "  Written to <home>/data/workflows/docs.json.",
         "  A choice names a workflow (`daoris driver workflow use <id> --repository <name>|--workspace <name> [--kind <kind>]`), and work binds its newest version at its first start; every gate then reads that version."
       ],
@@ -1665,7 +1665,7 @@
       },
       "exit": 0,
       "out": [
-        "daoris: `docs` v3 → v4 — Docs: a graph (schema 2) of 3 nodes and 2 wires, ending at `close`, digest gph-d9307805f7d9eeb0b6315fbb4729dd9c, which this build reads and does not run yet.",
+        "daoris: `docs` v3 → v4 — Docs: a graph (schema 2) of 3 nodes and 2 wires, ending at `close`, digest gph-d9307805f7d9eeb0b6315fbb4729dd9c.",
         "  --plan: nothing was written.",
         "  A choice names a workflow (`daoris driver workflow use <id> --repository <name>|--workspace <name> [--kind <kind>]`), and work binds its newest version at its first start; every gate then reads that version."
       ],
@@ -1691,7 +1691,7 @@
       "exit": 1,
       "out": [],
       "err": [
-        "daoris: `docs` v2 cannot be read here: v2: it is a graph (schema 2), which this build reads and does not run yet. The file keeps it as written."
+        "daoris: `docs` v2 is a graph (schema 2) of 3 nodes and 2 wires, ending at `close`, digest gph-7ed55499a2b6fe782cc27570c157e552, and holds no steps to read or change: `daoris driver workflow export docs` prints it whole, and a version saved after it is saved whole."
       ],
       "after": null
     },
@@ -1828,7 +1828,7 @@
       },
       "exit": 0,
       "out": [
-        "daoris: `docs` v1 → v2 — Docs: a graph (schema 2) of 3 nodes and 2 wires, ending at `close`, digest gph-cf0139b139b60137df41878407c77e96, which this build reads and does not run yet.",
+        "daoris: `docs` v1 → v2 — Docs: a graph (schema 2) of 3 nodes and 2 wires, ending at `close`, digest gph-cf0139b139b60137df41878407c77e96.",
         "  Written to <home>/data/workflows/docs.json.",
         "  A choice names a workflow (`daoris driver workflow use <id> --repository <name>|--workspace <name> [--kind <kind>]`), and work binds its newest version at its first start; every gate then reads that version."
       ],
@@ -1851,7 +1851,7 @@
       },
       "exit": 0,
       "out": [
-        "daoris: `release` — Release, from carried.json: 2 versions, its newest v2: a graph (schema 2) of 3 nodes and 2 wires, ending at `close`, digest gph-7ed55499a2b6fe782cc27570c157e552, which this build reads and does not run yet.",
+        "daoris: `release` — Release, from carried.json: 2 versions, its newest v2: a graph (schema 2) of 3 nodes and 2 wires, ending at `close`, digest gph-7ed55499a2b6fe782cc27570c157e552.",
         "  Written to <home>/data/workflows/release.json.",
         "  A choice names a workflow (`daoris driver workflow use <id> --repository <name>|--workspace <name> [--kind <kind>]`), and work binds its newest version at its first start; every gate then reads that version."
       ],
@@ -2671,7 +2671,7 @@
       },
       "exit": 0,
       "out": [
-        "daoris: `web-app` now chooses `docs-to-pr` as its default — Documentation to a pull request, v2 now: a graph (schema 2) of 6 nodes and 7 wires, digest gph-24feb38b5d78090212b1cac9dc8afb57, which this build reads and does not run yet.",
+        "daoris: `web-app` now chooses `docs-to-pr` as its default — Documentation to a pull request, v2 now: a graph (schema 2) of 6 nodes and 7 wires, digest gph-24feb38b5d78090212b1cac9dc8afb57.",
         "  This replaces the workspace's for every kind: `web-app` follows its own kinds and its own default, and Current where it names none.",
         "  Each new piece of work binds what is chosen at its first start; work already started keeps what it bound.",
         "  --plan: nothing was written.",
@@ -2708,7 +2708,7 @@
       },
       "exit": 0,
       "out": [
-        "daoris: the workspace `work` now chooses `docs-to-pr` as its default — Documentation to a pull request, v2 now: a graph (schema 2) of 6 nodes and 7 wires, digest gph-24feb38b5d78090212b1cac9dc8afb57, which this build reads and does not run yet.",
+        "daoris: the workspace `work` now chooses `docs-to-pr` as its default — Documentation to a pull request, v2 now: a graph (schema 2) of 6 nodes and 7 wires, digest gph-24feb38b5d78090212b1cac9dc8afb57.",
         "  Each new piece of work binds what is chosen at its first start; work already started keeps what it bound.",
         "  --plan: nothing was written.",
         "  Every gate reads the version a run bound at its first start: how it lands, your look and its second opinion follow that version."
@@ -2731,7 +2731,7 @@
       },
       "exit": 0,
       "out": [
-        "daoris: `web-app` now chooses `docs-to-pr` as its default — Documentation to a pull request, v2 now: a graph (schema 2) of 6 nodes and 7 wires, digest gph-24feb38b5d78090212b1cac9dc8afb57, which this build reads and does not run yet.",
+        "daoris: `web-app` now chooses `docs-to-pr` as its default — Documentation to a pull request, v2 now: a graph (schema 2) of 6 nodes and 7 wires, digest gph-24feb38b5d78090212b1cac9dc8afb57.",
         "  This replaces the workspace's for every kind: `web-app` follows its own kinds and its own default, and Current where it names none.",
         "  Each new piece of work binds what is chosen at its first start; work already started keeps what it bound.",
         "  Written to <config>.",
@@ -2767,7 +2767,7 @@
       },
       "exit": 0,
       "out": [
-        "daoris: the workspace `work` now chooses `docs-to-pr` as its default — Documentation to a pull request, v2 now: a graph (schema 2) of 6 nodes and 7 wires, digest gph-24feb38b5d78090212b1cac9dc8afb57, which this build reads and does not run yet.",
+        "daoris: the workspace `work` now chooses `docs-to-pr` as its default — Documentation to a pull request, v2 now: a graph (schema 2) of 6 nodes and 7 wires, digest gph-24feb38b5d78090212b1cac9dc8afb57.",
         "  Each new piece of work binds what is chosen at its first start; work already started keeps what it bound.",
         "  Written to <config>.",
         "  Every gate reads the version a run bound at its first start: how it lands, your look and its second opinion follow that version."
@@ -2789,7 +2789,7 @@
       "exit": 1,
       "out": [],
       "err": [
-        "daoris: `docs-to-pr` v2 cannot be read here: v2: it is a graph (schema 2), which this build reads and does not run yet. The file keeps it as written."
+        "daoris: `docs-to-pr` v2 is a graph (schema 2) of 6 nodes and 7 wires, ending at `close`, digest gph-24feb38b5d78090212b1cac9dc8afb57, and holds no steps to read or change: `daoris driver workflow export docs-to-pr` prints it whole, and a version saved after it is saved whole."
       ],
       "after": "{\n  \"workflows\": {\n    \"web-app\": {\n      \"default\": \"docs-to-pr\"\n    }\n  },\n  \"workspaceWorkflows\": {\n    \"work\": {\n      \"default\": \"docs-to-pr\"\n    }\n  }\n}\n"
     },
@@ -3692,7 +3692,7 @@
       },
       "exit": 0,
       "out": [
-        "daoris: `web-verify` — Verify the line, a verification pipeline, from verify.json: one version, its newest v1: a graph (schema 2) of 1 node and 0 wires, ending at `gates`, digest gph-33adad6e2b31c4063bc79327db9f9639, which this build reads and does not run yet.",
+        "daoris: `web-verify` — Verify the line, a verification pipeline, from verify.json: one version, its newest v1: a graph (schema 2) of 1 node and 0 wires, ending at `gates`, digest gph-33adad6e2b31c4063bc79327db9f9639.",
         "  Written to <home>/data/workflows/web-verify.json.",
         "  A choice names a workflow (`daoris driver workflow use <id> --repository <name>|--workspace <name> [--kind <kind>]`), and work binds its newest version at its first start; every gate then reads that version."
       ],
@@ -4098,7 +4098,7 @@
       "out": [
         "daoris: 2 workflows named in <home>/data/workflows:",
         "  `docs-to-pr` — A pull request with no press: v1, 3 steps. A pull request opens once its quest is done; you merge it.",
-        "  `web-verify` — Verify the line: v1 cannot be read here (v1: it is a graph (schema 2), which this build reads and does not run yet.); no version of it reads here.",
+        "  `web-verify` — Verify the line: v1, a graph (schema 2) of 1 node and 0 wires, ending at `gates`, digest gph-33adad6e2b31c4063bc79327db9f9639.",
         "Presets built in, for `daoris driver workflow new <id> --from <preset>` (`--with-opinion`, `--with-look`):",
         "  `merge-after-accept` — Merge after you accept. You accept each piece of work, and it merges into the line.",
         "  `branch-to-push` — A branch for you to push. You accept each piece of work onto a branch, and push it yourself.",

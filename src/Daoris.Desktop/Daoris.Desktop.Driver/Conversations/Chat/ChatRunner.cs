@@ -1467,6 +1467,26 @@ public sealed class ChatRunner : IDisposable
     }
 
     /// <summary>
+    /// Daoris's own words to a live chat (COWORK1b, D188; ASKQUESTS1): a turn, as the person's words make one, so the agent hears them
+    /// at once, and kept on the record as Daoris's (<see cref="DaorisWords.From"/>), never the person's. What Ask Daoris's Apply did,
+    /// and a proposal refused before it was shown. They take none of what a conversation hands with the person's first words (a
+    /// preface, an earlier conversation's words, a browser, a process), which stay for those words. False when nothing listens.
+    /// </summary>
+    /// <param name="key">The word's key (<see cref="DaorisWord"/>): one no fact of Daoris's is judged by, so it always goes.</param>
+    public bool Tell(string sessionId, string message, string key)
+    {
+        var said = new ChatMessage(message, []) { Daoris = new DaorisWord(key) };
+        if (_context.Turned.TryGetValue(sessionId, out var chat))
+        {
+            // As the person's words are (NOTIFY1a): the answer to it is one the person waits on.
+            _answers.Asked(sessionId);
+            return chat.Turns.Take(said) is not null;
+        }
+
+        return SendText(sessionId, said);
+    }
+
+    /// <summary>
     /// The person's words to a live chat kept on its record first (COWORK1c, D188 point 6; the message-urgency design §6), then taken by
     /// its turns under the record's id at the level they carry, through its one dispatcher (<see cref="ChatTurns.KeepAsync"/>): a shell
     /// that restarts before they go finds them waiting there. A text-only door has no turns: its words go at once, as before, and are

@@ -11,7 +11,10 @@ import { AskHistory } from './AskHistory';
 import { type AskConversationSlot, AskPanel } from './AskPanel';
 import type { HelpConversationRow } from './history';
 import { ProposalCard } from './ProposalCard';
+import { publishedCounts, publishedItems } from './published';
+import { PublishedList } from './PublishedList';
 import { starters } from './starters';
+import { TAKEN, WORKING } from '../quests/fixtures';
 
 // Ask Daoris (HELP1, D89): its panel on a machine that lacks everything, on one that lacks nothing,
 // and in Chinese widths by the same props.
@@ -205,6 +208,33 @@ export const ProposingEveryKind: Story = {
   },
 };
 
+/**
+ * ASKDISMISS1: the block a published quest leaves in the conversation, once a session has taken the quest: a go card, its
+ * sentence the driver's saying the quest is taken, *Go there* beside *Dismiss*, which only takes the card away.
+ */
+export const ProposingAGoToATakenQuest: Story = {
+  args: {
+    ...Talking.args,
+    conversation: {
+      ...Talking.args!.conversation!,
+      proposals: (
+        <ul className="m-0 mt-3 grid list-none gap-2.5 p-0">
+          <ProposalCard
+            proposal={{
+              id: 'g6t7k8n9', kind: 'go', describe: 'Open Quests → quest `#q2taken0` “Stream the tiles”, taken.', terminal: '',
+              why: 'you asked where the quest went',
+            }}
+            onApply={() => {}}
+            onDismiss={() => {}}
+          />
+        </ul>
+      ),
+    },
+  },
+};
+
+export const ProposingAGoToATakenQuestChinese: Story = { args: ProposingAGoToATakenQuest.args, decorators: [chinese] };
+
 // WORKFLOW1h-d: a workflow version's card (design §8.2): a new one, an edit, and a draft that offers only Not now.
 const WORKFLOW_SHOWN = {
   id: 'docs-to-pr', name: 'Documentation to a pull request', base: 1, version: 2, scope: 'web-app',
@@ -321,6 +351,26 @@ const docked = { args: { helper: 'claude-code-acp', framed: false }, decorators:
 
 /** A conversation running: its head, its words, a long fenced block wrapped at the pane, a table in its own scroll. */
 export const Open: Story = { ...docked, args: { ...docked.args, conversation: conversation() } };
+
+/**
+ * ASKQUESTS1: what the conversation published, its strip under the head and outside the words' scroll, folded to its line and
+ * opened; its rows' own states are `PublishedList`'s stories.
+ */
+const publishedStrip = (open: boolean) => {
+  const items = publishedItems(
+    [{ at: '2026-10-22T09:00:00+00:00', proposal: 'p1', kind: 'ask', workspace: 'work', ask: null, quest: TAKEN.id }],
+    { quests: [TAKEN], asks: [], sessions: [{ ...WORKING, quest: TAKEN.id }] },
+  );
+  return <PublishedList items={items} counts={publishedCounts(items)} open={open} onToggle={() => {}} onOpen={() => {}} />;
+};
+
+export const OpenPublished: Story = { ...docked, args: { ...docked.args, conversation: conversation({ published: publishedStrip(false) }) } };
+
+export const OpenPublishedOpened: Story = { ...docked, args: { ...docked.args, conversation: conversation({ published: publishedStrip(true) }) } };
+
+export const OpenPublishedChinese: Story = {
+  ...docked, args: { ...docked.args, conversation: conversation({ published: publishedStrip(true) }) }, decorators: [inTheDock, chinese],
+};
 
 /** Its long title, a pasted URL, read whole in the head. */
 export const OpenPastedTitle: Story = {

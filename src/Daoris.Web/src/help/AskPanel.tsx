@@ -12,6 +12,11 @@ export type AskConversationSlot = {
   body: ReactNode | null;
   /** What it proposes that waits for the person (HELP1c), or null. */
   proposals?: ReactNode;
+  /**
+   * What it published (ASKQUESTS1), each with its live state: a strip under its head, outside the scroll, or absent where it
+   * published nothing.
+   */
+  published?: ReactNode;
   /** The box, or null where nothing may be written yet: a conversation being checked, or one that cannot go on (ASKHIST1c). */
   composer: ReactNode;
   /** Whether the conversation shown has ended, so a message starts the next. */
@@ -66,9 +71,10 @@ const KEEPS_ESCAPE = 'input, textarea, select, [contenteditable="true"], form, [
  * **Two views, each with its own head** (ASKHIST1c), the same in the side bar, in its own region and at 680 px, where the
  * dock is the whole frame: the history's (what it is, a new conversation, the search), drawn by `AskHistory`; and the open
  * conversation's, left-led: *← History*, its title whole, and a new conversation at its end. The head says which view is
- * open, where a *History* button at the far right looked the same open or closed. Under the conversation's words, outside
- * their scroll and in this order: the way back to the tail, what the next words do, the access chip with *What it has*
- * (HELPMODE1b), and the box. Nothing floats over the words.
+ * open, where a *History* button at the far right looked the same open or closed. Under the head, outside the words' scroll,
+ * what the conversation published (ASKQUESTS1), folded to its line. Under the conversation's words, outside their scroll and in
+ * this order: the way back to the tail, what the next words do, the access chip with *What it has* (HELPMODE1b), and the box.
+ * Nothing floats over the words.
  */
 export function AskPanel({
   starters, helper, setup, conversation, scroller, framed = true, width, range, onResize, onResetWidth, onGo, onClose,
@@ -171,6 +177,8 @@ export function AskPanel({
           newPending={conversation.newPending}
         />
       )}
+      {/* What it published (ASKQUESTS1), under its head and outside the scroll, so it stays in view as the words move. */}
+      {conversation?.published && !conversation.wired && talking && conversation.published}
       <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
         {/* What it has takes the conversation's place while it is open (HELPMODE1b); the box stays below it. */}
         {conversation?.wired ?? (talking ? (

@@ -196,13 +196,21 @@ public static class WorkflowWords
         _ => $"through Ask Daoris (`{(door.StartsWith("ask-daoris:", StringComparison.Ordinal) ? door["ask-daoris:".Length..] : door)}`)",
     };
 
-    /// <summary>A graph version, as a writer says it: its size, its end and its digest, and that this build reads it and does not run it yet.</summary>
+    /// <summary>A graph version, as a writer says it: its size, its end and its digest (FABRIC-CUTOVER1d: it runs as a version of steps does).</summary>
     public static string GraphSaid(NamedVersion version)
     {
         var graph = version.Graph!;
         return $"a graph (schema {WorkflowNamed.GraphSchema}) of {Count(graph.Nodes.Count, "node")} and {Count(graph.Wires.Count, "wire")}, "
-            + $"ending at `{graph.End}`, digest {version.Digest}, which this build reads and does not run yet.";
+            + $"ending at `{graph.End}`, digest {version.Digest}.";
     }
+
+    /// <summary>
+    /// Why a verb that reads or changes a version's steps cannot take a graph version (FABRIC-CUTOVER1d): it holds none, and is read and saved
+    /// whole. A sentence that names the version.
+    /// </summary>
+    public static string NoSteps(string id, NamedVersion version) =>
+        $"`{id}` v{version.Version} is {GraphSaid(version).TrimEnd('.')}, and holds no steps to read or change: `daoris driver workflow export {id}` "
+        + "prints it whole, and a version saved after it is saved whole.";
 
     /// <summary>
     /// Current copied into steps (design §2.7's <i>Save as a workflow…</i>), each as Current draws it so the two read the same: the

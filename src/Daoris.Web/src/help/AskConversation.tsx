@@ -1,14 +1,14 @@
-import { type ReactNode, type RefObject, useEffect, useRef, useState } from 'react';
+import { type ReactNode, type RefObject, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HELP_REPOSITORY } from '../data/api';
 import { type Carry, NO_CARRY } from '../compose/carry';
 import { sentence } from '../locales/format';
-import { useHelpSessions, useWorkspaces } from '../data/queries';
+import { useEveryAsk, useEveryQuest, useEverySession, useHelpSessions, useStandingsMark, useWorkspaces } from '../data/queries';
 import { useScope } from '../data/scope';
 import { DEFAULT_WORKSPACE, workspaceOf } from '../data/workspaces';
 import {
   type HelpSettled, NO_TURNS, helpModeOf, useCancelTurn, useChatTurns, useDeleteSession, useDriver, useEditQueued, useEndChat,
-  useHarnesses, useHelpConversations, useHelpProposals, useHelpReadied, useHelpStartFrom, useHelpWired, usePinHelp, usePlugins,
+  useHarnesses, useHelpConversations, useHelpProposals, useHelpPublished, useHelpReadied, useHelpStartFrom, useHelpWired, usePinHelp, usePlugins,
   usePollUnlessTold, useRenameHelp, useSendMessage, useSessionEvents, useSetHelpMode, useSettleHelp, useStartHelp, useStopSession,
   stoppedWaiting, useGoOnBrief,
 } from '../bridge/shell';
@@ -28,6 +28,8 @@ import { type HelpConversationRow, sameWorkspace } from './history';
 import type { AskConversationSlot } from './AskPanel';
 import { placeDoor } from './places';
 import { ProposalCard } from './ProposalCard';
+import { publishedCounts, publishedItems } from './published';
+import { PublishedList } from './PublishedList';
 import type { StarterDoor } from './starters';
 import { type HelpWhere, prefaceOf } from './where';
 import { logEvent } from '../bridge/shell';
@@ -898,6 +900,49 @@ export function useAskConversation(
     if (door) onGo?.(door);
     if (answer.harnessAction) runs?.follow(answer.harnessAction.harness, answer.harnessAction.action);
   };
+  // ASKQUESTS1: a go card's sentence says where its quest, ask or session stands (since ASKDISMISS1), so the plan its Apply judges
+  // moves with them. While one is shown it is drawn again at each push that moves a standing, never on a clock, so its Apply finds
+  // the plan it shows rather than answering that the plan changed.
+  const goShown = cards.some((card) => card.kind === 'go');
+  const standings = useStandingsMark(goShown);
+  const drawnAt = useRef<string | null>(null);
+  useEffect(() => {
+    if (standings === null) {
+      drawnAt.current = null;
+      return;
+    }
+    if (drawnAt.current !== null && drawnAt.current !== standings) void proposals.refetch();
+    drawnAt.current = standings;
+    // Asked again only as the standings move; the query's handle is read from this render.
+  }, [standings]);
+
+  // What the conversation published (ASKQUESTS1, the design §9 item 12): its own list, by id, each one's state read from the lists the
+  // shell pushes, every workspace's, never asked on a clock. Read only where it published something; a row opens its record on Quests,
+  // the door a go uses, and adds no act.
+  const publishedRead = useHelpPublished(shown?.id ?? null);
+  const following = (publishedRead.data?.length ?? 0) > 0;
+  const everyQuest = useEveryQuest(following);
+  const everyAsk = useEveryAsk(following);
+  const everySession = useEverySession(following);
+  const [publishedOpen, setPublishedOpen] = useState(false);
+  useEffect(() => {
+    setPublishedOpen(false);
+  }, [shown?.id]);
+  const publishedRows = useMemo(
+    () => publishedItems(publishedRead.data ?? [], { quests: everyQuest.data, asks: everyAsk.data, sessions: everySession.data }),
+    [publishedRead.data, everyQuest.data, everyAsk.data, everySession.data],
+  );
+  const published = following ? (
+    <PublishedList
+      items={publishedRows}
+      counts={publishedCounts(publishedRows)}
+      failed={everyQuest.isError || everyAsk.isError}
+      open={publishedOpen}
+      onToggle={() => setPublishedOpen((was) => !was)}
+      onOpen={(door) => onGo?.(door)}
+    />
+  ) : undefined;
+
   const proposed = cards.length > 0 ? (
     <ul aria-label={t('help.proposal.list')} className="m-0 mt-3 grid list-none gap-2.5 p-0">
       {cards.map((proposal) => (
@@ -1000,7 +1045,7 @@ export function useAskConversation(
     : known?.title || (spoken?.session === shown.id ? spoken.title : t('help.head.untitled'));
 
   const slot: AskConversationSlot = {
-    body: conversation, proposals: proposed, composer, ended,
+    body: conversation, proposals: proposed, published, composer, ended,
     note: end.isPending ? <p role="status" className="m-0 text-small text-ink-soft">{t('help.finishing')}</p> : note,
     onNew: shown ? onNew : undefined,
     newPending: end.isPending,

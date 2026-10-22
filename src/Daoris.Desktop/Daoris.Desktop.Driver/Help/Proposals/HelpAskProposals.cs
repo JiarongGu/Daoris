@@ -70,7 +70,21 @@ internal sealed class HelpAskProposals : IHelpProposalKind
         var review = AskReviewCommand.Compose(proposal.Review, proposal.ReviewWords, out _)!;
         var answer = await applying.Doors.AskAsync(proposal.Workspace!.Trim(), proposal.Sentence!.Trim(), review.Choice, review.Words, ct,
                 string.IsNullOrWhiteSpace(proposal.ShortTitle) ? null : proposal.ShortTitle.Trim()).ConfigureAwait(false);
-        return applying.Settled(answer.Ok, $"{(answer.Ok ? "Applied" : "Not applied")}: `#{applying.Id}` (`{applying.Plan.Terminal}`) — {answer.Message}", answer.Message);
+        // ASKQUESTS1: the ask and the quest the door's answer named, by id, kept for the conversation's own list, and said where the
+        // service's sentence does not name them, so the agent knows what was published whatever that sentence's wording.
+        var said = answer.Ok ? answer.Message + Named(answer.Message, answer.AskId, answer.QuestId) : answer.Message;
+        return applying.Settled(answer.Ok, $"{(answer.Ok ? "Applied" : "Not applied")}: `#{applying.Id}` (`{applying.Plan.Terminal}`) — {said}", answer.Message,
+            answer.Ok ? new HelpPublishing(proposal.Workspace!.Trim(), answer.AskId, answer.QuestId) : null);
+    }
+
+    /// <summary>The ask and the quest by id where <paramref name="message"/> does not name them already: <c> (ask `#…`, quest `#…`)</c>, or nothing.</summary>
+    internal static string Named(string message, string? ask, string? quest)
+    {
+        var missing = new (string Noun, string? Id)[] { ("ask", ask), ("quest", quest) }
+            .Where(each => each.Id is { } id && !message.Contains(id, StringComparison.OrdinalIgnoreCase))
+            .Select(each => $"{each.Noun} `#{each.Id}`")
+            .ToList();
+        return missing.Count == 0 ? "" : $" ({string.Join(", ", missing)})";
     }
 
     /// <summary>The terminal's <c>--review</c> and <c>--review-words</c>, as the proposal holds them: none for <c>rule</c> or nothing said.</summary>

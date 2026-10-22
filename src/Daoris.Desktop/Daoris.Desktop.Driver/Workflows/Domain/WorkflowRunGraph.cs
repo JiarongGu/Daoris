@@ -5,7 +5,8 @@ internal static class WorkflowRunGraph
 {
     public static CurrentWorkflow Read(WorkflowProcess process, CurrentWorkflow current, IReadOnlyList<WorkflowPlugin> plugins)
     {
-        if (process.Problem is not null || process.Unread is not null)
+        // FABRIC-CUTOVER1d: a graph version's run is drawn from its graph and its record (WorkflowGraphRuns), never as steps.
+        if (process.Problem is not null || process.Unread is not null || process.Graph is not null)
             return new(current.StartHolds, [], process.Binding?.Digest ?? "unread");
         if (!process.Named) return current;
 

@@ -31,18 +31,17 @@ public sealed class HelpRoomDoorsTests
             // SESSUX1b: and a stop's release, which names the session stopped.
             "daoris driver retry <quest>", "daoris driver retry <quest> --session <id>", "daoris driver cap <n>",
             "daoris driver adapter <agent>",
-            // LEFT3: the screen's clear has its terminal door, which Ask Daoris still owes.
-            "daoris agent profile default <agent> <profile>|--clear [--workspace <name>]",
+            // LEFT3's default and its clear left with POOL1b (D197 point 6).
             "daoris browser use daoris|edge", "daoris browser links system|daoris",
             // LAYOUT7: the set-up press, Ask Daoris's `setup` kind since LAYOUT8, its screen the repository page's Set up for agents.
             "daoris-driver setup <repository> [--plan]",
             // TOOL4e (D125 §6): the order, *Try now* and the default cool-off, the terminal's doors (on the screen since TOOL4g).
-            "daoris agent profile order <agent> <profile>…|--clear [--workspace <name>]",
+            "daoris agent profile order <agent> <profile>…|--clear",
             "daoris agent profile ready <agent> <profile>|--own", "daoris driver cooloff <minutes>",
             // TOOL6a (D130 §16.6): how a list is used, the terminal's door (on the screen since TOOL4g); its switch and the
             // person's curve since SWITCH1d.
             "daoris agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off] "
-                + "[--curve <window>=<elapsed>:<used>,…] [--no-curve] [--workspace <name>]",
+                + "[--curve <window>=<elapsed>:<used>,…] [--no-curve]",
             // REVIEWENV1j (D154 point 3, D50): the person's review choice, the composer's, the ask page's and the gate's.
             "daoris-driver ask … --short \"…\"", "daoris-driver ask … --review rule|on|<environment>|off","daoris-driver ask --set-review <id> on|<environment>|off",
             "daoris-driver quest review <quest> off [\"…\"]", "daoris-driver quest review <quest> on|<environment>",

@@ -184,6 +184,51 @@ public sealed class OpinionLookTests : IDisposable
         Assert.Single(_passes);
     }
 
+    /// <summary>
+    /// FABRIC-CUTOVER1d (the cutover design §4): a run bound to a graph version is asked its second opinion only once its record has begun its
+    /// <c>opinion</c> node; while a check its graph places before the opinion waits, the look asks nothing, and once the pass begins the opinion
+    /// the next look asks it.
+    /// </summary>
+    [Fact]
+    public async Task A_graph_runs_opinion_is_not_asked_while_a_check_before_it_waits()
+    {
+        var (host, _, _) = await DoneAsync(required: false);
+        var digest = RunHome.SaveGraph(_home, """
+            {"schemaVersion":2,"entries":["claimed"],"end":"handed",
+             "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"check","kind":"acme.check/run","version":1,"reach":"performed"},
+                      {"id":"opinion","kind":"opinion","version":1,"reach":"observed"},{"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+             "wires":[{"id":"c>k","kind":"after","from":"claimed","to":"check"},{"id":"k>o","kind":"after","from":"check","to":"opinion"},
+                      {"id":"o>h","kind":"after","from":"opinion","to":"handed"}]}
+            """);
+        Assert.True(new WorkflowRunFiles(_home).Bind(new WorkflowRunBinding("q1", "reports", "work", "docs", WorkflowLevels.Repository, DateTimeOffset.UtcNow)
+        {
+            Version = 1, Digest = digest,
+        }));
+        var unit = RunUnits.IdOf("q1");
+        void Record(string opinion) => new NodeRecordFiles(_home, () => true).Write(new NodeRecord(unit)
+        {
+            Statuses = new Dictionary<string, NodeStatus>
+            {
+                ["claimed"] = new(unit, "claimed", NodeStates.Reached),
+                ["check"] = new(unit, "check", NodeStates.Active),
+                ["opinion"] = new(unit, "opinion", opinion),
+            },
+        });
+        var driver = Driver(host);
+
+        Record(NodeStates.Blocked);
+        var (_, held) = await driver.OpinionsAsync(new Snapshot([], [], []), [], CancellationToken.None);
+        await driver.Running.SettledAsync();
+        Assert.Equal(0, held);
+        Assert.Empty(_passes);
+
+        Record(NodeStates.Active);
+        var (_, asked) = await driver.OpinionsAsync(new Snapshot([], [], []), [], CancellationToken.None);
+        await driver.Running.SettledAsync();
+        Assert.Equal(1, asked);
+        Assert.Single(_passes);
+    }
+
     // ——— the machine and the fixtures
 
     private string Command => Path.Combine(_home, "agent-here");

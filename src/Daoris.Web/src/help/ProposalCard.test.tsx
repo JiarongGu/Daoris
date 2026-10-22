@@ -119,12 +119,12 @@ const PLUGIN_UPDATE: HelpProposal = {
   },
 };
 
-const press = async (proposal: HelpProposal, apply: string) => {
+const press = async (proposal: HelpProposal, apply: string, dismiss = 'Not now') => {
   const onApply = vi.fn();
   const onDismiss = vi.fn();
   render(<ul><ProposalCard proposal={proposal} onApply={onApply} onDismiss={onDismiss} /></ul>);
   await userEvent.click(screen.getByRole('button', { name: apply }));
-  await userEvent.click(screen.getByRole('button', { name: 'Not now' }));
+  await userEvent.click(screen.getByRole('button', { name: dismiss }));
   expect(onApply).toHaveBeenCalledWith(proposal.id);
   expect(onDismiss).toHaveBeenCalledWith(proposal.id);
 };
@@ -203,12 +203,28 @@ describe('the kinds that reach every door', () => {
   });
 
   it('a go names the place, carries no command since it changes nothing, and its Apply is a go', async () => {
-    await press(GO, 'Go there');
+    await press(GO, 'Go there', 'Dismiss');
 
     expect(screen.getByText('Ask Daoris suggests a screen')).toBeInTheDocument();
     expect(screen.getByText(GO.describe)).toBeInTheDocument();
     expect(screen.getByText(/changes nothing/)).toBeInTheDocument();
     expect(screen.queryByText(/the same at a terminal/)).not.toBeInTheDocument();
+  });
+
+  /**
+   * ASKDISMISS1: a go's second press only takes the card away, so it is worded as that, never as Not now, which answers a change;
+   * and a go to a quest a session took says so in the driver's sentence. The card offers no act on the quest.
+   */
+  it('a go to a taken quest says it is taken, and its second press is a dismiss, no act on the quest', async () => {
+    const taken: HelpProposal = {
+      id: 'g6t7k8n9', kind: 'go', terminal: '', why: 'the person asked where their quest went',
+      describe: 'Open Quests → quest `#q2taken0` “Stream the tiles”, taken.',
+    };
+    await press(taken, 'Go there', 'Dismiss');
+
+    expect(screen.getByText(/, taken\.$/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Not now' })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(['Go there', 'Dismiss']);
   });
 
   // ENTRY1d1: no command edits only the registry's row, so a move carries none, and its card is the plain one.
@@ -570,6 +586,9 @@ describe('the kinds that reach every door', () => {
       expect(screen.getByText('问道衍建议打开一个界面')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: '删除' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: '前往' })).toBeInTheDocument();
+      // ASKDISMISS1: the go card's dismiss takes it out of the list, as a notice's does; the delete card keeps its 暂不.
+      expect(screen.getByRole('button', { name: '移除' })).toBeInTheDocument();
+      expect(screen.getAllByRole('button', { name: '暂不' })).toHaveLength(2);
       expect(screen.getByText(GO.describe)).toBeInTheDocument();
       // PLUG9: the plugin card's chrome translates; the command stays as the manifest writes it.
       expect(screen.getByText('问道衍提议一个插件')).toBeInTheDocument();

@@ -26,8 +26,8 @@ public static class WorkflowProcesses
     /// <summary>
     /// The process of a run (design §2.6, §4.5): its binding read from the home, and a named workflow's version from the store by the
     /// number the run kept, which must still be the version it bound (a version is never edited). Current, or no binding, is the
-    /// rules live; a named workflow that cannot be read here holds the run with why. A graph version is held from the steps' gates, its
-    /// <c>claimed</c> node's options kept for its sessions (<see cref="WorkflowProcess.Claimed"/>, FABRIC-PIPELINE1b3).
+    /// rules live; a named workflow that cannot be read here holds the run with why. A graph version is read from its gate nodes (FABRIC-CUTOVER1d),
+    /// its <c>claimed</c> node's options kept for its sessions (<see cref="WorkflowProcess.Claimed"/>, FABRIC-PIPELINE1b3).
     /// </summary>
     /// <param name="run">The run: the chain's first quest in the repository (<see cref="WorkflowRunBindings.RunOf"/>); null for none.</param>
     public static WorkflowProcess Read(string home, DriverConfig config, string repository, string? workspace, string? run) =>
@@ -73,18 +73,16 @@ public static class WorkflowProcesses
         if (version is null) return held with { Problem = $"`{binding.Workflow}` v{number} is no longer saved here." };
         if (version.Steps is null)
         {
-            // FABRIC-PIPELINE1b3 (D192's FABRIC-PIPELINE1b2 note, point 5): a graph version is held from the steps' gates as before, and its
-            // `claimed` node's options are its sessions' (the pipeline design §3.1), read from the version as its file holds it, as GraphRuns
-            // reads it, never decoded, and only where it is the version its run bound. FABRIC-CUTOVER1e: its graph is carried beside, which the
-            // run's view draws from the run's record.
-            var unrun = held with { Problem = $"`{binding.Workflow}` v{number} cannot be read here: {version.Unrun}" };
-            return version is { Graph: { } graph, Digest: { } identity } && string.Equals(identity, binding.Digest, StringComparison.Ordinal)
-                ? unrun with
+            if (version is not { Graph: { } graph, Digest: { } identity }) return held with { Problem = $"`{binding.Workflow}` v{number} cannot be read here: {version.Problem}" };
+            if (!string.Equals(identity, binding.Digest, StringComparison.Ordinal))
+            {
+                return held with
                 {
-                    Claimed = graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Claimed)?.Options ?? new Dictionary<string, string>(),
-                    Graph = graph,
-                }
-                : unrun;
+                    Problem = $"`{binding.Workflow}` v{number} is not the version its run was bound to: its graph changed since, and a version is never edited.",
+                };
+            }
+
+            return Graphed(config, repository, workspace, run, binding, number, graph, held);
         }
         if (binding.Digest is { } digest && !string.Equals(digest, version.Digest, StringComparison.Ordinal))
         {
@@ -96,6 +94,44 @@ public static class WorkflowProcesses
         }
 
         return WorkflowProcess.Of(config, repository, workspace, binding, version.Steps) with { Run = run };
+    }
+
+    /// <summary>
+    /// A graph version read as a process (FABRIC-CUTOVER1d; D190 point 4, the cutover design §4): its gate nodes' options read back as the steps
+    /// <see cref="WorkflowProcess.Of"/> reads (<see cref="WorkflowNamed.GateSteps"/>), each choosing among what the repository declares, and the
+    /// graph carried beside, as its file holds it and never decoded, which the landing's graph part and the run's view read from the run's
+    /// record. Its steps are its person part (<see cref="Involvement.StepsOf(NodeGraph)"/>), so its kind's paths are judged on what a graph
+    /// version's are judged on where it is the workflow the work would follow without its kind. A gate node whose option does not read holds
+    /// the run, saying which; so does a graph that closes its quests (<c>quest.close</c>), whose close this build does not make for a run yet
+    /// (FABRIC-CUTOVER1h). FABRIC-PIPELINE1b3: its <c>claimed</c> node's options are its sessions' either way.
+    /// </summary>
+    private static WorkflowProcess Graphed(
+        DriverConfig config, string repository, string? workspace, string? run, WorkflowRunBinding binding, int number, NodeGraph graph,
+        WorkflowProcess held)
+    {
+        var claimed = graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Claimed)?.Options ?? new Dictionary<string, string>();
+        held = held with { Claimed = claimed, Graph = graph };
+        var (steps, problem) = WorkflowNamed.GateSteps(graph, number, held.Landing.Rule);
+        if (steps is null) return held with { Problem = $"`{binding.Workflow}` v{number} cannot be read here: {problem}" };
+        if (!steps.Any(step => step.Kind == WorkflowKinds.Landing))
+        {
+            // A verification pipeline's graph lands nothing (FABRIC-PIPELINE1a), so no chain's work follows it.
+            return held with { Problem = $"`{binding.Workflow}` v{number}'s graph holds no landing (`{NodeKinds.Handed}`), so no chain's work lands by it." };
+        }
+
+        if (graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.QuestClose) is { } close)
+        {
+            return held with
+            {
+                Problem = $"`{binding.Workflow}` v{number}'s graph closes its quests at `{close.Id}` (`{NodeKinds.QuestClose}`), and this build "
+                    + "does not close a run's quests yet, so it cannot start a run of it.",
+            };
+        }
+
+        return WorkflowProcess.Of(config, repository, workspace, binding, steps) with
+        {
+            Run = run, Steps = Involvement.StepsOf(graph), Claimed = claimed, Graph = graph,
+        };
     }
 
     /// <summary>

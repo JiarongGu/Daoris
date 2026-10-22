@@ -133,8 +133,8 @@ public static class WorkflowRunReader
             WorkflowRunBindings.RunOf(chain, repository));
         current = WorkflowRunGraph.Read(process, current, sources.Plugins);
 
-        // FABRIC-CUTOVER1e (D190 points 2 and 3): a run bound to a graph version is the runtime's, so it is drawn from its record, though its
-        // gates still hold the version as one this build does not run (CUTOVER1d reads them).
+        // FABRIC-CUTOVER1e (D190 points 2 and 3): a run bound to a graph version is the runtime's, so it is drawn from its record, and its gates
+        // read the version from its nodes (CUTOVER1d).
         if (process is { Graph: { } graph, Run: { } run }) return await GraphRunAsync(chain, repository, part, mine, workspace, current, process, graph, run, reads).ConfigureAwait(false);
 
         if (process.Problem is not null || process.Unread is not null)

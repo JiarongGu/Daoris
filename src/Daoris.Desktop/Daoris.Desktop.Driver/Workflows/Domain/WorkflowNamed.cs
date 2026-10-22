@@ -126,8 +126,11 @@ public sealed record NamedStep(string Id, string Kind, IReadOnlyList<WorkflowSet
 public sealed record NamedVersion(
     int Version, string? At, string? Door, IReadOnlyList<NamedStep>? Steps, string? Problem, string? Digest, NodeGraph? Graph = null)
 {
-    /// <summary>Why the steps-driven runtime cannot run it, or null where it can: a graph version reads, and is not run until the cutover.</summary>
-    public string? Unrun => Steps is not null ? null : Problem ?? $"v{Version}: it is a graph (schema 2), which this build reads and does not run yet.";
+    /// <summary>
+    /// Why it cannot be run here, or null where it can: its problem. A graph version runs as a version of steps does (FABRIC-CUTOVER1d; D190
+    /// point 4), the node runtime governing its run and its gates read from its nodes (<see cref="WorkflowProcesses"/>).
+    /// </summary>
+    public string? Unrun => Steps is not null || Graph is not null ? null : Problem;
 }
 
 /// <summary>A workflow file as read: its id and name and every version, each readable or not; or the file's own first problem.</summary>
@@ -424,20 +427,7 @@ public static class WorkflowNamed
         }
 
         var step = new NamedStep(id!, kind, fields);
-        if (kind == WorkflowKinds.Landing && (string?)step.Field("form") == LandingForm.Merge)
-        {
-            // A merge writes into the person's checkout (D145 point 1, D51 rule 6), and makes no branch for a plugin (D100).
-            if ((string?)step.Field("accept") == "automatic")
-            {
-                return (null, $"{p}only a branch lands with no press — a merge writes into your checkout, and with no press nothing would "
-                    + "stand between the work and the line.");
-            }
-
-            if (step.Field("pattern") is not null || step.Field("plugin") is not null)
-            {
-                return (null, $"{p}a merge makes no branch, so it names no `pattern` and no `plugin`.");
-            }
-        }
+        if (MergeProblem(step) is { } merge) return (null, p + merge);
 
         if (kind == WorkflowKinds.All)
         {
@@ -454,6 +444,88 @@ public static class WorkflowNamed
         }
 
         return (step, null);
+    }
+
+    /// <summary>
+    /// Why a landing that merges cannot be read, or null: a merge writes into the person's checkout (D145 point 1, D51 rule 6), so it never
+    /// lands with no press, and makes no branch for a plugin (D100), so it names no pattern and no plugin. A sentence after the step's prefix.
+    /// </summary>
+    private static string? MergeProblem(NamedStep step)
+    {
+        if (step.Kind != WorkflowKinds.Landing || (string?)step.Field("form") != LandingForm.Merge) return null;
+        if ((string?)step.Field("accept") == "automatic")
+        {
+            return "only a branch lands with no press — a merge writes into your checkout, and with no press nothing would stand between the "
+                + "work and the line.";
+        }
+
+        return step.Field("pattern") is not null || step.Field("plugin") is not null
+            ? "a merge makes no branch, so it names no `pattern` and no `plugin`."
+            : null;
+    }
+
+    /// <summary>
+    /// A graph version's gate nodes read back as the steps <see cref="WorkflowProcess.Of"/> reads (FABRIC-CUTOVER1d; D190 point 4, the cutover
+    /// design §4): its <c>claimed</c> as the work, its <c>opinion</c>, its <c>look</c> and its <c>handed</c> as the landing, in the graph's order,
+    /// each option read as the step of its kind reads that field, absence as its default. A landing's <c>form</c> and <c>accept</c> the node
+    /// leaves out are the repository's rule's (<paramref name="landing"/>), a merge's press always yours; an option the step's kind does not take
+    /// is the node's own and not read here. The first option that does not read is said with the node's id, and nothing is read in its place.
+    /// </summary>
+    /// <param name="landing">The landing rule a <c>handed</c> that leaves its form or its press out lands by: the declared rule, composed.</param>
+    public static (IReadOnlyList<NamedStep>? Steps, string? Problem) GateSteps(NodeGraph graph, int number, LandingRule landing)
+    {
+        var steps = new List<NamedStep>();
+        foreach (var node in graph.Nodes)
+        {
+            var kind = node.Kind switch
+            {
+                NodeKinds.Claimed => WorkflowKinds.Work,
+                NodeKinds.Opinion => WorkflowKinds.Opinion,
+                NodeKinds.Look => WorkflowKinds.Look,
+                NodeKinds.Handed => WorkflowKinds.Landing,
+                _ => null,
+            };
+            if (kind is null) continue;
+
+            var p = $"v{number}, node `{node.Id}`: ";
+            var fields = new List<WorkflowSetting>();
+            foreach (var field in WorkflowKindTable.Of(kind)!.Fields)
+            {
+                var text = node.Options.TryGetValue(field.Name, out var written) ? written
+                    : kind != WorkflowKinds.Landing ? null
+                    : field.Name switch
+                    {
+                        "form" => JsonSerializer.Serialize(landing.Form),
+                        // The rule's switch is its branch's: a merge it leaves to the rule is pressed (D145 point 1).
+                        "accept" => JsonSerializer.Serialize(
+                            landing.AutoAccept && (string?)fields.FirstOrDefault(each => each.Name == "form")?.Value == LandingForm.Branch ? "automatic" : "you"),
+                        _ => null,
+                    };
+                JsonElement? raw = null;
+                if (text is not null)
+                {
+                    try
+                    {
+                        using var document = JsonDocument.Parse(text);
+                        raw = document.RootElement.Clone();
+                    }
+                    catch (JsonException)
+                    {
+                        return (null, $"{p}its `{field.Name}` is not a JSON value.");
+                    }
+                }
+
+                var (value, problem) = ReadField(field, raw);
+                if (problem is not null) return (null, p + problem);
+                fields.Add(new WorkflowSetting(field.Name, value));
+            }
+
+            var step = new NamedStep(node.Id, kind, fields);
+            if (MergeProblem(step) is { } merge) return (null, p + merge);
+            steps.Add(step);
+        }
+
+        return (steps, null);
     }
 
     /// <summary>A field's value read, or why not: a sentence after the step's prefix. Absent and JSON null are both absence.</summary>

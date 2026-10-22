@@ -19499,6 +19499,20 @@ en and zh; `sync status` prints them. Proof: `QuestClosureHandshakeTests`, `Shar
 `RemoteSyncTests`, `SyncStateSliceTests`, `WorkspaceSetup.test.tsx`; the service's, driver's and modules' fast halves. On Opus. Detail:
 D173's FABRIC-CLOSE1i2 note.
 
+## FABRIC-CUTOVER1d — the doors read the run's record and land its commit (2026-10-22, D190)
+
+> - [ ] **FABRIC-CUTOVER1d — the doors read the run's record and land its commit** (driver, cli; after 1b, 1c, 1f; D190, design §4). A graph version read as a process (`WorkflowProcesses.cs:60`); the opinion and the look begun, their gates read at the branch's tip; the landing gate's graph part read from the run's record, never evaluated, holding with §4's sentences and asking a whole pass (`DriverWatch.cs:434`), the press keeping its answer and awaiting that pass within a bound (`OpinionPresses.cs:64-71`); the landing pinned to `handed`'s commit on every path, a merge included (`TreeLands.cs:175`, `:502-514`, `:855-860`); performed starts turned on; `quest.close` cannot start until 1h; the "does not run yet" words go (`WorkflowNamed.cs:117-121`, `namedworkflows.ts:130`, `:138`, `workflowdoor.ts:365`, `:691`). Proof: `WorkflowGateTests`; the door lands where the pass made `handed` active; a commit inserted between the gate's judgement and the landing lands nothing, on the branch and merge paths; a press after a *Reviewed* lands at the same press within the bound, else is refused with its answer kept; a person's task before `handed` holds *Accept…* naming it.
+
+**Outcome** 2026-10-22: built, the cli lane untouched (its words had moved into the driver's verb): a graph run lands only where its record holds
+`handed` active at the door's commit, pinned there on the branch and merge paths, a press waiting up to twenty seconds for the pass it asks; the
+runtime begins its gate nodes and starts its performed nodes. No window was looked at. Detail: D190's CUTOVER1d note. On Opus.
+## ASKDISMISS1 — dismissing an Ask Daoris quest block only hides it (2026-10-22, D89)
+
+> - **ASKDISMISS1**: dismissing an Ask Daoris quest block only hides it; it never acts on the quest, which may be taken (the owner's report, 2026-10-22). Building.
+
+**Outcome** 2026-10-22: a go card's second press is *Dismiss* (移除): it settles the card and tells the conversation nothing, and a go to a
+taken quest says so. Detail: the fix log's ASKDISMISS1 entry, the Ask Daoris design §6's note. On Opus.
+
 ## POOL1a2 — every reader on the set, and the bridge's answers (2026-10-22, D197)
 
 > - [ ] **POOL1a2 — every reader on the set, and the bridge's answers** (driver, modules; after POOL1a1, archived; D197). `HarnessRoster.Settings` read through `HarnessSettings.LoadSet` (built, unread by the roster), with the walk's tests of per-workspace scopes it turns (`AccountRotationTests`, `AccountRotationGoalTests`, `AccountNextStartTests`, `AccountCoolingTests`, `RosterReadTests`, `CodexUsageRosterTests`, `ReviewerChoiceTests`, one of `ResumeAccountTests`) rewritten to the set; `AccountAttention`'s twins, `WiringAsync` behind `STARTS`, `InheritsDaorisAccounts` and `ACCOUNTS`' `inherited`, `PlacesSaid`, `HARNESSES`' `places`, `nowhere` and defaults, `HARNESS_ENDED`'s `places`, the default's readers on the order's first, and `ResolveScope`, `JoinProblemOf`, `WithJoined`, `PlacesOf`, `DefaultAllowed` and `DefaultStanding` leaving with their last callers (Ask Daoris's and the terminal's are POOL1b's), with `AccountJoinTwinTests` and `ProfileDefaultTwinTests`, as design §2.4, §5.2 and §11 say. Proof: §11's rows for these.
@@ -19510,3 +19524,25 @@ older build wrote, through `HarnessSettings.Set`, and the default's readers in t
 the terminal's and Ask Daoris's callers, so they and the two twin tables stay for POOL1b. The listed classes rewritten to the set,
 with `OwnSpaceTests`, `HelpPlaceWorkspaceTests`, the modules' account classes and eleven `agents-text.json` rows; the driver's and
 the modules' fast halves pass. Not seen failing first, and no window was looked at. Detail: D197's POOL1a2 note. On Opus.
+
+## POOL1b — the terminal and Ask Daoris on one set (2026-10-22, D197)
+
+> - [ ] **POOL1b — the terminal and Ask Daoris on one set** (driver, service; after POOL1a2, archived; D197). The account verbs PUSH1f2e builds turned into D197's refusals, and the `set` mark on Ask Daoris's account proposals, as design §5.1, §5.3 and §11 say; `agent list`, `login` and `settings` on the set, and `ResolveScope`, `JoinProblemOf`, `WithJoined`, `PlacesOf`, `DefaultAllowed`, `DefaultEdited` and `ProfileDefault` leaving with these, their last callers, `AccountJoinTwinTests` and `ProfileDefaultTwinTests` with them (D197's POOL1a2 note). Proof: as §11 names it.
+
+**Outcome** 2026-10-22: built. `profile order` and `use` write the set; `profile default`, `profile join`, `--workspace` and
+`login --join`/`--join-machine` are refused in `OneSetWords`' sentences before any press is built, nothing written. `login` and
+`settings` naming no account take the order's first; `agent list` shows the set, the own sign-in apart and the unsaid receipts. Ask
+Daoris's service writes `set: true` and no workspace, `default` left both sides' doors, and an unmarked stored proposal is refused at
+its plan and Apply. The named helpers and both twin tables left. `HarnessProfileTests`' four default cases now press the order or are
+refused in D197's sentence, each saying why; `AgentAccountsBothWaysTests`' one-set theory holds the terminal's refusal. Proof: the
+driver's and the modules' fast halves pass; `HarnessProfileTests`, `DriverModuleAgentsTests`, `HelpDoorsTests` and
+`AgentsCommandTests` (Process) and the service's `HelpAgentProposalTests` pass filtered. No real sign-in was started; not seen
+failing first, and no window was looked at. Detail: D197's POOL1b note. On Opus.
+
+## ASKQUESTS1 — an Ask Daoris conversation's published quests, managed from it (2026-10-22, D89)
+
+> - **ASKQUESTS1**: the quests an Ask Daoris conversation publishes are managed from it: each with its live state, opened in one press, followed to its end (the owner's direction, 2026-10-22). Design after ASKDISMISS1.
+
+**Outcome** 2026-10-22: each conversation keeps what its Applies published by id (`HELP_PUBLISHED`), shown under its head with each
+one's live state from the pushed lists, a row opening its record on Quests; an Apply's result is Daoris's word, never the person's.
+Detail: the Ask Daoris design §9 item 12 (with Codex's read), D89's ASKQUESTS1 note. On Opus.

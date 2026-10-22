@@ -27,15 +27,15 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         // HEAD2e: an ask's short title, at most 40, the person's own where they gave one (the card says it).
         text.Append("- `ask_propose`: something to start, as an ask at a workspace, with an optional short title (at most 40 characters,\n");
         text.Append("  the few words that tell it apart in a list, the person's own where they gave one).\n");
-        // HELP10: an agent's default account, which HELP9 left owed. UX6e2: each is on the agent's page since UX6e.
-        text.Append("- `agent_propose`: an agent's Update or a pin to one version, as Agents → the agent's page → Ways in offers them,\n");
-        text.Append("  or which of its accounts it runs as by default, for the machine or one workspace (`default`,\n");
-        text.Append("  the account one the room lists under that agent).\n");
-        // TOOL4l-b (D130 §9): the account doors the screen's How accounts are used fold offers, each a card the person applies.
-        text.Append("  `use` sets how an agent's list of accounts is used (`use` goal or order, `keep` one account of the list or none,\n");
+        // UX6e2: each is on the agent's page since UX6e. POOL1b (D197 point 6): HELP10's `default` door left with the default.
+        text.Append("- `agent_propose`: an agent's Update or a pin to one version, as Agents → the agent's page → Ways in offers them.\n");
+        // TOOL4l-b (D130 §9): the account doors the screen's How accounts are used fold offers, each a card the person applies; since
+        // POOL1b (§5.3) on Daoris's accounts, one set for every workspace, and naming no workspace.
+        text.Append("  Daoris's accounts for an agent are one set that serves every workspace, in one order, so these name no workspace:\n");
+        text.Append("  `use` sets how they are used (`use` goal or order, `keep` one of them or none,\n");
         // SWITCH1d: the switch and the person's curve, in place of `early` and `near`.
-        text.Append("  `switch` smart, curve or off, and `curve` the person's own points a window, or `no_curve`); `order` writes the\n");
-        text.Append("  list in walk order, or with `clear` sends a workspace back to this machine's accounts; `ready` ends an account's\n");
+        text.Append("  `switch` smart, curve or off, and `curve` the person's own points a window, or `no_curve`); `order` puts the\n");
+        text.Append("  accounts named first, in that order, the rest after, or with `clear` returns to the ids' order; `ready` ends an account's\n");
         text.Append("  cool-off, as *Try now* does (`own` ends only an old cool-off of the tool's own sign-in).\n");
         text.Append("  Update moves a pinned agent's pin to its newest release, or runs an unpinned one's own updater, and is\n");
         text.Append("  offered only where that screen shows Update; a pin names one exact release, like 2.1.300, never `latest`.\n");
@@ -151,14 +151,18 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  each with the door that answers it. Daoris never writes into the repository, and you never run it yourself:\n");
         text.Append("  the person's Apply is the press.\n\n");
         // HELP7: the real helper said *press Apply* of a card whose button reads *go there*. HELP10: a delete's
-        // press was *delete* all along, and a bring-up-to-date card's first is the look.
+        // press was *delete* all along, and a bring-up-to-date card's first is the look. ASKDISMISS1: a go card's second
+        // press only takes it away, and is told to nobody, so the helper never waits on it or reads anything into it.
         text.Append("Each proposal reaches the person as a card with two buttons, and you name them as the card does:\n");
-        text.Append("a go card reads **go there** and **not now** (in 中文 **前往** and **暂不**),\n");
+        text.Append("a go card reads **go there** and **dismiss** (in 中文 **前往** and **移除**),\n");
         text.Append("a delete card **delete** and **not now** (in 中文 **删除** and **暂不**),\n");
         text.Append("a bring-up-to-date card **look for updates** until the person has looked, then **apply** (in 中文 **查看更新**, then **应用**),\n");
         // DRIFT1d2: an accept's press is the person's yes, worded as the quest page's.
         text.Append("an accept card **accept** and **not now** (in 中文 **采纳** and **暂不**),\n");
-        text.Append("and every other card reads **apply** and **not now** (in 中文 **应用** and **暂不**).\n\n");
+        text.Append("and every other card reads **apply** and **not now** (in 中文 **应用** and **暂不**).\n");
+        text.Append("A press of not now comes back to you as the person's next message;\n");
+        text.Append("dismissing a go card only takes it out of the conversation: nothing comes back to you, and it says nothing\n");
+        text.Append("about the quest, ask or place the card named.\n\n");
         return text.ToString();
     }
 }

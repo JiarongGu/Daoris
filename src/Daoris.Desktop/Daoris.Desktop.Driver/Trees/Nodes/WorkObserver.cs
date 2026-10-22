@@ -294,16 +294,19 @@ public sealed class PassGit(
 /// One pass's reads of D157's gates (FABRIC-RUN1c): the second opinion's and the look's gate for a unit's work, read once a pass for each
 /// unit whose <c>opinion</c> or <c>look</c> waits on them, however many rounds ask. Made for one pass and dropped with it.
 /// </summary>
-/// <param name="read">The look's read of one unit's gates (<see cref="NodeRuntimeLook.Gates"/>).</param>
-public sealed class PassGates(Func<WorkUnit, CancellationToken, Task<(OpinionGateState? Opinion, ReviewGateState? Review)>> read)
+/// <param name="read">The look's read of one unit's gates at a commit, or at its tree's <c>HEAD</c> (<see cref="NodeRuntimeLook.Gates"/>).</param>
+public sealed class PassGates(Func<WorkUnit, string?, CancellationToken, Task<(OpinionGateState? Opinion, ReviewGateState? Review)>> read)
 {
-    private readonly Dictionary<string, (OpinionGateState? Opinion, ReviewGateState? Review)> _read = new(StringComparer.Ordinal);
+    private readonly Dictionary<(string Unit, string? Tip), (OpinionGateState? Opinion, ReviewGateState? Review)> _read = [];
 
-    /// <summary>The gates of <paramref name="unit"/>'s work, read at the first ask this pass; either null where it was not read.</summary>
-    public async Task<(OpinionGateState? Opinion, ReviewGateState? Review)> OfAsync(WorkUnit unit, CancellationToken ct)
+    /// <summary>
+    /// The gates of <paramref name="unit"/>'s work at <paramref name="tip"/> (FABRIC-CUTOVER1d), or at its newest tree's <c>HEAD</c> where none
+    /// is given, read at the first ask this pass; either null where it was not read.
+    /// </summary>
+    public async Task<(OpinionGateState? Opinion, ReviewGateState? Review)> OfAsync(WorkUnit unit, string? tip, CancellationToken ct)
     {
-        if (_read.TryGetValue(unit.Id, out var gates)) return gates;
-        return _read[unit.Id] = await read(unit, ct).ConfigureAwait(false);
+        if (_read.TryGetValue((unit.Id, tip), out var gates)) return gates;
+        return _read[(unit.Id, tip)] = await read(unit, tip, ct).ConfigureAwait(false);
     }
 }
 

@@ -219,7 +219,7 @@
         "harness.settings.save", "harness.update", "help.close", "help.door.*", "help.new", "help.goOn", "help.history.open",
         "help.history.save", "help.history.deleteMeanIt", "help.history.back", "help.history.retry", "help.history.start",
         "help.history.clearSearch", "help.history.more", "help.history.useOriginal", "projects.git.history.more",
-        "help.proposal.apply", "help.proposal.delete", "help.proposal.dismiss", "help.proposal.go",
+        "help.proposal.apply", "help.proposal.delete", "help.proposal.dismiss", "help.proposal.dismissGo", "help.proposal.go",
         "help.proposal.look", "help.proposal.accept", "quests.requirements.accept", "projects.setUp.look", "projects.setUp.press",
         "projects.setUp.again",
         "help.quick.close", "help.quick.expand", "help.setup", "map.detail.openCode",

@@ -75,9 +75,9 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
 
     /// <summary>
     /// The bound graph version's graph, as its file holds it and never decoded (FABRIC-CUTOVER1e; D190 point 4, the cutover design §4: the
-    /// process carries the graph beside the steps its gates read): what the run's view draws from the run's record. The gates still hold the
-    /// version as one this build does not run (<see cref="Problem"/>) until CUTOVER1d reads them from its nodes. Null under Current, under a
-    /// steps version, and where the graph version is not the one its run bound.
+    /// process carries the graph beside the steps its gates read): what the run's view draws from the run's record, and the landing gate's
+    /// graph part reads it from (FABRIC-CUTOVER1d). Null under Current, under a steps version, and where the graph
+    /// version is not the one its run bound.
     /// </summary>
     public NodeGraph? Graph { get; init; }
 
@@ -576,5 +576,17 @@ public static class WorkflowLines
             ("code", step is null ? gate.State : WorkflowGateStates.CannotStart), ("step", step),
             ("workflow", gate.Process.Named ? gate.Process.Binding!.Workflow : null), ("version", gate.Process.Binding?.Version),
             ("outside", gate.State == WorkflowGateStates.KindPaths ? gate.Outside.Count : null), ("door", door),
+        ]);
+
+    /// <summary>
+    /// A landing a run's graph part held (FABRIC-CUTOVER1d): whose, where, <c>graph</c> as its code and the part's state, the workflow and its
+    /// version, the node <c>handed</c> waits on where it waits, and the door it was tried at. Ids and codes, never a sentence.
+    /// </summary>
+    public static LandingLine GraphHeld(string session, string? repository, string? workspace, WorkflowProcess? process, GraphGateState graph, string door) =>
+        new("workflow.held",
+        [
+            ("session", session), ("repository", repository), ("workspace", workspace), ("code", "graph"), ("graph", graph.State),
+            ("workflow", process?.Named == true ? process.Binding!.Workflow : null), ("version", process?.Binding?.Version), ("node", graph.Node),
+            ("door", door),
         ]);
 }

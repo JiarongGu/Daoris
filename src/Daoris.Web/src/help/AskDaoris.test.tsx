@@ -31,6 +31,12 @@ vi.mock('@shenora/react', async () => {
 import i18n from '../locales/i18n';
 import { keys } from '../data/queries';
 import { useStateHub } from '../bridge/state/stateHub';
+import { pushedOf, useStateSlices } from '../bridge/state/slices';
+import { asksSlice, questsSlice } from '../bridge/sessions/quests';
+import { sessionsSlice } from '../bridge/sessions/sessions';
+
+/** ASKQUESTS1: the slices a go card's standings are read from, pushed as `ShellSignals` mounts them. */
+const PUSHED_HERE = [questsSlice, asksSlice, sessionsSlice];
 import { code } from '../test/code';
 import { AskDaoris } from './AskDaoris';
 import type { HelpWhere } from './where';
@@ -43,6 +49,10 @@ const HELP = {
 let SESSIONS: unknown[] = [];
 let HELPER: string | null = 'claude-code-acp';
 let PROPOSALS: unknown[] = [];
+/** ASKQUESTS1: what the conversation published, by id, and the quests and asks the service lists. */
+let PUBLISHED_HERE: unknown[] = [];
+let QUESTS: unknown[] = [];
+let ASKS: unknown[] = [];
 const APPLIED_SETTING = { message: 'Applied: `#p1a2b3c4` — Drive `engine`.', applied: true };
 let APPLIED: unknown = APPLIED_SETTING;
 const asked: string[] = [];
@@ -55,6 +65,8 @@ function respond(url: string): Response {
       : SESSIONS.filter((row) => ['queued', 'starting', 'working', 'awaiting-person'].includes((row as { state: string }).state)));
   }
   if (url.startsWith('/api/registry')) return Response.json([]);
+  if (url.startsWith('/api/quests')) return Response.json(QUESTS);
+  if (url.startsWith('/api/asks')) return Response.json(ASKS);
   throw new Error(`unstubbed request: ${url}`);
 }
 
@@ -72,6 +84,7 @@ function bridge(start: { sessionId: string | null; message: string } = { session
       case 'HELP_PROPOSALS': return { session: HELP.id, proposals: PROPOSALS };
       case 'HELP_APPLY': return APPLIED;
       case 'HELP_DISMISS': return { message: 'Not now: the person did not apply `#p1a2b3c4`.' };
+      case 'HELP_PUBLISHED': return { session: HELP.id, published: PUBLISHED_HERE };
       default: return {};
     }
   });
@@ -816,6 +829,113 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
+   * ASKQUESTS1 (the Ask Daoris design §9 item 12): what the conversation published is in its own strip, with the state each one's
+   * list holds now: here a quest a session has taken, named by that session's state. A row opens its record on Quests, the door a
+   * go uses, and nothing else is pressed.
+   */
+  it('lists what the conversation published with its live state, and opens one on Quests', async () => {
+    const at = '2026-10-22T09:00:00Z';
+    SESSIONS = [HELP, {
+      id: 's9w8v7u6', quest: 'q1a2b3c4', repository: 'engine', adapter: 'claude-code', state: 'working', kind: 'task',
+      created: at, updated: at, workspace: 'default',
+    }];
+    QUESTS = [{
+      id: 'q1a2b3c4', from: 'daoris', to: 'engine', status: 'Taken', title: 'Cap the chunk budget', body: 'Cap it.', filed: at,
+      updated: at, workspace: 'default',
+    }];
+    ASKS = [{
+      id: 'a1b2c3d4', workspace: 'default', sentence: 'cap the chunk budget', state: 'Published', tier: 'named', asked: at,
+      updated: at, links: [], attachments: [], proposal: [], quests: ['q1a2b3c4'],
+    }];
+    PUBLISHED_HERE = [{ at, proposal: 'p1a2b3c4', kind: 'ask', workspace: 'default', ask: 'a1b2c3d4', quest: 'q1a2b3c4' }];
+    bridge();
+    const onGo = vi.fn();
+    show(undefined, null, onGo);
+
+    const strip = await screen.findByRole('button', { name: /Published from this conversation/ });
+    await waitFor(() => expect(strip).toHaveTextContent('Published from this conversation · 1 quest · 1 taken'));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_PUBLISHED', { payload: { session: HELP.id } });
+    await userEvent.click(strip);
+    const taken = screen.getByRole('button', { name: 'Open quest Cap the chunk budget' });
+    expect(taken).toHaveTextContent('session working');
+    await userEvent.click(taken);
+
+    expect(onGo).toHaveBeenCalledWith({ view: 'quests', item: 'q1a2b3c4' });
+    expect(invoke.mock.calls.map(([, type]) => type)).not.toContain('HELP_APPLY');
+    PUBLISHED_HERE = [];
+    QUESTS = [];
+    ASKS = [];
+  });
+
+  /**
+   * ASKQUESTS1: a go card's sentence says where its quest stands (since ASKDISMISS1), so the plan its Apply judges moves with a take.
+   * Where the shell pushes the quests, the asks and the sessions, the card is drawn again at the push that moves a standing, never on
+   * a clock and never by a pull, so its Apply finds the plan it shows rather than answering that it changed.
+   */
+  it('draws a go card again when a push moves where a quest stands', async () => {
+    const at = '2026-10-22T09:00:00Z';
+    const quest = {
+      id: 'q1a2b3c4', from: 'daoris', to: 'engine', status: 'Open', title: 'Cap the chunk budget', body: 'Cap it.', filed: at,
+      updated: at, workspace: 'default',
+    };
+    const part = (data: Record<string, unknown>) => [{ partition: 'default', seq: 1, status: 'ready', data }];
+    const snapshots: Record<string, unknown> = {
+      quests: { slice: 'quests', epoch: 'q1', status: 'ready', partitions: part({ [quest.id]: quest }) },
+      asks: { slice: 'asks', epoch: 'k1', status: 'ready', partitions: part({}) },
+      sessions: { slice: 'sessions', epoch: 's1', status: 'ready', partitions: part({ [HELP.id]: HELP }) },
+    };
+    SESSIONS = [HELP];
+    PROPOSALS = [{
+      id: 'g6o7t8o9', kind: 'go', describe: 'Open Quests → quest `#q1a2b3c4` “Cap the chunk budget”.', terminal: '', why: 'where it went',
+    }];
+    bridge();
+    const base = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, options?: { payload?: { slice?: string } }) =>
+      (type === 'STATE_SLICE' ? snapshots[options?.payload?.slice ?? ''] : base(module, type, options)));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    function Pushes() {
+      useStateHub();
+      useStateSlices(PUSHED_HERE);
+      return null;
+    }
+    render(
+      <QueryClientProvider client={client}>
+        <Pushes />
+        <Tooltip.Provider>
+          <AskDaoris onGo={vi.fn()} onClose={vi.fn()} />
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+    await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
+    const drawn = () => invoke.mock.calls.filter(([, type]) => type === 'HELP_PROPOSALS').length;
+    await waitFor(() => expect(pushedOf(client).live('quests')).toBe(true));
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 50)); });
+    const before = drawn();
+
+    act(() => {
+      heard.get('STATE_PUSH')?.({
+        slice: 'quests', epoch: 'q1', partition: 'default', seq: 2, status: 'ready', baseSeq: 1, removed: [],
+        data: { [quest.id]: { ...quest, status: 'Taken' } },
+      });
+    });
+
+    await waitFor(() => expect(drawn()).toBeGreaterThan(before));
+    expect(asked.some((url) => url.startsWith('/api/quests') || url.startsWith('/api/asks'))).toBe(false);
+    PROPOSALS = [];
+  });
+
+  /** ASKQUESTS1: a conversation that published nothing shows no strip, and asks no list of quests or asks for one. */
+  it('shows no strip where the conversation published nothing', async () => {
+    SESSIONS = [HELP];
+    bridge();
+    show();
+
+    await waitFor(() => expect(invoke.mock.calls.map(([, type]) => type)).toContain('HELP_PUBLISHED'));
+    expect(screen.queryByRole('button', { name: /Published from this conversation/ })).not.toBeInTheDocument();
+    expect(asked.some((url) => url.startsWith('/api/quests') || url.startsWith('/api/asks'))).toBe(false);
+  });
+
+  /**
    * HELP6: a go is applied by navigating, through the starters' own door, and nothing else changes. The
    * driver settles it and names the place; the page opens it — here the setup guide at its second step.
    */
@@ -866,6 +986,41 @@ describe('Ask Daoris, with an agent named', () => {
     await waitFor(() => expect(onGo).toHaveBeenCalledWith({ view: 'quests', item: 'ask:a2none00' }));
     PROPOSALS = [];
     APPLIED = APPLIED_SETTING;
+  });
+
+  /**
+   * ASKDISMISS1: the block a published quest leaves in the conversation is a go card, and its dismiss only takes it away. The
+   * driver settles the card and says nothing into the conversation; the page presses nothing about the quest: no Apply, no
+   * words, no quest's or ask's route. A taken quest's card says it is taken, in the driver's sentence.
+   */
+  it('takes a go card about a quest away on its dismiss, and sends nothing about the quest', async () => {
+    SESSIONS = [HELP];
+    PROPOSALS = [{
+      id: 'g6t7k8n9', kind: 'go', describe: 'Open Quests → quest `#q2taken0` “Stream the tiles”, taken.', terminal: '',
+      why: 'the person asked where their quest went',
+    }];
+    bridge();
+    const answers = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, request?: unknown) => {
+      // As the driver settles it: a dismissed card is pending no longer.
+      if (type === 'HELP_DISMISS') PROPOSALS = [];
+      return answers(module, type, request);
+    });
+    show();
+
+    const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
+    expect(within(cards).getByText(/, taken\.$/)).toBeInTheDocument();
+    invoke.mockClear();
+    asked.length = 0;
+    await userEvent.click(within(cards).getByRole('button', { name: 'Dismiss' }));
+
+    await waitFor(() => expect(screen.queryByRole('list', { name: 'what Ask Daoris proposes' })).not.toBeInTheDocument());
+    const sent = invoke.mock.calls.map(([, type]) => type as string);
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_DISMISS', { payload: { id: 'g6t7k8n9' } });
+    expect(sent.filter((type) => type === 'HELP_DISMISS')).toHaveLength(1);
+    expect(sent.filter((type) => type !== 'HELP_DISMISS' && /APPLY|INPUT|QUEST|ASK|WORK|DELETE|DECLINE|PAUSE|CLEAR/.test(type))).toEqual([]);
+    expect(asked.filter((url) => /\/api\/(quests|asks)/.test(url))).toEqual([]);
+    PROPOSALS = [];
   });
 
   /**

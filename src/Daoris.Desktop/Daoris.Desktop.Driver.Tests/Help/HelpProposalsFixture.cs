@@ -209,20 +209,10 @@ public sealed class HelpStandInDoors : IHelpDoors
         return Task.CompletedTask;
     }
 
-    /// <summary>What the default's door refuses with, as `HARNESS_ACTION` would; null to make it.</summary>
-    public string? DefaultRefusal { get; init; }
-
-    public Task SetDefaultAccountAsync(string harness, string account, string? workspace, CancellationToken ct)
-    {
-        if (DefaultRefusal is { } refused) throw new DriverException(refused);
-        Calls.Add($"HARNESS_ACTION {harness} profile-default {account} {workspace}".TrimEnd());
-        return Task.CompletedTask;
-    }
-
     /// <summary>What the use's door refuses with, as `ACCOUNT_USE` would; null to make it (TOOL4g).</summary>
     public string? UseRefusal { get; init; }
 
-    public Task SetAccountUseAsync(string harness, UseChange change, string? workspace, CancellationToken ct)
+    public Task SetAccountUseAsync(string harness, UseChange change, CancellationToken ct)
     {
         if (UseRefusal is { } refused) throw new DriverException(refused);
         // SWITCH1d: the switch and each window of the curve, as `session=0:90;weekly=0:30,100:100`.
@@ -231,7 +221,7 @@ public sealed class HelpStandInDoors : IHelpDoors
                 .Select(window => $"{window}={string.Join(",", set[window]!.Select(point => $"{point.Elapsed}:{point.Used}"))}"))
             : "";
         Calls.Add($"ACCOUNT_USE {harness} use={change.Use} keep={change.Keep} noKeep={change.NoKeep} early={change.Early} near={change.Near} "
-            + $"switch={change.Switch} curve={curve} noCurve={change.NoCurve} {workspace}".TrimEnd());
+            + $"switch={change.Switch} curve={curve} noCurve={change.NoCurve}");
         return Task.CompletedTask;
     }
 
@@ -247,19 +237,22 @@ public sealed class HelpStandInDoors : IHelpDoors
         return Task.FromResult(ReadyEnded);
     }
 
-    public Task SetAccountOrderAsync(string harness, IReadOnlyList<string> accounts, bool clear, string? workspace, CancellationToken ct)
+    public Task SetAccountOrderAsync(string harness, IReadOnlyList<string> accounts, bool clear, CancellationToken ct)
     {
         if (OrderRefusal is { } refused) throw new DriverException(refused);
-        Calls.Add($"ACCOUNT_USE {harness} order {string.Join(",", accounts)} clear={clear} {workspace}".TrimEnd());
+        Calls.Add($"ACCOUNT_USE {harness} order {string.Join(",", accounts)} clear={clear}");
         return Task.CompletedTask;
     }
 
     // IHelpAskDoors
+    /// <summary>What the ask door answers (ASKQUESTS1: the ids it names are what the conversation's list keeps); by default an ask and no quest.</summary>
+    public AskAnswer Asked { get; set; } = new(true, "Asked.", "a1", null);
+
     public Task<AskAnswer> AskAsync(string workspace, string sentence, string? review, string? reviewWords, CancellationToken ct, string? shortTitle = null)
     {
         var chosen = review is null ? "" : $" [review {review}{(reviewWords is null ? "" : $": {reviewWords}")}]";
         Calls.Add($"ask {workspace} {sentence}{chosen}{(shortTitle is null ? "" : $" [short {shortTitle}]")}");
-        return Task.FromResult(new AskAnswer(true, "Asked.", "a1", null));
+        return Task.FromResult(Asked);
     }
 
     // IHelpBrowserDoors
