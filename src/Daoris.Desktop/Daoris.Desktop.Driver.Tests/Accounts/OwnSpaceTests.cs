@@ -175,6 +175,27 @@ public sealed class OwnSpaceTests : IDisposable
         Assert.False(info.Environment.ContainsKey("FAKE_HOME"));
     }
 
+    /// <summary>
+    /// 🔴 And against the set (D197 point 3; the account-pool design §3 point 5, Fable's F1): once the come-up has folded Daoris's
+    /// accounts into one order, a record begun in the person's own sign-in still goes on there; the set never displaces it.
+    /// </summary>
+    [Theory]
+    [InlineData(StartKind.Driven, true)]
+    [InlineData(StartKind.Conversation, false)]
+    public async Task A_record_that_began_in_the_tool_s_own_home_resumes_there_against_the_set(StartKind kind, bool walks)
+    {
+        Account("daoris-1");
+        Account("daoris-2");
+        var roster = Roster();
+        roster.Pool(null);
+        Assert.Equal(["daoris-1", "daoris-2"], HarnessSettings.Load(Settings).Rotation["fake"]);
+
+        var resume = await roster.ResumeAsync("fake", Config, "aurora", account: null, kind, walks: walks);
+
+        Assert.True(resume.Selection.Allowed, resume.Selection.Refusal);
+        Assert.Equal((NextHold.Ready, (string?)null, (string?)null), (resume.Own, resume.Selection.Profile, resume.Selection.ProfileHome));
+    }
+
     [Fact]
     public async Task A_record_on_a_Daoris_account_resumes_on_it()
     {
