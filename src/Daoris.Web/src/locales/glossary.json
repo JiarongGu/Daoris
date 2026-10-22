@@ -288,7 +288,8 @@
         "opinion.act.*", "opinion.ask.anywayMeanIt", "opinion.ask.myselfMeanIt", "opinion.ask.sendBackMeanIt", "opinion.ask.stopMeanIt",
         "opinion.findingsShow", "opinion.findingsHide",
         "asks.record.reviewApply", "asks.record.reviewSet", "asks.record.kindApply",
-        "workflow.door.setup", "workflow.door.workspaceSetup", "workflow.run.door.*"
+        "workflow.door.setup", "workflow.door.workspaceSetup", "workflow.run.door.*",
+        "workflow.run.node.skip", "workflow.run.node.stop", "workflow.run.node.skipMeanIt", "workflow.run.node.stopMeanIt"
       ]
     },
     "status": {
@@ -407,7 +408,7 @@
         "signin.codePlaceholder", "work.find.placeholder", "work.rail.search.placeholder", "work.say.placeholder",
         "review.ask.notYetWords", "review.ask.skipWords", "asks.compose.reviewWords", "asks.record.reviewChoose",
         "opinion.ask.words", "opinion.ask.sendBackWords", "work.attention.stale.reason",
-        "help.history.search.placeholder", "work.start.find"
+        "help.history.search.placeholder", "work.start.find", "workflow.run.node.skipWords", "workflow.run.node.stopWords"
       ]
     },
     "toast": {
@@ -502,7 +503,7 @@
     { "term": "delete", "en": "delete", "zh": "删除", "means": "Remove a record for good: a quest, an ask.", "match": "\\bdelet(e|ed|es|ing)\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "clear", "en": "clear", "zh": "清除", "means": "Remove from this machine what it kept of finished work: its records, their words and the files they left; a team's remote keeps its copy. A setting cleared goes back to its default.", "why": "Delete (删除) removes a record for good and a quest's delete travels to every machine, where a clear never travels; clean up (清理) is landed trees and branches, which a clear never touches; 清空 empties a container and says nothing of what stays (HIST1e, D153 §8).", "match": "\\bclear(s|ed|ing)?\\b", "avoid": { "en": [], "zh": ["清理", "删除", "清空"] } },
     { "term": "remove", "en": "remove", "zh": "移除", "means": "Take something out of a list or a setting; what it named stays where it was.", "match": "\\bremov(e|ed|es|ing)\\b", "avoid": { "en": [], "zh": [] } },
-    { "term": "retire", "en": "retire", "zh": "注销", "means": "Take a repository out of the registry; nothing in it is deleted.", "match": "\\bretir(e|ed|es|ing)\\b", "avoid": { "en": [], "zh": [] } },
+    { "term": "retire", "en": "retire", "zh": "注销", "means": "Take a repository out of the registry; or, at a workspace's remote, a machine out of the machines it counts (FABRIC-CLOSE1i2), until that machine pushes again. Nothing in either is deleted.", "match": "\\bretir(e|ed|es|ing)\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "register", "en": "register", "zh": "注册", "means": "Add a repository to the registry, so the service knows where it is.", "why": "The registry is 注册表, and 注册 and 登记 were fifteen strings each.", "match": "\\bregist(er|ered|ers|ering|ry)\\b", "avoid": { "en": [], "zh": ["登记"] } },
     { "term": "import", "en": "import", "zh": "导入", "means": "Register every repository in a folder at once.", "match": "\\bimport\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "repository", "en": "repository", "zh": "仓库", "means": "A git repository the family knows, owned by its own agent.", "why": "The Projects view lists repositories, and every row, button and sentence in it says so; the owner's call.", "match": "\\brepositor(y|ies)\\b", "avoid": { "en": ["project", "projects"], "zh": ["项目"] } },

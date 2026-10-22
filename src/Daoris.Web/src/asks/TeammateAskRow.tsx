@@ -27,7 +27,8 @@ export function TeammateAskRow({ ask, chosen = false, onOpen }: { ask: Elsewhere
       <ListRowDoor chosen={chosen} onPress={() => onOpen(ask)}>
         <span className="flex items-baseline justify-between gap-2">
           <Pill tone="neutral">{t('asks.elsewhere.pill')}</Pill>
-          {ask.unread > 0 && <Pill tone="open">{t('asks.channel.unread', { count: ask.unread })}</Pill>}
+          {/* News waits on nobody: a neutral pill, never open's hue, the person's waits' alone (BADGEUX1). */}
+          {ask.unread > 0 && <Pill tone="neutral">{t('asks.channel.unread', { count: ask.unread })}</Pill>}
         </span>
         <span className="mt-0.5 block truncate font-mono text-body text-ink">#{ask.id}</span>
         <span className="block truncate font-mono text-meta text-ink-faint">

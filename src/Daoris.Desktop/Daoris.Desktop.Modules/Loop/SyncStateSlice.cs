@@ -43,7 +43,7 @@ public static class SyncStateSlice
     /// is pushed once it is named here or in <see cref="PulledOnly"/>, which <c>SyncStateSliceTests</c> holds against the service's
     /// answer record and the page's type.
     /// </summary>
-    public static readonly IReadOnlyList<string> Fields = ["workspace", "wired", "ahead", "behind", "conflicts", "synced", "tried", "problem"];
+    public static readonly IReadOnlyList<string> Fields = ["workspace", "wired", "ahead", "behind", "conflicts", "synced", "tried", "problem", "undeclared"];
 
     /// <summary>What the route answers of a circle that is never pushed: nothing yet.</summary>
     public static readonly IReadOnlyList<string> PulledOnly = [];

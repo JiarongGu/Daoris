@@ -168,7 +168,8 @@ function ChannelBody({ channel, onPost, onRead, onOpenQuest, onForward, reposito
     <div className="grid gap-3">
       <p className="m-0 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-small text-ink-soft">
         <span>{only ? t('asks.channel.panel.lead', { repository: only.repository }) : t('asks.channel.lead')}</span>
-        {unread > 0 && <Pill tone="open">{t('asks.channel.unread', { count: unread })}</Pill>}
+        {/* News waits on nobody: a neutral pill, never open's hue, the person's waits' alone (BADGEUX1). */}
+        {unread > 0 && <Pill tone="neutral">{t('asks.channel.unread', { count: unread })}</Pill>}
       </p>
 
       {items.length === 0

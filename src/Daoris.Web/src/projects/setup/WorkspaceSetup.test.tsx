@@ -1,9 +1,9 @@
 import type { ReactElement } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import '../../locales/i18n';
+import i18n from '../../locales/i18n';
 import { code } from '../../test/code';
 import { LANGUAGES } from '../fixtures';
 import { WorkspaceSetup, type WorkspaceSetupProps } from './WorkspaceSetup';
@@ -246,6 +246,50 @@ describe("a workspace's Setup", () => {
   it('says what still holds where the workspace adds no rule of its own', () => {
     at({ open: 'remote' });
     expect(screen.getByText("None of its own. This machine's still hold.")).toBeInTheDocument();
+  });
+});
+
+/**
+ * FABRIC-CLOSE1i2: the machines a wired workspace's remote counts undeclared, each with *Retire*, under its remote; every machine
+ * declared said as that; nothing drawn where the workspace is not wired or no pass heard the handshake.
+ */
+describe("a workspace's machines its remote counts undeclared", () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  const wired = { remote: { url: 'https://aurora.example.com', key: 'dk_abcd1234…' }, fromEnvironment: false, onWire: vi.fn(), onUnwire: vi.fn() };
+
+  it('lists each machine with its Retire, and retires the one pressed', async () => {
+    const onRetire = vi.fn();
+    at({ remote: { wiring: wired, rules: null, machines: { undeclared: ['m-gone', 'm-old'], onRetire } } });
+
+    expect(screen.getByText('Machines not declared')).toBeInTheDocument();
+    const row = screen.getByText('m-gone').closest('li')!;
+    await userEvent.click(within(row).getByRole('button', { name: 'Retire' }));
+    expect(onRetire).toHaveBeenCalledWith('m-gone');
+    expect(screen.getAllByRole('button', { name: 'Retire' })).toHaveLength(2);
+  });
+
+  it('holds every Retire while one is on its way', () => {
+    at({ remote: { wiring: wired, rules: null, machines: { undeclared: ['m-gone', 'm-old'], retiring: 'm-gone', onRetire: vi.fn() } } });
+    for (const button of screen.getAllByRole('button', { name: 'Retire' })) expect(button).toBeDisabled();
+  });
+
+  it('says every machine declared, with no Retire', () => {
+    at({ remote: { wiring: wired, rules: null, machines: { undeclared: [], onRetire: vi.fn() } } });
+    expect(screen.getByText('Every machine its remote counts has declared.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Retire' })).toBeNull();
+  });
+
+  it('draws nothing where the workspace is not wired', () => {
+    at({ open: 'remote', remote: { wiring: { ...wired, remote: null }, rules: null, machines: { undeclared: ['m-gone'], onRetire: vi.fn() } } });
+    expect(screen.queryByText('Machines not declared')).toBeNull();
+  });
+
+  it('says it in Chinese', async () => {
+    await i18n.changeLanguage('zh');
+    at({ remote: { wiring: wired, rules: null, machines: { undeclared: ['m-gone'], onRetire: vi.fn() } } });
+    expect(screen.getByText('未声明的机器')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '注销' })).toBeInTheDocument();
   });
 });
 

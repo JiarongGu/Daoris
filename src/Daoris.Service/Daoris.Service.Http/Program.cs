@@ -2314,6 +2314,14 @@ if (mode == ServiceMode.Shared)
         await s.Quests.DeclaredAsync(QuestWire.Declares(json), pushed, DateTimeOffset.UtcNow, ct);
         return Results.Text(QuestWire.Pushed(judged with { Closure = await s.Quests.ClosureAsync(ct) }), "application/json");
     });
+
+    // FABRIC-CLOSE1i2: a person's retirement of a machine the handshake counts, asked through their own machine's host. A machine heard
+    // from nothing here is answered `retired: false`, so a 404 stays what a remote before the door answers.
+    app.MapPost("/api/quests/machines/{machine}/retire", async (ComposedService s, string machine, CancellationToken ct) =>
+    {
+        var retired = await s.Quests.RetireMachineAsync(machine, DateTimeOffset.UtcNow, ct);
+        return Results.Text(QuestWire.Retired(retired, await s.Quests.ClosureAsync(ct)), "application/json");
+    });
 }
 else
 {
@@ -2360,7 +2368,38 @@ else
         var standing = await QuestSync.StandingAsync(s.Quests, s.Service, circle, ct);
         return Results.Ok(new SyncStandingResponse(
             circle, Wired: true, standing.Ahead, standing.Behind, standing.Conflicts,
-            standing.Synced, standing.Tried, standing.Problem));
+            standing.Synced, standing.Tried, standing.Problem,
+            // FABRIC-CLOSE1i2: the machines the remote last said had not declared, as the last pass heard them; none where it heard none.
+            s.Quests.ClosureOf(circle)?.Undeclared));
+    });
+
+    // The person's retirement of a machine the circle's remote still counts (FABRIC-CLOSE1i2): asked at the remote, and what it answers
+    // kept as a pass keeps it. A wall or a remote before the door is said in the remote's words, and nothing here changes.
+    app.MapPost("/api/sync/machines/{machine}/retire", async (ComposedService s, string machine, string? workspace, CancellationToken ct) =>
+    {
+        var circle = Workspaces.Normalize(workspace);
+        if (s.Remotes?.For(circle) is not { } remote)
+        {
+            return Results.NotFound(new ErrorResponse($"`{circle}` has no remote on this machine, so no machine of it is counted anywhere."));
+        }
+
+        try
+        {
+            var answered = await QuestSync.RetireMachineAsync(s.Quests, remote, circle, machine, ct);
+            return Results.Ok(new MachineRetiredResponse(
+                circle, machine, answered.Retired, answered.Closure.Undeclared,
+                answered.Retired
+                    ? $"`{circle}`'s remote no longer counts machine `{machine}`; a push from it counts it again."
+                    : $"`{circle}`'s remote has heard nothing from machine `{machine}`, so it counts nothing to retire."));
+        }
+        catch (RemoteException wall)
+        {
+            return Results.Json(
+                new ErrorResponse(wall.Status == 404
+                    ? $"`{circle}`'s remote is older than retiring a machine, so nothing was retired ({wall.Message})."
+                    : $"`{circle}`'s remote did not retire machine `{machine}`: {wall.Message}."),
+                statusCode: StatusCodes.Status502BadGateway);
+        }
     });
 
     app.MapGet("/api/quests/{id}/claim", async (ComposedService s, string id, CancellationToken ct) =>

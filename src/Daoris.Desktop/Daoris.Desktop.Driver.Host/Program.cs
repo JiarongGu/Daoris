@@ -266,6 +266,10 @@ using Daoris.Driver;
 //                 the person's Keep (WORKFLOW1f, design §4.4): where a kind's paths hold a session's work, keep the workflow
 //                 the kind chose for it, with their words, on its run, and print what the landing gate says after.
 //
+//   workflow skip <run> <node> "…"  ·  workflow stop <run> <node> ["…"]
+//                 the person's skip or stop of a node of a run bound to a graph version (FABRIC-CUTOVER1f, D190, design §5.2):
+//                 kept on the run's record, and the next look applies it; the running Daoris's window confirms it.
+//
 //   git branches [--repository <name>] [--all] [--json]
 //                 each repository's line and branches by kind (GIT1c, D147 §2.2, §3.3): the line with how it stands to
 //                 origin's copy and when the checkout last fetched, the sessions' branches named by their sessions, the

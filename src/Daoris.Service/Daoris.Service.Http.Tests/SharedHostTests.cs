@@ -409,6 +409,21 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
 
         var page = await host.GetAsync("/api/quests/operations?since=0", key: key);
         Assert.Equal(undeclared, page.Json.GetProperty("closure").GetProperty("undeclared").EnumerateArray().Select(m => m.GetString()).ToList());
+
+        // FABRIC-CLOSE1i2: the person retires the older machine through their own machine's host; one it never heard is not retired.
+        var retired = await host.SendAsync("POST", "/api/quests/machines/hs-older/retire", DaorisHost.Loopback, key, "{}");
+        Assert.Equal(200, retired.Status);
+        Assert.True(retired.Json.GetProperty("retired").GetBoolean());
+        Assert.DoesNotContain("hs-older", retired.Json.GetProperty("closure").GetProperty("undeclared").EnumerateArray().Select(m => m.GetString()));
+        var unknown = await host.SendAsync("POST", "/api/quests/machines/hs-never/retire", DaorisHost.Loopback, key, "{}");
+        Assert.Equal(200, unknown.Status);
+        Assert.False(unknown.Json.GetProperty("retired").GetBoolean());
+
+        // It pushes again, still declaring nothing: counted again.
+        await host.SendAsync("POST", "/api/quests/operations", DaorisHost.Loopback, key,
+            Push.Replace("DECLARES", "").Replace("MACHINE", "hs-older").Replace("QUEST", "h3h4h5h6h7h8").Replace("\"sequence\": 1", "\"sequence\": 2"));
+        var again = await host.GetAsync("/api/quests/operations?since=0", key: key);
+        Assert.Contains("hs-older", again.Json.GetProperty("closure").GetProperty("undeclared").EnumerateArray().Select(m => m.GetString()));
     }
 
     /// <summary>

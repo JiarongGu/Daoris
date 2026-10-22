@@ -426,6 +426,25 @@ public sealed class RemoteSyncTests
         Assert.Equal(["aurora  1 ahead · 0 behind · 0 in conflict · not synced yet"], fresh);
     }
 
+    /// <summary>
+    /// FABRIC-CLOSE1i2: the machines the remote last said had not declared a bound quest are read and printed; every one declared prints
+    /// nothing; and an answer without the field, a host before it or a pass that heard no handshake, reads as none, never as all declared.
+    /// </summary>
+    [Fact]
+    public void The_machines_the_remote_counts_undeclared_are_read_and_said_and_an_absent_list_is_none()
+    {
+        const string Answer = """{ "workspace": "aurora", "wired": true, "ahead": 0, "behind": [], "conflicts": [] UNDECLARED }""";
+        var some = RemoteSyncPayloads.Standing(Answer.Replace("UNDECLARED", """, "undeclared": ["m-gone", "m-old"]"""));
+        var all = RemoteSyncPayloads.Standing(Answer.Replace("UNDECLARED", """, "undeclared": []"""));
+        var none = RemoteSyncPayloads.Standing(Answer.Replace("UNDECLARED", ""));
+
+        Assert.Equal(["m-gone", "m-old"], some.Undeclared);
+        Assert.Contains("  not declared a bound quest, so no bind goes through the remote: m-gone, m-old", some.Describe());
+        Assert.Empty(all.Undeclared!);
+        Assert.Single(all.Describe());
+        Assert.Null(none.Undeclared);
+    }
+
     /// <summary>What stands on one held commit is said once, naming everything that does.</summary>
     [Fact]
     public void Everything_waiting_on_one_commit_is_named_in_one_sentence()

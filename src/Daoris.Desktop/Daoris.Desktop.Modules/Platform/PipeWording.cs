@@ -150,6 +150,8 @@ public static class PipeWording
 
         // A quest's, an ask's and a channel's.
         Row("RETRY_QUEST", W("quest", PipeRole.Quest));
+        // FABRIC-CUTOVER1f: a run is named by its chain's first quest here; its node and act are listed under the sentence, the words quoted.
+        Row("WORKFLOW_NODE", W("run", PipeRole.Quest), W("act", PipeRole.Form), W("words", PipeRole.Words));
         Row("WORK_RESUME", W("quest", PipeRole.Quest), W("ask", PipeRole.Ask));
         Row("LAND_ASK", W("ask", PipeRole.Ask));
         Row("CHANNEL_POST", W("text", PipeRole.Words));

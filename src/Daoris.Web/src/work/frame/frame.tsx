@@ -206,20 +206,17 @@ export type ActivityItem<T extends string> = {
   tab: T;
   label: string;
   icon: IconName;
-  /** A count on the icon. Zero wears nothing. */
-  badge?: number;
   /**
-   * `open` for a count that IS a status — what waits on a person — and the accent for a
-   * quantity.
+   * What waits on the person here (BADGEUX1, the UI/UX design §3.10): the bell's rows whose door opens this place, a number in the
+   * bell's hue. The only number a place wears, so a number on the window means one thing; zero wears nothing.
    */
-  tone?: 'accent' | 'open';
+  waits?: number;
   /**
-   * Something in its place waits on the person, marked beside a quantity in the waiting hue (SESSBADGE1, D76's note): Sessions
-   * counts the sessions the driver runs and marks what waits there. A dot, a shape of its own, since at badge size the waiting hue
-   * and the accent read alike (UX5 U24); shown with no count too.
+   * Work under way here, which waits on nobody (BADGEUX1): a mark, never a number, in taken's hue at the lower corner the number
+   * leaves free, still, since it stands for as long as the work runs. Shown with a number or without one.
    */
-  waiting?: boolean;
-  /** Its counts in words, said in its tip and as its description, so the marks are never hue alone (D41 §6). */
+  running?: boolean;
+  /** What its marks show, in words, said in its tip and as its description, so a mark is never hue alone (D41 §6). */
   detail?: string;
   /** Its key, as the Go menu prints it (UX7a, D152 §3.4), said in its tip: a place's position is its key. */
   keys?: string;
@@ -261,7 +258,7 @@ export function ActivityBar<T extends string>({
    */
   onToggleCurrent?: () => void;
 }) {
-  const place = ({ tab, label: name, icon, badge, tone, waiting, detail, keys }: ActivityItem<T>) => (
+  const place = ({ tab, label: name, icon, waits, running, detail, keys }: ActivityItem<T>) => (
     <Tip key={tab} content={[keys ? `${name} (${keys})` : name, detail].filter(Boolean).join(' · ')} side="right">
       <button
         type="button"
@@ -284,9 +281,9 @@ export function ActivityBar<T extends string>({
           <span aria-hidden className="absolute inset-y-1 left-0 w-0.5 rounded-full bg-accent" />
         )}
         <Icon name={icon} size={17} />
-        <CountBadge count={badge ?? 0} tone={tone} />
-        {/* What waits on the person, beside the quantity, at the corner the count leaves free (SESSBADGE1). */}
-        {waiting && <DotMark tone="parked" className="absolute bottom-1 right-1 size-2 ring-2 ring-page" />}
+        <CountBadge count={waits ?? 0} />
+        {/* Running work, beside the waits, at the corner the number leaves free (BADGEUX1): a shape, a place and a hue of its own. */}
+        {running && <DotMark tone="running" data-running="" className="absolute bottom-1 right-1 size-2 ring-2 ring-page" />}
       </button>
     </Tip>
   );

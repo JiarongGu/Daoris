@@ -699,6 +699,10 @@ public sealed class NodeRuntime(
             // FABRIC-CLOSE1q: the person's word on a held close, a close's recovery, before the closer sends any close again below; FABRIC-CLOSE1q2:
             // judged on the quests this pass read, so a word on a close for a submission reopened or replaced since never reaches the next one.
             if (_closer is not null) done.AddRange(_closer.Resolve(Declared, _quests));
+            // FABRIC-CUTOVER1f (the cutover design §3, §5.2): the person's skip or stop of a run's node, kept on its record by their door, applied
+            // before anything on it is judged; a run it names is judged this pass.
+            var worded = Worded(governed.Values);
+            done.AddRange(worded.Done);
             done.AddRange(await _performer.ReconcileAsync(Declared, sends, ct).ConfigureAwait(false));
             done.AddRange(_performer.Due(Declared));
             // FABRIC-PERFORM1d (§D3): what plugins created, asked of them at their unit's true end, or at once for a superseded attempt's,
@@ -706,6 +710,7 @@ public sealed class NodeRuntime(
             done.AddRange(await _cleaner.CleanAsync(Ended, sends, ct).ConfigureAwait(false));
 
             var said = new List<string>(bindings);
+            said.AddRange(worded.Said);
 
             // FABRIC-CLOSE1b, §E5 step 4: a close whose answer was lost is reconciled before anything new starts; FABRIC-CLOSE1u: by asking its
             // door what became of its key, never by sending it again blind, so one never delivered is judged again on what is there now.
@@ -875,6 +880,33 @@ public sealed class NodeRuntime(
         _graphRuns.Ended(scope.Run.Run, ended);
         said.Add($"work  {unit}: its run ended at #{newest.Id}: no step of its chain is still to come here, and nothing of its graph moves again; "
                  + "it is judged again once its chain comes back here.");
+    }
+
+    /// <summary>
+    /// The person's skips and stops of the governed runs' nodes, kept on each run's record by their door (FABRIC-CUTOVER1f; D190 point 3, the
+    /// cutover design §3, §5.2), applied through the one table under the run's declarations and the scope its starts take, and taken off whether
+    /// applied or not. Each is said, and names its run, so the run is judged this pass. A record that does not read keeps them: the evaluation says it.
+    /// </summary>
+    private (List<WorkPerformed> Done, List<string> Said) Worded(IEnumerable<GovernedUnit> governed)
+    {
+        var done = new List<WorkPerformed>();
+        var said = new List<string>();
+        foreach (var each in governed)
+        {
+            var unit = each.Unit.Id;
+            if (each.Scope is null || records.Read(unit) is not { Pending.Count: > 0 }) continue;
+            var scope = new NodeScope(each.GraphDigest, each.Run);
+            var now = clock();
+            var (refused, applied) = records.Edit(unit, record => RunNodeWords.Apply(record, each.Declared, scope, now));
+            if (refused is not null) continue;
+            foreach (var (word, code) in applied!)
+            {
+                done.Add(new WorkPerformed(unit, word.Node, code is null ? PerformedWhat.Resolved : PerformedWhat.Refused, code ?? word.Act));
+                said.Add(RunNodeWords.AppliedSaid(unit, word, code));
+            }
+        }
+
+        return (done, said);
     }
 
     /// <summary>

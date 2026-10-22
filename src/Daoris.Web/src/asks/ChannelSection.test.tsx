@@ -243,6 +243,8 @@ describe('what is unread', () => {
     expect(screen.getByText('3 unread')).toBeInTheDocument();
     expect(within(row('Noted.')).getByText('new')).toBeInTheDocument();
     expect(within(row('The v3 one.')).queryByText('new')).toBeNull();
+    // BADGEUX1: news waits on nobody, so its count wears a neutral ink, never open's, the person's waits' alone.
+    expect(screen.getByText('3 unread').className).not.toMatch(/st-open|ink-open/);
   });
 
   it('moves the mark through the newest item it showed, once, and none where nothing is unread', () => {

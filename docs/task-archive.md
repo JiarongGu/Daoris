@@ -19436,6 +19436,20 @@ note. On Opus.
 launcher's start and after its error; an act holding it past the wait leaves the journal for the next start, and the launcher starts
 nothing on `app/` and names the holder (`HeldBy`). Finishing a confirmed swap takes none. Detail: D171's SWAPLEASE2 note. On Opus.
 
+## BADGEUX1 — one meaning for a number: what waits on you (2026-10-22, D185)
+
+> - [ ] **BADGEUX1 — one meaning for a number: what waits on you** (web-shell; the owner's direction while using Daoris, 2026-10-22). A number on a session, a quest or a list place counts only what needs the person's step, the same things the taskbar button and the title bar's bell count (`needsListed`, NEEDSSCOPE1); running work is not counted, and is shown in a quieter style. Today Sessions' badge counts the sessions the driver runs (SESSBADGE1) and Quests' every outstanding quest. Proof: a design under D185 read by Codex; a test that each place's number equals the bell's for the same rows, scoped; a test that a running-only place shows the mark and no number; stories in light and dark; the window.
+
+**Outcome** 2026-10-22: each place of the activity bar counts the bell's rows its door opens, and work under way is a still dot in
+taken's hue (Sessions the driver's work less its parks, Quests a quest taken); unread is said in words in a neutral ink. Detail: the
+UI/UX design §3.10 with Codex's read, D185's BADGEUX1 note. On Opus.
+
+## FABRIC-CUTOVER1f — the person's skip and stop of a run's node (2026-10-22, D190)
+
+> - [ ] **FABRIC-CUTOVER1f — the person's skip and stop of a run's node** (driver, modules, web-shell, cli; after 1c, 1e; built before 1d; D190, design §5.2). Given with their words at the run's view and the terminal, kept on the run's record by the door under the lock and the lease in a field of its own that a record from before reads as none (as `WorkPerformer.cs:421-447` keeps a held attempt's word), applied by the next pass. Proof: a go-ahead nobody raised, skipped with words, lets `handed` begin; a stop ends the run, said; a skip with no words refused; a node after `handed` told for two runs at one tip, skipped with words; the door or exemption row in `HelpCoverageTests`.
+
+**Outcome** 2026-10-22: built, the cli lane untouched: *Pass over…* and *Stop…* under a graph run's node and `daoris-driver workflow skip|stop`,
+kept in `NodeRecord.Pending` and applied by the next pass; no window was looked at. Detail: D190's CUTOVER1f note. On Opus.
 ## FABRIC-CLOSE1i — the workspace's handshake through its remote (2026-10-22, D173)
 
 > - [ ] **FABRIC-CLOSE1i — the workspace's handshake through its remote** (service, driver). Each push declares its machine's `closure`, and the remote answers whether every machine of the workspace did. Proof: all declared allows the bind; one older machine refuses it, saying why.
@@ -19464,3 +19478,15 @@ over a file on the line), its two commands granted exactly beside four doctrine 
 declaration. An unknown stack is refused (`no-index-form`). The workspace plan asks a set-up repository its index in its
 turn, recorded under `indexed`; the page names `asks: 'index'` (en, zh). The family rehearsal was not run, and no session
 has carried the body. Detail: D151's ORIENT2c note. On Opus.
+
+## FABRIC-CLOSE1i2 — a machine the remote still counts, seen and retired (2026-10-22, D173)
+
+> - [ ] **FABRIC-CLOSE1i2 — a machine the remote still counts, seen and retired** (service, web-settings; after CLOSE1i; D173's FABRIC-CLOSE1i note). The remote counts every machine it has heard from, so a machine whose store was deleted, or that left the workspace, holds its binds off for ever if its last push declared nothing. Show which machines of a workspace have not declared (the pass's `closure`), and let the person retire one at the remote. Proof: a retired machine no longer refuses a bind; one that pushes again is counted again; the words in en and zh.
+
+**Outcome** 2026-10-22: built. The remote keeps the machines a person retired in a table of its own and counts them no more until a
+push marks them again, declared or not as it says; its door (`POST /api/quests/machines/{machine}/retire`) answers whether it retired
+one. This machine asks it at the person's door (`POST /api/sync/machines/{machine}/retire`) and keeps the answer, so a bind reads it at
+once. `/api/sync` names the undeclared machines, pushed to the window, where Setup's *Remote and reach* lists them with *Retire* (注销),
+en and zh; `sync status` prints them. Proof: `QuestClosureHandshakeTests`, `SharedHostTests`, `LocalHostTests`, `PersonDoorTableTests`,
+`RemoteSyncTests`, `SyncStateSliceTests`, `WorkspaceSetup.test.tsx`; the service's, driver's and modules' fast halves. On Opus. Detail:
+D173's FABRIC-CLOSE1i2 note.

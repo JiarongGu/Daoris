@@ -809,6 +809,20 @@ export const useAnswerSession = () => {
   });
 };
 
+/**
+ * Retire a machine the circle's remote still counts (FABRIC-CLOSE1i2), and read where the circle stands again where it is pulled. Where
+ * the shell pushes the standings, the retirement moves no family of the change stream: the caller's pass (*Sync now*'s) pushes it.
+ */
+export const useRetireMachine = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ workspace, machine }: { workspace: string; machine: string }) => api.retireMachine(workspace, machine),
+    onSettled: () => {
+      void client.invalidateQueries({ queryKey: keys.allSync, predicate: notPushed(client) });
+    },
+  });
+};
+
 /** Dismiss one conflict (SYNC6c) — and where each circle stands moves with it. */
 export const useDismissConflict = () => {
   const invalidate = useInvalidateQuestWork();

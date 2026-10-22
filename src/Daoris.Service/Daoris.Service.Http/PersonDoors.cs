@@ -257,6 +257,8 @@ public static class PersonDoors
         new("POST", "/api/quests/{id}/conflicts/dismiss", DoorClass.Person, "a conflict's dismissal"),
         // SYNCMERGE1a (D178 point 3): only the person, on the machine whose take lost, brings it forward; a local host's alone.
         new("POST", "/api/quests/{id}/conflicts/forward", DoorClass.Person, "a lost take brought forward"),
+        // FABRIC-CLOSE1i2: only the person says a machine left their workspace, since a retired machine no longer holds a bind off.
+        new("POST", "/api/sync/machines/{machine}/retire", DoorClass.Person, "a machine's retirement at a workspace's remote"),
         new("DELETE", "/api/registry/{repository}", DoorClass.Person, "a repository's retire"),
         new("POST", "/api/registry/{repository}/workspace", DoorClass.Person, "a repository's re-wiring"),
         new("POST", "/api/registry/import", DoorClass.Person, "a folder's import"),
@@ -274,6 +276,7 @@ public static class PersonDoors
         new("GET", "/api/feed/held", DoorClass.Shared),
         new("GET", "/api/quests/operations", DoorClass.Shared),
         new("POST", "/api/quests/operations", DoorClass.Shared),
+        new("POST", "/api/quests/machines/{machine}/retire", DoorClass.Shared),
     ];
 
     private static readonly Dictionary<(string Method, string Pattern), Door> ByRoute =

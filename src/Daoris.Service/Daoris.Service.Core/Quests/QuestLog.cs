@@ -278,6 +278,12 @@ public sealed record QuestClosure(IReadOnlyList<string> Undeclared)
     public bool All => Undeclared.Count == 0;
 }
 
+/// <summary>
+/// A remote's answer to a person's retirement of a machine (FABRIC-CLOSE1i2): whether it retired one (false where it had heard nothing
+/// from it), and the handshake as it stands after it.
+/// </summary>
+public sealed record QuestRetirement(bool Retired, QuestClosure Closure);
+
 /// <param name="Cursor">The number this machine has now fetched through.</param>
 /// <param name="Conflicts">The moves the rebase turned into conflicts, as they now stand in the log.</param>
 public sealed record QuestIntegration(long Cursor, IReadOnlyList<QuestOperation> Conflicts);

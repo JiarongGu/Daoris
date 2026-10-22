@@ -23,7 +23,7 @@ const ROWS: PushedAttention[] = [
   // A press's own row is its card's: counted by the presses' line, never twice.
   { kind: 'confirmation', id: 'c1', since: ago(1), where: '' },
 ];
-const KNOWN: AttentionRead = { state: 'known', rows: ROWS, sessions: 0, working: 2, resyncing: false };
+const KNOWN: AttentionRead = { state: 'known', rows: ROWS, working: 2, running: 2, resyncing: false };
 const PRESS: Confirmation = {
   source: 'pipe', id: 'c1', route: 'STOP_SESSION', fields: [], shown: true, expires: new Date(NOW.getTime() + 100_000).toISOString(),
 };
@@ -50,6 +50,8 @@ describe("Overview's summary of what needs you", () => {
       'Ready for you1',
     ]);
     expect(within(summary).queryByRole('listitem')).toBeNull();
+    // What waits wears open's ink, as the bell's number does (BADGEUX1).
+    for (const line of lines.slice(1)) expect(line.querySelector('.text-ink-open')).not.toBeNull();
   });
 
   /** GOAHEADSTALE1: a stale go-ahead holds no session's act, so it is counted with what waits for the person's word, where it is listed. */
@@ -128,6 +130,8 @@ describe("Overview's summary of what needs you", () => {
 
     const lines = () => within(screen.getByRole('region', { name: /What needs you|等你处理/ })).getAllByRole('button');
     expect(lines().map((line) => line.textContent)).toEqual(['Messages35 unread', 'Done and failed11 unread']);
+    // BADGEUX1: their figures count items and notices, which wait on nobody, so they wear a neutral ink, never open's, a wait's.
+    for (const line of lines()) expect(line.querySelector('.text-ink-open')).toBeNull();
     vi.useRealTimers();
     await userEvent.click(lines()[0]!);
     expect(onNotifications).toHaveBeenLastCalledWith('messages');

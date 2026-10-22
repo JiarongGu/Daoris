@@ -347,7 +347,7 @@ public static class WorkflowRunWords
                 }
 
                 said.Append(line).Append('\n');
-                foreach (var under in Under(step)) said.Append(Indent).Append(under).Append('\n');
+                foreach (var under in Under(step, run.Graph?.Run)) said.Append(Indent).Append(under).Append('\n');
             }
         }
 
@@ -357,9 +357,26 @@ public static class WorkflowRunWords
     /// <summary>Where a step's words start, so a line under it starts there too: the mark, the title's 16 and the state's 19.</summary>
     private static readonly string Indent = new(' ', 2 + 2 + 16 + 2 + 19 + 2);
 
-    /// <summary>The lines under a step: the person's words, why it is here, the opinion's presses in this terminal, the pull request.</summary>
-    private static IEnumerable<string> Under(WorkflowRunStep step)
+    /// <summary>
+    /// The lines under a step: the person's words, why it is here, the opinion's presses in this terminal, the pull request; and on a graph run's
+    /// node (FABRIC-CUTOVER1f), the person's word kept and not applied yet, or the skip and stop it offers as this terminal's commands on
+    /// <paramref name="run"/>.
+    /// </summary>
+    private static IEnumerable<string> Under(WorkflowRunStep step, string? run)
     {
+        if (step.Asked is { } asked)
+        {
+            yield return $"Your {asked.Act} is kept, and Daoris's next look applies it{(asked.Words is { } kept ? $": “{kept}”" : ".")}";
+        }
+        else if (run is not null && step.Acts is { Count: > 0 } acts)
+        {
+            var node = step.Step.Id;
+            var stop = $"`daoris-driver workflow stop {run} {node}` stops it.";
+            yield return acts.Contains(NodeWordActs.Skip)
+                ? $"`daoris-driver workflow skip {run} {node} \"…\"` passes it over for this run; {stop}"
+                : stop;
+        }
+
         var kind = step.Step.Kind;
         // The person's words a step keeps, shown as written: a skip's and a not yet's (D154), and a graph run's node's skip, refusal or stop.
         if (kind == WorkflowKinds.Look && step.Node is null && step.Detail is WorkflowRunDetails.Skip or WorkflowRunDetails.NotYet && step.Words is { Length: > 0 } words)

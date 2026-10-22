@@ -82,7 +82,7 @@ public sealed record AttentionFacts
 }
 
 /// <summary>
-/// Who needs the person (PUSH1d4, D182 point 6): <i>What needs you</i>'s rows and what the Sessions badge counts, judged once for every
+/// Who needs the person (PUSH1d4, D182 point 6): <i>What needs you</i>'s rows, the parks and the sessions the driver runs, judged once for every
 /// window. Each row carries its kind, its id, since when it has waited and the values it is worded from; what it is called, its
 /// sentences and the order the band draws are the page's (D182's PUSH1d4 note).
 /// </summary>
@@ -441,7 +441,8 @@ public static class NeedsAPerson
     }
 
     /// <summary>
-    /// What the Sessions icon's badge counts (UX5 U20, D126 §2.5), each by a key of its own: this machine's sessions parked to ask that
+    /// What parked on the person (UX5 U20's set, D126 §2.5), which the page keeps out of Sessions' running mark (BADGEUX1; a place counts
+    /// the rows), each by a key of its own: this machine's sessions parked to ask that
     /// nobody answered, a parked intake among them, and each quest parked on its failed sessions, each with its workspace for the window's
     /// scope (NEEDSSCOPE1); a parked quest whose record is not in hand says none, and every window counts it. A teammate's park waits on them.
     /// </summary>
@@ -466,7 +467,7 @@ public static class NeedsAPerson
 
     /// <summary>
     /// The sessions the driver runs on this machine (SESSBADGE1, D76's note), each by a key of its own with its workspace for the window's
-    /// scope: what the Sessions badge counts as a quantity and the status bar beside it. One count, the cap's: an active record of this
+    /// scope: what the status bar says, and, less the parks, Sessions' running mark (BADGEUX1). One count, the cap's: an active record of this
     /// machine's that takes a place under the cap (CAPCOUNT1, <see cref="ActiveSessions.HoldsSlot(string?, string?, string?, string?, string?)"/>),
     /// a parked one among them, never a conversation the person holds, Ask Daoris's or a chat. A teammate's runs on its own machine.
     /// </summary>

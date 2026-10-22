@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../../data/queries';
 import type { CurrentWorkflow, WorkflowScope, WorkflowStart } from '../../workflow/current';
-import type { RunScope, WorkflowRunAnswer } from '../../workflow/run';
+import type { NodeWordAnswer, NodeWordAsk, RunScope, WorkflowRunAnswer } from '../../workflow/run';
 import { call } from '../call';
 
 // How work moves in a repository or a workspace (WORKFLOW1b; D157 point 7, the workflow design §2.7, §6.1): its Current
@@ -64,3 +64,18 @@ export const useWorkflowRun = (scope: RunScope | null, { enabled = true }: { ena
     staleTime: 0,
   });
 };
+
+/**
+ * The person's skip or stop of a graph run's node (FABRIC-CUTOVER1f; D190 point 6, the cutover design §5.2), the page's half of
+ * `daoris-driver workflow skip|stop`: kept on the run's record by the driver for its next look, which applies it. Answers what was kept, or
+ * the refusal's code and the driver's sentence, never thrown; the run's view is asked again by the state hub under the driver's key.
+ */
+export const useRunNodeWord = () => useMutation({
+  mutationFn: async ({ run, node, act, words }: NodeWordAsk): Promise<NodeWordAnswer> => {
+    const answer = await call<Partial<NodeWordAnswer> | null>('WORKFLOW_NODE', { run, node, act, ...(words ? { words } : {}) });
+    return {
+      run: answer?.run ?? run, node: answer?.node ?? node, act: answer?.act ?? act, done: answer?.done === true,
+      refused: answer?.refused ?? null, message: answer?.message ?? null,
+    };
+  },
+});
