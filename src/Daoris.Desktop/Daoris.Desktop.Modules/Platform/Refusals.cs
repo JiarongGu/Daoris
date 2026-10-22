@@ -79,6 +79,13 @@ public static class Refusals
     /// </summary>
     public const string AccountsOneSet = "ACCOUNTS_ONE_SET";
 
+    /// <summary>
+    /// A trust hold whose file is the person's own sign-in's (POOL1a3, D197 point 3; the account-pool design §3 point 4): Daoris
+    /// writes nothing there, so <c>TRUST_FOLDER</c> refuses it before anything is written; the tool itself trusts it, at their
+    /// terminal.
+    /// </summary>
+    public const string TrustOwnHome = "TRUST_OWN_HOME";
+
     /// <summary>How a list is used, asked of a scope with no list of its own (D130 §16.6, TOOL4g): there is nothing to use. No door asks it since POOL1a; its words leave with POOL1c.</summary>
     public const string AccountUseNoList = "ACCOUNT_USE_NO_LIST";
 

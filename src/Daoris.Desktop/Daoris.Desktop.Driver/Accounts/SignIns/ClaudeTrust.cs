@@ -19,7 +19,11 @@ public sealed record TrustGrant(string Key, bool Changed, bool Verified);
 /// <param name="TrustFile">The harness's own file the hold read — the account's, which a grant writes.</param>
 /// <param name="Quest">The quest it held, when it was a quest's start.</param>
 /// <param name="Ask">The ask it held, when it was an intake's.</param>
-public sealed record TrustHold(string Folder, string TrustFile, string? Quest = null, string? Ask = null);
+/// <param name="Own">
+/// Whether its file is the tool's own home's (POOL1a3, D197 point 3): a conversation going on in the person's own sign-in, with
+/// no account of Daoris's. Daoris writes nothing there, so a screen offers no grant of it and <c>TRUST_FOLDER</c> refuses one.
+/// </param>
+public sealed record TrustHold(string Folder, string TrustFile, string? Quest = null, string? Ask = null, bool Own = false);
 
 /// <summary>
 /// The trust holds the loop's last tick reported — what a screen may offer the person to grant (D73).
@@ -241,17 +245,18 @@ public static class ClaudeTrust
     /// <remarks>
     /// 🔴 OWNSPACE1a (D175): a hold on a Daoris account names Daoris's door alone. A `claude` run at the person's terminal reads
     /// their own home, never the account's, so it would trust the folder where no session of Daoris's runs, and the hold would
-    /// come straight back.
+    /// come straight back. 🔴 POOL1a3 (D197 point 3): a hold with no account is a conversation going on in the person's own
+    /// sign-in, whose file Daoris never writes, so it names the tool itself at their terminal, never Daoris's door.
     /// </remarks>
     public static string Refusal(string tree, string? profile = null) =>
         $"`{tree}` has never been trusted by this agent on this machine, so it ignores the "
         + "repository's own `permissions.allow` — a session here can do the work but cannot take or "
         + "close its quest. "
         + (profile is null
-            ? $"Run `claude` in that directory once and accept the trust prompt, or `daoris agent trust claude-code \"{tree}\" --yes`. "
+            ? "The conversation goes on in your own sign-in, outside Daoris's accounts: trust the folder with the tool itself, at "
+              + "your terminal (run `claude` there once and accept its trust prompt). Daoris writes nothing in your own sign-in's file."
             : $"`daoris agent trust claude-code \"{tree}\" --profile {ShellWord.Of(profile, ShellWord.Account)} --yes` trusts it for "
-              + "the Daoris account the session runs as. ")
-        + "Daoris sets that flag only when you tell it to: it is your grant to give.";
+              + "the Daoris account the session runs as. Daoris sets that flag only when you tell it to: it is your grant to give.");
 
     /// <summary>
     /// The trust file a hold reads (OWNSPACE1a, D175): the one the session's harness reads, in the account's configuration home,

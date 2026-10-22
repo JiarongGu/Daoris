@@ -107,25 +107,21 @@ public sealed class CodexUsageProcessTests : IDisposable
     }
 
     /// <summary>
-    /// CODEXUSE3: a press for the tool's own sign-in starts the server with no account's home of Daoris's, so it answers
-    /// wherever the agent keeps its own sign-in (D63), and its answer is kept under the own sign-in's own key.
+    /// 🔴 POOL1a3 (D197 point 3, amending CODEXUSE3): an agent's press and the roster's read-all start each server under an
+    /// account's home of Daoris's, and never one with none, which would answer for the person's own sign-in (D63) and might
+    /// refresh their token. Nothing is kept under the own sign-in's key.
     /// </summary>
     [Fact]
-    public async Task The_own_sign_in_s_press_starts_the_server_with_no_account_s_home_and_keeps_it_under_its_own_key()
+    public async Task A_press_starts_every_server_under_an_account_s_home_and_never_one_with_none()
     {
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "door", "account-1"));
         var roster = Roster();
 
-        await roster.ReportAsync("door", Config, refresh: true, own: true);
+        await roster.ReportAsync("door", Config, refresh: true);
+        await roster.RosterAsync(Config, refresh: true);
 
-        // A `CODEX_HOME` this test process inherited is the person's own, and the server inherits it as their terminal would.
-        var own = Environment.GetEnvironmentVariable("CODEX_HOME") is { Length: > 0 } inherited ? Path.GetFileName(inherited) : "(own)";
-        Assert.Equal(
-            new[] { $"{own} app-server", "account-1 app-server" }.Order(StringComparer.Ordinal),
-            AskedLines().Order(StringComparer.Ordinal));
-        var said = AccountWindows.SaidOf(_home, "door", AccountWindows.Own, DateTimeOffset.UtcNow)!;
-        Assert.Equal(0.01, said.Of("session")!.Used);
-        Assert.Equal(0.15, said.Of("weekly")!.Used);
+        Assert.Equal(["account-1 app-server", "account-1 app-server"], AskedLines());
+        Assert.Null(AccountWindows.SaidOf(_home, "door", AccountWindows.Own, DateTimeOffset.UtcNow));
     }
 
     [Fact]

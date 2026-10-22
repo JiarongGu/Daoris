@@ -163,7 +163,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
             {
                 // The room is Daoris's own folder under the home, and trusting it is still the person's
                 // grant: the fact goes to the screen beside the sentence, as a quest's does (D73).
-                lock (untrusted) untrusted.Add(new TrustHold(room, trustPath, Ask: ask.Id));
+                lock (untrusted) untrusted.Add(new TrustHold(room, trustPath, Ask: ask.Id, Own: selection.ProfileHome is null));
                 return Hold(ClaudeTrust.Refusal(room, selection.ProfileHome is null ? null : selection.Profile));
             }
         }

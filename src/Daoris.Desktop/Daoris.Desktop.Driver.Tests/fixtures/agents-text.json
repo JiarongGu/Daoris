@@ -936,7 +936,7 @@
       }
     },
     {
-      "name": "trust, granted in the agent's own home",
+      "name": "trust, every account of Daoris's and never the agent's own home",
       "argv": [
         "trust",
         "claude-code",
@@ -944,26 +944,30 @@
         "--yes"
       ],
       "folders": [
+        "daoris/profiles/agents/claude-code/play/",
         "daoris/profiles/agents/claude-code/work/",
         "work/engine/"
       ],
       "before": {},
       "exit": 0,
       "out": [
-        "daoris: trusting `<root>/work/engine` for `claude-code`, as its own account — in its own file:",
-        "  <root>/user/.claude.json",
+        "daoris: trusting `<root>/work/engine` for `claude-code`, for each of Daoris's accounts (`play`, `work`) — each in its own file:",
+        "  <root>/daoris/profiles/agents/claude-code/play/.claude.json",
+        "  <root>/daoris/profiles/agents/claude-code/work/.claude.json",
         "  This is what the agent asks the first time it runs in a folder. Once it is granted, the",
         "  folder's own settings and `permissions.allow` apply there, and the agent stops asking.",
-        "  Daoris writes that one flag and nothing else in the file.",
+        "  Daoris writes that one flag and nothing else in each file.",
         "  Granted."
       ],
       "err": [],
       "after": {
-        "user/.claude.json": "{\n  \"projects\": {\n    \"<root>/work/engine\": {\n      \"hasTrustDialogAccepted\": true\n    }\n  }\n}\n"
-      }
+        "daoris/profiles/agents/claude-code/play/.claude.json": "{\n  \"projects\": {\n    \"<root>/work/engine\": {\n      \"hasTrustDialogAccepted\": true\n    }\n  }\n}\n",
+        "daoris/profiles/agents/claude-code/work/.claude.json": "{\n  \"projects\": {\n    \"<root>/work/engine\": {\n      \"hasTrustDialogAccepted\": true\n    }\n  }\n}\n"
+      },
+      "changed": "POOL1a3 (D197 point 3): with no account named, every account of the set in its order, each in its own file; the agent's own home's file, which is the person's, is never written."
     },
     {
-      "name": "trust, the machine's default account",
+      "name": "trust, the set in its order, its first first",
       "argv": [
         "trust",
         "claude-code",
@@ -971,6 +975,7 @@
         "--yes"
       ],
       "folders": [
+        "daoris/profiles/agents/claude-code/play/",
         "daoris/profiles/agents/claude-code/work/",
         "work/engine/"
       ],
@@ -979,18 +984,41 @@
       },
       "exit": 0,
       "out": [
-        "daoris: trusting `<root>/work/engine` for `claude-code`, as the account `work` — in its own file:",
+        "daoris: trusting `<root>/work/engine` for `claude-code`, for each of Daoris's accounts (`work`, `play`) — each in its own file:",
         "  <root>/daoris/profiles/agents/claude-code/work/.claude.json",
+        "  <root>/daoris/profiles/agents/claude-code/play/.claude.json",
         "  This is what the agent asks the first time it runs in a folder. Once it is granted, the",
         "  folder's own settings and `permissions.allow` apply there, and the agent stops asking.",
-        "  Daoris writes that one flag and nothing else in the file.",
+        "  Daoris writes that one flag and nothing else in each file.",
         "  Granted."
       ],
       "err": [],
       "after": {
         "daoris/data/harnesses.json": "{\"defaults\":{\"claude-code\":\"work\"}}",
+        "daoris/profiles/agents/claude-code/play/.claude.json": "{\n  \"projects\": {\n    \"<root>/work/engine\": {\n      \"hasTrustDialogAccepted\": true\n    }\n  }\n}\n",
         "daoris/profiles/agents/claude-code/work/.claude.json": "{\n  \"projects\": {\n    \"<root>/work/engine\": {\n      \"hasTrustDialogAccepted\": true\n    }\n  }\n}\n"
-      }
+      },
+      "changed": "POOL1a3 (D197 point 3): the machine's default no longer picks one account; it is the set's first (D197 point 2), read through the projection, and the file is not written."
+    },
+    {
+      "name": "trust, no account of Daoris's",
+      "argv": [
+        "trust",
+        "claude-code",
+        "<root>/work/engine",
+        "--yes"
+      ],
+      "folders": [
+        "work/engine/"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `claude-code` has no account of Daoris's to trust the folder for — Daoris never writes your own sign-in's file. Sign in to one with `daoris agent login claude-code --new`, or trust the folder with the tool itself, at your terminal (run `claude` there once and accept its trust prompt)."
+      ],
+      "after": {},
+      "changed": "POOL1a3 (D197 point 3): refused, where it wrote the agent's own home's file."
     },
     {
       "name": "trust, a door in its owner's account",

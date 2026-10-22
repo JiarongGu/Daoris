@@ -273,6 +273,29 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
         Assert.False(File.Exists(Path.Combine(Home, "x.json")));
     }
 
+    /// <summary>
+    /// 🔴 POOL1a3 (D197 point 3; Fable's F3): a hold whose file is the person's own sign-in's offers no press, and one sent anyway
+    /// is refused as <c>TRUST_OWN_HOME</c> before anything is written: Daoris writes nothing in the own home. The person trusts it
+    /// with the tool itself, at their terminal.
+    /// </summary>
+    [Fact]
+    public async Task Trusting_a_folder_held_for_the_own_sign_in_is_refused_and_writes_nothing()
+    {
+        var loop = Loop();
+        var file = Path.Combine(Home, "own", ".claude.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+        File.WriteAllText(file, """{"projects":{}}""");
+        var folder = Path.Combine(Home, "engine");
+        loop.Trust.Record([new TrustHold(folder, file, Quest: "q1", Own: true)]);
+
+        var refused = await RefusalAsync(new DriverModule(Bus, loop), "TRUST_FOLDER", new { folder, trustFile = file });
+
+        Assert.StartsWith(Refusals.TrustOwnHome, refused);
+        Assert.Contains("trust it with the tool itself, at your terminal", refused);
+        Assert.Equal("""{"projects":{}}""", File.ReadAllText(file));
+        Assert.False(ClaudeTrust.Accepted(file, folder));
+    }
+
     /// <summary>Every other standing choice survives it — this is an editor, not the file's owner.</summary>
     [Fact]
     public async Task The_notify_switch_leaves_the_rest_of_the_file_standing()
