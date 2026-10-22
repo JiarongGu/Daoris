@@ -10,8 +10,9 @@ namespace Daoris.Desktop;
 /// How work moves in a repository or a workspace, the page's `bridge/workflow.ts` (WORKFLOW1b; D157 point 7, the workflow
 /// design §2.7, §6.1): its Current workflow, which <see cref="WorkflowCurrent.Derive"/> draws from this machine's driver file,
 /// its plugins and its registry exactly as `daoris driver workflow show` reads them; and where a piece of work stands in it
-/// (WORKFLOW1c), the runs <see cref="WorkflowRunReader"/> reads. Read-only but one: <c>WORKFLOW_LANDED</c>, the person's press that sets
-/// the landed route and accepts the gates it runs unasked (FABRIC-PIPELINE1a).
+/// (WORKFLOW1c), the runs <see cref="WorkflowRunReader"/> reads. Read-only but two: <c>WORKFLOW_LANDED</c>, the person's press that sets
+/// the landed route and accepts the gates it runs unasked (FABRIC-PIPELINE1a); and <c>WORKFLOW_NODE</c>, their skip or stop of a graph run's
+/// node (FABRIC-CUTOVER1f).
 /// </summary>
 public sealed class WorkflowRoutes(DriverContext context)
 {
@@ -241,6 +242,41 @@ public sealed class WorkflowRoutes(DriverContext context)
         return new { Runs = read.Runs.Select(RunAnswer).ToArray(), read.Problem };
     }
 
+    // The person's skip or stop of a run's node (FABRIC-CUTOVER1f; D190 points 3 and 6, the cutover design §3, §5.2): the page's half of
+    // `daoris-driver workflow skip|stop`. Both doors end in RunNodeWords.Word, which keeps the word on the run's record under its lock with the
+    // lease asked inside it; the loop's runtime applies it at its next pass, which the nudge wakes.
+    /// <summary>
+    /// Keep the person's `act` (`skip` with their `words`, or `stop`, words where given) on `node` of `run`, a run bound to a graph version, for
+    /// the next look. Answers `{ run, node, act, done, refused, message }`, a refusal as an answer with its code (`not-run`, `unread-version`,
+    /// `not-node`, `not-act`, `ended`, `worded`, the one table's `no-words`, `not-skippable` and `not-in-table`, `not-held`, `unreadable`) and the
+    /// terminal's sentence. Asked for its words (`said: true`) by the terminal's verb over the pipe, it runs that verb's own path here.
+    /// </summary>
+    [DriverRoute("WORKFLOW_NODE")]
+    [Publishes("WORKFLOW_NODE", StateScopes.Driver)]
+    private async Task<object?> WorkflowNodeAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var run = PayloadHelper.GetRequiredValue<string>(request.Payload, "run");
+        var node = PayloadHelper.GetRequiredValue<string>(request.Payload, "node");
+        var act = PayloadHelper.GetRequiredValue<string>(request.Payload, "act");
+        var words = Optional(request, "words");
+        _ = _loop.Service ?? throw NotReady();
+        var records = new NodeRecordFiles(_loop.Home);
+
+        // The terminal's verb, confirmed in this window: its own path, so its lines are the alone path's; never a session's terminal here.
+        if (Flag(request, "said"))
+        {
+            var said = await TerminalSaid.RunAsync(output =>
+                WorkflowNodeCommand.RunAsync(new WorkflowNodeAsk(act, run, node, words), records, output, instance: null, _ => null, ct: cancellationToken))
+                .ConfigureAwait(false);
+            _loop.Nudge();
+            return said;
+        }
+
+        var done = await Task.Run(() => RunNodeWords.Word(records, run, node, act, words), cancellationToken).ConfigureAwait(false);
+        if (done.Done) _loop.Nudge();
+        return new { done.Run, done.Node, done.Act, done.Done, done.Refused, Message = RunNodeWords.Said(done) };
+    }
+
     /// <summary>
     /// One run as the page draws it: its chosen graph's digest and bound version identity, the plugins that may hold a start,
     /// each limit's sentence, and each step beside where it stands and its facts. A problem has no replacement graph.
@@ -292,6 +328,10 @@ public sealed class WorkflowRoutes(DriverContext context)
                 // FABRIC-CUTOVER1e: a graph run's node's own kind and the subject it observes; null on a steps run's step.
                 step.Node,
                 step.On,
+                // FABRIC-CUTOVER1f, additive: what the person may say of a graph run's node now (`skip`, `stop`), and their word kept on it and
+                // not applied yet; null on a steps run's step and where none.
+                step.Acts,
+                Asked = step.Asked is { } asked ? new { asked.Node, asked.Act, asked.Words, asked.At } : null,
             }).ToArray(),
             // FABRIC-CUTOVER1e: a run bound to a graph version, drawn from its record: its graph's wires and what its record says of it.
             Graph = run.Graph is { } graph
