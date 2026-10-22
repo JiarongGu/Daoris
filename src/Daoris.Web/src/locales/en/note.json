@@ -6,6 +6,7 @@
   "note.ended.parked-asked": "It stopped with its quest still taken, to ask you:",
   "note.ended.parked-transcript": "It stopped with its quest still taken, to ask you; what it needs ends its transcript.",
   "note.ended.parked-short": "It stopped to ask you.",
+  "note.ended.awaits-helper": "It asked a helper and stopped so the helper could read: it goes on in the same conversation with the helper's answer, and comes to you only if no answer comes.",
   "note.ended.answered-unfinished": "It went on with #{{awaits}} answered, and ended with the quest still taken (exit {{exit}}).",
   "note.ended.carried-unfinished": "It carried the quest on, and ended with it still taken (exit {{exit}}).",
   "note.ended.done": "The quest reached done.",

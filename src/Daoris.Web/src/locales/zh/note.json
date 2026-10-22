@@ -6,6 +6,7 @@
   "note.ended.parked-asked": "它停了下来，委托仍已接下，想问你：",
   "note.ended.parked-transcript": "它停了下来，委托仍已接下，想问你；它需要什么写在记录末尾。",
   "note.ended.parked-short": "它停下来问你。",
+  "note.ended.awaits-helper": "它请了助手，并停下来让助手阅读：助手回答后，它会带着回答在同一段对话中继续；只有没有回答时才交给你。",
   "note.ended.answered-unfinished": "#{{awaits}} 答复后它继续工作，结束时委托仍已接下（退出码 {{exit}}）。",
   "note.ended.carried-unfinished": "它接续了委托，结束时委托仍已接下（退出码 {{exit}}）。",
   "note.ended.done": "委托已完成。",

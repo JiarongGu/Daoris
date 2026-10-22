@@ -454,6 +454,14 @@ public sealed class Driver(
     internal Task<int> HelpersAsync(Snapshot snapshot, int taken, List<string> events, CancellationToken ct) =>
         Helpers.HelpersAsync(snapshot, taken, events, ct);
 
+    /// <summary>
+    /// Whether a driven run that ends now holding its quest waits on its own helper (HELPERWAIT1; <see cref="DriverHelpers.WaitsOnOwnHelperAsync"/>):
+    /// a question its run asked counts from the later of <paramref name="openedAt"/> and the words it was last handed, as its park binds one.
+    /// </summary>
+    internal Task<bool> WaitsOnOwnHelperAsync(string session, QuestView quest, DateTimeOffset openedAt, CancellationToken ct) =>
+        Helpers.WaitsOnOwnHelperAsync(
+            session, quest, Context.Events.LastHandedAt(session) is { } handed && handed > openedAt ? handed : openedAt, ct);
+
     /// <summary>The asks due an intake at a look (D65 §1b): <see cref="DriverIntakes.IntakesDueAsync"/>.</summary>
     private Task<IReadOnlyList<AskView>> IntakesDueAsync(int slots, List<string> events, CancellationToken ct) =>
         Intakes.IntakesDueAsync(slots, events, ct);
@@ -2371,6 +2379,9 @@ public sealed class Driver(
                     var after = await service.FindQuestAsync(quest.Id, ct).ConfigureAwait(false);
                     var status = after?.Status ?? "Open";
                     var stop = Context.Processes.StopMade(sessionId);
+                    // HELPERWAIT1: a clean end holding its quest, on its agent's own open helper ask and no question of the person's, waits on that helper.
+                    var awaitsHelper = stop is null && exitCode == 0 && status == "Taken"
+                                       && await WaitsOnOwnHelperAsync(sessionId, quest, openedAt, ct).ConfigureAwait(false);
                     var conclusion = stop is not null
                         // The driver's own stop, for a take that lost (D68 §5), stands it down: the quest was someone
                         // else's, and the reason says who. The person's, a pause's naming the pause (PAUSE1b, design
@@ -2392,7 +2403,8 @@ public sealed class Driver(
                                 // BGWAIT1c: the native door's harness ended its own background work with its turn.
                                 backgroundCut: ended.BackgroundCut,
                                 // FABRIC-CLOSE1h5: a closure graph's submission is its done, so its session is due, never parked.
-                                submitted: QuestResults.Submitted(after))
+                                submitted: QuestResults.Submitted(after),
+                                awaitsHelper: awaitsHelper)
                             // BGWAIT2: a done this run reached outranks the timeout, as it outranks a messy exit.
                             : Observation.AfterTimeout(config.TimeoutMinutes, quest.Status, status);
                     // ACCESSSWAP1b: a run Daoris ended at its turn's end for a changed setup is neither a park nor a failure, and goes on.

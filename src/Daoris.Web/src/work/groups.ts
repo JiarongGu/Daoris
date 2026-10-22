@@ -140,8 +140,8 @@ export function keptSessionFilters(filters: SessionFilters): Record<string, unkn
   return { ...(filters.group !== 'state' ? { group: filters.group } : {}), ...(filters.archived ? { archived: true } : {}) };
 }
 
-/** The words the reader derives that the page shows as its own (D126 §2.2, ANSWER1c, MSG1f). */
-const DERIVED: ReadonlySet<string> = new Set(['parked', 'awaiting-reply', 'answered', 'going-on']);
+/** The words the reader derives that the page shows as its own (D126 §2.2, ANSWER1c, MSG1f, HELPERWAIT1). */
+const DERIVED: ReadonlySet<string> = new Set(['parked', 'awaiting-reply', 'answered', 'going-on', 'awaiting-helper']);
 
 /**
  * A row's shown state: the reader's derived word where it said one (*parked*, *awaiting reply*, *answered*, *going on*),

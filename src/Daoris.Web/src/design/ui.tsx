@@ -284,6 +284,8 @@ export const SESSION_TONE: Record<ShownState, keyof typeof PILL_TONE> = {
   'answered': 'neutral',
   // Going on, its run is opening with the person's words, and nothing waits on the person (MSG1f): answered's twin.
   'going-on': 'neutral',
+  // Waiting on its own helper, nothing runs and nothing waits on the person (HELPERWAIT1): awaiting reply's twin.
+  'awaiting-helper': 'neutral',
 };
 
 /**
@@ -292,13 +294,14 @@ export const SESSION_TONE: Record<ShownState, keyof typeof PILL_TONE> = {
  * list's reader derives from the session's quest (D126 §2.2): **parked**, the last session here of a quest
  * parked on its failed sessions, and **awaiting-reply**, the last session here of a quest waiting on a
  * question asked of another repository; **answered**, a park the person answered, which the same session
- * goes on from at the driver's next look (ANSWER1c, D131); and **going-on**, a record going on with the person's
- * words, its run opening (MSG1f, D137 §3.2). None is a record state: no new session state (D126 §2).
+ * goes on from at the driver's next look (ANSWER1c, D131); **going-on**, a record going on with the person's
+ * words, its run opening (MSG1f, D137 §3.2); and **awaiting-helper**, a session that ended its turn on its own helper's
+ * ask and goes on with its answer (HELPERWAIT1). None is a record state: no new session state (D126 §2).
  *
  * The record says `working` for a chat's whole life, since its process is; whether a turn is in flight
  * is the driver's to say.
  */
-export type ShownState = SessionState | 'idle' | 'parked' | 'awaiting-reply' | 'answered' | 'going-on';
+export type ShownState = SessionState | 'idle' | 'parked' | 'awaiting-reply' | 'answered' | 'going-on' | 'awaiting-helper';
 
 /**
  * The catalogue key naming a shown state: the record's states and idle in `sessionState`, the reader's derived
@@ -309,6 +312,7 @@ export function shownKey(shown: ShownState): string {
   if (shown === 'awaiting-reply') return 'work.shown.awaitingReply';
   if (shown === 'answered') return 'work.shown.answered';
   if (shown === 'going-on') return 'work.shown.goingOn';
+  if (shown === 'awaiting-helper') return 'work.shown.awaitingHelper';
   return `sessionState.${shown}`;
 }
 
@@ -375,6 +379,8 @@ export const SESSION_DOT: Record<ShownState, keyof typeof DOT_TONE> = {
   'answered': 'idle',
   // Going on, its run is opening and no turn runs yet (MSG1f): quiet until its first prompt goes.
   'going-on': 'idle',
+  // Waiting on its own helper, its own turn has ended and nothing waits on the person (HELPERWAIT1): quiet, as awaiting reply is.
+  'awaiting-helper': 'idle',
 };
 
 /** Quest state on its soft field. The label is always present — status never rides on hue alone. */

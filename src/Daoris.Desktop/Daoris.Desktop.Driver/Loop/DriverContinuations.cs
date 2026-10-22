@@ -519,6 +519,10 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
 
         // A stop made of it is its end, a pause's naming the pause (PAUSE1b, design §4.1), as a first run's is (FLAKE3: one reading).
         var stop = _context.Processes.StopMade(sessionId);
+        // HELPERWAIT1: a clean end holding its quest, on its agent's own open helper ask and no question of the person's, waits on that
+        // helper, as a first run's does. A closed quest's session holds none, and never waits.
+        var awaitsHelper = stop is null && exitCode == 0 && !closed && status == "Taken"
+                           && await _driver.WaitsOnOwnHelperAsync(sessionId, quest, openedAt, ct).ConfigureAwait(false);
         var conclusion = stop is not null
             ? stop.Conclusion
             : exitCode is int code
@@ -532,7 +536,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                     // BGWAIT1c: the native door's harness ended its own background work with its turn.
                     backgroundCut: ended.BackgroundCut,
                     // FABRIC-CLOSE1h5: a closure graph's submission is its done, as at a first run's end.
-                    submitted: !closed && QuestResults.Submitted(after))
+                    submitted: !closed && QuestResults.Submitted(after),
+                    awaitsHelper: awaitsHelper)
                 // BGWAIT2: a done this run reached outranks the timeout; a quest closed before it went on is not this run's.
                 : Observation.AfterTimeout(config.TimeoutMinutes, quest.Status, status);
         // ACCESSSWAP1b: a run Daoris ended at its turn's end for a changed setup is neither a park nor a failure, and goes on again.

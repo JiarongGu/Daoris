@@ -106,6 +106,12 @@ public sealed record SessionRecord(string Id, string Repository, string State)
     public bool Partner => Piece is not null;
 
     /// <summary>
+    /// Whether it ended waiting on its own helper (HELPERWAIT1): completed by <see cref="NoteCodes.EndedAwaitsHelper"/>, read by its
+    /// note's code, never its English. False for every other record and from a host before parts.
+    /// </summary>
+    public bool AwaitsHelper { get; init; }
+
+    /// <summary>
     /// The key it is grouped by: the service's, else the record its own line of work, as the service derives a record whose
     /// facts are gone (<c>session:&lt;id&gt;/&lt;repository&gt;</c>, SESSONE1b), so a host from before still lists every record.
     /// </summary>
@@ -168,11 +174,18 @@ public static class SessionRecords
                 // COAGENT1b: a helper's or a partner's lead, and a partner's piece, kept only beside it, as the service keeps them.
                 Serves = Text(session, "serves") is { Length: > 0 } serves ? serves : null,
                 Piece = Text(session, "serves") is { Length: > 0 } && Text(session, "piece") is { Length: > 0 } piece ? piece : null,
+                // HELPERWAIT1: a completed record's note read for its code alone, and only a completed one's.
+                AwaitsHelper = Text(session, "state") == "completed" && Carries(session, NoteCodes.EndedAwaitsHelper.Code),
             });
         }
 
         return records;
     }
+
+    /// <summary>Whether a record's note carries a line of <paramref name="code"/>, read from its parts without composing them.</summary>
+    private static bool Carries(JsonElement session, string code) =>
+        session.TryGetProperty("noteParts", out var parts) && parts.ValueKind == JsonValueKind.Array
+        && parts.EnumerateArray().Any(part => part.ValueKind == JsonValueKind.Object && Text(part, "code") == code);
 
     /// <summary>
     /// The records as the service answers them, over a client of this reader's own. A refusal is the driver's sentence
@@ -357,6 +370,12 @@ public static class ShownState
     /// on with them, so it is working, as an answered park is.
     /// </summary>
     public const string GoingOn = "going-on";
+
+    /// <summary>
+    /// A session that ended its turn on its own helper's ask (HELPERWAIT1): it waits on that helper and goes on with its answer, so
+    /// nothing about it waits on the person until the helper ends with no answer.
+    /// </summary>
+    public const string AwaitingHelper = "awaiting-helper";
 }
 
 /// <summary>
@@ -1125,6 +1144,10 @@ public static class SessionGroups
                     Strikes = _look.Strikes.TryGetValue(record.Quest!, out var strikes) ? strikes : null,
                 };
             }
+
+            // 🔴 HELPERWAIT1: it ended its turn on its own helper's ask and goes on with the answer in its own tree, so it resumes later,
+            // never to review and never the person's: the planner considers nothing of its taken quest meanwhile, so no verdict says so.
+            if (record.AwaitsHelper) return Rest(row with { Group = SessionGroup.Later, Shown = ShownState.AwaitingHelper });
 
             if (ReviewableTree(record) is { } tree && _look.Trees.TryGetValue(Normal(tree), out var work) && work.Holds)
             {
