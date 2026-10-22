@@ -9,7 +9,7 @@ import { Button, Dot, Icon, Inline, SelectField } from '../../design/ui';
 import type { AccountRowFacts } from './accountWords';
 import type { RuleProposal } from '../../settings/repository/AgentRules';
 import type { GraphEnd, HeldAttempt, HeldResolution, UnreadableRecord } from '../head/milestone';
-import { ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers, type StaleSince } from './attention';
+import { ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers, type GitHeld, type StaleSince } from './attention';
 import { Note } from '../Note';
 import { type Answered, InlineConfirm } from '../InlineConfirm';
 import { hasNote, type NoteRecord } from '../noteLines';
@@ -23,7 +23,7 @@ import { TrustAsk } from '../waits/TrustAsk';
 export type AttentionKind =
   | 'parked' | 'parked-quest' | 'go-ahead' | 'trust' | 'account-wait' | 'signed-out'
   | 'proposal' | 'intake' | 'departure' | 'set-up' | 'rule' | 'unanswerable'
-  | 'review' | 'opinion' | 'helper' | 'hand-over' | 'work' | 'permission' | 'answer' | 'confirmation' | 'space';
+  | 'review' | 'opinion' | 'helper' | 'hand-over' | 'work' | 'permission' | 'answer' | 'confirmation' | 'space' | 'git-held';
 
 /**
  * One thing that is waiting on a person, as Overview's band shows it.
@@ -57,6 +57,9 @@ export type AttentionKind =
  *
  * **KEEP1f added `space`**: a volume still below its free-space floor once Daoris freed what it can make again (the cleanup design
  * §3.2). What else goes is the person's to choose, so its door, *Free up space…*, is its one control: it opens the *Disk space* card.
+ *
+ * **GITAUTH1a added `git-held`**: a git remote held because it could not authenticate (D198, the git auth design §5.2), said once.
+ * Nothing connects for it until a change lifts it or the person's *Try again*, its one act, on the row itself.
  */
 export type Attention = {
   /**
@@ -143,6 +146,10 @@ export type Attention = {
   read?: string | null;
   /** The sentence explaining what the person is being asked to settle. */
   detail?: string | null;
+  /** A `git-held` row's held group (GITAUTH1a): the repositories its *Try again* lifts, and why, which its mark's ink says. */
+  git?: GitHeld;
+  /** The workspace a `git-held` row was judged in, which its *Try again* names; absent where .NET scoped it to none. */
+  workspace?: string;
   /**
    * A parked session's or a parked intake's note, its English and its parts (LANG1b): worded by the row in the reader's
    * language, the agent's question as written, in `detail`'s place.
@@ -200,6 +207,8 @@ export type AttentionActs = {
   permission?: (item: Attention, option: string) => void;
   /** A third answer alone held for the person let go on (`goOn`) or kept (COWORK1e): its session's page's own presses. */
   answerAlone?: (item: Attention, goOn: boolean) => void;
+  /** A held git remote's *Try again* (GITAUTH1a): its repositories' holds lifted, so the next act connects once. */
+  gitTryAgain?: (item: Attention) => void;
 };
 
 /** Which handler each act needs. */
@@ -240,6 +249,7 @@ const HANDLER: Record<AttentionActId, keyof AttentionActs> = {
   'open-records': 'openRecords',
   'again-step': 'held',
   'stop-partial': 'held',
+  'git-try-again': 'gitTryAgain',
 };
 
 /** The kinds that wait in a circle rather than in a repository. */
@@ -346,6 +356,7 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
     else if (act === 'resend-close') acts.held?.(item, 'resend');
     else if (act === 'open-records') acts.openRecords?.(item);
     else if (act === 'again-step') acts.held?.(item, 'again');
+    else if (act === 'git-try-again') acts.gitTryAgain?.(item);
   };
   const label = (act: AttentionActId, account?: string): string => {
     switch (act) {
@@ -401,6 +412,8 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
       case 'again-step': return t('work.milestone.held.act.again');
       // FABRIC-CLOSE1j: a close found closed only in part, its node waiting again: its stop alone.
       case 'stop-partial': return t('work.milestone.closed.act.stop');
+      // GITAUTH1a: a held git remote's one act, *Try again*, the word a quest's retry is.
+      case 'git-try-again': return t('work.attention.act.retry');
     }
   };
 
@@ -419,7 +432,11 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
         {/* Status leads (D41 §4): the kind, then what, where and how long. The title moves to its own line where the main
             area is narrow, so the kind, where and how long keep one line above it. */}
         <p className="m-0 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-small">
-          <Dot tone="parked" label={t(item.kind === 'go-ahead' && item.stale ? 'work.attention.goAheadStale' : `work.attention.${item.kind}`)} />
+          {/* A host key changed since ssh trusted it (GITAUTH1a, the git auth design §7.4) wears danger's ink: it may be another host. */}
+          <Dot
+            tone={item.git?.class === 'host-changed' ? 'failed' : 'parked'}
+            label={t(item.kind === 'go-ahead' && item.stale ? 'work.attention.goAheadStale' : `work.attention.${item.kind}`)}
+          />
           <span
             id={titleId}
             className="order-last min-w-0 max-w-full basis-full truncate text-body font-semibold text-ink @3xl/main:order-none @3xl/main:basis-auto"

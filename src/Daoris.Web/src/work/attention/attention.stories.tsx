@@ -30,6 +30,7 @@ const ACTS: Required<AttentionActs> = {
   openRecords: () => {},
   answerAlone: () => {},
   handOver: () => {},
+  gitTryAgain: () => {},
 };
 /** Every door, as a shell's Overview hands them. */
 const DOORS: AttentionDoors = {
@@ -616,6 +617,54 @@ export const AccountRowsNarrowChinese: StoryObj = {
     <Main width={600}>
       <ul className="m-0 grid list-none gap-1 border border-line bg-raised p-0 py-2">
         {chineseRows().slice(0, 3).map((item) => <AttentionRow key={item.id} item={item} acts={ACTS} onOpen={() => {}} />)}
+      </ul>
+    </Main>
+  ),
+};
+
+/**
+ * GITAUTH1a (the git auth design §5.2, §7.4): a git remote held because it could not authenticate, one row per held group and class,
+ * each worded by the reader's language from its host, its repositories and git's own last line, which stay as written; *Try again* its
+ * one act. A host key changed since ssh trusted it wears danger's ink.
+ */
+const GIT_HELD: Attention[] = ([
+  ['refused', 'github.com', ['engine', 'game'], 'git@github.com: Permission denied (publickey).'],
+  ['write-refused', 'dev.azure.com', ['reports'], "remote: TF401027: You need the Git 'GenericContribute' permission to perform this action."],
+  ['host-unknown', 'git.example.org', ['tools'], 'Host key verification failed.'],
+  ['host-changed', 'gitlab.com', ['engine', 'game', 'tools'], 'WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!'],
+] as const).map(([held, host, repositories, words], index): Attention => ({
+  id: `default|${host}|${held}|all`, kind: 'git-held', where: 'origin', since: at(15 + index * 20), workspace: 'default',
+  title: '', git: { host, class: held, holds: held === 'write-refused' ? 'writes' : 'all', remote: 'origin', repositories: [...repositories], words },
+}));
+
+/** The held git remotes, each worded by a reader of `language`, as `attentionWorded` words them. */
+function gitHeldRows(language: 'en' | 'zh'): Attention[] {
+  const reader = readerIn(language);
+  const t = reader.t.bind(reader);
+  return GIT_HELD.map((item) => ({
+    ...item,
+    title: t(`work.attention.gitHeld.title.${item.git!.class}`, { host: item.git!.host }),
+    detail: t('work.attention.gitHeld.detail', { repositories: item.git!.repositories.join(', '), words: item.git!.words }),
+  }));
+}
+
+export const GitHeldRows: StoryObj = {
+  render: () => (
+    <Main width={1180}>
+      <ul className="m-0 grid list-none gap-1 border border-line bg-raised p-0 py-2">
+        {gitHeldRows('en').map((item) => <AttentionRow key={item.id} item={item} acts={ACTS} />)}
+      </ul>
+    </Main>
+  ),
+};
+
+/** The held git remotes in 中文, at 680 px: the host and git's words as written. */
+export const GitHeldRowsNarrowChinese: StoryObj = {
+  decorators: [chinese],
+  render: () => (
+    <Main width={600}>
+      <ul className="m-0 grid list-none gap-1 border border-line bg-raised p-0 py-2">
+        {gitHeldRows('zh').map((item) => <AttentionRow key={item.id} item={item} acts={ACTS} />)}
       </ul>
     </Main>
   ),

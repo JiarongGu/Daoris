@@ -688,6 +688,10 @@ public sealed partial class HelpCoverageTests
             "it answers a third answer in a row with nobody between, which the answers-alone bound holds for the person (D188 point 4): "
             + "*Go on with this answer* is their word on that one answer and *Not now* keeps it for them, given where it waits; the bound "
             + "itself is fixed, so Ask Daoris proposes no single answer.")),
+        // GITAUTH1a (D198 point 7): Try again on a held git remote's row in What needs you.
+        ("work", "useGitTryAgain", null, new Exempt(
+            "it lifts Daoris's own hold on git remotes that could not authenticate, so their next fetch tries once (the git-auth design "
+            + "§5.2): the person's word that something changed on the host, which no proposal could know, and it widens nothing.")),
         // SESSONE2c (D167 points 6 to 8): the ask's channel, posted to from the ask's page and a session's panel, and its mark.
         ("asks", "usePostChannel", null, ChannelPostDoor),
         ("work", "usePostChannel", null, ChannelPostDoor),

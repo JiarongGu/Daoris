@@ -79,6 +79,12 @@ public sealed record AttentionFacts
     /// (<see cref="AttentionStateSlice.SpaceWaits"/>): its root, free space, size and floor, what the floor freed and what the press could.
     /// </summary>
     public IReadOnlyList<JsonObject> Space { get; init; } = [];
+
+    /// <summary>
+    /// Each remote Daoris holds since it could not authenticate (GITAUTH1a, <see cref="AttentionStateSlice.GitWaits"/>): its repository,
+    /// workspace, remote, host, class, what it holds, what the transport said and since when.
+    /// </summary>
+    public IReadOnlyList<JsonObject> Git { get; init; } = [];
 }
 
 /// <summary>
@@ -431,6 +437,31 @@ public static class NeedsAPerson
                 ["floor"] = low["floor"]?.DeepClone(),
                 ["freed"] = low["freed"]?.DeepClone(),
                 ["could"] = low["could"]?.DeepClone(),
+            };
+            rows.Add(row);
+        }
+
+        // A git remote that cannot authenticate, held (GITAUTH1a, the git-auth design §5.2 and §7.4): one row per held group, its host,
+        // class and what it holds in a workspace, the repositories in it named on the row. Said once here; a session's and a press's
+        // words name this row rather than repeat it. Its one act, Try again, is on the row. It holds no work yet: a session goes on
+        // from the line it has, and the landing's push is its plugin's.
+        foreach (var group in facts.Git
+            .GroupBy(held => (Workspace: Text(held, "workspace") ?? "default", Host: Text(held, "host") ?? "", Class: Text(held, "class") ?? "",
+                Holds: Text(held, "holds") ?? ""))
+            .OrderBy(group => group.Key.Workspace, StringComparer.Ordinal).ThenBy(group => group.Key.Host, StringComparer.Ordinal))
+        {
+            var held = group.OrderBy(each => Text(each, "since"), StringComparer.Ordinal).ToList();
+            var key = group.Key;
+            var row = Row("git-held", $"{key.Workspace}|{key.Host}|{key.Class}|{key.Holds}", Text(held[0], "since"), key.Workspace);
+            row["git"] = new JsonObject
+            {
+                ["host"] = key.Host,
+                ["class"] = key.Class,
+                ["holds"] = key.Holds,
+                ["remote"] = Text(held[0], "remote"),
+                ["repositories"] = new JsonArray([.. held.Select(each => Text(each, "repository")).Distinct(StringComparer.OrdinalIgnoreCase)
+                    .Order(StringComparer.OrdinalIgnoreCase).Select(name => (JsonNode?)JsonValue.Create(name))]),
+                ["words"] = Text(held[0], "words"),
             };
             rows.Add(row);
         }

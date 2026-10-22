@@ -111,7 +111,7 @@ const everyAct = (): Required<AttentionActs> => ({
   acceptDeparture: vi.fn(), acceptRule: vi.fn(), declineRule: vi.fn(),
   signIn: vi.fn(), signInNew: vi.fn(), read: vi.fn(), letRun: vi.fn(), reviewed: vi.fn(), notYet: vi.fn(), showAgain: vi.fn(),
   opinionAgain: vi.fn(), opinionAnyway: vi.fn(), helper: vi.fn(), held: vi.fn(), permission: vi.fn(), answerAlone: vi.fn(),
-  openRecords: vi.fn(), handOver: vi.fn(),
+  openRecords: vi.fn(), handOver: vi.fn(), gitTryAgain: vi.fn(),
 });
 
 describe('a row in what needs you', () => {
@@ -655,6 +655,35 @@ describe('an account’s row', () => {
   });
 
   /** A sign-in's steps happen where it was started (platform language §4): the band hands its panel, under the row. */
+  /**
+   * GITAUTH1a (the git auth design §5.2, §7.4): a held git remote offers *Try again* alone, on the row, which hands the row to its act; a
+   * host key changed since ssh trusted it wears danger's ink; handed no act, it offers none and still says what is held.
+   */
+  it('tries a held git remote again in one press, its changed host key in danger’s ink', async () => {
+    vi.useRealTimers();
+    const git = {
+      host: 'github.com', class: 'refused' as const, holds: 'all' as const, remote: 'origin', repositories: ['engine', 'game'],
+      words: 'Permission denied (publickey).',
+    };
+    const held: Attention = {
+      id: 'default|github.com|refused|all', kind: 'git-held', title: 'github.com refused the sign-in git has here', where: 'origin',
+      since: '2026-09-21T09:00:00Z', detail: 'engine, game: …', git, workspace: 'default',
+    };
+    const acts = everyAct();
+    const { rerender } = render(<AttentionRow item={held} acts={acts} />);
+    expect(screen.getByText('git held')).toHaveClass('text-ink-open');
+    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(['Try again']);
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(acts.gitTryAgain).toHaveBeenCalledWith(held);
+
+    rerender(<AttentionRow item={{ ...held, git: { ...git, class: 'host-changed' } }} acts={acts} />);
+    expect(screen.getByText('git held')).toHaveClass('text-ink-danger');
+
+    rerender(<AttentionRow item={held} />);
+    expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.getByText('github.com refused the sign-in git has here')).toBeInTheDocument();
+  });
+
   it('holds what its band hands it under the row', () => {
     render(<AttentionRow item={SIGNED_OUT} acts={everyAct()} below={<p>the sign-in’s steps</p>} />);
     expect(within(screen.getByRole('listitem')).getByText('the sign-in’s steps')).toBeInTheDocument();

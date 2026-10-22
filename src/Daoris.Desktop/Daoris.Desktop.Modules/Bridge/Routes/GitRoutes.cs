@@ -190,6 +190,19 @@ public sealed class GitRoutes(DriverLoop loop)
     private static int GitPage(IpcRequest request) =>
         Number(request, "page") is { } page ? (int)Math.Clamp(page, -1, GitReads.LastPage + 1) : 0;
 
+    // GITAUTH1a: the person's Try again on a held git remote's row in What needs you (the git-auth design §5.2): every hold on the
+    // repositories it names, in its workspace where it names one, lifted, so the next fetch of each tries once. The row goes as the
+    // attention slice hears the lift (GitHolds.Changed); `{ lifted }`, how many holds were. Nothing connects here: the next act does.
+    [DriverRoute("GIT_TRY_AGAIN")]
+    private Task<object?> GitTryAgainAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var repositories = Strings(request, "repositories");
+        if (repositories.Count == 0) throw new DriverException("Try again names the repositories it lifts.");
+        var workspace = Optional(request, "workspace");
+        var lifted = repositories.Sum(repository => GitHolds.LiftRepository(_loop.Home, repository, workspace));
+        return Task.FromResult<object?>(new { Lifted = lifted });
+    }
+
     /// <summary>The strings an array the page sent holds, in the order sent: a graph's two-tip walk keeps its order.</summary>
     private static List<string> Strings(IpcRequest request, string field) =>
         request.Payload is { } payload && payload.TryGetProperty(field, out var items) && items.ValueKind == JsonValueKind.Array

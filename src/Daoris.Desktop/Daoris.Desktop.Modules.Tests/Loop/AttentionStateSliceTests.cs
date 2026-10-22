@@ -1552,13 +1552,15 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
             [
                 JsonNode.Parse("""{"volume":"v1","said":"2026-10-22T09:00:00Z","root":"C:\\","free":4,"total":100,"floor":10,"freed":2,"could":3}""")!.AsObject(),
             ],
+            // GITAUTH1a: a held git remote, every field set.
+            Git = [GitHeld()],
         };
         var rows = Rows(facts);
         Assert.Contains(rows, row => row["ended"] is JsonObject);
         Assert.Contains(rows, row => row["blocked"] is JsonObject blocked && blocked["entries"]![0]!["facts"] is JsonObject);
 
-        // Every kind but the accounts': nineteen.
-        Assert.Equal(19, rows.Select(row => row["kind"]!.GetValue<string>()).Distinct().Count());
+        // Every kind but the accounts': twenty.
+        Assert.Equal(20, rows.Select(row => row["kind"]!.GetValue<string>()).Distinct().Count());
         foreach (var row in rows) Assert.Equal(Normal(row), Normal(AttentionStateSlice.Picked(row)));
     }
 
@@ -1575,6 +1577,68 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
 
         Assert.Equal(AttentionStateSlice.Fields["row"].Order(StringComparer.Ordinal), TypeFields(attention, "PushedAttention").Order(StringComparer.Ordinal));
         Assert.Equal(AttentionStateSlice.Fields["account"].Order(StringComparer.Ordinal), TypeFields(accounts, "AccountRowFacts").Order(StringComparer.Ordinal));
+    }
+
+    /// <summary>A remote held since it could not authenticate, as <see cref="AttentionStateSlice.GitWaits"/> reads one (GITAUTH1a).</summary>
+    private static JsonObject GitHeld(string over = "{}") => With(JsonNode.Parse("""
+        {"repository":"engine","workspace":"aurora","remote":"origin","host":"ssh.dev.azure.com","class":"refused","holds":"all",
+         "words":"git@ssh.dev.azure.com: Permission denied (password,publickey).","since":"2026-10-22T09:00:00Z"}
+        """)!.AsObject(), over);
+
+    /// <summary>
+    /// GITAUTH1a (the git-auth design §5.2, §7.4): one row per held group, its workspace, host, class and what it holds, the repositories
+    /// in it named once each, from the oldest hold's time and words; a group of another class, host or workspace is a row of its own.
+    /// </summary>
+    [Fact]
+    public void A_held_git_remote_is_one_row_per_group_naming_its_repositories()
+    {
+        var rows = Rows(new()
+        {
+            Git =
+            [
+                GitHeld("""{"repository":"tools","since":"2026-10-22T09:05:00Z","words":"later"}"""),
+                GitHeld(),
+                GitHeld("""{"repository":"tools","since":"2026-10-22T09:06:00Z"}"""),
+                GitHeld("""{"repository":"web","class":"write-refused","holds":"writes","since":"2026-10-22T09:07:00Z"}"""),
+                GitHeld("""{"repository":"site","workspace":"default","host":"github.com","since":"2026-10-22T09:08:00Z"}"""),
+            ],
+        });
+
+        Assert.Equal(3, rows.Count);
+        Is("""
+            {"kind":"git-held","id":"aurora|ssh.dev.azure.com|refused|all","since":"2026-10-22T09:00:00Z","workspace":"aurora",
+             "git":{"host":"ssh.dev.azure.com","class":"refused","holds":"all","remote":"origin","repositories":["engine","tools"],
+                    "words":"git@ssh.dev.azure.com: Permission denied (password,publickey)."}}
+            """, rows.Single(row => row["id"]!.GetValue<string>() == "aurora|ssh.dev.azure.com|refused|all"));
+        Assert.Contains(rows, row => row["id"]!.GetValue<string>() == "aurora|ssh.dev.azure.com|write-refused|writes");
+        Assert.Equal("default", rows.Single(row => row["id"]!.GetValue<string>() == "default|github.com|refused|all")["workspace"]!.GetValue<string>());
+        Assert.Empty(Rows(new() { Git = [] }));
+    }
+
+    /// <summary>GITAUTH1a: the slice reads the home's holds with no machine path, and hears a hold kept or lifted.</summary>
+    [Fact]
+    public void The_slice_reads_the_homes_holds_and_hears_them_move()
+    {
+        var home = Path.Combine(Path.GetTempPath(), "daoris-attention-git-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            var root = Path.Combine(home, "engine");
+            using var woken = new SemaphoreSlim(0);
+            using var hearing = AttentionStateSlice.HearGitHolds(home, () => woken.Release());
+
+            GitHolds.Hold(home, root, "engine", "aurora", "origin", "git@ssh.dev.azure.com:v3/org/p/engine", "git-a", GitFailureClass.Refused,
+                "Permission denied (publickey).", new DateTimeOffset(2026, 10, 22, 9, 0, 0, TimeSpan.Zero));
+
+            Assert.True(woken.Wait(TimeSpan.FromSeconds(10)), "the slice never heard the hold");
+            var waits = System.Text.Json.JsonSerializer.Serialize(AttentionStateSlice.GitWaits(home));
+            Assert.Contains("\"Repository\":\"engine\"", waits);
+            Assert.DoesNotContain("Root", waits);
+            Assert.DoesNotContain(home.Replace("\\", "\\\\"), waits);
+        }
+        finally
+        {
+            try { Directory.Delete(home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
     }
 
     private static string PageSource(params string[] path)

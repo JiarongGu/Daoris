@@ -305,6 +305,39 @@ describe('What needs you on a machine', () => {
   });
 
   /**
+   * GITAUTH1a (the git auth design §5.2, §7.4): a held git remote is listed with what waits for the person's word, and its *Try again*
+   * asks the shell to lift its repositories' holds in its workspace, saying how many; one already lifted says so; a refusal in its words.
+   */
+  it('lists a held git remote and tries it again in one press, saying what it lifted', async () => {
+    const notify = vi.fn();
+    const git = {
+      host: 'github.com', class: 'refused' as const, holds: 'all' as const, remote: 'origin', repositories: ['engine', 'game'],
+      words: 'Permission denied (publickey).',
+    };
+    start([row('git-held', 'default|github.com|refused|all', '2026-10-01T09:00:00Z', { workspace: 'default', git })], { notify });
+    const shell = invoke.getMockImplementation()!;
+    const lifting = (lifted: number) => invoke.mockImplementation(async (module: string, type: string, request?: unknown) =>
+      (type === 'GIT_TRY_AGAIN' ? { lifted } : shell(module, type, request)));
+    lifting(2);
+
+    const item = await screen.findByRole('listitem', { name: 'github.com refused the sign-in git has here' });
+    expect(within(item).getByText('git held')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Waiting for your word/ })).toBeInTheDocument();
+    await userEvent.click(within(item).getByRole('button', { name: 'Try again' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith(
+      'DAORIS.DRIVER', 'GIT_TRY_AGAIN', { payload: { repositories: ['engine', 'game'], workspace: 'default' } }));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Daoris tries github.com again for 2 repositories the next time it needs them.'));
+
+    lifting(0);
+    await userEvent.click(within(item).getByRole('button', { name: 'Try again' }));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Daoris was no longer waiting on github.com: it tries it the next time it needs it.'));
+
+    invoke.mockRejectedValueOnce(new Error('Try again names the repositories it lifts.'));
+    await userEvent.click(within(item).getByRole('button', { name: 'Try again' }));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('Try again names the repositories it lifts'), 'error'));
+  });
+
+  /**
    * COWORK1e (D188 point 4; the message-urgency design §8.3): a third answer in a row with nobody between holds its session's work for
    * the person, with *Go on with this answer* and *Not now*, the session's page's own, each sending the session and the choice; its
    * answer said in the page's words, a refusal by its code.

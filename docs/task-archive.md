@@ -19585,3 +19585,19 @@ the status bar and what they open keep their size (measured in Chromium at 50-20
 stays at the status bar's right end until it is back at 100%; pressing it resets. It is kept per machine in every Daoris window, the
 Map keeps its own Ctrl+wheel, and the engine's zoom is prevented in the page. Detail: the UI/UX design §3.11 and D185's ZOOM1 note;
 the installed-window look follows the republish. On Opus.
+## GITAUTH1a — a remote that cannot authenticate is said once and left alone (2026-10-22, D198)
+
+> - [ ] **GITAUTH1a — a remote that cannot authenticate is said once and left alone** (driver, modules, web-shell; D198 points 6, 7, 16; design §5, §4.1's prompt variables, §10, §14 row 1). Failures classed by the transport's words, a hold keyed by repository, address, server and reads-or-writes, lifted by *Try again*, a changed address or a changed git; the moments read their fetch's answer; one *What needs you* row per held group in en and zh; no child prompts through git or GCM; one redaction boundary; a session told not to try. Proof: as §14 row 1 names it, including the empty `GIT_ASKPASS` measured through Windows' environment block.
+
+**Outcome** 2026-10-22: built. Every child handed the tools' environment takes the prompt variables (`GitWiring`), the terminal's
+shells none; `GitFailures` classes a failure by the transport's words; Daoris's one fetch of the line holds origin in
+`run/git/held.json` (`GitHolds`) and connects nothing while held, every look, press, start and moment answered by the hold's
+sentence; *Try again* (`GIT_TRY_AGAIN`), a changed address or a changed git lifts it; the moments read their fetch's answer;
+`git-held` rows in *What needs you*, one per workspace, host, class and holds, in en and zh; `GitWords.Redact` over the fetch, the
+hold, Ask Daoris's kept sync text and a landing plugin's message, and the sensitive gate refuses `github_pat_` and `glpat-`; a
+session's instruction carries a Git section for a held remote. Proof, real git and OpenSSH on the loopback only: the empty
+`GIT_ASKPASS` measured through the environment block (`GitPromptsProcessTests`), the words of each class (`GitFailuresProcessTests`,
+`GitWordsTests`), held once with no second connection across three moments over HTTP (`GitHoldsProcessTests`) and over SSH against a
+portable `sshd` (`GitSshHoldsProcessTests`, which holds nothing where `DAORIS_TEST_SSHD` names none). Not built here: the terminal's
+`git held` and `git try-again`. Not seen: the owner's SSH remote on the install (screenshot), owed after the republish. Detail:
+D198's GITAUTH1a note. On Opus.

@@ -257,7 +257,19 @@ public static class GitHolds
             Text("class")!, Text("git") ?? "", Text("words") ?? "", since);
     }
 
+    /// <summary>
+    /// A hold kept or lifted in this process, with the home it is in: <i>What needs you</i>'s slice hears it (GITAUTH1a). Raised off the
+    /// store's lock, on the pool, so a handler that reads the holds again never waits on the write that told it.
+    /// </summary>
+    public static event Action<string>? Changed;
+
     private static void Save(string home, IReadOnlyList<GitHold> holds)
+    {
+        Written(home, holds);
+        if (Changed is { } changed) ThreadPool.QueueUserWorkItem(_ => changed(home));
+    }
+
+    private static void Written(string home, IReadOnlyList<GitHold> holds)
     {
         var path = DaorisHome.Entry(home, HomeEntry.GitHeld);
         if (holds.Count == 0)
