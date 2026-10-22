@@ -646,6 +646,35 @@ public sealed class InstallHomeTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 SWAPLEASE2: a crashed swap's roll-back holds the same lease as the swap (the terminal RPC design §5). Both of the
+    /// launcher's swaps that put a journal right, the one at its start and the one after an error, name the install's home as
+    /// the lease's before they recover, and start nothing on <c>app/</c> when an act held it for the whole of the wait. Read off
+    /// its source, as the row above is.
+    /// </summary>
+    [Fact]
+    public void The_launchers_recovery_holds_the_installs_home_lease()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "daoris.json"))) directory = directory.Parent;
+        var program = File.ReadAllText(Path.Combine(directory!.FullName, "src", "Daoris.Desktop", "Daoris.Desktop.Launcher", "Program.cs"));
+        var main = program[program.IndexOf("public static int Main(", StringComparison.Ordinal)..program.IndexOf("internal static (bool Updating", StringComparison.Ordinal)];
+
+        foreach (var (recovers, held) in new[] { ("swap.Recover(running);", "swap.HeldBy is { } holding"), ("putRight.AfterError(", "putRight.HeldBy is { } holding") })
+        {
+            var at = main.IndexOf(recovers, StringComparison.Ordinal);
+            Assert.True(at > 0, $"`{recovers}` is not in Main");
+            var named = main.LastIndexOf($"LeaseHome = Path.Combine(root, \"{InstallHome.Folder}\")", at, StringComparison.Ordinal);
+            Assert.True(named > 0 && main.LastIndexOf("new InstallSwap(", at, StringComparison.Ordinal) < named,
+                $"the swap behind `{recovers}` names no lease's home");
+            var refused = main.IndexOf(held, at, StringComparison.Ordinal);
+            Assert.True(refused > at, $"`{recovers}` is not followed by its hold's refusal");
+            Assert.StartsWith(held + ") return Refuse(Unrecovered(holding));", main[refused..]);
+        }
+
+        Assert.Equal(2, main.Split("LeaseHome = ").Length - 1);
+    }
+
+    /// <summary>
     /// 🔴 HOMELEASE1: the first-start move holds the home's lease while it moves, so it never moves files under a verb acting
     /// alone. A verb holding the home for the whole of its wait: nothing moves, the older home stays where it was, and the notice
     /// says which act held it; the next start moves it.

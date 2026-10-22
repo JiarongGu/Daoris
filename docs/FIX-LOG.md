@@ -42,6 +42,19 @@ repository.
   and sets aside the wiring file's home's log as it does the home's.
 - **Verification:** `AgentsTextTests` 306 of 306; with the id's spelling switched off, the 17 rows that write a receipt were seen
   failing. `AgentsCommandTests`' fast classes, the driver's censuses and the driver's fast half green.
+## 2026-10-22 — A crashed swap was rolled back outside the home's lease (SWAPLEASE2)
+
+- **Symptom:** none seen; found reading HOMELEASE1 against the RPC design's §5. A launcher putting back a swap a dead launcher left
+  (`swapping`, or `started` with nothing running), at its start or after its own error, moved `app/` holding no lease, so a verb the
+  install carries could start alone from a folder half put back.
+- **Root cause:** HOMELEASE1 (`Daoris.Desktop.Launcher/Program.cs`) took the lease around `InstallSwap.Run` alone; `Recover`, and
+  `AfterError` through it, ran before and after it.
+- **Fix:** `InstallSwap.Recover` takes `LeaseHome`'s lease as a swap before it undoes a journal, reading the journal again under it;
+  an act holding it past the wait leaves the journal and says who (`HeldBy`), and the launcher starts nothing on `app/` and says so.
+  Finishing a confirmed swap moves nothing and takes none. D171's SWAPLEASE2 note.
+- **Verification:** `StagedBuildTests.A_crashed_swaps_roll_back_holds_the_homes_lease_and_moves_nothing_under_a_verbs_hold` (every
+  move back made while the swap holds the lease; nothing moved under a verb's) and `Only_a_roll_back_waits_for_the_homes_lease`;
+  `InstallHomeTests.The_launchers_recovery_holds_the_installs_home_lease` reads both of the launcher's recoveries.
 
 ## 2026-10-22 — A verb and the loop took the home's lease in two homes when the driver's config was named elsewhere (LEASEHOME2)
 

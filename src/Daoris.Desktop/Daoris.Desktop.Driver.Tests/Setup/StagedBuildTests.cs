@@ -757,6 +757,81 @@ public sealed class StagedBuildTests : IDisposable
         Assert.Equal("exited", StagedBuild.ReadJournal(_install)!.Reason);
     }
 
+    /// <summary>
+    /// 🔴 SWAPLEASE2 (the terminal RPC design §5): a crashed swap's roll-back moves <c>app/</c> as the swap does, so it holds the
+    /// home's lease as the swap does. A verb holding the home for the whole of the wait: nothing is moved, the journal is kept
+    /// for the next start, and who held it is said; once it lets go, the roll-back runs holding the lease, and lets it go after.
+    /// </summary>
+    [Fact]
+    public void A_crashed_swaps_roll_back_holds_the_homes_lease_and_moves_nothing_under_a_verbs_hold()
+    {
+        Stage();
+        Directory.CreateDirectory(Path.Combine(_install, "update", "previous"));
+        Directory.Move(Path.Combine(_install, "app"), Path.Combine(_install, "update", "previous", "app"));
+        StagedBuild.WriteJournal(_install, new SwapRecord(
+            SwapPhase.Swapping, "b1", "0.0.1", null, DateTimeOffset.UtcNow, [new SwapMove("app", "update/previous/app")]));
+        var data = Path.Combine(_install, "data");
+        var now = Start;
+        var held = new List<LeaseKind?>();
+        var swap = new InstallSwap(_install, start: _ => 1, alive: _ => true, clock: () => now, sleep: span => now += span)
+        {
+            LeaseHome = data,
+            LeaseWithin = TimeSpan.FromSeconds(30),
+            Mover = (from, to, overwrite) =>
+            {
+                held.Add(HomeLease.HeldBy(data)?.Kind);
+                InstallSwap.MoveOnDisk(from, to, overwrite);
+            },
+        };
+
+        using (var verb = HomeLease.TryAcquire(data, LeaseKind.Verb, out _, "trees land"))
+        {
+            Assert.NotNull(verb);
+            Assert.Null(swap.Recover(appRunning: false));
+            Assert.Equal((LeaseKind.Verb, "trees land"), (swap.HeldBy!.Kind, swap.HeldBy.What));
+            Assert.True(now - Start >= TimeSpan.FromSeconds(30), "the roll-back did not wait for the verb");
+            Assert.Empty(held);
+            Assert.False(Directory.Exists(Path.Combine(_install, "app")));
+            Assert.Equal(SwapPhase.Swapping, StagedBuild.ReadJournal(_install)!.Phase);
+        }
+
+        Assert.Equal(SwapPhase.RolledBack, swap.Recover(appRunning: false));
+        Assert.Null(swap.HeldBy);
+        Assert.NotEmpty(held);
+        Assert.All(held, kind => Assert.Equal(LeaseKind.Swap, kind));
+        AssertTheBuildBefore();
+        Assert.Null(HomeLease.HeldBy(data));
+    }
+
+    /// <summary>
+    /// SWAPLEASE2: a start with nothing to put right takes no lease, so an act holding the home costs it no wait; and finishing a
+    /// confirmed swap moves nothing, so it does not wait for the new application, which holds the home for its life.
+    /// </summary>
+    [Fact]
+    public void Only_a_roll_back_waits_for_the_homes_lease()
+    {
+        var data = Path.Combine(_install, "data");
+        using var verb = HomeLease.TryAcquire(data, LeaseKind.Verb, out _, "trees land");
+        Assert.NotNull(verb);
+        var waited = new InstallSwap(_install, start: _ => 1, alive: _ => true, sleep: _ => throw new InvalidOperationException("waited"))
+        {
+            LeaseHome = data,
+        };
+
+        Assert.Null(waited.Recover(appRunning: false));
+        Assert.Null(waited.HeldBy);
+
+        Stage();
+        new InstallSwap(_install, start: _ => 4242, alive: _ => true, clock: () => DateTimeOffset.UtcNow, sleep: _ => throw new Stop())
+        { ConfirmWithin = TimeSpan.FromHours(1) }.RunUntilStopped();
+        Assert.Null(waited.Recover(appRunning: true));
+        Assert.True(StagedBuild.Confirm(_install, 4242));
+
+        Assert.Equal(SwapPhase.Installed, waited.Recover(appRunning: true));
+        Assert.Null(waited.HeldBy);
+        Assert.Equal("new application", Read("app/Daoris.Desktop.exe"));
+    }
+
     [Fact]
     public void A_swap_confirmed_and_never_finished_is_installed_by_the_next_start()
     {
