@@ -13,6 +13,7 @@ import { cn } from '../../lib/cn';
 import { AnsweredPark } from '../waits/AnsweredPark';
 import { AwaitingIntake } from '../waits/AwaitingIntake';
 import { AwaitingPerson, type QuestClose, type Resolution } from '../waits/AwaitingPerson';
+import type { ParkQuestion } from '../waits/parkQuestion';
 import { type DetailRow, DetailsFold } from './DetailsFold';
 import { AccessChip, accessRow, startedFull } from '../AccessFact';
 import type { WaitEvents } from '../waits/anchors';
@@ -103,7 +104,18 @@ export function SessionHead({
   onAnswerSession, branch, ownBranch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
   ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest,
   continues, helps, onOpenSession, heavy, process, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek, helpers, permissions, answers,
+  question = null, answerBelow = false,
 }: {
+  /**
+   * Its question as its agent asked it (PARKVIEW1, the park's ask design §3), which its waiting card shows in place of its whole last
+   * message; null where it asked none through the connector.
+   */
+  question?: ParkQuestion | null;
+  /**
+   * The box below answers the park, and carries every press of what it asks (PARKVIEW1): its go-aheads are listed here with none,
+   * so the person answers in one place. False where nothing below takes the answer, and the head keeps their presses.
+   */
+  answerBelow?: boolean;
   /**
    * The answers the answers-alone bound holds for the person (COWORK1e, D188 point 4; the message-urgency design §8.3), the frame's,
    * handed to the foot's strip alike: every one the shell read, its own drawn, the agents' names, the answer's door and its pending.
@@ -314,6 +326,7 @@ export function SessionHead({
             key={session.id}
             note={session.note}
             parts={session.noteParts}
+            question={question}
             // The quest it serves, which its finish may close as the person's (QUESTCLOSE1): only its own, and a driven one's.
             quest={session.kind !== 'chat' && quest && quest.id === session.quest ? quest : null}
             pending={resolving}
@@ -337,8 +350,9 @@ export function SessionHead({
           <GoAheadList
             goAheads={goAheads}
             busy={resolving}
-            onAnswer={onGoAhead}
-            lead={t('work.awaiting.goAheadsLead')}
+            // PARKVIEW1: where the box below answers the park, its presses are the box's, so the person answers in one place.
+            onAnswer={answerBelow ? undefined : onGoAhead}
+            lead={t(answerBelow ? 'work.park.inTheBox' : 'work.awaiting.goAheadsLead')}
             inConversation={toEvent?.goAheads}
             marked={sought?.startsWith('goAhead:') ? Number(sought.slice('goAhead:'.length)) : undefined}
           />

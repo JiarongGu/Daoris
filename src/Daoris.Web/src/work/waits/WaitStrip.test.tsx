@@ -48,15 +48,27 @@ describe('the strip of what waits on the person, at the foot', () => {
     expect(within(strip()).queryByRole('textbox')).toBeNull();
   });
 
-  it('leaves the park\'s question line out while the go-aheads beside it stay', () => {
-    render(<WaitStrip session={parked} onResolve={vi.fn()} answerBelow goAheads={GO_AHEADS} onGoAhead={vi.fn()} onTop={vi.fn()} />);
-    expect(strip()).not.toHaveTextContent('answer it in the box below');
-    expect(strip()).toHaveTextContent('dashboard configuration');
+  // PARKVIEW1 (the park's ask design §3): where the box right below answers the park, it draws what the park asks with every press,
+  // its go-aheads among them, so the strip draws none of them and counts none: it counted *2 waiting on you* over one line.
+  it('draws and counts none of a park\'s waits where its box right below answers them', () => {
+    const { container } = render(
+      <WaitStrip session={parked} onResolve={vi.fn()} answerBelow goAheads={GO_AHEADS} onGoAhead={vi.fn()} onTop={vi.fn()} />,
+    );
+    expect(container).toBeEmptyDOMElement();
+
+    render(
+      <WaitStrip
+        session={parked} onResolve={vi.fn()} answerBelow goAheads={GO_AHEADS} onGoAhead={vi.fn()}
+        rules={{ proposals: [RULE], onAnswer: vi.fn() }} onTop={vi.fn()}
+      />,
+    );
+    expect(strip()).toHaveAccessibleName('Waiting on you');
+    expect(strip()).not.toHaveTextContent('dashboard configuration');
   });
 
-  it('answers a go-ahead still open through the head\'s own door, and lists none answered', async () => {
+  it('answers a go-ahead still open through the head\'s own door where no box below answers the park, and lists none answered', async () => {
     const onGoAhead = vi.fn();
-    render(<WaitStrip session={parked} onResolve={vi.fn()} answerBelow goAheads={GO_AHEADS} onGoAhead={onGoAhead} onTop={vi.fn()} />);
+    render(<WaitStrip session={parked} onResolve={vi.fn()} goAheads={GO_AHEADS} onGoAhead={onGoAhead} onTop={vi.fn()} />);
 
     const items = within(strip()).getAllByRole('listitem');
     expect(items).toHaveLength(1);
@@ -97,7 +109,7 @@ describe('the strip of what waits on the person, at the foot', () => {
   });
 
   it('folds to one line naming them where several wait, and shows them again', async () => {
-    render(<WaitStrip session={parked} onResolve={vi.fn()} answerBelow goAheads={GO_AHEADS} onGoAhead={vi.fn()} onTop={vi.fn()} />);
+    render(<WaitStrip session={parked} onResolve={vi.fn()} goAheads={GO_AHEADS} onGoAhead={vi.fn()} onTop={vi.fn()} />);
     expect(strip()).toHaveAccessibleName('2 waiting on you');
 
     await userEvent.click(within(strip()).getByRole('button', { name: 'Fold' }));
@@ -137,7 +149,7 @@ describe('the strip of what waits on the person, at the foot', () => {
   });
 
   it('has no such press where no raising event was found', () => {
-    render(<WaitStrip session={parked} onResolve={vi.fn()} answerBelow goAheads={GO_AHEADS} onGoAhead={vi.fn()} onTop={vi.fn()} />);
+    render(<WaitStrip session={parked} onResolve={vi.fn()} goAheads={GO_AHEADS} onGoAhead={vi.fn()} onTop={vi.fn()} />);
     expect(within(strip()).queryByRole('button', { name: 'In the conversation' })).toBeNull();
   });
 
@@ -160,7 +172,7 @@ describe('the strip of what waits on the person, at the foot', () => {
   });
 
   it('shows the same wait again when it is led to again, though its line was folded since', async () => {
-    const props = { session: parked, onResolve: vi.fn(), answerBelow: true, goAheads: GO_AHEADS, onGoAhead: vi.fn(), onTop: vi.fn() };
+    const props = { session: parked, onResolve: vi.fn(), goAheads: GO_AHEADS, onGoAhead: vi.fn(), onTop: vi.fn() };
     const { rerender } = render(<WaitStrip {...props} seek={{ wait: 'goAhead:2', n: 1 }} />);
     expect(within(strip()).getByRole('listitem')).toHaveFocus();
 
@@ -195,7 +207,7 @@ describe('the strip of what waits on the person, at the foot', () => {
   });
 
   it('folds naming a rule it proposed, and shows the one a raising block leads to', async () => {
-    const props = { session: parked, onResolve: vi.fn(), answerBelow: true, rules: { proposals: [RULE], onAnswer: vi.fn() }, onTop: vi.fn() };
+    const props = { session: parked, onResolve: vi.fn(), rules: { proposals: [RULE], onAnswer: vi.fn() }, onTop: vi.fn() };
     const { rerender } = render(<WaitStrip {...props} toEvent={{ rules: { r1: vi.fn() } }} />);
     await userEvent.click(within(strip()).getByRole('button', { name: 'Fold' }));
     expect(strip()).toHaveTextContent('its question · a rule it proposed');
@@ -244,7 +256,7 @@ describe('the strip of what waits on the person, at the foot', () => {
   });
 
   it('folds naming a helper it asked for, and has none where nothing can answer it', async () => {
-    render(<WaitStrip session={parked} onResolve={vi.fn()} answerBelow goAheads={GO_AHEADS} onGoAhead={vi.fn()} helpers={helpers()} onTop={vi.fn()} />);
+    render(<WaitStrip session={parked} onResolve={vi.fn()} goAheads={GO_AHEADS} onGoAhead={vi.fn()} helpers={helpers()} onTop={vi.fn()} />);
     await userEvent.click(within(strip()).getByRole('button', { name: 'Fold' }));
     expect(strip()).toHaveTextContent('its question · go-ahead #2 · a helper it asked for');
 
@@ -313,7 +325,7 @@ describe('the strip of what waits on the person, at the foot', () => {
    * are on screen the strip stands aside; never from under an ask open in it, nor from under the person's focus.
    */
   it('stands aside while the head\'s waits are on screen', () => {
-    const props = { session: parked, onResolve: vi.fn(), answerBelow: true, goAheads: GO_AHEADS, onGoAhead: vi.fn(), onTop: vi.fn() };
+    const props = { session: parked, onResolve: vi.fn(), goAheads: GO_AHEADS, onGoAhead: vi.fn(), onTop: vi.fn() };
     const { rerender } = render(<WaitStrip {...props} aside />);
     expect(screen.queryByRole('region', { name: /waiting on you/i })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
@@ -339,7 +351,7 @@ describe('the strip of what waits on the person, at the foot', () => {
   });
 
   it('stays while the person is in it, and stands aside once they leave', async () => {
-    const props = { session: parked, onResolve: vi.fn(), answerBelow: true, goAheads: GO_AHEADS, onGoAhead: vi.fn(), onTop: vi.fn() };
+    const props = { session: parked, onResolve: vi.fn(), goAheads: GO_AHEADS, onGoAhead: vi.fn(), onTop: vi.fn() };
     const { rerender } = render(<><button type="button">elsewhere</button><WaitStrip {...props} seek={{ wait: 'goAhead:2', n: 1 }} /></>);
     expect(within(strip()).getByRole('listitem')).toHaveFocus();
 

@@ -15,7 +15,7 @@ import {
   useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun, useRules, useSessionEvents, stoppedWaiting, useUnderWay,
   useEntryLanding, useLandEntry, useSessionHelpers, useUnderWaySubject, useSessionProcess, useWorkState, usePushedCalls, withCall,
   useAnswerPermission, usePermissionWaits, useSessionHandOverAsk, useApproveHandOver, useDeclineHandOver, type HandOverWord,
-  useAnswerWaits, useAnswerAlone,
+  useAnswerWaits, useAnswerAlone, useSessionQuestion,
 } from '../bridge/shell';
 import { handOverRefused, type HandOverAskWait } from './waits/HandOverAgentAsk';
 import { permissionSaid, type PermissionWaits } from './waits/PermissionAsks';
@@ -48,11 +48,12 @@ import { SessionBox } from './conversation/SessionBox';
 import { askOf, pauseAsk, wiredFor, type WorkTarget } from './pausing/pausing';
 import type { GoAheadAnswer } from '../asks/GoAheadList';
 import { goAheadsAsked, goAheadToast } from './waits/parkGoAheads';
+import { afterPress, choiceWords, openGoAheads } from './waits/parkQuestion';
 import { PauseAsk } from './pausing/WorkAsks';
 import { FilePreview } from './review/FilePreview';
 import { type FileOpen, FileOpener, fileName } from './review/preview';
 import { TerminalView } from './terminals/TerminalView';
-import { failure, type Notify, SESSION_ACTIVE, useErrorNotify } from '../design/ui';
+import { answeredPark, failure, type Notify, SESSION_ACTIVE, useErrorNotify } from '../design/ui';
 import type { FrameIntent } from '../menus/commands';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
 import { type AnchorState, SessionConversation } from './conversation/SessionConversation';
@@ -503,6 +504,12 @@ export function WorkFrame({
   const entryAsks = useAsks(true, channelAsk !== null);
   const goAheads = attended && parkAsk ? goAheadsAsked(asks.data, parkAsk, attended.id) : [];
   const parkGoAhead = useParkGoAhead();
+  // PARKVIEW1 (the park's ask design §2-§3): its question as its agent asked it and the driver kept it for this park, read only for a
+  // driven park of this machine's still waiting on the person. Drawn in its box with its answers as presses, and in its head's card.
+  const parkWaits = Boolean(attended && here && !intake && attended.kind !== 'chat' && attended.state === 'awaiting-person'
+    && !answeredPark(attended));
+  const parkQuestion = useSessionQuestion(parkWaits ? attended!.id : null);
+  const question = parkWaits ? parkQuestion.data ?? null : null;
   const talking = Boolean(attended && conversation && here && !oneTurn);
   // A driven session still working may be told something (SESS3): its words are held and are its next prompt. Offered only
   // where the driver says it listens, which is the protocol door; the pipe door has nothing to hear it.
@@ -741,6 +748,12 @@ export function WorkFrame({
   // A door that takes fewer characters at once than these says so before anything is sent, and the words stay in the box
   // (D137 §2.4): a driven session on the native door, whose resumed run takes them as one argument.
   const accepts = (text: string) => {
+    // PARKVIEW1 (the park's ask design §4): where its question waits beside go-aheads still open, the go-aheads come first, each
+    // keeping the park for this answer, which then sends it on with them; the words stay in the box, said why.
+    if (attended && answering && question && openGoAheads(goAheads).length > 0) {
+      setRefusal({ session: attended.id, text: t('work.park.goAheadsFirst') });
+      return false;
+    }
     if (!attended || !tooLong(text, { door: doorOf(attended.adapter, roster), kind: attended.kind })) return true;
     setRefusal({ session: attended.id, text: t('work.say.tooLong', { count: NATIVE_WORDS_LIMIT }) });
     return false;
@@ -946,13 +959,59 @@ export function WorkFrame({
   // go-ahead's, never a message to the park, so nothing is counted as one; the toast names any go-ahead still open from the
   // list as it stood at the press.
   // A refusal is said beside the go-ahead that was answered (UXFIX2b3b), not toasted.
+  // PARKVIEW1 (the park's ask design §4): where the park's question waits unanswered, a go-ahead keeps the park for that answer
+  // (`goesOn: false`, GOAHEAD2's provision for a caller that answers the park itself), which then sends it on with them all.
   const onGoAhead: GoAheadAnswer = (number, approved, words, answered) => {
     if (!attended || !parkAsk) { answered.done(); return; }
     const sessionQuest = attended.quest;
     const asked = goAheads;
-    parkGoAhead.mutate({ id: attended.id, ask: parkAsk, number, approved, words }, {
+    parkGoAhead.mutate({ id: attended.id, ask: parkAsk, number, approved, words, ...(question ? { goesOn: false } : {}) }, {
       onSuccess: (answer) => { notify(goAheadToast(t, number, approved, answer, { quest: sessionQuest, asked })); answered.done(); },
       onError: (error) => answered.refused(sentence(error)),
+    });
+  };
+
+  // PARKVIEW1 (the park's ask design §4): a press in the park's box takes the box's words with it. They leave the box only once the
+  // door kept them, and only where it still begins with them, so words typed while the press was on its way stay; a refusal is said
+  // in the box, the words kept.
+  const onBoxGoAhead = (number: number, approved: boolean) => {
+    if (!attended) return;
+    const session = attended.id;
+    const words = draft;
+    setRefusal(null);
+    onGoAhead(number, approved, words.trim() || undefined, {
+      done: () => setDraft((was) => afterPress(was, words)),
+      refused: (said) => setRefusal({ session, text: said }),
+    });
+  };
+  // One of the answers its question offered: its label, then the box's words, as the park's answer through the box's one door, naming
+  // the question so a label never answers one the park no longer asks (`question-changed`).
+  const onChoice = (label: string) => {
+    if (!attended || !question) return;
+    const session = attended.id;
+    const words = draft;
+    const text = choiceWords(label, words);
+    setRefusal(null);
+    const n = sending.begin(session, { text, files: [] });
+    say.mutate({ id: session, text, question: question.id }, {
+      onSuccess: (result) => {
+        sending.answered(n);
+        if (!result.sent) {
+          setRefusal({ session, text: result.why === 'question-changed' ? t('work.park.changed') : untaken(result, t('work.say.notTaken')) });
+          return;
+        }
+        setDraft((was) => afterPress(was, words));
+        counted(session, 'answer', text, 0, result);
+        notify(t('work.park.chose', { label }));
+      },
+      onError: (error: unknown) => {
+        // A send the page stopped waiting on may still land (SENDLOST1b): its words are shown on their way, so they leave the box.
+        if (stillTaking(n, error)) {
+          setDraft((was) => afterPress(was, words));
+          return;
+        }
+        setRefusal({ session, text: sentence(error) });
+      },
     });
   };
 
@@ -1657,6 +1716,10 @@ export function WorkFrame({
     // The go-aheads it asked, answerable only where this machine can answer the park (KNOWUSE1a2).
     goAheads,
     onGoAhead: here ? onGoAhead : undefined,
+    // Its question (PARKVIEW1), and whether the box below answers the park and carries every press of what it asks: then the strip
+    // draws none of the park's waits, and the head lists them with no press.
+    question,
+    answerBelow: answering || (talking && box.kind === 'chat'),
     // The rules it proposed (PROPOSEHERE1b): settled through the band's own door, then, on an *Allow*, the session told so as its
     // next turn, which is composed with the rule. One that takes no words now (its box's line, an intake) is not told, and says so.
     rules: {
@@ -1748,15 +1811,17 @@ export function WorkFrame({
   // leads to its line where it is on screen (WAITFOOT2b).
   const answerBelow = answering || (talking && box.kind === 'chat');
   const standing = attended && here && waits ? waitsOf({ ...waits, answerBelow }) : [];
+  // PARKVIEW1: where the box answers the park, its question and its go-aheads stand in the box, so *To the wait* leads there.
+  const inTheBox = (wait: AnchorWait) => answering && (wait === 'question' || wait.startsWith('goAhead:'));
   const [anchored, setAnchored] = useState<(AnchorState & { session: string }) | null>(null);
   const toEvent = attended && anchored?.session === attended.id ? waitEvents(anchored.anchored, anchored.show) : undefined;
   // One wait in one place on the screen (WAITFOOT2a, D168's WAITFOOT2 note): while the head's waits are wholly on screen the
   // strip stands aside, and a raising block's *To the wait* leads to the head's line instead of the strip's.
   const waitsOnScreen = useWaitsOnScreen(centre);
-  const [toWait, setToWait] = useState<{ session: string; wait: AnchorWait; n: number; at: 'head' | 'foot' } | null>(null);
+  const [toWait, setToWait] = useState<{ session: string; wait: AnchorWait; n: number; at: 'head' | 'foot' | 'box' } | null>(null);
   // Spent once the person attends another: the strip drawn again on coming back takes no focus from it.
   useEffect(() => { setToWait(null); }, [attended?.id]);
-  const seekAt = (at: 'head' | 'foot') => (attended && toWait?.session === attended.id && toWait.at === at ? toWait : null);
+  const seekAt = (at: 'head' | 'foot' | 'box') => (attended && toWait?.session === attended.id && toWait.at === at ? toWait : null);
   // Where the work's ask (*Accept…*, *Discard branch…*) is open: in the head or at the foot, never both (D168 point 3).
   const [workAsk, setWorkAsk] = useState<{ session: string; at: 'head' | 'foot' } | null>(null);
   const workAskAt = (at: 'head' | 'foot'): WorkAsk | undefined => (attended ? {
@@ -2249,8 +2314,9 @@ export function WorkFrame({
                   onToWait={(wait) => {
                     const anchor = anchorOf(wait);
                     if (!anchor) return;
-                    // To the head's line while it is on screen, where the strip stands aside (WAITFOOT2b), else the strip's.
-                    const at = waitsOnScreen === true ? 'head' : 'foot';
+                    // To the head's line while it is on screen, where the strip stands aside (WAITFOOT2b), else the strip's; a park's
+                    // question and go-aheads to the box that answers them (PARKVIEW1), which is always drawn.
+                    const at = inTheBox(anchor) ? 'box' : waitsOnScreen === true ? 'head' : 'foot';
                     setToWait((was) => ({ session: attended.id, wait: anchor, n: (was?.n ?? 0) + 1, at }));
                   }}
                   // Where the person's words went, a door to that session; and words that cannot go on here, one press
@@ -2387,6 +2453,20 @@ export function WorkFrame({
               ? headLink((sessions.data ?? []).find((row) => row.id === box.to))
               : null}
             onOpenSession={(session) => attend(session.id)}
+            // What the park asks, in its box with every answer a press the box's words go with (PARKVIEW1, the design §3-§4): its
+            // question as its agent asked it, its go-aheads still open, by when and what it holds. Only where the box answers a park.
+            park={answering ? {
+              quest: attended.quest,
+              tree: ownTree(attended, rootOf(attended.repository)),
+              since: attended.updated,
+              question,
+              goAheads: openGoAheads(goAheads),
+              busy: say.isPending || parkGoAhead.isPending,
+              onChoice: question ? onChoice : undefined,
+              onGoAhead: parkAsk ? onBoxGoAhead : undefined,
+              seek: seekAt('box'),
+              toEvent,
+            } : undefined}
           />
         )}
 

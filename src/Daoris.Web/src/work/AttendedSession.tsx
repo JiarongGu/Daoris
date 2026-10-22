@@ -10,6 +10,7 @@ import { ChainStrip } from '../map/ChainStrip';
 import type { SweepBranch } from '../settings/Sweep';
 import type { AccountNamer } from '../agents/tools';
 import type { QuestClose, Resolution } from './waits/AwaitingPerson';
+import type { ParkQuestion } from './waits/parkQuestion';
 import { HowItCameToBe, type TraceDoor } from './head/HowItCameToBe';
 import type { WaitEvents } from './waits/anchors';
 import type { MilestoneUnit } from './head/milestone';
@@ -68,8 +69,12 @@ export function AttendedSession({
   chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, ownBranch, onDiscardBranch, discardingBranch,
   headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind,
   opinion, continues, helps, heavy, process, parts, entryAccept, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek, helpers, permissions,
-  answers, milestone, onOpenBranch,
+  answers, milestone, onOpenBranch, question, answerBelow,
 }: {
+  /** Passed straight through to the head: its park's question as its agent asked it, its waiting card's (PARKVIEW1). */
+  question?: ParkQuestion | null;
+  /** Passed straight through to the head: the box below answers the park, and carries the presses of what it asks (PARKVIEW1). */
+  answerBelow?: boolean;
   /** Passed straight through to the head: the answers the answers-alone bound holds for the person, with their two presses (COWORK1e). */
   answers?: AnswerWaits | null;
   /** Passed straight through to the head: the process its own tree runs under, *Details*' rows (PROCESS1e). */
@@ -259,6 +264,8 @@ export function AttendedSession({
         onOpenSession={onSession}
         goAheads={goAheads}
         onGoAhead={onGoAhead}
+        question={question}
+        answerBelow={answerBelow}
         ownSignIn={ownSignIn}
         nameOf={nameOf}
         lands={lands}
