@@ -156,9 +156,14 @@ never read as success (BGWAIT2) nor as failure; it starts the support steps of �
 A session is never quiet while one of these holds, whatever the time:
 - a call held for the person's answer to its permission request (`RunningCall.Waiting`); that wait keeps its own bound (§9);
 - its call waiting for the heavy-run slot behind another session's run: the waiter's record beside the slot names it
-  (`Sessions/Heavy/HeavySlot.cs:36-45`, `HeavyLook`, :214);
-- words of the person's on their way to it (D136 point 4: nothing ends a run while one is);
-- a hand-over being made at its turn's end (`DriverHandOvers`).
+  (`Sessions/Heavy/HeavySlot.cs:36-45`, `HeavyLook`, :214).
+
+Two things a quiet session may carry change its steps rather than excuse it, since either could otherwise hold a hung session forever:
+- **The person's words on their way to it.** Nothing ends a run while one is (D136 point 4), so where one waits at step 2's time the row of
+  step 3 comes in its place: the person, whose words they are, decides.
+- **A hand-over approved and waiting for its turn's end** (`DriverHandOvers.cs:210-292`). A hung turn never ends, so step 2's end is taken as
+  its turn's end and the hand-over goes on: the conclusion reads the hand-over today only after a clean exit (`Driver.cs:2398`), and the
+  watcher's end joins it.
 
 A session holding the heavy-run slot is not waiting but busy: its gates run in a job of their own, named on the holder's record
 (`HeavyHolder.Job`, `HeavySlot.cs:19-20`), whose accounting the watcher reads as it reads the session's. The heavy slot's records are read
@@ -211,7 +216,7 @@ of §1.3, ends, or reaches the person.
 |---|---|---|---|
 | **1. A word** | at Q quiet (3Q in state C) | marks the session quiet on its head and rail, writes `watch.quiet` on its record, and keeps one word of its own for the agent, urgent | once per episode |
 | **2. An end and a carry-on** | 2Q after step 1, quiet and never busy since; at once in state E | ends the run, says why (`ended.quiet`), and the next look carries the line on in the same tree | once per episode; the strikes bound the line |
-| **3. The person** | the carried-on part is quiet before it was ever heard, or it cannot start | a row in *What needs you*; Daoris ends nothing more | until the person acts |
+| **3. The person** | the carried-on part is quiet before it was ever heard, or it cannot start; or, in step 2's place, the person's words wait on their way | a row in *What needs you*; Daoris ends nothing more | until the person acts |
 
 **Never a silent end.** Every step writes a coded note on the record, a console line and a machine-log line (`session.quiet` {session,
 adapter, state, minutes, step}); a run is ended only at step 2, and only after the word of step 1 and twice the quiet bound with nothing
@@ -427,7 +432,7 @@ machine's clock.
 | 1 | A stand-in streaming past any old bound is left alone: lines every 5 s, the watcher's clock moved three hours in looks; no mark, word, note or end | fast; Process with a real stand-in and a moved clock |
 | 2 | A silent one supported step by step: at Q the mark, `watch.quiet` and the urgent word kept on `said` with its key; at 3Q, never busy, the run ended `failed` with `ended.quiet`, the word withdrawn, a strike counted; the next look carries it on in a new part handed the brief, its instruction naming the quiet; that part silent from its start: at Q the `quiet` row, and each of its three presses; a line ended three times parks as `parked-quest` | fast; Process for the end and the carry-on |
 | 3 | A background command left alone: a protocol stand-in backgrounds a child that writes and computes and ends its turn; past 3Q nothing; the child then sleeps: at 3Q the word as a turn of its own, then step 2 | fast; Process |
-| 4 | A session waiting left alone: a held permission request, a call waiting for the heavy-run slot, the person's words on their way; the clock past every bound; nothing | fast |
+| 4 | A session waiting left alone: a held permission request, a call waiting for the heavy-run slot; the clock past every bound; nothing. And beside it: the person's words on their way at step 2's time bring the row, never an end; an approved hand-over waiting for a hung turn goes on at step 2's end | fast |
 | 5 | A busy foreground call left alone: no event for 3Q, the job busy; nothing | fast; Process with a computing child |
 | 6 | A process gone without an end: the root exits, a grandchild holds the pipe; within G the run ended, said and carried on | Process |
 | 7 | A look more than two minutes after the one before starts the count over | fast |
@@ -452,8 +457,8 @@ Each row is a feature a person can see working, built end to end (D187).
    once, and the safety the timeout gave (an end at 90 minutes) becomes a question to the person at 30 minutes of a session that neither
    said nor ran anything; until 1b the person, not Daoris, ends such a session.
 2. **SESSWATCH1b — Daoris's support: the word and the carry-on** (driver, web; after 1a). Steps 1 and 2 of §2 in every state, state E's end,
-   `ended.quiet` and its strike, the carry-on's instruction naming the quiet, the row moved to step 3's condition; `LongCalls`' look folded
-   into the watcher's. Proof: cases 2, 3 and 6; the notes in both languages.
+   `ended.quiet` and its strike, the carry-on's instruction naming the quiet, an approved hand-over taken at the watcher's end, the row
+   moved to step 3's condition and brought in step 2's place where the person's words wait; `LongCalls`' look folded into the watcher's. Proof: cases 2, 3 and 6; the notes in both languages.
 3. **SESSWATCH1c — the quiet setting** (driver, service, web-settings; after 1a, beside 1b). `quietMinutes`, its verb, `driver list`, Ask
    Daoris's `quiet` door and `settings_quiet`, the help room and its goldens, the Settings → Driver field. Proof: the setting-doors checks and
    case 9.
@@ -468,8 +473,8 @@ Each row is a feature a person can see working, built end to end (D187).
 - **D80.** A cut-off's *timed out* becomes the watcher's end of a quiet run (step 2), counted as a strike as before; *the session timeout is
   set from a terminal* is retired. The carry-on is unchanged: a new part in the same tree handed the brief (D189), its instruction naming
   the quiet.
-- **D188 point 1 and D193 part 9.** Among Daoris's own stops, *timeouts* becomes *the watcher's end of a quiet run*. **D188 point 2.**
-  Daoris's urgent word gains a second reason: the watcher's one word to a session seen quiet, once per quiet episode.
+- **D188 point 1 and D193 part 9.** Among Daoris's own stops, *timeouts* becomes *the watcher's end of a quiet run*. **D188 point 2 and
+  D193 part 9.** Daoris's urgent word gains a second reason: the watcher's one word to a session seen quiet, once per quiet episode.
 - **D83's BGWAIT notes.** A background wait is bounded by the watcher's state C, not the timeout: work that never ends holds the session until
   it shows no progress for 3Q, then gets a word, then an end.
 - **D131 point 5.** *A carry-on after a time-out* reads *after the watcher's end*.
