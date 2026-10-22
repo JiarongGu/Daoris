@@ -1522,9 +1522,13 @@ public sealed class QuestCloseTests : IDisposable
     }
 
     /// <summary>The host's two doors a bind reads and writes, each counted.</summary>
-    private sealed class Binds(bool knows, bool ok = true) : IClosureBindPort
+    /// <param name="remote">Whether the host judges a bind through a remote by its handshake (FABRIC-CLOSE1i); a host before it does not.</param>
+    /// <param name="refusal">The words of the host's refusal, where it refuses the bind.</param>
+    private sealed class Binds(bool knows, bool ok = true, bool remote = false, string? refusal = null) : IClosureBindPort
     {
         public int Asked { get; private set; }
+
+        public Task<bool> KnowsRemoteClosureAsync(CancellationToken ct) => Task.FromResult(remote);
 
         public List<(string Id, string Graph)> Bound { get; } = [];
 
@@ -1541,8 +1545,40 @@ public sealed class QuestCloseTests : IDisposable
         {
             Bound.Add((id, graph));
             Sessions.Add(session);
-            return Task.FromResult(ok ? (true, $"Quest `#{id}` closes through graph `{graph}`.") : (false, $"Quest `#{id}` is taken on another machine."));
+            return Task.FromResult(ok ? (true, $"Quest `#{id}` closes through graph `{graph}`.") : (false, refusal ?? $"Quest `#{id}` is taken on another machine."));
         }
+    }
+
+    /// <summary>
+    /// FABRIC-CLOSE1i: through a remote, a host that judges the workspace's handshake is asked the bind, which binds where every machine of
+    /// the workspace declared and is refused in the host's words, naming the older machine, where one did not. A host before it is asked
+    /// nothing there, and its quest closes by its done.
+    /// </summary>
+    [Fact]
+    public async Task Through_a_remote_a_host_that_judges_the_handshake_is_asked_the_bind_and_its_refusal_names_the_machine()
+    {
+        var quest = Taken("q7", null);
+
+        var declared = new Binds(knows: true, remote: true);
+        var bound = await ClosureBinding.AtTakeAsync(
+            declared, DriverConfig.Parse(Closing), quest, "games", remote: true, CancellationToken.None, session: "ses-q7");
+        Assert.True(bound!.Bound);
+        Assert.Equal([("q7", Digest(Closing))], declared.Bound);
+
+        const string Older = "Quest `#q7` syncs through a remote where machine `9f8e7d6c5b4a3210` of its workspace has not declared it knows a "
+                             + "bound quest (a Daoris older than this one, or one not synced since it was updated): it closes by its done. Nothing moved.";
+        var refused = await ClosureBinding.AtTakeAsync(
+            new Binds(knows: true, ok: false, remote: true, refusal: Older), DriverConfig.Parse(Closing), quest, "games", remote: true,
+            CancellationToken.None, session: "ses-q7");
+        Assert.False(refused!.Bound);
+        Assert.Contains("machine `9f8e7d6c5b4a3210`", refused.Said, StringComparison.Ordinal);
+
+        var before = new Binds(knows: true);
+        var unasked = await ClosureBinding.AtTakeAsync(
+            before, DriverConfig.Parse(Closing), quest, "games", remote: true, CancellationToken.None, session: "ses-q7");
+        Assert.False(unasked!.Bound);
+        Assert.Contains("older than this driver", unasked.Said, StringComparison.Ordinal);
+        Assert.Empty(before.Bound);
     }
 
     /// <summary>

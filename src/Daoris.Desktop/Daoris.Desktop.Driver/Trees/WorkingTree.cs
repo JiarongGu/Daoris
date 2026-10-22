@@ -922,8 +922,9 @@ public static class WorkingTree
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
         if (read is not null) Tools.Hand(info, read, home!);
         // GITSTART1: the system's git, where it is Git for Windows' launcher, starts as the git behind it with the
-        // launcher's variables, one process where it was two. A git the person named or a managed one starts as it is.
-        if (git.Way == ToolWay.System) GitForWindows.Direct(info);
+        // launcher's variables, one process where it was two. A managed git is laid out alike (its record names
+        // cmd/git.exe) and goes the same way (GITSTART5). A git the person named as a file starts as it is.
+        if (git.Way is ToolWay.System or ToolWay.Managed) GitForWindows.Direct(info);
         return (info, null);
     }
 

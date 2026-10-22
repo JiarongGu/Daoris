@@ -19,7 +19,7 @@ export type SetupShown = {
   layout?: string | null;
   adopted?: boolean | null;
   declares?: boolean | null;
-  asks?: 'whole' | 'move' | 'declare' | null;
+  asks?: 'whole' | 'move' | 'declare' | 'index' | null;
   agent?: string | null;
   lands?: 'merge' | 'branch' | null;
   /** The plugin a branch is handed to, where the landing rule names one. */

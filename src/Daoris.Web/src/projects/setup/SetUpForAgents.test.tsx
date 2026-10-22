@@ -47,6 +47,21 @@ describe('setting a repository up for agents', () => {
     expect(doors.onPress).toHaveBeenCalledOnce();
   });
 
+  // ORIENT2c: a repository set up and naming no index is asked its index, and the rule is the generator's own commands.
+  it('names the index quest a set-up repository is asked, and the generator commands its rule adds', () => {
+    const rules = ['Bash(daoris --version)', 'Bash(node tools/index.mjs)', 'Bash(node tools/index.mjs --check)'];
+    show({
+      plan: {
+        ...NEWBIE_SETUP, layout: 'agents', adopted: true, declares: true, asks: 'index', rules,
+        title: 'Give this repository an index of where things are (2026-10-22)',
+      },
+    });
+
+    expect(within(screen.getByLabelText('What a setup of newbie would ask')).getByText('its index of where things are')).toBeInTheDocument();
+    expect(within(screen.getByRole('list', { name: 'The rule it adds' })).getAllByRole('listitem').map((item) => item.textContent))
+      .toEqual(rules);
+  });
+
   it('says every refusal at once in the driver\'s words, offers no press, and looks again', async () => {
     const doors = show({
       plan: {

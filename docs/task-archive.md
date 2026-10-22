@@ -19443,3 +19443,31 @@ nothing on `app/` and names the holder (`HeldBy`). Finishing a confirmed swap ta
 **Outcome** 2026-10-22: each place of the activity bar counts the bell's rows its door opens, and work under way is a still dot in
 taken's hue (Sessions the driver's work less its parks, Quests a quest taken); unread is said in words in a neutral ink. Detail: the
 UI/UX design §3.10 with Codex's read, D185's BADGEUX1 note. On Opus.
+## FABRIC-CLOSE1i — the workspace's handshake through its remote (2026-10-22, D173)
+
+> - [ ] **FABRIC-CLOSE1i — the workspace's handshake through its remote** (service, driver). Each push declares its machine's `closure`, and the remote answers whether every machine of the workspace did. Proof: all declared allows the bind; one older machine refuses it, saying why.
+
+**Outcome** 2026-10-22: each push declares its machine; the remote keeps each machine's last word and answers, beside a page and a push's
+answer, the machines whose last push declared nothing; a pass keeps that per circle, and every bind through a remote (the take's own write
+included) binds only where none is undeclared, refused otherwise naming the machines. The host says `closeRemote`, and the driver asks its
+bind there. Retiring a machine the remote still counts is a row (FABRIC-CLOSE1i2). Detail: D173's FABRIC-CLOSE1i note. On Opus.
+## GITSTART5 — a managed git past its launcher (2026-10-22, D121)
+
+> - [ ] **GITSTART5 — a managed git past its launcher** (driver; D121 §2.3). A managed git is laid out alike (`resources.json`: `cmd/git.exe`) and still starts through its launcher. Proof: `ToolsChildrenTests`' managed row expecting `<version>/mingw64/bin/git.exe` with the launcher's variables.
+
+**Outcome** 2026-10-22: built. `WorkingTree.GitStart` starts a managed git past its launcher as it does the system's, with
+the launcher's variables over the tools' environment; a git named as a file still starts as it is. Proof: `ToolsChildrenTests`'
+new managed row (`<version>/package/mingw64/bin/git.exe`, `MSYSTEM`, the launcher's folders before the tools' `PATH`) and a row
+for a named file laid out as an install; the driver's fast half. The built-in MinGit 2.56.0 holds its git under `ucrt64/`,
+which the rule does not name, so it is GITSTART6's. On Opus. Detail: D121's GITSTART5 note.
+## ORIENT2c — repository index quest (2026-10-22, D151)
+
+> - [ ] **ORIENT2c — repository index quest** (driver). Inventory/generator/granted commands/check/declaration only. D151 §2/§5; brief/family tests.
+
+**Outcome** 2026-10-22: built. A repository set up on its line and naming no `documents.index` is asked *Give this
+repository an index of where things are* (`SetupCase.Index`, a fourth `SetupQuests` title): the inventory first, a
+generator at the path the press names from its stack (`tools/index.mjs`, `.cs` as a file-based program, or `.py`; never
+over a file on the line), its two commands granted exactly beside four doctrine verbs, its check, the marks and the
+declaration. An unknown stack is refused (`no-index-form`). The workspace plan asks a set-up repository its index in its
+turn, recorded under `indexed`; the page names `asks: 'index'` (en, zh). The family rehearsal was not run, and no session
+has carried the body. Detail: D151's ORIENT2c note. On Opus.

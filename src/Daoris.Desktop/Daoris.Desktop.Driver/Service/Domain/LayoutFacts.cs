@@ -98,6 +98,18 @@ public sealed record LayoutFacts
     /// <summary>Whether its <c>domain</c> says anything (<c>connect</c>'s <c>isDeclared</c>).</summary>
     public bool Declares { get; init; }
 
+    /// <summary>The manifest's <c>documents.index</c>, as declared: the README of its index of where things are (D151 point 4).</summary>
+    public string? DeclaredIndex { get; init; }
+
+    /// <summary>The manifest's <c>documents.router</c>, as declared: an index it keeps already (ORIENT2c).</summary>
+    public string? DeclaredRouter { get; init; }
+
+    /// <summary>The files on the line whose name says they are an index (<c>INDEX.md</c>, <c>code-map.json</c>), in order.</summary>
+    public IReadOnlyList<string> IndexNamed { get; init; } = [];
+
+    /// <summary>The files on the line under <c>tools/</c>, by their whole path, in order: where an index quest names its generator.</summary>
+    public IReadOnlyList<string> ToolFiles { get; init; } = [];
+
     /// <summary>Whether <c>daoris.lock</c> is on the line: <c>sync</c> has run there.</summary>
     public bool Locked { get; init; }
 
@@ -269,6 +281,10 @@ public static class LayoutReader
             Adopted = adopted,
             ManifestReads = manifest is not null,
             Declares = Declares(manifest),
+            DeclaredIndex = Document(manifest, "index"),
+            DeclaredRouter = Document(manifest, "router"),
+            IndexNamed = IndexNamedFiles(tree),
+            ToolFiles = [.. Under(tree, "tools/").Select(path => "tools/" + path)],
             Locked = locked,
             LockHarness = lockHarness,
             ManifestHarness = manifestHarness,
@@ -399,6 +415,28 @@ public static class LayoutReader
         bool Listed(string name) => domain.TryGetProperty(name, out var list) && list.ValueKind == JsonValueKind.Array && list.GetArrayLength() > 0;
         return summary || Listed("owns") || Listed("accepts");
     }
+
+    /// <summary>A role's path in the manifest's <c>documents</c>, as declared, or null where it names none.</summary>
+    private static string? Document(JsonDocument? manifest, string role) =>
+        manifest?.RootElement.TryGetProperty("documents", out var documents) == true && documents.ValueKind == JsonValueKind.Object
+            && documents.TryGetProperty(role, out var path) && path.ValueKind == JsonValueKind.String
+            && Declared(path.GetString()!.Trim()) is { Length: > 0 } declared
+            ? declared
+            : null;
+
+    /// <summary>The files named <c>index</c>, <c>code-map</c> or <c>codemap</c>, as markdown or JSON, case aside.</summary>
+    private static List<string> IndexNamedFiles(IReadOnlyList<LineEntry> tree) =>
+    [
+        .. tree.Where(entry => entry.IsFile)
+            .Select(entry => entry.Path)
+            .Where(path =>
+            {
+                // Markdown and JSON only: a module's `index.ts` or a page's `index.html` is code, not a list of places.
+                var name = path[(path.LastIndexOf('/') + 1)..].ToLowerInvariant();
+                return name is "index.md" or "code-map.md" or "codemap.md" or "code-map.json" or "codemap.json" or "index.json";
+            })
+            .Order(StringComparer.Ordinal),
+    ];
 
     /// <summary>A JSON object, or null for text that is not one: a file that does not read says nothing.</summary>
     private static JsonDocument? Json(string text)

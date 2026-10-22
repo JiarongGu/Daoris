@@ -14,8 +14,10 @@ public interface IRemote
     Task<QuestFetch> FetchQuestsAsync(long since, CancellationToken ct = default);
 
     /// <summary>A push of pending operations rebased on <paramref name="base"/>, judged quest by quest.</summary>
+    /// <param name="declares">The pushing machine, declaring it knows a bound quest (FABRIC-CLOSE1i); none declares nothing.</param>
     /// <exception cref="RemoteException">The remote could not be reached, or answered with a wall.</exception>
-    Task<QuestPush> PushQuestsAsync(long @base, IReadOnlyList<QuestOperation> operations, CancellationToken ct = default);
+    Task<QuestPush> PushQuestsAsync(
+        long @base, IReadOnlyList<QuestOperation> operations, CancellationToken ct = default, string? declares = null);
 
     /// <summary>
     /// This machine's own records, fed up — keyed at the remote by the key that carried them, and
@@ -95,8 +97,9 @@ public sealed class HttpRemote(RemoteConfig config) : IRemote
         QuestWire.ReadPage(await SendAsync(HttpMethod.Get, $"/api/quests/operations?since={since}", null, ct).ConfigureAwait(false))
         ?? throw new RemoteException("the remote answered a fetch with something that is not a page of operations");
 
-    public async Task<QuestPush> PushQuestsAsync(long @base, IReadOnlyList<QuestOperation> operations, CancellationToken ct = default) =>
-        QuestWire.ReadPushed(await SendAsync(HttpMethod.Post, "/api/quests/operations", QuestWire.Push(@base, operations), ct)
+    public async Task<QuestPush> PushQuestsAsync(
+        long @base, IReadOnlyList<QuestOperation> operations, CancellationToken ct = default, string? declares = null) =>
+        QuestWire.ReadPushed(await SendAsync(HttpMethod.Post, "/api/quests/operations", QuestWire.Push(@base, operations, declares), ct)
             .ConfigureAwait(false))
         ?? throw new RemoteException("the remote answered a push with something that is not a push's answer");
 
