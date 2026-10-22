@@ -229,16 +229,34 @@ public static class WorkspaceSetup
                 if (open >= most || WorkspaceSetupRules.PilotHolds(plan, asked)) return;
 
                 var press = await SetupPress.PlanAsync(world, config, door, next.Repository, day, ct).ConfigureAwait(false);
+                var registered = rows.Any(row => row.Registered && Same(row.Repository, next.Repository));
+                if (registered && press.Pressable && press.Case != SetupCase.Index)
+                {
+                    // The registry calls it set up and its line reads otherwise: only its index is the plan's to ask, so it
+                    // is done here, recorded and said nowhere, and never asked a set-up a second time.
+                    Skip(workspace, next.Repository, SetupRefusals.AlreadySetUp, "there is nothing to ask of it.", quiet: true);
+                    continue;
+                }
+
                 if (press.Pressable)
                 {
-                    var outcome = await SetupPress.PublishAsync(press, world, ct).ConfigureAwait(false);
+                    // ORIENT2c: an index quest's commands are its repository's own, so its rule goes in as the single press
+                    // adds one, into the repository's scope, and comes out if the ask is refused.
+                    var indexing = press.Case == SetupCase.Index;
+                    var outcome = indexing
+                        ? await SetupPress.ApplyAsync(press, world, home, ct).ConfigureAwait(false)
+                        : await SetupPress.PublishAsync(press, world, ct).ConfigureAwait(false);
                     if (outcome is { Published: true, QuestId: { Length: > 0 } quest })
                     {
-                        WorkspaceSetupFile.Update(home, workspace, current => current with { Published = With(current.Published, next.Repository, quest) });
+                        WorkspaceSetupFile.Update(home, workspace, current => indexing
+                            ? current with { Indexed = With(current.Indexed, next.Repository, quest) }
+                            : current with { Published = With(current.Published, next.Repository, quest) });
                         world.Said(SetupLine.Published(workspace, next.Repository, quest));
                         open++;
-                        asked++;
-                        said.Progress($"setup  {workspace}: asked `{next.Repository}` to set itself up, #{quest} ({open} of {most} at once).");
+                        if (!indexing) asked++;
+                        said.Progress(indexing
+                            ? $"setup  {workspace}: asked `{next.Repository}` for its index of where things are, #{quest} ({open} of {most} at once)."
+                            : $"setup  {workspace}: asked `{next.Repository}` to set itself up, #{quest} ({open} of {most} at once).");
                         continue;
                     }
 
@@ -268,13 +286,17 @@ public static class WorkspaceSetup
                 var refused = press.Refusals.Count > 0
                     ? press.Refusals
                     : [new SetupRefusal(SetupRefusals.AlreadySetUp, "there is nothing to ask of it.")];
-                Skip(workspace, next.Repository, refused[0].Code, string.Join(" ", refused.Select(refusal => refusal.Sentence)));
+                // A repository set up that names its index already is done, not skipped: recorded so it is judged once, and
+                // said nowhere.
+                var done = registered && refused.All(refusal => refusal.Code == SetupRefusals.AlreadySetUp);
+                Skip(workspace, next.Repository, refused[0].Code, string.Join(" ", refused.Select(refusal => refusal.Sentence)), quiet: done);
             }
         }
 
-        void Skip(string workspace, string repository, string code, string sentence)
+        void Skip(string workspace, string repository, string code, string sentence, bool quiet = false)
         {
             WorkspaceSetupFile.Update(home, workspace, current => current with { Skipped = With(current.Skipped, repository, new SetupSkip(code, sentence, now)) });
+            if (quiet) return;
             world.Said(SetupLine.Skipped(workspace, repository, code));
             said.Progress($"setup  {workspace}: skipped `{repository}`: {sentence}");
         }

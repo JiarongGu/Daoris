@@ -1582,7 +1582,7 @@ public sealed class QuestExchange(
         // circle syncs through a remote. An unknown id falls through to the store, which answers it as before.
         if (await quests.FindAsync(name, ct).ConfigureAwait(false) is { } found && SyncsThroughRemote(found.Workspace))
         {
-            return new(QuestRespondRefusal.NotInGraph, ThroughRemote(name), Quest: null);
+            return new(QuestRespondRefusal.NotInGraph, ThroughRemote(name, found.Workspace), Quest: null);
         }
 
         var move = await quests.BindAsync(name, graph.Trim(), now, ct).ConfigureAwait(false);
@@ -1612,8 +1612,8 @@ public sealed class QuestExchange(
     /// <summary>
     /// The graph named for an open quest's take (FABRIC-CLOSE1l, folding CLOSE1f): the driver names it as it opens the quest's first
     /// session, and the take on this machine binds it in the take's own write. Refused on a quest no longer open, whose take has passed
-    /// (§E5's cutover: it keeps today's done), and on a quest that leaves this machine for a remote, whose other machines no host here
-    /// can say run a build that knows a bound quest (FABRIC-CLOSE1e's compatibility).
+    /// (§E5's cutover: it keeps today's done), and on a quest that leaves this machine for a remote whose handshake has not said every
+    /// machine of its workspace runs a build that knows a bound quest (FABRIC-CLOSE1e's compatibility, FABRIC-CLOSE1i).
     /// </summary>
     private async Task<QuestRespondOutcome> BindAtTakeAsync(string name, string graph, string session, DateTimeOffset now, CancellationToken ct)
     {
@@ -1629,8 +1629,9 @@ public sealed class QuestExchange(
                 + "(`session`), and this names none: it closes by its done. Nothing moved.", Quest: null);
         }
 
-        // The map sync reads, as the driver read it before naming the graph, and as the take reads it again (FABRIC-CLOSE1o).
-        if (SyncsThroughRemote(found.Workspace)) return new(QuestRespondRefusal.NotInGraph, ThroughRemote(name), Quest: null);
+        // The map sync reads, as the driver read it before naming the graph, and as the take reads it again (FABRIC-CLOSE1o), with the
+        // remote's handshake as the circle's last pass heard it (FABRIC-CLOSE1i).
+        if (SyncsThroughRemote(found.Workspace)) return new(QuestRespondRefusal.NotInGraph, ThroughRemote(name, found.Workspace), Quest: null);
 
         // CLOSETAKE1 (QUESTSTOREVER1): a store a newer build stamped keeps binds this build would misread, so it writes none there.
         if (quests.NewerVersion is not null)
@@ -1668,21 +1669,35 @@ public sealed class QuestExchange(
         {
             QuestTakeBind.Expired => "its closure graph was named for this take, and that naming expired before the take came",
             QuestTakeBind.Replaced => "its closure graph was named for an earlier publication of this quest, deleted and asked again since",
-            QuestTakeBind.Remote => "its workspace syncs through a remote since its closure graph was named for this take",
+            QuestTakeBind.Remote => "its workspace syncs through a remote, and not every machine of it has declared it knows a bound quest "
+                                    + "since its closure graph was named for this take",
             _ => null,
         };
         return why is null ? "" : $" It is not bound to a graph: {why}. Finish it with `done` when its work is done, as any quest, whatever your instruction said.";
     }
 
     /// <summary>
-    /// Whether <paramref name="workspace"/> syncs through a remote by this machine's map, read when asked (FABRIC-CLOSE1o): the map
-    /// sync reads, as the driver read it before naming a graph. A circle with a remote is never bound, whoever of it is joined.
+    /// Whether <paramref name="workspace"/> syncs through a remote by this machine's map, read when asked (FABRIC-CLOSE1o), whose handshake
+    /// has not said every machine of it knows a bound quest (FABRIC-CLOSE1i): the map sync reads, and the remote's answer as the circle's
+    /// last pass heard it. A circle with a remote binds only once that pass heard every machine declared, whoever of it is joined.
     /// </summary>
-    private bool SyncsThroughRemote(string workspace) => remotes?.For(workspace) is not null;
+    private bool SyncsThroughRemote(string workspace) => remotes?.For(workspace) is not null && quests.ClosureOf(workspace) is not { All: true };
 
-    /// <summary>Why a bind, at the take or not, is refused a quest whose circle syncs through a remote (FABRIC-CLOSE1o, CLOSE1v).</summary>
-    private static string ThroughRemote(string name) =>
-        $"Quest `#{name}` syncs through a remote, whose machines this host cannot say know a bound quest: it closes by its done. Nothing moved.";
+    /// <summary>
+    /// Why a bind, at the take or not, is refused a quest whose circle syncs through a remote that has not said every machine of it knows a
+    /// bound quest (FABRIC-CLOSE1o, CLOSE1v, CLOSE1i): the machines it names, or that no pass has heard it say.
+    /// </summary>
+    private string ThroughRemote(string name, string workspace) => quests.ClosureOf(workspace) is { Undeclared: { Count: > 0 } undeclared }
+        ? $"Quest `#{name}` syncs through a remote where {Machines(undeclared)} of its workspace "
+          + (undeclared.Count == 1 ? "has not declared it knows" : "have not declared they know")
+          + " a bound quest (a Daoris older than this one, or one not synced since it was updated): it closes by its done. Nothing moved."
+        : $"Quest `#{name}` syncs through a remote that has not said every machine of its workspace knows a bound quest (no sync has heard it "
+          + "since, or the remote is older than this host): it closes by its done. Nothing moved.";
+
+    /// <summary>The machines a refusal names, by id, at most three and how many more.</summary>
+    private static string Machines(IReadOnlyList<string> machines) =>
+        (machines.Count == 1 ? "machine " : "machines ") + string.Join(", ", machines.Take(3).Select(m => $"`{m}`"))
+        + (machines.Count > 3 ? $" and {machines.Count - 3} more" : "");
 
     /// <summary>
     /// The agent's <c>ready</c> in a closure graph (FABRIC-CLOSE1a, §E5): its result, carrying exactly what a done carries, its

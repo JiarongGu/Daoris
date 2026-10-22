@@ -2113,7 +2113,8 @@ public sealed class Driver(
             var channelHeld = start.Channel is { } line ? await ChannelReach.HandAsync(channelDoors, line, sessionId, ct).ConfigureAwait(false) : null;
             // FABRIC-CLOSE1l (CLOSE1f, CLOSE1g; the fabric events design §E5): a quest whose work cycle holds `quest.close` names its graph for
             // the take as its first session opens, so the take binds it in its own write, and a bound quest's session says `ready`, never
-            // `done`. A circle synced through a remote, by the map sync reads, is never bound. No closure graph: nothing asked, nothing said.
+            // `done`. A circle synced through a remote, by the map sync reads, binds only where the host judges the remote's handshake and
+            // every machine of it declared it knows a bound quest (FABRIC-CLOSE1i). No closure graph: nothing asked, nothing said.
             // FABRIC-CLOSE1o: named for this session, whose take alone binds it, the service judging it again at the take. FABRIC-CUTOVER1g:
             // the graph its run is bound to, as the bind above kept it: Current's work cycle under Current, none under a named version.
             var closure = await ClosureBinding.AtStartAsync(

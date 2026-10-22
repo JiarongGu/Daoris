@@ -32,14 +32,32 @@ public static partial class SetupPressRules
     /// <summary>Whether a refusal is the machine's tools' rather than the repository's (<see cref="ToolRefusals"/>).</summary>
     public static bool IsToolRefusal(SetupRefusal refusal) => refusal.Code is SetupRefusals.NoNode or SetupRefusals.NoTool;
 
+    /// <summary>The rule a plan's press adds: the set-up's verbs, or an index quest's own (<see cref="IndexRules"/>).</summary>
+    public static IReadOnlyList<string> RulesOf(SetupPlan plan) => plan.Index is { } form ? IndexRules(form) : Rules;
+
+    /// <summary>
+    /// The doctrine tool's verbs an index quest's session runs (ORIENT2c): the version, the <c>sync</c> that renders the
+    /// declared index's row, and the two that verify. 🔴 Each is a verb its body asks for.
+    /// </summary>
+    public static readonly IReadOnlyList<string> IndexVerbs = ["daoris --version", "daoris sync", "daoris check", "daoris status --json"];
+
+    /// <summary>
+    /// The rule an index quest's press adds (D151 point 5): <see cref="IndexVerbs"/> and the generator's two commands,
+    /// exactly, each as a <c>Bash</c> allow, as a set-up's verbs are granted.
+    /// </summary>
+    public static IReadOnlyList<string> IndexRules(IndexForm form) =>
+        [.. IndexVerbs.Append(form.Write).Append(form.Check).Select(verb => $"Bash({verb})")];
+
     /// <summary>
     /// Which set-up the line calls for: none adopted is the whole; the older layout, or a move the lock has not
-    /// followed, is a move; the agents layout finished and declaring nothing is the knowledge alone; declaring too is done.
+    /// followed, is a move; the agents layout finished and declaring nothing is the knowledge alone; declaring and naming
+    /// no index is the index alone (ORIENT2c); naming one too is done.
     /// </summary>
     public static SetupCase CaseOf(LayoutFacts facts) =>
         !facts.Adopted ? SetupCase.Whole
         : !facts.Clean ? SetupCase.Move
         : !facts.Declares ? SetupCase.Declare
+        : facts.DeclaredIndex is null ? SetupCase.Index
         : SetupCase.Done;
 
     /// <summary>How the work will land, in the words the press says it in before it is pressed.</summary>

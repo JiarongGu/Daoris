@@ -70,12 +70,95 @@ public sealed class SetupPressTests : IDisposable
     }
 
     [Fact]
-    public async Task A_repository_already_set_up_is_refused()
+    public async Task A_repository_already_set_up_and_naming_its_index_is_refused()
     {
-        var plan = await PlanAsync(new World { Facts = Clean(declares: true) });
+        var plan = await PlanAsync(new World { Facts = Clean(declares: true, index: "docs/index/README.md") });
 
         Refused(plan, SetupRefusals.AlreadySetUp, "already set up");
+        Assert.Contains("`docs/index/README.md`", plan.Refusals[0].Sentence);
         Assert.Null(plan.Title);
+    }
+
+    /// <summary>
+    /// ORIENT2c (D151 point 5): a repository set up and naming no index is asked its index alone, the generator named from
+    /// what it is built with, and the rule the press would add is the doctrine tool's few verbs and the generator's two.
+    /// </summary>
+    [Fact]
+    public async Task A_repository_set_up_and_naming_no_index_is_asked_its_index_with_its_generator_named()
+    {
+        var plan = await PlanAsync(new World { Facts = Clean(declares: true), Description = Built("React", ".NET") });
+
+        Assert.Empty(plan.Refusals);
+        Assert.Equal(SetupCase.Index, plan.Case);
+        Assert.Equal("Give this repository an index of where things are (2026-10-01)", plan.Title);
+        Assert.Equal(new IndexForm("Node", "tools/index.mjs", "node tools/index.mjs", "node tools/index.mjs --check"), plan.Index);
+        Assert.Equal(
+            [
+                "Bash(daoris --version)", "Bash(daoris sync)", "Bash(daoris check)", "Bash(daoris status --json)",
+                "Bash(node tools/index.mjs)", "Bash(node tools/index.mjs --check)",
+            ],
+            SetupPressRules.RulesOf(plan));
+        Assert.All(SetupPressRules.RulesOf(plan), rule => Assert.Null(PermissionRules.Refusal(rule)));
+        Assert.Contains("`tools/index.mjs`", plan.Body);
+    }
+
+    /// <summary>ORIENT2c: each stack the press knows has one form, the first the reading names.</summary>
+    [Theory]
+    [InlineData(".NET", "tools/index.cs", "dotnet run tools/index.cs", "dotnet run tools/index.cs -- --check")]
+    [InlineData("Python", "tools/index.py", "python tools/index.py", "python tools/index.py --check")]
+    [InlineData("Vue", "tools/index.mjs", "node tools/index.mjs", "node tools/index.mjs --check")]
+    public void Each_known_stack_names_one_generator(string stack, string path, string write, string check)
+    {
+        var (form, problem) = IndexForms.For(["Terraform", stack], _ => false);
+
+        Assert.Null(problem);
+        Assert.Equal(path, form!.Generator);
+        Assert.Equal(write, form.Write);
+        Assert.Equal(check, form.Check);
+    }
+
+    /// <summary>ORIENT2c (the design §2.3): a name already on the line is never named over.</summary>
+    [Fact]
+    public async Task A_generator_name_already_on_the_line_is_passed_over_and_both_taken_refuse()
+    {
+        var one = await PlanAsync(new World { Facts = Clean(declares: true, tools: ["tools/index.mjs"]), Description = Built("Node") });
+        var both = await PlanAsync(new World
+        {
+            Facts = Clean(declares: true, tools: ["tools/index.mjs", "tools/orient-index.mjs"]), Description = Built("Node"),
+        });
+
+        Assert.Equal("tools/orient-index.mjs", one.Index!.Generator);
+        Refused(both, SetupRefusals.NoIndexForm, "already on its line");
+        Assert.Null(both.Title);
+    }
+
+    /// <summary>ORIENT2c (the design §2.2): a stack the press does not know gets no quest, and the press says so.</summary>
+    [Fact]
+    public async Task A_stack_the_press_does_not_know_is_refused_naming_the_ask_by_hand()
+    {
+        var go = await PlanAsync(new World { Facts = Clean(declares: true), Description = Built("Go") });
+        var silent = await PlanAsync(new World { Facts = Clean(declares: true) });
+
+        Refused(go, SetupRefusals.NoIndexForm, "built with Go");
+        Assert.Contains("*Give this repository an index of where things are*", go.Refusals[0].Sentence);
+        Refused(silent, SetupRefusals.NoIndexForm, "nothing it is built with could be read");
+        Assert.False(go.Pressable);
+        Assert.Null(go.Title);
+    }
+
+    /// <summary>ORIENT2c: the press grants the index quest's commands, exactly, as it grants a set-up's verbs.</summary>
+    [Fact]
+    public async Task Pressing_an_index_quest_adds_its_own_rule_and_publishes_it()
+    {
+        var world = new World { Facts = Clean(declares: true), Description = Built("Python") };
+        var plan = await PlanAsync(world);
+
+        var outcome = await SetupPress.ApplyAsync(plan, world, _home);
+
+        Assert.True(outcome.Published);
+        Assert.Equal(SetupPressRules.IndexRules(plan.Index!), outcome.Added);
+        Assert.Equal(SetupPressRules.IndexRules(plan.Index!), PermissionRules.Load(_home).Repositories["reports"].Allow);
+        Assert.StartsWith(SetupQuests.Index, Assert.Single(world.Published).Sentence);
     }
 
     [Fact]
@@ -362,14 +445,21 @@ public sealed class SetupPressTests : IDisposable
     private static LayoutFacts Adopter(string manifest, string lockText) =>
         new LayoutReaderTests.Scratch().File("daoris.json", manifest).File("daoris.lock", lockText).Read();
 
-    private static LayoutFacts Clean(bool declares) => new LayoutReaderTests.Scratch()
-        .File("daoris.json", declares
-            ? """{ "harness": "agents", "target": ".agents", "domain": { "summary": "Reports." } }"""
-            : """{ "harness": "agents", "target": ".agents" }""")
-        .File("daoris.lock", """{ "harness": "agents", "target": ".agents", "entries": [] }""")
-        .File("AGENTS.md", "<!-- daoris:rules -->\n# Doctrine\n<!-- /daoris:rules -->\n")
-        .File("CLAUDE.md", "<!-- daoris:import -->\n@AGENTS.md\n<!-- /daoris:import -->\n")
-        .Read();
+    private static LayoutFacts Clean(bool declares, string? index = null, string[]? tools = null)
+    {
+        var documents = index is null ? "" : $$""", "documents": { "index": "{{index}}" }""";
+        var scratch = new LayoutReaderTests.Scratch()
+            .File("daoris.json", declares
+                ? $$"""{ "harness": "agents", "target": ".agents", "domain": { "summary": "Reports." }{{documents}} }"""
+                : """{ "harness": "agents", "target": ".agents" }""")
+            .File("daoris.lock", """{ "harness": "agents", "target": ".agents", "entries": [] }""")
+            .File("AGENTS.md", "<!-- daoris:rules -->\n# Doctrine\n<!-- /daoris:rules -->\n")
+            .File("CLAUDE.md", "<!-- daoris:import -->\n@AGENTS.md\n<!-- /daoris:import -->\n");
+        foreach (var tool in tools ?? []) scratch = scratch.File(tool, "// a tool of its own\n");
+        return scratch.Read();
+    }
+
+    private static RepositoryDescription Built(params string[] stack) => new(null, stack, null);
 
     /// <summary>The world a press reads, as a stand-in: the registry, the line, the tools, the quests, the index, and the ask door.</summary>
     private sealed class World : ISetupWorld

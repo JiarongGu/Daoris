@@ -14,6 +14,10 @@ public static class SetupRefusals
     public const string NoNode = "no-node";
     public const string NoTool = "no-doctrine-tool";
     public const string AlreadySetUp = "already-set-up";
+
+    /// <summary>Set up, naming no index, and built with a stack the press knows no generator for (ORIENT2c).</summary>
+    public const string NoIndexForm = "no-index-form";
+
     public const string Open = "open";
 }
 
@@ -41,6 +45,9 @@ public sealed record SetupPlan(string Repository)
 
     /// <summary>Which set-up the line calls for, where it could be read.</summary>
     public SetupCase? Case { get; init; }
+
+    /// <summary>The generator an index quest names (ORIENT2c), whose two commands the press grants; null for any other case.</summary>
+    public IndexForm? Index { get; init; }
 
     /// <summary>Every refusal that applies, in the press's order; none is a press that publishes.</summary>
     public IReadOnlyList<SetupRefusal> Refusals { get; init; } = [];

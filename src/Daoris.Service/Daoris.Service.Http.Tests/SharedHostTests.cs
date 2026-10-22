@@ -381,6 +381,37 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
     }
 
     /// <summary>
+    /// FABRIC-CLOSE1i: the remote's doors answer the workspace's handshake. A push declaring its machine marks it declared; one declaring
+    /// nothing, as an older build pushes, marks every machine its operations name undeclared; a page and a push's answer both say which.
+    /// </summary>
+    [Fact]
+    public async Task The_quest_doors_answer_which_machines_have_not_declared_a_bound_quest()
+    {
+        var key = (await host.MintAsync("handshake@a-machine")).Key;
+        await RegisterAsync("HandshakeKeeper", key);
+        const string Push = """
+            { "base": 0DECLARES, "operations": [{ "machine": "MACHINE", "sequence": 1, "quest": "QUEST", "kind": "published",
+              "at": "2026-10-22T09:00:00Z",
+              "asked": { "from": "ask #a1b2c3", "to": "HandshakeKeeper", "title": "t", "body": "b", "links": [], "attachments": [], "then": [] } }] }
+            """;
+
+        var older = await host.SendAsync("POST", "/api/quests/operations", DaorisHost.Loopback, key,
+            Push.Replace("DECLARES", "").Replace("MACHINE", "hs-older").Replace("QUEST", "h1h2h3h4h5h6"));
+        var current = await host.SendAsync("POST", "/api/quests/operations", DaorisHost.Loopback, key,
+            Push.Replace("DECLARES", """, "machine": "hs-current", "closure": true""").Replace("MACHINE", "hs-current").Replace("QUEST", "h7h8h9h0h1h2"));
+
+        Assert.Equal((200, 200), (older.Status, current.Status));
+        var answered = current.Json.GetProperty("closure");
+        var undeclared = answered.GetProperty("undeclared").EnumerateArray().Select(m => m.GetString()).ToList();
+        Assert.Contains("hs-older", undeclared);
+        Assert.DoesNotContain("hs-current", undeclared);
+        Assert.False(answered.GetProperty("all").GetBoolean());
+
+        var page = await host.GetAsync("/api/quests/operations?since=0", key: key);
+        Assert.Equal(undeclared, page.Json.GetProperty("closure").GetProperty("undeclared").EnumerateArray().Select(m => m.GetString()).ToList());
+    }
+
+    /// <summary>
     /// EVID1a (D144 §3): a done's evidence is read on the machine whose tree holds the commit, and the verdict travels from
     /// there as an operation — a shared host has no evidence door. What a push carries is names and codes: a requirement
     /// whose evidence names a machine's path, or a verdict that does, is not whole, 400, and nothing of it is kept.

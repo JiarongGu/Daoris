@@ -63,6 +63,7 @@
   "projects.setUp.asks.whole": "完整配置",
   "projects.setUp.asks.move": "迁移到 `agents` 布局",
   "projects.setUp.asks.declare": "仅声明与知识",
+  "projects.setUp.asks.index": "其代码位置索引",
   "projects.setUp.agent": "执行者",
   "projects.setUp.lands": "落地",
   "projects.setUp.landsMerge": "合并到主线，已落地的历史即是审阅",
