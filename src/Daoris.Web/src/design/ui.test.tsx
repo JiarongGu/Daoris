@@ -6,7 +6,8 @@ import type { SessionState } from '../data/api';
 import i18n from '../locales/i18n';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import {
-  Button, Card, CardStack, CodeText, CountBadge, Dot, Drawer, EmptyState, FIELD_WIDTHS, FormField, FormGrid, FormRow, Inline, Menu,
+  Button, Card, CardStack, CodeText, CountBadge, Dot, Drawer, EmptyState, FIELD_WIDTHS, FormField, FormGrid, FormRow, FRAME_HELD,
+  FrameHeld, Icon, Inline, Menu,
   MetaLine, MonoWell, PathText, Pill, QuickPanel, Segmented, SelectField, SESSION_ACTIVE, SESSION_DOT, SESSION_TONE, SETTING_TRACK,
   SettingList, SettingRow, shownKey, type ShownState, shownState, StripMark, Tile, Tip, Toasts, WaitingCard,
 } from './ui';
@@ -1196,5 +1197,53 @@ describe('the segmented choice', () => {
     render(<Theme onChange={() => {}} />);
     expect(screen.getByRole('radiogroup', { name: 'theme' })).toHaveClass('inline-flex');
     expect(screen.getByRole('radio', { name: 'Dark' })).not.toHaveClass('flex-1');
+  });
+});
+
+/**
+ * ZOOM1 (the UI/UX design §3.11): the window zooms by the page's root size, so what is drawn in rem grows with it. An icon
+ * drawn in pixels stayed small beside text that grew, and in the frame, which wears the level's inverse, it shrank.
+ */
+describe("the window's zoom", () => {
+  it('sizes an icon in rem, the size it always had at 100%', () => {
+    const { container } = render(<><Icon name="bell" /><Icon name="search" size={15} /></>);
+    const [plain, sized] = [...container.querySelectorAll('svg')];
+    expect(plain).toHaveAttribute('width', '1rem');
+    expect(plain).toHaveAttribute('height', '1rem');
+    expect(sized).toHaveAttribute('width', '0.9375rem');
+  });
+
+  /** What the frame opens is the frame's: a menu bar's menu, a tip on the activity bar, the scope's list. */
+  it('holds what opens from the frame at the frame size, and leaves the rest to grow', async () => {
+    const user = userEvent.setup();
+    const opened = (held: boolean) => (
+      <Tooltip.Provider delayDuration={0}>
+        <FrameHeld.Provider value={held}>
+          <Menu.Root>
+            <Menu.Trigger>{held ? 'Held' : 'Grows'}</Menu.Trigger>
+            <Menu.Content><Menu.Item>Zoom in</Menu.Item></Menu.Content>
+          </Menu.Root>
+          <Tip content="what it does"><button type="button">tipped</button></Tip>
+          <SelectField value="" onChange={() => {}} options={[{ value: 'a', label: 'a' }]} ariaLabel="scope" />
+        </FrameHeld.Provider>
+      </Tooltip.Provider>
+    );
+
+    const { unmount } = render(opened(true));
+    screen.getByRole('button', { name: 'Held' }).focus();
+    await user.keyboard('{Enter}');
+    expect(await screen.findByRole('menu')).toHaveClass(FRAME_HELD);
+    await user.keyboard('{Escape}');
+    await user.hover(screen.getByRole('button', { name: 'tipped' }));
+    expect((await screen.findByRole('tooltip')).closest(`.${FRAME_HELD}`)).not.toBeNull();
+    await user.unhover(screen.getByRole('button', { name: 'tipped' }));
+    await user.click(screen.getByRole('combobox', { name: 'scope' }));
+    expect((await screen.findByRole('listbox')).closest(`.${FRAME_HELD}`)).not.toBeNull();
+    unmount();
+
+    render(opened(false));
+    screen.getByRole('button', { name: 'Grows' }).focus();
+    await user.keyboard('{Enter}');
+    expect(await screen.findByRole('menu')).not.toHaveClass(FRAME_HELD);
   });
 });

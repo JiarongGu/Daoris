@@ -237,6 +237,13 @@
   --animate-pulse: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) 3;
 }
 
+/* The window's frame at its own size while the content zooms (ZOOM1, the UI/UX design §3.11). The window zooms by the root's
+   size (`design/zoom.ts`), which everything drawn in rem follows; the title strip, the activity bar, the status bar and what
+   they open wear this, a CSS zoom of the level's inverse, which the same module sets beside the root's size. 1 at 100%. */
+@utility frame-held {
+  zoom: var(--frame-zoom, 1);
+}
+
 @keyframes drawer-in {
   from { transform: translateX(1.5rem); opacity: 0.6; }
   to { transform: none; opacity: 1; }
