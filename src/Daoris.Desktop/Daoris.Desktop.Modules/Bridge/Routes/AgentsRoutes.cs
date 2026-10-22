@@ -636,8 +636,10 @@ public sealed class AgentsRoutes(DriverContext context)
     /// they forgot, and the file's own rule is that absence means the harness's own home.
     /// </summary>
     /// <remarks>
-    /// One method the route and Ask Daoris's door both call (HELP10), so the two cannot drift. A default outside its scope's
-    /// own list is refused before anything is written, as the terminal refuses it since TOOL6a (TOOL4g, D130 §3.1).
+    /// One method the route and Ask Daoris's door both called (HELP10), so the two could not drift. A default outside its scope's
+    /// own list is refused before anything is written, as the terminal refuses it since TOOL6a (TOOL4g, D130 §3.1). The route
+    /// refuses <c>profile-default</c> since POOL1a (D197); Ask Daoris's <c>default</c> door is its last caller, which POOL1b retires
+    /// with it, <see cref="AccountsRoutes.DefaultAllowed"/> and <see cref="DefaultEdited"/>.
     /// </remarks>
     internal static int ProfileDefault(DriverLoop loop, string harness, string? profile, string? workspace)
     {
