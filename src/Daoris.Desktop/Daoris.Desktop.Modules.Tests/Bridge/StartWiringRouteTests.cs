@@ -55,11 +55,13 @@ public sealed class StartWiringRouteTests : Bridge
         // Once per workspace, in order — a repeated name is one circle.
         Assert.Equal(["aurora", "default"], starts.Select(s => s.GetProperty("workspace").GetString()));
 
+        // Rewritten by POOL1a2 (D197 point 1; the account-pool design §5.2): `aurora`'s own default was its start's account, from
+        // `workspace`. Every workspace reads the set now, begun at the machine's account, and `profileFrom` is never `workspace`.
         var aurora = starts[0];
         Assert.Equal("work", aurora.GetProperty("job").GetString());
         Assert.Equal("stub", aurora.GetProperty("owner").GetString());
-        Assert.Equal("office", aurora.GetProperty("profile").GetString());
-        Assert.Equal("workspace", aurora.GetProperty("profileFrom").GetString());
+        Assert.Equal("work", aurora.GetProperty("profile").GetString());
+        Assert.Equal("machine", aurora.GetProperty("profileFrom").GetString());
         Assert.True(aurora.GetProperty("commanded").GetBoolean());
         Assert.Equal(JsonValueKind.Null, aurora.GetProperty("refusal").ValueKind);
 
@@ -89,9 +91,10 @@ public sealed class StartWiringRouteTests : Bridge
             [("aurora", "work"), ("aurora", "intake"), ("default", "work"), ("default", "intake")],
             starts.Select(s => (s.GetProperty("workspace").GetString(), s.GetProperty("job").GetString())));
 
+        // The set's account, as the work's (POOL1a2): never a workspace's own.
         var aurora = starts[1];
         Assert.Equal("stub", aurora.GetProperty("adapter").GetString());
-        Assert.Equal(("office", "workspace"),
+        Assert.Equal(("work", "machine"),
             (aurora.GetProperty("profile").GetString(), aurora.GetProperty("profileFrom").GetString()));
         Assert.Equal(JsonValueKind.Null, aurora.GetProperty("refusal").ValueKind);
         Assert.Equal(("work", "machine"),
