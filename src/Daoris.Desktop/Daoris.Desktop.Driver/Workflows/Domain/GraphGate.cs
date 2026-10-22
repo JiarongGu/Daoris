@@ -158,6 +158,22 @@ public static class GraphGate
         };
     }
 
+    /// <summary>
+    /// Whether a run's record has begun its every node of <paramref name="kind"/> (the cutover design §4: the gates' own engines wait for their
+    /// node): each stands past ready, so its wires let it start and the runtime began it. True where the graph holds none; false where the record
+    /// does not read.
+    /// </summary>
+    public static bool Begun(NodeGraph graph, NodeRecord? record, string kind) =>
+        graph.Nodes.Where(node => node.Kind == kind).All(node => record is not null
+            && record.Statuses.GetValueOrDefault(node.Id)?.State is { } state && state is not (NodeStates.Blocked or NodeStates.Ready));
+
+    /// <summary>
+    /// Whether <paramref name="process"/>'s run, where it is bound to a graph version, has begun its node of <paramref name="kind"/>, its record
+    /// read with no lease and never written; true for every other run, whose gates' engines go on as before (FABRIC-CUTOVER1d).
+    /// </summary>
+    public static bool Begun(string home, WorkflowProcess process, string kind) =>
+        process is not { Graph: { } graph, Run: { } run } || Begun(graph, new NodeRecordFiles(home, () => false).Read(RunUnits.IdOf(run)), kind);
+
     /// <summary>What the graph part says (the cutover design §4's table): the terminal's line, and every door's refusal where it holds.</summary>
     public static string Says(GraphGateState gate) => gate.State switch
     {
