@@ -88,8 +88,9 @@ account's reach, which PERSONDOOR2 designs. Nothing here relies on that gap stay
 
 ### 0.6 Where an agent runs, and what a job tells
 
-- **One start gate.** Every process the driver library starts goes through `ProcessStarts.Shared.StartAsync`
-  (`Platform/ProcessStarts.cs:48`): the driver's one run, `Driver.HoldAsync` (`Driver.cs:3127-3147`), which the driven sessions,
+- **One start gate.** Every agent start, and most other processes the driver library starts, go through
+  `ProcessStarts.Shared.StartAsync` (`Platform/ProcessStarts.cs:48`; other git runs and a piece's launcher start their own): the driver's
+  one run, `Driver.HoldAsync` (`Driver.cs:3127-3147`), which the driven sessions,
   intakes, helpers, reviewers, partners, brainstorm passes and carry-ons go through; the carry-ons' own starts (`DriverContinuations.cs:970`,
   :1023); the conversations (`ChatRunner.cs:1180`); a plugin's process (`HookProcess.cs:144`, `PluginTrialProcess.cs:43`); a sign-in or an
   install (`HarnessActions.cs:479`, :546); a usage read (`CodexUsage.cs:334`); git (`WorkingTree.cs:1106`, `GitIdentityActs.cs:431`). A
