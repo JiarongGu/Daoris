@@ -422,8 +422,6 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
                   : accepting ? 'help.proposal.accept' : 'help.proposal.apply')}
           </Button>
         )}
-        {/* ASKDISMISS1: a go's second press only takes the card away and is told to nobody, so it is worded as that, never as
-            Not now, the answer to a change that the agent hears. */}
         <Button variant="ghost" disabled={pending} onClick={() => onDismiss(proposal.id)}>
           {t(going ? 'help.proposal.dismissGo' : 'help.proposal.dismiss')}
         </Button>
