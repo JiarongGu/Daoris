@@ -243,13 +243,6 @@ public static class WorkflowRunWords
         return step.Detail switch
         {
             WorkflowGraphDetails.Ready => "Ready: nothing before it holds it.",
-            // FABRIC-CUTOVER1c's guards; CUTOVER1d begins these on a graph run, and these three sentences go with them.
-            WorkflowGraphDetails.NotBegun => node switch
-            {
-                NodeKinds.Opinion => "Not begun: this build does not ask a graph run's second opinion yet.",
-                NodeKinds.Look => "Not begun: this build does not set up your look on a graph run yet.",
-                _ => "Not started: this build starts no plugin's step on a graph run yet.",
-            },
             WorkflowGraphDetails.Active => node switch
             {
                 NodeKinds.GoAhead => step.Words is { Length: > 0 } act ? $"Waits for your go-ahead: {act}" : "Waits for your go-ahead.",
@@ -279,8 +272,8 @@ public static class WorkflowRunWords
 
     /// <summary>
     /// What a run bound to a graph version says of itself, above its nodes (FABRIC-CUTOVER1e; the cutover design §2.3, §3): what its record says
-    /// where it says something (it does not read, it ended, Daoris has not judged it yet), the subjects its nodes observe, that its branches are its
-    /// graph's, and that every landing door still holds it, which CUTOVER1d's doors take away.
+    /// where it says something (it does not read, it ended, Daoris has not judged it yet), the subjects its nodes observe, and that its branches are
+    /// its graph's. Its landing doors read its record since FABRIC-CUTOVER1d, so no line says they hold it.
     /// </summary>
     public static IReadOnlyList<string> GraphSaid(WorkflowGraphRun graph)
     {
@@ -296,7 +289,6 @@ public static class WorkflowRunWords
         }
 
         said.Add("Its branches are its graph's, not the landing rule's: a push, a pull request or a deploy happens for this work only where its graph holds one.");
-        said.Add("Every landing door still holds this run: this build judges its graph and lands nothing for it yet.");
         return said;
     }
 

@@ -87,7 +87,7 @@ public sealed class NodeRuntimeReadsTests : IDisposable
             _holdReads.Add((root, holder, held));
             return Task.FromResult<bool?>(_holds.TryGetValue((holder, held), out var holds) ? holds : null);
         },
-        Gates = (unit, _) =>
+        Gates = (unit, _, _) =>
         {
             _gateReads.Add(unit.Id);
             return Task.FromResult(_gates.GetValueOrDefault(unit.Id));

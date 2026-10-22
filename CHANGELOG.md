@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- Work that follows a workflow saved as a graph now lands. Its second opinion, your look and a plugin's steps start as its graph
+  reaches them, and *Accept…*, `daoris-driver trees land` and the automatic landing land its work only where Daoris has judged the
+  graph at that very commit, and only that commit, a merge included: a commit made after the judgement lands nothing. Where the graph
+  still waits, the landing says on what, in the words the run's *Workflow* view uses; where Daoris has not judged the commit yet, your
+  press asks for that judgement and waits up to twenty seconds for it. `daoris driver workflow list` and `use` no longer say a graph
+  version does not run. A graph that closes its quests still waits for a later build to start.
 - A session waiting on you now says what it asks in its box, under its last message: its question in its own words, each answer it
   offers as a button beside what it will do on it (the one it recommends marked), the go-aheads it waits on with *Approve* and
   *Refuse*, how long it has waited, and what it holds meanwhile. Your words in the box go with the answer you press, or alone as your

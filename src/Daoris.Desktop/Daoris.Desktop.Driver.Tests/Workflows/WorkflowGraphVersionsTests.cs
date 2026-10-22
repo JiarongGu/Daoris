@@ -89,7 +89,8 @@ public sealed class WorkflowGraphVersionsTests
         Assert.Null(read.Problem);
         Assert.Equal([true, false, true], read.Versions.Select(each => each.Steps is not null));
         Assert.NotNull(read.Versions[1].Graph);
-        Assert.Equal("v2: it is a graph (schema 2), which this build reads and does not run yet.", read.Versions[1].Unrun);
+        // FABRIC-CUTOVER1d: a graph version runs, as a version of steps does.
+        Assert.Null(read.Versions[1].Unrun);
         Assert.Null(read.Versions[0].Unrun);
     }
 

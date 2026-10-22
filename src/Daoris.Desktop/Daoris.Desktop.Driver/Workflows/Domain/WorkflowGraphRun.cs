@@ -40,19 +40,13 @@ public static class NodeOptions
 
 /// <summary>
 /// Which row a graph run's node stands at (FABRIC-CUTOVER1e; D190 points 2 and 3, the cutover design §2, §3): its state on the run's record
-/// by the one lifecycle (<see cref="NodeStates"/>), and one more. Read with <see cref="WorkflowRunStep.Node"/> set, never with a step's kind.
+/// by the one lifecycle (<see cref="NodeStates"/>). Read with <see cref="WorkflowRunStep.Node"/> set, never with a step's kind. FABRIC-CUTOVER1d
+/// took away the one more, <c>not-begun</c>, with the guards it named: an answer that holds it reads as recorded.
 /// </summary>
 public static class WorkflowGraphDetails
 {
     public const string Blocked = NodeStates.Blocked;
     public const string Ready = NodeStates.Ready;
-
-    /// <summary>
-    /// A second opinion, a look or a plugin's performed step its wires let start, which this build does not begin on a graph run: the runtime
-    /// begins them once the landing doors read the run's record (FABRIC-CUTOVER1c's guards, CUTOVER1d, which drops this detail).
-    /// </summary>
-    public const string NotBegun = "not-begun";
-
     public const string Active = NodeStates.Active;
     public const string Reached = NodeStates.Reached;
     public const string Failed = NodeStates.Failed;
@@ -63,7 +57,7 @@ public static class WorkflowGraphDetails
     public const string Invalidated = NodeStates.Invalidated;
 
     public static IReadOnlyList<string> All { get; } =
-        [Blocked, Ready, NotBegun, Active, Reached, Failed, Rejected, Unknown, Skipped, Stopped, Invalidated];
+        [Blocked, Ready, Active, Reached, Failed, Rejected, Unknown, Skipped, Stopped, Invalidated];
 }
 
 /// <summary>
@@ -131,8 +125,8 @@ public sealed record WorkflowGraphRunFacts(WorkflowRunFacts Run, string RunId, N
 /// person answers (a go-ahead, a person's task, the look) waits on them, any other works. Its subject is the one its binding names, the
 /// cutover design §2.2's (<see cref="RunSubjects"/>), named: a quest by its id, a branch by its name as this machine's records hold it, a
 /// landing by the landed branch at its tip.</para>
-/// <para><b>Not begun until CUTOVER1d</b>: the runtime begins no second opinion and no look and starts no plugin's performed node on a graph
-/// run (FABRIC-CUTOVER1c), so one its wires let start is said not begun, never as waiting on an agent or on the person.</para>
+/// <para><b>Begun as any node</b> (FABRIC-CUTOVER1d): the runtime begins a run's second opinion and look and starts its plugin's performed
+/// nodes now its landing doors read its record, so one its wires let start is ready, then under way, as every node is.</para>
 /// <para><b>A look the work's choice adds</b> (D190 point 7, §6) is D154's hold at every landing door, drawn beside the graph as a steps run
 /// draws one (<see cref="WorkflowRuns.AddedLook"/>), never as one of its nodes, and only where the graph holds no look.</para>
 /// </remarks>
@@ -253,16 +247,29 @@ public static class WorkflowGraphRuns
     }
 
     /// <summary>
+    /// What the run's view says of one node standing at <paramref name="status"/>, its subject unnamed (FABRIC-CUTOVER1d): the words a landing door
+    /// holds with where <c>handed</c> waits on it (<see cref="GraphGate"/>). Not reached says so.
+    /// </summary>
+    public static string Said(NodeDeclaration node, NodeStatus status)
+    {
+        var (state, detail) = StateOf(node, status.State);
+        var step = new WorkflowRunStep(Cell(node, null), state, detail)
+        {
+            Node = node.Kind,
+            Code = status.State == NodeStates.Skipped ? status.By : status.Code,
+            Words = status.State is NodeStates.Skipped or NodeStates.Rejected or NodeStates.Stopped ? status.Words
+                : node.Kind == NodeKinds.GoAhead ? NodeOptions.Text(node, "act") : null,
+        };
+        return WorkflowRunWords.Said(step) ?? "Not reached yet.";
+    }
+
+    /// <summary>
     /// A node's state on the record as a run's step says it, and its detail (<see cref="WorkflowGraphDetails"/>): the one table the drawing
     /// reads, held by <c>WorkflowGraphRunTests</c>. A state this build does not know is said as recorded.
     /// </summary>
     public static (string State, string Detail) StateOf(NodeDeclaration node, string state) => state switch
     {
         NodeStates.Blocked => (WorkflowRunStates.NotReached, WorkflowGraphDetails.Blocked),
-        // FABRIC-CUTOVER1c's guards (CUTOVER1d drops them, and this row): a run's opinion and look are not begun and its performed node not
-        // started until its landing doors read its record.
-        NodeStates.Ready when node.Kind is NodeKinds.Opinion or NodeKinds.Look || (node.Reach == NodeReach.Performed && NodeKinds.IsPlugin(node.Kind)) =>
-            (WorkflowRunStates.CannotStart, WorkflowGraphDetails.NotBegun),
         NodeStates.Ready => (WorkflowRunStates.Working, WorkflowGraphDetails.Ready),
         NodeStates.Active when node.Kind is NodeKinds.GoAhead or NodeKinds.Human or NodeKinds.Look =>
             (WorkflowRunStates.WaitingOnYou, WorkflowGraphDetails.Active),
