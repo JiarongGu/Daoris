@@ -919,7 +919,9 @@ public sealed class PluginKitTests : IDisposable
             Assert.Equal(0, await PluginKitCommand.RunAsync(["try", folder], new StringWriter(), Home, log: log));
         }
 
-        var line = Assert.Single(MachineLogReader.Read(DaorisHome.Entry(Home, HomeEntry.Logs), new LogFilter()).Lines);
+        // Each trial's start says its containment too (TERMTRUST1a, agent.contained): codes only, never the plugin, so no history of it.
+        var line = Assert.Single(MachineLogReader.Read(DaorisHome.Entry(Home, HomeEntry.Logs), new LogFilter()).Lines,
+            each => each.Event != "agent.contained");
         Assert.Equal("plugin.tried", line.Event);
         Assert.Equal("acme.logged", line.Data.GetProperty("plugin").GetString());
         Assert.True(line.Data.GetProperty("passed").GetBoolean());
