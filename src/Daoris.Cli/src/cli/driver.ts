@@ -153,7 +153,7 @@ export const command: CliCommand = {
     '                         retry <quest> --session <id>',
     '                                                   release a quest your stop',
     '                                                   of that session holds',
-    '                         timeout <minutes>         how long one session may run',
+    '                         timeout <minutes>         retired: no session is limited by time',
     '                         cooloff <minutes>         how long an account cools when',
     '                                                   its agent names no time for',
     '                                                   its limit; 60 by default',
