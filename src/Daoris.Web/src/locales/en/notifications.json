@@ -70,5 +70,10 @@
   "notifications.messages.answered": "A conversation in {{repository}} answered you",
   "notifications.messages.answeredNamed": "{{conversation}} answered you",
   "notifications.messages.answeredHelp": "Ask Daoris answered you",
-  "notifications.messages.toast": "{{who}}, urgent, to everyone: {{line}}"
+  "notifications.messages.toast": "{{who}}, urgent, to everyone: {{line}}",
+  "notifications.standing.line": "These presses from a terminal run without asking you: {{presses}}. Standing confirmation since {{since}}, used {{count}} time since Daoris started.",
+  "notifications.standing.line_other": "These presses from a terminal run without asking you: {{presses}}. Standing confirmation since {{since}}, used {{count}} times since Daoris started.",
+  "notifications.standing.lineUndated": "These presses from a terminal run without asking you: {{presses}}. Used {{count}} time since Daoris started.",
+  "notifications.standing.lineUndated_other": "These presses from a terminal run without asking you: {{presses}}. Used {{count}} times since Daoris started.",
+  "notifications.standing.off": "Turn off"
 }

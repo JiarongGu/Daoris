@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { SystemWiring } from '../../data/wiring';
 import { PathText, Pill, SettingRow } from '../../design/ui';
@@ -37,9 +38,14 @@ function Found({ found }: { found: SystemWiring['terminal']['firstDaoris'] }) {
  * @remarks
  * A molecule: drawn from props. It sets nothing and copies nothing: *Copy terminal line* and the PATH presses are WIRING1e's.
  */
-export function WiringTerminal({ terminal, variables }: {
+export function WiringTerminal({ terminal, variables, standing }: {
   terminal: SystemWiring['terminal'];
   variables: SystemWiring['variables'];
+  /**
+   * The standing confirmation's row (TERMTRUST1a, `WiringStanding`), beside the launchers and the address file; none where the
+   * shell says none (an older one, or one serving no pipe), which draws no row.
+   */
+  standing?: ReactNode;
 }) {
   const { t } = useTranslation();
   const { address } = terminal;
@@ -91,6 +97,7 @@ export function WiringTerminal({ terminal, variables }: {
           </p>
         )}
       </SettingRow>
+      {standing}
       {ACCOUNT_VARIABLES.map((name) => {
         const found = variables.find((variable) => variable.name === name);
         return (

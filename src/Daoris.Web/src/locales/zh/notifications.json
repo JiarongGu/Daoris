@@ -70,5 +70,10 @@
   "notifications.messages.answered": "{{repository}} 的一个对话回复了你",
   "notifications.messages.answeredNamed": "{{conversation}}回复了你",
   "notifications.messages.answeredHelp": "问道衍回复了你",
-  "notifications.messages.toast": "{{who}}（紧急，致所有人）：{{line}}"
+  "notifications.messages.toast": "{{who}}（紧急，致所有人）：{{line}}",
+  "notifications.standing.line": "终端的这些操作无需问你即可执行：{{presses}}。自 {{since}} 起长期确认，本次启动以来使用 {{count}} 次。",
+  "notifications.standing.line_other": "终端的这些操作无需问你即可执行：{{presses}}。自 {{since}} 起长期确认，本次启动以来使用 {{count}} 次。",
+  "notifications.standing.lineUndated": "终端的这些操作无需问你即可执行：{{presses}}。本次启动以来使用 {{count}} 次。",
+  "notifications.standing.lineUndated_other": "终端的这些操作无需问你即可执行：{{presses}}。本次启动以来使用 {{count}} 次。",
+  "notifications.standing.off": "停用"
 }

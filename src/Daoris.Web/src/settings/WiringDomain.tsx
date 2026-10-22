@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  type DownloadCleared, refusedNoRoute, type SpacePlan, type SpaceStarted, useClearDownloads, useOpenLogFolder, useSpaceFree,
-  useSystemDownloads, useSystemSpace, useSystemWiring, useUpdateState,
+  type DownloadCleared, refusedNoRoute, type SpacePlan, type SpaceStarted, standingOf, useClearDownloads, useDriver, useOpenLogFolder,
+  useSetStandingConfirmation, useSpaceFree, useSystemDownloads, useSystemSpace, useSystemWiring, useUpdateState,
 } from '../bridge/shell';
 import { useSetKeep } from '../bridge/driver';
 import { failure, useErrorNotify } from '../design/ui';
 import { sentence } from '../locales/format';
+import { standingSaid } from '../person/standing';
 import type { StarterDoor } from '../help/starters';
 import { DomainLoading } from './DomainLoading';
 import type { SettingsDomainProps } from './domains';
@@ -15,6 +16,7 @@ import { WiringDownloads } from './wiring/WiringDownloads';
 import { WiringOlder } from './wiring/WiringHead';
 import { WiringSpace } from './wiring/WiringSpace';
 import { WiringSpaceFree } from './wiring/WiringSpaceFree';
+import { WiringStanding } from './wiring/WiringStanding';
 
 /** Where each file's door goes: the read names the place by a word, and the page knows its door (§3.4). */
 const FILE_DOORS: Record<string, StarterDoor> = {
@@ -70,6 +72,11 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   const [plan, setPlan] = useState<SpacePlan | undefined>(undefined);
   const [freeRefused, setFreeRefused] = useState<SpaceStarted | null>(null);
   useErrorNotify(downloads.error, notify);
+  // TERMTRUST1a (D201): the Terminal card's standing confirmation, read from the driver's state; *Turn off*'s answer said under it.
+  const standing = standingOf(useDriver().data?.standingConfirmation);
+  const setStanding = useSetStandingConfirmation();
+  const [offRefused, setOffRefused] = useState<string | null>(null);
+  const [offUnwritten, setOffUnwritten] = useState(false);
   const asked = useRef(false);
   const older = query.isError && refusedNoRoute(query.error);
   // An older shell's refusal is the page's state, not a failure to tell the person of.
@@ -153,6 +160,34 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
               onClose={() => setFreeOpen(false)}
             />
           ) : undefined}
+        />
+      )}
+      standing={standing && (
+        <WiringStanding
+          standing={standing}
+          busy={setStanding.isPending}
+          refused={offRefused}
+          unwritten={offUnwritten}
+          onTurnOn={(presses, answered) => {
+            setOffRefused(null);
+            setOffUnwritten(false);
+            setStanding.mutate(presses, {
+              onSuccess: (answer) => (answer.done ? answered.done() : answered.refused(standingSaid(t, answer.why, answer.message))),
+              onError: (error) => answered.refused(sentence(error)),
+            });
+          }}
+          onTurnOff={() => {
+            setOffRefused(null);
+            setOffUnwritten(false);
+            setStanding.mutate([], {
+              // Off for this run, its record unwritten: said under the row, as the next start may read it as on.
+              onSuccess: (answer) => {
+                if (!answer.done) setOffRefused(standingSaid(t, answer.why, answer.message));
+                else if (answer.why === 'unwritten') setOffUnwritten(true);
+              },
+              onError: (error) => setOffRefused(sentence(error)),
+            });
+          }}
         />
       )}
       onOpenLogFolder={() => openLogs.mutate(undefined, {

@@ -209,6 +209,12 @@ export type DriverState = {
    * repository, none being today's — absent on a shell older than it, which offers no sessions' checks row.
    */
   sessionChecks?: { repository: string; checks: string }[];
+  /**
+   * The person's standing confirmation (TERMTRUST1a, D201; the terminal-trust design §6.1), as the shell's `StandingNow` says it: read
+   * only through `standingOf` (`bridge/person.ts`), since the bridge leaves its nulls out. Absent on a shell older than it and where
+   * the shell serves no pipe, which draws no row.
+   */
+  standingConfirmation?: unknown;
 };
 
 /**

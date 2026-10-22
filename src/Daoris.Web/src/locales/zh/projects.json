@@ -229,6 +229,7 @@
   "projects.setup.clear": "清除",
   "projects.setup.twin.drive": "`daoris driver drive|undrive {{repository}}`",
   "projects.setup.twin.hold": "`daoris driver hold|resume {{repository}}`",
+  "projects.setup.heldStanding": "由终端按长期确认暂停",
   "projects.setup.twin.trees": "`daoris driver trees {{repository}} on|off`",
   "projects.setup.twin.line": "`daoris driver line {{repository}} <branch>|--clear`",
   "projects.setup.twin.landing": "`daoris driver landing {{repository}} merge|branch <pattern>|--clear`",

@@ -26,7 +26,7 @@ import { sessionChecksToast, type SessionChecksValue } from '../settings/reposit
 import {
   useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetAccess, useSetCommits, useHeavyMarks, useHeavySlot, useSetDrivable, useSetHeavyGates, useSetHelpers,
   useSetHandOver, useSetHold, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetSessionChecks, useSetStanding, useSetTrees,
-  useSetupPlan, useSetupPress, useSetWriteAcross, useSweepPlan, useWorkflowCurrent, useSetLanded,
+  useSetupPlan, useSetupPress, useSetWriteAcross, useSweepPlan, useWorkflowCurrent, useSetLanded, standingOf,
 } from '../bridge/shell';
 import type { SetUpForAgentsProps } from './setup/SetUpForAgents';
 import { doorOf } from '../agents/tools';
@@ -311,6 +311,8 @@ export function useProjectsView({
       onHold: (next) => setHold.mutate({ repository, held: next }, { onError: onDriverError }),
       onTrees: (next) => setTrees.mutate({ repository, ownTree: next }, { onError: onDriverError }),
       note: !registration.adopted && door === 'pipe' ? t('projects.outside.directDoor') : undefined,
+      // TERMTRUST1a: a hold a terminal made under the person's standing confirmation, as this run remembers it.
+      heldStanding: named(standingOf(driver.data.standingConfirmation)?.held, repository),
     };
   };
 
