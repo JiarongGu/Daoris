@@ -288,7 +288,8 @@
         "opinion.act.*", "opinion.ask.anywayMeanIt", "opinion.ask.myselfMeanIt", "opinion.ask.sendBackMeanIt", "opinion.ask.stopMeanIt",
         "opinion.findingsShow", "opinion.findingsHide",
         "asks.record.reviewApply", "asks.record.reviewSet", "asks.record.kindApply",
-        "workflow.door.setup", "workflow.door.workspaceSetup", "workflow.run.door.*"
+        "workflow.door.setup", "workflow.door.workspaceSetup", "workflow.run.door.*",
+        "workflow.run.node.skip", "workflow.run.node.stop", "workflow.run.node.skipMeanIt", "workflow.run.node.stopMeanIt"
       ]
     },
     "status": {
@@ -407,7 +408,7 @@
         "signin.codePlaceholder", "work.find.placeholder", "work.rail.search.placeholder", "work.say.placeholder",
         "review.ask.notYetWords", "review.ask.skipWords", "asks.compose.reviewWords", "asks.record.reviewChoose",
         "opinion.ask.words", "opinion.ask.sendBackWords", "work.attention.stale.reason",
-        "help.history.search.placeholder", "work.start.find"
+        "help.history.search.placeholder", "work.start.find", "workflow.run.node.skipWords", "workflow.run.node.stopWords"
       ]
     },
     "toast": {

@@ -103,7 +103,7 @@
   "person.route.SET_HELP_MODE": "更改问道衍的访问权限",
   "person.route.SET_HELP_GRANT": "更改问道衍的整理工作可以做什么",
   "person.route.WORKFLOW_LANDED": "更改一个仓库的落地路线及其检查",
-  "person.route.WORKFLOW_NODE": "跳过或停止一次运行的工作流中的一步",
+  "person.route.WORKFLOW_NODE": "跳过或停止一次进展中的一步",
   "person.route.SET_HEAVY_GATES": "更改一个仓库的重型检查",
   "person.route.SET_HOLD": "暂停一个仓库的工作，或将其放开",
   "person.route.SET_INTAKE": "更改阅读需求的智能体",

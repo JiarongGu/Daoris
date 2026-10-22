@@ -50,6 +50,42 @@ export interface RunStep {
   node?: string | null;
   /** What a graph run's node observes: `quest` (its `quest`), `branch` (its `branch` at its `commit`) or `landing`; none for the run itself. */
   on?: string | null;
+  /**
+   * What the person may say of a graph run's node now (FABRIC-CUTOVER1f), as the driver's one table takes it: `skip`, `stop`. None where it
+   * offers neither, on a steps run's step, and from a shell before it.
+   */
+  acts?: string[] | null;
+  /** The person's word on a graph run's node, kept and not applied yet (FABRIC-CUTOVER1f); none where none waits. */
+  asked?: NodeWordKept | null;
+}
+
+/** What the person may say of a graph run's node (FABRIC-CUTOVER1f): pass it over for the run, or stop it. */
+export type NodeAct = 'skip' | 'stop';
+
+/** A word kept on a run's node, as the driver answers it: the act, the person's words where given, and when. */
+export interface NodeWordKept {
+  node: string;
+  act: string;
+  words?: string | null;
+  at: string;
+}
+
+/** What a press of the person's word sends (`WORKFLOW_NODE`): the run, its node, the act, and their words. */
+export interface NodeWordAsk {
+  run: string;
+  node: string;
+  act: NodeAct;
+  words: string | null;
+}
+
+/** What `WORKFLOW_NODE` answers: kept, or refused by its code with the driver's sentence. */
+export interface NodeWordAnswer {
+  run: string;
+  node: string;
+  act: string;
+  done: boolean;
+  refused?: string | null;
+  message?: string | null;
 }
 
 /** A wire of a graph run's graph: from a node to a node, by its kind (`after`, `failed`, `rejected`, …). */
