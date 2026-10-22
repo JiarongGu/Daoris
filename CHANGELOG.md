@@ -9,6 +9,16 @@ with the version and date at release.
   start could leave such a folder, and its subfolders were folded in as accounts. Such a folder is now noted once in the machine
   log and otherwise left alone. If an earlier fold already wrote one into the account order, the next change of the accounts
   removes it and notes that in the machine log.
+- Daoris's git can act as SSH git identities of its own, set up from the terminal (GITAUTH1c, D198).
+  `daoris-driver git identity add-ssh <host> --label <label>` makes a key in a folder only your account can read, or imports
+  the one key file you name with `--import`. It says the public key to add on the host.
+  `git identity test` shows the host's keys beside the ones the host publishes, and trusts one only where you name its
+  fingerprint with `--trust-host`. `git default` and `git use` choose which identity a host, a workspace or a repository's
+  remote uses, or your own git sign-ins. A remote no identity serves keeps working as before.
+  A commit carries the identity's name and email where the repository names no author of its own. While Daoris's window is
+  open, an import, a trusted host key, choosing your own sign-ins and a removal are refused until Settings → Git can confirm
+  them; close the window to make them from the terminal.
+
 - Ask Daoris's trees fact no longer reads every kept session tree whole each time (TREELOOK1). A tree where nothing its read
   rests on has moved is asked for its status alone, and its edits are always read fresh. Four trees are read at once. A
   repository with about 145 kept trees answered in minutes before. With nothing moved it now answers in about twenty seconds
