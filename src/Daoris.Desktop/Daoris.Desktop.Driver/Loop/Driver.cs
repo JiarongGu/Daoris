@@ -3756,7 +3756,7 @@ public sealed class Driver(
             ending?.Open(session);
             // SESSWATCH1a: whether it waits on its own background work, the watcher's state C.
             var waitsOn = session;
-            Watch.OwnWork(sessionId, () => waitsOn.WaitsOnOwnWork);
+            Watch.OwnWork(sessionId, () => waitsOn.WaitsOnOwnWork, () => [.. waitsOn.BackgroundRunning.Select(task => task.Name)]);
             // What it says about its account's windows, kept as it says it (TOOL6c).
             if (said is not null) session.LimitsSaid += said;
             using var stops = output is null ? null : Context.Processes.OpenTaskStops(sessionId, session.StopTaskAsync);

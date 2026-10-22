@@ -450,6 +450,10 @@ public static class NoteCodes
     public static readonly NoteCode EndedQuiet = new("ended.quiet", ["minutes"]);
     public static readonly NoteCode EndedQuietPressed = new("ended.quiet-pressed", ["minutes"]);
     public static readonly NoteCode WatchQuiet = new("watch.quiet", ["minutes"]);
+    // The same mark naming what it was doing (the session-watch design §5.1): the call its agent was inside, or the background work it
+    // waited on that showed nothing (`works`, a list).
+    public static readonly NoteCode WatchQuietCall = new("watch.quiet-call", ["minutes", "call"]);
+    public static readonly NoteCode WatchQuietWork = new("watch.quiet-work", ["minutes", "works"]);
     public static readonly NoteCode WatchLeft = new("watch.left", []);
     public static readonly NoteCode EndedStopped = new("ended.stopped", []);
     public static readonly NoteCode EndedLostClaim = new("ended.lost-claim", []);

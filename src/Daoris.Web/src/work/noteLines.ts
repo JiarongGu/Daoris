@@ -65,6 +65,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'ended.quiet': { values: ['minutes'] },
   'ended.quiet-pressed': { values: ['minutes'] },
   'watch.quiet': { values: ['minutes'] },
+  'watch.quiet-call': { values: ['minutes', 'call'] },
+  'watch.quiet-work': { values: ['minutes', 'works'] },
   'watch.left': { values: [] },
   'ended.stopped': { values: [] },
   'ended.lost-claim': { values: [] },
@@ -525,6 +527,8 @@ export const NOTE_VALUES: Readonly<
   quests: 'ids',
   servers: 'names', works: 'names',
   option: 'text', chosen: 'text', work: 'text', state: 'bgstate', repository: 'text',
+  // SESSWATCH1a: the call a quiet session's agent was inside, its title as the record named it.
+  call: 'text',
   until: 'moment', at: 'moment', seen: 'moment',
   exit: 'number', minutes: 'number', paths: 'number', turn: 'number',
   // How long Ask Daoris's start waited for the machine's reading, in whole seconds (HELPSTUCK1).

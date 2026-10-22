@@ -122,6 +122,29 @@ public sealed class SessionWatchTests : IDisposable
         Assert.Null(_watch.QuietSince("s1"));
     }
 
+    /// <summary>
+    /// §5.1's <c>{{what}}</c>: the mark's note names the call its agent was inside as it went quiet, or in state C the background work
+    /// that showed nothing, each as a coded note of its own.
+    /// </summary>
+    [Fact]
+    public void The_mark_names_the_call_it_was_inside_or_the_work_it_waited_on()
+    {
+        using var run = Quest();
+        _events.Append("s1", new SessionEvent { Kind = SessionEventKind.Tool, Id = "c1", Title = "npm test", Status = "in_progress", At = DateTimeOffset.UtcNow });
+        Run(TimeSpan.FromMinutes(11));
+
+        var call = _events.Page("s1").Events.Last(e => e.Kind == SessionEventKind.Note).Parts!.Single();
+        Assert.Equal(("watch.quiet-call", "npm test"), (call.Code, call.Values.Single(value => value.Key == "call").Value.ToString()));
+
+        using var waiting = _watch.Watch("s2", new WatchedRun(SessionWatch.Quest, "q2", "claude-code-acp"));
+        _watch.OwnWork("s2", () => true, () => ["Run the tests"]);
+        Run(TimeSpan.FromMinutes(31));
+
+        var work = _events.Page("s2").Events.Last(e => e.Kind == SessionEventKind.Note).Parts!.Single();
+        Assert.Equal("watch.quiet-work", work.Code);
+        Assert.Contains("Run the tests", work.Text, StringComparison.Ordinal);
+    }
+
     // ——— Case 4: busy is a sign of work, read by window.
 
     [Fact]

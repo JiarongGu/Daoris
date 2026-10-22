@@ -28,6 +28,8 @@
   "note.ended.quiet": "它的智能体 {{minutes}} 分钟没有任何输出。Daoris 结束了这次运行，工作会在同一工作树中继续。",
   "note.ended.quiet-pressed": "它的智能体 {{minutes}} 分钟没有任何输出，你结束了这次运行，工作会在同一工作树中继续。",
   "note.watch.quiet": "它的智能体 {{minutes}} 分钟没有任何输出。Daoris 已查看。",
+  "note.watch.quiet-call": "它的智能体 {{minutes}} 分钟没有任何输出，期间 `{{call}}` 在运行。Daoris 已查看。",
+  "note.watch.quiet-work": "它的智能体 {{minutes}} 分钟没有任何输出，期间后台工作 {{works}} 没有进展。Daoris 已查看。",
   "note.watch.left": "你让它继续运行。它再次有输出后，Daoris 才会重新查看。",
   "note.ended.stopped": "已被手动停止。",
   "note.ended.handed-over": "已转交给 {{agent}}：它的委托会在同一个工作树中用它继续。",

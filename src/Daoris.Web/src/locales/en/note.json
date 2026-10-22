@@ -28,6 +28,8 @@
   "note.ended.quiet": "Nothing came from its agent for {{minutes}} minutes. Daoris ended this run, and the work goes on in the same tree.",
   "note.ended.quiet-pressed": "You ended this run after {{minutes}} minutes with nothing from its agent, and the work goes on in the same tree.",
   "note.watch.quiet": "Nothing came from its agent for {{minutes}} minutes. Daoris looked in.",
+  "note.watch.quiet-call": "Nothing came from its agent for {{minutes}} minutes, while `{{call}}` ran. Daoris looked in.",
+  "note.watch.quiet-work": "Nothing came from its agent for {{minutes}} minutes, while its background work {{works}} showed no progress. Daoris looked in.",
   "note.watch.left": "You left it running. Daoris looks in again once it is heard from.",
   "note.ended.stopped": "The person stopped it.",
   "note.ended.handed-over": "Handed over to {{agent}}: its quest goes on with it, in the same tree.",

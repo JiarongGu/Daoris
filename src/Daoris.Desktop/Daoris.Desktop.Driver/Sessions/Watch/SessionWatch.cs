@@ -51,7 +51,14 @@ public sealed record QuietRow(string Session, string Kind, string? Quest, int Mi
 /// <param name="State">The state it was judged in: <c>A</c> (a turn, its door's own) or <c>C</c> (waiting on its own work).</param>
 /// <param name="Step"><see cref="SessionWatch.Marked"/>, <see cref="SessionWatch.Brought"/>, <see cref="SessionWatch.Ended"/>, or <c>over</c>.</param>
 /// <param name="Outcome">Where an episode ends: <c>heard</c>, <c>busy</c>, <c>moving</c>, <c>waits</c>, <c>ended</c>, <c>left</c>, <c>pressed</c>; else <c>open</c>.</param>
-public sealed record QuietStep(string Session, string Kind, string Adapter, string State, int Minutes, string Step, string Outcome, int Episode);
+public sealed record QuietStep(string Session, string Kind, string Adapter, string State, int Minutes, string Step, string Outcome, int Episode)
+{
+    /// <summary>The call its agent was inside when it was marked, as the record named it (§5.1's <c>{{what}}</c>); null where none was.</summary>
+    public string? Call { get; init; }
+
+    /// <summary>The background work it waited on in state C when it was marked; empty where none.</summary>
+    public IReadOnlyList<string> Works { get; init; } = [];
+}
 
 /// <summary>
 /// The watcher (SESSWATCH1a, D200, the session-watch design §1, §2): a running driven session that says nothing and runs nothing for its
@@ -154,9 +161,12 @@ public sealed class SessionWatch
     /// Where a session's door learns whether it waits on its own background work (state C), once its door holds the session that
     /// knows: the protocol door's (<see cref="AcpSession.WaitsOnOwnWork"/>).
     /// </summary>
-    public void OwnWork(string session, Func<bool> waits)
+    /// <param name="works">The names of the background work it waits on, which its mark's note names (§5.1); none where null.</param>
+    public void OwnWork(string session, Func<bool> waits, Func<IReadOnlyList<string>>? works = null)
     {
-        if (_watched.TryGetValue(session, out var watched)) watched.OwnWork = waits;
+        if (!_watched.TryGetValue(session, out var watched)) return;
+        watched.OwnWork = waits;
+        watched.Works = works;
     }
 
     /// <summary>Stamp a session heard now: one in-memory write, from any reading thread.</summary>
@@ -270,6 +280,13 @@ public sealed class SessionWatch
             ("minutes", step.Minutes), ("step", step.Step), ("outcome", step.Outcome), ("episode", step.Episode));
         var noted = step switch
         {
+            { Step: Marked, Call: { } call } => Noted.Of(
+                NoteCodes.WatchQuietCall, $"Nothing came from its agent for {step.Minutes} minutes, while `{call}` ran. Daoris looked in.",
+                ("minutes", step.Minutes), ("call", call)),
+            { Step: Marked, Works.Count: > 0 } => Noted.Of(
+                NoteCodes.WatchQuietWork,
+                $"Nothing came from its agent for {step.Minutes} minutes, while its background work {string.Join(", ", step.Works.Select(work => $"`{work}`"))} showed no progress. Daoris looked in.",
+                ("minutes", step.Minutes), ("works", step.Works)),
             { Step: Marked } => Noted.Of(NoteCodes.WatchQuiet, $"Nothing came from its agent for {step.Minutes} minutes. Daoris looked in.", ("minutes", step.Minutes)),
             { Outcome: "left" } => Noted.Of(NoteCodes.WatchLeft, "You left it running. Daoris looks in again once it is heard from."),
             _ => null,
@@ -379,7 +396,12 @@ public sealed class SessionWatch
         {
             var episode = watched.Episode = Begin(watched, heard, now, unheard, busy: false);
             episode.Marked = true;
-            steps.Add(new QuietStep(watched.Session, watched.Run.Kind, watched.Run.Adapter, state, minutes, Marked, "open", episode.Number));
+            // What it was doing as it went quiet (§5.1): the call its agent was inside, or in state C the work that showed nothing.
+            steps.Add(new QuietStep(watched.Session, watched.Run.Kind, watched.Run.Adapter, state, minutes, Marked, "open", episode.Number)
+            {
+                Call = waitsOnWork ? null : _calls.Calling(watched.Session) is { Waiting: false, Title.Length: > 0 } call ? call.Title : null,
+                Works = waitsOnWork ? watched.Works?.Invoke() ?? [] : [],
+            });
             return;
         }
 
@@ -469,6 +491,7 @@ public sealed class SessionWatch
         public readonly string Session = session;
         public readonly WatchedRun Run = run;
         public Func<bool>? OwnWork = run.WaitsOnOwnWork;
+        public Func<IReadOnlyList<string>>? Works;
         public long HeardTicks = heard;
         public readonly List<(TimeSpan At, TimeSpan Cpu)> Reads = [];
         public readonly CancellationTokenSource End = new();
