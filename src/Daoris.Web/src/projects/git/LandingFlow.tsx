@@ -59,7 +59,7 @@ export function LandingFlow({ name, door, className }: { name: string; door: Lan
         </span>
       </button>
       {door.open && (
-        <div className="mt-2 grid min-w-0 gap-2 pl-[18px]">
+        <div className="mt-2 grid min-w-0 gap-2 pl-[1.125rem]">
           <p className="m-0 text-small text-ink-faint">{said}</p>
           {door.unitsUnread && <p className="m-0 text-small text-ink-faint">{t('landing.unitsUnread')}</p>}
           {door.landing && <LandingLifeFlow landing={door.landing} />}

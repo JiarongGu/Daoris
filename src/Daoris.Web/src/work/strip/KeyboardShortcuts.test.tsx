@@ -10,7 +10,7 @@ import { KeyboardShortcuts } from './KeyboardShortcuts';
 const state = (over: Partial<CommandState> = {}): CommandState => ({
   attached: true, view: 'quests', list: { shown: true }, panelShown: true, sideShown: false, moved: false, workspaces: [],
   scope: null, circle: null, wired: false, theme: 'system', language: 'en', agents: [], domains: [], knowledge: 'search',
-  session: null, quest: null, record: false, find: false, field: false, refreshing: false, ...over,
+  session: null, quest: null, record: false, find: false, field: false, refreshing: false, zoom: 100, ...over,
 });
 const doors = new Proxy({}, { get: () => vi.fn() }) as never;
 const groups = (over: Partial<CommandState> = {}) => {
@@ -29,6 +29,11 @@ describe('Keyboard shortcuts', () => {
     expect(workspace.getByText('Ctrl+Shift+N')).toBeInTheDocument();
     expect(within(screen.getByRole('region', { name: 'Go' })).getByText('Ctrl+8')).toBeInTheDocument();
     expect(within(screen.getByRole('region', { name: 'Help' })).getByText('Ctrl+Alt+I')).toBeInTheDocument();
+    // ZOOM1: View's zoom, both of zoom in's keys.
+    const view = within(screen.getByRole('region', { name: 'View' }));
+    expect(view.getByText('Zoom in')).toBeInTheDocument();
+    expect(view.getByText('Ctrl++')).toBeInTheDocument();
+    expect(view.getByText('Ctrl+0')).toBeInTheDocument();
     // Run prints no key since NEW1b moved its one keyed item to Workspace's *New conversation…*.
     expect(screen.getAllByRole('region')).toHaveLength(6);
     expect(screen.getByText(/Alt, pressed and let go, or F10/)).toBeInTheDocument();

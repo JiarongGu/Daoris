@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  applyZoom, readZoom, setZoom, subscribeZoom, ZOOM_KEY, ZOOM_LEVELS, zoomLevel, zoomStep, zoomWheel,
+  applyZoom, readZoom, setZoom, subscribeZoom, ZOOM_KEY, ZOOM_LEVELS, zoomBy, zoomLevel, zoomStep, zoomWheel,
 } from './zoom';
 
 // The window's zoom (ZOOM1): an editor's steps, kept for the machine as the theme is, and applied to the page's root size so
@@ -25,6 +25,16 @@ describe('the window zoom', () => {
     // A level between two steps goes to the next one its way.
     expect(zoomStep(105, 1)).toBe(110);
     expect(zoomStep(105, -1)).toBe(100);
+  });
+
+  it("takes View's three acts: a step in, a step out, back to 100%", () => {
+    zoomBy('in');
+    zoomBy('in');
+    expect(zoomLevel()).toBe(125);
+    zoomBy('out');
+    expect(zoomLevel()).toBe(110);
+    zoomBy('reset');
+    expect(zoomLevel()).toBe(100);
   });
 
   it('is 100% by default, and 100% leaves the page exactly as it was drawn', () => {

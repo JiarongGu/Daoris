@@ -12,19 +12,29 @@ const state = (over: Partial<CommandState> = {}): CommandState => ({
   attached: true, view: 'quests', list: { shown: true }, panelShown: true, sideShown: false, moved: false,
   workspaces: [{ name: 'work', repositories: 4 }, { name: 'forge', repositories: 2 }], scope: null, circle: 'work', wired: true,
   theme: 'dark', language: 'en', agents: [], domains: [], knowledge: 'search', session: null, quest: null, record: false, find: false,
-  field: false, refreshing: false, ...over,
+  field: false, refreshing: false, zoom: 100, ...over,
 });
 const doors = new Proxy({}, { get: () => vi.fn() }) as never;
 const entries = (over: Partial<CommandState> = {}) => commandTable(state(over), doors, i18n.t.bind(i18n));
 const labels = (rows: { label: string }[]) => rows.map((row) => row.label);
 
 describe('the menus, row by row', () => {
-  it('holds 67 items with the install\'s two workspaces, every place but Settings under Go (the design §6.2)', () => {
+  it('holds 70 items with the install\'s two workspaces, every place but Settings under Go (the design §6.2)', () => {
     const all = entries();
     const rows = MENUS.flatMap((menu) => menuRows(all, menu.id));
-    // The 66th, View's Workflow (WORKFLOW1c); the 67th, View's Notifications (NOTIFY2b).
-    expect(rows).toHaveLength(67);
-    expect(rows.filter((row) => row.shortcut)).toHaveLength(30);
+    // The 66th, View's Workflow (WORKFLOW1c); the 67th, View's Notifications (NOTIFY2b); the 68th to the 70th, View's zoom (ZOOM1).
+    expect(rows).toHaveLength(70);
+    expect(rows.filter((row) => row.shortcut)).toHaveLength(33);
+  });
+
+  /** ZOOM1 (the UI/UX design §3.11): the zoom is View's, ruled off as its own group, each row with its key; at 100% no reset. */
+  it("draws View's zoom as its own group, each with its key, its reset off at 100%", () => {
+    const zoom = (level: number) => menuRows(entries({ zoom: level }), 'view').filter((row) => row.id.startsWith('view.zoom'));
+    expect(zoom(100).map((row) => [row.label, row.shortcut, Boolean(row.disabled)])).toEqual([
+      ['Zoom in', 'Ctrl+=', false], ['Zoom out', 'Ctrl+-', false], ['Reset zoom', 'Ctrl+0', true],
+    ]);
+    expect(zoom(100)[0]!.separated).toBe(true);
+    expect(zoom(200).map((row) => Boolean(row.disabled))).toEqual([true, false, false]);
   });
 
   it('rules off each group, and names Run\'s two record groups with the tip that says what to open', () => {
@@ -60,7 +70,7 @@ describe('the menus, row by row', () => {
     expect(language?.sub?.map((row) => [row.label, Boolean(row.checked)])).toEqual([['English', true], ['中文', false]]);
     expect(labels(view)).toEqual([
       'Commands', 'Quest list', 'Panel', 'Side bar', 'Reset view locations', 'Notifications', 'Timeline', 'Workflow', 'Console', 'Monitor window',
-      "Daoris's browser", 'Theme', 'Language', 'Refresh the index',
+      "Daoris's browser", 'Theme', 'Language', 'Zoom in', 'Zoom out', 'Reset zoom', 'Refresh the index',
     ]);
   });
 

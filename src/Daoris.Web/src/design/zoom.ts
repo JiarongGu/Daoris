@@ -72,6 +72,11 @@ export function setZoom(level: number): void {
   tell();
 }
 
+/** View's three zoom acts (ZOOM1): a step in, a step out, or back to the page as drawn. */
+export function zoomBy(step: 'in' | 'out' | 'reset'): void {
+  setZoom(step === 'reset' ? ZOOM_DEFAULT : zoomStep(current, step === 'in' ? 1 : -1));
+}
+
 /**
  * A level another main window chose (ONEINSTANCE1): the store tells every other document of a write, so this one follows
  * as the theme does (WINDOW1), applied and told without writing it back.

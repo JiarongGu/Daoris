@@ -17,7 +17,7 @@ import {
   Monitor, Network,
   PanelBottom, PanelLeft, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose, Paperclip, Pause, Play, Plug, Plus, Redo2, Reply,
   RotateCw, Scissors, Search, Settings, Shield, Square, SquareArrowOutUpRight, SquareTerminal, Terminal, TextSelect, Trash2, TriangleAlert,
-  Undo2, Workflow, Wrench, WrapText, X,
+  Undo2, Workflow, Wrench, WrapText, X, ZoomIn, ZoomOut,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { type Quest, SESSION_ACTIVE, type SessionState } from '../data/api';
@@ -164,6 +164,9 @@ const ICONS = {
   wrap: WrapText,
   // Notifications (NOTIFY2b, the notification design §6): the title bar's button and the view's tab, the one new glyph.
   bell: Bell,
+  // The window's zoom (ZOOM1): View's rows and the status bar's level, larger or smaller than the page as drawn.
+  zoomIn: ZoomIn,
+  zoomOut: ZoomOut,
 } as const;
 
 export type IconName = keyof typeof ICONS;

@@ -84,7 +84,7 @@ export function HowItCameToBe({
         </span>
       </button>
       {open && (
-        <div className="mt-2 grid min-w-0 gap-3 pl-[18px]">
+        <div className="mt-2 grid min-w-0 gap-3 pl-[1.125rem]">
           <p className="m-0 text-small text-ink-faint">{t('work.trace.hint')}</p>
           {reading && !answer && <p className="m-0 text-small text-ink-soft" role="status">{t('work.trace.reading')}</p>}
           {refusal && !answer && <p className="m-0 text-small text-ink-soft"><Inline text={refusal} /></p>}

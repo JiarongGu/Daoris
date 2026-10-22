@@ -26,5 +26,8 @@
   "work.status.sessions_other": "{{count}} 个会话",
   "work.status.setup": "配置：{{done}}/{{of}}",
   "work.status.setupLabel": "配置",
-  "work.status.setupTip": "本机需要的步骤完成了几步。点击打开「开始使用」。"
+  "work.status.setupTip": "本机需要的步骤完成了几步。点击打开「开始使用」。",
+  "work.status.zoom": "缩放",
+  "work.status.zoomLevel": "{{percent}}%",
+  "work.status.zoomTip": "窗口内容按 {{percent}}% 显示，四周的栏保持原大小。点击恢复到 100%，与 Ctrl+0 相同。"
 }

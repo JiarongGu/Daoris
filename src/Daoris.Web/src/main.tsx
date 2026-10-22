@@ -7,6 +7,7 @@ import { SecondaryWindowRoot } from './app/SecondaryWindowRoot';
 import { WorkspaceScopeProvider } from './data/scope';
 import { secondaryWindow } from './work/window';
 import { applyTheme } from './design/theme';
+import { applyZoom } from './design/zoom';
 import { installPageErrors } from './bridge/shell';
 import './tokens.css';
 import './locales/i18n';
@@ -15,6 +16,8 @@ import './locales/i18n';
 // every launch with a chosen theme would flash the OS's one first. A secondary window runs this
 // too: same origin, same remembered choice.
 applyTheme();
+// The window's zoom (ZOOM1), likewise before the first paint and in every window: the machine's one level.
+applyZoom();
 
 // The page's own failures into the machine log (LOG1b), from before anything can fail. A browser has
 // no bridge and reports nothing.

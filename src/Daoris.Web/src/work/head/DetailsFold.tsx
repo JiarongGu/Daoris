@@ -59,7 +59,7 @@ export function DetailsFold({ summary, rows, className }: {
         </span>
       </button>
       {open && (
-        <dl className="m-0 mt-2 grid min-w-0 grid-cols-[max-content_1fr] gap-x-4 gap-y-1 pl-[18px] text-small">
+        <dl className="m-0 mt-2 grid min-w-0 grid-cols-[max-content_1fr] gap-x-4 gap-y-1 pl-[1.125rem] text-small">
           {shown.map((row) => (
             <div key={row.label} className="contents">
               <dt className="text-ink-faint">{row.label}</dt>

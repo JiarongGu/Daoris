@@ -331,7 +331,7 @@
         "work.status.driverStopped", "work.status.everyWorkspace", "work.status.indexedLabel",
         "work.status.remote", "work.status.remoteLocal", "work.status.remoteWired", "work.status.sessions",
         "work.status.sessionsLabel", "work.status.setup", "work.status.setupLabel", "work.status.tierLabel",
-        "work.shown.*", "work.status.workspace", "work.sync.label", "work.sync.level", "work.sync.never",
+        "work.shown.*", "work.status.workspace", "work.status.zoom", "work.status.zoomLevel", "work.sync.label", "work.sync.level", "work.sync.never",
         "work.sync.walled", "work.terminal.default", "work.terminal.endedMark", "work.tool.status.*",
         "review.state.*", "review.pill", "work.attention.set-up",
         "opinion.state.*", "opinion.weight.*", "opinion.sure.*", "opinion.disputed", "opinion.session.kind", "work.attention.opinion",

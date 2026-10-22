@@ -84,6 +84,9 @@ import { CommandPalette } from '../work/strip/CommandPalette';
 import { CommandCenter } from '../work/strip/CommandCenter';
 import { AppMenuBar, type BarMenu, focusMenuBar, useMenuFold } from '../work/strip/AppMenu';
 import { useThemeChoice } from '../design/theme';
+import { useZoom, zoomBy } from '../design/zoom';
+import { useZoomWheel } from './windowZoom';
+import { ZoomReadout } from '../work/frame/ZoomReadout';
 import { rememberedDomain, SETTINGS_DOMAINS } from '../settings/domains';
 import { store, stored } from '../lib/stored';
 import { figure } from '../locales/format';
@@ -255,6 +258,10 @@ export function App() {
   // A shell whose driver has not answered yet is still a shell (PUSHUX2): it waits, never reading as a browser.
   const driver = useDriver();
   const attached = useAttached();
+  // The window's zoom (ZOOM1, the UI/UX design §3.11): the content scales, the frame keeps its size. A shell's alone: a browser
+  // zooms its page itself, so it is left its wheel and its keys.
+  const zoom = useZoom();
+  useZoomWheel(attached);
   // Ask Daoris (HELP1) is a view of the frame's regions on every view since DOCK1a: bumped each time the
   // person asks for it, and the frame opens whichever region holds it, on it.
   const [helpFocus, setHelpFocus] = useState(0);
@@ -721,6 +728,7 @@ export function App() {
       find: findTarget(document, view) !== null,
       field: fields.current?.field() != null,
       refreshing: refresh.isPending,
+      zoom,
     };
   };
 
@@ -769,6 +777,7 @@ export function App() {
     browser: () => openBrowser.mutate(),
     theme: setTheme,
     language: (language) => void i18n.changeLanguage(language),
+    zoom: zoomBy,
     refresh: onRefresh,
     go: (target) => open(target),
     knowledge: (mode) => open('knowledge', null, { knowledge: mode }),
@@ -1445,6 +1454,8 @@ export function App() {
         // Where the setup is done (SETUP1b): absent in a browser, and once the required steps are.
         setup={setupCount}
         onSetup={() => openSettings('start')}
+        // The window's zoom while it is not 100%, pressed back to 100% (ZOOM1): a shell's alone.
+        zoom={attached ? { level: zoom, onReset: () => zoomBy('reset') } : undefined}
         // The tier by its value (OVERVIEWNOISE1c): the bar words it, and its note, in the page's language.
         tier={status.data ? { semantic: status.data.semantic } : undefined}
         indexed={indexed > 0
@@ -1512,6 +1523,9 @@ export function App() {
           />
         </QuickAsk>
       )}
+
+      {/* The zoom's level, said for a moment as it changes (ZOOM1); the status bar keeps it while it is not 100%. */}
+      {attached && <ZoomReadout level={zoom} />}
 
       {/* A press's toast first, staying until the view opens or the press ends (NOTIFY2b, §3.3); then the window's outcomes. */}
       <Toasts
