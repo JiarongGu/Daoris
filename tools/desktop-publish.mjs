@@ -33,12 +33,13 @@
  * the workspace's `_fixtures` is never asked: the deployment rehearsal publishes there, and it is one of the
  * gates being run.
  *
- * **A stage from the gate tree** (GATEWT1). `merge-branch --full --beside` runs the full set in a worktree of its own,
- * `local/gate-tree` under the main checkout, while merges move main on, and records its verdicts in the main checkout's
- * store, keyed by tree. `--stage --from-gated <commit>` builds that tree, never this checkout: it refuses when no gate
- * tree stands, when it holds another commit, or while its full set runs; asks the gates of the gate tree's own tree,
- * here and again in the gate tree's own publish, which it runs there with the same arguments; and once that stages,
- * notes it in the tree's record (`local/gate-tree.json`), so the next merge's prune removes the tree.
+ * **A stage from the gate tree** (GATEWT1). `merge-branch --ci` (CI1, after each merge) and `--full --beside` gate a commit
+ * in a worktree of their own, `local/gate-tree` under the main checkout, while merges move main on, and record their
+ * verdicts in the main checkout's store, keyed by tree. `--stage --from-gated <commit>` builds that tree, never this
+ * checkout: it refuses when no gate tree stands, when it holds another commit, or while a run holds it; holds the tree's
+ * lock itself through its build, so no CI run moves it meanwhile (CI1); asks the gates of the gate tree's own tree, here
+ * and again in the gate tree's own publish, which it runs there with the same arguments, a refusal naming `--ci <commit>`;
+ * and once that stages, notes it in the tree's record (`local/gate-tree.json`), so the next merge's prune removes the tree.
  *
  * **Framework-dependent on purpose.** The shell requires a Windows desktop runtime; a self-contained
  * publish would add ~150 MB to carry a .NET that this machine has. It carries its own Chromium (D92,
@@ -68,7 +69,7 @@
  */
 import { execSync, spawnSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
-import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { closeSync, copyFileSync, cpSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, rmSync, writeFileSync, writeSync } from 'node:fs';
 import { dirname, isAbsolute, join, posix, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 // The tar reader the CLI carries (AGT2b): what unpacks the doctrine tool's package (D124 §1.2).
@@ -814,7 +815,7 @@ const indented = (text) => text.split(/\r?\n/).filter((line) => line.trim()).map
  * the one that runs it all, unless `force` (`--force-ungated`, the person's explicit override), when it publishes
  * and says it is ungated.
  */
-export function ungatedRefusal(to, repoRoot, { force = false, ask = askGates } = {}) {
+export function ungatedRefusal(to, repoRoot, { force = false, ask = askGates, remedy = null } = {}) {
   if (insideFixtures(to, repoRoot)) return { refusal: null, note: null };
   const { code, out } = ask(repoRoot);
   if (code === 0) return { refusal: null, note: `desktop-publish: ${out.split(/\r?\n/)[0].replace(/^merge-branch: /, '')}` };
@@ -825,13 +826,15 @@ export function ungatedRefusal(to, repoRoot, { force = false, ask = askGates } =
     return { refusal: null, note: `desktop-publish: publishing ungated (--force-ungated): ${why}.\n${indented(out)}` };
   }
   // The tool's own last line names the command too; it is said once, below. A tool that names none, or cannot tell, gets the full set.
+  // CI1: a stage from the gate tree is handed its own `remedy`, the CI's command, which runs there what the commit's verdicts lack.
   const lines = out.split(/\r?\n/);
   const named = lines.map((line) => REMEDY.exec(line)).find(Boolean);
-  const [what, command] = named ? [named[1], named[2]] : ['every gate', GATE_COMMAND];
+  const [what, command] = remedy ? [remedy.what, remedy.command] : named ? [named[1], named[2]] : ['every gate', GATE_COMMAND];
+  const where = remedy?.where ?? 'on this checkout';
   const said = lines.filter((line) => !REMEDY.test(line) && !line.includes(GATE_COMMAND)).join('\n');
   return {
     refusal: `desktop-publish: ${why}, so it is not published to \`${to}\`.\n${indented(said)}\n`
-      + `  A merge runs only the gates its lanes reach (GATE3); run ${what} on this checkout: ${command}\n`
+      + `  A merge runs only the gates its lanes reach (GATE3); run ${what} ${where}: ${command}\n`
       + '  Or, as your explicit call, publish it ungated with --force-ungated.',
     note: null,
   };
@@ -860,37 +863,80 @@ const gitIn = (cwd, args) => spawnGit(args, { cwd, encoding: 'utf8', windowsHide
 const samePath = (a, b) => (process.platform === 'win32' ? resolve(a).toLowerCase() === resolve(b).toLowerCase() : resolve(a) === resolve(b));
 const minuteOf = (iso) => (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(iso ?? '') ? `${iso.slice(0, 10)} ${iso.slice(11, 16)} UTC` : 'an unknown time');
 
+/** The gate tree's lock as written, or null where there is none or it does not read. */
+function readTreeLock(file) {
+  try {
+    return JSON.parse(readFileSync(file, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+/** CI1: why a held gate tree is not staged, by who holds it: a CI run, another stage, or a full set beside. */
+function heldSaid(lock) {
+  const since = `pid ${lock.pid}, since ${minuteOf(lock.at)}`;
+  const sha = String(lock.commit ?? '').slice(0, 7);
+  if (lock.holder === 'ci') return `desktop-publish: the gate tree is not staged while a CI run is gating it (${since}, on ${sha}): its verdicts are not in yet`;
+  if (lock.holder === 'stage') return `desktop-publish: the gate tree is not staged while another stage of ${sha} is building from it (${since})`;
+  return `desktop-publish: the gate tree is not staged while its full set is still running (${since}): its verdicts are not in yet`;
+}
+
 /**
  * The gate tree to build `commit` from (GATEWT1), or the refusal that says why it cannot be: no gate tree under the
- * main checkout, one that holds another commit (main moved on, or a later full set moved it), or one whose full set is
- * still running, whose verdicts are not in yet. `home` is the main checkout, where its record is kept.
+ * main checkout, one that holds another commit (main moved on, or a later run moved it), or one a run holds (a CI run or a
+ * full set, whose verdicts are not in yet, or another stage). `home` is the main checkout, where its record is kept.
+ *
+ * CI1: `hold` takes the gate tree's lock for the stage (`holder: 'stage'`) and answers its `release`, so no CI run, which a
+ * watch starts as main moves, moves the tree while it builds: a run started meanwhile is refused by the lock as a second run is
+ * (the pipeline design's §4.6). It is taken only where none is held (`wx`), a dead process's taken over, and the commit read
+ * again under it, so a run that moved the tree between the look and the take is caught.
  */
-export function gatedSource(repoRoot, commit, { alive = pidAlive } = {}) {
+export function gatedSource(repoRoot, commit, { alive = pidAlive, hold = false, now = () => new Date().toISOString().replace(/\.\d+Z$/, 'Z') } = {}) {
   const listed = gitIn(repoRoot, ['worktree', 'list', '--porcelain']);
   if (listed.error || listed.status !== 0) return { refusal: `desktop-publish: git could not list the worktrees: ${(listed.stderr || listed.error?.message || '').trim()}` };
   const paths = listed.stdout.split(/\r?\n/).filter((line) => line.startsWith('worktree ')).map((line) => resolve(line.slice('worktree '.length).trim()));
   const home = paths[0] ?? repoRoot;
   const tree = join(home, ...GATE_TREE.split('/'));
+  const short = String(commit).slice(0, 7);
   if (!paths.some((path) => samePath(path, tree))) {
-    return { refusal: `desktop-publish: no gate tree at ${GATE_TREE}: node tools/merge-branch.mjs --full --beside makes one and gates it` };
+    return { refusal: `desktop-publish: no gate tree at ${GATE_TREE}: node tools/merge-branch.mjs --ci ${short} makes one and gates it` };
   }
   const wanted = gitIn(home, ['rev-parse', '--verify', '--quiet', `${commit}^{commit}`]);
   if (wanted.status !== 0) return { refusal: `desktop-publish: no commit '${commit}' to stage from the gate tree` };
   const want = wanted.stdout.trim();
-  const head = gitIn(tree, ['rev-parse', 'HEAD']).stdout.trim();
-  if (head !== want) {
-    return { refusal: `desktop-publish: the gate tree holds ${head.slice(0, 7) || 'no commit'}, not ${want.slice(0, 7)}: node tools/merge-branch.mjs --full --beside ${want.slice(0, 7)} gates that one there` };
-  }
-  let lock = null;
+  const holds = () => {
+    const head = gitIn(tree, ['rev-parse', 'HEAD']).stdout.trim();
+    return head === want ? null : `desktop-publish: the gate tree holds ${head.slice(0, 7) || 'no commit'}, not ${want.slice(0, 7)}: node tools/merge-branch.mjs --ci ${want.slice(0, 7)} gates that one there`;
+  };
+  const other = holds();
+  if (other) return { refusal: other };
+  const lockFile = join(home, ...GATE_TREE_LOCK.split('/'));
+  const lock = readTreeLock(lockFile);
+  if (lock && alive(Number(lock.pid))) return { refusal: heldSaid(lock) };
+  if (!hold) return { refusal: null, tree, commit: want, home };
+  if (lock) rmSync(lockFile, { force: true });
+  let fd;
   try {
-    lock = JSON.parse(readFileSync(join(home, ...GATE_TREE_LOCK.split('/')), 'utf8'));
-  } catch {
-    lock = null;
+    mkdirSync(dirname(lockFile), { recursive: true });
+    fd = openSync(lockFile, 'wx');
+  } catch (error) {
+    const taken = readTreeLock(lockFile);
+    return { refusal: error?.code === 'EEXIST' && taken ? heldSaid(taken) : `desktop-publish: the gate tree's lock could not be taken: ${error?.message ?? error}` };
   }
-  if (lock && alive(Number(lock.pid))) {
-    return { refusal: `desktop-publish: the gate tree is not staged while its full set is still running (pid ${lock.pid}, since ${minuteOf(lock.at)}): its verdicts are not in yet` };
+  try {
+    writeSync(fd, `${JSON.stringify({ pid: process.pid, commit: want, at: now(), holder: 'stage' })}\n`);
+  } finally {
+    closeSync(fd);
   }
-  return { refusal: null, tree, commit: want, home };
+  const release = () => {
+    if (readTreeLock(lockFile)?.pid === process.pid) rmSync(lockFile, { force: true });
+  };
+  const moved = holds();
+  if (moved) {
+    release();
+    return { refusal: moved };
+  }
+  return { refusal: null, tree, commit: want, home, release };
 }
 
 /** The arguments the gate tree's own publish runs with: these, but `--from-gated` and its commit, and `--to` absolute. */
@@ -1015,18 +1061,29 @@ async function main() {
       console.error('desktop-publish: --from-gated <commit> stages the commit the gate tree holds: give it with --stage and the commit.');
       process.exit(2);
     }
-    const source = gatedSource(repoRoot, commit);
+    // CI1: the stage holds the gate tree's lock through its build, so a CI run (a watch starts one as main moves) waits for it.
+    const source = gatedSource(repoRoot, commit, { hold: true });
     if (source.refusal) {
       console.error(source.refusal);
       process.exit(2);
     }
-    const asked = ungatedRefusal(to, source.tree, { force: flag('--force-ungated') });
-    if (asked.refusal) {
-      console.error(asked.refusal);
-      process.exit(2);
+    const sha = source.commit.slice(0, 7);
+    let built;
+    try {
+      const asked = ungatedRefusal(to, source.tree, {
+        force: flag('--force-ungated'),
+        remedy: { what: "what this commit's verdicts lack", where: 'in the gate tree', command: `node tools/merge-branch.mjs --ci ${sha}` },
+      });
+      if (asked.refusal) {
+        console.error(asked.refusal);
+        process.exitCode = 2;
+        return;
+      }
+      console.log(`desktop-publish: building ${sha} from the gate tree (${GATE_TREE}), not from this checkout; it holds the tree until its build ends.`);
+      built = spawnSync(process.execPath, [join(source.tree, 'tools', 'desktop-publish.mjs'), ...childArgs(argv, to)], { cwd: source.tree, stdio: 'inherit' });
+    } finally {
+      source.release();
     }
-    console.log(`desktop-publish: building ${source.commit.slice(0, 7)} from the gate tree (${GATE_TREE}), not from this checkout.`);
-    const built = spawnSync(process.execPath, [join(source.tree, 'tools', 'desktop-publish.mjs'), ...childArgs(argv, to)], { cwd: source.tree, stdio: 'inherit' });
     if (built.status === 0) {
       recordStaged(source.home, { commit: source.commit, to, at: new Date().toISOString().replace(/\.\d+Z$/, 'Z') });
       console.log('desktop-publish: the gate tree\'s stage is done; the next merge\'s prune removes the tree, or node tools/merge-branch.mjs --prune now.');

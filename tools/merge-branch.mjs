@@ -359,7 +359,7 @@ import { createHash } from 'node:crypto';
 import {
   closeSync, cpSync, existsSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync, writeSync,
 } from 'node:fs';
-import { constants as osConstants, freemem as osFreemem, setPriority as osSetPriority, totalmem as osTotalmem } from 'node:os';
+import { constants as osConstants, cpus as osCpus, freemem as osFreemem, setPriority as osSetPriority, totalmem as osTotalmem } from 'node:os';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fenced, gluedLabels, records } from './doc-duplicates.mjs';
 import { isMain, renameHeld, spawnGit, stagedTree, writeAtomic } from './fsx.mjs';
@@ -547,8 +547,13 @@ export const reuseBuild = (built, tree) => Boolean(built?.tree && tree && built.
  * Process-lane gate starts once every gate before it in the lane has ended but those it may run beside. REHLANE2: those
  * rehearsals are never beside each other, so each starts once the one before it has ended, all beside the git half
  * (REHLANE2b: the release, the family, then the deployment).
+ *
+ * CI1: `byMemory`, a CI run's schedule, drops GATEORDER1's wait. A Process half waits only for the light gates that build
+ * its component, and the heavy light gates run beside it, each starting once MEMGATE1's reading finds its free memory, as
+ * the half did. The build rule stays (two builds of one project fight over its `obj/`), and so does a rehearsal's wait for
+ * the whole light lane, which is about what it builds and stages, not load. Every other rule is the merge's.
  */
-export function laneSchedule(gates, { scripts = {}, width = LIGHT_WIDTH } = {}) {
+export function laneSchedule(gates, { scripts = {}, width = LIGHT_WIDTH, byMemory = false } = {}) {
   const lane = gates.filter(isProcessLane);
   const besideGit = lane.some(isGitHalf) ? lane.filter(runsBesideGitHalf) : [];
   const process = lane.filter((gate) => !besideGit.includes(gate));
@@ -566,7 +571,8 @@ export function laneSchedule(gates, { scripts = {}, width = LIGHT_WIDTH } = {}) 
   const waits = Object.fromEntries(process.map((gate) => {
     const component = dotnetComponent(gate.run);
     // GATEORDER1: beside the component's own gates, the heavy light gates, so a Process half's timing tests run with no suite loading the CPU.
-    const after = component === null ? light : light.filter((other) => sharing(component).includes(other) || isHeavyGate(other));
+    // CI1: by memory, the component's own alone; MEMGATE1's reading holds each heavy gate until its memory is free.
+    const after = component === null ? light : light.filter((other) => sharing(component).includes(other) || (!byMemory && isHeavyGate(other)));
     return [gate.name, { after: after.map((other) => other.name), component }];
   }));
   const reuses = {};
@@ -575,7 +581,7 @@ export function laneSchedule(gates, { scripts = {}, width = LIGHT_WIDTH } = {}) 
     const fast = build && planned.find((other) => testBuild(other.run) === build);
     if (fast) reuses[gate.name] = fast.name;
   }
-  return { light, process, waits, width: Math.max(1, width), components, reuses, beside };
+  return { light, process, waits, width: Math.max(1, width), components, reuses, beside, ...(byMemory ? { byMemory: true } : {}) };
 }
 
 /** The root `package.json`'s scripts, which `gateComponents` reads behind a gate's `npm run`; none when it has none. */
@@ -596,6 +602,9 @@ export const USAGE = [
   '       node tools/merge-branch.mjs --plan <branch> [--batch <branch>…] [--full]',
   '       node tools/merge-branch.mjs --full [--keep-going] [--one-at-a-time]',
   '       node tools/merge-branch.mjs --full --beside [<commit>] [--keep-going] [--one-at-a-time]',
+  '       node tools/merge-branch.mjs --ci [<commit>] [--one-at-a-time]',
+  '       node tools/merge-branch.mjs --ci --watch [--one-at-a-time]',
+  '       node tools/merge-branch.mjs --ci --stop',
   '       node tools/merge-branch.mjs --passed',
   '       node tools/merge-branch.mjs --prune [--plan]',
   '       node tools/merge-branch.mjs --drop-batch',
@@ -619,19 +628,30 @@ export function parseArgs(argv) {
   const options = {
     branches: [], keepGoing: false, commitCheck: true, resume: false, dropBatch: false, plan: false, prune: false, autoPrune: true,
     full: false, gated: false, rerun: [], passed: false, stale: false, oneAtATime: false, beside: false, besideCommit: null,
+    ci: false, ciCommit: null, watch: false, stop: false,
   };
   let batch = false;
   let rerun = false;
   let positional = 0;
   let batched = 0;
   let besideNext = false;
+  let ciNext = false;
   const flags = [];
   for (const arg of argv) {
     if (arg.startsWith('-')) flags.push(arg);
-    // GATEWT1: the word right after --beside, if it is no option, is the commit it gates.
+    // GATEWT1: the word right after --beside, if it is no option, is the commit it gates. CI1: so is the word after --ci.
     const besideCommit = besideNext && !arg.startsWith('-');
+    const ciCommit = ciNext && !arg.startsWith('-');
     besideNext = false;
+    ciNext = false;
     if (besideCommit && !rerun) options.besideCommit = arg;
+    else if (ciCommit && !rerun) options.ciCommit = arg;
+    else if (arg === '--ci') {
+      if (options.ci) throw usageError('--ci is given once, with the commit it gates after it');
+      options.ci = true;
+      ciNext = true;
+    } else if (arg === '--watch') options.watch = true;
+    else if (arg === '--stop') options.stop = true;
     else if (arg === '--beside') {
       if (options.beside) throw usageError('--beside is given once, with the commit it gates after it');
       options.beside = true;
@@ -664,6 +684,19 @@ export function parseArgs(argv) {
       if (options.branches.includes(arg)) throw usageError(`'${arg}' is named twice`);
       options.branches.push(arg);
     }
+  }
+  if (options.watch && !options.ci) throw usageError("--watch is the CI's: --ci --watch gates main's tip as it moves");
+  if (options.stop && !options.ci) throw usageError("--stop is the CI watch's: --ci --stop ends a watch running here");
+  if (options.ci) {
+    // CI1: one run of the CI, its watch, or the stop asked of the watch; each a verb alone.
+    if (flags.some((flag) => !['--ci', '--watch', '--stop', '--keep-going', '--one-at-a-time'].includes(flag))) {
+      throw usageError('--ci takes only a commit, --watch, --stop, --keep-going and --one-at-a-time');
+    }
+    const words = Boolean(options.ciCommit) || options.branches.length > 0;
+    if (options.stop && (options.watch || words || flags.length > 2)) throw usageError('--ci --stop takes nothing else: it asks the watch running here to end');
+    if (options.watch && words) throw usageError("--ci --watch gates main's tip as it moves: it takes no commit");
+    if (options.branches.length) throw usageError("--ci takes no branch: it gates a commit, main's tip unless named, in the gate tree");
+    return options;
   }
   if (options.beside) {
     if (!options.full) throw usageError('--beside runs the full set: --full --beside [<commit>]');
@@ -3053,7 +3086,16 @@ const dropState = (root) => rmSync(statePath(root), { force: true });
 // ---------------------------------------------------------------------------------------------------
 // Running gates
 
-const shown = (root, file) => relative(root, file).split('\\').join('/');
+/**
+ * A file as a line names it, from `root`. CI1: a CI run's logs are the main checkout's while its gates run in the gate tree,
+ * so one outside the gate tree is named from the main checkout that holds it, as the run's status names it.
+ */
+const shown = (root, file) => {
+  const near = relative(root, file);
+  const home = near.startsWith('..') ? resolve(root, '..', '..') : null;
+  const from = home && samePath(join(home, GATE_TREE), root) ? home : root;
+  return relative(from, file).split('\\').join('/');
+};
 const pad = (text, width) => (text.length >= width ? `${text} ` : text.padEnd(width));
 const count = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
@@ -3460,7 +3502,11 @@ function laneLines(schedule) {
     const loud = after.filter((name) => !own.includes(name));
     out.push(component === null
       ? `    ${names(gates)} ${verb} once the light lane has ended: a rehearsal builds what its command does not name`
-      : `    ${names(gates)} ${verb} once ${names(after)} ${after.length === 1 ? 'has' : 'have'} ended: ${own.length ? `${names(own)} build ${component} first${loud.length ? ', ' : ''}` : ''}${loud.length ? `${names(loud)} load${loud.length === 1 ? 's' : ''} the machine` : ''}`);
+      : `    ${names(gates)} ${verb} once ${names(after)} ${after.length === 1 ? 'has' : 'have'} ended: ${own.length ? `${names(own)} build${own.length === 1 ? 's' : ''} ${component} first${loud.length ? ', ' : ''}` : ''}${loud.length ? `${names(loud)} load${loud.length === 1 ? 's' : ''} the machine` : ''}`);
+  }
+  // CI1: a CI run's schedule leaves GATEORDER1's wait to the memory each heavy gate reads for before it starts.
+  if (schedule.byMemory && schedule.process.some((gate) => schedule.waits[gate.name]?.component !== null)) {
+    out.push('    the heavy light gates run beside the Process lane, each once its free memory allows (CI1, MEMGATE1)');
   }
   // GATEBUILD1: the Process halves that run their fast half's build.
   const reusing = new Map();
@@ -3560,9 +3606,14 @@ async function runInTurn(root, gates, dir, { keepGoing, run, print, beside = () 
  * memory before it starts, holding its place in its lane, and is handed the wait, for its tests run alone. A gate that died
  * of memory stops nothing: once both lanes have ended it runs again alone (`againOfMemory`), before the summary. With no
  * `memory` nothing is read and nothing waits, and a gate that died of memory still runs again.
+ *
+ * CI1: `byMemory` is a CI run's schedule (`laneSchedule`): a Process half waits only for what builds its component, and
+ * the heavy light gates beside it each wait for their memory as it did.
  */
-export async function runGates(root, gates, dir, { keepGoing = false, oneAtATime = false, width = LIGHT_WIDTH, scripts = null, run = runGate, print = console.log, halt = () => false, memory = null } = {}) {
-  const schedule = laneSchedule(gates, { scripts: scripts ?? rootScripts(root), width });
+export async function runGates(root, gates, dir, {
+  keepGoing = false, oneAtATime = false, width = LIGHT_WIDTH, scripts = null, run = runGate, print = console.log, halt = () => false, memory = null, byMemory = false,
+} = {}) {
+  const schedule = laneSchedule(gates, { scripts: scripts ?? rootScripts(root), width, byMemory });
   const passed = new Map();
   const heard = (result) => {
     if (result.verdict === 'PASS' && !isProcessLane(result.gate)) passed.set(result.gate.name, { gate: result.gate.name, tree: result.tree ?? null });
@@ -3775,17 +3826,23 @@ const headCommit = (root) => git(root, ['rev-parse', 'HEAD'], { allowFail: true 
 /**
  * The gates run in order, each verdict recorded with the tree it ran on (GATE3), as its gate ends, so a run
  * cut short keeps what it learned. `onResult` hears each result. A gate the run's `trees` ended gives no verdict (CIPRIO1c).
+ * CI1: `onStart` hears each gate as it starts, once its memory is free; `width` and `byMemory` are a CI run's schedule.
  */
-function runRecorded(root, gates, dir, { keepGoing = false, oneAtATime = false, branch = null, onResult = () => {}, halt = undefined, trees = null } = {}) {
+function runRecorded(root, gates, dir, {
+  keepGoing = false, oneAtATime = false, branch = null, onResult = () => {}, onStart = () => {}, halt = undefined, trees = null, width = LIGHT_WIDTH, byMemory = false,
+} = {}) {
   const commit = headCommit(root);
   return runGates(root, gates, dir, {
     keepGoing,
     oneAtATime,
     halt,
+    width,
+    byMemory,
     // MEMGATE1: the machine's memory, read before each heavy gate. `MERGE_BRANCH_MEMORY=off` reads none and waits for none: the
     // tool's own end-to-end tests set it, so none of them waits on what the machine holds.
     memory: process.env.MERGE_BRANCH_MEMORY === 'off' ? null : { read: readMemory },
     run: async (where, gate, logs, beside) => {
+      onStart(gate);
       const tree = contentTree(where);
       const started = nowIso();
       // GATEBUILD1: a Process half runs its fast half's build when that passed in this run on this same tree.
@@ -4298,7 +4355,9 @@ export function pidAlive(pid) {
 
 /**
  * The lock a full set beside the merges holds (`GATE_TREE_LOCK`, in the main checkout): its pid, the commit it gates,
- * since when, and whether that process still runs. Null when none is held. A lock that does not read is no run's.
+ * since when, whether that process still runs, and its `holder` (CI1): `full` (a full set beside, and a lock written
+ * before holders were named), `ci` (a CI run) or `stage` (`publish:desktop --from-gated`, through its build). Null when none
+ * is held. A lock that does not read is no run's.
  */
 export function readGateLock(home, alive = pidAlive) {
   let held;
@@ -4309,7 +4368,16 @@ export function readGateLock(home, alive = pidAlive) {
     held = {};
   }
   const pid = Number(held?.pid);
-  return { pid, commit: String(held?.commit ?? ''), at: String(held?.at ?? ''), running: alive(pid) };
+  const holder = ['ci', 'stage'].includes(held?.holder) ? held.holder : 'full';
+  return { pid, commit: String(held?.commit ?? ''), at: String(held?.at ?? ''), running: alive(pid), holder };
+}
+
+/** CI1: who holds the gate tree, as a refusal or a wait says it. */
+function holderSaid(held) {
+  const sha = held.commit.slice(0, 7);
+  if (held.holder === 'stage') return `a stage of ${sha} is building from the gate tree since ${when(held.at)} (pid ${held.pid}, ${GATE_TREE}): it holds the tree until its build ends`;
+  const who = held.holder === 'ci' ? 'a CI run holds the gate tree already' : 'a full set beside the merges is running already';
+  return `${who}: on ${sha} since ${when(held.at)} (pid ${held.pid}, ${GATE_TREE}); one runs at a time`;
 }
 
 /**
@@ -4318,9 +4386,10 @@ export function readGateLock(home, alive = pidAlive) {
  * process no longer runs (its window closed on it) is taken over, and returned as `stale` for the caller to say, with
  * `ended`: the pids `end` (CIPRIO1d, `endOrphans`) ended, the dead pid's direct children started since the lock's `at`
  * with their trees, and (CIPRIO1e, `endStrays`) the processes since then naming the gate tree's folder whose parent no longer
- * runs. Only Windows ends any: elsewhere both are no-ops.
+ * runs. Only Windows ends any: elsewhere both are no-ops. CI1: `holder` names the run (`full` or `ci`); a refusal is `busy`,
+ * which the CI watch reads as a tree to wait for, never a failure.
  */
-export function takeGateLock(home, { commit, alive = pidAlive, now = nowIso, end = endOrphans, endStrays = endStranded } = {}) {
+export function takeGateLock(home, { commit, holder = 'full', alive = pidAlive, now = nowIso, end = endOrphans, endStrays = endStranded } = {}) {
   const file = join(home, GATE_TREE_LOCK);
   mkdirSync(dirname(file), { recursive: true });
   let stale = null;
@@ -4331,9 +4400,7 @@ export function takeGateLock(home, { commit, alive = pidAlive, now = nowIso, end
     } catch (error) {
       if (error?.code !== 'EEXIST') throw error;
       const held = readGateLock(home, alive);
-      if (held?.running) {
-        throw new Refusal(`a full set beside the merges is running already: on ${held.commit.slice(0, 7)} since ${when(held.at)} (pid ${held.pid}, ${GATE_TREE}); one runs at a time`);
-      }
+      if (held?.running) throw Object.assign(new Refusal(holderSaid(held)), { busy: true });
       if (held) {
         // CIPRIO1d: a run killed outright left its steps' tree running; end what its pid started since the lock's `at`.
         const since = Date.parse(held.at);
@@ -4346,18 +4413,29 @@ export function takeGateLock(home, { commit, alive = pidAlive, now = nowIso, end
       continue;
     }
     try {
-      writeSync(fd, `${JSON.stringify({ pid: process.pid, commit, at: now() })}\n`);
+      writeSync(fd, `${JSON.stringify({ pid: process.pid, commit, at: now(), holder })}\n`);
     } finally {
       closeSync(fd);
     }
     return { stale };
   }
-  throw new Refusal(`${GATE_TREE_LOCK} could not be taken: another run took it at the same moment`);
+  throw Object.assign(new Refusal(`${GATE_TREE_LOCK} could not be taken: another run took it at the same moment`), { busy: true });
 }
 
 /** The lock let go, when it is this process's: one taken over since is another run's. */
 export function releaseGateLock(home) {
   if (readGateLock(home, () => false)?.pid === process.pid) rmSync(join(home, GATE_TREE_LOCK), { force: true });
+}
+
+/** CI1: this process's lock moved to the commit its run now gates (main moved before its gates started); another's is left. */
+function retargetGateLock(home, commit) {
+  const file = join(home, GATE_TREE_LOCK);
+  try {
+    const held = JSON.parse(readFileSync(file, 'utf8'));
+    if (held?.pid === process.pid) writeAtomic(file, `${JSON.stringify({ ...held, commit })}\n`);
+  } catch {
+    // A lock that does not read is no run's; the run goes on, and lets go of nothing it does not hold.
+  }
 }
 
 /** The gate tree's record (`GATE_TREE_RECORD`): the commit its last run gated, when it started and ended, whether it passed, and its stage. */
@@ -4388,7 +4466,9 @@ function writeGateRecord(home, fields) {
 export function gateTreeVerdict(facts, { atMerge = false } = {}) {
   const { lock } = facts;
   if (lock?.running) {
-    return { remove: false, why: `its full set is running (pid ${lock.pid}, since ${when(lock.at)}, on ${lock.commit.slice(0, 7)}): never removed while it runs` };
+    // CI1: a CI run and a stage hold it as a full set does, and are said as what they are.
+    const what = { ci: 'its CI run is running', stage: 'its stage is building' }[lock.holder] ?? 'its full set is running';
+    return { remove: false, why: `${what} (pid ${lock.pid}, since ${when(lock.at)}, on ${lock.commit.slice(0, 7)}): never removed while it runs` };
   }
   if (!facts.listed) return folderVerdict(facts.folder);
   // A full set started there by hand, as before GATEWT1, holds no lock: what runs inside is the only sign of it.
@@ -4702,7 +4782,7 @@ async function gateBeside(root, options) {
   if (resolved.status !== 0) throw new Refusal(`no commit '${asked}' to gate`);
   const commit = resolved.out.trim();
   const sha = commit.slice(0, 7);
-  const { stale } = takeGateLock(home, { commit });
+  const { stale } = takeGateLock(home, { commit, holder: 'full' });
   // CIPRIO1c: every step the run starts is held here, so a newer tip or a person's stop ends the gates running.
   const trees = stepTrees();
   const unhook = stopOnInterrupt(trees);
@@ -4750,6 +4830,510 @@ async function gateBeside(root, options) {
   }
 }
 
+// ---------------------------------------------------------------------------------------------------
+// CI1: the local CI runner, main's tip gated after each merge in the gate tree
+
+/** CI1: the CI's record in the main checkout: its last green run, and each run's commit and end, the newest last. */
+export const CI_RECORD = 'local/ci.json';
+
+/** CI1: the watch's record while it runs (its pid and start), and the stop `--ci --stop` asks of it. Both the main checkout's. */
+export const CI_WATCH = 'local/ci-watch.json';
+export const CI_STOP = 'local/ci-watch.stop';
+
+/** How many runs the CI's record keeps, the newest last: enough for the watch to know a tip it gated, and a day's history. */
+const CI_RUNS_KEPT = 50;
+
+/** A run's ends that count as gating its commit: the watch gates none of them again (a stopped run's commit is gated again). */
+const CI_ENDS = Object.freeze(['green', 'failed', 'error']);
+
+/**
+ * How often the watch reads main's tip: one `git rev-parse`, against a CI run of minutes. `MERGE_BRANCH_CI_WATCH_MS` sets it,
+ * for the tool's own tests. Whether it is asked to stop is read every `CI_TICK_MS`, a file's existence.
+ */
+export const CI_WATCH_MS = 10_000;
+const CI_TICK_MS = 1_000;
+
+/** How long `--ci --stop` waits for the watch it asked to end, which ends its gates' trees first. */
+const CI_STOP_WAIT_MS = 120_000;
+
+/**
+ * How many times a run of main's tip moves to a newer one before its gates start (a merge landing while it prepares), past
+ * which it gates what it holds: a line that lands faster than a tree can be prepared still gets a verdict.
+ */
+const CI_MOVES = 5;
+
+/**
+ * CI1: when the light lane runs wider. Before its gates start a CI run measures the machine over `sampleMs` (`measureLoad`): it is
+ * idle when at most `busy` of its processors' time was busy and its free commit and free physical memory are each at least
+ * `freeGb`; then the light lane is `width` wide, else `LIGHT_WIDTH`, a merge's. Its own gates are what loads it next, so it is
+ * measured once, before them. Five places: the three components' chains hold three (GATELANES2), and the gates that build none
+ * (orient-index, web-types, web-rules, tool-tests, web-unit, web-measured) waited for a fourth. The width is chosen, not
+ * measured on a full set yet: each run's status names its width and its gates' times, which tune it.
+ */
+export const CI_IDLE = Object.freeze({ busy: 0.25, freeGb: 16, width: 5, sampleMs: 1_000 });
+
+/**
+ * CI1: what a CI run gates on a tree, from the verdicts store (`stageJudgement`, GATE6's standing), the records no excuse: a
+ * gate runs when no verdict that stands on this tree passed it. A pass stands while no path changed since reaches its gate
+ * (`reaching`, the lane table), so the delta since a gate's last pass is what runs it again, and a gate a run failed stays
+ * owed, whatever changes, until a run passes it (the pipeline design's §4.7). The stage forgives the records, which the
+ * install carries none of; the CI runs what they reach (the universal gates, the CLI's verify), so a records commit is
+ * checked too. Every other gate is kept, with the verdict that stands and how it stands.
+ */
+export function ciPlan({ plan, verdicts, tree, drift, reaching }) {
+  const judged = stageJudgement({ plan, verdicts, tree, drift, reaching, isRecord: () => false });
+  const kept = judged.gates.filter((gate) => !judged.missing.includes(gate.name)).map((gate) => ({ name: gate.name, verdict: gate.verdict, standing: gate.standing }));
+  return { run: judged.missing, kept, gates: judged.gates };
+}
+
+/** CI1: the share of the processors' time that was busy between two `os.cpus()` readings, across all of them; null when not measured. */
+export function cpuBusy(before, after) {
+  if (!Array.isArray(before) || !Array.isArray(after) || !before.length || before.length !== after.length) return null;
+  const sum = (times) => Object.values(times ?? {}).reduce((all, each) => all + (Number(each) || 0), 0);
+  let total = 0;
+  let idle = 0;
+  for (let i = 0; i < before.length; i += 1) {
+    total += sum(after[i]?.times) - sum(before[i]?.times);
+    idle += (Number(after[i]?.times?.idle) || 0) - (Number(before[i]?.times?.idle) || 0);
+  }
+  return total > 0 ? Math.min(1, Math.max(0, 1 - idle / total)) : null;
+}
+
+/** CI1: the machine's load before a CI run's gates start: its processors' busy share over `ms`, and MEMGATE1's reading of its memory. */
+export async function measureLoad({ cpus = osCpus, sleep = (ms) => new Promise((done) => { setTimeout(done, ms); }), read = readMemory, ms = CI_IDLE.sampleMs } = {}) {
+  const before = cpus();
+  await sleep(ms);
+  const busy = cpuBusy(before, cpus());
+  let reading = {};
+  try {
+    reading = read() ?? {};
+  } catch {
+    reading = {};
+  }
+  return { busy, physical: finite(reading.physical), commit: finite(reading.commit) };
+}
+
+/** CI1: how wide a CI run's light lane is, and why, from its measured load (`CI_IDLE`). */
+export function ciWidth({ busy, physical, commit }) {
+  const merge = `the light lane runs ${LIGHT_WIDTH} wide, as a merge's`;
+  if (busy === null || busy === undefined) return { width: LIGHT_WIDTH, idle: false, why: `its processors' load could not be measured, so ${merge}` };
+  if (physical === null || physical === undefined) return { width: LIGHT_WIDTH, idle: false, why: `its free memory could not be read, so ${merge}` };
+  const free = [[commit, 'free commit'], [physical, 'free physical memory']].filter(([bytes]) => bytes !== null && bytes !== undefined);
+  const parts = [`${Math.round(busy * 100)}% of its processors busy`, ...free.map(([bytes, what]) => `${gbOf(bytes)} GB ${what}`)];
+  const said = `${parts.slice(0, -1).join(', ')} and ${parts.at(-1)}`;
+  const idle = busy <= CI_IDLE.busy && free.every(([bytes]) => bytes >= CI_IDLE.freeGb * GB);
+  if (idle) return { width: CI_IDLE.width, idle: true, why: `the machine is idle: ${said}; the light lane runs ${CI_IDLE.width} wide` };
+  return {
+    width: LIGHT_WIDTH,
+    idle: false,
+    why: `the machine is not idle: ${said} (idle is ${Math.round(CI_IDLE.busy * 100)}% busy at most, ${CI_IDLE.freeGb} GB free); ${merge}`,
+  };
+}
+
+/**
+ * CI1: a CI run's status as it starts (`local/scratch/ci-<sha7>/status.json`), which the parent reads and a later page may: the
+ * commit and its tree, the run's state (`running`, then `green`, `failed`, `stopped` or `error`), its pid and times, the delta
+ * since the last green run, the light lane's width and why, and every gate of the plan in its order: `waiting` for one it runs,
+ * then `running` and `done` with its verdict, time, log and note, or `not run`; `kept` for one whose verdict stands, with that
+ * verdict, the commit and tree it was given on, how it stands (`exact`, `unreached`), and its log where a CI run kept one.
+ */
+export function ciStatus({ commit, tree, plan, chosen, since, light, pid, at, logOf }) {
+  return {
+    schema: 1,
+    _why: 'Written by tools/merge-branch.mjs --ci (CI1): one CI run of this commit in the gate tree, each gate of the plan as it stands. The parent reads it.',
+    commit,
+    tree,
+    state: 'running',
+    pid,
+    started: at,
+    updated: at,
+    ended: null,
+    since,
+    light,
+    gates: plan.map((gate) => {
+      const base = { name: gate.name, kind: gate.kind, lane: isProcessLane(gate) ? 'process' : 'light' };
+      const kept = chosen.kept.find((entry) => entry.name === gate.name);
+      if (!kept || chosen.run.includes(gate.name)) return { ...base, state: 'waiting', verdict: null, at: null, ms: null, log: null, note: null, kept: null };
+      const { verdict, standing } = kept;
+      return {
+        ...base, state: 'kept', verdict: verdict.verdict, at: verdict.at ?? null, ms: null, log: logOf(gate.name, verdict.commit ?? null), note: null,
+        kept: { commit: verdict.commit ?? null, tree: verdict.tree ?? null, standing: standing.standing },
+      };
+    }),
+  };
+}
+
+/** The CI's record: its last green run and its runs, newest last; empty where there is none or it does not read. */
+function readCiRecord(home) {
+  try {
+    const parsed = JSON.parse(readFileSync(join(home, CI_RECORD), 'utf8'));
+    return {
+      lastGreen: typeof parsed?.lastGreen?.commit === 'string' ? parsed.lastGreen : null,
+      runs: Array.isArray(parsed?.runs) ? parsed.runs.filter((run) => typeof run?.commit === 'string') : [],
+    };
+  } catch {
+    return { lastGreen: null, runs: [] };
+  }
+}
+
+/** A run noted in the CI's record as it ends, the oldest dropped past `CI_RUNS_KEPT`; a green one is the last green run. */
+function noteCiRun(home, run, green = null) {
+  const record = readCiRecord(home);
+  writeAtomic(join(home, CI_RECORD), `${JSON.stringify({
+    schema: 1,
+    _why: 'Written by tools/merge-branch.mjs --ci (CI1): its last green run, and each run\'s commit, end and status file, the newest last. The watch gates no commit a run here ended.',
+    lastGreen: green ?? record.lastGreen,
+    runs: [...record.runs, run].slice(-CI_RUNS_KEPT),
+  }, null, 2)}\n`);
+}
+
+/** Whether a CI run here ended on `commit` (`CI_ENDS`): the watch gates it no more. */
+const ciGated = (home, commit) => readCiRecord(home).runs.some((run) => run.commit === commit && CI_ENDS.includes(run.state));
+
+/** Main's tip, or null when git could not read it: never a moved tip (`git-ref-absence`). */
+function readTip(home) {
+  try {
+    return git(home, ['rev-parse', '--verify', '--quiet', `refs/heads/${MAIN}^{commit}`], { allowFail: true }).out.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+/** A file under the main checkout as the status names it, `/`-separated from it. */
+const fromHome = (home, file) => relative(home, file).split('\\').join('/');
+
+/**
+ * `--ci [<commit>]` (CI1): one CI run, in the gate tree (GATEWT1's, held by its lock as a `ci` run), of `commit`, main's tip
+ * unless named. The tree is made or moved and its dependencies installed; a run of main's tip then reads the tip again and,
+ * where a merge landed meanwhile, moves to the newest before any gate starts (`CI_MOVES`), so a newer tip supersedes a run not
+ * yet started. Once its gates start it runs to its verdict, as a pipeline's run does (D192's pipeline design §4.3): what lands
+ * meanwhile is the next run's. It runs what the tree's verdicts lack (`ciPlan`), every gate the first time, keeping going past a
+ * failure, a guest on the machine as a run beside is (CIPRIO1), its light lane as wide as the measured load allows
+ * (`ciWidth`), scheduled by memory (`laneSchedule`'s `byMemory`). Each verdict goes to the main checkout's store as a merge's
+ * does, the logs and the status to its `local/scratch/ci-<sha7>/`, the run to the CI's record. `stopAsked` (the watch's stop)
+ * and a Ctrl+C end its gates' trees, its finished verdicts kept. 0 green, 1 failed or stopped.
+ */
+async function gateCi(root, options, { stopAsked = () => false } = {}) {
+  const home = verdictsHome(root);
+  if (!isIgnored(home, GATE_TREE)) {
+    throw new Refusal(`${GATE_TREE} is not ignored in the main checkout, so the gate tree would be part of the tree its merges gate`);
+  }
+  requireVerdictsIgnored(home);
+  if (!isIgnored(home, `${SCRATCH}/ci-probe/status.json`)) {
+    throw new Refusal(`${SCRATCH}/ is not ignored in the main checkout, so the CI's status and logs would change the trees its merges gate`);
+  }
+  const named = options.ciCommit;
+  const resolved = git(home, ['rev-parse', '--verify', '--quiet', `${named ?? `refs/heads/${MAIN}`}^{commit}`], { allowFail: true });
+  if (resolved.status !== 0) throw new Refusal(`no commit '${named ?? MAIN}' to gate`);
+  let commit = resolved.out.trim();
+  const { stale } = takeGateLock(home, { commit, holder: 'ci' });
+  const trees = stepTrees();
+  const unhook = stopOnInterrupt(trees);
+  // The watch's stop, heard while the run prepares and while its gates run: it ends them as a Ctrl+C does.
+  const asking = setInterval(() => {
+    try {
+      if (!trees.ended && stopAsked()) trees.end('the CI watch was asked to stop');
+    } catch {
+      // Asked again at the next tick.
+    }
+  }, CI_TICK_MS);
+  asking.unref();
+  let status = null;
+  let statusFile = null;
+  let saidWriteFailed = false;
+  const writeStatus = () => {
+    if (!status) return;
+    status.updated = nowIso();
+    try {
+      writeAtomic(statusFile, `${JSON.stringify(status, null, 2)}\n`);
+    } catch (error) {
+      if (!saidWriteFailed) console.log(`  the status could not be written (${error.message}); the run goes on`);
+      saidWriteFailed = true;
+    }
+  };
+  try {
+    if (stale) console.log(`the gate tree's lock was left by pid ${stale.pid} (on ${stale.commit.slice(0, 7)} since ${when(stale.at)}), which no longer runs: taken over${stale.ended.length ? `; ended what it left running (pid ${stale.ended.join(', ')})` : ''}`);
+    // CIPRIO1: before the tree is made or anything installed or built, so every descendant inherits the lowered class.
+    startBesideRun();
+    let tree;
+    for (let moves = 0; ; moves += 1) {
+      tree = locate(prepareGateTree(home, commit));
+      installDependencies(tree);
+      if (named || trees.ended) break;
+      const tip = readTip(home);
+      if (!tip || tip === commit) break;
+      if (moves >= CI_MOVES) {
+        console.log(`main moved again, to ${tip.slice(0, 7)}, before this run started: it gates ${commit.slice(0, 7)}, as it holds it, and the next run the newest`);
+        break;
+      }
+      console.log(`main moved from ${commit.slice(0, 7)} to ${tip.slice(0, 7)} before this run started: it gates ${tip.slice(0, 7)}, the newest, instead`);
+      commit = tip;
+      retargetGateLock(home, commit);
+    }
+    const sha = commit.slice(0, 7);
+    if (trees.ended) {
+      console.log(`stopped: ${trees.ended}, before any gate of ${sha} started; it is not a pass`);
+      return 1;
+    }
+    for (const line of copyPrivateFiles(home, tree, privateGateFiles(home))) console.log(`  ${line}`);
+    const plan = readPlan(tree);
+    const treeId = contentTree(tree);
+    if (!treeId) throw new Refusal("git could not write the gate tree's tree, so which verdicts stand on it cannot be told");
+    const standing = standingFor(tree, treeId);
+    const chosen = ciPlan({ ...standing, plan: plan.map((gate) => gate.name), verdicts: readVerdicts(home).verdicts });
+    const gates = plan.filter((gate) => chosen.run.includes(gate.name));
+    const dir = join(home, SCRATCH, `ci-${sha}`);
+    mkdirSync(dir, { recursive: true });
+    for (const gate of gates) {
+      for (const suffix of ['.log', '.rerun.log', '.trx', '.partial']) rmSync(join(dir, `${gate.name}${suffix}`), { force: true });
+    }
+    statusFile = join(dir, 'status.json');
+    const record = readCiRecord(home);
+    const since = { commit: record.lastGreen?.commit ?? null, at: record.lastGreen?.at ?? null, paths: null };
+    if (since.commit) {
+      const diff = git(tree, ['diff', '--name-only', '--no-renames', since.commit, commit], { allowFail: true });
+      if (diff.status === 0) since.paths = lines(diff.out).length;
+    }
+    const light = process.env.MERGE_BRANCH_MEMORY === 'off'
+      ? { width: LIGHT_WIDTH, idle: false, why: `the machine is not measured (MERGE_BRANCH_MEMORY=off), so the light lane runs ${LIGHT_WIDTH} wide, as a merge's` }
+      : ciWidth(await measureLoad());
+    const started = nowIso();
+    const logOf = (gate, at) => {
+      const file = at ? join(home, SCRATCH, `ci-${at.slice(0, 7)}`, `${gate}.log`) : null;
+      return file && existsSync(file) ? fromHome(home, file) : null;
+    };
+    status = ciStatus({ commit, tree: treeId, plan, chosen, since, light, pid: process.pid, at: started, logOf });
+    writeStatus();
+    writeGateRecord(home, { commit, started, ended: null, passed: null, staged: null, by: 'ci' });
+
+    const kept = chosen.gates.filter((gate) => !chosen.run.includes(gate.name));
+    console.log(`CI on ${sha} (CI1): ${gates.length} of ${plan.length} gates to run, ${count(kept.length, 'verdict')} kept, which still stand on this tree; it keeps going past a failure`);
+    console.log(since.commit
+      ? `  since the last green run (${since.commit.slice(0, 7)}, ${when(since.at)}): ${since.paths === null ? 'what changed could not be read' : `${count(since.paths, 'path')} changed`}`
+      : '  no green CI run is recorded here: every gate without a verdict that stands on this tree runs');
+    console.log(`  light lane: ${light.why}`);
+    for (const line of stageLines(kept)) console.log(line);
+    console.log(`  status: ${fromHome(home, statusFile)}`);
+
+    const gateOf = (name) => status.gates.find((gate) => gate.name === name);
+    let results = [];
+    if (gates.length) {
+      console.log('a guest on the machine: below normal priority, the Process lane at normal (CIPRIO1, FAMILYFAIL1c); a Process half\'s failures are re-run alone once its lane is quiet (FLAKE1)');
+      results = await runRecorded(tree, gates, dir, {
+        keepGoing: true,
+        oneAtATime: options.oneAtATime,
+        halt: () => Boolean(trees.ended),
+        trees,
+        width: light.width,
+        byMemory: true,
+        onStart: (gate) => {
+          Object.assign(gateOf(gate.name) ?? {}, { state: 'running', at: nowIso() });
+          writeStatus();
+        },
+        onResult: (result) => {
+          Object.assign(gateOf(result.gate.name) ?? {}, {
+            state: 'done', verdict: verdictShown(result), ms: result.ms ?? null, log: result.log ? fromHome(home, result.log) : null, note: result.note || null,
+          });
+          writeStatus();
+        },
+      });
+    } else {
+      console.log("  nothing to run: every gate's verdict stands on this tree");
+    }
+    for (const gate of status.gates) if (gate.state === 'waiting' || gate.state === 'running') gate.state = 'not run';
+
+    const after = ciPlan({ ...standing, plan: plan.map((gate) => gate.name), verdicts: readVerdicts(home).verdicts });
+    const state = trees.ended ? 'stopped' : after.run.length === 0 ? 'green' : 'failed';
+    const ended = nowIso();
+    Object.assign(status, { state, ended });
+    writeStatus();
+    const ranNames = results.filter((result) => result.verdict !== 'ENDED').map((result) => result.gate.name);
+    noteCiRun(home, { commit, state, at: ended, status: fromHome(home, statusFile) }, state === 'green' ? { commit, tree: treeId, at: ended } : null);
+    writeGateRecord(home, { commit, started, ended, passed: state === 'green', staged: null, by: 'ci' });
+
+    console.log('');
+    if (state === 'stopped') {
+      const endedNames = results.filter((result) => result.verdict === 'ENDED').map((result) => result.gate.name);
+      const left = gates.filter((gate) => !results.some((result) => result.gate.name === gate.name)).map((gate) => gate.name);
+      for (const line of endLines(`stopped: ${trees.ended}, so this run ended the gates it was running and started no more; it is not a pass`, ranNames, left, endedNames)) console.log(line);
+    } else if (state === 'green') {
+      const flakes = results.filter((result) => result.verdict === 'FLAKE');
+      const ran = ranNames.length ? `${count(ranNames.length, 'gate')} run and passed` : 'no gate run';
+      console.log(`merge-branch: CI green on ${sha}: ${ran}, ${count(kept.length, 'verdict')} kept${flakeNote(flakes)}; every gate's verdict stands on this tree.`);
+      console.log(`  Stage it from the gate tree, which holds it: npm run publish:desktop -- --to <install> --service --stage --from-gated ${sha}`);
+    } else {
+      const failed = results.filter((result) => result.verdict === 'FAIL');
+      // A gate owed that did not fail here: one not run, or a pass recorded with no tree git could name.
+      const lacking = after.run.filter((name) => !failed.some((result) => result.gate.name === name));
+      console.log(`merge-branch: CI did NOT pass ${sha}: ${failed.length ? `${failed.map(gateNamed).join(', ')} failed` : 'no gate failed'}${lacking.length ? `; ${lacking.join(', ')} without a pass` : ''}. Fix it forward (D180 point 3): each runs again in the next run, whatever it changes.`);
+      const memory = memoryLine(failed);
+      if (memory) console.log(memory);
+    }
+    console.log(`  status: ${fromHome(home, statusFile)}`);
+    return state === 'green' ? 0 : 1;
+  } catch (error) {
+    if (status && status.state === 'running') {
+      Object.assign(status, { state: 'error', ended: nowIso(), error: error?.message ?? String(error) });
+      writeStatus();
+      try {
+        noteCiRun(home, { commit, state: 'error', at: status.ended, status: fromHome(home, statusFile) });
+      } catch {
+        // The error itself is what the run says.
+      }
+    }
+    throw error;
+  } finally {
+    clearInterval(asking);
+    unhook();
+    releaseGateLock(home);
+  }
+}
+
+/**
+ * CI1: the watch's loop, its seams handed in. Every `pollMs` it reads main's tip; a tip no CI run here ended on (`gated`), that
+ * this watch has not taken up already, is gated (`run`) once the gate tree is idle (`holder`: who holds it, null when none),
+ * and the tip is read again at once after, so the tips that landed while a run went give way to the newest. A tree held is
+ * waited for, said once; a run refused because the tree was taken meanwhile (`busy`) is tried again; any other failure is
+ * said once and that tip not tried again by this watch. It ends, 0, once `stopAsked`, read every `tickMs`.
+ */
+export async function watchCi({ tip, gated, holder, run, stopAsked, sleep, say, pollMs = CI_WATCH_MS, tickMs = CI_TICK_MS, now = Date.now }) {
+  const tried = new Set();
+  let said = null;
+  const sayOnce = (line) => {
+    if (line !== said) say(line);
+    said = line;
+  };
+  let next = 0;
+  for (;;) {
+    if (stopAsked()) {
+      say('the CI watch: asked to stop, so it ends');
+      return 0;
+    }
+    if (now() >= next) {
+      next = now() + pollMs;
+      const at = tip();
+      if (!at) sayOnce("the CI watch: main's tip could not be read; it is read again");
+      else if (!gated(at) && !tried.has(at)) {
+        const busy = holder();
+        if (busy) sayOnce(`the CI watch: ${at.slice(0, 7)} waits: ${busy}`);
+        else {
+          tried.add(at);
+          said = null;
+          try {
+            await run();
+          } catch (error) {
+            if (error?.busy) tried.delete(at);
+            sayOnce(`the CI watch: ${error?.message ?? error}`);
+          }
+          next = 0;
+          continue;
+        }
+      }
+    }
+    await sleep(tickMs);
+  }
+}
+
+/** The CI watch's record: its pid and start, and whether it still runs; null when none is kept. */
+function readCiWatch(home, alive = pidAlive) {
+  try {
+    const held = JSON.parse(readFileSync(join(home, CI_WATCH), 'utf8'));
+    const pid = Number(held?.pid);
+    return { pid, at: String(held?.at ?? ''), running: alive(pid) };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * `--ci --watch` (CI1): the watch the parent leaves running. One per main checkout: a second says the first runs and ends, 0,
+ * so starting it again is harmless; one a dead process left is taken over. It gates main's tip as it moves (`watchCi`), each run
+ * `gateCi`'s, and never touches the main checkout's tree or a process it did not start: what it ends is its runs' own gates. It
+ * ends on `--ci --stop` (`CI_STOP`) or a Ctrl+C, the gates it is running ended first, every finished verdict kept.
+ */
+async function ciWatchVerb(root, options) {
+  const home = verdictsHome(root);
+  const file = join(home, CI_WATCH);
+  const stopFile = join(home, CI_STOP);
+  mkdirSync(dirname(file), { recursive: true });
+  let fd = null;
+  for (let attempt = 0; fd === null && attempt < 3; attempt += 1) {
+    try {
+      fd = openSync(file, 'wx');
+    } catch (error) {
+      if (error?.code !== 'EEXIST') throw error;
+      const held = readCiWatch(home);
+      if (held?.running) {
+        console.log(`merge-branch: a CI watch runs here already (pid ${held.pid}, since ${when(held.at)}): this one has nothing to do`);
+        return 0;
+      }
+      rmSync(file, { force: true });
+    }
+  }
+  if (fd === null) throw new Refusal(`${CI_WATCH} could not be taken: another watch took it at the same moment`);
+  try {
+    writeSync(fd, `${JSON.stringify({ pid: process.pid, at: nowIso() })}\n`);
+  } finally {
+    closeSync(fd);
+  }
+  rmSync(stopFile, { force: true });
+  let interrupted = false;
+  const interrupt = () => { interrupted = true; };
+  process.once('SIGINT', interrupt);
+  const stopAsked = () => interrupted || existsSync(stopFile);
+  const fromEnv = Number(process.env.MERGE_BRANCH_CI_WATCH_MS);
+  const pollMs = Number.isFinite(fromEnv) && fromEnv >= 100 ? fromEnv : CI_WATCH_MS;
+  try {
+    console.log(`the CI watch (CI1): main's tip gated in ${GATE_TREE} as it moves, once the tree is idle; read every ${span(pollMs)}; `
+      + 'stop it with node tools/merge-branch.mjs --ci --stop, or Ctrl+C');
+    return await watchCi({
+      tip: () => readTip(home),
+      gated: (commit) => ciGated(home, commit),
+      holder: () => {
+        const held = readGateLock(home);
+        return held?.running ? holderSaid(held) : null;
+      },
+      run: () => gateCi(root, { ...options, ciCommit: null }, { stopAsked }),
+      stopAsked,
+      sleep: (ms) => new Promise((done) => { setTimeout(done, Math.min(ms, pollMs)); }),
+      say: console.log,
+      pollMs,
+      tickMs: Math.min(CI_TICK_MS, pollMs),
+    });
+  } finally {
+    process.off('SIGINT', interrupt);
+    rmSync(stopFile, { force: true });
+    if (readCiWatch(home, () => false)?.pid === process.pid) rmSync(file, { force: true });
+  }
+}
+
+/**
+ * `--ci --stop` (CI1): asks the watch running here to end (`CI_STOP`), and waits up to `CI_STOP_WAIT_MS` for it to: it ends the
+ * gates it is running first, each with its tree, its finished verdicts kept. No process is stopped here. 0 ended or none ran,
+ * 1 still running at the bound.
+ */
+async function ciStopVerb(root) {
+  const home = verdictsHome(root);
+  const stopFile = join(home, CI_STOP);
+  const held = readCiWatch(home);
+  if (!held?.running) {
+    rmSync(stopFile, { force: true });
+    console.log('merge-branch: no CI watch is running here: nothing to stop');
+    return 0;
+  }
+  writeAtomic(stopFile, `${JSON.stringify({ pid: process.pid, at: nowIso() })}\n`);
+  console.log(`merge-branch: asked the CI watch (pid ${held.pid}) to stop: it ends the gates it is running, if any, and keeps every verdict already given`);
+  for (const end = Date.now() + CI_STOP_WAIT_MS; Date.now() < end;) {
+    if (!pidAlive(held.pid)) {
+      console.log('merge-branch: the CI watch has ended');
+      return 0;
+    }
+    await new Promise((done) => { setTimeout(done, 250); });
+  }
+  console.log(`merge-branch: the CI watch (pid ${held.pid}) has not ended after ${span(CI_STOP_WAIT_MS)}: its gates may still be ending; ask again, or look at it`);
+  return 1;
+}
+
 export async function main(argv) {
   const options = parseArgs(argv);
   const root = locate(process.cwd());
@@ -4764,6 +5348,8 @@ export async function main(argv) {
   }
   if (options.rerun.length) return mergeInProgress(root) ? rerunGates(root, options) : rerunCheckout(root, options);
   if (options.resume) return resume(root, options);
+  // CI1: one run of the CI, its watch, or the stop asked of the watch.
+  if (options.ci) return options.stop ? ciStopVerb(root) : options.watch ? ciWatchVerb(root, options) : gateCi(root, options);
   if (options.beside) return gateBeside(root, options);
   if (options.full && options.branches.length === 0) return gateCheckout(root, options);
   return start(root, options);

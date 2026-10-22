@@ -515,7 +515,7 @@ test('a CI run measures the machine before its gates start, and runs the light l
 
   // The share busy is the processors' own times between two readings, across all of them.
   const cpu = (user: number, idleTime: number): CpuTimes => ({ times: { user, nice: 0, sys: 0, idle: idleTime, irq: 0 } });
-  assert.equal(tool.cpuBusy([cpu(100, 100), cpu(100, 100)], [cpu(130, 170), cpu(110, 190)]), 0.25);
+  assert.equal(tool.cpuBusy([cpu(100, 100), cpu(100, 100)], [cpu(130, 170), cpu(120, 180)]), 0.25);
   assert.equal(tool.cpuBusy([cpu(1, 1)], [cpu(1, 1)]), null, 'no time passed: not measured');
   assert.equal(tool.cpuBusy([cpu(1, 1)], []), null, 'a count of processors that changed is not measured');
   let slept = 0;
