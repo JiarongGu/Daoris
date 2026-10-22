@@ -3627,9 +3627,12 @@ mkdirSync(profileAt('stub', 'alpha'), { recursive: true });
 writeFileSync(join(profileAt('stub', 'alpha'), 'credentials.json'), '{}\n');
 mkdirSync(profileAt('stub', 'fresh'), { recursive: true });
 
-const setProfile = (name) => writeFileSync(
-  harnessConfig, `${JSON.stringify({ defaults: { stub: name }, workspaces: {} }, null, 2)}\n`);
-setProfile('alpha');
+// Both folders are Daoris's accounts of the stub, one set that serves every workspace (D197 point 1). Its order, written
+// whole, says where starts begin, and *One by one, in order* (`use: order`) makes the walk begin at its first (point 2).
+// The file is written in the set's own shape, so no fold (`HarnessSettings.Change`) has anything to say of it.
+const setOrder = (order) => writeFileSync(
+  harnessConfig, `${JSON.stringify({ rotation: { stub: order }, rotationUse: { stub: { use: 'order' } } }, null, 2)}\n`);
+setOrder(['alpha', 'fresh']);
 
 const underProfile = await api('POST', '/api/quests', {
   body: {
@@ -3641,7 +3644,7 @@ const underProfile = await api('POST', '/api/quests', {
 });
 const profileRun = driver({ serviceUrl: BASE, config: driverConfig, harness: HARNESS_ENV, mode: '--until-idle' });
 check(
-  'a session spawns under the machine’s default profile',
+  'a session spawns under the first of the agent’s accounts, where its order begins',
   profileRun.code === 0 && /completed/.test(profileRun.out),
   profileRun.out,
 );
@@ -3673,29 +3676,67 @@ check(
     : `${profiled?.transcript}`,
 );
 
-// A profile nobody has logged into refuses BEFORE anything is recorded, and names the action.
-setProfile('fresh');
+// What the person's press read (ROSTER1): a look reads no account, so a start passes an account only once it is known to be
+// signed out. Any read time holds it: should the hour's backstop ask again, the stub still answers logged out, since an
+// account read so here has no credentials.
+const readAt = () => new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+const readSignedOut = (accounts) => {
+  mkdirSync(dirname(homeEntry(toolchainHome, 'reads')), { recursive: true });
+  writeFileSync(homeEntry(toolchainHome, 'reads'), `${JSON.stringify({
+    stub: { accounts: Object.fromEntries(accounts.map((account) => [account, { login: 'out', read: readAt() }])) },
+  }, null, 2)}\n`);
+};
+// A sign-in Daoris sees (TOOL6g): the mark a sign-in through either door leaves, in the home's probe marks (HOMELAYOUT3:
+// `run/probing/`, beside the locks the looks take), after which the next start asks the account again.
+const markSignedIn = (account) => {
+  const mark = homeEntry(toolchainHome, 'probing', 'stub', `${account}.signed-in`);
+  mkdirSync(dirname(mark), { recursive: true });
+  writeFileSync(mark, `${JSON.stringify({ at: readAt() })}\n`);
+};
+
+// A signed-out account stays in the set and is passed until it is signed in again (D197 point 1): with `fresh` first and
+// known to be signed out, the start is not held for it, and runs on the next account of the set.
+setOrder(['fresh', 'alpha']);
+readSignedOut(['fresh']);
+const passedAsk = await api('POST', '/api/quests', {
+  body: {
+    from: 'game', to: 'newcomer',
+    title: 'Run past an account nobody signed into',
+    body: 'It should pass the signed-out first and run on the next account of the set.',
+  },
+});
+const passedRun = driver({ serviceUrl: BASE, config: driverConfig, harness: HARNESS_ENV, mode: '--until-idle' });
+const passedRecord = ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? [])
+  .find((s) => s.quest === (passedAsk.json?.quest?.id ?? ''));
+check(
+  'a signed-out account first in the order is passed, not a hold: the start runs on the next account of the set, and its record names it',
+  passedRun.code === 0 && /completed/.test(passedRun.out)
+    && passedRecord?.state === 'completed' && passedRecord.profile === 'alpha',
+  `${passedRun.out}\n${JSON.stringify(passedRecord)}`,
+);
+
+// A hold is where no account of the set may run (D197): `alpha` signed out too, its credentials gone as a sign-out leaves
+// it. The start is held BEFORE anything is recorded, naming each account's sign-in.
+const alphaCredentials = join(profileAt('stub', 'alpha'), 'credentials.json');
+rmSync(alphaCredentials, { force: true });
+readSignedOut(['fresh', 'alpha']);
 const loggedOutAsk = await api('POST', '/api/quests', {
   body: {
     from: 'game', to: 'newcomer',
-    title: 'Run as an account nobody signed into',
+    title: 'Run where no account is signed in',
     body: 'It should be held, with the sentence that says how to fix it.',
   },
 });
 const sessionsBeforeRefusal =
   ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? []).length;
-// What the person's press read (ROSTER1): a look reads no account, so the start is held only once `fresh` is known to be
-// signed out. Any read time holds it: should the hour's backstop ask again, the stub still answers logged out.
-mkdirSync(dirname(homeEntry(toolchainHome, 'reads')), { recursive: true });
-writeFileSync(homeEntry(toolchainHome, 'reads'), `${JSON.stringify({
-  stub: { accounts: { fresh: { login: 'out', read: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z') } } },
-}, null, 2)}\n`);
 const loggedOutRun = driver({ serviceUrl: BASE, config: driverConfig, harness: HARNESS_ENV });
 check(
-  'a logged-out profile holds the start, naming the login action rather than failing bare',
+  'with every account of the set signed out, the start is held, naming each one’s sign-in rather than failing bare',
   loggedOutRun.code === 0
-    && /not signed in/.test(loggedOutRun.out)
-    && /daoris agent login stub --profile fresh/.test(loggedOutRun.out),
+    && /no `stub` account this start may use is ready: /.test(loggedOutRun.out)
+    && /`fresh` is not signed in/.test(loggedOutRun.out) && /`alpha` is not signed in/.test(loggedOutRun.out)
+    && /daoris agent login stub --profile fresh/.test(loggedOutRun.out)
+    && /daoris agent login stub --profile alpha/.test(loggedOutRun.out),
   loggedOutRun.out,
 );
 check(
@@ -3725,8 +3766,11 @@ check(
 // and then prints "Failed to authenticate. API Error: 401 …" and exits 1 — so every further session
 // on that account would pay the same minutes to fail the same way. The stub mirrors those words: the
 // first session ends saying so, and the NEXT start is held rather than spent. One run, one driver,
-// because the hold lives with the roster the loop keeps.
-setProfile('alpha');
+// because the hold lives with the roster the loop keeps. `alpha` is signed in again and first in the order, and `fresh`
+// still signed out, so once `alpha` is refused no account of the set is ready (D197): the hold names each, and why.
+setOrder(['alpha', 'fresh']);
+writeFileSync(alphaCredentials, '{}\n');
+markSignedIn('alpha');
 const refusedAgent = join(scratch, 'refused-agent.mjs');
 writeFileSync(refusedAgent, [
   "if (process.argv.includes('--version')) { console.log('stub-harness 1.0.0'); process.exit(0); }",
@@ -3747,23 +3791,20 @@ const newcomerSessions = async () =>
 const sessionsBeforeRefused = await newcomerSessions();
 const refusedRun = driver({ serviceUrl: BASE, config: refusedConfig, harness: HARNESS_ENV, mode: '--until-idle' });
 check(
-  'an account its provider refused ends its session saying so, and the next start is held, not spent',
+  'an account its provider refused ends its session saying so, and the next start is held, not spent: no account of the set is ready, and the hold says why for each',
   refusedRun.code === 0
     && /provider refused the `stub` account `alpha` \(401\)/.test(refusedRun.out)
-    && /held .*an earlier session found that its provider refused/.test(refusedRun.out)
+    && /held .*no `stub` account this start may use is ready: `alpha` was refused by its provider, `fresh` is not signed in/
+      .test(refusedRun.out)
     && (await newcomerSessions()) - sessionsBeforeRefused === 1,
   refusedRun.out,
 );
 
-// Put the machine back, and let the held quest through — a held quest that never ran would leave the
+// Put the machine back, and let the held quests through — a held quest that never ran would leave the
 // next phase looking at a queue nobody explained. The refusal read `alpha` signed out under the home
-// (ROSTER1b), which outlives the run, so logging it in is a sign-in Daoris sees: the mark a sign-in
-// through either door leaves (TOOL6g), after which the next start asks `alpha` again.
-setProfile('alpha');
-// Where the home's probe marks are (HOMELAYOUT3: `run/probing/`, beside the locks the looks above took).
-const signedMark = homeEntry(toolchainHome, 'probing', 'stub', 'alpha.signed-in');
-mkdirSync(dirname(signedMark), { recursive: true });
-writeFileSync(signedMark, `${JSON.stringify({ at: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z') })}\n`);
+// (ROSTER1b), which outlives the run, so logging it in is a sign-in Daoris sees, after which the next start asks `alpha`
+// again.
+markSignedIn('alpha');
 const releasedRun = driver({ serviceUrl: BASE, config: driverConfig, harness: HARNESS_ENV, mode: '--until-idle' });
 check(
   'logging the account in releases the queue with no restart — the file is the truth',
@@ -3788,11 +3829,15 @@ check(
     && JSON.parse(readFileSync(harnessConfig, 'utf8')).workspaces?.aurora?.['claude-code'] === 'work',
   defaulted.out,
 );
-// The stub's own default, written by hand above, survives the CLI's edit — the CLI is an editor over
-// the file, not its owner.
+// The stub's own set, its order and how it is used, written by hand above, survives the CLI's edit — the CLI is an editor
+// over the file, not its owner. Its edit folds the file first (D197 point 7), and a set already whole has nothing to fold,
+// so nothing is said of it either.
+const afterEdit = JSON.parse(readFileSync(harnessConfig, 'utf8'));
 check(
-  '…and the edit left every other wiring in the file standing',
-  JSON.parse(readFileSync(harnessConfig, 'utf8')).defaults?.stub === 'alpha',
+  '…and the edit left every other agent’s set in the file standing: the stub’s order and its use, with nothing folded',
+  JSON.stringify(afterEdit.rotation?.stub) === JSON.stringify(['alpha', 'fresh'])
+    && afterEdit.rotationUse?.stub?.use === 'order'
+    && (afterEdit.pooled?.stub ?? []).length === 0,
   readFileSync(harnessConfig, 'utf8'),
 );
 const typo = cliHarness('profile default claude-code typo');
@@ -5264,13 +5309,19 @@ check(
   `${followAgain.out}\n${JSON.stringify(rowAfterAgain)}\n${JSON.stringify(followedTwice)}`,
 );
 
+// Read from the line again, the set-up is done, and what a set-up repository is asked next is its index of where things
+// are (ORIENT2c, D151's note: `Done` means set up and naming an index). Atlas is a README and what its set-up wrote, so
+// the press cannot read what it is built with and cannot name the generator: it refuses (`no-index-form`), naming the
+// ask to make by hand, and asks nothing.
 const afterLanding = onSetupMachine('setup atlas --plan');
 const afterRead = readSetup(afterLanding.out);
 check(
-  'read from the line again, atlas is already set up — adopted on the agents layout and declaring — and nothing more is asked',
+  'read from the line again, atlas is set up — adopted on the agents layout and declaring — and only its index is left to ask, which the press cannot frame for a repository whose stack it cannot read, so nothing is asked',
   afterLanding.code === 1 && afterRead.commit === atlasLine.slice(0, 12)
-    && afterRead.layout === 'agents · adopted yes · declares yes'
-    && afterRead.refusals.length === 1 && /is already set up/.test(afterRead.refusals[0]) && afterRead.nothingPublished,
+    && afterRead.layout === 'agents · adopted yes · declares yes · its index of where things are'
+    && afterRead.refusals.length === 1
+    && /^`atlas` is set up and names no index of where things are, and the press cannot name its generator: /.test(afterRead.refusals[0])
+    && afterRead.refusals[0].includes('*Give this repository an index of where things are*') && afterRead.nothingPublished,
   afterLanding.out,
 );
 
@@ -5479,9 +5530,13 @@ const plannedLandings = [firstRecord, secondRecord].map((record) => onPlanMachin
   GIT_COMMITTER_NAME: 'Family Rehearsal', GIT_COMMITTER_EMAIL: 'rehearsal@example.invalid',
 }));
 const rowsAfterLanding = await plannedRows();
+// Set up, each is to go again in the plan, for its index of where things are (ORIENT2c, D151's note: the plan asks a set-up
+// repository its index in its turn, and it is set up once that closes done). Read from its line, each asks only that.
 const standingAfter = readWorkspaceSetup(onPlanMachine(`setup --workspace ${PLAN_WORKSPACE} --plan`).out);
+const planAfterLanding = readPlan();
+const linesAfterLanding = PLANNED.map((name) => readSetup(onPlanMachine(`setup ${name} --plan`).out));
 check(
-  'both land and are registered from their lines, adopted and declared in their workspace, with no `connect` run, and the plan reads both set up',
+  'both land and are registered from their lines, adopted and declared in their workspace, with no `connect` run, and the plan reads both to go again for their index of where things are, asking neither a set-up twice',
   rowsBeforeLanding.length === 2 && rowsBeforeLanding.every((row) => row.adopted === false && row.registered === false)
     && [firstPlanned, secondPlanned].every((name, at) => plannedLandings[at].code === 0
       && plannedLandings[at].out.includes(`registry  ${name}: registered from its line \`main\` at \``))
@@ -5491,8 +5546,15 @@ check(
         && row.summary === `${name}, as its README says it is.`
         && row.root === rowsBeforeLanding.find((each) => each.repository === name)?.root;
     })
-    && standingAfter.summary === 'Setting up — 2 set up',
-  `${plannedLandings.map((landed) => landed.out).join('\n')}\n${JSON.stringify(rowsAfterLanding)}\n${standingAfter.summary}`,
+    && standingAfter.summary === 'Setting up — 2 to go'
+    && JSON.stringify(standingAfter.standing.map((each) => `${each.repository} ${each.state}`).sort())
+      === JSON.stringify(PLANNED.map((name) => `${name} to go`))
+    && Object.keys(planAfterLanding?.published ?? {}).length === 2
+    && planAfterLanding.published[firstPlanned] === firstSetup?.id && planAfterLanding.published[secondPlanned] === secondSetup?.id
+    && Object.keys(planAfterLanding?.indexed ?? {}).length === 0
+    && linesAfterLanding.every((read) => read.layout === 'agents · adopted yes · declares yes · its index of where things are'),
+  `${plannedLandings.map((landed) => landed.out).join('\n')}\n${JSON.stringify(rowsAfterLanding)}\n${standingAfter.summary}\n`
+    + `${JSON.stringify(standingAfter.standing)}\n${JSON.stringify(planAfterLanding)}\n${linesAfterLanding.map((read) => read.layout).join('\n')}`,
 );
 
 // Leave nothing for a later phase to meet: the plan stopped, so no later look works it, both trees gone, both retired.
