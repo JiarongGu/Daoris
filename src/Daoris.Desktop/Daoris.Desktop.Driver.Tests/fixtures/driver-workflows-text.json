@@ -4754,7 +4754,7 @@
     },
     {
       "name": "a verb the family does not have",
-      "changed": "The family's words are Daoris's driver program's whole (PUSH1f2b): a verb it does not have is said in its own words and its usage on the error stream, as every host verb says one (D194 point 1); the dispatcher's golden row moved here.",
+      "changed": "The family's words are Daoris's driver program's whole (PUSH1f2b): a verb it does not have is said in its own words and its usage on the error stream, as every host verb says one (D194 point 1); the dispatcher's golden row moved here. The family's usage gains `driver keep`, each rule the person sets (KEEP1d).",
       "argv": [
         "frobnicate"
       ],
@@ -4796,6 +4796,8 @@
         "       daoris-driver driver workflow use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]",
         "       daoris-driver driver workflow kind <workspace> <kind> --label \"…\" [--paths <path,…>] | --drop",
         "              (a workflow's writes say their change, and with --plan save nothing)",
+        "       daoris-driver driver keep [set-aside <days>|whole|slim|default · downloads <days>|never|default · logs <days>|default",
+        "              · history <days>|never|default · floor <n>GB|<n>%|off|default]",
         "`daoris driver …` runs these."
       ],
       "after": null

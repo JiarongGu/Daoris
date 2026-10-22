@@ -199,6 +199,8 @@ lock (`driver.lock`, DRV8a) grown to cover every writer rather than a second fil
   then says so in its window and its log.
 - **Aliases.** The lease is a file in the folder, so every path to the folder takes the same lease, and its holder records the
   home's id (§3.1).
+- **Which home.** The folder the driver's config is in, which the loop drives: the file `DAORIS_DRIVER_CONFIG` names, else
+  `DAORIS_HOME`'s. A verb takes its lease there too, so the two meet wherever the config is (LEASEHOME2, D171's note).
 - **`--share`** is DRV8a's run beside the desktop's loop; under the lease it reads beside, and its writes go to the instance as
   a verb's do. HOMELEASE1 settles that with the loop's own writes.
 

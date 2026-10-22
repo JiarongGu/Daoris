@@ -2,7 +2,9 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// Which of <c>daoris-driver</c>'s verbs hold the home's lease while they act alone (HOMELEASE1, the terminal RPC design §5,
-/// §7.1): a verb's mutation does, for its run; a read never does. Read off its words, as the host routes them.
+/// §7.1): a verb's mutation does, for its run; a read never does. Read off its words, as the host routes them. The host takes it in
+/// the home the loop drives and holds, the folder the driver's config is in (<see cref="DriverConfig.FindHome(Func{string, string?})"/>,
+/// LEASEHOME2).
 /// </summary>
 /// <remarks>
 /// <para><b>An unclassed verb holds it.</b> A read that takes the lease only waits where another act holds the home; a write
@@ -96,7 +98,8 @@ public static class VerbLeases
     /// <see cref="Holds"/> on this terminal's variables: a file <c>DAORIS_DRIVER_CONFIG</c> names is no instance's (D194 point 2, the
     /// alone-path design §1.2), so the driver family acting on it holds nothing, as it sends nothing; and a file
     /// <c>DAORIS_HARNESS_CONFIG</c> names is no instance's either, so an agent's settings and trust on its home hold nothing, while the
-    /// rules, <c>DAORIS_HOME</c>'s whatever it names, hold that home (PUSH1f2d).
+    /// rules, <c>DAORIS_HOME</c>'s whatever it names, hold the home's lease (PUSH1f2d). A verb that holds takes the lease in the home the
+    /// loop drives, <see cref="DriverConfig.FindHome(Func{string, string?})"/>, where the loop holds it (LEASEHOME2).
     /// </summary>
     public static bool HoldsHere(IReadOnlyList<string> args, Func<string, string?> environment) =>
         Holds(args) && !(args[0] == "driver" && DriverConfig.Overridden(environment))

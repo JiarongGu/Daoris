@@ -369,6 +369,17 @@ public sealed class DriverRoutes(DriverContext context)
                 + "here to confirm — only a folder it is holding can be trusted from this screen. "
                 + "`daoris agent trust claude-code <folder> --yes` names any folder.");
 
+        // 🔴 Never the own sign-in's file (POOL1a3, D197 point 3; Fable's F3): its hold offers no press, and one sent anyway is
+        // refused before anything is written. The person trusts the folder with the tool itself, at their terminal.
+        if (hold.Own)
+        {
+            throw Refusals.Because(
+                Refusals.TrustOwnHome,
+                "That folder is held for your own sign-in, outside Daoris's accounts, so Daoris writes nothing in its file: trust it "
+                + "with the tool itself, at your terminal.",
+                ("folder", hold.Folder));
+        }
+
         var grant = ClaudeTrust.Grant(hold.TrustFile, hold.Folder);
         _loop.Nudge();
         return new

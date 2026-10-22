@@ -71,6 +71,12 @@ with the version and date at release.
   said *harness*; an add whose manifest does not read is said as the window says it, and an add from a folder inside your `DAORIS_HOME`, or
   one holding it, is refused with nothing copied; a remove of a plugin whose folder something holds is refused and takes nothing; and a change refused
   because `plugins.json` does not read is said with its code.
+- Daoris no longer asks your own sign-in anything (D197): *Read again*, on an agent's page or for every agent, reads Daoris's
+  accounts alone, neither your own sign-in's state nor its usage, since asking ran the agent where it might refresh your token beside
+  your own terminal's. *Read again* still ends your own sign-in's cool-off. `daoris agent trust <agent> <folder>` with no account named
+  now trusts the folder for each of Daoris's accounts, each in its own file, and with none is refused; it never writes your own
+  sign-in's file. A conversation going on in your own sign-in that is held for a folder's trust says to trust it with the tool itself,
+  at your terminal, and Daoris refuses to grant it there.
 - You may now set an age for finished work's records: on the *Disk space* card's *Conversations and records* row (*Change…*), with
   `daoris driver keep history <days>|never|default`, or through Ask Daoris's proposal you apply. Between 30 and 3,650 days; by default
   none, and nothing clears your history by itself, as before. With an age set, once a day each workspace's finished work whose last

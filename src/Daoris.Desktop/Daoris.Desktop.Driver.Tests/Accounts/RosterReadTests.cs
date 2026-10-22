@@ -217,6 +217,29 @@ public sealed class RosterReadTests : IDisposable
         Assert.Empty(Asked);
     }
 
+    /// <summary>
+    /// POOL1a3 (D197 point 3 and its acceptance note): the agent's <i>Read again</i> reads each account of Daoris's and never the
+    /// tool's own sign-in, and still ends that agent's own home's cool-off, nothing asked, so the cool-off's line that sends the
+    /// person to it holds. Another agent's stands until the roster's whole refresh, which asks no own sign-in either.
+    /// </summary>
+    [Fact]
+    public async Task The_agent_s_read_again_ends_its_own_home_s_cool_off_and_asks_the_own_sign_in_nothing()
+    {
+        AccountCooling.Cool(_home, new CoolingEntry("agent", null, Ten.AddHours(2), true, "session", Ten, "s0"), Ten);
+        AccountCooling.Cool(_home, new CoolingEntry("other", null, Ten.AddHours(2), true, "session", Ten, "s1"), Ten);
+        var roster = Roster();
+
+        await roster.ReportAsync("agent", Config, refresh: true);
+
+        Assert.Equal(["--login-state account-1", "--login-state account-2"], Asked.Order(StringComparer.Ordinal));
+        Assert.Equal(["other"], AccountCooling.Read(_home, Ten).Select(entry => entry.Agent));
+
+        await roster.RosterAsync(Config, refresh: true);
+        Assert.Empty(AccountCooling.Read(_home, Ten));
+        Assert.DoesNotContain(Asked, line => line.EndsWith("(own)", StringComparison.Ordinal));
+        Assert.Null(AccountReads.Of(_home, "agent").Own);
+    }
+
     /// <summary>One account's read names an account the agent has; another is refused in a sentence, and nothing is asked.</summary>
     [Fact]
     public async Task Reading_an_account_the_agent_does_not_have_is_refused_naming_the_ones_it_has()

@@ -156,8 +156,11 @@ public sealed partial class AgentsTextTests
             var identity = home is null || row.GetProperty("before").TryGetProperty(Spelled(Path.GetRelativePath(root, HomeIdentity.PathIn(home))), out _)
                 ? null
                 : Path.GetFullPath(HomeIdentity.PathIn(home));
+            // Nor is the machine log (POOL1a1's fold says what it changed there, D197 §6.2): a dated file the home appends to, never the verb's.
+            var logs = home is null ? null : Path.GetFullPath(DaorisHome.Entry(home, HomeEntry.Logs)) + Path.DirectorySeparatorChar;
             var written = Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories)
                 .Where(path => !string.Equals(Path.GetFullPath(path), identity, StringComparison.OrdinalIgnoreCase))
+                .Where(path => logs is null || !Path.GetFullPath(path).StartsWith(logs, StringComparison.OrdinalIgnoreCase))
                 .ToDictionary(path => Spelled(Path.GetRelativePath(root, path).Replace('\\', '/')), path => Spelled(File.ReadAllText(path)), StringComparer.Ordinal);
             var after = row.GetProperty("after").EnumerateObject().ToDictionary(file => file.Name, file => file.Value.GetString()!, StringComparer.Ordinal);
             Assert.True(after.Keys.Order(StringComparer.Ordinal).SequenceEqual(written.Keys.Order(StringComparer.Ordinal)),
