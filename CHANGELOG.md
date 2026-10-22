@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session waiting on you now says what it asks in its box, under its last message: its question in its own words, each answer it
+  offers as a button beside what it will do on it (the one it recommends marked), the go-aheads it waits on with *Approve* and
+  *Refuse*, how long it has waited, and what it holds meanwhile. Your words in the box go with the answer you press, or alone as your
+  answer; where it waits on a go-ahead and a question both, the go-ahead comes first and its answer waits for the question's, so the
+  session goes on once with both. Sessions ask through Daoris's new `question_ask` tool; one that asked only in its message is
+  answered in words as before. In English and 中文.
 - A workflow version saved as a graph now says which checks its sessions run: its `claimed` node's `checks` (`light` or
   `heavy-at-end`) is taken by every session of a run bound to it, its first included, in place of the repository's choice, and its
   `callMinutes` sets how long one call may run under *Light* before the session is told (20 by default). A value written another

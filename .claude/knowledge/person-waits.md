@@ -15,7 +15,7 @@ is the row's, not its kind's: `attentionGroup` reads it, and the band, its order
 | Place | File | What goes there |
 |---|---|---|
 | The kind | `src/Daoris.Web/src/work/waits/waits.ts` | a member of the `Wait` union and its line in `waitsOf`, in the order the head draws them |
-| The foot | `work/waits/WaitStrip.tsx` | its folded name (`waitName`) and its section in the strip |
+| The foot | `work/waits/WaitStrip.tsx` | its folded name (`waitName`) and its section in the strip; a park's question and go-aheads where the box below answers the park are the box's (`work/waits/ParkAnswer.tsx` in `SessionBox`, PARKVIEW1), which the strip neither draws nor counts (`boxBelow`) |
 | The head | `work/head/SessionHead.tsx` | its section, `data-wait-section` where it can be answered from there |
 | The props | `work/WorkFrame.tsx` → `work/AttendedSession.tsx` → `SessionHead` | `WaitProps` built once in the frame, so the head and the foot press the same handlers |
 | *What needs you*'s judge | `Daoris.Desktop.Modules/Loop/NeedsAPerson.cs` (the row: kind, id, since, the values it is worded from), `AttentionStateSlice.cs` (its input read from memory, `Fields` and `Holds`, its wake) | a row judged in .NET once for every window (PUSH1d4, D182 point 6); its cases in `AttentionStateSliceTests` |

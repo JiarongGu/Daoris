@@ -19408,3 +19408,11 @@ note. On Opus.
 
 **Outcome** 2026-10-22: a verb takes the lease in the home the loop drives, the folder the driver's config is in (`DriverConfig.FindHome`),
 `DAORIS_HOME` wherever no override names a file elsewhere, so an install is unchanged. Detail: D171's LEASEHOME2 note. On Opus.
+
+## PARKVIEW1 — a parked session's ask at its conversation's end, with its answers as presses (2026-10-22, D185)
+
+> - [ ] **PARKVIEW1 — a parked session's ask at its conversation's end, with its answers as presses** (web-shell, modules, driver; the owner's report, 2026-10-22; D137, D126 §9, D196). When a session waits on the person, its conversation's end should hold what it asks, in a clear form: the question, what each answer does, and what it holds meanwhile. The chat box should offer the answers it can take as presses (a go-ahead's yes or no, a choice, a stated answer), not a bare text box. Today the ask is buried in the turn's long report, and the box offers nothing fitting. Proof: a park's ask shown at the end at every width in both languages; each answer kind a press that reaches the session; Codex's read of the short design under D191.
+
+**Outcome** 2026-10-22: a park's question is recorded by its agent (`question_ask`) and bound to its park by the driver, and its box draws
+it with every answer a press (a choice, a go-ahead's yes or no, the free answer) through the box's own doors. Detail: the park's ask
+design (`docs/2026-10-22-park-ask-design.md`, its §8 Codex's read) and D185's PARKVIEW1 note. On Opus.

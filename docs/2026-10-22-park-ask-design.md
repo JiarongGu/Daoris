@@ -91,11 +91,10 @@ so it is always at the foot, where the person reads the last message, at every w
 at 40% of the main area and scrolls within, as the strip does. In order:
 
 1. **Its question**, the agent's words as written; under it each answer it offered as a press (its label, the recommended one
-   primary and marked *recommended*), and beside each what the agent will do on it, its words. With no question recorded, one
-   line: it asked in its last message, above.
+   primary and marked *recommended*), and beside each what the agent will do on it, its words; then, where the agent named one,
+   *It says it needs your answer by …*, in its words. With no question recorded, one line: it asked in its last message, above.
 2. **Each go-ahead still open**, as the ask lists it (the act, where, the agent's why), with *Approve* and *Refuse*.
-3. **By when.** *No deadline here: it has waited 12 min, and waits until you answer*, from the record; then, where the agent named
-   one, *It says it needs your answer by …*, in its words.
+3. **By when**, Daoris's: *No deadline here: it has waited 12m, and waits until you answer*, from the record.
 4. **Meanwhile**, Daoris's facts from the record: its quest stays taken, its branch is kept (named where it has a tree of its own),
    and it runs nothing until it is answered.
 5. **What an answer does**: it goes to the same session as the person's words, which goes on with it at the driver's next look,
@@ -109,7 +108,8 @@ answer*, the free answer, as today.
 go-aheads too), and the head lists them without presses: its card shows the recorded question and its answers in place of the
 whole last message (the note as today where none was recorded), and its go-ahead list says each is answered in the box below.
 The head keeps every press where no box below takes the answer (a teammate's park draws none, as today). One set of handlers
-still backs every press (D168 point 3).
+still backs every press (D168 point 3). The question and each go-ahead carry *In the conversation* (WAITFOOT1c), and a raising
+block's *To the wait* for either leads to its line in the box.
 
 ## 4. The order of answers, and how each reaches the session
 
