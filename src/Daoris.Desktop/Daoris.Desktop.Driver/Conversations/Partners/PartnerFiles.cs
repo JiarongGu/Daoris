@@ -36,6 +36,16 @@ public sealed class PartnerFiles(string home)
         return [.. asks.OrderBy(ask => ask.At).ThenBy(ask => ask.Id, StringComparer.Ordinal)];
     }
 
+    /// <summary>
+    /// Every piece on file with its lead and where it stands, as the common admission counts them (<see cref="PartnerAdmission"/>): an
+    /// ask with no state is <see cref="PartnerStates.Asked"/>, one whose state cannot be read <see cref="PartnerStates.Uncertain"/>, which
+    /// stays open until the person's act.
+    /// </summary>
+    public IReadOnlyList<PieceReservation> Reservations() =>
+        [.. Asks().Select(ask => new PieceReservation(
+            ask.Id, ask.Asker,
+            ReadState(ask.Id)?.State ?? (Unreadable(ask.Id, "state") ? PartnerStates.Uncertain : PartnerStates.Asked)))];
+
     public PartnerAsk? ReadAsk(string id)
     {
         if (Parse(PathOf(id, "ask")) is not { } root) return null;

@@ -695,6 +695,8 @@ public sealed class Driver(
         // The words a record could not go on with, read again at each look (MSG1b): the planner leaves them waiting. The session a
         // reopen names is one the planner goes on with too (FABRIC-CLOSE1c9).
         snapshot = snapshot with { Unable = Context.Marks.For(snapshot.LastRun.Values.Concat(snapshot.NamedByReopen.Values)) };
+        // COAGENT1b (the co-agent design §5): the pieces on file, whose reservations every starter below counts under the cap.
+        snapshot = snapshot with { Pieces = new PartnerFiles(home).Reservations() };
         // The quests handed to another agent (MIXAGENT1a-ii, D163 point 1): the boxes taken, the quests that left dropped, and what
         // stands read for the planner, which reads the stop that handed one over as released.
         var read = snapshot;
