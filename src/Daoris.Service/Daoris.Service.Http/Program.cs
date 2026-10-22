@@ -1647,6 +1647,20 @@ if (mode == ServiceMode.Local)
                 s, http)
             : OffMachineOpinion());
 
+    // A partner's record (COAGENT1b, D199 point 2; the co-agent design §2.3 step 5): the driver opens it for one piece, idempotent by
+    // the piece's id, a chat that serves the lead and carries the piece, in a clone of its own with an entry of its own.
+    app.MapPost("/api/partners", async (ComposedService s, HttpContext http, PartnerOpenRequest body, CancellationToken ct) =>
+        MachineLocal(http)
+            ? await HelperReply(
+                await s.Partners.OpenAsync(
+                    new PartnerOpen(body.Lead ?? "", body.Piece ?? "", body.Adapter ?? "", body.Tree ?? "")
+                    {
+                        Account = body.Account, HarnessVersion = body.HarnessVersion, BaseCommit = body.BaseCommit,
+                    },
+                    DateTimeOffset.UtcNow, ct),
+                s, http)
+            : OffMachineOpinion());
+
     app.MapPost("/api/helpers/{helper}/hand", async (ComposedService s, HttpContext http, string helper, HelperHandRequest body, CancellationToken ct) =>
         MachineLocal(http)
             ? await HelperReply(await s.Helpers.HandAsync(
@@ -2763,7 +2777,9 @@ static SessionResponse ToSession(Session s, bool loopback) => new(
     // Why the graph named for its take did not bind it (CLOSETAKE1): this machine's, so answered to it only.
     TookBind: loopback ? s.TookBind : null,
     // The downloaded versions its starts were handed (KEEP1b): this machine's, like the opinion, so answered to it only.
-    Resolved: loopback ? s.Resolved : null);
+    Resolved: loopback ? s.Resolved : null,
+    // The piece a partner's record writes (COAGENT1b): this machine's, like the opinion, so answered to it only.
+    Piece: loopback ? s.Piece : null);
 
 // A word with whose it is (XAGENT1c): `by` names the second opinion whose findings these are, and is absent for the person's.
 static SaidWordResponse ToSaid(SaidWord word) =>

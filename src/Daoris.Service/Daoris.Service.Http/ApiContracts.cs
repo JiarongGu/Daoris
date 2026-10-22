@@ -448,7 +448,10 @@ public sealed record SessionResponse(
     string? TookBind = null,
     // KEEP1b (D195 point 6): the downloaded versions its starts were handed, which the downloads' rule keeps while it runs; absent for a
     // record told none. This machine's own, like the opinion: answered to it only.
-    IReadOnlyList<string>? Resolved = null);
+    IReadOnlyList<string>? Resolved = null,
+    // COAGENT1b (D199 point 1): the piece a partner's record writes, beside `serves` naming its lead; absent for every other record.
+    // This machine's own, like the opinion: answered to it only.
+    string? Piece = null);
 // MSG1a: one word waiting on a record — its id, which the record's events say again where the session took it; the
 // words; when; its files' names, never where they are; and whether it was said after the record ended. XAGENT1c: `by`, the
 // second opinion whose findings these are, another agent's claims; absent, the person's words, as every word before it was.
@@ -517,6 +520,10 @@ public sealed record OpinionActionResponse(
 public sealed record HelperOpenRequest(string? Asker, string? Adapter, string? Tree, string? Account = null, string? HarnessVersion = null, string? BaseCommit = null);
 // COWORK1d: `running` true is the driver that runs a working driven asker handing an urgent ask's answer for its run's next step;
 // `level` the ask's, kept beside the word.
+// COAGENT1b (D199 point 2; the co-agent design §2.3 step 5): the driver opens a partner's record for one piece, idempotent by the
+// piece's id: its lead, its agent, its own clone, the account and version it runs on, and the ask's base commit.
+public sealed record PartnerOpenRequest(
+    string? Lead, string? Piece, string? Adapter, string? Tree, string? Account = null, string? HarnessVersion = null, string? BaseCommit = null);
 public sealed record HelperHandRequest(string? Text, bool? Running = null, string? Level = null);
 // A helper door's answer: the desk's sentence, the helper's record a pass opened or the asker the answer went to, and the word.
 public sealed record HelperActionResponse(string Message, SessionResponse? Session = null, SaidWordResponse? Said = null);
@@ -803,6 +810,7 @@ public sealed record ChangesResponse(string Since, IReadOnlyList<string> Moved);
 [JsonSerializable(typeof(OpinionActionResponse))]
 [JsonSerializable(typeof(HelperOpenRequest))]
 [JsonSerializable(typeof(HelperHandRequest))]
+[JsonSerializable(typeof(PartnerOpenRequest))]
 [JsonSerializable(typeof(HelperActionResponse))]
 [JsonSerializable(typeof(BrainstormAskRequest))]
 [JsonSerializable(typeof(IEnumerable<BrainstormResponse>))]
