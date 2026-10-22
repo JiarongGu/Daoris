@@ -30,6 +30,8 @@ with the version and date at release.
   `sessions partner <id> --list` lists the pieces. The head says *Partners: Codex, 1 piece working*, and a partner's own head
   names the session it works for. No agent is admitted as a partner until its confinement is measured on this machine. Until
   then each piece is refused, and says so.
+- A session waiting on you says in one line where its question is and how long it has waited, above its answers (PARKWORDS1).
+  What it holds meanwhile and where your answer goes are under *While it waits*, one press away.
 - A folder under Daoris's account homes that no agent or plugin names is no longer taken for an agent (POOLSTRAY1). An earlier
   start could leave such a folder, and its subfolders were folded in as accounts. Such a folder is now noted once in the machine
   log and otherwise left alone. If an earlier fold already wrote one into the account order, the next change of the accounts

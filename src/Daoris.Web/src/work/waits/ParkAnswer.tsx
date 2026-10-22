@@ -60,13 +60,15 @@ export function QuestionAsked({ question, busy = false, onChoice }: {
  *
  * @remarks
  * - **Its question**, the agent's words as written, and each answer it offered as a press, its label, beside what the agent does on
- *   it; the recommended one primary and marked. Recorded by the agent (`question_ask`), never read out of its prose: with none, one
- *   line says it asked in its last message.
+ *   it; the recommended one primary and marked. Recorded by the agent (`question_ask`), never read out of its prose.
+ * - **One line over it** (PARKWORDS1): where its question is (here, or above in its last message where it recorded none) and how
+ *   long it has waited, then *answer below*.
  * - **Each go-ahead still open** with *Approve* and *Refuse*, the box's words going as its words (GOAHEAD2b). Where a question waits
  *   beside them they come first, and its answers wait, said so: each go-ahead keeps the park for the question's answer, which then
  *   sends it on with them all (`goesOn: false`, the design §4).
- * - **By when** (no deadline Daoris keeps: how long it has waited, and the agent's own *by* where it named one), **what it holds
- *   meanwhile** (its quest taken, its own tree kept, nothing running) and **what an answer does**, Daoris's facts in its words.
+ * - **The agent's own *by*** under its question, where it named one.
+ * - **Behind a disclosure, folded** (PARKWORDS1): that no deadline runs, **what it holds meanwhile** (its quest taken, its own tree
+ *   kept, nothing running) and **what an answer does**, Daoris's facts in its words, there for the person who asks.
  *
  * Bounded at 40% of the main area and scrolled within, as the strip is, so a long question never pushes the field off the window.
  * A molecule: props in, presses out; the frame holds the words, the presses' doors and their pending.
@@ -115,10 +117,11 @@ export function ParkAnswer({ quest, tree = null, since, question, goAheads, busy
         {toEvent?.question && <span className="ml-auto"><InConversation onPress={toEvent.question} /></span>}
       </div>
 
-      <div data-wait="question" tabIndex={-1} className={sought === 'question' ? SOUGHT : 'outline-none'}>
-        {question
-          ? <QuestionAsked question={question} busy={busy || held} onChoice={onChoice} />
-          : <p className="m-0 text-small text-ink-soft">{t('work.park.noQuestion')}</p>}
+      <div data-wait="question" tabIndex={-1} className={cn('grid gap-1.5', sought === 'question' ? SOUGHT : 'outline-none')}>
+        <p className="m-0 text-small text-ink-soft">
+          {t(question ? 'work.park.waitingHere' : 'work.park.waitingAbove', { span: elapsed(since) })}
+        </p>
+        {question && <QuestionAsked question={question} busy={busy || held} onChoice={onChoice} />}
       </div>
 
       {goAheads.length > 0 && (
@@ -166,11 +169,14 @@ export function ParkAnswer({ quest, tree = null, since, question, goAheads, busy
 
       {held && <p className="m-0 text-small text-ink-soft">{t('work.park.order')}</p>}
 
-      <div className="grid gap-0.5 text-small text-ink-faint">
-        <p className="m-0">{t('work.park.deadline', { span: elapsed(since) })}</p>
-        {quest && <p className="m-0">{t(tree ? 'work.park.meanwhileTree' : 'work.park.meanwhile', { quest, tree })}</p>}
-        <p className="m-0">{t('work.park.goesOn')}</p>
-      </div>
+      <details className="text-small text-ink-faint">
+        <summary className="cursor-pointer">{t('work.park.whileWaiting')}</summary>
+        <div className="mt-1 grid gap-0.5">
+          <p className="m-0">{t('work.park.noDeadline')}</p>
+          {quest && <p className="m-0">{t(tree ? 'work.park.meanwhileTree' : 'work.park.meanwhile', { quest, tree })}</p>}
+          <p className="m-0">{t('work.park.goesOn')}</p>
+        </div>
+      </details>
     </section>
   );
 }
