@@ -137,7 +137,23 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
                 return Refused(HelperRefusal.NotFound, $"There is no helper session `{helperId.Trim()}` on this machine");
             }
 
+            // HELPERWAIT1 (D189 point 6): the newest live record of the asker's line, as a partner's piece is handed (PartnerDesk): a hand-over,
+            // a move or a carry-on takes the asker's helpers with it, and a left conversation is never reopened.
             var asker = await sessions.FindAsync(served, inside).ConfigureAwait(false);
+            for (var hops = 0; asker is { Origin: null } && hops <= LineBound; hops++)
+            {
+                if (await sessions.ContinuedByAsync(asker.Id, inside).ConfigureAwait(false) is not { } next) break;
+                // 🔴 HELPERWAIT1b (Codex's round-3 #4 on COWORKUX1): a line that goes on past the bound is refused, its newest part unread,
+                // never handed to the record where the bound stopped, which the line has left; the helper's conversation keeps the answer.
+                if (hops == LineBound)
+                {
+                    return Refused(HelperRefusal.CannotTake,
+                        $"Session `{served}`'s line runs past sixteen links, so its newest part is not read and no part it left takes the answer");
+                }
+
+                asker = next;
+            }
+
             string? cannot = asker switch
             {
                 null or { Origin: not null } => $"There is no session `{served}` of this machine's to hand the answer to",
@@ -145,8 +161,11 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
                 { Opinion: { } reads } => $"Session `{asker.Id}` read the work for second opinion `{reads}`: a pass takes no words",
                 { Serves: not null } => $"Session `{asker.Id}` is a helper itself: it takes no words",
                 { State: SessionState.StoodDown } => $"Session `{asker.Id}` stood down, so it has nothing to go on with",
-                { State: SessionState.AwaitingPerson } =>
+                { State: SessionState.AwaitingPerson, Answer: null } =>
                     $"Session `{asker.Id}` waits on the person's answer: a helper's answer reaches it at a turn's end, once it is answered",
+                // HELPERWAIT1 (Codex's round-2 #1 on COWORKUX1): a park the person answered takes it beside their answer, so its go-on
+                // hands both in one prompt; the answer is theirs, and it alone moves the park.
+                { State: SessionState.AwaitingPerson } => null,
                 // An open conversation between turns (MIXAGENT2a-iii) is working: the chat runner says the word as its next turn,
                 // or at its turn's end, which it alone knows. One still being started is not open yet.
                 { Kind: SessionKind.Chat, State: SessionState.Working } => null,
@@ -163,9 +182,10 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
                 return Refused(HelperRefusal.NotHanded, $"Helper `{helper.Id}`'s answer went to session `{asker.Id}` already: it goes once");
             }
 
+            // Keyed by its helper (HELPERWAIT1), one helper per ask: the word's own identity wherever it waits, as a piece's is (PartnerDesk).
             var word = new SaidWord(
                 Guid.NewGuid().ToString("N")[..8], text.Trim(), now, [], Reopens: true, Helper: helper.Id,
-                Level: level is { } said && SaidLevel.Known(said) ? said : null);
+                Level: level is { } said && SaidLevel.Known(said) ? said : null, Key: KeyOf(helper.Id));
             var kept = await sessions.KeepSaidAsync(asker.Id, word, ct: inside).ConfigureAwait(false);
             return new HelperOutcome(
                 HelperRefusal.None,
@@ -177,6 +197,12 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
             };
         }, ct).ConfigureAwait(false);
     }
+
+    /// <summary>How many links of an asker's line the hand follows, at most (HELPERWAIT1); the driver's look follows as many.</summary>
+    internal const int LineBound = 16;
+
+    /// <summary>A helper's answer's stable key, the producer key its word carries (HELPERWAIT1): one per helper, and so one per ask.</summary>
+    public static string KeyOf(string helper) => $"helper:{helper}";
 
     private static HelperOutcome Refused(HelperRefusal refusal, string why) => new(refusal, $"{why}. Nothing was kept.");
 }

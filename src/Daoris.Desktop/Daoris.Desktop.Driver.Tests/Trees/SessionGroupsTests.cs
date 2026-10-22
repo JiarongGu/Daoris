@@ -23,8 +23,11 @@ public sealed class SessionGroupsTests
     private static JsonObject Record(
         string id, string state, string? quest = null, string? tree = null, int at = 0, string repository = "engine",
         string kind = "driven", bool interrupted = false, string? ask = null, int? updated = null, string? answer = null,
-        bool deletable = false, string[]? said = null, string? entry = null, string? from = null, string? fromWhy = null) => new()
+        bool deletable = false, string[]? said = null, string? entry = null, string? from = null, string? fromWhy = null,
+        string? noteCode = null) => new()
         {
+            // Its note's first line by its code (LANG1a), where a case reads one (HELPERWAIT1).
+            ["noteParts"] = noteCode is null ? null : new JsonArray(new JsonObject { ["code"] = noteCode, ["values"] = new JsonObject(), ["text"] = "a line." }),
             // SESSONE1b: the line of work the service answers, and the session a hand-over continues, and why (SESSCTX1b).
             ["entry"] = entry,
             ["from"] = from,
@@ -335,6 +338,20 @@ public sealed class SessionGroupsTests
         ["an earlier session of a waiting quest is ended"] =
             new(Look([Record("s1", "failed", "q1"), Record("s2", "completed", "q1", at: 10)], [Asking, Question], [Verdict(Asking, StartVerdict.Waiting)]),
                 "s1", SessionGroup.Ended, "failed"),
+        // 🔴 HELPERWAIT1: a session that ended its turn on its own helper's ask waits on that helper, never on the person: resumes later,
+        // whatever its tree holds, since it goes on in that tree with the helper's answer. Its answer waiting on it, it goes on.
+        ["a session waiting on its own helper resumes later, never to review"] =
+            new(Look([Record("s1", "completed", "q1", Tree, noteCode: "ended.awaits-helper")], [Taken], trees: [(Tree, new TreeWork(3, 1))]),
+                "s1", SessionGroup.Later, ShownState.AwaitingHelper)
+            {
+                Also = row => Assert.Null(row.Work),
+            },
+        ["a session whose helper's answer waits on it goes on"] =
+            new(Look([Record("s1", "completed", "q1", Tree, said: ["w1"], noteCode: "ended.awaits-helper")], [Taken], [GoesOn(Taken)]),
+                "s1", SessionGroup.Working, ShownState.GoingOn),
+        ["a completed session with no helper to wait on and work in its tree is to review"] =
+            new(Look([Record("s1", "completed", "q1", Tree, noteCode: "ended.awaits")], [Taken], trees: [(Tree, new TreeWork(3, 1))]),
+                "s1", SessionGroup.Review, "completed"),
         ["the asker of a quest whose answer came back is ended while it resumes"] =
             new(Look([Record("s1", "completed", "q1", Tree)], [Asking], [Verdict(Asking, StartVerdict.Start)], [(Tree, new TreeWork(3, 0))]),
                 "s1", SessionGroup.Ended, "completed"),

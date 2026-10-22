@@ -19762,3 +19762,25 @@ and TERMTRUST1b filed. TERMTRUST1a part (i), the containment, is built. Every ag
 `daoris-piece-start` in its Daoris process's agents' job (`AgentStarts`, `AgentJobs`). A start the launcher cannot contain is still
 made, logged `agent.contained` and holds the `-open` event. The census of start sites holds the route. The launcher adds about
 110 ms per start. Its installed proof and part (ii) stay open under TERMTRUST1a. Detail: D201's part (i) note. On Opus.
+
+## HELPERWAIT1 — a session waiting on its own helper is not shown as waiting on the person (2026-10-23)
+
+> - [ ] **HELPERWAIT1 — a session waiting on its own helper is not shown as waiting on the person** (driver, modules, web; found 2026-10-23 on the install, GITAPP1's design session). A driven session that asked a Codex helper and ended its turn so the helper could start was recorded `awaiting-person`, its note reading that it stopped "to ask you", while the helper it asked (`serves` it) was working; the person's *What needs you* and the place's count showed it as theirs. A session whose turn ended on its own open helper ask (or a partner's piece, D199) is shown waiting on that helper, by name, and reaches the person only if the helper ends without an answer or the ask's bound passes (BGWAIT3's rule for its own background command). Proof: a stand-in that asks a helper and ends its turn reads as waiting on the helper, not on the person, and goes on when the answer comes; a helper that ends unanswered brings it to the person.
+
+**Outcome** 2026-10-23: a turn that ends on its agent's own open helper ask, asking the person nothing, concludes `completed` by
+`ended.awaits-helper` (*Resumes later*, awaiting helper), keeps its tree, and goes on once with the answer, handed to its line's newest
+record; a helper with no answer brings it to the person through a new guarded ledger move (D46's note). Codex's round-2 findings 1-5,
+7 and 8 on COWORKUX1 are built: an answered park takes the helper's answer beside the person's in one prompt, an older park is never
+converted, an unread question parks, a failed move back is retried, and an attempt mark makes the hand once-only (`hand-uncertain`).
+The partner's piece is not built here (COAGENT1d's `partner_ask` does not exist yet). Detail: FIX-LOG 2026-10-23 (HELPERWAIT1), D188's
+HELPERWAIT1 note. On Opus.
+## HELPERWAIT1b — the helper wait keeps the four guarantees Codex's round-3 read found unkept (2026-10-23)
+
+> - [ ] **HELPERWAIT1b — the helper wait keeps the guarantees COWORKUX1's round 3 claims** (driver, service; found 2026-10-23 in Codex's read of COWORKUX1's round 3, findings 1-5; filed by its quest, never a backlog row). A conclusion must not delete or settle an unread question to the person; an ambiguous hand response must keep the duplicate-delivery guard and hold the outcome as uncertain until it is read back; cleanup must not release a waiting lead's tree before a failed return to the person has recovered; the sixteen-link successor bound must not deliver to a part the line has left; and the cap-one Process case should prove cap-one progress. Proof: each red first, then green.
+
+**Outcome** 2026-10-23: a parked conclusion keeps a question file that does not read (`QuestionFiles.Settle`). A hand whose answer
+was lost is `HelperHanded.Uncertain`: its attempt mark stays and the next look reads the line back, never handing twice; only the
+desk's own refusal clears it. The tidy, the lock's let-go and Ask Daoris's housekeeping hold a waiting lead's tree while its quest is
+taken, as the service does. A line past sixteen links is refused on both sides. `HelperWaitTickTests` runs at a cap of one. The
+round-3 row that shows a refused return in *What needs you* stays open as HELPERWAIT1c, now before COWORKUX1a. Detail: FIX-LOG
+2026-10-23 (HELPERWAIT1b), COWORKUX1's design §15.4, D203's round-4 note. On Opus.

@@ -144,8 +144,31 @@ public sealed class BranchTidying(string home)
             .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
         held.UnionWith(await service.WaitingTreesAsync(ct).ConfigureAwait(false));
+        held.UnionWith(await WaitingOnHelpersAsync(service, ct).ConfigureAwait(false));
         if (reviewing is not null) held.UnionWith(TreesOf(new SessionTrees(home).TreesRoot, await reviewing(ct).ConfigureAwait(false)));
         return held;
+    }
+
+    /// <summary>
+    /// The trees of this machine's sessions that ended waiting on their own helper while their quest is still taken (HELPERWAIT1; Codex's
+    /// #5 on COWORKUX1): each goes on in its tree with the answer, or parks for the person, so it keeps it as a park does. One whose quest
+    /// closed meanwhile holds nothing.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 HELPERWAIT1b (Codex's round-3 #3): never read off an ask being open. Its last ask refused and its move back to the person failed,
+    /// the record is still completed and waiting, with no ask open, and the look tries the move again; until that move lands (it is then
+    /// active), it goes on, or its quest is no longer taken, its tree and its lock are kept. The service's holder reads the same
+    /// (<c>SessionLedger.HolderAsync</c>), as the planner's does (<see cref="Planner.WaitingInTree"/>).
+    /// </remarks>
+    public static async Task<IEnumerable<string>> WaitingOnHelpersAsync(ServiceClient service, CancellationToken ct)
+    {
+        var waiting = (await service.RecordsAsync(ct).ConfigureAwait(false))
+            .Where(record => HelperWaits.HoldsTree(record) && record.Tree is { Length: > 0 } && record.Quest is { Length: > 0 })
+            .ToList();
+        if (waiting.Count == 0) return [];
+        var taken = (await service.EveryQuestAsync(ct).ConfigureAwait(false))
+            .Where(quest => quest.Status == "Taken").Select(quest => quest.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return waiting.Where(record => taken.Contains(record.Quest!)).Select(record => record.Tree!);
     }
 
     /// <summary>

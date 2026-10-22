@@ -45,7 +45,12 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         var asks = files.Asks();
         var facts = _context.Runs.Facts;
         if (_context.Beside) facts.KeepAsksOf(asks.Select(ask => ask.Id));
-        if (asks.Count == 0) return 0;
+        ForgetHeldBut(asks);
+        if (asks.Count == 0)
+        {
+            await BackToPersonAsync(snapshot, asks, files, events, ct).ConfigureAwait(false);
+            return 0;
+        }
 
         var states = asks.ToDictionary(ask => ask.Id, ask => files.ReadState(ask.Id), StringComparer.Ordinal);
         var begun = 0;
@@ -60,7 +65,26 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                     case HelperStates.Refused:
                         continue;
                     case HelperStates.Answered:
-                        if (state.Handed is null) await SettlingAsync(ask, events, token => DeliverHelperAsync(ask, state, files, token), ct).ConfigureAwait(false);
+                        // HELPERWAIT1 (point 6): a hand held while its asker stands as it did then waits on its asker's move, which wakes a look,
+                        // and is not tried again at every look (200-480 ms each on the install, a record read whole).
+                        if (state.Handed is null && !HeldStill(ask, snapshot))
+                        {
+                            var seen = Seen(snapshot, ask.Asker);
+                            // Codex's round-2 #1: a park the person answered goes on at this look's plan, so its helper's answer is handed
+                            // here, before the plan, never beside it, and both reach it in one prompt.
+                            if (_context.Beside && seen is { } shown && shown.EndsWith("|answered", StringComparison.Ordinal))
+                            {
+                                if (await SettleOnceAsync(ask, token => DeliverHelperAsync(ask, state, files, token, seen), ct).ConfigureAwait(false) is { } line)
+                                {
+                                    events.Add(_context.Said.Say(line));
+                                }
+                            }
+                            else
+                            {
+                                await SettlingAsync(ask, events, token => DeliverHelperAsync(ask, state, files, token, seen), ct).ConfigureAwait(false);
+                            }
+                        }
+
                         continue;
                     case HelperStates.Started:
                         await SettlingAsync(ask, events, token => SettleStartedAsync(ask, state, files, token), ct).ConfigureAwait(false);
@@ -125,7 +149,193 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
             }
         }
 
+        await BackToPersonAsync(snapshot, asks, files, events, ct).ConfigureAwait(false);
         return begun;
+    }
+
+    // ——— HELPERWAIT1 (D163's and D188's notes): a session waiting on its own helper is not waiting on the person.
+
+    /// <summary>
+    /// Whether a driven session whose turn ends now, holding its quest as a park would, waits on its own helper instead (HELPERWAIT1, point
+    /// 1; <see cref="Observation.Conclude"/>'s <c>awaitsHelper</c>): its agent has an ask of its own still open, and its last turn asked
+    /// the person nothing, by <c>question_ask</c> since <paramref name="since"/> or by a go-ahead on its work's ask that still waits on
+    /// them. A real question parks as before, whatever helper it asked too.
+    /// </summary>
+    /// <param name="since">When the run last handed its agent words, as a question is bound to its park (<see cref="QuestionFiles.SettleRun"/>).</param>
+    internal async Task<bool> WaitsOnOwnHelperAsync(string session, QuestView quest, DateTimeOffset since, CancellationToken ct)
+    {
+        var files = new HelperFiles(_context.Home);
+        if (HelperWaits.Open(session, files.Asks(), files.ReadState).Count == 0) return false;
+        // A question on file that does not read is no proof that none was asked (Codex's round-2 #3): it parks, as one asked does.
+        if (new QuestionFiles(_context.Home).AskedSince(session, since) != false) return false;
+        return await AskedGoAheadAsync(session, quest.From, ct).ConfigureAwait(false) == false;
+    }
+
+    /// <summary>
+    /// Whether <paramref name="session"/> asked a go-ahead on its work's ask that still waits on the person (HELPERWAIT1): an ask
+    /// the service does not hold, or a quest on no ask, has none; one the service did not answer is unread, null, and its caller parks as
+    /// before rather than read a question as absent.
+    /// </summary>
+    private async Task<bool?> AskedGoAheadAsync(string session, string? from, CancellationToken ct)
+    {
+        if (AskWords.AskOf(from) is not { } id) return false;
+        try
+        {
+            return await _context.Service.FindAskAsync(id, ct).ConfigureAwait(false) is { } ask
+                   && HelperWaits.AskedGoAhead(session, AskWords.Of(ask));
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or JsonException or InvalidOperationException
+                                          || (error is OperationCanceledException && !ct.IsCancellationRequested))
+        {
+            return null;
+        }
+    }
+
+    // The hands held, by ask, with how the look's own list showed the asker when each was held (point 6), null where it showed none, and
+    // the state its record was read in, which a held hand is said once for.
+    private readonly object _heldGate = new();
+    private readonly Dictionary<string, (string? Seen, string State)> _held = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// How the look shows <paramref name="asker"/>: its state and whether the person answered it, from the list of live sessions; else, for
+    /// one that ended, its state, when it last moved and how many words wait on it, from the records the look read (HELPERWAIT1); null where
+    /// the look shows it neither way.
+    /// </summary>
+    private static string? Seen(Snapshot snapshot, string asker) =>
+        snapshot.Active.FirstOrDefault(view => string.Equals(view.Id, asker, StringComparison.OrdinalIgnoreCase)) is { } view
+            ? $"{view.State}|{(view.Answer is null ? "" : "answered")}"
+            : snapshot.LastRun.Values.FirstOrDefault(last => string.Equals(last.Session, asker, StringComparison.OrdinalIgnoreCase)) is { } ended
+            ? $"{ended.State}|{ended.Updated?.ToUnixTimeMilliseconds()}|{ended.Said?.Count}"
+            : null;
+
+    /// <summary>
+    /// Whether a hand held before is still held (point 6): its asker shows in the look's list as it did when the hand was held. A record
+    /// read whole tells nothing more until it moves, and its move wakes a look; an asker the list never showed is read again.
+    /// </summary>
+    private bool HeldStill(HelperAsk ask, Snapshot snapshot)
+    {
+        lock (_heldGate) return _held.TryGetValue(ask.Id, out var was) && was.Seen is not null && was.Seen == Seen(snapshot, ask.Asker);
+    }
+
+    /// <summary>
+    /// A hand held (point 6): kept with how the list showed its asker, and said once for the state its record holds it in; a later look
+    /// holds it again in silence until the asker moves.
+    /// </summary>
+    private LookLine? Held(HelperAsk ask, PriorSession asker, string? seen)
+    {
+        lock (_heldGate)
+        {
+            var said = !_held.TryGetValue(ask.Id, out var was) || !string.Equals(was.State, asker.State, StringComparison.OrdinalIgnoreCase);
+            _held[ask.Id] = (seen, asker.State);
+            if (!said) return null;
+        }
+
+        return Helper(LookClass.Progress, asker.Parked
+            ? $"helper  ask `{ask.Id}` is answered, and waits for the person's answer to session {asker.Session}, then for its turn to end: never into a step in flight."
+            : $"helper  ask `{ask.Id}` is answered, and waits for session {asker.Session}'s turn to end: never into a step in flight.");
+    }
+
+    /// <summary>
+    /// A hand the host refused (HELPERWAIT1): kept as a held hand is, said once for each refusal, and not asked again while the look shows its
+    /// asker as it did; a transient refusal is then asked again once the asker moves, as a held one is.
+    /// </summary>
+    private LookLine? Unhanded(HelperAsk ask, string? seen, LookLine line)
+    {
+        lock (_heldGate)
+        {
+            var said = !_held.TryGetValue(ask.Id, out var was) || !string.Equals(was.State, line.Text, StringComparison.Ordinal);
+            _held[ask.Id] = (seen, line.Text);
+            if (!said) return null;
+        }
+
+        return line;
+    }
+
+    /// <summary>
+    /// The word <paramref name="helper"/>'s answer was handed to the asker's line as already, or null (HELPERWAIT1; Codex's round-2 #2 and #7
+    /// on COWORKUX1): along every record of the line, the commissioner's and each successor's, one waiting on its record, else the newest
+    /// <c>user</c> event of its conversation that names the helper and took it as a turn. A conversation's notice to its runner that the
+    /// word waits (<c>reaches: resume</c>) is no taking. Read only where a hand is about to be made.
+    /// </summary>
+    private string? HandedBefore(IReadOnlyList<PriorSession> line, string helper)
+    {
+        foreach (var record in line)
+        {
+            if (record.Said?.FirstOrDefault(word => string.Equals(word.Helper, helper, StringComparison.Ordinal)) is { } waiting) return waiting.Id;
+            if (_context.Events.After(record.Session, 0).Events
+                    .LastOrDefault(each => each.Kind == SessionEventKind.User && each.Reaches is null
+                                           && string.Equals(each.Helper, helper, StringComparison.Ordinal)) is { } taken)
+            {
+                return taken.Id ?? "handed";
+            }
+        }
+
+        return null;
+    }
+
+    private void Forget(string ask)
+    {
+        lock (_heldGate) _held.Remove(ask);
+    }
+
+    private void ForgetHeldBut(IReadOnlyList<HelperAsk> asks)
+    {
+        var on = asks.Select(ask => ask.Id).ToHashSet(StringComparer.Ordinal);
+        lock (_heldGate)
+        {
+            foreach (var gone in _held.Keys.Where(ask => !on.Contains(ask)).ToList()) _held.Remove(gone);
+        }
+    }
+
+    // The waiting sessions whose move back to the person failed, by session, with the line said for it: each failure said once.
+    private readonly Dictionary<string, string> _backFailed = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// The sessions that waited on their own helper and have none of their own asks open any more (HELPERWAIT1, point 4): every helper
+    /// ended with no answer (refused, gone, unreadable, the person's no, past its bound), so each is brought back to the person as its
+    /// turn's end would have parked it, the reason first. Read from the look's records in memory. Only while its quest is still taken: a
+    /// quest closed meanwhile holds no park.
+    /// </summary>
+    /// <remarks>
+    /// <b>A failed move is tried again at every look, and said once</b> (Codex's round-2 #5 on COWORKUX1): nothing else moves the record,
+    /// so waiting for it to move would hold the lead for good. A service that could not be reached is said as a retry; one that refused the
+    /// move (a service from before it, a tree another holds) is said to the person as a wait, since the session is theirs until it moves.
+    /// One post a look, for a record in this rare state alone.
+    /// </remarks>
+    private async Task BackToPersonAsync(
+        Snapshot snapshot, IReadOnlyList<HelperAsk> asks, HelperFiles files, List<string> events, CancellationToken ct)
+    {
+        foreach (var record in snapshot.LastRun.Values.Where(HelperWaits.Waits))
+        {
+            if (!snapshot.Quests.Any(quest => quest.Status == "Taken" && string.Equals(quest.Id, record.Quest, StringComparison.OrdinalIgnoreCase))) continue;
+            if (HelperWaits.Open(record.Session, asks, files.ReadState).Count > 0) continue;
+
+            var transcript = DaorisHome.Entry(_context.Home, HomeEntry.Sessions, $"{record.Session}.log");
+            var back = Observation.HelperGone(
+                HelperWaits.Why(record.Session, asks, files.ReadState), SessionLastWords.ParkedWords(_context.Events, record.Session, transcript));
+            try
+            {
+                await _context.Service.AdvanceAsync(record.Session, back.State, back.Note, ct: ct, parts: back.Parts).ConfigureAwait(false);
+                lock (_heldGate) _backFailed.Remove(record.Session);
+                events.Add(_context.Said.Wait(
+                    "helper", $"helper  session {record.Session} waited on its own helper, which ended with no answer: it waits on the person again."));
+            }
+            catch (Exception error) when (error is HttpRequestException or DriverException or JsonException
+                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
+            {
+                // Classed where it is made (NOTIFY2h2's census): a refusal is the person's to look at, an unreachable service a retry.
+                var line = error is DriverException
+                    ? Helper(LookClass.Wait, $"helper  session {record.Session} waited on its own helper, which ended with no answer; the service refused bringing it back to the person, so it is yours to look at: {error.Message}")
+                    : Helper(LookClass.Retry, $"helper  session {record.Session} waited on its own helper, which ended with no answer, and could not be brought back to the person yet; it is tried again at the next look: {error.Message}");
+                lock (_heldGate)
+                {
+                    if (_backFailed.TryGetValue(record.Session, out var said) && said == line.Text) continue;
+                    _backFailed[record.Session] = line.Text;
+                }
+
+                events.Add(_context.Said.Say(line));
+            }
+        }
     }
 
     /// <summary>
@@ -385,40 +595,97 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     /// takes it open between turns, and ended: a shown event is left for the shell's chat runner, which says the word as its next
     /// turn, or goes the ended one on with it.
     /// </summary>
-    private async Task<LookLine?> DeliverHelperAsync(HelperAsk ask, HelperState state, HelperFiles files, CancellationToken ct)
+    /// <param name="seen">How the look's own list showed the asker (<see cref="Seen"/>), kept with a hand held; null from a pass's own settling.</param>
+    private async Task<LookLine?> DeliverHelperAsync(HelperAsk ask, HelperState state, HelperFiles files, CancellationToken ct, string? seen = null)
     {
         var service = _context.Service;
         var output = _context.Output;
-        var record = await service.RecordAsync(ask.Asker, ct).ConfigureAwait(false);
-        var never = record switch
+        // HELPERWAIT1 (D189 point 6): the newest record of the asker's line, as the hand door resolves it, so a left conversation is never
+        // reopened and the answer goes to the part that continues it.
+        var (asker, record, line, beyond) = await LineAsync(ask.Asker, ct).ConfigureAwait(false);
+        if (beyond)
         {
-            null => HelperWhy.AskerGone,
-            { Serves: not null } or { Opinion: not null } or { Ask.Length: > 0 } => HelperWhy.AskerUnfit,
-            _ when string.Equals(record.State, "stood-down", StringComparison.OrdinalIgnoreCase) => HelperWhy.CannotTake,
+            Forget(ask.Id);
+            return await RefuseAsync(ask, HelperWhy.CannotTake, state.Agent, files, ct,
+                    $"session {ask.Asker}'s line runs past sixteen links, so its newest part is not read and no part it left is handed the answer; the helper's conversation keeps it")
+                .ConfigureAwait(false);
+        }
+
+        var never = (asker, record) switch
+        {
+            (null, _) or (_, null) => HelperWhy.AskerGone,
+            ({ Serves: not null } or { Opinion: not null } or { Ask.Length: > 0 }, _) => HelperWhy.AskerUnfit,
+            (_, { Serves: not null } or { Opinion: not null } or { Ask.Length: > 0 }) => HelperWhy.AskerUnfit,
+            _ when string.Equals(record!.State, "stood-down", StringComparison.OrdinalIgnoreCase) => HelperWhy.CannotTake,
             _ => null,
         };
-        if (never is not null) return await RefuseAsync(ask, never, state.Agent, files, ct).ConfigureAwait(false);
+        if (never is not null)
+        {
+            Forget(ask.Id);
+            return await RefuseAsync(ask, never, state.Agent, files, ct).ConfigureAwait(false);
+        }
+
+        var to = record!.Session;
 
         // Never into a step in flight (D136): a running turn takes another agent's claim at its end, and a park after the person's
-        // answer. Said nowhere: each look would say it again, and the next look after the record ended hands it.
+        // answer. Said once (HELPERWAIT1, point 6), and not tried again until the asker moves; the next look after it ended hands it.
+        // 🔴 HELPERWAIT1 (Codex's round-2 #1 and #4 on COWORKUX1): a park the person answered takes it now, beside their answer, so its
+        // go-on hands both in one prompt; an unanswered park holds it, a park made before the rule included, since nothing on it proves
+        // it asked the person nothing (its question may stand in its closing words alone): the person's answer moves it, never the helper's.
         // A conversation open between turns is `working` and takes it (its runner says it as the next turn); one still starting waits.
         // 🔴 COWORK1d (the message-urgency design §5): an urgent ask's answer reaches a running asker this loop runs at its next step,
         // where its door takes words then, kept on its record for its run and held in its inbox under the record's id.
-        var conversation = record!.Kind == "chat";
+        var conversation = record.Kind == "chat";
         var open = conversation && string.Equals(record.State, "working", StringComparison.OrdinalIgnoreCase);
-        var inbox = ask.Urgent && !conversation && record.Running ? _context.Processes.InboxOf(ask.Asker) : null;
+        var inbox = ask.Urgent && !conversation && record.Running ? _context.Processes.InboxOf(to) : null;
         var nextStep = inbox?.ReachAt(MessageLevel.Urgent) == DrivenReach.NextStep;
-        if (!open && !nextStep && (record.Running || record.Parked)) return null;
+        if (!open && !nextStep && (record.Running || record is { Parked: true, AnsweredPark: false })) return Held(ask, record, seen);
+
+        // 🔴 One hand per ask (HELPERWAIT1, D188 point 4; Codex's round-2 #2 on COWORKUX1): the state is marked handed only after the keep,
+        // so a restart between the two can find an answer already handed. Its word is then waiting on a record of the asker's line, or a
+        // turn of one opened with it: marked handed, never handed twice. Nothing found proves nothing where a hand began (an event's write
+        // may have failed, a relay moved the word): the attempt mark, written before the door, says one did, and such an ask is never handed
+        // again by itself but settled as uncertain for the person, the answer kept in the helper's conversation.
+        if (HandedBefore(line, state.Helper!) is { } kept)
+        {
+            files.WriteState(state with { Handed = kept, Attempted = null });
+            Forget(ask.Id);
+            return Helper(LookClass.Progress, $"helper  ask `{ask.Id}` was handed to session {to} already, as word `{kept}`: it is not handed again.");
+        }
+
+        if (state.Attempted is not null)
+        {
+            Forget(ask.Id);
+            return await RefuseAsync(ask, HelperWhy.HandUncertain, state.Agent, files, ct).ConfigureAwait(false);
+        }
 
         var text = state.LastWords
             ? state.Words ?? ""
             : files.ReadAnswer(ask.Id)?.Answer ?? "";
         var agent = state.Agent ?? "another agent";
         var composed = HelperWords.Compose(agent, state.Helper!, ask.Question, text, state.LastWords, files.ReadCapture(ask.Id));
+        // The attempt mark, before the door (a write that fails hands nothing): kept until the door's answer is written.
+        files.WriteState(state with { Attempted = DateTimeOffset.UtcNow });
         var (handed, message, word) = await service.Helpers
             .HandAsync(state.Helper!, composed, ct, running: nextStep, level: ask.Urgent ? MessageLevels.Spelled(MessageLevel.Urgent) : null)
             .ConfigureAwait(false);
-        if (!handed) return Helper(LookClass.Retry, $"helper  ask `{ask.Id}` is answered, and waits to be handed to session {ask.Asker}: {message}");
+        // HELPERWAIT1: a hand the host refused kept nothing, so its mark goes; it is said once, and asked again only once the look shows
+        // its asker moved, never at every look.
+        if (handed == HelperHanded.Refused)
+        {
+            files.WriteState(state with { Attempted = null });
+            return Unhanded(ask, seen, Helper(LookClass.Retry, $"helper  ask `{ask.Id}` is answered, and waits to be handed to session {to}: {message}"));
+        }
+
+        // 🔴 HELPERWAIT1b (Codex's round-3 #2 on COWORKUX1): an answer lost after the door may have kept the word, so the mark stays and the
+        // outcome is uncertain until the next look reads the line back: the word found there marks it handed (above), and nothing found
+        // settles it uncertain for the person. It is never handed again.
+        if (handed == HelperHanded.Uncertain)
+        {
+            Forget(ask.Id);
+            return Helper(LookClass.Retry,
+                $"helper  ask `{ask.Id}`'s hand to session {to} is uncertain: {message}. The next look reads session {to}'s line for it, and never hands it twice.");
+        }
 
         // Held where the run takes it at its next step; one the inbox no longer takes stays on the record, which goes on with it once.
         var atNextStep = nextStep && word is not null && inbox!.HoldKept(
@@ -427,11 +694,12 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                 Id = word, Level = MessageLevel.Urgent,
                 Helped = new SaidWordView(word, composed, DateTimeOffset.UtcNow, [], true) { Helper = state.Helper, Level = MessageLevel.Urgent },
             },
-            new SaidDoor(service, ask.Asker));
-        files.WriteState(state with { Handed = word ?? "handed" });
+            new SaidDoor(service, to));
+        files.WriteState(state with { Handed = word ?? "handed", Attempted = null });
+        Forget(ask.Id);
         var noted = HelperNotes.Answered(agent, state.Helper!, state.LastWords);
-        output?.Append(ask.Asker, $"— {noted.Note}");
-        _context.Events.Keep(ask.Asker, new SessionEvent { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts }, say: null);
+        output?.Append(to, $"— {noted.Note}");
+        _context.Events.Keep(to, new SessionEvent { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts }, say: null);
 
         // The shell's chat runner hears this event, as it hears the person's words to an ended conversation (D137 §3.1), after the
         // note above so the turn it makes reads beneath it: the origin is Daoris's own (`target`), never the person's, and an
@@ -439,15 +707,49 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         if (conversation && word is not null)
         {
             _context.Events.Keep(
-                ask.Asker,
+                to,
                 new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Helper = state.Helper, Id = word, Text = composed, Reaches = "resume" },
                 say: null);
         }
 
         return Helper(LookClass.Progress, atNextStep
-            ? $"helper  ask `{ask.Id}` answered by {agent}: its answer reaches session {ask.Asker} at its next step, marked as the helper's."
-            : $"helper  ask `{ask.Id}` answered by {agent}: its answer is session {ask.Asker}'s next turn, marked as the helper's, at the driver's next look.");
+            ? $"helper  ask `{ask.Id}` answered by {agent}: its answer reaches session {to} at its next step, marked as the helper's."
+            : $"helper  ask `{ask.Id}` answered by {agent}: its answer is session {to}'s next turn, marked as the helper's, at the driver's next look.");
     }
+
+    /// <summary>
+    /// The asker's record, the newest record of its line and the line itself, oldest first (HELPERWAIT1, D189 point 6): the asker, then each
+    /// newest record continuing it by <c>from</c> (a hand-over, a move, a carry-on), followed as the hand door follows it, at most sixteen
+    /// links. Nulls and none where the asker is no record of this machine's. 🔴 HELPERWAIT1b (Codex's round-3 #4 on COWORKUX1): a line that
+    /// goes on past the bound is <c>Beyond</c>, its newest part unread, so the record where the bound stopped, which the line has left, is
+    /// never taken for it.
+    /// </summary>
+    private async Task<(PriorSession? Asker, PriorSession? Newest, IReadOnlyList<PriorSession> Line, bool Beyond)> LineAsync(string asker, CancellationToken ct)
+    {
+        var records = await _context.Service.RecordsAsync(ct).ConfigureAwait(false);
+        if (records.FirstOrDefault(record => string.Equals(record.Session, asker, StringComparison.Ordinal)) is not { } first) return (null, null, [], false);
+        var newest = first;
+        var line = new List<PriorSession> { first };
+        for (var hops = 0; hops <= LineBound; hops++)
+        {
+            var at = newest;
+            if (records.Where(record => string.Equals(record.From, at.Session, StringComparison.Ordinal))
+                    .OrderByDescending(record => record.Created).FirstOrDefault() is not { } next)
+            {
+                break;
+            }
+
+            // One more successor than the bound follows: the line is longer than it reads.
+            if (hops == LineBound) return (first, null, line, true);
+            newest = next;
+            line.Add(next);
+        }
+
+        return (first, newest, line, false);
+    }
+
+    /// <summary>How many links of an asker's line the look and the hand door follow, at most (HELPERWAIT1; the service's <c>HelperDesk</c>).</summary>
+    internal const int LineBound = 16;
 
     /// <summary>
     /// The helper's pass (MIXAGENT2a-ii; the reviewer's machinery, <see cref="PassAsync"/>): a read-only clone of the asker's

@@ -606,7 +606,7 @@ public sealed class SessionLedger(
 
         return await sessions.ExclusiveAsync(async inside =>
         {
-            var active = await sessions.ActiveForAsync(known.Repository, holding, inside).ConfigureAwait(false);
+            var active = await HolderAsync(known.Repository, holding, inside).ConfigureAwait(false);
             if (active is not null)
             {
                 return new SessionOpenOutcome(
@@ -1303,7 +1303,7 @@ public sealed class SessionLedger(
 
         return await sessions.ExclusiveAsync(async inside =>
         {
-            var active = await sessions.ActiveForAsync(quest.To, holding, inside).ConfigureAwait(false);
+            var active = await HolderAsync(quest.To, holding, inside).ConfigureAwait(false);
             if (active is not null)
             {
                 return new SessionOpenOutcome(SessionOpenRefusal.RepositoryBusy, Busy(quest.To, active), Session: null);
@@ -1389,6 +1389,8 @@ public sealed class SessionLedger(
             {
                 return target == SessionState.Working
                     ? await GoOnAsync(session, note, noteParts, evidence, transcript, now, inside).ConfigureAwait(false)
+                    : target == SessionState.AwaitingPerson && WaitedOnHelper(session)
+                    ? await BackToPersonAsync(session, note, noteParts, now, inside).ConfigureAwait(false)
                     : new SessionAdvanceOutcome(
                         SessionAdvanceRefusal.Terminal,
                         $"Session `{session.Id}` is {Spell(session.State)} — a finished session does not move.",
@@ -1457,7 +1459,7 @@ public sealed class SessionLedger(
         // Ask Daoris's holds its own workspace's one at a time (ASKSCOPE1a), as its start does: every workspace's runs in one room.
         var holder = IsHelp(session)
             ? await sessions.RunningInWorkspaceAsync(session.Repository, session.Workspace, parked: true, inside).ConfigureAwait(false)
-            : await sessions.ActiveForAsync(session.Repository, session.Tree, inside).ConfigureAwait(false);
+            : await HolderAsync(session.Repository, session.Tree, inside, except: session.Id).ConfigureAwait(false);
         if (holder is not null)
         {
             return new SessionAdvanceOutcome(SessionAdvanceRefusal.Busy, Busy(session.Repository, holder), Session: null);
@@ -1480,6 +1482,83 @@ public sealed class SessionLedger(
         return new SessionAdvanceOutcome(
             SessionAdvanceRefusal.None,
             $"Session `{id}` is working again: it goes on from {Spell(session.State)} with {with}.",
+            moved);
+    }
+
+    /// <summary>
+    /// The driver's code for a session that ended its turn on its own open helper ask (HELPERWAIT1; its <c>NoteCodes.EndedAwaitsHelper</c>,
+    /// a twin read here by its spelling): completed, since it waits on that helper and not on the person.
+    /// </summary>
+    internal const string EndedAwaitsHelper = "ended.awaits-helper";
+
+    /// <summary>Whether a finished record ended waiting on its own helper (HELPERWAIT1): completed, by that code.</summary>
+    private static bool WaitedOnHelper(Session session) =>
+        session.State == SessionState.Completed && NoteParts.Carries(session.NoteParts, EndedAwaitsHelper);
+
+    /// <summary>
+    /// The session holding <paramref name="repository"/>'s <paramref name="tree"/> (D51): an active one (<see cref="SessionStore.ActiveForAsync"/>),
+    /// else one that ended waiting on its own helper while its quest is still taken (HELPERWAIT1; Codex's #5 on COWORKUX1), which goes on
+    /// there with the answer or parks for the person, and so keeps its tree as a park does. <paramref name="except"/> is the record moving,
+    /// which holds nothing against itself.
+    /// </summary>
+    private async Task<Session?> HolderAsync(string repository, string? tree, CancellationToken inside, string? except = null)
+    {
+        if (await sessions.ActiveForAsync(repository, tree, inside).ConfigureAwait(false) is { } active) return active;
+        foreach (var waiting in await sessions.CompletedWithCodeAsync(repository, tree, EndedAwaitsHelper, inside).ConfigureAwait(false))
+        {
+            if (string.Equals(waiting.Id, except, StringComparison.Ordinal) || !WaitedOnHelper(waiting)) continue;
+            if (await quests.FindAsync(waiting.Quest!, inside).ConfigureAwait(false) is { Status: QuestStatus.Taken }) return waiting;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// The second move out of an ended state (HELPERWAIT1, D131's and D188's notes): a driven session of this machine's that ended waiting on
+    /// its own helper parks for the person when that helper ended with no answer, as its turn's end would have parked it, its note the
+    /// driver's (the reason, then the park's own line). Called inside <see cref="AdvanceAsync"/>'s step, the record already read.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Only that ending, and only to a park.</b> The record is still the one conversation (D131 §3), its quest still taken by it,
+    /// and nothing ran since it ended; the person's answer resumes that conversation as any park's does. A record words wait on goes on
+    /// with them instead; a teammate's, an intake, a pass or a helper, or one with no quest, does not move; and its tree must be free,
+    /// since a park holds it (D51).</para>
+    ///
+    /// <para><b>Its history stays</b> as a park's does: the note is the move's, and the evidence and the transcript are kept.</para>
+    /// </remarks>
+    private async Task<SessionAdvanceOutcome> BackToPersonAsync(
+        Session session, string? note, string? noteParts, DateTimeOffset now, CancellationToken inside)
+    {
+        var id = session.Id;
+        var refused = session switch
+        {
+            { Origin: { } origin } => $"Session `{id}` ran on `{origin}`; a finished record of another machine's does not move here.",
+            { Ask: not null } or { Opinion: not null } or { Serves: not null } or { Quest: null } =>
+                $"Session `{id}` holds no quest of its own to wait on the person for, so it does not move.",
+            { Said.Count: > 0 } => $"Session `{id}` has words waiting: it goes on with them, and does not park.",
+            _ => null,
+        };
+        if (refused is not null) return new SessionAdvanceOutcome(SessionAdvanceRefusal.Terminal, refused, Session: null);
+
+        // A park holds its quest (D83): one closed or taken elsewhere since it ended has nothing to wait on the person for.
+        if (await quests.FindAsync(session.Quest!, inside).ConfigureAwait(false) is not { Status: QuestStatus.Taken })
+        {
+            return new SessionAdvanceOutcome(
+                SessionAdvanceRefusal.Terminal, $"Session `{id}`'s quest `#{session.Quest}` is no longer taken, so it has nothing to park for.", Session: null);
+        }
+
+        if (await HolderAsync(session.Repository, session.Tree, inside, except: session.Id).ConfigureAwait(false) is { } holder)
+        {
+            return new SessionAdvanceOutcome(SessionAdvanceRefusal.Busy, Busy(session.Repository, holder), Session: null);
+        }
+
+        // Nothing waits on it (refused above), and this move never clears a word kept meanwhile, as a park's own end would.
+        var moved = await sessions
+            .SetStateAsync(id, SessionState.AwaitingPerson, note, evidence: null, transcript: null, now, inside, clearSaid: false, noteParts: noteParts)
+            .ConfigureAwait(false);
+        return new SessionAdvanceOutcome(
+            SessionAdvanceRefusal.None,
+            $"Session `{id}` waits on the person again: the helper it waited on ended with no answer.",
             moved);
     }
 
@@ -1703,7 +1782,7 @@ public sealed class SessionLedger(
     /// </remarks>
     private static string Busy(string repository, Session active) =>
         $"`{repository}`'s working tree already has an active session — `{active.Id}` "
-        + $"({Spell(active.State)}{(active.Quest is null ? ", a chat" : $", quest `#{active.Quest}`")}). "
+        + $"({(WaitedOnHelper(active) ? "waiting on its own helper" : Spell(active.State))}{(active.Quest is null ? ", a chat" : $", quest `#{active.Quest}`")}). "
         + "One session per working tree: two agents in one tree corrupt each other's git state.";
 
     /// <summary>

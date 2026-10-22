@@ -209,14 +209,33 @@ public sealed class QuestionFilesTests : IDisposable
         Assert.Equal(QuestionSettle.None, files.Clear("s1"));
     }
 
-    /// <summary>An unreadable question is no question to keep: it goes, so a park never shows half a file.</summary>
-    [Fact]
-    public void An_unreadable_question_goes_at_the_settle()
+    /// <summary>
+    /// 🔴 HELPERWAIT1b (Codex's round-3 #1 on COWORKUX1): a question on file that does not read is no proof none was asked, so the turn
+    /// parks for the person (<see cref="QuestionFiles.AskedSince"/> is null), and the park keeps the file, a first run's conclusion and a
+    /// resumed run's alike: nothing settles it away unread. The park still shows no half a file, since a read of it is none; a conclusion
+    /// that does not park keeps nothing, as before.
+    /// </summary>
+    [Theory]
+    [InlineData("first")]
+    [InlineData("resumed")]
+    public void An_unreadable_question_stays_with_the_park_it_ends_in(string run)
     {
-        Put("s1" + QuestionFiles.Suffix, "{ not json");
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
+        if (run == "resumed")
+        {
+            // The resumed run's go-on: the person's words handed to it after it opened, so its question binds to after them.
+            events.Keep("s1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Id = "w1", Text = "use the sheet", At = Opened.AddMinutes(2) }, say: null);
+        }
 
-        Assert.Equal(QuestionSettle.Gone, new QuestionFiles(_home).Settle("s1", "awaiting-person", Opened));
+        Put("s1" + QuestionFiles.Suffix, "{ \"id\": \"k1\", \"question\": ");
+        var files = new QuestionFiles(_home);
 
+        Assert.Null(files.AskedSince("s1", Opened));
+        Assert.Equal(QuestionSettle.Kept, files.SettleRun("s1", "awaiting-person", Opened, events));
+        Assert.True(File.Exists(PathOf("s1" + QuestionFiles.Suffix)));
+        Assert.Null(files.Read("s1"));
+
+        Assert.Equal(QuestionSettle.Gone, files.SettleRun("s1", "completed", Opened, events));
         Assert.False(File.Exists(PathOf("s1" + QuestionFiles.Suffix)));
     }
 

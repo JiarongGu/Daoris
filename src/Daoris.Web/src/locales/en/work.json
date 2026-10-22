@@ -112,6 +112,7 @@
   "work.shown.awaitingReply": "awaiting reply",
   "work.shown.answered": "answered",
   "work.shown.goingOn": "going on",
+  "work.shown.awaitingHelper": "awaiting helper",
   "work.timeline.title": "Timeline",
   "work.timeline.hint": "what was observed — process lifetime, the quest's transitions, and what landed in git. Never a reading of the stream.",
   "work.timeline.opened": "session opened",

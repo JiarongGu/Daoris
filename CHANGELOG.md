@@ -43,6 +43,14 @@ with the version and date at release.
   a tenth of a second. A start that cannot be contained (in a development build that has no launcher) runs as before. Each start
   is noted in the machine log as `agent.contained`. Nothing else changes until a later release lets you trust this machine's
   terminal.
+- A session that asks a helper and ends its turn so the helper can read now waits on that helper, not on you (HELPERWAIT1).
+  It no longer shows in *What needs you*; it shows under *Resumes later* as awaiting its helper, keeps its working tree, and goes
+  on by itself with the helper's answer. If the helper ends with no answer, the session comes to you with the reason. A session
+  waiting on your answer keeps waiting for it: once you answer, it goes on with your answer and its helper's together.
+- A session waiting on its helper now keeps its working tree until it reaches you, even when bringing it back to you failed
+  (HELPERWAIT1b). Before, the tidy could take that tree as soon as the helper's ask was refused. A question to you that Daoris could
+  not read now stays with the session waiting on your answer. A helper's answer whose handing got no clear reply is checked at the
+  next look and never handed twice.
 - A folder under Daoris's account homes that no agent or plugin names is no longer taken for an agent (POOLSTRAY1). An earlier
   start could leave such a folder, and its subfolders were folded in as accounts. Such a folder is now noted once in the machine
   log and otherwise left alone. If an earlier fold already wrote one into the account order, the next change of the accounts

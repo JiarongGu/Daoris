@@ -69,7 +69,13 @@ public sealed class HelperDoors
     /// a host from before refuses it as running, and the answer waits for the asker's end, as before.
     /// </param>
     /// <param name="level">The ask's level, kept beside the word: <c>urgent</c> where the ask was, else none.</param>
-    public async Task<(bool Handed, string Message, string? Word)> HandAsync(
+    /// <remarks>
+    /// 🔴 HELPERWAIT1b (Codex's round-3 #2 on COWORKUX1): the desk keeps the word before its answer is made, so only a refusal it gave says
+    /// nothing was kept: its own sentence on a bad request, a not-found or a conflict (<c>HelperReply</c>), or a host older than the door
+    /// answering a bare 404. Anything else, a status no refusal has, a success that does not read, or no answer at all (a timeout, a
+    /// broken connection), is <see cref="HelperHanded.Uncertain"/>: the word may wait on the line, and only a read of it says.
+    /// </remarks>
+    public async Task<(HelperHanded Outcome, string Message, string? Word)> HandAsync(
         string helper, string text, CancellationToken ct = default, bool running = false, string? level = null)
     {
         var door = $"/api/helpers/{Uri.EscapeDataString(helper)}/hand";
@@ -83,11 +89,43 @@ public sealed class HelperDoors
             writer.WriteEndObject();
         }
 
-        var (ok, status, payload, root) = await _service.PostJsonAsync(door, System.Text.Encoding.UTF8.GetString(stream.ToArray()), ct).ConfigureAwait(false);
-        if (root is not { } answer) return (false, $"the service at {_service.BaseUrl} has no `{door}` door ({status}) — is it older than this driver?", null);
-        if (!ok) return (false, Text(answer, "error") ?? payload, null);
+        bool ok;
+        int status;
+        string payload;
+        JsonElement? root;
+        try
+        {
+            (ok, status, payload, root) = await _service.PostJsonAsync(door, System.Text.Encoding.UTF8.GetString(stream.ToArray()), ct).ConfigureAwait(false);
+        }
+        catch (Exception lost) when (lost is HttpRequestException || (lost is OperationCanceledException && !ct.IsCancellationRequested))
+        {
+            return (HelperHanded.Uncertain, $"the service at {_service.BaseUrl} gave no answer to `{door}` ({lost.Message})", null);
+        }
 
-        var word = answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("said", out var said) ? Text(said, "id") : null;
-        return (true, Text(answer, "message") ?? "", word);
+        if (root is not { ValueKind: JsonValueKind.Object } answer)
+        {
+            return ok || status != 404
+                ? (HelperHanded.Uncertain, $"the service at {_service.BaseUrl} answered `{door}` with {status} that does not read", null)
+                : (HelperHanded.Refused, $"the service at {_service.BaseUrl} has no `{door}` door ({status}) — is it older than this driver?", null);
+        }
+
+        if (!ok)
+        {
+            var refused = status is 400 or 404 or 409 && Text(answer, "error") is not null;
+            return (refused ? HelperHanded.Refused : HelperHanded.Uncertain, Text(answer, "error") ?? payload, null);
+        }
+
+        var word = answer.TryGetProperty("said", out var said) ? Text(said, "id") : null;
+        return (HelperHanded.Kept, Text(answer, "message") ?? "", word);
     }
+}
+
+/// <summary>What a helper's hand came to (HELPERWAIT1b): its word kept, refused with nothing kept, or not known.</summary>
+public enum HelperHanded
+{
+    Kept,
+    Refused,
+
+    /// <summary>No answer that says either way: the word may wait on the asker's line, which the next look reads back.</summary>
+    Uncertain,
 }

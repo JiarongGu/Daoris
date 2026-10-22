@@ -106,6 +106,36 @@ public sealed class EntryPartsPlanTests
         Assert.Equal(StartVerdict.Waiting, Assert.Single(plan, c => c.Quest.Id == "3068f747").Verdict);
     }
 
+    /// <summary>
+    /// 🔴 HELPERWAIT1 (Codex's #5 on COWORKUX1): a part that ended waiting on its own helper still holds its tree, as a park does, though it
+    /// is completed and in no live list: it goes on there with the answer. A further part of its entry starts alongside, in a tree of its own,
+    /// and never into that one while its quest is taken; one whose quest is no longer taken holds nothing.
+    /// </summary>
+    [Theory]
+    [InlineData("Taken", true)]
+    [InlineData("Done", false)]
+    public void A_request_whose_entrys_newest_part_waits_on_its_own_helper_starts_alongside(string status, bool held)
+    {
+        var waiting = B1 with { NoteParts = [NoteCodes.EndedAwaitsHelper.Part("It asked a helper, and waits on its answer.")], Note = "It asked a helper." };
+        var snapshot = At0759() with
+        {
+            Quests =
+            [
+                Quest("3068f747", "db", status),
+                new QuestView("01ba2c71", "app", "db", "Ask 01ba2c71", "Why.", "Open") { PublishedBy = "8eba4af2" },
+            ],
+            Active = [],
+            LastRun = new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase) { ["3068f747"] = waiting },
+        };
+
+        var started = Assert.Single(Planner.Plan(snapshot, Config()), c => c.Quest.Id == "01ba2c71");
+
+        Assert.Equal(StartVerdict.Start, started.Verdict);
+        var entry = Assert.IsType<EntryParts>(started.Entry);
+        Assert.Equal(held ? null : "283ef343", entry.Into?.Session);
+        Assert.Equal(held ? "283ef343" : null, entry.HeldBy);
+    }
+
     /// <summary>PAR1 stands: a request of another line of work in the same repository is its own entry, side by side.</summary>
     [Fact]
     public void A_request_of_another_entry_in_the_same_repository_starts_in_a_tree_of_its_own()

@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
@@ -680,6 +681,51 @@ public sealed class BranchTidyingTests : IDisposable
         Assert.NotNull((await client.SayAsync("s-waiting", "fix the review comment")).Word);
 
         Assert.Equal([waiting], await client.WaitingTreesAsync());
+    }
+
+    /// <summary>
+    /// 🔴 HELPERWAIT1 (Codex's #5 on COWORKUX1): a session that ended waiting on its own helper keeps its tree from the tidy while its quest is
+    /// still taken, since it goes on there with the answer or parks for the person; one that ended any other way never did.
+    /// 🔴 HELPERWAIT1b (Codex's round-3 #3): its ask refused and its move back to the person failed, it is still completed and waiting, with
+    /// no ask open: it keeps its tree until that move lands (then it is active), it goes on, or its quest is no longer taken, as the
+    /// service's holder reads it (<c>SessionLedger.HolderAsync</c>), never on an ask being open.
+    /// </summary>
+    [Fact]
+    public async Task A_session_waiting_on_its_own_helper_keeps_its_tree_while_its_quest_is_taken()
+    {
+        using var ledger = new StandInLedger();
+        var waiting = DaorisHome.Entry(_home, HomeEntry.Trees, "default", "engine", "s-5e6f7a8b");
+        ledger.Publish("q1", "engine");
+        ledger.Driven("s-waiting", "q1", waiting, state: "completed");
+        ledger.Noted("s-waiting", "ended.awaits-helper");
+        ledger.Working("s-done", "engine", HomeTree, state: "completed");
+        var files = new HelperFiles(_home);
+        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Helpers));
+        File.WriteAllText(files.PathOf("a1b2c3d4", "ask"), new JsonObject
+        {
+            ["id"] = "a1b2c3d4", ["asker"] = "s-waiting", ["question"] = "Why?", ["agent"] = null, ["askedBy"] = HelperAsk.ByAgent,
+            ["at"] = DateTimeOffset.UtcNow.ToString("O"),
+        }.ToJsonString());
+        File.WriteAllText(files.PathOf("e5f6a7b8", "ask"), new JsonObject
+        {
+            ["id"] = "e5f6a7b8", ["asker"] = "s-done", ["question"] = "Why?", ["agent"] = null, ["askedBy"] = HelperAsk.ByAgent,
+            ["at"] = DateTimeOffset.UtcNow.ToString("O"),
+        }.ToJsonString());
+        using var client = ledger.Client();
+
+        Assert.Equal([waiting], await BranchTidying.InUseAsync(_home, client, null, CancellationToken.None));
+
+        // Refused, and its move back to the person failed: the record is unchanged, and still holds its tree.
+        files.WriteState(new HelperState("a1b2c3d4", HelperStates.Refused, HelperWhy.NoAnswer, null, DateTimeOffset.UtcNow));
+        Assert.Equal([waiting], await BranchTidying.InUseAsync(_home, client, null, CancellationToken.None));
+
+        // No ask on file at all reads the records still.
+        File.Delete(files.PathOf("a1b2c3d4", "ask"));
+        File.Delete(files.PathOf("e5f6a7b8", "ask"));
+        Assert.Equal([waiting], await BranchTidying.InUseAsync(_home, client, null, CancellationToken.None));
+
+        ledger.Move("q1", "Done");
+        Assert.Empty(await BranchTidying.InUseAsync(_home, client, null, CancellationToken.None));
     }
 
     /// <summary>With no set-up waiting and no desk, nothing is reviewed here.</summary>
