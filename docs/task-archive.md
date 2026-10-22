@@ -19435,3 +19435,10 @@ note. On Opus.
 **Outcome** 2026-10-22: a roll-back from the journal holds the install home's lease as a swap (`InstallSwap.LeaseHome`), at the
 launcher's start and after its error; an act holding it past the wait leaves the journal for the next start, and the launcher starts
 nothing on `app/` and names the holder (`HeldBy`). Finishing a confirmed swap takes none. Detail: D171's SWAPLEASE2 note. On Opus.
+
+## FABRIC-CUTOVER1f — the person's skip and stop of a run's node (2026-10-22, D190)
+
+> - [ ] **FABRIC-CUTOVER1f — the person's skip and stop of a run's node** (driver, modules, web-shell, cli; after 1c, 1e; built before 1d; D190, design §5.2). Given with their words at the run's view and the terminal, kept on the run's record by the door under the lock and the lease in a field of its own that a record from before reads as none (as `WorkPerformer.cs:421-447` keeps a held attempt's word), applied by the next pass. Proof: a go-ahead nobody raised, skipped with words, lets `handed` begin; a stop ends the run, said; a skip with no words refused; a node after `handed` told for two runs at one tip, skipped with words; the door or exemption row in `HelpCoverageTests`.
+
+**Outcome** 2026-10-22: built, the cli lane untouched: *Pass over…* and *Stop…* under a graph run's node and `daoris-driver workflow skip|stop`,
+kept in `NodeRecord.Pending` and applied by the next pass; no window was looked at. Detail: D190's CUTOVER1f note. On Opus.
