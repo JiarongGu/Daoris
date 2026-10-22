@@ -134,6 +134,8 @@ export const HOME_ENTRIES = [
   row('keeping', 'data', 'data/keeping.json', 'keeping.json'),
   row('notices', 'data', 'data/notices.json', 'notices.json'),
   row('git-identities', 'data', 'data/git-identities.json', 'data/git-identities.json'),
+  // TERMTRUST1a (D201 point 6): named here, never read by the CLI.
+  row('standing-confirmation', 'data', 'data/standing-confirmation.json', 'data/standing-confirmation.json'),
   row('keys', 'profiles', 'profiles/keys.json', 'keys.json'),
   row('remotes', 'profiles', 'profiles/remotes.json', 'remotes.json'),
   row('agent-homes', 'profiles', 'profiles/agents/*/*', 'harnesses/*/*'),
