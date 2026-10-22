@@ -5,6 +5,26 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-22 — Dismissing Ask Daoris's card about a quest it had published was told to the agent as the person's word (ASKDISMISS1)
+
+- **Symptom:** the owner, using Daoris: after applying a proposal that published a quest, the conversation showed a card about
+  that quest with a press to go to it; pressing its other button did something to the quest, which a session had already taken,
+  where the person only wanted the card gone.
+- **Root cause:** that card is a `go` proposal (`Open Quests → quest …`, *Go there*), and its other press was *Not now*, every
+  kind's. The page sent `HELP_DISMISS` (`AskConversation.tsx`, `useSettleHelp`), which settled the card `dismissed` and said
+  "Not now: the person did not apply `#<id>`." into the conversation in the person's words (`HelpRoutes.HelpDismissAsync`). That
+  started a turn in which the agent could take the press for the person's word on the quest the card named, and act on it. A go
+  changes nothing (HELP6), so there was nothing for the press to answer. The card also never said the quest was taken: a go's
+  sentence named done, declined and closed only.
+- **Fix:** `HelpProposals.Dismiss` settles the card and tells the conversation nothing for a `go`; a change's *Not now* is still the
+  person's answer (D89). The route says nothing for a go. The page words a go's second press *Dismiss* (移除, a notice's word for
+  taking something out of a list), never *Not now*. A go to a taken quest says `, taken`, and one to an ask names its taken quest.
+  The room tells the helper that a go card's dismiss tells it nothing.
+- **Verification:** seen failing first, then green: `HelpGoProposalsTests` (the dismiss, and the taken quest and ask rows),
+  `HelpRoomMayProposeTests`, `DriverModuleHelpTests.Dismissing_a_go_card_settles_it_and_tells_the_conversation_nothing`,
+  `ProposalCard.test.tsx` (three cases) and `AskDaoris.test.tsx`'s dismiss case. The last presses *Dismiss* and holds that the
+  page sends one `HELP_DISMISS`, no Apply, no words and no quest's or ask's route, and that the card leaves. No window was looked at.
+
 ## 2026-10-22 — The modules suite's account tests on `main` still asked for the scopes the fold retires, and the push missed `pooled` (POOL1a1)
 
 - **Symptom:** red on `main` after POOL1a1: `AgentAccountsBothWaysTests` 20 of 29, `AccountsStateSliceTests` 2, `HelpFileDoorsTests`'

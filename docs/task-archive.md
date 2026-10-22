@@ -19490,3 +19490,10 @@ once. `/api/sync` names the undeclared machines, pushed to the window, where Set
 en and zh; `sync status` prints them. Proof: `QuestClosureHandshakeTests`, `SharedHostTests`, `LocalHostTests`, `PersonDoorTableTests`,
 `RemoteSyncTests`, `SyncStateSliceTests`, `WorkspaceSetup.test.tsx`; the service's, driver's and modules' fast halves. On Opus. Detail:
 D173's FABRIC-CLOSE1i2 note.
+
+## ASKDISMISS1 — dismissing Ask Daoris's card about a published quest is a view act only (2026-10-22, D89)
+
+> - [ ] **ASKDISMISS1 — dismissing Ask Daoris's card about a published quest is a view act only** (driver, modules, web-shell; the owner's report while using Daoris, 2026-10-22). After a proposal that publishes a quest is applied, the conversation shows a card about that quest with its press to go there; dismissing it must only take the card out of the conversation, never decline, withdraw, close, delete or otherwise touch the quest, the applied result or its session, and a card about a quest already taken says so. Proof: a test that the dismiss sends no act on the quest and hides the card; a test that a taken quest's card says it is taken; stories in en and zh.
+
+**Outcome** 2026-10-22: a go card's second press is *Dismiss* (移除): it settles the card and tells the conversation nothing, and a go to a
+taken quest says so. Detail: the fix log's ASKDISMISS1 entry, the Ask Daoris design §6's note. On Opus.

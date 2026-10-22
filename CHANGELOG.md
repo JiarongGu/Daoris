@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- In Ask Daoris, a card that suggests a screen, such as the one that takes you to a quest it published, now reads *Go there* and
+  *Dismiss*. *Dismiss* only takes the card out of the conversation: Ask Daoris is told nothing, and the quest is left as it is. It
+  was *Not now*, which Ask Daoris was told as your answer. A card about a quest a session has taken says it is taken. In English
+  and 中文.
 - A machine that left a workspace you share through a remote, or whose Daoris store was deleted, no longer keeps its workflows from
   closing their quests. The workspace's *Setup*, under *Remote and reach*, now lists *Machines not declared*: each machine the remote
   counts that has not said it knows a workflow that closes its quests. *Retire* takes one out of what the remote counts, and the
