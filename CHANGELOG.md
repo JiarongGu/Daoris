@@ -5,6 +5,17 @@ with the version and date at release.
 
 ## Unreleased
 
+- An agent's page now shows its accounts as Daoris's accounts, one set that every workspace's work may run on (D197). Adding an
+  account asks only its name, and says the account joined Daoris's accounts; nothing asks which workspaces it may run work in. The
+  rows no longer say *Runs for*, and their ⋯ no longer offers a default or a list to add to or take from. *How accounts are used*
+  orders every account, up and down, with one set of settings for every workspace, and the *Workspaces* fold is gone. Where Daoris
+  folded an older machine's or workspace's lists into the set, what changed is said above the accounts until you press *Got it*.
+  Your own sign-in's row is its name and its ⓘ alone: Daoris never asks it, signs it in or out, or changes it. The start dialog lists
+  the accounts in their order with no *Not in … list* group, *What needs you* no longer offers to let an account run a workspace,
+  a folder held on your own sign-in's file says to trust it with the tool itself at your terminal, with no *Trust this folder*, and a
+  workspace's page lists Daoris's accounts in their order. A start that takes the order's first says so, the next start's line
+  speaks of the order and of Daoris's accounts rather than of a list or *here*, and *This machine's list* is said nowhere. In
+  English and 中文.
 - Ask Daoris now keeps the asks and quests each conversation published. Under the conversation's head, *Published from this
   conversation* says what stands (open, taken, done, declined, and what waits on you first); opened, each ask lists the quests it
   became, a taken quest names its session's state, and each row opens its record on Quests in one press. Their states move as the
