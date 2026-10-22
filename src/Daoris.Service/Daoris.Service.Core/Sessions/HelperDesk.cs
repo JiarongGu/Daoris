@@ -153,8 +153,11 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
                 { Opinion: { } reads } => $"Session `{asker.Id}` read the work for second opinion `{reads}`: a pass takes no words",
                 { Serves: not null } => $"Session `{asker.Id}` is a helper itself: it takes no words",
                 { State: SessionState.StoodDown } => $"Session `{asker.Id}` stood down, so it has nothing to go on with",
-                { State: SessionState.AwaitingPerson } =>
+                { State: SessionState.AwaitingPerson, Answer: null } =>
                     $"Session `{asker.Id}` waits on the person's answer: a helper's answer reaches it at a turn's end, once it is answered",
+                // HELPERWAIT1 (Codex's round-2 #1 on COWORKUX1): a park the person answered takes it beside their answer, so its go-on
+                // hands both in one prompt; the answer is theirs, and it alone moves the park.
+                { State: SessionState.AwaitingPerson } => null,
                 // An open conversation between turns (MIXAGENT2a-iii) is working: the chat runner says the word as its next turn,
                 // or at its turn's end, which it alone knows. One still being started is not open yet.
                 { Kind: SessionKind.Chat, State: SessionState.Working } => null,

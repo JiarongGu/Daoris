@@ -127,11 +127,12 @@ public sealed class HelperWaitTickTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A session the install parked before the rule, on the clean-exit park, while its own helper read: once the ask is answered the
-    /// next look completes the park as the wait it was and hands the answer, and the look after it goes on in its own conversation.
+    /// 🔴 A session the install parked before the rule, on the clean-exit park, while its own helper read (Codex's round-2 #1 and #4 on
+    /// COWORKUX1): nothing proves it asked the person nothing, so it stays parked and its helper's answer waits, the look not trying it
+    /// again; once the person answers, the next look hands the answer beside theirs and the same record goes on with both in one prompt.
     /// </summary>
     [Fact]
-    public async Task A_session_parked_on_its_own_helper_before_the_rule_is_handed_the_answer_and_goes_on()
+    public async Task A_session_parked_on_its_own_helper_before_the_rule_goes_on_with_both_answers_once_the_person_answers()
     {
         await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
         var driver = Driver(service, "parks");
@@ -148,17 +149,21 @@ public sealed class HelperWaitTickTests : IDisposable
             new JsonObject { ["id"] = AskId, ["helper"] = HelperId, ["answer"] = Answer, ["at"] = DateTimeOffset.UtcNow.ToString("O") }.ToJsonString());
 
         await driver.RunOnceAsync().WaitAsync(Poll.Patience);
-        Assert.True(service.State("s1") == "completed", service.Record("s1"));
-        Assert.Contains("\"code\":\"ended.awaits-helper\"", service.Record("s1"));
-        Assert.Single(service.HelperHands);
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.True(service.State("s1") == "awaiting-person", service.Record("s1"));
+        Assert.Empty(service.HelperHands);
+        Assert.Null(Files.ReadState(AskId)!.Handed);
 
+        await service.SayAsync("s1", "Use port 8080.");
         var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}\nstates: {string.Join(", ", service.States("s1"))}";
+        Assert.Single(service.HelperHands);
         Assert.True(service.Status("q1") == "Done", seen);
-        Assert.True(service.States("s1").SequenceEqual(["starting", "working", "awaiting-person", "completed", "working", "completed"]), seen);
+        Assert.True(service.States("s1").SequenceEqual(["starting", "working", "awaiting-person", "working", "completed"]), seen);
         var prompt = Heard().Last(line => line["method"]!.GetValue<string>() == "session/prompt");
-        Assert.Contains(prompt["blocks"]!.AsArray(), block => block!.GetValue<string>().Contains(Answer, StringComparison.Ordinal));
+        var blocks = string.Join("\n", prompt["blocks"]!.AsArray().Select(block => block!.GetValue<string>()));
+        Assert.True(blocks.Contains(Answer, StringComparison.Ordinal) && blocks.Contains("Use port 8080.", StringComparison.Ordinal), blocks);
     }
 
     /// <summary>The ask as <c>helper_ask</c> writes it, the agent's, made at <paramref name="at"/>.</summary>

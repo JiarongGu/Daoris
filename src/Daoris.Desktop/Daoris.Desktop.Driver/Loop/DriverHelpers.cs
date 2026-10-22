@@ -70,7 +70,19 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                         if (state.Handed is null && !HeldStill(ask, snapshot))
                         {
                             var seen = Seen(snapshot, ask.Asker);
-                            await SettlingAsync(ask, events, token => DeliverHelperAsync(ask, state, files, token, seen), ct).ConfigureAwait(false);
+                            // Codex's round-2 #1: a park the person answered goes on at this look's plan, so its helper's answer is handed
+                            // here, before the plan, never beside it, and both reach it in one prompt.
+                            if (_context.Beside && seen is { } shown && shown.EndsWith("|answered", StringComparison.Ordinal))
+                            {
+                                if (await SettleOnceAsync(ask, token => DeliverHelperAsync(ask, state, files, token, seen), ct).ConfigureAwait(false) is { } line)
+                                {
+                                    events.Add(_context.Said.Say(line));
+                                }
+                            }
+                            else
+                            {
+                                await SettlingAsync(ask, events, token => DeliverHelperAsync(ask, state, files, token, seen), ct).ConfigureAwait(false);
+                            }
                         }
 
                         continue;
@@ -154,19 +166,9 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     {
         var files = new HelperFiles(_context.Home);
         if (HelperWaits.Open(session, files.Asks(), files.ReadState).Count == 0) return false;
-        if (new QuestionFiles(_context.Home).Read(session) is { } asked && asked.At >= since) return false;
+        // A question on file that does not read is no proof that none was asked (Codex's round-2 #3): it parks, as one asked does.
+        if (new QuestionFiles(_context.Home).AskedSince(session, since) != false) return false;
         return await AskedGoAheadAsync(session, quest.From, ct).ConfigureAwait(false) == false;
-    }
-
-    /// <summary>
-    /// Whether a park asks the person something besides its helper (HELPERWAIT1, point 3): its question on file, which is its last turn's
-    /// while it is parked (PARKVIEW1), or a go-ahead it asked that still waits on them; null where the go-aheads could not be read.
-    /// </summary>
-    private async Task<bool?> AsksThePersonAsync(PriorSession park, CancellationToken ct)
-    {
-        if (new QuestionFiles(_context.Home).Read(park.Session) is not null) return true;
-        var quest = park.Quest is { } id ? await _context.Service.FindQuestAsync(id, ct).ConfigureAwait(false) : null;
-        return await AskedGoAheadAsync(park.Session, quest?.From, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -274,15 +276,21 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         }
     }
 
-    // The waiting sessions whose move back to the person the host refused, by session and when it last moved: tried again once it moves.
-    private readonly HashSet<string> _backRefused = new(StringComparer.Ordinal);
+    // The waiting sessions whose move back to the person failed, by session, with the line said for it: each failure said once.
+    private readonly Dictionary<string, string> _backFailed = new(StringComparer.Ordinal);
 
     /// <summary>
     /// The sessions that waited on their own helper and have none of their own asks open any more (HELPERWAIT1, point 4): every helper
     /// ended with no answer (refused, gone, unreadable, the person's no, past its bound), so each is brought back to the person as its
-    /// turn's end would have parked it, the reason first. Read from the look's records in memory; a host that refuses the move is told
-    /// once, and asked again once the record moves. Only while its quest is still taken: a quest closed meanwhile holds no park.
+    /// turn's end would have parked it, the reason first. Read from the look's records in memory. Only while its quest is still taken: a
+    /// quest closed meanwhile holds no park.
     /// </summary>
+    /// <remarks>
+    /// <b>A failed move is tried again at every look, and said once</b> (Codex's round-2 #5 on COWORKUX1): nothing else moves the record,
+    /// so waiting for it to move would hold the lead for good. A service that could not be reached is said as a retry; one that refused the
+    /// move (a service from before it, a tree another holds) is said to the person as a wait, since the session is theirs until it moves.
+    /// One post a look, for a record in this rare state alone.
+    /// </remarks>
     private async Task BackToPersonAsync(
         Snapshot snapshot, IReadOnlyList<HelperAsk> asks, HelperFiles files, List<string> events, CancellationToken ct)
     {
@@ -290,11 +298,6 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         {
             if (!snapshot.Quests.Any(quest => quest.Status == "Taken" && string.Equals(quest.Id, record.Quest, StringComparison.OrdinalIgnoreCase))) continue;
             if (HelperWaits.Open(record.Session, asks, files.ReadState).Count > 0) continue;
-            var key = $"{record.Session}|{record.Updated?.ToUnixTimeMilliseconds()}";
-            lock (_heldGate)
-            {
-                if (_backRefused.Contains(key)) continue;
-            }
 
             var transcript = DaorisHome.Entry(_context.Home, HomeEntry.Sessions, $"{record.Session}.log");
             var back = Observation.HelperGone(
@@ -302,15 +305,24 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
             try
             {
                 await _context.Service.AdvanceAsync(record.Session, back.State, back.Note, ct: ct, parts: back.Parts).ConfigureAwait(false);
+                lock (_heldGate) _backFailed.Remove(record.Session);
                 events.Add(_context.Said.Wait(
                     "helper", $"helper  session {record.Session} waited on its own helper, which ended with no answer: it waits on the person again."));
             }
             catch (Exception error) when (error is HttpRequestException or DriverException or JsonException
                                               || (error is OperationCanceledException && !ct.IsCancellationRequested))
             {
-                lock (_heldGate) _backRefused.Add(key);
-                events.Add(_context.Said.Retry(
-                    "helper", $"helper  session {record.Session} waited on its own helper, which ended with no answer, and could not be brought back to the person: {error.Message}"));
+                var refused = error is DriverException;
+                var line = refused
+                    ? $"helper  session {record.Session} waited on its own helper, which ended with no answer; the service refused bringing it back to the person, so it is yours to look at: {error.Message}"
+                    : $"helper  session {record.Session} waited on its own helper, which ended with no answer, and could not be brought back to the person yet; it is tried again at the next look: {error.Message}";
+                lock (_heldGate)
+                {
+                    if (_backFailed.TryGetValue(record.Session, out var said) && said == line) continue;
+                    _backFailed[record.Session] = line;
+                }
+
+                events.Add(refused ? _context.Said.Wait("helper", line) : _context.Said.Retry("helper", line));
             }
         }
     }
@@ -596,18 +608,11 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
 
         var to = record!.Session;
 
-        // 🔴 HELPERWAIT1 (point 3): a park the install made before the rule, while this ask's helper read, is no question of the
-        // person's: its agent asked this ask, ended its turn so the helper could read, and parked on the clean exit. It is completed as
-        // the wait on its helper it was, and handed the answer as such a session is, at once. A park that asks the person anything else
-        // (its question, a go-ahead), one made before the ask or one the person answered is theirs, and holds the answer as before.
-        if (record.Parked && HelperWaits.ParkedOn(record, ask) && await AsksThePersonAsync(record, ct).ConfigureAwait(false) == false)
-        {
-            await service.AdvanceAsync(to, "completed", Observation.AwaitsHelper, ct: ct).ConfigureAwait(false);
-            record = record with { State = "completed" };
-        }
-
         // Never into a step in flight (D136): a running turn takes another agent's claim at its end, and a park after the person's
         // answer. Said once (HELPERWAIT1, point 6), and not tried again until the asker moves; the next look after it ended hands it.
+        // 🔴 HELPERWAIT1 (Codex's round-2 #1 and #4 on COWORKUX1): a park the person answered takes it now, beside their answer, so its
+        // go-on hands both in one prompt; an unanswered park holds it, a park made before the rule included, since nothing on it proves
+        // it asked the person nothing (its question may stand in its closing words alone): the person's answer moves it, never the helper's.
         // A conversation open between turns is `working` and takes it (its runner says it as the next turn); one still starting waits.
         // 🔴 COWORK1d (the message-urgency design §5): an urgent ask's answer reaches a running asker this loop runs at its next step,
         // where its door takes words then, kept on its record for its run and held in its inbox under the record's id.
@@ -615,7 +620,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         var open = conversation && string.Equals(record.State, "working", StringComparison.OrdinalIgnoreCase);
         var inbox = ask.Urgent && !conversation && record.Running ? _context.Processes.InboxOf(to) : null;
         var nextStep = inbox?.ReachAt(MessageLevel.Urgent) == DrivenReach.NextStep;
-        if (!open && !nextStep && (record.Running || record.Parked)) return Held(ask, record, seen);
+        if (!open && !nextStep && (record.Running || record is { Parked: true, AnsweredPark: false })) return Held(ask, record, seen);
 
         // 🔴 One hand per ask (HELPERWAIT1, D188 point 4): the state is marked handed only after the keep, so a restart between
         // the two finds an answer already handed. Its word is then still waiting on the asker, or a turn of the asker's opened with it

@@ -262,7 +262,10 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             var after = await ResumedAfterAsync(service, quest, sessionId, target.Language, ct).ConfigureAwait(false);
             resume = new ResumeAsk(
                 kept.Conversation, words,
-                Continuations.OpeningNoted(adapter.Name, selection.Version, park.HarnessVersion, answer: park.Parked, findings, persons, helper, daoris),
+                // HELPERWAIT1: a helper's answer handed beside the person's at this look is among the words, though not among the look's.
+                Continuations.OpeningNoted(
+                    adapter.Name, selection.Version, park.HarnessVersion, answer: park.Parked, findings, persons,
+                    helper || words.Any(word => word.Helper is not null), daoris),
                 // Where its go-aheads changed since it started (AUTONOMY1c), told after the rest, since its instruction is not handed again.
                 Continuations.AfterWords(
                     Continuations.AfterWords(inSync, after),

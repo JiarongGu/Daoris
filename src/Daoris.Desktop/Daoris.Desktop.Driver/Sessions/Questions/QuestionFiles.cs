@@ -60,6 +60,17 @@ public sealed class QuestionFiles(string home)
         }
     }
 
+    /// <summary>
+    /// Whether the session asked the person a question at or after <paramref name="since"/> (HELPERWAIT1; Codex's round-2 #3 on COWORKUX1):
+    /// false where no file is on disk or its question was asked before, true where it was asked since, and null where a file is there and
+    /// does not read (busy, broken, past a bound), which a caller deciding that nobody waits on the person must read as a question.
+    /// </summary>
+    public bool? AskedSince(string session, DateTimeOffset since)
+    {
+        if (!SessionEventText.IsLocalId(session) || !File.Exists(PathOf(session))) return false;
+        return Read(session) is { } asked ? asked.At >= since : null;
+    }
+
     /// <summary>The question a file's text holds, held to the writer's bounds; null where it holds none.</summary>
     internal static ParkQuestion? Parsed(string text, string session, Func<DateTimeOffset> written)
     {

@@ -131,6 +131,30 @@ public sealed class HelperHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// HELPERWAIT1 (Codex's round-2 #1 on COWORKUX1): a park waits on the person, so its helper's answer is refused while they have not
+    /// answered, and kept beside their answer once they have: its go-on then hands both in one prompt, the person's answer still theirs.
+    /// </summary>
+    [Fact]
+    public async Task A_park_takes_its_helpers_answer_only_once_the_person_answered_it()
+    {
+        var sessions = host.Composed.Sessions;
+        var asker = await sessions.CreateAsync(null, "Parked", "stub", DateTimeOffset.UtcNow, kind: Daoris.Knowledge.SessionKind.Driven, tree: "trees/default/Parked/s-22222222");
+        await sessions.SetStateAsync(asker.Id, Daoris.Knowledge.SessionState.AwaitingPerson, "It stopped to ask you.", null, null, DateTimeOffset.UtcNow);
+        var helper = await sessions.CreateAsync(null, "Parked", "codex-acp", DateTimeOffset.UtcNow, kind: Daoris.Knowledge.SessionKind.Chat, serves: asker.Id);
+
+        Assert.Equal(409, (await host.PostAsync($"/api/helpers/{helper.Id}/hand", new { text = "Helper says five." })).Status);
+        Assert.Empty((await sessions.FindAsync(asker.Id))!.Said);
+
+        await sessions.KeepSaidAsync(asker.Id, new Daoris.Knowledge.SaidWord("person01", "Port 8080.", DateTimeOffset.UtcNow, []));
+        Assert.Equal(200, (await host.PostAsync($"/api/helpers/{helper.Id}/hand", new { text = "Helper says five." })).Status);
+
+        var record = (await sessions.FindAsync(asker.Id))!;
+        Assert.Equal(Daoris.Knowledge.SessionState.AwaitingPerson, record.State);
+        Assert.Equal(["person01", null], record.Said.Select(word => word.Helper is null ? word.Id : null));
+        Assert.Equal("Port 8080.", record.Answer);
+    }
+
+    /// <summary>
     /// MIXAGENT2a-iii: a conversation that asked is handed the answer while it is open (working, between turns), since the chat
     /// runner says it as the conversation's next turn; a conversation still being started, an intake, a helper and a stood-down
     /// record keep their refusals.

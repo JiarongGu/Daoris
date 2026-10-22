@@ -59,6 +59,12 @@ internal sealed class OpinionStandIn : HttpMessageHandler
     /// <summary>How many times a helper's hand was asked, taken or refused (HELPERWAIT1: a hand the host refuses is not asked again until its asker moves).</summary>
     public int HelperHandsAsked { get; private set; }
 
+    /// <summary>How many moves were asked of the state door, made or not (HELPERWAIT1).</summary>
+    public int MovesAsked { get; private set; }
+
+    /// <summary>Where set, the state door fails every move (HELPERWAIT1): <c>unreachable</c> as a transport failure, <c>refused</c> as a refusal.</summary>
+    public string? StateFailure { get; set; }
+
     /// <summary>Where set, every helper's hand is refused with this reason (HELPERWAIT1), as an older or a failing desk refuses one.</summary>
     public string? HelperHandRefusal { get; set; }
 
@@ -193,6 +199,10 @@ internal sealed class OpinionStandIn : HttpMessageHandler
                 case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/state", StringComparison.Ordinal):
                 {
                     var id = Uri.UnescapeDataString(path["/api/sessions/".Length..^"/state".Length]);
+                    MovesAsked++;
+                    // HELPERWAIT1 (Codex's round-2 #5): a door that cannot be reached, or one that refuses the move.
+                    if (StateFailure == "unreachable") throw new HttpRequestException("the service did not answer");
+                    if (StateFailure == "refused") return Refuse(HttpStatusCode.Conflict, "this service does not make that move");
                     var record = Find(id);
                     if (record is null) return Refuse(HttpStatusCode.NotFound, "no such session");
                     var asked = JsonNode.Parse(body!)!;
@@ -270,7 +280,8 @@ internal sealed class OpinionStandIn : HttpMessageHandler
                     var state = asker?["state"]!.GetValue<string>();
                     if (asker is null) return Refuse(HttpStatusCode.Conflict, "there is no such session to hand the answer to");
                     if (state == "stood-down") return Refuse(HttpStatusCode.Conflict, "it stood down");
-                    if (state == "awaiting-person") return Refuse(HttpStatusCode.Conflict, "it waits on the person's answer");
+                    // HELPERWAIT1: a park the person answered takes it beside their answer, as the desk lets it.
+                    if (state == "awaiting-person" && asker["answer"] is null) return Refuse(HttpStatusCode.Conflict, "it waits on the person's answer");
                     // An open conversation between turns (MIXAGENT2a-iii) takes it, as the desk lets it; and a driven asker working, where
                     // the driver that runs it asks with `running` (COWORK1d), its answer kept with its level.
                     var asked = JsonNode.Parse(body!)!;

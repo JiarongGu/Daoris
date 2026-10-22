@@ -5,8 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// HELPERWAIT1 (D163's and D188's notes): the rules a driven session waiting on its own helper is read by, in process. An ask is its own
 /// while its agent made it, and open until it is refused or its answer is handed; a session ended waiting on its helper is completed by
-/// that code, with nothing waiting on it; a park made before the rule while waiting on an ask is the clean-exit park, made after the ask,
-/// that nothing answered; and a go-ahead it asked and the person has not answered is a real question, never a wait on a helper.
+/// that code, with nothing waiting on it; and a go-ahead it asked and the person has not answered is a real question, never a wait on a helper.
 /// </summary>
 public sealed class HelperWaitsTests
 {
@@ -22,16 +21,6 @@ public sealed class HelperWaitsTests
         new(id, state, code, "h1", At) { Handed = handed, Agent = "codex-acp" };
 
     private static NotePart Part(NoteCode code) => code.Part("a line.", []);
-
-    /// <summary>A park made at <paramref name="minute"/>, by the clean-exit park's code unless another is named.</summary>
-    private static PriorSession Park(int minute = 5, NoteCode? code = null, string? answer = null, IReadOnlyList<SaidWordView>? said = null) =>
-        new("s1", "trees/s-1", "awaiting-person", Answer: answer)
-        {
-            Quest = "q1",
-            NoteParts = [Part(code ?? NoteCodes.EndedParkedAsked), NotePart.Said("I asked a helper.", NoteBy.Agent)],
-            Updated = At.AddMinutes(minute),
-            Said = said ?? [],
-        };
 
     [Fact]
     public void An_ask_is_open_while_its_agent_made_it_and_it_is_neither_refused_nor_handed()
@@ -58,27 +47,6 @@ public sealed class HelperWaitsTests
         Assert.False(HelperWaits.Waits(waiting with { NoteParts = [Part(NoteCodes.EndedAwaits)] }));
         Assert.False(HelperWaits.Waits(waiting with { State = "working" }));
         Assert.False(HelperWaits.Waits(waiting with { Session = "laptop/s1" }));
-    }
-
-    /// <summary>
-    /// 🔴 The parks the install made before the rule: the clean-exit park, with nothing answered or said to it, made at or after the ask
-    /// by its agent. A park made before the ask (the person's terminal asked for a park), one the person answered, one with words
-    /// waiting, one for another reason, an ask the person made and another session's ask are no such park.
-    /// </summary>
-    [Fact]
-    public void A_park_was_made_waiting_on_an_ask_where_it_is_the_clean_exit_park_made_after_its_agent_asked()
-    {
-        Assert.True(HelperWaits.ParkedOn(Park(), Ask()));
-        Assert.True(HelperWaits.ParkedOn(Park(code: NoteCodes.EndedParkedTranscript), Ask()));
-        Assert.True(HelperWaits.ParkedOn(Park(minute: 0), Ask()));
-
-        Assert.False(HelperWaits.ParkedOn(Park(minute: 5), Ask(minute: 6)));
-        Assert.False(HelperWaits.ParkedOn(Park(answer: "Port 8080."), Ask()));
-        Assert.False(HelperWaits.ParkedOn(Park(said: [new SaidWordView("w1", "go on", At, [], true)]), Ask()));
-        Assert.False(HelperWaits.ParkedOn(Park(code: NoteCodes.EndedAwaits), Ask()));
-        Assert.False(HelperWaits.ParkedOn(Park(), Ask(by: HelperAsk.ByPerson)));
-        Assert.False(HelperWaits.ParkedOn(Park(), Ask(asker: "s2")));
-        Assert.False(HelperWaits.ParkedOn(Park() with { State = "completed" }, Ask()));
     }
 
     /// <summary>A go-ahead the session asked that the person has not answered is a real question; one answered, or another's, is not.</summary>

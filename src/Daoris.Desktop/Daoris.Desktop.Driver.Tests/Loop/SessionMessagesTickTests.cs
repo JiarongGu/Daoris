@@ -1229,7 +1229,9 @@ public sealed class SessionMessagesTickTests : IDisposable
                         var served = Find(id)["serves"]!.GetValue<string>();
                         var asker = Find(served);
                         var state = asker["state"]!.GetValue<string>();
-                        if (Live.Contains(state)) return (409, $$"""{"error":"Session `{{served}}` is {{state}}. Nothing was kept."}""");
+                        // A park the person answered takes it beside their answer (HELPERWAIT1), as the desk lets it; any other live record waits.
+                        var answeredPark = state == "awaiting-person" && Wire(asker)["answer"] is not null;
+                        if (Live.Contains(state) && !answeredPark) return (409, $$"""{"error":"Session `{{served}}` is {{state}}. Nothing was kept."}""");
                         if (asker["said"]!.AsArray().Any(word => word!["helper"]?.GetValue<string>() == id)) return (409, """{"error":"it goes once"}""");
 
                         var text = Body()["text"]!.GetValue<string>();

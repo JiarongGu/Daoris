@@ -41,21 +41,6 @@ public static class HelperWaits
     public static bool Ended(IReadOnlyList<NotePart>? parts) => Carries(parts, NoteCodes.EndedAwaitsHelper);
 
     /// <summary>
-    /// Whether <paramref name="park"/> is the park a session made, before the rule, waiting on <paramref name="ask"/> (HELPERWAIT1 point 3):
-    /// the clean-exit park with its quest still taken, a driven record of this machine's that nothing answered and no words wait on, made
-    /// at or after its agent asked. A park made before the ask was the person's to answer before anything was asked of a helper.
-    /// </summary>
-    /// <remarks>Whether its last turn also asked a question or a go-ahead is read beside this, from the files and the ask (<see cref="AskedGoAhead"/>).</remarks>
-    public static bool ParkedOn(PriorSession park, HelperAsk ask) =>
-        park is { Parked: true, Answer: null, Teammate: false, Quest: not null }
-        && !string.Equals(park.Kind, ActiveSessions.ChatKind, StringComparison.Ordinal)
-        && park.Said is null or { Count: 0 }
-        && ask.AskedBy == HelperAsk.ByAgent && string.Equals(ask.Asker, park.Session, StringComparison.Ordinal)
-        && park.NoteParts is [{ Code: var code }, ..]
-        && (code == NoteCodes.EndedParkedAsked.Code || code == NoteCodes.EndedParkedTranscript.Code)
-        && park.Updated is { } parked && parked >= ask.At;
-
-    /// <summary>
     /// Whether <paramref name="session"/> asked a go-ahead on its work's ask that still waits on the person (KNOWUSE1a, GOAHEAD2): a real
     /// question, which the person's answer wakes. Unread words, or a quest on no ask, read as none.
     /// </summary>
