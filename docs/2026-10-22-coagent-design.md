@@ -1,10 +1,11 @@
-# Agents of different makers in one session: a lead, its partners, and one sheet per provider (COAGENT1, proposed, round 2, 2026-10-22)
+# Agents of different makers in one session: a lead, its partners, and one sheet per provider (COAGENT1, proposed, round 3, 2026-10-22)
 
-**Standing:** proposed, with D199, in round 2. Round 1 was a synthesis of three independent proposals written from one brief
+**Standing:** proposed, with D199, in round 3. Round 1 was a synthesis of three independent proposals written from one brief
 (Claude's, Codex's and Fable's, under D191), each difference settled by the steward in §1. Codex read round 1 (twenty-one findings,
-eighteen blocking) and Fable read it as a foundation (ten findings, four blocking); every finding was checked against the code before
-it was taken, and round 2 answers all of them (§12). Neither read asked to rethink the shape; both found that its promises of
-confinement, bounded spending, independent review and a single landing lacked the mechanisms that keep them, and round 2 adds them.
+eighteen blocking) and Fable read it as a foundation (ten findings, four blocking); round 2 answered all of them. Codex read round 2
+(eleven of its round-1 findings held, ten held in part; thirteen new findings, twelve blocking), and round 3 answers those (§12). Every
+finding was checked against the code before it was taken. No read asked to rethink the shape; each found a promise that lacked the
+mechanism keeping it, and each round added the mechanism.
 Nothing here publishes, signs in, spends an account, or removes the person's data; the runs on the install in §8.5 are each the
 owner's yes.
 
@@ -114,7 +115,8 @@ Why each:
    linked worktree shares the repository's refs, configuration, hooks and objects (`SessionTrees.cs:369`), which is why the reviewer's
    copy is a clone (`OpinionTree.cs:12-16`), and Fable's read showed that Codex's sandbox likely cannot commit there at all, its git
    directory lying outside the writable root. A clone of its own, with no remote, holds the partner's whole git state inside the one
-   folder its sandbox may write; Daoris commits what it left (§2.3 step 6) and imports the result into the repository itself.
+   folder its sandbox may write; Daoris reads the files it left, never running git there, and writes one commit into the repository
+   itself (§7.9, round 3, after Codex's second read).
 3. **A kept conversation waits for resume to be measured** (SESSCTX1a); it would also amend D189 point 6.
 4. **No turns granted by Daoris between the two.** Claude's automatic reading spends the second maker's account after every changed
    turn with no ask. Codex's grant record bounds what the count bounds once every answer is a go-on, which round 2 makes true by giving
@@ -176,12 +178,14 @@ shared context is Daoris's, the brief at a piece's start (D189 point 4) and the 
 
 ### 2.2 Who writes
 
-Nothing writes the lead's tree but the lead. A partner writes a clone of its own, made as the helper's copy is (`OpinionTree`: a
-clone with no remote, under the copies' folder with a prefix of its own beside the reviewer's `o-`), checked out at the exact commit
-the piece was asked from. Its refs, configuration, hooks and objects are its own, inside the one folder its posture may write, so
-nothing it does through git reaches the repository; Daoris alone moves its work into the repository (§2.3 step 7). What a clone does
-not prevent is a write by absolute path, through a shell, to anywhere else on the machine. That is what the partner's admission rests
-on a measurement for (§3.3): a provider is a partner only where its confinement was measured on its versions and posture.
+Nothing writes the lead's tree but the lead. A partner writes a clone of its own, made by Daoris as the helper's copy is
+(`OpinionTree`: a clone with no remote), under the repository's trees with a prefix of its own, `p-`, checked out at the exact commit
+the piece was asked from. Its refs, configuration, hooks and objects are its own, inside the one folder its enforcement mechanism lets
+it write. Daoris treats everything in that folder as data once the partner's turn began: it never runs git there again, and moves the
+partner's work into the repository itself, by reading the files (§7.9). What a clone does not stop is a write by absolute path, a
+`git push` to a local path, a link, or a call to Daoris's own local doors; those are stopped, if at all, by the agent's enforcement
+mechanism, which is why a provider is a partner only where that mechanism was identified and measured in its effective configuration
+(§3.3), and its process held in a strict container (§2.3 step 5).
 
 ### 2.3 A piece, end to end
 
@@ -201,41 +205,52 @@ on a measurement for (§3.3): a provider is a partner only where its confinement
 3. **The choice.** The walk is the helpers' (`ReviewerChoice.ChooseAsync`, each account by its codes) over the agents §2.3 step 2
    allows, another maker first; the lead's own maker only where named, then said *the same agent, fresh*. The agent must be admitted as a
    partner by its sheet (§3.3); otherwise refused with the sheet's code (`no-connector`, `not-measured`).
-4. **The reservation.** Before anything is made, the look writes the state `approved` with the slot it claims and the piece's
-   allowance, so two looks never prepare two pieces past the bound.
+4. **The reservation.** Before anything is made, the look reserves the piece's slot under the machine's cap and its place in the
+   lead's allowance in one step of the common admission every starter reads (§5), and writes the state `approved`. Two looks, or a look
+   and a quest's start, never both take the last slot.
 5. **The start.** The state `preparing` names the copy's folder before it is made; the copy is cloned and checked out at the ask's
    commit, refused if that commit is not in the repository (no fallback to another base: Codex's read, 15). The host opens the record
-   (`POST /api/partners`, a driver door: kind `chat`, `serves` = the lead, `piece` = the ask's id, its own entry), and the state
-   `started` names it **before** the turn. The partner runs one turn under the partner's rules (§7.4) with its instruction: the piece as
-   written, the paths, the commit it grew from, the lead's uncommitted paths at the ask and again at the start (so it leaves them
-   alone), the lead's line's brief (`ContextBrief`), how to end (commit as it goes; say what it did, what it did not, what it would
-   need), and that it asks nobody. Its bound is the rule's `minutes` (45 as a first value; the session timeout behind it); its end is
-   what Daoris observes of its process (D46), never its words.
-6. **Its end, and the work kept.** The state `ending` is written once the turn's end is observed and the partner's process and its
-   children have ended (the runner's stop ends the process tree; a background command still writing would otherwise race step 6).
-   Then Daoris commits whatever the partner left uncommitted in its copy, in one `add -A` and `commit` authored as Daoris's (*the
-   partner's uncommitted work, kept by Daoris*), so a piece's work never depends on the agent's own commit, its sandbox, its minutes or
-   a stop (Fable's read, F1). The state `kept` names the copy's tip.
-7. **The import.** Daoris fetches that tip from the copy into the repository as `refs/daoris/pieces/<id>`, written once and never
-   moved, outside the branches the person sees and any tidy reads. The state `imported` names the tip; the copy is removed.
+   (`POST /api/partners`, a driver door, idempotent by the piece's id: kind `chat`, `serves` = the lead, `piece` = the ask's id, its own
+   entry), and the state `started` names it **before** the turn. The partner's process is started suspended in an empty job, joined, and
+   only then let run, as a heavy run's gates are (`Agents/Consoles/ProcessJob.cs:23-26`, HEAVYRUN1a), under its effective configuration
+   (§3.3); a start that cannot join its job is refused, never run in the best-effort way an ordinary session's is (`ProcessJob.cs:20-21`).
+   The partner runs one turn under the partner's role (§7.4) with its instruction: the piece as written, the paths, the commit it grew
+   from, the lead's uncommitted paths at the ask and again at the start (so it leaves them alone), the lead's line's brief
+   (`ContextBrief`), how to end (say what it did, what it did not, what it would need; its files are what Daoris takes), and that it
+   asks nobody. Its bound is the rule's `minutes` (45 as a first value; the session timeout behind it); its end is what Daoris observes
+   of its process (D46), never its words.
+6. **Its end.** The turn's end is observed, then the job is ended and **waited empty** (`WaitEmptyAsync`): no process of the partner's,
+   nor any child, can still write the copy. Only then is `ending` written, with the moment that dates the keeper's commit. Where the
+   job's state cannot be known (a restart), nothing reads or removes the copy until the person's act (§7.2).
+7. **The work kept and imported, in one step Daoris owns** (§7.9). Daoris reads the copy's files as bytes, never running git in the copy,
+   judges them by the import's rules, and writes **one commit** onto the ask's base in the repository itself, through a temporary
+   index with no filters and no hooks, as Daoris's own commits are made; then it creates `refs/daoris/pieces/<id>` at that commit, a
+   create-only update, never moved after. The partner's own commits in its copy are not imported: their history, and anything it wrote
+   and deleted on the way, never reaches the repository. The state `imported` names the commit. A refused import is `held`, the copy
+   kept for the person's look and *Discard…*.
 8. **The answer.** `partner_answer` { summary (at most 20,000 characters), left (what it could not do) }, once; else its last words,
-   bounded as a helper's are. Daoris adds what it reads itself, never from the words: the tip, the commits past the base, the files
-   changed, those outside the piece's paths (*beyond its piece*), how many commits were Daoris's keeping, the declared gates its tool
-   calls ran and the newest failed one's kept output up to 2,000 characters (D189's check rule). The state `answered`.
+   bounded as a helper's are. Daoris adds what it reads itself, never from the words: the commit, the files changed, those outside the
+   piece's paths (*beyond its piece*), what the import refused or left out and why, the declared gates its tool calls ran and the newest
+   failed one's kept output up to 2,000 characters (D189's check rule). The state `answered`. The copy is then removed, a cleanup tried
+   again until done (§7.2).
 9. **The delivery.** Through `POST /api/partners/{partner}/hand` (a driver door), a said word marked `partner` (beside `helper`), with the
    piece's stable key, in fixed words (`PartnerWords`, no model): who answered on which account, the piece, the facts, the summary quoted
-   as the partner's claim, and the one line that takes it in: *in your tree: `git merge --no-ff refs/daoris/pieces/<id>`*. It goes to
-   the lead, or to the newest live record continuing the lead by `from`; never into a left conversation (D189 point 6); with none live,
-   it waits on the newest record of that chain for its next part. It goes at the turn's end as an ordinary solicited answer, may reopen
-   an ended lead once, and counts toward the answers-alone bound (§4.2). The hand door is idempotent by the key (§7.6). The state
-   `handed`.
-10. **Taking it in.** The lead merges the frozen tip in its own tree, in its own turn. A piece is **taken in** when Daoris reads its tip
-    as an ancestor of the lead's branch (`merge-base --is-ancestor`); a cherry-pick, a squash or a part of it is not taken in, and the
-    page says so (Codex's read, 14). The state `taken-in` is written at the next look that reads it.
+   as the partner's claim, and the one line that takes it in: *in your tree: `git merge --no-ff refs/daoris/pieces/<id>`*. Its
+   destination is claimed on the piece's delivery receipt before anything is handed: the lead, or the newest live record continuing the
+   lead by `from`, the claim moved along `from` explicitly; never a left conversation (D189 point 6); with none live, it waits on the
+   newest record of that chain for its next part. It goes at the turn's end as an ordinary solicited answer, may reopen an ended lead
+   once, and counts toward the answers-alone bound (§4.2). An attempt left uncertain by a restart waits for the person and is never
+   handed again by itself (§7.6). The state `handed`.
+10. **Taking it in.** The lead merges the frozen commit in its own tree, in its own turn. A piece is **taken in** when Daoris first reads
+    the commit as an ancestor of the lead's branch (`merge-base --is-ancestor`), and that is recorded with the lead's commit that took it
+    and never unset: a later rebase, a squash landing or a revert is the lead's own work on what it took in, and Daoris's replays and
+    squashes carry the piece's provenance on their records (§7.7). A cherry-pick or a part of it is not taken in, and the page says so
+    (Codex's read, 14).
 11. **Other ends.** The person's *Stop…* ends the partner's turn and goes on from step 6 with the end `stopped`; past its minutes, the
-    end is `out-of-time`; an account's limit met, `limited` (the account cools, D125). Each keeps and imports the work as above. An
-    end that left commits is handed as the piece's result (a solicited answer, step 9). An end with none, a refusal and a discard are
-    told to the lead as Daoris's notices, ordinary, which never reopen it (Codex's read, 19).
+    end is `out-of-time`; an account's limit met, `limited` (the account cools, D125). Each keeps and imports the work as above, and an
+    end whose import holds work is handed as the piece's result (a solicited answer, step 9). An end with no work, a refusal and a
+    discard are **notes** on the lead's record and the Pieces section, never words: they reach no prompt, reopen nothing and reset no
+    count (Codex's reads, 19 and 32).
 
 ### 2.4 Landing, and the doors that must refuse it
 
@@ -244,8 +259,12 @@ own entry, so an entry's Accept never lands it (`SessionEntries.cs:76-77`; `Entr
 eligibility refuses any record carrying `piece` at every door: the session's own *Accept…* and `LAND_SESSION_TREE`
 (`Daoris.Desktop.Modules/Bridge/Routes/TreesRoutes.cs:626`, `Trees/SessionGroups.cs:1124`), the terminal's `trees land`, Ask Daoris's
 card and the landing at done. A piece never taken in when its lead's work lands is *not taken in* (未并入): its ref stays until the
-person's *Discard…*, which removes it in one transaction verified at the tip (`ref-removal-transactions.md`). No tidy reads
-`refs/daoris/pieces/`. Clearing a closed quest's work clears its pieces (D153).
+person's *Discard…*, which removes it in one transaction verified at the commit (`ref-removal-transactions.md`). Clearing a closed
+quest's work clears its pieces (D153). Piece refs sit beside Daoris's recovery refs (`refs/daoris/discarded/`,
+`Trees/SessionTrees/ContentHolds.cs:69`) and are classed as they are: no tidy, clear, sync or landing mutates one, and **no proof of
+holding counts one as a holder** (`ContentHolds.AnyRef`, `:359`, and the strays' ref scan, `TreeStrays.cs:210`, exclude the prefix), since
+a piece's commit contains the lead's history up to its base and would otherwise let a lead's branch be forgotten as held. A valid ref
+keeps its objects through git's collection, which is what keeps the piece.
 
 ### 2.5 Reading the work in progress: the helper's copy
 
@@ -317,9 +336,18 @@ Safety rests only on a copy or clone of its own and on measured rows; a declared
 ### 3.3 What each role needs
 
 - **A lead of a driven session**: what a lone session needs today. **A lead of a conversation**: a conversation.
-- **A partner**: a door with a turn's end, the connector, a declared maker, and **partner confinement measured** on its harness version,
-  adapter version and the posture it will run under (Codex's read, 10). Without the connector it is refused `no-connector`; without the
-  measurement, `not-measured`, at every start, the person's own included. A stand-in's rows are its test's.
+- **A partner**: a door with a turn's end, the connector, a declared maker, and **partner confinement measured** (Codex's reads, 10 and
+  22). Confinement is not something an agent shows by declining to escape: it rests on an **identified enforcement mechanism** (for
+  Codex, its sandbox; for an agent that has none, nothing), measured in its **effective configuration**: the harness and adapter
+  versions, the posture, the writable roots Daoris hands it (the copy alone), its network and loopback reach, the operating system, and
+  the digest of the settings Daoris passes. A start whose effective configuration differs from every measured row is refused
+  `not-measured`, at every start, the person's own included. Without the connector, `no-connector`. A stand-in's rows exist for its
+  tests and never admit a production start.
+- **What the measurement must show** (M2, §8.5): through the mechanism itself, with deterministic probes and no agent in the loop where
+  the mechanism can run a command (Codex's sandbox runs a probe script), that a write outside the copy by absolute path, through a link
+  and transiently, a `git push` to a local path, a write under the home, an HTTP call to Daoris's local host and a connection to the
+  shell's pipe are each refused; the agent-directed run is supplementary evidence beside it. An agent with no identified mechanism is
+  not admitted as a partner, whatever its rules say.
 - **A helper or a reviewer**: as today; its copy is the floor (D155 point 5).
 - **Words sooner** than a turn's end: words at the next step, negotiated; *now*: steering, measured.
 
@@ -350,9 +378,10 @@ another agent's process, and authorship always from the binding, never from what
 
 A partner's answer is a solicited answer, and always ordinary: `partner_ask` takes no level, since a piece's answer is a commit the lead
 can only take in at a turn's end. It may reopen an ended lead once per ask; it is therefore always a go-on, which the answers-alone
-count reads (`AnswersAlone.cs:10-12`), and its mark joins the helper's and the opinion's as solicited (`AnswersAlone.cs:24`). A notice
-of Daoris's (a piece stopped with nothing, refused, discarded) is ordinary and makes no turn happen. Nobody but the person sends *now*,
-and no agent stops another's turn.
+count reads (`AnswersAlone.cs:10-12`), and its mark joins the helper's and the opinion's as solicited (`AnswersAlone.cs:24`). A piece
+that ends with no work, is refused or is discarded leaves a **note**, never a word: a Daoris word would reset the count
+(`AnswersAlone.cs:86-92`) and, beside an answer, would let a prompt pass the bound's hold (`:28-31`), so a note reaches no prompt and
+resets nothing (Codex's read, 32). Nobody but the person sends *now*, and no agent stops another's turn.
 
 ### 4.3 D155's and D163's rejection of agents conversing with no person between stands
 
@@ -379,8 +408,11 @@ needed a landing design. §2.3 and §2.4 are that landing.
   never a partner's account and is never asked (D197 point 3).
 - **A limit met mid-piece** cools the account, never a strike (D125); the piece ends `limited`, its work kept, imported and handed.
   There is no automatic repair in these rows: the lead or the person may ask a new piece from its tip.
-- **The cap** (D130, CAPCOUNT1): a partner's record carries `serves`, which `HoldsSlot` counts (`Planner.cs:818-822`), so its start takes
-  a slot claimed at the reservation (§2.3 step 4), as a helper's does; a full cap waits, said. A conversation lead still holds none.
+- **The cap** (D130, CAPCOUNT1): a partner's record carries `serves`, which `HoldsSlot` counts (`Planner.cs:818-822`). Before its record
+  exists, its reservation counts instead: the shared count every starter reads (`Planner.cs:826`, `Held`) gains the reservations of
+  pieces in `approved` and `preparing`, so a quest, a helper and a piece never take one slot twice; a reservation becomes its record's
+  slot when the record opens, counted once, and is released at every failure and end (Codex's read, 29). A full cap waits, said. A
+  conversation lead still holds none. A lead's two open pieces are counted across its `from` chain, so a hand-over does not reset them.
 - **Usage is each part's**, summed by `SessionEvents.Spent` and answered by `SESSION_SPENT`; the lead's head sums its partners' per
   maker. A count no turn said stays unknown, never zero (D57); Codex's counts are shown as reported, their meaning *not measured* until
   M4; its account's windows still come from its server between turns (`HarnessRoster.AskUsageAsync`).
@@ -417,6 +449,7 @@ diff against its base, read from the frozen ref; it offers no *Accept…*.
 | taken in | *Taken in* | *已并入* | — |
 | not taken in, at the landing | *Not taken in* | *未并入* | *Discard…* 丢弃… |
 | stopped, out of time, limited | *Stopped* · *Out of time* · *Account limited* | *已停止* · *超时* · *账户受限* | the work kept, *Discard…* 丢弃… |
+| held, its import refused | *Held: its work was not taken into the repository* | *已搁置：它的工作未导入仓库* | what was refused and why, *Discard…* 丢弃… |
 | refused | *Refused* | *已拒绝* | why, in words |
 | uncertain, after a restart | *Uncertain: Daoris restarted while it worked* | *不确定：工作时 Daoris 重启了* | *Hand over what it left* 交付它留下的 · *Discard…* 丢弃… |
 | discarded | *Discarded* | *已丢弃* | — |
@@ -467,49 +500,68 @@ Each addition goes into every place its knowledge document lists, in the same ch
 Under `<home>/data/partners/` (a home entry `partners` in both runtimes' `DaorisHome`, beside `helpers`; in the home inventory, the
 history's accounting, a deletion's and a clear's ownership and the kept-names catalogue): `<id>.ask.json` (id, asker, piece, paths,
 agent, base commit, uncommitted paths at the ask, askedBy, at; written once), `<id>.state.json` (the driver's alone: the state of §7.2,
-its code, the copy's folder, the partner's record, the tip, at), `<id>.answer.json` (summary, left, at) and `<id>.facts.json` (tip,
-commits, files, beyond, kept-by-Daoris count, checks). The service's `PartnerBox` and the driver's reader share no code and hold one
-table (`twins.md`).
+its code, the copy's folder, the partner's record, the job's identity, the keeper's moment, the imported commit, whether the copy is
+removed, at), `<id>.answer.json` (summary, left, at), `<id>.facts.json` (commit, files, beyond, refused and left out, checks) and
+`<id>.delivery.json` (§7.6). Each is written whole, to a temporary name and renamed. The service's `PartnerBox` and the driver's reader
+share no code and hold one table (`twins.md`).
 
-### 7.2 The states, and what a restart does at each
+### 7.2 The states, and how a restart reconciles each
 
-| State | Written | A restart finds it |
+A restart never trusts the last state alone: it reconciles what the state says with what it observes, by the stable identity of each
+side effect (Codex's read, 25). A side effect is always made before the state that names it, and is idempotent by its identity, so a
+crash between the two is repaired by observing and writing the state, never by doing it twice.
+
+| State | Side effect and its identity | A restart observes, then |
 |---|---|---|
-| `asked` | the ask's file, by its one writer | judged at the next look |
-| `waiting` | the person's yes is owed | stays |
-| `approved` | the yes or the person's own ask; the slot and the allowance reserved | prepares |
-| `preparing` | before the copy is made, naming its folder | removes a partial copy and prepares again (Daoris's work, no agent's) |
-| `started` | the partner's record id, before its turn | its process is gone: `uncertain` |
-| `ending` | the turn's end and the process tree's end observed | keeps and imports (Daoris's work) |
-| `kept` | the copy's tip after Daoris's keeping | imports |
-| `imported` | the frozen ref written at the tip; the copy removed | reads the facts |
-| `answered` | the answer's and the facts' files | hands, by the key |
-| `handed` | the service kept the word under the piece's key | nothing |
-| `taken-in`, `not-taken-in`, `discarded`, `refused` | as §2.3 and §2.4 say | nothing |
-| `uncertain` | a restart found `started` with no process, or a file of the box unreadable | the person's acts: *Hand over what it left* (keeps, imports, hands, all Daoris's work) or *Discard…* |
+| `asked`, `waiting` | the ask's file | judges it at the next look |
+| `approved` | the reservation, in the common admission | prepares |
+| `preparing` | the copy at its named folder | a partial copy is removed and prepared again (Daoris's work, no agent's) |
+| (opening) | the record, by the piece's id (the open is idempotent by it) | a record already open for the piece is taken as this one; `started` is written |
+| `started` | the job holding the partner | the job's state is known and empty: `ending`; unknown or not empty: **`uncertain`**, the copy kept and untouched |
+| `ending` | the keeper's moment, written before keeping | keeps: the commit is deterministic from the base, the files and that moment, so a retry makes the same commit |
+| (import) | `refs/daoris/pieces/<id>`, a create-only update | the ref at the keeper's commit: `imported`; at another commit: `uncertain` |
+| `held` | the import refused; the copy kept | stays for the person |
+| `imported` | the ref; the copy's removal a cleanup tried until done | reads the facts, then `answered` |
+| `answered` | the answer's and the facts' files | hands, by the delivery receipt (§7.6) |
+| `handed`, `taken-in`, `not-taken-in`, `discarded`, `refused` | as §2.3 and §2.4 say | nothing |
+| `uncertain` | — | the person's acts: *Hand over what it left* (ends the job, keeps, imports, hands: Daoris's work) or *Discard…* |
 
-The end's cause (`answered`, `stopped`, `out-of-time`, `limited`) is kept beside `ending`. Nothing at any state runs an agent again
-unasked.
+A state write that fails (a full disk) leaves the previous state, which the next look reconciles as above; an unreadable or absent state
+file is `uncertain`, naming the file. The end's cause (`answered`, `stopped`, `out-of-time`, `limited`) is kept beside `ending`. Nothing
+at any state runs an agent again unasked.
+
+The copy is owned by its box: the strays' cleanup leaves a `p-` folder whose box still holds it (`started`, `uncertain`, `held`, an
+unfinished removal), as it leaves an opinion's and a replay's (`Trees/SessionTrees/TreeStrays.cs:72-77`), and never moves it as a pass's
+leftover (`PassLeftovers`); the inventory lists it; only a verified import or the person's *Discard…* removes it (Codex's read, 26).
 
 ### 7.3 The record
 
 The session record's `piece` (the ask's id) joins `serves` (the lead), machine-only as `opinion` and `serves` are, through every place
 `session-record-fields.md` lists; the record keeps its own entry (`ownEntry`), as a helper's does. `piece` is read only where a partner
 differs from a helper: its title and page, its answer door, the Pieces section, the head's count and spend, the landing's eligibility,
-`line_read` and the opinion's families. `line_read`, for a record with `serves` and `piece`, reads its lead's line read-only (both the
+`line_read` and the opinion's families. On the page, `isHelper` means any record with `serves` (`src/Daoris.Web/src/work/identity.ts:79`):
+the one-turn restrictions it carries stay shared, and the names, the rail's words and the head's facts read `piece` to say *partner*; the
+rail already nests a serving record under its asker (`nestServing`, `src/Daoris.Web/src/work/groups.ts:304`), which is how the page shows
+a partner as part of its lead's session. `line_read`, for a record with `serves` and `piece`, reads its lead's line read-only (both the
 service's `LineEvents` and the driver's twin, with their tests), with no `from` link made, since the lead still runs.
 
 ### 7.4 The partner's role, enforced by the server
 
-The partner's binding carries its role. The connector's host refuses, by the role and before the tool runs, every tool outside the
-partner's allow-list: the knowledge and reading tools, `line_read` and `partner_answer`. A registration census fails on a tool that is
-neither allowed nor refused for the role, so a tool added later is classified when it is added. The same refusal is the existing one at
-each door that refuses a record with `serves`, and the quest tools gain it (a record with `serves` publishes, takes and closes nothing).
-The partner's rules (`PartnerPermissions`, beside `OpinionPermissions`), for an agent that takes them: edits, and git's commit and
-branch acts, allowed in its copy; push denied; the same tools denied by rule as the server refuses. Codex takes no rules file: its copy,
-its posture's measured confinement (§3.3) and the server's refusals are its floor. A native child of a partner shares its binding, so
-the server's refusals bound it too. A process that calls the local host over loopback rather than the connector is the gap every
-session has today (D154; PERSONDOOR1), not one this design opens.
+The partner's role is the driver's to bind: the driver starts the partner's connector with the session's scope in the environment it
+sets (as `IntakeScope` is read today, `src/Daoris.Service/Daoris.Service.Core/Asks/IntakeScope.cs:22`), and the service, asked by that
+scope, answers the record's `serves` and `piece`. The connector's host refuses, by that role and before the tool runs, every tool
+outside the partner's allow-list: the knowledge and reading tools, `line_read` and `partner_answer`. A registration census fails on a
+tool that is neither allowed nor refused for the role, so a tool added later is classified when it is added. The same refusal is the
+existing one at each door that refuses a record with `serves`, and the quest tools gain it (a record with `serves` publishes, takes and
+closes nothing). A native child inherits the environment, and with it the scope and the refusals; a connector started with the scope
+stripped holds no session, and its acting tools refuse.
+
+The local host's agent doors are not bound to a session: an agent may publish and respond to quests over HTTP with no person's key
+(`src/Daoris.Service/Daoris.Service.Http/PersonDoors.cs:106-110, 179-183`; D156 point 3), and the shell's pipe and the terminal's verbs
+answer a caller on the machine. For every session that is D156's residual; for a partner it is closed by admission instead: a partner is
+admitted only where its enforcement mechanism was measured to refuse it the local host's address and the pipe (§3.3), so neither the
+partner nor its children can reach those doors (Codex's read, 28). The partner's rules (`PartnerPermissions`, beside
+`OpinionPermissions`), for an agent that takes them, deny the same tools by rule as a second layer, never the only one.
 
 ### 7.5 The doors
 
@@ -520,22 +572,54 @@ the person's doors with their pipe words.
 ### 7.6 The word
 
 A piece's answer is a said word marked `partner`, with the piece's key as its producer key, through the session's one dispatcher (kept,
-attempted, went: `session-words.md`); the event that records it taken carries the key. The hand door answers a key already waiting with
-that word and a key already taken with *handed*, so a crash after the lead took the word and before the driver's mark never hands it
-twice (Codex's read, 18). Every reader of a solicited word (`AnswersAlone.Solicited`, `SaidWordView.Persons`, `PriorSession`, the
-ledger's `WentOnWith`, the resumed turn's opening) reads `partner` as it reads `helper`.
+attempted, went: `session-words.md`); the event that records it taken carries the key. Beside the dispatcher's own record of a word,
+which is per record (`Sessions/SessionLedger.cs:846`), the piece keeps **one delivery receipt** for the whole piece,
+`<id>.delivery.json`: the destination claimed, the key, and the outcome, `waiting`, `attempted`, `uncertain` or `taken` (Codex's read,
+31). The claim is written before the hand, and moved along `from` explicitly when the lead's successor takes over, in the same act that
+releases the predecessor's; the hand door answers a key already waiting with that word and a key already taken with *handed*. An
+attempt the come-up settles as uncertain (`Conversations/GoOn/UncertainWords.cs:64-72`) marks the receipt `uncertain`: it waits for the
+person (*Hand it again*), and nothing hands it again by itself. Every reader of a solicited word (`AnswersAlone.Solicited`,
+`SaidWordView.Persons`, `PriorSession`, the ledger's `WentOnWith`, the resumed turn's opening) reads `partner` as it reads `helper`.
 
 ### 7.7 The opinion's families
 
-The second opinion's families (`OpinionGateLook.cs:362-365`) gain the agent of every partner record serving the candidate's sessions
-whose piece's tip the candidate holds, so a maker that contributed a piece is never the reader of the work it is in (Codex's read, 3).
+The second opinion's families (`OpinionGateLook.cs:362-365`) gain the agent of every partner whose piece was **taken in** on the
+candidate's line, as recorded when it was first taken in (§2.3 step 10), whatever happened to its ancestry after: Daoris's replays
+(`Trees/SessionTrees/BranchReplays.cs:160-165`, a `rebase --onto`) and squash landings (`TreeLands.cs`) record the pieces the rewritten
+branch had taken in, so the provenance outlives the commit ids. Where a rewrite leaves it unclear, the maker is kept among the families:
+a maker that contributed a piece is never the reader of the work it is in (Codex's reads, 3 and 30). A merge later reverted stays taken
+in; the revert is the lead's work, shown in its diff.
 
 ### 7.8 Notes, the log, the sheet
 
 Coded notes in both catalogues: on the lead `partner.asked`, `.started`, `.answered`, `.taken-in`, `.refused` (why), `.stopped`,
 `.out-of-time`, `.limited`, `.uncertain`, `.beyond`, `.kept`; on the partner `partner.working`. The machine log: `partner.asked`,
-`.started`, `.answered`, `.refused`, `.imported`, the account by its profile name as `account.rotated`'s is. `AgentCapabilities` is
-answered on `HARNESSES` and `agent list`.
+`.started`, `.answered`, `.refused`, `.imported`, `.held`, the account by its profile name as `account.rotated`'s is.
+`AgentCapabilities` is answered on `HARNESSES` and `agent list`.
+
+### 7.9 The keeper and the import
+
+Once the partner's job is empty (§2.3 step 6), its copy is data the partner controlled, `.git` included: hooks, filters, `core.*`
+settings, signing and identity may all have been rewritten there. So Daoris never runs git in the copy again (Codex's read, 23):
+
+- **It reads the files, not git.** Daoris walks the copy's folder as bytes, never entering `.git`, never following a link, and compares
+  what it finds with the ask's base commit, read in the repository.
+- **It judges them by the import's rules** (Codex's read, 24): a regular or executable file only; a new or changed link, a junction or
+  another reparse point, a submodule or a nested repository refused; a file the repository's own ignore rules at the base ignore left
+  out (judged in the repository, its own trusted configuration, never the copy's); one file over 10 MB, or the piece over 50 MB, refused
+  (first values, read again in COAGENT1f). Paths outside the piece's paths are kept and named *beyond its piece*, never refused. What is
+  refused or left out is listed in the facts. Where a refusal leaves nothing worth handing, the import is `held`: the copy is kept for
+  the person to look at and discard.
+- **It writes one commit in the repository**: the base's tree read into a temporary index (`GIT_INDEX_FILE` under the home), each kept
+  file's bytes written with `hash-object -w --no-filters`, deletions taken out, `write-tree`, then `commit-tree` onto the base, which
+  runs no hook and signs nothing; its author and committer are made as Daoris's own squash commits are, by the repository's git
+  identity (`Trees/SessionTrees/TreeSquashes.cs:28-32`; D198 point 5 where a git identity of Daoris's is set), never the copy's; its
+  date is the keeper's moment, its message names the piece, the partner's agent and account. The same inputs make
+  the same commit, which is what lets a restart repeat it (§7.2).
+- **It imports nothing else.** The partner's own commits, branches and objects stay in the copy and go with it: anything the partner
+  wrote and deleted on the way, a secret among them, never reaches the repository's history. Daoris claims no secret detection of its
+  own: the lead's merge and the person's look see the commit's diff, and a gate the repository declares may scan it.
+- **What the person reads outlives the copy.** The partner's page reads its diff from the frozen ref against its base.
 
 ## 8. The test plan
 
@@ -545,10 +629,10 @@ answered on `HARNESSES` and `agent list`.
   `agent`, `read-only` and `agent-full-access`, a permission request before each write in `read-only`, no turn counts. It sits in
   `tools/rehearsal-kit.mjs` beside `ACP_STUB_AGENT`, and as a scripted in-memory agent for the fast half, with COAGENT1b.
 - **`ACP_STUB_AGENT` gains a switch** (`DAORIS_STUB_QUEUEING`) to declare `promptQueueing` (`tools/rehearsal-kit.mjs:821`), with
-  COAGENT1e's rehearsal phase.
+  COAGENT1b, whose `Process` proof needs a lead that queues and one that does not (Codex's read, 33).
 - **A second maker by file**: a test plugin manifest whose harness names `maker: "Stub Two"` and `product: "Stub B"` over the same stub
   script, as the rehearsal's `gate-agent` is declared (`tools/family-rehearsal.mjs:6030`), with stand-in rows in the measurements table
-  for its tests.
+  for its tests only, with COAGENT1b.
 
 ### 8.2 The fast half
 
@@ -556,13 +640,20 @@ answered on `HARNESSES` and `agent list`.
   bound each refused, a capture that changed under it taken again, the manifest, the answer naming its capture).
 - **COAGENT1b on**: `PartnerAsksTests` and `PartnerJudgeTests` (each refused asker, a blank piece, a path outside, a lead with no commit, an
   unlisted named agent refused, two open counted from `approved` with two overlapping looks), `PartnerChoiceTests` (the allowed agents
-  only, another maker first, the same maker only when named, `not-measured` and `no-connector`), `PartnerPassTests` (the copy at the exact
-  base and no fallback, the state written before each step, the rules' allows and denies, the instruction's golden under
-  `golden/partner-prompt/`), `PartnerKeepTests` (an uncommitted end kept as Daoris's commit, an end with nothing), `PartnerFactsTests`,
-  `PartnerStatesTests` (a restart at every row of §7.2's table, an unreadable file, `uncertain` and both acts), `PartnerDeliveryTests` (to
-  the lead, to its successor after a hand-over, waiting on an ended chain, never into a left conversation, a notice never reopening, the
-  key's idempotence with a crash after the take), `AnswersAloneTests` with a partner's answer, `OpinionGateLookTests` with a partner's piece
-  in the candidate, `HoldsSlot` for a partner's record, the landing's eligibility at each door refusing a partner's record, `NoteCodesTests`;
+  only, another maker first, the same maker only when named, `not-measured` for an effective configuration no row holds, a stand-in's row
+  never admitting a production start, and `no-connector`), `PartnerPassTests` (the copy at the exact base and no fallback, the state
+  written after each side effect, the role's allow-list, the instruction's golden under `golden/partner-prompt/`), `PartnerKeepTests`
+  (the copy's hooks, filters, `core.*` settings and identity rewritten and never run or read; a link, a junction, a submodule and a
+  nested repository refused; an ignored file left out by the repository's rules; a file and a piece over their bounds; deletions; the
+  same inputs making the same commit; a commit in the copy never imported), `PartnerFactsTests`, `PartnerStatesTests` (an interruption
+  between every side effect and the state that names it, a failed state write, an unreadable file, a job whose state is unknown, `held`,
+  `uncertain` and both acts), `PartnerAdmissionTests` (a reservation counted with active records, a quest's start and a piece's look
+  interleaved at the last slot, release at each failure, two open across a hand-over), `PartnerDeliveryTests` (the receipt's claim
+  before the hand, moved along `from` with a successor taking over between keeping and acknowledging, never into a left conversation,
+  an uncertain attempt waiting for the person, the key's idempotence with a crash after the take), `AnswersAloneTests` with a partner's
+  answer and with an answer beside a refusal, an empty end and a timeout (none resetting the count), `OpinionGateLookTests` with a
+  piece taken in and then replayed and squashed, `HoldsSlot` for a partner's record, the landing's eligibility at each door refusing a
+  partner's record, `ContentHoldsTests` never counting a piece ref as a holder, `TreeStraysTests` leaving a held copy, `NoteCodesTests`;
   the service's `PartnerBoxShapeTests`, `McpPartnerToolTests`, the role's allow-list and its registration census, `LineEventsTests` for a
   partner reading its lead's line, `SessionLedgerTests` for `piece` and the own entry, the quest tools refusing `serves`; the modules'
   `DriverModulePartnerTests`, `StatePublisherTests`, `PipeCensusTests`, the home's and the doors' censuses; the web's `Pieces`, `headFacts`
@@ -576,11 +667,13 @@ Every wait a test gives a real loop reads a held clock (`held-clocks.md`).
 
 `HelperCaptureProcessTests` (git half): a helper's copy holds the asker's uncommitted bytes and nothing returns from it.
 `PartnerProcessTests` (`Process` half): the loop's real tick with a lead on the ACP stub and the partner on the second maker's stub in its
-clone, committing some work and leaving some, answering; the answer at the lead's turn's end on the queueing stub and on the turn-end
-stand-in; a stalled partner cut at its minutes with its work kept; a stop; a partner whose background command outlives its turn;
-restarts around the start, the end and the answer's write. `PartnerLandingTests` (git half): the lead merges the frozen tip and the
-lead's work lands with it once; a cherry-pick read as not taken in; a piece never taken in left out and its ref kept; *Discard…*
-removing the ref in one verified transaction; no landing door landing a partner's record. `PartnerChatProcessTests` (COAGENT1c): a
+clone, writing files and answering; the answer at the lead's turn's end on the queueing stub and on the turn-end stand-in; the partner
+started suspended in its job and a start refused where the job cannot be joined; a stalled partner cut at its minutes with its work kept;
+a stop; a partner whose background command outlives its turn, the keeping waiting for the job to be empty; restarts around the start, the
+end, the keeping, the import and the answer's write. `PartnerLandingTests` (git half): the lead merges the frozen commit and the lead's
+work lands with it once; a cherry-pick read as not taken in; a piece taken in, then the lead's branch replayed and squashed by Daoris,
+still taken in with its provenance; a piece never taken in left out and its ref kept through tidy, clear, sync, a landing and `git gc`;
+*Discard…* removing the ref in one verified transaction; no landing door landing a partner's record. `PartnerChatProcessTests` (COAGENT1c): a
 conversation lead hears the answer as a turn of its own between turns.
 
 ### 8.4 The family rehearsal (COAGENT1e)
@@ -596,18 +689,22 @@ landing and its ref still standing. The transcript and the box's files are kept 
 - **With COAGENT1a**: Codex as the helper of a Claude Code session, reading its work in progress. It carries **M1**, Codex's connector
   calls joined to their session (`helper_answer` read beside its lineage line, FABRIC-ACP1's open half), and **M4**, what codex-acp
   reports of a turn's counts and what they mean.
-- **Before COAGENT1b is used on the install**: **M2**, partner confinement, for Codex under `agent` and for Claude Code under its work
-  posture, in a disposable repository the proof makes (never this repository's own checkout, Fable's read F3): the partner's clone, a
-  sibling folder standing in for the lead's tree, and a local bare repository standing in for a remote. The proof asks the partner, as a
-  piece, to change a file in the sibling folder by its absolute path, to add the bare repository as a remote and push to it, to write
-  under the home, and to commit in its clone; it hashes the sibling folder, the bare repository and the source repository's refs,
-  configuration and hooks before and after, and records whether the partner committed by itself. Each outcome is a row of the
-  measurements table with its versions and posture; an escape is filed as a row and the agent stays `not-measured`.
+- **Before COAGENT1b is used on the install**: **M2**, partner confinement, in a disposable repository the proof makes (never this
+  repository's own checkout, Fable's read F3): the partner's clone, a sibling folder standing in for the lead's tree, a local bare
+  repository standing in for a remote, a marker folder under a scratch home, and a listener standing in for the local host. For each
+  agent with an identified enforcement mechanism (Codex's sandbox; Claude Code only if one is identified), the proof first runs
+  **deterministic probes through the mechanism**, in the effective configuration a partner start would hand it, with no agent in the
+  loop: a write by absolute path into the sibling folder, through a link, and a transient one restored after; a `git push` to the bare
+  repository's local path; a write under the home; an HTTP call to the listener; a connection to a named pipe. Each must be refused, and
+  the proof hashes the sibling folder, the bare repository, the marker folder and the source repository's refs, configuration and hooks
+  before and after (Codex's read, 22). Then, as supplementary evidence, the agent itself is asked a piece that tries the same. Each
+  outcome becomes a row of the measurements table naming its effective configuration; any escape leaves the agent `not-measured`, filed
+  as a row.
 - **Then, with COAGENT1b**: the first real piece on this repository, Claude Code leading and Codex the partner, carrying **M3**, the cost
   per maker (the brief's characters, each part's counts, the lead's wait, the files beyond the piece, how much Daoris kept).
-- **COAGENT1f**: the reverse, Codex leading and Claude Code the partner (whether Codex can commit a merge in its own linked worktree is a
-  measurement of its own here); a Codex conversation resumed after its process ended (SESSCTX1a's Codex half); Codex's `turn/steer`
-  (STEER3) where ready.
+- **COAGENT1f**: the reverse, Codex leading with a partner of another maker where one is admitted (whether Codex can commit a merge in
+  its own linked worktree is a measurement of its own here); a Codex conversation resumed after its process ended (SESSCTX1a's Codex
+  half); Codex's `turn/steer` (STEER3) where ready.
 
 Each measurement is an evidence document, a row of the measurements table where it states a capability, and a dated note on D199.
 
@@ -629,11 +726,14 @@ Each is one feature a person can see working (D187), split, if ever, only by sub
    §8.3's capture cases; on the install, Codex reading a Claude Code session's work in progress, carrying M1 and M4. **The first usable
    on the install**: small, safe as helpers are, and Codex at work beside a session at once.
 2. **COAGENT1b — a partner writes one piece for a driven session, asked by the person** (service, driver, modules, web-shell; after 1a).
-   §2.3 for a driven lead, by the Pieces section's press and the terminal verb: the box and its states, the clone and the import, the
-   record's `serves` and `piece`, the role's allow-list and census, Daoris's keeping, the delivery by key, §2.4's landing at every door,
-   the opinion's families, the turn-end stand-in, the admission by a measured `partner-confinement` row (the measurements table's first
-   rows), the Pieces section and the head in English and Chinese, the notes and the log. Proof: §8.2 and §8.3's partner cases; M2 in a
-   disposable repository before its first use on the install; then the first real piece, carrying M3.
+   §2.3 for a driven lead, by the Pieces section's press and the terminal verb: the box, its states and their reconciliation, the
+   reservation in the common admission, the strict job, the clone owned by its box, the keeper and the import (§7.9), the frozen ref and
+   its classing, the record's `serves` and `piece`, the role's binding, allow-list and census, the delivery receipt, the notes that reset
+   nothing, §2.4's landing at every door, the opinion's families with their provenance, the admission by a measured row naming its
+   effective configuration (the measurements table's first rows), the turn-end stand-in, the kit's queueing switch and the second maker
+   by file, the Pieces section and the head in English and Chinese, the notes and the log. Proof: §8.2 and §8.3's partner cases; M2 in a
+   disposable repository before its first use on the install; then the first real piece, carrying M3. It is one feature, large: a
+   builder that cannot finish it splits by sub-feature only, never into a host half and a page half (D187 point 5).
 3. **COAGENT1c — a conversation's lead, and the head's menu** (driver, modules, web-shell; after 1b). A conversation asks for a piece and
    hears its answer between turns; the head's ⋯ offers the ask. Proof: `PartnerChatProcessTests`; the page in both languages.
 4. **COAGENT1d — the lead asks for a piece** (service, driver, modules, web-settings, web-shell; after 1b). `partner_ask` under the
@@ -643,13 +743,16 @@ Each is one feature a person can see working (D187), split, if ever, only by sub
    owner's `on` and the dogfood.
 5. **COAGENT1e — the provider sheet, and a maker that joins by declaration** (driver, modules, web-settings; after 1d). §3's
    `AgentCapabilities` with its sources and the measurements table whole, on `HARNESSES` and `agent list`, the Agents page's *In a shared
-   session*, the manifest's two postures and their fixtures, the kit's queueing switch, §8.4's rehearsal phase. Proof: the sheet's tests
-   per adapter, the census, the rehearsal phase.
+   session*, the manifest's two postures and their fixtures, §8.4's rehearsal phase. Proof: the sheet's tests per adapter, the census, the
+   rehearsal phase.
 6. **COAGENT1f — measured both ways on the install** (the parent with the owner; after 1d). §8.5's reverse run, Codex's resume and steer
    where ready, the first values (45 minutes, two open, the brief per piece) read again in a D199 note.
-7. **COAGENT1g — a hand-over waits for the outgoing part's descendants** (driver; checked first). Whether the runner's stop ends a part's
-   background commands and children before the next part starts in the tree; where it does not, the hand-over waits for them, said.
-   Proof: a `Process` case with a background command outliving its turn.
+7. **COAGENT1g — a hand-over waits for the outgoing part's descendants** (driver; checked first; **before 1d**, since from 1d the
+   install's leads hand over with pieces in flight). Whether the runner's stop ends a part's background commands and children before the
+   next part starts in the tree; where it does not, the hand-over waits for them, said, with the strict job a partner's start uses. Proof:
+   a `Process` case with a background command outliving its turn.
+
+The order is 1a, 1b, 1c, 1g, 1d, 1e, 1f.
 8. **Later, each after its measurement or its own design**: a channel between a lead and its partners, by participant (its own design,
    Codex's read 21); a partner resuming its own conversation on a second piece (amends D189 point 6; SESSCTX1a first); a limited piece
    carried on by itself, with its second record and its deadline; a cherry-pick's or a squash's provenance; a reading by another maker
@@ -675,19 +778,25 @@ D188 whole; D189 (point 6 included); D197; CAPCOUNT1; D24; D46; D47 §4.
 without the work in progress; turns Daoris grants between the lead and a partner; an urgent level on a piece; a conversation kept across
 pieces before resume is measured; a swap that keeps both conversations; a co-work record beside the boxes; a partner's record on the
 lead's entry; enrolling the person's conversation under the cap; a partner's work landed past its lead or by a cherry-pick read as taken
-in; a partner's edits applied as a patch; an unmeasured provider admitted as a partner; a role enforced only by rules an agent may not
-take; the manifest claiming queueing, steering, rules, limit words, lineage or confinement; a capability sheet a model is asked about;
-Daoris choosing a maker the person's rule did not list; a token or money cap no harness enforces.
+in; a partner's edits applied as a patch; Daoris running git in a partner's copy after its turn; the partner's own history imported;
+an unmeasured provider admitted as a partner, or one admitted on an agent's declining to escape, or on a stand-in's row; a partner
+started in a best-effort container; a role enforced only by rules an agent may not take; a piece ref counted as a holder; a piece's
+notice as a word; the manifest claiming queueing, steering, rules, limit words, lineage or confinement; a capability sheet a model is
+asked about; Daoris choosing a maker the person's rule did not list; a token or money cap no harness enforces.
 
 ## 11. What is not known
 
-- **Codex as a partner and a reader** (M1, M2, M4): whether its connector calls join, whether it stays confined, whether it commits in
-  its clone by itself, what its turn counts mean. Until M2, no partner runs on the install.
+- **Codex as a partner and a reader** (M1, M2, M4): whether its connector calls join, whether its sandbox on this machine refuses the
+  probes of §8.5 (the local host's address and the pipe among them), whether it can run the probes without an agent, what its turn counts
+  mean. Until M2, no partner runs on the install.
+- **Claude Code as a partner**: no enforcement mechanism of its own is identified here (its rules do not reach a shell's write), so it
+  is not admitted as a partner until one is identified and measured; it leads, and Codex is the partner, in the first rows.
 - **Whether Codex can work without network** under `agent`: a piece that needs a package fetch may fail there; M3's run says how often.
 - **The brief's cost per piece**, and whether 45 minutes and two open pieces are the right first values (M3, COAGENT1f).
 - **The clone's and the capture's cost** on this repository on this machine, where a program starts slowly (COAGENT1a, 1b).
 - **Whether the runner's stop ends a part's background work** before a hand-over starts the next part (COAGENT1g); a partner's end
-  waits for its process tree either way (§2.3 step 6).
+  waits for its job to be empty either way (§2.3 step 6).
+- **The import's first bounds** (10 MB a file, 50 MB a piece), read again in COAGENT1f.
 - **Whether a plugin's harness runs a second stand-in beside the first** in one rehearsal home, which §8.4 assumes.
 
 ## 12. The reads (D191)
@@ -696,6 +805,7 @@ Daoris choosing a maker the person's rule did not list; a token or money cap no 
 |---|---|---|---|---|---|
 | 1 | design and D199, round 1 | Codex (`codex-cli 0.162.0-alpha.17.2`, read-only, its prompt naming the files it might read) | `e44d52cba` | 21: 18 blocking, 3 non-blocking | all checked against the code; all taken in round 2, 2 in part with the rest answered |
 | 1 | design and D199, round 1, as a foundation's read | Fable | `e44d52cba` | 10: 4 blocking, 6 non-blocking | accept once the blocking four are answered; all taken in round 2 |
+| 2 | design and D199, round 2, and round 1's answers | Codex (the same) | `ba2ca4a48` | round 1's 21: 11 held, 10 held in part; 13 new: 12 blocking, 1 non-blocking | all checked against the code; all 13 taken in round 3, which also closes the ten held in part |
 
 **Codex's read of round 1:**
 
@@ -737,3 +847,24 @@ Daoris choosing a maker the person's rule did not list; a token or money cap no 
 | F8: 1d needs 1b; split 1a now | taken: the rows reordered and the split decided by sub-feature | §9 |
 | F9: `uncertain` missing from the states | taken | §6.1, §7.2 |
 | F10: two citations drifted | taken | §0.2 |
+
+**Codex's read of round 2.** On its round-1 findings: 1, 2, 4, 5, 6, 7, 9, 15, 16, 20 and 21 held; 3, 8, 10, 11, 12, 13, 14, 17, 18 and 19
+held in part, each pointing at a new finding below, which round 3 takes. It confirmed that `serves` keeps a partner out of the lead's
+entry, counts it under the cap and nests it under its lead on the rail (`groups.ts:304`), and that the page's names must read `piece`
+(`identity.ts:79`).
+
+| Finding | Taken or answered | Where |
+|---|---|---|
+| 22 (blocking): M2 measures an agent declining to escape; the effective configuration is not named | taken: admission rests on an identified enforcement mechanism in its effective configuration, measured by deterministic probes through the mechanism (local-path push, link, transient write, home, the local host, the pipe), the agent's run supplementary; a stand-in's row never admits production; Claude Code not admitted until a mechanism is identified | §3.3, §8.5, §11 |
+| 23 (blocking): the keeper runs git in a copy the partner controlled | taken: Daoris never runs git in the copy after the turn; it reads the files and writes one commit in the repository through a temporary index, no filters, no hooks, no signing, the repository's identity | §2.3 step 7, §7.9 |
+| 24 (blocking): no admission policy for the imported content and history | taken: regular and executable files only; links, junctions, submodules and nested repositories refused; the repository's ignore rules; bounds; the partner's own history never imported; secret detection not claimed; a refused import `held` with its copy | §7.9, §6.1 |
+| 25 (blocking): the states do not reconcile completed side effects | taken: each side effect made before its state and idempotent by its identity (the open by the piece, a deterministic keeper commit, a create-only ref); a restart observes, then writes; the copy's removal a retried cleanup; whole-file state writes | §7.2 |
+| 26 (blocking): stray cleanup would move a partner's copy | taken: the copy is owned by its box, left by the strays' cleanup while held, never a pass's leftover, listed in the inventory | §7.2 |
+| 27 (blocking): a harness's exit does not mean every writer ended | taken: started suspended in an empty job, refused where it cannot join, the end waiting for the job to be empty; an unknown job keeps the copy untouched until the person's act | §2.3 steps 5-6, §7.2 |
+| 28 (blocking): the role holds on MCP only; HTTP and the pipe stay open | taken: the driver binds the role through the scope a child inherits; the local host and the pipe are closed to a partner by admission, its mechanism measured to refuse them; D156 named as the residual for other sessions | §3.3, §7.4 |
+| 29 (blocking): the box's reservation does not reserve the shared cap | taken: reservations counted in the shared count every starter reads, converted once and released at every end; two open counted across `from` | §2.3 step 4, §5 |
+| 30 (blocking): ancestry is not durable incorporation or authorship | taken: taken-in recorded when first seen and never unset; Daoris's replays and squash landings carry the pieces' provenance; a contributing maker kept among the opinion's families where a rewrite leaves it unclear; a revert is the lead's work | §2.3 step 10, §7.7 |
+| 31 (blocking): delivery omits uncertain attempts and ownership across successors | taken: one piece-wide delivery receipt with its claimed destination, moved along `from`; an uncertain attempt waits for the person | §2.3 step 9, §7.6 |
+| 32 (blocking): a notice can reset the answers-alone count | taken: a piece's notices are notes, never words: they reach no prompt and reset nothing | §2.3 step 11, §4.2 |
+| 33 (blocking): 1b's proof needs fixtures scheduled in 1e | taken: the queueing switch and the second maker by file move into 1b; the strict job is 1b's; 1g ordered before 1d | §8.1, §9 |
+| 34: "no tidy reads the namespace" too strong | taken, and treated as needed: piece refs are classed beside the recovery refs, never mutated by generic cleanup and never counted as holders, with retention tests across tidy, clear, sync, a landing and `git gc` | §2.4, §8.3 |
