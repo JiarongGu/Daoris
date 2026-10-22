@@ -16,6 +16,12 @@ with the version and date at release.
 - A workflow that closes its quests now applies in a workspace you share through a remote, once every machine of it runs a Daoris
   that knows it: each sync says so to the remote, and the remote answers which machines have not. Until all have, a quest there
   closes by its done as before, and its session's start says which machine is older.
+- A repository already set up for agents that keeps no index of where things are is now asked for one: *Set up for agents*
+  (or `daoris-driver setup <repository>`) asks *Give this repository an index of where things are*, naming a generator in
+  the repository's own Node, .NET or Python toolchain and adding its two commands to the repository's rules beside the
+  doctrine tool's. Its session lists the indexes it keeps already and leaves each whole, writes the generator, its check
+  and its folder, and declares it. A workspace's set-up plan asks each repository for its index once its set-up has landed,
+  one at a time with the set-ups. A stack the press does not know is refused, saying how to ask by hand. In English and 中文.
 - A workflow version saved as a graph now says which checks its sessions run: its `claimed` node's `checks` (`light` or
   `heavy-at-end`) is taken by every session of a run bound to it, its first included, in place of the repository's choice, and its
   `callMinutes` sets how long one call may run under *Light* before the session is told (20 by default). A value written another
