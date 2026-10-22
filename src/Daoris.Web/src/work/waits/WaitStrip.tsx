@@ -18,6 +18,7 @@ import { AnswerAlone, answerFor, type AnswerWaits } from './AnswerAlone';
 import { ProposedRules, type RuleAsk, type RuleWaits } from './ProposedRules';
 import { InConversation, leftFor, type Seek, SOUGHT, useSought, waitName } from './WaitAnchor';
 import { rulesAsked, type Wait, WORK_WAITS, waitsOf } from './waits';
+import type { ParkQuestion } from './parkQuestion';
 
 /**
  * What the frame hands both the session's head and the strip at its foot (WAITFOOT1b, D168 point 3): every wait's press and its
@@ -33,6 +34,16 @@ export type WaitProps = {
   onAnswerAsk?: (ask: string) => void;
   goAheads?: GoAhead[];
   onGoAhead?: GoAheadAnswer;
+  /**
+   * The park's question as its agent asked it (PARKVIEW1, the park's ask design §2): the head's card shows it, and the box below
+   * draws it with its answers as presses. Null where it asked none through the connector.
+   */
+  question?: ParkQuestion | null;
+  /**
+   * The box below is a driven park's answer box, which draws what the park asks with every press (PARKVIEW1): the strip draws none
+   * of the park's waits, and the head lists its go-aheads with no press. A parked chat's composer draws none of it, so is no such box.
+   */
+  parkBox?: boolean;
   /**
    * The tool calls it holds for the person's answer under asking (AUTONOMY1b3c, D184 point 3): every request this machine's sessions
    * hold as the shell read them, its own drawn, the answer's one door and its pending. Absent where nothing reads them (a browser).
@@ -86,7 +97,8 @@ export type WaitProps = {
  * above the words that raised it.
  *
  * @remarks
- * **The head's molecules, not copies** (D168 point 2): a go-ahead still open is `GoAheadList`'s, a rule the session proposed
+ * **The head's molecules, not copies** (D168 point 2): a go-ahead still open is `GoAheadList`'s where no box below answers the
+ * park (where one does, the box draws it, PARKVIEW1), a rule the session proposed
  * `ProposedRules`' (PROPOSEHERE1b), the work's line `Lands` with its *Accept…*, the rebase words and the gates, a discard the line
  * holds `Discards`, an agent's ask for a helper waiting on the person's word `HelperAsks` with its yes and no (MIXAGENT2c), a tool
  * call held for their answer under asking `PermissionAsks` with a press per choice its agent offered (AUTONOMY1b3c), a third answer
@@ -132,11 +144,13 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, 
     if (inside && !section.current?.contains(section.current.ownerDocument.activeElement)) setInside(false);
   });
   const { session, toEvent } = props;
-  const waits = waitsOf({ ...props, answerBelow });
-  // A park's question whose box is right below is counted but not drawn (WAITFOOT2c): the box is the door and says so in its
-  // own placeholder, so a line over it was a second statement of the same ask. With nothing else to draw, no strip.
-  const boxBelow = (wait: Wait) => wait.kind === 'question' && wait.below;
-  if (waits.every(boxBelow)) return null;
+  // A park's question whose box is right below is not drawn here (WAITFOOT2c): the box is its door. Nor, since PARKVIEW1 (the park's
+  // ask design §3), are its go-aheads: the box draws what the park asks, each answer a press the box's words go with, so a line here
+  // would be a second place to answer the same ask. Neither is counted: the strip's count is what it draws (the look of 2026-10-22
+  // read *2 waiting on you* over one). With nothing else to draw, no strip.
+  const boxBelow = (wait: Wait) => (wait.kind === 'question' && wait.below) || (wait.kind === 'goAhead' && Boolean(props.parkBox));
+  const waits = waitsOf({ ...props, answerBelow }).filter((wait) => !boxBelow(wait));
+  if (waits.length === 0) return null;
   // Never from under the person (WAITFOOT2a): an ask open here, or the focus, a line a press led to's among it, holds it up.
   const held = inside || Boolean(workAsk?.open) || Boolean(ruleAsk?.open);
   const several = waits.length > 1;

@@ -10,6 +10,7 @@ import type { PartSpent, SessionEntry } from '../../work/entries';
 import { GROUP_ORDER, type SessionGroupName, type SessionGrouping } from '../../work/groups';
 import type { HelperAskRow, HelperWait } from '../../work/waits/HelperAsks';
 import type { HandOverAskRow } from '../../work/waits/HandOverAgentAsk';
+import { type ParkQuestion, readQuestion } from '../../work/waits/parkQuestion';
 import type { PermissionAnswered, PermissionChoice, PermissionWait } from '../../work/waits/PermissionAsks';
 import type { AnswerAloneAnswered, AnswerWait } from '../../work/waits/AnswerAlone';
 import type { NewSessionAnswer } from '../../work/say';
@@ -605,6 +606,22 @@ export const useSessionHandOverAsk = (session: string | null | undefined) => {
         state: word(ask.state), code: word(ask.code), agent: word(ask.agent),
       };
     },
+    enabled: isAvailable && Boolean(session),
+    refetchOnWindowFocus: false,
+  });
+};
+
+/**
+ * A parked session's question to the person (PARKVIEW1, the park's ask design §2), as its agent asked it through `question_ask` and
+ * the driver kept it for the park its last turn ended in, read off this machine's own files: shell-only, and asked only for a park of
+ * this machine's still waiting on the person (null asks nothing); null where none is kept. Under the sessions' key, so a look's tick
+ * and the session's moves ask it again, as its hand-over ask is.
+ */
+export const useSessionQuestion = (session: string | null | undefined) => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: ['sessions', 'question', session ?? ''] as const,
+    queryFn: async (): Promise<ParkQuestion | null> => readQuestion(await call<unknown>('SESSION_QUESTION', { id: session })),
     enabled: isAvailable && Boolean(session),
     refetchOnWindowFocus: false,
   });

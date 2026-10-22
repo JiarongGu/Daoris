@@ -386,8 +386,12 @@ public sealed class ReviewerChoiceTests : IDisposable
 
     // ——— The account walk, unchanged (§3.2 step 2): what it preserves, a reviewer gets.
 
+    /// <summary>
+    /// Rewritten by POOL1a2 (D197 point 1): a workspace's default once gave its reviewer that account. An older build's default is
+    /// read as the set now, begun at the machine's account, so a reviewer runs there whatever the workspace.
+    /// </summary>
     [Fact]
-    public async Task A_reviewer_runs_on_the_account_its_agent_s_scope_gives_the_workspace()
+    public async Task A_reviewer_runs_on_the_set_s_account_whatever_the_workspace()
     {
         Account("codex", "home");
         Account("codex", "office");
@@ -397,7 +401,7 @@ public sealed class ReviewerChoiceTests : IDisposable
         var work = await Choose(Roster(), "claude-code", "codex-acp", workspace: "work");
 
         Assert.Equal("home", machine.Selection!.Profile);
-        Assert.Equal("office", work.Selection!.Profile);
+        Assert.Equal("home", work.Selection!.Profile);
     }
 
     [Fact]

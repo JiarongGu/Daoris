@@ -83,7 +83,7 @@ internal sealed class CurveMove(ChatContext context, ChatHandOver handOver)
             var resolved = _context.Harnesses.Adapters.Resolve(adapter);
             if (resolved.Toolchain is not { } toolchain) return null;
             (agent, owner) = (resolved.Name, toolchain.Owner(resolved.Name));
-            scope = _context.Harnesses.Settings.ResolveScope(owner, prior.Workspace);
+            scope = _context.Harnesses.Settings.Set(owner);
         }
         catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException or JsonException)
         {

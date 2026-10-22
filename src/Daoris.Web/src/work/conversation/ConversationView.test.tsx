@@ -28,6 +28,31 @@ const FINISHED = () => [
 ];
 
 describe('ConversationView', () => {
+  /**
+   * PARKVIEW1 (Fable's read, Q4): words the person pressed as an answer of the park's question read as that answer chosen, then their
+   * own words, waiting at the foot and as the ask of the turn that took them; in 中文 the mark is translated and the answer is not.
+   */
+  it('draws a pressed answer as chosen, then the person\'s own words', async () => {
+    const { unmount } = view([
+      ev({ kind: 'turn', stopReason: 'end_turn' }),
+      ev({ kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: '1,200\n\nonly the menu entry', choice: '1,200' }),
+    ]);
+    expect(screen.getByText('chose')).toBeInTheDocument();
+    expect(screen.getByText('1,200')).toBeInTheDocument();
+    expect(screen.getByText('only the menu entry')).toBeInTheDocument();
+    expect(screen.queryByText(/^1,200\s+only the menu entry$/)).toBeNull();
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    try {
+      view([ev({ kind: 'user', origin: 'person', id: 'w2', text: 'Leave it for now', choice: 'Leave it for now' })]);
+      expect(screen.getByText('选了')).toBeInTheDocument();
+      expect(screen.getByText('Leave it for now')).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
   it('shows what was asked and the answer, and folds a finished turn\'s work into one counted row', async () => {
     view(FINISHED());
 

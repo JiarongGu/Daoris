@@ -22,6 +22,7 @@
   "help.proposal.titleGo": "Ask Daoris suggests a screen",
   "help.proposal.goNote": "Going there changes nothing: what it is for is done on the screen itself.",
   "help.proposal.go": "Go there",
+  "help.proposal.dismissGo": "Dismiss",
   "help.proposal.titlePlugin": "Ask Daoris proposes a plugin",
   "help.proposal.titleGrant": "Ask Daoris asks for a plugin's tools",
   "help.proposal.titleWithdraw": "Ask Daoris proposes taking a plugin's tools back",

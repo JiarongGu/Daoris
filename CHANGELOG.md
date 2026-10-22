@@ -11,6 +11,16 @@ with the version and date at release.
   still waits, the landing says on what, in the words the run's *Workflow* view uses; where Daoris has not judged the commit yet, your
   press asks for that judgement and waits up to twenty seconds for it. `daoris driver workflow list` and `use` no longer say a graph
   version does not run. A graph that closes its quests still waits for a later build to start.
+- A session waiting on you now says what it asks in its box, under its last message: its question in its own words, each answer it
+  offers as a button beside what it will do on it (the one it recommends marked), the go-aheads it waits on with *Approve* and
+  *Refuse*, how long it has waited, and what it holds meanwhile. Your words in the box go with the answer you press, or alone as your
+  answer; where it waits on a go-ahead and a question both, the go-ahead comes first and its answer waits for the question's, so the
+  session goes on once with both. Sessions ask through Daoris's new `question_ask` tool; one that asked only in its message is
+  answered in words as before. In English and 中文.
+- In Ask Daoris, a card that suggests a screen, such as the one that takes you to a quest it published, now reads *Go there* and
+  *Dismiss*. *Dismiss* only takes the card out of the conversation: Ask Daoris is told nothing, and the quest is left as it is. It
+  was *Not now*, which Ask Daoris was told as your answer. A card about a quest a session has taken says it is taken. In English
+  and 中文.
 - A machine that left a workspace you share through a remote, or whose Daoris store was deleted, no longer keeps its workflows from
   closing their quests. The workspace's *Setup*, under *Remote and reach*, now lists *Machines not declared*: each machine the remote
   counts that has not said it knows a workflow that closes its quests. *Retire* takes one out of what the remote counts, and the
@@ -28,6 +38,12 @@ with the version and date at release.
   <node>` at a terminal, which Daoris's window confirms. A skip keeps your words, so a go-ahead nobody will raise no longer strands
   the run; a stop ends the run once nothing else of it can move. Your word is kept on the run and applied at Daoris's next look,
   said there until then. In English and 中文.
+- Every start now reads an agent's accounts as one set (D197), even where a file an older Daoris wrote still names a workspace's own
+  list or default: each workspace's work starts in the one order, an account no list held carries work, and a start that waits no
+  longer names accounts outside a list for you to add. *What needs you* shows every signed-out account of Daoris's that no waiting
+  start already names, and no longer offers to let an account into a list. A new account's sign-in ends by saying it joined Daoris's
+  accounts and goes last in the order. `daoris agent list` marks the order's first account as the machine default, where starts
+  begin. A sign-in in the window that names no account is refused, as before.
 - An update that stopped part way is now put back only while nothing else acts on Daoris's home: a terminal's `daoris-driver`
   command changing it is waited for, up to thirty seconds. If it still holds the home, Daoris does not start on a half-replaced
   application; it says which command held the home and asks you to start it again once that has finished.

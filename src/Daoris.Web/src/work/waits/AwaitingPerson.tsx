@@ -4,6 +4,8 @@ import type { NotePart, Quest } from '../../data/api';
 import { Button, Segmented, WaitingCard } from '../../design/ui';
 import { type Answered, InlineConfirm } from '../InlineConfirm';
 import { Note } from '../Note';
+import { QuestionAsked } from './ParkAnswer';
+import type { ParkQuestion } from './parkQuestion';
 import { InConversation } from './WaitAnchor';
 
 /** What the ledger lets a person do from `awaiting-person` — and nothing this surface invented. */
@@ -48,7 +50,12 @@ export type QuestClose = { as: 'done'; note: string | null };
  * A molecule: it is handed the note and reports a move, so a parked session with a three-paragraph
  * analysis and one with none are both reachable by passing them.
  */
-export function AwaitingPerson({ note, parts, quest = null, pending = false, onResolve, onAnswer, onConversation }: {
+export function AwaitingPerson({ note, parts, question = null, quest = null, pending = false, onResolve, onAnswer, onConversation }: {
+  /**
+   * Its question as its agent asked it through the connector (PARKVIEW1, the park's ask design §3): shown in place of its whole last
+   * message, which the conversation holds, its answers listed; their presses are the box's below, or this card's own answer.
+   */
+  question?: ParkQuestion | null;
   /** The way to the message that asked, in the conversation, where it holds it (WAITFOOT1c): *In the conversation*. */
   onConversation?: () => void;
   /** The session's note: its English, shown as kept where it has no parts. */
@@ -89,7 +96,9 @@ export function AwaitingPerson({ note, parts, quest = null, pending = false, onR
   return (
     <WaitingCard title={t('work.head.waiting')}>
 
-      <Note note={note} parts={parts} className="mt-1.5 text-body leading-relaxed" />
+      {question
+        ? <div className="mt-1.5"><QuestionAsked question={question} /></div>
+        : <Note note={note} parts={parts} className="mt-1.5 text-body leading-relaxed" />}
 
       <p className="m-0 mt-2 flex flex-wrap items-center gap-x-2 text-small text-ink-faint">
         <span>{t('work.awaiting.hint')}</span>

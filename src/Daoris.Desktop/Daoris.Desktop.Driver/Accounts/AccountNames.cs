@@ -115,6 +115,11 @@ public static class AccountNames
     /// Which account a sign-in into an account that is here reaches (ACCT1): the one named, by its id or its name, else the
     /// machine's default. Never one that is not here: a sign-in into an existing account never makes a folder.
     /// </summary>
+    /// <remarks>
+    /// The window reads the set (POOL1a2, the account-pool design §2.4), which holds no default, so a sign-in there that names no
+    /// account is refused before anything starts. The terminal's <c>login</c> with none named taking the order's first is
+    /// POOL1b's (§5.1); until then it reads the raw file's default.
+    /// </remarks>
     public static AccountTarget SignInTarget(
         IReadOnlyCollection<string> accounts, IReadOnlyDictionary<string, string> names, HarnessSettings settings, string agent,
         string? given)

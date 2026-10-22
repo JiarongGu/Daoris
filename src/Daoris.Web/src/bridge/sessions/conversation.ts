@@ -514,8 +514,12 @@ const levelPayload = (level: Level | undefined) =>
  */
 export const useSay = () =>
   useMutation({
-    mutationFn: async (words: { id: string; text: string; level?: Level }) =>
-      wordsOf(await call<unknown>('SESSION_INPUT', { id: words.id, text: words.text, ...levelPayload(words.level) })),
+    // `question` (PARKVIEW1): the park's question a press answers, which the door refuses `question-changed` where the park no
+    // longer asks it, keeping nothing.
+    mutationFn: async (words: { id: string; text: string; level?: Level; question?: string }) =>
+      wordsOf(await call<unknown>('SESSION_INPUT', {
+        id: words.id, text: words.text, ...levelPayload(words.level), ...(words.question ? { question: words.question } : {}),
+      })),
   });
 
 /**
@@ -538,10 +542,15 @@ export type GoAheadAnswered = WordsAnswer & { waits: boolean; message: string };
 export const useParkGoAhead = () => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: async (answer: { id: string; ask: string; number: number; approved: boolean; words?: string }): Promise<GoAheadAnswered> => {
+    // `goesOn: false` (PARKVIEW1): the page answers the park itself, with the answer to the question it also asked, so the go-ahead
+    // keeps it waiting for that answer (GOAHEAD2's provision for such a caller). Absent, the ask's door decides as it always has.
+    mutationFn: async (answer: {
+      id: string; ask: string; number: number; approved: boolean; words?: string; goesOn?: boolean;
+    }): Promise<GoAheadAnswered> => {
       const answered = await call<unknown>('SESSION_GO_AHEAD', {
         id: answer.id, ask: answer.ask, number: answer.number, approved: answer.approved,
         ...(answer.words ? { words: answer.words } : {}),
+        ...(answer.goesOn === false ? { goesOn: false } : {}),
       });
       const { message, waits } = (answered ?? {}) as { message?: unknown; waits?: unknown };
       return { ...wordsOf(answered), waits: waits === true, message: typeof message === 'string' ? message : '' };

@@ -1145,39 +1145,51 @@ describe('a park\'s go-aheads', () => {
 
   const asksRead = () => vi.mocked(fetch).mock.calls.filter(([input]) => String(input).startsWith('/api/asks')).length;
 
-  it('shows the go-aheads the park asked, each with Approve and Refuse, and not another session\'s', async () => {
+  /** The box's go-ahead lines, where the box answers the park (PARKVIEW1): each with its own *Approve* and *Refuse*. */
+  const boxLines = async () => within(await screen.findByRole('region', { name: 'It asks you' })).getAllByRole('listitem');
+
+  /**
+   * PARKVIEW1 (the park's ask design §3): the park's box carries every press of what it asks, so the person answers in one place: the
+   * head lists the go-aheads with none, and the strip draws none of them.
+   */
+  it('shows the go-aheads the park asked in its box, each with Approve and Refuse, the head listing them, and not another session\'s', async () => {
     show('g0ah3ad0');
 
-    const section = await screen.findByRole('region', { name: 'Go-aheads it asked' });
-    const items = within(section).getAllByRole('listitem');
+    const items = await boxLines();
     expect(items.map((item) => item.textContent)).toEqual([
       expect.stringContaining('dashboard configuration'),
       expect.stringContaining('comparison report'),
     ]);
-    expect(section).not.toHaveTextContent('the release branch');
+    expect(screen.getByRole('region', { name: 'It asks you' })).not.toHaveTextContent('the release branch');
     for (const item of items) {
       expect(within(item).getByRole('button', { name: 'Approve' })).toBeInTheDocument();
       expect(within(item).getByRole('button', { name: 'Refuse' })).toBeInTheDocument();
     }
-    // The park's own card and box stay: its question can still be answered in words.
+    // The head lists them, saying where they are answered, with no press and no field of its own.
+    const head = screen.getByRole('region', { name: 'Go-aheads it asked' });
+    expect(within(head).getAllByRole('listitem')).toHaveLength(2);
+    expect(within(head).queryByRole('button', { name: 'Approve' })).toBeNull();
+    expect(within(head).queryByLabelText('your words, if any')).toBeNull();
+    expect(head).toHaveTextContent('Each is answered in the box below, with your words there.');
+    // The park's own card and box stay: with no question recorded, it is answered in words.
     expect(screen.getByText(/I need go-aheads 1 and 2/)).toBeInTheDocument();
     expect(screen.getByLabelText('Message')).toBeInTheDocument();
   });
 
-  it('approves one with the person\'s words through one door, and says the session goes on where the door sent it on', async () => {
+  it('approves one with the box\'s words through one door, the words leaving the box, and says the session goes on', async () => {
     const notify = vi.fn();
     show('g0ah3ad0', notify);
-    const section = await screen.findByRole('region', { name: 'Go-aheads it asked' });
-    const second = within(section).getAllByRole('listitem')[1]!;
+    const second = (await boxLines())[1]!;
     const before = asksRead();
 
-    await userEvent.type(within(second).getByLabelText('your words, if any'), 'dev first, then production');
+    await userEvent.type(screen.getByLabelText('Message'), 'dev first, then production');
     await userEvent.click(within(second).getByRole('button', { name: 'Approve' }));
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GO_AHEAD', {
       payload: { id: 'g0ah3ad0', ask: 'a5k001', number: 2, approved: true, words: 'dev first, then production' },
     }));
     expect(notify).toHaveBeenCalledWith("Approved go-ahead #2; the same session goes on with it at the driver's next look.");
+    await waitFor(() => expect(screen.getByLabelText('Message')).toHaveValue(''));
     // One press: neither the ask's own door nor the box's was asked as well.
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', expect.anything());
     expect(vi.mocked(fetch)).not.toHaveBeenCalledWith('/api/asks/a5k001/go-aheads/2', expect.anything());
@@ -1188,7 +1200,7 @@ describe('a park\'s go-aheads', () => {
   it('refuses one with no words, sending none, and says the same session goes on with the refusal', async () => {
     const notify = vi.fn();
     show('g0ah3ad0', notify);
-    const first = within(await screen.findByRole('region', { name: 'Go-aheads it asked' })).getAllByRole('listitem')[0]!;
+    const first = (await boxLines())[0]!;
 
     await userEvent.click(within(first).getByRole('button', { name: 'Refuse' }));
 
@@ -1205,7 +1217,7 @@ describe('a park\'s go-aheads', () => {
       : DRIVER_STATE));
     const notify = vi.fn();
     show('g0ah3ad0', notify);
-    const first = within(await screen.findByRole('region', { name: 'Go-aheads it asked' })).getAllByRole('listitem')[0]!;
+    const first = (await boxLines())[0]!;
 
     await userEvent.click(within(first).getByRole('button', { name: 'Approve' }));
 
@@ -1213,7 +1225,7 @@ describe('a park\'s go-aheads', () => {
       'Approved go-ahead #1. It still waits on you for go-ahead #2, and goes on once that is answered.',
     ));
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', expect.anything());
-    const second = within(screen.getByRole('region', { name: 'Go-aheads it asked' })).getAllByRole('listitem')[1]!;
+    const second = (await boxLines())[1]!;
     expect(within(second).getByRole('button', { name: 'Approve' })).toBeInTheDocument();
   });
 
@@ -1223,7 +1235,7 @@ describe('a park\'s go-aheads', () => {
       : DRIVER_STATE));
     const notify = vi.fn();
     show('g0ah3ad0', notify);
-    const first = within(await screen.findByRole('region', { name: 'Go-aheads it asked' })).getAllByRole('listitem')[0]!;
+    const first = (await boxLines())[0]!;
 
     await userEvent.click(within(first).getByRole('button', { name: 'Approve' }));
 
@@ -1232,7 +1244,7 @@ describe('a park\'s go-aheads', () => {
     ));
   });
 
-  it('says a refused go-ahead in the service\'s words beside it (UXFIX2b3b), and keeps the go-aheads to answer', async () => {
+  it('says a refused go-ahead in the service\'s words in the box (UXFIX2b3b), keeping its words and the go-aheads to answer', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type !== 'SESSION_GO_AHEAD') return DRIVER_STATE;
       throw Object.assign(new Error('fallback'), {
@@ -1241,15 +1253,17 @@ describe('a park\'s go-aheads', () => {
     });
     const notify = vi.fn();
     show('g0ah3ad0', notify);
-    const second = within(await screen.findByRole('region', { name: 'Go-aheads it asked' })).getAllByRole('listitem')[1]!;
+    const second = (await boxLines())[1]!;
 
+    await userEvent.type(screen.getByLabelText('Message'), 'only the menu entry');
     await userEvent.click(within(second).getByRole('button', { name: 'Approve' }));
 
-    expect(await within(second).findByRole('alert')).toHaveTextContent('Ask #a5k001 holds no go-ahead 2: it holds 1.');
+    // The box says a refusal word for word, as it says every other.
+    expect(await screen.findByRole('alert')).toHaveTextContent('Ask `#a5k001` holds no go-ahead 2: it holds 1.');
     expect(notify).not.toHaveBeenCalled();
-    expect(within(screen.getByRole('region', { name: 'Go-aheads it asked' })).getAllByRole('button', { name: 'Approve' }))
-      .toHaveLength(2);
-    expect(within(second).getByRole('button', { name: 'Approve' })).toBeEnabled();
+    expect(screen.getByLabelText('Message')).toHaveValue('only the menu entry');
+    expect(within(screen.getByRole('region', { name: 'It asks you' })).getAllByRole('button', { name: 'Approve' })).toHaveLength(2);
+    expect(within((await boxLines())[1]!).getByRole('button', { name: 'Approve' })).toBeEnabled();
   });
 
   it('shows nothing new for a park whose ask holds none of its own, and asks for no asks where no ask asked its quest', async () => {
@@ -1270,73 +1284,39 @@ describe('a park\'s go-aheads', () => {
   });
 
   /**
-   * WAITFOOT1b (D168): the person reads the conversation's foot, where the park's question is, so what waits on them stands
-   * there too, above the box and outside the conversation's scroll, answered through the head's one door; the head's stay.
+   * WAITFOOT1b (D168) and PARKVIEW1 (the park's ask design §3): the person reads the conversation's foot, where the park's question
+   * is, so what it asks stands there, in the box below the conversation's scroll, with every press of it; the strip, which counted
+   * its question and drew its go-aheads beside the box's own field, draws none of the park's waits, whether or not the head's are on
+   * screen, and the head lists the go-aheads with no press.
    */
-  it('answers a go-ahead from the strip at the foot through the same door, the head\'s list still there', async () => {
-    const notify = vi.fn();
-    show('g0ah3ad0', notify);
-    const strip = await screen.findByRole('region', { name: '3 waiting on you' });
-    // Outside the conversation's scroll, above the box, as Ask Daoris's note row is.
-    expect(screen.getByRole('main').contains(strip)).toBe(false);
-    expect(strip.compareDocumentPosition(screen.getByLabelText('Message'))).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-    // The box right below is the park's answer door, so no line over it says so (WAITFOOT2c).
-    expect(strip).not.toHaveTextContent('answer it in the box below');
-    expect(screen.getByRole('region', { name: 'Go-aheads it asked' })).toBeInTheDocument();
-
-    const second = within(strip).getAllByRole('listitem')[1]!;
-    await userEvent.click(within(second).getByRole('button', { name: 'Approve' }));
-
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GO_AHEAD', {
-      payload: { id: 'g0ah3ad0', ask: 'a5k001', number: 2, approved: true },
-    }));
-    expect(notify).toHaveBeenCalledWith("Approved go-ahead #2; the same session goes on with it at the driver's next look.");
-  });
-
-  /**
-   * WAITFOOT2a (D168's WAITFOOT2 note): the owner, 2026-10-15, found "a lot of duplicated options and message boxes": each wait
-   * in the head and again in the strip. The strip stands aside while the head's waits are wholly on screen, and stands again
-   * once any of them leaves it, so no press is ever out of sight.
-   */
-  it('draws each go-ahead once while the head\'s waits are on screen, and at the foot too once they are not', async () => {
+  it('answers a go-ahead in the box at the foot through the same door, no strip beside it, whether or not the head is on screen', async () => {
     const watched = watchScreen();
     try {
-      show('g0ah3ad0');
-      const head = await screen.findByRole('region', { name: 'Go-aheads it asked' });
-      // Watched where the record scrolls, below the page head pinned at its top.
+      const notify = vi.fn();
+      show('g0ah3ad0', notify);
+      const ask = await screen.findByRole('region', { name: 'It asks you' });
+      // Outside the conversation's scroll, above the box's field.
+      expect(screen.getByRole('main').contains(ask)).toBe(false);
+      expect(ask.compareDocumentPosition(screen.getByLabelText('Message'))).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+      const head = screen.getByRole('region', { name: 'Go-aheads it asked' });
       await waitFor(() => expect(watched.observers().flatMap((one) => one.targets)).toContain(head));
-      const [watching] = watched.observers();
-      expect(watching!.root).toBe(screen.getByRole('main'));
-      expect(watching!.rootMargin).toMatch(/^-\d+px 0px 0px 0px$/);
-      // Not yet told, the strip waits for the observer's word rather than flash over a head that may be on screen.
-      expect(screen.queryByRole('region', { name: '3 waiting on you' })).toBeNull();
+      for (const onScreen of [true, false]) {
+        watched.show(onScreen);
+        expect(screen.queryByRole('region', { name: /waiting on you$/ })).toBeNull();
+        expect(screen.getAllByRole('button', { name: 'Approve' })).toHaveLength(2);
+        expect(ask.contains(screen.getAllByRole('button', { name: 'Approve' })[0]!)).toBe(true);
+      }
 
-      watched.show(true);
-      expect(screen.queryByRole('region', { name: '3 waiting on you' })).toBeNull();
-      expect(screen.getAllByRole('button', { name: 'Approve' })).toHaveLength(2);
-      expect(head.contains(screen.getAllByRole('button', { name: 'Approve' })[0]!)).toBe(true);
+      const second = within(ask).getAllByRole('listitem')[1]!;
+      await userEvent.click(within(second).getByRole('button', { name: 'Approve' }));
 
-      watched.show(false);
-      expect(screen.getByRole('region', { name: '3 waiting on you' })).toBeInTheDocument();
-
-      // Half of one on screen is not on screen: its press may be the half that is not.
-      watched.show((section) => (section === head ? 0.5 : 1));
-      expect(screen.getByRole('region', { name: '3 waiting on you' })).toBeInTheDocument();
+      await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GO_AHEAD', {
+        payload: { id: 'g0ah3ad0', ask: 'a5k001', number: 2, approved: true },
+      }));
+      expect(notify).toHaveBeenCalledWith("Approved go-ahead #2; the same session goes on with it at the driver's next look.");
     } finally {
       watched.restore();
     }
-  });
-
-  it('takes the person from the strip to the head\'s waits at the top', async () => {
-    show('g0ah3ad0');
-    const strip = await screen.findByRole('region', { name: '3 waiting on you' });
-    const main = screen.getByRole('main');
-    main.scrollTop = 900;
-
-    await userEvent.click(within(strip).getByRole('button', { name: 'To the top' }));
-    expect(main.scrollTop).toBe(0);
-    // The focus goes with the person, to the record's head, where every wait stands.
-    expect(document.activeElement).toHaveAttribute('data-record-head');
   });
 
   /**
@@ -1365,11 +1345,11 @@ describe('a park\'s go-aheads', () => {
       return DRIVER_STATE;
     });
     const view = show('g0ah3ad0');
-    const strip = await screen.findByRole('region', { name: '3 waiting on you' });
+    const ask = await screen.findByRole('region', { name: 'It asks you' });
     const call = await screen.findByText('ask for a go-ahead');
 
-    // From the strip: go-ahead 1's call, outlined; go-ahead 2 asked by no call this conversation holds has no such press.
-    const [first, second] = within(strip).getAllByRole('listitem');
+    // From the box: go-ahead 1's call, outlined; go-ahead 2 asked by no call this conversation holds has no such press.
+    const [first, second] = within(ask).getAllByRole('listitem');
     expect(within(second!).queryByRole('button', { name: 'In the conversation' })).toBeNull();
     await userEvent.click(within(first!).getByRole('button', { name: 'In the conversation' }));
     await waitFor(() => expect(call.closest('[data-block]')!.className).toContain('outline-accent'));
@@ -1381,12 +1361,12 @@ describe('a park\'s go-aheads', () => {
       .map((said) => said.closest<HTMLElement>('[data-block]')).find(Boolean)!;
     await waitFor(() => expect(words.className).toContain('outline-accent'));
 
-    // And back: the call's mark names what waits from it, and *To the wait* leads to its line at the foot.
+    // And back: the call's mark names what waits from it, and *To the wait* leads to its line in the box (PARKVIEW1).
     const block = call.closest<HTMLElement>('[data-block]')!;
     await userEvent.click(within(block).getByRole('button', { name: 'To the wait: go-ahead #1' }));
-    await waitFor(() => expect(within(strip).getAllByRole('listitem')[0]).toHaveFocus());
+    await waitFor(() => expect(within(ask).getAllByRole('listitem')[0]).toHaveFocus());
 
-    // Away and back, the press is spent: the strip drawn again takes no focus and outlines nothing.
+    // Away and back, the press is spent: the box drawn again takes no focus and outlines nothing.
     const attend = (selected: string) => view.rerender(
       <QueryClientProvider client={view.client}>
         <Hub />
@@ -1394,15 +1374,15 @@ describe('a park\'s go-aheads', () => {
       </QueryClientProvider>,
     );
     attend('n0th3r00');
-    await waitFor(() => expect(screen.queryByRole('region', { name: '3 waiting on you' })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'It asks you' })).toBeNull());
     attend('g0ah3ad0');
-    const again = await screen.findByRole('region', { name: '3 waiting on you' });
+    const again = await screen.findByRole('region', { name: 'It asks you' });
     expect(within(again).getAllByRole('listitem')[0]).not.toHaveFocus();
     expect(within(again).getAllByRole('listitem')[0]!.className).not.toContain('outline-accent');
   });
 
-  // WAITFOOT2b (D168's WAITFOOT2 note): while the head's waits are on screen the strip stands aside, so *To the wait* leads there.
-  it('leads a raising block\'s *To the wait* to the head\'s line while the head is on screen', async () => {
+  // PARKVIEW1: the box that answers a park is always drawn, so *To the wait* leads to its line there, the head on screen or not.
+  it('leads a raising block\'s *To the wait* to the box\'s line while the head is on screen', async () => {
     const watched = watchScreen();
     try {
       const asked = '2026-09-02T00:30:00Z';
@@ -1421,18 +1401,153 @@ describe('a park\'s go-aheads', () => {
       const call = await screen.findByText('ask for a go-ahead');
       await waitFor(() => expect(watched.observers()).not.toHaveLength(0));
       watched.show(true);
-      expect(screen.queryByRole('region', { name: '3 waiting on you' })).toBeNull();
+      expect(screen.queryByRole('region', { name: /waiting on you$/ })).toBeNull();
 
       const block = call.closest<HTMLElement>('[data-block]')!;
       await userEvent.click(within(block).getByRole('button', { name: 'To the wait: go-ahead #1' }));
-      const line = within(screen.getByRole('region', { name: 'Go-aheads it asked' })).getAllByRole('listitem')[0]!;
+      const line = within(screen.getByRole('region', { name: 'It asks you' })).getAllByRole('listitem')[0]!;
       await waitFor(() => expect(line).toHaveFocus());
       expect(line.className).toContain('outline-accent');
-      // The strip stays aside: the line it would have led to is the one on screen.
-      expect(screen.queryByRole('region', { name: '3 waiting on you' })).toBeNull();
+      // No strip stands for the park's waits: the box holds them.
+      expect(screen.queryByRole('region', { name: /waiting on you$/ })).toBeNull();
     } finally {
       watched.restore();
     }
+  });
+});
+
+/**
+ * PARKVIEW1 (the park's ask design §2-§4): a session parked on a production go-ahead and a question its agent asked through
+ * `question_ask`. What it asks stands in its box, every answer a press the box's words go with, each reaching the session through
+ * a door the box already uses: a choice its label with the question's id, the free answer as before, and a go-ahead through the ask's
+ * door, kept from sending the park on while its question waits.
+ */
+describe('a park\'s question', () => {
+  const QUESTION = {
+    id: 'q5t10n00', question: 'Which quarterly target should the dashboard tile show?', at: '2026-09-02T00:45:00Z', recommend: 1,
+    by: 'before Friday\'s release',
+    choices: [{ label: '1,200', does: 'Write 1,200, the planning sheet\'s value.' }, { label: '1,350', does: 'Write 1,350.' }],
+  };
+  let ASKS: unknown[] = [];
+  let answered: Record<string, unknown> = { sent: true, reaches: 'resume' };
+
+  beforeEach(() => {
+    SESSIONS = [PARKED_ASKING];
+    ASKS = [{ ...ASK_WITH_GO_AHEADS, goAheads: [] }];
+    answered = { sent: true, reaches: 'resume' };
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith('/api/asks')) return Response.json(ASKS);
+      if (url.startsWith('/api/quests')) return Response.json([...QUESTS, ASKED_QUEST]);
+      return respond(url);
+    }));
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_QUESTION') return { question: QUESTION };
+      if (type === 'SESSION_INPUT') return answered;
+      if (type === 'SESSION_GO_AHEAD') return { message: 'Go-ahead 1 on ask `#a5k001` is approved.', sent: false, waits: true };
+      return DRIVER_STATE;
+    });
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+    eventHandlers.clear();
+    window.localStorage.removeItem('daoris.drafts');
+  });
+
+  it('shows its question in the box with its answers as presses, and in the head\'s card in place of its last message', async () => {
+    show('g0ah3ad0');
+
+    const ask = await screen.findByRole('region', { name: 'It asks you' });
+    expect(await within(ask).findByText('Which quarterly target should the dashboard tile show?')).toBeInTheDocument();
+    expect(within(ask).getByRole('button', { name: '1,200' })).toBeEnabled();
+    expect(within(ask).getByText('recommended')).toBeInTheDocument();
+    expect(within(ask).getByText('Write 1,350.')).toBeInTheDocument();
+    expect(within(ask).getByText('It says it needs your answer by: before Friday\'s release')).toBeInTheDocument();
+    expect(within(ask).getByText(/^Meanwhile its quest #q4sk00 stays taken/)).toBeInTheDocument();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUESTION', { payload: { id: 'g0ah3ad0' } });
+    // The head's card says the question, with no press of its own: the box below holds them.
+    const card = screen.getByText('This one is waiting on you').closest('section')!;
+    expect(within(card).getByText('Which quarterly target should the dashboard tile show?')).toBeInTheDocument();
+    expect(within(card).queryByRole('button', { name: '1,200' })).toBeNull();
+    expect(within(card).queryByText(/I need go-aheads 1 and 2/)).toBeNull();
+  });
+
+  it('sends a choice as its label with the box\'s words, naming the question, and the words leave the box', async () => {
+    const notify = vi.fn();
+    show('g0ah3ad0', notify);
+    const ask = await screen.findByRole('region', { name: 'It asks you' });
+    await within(ask).findByText('Which quarterly target should the dashboard tile show?');
+
+    await userEvent.type(screen.getByLabelText('Message'), 'but only on the dashboard');
+    await userEvent.click(within(ask).getByRole('button', { name: '1,350' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: { id: 'g0ah3ad0', text: '1,350\n\nbut only on the dashboard', question: 'q5t10n00' },
+    }));
+    expect(notify).toHaveBeenCalledWith("Answered “1,350”: the same session goes on with it at the driver's next look.");
+    await waitFor(() => expect(screen.getByLabelText('Message')).toHaveValue(''));
+  });
+
+  it('says a question that changed under the page in the box, keeping the words, and sends nothing more', async () => {
+    answered = { sent: false, why: 'question-changed' };
+    const notify = vi.fn();
+    show('g0ah3ad0', notify);
+    const ask = await screen.findByRole('region', { name: 'It asks you' });
+    await within(ask).findByText('Which quarterly target should the dashboard tile show?');
+
+    await userEvent.type(screen.getByLabelText('Message'), 'and say so');
+    await userEvent.click(within(ask).getByRole('button', { name: '1,200' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Its question changed since this page read it: read the new one and answer it. Nothing was sent.',
+    );
+    expect(screen.getByLabelText('Message')).toHaveValue('and say so');
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  it('sends the free answer through the box as before, naming no question', async () => {
+    show('g0ah3ad0');
+    const ask = await screen.findByRole('region', { name: 'It asks you' });
+    await within(ask).findByText('Which quarterly target should the dashboard tile show?');
+
+    await userEvent.type(screen.getByLabelText('Message'), 'Neither: hold the tile until the review.');
+    await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: { id: 'g0ah3ad0', text: 'Neither: hold the tile until the review.' },
+    }));
+  });
+
+  /**
+   * The owner's case, in neutral words: parked on a production go-ahead beside its question, with the person's words in the box. The
+   * go-ahead comes first and takes the words, keeping the park for the question (`goesOn: false`); the question's presses and the
+   * free answer wait for it, said so, and nothing goes to the park meanwhile.
+   */
+  it('answers a production go-ahead first with the box\'s words, keeping the park for its question, whose presses wait for it', async () => {
+    ASKS = [{ ...ASK_WITH_GO_AHEADS, goAheads: [ASK_WITH_GO_AHEADS.goAheads[0]] }];
+    const notify = vi.fn();
+    show('g0ah3ad0', notify);
+    const ask = await screen.findByRole('region', { name: 'It asks you' });
+    await within(ask).findByText('write on production');
+    expect(within(ask).getByText(
+      'Answer its go-aheads first: each keeps it waiting for its question, whose answer then sends it on with them.',
+    )).toBeInTheDocument();
+    expect(within(ask).getByRole('button', { name: '1,200' })).toBeDisabled();
+
+    await userEvent.type(screen.getByLabelText('Message'), 'only the menu entry, not the report');
+    await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Answer its go-aheads above first: then this answer sends it on with them.');
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', expect.anything());
+
+    await userEvent.click(within(within(ask).getByText('write on production').closest('li')!).getByRole('button', { name: 'Approve' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GO_AHEAD', {
+      payload: { id: 'g0ah3ad0', ask: 'a5k001', number: 1, approved: true, words: 'only the menu entry, not the report', goesOn: false },
+    }));
+    expect(notify).toHaveBeenCalledWith('Approved go-ahead #1. It still waits on you: answer it below to send it on.');
+    await waitFor(() => expect(screen.getByLabelText('Message')).toHaveValue(''));
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', expect.anything());
   });
 });
 

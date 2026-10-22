@@ -227,8 +227,12 @@ public sealed class CodexUsageRosterTests : IDisposable
         Assert.DoesNotContain($"fake/{first.Profile}", Asked().Skip(2));
     }
 
+    /// <summary>
+    /// Rewritten by POOL1a2 (D197 point 1): an account no list held was asked nothing, being one no start could take. Every account
+    /// of Daoris's is in the set now, so the one the stored list left out is asked as any other ready account the start could take.
+    /// </summary>
     [Fact]
-    public async Task Nothing_is_asked_of_a_cooling_a_key_a_signed_out_or_a_busy_account_nor_of_one_outside_the_list()
+    public async Task Nothing_is_asked_of_a_cooling_a_key_a_signed_out_or_a_busy_account()
     {
         Accounts("cooling", "out", "busy", "listed", "outside");
         // An account that is a key is not a plan's, so it has no windows to read.
@@ -241,7 +245,7 @@ public sealed class CodexUsageRosterTests : IDisposable
 
         await roster.SelectAsync("fake-door", Config, null, null);
 
-        Assert.Equal(["fake/listed"], Asked());
+        Assert.Equal(["fake/listed", "fake/outside"], Asked().Order(StringComparer.Ordinal));
     }
 
     [Fact]
@@ -252,7 +256,7 @@ public sealed class CodexUsageRosterTests : IDisposable
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "quiet", "account-1"));
         var roster = Roster();
 
-        roster.Next("fake", null);
+        roster.Next("fake");
         await roster.WiringAsync("fake-door", Config, null);
         await roster.SelectAsync("fake-door", Config, null, chosen: "account-2");
         await roster.SelectAsync("quiet", DriverConfig.Empty with { Adapter = "quiet" }, null, null);

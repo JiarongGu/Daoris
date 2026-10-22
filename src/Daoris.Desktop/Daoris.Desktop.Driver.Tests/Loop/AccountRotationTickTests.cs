@@ -346,7 +346,7 @@ public sealed class AccountRotationTickTests : IDisposable
 
         await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         Assert.Equal(("completed", "Done", "account-1"), (service.State("s1"), service.Status("q1"), Profile(service, "s1")));
-        Assert.Equal("account-2", roster.Next("stub", "default").Account);
+        Assert.Equal("account-2", roster.Next("stub").Account);
 
         await service.SayAsync("s1", "Also log the port.");
         var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);

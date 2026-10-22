@@ -381,6 +381,8 @@ public sealed class TurnStopTests : IDisposable
             const argv = process.argv.slice(2);
             if (argv.includes('--version')) { console.log('2.1.281 (Claude Code)'); process.exit(0); }
             if (argv.includes('auth')) { console.log('{"loggedIn": true}'); process.exit(0); }
+            // A run with no prompt is the usage read a start's walk asks the account first (USAGEPROBE1; POOL1a2): no conversation.
+            if (!argv.includes('-p')) process.exit(0);
             writeFileSync(argv[0], JSON.stringify(argv));
             process.stdin.resume();
             process.stdin.on('end', () => process.exit(0));
@@ -434,6 +436,8 @@ public sealed class TurnStopTests : IDisposable
             const argv = process.argv.slice(2);
             if (argv.includes('--version')) { console.log('2.1.281 (Claude Code)'); process.exit(0); }
             if (argv.includes('auth')) { console.log('{"loggedIn": true}'); process.exit(0); }
+            // A run with no prompt is the usage read a start's walk asks the account first (USAGEPROBE1; POOL1a2): no conversation.
+            if (!argv.includes('-p')) process.exit(0);
             writeFileSync(argv[0], JSON.stringify(argv));
             process.stdin.resume();
             process.stdin.on('end', () => process.exit(0));

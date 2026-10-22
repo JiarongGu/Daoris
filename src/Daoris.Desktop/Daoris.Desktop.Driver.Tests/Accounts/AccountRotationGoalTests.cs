@@ -321,10 +321,15 @@ public sealed class AccountRotationGoalTests : IDisposable
         Assert.Equal(("account-2", WalkStep.Cooling), (talkOnKept.Profile, talkOnKept.Choice!.Step));
     }
 
-    // ——— One scope (§2 rule 1, §3.1).
+    // ——— One set (POOL1a2, D197 points 1 and 2; the account-pool design §2.4): an older build's scopes read as one order.
 
+    /// <summary>
+    /// Rewritten by POOL1a2: a workspace's own list once began within it, never on the machine's default. Read as the set now, the
+    /// machine that named one account and no list is used <c>order</c> with that account first (design §6.1 rule 3), so the
+    /// workspace's start begins there too; never on the tool's own sign-in, whatever was named.
+    /// </summary>
     [Fact]
-    public async Task A_scope_with_a_list_begins_within_it_never_on_the_machine_s_default_or_the_tool_s_own_sign_in()
+    public async Task An_older_build_s_workspace_list_is_read_as_the_set_begun_at_the_machine_s_one_account()
     {
         Accounts("account-1", "account-2", "account-3");
         Wire(s => s.WithDefault("fake", "account-1").WithRotation("fake", ["account-2", "account-3"], "work")
@@ -335,30 +340,33 @@ public sealed class AccountRotationGoalTests : IDisposable
         var work = await roster.SelectAsync("fake", Config, "work", null);
         var loose = await roster.SelectAsync("loose", Config with { Adapter = "loose" }, null, null);
 
-        Assert.Equal(("account-2", (RotatedStart?)null), (work.Profile, work.Rotated));
+        Assert.Equal(("account-1", (RotatedStart?)null), (work.Profile, work.Rotated));
         Assert.Equal("account-1", loose.Profile);
     }
 
+    /// <summary>
+    /// Rewritten by POOL1a2: a workspace that named a default and no list once ran on that account alone, so its cool-off held the
+    /// start and the wait named the accounts outside it. Read as the set now, the start passes the cooling account and runs.
+    /// </summary>
     [Fact]
-    public async Task A_workspace_that_names_a_default_and_no_list_rotates_nowhere_and_its_wait_asks()
+    public async Task A_workspace_that_named_a_default_and_no_list_passes_its_cooling_account_within_the_set()
     {
         Accounts("account-1", "account-2", "account-3");
         Wire(s => s.WithRotation("fake", ["account-1", "account-2", "account-3"]).WithWorkspaceDefault("work", "fake", "account-2"));
-        var cooling = Cool("account-2");
+        Cool("account-2");
 
         var selection = await Present().SelectAsync("fake", Config, "work", null);
 
-        Assert.False(selection.Allowed);
-        Assert.Equal(cooling, selection.Cooling);
-        Assert.Equal(
-            CoolingWords.Hold(cooling, Zone) + " Not cooling, and not among the accounts `work` may use: `account-1`, `account-3` — "
-            + "Daoris starts nothing on them unless a list names them; `daoris agent profile order fake account-2 account-1 "
-            + "--workspace work` adds `account-1`.",
-            selection.Refusal);
+        Assert.True(selection.Allowed);
+        Assert.Equal("account-1", selection.Profile);
     }
 
+    /// <summary>
+    /// Rewritten by POOL1a2: an account no list held once carried no start, and the wait named it with the door that would add it.
+    /// Every account of Daoris's is in the set now, so it carries the start; a cooling or refused one is passed as ever.
+    /// </summary>
     [Fact]
-    public async Task The_wait_names_only_accounts_outside_the_list_that_are_not_cooling_or_refused_and_takes_none()
+    public async Task An_account_no_list_held_carries_the_start_since_none_is_outside_the_set()
     {
         Accounts("account-1", "account-2", "account-3", "account-4", "account-5");
         Wire(s => s.WithRotation("fake", ["account-1", "account-2"]));
@@ -370,48 +378,35 @@ public sealed class AccountRotationGoalTests : IDisposable
 
         var selection = await roster.SelectAsync("fake", Config, null, null);
 
-        Assert.False(selection.Allowed);
-        Assert.EndsWith(
-            "Daoris starts nothing on them until then. Not cooling, and not among the accounts this machine's starts may use: "
-            + "`account-3` — Daoris starts nothing on them unless a list names them; `daoris agent profile order fake account-1 "
-            + "account-2 account-3` adds `account-3`.",
-            selection.Refusal);
+        Assert.True(selection.Allowed);
+        Assert.Equal("account-3", selection.Profile);
     }
 
     /// <summary>
-    /// ROSTERREFUSE2: the kept-aside and outside-the-list clauses a wait adds are lines of their own after the refusal's, so its
-    /// code is kept and each clause is said by code, the doors' commands a value, the accounts a list the page names.
+    /// ROSTERREFUSE2: the kept-aside clause a wait adds is a line of its own after the refusal's, so its code is kept and the clause
+    /// is said by code. Rewritten by POOL1a2: the outside-the-list clauses (<c>held.outside-machine</c>, <c>held.outside-workspace</c>)
+    /// are added no more, since no account is outside the set; their codes stay in the catalogues for notes written before.
     /// </summary>
     [Fact]
     public async Task A_wait_s_added_clauses_are_parts_by_code_after_the_refusal_s()
     {
-        Accounts("account-1", "account-2", "account-3", "account-4");
+        Accounts("account-1", "account-2");
         Wire(s => s.WithRotation("fake", ["account-1", "account-2"]).WithUse("fake", new UseChange(Keep: "account-2")));
         var cooling = Cool("account-1");
 
-        var held = await Present().SelectAsync("fake", Config, null, null);
+        var held = await Present().SelectAsync("fake", Config, "work", null);
 
         Assert.Equal(held.Refusal, held.RefusalNote!.Note);
-        Assert.Equal(
-            ["held.cooling-account", "held.kept-aside", "held.outside-machine"], NoteAssert.Codes(held.RefusalNote.Parts));
+        Assert.Equal(["held.cooling-account", "held.kept-aside"], NoteAssert.Codes(held.RefusalNote.Parts));
         Assert.Equal("account-2", held.RefusalNote.Parts[1].Value("account"));
-        var outside = held.RefusalNote.Parts[2];
-        Assert.Equal(["account-3", "account-4"], (IReadOnlyList<string>)outside.Value("accounts")!);
-        Assert.Equal(
-            ("account-3", "daoris agent profile order fake account-1 account-2 account-3"), (outside.Value("first"), outside.Value("door")));
-
-        Wire(s => s.WithRotation("fake", ["account-1"], "work"));
-        var scoped = await Present().SelectAsync("fake", Config, "work", null);
-        Assert.Equal(scoped.Refusal, scoped.RefusalNote!.Note);
-        Assert.Equal(["held.cooling-account", "held.outside-workspace"], NoteAssert.Codes(scoped.RefusalNote.Parts));
-        Assert.Equal("work", scoped.RefusalNote.Parts[1].Value("workspace"));
-        Assert.Equal(cooling, scoped.Cooling);
+        Assert.Equal(cooling, held.Cooling);
     }
 
+    /// <summary>Rewritten by POOL1a2: a list of one beside another account is the set of both now, so the case is a set of one.</summary>
     [Fact]
-    public async Task A_list_of_one_has_no_choice_to_say()
+    public async Task A_set_of_one_has_no_choice_to_say()
     {
-        Accounts("account-1", "account-2");
+        Accounts("account-1");
         Wire(s => s.WithRotation("fake", ["account-1"]));
 
         var selection = await Present().SelectAsync("fake", Config, null, null);
@@ -494,12 +489,16 @@ public sealed class AccountRotationGoalTests : IDisposable
         Assert.Null(AccountLine.Rotated("s2", "claude-code", "account-1", "account-2", null, step, scope: "not a name").Data.Single(f => f.Key == "scope").Value);
     }
 
+    /// <summary>
+    /// Rewritten by POOL1a2: the machine's default was a step of its own, and a workspace's own list and kept account chose
+    /// otherwise. The default is the order's first now (design §2.2), so its clause is the list's, and a workspace's start takes the
+    /// set's account.
+    /// </summary>
     [Fact]
-    public async Task Each_step_s_clause_names_the_scope_and_the_account()
+    public async Task Each_step_s_clause_names_the_set_and_the_account()
     {
         Accounts("account-1", "account-2", "account-3");
-        Wire(s => s.WithDefault("fake", "account-2").WithRotation("fake", ["account-1", "account-2", "account-3"])
-            .WithRotation("fake", ["account-1", "account-3"], "work").WithUse("fake", new UseChange(Keep: "account-1"), "work"));
+        Wire(s => s.WithDefault("fake", "account-2").WithRotation("fake", ["account-1", "account-2", "account-3"]));
         var roster = Present();
 
         var machine = await roster.SelectAsync("fake", Config, null, null);
@@ -507,14 +506,14 @@ public sealed class AccountRotationGoalTests : IDisposable
         Cool("account-2");
         var cooled = await roster.SelectAsync("fake", Config, null, null);
 
-        Assert.Equal("it is this machine's default", machine.Choice?.Clause);
-        Assert.Equal(("account-3", "`account-1` is kept for conversations"), (work.Profile, work.Rotated?.Why));
-        Assert.Equal((string?)null, work.Choice?.Clause);
+        Assert.Equal(("account-2", "it comes first in this machine's list"), (machine.Profile, machine.Choice?.Clause));
+        // The workspace's start is the set's second, counted beside the first: it spreads as any start in the same look does.
+        Assert.Equal(("account-1", "it runs the fewest of Daoris's sessions"), (work.Profile, work.Rotated?.Why));
         Assert.Equal(
             $"the `fake` account `account-2` is cooling until Oct 3, 16:02 ({Zone.Id}), as the agent said; of the rest, it runs the "
             + "fewest of Daoris's sessions",
             cooled.Choice?.Clause);
-        Assert.Equal("account-1", cooled.Profile);
+        Assert.Equal("account-3", cooled.Profile);
     }
 
     // ——— What the agents said (TOOL6c, D130 §5.2, §6, §16.3 steps 2 and 5, §16.4): read from `windows.json` as each door
