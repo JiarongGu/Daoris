@@ -68,16 +68,18 @@ describe('the agent and account chip', () => {
     expect(onChange).toHaveBeenCalledWith({ adapter: 'codex', profile: 'team' });
   });
 
-  it('lists the scope’s accounts first, in its order, then the others', async () => {
-    show({
-      named: true, harnesses: ['codex'], value: { adapter: 'codex', profile: '' }, repository: 'engine',
-      scopeOf: () => ({ workspace: 'aurora', list: ['lab', 'team'] }),
-    });
+  /**
+   * POOL1c (the account-pool design §4.3): Daoris's accounts are one set, every workspace's, so the menu lists them in its order
+   * with no group of accounts outside a list; one the order does not name yet goes after.
+   */
+  it('lists Daoris’s accounts in the set’s order, with no group outside a list', async () => {
+    show({ named: true, harnesses: ['codex'], value: { adapter: 'codex', profile: '' }, orderOf: () => ['lab', 'team'] });
     const menu = await open();
 
     const rows = within(menu).getAllByRole('menuitemradio').map((row) => row.textContent ?? '');
     expect(rows.findIndex((text) => text.startsWith('lab'))).toBeLessThan(rows.findIndex((text) => text.startsWith('team')));
     expect(rows.findIndex((text) => text.startsWith('team'))).toBeLessThan(rows.findIndex((text) => text.startsWith('spare')));
+    expect(within(menu).queryByText(/Not in|this machine's list/)).toBeNull();
   });
 
   /** ACCOUNTID1b: two sign-ins of one email read alike; each says its organisation, after the email and once. */

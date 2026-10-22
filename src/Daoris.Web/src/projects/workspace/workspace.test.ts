@@ -6,47 +6,40 @@ import { accountsHere, hostOf } from './workspace';
 // What a workspace's page works out from answers it already holds (UX6g, D150 §4.3).
 
 const tool = (over: Partial<Tool> = {}): Tool => ({
-  name: 'claude-code', product: 'Claude Code', maker: 'Anthropic', doors: [], accounts: [], machineDefault: null, present: true,
-  ownLogin: 'in', ownAccount: 'me@example.invalid', ownRead: null, takesRules: true, workspaceDefaults: [], ...over,
+  name: 'claude-code', product: 'Claude Code', maker: 'Anthropic', doors: [], accounts: [], present: true,
+  ownLogin: 'in', ownAccount: 'me@example.invalid', ownRead: null, takesRules: true, ...over,
 });
 
 const named = (owner: string, profile?: string | null) => (profile ? `${profile}@${owner}` : `own@${owner}`);
+const accounts = (...names: string[]) => names.map((name) => ({ name, home: `h/${name}`, login: 'in' as const }));
 
+/** POOL1c (D197 point 1): one set of Daoris's accounts serves every workspace, so every workspace's page names the same. */
 describe('the accounts each agent may run in a workspace', () => {
-  it("names a workspace's own list, in its order, as its own", () => {
-    expect(accountsHere([tool()], { agents: [THREE] }, 'work', named)).toEqual([
-      { agent: 'claude-code', product: 'Claude Code', own: true, accounts: ['account-2@claude-code', 'account-1@claude-code'] },
-    ]);
-  });
-
-  it("names this machine's list where the workspace has none of its own", () => {
-    expect(accountsHere([tool()], { agents: [THREE] }, 'forge', named)).toEqual([{
-      agent: 'claude-code', product: 'Claude Code', own: false,
-      accounts: ['account-1@claude-code', 'account-2@claude-code', 'account-3@claude-code'],
+  it("names every account of Daoris's, in the set's order", () => {
+    expect(accountsHere([tool({ accounts: accounts('account-1', 'account-2', 'account-3') })], { agents: [THREE] }, named)).toEqual([{
+      agent: 'claude-code', product: 'Claude Code', accounts: ['account-1@claude-code', 'account-2@claude-code', 'account-3@claude-code'],
     }]);
   });
 
-  /** OWNSPACE1b-A (D175): nothing named means Daoris's accounts in turn, or the wait; never the tool's own sign-in. */
-  it("says Daoris's accounts, in turn, where nothing is named anywhere, or the wait with none, and leaves out an agent not installed", () => {
-    expect(accountsHere([tool(), tool({ name: 'codex', product: null, present: false })], { agents: [] }, 'forge', named)).toEqual([
-      {
-        agent: 'claude-code', product: 'Claude Code', own: false,
-        accounts: ['No Daoris account is signed in for it; its starts wait until you sign in.'],
-      },
+  it('puts an account the order does not name yet last, and names the accounts where the order was not answered', () => {
+    const four = tool({ accounts: accounts('account-4', 'account-1', 'account-2', 'account-3') });
+    expect(accountsHere([four], { agents: [THREE] }, named)[0]!.accounts)
+      .toEqual(['account-1@claude-code', 'account-2@claude-code', 'account-3@claude-code', 'account-4@claude-code']);
+    expect(accountsHere([four], undefined, named)[0]!.accounts)
+      .toEqual(['account-4@claude-code', 'account-1@claude-code', 'account-2@claude-code', 'account-3@claude-code']);
+  });
+
+  /** OWNSPACE1b-A (D175): never the tool's own sign-in; none where the agent has no account of Daoris's. */
+  it('names none where the agent has no account of Daoris’s, and leaves out an agent not installed', () => {
+    expect(accountsHere([tool(), tool({ name: 'codex', product: null, present: false })], { agents: [] }, named)).toEqual([
+      { agent: 'claude-code', product: 'Claude Code', accounts: [] },
     ]);
     const [signedIn] = byTool([{
       harness: 'claude-code', product: 'Claude Code', maker: 'Anthropic', present: true, version: '2.1.4', wire: 'pipe', signsIn: true,
       installs: true, takesRules: true, ownLogin: 'in', ownAccount: null, ownRead: null,
-      profiles: [{ name: 'acct-1', home: 'h/1', login: 'in' }], workspaceDefaults: [], machineDefault: null,
+      profiles: [{ name: 'acct-1', home: 'h/1', login: 'in' }],
     } as unknown as ToolDoor]);
-    expect(accountsHere([signedIn!], { agents: [] }, 'forge', named)[0]!.accounts).toEqual(["Daoris's accounts, in turn"]);
-  });
-
-  /** A shell older than the accounts' answer still carries a workspace's default on the roster (D49 §4). */
-  it("reads a workspace's default off the roster where the accounts were not answered", () => {
-    const older = tool({ machineDefault: 'personal', workspaceDefaults: [{ workspace: 'work', profile: 'team' }] });
-    expect(accountsHere([older], undefined, 'work', named)[0]).toMatchObject({ own: true, accounts: ['team@claude-code'] });
-    expect(accountsHere([older], undefined, 'forge', named)[0]).toMatchObject({ own: false, accounts: ['personal@claude-code'] });
+    expect(accountsHere([signedIn!], { agents: [] }, named)[0]!.accounts).toEqual(['acct-1@claude-code']);
   });
 });
 

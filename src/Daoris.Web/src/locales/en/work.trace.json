@@ -19,7 +19,7 @@
   "work.trace.source.rules": "the rules file this machine wrote for it",
   "work.trace.source.landings": "this machine's landings",
   "work.trace.source.config": "this machine's standing answers",
-  "work.trace.source.auto-landings": "this machine's list of work due to land",
+  "work.trace.source.auto-landings": "the work this machine has due to land",
   "work.trace.unread.sessions": "The service's session records could not be read, so no session is read here.",
   "work.trace.unread.quests": "The service's quests could not be read.",
   "work.trace.unread.landings": "This machine's landings do not read, so no landing is read here.",

@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { moment } from '../../locales/format';
 import i18n from '../../locales/i18n';
 import {
-  type AccountScope, type AgentAccounts, agentOf, cannotLeave, coolingLine, heldLine, listedIn, machineScope, moved, nextLine,
-  type NextStart, nothingSaid, offeredLine, ownLine, saidLine, used, USE_DEFAULTS, windowName, workspaceScope,
+  type AccountScope, type AgentAccounts, agentOf, coolingLine, heldLine, machineScope, moved, nextLine,
+  type NextStart, nothingSaid, offeredLine, ownLine, saidLine, USE_DEFAULTS, windowName,
 } from './accounts';
 
 // How each agent's accounts are used, read and said (TOOL4g; D125 §2.4, §3.7; D130 §3.1, §4.6, §5.2, §16.4): the pure half
@@ -27,16 +27,12 @@ describe('the answer, read', () => {
     expect(agentOf({} as never, 'claude-code')).toBeNull();
   });
 
-  it('reads the machine\'s scope, and a workspace\'s only where it names one of its own', () => {
-    const work = scope({ workspace: 'work', list: ['account-2'] });
-    const held = agent({ scopes: [scope({ list: SIX }), work] });
+  /** POOL1a2, POOL1c (D197): the set's one scope, every workspace's; an answer with none reads the defaults. */
+  it('reads the set’s one scope, and the defaults where an answer has none', () => {
+    const held = agent({ scopes: [scope({ list: SIX })] });
 
     expect(machineScope(held).list).toEqual(SIX);
-    expect(workspaceScope(held, 'work')).toBe(work);
-    expect(workspaceScope(held, 'lab')).toBeNull();
     expect(machineScope(agent({ scopes: [] })).use).toEqual(USE_DEFAULTS);
-    expect(listedIn(held, 'account-2')).toEqual(['work']);
-    expect(listedIn(held, 'account-6')).toEqual([]);
   });
 });
 
@@ -47,23 +43,6 @@ describe('a list, edited', () => {
     expect(moved(['account-1'], 'account-1', -1)).toEqual(['account-1']);
   });
 
-  it('turns Use on last, and off where it was', () => {
-    expect(used(['account-2'], 'account-1', true)).toEqual(['account-2', 'account-1']);
-    expect(used(SIX, 'account-4', false)).toEqual(['account-1', 'account-2', 'account-3', 'account-5', 'account-6']);
-    expect(used(['account-1'], 'account-1', false)).toEqual([]);
-  });
-
-  /** What the terminal refuses, the screen does not offer (D130 §3.1, §4.6). */
-  it('says what Use off would break: the default, the kept account, or a kept account left alone', () => {
-    const kept = (keep: string, list: string[]) => scope({ list, use: { ...USE_DEFAULTS, keep } });
-
-    expect(cannotLeave(scope({ list: SIX, default: 'account-2' }), 'account-2')).toBe('default');
-    expect(cannotLeave(kept('account-3', SIX), 'account-3')).toBe('keep');
-    expect(cannotLeave(kept('account-2', ['account-1', 'account-2']), 'account-1')).toBe('alone');
-    expect(cannotLeave(scope({ list: SIX, default: 'account-2' }), 'account-5')).toBeNull();
-    // The last account out clears the list, its settings with it, which is never refused.
-    expect(cannotLeave(scope({ list: ['account-1'], default: 'account-1' }), 'account-1')).toBeNull();
-  });
 });
 
 describe('what is said', () => {
@@ -329,12 +308,17 @@ describe('what is said', () => {
     expect(offeredLine('2026-10-03T10:17:00Z')).toMatch(/^自 .+ 起重新可用$/);
   });
 
-  /** D175 point 1: who the tool's own sign-in is, that Daoris starts nothing in it, and an old cool-off where it holds one. */
-  it('says the tool\'s own sign-in, who it is, that Daoris starts no session in it, and its old cool-off', () => {
-    expect(ownLine('someone@example.invalid', null)).toBe(
-      'Your own sign-in, someone@example.invalid: the account this tool uses at your own terminal. Daoris does not start sessions in it; conversations that began there go on there.',
+  /**
+   * D175 point 1, POOL1c (D197 point 3; the account-pool design §4.2's `harness.own.shared`): the tool's own sign-in is outside
+   * Daoris's accounts, never signed in or out, asked or started in by Daoris, and never changed by adding an account; no who.
+   */
+  it('says the tool\'s own sign-in is outside Daoris’s accounts, never asked, and never changed by adding one', async () => {
+    expect(ownLine()).toBe(
+      "Your own sign-in: the account this tool uses at your own terminal. It is not one of Daoris's accounts: Daoris never signs it in or out, never asks it anything, and starts no session in it, and adding an account never changes it. A conversation that began there before goes on there.",
     );
-    expect(ownLine(null, null)).toMatch(/^Your own sign-in: .+ Daoris does not start sessions in it; conversations that began there go on there\.$/);
-    expect(ownLine(null, cooling)).toMatch(/It was cooling until .+: an old cool-off, which nothing of Daoris's waits on\. If you have signed in to another account since, look again\.$/);
+    await i18n.changeLanguage('zh');
+    expect(ownLine()).toBe(
+      '你自己的登录：这是该工具在你自己的终端里使用的账户。它不是 Daoris 的账户：Daoris 从不让它登录或退出，从不向它询问任何信息，也不在其中启动会话；添加账户也不会改变它。此前在那里开始的对话仍在那里继续。',
+    );
   });
 });

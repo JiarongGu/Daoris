@@ -39,7 +39,7 @@ import { conversationOffer, rulesAsked, waitsOf } from './waits/waits';
 import { useWaitsOnScreen } from './waits/waitsOnScreen';
 import { sayDiscard } from '../settings/Sweep';
 import { doorOf, toolOf } from '../agents/tools';
-import { agentOf, machineScope, workspaceScope } from '../settings/accounts/accounts';
+import { agentOf, machineScope } from '../settings/accounts/accounts';
 import { namer } from '../settings/accounts/namer';
 import {
   boxOf, coolingFor, goOnBriefRefusal, levelsOf, NATIVE_WORDS_LIMIT, neverSentence, type NewSessionAnswer, startFromRefusal, takesWords, tooLong,
@@ -1408,15 +1408,12 @@ export function WorkFrame({
     labels: Object.fromEntries(roster.map((row) => [row.harness, doorLabel(t, row)])),
     names: Object.fromEntries(roster.map((row) => [row.harness, row.product || row.harness])),
     accounts: Object.fromEntries(roster.map((row) => [row.harness, Array.isArray(row.profiles) ? row.profiles : []])),
-    // The list a start in that repository may run on (D130 §3.2): its workspace's own, else this machine's, by the
-    // accounts' owner (AGT7), from the files the frame already reads; the picker sets the rest apart.
-    scopeOf: (repository, harness) => {
+    // The set's order of the agent's accounts of Daoris's, every workspace's (POOL1c, D197), by the accounts' owner (AGT7),
+    // from the files the frame already reads.
+    orderOf: (harness) => {
       const door = roster.find((row) => row.harness === harness);
       const use = door ? agentOf(accounts.data, toolOf(door)) : null;
-      if (!use) return null;
-      const workspace = (registry.data ?? []).find((row) => row.repository === repository)?.workspace || 'default';
-      const own = workspaceScope(use, workspace);
-      return own ? { workspace, list: own.list } : { workspace: null, list: machineScope(use).list };
+      return use ? machineScope(use).list : null;
     },
   };
   // The helpers the attended session asked for (MIXAGENT2b, D163): this machine's own files, so only for its own record. Its head
@@ -1963,7 +1960,6 @@ export function WorkFrame({
           key={attended.id}
           from={attended.adapter}
           first={otherToolDoors(attended, roster).map((door) => door.harness)}
-          repository={attended.repository}
           working={SESSION_ACTIVE.has(attended.state)}
           roster={agentRoster}
           initial={handOverChosen?.choice}
@@ -2136,7 +2132,7 @@ export function WorkFrame({
       names={agentRoster.names}
       defaultHarness={spawning?.harness}
       accounts={agentRoster.accounts}
-      scopeOf={agentRoster.scopeOf}
+      orderOf={agentRoster.orderOf}
       draft={newDraft}
       onDraft={setNewDraft}
       carried={newCarry}

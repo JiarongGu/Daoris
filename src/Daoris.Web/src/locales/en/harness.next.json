@@ -1,9 +1,9 @@
 {
   "harness.next.label": "Next start",
-  "harness.next.hint": "`daoris agent profile use {{agent}}{{scoped}}` prints the steps the next start follows",
+  "harness.next.hint": "`daoris agent profile use {{agent}}` prints the steps the next start follows",
   "harness.next.whyGoal": "Each start walks this list: driven work passes the account kept for conversations, and an account whose limit is reached, that draws on usage credits or whose use is over its curve goes last, the least over first; then the account running the fewest of Daoris's sessions, then one whose week resets within a day, then the one with the most room under its curve, then the one Daoris started on least recently, then the list's order. The first ready account runs: not cooling, not refused, and signed in.",
   "harness.next.whyGoalOff": "Each start walks this list: driven work passes the account kept for conversations, and an account whose limit is reached, that draws on usage credits or whose use is over Daoris's curve goes last, the least over first; then the account running the fewest of Daoris's sessions, then one whose week resets within a day, then the one furthest behind its week's pace, then the one Daoris started on least recently, then the list's order. The first ready account runs: not cooling, not refused, and signed in.",
-  "harness.next.whyOrder": "Each start runs on the first ready account in the list's order, begun at its default; an account whose limit is reached, that draws on usage credits or whose use is over its curve goes last. Driven work passes the account kept for conversations.",
+  "harness.next.whyOrder": "Each start runs on the first ready account in the order, begun at its first; an account whose limit is reached, that draws on usage credits or whose use is over its curve goes last. Driven work passes the account kept for conversations.",
   "harness.next.takes": "The next start takes {{account}}: {{why}}.",
   "harness.next.takesIn": "In {{workspace}}, the next start takes {{account}}: {{why}}.",
   "harness.next.own": "The next start runs in the tool's own home, which is nobody's sign-in: nothing here names an account.",

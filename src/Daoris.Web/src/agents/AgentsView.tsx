@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sentence } from '../locales/format';
 import { useHarnessRun, WithHarnessRuns } from './harnessRuns';
-import { useRegistry, useSessions } from '../data/queries';
-import { useScope } from '../data/scope';
+import { useSessions } from '../data/queries';
 import { SessionConsole } from '../work/console/SessionConsole';
 import {
   useAccountUse, useAccounts, useHarnessAction, useHarnesses, useReadAccounts, useRefreshHarnesses, useRuleAction, useRules,
@@ -14,13 +13,12 @@ import { SignIn } from './SignIn';
 import { byTool, type Tool } from './tools';
 import { failure, type Notify, useErrorNotify } from '../design/ui';
 import type { ViewLayout } from '../work/frame/ViewFrame';
-import { workspacesOf } from '../data/workspaces';
 import { agentOf } from '../settings/accounts/accounts';
 import type { ScopeActs } from '../settings/accounts/AccountUse';
 import { proposalChange } from '../settings/repository/proposals';
 import { AgentList, AgentStrip } from './AgentList';
 import { type AgentActs, AgentMainNotice, AgentPage, type Answered } from './AgentPage';
-import { type AgentPart, accountLabel, agentRows, runsForLine } from './agents';
+import { type AgentPart, accountLabel, agentRows } from './agents';
 
 /** What a door runs, and so what streams under it in *Ways in* (D49 §2). */
 const DOOR_ACTIONS = ['install', 'update', 'pin', 'unpin'] as const;
@@ -164,11 +162,6 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
   const ruleAnswer = useRuleAnswer({ notify });
   // The session that proposed a rule is found in the list while a proposal names one and a door to it was handed (PROPOSEHERE1c).
   const proposalSessions = useSessions(null, true, Boolean(say) && Array.isArray(rules.data?.proposals) && rules.data.proposals.some((one) => one.session));
-  const registry = useRegistry('machine');
-  // The workspace the window looks at: the one chosen, or the only one there is, as the application's circle (ACCTUX4c).
-  const chosenScope = useScope();
-  const known = workspacesOf(registry.data ?? []);
-  const inView = chosenScope.workspace ?? (known.length === 1 ? known[0]! : null);
   const {
     running, runningProfile, signingInNew, busy: acting, run, added, settleAdded, refusal, retry, dismiss, pressedAt,
     failure: failed, otherWay, switchWay,
@@ -196,10 +189,10 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
     // Unasked, so a failure is not said: *Read now* says its own.
     mutateRead({ harness: door });
   }, [stale, tool.name, door, mutateRead]);
-  // The new account this agent's sign-in kept, waiting on its name and its lists (UX7b): the add flow's step 3.
+  // The new account this agent's sign-in kept, waiting on its name (UX7b, POOL1c): the add flow's step 3.
   const addedHere = added && added.harness === door ? added : null;
   // A key added here asks the same question (the UX7 design §4.5, ACCTUX3): by its id and its key's handle, held while the
-  // page is, since it ends inside the request on this page; set aside, its row says *no workspace* with *Use in a workspace…*.
+  // page is, since it ends inside the request on this page; it serves every workspace whatever is answered (D197).
   const [keyAdded, setKeyAdded] = useState<{ profile: string; key: string | null } | null>(null);
   // The step answers the key's first, the newer press; a sign-in's waits behind it, held above every view.
   const answering = keyAdded
@@ -229,7 +222,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
     return account ? accountLabel(account, tool) : name;
   };
 
-  // ACCT2's rename and ACCT1's join, each the terminal's `daoris agent profile rename|join` (D50), said as they land.
+  // ACCT2's rename, the terminal's `daoris agent profile rename` (D50), said as it lands.
   const rename = async (account: string, name: string | null) => {
     // Naming an account its own id gives it no name of its own (ACCT2): the one way to clear it at the door.
     const answer = await act.mutateAsync({ harness: door, action: 'profile-rename', profile: account, name: name ?? account });
@@ -237,12 +230,6 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
       ? t('agents.renamed', { id: account, name: answer.name })
       : t('agents.unnamed', { id: account }));
     return answer.name ?? null;
-  };
-  const join = async (account: string, lists: (string | null)[], called?: string) => {
-    const answer = await act.mutateAsync({ harness: door, action: 'profile-join', profile: account, join: lists });
-    // ACCTUX4b: no place marked first, since *first* is the scope whose next start takes it, which the join's answer never names.
-    const places = (answer.places ?? []).map((place) => ({ workspace: place.workspace ?? null, first: false }));
-    notify(t('agents.joined', { account: called ?? labelOf(account), places: runsForLine(places) }));
   };
 
   // ACCTEDIT1: a question's act told back to it: done once it lands, so it closes then and not on the press; refused, its
@@ -252,14 +239,14 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
     landing.then(() => answered?.done(), (error: unknown) => (answered ? answered.refused(sentence(error)) : onError(error)));
   };
 
+  // The set's order and its one entry of settings (POOL1c, D197 point 2): no workspace is named, since one set serves them all.
   const scope: ScopeActs = {
-    onOrder: (workspace, list) => accountUse.mutate({ harness: door, action: 'order', accounts: list, ...(workspace ? { workspace } : {}) }, { onError }),
+    onOrder: (list) => accountUse.mutate({ harness: door, action: 'order', accounts: list }, { onError }),
     // A refusal the press's own place says (the curve's editor, PUSH1e) is told there, in the reader's language, and toasted nowhere.
-    onUse: (workspace, change, refused) => accountUse.mutate(
-      { harness: door, action: 'use', ...(workspace ? { workspace } : {}), ...change },
+    onUse: (change, refused) => accountUse.mutate(
+      { harness: door, action: 'use', ...change },
       { onError: refused ? (error: unknown) => refused(sentence(error)) : onError },
     ),
-    onInherit: (workspace, answered) => told(accountUse.mutateAsync({ harness: door, action: 'inherit', workspace }), answered),
   };
   const where = (scopeName: string, name: string | undefined) => scopeName === 'machine'
     ? t('settings.rules.proposals.everywhere')
@@ -271,37 +258,37 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
     onReadNow: () => readAccounts.mutate({ harness: door }, { onError }),
     onSignInNew: () => run(door, 'login-new'),
     // ACCTUX3: told back to the key's field, which closes once the key is kept and says a refusal in it; kept, the account
-    // goes to the add flow's last step for its name and lists, where a toast said it was added and left it in no list.
+    // goes to the add flow's last step for its name, where a toast said it was added.
     onAddKey: (key, answered) => told((async () => {
       const result = await act.mutateAsync({ harness: door, action: 'key-add', key });
       if (result.profile) setKeyAdded({ profile: result.profile, key: result.key ?? null });
     })(), answered),
-    // KEYREPLACE1b: the key goes into the same account, which keeps its name and lists, so no add flow follows.
+    // KEYREPLACE1b: the key goes into the same account, which keeps its name and its place in the order, so no add flow follows.
     onReplaceKey: (account, key, answered) => told(
       act.mutateAsync({ harness: door, action: 'key-replace', profile: account, key }), answered,
     ),
     onSignIn: (account) => run(door, 'login', account),
     onTryNow: (account, label) => accountUse.mutate(
-      { harness: door, action: 'ready', ...(account ? { profile: account } : { own: true }) },
+      { harness: door, action: 'ready', profile: account },
       { onSuccess: (answer) => notify(t(answer.ended ? 'harness.cooling.ready' : 'harness.cooling.notCooling', { account: label })), onError },
     ),
-    onDefault: (account, workspace) => run(door, 'profile-default', account ?? undefined, undefined, workspace),
-    onRemove: (account, answered) => run(door, 'profile-remove', account, undefined, undefined, answered),
+    onRemove: (account, answered) => run(door, 'profile-remove', account, undefined, answered),
     onRename: (account, name, answered) => told(rename(account, name), answered),
-    onJoin: (account, lists, answered) => told(join(account, lists), answered),
-    // The add flow's end (D152 §4.5): its name kept where the field holds one other than its id, then the lists joined;
-    // either refused leaves the question up, so nothing the person typed is lost, and says why in it.
-    onAddedAnswer: ({ name, join: lists }, answered) => {
+    // The add flow's end (D152 §4.5; POOL1c, the account-pool design §4.1): its name kept where the field holds one other than
+    // the one it has; refused, the question stays up, so nothing the person typed is lost, and says why in it.
+    onAddedAnswer: ({ name }, answered) => {
       if (!answering) return;
       const account = answering.profile;
       const current = tool.accounts.find((each) => each.name === account)?.displayName?.trim() || null;
-      const wanted = name?.trim() || null;
+      const wanted = name.trim() || null;
       told((async () => {
-        const called = wanted !== current && (wanted !== null || current !== null) ? await rename(account, wanted) : current;
-        if (lists.length > 0) await join(account, lists, called ?? undefined);
+        if (wanted !== current) await rename(account, wanted);
         answering.settle();
       })(), answered);
     },
+    // *Got it* (POOL1a; the account-pool design §6.3): the receipts the page showed, by id, marked said; a failure is a toast,
+    // since the block stays and the press is offered again.
+    onPooledSaid: (ids) => accountUse.mutate({ harness: door, action: 'said', ids }, { onError }),
     // ACCTUX3: told back to its editor, which closes once the save lands and says a refusal under it, the choice kept.
     onSaveSettings: (account, label, change, answered) => told((async () => {
       await tune.mutateAsync({ harness: door, profile: account, ...change });
@@ -347,8 +334,6 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
       use={use}
       rules={rulesAnswer}
       usage={used && used.filter((account) => tool.doors.some((each) => each.harness === account.harness))}
-      workspaces={workspacesOf(registry.data ?? [])}
-      inView={inView}
       adapter={adapter}
       part={part}
       reading={read.isPending}

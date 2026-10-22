@@ -138,7 +138,7 @@ export function openingRepository(
  */
 export function NewConversation({
   attached = true, repositories, busy = {}, recent = [], remembered, attended, onChoose, harnesses, labels = {}, names = {},
-  defaultHarness = '', accounts, scopeOf, draft, onDraft, carried, onCarry, pending = false, refusal, focus = 0, onFocused, onStart,
+  defaultHarness = '', accounts, orderOf, draft, onDraft, carried, onCarry, pending = false, refusal, focus = 0, onFocused, onStart,
   onOpenSession, onAdd, onImport, pick, reveal, pickerOpen = false, openingTree = 'driver', readCheckout = UNREAD, onMakeTask,
 }: {
   /** Whether a shell is here; false is a browser. */
@@ -164,11 +164,8 @@ export function NewConversation({
   defaultHarness?: string;
   /** Each agent's accounts, with their sign-in state (D49 §4), by agent: the accounts follow the agent chosen (REV3). */
   accounts: Readonly<Record<string, Pick<Account, 'name' | 'login' | 'account' | 'displayName' | 'key'>[]>>;
-  /**
-   * The list of accounts a start in this repository may run on, for this agent (D130 §3.2): its workspace's own, or this
-   * machine's, with the workspace it is, or null for this machine's. Null where neither names a list.
-   */
-  scopeOf?: (repository: string, harness: string) => { workspace: string | null; list: string[] } | null;
+  /** Each agent's accounts of Daoris's in the set's order, every workspace's (POOL1c, D197); null where it was not answered. */
+  orderOf?: (harness: string) => readonly string[] | null;
   /** The words, where the holder keeps them across a visit elsewhere. Absent, the composer holds its own. */
   draft?: string;
   onDraft?: (text: string) => void;
@@ -376,8 +373,7 @@ export function NewConversation({
           names={names}
           defaultHarness={defaultHarness}
           accounts={accounts}
-          repository={repository}
-          scopeOf={scopeOf}
+          orderOf={orderOf}
         />
 
         <Tip content={t('work.composer.attachTip')}>

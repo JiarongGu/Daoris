@@ -2,30 +2,30 @@ import { createContext, type ReactNode, useContext, useRef, useState } from 'rea
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { sentence } from '../locales/format';
-import { type DefaultStanding, type HarnessRoster, useHarnessAction, useHarnessEnded } from '../bridge/shell';
-import { byTool, type AccountPlace } from './tools';
+import { type HarnessRoster, useHarnessAction, useHarnessEnded } from '../bridge/shell';
+import { byTool } from './tools';
 import type { SignInWay } from './SignInSteps';
 import { accountLabel } from './agents';
 import { keys } from '../data/queries';
 import type { Notify } from '../design/ui';
 import type { Answered } from '../work/InlineConfirm';
 
-/** A process action a person started on a tool: an install, an update, a pin, or a sign-in. */
-export type HarnessRunAction = 'install' | 'update' | 'login' | 'login-new' | 'pin' | 'unpin' | 'profile-remove' | 'profile-default';
+/** A process action a person started on a tool: an install, an update, a pin, a sign-in, or an account removed. */
+export type HarnessRunAction = 'install' | 'update' | 'login' | 'login-new' | 'pin' | 'unpin' | 'profile-remove';
 
 /**
- * A new account a sign-in kept (UX7b, ACCT1): which tool, its id, who signed in, and where it runs, which is none for an
- * account just made. Held until the person answers the add flow's last step, its name and the lists it joins.
+ * A new account a sign-in kept (UX7b, ACCT1): which tool, its id and who signed in. It joined Daoris's accounts as it was
+ * made (D197), and is held until the person answers the add flow's last step, its name.
  */
 export type AccountAdded = {
-  harness: string; profile: string; account: string | null; places: AccountPlace[];
+  harness: string; profile: string; account: string | null;
   /** The name the sign-in's end offered it (ACCOUNTID1b, `HARNESS_ENDED.offered`); undefined from an older shell. */
   offered?: string | null;
 };
 
 /** Which action runs on which tool, and for whom, while it runs — and how to start one. */
 export type HarnessRun = {
-  /** The new account the last sign-in to another account kept, waiting on its name and lists; null once answered. */
+  /** The new account the last sign-in to another account kept, waiting on its name; null once answered. */
   added: AccountAdded | null;
   /** The add flow's last step answered or set aside: the account is no longer waiting on it. */
   settleAdded: () => void;
@@ -43,7 +43,7 @@ export type HarnessRun = {
    * Start one. An ask that pressed it (*Remove…*'s, UXFIX2) is told how it ended: `done` once it ended well or started a
    * process whose end is news, `refused` with the sentence that would have been its toast.
    */
-  run: (harness: string, action: HarnessRunAction, profile?: string, version?: string, workspace?: string, answered?: Answered) => void;
+  run: (harness: string, action: HarnessRunAction, profile?: string, version?: string, answered?: Answered) => void;
   /**
    * Follow an action the machine already started for the person (HELP6: Ask Daoris's Apply of an update
    * or a pin): its console shows under the tool doing it, and its end is said, as for one started here.
@@ -79,26 +79,6 @@ export type HarnessRun = {
 };
 
 const Runs = createContext<HarnessRun | null>(null);
-
-/**
- * What sessions run as where a default was edited, in the sentence `daoris agent profile default … [--clear]` prints
- * (LOOK2c, D50): the machine's account or its own home again, a workspace's own account, or a workspace naming none that
- * runs as the machine's default or in the agent's own home.
- */
-export const defaultSaid = (
-  t: ReturnType<typeof useTranslation>['t'], harness: string, standing: DefaultStanding,
-): string => {
-  const { workspace, account } = standing;
-  if (!workspace) {
-    return standing.from === 'own' || !account
-      ? t('harness.default.machineOwn', { harness })
-      : t('harness.default.machine', { harness, account });
-  }
-  if (standing.from === 'workspace' && account) return t('harness.default.workspace', { harness, workspace, account });
-  return standing.from === 'machine' && account
-    ? t('harness.default.workspaceMachine', { harness, workspace, account })
-    : t('harness.default.workspaceOwn', { harness, workspace });
-};
 
 /** The state of a tool's running action, and the one listener for its end. */
 function useRunState(notify: Notify): HarnessRun {
@@ -148,8 +128,7 @@ function useRunState(notify: Notify): HarnessRun {
    */
   const ended = (
     action: string, profile: string | undefined, exitCode: number, problem: string | null,
-    account?: string | null, kept?: boolean | null, places?: AccountPlace[] | null, offered?: string | null,
-    cancelled?: boolean | null,
+    account?: string | null, kept?: boolean | null, offered?: string | null, cancelled?: boolean | null,
   ) => {
     const signIn = action === 'login' || action === 'login-new';
     // SIGNIN1: a sign-in that did not sign in says so in its own panel, which stays up with its way on (the UI/UX design
@@ -169,18 +148,17 @@ function useRunState(notify: Notify): HarnessRun {
       notify(problem, 'error');
       return;
     }
-    // Another account (D66 §3): kept only when the sign-in finished, and named by who signed in. One no list holds runs no
-    // start, which is how the install's work kept waiting on another account (ACCT1), so the sentence says so and the
-    // agent's page asks where it runs (UX7b).
+    // Another account (D66 §3): kept only when the sign-in finished, and named by who signed in. It joined Daoris's accounts
+    // as it was made, every workspace's work may run on it (D197; the account-pool design §4.1), which the agent's page says
+    // where it asks its name (UX7b); no account is ever nowhere.
     if (action === 'login-new') {
       if (exitCode !== 0) notify(t('harness.loginNew.failed', { code: exitCode }), 'error');
       else if (!kept) notify(t('harness.loginNew.nobody'), 'error');
       else {
-        const nowhere = Array.isArray(places) && places.length === 0;
-        if (account) notify(t(nowhere ? 'harness.loginNew.doneNowhere' : 'harness.loginNew.done', { account }));
-        else notify(t(nowhere ? 'harness.loginNew.unnamedNowhere' : 'harness.loginNew.unnamed', { profile }));
+        if (account) notify(t('harness.loginNew.done', { account }));
+        else notify(t('harness.loginNew.unnamed', { profile }));
         const harness = runningRef.current?.split(':')[0];
-        if (harness && profile) setAdded({ harness, profile, account: account ?? null, places: places ?? [], offered });
+        if (harness && profile) setAdded({ harness, profile, account: account ?? null, offered });
       }
       return;
     }
@@ -206,10 +184,7 @@ function useRunState(notify: Notify): HarnessRun {
       return;
     }
     setInFlight(null);
-    ended(
-      news.action, news.profile ?? undefined, news.exitCode, news.problem, news.account, news.kept, news.places, news.offered,
-      news.cancelled,
-    );
+    ended(news.action, news.profile ?? undefined, news.exitCode, news.problem, news.account, news.kept, news.offered, news.cancelled);
   });
 
   /**
@@ -217,7 +192,7 @@ function useRunState(notify: Notify): HarnessRun {
    * same sign-in running another way, which the driver stops first.
    */
   const start = (
-    harness: string, action: HarnessRunAction, profile?: string, version?: string, workspace?: string, answered?: Answered,
+    harness: string, action: HarnessRunAction, profile?: string, version?: string, answered?: Answered,
     way: SignInWay = 'browser', switching = false,
   ) => {
     // Never over one still running: whose end the news belongs to is the one thing this must not lose. A switch takes the
@@ -240,7 +215,7 @@ function useRunState(notify: Notify): HarnessRun {
     if (action === 'login-new') setAdded(null);
     // The way only where it is not the first or it switches, so a press says what it always said.
     const how = signIn && (way !== 'browser' || switching) ? { way, ...(switching ? { switch: true } : {}) } : {};
-    act.mutate({ harness, action, profile, version, workspace, ...how }, {
+    act.mutate({ harness, action, profile, version, ...how }, {
       // A file edit ends inside the request; a process answers `started` and ends as news, heard
       // above. Either way the end is said once, by the same sentence.
       onSuccess: (result) => {
@@ -262,15 +237,6 @@ function useRunState(notify: Notify): HarnessRun {
           }
           answered.done();
         }
-        // A default's edit says what sessions there run as now (LOOK2c), as the terminal's verb prints it: a workspace
-        // cleared on the tool's own row runs as the machine's default where one is set, not in the tool's own home.
-        if (action === 'profile-default' && result.default && (result.exitCode ?? 0) === 0) {
-          setRunningProfile(null);
-          setSigningInNew(null);
-          const name = result.default.account ? called(harness, result.default.account) : null;
-          notify(defaultSaid(t, harness, { ...result.default, account: name ?? result.default.account }));
-          return;
-        }
         ended(action, profile, result.exitCode ?? 0, null);
       },
       onError: (error: unknown) => {
@@ -290,19 +256,19 @@ function useRunState(notify: Notify): HarnessRun {
     });
   };
 
-  const run: HarnessRun['run'] = (harness, action, profile, version, workspace, answered) =>
-    start(harness, action, profile, version, workspace, answered);
+  const run: HarnessRun['run'] = (harness, action, profile, version, answered) =>
+    start(harness, action, profile, version, answered);
 
   // The same sign-in again, by the same way, from its refused or failed panel; or the panel closed with nothing left of the
   // press. Over one still running, again or the other way takes its place (CODEXLOGIN1).
   const retry = () => {
     const last = lastSignIn.current;
-    if (last) start(last.harness, last.action, last.profile, undefined, undefined, undefined, last.way, inFlight !== null);
+    if (last) start(last.harness, last.action, last.profile, undefined, undefined, last.way, inFlight !== null);
   };
   const switchWay = () => {
     const last = lastSignIn.current;
     if (!last) return;
-    start(last.harness, last.action, last.profile, undefined, undefined, undefined,
+    start(last.harness, last.action, last.profile, undefined, undefined,
       last.way === 'device-code' ? 'browser' : 'device-code', inFlight !== null);
   };
   const otherWay: SignInWay | null = signedWay?.deviceCode ? (signedWay.way === 'device-code' ? 'browser' : 'device-code') : null;

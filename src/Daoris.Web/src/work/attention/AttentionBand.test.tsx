@@ -91,7 +91,7 @@ const ROSTER: HarnessRoster = {
   }],
 };
 const facts = (over: Partial<PushedAccountFacts> = {}): PushedAccountFacts => ({
-  agent: 'claude-code', product: 'Claude Code', harness: 'claude-code', signsIn: true, outside: null, readFirst: null,
+  agent: 'claude-code', product: 'Claude Code', harness: 'claude-code', signsIn: true,
   named: [
     { id: 'account-2', name: null, state: 'cooling', read: READ, until: '2026-10-02T04:42:00Z' },
     { id: 'account-1', name: null, state: 'out', read: READ, until: null },
@@ -414,27 +414,23 @@ describe('What needs you on a machine', () => {
     await waitFor(() => expect(within(item).queryByRole('region', { name: 'Signing in to account-1' })).toBeNull());
   });
 
-  /** D130 §3.3: a ready account outside the workspace's list joins it only after the row says what that lets Daoris spend. */
-  it('lets a ready account run the workspace after asking once, saying where it runs now', async () => {
-    const notify = vi.fn();
-    start([waitRow({ account: facts({ named: [facts().named[0]!], outside: { id: 'account-4', list: 'default', workspace: 'default' } }) })], { notify });
+  /**
+   * POOL1c (the account-pool design §4.3): no account is outside the set, so a wait offers to let none run and joins none to a
+   * list, whatever an older answer carries.
+   */
+  it('lets no account run a workspace: every account of Daoris’s serves every workspace', async () => {
+    const older = { ...facts({ named: [facts().named[0]!] }), outside: { id: 'account-4', list: 'default', workspace: 'default' } };
+    start([waitRow({ account: older as PushedAccountFacts })]);
     const item = await screen.findByRole('listitem', { name: 'Intake for ask #a1' });
-
-    await userEvent.click(await within(item).findByRole('button', { name: 'Let account-4 run default…' }));
+    expect(within(item).queryByRole('button', { name: /^Let account-4/ })).toBeNull();
     expect(asked()).not.toContain('HARNESS_ACTION');
-    await userEvent.click(within(item).getByRole('button', { name: "Add to default's list" }));
-
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
-      payload: { harness: 'claude-code', action: 'profile-join', profile: 'account-4', join: ['default'] },
-    }));
-    await waitFor(() => expect(notify).toHaveBeenCalledWith('account-4 runs work in default now.'));
   });
 
-  /** A signed-out account a list holds is a row of its own where no waiting start names it, its door the agent's page. */
-  it('lists a signed-out account a list holds, and opens its agent', async () => {
+  /** A signed-out account of Daoris's is a row of its own where no waiting start names it, its door the agent's page. */
+  it('lists a signed-out account, and opens its agent', async () => {
     const door = vi.fn();
     start([row('signed-out', 'signed-out:claude-code/account-1', null, {
-      read: READ, where: 'Claude Code', runs: ['default'], account: facts({ named: [facts().named[1]!] }),
+      read: READ, where: 'Claude Code', account: facts({ named: [facts().named[1]!] }),
     })], { doors: { 'signed-out': door } });
     const item = await screen.findByRole('listitem', { name: 'account-1' });
 

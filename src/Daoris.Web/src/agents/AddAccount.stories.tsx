@@ -1,42 +1,34 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import i18n from '../locales/i18n';
-import { PlaceAccount, RenameAccount, ReSignIn } from './AddAccount';
-import { accountState, type JoinChoice } from './agents';
+import { InTheme } from '../plugins/storyIcons';
+import { chinese } from '../design/storyLanguage';
+import { storyWidths } from '../design/storyWidths';
+import { NameAccount, RenameAccount, ReSignIn } from './AddAccount';
+import { accountState } from './agents';
 import { READ } from './agentsFixtures';
 
-// *Add an account…*'s steps (UX7b, the UX7 design §4.5), each a molecule drawn alone: step 1 steering a person signing an
-// account back in to its row, step 3 asking the new account's name and its lists, a row's *Use in a workspace…*, and a
-// rename. Step 2 is the tool's own sign-in, `SignIn`, which is an organism. The words are the catalogue's, read as each
-// story renders, so a story in 中文 is in 中文.
+// *Add an account…*'s steps (UX7b, the UX7 design §4.5; POOL1c, the account-pool design §4.1), each a molecule drawn alone: step
+// 1 steering a person signing an account back in to its row, step 3 saying the new account joined Daoris's accounts and asking
+// its name, and a rename. Step 2 is the tool's own sign-in, `SignIn`, which is an organism. Each drawn at the main area's
+// widths (the UI/UX design R6), in English and 中文, light and dark. The words are the catalogue's, read as each story renders,
+// so a story in 中文 is in 中文.
 
 const nothing = () => {};
-
-/** The install's two lists a new account may join: work's own, and this machine's, which forge starts on. */
-const CHOICES: JoinChoice[] = [
-  { workspace: 'work', holds: ['account-1', 'account-2', 'personal'], listed: true, usedBy: [], moves: false },
-  { workspace: null, holds: [], listed: false, usedBy: ['forge'], moves: true },
-];
+const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
 const meta: Meta = {
   title: 'Agents/AddAccount',
-  decorators: [(Story) => (
-    <div className="w-[52rem] max-w-full bg-page p-4">
-      <Story />
-    </div>
-  )],
+  decorators: [storyWidths.wide],
 };
 export default meta;
 
-/** Step 1: account-2 reads unknown and a list holds it, so its own *Sign in* is offered before a new account. */
+/** Step 1: account-2 reads unknown and account-5 signed out, in the set's order, each with its own *Sign in*. */
 export const SigningBackIn: StoryObj<typeof ReSignIn> = {
   render: () => (
     <ReSignIn
       accounts={[
-        { id: 'account-2', name: 'account-2', state: accountState({ login: 'unknown', read: null }, null, true), runs: 'work' },
-        {
-          id: 'account-5', name: 'old@example.invalid', state: accountState({ login: 'out', read: READ }, null, false),
-          runs: i18n.t('agents.runs.none'),
-        },
+        { id: 'account-2', name: 'account-2', state: accountState({ login: 'unknown', read: null }, null, true) },
+        { id: 'account-5', name: 'old@example.invalid', state: accountState({ login: 'out', read: READ }, null, true) },
       ]}
       onSignIn={nothing}
       onNew={nothing}
@@ -45,52 +37,69 @@ export const SigningBackIn: StoryObj<typeof ReSignIn> = {
   ),
 };
 
-/** Step 3: who signed in offered as its name, a workspace's own list and this machine's, which forge starts on. */
-export const NameAndLists: StoryObj<typeof PlaceAccount> = {
+/** The same at the main area's 400 px floor, in 中文. */
+export const SigningBackInNarrowChinese: StoryObj<typeof ReSignIn> = {
+  ...SigningBackIn, decorators: [storyWidths.narrow, chinese],
+};
+
+/**
+ * Step 3: who signed in, that it joined Daoris's accounts and every workspace's work may run on it, its name with the email
+ * offered, and one press, *Done*. Nothing asks where it runs (D197 point 4).
+ */
+export const NameStep: StoryObj<typeof NameAccount> = {
   render: () => (
-    <PlaceAccount
+    <NameAccount
       agent="claude-code"
       account="acct-5e1f0a2b"
       title={i18n.t('agents.add.title')}
       signedIn="spare@example.invalid"
       offered="spare@example.invalid"
-      choices={CHOICES}
-      cancelLabel={i18n.t('agents.add.notNow')}
+      fallback="spare@example.invalid"
       onDone={nothing}
-      onCancel={nothing}
     />
   ),
 };
 
-/** A row's *Use in a workspace…*: the same question with no name to ask. */
-export const UseInAWorkspace: StoryObj<typeof PlaceAccount> = {
+/** The same at half the main area. */
+export const NameStepHalf: StoryObj<typeof NameAccount> = { ...NameStep, decorators: [storyWidths.half] };
+
+/** The same at the 400 px floor, in dark. */
+export const NameStepNarrowDark: StoryObj<typeof NameAccount> = { ...NameStep, decorators: [storyWidths.narrow, dark] };
+
+/** The same in 中文. */
+export const NameStepChinese: StoryObj<typeof NameAccount> = { ...NameStep, decorators: [chinese] };
+
+/** The same in 中文 at the 400 px floor, in dark. */
+export const NameStepNarrowChineseDark: StoryObj<typeof NameAccount> = { ...NameStep, decorators: [storyWidths.narrow, chinese, dark] };
+
+/** A key added (ACCTUX3): *Added the API key …*, the same sentence, and its name left empty to be called by its handle. */
+export const NameStepKey: StoryObj<typeof NameAccount> = {
   render: () => (
-    <PlaceAccount
+    <NameAccount
       agent="claude-code"
-      account="acct-5e1f0a2b"
-      title={i18n.t('agents.place.title', { account: 'spare@example.invalid' })}
-      choices={CHOICES}
-      cancelLabel={i18n.t('common.cancel')}
+      account="acct-9c8d7e6f"
+      title={i18n.t('harness.profile.addKey')}
+      lead={i18n.t('agents.add.keyAdded', { handle: '…k3y9' })}
+      offered=""
+      fallback={i18n.t('harness.profile.keyName', { handle: '…k3y9' })}
       onDone={nothing}
-      onCancel={nothing}
     />
   ),
 };
 
-/** A row's *Use in a workspace…* refused (ACCTEDIT1): still open, its boxes as they were, the refusal said under them. */
-export const UseInAWorkspaceRefused: StoryObj<typeof PlaceAccount> = {
+/** The name refused (ACCTEDIT1): the step stays open with the name typed, the driver's sentence under it, whole. */
+export const NameStepRefused: StoryObj<typeof NameAccount> = {
   render: () => (
-    <PlaceAccount
+    <NameAccount
       agent="claude-code"
       account="acct-5e1f0a2b"
-      title={i18n.t('agents.place.title', { account: 'spare@example.invalid' })}
-      choices={CHOICES}
-      refusal={'`work` names no `claude-code` account or list of its own, so its starts take this machine\'s list — join this '
-        + 'machine\'s list, or give `work` a list of its own first (`daoris agent profile order claude-code <account>… '
-        + '--workspace work`).'}
-      cancelLabel={i18n.t('common.cancel')}
+      title={i18n.t('agents.add.title')}
+      signedIn="spare@example.invalid"
+      offered="spare"
+      fallback="spare@example.invalid"
+      refusal={'accounts.json could not be read, so `acct-5e1f0a2b` was not renamed — writing it would lose every other '
+        + 'account\'s name. Fix the file or remove it, then rename again.'}
       onDone={nothing}
-      onCancel={nothing}
     />
   ),
 };

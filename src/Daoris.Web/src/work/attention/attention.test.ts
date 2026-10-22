@@ -228,6 +228,21 @@ describe('a folder waiting on the person\'s trust, worded', () => {
     expect(item.detail).toContain('permissions.allow');
   });
 
+  /**
+   * POOL1c (D197 point 3; the account-pool design §3 point 4, §4.3): a hold on your own sign-in's file, the row's `trust.own`,
+   * offers no grant, since Daoris writes nothing there, and says to trust the folder with the tool itself, at your terminal.
+   */
+  it('offers no grant on your own sign-in’s file, and says to trust it with the tool itself', () => {
+    const own = { ...hold, own: true };
+    const item = words(trusted({ trust: own }));
+    expect(item.trust).toEqual(own);
+    expect(item.detail).toBe(
+      "This conversation goes on in your own sign-in, outside Daoris's accounts, so Daoris writes nothing in its file: trust the folder with the tool itself, at your terminal.",
+    );
+    expect(attentionActs(item)).toEqual([]);
+    expect(attentionActs(words(trusted()))).toEqual(['trust']);
+  });
+
   it('names an intake\'s room by its ask, and a quest not in hand by its id', () => {
     expect(words(trusted({ where: null, quest: undefined, ask: '7c1e9a04b2d5' }))).toMatchObject({ where: 'ask #7c1e9a04b2d5', ask: '7c1e9a04b2d5' });
     expect(words(trusted({ where: null })).where).toBe('#q1');
@@ -826,20 +841,20 @@ describe('what a row offers', () => {
 
   it('asks once before what widens what Daoris may do, and before a choice', () => {
     expect([...ASKS_ONCE].sort())
-      .toEqual(['accept-rule', 'approve', 'choose', 'let-run', 'not-yet', 'opinion-anyway', 'refuse', 'trust']);
+      .toEqual(['accept-rule', 'approve', 'choose', 'not-yet', 'opinion-anyway', 'refuse', 'trust']);
   });
 });
 
 /**
  * UX6d (design §6.2–§6.3): an account's row offers what settles it in one press, *Sign in* to an account read signed out and
- * *Read* for one no read answered, and *Let … run …* (D130 §3.3), which asks once since it widens what Daoris may spend. Two
- * at most beside the door, so a row holds three controls (§9.3).
+ * *Read* for one no read answered. Two at most beside the door, so a row holds three controls (§9.3). *Let … run …* went with
+ * POOL1c (the account-pool design §4.3): every account of Daoris's serves every workspace, so none is outside a start's list.
  */
 describe('what an account’s row offers', () => {
   const named = (id: string | null, state: NamedAccount['state'], read: string | null = '2026-10-05T10:42:00Z'): NamedAccount =>
     ({ id, label: id ?? 'Your own sign-in', state, read, until: null });
   const facts = (over: Partial<AccountRowFacts> = {}): AccountRowFacts => ({
-    agent: 'claude-code', product: 'Claude Code', harness: 'claude-code', signsIn: true, named: [], outside: null, ...over,
+    agent: 'claude-code', product: 'Claude Code', harness: 'claude-code', signsIn: true, named: [], ...over,
   });
   const accountRow = (kind: 'account-wait' | 'signed-out', account: AccountRowFacts): Attention =>
     ({ id: 'x', kind, title: 't', where: 'w', since: '2026-10-05T10:00:00Z', account });
@@ -855,23 +870,22 @@ describe('what an account’s row offers', () => {
     expect(attentionActs(item)).toEqual(['sign-in', 'sign-in']);
   });
 
-  it('lets a ready account in, and reads one no read answered, after the sign-ins, two at most', () => {
-    const outside = { id: 'account-4', label: 'account-4', list: 'work', workspace: 'work' };
-    expect(attentionOffers(accountRow('account-wait', facts({ named: [named('account-2', 'cooling'), named('account-5', 'unknown', null)], outside }))))
-      .toEqual([{ act: 'let-run', account: 'account-4' }, { act: 'read', account: 'account-5' }]);
+  it('reads one no read answered, after the sign-ins, two at most', () => {
+    expect(attentionOffers(accountRow('account-wait', facts({ named: [named('account-2', 'cooling'), named('account-5', 'unknown', null)] }))))
+      .toEqual([{ act: 'read', account: 'account-5' }]);
     expect(attentionOffers(accountRow('account-wait', facts({
-      named: [named('account-1', 'out'), named('account-3', 'out'), named('account-6', 'out')], outside,
+      named: [named('account-1', 'out'), named('account-3', 'out'), named('account-6', 'out')],
     })))).toEqual([{ act: 'sign-in', account: 'account-1' }, { act: 'sign-in', account: 'account-3' }]);
   });
 
-  /** UXFIX3: an account outside the list that no read answered may be signed out, so the row reads it first. */
-  it('reads an unread account outside the list first, where it would offer to let it run', () => {
-    const readFirst = { id: 'account-4', label: 'account-4' };
-    expect(attentionOffers(accountRow('account-wait', facts({ named: [named('account-2', 'cooling'), named('account-5', 'unknown', null)], readFirst }))))
-      .toEqual([{ act: 'read', account: 'account-4' }, { act: 'read', account: 'account-5' }]);
-    expect(attentionOffers(accountRow('account-wait', facts({ named: [named('account-1', 'out')], readFirst }))))
-      .toEqual([{ act: 'sign-in', account: 'account-1' }, { act: 'read', account: 'account-4' }]);
-    expect(attentionActs(accountRow('account-wait', facts({ named: [named('account-2', 'cooling')], readFirst })))).not.toContain('let-run');
+  /**
+   * POOL1c (the account-pool design §4.3): no account is outside the set, so a row never offers to let one run, whatever an
+   * older answer carries beside it.
+   */
+  it('never offers to let an account run: every account of Daoris’s serves every workspace', () => {
+    const older = { ...facts({ named: [named('account-2', 'cooling')] }), outside: { id: 'account-4', list: 'work', workspace: 'work' }, readFirst: { id: 'account-4' } };
+    expect(attentionOffers(accountRow('account-wait', older as AccountRowFacts))).toEqual([]);
+    expect(attentionActs(accountRow('account-wait', older as AccountRowFacts))).not.toContain('let-run');
   });
 
   /** A read that failed is a reading: *Read* is for an account never read (§6.3), as the agent's page offers it. */
@@ -909,8 +923,8 @@ describe('what needs a person, with the accounts as last known', () => {
     profiles: [{ name: 'account-1', home: 'H/account-1', login: 'out', read: '2026-09-21T11:58:00Z' }, { name: 'account-2', home: 'H/account-2', login: 'out', read: '2026-09-21T08:00:00Z' }],
   }]);
   const signedOut = (account: string, read: string) => row('signed-out', `signed-out:claude-code/${account}`, null, {
-    read, where: 'Claude Code', runs: [null],
-    account: { agent: 'claude-code', product: 'Claude Code', harness: 'claude-code', signsIn: true, outside: null, named: [{ id: account, name: null, state: 'out', read, until: null }] },
+    read, where: 'Claude Code',
+    account: { agent: 'claude-code', product: 'Claude Code', harness: 'claude-code', signsIn: true, named: [{ id: account, name: null, state: 'out', read, until: null }] },
   });
 
   it('lists a signed-out account after a parked session, which says how long it waited, and never moves it by a reading', () => {

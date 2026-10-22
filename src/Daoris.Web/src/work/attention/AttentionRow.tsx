@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import type { SetUpRef } from '../../data/api';
 import { clockOf, elapsed } from '../../locales/format';
 import { cn } from '../../lib/cn';
-import { shellWord } from '../../lib/shellWord';
 import type { TrustHold } from '../../data/signals';
 import { Button, Dot, Icon, Inline, SelectField } from '../../design/ui';
 import type { AccountRowFacts } from './accountWords';
@@ -176,8 +175,6 @@ export type AttentionActs = {
   signInNew?: (item: Attention) => void;
   /** One account read on the press (§5.3, ROSTER1): the one reading a person may ask for, never a look. */
   read?: (item: Attention, account: string) => void;
-  /** A ready account let into the list the waiting start reads (D130 §3.3), after its question. */
-  letRun?: (item: Attention, account: string, answered: Answered) => void;
   /** A set-up the person looked at said reviewed (REVIEWENV1g): one press, naming the set-up the row drew. */
   reviewed?: (item: Attention) => void;
   /** A set-up said not yet, with the person's words, which go to its session as its next turn (REVIEWENV1g). */
@@ -216,7 +213,6 @@ const HANDLER: Record<AttentionActId, keyof AttentionActs> = {
   'sign-in': 'signIn',
   'sign-in-new': 'signInNew',
   read: 'read',
-  'let-run': 'letRun',
   reviewed: 'reviewed',
   'not-yet': 'notYet',
   'show-again': 'showAgain',
@@ -281,11 +277,10 @@ const DOOR_ONLY: Partial<Record<Attention['kind'], (item: Attention) => [string,
  * is the half that travels. A row whose answer needs reading has its door as its one control (*Answer…*, *Review*); every
  * other row's door is *Open* at its end, beside its acts, and an account's row's is its agent's name (UX6d).
  *
- * **An account's row settles what one press can** (UX6d, §6.2): *Sign in* to each account read signed out, *Read* an
- * account no read answered, and *Let … run …* (D130 §3.3) for an account known ready, which widens what Daoris may spend and
- * so asks once, naming the list it joins and its terminal twin; where the one outside the list was never read, *Read* it
- * first (UXFIX3). Its sign-in's steps are the band's to hand (`below`), since they follow a process. A signed-out account's
- * row says when it was read where the others say how long (*read 10:42*), since a reading is not a wait (UXFIX3).
+ * **An account's row settles what one press can** (UX6d, §6.2): *Sign in* to each account read signed out, and *Read* an
+ * account no read answered; no account is outside a start's list, since every account of Daoris's serves every workspace
+ * (POOL1c). Its sign-in's steps are the band's to hand (`below`), since they follow a process. A signed-out account's row says
+ * when it was read where the others say how long (*read 10:42*), since a reading is not a wait (UXFIX3).
  *
  * A molecule: it is handed the item, the acts and the door, and reports each press.
  */
@@ -314,10 +309,8 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
   const offered = attentionOffers(item).filter((offer) => acts[HANDLER[offer.act]] !== undefined);
   const doorOnly = DOOR_ONLY[item.kind];
   const where = IN_A_CIRCLE.has(item.kind) || item.circle ? t('work.attention.circle', { circle: item.where }) : item.where;
-  // An account's name as the row says it: the person's, from what the row names (ACCT2), or the one outside its list.
-  const called = (account?: string) =>
-    [...(item.account?.named ?? []), item.account?.outside, item.account?.readFirst]
-      .find((one) => one && one.id === account)?.label ?? account ?? '';
+  // An account's name as the row says it: the person's, from what the row names (ACCT2).
+  const called = (account?: string) => (item.account?.named ?? []).find((one) => one.id === account)?.label ?? account ?? '';
   // How long it has waited; where no wait is known, when its account was read, which is not a wait (UXFIX3).
   const when = item.since
     ? t('work.attention.since', { span: elapsed(item.since) })
@@ -365,9 +358,6 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
       // A static label that names no account: whoever signs in names it (D175 point 6).
       case 'sign-in-new': return t('harness.login.forDaoris');
       case 'read': return t('agents.act.readFor', { account: called(account) });
-      case 'let-run': return t('work.attention.act.letRun', {
-        account: item.account?.outside?.label ?? '', workspace: item.account?.outside?.workspace ?? '',
-      });
       // The review's own words, as the step's page and the strip's chip say them (REVIEWENV1g).
       case 'reviewed': return t('review.act.reviewed');
       case 'not-yet': return t('review.act.notYet');
@@ -505,7 +495,6 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
                 acts.answer?.(item, asking === 'approve', words.trim() || undefined, answered);
               } else if (asking === 'choose') acts.publish?.(item, [choice], answered);
               else if (asking === 'accept-rule') acts.acceptRule?.(item, answered);
-              else if (asking === 'let-run' && item.account?.outside) acts.letRun?.(item, item.account.outside.id, answered);
               else if (asking === 'not-yet') acts.notYet?.(item, words.trim(), answered);
               else if (asking === 'opinion-anyway') acts.opinionAnyway?.(item, words.trim() || undefined, answered);
               else answered.done();
@@ -518,21 +507,6 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
       {below && <div className="min-w-0 @3xl/main:col-span-2">{below}</div>}
     </li>
   );
-}
-
-/**
- * What letting an account run a workspace does (D130 §3.3), before the press that does it: the list it joins, what Daoris
- * may then start and spend, and the terminal's twin (D50, ACCT1's `profile join`), its account and workspace spelled for
- * any shell (ACCTQUOTE1). This machine's list is said as one every workspace naming no account of its own runs on.
- */
-function letRunSentence(
-  t: ReturnType<typeof useTranslation>['t'], agent: string, outside: NonNullable<AccountRowFacts['outside']>,
-): string {
-  const where = outside.list ? shellWord(outside.list, '<workspace>') : '--machine';
-  const command = `\`daoris agent profile join ${agent} ${shellWord(outside.id, '<account>')} ${where}\``;
-  return outside.list
-    ? t('work.attention.ask.letRun', { account: outside.label, workspace: outside.list, command })
-    : t('work.attention.ask.letRunMachine', { account: outside.label, workspace: outside.workspace, command });
 }
 
 /**
@@ -572,13 +546,10 @@ function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onC
   const notYet = act === 'not-yet';
   // *Go on anyway…* says what stays unsettled, and takes words the person may give (XAGENT1g, the second-agent design §8.5).
   const anyway = act === 'opinion-anyway' && item.opinion ? item.opinion.opinion : null;
-  const outside = act === 'let-run' ? item.account?.outside ?? null : null;
   const sentence = anyway
     ? t('opinion.ask.anyway', { unsettled: unsettledWords(t, opinionState(anyway.state), anyway) })
     : notYet
     ? t(item.session ? 'review.ask.notYet' : 'review.ask.notYetOwn', { quest: item.id })
-    : outside
-    ? letRunSentence(t, item.account!.agent, outside)
     : act === 'approve'
       ? t('work.attention.ask.approve', { id: item.ask ?? '' })
       : act === 'refuse'
@@ -591,8 +562,6 @@ function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onC
     ? t('opinion.ask.anywayMeanIt')
     : notYet
     ? t('review.ask.notYetMeanIt')
-    : outside
-    ? (outside.list ? t('agents.account.addTo', { workspace: outside.list }) : t('agents.account.addToMachine'))
     : act === 'approve'
       ? t('asks.goAhead.approve')
       : act === 'refuse'

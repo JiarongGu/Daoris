@@ -4,6 +4,7 @@
   "trust.holding.quest": "驱动为此扣住了委托 #{{id}}。",
   "trust.holding.ask": "驱动为此扣住了需求 #{{id}} 的受理会话。",
   "trust.file": "Daoris 只在智能体自己的文件里写入这一项，别的一概不动：",
+  "trust.ownHome": "这个对话在你自己的登录中继续，不属于 Daoris 的账户，所以 Daoris 不会写入它的文件：请在你的终端里用该工具本身信任这个文件夹。",
   "trust.grant": "信任这个文件夹",
   "trust.cancel": "暂不",
   "trust.open": "信任这个文件夹…"

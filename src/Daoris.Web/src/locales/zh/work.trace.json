@@ -19,7 +19,7 @@
   "work.trace.source.rules": "本机为它写下的规则文件",
   "work.trace.source.landings": "本机的落地记录",
   "work.trace.source.config": "本机的长期答复",
-  "work.trace.source.auto-landings": "本机待落地工作的列表",
+  "work.trace.source.auto-landings": "本机待落地的工作",
   "work.trace.unread.sessions": "无法读取服务的会话记录，因此这里没有读取任何会话。",
   "work.trace.unread.quests": "无法读取服务的委托。",
   "work.trace.unread.landings": "本机的落地记录无法读取，因此这里没有读取任何落地。",

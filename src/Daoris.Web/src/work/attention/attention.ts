@@ -227,7 +227,7 @@ export function rowRun(item: Attention): { session?: string | null; quest?: stri
 /** An act a row offers (design §6.2–§6.3), named as the row's press. */
 export type AttentionActId =
   | 'publish' | 'choose' | 'retry' | 'approve' | 'refuse' | 'trust' | 'accept-departure' | 'accept-rule' | 'decline-rule'
-  | 'sign-in' | 'sign-in-new' | 'read' | 'let-run' | 'reviewed' | 'not-yet' | 'show-again' | 'opinion-again' | 'opinion-anyway'
+  | 'sign-in' | 'sign-in-new' | 'read' | 'reviewed' | 'not-yet' | 'show-again' | 'opinion-again' | 'opinion-anyway'
   | 'let-ask' | 'not-now'
   // NOTIFY2e: the person's yes or no to an agent's ask to hand its session over: *Hand over to {agent}*, *Not now*.
   | 'hand-over' | 'keep-agent'
@@ -286,11 +286,11 @@ function permissionOffers(item: Attention): AttentionOffer[] {
 
 /**
  * The acts that ask once under the row before they do anything (design §6.3, D41 §4): a go-ahead's yes or no, which every
- * session on its ask is handed; a folder's trust, a widening of the rules and an account let into a list (D130 §3.3), which
- * widen what Daoris may do or spend; and a choice of receiver, which is a choice before it is a press.
+ * session on its ask is handed; a folder's trust and a widening of the rules, which widen what Daoris may do; and a choice of
+ * receiver, which is a choice before it is a press.
  */
 export const ASKS_ONCE: ReadonlySet<AttentionActId> = new Set([
-  'choose', 'approve', 'refuse', 'trust', 'accept-rule', 'let-run',
+  'choose', 'approve', 'refuse', 'trust', 'accept-rule',
   // A *not yet* asks for the person's words, which are what the set-up step's session acts on (REVIEWENV1g).
   'not-yet',
   // *Go on anyway…* says what stays unsettled and takes the person's words (XAGENT1g, the second-agent design §8.5).
@@ -302,10 +302,10 @@ const ACCOUNT_ACTS = 2;
 
 /**
  * What an account's row offers (UX6d, design §6.2–§6.3), each for one account: *Sign in* to each account the start passed
- * signed out, in the order it names them; *Let … run …* for an account outside its list known ready (D130 §3.3), or in its
- * place *Read* for one there never read (UXFIX3), since letting run an account nobody looked at widens what Daoris may spend
- * on a guess; and *Read* for one it names that no read answered (§5.3: a reading only on the press). A signed-out account's
- * own row signs it in. Never the tool's own sign-in, which is the person's, nor where Daoris runs no sign-in for the agent.
+ * signed out, in the order it names them, and *Read* for one it names that no read answered (§5.3: a reading only on the
+ * press). No *Let … run …*: every account of Daoris's serves every workspace (POOL1c; the account-pool design §4.3). A
+ * signed-out account's own row signs it in. Never the tool's own sign-in, which is the person's, nor where Daoris runs no
+ * sign-in for the agent.
  * Where no Daoris account is signed in, *Sign in for Daoris* leads (OWNSPACE1b-B, D175 point 7): it names no account, and runs
  * the add flow's sign-in in place. Two at most: the rest are on the agent's page, the row's door, and its line says them.
  */
@@ -319,12 +319,8 @@ function accountOffers(item: Attention): AttentionOffer[] {
     ]
     : [];
   if (item.kind === 'signed-out') return signIns.slice(0, 1);
-  const outside: AttentionOffer[] = facts.outside
-    ? [{ act: 'let-run', account: facts.outside.id }]
-    : facts.readFirst ? [{ act: 'read', account: facts.readFirst.id }] : [];
   return [
     ...signIns,
-    ...outside,
     ...facts.named.filter((one) => one.state === 'unknown' && one.id && !one.read).map((one) => ({ act: 'read' as const, account: one.id! })),
   ].slice(0, ACCOUNT_ACTS);
 }
@@ -345,7 +341,8 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
     // GOAHEADSTALE1: nothing on a stale one's ask could use a yes but whatever starts there next, which no session asked it for, so
     // its refusal is the one answer offered.
     case 'go-ahead': return item.stale ? plain('refuse') : plain('approve', 'refuse');
-    case 'trust': return item.trust ? plain('trust') : [];
+    // A hold on the person's own sign-in's file offers no grant (POOL1c, D197 point 3): Daoris writes nothing there.
+    case 'trust': return item.trust && !item.trust.own ? plain('trust') : [];
     case 'departure': return plain('accept-departure');
     // A set-up shown and waiting (REVIEWENV1g, design §3.3): the strip's chip's and the step's page's own presses, *Show it
     // again* only for a local set-up, which Daoris serves; *Skip…* is the step's page's, where the work is read.
@@ -466,8 +463,6 @@ export type PushedAttention = {
   holding?: { quests: string[]; asks: string[] };
   /** When a signed-out account was read (UXFIX3). */
   read?: string | null;
-  /** Where a signed-out account runs, each a workspace or null for this machine. */
-  runs?: (string | null)[];
   account?: PushedAccountFacts;
   /**
    * A press a terminal sent that waits for the window's Confirm (CONFIRMSEEN1): its route, the terminal as the system names it, when
@@ -669,8 +664,11 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         ...base,
         title: row.trust?.folder ?? row.id,
         where: row.where ?? (row.ask ? askWhere(row.ask) : `#${row.quest ?? ''}`),
-        detail: i18n.t('work.attention.trustWhy'),
-        ...(row.trust ? { trust: { folder: row.trust.folder, trustFile: row.trust.trustFile } } : {}),
+        // On the person's own sign-in's file (POOL1c, D197 point 3), it says to trust the folder with the tool itself.
+        detail: i18n.t(row.trust?.own ? 'trust.ownHome' : 'work.attention.trustWhy'),
+        ...(row.trust
+          ? { trust: { folder: row.trust.folder, trustFile: row.trust.trustFile, ...(row.trust.own ? { own: true } : {}) } }
+          : {}),
         // What its door opens: the quest it holds, or the ask whose intake it holds (D73).
         ...(row.quest ? { quest: row.quest } : row.ask ? { ask: row.ask } : {}),
       };

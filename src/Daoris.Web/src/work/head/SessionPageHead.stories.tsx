@@ -292,7 +292,7 @@ export const HandOverAskingIdle: Story = {
   args: {
     session: A_CONVERSATION, title: 'Cap the hydration per frame', shown: 'completed',
     acts: ['handOver', 'openFolder', 'terminal', 'detach', 'archive', 'delete', 'copy'],
-    asking: <HandOverAsk from="claude-code" repository="engine" roster={ROSTER} onHandOver={() => {}} onClose={() => {}} />,
+    asking: <HandOverAsk from="claude-code"roster={ROSTER} onHandOver={() => {}} onClose={() => {}} />,
   },
   decorators: [sessionWidths.half],
 };
@@ -302,7 +302,7 @@ export const HandOverAskingWhileItWorks: Story = {
   args: {
     session: { ...A_CONVERSATION, state: 'working' }, title: 'Cap the hydration per frame', shown: 'working',
     acts: ['stop', 'handOver', 'openFolder', 'terminal', 'detach', 'copy'],
-    asking: <HandOverAsk from="claude-code" repository="engine" working roster={ROSTER} onHandOver={() => {}} onClose={() => {}} />,
+    asking: <HandOverAsk from="claude-code"working roster={ROSTER} onHandOver={() => {}} onClose={() => {}} />,
   },
   decorators: [sessionWidths.half],
 };
@@ -313,7 +313,7 @@ export const HandOverRefused: Story = {
     ...HandOverAskingIdle.args,
     asking: (
       <HandOverAsk
-        from="claude-code" repository="engine" roster={ROSTER} onHandOver={() => {}} onClose={() => {}}
+        from="claude-code"roster={ROSTER} onHandOver={() => {}} onClose={() => {}}
         refused={i18n.t('work.handOver.refused.treeGone')}
       />
     ),
@@ -340,7 +340,7 @@ export const HandOverRefusedChinese: Story = {
     title: '限制每帧的水合工作量',
     asking: (
       <HandOverAsk
-        from="claude-code" repository="engine" roster={ROSTER} onHandOver={() => {}} onClose={() => {}}
+        from="claude-code"roster={ROSTER} onHandOver={() => {}} onClose={() => {}}
         refused={i18n.t('work.handOver.refused.treeGone', { lng: 'zh' })}
       />
     ),

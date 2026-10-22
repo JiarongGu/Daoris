@@ -29,8 +29,6 @@
   "work.start.profile": "Account",
   "work.start.profileDefault": "Driver's choice",
   "work.start.accountDriver": "driver's",
-  "work.start.outside": "Not in {{workspace}}'s list",
-  "work.start.outsideMachine": "Not in this machine's list",
   "work.start.go": "Start",
   "work.start.going": "Starting…",
   "work.start.task": "Make it a task with Daoris…",

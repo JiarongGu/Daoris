@@ -1,25 +1,17 @@
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { moment } from '../../locales/format';
-import { shellWord } from '../../lib/shellWord';
-import { type Answered, InlineConfirm } from '../../work/InlineConfirm';
-import { Button, CheckField, Icon, Inline, Pill, Prose, Segmented, SelectField, SettingList, SettingRow, Tip } from '../../design/ui';
+import { Button, Icon, Inline, Pill, Segmented, SelectField, SettingList, SettingRow, Tip } from '../../design/ui';
 import {
-  type AccountCooling, type AccountFacts, type AccountScope, type AccountUseChange, type AgentAccounts, cannotLeave,
-  coolingLine, heldLine, moved, nextLine, nothingSaid, offeredLine, ownLine, saidLine, switchOf, used,
+  type AccountCooling, type AccountFacts, type AccountScope, type AccountUseChange, type AgentAccounts, coolingLine, heldLine,
+  moved, nextLine, nothingSaid, offeredLine, saidLine, switchOf,
 } from './accounts';
 import { type CurveAccount, CurveChart, CurvePoints } from './UsageCurve';
 import { CURVE_WINDOWS, goneOf, ownPoints, type Switch } from './usageCurves';
 
-// How each agent's accounts are used, as Settings → Agents shows it (TOOL4g; D125 §2.4, §3.7, §6; D130 §3.2, §9, §16.6).
-// Molecules: every state arrives as props, so a cooling account, a scope with six accounts, a workspace on this machine's
-// accounts and an agent whose sessions say nothing are each a story. The Agents domain holds the hooks.
-
-/**
- * A scope's `--workspace` as its terminal twins print it, or nothing for this machine's scope. The twin is pasted into
- * whichever shell a person has, so the workspace is spelled for every shell (`shellWord`, ACCTQUOTE1c).
- */
-const scopedFlag = (workspace?: string) => (workspace ? ` --workspace ${shellWord(workspace, '<workspace>')}` : '');
+// How each agent's accounts are used, as its page shows it (TOOL4g; D125 §2.4, §3.7, §6; D130 §9, §16.6; POOL1c, D197 and the
+// account-pool design §4.2): the one set's order and its one entry of settings, every workspace's. Molecules: every state
+// arrives as props, so a cooling account, a set of six accounts and an agent whose sessions say nothing are each a story. The
+// Agents place holds the hooks.
 
 /** An account as a list row names it: its directory, what a person calls it, and whether it is signed in. */
 export type AccountChoice = { name: string; label: string; login?: 'in' | 'out' | 'unknown'; keyed?: boolean };
@@ -81,32 +73,6 @@ export function CoolingLine({ cooling, label, busy, onTryNow, now }: {
   );
 }
 
-/**
- * The tool's own sign-in, read-only (D175 point 1): who it is where the tool says, that Daoris starts no session in it and
- * conversations begun there go on there, an old cool-off where it holds one, and the press that signs in an account for Daoris.
- */
-export function OwnSignInLine({ who, cooling, signsIn, busy, onSignIn }: {
-  who?: string | null;
-  cooling?: AccountCooling | null;
-  /** Whether the tool has a sign-in flow Daoris can run: no press where it has none. */
-  signsIn: boolean;
-  busy?: boolean;
-  onSignIn: () => void;
-}) {
-  const { t } = useTranslation();
-  return (
-    <div className="mt-2 flex flex-wrap items-start gap-2 border-l-[3px] border-accent bg-page/60 px-3 py-2">
-      <Prose className="min-w-0 flex-1 basis-72 text-small text-ink-soft">{ownLine(who, cooling)}</Prose>
-      {signsIn && (
-        <Button disabled={busy} onClick={onSignIn}>
-          <Icon name="plus" size={13} />
-          {t('harness.profile.signInNew')}
-        </Button>
-      )}
-    </div>
-  );
-}
-
 /** Each account's own plan and terms apply (D130 point 12): said once, under the agent's accounts. */
 export function TermsLine() {
   const { t } = useTranslation();
@@ -114,19 +80,18 @@ export function TermsLine() {
 }
 
 /**
- * Which account the scope's next start takes, and why (TOOL6e; D130 §3–§4, D125 §3.7): the walk's step, since when that
- * account is offered again where its cool-off just ended, what holds every other account, and that the tool's own sign-in
- * carries none of these starts, which is the switch a person makes at their terminal and expects Daoris to follow. Drawn
- * only where the answer carries it, so a shell older than TOOL6e shows nothing rather than a guess.
+ * Which account the set's next start takes, in any workspace, and why (TOOL6e; D130 §3–§4, D125 §3.7): the walk's step, since
+ * when that account is offered again where its cool-off just ended, what holds every other account, and that the tool's own
+ * sign-in carries none of these starts, which is the switch a person makes at their terminal and expects Daoris to follow.
+ * Drawn only where the answer carries it, so a shell older than TOOL6e shows nothing rather than a guess.
  */
-export function NextStartRow({ agent, product, scope, labelOf, isKey, workspace }: {
+export function NextStartRow({ agent, product, scope, labelOf, isKey }: {
   agent: AgentAccounts;
   product: string;
   scope: AccountScope;
   labelOf: (name: string) => string;
   /** Whether an account is an API key: a key held signed out is refused, repaired by a new key (ACCTUX1b). */
   isKey?: (name: string) => boolean;
-  workspace?: string;
 }) {
   const { t } = useTranslation();
   const next = scope.next;
@@ -144,7 +109,7 @@ export function NextStartRow({ agent, product, scope, labelOf, isKey, workspace 
   return (
     <SettingRow
       label={t('harness.next.label')}
-      hint={listed ? t('harness.next.hint', { agent: agent.agent, scoped: scopedFlag(workspace) }) : undefined}
+      hint={listed ? t('harness.next.hint', { agent: agent.agent }) : undefined}
       why={listed ? t(walk) : undefined}
     >
       <p className="m-0 text-small text-ink">
@@ -158,141 +123,101 @@ export function NextStartRow({ agent, product, scope, labelOf, isKey, workspace 
   );
 }
 
-/** What a scope's editor is handed to change it: each press is the terminal's door's twin (D50). */
+/** What the set's editor is handed to change it: each press is the terminal's door's twin (D50). */
 export type ScopeActs = {
-  /** A list written whole, in order; none clears it, and its settings with it. */
-  onOrder: (workspace: string | null, list: string[]) => void;
+  /** The set's order written whole (`daoris agent profile order`): every account, the first where *One by one, in order* begins. */
+  onOrder: (list: string[]) => void;
   /**
-   * How the list is used: one setting at a time, a field left out unchanged. `refused`, where handed, is told the door's refusal in
+   * How the set is used: one setting at a time, a field left out unchanged. `refused`, where handed, is told the door's refusal in
    * the reader's language in place of the toast: the curve's editor says it under the rows it keeps (PUSH1e: the rules are .NET's).
    */
-  onUse: (workspace: string | null, change: AccountUseChange, refused?: (problem: string) => void) => void;
-  /** A workspace returned to this machine's accounts: its default, list and settings cleared at once. */
-  /** Told how it ended, so the ask stays open while it runs and says a refusal inside it (UXFIX2b3c). */
-  onInherit: (workspace: string, answered: Answered) => void;
+  onUse: (change: AccountUseChange, refused?: (problem: string) => void) => void;
 };
 
 /**
- * One scope's list and how it is used (D130 §3.2, §16.6 as D165 §6 amends it): its accounts in order, each with *Use* and,
- * once used, up and down; then *Use accounts*, *Keep for conversations* and *Switch accounts* with each window's curve
- * (SWITCH1d). The settings come with the list, so a scope with none shows where its starts run instead. Any number of
- * accounts: the editor holds as many rows as the agent has.
+ * The set's order and how it is used (D130 §16.6 as D165 §6 amends it; POOL1c, D197 point 2 and the account-pool design §4.2):
+ * every account of Daoris's in the order they are used, each with up and down and no *Use* switch, since every account serves
+ * every workspace; then *Use accounts*, *Keep for conversations* and *Switch accounts* with each window's curve (SWITCH1d), the
+ * one entry of settings every workspace's starts read. Any number of accounts: the editor holds as many rows as the agent has.
  */
-export function ScopeEditor({ agent, product, scope, accounts, workspace, busy, acts }: {
+export function ScopeEditor({ agent, product, scope, accounts, busy, acts }: {
   agent: AgentAccounts;
   /** What a person calls the tool, for the sentence an agent whose sessions say nothing reads. */
   product: string;
   scope: AccountScope;
   accounts: AccountChoice[];
-  /** The workspace, or absent for this machine's scope. */
-  workspace?: string;
   busy?: boolean;
-  acts: Pick<ScopeActs, 'onOrder' | 'onUse'>;
+  acts: ScopeActs;
 }) {
   const { t } = useTranslation();
-  const where = workspace ?? null;
-  const scopeName = workspace ? t('harness.use.workspace', { workspace }) : t('harness.use.machine');
   const labelOf = (name: string) => accounts.find((account) => account.name === name)?.label ?? name;
   const isKey = (name: string) => accounts.find((account) => account.name === name)?.keyed === true;
-  // The list in its order, then every account it does not use, as the agent has them.
-  const rows = [
-    ...scope.list.map((name) => ({ name, used: true })),
-    ...accounts.filter((account) => !scope.list.includes(account.name)).map((account) => ({ name: account.name, used: false })),
-  ];
-  const listed = scope.list.length > 0;
+  // The order, then any account it does not name yet, as the agent has them: `Change` writes the order whole at every change,
+  // so a move writes them all, the one it does not name yet placed where the person sees it.
+  const order = [...scope.list, ...accounts.filter((account) => !scope.list.includes(account.name)).map((account) => account.name)];
   const nearOf = (name: string) => scope.near.find((each) => each.account === name);
   const coolingOf = (name: string) => agent.accounts.find((account) => account.name === name)?.cooling;
-  // Each hint is the terminal's twin for this scope, so a workspace's names its `--workspace`.
-  const hinted = { agent: agent.agent, scoped: scopedFlag(workspace) };
+  // Each hint is the terminal's twin, which names no workspace: one set serves them all.
+  const hinted = { agent: agent.agent };
+  const listName = t('harness.use.listLabel');
 
   return (
     <SettingList className="min-w-0">
       {/* First: the question a person comes with is where the next start goes, and why (TOOL6e). */}
-      <NextStartRow agent={agent} product={product} scope={scope} labelOf={labelOf} isKey={isKey} workspace={workspace} />
+      <NextStartRow agent={agent} product={product} scope={scope} labelOf={labelOf} isKey={isKey} />
       <SettingRow
         label={t('harness.use.list')}
         hint={t('harness.use.orderHint', hinted)}
         why={t('harness.use.listWhy')}
       >
-        {/* The switch's name, once, above its column (D130 §9: *Use*), where each row's box is named for its account. */}
-        <p className="m-0 mt-1 text-meta text-ink-faint">{t('harness.use.member')}</p>
-        <ol aria-label={t('harness.use.listLabel', { scope: scopeName })} className="m-0 mt-1 list-none p-0">
-          {rows.map((row, index) => {
-            const blocked = row.used ? cannotLeave(scope, row.name) : null;
-            const account = accounts.find((each) => each.name === row.name);
-            const near = nearOf(row.name);
-            const toggle = (
-              <CheckField
-                checked={row.used}
-                disabled={busy || blocked !== null}
-                onChange={(on) => acts.onOrder(where, used(scope.list, row.name, on))}
-                label={t('harness.use.memberFor', { account: labelOf(row.name), scope: scopeName })}
-                hideLabel
-              />
-            );
+        <ol aria-label={listName} className="m-0 mt-1 list-none p-0">
+          {order.map((name, index) => {
+            const account = accounts.find((each) => each.name === name);
+            const near = nearOf(name);
             return (
-              <li key={row.name} className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-line py-1.5 first:border-t-0">
-                {blocked ? (
-                  <Tip content={t(`harness.use.cannotLeave.${blocked}`, { account: labelOf(row.name) })}>
-                    <span>{toggle}</span>
-                  </Tip>
-                ) : toggle}
-                <span className={row.used ? 'text-body text-ink [overflow-wrap:anywhere]' : 'text-body text-ink-faint [overflow-wrap:anywhere]'}>
-                  {labelOf(row.name)}
-                </span>
-                {row.used && scope.begins === row.name && <Pill tone="neutral">{t('harness.use.begins')}</Pill>}
-                {row.used && scope.use.keep === row.name && <Pill tone="neutral">{t('harness.use.kept')}</Pill>}
+              <li key={name} className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-line py-1.5 first:border-t-0">
+                <span className="text-body text-ink [overflow-wrap:anywhere]">{labelOf(name)}</span>
+                {scope.begins === name && <Pill tone="neutral">{t('harness.use.begins')}</Pill>}
+                {scope.use.keep === name && <Pill tone="neutral">{t('harness.use.kept')}</Pill>}
                 {/* What passes it at a start, in the curve's words (SWITCH1d): over its curve, its limit reached, or credits. */}
-                {row.used && near && (
+                {near && (
                   <Tip
-                    content={saidLine(agent.accounts.find((each) => each.name === row.name)?.said, {
-                      over: scope.overCurve?.find((each) => each.account === row.name) ?? null,
+                    content={saidLine(agent.accounts.find((each) => each.name === name)?.said, {
+                      over: scope.overCurve?.find((each) => each.account === name) ?? null,
                     })}
                   >
                     <span><Pill tone="neutral">{t(`harness.use.passed.${near.by}`)}</Pill></span>
                   </Tip>
                 )}
-                {coolingOf(row.name) && <Pill tone="neutral">{t('harness.cooling.pill')}</Pill>}
+                {coolingOf(name) && <Pill tone="neutral">{t('harness.cooling.pill')}</Pill>}
                 {account?.login === 'out' && !account.keyed && <Pill tone="neutral">{t('harness.login.out')}</Pill>}
                 {/* Each arrow a target of 28 px at least (the platform language §6, ACCTUX2): its glyph and padding were 25. */}
-                {row.used && (
-                  <span className="ml-auto flex gap-0.5">
-                    <Button
-                      variant="ghost"
-                      className="min-w-7 justify-center px-1.5"
-                      disabled={busy || index === 0}
-                      aria-label={`${t('harness.use.up')} · ${labelOf(row.name)}`}
-                      onClick={() => acts.onOrder(where, moved(scope.list, row.name, -1))}
-                    >
-                      <Icon name="chevronUp" size={13} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      className="min-w-7 justify-center px-1.5"
-                      disabled={busy || index === scope.list.length - 1}
-                      aria-label={`${t('harness.use.down')} · ${labelOf(row.name)}`}
-                      onClick={() => acts.onOrder(where, moved(scope.list, row.name, 1))}
-                    >
-                      <Icon name="chevronDown" size={13} />
-                    </Button>
-                  </span>
-                )}
+                <span className="ml-auto flex gap-0.5">
+                  <Button
+                    variant="ghost"
+                    className="min-w-7 justify-center px-1.5"
+                    disabled={busy || index === 0}
+                    aria-label={`${t('harness.use.up')} · ${labelOf(name)}`}
+                    onClick={() => acts.onOrder(moved(order, name, -1))}
+                  >
+                    <Icon name="chevronUp" size={13} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="min-w-7 justify-center px-1.5"
+                    disabled={busy || index === order.length - 1}
+                    aria-label={`${t('harness.use.down')} · ${labelOf(name)}`}
+                    onClick={() => acts.onOrder(moved(order, name, 1))}
+                  >
+                    <Icon name="chevronDown" size={13} />
+                  </Button>
+                </span>
               </li>
             );
           })}
         </ol>
-        {!listed && (
-          <p className="m-0 mt-1 text-small text-ink-faint">
-            {/* Where nothing is named, Daoris's accounts are taken in turn (D175 point 2); only a test double's own home
-                runs on the tool's own sign-in, which the answer says by `inherited: false`. */}
-            {t('harness.use.empty', {
-              fallback: scope.default
-                ? labelOf(scope.default)
-                : t(scope.inherited === false ? 'harness.use.emptyOwn' : 'harness.use.emptyInherited'),
-            })}
-          </p>
-        )}
-        {scope.problem && (
+        {/* A hand-edited file read with the order winning (D130 §3.1): a kept account the order does not hold, or held alone. */}
+        {scope.problem && scope.problem.kind !== 'default' && (
           <p className="m-0 mt-1.5 border-l-[3px] border-warn bg-page/60 px-3 py-1.5 text-small text-ink-soft">
             {t(`harness.use.problem.${scope.problem.kind}`, { account: labelOf(scope.problem.account) })}
           </p>
@@ -302,54 +227,50 @@ export function ScopeEditor({ agent, product, scope, accounts, workspace, busy, 
         )}
       </SettingRow>
 
-      {listed && (
-        <>
-          <SettingRow
+      <SettingRow
+        label={t('harness.use.mode.label')}
+        hint={t('harness.use.mode.hint', hinted)}
+        why={t('harness.use.mode.why')}
+        control={(
+          <Segmented
             label={t('harness.use.mode.label')}
-            hint={t('harness.use.mode.hint', hinted)}
-            why={t('harness.use.mode.why')}
-            control={(
-              <Segmented
-                label={`${t('harness.use.mode.label')} · ${scopeName}`}
-                value={scope.use.use}
-                options={[
-                  { value: 'goal', label: t('harness.use.mode.goal') },
-                  { value: 'order', label: t('harness.use.mode.order') },
-                ]}
-                onChange={(use) => { if (!busy && use !== scope.use.use) acts.onUse(where, { use }); }}
-              />
-            )}
-          >
-            <p className="m-0 text-small text-ink-soft">
-              {t(scope.use.use === 'order' ? 'harness.use.mode.orderSays' : 'harness.use.mode.goalSays')}
-            </p>
-            {nothingSaid(agent, scope) && <p className="m-0 mt-1 text-small text-ink-faint">{t('harness.use.unsaid')}</p>}
-          </SettingRow>
+            value={scope.use.use}
+            options={[
+              { value: 'goal', label: t('harness.use.mode.goal') },
+              { value: 'order', label: t('harness.use.mode.order') },
+            ]}
+            onChange={(use) => { if (!busy && use !== scope.use.use) acts.onUse({ use }); }}
+          />
+        )}
+      >
+        <p className="m-0 text-small text-ink-soft">
+          {t(scope.use.use === 'order' ? 'harness.use.mode.orderSays' : 'harness.use.mode.goalSays')}
+        </p>
+        {nothingSaid(agent, scope) && <p className="m-0 mt-1 text-small text-ink-faint">{t('harness.use.unsaid')}</p>}
+      </SettingRow>
 
-          <SettingRow
-            label={t('harness.use.keep.label')}
-            hint={t('harness.use.keep.hint', hinted)}
-            why={t('harness.use.keep.why')}
-            control={scope.list.length > 1 ? (
-              <SelectField
-                value={scope.use.keep ?? ''}
-                disabled={busy}
-                ariaLabel={`${t('harness.use.keep.label')} · ${scopeName}`}
-                placeholder={t('harness.use.keep.none')}
-                options={[
-                  { value: '-', label: t('harness.use.keep.none') },
-                  ...scope.list.map((name) => ({ value: name, label: labelOf(name) })),
-                ]}
-                onChange={(value) => acts.onUse(where, value === '-' ? { noKeep: true } : { keep: value })}
-              />
-            ) : undefined}
-          >
-            {scope.list.length < 2 && <p className="m-0 text-small text-ink-faint">{t('harness.use.keep.needsTwo')}</p>}
-          </SettingRow>
+      <SettingRow
+        label={t('harness.use.keep.label')}
+        hint={t('harness.use.keep.hint', hinted)}
+        why={t('harness.use.keep.why')}
+        control={order.length > 1 ? (
+          <SelectField
+            value={scope.use.keep ?? ''}
+            disabled={busy}
+            ariaLabel={t('harness.use.keep.label')}
+            placeholder={t('harness.use.keep.none')}
+            options={[
+              { value: '-', label: t('harness.use.keep.none') },
+              ...order.map((name) => ({ value: name, label: labelOf(name) })),
+            ]}
+            onChange={(value) => acts.onUse(value === '-' ? { noKeep: true } : { keep: value })}
+          />
+        ) : undefined}
+      >
+        {order.length < 2 && <p className="m-0 text-small text-ink-faint">{t('harness.use.keep.needsTwo')}</p>}
+      </SettingRow>
 
-          <SwitchRow agent={agent} product={product} scope={scope} labelOf={labelOf} workspace={workspace} busy={busy} acts={acts} />
-        </>
-      )}
+      <SwitchRow agent={agent} product={product} scope={scope} labelOf={labelOf} busy={busy} acts={acts} />
     </SettingList>
   );
 }
@@ -361,21 +282,18 @@ export function ScopeEditor({ agent, product, scope, accounts, workspace, busy, 
  * saved as `--curve` saves them, and *Clear my own curve* as `--no-curve`. The person's curve is kept whatever the switch says,
  * and read only under *My own curve*.
  */
-function SwitchRow({ agent, product, scope, labelOf, workspace, busy, acts, now = new Date() }: {
+function SwitchRow({ agent, product, scope, labelOf, busy, acts, now = new Date() }: {
   agent: AgentAccounts;
   product: string;
   scope: AccountScope;
   labelOf: (name: string) => string;
-  workspace?: string;
   busy?: boolean;
   acts: Pick<ScopeActs, 'onUse'>;
   /** The moment the accounts are placed at; now, unless a story's. */
   now?: Date;
 }) {
   const { t } = useTranslation();
-  const where = workspace ?? null;
-  const scopeName = workspace ? t('harness.use.workspace', { workspace }) : t('harness.use.machine');
-  const hinted = { agent: agent.agent, scoped: scopedFlag(workspace) };
+  const hinted = { agent: agent.agent };
   const switched = switchOf(scope.use);
   const own = (window: string) => ownPoints(scope.use, window);
   // Each account of the list on a window now, where .NET measured its agent's share against the scope's curve (PUSH1e): placed by
@@ -394,14 +312,14 @@ function SwitchRow({ agent, product, scope, labelOf, workspace, busy, acts, now 
       why={t('harness.use.switch.why')}
       control={(
         <Segmented
-          label={`${t('harness.use.switch.label')} · ${scopeName}`}
+          label={t('harness.use.switch.label')}
           value={switched}
           options={[
             { value: 'smart', label: t('harness.use.switch.smart') },
             { value: 'curve', label: t('harness.use.switch.curve') },
             { value: 'off', label: t('harness.use.switch.off') },
           ]}
-          onChange={(to: Switch) => { if (!busy && to !== switched) acts.onUse(where, { switch: to }); }}
+          onChange={(to: Switch) => { if (!busy && to !== switched) acts.onUse({ switch: to }); }}
         />
       )}
     >
@@ -430,7 +348,7 @@ function SwitchRow({ agent, product, scope, labelOf, workspace, busy, acts, now 
                   ...hinted, window,
                   points: own(window)?.map(([gone, used]) => `${gone}:${used}`).join(',') ?? '<elapsed>:<used>,…',
                 })}
-                onSave={(points, refused) => acts.onUse(where, { curve: { [window]: points } }, refused)}
+                onSave={(points, refused) => acts.onUse({ curve: { [window]: points } }, refused)}
               />
             )}
           </div>
@@ -438,7 +356,7 @@ function SwitchRow({ agent, product, scope, labelOf, workspace, busy, acts, now 
       </div>
       {switched === 'curve' && CURVE_WINDOWS.some((window) => own(window) !== null) && (
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-          <Button variant="ghost" disabled={busy} onClick={() => acts.onUse(where, { noCurve: true })}>{t('harness.curve.clear')}</Button>
+          <Button variant="ghost" disabled={busy} onClick={() => acts.onUse({ noCurve: true })}>{t('harness.curve.clear')}</Button>
           <span className="text-small text-ink-faint"><Inline text={t('harness.curve.clearHint', hinted)} /></span>
         </div>
       )}
@@ -446,92 +364,3 @@ function SwitchRow({ agent, product, scope, labelOf, workspace, busy, acts, now 
   );
 }
 
-/**
- * A workspace's scope (D130 §3.2): *This machine's accounts* or *Its own accounts*. On this machine's, it says where its starts
- * run; on its own, its list and settings are the editor's. Back to this machine's clears its own default, list and settings,
- * so the first press asks.
- */
-export function WorkspaceScope({ agent, product, workspace, scope, machine, accounts, busy, acts }: {
-  agent: AgentAccounts;
-  product: string;
-  workspace: string;
-  /** Its own scope, or null where it names neither a default nor a list of its own. */
-  scope: AccountScope | null;
-  /** This machine's scope, which it runs on while it has none of its own. */
-  machine: AccountScope;
-  accounts: AccountChoice[];
-  busy?: boolean;
-  acts: ScopeActs;
-}) {
-  const { t } = useTranslation();
-  // Its own accounts chosen before any is used: the editor shows the list empty until the first Use writes it.
-  const [opening, setOpening] = useState(false);
-  const [confirming, setConfirming] = useState(false);
-  const own = scope !== null || opening;
-  const labelOf = (name: string) => accounts.find((account) => account.name === name)?.label ?? name;
-  const inherits = machine.list.length > 0
-    ? t('harness.use.scope.inheritsList', { accounts: machine.list.map(labelOf).join(', ') })
-    : machine.default
-      ? t('harness.use.scope.inheritsDefault', { account: labelOf(machine.default) })
-      : t('harness.use.scope.inheritsOwn');
-
-  return (
-    <SettingList className="mt-2 border-t border-line pt-2">
-      <SettingRow
-        label={t('harness.use.workspace', { workspace })}
-        hint={own ? undefined : t('harness.use.scope.hint', { agent: agent.agent, workspace: shellWord(workspace, '<workspace>') })}
-        control={(
-          <Segmented
-            label={`${t('harness.use.scope.label')} · ${workspace}`}
-            value={own ? 'own' : 'machine'}
-            options={[
-              { value: 'machine', label: t('harness.use.scope.machine') },
-              { value: 'own', label: t('harness.use.scope.own') },
-            ]}
-            onChange={(choice) => {
-              if (busy) return;
-              if (choice === 'own') {
-                setConfirming(false);
-                setOpening(true);
-              } else if (scope === null) {
-                setOpening(false);
-              } else {
-                setConfirming(true);
-              }
-            }}
-          />
-        )}
-      >
-        {!own && <p className="m-0 text-small text-ink-soft">{inherits}</p>}
-        {confirming && scope !== null && (
-          // UXFIX2b3c: the shared ask stays open while the act runs and says a refusal inside it (ACCTEDIT1's contract).
-          <InlineConfirm
-            label={t('harness.use.scope.confirmMove')}
-            says={<Inline text={t('harness.use.scope.confirm', { workspace, agent: agent.agent })} />}
-            meanIt={t('harness.use.scope.confirmMove')}
-            busy={busy}
-            className="mt-1"
-            onConfirm={(answered) => acts.onInherit(workspace, {
-              done: () => { setOpening(false); answered.done(); },
-              refused: answered.refused,
-            })}
-            onClose={() => setConfirming(false)}
-          />
-        )}
-      </SettingRow>
-      {own && (
-        <div className="pl-3">
-          <ScopeEditor
-            agent={agent}
-            product={product}
-            scope={scope ?? { workspace, default: null, list: [], begins: null, use: machine.use, unknown: [], problem: null, near: [] }}
-            accounts={accounts}
-            workspace={workspace}
-            busy={busy}
-            acts={acts}
-          />
-        </div>
-      )}
-    </SettingList>
-  );
-}

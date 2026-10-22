@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../locales/i18n';
 import { byTool, type ToolDoor } from './tools';
-import { AccountRow } from './AccountRow';
+import { ACCOUNT_COLUMNS, AccountRow } from './AccountRow';
 import { type AgentActs, AgentPage } from './AgentPage';
 import type { AccountSaid } from '../settings/accounts/accounts';
 import { accountState, type WindowCell } from './agents';
@@ -18,27 +18,27 @@ import { CLAUDE_USE, DOORS, READ } from './agentsFixtures';
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
 const nothing = () => {};
 const ACTS: AgentActs = {
-  onReadAgain: nothing, onReadOne: nothing, onReadNow: nothing, onSignInNew: nothing, onAddKey: nothing, onReplaceKey: nothing, onSignIn: nothing, onTryNow: nothing, onDefault: nothing,
-  onRemove: nothing, onRename: nothing, onJoin: nothing, onAddedAnswer: nothing, onSaveSettings: nothing, onDoor: nothing, onPin: nothing,
-  scope: { onOrder: nothing, onUse: nothing, onInherit: nothing },
+  onReadAgain: nothing, onReadOne: nothing, onReadNow: nothing, onSignInNew: nothing, onAddKey: nothing, onReplaceKey: nothing, onSignIn: nothing, onTryNow: nothing,
+  onRemove: nothing, onRename: nothing, onAddedAnswer: nothing, onPooledSaid: nothing, onSaveSettings: nothing, onDoor: nothing, onPin: nothing,
+  scope: { onOrder: nothing, onUse: nothing },
   rules: { onSwitchDefault: nothing, onRemove: nothing, onAdd: nothing, onAnswer: nothing },
 };
 
 const CLAUDE = DOORS.find((door) => door.harness === 'claude-code')!;
 const HOME = 'C:/somewhere/data/harnesses/claude-code/';
 
-/** Claude Code's page with these accounts, each in this machine's list so each holds work; its sessions speak unless told. */
+/** Claude Code's page with these accounts, each in the set's order, as every account is (D197); its sessions speak unless told. */
 function page(profiles: NonNullable<ToolDoor['profiles']>, { speaks = true, said = {} }: {
   speaks?: boolean; said?: Record<string, AccountSaid>;
 } = {}) {
-  const [tool] = byTool([{ ...CLAUDE, machineDefault: null, workspaceDefaults: [], profiles }]);
+  const [tool] = byTool([{ ...CLAUDE, profiles }]);
   const use = {
     ...CLAUDE_USE,
     speaks,
     accounts: profiles.map((profile) => ({ name: profile.name, running: 0, said: said[profile.name] ?? null })),
     scopes: [{ ...CLAUDE_USE.scopes[0]!, default: null, begins: profiles[0]!.name, list: profiles.map((profile) => profile.name) }],
   };
-  return render(<AgentPage tool={tool!} use={use} rules={null} usage={[]} workspaces={['work']} acts={ACTS} />);
+  return render(<AgentPage tool={tool!} use={use} rules={null} usage={[]} acts={ACTS} />);
 }
 
 const SESSION_88: WindowCell = {
@@ -62,7 +62,6 @@ describe('an account’s row (ACCTUX1)', () => {
         <AccountRow
           name="spare"
           state={accountState({ login: 'in', read: READ }, null, true)}
-          runs="work"
           menu={[]}
           usage={{ cells: [SESSION_88], notes: [] }}
         />
@@ -120,7 +119,6 @@ describe('an account’s row without a pointer (ACCTUX2)', () => {
           name="spare"
           who="a.rather.long.identity.for.a.narrow.row@example.invalid"
           state={accountState({ login: 'in', read: READ }, null, true)}
-          runs="work"
           menu={[]}
         />
       </ul>,
@@ -132,24 +130,35 @@ describe('an account’s row without a pointer (ACCTUX2)', () => {
     expect(who).not.toHaveAttribute('data-state');
   });
 
-  it('names each fact on its row for a reader: its state, what it runs for, and what runs on it now', () => {
+  it('names each fact on its row for a reader: its state and what runs on it now, and no workspace it runs for (D197)', () => {
     render(
       <ul>
         <AccountRow
           name="spare"
           state={accountState({ login: 'in', read: READ }, null, true)}
-          runs="work · forge"
           current="1 session"
           menu={[]}
         />
       </ul>,
     );
     const row = screen.getByRole('listitem', { name: 'spare' });
-    for (const [label, value] of [['State', 'signed in'], ['Runs for', 'work · forge'], ['Now', '1 session']] as const) {
+    for (const [label, value] of [['State', 'signed in'], ['Now', '1 session']] as const) {
       const named = within(row).getByText(label);
       expect(named, label).toHaveClass('sr-only');
       expect(named.parentElement!.textContent, label).toContain(value);
     }
+    // POOL1c (the account-pool design §4.2): *Runs for* went, since every account runs for every workspace.
+    expect(within(row).queryByText('Runs for')).toBeNull();
+    expect(ACCOUNT_COLUMNS).not.toMatch(/minmax\(0,1fr\)_minmax\(0,0\.6fr\)/);
+  });
+
+  /** POOL1c (the account-pool design §3 point 3, §4.2): your own sign-in's row shows its name and ⓘ, and no state. */
+  it('draws no state where none is handed: your own sign-in, which Daoris never asks', () => {
+    render(<ul><AccountRow name="Your own sign-in" why="Your own sign-in: the account this tool uses at your own terminal." menu={[]} /></ul>);
+    const row = screen.getByRole('listitem', { name: 'Your own sign-in' });
+    expect(within(row).queryByText('State')).toBeNull();
+    expect(within(row).queryByText(/signed in|signed out|unknown|never read/)).toBeNull();
+    expect(within(row).queryByRole('button', { name: /More for/ })).toBeNull();
   });
 
   /** Whether the hold is the agent's reset or Daoris's default was the time's tip alone. */
@@ -158,7 +167,7 @@ describe('an account’s row without a pointer (ACCTUX2)', () => {
     const cooling = { until, stated: false, window: null, seen: READ, assumedZone: false, notBelieved: false };
     render(
       <ul>
-        <AccountRow name="reserve" state={accountState({ login: 'in', read: READ }, { cooling }, true)} runs="work" menu={[]} />
+        <AccountRow name="reserve" state={accountState({ login: 'in', read: READ }, { cooling }, true)} menu={[]} />
       </ul>,
     );
     const row = screen.getByRole('listitem', { name: 'reserve' });
@@ -193,7 +202,7 @@ describe('an account’s row without a pointer (ACCTUX2)', () => {
   });
 
   it('offers no such press where the state needs no explanation', () => {
-    render(<ul><AccountRow name="spare" state={accountState({ login: 'in', read: READ }, null, true)} runs="work" menu={[]} /></ul>);
+    render(<ul><AccountRow name="spare" state={accountState({ login: 'in', read: READ }, null, true)} menu={[]} /></ul>);
     expect(screen.queryByRole('button', { name: /state$/ })).toBeNull();
   });
 
@@ -216,7 +225,7 @@ describe('an account’s windows, a cell each (ACCTUX4)', () => {
 
   it('draws a window in a cell of its own: its name, a thin bar as wide as its share of its own allowance, and its times', () => {
     const slight = { ...SESSION_88, used: 0.01, reading: '1% used' };
-    render(<ul><AccountRow name="spare" state={signedIn} runs="work" menu={[]} usage={{ cells: [slight, WEEKLY_UNKNOWN], notes: [] }} /></ul>);
+    render(<ul><AccountRow name="spare" state={signedIn} menu={[]} usage={{ cells: [slight, WEEKLY_UNKNOWN], notes: [] }} /></ul>);
     const session = cellOf(screen.getByRole('listitem', { name: 'spare' }), 'session')!;
     expect(session.textContent).toMatch(/^five-hour.*1% used.*resets 15:00.*said 20 min ago$/);
     const bar = barOf(session)!;
@@ -228,7 +237,7 @@ describe('an account’s windows, a cell each (ACCTUX4)', () => {
   });
 
   it('says a window its agent did not report unknown, in words with no bar, never 0%', () => {
-    render(<ul><AccountRow name="spare" state={signedIn} runs="work" menu={[]} usage={{ cells: [SESSION_88, WEEKLY_UNKNOWN], notes: [] }} /></ul>);
+    render(<ul><AccountRow name="spare" state={signedIn} menu={[]} usage={{ cells: [SESSION_88, WEEKLY_UNKNOWN], notes: [] }} /></ul>);
     const row = screen.getByRole('listitem', { name: 'spare' });
     const weekly = cellOf(row, 'weekly')!;
     expect(within(weekly).getByText('unknown')).toBeTruthy();
@@ -238,7 +247,7 @@ describe('an account’s windows, a cell each (ACCTUX4)', () => {
 
   it('fills a share past its allowance to the bar’s end, and says the share as it was said', () => {
     const over = { ...SESSION_88, used: 1.2, reading: '120% used' };
-    render(<ul><AccountRow name="spare" state={signedIn} runs="work" menu={[]} usage={{ cells: [over], notes: [] }} /></ul>);
+    render(<ul><AccountRow name="spare" state={signedIn} menu={[]} usage={{ cells: [over], notes: [] }} /></ul>);
     expect(barOf(cellOf(document.body, 'session')!)!.style.width).toBe('100%');
     expect(screen.getByText('120% used')).toBeTruthy();
   });
@@ -246,7 +255,7 @@ describe('an account’s windows, a cell each (ACCTUX4)', () => {
   it('wears the warning hue where its agent said a window is near or reached, and the soft ink otherwise', () => {
     render(
       <ul>
-        <AccountRow name="spare" state={signedIn} runs="work" menu={[]} usage={{ cells: [{ ...SESSION_88, warned: true }, { ...SESSION_88, window: 'weekly', name: 'weekly' }], notes: [] }} />
+        <AccountRow name="spare" state={signedIn} menu={[]} usage={{ cells: [{ ...SESSION_88, warned: true }, { ...SESSION_88, window: 'weekly', name: 'weekly' }], notes: [] }} />
       </ul>,
     );
     expect(barOf(cellOf(document.body, 'session')!)!.className).toContain('bg-warn');
@@ -260,7 +269,7 @@ describe('an account’s windows, a cell each (ACCTUX4)', () => {
   it('says a window against its curve, and wears the warning hue where it is over it', () => {
     const under = { ...SESSION_88, curve: 'its curve allows 90% now', over: false };
     const over = { ...SESSION_88, window: 'weekly', name: 'weekly', used: 0.62, reading: '62% used', curve: 'over its curve\'s 46% now', over: true };
-    render(<ul><AccountRow name="spare" state={signedIn} runs="work" menu={[]} usage={{ cells: [under, over], notes: [] }} /></ul>);
+    render(<ul><AccountRow name="spare" state={signedIn} menu={[]} usage={{ cells: [under, over], notes: [] }} /></ul>);
     const session = cellOf(document.body, 'session')!;
     const weekly = cellOf(document.body, 'weekly')!;
     expect(session.textContent).toMatch(/^five-hour.*88% used, its curve allows 90% now.*resets 15:00/);
@@ -272,7 +281,7 @@ describe('an account’s windows, a cell each (ACCTUX4)', () => {
   });
 
   it('says what is the account’s and no window’s under its cells: a reset unknown, since when it is offered again', () => {
-    render(<ul><AccountRow name="spare" state={signedIn} runs="work" menu={[]} usage={{ cells: [WEEKLY_UNKNOWN], notes: ['reset unknown'] }} /></ul>);
+    render(<ul><AccountRow name="spare" state={signedIn} menu={[]} usage={{ cells: [WEEKLY_UNKNOWN], notes: ['reset unknown'] }} /></ul>);
     const note = screen.getByText('reset unknown');
     expect(note.className).toContain('text-ink-soft');
     expect(cellOf(document.body, 'weekly')!.contains(note)).toBe(false);

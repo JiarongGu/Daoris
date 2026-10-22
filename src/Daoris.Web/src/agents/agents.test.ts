@@ -5,10 +5,11 @@ import { byTool, type ToolDoor } from './tools';
 import { scopeOf, THREE } from '../settings/accounts/accountsFixtures';
 import type { AgentAccounts } from '../settings/accounts/accounts';
 import {
-  accountAct, accountLabel, accountName, accountState, accountWho, agentRows, ownWho, doorsSummary, heldBy, joinChoices, nextStartSaid, nextStartSaidFor,
-  ownSaid, ownState, readLine, rulesSummary, runsFor, runsForLine, settingsSummary, sharesOwn, signedOutHeld, stateWhen, stateWord,
-  usageCells, usageSummary, useSummary, versionOnly, workspacesSummary,
+  accountAct, accountLabel, accountName, accountState, accountStates, accountWho, agentRows, ownWho, doorsSummary, heldBy, nextStartSaid,
+  pooledLines, readLine, rulesSummary, settingsSummary, signedOutHeld, stateWhen, stateWord, usageCells, usageSummary, useSummary,
+  versionOnly,
 } from './agents';
+import type { PoolReceipt } from '../settings/accounts/accounts';
 
 // The Agents place's words and facts (UX6e, D150 §5), pure: an account's last known state with when it was read, the list's
 // rows, and each folded section's line. No bridge, so every state is an argument.
@@ -18,8 +19,7 @@ const NOW = new Date('2026-10-04T12:00:00.000Z');
 
 const claude = (over: Partial<ToolDoor> = {}): ToolDoor => ({
   harness: 'claude-code', product: 'Claude Code', maker: 'Anthropic', present: true, version: '2.1.4 (Claude Code)',
-  wire: 'pipe', machineDefault: 'account-1', ownLogin: 'unknown', ownRead: null,
-  workspaceDefaults: [{ workspace: 'forge', profile: 'account-2' }],
+  wire: 'pipe', ownLogin: 'unknown', ownRead: null,
   profiles: [
     { name: 'account-1', home: 'h/1', login: 'out', account: 'you@work', read: TEN },
     { name: 'account-2', home: 'h/2', login: 'in', account: 'you@home', read: TEN },
@@ -111,17 +111,22 @@ describe('an account’s state, as last known', () => {
 });
 
 describe('which accounts hold work', () => {
-  it('is an account a default names, or a list holds, the machine’s or a workspace’s', () => {
+  /**
+   * POOL1c (D197 point 1; the account-pool design §4.2): every account signed in for Daoris serves every workspace, so each one
+   * holds work, whatever an order names, and a signed-out one is loud. An account the agent does not have holds nothing.
+   */
+  it('is every account of Daoris’s, one set for every workspace, whatever the order names', () => {
     const [tool] = byTool([claude()]);
-    expect(heldBy(tool!, THREE, 'account-1')).toBe(true); // the machine's default
-    expect(heldBy(tool!, THREE, 'account-2')).toBe(true); // forge's default, and lists
-    expect(heldBy(tool!, { ...THREE, scopes: [scopeOf()] }, 'account-3')).toBe(false);
+    for (const name of ['account-1', 'account-2', 'account-3']) expect(heldBy(tool!, name)).toBe(true);
+    expect(heldBy(tool!, 'account-9')).toBe(false);
+    expect([...accountStates(tool!, { ...THREE, scopes: [scopeOf()] }).values()].every((state) => state.holdsWork)).toBe(true);
   });
 
-  it('counts the signed-out accounts that hold work, the badge’s number', () => {
+  it('counts every signed-out account, the badge’s number, whatever the order names', () => {
     const [tool] = byTool([claude()]);
     expect(signedOutHeld(tool!, THREE)).toBe(2);
-    expect(signedOutHeld(tool!, { ...THREE, scopes: [scopeOf()] })).toBe(1);
+    expect(signedOutHeld(tool!, { ...THREE, scopes: [scopeOf()] })).toBe(2);
+    expect(signedOutHeld(tool!, null)).toBe(2);
   });
 
   /** ACCTUX1: a refused key holding work waits on the person as a signed-out account does, so the badge counts it. */
@@ -136,12 +141,10 @@ describe('which accounts hold work', () => {
     expect(agentRows([tool!], { agents: [THREE] })[0]!.phrase).toBe('2 accounts · 1 signed out · 1 key refused');
   });
 
-  /** OWNSPACE1b-A (D175): nothing starts in the tool's own sign-in, so it holds no work and is never counted. */
-  it("never counts the tool's own sign-in, which holds no work, even signed out with no account named", () => {
-    const [tool] = byTool([claude({ machineDefault: null, ownLogin: 'out', profiles: [], workspaceDefaults: [] })]);
+  /** OWNSPACE1b-A (D175), POOL1c (D197 point 3): nothing starts in the tool's own sign-in, so it is never counted. */
+  it("never counts the tool's own sign-in, even signed out with no account of Daoris's", () => {
+    const [tool] = byTool([claude({ ownLogin: 'out', profiles: [] })]);
     const none: AgentAccounts = { agent: 'claude-code', speaks: false, own: {}, accounts: [], scopes: [scopeOf()] };
-    expect(sharesOwn(tool!, none)).toBe(false);
-    expect(ownState(tool!, none)).toMatchObject({ state: 'out', holdsWork: false });
     expect(signedOutHeld(tool!, none)).toBe(0);
   });
 });
@@ -198,7 +201,7 @@ describe('the list', () => {
   });
 
   it('says an agent with no Daoris account has none yet, not that it runs on its own sign-in', () => {
-    const rows = agentRows(byTool([claude({ profiles: [], machineDefault: null, workspaceDefaults: [] })]), undefined);
+    const rows = agentRows(byTool([claude({ profiles: [] })]), undefined);
     expect(rows[0]!.phrase).toBe('no Daoris account yet');
     // A plugin's agent that signs in nowhere is installed, and nothing more is claimed of it.
     const declared = agentRows(byTool([{ harness: 'acme-agent', present: true, signsIn: false, profiles: [] }]), undefined);
@@ -330,75 +333,7 @@ describe('two sign-ins of one email, told apart (ACCOUNTID1b)', () => {
   });
 });
 
-describe('where an account runs (ACCT1)', () => {
-  beforeEach(() => i18n.changeLanguage('en'));
-
-  it('reads the roster’s places where the shell gives them, this machine first and where it starts first marked', () => {
-    const [tool] = byTool([claude({
-      profiles: [{
-        name: 'account-2', home: 'h/2', login: 'in', places: [
-          { workspace: 'work', list: true, default: true }, { workspace: null, list: true, default: false },
-        ],
-      }],
-    })]);
-    const runs = runsFor(tool!, THREE, 'account-2');
-    expect(runs).toEqual([{ workspace: null, first: false }, { workspace: 'work', first: true }]);
-    expect(runsForLine(runs)).toBe('this machine · work (first)');
-  });
-
-  /**
-   * ACCTUX4b (the second opinion's line 125): *first* is the account the scope's next start takes (`scope.next`), not its
-   * default or its list's head. THREE's machine begins on account-1, which cools, so its next start takes account-3.
-   */
-  it('marks first the scope whose next start takes it, not the one whose list begins on it', () => {
-    const [tool] = byTool([claude({
-      profiles: [
-        { name: 'account-1', home: 'h/1', login: 'out', places: [{ workspace: null, list: true, default: true }] },
-        { name: 'account-3', home: 'h/3', login: 'out', places: [{ workspace: null, list: true, default: false }] },
-      ],
-    })]);
-    expect(runsFor(tool!, THREE, 'account-1')).toEqual([{ workspace: null, first: false }]);
-    const runs = runsFor(tool!, THREE, 'account-3');
-    expect(runs).toEqual([{ workspace: null, first: true }]);
-    // Said where it runs in one place too: the mark says a fact of that scope, not which of its places comes first.
-    expect(runsForLine(runs)).toBe('this machine (first)');
-  });
-
-  it('works it out from the lists and defaults where the shell is older, the scope whose next start takes it first', () => {
-    const [tool] = byTool([claude()]);
-    // forge names account-2 its default and has no scope, so no next start of its is known, and it is not marked.
-    expect(runsFor(tool!, THREE, 'account-2')).toEqual([
-      { workspace: null, first: false }, { workspace: 'forge', first: false }, { workspace: 'work', first: true },
-    ]);
-    expect(runsFor(tool!, THREE, 'account-1')[0]).toEqual({ workspace: null, first: false });
-    expect(runsFor(tool!, THREE, 'account-3')).toEqual([{ workspace: null, first: true }]);
-  });
-
-  it('marks no scope first where the shell names no next start', () => {
-    const [tool] = byTool([claude()]);
-    const older = { ...THREE, scopes: THREE.scopes.map((scope) => ({ ...scope, next: undefined })) };
-    const runs = runsFor(tool!, older, 'account-2');
-    expect(runs.some((place) => place.first)).toBe(false);
-    expect(runsForLine(runs)).toBe('this machine · forge · work');
-  });
-
-  it('says no workspace where nothing holds it, as the roster’s nowhere says', () => {
-    const [tool] = byTool([claude({ profiles: [{ name: 'acct-1a2b3c4d', home: 'h/9', login: 'in', places: [], nowhere: true }] })]);
-    const runs = runsFor(tool!, THREE, 'acct-1a2b3c4d');
-    expect(runs).toEqual([]);
-    expect(runsForLine(runs)).toBe('no workspace');
-  });
-
-  /** OWNSPACE1b-A (D175): no workspace runs on your own sign-in, whatever this machine names. */
-  it("never says a workspace runs on your own sign-in", () => {
-    const [tool] = byTool([claude({ machineDefault: null, workspaceDefaults: [] })]);
-    const use: AgentAccounts = { ...THREE, scopes: [scopeOf(), THREE.scopes[1]!] };
-    expect(sharesOwn(tool!, use)).toBe(false);
-    expect(sharesOwn(tool!, null)).toBe(false);
-  });
-});
-
-/** ACCTUX4b (the second opinion's lines 128-133): this machine's next start, said above the accounts in the fold's words. */
+/** ACCTUX4b (the second opinion's lines 128-133): the set's next start, said above the accounts in the fold's words. */
 describe('the next start, above the accounts', () => {
   beforeEach(() => i18n.changeLanguage('en'));
   const labelOf = (name: string) => name;
@@ -467,35 +402,11 @@ describe('the next start, above the accounts', () => {
     });
   });
 
-  /** ACCTUX4c: the window's workspace speaks where it has a scope of its own with a next start, else this machine. */
-  it('says the next start of the workspace in view, named, where it has a scope of its own', () => {
-    // ACCTUX4d: the workspace is joined into the one sentence, not prefixed to it.
-    expect(nextStartSaidFor(THREE, 'work', labelOf)).toEqual({
-      takes: 'In work, the next start takes account-2: it is the only account here that is ready.', held: null,
-    });
-  });
-
   it('says it in one sentence in 中文, with no space after a full-width mark', async () => {
     await i18n.changeLanguage('zh');
-    const said = nextStartSaidFor(THREE, 'work', labelOf)!;
-    expect(said.takes).toBe('在 work 中，下一次启动使用 account-2：它是这里唯一就绪的账户。');
+    const said = nextStartSaid(THREE.scopes[0]!, labelOf)!;
     expect(said.takes).not.toMatch(/[：，。] /);
-  });
-
-  it('says this machine’s where the workspace has no scope of its own, or none is in view', () => {
-    const machine = nextStartSaid(THREE.scopes[0]!, labelOf);
-    expect(nextStartSaidFor(THREE, 'forge', labelOf)).toEqual(machine);
-    expect(nextStartSaidFor(THREE, null, labelOf)).toEqual(machine);
-    // A workspace's scope that names no next start (an older shell) is not guessed at: this machine's speaks.
-    const bare: AgentAccounts = { ...THREE, scopes: [THREE.scopes[0]!, scopeOf({ workspace: 'work', list: ['account-1'] })] };
-    expect(nextStartSaidFor(bare, 'work', labelOf)).toEqual(machine);
-  });
-
-  it('says the workspace’s next start where this machine runs on your own sign-in', () => {
-    const own: AgentAccounts = { ...THREE, scopes: [scopeOf({ next: { account: null, reason: 'own', others: [] } }), THREE.scopes[1]!] };
-    expect(nextStartSaidFor(own, 'work', labelOf)?.takes).toMatch(/^In work, the next start takes /);
-    expect(nextStartSaidFor(own, null, labelOf)).toBeNull();
-    expect(nextStartSaidFor(null, 'work', labelOf)).toBeNull();
+    expect(said.takes).not.toMatch(/本机/);
   });
 });
 
@@ -506,20 +417,20 @@ describe('the one act an account’s state asks for (D152 §4)', () => {
   });
 
   it('is Sign in when signed out, Read when unknown, Try now when cooling', () => {
-    expect(accountAct(state('out'), { signsIn: true, present: true, runs: 1 })).toEqual({ act: 'signIn', loud: true });
-    expect(accountAct(state('unknown', false), { signsIn: true, present: true, runs: 1 })).toEqual({ act: 'read', loud: false });
-    expect(accountAct(state('cooling'), { signsIn: true, present: true, runs: 1 })).toEqual({ act: 'tryNow', loud: false });
+    expect(accountAct(state('out'), { signsIn: true, present: true })).toEqual({ act: 'signIn', loud: true });
+    expect(accountAct(state('unknown', false), { signsIn: true, present: true })).toEqual({ act: 'read', loud: false });
+    expect(accountAct(state('cooling'), { signsIn: true, present: true })).toEqual({ act: 'tryNow', loud: false });
   });
 
-  it('is Use in a workspace… when signed in and nothing runs on it, and none once something does', () => {
-    expect(accountAct(state('in'), { signsIn: true, present: true, runs: 0 })).toEqual({ act: 'place', loud: false });
-    expect(accountAct(state('keyed'), { signsIn: true, present: true, runs: 0 })).toEqual({ act: 'place', loud: false });
-    expect(accountAct(state('in'), { signsIn: true, present: true, runs: 2 })).toBeNull();
+  /** POOL1c (the account-pool design §4.2): *Use in a workspace…* goes, since every account runs for every workspace. */
+  it('is none for a signed-in account or a key: every account serves every workspace', () => {
+    expect(accountAct(state('in'), { signsIn: true, present: true })).toBeNull();
+    expect(accountAct(state('keyed'), { signsIn: true, present: true })).toBeNull();
   });
 
   it('offers no sign-in where the agent has none, nor a read where it is not installed', () => {
-    expect(accountAct(state('out'), { signsIn: false, present: true, runs: 1 })).toBeNull();
-    expect(accountAct(state('unknown'), { signsIn: true, present: false, runs: 1 })).toBeNull();
+    expect(accountAct(state('out'), { signsIn: false, present: true })).toBeNull();
+    expect(accountAct(state('unknown'), { signsIn: true, present: false })).toBeNull();
   });
 
   /**
@@ -527,11 +438,11 @@ describe('the one act an account’s state asks for (D152 §4)', () => {
    * where it holds work. Where the agent takes no key from Daoris there is no act to offer.
    */
   it('is New API key when its key was refused, and none where the agent takes no key', () => {
-    expect(accountAct(state('refused'), { signsIn: false, present: true, runs: 1, takesKey: true })).toEqual({ act: 'newKey', loud: true });
-    expect(accountAct(state('refused', false), { signsIn: false, present: true, runs: 1, takesKey: true }))
+    expect(accountAct(state('refused'), { signsIn: false, present: true, takesKey: true })).toEqual({ act: 'newKey', loud: true });
+    expect(accountAct(state('refused', false), { signsIn: false, present: true, takesKey: true }))
       .toEqual({ act: 'newKey', loud: false });
-    expect(accountAct(state('refused'), { signsIn: true, present: true, runs: 1 })).toBeNull();
-    expect(accountAct(state('refused'), { signsIn: false, present: false, runs: 1, takesKey: true })).toBeNull();
+    expect(accountAct(state('refused'), { signsIn: true, present: true })).toBeNull();
+    expect(accountAct(state('refused'), { signsIn: false, present: false, takesKey: true })).toBeNull();
   });
 });
 
@@ -691,81 +602,96 @@ describe('what an account’s agent last said, a cell a window', () => {
     expect(usageCells({}, cooling(false), { now: NOW })!.notes).toEqual(['重置时间未知']);
   });
 
-  /**
-   * CODEXUSE3: the tool's own sign-in's windows, read at a person's press, are answered beside the accounts as `own.said`,
-   * and its row says them as an account's row says its own; a shell older than that answers none, and its row says nothing.
-   */
-  it('reads your own sign-in’s windows beside the accounts, and none where the shell answers none', () => {
-    const use = (own: Record<string, unknown>): AgentAccounts => ({
-      agent: 'codex', speaks: true, own: own as AgentAccounts['own'], accounts: [], scopes: [scopeOf()],
-    });
-    const codex = byTool([{ ...claude({ profiles: [] }), harness: 'codex-acp', product: 'Codex', maker: 'OpenAI', accountOf: 'codex' }])[0]!;
-
-    expect(ownSaid(use({ said }))).toEqual(said);
-    expect(usageCells({ said: ownSaid(use({ said })) }, ownState(codex, use({ said })), { now: NOW })!.cells
-      .map((cell) => cell.reading)).toEqual(['88% used, ahead of its pace, by its own word', '15% used']);
-    expect(ownSaid(use({}))).toBeNull();
-    expect(ownSaid(use({ said: null }))).toBeNull();
-    expect(ownSaid(use({ said: { seen: SEEN } }))).toBeNull();
-    expect(ownSaid(null)).toBeNull();
-    expect(usageCells({ said: ownSaid(use({})) }, ownState(codex, use({})), { now: NOW })).toBeNull();
-  });
 });
 
-describe('the lists a new account may join (D152 §4.5)', () => {
+/**
+ * POOL1c (D197 point 7; the account-pool design §4.2, §6.3): what the fold into one set changed, each receipt's lines in the
+ * reader's language, from its kinds and values, in the order the terminal's `agent list` says them (`AgentListCommand.PoolLines`).
+ */
+describe('what the fold into one set changed', () => {
   beforeEach(() => i18n.changeLanguage('en'));
-  const labelOf = (name: string) => name;
-
-  it('offers each workspace with a list of its own, then this machine’s, saying who holds each', () => {
-    const [tool] = byTool([claude({ workspaceDefaults: [] })]);
-    const choices = joinChoices(tool!, THREE, ['forge', 'work'], labelOf, 'acct-1a2b3c4d');
-    expect(choices.map((choice) => choice.workspace)).toEqual(['work', null]);
-    expect(choices[0]).toMatchObject({ holds: ['account-2', 'account-1'], usedBy: [], moves: false });
-    expect(choices[1]).toMatchObject({ holds: ['account-1', 'account-2', 'account-3'], usedBy: ['forge'], moves: false });
+  const labelOf = (name: string) => ({ 'account-1': 'you@work', 'account-2': 'you@home' } as Record<string, string>)[name] ?? name;
+  const receipt = (over: Partial<PoolReceipt> = {}): PoolReceipt => ({
+    id: 'r1', at: TEN, scopes: [], order: ['account-1', 'account-2', 'account-3'], moved: [], joined: [], inOrder: null, notKept: [],
+    gone: [], ...over,
   });
 
-  it('offers a workspace whose own default names one account, its list beginning there', () => {
-    const [tool] = byTool([claude()]);
-    const choices = joinChoices(tool!, THREE, ['forge', 'work'], labelOf, 'acct-1a2b3c4d');
-    expect(choices.map((choice) => choice.workspace)).toEqual(['forge', 'work', null]);
-    expect(choices[0]).toMatchObject({ holds: ['account-2'], listed: false });
-    expect(choices[2]!.usedBy).toEqual([]);
+  it('says each scope that named fewer accounts than the set, a workspace by name and the machine’s as the workspaces naming none', () => {
+    const lines = pooledLines(receipt({
+      scopes: [
+        { workspace: 'work', default: null, list: ['account-1', 'account-2'], begins: 'account-1' },
+        { workspace: 'forge', default: 'account-2', list: [], begins: 'account-2' },
+        { workspace: null, default: null, list: ['account-1', 'account-3'], begins: 'account-1' },
+        { workspace: 'lab', default: null, list: ['account-1', 'account-2', 'account-3'], begins: 'account-1' },
+        { workspace: 'empty', default: null, list: [], begins: null },
+      ],
+    }), labelOf);
+    expect(lines).toEqual([
+      'work had its own accounts (you@work, you@home); it now runs on all 3.',
+      'forge ran on you@home alone; it now runs on all 3.',
+      'Workspaces that named no accounts ran on you@work, account-3; they now run on all 3.',
+    ]);
   });
 
-  it('says ticking this machine’s list moves its starts where it names nobody, and leaves out a list that holds it', () => {
-    const [tool] = byTool([claude({ machineDefault: null, workspaceDefaults: [] })]);
-    const use: AgentAccounts = { ...THREE, scopes: [scopeOf(), THREE.scopes[1]!] };
-    const choices = joinChoices(tool!, use, ['forge', 'work'], labelOf, 'account-1');
-    expect(choices.map((choice) => choice.workspace)).toEqual([null]);
-    expect(choices[0]).toMatchObject({ holds: [], usedBy: ['forge'], moves: true });
+  it('says a machine scope of one account, that its starts still begin there, each first moved, an account placed, a setting not kept and a name gone', () => {
+    const lines = pooledLines(receipt({
+      scopes: [{ workspace: null, default: 'account-2', list: [], begins: 'account-2' }],
+      inOrder: 'account-2',
+      moved: [{ workspace: 'work', account: 'account-1', place: 2 }, { workspace: null, account: 'account-3', place: 3 }],
+      joined: [{ account: 'account-3', place: 3 }],
+      notKept: [
+        { workspace: 'work', setting: 'use', value: '"goal"' },
+        { workspace: null, setting: 'keep', value: '"account-1"' },
+        { workspace: 'lab', setting: 'switch', value: '"off"' },
+      ],
+      gone: ['old-account'],
+    }), labelOf);
+    expect(lines).toEqual([
+      'Workspaces that named no accounts ran on you@home alone; they now run on all 3.',
+      'Their starts still begin at you@home, since the accounts are now used One by one, in order.',
+      "work's starts began at you@work; it is number 2 in the order now.",
+      'Starts of workspaces that named no accounts began at account-3; it is number 3 in the order now.',
+      "account-3 was not in the order; it is number 3 now, and every workspace's work may run on it.",
+      "Not kept: work's way of using accounts (Make the most of them).",
+      'Not kept: account kept for conversations (you@work), set for workspaces that named no accounts.',
+      "Not kept: lab's switching of accounts (Off).",
+      'old-account was named but is no account here, so it was left out.',
+    ]);
+  });
+
+  it('says each line in 中文, the machine’s scope by the workspaces that named none, never this machine', async () => {
+    await i18n.changeLanguage('zh');
+    const lines = pooledLines(receipt({
+      scopes: [{ workspace: 'work', default: null, list: ['account-1'], begins: 'account-1' }],
+      moved: [{ workspace: null, account: 'account-2', place: 2 }],
+    }), labelOf);
+    expect(lines).toEqual([
+      'work 原来只在 you@work 上运行；现在它可以在全部 3 个账户上运行。',
+      '没有指定账户的工作区的启动原来从 you@home 开始；现在它在顺序中排第 2 位。',
+    ]);
+    expect(lines.join('')).not.toMatch(/本机/);
   });
 });
 
 describe('each folded section’s line', () => {
   beforeEach(() => i18n.changeLanguage('en'));
-  const labelOf = (name: string) => ({ 'account-1': 'you@work', 'account-2': 'you@home' } as Record<string, string>)[name] ?? name;
 
-  it('says how accounts are used by naming each scope and what its starts run on (D152 §4.4)', () => {
-    expect(useSummary({ ...THREE, scopes: [scopeOf(), THREE.scopes[1]!] }, labelOf))
-      .toBe("This machine: Daoris's accounts, in turn · work: its own list of 2");
-    expect(useSummary({ ...THREE, scopes: [scopeOf({ default: 'account-2' })] }, labelOf)).toBe('This machine: you@home');
-    expect(useSummary(THREE, labelOf)).toBe('This machine: a list of 3 · work: its own list of 2');
+  /** POOL1c (the account-pool design §4.2's `agents.use.summary.all`): the set's, every workspace's, and how it is used. */
+  it('says how accounts are used as the one set’s: every account, for every workspace, and the way they are used', () => {
+    expect(useSummary(THREE, 3)).toBe('All 3 accounts, for every workspace · Make the most of them');
+    expect(useSummary({ ...THREE, scopes: [scopeOf({ use: { ...THREE.scopes[0]!.use, use: 'order' } })] }, 1))
+      .toBe('1 account, for every workspace · One by one, in order');
   });
 
-  it('says it tight in 中文, a name set off by its colon and never by spaces', () => {
+  it('says it tight in 中文, never this machine', () => {
     i18n.changeLanguage('zh');
-    expect(useSummary({ ...THREE, scopes: [scopeOf(), THREE.scopes[1]!] }, labelOf)).toBe('本机：Daoris 的账户，轮流使用 · work：自有列表，2 个账户');
+    expect(useSummary(THREE, 3)).toBe('全部 3 个账户，用于所有工作区 · 充分利用');
   });
 
   it('says a version as its number alone, without the product name the binary prints', () => {
     expect(versionOnly('2.1.4 (Claude Code)')).toBe('2.1.4');
     expect(versionOnly('0.9.1')).toBe('0.9.1');
     expect(versionOnly('(not asked)')).toBe('(not asked)');
-  });
-
-  it("says each workspace on its own accounts or this machine's", () => {
-    expect(workspacesSummary(THREE, ['forge', 'work'], labelOf)).toBe("forge: this machine's · work: its own (you@home, you@work)");
-    expect(workspacesSummary(THREE, [], labelOf)).toBe('No workspace yet');
   });
 
   it('says each way in, its version, and which one driven work starts on', () => {

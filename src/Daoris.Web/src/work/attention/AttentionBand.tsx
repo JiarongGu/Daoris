@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { runsForLine } from '../../agents/agents';
 import { useHarnessRun, WithHarnessRuns } from '../../agents/harnessRuns';
 import { useAcceptQuest, useAnswerGoAhead, useAsks, usePublishAsk, useQuests, useSessions } from '../../data/queries';
 import {
-  retryNotice, useApproveHelper, useAttention, useDeclineHelper, useHarnessAction, useHarnesses, useNudge, useRefreshHarnesses,
+  retryNotice, useApproveHelper, useAttention, useDeclineHelper, useHarnesses, useNudge, useRefreshHarnesses,
   useOpenWorkRecords, useResolveHeld, useRetryQuest, useTrustFolder, useAnswerPermission, useAnswerAlone, useApproveHandOver,
   useDeclineHandOver,
 } from '../../bridge/shell';
@@ -58,8 +57,8 @@ const STALE_KEY = 'stale-go-aheads';
  * to find out**. The stale go-aheads (GOAHEADSTALE1) are refused together, with one reason, each through its row's own door.
  *
  * **The accounts** (UX6d): *Sign in* runs the agent's own sign-in through the application's one running action (SIGNIN1), the
- * agent page's own, so it outlives leaving Overview and its steps follow under the row; *Read* reads that one account (ROSTER1);
- * *Let … run …* joins the list (ACCT1's `profile-join`) after its question.
+ * agent page's own, so it outlives leaving Overview and its steps follow under the row; *Read* reads that one account (ROSTER1).
+ * No row lets an account run: every account of Daoris's serves every workspace (POOL1c, D197).
  *
  * **With nothing waiting it is one line**, *Nothing needs you*, and what is working (§6.1).
  *
@@ -124,7 +123,6 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
   const say = useSay();
   const nudge = useNudge();
   const readOne = useRefreshHarnesses();
-  const harnessAct = useHarnessAction();
   const harnessRun = useHarnessRun();
   // A set-up's verdict, from its row (REVIEWENV1g): the review's one owner, as the step's page presses it.
   const reviewActs = useReviewActs({ notify });
@@ -332,23 +330,6 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
     read: (item, account) => {
       const agent = item.account?.agent;
       if (agent) run(item, () => readOne.mutateAsync({ agent, profile: account }), () => {});
-    },
-    // Into the list the waiting start reads (D130 §3.3), as the agent page's *Add to …'s list* (ACCT1): said where it runs now.
-    letRun: (item, account, answered) => {
-      const facts = item.account;
-      const outside = facts?.outside;
-      if (!facts?.harness || !outside || outside.id !== account) { answered.done(); return; }
-      const harness = facts.harness;
-      run(
-        item,
-        () => harnessAct.mutateAsync({ harness, action: 'profile-join', profile: account, join: [outside.list] }),
-        // ACCTUX4b: no place marked first, since *first* is the scope whose next start takes it, which the join's answer never names.
-        (answer) => notify(t('agents.joined', {
-          account: outside.label,
-          places: runsForLine((answer.places ?? []).map((place) => ({ workspace: place.workspace ?? null, first: false }))),
-        })),
-        answered,
-      );
     },
   };
 

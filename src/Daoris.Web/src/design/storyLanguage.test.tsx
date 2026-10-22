@@ -75,7 +75,8 @@ describe('a story in another language (STORY2)', () => {
     await i18n.changeLanguage('en');
     const agents = composed(await import('../agents/AgentPage.stories'));
     const { container, unmount } = render(<agents.CodexWindowsChinese />);
-    expect(container.textContent).toContain('（优先）');
+    // The set's summary (POOL1c), a pure helper's words, where the *Runs for* mark was before it went.
+    expect(container.textContent).toContain('全部 3 个账户，用于所有工作区');
     expect(container.textContent).toContain('下一次启动使用');
     expect(i18n.language).toBe('zh');
     expect(localStorage.getItem(KEY)).toBe('en');

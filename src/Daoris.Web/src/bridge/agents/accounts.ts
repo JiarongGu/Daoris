@@ -6,10 +6,10 @@ import { call } from '../call';
 import { readSlice } from '../driver';
 import { readPushed, type SliceSpec, usePushedLive } from '../state/slices';
 
-// How each agent's accounts are used (TOOL4g; D125 §2.4, §3.7, §6; D130 §3.2, §9, §16.6): each scope's list and how it is
-// used, each account's cool-off, what its agent last said, its learned week and Daoris's sessions on it; each account's use
-// read again (SWITCH1d); and the edits Settings → Agents makes, the terminal's `daoris agent profile order|use|ready` over the
-// same files (D50).
+// How each agent's accounts are used (TOOL4g; D125 §2.4, §3.7, §6; D130 §9, §16.6; D197): the set's order and how it is used,
+// each account's cool-off, what its agent last said, its learned week and Daoris's sessions on it, and what the fold into one
+// set changed; each account's use read again (SWITCH1d); and the edits the agent's page makes, the terminal's
+// `daoris agent profile order|use|ready` over the same files (D50).
 
 const isAgent = (value: unknown): value is AgentAccounts =>
   typeof value === 'object' && value !== null && typeof (value as { agent?: unknown }).agent === 'string';
@@ -62,25 +62,25 @@ export const useReadAccounts = () =>
 
 /**
  * The screen's edits to how an agent's accounts are used (TOOL4g), each refused as the terminal refuses it and written to
- * the same file: `order`, a scope's list written whole (`daoris agent profile order`, none clearing it); `use`, how it is
- * used (`profile use`); `ready`, a cool-off ended early, *Try now* (`profile ready`, `own` for the tool's own sign-in); and
- * `inherit`, a workspace returned to this machine's accounts, its default, list and settings cleared at once.
+ * the same file: `order`, the set's order written whole (`daoris agent profile order`, the accounts named first and the rest
+ * after); `use`, how the set is used (`profile use`); `ready`, a cool-off ended early, *Try now* (`profile ready`); and `said`,
+ * *Got it* on what the fold into one set changed, by the receipts' ids (POOL1a; the account-pool design §6.3). One set serves
+ * every workspace (D197), so no workspace is named: the bridge refuses one as `ACCOUNTS_ONE_SET`.
  *
- * The lists, the cool-offs and what a start runs on (a workspace's default may go with its list, MAP1b) sit under the roster's
- * key, which the route publishes and the state hub asks again in every window (STATEHUB1h, D169).
+ * The order, the cool-offs and what a start runs on sit under the roster's key, which the route publishes and the state hub
+ * asks again in every window (STATEHUB1h, D169).
  */
 export const useAccountUse = () =>
   useMutation({
-    mutationFn: ({ harness, action, workspace, ...rest }: {
+    mutationFn: ({ harness, action, ...rest }: {
       harness: string;
-      action: 'order' | 'use' | 'ready' | 'inherit';
-      workspace?: string;
-      /** For `order`: the list, in order; none clears it. */
+      action: 'order' | 'use' | 'ready' | 'said';
+      /** For `order`: the order, the accounts named first. */
       accounts?: string[];
-      /** For `ready`: the account whose cool-off ends, or `own` for the tool's own sign-in. */
+      /** For `ready`: the account whose cool-off ends. */
       profile?: string;
-      own?: boolean;
+      /** For `said`: the receipts the page showed, by id. */
+      ids?: string[];
     } & AccountUseChange) =>
-      call<{ harness: string; action: string; workspace?: string | null; profile?: string | null; ended?: boolean }>(
-        'ACCOUNT_USE', { harness, action, ...(workspace ? { workspace } : {}), ...rest }),
+      call<{ harness: string; action: string; profile?: string | null; ended?: boolean }>('ACCOUNT_USE', { harness, action, ...rest }),
   });

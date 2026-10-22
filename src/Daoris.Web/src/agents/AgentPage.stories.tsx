@@ -4,30 +4,32 @@ import { chinese } from '../design/storyLanguage';
 import type { AgentActs } from './AgentPage';
 import { AgentMainNotice, AgentPage } from './AgentPage';
 import {
-  AHEAD_USE, CLAUDE_TOOL, CLAUDE_USE, CODEX_OWN_TOOL, CURVE_USE, CODEX_OWN_USE, CODEX_READ_TOOL, CODEX_READ_USE, CODEX_TOOL, CODEX_USE, DSH_TOOL,
-  INSTALL_TOOL, INSTALL_USE, INSTALL_WORKSPACES, ORGS_TOOL, READ, READINGS_TOOL, READINGS_USE, RULES, USAGE, WORKSPACES,
+  AHEAD_USE, CLAUDE_POOLED_USE, CLAUDE_TOOL, CLAUDE_USE, CODEX_OWN_TOOL, CURVE_USE, CODEX_OWN_USE, CODEX_READ_TOOL, CODEX_READ_USE, CODEX_TOOL,
+  CODEX_USE, DSH_TOOL, INSTALL_TOOL, INSTALL_USE, ORGS_TOOL, READ, READINGS_TOOL, READINGS_USE, RULES, USAGE,
 } from './agentsFixtures';
 
-// An agent's page (UX7b, D152 §4; first UX6e, D150 §5.2) in the main area: the design's Claude Code, three accounts of which
-// two read signed out and one cools, your own sign-in never read, each section folded to its line; the install's shape, a
-// row per state with its one act; the add flow's last step; *Read again* on its way; a proposal waiting, which opens *What
-// it may do*; an agent with one account and no settings Daoris knows; Codex's own sign-in with its windows read (CODEXUSE3);
-// Codex's accounts read, in the same window cells as Claude Code's (ACCTUX4), at each width and in 中文; one not installed; an API key; what each row knows (ACCTUX1), in both themes; the same read without a pointer (ACCTUX2), each
-// row's explanation opened, at 680 px and the main area's 400 px floor in both themes; Claude Code's pace warning on the
-// account the next start takes, said as *ahead of its pace* and never near (USAGEREAD3b), in both themes and in 中文; each
-// window against its curve with *Read now* (SWITCH1d), in both themes and in 中文; a key
-// added asking its name and lists,
-// and a key refused in its field (ACCTUX3), at the same widths; and the main area with no page. Each at
-// the main area's two widths: the frame's 52rem, and the 680 px window's main area, where rows stack. Above the accounts,
-// this machine's next start (ACCTUX4b): a wait in `ThreeAccounts`, the list's first taken in `Readings`, and the list's
-// first passed over in `CodexWindows`, its row marked first. One email in several organisations, each row told apart
-// (ACCOUNTID1b), in English and 中文, and the add flow offering a second sign-in's name.
+// An agent's page (UX7b, D152 §4; first UX6e, D150 §5.2; POOL1c, the account-pool design §4.2) in the main area: the design's
+// Claude Code, three accounts of Daoris's, one set for every workspace, of which two read signed out and one cools, your own
+// sign-in last with its ⓘ alone, each section folded to its line; what the fold into one set changed, above the rows until
+// *Got it*, at each width, in 中文 and in dark; the install's shape, a row per state with its one act; the add flow's last
+// step, its name alone; *Read again* on its way; a proposal waiting, which opens *What it may do*; an agent with one account
+// and no settings Daoris knows; Codex with no account of Daoris's, your own sign-in never asked (D197 point 3); Codex's
+// accounts read, in the same window cells as Claude Code's (ACCTUX4), at each width and in 中文; one not installed; an API
+// key; what each row knows (ACCTUX1), in both themes; the same read without a pointer (ACCTUX2), each row's explanation
+// opened, at 680 px and the main area's 400 px floor in both themes; Claude Code's pace warning on the account the next start
+// takes, said as *ahead of its pace* and never near (USAGEREAD3b), in both themes and in 中文; each window against its curve
+// with *Read now* (SWITCH1d), in both themes and in 中文; a key added asking its name, and a key refused in its field
+// (ACCTUX3), at the same widths; and the main area with no page. Each at the main area's widths: the frame's 52rem, the 680 px
+// window's main area, where rows stack, and the 400 px floor. Above the accounts, the set's next start (ACCTUX4b): a wait in
+// `ThreeAccounts`, the order's first taken in `Readings`, and the order's first passed over in `CodexWindows`. One email in
+// several organisations, each row told apart (ACCOUNTID1b), in English and 中文, and the add flow offering a second sign-in's
+// name.
 
 const nothing = () => {};
 const ACTS: AgentActs = {
-  onReadAgain: nothing, onReadOne: nothing, onReadNow: nothing, onSignInNew: nothing, onAddKey: nothing, onReplaceKey: nothing, onSignIn: nothing, onTryNow: nothing, onDefault: nothing,
-  onRemove: nothing, onRename: nothing, onJoin: nothing, onAddedAnswer: nothing, onSaveSettings: nothing, onDoor: nothing, onPin: nothing,
-  scope: { onOrder: nothing, onUse: nothing, onInherit: nothing },
+  onReadAgain: nothing, onReadOne: nothing, onReadNow: nothing, onSignInNew: nothing, onAddKey: nothing, onReplaceKey: nothing, onSignIn: nothing, onTryNow: nothing,
+  onRemove: nothing, onRename: nothing, onAddedAnswer: nothing, onPooledSaid: nothing, onSaveSettings: nothing, onDoor: nothing, onPin: nothing,
+  scope: { onOrder: nothing, onUse: nothing },
   rules: { onSwitchDefault: nothing, onRemove: nothing, onAdd: nothing, onAnswer: nothing },
 };
 const QUIET_RULES = { ...RULES, proposals: [] };
@@ -36,7 +38,7 @@ const meta: Meta<typeof AgentPage> = {
   title: 'Agents/AgentPage',
   component: AgentPage,
   args: {
-    tool: CLAUDE_TOOL, use: CLAUDE_USE, rules: QUIET_RULES, usage: USAGE, workspaces: WORKSPACES, adapter: 'claude-code',
+    tool: CLAUDE_TOOL, use: CLAUDE_USE, rules: QUIET_RULES, usage: USAGE, adapter: 'claude-code',
     acts: ACTS,
   },
   // A width between the side bar's two states (D119 §3.6), and the page's whole height, so a shot shows every section.
@@ -56,11 +58,8 @@ type Story = StoryObj<typeof AgentPage>;
  */
 export const ThreeAccounts: Story = {};
 
-/** The workspace in view has a scope of its own: its next start is said above the accounts, named (ACCTUX4c). */
-export const WorkspaceInView: Story = { args: { inView: 'work' } };
-
-/** The same in 中文: the workspace is joined into the one sentence, no space after 「，」 or 「：」 (ACCTUX4d). */
-export const WorkspaceInViewChinese: Story = { args: { inView: 'work' }, decorators: [chinese] };
+/** The same in 中文: no *this machine*, no list and no workspace; your own sign-in's ⓘ says it is outside Daoris's accounts. */
+export const ThreeAccountsChinese: Story = { decorators: [chinese] };
 
 /** The same at the 680 px window's main area, where the wait's two sentences wrap. */
 export const ThreeAccountsNarrow: Story = {
@@ -68,10 +67,33 @@ export const ThreeAccountsNarrow: Story = {
 };
 
 /**
- * The install's shape (the UX7 design §4.7): a row per state with its one act, *Read* on the account a list holds that reads
- * unknown, *Try now* on the one cooling, *Use in a workspace…* on the new account no list holds, and your own sign-in last.
+ * What the fold into one set changed (POOL1a, D197 point 7; the account-pool design §4.2): one block above the rows while any
+ * of it is unsaid, a line per change of two receipts, and *Got it*, which marks them said by id.
  */
-export const TheInstall: Story = { args: { tool: INSTALL_TOOL, use: INSTALL_USE, workspaces: INSTALL_WORKSPACES, usage: [] } };
+export const FoldSaid: Story = { args: { use: CLAUDE_POOLED_USE } };
+
+/** The same in 中文. */
+export const FoldSaidChinese: Story = { args: FoldSaid.args, decorators: [chinese] };
+
+/** The same at the 680 px window's main area, in dark. */
+export const FoldSaidNarrowDark: Story = {
+  args: FoldSaid.args,
+  decorators: [(Story) => <div className="w-[37rem] max-w-full"><Story /></div>, (Story) => <InTheme theme="dark"><Story /></InTheme>],
+};
+
+/** The same at the 400 px floor, in 中文 and in dark. */
+export const FoldSaidFloorChineseDark: Story = {
+  args: FoldSaid.args,
+  decorators: [
+    (Story) => <div className="w-[25rem] max-w-full"><Story /></div>, chinese, (Story) => <InTheme theme="dark"><Story /></InTheme>,
+  ],
+};
+
+/**
+ * The install's shape (the UX7 design §4.7): a row per state with its one act, *Read* on the account that reads unknown, *Try
+ * now* on the one cooling, none on the new account signed in, last in the order, and your own sign-in last of all.
+ */
+export const TheInstall: Story = { args: { tool: INSTALL_TOOL, use: INSTALL_USE, usage: [] } };
 
 /** The same, at the 680 px window's main area: each row stacks to three short lines, and the columns' names are gone. */
 export const TheInstallNarrow: Story = {
@@ -79,16 +101,22 @@ export const TheInstallNarrow: Story = {
   decorators: [(Story) => <div className="w-[37rem] max-w-full"><Story /></div>],
 };
 
-/** The add flow's last step, under the header: the email offered as its name, and the lists it may join. */
-export const AddedAskingWhere: Story = {
+/**
+ * The add flow's last step, under the header (the account-pool design §4.1): it joined Daoris's accounts, the email offered
+ * as its name, and *Done*.
+ */
+export const AddedAskingName: Story = {
   args: { ...TheInstall.args, added: { account: 'acct-5e1f0a2b', who: 'spare@example.invalid' } },
 };
+
+/** The same in 中文. */
+export const AddedAskingNameChinese: Story = { args: AddedAskingName.args, decorators: [chinese] };
 
 /**
  * One email in three organisations and the tool's own sign-in in a fourth (ACCOUNTID1b): each row says what tells it apart,
  * after the email and once; a name that says both repeats neither, and a plan stands where no organisation was named.
  */
-export const OneEmailManyOrganisations: Story = { args: { tool: ORGS_TOOL, use: null, workspaces: [], usage: [] } };
+export const OneEmailManyOrganisations: Story = { args: { tool: ORGS_TOOL, use: null, usage: [] } };
 
 /** The same in 中文: the organisations are the tool's words, said as it said them. */
 export const OneEmailManyOrganisationsChinese: Story = { args: OneEmailManyOrganisations.args, decorators: [chinese] };
@@ -114,13 +142,13 @@ export const AtUsage: Story = { args: { part: 'usage' } };
 export const OneAccount: Story = { args: { tool: CODEX_TOOL, use: CODEX_USE, rules: QUIET_RULES, usage: [] } };
 
 /**
- * Codex with no account of Daoris's (CODEXUSE3): your own sign-in's row says its five-hour and weekly use, read at a press
- * of Codex's own server, as an account's row says its own; its ⋯ reads it again.
+ * Codex with no account of Daoris's (D197 point 3; the account-pool design §3, §4.2): your own sign-in's row is its name and its
+ * ⓘ alone, no state, no reading, no *Read again* and no ⋯, though a reading of it was kept from before: Daoris never asks it.
  */
-export const OwnSignInRead: Story = { args: { tool: CODEX_OWN_TOOL, use: CODEX_OWN_USE, rules: QUIET_RULES, usage: [] } };
+export const OwnSignInNeverAsked: Story = { args: { tool: CODEX_OWN_TOOL, use: CODEX_OWN_USE, rules: QUIET_RULES, usage: [] } };
 
 /** The same in 中文. */
-export const OwnSignInReadChinese: Story = { args: OwnSignInRead.args, decorators: [chinese] };
+export const OwnSignInNeverAskedChinese: Story = { args: OwnSignInNeverAsked.args, decorators: [chinese] };
 
 /**
  * Codex's accounts read (ACCTUX4): the same cells as Claude Code's `Readings`, the five hours then the week on every row, each
@@ -170,7 +198,7 @@ const dark: Decorator =(Story) => <InTheme theme="dark"><Story /></InTheme>;
  * agent named, says each window's share in the ink and its reset beside it in the soft ink; and an account named for its
  * email says it once.
  */
-export const Readings: Story = { args: { tool: READINGS_TOOL, use: READINGS_USE, workspaces: ['work'], usage: [] } };
+export const Readings: Story = { args: { tool: READINGS_TOOL, use: READINGS_USE, usage: [] } };
 
 /** The same in dark, where the faint ink the readings wore was the hardest to read. */
 export const ReadingsDark: Story = { args: Readings.args, decorators: [dark] };
@@ -188,7 +216,7 @@ export const ReadingsChinese: Story = { args: Readings.args, decorators: [chines
  * Claude Code's pace warning (USAGEREAD3b, D165 point 2): the account the next start takes says its week is ahead of its pace
  * at 60%, in the agent's own words and the warning's hue, never *near its limit*, and the next start still takes it.
  */
-export const AheadOfPace: Story = { args: { tool: READINGS_TOOL, use: AHEAD_USE, workspaces: ['work'], usage: [] } };
+export const AheadOfPace: Story = { args: { tool: READINGS_TOOL, use: AHEAD_USE, usage: [] } };
 
 /** The same in dark. */
 export const AheadOfPaceDark: Story = { args: AheadOfPace.args, decorators: [dark] };
@@ -200,7 +228,7 @@ export const AheadOfPaceChinese: Story = { args: AheadOfPace.args, decorators: [
  * SWITCH1d (the switch design §5): each window against its curve now and where its reading came from, read from Claude Code or
  * said by a session, with *Read now* beside *Read again*: the week over its curve says so in the ink and the warning hue.
  */
-export const AgainstTheCurve: Story = { args: { tool: READINGS_TOOL, use: CURVE_USE, workspaces: ['work'], usage: [] } };
+export const AgainstTheCurve: Story = { args: { tool: READINGS_TOOL, use: CURVE_USE, usage: [] } };
 
 /** The same in dark. */
 export const AgainstTheCurveDark: Story = { args: AgainstTheCurve.args, decorators: [dark] };
@@ -249,8 +277,8 @@ export const ReadingsExplainedFloorDark: Story = { args: Readings.args, decorato
 export const TheInstallFloorDark: Story = { args: TheInstall.args, decorators: [atFloor, dark] };
 
 /**
- * A key added asks its name and lists (ACCTUX3, the UX7 design §4.5), where it ended in a toast: *Added the API key …*, its
- * name left empty to be called by its handle, and the lists it may join.
+ * A key added asks its name (ACCTUX3, the UX7 design §4.5; the account-pool design §4.1), where it ended in a toast: *Added the
+ * API key …*, that it joined Daoris's accounts, and its name left empty to be called by its handle.
  */
 export const KeyAddedAskingWhere: Story = {
   args: { ...TheInstall.args, added: { account: 'acct-9c8d7e6f', who: null, key: '…k3y9' } },

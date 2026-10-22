@@ -4,6 +4,7 @@
   "trust.holding.quest": "The driver is holding quest #{{id}} for it.",
   "trust.holding.ask": "The driver is holding the intake for ask #{{id}} for it.",
   "trust.file": "Daoris writes one flag in the agent's own file, and nothing else in it:",
+  "trust.ownHome": "This conversation goes on in your own sign-in, outside Daoris's accounts, so Daoris writes nothing in its file: trust the folder with the tool itself, at your terminal.",
   "trust.grant": "Trust this folder",
   "trust.cancel": "Not now",
   "trust.open": "Trust this folder…"

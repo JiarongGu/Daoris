@@ -7,22 +7,20 @@ import {
 } from '../design/ui';
 import { type Answered, InlineConfirm, Refused } from '../work/InlineConfirm';
 import { PageHead, ViewMain } from '../work/frame/ViewMain';
-import {
-  type AccountScope, type AgentAccounts, cannotLeave, machineScope, ownLine, workspaceScope,
-} from '../settings/accounts/accounts';
+import { type AccountScope, type AgentAccounts, machineScope, ownLine } from '../settings/accounts/accounts';
 import { AccountSettingsForm, AccountSettingsSummary } from '../settings/accounts/AccountSettings';
-import { type AccountChoice, type ScopeActs, ScopeEditor, WorkspaceScope } from '../settings/accounts/AccountUse';
+import { type AccountChoice, type ScopeActs, ScopeEditor } from '../settings/accounts/AccountUse';
 import { AgentRules, type AgentRulesState, type RuleAddition, type RuleScopeName } from '../settings/repository/AgentRules';
 import { ACCOUNT_COLUMNS, AccountColumnsHead, AccountRow } from './AccountRow';
-import { type BackAccount, PlaceAccount, RenameAccount, ReSignIn } from './AddAccount';
+import { type BackAccount, NameAccount, RenameAccount, ReSignIn } from './AddAccount';
 import {
-  type AccountAct, type AccountState, type AgentPart, type AgentUsage, accountAct, accountLabel, accountName, accountStates,
-  accountWho, doorsSummary, joinChoices, latestRead, nextStartSaidFor, ownSaid, ownState, ownWho, rulesSummary, runsFor, runsForLine, whoApart,
-  settingsSummary, usageCells, usageSummary, useSummary, versionOnly, workspacesSummary,
+  type AccountAct, type AgentPart, type AgentUsage, accountAct, accountLabel, accountName, accountStates, accountWho,
+  doorsSummary, latestRead, nextStartSaid, pooledLines, rulesSummary, whoApart, settingsSummary, usageCells, usageSummary,
+  useSummary, versionOnly,
 } from './agents';
 
 /** The sections that fold (D150 §1 rule 4): the accounts never do. */
-export type AgentSection = 'use' | 'workspaces' | 'doors' | 'rules' | 'settings' | 'usage';
+export type AgentSection = 'use' | 'doors' | 'rules' | 'settings' | 'usage';
 
 /** A door's acts that run its own mechanism (D49 §4): its installer, its updater, its pin. */
 export type DoorAction = 'install' | 'update' | 'unpin';
@@ -35,8 +33,8 @@ export type RuleActs = {
   onAnswer: (id: string, accept: boolean) => void;
 };
 
-/** The add flow's last step answered (D152 §4.5): the name in its field (empty is none), and the lists ticked, null for this machine's. */
-export type AddedAnswer = { name?: string; join: (string | null)[] };
+/** The add flow's last step answered (D152 §4.5; POOL1c, the account-pool design §4.1): the name in its field, empty being none. */
+export type AddedAnswer = { name: string };
 
 /**
  * How a question asked in the page hears how its act ended (ACCTEDIT1): `done` once it landed, and `refused` with the
@@ -46,14 +44,14 @@ export type AddedAnswer = { name?: string; join: (string | null)[] };
 export type { Answered };
 
 /**
- * The questions that wait on their act's answer: a row's rename, a row's *Use in a workspace…*, the add flow's last step, the
- * key's field and an account's model and effort (ACCTUX3).
+ * The questions that wait on their act's answer: a row's rename, the add flow's last step, the key's field and an account's
+ * model and effort (ACCTUX3).
  */
-type Question = 'rename' | 'place' | 'added' | 'key' | 'settings';
+type Question = 'rename' | 'added' | 'key' | 'settings';
 
 /** Every press on an agent's page, each the terminal's twin (D50). */
 export type AgentActs = {
-  /** *Read again*: this agent's accounts, one at a time, and the tool's own sign-in (§5.3). */
+  /** *Read again*: this agent's accounts, one at a time; never the tool's own sign-in (D197 point 3). */
   onReadAgain: () => void;
   /** An account's own *Read*, from its row or its ⋯: that account alone (ROSTER1). */
   onReadOne: (account: string) => void;
@@ -67,21 +65,19 @@ export type AgentActs = {
   onReplaceKey: (account: string, key: string, answered: Answered) => void;
   /** A sign-in to the account a row names, by its id (ACCT1). */
   onSignIn: (account: string) => void;
-  /** *Try now*: an account's cool-off ended early, or the tool's own sign-in's with null. */
-  onTryNow: (account: string | null, label: string) => void;
-  /** A default set (an account) or cleared (null): the machine's, or a workspace's. */
-  onDefault: (account: string | null, workspace?: string) => void;
+  /** *Try now*: an account's cool-off ended early. */
+  onTryNow: (account: string, label: string) => void;
   /** An account removed, from its *Remove…*'s ask, told back to it (UXFIX2). */
   onRemove: (account: string, answered: Answered) => void;
   /** An account named by the person, or its name taken back with null (ACCT2, `daoris agent profile rename`). */
   onRename: (account: string, name: string | null, answered: Answered) => void;
-  /**
-   * An account put into the lists named, a workspace's or null for this machine's (ACCT1, `daoris agent profile join`): from a
-   * row's question, which hears the answer, or from its ⋯, which has no question to say a refusal in.
-   */
-  onJoin: (account: string, join: (string | null)[], answered?: Answered) => void;
-  /** The new account's name and lists, at the add flow's end; *Not now* ticks none, and the account says *no workspace*. */
+  /** The new account's name, at the add flow's end (POOL1c: nothing else is asked). */
   onAddedAnswer: (answer: AddedAnswer, answered: Answered) => void;
+  /**
+   * *Got it* on what the fold into one set changed (POOL1a, the account-pool design §6.3): the receipts the page showed, by id,
+   * marked said (`ACCOUNT_USE` `said`); one written after the page drew is not among them, and stays.
+   */
+  onPooledSaid: (ids: string[]) => void;
   /** An account's own model and effort saved (AGT6), told back to its editor (ACCTUX3): it closes once the save lands. */
   onSaveSettings: (account: string, label: string, change: AccountSettingsChange, answered: Answered) => void;
   onDoor: (door: string, action: DoorAction) => void;
@@ -93,8 +89,10 @@ export type AgentActs = {
 /**
  * **An agent's page** (UX7b, D152 §4; first built by UX6e, D150 §5.2): its header is one line, the product, its maker, its
  * version and whether it is installed, with *Add an account…* and a ⋯; then its accounts, one row each in columns that line
- * up, each with the one act its state asks for, and your own sign-in last; then its sections, each folded to a line naming
- * its values: how accounts are used, its workspaces, its ways in, what it may do, model and effort, usage.
+ * up, each with the one act its state asks for, and your own sign-in last, outside them; then its sections, each folded to a
+ * line naming its values: how accounts are used, its ways in, what it may do, model and effort, usage. Its accounts of Daoris's
+ * are one set serving every workspace (POOL1c, D197; the account-pool design §4.2): no row says where it runs, and what the fold
+ * into one set changed is said above them until *Got it*.
  *
  * @remarks
  * **A molecule**: every state arrives as props, the panels a press opens arrive as nodes (a sign-in's, a door's console),
@@ -112,7 +110,7 @@ export type AgentActs = {
  * - **Explanation folds** (D152 §4.4): your own sign-in's paragraph is its row's ⓘ, the plans and terms one line that opens.
  */
 export function AgentPage({
-  tool, use, rules, usage, workspaces, inView = null, adapter, part, reading = false, readingNow = false, busy = false, settingsBusy = false, signingIn = null,
+  tool, use, rules, usage, adapter, part, reading = false, readingNow = false, busy = false, settingsBusy = false, signingIn = null,
   signInPanel, signInNewPanel, added = null, doorRunning = null, doorConsole, acts, onOpenPlugin, onAnchored, now,
 }: {
   tool: Tool;
@@ -122,10 +120,6 @@ export function AgentPage({
   rules: AgentRulesState | null;
   /** What each of its accounts has carried (TOOL3), by its doors; null while it is not answered yet, never nothing measured (PUSHUX1). */
   usage: AgentUsage[] | null;
-  /** Every workspace this machine has, the unnamed `default` included: the CLI sets that one's accounts too. */
-  workspaces: string[];
-  /** The workspace the window is looking at, or null for every one: its next start is said above the accounts (ACCTUX4c). */
-  inView?: string | null;
   /** The adapter driven work starts on (`driver.json`'s). */
   adapter?: string;
   /** The part a door named, opened and brought into view. */
@@ -144,7 +138,7 @@ export function AgentPage({
   signInNewPanel?: ReactNode;
   /**
    * The new account a sign-in or a key added kept, by its id, who signed in and, for a key, its handle, waiting on the add
-   * flow's step 3: a key added asks the same question (the UX7 design §4.5, ACCTUX3).
+   * flow's step 3, its name: a key added asks the same question (the UX7 design §4.5, ACCTUX3).
    */
   added?: { account: string; who: string | null; key?: string | null; offered?: string | null } | null;
   /** The door whose action runs, whose block holds `doorConsole`. */
@@ -162,11 +156,12 @@ export function AgentPage({
   const door = tool.doors[0]!;
   const signsIn = door.signsIn !== false;
   const product = tool.product ?? tool.name;
+  // The set's one scope, every workspace's (POOL1a2, D197): its order, how it is used and its next start.
   const machine: AccountScope | null = use ? machineScope(use) : null;
   const states = accountStates(tool, use);
-  const own = ownState(tool, use);
-  // When any of its accounts was last read, said once at the head of the list beside *Read again*.
-  const latest = latestRead([own, ...states.values()]);
+  // When any of its accounts was last read, said once at the head of the list beside *Read again*; your own sign-in is never
+  // read (D197 point 3), so a reading of it kept from before is not among them.
+  const latest = latestRead([...states.values()]);
   const ownLabel = t('agents.account.own');
   const accountOf = (name: string) => tool.accounts.find((each) => each.name === name);
   // An account on one line, told apart from another sign-in of its email (ACCOUNTID1b).
@@ -177,22 +172,19 @@ export function AgentPage({
   const choices: AccountChoice[] = tool.accounts.map((account) => ({
     name: account.name, label: labelOf(account.name), login: account.login, keyed: Boolean(account.key),
   }));
-  // D130 §3.1: a scope with a list of its own takes a default only from it, so a press the list would refuse is not offered.
-  const mayDefault = (name: string, workspace?: string) => {
-    const scope = use ? (workspace ? workspaceScope(use, workspace) : machine) : null;
-    return !scope || scope.list.length === 0 || scope.list.includes(name);
-  };
-  const scopeWorkspaces = [...new Set([
-    ...workspaces, ...(use?.scopes.map((scope) => scope.workspace).filter((name): name is string => Boolean(name)) ?? []),
-  ])].sort();
+  // Where an account stands in the set's order (D197 point 2), for the lists the page draws in it; one the order does not
+  // name yet goes after, as `Change` would place it.
+  const order = machine?.list ?? [];
+  const place = (name: string) => (order.includes(name) ? order.indexOf(name) : order.length);
   const sessions = (usage ?? []).reduce((sum, account) => sum + account.sessions, 0);
   const rulesShown = tool.takesRules && rules !== null;
   const settingsShown = Boolean(tool.settingsChoices) && tool.accounts.some((account) => account.settings);
-  const joinable = (name: string) => joinChoices(tool, use, scopeWorkspaces, labelOf, name);
-  // The next start, said above the accounts (ACCTUX4b): the workspace in view's where it has a scope of its own (ACCTUX4c),
-  // else this machine's; every workspace's is also said in its fold under *Workspaces*. None where a test double runs in its
-  // own home, nor from a shell that names none.
-  const nextSaid = nextStartSaidFor(use, inView, labelOf, (name) => Boolean(accountOf(name)?.key));
+  // The set's next start, in any workspace, said above the accounts (ACCTUX4b; POOL1c: one set, so no workspace is named).
+  // None where a test double runs in its own home, nor from a shell that names none.
+  const nextSaid = nextStartSaid(machine, labelOf, (name) => Boolean(accountOf(name)?.key));
+  // What the fold into one set changed (POOL1a, the account-pool design §6.3): each receipt still unsaid, said above the rows
+  // until *Got it*, which marks those the page showed, by id.
+  const pooled = Array.isArray(use?.pooled) ? use.pooled : [];
 
   // What the person has open: a section, the add flow's first step, a row's question or rename, *Remove…*'s ask, the model
   // and effort form, a key's field, a pin's version, the plans and terms.
@@ -212,7 +204,6 @@ export function AgentPage({
     setOpen((was) => new Set([...was, 'rules' as const]));
   }, [waiting]);
   const [goingBack, setGoingBack] = useState(false);
-  const [placing, setPlacing] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [removing, setRemoving] = useState<string | null>(null);
   const [tuning, setTuning] = useState<string | null>(null);
@@ -232,9 +223,9 @@ export function AgentPage({
   };
   const refusalOf = (question: Question, account: string) =>
     (refused?.question === question && refused.account === account ? refused.sentence : null);
-  const ask = (question: 'rename' | 'place', account: string | null) => {
+  const askRename = (account: string | null) => {
     setRefused(null);
-    (question === 'rename' ? setRenaming : setPlacing)(account);
+    setRenaming(account);
   };
   // The key's field and the model and effort editor ask so too (ACCTUX3): opened or put down, the last refusal goes.
   const askKey = (open: boolean) => {
@@ -281,7 +272,7 @@ export function AgentPage({
   }, [part]);
 
   // ACCTUX3: the field closes and forgets the key once it is kept, never on the press, so a refused key stays to be corrected
-  // with why said under it (ACCTEDIT1's contract); kept, the add flow's last step asks its name and lists.
+  // with why said under it (ACCTEDIT1's contract); kept, the add flow's last step asks its name.
   const addKey = () => {
     const key = keyDraft.trim();
     if (!key) return;
@@ -301,14 +292,12 @@ export function AgentPage({
     }));
   };
 
-  // *Add an account…*'s first step (D152 §4.5): the accounts a person signing one back in means, each signed out or unknown.
-  // With none, it starts the sign-in at once.
+  // *Add an account…*'s first step (D152 §4.5; the account-pool design §4.1): the accounts a person signing one back in means,
+  // each signed out or unknown, in the set's order. With none, it starts the sign-in at once.
   const back: BackAccount[] = tool.accounts
     .filter((account) => !account.key && ['out', 'unknown'].includes(states.get(account.name)!.state))
-    .map((account) => ({
-      id: account.name, name: accountLabel(account, tool), state: states.get(account.name)!,
-      runs: runsForLine(runsFor(tool, use, account.name)),
-    }));
+    .sort((a, b) => place(a.name) - place(b.name))
+    .map((account) => ({ id: account.name, name: accountLabel(account, tool), state: states.get(account.name)! }));
   const startAdding = () => {
     if (back.length > 0) setGoingBack(true);
     else acts.onSignInNew();
@@ -382,49 +371,16 @@ export function AgentPage({
     />
   );
 
-  const ownMenu: MenuAct[] = [
-    // Naming no account clears the default: Daoris's accounts, in turn, again (D49 §4, D175 point 2).
-    ...(tool.machineDefault !== null ? [{ id: 'default', label: t('agents.account.useDefault'), onSelect: () => acts.onDefault(null) }] : []),
-    ...tool.workspaceDefaults.map((circle) => ({
-      id: `clear:${circle.workspace}`, label: t('agents.account.clearIn', { workspace: circle.workspace }),
-      onSelect: () => acts.onDefault(null, circle.workspace),
-    })),
-    // Read again on the press, as each account's ⋯ offers (CODEXUSE3): with the agent's accounts, since the driver has no
-    // read of the own sign-in alone (§5.3); its state and, where its agent's server answers, its windows.
-    { id: 'read', label: t('agents.account.readAgain'), disabled: reading || busy, onSelect: acts.onReadAgain },
-  ];
-
-  // The lists an account is in, the machine's and each workspace's own, for its ⋯'s *Remove from …'s list* (D152 §4.2).
-  const listsHolding = (name: string): { workspace: string | null; scope: AccountScope }[] => (use?.scopes ?? [])
-    .filter((scope) => scope.list.includes(name))
-    .map((scope) => ({ workspace: scope.workspace ?? null, scope }));
-
-  const accountMenu = (account: Account, state: AccountState): MenuAct[] => {
+  // An account's ⋯ (D152 §4.2; the account-pool design §4.2): its model and effort, *Rename…*, *Sign in again*, *Read again*
+  // and *Remove…*. A default, and a list to add it to or take it from, went with POOL1c: every account serves every workspace,
+  // and the order says where starts begin (*How accounts are used*).
+  const accountMenu = (account: Account, state: { state: string }): MenuAct[] => {
     const name = account.name;
     return [
-      ...(tool.machineDefault !== name && mayDefault(name)
-        ? [{ id: 'default', label: t('agents.account.useDefault'), disabled: busy, onSelect: () => acts.onDefault(name) }] : []),
-      ...workspaces.filter((workspace) => mayDefault(name, workspace)
-        && !tool.workspaceDefaults.some((circle) => circle.workspace === workspace && circle.profile === name))
-        .map((workspace) => ({
-          id: `default:${workspace}`, label: t('agents.account.useDefaultIn', { workspace }), disabled: busy,
-          onSelect: () => acts.onDefault(name, workspace),
-        })),
-      ...joinable(name).map((choice) => ({
-        id: `join:${choice.workspace ?? ''}`, disabled: busy,
-        label: choice.workspace ? t('agents.account.addTo', { workspace: choice.workspace }) : t('agents.account.addToMachine'),
-        onSelect: () => acts.onJoin(name, [choice.workspace]),
-      })),
-      // Taken out as `profile order` writes the list without it; a press the terminal would refuse is offered disabled.
-      ...listsHolding(name).map(({ workspace, scope }) => ({
-        id: `leave:${workspace ?? ''}`, disabled: busy || cannotLeave(scope, name) !== null,
-        label: workspace ? t('agents.account.removeFrom', { workspace }) : t('agents.account.removeFromMachine'),
-        onSelect: () => acts.scope.onOrder(workspace, scope.list.filter((each) => each !== name)),
-      })),
       ...(settingsShown && account.settings && tool.settingsChoices
         ? [{ id: 'settings', label: t('agents.account.settings'), onSelect: () => { setOpen((was) => new Set([...was, 'settings' as const])); askSettings(name); } }]
         : []),
-      { id: 'rename', label: t('agents.account.rename'), disabled: busy, onSelect: () => ask('rename', name) },
+      { id: 'rename', label: t('agents.account.rename'), disabled: busy, onSelect: () => askRename(name) },
       ...(signsIn && !account.key && state.state !== 'out'
         ? [{ id: 'signIn', label: t('harness.login.again'), disabled: busy || !tool.present, onSelect: () => acts.onSignIn(name) }]
         : []),
@@ -437,19 +393,18 @@ export function AgentPage({
   };
 
   /** A row's one act, worded and wired (D152 §4.2's table). */
-  const actOf = (act: AccountAct | null, id: string | null, label: string) => {
+  const actOf = (act: AccountAct | null, id: string, label: string) => {
     if (!act) return undefined;
     switch (act.act) {
       case 'signIn':
         return {
           label: t('harness.login.action'), ariaLabel: t('agents.act.signInTo', { account: label }), loud: act.loud,
-          onPress: () => acts.onSignIn(id!), disabled: busy,
+          onPress: () => acts.onSignIn(id), disabled: busy,
         };
       case 'read':
         return {
           label: t('agents.act.read'), ariaLabel: t('agents.act.readFor', { account: label }), loud: act.loud,
-          // Your own sign-in has no read of its own: *Read again* asks it with the agent's accounts (§5.3).
-          onPress: () => (id ? acts.onReadOne(id) : acts.onReadAgain()), disabled: reading || busy,
+          onPress: () => acts.onReadOne(id), disabled: reading || busy,
         };
       case 'tryNow':
         return {
@@ -457,16 +412,11 @@ export function AgentPage({
           onPress: () => acts.onTryNow(id, label), disabled: busy,
         };
       // A key its provider refused (ACCTUX1): a key field on its own row, which puts the new key into the same account
-      // (`key-replace`, KEYREPLACE1b), keeping its name, lists and order.
+      // (`key-replace`, KEYREPLACE1b), keeping its name and its place in the order.
       case 'newKey':
         return {
           label: t('agents.act.newKey'), ariaLabel: t('agents.act.newKeyFor', { account: label }), loud: act.loud,
           onPress: () => askReplace(id), disabled: busy,
-        };
-      default:
-        return {
-          label: t('agents.act.place'), ariaLabel: t('agents.act.placeFor', { account: label }),
-          onPress: () => ask('place', id), disabled: busy,
         };
     }
   };
@@ -476,13 +426,8 @@ export function AgentPage({
     // Where a name reads as another sign-in's, the line its acts and asks name it by (ACCOUNTID1b).
     const label = accountLabel(account, tool);
     const state = states.get(account.name)!;
-    const runs = runsFor(tool, use, account.name);
     const facts = use?.accounts.find((each) => each.name === account.name);
-    // *Use in a workspace…* only where there is a list to join; an older shell's page names none.
-    const act = accountAct(state, {
-      signsIn: signsIn && !account.key, present: tool.present, runs: runs.length, takesKey: Boolean(door.takesKey),
-    });
-    const offered = act?.act === 'place' && joinable(account.name).length === 0 ? null : act;
+    const offered = accountAct(state, { signsIn: signsIn && !account.key, present: tool.present, takesKey: Boolean(door.takesKey) });
     // What its agent last said, and since when it is offered again, under that row alone; a cool-off's column says its hold's
     // end, so each reset the agent reported is said in its window's cell, and one Daoris chose the length of says the reset is
     // unknown (ACCTUX1). The session's and the week's cells are on every sign-in whose agent speaks, unknown until read
@@ -499,7 +444,6 @@ export function AgentPage({
         id={account.name}
         home={account.home}
         state={state}
-        runs={runsForLine(runs)}
         current={typeof facts?.running === 'number' && facts.running > 0 ? t('agents.now.sessions', { count: facts.running }) : null}
         usage={usage}
         act={actOf(offered, account.name, label)}
@@ -517,21 +461,6 @@ export function AgentPage({
             onClose={() => setRemoving((was) => (was === account.name ? null : was))}
           />
         )}
-        {placing === account.name && (
-          <PlaceAccount
-            agent={tool.name}
-            account={account.name}
-            title={t('agents.place.title', { account: label })}
-            choices={joinable(account.name)}
-            busy={busy}
-            refusal={refusalOf('place', account.name)}
-            cancelLabel={t('common.cancel')}
-            onDone={({ join }) => acts.onJoin(account.name, join, answered('place', account.name, () => {
-              setPlacing((was) => (was === account.name ? null : was));
-            }))}
-            onCancel={() => ask('place', null)}
-          />
-        )}
         {renaming === account.name && (
           <RenameAccount
             agent={tool.name}
@@ -543,7 +472,7 @@ export function AgentPage({
             onSave={(named) => acts.onRename(account.name, named, answered('rename', account.name, () => {
               setRenaming((was) => (was === account.name ? null : was));
             }))}
-            onCancel={() => ask('rename', null)}
+            onCancel={() => askRename(null)}
           />
         )}
         {replacing === account.name && (
@@ -602,7 +531,7 @@ export function AgentPage({
           )}
           {signInNewPanel}
           {added && (
-            <PlaceAccount
+            <NameAccount
               key={added.account}
               agent={tool.name}
               account={added.account}
@@ -611,13 +540,10 @@ export function AgentPage({
               lead={addedKey ? t('agents.add.keyAdded', { handle: addedKey }) : undefined}
               offered={offeredName}
               fallback={addedFallback}
-              choices={joinable(added.account)}
               busy={busy}
               refusal={refusalOf('added', added.account)}
-              cancelLabel={t('agents.add.notNow')}
-              // The organism closes this step once both acts land (`added` goes); a refusal is said in it.
+              // The organism closes this step once the name lands (`added` goes); a refusal is said in it.
               onDone={(answer) => acts.onAddedAnswer(answer, answered('added', added.account))}
-              onCancel={(answer) => acts.onAddedAnswer({ ...answer, join: [] }, answered('added', added.account))}
             />
           )}
         </div>
@@ -649,12 +575,32 @@ export function AgentPage({
               )}
             </span>
           </div>
-          {/* Which account the next start takes and why, above the rows that answer it in parts (ACCTUX4b; the second opinion's
-              lines 128-133): a light line, not a setting's row, in the words of the fold's *Next start*; what holds the account
-              the list begins on follows in the soft ink, since that is the one a person expects it to take. */}
+          {/* What the fold into one set changed (POOL1a, the account-pool design §4.2, §6.3), one block above the rows while
+              any of it is unsaid, a line per change, each receipt's lines in the reader's language; *Got it* marks the receipts
+              shown said, by id, and the person's acknowledgement is all it is. */}
+          {pooled.length > 0 && (
+            <section
+              aria-label={t('agents.pooled.title', { product })}
+              className="mb-2 flex flex-wrap items-start gap-x-3 gap-y-1.5 border-l-[3px] border-accent bg-page/60 px-3 py-2"
+            >
+              <div className="min-w-0 flex-1 basis-72">
+                <p className="m-0 text-small font-medium text-ink">{t('agents.pooled.title', { product })}</p>
+                <ul className="m-0 mt-1 list-none p-0 text-small text-ink-soft [overflow-wrap:anywhere]">
+                  {pooled.flatMap((receipt) => pooledLines(receipt, labelOf).map((line, at) => (
+                    <li key={`pooled:${receipt.id}:${at}`}>{line}</li>
+                  )))}
+                </ul>
+              </div>
+              <Button disabled={busy} onClick={() => acts.onPooledSaid(pooled.map((receipt) => receipt.id))}>
+                {t('agents.pooled.gotIt')}
+              </Button>
+            </section>
+          )}
+          {/* Which account the next start takes and why, in any workspace, above the rows that answer it in parts (ACCTUX4b; the
+              second opinion's lines 128-133): a light line, not a setting's row, in the words of the fold's *Next start*; what
+              holds the account the order begins on follows in the soft ink, since that is the one a person expects it to take. */}
           {nextSaid && (
             <p className="m-0 mb-2 text-small text-ink [overflow-wrap:anywhere]">
-              {nextSaid.workspace && <span className="font-medium">{t('agents.nextStart.in', { workspace: nextSaid.workspace })}{' '}</span>}
               <span>{nextSaid.takes}</span>
               {nextSaid.held && <>{t('harness.said.sentences')}<span className="text-ink-soft">{nextSaid.held}</span></>}
             </p>
@@ -662,25 +608,10 @@ export function AgentPage({
           <ul className={ACCOUNT_COLUMNS}>
             {(tool.accounts.length > 0 || tool.present) && <AccountColumnsHead />}
             {tool.accounts.map(accountRow)}
-            {/* Your own sign-in last (D152 §4.3), its explanation on its name's ⓘ: the one sign-in no list holds, which an agent
-                not installed has none of. */}
-            {tool.present && (
-              <AccountRow
-                name={ownLabel}
-                who={ownWho(tool)}
-                why={ownLine(ownWho(tool), use?.own.cooling)}
-                state={own}
-                // No *Runs for* and no *Try now*: no start runs on it, so an old cool-off is only said (D175 point 1).
-                // What its agent last said of its windows, where a press asked its own server (CODEXUSE3), in the cells an
-                // account's row draws (ACCTUX4); else only that a cool-off Daoris chose the length of has no known reset
-                // (ACCTUX1). No unknown cells where nothing was said: Claude Code's own sign-in is never read.
-                // No curve: no list holds your own sign-in, so no switch measures it.
-                usage={usageCells({ said: ownSaid(use) }, own, { now, product })}
-                act={actOf(own.state === 'unknown' ? accountAct(own, { signsIn: false, present: tool.present, runs: 1 }) : null, null, ownLabel)}
-                menu={ownMenu}
-                now={now}
-              />
-            )}
+            {/* Your own sign-in last, outside Daoris's accounts (D152 §4.3; POOL1c, D197 point 3, the account-pool design §3 and
+                §4.2): its name and its ⓘ, which says all of it, and no state, no who, no reading, no act and no ⋯, since Daoris
+                never asks it anything and never changes it. An agent not installed has none. */}
+            {tool.present && <AccountRow name={ownLabel} why={ownLine()} menu={[]} now={now} />}
           </ul>
           {/* Each account's own plan and terms apply (D130 point 12): one line at the list's foot that opens the paragraph,
               a target of 28 px (the platform language §6, ACCTUX2) where its line of text was about 16. */}
@@ -721,36 +652,17 @@ export function AgentPage({
         </section>
       )}
 
-      {/* How the accounts are used (TOOL4g; D130 §3.2, §16.6): this machine's list and settings, folded to the scopes. */}
-      {use && machine && tool.accounts.length > 0 && (
-        <Fold section="use" title={t('harness.use.title')} summary={useSummary(use, labelOf)} open={open.has('use')} onToggle={toggle}>
-          <ScopeEditor agent={use} product={product} scope={machine} accounts={choices} busy={busy} acts={acts.scope} />
-        </Fold>
-      )}
-
-      {/* Each workspace on this machine's accounts or its own (D130 §3.2), moved here from Settings (D150 §3.1). */}
+      {/* How the accounts are used (TOOL4g; D130 §16.6; POOL1c, the account-pool design §4.2): the one set's order and its one
+          entry of settings, every workspace's. The *Workspaces* fold went with it: there is one scope to say. */}
       {use && machine && tool.accounts.length > 0 && (
         <Fold
-          section="workspaces"
-          title={t('agents.section.workspaces')}
-          summary={workspacesSummary(use, scopeWorkspaces, labelOf)}
-          open={open.has('workspaces')}
+          section="use"
+          title={t('harness.use.title')}
+          summary={useSummary(use, tool.accounts.length)}
+          open={open.has('use')}
           onToggle={toggle}
         >
-          {scopeWorkspaces.length === 0 && <p className="m-0 text-small text-ink-faint">{t('agents.workspaces.none')}</p>}
-          {scopeWorkspaces.map((workspace) => (
-            <WorkspaceScope
-              key={workspace}
-              agent={use}
-              product={product}
-              workspace={workspace}
-              scope={workspaceScope(use, workspace)}
-              machine={machine}
-              accounts={choices}
-              busy={busy}
-              acts={acts.scope}
-            />
-          ))}
+          <ScopeEditor agent={use} product={product} scope={machine} accounts={choices} busy={busy} acts={acts.scope} />
         </Fold>
       )}
 

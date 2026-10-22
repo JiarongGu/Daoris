@@ -1,28 +1,23 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import { act } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../../locales/i18n';
-import type { Answered } from '../../work/InlineConfirm';
-import { USE_DEFAULTS } from './accounts';
 import {
   AHEAD, CHOICES, MACHINE_NEAR, OFFERED_AGAIN, OWN_COOLING, scopeOf, SILENT, SIX, SIX_AGENT, SIX_CHOICES, THREE,
 } from './accountsFixtures';
-import { AccountFactsLines, OwnSignInLine, type ScopeActs, ScopeEditor, TermsLine, WorkspaceScope } from './AccountUse';
+import { AccountFactsLines, type ScopeActs, ScopeEditor, TermsLine } from './AccountUse';
 
-// How an agent's accounts are used, as molecules (TOOL4g; D125 §2.4, §3.7, §6; D130 §3.2, §9, §16.6): props in, presses out,
-// each the terminal's door's twin. With three accounts and with six: nothing counts accounts.
+// How an agent's accounts are used, as molecules (TOOL4g; D125 §2.4, §3.7, §6; D130 §9, §16.6; POOL1c, D197): props in,
+// presses out, each the terminal's door's twin, which names no workspace since one set serves them all. With three accounts
+// and with six: nothing counts accounts.
 
-const acts = (): ScopeActs & { calls: unknown[][]; answers: Answered[] } => {
+const acts = (): ScopeActs & { calls: unknown[][] } => {
   const calls: unknown[][] = [];
-  const answers: Answered[] = [];
   return {
     calls,
-    answers,
-    onOrder: (workspace, list) => calls.push(['order', workspace, list]),
-    onUse: (workspace, change) => calls.push(['use', workspace, change]),
-    onInherit: (workspace, answered) => { calls.push(['inherit', workspace]); answers.push(answered); },
+    onOrder: (list) => { calls.push(['order', list]); },
+    onUse: (change) => { calls.push(['use', change]); },
   };
 };
 
@@ -80,24 +75,7 @@ describe('an account\'s facts', () => {
   });
 });
 
-describe('the tool\'s own sign-in, and the terms', () => {
-  /** D175 point 1: the read-only line, with who and an old cool-off, and the press that signs in an account for Daoris. */
-  it('says who it is and its old cool-off, with Sign in to another account', async () => {
-    const onSignIn = vi.fn();
-    wrap(<OwnSignInLine who="someone@example.invalid" cooling={OWN_COOLING} signsIn onSignIn={onSignIn} />);
-
-    expect(screen.getByText(/^Your own sign-in, someone@example\.invalid: .+ Daoris does not start sessions in it; .+ It was cooling until .+look again\.$/)).toBeTruthy();
-    await userEvent.click(screen.getByRole('button', { name: 'Sign in to another account' }));
-    expect(onSignIn).toHaveBeenCalledOnce();
-  });
-
-  it('offers no sign-in a tool has none of', () => {
-    wrap(<OwnSignInLine signsIn={false} onSignIn={() => {}} />);
-
-    expect(screen.getByText(/^Your own sign-in: /)).toBeTruthy();
-    expect(screen.queryByRole('button')).toBeNull();
-  });
-
+describe('the terms', () => {
   it('says each account\'s own plan and terms apply', () => {
     wrap(<TermsLine />);
 
@@ -105,30 +83,33 @@ describe('the tool\'s own sign-in, and the terms', () => {
   });
 });
 
-describe('a scope\'s list', () => {
-  /** D130 §9: *Use* on each account's row; on appends last, off takes it out, as the terminal names a list. */
-  it('turns Use on last and off where it was, and moves a used account up and down', async () => {
+describe('the set\'s order', () => {
+  /**
+   * POOL1c (D197 point 2; the account-pool design §4.2): every account of Daoris's in the order, each with up and down and no
+   * *Use* switch, since every account serves every workspace; a move writes the whole order, one it did not name yet included.
+   */
+  it('moves each account up and down in the whole order, with no Use switch', async () => {
     const pressed = acts();
     wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ list: ['account-1', 'account-2'], begins: 'account-1' })} accounts={CHOICES} acts={pressed} />);
 
-    const list = screen.getByRole('list', { name: 'This machine: accounts in the order they are used' });
+    const list = screen.getByRole('list', { name: "Daoris's accounts, in the order they are used" });
     expect(within(list).getAllByRole('listitem').map((row) => row.textContent)).toEqual([
       expect.stringContaining('work@example.invalid'), expect.stringContaining('home@example.invalid'),
       expect.stringContaining('spare@example.invalid'),
     ]);
-    await userEvent.click(screen.getByRole('checkbox', { name: 'use spare@example.invalid for This machine' }));
-    await userEvent.click(screen.getByRole('checkbox', { name: 'use home@example.invalid for This machine' }));
+    expect(screen.queryByRole('checkbox')).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'Move up · home@example.invalid' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Move up · spare@example.invalid' }));
 
     expect(pressed.calls).toEqual([
-      ['order', null, ['account-1', 'account-2', 'account-3']],
-      ['order', null, ['account-1']],
-      ['order', null, ['account-2', 'account-1']],
+      ['order', ['account-2', 'account-1', 'account-3']],
+      ['order', ['account-1', 'account-3', 'account-2']],
     ]);
     expect(screen.getByRole('button', { name: 'Move up · work@example.invalid' }).hasAttribute('disabled')).toBe(true);
-    expect(screen.getByRole('button', { name: 'Move down · home@example.invalid' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Move down · spare@example.invalid' }).hasAttribute('disabled')).toBe(true);
     // A signed-out account says so where it would be passed.
     expect(within(list).getAllByRole('listitem')[2]!.textContent).toContain('signed out');
+    expect(document.body.textContent).not.toMatch(/This machine|this scope|Use off/);
   });
 
   /**
@@ -139,20 +120,11 @@ describe('a scope\'s list', () => {
     wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ list: ['account-1', 'account-2'], begins: 'account-1' })} accounts={CHOICES} acts={acts()} />);
 
     const moves = screen.getAllByRole('button', { name: /^Move (up|down) · / });
-    expect(moves).toHaveLength(4);
+    expect(moves).toHaveLength(6);
     for (const move of moves) {
       const width = /(?:^|\s)min-w-(\d+)(?:\s|$)/.exec(move.className)?.[1];
       expect(Number(width) * 4, move.getAttribute('aria-label') ?? '').toBeGreaterThanOrEqual(28);
     }
-  });
-
-  /** What the terminal refuses, the screen does not offer: the default's Use off is disabled, and its tip says why. */
-  it('does not offer Use off on the scope\'s default or its kept account', () => {
-    wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={MACHINE_NEAR} accounts={CHOICES} acts={acts()} />);
-
-    expect(screen.getByRole('checkbox', { name: 'use work@example.invalid for This machine' }).hasAttribute('disabled')).toBe(true);
-    expect(screen.getByRole('checkbox', { name: 'use spare@example.invalid for This machine' }).hasAttribute('disabled')).toBe(true);
-    expect(screen.getByRole('checkbox', { name: 'use home@example.invalid for This machine' }).hasAttribute('disabled')).toBe(false);
   });
 
   /**
@@ -188,25 +160,27 @@ describe('a scope\'s list', () => {
     expect(rows[2]!.textContent).not.toContain('over its curve');
   });
 
-  /** A scope with no list has no settings: it says where its starts run, and the first Use gives it a list. */
-  it('says where starts run while the scope has no list, and offers no settings', () => {
-    const { unmount } = wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ inherited: true })} accounts={CHOICES} acts={acts()} />);
+  /**
+   * POOL1c: an answer that names no order yet still draws every account of Daoris's, in the agent's order, and the one entry of
+   * settings, since every account serves every workspace; nothing says *no account is used here*.
+   */
+  it('draws every account and the settings where the answer names no order yet', () => {
+    wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf()} accounts={CHOICES} acts={acts()} />);
 
-    expect(screen.getByText(/^No account is used here yet, so starts take Daoris's accounts, in turn\./)).toBeTruthy();
-    expect(screen.queryByRole('radiogroup')).toBeNull();
-    unmount();
-
-    // A test double that runs in its own home says so by `inherited: false`: the own sign-in is said there alone.
-    wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ inherited: false })} accounts={CHOICES} acts={acts()} />);
-    expect(screen.getByText(/^No account is used here yet, so starts take the tool's own sign-in\./)).toBeTruthy();
-    expect(screen.queryByText('Keep for conversations')).toBeNull();
+    expect(within(screen.getByRole('list')).getAllByRole('listitem')).toHaveLength(3);
+    expect(screen.getAllByRole('radiogroup')).toHaveLength(2);
+    expect(screen.getByText('Keep for conversations')).toBeTruthy();
+    expect(screen.queryByText(/No account is used here yet/)).toBeNull();
   });
 
-  /** A hand-edited file that breaks the rule is read with the list winning, and said (D130 §3.1). */
-  it('says a default outside its list', () => {
-    wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ default: 'account-3', list: ['account-1'], begins: 'account-1', problem: { kind: 'default', account: 'account-3' } })} accounts={CHOICES} acts={acts()} />);
+  /** A hand-edited file that breaks the rule is read with the order winning, and said (D130 §3.1); a default is never said. */
+  it('says a kept account the order does not hold, and no default', () => {
+    const { unmount } = wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ list: ['account-1', 'account-2'], begins: 'account-1', problem: { kind: 'keep', account: 'account-3' } })} accounts={CHOICES} acts={acts()} />);
+    expect(screen.getByText(/^The account kept for conversations, spare@example\.invalid, is not in the order/)).toBeTruthy();
+    unmount();
 
-    expect(screen.getByText(/^This scope's default, spare@example\.invalid, is not in its list/)).toBeTruthy();
+    wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ list: ['account-1'], begins: 'account-1', problem: { kind: 'default', account: 'account-3' } })} accounts={CHOICES} acts={acts()} />);
+    expect(screen.queryByText(/This scope's default|is not in its list/)).toBeNull();
   });
 });
 
@@ -220,15 +194,15 @@ describe('how a scope\'s list is used', () => {
     wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={MACHINE_NEAR} accounts={CHOICES} acts={pressed} />);
 
     await userEvent.click(screen.getByRole('radio', { name: 'One by one, in order' }));
-    const switched = screen.getByRole('radiogroup', { name: 'Switch accounts · This machine' });
+    const switched = screen.getByRole('radiogroup', { name: 'Switch accounts' });
     expect(within(switched).getByRole('radio', { name: 'My own curve' })).toHaveAttribute('aria-checked', 'true');
     await userEvent.click(within(switched).getByRole('radio', { name: 'Off' }));
     await userEvent.click(within(switched).getByRole('radio', { name: 'Smart' }));
 
     expect(pressed.calls).toEqual([
-      ['use', null, { use: 'order' }],
-      ['use', null, { switch: 'off' }],
-      ['use', null, { switch: 'smart' }],
+      ['use', { use: 'order' }],
+      ['use', { switch: 'off' }],
+      ['use', { switch: 'smart' }],
     ]);
     expect(screen.getByText(/^Each start goes to the account running the fewest/)).toBeTruthy();
     expect(screen.getByText(/^Your own rows, a window each; a window you leave out takes Daoris's curve\.$/)).toBeTruthy();
@@ -276,8 +250,8 @@ describe('how a scope\'s list is used', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Clear my own curve' }));
 
     expect(pressed.calls).toEqual([
-      ['use', null, { curve: { session: [[0, 85]] } }],
-      ['use', null, { noCurve: true }],
+      ['use', { curve: { session: [[0, 85]] } }],
+      ['use', { noCurve: true }],
     ]);
     expect(twins()).toEqual(expect.arrayContaining([
       'daoris agent profile use claude-code --curve session=0:80',
@@ -296,14 +270,15 @@ describe('how a scope\'s list is used', () => {
 
   /** The order's cost is said where it is chosen (D130 §16.6). */
   it('says what one by one costs', () => {
-    wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={THREE.scopes[1]!} accounts={CHOICES} workspace="work" acts={acts()} />);
+    const scope = { ...THREE.scopes[0]!, use: { ...THREE.scopes[0]!.use, use: 'order' as const } };
+    wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scope} accounts={CHOICES} acts={acts()} />);
 
     expect(screen.getByText(/one limit stops every session on that account\.$/)).toBeTruthy();
   });
 
-  /** A list of one keeps nothing: keeping its only account would leave driven work none. */
-  it('offers no kept account with one account in the list', () => {
-    wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ list: ['account-1'], begins: 'account-1' })} accounts={CHOICES} acts={acts()} />);
+  /** A set of one keeps nothing: keeping its only account would leave driven work none. */
+  it('offers no kept account with one account of Daoris’s', () => {
+    wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ list: ['account-1'], begins: 'account-1' })} accounts={CHOICES.slice(0, 1)} acts={acts()} />);
 
     expect(screen.getByText(/^Keeping an account for conversations needs another account/)).toBeTruthy();
     expect(screen.queryByRole('combobox')).toBeNull();
@@ -314,7 +289,7 @@ describe('how a scope\'s list is used', () => {
     wrap(<ScopeEditor agent={SILENT} product="Codex" scope={SILENT.scopes[0]!} accounts={[]} acts={acts()} />);
 
     expect(screen.getByText("Codex's sessions here do not say how much of each window is used, so a start passes no account by its use.")).toBeTruthy();
-    expect(screen.getByRole('radiogroup', { name: 'Switch accounts · This machine' })).toBeTruthy();
+    expect(screen.getByRole('radiogroup', { name: 'Switch accounts' })).toBeTruthy();
   });
 
   /**
@@ -334,30 +309,26 @@ describe('the next start', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
   /**
-   * TOOL6e, the owner's case: the workspace's default came out of its cool-off and nothing runs, so the next start takes
-   * it; another account cools; and the tool's own sign-in, which the owner had switched, carries none of these starts.
+   * TOOL6e, the owner's case: the order's first came out of its cool-off and nothing runs, so the next start takes it; another
+   * account cools; and the tool's own sign-in, which the owner had switched, carries none of these starts.
    */
   it('says which account the next start takes, why, since when it is offered again, and what holds the others', () => {
-    const work = OFFERED_AGAIN.scopes[1]!;
-    wrap(<ScopeEditor agent={OFFERED_AGAIN} product="Claude Code" scope={work} accounts={CHOICES} workspace="work" acts={acts()} />);
+    wrap(<ScopeEditor agent={OFFERED_AGAIN} product="Claude Code" scope={OFFERED_AGAIN.scopes[0]!} accounts={CHOICES} acts={acts()} />);
 
     const row = screen.getByText('Next start').closest('div.\\@container') as HTMLElement;
     expect(row).toBeTruthy();
-    expect(within(row).getByText(/^The next start takes work@example\.invalid: Daoris started on it less recently than home@example\.invalid\. Its cool-off ended at .+\.$/)).toBeTruthy();
+    expect(within(row).getByText(/^The next start takes work@example\.invalid: it comes first in the list\. Its cool-off ended at .+\.$/)).toBeTruthy();
     expect(within(row).getByText(/^spare@example\.invalid is cooling until .+\.$/)).toBeTruthy();
     expect(within(row).getByText(/^Claude Code's own sign-in, the account it uses at your terminal, carries none of these starts/)).toBeTruthy();
-    // Its terminal twin: `profile use` names the steps, since the CLI reads no session record to name the account.
-    expect(row.textContent).toContain('daoris agent profile use claude-code --workspace work');
+    // Its terminal twin: `profile use` names the steps, since the CLI reads no session record to name the account; no workspace.
+    expect(row.textContent).toContain('daoris agent profile use claude-code');
+    expect(row.textContent).not.toContain('--workspace');
   });
 
-  /**
-   * The tool's own sign-in, where nothing names an account, is said by the list's empty line and D125 §3.7's line, so no
-   * third sentence; its wait is said, and never that it carries none of the starts it does carry.
-   */
+  /** A test double's own home, where the reason is `own`, draws no next start: nothing else says it either. */
   it('says the tool\'s own sign-in once, and its wait without claiming it carries none', () => {
-    const { unmount } = wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ inherited: true, next: { account: null, reason: 'own', others: [] } })} accounts={CHOICES} acts={acts()} />);
+    const { unmount } = wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ next: { account: null, reason: 'own', others: [] } })} accounts={CHOICES} acts={acts()} />);
     expect(screen.queryByText('Next start')).toBeNull();
-    expect(screen.getByText(/^No account is used here yet, so starts take Daoris's accounts, in turn\./)).toBeTruthy();
     unmount();
 
     wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ next: { account: null, reason: 'waits', when: OWN_COOLING.until, others: [{ account: null, hold: 'cooling', until: OWN_COOLING.until }] } })} accounts={CHOICES} acts={acts()} />);
@@ -368,13 +339,13 @@ describe('the next start', () => {
 
   /** D175 point 2 and OWNSPACE1b settlement 4: no Daoris account signed in is its own line, apart from a wait. */
   it('says no Daoris account is signed in, when the reason arrives', () => {
-    wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ inherited: true, next: { account: null, reason: 'noAccount', others: [] } })} accounts={CHOICES} acts={acts()} />);
+    wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ next: { account: null, reason: 'noAccount', others: [] } })} accounts={CHOICES} acts={acts()} />);
     expect(screen.getByText('No Daoris account is signed in for it; its starts wait until you sign in.')).toBeTruthy();
   });
 
-  /** A workspace whose every account is held waits, and its own-sign-in sentence stands: switching that would not help. */
+  /** A set whose every account is held waits, and its own-sign-in sentence stands: switching that would not help. */
   it('says a list\'s wait with the sentence that the tool\'s own sign-in carries none of its starts', () => {
-    wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ list: ['account-1'], begins: 'account-1', next: { account: null, reason: 'waits', when: OWN_COOLING.until, others: [{ account: 'account-1', hold: 'cooling', until: OWN_COOLING.until }] } })} accounts={CHOICES} workspace="work" acts={acts()} />);
+    wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ list: ['account-1'], begins: 'account-1', next: { account: null, reason: 'waits', when: OWN_COOLING.until, others: [{ account: 'account-1', hold: 'cooling', until: OWN_COOLING.until }] } })} accounts={CHOICES} acts={acts()} />);
 
     expect(screen.getByText(/^No account here is ready, so the next start waits until .+\.$/)).toBeTruthy();
     expect(screen.getByText(/^work@example\.invalid is cooling until .+\.$/)).toBeTruthy();
@@ -386,17 +357,18 @@ describe('the next start', () => {
    * room under the curve, or by the week's pace with the switch off; one by one says what goes last, with no switch named.
    */
   it('says the walk by the curve, and by the week\'s pace with the switch off', async () => {
-    const work = OFFERED_AGAIN.scopes[1]!;
-    const { unmount } = wrap(<ScopeEditor agent={OFFERED_AGAIN} product="Claude Code" scope={work} accounts={CHOICES} workspace="work" acts={acts()} />);
+    const set = OFFERED_AGAIN.scopes[0]!;
+    const { unmount } = wrap(<ScopeEditor agent={OFFERED_AGAIN} product="Claude Code" scope={set} accounts={CHOICES} acts={acts()} />);
     expect(screen.getByRole('note', { name: /^Each start walks this list: .+ whose use is over its curve goes last, the least over first; .+, then the one with the most room under its curve, / })).toBeTruthy();
     unmount();
 
-    const paced = wrap(<ScopeEditor agent={OFFERED_AGAIN} product="Claude Code" scope={{ ...work, use: { ...work.use, early: false, switch: 'off' } }} accounts={CHOICES} workspace="work" acts={acts()} />);
+    const paced = wrap(<ScopeEditor agent={OFFERED_AGAIN} product="Claude Code" scope={{ ...set, use: { ...set.use, early: false, switch: 'off' } }} accounts={CHOICES} acts={acts()} />);
     expect(screen.getByRole('note', { name: /^Each start walks this list: .+ whose use is over Daoris's curve goes last, the least over first; .+, then the one furthest behind its week's pace, / })).toBeTruthy();
     paced.unmount();
 
-    wrap(<ScopeEditor agent={OFFERED_AGAIN} product="Claude Code" scope={{ ...work, use: { ...work.use, use: 'order' } }} accounts={CHOICES} workspace="work" acts={acts()} />);
-    expect(screen.getByRole('note', { name: /^Each start runs on the first ready account in the list's order, begun at its default; an account whose limit is reached, that draws on usage credits or whose use is over its curve goes last\./ })).toBeTruthy();
+    // POOL1c (D197 point 2): one by one begins at the order's first, since the set has no default beside it.
+    wrap(<ScopeEditor agent={OFFERED_AGAIN} product="Claude Code" scope={{ ...set, use: { ...set.use, use: 'order' } }} accounts={CHOICES} acts={acts()} />);
+    expect(screen.getByRole('note', { name: /^Each start runs on the first ready account in the order, begun at its first; an account whose limit is reached, that draws on usage credits or whose use is over its curve goes last\./ })).toBeTruthy();
   });
 
   /** An answer from a shell older than TOOL6e has no `next`: the row is not drawn. */
@@ -408,10 +380,11 @@ describe('the next start', () => {
 
   it('says it in 中文', async () => {
     await i18n.changeLanguage('zh');
-    wrap(<ScopeEditor agent={OFFERED_AGAIN} product="Claude Code" scope={OFFERED_AGAIN.scopes[1]!} accounts={CHOICES} workspace="work" acts={acts()} />);
+    wrap(<ScopeEditor agent={OFFERED_AGAIN} product="Claude Code" scope={OFFERED_AGAIN.scopes[0]!} accounts={CHOICES} acts={acts()} />);
 
     expect(screen.getByText('下一次启动')).toBeTruthy();
-    expect(screen.getByText(/^下一次启动使用 work@example\.invalid：Daoris 在它上面启动的时间比 home@example\.invalid 更早。它的冷却在 .+ 结束。$/)).toBeTruthy();
+    expect(screen.getByText(/^下一次启动使用 work@example\.invalid：.+。它的冷却在 .+ 结束。$/)).toBeTruthy();
+    expect(document.body.textContent).not.toMatch(/本机/);
     expect(screen.getByText(/^Claude Code 自己的登录/)).toBeTruthy();
   });
 
@@ -423,128 +396,19 @@ describe('the next start', () => {
   });
 });
 
-describe('a workspace\'s scope', () => {
-  /** D130 §3.2: on this machine's accounts, it says which; its own accounts open the list, which the first Use writes. */
-  it('says which accounts it runs on, and opens a list of its own on the press', async () => {
-    const pressed = acts();
-    wrap(<WorkspaceScope agent={THREE} product="Claude Code" workspace="lab" scope={null} machine={THREE.scopes[0]!} accounts={CHOICES} acts={pressed} />);
-
-    expect(screen.getByText('Its starts run on this machine\'s accounts: work@example.invalid, home@example.invalid, spare@example.invalid.')).toBeTruthy();
-    await userEvent.click(screen.getByRole('radio', { name: 'Its own accounts' }));
-    await userEvent.click(screen.getByRole('checkbox', { name: 'use home@example.invalid for Workspace lab' }));
-
-    expect(pressed.calls).toEqual([['order', 'lab', ['account-2']]]);
-  });
-
-  /** Back to this machine's accounts clears its own default, list and settings, so the first press asks. */
-  it('asks once before returning to this machine\'s accounts', async () => {
-    const pressed = acts();
-    wrap(<WorkspaceScope agent={THREE} product="Claude Code" workspace="work" scope={THREE.scopes[1]!} machine={THREE.scopes[0]!} accounts={CHOICES} acts={pressed} />);
-
-    await userEvent.click(screen.getByRole('radio', { name: "This machine's accounts" }));
-    expect(pressed.calls).toEqual([]);
-    expect(screen.getByText(/^This clears work's own default, list and settings for claude-code/)).toBeTruthy();
-    await userEvent.click(screen.getByRole('button', { name: "Use this machine's accounts" }));
-
-    expect(pressed.calls).toEqual([['inherit', 'work']]);
-  });
-
-  /** UXFIX2b3c: the ask stays open while the act runs, says a refusal inside it, and closes only once it lands. */
-  it('keeps the ask open while it waits, says a refusal inside it, and closes on done with the focus returned', async () => {
-    const pressed = acts();
-    wrap(<WorkspaceScope agent={THREE} product="Claude Code" workspace="work" scope={THREE.scopes[1]!} machine={THREE.scopes[0]!} accounts={CHOICES} acts={pressed} />);
-
-    await userEvent.click(screen.getByRole('radio', { name: "This machine's accounts" }));
-    const group = screen.getByRole('group', { name: "Use this machine's accounts" });
-    expect(group.contains(document.activeElement)).toBe(true);
-    await userEvent.click(within(group).getByRole('button', { name: "Use this machine's accounts" }));
-
-    expect(screen.getByRole('group', { name: "Use this machine's accounts" })).toBeTruthy();
-    expect(screen.getByRole('status').textContent).not.toBe('');
-    act(() => pressed.answers[0]!.refused('Not saved: the file is locked.'));
-    expect(within(screen.getByRole('group', { name: "Use this machine's accounts" })).getByRole('alert').textContent).toContain('the file is locked');
-    expect(screen.getByRole('status').textContent).toBe('');
-
-    await userEvent.click(within(screen.getByRole('group', { name: "Use this machine's accounts" })).getByRole('button', { name: "Use this machine's accounts" }));
-    act(() => pressed.answers[1]!.done());
-    expect(screen.queryByRole('group', { name: "Use this machine's accounts" })).toBeNull();
-    expect(document.activeElement).not.toBe(document.body);
-  });
-
-  /** Its hint is the terminal's twin that returns it to this machine's accounts, or gives it a list of its own. */
-  it('names the terminal twin for its workspace', () => {
-    wrap(<WorkspaceScope agent={THREE} product="Claude Code" workspace="lab" scope={null} machine={THREE.scopes[0]!} accounts={CHOICES} acts={acts()} />);
-
-    expect(twins()).toEqual(['daoris agent profile order claude-code <account>…|--clear --workspace lab']);
-  });
-
-  /** A workspace on this machine's accounts where the machine has none says the tool's own sign-in, or the default. */
-  it('says the tool\'s own sign-in, or this machine\'s default, where the machine has no list', () => {
-    const { unmount } = wrap(<WorkspaceScope agent={THREE} product="Claude Code" workspace="lab" scope={null} machine={scopeOf()} accounts={CHOICES} acts={acts()} />);
-    expect(screen.getByText("Its starts take Daoris's accounts, in turn, as this machine's do.")).toBeTruthy();
-    unmount();
-
-    wrap(<WorkspaceScope agent={THREE} product="Claude Code" workspace="lab" scope={null} machine={scopeOf({ default: 'account-2', begins: 'account-2', use: USE_DEFAULTS })} accounts={CHOICES} acts={acts()} />);
-    expect(screen.getByText("Its starts run on this machine's default, home@example.invalid.")).toBeTruthy();
-  });
-});
-
 /**
- * ACCTQUOTE1c (D125's ACCTQUOTE1 note): each hint is a command a person pastes into whichever shell they have, so a workspace
- * with a space is in double quotes, and one no spelling holds in every shell (`R&D`) is the placeholder `<workspace>`.
+ * ACCTQUOTE1c (D125's ACCTQUOTE1 note), POOL1c (D197 point 6): each hint is a command a person pastes into whichever shell they
+ * have, and names no workspace, since one set of Daoris's accounts serves them all and the terminal refuses `--workspace`.
  */
-describe('a scope\'s terminal twins', () => {
-  const scoped = (workspace: string) => ({ ...OFFERED_AGAIN.scopes[1]!, workspace });
-  const editor = (workspace?: string) => wrap(
-    <ScopeEditor agent={OFFERED_AGAIN} product="Claude Code" scope={workspace ? scoped(workspace) : OFFERED_AGAIN.scopes[0]!} accounts={CHOICES} workspace={workspace} acts={acts()} />,
-  );
-  // The next start's, then the list's, then each of how the list is used.
-  const scopeTwins = (flag: string) => [
-    `daoris agent profile use claude-code${flag}`,
-    `daoris agent profile order claude-code <account>…${flag}`,
-    `daoris agent profile use claude-code goal|order${flag}`,
-    `daoris agent profile use claude-code --keep <account>|--no-keep${flag}`,
-    `daoris agent profile use claude-code --switch smart|curve|off${flag}`,
-  ];
-
-  it('names no workspace on this machine\'s scope', () => {
-    editor();
-    expect(twins()).toEqual(scopeTwins(''));
-  });
-
-  it('names a workspace a shell takes as it is', () => {
-    editor('work');
-    expect(twins()).toEqual(scopeTwins(' --workspace work'));
-  });
-
-  it('quotes a workspace with a space in each twin', () => {
-    editor('my team');
-    expect(twins()).toEqual(scopeTwins(' --workspace "my team"'));
-  });
-
-  it('names a workspace no shell can take by a placeholder in each twin', () => {
-    editor('R&D');
-    expect(twins()).toEqual(scopeTwins(' --workspace <workspace>'));
-  });
-
-  it('spells the workspace in its scope\'s twin', () => {
-    const { unmount } = wrap(<WorkspaceScope agent={THREE} product="Claude Code" workspace="my team" scope={null} machine={THREE.scopes[0]!} accounts={CHOICES} acts={acts()} />);
-    expect(twins()).toEqual(['daoris agent profile order claude-code <account>…|--clear --workspace "my team"']);
-    unmount();
-
-    wrap(<WorkspaceScope agent={THREE} product="Claude Code" workspace="R&D" scope={null} machine={THREE.scopes[0]!} accounts={CHOICES} acts={acts()} />);
-    expect(twins()).toEqual(['daoris agent profile order claude-code <account>…|--clear --workspace <workspace>']);
-  });
-
-  /** The workspace's own name is said as it is wherever the page says it rather than prints a command: only twins spell it. */
-  it('says the workspace as it is outside the twins', async () => {
-    const pressed = acts();
-    wrap(<WorkspaceScope agent={THREE} product="Claude Code" workspace="R&D" scope={{ ...THREE.scopes[1]!, workspace: 'R&D' }} machine={THREE.scopes[0]!} accounts={CHOICES} acts={pressed} />);
-
-    expect(screen.getByText('Workspace R&D')).toBeTruthy();
-    await userEvent.click(screen.getByRole('radio', { name: "This machine's accounts" }));
-    expect(screen.getByText(/^This clears R&D's own default, list and settings for claude-code/)).toBeTruthy();
-    await userEvent.click(screen.getByRole('button', { name: "Use this machine's accounts" }));
-    expect(pressed.calls).toEqual([['inherit', 'R&D']]);
+describe('the set\'s terminal twins', () => {
+  it('names no workspace in any twin', () => {
+    wrap(<ScopeEditor agent={OFFERED_AGAIN} product="Claude Code" scope={OFFERED_AGAIN.scopes[0]!} accounts={CHOICES} acts={acts()} />);
+    expect(twins()).toEqual([
+      'daoris agent profile use claude-code',
+      'daoris agent profile order claude-code <account>…',
+      'daoris agent profile use claude-code goal|order',
+      'daoris agent profile use claude-code --keep <account>|--no-keep',
+      'daoris agent profile use claude-code --switch smart|curve|off',
+    ]);
   });
 });

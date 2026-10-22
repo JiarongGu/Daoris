@@ -217,10 +217,10 @@ describe('a new conversation', () => {
   });
 
   /**
-   * D130 §3.2: the accounts the repository's workspace's list holds first, in the list's order, then every other under
-   * *not in its list*, so a pick outside it is never made by accident.
+   * POOL1c (D197; the account-pool design §4.3): Daoris's accounts in the set's order, every workspace's, then any the order does
+   * not name yet, with no group of accounts outside a list.
    */
-  it('lists the workspace’s accounts first, and every other under not in its list', async () => {
+  it('lists Daoris’s accounts in the set’s order, with no group outside a list', async () => {
     show({
       harnesses: ['claude-code'],
       accounts: {
@@ -230,9 +230,7 @@ describe('a new conversation', () => {
           { name: 'account-3', login: 'out', account: 'spare@example.invalid' },
         ],
       },
-      scopeOf: (repository, harness) => (repository === 'engine' && harness === 'claude-code'
-        ? { workspace: 'aurora', list: ['account-2', 'account-1'] }
-        : null),
+      orderOf: (harness) => (harness === 'claude-code' ? ['account-2', 'account-1'] : null),
     });
 
     const menu = await chipMenu(/^Agent and account:/);
@@ -241,7 +239,7 @@ describe('a new conversation', () => {
       "Driver's choice", 'account-2 · you@home.example', 'account-1 · you@work.example',
       'account-3 · spare@example.invalid (signed out)',
     ]);
-    expect(within(menu).getByText("Not in aurora's list")).toBeInTheDocument();
+    expect(within(menu).queryByText(/Not in|this machine's list/)).toBeNull();
   });
 
   /**
