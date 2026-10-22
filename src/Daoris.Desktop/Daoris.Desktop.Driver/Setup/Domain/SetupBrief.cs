@@ -14,7 +14,10 @@ public enum SetupCase
     /// <summary>Adopted on the agents layout and clean, declaring nothing: the knowledge step alone (<see cref="SetupQuests.Declare"/>).</summary>
     Declare,
 
-    /// <summary>Adopted on the agents layout, clean and declaring: already set up, refused.</summary>
+    /// <summary>Set up, and naming no index of where things are: the index alone (<see cref="SetupQuests.Index"/>, ORIENT2c).</summary>
+    Index,
+
+    /// <summary>Set up and naming its index: nothing to ask, refused.</summary>
     Done,
 }
 
@@ -26,9 +29,11 @@ public enum SetupCase
 /// <param name="Description">What its README says of it, as the intake reads it (D77); null when it says nothing.</param>
 /// <param name="Entries">The path of each entry the workspace's index holds for it, once per entry.</param>
 /// <param name="Neighbours">The names the workspace knows its other repositories by.</param>
+/// <param name="Index">The generator the index quest names (<see cref="IndexForms"/>); required for <see cref="SetupCase.Index"/> alone.</param>
 public sealed record SetupBriefInput(
     SetupCase Case, DateOnly Day, string Repository, LayoutFacts Facts, string Version,
-    RepositoryDescription? Description, IReadOnlyList<string> Entries, IReadOnlyList<string> Neighbours);
+    RepositoryDescription? Description, IReadOnlyList<string> Entries, IReadOnlyList<string> Neighbours,
+    IndexForm? Index = null);
 
 /// <summary>
 /// The set-up quest's words (LAYOUT7; D117 §6.2–§6.3 as D124 §2.2–§2.7 amends them): a title from
@@ -56,6 +61,8 @@ public static class SetupBrief
     /// <exception cref="ArgumentException">A repository already set up: there is nothing to ask.</exception>
     public static (string Title, string Body) Compose(SetupBriefInput input)
     {
+        if (input.Case == SetupCase.Index) return IndexBrief.Compose(input);
+
         var stem = input.Case switch
         {
             SetupCase.Whole => SetupQuests.SetUp,
@@ -178,7 +185,7 @@ public static class SetupBrief
         body.Append('\n');
     }
 
-    private static string Tool(string version) =>
+    internal static string Tool(string version) =>
         $"**The tool.** Run `daoris --version`. It prints `{version}`. If it prints anything else, or `daoris` is not "
         + "found, stop and decline: *the doctrine command could not run here*, with what it printed.";
 
@@ -319,7 +326,7 @@ public static class SetupBrief
         "**Verify.** Run `daoris check` and `daoris status --json`, then this repository's own build and tests where "
         + "they are a session's to run.";
 
-    private static string Commit() =>
+    internal static string Commit() =>
         "**Commit** on this branch as each step lands: the branch is what is reviewed, and this session never pushes it.";
 
     /// <remarks>
@@ -429,7 +436,7 @@ public static class SetupBrief
     }
 
     /// <summary>Names in code type, at most <see cref="Shown"/> of them unless every one is asked for.</summary>
-    private static string Names(IReadOnlyList<string> names, bool everyOne = false)
+    internal static string Names(IReadOnlyList<string> names, bool everyOne = false)
     {
         var quoted = names.Select(name => $"`{name}`").ToList();
         return everyOne || quoted.Count <= Shown
@@ -437,8 +444,8 @@ public static class SetupBrief
             : string.Join(", ", quoted.Take(Shown)) + $", and {quoted.Count - Shown} more";
     }
 
-    private static string Count(int count, string noun) =>
+    internal static string Count(int count, string noun) =>
         count == 1 ? $"1 {noun}" : $"{count} {(noun.EndsWith('y') ? noun[..^1] + "ies" : noun + "s")}";
 
-    private static string Short(string commit) => TextBounds.ShortCommit(commit, 12);
+    internal static string Short(string commit) => TextBounds.ShortCommit(commit, 12);
 }

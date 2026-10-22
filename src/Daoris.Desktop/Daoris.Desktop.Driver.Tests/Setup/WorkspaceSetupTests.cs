@@ -237,7 +237,10 @@ public sealed class WorkspaceSetupTests : IDisposable
 
         var preview = await PreviewAsync(world, Driven(3).WithDrivable("billing", false));
 
-        Assert.Equal(SetupState.SetUp, preview.Rows.Single(row => row.Repository == "docs").Standing.State);
+        // ORIENT2c: a repository set up is still to go for its index until the plan has asked it.
+        var docs = preview.Rows.Single(row => row.Repository == "docs").Standing;
+        Assert.Equal(SetupState.ToGo, docs.State);
+        Assert.Equal("set up: What docs owns. Its index is to go.", docs.Said);
         var billing = preview.Rows.Single(row => row.Repository == "billing");
         Assert.Equal(SetupState.ToGo, billing.Standing.State);
         Assert.Contains(billing.Refusals, refusal => refusal.Code == SetupRefusals.NotDriven);
@@ -530,6 +533,85 @@ public sealed class WorkspaceSetupTests : IDisposable
         var standing = (await StandAsync(world, config)).Single(standing => standing.Repository == "atlas");
         Assert.Equal(SetupState.SetUp, standing.State);
         Assert.Equal("set up: What atlas owns.", standing.Said);
+    }
+
+    /// <summary>
+    /// ORIENT2c (D151 point 5): a repository set up is asked its index next, paced with the set-ups (one open at a time by
+    /// default), its commands granted in its own scope as the single press grants them; once that closes, the next set-up goes.
+    /// </summary>
+    [Fact]
+    public async Task A_repository_set_up_is_asked_its_index_in_its_turn_paced_with_the_set_ups()
+    {
+        var world = World("atlas", "billing");
+        world.SetUp("atlas");
+        world.SetUpLine("atlas");
+        var config = Driven(3);
+        await PressAsync(world, config, new(Pilot: 0));
+
+        var first = await TickAsync(world, config);
+        await TickAsync(world, config);
+
+        Assert.Equal(["atlas"], Asked(world));
+        var index = world.Quests.Single();
+        Assert.Equal("Give this repository an index of where things are (2026-10-02)", index.Title);
+        Assert.Equal(index.Id, Plan().Indexed["atlas"]);
+        Assert.False(Plan().Published.ContainsKey("atlas"));
+        Assert.Contains(first, line => line.StartsWith("setup  work: asked `atlas` for its index of where things are", StringComparison.Ordinal));
+        Assert.Contains("Bash(node tools/index.mjs --check)", PermissionRules.Load(_home).Repositories["atlas"].Allow);
+        var open = (await StandAsync(world, config)).Single(standing => standing.Repository == "atlas");
+        Assert.Equal(SetupState.Open, open.State);
+        Assert.Equal($"its index #{index.Id} is open.", open.Said);
+
+        world.Close(index.Id, "Done");
+        await TickAsync(world, config);
+
+        Assert.Equal(["atlas", "billing"], Asked(world));
+        var done = (await StandAsync(world, config)).Single(standing => standing.Repository == "atlas");
+        Assert.Equal(SetupState.SetUp, done.State);
+        Assert.Equal($"set up: What atlas owns. Its index #{index.Id} is done, for your review.", done.Said);
+    }
+
+    /// <summary>ORIENT2c: one that names its index already is set up, judged once and said nowhere; a declined index is never asked again.</summary>
+    [Fact]
+    public async Task A_repository_naming_its_index_is_set_up_quietly_and_a_declined_index_is_not_asked_again()
+    {
+        var world = World("atlas", "billing", "cargo");
+        world.SetUp("atlas");
+        world.SetUpLine("atlas", index: "docs/index/README.md");
+        world.SetUp("billing");
+        world.SetUpLine("billing");
+        var config = Driven(3);
+        await PressAsync(world, config, new(Pilot: 0));
+
+        var said = await TickAsync(world, config);
+        world.Close(world.Quests.Single().Id, "Declined", "No generator wanted here.");
+        await TickAsync(world, config);
+        await TickAsync(world, config);
+
+        Assert.Equal(["billing", "cargo"], Asked(world));
+        Assert.DoesNotContain(said, line => line.Contains("skipped `atlas`", StringComparison.Ordinal));
+        Assert.DoesNotContain(world.Logged, line => line.Event == "setup.skipped");
+        var standings = await StandAsync(world, config);
+        Assert.Equal(SetupState.SetUp, standings.Single(standing => standing.Repository == "atlas").State);
+        Assert.Equal(SetupState.Declined, standings.Single(standing => standing.Repository == "billing").State);
+    }
+
+    /// <summary>
+    /// The registry calls it set up and its line reads otherwise: the plan asks a set-up repository nothing but its index,
+    /// so a stale line is never asked to set itself up again.
+    /// </summary>
+    [Fact]
+    public async Task A_registered_repository_whose_line_reads_unadopted_is_never_asked_a_set_up()
+    {
+        var world = World("atlas");
+        world.SetUp("atlas");
+        var config = Driven(3);
+        await PressAsync(world, config, new(Pilot: 0));
+
+        await TickAsync(world, config);
+
+        Assert.Empty(Asked(world));
+        Assert.Equal(SetupState.SetUp, (await StandAsync(world, config)).Single().State);
     }
 
     /// <summary>
