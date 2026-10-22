@@ -213,9 +213,10 @@ public sealed class AccountAttentionSliceTests
 
         foreach (var wait in new[] { Wait("""{"signedOut":[]}"""), Wait("""{"workspace":null,"signedOut":[]}""") })
         {
-            var facts = Derive(doors: doors, waits: [wait]).Single(row => row["kind"]!.GetValue<string>() == "account-wait")["account"]!;
-            Assert.Null(facts["outside"]);
-            Assert.Null(facts["readFirst"]);
+            // POOL1c: the page reads neither now, so neither is written (they were null since POOL1a2).
+            var facts = Derive(doors: doors, waits: [wait]).Single(row => row["kind"]!.GetValue<string>() == "account-wait")["account"]!.AsObject();
+            Assert.False(facts.ContainsKey("outside"));
+            Assert.False(facts.ContainsKey("readFirst"));
         }
     }
 
@@ -273,8 +274,8 @@ public sealed class AccountAttentionSliceTests
         Assert.Equal(("wait:claude-code/:signed-out", "work", true, "2026-10-05T10:25:00Z"),
             (row["id"]!.GetValue<string>(), row["where"]!.GetValue<string>(), row["wholeWorkspace"]!.GetValue<bool>(), row["since"]!.GetValue<string>()));
         Assert.Equal("account-1=out", Named(row));
-        Assert.Null(row["account"]!["outside"]);
-        Assert.Null(row["account"]!["readFirst"]);
+        Assert.False(row["account"]!.AsObject().ContainsKey("outside"));
+        Assert.False(row["account"]!.AsObject().ContainsKey("readFirst"));
     }
 
     /// <summary>OWNSPACE1b-A: the tool's own sign-in read signed out holds no work, so it has no row.</summary>
@@ -350,7 +351,8 @@ public sealed class AccountAttentionSliceTests
 
     /// <summary>
     /// UXFIX3: only when it was read is known, never since when it holds work, so it carries its reading and no wait. Rewritten by
-    /// POOL1a2: it said where it ran, <c>runs</c>; every account of the set serves every workspace now, so it says none.
+    /// POOL1a2: it said where it ran, <c>runs</c>; every account of the set serves every workspace now, so it says none, and since
+    /// POOL1c no <c>outside</c> either.
     /// </summary>
     [Fact]
     public void A_signed_out_account_of_the_set_is_a_row_of_its_own_carrying_its_reading_and_no_wait()
@@ -360,7 +362,7 @@ public sealed class AccountAttentionSliceTests
         Assert.Equal("signed-out:claude-code/account-1,signed-out:claude-code/account-3", Ids(rows));
         Is($$$"""
            {"kind":"signed-out","id":"signed-out:claude-code/account-1","since":null,"read":"{{{Read}}}","where":"Claude Code",
-            "account":{"agent":"claude-code","product":"Claude Code","harness":"claude-code","signsIn":true,"outside":null,
+            "account":{"agent":"claude-code","product":"Claude Code","harness":"claude-code","signsIn":true,
              "named":[{"id":"account-1","name":null,"state":"out","read":"{{{Read}}}","until":null}]}}
            """, rows[0]);
     }
@@ -454,8 +456,8 @@ public sealed class AccountAttentionSliceTests
             Asks = Asked, Registry = WorkRegistry,
         });
 
-        // No account is outside the set (POOL1a2): the field is written, and null, kept for the page's shape until POOL1c.
-        Assert.Contains(rows, row => row["account"] is JsonObject account && account.ContainsKey("outside") && account["outside"] is null);
+        // No account is outside the set (POOL1a2), and since POOL1c neither field the page no longer reads is written.
+        Assert.DoesNotContain(rows, row => row["account"] is JsonObject account && (account.ContainsKey("outside") || account.ContainsKey("readFirst")));
         Assert.Contains(rows, row => row["account"]?["noAccount"] is not null);
         foreach (var row in rows) Assert.Equal(Normal(row), Normal(AttentionStateSlice.Picked(row)));
     }
