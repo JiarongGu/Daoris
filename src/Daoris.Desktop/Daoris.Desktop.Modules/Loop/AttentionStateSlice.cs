@@ -120,7 +120,7 @@ public static class AttentionStateSlice
         // GITAUTH1a: a held group of git remotes that cannot authenticate.
         ["git"] = ["host", "class", "holds", "remote", "repositories", "words"],
         // SESSWATCH1a: a quiet session brought to the person, or a busy one nothing is heard from.
-        ["quiet"] = ["minutes", "busy", "intake", "words"],
+        ["quiet"] = ["minutes", "busy", "intake", "words", "heavy"],
     };
 
     /// <summary>Which shape a field holds, as <c>shape.field</c>, an object of it or a list of them; every other field is a value.</summary>
@@ -496,7 +496,7 @@ public static class AttentionStateSlice
     [
         .. watch.Rows().Select(row => (object)new
         {
-            row.Session, row.Kind, row.Quest, row.Minutes, row.Busy,
+            row.Session, row.Kind, row.Quest, row.Minutes, row.Busy, row.Heavy,
             Since = Moments.Write(row.Since),
             Words = processes.InboxOf(row.Session)?.State.Queued.Any(word => word.Persons) == true,
         }),

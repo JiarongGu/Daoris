@@ -63,6 +63,25 @@ const words = (pushed: PushedAttention, names: AttentionNames = {}) => attention
 const keyed = (rows: readonly PushedAttention[]) => attentionInOrder(rows).map((each) => `${each.kind}:${each.id}`);
 
 describe('what needs a person, worded', () => {
+  // SESSWATCH1a (the session-watch design §5.2): what happened, never what Daoris did, and where the person's words wait, where they go.
+  it('words a quiet session as quiet or busy, its waiting words where they go, and a heavy wait behind its holder', () => {
+    const quiet = (watch: Partial<QuietWait>) => row('quiet', 's1a2b3c4', '2026-09-21T10:00:00Z', {
+      where: 'engine', session: 's1a2b3c4', quest: '7a82cc', quiet: { minutes: 31, busy: false, intake: false, words: false, ...watch },
+    });
+    const names = { sessions: [session({ quest: '7a82cc' })], quests: [quest({ status: 'Taken' })] };
+    const title = 'Expose a streaming budget on the chunk API';
+
+    expect(words(quiet({ words: true }), names).detail).toBe(
+      `${title} has said nothing for 31 minutes, and nothing it runs uses the machine. `
+      + 'Your words wait to reach it. Ending it hands them to the work’s next part.');
+    expect(words(quiet({ busy: true, words: true }), names).detail)
+      .toBe(`${title} has said nothing for 31 minutes, while something it runs keeps the machine busy.`);
+    expect(words(quiet({ heavy: 's1a2b3c4' }), names).detail)
+      .toBe(`${title} has said nothing for 31 minutes, and nothing it runs uses the machine. It waits for the heavy run behind ${title}.`);
+    expect(words(quiet({ heavy: '' }), names).detail).toContain('behind a run started from a terminal');
+    expect(words(quiet({}), names)).toMatchObject({ kind: 'quiet', title, session: 's1a2b3c4', quest: '7a82cc' });
+  });
+
   it('names a parked session by its derived identity, with the analysis it is waiting on', () => {
     const pushed = row('parked', 's1a2b3c4', '2026-09-21T10:00:00Z', { workspace: 'default', where: 'engine', note: { note: 'two ways forward.' } });
 

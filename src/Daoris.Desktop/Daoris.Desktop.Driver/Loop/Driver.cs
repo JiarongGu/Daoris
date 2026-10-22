@@ -3160,7 +3160,10 @@ public sealed class Driver(
         using var watched = minutes is null && target.Opinion is null && target.Helper is null && target.Brainstorm is null && target.Piece is null
             ? Watch.Watch(
                 sessionId,
-                new WatchedRun(target.Ask is null ? SessionWatch.Quest : SessionWatch.Intake, target.Ask is null ? target.QuestId : null, adapter.Name))
+                new WatchedRun(target.Ask is null ? SessionWatch.Quest : SessionWatch.Intake, target.Ask is null ? target.QuestId : null, adapter.Name)
+                {
+                    Tree = cwd,
+                })
             : null;
         using var servers = new Disposer(() => SpawnServers.Remove(handed));
         using var ruled = new Disposer(() => SpawnSettings.Remove(rules.File));
@@ -3522,7 +3525,8 @@ public sealed class Driver(
         watch.Log = Log;
         var lines = new LookLines(said, "watch");
         var steps = watch.Look(
-            id => Context.Processes.JobOf(id) is { } job ? new JobRead(job.Holds, job.Cpu) : null, TimeSpan.FromSeconds(config.PollSeconds));
+            id => Context.Processes.JobOf(id) is { } job ? new JobRead(job.Holds, job.Cpu) : null, TimeSpan.FromSeconds(config.PollSeconds),
+            (id, tree) => HeavyWaitOf(id, tree));
         foreach (var step in steps)
         {
             var who = step.Kind == SessionWatch.Intake ? $"intake {step.Session}" : $"session {step.Session}";
@@ -3549,6 +3553,19 @@ public sealed class Driver(
         }
 
         return lines.Said;
+    }
+
+    /// <summary>
+    /// Whether a session waits for its repository's heavy-run slot (HEAVYSLOT1, the session-watch design §1.3), from the slot's records:
+    /// the holder's session, or null for a run from a terminal; null where it waits for none, or its tree is in no checkout.
+    /// </summary>
+    private HeavyWait? HeavyWaitOf(string session, string? tree)
+    {
+        if (tree is null || HeavySlot.KeyOf(tree) is not { } key) return null;
+        var look = HeavySlot.Look(home, key);
+        return look.Waiters.Any(waiter => string.Equals(waiter.Session, session, StringComparison.OrdinalIgnoreCase))
+            ? new HeavyWait(look.Holder?.Session)
+            : null;
     }
 
     /// <summary>The watcher (SESSWATCH1a): every running driven session's, shared by every look's driver through the record.</summary>

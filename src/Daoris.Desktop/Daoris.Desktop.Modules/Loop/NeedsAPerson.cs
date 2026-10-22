@@ -345,6 +345,8 @@ public static class NeedsAPerson
                 ["intake"] = Text(wait, "kind") == SessionWatch.Intake,
                 ["words"] = wait["words"]?.DeepClone(),
             };
+            // It waits for its repository's heavy-run slot behind a holder, named by the holder's session, empty for a terminal's run.
+            if (wait["heavy"] is JsonValue heavy) row["quiet"]!["heavy"] = heavy.DeepClone();
             rows.Add(row);
         }
 

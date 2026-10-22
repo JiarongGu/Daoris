@@ -83,6 +83,8 @@
   "work.attention.quietWhy": "{{session}} 已 {{minutes}} 分钟没有任何输出，它运行的程序也没有占用机器。",
   "work.attention.quietBusyWhy": "{{session}} 已 {{minutes}} 分钟没有任何输出，而它运行的程序一直占用着机器。",
   "work.attention.quietWords": "你的话还在等它接收。结束它，你的话会交给这项工作的下一段。",
+  "work.attention.quietHeavy": "它在 {{holder}} 之后等待重型检查。",
+  "work.attention.quietHeavyTerminal": "它在一个从终端启动的运行之后等待重型检查。",
   "work.attention.quietStopped": "这次运行已停止，它的工作等你处理。",
   "work.attention.quietCarried": "这次运行结束了，下次查看时工作会在同一工作树中继续。",
   "work.attention.quietLeft": "已让它继续运行：它再次有输出后，Daoris 才会重新查看。",

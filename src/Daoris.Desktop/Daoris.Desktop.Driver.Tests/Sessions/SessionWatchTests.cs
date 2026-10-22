@@ -187,6 +187,36 @@ public sealed class SessionWatchTests : IDisposable
         Assert.True(holding.IsCompleted);
     }
 
+    /// <summary>
+    /// Case 5's second half (§1.3): a call waiting for its repository's heavy-run slot behind another run is a wait, never marked, and at
+    /// three times its bound it is brought to the person all the same, naming the holder: a terminal's run has no session to help.
+    /// </summary>
+    [Fact]
+    public void A_session_waiting_for_the_heavy_slot_is_a_wait_until_three_times_its_bound_then_brought_naming_the_holder()
+    {
+        using var run = Quest();
+        var asked = 0;
+        HeavyWait? Waits(string session, string? tree)
+        {
+            asked++;
+            return session == "s1" ? new HeavyWait("s9") : null;
+        }
+
+        var steps = new List<QuietStep>();
+        for (var at = 0; at < 124; at++)
+        {
+            _now += Pace;
+            steps.AddRange(_watch.Look(Job, Pace, Waits));
+        }
+
+        Assert.Equal([SessionWatch.Brought], steps.Select(step => step.Step));
+        var row = _watch.RowOf("s1")!;
+        Assert.Equal(("s9", false), (row.Heavy, row.Busy));
+        Assert.Null(_watch.QuietSince("s1"));
+        // Read only once it had gone unheard for half its bound.
+        Assert.InRange(asked, 100, 124 - 19);
+    }
+
     // ——— Case 11: the clock.
 
     [Fact]

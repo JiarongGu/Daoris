@@ -83,6 +83,8 @@
   "work.attention.quietWhy": "{{session}} has said nothing for {{minutes}} minutes, and nothing it runs uses the machine.",
   "work.attention.quietBusyWhy": "{{session}} has said nothing for {{minutes}} minutes, while something it runs keeps the machine busy.",
   "work.attention.quietWords": "Your words wait to reach it. Ending it hands them to the work’s next part.",
+  "work.attention.quietHeavy": "It waits for the heavy run behind {{holder}}.",
+  "work.attention.quietHeavyTerminal": "It waits for the heavy run behind a run started from a terminal.",
   "work.attention.quietStopped": "Its run is stopped, and its work waits for you.",
   "work.attention.quietCarried": "Its run ends, and the work goes on in the same tree at the next look.",
   "work.attention.quietLeft": "Left running: Daoris looks in again once it is heard from.",

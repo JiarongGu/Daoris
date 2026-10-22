@@ -413,7 +413,11 @@ function opinionOffers(item: Attention): AttentionOffer[] {
  * A quiet row's watch (SESSWATCH1a, D200): the minutes nothing was heard from its session, whether something it runs keeps the machine
  * busy (the *busy, nothing heard* row, offered no end), whether it is an intake, and whether the person's words wait to reach it.
  */
-export type QuietWait = { minutes: number; busy: boolean; intake: boolean; words: boolean };
+export type QuietWait = {
+  minutes: number; busy: boolean; intake: boolean; words: boolean;
+  /** It waits for its repository's heavy-run slot behind a holder (§1.3): the holder's session, or empty for a run from a terminal. */
+  heavy?: string | null;
+};
 
 /** What a quiet row offers (§2.3, §5.2), in its order. */
 function quietOffers(quiet: QuietWait): AttentionOffer[] {
@@ -768,6 +772,12 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         title: named(row.session ?? row.id),
         detail: [
           i18n.t(quiet?.busy ? 'work.attention.quietBusyWhy' : 'work.attention.quietWhy', values),
+          // It waits behind another run of its repository's heavy gates: named by its session, or said to be a terminal's.
+          ...(typeof quiet?.heavy === 'string'
+            ? [quiet.heavy
+              ? i18n.t('work.attention.quietHeavy', { holder: named(quiet.heavy) })
+              : i18n.t('work.attention.quietHeavyTerminal')]
+            : []),
           ...(quiet?.words && !quiet.busy ? [i18n.t('work.attention.quietWords')] : []),
         ].join(' '),
         session: row.session ?? row.id,

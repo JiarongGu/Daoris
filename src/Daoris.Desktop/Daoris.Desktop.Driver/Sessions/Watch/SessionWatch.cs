@@ -14,7 +14,16 @@ public sealed record WatchedRun(string Kind, string? Quest, string Adapter)
     /// quiet then judged by whether that work moves, on longer bounds. Null where its door holds no such wait.
     /// </summary>
     public Func<bool>? WaitsOnOwnWork { get; init; }
+
+    /// <summary>The folder it works in, whose repository's heavy-run slot it may wait for (§1.3); null where none was named.</summary>
+    public string? Tree { get; init; }
 }
+
+/// <summary>
+/// A session's place at its repository's heavy-run slot (HEAVYSLOT1, the session-watch design §1.3): it waits behind a holder, named by
+/// the holder's session where its environment named one, else null (a run from a terminal).
+/// </summary>
+public sealed record HeavyWait(string? Holder);
 
 /// <summary>What the job's accounting reads for a session now: whether its root joined, and its CPU, cumulative.</summary>
 public sealed record JobRead(bool Holds, TimeSpan? Cpu);
@@ -28,7 +37,15 @@ public sealed record JobRead(bool Holds, TimeSpan? Cpu);
 /// The <i>busy, nothing heard</i> row: something it runs keeps the machine busy, so it is never offered <i>End and carry on</i>.
 /// </param>
 /// <param name="Since">When it was last heard, by the wall clock, for the row's time.</param>
-public sealed record QuietRow(string Session, string Kind, string? Quest, int Minutes, bool Busy, DateTimeOffset Since);
+public sealed record QuietRow(string Session, string Kind, string? Quest, int Minutes, bool Busy, DateTimeOffset Since)
+{
+    /// <summary>
+    /// It waits for its repository's heavy-run slot (§1.3): brought to the person all the same past three times its bound, since the
+    /// holder may be a run from a terminal with no session to help. The holder's session, or empty for a run from a terminal; null where
+    /// it waits for no slot.
+    /// </summary>
+    public string? Heavy { get; init; }
+}
 
 /// <summary>One step the watcher took this look, written as a coded note, a console line and <c>session.quiet</c>.</summary>
 /// <param name="State">The state it was judged in: <c>A</c> (a turn, its door's own) or <c>C</c> (waiting on its own work).</param>
@@ -220,14 +237,18 @@ public sealed class SessionWatch
     /// </summary>
     /// <param name="jobs">The job's accounting for a session, or null where it runs no process here.</param>
     /// <param name="pace">The watch's pace, for the gap rule where the clock runs on in sleep.</param>
-    public IReadOnlyList<QuietStep> Look(Func<string, JobRead?> jobs, TimeSpan pace)
+    /// <param name="heavy">
+    /// Where a session's tree waits for its repository's heavy-run slot (§1.3), read from the slot's records only for a session unheard for
+    /// half its bound; null reads none.
+    /// </param>
+    public IReadOnlyList<QuietStep> Look(Func<string, JobRead?> jobs, TimeSpan pace, Func<string, string?, HeavyWait?>? heavy = null)
     {
         var steps = new List<QuietStep>();
         var now = Clock.Now;
         lock (_gate)
         {
             Gap(now, pace);
-            foreach (var watched in _watched.Values) Judge(watched, now, jobs, steps);
+            foreach (var watched in _watched.Values) Judge(watched, now, jobs, heavy, steps);
         }
 
         foreach (var step in steps) Write(step);
@@ -273,7 +294,7 @@ public sealed class SessionWatch
         }
     }
 
-    private void Judge(Watched watched, TimeSpan now, Func<string, JobRead?> jobs, List<QuietStep> steps)
+    private void Judge(Watched watched, TimeSpan now, Func<string, JobRead?> jobs, Func<string, string?, HeavyWait?>? heavy, List<QuietStep> steps)
     {
         if (watched.Gone) return;
         var heard = Volatile.Read(ref watched.HeardTicks);
@@ -310,6 +331,21 @@ public sealed class SessionWatch
         if (unheard < markAt / 2)
         {
             watched.Reads.Clear();
+            return;
+        }
+
+        // A call waiting for the heavy-run slot behind another run is a wait (§1.3), until three times its bound, when the person is
+        // brought it all the same: the holder may be a run from a terminal with no session to help.
+        if (heavy?.Invoke(watched.Session, watched.Run.Tree) is { } waits)
+        {
+            if (watched.Episode is { Marked: true, Row: null } marked) steps.Add(Over(watched, marked, "waits", now));
+            if (unheard < bringAt || watched.LeftAt is not null || watched.Episode?.Row is not null) return;
+            var waiting = watched.Episode ??= Begin(watched, heard, now, unheard, busy: false);
+            waiting.Row = new QuietRow(watched.Session, watched.Run.Kind, watched.Run.Quest, minutes, Busy: false, waiting.Since)
+            {
+                Heavy = waits.Holder ?? "",
+            };
+            steps.Add(new QuietStep(watched.Session, watched.Run.Kind, watched.Run.Adapter, "B", minutes, Brought, "open", waiting.Number));
             return;
         }
 
