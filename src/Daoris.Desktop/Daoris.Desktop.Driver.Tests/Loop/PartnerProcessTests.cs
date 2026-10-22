@@ -80,7 +80,8 @@ public sealed class PartnerProcessTests : IDisposable
             Adapter = "claude-code-acp",
             Cap = 3,
             TimeoutMinutes = 2,
-            Commands = new Dictionary<string, IReadOnlyList<string>> { ["codex-acp"] = ["node", Agent()] },
+            // `codex-acp` runs as `codex`'s accounts: both are the stand-in, so nothing here falls back to an agent on the PATH.
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["codex-acp"] = ["node", Agent()], ["codex"] = ["node", Agent()] },
         };
         var adapters = AdapterSet.Built();
         var choice = new ReviewerChoice("codex-acp", "another-maker", null, "codex-acp writes it.")
