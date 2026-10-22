@@ -400,7 +400,7 @@ UNBLOCK6–8; TOOLS6/8 precede 9, TOOLS10 precedes managed-Git sessions, 11 last
 - [ ] **TOOLS9 — managed-tool rehearsals**. Loopback lists, stubs and tamper refusals. D121 §6/§7.
 - [ ] **TOOLS10 — managed-Git probe** (owner permits one start per agent). D121 §7.
 - [ ] **TOOLS11 — real installs** (owner). Managed SSH Git, plugin Node, terminal PowerShell, gh/az landing. D121 §7.
-- [ ] **GITSTART5 — a managed git past its launcher** (driver; D121 §2.3). A managed git is laid out alike (`resources.json`: `cmd/git.exe`) and still starts through its launcher. Proof: `ToolsChildrenTests`' managed row expecting `<version>/mingw64/bin/git.exe` with the launcher's variables.
+- [ ] **GITSTART6 — the built-in MinGit's `ucrt64` git past its launcher** (driver, service, devkit, cli; after TOOLS10; D121's GITSTART5 note). MinGit 2.56.0 holds its git under `ucrt64/`, which `GitForWindows.Prefixes` and its three twins do not name, so the managed git still starts through its launcher. Measure what that launcher hands its child first (GITSTART1's FIX-LOG method). Proof: a `ucrt64` row in `GitForWindowsTests` and each twin's table.
 
 ## Code structure
 
