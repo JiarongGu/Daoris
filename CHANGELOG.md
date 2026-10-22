@@ -11,6 +11,11 @@ with the version and date at release.
   answer; where it waits on a go-ahead and a question both, the go-ahead comes first and its answer waits for the question's, so the
   session goes on once with both. Sessions ask through Daoris's new `question_ask` tool; one that asked only in its message is
   answered in words as before. In English and 中文.
+- A machine that left a workspace you share through a remote, or whose Daoris store was deleted, no longer keeps its workflows from
+  closing their quests. The workspace's *Setup*, under *Remote and reach*, now lists *Machines not declared*: each machine the remote
+  counts that has not said it knows a workflow that closes its quests. *Retire* takes one out of what the remote counts, and the
+  workspace's next bind goes through. A retired machine that syncs again is counted again. `daoris-driver sync status` names the
+  machines too. In English and 中文.
 - An update that stopped part way is now put back only while nothing else acts on Daoris's home: a terminal's `daoris-driver`
   command changing it is waited for, up to thirty seconds. If it still holds the home, Daoris does not start on a half-replaced
   application; it says which command held the home and asks you to start it again once that has finished.

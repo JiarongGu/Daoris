@@ -58,6 +58,14 @@ internal sealed class StoreRemote(
         return QuestWire.ReadPushed(QuestWire.Pushed(judged with { Closure = await remote.ClosureAsync(ct) }))!;
     }
 
+    // As the shared host's door does (FABRIC-CLOSE1i2): the retirement kept, and the handshake answered after it.
+    public async Task<QuestRetirement> RetireMachineAsync(string machine, CancellationToken ct = default)
+    {
+        Calls++;
+        var retired = await remote.RetireMachineAsync(machine, DateTimeOffset.UtcNow, ct);
+        return QuestWire.ReadRetired(QuestWire.Retired(retired, await remote.ClosureAsync(ct)))!;
+    }
+
     public async Task PushSessionsAsync(IReadOnlyList<FedSessionRecord> records, CancellationToken ct = default)
     {
         Calls++;

@@ -138,6 +138,24 @@ public static class QuestWire
     });
 
     /// <summary>
+    /// The remote's answer to a person's retirement of a machine (FABRIC-CLOSE1i2): whether it retired one, false where it had heard
+    /// nothing from it, and the handshake as it stands after it.
+    /// </summary>
+    public static string Retired(bool retired, QuestClosure closure) => Written(writer =>
+    {
+        writer.WriteStartObject();
+        writer.WriteBoolean("retired", retired);
+        WriteClosure(writer, closure);
+        writer.WriteEndObject();
+    });
+
+    /// <summary>A retirement's answer read back, or null where it carries no whole handshake.</summary>
+    public static QuestRetirement? ReadRetired(string json) =>
+        ParseObject(json) is { } root && ReadClosure(root) is { } closure
+            ? new QuestRetirement(root.TryGetProperty("retired", out var retired) && retired.ValueKind == JsonValueKind.True, closure)
+            : null;
+
+    /// <summary>
     /// The remote's handshake (FABRIC-CLOSE1i), beside a page or a push's answer: <c>closure: { all, undeclared }</c>. Only where the remote
     /// answers it, so a remote's answer without it crosses exactly as it did.
     /// </summary>

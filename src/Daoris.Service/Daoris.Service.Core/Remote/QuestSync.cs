@@ -59,6 +59,20 @@ public static class QuestSync
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// A person's retirement of <paramref name="machine"/> at <paramref name="workspace"/>'s remote (FABRIC-CLOSE1i2): asked there, and the
+    /// handshake it answers kept as the last pass keeps what it heard, so a bind reads it at once. A wall, or a remote before the door,
+    /// is the <see cref="RemoteException"/> the caller says; a machine the remote has heard nothing from is answered not retired, and
+    /// what it answers is kept all the same.
+    /// </summary>
+    public static async Task<QuestRetirement> RetireMachineAsync(
+        QuestStore store, IRemote remote, string workspace, string machine, CancellationToken ct = default)
+    {
+        var answered = await remote.RetireMachineAsync(machine, ct).ConfigureAwait(false);
+        await store.HeardClosureAsync(workspace, answered.Closure, ct).ConfigureAwait(false);
+        return answered;
+    }
+
     /// <summary>Where a circle stands (SYNC6a), with what may leave read the way a pass reads it.</summary>
     public static async Task<QuestStanding> StandingAsync(
         QuestStore store, KnowledgeService service, string workspace, CancellationToken ct = default)
