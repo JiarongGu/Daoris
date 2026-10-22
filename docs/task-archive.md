@@ -19402,6 +19402,12 @@ which `browser.ts` and `remotemap.ts` still write through; the seam is `platform
 1,168 after). Unproven until the install: a plugin added and switched from a terminal beside the open window. Detail: D194's PUSH1f2f
 note. On Opus.
 
+## FABRIC-CUTOVER1e — a graph run's selection, involvement and drawing from its record (2026-10-22, D190)
+
+> - [ ] **FABRIC-CUTOVER1e — a graph run's selection, involvement and drawing from its record** (driver, cli, web-shell; after 1c; D190, design §2.3, §4, §6). `Otherwise` takes a graph newest (`WorkflowProcesses.cs:125`); a graph version's person part read from its gate and go-ahead nodes where `Involvement.Lowers` reads steps (`WorkflowGate.cs:240`); the run's Workflow view and `daoris driver workflow run` draw a schema-2 run from its record, its subjects named, its branches said to be its graph's, an opinion or look not begun until 1d said so, an added look beside it (WORKFLOW2c). Proof: both twins' tests; the window's Workflow view of a schema-2 run.
+
+**Outcome** 2026-10-22: built, the cli lane untouched (its verb is the driver program's): a graph's person part read from its nodes, and a
+graph run drawn from its record, a fork and its join by its wires. No window was looked at. Detail: D190's CUTOVER1e note. On Opus.
 ## LEASEHOME2 — one home for the loop's lease and a verb's (2026-10-22, D171)
 
 > - [ ] **LEASEHOME2 — one home for the loop's lease and a verb's** (driver). The headless loop takes its lease in the driver config's folder (`DriverConfig.HomeOf`), a verb in `DAORIS_HOME`; with `DAORIS_DRIVER_CONFIG` elsewhere the two never meet, and a verb run with another `DAORIS_HOME` is unseen by the swap. The RPC design §5. Proof: a `DriverHostTests` row with the config elsewhere.

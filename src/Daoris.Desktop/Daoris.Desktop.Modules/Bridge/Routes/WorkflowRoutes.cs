@@ -289,7 +289,19 @@ public sealed class WorkflowRoutes(DriverContext context)
                 step.GoAhead,
                 step.Words,
                 step.Code,
+                // FABRIC-CUTOVER1e: a graph run's node's own kind and the subject it observes; null on a steps run's step.
+                step.Node,
+                step.On,
             }).ToArray(),
+            // FABRIC-CUTOVER1e: a run bound to a graph version, drawn from its record: its graph's wires and what its record says of it.
+            Graph = run.Graph is { } graph
+                ? new
+                {
+                    graph.Run, graph.Entries, graph.End,
+                    Wires = graph.Wires.Select(wire => new { wire.From, wire.To, wire.Kind }).ToArray(),
+                    graph.Quest, graph.Branch, graph.Judged, graph.Unread, graph.Ended,
+                }
+                : null,
         };
     }
 }

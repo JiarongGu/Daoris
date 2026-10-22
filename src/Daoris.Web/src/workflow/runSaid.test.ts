@@ -2,8 +2,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import i18n from '../locales/i18n';
-import type { RunStep } from './run';
-import { addedSaid, runSaid, runShort, stateSaid } from './runSaid';
+import type { GraphRun, RunStep } from './run';
+import { addedSaid, graphSaid, runSaid, runShort, stateSaid } from './runSaid';
 import { WORKING } from './runFixtures';
 
 // WORKFLOW1c5 (D157's WORKFLOW1c5 note, `.claude/knowledge/twins.md`): the English a run says is one table with the driver, its
@@ -16,6 +16,7 @@ const TABLE = JSON.parse(readFileSync(
   states: Record<string, string>;
   added: Record<string, string>;
   rows: Row[];
+  graph: (Partial<Pick<GraphRun, 'quest' | 'branch' | 'judged' | 'unread' | 'ended'>> & { said: string[] })[];
 };
 
 const t = i18n.getFixedT('en');
@@ -34,7 +35,16 @@ const stepOf = (row: Row): RunStep => ({
   goAhead: row.goAhead as number | undefined,
   words: row.words as string | undefined,
   code: row.code as string | undefined,
+  node: row.node as string | undefined,
+  on: row.on as string | undefined,
 } as RunStep);
+
+/** A graph run's own part as the table's `graph` rows give it (FABRIC-CUTOVER1e). */
+const graphOf = (row: TABLE_GRAPH): GraphRun => ({
+  run: 'q2', entries: ['claimed'], end: 'handed', wires: [],
+  quest: row.quest ?? null, branch: row.branch ?? null, judged: row.judged ?? false, unread: row.unread ?? false, ended: row.ended ?? null,
+});
+type TABLE_GRAPH = (typeof TABLE.graph)[number];
 
 describe("a run's English, as the driver's table holds it", () => {
   it.each(TABLE.rows.map((row, index) => [`${index} ${row.kind}.${row.detail || '(none)'} ${row.state ?? ''} ${row.code ?? ''}`, row] as const))(
@@ -43,6 +53,22 @@ describe("a run's English, as the driver's table holds it", () => {
       expect(runSaid(t, stepOf(row))).toBe(row.said);
     },
   );
+
+  // FABRIC-CUTOVER1e: what a graph run says above its nodes, line for line, as the driver's `WorkflowRunWords.GraphSaid` says it.
+  it.each(TABLE.graph.map((row, index) => [index, row] as const))('says graph row %s in the table’s words', (_index, row) => {
+    expect(graphSaid(t, graphOf(row))).toEqual(row.said);
+  });
+
+  it('says a graph run in Chinese too, every line and a node on its subject', () => {
+    const zh = i18n.getFixedT('zh');
+    for (const row of TABLE.graph) {
+      const lines = graphSaid(zh, graphOf(row));
+      expect(lines).toHaveLength(row.said.length);
+      for (const line of lines) expect(line).toMatch(/[一-鿿]/);
+    }
+    const handed = TABLE.rows.find((row) => row.node === 'handed' && row.detail === 'active' && row.commit)!;
+    expect(runSaid(zh, stepOf(handed))).toBe('在 `daoris/q2-work` 的 `11111111` 上观察中。');
+  });
 
   it('words each state and each look added as the table has it', () => {
     for (const [state, word] of Object.entries(TABLE.states)) expect(stateSaid(t, state)).toBe(word);

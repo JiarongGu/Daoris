@@ -517,7 +517,7 @@ public sealed class NodeRuntime(
             Quests = work,
             Branch = branch,
             Branches = branches,
-            AfterHanded = AfterHanded(graph),
+            AfterHanded = RunSubjects.AfterHanded(graph),
             GoAheads = goAheads,
             Root = root,
             Identity = identity,
@@ -535,22 +535,6 @@ public sealed class NodeRuntime(
         // When a branch unit's work was opened: its session branch's opening, else its newest landing.
         static DateTimeOffset Opened(WorkUnit unit) =>
             unit.Records.Branch?.At ?? unit.Records.Landings.Select(landing => landing.LandedAt).DefaultIfEmpty(DateTimeOffset.MinValue).Max();
-    }
-
-    /// <summary>The nodes a wire path leads to from <c>handed</c> (the cutover design §2.2): what observes the run's branch at its landing.</summary>
-    private static HashSet<string> AfterHanded(NodeGraph graph)
-    {
-        var after = new HashSet<string>(StringComparer.Ordinal);
-        var next = new Queue<string>(graph.Nodes.Where(node => node.Kind == NodeKinds.Handed).Select(node => node.Id));
-        while (next.TryDequeue(out var from))
-        {
-            foreach (var wire in graph.Wires.Where(wire => wire.From is { Unit: null } source && source.Node == from && wire.To is { Unit: null }))
-            {
-                if (after.Add(wire.To.Node)) next.Enqueue(wire.To.Node);
-            }
-        }
-
-        return after;
     }
 
     /// <summary>
@@ -1001,15 +985,8 @@ public sealed class NodeRuntime(
         return (before, WireEvaluation.Evaluate(nodes, governed.Graph.Wires, before, run));
     }
 
-    /// <summary>The subject a run's node observes (the cutover design §2.2's table): by its kind, and a plugin's or a check's by its place after <c>handed</c>.</summary>
-    private static RunSubject SubjectOf(NodeDeclaration node, RunScope scope) => node.Kind switch
-    {
-        NodeKinds.Claimed or NodeKinds.QuestClose => RunSubject.Quest,
-        NodeKinds.GoAhead or NodeKinds.Human or NodeKinds.WaitUnit or NodeKinds.Stop or NodeKinds.All => RunSubject.Run,
-        NodeKinds.Opinion or NodeKinds.Look or NodeKinds.Handed => RunSubject.Branch,
-        NodeKinds.Pushed or NodeKinds.PullRequest or NodeKinds.Line => RunSubject.Landing,
-        _ => scope.AfterHanded.Contains(node.Id) ? RunSubject.Landing : RunSubject.Branch,
-    };
+    /// <summary>The subject a run's node observes (the cutover design §2.2's table, <see cref="RunSubjects"/>, which the run's view reads too).</summary>
+    private static RunSubject SubjectOf(NodeDeclaration node, RunScope scope) => RunSubjects.Of(node, scope.AfterHanded);
 
     /// <summary>
     /// The landing a run's <c>handed</c> reached on (the cutover design §2.2): the branch unit its reach names and the tip its evidence names, the

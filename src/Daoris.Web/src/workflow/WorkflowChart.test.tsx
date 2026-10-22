@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../locales/i18n';
 import { FULL, NOTHING_SET, WITH_A_FAILURE_PATH } from './fixtures';
-import { answerOf, GO_AHEAD_REFUSAL, IN_REVIEW, LANDED } from './runFixtures';
+import { answerOf, GO_AHEAD_REFUSAL, GRAPH_RUN, IN_REVIEW, LANDED } from './runFixtures';
 import { WorkflowRunView } from './WorkflowRunView';
 import { WorkflowTab } from './WorkflowTab';
 
@@ -128,7 +128,8 @@ describe("the Workflow tab's flowchart", () => {
     const { container, unmount } = render(<WorkflowTab page="repository" name="engine" current={WITH_A_FAILURE_PATH} />);
     expect(ids()).toContain('checks:failed');
     expect(node('Sent back once, then you').className).toMatch(/border-dashed/);
-    expect(feet(node('A step this page has no words for: check'))).toEqual([
+    // FABRIC-CUTOVER1e: a check is titled as a graph run's check node is, where it was a step this page had no words for.
+    expect(feet(node('The checks'))).toEqual([
       'Finished, automatically', 'Sent back once, then you, if it fails',
     ]);
     // A rank of two, the next step and the outcome beside it: 39.5rem, so the rail at a 680 px window's main area.
@@ -195,8 +196,22 @@ describe("the Workflow view's run on the flowchart", () => {
     expect(opinion).not.toHaveTextContent(/by you/);
     expect(node('Your look in dev', run())).toHaveTextContent('Skipped for this work, by you.');
     // The go-ahead's refusal waits for the person: its failure path, dashed, to its outcome.
-    expect(feet(node('A step this page has no words for: go-ahead', run()))).toEqual(['Finished, automatically', 'Waits for you, if you refuse it']);
+    // FABRIC-CUTOVER1e: a go-ahead is titled as a graph run's go-ahead is, where it was a step this page had no words for.
+    expect(feet(node('Your go-ahead', run()))).toEqual(['Finished, automatically', 'Waits for you, if you refuse it']);
     expect(screen.queryByText(/taken/)).toBeNull();
+  });
+
+  // FABRIC-CUTOVER1e (D186's FLOWCHART1d note): a graph run's drawing is the first that holds a group: its fork and its join are drawn as
+  // its graph's wires hold them, each node lit by its record.
+  it("draws a graph run's fork and join by its wires, each node lit by its record", () => {
+    paneWidth = 1232;
+    const { container } = render(<WorkflowRunView answer={answerOf(GRAPH_RUN)} />);
+    expect(placement(container)).toBe('down');
+    expect(ids()).toEqual(['claimed', 'build', 'lint', 'both', 'halt', 'opinion', 'handed', 'deployed', ':finished']);
+    expect(feet(node('The work'))).toEqual(['built by acme.ci, automatically', 'linted by acme.ci, automatically']);
+    expect(feet(node('The join'))).toEqual(['Stop, if it fails', 'Second opinion, automatically']);
+    expect(node('built by acme.ci')).toHaveAttribute('aria-current', 'step');
+    expect(node('built by acme.ci')).toHaveTextContent('Observed on daoris/q1-fix-the-header at 01234567.');
   });
 
   it('reaches the end of the line once the run finished', () => {
