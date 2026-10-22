@@ -96,6 +96,8 @@ public sealed class ProcessStartsCensusTests
         ["Daoris.Desktop.Driver/Loop/Driver.cs"] = StartClass.Background,
         ["Daoris.Desktop.Driver/Plugins/HookProcess.cs"] = StartClass.Background,
         ["Daoris.Desktop.Driver/Accounts/Usage/CodexUsage.cs"] = StartClass.Background,
+        // A git identity's key made, or its host's keys read and its test run, at the person's own verb (GITAUTH1c).
+        ["Daoris.Desktop.Driver/Platform/GitIdentityActs.cs"] = StartClass.Person,
         // A conversation's agent, a session going on with the person's words, a press, a terminal, and the host the window
         // waits on.
         ["Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.cs"] = StartClass.Person,

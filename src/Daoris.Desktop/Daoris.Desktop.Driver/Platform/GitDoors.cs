@@ -87,6 +87,10 @@ public static class GitDoors
         var verdict = Judge(home, act, GitAddressKeys.Of(call.Host, call.Path), variable, remote: null, host);
         if (!verdict.Allowed) return Refuse(error, verdict.Line!);
 
+        var serves = Serving(home, folder, call, variable);
+        if (serves.Kind == GitServeKind.Identity) return IdentitySsh(home, serves.Identity!, call, variable, error, folder, act, host);
+
+        // Under own, and where nothing serves (which keeps today's ambient credentials until GITAUTH1e, §6.8): what git would have run.
         var (file, prefix, problem) = SshCommand(folder, variable);
         if (problem is not null)
         {
@@ -95,8 +99,14 @@ public static class GitDoors
             return Refuse(error, problem);
         }
 
+        return Run(SshStart(file!, folder, [.. prefix, .. call.Options, call.Host, call.Command]), error);
+    }
+
+    /// <summary>The ssh the door starts, under an identity or as git would have: its file, its folder and its words.</summary>
+    private static ProcessStartInfo SshStart(string file, string folder, IReadOnlyList<string> words)
+    {
         // Not the tools' environment (TOOLS5): the door is git's child, and its ssh takes git's environment as git would have handed it.
-        var info = new ProcessStartInfo(file!)
+        var info = new ProcessStartInfo(file)
         {
             UseShellExecute = false,
             WorkingDirectory = folder,
@@ -104,11 +114,128 @@ public static class GitDoors
             // spawn with no stream redirected and no window is given a console of its own, which cuts that stdio (GITAUTH1b's merge).
             CreateNoWindow = false,
         };
-        foreach (var word in prefix) info.ArgumentList.Add(word);
-        foreach (var word in call.Options) info.ArgumentList.Add(word);
-        info.ArgumentList.Add(call.Host);
-        info.ArgumentList.Add(call.Command);
-        return Run(info, error);
+        foreach (var word in words) info.ArgumentList.Add(word);
+        return info;
+    }
+
+    /// <summary>
+    /// What serves an ssh act (§3.2, §4.2 step 1): the repository its working folder belongs to (<see cref="GitFolders"/>), the
+    /// remotes whose address is the act's, and the act's host with git's port, resolved from the files alone, taking no lease.
+    /// </summary>
+    public static GitServes Serving(string home, string folder, SshCall call, Func<string, string?> variable)
+    {
+        var identities = GitIdentities.Read(home);
+        var pointers = GitIdentityUse.Read(home);
+        if (identities.Count == 0 && pointers.Count == 0) return GitServes.Nothing([]);
+
+        var port = PortOf(call.Options);
+        var host = GitHosts.Of(call.Host, port);
+        var (repository, workspace) = GitFolders.RepositoryOf(home, folder);
+        IReadOnlyList<string> remotes = repository is not null && pointers.Repository.ContainsKey(repository)
+            ? RemotesAt(folder, GitAddressKeys.Of(call.Host, call.Path), variable)
+            : [];
+        return GitIdentityUse.Resolve(identities, pointers, repository, workspace, remotes, host, GitIdentity.Ssh);
+    }
+
+    /// <summary>The port git handed the door by <c>-p</c>, or null for the default.</summary>
+    internal static string? PortOf(IReadOnlyList<string> options)
+    {
+        for (var index = 0; index + 1 < options.Count; index++)
+        {
+            if (options[index] == "-p") return options[index + 1];
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// The repository's remotes whose fetch or push address has <paramref name="key"/> (<see cref="GitAddressKeys"/>), read from git's
+    /// configuration in the act's folder (the door's one git start under a repository's pointer).
+    /// </summary>
+    internal static IReadOnlyList<string> RemotesAt(string folder, string? key, Func<string, string?> variable)
+    {
+        if (key is null || Find("git", variable("PATH")) is not { } git) return [];
+        var said = Ask(git, folder, ["config", "--get-regexp", @"^remote\..*\.(url|pushurl)$"]);
+        if (said is null) return [];
+        var names = new List<string>();
+        foreach (var line in said.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var space = line.IndexOf(' ');
+            if (space < 0) continue;
+            var name = line[..space];
+            var remote = name["remote.".Length..name.LastIndexOf('.')];
+            if (string.Equals(GitAddressKeys.Of(line[(space + 1)..].Trim()), key, StringComparison.OrdinalIgnoreCase) && !names.Contains(remote))
+                names.Add(remote);
+        }
+
+        return names;
+    }
+
+    /// <summary>
+    /// An identity's act (§4.2 step 3): the ssh the person chose, else git's own, started by its absolute path with Daoris's options
+    /// first, the identity's key alone, no agent and Daoris's known hosts checked strictly; then git's <c>-p</c>, <c>-4</c>, <c>-6</c> and
+    /// <c>SendEnv</c>. A chosen ssh that is not OpenSSH cannot carry an identity, and is refused naming it.
+    /// </summary>
+    private static int IdentitySsh(
+        string home, GitIdentity identity, SshCall call, Func<string, string?> variable, TextWriter error, string folder, GitAct act, string host)
+    {
+        var (ssh, problem) = OpenSsh(home, variable);
+        if (ssh is null)
+        {
+            GitLog.Refused(home, variable, problem!.Contains("OpenSSH", StringComparison.Ordinal) ? "own-input" : "unreached", act, null, host);
+            return Refuse(error, problem);
+        }
+
+        if (!File.Exists(GitKeys.KeyPath(home, identity.Id)))
+        {
+            GitLog.Refused(home, variable, "no-identity", act, null, host);
+            return Refuse(error, $"daoris-git-ssh: the git identity {identity.Label} has no key on this machine: add it again in Daoris.");
+        }
+
+        GitSshFiles.Used(home, identity.Id);
+        return Run(SshStart(ssh, folder, IdentityArguments(home, identity.Id, call)), error);
+    }
+
+    /// <summary>Every argument an identity's ssh is started with (§4.2 step 3), in order: the door's argument table holds it.</summary>
+    public static IReadOnlyList<string> IdentityArguments(string home, string id, SshCall call) =>
+        [.. GitSshFiles.IdentityOptions(home, id), .. call.Options, call.Host, call.Command];
+
+    /// <summary>
+    /// The OpenSSH ssh an identity's act runs (D121 §2.5's choice): the command the person named in <c>tools.json</c>'s
+    /// <c>git.core.sshCommand</c>, by its first word, where it is OpenSSH; else the <c>ssh</c> git's own path finds.
+    /// </summary>
+    public static (string? File, string? Problem) OpenSsh(string home, Func<string, string?> variable)
+    {
+        if (ChosenSsh(home) is { } chosen)
+        {
+            var (first, _) = FirstWord(chosen);
+            var name = Path.GetFileNameWithoutExtension(first.Replace('\\', '/').Split('/')[^1]).ToLowerInvariant();
+            if (name is not "ssh")
+                return (null, $"daoris-git-ssh: the ssh you chose ({name}) is not OpenSSH, so it cannot carry a git identity.");
+            if (Path.IsPathFullyQualified(first) && File.Exists(first)) return (first, null);
+            if (Find(first, variable("PATH")) is { } found) return (found, null);
+            return (null, $"daoris-git-ssh: the ssh you chose is not there ({first}).");
+        }
+
+        return Find("ssh", variable("PATH")) is { } ssh ? (ssh, null) : (null, "daoris-git-ssh: finds no ssh on git's PATH.");
+    }
+
+    /// <summary>The ssh command the person chose in <c>tools.json</c> (<c>git.core.sshCommand</c>), or null.</summary>
+    private static string? ChosenSsh(string home)
+    {
+        try
+        {
+            var path = DaorisHome.Entry(home, HomeEntry.Tools);
+            if (!File.Exists(path)) return null;
+            return System.Text.Json.Nodes.JsonNode.Parse(AtomicFile.ReadText(path)) is System.Text.Json.Nodes.JsonObject root
+                && root["git"] is System.Text.Json.Nodes.JsonObject git
+                && git["core.sshCommand"] is System.Text.Json.Nodes.JsonValue value && value.TryGetValue<string>(out var text)
+                && !string.IsNullOrWhiteSpace(text) ? text.Trim() : null;
+        }
+        catch (Exception failure) when (failure is IOException or UnauthorizedAccessException or System.Text.Json.JsonException or DriverException)
+        {
+            return null;
+        }
     }
 
     /// <summary>
@@ -145,7 +272,13 @@ public static class GitDoors
     private static string? ConfiguredSsh(string folder, Func<string, string?> variable)
     {
         if (Find("git", variable("PATH")) is not { } git) return null;
-        // Not the tools' environment (TOOLS5): git's own git, on git's PATH, asked one setting.
+        return Ask(git, folder, ["config", "--get", "core.sshCommand"])?.Trim();
+    }
+
+    /// <summary>What git answers in <paramref name="folder"/> on its standard output; null where it fails or cannot start.</summary>
+    private static string? Ask(string git, string folder, IReadOnlyList<string> arguments)
+    {
+        // Not the tools' environment (TOOLS5): git's own git, on git's PATH, asked its configuration.
         var info = new ProcessStartInfo(git)
         {
             UseShellExecute = false,
@@ -158,15 +291,16 @@ public static class GitDoors
             StandardErrorEncoding = Encoding.UTF8,
             StandardInputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
         };
-        foreach (var word in new[] { "config", "--get", "core.sshCommand" }) info.ArgumentList.Add(word);
+        foreach (var word in arguments) info.ArgumentList.Add(word);
         try
         {
             using var process = Process.Start(info)!;
             process.StandardInput.Close();
+            var error = process.StandardError.ReadToEndAsync();
             var said = process.StandardOutput.ReadToEnd();
-            process.StandardError.ReadToEnd();
+            error.Wait();
             process.WaitForExit();
-            return process.ExitCode == 0 ? said.Trim() : null;
+            return process.ExitCode == 0 ? said : null;
         }
         catch (System.ComponentModel.Win32Exception)
         {

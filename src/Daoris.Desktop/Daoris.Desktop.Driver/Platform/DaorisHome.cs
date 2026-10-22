@@ -360,12 +360,17 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry UsageHistory = new("usage-history", HomeCategory.Data, "data/usage-history", "usage-history");
     public static readonly HomeEntry Keeping = new("keeping", HomeCategory.Data, "data/keeping.json", "keeping.json");
     public static readonly HomeEntry Notices = new("notices", HomeCategory.Data, "data/notices.json", "notices.json");
+    public static readonly HomeEntry GitIdentities = new("git-identities", HomeCategory.Data, "data/git-identities.json", "data/git-identities.json");
     public static readonly HomeEntry Keys = new("keys", HomeCategory.Profiles, "profiles/keys.json", "keys.json");
     public static readonly HomeEntry Remotes = new("remotes", HomeCategory.Profiles, "profiles/remotes.json", "remotes.json");
     public static readonly HomeEntry AgentHomes = new("agent-homes", HomeCategory.Profiles, "profiles/agents/*/*", "harnesses/*/*");
     public static readonly HomeEntry BrowserEngine = new("browser-engine", HomeCategory.Profiles, "profiles/browser/engine", "browser/engine");
     public static readonly HomeEntry BrowserEdge = new("browser-edge", HomeCategory.Profiles, "profiles/browser/edge", "browser/edge");
     public static readonly HomeEntry EdgeCookies = new("edge-cookies", HomeCategory.Profiles, "profiles/browser/edge-session-cookies.bin", "browser/edge-session-cookies.bin");
+    public static readonly HomeEntry GitKeys = new("git-keys", HomeCategory.Profiles, "profiles/git/keys", "profiles/git/keys");
+    public static readonly HomeEntry GitSshConfig = new("git-ssh-config", HomeCategory.Profiles, "profiles/git/ssh_config", "profiles/git/ssh_config");
+    public static readonly HomeEntry GitKnownHosts = new("git-known-hosts", HomeCategory.Profiles, "profiles/git/known_hosts", "profiles/git/known_hosts");
+    public static readonly HomeEntry GitConfig = new("git-config", HomeCategory.Profiles, "profiles/git/global.gitconfig", "profiles/git/global.gitconfig");
     public static readonly HomeEntry Window = new("window", HomeCategory.Profiles, "profiles/window", "", "chromium", "config");
     public static readonly HomeEntry Trees = new("trees", HomeCategory.Work, "work/trees/*/*/*", "trees/*/*/*");
     public static readonly HomeEntry HelpRoom = new("help-room", HomeCategory.Work, "work/rooms/help", "help", "CLAUDE.md");
@@ -396,6 +401,8 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry HomeMove = new("home-move", HomeCategory.Run, "run/home-move.json", "run/home-move.json");
     public static readonly HomeEntry GitHeld = new("git-held", HomeCategory.Run, "run/git/held.json", "run/git/held.json");
     public static readonly HomeEntry GitGrants = new("git-grants", HomeCategory.Run, "run/git/grants", "run/git/grants");
+    public static readonly HomeEntry GitUsed = new("git-used", HomeCategory.Run, "run/git/used", "run/git/used");
+    public static readonly HomeEntry GitCheckouts = new("git-checkouts", HomeCategory.Run, "run/git/checkouts.json", "run/git/checkouts.json");
     public static readonly HomeEntry Logs = new("logs", HomeCategory.Logs, "logs", "logs");
 
     /// <summary>Every entry, in the table's order, which the twins hold in the same order.</summary>
@@ -405,12 +412,12 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
         PluginApprovals, Usage,
         Landings, SessionBranches, LinesMoved, RegistryFollowed, Abandoned, Update, Knowledge, Sessions, Helpers, Partners, Handed, Setup,
         Workflows, HelpProposals, ConfiguredAccess, OpinionGates, OpinionDues, BrowserSettings, BrowserFavorites, HomeId, Brainstorms,
-        UsageHistory, Keeping, Notices,
-        Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, Window,
+        UsageHistory, Keeping, Notices, GitIdentities,
+        Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, GitKeys, GitSshConfig, GitKnownHosts, GitConfig, Window,
         Trees, HelpRoom, HelpRooms, Intake, OpinionPackets, QuestFiles, AskFiles, SessionFiles, Proof, UsageRead, BrainstormRooms,
         Toolchain, ToolVersions, Bin,
         HomeLease, DriverLock, Running, Locks, Spawn, Starts, Hooks, Probing, SessionPids, Requests, EdgeRecord, Pipe, HomeMove,
-        GitHeld, GitGrants, Logs,
+        GitHeld, GitGrants, GitUsed, GitCheckouts, Logs,
     ];
 
     /// <summary>The entry of this name, or null where the table holds none.</summary>
