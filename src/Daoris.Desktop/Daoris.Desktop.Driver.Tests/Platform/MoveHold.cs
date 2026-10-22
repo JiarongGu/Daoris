@@ -5,10 +5,8 @@ using Microsoft.Win32.SafeHandles;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A file held as Windows' own move holds the file it has just put in place (BINDRACE1): open for its deletion, sharing everything,
-/// until the move lets it go. A reader that opens it in that moment without sharing deletion is refused, though the file is there and
-/// whole; a reader that shares deletion reads it. Measured in a probe of <c>File.Move</c> without overwriting beside a reader that read
-/// the file as it appeared, under one spinning thread per core: 478 refusals in 700 for <c>File.ReadAllText</c>, none sharing deletion.
+/// A file held as Windows' own move holds the file it has just put in place (BINDRACE1, <see cref="Daoris.Driver.AtomicFile.ReadText"/>):
+/// open for its deletion, sharing everything, so a test meets every run the moment a reader beside the move meets under load.
 /// </summary>
 internal static class MoveHold
 {

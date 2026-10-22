@@ -77,10 +77,7 @@ public sealed class AtomicFileTests : IDisposable
         Assert.False(Directory.Exists(from));
     }
 
-    /// <summary>
-    /// BINDRACE1: a file moved into place is held a moment after for its deletion by the move itself (<see cref="MoveHold"/>), and a reader
-    /// that does not share deletion is refused then. The reading half shares it, so the file is read whole in that moment.
-    /// </summary>
+    /// <summary>BINDRACE1: a file is read whole while the move that landed it still holds it (<see cref="MoveHold"/>), which refuses a plain read.</summary>
     [Fact]
     public void A_file_is_read_whole_while_its_move_into_place_still_holds_it()
     {

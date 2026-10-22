@@ -17,23 +17,18 @@ namespace Daoris.Driver;
 ///
 /// <para>Text is written as BOM-less UTF-8, and what it says (LF, a final newline) is the caller's.</para>
 ///
-/// <para><b>A reader beside these writes shares deletion</b> (<see cref="ReadText"/>, BINDRACE1). Windows' move opens the file it
-/// moves for deletion and closes it only after the file is in place, so for a moment the file is there and whole and still held. A
-/// reader opening it then without sharing deletion, as <c>File.ReadAllText</c> does, is refused, and a start of a run that lost the
-/// race for its binding read the winner's as unread and held.</para>
+/// <para>A file these writes keep is read beside its writer through <see cref="ReadText"/> (BINDRACE1).</para>
 /// </remarks>
 public static class AtomicFile
 {
     private static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
 
-    /// <summary>
-    /// A file these writes keep, read whole, sharing its writing and deletion with a writer, so the moment a move or a replace still
-    /// holds it never refuses the read (BINDRACE1).
-    /// </summary>
+    /// <summary>A file these writes keep, read whole, sharing its writing and deletion with a writer.</summary>
     /// <remarks>
-    /// 🔴 Measured (BINDRACE1): a reader that waited for a file moved into place without overwriting and read it as it appeared, under
-    /// one spinning thread per core, was refused with a sharing violation in 478 reads of 700 through <c>File.ReadAllText</c>, and in none
-    /// of 700 sharing deletion. Nothing was ever missing or partial: the move lands a whole file, and only its own open handle refused.
+    /// 🔴 Measured (BINDRACE1): Windows' move opens the file it moves for deletion and closes it only once the file is in place, so for a
+    /// moment the file is there, whole, and still held. A reader that does not share deletion, as <c>File.ReadAllText</c> does not, is
+    /// refused in that moment with a sharing violation: 478 reads of 700 that read a file as it appeared under load, and none of 700 that
+    /// shared deletion. A start that lost the race for its run's binding read the winner's as unread, and held.
     /// </remarks>
     /// <exception cref="FileNotFoundException">No file is there.</exception>
     /// <exception cref="IOException">It could not be read.</exception>

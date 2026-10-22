@@ -16,8 +16,8 @@ public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
     public bool Bound(string run) => WorkflowRunBindings.IsRunId(run) && File.Exists(WorkflowRunBindings.PathOf(home, run));
 
     /// <summary>
-    /// A run's binding, or null where it has none here, or its file does not read as one. Read sharing its deletion (BINDRACE1): a start
-    /// that lost the race for its run's binding reads the winner's as it lands, while the move that put it there still holds it.
+    /// A run's binding, or null where it has none here, or its file does not read as one. Read sharing its deletion
+    /// (<see cref="AtomicFile.ReadText"/>, BINDRACE1), so a start that lost the race for its run's binding reads the winner's as it lands.
     /// </summary>
     public WorkflowRunBinding? Read(string run)
     {

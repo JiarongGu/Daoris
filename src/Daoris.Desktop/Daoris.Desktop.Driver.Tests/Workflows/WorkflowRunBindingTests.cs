@@ -273,9 +273,8 @@ public sealed class WorkflowRunBindingTests : IDisposable
     }
 
     /// <summary>
-    /// BINDRACE1: the start that loses the race reads the winner's binding as it lands, while Windows' move still holds the file open for
-    /// its deletion (<see cref="MoveHold"/>), a moment in which a reader not sharing deletion is refused. Every read of a binding shares it,
-    /// so the start takes under the binding there, where it read as kept and unread and held; the version it names stays kept, and another
+    /// BINDRACE1: the start that loses the race reads the winner's binding while the move that landed it still holds it
+    /// (<see cref="MoveHold"/>), and takes under it where it read it as unread and held. The version it names stays kept, and another
     /// bind is told the run is bound.
     /// </summary>
     [Fact]
