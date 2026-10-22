@@ -108,7 +108,12 @@ describe('Notifications', () => {
 
     const groups = screen.getAllByRole('region');
     expect(groups.map((group) => group.getAttribute('aria-label'))).toEqual(['Waiting for your confirmation', 'What needs you', 'Done and failed']);
-    expect(within(groups[2]!).getByRole('button', { name: /Done and failed/ })).toHaveTextContent('1');
+    // Its unread said with its word, in a neutral ink: news waits on nobody, and open's ink is a wait's (BADGEUX1).
+    const head = within(groups[2]!).getByRole('button', { name: /Done and failed/ });
+    expect(head).toHaveTextContent('Done and failed1 unread');
+    expect(head.querySelector('.text-ink-open')).toBeNull();
+    // What needs you keeps its figure in open's ink, the bell's.
+    expect(within(groups[1]!).getByRole('button', { name: /What needs you/ }).querySelector('.text-ink-open')).not.toBeNull();
     expect(within(groups[2]!).getAllByRole('listitem')).toHaveLength(2);
     await userEvent.click(within(groups[2]!).getAllByRole('button', { name: 'Dismiss' })[1]!);
     expect(onDismiss).toHaveBeenCalledWith(notices[1]);
@@ -154,7 +159,10 @@ describe('Notifications', () => {
 
       expect(screen.getAllByRole('region').map((each) => each.getAttribute('aria-label')))
         .toEqual(['Waiting for your confirmation', 'What needs you', 'Messages', 'Done and failed']);
-      expect(within(group()).getByRole('button', { name: /^Messages/ })).toHaveTextContent('4');
+      // Headed by its unread in words, in a neutral ink (BADGEUX1), as each item says its own.
+      expect(within(group()).getByRole('button', { name: /^Messages/ })).toHaveTextContent('Messages4 unread');
+      expect(within(group()).getByRole('button', { name: /^Messages/ }).querySelector('.text-ink-open')).toBeNull();
+      expect(within(group()).getByText('2 unread').className).not.toContain('text-ink-open');
       const items = within(group()).getAllByRole('listitem');
       expect(items.map((item) => item.querySelector('[data-message-name]')!.textContent)).toEqual([
         'A conversation in game answered you', 'Export the feed as CSV', 'A teammate’s ask #7e6f51',

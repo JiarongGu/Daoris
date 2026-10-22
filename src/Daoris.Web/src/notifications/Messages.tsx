@@ -113,7 +113,8 @@ export function Messages({ asks, answered, names, onOpenAsk, onMarkAsk, onOpenAn
             <li key={item.key} data-message-ask={item.ask.ask} className="grid gap-1 rounded-sm border border-line bg-raised px-2.5 py-2">
               <p className="m-0 flex items-baseline gap-1.5 text-body text-ink">
                 <span data-message-name="" className="min-w-0 flex-1 wrap-anywhere">{askWords(item.ask, t, names)}</span>
-                <span className="shrink-0 font-mono text-meta tabular-nums text-ink-open">
+                {/* News waits on nobody: its count in a neutral ink, never open's, a wait's (BADGEUX1). */}
+                <span className="shrink-0 font-mono text-meta tabular-nums text-ink-soft">
                   {t('notifications.messages.unread', { count: item.ask.unread })}
                 </span>
               </p>
