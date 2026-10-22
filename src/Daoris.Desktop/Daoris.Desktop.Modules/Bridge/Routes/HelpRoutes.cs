@@ -678,33 +678,14 @@ public sealed class HelpRoutes(DriverContext context)
                 context.Actions.Relay(harness, action), config, ended);
         }
 
-        // HARNESS_ACTION's own profile-default (HELP10): the door's owner (AGT7), the same write, and a person looking again
-        // as the route's edit is; the report reads the default fresh, so no account is asked (ROSTER1).
-        public async Task SetDefaultAccountAsync(string harness, string account, string? workspace, CancellationToken ct)
-        {
-            var config = DriverConfig.Load(_loop.ConfigPath);
-            var toolchain = _loop.Harnesses.Toolchain(harness)
-                ?? throw new DriverException($"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's.");
-            try
-            {
-                AgentsRoutes.ProfileDefault(_loop, toolchain.Owner(harness), account, workspace);
-            }
-            catch (ShenoraException refused)
-            {
-                // The route's refusal in its words, as the driver's, so the card settles refused with them (TOOL4g).
-                throw new DriverException(refused.Message);
-            }
-
-            await AgentsRoutes.ChangedAsync(_loop, harness, "profile-default", config, ct).ConfigureAwait(false);
-        }
-
-        // ACCOUNT_USE's own `use` (TOOL4g): the same refusals and the same write, then the loop asked to look.
-        public Task SetAccountUseAsync(string harness, UseChange change, string? workspace, CancellationToken ct)
+        // ACCOUNT_USE's own `use` (TOOL4g): the same refusals and the same write, then the loop asked to look. The set's one entry since
+        // POOL1b (D197); the `default` door, HARNESS_ACTION's `profile-default`, left with it.
+        public Task SetAccountUseAsync(string harness, UseChange change, CancellationToken ct)
         {
             var owner = AccountsRoutes.OwnerOf(_loop.Harnesses, harness);
             try
             {
-                HarnessSettings.Change(_loop.Harnesses.SettingsPath, read => AccountsRoutes.UseEdited(read, owner, change, workspace));
+                HarnessSettings.Change(_loop.Harnesses.SettingsPath, read => AccountsRoutes.UseEdited(read, owner, change, workspace: null));
             }
             catch (ShenoraException refused)
             {
@@ -715,24 +696,16 @@ public sealed class HelpRoutes(DriverContext context)
             return Task.CompletedTask;
         }
 
-        // ACCOUNT_USE's own `order` and `inherit` (TOOL4l-b): the list written whole through the screen's own edit, or a workspace
-        // returned to the machine's accounts with its default and list cleared at once (D130 §3.2), then the loop asked to look.
-        public Task SetAccountOrderAsync(string harness, IReadOnlyList<string> accounts, bool clear, string? workspace, CancellationToken ct)
+        // ACCOUNT_USE's own `order` (TOOL4l-b; POOL1b, D197): the set's order through the screen's own edit, the accounts named first,
+        // or the ids' order again where cleared, written whole by the change and clearing no setting; then the loop asked to look.
+        public Task SetAccountOrderAsync(string harness, IReadOnlyList<string> accounts, bool clear, CancellationToken ct)
         {
             var owner = AccountsRoutes.OwnerOf(_loop.Harnesses, harness);
             try
             {
-                if (clear)
-                {
-                    var circle = workspace ?? throw new DriverException("returning to this machine's accounts names the workspace that returns.");
-                    HarnessSettings.Change(_loop.Harnesses.SettingsPath,
-                        read => read.WithWorkspaceDefault(circle, owner, null).WithRotation(owner, null, circle));
-                }
-                else
-                {
-                    HarnessSettings.Change(_loop.Harnesses.SettingsPath,
-                        read => AccountsRoutes.OrderEdited(read, HarnessSettings.Profiles(_loop.Harnesses.Home, owner), owner, accounts, workspace));
-                }
+                HarnessSettings.Change(_loop.Harnesses.SettingsPath, clear
+                    ? read => read.WithRotation(owner, null)
+                    : read => AccountsRoutes.OrderEdited(read, HarnessSettings.Profiles(_loop.Harnesses.Home, owner), owner, accounts, workspace: null));
             }
             catch (ShenoraException refused)
             {

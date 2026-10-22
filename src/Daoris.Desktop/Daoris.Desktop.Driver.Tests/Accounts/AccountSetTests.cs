@@ -293,7 +293,7 @@ public sealed class AccountSetTests : IDisposable
 
         foreach (var workspace in new string?[] { null, "w", "other" })
         {
-            var scope = folded.ResolveScope(Agent, workspace);
+            var scope = OlderScope.Of(folded, Agent, workspace);
             Assert.Equal(ChoiceFrom.Machine, scope.From);
             Assert.Equal(["a", "b"], scope.List);
             Assert.Equal("order", scope.Use.Use);
@@ -313,7 +313,7 @@ public sealed class AccountSetTests : IDisposable
 
         var set = HarnessSettings.LoadSet(File_);
 
-        Assert.Equal(["b", "a"], set.ResolveScope(Agent, "w").List);
+        Assert.Equal(["b", "a"], set.Set(Agent).List);
         Assert.Equal(text, File.ReadAllText(File_));
     }
 

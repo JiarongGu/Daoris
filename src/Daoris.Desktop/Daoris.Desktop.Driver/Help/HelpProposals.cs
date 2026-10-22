@@ -39,6 +39,12 @@ public sealed record HelpProposal(
     public UseChange? AccountUse { get; init; }
 
     /// <summary>
+    /// Whether a <c>use</c> or <c>order</c> proposal was written for the one set (POOL1b, D197 point 6, the account-pool design §5.3): the
+    /// service's <c>set: true</c>. One without it was written for a scope's list, which is gone, and is refused at its Apply.
+    /// </summary>
+    public bool ForSet { get; init; }
+
+    /// <summary>
     /// The <c>use</c> door's curve where the file's breaks a rule (SWITCH1d): the twins' sentence, which its card refuses with;
     /// null where it names no curve or a curve that reads.
     /// </summary>

@@ -13,8 +13,8 @@ public sealed class HelpTerminalsSpelledTests : HelpProposalsFixture
         new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase) { [agent] = accounts };
 
     /// <summary>
-    /// A machine whose accounts and workspaces need spelling: the machine's list <c>work</c>, <c>my team</c>'s
-    /// <c>work, my acct</c>, <c>R&amp;D</c>'s <c>work, R&amp;D</c>, and <c>our lab</c> with no list of its own.
+    /// A machine whose accounts need spelling: the set's order <c>work, my acct, R&amp;D</c> (POOL1b, D197). Before POOL1b it held
+    /// the workspaces' own lists, whose names a <c>default</c>'s and a <c>use</c>'s <c>--workspace</c> spelled; neither names one now.
     /// </summary>
     private static readonly HelpMachineFacts Spelled = Machine with
     {
@@ -27,58 +27,41 @@ public sealed class HelpTerminalsSpelledTests : HelpProposalsFixture
                 Accounts = ["work", "my acct", "R&D"], SettingsKnown = true, Product = "Claude Code",
             },
         ],
-        Wiring = new HarnessSettings
-        {
-            Rotation = Lists("claude-code", "work"),
-            WorkspaceRotation = new Dictionary<string, IReadOnlyDictionary<string, IReadOnlyList<string>>>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["my team"] = Lists("claude-code", "work", "my acct"),
-                ["R&D"] = Lists("claude-code", "work", "R&D"),
-            },
-        },
+        Wiring = new HarnessSettings { Rotation = Lists("claude-code", "work", "my acct", "R&D") },
     };
 
     private static HelpPlan Plan(HelpProposal proposal) => HelpProposals.Plan(proposal, DriverConfig.Empty, Spelled);
 
     private static HelpProposal Agent(string door, string? account, string? workspace, UseChange? use = null) =>
-        new("p7", "agent", door, "claude-code", workspace, account, null, "the person asked", "h1", "proposed") { AccountUse = use };
+        new("p7", "agent", door, "claude-code", workspace, account, null, "the person asked", "h1", "proposed") { AccountUse = use, ForSet = true };
 
+    /// <summary>A stored <c>default</c>'s refusal names the account <c>order</c> would put first, spelled for any shell (POOL1b, §5.3).</summary>
     [Theory]
-    [InlineData("my acct", "my team", "daoris agent profile default claude-code \"my acct\" --workspace \"my team\"")]
-    [InlineData("R&D", "R&D", "daoris agent profile default claude-code <account> --workspace <workspace>")]
-    public void A_default_s_terminal_spells_its_account_and_workspace(string account, string workspace, string terminal)
+    [InlineData("my acct", "`daoris agent profile order claude-code \"my acct\"` puts one first")]
+    [InlineData("R&D", "`daoris agent profile order claude-code <account>` puts one first")]
+    public void A_default_s_refusal_spells_the_account_order_would_put_first(string account, string door)
     {
-        var plan = Plan(Agent("default", account, workspace));
-
-        Assert.Null(plan.Refusal);
-        Assert.Equal(terminal, plan.Terminal);
+        Assert.Contains(door, Plan(Agent("default", account, null)).Refusal);
     }
 
     [Theory]
-    [InlineData("my acct", null, "`daoris agent profile order claude-code work \"my acct\"` adds it")]
-    [InlineData("my acct", "R&D", "`daoris agent profile order claude-code work <account> \"my acct\" --workspace <workspace>` adds it")]
-    public void A_default_outside_its_list_names_the_order_that_adds_it_spelled(string account, string? workspace, string door)
+    [InlineData("my acct", "daoris agent profile use claude-code --keep \"my acct\"")]
+    [InlineData("R&D", "daoris agent profile use claude-code --keep <account>")]
+    public void A_use_s_terminal_spells_its_kept_account(string keep, string terminal)
     {
-        Assert.Contains(door, Plan(Agent("default", account, workspace)).Refusal);
-    }
-
-    [Theory]
-    [InlineData("my acct", "my team", "daoris agent profile use claude-code --keep \"my acct\" --workspace \"my team\"")]
-    [InlineData("R&D", "R&D", "daoris agent profile use claude-code --keep <account> --workspace <workspace>")]
-    public void A_use_s_terminal_spells_its_kept_account_and_workspace(string keep, string workspace, string terminal)
-    {
-        var plan = Plan(Agent("use", null, workspace, new UseChange(Keep: keep)));
+        var plan = Plan(Agent("use", null, null, new UseChange(Keep: keep)));
 
         Assert.Null(plan.Refusal);
         Assert.Equal(terminal, plan.Terminal);
     }
 
     [Fact]
-    public void A_use_over_no_list_names_the_order_that_makes_one_spelled()
+    public void An_order_s_terminal_spells_its_accounts()
     {
-        Assert.Contains(
-            "`daoris agent profile order claude-code <account>… --workspace \"our lab\"` gives it one",
-            Plan(Agent("use", null, "our lab", new UseChange(Use: "goal"))).Refusal);
+        var plan = Plan(Agent("order", null, null) with { AccountOrder = new AccountOrder(["my acct", "R&D"], false) });
+
+        Assert.Null(plan.Refusal);
+        Assert.Equal("daoris agent profile order claude-code \"my acct\" <account>", plan.Terminal);
     }
 
     [Theory]

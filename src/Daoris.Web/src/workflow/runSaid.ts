@@ -103,9 +103,12 @@ export function runSaid(t: TFunction, step: RunStep): string | null {
   }
 }
 
-/** The details a graph run's node is said by (FABRIC-CUTOVER1e, the driver's `WorkflowGraphDetails`): its record's state, and one more. */
+/**
+ * The details a graph run's node is said by (FABRIC-CUTOVER1e, the driver's `WorkflowGraphDetails`): its record's state. FABRIC-CUTOVER1d took
+ * `not-begun` away with the guards it named, so an answer from a driver before it says that node as recorded.
+ */
 export const GRAPH_DETAILS = [
-  'blocked', 'ready', 'not-begun', 'active', 'reached', 'failed', 'rejected', 'unknown', 'skipped', 'stopped', 'invalidated',
+  'blocked', 'ready', 'active', 'reached', 'failed', 'rejected', 'unknown', 'skipped', 'stopped', 'invalidated',
 ] as const;
 
 /** What a graph run's node observes, named (the cutover design §2.2): its quest, its branch at its tip, or its landing there; null for the run. */
@@ -129,10 +132,6 @@ function nodeSaid(t: TFunction, step: RunStep, node: string): string | null {
   const on = onSaid(t, step);
   switch (step.detail) {
     case 'ready': return t('workflow.run.graph.said.ready');
-    // FABRIC-CUTOVER1c's guards: CUTOVER1d begins these on a graph run, and these words go with them.
-    case 'not-begun':
-      return t(node === 'opinion' ? 'workflow.run.graph.said.notBegun.opinion'
-        : node === 'look' ? 'workflow.run.graph.said.notBegun.look' : 'workflow.run.graph.said.notBegun.plugin');
     case 'active':
       if (node === 'go-ahead') {
         return step.words ? t('workflow.run.graph.said.goAhead', { act: step.words }) : t('workflow.run.graph.said.goAheadNone');
@@ -152,8 +151,8 @@ function nodeSaid(t: TFunction, step: RunStep, node: string): string | null {
 
 /**
  * What a run bound to a graph version says of itself, above its nodes (FABRIC-CUTOVER1e; the cutover design §2.3, §3): what its record says
- * where it says something, the subjects its nodes observe, that its branches are its graph's, and that every landing door still holds it,
- * which CUTOVER1d's doors take away. The driver's `WorkflowRunWords.GraphSaid`, line for line.
+ * where it says something, the subjects its nodes observe, and that its branches are its graph's; its landing doors read its record since
+ * FABRIC-CUTOVER1d, so no line says they hold it. The driver's `WorkflowRunWords.GraphSaid`, line for line.
  */
 export function graphSaid(t: TFunction, graph: GraphRun): string[] {
   const said: string[] = [];
@@ -165,7 +164,7 @@ export function graphSaid(t: TFunction, graph: GraphRun): string[] {
       ? t('workflow.run.graph.subjects', { quest: graph.quest, branch: graph.branch })
       : t('workflow.run.graph.subjectsNoBranch', { quest: graph.quest }));
   }
-  said.push(t('workflow.run.graph.branches'), t('workflow.run.graph.held'));
+  said.push(t('workflow.run.graph.branches'));
   return said;
 }
 

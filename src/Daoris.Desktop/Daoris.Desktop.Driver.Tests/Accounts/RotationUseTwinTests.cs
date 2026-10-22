@@ -131,7 +131,7 @@ public sealed class RotationUseTwinTests : IDisposable
     [MemberData(nameof(Reads))]
     public void A_scope_is_read_as_the_cli_reads_it(string why, string file, string agent, string? workspace, string from, string? list, string? begins, string use)
     {
-        var scope = Read(file).ResolveScope(agent, workspace);
+        var scope = OlderScope.Of(Read(file), agent, workspace);
 
         var wanted = list is null ? [] : Names(list);
         Assert.True(from == Rung(scope.From), $"{why}: {Rung(scope.From)}");
@@ -235,8 +235,8 @@ public sealed class RotationUseTwinTests : IDisposable
         var settings = new HarnessSettings().WithRotation("claude-code", ["account-1", "account-2"])
             .WithUse("claude-code", new UseChange(Keep: "account-9"));
 
-        Assert.Null(settings.ResolveScope("claude-code", null).Use.Keep);
-        Assert.Equal(["account-1", "account-2"], settings.ResolveScope("claude-code", null).List);
+        Assert.Null(settings.Set("claude-code").Use.Keep);
+        Assert.Equal(["account-1", "account-2"], settings.Set("claude-code").List);
         Assert.Equal("account-9", settings.Uses["claude-code"]["keep"]?.GetString());
     }
 

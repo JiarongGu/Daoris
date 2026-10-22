@@ -113,6 +113,14 @@ public sealed partial class HelpCoverageTests
     private static readonly Door JoinDoor = new("agent", "order");
 
     /// <summary>
+    /// The page's <i>Use by default</i> (<c>profile-default</c>), refused on the bridge as <c>ACCOUNTS_ONE_SET</c> since POOL1a1 and
+    /// left in the page until POOL1c (D197): Ask Daoris's <c>default</c> door left with POOL1b, so the press answers to no door.
+    /// </summary>
+    private static readonly Exempt DefaultPress = new(
+        "Daoris's accounts are one set and its order says where starts begin (D197), so the bridge refuses a default as "
+        + "ACCOUNTS_ONE_SET and Ask Daoris proposes `order` instead; the page's press leaves with POOL1c.");
+
+    /// <summary>
     /// The driver lock's <c>--share</c> (DRV8, D104), decided: a flag on the start of a headless loop, not a setting.
     /// </summary>
     private static readonly Exempt Share = new(
@@ -831,7 +839,7 @@ public sealed partial class HelpCoverageTests
         ("agents", "useHarnessAction", "profile-add", new Exempt("an account is made by its own sign-in; " + SignIn)),
         ("agents", "useHarnessAction", "profile-remove", new Exempt(
             "it deletes an account with its sign-in, which only the person can make again (D89).")),
-        ("agents", "useHarnessAction", "profile-default", new Door("agent", "default")),
+        ("agents", "useHarnessAction", "profile-default", DefaultPress),
         // UX7b: the agent's page presses ACCT2's rename and ACCT1's join, at a new account's end and from a row.
         ("agents", "useHarnessAction", "profile-rename", RenameDoor),
         ("agents", "useHarnessAction", "profile-join", JoinDoor),
@@ -1019,9 +1027,7 @@ public sealed partial class HelpCoverageTests
     /// </summary>
     private static readonly (string Control, string Form, Answer Answer)[] Forms =
     [
-        // LEFT3: the terminal's `--clear` made this the screen's and the terminal's both (D50), and Ask Daoris's next.
-        ("agents: useHarnessAction profile-default", "clearing an account's default back to Daoris's accounts",
-            new Owed(HelpRoomOwed.DefaultClear)),
+        // LEFT3's clear of an account's default left with the default (POOL1b, D197 point 6): none is owed now.
     ];
 
     private static string Page => Path.Combine(HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Web", "src");
@@ -1783,22 +1789,27 @@ public sealed partial class HelpCoverageTests
     }
 
     /// <summary>
-    /// ACCT1, ACCT2: the terminal's new account doors — <c>profile rename</c>, <c>profile join</c>, and a sign-in's
-    /// <c>--join</c> and <c>--name</c> — are answered for while the CLI's usage spells them, and the room names each, so the
-    /// helper points the person at them before any screen presses them. A sign-in stays exempt (D89).
+    /// ACCT2: the terminal's account name door, <c>profile rename</c>, and a sign-in's <c>--name</c>, are answered for while the CLI's
+    /// usage spells them, and the room names each, so the helper points the person at them before any screen presses them. A sign-in
+    /// stays exempt (D89). ACCT1's <c>profile join</c> and a sign-in's <c>--join</c> and <c>--join-machine</c>, which this held spelled
+    /// too, are refused since POOL1b (D197 point 6), so neither the usage nor the room names them, nor <c>profile default</c>.
     /// </summary>
     [Fact]
-    public void The_account_name_and_join_doors_are_answered_for_and_named_in_the_room()
+    public void The_account_name_door_is_answered_for_and_named_in_the_room_and_the_join_doors_are_gone()
     {
         var usage = File.ReadAllText(Path.Combine(HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Cli", "src", "cli", "agent.ts"));
         var room = string.Join("\n", HelpRoomDoors.Doors.Select(door => door.Terminal));
 
         Assert.Contains("profile rename <agent> <account> <name>", usage);
-        Assert.Contains("profile join <agent> <account> [<workspace>…] [--machine]", usage);
-        Assert.Contains("login <agent> --new [--name N] [--join W] [--join-machine]", usage);
+        Assert.Contains("login <agent> --new [--name N]", usage);
         Assert.Contains("`daoris agent profile rename <agent> <account> <name>`", room);
-        Assert.Contains("`daoris agent profile join <agent> <account> <workspace>…|--machine`", room);
-        Assert.Contains("`daoris agent login <agent> --new [--name <name>] [--join <workspace>] [--join-machine]`", room);
+        Assert.Contains("`daoris agent login <agent> --new [--name <name>]`", room);
+        foreach (var gone in new[] { "profile join", "--join", "profile default" })
+        {
+            Assert.DoesNotContain(gone, usage, StringComparison.Ordinal);
+            Assert.DoesNotContain(gone, room, StringComparison.Ordinal);
+        }
+
         Assert.Contains("D66", RenameDoor.Reason);
         // Joining is the list with the account added (TOOL4l-b), so it is the `order` door.
         Assert.Equal(new Door("agent", "order"), JoinDoor);

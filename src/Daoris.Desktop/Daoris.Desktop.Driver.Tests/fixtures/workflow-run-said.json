@@ -118,9 +118,8 @@
 
     { "node": "claimed", "kind": "work", "state": "not-reached", "detail": "blocked", "said": null },
     { "node": "claimed", "kind": "work", "detail": "ready", "said": "Ready: nothing before it holds it." },
-    { "node": "opinion", "kind": "opinion", "state": "cannot-start", "detail": "not-begun", "said": "Not begun: this build does not ask a graph run's second opinion yet." },
-    { "node": "look", "kind": "look", "state": "cannot-start", "detail": "not-begun", "said": "Not begun: this build does not set up your look on a graph run yet." },
-    { "node": "acme.deploy/deploy", "kind": "acme.deploy/deploy", "state": "cannot-start", "detail": "not-begun", "said": "Not started: this build starts no plugin's step on a graph run yet." },
+    { "node": "opinion", "kind": "opinion", "detail": "ready", "said": "Ready: nothing before it holds it." },
+    { "node": "opinion", "kind": "opinion", "state": "cannot-start", "detail": "not-begun", "said": "Shown as recorded: cannot-start, not-begun." },
     { "node": "go-ahead", "kind": "go-ahead", "state": "waiting-on-you", "detail": "active", "words": "deploy the release", "said": "Waits for your go-ahead: deploy the release" },
     { "node": "go-ahead", "kind": "go-ahead", "state": "waiting-on-you", "detail": "active", "said": "Waits for your go-ahead." },
     { "node": "human", "kind": "human", "state": "waiting-on-you", "detail": "active", "said": "Waits for your task." },
@@ -153,24 +152,20 @@
     { "quest": "q2", "branch": "daoris/q2-work", "said": [
       "Daoris has not judged its graph yet: its next look does.",
       "Its graph observes quest #q2, its newest work here, and `daoris/q2-work`, the branch its newest session worked.",
-      "Its branches are its graph's, not the landing rule's: a push, a pull request or a deploy happens for this work only where its graph holds one.",
-      "Every landing door still holds this run: this build judges its graph and lands nothing for it yet."
+      "Its branches are its graph's, not the landing rule's: a push, a pull request or a deploy happens for this work only where its graph holds one."
     ] },
     { "judged": true, "quest": "q2", "said": [
       "Its graph observes quest #q2, its newest work here; no session of it has worked a branch here yet.",
-      "Its branches are its graph's, not the landing rule's: a push, a pull request or a deploy happens for this work only where its graph holds one.",
-      "Every landing door still holds this run: this build judges its graph and lands nothing for it yet."
+      "Its branches are its graph's, not the landing rule's: a push, a pull request or a deploy happens for this work only where its graph holds one."
     ] },
     { "unread": true, "said": [
       "Its node record does not read, so nothing on it is judged or started until a person mends it.",
-      "Its branches are its graph's, not the landing rule's: a push, a pull request or a deploy happens for this work only where its graph holds one.",
-      "Every landing door still holds this run: this build judges its graph and lands nothing for it yet."
+      "Its branches are its graph's, not the landing rule's: a push, a pull request or a deploy happens for this work only where its graph holds one."
     ] },
     { "judged": true, "ended": "q2", "quest": "q2", "branch": "daoris/q2-work", "said": [
       "It ended at quest #q2: nothing of its graph moves again until its chain comes back here.",
       "Its graph observes quest #q2, its newest work here, and `daoris/q2-work`, the branch its newest session worked.",
-      "Its branches are its graph's, not the landing rule's: a push, a pull request or a deploy happens for this work only where its graph holds one.",
-      "Every landing door still holds this run: this build judges its graph and lands nothing for it yet."
+      "Its branches are its graph's, not the landing rule's: a push, a pull request or a deploy happens for this work only where its graph holds one."
     ] }
   ]
 }

@@ -19499,6 +19499,13 @@ en and zh; `sync status` prints them. Proof: `QuestClosureHandshakeTests`, `Shar
 `RemoteSyncTests`, `SyncStateSliceTests`, `WorkspaceSetup.test.tsx`; the service's, driver's and modules' fast halves. On Opus. Detail:
 D173's FABRIC-CLOSE1i2 note.
 
+## FABRIC-CUTOVER1d — the doors read the run's record and land its commit (2026-10-22, D190)
+
+> - [ ] **FABRIC-CUTOVER1d — the doors read the run's record and land its commit** (driver, cli; after 1b, 1c, 1f; D190, design §4). A graph version read as a process (`WorkflowProcesses.cs:60`); the opinion and the look begun, their gates read at the branch's tip; the landing gate's graph part read from the run's record, never evaluated, holding with §4's sentences and asking a whole pass (`DriverWatch.cs:434`), the press keeping its answer and awaiting that pass within a bound (`OpinionPresses.cs:64-71`); the landing pinned to `handed`'s commit on every path, a merge included (`TreeLands.cs:175`, `:502-514`, `:855-860`); performed starts turned on; `quest.close` cannot start until 1h; the "does not run yet" words go (`WorkflowNamed.cs:117-121`, `namedworkflows.ts:130`, `:138`, `workflowdoor.ts:365`, `:691`). Proof: `WorkflowGateTests`; the door lands where the pass made `handed` active; a commit inserted between the gate's judgement and the landing lands nothing, on the branch and merge paths; a press after a *Reviewed* lands at the same press within the bound, else is refused with its answer kept; a person's task before `handed` holds *Accept…* naming it.
+
+**Outcome** 2026-10-22: built, the cli lane untouched (its words had moved into the driver's verb): a graph run lands only where its record holds
+`handed` active at the door's commit, pinned there on the branch and merge paths, a press waiting up to twenty seconds for the pass it asks; the
+runtime begins its gate nodes and starts its performed nodes. No window was looked at. Detail: D190's CUTOVER1d note. On Opus.
 ## ASKDISMISS1 — dismissing an Ask Daoris quest block only hides it (2026-10-22, D89)
 
 > - **ASKDISMISS1**: dismissing an Ask Daoris quest block only hides it; it never acts on the quest, which may be taken (the owner's report, 2026-10-22). Building.
@@ -19517,3 +19524,17 @@ older build wrote, through `HarnessSettings.Set`, and the default's readers in t
 the terminal's and Ask Daoris's callers, so they and the two twin tables stay for POOL1b. The listed classes rewritten to the set,
 with `OwnSpaceTests`, `HelpPlaceWorkspaceTests`, the modules' account classes and eleven `agents-text.json` rows; the driver's and
 the modules' fast halves pass. Not seen failing first, and no window was looked at. Detail: D197's POOL1a2 note. On Opus.
+
+## POOL1b — the terminal and Ask Daoris on one set (2026-10-22, D197)
+
+> - [ ] **POOL1b — the terminal and Ask Daoris on one set** (driver, service; after POOL1a2, archived; D197). The account verbs PUSH1f2e builds turned into D197's refusals, and the `set` mark on Ask Daoris's account proposals, as design §5.1, §5.3 and §11 say; `agent list`, `login` and `settings` on the set, and `ResolveScope`, `JoinProblemOf`, `WithJoined`, `PlacesOf`, `DefaultAllowed`, `DefaultEdited` and `ProfileDefault` leaving with these, their last callers, `AccountJoinTwinTests` and `ProfileDefaultTwinTests` with them (D197's POOL1a2 note). Proof: as §11 names it.
+
+**Outcome** 2026-10-22: built. `profile order` and `use` write the set; `profile default`, `profile join`, `--workspace` and
+`login --join`/`--join-machine` are refused in `OneSetWords`' sentences before any press is built, nothing written. `login` and
+`settings` naming no account take the order's first; `agent list` shows the set, the own sign-in apart and the unsaid receipts. Ask
+Daoris's service writes `set: true` and no workspace, `default` left both sides' doors, and an unmarked stored proposal is refused at
+its plan and Apply. The named helpers and both twin tables left. `HarnessProfileTests`' four default cases now press the order or are
+refused in D197's sentence, each saying why; `AgentAccountsBothWaysTests`' one-set theory holds the terminal's refusal. Proof: the
+driver's and the modules' fast halves pass; `HarnessProfileTests`, `DriverModuleAgentsTests`, `HelpDoorsTests` and
+`AgentsCommandTests` (Process) and the service's `HelpAgentProposalTests` pass filtered. No real sign-in was started; not seen
+failing first, and no window was looked at. Detail: D197's POOL1b note. On Opus.

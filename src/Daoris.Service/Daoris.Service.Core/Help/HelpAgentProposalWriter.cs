@@ -3,32 +3,34 @@ using static Daoris.Knowledge.HelpProposalFile;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The <c>agent</c> kind's writer (HELP6): an agent's Update, or a pin to one exact version — and since HELP10 the
-/// account it runs as by default.
+/// The <c>agent</c> kind's writer (HELP6): an agent's Update, or a pin to one exact version, and how its accounts are used, ordered and
+/// offered again (TOOL4l-a). Since POOL1b (D197 point 6, the account-pool design §5.3) its accounts are one set: a <c>use</c> or an
+/// <c>order</c> is written with <c>set: true</c>, the mark the driver applies only, and names no workspace; HELP10's <c>default</c> left.
 /// </summary>
 internal sealed class HelpAgentProposalWriter(HelpProposalFile file)
 {
+    /// <summary>The doors this writes, the driver's <c>HelpAgentProposals.Doors</c> exactly (TOOL4l-b; the kinds test holds both ways).</summary>
+    public static readonly IReadOnlyList<string> Doors = ["update", "pin", "use", "order", "ready"];
+
     /// <summary>
     /// Write one agent proposal (HELP6): <c>update</c> to its newest release, or <c>pin</c> to one exact
-    /// version — the Agents screen's two presses, which the driver judges by that door's roster. Since HELP10,
-    /// <c>default</c>: the account it runs as by default, for the machine or one workspace — the screen's
-    /// <i>Make default</i>, and <c>daoris agent profile default</c>.
+    /// version — the Agents screen's two presses, which the driver judges by that door's roster — or <c>use</c>, <c>order</c> or
+    /// <c>ready</c> on the agent's one set.
     /// </summary>
-    /// <param name="account">For <c>default</c>, the account, written as the proposal's value; for <c>ready</c>, the account whose cool-off ends (or <c>own</c>), written as <c>account</c>.</param>
-    /// <param name="workspace">For <c>default</c>, <c>use</c> and <c>order</c>: the one workspace it is for; null for the machine.</param>
-    /// <param name="use">For <c>use</c> (TOOL4l-a): <c>goal</c> or <c>order</c>, the scope's way of choosing.</param>
+    /// <param name="account">For <c>ready</c>, the account whose cool-off ends (or <c>own</c>), written as <c>account</c>.</param>
+    /// <param name="use">For <c>use</c> (TOOL4l-a): <c>goal</c> or <c>order</c>, the set's way of choosing.</param>
     /// <param name="keep">For <c>use</c>: the account kept; <paramref name="noKeep"/> keeps none, and neither leaves it as it is.</param>
     /// <param name="early">For <c>use</c>, the old name (D165 §6): switch before the limit, or not; the driver reads it on.</param>
     /// <param name="near">For <c>use</c>, the old name: the person's curve's five-hour window flat at this percent.</param>
-    /// <param name="accounts">For <c>order</c>: the walk's accounts, in order.</param>
-    /// <param name="clear">For <c>order</c>: the workspace goes back to the machine's accounts.</param>
+    /// <param name="accounts">For <c>order</c>: the accounts put first, in order; the rest follow in theirs.</param>
+    /// <param name="clear">For <c>order</c>: the order goes back to the accounts' ids.</param>
     /// <param name="switched">For <c>use</c> (SWITCH1d): <c>smart</c>, <c>curve</c> or <c>off</c>, when the scope switches accounts.</param>
     /// <param name="curve">For <c>use</c>: the person's points, one window each, spelled as the terminal's <c>--curve</c>
     /// (<c>weekly=0:30,50:70,100:100</c>); the driver judges the curve's rules.</param>
     /// <param name="noCurve">For <c>use</c>: the person's curve taken out, written as a curve of null.</param>
     public (string? Id, string Message) Propose(
         string action, string agent, string? version, string why, string? session, DateTimeOffset at,
-        string? account = null, string? workspace = null,
+        string? account = null,
         string? use = null, string? keep = null, bool noKeep = false, bool? early = null, int? near = null,
         IReadOnlyList<string>? accounts = null, bool clear = false,
         string? switched = null, IReadOnlyList<string>? curve = null, bool noCurve = false)
@@ -37,7 +39,6 @@ internal sealed class HelpAgentProposalWriter(HelpProposalFile file)
         var named = Blank(agent);
         var release = Blank(version);
         var whose = Blank(account);
-        var circle = Blank(workspace);
         var way = Blank(use);
         var kept = Blank(keep);
         var list = accounts?.Select(Blank).ToList() ?? [];
@@ -47,17 +48,19 @@ internal sealed class HelpAgentProposalWriter(HelpProposalFile file)
         if (string.IsNullOrWhiteSpace(why)) return NoReason;
         var usesAny = way is not null || kept is not null || noKeep || early is not null || near is not null
             || when is not null || windows.Count > 0 || noCurve;
-        var refused = door is not ("update" or "pin" or "default" or "use" or "order" or "ready")
-            ? "an agent's change is `update`, `pin`, `default`, `use`, `order` or `ready`: update moves it to its newest release, "
-              + "pin to one exact version, default names the account it runs as, use sets how a list of accounts is used, "
-              + "order sets the list, and ready ends an account's cool-off."
+        // POOL1b (D197 point 6): `default` left; the order says where starts begin, and the set serves every workspace.
+        var refused = door == "default"
+            ? "`default` is retired: every account of Daoris's serves every workspace (D197), and the order says where starts begin — "
+              + "propose `order` with the account first."
+            : !Doors.Contains(door)
+            ? "an agent's change is `update`, `pin`, `use`, `order` or `ready`: update moves it to its newest release, "
+              + "pin to one exact version, use sets how its accounts are used, order puts accounts first, "
+              + "and ready ends an account's cool-off."
             : named is null ? "the change names the agent it is for, as `daoris agent` spells it."
             : door == "pin" && release is null ? "`pin` names the version: one exact release, such as 2.1.300."
             : door != "pin" && release is not null ? $"`{door}` names no version — only `pin` names one."
-            : door == "default" && whose is null ? "`default` names the account the agent runs as, one the room lists under it."
             : door == "ready" && whose is null ? "`ready` names the account whose cool-off ends, or `own` for the tool's own sign-in."
-            : (door is not ("default" or "ready") && whose is not null) || (door is not ("default" or "use" or "order") && circle is not null)
-                ? $"`{door}` names no account or workspace it does not take — `default` and `ready` name an account, `default`, `use` and `order` a workspace."
+            : door != "ready" && whose is not null ? $"`{door}` names no account — only `ready` names one."
             : door != "use" && usesAny ? $"`{door}` takes no use, keep, switch or curve — only `use` does."
             : door != "order" && (list.Count > 0 || clear) ? $"`{door}` takes no accounts list or clear — only `order` does."
             : door == "use" && !usesAny
@@ -72,11 +75,10 @@ internal sealed class HelpAgentProposalWriter(HelpProposalFile file)
                 ? $"`{windows[bad]}` is not a window's curve: a curve is `<window>=<elapsed>:<used>,…`, a window each, such as "
                   + "`weekly=0:30,50:70,100:100`."
             : door == "order" && (list.Count > 0) == clear
-                ? (clear ? "`order` sets the list or clears a workspace's, never both." : "`order` names the accounts in walk order, or clears a workspace's list.")
-            : door == "order" && clear && circle is null ? "clearing a list names the workspace it goes back to the machine's accounts for."
+                ? (clear ? "`order` puts accounts first or returns to the ids' order, never both." : "`order` names the accounts to put first, in order, or clears it back to the ids' order.")
             : door == "order" && list.Any(each => each is null) ? "an account of the list is not blank."
             : Word(named, "an agent") ?? (release is null ? null : Word(release, "a version"))
-              ?? (whose is null ? null : Word(whose, "an account")) ?? (circle is null ? null : Word(circle, "a workspace"))
+              ?? (whose is null ? null : Word(whose, "an account"))
               ?? (way is null ? null : Word(way, "a way to use accounts")) ?? (kept is null ? null : Word(kept, "an account"))
               ?? list.Select(each => Word(each!, "an account")).FirstOrDefault(each => each is not null);
         if (refused is not null) return (null, $"{Capital(refused)} Nothing was proposed.");
@@ -86,9 +88,12 @@ internal sealed class HelpAgentProposalWriter(HelpProposalFile file)
             writer.WriteString("kind", "agent");
             writer.WriteString("door", door);
             writer.WriteString("target", named);
-            Nullable(writer, "workspace", circle);
-            // A pin's version, or a default's account: what the change sets.
-            Nullable(writer, "value", release ?? (door == "default" ? whose : null));
+            // The set serves every workspace (POOL1b), so a proposal names none.
+            writer.WriteNull("workspace");
+            // A pin's version: what the change sets.
+            Nullable(writer, "value", release);
+            // POOL1b (§5.3): a use or an order is written for the one set, and the driver applies only one so marked.
+            if (door is "use" or "order") writer.WriteBoolean("set", true);
             // The use, order and ready doors' own fields (TOOL4l-a): a field left out is no change, and keep none is a null.
             if (door == "ready") writer.WriteString("account", whose);
             if (way is not null) writer.WriteString("use", way);

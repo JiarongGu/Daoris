@@ -85,10 +85,12 @@ public sealed record NodeRuntimeLook(DriverConfig Config, bool Whole)
     /// <summary>
     /// The second opinion's and the look's gates for a branch unit's work as a landing door reads them (FABRIC-RUN1c, WIRE1g, WIRE1h; NODE1b:
     /// <see cref="OpinionGate.JudgeAsync"/> and <see cref="ReviewGate"/>'s live read), what its <c>opinion</c> and <c>look</c> nodes observe:
-    /// read once a pass for a unit, and only where one of them waits. Either is null where it was not read, and its node waits.
+    /// read once a pass for a unit, and only where one of them waits. Either is null where it was not read, and its node waits. Judged at the
+    /// commit given, where one is (FABRIC-CUTOVER1d: a run's branch at the tip the pass read, which its gate nodes bind, as a landing door
+    /// judges at a commit it pins); null judges the unit's newest tree's <c>HEAD</c>, as before.
     /// </summary>
-    public Func<WorkUnit, CancellationToken, Task<(OpinionGateState? Opinion, ReviewGateState? Review)>> Gates { get; init; } =
-        (_, _) => Task.FromResult<(OpinionGateState?, ReviewGateState?)>((null, null));
+    public Func<WorkUnit, string?, CancellationToken, Task<(OpinionGateState? Opinion, ReviewGateState? Review)>> Gates { get; init; } =
+        (_, _, _) => Task.FromResult<(OpinionGateState?, ReviewGateState?)>((null, null));
 
     /// <summary>
     /// The named workflow's version a quest unit's run is bound to (FABRIC-RUN1c; §E7, D157 §5.1: the decoder's read for a run, through
@@ -197,8 +199,9 @@ public static class NodeRuns
 /// here; a bound quest is closed by the graph it was bound to.</para>
 /// <para><b>Runs bound to graph versions</b> (FABRIC-CUTOVER1c; D190 points 1 to 3): such a run arms it too (<see cref="GraphRuns"/>), and is
 /// governed on its own record, <c>run:&lt;run&gt;</c>, each node observing the subject its kind names (<see cref="RunScope"/>), while Current's
-/// graphs govern none of its quests and branches (<see cref="RunOwners"/>). Its opinion and look are not begun and its performed nodes not started,
-/// since its landing doors do not read its record; its end is kept there, and its chain coming back here arms it again (<see cref="Return"/>).</para>
+/// graphs govern none of its quests and branches (<see cref="RunOwners"/>). Its opinion and look are begun, their gates read on its branch at the
+/// tip the pass read, and its performed nodes started, since its landing doors read its record (FABRIC-CUTOVER1d); its
+/// end is kept there, and its chain coming back here arms it again (<see cref="Return"/>).</para>
 /// </remarks>
 public sealed class NodeRuntime(
     NodeRecordFiles records, IWorkRuntimePort port, Func<DateTimeOffset> clock, Func<bool>? holdsLease = null, IQuestClosePort? closes = null)
@@ -762,7 +765,7 @@ public sealed class NodeRuntime(
         var tip = tipped ? await tips.TipAsync(governed.Watched.Root, governed.Watched.Branch, ct).ConfigureAwait(false) : null;
 
         // FABRIC-CUTOVER1c (the cutover design §2.2): a run's branch-side nodes bind its branch's tip read in the pass, and its gates are read there
-        // (CUTOVER1d); an end its record holds from before its chain came back here lapses, and the run goes on (§3).
+        // (CUTOVER1d, GatesAsync); an end its record holds from before its chain came back here lapses, and the run goes on (§3).
         if (governed.Scope is { } scope)
         {
             tip = scope.Branch is { } branch ? await tips.TipAsync(scope.Root, branch.Subject.Artifact ?? "", ct).ConfigureAwait(false) : null;
@@ -780,8 +783,8 @@ public sealed class NodeRuntime(
             // FABRIC-RUN1b: what git says for the built-ins this round's record holds waiting on it, read once a pass; FABRIC-RUN1c: the gates
             // its opinion and look wait on, likewise.
             var reads = await GitReadsAsync(governed, record, git.Git, ct).ConfigureAwait(false);
-            var gates = await GatesAsync(governed, record, git.Gates, ct).ConfigureAwait(false);
-            var (before, evaluated) = governed.Scope is null ? Evaluate(governed, record, tipped, tip, reads, gates) : EvaluateRun(governed, record, tip, reads);
+            var gates = await GatesAsync(governed, record, tip, git.Gates, ct).ConfigureAwait(false);
+            var (before, evaluated) = governed.Scope is null ? Evaluate(governed, record, tipped, tip, reads, gates) : EvaluateRun(governed, record, tip, reads, gates);
             if (evaluated.Refusal is { } refusal)
             {
                 said.Add($"work  {unit}: its graph was not judged ({refusal}: {string.Join(", ", evaluated.Missing)}), so nothing on it is started.");
@@ -803,11 +806,8 @@ public sealed class NodeRuntime(
                     // next pass reads it again, and no further round reads git again only to find the same stale revision.
                     if (_governed is null) return;
                 }
-                else if (governed.Scope is not null && node.Kind is NodeKinds.Opinion or NodeKinds.Look)
-                {
-                    // FABRIC-CUTOVER1c (the cutover design §3): a run's opinion and look are begun once the doors read its record (CUTOVER1d);
-                    // until then its gates read the version as one that cannot be read here, and a gate node begun would wait on *cannot start*.
-                }
+                // FABRIC-CUTOVER1d (the cutover design §3, §4): the doors read a run's record, so its opinion and look are begun as a unit's are,
+                // their gates read on its branch at the tip this pass read.
                 else if ((node.Reach == NodeReach.Observed && (Begins(node.Kind) || governed.Observable.Contains(node.Id)))
                          // FABRIC-CUTOVER1c (§3, a change named): a run's go-ahead is begun though it is pressed, since its answer is D135's record.
                          || (governed.Scope is not null && node.Kind == NodeKinds.GoAhead))
@@ -823,9 +823,9 @@ public sealed class NodeRuntime(
                     started |= begun.What == PerformedWhat.Begun;
                 }
                 // FABRIC-PERFORM1p: a performed node whose branch's tip this pass did not read is left ready, as an observed one is: it is sent
-                // on no guess, and the pass that reads the tip sends it there. FABRIC-CUTOVER1c (the cutover design §3): a run's performed node
-                // is left ready until its doors read the run (CUTOVER1d), so nothing outside acts for a run whose landing every door refuses.
-                else if (governed.Scope is null && governed.Dispatchable.Contains(node.Id) && !(tipped && tip is null) && sends.Left > 0
+                // on no guess, and the pass that reads the tip sends it there. FABRIC-CUTOVER1d (the cutover design §3): a run's performed node is
+                // started as a unit's is, now its doors read the run; one on a subject whose revision was not read is offered no start (§2.2).
+                else if (governed.Dispatchable.Contains(node.Id) && !(tipped && tip is null) && sends.Left > 0
                          && port.GenerationOf(PluginOf(node.Kind)) is not null && sends.Take())
                 {
                     // FABRIC-CLOSE1s: a bound quest's revision is its chain's and branches', from the last full read, which a wake reuses: a start
@@ -957,10 +957,11 @@ public sealed class NodeRuntime(
     /// core takes them: <c>claimed</c> on its newest work quest here; its gates, <c>handed</c> and a plugin's node before it on its branch at the
     /// tip read in the pass; what follows <c>handed</c> on the branch it reached on, at that landing's tip as its record keeps it; and its own nodes
     /// on the run itself, its go-ahead answered by the go-aheads its own sessions and quests asked. A subject not found this pass withholds its
-    /// nodes alone. Pure: what it moves is the caller's to keep.
+    /// nodes alone. FABRIC-CUTOVER1d: its opinion and look observe its branch's gates as read at that tip (<paramref name="gates"/>). Pure: what it
+    /// moves is the caller's to keep.
     /// </summary>
     private static (Dictionary<string, NodeStatus> Before, WireEvaluated Evaluated) EvaluateRun(
-        GovernedUnit governed, NodeRecord record, string? tip, NodeGitReads? git)
+        GovernedUnit governed, NodeRecord record, string? tip, NodeGitReads? git, (OpinionGateState? Opinion, ReviewGateState? Review) gates)
     {
         var scope = governed.Scope!;
         var self = governed.Unit;
@@ -1013,6 +1014,12 @@ public sealed class NodeRuntime(
             GoAheads = scope.GoAheads is { } asked
                 ? new Dictionary<string, IReadOnlyList<GoAheadView>>(StringComparer.Ordinal) { [self.Id] = asked }
                 : new Dictionary<string, IReadOnlyList<GoAheadView>>(StringComparer.Ordinal),
+            Opinions = gates.Opinion is { } opinion && scope.Branch is { } judged
+                ? new Dictionary<string, OpinionGateState>(StringComparer.Ordinal) { [judged.Id] = opinion }
+                : new Dictionary<string, OpinionGateState>(StringComparer.Ordinal),
+            Reviews = gates.Review is { } review && scope.Branch is { } looked
+                ? new Dictionary<string, ReviewGateState>(StringComparer.Ordinal) { [looked.Id] = review }
+                : new Dictionary<string, ReviewGateState>(StringComparer.Ordinal),
         };
         return (before, WireEvaluation.Evaluate(nodes, governed.Graph.Wires, before, run));
     }
@@ -1120,15 +1127,23 @@ public sealed class NodeRuntime(
     /// asks nothing. Nothing read leaves both null, and the nodes wait.
     /// </summary>
     /// <remarks>
-    /// FABRIC-CUTOVER1c (the cutover design §3): a run's gates are read for none of its nodes until its doors read it (CUTOVER1d), which then reads
-    /// its branch's at the pass's tip (§2.2); before that a gate read would answer *cannot start*, and cost each pass a read per run.
+    /// FABRIC-CUTOVER1d (the cutover design §2.2): a run's gates are its branch's, read at the tip this pass read (<paramref name="tip"/>), which
+    /// its gate nodes bind, so the opinion and the look are judged at their bound commit by construction, never at a tree's <c>HEAD</c> a commit
+    /// since has moved. A run with no branch, or whose branch's tip was not read (its tree tidied after its landing), reads none, and its gate
+    /// nodes keep their bindings, a landing at the bound commit answering them from its record.
     /// </remarks>
     private static async Task<(OpinionGateState? Opinion, ReviewGateState? Review)> GatesAsync(
-        GovernedUnit governed, NodeRecord record, PassGates gates, CancellationToken ct) =>
-        governed.Scope is null && governed.Graph.Nodes.Any(node => node.Kind is NodeKinds.Opinion or NodeKinds.Look
-            && record.Statuses.GetValueOrDefault(node.Id)?.State is NodeStates.Active or NodeStates.Unknown)
-            ? await gates.OfAsync(governed.Unit, ct).ConfigureAwait(false)
-            : default;
+        GovernedUnit governed, NodeRecord record, string? tip, PassGates gates, CancellationToken ct)
+    {
+        if (!governed.Graph.Nodes.Any(node => node.Kind is NodeKinds.Opinion or NodeKinds.Look
+                && record.Statuses.GetValueOrDefault(node.Id)?.State is NodeStates.Active or NodeStates.Unknown))
+        {
+            return default;
+        }
+
+        if (governed.Scope is null) return await gates.OfAsync(governed.Unit, null, ct).ConfigureAwait(false);
+        return governed.Scope.Branch is { } branch && tip is not null ? await gates.OfAsync(branch, tip, ct).ConfigureAwait(false) : default;
+    }
 
     /// <summary>One pass's reads beyond the tips (FABRIC-RUN1b, RUN1c): git's for the observed built-ins, and D157's gates.</summary>
     private sealed record PassReads(PassGit Git, PassGates Gates);
@@ -1501,12 +1516,13 @@ public sealed class NodeRuntime(
         return [.. first, .. rotation];
     }
 
-    /// <summary>Whether a unit's record holds one of its dispatchable nodes ready: a start owed, judged at a wake as well as at the look.</summary>
-    /// <remarks>FABRIC-CUTOVER1c: a run's performed node is started by none of its passes until CUTOVER1d, so a ready one owes nothing yet.</remarks>
+    /// <summary>
+    /// Whether a unit's record holds one of its dispatchable nodes ready: a start owed, judged at a wake as well as at the look. A run's too
+    /// (FABRIC-CUTOVER1d), now its passes start its performed nodes.
+    /// </summary>
     private bool OwesStart(GovernedUnit governed) =>
         records.Read(governed.Unit.Id) is { } record
-        && (governed.Scope is null ? governed.Dispatchable.Concat(governed.Observable) : governed.Observable)
-            .Any(node => record.Statuses.GetValueOrDefault(node)?.State == NodeStates.Ready);
+        && governed.Dispatchable.Concat(governed.Observable).Any(node => record.Statuses.GetValueOrDefault(node)?.State == NodeStates.Ready);
 
     /// <summary>
     /// Whether a unit's plugin nodes bind to its branch's tip read in the pass (FABRIC-PERFORM1m), its plugins are told that tip and an answer
@@ -1617,8 +1633,8 @@ public sealed class NodeRuntime(
     /// </summary>
     /// <remarks>
     /// FABRIC-CUTOVER1c (the cutover design §2.4.1): a run's plugin nodes are told under their subject's unit, never <c>run:</c>: before
-    /// <c>handed</c> its branch at the tip read, after it the landed branch at the landing's tip; a performed one only while an attempt waits, its
-    /// start being CUTOVER1d's. One landed branch told at one tip for two runs is told for neither, and <paramref name="said"/> says so.
+    /// <c>handed</c> its branch at the tip read, after it the landed branch at the landing's tip; a performed one as a unit's is (CUTOVER1d). One
+    /// landed branch told at one tip for two runs is told for neither, and <paramref name="said"/> says so.
     /// </remarks>
     private bool Tell(IEnumerable<GovernedUnit> governed, PassTips tips, List<string> said)
     {
@@ -1642,7 +1658,7 @@ public sealed class NodeRuntime(
                 var waiting = record.Attempts.Any(attempt => attempt.Node == id && attempt.State is AttemptStates.Recorded or AttemptStates.Sent or AttemptStates.Unknown);
                 var state = record.Statuses.GetValueOrDefault(id)?.State;
                 if (each.Observable.Contains(id) ? state != NodeStates.Active
-                    : !waiting && (each.Scope is not null || state is not (NodeStates.Ready or NodeStates.Active or NodeStates.Unknown)))
+                    : !waiting && state is not (NodeStates.Ready or NodeStates.Active or NodeStates.Unknown))
                 {
                     continue;
                 }

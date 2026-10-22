@@ -90,17 +90,12 @@ internal sealed class HelpRoomOwed : IHelpRoomSection
         + "it stops offering; that is the `tool` kind's `location` door, which TOOLS8 builds (D121 §4.3), and until then "
         + "`daoris tool locations remove` is the terminal's door.");
 
-    /// <summary>LEFT3's clear of an account's default: the <c>agent</c> kind's <c>default</c> door takes an account and no clear yet.</summary>
-    public static readonly HelpOwedDoor DefaultClear = new(
-        "clear an account's default, back to Daoris's accounts",
-        ["daoris agent profile default <agent> <profile>|--clear"],
-        "a cleared default is a setting that undoes itself, so Ask Daoris should propose it; the `agent` kind's "
-        + "`default` door takes an account and no clear yet, which waits on the service's `agent_propose` taking "
-        + "one and the driver's judge applying it through `IHelpDoors.SetDefaultAccountAsync` with none.");
-
-    /// <summary>Every door owed, in the order a person meets the tasks, as the doors table runs.</summary>
+    /// <summary>
+    /// Every door owed, in the order a person meets the tasks, as the doors table runs. LEFT3's clear of an account's default left with
+    /// the default itself (POOL1b, D197 point 6): the order says where starts begin.
+    /// </summary>
     public static readonly IReadOnlyList<HelpOwedDoor> All =
-        [Workspace, Register, Check, AskReview, AskKind, Workflow, ToolUse, ToolLocation, DefaultClear];
+        [Workspace, Register, Check, AskReview, AskKind, Workflow, ToolUse, ToolLocation];
 
     public string Render(HelpMachine machine)
     {

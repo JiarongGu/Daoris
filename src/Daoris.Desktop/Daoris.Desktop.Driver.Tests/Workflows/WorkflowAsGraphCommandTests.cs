@@ -71,7 +71,7 @@ public sealed class WorkflowAsGraphCommandTests : IDisposable
         Assert.Equal((0, ""), (exit, _error.ToString()));
         var lines = Lines(_out);
         Assert.Equal("daoris: `careful` v1 → v2 — Careful, v1's steps as a graph: a graph (schema 2) of 8 nodes and 9 wires, ending at `both`, "
-            + "digest gph-e336ed86bc06526dccbcc95a8da3add3, which this build reads and does not run yet.", lines[0]);
+            + "digest gph-e336ed86bc06526dccbcc95a8da3add3.", lines[0]);
         Assert.Equal("  The go-ahead `ask` now holds what follows it until your yes, or your skip with your words: the steps went on past one that "
             + "could not start.", lines[1]);
         Assert.StartsWith("  Written to ", lines[2], StringComparison.Ordinal);

@@ -152,7 +152,14 @@ public static class DriverWorkflowsCommand
                     continue;
                 }
 
-                var reads = read.Versions.Reverse().FirstOrDefault(each => each.Steps is not null);
+                // FABRIC-CUTOVER1d: a graph version reads and runs as a version of steps does.
+                if (newest.Graph is not null)
+                {
+                    Say($"  `{found.Id}` — {read.Name}: v{newest.Version}, {WorkflowWords.GraphSaid(newest)}");
+                    continue;
+                }
+
+                var reads = read.Versions.Reverse().FirstOrDefault(each => each.Steps is not null || each.Graph is not null);
                 Say($"  `{found.Id}` — {read.Name}: v{newest.Version} cannot be read here ({newest.Unrun})"
                     + (reads is null ? "; no version of it reads here." : $"; v{reads.Version} is the newest that reads."));
             }
@@ -175,6 +182,7 @@ public static class DriverWorkflowsCommand
             if (read.Problem is not null) throw new ChoiceWords($"`{id}` cannot be read: {read.Problem}", 1);
             var shown = version is null ? read.Versions[^1] : read.Versions.FirstOrDefault(each => each.Version == version);
             if (shown is null) throw new ChoiceWords($"`{id}` keeps no v{version} — it keeps {Kept(read)}.");
+            if (shown.Graph is not null) throw new ChoiceWords(WorkflowWords.NoSteps(id, shown), 1);
             if (shown.Steps is null) throw new ChoiceWords($"`{id}` v{shown.Version} cannot be read here: {shown.Unrun} The file keeps it as written.", 1);
 
             var newest = ReferenceEquals(shown, read.Versions[^1]);
@@ -186,7 +194,7 @@ public static class DriverWorkflowsCommand
                 foreach (var line in WorkflowWords.NamedStepSaid(step)) Say(line);
             }
 
-            Say($"  Versions kept: {string.Join(", ", read.Versions.Select(each => $"v{each.Version}{(each.Steps is null ? " (cannot be read here)" : "")}"))}.");
+            Say($"  Versions kept: {string.Join(", ", read.Versions.Select(each => $"v{each.Version}{(each.Steps is not null ? "" : each.Graph is not null ? " (a graph)" : " (cannot be read here)")}"))}.");
             Say(WorkflowWords.WhatChooses);
             return 0;
         }
@@ -285,6 +293,16 @@ public static class DriverWorkflowsCommand
             var why = WorkflowWords.WhyChosen(selected, owner, circle);
             var found = Load(selected.Workflow);
             var newest = found?.Read.Problem is null && found is not null ? found.Read.Versions[^1] : null;
+            if (newest is { Graph: not null })
+            {
+                // FABRIC-CUTOVER1d: a graph newest is followed as a version of steps is, its graph said whole.
+                Say($"daoris: {whose} follows `{selected.Workflow}` — {found!.Read.Name}, v{newest.Version} (digest {newest.Digest}), {why}.");
+                foreach (var line in notes.Concat(UndeclaredSaid(selected, circle)).Concat(RoutesSaid(owner, circle, inWorkspace))) Say(line);
+                Say($"  {char.ToUpperInvariant(WorkflowWords.GraphSaid(newest)[0])}{WorkflowWords.GraphSaid(newest)[1..]}");
+                Say(WorkflowWords.WhatChooses);
+                return 0;
+            }
+
             if (newest?.Steps is null)
             {
                 var problem = found is null ? "no workflow by that id is saved here"
@@ -410,7 +428,7 @@ public static class DriverWorkflowsCommand
                 var found = Load(chosen)!;
                 var newest = found.Read.Versions[^1];
                 Say($"daoris: {whose} now chooses `{chosen}`{forWhat} — {found.Read.Name}, v{newest.Version} now: {(newest.Graph is { } graph
-                    ? $"a graph (schema {WorkflowNamed.GraphSchema}) of {graph.Nodes.Count} nodes and {graph.Wires.Count} wires, digest {newest.Digest}, which this build reads and does not run yet."
+                    ? $"a graph (schema {WorkflowNamed.GraphSchema}) of {graph.Nodes.Count} nodes and {graph.Wires.Count} wires, digest {newest.Digest}."
                     : WorkflowPresets.Line(newest.Steps!))}");
             }
 
@@ -747,6 +765,7 @@ public static class DriverWorkflowsCommand
             var versions = found.Read.Versions;
             var version = wanted is null ? versions[^1] : versions.FirstOrDefault(each => each.Version == wanted);
             if (version is null) throw new ChoiceWords($"`{found.Id}` keeps no v{wanted} — it keeps {Kept(found.Read)}.");
+            if (version.Graph is not null) throw new ChoiceWords(WorkflowWords.NoSteps(found.Id, version), 1);
             if (version.Steps is null) throw new ChoiceWords($"`{found.Id}` v{version.Version} cannot be read here: {version.Unrun}", 1);
             var index = versions.ToList().IndexOf(version);
             return (version, found.File!["versions"]![index]!["steps"]!.DeepClone().AsArray());
@@ -771,6 +790,7 @@ public static class DriverWorkflowsCommand
             var id = Named(argv.ElementAtOrDefault(2)).Id;
             var found = Required(id);
             var (version, raw) = BaseOf(found);
+            if (raw is null && version.Graph is not null) throw new ChoiceWords(WorkflowWords.NoSteps(id, version), 1);
             if (raw is null)
             {
                 throw new ChoiceWords($"`{id}` v{version.Version} cannot be read here: {version.Unrun} `daoris driver workflow apply "

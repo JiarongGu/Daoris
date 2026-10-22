@@ -186,9 +186,10 @@ public sealed class AgentAccountsBothWaysTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// What one set leaves nothing to name (POOL1a1, D197 point 6; the account-pool design §5.2): the route refuses a default, a list
-    /// to join and a workspace as <c>ACCOUNTS_ONE_SET</c>, writing nothing, while the terminal's verb alone still acts as PUSH1f2e
-    /// built it. POOL1b turns each into §5.1's refusal, and its row returns to the case above, the same both ways.
+    /// What one set leaves nothing to name (POOL1b, D197 point 6; the account-pool design §5.1): the terminal refuses a default, a
+    /// list to join and a workspace in <see cref="OneSetWords"/>' words before it builds any press, so no route is asked and nothing is
+    /// written, alone or through the window. The route's own <c>ACCOUNTS_ONE_SET</c> refusal of such a payload (POOL1a1) is
+    /// <c>DriverModuleAccountsTests</c>'.
     /// </summary>
     [Theory]
     [InlineData("profile default claude-code account-2")]
@@ -201,20 +202,19 @@ public sealed class AgentAccountsBothWaysTests : DriverModuleBridge
     [InlineData("profile join claude-code account-3 --machine")]
     [InlineData("profile use claude-code --no-keep --no-curve --workspace work")]
     [InlineData("profile use claude-code --clear --workspace work")]
-    public async Task What_one_set_names_nothing_for_is_refused_on_the_route_and_written_nothing(string text)
+    public async Task What_one_set_names_nothing_for_is_refused_at_the_terminal_and_written_nothing(string text)
     {
         var words = text.Split(' ');
 
         var alone = await AloneAsync(words);
-        var route = await RouteAsync(words);
         Laid(own: false);
+        var refused = Assert.Throws<AgentWords>(() => AgentsCommand.Plan(words, World(new StringWriter(), new StringWriter()), out _));
         var laid = Now(new StringWriter(), new StringWriter(), 0);
 
-        Assert.Equal(0, alone.Exit);
-        Assert.Equal(2, route.Exit);
-        Assert.Equal("", route.Out);
-        Assert.StartsWith("daoris: every account signed in for Daoris serves every workspace (D197)", route.Error);
-        Assert.EndsWith($"({Refusals.AccountsOneSet}){Environment.NewLine}", route.Error);
-        Assert.Equal(laid with { Exit = 2, Error = route.Error }, route);
+        Assert.Contains("(D197)", refused.Message, StringComparison.Ordinal);
+        Assert.Equal(2, alone.Exit);
+        Assert.Equal("", alone.Out);
+        Assert.Contains(refused.Message, alone.Error, StringComparison.Ordinal);
+        Assert.Equal(laid with { Exit = 2, Error = alone.Error }, alone);
     }
 }
