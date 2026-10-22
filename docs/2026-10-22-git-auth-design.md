@@ -1,6 +1,6 @@
 # Git identities and git access: who Daoris's git acts as on a code host, and what it may do there (GITAUTH1)
 
-**Status: proposed, round 4** (D198, 2026-10-22). Written by Claude Opus from the code at `75bb61805` and read again at
+**Status: accepted, round 4** (D198, accepted by the steward 2026-10-22). Written by Claude Opus from the code at `75bb61805` and read again at
 `847716cb2`; nothing here is built. Read under D191 by Codex twice (round 1: thirty-eight findings, twenty-seven blocking; round 2:
 twenty-four, fifteen blocking) and by Fable once, on round 3, as a foundation's read (two blocking findings and fifteen others,
 every §0 claim confirmed). Every finding was checked against the code and taken or answered (§16). The steward settled the one
