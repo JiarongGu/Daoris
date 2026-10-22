@@ -151,7 +151,7 @@ function frame(root: string, title = 'Fix the API gap'): Record<string, unknown>
   };
 }
 
-function calls(fx: Fixture): { tool: string; args: string[]; cwd: string }[] {
+function calls(fx: Fixture): { tool: string; args: string[]; cwd: string; routed: string | null }[] {
   const log = join(fx.root, 'calls.jsonl');
   return existsSync(log) ? readFileSync(log, 'utf8').trim().split('\n').map((line) => JSON.parse(line)) : [];
 }
@@ -506,7 +506,7 @@ test('GITAUTH1b: with an origin no tool can be told, each plugin\'s tool runs wi
   git(fx.root, '-C', origin, 'branch', '-D', BRANCH);
   await land('azure-devops-pull-request', fx, bin, { ...frame(root), origin }, ROUTED);
 
-  const [gh, az] = calls(fx) as { tool: string; args: string[]; routed: string | null }[];
+  const [gh, az] = calls(fx);
   assert.ok(!gh!.args.includes('--repo'), gh!.args.join(' '));
   assert.ok(!az!.args.includes('--detect'), az!.args.join(' '));
   assert.equal(gh!.routed, null);
