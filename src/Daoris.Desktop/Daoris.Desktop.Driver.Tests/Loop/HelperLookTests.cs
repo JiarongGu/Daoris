@@ -604,20 +604,40 @@ public sealed class HelperLookTests : IDisposable
         Assert.Single(host.HelperHands);
     }
 
-    /// <summary>A restart: a `started` ask whose helper ended, with an answer on file, is settled and delivered at the next look.</summary>
-    [Fact]
-    public async Task A_started_ask_whose_helper_ended_before_a_restart_is_settled_at_the_next_look()
+    /// <summary>
+    /// A restart: a `started` ask whose helper ended, the sweep's interrupted ending included, is settled at the next look (Codex's round-2
+    /// #8 on COWORKUX1): with an answer `helper_answer` saved before the cut it is delivered, whatever the helper's ending; with none it is
+    /// refused no-answer, which brings a session waiting on it to the person.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_started_ask_whose_helper_ended_before_a_restart_is_settled_at_the_next_look(bool saved)
     {
         Ask("a1");
         Files.WriteState(new HelperState("a1", HelperStates.Started, null, Helper, At) { Agent = "codex-acp" });
-        File.WriteAllText(Files.PathOf("a1", "answer"),
-            new JsonObject { ["id"] = "a1", ["helper"] = Helper, ["answer"] = "Line 42.", ["at"] = At.ToString("O") }.ToJsonString());
+        if (saved)
+        {
+            File.WriteAllText(Files.PathOf("a1", "answer"),
+                new JsonObject { ["id"] = "a1", ["helper"] = Helper, ["answer"] = "Line 42.", ["at"] = At.ToString("O") }.ToJsonString());
+        }
+
         var host = Host();
+        host.Move(Helper, "stopped");
 
         await Look(Driver(host, pass: null));
 
-        Assert.Equal(HelperStates.Answered, Files.ReadState("a1")!.State);
-        Assert.Single(host.HelperHands);
+        var state = Files.ReadState("a1")!;
+        if (saved)
+        {
+            Assert.Equal(HelperStates.Answered, state.State);
+            Assert.Single(host.HelperHands);
+        }
+        else
+        {
+            Assert.Equal((HelperStates.Refused, HelperWhy.NoAnswer), (state.State, state.Code));
+            Assert.Empty(host.HelperHands);
+        }
     }
 
     // ——— HELPERWAIT1 (D163's and D188's notes): a session waiting on its own helper is not waiting on the person.
@@ -889,6 +909,56 @@ public sealed class HelperLookTests : IDisposable
         await Look(Driver(host, pass: null));
 
         Assert.Empty(host.HelperHands);
+        Assert.Equal("hp-w9", Files.ReadState("a1")!.Handed);
+    }
+
+    /// <summary>
+    /// 🔴 Codex's round-2 #2 and #7 on COWORKUX1: a hand that began (its mark written before the door) and whose outcome a restart lost is
+    /// never made again on the absence of evidence, since an event's write may have failed and a word may have moved: with nothing on the
+    /// line it settles as uncertain for the person; a conversation's notice to its runner that the word waits is no evidence of a taking.
+    /// </summary>
+    [Theory]
+    [InlineData("nothing")]
+    [InlineData("notice")]
+    public async Task An_attempt_a_restart_cut_with_no_evidence_is_settled_uncertain_and_never_handed_again(string left)
+    {
+        Ask("a1");
+        Answered();
+        Files.WriteState(Files.ReadState("a1")! with { Attempted = At });
+        if (left == "notice")
+        {
+            new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).Append(
+                "s1", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Helper = Helper, Id = "hp-w9", Text = "Another agent answered.", Reaches = "resume" });
+        }
+
+        var host = Host();
+        await Look(Driver(host, pass: null));
+
+        Assert.Empty(host.HelperHands);
+        Assert.Equal(0, host.HelperHandsAsked);
+        var state = Files.ReadState("a1")!;
+        Assert.Equal((HelperStates.Refused, HelperWhy.HandUncertain, Helper), (state.State, state.Code, state.Helper));
+        Assert.True(HelperWaits.Open("s1", [new HelperAsk("a1", "s1", "Why?", null, HelperAsk.ByAgent, At)], Files.ReadState).Count == 0);
+    }
+
+    /// <summary>
+    /// 🔴 Codex's round-2 #2: the evidence is read along the asker's line. A turn of the commissioner took the answer, and the line was handed
+    /// over before the mark was written: the ask is marked handed, and its successor is never handed it again.
+    /// </summary>
+    [Fact]
+    public async Task An_answer_taken_before_a_relay_is_found_on_the_line_and_not_handed_to_the_successor()
+    {
+        Ask("a1");
+        Answered();
+        Files.WriteState(Files.ReadState("a1")! with { Attempted = At });
+        new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).Append(
+            "s1", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Helper = Helper, Id = "hp-w9", Text = "Another agent answered." });
+        var host = Host(state: "stopped").Session("s2", "completed", tree: "trees/default/reports/s-1", kind: "drive");
+        host.Set("s2", "from", "s1");
+
+        await Look(Driver(host, pass: null));
+
+        Assert.Equal(0, host.HelperHandsAsked);
         Assert.Equal("hp-w9", Files.ReadState("a1")!.Handed);
     }
 

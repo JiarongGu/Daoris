@@ -54,6 +54,12 @@ public static class HelperWhy
     /// </summary>
     public const string Declined = "declined";
 
+    /// <summary>
+    /// The answer's hand began and its outcome was never written (a restart between the two), and nothing on the asker's line shows it
+    /// taken (HELPERWAIT1; Codex's round-2 #2 on COWORKUX1): it is never handed again by itself, and stays on its ask for the person.
+    /// </summary>
+    public const string HandUncertain = "hand-uncertain";
+
     // COAGENT1a (D199 point 5; the co-agent design §2.5): the asker's work in progress could not be captured whole, so no helper
     // was handed part of it.
 
@@ -94,6 +100,7 @@ public static class HelperWhy
         NoAnswer => "the helper ended without an answer",
         Conversation => "that session is a conversation, which takes words only from the person",
         CannotTake => "that session cannot take the answer",
+        HandUncertain => "its answer may or may not have reached the session, so it is not handed again; the helper's own conversation holds it",
         _ => why,
     };
 }
@@ -127,6 +134,13 @@ public sealed record HelperState(string Id, string State, string? Code, string? 
 
     /// <summary>The word id the answer went to the asker as, once handed.</summary>
     public string? Handed { get; init; }
+
+    /// <summary>
+    /// When the driver began handing the answer (HELPERWAIT1; Codex's round-2 #2 on COWORKUX1): written before the hand door is asked and
+    /// cleared where it refused, so one still on file with nothing <see cref="Handed"/> is an attempt whose outcome nobody wrote, which is
+    /// never made again without evidence of where it went.
+    /// </summary>
+    public DateTimeOffset? Attempted { get; init; }
 
     /// <summary>The agent that was started, for the notes.</summary>
     public string? Agent { get; init; }

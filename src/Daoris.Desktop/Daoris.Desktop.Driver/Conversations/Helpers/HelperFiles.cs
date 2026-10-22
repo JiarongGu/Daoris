@@ -56,6 +56,7 @@ public sealed class HelperFiles(string home)
             {
                 LastWords = element.TryGetProperty("lastWords", out var last) && last.ValueKind == JsonValueKind.True,
                 Handed = Text(element, "handed"),
+                Attempted = Moments.Read(element, "attempted"),
                 Agent = Text(element, "agent"),
                 Words = Text(element, "words"),
             };
@@ -77,6 +78,7 @@ public sealed class HelperFiles(string home)
             writer.WriteString("at", Moments.Write(state.At));
             if (state.LastWords) writer.WriteBoolean("lastWords", true);
             if (state.Handed is not null) writer.WriteString("handed", state.Handed);
+            if (state.Attempted is { } attempted) writer.WriteString("attempted", Moments.Write(attempted));
             if (state.Agent is not null) writer.WriteString("agent", state.Agent);
             if (state.Words is not null) writer.WriteString("words", state.Words);
             writer.WriteEndObject();

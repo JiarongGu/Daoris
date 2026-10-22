@@ -468,6 +468,8 @@ export const HELPER_REASONS: Readonly<Record<string, { key: string; values: read
   'capture-unreadable': { key: 'note.helper.why.capture-unreadable', values: [] },
   'capture-bound': { key: 'note.helper.why.capture-bound', values: [] },
   'capture-moved': { key: 'note.helper.why.capture-moved', values: [] },
+  // A hand whose outcome a restart lost (HELPERWAIT1), never made again by itself.
+  'hand-uncertain': { key: 'note.helper.why.hand-uncertain', values: [] },
 };
 
 /**

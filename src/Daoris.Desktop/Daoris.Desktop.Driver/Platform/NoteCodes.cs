@@ -561,6 +561,8 @@ public static class NoteCodes
         new(HelperWhy.CaptureUnreadable, [], "note.helper.why.capture-unreadable"),
         new(HelperWhy.CaptureBound, [], "note.helper.why.capture-bound"),
         new(HelperWhy.CaptureMoved, [], "note.helper.why.capture-moved"),
+        // HELPERWAIT1: a hand whose outcome a restart lost, added after the sixteen (a reason is additive).
+        new(HelperWhy.HandUncertain, [], "note.helper.why.hand-uncertain"),
     ]);
 
     /// <summary>Why a piece was refused, held or uncertain (COAGENT1b, <see cref="PartnerWhy"/>): the page's <c>note.partner.why.*</c>.</summary>
