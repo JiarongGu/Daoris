@@ -149,6 +149,12 @@ public sealed record SessionTarget(
     public string? InSync { get; init; }
 
     /// <summary>
+    /// Its repository's held remotes at its start, in the driver's words (GITAUTH1a, the git-auth design §5.3), so it does not try what
+    /// Daoris holds; null where none is held.
+    /// </summary>
+    public string? Git { get; init; }
+
+    /// <summary>
     /// For a session in a tree just opened with its checkout's dependencies copied in (TREEDEPS1, D51's note): what was copied, and
     /// to skip the <c>npm ci</c> that would delete it (<see cref="DependencyCopy.Told"/>), said before how to take the quest. Null
     /// where nothing was copied, and the instruction reads as it did.
@@ -420,6 +426,9 @@ public static class TargetPrompt
         .. AskingPieces(target, lead: "\n"),
         new(HandedSections.Proposing, "\n\n" + Proposing),
         new(HandedSections.Boundary, "\n\n" + Boundary(target)),
+        // A held remote's Git section (GITAUTH1a, the git-auth design §5.3): the driver's own words, beside the boundary and counted
+        // with it.
+        new(HandedSections.Boundary, target.Git is { Length: > 0 } git ? $"\n\n{git}" : ""),
     ];
 
     /// <summary>A first start (D46 §3): the quest, to take, work and close, or stand down from where it is someone else's.</summary>

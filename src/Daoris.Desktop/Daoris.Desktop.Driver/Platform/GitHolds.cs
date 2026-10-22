@@ -180,6 +180,36 @@ public static class GitHolds
             + "you, or its address or the git Daoris runs changes";
     }
 
+    /// <summary>
+    /// A session's Git section for its repository's held remotes (the design §5.3), or null where none is held: what is held and why,
+    /// and that it is not to try, beside the boundary of its instruction.
+    /// </summary>
+    public static string? Told(IReadOnlyList<GitHold> holds)
+    {
+        if (holds.Count == 0) return null;
+        var lines = holds.OrderBy(hold => hold.Remote, StringComparer.Ordinal).Select(hold => hold.Holds == Writes
+            ? $"`{hold.Remote}` ({hold.Host ?? hold.Address}) refused a push with the sign-in git has on this machine. You may fetch it; "
+              + "pushing is not yours in any case."
+            : $"`{hold.Remote}` ({hold.Host ?? hold.Address}) cannot be reached with the sign-in git has on this machine "
+              + $"({Why(hold)}), so neither you nor Daoris can reach it now. Do not fetch, pull or push it: work from the line as this "
+              + $"checkout has it, and say in your closing note that `{hold.Remote}` was not fetched.");
+        return "**Git.** " + string.Join(" ", lines) + " The person sees it in What needs you, where Try again lifts it.";
+    }
+
+    private static string Why(GitHold hold) => hold.Class switch
+    {
+        "host-unknown" => "ssh does not know its key",
+        "host-changed" => "its key is not the one ssh knows for it",
+        _ => "the host refused it",
+    };
+
+    /// <summary>The holds on a repository named as the registry names it, in a workspace where one is named.</summary>
+    public static IReadOnlyList<GitHold> OfRepository(string home, string repository, string? workspace) =>
+    [
+        .. Read(home).Where(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase)
+            && (workspace is null || each.Workspace is null || string.Equals(each.Workspace, workspace, StringComparison.OrdinalIgnoreCase))),
+    ];
+
     /// <summary>The holds on a repository's checkout.</summary>
     public static IReadOnlyList<GitHold> On(string home, string root) => [.. Read(home).Where(each => SameRoot(each, root))];
 
