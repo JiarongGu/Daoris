@@ -1090,6 +1090,19 @@ public sealed record HarnessSettings(
     }
 
     /// <summary>
+    /// The agent's one set as a start reads it (POOL1a2, the account-pool design §2.4): its whole order, begun at the order's first,
+    /// and its one entry of settings. Read on the projection (<see cref="LoadSet"/>), which holds no default and no workspace's scope,
+    /// so every workspace reads this one; on a raw file it is the machine's scope.
+    /// </summary>
+    public RotationScope Set(string agent) => ResolveScope(agent, workspace: null);
+
+    /// <summary>
+    /// Where the set's starts begin (the account-pool design §2.2): the order's first, which every reader of the machine's default
+    /// reads now; none where the agent has no account.
+    /// </summary>
+    public string? FirstOf(string agent) => Set(agent).Begins;
+
+    /// <summary>
     /// This machine's scope for <paramref name="agent"/> with <paramref name="accounts"/> as its list (OWNSPACE1a, D175's
     /// OWNSPACE1a note): what a start walks where neither the machine nor the workspace names an account, the agent's Daoris
     /// accounts on this machine, begun at the first and used as the machine's use for the agent says.

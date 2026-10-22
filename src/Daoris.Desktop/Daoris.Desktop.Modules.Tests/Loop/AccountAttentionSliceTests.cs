@@ -5,9 +5,14 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// <i>What needs you</i>'s accounts (UX6d, D150 §6.2–§6.3; TOOL4m's row), judged in .NET (PUSH1d4): a start waiting for accounts and a
-/// signed-out account a list holds, ported cell for cell from <c>accountAttention.test.ts</c> and <c>attention.test.ts</c>'s last block.
+/// signed-out account of the set, ported cell for cell from <c>accountAttention.test.ts</c> and <c>attention.test.ts</c>'s last block.
 /// An account's name, the row's title and its line of why are the page's words over what is pushed here, held by its own tests.
 /// </summary>
+/// <remarks>
+/// Rewritten by POOL1a2 (D197 point 1; the account-pool design §2.4, §5.2): <c>ACCOUNTS</c> answers one scope, the agent's set, and
+/// <c>HARNESSES</c> no defaults, so the fixtures are one set; every account of it holds work, none runs only somewhere (no <c>runs</c>),
+/// and none is outside it, so no row offers an account to let in or to read first. Each changed case says what it held before.
+/// </remarks>
 public sealed class AccountAttentionSliceTests
 {
     private const string Read = "2026-10-05T10:42:00Z";
@@ -17,12 +22,11 @@ public sealed class AccountAttentionSliceTests
     private static JsonObject Door(string over = "{}") => With(
         """
         {"harness":"claude-code","present":true,"product":"Claude Code","maker":"Anthropic","signsIn":true,"wire":"pipe",
-         "machineDefault":null,"ownLogin":"unknown","ownRead":null,"workspaceDefaults":[],
+         "ownLogin":"unknown","ownRead":null,
          "profiles":[
            {"name":"account-1","home":"H/account-1","login":"out","read":"2026-10-05T10:42:00Z","account":"you@work.example"},
            {"name":"account-2","home":"H/account-2","login":"in","read":"2026-10-05T09:00:00Z","displayName":"home"},
-           {"name":"account-3","home":"H/account-3","login":"out","read":"2026-10-05T10:42:00Z"},
-           {"name":"account-4","home":"H/account-4","login":"in","read":"2026-10-05T09:00:00Z"}]}
+           {"name":"account-3","home":"H/account-3","login":"out","read":"2026-10-05T10:42:00Z"}]}
         """,
         over);
 
@@ -39,11 +43,12 @@ public sealed class AccountAttentionSliceTests
         """{"workspace":null,"default":null,"list":[],"begins":null,"use":{"use":"goal","keep":null,"early":true,"near":90},"unknown":[],"problem":null,"near":[]}""",
         over).ToJsonString();
 
-    /// <summary>The owner's install as D150 §0 read it: <c>work</c> may run on all three accounts, one cooling, two signed out.</summary>
-    private static JsonObject Use(params string[] scopes)
+    /// <summary>
+    /// The owner's install as D150 §0 read it, as one set: every workspace may run on all three accounts, one cooling, two signed out.
+    /// </summary>
+    private static JsonObject Use(string? set = null)
     {
-        var work = Scope("""{"workspace":"work","list":["account-2","account-1","account-3"],"begins":"account-2"}""");
-        var listed = string.Join(",", scopes.Length > 0 ? scopes : [Scope(), work]);
+        var listed = set ?? Scope("""{"list":["account-2","account-1","account-3"],"begins":"account-2"}""");
         return JsonNode.Parse(
             """{"agents":[{"agent":"claude-code","speaks":true,"own":{},"accounts":[{"name":"account-2","cooling":""" + Cooling + "}],\"scopes\":[" + listed + "]}]}")!.AsObject();
     }
@@ -162,7 +167,7 @@ public sealed class AccountAttentionSliceTests
     public void A_waiting_start_on_signed_out_accounts_alone_names_each()
     {
         var held = JsonNode.Parse("""{"quest":"q1","repository":"engine","verdict":"Blocked","reason":"none ready","signedOut":{"agent":"claude-code","accounts":["account-1","account-3"]}}""")!.AsObject();
-        var row = Assert.Single(Derive(use: Use(Scope(), Scope("""{"workspace":"work","list":["account-1","account-3"]}""")), considered: [held], quests: [QuestIn()], asks: []));
+        var row = Assert.Single(Derive(use: Use(Scope("""{"list":["account-1","account-3"]}""")), considered: [held], quests: [QuestIn()], asks: []));
 
         Assert.Equal("account-1=out,account-3=out", Named(row));
         Assert.Equal(Read, row["account"]!["named"]![0]!["read"]!.GetValue<string>());
@@ -176,7 +181,7 @@ public sealed class AccountAttentionSliceTests
             {"profiles":[{"name":"account-2","home":"H/account-2","login":"in","read":"2026-10-05T09:00:00Z","displayName":"home"},
                          {"name":"account-5","home":"H/account-5","login":"unknown","read":null}]}
             """);
-        var row = Assert.Single(Derive(doors: [doors], use: Use(Scope(), Scope("""{"workspace":"work","list":["account-2","account-5"]}""")), waits: [Wait("""{"signedOut":[]}""")]));
+        var row = Assert.Single(Derive(doors: [doors], use: Use(Scope("""{"list":["account-2","account-5"]}""")), waits: [Wait("""{"signedOut":[]}""")]));
 
         Assert.Equal("account-2=cooling,account-5=unknown", Named(row));
         Assert.Null(row["account"]!["named"]![1]!["read"]);
@@ -186,69 +191,32 @@ public sealed class AccountAttentionSliceTests
     [Fact]
     public void The_account_kept_for_conversations_is_left_out()
     {
-        var use = Use(Scope(), Scope("""{"workspace":"work","list":["account-2","account-1","account-4"],"use":{"use":"goal","keep":"account-4","early":true,"near":90}}"""));
-        Assert.Equal("account-2=cooling,account-1=out", Named(Assert.Single(Derive(use: use, waits: [Wait("""{"signedOut":["account-1"]}""")]))));
+        var use = Use(Scope("""{"list":["account-2","account-1","account-3"],"use":{"use":"goal","keep":"account-3","early":true,"near":90}}"""));
+        // account-3, signed out and named by no wait, is a row of its own beside it: every account of the set holds work (POOL1a2).
+        var rows = Derive(use: use, waits: [Wait("""{"signedOut":["account-1"]}""")]);
+        Assert.Equal("account-2=cooling,account-1=out", Named(rows.Single(row => row["kind"]!.GetValue<string>() == "account-wait")));
     }
 
-    /// <summary>D130 §3.3: every account the workspace may use is cooling and another is ready, so the row offers to let that one run it.</summary>
+    /// <summary>
+    /// Rewritten by POOL1a2 (D197 point 1): where every account a workspace could use was cooling and another was ready, the row
+    /// offered to let that one run it (D130 §3.3) or to read an unread one first (UXFIX3), by the list the join added it to. No
+    /// account is outside the set now, so a ready one, an unread one or a refused key is never offered, whatever the wait.
+    /// </summary>
     [Fact]
-    public void A_ready_account_outside_the_workspace_s_list_is_offered_by_the_list_the_join_adds_it_to()
+    public void No_account_is_offered_to_let_in_or_to_read_first_since_none_is_outside_the_set()
     {
-        var use = Use(Scope(), Scope("""{"workspace":"work","list":["account-2"],"begins":"account-2"}"""));
-        Is("""{"id":"account-4","list":"work","workspace":"work"}""",
-            Assert.Single(Derive(use: use, waits: [Wait("""{"signedOut":[]}""")]))["account"]!["outside"]!.AsObject());
-    }
+        var profiles = JsonNode.Parse(Profiles("account-1", "{}"))!.AsArray();
+        profiles.Add(JsonNode.Parse("""{"name":"account-4","home":"H/account-4","login":"in","read":"2026-10-05T09:00:00Z"}"""));
+        profiles.Add(JsonNode.Parse("""{"name":"account-0","home":"H/account-0","login":"unknown","read":null}"""));
+        profiles.Add(JsonNode.Parse("""{"name":"account-5","home":"H/account-5","login":"out","key":"…abcd","read":"2026-10-05T09:00:00Z"}"""));
+        var doors = new[] { With(Door(), "{\"profiles\":" + profiles.ToJsonString() + "}") };
 
-    /// <summary>A workspace naming no account of its own runs on this machine's list (D130 §2): the join is this machine's list's.</summary>
-    [Fact]
-    public void A_ready_account_is_offered_to_this_machine_s_list_where_the_workspace_runs_on_it() =>
-        Is("""{"id":"account-4","list":null,"workspace":"work"}""",
-            Assert.Single(Derive(use: Use(Scope("""{"list":["account-2"],"begins":"account-2"}""")), waits: [Wait("""{"signedOut":[]}""")]))["account"]!["outside"]!.AsObject());
-
-    [Fact]
-    public void No_account_is_offered_where_none_is_ready_or_where_the_wait_spans_workspaces()
-    {
-        var use = Use(Scope(), Scope("""{"workspace":"work","list":["account-2"]}"""));
-        var three = new JsonArray([.. Door()["profiles"]!.AsArray().Where(each => each!["name"]!.GetValue<string>() != "account-4").Select(each => each!.DeepClone())]);
-        var withoutFour = With(Door(), "{\"profiles\":" + three.ToJsonString() + "}");
-
-        Assert.Null(Assert.Single(Derive(doors: [withoutFour], use: use, waits: [Wait("""{"signedOut":[]}""")]))["account"]!["outside"]);
-        Assert.Null(Assert.Single(Derive(use: use, waits: [Wait("""{"workspace":null,"signedOut":[]}""")]))["account"]!["outside"]);
-    }
-
-    /// <summary>UXFIX3: <i>Let … run …</i> only for an account known ready; one no read answered is offered to read first.</summary>
-    [Fact]
-    public void Only_an_account_known_ready_is_let_in_and_an_unread_one_is_read_first()
-    {
-        var use = Use(Scope(), Scope("""{"workspace":"work","list":["account-2"],"begins":"account-2"}"""));
-        JsonObject Facts(string profiles) =>
-            Assert.Single(Derive(doors: [With(Door(), "{\"profiles\":" + profiles + "}")], use: use, waits: [Wait("""{"signedOut":[]}""")]))["account"]!.AsObject();
-
-        var unread = Facts(Profiles("account-4", """{"login":"unknown","read":null}"""));
-        Assert.Null(unread["outside"]);
-        Is("""{"id":"account-4"}""", unread["readFirst"]!.AsObject());
-
-        // A read that failed is a reading: Read is for an account never read (§6.3), so neither is offered.
-        var failed = Facts(Profiles("account-4", $$"""{"login":"unknown","read":"{{Read}}"}"""));
-        Assert.Null(failed["outside"]);
-        Assert.Null(failed["readFirst"]);
-
-        // A ready one is let in, whatever an unread one beside it.
-        var both = JsonNode.Parse(Profiles("account-4", "{}"))!.AsArray();
-        both.Add(JsonNode.Parse("""{"name":"account-0","home":"H/account-0","login":"unknown","read":null}"""));
-        var ready = Facts(both.ToJsonString());
-        Assert.Equal("account-4", ready["outside"]!["id"]!.GetValue<string>());
-        Assert.Null(ready["readFirst"]);
-    }
-
-    /// <summary>ACCTUX1: a key its provider refused read <i>unchecked</i>; it is never let in, nor offered to read first.</summary>
-    [Fact]
-    public void A_key_its_provider_refused_is_never_let_in_nor_read_first()
-    {
-        var use = Use(Scope(), Scope("""{"workspace":"work","list":["account-2"],"begins":"account-2"}"""));
-        var facts = Assert.Single(Derive(doors: [DoorWith("account-4", """{"login":"out","key":"…abcd"}""")], use: use, waits: [Wait("""{"signedOut":[]}""")]))["account"]!;
-        Assert.Null(facts["outside"]);
-        Assert.Null(facts["readFirst"]);
+        foreach (var wait in new[] { Wait("""{"signedOut":[]}"""), Wait("""{"workspace":null,"signedOut":[]}""") })
+        {
+            var facts = Derive(doors: doors, waits: [wait]).Single(row => row["kind"]!.GetValue<string>() == "account-wait")["account"]!;
+            Assert.Null(facts["outside"]);
+            Assert.Null(facts["readFirst"]);
+        }
     }
 
     /// <summary>ACCTUX1: a refused key the start would run on is said as refused, which no sign-in answers.</summary>
@@ -257,11 +225,15 @@ public sealed class AccountAttentionSliceTests
         Assert.Equal("account-2=cooling,account-1=out,account-3=refused",
             Named(Assert.Single(Derive(doors: [DoorWith("account-3", """{"key":"…abcd"}""")], waits: [Wait("""{"signedOut":["account-1"]}""")]))));
 
-    /// <summary>The tool's own sign-in, where nothing names an account: named by the page as the person knows it.</summary>
+    /// <summary>
+    /// The tool's own sign-in, cooling: named by the page as the person knows it. Rewritten by POOL1a2 (D197 point 3): it was the
+    /// account where nothing named one; it is a conversation begun there now, which the set never serves, so the wait names it alone
+    /// whatever the set holds.
+    /// </summary>
     [Fact]
-    public void The_tool_s_own_sign_in_is_named_where_nothing_names_an_account()
+    public void The_tool_s_own_sign_in_cooling_is_named_alone_whatever_the_set_holds()
     {
-        var row = Assert.Single(Derive(use: Use(Scope()), waits: [Wait("""{"account":null,"name":null,"signedOut":[]}""")]));
+        var row = Assert.Single(Derive(waits: [Wait("""{"account":null,"name":null,"signedOut":[]}""")]), row => row["kind"]!.GetValue<string>() == "account-wait");
         Is($$"""{"id":null,"name":null,"state":"cooling","read":null,"until":"{{Until}}"}""", Assert.Single(row["account"]!["named"]!.AsArray())!.AsObject());
     }
 
@@ -282,14 +254,17 @@ public sealed class AccountAttentionSliceTests
     private static readonly string HeldSignedOut =
         """{"agent":"claude-code","account":null,"name":null,"workspace":"work","until":null,"stated":false,"quests":[],"asks":["a1"],"signedOut":["account-1"]}""";
 
-    /// <summary><c>work</c> runs on <c>account-1</c> alone; <c>account-4</c>, outside its list, was never read.</summary>
+    /// <summary>
+    /// The agent's set is <c>account-1</c> alone. Rewritten by POOL1a2: <c>work</c> ran on it alone beside <c>account-4</c>, outside
+    /// its list and never read; no account is outside the set now.
+    /// </summary>
     private static List<JsonObject> SignedOutAlone(string door = "{}", JsonObject[]? waits = null, JsonObject[]? considered = null, JsonObject[]? quests = null, JsonObject[]? asks = null) =>
         Derive(
-            doors: [With(DoorWith("account-4", """{"login":"unknown","read":null}"""), door)],
-            use: Use(Scope(), Scope("""{"workspace":"work","list":["account-1"]}""")),
+            doors: [With(Door("""{"profiles":[{"name":"account-1","home":"H/account-1","login":"out","read":"2026-10-05T10:42:00Z"}]}"""), door)],
+            use: Use(Scope("""{"list":["account-1"],"begins":"account-1"}""")),
             waits: waits ?? [JsonNode.Parse(HeldSignedOut)!.AsObject()], considered: considered, quests: quests, asks: asks);
 
-    /// <summary>A wait with no <c>until</c> is no cool-off: its accounts, its ask, and <i>Read</i> first for the one never read.</summary>
+    /// <summary>A wait with no <c>until</c> is no cool-off: its accounts and its ask, and nothing to read first (POOL1a2).</summary>
     [Fact]
     public void A_wait_with_no_time_names_its_accounts_and_its_ask_and_never_the_own_sign_in_as_cooling()
     {
@@ -299,7 +274,7 @@ public sealed class AccountAttentionSliceTests
             (row["id"]!.GetValue<string>(), row["where"]!.GetValue<string>(), row["wholeWorkspace"]!.GetValue<bool>(), row["since"]!.GetValue<string>()));
         Assert.Equal("account-1=out", Named(row));
         Assert.Null(row["account"]!["outside"]);
-        Is("""{"id":"account-4"}""", row["account"]!["readFirst"]!.AsObject());
+        Assert.Null(row["account"]!["readFirst"]);
     }
 
     /// <summary>OWNSPACE1b-A: the tool's own sign-in read signed out holds no work, so it has no row.</summary>
@@ -371,17 +346,20 @@ public sealed class AccountAttentionSliceTests
     public void No_account_never_names_the_tool_s_own_sign_in() =>
         Assert.Empty(Assert.Single(None($$"""{"ownLogin":"out","ownRead":"{{Read}}"}"""))["account"]!["named"]!.AsArray());
 
-    // ---- a signed-out account a list holds ----
+    // ---- a signed-out account of the set ----
 
-    /// <summary>UXFIX3: only when it was read is known, never since when it holds work, so it carries its reading and no wait.</summary>
+    /// <summary>
+    /// UXFIX3: only when it was read is known, never since when it holds work, so it carries its reading and no wait. Rewritten by
+    /// POOL1a2: it said where it ran, <c>runs</c>; every account of the set serves every workspace now, so it says none.
+    /// </summary>
     [Fact]
-    public void A_signed_out_account_a_list_holds_is_a_row_of_its_own_carrying_its_reading_and_no_wait()
+    public void A_signed_out_account_of_the_set_is_a_row_of_its_own_carrying_its_reading_and_no_wait()
     {
         var rows = Derive();
 
         Assert.Equal("signed-out:claude-code/account-1,signed-out:claude-code/account-3", Ids(rows));
         Is($$$"""
-           {"kind":"signed-out","id":"signed-out:claude-code/account-1","since":null,"read":"{{{Read}}}","where":"Claude Code","runs":["work"],
+           {"kind":"signed-out","id":"signed-out:claude-code/account-1","since":null,"read":"{{{Read}}}","where":"Claude Code",
             "account":{"agent":"claude-code","product":"Claude Code","harness":"claude-code","signsIn":true,"outside":null,
              "named":[{"id":"account-1","name":null,"state":"out","read":"{{{Read}}}","until":null}]}}
            """, rows[0]);
@@ -395,7 +373,8 @@ public sealed class AccountAttentionSliceTests
 
         Assert.Equal("signed-out:claude-code/account-1,signed-out:claude-code/account-3", Ids(rows));
         Assert.Equal("account-3=refused", Named(rows[1]));
-        Assert.Equal(("Claude Code", """["work"]"""), (rows[1]["where"]!.GetValue<string>(), rows[1]["runs"]!.ToJsonString()));
+        Assert.Equal("Claude Code", rows[1]["where"]!.GetValue<string>());
+        Assert.False(rows[1].ContainsKey("runs"));
     }
 
     /// <summary>ACCOUNTID1b: two accounts of one email are two rows, each named by the page from the roster it holds.</summary>
@@ -406,7 +385,7 @@ public sealed class AccountAttentionSliceTests
             {"profiles":[{"name":"acct-0000000a","home":"H/a","login":"out","read":"2026-10-05T10:42:00Z","account":"person@example.invalid","org":"Org A"},
                          {"name":"acct-0000000b","home":"H/b","login":"out","read":"2026-10-05T10:42:00Z","account":"person@example.invalid","org":"Org B"}]}
             """);
-        var rows = Derive(doors: [doors], use: Use(Scope(), Scope("""{"workspace":"work","list":["acct-0000000a","acct-0000000b"]}""")));
+        var rows = Derive(doors: [doors], use: Use(Scope("""{"list":["acct-0000000a","acct-0000000b"]}""")));
         Assert.Equal("signed-out:claude-code/acct-0000000a,signed-out:claude-code/acct-0000000b", Ids(rows));
     }
 
@@ -423,10 +402,14 @@ public sealed class AccountAttentionSliceTests
     public void A_signed_out_account_a_waiting_start_names_is_listed_once() =>
         Assert.Equal(["account-wait"], Derive(waits: [Wait()]).Select(row => row["kind"]!.GetValue<string>()));
 
+    /// <summary>
+    /// Rewritten by POOL1a2 (D197 point 1): a signed-out account that no list and no default held was no row, holding no work. Every
+    /// account of the set holds work now, so it is a row however the set was answered; an agent not installed has none.
+    /// </summary>
     [Fact]
-    public void A_signed_out_account_nothing_holds_or_of_an_agent_not_installed_is_no_row()
+    public void A_signed_out_account_is_a_row_whatever_the_set_answered_and_of_an_agent_not_installed_is_none()
     {
-        Assert.Empty(Derive(use: Use(Scope())));
+        Assert.Equal("signed-out:claude-code/account-1,signed-out:claude-code/account-3", Ids(Derive(use: Use(Scope()))));
         Assert.Empty(Derive(doors: [Door("""{"present":false}""")]));
     }
 
@@ -440,15 +423,15 @@ public sealed class AccountAttentionSliceTests
         Assert.Empty(Derive(doors: [], noUse: true, waits: [], asks: []));
 
     /// <summary>
-    /// UXFIX3: a signed-out account's row knows when it was read, not since when it holds work: no wait however its reading moves. A
-    /// door's default and a workspace's default hold an account as a list does.
+    /// UXFIX3: a signed-out account's row knows when it was read, not since when it holds work: no wait however its reading moves.
+    /// Rewritten by POOL1a2: it was held by a door's default and a workspace's, as a list holds one; every account of the set holds
+    /// work now, with no accounts' answer read at all.
     /// </summary>
     [Fact]
-    public void A_signed_out_account_a_default_holds_beside_a_parked_session_has_no_wait()
+    public void A_signed_out_account_of_the_set_beside_a_parked_session_has_no_wait()
     {
         JsonObject DoorRead(string one, string two) => Door($$"""
-            {"machineDefault":"account-1","workspaceDefaults":[{"workspace":"aurora","profile":"account-2"}],
-             "profiles":[{"name":"account-1","home":"H/account-1","login":"out","read":"{{one}}"},{"name":"account-2","home":"H/account-2","login":"out","read":"{{two}}"}]}
+            {"profiles":[{"name":"account-1","home":"H/account-1","login":"out","read":"{{one}}"},{"name":"account-2","home":"H/account-2","login":"out","read":"{{two}}"}]}
             """);
         AttentionFacts Facts(JsonObject door) => new() { Sessions = [Session("""{"state":"awaiting-person"}""")], Registry = [Registration("engine")], Doors = [door] };
 
@@ -466,12 +449,13 @@ public sealed class AccountAttentionSliceTests
     {
         var rows = Rows(new()
         {
-            Doors = [Door()], Use = Use(Scope(), Scope("""{"workspace":"work","list":["account-2"],"begins":"account-2"}""")),
+            Doors = [Door()], Use = Use(),
             Waits = [Wait("""{"signedOut":[]}"""), JsonNode.Parse(NoAccount)!.AsObject(), Wait("""{"agent":"codex","workspace":"work"}""")],
             Asks = Asked, Registry = WorkRegistry,
         });
 
-        Assert.Contains(rows, row => row["account"]?["outside"] is JsonObject);
+        // No account is outside the set (POOL1a2): the field is written, and null, kept for the page's shape until POOL1c.
+        Assert.Contains(rows, row => row["account"] is JsonObject account && account.ContainsKey("outside") && account["outside"] is null);
         Assert.Contains(rows, row => row["account"]?["noAccount"] is not null);
         foreach (var row in rows) Assert.Equal(Normal(row), Normal(AttentionStateSlice.Picked(row)));
     }

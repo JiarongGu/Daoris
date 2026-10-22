@@ -92,8 +92,8 @@ public sealed class AccountNextStartTests : IDisposable
             new SessionStarted("fake-door", "account-2", Seen.AddMinutes(-4), Running: true),
         ], roster.Mark());
 
-        var said = roster.Next("fake", null);
-        Assert.Equal(said, roster.Next("fake", null), new NextComparer());
+        var said = roster.Next("fake");
+        Assert.Equal(said, roster.Next("fake"), new NextComparer());
 
         Assert.Equal(("account-3", NextReason.Fewest, "account-1"), (said.Account, said.Reason, said.Over));
         Assert.Equal("account-1=Ready account-2=Ready", Holds(said));
@@ -116,31 +116,32 @@ public sealed class AccountNextStartTests : IDisposable
             new SessionStarted("fake", "account-3", Seen.AddHours(-1), Running: false),
         ], roster.Mark());
 
-        var cooling = roster.Next("fake", "work");
+        // The workspace's own list and default, written by an older build, are read as the set (POOL1a2): its first is the order's.
+        var cooling = roster.Next("fake");
         Assert.Equal(("account-2", NextReason.LeastRecent), (cooling.Account, cooling.Reason));
         Assert.Equal(new AccountHeld("account-1", NextHold.Cooling, Until), cooling.Others[0]);
 
         _now = Until.AddMinutes(1);
-        var offered = roster.Next("fake", "work");
+        var offered = roster.Next("fake");
         Assert.Equal(("account-1", NextReason.LeastRecent, "account-2"), (offered.Account, offered.Reason, offered.Over));
         Assert.Equal(Until, Assert.Single(AccountCooling.Offered(_home, _now)).Until);
     }
 
+    /// <summary>
+    /// Rewritten by POOL1a2 (D197 point 1; the account-pool design §2.4): a workspace's own list once held its starts to its own
+    /// accounts, the machine's outside it, and another workspace read the machine's list with the workspace's account outside.
+    /// Read as the set now, one order of every account (the machine's list, then the workspace's), and no account is outside.
+    /// </summary>
     [Fact]
-    public void A_workspace_s_own_list_is_its_own_and_the_machine_s_accounts_are_not_used_there()
+    public void A_workspace_s_own_list_is_read_as_the_set_and_no_account_is_outside()
     {
         Accounts("account-1", "account-2", "account-3");
         Wire(s => s.WithRotation("fake", ["account-1", "account-2"]).WithRotation("fake", ["account-3"], "work"));
         var roster = Roster();
 
-        var work = roster.Next("fake", "work");
-        Assert.Equal(("account-3", NextReason.Named), (work.Account, work.Reason));
-        Assert.Equal("account-1=Outside account-2=Outside", Holds(work));
-
-        // A workspace with nothing of its own reads this machine's scope.
-        var lab = roster.Next("fake", "lab");
-        Assert.Equal(("account-1", NextReason.List), (lab.Account, lab.Reason));
-        Assert.Equal("account-2=Ready account-3=Outside", Holds(lab));
+        var next = roster.Next("fake");
+        Assert.Equal(("account-1", NextReason.List), (next.Account, next.Reason));
+        Assert.Equal("account-2=Ready account-3=Ready", Holds(next));
     }
 
     [Fact]
@@ -151,7 +152,7 @@ public sealed class AccountNextStartTests : IDisposable
         var roster = Roster();
         roster.Refuse("fake-door", "account-1", "refused");
 
-        var next = roster.Next("fake", null);
+        var next = roster.Next("fake");
 
         Assert.Equal(("account-2", NextReason.OnlyReady), (next.Account, next.Reason));
         Assert.Equal("account-1=Refused", Holds(next));
@@ -167,12 +168,12 @@ public sealed class AccountNextStartTests : IDisposable
         Accounts("account-1");
         var roster = Roster();
 
-        var next = roster.Next("fake", null);
+        var next = roster.Next("fake");
         Assert.Equal(("account-1", NextReason.Named), (next.Account, next.Reason));
         Assert.Empty(next.Others);
 
         Cool(null, Until);
-        Assert.Equal(("account-1", NextReason.Named), roster.Next("fake", null) is var cooled ? (cooled.Account, cooled.Reason) : default);
+        Assert.Equal(("account-1", NextReason.Named), roster.Next("fake") is var cooled ? (cooled.Account, cooled.Reason) : default);
     }
 
     /// <summary>Two answers are one when they take the same account for the same reason, holding the others alike.</summary>
