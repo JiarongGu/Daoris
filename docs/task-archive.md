@@ -19736,3 +19736,10 @@ the Pieces section and the head in en and zh. No agent is admitted until M2 writ
 parent runs for M2 on a disposable repository and then for the first real piece (M3). What part seven left (taken in, the opinion's
 families, *Discard…*, *Hand over what it left*, `PartnerLandingTests` and the remaining process cases) is COAGENT1b2. Detail: D199's
 COAGENT1b notes, parts one to seven. On Opus.
+## PARKWORDS1 — a park's card says in one line where its question is and how long it has waited (2026-10-23, D185)
+
+> - [ ] **PARKWORDS1 — a park's card says in one line where its question is and how long it has waited** (web-shell; filed on main, not in the tree that built it). Today `src/Daoris.Web/src/work/waits/ParkAnswer.tsx` stacks four sentences before the answer box: `work.park.noQuestion`, `work.park.deadline`, `work.park.meanwhileTree` or `work.park.meanwhile`, and `work.park.goesOn`. One line carries the question's place and the span; what is held and how the answer travels go behind a disclosure, in English and Chinese; go-aheads, the by-date line and the order line stay. Proof: the story and a behavior test for the one line and the disclosure, both languages; the web checks.
+
+**Outcome** 2026-10-23: `work.park.waitingHere` / `waitingAbove` say the place and the span over the question; no deadline, the
+quest and tree held and where the answer goes fold under *While it waits* (a native `details`). `work.park.noQuestion` and
+`work.park.deadline` left both catalogues. Detail: D185's PARKWORDS1 note. On Opus.
