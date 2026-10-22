@@ -457,7 +457,9 @@ app.MapGet("/api/status", (ComposedService s, string? prove) => new StatusRespon
     // FABRIC-CLOSE1b's handshake: a driver binds a quest to a closure graph only against a host that says it knows one.
     Closure: true,
     // CLOSECAP1: the outcome door's recovery, which a binding needs beside the graph's doors.
-    CloseOutcome: true));
+    CloseOutcome: true,
+    // FABRIC-CLOSE1i: a circle synced through a remote is judged here by the remote's handshake, so a driver asks this host's bind there.
+    CloseRemote: true));
 
 // Every cross-repository answer below takes `workspace` — the unit of sharing (D48 §4). Absent spans
 // every circle this deployment holds, which for a shared host is one by construction and for a local
@@ -2284,13 +2286,18 @@ if (mode == ServiceMode.Shared)
     // The remote's quest doors (D68, sync design §8): what it accepted after a number, in its order,
     // and a push rebased on one, judged quest by quest through the same table every machine uses. The
     // wire is Core's (QuestWire), the one the machines' client writes — two hands, one shape.
+    // FABRIC-CLOSE1i: both answer the workspace's handshake, which machines here have not declared they know a bound quest.
     app.MapGet("/api/quests/operations", async (ComposedService s, long? since, CancellationToken ct) =>
-        Results.Text(QuestWire.Page(await s.Quests.OperationsSinceAsync(since ?? 0, ct: ct)), "application/json"));
+        Results.Text(QuestWire.Page(await s.Quests.OperationsSinceAsync(since ?? 0, ct: ct) with
+        {
+            Closure = await s.Quests.ClosureAsync(ct),
+        }), "application/json"));
 
     app.MapPost("/api/quests/operations", async (ComposedService s, HttpRequest request, CancellationToken ct) =>
     {
         using var body = new StreamReader(request.Body);
-        if (QuestWire.ReadPush(await body.ReadToEndAsync(ct)) is not var (@base, pushed))
+        var json = await body.ReadToEndAsync(ct);
+        if (QuestWire.ReadPush(json) is not var (@base, pushed))
         {
             return Results.BadRequest(new ErrorResponse(QuestWire.Shape));
         }
@@ -2303,7 +2310,9 @@ if (mode == ServiceMode.Shared)
             asked => s.Exchange.JudgeReceived(asked, registered),
             asked => registered.Named(asked.To)?.InWorkspace ?? Workspaces.Default,
             ct);
-        return Results.Text(QuestWire.Pushed(judged), "application/json");
+        // What the push said of its machine (FABRIC-CLOSE1i), heard whatever was kept of it, since a refused operation's build is still its own.
+        await s.Quests.DeclaredAsync(QuestWire.Declares(json), pushed, DateTimeOffset.UtcNow, ct);
+        return Results.Text(QuestWire.Pushed(judged with { Closure = await s.Quests.ClosureAsync(ct) }), "application/json");
     });
 }
 else

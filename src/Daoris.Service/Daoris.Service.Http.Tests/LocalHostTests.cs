@@ -1066,6 +1066,8 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.True((await host.GetAsync("/api/status")).Json.GetProperty("closure").GetBoolean());
         // CLOSECAP1: and its outcome door, which a binding also needs.
         Assert.True((await host.GetAsync("/api/status")).Json.GetProperty("closeOutcome").GetBoolean());
+        // FABRIC-CLOSE1i: and judges a bind through a remote by the remote's handshake.
+        Assert.True((await host.GetAsync("/api/status")).Json.GetProperty("closeRemote").GetBoolean());
     }
 
     /// <summary>
