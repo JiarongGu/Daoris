@@ -606,7 +606,7 @@ public sealed class SessionLedger(
 
         return await sessions.ExclusiveAsync(async inside =>
         {
-            var active = await sessions.ActiveForAsync(known.Repository, holding, inside).ConfigureAwait(false);
+            var active = await HolderAsync(known.Repository, holding, inside).ConfigureAwait(false);
             if (active is not null)
             {
                 return new SessionOpenOutcome(
@@ -1303,7 +1303,7 @@ public sealed class SessionLedger(
 
         return await sessions.ExclusiveAsync(async inside =>
         {
-            var active = await sessions.ActiveForAsync(quest.To, holding, inside).ConfigureAwait(false);
+            var active = await HolderAsync(quest.To, holding, inside).ConfigureAwait(false);
             if (active is not null)
             {
                 return new SessionOpenOutcome(SessionOpenRefusal.RepositoryBusy, Busy(quest.To, active), Session: null);
@@ -1459,7 +1459,7 @@ public sealed class SessionLedger(
         // Ask Daoris's holds its own workspace's one at a time (ASKSCOPE1a), as its start does: every workspace's runs in one room.
         var holder = IsHelp(session)
             ? await sessions.RunningInWorkspaceAsync(session.Repository, session.Workspace, parked: true, inside).ConfigureAwait(false)
-            : await sessions.ActiveForAsync(session.Repository, session.Tree, inside).ConfigureAwait(false);
+            : await HolderAsync(session.Repository, session.Tree, inside, except: session.Id).ConfigureAwait(false);
         if (holder is not null)
         {
             return new SessionAdvanceOutcome(SessionAdvanceRefusal.Busy, Busy(session.Repository, holder), Session: null);
@@ -1496,6 +1496,24 @@ public sealed class SessionLedger(
         session.State == SessionState.Completed && NoteParts.Carries(session.NoteParts, EndedAwaitsHelper);
 
     /// <summary>
+    /// The session holding <paramref name="repository"/>'s <paramref name="tree"/> (D51): an active one (<see cref="SessionStore.ActiveForAsync"/>),
+    /// else one that ended waiting on its own helper while its quest is still taken (HELPERWAIT1; Codex's #5 on COWORKUX1), which goes on
+    /// there with the answer or parks for the person, and so keeps its tree as a park does. <paramref name="except"/> is the record moving,
+    /// which holds nothing against itself.
+    /// </summary>
+    private async Task<Session?> HolderAsync(string repository, string? tree, CancellationToken inside, string? except = null)
+    {
+        if (await sessions.ActiveForAsync(repository, tree, inside).ConfigureAwait(false) is { } active) return active;
+        foreach (var waiting in await sessions.CompletedWithCodeAsync(repository, tree, EndedAwaitsHelper, inside).ConfigureAwait(false))
+        {
+            if (string.Equals(waiting.Id, except, StringComparison.Ordinal) || !WaitedOnHelper(waiting)) continue;
+            if (await quests.FindAsync(waiting.Quest!, inside).ConfigureAwait(false) is { Status: QuestStatus.Taken }) return waiting;
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// The second move out of an ended state (HELPERWAIT1, D131's and D188's notes): a driven session of this machine's that ended waiting on
     /// its own helper parks for the person when that helper ended with no answer, as its turn's end would have parked it, its note the
     /// driver's (the reason, then the park's own line). Called inside <see cref="AdvanceAsync"/>'s step, the record already read.
@@ -1529,7 +1547,7 @@ public sealed class SessionLedger(
                 SessionAdvanceRefusal.Terminal, $"Session `{id}`'s quest `#{session.Quest}` is no longer taken, so it has nothing to park for.", Session: null);
         }
 
-        if (await sessions.ActiveForAsync(session.Repository, session.Tree, inside).ConfigureAwait(false) is { } holder)
+        if (await HolderAsync(session.Repository, session.Tree, inside, except: session.Id).ConfigureAwait(false) is { } holder)
         {
             return new SessionAdvanceOutcome(SessionAdvanceRefusal.Busy, Busy(session.Repository, holder), Session: null);
         }
@@ -1764,7 +1782,7 @@ public sealed class SessionLedger(
     /// </remarks>
     private static string Busy(string repository, Session active) =>
         $"`{repository}`'s working tree already has an active session — `{active.Id}` "
-        + $"({Spell(active.State)}{(active.Quest is null ? ", a chat" : $", quest `#{active.Quest}`")}). "
+        + $"({(WaitedOnHelper(active) ? "waiting on its own helper" : Spell(active.State))}{(active.Quest is null ? ", a chat" : $", quest `#{active.Quest}`")}). "
         + "One session per working tree: two agents in one tree corrupt each other's git state.";
 
     /// <summary>

@@ -194,10 +194,16 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     private readonly object _heldGate = new();
     private readonly Dictionary<string, (string? Seen, string State)> _held = new(StringComparer.Ordinal);
 
-    /// <summary>How the look's list of live sessions shows <paramref name="asker"/>: its state and whether the person answered it; null where it is not live.</summary>
+    /// <summary>
+    /// How the look shows <paramref name="asker"/>: its state and whether the person answered it, from the list of live sessions; else, for
+    /// one that ended, its state, when it last moved and how many words wait on it, from the records the look read (HELPERWAIT1); null where
+    /// the look shows it neither way.
+    /// </summary>
     private static string? Seen(Snapshot snapshot, string asker) =>
         snapshot.Active.FirstOrDefault(view => string.Equals(view.Id, asker, StringComparison.OrdinalIgnoreCase)) is { } view
             ? $"{view.State}|{(view.Answer is null ? "" : "answered")}"
+            : snapshot.LastRun.Values.FirstOrDefault(last => string.Equals(last.Session, asker, StringComparison.OrdinalIgnoreCase)) is { } ended
+            ? $"{ended.State}|{ended.Updated?.ToUnixTimeMilliseconds()}|{ended.Said?.Count}"
             : null;
 
     /// <summary>
@@ -225,6 +231,22 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         return Helper(LookClass.Progress, asker.Parked
             ? $"helper  ask `{ask.Id}` is answered, and waits for the person's answer to session {asker.Session}, then for its turn to end: never into a step in flight."
             : $"helper  ask `{ask.Id}` is answered, and waits for session {asker.Session}'s turn to end: never into a step in flight.");
+    }
+
+    /// <summary>
+    /// A hand the host refused (HELPERWAIT1): kept as a held hand is, said once for each refusal, and not asked again while the look shows its
+    /// asker as it did; a transient refusal is then asked again once the asker moves, as a held one is.
+    /// </summary>
+    private LookLine? Unhanded(HelperAsk ask, string? seen, string line)
+    {
+        lock (_heldGate)
+        {
+            var said = !_held.TryGetValue(ask.Id, out var was) || !string.Equals(was.State, line, StringComparison.Ordinal);
+            _held[ask.Id] = (seen, line);
+            if (!said) return null;
+        }
+
+        return Helper(LookClass.Retry, line);
     }
 
     /// <summary>
@@ -614,7 +636,8 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         var (handed, message, word) = await service.Helpers
             .HandAsync(state.Helper!, composed, ct, running: nextStep, level: ask.Urgent ? MessageLevels.Spelled(MessageLevel.Urgent) : null)
             .ConfigureAwait(false);
-        if (!handed) return Helper(LookClass.Retry, $"helper  ask `{ask.Id}` is answered, and waits to be handed to session {to}: {message}");
+        // HELPERWAIT1: a hand the host refused is said once, and asked again only once the look shows its asker moved, never at every look.
+        if (!handed) return Unhanded(ask, seen, $"helper  ask `{ask.Id}` is answered, and waits to be handed to session {to}: {message}");
 
         // Held where the run takes it at its next step; one the inbox no longer takes stays on the record, which goes on with it once.
         var atNextStep = nextStep && word is not null && inbox!.HoldKept(

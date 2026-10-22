@@ -56,6 +56,12 @@ internal sealed class OpinionStandIn : HttpMessageHandler
     /// <summary>How many times the records were read whole (HELPERWAIT1: a held hand reads none until its asker moves).</summary>
     public int RecordReads { get; private set; }
 
+    /// <summary>How many times a helper's hand was asked, taken or refused (HELPERWAIT1: a hand the host refuses is not asked again until its asker moves).</summary>
+    public int HelperHandsAsked { get; private set; }
+
+    /// <summary>Where set, every helper's hand is refused with this reason (HELPERWAIT1), as an older or a failing desk refuses one.</summary>
+    public string? HelperHandRefusal { get; set; }
+
     /// <summary>A client over this host, as a driver is handed one.</summary>
     public ServiceClient Client() => new(Url, null, new HttpClient(this, disposeHandler: false));
 
@@ -256,6 +262,8 @@ internal sealed class OpinionStandIn : HttpMessageHandler
                 case ("POST", _) when path.StartsWith("/api/helpers/", StringComparison.Ordinal) && path.EndsWith("/hand", StringComparison.Ordinal):
                 {
                     var id = Uri.UnescapeDataString(path["/api/helpers/".Length..^"/hand".Length]);
+                    HelperHandsAsked++;
+                    if (HelperHandRefusal is { } refusal) return Refuse(HttpStatusCode.Conflict, refusal);
                     var helper = Find(id);
                     if (helper?["serves"]?.GetValue<string>() is not { } served) return Refuse(HttpStatusCode.NotFound, $"There is no helper session `{id}`");
                     var asker = Find(served);

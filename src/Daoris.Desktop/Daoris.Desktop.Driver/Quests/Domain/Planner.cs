@@ -1602,6 +1602,17 @@ public static class Planner
                 };
             }
 
+            // HELPERWAIT1: a part waiting on its own helper keeps its tree, as a park does, though no live list shows it.
+            if (WaitingInTree(snapshot, tree, except: null) is { } waiting)
+            {
+                return start with
+                {
+                    Entry = entry with { HeldBy = waiting },
+                    Reason = $"starting in `{quest.To}`, alongside session `{waiting}`, which waits on its own helper in its session's tree — "
+                             + "a further part, in a tree of its own.",
+                };
+            }
+
             if (treesThisTick.FirstOrDefault(claim => SameTree(claim.Tree, tree)) is { Quest: { } ahead })
             {
                 return start with
@@ -1828,6 +1839,17 @@ public static class Planner
                     };
                 }
 
+                // HELPERWAIT1: so does a session waiting on its own helper there, which goes on in it with the answer.
+                if (into is { Tree: { Length: > 0 } kept }
+                    && WaitingInTree(snapshot, kept, except: continuing ? into.Session : null) is { } waiting)
+                {
+                    return new(quest, StartVerdict.RepositoryBusy,
+                        $"session `{waiting}` waits on its own helper in the tree `#{quest.Id}` goes back into — one session per tree.")
+                    {
+                        Said = new(SittingFact.Tree) { Session = waiting },
+                    };
+                }
+
                 // PARALLEL1b: a start still opening holds the tree it goes back into, as its session will.
                 if (into is { Tree: { Length: > 0 } reserved }
                     && opening.FirstOrDefault(start => SameTree(start.Tree, reserved)) is { Quest: { } going })
@@ -2020,6 +2042,17 @@ public static class Planner
     internal static IReadOnlyList<StartReservation> Opening(Snapshot snapshot) =>
         [.. snapshot.Starting.Where(start => start.Quest is null
                                              || !snapshot.Active.Any(s => string.Equals(s.Quest, start.Quest, StringComparison.OrdinalIgnoreCase)))];
+
+    /// <summary>
+    /// The session that ended waiting on its own helper in <paramref name="tree"/> while its quest is still taken (HELPERWAIT1; Codex's #5 on
+    /// COWORKUX1), or null: it goes on there with the answer, or parks for the person, so it keeps the tree as a park does, though it is
+    /// completed and in no live list. <paramref name="except"/> is the record going back in, which holds nothing against itself.
+    /// </summary>
+    internal static string? WaitingInTree(Snapshot snapshot, string tree, string? except) =>
+        snapshot.LastRun.Values.FirstOrDefault(last =>
+            HelperWaits.HoldsTree(last) && SameTree(last.Tree, tree)
+            && !string.Equals(last.Session, except, StringComparison.OrdinalIgnoreCase)
+            && snapshot.Quests.Any(quest => quest.Status == "Taken" && string.Equals(quest.Id, last.Quest, StringComparison.OrdinalIgnoreCase)))?.Session;
 
     /// <summary>Two tree paths are one tree — separators and case aside, as Windows sees them.</summary>
     internal static bool SameTree(string? a, string? b) =>

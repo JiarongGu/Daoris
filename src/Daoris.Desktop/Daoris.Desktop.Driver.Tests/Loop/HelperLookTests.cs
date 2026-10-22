@@ -784,6 +784,35 @@ public sealed class HelperLookTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 HELPERWAIT1 (the look stops retrying a hand it cannot make): a hand the host refuses is said once, and is not asked again while the
+    /// look's records show its asker as they did when it was refused; once the asker's record moves, the next look asks again.
+    /// </summary>
+    [Fact]
+    public async Task A_hand_the_host_refuses_is_said_once_and_asked_again_only_once_its_asker_moves()
+    {
+        Ask("a1");
+        Answered();
+        var host = Host();
+        host.HelperHandRefusal = "the desk cannot take it now";
+        var driver = Driver(host, pass: null);
+        var record = new PriorSession("s1", "trees/default/reports/s-1", "completed") { Quest = "q1", Updated = At };
+        Snapshot Records(PriorSession last) =>
+            new([], [], []) { LastRun = new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase) { ["q1"] = last } };
+
+        var events = new List<string>();
+        foreach (var _ in Enumerable.Range(0, 3)) await driver.HelpersAsync(Records(record), 0, events, CancellationToken.None);
+
+        Assert.Equal(1, host.HelperHandsAsked);
+        Assert.Contains("the desk cannot take it now", Assert.Single(events));
+        Assert.Null(Files.ReadState("a1")!.Handed);
+
+        host.HelperHandRefusal = null;
+        await driver.HelpersAsync(Records(record with { Updated = At.AddMinutes(1) }), 0, events, CancellationToken.None);
+        Assert.Single(host.HelperHands);
+        Assert.NotNull(Files.ReadState("a1")!.Handed);
+    }
+
+    /// <summary>
     /// 🔴 One hand per ask (Fable's read of COWORKUX1, F3): a restart that cut the look between the keep and the state's mark finds the
     /// answer already handed, its word still waiting on the asker or a turn of the asker's already opened with it, and marks it handed
     /// without handing it twice.
