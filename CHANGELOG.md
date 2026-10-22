@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- A run bound to a workflow version saved as a graph is now drawn from what Daoris has judged of it, in the side bar's *Workflow* view
+  and `daoris-driver workflow run`, where it was said not to run: each node of its graph where it stands, on the quest or the branch it
+  watches, a fork and its join drawn as the graph holds them, its branches said to be its graph's and not the landing rule's, a second
+  opinion or a look not begun yet said so, every landing door still holding it said, and a look your chain or ask added drawn beside it.
+  What a kind of task would ask of you now reads a workflow whose newest version is a graph. In English and 中文.
 - A workflow version saved as a graph now says which checks its sessions run: its `claimed` node's `checks` (`light` or
   `heavy-at-end`) is taken by every session of a run bound to it, its first included, in place of the repository's choice, and its
   `callMinutes` sets how long one call may run under *Light* before the session is told (20 by default). A value written another
