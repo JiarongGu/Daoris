@@ -1,0 +1,17 @@
+{
+  "work.park.title": "It asks you",
+  "work.park.recommended": "recommended",
+  "work.park.noQuestion": "It asked in its last message, above: answer it below.",
+  "work.park.goAheads": "Go-aheads it waits on",
+  "work.park.inTheBox": "Each is answered in the box below, with your words there.",
+  "work.park.deadline": "No deadline here: it has waited {{span}}, and waits until you answer.",
+  "work.park.by": "It says it needs your answer by: {{by}}",
+  "work.park.meanwhileTree": "Meanwhile its quest #{{quest}} stays taken, its tree {{tree}} is kept, and it runs nothing until you answer.",
+  "work.park.meanwhile": "Meanwhile its quest #{{quest}} stays taken, and it runs nothing until you answer.",
+  "work.park.goesOn": "Your answer goes to the same session as your words, and it goes on with it at the driver's next look.",
+  "work.park.order": "Answer its go-aheads first: each keeps it waiting for its question, whose answer then sends it on with them.",
+  "work.park.placeholder": "your words — with the answer you press above, or alone as your answer",
+  "work.park.goAheadsFirst": "Answer its go-aheads above first: then this answer sends it on with them.",
+  "work.park.changed": "Its question changed since this page read it: read the new one and answer it. Nothing was sent.",
+  "work.park.chose": "Answered “{{label}}”: the same session goes on with it at the driver's next look."
+}

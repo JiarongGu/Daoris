@@ -5,8 +5,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// FABRIC-CUTOVER1e (D190 points 2, 3 and 7; the cutover design §2.2, §2.3, §6, §11.1): a run bound to a graph version is drawn from its record,
 /// <c>run:&lt;run&gt;</c>, each node a step where its record's status says it stands, on the subject its binding names, named; an opinion, a look and
-/// a plugin's performed step its wires let start said not begun until CUTOVER1d; its branches said to be its graph's; and a look the work's own
-/// choice adds drawn beside the graph. Pure, over facts: the reader gathers them (<c>WorkflowPortsTests</c>) and the route answers them
+/// a plugin's performed step its wires let start ready as any node (CUTOVER1d took the not-begun row away); its branches said to be its graph's; and a
+/// look the work's own choice adds drawn beside the graph. Pure, over facts: the reader gathers them (<c>WorkflowPortsTests</c>) and the route answers them
 /// (<c>DriverModuleWorkflowRunTests</c>).
 /// </summary>
 public sealed class WorkflowGraphRunTests
@@ -119,18 +119,17 @@ public sealed class WorkflowGraphRunTests
                 "Daoris has not judged its graph yet: its next look does.",
                 "Its graph observes quest #q1, its newest work here, and `daoris/q1-tree`, the branch its newest session worked.",
                 "Its branches are its graph's, not the landing rule's: a push, a pull request or a deploy happens for this work only where its graph holds one.",
-                "Every landing door still holds this run: this build judges its graph and lands nothing for it yet.",
             ],
             WorkflowRunWords.GraphSaid(graph));
     }
 
     /// <summary>
     /// Each node says its record's state on the subject its binding names: the claim reached on its quest, the landing observed on the branch the
-    /// session's records name at the tip it was bound to; the opinion, the look and the plugin's performed deploy its wires let start not begun
-    /// (FABRIC-CUTOVER1c's guards), and the run stands at the first of them.
+    /// session's records name at the tip it was bound to; the opinion, the look and the plugin's performed deploy its wires let start ready, as any
+    /// node is (FABRIC-CUTOVER1d: the runtime begins them now its doors read the run), and the run stands at the first of them.
     /// </summary>
     [Fact]
-    public void Each_node_says_its_records_state_on_the_subject_it_observes_and_a_gate_not_begun_says_so()
+    public void Each_node_says_its_records_state_on_the_subject_it_observes_and_a_ready_gate_is_ready()
     {
         var record = Record(
             Status(NodeKinds.Claimed, NodeStates.Reached, "quest:q1", "q1-moment"),
@@ -145,9 +144,9 @@ public sealed class WorkflowGraphRunTests
         Assert.Equal(
             [
                 (WorkflowRunStates.Done, WorkflowGraphDetails.Reached, "Reached on quest #q1."),
-                (WorkflowRunStates.CannotStart, WorkflowGraphDetails.NotBegun, "Not begun: this build does not ask a graph run's second opinion yet."),
-                (WorkflowRunStates.CannotStart, WorkflowGraphDetails.NotBegun, "Not begun: this build does not set up your look on a graph run yet."),
-                (WorkflowRunStates.CannotStart, WorkflowGraphDetails.NotBegun, "Not started: this build starts no plugin's step on a graph run yet."),
+                (WorkflowRunStates.Working, WorkflowGraphDetails.Ready, "Ready: nothing before it holds it."),
+                (WorkflowRunStates.Working, WorkflowGraphDetails.Ready, "Ready: nothing before it holds it."),
+                (WorkflowRunStates.Working, WorkflowGraphDetails.Ready, "Ready: nothing before it holds it."),
                 (WorkflowRunStates.Working, WorkflowGraphDetails.Active, "Observed on `daoris/q1-tree` at `11111111`."),
             ],
             run.Steps.Select(step => (step.State, step.Detail, WorkflowRunWords.Said(step))));

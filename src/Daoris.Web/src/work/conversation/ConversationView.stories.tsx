@@ -203,6 +203,20 @@ const WAITING: SessionEvent[] = [
   ev({ kind: 'note', text: 'It resumed on its own conversation.' }),
 ];
 export const WaitingForFirstAnswer: Story = { args: { turns: toTurns(WAITING).turns, live: true } };
+
+/**
+ * PARKVIEW1 (Fable's read, Q4): a park answered with a press of its question's answer, the person's own words after it: drawn as that
+ * answer chosen at the foot, waiting for the same session to go on, never as words they typed.
+ */
+const CHOSE: SessionEvent[] = [
+  ev({ kind: 'message', text: 'The tile reads its target from the configuration. Which quarterly target should it show?' }),
+  ev({ kind: 'turn', stopReason: 'end_turn' }),
+  ev({ kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: '1,200\n\nonly on the dashboard, not the report', choice: '1,200' }),
+];
+export const ParkAnsweredWithAChoice: Story = { args: { turns: toTurns(CHOSE).turns } };
+
+/** The same in 中文 at the floor: the mark translated, the answer as its question offered it. */
+export const ParkAnsweredWithAChoiceChineseNarrow: Story = { ...ParkAnsweredWithAChoice, decorators: [sessionWidths.narrow, chinese] };
 export const WaitingForFirstAnswerChinese: Story = { ...WaitingForFirstAnswer, decorators: [chinese] };
 /** WAITSAY1: a call that has run for nine minutes, named with how long. */
 const CALLING: SessionEvent[] = [

@@ -96,6 +96,10 @@ Under **Readings**, everything else you decided or took on the evidence, each sa
 rather than asked as a question, and each naming what it rests on: the line of the quest or of the
 ticket it links, quoted; a document's path and line; or a code path. An item that names nothing it
 checked has not been looked into yet: look before you write it.
+Where your connector offers `question_ask`, ask there what only the person can decide before you
+end your turn on it: the question in a sentence or two, the answers you offer, each with what you
+will do on it, and the one you recommend. The person answers it with a press at the end of this
+conversation, and their answer is your next prompt.
 
 If a command the work genuinely needs is refused, and your connector offers `permission_propose`,
 propose the narrowest rule that would allow it, with the reason. A rule that lets agents do more

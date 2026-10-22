@@ -32,6 +32,8 @@ public static class KnowledgeServer
         typeof(RuleProposalTools),
         typeof(ReviewTools),
         typeof(GoAheadTools),
+        // A driven session's question to the person before it parks (PARKVIEW1), drawn at its conversation's end with its answers as presses.
+        typeof(QuestionTools),
         typeof(HelperTools),
         // A working session's ask to go on with another agent (MIXAGENT1c), settled by the person's hand-over rule.
         typeof(HandOverTools),

@@ -269,6 +269,21 @@ public sealed partial class McpToolDescriptionTests
     }
 
     /// <summary>
+    /// PARKVIEW1: what a session reads of `question_ask` says the person answers with a press at the conversation's end, sends a
+    /// go-ahead to `go_ahead_ask`, and says the turn ends after it; and `go_ahead_ask` itself names no question tool.
+    /// </summary>
+    [Fact]
+    public void The_question_tool_says_its_answers_are_presses_and_a_go_ahead_is_asked_elsewhere()
+    {
+        var question = string.Join(" ", Descriptions().Where(d => d.Tool == "question_ask").Select(d => d.Text));
+
+        Assert.Contains("press", question);
+        Assert.Contains("go_ahead_ask", question);
+        Assert.Contains("end your turn", question);
+        Assert.Contains("recommend", question);
+    }
+
+    /// <summary>
     /// SESSCTX1f (the session-context design §3.5): what a session reads of `line_read` says it changes nothing, reads this machine's
     /// record and never over the network, reads its own session's line and refuses any other record, and never shows the agent's
     /// thoughts; it is the one tool of its kind.

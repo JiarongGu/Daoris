@@ -166,6 +166,40 @@ export const ParkedAskingGoAheads: Story = {
 };
 
 /**
+ * PARKVIEW1 (the park's ask design §3): parked on a question its agent asked through the connector, beside a go-ahead, where the box
+ * below answers it. The card shows the question and its answers in place of the whole last message, and the go-ahead is listed with
+ * no press: every press is the box's, where the person writes.
+ */
+export const ParkedOnAQuestionAnsweredBelow: Story = {
+  args: {
+    ...ParkedAskingGoAheads.args,
+    goAheads: [GO_AHEADS[0]!],
+    parkBox: true,
+    question: {
+      id: 'q5t10n00',
+      question: 'Where should the streaming budget live?',
+      choices: [
+        { label: 'On the chunk API', does: 'Cap hydration where the work is spent, as the quest asks; touches more call sites.' },
+        { label: 'In the scheduler', does: 'A smaller change, with the budget kept away from the API that spends it.' },
+      ],
+      recommend: 1,
+      by: null,
+      at: at(12),
+    },
+  },
+};
+
+/** The same in 中文 at half the window. */
+export const ParkedOnAQuestionAnsweredBelowChineseHalf: Story = {
+  ...ParkedOnAQuestionAnsweredBelow, decorators: [sessionWidths.half, chinese],
+};
+
+/** The same in dark at the floor. */
+export const ParkedOnAQuestionAnsweredBelowDarkNarrow: Story = {
+  ...ParkedOnAQuestionAnsweredBelow, decorators: [sessionWidths.narrow, dark],
+};
+
+/**
  * The same park once the person approved the first (GOAHEAD2b): go-ahead 2 is still open, so it stays parked with no
  * answer, as at the ask's door, and goes on once the second is answered.
  */

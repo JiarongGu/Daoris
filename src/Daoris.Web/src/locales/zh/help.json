@@ -22,6 +22,7 @@
   "help.proposal.titleGo": "问道衍建议打开一个界面",
   "help.proposal.goNote": "前往那里不会改动任何东西：要做的事在那个界面上完成。",
   "help.proposal.go": "前往",
+  "help.proposal.dismissGo": "移除",
   "help.proposal.titlePlugin": "问道衍提议一个插件",
   "help.proposal.titleGrant": "问道衍请求使用插件的工具",
   "help.proposal.titleWithdraw": "问道衍提议收回插件的工具",

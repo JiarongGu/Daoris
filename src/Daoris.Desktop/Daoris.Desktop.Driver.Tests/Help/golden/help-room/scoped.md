@@ -172,11 +172,14 @@ under *Doors Daoris still owes* (below), say Daoris still owes that door and nam
   the person's Apply is the press.
 
 Each proposal reaches the person as a card with two buttons, and you name them as the card does:
-a go card reads **go there** and **not now** (in 中文 **前往** and **暂不**),
+a go card reads **go there** and **dismiss** (in 中文 **前往** and **移除**),
 a delete card **delete** and **not now** (in 中文 **删除** and **暂不**),
 a bring-up-to-date card **look for updates** until the person has looked, then **apply** (in 中文 **查看更新**, then **应用**),
 an accept card **accept** and **not now** (in 中文 **采纳** and **暂不**),
 and every other card reads **apply** and **not now** (in 中文 **应用** and **暂不**).
+A press of not now comes back to you as the person's next message;
+dismissing a go card only takes it out of the conversation: nothing comes back to you, and it says nothing
+about the quest, ask or place the card named.
 
 ## Making a plugin
 

@@ -1102,6 +1102,8 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     // SWITCH1b-iii: the usage curve's table, among the driver's fixtures since PUSH1f2e, which its twin reads; since SWITCH1d the
     // page's twin.
     ['the usage curve table', ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/usage-curves.json'], [...BASE, 'driver', 'modules', 'web-unit']],
+    // PARKVIEW1: a park's question as each reader takes it, the driver's QuestionFilesTests and the page's parkQuestion.test.ts.
+    ['the park question table', ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/park-question.json'], [...BASE, 'driver', 'web-unit']],
     ['release tooling', ['tools/release-rehearsal.mjs'], [...BASE, 'rehearse']],
     ['the CLI', ['src/Daoris.Cli/src/platform/args.ts'], [...BASE, 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
     // PUSH1f2a: the driver's DriverProgramWordsProcessTests runs the CLI's entry, dispatcher, driver row and seam under node.

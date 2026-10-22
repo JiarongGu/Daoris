@@ -148,6 +148,11 @@ route the screen would, and the result, done or refused in the route's words, go
 conversation as the person's next message, so the agent knows. A proposal is a file under the home
 (`<home>/help/proposals/<id>.json`, PERM2's shape), so an unanswered one survives a restart.
 
+*2026-10-22 (ASKDISMISS1):* a go's card, which changes nothing (HELP6), reads **Go there** and **Dismiss** (移除). Its dismiss
+settles the card so no window draws it again, and goes back into the conversation as nothing: told as *Not now*, it had started
+a turn in which the agent could take it for the person's word on the quest the card named. A change's *Not now* still goes back
+as the person's next message. A go to a quest a session has taken says so, and one to an ask names its taken quest.
+
 *2026-10-22 (ASKQUESTS1, §9 item 12):* what an Apply did goes back as Daoris's word, still a turn, its words starting `Daoris:` and
 naming by id what it published; a change's *Not now* stays the person's. What an Apply published is kept with the conversation
 and shown in the panel with its live state.

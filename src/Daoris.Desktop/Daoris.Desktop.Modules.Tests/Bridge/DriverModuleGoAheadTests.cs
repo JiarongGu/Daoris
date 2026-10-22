@@ -54,6 +54,33 @@ public sealed class DriverModuleGoAheadTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// 🔴 PARKVIEW1 (the park's ask design §4): where the page answers the park itself, with the answer to the question it also
+    /// asked, its go-ahead goes through the ask's door saying <c>goesOn: false</c> (GOAHEAD2's provision for such a caller): even the
+    /// last one open keeps the park, which waits on the person for that answer, and nothing is nudged.
+    /// </summary>
+    [Fact]
+    public async Task A_go_ahead_answered_beside_its_question_keeps_the_park_for_that_answer()
+    {
+        var ledger = new Ledger
+        {
+            Records = Records(Record("s1", "awaiting-person")),
+            AfterGoAhead = Records(Record("s1", "awaiting-person", answer: "carry on.")),
+        };
+        var (loop, module) = await UpAsync(ledger);
+
+        var answered = await AnswerAsync(module, "SESSION_GO_AHEAD", new { id = "s1", ask = "a1", number = 2, approved = true, goesOn = false });
+
+        Assert.Equal((false, null, true), Park(answered));
+        Assert.Equal(["/api/asks/a1/go-aheads/2"], ledger.Posts.Select(post => post.Path));
+        using (var goAhead = JsonDocument.Parse(ledger.Posts[0].Body))
+        {
+            Assert.False(goAhead.RootElement.GetProperty("goesOn").GetBoolean());
+        }
+
+        Assert.Equal(0, loop.Nudges);
+    }
+
+    /// <summary>
     /// A go-ahead the session asked still open keeps it parked, as at the ask's door: the service keeps no answer, so the
     /// page is told the park still waits on the person, and nothing is nudged or posted beside the go-ahead.
     /// </summary>

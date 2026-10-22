@@ -49,6 +49,29 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// ASKDISMISS1: a go card's dismiss is a view act. Its card is settled, so no window draws it again, and the answer says the
+    /// conversation was told nothing: a go changes nothing, so its dismiss is no word on the quest it names.
+    /// </summary>
+    [Fact]
+    public async Task Dismissing_a_go_card_settles_it_and_tells_the_conversation_nothing()
+    {
+        var folder = HelpProposals.FolderOf(Home);
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "g1a2b3c4.json"), """
+            { "id": "g1a2b3c4", "proposed": "2026-09-29T10:00:00Z", "by": { "session": "h1" }, "kind": "go",
+              "door": "go", "target": "quests", "item": "q2taken0", "why": "the person asked where their quest went",
+              "state": "proposed", "note": null }
+            """);
+
+        var dismissed = await AnswerAsync(Module(), "HELP_DISMISS", new { id = "g1a2b3c4" });
+
+        var message = dismissed.GetProperty("message").GetString();
+        Assert.DoesNotContain("did not apply", message);
+        Assert.Contains("nothing was said to Ask Daoris", message);
+        Assert.Equal("dismissed", HelpProposals.Find(Home, "g1a2b3c4")!.State);
+    }
+
+    /// <summary>
     /// LEFT3 b: a looked-at sync card carries, beside its rows, what they do not say, in the shape the page's
     /// <c>HelpSyncShown</c> reads: each repository not fetched with git's reason, when it last heard from origin and how
     /// origin is reached, and the repositories the look left apart. Before a look, both are empty.

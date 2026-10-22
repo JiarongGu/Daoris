@@ -19414,6 +19414,14 @@ graph run drawn from its record, a fork and its join by its wires. No window was
 
 **Outcome** 2026-10-22: a verb takes the lease in the home the loop drives, the folder the driver's config is in (`DriverConfig.FindHome`),
 `DAORIS_HOME` wherever no override names a file elsewhere, so an install is unchanged. Detail: D171's LEASEHOME2 note. On Opus.
+
+## PARKVIEW1 — a parked session's ask at its conversation's end, with its answers as presses (2026-10-22, D185)
+
+> - [ ] **PARKVIEW1 — a parked session's ask at its conversation's end, with its answers as presses** (web-shell, modules, driver; the owner's report, 2026-10-22; D137, D126 §9, D196). When a session waits on the person, its conversation's end should hold what it asks, in a clear form: the question, what each answer does, and what it holds meanwhile. The chat box should offer the answers it can take as presses (a go-ahead's yes or no, a choice, a stated answer), not a bare text box. Today the ask is buried in the turn's long report, and the box offers nothing fitting. Proof: a park's ask shown at the end at every width in both languages; each answer kind a press that reaches the session; Codex's read of the short design under D191.
+
+**Outcome** 2026-10-22: a park's question is recorded by its agent (`question_ask`) and bound to its park by the driver, and its box draws
+it with every answer a press (a choice, a go-ahead's yes or no, the free answer) through the box's own doors. Detail: the park's ask
+design (`docs/2026-10-22-park-ask-design.md`, its §8 Codex's read) and D185's PARKVIEW1 note. On Opus.
 ## POOL1a3 — the person's own sign-in never asked or written (2026-10-22, D197)
 
 > - [ ] **POOL1a3 — the person's own sign-in never asked or written** (driver, modules; after POOL1a1; D197 point 3). The `own` parameter leaving `ReportAsync`, `PressAsync`, `PressUsageAsync` and `HarnessProbe.ProbeAsync`, so `HARNESSES_REFRESH` with no agent and the driver's `agent list` ask no own sign-in; the own-home trust hold carrying `own` with no press and `TRUST_FOLDER` refusing it as `TRUST_OWN_HOME` before anything is written; `agent trust` with no account named trusting every account of the set and never the own home; and the own cool-off's *Read again* line settled (D197's acceptance note), as design §3 and §11 say. Proof: §11's rows for these, with a test that every sign-in action's spawn sets the configuration home under the home.
@@ -19490,6 +19498,20 @@ once. `/api/sync` names the undeclared machines, pushed to the window, where Set
 en and zh; `sync status` prints them. Proof: `QuestClosureHandshakeTests`, `SharedHostTests`, `LocalHostTests`, `PersonDoorTableTests`,
 `RemoteSyncTests`, `SyncStateSliceTests`, `WorkspaceSetup.test.tsx`; the service's, driver's and modules' fast halves. On Opus. Detail:
 D173's FABRIC-CLOSE1i2 note.
+
+## FABRIC-CUTOVER1d — the doors read the run's record and land its commit (2026-10-22, D190)
+
+> - [ ] **FABRIC-CUTOVER1d — the doors read the run's record and land its commit** (driver, cli; after 1b, 1c, 1f; D190, design §4). A graph version read as a process (`WorkflowProcesses.cs:60`); the opinion and the look begun, their gates read at the branch's tip; the landing gate's graph part read from the run's record, never evaluated, holding with §4's sentences and asking a whole pass (`DriverWatch.cs:434`), the press keeping its answer and awaiting that pass within a bound (`OpinionPresses.cs:64-71`); the landing pinned to `handed`'s commit on every path, a merge included (`TreeLands.cs:175`, `:502-514`, `:855-860`); performed starts turned on; `quest.close` cannot start until 1h; the "does not run yet" words go (`WorkflowNamed.cs:117-121`, `namedworkflows.ts:130`, `:138`, `workflowdoor.ts:365`, `:691`). Proof: `WorkflowGateTests`; the door lands where the pass made `handed` active; a commit inserted between the gate's judgement and the landing lands nothing, on the branch and merge paths; a press after a *Reviewed* lands at the same press within the bound, else is refused with its answer kept; a person's task before `handed` holds *Accept…* naming it.
+
+**Outcome** 2026-10-22: built, the cli lane untouched (its words had moved into the driver's verb): a graph run lands only where its record holds
+`handed` active at the door's commit, pinned there on the branch and merge paths, a press waiting up to twenty seconds for the pass it asks; the
+runtime begins its gate nodes and starts its performed nodes. No window was looked at. Detail: D190's CUTOVER1d note. On Opus.
+## ASKDISMISS1 — dismissing an Ask Daoris quest block only hides it (2026-10-22, D89)
+
+> - **ASKDISMISS1**: dismissing an Ask Daoris quest block only hides it; it never acts on the quest, which may be taken (the owner's report, 2026-10-22). Building.
+
+**Outcome** 2026-10-22: a go card's second press is *Dismiss* (移除): it settles the card and tells the conversation nothing, and a go to a
+taken quest says so. Detail: the fix log's ASKDISMISS1 entry, the Ask Daoris design §6's note. On Opus.
 
 ## POOL1a2 — every reader on the set, and the bridge's answers (2026-10-22, D197)
 

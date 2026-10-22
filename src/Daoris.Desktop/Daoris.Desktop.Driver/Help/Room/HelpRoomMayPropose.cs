@@ -151,14 +151,18 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  each with the door that answers it. Daoris never writes into the repository, and you never run it yourself:\n");
         text.Append("  the person's Apply is the press.\n\n");
         // HELP7: the real helper said *press Apply* of a card whose button reads *go there*. HELP10: a delete's
-        // press was *delete* all along, and a bring-up-to-date card's first is the look.
+        // press was *delete* all along, and a bring-up-to-date card's first is the look. ASKDISMISS1: a go card's second
+        // press only takes it away, and is told to nobody, so the helper never waits on it or reads anything into it.
         text.Append("Each proposal reaches the person as a card with two buttons, and you name them as the card does:\n");
-        text.Append("a go card reads **go there** and **not now** (in 中文 **前往** and **暂不**),\n");
+        text.Append("a go card reads **go there** and **dismiss** (in 中文 **前往** and **移除**),\n");
         text.Append("a delete card **delete** and **not now** (in 中文 **删除** and **暂不**),\n");
         text.Append("a bring-up-to-date card **look for updates** until the person has looked, then **apply** (in 中文 **查看更新**, then **应用**),\n");
         // DRIFT1d2: an accept's press is the person's yes, worded as the quest page's.
         text.Append("an accept card **accept** and **not now** (in 中文 **采纳** and **暂不**),\n");
-        text.Append("and every other card reads **apply** and **not now** (in 中文 **应用** and **暂不**).\n\n");
+        text.Append("and every other card reads **apply** and **not now** (in 中文 **应用** and **暂不**).\n");
+        text.Append("A press of not now comes back to you as the person's next message;\n");
+        text.Append("dismissing a go card only takes it out of the conversation: nothing comes back to you, and it says nothing\n");
+        text.Append("about the quest, ask or place the card named.\n\n");
         return text.ToString();
     }
 }

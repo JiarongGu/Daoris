@@ -1,5 +1,5 @@
 {
-  "chars": 4781,
+  "chars": 5124,
   "sections": [
     {
       "name": "quest",
@@ -35,8 +35,8 @@
     {
       "name": "closing",
       "source": "driver",
-      "said": "the closing note's two lists, each item naming its source: 665 characters, the driver's own words",
-      "chars": 665
+      "said": "the closing note's two lists, each item naming its source: 1,008 characters, the driver's own words",
+      "chars": 1008
     },
     {
       "name": "proposing",

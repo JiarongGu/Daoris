@@ -178,6 +178,15 @@ public sealed class Driver(
         + "and works it in one turn. What it does lands on the quest — its take, its close and its "
         + "commits — and stopping it is the one move that reaches it.";
 
+    /// <summary>
+    /// A park's question the disk would not let go at a run's opening or conclusion (PARKVIEW1; Fable's read, Q1), logged as
+    /// <c>question.stayed</c>: its park could show a question its run did not ask. Every other outcome says nothing.
+    /// </summary>
+    internal void Questions(string sessionId, QuestionSettle settled)
+    {
+        if (settled == QuestionSettle.Stayed) Log?.Warn("question.stayed", ("session", sessionId));
+    }
+
     /// <summary>Two lines a transcript opens with, either of which may be absent.</summary>
     internal static string? JoinNotices(string? first, string? second) =>
         (first, second) switch
@@ -230,6 +239,12 @@ public sealed class Driver(
     /// holds its end, its chain has come back here, and the loop's runtime is asked for a pass that judges it. Null tells nobody.
     /// </summary>
     internal Action<string>? RunReturned { get; init; }
+
+    /// <summary>
+    /// Asks the loop's runtime for a whole pass (FABRIC-CUTOVER1d; the cutover design §4): the look's automatic landing held by a run's graph for a
+    /// judgement its next pass makes asks it, and tries again at its next look. Null asks nobody.
+    /// </summary>
+    internal Action? PassAsked { get; init; }
 
     /// <summary>
     /// What completes once something else wants the loop (PARALLEL1b, D181 point 3): a nudge, an ending, the <c>look</c> topic's
@@ -1099,7 +1114,7 @@ public sealed class Driver(
             var lander = new AutoLander(
                 home, new ServiceAutoLandingWorld(service),
                 new SessionTrees(home, new LandingPlugins(home, say: (plugin, line) => output?.Append($"plugin:{plugin}", line), pluginLog: Context.Hooks?.Log)),
-                Context.Events, service.LandingSaid) { Look = Lines };
+                Context.Events, service.LandingSaid) { Look = Lines, PassAsked = PassAsked };
             if (Context.Beside)
             {
                 SelectBeside(lander, ct);
@@ -2042,6 +2057,8 @@ public sealed class Driver(
         Context.Processes.MarkOpening(sessionId);
         onOpened();
         var openedAt = DateTimeOffset.UtcNow;
+        // PARKVIEW1 (the park's ask design §2): no question stands while a run of its record works; one the disk keeps is logged.
+        Questions(sessionId, new QuestionFiles(home).Clear(sessionId));
 
         // Which account it opened on and why (TOOL4f, D125 §3.6; TOOL6b, D130 §16.4): its record's first line names the step
         // that chose it, and, for a carry-on, the cut-off session and the turn a limit refused; a start moved off where its
@@ -2334,6 +2351,9 @@ public sealed class Driver(
                             service, after, new EvidenceAt(workTree, EvidenceCodes.SessionEnd) { Base = before, Session = sessionId },
                             commits, ct)
                         .ConfigureAwait(false);
+                    // PARKVIEW1 (the park's ask design §2): its question kept only for the park this run ends in, and only where its last
+                    // turn asked it; settled before the record moves, so a parked record never shows another run's question.
+                    Questions(sessionId, new QuestionFiles(home).SettleRun(sessionId, conclusion.State, openedAt, Context.Events));
                     await service.AdvanceAsync(
                         sessionId, conclusion.State, note: conclusion.Note, evidence: evidence, ct: ct, limit: limited,
                         parts: conclusion.Parts).ConfigureAwait(false);

@@ -989,6 +989,41 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
+   * ASKDISMISS1: the block a published quest leaves in the conversation is a go card, and its dismiss only takes it away. The
+   * driver settles the card and says nothing into the conversation; the page presses nothing about the quest: no Apply, no
+   * words, no quest's or ask's route. A taken quest's card says it is taken, in the driver's sentence.
+   */
+  it('takes a go card about a quest away on its dismiss, and sends nothing about the quest', async () => {
+    SESSIONS = [HELP];
+    PROPOSALS = [{
+      id: 'g6t7k8n9', kind: 'go', describe: 'Open Quests → quest `#q2taken0` “Stream the tiles”, taken.', terminal: '',
+      why: 'the person asked where their quest went',
+    }];
+    bridge();
+    const answers = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, request?: unknown) => {
+      // As the driver settles it: a dismissed card is pending no longer.
+      if (type === 'HELP_DISMISS') PROPOSALS = [];
+      return answers(module, type, request);
+    });
+    show();
+
+    const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
+    expect(within(cards).getByText(/, taken\.$/)).toBeInTheDocument();
+    invoke.mockClear();
+    asked.length = 0;
+    await userEvent.click(within(cards).getByRole('button', { name: 'Dismiss' }));
+
+    await waitFor(() => expect(screen.queryByRole('list', { name: 'what Ask Daoris proposes' })).not.toBeInTheDocument());
+    const sent = invoke.mock.calls.map(([, type]) => type as string);
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_DISMISS', { payload: { id: 'g6t7k8n9' } });
+    expect(sent.filter((type) => type === 'HELP_DISMISS')).toHaveLength(1);
+    expect(sent.filter((type) => type !== 'HELP_DISMISS' && /APPLY|INPUT|QUEST|ASK|WORK|DELETE|DECLINE|PAUSE|CLEAR/.test(type))).toEqual([]);
+    expect(asked.filter((url) => /\/api\/(quests|asks)/.test(url))).toEqual([]);
+    PROPOSALS = [];
+  });
+
+  /**
    * ENTRY1f2 (D161's ENTRY1f note): a go may name the one session that waits, judged by the driver against the machine's
    * own records; the page opens Sessions with it chosen, by its id.
    */

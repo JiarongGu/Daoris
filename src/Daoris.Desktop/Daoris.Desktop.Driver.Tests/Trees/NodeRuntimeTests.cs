@@ -174,7 +174,7 @@ public sealed partial class NodeRuntimeTests : IDisposable
             Interlocked.Increment(ref _gitRead);
             return Task.FromResult<bool?>(null);
         },
-        Gates = (_, _) =>
+        Gates = (_, _, _) =>
         {
             Interlocked.Increment(ref _gitRead);
             return Task.FromResult<(OpinionGateState?, ReviewGateState?)>((null, null));

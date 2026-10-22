@@ -259,6 +259,16 @@ public static class Continuations
         now is null ? look : now.Waiting;
 
     /// <summary>
+    /// The words, each marked with the answer of its park's question it was pressed as (PARKVIEW1; Fable's read, Q4), by its id among
+    /// <paramref name="choices"/> (<see cref="SessionEvents.ChoicesOf"/>): so it is handed as that answer chosen
+    /// (<see cref="SaidWordView.Handed"/>) and its record says so again where the session takes it. A word with none stays as it is.
+    /// </summary>
+    internal static IReadOnlyList<SaidWordView> Marked(IReadOnlyList<SaidWordView> words, IReadOnlyDictionary<string, string> choices) =>
+        choices.Count == 0
+            ? words
+            : [.. words.Select(word => word.Id is { } id && choices.TryGetValue(id, out var choice) ? word with { Choice = choice } : word)];
+
+    /// <summary>
     /// The record a fallback hands its words on from (SAIDBACK1f, D137 §2.4): the look's, with the words it holds now, so one
     /// taken back or reworded since the look never goes to the new session. A park's answer is no said word, and the look's
     /// record stands where it could not be read again.

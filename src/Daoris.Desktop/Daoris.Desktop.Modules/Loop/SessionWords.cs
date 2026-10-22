@@ -172,8 +172,11 @@ public sealed class SessionWords : IDisposable
         public bool Pumping { get; set; }
     }
 
-    /// <summary>One word as it goes to the say door: its text, the names of its files, and the door it was said at.</summary>
-    private sealed record Word(string Text, IReadOnlyList<string> Files, string Door);
+    /// <summary>
+    /// One word as it goes to the say door: its text, the names of its files, the door it was said at, and the answer of its park's
+    /// question it was pressed as (PARKVIEW1), which the conversation shows it under; null for every other word.
+    /// </summary>
+    private sealed record Word(string Text, IReadOnlyList<string> Files, string Door, string? Choice = null);
 
     private static TaskCompletionSource Signal() => new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -363,9 +366,13 @@ public sealed class SessionWords : IDisposable
     /// A session this machine runs that takes no words at all (an intake, INT4h), in the driver's words; files the person
     /// attached that a conversation cannot carry; or a service whose answer could not be read.
     /// </exception>
+    /// <param name="choice">
+    /// The answer of a park's question the words begin with, as a press composes them (PARKVIEW1; Fable's read, Q4): the conversation
+    /// shows them under it, and the resumed run is handed them as that answer chosen. Null for every other word.
+    /// </param>
     public async Task<WordsAnswer?> SayAsync(
         string id, string text, IReadOnlyList<ChatUpload> files, string? preface, string door, CancellationToken ct,
-        MessageLevel level = MessageLevel.Urgent, string? key = null)
+        MessageLevel level = MessageLevel.Urgent, string? key = null, string? choice = null)
     {
         var now = level == MessageLevel.Now;
         // A driven session that hears words during its run (SESS3, D136; the native door's run, MSG1b). COWORK1c: kept on its record
@@ -439,7 +446,7 @@ public sealed class SessionWords : IDisposable
 
         // Kept as a conversation keeps what is attached (CONV4c), so the names on the record name files that exist.
         var kept = files.Count > 0 ? ChatFiles.Keep(_loop.Home, id, files) : [];
-        var word = new Word(text, [.. kept.Select(file => file.Name)], door);
+        var word = new Word(text, [.. kept.Select(file => file.Name)], door, choice);
         return holding
             ? await HoldForTakeAsync(id, word, ct).ConfigureAwait(false)
             : await KeepOrHoldAsync(id, word, ct).ConfigureAwait(false);
@@ -999,6 +1006,8 @@ public sealed class SessionWords : IDisposable
                 Files = kept.Files.Count > 0 ? kept.Files : null,
                 Reaches = "resume",
                 Door = word.Door,
+                // PARKVIEW1 (Fable's read, Q4): pressed as an answer of its park's question, shown as that answer chosen.
+                Choice = word.Choice is { } choice && kept.Text.StartsWith(choice, StringComparison.Ordinal) ? choice : null,
             }, line => _loop.Output.Append(id, line));
             // The record's waiting words are the queue's now (SAIDBACK1b): told again, so the box's list offers this one too.
             Tell(id);

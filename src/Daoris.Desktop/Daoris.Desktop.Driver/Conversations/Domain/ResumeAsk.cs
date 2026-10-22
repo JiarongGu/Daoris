@@ -46,14 +46,15 @@ internal sealed class ResumeAsk(
     /// The person's words joined by a blank line, as the native door's one argument carries them: each with where its files
     /// are kept beneath it, as a conversation's message names them on that door (MSG1d3, <see cref="ChatFiles.PathLines"/>).
     /// </summary>
-    public string Answer => string.Join("\n\n", words.Select((word, at) => word.Text + ChatFiles.PathLines(_files[at])));
+    /// <remarks>A word pressed as an answer of its park's question is handed as that answer chosen (<see cref="SaidWordView.Handed"/>, PARKVIEW1).</remarks>
+    public string Answer => string.Join("\n\n", words.Select((word, at) => word.Handed + ChatFiles.PathLines(_files[at])));
 
     /// <summary>What the conversation is resumed with on the native door: the words, then the appendix after a blank line.</summary>
     public string Prompt => appendix is { Length: > 0 } more ? $"{Answer}\n\n{more}" : Answer;
 
     /// <summary>The same on the protocol door (D137 §2.2): each word its own text block in order, then the appendix as one more.</summary>
     public IReadOnlyList<string> Blocks =>
-        [.. words.Select(word => word.Text), .. appendix is { Length: > 0 } more ? new[] { more } : []];
+        [.. words.Select(word => word.Handed), .. appendix is { Length: > 0 } more ? new[] { more } : []];
 
     /// <summary>The ids of the words its record keeps, for the service to take off once the session took them; none from before <c>said</c>.</summary>
     public IReadOnlyList<string> Ids => [.. words.Select(word => word.Id).OfType<string>()];
@@ -113,6 +114,8 @@ internal sealed class ResumeAsk(
                 Opinion = word.By,
                 // COWORK1e: a helper's answer by its mark, which the answers-alone bound counts (AnswersAlone).
                 Helper = word.Helper,
+                // PARKVIEW1: a word pressed as an answer of its park's question keeps that mark where the session took it.
+                Choice = word.Choice,
                 Id = word.Id,
                 Text = word.Text,
                 Files = word.Files.Count > 0 ? word.Files : null,

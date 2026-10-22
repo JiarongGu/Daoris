@@ -122,6 +122,12 @@ public sealed class AutoLander(
     public AutoLandings Due { get; } = new(home);
 
     /// <summary>
+    /// Asks the loop's runtime for a whole pass (FABRIC-CUTOVER1d; the cutover design §4): where a run's graph holds the landing for a judgement
+    /// its next pass makes, the look asks it as a door does, and tries again at its next look. Null asks nobody.
+    /// </summary>
+    public Action? PassAsked { get; init; }
+
+    /// <summary>
     /// The look's classing (NOTIFY2h2), by which each line is classed as it is made: a try by its code (<see cref="ClassOf"/>), one
     /// that could not be made, or was overtaken, the next look's. None classes and keeps nothing.
     /// </summary>
@@ -244,6 +250,10 @@ public sealed class AutoLander(
         // The landing gate, read once (XAGENT1f, the second-agent design §7), with the process read above (WORKFLOW1f), by the one
         // helper the push and a push held back's recovery read it with (FABRIC-CLOSE1h12). Its first part that holds, in §7's order:
         var (gate, held, line) = await GateAsync(entry, entry.Session, entry.Quest, entry.Tree, world, ct, process).ConfigureAwait(false);
+
+        // FABRIC-CUTOVER1d: a run's graph holding it for what its next pass may judge asks for that pass; the hold below is kept with no tip
+        // and no status, as the run's own part's is, so the next look reads the gate again and lands it once the record lets it.
+        if (gate.GraphHolds && gate.Graph is { AsksPass: true }) PassAsked?.Invoke();
 
         // The run's own part first (WORKFLOW1f, the workflow design §3.7, §4.4): a workflow that cannot be read here, or a kind's
         // paths, holds it, said once; and the named workflow's landing step, last before the landing: one that cannot start sits. Kept
