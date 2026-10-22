@@ -140,8 +140,9 @@ public sealed class HookProcess : IHookChannel
         {
             // Through the start gate (PROCSTART2): a plugin is started at a press's point too. A hook's program serves the
             // loop's points, so its start is the background's (PARALLEL1d), and its caller's token ends its wait for a place
-            // as it ends the handshake below (PARALLEL1e).
-            process = await ProcessStarts.Shared.StartAsync(info, StartClass.Background, ct).ConfigureAwait(false)
+            // as it ends the handshake below (PARALLEL1e). Through the launcher (TERMTRUST1a, D201 point 4): a plugin's step runs a
+            // repository's own commands, so its program is born in this process's agents' job as an agent's harness is.
+            process = await AgentStarts.StartAsync(info, ContainedKind.Plugin, StartClass.Background, home, log: null, ct).ConfigureAwait(false)
                 ?? throw new DriverException($"plugin `{plugin.Manifest.Id}`'s hook process did not start.");
         }
         catch (System.ComponentModel.Win32Exception error)

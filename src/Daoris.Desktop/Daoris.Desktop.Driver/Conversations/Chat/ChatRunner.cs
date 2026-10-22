@@ -1176,8 +1176,9 @@ public sealed class ChatRunner : IDisposable
                 });
             }
 
-            // Through the start gate (PROCSTART2): a conversation's press may reach here before its first wait.
-            process = await ProcessStarts.Shared.StartAsync(info, CancellationToken.None).ConfigureAwait(false)
+            // Through the start gate (PROCSTART2): a conversation's press may reach here before its first wait. Through the launcher
+            // (TERMTRUST1a, D201 point 4): its harness born in this process's agents' job, the launcher read as the conversation's process.
+            process = await AgentStarts.StartAsync(info, ContainedKind.Agent, StartClass.Person, _home, log: null, CancellationToken.None).ConfigureAwait(false)
                 ?? throw new DriverException($"the {resolved.Name} adapter's process did not start");
         }
         catch (Exception error)

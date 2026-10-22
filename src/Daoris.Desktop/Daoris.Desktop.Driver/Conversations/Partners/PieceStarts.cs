@@ -3,11 +3,13 @@ using System.Diagnostics;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The partner's strict start, the driver's half (COAGENT1b; D199's note on how a partner starts in its strict job; the co-agent design
-/// §2.3 step 5): the harness's start, as <see cref="Driver.Prepare"/> built it, is made the launcher's (<see cref="PieceLauncher"/>), which
-/// joins the piece's job before the harness runs. The environment, the folder, the streams and their encodings stay the harness's, so the
-/// doors read the launcher as they read any session's process. Never the best effort an ordinary session's job is: with no job made, or no
-/// launcher laid out beside the home, the piece is refused <see cref="PartnerWhy.NoJob"/> and nothing starts.
+/// A start made the launcher's, the driver's half (COAGENT1b; D199's note on how a partner starts in its strict job; the co-agent design
+/// §2.3 step 5; generalized by TERMTRUST1a, D201 point 4): the harness's start, as <see cref="Driver.Prepare"/> or a plugin's
+/// <see cref="HookProcess.StartInfo"/> built it, is made the launcher's (<see cref="PieceLauncher"/>), which joins the jobs it is named before
+/// the harness runs. The environment, the folder, the streams and their encodings stay the harness's, so the doors read the launcher as they
+/// read any session's process. Every agent, plugin process and piece is made so through <see cref="AgentStarts"/>; a piece is never the
+/// best effort an ordinary start is: with no job made, or no launcher laid out beside the home, it is refused <see cref="PartnerWhy.NoJob"/>
+/// and nothing starts.
 /// </summary>
 public static class PieceStarts
 {
@@ -18,19 +20,20 @@ public static class PieceStarts
             : null;
 
     /// <summary>
-    /// Make <paramref name="harness"/>'s start the launcher's, in place: the launcher named as the program and handed the job, the harness and
-    /// its words after it; everything else of the start kept. Null where it was made; otherwise why not, the start unchanged.
+    /// Make <paramref name="harness"/>'s start the launcher's, in place: the launcher named as the program and handed the jobs, in order, then
+    /// the harness and its words after it; everything else of the start kept. Null where it was made; otherwise why not, the start unchanged.
     /// </summary>
-    public static string? Through(ProcessStartInfo harness, string? launcher, ProcessJob? job, string piece)
+    public static string? Through(ProcessStartInfo harness, string? launcher, IReadOnlyList<string> jobs)
     {
-        if (Missing(launcher, job, piece) is { } missing) return missing;
+        if (jobs.Count == 0) return "no job was made for it, so it is started as it was.";
+        if (launcher is null) return $"the launcher ({PieceLauncher.Program}) is not laid out in this install, so it is started as it was.";
         if (!string.IsNullOrEmpty(harness.Arguments)) return "the harness's start carries its words as one string, which the launcher cannot hand on whole.";
 
         var file = harness.FileName;
         var words = harness.ArgumentList.ToList();
         harness.FileName = launcher;
         harness.ArgumentList.Clear();
-        foreach (var word in PieceLauncher.Arguments(PieceJobs.NameOf(piece), file, words)) harness.ArgumentList.Add(word);
+        foreach (var word in PieceLauncher.Arguments(jobs, file, words)) harness.ArgumentList.Add(word);
         return null;
     }
 

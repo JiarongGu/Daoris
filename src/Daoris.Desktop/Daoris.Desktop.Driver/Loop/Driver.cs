@@ -3124,6 +3124,10 @@ public sealed class Driver(
     /// Told once the process started, before anything else here can fail: what tells such a caller a run that never started, its
     /// record to be put back, from one that did (SAIDBACK1e).
     /// </param>
+    /// <param name="piece">
+    /// A partner's piece's job (COAGENT1b), which its harness joins beneath this process's agents' job and is never started outside
+    /// (TERMTRUST1a); null for every other run.
+    /// </param>
     internal async Task<T> HoldAsync<T>(
         ISessionAdapter adapter, ProcessStartInfo info, SessionTarget target, string sessionId, string transcript,
         string cwd, string? harnessNotice, (string? File, object? Meta, HandedSection? Handed) rules, string? handed, string? refusesInput,
@@ -3132,15 +3136,19 @@ public sealed class Driver(
         IReadOnlyList<AcpMcpServer>? handedServers = null, bool drivesBrowser = false, Action<JsonElement>? said = null,
         ResumeAsk? resume = null, Noted? workingNote = null, Func<string, string, ProcessStartInfo?>? goOn = null,
         Action? working = null, Func<CancellationToken, Task<bool>>? waitsOnBackground = null, int? minutes = null,
-        string? noConnector = null, Action<SessionStop?>? stopMade = null, bool movedFirst = false, Action? spawned = null)
+        string? noConnector = null, Action<SessionStop?>? stopMade = null, bool movedFirst = false, Action? spawned = null,
+        string? piece = null)
     {
         // Through the start gate (PROCSTART2): a press that starts a session reaches here before its first wait, and the
         // runtime's start lock is no thread's to wait on but the pool's. Seen through once begun, as the start always was.
         // PARALLEL1d: a run that goes on with the person's words (ANSWER1a) is the person's start; every other the loop's.
         // PARALLEL1f: its wait for a place is on the loop's token, so a driver closing ends a start still queued, which throws
         // before `spawned` is told: its caller puts back what it took, or closes its record as the driver's (D104).
+        // TERMTRUST1a (D201 point 4): through the launcher, so the harness is born in this process's agents' job, and a partner's in its
+        // piece's job beneath it; the process answered is the launcher's, which the doors read as the session's.
         var whose = resume is null ? StartClass.Background : StartClass.Person;
-        using var process = await ProcessStarts.Shared.StartAsync(info, whose, ct).ConfigureAwait(false)
+        using var process = await AgentStarts.StartAsync(info, piece is null ? ContainedKind.Agent : ContainedKind.Piece, whose, home, Log, ct, piece)
+                .ConfigureAwait(false)
             ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
         spawned?.Invoke();
         // Kept beside the process, so who is driving Daoris's browser lasts exactly as long as it (BRW8).

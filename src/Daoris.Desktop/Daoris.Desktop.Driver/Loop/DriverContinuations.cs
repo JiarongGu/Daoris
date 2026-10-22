@@ -963,11 +963,12 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
 
             // Through the start gate (PROCSTART2), as the first run's start is, waiting for its place on the loop's token
             // (PARALLEL1f). A driver closing while it waits starts no run, so the words it took are said never to have reached
-            // the session, as a stop's are, and the close ends the record as it ends any run it cuts off (D104).
+            // the session, as a stop's are, and the close ends the record as it ends any run it cuts off (D104). Through the launcher
+            // (TERMTRUST1a), as the first run's is: its harness born in this process's agents' job.
             System.Diagnostics.Process? started;
             try
             {
-                started = await ProcessStarts.Shared.StartAsync(info, ct).ConfigureAwait(false);
+                started = await AgentStarts.StartAsync(info, ContainedKind.Agent, StartClass.Person, _context.Home, _driver.Log, ct).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
@@ -1020,7 +1021,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     {
         _context.Output?.Append(sessionId, "— its harness ended before it reopened its conversation, so the same resume is tried once more.");
         resume.Again();
-        var process = await ProcessStarts.Shared.StartAsync(info, StartClass.Person, ct).ConfigureAwait(false)
+        // The first run's start again, already the launcher's where that one was (TERMTRUST1a): left as it is, and said again.
+        var process = await AgentStarts.StartAsync(info, ContainedKind.Agent, StartClass.Person, _context.Home, _driver.Log, ct).ConfigureAwait(false)
             ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
         keep.Add(process);
         keep.Add(_context.Processes.Track(sessionId, process, refusesInput, drivesBrowser));
