@@ -41,6 +41,12 @@ that `git worktree list` does not list and that holds no `.git` is a half-remove
 without following a reparse point. A process holding either is named with its pid, never stopped.
 Other registered worktrees use their owning lifecycle tool.
 
+The agent harness also removes a worker's isolated worktree as soon as the worker ends without a
+tracked change, gitignored `local/` included. A docs-only or read-only dispatch whose product is
+scratch (a brief, a proposal, a read's answer) writes it under the main checkout's `local/scratch/`,
+or commits it, before handing back; otherwise it is lost with the worktree (2026-10-22, COAGENT1's
+first phase).
+
 Use literal targets and one shell throughout; verify absence afterward. If execution is rejected,
 record the action and exact reason, leave the task open, and resolve the actual permission setting
 or surface it to the owner. Retry after new authorization or a real permission change through the
