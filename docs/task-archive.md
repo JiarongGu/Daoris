@@ -19565,3 +19565,12 @@ over `NodeRuntimeFixture` (the last two over `NodeRunFixture`, the run helpers t
 D166's PART6 fixtures do; no test body changed. Test cases listed before and after: 52 and 52 (32 + 13 + 7), 25 and 25 (20 + 5), the
 same names. `node tools/partials.mjs` is clean and `tools/partials.json` is unchanged. The driver's fast half passes (13,258); none of
 the five classes is a Process class, so `process.runsettings` with their filter selects no test. On Opus.
+
+## POOLREH1 — the family rehearsal's account and set-up checks stated in D197's and ORIENT2c's terms (2026-10-22)
+
+> From the full set at `cb9211d88`: `rehearse-family` failed six account checks and one set-up check after POOL1a's one-set fold.
+
+**Outcome** 2026-10-22: the family rehearsal passes again (435 ok). Phase 15 states D197 and POOL1b: a signed-out account is passed,
+a hold comes only when no account of the set may run, the refused account's hold names every account, `profile default` is refused
+for `profile order`, and the CLI's edits leave the stub's set standing. 17c and 17d state ORIENT2c: a set-up repository is asked its
+index next. No product defect; detail in commits 40361f317 and cc57d8259. On Opus.
