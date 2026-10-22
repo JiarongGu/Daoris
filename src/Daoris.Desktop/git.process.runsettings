@@ -9,7 +9,10 @@
   Four, in one host: PROC1a measured the half as git starts made one at a time, four classes at once at
   about 2.2 times the throughput, and no gain from eight in one host or from a second host past four at
   once, since every start slows past about four whichever host makes it (FLAKE1's FIX-LOG entry). A class
-  is xUnit's unit of parallel work, so the longest class is this run's wall.
+  is xUnit's unit of parallel work, and with more classes waiting than running the four stay full: the
+  run's wall is its summed test time over four, and a class is the wall only once it is longer than that
+  share (PROCSPEED1b: at c557800 four tests ran for 4036 of the 4135 s, the longest class took 914 s).
+  So a run is made shorter by fewer git starts, not by splitting a class.
 
   The name ends in process.runsettings on purpose: the merge tool reads a gate run with such a file as a
   Process half (isProcessGate), so this one too keeps its trx and re-runs a failed test alone. Its filter
