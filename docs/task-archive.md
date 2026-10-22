@@ -19743,3 +19743,12 @@ COAGENT1b notes, parts one to seven. On Opus.
 **Outcome** 2026-10-23: `work.park.waitingHere` / `waitingAbove` say the place and the span over the question; no deadline, the
 quest and tree held and where the answer goes fold under *While it waits* (a native `details`). `work.park.noQuestion` and
 `work.park.deadline` left both catalogues. Detail: D185's PARKWORDS1 note. On Opus.
+## STARTFAST1 — the start timed stage by stage, and the first page's path read (2026-10-23)
+
+> - [ ] **STARTFAST1, its first part — the start of the desktop timed stage by stage, and the first page path found** (desktop, modules; the owner's install start of 2026-10-23: 11 s from the process's start to `app.started` with nothing logged between, the host's 5 s later, the Sessions view at 18 s, `splash.lifted by=bound ms=15435`, `help.room.look` 3.2 s, `look.slow` follow and tidy 5 s each, `request.failed route=/api/confirmations/waiting ms=20002`). One `start.stages` line per start, then the path to the first page's data read with its file and line, and the cut proposed.
+
+**Outcome** 2026-10-23: `StartStages` (a stopwatch begun at the top of `Main` and the process's start time, read once) writes one
+`start.stages` line per start: `main`, `home`, `driver`, `pipe`, `host`, `shown`, `browser`, `page`, `splash` in ms from the
+process's start, `by` and `missing`; once every stage came, a minute after the splash, or at the stop. Nothing that starts changed.
+`StartStagesTests` holds every stage once and in order, and each marked once in the sources. The reading and the proposed cut are
+`docs/2026-10-23-start-path-design.md`; the cut is STARTFAST1b. On Opus.

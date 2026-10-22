@@ -62,6 +62,7 @@ holds the detail. The structural changes come first, so the features built after
 - **WORKSPACEPILOT1**: the games workspace set up through Daoris: the owner names the pilot.
 - **AGENTROOM1b**: agents of different makers in one meeting: a real agent's turn (the first slice is merged).
 - **KITREQ1**: four requests for the UI kit's owner.
+- **STARTFAST1**: the desktop's start is slow on a cold machine: 11 s to `app.started`, the splash lifted by its bound at about 26 s (the owner's install, 2026-10-23). Each start now writes `start.stages` (STARTFAST1, built); the cut itself is STARTFAST1b.
 
 ## Workspace cleanup
 
@@ -495,6 +496,7 @@ Decision/trigger rows stay held; diagnostic captures are not permission to chang
 - [ ] **BGWAIT2b — the person's words said into a woken turn, probed then held** (driver; D83's BGWAIT2 note, "What is left"; steer evidence §1). By the same reading of the adapter that explained BGWAIT2, words sent while the harness's own woken turn runs are taken by that turn and may never be answered, so the run would wait on them until the timeout. Unobserved. Probe the installed adapter first, then a fake-agent case in `AcpBackgroundTests` doing what the probe saw. The probe needs a real model turn on a real sign-in (a background task waking the agent, words sent into the woken turn): the owner's go-ahead before it runs (a scout's plan, 2026-10-20: a scratch harness under `_fixtures/` modelled on `tools/console2-probe.mjs`, the adapter version pinned to the install's). Reading the installed adapter's settling code first needs no account. Proof: the probe's record; the case.
 - [ ] **LAND4b — failed automatic landing** (driver; decide). Unify Done+failed rule with person's press. D145/D102; rule case.
 - [ ] **QUESTCLOSE1b4 — a lost move's note keeps its parts** (service; consider). A quest's `conflicts` (`QuestConflict`) carry a lost move's note but not its parts, so a lost person's done reads in English. If the page should word it, `QuestConflict` and the answer gain parts. D142 point 2; a sync test.
+- [ ] **STARTFAST1b — the start's cut** (desktop, modules, web-shell, service). The start-path design §5: the host spawned before `app.Run()`, the splash lifted on the first screen's queries, the first look's follow, tidy and facts held until the page's word, `confirmations/waiting` exempt from `request.failed`. Proof: `start.stages` on the install before and after; each cut's own test.
 - [ ] **FREEZE1b — capture next stalled bar** (modules/driver; trigger: ui.stalled). Move measured cause off UI thread; request runtime-owned changes. D56/log §4.
 - [ ] **ASKNAME1c — named-proposal twin** (service/driver/web). One case-sensitive fixture across tier/intake/page; register twin. D77; three-suite proof.
 - [ ] **GOAHEAD2c — rehearsal go-aheads** (tools). Stub asks twice; first answer stays parked, second resumes once naming both. D135/phase 17a.

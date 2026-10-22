@@ -32,6 +32,10 @@ with the version and date at release.
   then each piece is refused, and says so.
 - A session waiting on you says in one line where its question is and how long it has waited, above its answers (PARKWORDS1).
   What it holds meanwhile and where your answer goes are under *While it waits*, one press away.
+- Each start of the Daoris window now writes one `start.stages` line to the machine log, read in Settings → Logs (STARTFAST1). It
+  says when each stage of the start came, in milliseconds from the program's start: the home, the driver, the terminal's pipe, the
+  local service, the window shown, the page's browser, the page's first data and the splash lifted, and what lifted it. What
+  starts, and in what order, is unchanged.
 - A folder under Daoris's account homes that no agent or plugin names is no longer taken for an agent (POOLSTRAY1). An earlier
   start could leave such a folder, and its subfolders were folded in as accounts. Such a folder is now noted once in the machine
   log and otherwise left alone. If an earlier fold already wrote one into the account order, the next change of the accounts
