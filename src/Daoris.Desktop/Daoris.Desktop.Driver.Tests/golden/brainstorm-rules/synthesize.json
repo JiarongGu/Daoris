@@ -38,6 +38,7 @@
     "mcp__daoris-knowledge__line_read",
     "mcp__daoris-knowledge__opinion_answer",
     "mcp__daoris-knowledge__opinion_give",
+    "mcp__daoris-knowledge__partner_answer",
     "mcp__daoris-knowledge__pause_propose",
     "mcp__daoris-knowledge__permission_propose",
     "mcp__daoris-knowledge__plugin_propose",

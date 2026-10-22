@@ -117,7 +117,7 @@ public static class PermissionRules
                 "registry", "knowledge_search", "knowledge_get", "knowledge_repositories",
                 "knowledge_convergence", "quest_list", "quest_respond", "quest_publish", "permission_propose", "go_ahead_ask",
                 "review_serve", "review_ready", "opinion_give", "opinion_answer",
-                "helper_ask", "helper_answer", "channel_post", "channel_read", "handover_propose", "line_read", "question_ask",
+                "helper_ask", "helper_answer", "partner_answer", "channel_post", "channel_read", "handover_propose", "line_read", "question_ask",
             }.Select(tool => ConnectorPrefix + tool)],
             // Not `knowledge_refresh`: rebuilding the index is the machine's job, never a session's. And
             // `permission_propose` (PERM2, D74) only PROPOSES — a widening still waits for the person. `go_ahead_ask`
@@ -129,6 +129,8 @@ public static class PermissionRules
             // asks for an opinion, lands the work or answers a dispute, which is the person's. `helper_ask` and `helper_answer`
             // (MIXAGENT2a-i, D163 point 2) write a file each under the home and nothing else: an ask the driver takes under the
             // person's `helpers` rule, and a helper's answer, which reaches the asker as another agent's claim, never the person's.
+            // `partner_answer` (COAGENT1b, D199 point 8) writes one file under the home, for the piece the driver started its
+            // session for, and is refused to every other session: the partner's claim beside the files Daoris reads itself.
             // `channel_post` and `channel_read` (SESSONE2a/2b, D167 point 7) speak and read for the session's own ask only, a
             // helper and a reviewer refused: a message is that agent's claim, reaches no run it does not already have, and asks
             // nothing of anyone, so work and requests stay quests. `handover_propose` (MIXAGENT1c, D163 point 3) writes one file
