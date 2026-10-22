@@ -19714,3 +19714,11 @@ commits are plumbing in the bare origin (three starts a squash, from about twent
 showed where the seconds went: the start's own cost on this machine, and the product's repeated asks (left to PROC1d-v). On
 main, the 18 changed classes' 242 git cases ran in 14 min 6 s, about 3.5 s a test from 24. The whole half's time comes with CI1's
 next run on main. Detail: FIX-LOG 2026-10-23 (PROCSPEED1b). On Opus.
+## REVIEWLOCK1 — Review's reads take no lock in a running session's tree (2026-10-23)
+
+> - [ ] **REVIEWLOCK1 — Review's reads take no lock in a running session's tree** (driver; found 2026-10-23 by Fable's GITAPP1 proposal). Review's `git status` (`WorkingTree.cs:335`), the offer's (`TreeWorkReads.cs:77`) and `CleanAsync` pass no `--no-optional-locks`, which the helper capture (`HelperCapture.cs:104`) and `HelpCheckouts.cs:104` do, so opening Review can refresh the index and take `index.lock` in a tree a session is writing in. Pass it on every read-only status of a session's tree. Proof: a census finds a read-only `status` without it; a Process case opens Review while a stand-in holds the tree's index and neither fails.
+
+**Outcome** 2026-10-23: the driver's 24 statuses and diffs pass `--no-optional-locks`; `tools/optional-locks.mjs` (in verify)
+refuses one without it. A working-tree diff ignores the flag, so Review's range read also passes `diff.autoRefreshIndex=false`.
+`ReviewLockTests` opens Review while a stand-in holds `index.lock`, and over a stale index. Detail: FIX-LOG 2026-10-23
+(REVIEWLOCK1). On Opus.
