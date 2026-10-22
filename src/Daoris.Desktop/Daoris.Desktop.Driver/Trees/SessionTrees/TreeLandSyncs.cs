@@ -62,7 +62,7 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
         if (branch is "" or "HEAD") return (null, null);
         if ((await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch is not { } line) return (null, null);
 
-        var fetched = fetch ? await FetchedAsync(root, line, ct).ConfigureAwait(false) : null;
+        var fetched = fetch ? await FetchedAsync(root, line, repository, workspace, ct).ConfigureAwait(false) : null;
         // LANDGIT1b: the line here and origin's copy of it, one read after the fetch (PROC1d-ii), where each form was a start of its own
         // and the line here was asked twice. Read at the moment the forms were, and the judgement's alone: it ends with this method.
         var refs = RefSnapshot.Take(root);
@@ -85,13 +85,13 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
         if (tree.Code != 0) return null;
         var root = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(tree.CommonDir.Trim()))!;
         if ((await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch is not { } line) return null;
-        return await FetchedAsync(root, line, ct).ConfigureAwait(false);
+        return await FetchedAsync(root, line, repository, workspace, ct).ConfigureAwait(false);
     }
 
     /// <summary>D109's fetch of the line, and its words in WSR7's where it failed; null where it fetched or there is no `origin`.</summary>
-    private static async Task<string?> FetchedAsync(string root, string line, CancellationToken ct)
+    private static async Task<string?> FetchedAsync(string root, string line, string repository, string workspace, CancellationToken ct)
     {
-        var (failed, url) = await FetchAsync(root, line, ct).ConfigureAwait(false);
+        var (failed, url) = await FetchAsync(root, line, ct, repository, workspace).ConfigureAwait(false);
         // No `origin` at all is nothing to fetch, and nothing to say: the line here is all there is.
         if (failed is null || url is null) return null;
         return LandingSyncWords.NotFetched(failed, await LastFetchAsync(root, line, ct).ConfigureAwait(false), ReachOf(url), DateTimeOffset.UtcNow);

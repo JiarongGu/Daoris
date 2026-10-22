@@ -11,7 +11,8 @@ internal static class TreeRefs
 {
     /// <summary>
     /// A credential prompt with nobody at a terminal would wait for ever: git is told to fail instead. The person's
-    /// credential helper still answers, since the fetch runs as them.
+    /// credential helper still answers, since the fetch runs as them. Every start is handed it now (<see cref="GitWiring"/>); kept
+    /// here, where the fetch is, so this one never depends on a seam.
     /// </summary>
     private static readonly Dictionary<string, string> NoPrompt = new(StringComparer.Ordinal) { ["GIT_TERMINAL_PROMPT"] = "0" };
 
@@ -79,27 +80,57 @@ internal static class TreeRefs
     }
 
     /// <summary>
-    /// Fetch the line from <c>origin</c> (WSR6), as the person, with their credentials: the one network step, and it
-    /// moves only origin's own refs here. Null where it fetched; otherwise why not, in git's words — and origin's address.
+    /// Fetch the line from <c>origin</c> (WSR6), with whatever sign-in git finds here: the one network step, and it moves only
+    /// origin's own refs here. Null where it fetched; otherwise why not, in git's words redacted (<see cref="GitWords"/>), or the
+    /// hold's sentence where origin is held — and origin's address.
     /// </summary>
     /// <remarks>
     /// <para><b>It writes no <c>FETCH_HEAD</c></b> (WSR7): a fetch that fails empties that file and stamps it with the failure's
     /// time, which made the person's own last fetch unreadable, and only origin's refs are the look's to move.</para>
     /// <para><b>One at a time per line</b> (FABRIC-END6c): a fetch of the line already in flight, whichever path started it, is joined
     /// rather than started again beside it (<see cref="RemoteFetches.OnceAsync"/>).</para>
+    /// <para><b>Held, and not tried</b> (GITAUTH1a, the git-auth design §5.2): a failure whose class holds (<see cref="GitFailures"/>)
+    /// holds origin (<see cref="GitHolds"/>), and while it is held no fetch connects, whichever path asks: the hold's sentence is the
+    /// answer, at once. A fetch that passes lifts a hold over reads. <paramref name="repository"/> and <paramref name="workspace"/>
+    /// name the hold's row.</para>
     /// </remarks>
-    internal static async Task<(string? Failed, string? Url)> FetchAsync(string root, string? line, CancellationToken ct) =>
-        line is null ? (null, null) : await RemoteFetches.OnceAsync(root, line, token => FetchingAsync(root, line, token), ct).ConfigureAwait(false);
+    internal static async Task<(string? Failed, string? Url)> FetchAsync(
+        string root, string? line, CancellationToken ct, string repository = "", string? workspace = null) =>
+        line is null
+            ? (null, null)
+            : await RemoteFetches.OnceAsync(root, line, token => FetchingAsync(root, line, repository, workspace, token), ct).ConfigureAwait(false);
 
-    private static async Task<(string? Failed, string? Url)> FetchingAsync(string root, string line, CancellationToken ct)
+    private static async Task<(string? Failed, string? Url)> FetchingAsync(
+        string root, string line, string repository, string? workspace, CancellationToken ct)
     {
         var (remote, url, _) = await WorkingTree.GitAsync(root, ["remote", "get-url", "origin"], ct).ConfigureAwait(false);
         if (remote != 0) return ("there is no `origin` remote here", null);
+        var address = url.Trim();
+        var home = DaorisHome.Resolve();
+        var git = home is null ? null : WorkingTree.GitInUse(home);
+        if (home is not null && GitHolds.Holding(home, root, "origin", address, git, GitAct.Read) is { } held)
+        {
+            return (GitHolds.Said(held), GitWords.Redact(address));
+        }
+
         var (code, _, err) = await WorkingTree.GitAsync(
             root, ["fetch", "--quiet", "--no-write-fetch-head", "origin", line], NoPrompt, SyncBounds.Fetch, ct).ConfigureAwait(false);
         // FABRIC-END6: every fetch of the line counted, made or failed, so a moment inside its minute fetches nothing more (§A4.3).
         RemoteFetches.Fetched(root, line, DateTimeOffset.UtcNow);
-        return (code == 0 ? null : Failure(err), url.Trim());
+        if (code == 0)
+        {
+            if (home is not null) GitHolds.Passed(home, root, "origin", GitAct.Read);
+            return (null, GitWords.Redact(address));
+        }
+
+        var failure = GitFailures.Class(err, GitAct.Read);
+        if (home is not null
+            && GitHolds.Hold(home, root, repository, workspace, "origin", address, git, failure, err, DateTimeOffset.UtcNow) is { } hold)
+        {
+            return (GitHolds.Said(hold), GitWords.Redact(address));
+        }
+
+        return (GitWords.Redact(Failure(err)), GitWords.Redact(address));
     }
 
     /// <summary>

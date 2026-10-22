@@ -196,7 +196,10 @@ public sealed class PipeCensus
             "NOTIFICATIONS",
             // The driver's own (D156 §3: sync, refresh): a look now, a sync pass with the service, the registry and the
             // accounts' use read again, the tools' locations looked at.
-            "NUDGE", "SYNC_NOW", "REGISTRY_REFRESH", "ACCOUNTS_READ", "TOOLS_LOOK");
+            "NUDGE", "SYNC_NOW", "REGISTRY_REFRESH", "ACCOUNTS_READ", "TOOLS_LOOK",
+            // GITAUTH1a: a held git remote tried again at its next act, which the terminal's `git try-again` will also do (design §8):
+            // it widens nothing, and the act it lets through is judged as any other.
+            "GIT_TRY_AGAIN");
         Add(PipeClass.Person,
             // The yes, and what answers for the person's verdict: a landing, a hand-off, an opinion overridden or taken on.
             "LAND_SESSION_TREE", "LAND_ENTRY", "LAND_ASK", "HANDOFF", "OPINION_ANYWAY", "OPINION_MYSELF",

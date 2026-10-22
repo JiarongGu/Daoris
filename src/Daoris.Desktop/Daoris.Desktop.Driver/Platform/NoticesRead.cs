@@ -61,7 +61,7 @@ public static class NoticesRead
         ["answer"] = "holding", ["confirmation"] = "holding", ["trust"] = "holding", ["account-wait"] = "holding",
         ["signed-out"] = "holding", ["proposal"] = "word", ["intake"] = "word", ["departure"] = "word", ["set-up"] = "word",
         ["opinion"] = "word", ["rule"] = "word", ["helper"] = "word", ["hand-over"] = "word", ["work"] = "word",
-        ["space"] = "word", ["unanswerable"] = "word", ["review"] = "ready",
+        ["space"] = "word", ["unanswerable"] = "word", ["git-held"] = "word", ["review"] = "ready",
     };
 
     /// <summary>

@@ -93,6 +93,10 @@ through without it:
 - **Renames count.** `--diff-filter=ACM` misses the `R` that `git mv` produces.
 - **Commit messages are scanned.** They are history, and they are the half nobody reviews.
 
+The structural patterns name credential shapes as their makers print them. GitHub's fine-grained token
+(`github_pat_…`) and GitLab's personal token (`glpat-…`) joined the classic ones with GITAUTH1a. Daoris's
+redaction of what git says cuts the same shapes, so a token that git echoes is never kept or shown.
+
 Findings are redacted in the report. A gate that prints the secret it caught has written that secret to
 a build log, which is frequently more public than the commit it just blocked.
 

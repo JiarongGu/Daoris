@@ -186,6 +186,23 @@ public sealed class SensitiveGateTests : IDisposable
         Assert.Contains("GitHub token", result.Detail);
     }
 
+    /// <summary>GITAUTH1a: GitHub's fine-grained token and GitLab's personal one are refused as the classic shapes are, and not printed.</summary>
+    [Theory]
+    [InlineData("github", "_pat_", "GitHub fine-grained token")]
+    [InlineData("glpat", "-", "GitLab token")]
+    public void A_fine_grained_GitHub_token_and_a_GitLab_token_are_refused(string prefix, string joint, string why)
+    {
+        var token = string.Concat(prefix, joint, new string('B', 22), "_x9");
+        _fx.Write("config.txt", $"token={token}");
+        _fx.Write("local/sensitive-patterns.txt", "# none needed");
+
+        var result = new SensitiveGate(ScanScope.Tree, new FakeGit("config.txt")).Run(Context());
+
+        Assert.False(result.Passed);
+        Assert.DoesNotContain(token, result.Detail);
+        Assert.Contains(why, result.Detail);
+    }
+
     /// <summary>A binary file is not text and scanning it produces noise, not findings.</summary>
     [Fact]
     public void Binary_files_are_skipped()

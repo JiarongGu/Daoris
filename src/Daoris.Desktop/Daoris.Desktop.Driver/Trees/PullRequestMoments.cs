@@ -152,8 +152,11 @@ internal interface IPullRequestMomentWorld
     /// <summary>Someone else's fetch moved origin's line, heard at <paramref name="at"/>.</summary>
     void HeardFetched(RefRepository repository, string line, DateTimeOffset at);
 
-    /// <summary>Fetch the line from origin, counted as every fetch is.</summary>
-    Task FetchAsync(RefRepository repository, string line, CancellationToken ct);
+    /// <summary>
+    /// Fetch the line from origin, counted as every fetch is: null where it fetched, else why not, a held origin's sentence where it is
+    /// held (GITAUTH1a), which connects nothing.
+    /// </summary>
+    Task<string?> FetchAsync(RefRepository repository, string line, CancellationToken ct);
 
     /// <summary>Ask the plugin about <paramref name="entries"/>, keeping what it answers; how many came back completed where they were not.</summary>
     Task<int> AskAsync(RefRepository repository, IReadOnlyList<LandedBranch> entries, CancellationToken ct);
@@ -462,9 +465,11 @@ public sealed class PullRequestMoments : IAsyncDisposable
 
         if (fetch && !(_world.Fetched(repository, line) is { } last && now - last < PullRequestAsking.Fresh))
         {
-            await _world.FetchAsync(repository, line, ct).ConfigureAwait(false);
+            // GITAUTH1a: the fetch's answer is read. One that failed moved nothing of origin's here, so nothing is seen; a held origin
+            // was not tried at all, and its hold, not the minute, keeps the next moment from trying it (the git-auth design §5.2). The
+            // plugin is asked all the same: it asks the host's own service, not git.
             // The fetch's own write to origin's line is no one else's fetch when the ref watch tells it.
-            Seen(repository, line, _world.OriginTip(repository, line));
+            if (await _world.FetchAsync(repository, line, ct).ConfigureAwait(false) is null) Seen(repository, line, _world.OriginTip(repository, line));
         }
 
         // A press or a landing that took the repository during the fetch: skipped too, before anything is asked.
@@ -583,7 +588,8 @@ public sealed class PullRequestMoments : IAsyncDisposable
 
         public void HeardFetched(RefRepository repository, string line, DateTimeOffset at) => RemoteFetches.Fetched(repository.Root, line, at);
 
-        public Task FetchAsync(RefRepository repository, string line, CancellationToken ct) => TreeRefs.FetchAsync(repository.Root, line, ct);
+        public async Task<string?> FetchAsync(RefRepository repository, string line, CancellationToken ct) =>
+            (await TreeRefs.FetchAsync(repository.Root, line, ct, repository.Repository, repository.Workspace).ConfigureAwait(false)).Failed;
 
         public Task<int> AskAsync(RefRepository repository, IReadOnlyList<LandedBranch> entries, CancellationToken ct) =>
             trees.AskAtMomentAsync(repository.Root, repository.Repository, repository.Workspace, entries, ct);

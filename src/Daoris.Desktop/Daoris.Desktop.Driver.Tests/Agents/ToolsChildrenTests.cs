@@ -244,31 +244,67 @@ public sealed class ToolsChildrenTests : IDisposable
     }
 
     [Fact]
-    public void With_every_tool_the_systems_a_start_is_handed_the_environment_it_inherited_byte_for_byte()
+    public void With_every_tool_the_systems_a_start_is_handed_the_environment_it_inherited_byte_for_byte_but_the_prompts()
     {
         var info = new ProcessStartInfo("x");
-        var before = info.Environment.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+        var before = Unprompted(info.Environment);
 
         Tools.Hand(info, Home);
         Tools.Hand(info, home: null);
 
-        Assert.Equal(before, info.Environment.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal));
+        Assert.Equal(before, Unprompted(info.Environment));
+        Assert.All(GitWiring.Prompts, pair => Assert.Equal(pair.Value, info.Environment[pair.Key]));
     }
 
+    /// <summary>GITAUTH1a: with a home and without one, a start is handed the prompt variables and loses the inherited ones that prompt.</summary>
     [Fact]
-    public void A_start_is_handed_the_tools_PATH_over_the_one_it_holds_and_nothing_else_changes()
+    public void Every_start_is_handed_the_prompt_variables_and_loses_the_inherited_askpass_and_traces()
+    {
+        foreach (var home in new[] { Home, null })
+        {
+            var info = new ProcessStartInfo("x");
+            info.Environment["GIT_ASKPASS"] = "C:/elsewhere/askpass.exe";
+            info.Environment["GIT_TERMINAL_PROMPT"] = "1";
+            foreach (var name in GitWiring.Removed) info.Environment[name] = "inherited";
+
+            Tools.Hand(info, home);
+
+            Assert.Equal("", info.Environment["GIT_ASKPASS"]);
+            Assert.Equal("0", info.Environment["GIT_TERMINAL_PROMPT"]);
+            Assert.Equal("never", info.Environment["GCM_INTERACTIVE"]);
+            Assert.Equal("1", info.Environment["GIT_TRACE_REDACT"]);
+            Assert.All(GitWiring.Removed, name => Assert.False(info.Environment.ContainsKey(name), name));
+        }
+    }
+
+    /// <summary>GITAUTH1a, the design §4.5: the terminal's shells are the person's own, so its block takes none of the prompt variables.</summary>
+    [Fact]
+    public void The_terminals_environment_takes_none_of_the_prompt_variables()
+    {
+        var variables = Tools.ChildEnvironment(Tools.Read(Home), Home, Inherited("two"));
+
+        Assert.All(GitWiring.Prompts.Keys, name => Assert.False(variables.ContainsKey(name), name));
+    }
+
+    private static Dictionary<string, string?> Unprompted(IDictionary<string, string?> environment) => environment
+        .Where(pair => !GitWiring.Prompts.ContainsKey(pair.Key) && !GitWiring.Removed.Contains(pair.Key, StringComparer.OrdinalIgnoreCase))
+        .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase);
+
+    [Fact]
+    public void A_start_is_handed_the_tools_PATH_over_the_one_it_holds_and_nothing_else_changes_but_the_prompts()
     {
         Write("""{"tools":{"gh":{"use":"managed","version":"2.62.0"}}}""");
         var info = new ProcessStartInfo("x");
         info.Environment[Tools.PathVariable] = Inherited("two");
-        var before = info.Environment.Where(pair => !string.Equals(pair.Key, Tools.PathVariable, StringComparison.OrdinalIgnoreCase))
-            .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+        var before = Unprompted(info.Environment);
+        before.Remove(Tools.PathVariable);
 
         Tools.Hand(info, Home);
 
         Assert.Equal(Folder("managed:gh/bin", null) + Path.PathSeparator + Inherited("two"), info.Environment[Tools.PathVariable]);
-        Assert.Equal(before, info.Environment.Where(pair => !string.Equals(pair.Key, Tools.PathVariable, StringComparison.OrdinalIgnoreCase))
-            .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal));
+        var after = Unprompted(info.Environment);
+        after.Remove(Tools.PathVariable);
+        Assert.Equal(before, after);
     }
 
     // ── A command's first word (§2.4, §2.7) ─────────────────────────────────────────────────────────

@@ -82,6 +82,9 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   // A volume still below its free-space floor once the floor freed what Daoris can make again (KEEP1f, the cleanup design §3.2): the
   // rest waits for the person's choice on *Free up space…*, and nothing running is held by it yet.
   space: 'word',
+  // A git remote held because it could not authenticate (GITAUTH1a, D198; the git auth design §5.2, §7.4): nothing connects for it
+  // until the person's *Try again* or a change lifts it, and nothing already running is held by this row.
+  'git-held': 'word',
   unanswerable: 'word',
   review: 'ready',
 };
@@ -144,6 +147,9 @@ export const ATTENTION_PLACE: Readonly<Record<AttentionKind, AttentionPlace | nu
   // This Daoris's *Disk space* card.
   space: 'settings',
   confirmation: null,
+  // A held git remote (GITAUTH1a): its one act, *Try again*, is on the row itself, so no place counts it until Settings → Git holds its
+  // setting (GITAUTH1e); the bell does.
+  'git-held': null,
 };
 
 /** The sessions a place is judged with: those the page holds, for the branch a unit of work was cut for (`workCutFor`). */
@@ -244,7 +250,9 @@ export type AttentionActId =
   // FABRIC-PERFORM1k: the person's new attempt on a plugin step's failure kept for them.
   | 'again-step'
   // FABRIC-CLOSE1j: the stop of a close found closed only in part, its node waiting again.
-  | 'stop-partial';
+  | 'stop-partial'
+  // GITAUTH1a: a git remote held because it could not authenticate, tried again on the person's press.
+  | 'git-try-again';
 
 /** The act each word offered on a held attempt is pressed by (FABRIC-PERFORM1g, FABRIC-CLOSE1q): a close's stop is not a step's. */
 export function heldActs(held: HeldAttempt): AttentionActId[] {
@@ -373,6 +381,8 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
         : item.ended && endOffersStop(item.ended) ? plain('stop-partial') : [];
     case 'account-wait':
     case 'signed-out': return accountOffers(item);
+    // A held git remote (GITAUTH1a, the git auth design §5.2): *Try again*, one press, which lifts its holds and connects nothing itself.
+    case 'git-held': return item.git ? plain('git-try-again') : [];
     default: return [];
   }
 }
@@ -482,6 +492,25 @@ export type PushedAttention = {
    * bytes as read when it was said, what the floor freed in this stretch, and what *Free up space…* could free (null where none was read).
    */
   space?: { root: string | null; free: number; total: number; floor: number | null; freed: number; could?: number | null };
+  /** A git remote held because it could not authenticate (GITAUTH1a): one row per held group, as .NET groups them. */
+  git?: GitHeld;
+};
+
+/** Why a git remote is held (the git auth design §5.1): refused, its push refused, its host key unknown, or its host key changed. */
+export type GitHeldClass = 'refused' | 'write-refused' | 'host-unknown' | 'host-changed';
+
+/**
+ * A held group of git remotes (GITAUTH1a, D198; the git auth design §5.2): the host, why, what it holds (reads and writes, or writes
+ * alone), the remote, the repositories held in this group, and git's or ssh's own last line, already redacted. The host, the remote,
+ * the repositories and git's words are content, shown as written.
+ */
+export type GitHeld = {
+  host: string;
+  class: GitHeldClass;
+  holds: 'all' | 'writes';
+  remote: string;
+  repositories: string[];
+  words: string;
 };
 
 /**
@@ -498,12 +527,12 @@ export type AttentionPushed = {
 /**
  * Each kind's place among the kinds of its group when two waited as long (design §6.2's order of kinds): the accounts', parks,
  * parked quests, go-aheads, held calls, held answers (COWORK1e), a terminal's presses (CONFIRMSEEN1) and folders; then asks,
- * departures, set-ups, second opinions, widenings, helpers, hand-overs, a unit's blocked clean-up, a held attempt and quests nobody can take;
- * then review.
+ * departures, set-ups, second opinions, widenings, helpers, hand-overs, a unit's blocked clean-up, a held attempt, a volume below its
+ * floor, a held git remote (GITAUTH1a) and quests nobody can take; then review.
  */
 const KIND_ORDER: readonly AttentionKind[] = [
   'account-wait', 'signed-out', 'parked', 'parked-quest', 'go-ahead', 'permission', 'answer', 'confirmation', 'trust',
-  'proposal', 'departure', 'set-up', 'opinion', 'rule', 'helper', 'hand-over', 'work', 'space', 'unanswerable', 'review',
+  'proposal', 'departure', 'set-up', 'opinion', 'rule', 'helper', 'hand-over', 'work', 'space', 'git-held', 'unanswerable', 'review',
 ];
 
 /** A row's place among its group's kinds; an intake is an ask's, and a held attempt comes after a unit's blocked clean-up. */
@@ -756,6 +785,16 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
     // KEEP1f: named by the volume's free space and where it is mounted; why, its floor, what Daoris freed, and what the press could.
     case 'space':
       return { ...base, ...(row.space ? spaceWorded(row.space) : { title: row.id, detail: null }) };
+    // GITAUTH1a (the git auth design §5.2, §7.4): named by its host and why, said once; its repositories, that nothing tries it again
+    // until the person's *Try again* or a change, and git's own words, as written. What its press lifts is its git and its workspace.
+    case 'git-held':
+      return {
+        ...base,
+        where: row.where ?? row.git?.remote ?? '',
+        ...(row.git ? gitHeldWorded(row.git) : { title: row.id, detail: null }),
+        ...(row.git ? { git: row.git } : {}),
+        ...(row.workspace ? { workspace: row.workspace } : {}),
+      };
     default:
       return { ...base, title: row.title ?? row.id };
   }
@@ -797,6 +836,18 @@ function spaceWorded(low: NonNullable<PushedAttention['space']>): Pick<Attention
       low.freed > 0 ? i18n.t('work.attention.spaceFreed', { size: size(low.freed) }) : i18n.t('work.attention.spaceFreedNothing'),
       ...(low.could ? [i18n.t('work.attention.spaceCould', { size: size(low.could) })] : []),
     ].join(' '),
+  };
+}
+
+/**
+ * A held git remote (GITAUTH1a, the git auth design §7.4), in the reader's language: its host and why as its title; then the repositories
+ * it holds, that Daoris does not try it again until *Try again* or a change, and git's own last line. The host, the repositories and git's
+ * words are content.
+ */
+function gitHeldWorded(held: GitHeld): Pick<Attention, 'title' | 'detail'> {
+  return {
+    title: i18n.t(`work.attention.gitHeld.title.${held.class}`, { host: held.host }),
+    detail: i18n.t('work.attention.gitHeld.detail', { repositories: (held.repositories ?? []).join(', '), words: held.words ?? '' }),
   };
 }
 

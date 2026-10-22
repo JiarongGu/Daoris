@@ -114,5 +114,14 @@
   "work.attention.stale.meanIt": "拒绝 {{count}} 个放行",
   "work.attention.stale.meanIt_other": "拒绝 {{count}} 个放行",
   "work.attention.stale.refused": "已拒绝 {{count}} 个过时的放行。",
-  "work.attention.stale.refused_other": "已拒绝 {{count}} 个过时的放行。"
+  "work.attention.stale.refused_other": "已拒绝 {{count}} 个过时的放行。",
+  "work.attention.git-held": "Git 受阻",
+  "work.attention.gitHeld.title.refused": "{{host}} 拒绝了这里 Git 的登录",
+  "work.attention.gitHeld.title.write-refused": "{{host}} 拒绝了用这里 Git 的登录推送",
+  "work.attention.gitHeld.title.host-unknown": "ssh 还不认识 {{host}} 的主机密钥",
+  "work.attention.gitHeld.title.host-changed": "{{host}} 的主机密钥自 ssh 上次信任后已改变",
+  "work.attention.gitHeld.detail": "{{repositories}}：在你按“重试”、或它的地址或 Daoris 运行的 Git 改变之前，Daoris 不会再尝试这个远程仓库。Git 的原话：{{words}}",
+  "work.attention.gitHeld.lifted": "下次需要时，Daoris 会为 {{count}} 个仓库再次尝试 {{host}}。",
+  "work.attention.gitHeld.lifted_other": "下次需要时，Daoris 会为 {{count}} 个仓库再次尝试 {{host}}。",
+  "work.attention.gitHeld.liftedNone": "Daoris 已不在等 {{host}}：下次需要时会尝试它。"
 }

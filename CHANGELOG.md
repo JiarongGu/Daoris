@@ -17,6 +17,14 @@ with the version and date at release.
   quests do, with nothing asked again on a timer, and the list is kept across a restart. What an Apply did is now said in the
   conversation as Daoris's word, naming what it published, never as yours; *Not now* is still yours. A *Go there* card is drawn
   again when its quest is taken, so its press no longer answers that the plan changed. In English and 中文.
+- A git remote that refuses the sign-in git has on your machine is now said once and left alone. When Daoris's fetch of a
+  repository's line is refused (the key or the credential refused, a push refused, a host whose key ssh does not know or whose key
+  changed), Daoris holds that remote: no look, press, start or pull request's moment tries it again, and *What needs you* shows one row
+  for each host and reason, naming the repositories, with *Try again*. Changing the remote's address, or the git Daoris runs, tries it
+  again too. A session started on a held repository is told not to fetch, pull or push it, and to work from the line it has. A host
+  that cannot be reached at all holds nothing, and is tried again as before. Nothing Daoris starts asks for a sign-in any more: git
+  never prompts, and Git Credential Manager no longer opens a window for a session's HTTPS fetch or push, so a missing credential
+  fails at once. What git says is cut of any token, password or key before Daoris keeps or shows it. In English and 中文.
 - Work that follows a workflow saved as a graph now lands. Its second opinion, your look and a plugin's steps start as its graph
   reaches them, and *Accept…*, `daoris-driver trees land` and the automatic landing land its work only where Daoris has judged the
   graph at that very commit, and only that commit, a merge included: a commit made after the judgement lands nothing. Where the graph

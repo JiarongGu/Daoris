@@ -6,7 +6,7 @@ import { useAcceptQuest, useAnswerGoAhead, useAsks, usePublishAsk, useQuests, us
 import {
   retryNotice, useApproveHelper, useAttention, useDeclineHelper, useHarnessAction, useHarnesses, useNudge, useRefreshHarnesses,
   useOpenWorkRecords, useResolveHeld, useRetryQuest, useTrustFolder, useAnswerPermission, useAnswerAlone, useApproveHandOver,
-  useDeclineHandOver,
+  useDeclineHandOver, useGitTryAgain,
 } from '../../bridge/shell';
 import { permissionSaid } from '../waits/PermissionAsks';
 import { answerAloneSaid } from '../waits/AnswerAlone';
@@ -112,6 +112,7 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
   const answerAlone = useAnswerAlone();
   const resolveHeld = useResolveHeld();
   const openRecords = useOpenWorkRecords();
+  const gitTryAgain = useGitTryAgain();
 
   const publish = usePublishAsk();
   const answerGoAhead = useAnswerGoAhead();
@@ -268,6 +269,16 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
     // The folder a node record that does not read is kept in (FABRIC-PERFORM1j), opened for the person to mend it; a refusal (no record
     // kept now) in the driver's words. Its row goes once the record reads, as the slice is judged again.
     openRecords: (item) => run(item, () => openRecords.mutateAsync(), () => {}),
+    // A held git remote's *Try again* (GITAUTH1a, the git auth design §5.2): its repositories' holds lifted in its workspace, said in the
+    // page's words; a refusal in the driver's. Its row goes as .NET judges the slice again, which the lift wakes.
+    gitTryAgain: (item) => {
+      const held = item.git;
+      if (!held) return;
+      run(item, () => gitTryAgain.mutateAsync({ repositories: held.repositories, ...(item.workspace ? { workspace: item.workspace } : {}) }),
+        (answer) => notify(answer.lifted > 0
+          ? t('work.attention.gitHeld.lifted', { count: answer.lifted, host: held.host })
+          : t('work.attention.gitHeld.liftedNone', { host: held.host })));
+    },
     // An agent's ask for a helper said yes or no to, as its session's page says it (MIXAGENT2c): its answer said in the page's
     // words, a refusal by its code in the error's tone.
     helper: (item, yes) => {

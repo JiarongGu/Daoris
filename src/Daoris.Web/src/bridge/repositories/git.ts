@@ -1,4 +1,4 @@
-import { useQueries, useQuery } from '@tanstack/react-query';
+import { useMutation, useQueries, useQuery } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../../data/queries';
 import { call } from '../call';
@@ -217,6 +217,17 @@ export const useCheckoutBranch = ({ repository, workspace }: { repository: strin
   });
   return { available: isAvailable, query };
 };
+
+/**
+ * The person's *Try again* on a remote held because it could not authenticate (GITAUTH1a, D198; the git auth design §5.2): the holds of
+ * these repositories lifted, in the row's workspace where it has one, so the next act that skipped them connects once. It answers how
+ * many it lifted; the attention slice wakes itself, so the row goes as .NET judges it again, and this hook asks nothing again.
+ */
+export const useGitTryAgain = () =>
+  useMutation({
+    mutationFn: ({ repositories, workspace }: { repositories: readonly string[]; workspace?: string }) =>
+      call<{ lifted: number }>('GIT_TRY_AGAIN', { repositories: [...repositories], ...(workspace ? { workspace } : {}) }),
+  });
 
 /** A page of the graph from tips named by their whole ids (the list's `commit`); asks nothing with no tip. */
 export const useGitGraph = (repository: string | null, tips: readonly string[], options: { page?: number; sinceParted?: boolean; workspace?: string } = {}) => {
