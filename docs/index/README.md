@@ -308,7 +308,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-21-notification-design.md` | 114 | 972 |
 | `docs/2026-10-22-coagent-design.md` | 89 | 870 |
 | `docs/2026-10-22-git-auth-design.md` | 111 | 1133 |
-| `docs/2026-10-23-coworker-design.md` | 83 | 760 |
+| `docs/2026-10-23-coworker-design.md` | 94 | 837 |
 | `docs/2026-10-23-coworker-proposals.md` | 90 | 1099 |
 | `docs/2026-10-23-coworker-reads.md` | 54 | 499 |
 | `docs/2026-10-23-session-watch-design.md` | 74 | 714 |

@@ -5,6 +5,35 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-23 — The helper wait did not keep four guarantees its design claimed (HELPERWAIT1b)
+
+- **Symptom:** found by Codex's read of COWORKUX1's round 3, not seen on a machine. Round 3 claimed four guarantees of the built
+  helper wait that the code did not keep. The guarantees: a park keeps the question it parked for, a hand is made once, the waiting
+  lead keeps its tree until it reaches the person, and the answer goes to the line's live part.
+- **Root cause:** four separate gaps. (1) `QuestionFiles.Settle` kept only a question that read and was fresh, and deleted the rest.
+  A question file that did not read made the turn park (`AskedSince` null), then the same conclusion deleted it. (2)
+  `HelperDoors.HandAsync` answered `Handed: false` for any unsuccessful or unreadable answer, and the driver cleared the attempt mark
+  on it. But the desk keeps the word before its answer is made, and the host can still answer 500 after. A word consumed with its
+  event unwritten then left no evidence and no mark, and the next look handed it again. (3) `BranchTidying.WaitingOnHelpersAsync`
+  held a waiting lead's tree only while one of its asks was open. After its last ask was refused and its move back to the person
+  failed, the lead was still waiting but held nothing, so the tidy could let go of its lock and take its tree while the ledger held
+  it. (4) The hand door and the driver's line read stopped at sixteen links and took the record there, which the line may have left.
+- **Fix:** (1) a parked conclusion keeps a question file that does not read; a read of it is still none. (2) `HelperHanded` tells
+  `Kept`, `Refused` and `Uncertain`. Only the desk's own refusal is `Refused`: its sentence on a 400, 404 or 409, or an older host's
+  bare 404. The mark is cleared on that alone. An uncertain hand keeps its mark and is said as a retry. The next look reads the line
+  back: the word found marks it handed, and nothing found settles `hand-uncertain`. (3) the tidy, the lock's let-go and Ask
+  Daoris's housekeeping read the service's predicate: waiting on its own helper while its quest is taken. (4) both sides follow one
+  link past the bound, and a line that goes on is refused `CannotTake`, nothing kept. Beside them, `HelperWaitTickTests` runs at a cap
+  of one (Codex's finding 5), and three of HELPERWAIT1's look lines are classed where they are made, which `LookSaidTests` refused
+  once HELPERWAIT1 met main's census. The partner's door has the same bound (PARTNERLINE1, open).
+- **Verification:** red first, each for its own reason, then green. `QuestionFilesTests` (the unread file kept by a first run's and a
+  resumed run's park). `HelperLookTests` (a word kept and its answer lost as a 500, an unreadable success and a timeout; found, or
+  consumed with no event; one hand each; a line of seventeen links refused, sixteen handed). `BranchTidyingTests` (held after the
+  refusal with the return failed, and with no ask on file; let go once the quest is done). `HelperHostTests` (seventeen links refused
+  with nothing kept, sixteen reach the newest; red without the fix). Green: the driver's fast half (13,792), `HelperHostTests` (10),
+  and the Process classes `HelperWaitTickTests` (2, with its cap-one assertion) and `HelperProcessTests` (4) by class with
+  `process.runsettings`, and `HelperCaptureProcessTests` (4) with `git.process.runsettings`.
+
 ## 2026-10-23 — Opening Review could take the index lock in a tree its session was writing in (REVIEWLOCK1)
 
 - **Symptom:** found by Fable's GITAPP1 proposal, not seen on a machine. Review reads a session's tree while its agent may be
@@ -29,6 +58,7 @@ repository.
   `TreeDiffSplitTests` holds the stat-only drop and the read's arguments. The census's test refuses planted cases and passes on
   the tree. Also green: `TreeDiffTests`, `ReviewBaseTests`, `LandGitCountTests`, and the fast classes whose git stand-ins
   match on the command (190).
+
 ## 2026-10-23 — A session waiting on its own helper was shown waiting on the person (HELPERWAIT1)
 
 - **Symptom:** on the install, twice in GITAPP1's design session. A driven session asked a Codex helper (`helper_ask`) and ended
