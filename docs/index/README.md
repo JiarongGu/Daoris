@@ -249,8 +249,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `tools/deployment-rehearsal.mjs` | 105 | 1814 |
-| `tools/desktop-publish.mjs` | 76 | 1336 |
+| `tools/deployment-rehearsal.mjs` | 105 | 1815 |
+| `tools/desktop-publish.mjs` | 77 | 1344 |
 | `tools/desktop.mjs` | 54 | 1090 |
 | `tools/family-rehearsal.mjs` | 359 | 6228 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |

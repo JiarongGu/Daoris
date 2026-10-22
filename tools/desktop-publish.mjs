@@ -12,6 +12,8 @@
  *   node tools/desktop-publish.mjs --to <install> --service --stage
  *                                                           …beside a running install, in update/staged/,
  *                                                           which the desktop installs when idle (D139)
+ *   … --git-doors                                           …with Daoris's two git doors in app/bin/ (GITAUTH1b,
+ *                                                           D198), left out until their owed measurements pass
  *   … --force-ungated                                       …a tree the full set of gates has not passed
  *                                                           (GATE3, below): the person's call
  *   node tools/desktop-publish.mjs --to <install> --service --stage --from-gated <commit>
@@ -1241,15 +1243,21 @@ async function main() {
   layDriverLaunchers(root);
 
   // The git doors (GITAUTH1b, D198 point 2), in `app/bin/` beside the launchers, laid after `layCli` replaced the folder: every
-  // process Daoris starts is routed through them from the next start (`GitWiring.Hand`).
-  console.log(`desktop-publish: publishing the git doors into ${CLI_BIN.join('/')}/…`);
-  const doorStage = join(stages, 'git-doors');
-  run(gitDoorPublishCommand(doorStage, artifacts));
-  try {
-    layGitDoors(doorStage, root);
-  } catch (error) {
-    console.error(error.message);
-    process.exit(1);
+  // process Daoris starts is routed through them from the next start (`GitWiring.Hand`). Only with `--git-doors` until D198's owed
+  // measurements (a real sshd, `gh` and `az` under the rewrite, git-lfs) pass on the install: a publish without it leaves the doors
+  // out, and since `layCli` replaced `app/bin/` whole, an install that had them goes back to git as it was (D198's GITAUTH1b note).
+  if (flag('--git-doors')) {
+    console.log(`desktop-publish: publishing the git doors into ${CLI_BIN.join('/')}/…`);
+    const doorStage = join(stages, 'git-doors');
+    run(gitDoorPublishCommand(doorStage, artifacts));
+    try {
+      layGitDoors(doorStage, root);
+    } catch (error) {
+      console.error(error.message);
+      process.exit(1);
+    }
+  } else {
+    console.log('desktop-publish: the git doors are left out (--git-doors lays them; D198\'s owed measurements first).');
   }
   rmSync(stages, { recursive: true, force: true });
 

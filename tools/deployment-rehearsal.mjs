@@ -703,7 +703,8 @@ async function main() {
   rmSync(scratch, { recursive: true, force: true, maxRetries: 20, retryDelay: 500 });
   mkdirSync(scratch, { recursive: true });
 
-  const published = publishDesktop(install, '--service', 15 * 60_000);
+  // --git-doors: the doors ship only on request until D198's owed measurements pass (GITAUTH1b), and the rehearsal proves their layout.
+  const published = publishDesktop(install, '--service --git-doors', 15 * 60_000);
   check('publish:desktop --service exits 0', published.code === 0,
     published.out.split('\n').slice(-12).join('\n'));
 
@@ -879,7 +880,7 @@ async function main() {
   const neighbour = join(install, 'a-neighbours-notes.txt');
   writeFileSync(neighbour, 'not the application’s\n');
 
-  const republished = publishDesktop(install, '--service', 15 * 60_000);
+  const republished = publishDesktop(install, '--service --git-doors', 15 * 60_000);
   check('a second publish into its own install is accepted', republished.code === 0,
     republished.out.split('\n').slice(-8).join('\n'));
   check('…and it left no bundle from the publish before it', !existsSync(decoy),
