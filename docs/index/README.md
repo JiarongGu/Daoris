@@ -106,7 +106,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/scoped.md` | 54 | 426 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/sparse.md` | 50 | 366 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/DriverCommandTests.cs` | 46 | 719 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/SessionMessagesTickTests.cs` | 73 | 1261 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/SessionMessagesTickTests.cs` | 73 | 1264 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/SessionsOutliveTheirLookTests.cs` | 43 | 957 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Platform/NoteCodesTests.cs` | 41 | 760 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Plugins/PluginCatalogTests.cs` | 40 | 795 |
