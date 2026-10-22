@@ -263,6 +263,36 @@ describe('a session’s facts line', () => {
         .toBe('正在协助「流式预算」');
     });
   });
+
+  // COAGENT1b (D199; the co-agent design §6.1): a lead's partners where its pieces exist, and a partner's own lead.
+  describe('its partners and its lead', () => {
+    const CHAT = { kind: 'chat', quest: null } as const;
+
+    it('says the agents its pieces went to, and how many work, where it asked any', () => {
+      const lead = session();
+      expect(sessionFacts(t, { session: lead, shown: 'working', partners: { agents: ['Codex'], working: 1 } })[1])
+        .toBe('Partners: Codex, 1 piece working');
+      expect(sessionFacts(t, { session: lead, shown: 'working', partners: { agents: ['Codex', 'Stub B'], working: 2 } })[1])
+        .toBe('Partners: Codex and Stub B, 2 pieces working');
+      expect(sessionFacts(t, { session: lead, shown: 'working', partners: { agents: ['Codex'], working: 0 } })[1]).toBe('Partners: Codex');
+      expect(sessionFacts(t, { session: lead, shown: 'working', partners: null })).not.toContain('Partners: Codex');
+    });
+
+    it('says whom a partner works for, apart from a helper', () => {
+      const partner = session({ ...CHAT, serves: 's9f8e7d6', piece: 'p1a2b3c4' });
+      expect(sessionFacts(t, { session: partner, shown: 'working', helping: 'Expose a streaming budget' })[1])
+        .toBe('Working for Expose a streaming budget');
+      expect(sessionFacts(t, { session: partner, shown: 'working' })[1]).toBe('Working for another session');
+    });
+
+    it('is said in 中文', async () => {
+      await i18n.changeLanguage('zh');
+      expect(sessionFacts(t, { session: session(), shown: 'working', partners: { agents: ['Codex'], working: 1 } })[1])
+        .toBe('搭档：Codex，1 个分项进行中');
+      expect(sessionFacts(t, { session: session({ ...CHAT, serves: 's9f8e7d6', piece: 'p1' }), shown: 'working', helping: '流式预算' })[1])
+        .toBe('为 流式预算 工作');
+    });
+  });
 });
 
 describe('a quest’s facts line', () => {

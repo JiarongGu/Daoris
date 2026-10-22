@@ -130,6 +130,7 @@ public static class OpenRoutes
         ("plugins install <file>", null, "alone: PLUGIN_INSTALL installs one of the install's own offers; no route reads a package file, and its words name the folder"),
         ("plugins new <id>", null, "alone: it writes a plugin's folder where the terminal stands, never under the home"),
         ("logs", null, "alone: a read of the machine log this process reads itself, whose words name its folder"),
+        ("sessions partner <id> --list", null, "alone: a read of the pieces' box under the home, which says the same with or without the instance"),
         // What stays off the pipe by design (§7.1, §11): a conversation the terminal runs, a loop, the updater's request, and the
         // service's own doors, which the service writes once whoever asks.
         ("chat", null, "alone: the conversation runs in this terminal's own process, with its own agent and its own Ctrl+C, until RPC1g"),
@@ -195,6 +196,9 @@ public static class PersonPresses
 
     /// <summary><c>sessions helper --decline &lt;ask&gt;</c>: the no to an agent's ask of a helper.</summary>
     public static InstanceRoute SessionHelperDecline { get; } = Person("SESSION_HELPER_DECLINE");
+
+    /// <summary><c>sessions partner &lt;id&gt; "…" --agent &lt;name&gt;</c>: the person's ask of a piece (COAGENT1b).</summary>
+    public static InstanceRoute SessionPartnerAsk { get; } = Person("SESSION_PARTNER_ASK");
 
     /// <summary><c>sessions hand-over &lt;id&gt; --approve</c>: the yes to an agent's ask to hand its session over (MIXAGENT1c).</summary>
     public static InstanceRoute SessionHandOverApprove { get; } = Person("SESSION_HAND_OVER_APPROVE");
@@ -301,6 +305,8 @@ public static class PersonPresses
         ("sessions helper <id> \"…\"", SessionHelperAsk),
         ("sessions helper --approve <ask>", SessionHelperApprove),
         ("sessions helper --decline <ask>", SessionHelperDecline),
+        ("sessions partner <id> \"…\" --agent <name>", SessionPartnerAsk),
+        ("sessions partner <piece> --stop", SessionStop),
     ];
 }
 

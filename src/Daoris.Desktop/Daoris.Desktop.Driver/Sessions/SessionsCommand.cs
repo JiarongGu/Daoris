@@ -57,6 +57,9 @@ public sealed record SessionsAsk(string Verb)
 
     /// <summary>A hand-over's account, or null for the one the roster picks.</summary>
     public string? Account { get; init; }
+
+    /// <summary>A piece's paths (COAGENT1b, <c>sessions partner … --paths</c>), each repository-relative as the person named it.</summary>
+    public IReadOnlyList<string> Paths { get; init; } = [];
 }
 
 /// <summary>
@@ -145,6 +148,12 @@ public sealed record SessionsWorld(ServiceClient Service, string Home, DriverCon
     /// roster reads them for a start. Null reads this build's adapters and the home's plugins.
     /// </summary>
     public Func<string, HandOverAgent?>? Drives { get; init; }
+
+    /// <summary>
+    /// How a piece's lead's tree is read at the person's ask (COAGENT1b, <c>sessions partner</c>): its commit and uncommitted paths, git's
+    /// by default, a test's without a process (MOD8).
+    /// </summary>
+    public Func<string, CancellationToken, Task<PieceBase>> PieceBase { get; init; } = PartnerPersonAsk.ReadTreeAsync;
 }
 
 /// <summary>
@@ -206,6 +215,8 @@ public static class SessionsCommand
                daoris-driver sessions hand-over <id> --approve|--decline
                daoris-driver sessions helper <id> "<question>" [--agent <name>]
                daoris-driver sessions helper --approve|--decline <ask>
+               daoris-driver sessions partner <id> "<piece>" --agent <name> [--paths <path>…]
+               daoris-driver sessions partner <id> --list  ·  sessions partner <piece> --stop
         """;
 
     /// <summary>The fields of a row in <c>--json</c>, in order: <c>SESSION_GROUPS</c>' row, field for field.</summary>
@@ -303,6 +314,8 @@ public static class SessionsCommand
                 return null;
             case ["helper", ..]:
                 return SessionsHelperCommand.Read(args, out problem);
+            case ["partner", ..]:
+                return SessionsPartnerCommand.Read(args, out problem);
         }
 
         var ask = new SessionsAsk("list");
@@ -413,6 +426,16 @@ public static class SessionsCommand
             "helper-decline" => await ThroughAsync(
                 world, PersonPresses.SessionHelperDecline, Body(("ask", ask.Ids[0])),
                 () => SessionsHelperCommand.RunWordAsync(world, ask, output), output, ct).ConfigureAwait(false),
+            "partner" => await ThroughAsync(
+                world, PersonPresses.SessionPartnerAsk,
+                Body(("id", ask.Ids[0]), ("piece", ask.Text), ("agent", ask.Agent), ("paths", ask.Paths.Count > 0 ? ask.Paths : null)),
+                () => SessionsPartnerCommand.RunAsync(world, ask, output, ct), output, ct).ConfigureAwait(false),
+            "partner-list" => await SessionsPartnerCommand.ListAsync(world, ask.Ids[0], output).ConfigureAwait(false),
+            // A piece's stop is its partner's record's stop, the same press: the driver reads it as the person's and keeps the work.
+            "partner-stop" => SessionsPartnerCommand.Working(world, ask.Ids[0], output) is { } partner
+                ? await ThroughAsync(
+                    world, PersonPresses.SessionStop, Body(("id", partner)), () => StopAsync(world, partner, output, ct), output, ct).ConfigureAwait(false)
+                : 1,
             "stop" => await ThroughAsync(
                 world, PersonPresses.SessionStop, Body(("id", ask.Ids[0])), () => StopAsync(world, ask.Ids[0], output, ct), output, ct).ConfigureAwait(false),
             "stop-turn" => await ThroughAsync(

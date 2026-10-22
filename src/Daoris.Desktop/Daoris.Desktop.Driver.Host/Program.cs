@@ -172,6 +172,11 @@ using Daoris.Driver;
 //                 home's `helpers` folder; the driver takes it at its next look and starts a read-only helper on another agent,
 //                 whose answer comes back to that session as its next turn, marked as the helper's. A helper, a reviewer and an
 //                 intake are refused, exit 1.
+//   sessions partner <id> "<piece>" --agent <name> [--paths <path>…]
+//   sessions partner <id> --list  ·  sessions partner <piece> --stop
+//                 the person's own ask of a piece (COAGENT1b, D199): the ask under the home's `partners` folder at the exact commit
+//                 the session's tree stands at, which the driver judges at its next look and starts only where the agent's
+//                 confinement as a partner was measured; the session's pieces; a working piece's stop, which is its partner's.
 //
 //   driver [list | <choice> | work-cycle | brainstorms | workflow …]
 //                 this machine's standing choices, workflows and cycles (PUSH1f2a, PUSH1f2b, D194): the words `daoris driver …`

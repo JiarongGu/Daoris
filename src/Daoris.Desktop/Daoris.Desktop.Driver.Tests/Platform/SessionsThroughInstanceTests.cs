@@ -154,6 +154,8 @@ public sealed class SessionsThroughInstanceTests
             $$"""{"id":"{{Id}}","question":"why?","agent":"codex","said":true}"""),
         "helper-approve" => (new("helper-approve") { Ids = ["#7"] }, "SESSION_HELPER_APPROVE", """{"ask":"#7","said":true}"""),
         "helper-decline" => (new("helper-decline") { Ids = ["#7"] }, "SESSION_HELPER_DECLINE", """{"ask":"#7","said":true}"""),
+        "partner" => (new("partner") { Ids = [Id], Text = "Write it.", Agent = "codex-acp", Paths = ["src"] }, "SESSION_PARTNER_ASK",
+            $$"""{"id":"{{Id}}","piece":"Write it.","agent":"codex-acp","paths":["src"],"said":true}"""),
         _ => throw new ArgumentOutOfRangeException(nameof(name)),
     };
 
@@ -178,6 +180,7 @@ public sealed class SessionsThroughInstanceTests
     [InlineData("helper")]
     [InlineData("helper-approve")]
     [InlineData("helper-decline")]
+    [InlineData("partner")]
     public async Task The_other_sessions_verbs_through_the_instance_wait_for_the_window_and_print_the_lines_it_answers(string name)
     {
         if (!OperatingSystem.IsWindows()) return;

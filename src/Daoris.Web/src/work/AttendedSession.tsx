@@ -34,6 +34,7 @@ import type { Seek } from './waits/WaitAnchor';
 import { type HeadLink, type HeadOpinion, type HeadReview, type LandingPlan, SessionHead, type WorkAsk } from './head/SessionHead';
 import { SessionRelations } from './head/SessionRelations';
 import { SessionTimeline } from './head/SessionTimeline';
+import type { PieceSection } from './pieces/Pieces';
 
 /**
  * The one session the person is attending: its record, and what was observed about it.
@@ -69,8 +70,10 @@ export function AttendedSession({
   chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, ownBranch, onDiscardBranch, discardingBranch,
   headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind,
   opinion, continues, helps, heavy, process, parts, entryAccept, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek, helpers, permissions,
-  answers, milestone, onOpenBranch, question, parkBox,
+  answers, milestone, onOpenBranch, question, parkBox, pieces,
 }: {
+  /** Its pieces (COAGENT1b, D199), the frame's: handed to its head's Pieces section. Absent, none is drawn. */
+  pieces?: PieceSection | null;
   /** Passed straight through to the head: its park's question as its agent asked it, its waiting card's (PARKVIEW1). */
   question?: ParkQuestion | null;
   /** Passed straight through to the head: the box below is the park's answer box, with the presses of what it asks (PARKVIEW1). */
@@ -286,6 +289,7 @@ export function AttendedSession({
         ruleAsk={ruleAsk}
         seek={seek}
         helpers={helpers}
+        pieces={pieces}
         permissions={permissions}
         answers={answers}
       />

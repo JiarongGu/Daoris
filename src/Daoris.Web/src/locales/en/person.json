@@ -50,6 +50,7 @@
   "person.route.SESSION_HELPER_ASK": "ask another agent to help a session",
   "person.route.SESSION_HELPER_APPROVE": "say yes to an agent's ask for a helper",
   "person.route.SESSION_HELPER_DECLINE": "say no to an agent's ask for a helper",
+  "person.route.SESSION_PARTNER_ASK": "ask another agent to work on a piece for a session",
   "person.route.LAND_SESSION_TREE": "accept a session's work and land it",
   "person.route.DISCARD_SESSION_TREE": "discard a session's tree",
   "person.route.SWEEP": "clean up session branches",

@@ -281,6 +281,17 @@ public sealed partial class HelpCoverageTests
         + "`daoris-driver sessions helper` and the page's *Ask another agent…* (its head's ⋯, which asks under the head).");
 
     /// <summary>
+    /// COAGENT1b's <c>daoris-driver sessions partner</c> (D199 point 2), a verb of the headless host, and the page's press in the Pieces
+    /// section (<c>useAskPartner</c>, *Ask another agent to work on a piece…*): exempt, as a helper's ask is, since it is the person's own
+    /// ask of another agent to write a piece of their work, which spends that agent's allowance; whether a lead may ask for one is
+    /// COAGENT1d's rule, set elsewhere.
+    /// </summary>
+    private static readonly Exempt PartnerAskDoor = new(
+        "asking another agent to write a piece of a session's work spends that agent's allowance on the person's own piece (D199), "
+        + "which stays the person's to ask (D133 §1), so Ask Daoris proposes none; it can name `daoris-driver sessions partner` and the "
+        + "page's *Ask another agent to work on a piece…* (the session's Pieces section).");
+
+    /// <summary>
     /// MIXAGENT2b's *Let it ask* (<c>useApproveHelper</c>) and HELPERNO1's *Not now* (<c>useDeclineHelper</c>): the person's yes
     /// or no to an agent's ask for a helper that waits on it under the <c>helpers</c> rule's <c>ask</c> (D163 point 3). Exempt,
     /// since it is their word on that one ask, given where it waits; what an agent's ask does at all is the rule, a door already.
@@ -665,6 +676,8 @@ public sealed partial class HelpCoverageTests
         ("work", "useHandOver", null, HandOverDoor),
         // MIXAGENT2b (D163 points 2 and 3): *Ask another agent…* and the person's yes to an agent's ask; HELPERNO1: their no.
         ("work", "useAskHelper", null, HelperAskDoor),
+        // COAGENT1b (D199 point 2): *Ask another agent to work on a piece…*, the person's own ask of a piece.
+        ("work", "useAskPartner", null, PartnerAskDoor),
         ("work", "useApproveHelper", null, HelperAnswerDoor),
         ("work", "useDeclineHelper", null, HelperAnswerDoor),
         // MIXAGENT1c (D163 point 3): the person's yes and no to a session's agent's own ask to hand it over, at the foot of its page.
@@ -1150,6 +1163,7 @@ public sealed partial class HelpCoverageTests
             .Append(StartFromDoor)
             .Append(HandOverDoor)
             .Append(HelperAskDoor)
+            .Append(PartnerAskDoor)
             .Append(TraceDoor)
             .Append(WorkflowRunDoor)
             .Append(WiringDoor)
@@ -1385,6 +1399,19 @@ public sealed partial class HelpCoverageTests
         Assert.Null(HelpProposalKinds.Find("helper"));
         Assert.Contains("D163", HelperAskDoor.Reason);
         Assert.Contains("D133", HelperAskDoor.Reason);
+    }
+
+    /// <summary>
+    /// COAGENT1b: the headless host's <c>sessions partner</c> is exempt from Ask Daoris while its usage spells it, as the person's own
+    /// ask of another agent, which no kind of that name takes.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_sessions_partner_is_exempt_as_the_persons_own_ask()
+    {
+        Assert.Contains("sessions partner <id> \"<piece>\" --agent <name>", DriverCommand.Usage);
+        Assert.Null(HelpProposalKinds.Find("partner"));
+        Assert.Contains("D199", PartnerAskDoor.Reason);
+        Assert.Contains("D133", PartnerAskDoor.Reason);
     }
 
     /// <summary>

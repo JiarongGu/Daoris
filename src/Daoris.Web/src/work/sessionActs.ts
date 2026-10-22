@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import type { Session } from '../data/api';
 import {
-  retryNotice, stopNotice, useApproveHelper, useArchiveSessions, useAskHelper, useCancelTurn, useDeclineHelper, useDeleteSession, useHandOver,
-  useOpenSessionFolder, useOpenWindow, useResolveSession, useRetryQuest, useStopSession,
+  retryNotice, stopNotice, useApproveHelper, useArchiveSessions, useAskHelper, useAskPartner, useCancelTurn, useDeclineHelper, useDeleteSession,
+  useHandOver, useOpenSessionFolder, useOpenWindow, useResolveSession, useRetryQuest, useStopSession,
 } from '../bridge/shell';
 import { list, sentence } from '../locales/format';
 import { failure, type Notify, SESSION_ACTIVE } from '../design/ui';
@@ -55,6 +55,13 @@ const FRAME_ACTS = new Set<SessionActId>([
 const HELPER_REFUSALS = new Set([
   'blank', 'too-long', 'agent', 'not-held', 'helper', 'reviewer', 'intake', 'gone', 'person', 'waits', 'past', 'approved', 'unread',
 ]);
+
+/** The codes a piece's ask answers by (COAGENT1b; the bridge's `PartnerAskWhy`), each said in the catalogue's words. */
+const PIECE_REFUSALS = new Set(['blank', 'too-long', 'agent', 'path', 'not-held', 'unfit', 'no-commit']);
+
+/** A piece's refusal in the catalogue's words, by its code; one a later driver adds is said in the driver's own sentence. */
+export const pieceSaid = (t: Translate, why: string | null, message: string) =>
+  (why && PIECE_REFUSALS.has(why) ? t(`work.pieces.refused.${why}`) : message || why || '');
 
 /** A helper's refusal in the catalogue's words, by its code: *What needs you*'s yes and no say them too (MIXAGENT2c). */
 export const helperSaid = (t: Translate, why: string | null, message: string) =>
@@ -119,6 +126,7 @@ export function useSessionActs({ notify, doors = {}, entries }: {
   const remove = useDeleteSession();
   const handOver = useHandOver();
   const askHelper = useAskHelper();
+  const askPartner = useAskPartner();
   const approveHelper = useApproveHelper();
   const declineHelper = useDeclineHelper();
   const cancelTurn = useCancelTurn();
@@ -280,6 +288,38 @@ export function useSessionActs({ notify, doors = {}, entries }: {
   );
 
   /**
+   * *Ask another agent to work on a piece…*'s second press (COAGENT1b, D199 point 2), told back to its ask: `done` once the driver's
+   * file holds it, a refusal by its code said inside the ask, keeping the words.
+   */
+  const askPartnerNow = (session: Session, asked: { piece: string; agent: string; paths: readonly string[] }, answered: Answered) =>
+    askPartner.mutate(
+      { session: session.id, piece: asked.piece, agent: asked.agent, paths: asked.paths },
+      {
+        onSuccess: (answer) => {
+          if (!answer.asked) {
+            answered.refused(pieceSaid(t, answer.why, answer.message));
+            return;
+          }
+          notify(t('work.pieces.asked'));
+          answered.done();
+        },
+        onError: refusedIn(answered),
+      },
+    );
+
+  /**
+   * A working piece's *Stop…* (COAGENT1b): its partner's record's stop, the stop's one press, told back to its ask. The driver reads it
+   * as the person's and keeps what the partner wrote.
+   */
+  const stopPartnerNow = (partner: string, answered: Answered) => stop.mutate(partner, {
+    onSuccess: (answer) => {
+      notify(t(stopNotice(answer), { id: partner }));
+      answered.done();
+    },
+    onError: refusedIn(answered),
+  });
+
+  /**
    * The person's yes to an agent's ask that waits on it (MIXAGENT2b, D163 point 3), told back to its press: `done` once the
    * driver's file holds it; a refusal by its code, said beside the press.
    */
@@ -353,12 +393,16 @@ export function useSessionActs({ notify, doors = {}, entries }: {
     stopNow,
     handOverNow,
     askHelperNow,
+    askPartnerNow,
+    stopPartnerNow,
     approveHelperNow,
     declineHelperNow,
     deleteNow,
     archiveListed,
     /** A helper's ask on its way: its ask's presses wait for it (MIXAGENT2b). */
     askingHelper: askHelper.isPending,
+    /** A piece's ask on its way: its ask's presses wait for it (COAGENT1b). */
+    askingPartner: askPartner.isPending,
     /** A yes or a no to an agent's ask on its way: the rows' presses wait for it. */
     approvingHelper: approveHelper.isPending || declineHelper.isPending,
     /** A stop on its way. */

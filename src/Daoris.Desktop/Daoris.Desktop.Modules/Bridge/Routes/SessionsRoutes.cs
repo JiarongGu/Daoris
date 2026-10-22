@@ -210,6 +210,76 @@ public sealed class SessionsRoutes(DriverContext context)
         return Task.FromResult<object?>(new { Helpers = helpers });
     }
 
+    // *Ask another agent to work on a piece…* (COAGENT1b, D199 point 2; the co-agent design §2.3 step 1, §6.1): the person's own ask of
+    // a piece for a session, the file `daoris-driver sessions partner` writes, by the one judge and writer both share
+    // (`PartnerPersonAsk`): the piece within its bound, an agent named in one word, the paths inside, a session of this machine's that
+    // may lead one, and its tree's commit read as the piece's exact base. Everything else is the driver's, at its next look, which the
+    // nudge brings sooner. What cannot is `asked: null` with its code for the page to word, and the verb's sentence beside it.
+    [DriverRoute("SESSION_PARTNER_ASK")]
+    [Publishes("SESSION_PARTNER_ASK", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
+    private async Task<object?> SessionPartnerAskAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var piece = (Optional(request, "piece") ?? "").Trim();
+        var agent = Optional(request, "agent")?.Trim();
+        IReadOnlyList<string> paths = request.Payload is { } payload && payload.TryGetProperty("paths", out var named) && named.ValueKind == JsonValueKind.Array
+            ? [.. named.EnumerateArray().Where(path => path.ValueKind == JsonValueKind.String).Select(path => path.GetString()!)]
+            : [];
+        var service = _loop.Service ?? throw NotReady();
+        // `sessions partner` sent over the pipe asks for the verb's own words, judged by the same code.
+        if (Flag(request, "said"))
+        {
+            return await SaidAsync(new SessionsAsk("partner") { Ids = [id], Text = piece, Agent = agent, Paths = paths }, cancellationToken).ConfigureAwait(false);
+        }
+
+        var asked = await PartnerPersonAsk.AskAsync(
+            _loop.Home, service, id, piece, paths, agent, _loop.PieceBases, DateTimeOffset.UtcNow, cancellationToken).ConfigureAwait(false);
+        if (asked.Asked is not null) _loop.Nudge();
+        return new { asked.Asked, asked.Why, asked.Message };
+    }
+
+    // The pieces a session asked (COAGENT1b; the co-agent design §6.1's Pieces section), oldest first, each as the driver's look left
+    // it: the piece and its paths, the agent, where it stands and why, its partner's record once started, its frozen commit and ref
+    // once imported, and the files Daoris read in it with those beyond its paths. Read off the home's `partners` folder, the driver's
+    // own files; the partner's own words stay its answer's, which reaches the session as a word.
+    [DriverRoute("SESSION_PARTNERS")]
+    private Task<object?> SessionPartnersAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        // A read of files, off the window's thread (UIFREEZE1).
+        return Task.Run<object?>(() =>
+        {
+            var files = new PartnerFiles(_loop.Home);
+            var pieces = files.Asks()
+                .Where(ask => string.Equals(ask.Asker, id, StringComparison.Ordinal))
+                .Select(ask =>
+                {
+                    var state = files.ReadState(ask.Id);
+                    var facts = state?.Commit is { Length: > 0 } ? files.ReadFacts(ask.Id) : null;
+                    return new
+                    {
+                        ask.Id,
+                        ask.Piece,
+                        ask.Paths,
+                        ask.Agent,
+                        ask.AskedBy,
+                        At = Moments.Write(ask.At),
+                        State = state?.State ?? (files.Unreadable(ask.Id, "state") ? PartnerStates.Uncertain : PartnerStates.Asked),
+                        state?.Code,
+                        state?.End,
+                        state?.Partner,
+                        StartedOn = state?.Agent,
+                        Commit = state?.Commit is { Length: > 0 } commit ? commit : null,
+                        Ref = state?.Commit is { Length: > 0 } ? PieceRefs.Of(ask.Id) : null,
+                        Files = facts?.Files,
+                        Beyond = facts?.Beyond,
+                    };
+                })
+                .ToList();
+            return new { Pieces = pieces };
+        }, cancellationToken);
+    }
+
     // What of the agents' asks waits on the person's word across this machine's sessions (MIXAGENT2c, D168; D163 point 3), for
     // *What needs you*: each the driver's look holds `waiting` with no code under the `helpers` rule's `ask`, the one state the yes
     // and the no answer, oldest first, with the session that asked. A read off the home's `helpers` folder: it declares nothing,
