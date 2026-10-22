@@ -237,8 +237,8 @@ public sealed class AnswerContinuesTickTests : IDisposable
     /// line then its own, naming no account, and the carry-on runs on account 2 in the same tree.
     /// </summary>
     /// <remarks>
-    /// Until POOL1a1 the person's default moving to account 2 took account 1 off the accounts this work may use. Since the fold
-    /// (D197 points 1 and 7) a default is the set's first and account 1 stays in the set, so the park would rightly resume there.
+    /// A default moved to account 2 takes no account out (POOL1a1; D197 points 1 and 2): it is the set's first, account 1 stays in
+    /// the set, and the park would rightly resume there.
     /// </remarks>
     [Fact]
     public async Task An_answer_on_another_account_never_resumes_and_is_carried_on_saying_why()

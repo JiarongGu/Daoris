@@ -260,7 +260,7 @@ public sealed class OpinionResumeTickTests : IDisposable
             const [log, ...argv] = process.argv.slice(2);
             if (argv.includes('--version')) { console.log('2.1.0 (Claude Code)'); process.exit(0); }
             if (argv[0] === 'auth' && argv[1] === 'status') { console.log('{"loggedIn": true}'); process.exit(0); }
-            // A run with no prompt is the usage read a start's walk asks its set's accounts first (USAGEPROBE1; one set since POOL1a1):
+            // A run with no prompt is the usage read a start's walk asks its set's accounts first (USAGEPROBE1; POOL1a1's one set):
             // this stub keeps no plan and says nothing, so the account reads as unknown (D57), and it is no run.
             if (!argv.includes('-p')) process.exit(0);
             const after = (flag) => { const at = argv.indexOf(flag); return at < 0 ? null : argv[at + 1]; };
