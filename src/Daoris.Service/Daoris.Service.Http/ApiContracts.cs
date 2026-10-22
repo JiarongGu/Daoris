@@ -617,10 +617,11 @@ public sealed record AccessKeepRequest(Dictionary<string, string>? Access);
 public sealed record ResolvedKeepRequest(List<string>? Resolved);
 // `Interrupted` (D104): a move to `stopped` that was not the person's. `Limit` (TOOL4c): a move to `failed`
 // that an account's limit made. Silence is the old reading of both. `NoteParts` (LANG1a): the note's lines by code, beside
-// it; a note sent without them clears the record's, and an older driver sends none.
+// it; a note sent without them clears the record's, and an older driver sends none. `Expected` (TERMTRUST1a, D201 point 2): the
+// state the record must be in, compared in the ledger's step; none moves from any state the move allows, as before.
 public sealed record AdvanceSessionRequest(
     string? State, string? Note, string? Evidence, string? Transcript, bool? Interrupted = null, bool? Limit = null,
-    JsonElement? NoteParts = null);
+    JsonElement? NoteParts = null, string? Expected = null);
 public sealed record SessionActionResponse(SessionResponse Session, string Message);
 // `FirstLine` and `LastLine` (ORIENT2e): the lines of its file an entry is, as `/api/entries` answers them, taken
 // only where they can be its body's; a feed that names none is read as before.

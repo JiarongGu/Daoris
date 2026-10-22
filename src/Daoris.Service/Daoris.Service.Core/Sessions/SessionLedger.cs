@@ -1343,9 +1343,15 @@ public sealed class SessionLedger(
     /// The note's parts beside it (LANG1a, D142 point 2), as <see cref="NoteParts.Normalize"/> keeps them; only with a note.
     /// A note moved without them clears the record's.
     /// </param>
+    /// <param name="expected">
+    /// The state the record must be in for the move to be made, compared inside the step (TERMTRUST1a, D201 point 2): a finish under
+    /// the standing confirmation sends <c>awaiting-person</c>, so a session resumed between the verb's read and the move is not ended.
+    /// Null moves from any state the move allows, as before.
+    /// </param>
     public async Task<SessionAdvanceOutcome> AdvanceAsync(
         string id, string state, string? note, string? evidence, string? transcript,
-        DateTimeOffset now, CancellationToken ct = default, bool interrupted = false, bool limit = false, string? noteParts = null)
+        DateTimeOffset now, CancellationToken ct = default, bool interrupted = false, bool limit = false, string? noteParts = null,
+        string? expected = null)
     {
         var target = Parse(state);
         if (target is null or SessionState.Queued)
@@ -1354,6 +1360,15 @@ public sealed class SessionLedger(
             return new(
                 SessionAdvanceRefusal.UnknownState,
                 $"Unknown state '{state}' — one of: {AdvanceTargets}.",
+                Session: null);
+        }
+
+        var from = expected is null ? null : Parse(expected);
+        if (expected is not null && from is null)
+        {
+            return new(
+                SessionAdvanceRefusal.UnknownState,
+                $"Unknown expected state '{expected}' — one of: queued, {AdvanceTargets}.",
                 Session: null);
         }
 
@@ -1387,12 +1402,20 @@ public sealed class SessionLedger(
 
             if (!session.Active)
             {
-                return target == SessionState.Working
+                return target == SessionState.Working && from is null
                     ? await GoOnAsync(session, note, noteParts, evidence, transcript, now, inside).ConfigureAwait(false)
                     : new SessionAdvanceOutcome(
                         SessionAdvanceRefusal.Terminal,
                         $"Session `{session.Id}` is {Spell(session.State)} — a finished session does not move.",
                         Session: null);
+            }
+
+            if (from is { } wanted && session.State != wanted)
+            {
+                return new SessionAdvanceOutcome(
+                    SessionAdvanceRefusal.InvalidMove,
+                    $"Session `{session.Id}` is {Spell(session.State)}, not {Spell(wanted)} as this move expected, so it was not moved.",
+                    Session: null);
             }
 
             if (!Allowed(session.State).Contains(target.Value))

@@ -82,6 +82,41 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         return opened.Session!;
     }
 
+    /// <summary>
+    /// TERMTRUST1a (D201 point 2, the terminal-trust design §2.1 and §8 case 7): a finish under the standing confirmation is moved only
+    /// from <c>awaiting-person</c>, the expected state compared inside the store's step, so a session the driver resumed between the
+    /// verb's read and the move is not finished; an advance naming no expected state moves as before.
+    /// </summary>
+    [Fact]
+    public async Task An_advance_with_an_expected_state_moves_only_a_record_in_that_state()
+    {
+        var parked = await Working(await Publish(), Now);
+        await _ledger.AdvanceAsync(parked.Id, "awaiting-person", "Which report?", null, null, Now);
+
+        var finished = await _ledger.AdvanceAsync(parked.Id, "completed", null, null, null, Now, expected: "awaiting-person");
+
+        Assert.Equal(SessionAdvanceRefusal.None, finished.Refusal);
+        Assert.Equal(SessionState.Completed, finished.Session!.State);
+
+        var resumed = await Working(await Publish(title: "Another"), Now);
+        await _ledger.AdvanceAsync(resumed.Id, "awaiting-person", "Which host?", null, null, Now);
+        // The driver's look resumed it between the verb's read and the move.
+        await _ledger.AdvanceAsync(resumed.Id, "working", null, null, null, Now);
+
+        var refused = await _ledger.AdvanceAsync(resumed.Id, "completed", null, null, null, Now, expected: "awaiting-person");
+
+        Assert.Equal(SessionAdvanceRefusal.InvalidMove, refused.Refusal);
+        Assert.Contains("awaiting-person", refused.Message);
+        Assert.Equal(SessionState.Working, (await _sessions.FindAsync(resumed.Id))!.State);
+        // And one already ended is ended, not gone on with.
+        Assert.Equal(
+            SessionAdvanceRefusal.Terminal,
+            (await _ledger.AdvanceAsync(parked.Id, "working", null, null, null, Now, expected: "awaiting-person")).Refusal);
+        Assert.Equal(
+            SessionAdvanceRefusal.UnknownState,
+            (await _ledger.AdvanceAsync(resumed.Id, "completed", null, null, null, Now, expected: "parked")).Refusal);
+    }
+
     [Fact]
     public async Task Opening_a_session_for_an_open_quest_queues_it()
     {
