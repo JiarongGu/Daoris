@@ -1,8 +1,8 @@
 # No time limit on a working session; a watcher supports one that is stuck (SESSWATCH1, 2026-10-23)
 
-**Status: proposed (D200), round 2.** Written by Claude Opus at `360b27bc6`; revised after Codex's read (D191), whose fourteen findings
-were each checked against the code and taken (§10). Fable's read is owed, since the design amends decided rules other designs rest on
-(D80's carry-on trigger, D188 points 1 and 2, D193 part 9). Nothing is built.
+**Status: proposed (D200), round 3.** Written by Claude Opus at `360b27bc6`; revised after Codex's read (D191), whose fourteen findings
+were each checked against the code and taken, and after Fable's foundation read, whose twelve findings (four blocking) were checked and
+taken (§10). The steward accepts after reading this round. Nothing is built.
 
 This design makes three parts of D193's company work at the desk: **staff** (part 4: a seat is held by work under way, and a worker is
 never sent home by the clock), **operations** (part 15: no failure loses the work, and every stop says how to go on) and
@@ -79,9 +79,9 @@ the install; the install's own records were not read for this design.
   batched (`Sessions/Events/SessionEventLog.cs:39-50`), after which `Evented` is raised in-process (:36, :68). The kinds are `user`,
   `message`, `thought`, `tool`, `plan`, `usage`, `turn`, `note`, `raw` and `receipt` (`Sessions/Domain/SessionEvents.cs:13-48`). No
   in-memory "last event at" exists anywhere.
-- **Not everything the harness says becomes an event.** On the pipe door, each stdout line is read by `HarnessCapture`, where
-  `HarnessWords.Heard` already sees every one (`Agents/Streams/HarnessCapture.cs:148-152`), but a subagent's lines are taken to its own
-  console before the mapper (:153, `Agents/Streams/ClaudeStreams.cs:73-81`), the mapper keeps only text and thinking deltas of the partial
+- **Not everything the harness says becomes an event.** On the pipe door, each stdout line is read in `HarnessCapture`'s loop
+  (`Agents/Streams/HarnessCapture.cs:148`), where `HarnessWords.Heard` sees it where a `HarnessWords` was handed (:153), but a subagent's
+  lines are taken to its own console before the mapper (:154, `Agents/Streams/ClaudeStreams.cs:73-81`), the mapper keeps only text and thinking deltas of the partial
   stream (`Agents/Streams/StructuredOutput.cs:176-198`), and stderr is pumped apart (`HarnessCapture.cs:144`). On the protocol door a
   subagent's frames go to its console (`Agents/Acp/AcpStreams.cs:95-102`, `Acp.cs:1712-1725`). A text-only door writes no events at all
   (`HarnessCapture.cs:54-77`), only its transcript.
@@ -163,18 +163,23 @@ person's attention, and an end only where the record shows such quiet is not wor
 
 ### 1.2 Signs of work, read only from what Daoris already holds
 
-- **Heard.** The time the door last read anything from the harness: on the pipe door each stdout line, read where `HarnessWords.Heard`
-  already reads it (`HarnessCapture.cs:152`), before a subagent's line is taken aside or a partial delta is dropped, and each stderr line in
-  its pump (:144); on the protocol door each frame its reader takes, a subagent's included; on a text-only door each transcript line. Only the
-  time is kept, in memory, never the line; nothing reads a file, and a subagent's content never enters its parent's conversation.
-- **Busy.** The session's job used CPU above the idle floor (§1.5): one accounting read of the job, counting the harness and every command
-  it started, background ones included. The registry's entry holds the job for it, and says whether its accounting can be trusted: the root
-  joined, on Windows. Where it cannot (the join failed, off Windows), busy is **unknown**, which never authorizes an end. The job is read
-  first as a baseline once a session has gone unheard for half of its bound, then at each look while it stays unheard.
+- **Heard.** The time the door last read anything from the harness: on the pipe door each stdout line at the top of the capture's loop
+  (`HarnessCapture.cs:148`), before a subagent's line is taken aside (:154) or a partial delta is dropped, and each stderr line in its pump
+  (:144); on the protocol door each frame its reader takes, a subagent's included; on a text-only door each line its capture reads
+  (:54-77). The stamp is a parameter of its own on each capture, never `HarnessWords`, which is handed only where a run ends on what its
+  harness said (:153). Only the time is kept, in memory, never the line; nothing reads a file, and a subagent's content never enters its
+  parent's conversation.
+- **Busy.** The session's job used CPU above the idle floor (§1.5) over the last window: one accounting read of the job, counting the
+  harness and every command it started, background ones included. The accounting is cumulative over every process that ever joined the job
+  (`ProcessJob.cs:222-231`), so busy is the CPU between the newest read and the read before it, over the time between them, a window of at
+  least a minute; the first read, once a session has gone unheard for half of its bound, is only the window's start. Past work never
+  counts. The registry's entry holds the job, and says whether its accounting can be trusted: the root joined, on Windows. Where it cannot
+  (the join failed, off Windows), busy is **unknown**, which never authorizes an end.
 - **Moving work.** For a session waiting on its own background work: that work's output grew, where its console keeps the tail in memory,
   or the job is busy.
 - **Alive.** Its root process has not exited: the run's own wait on its exit (`Driver.cs:3406`) stamps the time it returns, so nothing
-  polls a process.
+  polls a process. On the pipe door the root's exit is the turn's end, its exit code already held (`Driver.cs:3243-3245`); what can still
+  hang is the capture a stray descendant holds open (:3246), which state E bounds.
 
 What "heard" cannot tell: a harness that repeats a meter, an unchanged tool update or a raw frame is heard though nothing moves (§2.4).
 
@@ -207,7 +212,7 @@ a pause and a quest waiting on another repository (D79) have no process, so noth
 | **B.** A turn runs, a call open (a command, a tool, a subagent) | heard (a subagent's lines), busy | silent until the result, but for a subagent | a burst, then silent, but for a subagent | unmeasured | silent until the result | transcript lines |
 | **C.** No turn runs; it waits on its own background work (BGWAIT1-3) | moving work | never: the harness ends the work with the turn | yes | none known | none known | none |
 | **D.** A woken turn whose end is never said (BGWAIT2's remainder) | heard | never | yes | none known | none known | none |
-| **E.** Its process gone without an end | alive | every door | every door | every door | every door | every door |
+| **E.** Its root exited, its capture still held open | alive | a stray holding stdout | a stray holding stdout | a stray holding stdout | a stray holding stdout | a stray holding stdout |
 
 A call in state B that waits on input, a lock or the network is idle; so is one that waits on a server. A test run or a build keeps its job
 busy. Claude Code's own Bash tool ends a foreground command at its timeout, two minutes by default and ten at most, as its tool's
@@ -218,12 +223,15 @@ description says; Codex's bound on a command was not read.
 - **Quiet, Q: 10 minutes** unheard, in states A, B and D, with the job not busy (or busy unknown). The person sets it (§3), from 5 to 120.
   Ten minutes is longer than the longest foreground command Claude Code allows; the longest quiet of a working turn on the install is
   unmeasured (SESSWATCH1d).
-- **The idle floor: 0.2 seconds of CPU a minute** (1 second in 5, a third of a percent of one core), measured from the baseline read at
-  half of Q to each later read. Measured on node stand-ins (§4.2): the shapes of a stall used at most 31 ms a minute, one parsing a stream of
+- **The idle floor: 0.2 seconds of CPU a minute** (1 second in 5, a third of a percent of one core), over the window between the two newest
+  reads, a minute at least. Measured on node stand-ins (§4.2): the shapes of a stall used at most 31 ms a minute, one parsing a stream of
   small chunks 500 ms a minute, and a test run's shape 52 s a minute. The real harnesses' floor is SESSWATCH1d's to measure.
+- **Unheard, whatever the CPU: 3Q** (30 minutes). A session busy but unheard that long is brought to the person (§2.3), since a stray loop
+  or a spinning child is busy and stuck at once, and on the Claude doors a foreground call is ended by the harness within ten minutes. It
+  gets no word and no end.
 - **State C: 3Q** (30 minutes) with no moving work before the word, and 2Q more before an end where ends are enabled: 5Q, 50 minutes, in all.
-- **Gone, G: 60 seconds** from the root's exit, or its stream's end, to the run's end in state E: the door's drain and `EndedLingeringAsync`'s
-  ten seconds fit inside it.
+- **The capture, G: 60 seconds** from the root's exit, or its stream's end, to the capture's end in state E: the door's drain and
+  `EndedLingeringAsync`'s ten seconds fit inside it.
 - **The clock stops while the machine sleeps.** Quiet is counted on the machine's unbiased interrupt time (Windows'
   `QueryUnbiasedInterruptTime`, behind the handed `TimeProvider`), which does not advance in sleep or hibernation, so a wake reads no session as
   quiet, and a slow look or a long `PollSeconds` loses nothing: the count is time, not looks. Elsewhere, a monotonic clock, and a gap between
@@ -233,9 +241,16 @@ description says; Codex's bound on a command was not read.
 
 **Where it lives.** One watcher per shell, held beside `RunningCalls` (`Modules/Loop/DriverLoop.cs:100`): for each running driven session, its
 heard time (stamped by the door's reader), its job and whether its accounting holds, its episode and its step. A stage of every look judges it
-(`watch`, timed by `LookStages` with the others), so it shares the look's pace and its log line. The headless `--until-idle` judges it at each
-of its looks; `--once` judges it while it waits for its sessions, its wait woken at the pace whether or not a remote syncs. The attention
-slice reads its rows from memory, as it reads the hand-over's.
+(`watch`, timed by `LookStages` with the others), so it shares the look's pace and its log line. The attention slice reads its rows from memory, as it reads the
+hand-over's.
+
+**The headless host.** `--until-idle` judges it at each of its looks; `--once` judges it while it waits for its sessions, its wait woken at
+the pace whether or not a remote syncs. Neither has a bound of its own once `WaitAsync`'s cancel is gone (`RunOnceAsync` awaits
+`SettleAsync`, `Driver.cs:1503-1525`, :1575-1604; `RunUntilIdleAsync` returns only when idle, :1465-1486), and it has no *What needs you*:
+it is the person's terminal, so the row is its console line (each step already writes one), and the operator's Ctrl-C is the stop, the
+driver's shutdown, whose interrupted record D104 carries on. A run nobody watches can be given its end: `--once` and `--until-idle` take
+`--quiet-end <minutes>`, which enables step 2's end for that run alone: a session of it unheard that long, busy or not, is ended and
+carried on as step 2 says, for a rehearsal or a scheduled run that must return. Without it the host waits, saying so on its console.
 
 The steps run per **quiet episode**: from the look a session is first quiet to the look it is heard again, shows moving work or busy CPU,
 begins a wait of §1.3, ends, or reaches the person. Each step writes a coded note on the record, a console line and a machine-log line
@@ -245,11 +260,21 @@ or an end. That record is what SESSWATCH1d reads.
 | Step | When | What Daoris does | For |
 |---|---|---|---|
 | **1. A word** | at Q quiet (3Q in state C) | marks the session quiet on its head and rail, writes `watch.quiet`, and keeps one word of its own for the agent, urgent | quest sessions |
-| **2. An end and a carry-on** | 2Q after step 1, quiet and never busy since, busy known; at once in state E | ends the run, says why (`ended.quiet`), and the next look carries the line on in the same tree | quest sessions, **only in the cells enabled** (§2.2); state E for every run |
-| **3. The person** | at step 2's time where step 2 is not enabled or not allowed; or when a carried-on part is quiet before it was ever heard, or cannot start | a row in *What needs you*, whose presses include the end and carry-on | every driven session and intake |
+| **2. An end and a carry-on** | 2Q after step 1, quiet and never busy since, busy known | ends the run, says why (`ended.quiet`), and the next look carries the line on in the same tree | quest sessions, **only in the cells enabled** (§2.2), or under `--quiet-end` |
+| **3. The person** | at step 2's time where step 2 is not enabled or not allowed; at 3Q unheard, busy or not; or when a carried-on part is quiet before it was ever heard, or cannot start | a row in *What needs you*, whose presses include, where the session is quiet, the end and carry-on | every driven session and intake |
 
-**Never a silent end, and no end that is not earned.** A run is ended only in state E, where its process is already gone, or at step 2 in a
-door and state whose record shows that quiet held that long is not work. Everywhere else the person decides, with the same end one press away.
+**State E is not a step but a bound on the capture.** A run whose root has exited is concluded by what it said, within G: after G with its
+capture still held open, the run's job is terminated, the capture abandoned as `AbandonedAsync` abandons one (`Driver.cs:3236`), and on the
+pipe door the run concludes by its exit code and the result already captured (`Observation.Conclude`, `Driver.cs:2372-2390`: done is
+completed, a clean exit holding the quest parks, a crash fails), the root's own writes being in the pipe and only its end withheld;
+`ended.gone` is only a note line saying the strays were ended. On the protocol door the root's exit ends the stream, which `StreamEnded`
+already reads (`Acp.cs:446-460`), so state E there is only a stdout a stray holds: the run concludes `failed` with the watcher's note unless
+its prompt was answered. A strike only where the conclusion is `failed` by the exit itself. So a session that finished its turn and left a dev
+server holding its pipe, ORPHAN1's own case (`ProcessJob.cs:10-13`), ends as it finished, never as a cut-off.
+
+**Never a silent end, and no end that is not earned.** A run the watcher judged quiet is ended only at step 2, in a door and state whose
+record shows that quiet held that long is not work, or by the person's press, or under a headless run's `--quiet-end`. Everywhere else the
+person decides, with the same end one press away where the session is quiet.
 
 ### 2.1 Step 1: a word, under D188
 
@@ -264,13 +289,19 @@ reaches the agent as its door allows:
 | claude-code-acp, state C | at once, as a turn of its own: no turn runs, and the session goes on only by Daoris's prompt, as BGWAIT2's go-on does |
 | native claude-code, codex-acp, dsh, a text-only door, in a turn | nowhere during the turn: it waits for the turn's end, and is withdrawn when the session is heard again or its run ends, so it never makes a turn for a fact no longer true |
 
-**A word never outlives its episode.** It is taken off `said` when its episode ends, and before any conclusion of its run is written; it is
-never counted among the words that make a look go on in an ended record (`WordsOn`); and a `watch` word found on an ended record (a crash, a
-withdrawal that failed) is settled at the come-up with the uncertain words, before the first look plans, and said. So a word can never turn
-D80's carry-on into a resume of the failed record.
+**A word not yet on the wire never outlives its episode.** It is taken off `said` when its episode ends, and before any conclusion of its
+run is written; it is never counted among the words that make a look go on in an ended record (`WordsOn`); and a `watch` word found on an
+ended record (a crash, a withdrawal that failed) is settled at the come-up with the uncertain words, before the first look plans, and said.
+So a word can never turn D80's carry-on into a resume of the failed record. A word already on the wire cannot be called back: on
+claude-code-acp it is sent as a queued prompt at once (D188 point 6) and read at the harness's next step, which on a hung call comes after
+the call ended, so its words say the call *ran*, true whenever they are read.
 
-The words, Daoris's one English: *"Daoris: nothing has come from this session for {minutes} minutes{, while your call `{title}` runs | ,
-while your background work `{names}` shows no progress}. If a command waits on input, a lock or the network, stop it and go another way;
+**It resets no count.** A `watch` word is excluded from `AnswersAlone.Resets` (`Conversations/Domain/AnswersAlone.cs:89-91`), which today
+counts any taken word of Daoris's with no reach: the state-C word, a prompt of its own, would otherwise give a line going on by answers
+alone two more answers after every quiet. D199 settled the same for a partner's notices.
+
+The words, Daoris's one English: *"Daoris: nothing came from this session for {minutes} minutes{, while your call `{title}` ran | ,
+while your background work `{names}` showed no progress}. If a command waits on input, a lock or the network, stop it and go another way;
 run anything long in the background and read its output; if something only the person can give blocks you, ask with `question_ask`. Daoris
 has stopped nothing."* `question_ask` turns a stuck session into a park with a question, the person's door for what only they can give
 (D83, D124). Where `LongCalls` already told the same call, its word is the episode's word and no second is kept.
@@ -280,25 +311,30 @@ has stopped nothing."* `question_ask` turns a stuck session into a park with a q
 - **Where it is enabled.** An end is automatic only in a cell (a door and a state) that SESSWATCH1d's record supports: over the install's
   quiet episodes in that cell, none that stayed quiet and idle for the step-2 bound was later heard again or pressed on as working, and a
   D200 note lists the cells. Until a cell is listed, step 3 comes at step 2's time. Busy unknown, the person's words on their way, and any
-  door whose quiet states are unmeasured (codex-acp and dsh today) are never enabled. State E is enabled for every run from SESSWATCH1a: the
-  process is already gone.
+  door whose quiet states are unmeasured (codex-acp and dsh today) are never enabled. A headless run's `--quiet-end` enables it for that run
+  alone (§2).
 - **The end's own cause.** The watcher ends a run through the run's own wait, as the timeout did: a cancellation it holds per run takes the
   place of `CancelAfter` (`Driver.cs:3402-3403`), so the exit is null and no registry stop (`stood-down`, `stopped`) is read. Every conclusion
   path reads the cause, `EndedBy.Watcher` with its minutes and what it waited on: a quest session concludes `failed` with `ended.quiet`, or
   `completed` where its run brought the quest to done (`AfterTimeout`'s rule); an intake `failed` with `ended.quiet`, as a timed-out intake
   failed. The protocol door is told first (`AcpEnding`), so its stream's end is said as the watcher's.
 - **The capture let go.** The end terminates the run's job, so a descendant holding the harness's pipe ends with it and the capture drains;
-  the drain after an end is bounded by G, after which the capture is abandoned and said. State E's end is the same act.
+  the drain after an end is bounded by G, after which the capture is abandoned and said, as state E abandons one.
 - **The carry-on is the timeout's.** The look the ending wakes carries a quest on by D80 in a new part in the same tree, handed Daoris's brief
   (D189), whose instruction says what cut the last part off from its note: `ended.quiet` names the minutes and the call that hung or the work
   that showed nothing (`Adapters.cs:632-646` reads the note). The brief carries the part's last tool calls and plan. The ended record holds no
   slot, so the carry-on starts behind the cap like any start (§6). A failed intake leaves its ask to the person, as today.
-- **Counted.** The ended record stays `failed`, so the end is a strike, as a timeout was: at the strike limit (3 by default; none at 0) the
-  quest parks on the person (D80, `Planner.cs:1776-1791`), its sitting sentence naming the watcher's ends.
+- **Counted.** The ended record stays `failed`, so Daoris's own end is a strike, as a timeout was: at the strike limit (3 by default; none
+  at 0) the quest parks on the person (D80, `Planner.cs:1776-1791`), its sitting sentence naming the watcher's ends. The strikes bound what
+  restarts with nobody between; the person's own press is not one (§2.3).
 - **A hand-over waiting is taken.** Where a hand-over is approved and waits for the turn's end, the end is taken as that end: the conclusion
   reads the hand-over after the watcher's end as it does after a clean exit (`Driver.cs:2398`), concludes `stopped` with `ended.handed-over`
   and a note that the quiet ended the turn, counts no strike (the person or their rule chose the move), and the next part runs on the agent
-  named. Daoris itself never chooses another agent: an automatic hand-over is rejected by default (D163 point 3).
+  named. Daoris itself never chooses another agent: an automatic hand-over is rejected by default (D163 point 3). COAGENT1g's rule (a
+  hand-over waits for the outgoing part's background work and children) holds for this one too: the end terminates the job, so the part's
+  descendants are ended before the next part starts, never handed over beneath it.
+- **A lead's pieces.** An end of a session leading open pieces (D199) leaves them as any end of the lead does: each piece's answer moves
+  along `from` to the part that carries the line on (D199 point 8).
 - **Not the resume, for now.** Resuming the quiet session's own conversation would keep the agent's exact memory, but a resumed ended record
   goes back to `working` (`DriverContinuations.cs:156-158`), so its strike would go and a line that hangs the same way could loop at a whole
   context each time; a word of Daoris's alone opens nothing where the resume falls back (`Driver.cs:2007-2015`); and the conversation may hold
@@ -310,13 +346,29 @@ A row in *What needs you* (§5.2), and Daoris ends nothing more: the session kee
 presses. Where it comes:
 - at step 2's time wherever step 2 is not enabled, not allowed (busy unknown, the person's words on their way) or not a quest session's;
 - when a part the watcher carried on is quiet before its agent was ever heard (Q from its start), or the carry-on cannot start;
-- for a call waiting on the heavy-run slot past 3Q (§1.3).
+- for a call waiting on the heavy-run slot past 3Q (§1.3);
+- at 3Q unheard whatever its CPU: a session busy but silent that long is worded *busy, nothing heard*, and offered no end, since busy is a
+  sign of work and the person judges it. Without this a spinning child or a loop in the harness would hold its seat and tree for ever, where
+  the timeout once ended it.
 
 Its presses, each where it applies:
-- **End and carry on** (quest sessions): step 2 by the person's press, through the same end, counted the same way, the press named on the note;
-- **Hand over…** (quest sessions): D163's hand-over to another agent, which stops the run and goes on with the agent chosen in the same tree;
+- **End and carry on** (quest sessions, quiet only): the person's stop released at once, *Stop* and *Try again* in one press (D126 §3.4):
+  the run ends as the person's stop ends one (read before any exit, `Driver.cs:2366-2371`), the record concludes `stopped` as the person's
+  with `ended.quiet-pressed`, the stop is released in the same press, and the next look carries the line on in a new part handed the brief,
+  as a released stop is carried on (`Planner.cs:1910-1919`). It counts no strike: a person's stop
+  never does (D58), nor a hand-over they choose (D163), and the strikes bound what restarts with nobody between. The person's words waiting
+  to reach the session are not lost: the press moves them off the ended record to the carry-on's start as the person's words, as a
+  conversation's move hands its words to its new part (D189's SESSCTX1c part B note), and the row says so before the press.
+- **Hand over…** (quest sessions): D163's hand-over to another agent, which stops the run and goes on with the agent chosen in the same tree.
+  The page refuses a quest session's hand-over today (`Conversations/HandOver/HandOver.cs:52-60`, :145; `work.json:45`, `work/say.ts:176`),
+  which `daoris-driver sessions hand-over` answers through `QuestHandOver` (`Conversations/HandOver/HandOverQuest.cs:67`); SESSWATCH1a
+  builds the page's press through that judge, in every place of the bridge-presses knowledge, so the row's press is real from its first row.
 - **Stop**: the person's stop, the quest held behind *Try again*, an intake's ask left to the person;
 - **Leave it running**: the watcher stands down for this session until it is heard again (`watch.left`), and the row goes.
+
+**What the cap means here.** A hung session keeps its slot and its tree until the person presses: with the cap at two, two hung sessions
+stop all driven work until the person acts. That is why the row counts on the bell. The old timeout freed the seat at 90 minutes; this shape
+frees it by a press, or, once SESSWATCH1e is built, by an end the record allows.
 
 ### 2.4 What the watcher does not watch, and what it cannot see
 
@@ -324,11 +376,14 @@ Its presses, each where it applies:
   No word, no end and no row; its turn's stop is the person's *Stop turn*.
 - **A pass with minutes of its own** (a helper's 15, a reviewer's rule's 20, a partner's 45, a brainstorm's and a meeting's turn) keeps
   them, as D163, D155, D199, D176 and D177 give them: each is an answer owed to an asker by a time, and none of the kills of 0.2 was one.
-  They are no longer capped by `timeoutMinutes`, so a reviewer is told the minutes it gets. Whether each becomes the time its asker is told
-  it is late, watched rather than ended, is SESSWATCH1f's question, asked of each decision.
+  They are no longer capped by `timeoutMinutes`, so a reviewer is told the minutes it gets. At the code's default of 30 a partner's pass
+  grows from 30 to 45 minutes, a reviewer's grows from 30 to its rule's only where its rule sets more than 30 (its default of 20 stays),
+  and a helper's stays at 15; at the install's 90 nothing moves unless a reviewer's rule sets more than 90. Whether each becomes the time its asker is told it is late, watched
+  rather than ended, is SESSWATCH1f's question, asked of each decision.
 - **What heard cannot tell.** A harness that repeats a meter, an unchanged tool update or a raw frame is heard though nothing moves, and busy
-  work that goes in circles (the same failing command again and again) is working by every sign here; telling either needs a reading of the
-  work, which no step makes. Such a line spends until its account's limit, the strikes or the person stop it; the watcher does not bound it.
+  work that goes in circles while saying something (the same failing command again and again) is working by every sign here; telling either
+  needs a reading of the work, which no step makes. Such a line spends until its account's limit, the strikes or the person stop it; the
+  watcher does not bound it. Busy work that says nothing is brought to the person at 3Q (§2.3).
 
 ## 3. What replaces `timeoutMinutes`
 
@@ -380,6 +435,8 @@ The watcher's primitives, timed on the same machine (median, 95th percentile):
 | The stamp of a heard time | one in-memory write on the reading thread | every line or frame the harness sends |
 | One job's CPU, by its accounting | 13 µs (24 µs) | each session unheard for half its bound or more, once a look |
 | The heavy slot's records (files and process start times) | a directory's records, as `HeavyLook` reads them | each repository with heavy gates and a session unheard for half its bound, once a look |
+| Step 1's word, kept through the say door | one HTTP call to the service | each quiet episode, once |
+| Each step's coded note | one append to the session's event file | each step, once an episode |
 | Whether a held process has exited | 7-17 µs | never: the run's own wait stamps its exit |
 | A file's length and last write | 4-13 µs | never: background output is read from the tail a kept console holds, else the job's CPU judges |
 | The whole machine's processes with their parents and times | 20-45 ms over about 780 processes | never: rejected |
@@ -428,7 +485,7 @@ once; the design rests on their orders of magnitude, not their digits.
 | `note.watch.what.work` | , while its background work {{works}} showed no progress | ，期间后台工作 {{works}} 没有进展 |
 | `note.ended.quiet` | Nothing came from its agent for {{minutes}} minutes{{what}}, and nothing it ran used the machine. Daoris ended this run, and the work goes on in the same tree. | 它的智能体 {{minutes}} 分钟没有任何输出{{what}}，它运行的程序也没有占用机器。Daoris 结束了这次运行，工作会在同一工作树中继续。 |
 | `note.ended.quiet-pressed` | You ended this run after {{minutes}} minutes with nothing from its agent, and the work goes on in the same tree. | 它的智能体 {{minutes}} 分钟没有任何输出，你结束了这次运行，工作会在同一工作树中继续。 |
-| `note.ended.gone` | Its agent's process ended without ending the session; Daoris ended what was left, and the work goes on. | 它的智能体进程结束了，会话却没有结束；Daoris 结束了剩下的部分，工作会继续。 |
+| `note.ended.gone` | Its agent's process had ended, but something it started still held its output; Daoris ended what was left. | 它的智能体进程已经结束，但它启动的程序仍占着输出；Daoris 结束了剩下的部分。 |
 | `note.watch.left` | You left it running. Daoris looks in again once it is heard from. | 你让它继续运行。它再次有输出后，Daoris 才会重新查看。 |
 | `work.rail.quiet` | quiet · {{time}} | 无动静 · {{time}} |
 
@@ -446,13 +503,16 @@ what happened, so they hold before the word and the end are built (SESSWATCH1a) 
 | `work.attention.quietWhy` | {{session}} has said nothing for {{minutes}} minutes, and nothing it runs uses the machine. | {{session}} 已 {{minutes}} 分钟没有任何输出，它运行的程序也没有占用机器。 |
 | `work.attention.quietTold` | Daoris told it once. | Daoris 提醒过它一次。 |
 | `work.attention.quietCarried` | Daoris carried it on once, and it is still quiet. | Daoris 让它接着做过一次，它仍无动静。 |
-| `work.attention.quietWords` | Your words wait to reach it. | 你的话还在等它接收。 |
+| `work.attention.quietBusy` | busy, nothing heard | 在运行，但没有任何输出 |
+| `work.attention.quietBusyWhy` | {{session}} has said nothing for {{minutes}} minutes, while something it runs keeps the machine busy. | {{session}} 已 {{minutes}} 分钟没有任何输出，而它运行的程序一直占用着机器。 |
+| `work.attention.quietWords` | Your words wait to reach it. Ending it hands them to the work's next part. | 你的话还在等它接收。结束它，你的话会交给这项工作的下一段。 |
 | `work.attention.quietHeavy` | It waits for the heavy run behind {{holder}}. | 它在 {{holder}} 之后等待重型检查。 |
 | `work.attention.act.carryOn` | End and carry on | 结束并接着做 |
 | `work.attention.act.leave` | Leave it running | 让它继续运行 |
 
-Its other presses are the existing *Hand over…* (转交…) and *Stop…* (停止…), and its door opens the session. *Waiting on you* (等你处理) is a
-park's and is not used.
+Its other presses are *Hand over…* (转交…), the page's press for a quest session built in SESSWATCH1a (§2.3), and the existing *Stop…*
+(停止…), and its door opens the session. The *busy, nothing heard* row offers *Leave it running*, *Stop…* and *Hand over…*, never *End and
+carry on*. *Waiting on you* (等你处理) is a park's and is not used.
 
 ### 5.3 Settings and Ask Daoris
 
@@ -474,8 +534,10 @@ Ask Daoris answers *how long may a session run?* with: as long as it works; Daor
   session whose account reached its limit is ended by the limit's own words where its door says them, which also count as heard; a limit
   that a door does not say looks like any other quiet.
 - **No spending budget is added.** No wall-clock limit remains, and none replaces it. The spend of a stuck line is bounded by its account's
-  allowance (D165, D197), by the strikes where the limit is set (D80: the watcher's ends count), by one end per episode, and by the cap. A
-  busy line that spends without progress is what §2.4 leaves. Any budget a later design adds parks the line at its next start for the
+  allowance (D165, D197), by the strikes where the limit is set (D80: Daoris's own ends count), by one end per episode, and by the cap. A
+  busy line that says nothing reaches the person at 3Q; one that says something while it circles is what §2.4 leaves.
+- **A hung session holds its seat until a press.** With the cap at two, two hung sessions stop all driven work until the person acts
+  (§2.3); the row counts on the bell for that reason. Any budget a later design adds parks the line at its next start for the
   person, and never ends a turn.
 
 ## 7. Proof
@@ -493,25 +555,27 @@ hands the CPU it wants, as the held-clocks knowledge asks; the `Process` half ru
 | # | Case | Row | Half |
 |---|---|---|---|
 | 1 | Streaming past any old bound left alone: lines every 5 s, the clock moved three hours; no mark, word, note or end. The same for a parent silent while its subagent streams, and for a harness writing only to stderr | 1a | fast; Process with real stand-ins and a moved clock |
-| 2 | A silent quest session in a cell not enabled: at Q the mark and (1b) the word kept with its key; at step 2's time the row, never an end; *End and carry on* ends it `failed` with `ended.quiet-pressed`, a strike counted, and the next look carries it on in a new part handed the brief | 1a, 1b | fast; Process for the press's end |
+| 2 | A silent quest session in a cell not enabled: at Q the mark and (1b) the word kept with its key; at step 2's time the row, never an end; *End and carry on* ends it `stopped` as the person's with `ended.quiet-pressed`, released, no strike, and the next look carries it on in a new part handed the brief; the person's waiting words go to that part as theirs, never to a resume of the one that hung | 1a, 1b | fast; Process for the press's end |
 | 3 | The same in an enabled cell: the end at step 2's time, the word withdrawn before the conclusion, `ended.quiet`, a strike; the carried-on part silent from its start brings the row; at the strike limit `parked-quest`, and with the limit at 0 no park | 1e | fast; Process |
-| 4 | A busy foreground call left alone: no line for 3Q, the job busy; nothing. A session whose job could not be joined: busy unknown, the row at step 2's time, never an end | 1a | fast; Process with a computing child |
+| 4 | A busy foreground call: no line, the job busy; no mark and no word; at 3Q unheard the *busy, nothing heard* row with no *End and carry on*. Busy read by window: a session that computed silently for ten minutes and then hung reads idle within a minute of hanging, its past CPU never counted. A session whose job could not be joined: busy unknown, the row at step 2's time, never an end | 1a | fast; Process with a computing child |
 | 5 | Waiting left alone: a held permission request; a call waiting for the heavy-run slot until 3Q, then the row naming the holder | 1a | fast |
 | 6 | The person's words on their way at step 2's time bring the row, never an end, in an enabled cell too | 1e | fast |
 | 7 | An approved hand-over waiting on a hung turn goes on at the watcher's end: `stopped`, `ended.handed-over`, no strike, the next part on the agent named | 1e | fast; Process |
 | 8 | A background command left alone: a protocol stand-in backgrounds a child that writes and computes and ends its turn; past 5Q nothing; the child then sleeps: at 3Q the word as a turn of its own | 1a, 1b | fast; Process |
-| 9 | A process gone without an end: the root exits, a grandchild holds the pipe; within G the job ended, the capture drained, `ended.gone`, and the line carried on | 1a | Process |
-| 10 | A watcher word never outlives its episode: withdrawn when heard; withdrawn before the conclusion; a word left on an ended record by a crash settled at the come-up before the first plan; never a go-on | 1b | fast |
+| 9 | State E: the root exits, a grandchild holds the pipe; within G the job ended, the capture abandoned, `ended.gone` as a note line, and the run concluded by its exit: a clean exit with its quest done is `completed`, one holding its quest parks, with no strike and no carry-on; a crash is `failed` and carried on. On the protocol door, a stdout a stray holds after the prompt was answered concludes as answered | 1a | Process |
+| 10 | A watcher word not yet on the wire never outlives its episode: withdrawn when heard; withdrawn before the conclusion; a word left on an ended record by a crash settled at the come-up before the first plan; never a go-on; a state-C word taken resets no answers-alone count | 1b | fast |
 | 11 | The clock: a sleep of the machine (the unbiased clock held still) counts no quiet; `PollSeconds` at 180 and looks slower than the pace still count quiet; off Windows, the gap rule | 1a | fast |
-| 12 | The headless host: `--until-idle` carries a gone run on at its next look; `--once` ends a gone run and reports it for the next run, with and without a remote | 1a | fast |
+| 12 | The headless host: each step's console line; Ctrl-C ends a quiet run as the driver's shutdown, carried on by D104; `--once` and `--until-idle` with `--quiet-end` end a session unheard that long, busy or not, and return, with and without a remote; without it they wait, saying so | 1a | fast |
 | 13 | An intake: the mark and the row with *Stop* and *Leave it*; no word, no carry-on, no strike; gone, it fails as a timed-out intake failed | 1a | fast |
 | 14 | The cost is flat: 1, 10, 100 and 1,000 running sessions; for those heard within half their bound a look makes no system call, HTTP call or file read (counted through the seams); one job read a look for each silent one; the in-memory time recorded beside, never asserted | 1a | fast |
 | 15 | The settings: a loaded file keeps `timeoutMinutes` as stored through every save and never reads it for a bound; a configuration built in memory writes none; an older build's read of the file still finds 90; `quietMinutes` set, refused out of range and listed; the retired verb, door and tool answer as §3 says | 1a, 1c | fast; the setting-doors checks |
-| 16 | The page: the notes, the rail's line, the row and its presses, in English and 中文 | 1a, 1b | vitest, stories, `i18n:check` |
+| 16 | The page: the notes, the rail's line, the row in both its variants and its presses, *Hand over…* on a quest session through `QuestHandOver`, in English and 中文 | 1a, 1b | vitest, stories, `i18n:check`; the bridge-presses checks |
 | 17 | On the install: the quiet episodes by door and state, the real harnesses' idle CPU, and a session past 90 minutes left alone | 1d | the parent |
 
-The tests that set `TimeoutMinutes` as a backstop (§0.3) take their own patience instead: a cancellation token on `Poll.Patience`, or the
-watcher's moved clock where the case is the watcher's.
+**The backstops.** The tests that set `TimeoutMinutes` as a backstop (§0.3), about fifty sites in thirty-four files, keep one in one place:
+`WaitAsync` keeps its `minutes` parameter for the passes, so a test-only bound through the same parameter (a `TestBound` on the driver,
+never read from `driver.json`) keeps the fast suites from hanging on a dead stand-in without rewriting each site. A case that is the
+watcher's uses the moved clock instead.
 
 ## 8. The rows
 
@@ -520,15 +584,19 @@ SESSWATCH1e only where SESSWATCH1d's record allows.
 
 1. **SESSWATCH1a — no wall clock on a working session; a quiet one seen and brought to the person** (driver, modules, web; first).
    `WaitAsync` no longer ends a driven session, an answered park's resumed run, a native go-on or an intake on time; the passes keep their own
-   minutes, uncapped. The watcher's state and look (heard at every line and frame, busy with its validity, alive, the waits of §1.3, the
-   unbiased clock), riding every look and both headless paths; the quiet mark; `session.quiet` with each episode's outcome; the `quiet` row at
-   step 2's time with its presses, *End and carry on* through the watcher's end cause; state E's end with the job terminated and the capture
-   let go, which takes the place of the timeout's one other job; `timeoutMinutes` kept and unread, the old verb, door and tool retired with
-   §3's words; the stand-in of §7; the backstops replaced. Proof: cases 1, 2 (without the word), 4, 5, 8 (the first half), 9, 11-15 and 16.
-   **Why first, and safe:** it removes the kill at once, nothing quiet is ended by Daoris, a hung capture still ends (state E), and the safety
-   the timeout gave becomes a question to the person after thirty minutes of a session that neither said nor ran anything.
+   minutes, uncapped. The watcher's state and look (heard stamped by each capture's own parameter at every line and frame, busy by window
+   with its validity, alive, the waits of §1.3, the unbiased clock), riding every look and both headless paths; the quiet mark;
+   `session.quiet` with each episode's outcome; the `quiet` row at step 2's time and the *busy, nothing heard* row at 3Q, with their presses:
+   *End and carry on* as the person's released stop, their waiting words handed on, and *Hand over…* built on the page for a quest session
+   through `QuestHandOver`; state E as a bound on the capture, concluding by the exit, which takes the place of the timeout's one other job;
+   the headless host's console line and `--quiet-end`; `timeoutMinutes` kept and unread, the old verb, door and tool retired with §3's
+   words; the stand-in of §7; the backstops kept as one test-only bound. Proof: cases 1, 2 (without the word), 4, 5, 8 (the first half), 9,
+   11-15 and 16. **Why first, and safe:** it removes the kill at once, nothing quiet is ended by Daoris, a hung capture still ends (state E)
+   without turning a finished run into a cut-off, and the safety the timeout gave becomes a question to the person after thirty minutes of a
+   session that said nothing, busy or not.
 2. **SESSWATCH1b — Daoris's word** (driver, web; after 1a). Step 1 for quest sessions by door, the `watch` key kind, its withdrawal and its
-   settlement at the come-up, the row's *told* line; `LongCalls`' look folded into the watcher's. Proof: cases 2 (the word), 8 and 10.
+   settlement at the come-up, its exclusion from `AnswersAlone.Resets`, the row's *told* line; `LongCalls`' look folded into the watcher's.
+   Proof: cases 2 (the word), 8 and 10.
 3. **SESSWATCH1c — the quiet setting** (driver, service, web-settings; after 1a, beside 1b). `quietMinutes`, its verb, `driver list`, Ask
    Daoris's `quiet` door and `settings_quiet`, the help room and its goldens, the Settings → Driver field, the retired doors naming it.
    Proof: the setting-doors checks and case 15.
@@ -545,9 +613,10 @@ SESSWATCH1e only where SESSWATCH1d's record allows.
 ## 9. What D200 amends, and what it rejects
 
 **Amends:**
-- **D80.** A cut-off's *timed out* becomes the watcher's end: of a run whose process is gone, at the person's *End and carry on*, or of a
-  quiet run in a cell the record allows, each counted as a strike as before; *the session timeout is set from a terminal* is retired. The
-  carry-on is unchanged: a new part in the same tree handed the brief (D189), its instruction naming the quiet.
+- **D80.** A cut-off's *timed out* becomes the watcher's end of a quiet run, in a cell the record allows or under `--quiet-end`, counted as
+  a strike as before; *the session timeout is set from a terminal* is retired. The carry-on is unchanged: a new part in the same tree handed
+  the brief (D189), its instruction naming the quiet. A run whose root exited is concluded by its exit, never as a cut-off; the person's *End
+  and carry on* is their stop released at once (D58, D126 §3.4), carried on with no strike.
 - **D188 point 1 and D193 part 9.** Among Daoris's own stops, *timeouts* becomes *the watcher's end*. **D188 point 2 and D193 part 9.**
   Daoris's urgent word gains a second reason: the watcher's one word to a quest session seen quiet, once per quiet episode, never outliving it.
 - **D83's BGWAIT notes.** A background wait is bounded by the watcher's state C, not the timeout: work that never ends holds the session until
@@ -559,8 +628,9 @@ SESSWATCH1e only where SESSWATCH1d's record allows.
 - **D155, D163, D199.** Their passes' minutes are no longer capped by `timeoutMinutes`.
 - **D184's held permission bound** keeps its 15 minutes, its reason now its own: a request nobody answers is refused so the turn goes on.
 
-**These stand:** D46 §4, D51, D104's sweep, D105 §3, D124, D131 points 1-4, D132, D136, D137, D165, D167, D184, D189, D24 and D130's
-CAPCOUNT1 (an ended record frees its slot, as today).
+**These stand:** D46 §4, D51, D58 (a stop is no strike), D104's sweep and its interrupted carry-on, D105 §3, D124, D126 §3.4, D131 points
+1-4, D132, D136, D137, D165, D167, D184, D189, D199 point 8 and COAGENT1g, D24 and D130's CAPCOUNT1 (an ended record frees its slot, as
+today).
 
 **Rejected:**
 - **A longer timeout, or one per repository.** D80 rejected it for a cut-off, and it still ends a working session at its bound.
@@ -574,20 +644,29 @@ CAPCOUNT1 (an ended record frees its slot, as today).
 - **Ending through the processes' registry.** Its stops conclude `stood-down` or `stopped` and an intake reads any as the person's; the
   watcher's end has a cause of its own, read by every conclusion path.
 - **Resuming the quiet session's own conversation at the end** (§2.2).
+- **Ending a run whose root exited as a cut-off** (Fable's read, finding 1). Its exit is its turn's end; only the capture a stray holds is
+  bounded, and the run concludes by what it said.
+- **Busy as a rate from one baseline** (finding 2). The job's CPU is cumulative, so past work would read busy for hours after a hang.
+- **Leaving busy silence unbounded** (finding 3). It is the one case the timeout once ended that nothing else reaches; the row answers it,
+  with no end.
+- **Counting the person's *End and carry on* as a strike.** A person's stop is none (D58), nor their hand-over (D163); the strikes bound
+  what restarts with nobody between.
 - **A hand-over chosen by Daoris.** It changes the maker unasked; D163 point 3 rejects automatic hand-overs by default.
 - **A second end at step 3.** Daoris would decide the work is lost.
 - **Reserving a carried-on line's slot.** CAPCOUNT1 counts records; an ended record frees its slot and the carry-on starts behind the cap.
 - **A token or spend budget now** (§6).
-- **A machine-wide process query, a file read per session or the event file's tail per look** (§4.2).
+- **A machine-wide process query, a file read per session or the event file's tail per look** (§4.2). The one exception is the heavy slot's
+  records, read a look only for a session unheard for half its bound in a repository with heavy gates.
 - **Stamping heard from recorded events alone.** A subagent's lines, the partial stream's other deltas and stderr never become the parent's
   events (§0.4).
 - **A reset of the count when looks are far apart.** A long `PollSeconds` would never count quiet; the clock that stops in sleep does instead.
 - **Mapping the old 90 onto the quiet bound** (§3).
 
 **What is left.** codex-acp's tool frames and background work, dsh's long steps, and the real harnesses' idle CPU are unmeasured, so no end
-is automatic on them. A quiet conversation is said and never helped. A harness that repeats a meter, and busy work in circles, are never
-quiet (§2.4). A call waiting for the heavy slot is the person's after 3Q, and the holder's own run is not the watcher's where no session holds
-it.
+is automatic on them. A quiet conversation is said and never helped. A harness that repeats a meter, and busy work that circles while it
+says something, are never quiet (§2.4). A call waiting for the heavy slot is the person's after 3Q, and the holder's own run is not the
+watcher's where no session holds it. Until SESSWATCH1e a hung session frees its seat only by a press; the headless host without
+`--quiet-end` waits until its operator's Ctrl-C.
 
 ## 10. The reads
 
@@ -606,7 +685,7 @@ words on their way and the approved hand-over, §1.3) were read in it.
 | 5 | Blocking: an intake takes no words, no hand-over, no carry-on and no strike | `Driver.cs:3171-3177`, `DriverIntakes.cs:45-49`, `SessionLedger.cs:319-333` | taken | The word, the carry-on and the strike are quest sessions'; an intake gets the mark, the row with *Stop* and *Leave it*, and state E's end (§2) |
 | 6 | Blocking: a durable watcher word can outlive its episode and reopen the failed record | `DrivenInbox.cs:838-888`, `UncertainWords.cs:61-65`, `DaorisWords.cs:137-151`, `Planner.cs:1441-1468` | taken | A `watch` key kind; withdrawn before any conclusion; never counted for a go-on; settled at the come-up (§2.1) |
 | 7 | Blocking: a failed record holds no slot | `Planner.cs:1451-1458`, :1882-1895 | taken | §6 says the slot is freed at the end and the carry-on starts behind the cap; reserving one rejected |
-| 8 | Blocking: `--once` has no next look to carry on | `Driver.cs:1503-1525`, :1554-1614 | taken | `--once` ends a gone run and reports it for the next run; its wait is woken at the pace with or without a remote; `--until-idle` carries on (§2, case 12) |
+| 8 | Blocking: `--once` has no next look to carry on | `Driver.cs:1503-1525`, :1554-1614 | taken; refined in round 3 by Fable's findings 1 and 4 | `--once` ends a gone run and reports it for the next run; its wait is woken at the pace with or without a remote; `--until-idle` carries on (§2, case 12) |
 | 9 | Blocking: a two-minute reset disables the watcher under a long `PollSeconds` | `DriverConfig.cs:1423`, `DriverWatch.cs:641`, :780, :827 | taken | Quiet counted on a clock that stops in sleep; the gap rule only off Windows, relative to the pace (§1.5) |
 | 10 | Blocking: the approved hand-over's conclusion and strike were unsettled | `Driver.cs:2398-2402`, `DriverHandOvers.cs` | taken | It concludes `stopped`, `ended.handed-over`, no strike, the agent named going on (§2.2) |
 | 11 | A heavy-slot waiter is exempt for ever, and meters can refresh heard | `HeavySlot.cs:19-20`, :172-202; `Acp.cs:2296-2340` | taken | The heavy wait brings the row after 3Q; both named as what heard cannot tell (§1.3, §2.4) |
@@ -614,4 +693,22 @@ words on their way and the approved hand-over, §1.3) were read in it.
 | 13 | "Healthy" meant "recently heard"; the slot's records are files | §4.2, `ProcessJob.cs:98-108`, `HeavySlot.cs:214-240` | taken | §4.2 restated: reads grow with silent sessions, working or not, and the slot's records are counted |
 | 14 | The rows and bounds needed reconciling: 1a's row words, 1a's retired door, state C at 5Q, the strike limit at 0 | §§2, 5.2, 7, 8; `Planner.cs:1781`, `DriverConfig.cs:79` | taken | The row says only what happened; the retired door names `quiet` from 1c; state C stated at 5Q; the strike limit qualified; the destructive row gated last |
 
-Fable's read is the parent's, owed under D191 since the design amends rules other designs rest on.
+**Fable's foundation read, round 2** (the parent's, under D191, at `d536e7966`, 2026-10-23). Verdict: the shape is right, accept once the
+four blocking findings are answered, none a change of shape. Twelve findings, four blocking; the reader confirmed every citation but two
+slips (finding 8), and found holding the timeout's inventory, the captures' seams, the job's best effort, the words' and strikes' paths, the
+cap, the pause, the stop and the intake. Each finding was checked by the steward at the lines it cites; all held and were taken.
+
+| # | Finding | Checked at | Verdict | What changed |
+|---|---|---|---|---|
+| 1 | Blocking: state E concluded a cleanly ended pipe-door run as a cut-off, a strike and a context re-read | `Driver.cs:3236`, :3243-3246, :2372-2390; `Acp.cs:446-460`; `ProcessJob.cs:10-13` | taken | State E is a bound on the capture: after G the job ended, the capture abandoned, the run concluded by its exit and what it said, `ended.gone` a note line, a strike only where the exit fails (§2, case 9) |
+| 2 | Blocking: busy from one baseline is cumulative, so past work reads busy for hours after a hang | `ProcessJob.cs:222-231` | taken | Busy is the CPU between the two newest reads over their window, a minute at least (§1.2, §1.5, case 4) |
+| 3 | Blocking: a busy, silent stall escaped every step, the one regression against the timeout | §1.2, §2.4, §6 | taken | At 3Q unheard, whatever the CPU, the *busy, nothing heard* row with *Leave it running*, *Stop…* and *Hand over…*, no word, no end (§1.5, §2.3, §5.2) |
+| 4 | Blocking: the headless host never returns on a session that hangs alive | `Driver.cs:1465-1486`, :1503-1525, :1575-1604 | taken | Its console line is the row, Ctrl-C the stop (D104's interrupted carry-on), and `--quiet-end <minutes>` gives a run nobody watches its end, on `--once` and `--until-idle` (§2, case 12) |
+| 5 | The state-C word reset the answers-alone count | `AnswersAlone.cs:89-91` | taken | The `watch` kind is excluded from `Resets` (§2.1, row 1b) |
+| 6 | *Hand over…* does not exist on the page for a quest session | `HandOver.cs:52-60`, :145; `HandOverQuest.cs:67`; `work.json:45`; `say.ts:176` | taken | SESSWATCH1a builds the page's press through `QuestHandOver` (§2.3, §5.2, case 16) |
+| 7 | The person's press counted a strike unsaid, and lost their waiting words | `DriverContinuations.cs:1004`; D58; D163 | taken | The press is the person's stop released at once, no strike; their waiting words go to the carry-on as theirs, and the row says so (§2.3, §5.2, case 2) |
+| 8 | Two citation slips; the stamp must not ride `HarnessWords`; say what moves for the passes | `HarnessCapture.cs:152-154`, :54-77; `DriverOpinions.cs:154`, `OpinionPass.cs:103` | taken | Citations fixed; the stamp is each capture's own parameter (§1.2); what moves at 30 and at 90 said (§2.4) |
+| 9 | A word already on the wire cannot be withdrawn and reads stale | `Acp.cs:951-972`; D188 point 6 | taken | "A word not yet on the wire never outlives its episode"; the word says the call *ran* (§2.1) |
+| 10 | Name D199's lead, COAGENT1g, and what the cap means for hung sessions | D199 point 8; COAGENT1g; §6 | taken | A lead's pieces follow `from`; the hand-over's descendants end with the job; two hung sessions at a cap of two stop all driven work until a press (§2.2, §2.3, §6) |
+| 11 | Two per-episode costs missing from §4.2; §9's rejection needed the heavy slot's exception | §4.2, §9 | taken | Both rows added; the exception said |
+| 12 | Build note: one test-only bound replaces the backstops | `WaitAsync`'s `minutes` | taken | `TestBound` through `minutes`, never from `driver.json` (§7) |
