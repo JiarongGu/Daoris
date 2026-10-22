@@ -776,3 +776,94 @@ References below use **Design** for `docs/2026-10-23-git-app-design.md`, **Drive
 **11 findings; 10 blocking.**
 
 **Verdict: another round.** The read/write split holds, the corrected version floors hold, and deferring the held reader is justified. The remaining changes affect the accepted foundation: which tree D compares, equivalence of line resolution, generated ceilings, validation of retained observations and contexts, invalidation of Daoris-owned inputs, cancellation across the bridge, and independently satisfiable row proofs. D202 should remain proposed until those contracts agree.
+
+## Codex, round 4
+
+Codex's read of round 4 at `180bcaf8b`, read-only, part one only. Round 5 answers it.
+
+### 1. Round-3 findings against part one
+
+References use **Design** for `docs/2026-10-23-git-app-design.md`, **Driver/** for `src/Daoris.Desktop/Daoris.Desktop.Driver/`, **Modules/** for `src/Daoris.Desktop/Daoris.Desktop.Modules/`, and **Web/** for `src/Daoris.Web/src/`. Verdicts assess the proposal, not an implementation already built.
+
+| Finding | Verdict | Where | Why |
+|---|---|---|---|
+| R3-1 — merged comparison tree discarded | taken | P1.1:34–37; P1.2:69–70; P1.7:170–177 | D now reads `Against ?? From`, returns `Base = From`, and exercises REVIEWBASE3’s chain-step fixture. This matches `TreesRoutes.cs:77–80`. |
+| R3-2 — dangling origin `HEAD` guessed differently | taken | P1.2:64,79–82 | The actual three git questions and their selection order replace enumeration. This preserves `WorkingTree.DefaultBranchAsync:105–124`, including its shortening rule. |
+| R3-3 — ceilings unsupported by the graph | taken | P1.4:101–125; P2:216–217 | Cold counts become generated, with the printed table explicitly correctable; warm validity combinations rightly move to part two. The untracked scheduling defect below remains. |
+| R3-4 — large packed refs escape validation | moved | P2:207–208 | Part one introduces no retained refs observation or validation claim. |
+| R3-5 — context construction lacks a barrier | moved | P2:211–212 | Part one constructs no new context or context-keyed cache. |
+| R3-6 — frontend retains unsupported answers | moved | P1.1:38–40; P2:213 | Existing frontend retention remains unchanged; the proposed capability-dependent retention belongs to part two. |
+| R3-7 — retained reviews omit Daoris-owned inputs | moved | P1.1:29–33,38–40; P2:214–215 | New whole-review retention is removed. Existing page freshness remains today’s behavior; part one must still read line choices and grown records as the current chain does. |
+| R3-8 — page cancellation never reaches the owner | open | P1.6; P1.7:180–182 | The read-id and last-waiter door addresses navigation, but window destruction and the claimed kill-and-wait behavior remain incomplete; findings 4–5. |
+| R3-9 — first row changes answers through new flags | taken | P1.5:129–135; P1.8:190–194 | The first row now instruments today’s arguments without adding controls. REVIEWLOCK1’s existing flags and parser behavior remain intact. |
+| R3-10 — graph row depends on later untracked implementation | open | P1.3; P1.4:121; P1.8:195–197 | The later-row dependency is removed, but the interim window does not establish its stated waste bound; finding 2. |
+| R3-11 — executable replacement omitted from identity | moved | P2:211–212 | Part one adds no binary-dependent retained answer or capability decision. Existing executable selection stays with `GitStart`. |
+
+### 2. Part one on its own
+
+The instrumentation row can land first. The graph and cancellation rows can also be separated without importing part two’s observation, context, cache or watches. **Their current proofs do not yet establish exact equivalence and complete cancellation.**
+
+The central range corrections hold: recorded-base ancestry precedes its fallback selection, E supplies the branch for the grown-base lookup, `known` controls the union counts, and D preserves the merged comparison tree. The landed/gone row correctly points back to today’s `LandedFromAsync` and `ProveAsync` orders rather than replacing their selections.
+
+The proposed seam can cover Review’s direct git launches: its ordinary, streamed and byte reads reach the three named runners. I found no additional direct Review git launcher outside those runners. The remaining issues concern scheduling, route coverage and ownership.
+
+1. **Blocking — identical commands are not sufficient to make program-capable reads independent.**
+
+   **Rests on:** Design:25–28,44–47,69–72,84–87; `Driver/Trees/WorkingTree.cs:331,460–480`; `Driver/Trees/SessionTrees/ReviewRanges.cs:90–95`; `Modules/Bridge/Routes/TreesRoutes.cs:70–94`.
+
+   Part one deliberately retains textconv, filters and repository merge drivers, but starts W and D₀ together and permits the offer beside D. Today those operations occur in a defined order. A configured textconv can record invocation order and include that state in its output; swapping the working-tree and committed conversions then changes patches even with unchanged refs and source files. Speculating a discarded D₀ can also invoke conversions that the selected chain never invokes.
+
+   The speculation rule checks command equality, not whether running that command earlier or unnecessarily changes a later answer. P1.7’s ordinary fixtures do not establish that distinction.
+
+   **Smallest fix:** preserve today’s ordering for reads that may execute configured programs, and do not speculate them without establishing that doing so is harmless. A conservative part-one implementation can retain that portion of the chain while parallelizing plain ref, ancestry and count questions. Add an order-sensitive textconv fixture, with helper state reset identically for the chain and graph. Suppressing conversions or refusing merge drivers remains part two.
+
+2. **Blocking — the untracked window does not imply at most three wasted starts.**
+
+   **Rests on:** Design:73,91–97,121; `Driver/Trees/WorkingTree.cs:331–338,340–363`.
+
+   U starts as soon as S answers, before W establishes the initial spent budget. If W eventually answers with the budget already exhausted, today reads **zero** untracked patches, while the proposed window can already have started four: more than `w − 1`.
+
+   Separately, “at most w at once” bounds running reads, not completed answers waiting for the ordered fold. Hold the first untracked answer, let later answers complete, and a window replenished on completion can start arbitrarily many files before the fold discovers that the first patch exhausted the remaining budget.
+
+   **Smallest fix:** make W’s successful answer and initial budget a prerequisite for opening U. Bound the window by files **started but not yet folded**, replenishing it only as the ordered fold advances. Stop on W/S failure and budget exhaustion. Add held-W and held-first-U cases to the census, including W consuming the entire budget; derive the resulting depth and waste count from that protocol.
+
+3. **Blocking — the equivalence proof omits route branches that determine the answer.**
+
+   **Rests on:** Design:74–77,101–108,170–177; `Modules/Bridge/Routes/TreesRoutes.cs:70–116`; `Driver/Trees/WorkingTree.cs:331–338`; `Driver/Trees/SessionTrees/ReviewRanges.cs:35–40`.
+
+   P1.4 enumerates own-tree, landed and gone conditions, but does not enumerate several current route distinctions:
+
+   - A present tree outside this home still gets a committed review; `ReviewRangeAsync` returns the recorded base, while dirty work and the offer are excluded.
+   - An empty base skips the committed range but can return dirty-only work, including H at `TreesRoutes.cs:113`.
+   - A failed committed diff falls through to a full landed review, or to dirty-only work when no landing exists.
+   - W or S failing makes the uncommitted answer null; successful speculative status or untracked answers must not manufacture dirty work.
+
+   H’s stated use “where the diff answered” does not describe the dirty-only path. The offer also starts before D succeeds or H is accepted, so it is speculative on those failure paths although its row does not say so. Comparing successful `SESSION_DIFF` answers over the listed fixtures cannot prove these alternatives or their refusals.
+
+   **Smallest fix:** retain the route’s existing guards and fallback precedence explicitly around the graph, add those conditions to the builder/census, and compare both answers **and refusal outcomes** against today’s route. Mark early offer work speculative and account for its discarded starts.
+
+### 3. Cancellation and its proof
+
+4. **Blocking — closing one window is incorrectly treated as host shutdown.**
+
+   **Rests on:** Design:151–163,180–182; `Modules/Windows/MainWindows.cs:4–12,64–98`; `src/Daoris.Desktop/Daoris.Desktop.App/MainForm.cs:198–207`; `src/Daoris.Desktop/Daoris.Desktop.App/SecondaryWindowHost.cs:154–166`; `Modules/Bridge/RouteFlights.cs:32–54,93–113`.
+
+   The application survives a main window closing while another remains. The first main window can instead be hidden with its page and services retained. A secondary window’s destruction likewise does not mean host shutdown.
+
+   P1.6 supplies a delayed JavaScript leave for unmounting, then relies on shutdown for window exit. It neither binds read ids to a window lifetime nor proves that destroying that window cancels its route waiter. A destroyed page cannot reliably deliver its ten-second callback. `RouteFlights` cancels only after its callers’ tokens actually cancel; it does not observe window closure itself.
+
+   **Smallest fix:** bind each read waiter to the originating view’s lifetime, using an existing cancellation path only if that path is demonstrated. On destruction, release that view’s ids without depending on JavaScript. Add a case closing the reading secondary window while another main window keeps the host alive, plus a shared-read case where another window still waits. State separately what hiding the first main window means.
+
+5. **Blocking — the runners do not currently provide the promised kill-and-wait guarantee.**
+
+   **Rests on:** Design:146–158; `Driver/Platform/ChildProcess.cs:71–87,112–120`; `Driver/Trees/WorkingTree.cs:1172–1175,1234–1246`; `Modules/Bridge/RouteFlights.cs:47–54,101–102`.
+
+   P1.6 says every running process is killed **and waited for by the runner, as today**. Today `ChildProcess` catches cancellation, calls `KillTree`, and observes output tasks using the already-cancelled token; it does not then await process exit. The streamed runner’s `EndAsync` kills and observes stderr, also without an exit wait. `KillTree` additionally swallows termination failures.
+
+   Thus a caller’s cancellation completing is not proof that its process has exited. `RouteFlights.JoinAsync` also releases a cancelled caller before the flight’s asynchronous cancellation and cleanup finish. P1.7 must distinguish those milestones.
+
+   **Smallest fix:** assign termination and exit observation to the process owner, retain ownership until cleanup finishes, and handle failed termination explicitly. Put the required runner changes in 1a-iii, including its driver scope. Exercise ordinary, streamed and byte runners, cancellation during creation, and multiple running nodes; assert actual process exit and owner cleanup, not merely a cancelled route wait. Define how unused speculative nodes are cancelled or drained before their ownership is released.
+
+**5 findings; 5 blocking.**
+
+**Verdict: another round.** The narrower scope is coherent, and the merged comparison, line guess, unchanged first-row flags and separation from retained answers hold. Before acceptance, specify safe ordering for program-capable reads, a fold-bounded untracked window, complete route fallback coverage, window-bound cancellation and observed process termination. Those are part-one dependencies and proofs; none requires accepting part two or reading GITAPP2.
