@@ -851,6 +851,18 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null, Fu
     /// <inheritdoc cref="TreeWorkReads.UncommittedAsync"/>
     public Task<int?> UncommittedAsync(string tree, CancellationToken ct = default) => WorkReads.UncommittedAsync(tree, ct);
 
+    /// <summary>
+    /// One <c>git status</c> of a tree a kept read proved this home's linked tree (TREELOOK1, <see cref="TreeReadPass"/>), counted;
+    /// null where git cannot say. Nothing else is asked, so a caller that has not proved it asks <see cref="UncommittedAsync"/>.
+    /// </summary>
+    internal Task<int?> StatusCountAsync(string tree, CancellationToken ct = default) => TreeWorkReads.UncommittedOfAsync(tree, ct);
+
+    /// <summary>The landings record a tree's walk reads (TREELOOK1's stamp).</summary>
+    internal string LandingsPath => _context.Recorded.FilePath;
+
+    /// <summary>The choices a tree's walk reads its line from (TREELOOK1's stamp).</summary>
+    internal string ConfigPath => DriverConfig.ResolvePath(_context.Variable, _context.Home);
+
     /// <inheritdoc cref="TreeWorkReads.DiscardOfferAsync"/>
     public Task<DiscardOffer?> DiscardOfferAsync(string tree, CancellationToken ct = default) => WorkReads.DiscardOfferAsync(tree, ct);
 

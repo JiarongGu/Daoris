@@ -367,27 +367,37 @@ public static class HelpFacts
     /// sessions' trees that would be put to review or offered to land judged once with git (<see cref="SessionGroups.JudgeAsync"/>),
     /// and no other tree. <paramref name="times"/> takes the walk's time and how many trees it asked, where a caller says them.
     /// </summary>
+    /// <remarks>
+    /// TREELOOK1: a tree is walked again only where something its walk rests on moved since the home's last read of it, and asked one
+    /// <c>git status</c> otherwise (<see cref="TreeReadMemo"/>); <see cref="TreesAtOnce"/> trees at once. 145 kept trees took 45-110 s
+    /// one after another, past the part's bound.
+    /// </remarks>
     public static async Task<HelpTrees> ReadTreesAsync(string home, HelpTreesPart part, CancellationToken ct, LookTimes? times = null)
     {
         var trees = new SessionTrees(home);
-        return await ReadTreesAsync(part, trees.Holds, trees.WorkAsync, ct, times).ConfigureAwait(false);
+        var pass = TreeReadMemo.Of(home).Begin(trees);
+        return await ReadTreesAsync(part, trees.Holds, pass.WorkAsync, ct, times, TreesAtOnce).ConfigureAwait(false);
     }
+
+    /// <summary>How many of a part's trees are read at once (TREELOOK1): each start still passes the background's places (PARALLEL1d).</summary>
+    public const int TreesAtOnce = 4;
 
     /// <summary>
     /// One part of the trees through <paramref name="judge"/>, git's walk where the home's is read (<see cref="ReadTreesAsync(string,
     /// HelpTreesPart, CancellationToken, LookTimes?)"/>), a stand-in where a test hands one: each tree <paramref name="held"/> takes that
     /// the part's sessions would put to review or offer to land, judged once, with the trees it asked (PUSH1c1).
     /// </summary>
+    /// <param name="atOnce">How many trees are judged at once; one after another unless a caller says more.</param>
     public static async Task<HelpTrees> ReadTreesAsync(
         HelpTreesPart part, Func<string, bool> held, Func<string, CancellationToken, Task<TreeWork?>> judge, CancellationToken ct,
-        LookTimes? times = null)
+        LookTimes? times = null, int atOnce = 1)
     {
         // The part's own trees alone: a look kept with every tree judged carries none of them in.
         var look = part.Look with { Trees = HelpTrees.None.Trees };
         times ??= new LookTimes();
         var asked = SessionGroups.TreesToJudge(look, held, part.Sessions);
         times.Trees = asked.Count;
-        var judged = await times.TimeAsync("trees", () => SessionGroups.JudgeAsync(look, held, judge, part.Sessions, ct)).ConfigureAwait(false);
+        var judged = await times.TimeAsync("trees", () => SessionGroups.JudgeAsync(look, held, judge, part.Sessions, ct, atOnce)).ConfigureAwait(false);
         return new HelpTrees(judged.Trees) { Asked = asked.Select(SessionGroups.Normal).ToHashSet(StringComparer.OrdinalIgnoreCase) };
     }
 
