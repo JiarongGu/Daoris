@@ -1959,6 +1959,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
                 Kind = Text(session, "kind") ?? ActiveSessions.DrivenKind,
                 Opinion = Text(session, "opinion") is { Length: > 0 } opinion ? opinion : null,
                 Serves = Text(session, "serves") is { Length: > 0 } serves ? serves : null,
+                // A partner's piece (COAGENT1b): its reservation is counted once its record opens.
+                Piece = Text(session, "piece") is { Length: > 0 } piece ? piece : null,
             });
         }
 

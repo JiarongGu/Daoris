@@ -763,6 +763,13 @@ public sealed record SessionView(
     /// serves no quest. Answered on loopback alone.
     /// </summary>
     public string? Serves { get; init; }
+
+    /// <summary>
+    /// The piece a partner's record writes, the ask's id, or null for every other session (COAGENT1b, the co-agent design §7.3): beside
+    /// its <see cref="Serves"/>, which names its lead. What tells the common admission a piece's record has opened, so its reservation
+    /// is counted once. Answered on loopback alone.
+    /// </summary>
+    public string? Piece { get; init; }
 }
 
 /// <summary>
@@ -858,8 +865,10 @@ public sealed record Snapshot(
     /// How many active sessions take a place under the machine's cap (CAPCOUNT1, <see cref="ActiveSessions.HoldsSlot"/>): the ones the
     /// driver started, never a conversation the person holds. Every site that spends a slot reads this, never the list's length, which
     /// is every active session and is read as that for a busy tree and a repository's holder.
+    /// A piece reserved and not yet opened holds one too (COAGENT1b, the co-agent design §5): the reservations on file
+    /// (<see cref="Pieces"/>), each counted once, since an active record carrying its piece counts it instead.
     /// </summary>
-    public int SlotsHeld => ActiveSessions.Held(Active);
+    public int SlotsHeld => ActiveSessions.Held(Active) + PartnerAdmission.Reserving(Pieces, Active);
 
     /// <summary>
     /// The session THIS machine last ran on each quest, by quest id — derived from the same records as
@@ -948,6 +957,12 @@ public sealed record Snapshot(
     /// stands for. Absent is none, as for a caller that waits for each start to open.
     /// </summary>
     public IReadOnlyList<StartReservation> Starting { get; init; } = [];
+
+    /// <summary>
+    /// The pieces on file with their leads and states (COAGENT1b, D199 point 4), as the look read the boxes: those reserved and not yet
+    /// opened hold a slot in <see cref="SlotsHeld"/>, the common admission every starter reads. Absent is none.
+    /// </summary>
+    public IReadOnlyList<PieceReservation> Pieces { get; init; } = [];
 
     /// <summary>
     /// How many commits the tree of each open quest's last session here holds beyond the commit it opened at, by quest id, where that

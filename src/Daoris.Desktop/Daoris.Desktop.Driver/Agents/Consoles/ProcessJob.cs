@@ -135,6 +135,19 @@ public sealed class ProcessJob : IDisposable
     }
 
     /// <summary>
+    /// How many processes the job by that name holds, opened for its count alone (COAGENT1b: a restart observing a partner's job); null
+    /// where no job answers to the name or its count did not read, which is never "none".
+    /// </summary>
+    internal static int? ActiveOf(string name)
+    {
+        if (!OperatingSystem.IsWindows()) return null;
+        var handle = OpenJobObject(JobQuery, false, name);
+        if (handle == IntPtr.Zero) return null;
+        using var job = new ProcessJob(handle);
+        return job.Active;
+    }
+
+    /// <summary>
     /// End the job a dead holder of a heavy-run slot named, if it is still there, and wait until it holds nothing (HEAVYRUN1a): true
     /// where it was. A name no job answers to is a job whose last handle closed, which ended what it held as it closed.
     /// </summary>
