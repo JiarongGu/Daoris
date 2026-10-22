@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A folder under Daoris's account homes that no agent or plugin names is no longer taken for an agent (POOLSTRAY1). An earlier
+  start could leave such a folder, and its subfolders were folded in as accounts. Such a folder is now noted once in the machine
+  log and otherwise left alone. If an earlier fold already wrote one into the account order, the next change of the accounts
+  removes it and notes that in the machine log.
 - Ask Daoris's trees fact no longer reads every kept session tree whole each time (TREELOOK1). A tree where nothing its read
   rests on has moved is asked for its status alone, and its edits are always read fresh. Four trees are read at once. A
   repository with about 145 kept trees answered in minutes before. With nothing moved it now answers in about twenty seconds
