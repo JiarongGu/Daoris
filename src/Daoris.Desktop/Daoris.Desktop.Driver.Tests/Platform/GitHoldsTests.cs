@@ -46,6 +46,7 @@ public sealed class GitHoldsTests : IDisposable
     [InlineData(GitFailureClass.Refused, "all")]
     [InlineData(GitFailureClass.HostUnknown, "all")]
     [InlineData(GitFailureClass.HostChanged, "all")]
+    [InlineData(GitFailureClass.OwnInput, "all")]
     [InlineData(GitFailureClass.WriteRefused, "writes")]
     [InlineData(GitFailureClass.Unreachable, null)]
     [InlineData(GitFailureClass.Unclassed, null)]

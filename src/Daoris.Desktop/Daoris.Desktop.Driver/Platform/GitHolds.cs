@@ -132,7 +132,9 @@ public static class GitHolds
     /// </summary>
     public static int Lift(string home, string root, string? remote, string why) => Lift(home, root, remote, why, _ => true);
 
-    private static int Lift(string home, string root, string? remote, string why, Func<GitHold, bool> which)
+    /// <summary>The holds on the checkout (on one remote where <paramref name="remote"/> names it) that <paramref name="which"/> picks,
+    /// lifted; how many were.</summary>
+    internal static int Lift(string home, string root, string? remote, string why, Func<GitHold, bool> which)
     {
         List<GitHold> lifted;
         lock (Gate)
@@ -173,9 +175,12 @@ public static class GitHolds
             "write-refused" => $"{host} refused a push with the sign-in git has here",
             "host-unknown" => $"ssh does not know {host}'s key",
             "host-changed" => $"{host}'s key is not the one ssh knows for it",
+            "own-input" => OwnInputWhy,
             _ => $"{host} refused the sign-in git has here",
         };
         var said = hold.Words.Length == 0 ? "" : $" ({hold.Words})";
+        if (hold.Class == "own-input")
+            return $"`{hold.Remote}` is held: {why}. Daoris does not reach it until that setting is removed from this repository";
         return $"`{hold.Remote}` is held: {why}{said}. Daoris does not try it again until you press Try again on its row in What needs "
             + "you, or its address or the git Daoris runs changes";
     }
@@ -190,11 +195,19 @@ public static class GitHolds
         var lines = holds.OrderBy(hold => hold.Remote, StringComparer.Ordinal).Select(hold => hold.Holds == Writes
             ? $"`{hold.Remote}` ({hold.Host ?? hold.Address}) refused a push with the sign-in git has on this machine. You may fetch it; "
               + "pushing is not yours in any case."
+            : hold.Class == "own-input"
+            ? $"`{hold.Remote}` ({hold.Host ?? hold.Address}) is held: {OwnInputWhy}. Do not fetch, pull or push it, and do not change "
+              + $"that setting: work from the line as this checkout has it, and say in your closing note that `{hold.Remote}` was not fetched."
             : $"`{hold.Remote}` ({hold.Host ?? hold.Address}) cannot be reached with the sign-in git has on this machine "
               + $"({Why(hold)}), so neither you nor Daoris can reach it now. Do not fetch, pull or push it: work from the line as this "
               + $"checkout has it, and say in your closing note that `{hold.Remote}` was not fetched.");
         return "**Git.** " + string.Join(" ", lines) + " The person sees it in What needs you, where Try again lifts it.";
     }
+
+    /// <summary>Why a repository is held as <c>own-input</c> (<see cref="GitOwnInput"/>), naming the setting and never its value.</summary>
+    private const string OwnInputWhy =
+        "this repository names its own ssh command (`core.sshCommand`), which git runs in place of Daoris's ssh door on this install, "
+        + "since the install's folder holds a space or another character git's shell would read";
 
     private static string Why(GitHold hold) => hold.Class switch
     {

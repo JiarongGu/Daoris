@@ -127,6 +127,58 @@ public sealed class GitHoldsProcessTests : IDisposable
         Assert.Equal(GitWords.HostOf(moved.Address), Assert.Single(GitHolds.Read(Home)).Host);
     }
 
+    /// <summary>An install laid out with the ssh door in its <c>app/bin/</c> (an empty file: no act here starts it), made the home.</summary>
+    private string Install(string name)
+    {
+        var install = Path.Combine(_root, name);
+        Directory.CreateDirectory(Path.Combine(install, "data"));
+        Directory.CreateDirectory(Path.Combine(install, "app", "bin"));
+        File.WriteAllText(Path.Combine(install, DaorisHome.InstallMarker), "# Daoris — installed desktop\n");
+        File.WriteAllText(Path.Combine(install, "app", "bin", GitWiring.SshDoor), "");
+        var home = Path.Combine(install, "data");
+        Environment.SetEnvironmentVariable(DaorisHome.Variable, home);
+        return home;
+    }
+
+    [Fact]
+    public async Task A_repositorys_own_ssh_command_where_the_door_is_named_by_GIT_SSH_is_held_as_own_input_until_it_goes()
+    {
+        var home = Install("with space");
+        Assert.Equal("git-ssh", GitWiring.SshForm(home));
+        await Git("init", "-q", "-b", "main");
+        await Git("remote", "add", "origin", "git@code.example.invalid:org/engine.git");
+        await Git("config", "core.sshCommand", "ssh -i C:/keys/engine_key");
+
+        var held = await FetchAsync(Repo);
+
+        Assert.Equal(0, held.Fetches);
+        Assert.StartsWith("`origin` is held: this repository names its own ssh command (`core.sshCommand`)", held.Failed, StringComparison.Ordinal);
+        Assert.DoesNotContain("engine_key", held.Failed, StringComparison.Ordinal);
+        var hold = Assert.Single(GitHolds.Read(home));
+        Assert.Equal(("own-input", "all", "", "code.example.invalid"), (hold.Class, hold.Holds, hold.Words, hold.Host));
+        Assert.DoesNotContain("engine_key", File.ReadAllText(DaorisHome.Entry(home, HomeEntry.GitHeld)), StringComparison.Ordinal);
+        Assert.Equal(held.Failed, (await FetchAsync(Repo)).Failed);
+
+        // The setting removed: the hold goes before the next act, which is then tried.
+        await Git("config", "--unset", "core.sshCommand");
+        Assert.Null(await GitOwnInput.HeldAsync(home, Repo, "engine", "work", "origin", "git@code.example.invalid:org/engine.git", null, CancellationToken.None));
+        Assert.Empty(GitHolds.Read(home));
+    }
+
+    [Theory]
+    [InlineData("bare", "git@code.example.invalid:org/engine.git")]
+    [InlineData("with space", "https://code.example.invalid/org/engine.git")]
+    public async Task Neither_a_door_named_by_its_bare_path_nor_an_HTTPS_remote_is_held_for_a_repositorys_ssh_command(string install, string address)
+    {
+        var home = Install(install);
+        await Git("init", "-q", "-b", "main");
+        await Git("config", "core.sshCommand", "ssh -i C:/keys/engine_key");
+
+        Assert.False(await GitOwnInput.FindsAsync(home, Repo, address, CancellationToken.None));
+        Assert.Null(await GitOwnInput.HeldAsync(home, Repo, "engine", "work", "origin", address, null, CancellationToken.None));
+        Assert.Empty(GitHolds.Read(home));
+    }
+
     [Fact]
     public async Task An_unreachable_host_holds_nothing()
     {

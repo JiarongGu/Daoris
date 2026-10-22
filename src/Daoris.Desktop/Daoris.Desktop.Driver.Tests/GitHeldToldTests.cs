@@ -34,6 +34,17 @@ public sealed class GitHeldToldTests
     }
 
     [Fact]
+    public void A_remote_held_as_own_input_names_the_setting_and_tells_the_session_to_leave_it()
+    {
+        var told = GitHolds.Told([Held(failure: "own-input")])!;
+
+        Assert.Contains("this repository names its own ssh command (`core.sshCommand`)", told, StringComparison.Ordinal);
+        Assert.Contains("Do not fetch, pull or push it, and do not change that setting", told, StringComparison.Ordinal);
+        Assert.StartsWith("`origin` is held: this repository names its own ssh command", GitHolds.Said(Held(failure: "own-input")), StringComparison.Ordinal);
+        Assert.EndsWith("until that setting is removed from this repository", GitHolds.Said(Held(failure: "own-input")), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Nothing_held_is_nothing_told()
     {
         Assert.Null(GitHolds.Told([]));

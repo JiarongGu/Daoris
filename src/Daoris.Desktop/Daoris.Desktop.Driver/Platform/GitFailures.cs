@@ -8,9 +8,9 @@ public enum GitAct
 }
 
 /// <summary>
-/// The classes of a remote act's failure GITAUTH1a holds on (the git-auth design §5.1): those today's ambient credentials meet.
-/// The identity's, the configuration's and the judge's classes (<c>no-identity</c>, <c>own-input</c>, <c>denied</c>, <c>ask</c>)
-/// join with the rows that make them.
+/// The classes of a remote act's failure GITAUTH1a holds on (the git-auth design §5.1): those today's ambient credentials meet,
+/// and GITAUTH1b's <c>own-input</c>. The identity's and the judge's classes (<c>no-identity</c>, <c>denied</c>, <c>ask</c>) join with
+/// the rows that make them.
 /// </summary>
 public enum GitFailureClass
 {
@@ -31,6 +31,13 @@ public enum GitFailureClass
 
     /// <summary>The host's key is not the one known for it: holds reads and writes.</summary>
     HostChanged,
+
+    /// <summary>
+    /// An input the doors cannot outrank (§4.2): a repository's own <c>core.sshCommand</c> where the ssh door is named by
+    /// <c>GIT_SSH</c>, which that setting outranks. Never read from words: <see cref="GitOwnInput"/> finds it before an act.
+    /// Holds reads and writes.
+    /// </summary>
+    OwnInput,
 }
 
 /// <summary>
@@ -99,6 +106,7 @@ public static class GitFailures
         GitFailureClass.WriteRefused => "write-refused",
         GitFailureClass.HostUnknown => "host-unknown",
         GitFailureClass.HostChanged => "host-changed",
+        GitFailureClass.OwnInput => "own-input",
         GitFailureClass.Unreachable => "unreachable",
         _ => "unclassed",
     };
@@ -110,6 +118,7 @@ public static class GitFailures
         "write-refused" => GitFailureClass.WriteRefused,
         "host-unknown" => GitFailureClass.HostUnknown,
         "host-changed" => GitFailureClass.HostChanged,
+        "own-input" => GitFailureClass.OwnInput,
         _ => null,
     };
 

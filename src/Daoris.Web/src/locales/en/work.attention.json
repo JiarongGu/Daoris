@@ -116,7 +116,9 @@
   "work.attention.gitHeld.title.write-refused": "{{host}} refused a push with the sign-in git has here",
   "work.attention.gitHeld.title.host-unknown": "ssh does not know {{host}}'s key yet",
   "work.attention.gitHeld.title.host-changed": "{{host}}'s key changed since ssh last trusted it",
+  "work.attention.gitHeld.title.own-input": "{{host}} is reached by the repository's own ssh command, past Daoris's door",
   "work.attention.gitHeld.detail": "{{repositories}}: Daoris does not try this git remote again until you press Try again, or its address or the git Daoris runs changes. git said: {{words}}",
+  "work.attention.gitHeld.detailOwnInput": "{{repositories}}: the repository names its own ssh command (core.sshCommand), which git runs in place of Daoris's ssh door on this install, since the install's folder holds a space. Daoris does not reach this git remote until that setting is removed from the repository.",
   "work.attention.gitHeld.lifted": "Daoris tries {{host}} again for {{count}} repository the next time it needs it.",
   "work.attention.gitHeld.lifted_other": "Daoris tries {{host}} again for {{count}} repositories the next time it needs them.",
   "work.attention.gitHeld.liftedNone": "Daoris was no longer waiting on {{host}}: it tries it the next time it needs it."
