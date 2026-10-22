@@ -19490,3 +19490,11 @@ once. `/api/sync` names the undeclared machines, pushed to the window, where Set
 en and zh; `sync status` prints them. Proof: `QuestClosureHandshakeTests`, `SharedHostTests`, `LocalHostTests`, `PersonDoorTableTests`,
 `RemoteSyncTests`, `SyncStateSliceTests`, `WorkspaceSetup.test.tsx`; the service's, driver's and modules' fast halves. On Opus. Detail:
 D173's FABRIC-CLOSE1i2 note.
+
+## FABRIC-CUTOVER1d — the doors read the run's record and land its commit (2026-10-22, D190)
+
+> - [ ] **FABRIC-CUTOVER1d — the doors read the run's record and land its commit** (driver, cli; after 1b, 1c, 1f; D190, design §4). A graph version read as a process (`WorkflowProcesses.cs:60`); the opinion and the look begun, their gates read at the branch's tip; the landing gate's graph part read from the run's record, never evaluated, holding with §4's sentences and asking a whole pass (`DriverWatch.cs:434`), the press keeping its answer and awaiting that pass within a bound (`OpinionPresses.cs:64-71`); the landing pinned to `handed`'s commit on every path, a merge included (`TreeLands.cs:175`, `:502-514`, `:855-860`); performed starts turned on; `quest.close` cannot start until 1h; the "does not run yet" words go (`WorkflowNamed.cs:117-121`, `namedworkflows.ts:130`, `:138`, `workflowdoor.ts:365`, `:691`). Proof: `WorkflowGateTests`; the door lands where the pass made `handed` active; a commit inserted between the gate's judgement and the landing lands nothing, on the branch and merge paths; a press after a *Reviewed* lands at the same press within the bound, else is refused with its answer kept; a person's task before `handed` holds *Accept…* naming it.
+
+**Outcome** 2026-10-22: built, the cli lane untouched (its words had moved into the driver's verb): a graph run lands only where its record holds
+`handed` active at the door's commit, pinned there on the branch and merge paths, a press waiting up to twenty seconds for the pass it asks; the
+runtime begins its gate nodes and starts its performed nodes. No window was looked at. Detail: D190's CUTOVER1d note. On Opus.
