@@ -19408,3 +19408,16 @@ note. On Opus.
 
 **Outcome** 2026-10-22: a verb takes the lease in the home the loop drives, the folder the driver's config is in (`DriverConfig.FindHome`),
 `DAORIS_HOME` wherever no override names a file elsewhere, so an install is unchanged. Detail: D171's LEASEHOME2 note. On Opus.
+## POOL1a3 — the person's own sign-in never asked or written (2026-10-22, D197)
+
+> - [ ] **POOL1a3 — the person's own sign-in never asked or written** (driver, modules; after POOL1a1; D197 point 3). The `own` parameter leaving `ReportAsync`, `PressAsync`, `PressUsageAsync` and `HarnessProbe.ProbeAsync`, so `HARNESSES_REFRESH` with no agent and the driver's `agent list` ask no own sign-in; the own-home trust hold carrying `own` with no press and `TRUST_FOLDER` refusing it as `TRUST_OWN_HOME` before anything is written; `agent trust` with no account named trusting every account of the set and never the own home; and the own cool-off's *Read again* line settled (D197's acceptance note), as design §3 and §11 say. Proof: §11's rows for these, with a test that every sign-in action's spawn sets the configuration home under the home.
+
+**Outcome** 2026-10-22: built. `own` left the roster's report, press and usage read and the probe; a usage read takes an account,
+never none, and `HarnessActions.PrepareLogin` refuses a home outside the account homes. The agent's *Read again* ends that agent's
+own cool-off unasked, so `waits.read-again` stands unchanged. `TrustHold.Own` marks a hold with no account home, the attention row
+carries `trust.own`, and `TRUST_FOLDER` refuses it as `TRUST_OWN_HOME` (en, zh); `ClaudeTrust.Refusal` with no account names the
+tool itself. `agent trust` with none named grants each account of the set in its order, and with none refuses. Proof:
+`HarnessProbeTests`, `CodexAccountTests`, `CodexAccountProcessTests`, `CodexUsageRosterTests`, `CodexUsageProcessTests`,
+`RosterReadTests`, `ProbeRaceTests`, `WorkspaceTrustTests`, `AgentsTextTests`' trust rows, `DriverModuleDriverTests`,
+`AttentionStateSliceTests`, `DriverModuleAgentsTests`. Not seen failing first, and no window was looked at. Detail: D197's POOL1a3
+note. On Opus.

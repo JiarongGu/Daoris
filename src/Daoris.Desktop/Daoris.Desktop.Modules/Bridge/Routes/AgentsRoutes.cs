@@ -26,9 +26,10 @@ public sealed class AgentsRoutes(DriverContext context)
     private Task<object?> HarnessesAsync(IpcRequest request, CancellationToken cancellationToken) =>
         ReadHarnessesAsync(request, refresh: false, cancellationToken);
 
-    // The person pressing *Read again* (HARNESSREFRESH1, D169): every agent's accounts, with `agent` one agent's accounts and
-    // its own sign-in, or with `profile` too that one account alone. Its own route so it can declare what it moved, which the
-    // read above must not: it answers the roster as the read does, and every window asks its roster again.
+    // The person pressing *Read again* (HARNESSREFRESH1, D169): every agent's accounts, with `agent` one agent's accounts, or
+    // with `profile` too that one account alone; never an agent's own sign-in (POOL1a3, D197 point 3). Its own route so it can
+    // declare what it moved, which the read above must not: it answers the roster as the read does, and every window asks its
+    // roster again.
     [DriverRoute("HARNESSES_REFRESH")]
     [Publishes("HARNESSES_REFRESH", StateScopes.Harnesses)]
     private Task<object?> RefreshHarnessesAsync(IpcRequest request, CancellationToken cancellationToken) =>
@@ -44,10 +45,10 @@ public sealed class AgentsRoutes(DriverContext context)
         if (agent is not null)
         {
             // Through the agent's account-owning door, which every door onto it shares (AGT7), so each account is asked
-            // once, not once a door: one at a time, and its own sign-in; or that one account alone (ROSTER1).
+            // once, not once a door: one at a time; or that one account alone (ROSTER1).
             var door = AccountDoor(agent)
                 ?? throw new DriverException($"no agent `{agent}` on this machine has accounts to read.");
-            await _loop.Harnesses.ReportAsync(door, config, refresh: true, cancellationToken, own: account is null, account: account);
+            await _loop.Harnesses.ReportAsync(door, config, refresh: true, cancellationToken, account: account);
             roster = await _loop.Harnesses.RosterAsync(config, refresh: false, cancellationToken);
         }
         else

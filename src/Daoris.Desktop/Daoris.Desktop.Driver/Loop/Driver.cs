@@ -1873,8 +1873,9 @@ public sealed class Driver(
             var trustPath = ClaudeTrust.PathFor(trustFile, chosen.ProfileHome, preflight.Toolchain!.ProfileVariable);
             if (ClaudeTrust.Accepted(trustPath, workTree) != false) return null;
 
-            // Said twice, on purpose: the sentence for a person, the fact for a screen (D73).
-            lock (untrusted) untrusted.Add(new TrustHold(workTree, trustPath, Quest: quest.Id));
+            // Said twice, on purpose: the sentence for a person, the fact for a screen (D73). With no account home its file is
+            // the own sign-in's, which Daoris never writes (POOL1a3, D197 point 3): the screen offers no grant of it.
+            lock (untrusted) untrusted.Add(new TrustHold(workTree, trustPath, Quest: quest.Id, Own: chosen.ProfileHome is null));
             return Hold(ClaudeTrust.Refusal(workTree, chosen.ProfileHome is null ? null : chosen.Profile));
         }
 

@@ -51,6 +51,45 @@ public sealed class CodexAccountTests : IDisposable
         Assert.Null(agent.Toolchain.KeyVariable);
     }
 
+    /// <summary>
+    /// 🔴 POOL1a3 (D197 point 3; the account-pool design §3 point 1): every sign-in action's spawn, each door's agent and each
+    /// way it signs in, sets the agent's configuration-home variable to an account's folder under the home; a folder anywhere
+    /// else, the person's own profile folder among them, is refused before anything is made. Prepared, never started: no test
+    /// starts a real sign-in (LIVELOGIN1).
+    /// </summary>
+    [Fact]
+    public void Every_sign_in_s_spawn_sets_the_configuration_home_under_the_home_and_none_runs_elsewhere()
+    {
+        var roster = Roster();
+        var prepared = 0;
+        foreach (var door in AdapterSet.Built().Names)
+        {
+            if (roster.AccountAgentOf(door) is not { Toolchain.LoginArguments: not null } agent) continue;
+            var run = roster.SignInCommand(door, DriverConfig.Empty)!;
+            SignInWay[] ways = agent.Toolchain.DeviceLoginArguments is null ? [SignInWay.Browser] : [SignInWay.Browser, SignInWay.DeviceCode];
+            foreach (var way in ways)
+            {
+                var account = HarnessSettings.ProfileHome(_home, agent.Name, $"acct-{prepared:x8}");
+                var info = HarnessActions.PrepareLogin(agent.Toolchain, run, account, fresh: true, way);
+
+                Assert.Equal(account, info.Environment[agent.Toolchain.ProfileVariable!]);
+                Assert.Equal((Path.GetFullPath(_home), agent.Name), (HarnessSettings.AccountAt(account)!.Value.Home, HarnessSettings.AccountAt(account)!.Value.Agent));
+                prepared++;
+            }
+
+            foreach (var elsewhere in new[] { Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), Path.Combine(_home, "elsewhere"), "" })
+            {
+                var refusal = Assert.Throws<DriverException>(() => HarnessActions.PrepareLogin(agent.Toolchain, run, elsewhere, fresh: true));
+                Assert.StartsWith("a sign-in runs only into one of Daoris's accounts", refusal.Message, StringComparison.Ordinal);
+            }
+
+            Assert.False(Directory.Exists(Path.Combine(_home, "elsewhere")));
+        }
+
+        // Claude Code's and Codex's doors, Codex by both its ways, at least.
+        Assert.True(prepared >= 3, $"{prepared} sign-ins prepared");
+    }
+
     /// <summary>An agent this build carries a door of answers for itself; the declaration is only for one it does not.</summary>
     [Fact]
     public void A_door_onto_an_agent_with_a_door_of_its_own_asks_that_door()

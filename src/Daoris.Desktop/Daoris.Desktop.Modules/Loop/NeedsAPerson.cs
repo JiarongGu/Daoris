@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Daoris.Driver;
 
@@ -514,6 +515,8 @@ public static class NeedsAPerson
             // Its repository where it holds a quest in hand; else the page names the ask it holds, or the quest by its id.
             row["where"] = Text(held, "to");
             row["trust"] = new JsonObject { ["folder"] = Text(hold, "folder"), ["trustFile"] = Text(hold, "trustFile") };
+            // Its file the own sign-in's (POOL1a3, D197 point 3): the page draws no press, and TRUST_FOLDER refuses one.
+            if (hold["own"]?.GetValueKind() == JsonValueKind.True) row["trust"]!["own"] = true;
             // What its door opens: the quest it holds, or the ask whose intake it holds.
             if (Truthy(hold, "quest") is { } holds) row["quest"] = holds;
             if (Truthy(hold, "ask") is { } intake) row["ask"] = intake;
