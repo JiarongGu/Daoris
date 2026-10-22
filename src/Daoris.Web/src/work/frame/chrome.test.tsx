@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render as rtlRender, screen } from '@testing-library/react';
+import { fireEvent, render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../../locales/i18n';
@@ -40,8 +40,8 @@ function carried(initial: Record<string, string> = {}) {
 
 const VIEWS = [
   { tab: 'overview' as const, label: 'Overview', icon: 'overview' as const },
-  { tab: 'sessions' as const, label: 'Sessions', icon: 'frameWork' as const, badge: 1, tone: 'open' as const },
-  { tab: 'quests' as const, label: 'Quests', icon: 'quests' as const, badge: 3 },
+  { tab: 'sessions' as const, label: 'Sessions', icon: 'frameWork' as const, waits: 1 },
+  { tab: 'quests' as const, label: 'Quests', icon: 'quests' as const, waits: 3 },
 ];
 const SETTINGS = [{ tab: 'settings' as const, label: 'Settings', icon: 'settings' as const }];
 
@@ -126,37 +126,53 @@ describe('ActivityBar', () => {
     expect(screen.getAllByRole('button', { current: 'page' })).toHaveLength(1);
   });
 
-  /** The one status on the bar wears the status hue, its digits in that hue's ink (UXFIX5c); a quantity wears the accent. */
-  it('colours a count by what it is', () => {
+  /**
+   * BADGEUX1 (the UI/UX design §3.10): a place's number counts only what waits on the person there, as the bell does, so every number
+   * on the bar wears the bell's hue, its digits in that hue's ink (UXFIX5c). There is no quantity in the accent any more.
+   */
+  it('draws every number as a wait, in open’s hue', () => {
     render(<ActivityBar label="Views" items={VIEWS} active="overview" onSelect={() => {}} />);
-    expect(screen.getByText('1').className).toContain('border-st-open');
-    expect(screen.getByText('1').className).toContain('text-ink-open');
-    expect(screen.getByText('3').className).toContain('text-accent');
+    for (const figure of ['1', '3']) {
+      expect(screen.getByText(figure).className).toContain('border-st-open');
+      expect(screen.getByText(figure).className).toContain('text-ink-open');
+      expect(screen.getByText(figure).className).not.toContain('text-accent');
+    }
   });
 
   /**
-   * SESSBADGE1 (D76's note): Sessions counts the sessions the driver runs, a quantity in the accent, and marks what waits on the
-   * person there beside it in the waiting hue: a dot, a shape of its own, since at badge size that hue and the accent read alike
-   * (UX5 U24). Never a mark alone (D41 §6): the counts in words are the place's tip and its description.
+   * BADGEUX1: running work is a mark, never a number, in taken's hue (the status palette's *in progress*), at the lower corner the
+   * number leaves free. Never a mark alone (D41 §6): what each shows is said in words, as the place's tip and its description.
    */
-  it('marks what waits on the person beside a count, and says both in words', async () => {
-    const items = [{ ...VIEWS[1]!, badge: 4, tone: undefined, waiting: true, detail: '4 active · 1 waiting on you' }];
-    const { rerender } = render(<ActivityBar label="Views" items={items} active="overview" onSelect={() => {}} />);
+  it('marks running work with no number, and says it in words', async () => {
+    const items = [{ ...VIEWS[1]!, waits: 0, running: true, detail: '3 under way' }];
+    render(<ActivityBar label="Views" items={items} active="overview" onSelect={() => {}} />);
 
     const sessions = screen.getByRole('button', { name: 'Sessions' });
-    expect(screen.getByText('4').className).toContain('text-accent');
-    expect(sessions.querySelector('.bg-st-open')).not.toBeNull();
-    expect(sessions).toHaveAccessibleDescription('4 active · 1 waiting on you');
+    expect(sessions.querySelector('[data-running]')).not.toBeNull();
+    expect(sessions.querySelector('[data-running]')!.className).toContain('bg-st-taken');
+    expect(within(sessions).queryByText(/^\d+$/)).toBeNull();
+    expect(sessions).toHaveAccessibleDescription('3 under way');
     await userEvent.hover(sessions);
-    expect((await screen.findByRole('tooltip')).textContent).toContain('4 active · 1 waiting on you');
+    expect((await screen.findByRole('tooltip')).textContent).toContain('3 under way');
+  });
 
-    rerender(<ActivityBar label="Views" items={[{ ...items[0]!, badge: 0, detail: '1 waiting on you' }]} active="overview" onSelect={() => {}} />);
-    expect(screen.queryByText('0')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Sessions' }).querySelector('.bg-st-open')).not.toBeNull();
+  it('shows a wait and running work at once, the number above and the mark below, and says both', () => {
+    const items = [{ ...VIEWS[1]!, waits: 2, running: true, detail: '2 waiting on you · 3 under way' }];
+    const { rerender } = render(<ActivityBar label="Views" items={items} active="overview" onSelect={() => {}} />);
 
-    rerender(<ActivityBar label="Views" items={[{ ...items[0]!, waiting: false, detail: undefined }]} active="overview" onSelect={() => {}} />);
-    expect(screen.getByRole('button', { name: 'Sessions' }).querySelector('.bg-st-open')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Sessions' })).not.toHaveAttribute('aria-description');
+    const sessions = () => screen.getByRole('button', { name: 'Sessions' });
+    expect(within(sessions()).getByText('2').className).toContain('top-0');
+    expect(sessions().querySelector('[data-running]')!.className).toContain('bottom-1');
+    expect(sessions()).toHaveAccessibleDescription('2 waiting on you · 3 under way');
+
+    rerender(<ActivityBar label="Views" items={[{ ...items[0]!, running: false, detail: '2 waiting on you' }]} active="overview" onSelect={() => {}} />);
+    expect(sessions().querySelector('[data-running]')).toBeNull();
+    expect(within(sessions()).getByText('2')).toBeInTheDocument();
+
+    rerender(<ActivityBar label="Views" items={[{ ...items[0]!, waits: 0, running: false, detail: undefined }]} active="overview" onSelect={() => {}} />);
+    expect(sessions().querySelector('[data-running]')).toBeNull();
+    expect(within(sessions()).queryByText(/^\d+$/)).toBeNull();
+    expect(sessions()).not.toHaveAttribute('aria-description');
   });
 
   it('carries the counts, and wears nothing at zero', () => {
@@ -167,7 +183,7 @@ describe('ActivityBar', () => {
     rerender(
       <ActivityBar
         label="Views"
-        items={VIEWS.map((item) => ({ ...item, badge: item.badge && 0 }))}
+        items={VIEWS.map((item) => ({ ...item, waits: item.waits && 0 }))}
         active="overview"
         onSelect={() => {}}
       />,

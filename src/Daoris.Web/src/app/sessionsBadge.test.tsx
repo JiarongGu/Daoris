@@ -133,70 +133,132 @@ function start(
   );
 }
 
-const sessionsButton = () => within(screen.getByRole('navigation', { name: 'Views' })).getByRole('button', { name: 'Sessions' });
+/** A place of the activity bar, by its name in the window's language. */
+const placeButton = (name: string, bar = 'Views') => within(screen.getByRole('navigation', { name: bar })).getByRole('button', { name });
+const sessionsButton = () => placeButton('Sessions');
+/** The number a place wears, or null where it wears none. */
+const figure = (name: string) => within(placeButton(name)).queryByText(/^\d+$/)?.textContent ?? null;
+/** Whether a place wears the running mark. */
+const runs = (name: string) => placeButton(name).querySelector('[data-running]') !== null;
 const statusBar = () => screen.getByLabelText('state of this machine');
 
+/** The title bar's bell (NOTIFY2b, the notification design §2.1), which counts what Overview's badge counted. */
+const bell = () => screen.getByRole('button', { name: /^Notifications/ });
+
 /**
- * SESSBADGE1 (D76's note): with many driven sessions working, the owner saw the Sessions icon's number almost always empty, since it
- * counted only what waited on them (UX5 U20); and the status bar counted an Ask Daoris conversation idle between turns. The badge
- * counts the sessions the driver runs, as .NET counts them by the cap's rule, a quantity in the accent, and the status bar the same;
- * what waits on the person in Sessions is marked beside the count in its own hue, and said in words in the place's tip.
+ * BADGEUX1 (the UI/UX design §3.10): the owner, using Daoris, found numbers on the activity bar that counted work no one waited on
+ * (Sessions' the sessions the driver runs, SESSBADGE1; Quests' every outstanding quest) drawn like the bell's. A number on a place now
+ * counts only what waits on the person there, the bell's rows whose door opens it, in the window's workspace, so each place's number
+ * is the bell's for the same rows; running work is a mark, never a number, said in words in the place's tip.
  */
-describe("Sessions' badge", () => {
+describe("A place's number", () => {
   afterEach(async () => {
     cleanup();
     vi.unstubAllGlobals();
     invoke.mockReset();
     window.localStorage.clear();
+    window.sessionStorage.clear();
     await i18n.changeLanguage('en');
   });
 
-  const mark = () => sessionsButton().querySelector('.bg-st-open');
+  const permission = {
+    session: 'c4a7c4a7', request: '900', call: null, title: 'npm test', kind: 'execute', since: '2026-10-01T11:00:00Z', until: '2026-10-01T11:15:00Z',
+    choices: [{ id: 'allow', name: 'Allow', kind: 'allow_once' }],
+  };
+  const proposal: RuleProposal = {
+    id: 'p0000002', state: 'waiting', action: 'add', scope: 'machine', list: 'allow', rule: 'WebFetch',
+    why: 'The docs it needs are on the web.', proposed: '2026-10-01T11:00:00Z',
+  };
+  /** Each place's waits, as .NET pushes them: the rows whose door opens that place, and none of another's. */
+  const PLACED: [place: string, rows: PushedAttention[]][] = [
+    ['Sessions', [...PARKS, { kind: 'permission', id: 'c4a7c4a7#900', since: permission.since, workspace: 'default', where: 'engine', session: 'c4a7c4a7', permission }]],
+    ['Quests', [
+      { kind: 'proposal', id: ASKS[0]!.id, since: ASKS[0]!.asked, workspace: 'default', where: 'default', publishTo: ['engine'], choices: ['engine'] },
+      { ...PARKED_QUEST, workspace: 'default' },
+    ]],
+    ['Repositories', [{
+      kind: 'work', id: 'u-orphan', since: '2026-10-01T10:00:00Z', workspace: 'default', where: 'engine', title: 'daoris/s-orphan',
+      blocked: { unknown: true, entries: [] },
+    }]],
+    ['Agents', [{ kind: 'rule', id: proposal.id, since: proposal.proposed, detail: proposal.why, proposal }]],
+    ['Settings', [{ kind: 'space', id: 'D:', since: '2026-10-01T10:00:00Z' }]],
+  ];
 
-  it('counts the sessions the driver runs as a quantity, never a conversation the person holds', async () => {
-    start([], {}, { ...WORKING, 'session:1n7a4e00': { workspace: 'default' }, 'session:r3v13w00': { workspace: 'default' } });
+  for (const [place, rows] of PLACED) {
+    it(`counts at ${place} what waits there, the bell’s number for the same rows`, async () => {
+      start(rows, {}, {});
 
-    await waitFor(() => expect(within(sessionsButton()).getByText('3')).toBeInTheDocument());
-    expect(within(sessionsButton()).getByText('3').className).toContain('text-accent');
-    expect(mark()).toBeNull();
+      await waitFor(() => expect(within(bell()).getByText(String(rows.length))).toBeInTheDocument());
+      expect(figure(place)).toBe(String(rows.length));
+      expect(within(placeButton(place)).getByText(String(rows.length))).toHaveAttribute('data-tone', 'open');
+      // Its words lead with what waits; Quests says its taken quest after them.
+      expect(placeButton(place)).toHaveAccessibleDescription(new RegExp(`^${rows.length} waiting on you`));
+      // No other place counts them.
+      for (const [other] of PLACED.filter(([each]) => each !== place)) expect(figure(other)).toBeNull();
+    });
+  }
+
+  it('counts every wait at one place, the places summing to the bell', async () => {
+    start(PLACED.flatMap(([, rows]) => rows), {}, {});
+
+    const all = PLACED.reduce((sum, [, rows]) => sum + rows.length, 0);
+    await waitFor(() => expect(within(bell()).getByText(String(all))).toBeInTheDocument());
+    expect(PLACED.reduce((sum, [place]) => sum + Number(figure(place) ?? 0), 0)).toBe(all);
+    expect(figure('Overview')).toBeNull();
   });
 
-  it('marks what waits on the person beside the count, in its own hue, and says both in words', async () => {
-    start([...PARKS, PARKED_QUEST], { ...COUNTED, 'quest:q1': { kind: 'parked-quest' } });
+  /** A place with running work and nothing waiting wears the mark and no number, in taken's hue, said in words. */
+  it('marks running work with no number', async () => {
+    start([], {}, { ...WORKING, 'session:1n7a4e00': { workspace: 'default' } });
 
-    await waitFor(() => expect(within(sessionsButton()).getByText('1')).toBeInTheDocument());
-    expect(within(sessionsButton()).getByText('1').className).toContain('text-accent');
-    expect(mark()).not.toBeNull();
-    expect(sessionsButton()).toHaveAccessibleDescription('1 active · 2 waiting on you');
+    await waitFor(() => expect(runs('Sessions')).toBe(true));
+    expect(figure('Sessions')).toBeNull();
+    expect(sessionsButton().querySelector('[data-running]')!.className).toContain('bg-st-taken');
+    expect(sessionsButton()).toHaveAccessibleDescription('2 under way');
+    // A taken quest is Quests' running work, with nothing there waiting.
+    expect(runs('Quests')).toBe(true);
+    expect(figure('Quests')).toBeNull();
+    expect(placeButton('Quests')).toHaveAccessibleDescription('1 taken');
+    expect(within(bell()).queryByText(/^\d+$/)).toBeNull();
   });
 
-  it('marks what waits where nothing the driver runs is active', async () => {
-    start(PARKS, COUNTED, {});
+  it('shows what waits and what runs at once, and says both, the waits first', async () => {
+    start(PARKS, COUNTED, WORKING);
 
-    await waitFor(() => expect(mark()).not.toBeNull());
-    expect(within(sessionsButton()).queryByText(/^\d+$/)).toBeNull();
+    await waitFor(() => expect(figure('Sessions')).toBe('2'));
+    expect(runs('Sessions')).toBe(true);
+    expect(sessionsButton()).toHaveAccessibleDescription('2 waiting on you · 1 under way');
+  });
+
+  /** A session the driver runs that parked on the person is a wait, counted, and not running work. */
+  it('never marks a parked session as running', async () => {
+    const parked = { 'session:p4rk3d00': { kind: 'parked', workspace: 'default' } };
+    start([{ kind: 'parked', id: 'p4rk3d00', since: '2026-10-01T09:30:00Z', workspace: 'default', where: 'engine', note: {} }], parked,
+      { 'session:p4rk3d00': { workspace: 'default' } });
+
+    await waitFor(() => expect(figure('Sessions')).toBe('1'));
+    expect(runs('Sessions')).toBe(false);
     expect(sessionsButton()).toHaveAccessibleDescription('1 waiting on you');
+    // The status bar still says the cap's count, the parked one among it (SESSBADGE1, CAPCOUNT1).
+    expect(within(statusBar()).getByText('1 session')).toBeInTheDocument();
   });
 
-  it('says its counts in Chinese', async () => {
+  it('says what each place shows in Chinese', async () => {
     await i18n.changeLanguage('zh');
-    start(PARKS);
+    start(PARKS, COUNTED, WORKING);
 
-    const sessions = () => within(screen.getByRole('navigation', { name: '视图' })).getByRole('button', { name: '会话' });
-    await waitFor(() => expect(sessions()).toHaveAccessibleDescription('1 个进行中 · 1 个等你处理'));
+    await waitFor(() => expect(placeButton('会话', '视图')).toHaveAccessibleDescription('2 个等你处理 · 1 个进行中'));
+    expect(placeButton('委托', '视图')).toHaveAccessibleDescription('1 个已接下');
   });
 
-  /** The status bar counts the same sessions: the person's chat parked asking and the teammate's are in the list, and not counted. */
-  it('is the count the status bar says', async () => {
+  /** The status bar keeps the cap's count: what the driver runs, parked or not, never the person's own conversations. */
+  it('leaves the status bar the cap’s count', async () => {
     start(PARKS, COUNTED, { ...WORKING, 'session:1n7a4e00': { workspace: 'default' } });
 
-    await waitFor(() => expect(within(sessionsButton()).getByText('2')).toBeInTheDocument());
-    expect(within(statusBar()).getByText('2 sessions')).toBeInTheDocument();
+    await waitFor(() => expect(within(statusBar()).getByText('2 sessions')).toBeInTheDocument());
+    expect(sessionsButton()).toHaveAccessibleDescription('2 waiting on you · 2 under way');
   });
 });
-
-/** The title bar's bell (NOTIFY2b, the notification design §2.1), which counts what Overview's badge counted. */
-const bell = () => screen.getByRole('button', { name: /^Notifications/ });
 const overviewButton = () => within(screen.getByRole('navigation', { name: 'Views' })).getByRole('button', { name: 'Overview' });
 /** *Notifications* shown by its bell, where every row of What needs you is (NOTIFY2b). */
 const openNotifications = async () => {
@@ -472,11 +534,13 @@ describe('A window on one workspace', () => {
   it('counts and lists its own workspace’s rows and the machine’s, never another workspace’s', async () => {
     start(ROWS, WAITING, WORKING, 'default');
 
-    // The two parks and the machine's rule, on the bell and the taskbar; Sessions marks its own park alone.
+    // The two parks and the machine's rule, on the bell and the taskbar; Sessions counts its own parks and Agents the rule, the
+    // places summing to the bell (BADGEUX1); the other workspace's review and parked quest are counted nowhere.
     await waitFor(() => expect(within(bell()).getByText('3')).toBeInTheDocument());
     await waitFor(() => expect(badges().at(-1)).toEqual(
       ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 3, description: '3 waiting on you', order: expect.any(Number) } }]));
-    expect(sessionsButton()).toHaveAccessibleDescription('1 active · 1 waiting on you');
+    expect(sessionsButton()).toHaveAccessibleDescription('2 waiting on you · 1 under way');
+    expect([figure('Sessions'), figure('Quests'), figure('Agents')]).toEqual(['2', null, '1']);
 
     await openNotifications();
     await screen.findByText('an agent asks to do more');
@@ -512,7 +576,9 @@ describe('A window on one workspace', () => {
     await waitFor(() => expect(within(bell()).getByText('5')).toBeInTheDocument());
     await waitFor(() => expect(badges().at(-1)).toEqual(
       ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 5, description: '5 waiting on you', order: expect.any(Number) } }]));
-    expect(sessionsButton()).toHaveAccessibleDescription('1 active · 2 waiting on you');
+    // Every workspace's: the parks and the review in Sessions, the parked quest in Quests, the rule in Agents (BADGEUX1).
+    expect(sessionsButton()).toHaveAccessibleDescription('3 waiting on you · 1 under way');
+    expect([figure('Sessions'), figure('Quests'), figure('Agents')]).toEqual(['3', '1', '1']);
 
     await openNotifications();
     expect(await screen.findByRole('group', { name: 'Ready for you' })).toBeInTheDocument();

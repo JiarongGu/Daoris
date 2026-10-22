@@ -402,6 +402,10 @@ const DOT_TONE: Record<string, { mark: string; word: string }> = {
   // done already is; what waits on another is a neutral, neither the person's open hue nor an outcome's.
   done: { mark: 'bg-st-done', word: 'text-ink-done' },
   waits: { mark: 'bg-ink-soft', word: 'text-ink-soft' },
+  // Work under way at a place of the activity bar (BADGEUX1, the UI/UX design §3.10): taken's hue, the status palette's *in progress*,
+  // which a working session's pill and a taken quest's wear. Not done's green, an outcome's, and not the accent, which reads as open's
+  // amber at badge size beside a wait's number (UX5 U24); still, since it stands for as long as the work runs.
+  running: { mark: 'bg-st-taken', word: 'text-ink-taken' },
 };
 
 /**
@@ -432,8 +436,12 @@ export function Dot({ tone = 'idle', label, className }: {
  * where the mark's control names itself, so it is never hue alone (D41 §6); anywhere with room for the
  * word, `Dot` is the component.
  */
-export function DotMark({ tone = 'idle', className }: { tone?: keyof typeof DOT_TONE; className?: string }) {
-  return <span aria-hidden className={cn('inline-block size-1.5 shrink-0 rounded-full', DOT_TONE[tone].mark, className)} />;
+export function DotMark({ tone = 'idle', className, ...data }: {
+  tone?: keyof typeof DOT_TONE; className?: string;
+  /** A mark a test or a measure finds it by (`data-running`, BADGEUX1). */
+  [attribute: `data-${string}`]: string | undefined;
+}) {
+  return <span aria-hidden {...data} className={cn('inline-block size-1.5 shrink-0 rounded-full', DOT_TONE[tone].mark, className)} />;
 }
 
 /**
@@ -1420,13 +1428,14 @@ export const Menu = {
  * number, and the text is centred by flex with no line-height of its own to push it taller.
  * `ui.test.tsx` holds the two equal.
  */
-export function CountBadge({ count, tone = 'accent' }: {
+export function CountBadge({ count, tone = 'open' }: {
   count: number;
   /**
-   * A status hue for a count that IS a status (sessions waiting on a person); the accent otherwise. The warning hue is a press
-   * that waits unshown with a clock on it (NOTIFY2b, the notification design §3.3: the bell's count of the presses).
+   * A badge counts only what waits on the person (BADGEUX1, the UI/UX design §3.10), so it wears open's hue, the person's; there is
+   * no quantity in the accent. The warning hue is a press that waits unshown with a clock on it (NOTIFY2b, the notification design
+   * §3.3: the bell's count of the presses).
    */
-  tone?: 'accent' | 'open' | 'warn';
+  tone?: 'open' | 'warn';
 }) {
   if (count <= 0) return null;
   return (
@@ -1439,7 +1448,7 @@ export function CountBadge({ count, tone = 'accent' }: {
         // sits inside the circle, and two grow it into a pill as they should.
         'absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full border bg-page px-0.5',
         'font-mono text-meta leading-none tabular-nums',
-        tone === 'open' ? 'border-st-open text-ink-open' : tone === 'warn' ? 'border-warn text-warn' : 'border-accent text-accent',
+        tone === 'warn' ? 'border-warn text-warn' : 'border-st-open text-ink-open',
       )}
     >
       {count > 99 ? '99+' : count}

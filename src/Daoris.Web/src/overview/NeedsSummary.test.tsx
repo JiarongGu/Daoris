@@ -23,7 +23,7 @@ const ROWS: PushedAttention[] = [
   // A press's own row is its card's: counted by the presses' line, never twice.
   { kind: 'confirmation', id: 'c1', since: ago(1), where: '' },
 ];
-const KNOWN: AttentionRead = { state: 'known', rows: ROWS, sessions: 0, working: 2, resyncing: false };
+const KNOWN: AttentionRead = { state: 'known', rows: ROWS, working: 2, running: 2, resyncing: false };
 const PRESS: Confirmation = {
   source: 'pipe', id: 'c1', route: 'STOP_SESSION', fields: [], shown: true, expires: new Date(NOW.getTime() + 100_000).toISOString(),
 };

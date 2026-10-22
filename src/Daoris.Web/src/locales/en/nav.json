@@ -12,5 +12,6 @@
   "nav.plugins": "Plugins",
   "nav.settings": "Settings",
   "nav.waiting": "{{count}} waiting on you",
-  "nav.active": "{{count}} active"
+  "nav.underWay": "{{count}} under way",
+  "nav.taken": "{{count}} taken"
 }
