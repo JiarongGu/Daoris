@@ -488,6 +488,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             // completed, as an answer it could not take always ended it (D131 §2). SESSCTX1c: where another client holds its
             // conversation it waits for the person (the caller marks its words), so its note says it cannot go on, as a closed quest's.
             var held = closed || refused.Holds;
+            // PARKVIEW1: a resume refused parks nothing, so no question is kept for it.
+            new QuestionFiles(_context.Home).SettleRun(sessionId, park.Parked ? "completed" : park.State, openedAt, _context.Events);
             await service.AdvanceAsync(
                     sessionId, park.Parked ? "completed" : park.State,
                     held ? Continuations.CannotNote(park, refused)
@@ -560,6 +562,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         }
 
         var evidence = await WorkingTree.CommitsSinceAsync(workTree, park.BaseCommit ?? before, ct).ConfigureAwait(false);
+        // PARKVIEW1 (the park's ask design §2): its question kept only for the park this resumed run ends in, asked in its last turn.
+        new QuestionFiles(_context.Home).SettleRun(sessionId, conclusion.State, openedAt, _context.Events);
         await service.AdvanceAsync(
                 sessionId, conclusion.State, note: conclusion.Note, evidence: evidence, ct: ct, limit: limited, parts: conclusion.Parts)
             .ConfigureAwait(false);

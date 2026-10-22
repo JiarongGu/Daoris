@@ -2332,6 +2332,9 @@ public sealed class Driver(
                             service, after, new EvidenceAt(workTree, EvidenceCodes.SessionEnd) { Base = before, Session = sessionId },
                             commits, ct)
                         .ConfigureAwait(false);
+                    // PARKVIEW1 (the park's ask design §2): its question kept only for the park this run ends in, and only where its last
+                    // turn asked it; settled before the record moves, so a parked record never shows another run's question.
+                    new QuestionFiles(home).SettleRun(sessionId, conclusion.State, openedAt, Context.Events);
                     await service.AdvanceAsync(
                         sessionId, conclusion.State, note: conclusion.Note, evidence: evidence, ct: ct, limit: limited,
                         parts: conclusion.Parts).ConfigureAwait(false);

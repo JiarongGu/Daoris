@@ -380,6 +380,14 @@ public sealed class SessionEvents(string directory)
     public DateTimeOffset? LastAt(string sessionId) => Newest<DateTimeOffset>(sessionId, e => e.At);
 
     /// <summary>
+    /// When its record last shows words handed to its agent (PARKVIEW1, the park's ask design §2): the newest prompt or word recorded as
+    /// said to it (a <c>user</c> event) or written to its harness (a <c>sent</c> receipt), read from the file's end. What a question it
+    /// asked must come after to be its last turn's. Null for none, no record, an unreadable one, or an id that is not one.
+    /// </summary>
+    public DateTimeOffset? LastHandedAt(string sessionId) => Newest<DateTimeOffset>(sessionId, e =>
+        e.Kind == SessionEventKind.User || (e.Kind == SessionEventKind.Receipt && e.Receipt == Receipts.Sent) ? e.At : null);
+
+    /// <summary>
     /// Whether a conversation's last turn has ended with nothing said since (ACCEPTFOOT1b), read from its record's end as
     /// <see cref="LastAt"/> reads it: the newest event that says where its turns stand is a turn's end. A word said after it, or the
     /// agent's words, a call, its reasoning or a plan (a turn its harness woke by itself), is a turn under way; a note, a usage or

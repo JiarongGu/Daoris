@@ -84,6 +84,59 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// PARKVIEW1 (the park's ask design §4): a press answering a park's question names it, and goes as any word where that question is
+    /// the one its park still asks.
+    /// </summary>
+    [Fact]
+    public async Task A_choice_for_the_question_the_park_asks_goes_as_its_answer()
+    {
+        AskedQuestion("s1", "a1b2c3d4");
+        var ledger = new Ledger
+        {
+            Records = Records(Record("s1", "awaiting-person")),
+            Say = id => (HttpStatusCode.OK, $$$"""
+                {"session":{"id":"{{{id}}}","state":"awaiting-person"},"message":"Kept for session `{{{id}}}` to go on with.",
+                 "said":{"id":"w1","text":"1,200","at":"2026-10-22T09:10:00+00:00","files":[],"reopens":false}}
+                """),
+        };
+        var (loop, module) = await UpAsync(ledger);
+
+        var sent = await AnswerAsync(module, "SESSION_INPUT", new { id = "s1", text = "1,200", question = "a1b2c3d4" });
+
+        Assert.Equal((true, "resume"), (sent.GetProperty("sent").GetBoolean(), sent.GetProperty("reaches").GetString()));
+        Assert.Equal("/api/sessions/s1/say", Assert.Single(ledger.Posts).Path);
+        Assert.Equal(1, loop.Nudges);
+    }
+
+    /// <summary>
+    /// 🔴 PARKVIEW1: a press for a question the park no longer asks (answered and asked anew in another window, or none kept) is
+    /// refused `question-changed` and keeps nothing, so a label never answers a question it was not offered for.
+    /// </summary>
+    [Theory]
+    [InlineData("e5f6a7b8")]
+    [InlineData(null)]
+    public async Task A_choice_for_a_question_the_park_no_longer_asks_keeps_nothing(string? onFile)
+    {
+        if (onFile is not null) AskedQuestion("s1", onFile);
+        var ledger = new Ledger { Records = Records(Record("s1", "awaiting-person")) };
+        var (loop, module) = await UpAsync(ledger);
+
+        var sent = await AnswerAsync(module, "SESSION_INPUT", new { id = "s1", text = "1,200", question = "a1b2c3d4" });
+
+        Assert.Equal((false, "question-changed"), (sent.GetProperty("sent").GetBoolean(), sent.GetProperty("why").GetString()));
+        Assert.Empty(ledger.Posts);
+        Assert.Equal(0, loop.Nudges);
+    }
+
+    /// <summary>The question `question_ask` wrote for a session, under the home's sessions folder.</summary>
+    private void AskedQuestion(string session, string id)
+    {
+        Directory.CreateDirectory(DaorisHome.Entry(Home, HomeEntry.Sessions));
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Sessions, session + QuestionFiles.Suffix),
+            $$"""{"id":"{{id}}","session":"{{session}}","question":"Which target?","choices":[{"label":"1,200","does":"Write it."}],"at":"2026-10-22T09:05:00Z"}""");
+    }
+
+    /// <summary>
     /// MSG1d (D137 §2.2): what never goes on is refused by its code, and nothing is posted: a teammate's record (whose
     /// process and conversation are on their machine), an intake, a session that stood down, a session whose quest went on in
     /// a later session here, and a record nothing holds. Ask Daoris's own conversation goes on in itself since ASKHIST1

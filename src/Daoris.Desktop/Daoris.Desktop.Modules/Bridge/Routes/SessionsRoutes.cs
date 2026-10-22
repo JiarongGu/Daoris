@@ -282,6 +282,32 @@ public sealed class SessionsRoutes(DriverContext context)
         });
     }
 
+    // A parked session's question to the person (PARKVIEW1, the park's ask design §2), as its agent asked it through `question_ask`
+    // and the driver kept it for the park its last turn ended in: its words, the answers it offers with what it does on each, the one
+    // it recommends and by when, each the agent's own; null where none is kept. A read off the home's sessions folder, the files
+    // leaving the window's thread first (UIFREEZE1): it declares nothing, and the page asks it only of a park of this machine's.
+    [DriverRoute("SESSION_QUESTION")]
+    private Task<object?> SessionQuestionAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        return Task.Run<object?>(() =>
+        {
+            var asked = new QuestionFiles(_loop.Home).Read(id);
+            return new
+            {
+                Question = asked is null ? null : new
+                {
+                    asked.Id,
+                    Question = asked.Question,
+                    Choices = asked.Choices.Select(choice => new { choice.Label, choice.Does }).ToArray(),
+                    asked.Recommend,
+                    asked.By,
+                    At = Moments.Write(asked.At),
+                },
+            };
+        }, cancellationToken);
+    }
+
     // The person's yes to their session's agent's ask to hand it over under the `handOver` rule's `ask` (MIXAGENT1c, D163 point 3):
     // the judge the terminal's `sessions hand-over <id> --approve` shares (`HandOverAskWord`). A conversation this shell's chat runner
     // holds is handed over at once, through the runner's own hand-over (taken where it is not talking, else at its turn's end), the
