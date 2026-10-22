@@ -10,14 +10,14 @@ import { readText } from '../src/platform/fsx.ts';
 import { driverFile } from './_csharp.ts';
 import { makeFixture, unroled } from './_fixture.ts';
 import {
-  CLOSED_NOTE, SWEPT_NOTE, bridgeCall, cliProblems, concludedByTheClose, firstUnder, gitBashBeside, hookLines, insideWorkspace,
+  CLOSED_NOTE, SWEPT_NOTE, bridgeCall, cliProblems, concludedByTheClose, doorAnswered, doorProblems, firstUnder, gitBashBeside, hookLines, insideWorkspace,
   invokeInPage, isInstallsConnector, isMarkedProcess, launchers, loggedData, markedProcess, offerProblems, offeredConnector, stageLiveBuild,
   strays, swapOutcome, transcriptHolds, utf8Of,
   // @ts-expect-error — untyped workspace tooling; the same seam desktop-tool.test.ts documents
 } from '../../../tools/deployment-rehearsal.mjs';
 // The install's layout, from the script that makes it: the gate reads the same constants.
 import {
-  CLI_BIN, CLI_ENTRY, CLI_LAUNCHERS, CLI_PACKAGE, DRIVER_EXE, DRIVER_HOME, DRIVER_LAUNCHERS, CONNECTOR_EXE, CONNECTOR_HOME, HOST_EXE, HOST_HOME, OFFERED_PLUGINS, PLUGIN_OFFERS,
+  CLI_BIN, CLI_ENTRY, CLI_LAUNCHERS, CLI_PACKAGE, DRIVER_EXE, DRIVER_HOME, DRIVER_LAUNCHERS, CONNECTOR_EXE, CONNECTOR_HOME, GIT_DOORS, HOST_EXE, HOST_HOME, OFFERED_PLUGINS, PLUGIN_OFFERS, layGitDoors,
   // @ts-expect-error — untyped workspace tooling; the same seam desktop-tool.test.ts documents
 } from '../../../tools/desktop-publish.mjs';
 // The protocol stub both rehearsals run (DEPLOY5): one copy, where the family rehearsal's used to be.
@@ -146,6 +146,43 @@ test('the doctrine tool check names what an install lacks, and passes on a sound
   assert.ok(problems.includes(`${CLI_PACKAGE.join('/')}/dist/cli.js is not there`));
   assert.ok(problems.includes(`${CLI_PACKAGE.join('/')}/canon/canon.json is not there`));
   fx.cleanup();
+});
+
+/**
+ * GITAUTH1b (D198 point 2): the publish lays the git doors out in `app/bin/`, the ssh door's publish whole and its executable again
+ * as the remote helper, under the names `GitWiring` hands a start only where they are laid out; the gate names a door or their
+ * library missing, and holds each door's answer to its own name.
+ */
+test('the publish lays the git doors out under the names GitWiring hands, and the gate names what is missing', () => {
+  const wiring = readText(driverFile('GitWiring.cs'));
+  assert.ok(wiring.includes(`SshDoor = "${GIT_DOORS[0]}"`), `GitWiring.SshDoor is not ${GIT_DOORS[0]}`);
+  assert.ok(wiring.includes(`RemoteHelper = "${GIT_DOORS[1]}"`), `GitWiring.RemoteHelper is not ${GIT_DOORS[1]}`);
+
+  const fx = makeFixture('deploy-doors');
+  for (const file of ['daoris-git-ssh.exe', 'daoris-git-ssh.dll', 'daoris-git-ssh.runtimeconfig.json']) fx.write(`published/${file}`, file);
+  const install = join(fx.root, 'install');
+  assert.deepEqual(doorProblems(install), [
+    ...GIT_DOORS.map((door: string) => `${CLI_BIN.join('/')}/${door} is not there`),
+    `${CLI_BIN.join('/')}/daoris-git-ssh.dll, which both doors load, is not there`,
+  ]);
+
+  layGitDoors(join(fx.root, 'published'), install);
+  assert.deepEqual(doorProblems(install), []);
+  assert.equal(readText(join(install, ...CLI_BIN, GIT_DOORS[1])), 'daoris-git-ssh.exe', 'the remote helper is the ssh door\'s executable');
+  assert.equal(readText(join(install, ...CLI_BIN, 'daoris-git-ssh.runtimeconfig.json')), 'daoris-git-ssh.runtimeconfig.json');
+  assert.throws(() => layGitDoors(join(fx.root, 'nothing'), install), /made no daoris-git-ssh\.exe/);
+  fx.cleanup();
+});
+
+test('a door answers as itself: exit 128 and a refusal in its own name', () => {
+  const ssh = 'daoris-git-ssh: takes one host and one remote command, as git passes them.\n';
+  const helper = 'git-remote-daoris: takes a remote and an address, as git passes them.\n';
+  assert.equal(doorAnswered('daoris-git-ssh.exe', { status: 128, stderr: ssh }), true);
+  assert.equal(doorAnswered('git-remote-daoris.exe', { status: 128, stderr: helper }), true);
+  // The copy answering as the other program is not the remote helper git would run.
+  assert.equal(doorAnswered('git-remote-daoris.exe', { status: 128, stderr: ssh }), false);
+  assert.equal(doorAnswered('daoris-git-ssh.exe', { status: 0, stderr: ssh }), false);
+  assert.equal(doorAnswered('daoris-git-ssh.exe', { status: null, stderr: undefined }), false);
 });
 
 /**

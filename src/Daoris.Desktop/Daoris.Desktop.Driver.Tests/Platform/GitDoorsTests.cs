@@ -225,6 +225,87 @@ public sealed class GitDoorsTests : IDisposable
         Assert.Equal(GitAccessRules.DeniedLine, error.ToString().Trim());
     }
 
+    // ── The coded lines (§11) ──────────────────────────────────────────────────────────────────────
+
+    private System.Text.Json.JsonElement[] Lines(string @event)
+    {
+        var folder = DaorisHome.Entry(Home, HomeEntry.Logs);
+        if (!Directory.Exists(folder)) return [];
+        return
+        [
+            .. Directory.EnumerateFiles(folder, "*.driver.jsonl")
+                .SelectMany(StubFile.Lines)
+                .Select(line => System.Text.Json.JsonDocument.Parse(line).RootElement.Clone())
+                .Where(line => line.GetProperty("event").GetString() == @event)
+                .Select(line => line.GetProperty("data")),
+        ];
+    }
+
+    private static string? Field(System.Text.Json.JsonElement data, string name) =>
+        data.TryGetProperty(name, out var value) && value.ValueKind == System.Text.Json.JsonValueKind.String ? value.GetString() : null;
+
+    [Fact]
+    public void A_refusal_at_the_door_is_a_coded_line_naming_who_acted_and_never_the_user()
+    {
+        var variables = new Dictionary<string, string?>
+        {
+            [GitRouting.HomeVariable] = Home, ["PATH"] = "", [GitLog.SessionVariable] = "s-1234", ["DAORIS_REPOSITORY"] = "engine",
+        };
+
+        GitDoors.Ssh(["git@github.com", "git-receive-pack 'org/engine.git'"], name => variables.GetValueOrDefault(name), new StringWriter(), _root);
+
+        var line = Assert.Single(Lines("git.refused"));
+        Assert.Equal(("engine", "github.com", "write", "denied", "session", "s-1234"),
+            (Field(line, "repository"), Field(line, "host"), Field(line, "class"), Field(line, "code"), Field(line, "door"), Field(line, "session")));
+        Assert.DoesNotContain("git@", line.GetRawText(), StringComparison.Ordinal);
+        Assert.Empty(Lines("git.grant.used"));
+    }
+
+    [Fact]
+    public void The_landings_grant_taken_at_the_door_is_said_and_who_used_it_is_the_landing()
+    {
+        var grant = GitGrants.Write(Home, "git@github.com:org/engine.git", DateTimeOffset.UtcNow)!;
+        var variables = new Dictionary<string, string?> { [GitRouting.HomeVariable] = Home, ["PATH"] = "", [GitRouting.GrantVariable] = grant };
+
+        // Allowed by the grant; with no ssh on this PATH the act is then not reached, which is said too.
+        var error = new StringWriter();
+        GitDoors.Ssh(["git@github.com", "git-receive-pack 'org/engine.git'"], name => variables.GetValueOrDefault(name), error, _root);
+
+        Assert.Contains("finds no ssh", error.ToString(), StringComparison.Ordinal);
+        var used = Assert.Single(Lines("git.grant.used"));
+        Assert.Equal(("landing", "write", "github.com"), (Field(used, "door"), Field(used, "class"), Field(used, "host")));
+        var refused = Assert.Single(Lines("git.refused"));
+        Assert.Equal(("unreached", "landing"), (Field(refused, "code"), Field(refused, "door")));
+    }
+
+    [Fact]
+    public void A_grant_written_and_the_wiring_at_the_drivers_start_are_coded_lines()
+    {
+        GitLog.Granted(Home, "engine", "origin", "s-1234", "press");
+        DriverWatch.Wired(Home);
+
+        var granted = Assert.Single(Lines("git.granted"));
+        Assert.Equal(("engine", "origin", "write", "press", "landing"),
+            (Field(granted, "repository"), Field(granted, "remote"), Field(granted, "class"), Field(granted, "by"), Field(granted, "door")));
+        var wired = Assert.Single(Lines("git.wired"));
+        Assert.Null(Field(wired, "ssh"));
+        Assert.False(wired.GetProperty("helper").GetBoolean());
+
+        Lay(GitWiring.SshDoor, GitWiring.RemoteHelper);
+        DriverWatch.Wired(Home);
+        var laid = Lines("git.wired")[^1];
+        Assert.Equal("command", Field(laid, "ssh"));
+        Assert.True(laid.GetProperty("helper").GetBoolean());
+    }
+
+    [Theory]
+    [InlineData("origin", "origin")]
+    [InlineData("https://github.com/org/engine.git", null)]
+    [InlineData("https://someone@github.com/org/engine.git", null)]
+    [InlineData("git@github.com:org/engine.git", null)]
+    [InlineData("", null)]
+    public void The_helpers_remote_is_logged_by_its_name_alone(string given, string? logged) => Assert.Equal(logged, GitDoors.RemoteName(given));
+
     [Theory]
     [InlineData("ssh -i C:/keys/deploy", "ssh", "-i C:/keys/deploy")]
     [InlineData("\"C:/Program Files/OpenSSH/ssh.exe\" -i k", "C:/Program Files/OpenSSH/ssh.exe", "-i k")]

@@ -513,3 +513,21 @@ test('GITAUTH1b: with an origin no tool can be told, each plugin\'s tool runs wi
   assert.equal(az!.routed, null);
   fx.cleanup();
 });
+
+test('GITAUTH1b: the Azure DevOps plugin\'s state query names its repository from the state frame\'s origin, as its landing does', async () => {
+  const fx = makeFixture('state-azure-origin');
+  const { root } = repository(fx);
+  const bin = fakes(fx);
+  const origin = 'https://dev.azure.com/example-org/proj/_git/engine';
+  const completed = pr(6, 'completed', { lastMergeCommit: { commitId: MERGE }, lastMergeSourceCommit: { commitId: SOURCE } });
+
+  const spoken = await ask('azure-devops-pull-request', fx, bin, { ...stateFrame(root, null), origin },
+    { ...ROUTED, FAKE_PRS: JSON.stringify([completed]), FAKE_PR: JSON.stringify(completed) });
+
+  assert.equal(spoken.answer.state, 'completed', String(spoken.answer.message));
+  const [list, show] = calls(fx);
+  assert.deepEqual(list!.args.slice(list!.args.indexOf('json') + 1),
+    ['--organization', 'https://dev.azure.com/example-org', '--detect', 'false', '--project', 'proj', '--repository', 'engine']);
+  assert.deepEqual(show!.args.slice(show!.args.indexOf('json') + 1), ['--organization', 'https://dev.azure.com/example-org', '--detect', 'false']);
+  fx.cleanup();
+});

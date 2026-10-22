@@ -273,8 +273,14 @@ public sealed record StateAsk(LandedBranch Entry, string Plugin, StateFrame Fram
 /// <param name="Line">The repository's line (D86), or null.</param>
 /// <param name="PullRequest">The pull request the record holds, or null.</param>
 /// <param name="PushedTip">The commit the plugin pushed, or null.</param>
+/// <param name="Origin">
+/// <c>origin</c>'s address as the one reader gives it (GITAUTH1b, the git-auth design §4.4), the land frame's twin: a plugin's tool that
+/// reads remotes is named the repository from it, since under Daoris's doors the checkout's remotes read <c>daoris::https://…</c>.
+/// Null where there is no <c>origin</c>.
+/// </param>
 public sealed record StateFrame(
-    string Repository, string Workspace, string Root, string Branch, string? Line, string? PullRequest, string? PushedTip);
+    string Repository, string Workspace, string Root, string Branch, string? Line, string? PullRequest, string? PushedTip,
+    string? Origin = null);
 
 /// <summary>What came of one ask: the answer, or the failure's code and Daoris's sentence, or not asked this time.</summary>
 /// <param name="Failure">One of <see cref="PluginEvents"/>' failure kinds, or <see cref="PullRequestCodes.NotAsked"/>; null where it answered.</param>

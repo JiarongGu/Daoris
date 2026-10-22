@@ -166,6 +166,10 @@ describe('what needs a person, worded', () => {
     expect(titled('write-refused')).toBe('github.com refused a push with the sign-in git has here');
     expect(titled('host-unknown')).toBe("ssh does not know github.com's key yet");
     expect(titled('host-changed')).toBe("github.com's key changed since ssh last trusted it");
+    // GITAUTH1b: a repository's own ssh command, held before any act, is lifted by removing it, and git said nothing.
+    const own = words(row('git-held', 'own', null, { git: { ...git, class: 'own-input', words: '' } }));
+    expect(own.title).toBe("github.com is reached by the repository's own ssh command, past Daoris's door");
+    expect(own.detail).toMatch(/^engine, game: the repository names its own ssh command \(core\.sshCommand\).*until that setting is removed from the repository\.$/);
     // A row from a shell that sent no group offers nothing to lift.
     expect(attentionActs(words(row('git-held', 'bare', null)))).toEqual([]);
     // After a volume below its floor, before a quest nobody can take, where they waited as long.

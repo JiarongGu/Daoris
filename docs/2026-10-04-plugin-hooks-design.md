@@ -83,7 +83,9 @@ occasion, such as the clean-up's list, waits that long.
 
 `hook/work/state` is sent `repository`, `workspace`, `root` (the repository's checkout here), `branch`, `line` (the
 repository's line, D86, or null), `pullRequest` (the record's, or null) and `pushedTip` (the commit the plugin pushed, or
-null). A plugin finds the pull request by its address, or with none by its source branch, preferring one into `line`.
+null). GITAUTH1b adds `origin`, as the land frame carries it (§1's table): a tool that reads the checkout's remotes is named its
+repository from it, else run without Daoris's routing. A plugin finds the pull request by its address, or with none by its source
+branch, preferring one into `line`.
 
 | Field | |
 |---|---|

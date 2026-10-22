@@ -491,8 +491,19 @@ export type PushedAttention = {
   git?: GitHeld;
 };
 
-/** Why a git remote is held (the git auth design §5.1): refused, its push refused, its host key unknown, or its host key changed. */
-export type GitHeldClass = 'refused' | 'write-refused' | 'host-unknown' | 'host-changed';
+/**
+ * Why a git remote is held (the git auth design §5.1): refused, its push refused, its host key unknown, its host key changed, or
+ * (GITAUTH1b) its repository's own ssh command, which Daoris's ssh door cannot stand in front of on this install.
+ */
+export type GitHeldClass = 'refused' | 'write-refused' | 'host-unknown' | 'host-changed' | 'own-input';
+
+/**
+ * The detail's key for a held group: an `own-input` hold is lifted by removing the repository's setting, not by a retry, and git said
+ * nothing, since nothing failed (GITAUTH1b).
+ */
+export function gitHeldDetailKey(held: Pick<GitHeld, 'class'>): string {
+  return held.class === 'own-input' ? 'work.attention.gitHeld.detailOwnInput' : 'work.attention.gitHeld.detail';
+}
 
 /**
  * A held group of git remotes (GITAUTH1a, D198; the git auth design §5.2): the host, why, what it holds (reads and writes, or writes
@@ -845,7 +856,7 @@ function spaceWorded(low: NonNullable<PushedAttention['space']>): Pick<Attention
 function gitHeldWorded(held: GitHeld): Pick<Attention, 'title' | 'detail'> {
   return {
     title: i18n.t(`work.attention.gitHeld.title.${held.class}`, { host: held.host }),
-    detail: i18n.t('work.attention.gitHeld.detail', { repositories: (held.repositories ?? []).join(', '), words: held.words ?? '' }),
+    detail: i18n.t(gitHeldDetailKey(held), { repositories: (held.repositories ?? []).join(', '), words: held.words ?? '' }),
   };
 }
 

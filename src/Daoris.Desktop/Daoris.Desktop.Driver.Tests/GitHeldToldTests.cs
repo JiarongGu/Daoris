@@ -34,6 +34,46 @@ public sealed class GitHeldToldTests
     }
 
     [Fact]
+    public void A_remote_held_as_own_input_names_the_setting_and_tells_the_session_to_leave_it()
+    {
+        var told = GitHolds.Told([Held(failure: "own-input")])!;
+
+        Assert.Contains("this repository names its own ssh command (`core.sshCommand`)", told, StringComparison.Ordinal);
+        Assert.Contains("Do not fetch, pull or push it, and do not change that setting", told, StringComparison.Ordinal);
+        Assert.StartsWith("`origin` is held: this repository names its own ssh command", GitHolds.Said(Held(failure: "own-input")), StringComparison.Ordinal);
+        Assert.EndsWith("until that setting is removed from this repository", GitHolds.Said(Held(failure: "own-input")), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Under_the_rewrite_a_session_is_told_what_git_remote_shows_and_to_name_its_tools_repository()
+    {
+        var told = GitHolds.Told([], rewritten: true, origin: "https://someone:s3cret@github.com/org-a/engine.git")!;
+
+        Assert.StartsWith("**Git.** Daoris's git door stands in front of this repository's HTTP and HTTPS remotes, so `git remote -v` shows each as "
+            + "`daoris::` followed by its address. `origin` shows as `daoris::https://github.com/org-a/engine.git`, and its address is "
+            + "`https://github.com/org-a/engine.git`.", told, StringComparison.Ordinal);
+        Assert.Contains("`gh --repo <owner>/<name>`", told, StringComparison.Ordinal);
+        Assert.Contains("`--detect false`", told, StringComparison.Ordinal);
+        Assert.Contains("`gh` and `az` here act as the person's own sign-ins", told, StringComparison.Ordinal);
+        Assert.DoesNotContain("s3cret", told, StringComparison.Ordinal);
+
+        // An SSH origin is shown as it is: no example, the door's sentence alone.
+        var ssh = GitHolds.Told([], rewritten: true, origin: "git@github.com:org-a/engine.git")!;
+        Assert.DoesNotContain("`origin` shows as", ssh, StringComparison.Ordinal);
+        Assert.Contains("`git remote -v` shows each as `daoris::`", ssh, StringComparison.Ordinal);
+
+        // With a hold, the rewrite's words come first and the hold's after them, in one section.
+        var both = GitHolds.Told([Held()], rewritten: true, origin: null)!;
+        Assert.StartsWith("**Git.** Daoris's git door", both, StringComparison.Ordinal);
+        Assert.Contains("`origin` (ssh.dev.azure.com) cannot be reached", both, StringComparison.Ordinal);
+        Assert.Single(both.Split("**Git.**")[1..]);
+
+        // Not rewritten (no remote helper laid out): as before.
+        Assert.Null(GitHolds.Told([], rewritten: false, origin: "https://github.com/org-a/engine.git"));
+        Assert.Equal(GitHolds.Told([Held()]), GitHolds.Told([Held()], rewritten: false, origin: "https://github.com/org-a/engine.git"));
+    }
+
+    [Fact]
     public void Nothing_held_is_nothing_told()
     {
         Assert.Null(GitHolds.Told([]));

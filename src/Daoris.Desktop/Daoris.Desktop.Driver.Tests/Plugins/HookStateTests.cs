@@ -98,15 +98,19 @@ public sealed class HookStateTests
     public void The_frame_names_the_branch_the_line_and_what_the_record_holds()
     {
         var frame = JsonSerializer.SerializeToElement(HookFrames.State(new StateFrame(
-            "engine", "aurora", "D:/fam/engine", "feature/q1-fix", "main", "https://example.test/pr/7", Source)));
+            "engine", "aurora", "D:/fam/engine", "feature/q1-fix", "main", "https://example.test/pr/7", Source,
+            "https://dev.azure.com/org/project/_git/engine")));
 
-        Assert.Equal(["repository", "workspace", "root", "branch", "line", "pullRequest", "pushedTip"],
+        Assert.Equal(["repository", "workspace", "root", "branch", "line", "pullRequest", "pushedTip", "origin"],
             frame.EnumerateObject().Select(property => property.Name));
         Assert.Equal("feature/q1-fix", frame.GetProperty("branch").GetString());
+        // GITAUTH1b: origin as the one reader gives it, as the land frame carries it.
+        Assert.Equal("https://dev.azure.com/org/project/_git/engine", frame.GetProperty("origin").GetString());
         Assert.Equal(Source, frame.GetProperty("pushedTip").GetString());
         var none = JsonSerializer.SerializeToElement(HookFrames.State(new StateFrame("engine", "aurora", "r", "b", null, null, null)));
         Assert.Equal(JsonValueKind.Null, none.GetProperty("line").ValueKind);
         Assert.Equal(JsonValueKind.Null, none.GetProperty("pullRequest").ValueKind);
+        Assert.Equal(JsonValueKind.Null, none.GetProperty("origin").ValueKind);
     }
 
     /// <summary>A completed answer, whole: each field read, the target without <c>refs/heads/</c>, the commits made lower-case.</summary>

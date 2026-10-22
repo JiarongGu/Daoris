@@ -97,6 +97,8 @@ public sealed class LandingPlugins(
         frame = frame with { Origin = frame.Origin ?? await GitRemotes.AddressOf(frame.Root, "origin", ct: ct).ConfigureAwait(false) };
         var pushTo = await GitRemotes.AddressOf(frame.Root, "origin", push: true, ct: ct).ConfigureAwait(false) ?? frame.Origin;
         var grant = pushTo is null ? null : GitGrants.Write(home, pushTo, _clock());
+        // The person's press, or the rule that accepts automatically, standing for it (§6.7, §11).
+        if (grant is not null) GitLog.Granted(home, frame.Repository, "origin", frame.Session, frame.AcceptedBy == AcceptedBy.Auto ? "standing" : "press");
 
         IHookChannel? channel = null;
         var where = PluginEvents.AtStart;

@@ -99,6 +99,9 @@ internal sealed class PullRequestAsks(TreeContext context)
         var refs = RefSnapshot.Take(root);
         IReadOnlyList<LandedProofs.LineForm>? forms = null;
         IReadOnlyList<string>? unlanded = null;
+        // GITAUTH1b: origin as the one reader gives it, read once and only where an entry is asked (the git-auth design §4.4).
+        var originRead = false;
+        string? origin = null;
 
         var asks = new List<StateAsk>();
         foreach (var entry in context.Recorded.Entries().Where(entry => Ours(entry, repository) && (again is null || SameLanding(entry, again))))
@@ -117,8 +120,14 @@ internal sealed class PullRequestAsks(TreeContext context)
             // FABRIC-END6c: D148's minute shared with every other occasion in this process, taken last so only an entry asked takes it. A
             // due moment took its entries' minutes itself, just before it asked; Ask again, a person's door, asks whatever it says.
             if (again is null && moment is null && !PullRequestMinute.TryTake(context.Home, entry, now)) continue;
+            if (!originRead)
+            {
+                origin = await GitRemotes.AddressOf(root, "origin", ct: ct).ConfigureAwait(false);
+                originRead = true;
+            }
+
             asks.Add(new StateAsk(entry, plugin,
-                new StateFrame(repository, workspace, root, entry.Branch, line, entry.PullRequest, entry.PushedTip)));
+                new StateFrame(repository, workspace, root, entry.Branch, line, entry.PullRequest, entry.PushedTip, origin)));
         }
 
         return asks;
