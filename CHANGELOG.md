@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- The window zooms as a code editor's does. Ctrl+wheel, Ctrl+= (or Ctrl++), Ctrl+- and Ctrl+0, and View's *Zoom in*, *Zoom out*
+  and *Reset zoom*, make the content larger or smaller in steps from 50% to 200%, while the title bar, its menus and window
+  buttons, the bar of places on the left and the status bar keep their size. The level shows for a moment over the content as it
+  changes, and stays on the status bar's right end while it is not 100%; pressing it goes back to 100%. Daoris keeps the level
+  for this machine, in every Daoris window, across restarts. The Map keeps its own Ctrl+wheel. Before, Ctrl+wheel scaled the
+  whole window, the title bar included, and said no level. In English and 中文.
 - A session waiting on you now says what it asks in its box, under its last message: its question in its own words, each answer it
   offers as a button beside what it will do on it (the one it recommends marked), the go-aheads it waits on with *Approve* and
   *Refuse*, how long it has waited, and what it holds meanwhile. Your words in the box go with the answer you press, or alone as your

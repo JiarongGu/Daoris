@@ -66,6 +66,10 @@ applications do with the **window** itself. Five rules recur, and Daoris breaks 
 > Sessions' rail becomes one list pane among several. A list becomes a strip when the main area has no
 > room beside it, rather than below a fixed 1024 px, and a strip the window drew opens its list over the
 > main area. `docs/2026-10-01-frame-model-design.md` is the contract, and §3c's rail is its first list.
+>
+> **Amended by ZOOM1 (2026-10-22, D185's note; the UI/UX design §3.11).** The window zooms its content as an editor's does, and
+> the frame keeps its size at every level: the app strip with its caption room, the activity bar, the status bar, the regions'
+> sizes, and the menus, tips and lists the three bars open. The status bar says the level at its right end while it is not 100%.
 
 ```
 ┌────────────────────────────────────────────────┐
