@@ -81,12 +81,12 @@ public sealed class HelpProposalBox(string? home)
     /// <inheritdoc cref="HelpAgentProposalWriter.Propose"/>
     public (string? Id, string Message) ProposeAgent(
         string action, string agent, string? version, string why, string? session, DateTimeOffset at,
-        string? account = null, string? workspace = null,
+        string? account = null,
         string? use = null, string? keep = null, bool noKeep = false, bool? early = null, int? near = null,
         IReadOnlyList<string>? accounts = null, bool clear = false,
         string? switched = null, IReadOnlyList<string>? curve = null, bool noCurve = false) =>
         new HelpAgentProposalWriter(file).Propose(
-            action, agent, version, why, session, at, account, workspace, use, keep, noKeep, early, near, accounts, clear,
+            action, agent, version, why, session, at, account, use, keep, noKeep, early, near, accounts, clear,
             switched, curve, noCurve);
 
     /// <inheritdoc cref="HelpDeleteProposalWriter.Propose"/>

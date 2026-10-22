@@ -651,6 +651,13 @@ public sealed record LandingGate(OpinionGateState Opinion, ReviewGateState Revie
     public WorkflowProcess? Process => Workflow?.Process;
 
     /// <summary>
+    /// The graph's part, for a run bound to a graph version (FABRIC-CUTOVER1d; D190 point 4, the cutover design §4): the run's record read, never
+    /// evaluated, after the look's part and before the landing step's own. Where it lets the work go, <see cref="Tip"/> is the commit its
+    /// <c>handed</c> is bound to, so every path lands that commit. Null for every other run.
+    /// </summary>
+    public GraphGateState? Graph { get; init; }
+
+    /// <summary>
     /// The tree's tip the gate was judged at, where the door pins it (FABRIC-END7's review: the look's automatic landing): the landing
     /// lands exactly that commit, or refuses where the tree moved past it, so a commit made after the judgement never lands unseen. Null
     /// lands the tree as it stands, as the person's press does.
@@ -662,18 +669,23 @@ public sealed record LandingGate(OpinionGateState Opinion, ReviewGateState Revie
 
     /// <summary>
     /// The first part that holds, in §7's order, as a landing's refusal: its sentence and its code; null where all let go. The run's
-    /// own part and the landing step's are refused as <see cref="AutoLandingCode.Refused"/>: their sentence says what holds them.
+    /// own part, its graph's (FABRIC-CUTOVER1d) and the landing step's are refused as <see cref="AutoLandingCode.Refused"/>: their sentence says
+    /// what holds them.
     /// </summary>
     public TreeLanding? Refusal =>
         Workflow is { LetsGo: false } workflow ? new(false, workflow.Says) { Refusal = AutoLandingCode.Refused }
         : !Opinion.LetsGo ? new(false, Opinion.Says) { Refusal = AutoLandingCode.Opinion }
         : !Review.LetsGo ? new(false, Review.Says) { Refusal = AutoLandingCode.Unreviewed }
+        : Graph is { LetsGo: false } graph ? new(false, graph.Says) { Refusal = AutoLandingCode.Refused }
         : Process?.LandingCannot is not null ? new(false, WorkflowGate.LandingSays(Process)) { Refusal = AutoLandingCode.Refused }
         : null;
 
     /// <summary>Whether what holds the work is the run's own part or its landing step's (WORKFLOW1f), where it holds.</summary>
     public bool WorkflowHolds => Workflow is { LetsGo: false }
-        || (Opinion.LetsGo && Review.LetsGo && Process?.LandingCannot is not null);
+        || (Opinion.LetsGo && Review.LetsGo && Graph is not { LetsGo: false } && Process?.LandingCannot is not null);
+
+    /// <summary>Whether what holds the work is its graph's part (FABRIC-CUTOVER1d): every part before it lets it go.</summary>
+    public bool GraphHolds => Workflow is not { LetsGo: false } && Opinion.LetsGo && Review.LetsGo && Graph is { LetsGo: false };
 
     /// <summary>
     /// The gate with the person's press counted (§8.2–§8.3): where the press was made with what was unsettled shown, and the gate
@@ -700,6 +712,8 @@ public static class LandingGateWords
         if (gate.Workflow is { State: not WorkflowGateStates.None } workflow) lines.Add($"trees: {workflow.Says}");
         if (gate.Opinion.State != OpinionGateStates.None) lines.Add($"trees: {gate.Opinion.Says}");
         if (gate.Review.State != ReviewStates.None) lines.Add($"trees: {gate.Review.Says}");
+        // FABRIC-CUTOVER1d: the graph's part, after the look's, as the gate refuses it.
+        if (gate.Graph is { } graph) lines.Add($"trees: {graph.Says}");
         if (gate.Process is { LandingCannot: not null } process) lines.Add($"trees: {WorkflowGate.LandingSays(process)}");
         return lines;
     }
@@ -709,6 +723,8 @@ public static class LandingGateWords
     public static LandingLine? Held(string session, (string Workspace, string Repository) owner, LandingGate gate, TreeLanding landed, string door) =>
         landed.Refusal switch
         {
+            AutoLandingCode.Refused when gate.GraphHolds && gate.Graph is { } graph =>
+                WorkflowLines.GraphHeld(session, owner.Repository, owner.Workspace, gate.Process, graph, door),
             AutoLandingCode.Refused when gate.WorkflowHolds && gate.Workflow is { } workflow =>
                 WorkflowLines.Held(session, owner.Repository, owner.Workspace, workflow, door, workflow.LetsGo ? WorkflowKinds.Landing : null),
             AutoLandingCode.Opinion => OpinionLines.Held(session, owner.Repository, owner.Workspace, gate.Opinion, door),

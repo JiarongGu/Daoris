@@ -849,11 +849,11 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
             action = "use", harness = "claude-code", use = "order", keep = "account-2", early = false, near = 85,
         });
 
-        var use = HarnessSettings.Load(HarnessSettingsPath).ResolveScope("claude-code", "work").Use;
+        var use = HarnessSettings.LoadSet(HarnessSettingsPath).Set("claude-code").Use;
         Assert.Equal(new RotationUse("order", "account-2", false, 85), use);
 
         await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "use", harness = "claude-code", noKeep = true, use = "goal" });
-        Assert.Equal(new RotationUse("goal", null, false, 85), HarnessSettings.Load(HarnessSettingsPath).ResolveScope("claude-code", null).Use);
+        Assert.Equal(new RotationUse("goal", null, false, 85), HarnessSettings.Load(HarnessSettingsPath).Set("claude-code").Use);
 
         await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "use", harness = "claude-code", clear = true });
         Assert.False(HarnessSettings.Load(HarnessSettingsPath).Uses.ContainsKey("claude-code"));
@@ -920,14 +920,14 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
             ["action"] = "use", ["harness"] = "claude-code", ["curve"] = Curve("""{ "session": [[0, 80]] }"""),
         });
 
-        var use = HarnessSettings.Load(HarnessSettingsPath).ResolveScope("claude-code", null).Use;
+        var use = HarnessSettings.Load(HarnessSettingsPath).Set("claude-code").Use;
         Assert.Equal("curve", use.Switch);
         Assert.Equal([new CurvePoint(0, 80)], use.Curve["session"]);
         Assert.Equal([new CurvePoint(0, 30), new CurvePoint(50, 70), new CurvePoint(100, 100)], use.Curve["weekly"]);
 
         await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "use", harness = "claude-code", @switch = "off", noCurve = true });
 
-        use = HarnessSettings.Load(HarnessSettingsPath).ResolveScope("claude-code", null).Use;
+        use = HarnessSettings.Load(HarnessSettingsPath).Set("claude-code").Use;
         Assert.Equal("off", use.Switch);
         Assert.True(use.Curve.IsEmpty);
     }
@@ -1063,28 +1063,8 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Assert.Empty(Agent(await AnswerAsync(Module(), "ACCOUNTS", new { }), "claude-code").GetProperty("pooled").EnumerateArray());
     }
 
-    /// <summary>The rule the route and Ask Daoris's door ask, row by row: <c>rotation-use.test.ts</c>'s default rows.</summary>
-    [Theory]
-    [InlineData(null, "account-2", false)]
-    [InlineData("work", "account-2", false)]
-    [InlineData(null, "account-1", false)]
-    [InlineData(null, null, false)]
-    [InlineData("lab", "account-2", true)]
-    public void A_default_is_allowed_only_inside_its_scopes_own_list(string? workspace, string? profile, bool refused)
-    {
-        var settings = new HarnessSettings
-        {
-            Rotation = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase) { ["claude-code"] = ["account-1", "account-2"] },
-            WorkspaceRotation = new Dictionary<string, IReadOnlyDictionary<string, IReadOnlyList<string>>>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["lab"] = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase) { ["claude-code"] = ["account-1"] },
-            },
-        };
-
-        var problem = Record.Exception(() => AccountsRoutes.DefaultAllowed(settings, "claude-code", profile, workspace));
-
-        Assert.Equal(refused, problem is not null);
-    }
+    // The rule the route and Ask Daoris's `default` door asked, a default inside its scope's own list (`DefaultAllowed`), left with
+    // its last caller, the door, in POOL1b (D197 point 6).
 
     // ---------------------------------------------------------------- the screen's Remove (TOOL4e's fix)
 
@@ -1110,7 +1090,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Assert.False(settings.Defaults.ContainsKey("claude-code"));
         Assert.Equal(["account-2"], settings.Rotation["claude-code"]);
         Assert.False(settings.WorkspaceRotation.ContainsKey("aurora"));
-        Assert.Null(settings.ResolveScope("claude-code", null).Use.Keep);
+        Assert.Null(settings.Set("claude-code").Use.Keep);
     }
 
     // ---------------------------------------------------------------- the cool-off setting

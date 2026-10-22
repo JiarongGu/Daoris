@@ -153,6 +153,10 @@ settles the card so no window draws it again, and goes back into the conversatio
 a turn in which the agent could take it for the person's word on the quest the card named. A change's *Not now* still goes back
 as the person's next message. A go to a quest a session has taken says so, and one to an ask names its taken quest.
 
+*2026-10-22 (ASKQUESTS1, §9 item 12):* what an Apply did goes back as Daoris's word, still a turn, its words starting `Daoris:` and
+naming by id what it published; a change's *Not now* stays the person's. What an Apply published is kept with the conversation
+and shown in the panel with its live state.
+
 ## 7. With no agent named
 
 D24: the useful part without a model. Ask Daoris opens with **starters from what the machine
@@ -451,6 +455,111 @@ line git can name. With an agent named, a starter is also a first message.
      set-aside with a real process (no `Process` row was written); a new conversation reading its handed transcript; and the panel
      on the window in both themes. Not built: a terminal door for a new conversation from an earlier one, since no terminal door
      opens an Ask Daoris conversation at all.
+12. **ASKQUESTS1**: the asks and quests a conversation published, kept with it, shown live in the panel and followed to their end
+   (2026-10-22, the owner's direction while using Ask Daoris). Before it, what an Apply published lived in the scroll only: the
+   ask's card before Apply, the Apply's sentence after it, said into the conversation as the person's words, and any go card the
+   agent drew later; the ids the service answered (`AskAnswer.AskId`, `QuestId`) were dropped in the kinds' Apply
+   (`HelpAskProposals.ApplyAsync` kept only the sentence), and nothing kept a list. *Designed and built with no decision of its own,
+   read by Codex (below); what it amends is named for the steward's note on D89:*
+   - **The conversation's own list** (`HelpPublished`): `<home>/sessions/<id>.published.json`, `{ "published": [ { "at",
+     "proposal", "kind", "workspace", "ask", "quest" } ] }`, oldest first, one entry per Apply that published something: an `ask`
+     card (the ask door's answer) and a `setup` card (its outcome's ask and quest). The ids are the service's answer, handed to
+     `HelpApplying.Settled`, never read from a sentence; an answer naming neither keeps nothing. The entry is kept as the service
+     answers, before the card settles applied and before the conversation is told, once per proposal (one Apply settles it, the
+     claim of HELPAPPLY1; a second keep of the same proposal keeps the first), under an in-process lock as `HelpWired`'s receipts
+     are. What is left: a crash between the service's answer and the keep loses the entry, never the ask or the quest, which Quests
+     still lists; and a door's refusal before anything happened keeps nothing, as it settles nothing. A file of its own, beside the
+     conversation's other files and in `SessionHomeFiles`' inventory under Ask Daoris's name, so a delete or a history clear takes
+     it: not a field of `.help.json`, which a build before this one rewrites whole on a rename or a pin (`HelpConversations.Change`)
+     and would drop (`compatible-builds`); such a build's delete or clear leaves this file behind, since its inventory does not name
+     it. It keeps ids and when, never a state: the state is the service's, read live. A conversation that applied before this build
+     has no file and lists nothing; its words are never parsed for ids. One process writes it and the same process reads it, the
+     desktop host's driver library at the window's Apply (D89: no terminal door applies a proposal); the service and the terminal
+     never read it, so it is no record one process writes for another, and Fable is not owed it.
+   - **The route** (`HELP_PUBLISHED { session }`): `{ session, published: [...] }`, newest first, each entry's absent id left out. A
+     read: no mark (`StatePublisherTests`' row `""`, no entry in the page's `DECLARED`), `Open` in the pipe's census, the help
+     row of the desktop README, off the window's thread, desktop-only as the conversation is. Its key, `HELP_PUBLISHED` in
+     `bridge/help.ts`, is added to the state hub's `help` family (`stateHub.ts`), which `HELP_APPLY` publishes, so an Apply's
+     entry is read at the publish that settles its card; nothing else moves it, so it is never asked on a clock. An older shell's
+     answer, none, reads as nothing published. No coverage row: it is a read.
+   - **The panel's place**: a strip under the open conversation's head, outside the scroll, shown only where the conversation
+     published something, and gone while the history or *What it has* takes the conversation's place. Folded, one line: *Published
+     from this conversation* and what stands, each count with its noun (*3 quests · 1 open · 1 taken · 1 done*, *1 ask with no
+     quest yet* for an ask still asked, never one closed or done with none). What waits on the person is counted first and in
+     open's ink, the only part that wears it (D185 §3.10.2): a done a departure holds for their yes (`held`, DRIFT1d) and an ask
+     proposed or asking a go-ahead (KNOWUSE1a); the rest is the soft ink. Opened in place, newest first, at most 12rem tall before
+     its own scroll: each ask with the quests it became under it, and each quest published on its own. A row is one press that
+     opens its record on Quests, the door a go uses (`placeDoor`'s item: a quest by its id, an ask as `ask:<id>`); it adds no act,
+     since every act on a quest or an ask is its page's (D50). Each row says its state as its list does: a quest's status pill
+     (`QUEST_TONE`, *submitted* where its taker said ready, its hold's words where one holds it for the person), an ask's
+     (`ASK_TONE`); a taken quest worked here names its session's state (`sessionState.*`, `SESSION_TONE`), the live session whose
+     `quest` it is, never its ask's intake; one whose take is another machine's says so only where both `holder` and `here` are
+     known and differ; a record the lists answered and no longer hold is *no longer on this machine* and opens nothing; and while
+     a list is not answered yet the row and the line read *reading…*, never empty or gone (D185 §3.8). A list that failed to read
+     says so in the line.
+   - **Live, never polled, never stale after a take.** The states are read from the pushed quests, asks and sessions slices
+     (`QuestsStateSlice`, `AsksStateSlice`, `SessionsStateSlice`; PUSH1d2, PUSH1d3), from their widest entries, every workspace's
+     (`useEveryQuest`, `useEveryAsk`, `useEverySession`, never the window's scoped lists), so the window's scope never hides what
+     the conversation published and a take moves its row at the take's push. Where a shell pushes none of them, each is the widest
+     list's own pull, asked as Quests' lists are; read only while the conversation published something. Opening a row judges
+     nothing, so it is never refused.
+   - **The go card after a take.** Since ASKDISMISS1 a go card's sentence says where its quest stands (*taken*), and an ask by its
+     taken quests, so the plan its Apply judges moves with a take, and a card drawn before the take answered *the plan changed*
+     at its first press (`HELP_APPLY`'s `changed`, HELPAPPLY1). While a go card is shown, the proposals are asked again at each push
+     that moves a quest's status, an ask's state or quests, or a session's state (`useStandingsMark`): read only while all three
+     slices are pushed, never a pull and never on a clock, and `HELP_PROPOSALS` publishes nothing, so it cannot loop.
+   - **The transcript: the Apply's result is Daoris's word.** It is still a turn, as the person's words make one, so the agent
+     hears what was published at its next step or as its next turn, whichever its door takes (§6, D89); but it is Daoris's
+     (`ChatRunner.Tell`, COWORK1b's mark, `from: daoris`, D188), on the record and on the page, never the person's. The person
+     pressed Apply; the sentence is the driver's and the service's, and ASKDISMISS1 showed what a sentence said in the person's name
+     does: the agent took it for their word. Its words start `Daoris:`, as Daoris's other words to a session do, since the agent
+     reads only the words and a text-only door keeps nothing but them; and they name by id the ask and the quest the service's
+     answer named where its sentence does not already. So is a proposal refused before it was shown (*Daoris did not show proposal
+     …*). A change's *Not now* stays the person's answer, their next message. Daoris's word waiting for a turn is never in the
+     person's queue, never edited by its id, and never handed back to their box by a stop (`ChatMessage.Theirs`); a stop takes it
+     with what it withdraws, and the list still holds what was published. The panel's list is built from the record, never from
+     the words. Rejected: a line of the page's own with no turn, which tells the agent nothing until the person speaks again; and
+     keeping it in the person's name.
+   - **What the agent is told**: the Apply's word, at its next step or turn, with the ids. The room's Asks section is unchanged and
+     lists no conversation's own: the room is the workspace's, written at a start, and a state written there is stale at the next
+     take, the go card's defect again. The live state is the family's `quest_list`, which the room already names; its *What you
+     may do* now says that what an Apply did comes back as Daoris's word, starting `Daoris:` and naming the ids, and a *Not now* as
+     the person's.
+   - **Words** (`help.published.*`, the glossary's names: *quest* 委托, *ask* 需求, *publish* 发布, *conversation* 对话):
+     *Published from this conversation* 本对话发布的; *{n} quests* {n} 项委托; *{n} open* {n} 项待接, *taken* 已接下, *done*
+     已完成, *declined* 已谢绝; *{n} waits on you* {n} 项等你处理; *{n} ask with no quest yet* {n} 项需求尚无委托; *{n} no longer on
+     this machine* {n} 项已不在本机; *to {repository}* 发给 {repository}; *asked at {workspace}* 在 {workspace} 提出; *session
+     {state}* 会话：{state}; *taken on another machine* 由另一台机器接下; *a go-ahead waits on you* 有一项同意等你处理; *reading where
+     each stands…* 正在读取各项状态…; *Open quest {name}* 打开委托 {name}. The statuses' own words are `status.*`, `asks.state.*`
+     and a hold's, as their lists say them.
+   - **Left out:** a terminal door for one conversation's list (`daoris-driver help list` keeps its fields): each quest and ask
+     is the terminal's already by the id the Apply's word names. The asks a conversation proposed and the person did not apply
+     are its cards', not the list's. An Apply's word to a conversation nothing listens to (one that ended) is lost as the person's
+     was before; the list keeps the entry.
+   - **What the gates do not cover:** the strip on the installed window in both themes and at the dock's widths; a real agent's
+     turn on Daoris's word after an Apply.
+   - **The read (D191).** Codex read the design before it was built, read-only in the branch's checkout, told the files to check;
+     Fable did not: the design adds a file the desktop host writes and reads, and changes no record another process reads, no
+     protocol between processes and no rule other designs rest on (D191's amendment). Each finding was checked against the code.
+
+     | Finding | Verdict |
+     |---|---|
+     | The ids are dropped in the kinds, not the route; the service's sentence need not name them | Taken: the history above says so, and the Apply's word adds the ids its sentence lacks (`HelpAskProposals.Named`) |
+     | A take alone does not move a go card's sentence (`HelpGoProposals.cs:187`) | Taken as read on a checkout before ASKDISMISS1, which adds *taken*; the go card section names that as the cause |
+     | Keeping after the card settles leaves a gap; concurrent keeps of one conversation; duplicates | Taken: kept before the settle, under a lock, once per proposal; the crash window is said |
+     | An older build's delete leaves the file | Taken: said, as `compatible-builds` asks |
+     | The agent reads no `from` mark; a text-only door keeps only the words | Taken: the words start `Daoris:` |
+     | *At once* is not true of a turn that is running | Taken: *at its next step or as its next turn* |
+     | A handed transcript labels every user passage *The person* (`HelpConversations.cs:388`) | Partly: the words carry `Daoris:`; the label was so for these lines before, and is left |
+     | A Daoris word before the person's first words would hide a conversation from the history (`SessionEventLog.cs:158`) | Not taken: a proposal needs an agent's turn, which needs the person's first words |
+     | Daoris's word waiting shows in the person's queue, is editable, and a stop hands it to their box | Taken: `ChatMessage.Theirs` leaves it out of all three |
+     | A Tell to a conversation nothing listens to is lost; two `HELP_PROPOSALS` reads at once can tell one refusal twice | Not taken: both were so before; the list keeps the entry. The refusal race is named for the steward |
+     | The pull fallback where nothing is pushed | Taken: said, and read only where something was published |
+     | Unknown and absent apart; a gone record opens nothing; *another machine* only where both are known | Taken, each held by `published.test.ts` and `PublishedList.test.tsx` |
+     | Redrawing go cards is unrelated; it must not hear every cache update, and go names sessions too | Kept, as the dispatch named the go card's refusal; narrowed to a mark of the three standings read only while pushed |
+     | Name the key's wiring into the hub, the `StatePublisherTests` row, no `DECLARED`, the README | Taken: each is named above and built |
+     | *None waits on the person* is false: a held done, a go-ahead asked | Taken: counted first in open's ink |
+     | *No quest yet* for a closed ask; counts need nouns; 会话：{state} | Taken |
 
 ## 10. Not chosen
 

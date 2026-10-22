@@ -25,6 +25,11 @@ namespace Daoris.Driver;
 /// the screen's <c>ACCOUNT_USE</c>. Since TOOL4l-b it is listed in <see cref="Doors"/>, with <c>order</c> (a scope's list written
 /// whole, or a workspace sent back to the machine's accounts) and <c>ready</c> (<i>Try now</i>, an account's cool-off ended),
 /// since the service's <c>agent_propose</c> writes all three (TOOL4l-a).</para>
+///
+/// <para>Since POOL1b (D197 point 6, the account-pool design §5.3) an agent's accounts are one set: <c>use</c> and <c>order</c> act on
+/// it, each applied only where the service marked it so (<c>set: true</c>), and refuse a workspace in the terminal's words; a stored
+/// proposal without the mark, whose <c>order</c> may have meant <i>only these accounts</i>, is refused at its Apply. <c>default</c> left
+/// <see cref="Doors"/>, and a stored one is refused, naming <c>order</c>.</para>
 /// </remarks>
 internal sealed partial class HelpAgentProposals : IHelpProposalKind
 {
@@ -33,7 +38,7 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
     // HELP6: every door built since HELP1c, each a card the person applies the same way.
     public string Tool => "agent_propose";
 
-    public IReadOnlyList<string> Doors { get; } = ["update", "pin", "default", "use", "order", "ready"];
+    public IReadOnlyList<string> Doors { get; } = ["update", "pin", "use", "order", "ready"];
 
     /// <summary>
     /// The <c>use</c> door's four fields, read from any file that carries one: a field left out is no change. And, from an
@@ -44,6 +49,12 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
         if (file.ValueKind != JsonValueKind.Object) return proposal;
         proposal = ReadUse(proposal, file);
         if (proposal.Kind != "agent") return proposal;
+
+        // POOL1b: the service's mark that the proposal was written for the one set (§5.3).
+        if (proposal.Door is "use" or "order")
+        {
+            proposal = proposal with { ForSet = file.TryGetProperty("set", out var set) && set.ValueKind == JsonValueKind.True };
+        }
 
         if (proposal.Door == "order")
         {
@@ -92,7 +103,8 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
 
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
-        if (proposal.Door == "default") return Default(proposal, facts);
+        if (proposal.Door == "default") return Retired(proposal, facts);
+        if (proposal.Door is "use" or "order" && !proposal.ForSet) return Unmarked(proposal);
         if (proposal.Door == "use") return Use(proposal, facts);
         if (proposal.Door == "order") return Order(proposal, facts);
         if (proposal.Door == "ready") return Ready(proposal, facts);
@@ -103,7 +115,7 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
         var terminal = update ? $"daoris agent update {name}" : $"daoris agent pin {name} {version}";
         HelpPlan Refused(string why) => new(why, "", terminal, null);
 
-        if (proposal.Door is not ("update" or "pin")) return Refused($"`{proposal.Door}` is not an agent's change — `update`, `pin`, `default`, `use`, `order` or `ready`.");
+        if (proposal.Door is not ("update" or "pin")) return Refused($"`{proposal.Door}` is not an agent's change — `update`, `pin`, `use`, `order` or `ready`.");
         if (facts.Doors.FirstOrDefault(each => string.Equals(each.Name, name, StringComparison.Ordinal)) is not { } door)
         {
             return Refused($"there is no agent `{name}` on this machine — one of {Names(facts.Doors.Select(each => each.Name))}.");
@@ -169,74 +181,39 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
     }
 
     /// <summary>
-    /// <c>default</c> (HELP10): which account an agent's sessions run as, for the machine or one workspace (D49 §4), as
-    /// <c>daoris agent profile default</c> takes it — an account that exists, never one made by naming it — said in its
-    /// words. A door's default is its owner's (AGT7), so the command and the sentence name the owner.
+    /// A stored <c>default</c> (HELP10, retired by POOL1b, D197 point 6, the account-pool design §5.3): refused at its Apply, naming
+    /// <c>order</c>, which says where the set's starts begin. A door's accounts are its owner's (AGT7), so the sentence names the owner.
     /// </summary>
-    /// <remarks>
-    /// The screen can also clear a default back to Daoris's accounts, which no terminal verb does; that stays the
-    /// screen's press, so a default here always names an account.
-    /// </remarks>
-    private static HelpPlan Default(HelpProposal proposal, HelpMachineFacts facts)
+    private static HelpPlan Retired(HelpProposal proposal, HelpMachineFacts facts)
     {
         var name = proposal.Target?.Trim() ?? "";
-        var account = proposal.Value?.Trim() ?? "";
-        var workspace = proposal.Workspace?.Trim() is { Length: > 0 } w ? w : null;
-        if (facts.Doors.FirstOrDefault(each => string.Equals(each.Name, name, StringComparison.Ordinal)) is not { } door)
-        {
-            return new HelpPlan($"there is no agent `{name}` on this machine — one of {Names(facts.Doors.Select(each => each.Name))}.", "", "", null);
-        }
-
-        var owner = door.AccountsOf;
-        var terminal = $"daoris agent profile default {owner} {ShellWord.Of(account, ShellWord.Account)}" + Scoped(workspace);
-        HelpPlan Refused(string why) => new(why, "", terminal, null);
-
-        if (account.Length == 0)
-        {
-            return Refused($"a default names the account `{owner}` runs as — one the room lists under it; clearing it, so Daoris's "
-                + "accounts serve again, is done on the screen.");
-        }
-
-        if (!door.Accounts.Contains(account, StringComparer.Ordinal))
-        {
-            return Refused($"`{owner}` has no account `{account}` on this machine — accounts that exist: "
-                + (door.Accounts.Count > 0 ? string.Join(", ", door.Accounts) : "(none)"));
-        }
-
-        if (workspace is not null && !facts.Workspaces.Contains(workspace, StringComparer.OrdinalIgnoreCase))
-        {
-            return Refused($"there is no workspace `{workspace}` on this machine — one of {Names(facts.Workspaces)}.");
-        }
-
-        // D130 §3.1 (TOOL4g, as the terminal and the screen refuse it): a default is where its scope's starts begin within
-        // its own list, so one the list does not hold is refused. A scope with no list of its own takes any account.
-        var list = OwnList(facts.Wiring, owner, workspace);
-        if (ScopeProblem.Of(account, list, null) is { Kind: ScopeProblemKind.Default })
-        {
-            return Refused($"`{owner}`'s list {Where(workspace)} is {string.Join(", then ", list)}, and `{account}` is not in it — the list "
-                + "is every account its starts may run on, and the default is where they begin within it. "
-                + $"`daoris agent profile order {owner} {ShellWord.Words(list.Append(account), ShellWord.Account)}{Scoped(workspace)}` adds it, or make "
-                + "one of the list the default.");
-        }
-
-        return new HelpPlan(null,
-            workspace is null
-                ? $"This machine runs `{owner}` as `{account}` by default."
-                : $"Sessions in `{workspace}` run `{owner}` as `{account}`.",
-            terminal, null);
+        var owner = facts.Doors.FirstOrDefault(each => string.Equals(each.Name, name, StringComparison.Ordinal))?.AccountsOf ?? name;
+        var account = proposal.Value?.Trim() is { Length: > 0 } named ? named : null;
+        return new HelpPlan($"`default` is retired: {OneSetWords.Default(owner, account)}. Propose `order` with the account first.", "", "", null);
     }
 
     /// <summary>
-    /// <c>use</c> (TOOL4g, D130 §16.6): how a scope's list is used, for the machine or one workspace, as
-    /// <c>daoris agent profile use</c> takes it — a scope with a list of its own, a way to use accounts and a switch this build
-    /// knows, a curve that keeps its rules (SWITCH1d), a near from 50 to 99, and a kept account of the list that leaves driven
-    /// work another — said in its words, the switch and the curve in the curve's terms. A door's accounts are its owner's (AGT7),
-    /// so the command and the sentence name the owner.
+    /// A stored <c>use</c> or <c>order</c> written before the <c>set</c> mark (POOL1b, §5.3): for the machine's or a workspace's list, and
+    /// an <c>order</c> of it may have said which accounts alone may run, so it is refused, never applied to the set.
+    /// </summary>
+    private static HelpPlan Unmarked(HelpProposal proposal) => new($"this `{proposal.Door}` was {OneSetWords.Unmarked}.", "", "", null);
+
+    /// <summary>A workspace named on <c>use</c> or <c>order</c>, refused in the terminal's words (POOL1b, §5.3).</summary>
+    private static string? WorkspaceRefused(HelpProposal proposal) =>
+        proposal.Workspace?.Trim() is { Length: > 0 } ? $"{OneSetWords.Workspace("workspace")}." : null;
+
+    /// <summary>The set's order as the facts read it (the projection, POOL1a2): every account of the owner's; none where nothing was read.</summary>
+    private static IReadOnlyList<string> SetOf(HarnessSettings? wiring, string owner) => wiring?.Set(owner).List ?? [];
+
+    /// <summary>
+    /// <c>use</c> (TOOL4g, D130 §16.6; POOL1b, §5.3): how the set is used, its one entry of settings, as <c>daoris agent profile use</c>
+    /// takes it — an agent with an account of Daoris's, a way to use accounts and a switch this build knows, a curve that keeps its rules
+    /// (SWITCH1d), a near from 50 to 99, and a kept account of the set that leaves driven work another — said in its words, the switch and
+    /// the curve in the curve's terms. A door's accounts are its owner's (AGT7), so the command and the sentence name the owner.
     /// </summary>
     private static HelpPlan Use(HelpProposal proposal, HelpMachineFacts facts)
     {
         var name = proposal.Target?.Trim() ?? "";
-        var workspace = proposal.Workspace?.Trim() is { Length: > 0 } w ? w : null;
         if (facts.Doors.FirstOrDefault(each => string.Equals(each.Name, name, StringComparison.Ordinal)) is not { } door)
         {
             return new HelpPlan($"there is no agent `{name}` on this machine — one of {Names(facts.Doors.Select(each => each.Name))}.", "", "", null);
@@ -254,30 +231,24 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
             + (change.Early is { } early ? $" --early {(early ? "on" : "off")}" : "")
             + (change.Near is { } near ? $" --near {near}" : "")
             + (change.Switch is { Length: > 0 } switched ? $" --switch {switched}" : "")
-            + (change.NoCurve ? " --no-curve" : curve)
-            + Scoped(workspace);
+            + (change.NoCurve ? " --no-curve" : curve);
         HelpPlan Refused(string why) => new(why, "", terminal, null);
 
-        if (workspace is not null && !facts.Workspaces.Contains(workspace, StringComparer.OrdinalIgnoreCase))
-        {
-            return Refused($"there is no workspace `{workspace}` on this machine — one of {Names(facts.Workspaces)}.");
-        }
-
+        if (WorkspaceRefused(proposal) is { } scoped) return Refused(scoped);
         if (proposal.AccountCurveRefused is { } broken) return Refused(broken);
 
         if (change.Use is null && change.Keep is null && !change.NoKeep && change.Early is null && change.Near is null
             && change.Switch is null && change.Curve is null && !change.NoCurve)
         {
-            return Refused("a use names how the list is used: `use` (goal or order), `keep` (an account of the list, or none), "
+            return Refused("a use names how the accounts are used: `use` (goal or order), `keep` (one of the accounts, or none), "
                 + "`switch` (smart, curve or off) or `curve` (your own points, a window each).");
         }
 
-        var list = OwnList(facts.Wiring, owner, workspace);
+        var list = SetOf(facts.Wiring, owner);
         if (list.Count == 0)
         {
-            return Refused($"{(workspace is null ? "this machine" : $"`{workspace}`")} has no list of its own for `{owner}`, so there is "
-                + $"nothing to use — `daoris agent profile order {owner} <account>…{Scoped(workspace)}` gives it one, and how it is "
-                + "used is set beside it.");
+            return Refused($"`{owner}` has no account of Daoris's, so there is nothing to use — `daoris agent login {owner} --new` signs in to "
+                + "one, and how its accounts are used is set beside them.");
         }
 
         if (change.Use is { } way && !RotationUse.Modes.Contains(way, StringComparer.Ordinal))
@@ -301,11 +272,11 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
             switch (ScopeProblem.Of(null, list, keep))
             {
                 case { Kind: ScopeProblemKind.Keep }:
-                    return Refused($"`{keep}` is not in `{owner}`'s list {Where(workspace)} ({string.Join(", then ", list)}) — the kept "
-                        + "account is one of the list.");
+                    return Refused($"`{keep}` is not one of `{owner}`'s accounts ({string.Join(", then ", list)}) — the kept account is one "
+                        + "of Daoris's accounts.");
                 case { Kind: ScopeProblemKind.Alone }:
-                    return Refused($"`{owner}`'s list {Where(workspace)} holds no account but `{keep}`, so keeping it for conversations "
-                        + "would leave driven work none.");
+                    return Refused($"`{owner}` has no account of Daoris's but `{keep}`, so keeping it for conversations would leave driven "
+                        + "work none.");
             }
         }
 
@@ -327,7 +298,7 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
         }
 
         var joined = said.Count == 1 ? said[0] : $"{string.Join(", ", said.Take(said.Count - 1))} and {said[^1]}";
-        return new HelpPlan(null, $"{(workspace is null ? "On this machine" : $"In `{workspace}`")}, `{owner}` {joined}.", terminal, null);
+        return new HelpPlan(null, $"For every workspace, `{owner}` {joined}.", terminal, null);
 
         static string Switching(string when) => when switch
         {
@@ -344,14 +315,13 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
         string.Join(by, points.Select(point => $"{point.Elapsed}:{point.Used}"));
 
     /// <summary>
-    /// <c>order</c> (TOOL4l-b, D130 §9): a scope's list written whole, or a workspace sent back to the machine's accounts, as
-    /// <c>daoris agent profile order</c> takes it — each name an account here, once, and a list that still holds its scope's
-    /// default and kept account (D130 §3.1, §4.6) — said in its words. A door's accounts are its owner's (AGT7).
+    /// <c>order</c> (TOOL4l-b, D130 §9; POOL1b, §5.3): the set's order, as <c>daoris agent profile order</c> takes it — the accounts named
+    /// first, in that order, each an account here and once, and the rest after in their order — or <c>clear</c>, the ids' order again,
+    /// clearing no setting; said in its words. A door's accounts are its owner's (AGT7).
     /// </summary>
     private static HelpPlan Order(HelpProposal proposal, HelpMachineFacts facts)
     {
         var name = proposal.Target?.Trim() ?? "";
-        var workspace = proposal.Workspace?.Trim() is { Length: > 0 } w ? w : null;
         if (facts.Doors.FirstOrDefault(each => string.Equals(each.Name, name, StringComparison.Ordinal)) is not { } door)
         {
             return new HelpPlan($"there is no agent `{name}` on this machine — one of {Names(facts.Doors.Select(each => each.Name))}.", "", "", null);
@@ -360,62 +330,36 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
         var owner = door.AccountsOf;
         var change = proposal.AccountOrder ?? new AccountOrder([], false);
         IReadOnlyList<string> list = [.. change.Accounts.Select(each => each.Trim()).Where(each => each.Length > 0)];
-        var own = OwnDefault(facts.Wiring, owner, workspace);
-        var held = OwnList(facts.Wiring, owner, workspace);
-        // A workspace sent back clears what it holds of its own: its list and its default, one terminal command each (D130 §3.2).
         var terminal = change.Clear
-            ? string.Join("; ", new[]
-            {
-                held.Count > 0 || own is null ? $"daoris agent profile order {owner} --clear{Scoped(workspace)}" : null,
-                own is null ? null : $"daoris agent profile default {owner} --clear{Scoped(workspace)}",
-            }.OfType<string>())
-            : $"daoris agent profile order {owner} {ShellWord.Words(list, ShellWord.Account)}{Scoped(workspace)}";
+            ? $"daoris agent profile order {owner} --clear"
+            : $"daoris agent profile order {owner} {ShellWord.Words(list, ShellWord.Account)}";
         HelpPlan Refused(string why) => new(why, "", terminal, null);
 
-        if (workspace is not null && !facts.Workspaces.Contains(workspace, StringComparer.OrdinalIgnoreCase))
-        {
-            return Refused($"there is no workspace `{workspace}` on this machine — one of {Names(facts.Workspaces)}.");
-        }
-
+        if (WorkspaceRefused(proposal) is { } scoped) return Refused(scoped);
         if (list.Count > 0 == change.Clear)
         {
             return Refused(change.Clear
-                ? "`order` sets the list or clears a workspace's, never both."
-                : "`order` names the accounts in walk order, or clears a workspace's list.");
+                ? "`order` puts accounts first or returns to the ids' order, never both."
+                : "`order` names the accounts to put first, in order, or clears it back to the ids' order.");
         }
 
         if (change.Clear)
         {
-            if (workspace is null) return Refused("clearing a list names the workspace it goes back to the machine's accounts for.");
-            if (held.Count == 0 && own is null)
-            {
-                return Refused($"`{workspace}` has no list or default of its own for `{owner}`, so there is nothing to clear — it already runs on "
-                    + "this machine's accounts.");
-            }
-
+            string[] ids = [.. door.Accounts.Order(StringComparer.Ordinal)];
             return new HelpPlan(null,
-                $"`{workspace}` goes back to this machine's accounts for `{owner}`: "
-                + (held.Count > 0 && own is not null ? "its own list and default are" : held.Count > 0 ? "its own list is" : "its own default is")
-                + " cleared.", terminal, null);
+                $"`{owner}`'s order goes back to its accounts' ids"
+                + (ids.Length > 0 ? $": {string.Join(", then ", ids.Select(each => $"`{each}`"))}" : "")
+                + ". No setting is cleared.", terminal, null);
         }
 
         if (HarnessSettings.OrderProblem(door.Accounts, list) is { } problem) return Refused(problem.Sentence(owner, door.Accounts));
 
-        var where = workspace is null ? "this machine's" : $"`{workspace}`'s";
-        switch (ScopeProblem.Of(own, list, OwnKeep(facts.Wiring, owner, workspace)))
-        {
-            case { Kind: ScopeProblemKind.Default } bound:
-                return Refused($"{where} default for `{owner}` is `{bound.Account}`, and the list would not hold it — the default is where starts "
-                    + "begin within the list. Make one of the list the default first.");
-            case { Kind: ScopeProblemKind.Keep } bound:
-                return Refused($"`{bound.Account}` is kept for conversations, and the list does not hold it — the kept account is one of the list.");
-            case { Kind: ScopeProblemKind.Alone } bound:
-                return Refused($"`{bound.Account}` is kept for conversations, and the list would hold no other account, so driven work would have none.");
-        }
-
+        // The named first, then the rest in the set's order, then any account it does not hold yet, by id (AccountSet.Whole).
+        IReadOnlyList<string> whole = [.. list, .. SetOf(facts.Wiring, owner).Concat(door.Accounts.Order(StringComparer.Ordinal))
+            .Distinct(StringComparer.Ordinal).Where(each => door.Accounts.Contains(each, StringComparer.Ordinal) && !list.Contains(each, StringComparer.Ordinal))];
         return new HelpPlan(null,
-            $"{(workspace is null ? "On this machine" : $"In `{workspace}`")}, `{owner}`'s list is "
-            + $"{string.Join(", then ", list.Select(each => $"`{each}`"))}: its starts may run on those accounts, in that order.",
+            $"`{owner}`'s order is {string.Join(", then ", whole.Select(each => $"`{each}`"))}, for every workspace: one by one, in order, "
+            + "begins at the first, and make the most of them uses the order only to break a tie.",
             terminal, null);
     }
 
@@ -471,35 +415,17 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
     /// <summary>What a <c>ready</c> names for the tool's own sign-in, as the service's writer and the terminal's <c>--own</c> do.</summary>
     private const string OwnSignIn = "own";
 
-    private static string? OwnDefault(HarnessSettings? wiring, string owner, string? workspace) =>
-        wiring is null ? null
-        : (workspace is null
-            ? wiring.Defaults.GetValueOrDefault(owner)
-            : wiring.Workspaces.TryGetValue(workspace, out var defaults) ? defaults.GetValueOrDefault(owner) : null) is { Length: > 0 } named
-            ? named.Trim()
-            : null;
-
-    private static string? OwnKeep(HarnessSettings? wiring, string owner, string? workspace) =>
-        wiring is null ? null
-        : RotationUse.Read(workspace is null
-            ? wiring.Uses.GetValueOrDefault(owner)
-            : wiring.WorkspaceUses.TryGetValue(workspace, out var uses) ? uses.GetValueOrDefault(owner) : null).Use.Keep;
-
-    /// <summary>A scope's own list, as the wiring holds it: the machine's, or the workspace's own; none where nothing was read.</summary>
-    private static IReadOnlyList<string> OwnList(HarnessSettings? wiring, string owner, string? workspace) =>
-        wiring is null ? []
-        : workspace is null ? wiring.Rotation.GetValueOrDefault(owner) ?? []
-        : wiring.WorkspaceRotation.TryGetValue(workspace, out var lists) ? lists.GetValueOrDefault(owner) ?? [] : [];
-
-    private static string Where(string? workspace) => workspace is null ? "on this machine" : $"in `{workspace}`";
-
-    /// <summary>A scope in a command: nothing for the machine, <c>--workspace</c> for one workspace, spelled for any shell (ACCTQUOTE1b).</summary>
-    private static string Scoped(string? workspace) => workspace is null ? "" : $" --workspace {ShellWord.Of(workspace, ShellWord.Workspace)}";
-
     public async Task<HelpApplied> ApplyAsync(HelpApplying applying, CancellationToken ct)
     {
         var (proposal, plan, id) = (applying.Proposal, applying.Plan, applying.Id);
         var harness = proposal.Target!.Trim();
+        // POOL1b (§5.3): a retired door or an unmarked list's proposal is never applied to the set, whatever judged it.
+        if (proposal.Door == "default" || (proposal.Door is "use" or "order" && !proposal.ForSet))
+        {
+            var why = proposal.Door == "default" ? $"`default` is retired: {OneSetWords.Default(harness)}." : $"this `{proposal.Door}` was {OneSetWords.Unmarked}.";
+            return applying.Settled(false, $"Not applied: `#{id}` — {why}", why);
+        }
+
         if (proposal.Door == "ready")
         {
             var account = proposal.ReadyAccount?.Trim() is { } named && named != OwnSignIn ? named : null;
@@ -528,9 +454,7 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
             var order = proposal.AccountOrder ?? new AccountOrder([], false);
             try
             {
-                await applying.Doors.SetAccountOrderAsync(
-                    harness, order.Accounts, order.Clear, proposal.Workspace?.Trim() is { Length: > 0 } scope ? scope : null, ct)
-                    .ConfigureAwait(false);
+                await applying.Doors.SetAccountOrderAsync(harness, order.Accounts, order.Clear, ct).ConfigureAwait(false);
             }
             catch (DriverException error)
             {
@@ -544,24 +468,7 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
         {
             try
             {
-                await applying.Doors.SetAccountUseAsync(
-                    harness, proposal.AccountUse ?? new UseChange(), proposal.Workspace?.Trim() is { Length: > 0 } scope ? scope : null, ct)
-                    .ConfigureAwait(false);
-            }
-            catch (DriverException error)
-            {
-                return applying.Settled(false, $"Not applied: `#{id}` (`{plan.Terminal}`) — {error.Message}", error.Message);
-            }
-
-            return applying.Settled(true, $"Applied: `#{id}` — {plan.Describe} (`{plan.Terminal}`)", null);
-        }
-
-        if (proposal.Door == "default")
-        {
-            try
-            {
-                await applying.Doors.SetDefaultAccountAsync(
-                    harness, proposal.Value!.Trim(), proposal.Workspace?.Trim() is { Length: > 0 } w ? w : null, ct).ConfigureAwait(false);
+                await applying.Doors.SetAccountUseAsync(harness, proposal.AccountUse ?? new UseChange(), ct).ConfigureAwait(false);
             }
             catch (DriverException error)
             {
@@ -602,23 +509,16 @@ public interface IHelpAgentDoors
     Task StartAgentActionAsync(string harness, string action, string? version, Action<int, string?> ended, CancellationToken ct);
 
     /// <summary>
-    /// <c>HARNESS_ACTION</c>'s own <c>profile-default</c> (HELP10): the account a door's owner runs as, for the machine,
-    /// or for <paramref name="workspace"/> alone, written as the screen writes it and the roster asked again.
+    /// <c>ACCOUNT_USE</c>'s own <c>use</c> (TOOL4g; POOL1b): how a door's owner's set is used, refused as the screen refuses it and
+    /// written as it writes it. A workspace's and <c>HARNESS_ACTION</c>'s <c>profile-default</c> left with D197.
     /// </summary>
-    Task SetDefaultAccountAsync(string harness, string account, string? workspace, CancellationToken ct);
+    Task SetAccountUseAsync(string harness, UseChange change, CancellationToken ct);
 
     /// <summary>
-    /// <c>ACCOUNT_USE</c>'s own <c>use</c> (TOOL4g): how a door's owner's list is used, for the machine or for
-    /// <paramref name="workspace"/> alone, refused as the screen refuses it and written as it writes it.
+    /// <c>ACCOUNT_USE</c>'s own <c>order</c> (TOOL4l-b; POOL1b): a door's owner's set ordered, the accounts named first and the rest after,
+    /// or, with <paramref name="clear"/>, returned to the ids' order; refused as the screen refuses it and written as it writes it.
     /// </summary>
-    Task SetAccountUseAsync(string harness, UseChange change, string? workspace, CancellationToken ct);
-
-    /// <summary>
-    /// <c>ACCOUNT_USE</c>'s own <c>order</c> (TOOL4l-b): a door's owner's list written whole for the machine or for
-    /// <paramref name="workspace"/> alone, or, with <paramref name="clear"/>, that workspace returned to the machine's accounts
-    /// (<c>inherit</c>); refused as the screen refuses it and written as it writes it.
-    /// </summary>
-    Task SetAccountOrderAsync(string harness, IReadOnlyList<string> accounts, bool clear, string? workspace, CancellationToken ct);
+    Task SetAccountOrderAsync(string harness, IReadOnlyList<string> accounts, bool clear, CancellationToken ct);
 
     /// <summary>
     /// <c>ACCOUNT_USE</c>'s own <c>ready</c> (TOOL4l-b): <i>Try now</i>, an account's cool-off ended, or the tool's own sign-in's

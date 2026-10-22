@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   keepPreviousData, type QueryClient, type QueryKey, useMutation, useQueries, useQuery, useQueryClient, type UseQueryOptions,
 } from '@tanstack/react-query';
@@ -498,6 +498,35 @@ export const useQuests = (repository: string | null, includeClosed: boolean, ena
   });
 };
 
+/** Every row a list holds: the widest read's own selection, stable, so its answer is read again only when the list moves. */
+const everyRow = <T,>(rows: T[]) => rows;
+
+/**
+ * Every quest this machine's lists hold, closed included, whatever the window's workspace (ASKQUESTS1): what an Ask Daoris
+ * conversation published is followed wherever it was asked. Where the shell pushes the quests (PUSH1d3), the one entry its pushes
+ * write, from memory, never asked again; elsewhere that widest list's own pull. `enabled` false asks nothing.
+ */
+export const useEveryQuest = (enabled: boolean) => {
+  const client = useQueryClient();
+  const live = usePushedLive(QUESTS_SLICE);
+  const widest = { key: keys.quests(null, true, null), pull: () => api.quests(null, true, null) };
+  return useQuery({
+    ...pushedList(client, live, QUESTS_SLICE, widest, { key: widest.key, pull: (signal) => api.quests(null, true, null, signal) }, everyRow),
+    enabled,
+  });
+};
+
+/** Every ask, closed and done included, whatever the window's workspace (ASKQUESTS1), as `useEveryQuest` reads the quests. */
+export const useEveryAsk = (enabled: boolean) => {
+  const client = useQueryClient();
+  const live = usePushedLive(ASKS_SLICE);
+  const widest = { key: keys.asks(true, null), pull: () => api.asks(true, null) };
+  return useQuery({
+    ...pushedList(client, live, ASKS_SLICE, widest, { key: widest.key, pull: (signal) => api.asks(true, null, signal) }, everyRow),
+    enabled,
+  });
+};
+
 /**
  * One quest's moves, in the order its history replays (FLOWCHART1a2, D186): read only for the quest named, which its page names
  * once its flowchart is opened, as the trace is read only when opened (D143); `null` names none and asks nothing. Pulled in a
@@ -606,6 +635,33 @@ export const useSessions = (repository: string | null, includeClosed: boolean, e
   const { read } = useSessionsRead(repository, includeClosed, workspace);
   return useQuery({ ...read, enabled });
 };
+
+/** Every session, ended ones included, whatever the window's workspace (ASKQUESTS1): who works a quest an Ask Daoris conversation published. */
+export const useEverySession = (enabled: boolean) => {
+  const { read } = useSessionsRead(null, true, null);
+  return useQuery({ ...read, enabled });
+};
+
+/**
+ * A mark that moves when any quest's status, any ask's state or its quests, or any session's state moves (ASKQUESTS1), read from
+ * the slices the shell pushes and only while all three are pushed: never a pull, so nothing is asked on its account. Null while
+ * they are not pushed, or not `enabled`. What a go card's sentence says of its quest, ask or session moves with it, so the card
+ * is drawn again at the push rather than its Apply finding a plan other than the one shown.
+ */
+export function useStandingsMark(enabled: boolean): string | null {
+  const live = [usePushedLive(QUESTS_SLICE), usePushedLive(ASKS_SLICE), usePushedLive(SESSIONS_SLICE)].every(Boolean);
+  const quests = useEveryQuest(enabled && live);
+  const asks = useEveryAsk(enabled && live);
+  const sessions = useEverySession(enabled && live);
+  return useMemo(() => {
+    if (!enabled || !live || !quests.data || !asks.data || !sessions.data) return null;
+    return [
+      ...quests.data.map((quest) => `q:${quest.id}:${quest.status}:${quest.held === true}`),
+      ...asks.data.map((ask) => `a:${ask.id}:${ask.state}:${ask.quests.length}`),
+      ...sessions.data.map((session) => `s:${session.id}:${session.state}`),
+    ].join(' ');
+  }, [enabled, live, quests.data, asks.data, sessions.data]);
+}
 
 /**
  * The second opinions on this machine (XAGENT1g4c), asked only where the sessions list holds a reviewer (`enabled`). A 404 (a

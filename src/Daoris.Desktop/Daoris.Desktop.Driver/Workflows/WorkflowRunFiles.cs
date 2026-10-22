@@ -15,13 +15,16 @@ public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
     /// <summary>Whether a run is bound here.</summary>
     public bool Bound(string run) => WorkflowRunBindings.IsRunId(run) && File.Exists(WorkflowRunBindings.PathOf(home, run));
 
-    /// <summary>A run's binding, or null where it has none here, or its file does not read as one.</summary>
+    /// <summary>
+    /// A run's binding, or null where it has none here, or its file does not read as one. Read sharing its deletion
+    /// (<see cref="AtomicFile.ReadText"/>, BINDRACE1), so a start that lost the race for its run's binding reads the winner's as it lands.
+    /// </summary>
     public WorkflowRunBinding? Read(string run)
     {
         if (!Bound(run)) return null;
         try
         {
-            return Parse(File.ReadAllText(WorkflowRunBindings.PathOf(home, run)));
+            return Parse(AtomicFile.ReadText(WorkflowRunBindings.PathOf(home, run)));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -66,7 +69,7 @@ public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
         {
             try
             {
-                var binding = Parse(File.ReadAllText(path));
+                var binding = Parse(AtomicFile.ReadText(path));
                 if (binding is null || (!binding.IsCurrent
                     && string.Equals(binding.Repository, repository, StringComparison.OrdinalIgnoreCase)))
                 {
@@ -93,7 +96,8 @@ public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
         {
             try
             {
-                using var document = JsonDocument.Parse(File.ReadAllText(path));
+                // Shared as the run's own read is (BINDRACE1): a version a binding landing now names is still kept.
+                using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
                 runs.Add(document.RootElement.Clone());
             }
             catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)

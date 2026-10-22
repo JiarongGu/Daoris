@@ -365,7 +365,9 @@ public sealed class HelpRoutes(DriverContext context)
             if (plan.Refusal is { } refused)
             {
                 HelpProposals.Settle(_loop.Home, proposal.Id, "refused", refused);
-                _loop.Chat?.Say(session, InPersonsWords($"Daoris did not show proposal `#{proposal.Id}` to the person — the route refuses it: {refused}"));
+                // ASKQUESTS1: Daoris's own word, never the person's.
+                _loop.Chat?.Tell(session, InPersonsWords($"Daoris did not show proposal `#{proposal.Id}` to the person — the route refuses it: {refused}"),
+                    DaorisWordKey("help-refused", proposal.Id));
                 continue;
             }
 
@@ -459,7 +461,8 @@ public sealed class HelpRoutes(DriverContext context)
 
     // The person's Apply: made through the door the screen's own route uses (HELP6), judged again
     // first, since the machine may have moved since the card was drawn. The result goes back into
-    // the conversation as the person's next message, so the agent knows (D89). It acts through the doors directly, not through
+    // the conversation as a turn, so the agent knows (D89), told as Daoris's word, never the person's (ASKQUESTS1, D188's COWORK1b
+    // mark); what it published is kept with the conversation by `HelpProposals.ApplyAsync`. It acts through the doors directly, not through
     // their routes, so it declares every family a door it holds may move (STATEHUB1h, D169): the driver's file and what reads
     // it, an ask, a quest or a session it made, paused or deleted, an agent's settings or pin, a plugin, the browser's settings,
     // a repository moved, finished history cleared, and the proposal itself.
@@ -493,10 +496,14 @@ public sealed class HelpRoutes(DriverContext context)
             return new { Message = changed, Applied = false, Go = (object?)null, HarnessAction = (object?)null, Stands = true, Changed = true };
         }
 
-        // What it did, and an agent action's end once it comes, into the conversation that proposed it.
+        // What it did, and an agent action's end once it comes, into the conversation that proposed it, as Daoris's word (ASKQUESTS1).
+        var told = 0;
         void Say(string text)
         {
-            if (proposal.Session is { } session) _loop.Chat?.Say(session, InPersonsWords(text));
+            if (proposal.Session is { } session)
+            {
+                _loop.Chat?.Tell(session, $"Daoris: {InPersonsWords(text)}", DaorisWordKey("help-apply", $"{proposal.Id}/{Interlocked.Increment(ref told)}"));
+            }
         }
 
         var applied = await HelpProposals.ApplyAsync(
@@ -678,33 +685,14 @@ public sealed class HelpRoutes(DriverContext context)
                 context.Actions.Relay(harness, action), config, ended);
         }
 
-        // HARNESS_ACTION's own profile-default (HELP10): the door's owner (AGT7), the same write, and a person looking again
-        // as the route's edit is; the report reads the default fresh, so no account is asked (ROSTER1).
-        public async Task SetDefaultAccountAsync(string harness, string account, string? workspace, CancellationToken ct)
-        {
-            var config = DriverConfig.Load(_loop.ConfigPath);
-            var toolchain = _loop.Harnesses.Toolchain(harness)
-                ?? throw new DriverException($"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's.");
-            try
-            {
-                AgentsRoutes.ProfileDefault(_loop, toolchain.Owner(harness), account, workspace);
-            }
-            catch (ShenoraException refused)
-            {
-                // The route's refusal in its words, as the driver's, so the card settles refused with them (TOOL4g).
-                throw new DriverException(refused.Message);
-            }
-
-            await AgentsRoutes.ChangedAsync(_loop, harness, "profile-default", config, ct).ConfigureAwait(false);
-        }
-
-        // ACCOUNT_USE's own `use` (TOOL4g): the same refusals and the same write, then the loop asked to look.
-        public Task SetAccountUseAsync(string harness, UseChange change, string? workspace, CancellationToken ct)
+        // ACCOUNT_USE's own `use` (TOOL4g): the same refusals and the same write, then the loop asked to look. The set's one entry since
+        // POOL1b (D197); the `default` door, HARNESS_ACTION's `profile-default`, left with it.
+        public Task SetAccountUseAsync(string harness, UseChange change, CancellationToken ct)
         {
             var owner = AccountsRoutes.OwnerOf(_loop.Harnesses, harness);
             try
             {
-                HarnessSettings.Change(_loop.Harnesses.SettingsPath, read => AccountsRoutes.UseEdited(read, owner, change, workspace));
+                HarnessSettings.Change(_loop.Harnesses.SettingsPath, read => AccountsRoutes.UseEdited(read, owner, change, workspace: null));
             }
             catch (ShenoraException refused)
             {
@@ -715,24 +703,16 @@ public sealed class HelpRoutes(DriverContext context)
             return Task.CompletedTask;
         }
 
-        // ACCOUNT_USE's own `order` and `inherit` (TOOL4l-b): the list written whole through the screen's own edit, or a workspace
-        // returned to the machine's accounts with its default and list cleared at once (D130 §3.2), then the loop asked to look.
-        public Task SetAccountOrderAsync(string harness, IReadOnlyList<string> accounts, bool clear, string? workspace, CancellationToken ct)
+        // ACCOUNT_USE's own `order` (TOOL4l-b; POOL1b, D197): the set's order through the screen's own edit, the accounts named first,
+        // or the ids' order again where cleared, written whole by the change and clearing no setting; then the loop asked to look.
+        public Task SetAccountOrderAsync(string harness, IReadOnlyList<string> accounts, bool clear, CancellationToken ct)
         {
             var owner = AccountsRoutes.OwnerOf(_loop.Harnesses, harness);
             try
             {
-                if (clear)
-                {
-                    var circle = workspace ?? throw new DriverException("returning to this machine's accounts names the workspace that returns.");
-                    HarnessSettings.Change(_loop.Harnesses.SettingsPath,
-                        read => read.WithWorkspaceDefault(circle, owner, null).WithRotation(owner, null, circle));
-                }
-                else
-                {
-                    HarnessSettings.Change(_loop.Harnesses.SettingsPath,
-                        read => AccountsRoutes.OrderEdited(read, HarnessSettings.Profiles(_loop.Harnesses.Home, owner), owner, accounts, workspace));
-                }
+                HarnessSettings.Change(_loop.Harnesses.SettingsPath, clear
+                    ? read => read.WithRotation(owner, null)
+                    : read => AccountsRoutes.OrderEdited(read, HarnessSettings.Profiles(_loop.Harnesses.Home, owner), owner, accounts, workspace: null));
             }
             catch (ShenoraException refused)
             {
@@ -1131,10 +1111,35 @@ public sealed class HelpRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// A result said into Ask Daoris's conversation in the person's name (HELP1c): plain words, since a
-    /// person's message renders verbatim and a sentence full of backticks read as noise on the window.
+    /// A sentence said into Ask Daoris's conversation (HELP1c): plain words, since a turn's words render verbatim and a sentence full
+    /// of backticks read as noise on the window. The person's Not now, and since ASKQUESTS1 Daoris's word of what an Apply did.
     /// </summary>
     private static string InPersonsWords(string told) => told.Replace("`", "", StringComparison.Ordinal);
+
+    /// <summary>
+    /// The key a word of Daoris's to Ask Daoris's conversation carries (ASKQUESTS1, <see cref="DaorisWord"/>): its kind and the proposal
+    /// it is about. No fact of Daoris's is judged by it (<see cref="DaorisKeys.Read"/> names none), so the word always goes.
+    /// </summary>
+    private static string DaorisWordKey(string kind, string about) => $"{kind}/{about}";
+
+    // ASKQUESTS1 (the Ask Daoris design §9 item 12): what one conversation's Applies published, the newest first, each by the ids the
+    // service answered, as `HelpPublished` keeps them beside its other files. The page reads each one's state from the pushed quests,
+    // asks and sessions. A read of this machine's home, off the window's thread (UIFREEZE1): it declares nothing, and its key is under
+    // `help`, which an Apply publishes. Desktop-only, as the conversation is.
+    [DriverRoute("HELP_PUBLISHED")]
+    private Task<object?> HelpPublishedAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var home = _loop.Home;
+        return Task.Run<object?>(() => PublishedAnswer(session, new HelpPublished(home).Read(session)), cancellationToken);
+    }
+
+    /// <summary>What <c>HELP_PUBLISHED</c> answers (ASKQUESTS1): <c>{ session, published }</c>, an id the service's answer did not name left out.</summary>
+    public static object PublishedAnswer(string session, IReadOnlyList<HelpPublishedEntry> published) => new
+    {
+        Session = session,
+        Published = published.Select(entry => new { entry.At, entry.Proposal, entry.Kind, entry.Workspace, entry.Ask, entry.Quest }).ToArray(),
+    };
 
     // ——— Ask Daoris's history (ASKHIST1): its conversations listed and searched, named, pinned and started from. Going on in
     // one is the person's words to it (`SESSION_INPUT`), and deleting one is `SESSION_DELETE`'s, so each has the one owner the

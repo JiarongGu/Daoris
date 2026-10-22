@@ -169,15 +169,15 @@ public static class AgentsCommand
                daoris-driver agent settings <agent> [--account <account>] [model <name>|unset] [effort <level>|unset [--for <model>]]
                daoris-driver agent which <agent> [--workspace <name>] [--json]
                daoris-driver agent unpin <agent> [--workspace <name>]
-               daoris-driver agent profile [list] · add|remove <agent> <profile> · default <agent> <profile>|--clear [--workspace <name>]
-               daoris-driver agent profile order <agent> <profile>…|--clear [--workspace <name>] · ready <agent> <profile>|--own
+               daoris-driver agent profile [list] · add|remove <agent> <profile>
+               daoris-driver agent profile order <agent> <profile>…|--clear · ready <agent> <profile>|--own
                daoris-driver agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off]
-                     [--curve <window>=<elapsed>:<used>,…]… [--no-curve] [--workspace <name>] · use <agent> --clear [--workspace <name>]
-               daoris-driver agent profile rename <agent> <account> <name> · join <agent> <account> [<workspace>…] [--machine]
+                     [--curve <window>=<elapsed>:<used>,…]… [--no-curve] · use <agent> --clear
+               daoris-driver agent profile rename <agent> <account> <name>
                daoris-driver agent install <agent>
                daoris-driver agent key <agent> [--account <account>]     the key read from standard input, never an argument
-               daoris-driver agent login <agent> [--profile <account>] [--join <workspace>]… [--join-machine] [--device-code]
-               daoris-driver agent login <agent> --new [--name <name>] [--join <workspace>]… [--join-machine] [--device-code]
+               daoris-driver agent login <agent> [--profile <account>] [--device-code]
+               daoris-driver agent login <agent> --new [--name <name>] [--device-code]
                daoris-driver agent update <agent> [--workspace <name>]
                daoris-driver agent pin <agent> <version> [--workspace <name>]
         `daoris agent …` runs these, every verb of the family.
@@ -777,8 +777,9 @@ public static class AgentsCommand
         }
 
         var given = FlagValue(args, "--account") ?? FlagValue(args, "--profile");
+        // With none named, the order's first (POOL1b, the account-pool design §5.1), where the machine's default was.
         var account = (given is not null ? AccountNamed(home, owner, given) : null)
-            ?? (HarnessSettings.Load(path).Defaults.TryGetValue(owner, out var fallback) ? fallback : null)
+            ?? HarnessSettings.LoadSet(path).FirstOf(owner)
             ?? throw new AgentWords(
                 $"`{owner}` has no Daoris account named here — Daoris never works in the tool's own configuration home. "
                 + "Name one of Daoris's accounts with `--account <name>` (`daoris agent list` shows them), sign in to one with "

@@ -63,39 +63,45 @@ public sealed class HarnessProfileTests : Bridge
         Assert.True(Directory.Exists(ProfileAt("claude-code", "work")));
     }
 
+    /// <summary>
+    /// Choosing which account starts begin on is the set's order (POOL1b, D197 points 2 and 6): <c>profile-default</c> is refused as
+    /// <c>ACCOUNTS_ONE_SET</c>, nothing is written, and a new account is the order's first, where starts begin. It recorded the press
+    /// as this machine's default before, which D197 retires (the bridge has refused it since POOL1a1).
+    /// </summary>
     [Fact]
-    public async Task Choosing_a_profile_records_it_as_this_machine_s()
+    public async Task Choosing_a_default_is_refused_and_the_set_s_first_is_where_starts_begin()
     {
         var module = Module();
         await AnswerAsync(module, "HARNESS_ACTION",
             new { harness = "claude-code", action = "profile-add", profile = "work" });
-        await AnswerAsync(module, "HARNESS_ACTION",
+        var refused = await RefusalAsync(module, "HARNESS_ACTION",
             new { harness = "claude-code", action = "profile-default", profile = "work" });
 
-        Assert.Equal("work", HarnessSettings.Load(HarnessSettingsPath).Defaults["claude-code"]);
+        Assert.StartsWith(Refusals.AccountsOneSet, refused);
+        Assert.False(HarnessSettings.Load(HarnessSettingsPath).Defaults.ContainsKey("claude-code"));
+        Assert.Equal("work", HarnessSettings.LoadSet(HarnessSettingsPath).FirstOf("claude-code"));
     }
 
     /// <summary>
-    /// LOOK2c: a default's edit answers what sessions there run as now, the fact the terminal's verb prints. The tool's
-    /// own row's *use for a workspace*, with a machine default set, runs that workspace as the default, not in the tool's
-    /// own home, and the answer says so for the screen to say.
+    /// A workspace's default, set or cleared, is refused too (POOL1b, D197 point 1): the set serves every workspace, so nothing is
+    /// written and every workspace's starts begin at the order's first. LOOK2c held here that a default's edit answered what sessions
+    /// there ran as, the machine's default for a workspace that cleared its own; there is no such edit now.
     /// </summary>
     [Fact]
-    public async Task A_defaults_edit_answers_what_sessions_there_run_as_now()
+    public async Task A_workspace_s_default_is_refused_and_every_workspace_begins_at_the_set_s_first()
     {
         var module = Module();
         await AnswerAsync(module, "HARNESS_ACTION",
             new { harness = "claude-code", action = "profile-add", profile = "work" });
-        var machine = (await AnswerAsync(module, "HARNESS_ACTION",
-            new { harness = "claude-code", action = "profile-default", profile = "work" })).GetProperty("default");
-        var cleared = (await AnswerAsync(module, "HARNESS_ACTION",
-            new { harness = "claude-code", action = "profile-default", workspace = "aurora" })).GetProperty("default");
+        var set = await RefusalAsync(module, "HARNESS_ACTION",
+            new { harness = "claude-code", action = "profile-default", profile = "work", workspace = "aurora" });
+        var cleared = await RefusalAsync(module, "HARNESS_ACTION",
+            new { harness = "claude-code", action = "profile-default", workspace = "aurora" });
 
-        Assert.Equal(JsonValueKind.Null, machine.GetProperty("workspace").ValueKind);
-        Assert.Equal("work", machine.GetProperty("account").GetString());
-        Assert.Equal("aurora", cleared.GetProperty("workspace").GetString());
-        Assert.Equal("work", cleared.GetProperty("account").GetString());
-        Assert.Equal("machine", cleared.GetProperty("from").GetString());
+        Assert.StartsWith(Refusals.AccountsOneSet, set);
+        Assert.StartsWith(Refusals.AccountsOneSet, cleared);
+        Assert.Empty(HarnessSettings.Load(HarnessSettingsPath).Workspaces);
+        Assert.Equal("work", HarnessSettings.LoadSet(HarnessSettingsPath).FirstOf("claude-code"));
     }
 
     /// <summary>
@@ -130,29 +136,35 @@ public sealed class HarnessProfileTests : Bridge
     /// 🔴 <b>Removing an account removes it</b> (D66 §3, amending SES3's "deletes nothing"). The
     /// owner's report: Forget did not delete the account. The old rule kept a signed-in directory
     /// and un-pointed it, so the account stayed listed and signed in — the leftover the person
-    /// pressed the button to be rid of. Now the directory goes, credentials included, and every
-    /// default naming it goes with it.
+    /// pressed the button to be rid of. Now the directory goes, credentials included, and the set's
+    /// order no longer names it.
     /// </summary>
+    /// <remarks>
+    /// POOL1b (D197): the account is put first in the set's order (<c>ACCOUNT_USE</c>'s <c>order</c>), and its removal leaves the order
+    /// to the rest. Before POOL1b it was made the machine's and a workspace's default, each un-pointed by the removal; those presses are
+    /// refused as <c>ACCOUNTS_ONE_SET</c> since POOL1a1, so the order is what can still name it.
+    /// </remarks>
     [Fact]
     public async Task Removing_an_account_deletes_it_signed_in_or_not_and_un_points_it_everywhere()
     {
         var module = ModuleWithStubHarness();
-        await AnswerAsync(module, "HARNESS_ACTION",
-            new { harness = "stub", action = "profile-add", profile = "work" });
+        foreach (var profile in new[] { "spare", "work" })
+        {
+            await AnswerAsync(module, "HARNESS_ACTION", new { harness = "stub", action = "profile-add", profile });
+        }
+
         File.WriteAllText(Path.Combine(ProfileAt("stub", "work"), "credentials.json"), "someone@example.invalid");
-        await AnswerAsync(module, "HARNESS_ACTION",
-            new { harness = "stub", action = "profile-default", profile = "work" });
-        await AnswerAsync(module, "HARNESS_ACTION",
-            new { harness = "stub", action = "profile-default", profile = "work", workspace = "aurora" });
+        await AnswerAsync(module, "ACCOUNT_USE", new { action = "order", harness = "stub", accounts = new[] { "work" } });
+        Assert.Equal(["work", "spare"], HarnessSettings.Load(HarnessSettingsPath).Rotation["stub"]);
 
         var answer = await AnswerAsync(module, "HARNESS_ACTION",
             new { harness = "stub", action = "profile-remove", profile = "work" });
 
         Assert.Equal(0, answer.GetProperty("exitCode").GetInt32());
         Assert.False(Directory.Exists(ProfileAt("stub", "work")));
-        var settings = HarnessSettings.Load(HarnessSettingsPath);
-        Assert.False(settings.Defaults.ContainsKey("stub"));
-        Assert.Null(settings.Resolve("stub", "aurora", null));
+        var settings = HarnessSettings.LoadSet(HarnessSettingsPath);
+        Assert.Equal(["spare"], settings.Rotation["stub"]);
+        Assert.Equal("spare", settings.FirstOf("stub"));
         Assert.Contains(Raised.Select(Line), line => line.Contains("removed") && line.Contains("sign-in"));
     }
 
@@ -394,23 +406,29 @@ public sealed class HarnessProfileTests : Bridge
 
     /// <summary>
     /// 🔴 A door's accounts are its owner's (AGT7): an account action on `claude-code-acp` lands on
-    /// `claude-code`'s accounts — its defaults, its directories, its keys — and makes nothing under
+    /// `claude-code`'s accounts — its order, its directories, its keys — and makes nothing under
     /// the door's own name.
     /// </summary>
+    /// <remarks>
+    /// POOL1b (D197): the door's press that lands on the owner's set is <c>ACCOUNT_USE</c>'s <c>order</c>, putting the account first in
+    /// <c>claude-code</c>'s order. It was <c>profile-default</c> before, writing <c>claude-code</c>'s default, which the bridge refuses as
+    /// <c>ACCOUNTS_ONE_SET</c> since POOL1a1.
+    /// </remarks>
     [Fact]
     public async Task An_account_action_on_a_door_lands_on_the_owner_s_accounts()
     {
         var module = Module();
         await AnswerAsync(module, "HARNESS_ACTION",
             new { harness = "claude-code-acp", action = "profile-add", profile = "work" });
-        await AnswerAsync(module, "HARNESS_ACTION",
-            new { harness = "claude-code-acp", action = "profile-default", profile = "work" });
+        await AnswerAsync(module, "ACCOUNT_USE",
+            new { action = "order", harness = "claude-code-acp", accounts = new[] { "work" } });
         var keyed = await AnswerAsync(module, "HARNESS_ACTION",
             new { harness = "claude-code-acp", action = "key-add", key = "sk-ant-api03-door-5678" });
 
         Assert.True(Directory.Exists(ProfileAt("claude-code", "work")));
-        Assert.Equal("work", HarnessSettings.Load(HarnessSettingsPath).Defaults["claude-code"]);
-        Assert.False(HarnessSettings.Load(HarnessSettingsPath).Defaults.ContainsKey("claude-code-acp"));
+        var order = HarnessSettings.Load(HarnessSettingsPath).Rotation;
+        Assert.Equal("work", order["claude-code"][0]);
+        Assert.False(order.ContainsKey("claude-code-acp"));
         Assert.Equal("sk-ant-api03-door-5678",
             HarnessKeys.Of(Home, "claude-code", keyed.GetProperty("profile").GetString()!));
         Assert.False(Directory.Exists(DaorisHome.Entry(Home, HomeEntry.AgentHomes,"claude-code-acp")));

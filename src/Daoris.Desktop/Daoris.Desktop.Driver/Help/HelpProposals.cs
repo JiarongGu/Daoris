@@ -39,6 +39,12 @@ public sealed record HelpProposal(
     public UseChange? AccountUse { get; init; }
 
     /// <summary>
+    /// Whether a <c>use</c> or <c>order</c> proposal was written for the one set (POOL1b, D197 point 6, the account-pool design §5.3): the
+    /// service's <c>set: true</c>. One without it was written for a scope's list, which is gone, and is refused at its Apply.
+    /// </summary>
+    public bool ForSet { get; init; }
+
+    /// <summary>
     /// The <c>use</c> door's curve where the file's breaks a rule (SWITCH1d): the twins' sentence, which its card refuses with;
     /// null where it names no curve or a curve that reads.
     /// </summary>
@@ -657,6 +663,28 @@ public static class HelpProposals
 
         foreach (var text in early) say(text);
         return applied;
+    }
+
+    /// <summary>
+    /// Keep what an Apply published with the conversation that proposed it (ASKQUESTS1, <see cref="HelpPublished"/>), by the ids the
+    /// service's answer named, as soon as it answered and before the card settles (<see cref="HelpApplying.Settled"/>). A keep that
+    /// fails loses the list's entry, never the Apply, which happened: the quest and the ask stand, and Quests lists them.
+    /// </summary>
+    internal static void KeepPublished(string home, HelpProposal proposal, HelpPublishing made)
+    {
+        if (proposal.Session is not { } session || !SessionEventText.IsId(session)) return;
+        try
+        {
+            new HelpPublished(home).Keep(session, new HelpPublishedEntry(DateTimeOffset.UtcNow, proposal.Id, proposal.Kind, made.Workspace)
+            {
+                Ask = made.Ask,
+                Quest = made.Quest,
+            });
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // Only this conversation's list is short by one, as a file that does not read is.
+        }
     }
 
     private static async Task<HelpApplied> ApplyOnceAsync(

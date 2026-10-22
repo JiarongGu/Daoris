@@ -530,27 +530,6 @@ public sealed class AccountsRoutes(DriverLoop loop)
         return settings.WithUse(owner, change, workspace);
     }
 
-    /// <summary>
-    /// Whether a scope's default may name <paramref name="profile"/> (D130 §3.1, as TOOL6a's terminal refuses it): within its
-    /// own list, where it has one. A clear, and a scope with no list of its own, take any account. What <c>profile-default</c>
-    /// and Ask Daoris's <c>default</c> door ask before they write.
-    /// </summary>
-    /// <exception cref="ShenoraException">The scope's list does not hold the account.</exception>
-    public static void DefaultAllowed(HarnessSettings settings, string owner, string? profile, string? workspace)
-    {
-        if (profile is not { Length: > 0 }) return;
-        var list = OwnList(settings, owner, workspace);
-        if (ScopeProblem.Of(profile, list, null) is not { Kind: ScopeProblemKind.Default }) return;
-
-        var where = workspace is null ? "on this machine" : $"in `{workspace}`";
-        throw Refusals.Because(
-            Refusals.AccountDefaultOutsideList,
-            $"`{owner}`'s list {where} is {string.Join(", then ", list)}, and `{profile}` is not in it — the list is every account "
-            + "its starts may run on, and the default is where they begin within it. Turn on Use for it first, or make one of "
-            + "the list the default.",
-            Scoped(workspace, ("agent", owner), ("account", profile), ("list", string.Join(", ", list))));
-    }
-
     /// <summary>A scope's own list: the machine's, or the workspace's own, never the machine's standing in for it.</summary>
     private static IReadOnlyList<string> OwnList(HarnessSettings settings, string owner, string? workspace) =>
         workspace is null

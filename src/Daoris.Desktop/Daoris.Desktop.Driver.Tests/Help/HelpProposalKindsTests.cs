@@ -144,6 +144,15 @@ public sealed partial class HelpProposalKindsTests
         Assert.Equal(
             new HelpSettingProposals().Doors,
             Regex.Matches(listed.Groups[1].Value, "\"([a-z-]+)\"").Select(match => match.Groups[1].Value));
+
+        // POOL1b (D197 point 6, the account-pool design §5.3): the agent kind's doors are a list on both sides too, the same list, so
+        // `default` left both in one change and a door one side writes the other always judges.
+        var agent = ServiceSettingDoors().Match(File.ReadAllText(CoreFile("HelpAgentProposalWriter.cs")));
+        Assert.True(agent.Success, "the service's agent doors are a list, `Doors`.");
+        Assert.Equal(
+            new HelpAgentProposals().Doors,
+            Regex.Matches(agent.Groups[1].Value, "\"([a-z-]+)\"").Select(match => match.Groups[1].Value));
+        Assert.DoesNotContain("default", new HelpAgentProposals().Doors);
     }
 
     /// <summary>The page's card takes exactly the kinds this side judges: the <c>kind</c> of its proposal type.</summary>

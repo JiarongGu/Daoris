@@ -220,7 +220,10 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         else if (((gate.State == OpinionGateStates.NotAsked && !gate.Held)
                   || (gate is { State: OpinionGateStates.Unavailable, Code: ReviewerUnavailable.Cooling, Until: { } reset } && reset <= now))
                  // One opinion reads a chain's whole work here (§8.1): an earlier step's is its last step's to ask.
-                 && (due.Occasion == OpinionRules.Steps || !OpinionGate.HasLaterWork(chain, due.Quest, due.Repository)))
+                 && (due.Occasion == OpinionRules.Steps || !OpinionGate.HasLaterWork(chain, due.Quest, due.Repository))
+                 // FABRIC-CUTOVER1d (the cutover design §4): a run bound to a graph version is asked its opinion only once its record has begun
+                 // the node, so what its graph places before the opinion comes first. The person's own ask above is theirs, and goes.
+                 && GraphGate.Begun(Home, process, NodeKinds.Opinion))
         {
             act = new OpinionAct(due, key, claim, chain, due.Occasion, Person: false, process);
         }

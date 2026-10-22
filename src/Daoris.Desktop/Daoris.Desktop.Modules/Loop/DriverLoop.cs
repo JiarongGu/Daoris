@@ -285,6 +285,12 @@ public sealed class DriverLoop(
     /// <summary>The quests the node runtime last read (FABRIC-CLOSE1q3), for the held list to judge a close against; null before one pass has read.</summary>
     public IReadOnlyDictionary<string, QuestView>? LastQuests => _watch?.LastQuests;
 
+    /// <summary>
+    /// Ask the loop's runtime for a whole pass, and wait for it within <paramref name="bound"/> (FABRIC-CUTOVER1d, <see cref="DriverWatch.PassWholeAsync"/>):
+    /// a press held by a run's graph for a judgement not made yet. False past the bound, and where no loop runs.
+    /// </summary>
+    public Task<bool> PassWholeAsync(TimeSpan bound, CancellationToken ct) => _watch?.PassWholeAsync(bound, ct) ?? Task.FromResult(false);
+
     /// <summary>Look now because a terminal's words for <paramref name="session"/> were kept: the requests topic's wake (FABRIC-EVENT2b).</summary>
     public void Said(string session)
     {

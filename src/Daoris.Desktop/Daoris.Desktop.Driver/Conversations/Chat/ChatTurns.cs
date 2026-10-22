@@ -331,8 +331,8 @@ internal sealed class ChatTurns(
 
     /// <summary>The person's word waiting, the one the door opens for among them, by its id; null where none is. Called under the lock.</summary>
     private ChatMessage? Waiting(string id) =>
-        _holding is { OnRecord: false } holding && holding.Id == id ? holding
-        : _waiting.FirstOrDefault(message => !message.OnRecord && message.Id == id);
+        _holding is { Theirs: true } holding && holding.Id == id ? holding
+        : _waiting.FirstOrDefault(message => message.Theirs && message.Id == id);
 
     /// <summary>
     /// One waiting word taken back, reworded (under <paramref name="newId"/>, the record's, where it kept the new words), or at a new
@@ -342,14 +342,14 @@ internal sealed class ChatTurns(
     private QueueEdit EditedHere(string id, string? text, MessageLevel? level, string? newId)
     {
         var withdrawn = text is not null || level is null;
-        if (_holding is { OnRecord: false } holding && holding.Id == id)
+        if (_holding is { Theirs: true } holding && holding.Id == id)
         {
             _holding = text is null && level is null ? null : Changed(holding, text, level, newId);
             if (withdrawn) TakeOff([holding]);
         }
         else
         {
-            var at = _waiting.FindIndex(message => !message.OnRecord && message.Id == id);
+            var at = _waiting.FindIndex(message => message.Theirs && message.Id == id);
             if (at < 0) return QueueEdit.Taken;
             var old = _waiting[at];
             _waiting.RemoveAt(at);
@@ -715,8 +715,9 @@ internal sealed class ChatTurns(
         if (stop is not null) await SendStopAsync(stop).ConfigureAwait(false);
         // The words a conversation goes on with are not handed back (MSG1c): the page never listed them, and they stay on
         // the record, which takes them off only once they went. Nor is a helper's answer (MIXAGENT2a-iii): it is no word of the
-        // person's to put back in the composer, and it stays on the record for a later turn.
-        withdrawn.RemoveAll(message => message.OnRecord);
+        // person's to put back in the composer, and it stays on the record for a later turn. Nor is Daoris's own word (ASKQUESTS1):
+        // the stop takes it with the turn.
+        withdrawn.RemoveAll(message => !message.Theirs);
         return !cancelled && withdrawn.Count == 0 ? TurnStop.Nothing : new TurnStop(cancelled, withdrawn);
     }
 
@@ -922,11 +923,12 @@ internal sealed class ChatTurns(
 
     private ChatQueue Now() => new(_pumping, Snapshot(), _lastEnded, _opening);
 
-    // The words a conversation goes on with are left out (MSG1c): its record shows them waiting already, at its foot.
+    // The words a conversation goes on with are left out (MSG1c): its record shows them waiting already, at its foot. So is Daoris's
+    // own word (ASKQUESTS1): the queue is the person's, which the composer draws with its edits.
     private List<ChatMessage> Snapshot()
     {
-        List<ChatMessage> now = _holding is null || _holding.OnRecord ? [] : [_holding];
-        now.AddRange(_waiting.Where(message => !message.OnRecord));
+        List<ChatMessage> now = _holding is { Theirs: true } ? [_holding] : [];
+        now.AddRange(_waiting.Where(message => message.Theirs));
         return now;
     }
 

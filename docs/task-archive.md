@@ -19499,6 +19499,13 @@ en and zh; `sync status` prints them. Proof: `QuestClosureHandshakeTests`, `Shar
 `RemoteSyncTests`, `SyncStateSliceTests`, `WorkspaceSetup.test.tsx`; the service's, driver's and modules' fast halves. On Opus. Detail:
 D173's FABRIC-CLOSE1i2 note.
 
+## FABRIC-CUTOVER1d — the doors read the run's record and land its commit (2026-10-22, D190)
+
+> - [ ] **FABRIC-CUTOVER1d — the doors read the run's record and land its commit** (driver, cli; after 1b, 1c, 1f; D190, design §4). A graph version read as a process (`WorkflowProcesses.cs:60`); the opinion and the look begun, their gates read at the branch's tip; the landing gate's graph part read from the run's record, never evaluated, holding with §4's sentences and asking a whole pass (`DriverWatch.cs:434`), the press keeping its answer and awaiting that pass within a bound (`OpinionPresses.cs:64-71`); the landing pinned to `handed`'s commit on every path, a merge included (`TreeLands.cs:175`, `:502-514`, `:855-860`); performed starts turned on; `quest.close` cannot start until 1h; the "does not run yet" words go (`WorkflowNamed.cs:117-121`, `namedworkflows.ts:130`, `:138`, `workflowdoor.ts:365`, `:691`). Proof: `WorkflowGateTests`; the door lands where the pass made `handed` active; a commit inserted between the gate's judgement and the landing lands nothing, on the branch and merge paths; a press after a *Reviewed* lands at the same press within the bound, else is refused with its answer kept; a person's task before `handed` holds *Accept…* naming it.
+
+**Outcome** 2026-10-22: built, the cli lane untouched (its words had moved into the driver's verb): a graph run lands only where its record holds
+`handed` active at the door's commit, pinned there on the branch and merge paths, a press waiting up to twenty seconds for the pass it asks; the
+runtime begins its gate nodes and starts its performed nodes. No window was looked at. Detail: D190's CUTOVER1d note. On Opus.
 ## ASKDISMISS1 — dismissing an Ask Daoris quest block only hides it (2026-10-22, D89)
 
 > - **ASKDISMISS1**: dismissing an Ask Daoris quest block only hides it; it never acts on the quest, which may be taken (the owner's report, 2026-10-22). Building.
@@ -19517,3 +19524,44 @@ older build wrote, through `HarnessSettings.Set`, and the default's readers in t
 the terminal's and Ask Daoris's callers, so they and the two twin tables stay for POOL1b. The listed classes rewritten to the set,
 with `OwnSpaceTests`, `HelpPlaceWorkspaceTests`, the modules' account classes and eleven `agents-text.json` rows; the driver's and
 the modules' fast halves pass. Not seen failing first, and no window was looked at. Detail: D197's POOL1a2 note. On Opus.
+
+## POOL1b — the terminal and Ask Daoris on one set (2026-10-22, D197)
+
+> - [ ] **POOL1b — the terminal and Ask Daoris on one set** (driver, service; after POOL1a2, archived; D197). The account verbs PUSH1f2e builds turned into D197's refusals, and the `set` mark on Ask Daoris's account proposals, as design §5.1, §5.3 and §11 say; `agent list`, `login` and `settings` on the set, and `ResolveScope`, `JoinProblemOf`, `WithJoined`, `PlacesOf`, `DefaultAllowed`, `DefaultEdited` and `ProfileDefault` leaving with these, their last callers, `AccountJoinTwinTests` and `ProfileDefaultTwinTests` with them (D197's POOL1a2 note). Proof: as §11 names it.
+
+**Outcome** 2026-10-22: built. `profile order` and `use` write the set; `profile default`, `profile join`, `--workspace` and
+`login --join`/`--join-machine` are refused in `OneSetWords`' sentences before any press is built, nothing written. `login` and
+`settings` naming no account take the order's first; `agent list` shows the set, the own sign-in apart and the unsaid receipts. Ask
+Daoris's service writes `set: true` and no workspace, `default` left both sides' doors, and an unmarked stored proposal is refused at
+its plan and Apply. The named helpers and both twin tables left. `HarnessProfileTests`' four default cases now press the order or are
+refused in D197's sentence, each saying why; `AgentAccountsBothWaysTests`' one-set theory holds the terminal's refusal. Proof: the
+driver's and the modules' fast halves pass; `HarnessProfileTests`, `DriverModuleAgentsTests`, `HelpDoorsTests` and
+`AgentsCommandTests` (Process) and the service's `HelpAgentProposalTests` pass filtered. No real sign-in was started; not seen
+failing first, and no window was looked at. Detail: D197's POOL1b note. On Opus.
+
+## ASKQUESTS1 — an Ask Daoris conversation's published quests, managed from it (2026-10-22, D89)
+
+> - **ASKQUESTS1**: the quests an Ask Daoris conversation publishes are managed from it: each with its live state, opened in one press, followed to its end (the owner's direction, 2026-10-22). Design after ASKDISMISS1.
+
+**Outcome** 2026-10-22: each conversation keeps what its Applies published by id (`HELP_PUBLISHED`), shown under its head with each
+one's live state from the pushed lists, a row opening its record on Quests; an Apply's result is Daoris's word, never the person's.
+Detail: the Ask Daoris design §9 item 12 (with Codex's read), D89's ASKQUESTS1 note. On Opus.
+
+## BINDRACE1 — the run binding's race behind a FLAKE1 sighting (2026-10-22)
+
+> From FLAKE1: `WorkflowRunBindingTests.Two_starts_of_one_run_at_once_both_take_under_one_binding` (FABRIC-CUTOVER1g's race, once in the whole fast half beside three builders, green alone six times; again 2026-10-22 in POOL1b's fast half on the install).
+
+**Outcome** 2026-10-22: fixed in the product. The losing start read the winner's binding while Windows' move still held it open for
+deletion, and `File.ReadAllText` was refused, so it said `Unread` and held. Every read of a binding file now goes through
+`AtomicFile.ReadText`, which shares deletion. Reproduced every run by `MoveHold`; three tests seen failing first. The driver's other
+plain readers are READSHARE1. Detail: FIX-LOG 2026-10-22 (BINDRACE1). On Opus.
+## PARTWHOLE1 — the two test classes split by hand made whole classes again (2026-10-22, D166)
+
+> - [ ] **PARTWHOLE1 — the two test classes split by hand made whole classes again** (driver tests; found 2026-10-22, it fails `npm run verify` and so the `cli` gate on main). FABRIC-CUTOVER1c and 1f split `NodeRuntimeTests` over `NodeRuntimeTests.cs`, `.Runs.cs` and `.Words.cs`, and `ObservedEventTests` over `ObservedEventTests.cs` and `.Runs.cs` (`src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/`), as hand-written `partial` classes, which PART1's census (`tools/partials.mjs`, D166's note) refuses. Each split file becomes a class of its own named for what it tests, over a shared fixture class for the helpers they share, with no test lost or renamed in substance; `tools/partials.json` gains nothing. Proof: `node tools/partials.mjs` exits 0; the three classes' and two classes' test counts before equal the counts after; the driver's fast half and these Process classes pass.
+
+**Outcome** 2026-10-22: built. `NodeRuntimeTests` is three classes, `NodeRuntimeTests`, `NodeRuntimeRunTests` and `RunNodeWordsTests`,
+over `NodeRuntimeFixture` (the last two over `NodeRunFixture`, the run helpers they share); `ObservedEventTests` is two,
+`ObservedEventTests` and `ObservedRunEventTests`, over `ObservedEventFixture`. A fixture holds only what more than one class uses, as
+D166's PART6 fixtures do; no test body changed. Test cases listed before and after: 52 and 52 (32 + 13 + 7), 25 and 25 (20 + 5), the
+same names. `node tools/partials.mjs` is clean and `tools/partials.json` is unchanged. The driver's fast half passes (13,258); none of
+the five classes is a Process class, so `process.runsettings` with their filter selects no test. On Opus.

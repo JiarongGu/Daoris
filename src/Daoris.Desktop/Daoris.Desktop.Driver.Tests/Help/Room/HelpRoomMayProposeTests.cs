@@ -186,17 +186,20 @@ public sealed class HelpRoomMayProposeTests
     }
 
     /// <summary>
-    /// HELP10: which account an agent runs as by default, for the machine or a workspace, is an agent proposal, named
-    /// with the rule it is judged by — an account the room lists — beside the command that does the same.
+    /// POOL1b (D197 point 6, the account-pool design §5.3): the room words Daoris's accounts as one set, whose <c>use</c> and
+    /// <c>order</c> name no workspace, and offers no default; HELP10 held here that an agent's default account, for the machine or a
+    /// workspace, was proposed, beside <c>daoris agent profile default</c>.
     /// </summary>
     [Fact]
-    public void The_room_says_an_agents_default_account_is_proposed()
+    public void The_room_says_an_agents_accounts_are_one_set_and_offers_no_default()
     {
         var agents = HelpRoom.Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("or which of its accounts it runs as by default, for the machine or one workspace", agents);
-        Assert.Contains("the account one the room lists under that agent", agents);
-        Assert.Contains("`daoris agent profile default <agent> <profile>|--clear [--workspace <name>]`", agents);
+        Assert.Contains("Daoris's accounts for an agent are one set that serves every workspace, in one order, so these name no workspace", agents);
+        Assert.Contains("`order` puts the\n  accounts named first, in that order, the rest after, or with `clear` returns to the ids' order", agents);
+        Assert.DoesNotContain("by default, for the machine or one workspace", agents);
+        Assert.DoesNotContain("daoris agent profile default", agents);
+        Assert.DoesNotContain("this machine's accounts", agents);
     }
 
     /// <summary>HELP10: the browser's settings, each named as the terminal spells it, and when each holds.</summary>

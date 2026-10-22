@@ -7,21 +7,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <c>run:&lt;run&gt;</c>, each node observing the subject its kind names; Current kept off its quests and branches; its go-ahead begun on its own
 /// answers; no gate node begun and no performed node started until the doors read the run (CUTOVER1d). Each seen failing first.
 /// </summary>
-public sealed partial class NodeRuntimeTests
+public sealed class NodeRuntimeRunTests : NodeRunFixture
 {
-    private const string RunId = "q7";
-
-    private static readonly string RunUnit = RunUnits.IdOf(RunId);
-
-    private const string Tip1 = "1111111111111111111111111111111111111111";
-
-    private const string Tip2 = "2222222222222222222222222222222222222222";
-
-    private static readonly DateTimeOffset Opened = new(2026, 10, 17, 8, 0, 0, TimeSpan.Zero);
-
-    /// <summary>A plugin's observed step: the deploy its plugin reports.</summary>
-    private static readonly NodeDeclaration Deployed = new(Plugin + "/deployed", Plugin + "/deployed", 1, NodeReach.Observed);
-
     /// <summary>The least a named version's graph holds: <c>claimed</c>, then <c>handed</c>.</summary>
     private const string ClaimedThenHanded = """
         {"schemaVersion":2,"entries":["claimed"],"end":"handed",
@@ -35,15 +22,6 @@ public sealed partial class NodeRuntimeTests
          "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"handed","kind":"handed","version":1,"reach":"observed"},
                   {"id":"deployed","kind":"acme.deploy/deployed","version":1,"reach":"observed"}],
          "wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"},{"id":"h>d","kind":"after","from":"handed","to":"deployed"}]}
-        """;
-
-    /// <summary>A go-ahead between the claim and the landing, naming its act.</summary>
-    private const string GoAheadBeforeHanded = """
-        {"schemaVersion":2,"entries":["claimed"],"end":"handed",
-         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
-                  {"id":"go","kind":"go-ahead","version":1,"reach":"pressed","options":{"act":"deploy the release"}},
-                  {"id":"handed","kind":"handed","version":1,"reach":"observed"}],
-         "wires":[{"id":"c>g","kind":"after","from":"claimed","to":"go"},{"id":"g>h","kind":"after","from":"go","to":"handed"}]}
         """;
 
     /// <summary>The opinion and the look beside it before the landing, and the plugin's performed deploy after the claim.</summary>
@@ -75,43 +53,6 @@ public sealed partial class NodeRuntimeTests
             "other": { "form": "merge", "cycle": { "schemaVersion": 2, "entries": ["deployed"], "end": "deployed",
               "nodes": [{ "id": "deployed", "kind": "acme.deploy/deployed", "version": 1, "reach": "observed" }], "wires": [] } } } }
         """;
-
-    /// <summary>Each branch's tip as the pass reads it, by branch.</summary>
-    private readonly Dictionary<string, string> _branchTips = new(StringComparer.Ordinal);
-
-    /// <summary>Why the units' attribution was not read, as the service's outage says it; none where it was read.</summary>
-    private IReadOnlyList<string> _unread = [];
-
-    private int _gatesRead;
-
-    /// <summary>A look over the run's home: the units the test sets, the branches' tips, and the gates counted.</summary>
-    private NodeRuntimeLook RunLook(string config = "{}", bool whole = true) => Look(config, whole) with
-    {
-        Units = _ =>
-        {
-            Interlocked.Increment(ref _unitsRead);
-            return Task.FromResult(new NodeUnitsRead(_units, new Dictionary<string, string> { ["engine"] = "checkout", ["other"] = "elsewhere" })
-            {
-                Unread = _unread,
-            });
-        },
-        Steps = () => [Step, Build, Deployed],
-        Tips = (_, branches, _) => Task.FromResult<IReadOnlyDictionary<string, string>>(
-            branches.Where(_branchTips.ContainsKey).ToDictionary(branch => branch, branch => _branchTips[branch], StringComparer.Ordinal)),
-        Gates = (_, _) =>
-        {
-            Interlocked.Increment(ref _gatesRead);
-            return Task.FromResult<(OpinionGateState?, ReviewGateState?)>((null, null));
-        },
-    };
-
-    /// <summary>Run <c>q7</c> bound to v1 of a workflow holding <paramref name="graph"/>.</summary>
-    private void BoundTo(string graph, string? ask = null) => RunHome.Bind(_home, RunId, RunHome.SaveGraph(_home, graph), _now, ask: ask);
-
-    private Task<NodeRuntimePass> RunPassAsync(NodeRuntime runtime, string config = "{}", bool whole = true) =>
-        runtime.PassAsync(RunLook(config, whole), CancellationToken.None);
-
-    private NodeStatus RunStatus(string node, string unit = "") => Files.Read(unit.Length == 0 ? RunUnit : unit)!.Statuses[node];
 
     private bool RecordKept(string unit) => File.Exists(NodeRecordFiles.PathOf(_home, unit));
 
@@ -429,27 +370,85 @@ public sealed partial class NodeRuntimeTests
         Assert.Empty(_port.Sent);
     }
 
+    /// <summary>The gates each run's branch is read at, by branch unit and tip, and what they answer (FABRIC-CUTOVER1d).</summary>
+    private readonly List<(string Unit, string? Tip)> _gatesAt = [];
+
+    private readonly Dictionary<string, (OpinionGateState? Opinion, ReviewGateState? Review)> _gatesOf = new(StringComparer.Ordinal);
+
+    /// <summary>A look whose gates answer from <see cref="_gatesOf"/> by the tip asked, counting each read.</summary>
+    private NodeRuntimeLook GatesLook() => RunLook() with
+    {
+        Gates = (unit, tip, _) =>
+        {
+            Interlocked.Increment(ref _gatesRead);
+            _gatesAt.Add((unit.Id, tip));
+            return Task.FromResult(tip is null ? default : _gatesOf.GetValueOrDefault(tip));
+        },
+    };
+
+    /// <summary>The engine's second opinion settled, and its look reviewed, each at <paramref name="tip"/>.</summary>
+    private static (OpinionGateState?, ReviewGateState?) Answered(string tip) =>
+    (
+        new OpinionGateState(OpinionGateStates.Settled, RunHome.Repository) { Tip = tip },
+        new ReviewGateState(ReviewStates.Reviewed, new ReviewDecision(ReviewLevels.Repository, "preview") { Repository = RunHome.Repository })
+        {
+            Tip = tip, Verdict = new QuestReviewVerdictView(ReviewVerdicts.Reviewed),
+        });
+
     /// <summary>
-    /// Until the doors read a run (CUTOVER1d), its opinion and look are not begun, so no gate is read for it, and its plugin's performed node is
-    /// neither started nor awaited (§3).
+    /// FABRIC-CUTOVER1d (the cutover design §2.2, §3): the doors read a run's record, so its opinion and look are begun on its branch at the tip
+    /// the pass read, their gates read for that branch at that tip (never at a tree's <c>HEAD</c>), and each reached on its gate's answer there;
+    /// its plugin's performed node is started on the branch's unit at that tip, and awaited under it. A commit on the branch moves them all: the
+    /// gates are read again at the new tip.
     /// </summary>
     [Fact]
-    public async Task No_gate_node_is_begun_and_no_performed_node_started_on_a_run()
+    public async Task A_runs_gate_nodes_are_begun_their_gates_read_at_its_branch_tip_and_its_performed_node_started()
     {
         BoundTo(GatesAndADeploy);
         _branchTips["daoris/s1"] = Tip1;
         _units = [RunHome.QuestUnit(RunHome.Quest(RunId, "Done")), RunHome.Branch("unit-b1", "daoris/s1", Opened, [RunId])];
         var runtime = Runtime();
 
-        await RunPassAsync(runtime);
-        await RunPassAsync(runtime);
+        await runtime.PassAsync(GatesLook(), CancellationToken.None);
 
         Assert.Equal(NodeStates.Reached, RunStatus("claimed").State);
-        Assert.Equal((NodeStates.Ready, NodeStates.Ready, NodeStates.Ready, NodeStates.Blocked),
-            (RunStatus("opinion").State, RunStatus("look").State, RunStatus("deploy").State, RunStatus("handed").State));
-        Assert.Empty(_port.Sent);
-        Assert.Equal(0, _gatesRead);
-        Assert.All(_port.Told, told => Assert.False(told.ContainsKey(Plugin)));
+        Assert.Equal((NodeStates.Active, NodeStates.Active), (RunStatus("opinion").State, RunStatus("look").State));
+        Assert.Equal(("unit-b1", Tip1), (RunStatus("opinion").Binding!.Subject, RunStatus("opinion").Binding!.SubjectRevision));
+        var sent = Assert.Single(_port.Sent);
+        Assert.Equal(("unit-b1", Plugin + "/deploy", Tip1), (sent.Unit, sent.Step, sent.SubjectRevision));
+        Assert.Equal(NodeStates.Blocked, RunStatus("handed").State);
+        Assert.Contains(("unit-b1", (string?)Tip1), _gatesAt);
+        Assert.DoesNotContain(_gatesAt, read => read.Tip is null);
+
+        _gatesOf[Tip1] = Answered(Tip1);
+        await runtime.PassAsync(GatesLook(), CancellationToken.None);
+        Assert.Equal((NodeStates.Reached, NodeStates.Reached), (RunStatus("opinion").State, RunStatus("look").State));
+
+        // A commit on the branch: the gates are read again at the new tip, and the opinion waits on it there.
+        _branchTips["daoris/s1"] = Tip2;
+        _gatesAt.Clear();
+        await runtime.PassAsync(GatesLook(), CancellationToken.None);
+        Assert.Equal((NodeStates.Active, Tip2), (RunStatus("opinion").State, RunStatus("opinion").Binding!.SubjectRevision));
+        Assert.Contains(("unit-b1", (string?)Tip2), _gatesAt);
+    }
+
+    /// <summary>
+    /// FABRIC-CUTOVER1d: a run's ready performed node is owed a start at a wake as at the look, and the awaited set tells its plugin of it under
+    /// the run's branch once it is started (§2.4.1).
+    /// </summary>
+    [Fact]
+    public async Task A_runs_performed_node_is_told_under_its_branch_once_started()
+    {
+        BoundTo(GatesAndADeploy);
+        _branchTips["daoris/s1"] = Tip1;
+        _units = [RunHome.QuestUnit(RunHome.Quest(RunId, "Done")), RunHome.Branch("unit-b1", "daoris/s1", Opened, [RunId])];
+        var runtime = Runtime();
+
+        await runtime.PassAsync(GatesLook(), CancellationToken.None);
+
+        var told = Assert.Single(_port.Told[^1][Plugin]);
+        Assert.Equal(("unit-b1", "daoris/s1", Tip1), (told.Unit, told.Branch, told.Tip));
+        Assert.Equal(["deploy"], told.Awaiting);
     }
 
     /// <summary>

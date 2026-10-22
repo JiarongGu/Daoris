@@ -183,8 +183,13 @@ internal sealed class TreeLands(
     /// The session tree's repository and branch as its landing read them a moment ago (LANDGIT1b); null reads them here. Only the
     /// tree's: every check of the root is still made here, immediately before the merge.
     /// </param>
+    /// <param name="pinned">
+    /// The commit the door judged (FABRIC-CUTOVER1d, <see cref="LandingGate.Tip"/>: a graph run's <c>handed</c>'s): the branch must stand there
+    /// immediately before the merge, and the merge takes that commit, never the branch as it stands then. Null merges the branch as it stands.
+    /// </param>
     internal async Task<TreeMerge> MergeAsync(
-        string path, CancellationToken ct = default, LandReplay? replay = null, int? uncommitted = null, CommonDirAndBranch? here = null)
+        string path, CancellationToken ct = default, LandReplay? replay = null, int? uncommitted = null, CommonDirAndBranch? here = null,
+        string? pinned = null)
     {
         var full = Path.GetFullPath(path);
         if (!full.StartsWith(Path.GetFullPath(context.TreesRoot) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
@@ -230,11 +235,20 @@ internal sealed class TreeLands(
                 + "there is nowhere to merge to. Set one with `daoris driver line`.");
         }
 
+        // FABRIC-CUTOVER1d: pinned, the work merged is the commit judged, read here, as late as the root's own checks.
+        if (pinned is not null && await CommitOfAsync(root, $"refs/heads/{branch}", ct).ConfigureAwait(false) is { } stands
+            && !string.Equals(stands, pinned, StringComparison.OrdinalIgnoreCase))
+        {
+            return new(false, Moved(branch, stands, pinned).Message);
+        }
+
+        var merging = pinned ?? branch;
+
         // 🔴 Compared where git has the line, and a comparison git could not make is not "nothing to
         // merge": a line only origin has made `log` fail, and its empty output said the work was there.
         var against = await ComparableAsync(root, canonical, ct).ConfigureAwait(false) ?? canonical;
         var (aheadCode, ahead, aheadErr) = await WorkingTree.GitAsync(
-            root, ["log", "--oneline", $"{against}..{branch}"], ct).ConfigureAwait(false);
+            root, ["log", "--oneline", $"{against}..{merging}"], ct).ConfigureAwait(false);
         if (aheadCode != 0)
         {
             return new(false, $"git cannot compare `{branch}` with `{canonical}` here: {FirstLine(aheadErr)} "
@@ -268,10 +282,12 @@ internal sealed class TreeLands(
         }
 
         // `--no-ff` so the merge is one commit a person can read and revert as a unit, and `--no-edit`
-        // so nothing opens an editor on a machine nobody is sitting at. A replay's tip is merged under the branch's name.
-        var (mergeCode, _, mergeErr) = await WorkingTree.GitAsync(
-            root, replay is null ? ["merge", "--no-ff", "--no-edit", branch] : ["merge", "--no-ff", "-m", $"Merge branch '{branch}'", replay.Now], ct)
-            .ConfigureAwait(false);
+        // so nothing opens an editor on a machine nobody is sitting at. A replay's tip is merged under the branch's name, and so is a pinned
+        // commit (FABRIC-CUTOVER1d), so the merge is the one the branch's would have been.
+        string[] merge = replay is not null ? ["merge", "--no-ff", "-m", $"Merge branch '{branch}'", replay.Now]
+            : pinned is not null ? ["merge", "--no-ff", "-m", $"Merge branch '{branch}'", pinned]
+            : ["merge", "--no-ff", "--no-edit", branch];
+        var (mergeCode, _, mergeErr) = await WorkingTree.GitAsync(root, merge, ct).ConfigureAwait(false);
         if (mergeCode != 0)
         {
             // Leave the root as it was found. Nothing here resolves a conflict: the person does that
@@ -404,6 +420,17 @@ internal sealed class TreeLands(
         return string.IsNullOrWhiteSpace(dirty) ? 0 : dirty.Trim().Split('\n').Length;
     }
 
+    /// <summary>
+    /// A pinned landing whose branch moved past the commit its door judged (FABRIC-END7's review; FABRIC-CUTOVER1d's merge too): nothing lands, and
+    /// it is judged again at its new tip.
+    /// </summary>
+    private static TreeLanding Moved(string branch, string stands, string pinned) =>
+        new(false, $"`{branch}` moved after its landing was judged: it stands at {TextBounds.ShortCommit(stands, 8)}, "
+            + $"not {TextBounds.ShortCommit(pinned, 8)}. Nothing was landed; it is judged again at its new tip.")
+        {
+            Refusal = AutoLandingCode.Refused,
+        };
+
     /// <summary>What a landing says that waited for another of its tree past <see cref="LandingHolds.Wait"/> (LANDRACE1).</summary>
     internal static string StillLanding =>
         $"another landing of this session's work was still under way after {(int)LandingHolds.Wait.TotalMinutes} minutes, so nothing was "
@@ -533,6 +560,15 @@ internal sealed class TreeLands(
         var followed = false;
         if (!branchForm)
         {
+            // FABRIC-CUTOVER1d (the cutover design §4): pinned, as a graph run's landing is to the commit its `handed` is bound to, the merge lands
+            // that commit or nothing, as a pinned branch landing does: the session's branch must stand there before anything is replayed or
+            // merged, and the merge takes the commit itself, so one made after the judgement never lands unseen.
+            if (gate?.Tip is { } pin && here is not null && await CommitOfAsync(full, $"refs/heads/{here.Branch.Trim()}", ct).ConfigureAwait(false) is { } stands
+                && !string.Equals(stands, pin, StringComparison.OrdinalIgnoreCase))
+            {
+                return Fetched(Moved(here.Branch.Trim(), stands, pin), notFetched);
+            }
+
             if (replaying is not null)
             {
                 var (made, notMade) = await syncs.ReplayAsync(replaying, repository, workspace, replaying.Onto, replaying.Held.Kept, ct).ConfigureAwait(false);
@@ -540,7 +576,7 @@ internal sealed class TreeLands(
                 replayed = made;
             }
 
-            var merged = await MergeAsync(path, ct, replayed, uncommitted, here).ConfigureAwait(false);
+            var merged = await MergeAsync(path, ct, replayed, uncommitted, here, pinned: gate?.Tip).ConfigureAwait(false);
             landed = new(merged.Merged, merged.Message) { LeftOut = merged.Merged ? replayed?.LeftOut : null };
             landed = Fetched(landed, notFetched);
         }
@@ -901,12 +937,7 @@ internal sealed class TreeLands(
             .ToList();
 
         // FABRIC-END7's review: pinned, the work read here is the work judged, or nothing lands.
-        if (pinned is not null && !string.Equals(commits[^1].Sha, pinned, StringComparison.OrdinalIgnoreCase))
-        {
-            return new TreeLanding(false, $"`{branch}` moved after its landing was judged: it stands at {TextBounds.ShortCommit(commits[^1].Sha, 8)}, "
-                + $"not {TextBounds.ShortCommit(pinned, 8)}. Nothing was landed; it is judged again at its new tip.")
-            { Refusal = AutoLandingCode.Refused };
-        }
+        if (pinned is not null && !string.Equals(commits[^1].Sha, pinned, StringComparison.OrdinalIgnoreCase)) return Moved(branch, commits[^1].Sha, pinned);
 
         // TREEFOLLOW1 (D164 point 4): the tree its agent moved onto a branch of its own lands as that branch stands: it is already the
         // pull request's branch, named as the repository names its own, so none is made and the rule's pattern is not asked.

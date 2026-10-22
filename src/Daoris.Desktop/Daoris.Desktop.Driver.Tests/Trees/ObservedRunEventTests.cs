@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// landing and the landed branch at its landing's tip after it, and its event mapped back to the run's record. A kept observation names its
 /// subject, and a landing's telling is judged on the tip told, which the landing's record keeps. Each seen failing first.
 /// </summary>
-public sealed partial class ObservedEventTests
+public sealed class ObservedRunEventTests : ObservedEventFixture
 {
     private const string B2 = "engine~feature-b2";
 

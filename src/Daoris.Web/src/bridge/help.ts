@@ -4,6 +4,7 @@ import { keys } from '../data/queries';
 import { type HelpListing, joinPages, listingPage, sameWorkspace } from '../help/history';
 import type { HelpProposal } from '../help/ProposalCard';
 import type { HelpPlace } from '../help/places';
+import type { HelpPublishedEntry } from '../help/published';
 import { call, pressBound } from './call';
 import { syncLookBound } from './repositories/lines';
 import { logEvent } from './log';
@@ -258,6 +259,41 @@ export const useHelpWired = (session: string | null, enabled = true) => {
     queryKey: [...HELP_WIRED, session],
     queryFn: async () => wiredAnswer(await call<unknown>('HELP_WIRED', { session: session! }), session!),
     enabled: isAvailable && session !== null && enabled,
+  });
+};
+
+/**
+ * One `HELP_PUBLISHED` answer read as the conversation's list (ASKQUESTS1), each entry field for field as the driver keeps it
+ * (`HelpPublished.cs`), newest first: an id the answer leaves out reads as none, an entry with no proposal or neither id as no
+ * entry, and an answer that does not read, an older shell's, as nothing published.
+ */
+export function publishedAnswer(answer: unknown): HelpPublishedEntry[] {
+  const held = (answer ?? {}) as { published?: unknown };
+  return rowsOf(held.published).flatMap((entry): HelpPublishedEntry[] => {
+    const proposal = textOf(entry.proposal);
+    const kind = textOf(entry.kind);
+    const ask = textOf(entry.ask);
+    const quest = textOf(entry.quest);
+    if (!proposal || !kind || (!ask && !quest)) return [];
+    return [{ at: textOf(entry.at) ?? '', proposal, kind, workspace: textOf(entry.workspace), ask, quest }];
+  });
+}
+
+/** What each conversation published: a conversation's under it, read again when the `help` scope is published (an Apply adds one). */
+export const HELP_PUBLISHED = ['help-published'] as const;
+
+/**
+ * What one Ask Daoris conversation's Applies published (ASKQUESTS1, the Ask Daoris design §9 item 12): the asks and quests by id,
+ * the newest first. A read of this machine's home, desktop-only as the conversation is; nothing but an Apply moves it, and the
+ * Apply publishes `help`, which asks it again, so it is never asked on a clock. Each one's state is the pushed lists'.
+ */
+export const useHelpPublished = (session: string | null) => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: [...HELP_PUBLISHED, session],
+    queryFn: async () => publishedAnswer(await call<unknown>('HELP_PUBLISHED', { session: session! })),
+    enabled: isAvailable && session !== null,
+    staleTime: Infinity,
   });
 };
 
