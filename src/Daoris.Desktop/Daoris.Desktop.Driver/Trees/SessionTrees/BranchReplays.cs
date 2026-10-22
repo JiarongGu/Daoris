@@ -529,7 +529,7 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
             // where its work is: it goes once the tree and that branch are gone too.
             if (entry.Now is { } now)
             {
-                if (Directory.Exists(Path.Combine(context.TreesRoot, entry.Workspace, entry.Repository, Path.GetFileName(entry.Branch)))) continue;
+                if (Directory.Exists(context.TreeAt(entry.Workspace, entry.Repository, Path.GetFileName(entry.Branch)))) continue;
                 var (stands, _, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{now}"], ct).ConfigureAwait(false);
                 if (stands == 0) continue;
                 // RECORDUNREAD1: that branch unread (a broken ref) is not gone; only git's own "missing" says so.

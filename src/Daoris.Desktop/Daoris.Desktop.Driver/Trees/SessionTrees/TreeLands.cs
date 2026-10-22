@@ -192,7 +192,7 @@ internal sealed class TreeLands(
         string? pinned = null)
     {
         var full = Path.GetFullPath(path);
-        if (!full.StartsWith(Path.GetFullPath(context.TreesRoot) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+        if (!context.Holds(full))
         {
             return new(false, $"{path} is not a session tree — this merges only trees Daoris opened, "
                 + $"under {context.TreesRoot}.");
@@ -809,7 +809,7 @@ internal sealed class TreeLands(
     /// </summary>
     private string? UnitOf(string full, string repository) => context.Grown.All()
         .LastOrDefault(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase)
-            && string.Equals(Path.GetFullPath(Path.Combine(context.TreesRoot, entry.Workspace, entry.Repository, Path.GetFileName(entry.Branch))),
+            && string.Equals(Path.GetFullPath(context.TreeAt(entry.Workspace, entry.Repository, Path.GetFileName(entry.Branch))),
                 Path.TrimEndingDirectorySeparator(full), StringComparison.OrdinalIgnoreCase))?.Unit;
 
     /// <summary>Words said before the sentence that the tree stays, which a tidy takes out; at the end where it is not there.</summary>

@@ -19798,3 +19798,10 @@ round-3 row that shows a refused return in *What needs you* stays open as HELPER
 (`StandingConfirmation.OfferedInThisBuild` false), so nothing a person can feel changes until part (i) lands and its case 4 is looked
 at on the install. §8 cases 1, 3 and 5 to 12 hold by class; case 3's elevation is not measured, and case 14 is the parent's look once
 the grant is offered. Detail: D201's TERMTRUST1a part (ii) note. On Opus.
+## TREEPLACE1 — trees a session opened under the home's old trees place are refused as not a session tree (2026-10-23)
+
+> - [ ] **TREEPLACE1 — trees a session opened under the home's old trees place are refused as not a session tree** (driver; the row as the ask filed it, which this tree did not hold). The home layout move (`home.moved` at the install start of 2026-10-23) moved many entries but not the trees, which are git worktrees, so 11 trees of this repository still sit under the install `data/trees` while new ones open under `work/trees`. `TreeContext.Holds` and the checks in `TreeLands.cs` and `TreeRemovals.cs` accept only the new place, so `trees land` refuses such a session (SESSWATCH1a and COAGENT1b part 7, merged by hand), `trees remove` refuses it, and the automatic tidy keeps it: seven trees whose work is already on main stay forever and every look walks them (TREELOOK1). Fix: a tree under either spelling of `HomeEntry.Trees` is one this home opened, in one predicate every check uses; or the layout move relocates each tree with `git worktree move`. Proof: on a scratch home, a tree under the old place is landed, removed and tidied as a new-place one is, and a folder outside both is still refused.
+
+**Outcome** 2026-10-23: the predicate, not the move. `TreeContext.RootOf` reads both places of `HomeEntry.Trees`, and every
+check asks it. The trees stay where they are, as D172 point 6 says. `TreePlacesGitTests` lands, merges, removes and tidies a
+tree moved to the old place, and refuses one outside both. Detail: FIX-LOG 2026-10-23 (TREEPLACE1), D172's TREEPLACE1 note. On Opus.

@@ -337,6 +337,8 @@
     "TreeLeftoversTests.cs": "Trees",
     "TreeLockTests.cs": "Trees",
     "TreeMergeTests.cs": "Trees",
+    "TreePlacesGitTests.cs": "Trees",
+    "TreePlacesTests.cs": "Trees",
     "TreeScratchTests.cs": "Trees",
     "TreeSyncTests.cs": "Trees",
     "TreeUpdateTests.cs": "Trees",

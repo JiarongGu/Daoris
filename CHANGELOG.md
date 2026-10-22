@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session tree opened before the install's folders were rearranged is landed, removed and tidied again (TREEPLACE1). Such
+  trees stay in the install's `data/trees/` while new ones open in `work/trees/`. *Accept*, `trees land` and `trees remove`
+  refused them as not a session tree, and the tidy kept them after their work was on the line. Both places now hold Daoris's
+  own trees, and a folder outside both is still refused.
 - Opening Review no longer writes to a session tree's git index (REVIEWLOCK1). Before, Review could hold the index's lock just
   as the session's agent tried to stage or commit there, and the agent's git then failed. Review's reads, and every status
   Daoris asks of a tree, now leave the index alone.

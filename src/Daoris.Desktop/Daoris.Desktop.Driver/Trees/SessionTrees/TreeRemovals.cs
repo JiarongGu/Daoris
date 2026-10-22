@@ -19,7 +19,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
     internal async Task<TreeRemoval> RemoveAsync(string path, bool force = false, CancellationToken ct = default)
     {
         var full = Path.GetFullPath(path);
-        if (!full.StartsWith(Path.GetFullPath(context.TreesRoot) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+        if (!context.Holds(full))
         {
             return new(false, $"{path} is not a session tree — this removes only trees Daoris opened, "
                 + $"under {context.TreesRoot}. A checkout is never a side effect's to delete.");

@@ -52,14 +52,38 @@ internal sealed class TreeContext
     internal SessionBranches Grown => new(Home);
 
     /// <summary>
-    /// Every tree this machine's Daoris has opened lives under here, and only here: the home's <see cref="HomeEntry.Trees"/>,
-    /// asked short of an item, the folder holding them.
+    /// Where this machine's Daoris opens a tree: the home's <see cref="HomeEntry.Trees"/>, asked short of an item, the folder
+    /// holding them. A tree opened before the home's layout moved may sit at the entry's other place (<see cref="TreesRoots"/>).
     /// </summary>
     internal string TreesRoot => DaorisHome.Entry(Home, HomeEntry.Trees);
 
+    /// <summary>
+    /// Both places of <see cref="HomeEntry.Trees"/>, the new first (TREEPLACE1): D172 point 6 never moves a tree, so the trees
+    /// opened before the layout moved stay at the old place while new ones open at the new, and each is one this home opened.
+    /// </summary>
+    internal IReadOnlyList<string> TreesRoots => DaorisHome.Places(Home, HomeEntry.Trees);
+
     /// <summary>Whether <paramref name="path"/> is a tree this home opened — the only kind a landing rule reaches.</summary>
-    internal bool Holds(string path) =>
-        Path.GetFullPath(path).StartsWith(Path.GetFullPath(TreesRoot) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+    internal bool Holds(string path) => RootOf(path) is not null;
+
+    /// <summary>
+    /// The place of <see cref="HomeEntry.Trees"/> that holds <paramref name="path"/> below it, or null for a path under neither
+    /// (TREEPLACE1): the one test of a tree this home opened, which every check asks.
+    /// </summary>
+    internal string? RootOf(string path)
+    {
+        var full = Path.GetFullPath(path);
+        return TreesRoots.FirstOrDefault(root =>
+            full.StartsWith(Path.TrimEndingDirectorySeparator(Path.GetFullPath(root)) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// The folder of the tree the layout names <c>&lt;workspace&gt;/&lt;repository&gt;/&lt;name&gt;</c> (TREEPLACE1): where a tree
+    /// is at either place, else where a new one opens.
+    /// </summary>
+    internal string TreeAt(string workspace, string repository, string name) =>
+        DaorisHome.Places(Home, HomeEntry.Trees, workspace, repository, name).FirstOrDefault(Directory.Exists)
+        ?? Path.Combine(TreesRoot, workspace, repository, name);
 
     /// <summary>
     /// The person's choices, from the file the loop and the planner read (CONFIGSEAM1): this home's <c>driver.json</c> alone
@@ -125,7 +149,7 @@ internal sealed class TreeContext
     /// <summary>A tree's workspace and repository, read from the layout Daoris itself chose (`trees/&lt;workspace&gt;/&lt;repository&gt;/&lt;name&gt;`).</summary>
     internal (string Workspace, string Repository) OwnerOf(string full)
     {
-        var parts = Path.GetRelativePath(TreesRoot, full).Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var parts = Path.GetRelativePath(RootOf(full) ?? TreesRoot, full).Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         return parts.Length >= 3 ? (parts[0], parts[1]) : ("", "");
     }
 }

@@ -67,7 +67,7 @@ internal sealed class TreeGates(TreeContext context)
         var commit = tip ?? await ReviewGit.HeadAsync(full, ct).ConfigureAwait(false);
         var branches = context.Grown.Entries();
         var unit = branches.LastOrDefault(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase)
-            && string.Equals(Path.GetFullPath(Path.Combine(context.TreesRoot, entry.Workspace, entry.Repository, Path.GetFileName(entry.Branch))),
+            && string.Equals(Path.GetFullPath(context.TreeAt(entry.Workspace, entry.Repository, Path.GetFileName(entry.Branch))),
                 Path.TrimEndingDirectorySeparator(full), StringComparison.OrdinalIgnoreCase))?.Unit;
         var judged = GraphGate.Judge(new GraphGateFacts(run, graph, digest, new NodeRecordFiles(context.Home, () => false).Read(RunUnits.IdOf(run)))
         {

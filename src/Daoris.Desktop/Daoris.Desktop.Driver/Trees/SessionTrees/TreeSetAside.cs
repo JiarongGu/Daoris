@@ -63,7 +63,7 @@ internal sealed class TreeSetAside(TreeContext context)
             // TREEFOLLOW1: the folder here is a tree git lists, on the branch its agent made; it is not this branch's, so nothing of
             // it is read as unreadable, and it stays untouched.
             if (item.TreeOn is not null) return null;
-            var folder = Path.Combine(context.TreesRoot, item.Workspace, item.Repository, item.Branch[TreeFollows.SessionPrefix.Length..]);
+            var folder = context.TreeAt(item.Workspace, item.Repository, item.Branch[TreeFollows.SessionPrefix.Length..]);
             return Directory.Exists(folder) ? (TidyKept.Unread, $"its folder at {folder} is here, and git lists no tree for it", TidyCause.Folder) : null;
         }
 
