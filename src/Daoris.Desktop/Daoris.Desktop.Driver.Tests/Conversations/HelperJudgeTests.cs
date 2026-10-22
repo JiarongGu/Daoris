@@ -42,6 +42,20 @@ public sealed class HelperJudgeTests
         Assert.Equal(HelperVerdict.Go, HelperJudge.Judge(Ask(), approved, Asker(), Rule(HelperRules.Ask), 0, true));
     }
 
+    /// <summary>
+    /// COAGENT1a (D199 point 5): an asker with a turn in flight waits `turn`, after the person's yes and before the cap, so its work
+    /// in progress is captured only at a turn's boundary; the person's own ask waits the same.
+    /// </summary>
+    [Fact]
+    public void An_asker_mid_turn_waits_for_its_turns_end_after_the_persons_yes_and_before_the_cap()
+    {
+        Assert.Equal(HelperVerdict.Wait(HelperVerdict.Turn), HelperJudge.Judge(Ask(), null, Asker(), Rule(HelperRules.On), 0, slot: false, between: false));
+        Assert.Equal(HelperVerdict.Wait(HelperVerdict.Turn), HelperJudge.Judge(Ask(HelperAsk.ByPerson), null, Asker(), Rule(HelperRules.Off), 0, true, between: false));
+        Assert.Equal(HelperVerdict.Wait(null), HelperJudge.Judge(Ask(), null, Asker(), Rule(HelperRules.Ask), 0, true, between: false));
+        Assert.Equal(HelperVerdict.Refuse(HelperWhy.TooMany), HelperJudge.Judge(Ask(), null, Asker(), Rule(HelperRules.On), HelperJudge.PerAsker, true, between: false));
+        Assert.Equal(HelperVerdict.Go, HelperJudge.Judge(Ask(), null, Asker(), Rule(HelperRules.On), 0, true, between: true));
+    }
+
     /// <summary>The person's own ask is theirs: neither `ask` nor `off` holds a verb they typed, and they say yes by typing it.</summary>
     [Theory]
     [InlineData(HelperRules.Ask)]

@@ -54,10 +54,37 @@ public static class HelperWhy
     /// </summary>
     public const string Declined = "declined";
 
+    // COAGENT1a (D199 point 5; the co-agent design §2.5): the asker's work in progress could not be captured whole, so no helper
+    // was handed part of it.
+
+    /// <summary>The asker's tree holds an unresolved merge.</summary>
+    public const string CaptureMerge = "capture-merge";
+
+    /// <summary>A link in the asker's work leads out of its tree.</summary>
+    public const string CaptureLink = "capture-link";
+
+    /// <summary>The asker's work changes a submodule, or holds a repository of its own.</summary>
+    public const string CaptureSubmodule = "capture-submodule";
+
+    /// <summary>A file of the asker's work could not be read.</summary>
+    public const string CaptureUnreadable = "capture-unreadable";
+
+    /// <summary>The asker's work is past the capture's bounds (<see cref="HelperCaptures"/>).</summary>
+    public const string CaptureBound = "capture-bound";
+
+    /// <summary>The asker's work changed while it was captured, and again when it was captured once more.</summary>
+    public const string CaptureMoved = "capture-moved";
+
     /// <summary>The reason in one English sentence's clause, for the terminal and the transcript.</summary>
     public static string Said(string why) => why switch
     {
         Declined => "the person said no to it",
+        CaptureMerge => "its work holds an unresolved merge, so it could not be captured whole",
+        CaptureLink => "a link in its work leads out of its tree, so it could not be captured whole",
+        CaptureSubmodule => "its work changes a submodule or holds a repository of its own, so it could not be captured whole",
+        CaptureUnreadable => "a file of its work could not be read, so it could not be captured whole",
+        CaptureBound => "its uncommitted work is past what a helper is handed",
+        CaptureMoved => "its work kept changing while it was captured",
         Off => "the rule for helpers is off for this repository",
         AskerGone => "the session that asked is not on this machine",
         AskerUnfit => "the session that asked is itself a helper, a reviewer or an intake",

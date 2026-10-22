@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// The helpers' three files per ask under <c>&lt;home&gt;/helpers</c> (MIXAGENT2a-i, D163 point 2): read as the service writes
 /// them and written as the service reads them. The file is the contract; the service's <c>HelperBox</c> and this share no code,
-/// and each side's tests hold the same shapes.
+/// and each side's tests hold the same shapes. A fourth, <c>&lt;askId&gt;.capture.json</c> (COAGENT1a), is the driver's alone.
 /// </summary>
 /// <remarks>The records are the Domain's (<see cref="HelperAsk"/>, <see cref="HelperState"/>, <see cref="HelperAnswer"/>; STRUCT3h).</remarks>
 public sealed class HelperFiles(string home)
@@ -93,6 +93,86 @@ public sealed class HelperFiles(string home)
             return Text(element, "answer") is { Length: > 0 } answer && Text(element, "helper") is { } helper
                 ? new HelperAnswer(Text(element, "id") ?? id, helper, answer, Moments.Read(element, "at") ?? DateTimeOffset.UtcNow)
                 : null;
+        }
+    }
+
+    /// <summary>
+    /// Keep the manifest of the work a helper was handed, <c>&lt;askId&gt;.capture.json</c> (COAGENT1a, the co-agent design §2.5):
+    /// the driver's alone, written before the helper starts, never its bytes. The service reads none of it.
+    /// </summary>
+    public void WriteCapture(string id, HelperCaptured capture)
+    {
+        JsonFile.Write(PathOf(id, "capture"), writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("id", capture.Id);
+            writer.WriteString("commit", capture.Commit);
+            writer.WriteString("at", Moments.Write(capture.At));
+            writer.WriteStartArray("files");
+            foreach (var file in capture.Files)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("path", file.Path);
+                writer.WriteString("sha256", file.Hash);
+                writer.WriteNumber("size", file.Size);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+            writer.WriteStartArray("deleted");
+            foreach (var path in capture.Deleted) writer.WriteStringValue(path);
+            writer.WriteEndArray();
+            writer.WriteStartArray("leftOut");
+            foreach (var left in capture.LeftOut)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("path", left.Path);
+                writer.WriteString("why", left.Why);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+            writer.WriteBoolean("ignoredLeftOut", true);
+            writer.WriteEndObject();
+        });
+    }
+
+    /// <summary>The manifest of the work an ask's helper was handed, or null where none was kept (an ask from before COAGENT1a) or it is unreadable.</summary>
+    public HelperCaptured? ReadCapture(string id)
+    {
+        if (Parse(PathOf(id, "capture")) is not { } root) return null;
+        using (root)
+        {
+            var element = root.RootElement;
+            if (Text(element, "id") is not { Length: > 0 } name || Text(element, "commit") is not { Length: > 0 } commit) return null;
+            var files = new List<CapturedFile>();
+            var deleted = new List<string>();
+            var left = new List<CaptureLeftOut>();
+            if (element.TryGetProperty("files", out var listed) && listed.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var file in listed.EnumerateArray())
+                {
+                    if (Text(file, "path") is { } path && Text(file, "sha256") is { } hash)
+                    {
+                        files.Add(new CapturedFile(path, hash, file.TryGetProperty("size", out var size) && size.TryGetInt64(out var bytes) ? bytes : 0));
+                    }
+                }
+            }
+
+            if (element.TryGetProperty("deleted", out var gone) && gone.ValueKind == JsonValueKind.Array)
+            {
+                deleted.AddRange(gone.EnumerateArray().Where(path => path.ValueKind == JsonValueKind.String).Select(path => path.GetString()!));
+            }
+
+            if (element.TryGetProperty("leftOut", out var leaving) && leaving.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var entry in leaving.EnumerateArray())
+                {
+                    if (Text(entry, "path") is { } path && Text(entry, "why") is { } why) left.Add(new CaptureLeftOut(path, why));
+                }
+            }
+
+            return new HelperCaptured(name, commit, Moments.Read(element, "at") ?? DateTimeOffset.UtcNow, files, deleted, left);
         }
     }
 

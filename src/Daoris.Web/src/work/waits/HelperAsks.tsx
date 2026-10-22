@@ -75,7 +75,12 @@ export type HelperWaits = {
 /** The codes of a refusal the timeline's notes already word (`note.helper.why.*`, MIXAGENT2a-ii); any other is said as written. */
 const WHY = new Set([
   'off', 'asker-gone', 'asker-unfit', 'too-many', 'unreadable', 'not-started', 'no-answer', 'conversation', 'cannot-take', 'declined',
+  // COAGENT1a: the session's work in progress could not be captured whole.
+  'capture-merge', 'capture-link', 'capture-submodule', 'capture-unreadable', 'capture-bound', 'capture-moved',
 ]);
+
+/** Why a waiting ask waits where it is no yes of the person's, as the driver's look writes it; any other waits on an agent. */
+const WAITS: Record<string, string> = { cap: 'work.helper.state.cap', turn: 'work.helper.state.turn' };
 
 /** Where one ask stands, in a line: who asked, the agent it named until one started, and its state in the person's words. */
 export function helperLine(t: TFunction, row: HelperAskRow, nameOf: (agent: string) => string): string {
@@ -93,7 +98,7 @@ export function helperLine(t: TFunction, row: HelperAskRow, nameOf: (agent: stri
       case 'approved': return [t('work.helper.state.approved'), t('work.helper.state.next')].join(' · ');
       case 'waiting':
         if (row.code === null) return t(row.askedBy === 'agent' ? 'work.helper.state.yours' : 'work.helper.state.next');
-        return t(row.code === 'cap' ? 'work.helper.state.cap' : 'work.helper.state.agent');
+        return t(WAITS[row.code] ?? 'work.helper.state.agent');
       default:
         return t(waitsOnYes(row) ? 'work.helper.state.yours' : 'work.helper.state.next');
     }

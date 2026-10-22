@@ -102,5 +102,28 @@ public sealed class HelperWordsTests
         var last = HelperWords.Compose("codex-acp", "h1a2b3c4", "Why?", "Probably the window.", lastWords: true);
         Assert.Contains("did not use its answer tool", last);
         Assert.Contains("its last words, not a deliberate answer", last);
+        Assert.DoesNotContain("capture", last);
+    }
+
+    /// <summary>
+    /// COAGENT1a (the co-agent design §2.5 point 5): the answer names the capture its helper read, by its name, commit, moment and
+    /// what it held, and says the work may have moved since; a capture with nothing uncommitted says so.
+    /// </summary>
+    [Fact]
+    public void The_answer_names_the_capture_its_helper_read_and_says_the_work_may_have_moved()
+    {
+        var at = DateTimeOffset.Parse("2026-10-22T09:30:00Z");
+        var capture = new HelperCaptured(
+            "0123456789ab", "2222222222222222222222222222222222222222", at,
+            [new CapturedFile("src/a.ts", new string('a', 64), 3), new CapturedFile("b.bin", new string('b', 64), 4)], ["gone.md"], []);
+
+        var text = HelperWords.Compose("codex-acp", "h1a2b3c4", "Why?", "Line 42.", lastWords: false, capture);
+
+        Assert.Contains(
+            "It read your work as Daoris captured it at 2026-10-22 09:30 UTC (capture `0123456789ab`: commit `2222222` with 2 changed or new "
+            + "files and 1 deletion). Your work may have moved since.", text);
+        Assert.True(text.IndexOf("capture `0123456789ab`", StringComparison.Ordinal) < text.IndexOf("> Line 42.", StringComparison.Ordinal));
+        var clean = HelperWords.Compose("codex-acp", "h1a2b3c4", "Why?", "Line 42.", lastWords: false, capture with { Files = [], Deleted = [] });
+        Assert.Contains("commit `2222222` with nothing uncommitted", clean);
     }
 }

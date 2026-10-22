@@ -75,6 +75,9 @@ internal sealed class LoopContext(
     /// <summary>How an asker's tree is read, its last commit and its repository's registered checkout, unless a test hands in a stand-in (MOD8).</summary>
     public Func<string, CancellationToken, Task<(string? Tip, string? Root)>>? HelperTrees { get; set; }
 
+    /// <summary>How an asker's work in progress is captured for its helper (COAGENT1a), unless a test hands in a stand-in, since a real capture spawns git (MOD8).</summary>
+    public Func<string, CancellationToken, Task<HelperCaptureRead>>? HelperCaptures { get; set; }
+
     /// <summary>How a helper's agent is chosen, unless a test hands in a choice.</summary>
     public Func<HelperAsk, HelperRule, PriorSession, CancellationToken, Task<ReviewerChoice>>? HelperChoices { get; set; }
 

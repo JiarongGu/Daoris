@@ -1,6 +1,6 @@
 {
   "work.helper.title": "ask another agent",
-  "work.helper.says": "Another agent reads this session’s work and answers your question; it changes nothing. Its answer comes back to this session as its next turn, marked as the helper’s.",
+  "work.helper.says": "Another agent reads this session’s work, what it has not committed included, and answers your question; it changes nothing. Its answer comes back to this session as its next turn, marked as the helper’s.",
   "work.helper.question": "Your question",
   "work.helper.agent": "Which agent",
   "work.helper.anyAgent": "Let Daoris choose",
@@ -15,6 +15,7 @@
   "work.helper.state.yours": "waits for your yes",
   "work.helper.state.approved": "you said yes",
   "work.helper.state.cap": "waits for a running session to end",
+  "work.helper.state.turn": "waits for this session’s turn to end, so it reads the work whole",
   "work.helper.state.agent": "waits for an agent that can take it",
   "work.helper.state.started": "{{agent}} is answering",
   "work.helper.state.answered": "{{agent}} answered: its answer is this session’s next turn",

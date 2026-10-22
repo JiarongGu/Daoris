@@ -546,6 +546,13 @@ public static class NoteCodes
         new(HelperWhy.CannotTake, [], "note.helper.why.cannot-take"),
         // HELPERNO1: the person's no to an agent's ask, added after the nine (a reason is additive).
         new(HelperWhy.Declined, [], "note.helper.why.declined"),
+        // COAGENT1a: the asker's work in progress could not be captured whole, added after the ten (a reason is additive).
+        new(HelperWhy.CaptureMerge, [], "note.helper.why.capture-merge"),
+        new(HelperWhy.CaptureLink, [], "note.helper.why.capture-link"),
+        new(HelperWhy.CaptureSubmodule, [], "note.helper.why.capture-submodule"),
+        new(HelperWhy.CaptureUnreadable, [], "note.helper.why.capture-unreadable"),
+        new(HelperWhy.CaptureBound, [], "note.helper.why.capture-bound"),
+        new(HelperWhy.CaptureMoved, [], "note.helper.why.capture-moved"),
     ]);
 
     /// <summary>Why an agent's ask to hand its session over came to nothing (MIXAGENT1c, <see cref="HandOverAskWhy"/>): the page's <c>note.handover.why.*</c>.</summary>

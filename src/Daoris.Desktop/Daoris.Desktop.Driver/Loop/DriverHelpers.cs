@@ -93,7 +93,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                                                      && states[other.Id] is { State: HelperStates.Started })
                                  + begunFor.GetValueOrDefault(ask.Asker);
                 var slot = config.Cap - snapshot.SlotsHeld - taken - begun > 0;
-                var verdict = HelperJudge.Judge(ask, state, record, rule, startedFor, slot);
+                var verdict = HelperJudge.Judge(ask, state, record, rule, startedFor, slot, Between(ask.Asker, record, snapshot));
                 switch (verdict.Kind)
                 {
                     case HelperVerdict.RefuseKind:
@@ -126,6 +126,20 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         }
 
         return begun;
+    }
+
+    /// <summary>
+    /// Whether the asker has no turn in flight (COAGENT1a, D199 point 5): its work in progress is captured only then. Whether it
+    /// runs is this look's list of active sessions under the watch, where the asker's record is read once per ask, and its record
+    /// otherwise; a running one is between turns where its newest turn has ended (<see cref="SessionEvents.TurnEnded"/>).
+    /// </summary>
+    private bool Between(string asker, PriorSession? record, Snapshot snapshot)
+    {
+        var running = _context.Beside
+            ? snapshot.Active.FirstOrDefault(view => string.Equals(view.Id, asker, StringComparison.OrdinalIgnoreCase)) is { } view
+              && view.State.ToLowerInvariant() is "queued" or "starting" or "working"
+            : record is { Running: true };
+        return !running || _context.Events.TurnEnded(asker);
     }
 
     /// <summary>How many asks for a helper are judged at once beside the looks (PARALLEL1g; a topic bounded, the events design §A3).</summary>
@@ -191,6 +205,11 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
             ? await read(tree, ct).ConfigureAwait(false)
             : (await ReviewGit.HeadAsync(tree, ct).ConfigureAwait(false), await TreeGates.CheckoutOfTreeAsync(tree, ct).ConfigureAwait(false));
 
+    // The asker's work in progress is captured with git and its files (COAGENT1a), unless a test hands in a stand-in (the context's
+    // HelperCaptures), for the same reason.
+    private Task<HelperCaptureRead> CaptureAsync(string tree, CancellationToken ct) =>
+        _context.HelperCaptures is { } capture ? capture(tree, ct) : HelperCapture.TakeAsync(tree, git: null, ct);
+
     private static string HelperClaim(string ask) => $"helper:{ask}";
 
     /// <summary>A pass beside the look, as a second opinion's is: told opened at once, its line joining a later look's report.</summary>
@@ -236,7 +255,8 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     /// was chosen) and why. Never an account's name or a path. Its line is the log's, the asker told; an asker that has left is told
     /// nothing, so the refusal is news (NOTIFY2h2).
     /// </summary>
-    private Task<LookLine> RefuseAsync(HelperAsk ask, string code, string? agent, HelperFiles files, CancellationToken ct)
+    /// <param name="detail">What refused it beyond its code, for the log's line alone (a capture's path): never the notes'.</param>
+    private Task<LookLine> RefuseAsync(HelperAsk ask, string code, string? agent, HelperFiles files, CancellationToken ct, string? detail = null)
     {
         var kept = files.ReadState(ask.Id);
         files.WriteState(new HelperState(ask.Id, HelperStates.Refused, code, kept?.Helper, DateTimeOffset.UtcNow) { Agent = agent ?? kept?.Agent });
@@ -248,7 +268,9 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         }
 
         return Task.FromResult(new LookLine(
-            $"helper  ask `{ask.Id}` refused ({code}): {HelperWhy.Said(code)}.",
+            detail is { Length: > 0 }
+                ? $"helper  ask `{ask.Id}` refused ({code}): {HelperWhy.Said(code)} ({detail})."
+                : $"helper  ask `{ask.Id}` refused ({code}): {HelperWhy.Said(code)}.",
             code == HelperWhy.AskerGone
                 ? LookClassed.Noticed("helper", new LookNews(LookSaid.HelperAskerGone, ask.Id))
                 : new LookClassed(LookClass.Progress, "helper")));
@@ -278,8 +300,19 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         }
 
         var agent = choice.Reviewer!;
-        var passAsk = new HelperPassAsk(ask, asker.Repository ?? "", root, tip)
+
+        // COAGENT1a (D199 point 5; the co-agent design §2.5): the asker's work in progress, captured whole with its manifest at this
+        // turn boundary, or refused in its code; its manifest kept before the helper starts, and its commit the copy's.
+        var read = await CaptureAsync(asker.Tree!, ct).ConfigureAwait(false);
+        if (read.Captured is not { } capture)
         {
+            return await RefuseAsync(ask, read.Code ?? HelperWhy.Unreadable, null, files, ct, read.Detail).ConfigureAwait(false);
+        }
+
+        files.WriteCapture(ask.Id, capture);
+        var passAsk = new HelperPassAsk(ask, asker.Repository ?? "", root, capture.Commit)
+        {
+            Capture = capture,
             Workspace = asker.Workspace,
             Opened = helper =>
             {
@@ -381,7 +414,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
             ? state.Words ?? ""
             : files.ReadAnswer(ask.Id)?.Answer ?? "";
         var agent = state.Agent ?? "another agent";
-        var composed = HelperWords.Compose(agent, state.Helper!, ask.Question, text, state.LastWords);
+        var composed = HelperWords.Compose(agent, state.Helper!, ask.Question, text, state.LastWords, files.ReadCapture(ask.Id));
         var (handed, message, word) = await service.Helpers
             .HandAsync(state.Helper!, composed, ct, running: nextStep, level: ask.Urgent ? MessageLevels.Spelled(MessageLevel.Urgent) : null)
             .ConfigureAwait(false);
@@ -418,8 +451,9 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
 
     /// <summary>
     /// The helper's pass (MIXAGENT2a-ii; the reviewer's machinery, <see cref="PassAsync"/>): a read-only clone of the asker's
-    /// repository at its tree's last commit, its record a chat that serves the asker, one turn under the reviewer's read-only rules
-    /// with its one tool <c>helper_answer</c>, and the clone removed however it ended. A choice with no agent starts nothing.
+    /// repository at its tree's last commit with the asker's captured work in progress laid over it (COAGENT1a), its record a chat
+    /// that serves the asker, one turn under the reviewer's read-only rules with its one tool <c>helper_answer</c>, and the clone
+    /// removed however it ended, nothing read back from it. A choice with no agent starts nothing.
     /// </summary>
     internal async Task<HelperPassRun> HelperPassAsync(HelperPassAsk ask, ReviewerChoice choice, CancellationToken ct = default)
     {
@@ -446,6 +480,17 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         catch (DriverException error)
         {
             return new HelperPassRun(null, $"held  helper for ask `{ask.Ask.Id}`: {error.Message}") { Code = HelperWhy.Unreadable };
+        }
+
+        // COAGENT1a: the asker's work in progress laid over the fresh copy; a copy it cannot be laid over whole is removed, and no
+        // helper reads part of it.
+        if (ask.Capture is { } capture && HelperCapture.LayOver(copy.Path, capture) is { } unlaid)
+        {
+            var gone = await OpinionTree.RemoveAsync(_context.Home, copy.Path).ConfigureAwait(false);
+            return new HelperPassRun(null, $"held  helper for ask `{ask.Ask.Id}`: its work could not be laid over its copy: {unlaid}{(gone is null ? "" : $" {gone}")}")
+            {
+                Code = HelperWhy.Unreadable,
+            };
         }
 
         HelperPassRun run;
@@ -491,7 +536,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
 
         try
         {
-            var packet = new HelperPacket(ask.Ask.Asker, ask.Repository, ask.Tip, ask.Ask.Question, bound);
+            var packet = new HelperPacket(ask.Ask.Asker, ask.Repository, ask.Tip, ask.Ask.Question, bound) { Capture = ask.Capture };
             var target = new SessionTarget(
                 QuestId: "", $"Helper for session {ask.Ask.Asker}", "", "Daoris", ask.Repository, copy.Path, service.BaseUrl)
             {
