@@ -176,6 +176,28 @@ public sealed record ObservedEvent(string Plugin, string Repository, string Step
 /// </summary>
 public sealed record RunEnd(string Quest, DateTimeOffset At);
 
+/// <summary>What the person may say of a run's node at its door (FABRIC-CUTOVER1f; the cutover design §5.2): pass it over, or stop it.</summary>
+public static class NodeWordActs
+{
+    /// <summary>Pass it over for this run, with the person's words (§E2's skip by the person).</summary>
+    public const string Skip = "skip";
+
+    /// <summary>Stop it, with the person's words where they give any (§E2's stop).</summary>
+    public const string Stop = "stop";
+
+    public static readonly IReadOnlyList<string> All = [Skip, Stop];
+}
+
+/// <summary>
+/// The person's skip or stop of a run's node (FABRIC-CUTOVER1f; D190 point 3, the cutover design §3, §5.2), kept on the run's record by their
+/// door and not applied yet: the runtime, the record's one writer of statuses, applies it at its next pass and takes it off.
+/// </summary>
+/// <param name="Node">The node's id in the run's graph.</param>
+/// <param name="Act">One of <see cref="NodeWordActs"/>.</param>
+/// <param name="Words">The person's words: a skip's, which it needs, or a stop's where given.</param>
+/// <param name="At">When the person gave it.</param>
+public sealed record NodeWord(string Node, string Act, string? Words, DateTimeOffset At);
+
 /// <summary>
 /// A unit's node record (FABRIC-PERFORM1b; §E7, <i>unit records keep §D6's attempts</i>): every node's status on the unit, the attempts
 /// dispatched for them, the trigger firings their starts consumed, and the history their moves cleared. One writer, the driver in the
@@ -209,6 +231,12 @@ public sealed record NodeRecord(string Unit)
 
     /// <summary>A run's end (FABRIC-CUTOVER1c), which only a run's record holds; null while it goes on, and on every unit's record.</summary>
     public RunEnd? Ended { get; init; }
+
+    /// <summary>
+    /// The person's skips and stops of a run's nodes (FABRIC-CUTOVER1f), each kept by their door and not applied yet, at most one a node; the
+    /// next pass applies them and takes them off. Empty on every unit's record, and on a record written before the field.
+    /// </summary>
+    public IReadOnlyList<NodeWord> Pending { get; init; } = [];
 
     /// <summary>The attempt an invocation names, or null.</summary>
     public NodeAttempt? Invoked(string invocation) =>
