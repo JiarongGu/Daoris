@@ -163,7 +163,7 @@ public static class WorkingTree
     /// <summary>Clean means: a git repository, with nothing uncommitted.</summary>
     public static async Task<(bool Clean, string Detail)> CleanAsync(string root, CancellationToken ct = default)
     {
-        var (code, stdout, stderr) = await GitAsync(root, ["status", "--porcelain"], ct).ConfigureAwait(false);
+        var (code, stdout, stderr) = await GitAsync(root, ["--no-optional-locks", "status", "--porcelain"], ct).ConfigureAwait(false);
         if (code != 0)
         {
             return (false, $"not a spawnable tree — git status failed: {FirstLine(stderr)}");
@@ -184,7 +184,7 @@ public static class WorkingTree
     public static async Task<IReadOnlyList<string>> UncommittedAsync(
         string root, int limit = 60, CancellationToken ct = default)
     {
-        var (code, stdout, _) = await GitAsync(root, ["status", "--porcelain"], ct).ConfigureAwait(false);
+        var (code, stdout, _) = await GitAsync(root, ["--no-optional-locks", "status", "--porcelain"], ct).ConfigureAwait(false);
         if (code != 0) return [];
 
         var lines = stdout.Split('\n', StringSplitOptions.RemoveEmptyEntries)
@@ -202,7 +202,7 @@ public static class WorkingTree
     /// </summary>
     public static async Task<bool> UnmodifiedAsync(string root, string path, CancellationToken ct = default)
     {
-        var (code, stdout, _) = await GitAsync(root, ["status", "--porcelain", "--", path], ct).ConfigureAwait(false);
+        var (code, stdout, _) = await GitAsync(root, ["--no-optional-locks", "status", "--porcelain", "--", path], ct).ConfigureAwait(false);
         return code == 0 && string.IsNullOrWhiteSpace(stdout);
     }
 
@@ -314,7 +314,8 @@ public static class WorkingTree
     /// <remarks>
     /// 🔴 <b>Only for a tree the session ran in alone.</b> A conversation in the person's checkout may have opened on a dirty
     /// tree (D49 §3), so what is uncommitted there is not knowably the session's and is never read through this: the caller
-    /// asks only of a tree this home made. Reads only (<c>git diff</c>, <c>git status</c>); the index is not refreshed to disk.
+    /// asks only of a tree this home made. Reads only (<c>git diff</c>, <c>git status</c>); the index is not refreshed to disk, and
+    /// no <c>index.lock</c> is taken in a tree its session may be writing in that moment (REVIEWLOCK1).
     /// The files are bounded as the committed list is: <see cref="PatchBudget"/> and <see cref="PatchCap"/>.
     /// </remarks>
     public static Task<TreeDiff?> UncommittedDiffAsync(string root, CancellationToken ct = default) =>
@@ -332,7 +333,7 @@ public static class WorkingTree
 
         var status = new StringBuilder();
         var code = await git(
-            root, ["status", "--porcelain", "-z", "--untracked-files=all"], piece => { status.Append(piece.Span); return true; }, ct)
+            root, ["--no-optional-locks", "status", "--porcelain", "-z", "--untracked-files=all"], piece => { status.Append(piece.Span); return true; }, ct)
             .ConfigureAwait(false);
         if (code != 0) return null;
 
@@ -384,7 +385,7 @@ public static class WorkingTree
         var code = await git(
             root,
             [
-                "-c", "core.quotePath=false", "diff", "--no-index", "--no-color", "--no-ext-diff", "--src-prefix=a/", "--dst-prefix=b/",
+                "--no-optional-locks", "-c", "core.quotePath=false", "diff", "--no-index", "--no-color", "--no-ext-diff", "--src-prefix=a/", "--dst-prefix=b/",
                 "--", "/dev/null", path,
             ],
             piece => { text.Append(piece.Span); return true; },
@@ -463,6 +464,12 @@ public static class WorkingTree
         var code = await git(
             root,
             [
+                // A diff against the working tree (`HEAD` alone, a session's uncommitted work) takes the tree's `index.lock` to
+                // write the stat data it refreshed, which a session writing there may need that moment (REVIEWLOCK1). git's diff
+                // does so whatever `--no-optional-locks` says (2.53); `diff.autoRefreshIndex=false` keeps it from refreshing,
+                // and RangeSplit drops the files that leaves listed with nothing changed. A range of two commits reads no tree.
+                "--no-optional-locks",
+                "-c", "diff.autoRefreshIndex=false",
                 // A path outside ASCII as itself on the `diff --git` line, as `-z` gives it in the lists.
                 "-c", "core.quotePath=false",
                 "diff",
@@ -622,6 +629,10 @@ public static class WorkingTree
         private void BeginPatch()
         {
             _inPatch = true;
+            // A tracked file whose stat data alone moved is listed `M` by `--raw` when the index is not refreshed
+            // (`diff.autoRefreshIndex=false`, REVIEWLOCK1), and nothing else: no count and no patch. A file that changed is always
+            // counted, a binary one with `-`, so one with no count changed nothing and is no file of the answer.
+            _files.RemoveAll(file => file.Status == 'M' && !_counts.ContainsKey(file.New));
             _patches = new string?[_files.Count];
             for (var i = 0; i < _files.Count; i++)
             {

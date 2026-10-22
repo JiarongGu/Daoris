@@ -63,7 +63,7 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
         {
             // 🔴 The session's own tree, read again immediately before: still on this branch, at the commit judged, clean.
             var (_, onOut, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
-            var (_, dirty, _) = await WorkingTree.GitAsync(tree, ["status", "--porcelain"], ct).ConfigureAwait(false);
+            var (_, dirty, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "status", "--porcelain"], ct).ConfigureAwait(false);
             if (onOut.Trim() != item.Branch || await CommitOfAsync(tree, "HEAD", ct).ConfigureAwait(false) != tip || !string.IsNullOrWhiteSpace(dirty))
             {
                 return new(item, false, $"`{item.Branch}` {TreeSync.LeftSince}");
@@ -469,7 +469,7 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
         // Each stop is one commit; a bound on them keeps a replay that never settles from going round for ever.
         for (var stops = 0; code != 0 && stops < GeneratedPaths.StopsAtMost; stops++)
         {
-            var (listed, unmerged, _) = await WorkingTree.GitAsync(tree, ["-c", "core.quotePath=false", "diff", "--name-only", "--diff-filter=U"], ct)
+            var (listed, unmerged, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "-c", "core.quotePath=false", "diff", "--name-only", "--diff-filter=U"], ct)
                 .ConfigureAwait(false);
             var paths = unmerged.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             if (listed != 0 || paths.Length == 0) break;
@@ -498,7 +498,7 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
             }
 
             // Nothing left of the commit once its generated files are the line's: skipped, as a commit that becomes empty is dropped.
-            var (same, _, _) = await WorkingTree.GitAsync(tree, ["diff", "--cached", "--quiet", "HEAD"], ct).ConfigureAwait(false);
+            var (same, _, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "diff", "--cached", "--quiet", "HEAD"], ct).ConfigureAwait(false);
             (code, output, err) = await WorkingTree.GitAsync(
                 tree, same == 0 ? ["rebase", "--skip"] : ["-c", "core.editor=:", "rebase", "--continue"], environment: null, SyncBounds.Replay, ct)
                 .ConfigureAwait(false);

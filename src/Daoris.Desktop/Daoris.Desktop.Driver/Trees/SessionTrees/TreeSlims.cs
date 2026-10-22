@@ -24,7 +24,7 @@ internal static class TreeSlims
     internal static async Task<IReadOnlyList<string>> JudgeAsync(string tree, CancellationToken ct)
     {
         var (code, porcelain, _) = await WorkingTree.GitAsync(
-            tree, ["status", "--porcelain=v1", "-z", "--ignored=traditional", "--untracked-files=normal"], ct).ConfigureAwait(false);
+            tree, ["--no-optional-locks", "status", "--porcelain=v1", "-z", "--ignored=traditional", "--untracked-files=normal"], ct).ConfigureAwait(false);
         if (code != 0) return [];
         var candidates = new List<string>();
         var entries = porcelain.Split('\0');

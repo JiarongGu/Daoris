@@ -739,7 +739,7 @@ public sealed class AutoLander(
     private static async Task<(string? Tip, string Status, int Uncommitted)> ReadTreeAsync(string tree, CancellationToken ct)
     {
         var (headCode, head, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "--verify", "--quiet", "HEAD^{commit}"], ct).ConfigureAwait(false);
-        var (statusCode, porcelain, _) = await WorkingTree.GitAsync(tree, ["status", "--porcelain"], ct).ConfigureAwait(false);
+        var (statusCode, porcelain, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "status", "--porcelain"], ct).ConfigureAwait(false);
         var tip = headCode == 0 ? head.Trim() : null;
         if (statusCode != 0) return (tip, Unreadable, 0);
         var status = AutoLandingRules.Fingerprint(porcelain);

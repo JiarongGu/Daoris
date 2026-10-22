@@ -269,7 +269,7 @@ public sealed class LandGitCountTests : IDisposable
     {
         var program = Path.GetFileNameWithoutExtension(info.FileName).ToLowerInvariant();
         // The working folder is part of the question: the same command in another tree is another fact.
-        var arguments = info.ArgumentList.SkipWhile(each => each is "-c" or "core.longpaths=true");
+        var arguments = info.ArgumentList.SkipWhile(each => each is "-c" or "core.longpaths=true" or "--no-optional-locks");
         var where = Path.GetRelativePath(_scratch, info.WorkingDirectory).Replace('\\', '/');
         lock (starts) starts.Add(program + " " + string.Join(' ', arguments) + "  @ " + where);
         return Process.Start(info);

@@ -436,7 +436,7 @@ internal sealed class TreeUpdates(
     /// <summary>The paths a tree's <c>git status --porcelain</c> lists: its uncommitted work, untracked files included.</summary>
     private static async Task<int> StatusPathsAsync(string tree, CancellationToken ct)
     {
-        var (_, dirty, _) = await WorkingTree.GitAsync(tree, ["status", "--porcelain"], ct).ConfigureAwait(false);
+        var (_, dirty, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "status", "--porcelain"], ct).ConfigureAwait(false);
         return dirty.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length;
     }
 

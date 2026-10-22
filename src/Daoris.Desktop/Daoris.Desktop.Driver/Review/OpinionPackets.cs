@@ -108,7 +108,7 @@ public static class OpinionPackets
         }
 
         var (named, paths, nameError) = await WorkingTree.GitAsync(
-            root, ["-c", "core.quotepath=false", "diff", "--name-status", "-M", "-z", "--no-ext-diff", $"{from}...{to}"], ct).ConfigureAwait(false);
+            root, ["--no-optional-locks", "-c", "core.quotepath=false", "diff", "--name-status", "-M", "-z", "--no-ext-diff", $"{from}...{to}"], ct).ConfigureAwait(false);
         if (named != 0) throw new DriverException($"git could not name what `{repository}`'s work changes: {nameError.Trim()}");
 
         return new OpinionCandidateRead(repository, from, to, read, Paths(paths));
@@ -122,7 +122,7 @@ public static class OpinionPackets
     {
         Directory.CreateDirectory(Path.GetDirectoryName(file)!);
         var (code, _, _) = await WorkingTree.GitAsync(
-            root, ["diff", "--no-color", "--no-ext-diff", "--no-textconv", "-M", $"--output={file}", $"{candidate.Base}...{candidate.Tip}"], ct)
+            root, ["--no-optional-locks", "diff", "--no-color", "--no-ext-diff", "--no-textconv", "-M", $"--output={file}", $"{candidate.Base}...{candidate.Tip}"], ct)
             .ConfigureAwait(false);
         return code == 0 && File.Exists(file);
     }

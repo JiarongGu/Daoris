@@ -172,7 +172,7 @@ internal static class LandedProofs
     internal static async Task<IReadOnlyList<string>?> NamesAsync(string root, string from, string to, CancellationToken ct)
     {
         var (code, output, _) = await WorkingTree.GitAsync(
-            root, ["diff", "--no-ext-diff", "--no-renames", "--ignore-submodules=none", "--name-only", "-z", from, to], ct).ConfigureAwait(false);
+            root, ["--no-optional-locks", "diff", "--no-ext-diff", "--no-renames", "--ignore-submodules=none", "--name-only", "-z", from, to], ct).ConfigureAwait(false);
         return code != 0 ? null : output.Split('\0', StringSplitOptions.RemoveEmptyEntries);
     }
 

@@ -416,7 +416,7 @@ internal sealed class TreeLands(
     /// </summary>
     private static async Task<int> DirtyAsync(string full, CancellationToken ct)
     {
-        var (_, dirty, _) = await WorkingTree.GitAsync(full, ["status", "--porcelain"], ct).ConfigureAwait(false);
+        var (_, dirty, _) = await WorkingTree.GitAsync(full, ["--no-optional-locks", "status", "--porcelain"], ct).ConfigureAwait(false);
         return string.IsNullOrWhiteSpace(dirty) ? 0 : dirty.Trim().Split('\n').Length;
     }
 

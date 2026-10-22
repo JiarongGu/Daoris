@@ -131,7 +131,7 @@ public sealed class StartTreeCloseTests : IDisposable
                 // The branch's delete, verified against the line's tip: the model's one transaction.
                 _branch = null;
                 return Said("");
-            case ["status", ..] or ["log", ..] or ["ls-files", ..] or ["config", ..] or ["worktree", "unlock", _] or ["worktree", "list", ..]:
+            case ["--no-optional-locks", "status", ..] or ["log", ..] or ["ls-files", ..] or ["config", ..] or ["worktree", "unlock", _] or ["worktree", "list", ..]:
                 return Said("");
             default:
                 return Failed();

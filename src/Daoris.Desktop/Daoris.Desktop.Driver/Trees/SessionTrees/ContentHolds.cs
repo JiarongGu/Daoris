@@ -494,7 +494,7 @@ internal sealed class ContentHolds(TreeContext context)
     internal static async Task<TreeHolds?> HoldsAsync(string tree, string root, CancellationToken ct)
     {
         var (code, porcelain, _) = await WorkingTree.GitAsync(
-            tree, ["status", "--porcelain", "-z", "--untracked-files=all", "--ignored=matching", "--ignore-submodules=none"], ct).ConfigureAwait(false);
+            tree, ["--no-optional-locks", "status", "--porcelain", "-z", "--untracked-files=all", "--ignored=matching", "--ignore-submodules=none"], ct).ConfigureAwait(false);
         if (code != 0) return null;
         var uncommitted = new List<string>();
         var ignored = new List<string>();

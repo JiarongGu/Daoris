@@ -102,14 +102,14 @@ internal static class GeneratedWriters
         var folders = running.Select(writer => writer.Folder).Distinct(StringComparer.Ordinal).ToList();
         var (added, _, addErr) = await WorkingTree.GitAsync(tree, ["add", "-A", "--", .. folders], ct).ConfigureAwait(false);
         if (added != 0) return new([], runs, $"git would not stage what it wrote: {TreeGit.Failure(addErr)}");
-        var (same, _, _) = await WorkingTree.GitAsync(tree, ["diff", "--cached", "--quiet", "HEAD"], ct).ConfigureAwait(false);
+        var (same, _, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "diff", "--cached", "--quiet", "HEAD"], ct).ConfigureAwait(false);
         if (same == 0) return new([], runs, null);
 
         var (made, _, madeErr) = await WorkingTree.GitAsync(
             tree, ["commit", "--quiet", "-m", $"Write {string.Join(", ", folders)} again from the replayed tree"], environment: null, SyncBounds.Replay, ct)
             .ConfigureAwait(false);
         if (made != 0) return new([], runs, $"git would not commit what it wrote: {TreeGit.Failure(madeErr)}");
-        var (_, names, _) = await WorkingTree.GitAsync(tree, ["-c", "core.quotePath=false", "diff", "--name-only", "HEAD~1", "HEAD"], ct)
+        var (_, names, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "-c", "core.quotePath=false", "diff", "--name-only", "HEAD~1", "HEAD"], ct)
             .ConfigureAwait(false);
         return new(names.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries), runs, null);
     }

@@ -345,6 +345,32 @@ public sealed class TreeDiffSplitTests
         Assert.Contains(calls, call => call[^1] == "HEAD" && call.Contains("--raw"));
     }
 
+    /// <summary>
+    /// REVIEWLOCK1: the uncommitted read asks git not to refresh the index, which would take the tree's <c>index.lock</c>, so a file
+    /// whose stat data alone moved comes back listed <c>M</c> with no count and no patch (as git 2.53 wrote it), and is no file.
+    /// </summary>
+    [Fact]
+    public async Task The_uncommitted_read_takes_no_lock_and_a_file_whose_stat_alone_moved_is_no_file()
+    {
+        const string patch = "diff --git a/b.txt b/b.txt\nindex 6178079..5ea2ed4 100644\n--- a/b.txt\n+++ b/b.txt\n@@ -1 +1 @@\n-b\n+changed\n";
+        var range = ":100644 100644 7898192 0000000 M\0a.txt\0:100644 100644 6178079 0000000 M\0b.txt\0" + "1\t1\tb.txt\0" + "\0" + patch;
+        var calls = new List<IReadOnlyList<string>>();
+
+        var diff = await WorkingTree.UncommittedDiffAsync(Root, Dirty(range, " M b.txt\0", _ => (1, ""), calls), CancellationToken.None);
+
+        var file = Assert.Single(diff!.Files);
+        Assert.Equal(("b.txt", 1, 1, patch), (file.Path, file.Added, file.Removed, file.Patch));
+        var read = calls.Single(call => call[^1] == "HEAD" && call.Contains("--raw"));
+        var status = calls.Single(call => call.Contains("status"));
+        foreach (var call in new[] { read, status })
+        {
+            Assert.Equal("--no-optional-locks", call[0]);
+        }
+
+        var words = read.ToList();
+        Assert.True(words.IndexOf("diff.autoRefreshIndex=false") is var at && at > 0 && at < words.IndexOf("diff") && words[at - 1] == "-c");
+    }
+
     /// <summary>An untracked file is listed `A`, with the patch git's no-index diff gives and the lines it added counted.</summary>
     [Fact]
     public async Task An_untracked_file_is_listed_added_with_its_no_index_patch()

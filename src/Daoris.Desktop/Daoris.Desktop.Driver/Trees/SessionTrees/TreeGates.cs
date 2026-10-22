@@ -116,7 +116,7 @@ internal sealed class TreeGates(TreeContext context)
     {
         var at = tip ?? "HEAD";
         if (await ForkPointAsync(tree, ct, at).ConfigureAwait(false) is not { } fork) return null;
-        var (code, names, _) = await WorkingTree.GitAsync(tree, ["diff", "--name-only", "--no-renames", "-z", fork, at], ct).ConfigureAwait(false);
+        var (code, names, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "diff", "--name-only", "--no-renames", "-z", fork, at], ct).ConfigureAwait(false);
         return code == 0 ? [.. names.Split('\0', StringSplitOptions.RemoveEmptyEntries)] : null;
     }
 
