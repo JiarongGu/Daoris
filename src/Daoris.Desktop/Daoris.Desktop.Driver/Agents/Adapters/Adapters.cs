@@ -850,7 +850,9 @@ public static class TargetPrompt
     /// <summary>
     /// How the close is written (KNOWUSE1c, D135 §4): what only the person can give, apart from the readings the session
     /// took, and every item naming what it rests on, so a reading is corrected in review and a question that names nothing
-    /// checked shows itself. Said for the note a quest closes with and the last message a stop ends on alike.
+    /// checked shows itself. Said for the note a quest closes with and the last message a stop ends on alike. What only the person
+    /// can decide is asked through the connector too (PARKVIEW1), so the page draws it at the conversation's end with its answers as
+    /// presses, never read out of the note's words.
     /// </summary>
     private const string Closing =
         """
@@ -862,6 +864,10 @@ public static class TargetPrompt
         rather than asked as a question, and each naming what it rests on: the line of the quest or of the
         ticket it links, quoted; a document's path and line; or a code path. An item that names nothing it
         checked has not been looked into yet: look before you write it.
+        Where your connector offers `question_ask`, ask there what only the person can decide before you
+        end your turn on it: the question in a sentence or two, the answers you offer, each with what you
+        will do on it, and the one you recommend. The person answers it with a press at the end of this
+        conversation, and their answer is your next prompt.
         """;
 
     /// <summary>

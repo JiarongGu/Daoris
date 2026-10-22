@@ -51,6 +51,12 @@ public sealed class AccountCoolingTests : IDisposable
         string? window = "weekly", bool assumedZone = false, bool notBelieved = false) =>
         new(agent, account, until ?? Until, stated, window, Seen, "3f9c2a71", assumedZone, notBelieved);
 
+    /// <summary>The agent's accounts, a folder each under the account homes: the set every start reads (POOL1a2, D197 point 1).</summary>
+    private void Accounts(string agent, params string[] names)
+    {
+        foreach (var name in names) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, agent, name));
+    }
+
     private JsonObject File() => JsonNode.Parse(System.IO.File.ReadAllText(AccountCooling.PathOf(_home)))!.AsObject();
 
     // ——— The file (§2.3).
@@ -408,6 +414,8 @@ public sealed class AccountCoolingTests : IDisposable
         Assert.Equal(("held.not-installed", "fake"), (absent.RefusalNote.Parts[0].Code, absent.RefusalNote.Parts[0].Value("agent")));
         Assert.Equal(AgentAbsence.NotInstalled, absent.Absent);
 
+        // An account of Daoris's is a folder (POOL1a2): one the wiring names and no folder holds is no account of the set.
+        Accounts("fake", "account-1");
         new HarnessSettings().WithDefault("fake", "account-1").Save(Settings);
         AccountCooling.Cool(_home, Entry(agent: "fake", account: "account-1"), _now);
         var named = await roster.SelectAsync("fake", Config, null, null);
@@ -416,9 +424,15 @@ public sealed class AccountCoolingTests : IDisposable
         Assert.Equal(("held.cooling-account", "fake", "account-1"), (part.Code, part.Value("owner"), part.Value("account")));
     }
 
+    /// <summary>
+    /// Rewritten by POOL1a2 (D197 point 1; the account-pool design §2.4, §6.1 rule 3): the machine's account and a workspace's were
+    /// each a scope's one account, so the machine's cool-off held its start and not the workspace's. Both are the set now, used
+    /// <c>order</c> from the machine's first: every start passes the cooling account to the next, and a pick of it is held.
+    /// </summary>
     [Fact]
-    public async Task A_named_account_s_cool_off_holds_starts_on_it_and_not_on_another_account()
+    public async Task A_named_account_s_cool_off_holds_a_pick_of_it_and_the_set_passes_it()
     {
+        Accounts("fake", "account-1", "account-2");
         new HarnessSettings().WithDefault("fake", "account-1").WithWorkspaceDefault("work", "fake", "account-2").Save(Settings);
         var roster = Roster(new Adapter("fake", Present()));
         AccountCooling.Cool(_home, Entry(agent: "fake"), _now);
@@ -427,7 +441,8 @@ public sealed class AccountCoolingTests : IDisposable
         var work = await roster.SelectAsync("fake", Config, "work", null);
         var picked = await roster.SelectAsync("fake", Config, "work", "account-1");
 
-        Assert.Equal(CoolingWords.Hold(Entry(agent: "fake"), Zone), machine.Refusal);
+        // Passed to account-2, whose probe then finds nothing on this PATH: no cool-off holds either start.
+        Assert.Null(machine.Cooling);
         Assert.Null(work.Cooling);
         Assert.Equal(Entry(agent: "fake"), picked.Cooling);
     }
@@ -439,6 +454,7 @@ public sealed class AccountCoolingTests : IDisposable
     [Fact]
     public async Task A_handed_quest_s_named_account_is_tried_first_and_the_walk_goes_on_within_the_named_agent()
     {
+        Accounts("fake", "account-1", "account-2");
         new HarnessSettings().WithDefault("fake", "account-1").Save(Settings);
         var roster = Roster(new Adapter("fake", Present()));
         AccountCooling.Cool(_home, Entry(agent: "fake", account: "account-1"), _now);
@@ -446,7 +462,8 @@ public sealed class AccountCoolingTests : IDisposable
 
         var (selection, passed) = await roster.SelectHandedAsync("fake", Config, null, "account-2", StartKind.Driven);
 
-        // The pick, account-2, is cooling: the walk it falls to begins at the agent's default, account-1, and holds there.
+        // The pick, account-2, is cooling: the walk it falls to begins at the order's first, account-1 (POOL1a2), and with every
+        // account of the set cooling it holds there.
         Assert.Equal("account-2", passed);
         Assert.False(selection.Allowed);
         Assert.Equal("account-1", selection.Cooling!.Account);
@@ -573,16 +590,20 @@ public sealed class AccountCoolingTests : IDisposable
     {
         var adapters = AdapterSet.Built();
         var roster = new HarnessRoster(adapters, Settings) { Clock = () => _now, Zone = Zone };
+        Accounts("stub", "account-1", "account-2");
         new HarnessSettings().WithDefault("stub", "account-1").WithWorkspaceDefault("work", "stub", "account-2").Save(Settings);
 
         var limited = roster.Limited("acp-stub", "account-1", Refusal, "s1");
 
         Assert.Equal(("stub", "account-1", Until), (limited!.Value.Entry.Agent, limited.Value.Entry.Account, limited.Value.Entry.Until));
         Assert.Equal(limited.Value.Entry, AccountCooling.Of(_home, "stub", "account-1", _now));
-        // One account, spent: neither way onto it starts, and another account of the stub is not held.
-        var door = await roster.SelectAsync("acp-stub", DriverConfig.Empty with { Adapter = "acp-stub" }, null, null);
-        var pipe = await roster.SelectAsync("stub", DriverConfig.Empty with { Adapter = "stub" }, null, null);
-        Assert.Equal((CoolingWords.Hold(limited.Value.Entry, Zone), limited.Value.Entry), (door.Refusal, door.Cooling));
+        // One account, spent: neither way onto it starts it, and another account of the stub is not held. Rewritten by POOL1a2: the
+        // set's starts pass it to account-2 (D197 point 1), so the hold is the pick's on each door.
+        var door = await roster.SelectAsync("acp-stub", DriverConfig.Empty with { Adapter = "acp-stub" }, null, "account-1");
+        var pipe = await roster.SelectAsync("stub", DriverConfig.Empty with { Adapter = "stub" }, null, "account-1");
+        Assert.Equal(limited.Value.Entry, door.Cooling);
+        // A pick's hold goes on to say what of the agent's other accounts, after the cool-off's own sentence.
+        Assert.StartsWith(CoolingWords.Hold(limited.Value.Entry, Zone), door.Refusal);
         Assert.Equal(limited.Value.Entry, pipe.Cooling);
         Assert.Null((await roster.SelectAsync("acp-stub", DriverConfig.Empty with { Adapter = "acp-stub" }, "work", null)).Cooling);
     }

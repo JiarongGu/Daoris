@@ -128,8 +128,14 @@ public sealed class OwnSpaceTests : IDisposable
         Assert.True(selection.SignedOut.NoAccount);
     }
 
+    /// <summary>
+    /// Rewritten by POOL1a2 (D197 point 1; the account-pool design §2.1, §2.4): with nothing named, accounts all signed out once held
+    /// with the no-account sentence, which sends the person to sign in a new one. They are the set's now, an order every start
+    /// reads, so the hold is the set's: each account named with its own sign-in, since a signed-out account stays in the set until
+    /// signed in again. <c>held.no-account</c> stays the sentence of an agent with no account at all (above).
+    /// </summary>
     [Fact]
-    public async Task Accounts_all_signed_out_hold_with_the_same_sentence()
+    public async Task Accounts_all_signed_out_hold_naming_each_one_s_sign_in()
     {
         Account("daoris-1");
         Account("daoris-2");
@@ -140,9 +146,11 @@ public sealed class OwnSpaceTests : IDisposable
         var selection = await roster.SelectAsync("fake", Config, "aurora", chosen: null);
 
         Assert.False(selection.Allowed);
-        Assert.StartsWith(NoAccount, selection.Refusal);
+        Assert.DoesNotContain(NoAccount, selection.Refusal);
+        Assert.Contains("daoris agent login fake --profile daoris-1", selection.Refusal);
+        Assert.Contains("daoris agent login fake --profile daoris-2", selection.Refusal);
         Assert.Equal(["daoris-1", "daoris-2"], selection.SignedOut!.Accounts);
-        Assert.True(selection.SignedOut.NoAccount);
+        Assert.False(selection.SignedOut.NoAccount);
     }
 
     [Fact]
@@ -250,21 +258,21 @@ public sealed class OwnSpaceTests : IDisposable
     {
         var roster = new HarnessRoster(AdapterSet.Built(), Settings);
 
-        Assert.Equal(((string?)null, NextReason.NoAccount), roster.Next("codex", null) is var waits ? (waits.Account, waits.Reason) : default);
+        Assert.Equal(((string?)null, NextReason.NoAccount), roster.Next("codex") is var waits ? (waits.Account, waits.Reason) : default);
 
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "codex", "daoris-1"));
 
-        Assert.Equal(("daoris-1", NextReason.Named), roster.Next("codex", null) is var next ? (next.Account, next.Reason) : default);
+        Assert.Equal(("daoris-1", NextReason.Named), roster.Next("codex") is var next ? (next.Account, next.Reason) : default);
     }
 
     [Fact]
     public void The_next_start_with_no_Daoris_account_waits_and_with_one_takes_it()
     {
-        Assert.Equal((null, NextReason.NoAccount), (Roster().Next("fake", "aurora") is var waits ? (waits.Account, waits.Reason) : default));
+        Assert.Equal((null, NextReason.NoAccount), (Roster().Next("fake") is var waits ? (waits.Account, waits.Reason) : default));
 
         Account("daoris-1");
 
-        var next = Roster().Next("fake", "aurora");
+        var next = Roster().Next("fake");
         Assert.Equal(("daoris-1", NextReason.Named), (next.Account, next.Reason));
     }
 }

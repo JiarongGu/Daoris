@@ -145,7 +145,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         Assert.True(selection.Allowed);
         Assert.Equal("account-2", selection.Profile);
         Assert.Equal(("account-1", "the `fake` account `account-1` is not signed in"), (selection.Rotated!.From, selection.Rotated.Why));
-        Assert.Equal(NextHold.SignedOut, Assert.Single(roster.Next("fake", null).Others, held => held.Account == "account-1").Hold);
+        Assert.Equal(NextHold.SignedOut, Assert.Single(roster.Next("fake").Others, held => held.Account == "account-1").Hold);
     }
 
     [Fact]

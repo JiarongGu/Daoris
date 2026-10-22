@@ -266,7 +266,7 @@ public static class HarnessProbe
                 + $"`daoris agent pin {adapter} {run.Pinned}` installs it, and "
                 + $"`daoris agent unpin {adapter}` goes back to PATH",
                 toolchain.ProfileVariable,
-                settings.Defaults.TryGetValue(toolchain.Owner(adapter), out var pinnedDefault) ? pinnedDefault : null,
+                settings.FirstOf(toolchain.Owner(adapter)),
                 []);
         }
 
@@ -312,7 +312,8 @@ public static class HarnessProbe
             present ? FirstLine(version.Output) : null,
             present ? null : version.Problem,
             toolchain.ProfileVariable,
-            settings.Defaults.TryGetValue(owner, out var machine) ? machine : null,
+            // The order's first, where the machine's default was (POOL1a2, the account-pool design §2.2).
+            settings.FirstOf(owner),
             profiles,
             ownAnswer.Login,
             ownAnswer.Account,

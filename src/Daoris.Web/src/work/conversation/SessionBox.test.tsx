@@ -105,6 +105,32 @@ describe('SessionBox', () => {
     expect(onSend).toHaveBeenCalledWith('go ahead with the PUT');
   });
 
+  /**
+   * PARKVIEW1 (the park's ask design §3): what the park asks stands in its answer's box above the field, every answer a press, and
+   * the field says its words go with the answer pressed; the free answer is the box's own send, as before.
+   */
+  it('draws what a park asks above the answer\'s field, its answers as presses', async () => {
+    const onSend = vi.fn();
+    const onChoice = vi.fn();
+    show({
+      box: { kind: 'say', mode: 'answer' }, onSend,
+      park: {
+        quest: 'q8f2e1', since: '2026-10-22T09:00:00Z', goAheads: [], onChoice,
+        question: { id: 'q1', question: 'Which port?', choices: [{ label: '8080', does: 'Use 8080.' }], recommend: null, by: null, at: '' },
+      },
+    });
+
+    const ask = screen.getByRole('region', { name: 'It asks you' });
+    const field = screen.getByLabelText('Message');
+    expect(ask.compareDocumentPosition(field)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(field).toHaveAttribute('placeholder', 'your words — with the answer you press above, or alone as your answer');
+    await userEvent.click(screen.getByRole('button', { name: '8080' }));
+    expect(onChoice).toHaveBeenCalledWith('8080');
+    await userEvent.type(field, 'any free port');
+    await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
+    expect(onSend).toHaveBeenCalledWith('any free port');
+  });
+
   /** D137 §5.1: on a session that ended, the box says the same session goes on with the words; nothing to attach. */
   it('offers a session that ended the box where the same session goes on', async () => {
     const onSend = vi.fn();

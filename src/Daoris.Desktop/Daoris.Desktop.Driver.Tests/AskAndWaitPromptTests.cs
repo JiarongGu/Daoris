@@ -186,6 +186,25 @@ public sealed class AskAndWaitPromptTests
     }
 
     /// <summary>
+    /// PARKVIEW1 (the park's ask design §2): what only the person can decide is asked through the connector's `question_ask` before
+    /// the turn ends on it, with the answers offered and the one recommended, so the page draws it at the conversation's end with its
+    /// answers as presses rather than leaving it a bullet of the closing note.
+    /// </summary>
+    [Fact]
+    public void What_only_the_person_can_decide_is_asked_through_question_ask()
+    {
+        foreach (var (which, prompt) in EveryInstruction(Target()))
+        {
+            var flat = Flat(prompt);
+            Assert.True(flat.Contains(
+                "Where your connector offers `question_ask`, ask there what only the person can decide before you end your turn on "
+                + "it: the question in a sentence or two, the answers you offer, each with what you will do on it, and the one you "
+                + "recommend. The person answers it with a press at the end of this conversation, and their answer is your next prompt.",
+                StringComparison.Ordinal), which);
+        }
+    }
+
+    /// <summary>
     /// KNOWUSE1d (D135 §5, D133 §1): a fresh attempt found the person's answer, misread, in its first attempt's closed note
     /// ("Per your answer") and in a document on that branch, and wrote into the repository's knowledge that the owner had
     /// settled it. The person's words are those the instruction quotes as theirs, which the ask's record holds; a quote met

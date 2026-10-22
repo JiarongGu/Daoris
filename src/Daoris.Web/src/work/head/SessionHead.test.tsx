@@ -1132,6 +1132,31 @@ describe('a park\'s go-aheads', () => {
     expect(within(section).queryByRole('button')).toBeNull();
   });
 
+  /**
+   * PARKVIEW1 (the park's ask design §3): where the box below answers the park, it carries every press of what the park asks, so
+   * the head lists the go-aheads with no press and no field, saying where they are answered; and its card shows the question its
+   * agent asked through the connector, its answers listed, in place of its whole last message.
+   */
+  it('lists them with no press where the box below answers the park, and shows its question in place of its last message', () => {
+    const question = {
+      id: 'q5t10n00', question: 'Which target should the tile show?', recommend: 1, by: null, at: '2026-09-21T11:20:00Z',
+      choices: [{ label: '1,200', does: 'Write 1,200.' }, { label: '1,350', does: 'Write 1,350.' }],
+    };
+    render(<SessionHead session={session(parked)} onResolve={vi.fn()} goAheads={ASKED} onGoAhead={vi.fn()} parkBox question={question} />);
+
+    const section = screen.getByRole('region', { name: 'Go-aheads it asked' });
+    expect(within(section).getAllByRole('listitem')).toHaveLength(2);
+    expect(within(section).queryByRole('button')).toBeNull();
+    expect(within(section).queryByLabelText('your words, if any')).toBeNull();
+    expect(section).toHaveTextContent('Each is answered in the box below, with your words there.');
+    expect(screen.getByText('Which target should the tile show?')).toBeInTheDocument();
+    expect(screen.getByText('Write 1,350.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '1,200' })).toBeNull();
+    expect(screen.queryByText('I need the two go-aheads to finish.')).toBeNull();
+    // The card's own moves stay its: finish and decline.
+    expect(screen.getByRole('button', { name: 'Finish' })).toBeInTheDocument();
+  });
+
   it('shows nothing new for a park that asked none, or a session no longer parked', () => {
     const { rerender } = render(<SessionHead session={session(parked)} goAheads={[]} onGoAhead={vi.fn()} />);
     expect(screen.queryByRole('region', { name: 'Go-aheads it asked' })).toBeNull();

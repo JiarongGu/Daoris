@@ -309,6 +309,10 @@ public sealed record ProfileReport(
 /// One harness as this machine has it (D49 §4): present or absent, its version, its profiles.
 /// </summary>
 /// <param name="Problem">Why it could not be probed — the sentence a person acts on, when absent.</param>
+/// <param name="MachineDefault">
+/// Where its starts begin: the order's first of the agent's set (POOL1a2, the account-pool design §2.2), where the machine's
+/// default was; none where the agent has no account of Daoris's.
+/// </param>
 /// <param name="OwnLogin">
 /// What the harness says about logging in to its OWN configuration home — the account a person
 /// actually has before naming any profile, asked the same read-only way. Unknown when absent.

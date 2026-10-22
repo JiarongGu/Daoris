@@ -34,13 +34,14 @@ public static class OpinionPermissions
     /// a set-up's serving and its ready, a working session's answer, a helper's ask and answer (MIXAGENT2a-i: a reviewer asks for
     /// no helper, and is none), the ask's channel (SESSONE2b, D167 point 7: each answers one question, and the service refuses both
     /// it anyway), an ask to hand over (MIXAGENT1c: a reviewer and a helper answer one question and go on with nobody), a line's
-    /// history (SESSCTX1f: neither continues another session, and the record it would read is the working session's), and the
-    /// machine's own index rebuild.
+    /// history (SESSCTX1f: neither continues another session, and the record it would read is the working session's), the
+    /// machine's own index rebuild, and a park's question (PARKVIEW1: neither parks, and the service refuses both it anyway).
     /// </summary>
     private static readonly string[] Acting =
     [
         "quest_respond", "quest_publish", "go_ahead_ask", "permission_propose", "review_serve", "review_ready", "opinion_answer",
         "helper_ask", "helper_answer", "channel_post", "channel_read", "handover_propose", "line_read", "knowledge_refresh",
+        "question_ask",
     ];
 
     /// <summary>What it reads its history with: git's reading commands, and the <c>cd</c> an agent prefixes one with.</summary>

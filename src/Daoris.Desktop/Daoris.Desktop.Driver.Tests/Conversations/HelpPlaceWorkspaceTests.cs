@@ -68,11 +68,12 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
     private static DriverConfig Config => DriverConfig.Empty with { Adapter = "door", HelperAdapter = "door" };
 
     /// <summary>
-    /// 🔴 The workspace named reaches the ledger's open and chooses the account by that workspace's default; none named sends
-    /// none and takes the machine's, as before. A second in the same workspace is the ledger's refusal, naming the first.
+    /// 🔴 The workspace named reaches the ledger's open; none named sends none. A second in the same workspace is the ledger's
+    /// refusal, naming the first. Rewritten by POOL1a2 (D197 point 1): the workspace's default once chose its account; an older
+    /// build's default is read as the set now, so both take the order's first, the machine's account.
     /// </summary>
     [Fact]
-    public async Task The_workspace_reaches_the_ledger_s_open_and_chooses_its_account()
+    public async Task The_workspace_reaches_the_ledger_s_open_and_its_account_is_the_set_s()
     {
         var ledger = new ChatLedger();
         var runner = Runner(ledger);
@@ -83,7 +84,7 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
 
         Assert.Equal(["alpha", null, "alpha"], ledger.HelpAsked);
         Assert.Equal(("h1", "alpha"), (alpha.SessionId, alpha.Workspace));
-        Assert.Equal("office", ledger.Record(alpha.SessionId!)["profile"]!.GetValue<string>());
+        Assert.Equal("home", ledger.Record(alpha.SessionId!)["profile"]!.GetValue<string>());
         Assert.Equal(("h2", "default"), (unnamed.SessionId, unnamed.Workspace));
         Assert.Equal("home", ledger.Record(unnamed.SessionId!)["profile"]!.GetValue<string>());
         Assert.Null(again.SessionId);

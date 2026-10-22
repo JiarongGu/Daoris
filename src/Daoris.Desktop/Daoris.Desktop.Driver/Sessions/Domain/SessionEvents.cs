@@ -232,6 +232,14 @@ public sealed record SessionEvent
     public string? Channel { get; init; }
 
     /// <summary>
+    /// For <see cref="SessionEventKind.User"/>: the answer of its park's question the person pressed (PARKVIEW1, the park's ask design
+    /// §4), as the question offered it: the words begin with this label, then the person's own after a blank line. So the page draws a
+    /// choice as one, and the resumed run is handed it as <c>chose: &lt;label&gt;</c> (<see cref="SaidWordView.Handed"/>). Null on every
+    /// other event, and on a record from before, read as it was.
+    /// </summary>
+    public string? Choice { get; init; }
+
+    /// <summary>
     /// For <see cref="SessionEventKind.User"/>: on the brief a new part is handed as its first prompt (SESSCTX1b, the session-context
     /// design §3.4), the session it continues. Its <see cref="Origin"/> is <c>target</c> and it carries its <see cref="Account"/>, so
     /// it reads as an instruction does; no person said it, so it never names the conversation (<see cref="SessionEvents.Openings"/>).
