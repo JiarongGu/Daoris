@@ -365,7 +365,9 @@ public sealed class HelpRoutes(DriverContext context)
             if (plan.Refusal is { } refused)
             {
                 HelpProposals.Settle(_loop.Home, proposal.Id, "refused", refused);
-                _loop.Chat?.Say(session, InPersonsWords($"Daoris did not show proposal `#{proposal.Id}` to the person — the route refuses it: {refused}"));
+                // ASKQUESTS1: Daoris's own word, never the person's.
+                _loop.Chat?.Tell(session, InPersonsWords($"Daoris did not show proposal `#{proposal.Id}` to the person — the route refuses it: {refused}"),
+                    DaorisWordKey("help-refused", proposal.Id));
                 continue;
             }
 
@@ -459,7 +461,8 @@ public sealed class HelpRoutes(DriverContext context)
 
     // The person's Apply: made through the door the screen's own route uses (HELP6), judged again
     // first, since the machine may have moved since the card was drawn. The result goes back into
-    // the conversation as the person's next message, so the agent knows (D89). It acts through the doors directly, not through
+    // the conversation as a turn, so the agent knows (D89), told as Daoris's word, never the person's (ASKQUESTS1, D188's COWORK1b
+    // mark); what it published is kept with the conversation by `HelpProposals.ApplyAsync`. It acts through the doors directly, not through
     // their routes, so it declares every family a door it holds may move (STATEHUB1h, D169): the driver's file and what reads
     // it, an ask, a quest or a session it made, paused or deleted, an agent's settings or pin, a plugin, the browser's settings,
     // a repository moved, finished history cleared, and the proposal itself.
@@ -493,10 +496,14 @@ public sealed class HelpRoutes(DriverContext context)
             return new { Message = changed, Applied = false, Go = (object?)null, HarnessAction = (object?)null, Stands = true, Changed = true };
         }
 
-        // What it did, and an agent action's end once it comes, into the conversation that proposed it.
+        // What it did, and an agent action's end once it comes, into the conversation that proposed it, as Daoris's word (ASKQUESTS1).
+        var told = 0;
         void Say(string text)
         {
-            if (proposal.Session is { } session) _loop.Chat?.Say(session, InPersonsWords(text));
+            if (proposal.Session is { } session)
+            {
+                _loop.Chat?.Tell(session, $"Daoris: {InPersonsWords(text)}", DaorisWordKey("help-apply", $"{proposal.Id}/{Interlocked.Increment(ref told)}"));
+            }
         }
 
         var applied = await HelpProposals.ApplyAsync(
@@ -1104,10 +1111,35 @@ public sealed class HelpRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// A result said into Ask Daoris's conversation in the person's name (HELP1c): plain words, since a
-    /// person's message renders verbatim and a sentence full of backticks read as noise on the window.
+    /// A sentence said into Ask Daoris's conversation (HELP1c): plain words, since a turn's words render verbatim and a sentence full
+    /// of backticks read as noise on the window. The person's Not now, and since ASKQUESTS1 Daoris's word of what an Apply did.
     /// </summary>
     private static string InPersonsWords(string told) => told.Replace("`", "", StringComparison.Ordinal);
+
+    /// <summary>
+    /// The key a word of Daoris's to Ask Daoris's conversation carries (ASKQUESTS1, <see cref="DaorisWord"/>): its kind and the proposal
+    /// it is about. No fact of Daoris's is judged by it (<see cref="DaorisKeys.Read"/> names none), so the word always goes.
+    /// </summary>
+    private static string DaorisWordKey(string kind, string about) => $"{kind}/{about}";
+
+    // ASKQUESTS1 (the Ask Daoris design §9 item 12): what one conversation's Applies published, the newest first, each by the ids the
+    // service answered, as `HelpPublished` keeps them beside its other files. The page reads each one's state from the pushed quests,
+    // asks and sessions. A read of this machine's home, off the window's thread (UIFREEZE1): it declares nothing, and its key is under
+    // `help`, which an Apply publishes. Desktop-only, as the conversation is.
+    [DriverRoute("HELP_PUBLISHED")]
+    private Task<object?> HelpPublishedAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var home = _loop.Home;
+        return Task.Run<object?>(() => PublishedAnswer(session, new HelpPublished(home).Read(session)), cancellationToken);
+    }
+
+    /// <summary>What <c>HELP_PUBLISHED</c> answers (ASKQUESTS1): <c>{ session, published }</c>, an id the service's answer did not name left out.</summary>
+    public static object PublishedAnswer(string session, IReadOnlyList<HelpPublishedEntry> published) => new
+    {
+        Session = session,
+        Published = published.Select(entry => new { entry.At, entry.Proposal, entry.Kind, entry.Workspace, entry.Ask, entry.Quest }).ToArray(),
+    };
 
     // ——— Ask Daoris's history (ASKHIST1): its conversations listed and searched, named, pinned and started from. Going on in
     // one is the person's words to it (`SESSION_INPUT`), and deleting one is `SESSION_DELETE`'s, so each has the one owner the

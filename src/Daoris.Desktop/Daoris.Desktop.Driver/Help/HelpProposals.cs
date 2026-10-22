@@ -665,6 +665,28 @@ public static class HelpProposals
         return applied;
     }
 
+    /// <summary>
+    /// Keep what an Apply published with the conversation that proposed it (ASKQUESTS1, <see cref="HelpPublished"/>), by the ids the
+    /// service's answer named, as soon as it answered and before the card settles (<see cref="HelpApplying.Settled"/>). A keep that
+    /// fails loses the list's entry, never the Apply, which happened: the quest and the ask stand, and Quests lists them.
+    /// </summary>
+    internal static void KeepPublished(string home, HelpProposal proposal, HelpPublishing made)
+    {
+        if (proposal.Session is not { } session || !SessionEventText.IsId(session)) return;
+        try
+        {
+            new HelpPublished(home).Keep(session, new HelpPublishedEntry(DateTimeOffset.UtcNow, proposal.Id, proposal.Kind, made.Workspace)
+            {
+                Ask = made.Ask,
+                Quest = made.Quest,
+            });
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // Only this conversation's list is short by one, as a file that does not read is.
+        }
+    }
+
     private static async Task<HelpApplied> ApplyOnceAsync(
         string home, HelpProposal proposal, HelpPlan plan, IHelpDoors doors, Action<string> later, CancellationToken ct)
     {

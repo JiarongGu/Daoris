@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- Ask Daoris now keeps the asks and quests each conversation published. Under the conversation's head, *Published from this
+  conversation* says what stands (open, taken, done, declined, and what waits on you first); opened, each ask lists the quests it
+  became, a taken quest names its session's state, and each row opens its record on Quests in one press. Their states move as the
+  quests do, with nothing asked again on a timer, and the list is kept across a restart. What an Apply did is now said in the
+  conversation as Daoris's word, naming what it published, never as yours; *Not now* is still yours. A *Go there* card is drawn
+  again when its quest is taken, so its press no longer answers that the plan changed. In English and 中文.
 - Work that follows a workflow saved as a graph now lands. Its second opinion, your look and a plugin's steps start as its graph
   reaches them, and *Accept…*, `daoris-driver trees land` and the automatic landing land its work only where Daoris has judged the
   graph at that very commit, and only that commit, a merge included: a commit made after the judgement lands nothing. Where the graph

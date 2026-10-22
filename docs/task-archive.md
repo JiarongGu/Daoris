@@ -19538,3 +19538,11 @@ refused in D197's sentence, each saying why; `AgentAccountsBothWaysTests`' one-s
 driver's and the modules' fast halves pass; `HarnessProfileTests`, `DriverModuleAgentsTests`, `HelpDoorsTests` and
 `AgentsCommandTests` (Process) and the service's `HelpAgentProposalTests` pass filtered. No real sign-in was started; not seen
 failing first, and no window was looked at. Detail: D197's POOL1b note. On Opus.
+
+## ASKQUESTS1 — an Ask Daoris conversation's published quests, managed from it (2026-10-22, D89)
+
+> - **ASKQUESTS1**: the quests an Ask Daoris conversation publishes are managed from it: each with its live state, opened in one press, followed to its end (the owner's direction, 2026-10-22). Design after ASKDISMISS1.
+
+**Outcome** 2026-10-22: each conversation keeps what its Applies published by id (`HELP_PUBLISHED`), shown under its head with each
+one's live state from the pushed lists, a row opening its record on Quests; an Apply's result is Daoris's word, never the person's.
+Detail: the Ask Daoris design §9 item 12 (with Codex's read), D89's ASKQUESTS1 note. On Opus.

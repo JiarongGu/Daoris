@@ -245,11 +245,14 @@ public sealed class HelpStandInDoors : IHelpDoors
     }
 
     // IHelpAskDoors
+    /// <summary>What the ask door answers (ASKQUESTS1: the ids it names are what the conversation's list keeps); by default an ask and no quest.</summary>
+    public AskAnswer Asked { get; set; } = new(true, "Asked.", "a1", null);
+
     public Task<AskAnswer> AskAsync(string workspace, string sentence, string? review, string? reviewWords, CancellationToken ct, string? shortTitle = null)
     {
         var chosen = review is null ? "" : $" [review {review}{(reviewWords is null ? "" : $": {reviewWords}")}]";
         Calls.Add($"ask {workspace} {sentence}{chosen}{(shortTitle is null ? "" : $" [short {shortTitle}]")}");
-        return Task.FromResult(new AskAnswer(true, "Asked.", "a1", null));
+        return Task.FromResult(Asked);
     }
 
     // IHelpBrowserDoors

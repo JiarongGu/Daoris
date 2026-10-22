@@ -26,7 +26,10 @@ vi.mock('@shenora/react', async (importOriginal) => {
 import type { HelpProposal } from '../help/ProposalCard';
 import { keys } from '../data/queries';
 import { useSetHelpMode } from './driver';
-import { HELP_PROPOSALS, helpModeOf, settleBound, useHelpWired, useSettleHelp, wiredAnswer, type HelpSettled } from './help';
+import {
+  HELP_PROPOSALS, HELP_PUBLISHED, helpModeOf, publishedAnswer, settleBound, useHelpPublished, useHelpWired, useSettleHelp, wiredAnswer,
+  type HelpSettled,
+} from './help';
 import { useStateHub } from './state/stateHub';
 
 /**
@@ -262,5 +265,52 @@ describe('Ask Daoris’s mode and what it was handed', () => {
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_HELP_MODE', { payload: { mode: 'full' } });
     expect(client.getQueryData<{ helpMode?: string }>(keys.driver)?.helpMode).toBe('full');
+  });
+});
+
+/**
+ * ASKQUESTS1 (the Ask Daoris design §9 item 12): what a conversation's Applies published, read over `HELP_PUBLISHED` as the driver
+ * keeps it (`HelpPublished.cs`), newest first, an id its answer leaves out read as none, and an older shell's no answer read as none.
+ */
+describe('what a conversation published', () => {
+  const wrapped = () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client }, children);
+    return { client, wrapper };
+  };
+
+  it('reads each entry field for field, and one with no proposal or neither id as nothing', () => {
+    expect(publishedAnswer({
+      session: 'h1',
+      published: [
+        { at: '2026-10-22T10:00:00+00:00', proposal: 'p2', kind: 'setup', workspace: 'work', ask: 'a2', quest: 'q2' },
+        { at: '2026-10-22T09:00:00+00:00', proposal: 'p1', kind: 'ask', workspace: 'work', ask: 'a1' },
+        { at: '2026-10-22T08:00:00+00:00', proposal: 'p0', kind: 'ask' },
+        { at: '2026-10-22T08:00:00+00:00', kind: 'ask', ask: 'a0' },
+      ],
+    })).toEqual([
+      { at: '2026-10-22T10:00:00+00:00', proposal: 'p2', kind: 'setup', workspace: 'work', ask: 'a2', quest: 'q2' },
+      { at: '2026-10-22T09:00:00+00:00', proposal: 'p1', kind: 'ask', workspace: 'work', ask: 'a1', quest: null },
+    ]);
+    expect(publishedAnswer(undefined)).toEqual([]);
+    expect(publishedAnswer({})).toEqual([]);
+  });
+
+  it('asks HELP_PUBLISHED for the conversation named, under the help family, and nothing with none', async () => {
+    invoke.mockReset();
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'HELP_PUBLISHED'
+      ? { session: 'h1', published: [{ at: '2026-10-22T09:00:00+00:00', proposal: 'p1', kind: 'ask', ask: 'a1' }] }
+      : undefined));
+    const { client, wrapper } = wrapped();
+    const { result } = renderHook(() => useHelpPublished('h1'), { wrapper });
+
+    await waitFor(() => expect(result.current.data).toHaveLength(1));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_PUBLISHED', { payload: { session: 'h1' } });
+    expect(client.getQueryData([...HELP_PUBLISHED, 'h1'])).toHaveLength(1);
+
+    invoke.mockClear();
+    renderHook(() => useHelpPublished(null), { wrapper: wrapped().wrapper });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(invoke).not.toHaveBeenCalled();
   });
 });

@@ -3,7 +3,7 @@ import { type QueryClient, type QueryKey, skipToken, useIsMutating, useQuery, us
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import { keys } from '../../data/queries';
 import { readUnderWay } from '../driver';
-import { HELP_HISTORY, HELP_PROPOSALS, HELP_WIRED } from '../help';
+import { HELP_HISTORY, HELP_PROPOSALS, HELP_PUBLISHED, HELP_WIRED } from '../help';
 import { ALL_HISTORY } from '../sessions/history';
 import { treesSyncScopeKey } from '../repositories/lines';
 import { notPushed } from './slices';
@@ -53,8 +53,8 @@ const scopes = new Map<string, (sessions: string[] | null) => QueryKey[]>([
   // conversation proposed; the browser's settings and favorites.
   ['tools', () => [ALL_TOOLS]],
   // HELPWIREDLIVE1: and the receipts *What it has* shows, so one a resume or a change of mode records while it is open appears
-  // (only an enabled query, the open panel's, asks again).
-  ['help', () => [HELP_HISTORY, HELP_PROPOSALS, HELP_WIRED]],
+  // (only an enabled query, the open panel's, asks again). ASKQUESTS1: and what a conversation published, which an Apply adds.
+  ['help', () => [HELP_HISTORY, HELP_PROPOSALS, HELP_WIRED, HELP_PUBLISHED]],
   ['browser', () => [keys.browserSettings]],
   // How this Daoris is wired, told by the driver as a walk of its sizes starts and ends (FABRIC-EVENT5b), and by the Downloads
   // row's clearing (CACHECLEAR1), with that row's list; and the Disk space card, told as each kind's walk ends (KEEP1c).

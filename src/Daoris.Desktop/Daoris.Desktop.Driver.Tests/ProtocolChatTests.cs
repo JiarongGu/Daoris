@@ -86,6 +86,43 @@ public sealed class ProtocolChatTests : IDisposable
     }
 
     /// <summary>
+    /// ASKQUESTS1 (the Ask Daoris design §9 item 12): what Ask Daoris's Apply did is Daoris's word, a turn as the person's words make
+    /// one, so the agent hears it at once, and kept on the record as Daoris's (COWORK1b's mark), never the person's.
+    /// </summary>
+    [Fact]
+    public async Task Daoris_s_word_to_a_chat_is_a_turn_the_record_keeps_as_daoris_s()
+    {
+        await using var service = StandInService.Start(Path.Combine(_home, "engine"));
+        var config = DriverConfig.Empty with
+        {
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard] },
+        };
+        var adapters = AdapterSet.Built();
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
+        using var client = new ServiceClient(service.Url, null);
+        using var runner = new ChatRunner(
+            client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events,
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+
+        var id = (await runner.StartAsync("engine", "acp-stub", config)).SessionId;
+        Assert.NotNull(id);
+        string Seen() => $"heard [{string.Join(" | ", HeardLines())}], state {service.State(id!)}, "
+                         + $"record [{string.Join(" | ", events.Page(id!).Events.Select(e => e.Kind))}]";
+        await Until(() => service.State(id!) == "working", Seen);
+
+        Assert.True(runner.Say(id!, "first"));
+        Assert.True(runner.Tell(id!, "Applied: #p1a2b3c4 — Asked as #a1b2c3d4 in work.", "help-apply/p1a2b3c4"));
+        await Until(() => events.Page(id!).Events.Count(e => e.Kind == SessionEventKind.Turn) == 2, Seen);
+
+        Assert.Contains("prompt: Applied: #p1a2b3c4 — Asked as #a1b2c3d4 in work.", HeardLines());
+        var told = events.Page(id!).Events.Where(e => e.Kind == SessionEventKind.User).ToList();
+        Assert.Equal(["person:", "target:daoris"], told.Select(e => $"{e.Origin}:{e.From}"));
+        Assert.Equal("Applied: #p1a2b3c4 — Asked as #a1b2c3d4 in work.", told[1].Text);
+        Assert.True(runner.Finish(id!));
+        await Until(() => service.State(id!) == "completed", Seen);
+    }
+
+    /// <summary>
     /// When a conversation's end is told, its console has already ended: a page that asks again on
     /// hearing it reads the console as ended. Found looking at CONSOLE3c: the ending was told first and
     /// the console closed after, so a page asking at once still read it as live, beside `completed`.

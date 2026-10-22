@@ -640,6 +640,48 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
+    /// ASKQUESTS1 (Codex's read of the design, D191): Daoris's word to a conversation (what Ask Daoris's Apply did) is no word of the
+    /// person's. Waiting for the turn's end it is never listed in their queue, which the composer draws with its edits, and never
+    /// edited by its id; a stop never hands it back to their box; and the record keeps it as Daoris's.
+    /// </summary>
+    [Fact]
+    public async Task Daoris_s_word_waiting_is_never_the_persons_to_list_edit_or_take_back()
+    {
+        var door = new Door { TakesWordsMidTurn = false };
+        var turns = door.Turns();
+        turns.Take(new ChatMessage("read the five files", []));
+        await Poll.Until(() => door.Took.Count == 1, () => "the first turn never reached the door");
+
+        var word = new ChatMessage("Daoris: Applied: #p1a2b3c4.", []) { Daoris = new DaorisWord("help-apply/p1a2b3c4/1") };
+        Assert.Equal(TurnReach.TurnEnd, turns.Take(word));
+        turns.Take(new ChatMessage("and the readme", []));
+
+        Assert.Equal(["and the readme"], turns.State.Queued.Select(message => message.Text));
+        var stop = await turns.StopAsync();
+        Assert.Equal(["and the readme"], stop.Withdrawn.Select(message => message.Text));
+
+        var recorded = Assert.Single(ChatRunner.Recorded(word));
+        Assert.Equal(("target", DaorisWords.From), (recorded.Origin, recorded.From));
+    }
+
+    /// <summary>ASKQUESTS1: Daoris's word waiting alone goes as the next turn, unlisted.</summary>
+    [Fact]
+    public async Task Daoris_s_word_waiting_alone_goes_as_the_next_turn_unlisted()
+    {
+        var door = new Door { TakesWordsMidTurn = false };
+        var turns = door.Turns();
+        turns.Take(new ChatMessage("read the five files", []));
+        await Poll.Until(() => door.Took.Count == 1, () => "the first turn never reached the door");
+
+        turns.Take(new ChatMessage("Daoris: Applied: #p1a2b3c4.", []) { Daoris = new DaorisWord("help-apply/p1a2b3c4/1") });
+
+        Assert.Empty(turns.State.Queued);
+        door.EndTurn(0);
+        await Poll.Until(() => door.Took.Count == 2, () => "Daoris's word never went");
+        Assert.Equal("Daoris: Applied: #p1a2b3c4.", door.Took[1]);
+    }
+
+    /// <summary>
     /// MSG1c3 (D137's MSG1c2 note, D142 point 1): a word handed to the turn at its next step, whose turn the person stopped
     /// while it was on its way and the agent then answered <c>cancelled</c>, may have been read with its answer dropped
     /// (STEER1 §3). The line the conversation keeps of it carries a code the page words in the reader's language, the word's

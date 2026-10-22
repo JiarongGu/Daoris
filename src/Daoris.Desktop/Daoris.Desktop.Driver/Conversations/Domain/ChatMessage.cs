@@ -144,6 +144,13 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     internal bool OnRecord => GoesOn is not null || Helped is not null || Said;
 
     /// <summary>
+    /// Whether this is the person's own word waiting (ASKQUESTS1): listed in the queue the page is told, edited and taken back by its
+    /// id, and handed back to their composer by a stop. Neither what the record shows waiting already (<see cref="OnRecord"/>) nor
+    /// Daoris's own word (<see cref="Daoris"/>), which a stop takes with what it withdraws and never puts in their box.
+    /// </summary>
+    internal bool Theirs => !OnRecord && Daoris is null;
+
+    /// <summary>
     /// Words the record already shows as said under <see cref="Id"/> and what was told beside them, handed back to be the next
     /// turn because the agent answered their steer <c>promptRequired</c> (STEER2d): that turn records them only as taken under
     /// the same id, once, and never says them or what was told again.
