@@ -118,10 +118,10 @@ export function openingRepository(
  * @remarks
  * **It replaced the *Start session* drawer** (D55's), which started an empty conversation the person typed into after. What
  * the drawer knew is the chips': repositories with a checkout here, a busy checkout and what lets it start, the agents by the
- * names Settings gives them (UX5 U67), and the accounts in the workspace's list's order (D130 §3.2).
+ * names Settings gives them (UX5 U67), and the accounts in the set's order (D197 point 2).
  *
  * **Every chip may be left alone.** Silence resolves the way a driven session resolves (D49 §4, D51): the agent from
- * `driver.json`, the account from the workspace's default then the machine's, the tree from the repository's standing opt-in.
+ * `driver.json`, the account the walk of the agent's set takes (D197), the tree from the repository's standing opt-in.
  * So the defaults say *driver's*, and send nothing.
  *
  * **Enter starts; Shift+Enter is a new line; an input method's Enter is its own** (IME1). Files go with the words, through
