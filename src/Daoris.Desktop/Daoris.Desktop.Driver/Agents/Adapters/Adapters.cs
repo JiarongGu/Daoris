@@ -1546,6 +1546,8 @@ internal static class Spawning
         // that PATH (HarnessProbe.Apply), so an agent npm put under a managed node is found the same way. The tools are the
         // home's the start was handed (ENVSEAM1), this process's where it was handed none.
         Tools.Hand(info, home);
+        // GITAUTH1b (the git-auth design §4.1): a session's gh or az acts with no token the desktop inherited.
+        GitWiring.Untoken(info.Environment);
 
         return info;
     }

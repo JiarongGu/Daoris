@@ -20,6 +20,9 @@
          so a driver change it cannot compile (a type the base library lacks) surfaced only in the publish. The driver gate
          builds it here, a compile of six files. -->
     <ProjectReference Include="..\Daoris.Desktop.Launcher\Daoris.Desktop.Launcher.csproj" ReferenceOutputAssembly="false" />
+    <!-- Built first and never referenced (GITAUTH1b): the git doors compile driver files in by link, and `GitDoorsProcessTests`
+         lays the built program out as an install's doors and has git start it. -->
+    <ProjectReference Include="..\Daoris.Desktop.GitDoor\Daoris.Desktop.GitDoor.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>

@@ -287,7 +287,8 @@ public sealed class ToolsChildrenTests : IDisposable
     }
 
     private static Dictionary<string, string?> Unprompted(IDictionary<string, string?> environment) => environment
-        .Where(pair => !GitWiring.Prompts.ContainsKey(pair.Key) && !GitWiring.Removed.Contains(pair.Key, StringComparer.OrdinalIgnoreCase))
+        .Where(pair => !GitWiring.Prompts.ContainsKey(pair.Key) && !GitWiring.Removed.Contains(pair.Key, StringComparer.OrdinalIgnoreCase)
+            && pair.Key != GitRouting.HomeVariable)
         .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase);
 
     [Fact]

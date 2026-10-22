@@ -684,12 +684,13 @@ public static class Tools
     }
 
     /// <summary>
-    /// Hand a start the tools' environment from a read the caller already holds, with the prompt variables every child takes
-    /// (GITAUTH1a, <see cref="GitWiring"/>): never the terminal's, which builds its block from <see cref="ChildEnvironment"/>.
+    /// Hand a start the tools' environment from a read the caller already holds, with the prompt variables and the doors every
+    /// child takes (GITAUTH1a and GITAUTH1b, <see cref="GitWiring"/>): never the terminal's, which builds its block from
+    /// <see cref="ChildEnvironment"/>.
     /// </summary>
     public static void Hand(ProcessStartInfo info, ToolsRead read, string home)
     {
-        GitWiring.Hand(info);
+        GitWiring.Hand(info, home);
         var inherited = info.Environment.TryGetValue(PathVariable, out var path) ? path : null;
         foreach (var (name, value) in ChildEnvironment(read, home, inherited)) info.Environment[name] = value;
     }
