@@ -20,6 +20,10 @@ with the version and date at release.
   now say sessions are no longer limited by time and change nothing. A `timeoutMinutes` in `driver.json` is kept for an older
   Daoris, and `driver list` says so. A reviewer's, a helper's and a partner's pass keep their own minutes, no longer cut by it.
 
+- A session that asks a helper and ends its turn so the helper can read now waits on that helper, not on you (HELPERWAIT1).
+  It no longer shows in *What needs you*; it shows under *Resumes later* as awaiting its helper, keeps its working tree, and goes
+  on by itself with the helper's answer. If the helper ends with no answer, the session comes to you with the reason. A session
+  waiting on your answer keeps waiting for it: once you answer, it goes on with your answer and its helper's together.
 - A folder under Daoris's account homes that no agent or plugin names is no longer taken for an agent (POOLSTRAY1). An earlier
   start could leave such a folder, and its subfolders were folded in as accounts. Such a folder is now noted once in the machine
   log and otherwise left alone. If an earlier fold already wrote one into the account order, the next change of the accounts

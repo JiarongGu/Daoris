@@ -144,8 +144,26 @@ public sealed class BranchTidying(string home)
             .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
         held.UnionWith(await service.WaitingTreesAsync(ct).ConfigureAwait(false));
+        held.UnionWith(await WaitingOnHelpersAsync(home, service, ct).ConfigureAwait(false));
         if (reviewing is not null) held.UnionWith(TreesOf(new SessionTrees(home).TreesRoot, await reviewing(ct).ConfigureAwait(false)));
         return held;
+    }
+
+    /// <summary>
+    /// The trees of this machine's sessions that ended waiting on their own helper and have an ask of their own still open (HELPERWAIT1;
+    /// Codex's #5 on COWORKUX1): each goes on in its tree with the answer, so it keeps it as a park does. One with none open is handed its
+    /// answer (its words then wait, <see cref="ServiceClient.WaitingTreesAsync"/>) or brought back to the person (active again), and one
+    /// whose quest closed meanwhile holds nothing. No ask on file reads no record.
+    /// </summary>
+    public static async Task<IEnumerable<string>> WaitingOnHelpersAsync(string home, ServiceClient service, CancellationToken ct)
+    {
+        var files = new HelperFiles(home);
+        var asks = files.Asks();
+        if (asks.Count == 0) return [];
+        return (await service.RecordsAsync(ct).ConfigureAwait(false))
+            .Where(record => HelperWaits.HoldsTree(record) && record.Tree is { Length: > 0 }
+                             && HelperWaits.Open(record.Session, asks, files.ReadState).Count > 0)
+            .Select(record => record.Tree!);
     }
 
     /// <summary>

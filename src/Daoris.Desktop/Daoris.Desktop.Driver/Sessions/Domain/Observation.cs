@@ -85,10 +85,15 @@ public static class Observation
     /// Whether its quest stands at a closure graph's current submission (FABRIC-CLOSE1h5, <see cref="QuestResults.Submitted"/>): taken,
     /// and its result in, so the session ends as one whose quest reached done does, never parked as though it waited on the person.
     /// </param>
+    /// <param name="awaitsHelper">
+    /// Whether its agent has a helper ask of its own still open, and its last turn asked the person nothing (HELPERWAIT1,
+    /// <c>Driver.WaitsOnOwnHelperAsync</c>): where it would park, it waits on that helper instead.
+    /// </param>
     public static SessionConclusion Conclude(
         int exitCode, string questStatus, string? awaitsBefore = null, string? awaitsAfter = null,
         string? turnFailed = null, bool resumed = false, bool took = false, string? lastWords = null,
-        string? reopenedFrom = null, IReadOnlyList<string>? backgroundCut = null, bool submitted = false) => questStatus switch
+        string? reopenedFrom = null, IReadOnlyList<string>? backgroundCut = null, bool submitted = false,
+        bool awaitsHelper = false) => questStatus switch
     {
         // Ask and wait (D79): the session published a question to another repository and waits on it.
         // Its quest stays taken for the same tree to resume in, and that is a good ending.
@@ -141,6 +146,14 @@ public static class Observation
                 + "ends such work with the turn, so it was cut off before that work finished, and is carried on in the same tree.",
                 ("works", works))),
 
+        // 🔴 HELPERWAIT1 (the owner's install, 2026-10-23, twice): its agent asked a helper and ended its turn so the helper could read
+        // its work, which a helper does only at a turn's end (COAGENT1a). Parked, it read as asking the person, and its helper's answer
+        // waited for the person's: a deadlock. It waits on its helper, which is no question, as BGWAIT1's own background work is not:
+        // completed, by a code of its own and quoting nothing, so nothing counts it as the person's; the answer reopens it once (D188
+        // point 4), and a helper that ends with no answer brings it back to the person as this park would have (HelperGone).
+        "Taken" when exitCode == 0 && awaitsHelper && Parks(questStatus, awaitsBefore, awaitsAfter, resumed, took)
+            => SessionConclusion.Of("completed", AwaitsHelper),
+
         // 🔴 A session that holds its own quest and ended its turn cleanly is WAITING ON THE PERSON
         // (STANDDOWN2): it took the quest itself, or resumed or carried on one this machine already
         // held. FG5's verify session did exactly this with three questions, and read "someone else has
@@ -148,14 +161,7 @@ public static class Observation
         // A park is never resumed by itself, so nothing here loops. The rule is one (Parks): the protocol door reads it too, to
         // keep a turn that ended on its own background work working instead (BGWAIT1).
         "Taken" when exitCode == 0 && Parks(questStatus, awaitsBefore, awaitsAfter, resumed, took)
-            // The words lead: wherever this note is shown, it already says the session is waiting.
-            => SessionConclusion.Of("awaiting-person",
-                lastWords is { Length: > 0 } said
-                    ? Noted.Of(NoteCodes.EndedParkedAsked, "It stopped with its quest still taken, to ask you:")
-                        .Then("\n\n", Noted.Said(said, NoteBy.Agent))
-                    : Noted.Of(
-                        NoteCodes.EndedParkedTranscript,
-                        "It stopped with its quest still taken, to ask you — what it needs is in the last words of its transcript.")),
+            => SessionConclusion.Of("awaiting-person", Parked(lastWords)),
 
         // Holding its quest with a messy exit is a failure, and the strikes bound carrying it on (D80).
         "Taken" when awaitsBefore is { Length: > 0 }
@@ -202,6 +208,36 @@ public static class Observation
         && !Asks(awaitsBefore, awaitsAfter)
         && (took || resumed || awaitsBefore is { Length: > 0 });
 
+    /// <summary>
+    /// A park's note (STANDDOWN2): the words lead, since wherever this note is shown it already says the session is waiting; with no
+    /// words to quote, where they would be.
+    /// </summary>
+    internal static Noted Parked(string? lastWords) =>
+        lastWords is { Length: > 0 } said
+            ? Noted.Of(NoteCodes.EndedParkedAsked, "It stopped with its quest still taken, to ask you:")
+                .Then("\n\n", Noted.Said(said, NoteBy.Agent))
+            : Noted.Of(
+                NoteCodes.EndedParkedTranscript,
+                "It stopped with its quest still taken, to ask you — what it needs is in the last words of its transcript.");
+
+    /// <summary>
+    /// A session that ended its turn on its own open helper ask (HELPERWAIT1): it waits on that helper, and comes to the person only if
+    /// no answer comes. Its agent's words are not quoted: they are its conversation's, and a quote would read as a question.
+    /// </summary>
+    public static Noted AwaitsHelper => Noted.Of(
+        NoteCodes.EndedAwaitsHelper,
+        "It asked a helper and stopped so the helper could read: it goes on in the same conversation with the helper's answer, "
+        + "and comes to you only if no answer comes.");
+
+    /// <summary>
+    /// The park a session that waited on its own helper is brought back to when that helper ends with no answer (HELPERWAIT1): today's
+    /// park, as its turn's end would have made it, after the reason by its own code (<see cref="HelperNotes.Refused"/>).
+    /// </summary>
+    /// <param name="why">The refusal's line: why no helper answered, and which agent, where one was chosen.</param>
+    /// <param name="lastWords">The agent's last words, quoted as a park quotes them; null points at the transcript.</param>
+    public static SessionConclusion HelperGone(Noted why, string? lastWords) =>
+        SessionConclusion.Of("awaiting-person", why.Then("\n\n", Parked(lastWords)));
+
     /// <summary>A NEW question to another repository (D79): what it waits on now, and not what it waited on before.</summary>
     private static bool Asks(string? awaitsBefore, string? awaitsAfter) =>
         awaitsAfter is { Length: > 0 } && !string.Equals(awaitsAfter, awaitsBefore, StringComparison.Ordinal);
@@ -228,13 +264,14 @@ public static class Observation
     /// <param name="questStatus">Its quest's status as the run left it.</param>
     /// <param name="backgroundCut">The session's own background work its harness ended with its turn (BGWAIT1c), as a start's.</param>
     /// <param name="submitted">Whether its quest stands at a closure graph's current submission, as a start's (FABRIC-CLOSE1h5).</param>
+    /// <param name="awaitsHelper">Whether it ended its turn on its own open helper ask, as a start's (HELPERWAIT1).</param>
     public static SessionConclusion Resumed(
         int exitCode, string before, string startedOn, string questStatus, string? awaitsBefore = null, string? awaitsAfter = null,
         string? turnFailed = null, bool took = false, string? lastWords = null, IReadOnlyList<string>? backgroundCut = null,
-        bool submitted = false) =>
+        bool submitted = false, bool awaitsHelper = false) =>
         startedOn is "Open" or "Taken"
             ? Conclude(exitCode, questStatus, awaitsBefore, awaitsAfter, turnFailed, resumed: true, took, lastWords, backgroundCut: backgroundCut,
-                submitted: submitted)
+                submitted: submitted, awaitsHelper: awaitsHelper)
             : WentOn(exitCode, before, turnFailed);
 
     /// <summary>

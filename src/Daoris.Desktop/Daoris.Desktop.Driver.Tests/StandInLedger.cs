@@ -574,6 +574,16 @@ internal sealed class StandInLedger : HttpMessageHandler
         }
     }
 
+    /// <summary>The record's note, its one coded part, as the ledger keeps the driver's (HELPERWAIT1: <c>ended.awaits-helper</c>).</summary>
+    public void Noted(string session, string code)
+    {
+        lock (_gate)
+        {
+            _sessions.Single(s => s["id"]!.GetValue<string>() == session)["noteParts"] =
+                new JsonArray(new JsonObject { ["code"] = code, ["values"] = new JsonObject(), ["text"] = code });
+        }
+    }
+
     /// <summary>
     /// <paramref name="quest"/> made a set-up step showing its chain's work in <paramref name="environment"/>, done, with one
     /// local set-up <paramref name="session"/> said and no verdict on it yet (REVIEWENV1d): a review waiting for the person.

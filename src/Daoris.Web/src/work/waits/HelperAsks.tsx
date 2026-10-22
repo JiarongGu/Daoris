@@ -77,6 +77,8 @@ const WHY = new Set([
   'off', 'asker-gone', 'asker-unfit', 'too-many', 'unreadable', 'not-started', 'no-answer', 'conversation', 'cannot-take', 'declined',
   // COAGENT1a: the session's work in progress could not be captured whole.
   'capture-merge', 'capture-link', 'capture-submodule', 'capture-unreadable', 'capture-bound', 'capture-moved',
+  // HELPERWAIT1: a hand whose outcome a restart lost.
+  'hand-uncertain',
 ]);
 
 /** Why a waiting ask waits where it is no yes of the person's, as the driver's look writes it; any other waits on an agent. */
@@ -167,7 +169,8 @@ function HelperAskLine({ row, nameOf, onApprove, onDecline, onOpen, busy, onConv
   }, []);
   const yes = onApprove && waitsOnYes(row);
   const no = onDecline && waitsOnWord(row);
-  const door = onOpen && row.helper && (row.state === 'started' || row.state === 'answered') ? row.helper : null;
+  // A hand whose outcome a restart lost (HELPERWAIT1) keeps the helper's door: its conversation holds the answer for the person.
+  const door = onOpen && row.helper && (row.state === 'started' || row.state === 'answered' || row.code === 'hand-uncertain') ? row.helper : null;
   // The yes and the no share one pending and one refusal line: they answer the same ask.
   const press = (answer: HelperApprove) => {
     const mine = ++turn.current;

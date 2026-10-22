@@ -107,6 +107,54 @@ public sealed class HelperHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// HELPERWAIT1 (D189 point 6): an asker its line has left (a hand-over, a move, a carry-on) is never reopened by its helper's answer: the
+    /// answer goes to the newest record continuing it, as a partner's piece does, and is keyed by its helper; the record left keeps nothing.
+    /// </summary>
+    [Fact]
+    public async Task The_hand_door_follows_the_askers_line_to_its_newest_record_and_keys_the_word()
+    {
+        var sessions = host.Composed.Sessions;
+        var asker = await sessions.CreateAsync(null, "Relay", "stub", DateTimeOffset.UtcNow, kind: Daoris.Knowledge.SessionKind.Driven, tree: "trees/default/Relay/s-11111111");
+        var helper = await sessions.CreateAsync(null, "Relay", "codex-acp", DateTimeOffset.UtcNow, kind: Daoris.Knowledge.SessionKind.Chat, serves: asker.Id);
+        await sessions.SetStateAsync(asker.Id, Daoris.Knowledge.SessionState.Stopped, "handed over.", null, null, DateTimeOffset.UtcNow);
+        var successor = await sessions.CreateAsync(
+            null, "Relay", "codex-acp", DateTimeOffset.UtcNow.AddSeconds(1), kind: Daoris.Knowledge.SessionKind.Driven, tree: "trees/default/Relay/s-11111111",
+            from: asker.Id);
+        await sessions.SetStateAsync(successor.Id, Daoris.Knowledge.SessionState.Completed, "done.", null, null, DateTimeOffset.UtcNow);
+
+        var handed = await host.PostAsync($"/api/helpers/{helper.Id}/hand", new { text = "Helper says five." });
+
+        Assert.Equal(200, handed.Status);
+        var word = Assert.Single((await sessions.FindAsync(successor.Id))!.Said);
+        Assert.Equal((helper.Id, $"helper:{helper.Id}"), (word.Helper, word.Key));
+        Assert.Empty((await sessions.FindAsync(asker.Id))!.Said);
+    }
+
+    /// <summary>
+    /// HELPERWAIT1 (Codex's round-2 #1 on COWORKUX1): a park waits on the person, so its helper's answer is refused while they have not
+    /// answered, and kept beside their answer once they have: its go-on then hands both in one prompt, the person's answer still theirs.
+    /// </summary>
+    [Fact]
+    public async Task A_park_takes_its_helpers_answer_only_once_the_person_answered_it()
+    {
+        var sessions = host.Composed.Sessions;
+        var asker = await sessions.CreateAsync(null, "Parked", "stub", DateTimeOffset.UtcNow, kind: Daoris.Knowledge.SessionKind.Driven, tree: "trees/default/Parked/s-22222222");
+        await sessions.SetStateAsync(asker.Id, Daoris.Knowledge.SessionState.AwaitingPerson, "It stopped to ask you.", null, null, DateTimeOffset.UtcNow);
+        var helper = await sessions.CreateAsync(null, "Parked", "codex-acp", DateTimeOffset.UtcNow, kind: Daoris.Knowledge.SessionKind.Chat, serves: asker.Id);
+
+        Assert.Equal(409, (await host.PostAsync($"/api/helpers/{helper.Id}/hand", new { text = "Helper says five." })).Status);
+        Assert.Empty((await sessions.FindAsync(asker.Id))!.Said);
+
+        await sessions.KeepSaidAsync(asker.Id, new Daoris.Knowledge.SaidWord("person01", "Port 8080.", DateTimeOffset.UtcNow, []));
+        Assert.Equal(200, (await host.PostAsync($"/api/helpers/{helper.Id}/hand", new { text = "Helper says five." })).Status);
+
+        var record = (await sessions.FindAsync(asker.Id))!;
+        Assert.Equal(Daoris.Knowledge.SessionState.AwaitingPerson, record.State);
+        Assert.Equal(["person01", null], record.Said.Select(word => word.Helper is null ? word.Id : null));
+        Assert.Equal("Port 8080.", record.Answer);
+    }
+
+    /// <summary>
     /// MIXAGENT2a-iii: a conversation that asked is handed the answer while it is open (working, between turns), since the chat
     /// runner says it as the conversation's next turn; a conversation still being started, an intake, a helper and a stood-down
     /// record keep their refusals.

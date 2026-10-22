@@ -388,6 +388,68 @@ public sealed class ObservationTests
         Assert.Equal("awaiting-person", Observation.Conclude(0, "Taken", took: true, lastWords: PicksUp, backgroundCut: []).State);
     }
 
+    private const string HelperAsked = "I asked a helper about the window; I will go on when it answers.";
+
+    /// <summary>
+    /// 🔴 HELPERWAIT1 (the owner's install, 2026-10-23): a driven turn that ends cleanly on its own open helper ask, holding its quest
+    /// as a park would, waits on that helper and not on the person. Completed, by a code of its own and no quote of the agent's
+    /// words, so neither *What needs you* nor the place's count holds it; the helper's answer reopens it (D188 point 4). A start and a
+    /// resumed run alike. A done, a new question to another repository, the person's reopen, a messy exit and a failed turn read as
+    /// before; a stand-down is no park, and without an open helper ask the park is unchanged.
+    /// </summary>
+    [Fact]
+    public void A_turn_that_ended_on_its_own_open_helper_ask_waits_on_the_helper_not_the_person()
+    {
+        foreach (var conclusion in new[]
+                 {
+                     Observation.Conclude(0, "Taken", took: true, lastWords: HelperAsked, awaitsHelper: true),
+                     Observation.Conclude(0, "Taken", resumed: true, lastWords: HelperAsked, awaitsHelper: true),
+                     Observation.Resumed(0, "awaiting-person", "Taken", "Taken", took: true, lastWords: HelperAsked, awaitsHelper: true),
+                     Observation.Resumed(0, "completed", "Taken", "Taken", lastWords: HelperAsked, awaitsHelper: true),
+                 })
+        {
+            Assert.Equal("completed", conclusion.State);
+            Assert.Equal(NoteCodes.EndedAwaitsHelper.Code, Assert.Single(conclusion.Parts!).Code);
+            Assert.Equal(
+                "It asked a helper and stopped so the helper could read: it goes on in the same conversation with the helper's answer, "
+                + "and comes to you only if no answer comes.",
+                conclusion.Note);
+            Assert.DoesNotContain(HelperAsked, conclusion.Note);
+        }
+
+        Assert.Equal("ended.done", Observation.Conclude(0, "Done", took: true, awaitsHelper: true).Parts![0].Code);
+        Assert.Equal("ended.awaits", Observation.Conclude(0, "Taken", awaitsAfter: "q9", took: true, awaitsHelper: true).Parts![0].Code);
+        Assert.Equal(
+            NoteCodes.EndedSourceReopened.Code, Observation.Conclude(0, "Taken", took: true, reopenedFrom: "q1", awaitsHelper: true).Parts![0].Code);
+        Assert.Equal(NoteCodes.EndedTakenExit.Code, Observation.Conclude(1, "Taken", took: true, awaitsHelper: true).Parts![0].Code);
+        Assert.Equal(
+            NoteCodes.EndedTurnFailedTaken.Code, Observation.Conclude(0, "Taken", turnFailed: "limit reached", took: true, awaitsHelper: true).Parts![0].Code);
+        Assert.Equal("stood-down", Observation.Conclude(0, "Taken", took: false, awaitsHelper: true).State);
+        Assert.Equal(
+            ("awaiting-person", NoteCodes.EndedParkedAsked.Code),
+            (Observation.Conclude(0, "Taken", took: true, lastWords: HelperAsked).State, Observation.Conclude(0, "Taken", took: true, lastWords: HelperAsked).Parts![0].Code));
+    }
+
+    /// <summary>
+    /// HELPERWAIT1: the park a session is brought back to when the helper it waited on ends with no answer is today's park, its reason
+    /// first: the helper's refusal by its own code, then the agent's last words quoted as a park quotes them, or the transcript's pointer.
+    /// </summary>
+    [Fact]
+    public void A_helper_that_ended_with_no_answer_brings_its_asker_back_to_the_person_with_the_reason()
+    {
+        var quoted = Observation.HelperGone(HelperNotes.Refused(HelperWhy.NoAnswer, "codex-acp"), HelperAsked);
+        var bare = Observation.HelperGone(HelperNotes.Refused(HelperWhy.Declined), lastWords: null);
+
+        Assert.Equal("awaiting-person", quoted.State);
+        Assert.Equal(["helper.refused-by", NoteCodes.EndedParkedAsked.Code, null], quoted.Parts!.Select(part => part.Code));
+        Assert.Equal((HelperAsked, NoteBy.Agent), (quoted.Parts![2].Words, quoted.Parts[2].By));
+        Assert.Equal(
+            "Helper codex-acp did not answer this question: the helper ended without an answer.\n\nIt stopped with its quest still taken, to ask you:"
+            + $"\n\n{HelperAsked}",
+            quoted.Note);
+        Assert.Equal(("awaiting-person", "helper.refused", NoteCodes.EndedParkedTranscript.Code), (bare.State, bare.Parts![0].Code, bare.Parts[1].Code));
+    }
+
     /// <summary>With no last words to quote, the park still says where they would be.</summary>
     [Fact]
     public void A_park_with_no_last_words_points_at_the_transcript()

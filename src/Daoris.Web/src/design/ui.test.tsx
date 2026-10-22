@@ -721,9 +721,9 @@ describe('the session tone map', () => {
   ];
 
   // The nine the wire carries, the one the page shows a live chat between turns (UX5 U17), the two words the
-  // session list's reader derives from the session's quest (D126 §2.2), the park the person answered (ANSWER1c), and a
-  // record going on with their words (MSG1f).
-  const SHOWN = [...STATES, 'idle', 'parked', 'awaiting-reply', 'answered', 'going-on'];
+  // session list's reader derives from the session's quest (D126 §2.2), the park the person answered (ANSWER1c), a
+  // record going on with their words (MSG1f), and a session waiting on its own helper (HELPERWAIT1).
+  const SHOWN = [...STATES, 'idle', 'parked', 'awaiting-reply', 'answered', 'going-on', 'awaiting-helper'];
 
   it('tones every session state, and awaiting-person wears waiting, never an outcome', () => {
     for (const state of SHOWN) expect(SESSION_TONE[state as keyof typeof SESSION_TONE]).toBeTruthy();
@@ -752,6 +752,9 @@ describe('the session tone map', () => {
     // ANSWER1c: answered, it waits on the driver's next look, as a queued session does, and no longer on the person.
     expect(SESSION_TONE.answered).toBe('neutral');
     expect(SESSION_DOT.answered).toBe('idle');
+    // HELPERWAIT1: waiting on its own helper, nothing runs and nothing waits on the person, as awaiting a reply.
+    expect(SESSION_TONE['awaiting-helper']).toBe('neutral');
+    expect(SESSION_DOT['awaiting-helper']).toBe('idle');
   });
 
   /** Each shown state has its word: the record's in `sessionState`, the reader's two in `work.shown` (D126 §8). */
@@ -761,6 +764,7 @@ describe('the session tone map', () => {
     expect(shownKey('parked')).toBe('work.shown.parked');
     expect(shownKey('awaiting-reply')).toBe('work.shown.awaitingReply');
     expect(shownKey('answered')).toBe('work.shown.answered');
+    expect(shownKey('awaiting-helper')).toBe('work.shown.awaitingHelper');
     for (const state of SHOWN) {
       expect(i18n.exists(shownKey(state as ShownState), { lng: 'en' })).toBe(true);
       expect(i18n.exists(shownKey(state as ShownState), { lng: 'zh' })).toBe(true);

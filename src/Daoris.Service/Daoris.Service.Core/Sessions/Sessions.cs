@@ -1129,6 +1129,30 @@ public sealed class SessionStore
     }, ct);
 
     /// <summary>
+    /// This machine's completed records in <paramref name="tree"/> whose note carries <paramref name="code"/>, matched as
+    /// <see cref="ActiveForAsync"/> matches a tree (HELPERWAIT1): the sessions that ended waiting on their own helper, which keep their tree
+    /// while their quest is taken. Whether it is, is the caller's to read: the quests are not this store's.
+    /// </summary>
+    public Task<IReadOnlyList<Session>> CompletedWithCodeAsync(
+        string repository, string? tree, string code, CancellationToken ct = default) => _db.RunAsync<IReadOnlyList<Session>>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = """
+            SELECT * FROM sessions
+            WHERE repository = $repository AND state = 'Completed' AND origin IS NULL AND quest IS NOT NULL
+              AND note_parts LIKE $code ESCAPE '\'
+              AND ($tree IS NULL OR tree IS NULL OR tree = $tree)
+            """;
+        command.Parameters.AddWithValue("$repository", repository);
+        command.Parameters.AddWithValue("$tree", (object?)Trees.Normalize(tree) ?? DBNull.Value);
+        command.Parameters.AddWithValue("$code", $"%\"{code.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_")}\"%");
+        var found = new List<Session>();
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        while (await reader.ReadAsync(ct).ConfigureAwait(false)) found.Add(Read(reader));
+        return found;
+    }, ct);
+
+    /// <summary>
     /// The session with a PROCESS in this directory, whichever record it belongs to — the intake
     /// room's lock (D65 §1b), where every ask in a circle is a different "repository" in one room.
     /// </summary>

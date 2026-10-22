@@ -262,7 +262,10 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             var after = await ResumedAfterAsync(service, quest, sessionId, target.Language, ct).ConfigureAwait(false);
             resume = new ResumeAsk(
                 kept.Conversation, words,
-                Continuations.OpeningNoted(adapter.Name, selection.Version, park.HarnessVersion, answer: park.Parked, findings, persons, helper, daoris),
+                // HELPERWAIT1: a helper's answer handed beside the person's at this look is among the words, though not among the look's.
+                Continuations.OpeningNoted(
+                    adapter.Name, selection.Version, park.HarnessVersion, answer: park.Parked, findings, persons,
+                    helper || words.Any(word => word.Helper is not null), daoris),
                 // Where its go-aheads changed since it started (AUTONOMY1c), told after the rest, since its instruction is not handed again.
                 Continuations.AfterWords(
                     Continuations.AfterWords(inSync, after),
@@ -519,6 +522,10 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
 
         // A stop made of it is its end, a pause's naming the pause (PAUSE1b, design §4.1), as a first run's is (FLAKE3: one reading).
         var stop = _context.Processes.StopMade(sessionId);
+        // HELPERWAIT1: a clean end holding its quest, on its agent's own open helper ask and no question of the person's, waits on that
+        // helper, as a first run's does. A closed quest's session holds none, and never waits.
+        var awaitsHelper = stop is null && exitCode == 0 && !closed && status == "Taken"
+                           && await _driver.WaitsOnOwnHelperAsync(sessionId, quest, openedAt, ct).ConfigureAwait(false);
         var conclusion = stop is not null
             ? stop.Conclusion
             : exitCode is int code
@@ -532,7 +539,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                     // BGWAIT1c: the native door's harness ended its own background work with its turn.
                     backgroundCut: ended.BackgroundCut,
                     // FABRIC-CLOSE1h5: a closure graph's submission is its done, as at a first run's end.
-                    submitted: !closed && QuestResults.Submitted(after))
+                    submitted: !closed && QuestResults.Submitted(after),
+                    awaitsHelper: awaitsHelper)
                 // BGWAIT2: a done this run reached outranks the timeout; a quest closed before it went on is not this run's.
                 : _driver.Watch.EndedMinutes(sessionId) is { } quietMinutes
                     ? Observation.AfterQuiet(quietMinutes, quest.Status, status)
@@ -591,7 +599,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         return (new StartRun(
             $"{conclusion.State}  session {sessionId} (#{quest.Id} → {quest.To}) [resumed its conversation]: {conclusion.Note}",
             true,
-            SessionStates.IsParked(conclusion.State) || swappedOn
+            // HELPERWAIT1: a session waiting on its own helper is no ending, and keeps its tree (the caller's TREELOCK1), as a park does.
+            SessionStates.IsParked(conclusion.State) || swappedOn || HelperWaits.Ended(conclusion.Parts)
                 ? null
                 : new SessionEnded(
                     sessionId, quest.To, conclusion.State,

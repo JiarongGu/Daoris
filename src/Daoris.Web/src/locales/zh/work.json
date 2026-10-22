@@ -112,6 +112,7 @@
   "work.shown.awaitingReply": "等回复",
   "work.shown.answered": "已回答",
   "work.shown.goingOn": "继续中",
+  "work.shown.awaitingHelper": "等助手",
   "work.timeline.title": "时间线",
   "work.timeline.hint": "被观察到的事实——进程存续、委托的状态变动，以及落进 git 的提交。绝不来自对输出流的解读。",
   "work.timeline.opened": "会话开启",

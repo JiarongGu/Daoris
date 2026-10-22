@@ -404,6 +404,14 @@ public static class NoteCodes
     public static readonly NoteCode EndedParkedAsked = new("ended.parked-asked", []);
     public static readonly NoteCode EndedParkedTranscript = new("ended.parked-transcript", []);
     public static readonly NoteCode EndedParkedShort = new("ended.parked-short", []);
+
+    /// <summary>
+    /// HELPERWAIT1 (D163's and D188's notes): it ended its turn cleanly on its own open helper ask, holding its quest as a park would, so
+    /// it waits on that helper and not on the person: completed, its helper's answer reopening it once (D188 point 4). A twin: the
+    /// service's ledger reads this spelling to bring the session back to the person when the helper ends with no answer
+    /// (<c>SessionLedger.EndedAwaitsHelper</c>).
+    /// </summary>
+    public static readonly NoteCode EndedAwaitsHelper = new("ended.awaits-helper", []);
     public static readonly NoteCode EndedAnsweredUnfinished = new("ended.answered-unfinished", ["awaits", "exit"]);
     public static readonly NoteCode EndedCarriedUnfinished = new("ended.carried-unfinished", ["exit"]);
     public static readonly NoteCode EndedDone = new("ended.done", []);
@@ -566,6 +574,8 @@ public static class NoteCodes
         new(HelperWhy.CaptureUnreadable, [], "note.helper.why.capture-unreadable"),
         new(HelperWhy.CaptureBound, [], "note.helper.why.capture-bound"),
         new(HelperWhy.CaptureMoved, [], "note.helper.why.capture-moved"),
+        // HELPERWAIT1: a hand whose outcome a restart lost, added after the sixteen (a reason is additive).
+        new(HelperWhy.HandUncertain, [], "note.helper.why.hand-uncertain"),
     ]);
 
     /// <summary>Why a piece was refused, held or uncertain (COAGENT1b, <see cref="PartnerWhy"/>): the page's <c>note.partner.why.*</c>.</summary>

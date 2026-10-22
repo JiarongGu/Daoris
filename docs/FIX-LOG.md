@@ -29,6 +29,31 @@ repository.
   `TreeDiffSplitTests` holds the stat-only drop and the read's arguments. The census's test refuses planted cases and passes on
   the tree. Also green: `TreeDiffTests`, `ReviewBaseTests`, `LandGitCountTests`, and the fast classes whose git stand-ins
   match on the command (190).
+## 2026-10-23 — A session waiting on its own helper was shown waiting on the person (HELPERWAIT1)
+
+- **Symptom:** on the install, twice in GITAPP1's design session. A driven session asked a Codex helper (`helper_ask`) and ended
+  its turn so the helper could read its work. It was recorded `awaiting-person`, its note saying it stopped "to ask you", and *What
+  needs you* counted it as the person's while the helper worked. When the helper answered, the answer sat unread until the person
+  answered a question nobody had asked, and every look read the records whole to hold the hand again.
+- **Root cause:** `Observation.Conclude` read every clean end that held its quest as a park, with no input for an open ask of the
+  session's own. `DriverHelpers.DeliverHelperAsync` (then `:411`) held any parked asker's answer until the person answered, and
+  retried that hold at every look.
+- **Fix:** such an end concludes `completed` by `ended.awaits-helper` when its agent's own ask is still open (an unjudged one
+  included) and its turn asked the person nothing (a question file that does not read counts as asked). The helper's answer reopens
+  it once, as the next turn, with `HelperWords.Compose`, handed to the newest record of its line. It keeps its tree while it waits:
+  the ledger's exclusion, the run's lock, the planner's further part and the tidy all read it as the holder. A park keeps its park;
+  its helper's answer is handed beside the person's once they answer, so both reach it in one prompt. A helper that ends with no
+  answer brings it back to the person with the reason, through a new guarded ledger move (D46's note); a failed move is retried at
+  each look and said once. An attempt mark written before the hand door makes the hand once-only across a restart: an attempt with no
+  evidence on the line settles `hand-uncertain` and is never made again. A held or refused hand is said once and not read again
+  until its asker moves. D188's HELPERWAIT1 note has the rule; Codex's round-2 findings 1-5, 7 and 8 on COWORKUX1 are each built.
+- **Verification:** red first, then green. The covering driver classes outside the Process half (573: `HelperLookTests`,
+  `HelperWaitsTests`, `ObservationTests`, `EntryPartsPlanTests`, `PlannerTests`, `BranchTidyingTests`, `SessionGroupsTests`,
+  `ContinuationTests`, `NoteCodesTests` among them), the service's `SessionLedgerTests` and store classes (148), `HelperHostTests` (8),
+  and the Process classes `HelperWaitTickTests` and `SessionMessagesTickTests` (21): a stand-in asks, ends its turn, and goes on with
+  the answer with no press of the person's; a park made before the rule is kept parked, then goes on with both answers in one prompt.
+  The web's `note.test.ts` and locale tests hold the new reason in en and zh. The censuses (home paths, one word, partials, read
+  shares, live logins) are clean. No real agent asked a real helper here; the installed window is the parent's to see.
 
 ## 2026-10-23 — The account fold read a stray folder under the agent homes as an agent (POOLSTRAY1)
 

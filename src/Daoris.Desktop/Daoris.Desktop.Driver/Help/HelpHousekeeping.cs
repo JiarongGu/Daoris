@@ -182,10 +182,17 @@ public sealed partial class HelpHousekeeping(string home, Func<ServiceClient?> s
             : new HousekeepingAnswer(ConfiguredAccess.DiscardBranch, false, HousekeepingAnswer.Kept, $"Kept: {removal.Message}");
     }
 
-    /// <summary>The trees sessions still running or waiting name, as the service's ledger says now: each is kept, whatever it holds.</summary>
-    private static async Task<HashSet<string>> InUseAsync(ServiceClient ledger, CancellationToken ct) =>
-        (await ledger.ActiveSessionsAsync(ct).ConfigureAwait(false))
+    /// <summary>
+    /// The trees sessions still running or waiting name, as the service's ledger says now, a session waiting on its own helper's among them
+    /// (HELPERWAIT1): each is kept, whatever it holds.
+    /// </summary>
+    private async Task<HashSet<string>> InUseAsync(ServiceClient ledger, CancellationToken ct)
+    {
+        var held = (await ledger.ActiveSessionsAsync(ct).ConfigureAwait(false))
             .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        held.UnionWith(await BranchTidying.WaitingOnHelpersAsync(home, ledger, ct).ConfigureAwait(false));
+        return held;
+    }
 
     private static string Capital(string sentence) => sentence.Length == 0 ? sentence : char.ToUpperInvariant(sentence[0]) + sentence[1..];
 
