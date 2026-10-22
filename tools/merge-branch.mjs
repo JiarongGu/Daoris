@@ -47,7 +47,7 @@
  *    `dotnet build-server shutdown`; since REHLANE2b its builds keep servers of their own, and no gate has a step before it.
  *    GATESLIM1: by default a merge runs the blocking checks alone (`BLOCKING`: the universal gates, the code map and the
  *    orientation index's check), and each path check one of its paths reaches (`PATH_CHECKS`: MERGETSC1's web
- *    `tsc --noEmit` and MERGEWEBRULES1's design and structure tests, where the page's sources change); every other gate it reaches is listed and skipped, "in the CI beside" (`--full --beside`).
+ *    `tsc --noEmit` and MERGEWEBRULES1's design and structure tests, where the page's sources change); every other gate it reaches is listed and skipped, "in the CI beside" (`--ci`, CI1).
  *    `--gated` runs what follows: of the plan, the baseline (`BASELINE`: the blocking checks and the CLI's `verify`, at every
  *    merge) and each gate a path the merge changes can reach (`REACH`). A path no rule
  *    places reaches every gate, and so does a gate the table never names. A long gate (`isLongGate`) is
@@ -149,6 +149,30 @@
  *   fail or a thrown error, the tree's run folder is copied to the main checkout's `local/scratch/beside-<sha7>` (the newest
  *   run's replaces an older), so a prune loses none. A run killed outright never gets there: the next run, before it clears
  *   its logs, keeps any run folder it finds in the tree whose `beside-<sha7>` is absent.
+ *
+ * ## The CI between releases (CI1)
+ *
+ * A release's verification at `c557800` ran 20 gates one after another for 2 h 48 min, since nothing had verified main
+ * since the last one. `--ci [<commit>]` (`gateCi`) verifies main's tip after each merge, in the gate tree under its lock (a
+ * `ci` holder), so a release waits only for the delta since. D180's CI1 note has what it settles and what it rejected.
+ *
+ * - **What it runs** (`ciPlan`): the gates the tree's verdicts lack. A gate runs when no verdict that stands on the tree
+ *   (GATE6) passed it: none, a pass a path changed since reaches, or a failure, which stays owed whatever changes. The
+ *   records are not forgiven, as the stage forgives them. The first run is the full set; a run with nothing owed runs nothing.
+ * - **How**: as a run beside does (CIPRIO1, its private files, its dependencies), keeping going past a failure, its light
+ *   lane `CI_IDLE.width` wide when the machine is measured idle before its gates start (`measureLoad`, `ciWidth`), and
+ *   scheduled by memory (`laneSchedule`'s `byMemory`): a Process half waits only for what builds its component, the heavy
+ *   light gates beside it each once MEMGATE1 finds its memory.
+ * - **Which tip**: a run of main's tip reads it again once its tree is prepared and moves to the newest before any gate starts
+ *   (`CI_MOVES`); once started it runs to its verdict, and what lands meanwhile is the next run's.
+ * - **What it writes**, all under the main checkout's ignored `local/`: each verdict in the store as a merge's, its logs and
+ *   `status.json` (`ciStatus`, rewritten as each gate starts and ends) in `local/scratch/ci-<sha7>/`, the gate tree's
+ *   record, and the run in `CI_RECORD` (its last green run, its runs).
+ * - **The watch** (`--ci --watch`, `ciWatchVerb`, `watchCi`): one per main checkout (`CI_WATCH`), it gates main's tip as it
+ *   moves once the gate tree is idle, never a tip a run gave a verdict on, and ends on `--ci --stop` (`CI_STOP`) or a Ctrl+C,
+ *   ending its gates' trees first.
+ * - **The stage** reads the CI's verdicts from the one store (`--passed` in the gate tree), and holds the tree's lock through
+ *   its build (`publish:desktop`'s `gatedSource`, a `stage` holder), so no CI run moves the tree under it.
  *
  * ## The prune (GATE2)
  *
@@ -345,14 +369,18 @@
  *   node tools/merge-branch.mjs --plan <branch> [--batch <branch>…] [--full]
  *   node tools/merge-branch.mjs --full [--keep-going] [--one-at-a-time]
  *   node tools/merge-branch.mjs --full --beside [<commit>] [--keep-going] [--one-at-a-time]
+ *   node tools/merge-branch.mjs --ci [<commit>] [--one-at-a-time]
+ *   node tools/merge-branch.mjs --ci --watch [--one-at-a-time]
+ *   node tools/merge-branch.mjs --ci --stop
  *   node tools/merge-branch.mjs --passed
  *   node tools/merge-branch.mjs --prune [--plan]
  *   node tools/merge-branch.mjs --drop-batch
  *
  * Exit codes: 0 merged and every gate passed (flakes named), or pruned (a branch kept is the rule working),
- * or the full set passed the checkout, after a re-run on it or not · 1 a conflict, a failed gate, a failed
- * commit check, or a checkout the full set has not passed · 2 refused (usage, not on main, a dirty tree, an
- * unknown branch or gate, a full set beside already running, a gate tree with changes) or a tool error.
+ * or the full set passed the checkout, after a re-run on it or not, or a CI run green, a watch ended, a stop
+ * answered · 1 a conflict, a failed gate, a failed commit check, a checkout the full set has not passed, a CI
+ * run failed or stopped, or a watch still running at the stop's bound · 2 refused (usage, not on main, a dirty
+ * tree, an unknown branch or gate, the gate tree held by another run, a gate tree with changes) or a tool error.
  */
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -847,7 +875,7 @@ export const BASELINE = Object.freeze(['universal', 'code-map', 'orient-index', 
 /**
  * GATESLIM1: what a merge blocks on by default: the universal gates (which hold the sensitive-patterns scan, never to reach a
  * commit), the code map and the orientation index's check. Every other gate is listed and skipped, "in the CI beside"
- * (`--full --beside`); `--gated` runs what the merge's paths reach, `--full` every gate, `--rerun <gate>` a named one.
+ * (`--ci`, CI1); `--gated` runs what the merge's paths reach, `--full` every gate, `--rerun <gate>` a named one.
  */
 export const BLOCKING = Object.freeze(['universal', 'code-map', 'orient-index']);
 
@@ -1544,7 +1572,7 @@ export function selectGates(plan, changed, { lanes = [], full = false, gated = f
     if (full) return { gate, run: true, reached, why: '--full runs every gate' };
     const detail = reached ? `; ${why.replace(/^everything runs: /, '')}` : '';
     if (isLongGate(gate)) return { gate, run: false, reached, why: `in the full set before staging${detail}` };
-    // GATESLIM1: a merge blocks on the checks alone; the CI beside (--full --beside) runs the rest, and --gated runs what is reached.
+    // GATESLIM1: a merge blocks on the checks alone; the CI beside (--ci, CI1) runs the rest, and --gated runs what is reached.
     if (!gated) return { gate, run: false, reached, why: `in the CI beside${detail}` };
     return { gate, run: reached, reached, why };
   });
@@ -4451,7 +4479,7 @@ function readGateRecord(home) {
 function writeGateRecord(home, fields) {
   const record = {
     schema: 1,
-    _why: 'Written by tools/merge-branch.mjs --full --beside (GATEWT1): the gate tree\'s last run; publish:desktop --from-gated adds its stage, which lets the next merge\'s prune remove the tree.',
+    _why: 'Written by tools/merge-branch.mjs --full --beside (GATEWT1) and --ci (CI1, by: ci): the gate tree\'s last run; publish:desktop --from-gated adds its stage, which lets the next merge\'s prune remove the tree.',
     ...fields,
   };
   writeAtomic(join(home, GATE_TREE_RECORD), `${JSON.stringify(record, null, 2)}\n`);
@@ -4550,7 +4578,7 @@ function prepareGateTree(home, commit) {
   if (changes.length) {
     throw new Refusal(`the gate tree (${GATE_TREE}) holds changes, which the full set would gate as part of a tree no commit holds:\n`
       + `${changes.slice(0, 12).map((line) => `  ${line}`).join('\n')}${changes.length > 12 ? `\n  … ${changes.length - 12} more` : ''}\n`
-      + '  Look at them; once it is clean, --prune removes it or --full --beside moves it');
+      + '  Look at them; once it is clean, --prune removes it, or --ci or --full --beside moves it');
   }
   const head = git(path, ['rev-parse', 'HEAD']).out.trim();
   if (head === commit) {
