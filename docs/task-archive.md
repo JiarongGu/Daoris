@@ -19497,3 +19497,14 @@ D173's FABRIC-CLOSE1i2 note.
 
 **Outcome** 2026-10-22: a go card's second press is *Dismiss* (移除): it settles the card and tells the conversation nothing, and a go to a
 taken quest says so. Detail: the fix log's ASKDISMISS1 entry, the Ask Daoris design §6's note. On Opus.
+## POOL1a2 — every reader on the set, and the bridge's answers (2026-10-22, D197)
+
+> - [ ] **POOL1a2 — every reader on the set, and the bridge's answers** (driver, modules; after POOL1a1, archived; D197). `HarnessRoster.Settings` read through `HarnessSettings.LoadSet` (built, unread by the roster), with the walk's tests of per-workspace scopes it turns (`AccountRotationTests`, `AccountRotationGoalTests`, `AccountNextStartTests`, `AccountCoolingTests`, `RosterReadTests`, `CodexUsageRosterTests`, `ReviewerChoiceTests`, one of `ResumeAccountTests`) rewritten to the set; `AccountAttention`'s twins, `WiringAsync` behind `STARTS`, `InheritsDaorisAccounts` and `ACCOUNTS`' `inherited`, `PlacesSaid`, `HARNESSES`' `places`, `nowhere` and defaults, `HARNESS_ENDED`'s `places`, the default's readers on the order's first, and `ResolveScope`, `JoinProblemOf`, `WithJoined`, `PlacesOf`, `DefaultAllowed` and `DefaultStanding` leaving with their last callers (Ask Daoris's and the terminal's are POOL1b's), with `AccountJoinTwinTests` and `ProfileDefaultTwinTests`, as design §2.4, §5.2 and §11 say. Proof: §11's rows for these.
+
+**Outcome** 2026-10-22: built. The roster reads the projection, so every start, look and door reads the agent's one set whatever an
+older build wrote, through `HarnessSettings.Set`, and the default's readers in the roster read the order's first; `HARNESSES`,
+`HARNESS_ENDED`, `ACCOUNTS` and `STARTS` answer the set, and *What needs you* reads it. `InheritsDaorisAccounts`, `PlacesSaid` and
+`DefaultStanding` left; `ResolveScope`, `JoinProblemOf`, `WithJoined`, `PlacesOf`, `DefaultAllowed` and `DefaultEdited` keep only
+the terminal's and Ask Daoris's callers, so they and the two twin tables stay for POOL1b. The listed classes rewritten to the set,
+with `OwnSpaceTests`, `HelpPlaceWorkspaceTests`, the modules' account classes and eleven `agents-text.json` rows; the driver's and
+the modules' fast halves pass. Not seen failing first, and no window was looked at. Detail: D197's POOL1a2 note. On Opus.

@@ -146,7 +146,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     /// 2026-09-23). While it runs the page may answer it or stop it (HARNESS_INPUT, HARNESS_CANCEL).
     /// </remarks>
     /// <param name="ended">Told the exit code and any problem once the process ends, after the news goes out.</param>
-    /// <param name="joins">The lists a sign-in puts its account in at its end (ACCT1): a workspace's name, or null for this machine's.</param>
+    /// <param name="joins">The lists a sign-in names (ACCT1), refused where it names any since POOL1a (D197): the account joins Daoris's accounts.</param>
     /// <param name="name">A new account's name, the person's, given as it is made (ACCT2).</param>
     /// <param name="way">A sign-in's way (CODEXLOGIN1): the agent's own sign-in, its browser first, or its device code.</param>
     /// <param name="switching">
@@ -236,9 +236,9 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
             "install" => () => HarnessActions.InstallAsync(toolchain, stream, CancellationToken.None, track),
             "update" => () => UpdateAsync(harness, toolchain, command, stream, CancellationToken.None, track),
             "login" => () => SignInToAsync(
-                harness, owner, target!, signingToolchain, signingRun!, profileHome, stream, config, track, lists, life, way),
+                harness, owner, target!, signingToolchain, signingRun!, profileHome, stream, config, track, life, way),
             "login-new" => () => SignInAsync(
-                harness, owner, fresh!, signingToolchain, signingRun!, profileHome, stream, config, track, lists, name, life, way),
+                harness, owner, fresh!, signingToolchain, signingRun!, profileHome, stream, config, track, name, life, way),
             // The managed toolchain (TOOL2/D57) — the desktop's half of `daoris agent pin|unpin`, over
             // the same file.
             _ => () => PinAsync(harness, toolchain, stream, version!, CancellationToken.None, track),
@@ -413,11 +413,6 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
                 ? Directory.Exists(HarnessSettings.ProfileHome(
                     _loop.Harnesses.Home, _loop.Harnesses.Toolchain(harness)?.Owner(harness) ?? harness, profile))
                 : (bool?)null,
-            // Where the account signed in runs now, its joins made (ACCT1): each list and default holding it, this machine a
-            // null workspace; none is an account no start runs on, which the page asks about at the sign-in's end.
-            Places = signingIn
-                ? AgentsRoutes.PlacesShown(_loop.Harnesses.Settings.PlacesOf(owner, profile!))
-                : null,
             // Whether the person's *Cancel* stopped it (SIGNIN1), so its end is no failure to say: the page closes its panel.
             Cancelled = life?.Cancelled ?? false,
             // Whether it was stopped for the same sign-in by another way (CODEXLOGIN1), which runs on in the same panel: the page
@@ -460,7 +455,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     private async Task<int> SignInAsync(
         string harness, string owner, string fresh, HarnessToolchain toolchain, HarnessCommand run,
         string profileHome, Action<string> stream, DriverConfig config, Action<HarnessRun> track,
-        IReadOnlyList<string?> joins, string? name, Life life, SignInWay way)
+        string? name, Life life, SignInWay way)
     {
         var code = -1;
         try
@@ -512,7 +507,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
                 stream(AgentsRoutes.SignedInSentence(said.Account, owner, called, fresh, apart));
                 life.Lists = life.Now;
                 Phase(life, SignInPhase.Lists);
-                Placed(owner, fresh, joins, stream);
+                Placed(owner, fresh, stream);
                 life.Joined = life.Now;
             }
         }
@@ -520,7 +515,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
 
     /// <summary>
     /// Sign back in to an account that is here (ACCT1): the tool's own login flow into its folder, never a new one, and at
-    /// its end the lists the person named joined and where it runs said.
+    /// its end its place in the order kept (POOL1a2).
     /// </summary>
     /// <remarks>
     /// Who signed in is read before the lists are joined (SIGNIN1, the UI/UX design §3.2's phases), and the end's news says it
@@ -528,7 +523,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     /// </remarks>
     private async Task<int> SignInToAsync(
         string harness, string owner, string account, HarnessToolchain toolchain, HarnessCommand run, string profileHome,
-        Action<string> stream, DriverConfig config, Action<HarnessRun> track, IReadOnlyList<string?> joins, Life life,
+        Action<string> stream, DriverConfig config, Action<HarnessRun> track, Life life,
         SignInWay way)
     {
         var code = await HarnessActions.LoginAsync(toolchain, run, profileHome, stream, CancellationToken.None, track, way: way);
@@ -549,53 +544,27 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         life.WhoDone = life.Now;
         life.Lists = life.Now;
         Phase(life, SignInPhase.Lists);
-        Placed(owner, account, joins, stream);
+        // An account signed back in keeps its place in the order and joins nothing (POOL1a2); a stored order an older build wrote
+        // without it places it last.
+        HarnessSettings.Placed(_loop.Harnesses.SettingsPath, owner, account);
         life.Joined = life.Now;
         return code;
     }
 
     /// <summary>
-    /// A sign-in's end beside who signed in (ACCT1): the lists named joined, and where the account runs said — each list and
-    /// default that holds it, or that none does and so no start runs on it. A list that could not be written is said, and
-    /// the sign-in stands.
+    /// A sign-in's end beside who signed in (POOL1a2, D197 point 4; the account-pool design §4.4): the account placed last in its
+    /// agent's order (§2.2), and one sentence, that it joined Daoris's accounts. Nothing is asked of where it runs, since every
+    /// account serves every workspace; an order that could not be written now is placed by the next change of the file.
     /// </summary>
-    private void Placed(string owner, string account, IReadOnlyList<string?> joins, Action<string> stream)
+    private void Placed(string owner, string account, Action<string> stream)
     {
-        IReadOnlyList<AccountPlace> places;
-        try
-        {
-            places = Joined(_loop, owner, account, joins);
-        }
-        catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
-        {
-            stream($"the account was kept, and joined no list — {error.Message}");
-            places = _loop.Harnesses.Settings.PlacesOf(owner, account);
-        }
-
-        var shown = AccountNames.Shown(_loop.Harnesses.Home, owner, account);
-        stream(PlacesSaid(_loop.Harnesses.Settings, owner, shown, places));
+        // A new account goes last in the order, whatever its id (POOL1a, the account-pool design §2.2).
+        HarnessSettings.Placed(_loop.Harnesses.SettingsPath, owner, account);
+        stream(JoinedSaid(AccountNames.Shown(_loop.Harnesses.Home, owner, account)));
     }
 
-    /// <summary>
-    /// Where an account runs, said at a sign-in's end. A scope that names no account takes all of Daoris's accounts in turn
-    /// (OWNSPACE1a, D175), so where this machine names nothing an account no list holds is still taken, and "no start runs on
-    /// it" is said only where the machine's own list or default names others (OWNSPACE1b-B).
-    /// </summary>
-    public static string PlacesSaid(HarnessSettings settings, string owner, string shown, IReadOnlyList<AccountPlace> places)
-    {
-        if (places.Count > 0) return $"`{shown}` runs work in {string.Join(", ", places.Select(PlaceWords))}.";
-        var machine = settings.ResolveScope(owner, null);
-        return machine.List.Count == 0 && machine.Begins is null
-            ? $"no list and no default names `{shown}`, and none names another, so Daoris takes its accounts in turn."
-            : $"no list and no default holds `{shown}`, so no start runs on it — put it in a workspace's list from its row.";
-    }
-
-    /// <summary>One scope an account runs in, as a person reads it: <c>this machine's list, as its default</c>.</summary>
-    private static string PlaceWords(AccountPlace place)
-    {
-        var scope = place.Workspace is null ? "this machine's" : $"`{place.Workspace}`'s";
-        return place is { List: true, Default: true } ? $"{scope} list, as its default" : $"{scope} {(place.List ? "list" : "default")}";
-    }
+    /// <summary>What a sign-in's end says of a new account (the account-pool design §4.4, <c>agents.add.joined</c>'s English).</summary>
+    public static string JoinedSaid(string shown) => $"`{shown}` joined Daoris's accounts: every workspace's work may run on it.";
 
     /// <summary>A name given at a sign-in's end, or null where none was asked or it could not be kept, which is said.</summary>
     private static string? Kept(Func<string?> rename, bool asked, Action<string> stream)
@@ -621,19 +590,6 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     private static void RefuseJoins(DriverLoop loop, string owner, IReadOnlyList<string?> joins)
     {
         if (joins.Count > 0) throw AccountsRoutes.OneSet(owner, "a list to join");
-    }
-
-    /// <summary>The account put into each list named, in order, written once; where it runs now (ACCT1). Agents' <c>profile-join</c> calls it too.</summary>
-    internal static IReadOnlyList<AccountPlace> Joined(DriverLoop loop, string owner, string account, IReadOnlyList<string?> joins)
-    {
-        RefuseJoins(loop, owner, joins);
-        // A new account goes last in the order, whatever its id (POOL1a, the account-pool design §2.2).
-        HarnessSettings.Placed(loop.Harnesses.SettingsPath, owner, account);
-        var settings = joins.Count > 0
-            ? HarnessSettings.Change(loop.Harnesses.SettingsPath,
-                read => joins.Aggregate(read, (next, workspace) => next.WithJoined(owner, account, workspace)))
-            : loop.Harnesses.Settings;
-        return settings.PlacesOf(owner, account);
     }
 
     /// <summary>The action running under `harness:action`, or the refusal that names it.</summary>

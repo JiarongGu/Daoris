@@ -90,9 +90,13 @@ public sealed class StartWiringTests : IDisposable
         Assert.Contains("1.4.2", wiring.Version);
     }
 
-    /// <summary>The order a start asks in (D49 §4): the workspace's default before the machine's.</summary>
+    /// <summary>
+    /// Rewritten by POOL1a2 (D197 point 1; the account-pool design §2.4): the workspace's default outranked the machine's (D49 §4),
+    /// answered as <see cref="ChoiceFrom.Workspace"/>. Every workspace reads the set now, begun at the machine's account under
+    /// <c>order</c> (§6.1 rule 3), and the panel never answers <c>Workspace</c> for an account.
+    /// </summary>
     [Fact]
-    public async Task A_workspace_s_default_account_outranks_the_machine_s()
+    public async Task Every_workspace_s_start_takes_the_set_s_account_never_a_workspace_s()
     {
         SignedIn("agent", "work");
         SignedIn("agent", "office");
@@ -102,13 +106,14 @@ public sealed class StartWiringTests : IDisposable
         var aurora = await roster.WiringAsync("agent", Config(), "aurora");
         var other = await roster.WiringAsync("agent", Config(), "elsewhere");
 
-        Assert.Equal(("office", ChoiceFrom.Workspace), (aurora.Profile, aurora.ProfileFrom));
+        Assert.Equal(("work", ChoiceFrom.Machine), (aurora.Profile, aurora.ProfileFrom));
         Assert.Equal(("work", ChoiceFrom.Machine), (other.Profile, other.ProfileFrom));
     }
 
     /// <summary>
     /// No default anywhere and no Daoris account is a start that waits for a sign-in, never the agent's own sign-in (OWNSPACE1a,
-    /// D175 point 2); with one, the start takes it, though nothing named it.
+    /// D175 point 2); with one, the start takes it, though nothing named it. Rewritten by POOL1a2: the one account was answered as
+    /// <see cref="ChoiceFrom.Unset"/>, named by nobody; it is the set's order now, read as the machine's.
     /// </summary>
     [Fact]
     public async Task No_default_and_no_Daoris_account_waits_for_a_sign_in_and_one_account_takes_the_start()
@@ -122,7 +127,7 @@ public sealed class StartWiringTests : IDisposable
         SignedIn("agent", "work");
         var takes = await Roster().WiringAsync("agent", Config(), "aurora");
 
-        Assert.Equal(("work", ChoiceFrom.Unset, (string?)null), (takes.Profile, takes.ProfileFrom, takes.Refusal));
+        Assert.Equal(("work", ChoiceFrom.Machine, (string?)null), (takes.Profile, takes.ProfileFrom, takes.Refusal));
     }
 
     /// <summary>

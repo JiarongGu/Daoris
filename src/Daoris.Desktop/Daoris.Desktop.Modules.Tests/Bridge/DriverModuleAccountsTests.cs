@@ -239,12 +239,13 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         var weekly = Window("account-1", "weekly");
         Assert.Equal((63, true), (weekly.GetProperty("curve").GetInt32(), weekly.GetProperty("over").GetBoolean()));
         Assert.Equal(week.AddDays(-7).ToUnixTimeSeconds(), weekly.GetProperty("from").GetDateTimeOffset().ToUnixTimeSeconds());
-        // Measured by its workspace's own curve, the only list holding it: 80%, which 85% is over; this machine's would say 90.
+        // Rewritten by POOL1a2 (D197 point 2; the account-pool design §6.1 rule 3): each row was measured by the list holding it, the
+        // workspace's own curve or this machine's. The set has one entry of settings now, the workspace's taken where a start read
+        // it and nothing else set the field, so every account is measured by its 80%, which 85% is over.
         var own = Window("account-2", "session");
         Assert.Equal((80, true), (own.GetProperty("curve").GetInt32(), own.GetProperty("over").GetBoolean()));
-        // In no list: this machine's smart curve, 90%, which 85% is under.
         var none = Window("account-3", "session");
-        Assert.Equal((90, false), (none.GetProperty("curve").GetInt32(), none.GetProperty("over").GetBoolean()));
+        Assert.Equal((80, true), (none.GetProperty("curve").GetInt32(), none.GetProperty("over").GetBoolean()));
         // A window this build has no length for has no start and no curve; one with no number is not measured.
         var odd = Window("account-3", "60-minute");
         Assert.Equal(
@@ -290,15 +291,14 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
                 $"{each.GetProperty("account").GetString()} {each.GetProperty("window").GetString()} {each.GetProperty("curve").GetInt32()}"),
         ];
 
-        var machine = Scope(claude, null);
-        Assert.Equal("""{"session":[[0,90]],"weekly":[[0,20],[75,95],[100,100]]}""", Curves(machine));
-        Assert.Equal(["account-1 session 90 False", "account-1 weekly 63 False", "account-2 session 90 True"], Measured(machine));
-        Assert.Equal(["account-2 session 90"], Over(machine));
-
-        var own = Scope(claude, "own");
-        Assert.Equal("""{"session":[[0,50]],"weekly":[[0,20],[75,95],[100,100]]}""", Curves(own));
-        Assert.Equal(["account-1 session 50 True", "account-1 weekly 63 False"], Measured(own));
-        Assert.Equal(["account-1 session 50"], Over(own));
+        // Rewritten by POOL1a2 (D197 point 2; the account-pool design §6.1 rule 3): this machine's scope and the workspace's each
+        // answered their own curves. The set is one scope now, its settings the workspace's own curve, which a start read and this
+        // machine's entry did not set, and every account of the set is measured by it.
+        var set = Assert.Single(claude.GetProperty("scopes").EnumerateArray().ToList());
+        Assert.Equal(JsonValueKind.Null, set.GetProperty("workspace").ValueKind);
+        Assert.Equal("""{"session":[[0,50]],"weekly":[[0,20],[75,95],[100,100]]}""", Curves(set));
+        Assert.Equal(["account-1 session 50 True", "account-1 weekly 63 False", "account-2 session 50 True"], Measured(set));
+        Assert.Equal(["account-1 session 50", "account-2 session 50"], Over(set));
     }
 
     /// <summary>
@@ -326,8 +326,11 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
 
         var claude = Agent(await AnswerAsync(Module(), "ACCOUNTS"), "claude-code");
 
-        Assert.Equal(["account-2"], Strings(Scope(claude, null).GetProperty("room")));
-        Assert.Equal(["account-2"], Strings(Scope(claude, "off").GetProperty("room")));
+        // Rewritten by POOL1a2 (D197 point 2): the workspace's own scope under `off` answered its room beside this machine's. Its
+        // switch is the set's now (the account-pool design §6.1 rule 3), and the one scope answers the same room under it.
+        var set = Scope(claude, null);
+        Assert.Equal("off", set.GetProperty("use").GetProperty("switch").GetString());
+        Assert.Equal(["account-2"], Strings(set.GetProperty("room")));
     }
 
     /// <summary>
@@ -408,12 +411,13 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// D130 §3.1, §6: a scope answers its own default, its list, where it begins, how it is used, and which of its accounts
-    /// are near their limit by its own <i>near</i>; a workspace answers a scope of its own only where it names a default or
-    /// a list of its own.
+    /// D130 §3.1, §6: a scope answers its list, where it begins, how it is used, and which of its accounts are near their limit by
+    /// its own <i>near</i>. Rewritten by POOL1a2 (D197 points 1 and 2; the account-pool design §5.2): a workspace that named a
+    /// default or a list of its own answered a scope of its own, and this machine's its default. The set is the one scope now: the
+    /// order whole, begun where this machine's starts began, no default beside it, this machine's settings.
     /// </summary>
     [Fact]
-    public async Task A_scope_answers_its_list_its_settings_and_which_accounts_are_near_by_its_own_near()
+    public async Task The_set_answers_its_order_its_settings_and_which_accounts_are_near_by_its_own_near()
     {
         Accounts("claude-code", "account-1", "account-2", "account-3");
         Wiring("""
@@ -429,28 +433,17 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
 
         var claude = Agent(await AnswerAsync(Module(), "ACCOUNTS"), "claude-code");
 
-        var machine = Scope(claude, null);
-        Assert.Equal("account-2", machine.GetProperty("default").GetString());
-        Assert.Equal(["account-1", "account-2", "account-3"], Strings(machine.GetProperty("list")));
-        Assert.Equal("account-2", machine.GetProperty("begins").GetString());
-        Assert.Equal("order", machine.GetProperty("use").GetProperty("use").GetString());
-        Assert.Equal("account-3", machine.GetProperty("use").GetProperty("keep").GetString());
-        var near = Assert.Single(machine.GetProperty("near").EnumerateArray().ToList());
+        var set = Assert.Single(claude.GetProperty("scopes").EnumerateArray().ToList());
+        Assert.Equal(JsonValueKind.Null, set.GetProperty("workspace").ValueKind);
+        Assert.Equal(JsonValueKind.Null, set.GetProperty("default").ValueKind);
+        Assert.Equal(["account-2", "account-1", "account-3"], Strings(set.GetProperty("list")));
+        Assert.Equal("account-2", set.GetProperty("begins").GetString());
+        Assert.Equal("order", set.GetProperty("use").GetProperty("use").GetString());
+        Assert.Equal("account-3", set.GetProperty("use").GetProperty("keep").GetString());
+        var near = Assert.Single(set.GetProperty("near").EnumerateArray().ToList());
         Assert.Equal("account-1", near.GetProperty("account").GetString());
         Assert.Equal("session", near.GetProperty("window").GetString());
         Assert.Equal("number", near.GetProperty("by").GetString());
-
-        // Its own list, today's settings: 85% is under its near of 90.
-        var work = Scope(claude, "work");
-        Assert.Equal(["account-2", "account-1"], Strings(work.GetProperty("list")));
-        Assert.Equal("account-2", work.GetProperty("begins").GetString());
-        Assert.Equal(90, work.GetProperty("use").GetProperty("near").GetInt32());
-        Assert.Empty(work.GetProperty("near").EnumerateArray());
-
-        // A default and no list is a scope of its own: that account alone.
-        var solo = Scope(claude, "solo");
-        Assert.Equal("account-3", solo.GetProperty("default").GetString());
-        Assert.Empty(solo.GetProperty("list").EnumerateArray());
     }
 
     /// <summary>
@@ -521,9 +514,12 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
 
         static string[] Near(JsonElement scope) =>
             [.. scope.GetProperty("near").EnumerateArray().Select(each => $"{each.GetProperty("account").GetString()} {each.GetProperty("window").GetString()} {each.GetProperty("by").GetString()}")];
-        Assert.Equal(["account-1 weekly number"], Near(Scope(claude, null)));
-        Assert.Equal(["account-2 session number"], Near(Scope(claude, "own")));
-        Assert.Equal(["account-1 weekly number"], Near(Scope(claude, "off")));
+        // Rewritten by POOL1a2 (D197 point 2; the account-pool design §6.1 rule 3): each workspace's scope answered its near by its
+        // own switch. The set has one entry now: the two switches disagreed, so neither was kept and the set's is the smart one,
+        // whose week passes account-1; the one curve, `own`'s, was taken.
+        var set = Scope(claude, null);
+        Assert.Equal("smart", set.GetProperty("use").GetProperty("switch").GetString());
+        Assert.Equal(["account-1 weekly number"], Near(set));
     }
 
     /// <summary>
@@ -553,21 +549,15 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Assert.Equal("account-2", machine.GetProperty("over").GetString());
         Assert.Equal(JsonValueKind.Null, machine.GetProperty("when").ValueKind);
         Assert.All(["window", "unused", "seen"], name => Assert.Equal(JsonValueKind.Null, machine.GetProperty(name).ValueKind));
-        Assert.Equal(
-            ["account-2=ready", "account-3=outside"],
-            machine.GetProperty("others").EnumerateArray().Select(each => $"{each.GetProperty("account").GetString()}={each.GetProperty("hold").GetString()}"));
-
-        // Its default cooling: the only other account it uses carries the start, and the cool-off says until when.
-        var work = Scope(claude, "work").GetProperty("next");
-        Assert.Equal("account-1", work.GetProperty("account").GetString());
-        Assert.Equal("onlyReady", work.GetProperty("reason").GetString());
-        var others = work.GetProperty("others").EnumerateArray().ToList();
-        Assert.Equal(["account-3", "account-2"], others.Select(each => each.GetProperty("account").GetString()));
-        Assert.Equal(["cooling", "outside"], others.Select(each => each.GetProperty("hold").GetString()));
+        // Rewritten by POOL1a2 (D197 point 1): account-3 was outside this machine's list, and the workspace's own scope answered its
+        // next start apart. Every account is in the set now, in one order (this machine's list, then the workspace's), so account-3
+        // is held by its cool-off, and no workspace answers a scope of its own.
+        var others = machine.GetProperty("others").EnumerateArray().ToList();
+        Assert.Equal(["account-2=ready", "account-3=cooling"], others.Select(each => $"{each.GetProperty("account").GetString()}={each.GetProperty("hold").GetString()}"));
         Assert.Equal(
             until.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm"),
-            others[0].GetProperty("until").GetDateTimeOffset().ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm"));
-        Assert.Equal(JsonValueKind.Null, others[1].GetProperty("until").ValueKind);
+            others[1].GetProperty("until").GetDateTimeOffset().ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm"));
+        Assert.Single(claude.GetProperty("scopes").EnumerateArray());
     }
 
     /// <summary>
@@ -618,21 +608,24 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// OWNSPACE1b-A (D175 settlement 5): a scope naming nothing says <c>inherited</c>, since the agent's Daoris accounts are its
-    /// list, with one account or none; a scope that names its own account does not.
+    /// Rewritten by POOL1a2 (D197 point 1; the account-pool design §5.2): a scope naming nothing said <c>inherited</c>
+    /// (OWNSPACE1b-A, D175 settlement 5), since the agent's Daoris accounts were its list, and a workspace naming its own account
+    /// did not. The set's order names every account now, so <c>inherited</c> goes, and an older build's workspace default is read
+    /// into the one order, first.
     /// </summary>
     [Fact]
-    public async Task A_scope_naming_nothing_answers_that_Daoris_accounts_are_inherited()
+    public async Task The_set_answers_no_inherited_and_a_workspace_s_default_is_read_into_its_order()
     {
         var bare = Scope(Agent(await AnswerAsync(Module(), "ACCOUNTS"), "claude-code"), null);
-        Assert.True(bare.GetProperty("inherited").GetBoolean());
+        Assert.False(bare.TryGetProperty("inherited", out _));
 
         Accounts("claude-code", "account-1", "account-2");
         Wiring("""{ "workspaces": { "work": { "claude-code": "account-2" } } }""");
         var claude = Agent(await AnswerAsync(Module(), "ACCOUNTS"), "claude-code");
 
-        Assert.True(Scope(claude, null).GetProperty("inherited").GetBoolean());
-        Assert.False(Scope(claude, "work").GetProperty("inherited").GetBoolean());
+        var set = Assert.Single(claude.GetProperty("scopes").EnumerateArray().ToList());
+        Assert.False(set.TryGetProperty("inherited", out _));
+        Assert.Equal(["account-2", "account-1"], Strings(set.GetProperty("list")));
     }
 
     /// <summary>
@@ -661,9 +654,13 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Assert.Equal(JsonValueKind.Null, claude.GetProperty("own").GetProperty("cooling").ValueKind);
     }
 
-    /// <summary>A file edited by hand that breaks the rule is read with the list winning, and the scope names the conflict.</summary>
+    /// <summary>
+    /// A file edited by hand that breaks the rule is read with the list winning. Rewritten by POOL1a2 (the account-pool design §6.1
+    /// rule 2): the scope named the conflict, a default outside its list. The set holds no default, so the default is read as an
+    /// account its list left out, placed after it, and there is no conflict left to name.
+    /// </summary>
     [Fact]
-    public async Task A_scope_whose_default_is_outside_its_list_names_the_conflict()
+    public async Task A_default_outside_its_list_is_read_into_the_set_after_it_with_no_conflict_left()
     {
         Accounts("claude-code", "account-1", "account-2");
         Wiring("""
@@ -673,8 +670,8 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         var machine = Scope(Agent(await AnswerAsync(Module(), "ACCOUNTS"), "claude-code"), null);
 
         Assert.Equal("account-1", machine.GetProperty("begins").GetString());
-        Assert.Equal("default", machine.GetProperty("problem").GetProperty("kind").GetString());
-        Assert.Equal("account-2", machine.GetProperty("problem").GetProperty("account").GetString());
+        Assert.Equal(["account-1", "account-2"], Strings(machine.GetProperty("list")));
+        Assert.Equal(JsonValueKind.Null, machine.GetProperty("problem").ValueKind);
     }
 
     /// <summary>
@@ -723,10 +720,9 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Assert.Equal("read", Source("account-1"));
         Assert.Equal("said", Source("account-2"));
 
-        var machine = Scope(claude, null).GetProperty("use");
-        Assert.Equal("smart", machine.GetProperty("switch").GetString());
-        Assert.Empty(machine.GetProperty("curve").EnumerateObject());
-        var own = Scope(claude, "own").GetProperty("use");
+        // Rewritten by POOL1a2 (D197 point 2; the account-pool design §6.1 rule 3): this machine's scope answered the smart switch and
+        // no curve, the workspace's its own. The set's one entry takes the workspace's, which a start read and nothing else set.
+        var own = Assert.Single(claude.GetProperty("scopes").EnumerateArray().ToList()).GetProperty("use");
         Assert.Equal("curve", own.GetProperty("switch").GetString());
         Assert.Equal("[[0,30],[50,70],[100,100]]", own.GetProperty("curve").GetProperty("weekly").GetRawText());
         Assert.False(own.GetProperty("curve").TryGetProperty("session", out _));

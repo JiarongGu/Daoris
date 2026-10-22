@@ -421,7 +421,7 @@ public sealed class ResumeAccountTests : IDisposable
             new SessionStarted("fake", "account-1", Seen.AddHours(-3), Running: false),
             new SessionStarted("fake", "account-2", Seen.AddHours(-2), Running: false),
         ], roster.Mark());
-        Assert.Equal("account-3", roster.Next("fake", null).Account);
+        Assert.Equal("account-3", roster.Next("fake").Account);
 
         var resume = await roster.ResumeAsync("fake", Config, null, "account-1", StartKind.Driven);
 
@@ -475,8 +475,9 @@ public sealed class ResumeAccountTests : IDisposable
     }
 
     /// <summary>
-    /// An account that cannot run there at all carries the words on at once, on the walk's pick, saying why: off the list, gone
-    /// from the machine, refused by its provider.
+    /// An account that cannot run there at all carries the words on at once, on the walk's pick, saying why: gone from the machine,
+    /// refused by its provider. Rewritten by POOL1a2 (D197 point 1): an account the stored list left out was off the list and
+    /// carried on elsewhere (<c>account.resume-outside</c>); it is in the set now, so its record goes on on it, and no account is off.
     /// </summary>
     [Fact]
     public async Task A_resume_whose_account_cannot_run_there_takes_the_walk_s_pick_at_once_saying_why()
@@ -485,16 +486,18 @@ public sealed class ResumeAccountTests : IDisposable
         new HarnessSettings().WithRotation("fake", ["account-2", "account-3"]).Save(Settings);
         var roster = Roster();
 
-        var outside = await roster.ResumeAsync("fake", Config, null, "account-1", StartKind.Driven);
-        Assert.Equal((NextHold.Outside, true, "account-2"), (outside.Own, outside.Selection.Allowed, outside.Selection.Profile));
-        Assert.Equal("account.resume-outside", outside.Elsewhere!.Detail!.Parts.Single().Code);
+        var unlisted = await roster.ResumeAsync("fake", Config, null, "account-1", StartKind.Driven);
+        Assert.Equal((NextHold.Ready, true, "account-1"), (unlisted.Own, unlisted.Selection.Allowed, unlisted.Selection.Profile));
+        Assert.Null(unlisted.Elsewhere);
 
         var gone = await roster.ResumeAsync("fake", Config, null, "account-9", StartKind.Driven);
         Assert.Equal(NextHold.Missing, gone.Own);
 
         roster.Refuse("fake", "account-3", "its provider refused it");
         var refused = await roster.ResumeAsync("fake", Config, null, "account-3", StartKind.Driven);
-        Assert.Equal((NextHold.Refused, "account-2"), (refused.Own, refused.Selection.Profile));
+        // The walk's pick: account-1 and account-2 each carry one start now (the first resume, and the gone one's words carried on),
+        // so the one started on least recently, account-1, which the set holds since POOL1a2.
+        Assert.Equal((NextHold.Refused, "account-1"), (refused.Own, refused.Selection.Profile));
         Assert.Equal("account.resume-refused", refused.Elsewhere!.Detail!.Parts.Single().Code);
     }
 
