@@ -27,7 +27,7 @@ repository.
   class with `process.runsettings`; `AnswerContinuesTickTests` (its stand-in now keeps `noteParts`); the fast
   `ObservationTests` (with `A_turn_its_provider_refused_is_a_failed_run_by_its_own_code_never_a_park`), `NoteCodesTests`,
   `NoteSitesTests`, `StructureTests`, `AttentionTests` and `AcpTests` (223); the web's `note.test.ts` and `noteLines.test.ts`
-  (88). The driver and modules fast halves' results are in the closing note.
+  (88). The driver's fast half (14119) and the modules' (2331) pass. Censuses: home and live-logins are clean.
 - **Not covered:** Daoris has not measured a refusal on the native door, whose `result` frame it reads for no stop reason. A
   native run its provider refused is still concluded by its exit and its quest's state.
 
