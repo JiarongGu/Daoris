@@ -245,6 +245,17 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         CoolingAgent(adapters.Resolve(adapter)) is { } agent ? AccountCooling.Of(Home, agent, profile, Clock()) : null;
 
     /// <summary>
+    /// Every account of the adapter's owner cooling now, earliest ready first (LIMITRESUME1c, D206 §3.2): what a conversation held by
+    /// its limit computes its wait from. None for an adapter that has no accounts.
+    /// </summary>
+    public IReadOnlyList<CoolingEntry> CoolingsOf(string adapter) =>
+        CoolingAgent(adapters.Resolve(adapter)) is { } agent
+            ? [.. AccountCooling.Read(Home, Clock())
+                .Where(entry => string.Equals(entry.Agent, agent, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(entry => entry.Until)]
+            : [];
+
+    /// <summary>
     /// The door's failure, read for an account's limit (TOOL4d, D125 §1, §2): where the adapter's table recognises it, the
     /// account the session ran as cools until the reset the agent named, and what was read is returned. Null is a
     /// failure as today, and nothing is written.

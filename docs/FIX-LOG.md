@@ -81,6 +81,31 @@ repository.
 - **Not covered:** the installed window was not looked at. An intake's limited end keeps its *Ended* until row 1h, and the
   terminal's `sessions`, Ask Daoris's tools, Overview and the list's filters are row 1d's.
 
+## 2026-10-24 - A conversation at its limit was refused turn by turn, and its waiting words never went on at the reset (LIMITRESUME1c)
+
+- **Symptom:** design D206 §2.2, from the code at `2d2aedca0`. A conversation whose every account was at its limit stayed on its
+  cooling account. Each word the person said started a turn the account refused again. An ended chat's words that waited for
+  its own cooling account said *your words wait to go on in it then* (`waits.account`), yet nothing made them go on at the
+  reset. They waited for a word, a press, the sweep or the come-up.
+- **Root cause:** LIMITGOON1 wrote nothing for the case where the walk gives no other account (*the next refused turn tries
+  again*). No part of the driver looked at a conversation once its account's cool-off ended. The look plans driven lines only,
+  and the chat runner had no stage on it.
+- **Fix:** where no other account has room, the conversation's turns wait (`ChatTurns.WaitForLimit`). A word is kept and
+  queued, never sent, and the conversation says `chat.limit-waits` with its first ready moment. The look's `limits` stage
+  (`LimitWaits`, beside each look through `DriverWatch.Limits`) wakes it at its computed wait. It also wakes on a changed stamp of
+  the account files: its own account first, in its own conversation, with the refused turns' words, the waited words and Daoris's
+  word, each once; otherwise it moves by the walk with the brief. Ended chats whose words wait for their own account are
+  woken there. Detail: D206's LIMITRESUME1c note.
+- **Verify:** `LimitWaitsProcessTests` (11, by class with `process.runsettings`): a chat and Ask Daoris waiting, the stage asking
+  nothing on the held clock, each woken once at the reset in its own process. An ended conversation moved once another account
+  frees. An ended chat's waiting words woken on their own account only. `resource_not_found` going on briefed, and a plain
+  refusal waiting for the person. *Try now*, a sign-in and an added account each waking a wait cached for tomorrow. A move's box
+  delivered once across a shell's end, and *Stop waiting*. The fast classes it touches (`ChatGoOnTests`, `ChatTurnsTests`,
+  `LimitHeldTests`, `NoteCodesTests`, `HomeWatchTests`, `ChainTests` and four more, 215) and the web's `note.test.ts` and
+  `noteLines.test.ts` (88) pass.
+- **Not covered:** the native door's limit is not read until row 1f, so a native-door conversation never waits this way. The
+  page's sentence and presses are row 1d's. Not seen on the install.
+
 ## 2026-10-23 - A turn its model's provider refused parked on the person (APIREFUSAL1)
 
 - **Symptom:** LIMITGOON1's first session on the install (session `cc63a27e`, 08:16 UTC) ended parked: *It stopped with its

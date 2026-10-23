@@ -972,11 +972,23 @@ internal sealed class ChatLedger : HttpMessageHandler
                         return (HttpStatusCode.Conflict, """{"error":"words to a running session reach it through the driver that runs it.","refusal":"running"}""");
                     }
 
+                    // A say under a key a waiting word holds is answered with that word (COWORK1b).
+                    if (asked["key"]?.GetValue<string>() is { Length: > 0 } key
+                        && session["said"]!.AsArray().FirstOrDefault(each => each!["key"]?.GetValue<string>() == key) is { } held)
+                    {
+                        return (HttpStatusCode.OK, new JsonObject
+                        {
+                            ["session"] = session.DeepClone(), ["message"] = "kept", ["said"] = held.DeepClone(),
+                        }.ToJsonString());
+                    }
+
                     var word = new JsonObject
                     {
                         ["id"] = $"k{++_kept}", ["text"] = asked["text"]!.GetValue<string>(), ["at"] = "2026-10-03T09:30:00Z",
                         ["files"] = new JsonArray(), ["reopens"] = !running, ["level"] = asked["level"]?.GetValue<string>(),
                         ["key"] = asked["key"]?.GetValue<string>(),
+                        // COWORK1b: Daoris's own words kept as Daoris's, as the service keeps them (LIMITRESUME1c's limit word).
+                        ["from"] = asked["from"]?.GetValue<string>(),
                     };
                     session["said"]!.AsArray().Add(word);
                     return (HttpStatusCode.OK, new JsonObject

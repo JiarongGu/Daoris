@@ -868,6 +868,8 @@ public sealed class DriverLoop(
             // this shell's chat runner, handed Daoris's brief and the person's words.
             GoesOnLost = (session, why, token) => chat.GoOnLostAsync(
                 session, why, DriverConfig.Load(ConfigPath), onEnded: (ended, state) => Ended(eventBus, ended, state), token),
+            // LIMITRESUME1c (D206 §3.4): the conversations that wait for an account, woken by this shell's chat runner beside each look.
+            Limits = (looked, token) => chat.WakeLimitsAsync(looked, onEnded: (ended, state) => Ended(eventBus, ended, state), token),
         };
         // FABRIC-END6c: a focus heard before the watch existed is told to it now, once; the watch keeps it until its moments exist.
         _focus.Ready(_watch.Focused);

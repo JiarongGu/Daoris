@@ -178,7 +178,7 @@ public sealed class ChainTable
             ChainEvents.Home, ChainEvents.TimerOf(ChangeTopics.Requests), ChainEvents.TimerOf(ChangeTopics.Config),
             ChainEvents.TimerOf(ChangeTopics.Plugins), ChainEvents.TimerOf(ChangeTopics.Lines), ChainEvents.TimerOf(ChangeTopics.Words),
             ChainEvents.TimerOf(ChangeTopics.Update), ChainEvents.TimerOf(ChangeTopics.Help), ChainEvents.TimerOf(ChangeTopics.Gates),
-            ChainEvents.TimerOf(ChangeTopics.Notices),
+            ChainEvents.TimerOf(ChangeTopics.Notices), ChainEvents.TimerOf(ChangeTopics.Accounts),
         ], []),
         // FABRIC-RUN1: the evaluation runtime hears what the plan hears, its deadline the look's, and a plugin's step; it writes only the
         // units' node records, which no link hears, and emits nothing. FABRIC-RUN1d: and its own wakes, which with a plugin's step it alone

@@ -81,6 +81,9 @@ internal sealed class ChatTurns(
     private bool _finishing;
     // Held for a hand-over's take (SWITCH1c-ii): no word starts a turn the take's end would cut.
     private bool _held;
+    // Waiting for its account's limit to reset (LIMITRESUME1c, D206 §3.5): a word is kept and waits, and starts no turn on a process
+    // whose account would refuse it, until the wake hands them all over in one (WakeFromLimit) or a move takes them (HoldLimited).
+    private bool _limited;
     private bool _gone;
     private ChatQueue _published = ChatQueue.Idle;
     private TaskCompletionSource _drained = Completed();
@@ -452,6 +455,81 @@ internal sealed class ChatTurns(
     }
 
     /// <summary>
+    /// Wait for the account's limit to reset (LIMITRESUME1c, D206 §3.5): from now on a word is kept as any is and waits, shown queued,
+    /// but starts no turn, since the account would refuse it. False where the conversation is finishing, held for a take, or gone.
+    /// </summary>
+    public bool WaitForLimit()
+    {
+        lock (_gate)
+        {
+            if (_finishing || _gone || _held) return false;
+            _limited = true;
+            return true;
+        }
+    }
+
+    /// <summary>Whether its words wait for its account's limit to reset (<see cref="WaitForLimit"/>).</summary>
+    public bool Limited
+    {
+        get
+        {
+            lock (_gate) return _limited;
+        }
+    }
+
+    /// <summary>
+    /// The wake (LIMITRESUME1c, D206 §3.5): every word that waited, handed to <paramref name="compose"/> in the order said, becomes one
+    /// turn, the next at once, and the turns take words again. Under the turns' own lock, so a word said as it wakes either waited and is
+    /// among them or comes after it. False, composing nothing, where it was not waiting, or is finishing, held or gone.
+    /// </summary>
+    /// <param name="compose">The one turn the waiting words become; called under the lock, so it must not call back into the turns.</param>
+    public bool WakeFromLimit(Func<IReadOnlyList<ChatMessage>, ChatMessage> compose)
+    {
+        bool start;
+        lock (_gate)
+        {
+            if (!_limited || _finishing || _gone || _held) return false;
+            List<ChatMessage> waited = [.. _waiting.Select(Unstamped)];
+            _waiting.Clear();
+            _waiting.Add(compose(waited));
+            _limited = false;
+            start = !_pumping;
+            if (start)
+            {
+                _pumping = true;
+                _drained = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            }
+        }
+
+        if (start) _ = PumpAsync();
+        lock (_gate) Publish();
+        return true;
+    }
+
+    /// <summary>
+    /// Hold the turns for a move while they wait for the limit (LIMITRESUME1c, as <see cref="Hold"/> holds them for a take): the words
+    /// that waited are handed out, in the order said, for the move to carry, and nothing more is taken until <see cref="Release"/>.
+    /// Null where it was not waiting, a turn runs, or it is finishing, held or gone.
+    /// </summary>
+    public IReadOnlyList<ChatMessage>? HoldLimited()
+    {
+        lock (_gate)
+        {
+            if (!_limited || _pumping || _holding is not null || _finishing || _gone || _held) return null;
+            List<ChatMessage> waited = [.. _waiting.Select(Unstamped)];
+            _waiting.Clear();
+            _limited = false;
+            _held = true;
+            Publish();
+            return waited;
+        }
+    }
+
+    /// <summary>A waiting word without the queue's own id, which no record knows: its record's id stays. Called under the lock.</summary>
+    private ChatMessage Unstamped(ChatMessage message) =>
+        message.Id is { } stamped && _stamped.Remove(stamped) ? message with { Id = null } : message;
+
+    /// <summary>
     /// The one closing turn a hand-over's take asks of the outgoing agent while its turns are held (SESSCTX1c part B, the session-context
     /// design §2.2): taken as a turn of its own though held, every other word still taking nothing, and what completes once that turn has
     /// ended. Null where the turns are not held by <see cref="Hold"/>, or something runs or waits, or the conversation is finishing or gone.
@@ -499,7 +577,8 @@ internal sealed class ChatTurns(
             }
 
             _waiting.Add(Stamped(message));
-            start = !_pumping;
+            // LIMITRESUME1c: waiting for the limit, a word waits with the rest and starts nothing.
+            start = !_pumping && !_limited;
             if (start)
             {
                 _pumping = true;
@@ -767,7 +846,8 @@ internal sealed class ChatTurns(
             ChatMessage message;
             lock (_gate)
             {
-                if (_waiting.Count == 0 || _gone)
+                // LIMITRESUME1c: a conversation waiting for its account's limit starts no turn; the wake starts the next.
+                if (_waiting.Count == 0 || _gone || _limited)
                 {
                     _pumping = false;
                     _drained.TrySetResult();
