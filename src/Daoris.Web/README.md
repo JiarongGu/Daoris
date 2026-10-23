@@ -207,7 +207,8 @@ A folder past twenty sources keeps its scopes in folders named for what they hol
   and place reads (identity, the list's groups and entries, an ask's channel, a note's words, the one ask) at its top.
   A note's words come from one map per reason family (`noteLines.ts`), each held key for key to the driver's `NoteCodes` by
   `locales/note.test.ts`: a helper's, a hand-over's, and a partner's piece (COAGENT1b), whose notes on the lead and the
-  partner are notes, never words, and reset nothing;
+  partner are notes, never words, and reset nothing. A hand-over's note names who asked it (the person at a terminal, the
+  window or the agent) and says one Daoris could not take as not taken, with its reason, never as refused (HANDOVERSAID1);
   `frame/` (the window's frame: regions, lists, the dock, a page's header, the status bar), `strip/` (the app strip:
   its menus, command center and palette, the browser's door), `rail/` (Sessions' list), `head/` (a session's head,
   timeline, trace and milestone), `conversation/` (the conversation, its composer and box), `review/` (a session's

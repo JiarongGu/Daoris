@@ -45,10 +45,55 @@ public static class HandOverAskWhy
     /// <summary>The session is a helper, a reviewer, an intake or Ask Daoris's own conversation (the files may be old).</summary>
     public const string AskerUnfit = "asker-unfit";
 
-    /// <summary>The hand-over itself was refused as it was taken: its quest closed, its tree gone, another process runs it.</summary>
+    /// <summary>The hand-over could not be taken for a reason none of the codes below names.</summary>
     public const string Cannot = "cannot";
 
-    public static readonly IReadOnlyList<string> All = [Off, Declined, JustHanded, NoAgent, AskerGone, AskerUnfit, Cannot];
+    // HANDOVERSAID1: the take's own refusals (HandOver's codes), each said in its words rather than as `cannot`.
+
+    /// <summary>The session's quest is closed: no work is left to hand over.</summary>
+    public const string QuestClosed = HandOver.QuestClosed;
+
+    /// <summary>The session's quest is no longer this machine's to carry on.</summary>
+    public const string QuestElsewhere = HandOver.QuestElsewhere;
+
+    /// <summary>The session's quest lost its take to the person's reopen of the work it grew from.</summary>
+    public const string QuestReopened = HandOver.QuestReopened;
+
+    /// <summary>A later session here carries the quest on.</summary>
+    public const string NotLastRun = HandOver.NotLastRun;
+
+    /// <summary>The agent it was to go to is not one this machine has.</summary>
+    public const string UnknownAgent = HandOver.UnknownAgent;
+
+    /// <summary>It already runs on that agent.</summary>
+    public const string SameAgent = HandOver.SameAgent;
+
+    /// <summary>That agent's door cannot work in the session's repository.</summary>
+    public const string NoDoor = HandOver.NoDoor;
+
+    /// <summary>Another Daoris process on this machine runs it.</summary>
+    public const string Running = HandOver.Running;
+
+    /// <summary>The tree it ran in is gone.</summary>
+    public const string TreeGone = HandOver.TreeGone;
+
+    /// <summary>Another hand-over of it waits already.</summary>
+    public const string Waiting = HandOver.Waiting;
+
+    public static readonly IReadOnlyList<string> All =
+    [
+        Off, Declined, JustHanded, NoAgent, AskerGone, AskerUnfit, Cannot,
+        QuestClosed, QuestElsewhere, QuestReopened, NotLastRun, UnknownAgent, SameAgent, NoDoor, Running, TreeGone, Waiting,
+    ];
+
+    /// <summary>A take's refusal as a code of these: its own where it is one, else <see cref="Cannot"/>.</summary>
+    public static string Of(string? code) => code is not null && All.Contains(code) ? code : Cannot;
+
+    /// <summary>
+    /// Whether a hand-over not taken for this reason leaves nothing to go on with (HANDOVERSAID1): its quest closed or carried elsewhere,
+    /// or its tree gone. Otherwise the session goes on with its own agent.
+    /// </summary>
+    public static bool Ends(string why) => why is QuestClosed or QuestElsewhere or QuestReopened or NotLastRun or TreeGone;
 
     /// <summary>The reason in one English sentence's clause, for the terminal and the transcript.</summary>
     public static string Said(string why) => why switch
@@ -60,8 +105,31 @@ public static class HandOverAskWhy
         AskerGone => "the session is not on this machine",
         AskerUnfit => "the session is a helper, a reviewer, an intake or Ask Daoris's own conversation",
         Cannot => "the hand-over could not be taken",
+        QuestClosed => "its quest is closed, so no work is left to hand over",
+        QuestElsewhere => "its quest is no longer this machine's to carry on",
+        QuestReopened => "its quest lost its take when the work it grew from was reopened",
+        NotLastRun => "a later session here carries its quest on",
+        UnknownAgent => "the agent it was to go to is not available on this machine",
+        SameAgent => "it already runs on that agent",
+        NoDoor => "that agent cannot work in this repository",
+        Running => "it runs in another Daoris process on this machine",
+        TreeGone => "the tree it ran in is gone",
+        Waiting => "another hand-over of it already waits",
         _ => why,
     };
+}
+
+/// <summary>Who made a hand-over's ask, as its session's record names them (HANDOVERSAID1): the path that made it, never a guess.</summary>
+public static class HandOverAsker
+{
+    /// <summary>The session's agent, through the connector's <c>handover_propose</c>.</summary>
+    public const string Agent = "agent";
+
+    /// <summary>The person, at a terminal: <c>sessions hand-over &lt;id&gt; --agent &lt;adapter&gt;</c>.</summary>
+    public const string Terminal = "terminal";
+
+    /// <summary>The person, by the window's press.</summary>
+    public const string Window = "window";
 }
 
 /// <summary>An agent's ask to hand its session over, as <c>&lt;session&gt;.hand-over-ask.json</c> keeps it: written by <c>handover_propose</c>, never changed.</summary>
@@ -244,7 +312,37 @@ public static class HandOverAskNotes
     public static Noted Taking(string agent) =>
         Noted.Of(NoteCodes.HandOverTaking, $"Its agent asked to hand this session over: it goes on with {agent} once its turn ends.", ("agent", agent));
 
-    /// <summary>It came to nothing, and why.</summary>
+    /// <summary>
+    /// The person asked to hand a quest's session over (HANDOVERSAID1), by the path that made the ask: at a terminal or by the window's
+    /// press. The agent's own ask is <see cref="Asked"/>'s, which waits on their word; theirs is the word.
+    /// </summary>
+    public static Noted AskedBy(string by, string agent) => by == HandOverAsker.Terminal
+        ? Noted.Of(NoteCodes.HandOverAskedTerminal, $"You asked at a terminal to hand this session over to {agent}: Daoris takes it at its next look.", ("agent", agent))
+        : Noted.Of(NoteCodes.HandOverAskedWindow, $"You asked in the window to hand this session over to {agent}: Daoris takes it at its next look.", ("agent", agent));
+
+    /// <summary>It came to nothing before anyone's yes, and why: the rule, the person's no, or what the session or its quest is.</summary>
     public static Noted Refused(string why) =>
         Noted.Of(NoteCodes.HandOverRefused, $"Its agent's ask to hand this session over was refused: {HandOverAskWhy.Said(why)}.", ("why", why));
+
+    /// <summary>
+    /// A hand-over let go, by the person's yes, their own ask or the rule's <c>on</c>, that Daoris could not take (HANDOVERSAID1): never
+    /// said as refused, since nobody refused it. Its real reason, and what the session does next: goes on with its own agent, or, where
+    /// its quest or tree is gone, nothing goes on with it.
+    /// </summary>
+    public static Noted NotTaken(string agent, string? code)
+    {
+        var why = HandOverAskWhy.Of(code);
+        return HandOverAskWhy.Ends(why)
+            ? Noted.Of(NoteCodes.HandOverNotTakenEnds,
+                $"The hand-over to {agent} was not taken: {HandOverAskWhy.Said(why)}. Nothing goes on with this session.", ("agent", agent), ("why", why))
+            : Noted.Of(NoteCodes.HandOverNotTaken,
+                $"The hand-over to {agent} was not taken: {HandOverAskWhy.Said(why)}. This session goes on with its own agent.", ("agent", agent), ("why", why));
+    }
+
+    /// <summary>A hand-over line on the session's record and its transcript, as the look writes every note; the terminal has no transcript.</summary>
+    public static void Say(SessionEvents events, SessionOutput? output, string session, Noted note)
+    {
+        output?.Append(session, $"— {note.Note}");
+        events.Keep(session, new SessionEvent { Kind = SessionEventKind.Note, Text = note.Note, Parts = note.Parts }, say: null);
+    }
 }

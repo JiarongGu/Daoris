@@ -19958,3 +19958,13 @@ reading of the install's record are in FIX-LOG's PARKANSWER1 entry. The installe
 **Outcome.** Driven starts and repository conversations receive their selected adapter's attribution instruction, naming their
 maker and asking for the running model. Claude's harness adds its own trailer. The merge check accepts supported makers and
 names them on refusal. Per-adapter brief tests and a real git Codex stand-in cover it; verification and root cause: FIX-LOG 2026-10-24.
+## HANDOVERSAID1 — a hand-over says who asked it, and why it was not taken (2026-10-23)
+
+> - [ ] **HANDOVERSAID1 — a hand-over says who asked it, and why it was not taken** (driver, modules, web; the owner's report, 2026-10-23; asked as quest `#04c50a38cbda`, never a backlog row). Seen on the install at 13:13 UTC on session `cc63a27e`: an ask recorded `handover.asked`, the person pressed yes in the window, and the look wrote `handover.refused` with `cannot`, which the person read as their own refusal; the session then went on with its own agent and nothing said so. The ask note names its asker (the person at a terminal, the window press, or the agent); a hand-over the person approved that Daoris could not take is said as not taken with its real reason in words, never as refused; what the session does next is said; check whether a hand-over of a session whose quest is closed should be refused at the ask rather than after the yes. Proof, red first: note words for each asker, an approved hand-over of a closed quest's session said as not taken with its reason, en and zh, the attention row.
+
+**Outcome** 2026-10-24: a hand-over that was let go but not taken is now `handover.not-taken` or `handover.not-taken-ends`. Each
+note gives the take's own reason in words and says what the session does next. It is never said as refused (driver, modules). The
+look refuses an ask by that reason before it waits on the person, so a closed quest is never put to a yes or shown as an attention
+row. The person's own ask of a quest's session names its asker (`handover.asked-terminal`, `handover.asked-window`), worded in en
+and zh (web). The install's ask was the agent's own (`askedBy: agent`, its `handover_propose` call), and the real reason there was
+not recorded. Detail and the red-first proof are in FIX-LOG's HANDOVERSAID1 entry.

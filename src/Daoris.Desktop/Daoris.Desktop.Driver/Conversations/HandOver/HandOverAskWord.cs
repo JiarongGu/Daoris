@@ -111,9 +111,7 @@ public static class HandOverAskWord
     private static HandOverWordAnswer Declined(HandOverAskFiles files, SessionEvents events, SessionOutput? output, string session, string id)
     {
         files.WriteState(session, new HandOverAskState(id, HandOverAskStates.Refused, HandOverAskWhy.Declined, null, DateTimeOffset.UtcNow));
-        var note = HandOverAskNotes.Refused(HandOverAskWhy.Declined);
-        output?.Append(session, $"— {note.Note}");
-        events.Keep(session, new SessionEvent { Kind = SessionEventKind.Note, Text = note.Note, Parts = note.Parts }, say: null);
+        HandOverAskNotes.Say(events, output, session, HandOverAskNotes.Refused(HandOverAskWhy.Declined));
         return new(true, null, $"#{id} has your no: the session stays with its agent, and its timeline says so.", true);
     }
 }

@@ -236,10 +236,13 @@ describe('the page’s map of a note’s codes, held to both writers', () => {
     }
   });
 
-  /** MIXAGENT1c: why an agent's ask to hand its session over came to nothing is a reason family of its own, held key for key. */
-  it('words every reason an agent\'s ask to hand over was refused', () => {
+  /**
+   * MIXAGENT1c: why an agent's ask to hand its session over came to nothing is a reason family of its own, held key for key; since
+   * HANDOVERSAID1 it holds the take's own refusals too, each said in its words rather than as `cannot`.
+   */
+  it('words every reason an agent\'s ask to hand over was refused or not taken', () => {
     const asked = reasons('HandOver');
-    expect(asked.length).toBe(7);
+    expect(asked.length).toBe(17);
     const page = Object.values(HAND_OVER_ASK_REASONS).map(({ key, values }) => ({ key, values: [...values] }));
     const byKey = (a: { key: string }, b: { key: string }) => a.key.localeCompare(b.key);
     expect(page.sort(byKey)).toEqual([...asked].sort(byKey));

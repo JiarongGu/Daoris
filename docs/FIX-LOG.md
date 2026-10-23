@@ -5,6 +5,42 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-23 - An approved hand-over that could not be taken read as refused (HANDOVERSAID1)
+
+- **Symptom:** on the install at 13:13 UTC, session `cc63a27e` (quest `#289dcd93ebeb`) wrote `handover.asked`, *Its agent
+  asked to hand this session over*, to `codex-acp`. The person pressed yes in the window. Seven seconds later the look wrote
+  `handover.refused` with `cannot`, *Its agent's ask to hand this session over was refused: the hand-over could not be taken*.
+  The person read that as their own refusal. The session then went on with its own agent, and nothing said so.
+- **Root cause:** every path that lets a hand-over go and then fails to take it (`DriverHandOvers.GoAsync`,
+  `TakeHandOverAsync` and the window's yes in `SessionsRoutes`) wrote the ask's state and note with one code, `cannot`. The take's
+  own reason, a `HandOver` code such as `quest-closed`, went only to the look's line, which the record does not keep. The note's
+  wording was the refusal's, so a yes that stood read as a no. Nothing judged the take before the ask waited, so a quest that was
+  already closed still asked the person. The ask on the install was the agent's own: its `.hand-over-ask.json` says
+  `askedBy: agent`, and its events show the `handover_propose` call at 13:12:43. The person's own hand-over of a quest's session,
+  from a terminal or the window, wrote nothing on the record. The real reason on the install is not recoverable. The quest
+  started again at 13:13:50, so it was probably not closed at 13:13:16.
+- **Fix:** a hand-over let go that the take cannot go on with is said as not taken: `handover.not-taken` (*This session goes on
+  with its own agent*), or `handover.not-taken-ends` where its quest closed, went elsewhere or its tree is gone (*Nothing goes on
+  with this session*). Each names the take's own reason in words. `HandOverAskWhy` takes the take's codes (`Of` keeps any other as
+  `cannot`), and the page's reason family follows them. Before an ask waits on the person, the look judges the take
+  (`TakeRefusesAsync`, at each look while it waits). A quest that is closed, an agent that is unavailable or a tree that is gone
+  refuses the ask then, by that reason, and no attention row asks for a yes. The person's own ask of a quest's session names its
+  asker: `handover.asked-terminal` from the verb (through the loop's record where the verb runs in the window's Daoris,
+  `SessionsWorld.Notes`), and `handover.asked-window` from the press. The notes are worded in en and zh.
+- **Verify:** red first, against the old sources:
+  `HandOverAskLookTests.An_approved_hand_over_of_a_closed_quests_session_is_said_as_not_taken_with_its_reason` (`refused`,
+  `cannot`), `An_ask_of_a_session_whose_quest_is_closed_is_refused_at_the_ask_by_that_reason` (`waiting`),
+  `HandOverTests.The_terminal_s_ask_of_a_quest_s_session_is_named_on_its_record_as_the_person_s_at_a_terminal` (no note) and
+  `DriverModuleHandOverTests.A_yes_the_take_cannot_go_on_with_is_said_as_not_taken_with_its_reason` (`cannot`). Green by class:
+  the driver's `HandOverAskLookTests`, `HandOverAskJudgeTests`, `HandOverTests`, `SessionsHandOverWordTests`,
+  `HandOverAskFilesTests`, `HandOverAskTickTests`, `HandOverAtTurnEndTests`, `NoteCodesTests`, `LookSaidTests` and
+  `SessionsThroughInstanceTests` (107). The Process class `HandOverProcessTests` (5). The modules' `DriverModuleHandOverTests`,
+  `DriverModuleHandOverAskTests`, `AttentionStateSliceTests` and `DriverModuleSessionsTests` (177). The web's `noteLines.test.ts`,
+  `note.test.ts` and `Note.test.tsx` (98).
+- **Not covered:** the agent's ask file is the connector's alone, and it always says `agent`. A terminal or window ask is a box,
+  not an ask file, so the window's press of a quest's session is held by the shared note helper, not by a route test of its own.
+  The installed window is not yet looked at.
+
 ## 2026-10-23 - A turn its model's provider refused parked on the person (APIREFUSAL1)
 
 - **Symptom:** LIMITGOON1's first session on the install (session `cc63a27e`, 08:16 UTC) ended parked: *It stopped with its

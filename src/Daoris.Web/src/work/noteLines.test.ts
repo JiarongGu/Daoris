@@ -329,6 +329,53 @@ describe('noteLines', () => {
   });
 
   /** CONVNOTE2a: a resumed conversation's first line is worded in either language, a version that moved a line beside it. */
+  /**
+   * HANDOVERSAID1 (the owner's report, 2026-10-23): a hand-over's ask names who asked it, by the path that made it, and one let go that
+   * Daoris could not take is said as not taken, its reason in words and what the session does next, never as refused.
+   */
+  describe('a hand-over’s ask and one not taken', () => {
+    const asked = (code: string) => coded(code, '…', { agent: 'codex-acp' });
+    const notTaken = (code: string, why: string) => coded(code, '…', { agent: 'codex-acp', why });
+
+    it('names each asker, in English and 中文', () => {
+      const parts = [asked('handover.asked'), asked('handover.asked-terminal'), asked('handover.asked-window')];
+      expect(parts.map((part) => noteLines(t, { parts: [part] }, 'en')[0].text)).toEqual([
+        'Its agent asked to hand this session over; it waits for your yes or no to go on with codex-acp.',
+        'You asked at a terminal to hand this session over to codex-acp: Daoris takes it at its next look.',
+        'You asked in the window to hand this session over to codex-acp: Daoris takes it at its next look.',
+      ]);
+      expect(parts.map((part) => noteLines(zh, { parts: [part] }, 'zh')[0].text)).toEqual([
+        '它的智能体要求转交这个会话；转交给 codex-acp 前，等你同意或拒绝。',
+        '你在终端要求把这个会话转交给 codex-acp：Daoris 会在下一次查看时接手。',
+        '你在窗口中要求把这个会话转交给 codex-acp：Daoris 会在下一次查看时接手。',
+      ]);
+    });
+
+    it('says an approved hand-over of a closed quest’s session as not taken with its reason and what comes next, never refused', () => {
+      const closed = notTaken('handover.not-taken-ends', 'quest-closed');
+      const same = notTaken('handover.not-taken', 'same-agent');
+      expect(noteLines(t, { parts: [closed] }, 'en')[0]).toEqual({
+        kind: 'said',
+        text: 'The hand-over to codex-acp was not taken: its quest is closed, so no work is left to hand over. Nothing goes on with this session.',
+      });
+      expect(noteLines(t, { parts: [same] }, 'en')[0].text)
+        .toBe('The hand-over to codex-acp was not taken: it already runs on that agent. This session goes on with its own agent.');
+      expect(noteLines(zh, { parts: [closed] }, 'zh')[0].text)
+        .toBe('转交给 codex-acp 没有完成：它的任务已关闭，没有剩下的工作可以转交。这个会话不会再继续。');
+      expect(noteLines(zh, { parts: [same] }, 'zh')[0].text)
+        .toBe('转交给 codex-acp 没有完成：它已经在那个智能体上运行。这个会话继续由它自己的智能体做。');
+      for (const line of [closed, same].map((part) => noteLines(t, { parts: [part] }, 'en')[0].text)) expect(line).not.toMatch(/refused/);
+    });
+
+    it('says an ask refused at the ask by the take’s own reason, in English and 中文', () => {
+      const refused = coded('handover.refused', '…', { why: 'quest-closed' });
+      expect(noteLines(t, { parts: [refused] }, 'en')[0].text)
+        .toBe('Its agent’s ask to hand this session over was refused: its quest is closed, so no work is left to hand over.');
+      expect(noteLines(zh, { parts: [refused] }, 'zh')[0].text)
+        .toBe('它的智能体要求转交这个会话，被拒绝：它的任务已关闭，没有剩下的工作可以转交。');
+    });
+  });
+
   describe('a resumed conversation’s first line', () => {
     const lead = (why: string) => coded('resumed.opening', '— … resumed on `claude-code`', { adapter: 'claude-code', why });
     const moved = coded('resumed.moved', '2.1.300; it opened on 2.1.281', { now: '2.1.300', then: '2.1.281' });

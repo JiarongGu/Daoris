@@ -413,11 +413,10 @@ public sealed class SessionsRoutes(DriverContext context)
                 .ConfigureAwait(false);
             if (!handed.Kept && handed.SessionId is null)
             {
-                // Refused as it was taken: the look's own refusal, said on the session's record.
-                files.WriteState(session, new HandOverAskState(askId, HandOverAskStates.Refused, HandOverAskWhy.Cannot, null, DateTimeOffset.UtcNow));
-                var note = HandOverAskNotes.Refused(HandOverAskWhy.Cannot);
-                _loop.Output?.Append(session, $"— {note.Note}");
-                _loop.Events.Keep(session, new SessionEvent { Kind = SessionEventKind.Note, Text = note.Note, Parts = note.Parts }, say: null);
+                // HANDOVERSAID1: their yes stood, and the take could not go: not taken, by the take's own reason, never refused.
+                var why = HandOverAskWhy.Of(handed.Why);
+                files.WriteState(session, new HandOverAskState(askId, HandOverAskStates.Refused, why, null, DateTimeOffset.UtcNow));
+                HandOverAskNotes.Say(_loop.Events, _loop.Output, session, HandOverAskNotes.NotTaken(agent, why));
                 _loop.Nudge();
                 return new { Approved = false, Why = handed.Why ?? HandOverAskWhy.Cannot, handed.Message, Agent = agent };
             }

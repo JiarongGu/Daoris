@@ -95,7 +95,7 @@ internal sealed class DriverHandOvers(LoopContext context)
             box.Clear(id);
             events.Add(_context.Said.News(
                 "hand-over", new LookNews(LookSaid.HandOverRefused, id, id, quest, record.Workspace), $"hand-over  session `{id}` (#{quest}): {refused.Message}"));
-            if (agentAsk) RefuseAsk(id, HandOverAskWhy.Cannot);
+            NotTaken(id, ask.Agent, refused.Why, agentAsk);
             return;
         }
 
@@ -125,7 +125,7 @@ internal sealed class DriverHandOvers(LoopContext context)
                 box.Clear(id);
                 events.Add(_context.Said.News("hand-over", new LookNews(LookSaid.HandOverElsewhere, id, id, quest, record.Workspace),
                     $"hand-over  session `{id}` (#{quest}) runs in another Daoris process on this machine: hand it over there, or stop it first."));
-                if (agentAsk) RefuseAsk(id, HandOverAskWhy.Cannot);
+                NotTaken(id, ask.Agent, HandOverAskWhy.Running, agentAsk);
                 return;
             }
         }
@@ -180,6 +180,17 @@ internal sealed class DriverHandOvers(LoopContext context)
                     $"hand-over  session `{session}`'s agent asked to hand it over, refused ({verdict.Code}): {HandOverAskWhy.Said(verdict.Code!)}."));
                 break;
             case HandOverAskVerdict.WaitKind:
+                // HANDOVERSAID1: what the take would refuse is refused at the ask, never left to wait on a yes it cannot honour: its
+                // quest closed or carried elsewhere, its tree gone, the agent named not this machine's. Judged at each look it waits.
+                if (await TakeRefusesAsync(record!, verdict.Agent!, ct).ConfigureAwait(false) is { } refused)
+                {
+                    var code = HandOverAskWhy.Of(refused.Why);
+                    RefuseAsk(session, code, ask.Id);
+                    events.Add(_context.Said.News("hand-over", new LookNews(LookSaid.HandOverAskRefused, ask.Id, session, Workspace: record?.Workspace),
+                        $"hand-over  session `{session}`'s agent asked to hand it over, refused ({code}): {refused.Message}"));
+                    break;
+                }
+
                 if (own is { State: HandOverAskStates.Waiting } waiting && waiting.Agent == verdict.Agent) break;
                 files.WriteState(session, new HandOverAskState(ask.Id, HandOverAskStates.Waiting, null, verdict.Agent, DateTimeOffset.UtcNow));
                 if (own is null) Say(session, HandOverAskNotes.Asked(verdict.Agent!));
@@ -248,7 +259,7 @@ internal sealed class DriverHandOvers(LoopContext context)
 
         if (!kept)
         {
-            RefuseAsk(session, HandOverAskWhy.Cannot, ask.Id);
+            NotTaken(session, agent, code, agentAsk: true, ask.Id);
             events.Add(_context.Said.News("hand-over", new LookNews(LookSaid.HandOverFailed, ask.Id, session, Workspace: record.Workspace),
                 $"hand-over  session `{session}`'s agent asked to hand it over to {agent}, and it could not be taken ({code ?? "refused"}): {message}"));
             return;
@@ -345,6 +356,34 @@ internal sealed class DriverHandOvers(LoopContext context)
     /// <summary>The note the agent left with its ask, for the next start; null where it left none.</summary>
     private string? AgentNote(string session) => new HandOverAskFiles(_context.Home).Ask(session)?.Note is { Length: > 0 } note ? note : null;
 
+    /// <summary>What the take would refuse a hand-over of this session to <paramref name="agent"/> for now, judged as the take judges it; null where it would go.</summary>
+    private async Task<HandOverAnswer?> TakeRefusesAsync(PriorSession record, string agent, CancellationToken ct)
+    {
+        var (refused, _) = IsQuest(record)
+            ? await QuestHandOver.JudgeAsync(_context.Service, Drives, record.Session, agent, null, ct, agentAsk: true).ConfigureAwait(false)
+            : await HandOver.JudgeAsync(_context.Service, AccountsOf, record.Session, agent, null, ct).ConfigureAwait(false);
+        return refused;
+    }
+
+    /// <summary>
+    /// A hand-over let go that could not be taken (HANDOVERSAID1): an agent's ask's state refused with the take's own code, and on the
+    /// session's record, whoever asked, the not-taken line with its reason and what the session does next. Never said as refused.
+    /// </summary>
+    private void NotTaken(string session, string agent, string? code, bool agentAsk, string? id = null)
+    {
+        var why = HandOverAskWhy.Of(code);
+        if (agentAsk)
+        {
+            var files = new HandOverAskFiles(_context.Home);
+            if ((id ?? files.Ask(session)?.Id) is { } askId)
+            {
+                files.WriteState(session, new HandOverAskState(askId, HandOverAskStates.Refused, why, null, DateTimeOffset.UtcNow));
+            }
+        }
+
+        Say(session, HandOverAskNotes.NotTaken(agent, why));
+    }
+
     /// <summary>An ask refused: its state with the code, and the coded line on its session's record.</summary>
     private void RefuseAsk(string session, string code, string? id = null)
     {
@@ -356,9 +395,5 @@ internal sealed class DriverHandOvers(LoopContext context)
     }
 
     /// <summary>A coded line on the session's record and its transcript, as every look's note is written.</summary>
-    private void Say(string session, Noted note)
-    {
-        _context.Output?.Append(session, $"— {note.Note}");
-        _context.Events.Keep(session, new SessionEvent { Kind = SessionEventKind.Note, Text = note.Note, Parts = note.Parts }, say: null);
-    }
+    private void Say(string session, Noted note) => HandOverAskNotes.Say(_context.Events, _context.Output, session, note);
 }

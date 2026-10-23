@@ -224,6 +224,8 @@ public sealed class ConversationRoutes(DriverContext context)
                 .ConfigureAwait(false);
             if (answer.Kept)
             {
+                // HANDOVERSAID1: the session's record names who asked, the person by the window's press.
+                HandOverAskNotes.Say(_loop.Events, _loop.Output, id, HandOverAskNotes.AskedBy(HandOverAsker.Window, agent));
                 SessionWatch.Of(_loop.Events).Pressed(id);
                 _loop.Nudge();
             }

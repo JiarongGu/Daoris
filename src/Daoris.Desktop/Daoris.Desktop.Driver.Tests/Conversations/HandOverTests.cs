@@ -523,6 +523,24 @@ public sealed class HandOverTests : IDisposable
         Assert.Equal(("codex-acp", "work", HandOverWhy.Press, HandOverBy.Person), (box.Agent, box.Account, box.Why, box.AskedBy));
     }
 
+    /// <summary>
+    /// 🔴 HANDOVERSAID1: the session's record names who asked, the person at a terminal, on a code of its own; a refused ask writes
+    /// nothing on it.
+    /// </summary>
+    [Fact]
+    public async Task The_terminal_s_ask_of_a_quest_s_session_is_named_on_its_record_as_the_person_s_at_a_terminal()
+    {
+        var world = new SessionsWorld(QuestRoom().Client(), _home, DriverConfig.Empty, SessionWire.Pipe, null) { Drives = Drives, LoopRuns = () => true };
+
+        Assert.Equal(1, await SessionsCommand.RunAsync(SessionsCommand.Read(["hand-over", "qu3st000", "--agent", "gemini"], out _)!, world, new StringWriter()));
+        Assert.Empty(Events.After("qu3st000", 0).Events);
+        Assert.Equal(0, await SessionsCommand.RunAsync(SessionsCommand.Read(["hand-over", "qu3st000", "--agent", "codex-acp"], out _)!, world, new StringWriter()));
+
+        var note = Assert.Single(Events.After("qu3st000", 0).Events, e => e.Kind == SessionEventKind.Note);
+        Assert.Equal("handover.asked-terminal", note.Parts![0].Code);
+        Assert.Equal("You asked at a terminal to hand this session over to codex-acp: Daoris takes it at its next look.", note.Text);
+    }
+
     [Fact]
     public async Task The_terminal_says_where_no_loop_holds_the_home_and_refuses_with_the_judge_s_sentence()
     {
