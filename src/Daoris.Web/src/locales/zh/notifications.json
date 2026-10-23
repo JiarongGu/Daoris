@@ -60,7 +60,7 @@
   "notifications.done.look.reopen-unrecorded": "一次重新打开指向的会话在本机没有记录：这里没有通知任何会话",
   "notifications.done.look.reopen-tree-gone": "一个被重新打开的委托的会话未被告知：它的工作树已不在，所以不会重做这项工作",
   "notifications.done.look.plugin-unsound": "一个插件在一小时内退出三次后已停止：你再试一次后它才会重新启动",
-  "notifications.done.look.limit-waits": "因账户额度用尽而中断的工作正在等待账户恢复可用，届时将自动继续",
+  "notifications.done.look.limit-waits": "因账户额度用尽而中断的工作正在等待账户重新可用，届时将自动继续",
   "notifications.done.look.limit-went-on": "因账户额度用尽而中断的工作已在新会话中继续，并附上 Daoris 的简报",
   "notifications.nothingUnread": "没有未读内容。",
   "notifications.markRead": "标为已读",

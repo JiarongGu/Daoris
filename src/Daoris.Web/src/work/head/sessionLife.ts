@@ -30,7 +30,7 @@ export const SESSION_MOVES: readonly (readonly [SessionState, SessionState])[] =
 type Translate = (key: string, values?: Record<string, unknown>) => string;
 
 /** The session's own fields the flow reads: its state, and what makes it a record that is never gone on with. */
-export type SessionOfLife = Pick<Session, 'id' | 'state'> & Partial<Pick<Session, 'ask' | 'opinion' | 'serves' | 'answer' | 'kind'>>;
+export type SessionOfLife = Pick<Session, 'id' | 'state'> & Partial<Pick<Session, 'ask' | 'opinion' | 'serves' | 'answer' | 'kind' | 'limit'>>;
 
 /** One of the outcomes the group node names: whether the record is in it, and whether the ledger lets it go on. */
 export type OutcomeMember = { state: SessionState; word: string; current: boolean; goesOn: boolean };

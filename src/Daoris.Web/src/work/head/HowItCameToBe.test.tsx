@@ -96,6 +96,9 @@ describe('how this came to be', () => {
     expect(steps.map((item) => item.textContent?.slice(0, 10))).toEqual(['Session s1', 'Session s2']);
     const [first, second] = steps as [HTMLElement, HTMLElement];
     expect(first).toHaveTextContent('by an account\'s limit');
+    // LIMITRESUME1a: a limit's end is worded limited, its note kept, never failed.
+    expect(within(first).getByText('limited')).toBeInTheDocument();
+    expect(within(first).queryByText('failed')).toBeNull();
     expect(first).toHaveTextContent('agent claude-code · version 2.1.3 · account personal');
     expect(first).toHaveTextContent('The first session on its quest.');
     expect(second).toHaveTextContent('tree dashboards-q1 · grew from abc1234');

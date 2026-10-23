@@ -287,6 +287,8 @@ export const SESSION_TONE: Record<ShownState, keyof typeof PILL_TONE> = {
   'going-on': 'neutral',
   // Waiting on its own helper, nothing runs and nothing waits on the person (HELPERWAIT1): awaiting reply's twin.
   'awaiting-helper': 'neutral',
+  // Ended by an account's limit, its line going on by itself (LIMITRESUME1a): quiet, never the failure's red.
+  'limited': 'neutral',
 };
 
 /**
@@ -297,12 +299,13 @@ export const SESSION_TONE: Record<ShownState, keyof typeof PILL_TONE> = {
  * question asked of another repository; **answered**, a park the person answered, which the same session
  * goes on from at the driver's next look (ANSWER1c, D131); **going-on**, a record going on with the person's
  * words, its run opening (MSG1f, D137 §3.2); and **awaiting-helper**, a session that ended its turn on its own helper's
- * ask and goes on with its answer (HELPERWAIT1). None is a record state: no new session state (D126 §2).
+ * ask and goes on with its answer (HELPERWAIT1); and **limited**, a `failed` record whose failure an account's limit made, its
+ * `limit` flag (LIMITRESUME1a, D206 point 1). None is a record state: no new session state (D126 §2).
  *
  * The record says `working` for a chat's whole life, since its process is; whether a turn is in flight
  * is the driver's to say.
  */
-export type ShownState = SessionState | 'idle' | 'parked' | 'awaiting-reply' | 'answered' | 'going-on' | 'awaiting-helper';
+export type ShownState = SessionState | 'idle' | 'parked' | 'awaiting-reply' | 'answered' | 'going-on' | 'awaiting-helper' | 'limited';
 
 /**
  * The catalogue key naming a shown state: the record's states and idle in `sessionState`, the reader's derived
@@ -314,7 +317,16 @@ export function shownKey(shown: ShownState): string {
   if (shown === 'answered') return 'work.shown.answered';
   if (shown === 'going-on') return 'work.shown.goingOn';
   if (shown === 'awaiting-helper') return 'work.shown.awaitingHelper';
+  if (shown === 'limited') return 'work.limit.word';
   return `sessionState.${shown}`;
+}
+
+/**
+ * A record's state with the one word its `limit` flag makes (LIMITRESUME1a, D206 point 1): a `failed` record an account's limit
+ * ended is **limited**; every other is its own state. For a surface that shows the record's state and no other reading of it.
+ */
+export function limitedOr(session: { state: SessionState; limit?: boolean }): ShownState {
+  return session.state === 'failed' && session.limit ? 'limited' : session.state;
 }
 
 /**
@@ -337,10 +349,13 @@ export function answeredPark(session: { state: SessionState; answer?: string | n
  * A live record that still keeps the person's words is **going on** (MSG1f, D137 §3.2): it went on with them, and
  * its run's first prompt has not taken them yet. An ended record with words waiting is the list's reader's to say,
  * since words it cannot take stay waiting there too, and only the reader knows which.
+ *
+ * A `failed` record an account's limit ended is **limited** (LIMITRESUME1a, D206 point 1): no failure, and quiet.
  */
 export function shownState(
-  session: { kind?: 'driven' | 'chat'; state: SessionState; answer?: string | null }, taking: boolean | undefined,
+  session: { kind?: 'driven' | 'chat'; state: SessionState; answer?: string | null; limit?: boolean }, taking: boolean | undefined,
 ): ShownState {
+  if (limitedOr(session) === 'limited') return 'limited';
   if (answeredPark(session)) return 'answered';
   if (session.state !== 'awaiting-person' && SESSION_ACTIVE.has(session.state) && session.answer) return 'going-on';
   return session.kind === 'chat' && session.state === 'working' && taking === false ? 'idle' : session.state;
@@ -382,6 +397,8 @@ export const SESSION_DOT: Record<ShownState, keyof typeof DOT_TONE> = {
   'going-on': 'idle',
   // Waiting on its own helper, its own turn has ended and nothing waits on the person (HELPERWAIT1): quiet, as awaiting reply is.
   'awaiting-helper': 'idle',
+  // Ended by an account's limit (LIMITRESUME1a): an ended record, as failed is.
+  'limited': 'ended',
 };
 
 /** Quest state on its soft field. The label is always present — status never rides on hue alone. */
