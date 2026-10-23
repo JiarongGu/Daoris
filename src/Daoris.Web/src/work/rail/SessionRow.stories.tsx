@@ -4,6 +4,8 @@ import { InTheme } from '../../plugins/storyIcons';
 import { chinese } from '../../design/storyLanguage';
 import type { SessionGrouping } from '../groups';
 import { SessionRow } from './SessionRow';
+import { useTranslation } from 'react-i18next';
+import { type LimitWait, limitWaitSaid } from '../waits/limitWait';
 
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
@@ -169,6 +171,22 @@ export const AwaitingPerson: Story = {
 export const Finished: Story = {
   args: { session: { ...SESSION, state: 'completed', created: at(95), updated: at(50) } },
 };
+
+/**
+ * A line its account's limit cut off (LIMITRESUME1d2, D206 §3.7): *limited*, quiet, and when it goes on by itself, the head's first
+ * sentence worded in the story's language.
+ */
+export const LimitedWaiting: Story = {
+  args: { session: { ...SESSION, state: 'failed', limit: true, created: at(95), updated: at(20) } },
+  render: function Render(args) {
+    const { t } = useTranslation();
+    const wait: LimitWait = { until: '2026-10-24T11:02:00Z', account: 'work', own: true, stated: true, notLifted: null };
+    return <SessionRow {...args} limitWait={limitWaitSaid(t, wait, (account) => account ?? '')[0]} />;
+  },
+};
+
+/** The same in 中文. */
+export const LimitedWaitingChinese: Story = { ...LimitedWaiting, decorators: [chinese] };
 
 /** Where the list's reader placed a row (SESSUX1c): the facts each story below adds to it. */
 const placed = (over: Partial<SessionGrouping> & Pick<SessionGrouping, 'group' | 'shown'>): SessionGrouping => ({

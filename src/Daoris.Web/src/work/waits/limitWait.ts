@@ -3,6 +3,9 @@ import { type AccountsAnswer, type AccountCooling, agentOf, machineScope, worksp
 import { toolOf, type ToolDoor } from '../../agents/tools';
 import { moment } from '../../locales/format';
 import type { Translate } from '../pausing/pausing';
+import type { SessionEvent } from '../conversation/conversation';
+import { noteText } from '../noteLines';
+import type { AccountNames } from '../accountNames';
 
 // What a line an account's limit cut off says while it waits (LIMITRESUME1d, D206 §3.7): one sentence, the same in the session's
 // head, its foot, its row and its quest's page, read from facts the page already holds. Pure, so every surface reads one rule.
@@ -93,6 +96,47 @@ export function limitWaitOf({ session, workspace, doors, answer, now }: {
 }
 
 /**
+ * A conversation's wait as its events hold it (LIMITRESUME1d2, D206 §3.5, §3.7): the `chat.limit-waits` line the driver says where no
+ * account of its agent had room, and when the first is ready again. Never drawn from the accounts alone, which would claim a resume
+ * for a conversation no limit holds.
+ */
+export type ChatLimitHeld = {
+  /** The note's part, so a page that holds no walk says the driver's own line in the reader's language. */
+  part: NotePart;
+  /** The margin-added moment the first account of its agent is ready again (§3.2). */
+  until: string;
+  /** Whether the agent said that reset (`stated`, `assumed`); otherwise Daoris's default stands in. */
+  stated: boolean;
+};
+
+// What ends a conversation's wait after its line, as the driver's `LimitHeld.Waiting` and the look's stage read them: the person's
+// *Stop waiting*, the wake's resume in its own conversation or its refusal, and the move to another account.
+const LEAVES_THE_WAIT = new Set(['chat.limit-stopped-waiting', 'limit.resumed', 'limit.resume-refused', 'moved.on']);
+
+/**
+ * Whether a conversation still waits for its limit, read from its events (D206 §3.5): its last `chat.limit-waits` line, with no turn
+ * since (it went on), no line that ends the wait, and no refusal that waits for the person (a note naming its `why`). Null otherwise.
+ */
+export function chatLimitHeldOf(events: readonly SessionEvent[]): ChatLimitHeld | null {
+  for (let at = events.length - 1; at >= 0; at--) {
+    const event = events[at]!;
+    if (event.kind === 'turn') return null;
+    if (event.kind !== 'note') continue;
+    if (event.why) return null;
+    const parts = event.parts ?? [];
+    if (parts.some((part) => part.code !== undefined && LEAVES_THE_WAIT.has(part.code))) return null;
+    const part = parts.find((each) => each.code === 'chat.limit-waits');
+    if (!part?.code) continue;
+    const until = part.values?.until;
+    const why = part.values?.why;
+    return typeof until === 'string' && until
+      ? { part, until, stated: why === 'stated' || why === 'assumed' }
+      : null;
+  }
+  return null;
+}
+
+/**
  * The wait in words (D206 §3.7): when it resumes by itself and on which account (or, no reset said, when it tries again), then which
  * resume comes, then the reset that did not lift it where one did not. `label` names an account as the roster names it, the own
  * sign-in by its own name.
@@ -106,4 +150,41 @@ export function limitWaitSaid(t: Translate, wait: LimitWait, label: (account: st
     t(wait.own ? 'work.limit.own' : 'work.limit.briefed'),
     ...(wait.notLifted ? [t('work.limit.notLifted', { hit: wait.notLifted })] : []),
   ];
+}
+
+/**
+ * A driven line's wait in words where it waits (LIMITRESUME1d2, D206 §3.7): the head's sentence, for the session's row and its quest's
+ * page, which hold the same facts. Null where it is no limited line or the walk waits for nothing.
+ */
+export function limitWaitLines(t: Translate, { session, questStatus, paused = false, workspace, doors, answer, label, now }: {
+  session: Pick<Session, 'state' | 'limit' | 'kind' | 'quest' | 'adapter' | 'profile' | 'noteParts'>;
+  questStatus?: string | null;
+  paused?: boolean;
+  workspace?: string | null;
+  doors: readonly ToolDoor[];
+  answer: AccountsAnswer | null | undefined;
+  label: (account: string | null) => string;
+  now: Date;
+}): string[] | null {
+  if (!limitedLine(session, questStatus, paused)) return null;
+  const wait = limitWaitOf({ session, workspace, doors, answer, now });
+  return wait ? limitWaitSaid(t, wait, label) : null;
+}
+
+/**
+ * A conversation's wait in words (LIMITRESUME1d2, D206 §3.7): the walk's sentence where the page holds the accounts and the walk
+ * waits, else the driver's own `chat.limit-waits` line in the reader's language (a browser, or a walk not read yet). Null once that
+ * line's moment has passed and no walk says more: the look wakes it then, and a line saying a time gone by would claim a wait.
+ */
+export function chatLimitWaitSaid(t: Translate, { held, wait, label, language, names, now }: {
+  held: ChatLimitHeld;
+  wait: LimitWait | null;
+  label: (account: string | null) => string;
+  language: string;
+  names?: AccountNames;
+  now: Date;
+}): string[] | null {
+  if (wait) return limitWaitSaid(t, wait, label);
+  if (!(Date.parse(held.until) > now.getTime())) return null;
+  return [noteText(t, { note: null, parts: [held.part] }, language, names)];
 }

@@ -240,6 +240,15 @@ public sealed partial class HelpCoverageTests
         + "`daoris-driver sessions go-on-new` and the screen's press once the page has it (D137 §2.2).");
 
     /// <summary>
+    /// LIMITRESUME1d2's <c>SESSION_STOP_WAITING</c> (D206 §3.7): exempt, since telling a conversation its limit holds to wait no more
+    /// is the person's own word on their conversation, and only they decide it goes on when they next write.
+    /// </summary>
+    private static readonly Exempt StopWaitingDoor = new(
+        "telling a conversation its account's limit holds to wait no more is the person's own word on their conversation (D206 §3.7): "
+        + "nothing goes on by itself after it, and the person's next word goes on as any word to an ended conversation does, "
+        + "so Ask Daoris proposes none; *Stop waiting* beside the conversation's wait is the door.");
+
+    /// <summary>
     /// MSG1f3's <c>daoris-driver sessions start-from</c> (D137 §2.2, D50), a verb of the headless host: exempt, since it moves
     /// the person's words into a conversation of their own, the person's press as the screen's is (D133 §1).
     /// </summary>
@@ -681,6 +690,9 @@ public sealed partial class HelpCoverageTests
         // SESSCTX1c part B (D189 point 3): *Go on with Daoris's brief*, on a session's page and in Ask Daoris's own room.
         ("work", "useGoOnBrief", null, GoOnBriefDoor),
         ("help", "useGoOnBrief", null, GoOnBriefDoor),
+        // LIMITRESUME1d2 (D206 §3.7): *Stop waiting* on a conversation its account's limit holds, on a session's page and in Ask Daoris.
+        ("work", "useStopWaiting", null, StopWaitingDoor),
+        ("help", "useStopWaiting", null, StopWaitingDoor),
         ("work", "useHandOver", null, HandOverDoor),
         // MIXAGENT2b (D163 points 2 and 3): *Ask another agent…* and the person's yes to an agent's ask; HELPERNO1: their no.
         ("work", "useAskHelper", null, HelperAskDoor),

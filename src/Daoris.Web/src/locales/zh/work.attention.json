@@ -60,6 +60,7 @@
   "work.attention.account-wait": "等待账户",
   "work.attention.signed-out": "已退出登录",
   "work.attention.accounts.cooling": "{{account}} 冷却至 {{when}}",
+  "work.attention.accounts.unkept": "Daoris 无法保存 {{account}} 的冷却状态",
   "work.attention.accounts.out": "{{accounts}} 于 {{when}} 读取为已退出登录",
   "work.attention.accounts.outUnread": "{{accounts}} 已退出登录",
   "work.attention.accounts.never": "{{accounts}} 状态未知，从未读取",

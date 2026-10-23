@@ -10,7 +10,7 @@ import type { AccountNamer } from '../agents/tools';
 import { type Consideration, sittingSentence, type TrustHold, waitsForAccount } from '../data/signals';
 import { Button, Icon, type IconName, Inline, Menu, Pill, Prose, QUEST_TONE, SectionTitle, SESSION_TONE, shownKey } from '../design/ui';
 import { type SessionGrouping, shownOf } from '../work/groups';
-import { liveParts } from '../work/noteLines';
+import { joinLines, liveParts } from '../work/noteLines';
 import { placedFact } from '../work/rail/SessionRow';
 import { lastAbandon, pauseAsk, type WorkDoor, workOffers, type WorkPlan, type WorkTarget } from '../work/pausing/pausing';
 import { ClearAsk } from '../work/history/ClearAsk';
@@ -150,7 +150,7 @@ export function QuestPage({
   quest, lanes, question, sitting, hold, chain = [], session,
   busy = false, retrying = false, trusting = false, granting = false, dismissing = false, forwarding = false, accepting = false,
   onRespond, onDelete, onDismiss, onForward, onRetry, onTrusting, onGrant, onOpenQuest, onAttend, onOpenAsk, onAccept, work, history, trace,
-  nameOf, review, workflow, grouping, reopen, goOn, moves, ends = [],
+  nameOf, review, workflow, grouping, reopen, goOn, moves, ends = [], limitWait,
 }: {
   /**
    * Its closure graph's ends (FABRIC-CLOSE1j2, the fabric events design §E5), which this machine's driver reads from its unit's record
@@ -189,6 +189,11 @@ export function QuestPage({
    * and its trace say each account by it. Absent, as in a browser, each record's id is said.
    */
   nameOf?: AccountNamer;
+  /**
+   * When its session, a line its account's limit cut off, goes on by itself and how (LIMITRESUME1d2, D206 §3.7): the head's sentence,
+   * worded by its organism from the accounts it holds (`limitWaitLines`). Absent, as in a browser, nothing is claimed.
+   */
+  limitWait?: readonly string[] | null;
   /**
    * How it came to be (TRACE1b, D143, D50), folded at the foot of its page: the page's organism holds the fold and the read.
    * Absent in a browser, which has no driver to read this machine's records (D47 §4).
@@ -992,6 +997,8 @@ export function QuestPage({
           </div>
           {/* What it waits on, in the row's own words (D126 §2.4): its last end reads as finished beside a quest that is not. */}
           {waitsOn && <p className="m-0 mt-2 text-body text-ink-soft">{t(waitsOn.line, waitsOn.values)}</p>}
+          {/* Its limit's wait, the head's own sentence (LIMITRESUME1d2): when it goes on by itself, and how. */}
+          {limitWait && limitWait.length > 0 && <p className="m-0 mt-2 text-body text-ink-soft">{joinLines(t, limitWait)}</p>}
           {/* A working session's past ending is left out of the reading, never of the record (WAITSHOWN1, D137 §2.3). */}
           <Note
             note={session.state === 'working' ? (session.noteParts?.length ? undefined : session.note) : session.note}

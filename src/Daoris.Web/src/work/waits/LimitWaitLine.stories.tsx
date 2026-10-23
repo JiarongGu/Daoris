@@ -22,8 +22,10 @@ const narrow: Decorator = (Story) => <Main width={600}><Story /></Main>;
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
 /** A driven line's wait, in the story's language, with *Go on now with…*, *Try now* and *Pause quest…*. */
-function Waiting({ own = true, stated = true, notLifted = null, refused = false }: {
+function Waiting({ own = true, stated = true, notLifted = null, refused = false, conversation = null }: {
   own?: boolean; stated?: boolean; notLifted?: string | null; refused?: boolean;
+  /** A conversation's line (LIMITRESUME1d2): *Stop…* while it runs, *Stop waiting* once it ended, never *Pause quest…*. */
+  conversation?: 'running' | 'ended' | null;
 }) {
   const { t } = useTranslation();
   const wait: LimitWait = { until: UNTIL, account: own ? 'work' : 'home', own, stated, notLifted };
@@ -33,7 +35,9 @@ function Waiting({ own = true, stated = true, notLifted = null, refused = false 
       refusal={refused ? t('errors.DRIVER_NOT_READY') : null}
       onGoOnNow={nothing}
       onTryNow={nothing}
-      onPause={nothing}
+      onPause={conversation ? undefined : nothing}
+      onStop={conversation === 'running' ? nothing : undefined}
+      onStopWaiting={conversation === 'ended' ? nothing : undefined}
     />
   );
 }
@@ -67,3 +71,14 @@ export const NoResetNotLiftedNarrowChineseDark: Story = { args: { stated: false,
 
 /** *Try now* refused: the sentence said under the presses. */
 export const Refused: Story = { args: { refused: true } };
+
+/** A conversation that ended waiting (LIMITRESUME1d2): *Stop waiting* beside *Go on now with…* and *Try now*. */
+export const ConversationEnded: Story = { args: { conversation: 'ended' } };
+
+/** The same in 中文. */
+export const ConversationEndedChinese: Story = { args: { conversation: 'ended' }, decorators: [chinese] };
+
+/** A conversation still running, waiting with its words, at 600 px in 中文 and dark: *Stop…* ends it. */
+export const ConversationRunningNarrowChineseDark: Story = {
+  args: { conversation: 'running', own: false }, decorators: [chinese, dark, narrow],
+};

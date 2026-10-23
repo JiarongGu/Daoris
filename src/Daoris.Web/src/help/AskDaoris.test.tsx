@@ -1310,6 +1310,42 @@ describe('Ask Daoris’s history', () => {
     expect(screen.getByLabelText('Message')).toHaveAttribute('placeholder', expect.stringMatching(/^write to go on in this conversation/));
   });
 
+  /**
+   * LIMITRESUME1d2 (D206 §3.7): a conversation its account's limit holds says so above the box, read from its events; its *Go on now
+   * with…* is Ask Daoris's own door (`ResumeWords.HelpDoor`), a new conversation from this one, never the hand-over, which refuses Ask
+   * Daoris. No accounts read, the driver's own line says when the first is ready again.
+   */
+  it('says a limit holds it, and goes on now in a new conversation from it', async () => {
+    withHistory([row({})], { sessionId: 'fr0m0000', message: 'opened', from: EARLIER.id });
+    const until = new Date(Date.now() + 3 * 3600_000).toISOString();
+    const answered = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => {
+      if (type === 'SESSION_HISTORY') {
+        return {
+          session: EARLIER.id, earlier: false, latest: 3,
+          events: [
+            { seq: 1, at: EARLIER.updated, kind: 'user', origin: 'person', text: 'and a remote?' },
+            { seq: 2, at: EARLIER.updated, kind: 'turn', stopReason: 'error' },
+            {
+              seq: 3, at: EARLIER.updated, kind: 'note', text: 'No account has room now.',
+              parts: [{ code: 'chat.limit-waits', values: { owner: 'claude-code', until, why: 'stated' } }],
+            },
+          ],
+        };
+      }
+      return answered(module, type, ...rest);
+    });
+    show();
+
+    const line = await screen.findByRole('group', { name: 'Waiting for a limit' });
+    expect(line).toHaveTextContent(/^No account of `claude-code` has room now; the first is ready again at /);
+    expect(within(line).getByRole('button', { name: 'Stop waiting' })).toBeInTheDocument();
+    await userEvent.click(within(line).getByRole('button', { name: 'Go on now with…' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_START_FROM', { payload: { id: EARLIER.id } }));
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HAND_OVER', expect.anything());
+  });
+
   /** One whose own conversation was not kept cannot go on in itself: a new one starts from its words, handed as a file. */
   it('starts a new conversation from the words of one that cannot go on in itself', async () => {
     withHistory([row({ resumable: false })], { sessionId: 'fr0m0000', message: 'opened', from: EARLIER.id });

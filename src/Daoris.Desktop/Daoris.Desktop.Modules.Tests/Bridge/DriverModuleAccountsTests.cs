@@ -177,6 +177,25 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Assert.Empty(claude.GetProperty("accounts").EnumerateArray());
         // Nothing said of its windows: absent, never zero (D57).
         Assert.Equal(JsonValueKind.Null, claude.GetProperty("own").GetProperty("said").ValueKind);
+        // Kept in the file: nothing said of a cool-off held in memory alone (LIMITRESUME1d2).
+        Assert.False(own.TryGetProperty("unwritten", out _));
+    }
+
+    /// <summary>
+    /// LIMITRESUME1d2 (D206 §3.1): a cool-off the file would not take is held in memory, and answered as one, so the band says Daoris
+    /// could not keep it beside its account.
+    /// </summary>
+    [Fact]
+    public async Task A_cool_off_the_file_would_not_take_is_answered_held_in_memory_only()
+    {
+        Accounts("claude-code", "account-1");
+        // A folder where the file goes: the write is refused, as a held file refuses it.
+        Directory.CreateDirectory(AccountCooling.PathOf(Home));
+        Assert.False(AccountCooling.Keep(Home, new CoolingEntry("claude-code", "account-1", Now.AddHours(1), true, "session", Now, "s1"), Now));
+
+        var claude = Agent(await AnswerAsync(Module(), "ACCOUNTS"), "claude-code");
+
+        Assert.True(Account(claude, "account-1").GetProperty("cooling").GetProperty("unwritten").GetBoolean());
     }
 
     /// <summary>

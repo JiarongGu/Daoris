@@ -78,7 +78,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
                         Reads = owner.Any(door => roster.UsageOf(door.Door) is not null),
                         Own = new
                         {
-                            Cooling = CoolingShown(cooling.FirstOrDefault(entry => Same(entry.Agent, agent) && entry.Account is null)),
+                            Cooling = CoolingShown(cooling.FirstOrDefault(entry => Same(entry.Agent, agent) && entry.Account is null), roster.Home),
                             Offered = offered.FirstOrDefault(entry => Same(entry.Agent, agent) && entry.Account is null)?.Until,
                             // What its agent last said of its windows (CODEXUSE3), read at a person's press and kept under its
                             // own key: beside the accounts, never one of them, so no scope's near reads it.
@@ -88,7 +88,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
                         {
                             Name = account,
                             DisplayName = names.GetValueOrDefault(account),
-                            Cooling = CoolingShown(cooling.FirstOrDefault(entry => Same(entry.Agent, agent) && Same(entry.Account, account))),
+                            Cooling = CoolingShown(cooling.FirstOrDefault(entry => Same(entry.Agent, agent) && Same(entry.Account, account)), roster.Home),
                             Offered = offered.FirstOrDefault(entry => Same(entry.Agent, agent) && Same(entry.Account, account))?.Until,
                             // Each window's projection beside its reading (USAGEPROBE1b): the roster's own, over its ledger held in
                             // memory and read on as the history grows, so a tick re-parses no month.
@@ -213,10 +213,14 @@ public sealed class AccountsRoutes(DriverLoop loop)
         Room = room,
     };
 
-    private static object? CoolingShown(CoolingEntry? entry) => entry is null ? null : new
-    {
-        entry.Until, entry.Stated, entry.Window, entry.Seen, entry.AssumedZone, entry.NotBelieved,
-    };
+    /// <remarks>
+    /// <c>Unwritten</c> (LIMITRESUME1d2, D206 §3.1) is said only where the cool-off is held in memory, the file not having taken it
+    /// (<see cref="AccountCooling.Unwritten(string, string, string?)"/>): the band says Daoris could not keep it.
+    /// </remarks>
+    private static object? CoolingShown(CoolingEntry? entry, string home) => entry is null ? null
+        : AccountCooling.Unwritten(home, entry.Agent, entry.Account)
+            ? new { entry.Until, entry.Stated, entry.Window, entry.Seen, entry.AssumedZone, entry.NotBelieved, Unwritten = true }
+            : new { entry.Until, entry.Stated, entry.Window, entry.Seen, entry.AssumedZone, entry.NotBelieved };
 
     /// <param name="use">How the list the account's row is measured by is used; none for the tool's own sign-in, which no list holds.</param>
     private static object? SaidShown(AccountSaid? said, DateTimeOffset now, AccountProjection? projection = null, RotationUse? use = null) =>

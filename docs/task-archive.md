@@ -20091,3 +20091,11 @@ backlog. Detail: D206's LIMITRESUME1d note.
 nothing (generated files aside, the backlog read by rows). The landing refuses such a tree as `carried` before any replay, so no
 rebase is told, and the head, the removals and the clean-up take it as landed. A squash's recorded subject was not used. Detail:
 D102's SQUASHSEEN1 note; FIX-LOG 2026-10-24.
+## LIMITRESUME1d2 — a conversation its limit holds says so, and every reader says limited (2026-10-24, D206)
+
+> **LIMITRESUME1d2**, what 1d left: a conversation's line (its head and foot read `chat.limit-waits` from its events, with *Go on now with…*, Ask Daoris's `HelpDoor`, *Stop* or *Stop waiting* through `useStopWaiting`, which then needs its `HelpCoverageTests` row, and *Try now*); the sentence on the session's row and the quest's page (`work/waits/limitWait.ts` is the one rule); `account.cooling-unkept` in the band (`AccountCooling.Unwritten` pushed on the account-wait row's named account); §3.1's other readers beyond the terminal (Ask Daoris's session tools, Overview's counts and the list's filters). Proof: page tests and stories in en and zh, the coverage row.
+
+**Outcome** 2026-10-24: a conversation its account's limit holds says at its head and foot, and in Ask Daoris above its box, when it
+goes on by itself, read from its events, with *Go on now with…*, *Stop…* or *Stop waiting* and *Try now*; a limited line's row and
+its quest's page say the same sentence; the band says a cool-off Daoris could not keep beside its account; Ask Daoris's session go
+says *limited*. Overview's counts and the list's filters already read the flag. Detail: D206's LIMITRESUME1d2 note.

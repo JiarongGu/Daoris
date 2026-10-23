@@ -114,6 +114,13 @@ describe('a session row', () => {
     }
   });
 
+  /** LIMITRESUME1d2 (D206 §3.7): its row says when it goes on by itself, the head's own sentence, handed in worded. */
+  it('says when a limited line goes on by itself, as its head says it', () => {
+    const limited = session({ state: 'failed', limit: true, quest: '7a82cc' });
+    render(<SessionRow session={limited} limitWait="Waiting for a limit to reset: it resumes by itself at Oct 24, 11:02, on work." />);
+    expect(screen.getByText(/Waiting for a limit to reset: it resumes by itself at Oct 24, 11:02, on work\./)).toBeInTheDocument();
+  });
+
   /**
    * UX5 U17, decided by the reference console: a live chat whose turn has ended is idle, a quiet
    * mark and the word, and working only while a turn is in flight. It read *working* between turns.

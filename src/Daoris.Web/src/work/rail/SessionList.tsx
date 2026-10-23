@@ -42,6 +42,8 @@ export type SessionRowFacts = {
   entry?: EntryFacts | null;
   /** Its part in its repository's heavy-run slot (HEAVYSLOT1), where it holds it or waits for it. */
   heavy?: HeavyPart | null;
+  /** When a line its account's limit cut off goes on by itself, and on which account (LIMITRESUME1d2, `limitWaitLines`' first). */
+  limitWait?: string | null;
   /** The title of the session its wait is behind, where the rail holds it (HEAVYSLOT1); absent, its id. */
   heavyBehind?: string | null;
 };

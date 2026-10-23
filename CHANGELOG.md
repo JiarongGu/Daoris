@@ -9,6 +9,11 @@ with the version and date at release.
   (SQUASHSEEN1). Those sessions are no longer told to rebase onto work the line already holds. Each one's page offers *Discard
   branch…* in place of *Accept…*, saying a squash carried its work, and its tree is tidied as a landed one is. A session with
   work the line truly lacks is still asked to rebase.
+- A conversation that waits for an account's limit now says so at its top and above its box, and in Ask Daoris: when it goes on by
+  itself, and on which account (LIMITRESUME1d2). Beside it, *Go on now with…* goes on now with another agent or account (in Ask
+  Daoris, a new conversation from this one), *Stop waiting* lets it go on only when you next write, and *Try now* offers the account
+  again. A quest's session that waits for a limit says when it goes on in its row and on the quest's page, and *What needs you* says
+  when Daoris could not keep an account's cool-off.
 - A quest's session that waits for an account's limit now says so under its header: when it goes on by itself, and on which account,
   whether it goes on in its own conversation or in a new session with Daoris's brief, and when a reset did not lift the limit
   (LIMITRESUME1d). Beside it, *Go on now with…* hands it to another agent or account now, *Pause quest…* holds it, and *Try now*

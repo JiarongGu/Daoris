@@ -88,8 +88,13 @@ function callLine(t: TFunction, calling: NonNullable<SessionGrouping['calling']>
 
 export function SessionRow({
   session, quest, opening, root, where, reads, continues, helps, taking, lastTurn, grouping, place, archived = false,
-  selected = false, onSelect, acts = [], onAct, name, parts, heavy, heavyBehind,
+  selected = false, onSelect, acts = [], onAct, name, parts, heavy, heavyBehind, limitWait,
 }: {
+  /**
+   * When a line its account's limit cut off goes on by itself, and on which account (LIMITRESUME1d2, D206 §3.7): the head's first
+   * sentence, worded by the caller from the accounts it holds. Absent, nothing is claimed.
+   */
+  limitWait?: string | null;
   /**
    * Its part in its repository's heavy-run slot (HEAVYSLOT1, the UI/UX design §3.5): the gate it runs, the gate it failed at, or the
    * run it waits behind, said in place of the call it is inside, since that call is the heavy run. Absent, nothing is claimed.
@@ -195,6 +200,7 @@ export function SessionRow({
     archived ? t('work.rail.archived') : null,
     parts && parts > 1 ? t('work.rail.parts', { count: parts }) : null,
     placed ? t(placed.line, placed.values) : null,
+    limitWait ?? null,
     calling ? callLine(t, calling) : null,
     heavyPart ? heavyLine(t, heavyPart, (id) => heavyBehind || id) : null,
     quiet ? t('work.rail.quiet', { time: elapsed(quiet) }) : null,

@@ -232,11 +232,12 @@ internal sealed class HelpGoProposals : IHelpProposalKind
         if (WordsNever.IsHelp(record)) return (null, $"`{record.Id}` is Ask Daoris's own conversation; it opens here, not in Sessions.");
         if (record.Teammate) return (null, $"`{record.Id}` is a teammate's session: it runs on their machine, and nothing here reaches it.");
 
-        // Where it ran, an intake by its ask (D65 §1b); and whether it waits on the person by the list's own rule, or ended.
+        // Where it ran, an intake by its ask (D65 §1b); and whether it waits on the person by the list's own rule, or ended, a failure
+        // an account's limit made said limited (LIMITRESUME1d2, D206 §3.1).
         var where = record.Ask is { } ask ? $" answering ask `#{ask}`" : $" in `{record.Repository}`";
         var stands = SessionGroups.WaitsOnYou(record.Id, record.State, record.Answer) ? ", waiting on you"
             : record.Live ? ""
-            : $", {record.State}";
+            : $", {ShownState.Of(record)}";
         return ((record.Id, $" → session `{record.Id}`{where}{stands}"), null);
     }
 
