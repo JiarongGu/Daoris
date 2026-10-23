@@ -8,6 +8,20 @@ export const WAIT_PART = 'data-wait-part';
 /** The parts drawn now: a strip standing aside is `hidden`, and takes none of the height. */
 const PARTS = `[${WAIT_PART}]:not([hidden])`;
 
+const heightOf = (element: Element) => element.getBoundingClientRect().height;
+
+/** The parts' height as drawn. */
+const partsOf = (panel: HTMLElement) => [...panel.querySelectorAll(PARTS)].reduce((total, part) => total + heightOf(part), 0);
+
+/**
+ * The room the conversation and the waits share: the main area beside the panel in its column and the parts as drawn. It holds
+ * still as a part grows, the main area giving what the part takes. 0 where there is no main area beside it, or nothing is laid out.
+ */
+function roomOf(panel: HTMLElement): number {
+  const main = [...(panel.parentElement?.children ?? [])].find((sibling) => sibling.getAttribute('data-region') === 'main');
+  return main ? heightOf(main) + partsOf(panel) : 0;
+}
+
 /**
  * **The waiting panel** (WAITPANEL1): what waits on the person at the foot of a session's conversation, the strip and the box
  * under it, with its top edge a handle that sizes it and the conversation's own presses above it.
@@ -17,8 +31,9 @@ const PARTS = `[${WAIT_PART}]:not([hidden])`;
  * and the box's field is never in it, so words are always typed in sight. Fewer waits than the height take their own height. A
  * drag starts from what is drawn, so the edge moves with the pointer from the first pixel.
  *
- * **Bounded both ways**: the floor (`WAIT_PANEL.min`) keeps a line of the strip and a line under it; the ceiling is half the
- * window, in the drag and again in the page's CSS, so a height kept in a tall window never takes a short window's conversation.
+ * **Bounded both ways**: the floor (`WAIT_PANEL.min`) keeps a line of the strip and a line under it; the ceiling leaves the
+ * conversation's main area its own floor (`WAIT_PANEL.conversation`) of the room the two share in the column, read again as the
+ * column changes, so a height kept in a tall window never takes a short window's conversation, nor does the output panel's.
  *
  * **The output panel's handle, turned to this panel** (D55): a separator that takes the focus, ↑ and ↓ a step, Home and End to
  * either end, and a double-click back to where it started, as a sash does. Drawn only while a part is: with nothing waiting there
@@ -43,6 +58,7 @@ export function WaitPanel({ height, onResize, onReset, controls, children }: {
   const { t } = useTranslation();
   const panel = useRef<HTMLDivElement>(null);
   const [parts, setParts] = useState(0);
+  const [room, setRoom] = useState(0);
 
   // Which parts are drawn, read again as the strip comes, goes or stands aside: a hook-free child says so by its mark alone.
   useLayoutEffect(() => {
@@ -55,13 +71,26 @@ export function WaitPanel({ height, onResize, onReset, controls, children }: {
     return () => observer?.disconnect();
   }, []);
 
-  const max = waitPanelMax(typeof window === 'undefined' ? 0 : window.innerHeight);
+  // The room the conversation and the waits share, read again as the column or the main area changes size (a window resized,
+  // the output panel dragged, a part come or gone).
+  useLayoutEffect(() => {
+    const node = panel.current;
+    const column = node?.parentElement;
+    if (!node || !column) return undefined;
+    const read = () => setRoom(roomOf(node));
+    read();
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(read);
+    for (const watched of column.children) observer?.observe(watched);
+    observer?.observe(column);
+    return () => observer?.disconnect();
+  }, [parts]);
+
+  const max = waitPanelMax(typeof window === 'undefined' ? 0 : window.innerHeight, room);
   const clamp = (next: number) => Math.round(Math.min(max, Math.max(WAIT_PANEL.min, next)));
   const kept = clamp(height);
   // What the parts take now; a page that lays nothing out (a test's) says nothing, and the kept height stands for it.
   const drawn = () => {
-    const sizes = [...(panel.current?.querySelectorAll<HTMLElement>(PARTS) ?? [])].map((part) => part.getBoundingClientRect().height);
-    const sum = sizes.reduce((total, size) => total + size, 0);
+    const sum = panel.current ? partsOf(panel.current) : 0;
     return sum > 0 ? Math.min(kept, sum) : kept;
   };
 
@@ -79,9 +108,8 @@ export function WaitPanel({ height, onResize, onReset, controls, children }: {
     window.addEventListener('pointerup', done);
   };
 
-  // Each part's share of the height, and never more than its share of half the window, whatever was kept.
-  const share = Math.max(1, parts);
-  const style = { '--wait-part': `min(${kept / share}px, ${(WAIT_PANEL.share * 100) / share}vh)` } as CSSProperties;
+  // Each part's share of the height, held under the ceiling whatever was kept.
+  const style = { '--wait-part': `${Math.floor(kept / Math.max(1, parts))}px` } as CSSProperties;
 
   return (
     <div ref={panel} data-region="wait-panel" style={style} className="relative flex shrink-0 flex-col">

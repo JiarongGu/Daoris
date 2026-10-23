@@ -99,7 +99,7 @@ describe('the waiting panel', () => {
     expect(window.localStorage.getItem(WAIT_PANEL_KEY)).toBeNull();
   });
 
-  it('holds a height kept in a taller window at half of this one', () => {
+  it('holds a height kept in a taller window at half of this one, where no column is laid out to read', () => {
     window.localStorage.setItem(WAIT_PANEL_KEY, '700');
     render(<Held />);
     expect(now()).toBe(400);
@@ -146,12 +146,12 @@ describe('the waiting panel', () => {
     expect(screen.getByRole('separator')).toBeInTheDocument();
   });
 
-  it('gives each part drawn its share of the height, never more than its share of half the window', async () => {
+  it('gives each part drawn its share of the height', async () => {
     const { container, rerender } = render(
       <WaitPanel height={300} onResize={() => {}}><section {...{ [WAIT_PART]: '' }}>one</section></WaitPanel>,
     );
     const panel = container.querySelector<HTMLElement>('[data-region="wait-panel"]')!;
-    expect(panel.style.getPropertyValue('--wait-part')).toBe('min(300px, 50vh)');
+    expect(panel.style.getPropertyValue('--wait-part')).toBe('300px');
     rerender(
       <WaitPanel height={300} onResize={() => {}}>
         <section {...{ [WAIT_PART]: '' }}>one</section>
@@ -159,7 +159,28 @@ describe('the waiting panel', () => {
       </WaitPanel>,
     );
     await act(async () => {});
-    expect(panel.style.getPropertyValue('--wait-part')).toBe('min(150px, 25vh)');
+    expect(panel.style.getPropertyValue('--wait-part')).toBe('150px');
+  });
+
+  it('leaves the conversation its floor in the column, whatever the window: the waits take what is left of their shared room', () => {
+    // The column as laid out: a main area of 300 px over a part of 100, so the two share 400 and the waits take at most 160.
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      const height = this.getAttribute('data-region') === 'main' ? 300 : this.hasAttribute(WAIT_PART) ? 100 : 0;
+      return { height, width: 0, top: 0, left: 0, right: 0, bottom: height, x: 0, y: 0, toJSON: () => ({}) } as DOMRect;
+    });
+    window.localStorage.setItem(WAIT_PANEL_KEY, '300');
+    render(
+      <div>
+        <main data-region="main">the conversation</main>
+        <Held />
+      </div>,
+    );
+    expect(handle()).toHaveAttribute('aria-valuemax', String(400 - WAIT_PANEL.conversation));
+    expect(now()).toBe(400 - WAIT_PANEL.conversation);
+    // A drag starts from what the parts take as drawn (100 px), not from the height kept.
+    fireEvent.keyDown(handle(), { key: 'ArrowUp' });
+    expect(now()).toBe(100 + WAIT_PANEL.step);
+    expect(waitPanelMax(800, 200)).toBe(WAIT_PANEL.min);
   });
 
   /**

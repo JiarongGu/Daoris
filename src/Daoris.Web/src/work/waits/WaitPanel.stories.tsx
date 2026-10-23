@@ -133,5 +133,5 @@ export const NothingWaiting: Story = { args: { holds: 'nothing' } };
 /** At the floor: a line of what waits, the rest scrolled, the conversation given the column. */
 export const AtTheFloor: Story = { render: () => <Column height={72} onResize={nothing} holds="park" /> };
 
-/** Kept tall, past half the window: held at half, so the conversation above stays readable. */
+/** Kept taller than the column: held where the conversation keeps its floor (240 px) above the panel, so it stays readable. */
 export const KeptTall: Story = { render: () => <Column height={2000} onResize={nothing} holds="stripAndPark" /> };
