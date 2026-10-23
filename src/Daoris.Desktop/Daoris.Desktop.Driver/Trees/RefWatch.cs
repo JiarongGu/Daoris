@@ -366,6 +366,7 @@ public sealed class RefWatch : IAsyncDisposable
             if (repository is null) continue;
             Heard?.Invoke(repository.Repository, mine);
             PullRequestMoments.Moved(_home, repository); // FABRIC-END6: origin's line may have moved, link 6's moment.
+            RegistryFollowing.Heard(_home, repository); // SETUPSTATE1: and its own line, moved outside Daoris, is the registry's to follow.
             var written = await _keep(repository, ct).ConfigureAwait(false);
             if (written <= 0) continue;
             acted += written;

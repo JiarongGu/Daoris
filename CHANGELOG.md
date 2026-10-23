@@ -9,6 +9,10 @@ with the version and date at release.
   edge, or focus the edge and use the arrow keys, Home and End; a double-click puts it back. Your height is kept for next time, it
   starts at 240 px, and the conversation above always keeps room to read. *To the top* and *Back to bottom* now sit just above the
   panel, never under it.
+- A repository set up from its page now reads as adopted once its set-up reaches its line, with no reload (SETUPSTATE1). A set-up
+  that landed on a branch for review, merged on the remote and then pulled outside Daoris, was not registered until Daoris
+  started again. Now Daoris notices the line move, registers the repository from it at its next look, and tells every open
+  window.
 
 - Finishing or declining a parked session now releases its tree's lock (TREELOCK2). The tidy also clears stale session locks
   at both tree locations. `trees remove --force` can remove a tree locked by an ended session and keeps trees a running or

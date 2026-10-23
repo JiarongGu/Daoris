@@ -52,6 +52,30 @@ public sealed class DriverModuleRegistryTests : DriverModuleBridge
         Assert.Contains("its checkout is not where its row says", answer.GetProperty("said").GetString());
     }
 
+    /// <summary>
+    /// 🔴 SETUPSTATE1 (the owner's report, 2026-10-23): the look's follow registered a set-up repository from its line, adopted, and
+    /// no route's press was behind it, so no window was told and the page read it not adopted until a reload. A follow that sent a
+    /// registration tells the windows <c>registry</c>; one that sent nothing (unchanged, not set up, refused) tells nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_follow_that_registered_a_repository_tells_the_windows_the_registry_moved()
+    {
+        var loop = Loop();
+        using var client = new ServiceClient("http://stand-in", null, new HttpClient(new StandInRegistry()));
+        await loop.ComeUpAsync(client);
+        bool Told() => Raised.Any(message => message.Type == StatePublisher.Type
+            && message.Payload is StateChanged { Scopes: var scopes } && scopes.SequenceEqual(["registry"]));
+
+        client.Followed(new RegistrationFollowed("game", RegistryOutcome.NotSetUp, "game is not set up"));
+        client.Followed(new RegistrationFollowed("engine", RegistryOutcome.Unchanged, "engine is as its row holds"));
+        Assert.False(Told());
+
+        client.Followed(new RegistrationFollowed("game", RegistryOutcome.Registered, "registered from its line", "main", "0123456789ab", Sent: true));
+        await UntilAsync(Told);
+        var told = Assert.Single(Raised, message => message.Type == StatePublisher.Type);
+        Assert.Null(((StateChanged)told.Payload!).Sessions);
+    }
+
     /// <summary>The registry door, standing in: `game` with a checkout that is not there, `engine` a teammate's row.</summary>
     private sealed class StandInRegistry : HttpMessageHandler
     {

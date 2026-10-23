@@ -1780,6 +1780,58 @@ describe('an unadopted repository on this machine (INT3c)', () => {
   });
 
   /**
+   * 🔴 SETUPSTATE1 (the owner's report, 2026-10-23): a set-up's work landed on the line and the driver's follow registered the
+   * repository from it, adopted, but the page still read it not adopted until a reload: nothing told the window the registry moved.
+   * The shell tells `registry` once a follow sends a registration (`DriverLoop`'s `RegistryFollowed`), and the page reads it again.
+   */
+  it('reads a repository set up from its page as adopted once its line is registered, with no reload (SETUPSTATE1)', async () => {
+    let adopted = false;
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (!url.startsWith('/api/registry')) return respond(url);
+      return Response.json(WITH_OUTSIDERS.map((row) => (row.repository === 'newbie' && adopted
+        ? { ...row, adopted: true, summary: 'A repository set up for agents.' }
+        : row)));
+    }));
+    invoke.mockImplementation(async (module: string, type: string) => {
+      if (module !== 'DAORIS.DRIVER') return undefined;
+      if (type === 'HARNESSES') return roster('claude-code-acp');
+      if (type === 'SETUP_PLAN') return NEWBIE_SETUP;
+      if (type === 'SETUP_PRESS') {
+        return {
+          published: true, message: 'Asked as `#a1b2c3d4` in `default`.', askId: 'a1b2c3d4', questId: 'q1a2b3c4',
+          added: NEWBIE_SETUP.rules, plan: NEWBIE_SETUP,
+        };
+      }
+      return { ...DRIVER_STATE, adapter: 'claude-code-acp' };
+    });
+    show(<><Hub /><ProjectsView notify={() => {}} /></>);
+    const page = await chooseRepository('newbie');
+    const setUp = within(page).getByRole('heading', { name: 'Set up for agents' }).closest('section')!;
+    await userEvent.click(within(setUp).getByRole('button', { name: 'Show the plan' }));
+    await userEvent.click(await within(setUp).findByRole('button', { name: 'Set it up' }));
+    expect(await within(setUp).findByText(/its own session takes it at the next look/)).toBeInTheDocument();
+    expect(within(repositoryMain()).getByText('Adoption steps')).toBeInTheDocument();
+
+    // Its session's work lands and the look's follow registers it from the line. Untold, the window keeps what it read.
+    adopted = true;
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(within(repositoryMain()).getByText('Adoption steps')).toBeInTheDocument();
+    // The shell says the registry moved, and the page reads it again.
+    await act(async () => {
+      eventHandlers.get('DAORIS.STATE_CHANGED')?.({ scopes: ['registry'] });
+    });
+
+    const main = within(repositoryMain());
+    await waitFor(() => expect(main.queryByText('Adoption steps')).toBeNull());
+    expect(main.queryByRole('heading', { name: 'Set up for agents' })).toBeNull();
+    expect(main.queryByText('not adopted')).toBeNull();
+    expect(main.getByText('A repository set up for agents.')).toBeInTheDocument();
+  });
+
+  /**
    * 🔴 UX5 U36: the group opened with an eight-line paragraph above its one row, read once and
    * scrolled past every visit after, the essay a settings page was before its rows (§4, `SettingRow`).
    * It leads with one line now, and the reasoning is on the info glyph, where a row keeps its why.

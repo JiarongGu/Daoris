@@ -5,6 +5,33 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-23 - A repository set up from its page stayed not adopted (SETUPSTATE1)
+
+- **Symptom:** the owner pressed *Set it up* on a work repository's page. Its set-up session finished, its work landed on a
+  branch for review, and the pull request was merged. The page still read *not adopted* and offered the set-up again.
+- **Root cause:** the press was not at fault. It published the quest, the session ran (06:33-06:53 UTC) and its branch landed
+  at 06:55 under the workspace's `branch` rule. The person merged the pull request on the remote, and at 06:57 the checkout's
+  `dev` was fast-forwarded by `pull --no-commit origin dev`, outside Daoris. The tidy then removed the landed branch as
+  `on-line`. Registration follows a line only where `lines-moved.json` says Daoris moved it (WSSETUP5: Daoris's own merge or
+  *Bring up to date*), and once at a start. No Daoris door moved this line, so nothing made it due, and the install's
+  `registry-followed.json` still read `not-set-up` from the 05:29 start. A second gap stood behind it: even a follow that
+  registers, the look's, has no press behind it. No route declared `registry`, so an open window would not have been told.
+- **Fix:** the ref watch already hears a repository's refs move. Now it also calls `RegistryFollowing.Heard`. Where the line,
+  as last followed, stands at another commit by git's own files (`TreeTips.Named`, no process), the line is recorded moved, and
+  the next look follows it. `DriverLoop.ComeUpAsync` turns `ServiceClient.RegistryFollowed` with `Sent` into a `registry`
+  state change, as `Moved` already becomes `sessions`. The page's hub already asks the registry again on that scope.
+- **Verify:** red first: `RefWatchTests.A_line_heard_moving_outside_daoris_is_due_for_the_registry` failed with nothing due
+  while the watch's call was out. `DriverModuleRegistryTests.A_follow_that_registered_a_repository_tells_the_windows_the_registry_moved`
+  failed (*the condition never held*) while the publication was out. Green: the driver's `RefWatchTests`,
+  `RegistryFollowingTests` and `RegistrationFollow*` (86), and the modules' `DriverModuleRegistryTests`,
+  `DriverLoopChatTakenUpTests` and `StatePublisherTests` (219). The page's behavior test
+  (`ProjectsView.test.tsx`, *reads a repository set up from its page as adopted…*) presses the set-up. It reads the page
+  unchanged while untold, and adopted, with no set-up offered, once `registry` is told. The file's 64 pass. Censuses: home,
+  read-shares, one-word, partials, optional-locks and live-logins are clean.
+- **Installed window, after the republish:** on a repository whose set-up merges outside Daoris, its page drops *not adopted*
+  and *Set up for agents* within a look of the pull. The machine log shows `registry.followed` with `registered` for it.
+  That repository itself is registered by the next start's follow of every line, or by its row's *Refresh*.
+
 ## 2026-10-23 - Finished sessions kept their trees locked (TREELOCK2)
 
 - **Symptom:** trees whose sessions the person finished stayed locked as `daoris session <id>`. Even `trees remove --force`

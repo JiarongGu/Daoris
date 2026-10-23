@@ -1093,6 +1093,12 @@ public sealed class DriverLoop(
         // the words were withdrawn before the run began, which announces no end) tells the windows `sessions` for it, so Ask Daoris's
         // list is not read again every 1.5 s while words wait, and a page that read `working` is told the record is not.
         service.Moved += moved => StatePublisher.Publish(eventBus, StateScopes.Sessions, moved.Session);
+        // SETUPSTATE1: a follow that sent a registration (a set-up's line registered by the look, a landing's press, the row's Refresh)
+        // tells the windows `registry`, so a repository set up from its page reads adopted with no reload. No route declares the look's.
+        service.RegistryFollowed += followed =>
+        {
+            if (followed.Sent) StatePublisher.Publish(eventBus, StateScopes.Registry);
+        };
         Words.Reached += (session, reach) =>
             _ = eventBus.EmitAsync("DAORIS", "SESSION_QUEUED", ConversationRoutes.QueueAnswer(this, session, reach));
 
