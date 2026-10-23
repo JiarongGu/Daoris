@@ -338,7 +338,8 @@ public sealed class AccountLimitHoldTests : IDisposable
 
         var sitting = Assert.Single(look.Considerations);
         Assert.Equal(StartVerdict.Blocked, sitting.Verdict);
-        Assert.Equal(CoolingWords.Hold(roster.CoolingOf("acp-stub", null)!, Zone), sitting.Reason);
+        // LIMITRESUME1b: a line a limit cut off says its own wait, the earliest reset and whose account.
+        Assert.Equal(LimitResume.Waits(roster.CoolingOf("acp-stub", null)!, Zone).Note, sitting.Reason);
         Assert.False(look.Progressed);
         Assert.Single(_ledger.Sessions);
         Assert.Contains(look.Events, line => line.StartsWith("held  #q1 → engine: ", StringComparison.Ordinal));

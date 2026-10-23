@@ -450,6 +450,11 @@ public static class NoteCodes
     // The person's words a failed turn carried wait to go again (TURNFAIL1), or, failing twice, wait for the person.
     public static readonly NoteCode EndedWordsWait = new("ended.words-wait", []);
     public static readonly NoteCode EndedWordsWaitYou = new("ended.words-wait-you", []);
+    // LIMITRESUME1b (D206): the person's words a turn an account's limit refused carried wait for the limit to lift, never failed twice.
+    public static readonly NoteCode EndedLimitWordsWait = new("ended.limit-words-wait", []);
+    // A limited line's own conversation that could not be resumed says LimitResumeRefused, with the limit's wake below (LIMITRESUME1b).
+    // LIMITRESUME1b (D206): an attempt refused by the same kind of limit (`hit`) just after its account's cool-off ended.
+    public static readonly NoteCode LimitNotLifted = new("limit.not-lifted", ["hit"]);
 
     // ACCESSSWAP1b (D183's note): Daoris ended a run at its turn's end because its repository's permission prompts changed (`from`, `to`,
     // each a permission prompts value), and the words it held go on in the same conversation under the new setup.
@@ -944,6 +949,9 @@ public static class NoteCodes
     // is a line of its own, its refresh `waits.read-again`. `profile` is the id as a shell spells it in the sign-in command.
     public static readonly NoteCode HeldCoolingAccount = new("held.cooling-account", ["owner", "account", "until", "why"]) { Why = Cooling };
     public static readonly NoteCode HeldCoolingOwn = new("held.cooling-own", ["owner", "until", "why"]) { Why = Cooling };
+    // LIMITRESUME1b (D206): a line a limit cut off, every account it may run on at its limit, goes on by itself once the earliest is ready.
+    public static readonly NoteCode HeldLimitWaits = new("held.limit-waits", ["owner", "account", "until"]) { Why = Cooling };
+    public static readonly NoteCode HeldLimitWaitsOwn = new("held.limit-waits-own", ["owner", "until"]) { Why = Cooling };
     public static readonly NoteCode HeldSignedOut = new("held.signed-out", ["owner", "account", "profile"]);
     // LOCKPASSED1 (D125's PARALLEL1c note): every account the start could run on was locked past its patience; the accounts by id, a list.
     public static readonly NoteCode HeldLocked = new("held.locked", ["owner", "accounts"]);

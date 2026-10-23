@@ -45,6 +45,70 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     }
 
     /// <summary>
+    /// Whether a record an account's limit ended could resume its own conversation on <paramref name="agent"/> (LIMITRESUME1b, D206; the
+    /// limit-resume design §3.3 step 1): the judge passing as if words waited, since with none it answers <c>ended</c> (the same agent and
+    /// account, its tree, a kept id, a door that resumes), on a door whose resume of a missing conversation is known to fail closed. The
+    /// protocol door refuses one with <c>resource_not_found</c> before any prompt; the native door goes by the brief until row 1f has
+    /// recorded what its <c>--resume</c> of a missing id does.
+    /// </summary>
+    internal bool LimitResumes(PriorSession limited, string agent)
+    {
+        ISessionAdapter adapter;
+        try { adapter = _context.Adapters.Resolve(agent); } catch (DriverException) { return false; }
+        if (adapter.Wire != SessionWire.Acp) return false;
+
+        var asIfWords = limited with { Said = [new SaidWordView(null, LimitResume.Words, DateTimeOffset.UnixEpoch, [], true) { From = DaorisWords.From }] };
+        return Continuations.Judge(
+            ConversationTrees.Stands, asIfWords, adapter.Name, adapter.Resumes, limited.Profile, _context.Conversations.Read(limited.Session)) is null;
+    }
+
+    /// <summary>
+    /// Daoris's limit word kept on the ended record through the say door (LIMITRESUME1b, the design §3.3 step 1), as
+    /// <see cref="RebaseTelling"/> keeps its own, under the key of the cool-off that held it, so a later look's start keeps one; then the
+    /// record as it stands now, its words the person's first and Daoris's last, as the say door keeps them. Null where the door refused
+    /// it, and the line goes on as the carry-on it was planned.
+    /// </summary>
+    internal async Task<(PriorSession Record, string Word)?> KeepLimitWordAsync(PriorSession limited, CancellationToken ct)
+    {
+        SayAnswer said;
+        try
+        {
+            said = await _context.Service.SayAsync(
+                    limited.Session, LimitResume.Words, ct: ct, from: DaorisWords.From,
+                    key: DaorisKeys.LimitReset(limited.Session, LimitResume.Until(limited)))
+                .ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
+        {
+            return null;
+        }
+
+        if (!said.Kept || said.Word?.Id is not { } word) return null;
+        var now = await ReadAgainAsync(_context.Service, limited.Session, ct).ConfigureAwait(false);
+        if (now is null) return null;
+        return (Continuations.HandedOn(limited, now), word);
+    }
+
+    /// <summary>
+    /// Daoris's limit words taken off a record by their ids (LIMITRESUME1b): at every conclusion of the run they went with, and where its
+    /// own conversation could not take them, the record's own session named as the one that took them. A refusal costs nothing more:
+    /// the next attempt keeps its own under its own cool-off's key.
+    /// </summary>
+    internal async Task TakeLimitWordsOffAsync(string session, IReadOnlyList<string> ids, CancellationToken ct)
+    {
+        if (ids.Count == 0) return;
+        try
+        {
+            await _context.Service.TakenAsync(session, ids, by: session, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is HttpRequestException or DriverException
+                                          || (error is OperationCanceledException && !ct.IsCancellationRequested))
+        {
+            _context.Output?.Append(session, $"— Daoris's limit word could not be taken off: {error.Message}");
+        }
+    }
+
+    /// <summary>
     /// Why the words wait (MSG1g): the account, its reset and that its conversation is there, then the door out of the wait. A
     /// taken or open quest's session goes on in a new session at the person's choice; a closed quest's has nothing to carry it
     /// on by itself, so its door is a conversation with the words (D137 §2.2). Machine-local: it names the account.
@@ -558,14 +622,24 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
 
         // 🔴 TURNFAIL1: words a failed turn carried were never answered. They stay waiting on the record, unmarked, as a cooling
         // account's do (D137 §2.2), and its note and conversation say why; failing a second time running, they wait for the
-        // person (FailedTurnWords). Every other run took them.
-        var words = stop is null && resume.Prompted && resume.Ids.Count > 0 ? FailedTurnWords.Judge(conclusion, turnFailed, ended, park) :WordsAfter.Taken;
-        if (FailedTurnWords.Line(words) is { } waits)
+        // person (FailedTurnWords). Every other run took them. LIMITRESUME1b: a limited end's always wait (D137's note as D206 amends it).
+        var words = stop is null && resume.Prompted && resume.Ids.Count > 0
+            ? FailedTurnWords.Judge(conclusion, turnFailed, ended, park, limited)
+            : WordsAfter.Taken;
+        // LIMITRESUME1b (the design §3.3, round 3's B8 item 3): Daoris's limit word comes off at every conclusion, so it never reaches a
+        // later attempt, a fallback or a new part; the rule that the words wait is for the person's, and with none of theirs nothing waits.
+        var limitWords = words == WordsAfter.Taken ? [] : LimitResume.WordIds(resume.Words);
+        await TakeLimitWordsOffAsync(sessionId, limitWords, ct).ConfigureAwait(false);
+        IReadOnlyList<string> waiting = [.. resume.Ids.Except(limitWords, StringComparer.Ordinal)];
+        if (waiting.Count == 0 && limitWords.Count > 0) words = WordsAfter.Taken;
+        else if (FailedTurnWords.Line(words) is { } waits)
         {
             conclusion = conclusion.Then("\n\n", waits);
-            if (words == WordsAfter.Held) _context.Marks.Mark(sessionId, resume.Ids, GoOnMarks.FailedTwice, DateTimeOffset.UtcNow);
+            if (words == WordsAfter.Held) _context.Marks.Mark(sessionId, waiting, GoOnMarks.FailedTwice, DateTimeOffset.UtcNow);
             _context.Events.Keep(
-                sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = waits.Note, Parts = waits.Parts, Words = resume.Ids }, say: null);
+                sessionId,
+                new SessionEvent { Kind = SessionEventKind.Note, Text = waits.Note, Parts = waits.Parts, Words = waiting.Count > 0 ? waiting : null },
+                say: null);
         }
         else if (resume.Prompted && resume.Ids.Count > 0)
         {

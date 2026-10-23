@@ -313,7 +313,8 @@ public sealed class AccountNamesSaidTests : IDisposable
 
         var sitting = Assert.Single(look.Considerations);
         Assert.Equal(StartVerdict.Blocked, sitting.Verdict);
-        Assert.StartsWith("the `stub` account `work` is cooling until", sitting.Reason);
+        // LIMITRESUME1b: a line a limit cut off says its own wait, the account by the name the person gave it.
+        Assert.StartsWith("Every account it may run on is at its limit: it goes on by itself once the `stub` account `work` is ready again at", sitting.Reason);
         var wait = Assert.Single(look.Waits);
         Assert.Equal(("account-1", "work"), (wait.Account, wait.Name));
         var line = Assert.Single(lines, l => l.Event == "starts.waiting");

@@ -91,6 +91,43 @@ repository.
   work's maker for Claude Code. Green: `OpinionWritersTests` (6, the walk refusing a reviewer of either as `not-independent`),
   `OpinionRecheckTests`, `OpinionDeliveryTests`, `ReviewerChoiceTests`, `OpinionGateTests` and `StructureTests` in the fast half;
   `OpinionLookTests` and `OpinionResumeTickTests` by class with `process.runsettings`.
+## 2026-10-24 - A line a limit cut off came back briefed on the account its conversation was on (LIMITRESUME1b)
+
+- **Symptom:** on the install (D206 design §1, quest `1b78581ff053`), the line waited two hours for account C's reset, then began
+  `9967271d` as a carry-on on account C, the account its last part ran on, handed a brief (`briefed=true`). The agent's own
+  conversation still lay on that account, and it was thrown away.
+- **Root cause:** a carry-on walked like a first start, and *no context stays with an account* (`Driver.cs`'s carry-on branch). The
+  agent's own resume was taken only where the person's words waited on the record (`DriverContinuations.ResumesOwn`), so a limit's
+  end with no words never took it. An open quest a limit cut off before its take was started afresh in a new tree. A record's words
+  waited for its own cooling account even where another could take them now. Two limited resumes running would also have held the
+  person's words as *failed twice* (TURNFAIL1 read a limit's failure as any other).
+- **Fix:** design §3.3, decided inside the carry-on's start. Its own account ready, its maker's reading asked, and the judge passing
+  on the protocol door, Daoris's word is kept on the ended record just before it goes on. The same conversation resumes, and every
+  conclusion takes the word off. A refusal goes on briefed in the same start, or is held for the person on `elsewhere`. A limited
+  record's words go with the walk, an open quest is carried on, and a limited end's words always wait (`WordsAfter.LimitWait`). A
+  reset that did not lift the limit is said once.
+- **Verify:** red first: `PlannerTests.An_open_quest_whose_last_session_a_limit_ended…`, and `LimitResumeTickTests`' three step-1
+  cases failed with step 1 switched off. Green by class: `LimitResumeTickTests` (9), `AccountRotationTickTests` (9),
+  `AccountLimitTickTests`, `SessionMessagesTickTests`, `AnswerContinuesTickTests`, `HandOverLookTests` with `process.runsettings`;
+  `PlannerTests`, `ContinuationTests`, `LookSaidTests`, `AccountCoolingTests`, the hold tests and `NoteCodesTests` fast.
+  `i18n:check` and `names:check --strict` pass.
+- **Not covered:** the installed window (row 1g's). The native door goes by the brief until row 1f records its resume of a missing
+  id. `AccountRotationTickTests`' two-limited case failed once under the class's load, its stub ending before its first answer, and
+  passed in two runs after.
+
+## 2026-10-24 - A cool-off the file would not take spent a strike (LIMITRESUME1b)
+
+- **Symptom:** none seen on the install. Read in the code by round 3's Codex 10 (D206 design §3.1): with `cooling.json` unwritable,
+  a run an account's limit ended was recorded as a plain failure, so a healthy line could park on its strikes for a full disk.
+- **Root cause:** `HarnessRoster.Limited` read the limit and wrote its cool-off as one step, and `Driver.AccountLimited` caught the
+  write's `IOException` and returned the conclusion unlimited, deliberately (*the strikes bound it*).
+- **Fix:** the roster keeps the cool-off through `AccountCooling.Keep`. A write the file refuses holds the entry in this process's
+  memory, which every reader reads as it reads the file and *Try now* ends. It is written again once per look until the file takes
+  it or its reset passes. The end stays limited, and the machine log says `account.cooling-unkept`.
+- **Verify:** red first: `LimitResumeTickTests.A_cool_off_whose_write_fails…` failed with the roster writing through `Cool`. Green
+  with `Keep`, and `AccountCoolingTests.A_cool_off_the_file_will_not_take…` (fast).
+- **Not covered:** a shell that ends loses the memory, so the first attempt after the come-up meets the refusal again, limited
+  again. The band's line for it is row 1d's.
 
 ## 2026-10-24 - Each part a limit cut off read as a failure, each with an *Ended* notice (LIMITRESUME1a)
 

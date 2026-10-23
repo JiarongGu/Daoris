@@ -68,8 +68,14 @@ public sealed record ResumeChoice(HarnessSelection Selection, NextHold Own)
     /// <summary>The person chose a new session while its account cooled (*Go on in a new session*).</summary>
     public bool NewSession { get; init; }
 
-    /// <summary>The words wait for the record's own account's reset: it cools, and nobody chose a new session.</summary>
-    public bool Waits => Own == NextHold.Cooling && !NewSession;
+    /// <summary>
+    /// The record an account's limit ended (LIMITRESUME1b, D206; the limit-resume design §3.3 step 2): its words go where the line goes,
+    /// with a briefed part on another account, never waiting for its own to reset while another could take them (D137 point 7 amended).
+    /// </summary>
+    public bool Limited { get; init; }
+
+    /// <summary>The words wait for the record's own account's reset: it cools, nobody chose a new session, and no limit ended it.</summary>
+    public bool Waits => Own == NextHold.Cooling && !NewSession && !Limited;
 
     /// <summary>
     /// Why the words go elsewhere, where they do (the reason <c>account</c>, with what held the account as its detail); null

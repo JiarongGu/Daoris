@@ -60,6 +60,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'ended.went-on-failed': { values: [] },
   'ended.words-wait': { values: [] },
   'ended.words-wait-you': { values: [] },
+  'ended.limit-words-wait': { values: [] },
+  'limit.not-lifted': { values: ['hit'] },
   // ACCESSSWAP1b: a run ended at its turn's end because its permission prompts changed, and its held words go on under the new setup.
   'ended.setup-changed': { values: ['from', 'to'] },
   'ended.words-setup': { values: [] },
@@ -376,6 +378,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // id as a shell spells it, the tool's own sign-in's refresh `waits.read-again`.
   'held.cooling-account': { values: ['owner', 'account', 'until', 'why'], why: 'cooling' },
   'held.cooling-own': { values: ['owner', 'until', 'why'], why: 'cooling' },
+  'held.limit-waits': { values: ['owner', 'account', 'until'], why: 'cooling' },
+  'held.limit-waits-own': { values: ['owner', 'until'], why: 'cooling' },
   'held.signed-out': { values: ['owner', 'account', 'profile'] },
   // OWNSPACE1a: no Daoris account of the agent's is signed in, and its own home is never a start's.
   'held.no-account': { values: ['owner'] },
@@ -601,6 +605,8 @@ export const NOTE_VALUES: Readonly<
   option: 'text', chosen: 'text', work: 'text', state: 'bgstate', repository: 'text',
   // SESSWATCH1a: the call a quiet session's agent was inside, its title as the record named it.
   call: 'text',
+  // LIMITRESUME1b: the limit an attempt just after its reset met again, in the agent's own words.
+  hit: 'text',
   until: 'moment', at: 'moment', seen: 'moment',
   exit: 'number', minutes: 'number', paths: 'number', turn: 'number',
   // How long Ask Daoris's start waited for the machine's reading, in whole seconds (HELPSTUCK1).

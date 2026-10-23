@@ -274,7 +274,8 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         if (AccountLimits.Read(LimitsOf(resolved.Name), failure, now, Zone, coolOff ?? AccountLimits.DefaultCoolOff) is not { } seen) return null;
 
         var entry = new CoolingEntry(agent, profile, seen.Until, seen.Stated, seen.Window, now, session, seen.AssumedZone, seen.NotBelieved);
-        AccountCooling.Cool(Home, entry, now);
+        // LIMITRESUME1b (D206; D125 point 3 amended): a cool-off the file will not take is held in memory, never lost to a strike.
+        AccountCooling.Keep(Home, entry, now);
         // A limit's sentence is a set point: the account's maker is asked once it is ready again, its reading older (USAGEPROBE1).
         if (profile is not null) _limitSaid[AccountKey(agent, profile)] = now;
 
@@ -932,9 +933,14 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// <param name="account">The account the record ran on, or null for the tool's own sign-in.</param>
     /// <param name="newSession">The person chose to go on in a new session rather than wait for a cooling account.</param>
     /// <param name="walks">Whether an account that cannot carry the words is replaced by the walk's pick.</param>
+    /// <param name="limited">
+    /// The record an account's limit ended (LIMITRESUME1b, D206; the limit-resume design §3.3): its account, ready, has its maker's reading
+    /// asked first as the walk asks a just-reset account, a reading still out held as cooling; and, cooling, its words never wait for it
+    /// (<see cref="ResumeChoice.Limited"/>), since they go where the line goes.
+    /// </param>
     public async Task<ResumeChoice> ResumeAsync(
         string adapter, DriverConfig config, string? workspace, string? account, StartKind kind, bool newSession = false,
-        bool walks = true, CancellationToken ct = default)
+        bool walks = true, CancellationToken ct = default, bool limited = false)
     {
         var resolved = adapters.Resolve(adapter);
         if (resolved.Toolchain is not { } toolchain)
@@ -962,7 +968,17 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         var names = AccountNames.Of(Home, owner);
         var before = Before(owner, named, Clock(), names);
         var own = ResumeAccount.Judge(named, scope, kind, before, present);
-        if (own == NextHold.Cooling && !newSession)
+        // LIMITRESUME1b (the design §3.3 step 1, round 2's B2): a limited record's own account, ready by its cool-off, is asked its maker's
+        // reading first, where its door carries none of its windows, and judged again on what that left; where its door carries them, the
+        // attempt is the probe. USAGEONE1's skip of a resume's probe stays for the person's words.
+        if (limited && named is not null && own == NextHold.Ready)
+        {
+            await FreshenAsync(adapter, owner, [named], config, ct).ConfigureAwait(false);
+            before = Before(owner, named, Clock(), names);
+            own = ResumeAccount.Judge(named, scope, kind, before, present);
+        }
+
+        if (own == NextHold.Cooling && !newSession && !limited)
         {
             // CONVNOTE2g: the conversation's line by code beside the hold's English, composed here, where the names it says are read.
             var cooling = before.Cooling!;
@@ -984,10 +1000,11 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         async Task<ResumeChoice> ElsewhereAsync(NextHold held) => new(
             walks
                 ? await SelectAsync(adapter, config, workspace, chosen: null, kind, ct).ConfigureAwait(false)
-                : new HarnessSelection(ResumeWords.Line(held, newSession)?.Note ?? "Its own account cannot carry it."),
+                : new HarnessSelection(ResumeWords.Line(held, newSession)?.Note ?? "Its own account cannot carry it.") { Cooling = before.Cooling },
             held)
         {
             NewSession = newSession && held == NextHold.Cooling,
+            Limited = limited,
         };
     }
 

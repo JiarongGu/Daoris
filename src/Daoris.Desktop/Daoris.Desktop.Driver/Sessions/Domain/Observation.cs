@@ -461,6 +461,12 @@ public enum WordsAfter
 
     /// <summary>They failed a second time running: they stay waiting, marked, until the person says more (MSG1b's marks).</summary>
     Held,
+
+    /// <summary>
+    /// An account's limit refused the turn (LIMITRESUME1b, D206): they stay waiting, unmarked, however many limited ends run, under a
+    /// line of its own that neither bound reads as a first failure.
+    /// </summary>
+    LimitWait,
 }
 
 /// <summary>
@@ -478,8 +484,13 @@ public static class FailedTurnWords
     /// <param name="conclusion">How the run concluded, every account's line added.</param>
     /// <param name="turnFailed">What the protocol door said refusing the turn (ACPEND1), or null.</param>
     /// <param name="before">The record as the look planned the run: its note says how it ended before it went on.</param>
-    public static WordsAfter Judge(SessionConclusion conclusion, string? turnFailed, PriorSession before) =>
+    /// <param name="limited">
+    /// Whether an account's limit ended the run (the driver's <c>AccountLimited</c>, its second value): its words always wait, never held
+    /// for the person (LIMITRESUME1b, D206), since every attempt meets a cool-off that has ended.
+    /// </param>
+    public static WordsAfter Judge(SessionConclusion conclusion, string? turnFailed, PriorSession before, bool limited = false) =>
         turnFailed is not { Length: > 0 } || conclusion.State != "failed" ? WordsAfter.Taken
+        : limited ? WordsAfter.LimitWait
         : before.NoteParts?.Any(part => part.Code == NoteCodes.EndedWordsWait.Code || part.Code == NoteCodes.EndedWordsWaitYou.Code) == true
             ? WordsAfter.Held
             : WordsAfter.Wait;
@@ -489,8 +500,9 @@ public static class FailedTurnWords
     /// <c>result</c> its harness ended with (<see cref="HarnessEnding.Failure"/>, which TURNFAIL2's words left read), so the bound
     /// marks a native run's words as it marks a protocol run's.
     /// </summary>
-    public static WordsAfter Judge(SessionConclusion conclusion, string? turnFailed, HarnessEnding ended, PriorSession before) =>
-        Judge(conclusion, turnFailed is { Length: > 0 } ? turnFailed : ended.Failure, before);
+    public static WordsAfter Judge(
+        SessionConclusion conclusion, string? turnFailed, HarnessEnding ended, PriorSession before, bool limited = false) =>
+        Judge(conclusion, turnFailed is { Length: > 0 } ? turnFailed : ended.Failure, before, limited);
 
     /// <summary>The line the record's note and its conversation say why the words wait by; null for words taken.</summary>
     public static Noted? Line(WordsAfter after) => after switch
@@ -498,6 +510,7 @@ public static class FailedTurnWords
         WordsAfter.Wait => Noted.Of(NoteCodes.EndedWordsWait, "Your words wait to go again at the next look."),
         WordsAfter.Held => Noted.Of(
             NoteCodes.EndedWordsWaitYou, "Your words failed twice and wait for you: they go again with the next words you say."),
+        WordsAfter.LimitWait => Noted.Of(NoteCodes.EndedLimitWordsWait, "Your words wait for the account's limit to lift."),
         _ => null,
     };
 }

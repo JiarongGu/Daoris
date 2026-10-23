@@ -140,7 +140,13 @@ public static class DaorisKeys
     /// <c>until</c> that held it, so a wake tried again at a later look keeps one word. No quest's fact: <see cref="Read"/> names none.
     /// </summary>
     public static string LimitReset(string session, DateTimeOffset until) =>
-        $"{LimitResetKind}/{session}/{until.UtcDateTime.ToString("yyyy-MM-dd'T'HH-mm-ss'Z'", System.Globalization.CultureInfo.InvariantCulture)}";
+        LimitReset(session, until.UtcDateTime.ToString("yyyy-MM-dd'T'HH-mm-ss'Z'", System.Globalization.CultureInfo.InvariantCulture));
+
+    /// <summary>
+    /// The limit word's key for a driven line (LIMITRESUME1b): the <c>until</c> as its cooling note said it, so a start tried again
+    /// for the same cool-off keeps one word.
+    /// </summary>
+    public static string LimitReset(string session, string until) => $"{LimitResetKind}/{session}/{until}";
 
     /// <summary>Whether a word's key is a limit word's (<see cref="LimitReset"/>): what every refusal takes off first (D206 §3.5).</summary>
     public static bool IsLimitReset(string? key) => key?.StartsWith(LimitResetKind + "/", StringComparison.Ordinal) == true;

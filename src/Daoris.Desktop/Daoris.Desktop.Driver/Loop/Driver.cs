@@ -667,6 +667,10 @@ public sealed class Driver(
     /// <summary><see cref="TickAsync"/>'s look, saying into <paramref name="events"/> and <paramref name="concluded"/> as it goes.</summary>
     private async Task<TickReport> LookAsync(List<string> events, List<SessionEnded> concluded, CancellationToken ct)
     {
+        // LIMITRESUME1b (the limit-resume design §3.1): a cool-off the file would not take is written again once per look, held in memory
+        // meanwhile, so the account stays passed until its reset with no strike spent on a full disk.
+        AccountCooling.WriteUnkept(home, Context.Harnesses.Clock());
+
         // The sync runs BESIDE the sessions, not only around them (D68 §6): every whole look syncs, and a whole look comes
         // round at the watch's pace while sessions work. After it, every session this driver runs whose take came
         // back LOST is stopped, because its quest is another machine's and its work would double theirs (D68 §5).
@@ -930,9 +934,13 @@ public sealed class Driver(
                 }
 
                 // LIMITRESUME1a (D206 point 1): a line a limit cut off says that it went on, once, as its own news, not its end's.
+                // LIMITRESUME1b: or, its own account ready again, that it resumed its own conversation.
                 if (LimitedLine(came.Started) is { } wentOn)
                 {
-                    events.Add(Lines.News("start", wentOn with { Code = LookSaid.LimitWentOn }, $"start  #{wentOn.Quest}: {LimitWentOnLine}"));
+                    var (code, line) = LimitResumed.TryRemove(wentOn.Quest!, out _)
+                        ? (LookSaid.LimitResumed, LimitResumedLine)
+                        : (LookSaid.LimitWentOn, LimitWentOnLine);
+                    events.Add(Lines.News("start", wentOn with { Code = code }, $"start  #{wentOn.Quest}: {line}"));
                 }
 
                 continue;
@@ -1094,8 +1102,17 @@ public sealed class Driver(
         }
     }
 
-    /// <summary>The line said where a line a limit cut off went on (LIMITRESUME1a): every carry-on is a new part handed the brief.</summary>
+    /// <summary>The line said where a line a limit cut off went on (LIMITRESUME1a): a carry-on is a new part handed the brief.</summary>
     internal const string LimitWentOnLine = "work an account's limit cut off went on in a new session, handed Daoris's brief.";
+
+    /// <summary>The line said where a line a limit cut off resumed its own conversation on its own account (LIMITRESUME1b).</summary>
+    internal const string LimitResumedLine = "work an account's limit cut off resumed in its own conversation, its account ready again.";
+
+    /// <summary>
+    /// The quests whose start resumed their limited record's own conversation (LIMITRESUME1b), by quest, the record as the value: set as
+    /// the start keeps Daoris's word, taken off where its own conversation refused, and read once by the look's news.
+    /// </summary>
+    internal System.Collections.Concurrent.ConcurrentDictionary<string, string> LimitResumed { get; } = new(StringComparer.Ordinal);
 
     /// <summary>
     /// The line's own news for a start of a quest whose last part an account's limit ended (LIMITRESUME1a, D206 point 1; the limit-resume
@@ -1743,16 +1760,38 @@ public sealed class Driver(
         // with it. The intake's twin already held on the same sentence.
         HarnessSelection selection;
         ResumeChoice? resume = null;
+        // 🔴 LIMITRESUME1b (D206; the limit-resume design §3.3): the record an account's limit ended, which this start resumes in its own
+        // conversation where its own account is ready again, decided here inside the carry-on's own start, never beside the look (round 2's
+        // B1): the same look would plan the carry-on, and its walk land briefed on the account just freed. A hand-over made from it is the
+        // person's press and decides the start instead (step 0).
+        var limitedLine = LimitResume.Line(start, handedFrom);
+        // Whether this start resumes that record's own conversation on its own account: the limit's intent, separate from any words waiting.
+        var limitResume = false;
         try
         {
             if (GoOns.ResumesOwn(start, agent) is { } words)
             {
                 // A resume asks for its record's own account (MSG1g, D137 §2.2): its conversation lives in that account's
-                // configuration home (D131 §1), so the walk that chooses a start's account never chooses a resume's.
+                // configuration home (D131 §1), so the walk that chooses a start's account never chooses a resume's. A limited record's
+                // words go where its line goes, never waiting on its cooling account while another could take them (step 2).
                 resume = await Context.Harnesses
-                    .ResumeAsync(agent, config, start.Workspace, words.Profile, StartKind.Driven, Context.NewSessions.Covers(words), ct: ct)
+                    .ResumeAsync(
+                        agent, config, start.Workspace, words.Profile, StartKind.Driven, Context.NewSessions.Covers(words), ct: ct,
+                        limited: limitedLine is not null)
                     .ConfigureAwait(false);
                 selection = resume.Selection;
+                limitResume = limitedLine is not null && resume.Own == NextHold.Ready && selection.Allowed;
+            }
+            else if (!start.GoesOn && limitedLine is not null && GoOns.LimitResumes(limitedLine, agent)
+                     && await Context.Harnesses
+                             .ResumeAsync(agent, config, start.Workspace, limitedLine.Profile, StartKind.Driven, walks: false, ct: ct, limited: true)
+                             .ConfigureAwait(false) is { Own: NextHold.Ready, Selection.Allowed: true } own)
+            {
+                // Step 1: its own account ready, its maker's reading asked, the judge passing and a door known to fail closed, so its
+                // own conversation resumes there, asked before the walk, so its own account wins where another is ready too.
+                resume = own;
+                selection = own.Selection;
+                limitResume = true;
             }
             else
             {
@@ -1780,6 +1819,15 @@ public sealed class Driver(
 
         if (!selection.Allowed)
         {
+            // LIMITRESUME1b (the design §3.3 step 3): a line a limit cut off, with no account it may run on ready, waits with a sentence
+            // of its own naming the earliest reset and whose account, said on its record once per wait; the next look past it takes it.
+            if (limitedLine is not null && selection.Cooling is { } earliest)
+            {
+                var waits = LimitResume.Waits(earliest, Context.Harnesses.Zone, AccountNames.Of(home, earliest.Agent));
+                GoOns.HeldSaying(limitedLine, waits);
+                return Hold(waits.Note) with { Cooling = earliest, SignedOut = selection.SignedOut };
+            }
+
             // A cooling account's hold carries its cool-off (TOOL4d), so the look says the wait once and a screen shows
             // the quest waiting for an account; and the accounts it passed not signed in (TOOL6g), so both say the sign-in.
             return Hold(selection.Refusal!) with { Cooling = selection.Cooling, SignedOut = selection.SignedOut };
@@ -2011,6 +2059,25 @@ public sealed class Driver(
         // record with is tried, and said `ended`.
         ContinueReason? fellBack = null;
         var answerKept = false;
+
+        // 🔴 LIMITRESUME1b (the design §3.3 step 1, round 3's B8 item 4): Daoris's word is kept on the limited record only here, just
+        // before it goes on, after every hold between (access, tree, replay, trust), so a held start leaves no word on it. The person's
+        // words, where a GoOn carries any, are already on it, so theirs go first and Daoris's last. A word the door would not keep leaves
+        // the start the carry-on it was planned.
+        var planned = start;
+        string? limitWord = null;
+        if (limitResume && await GoOns.KeepLimitWordAsync(start.Resumes!, ct).ConfigureAwait(false) is { } keptWord)
+        {
+            limitWord = keptWord.Word;
+            start = start with { Resumes = keptWord.Record, GoesOn = true };
+            LimitResumed[quest.Id] = keptWord.Record.Session;
+        }
+        else if (limitResume && !start.GoesOn)
+        {
+            limitResume = false;
+            resume = null;
+        }
+
         var written = start.Resumes;
         if (start.Resumes is { } park
             && (start.GoesOn || park is { State: "completed", Answer: not null, Said: null })
@@ -2030,10 +2097,24 @@ public sealed class Driver(
                 return continued;
             }
 
+            // 🔴 LIMITRESUME1b (the design §3.3, round 3's B8 items 1-3): its own conversation refused, before the wire or on it, Daoris's
+            // word comes off by its id and the line goes on in this same start as the carry-on that was planned, briefed, the person's
+            // words after the brief as theirs, said with the refusal's own code. Another client holding the conversation keeps the word,
+            // marked with the rest below, so the line is held for the person and never spins.
+            if (limitWord is not null && !fellBack!.Holds)
+            {
+                await GoOns.TakeLimitWordsOffAsync(park.Session, [limitWord], ct).ConfigureAwait(false);
+                LimitResumed.TryRemove(quest.Id, out _);
+                var refusedOwn = LimitResume.Refused(fellBack);
+                Context.Output?.Append(park.Session, refusedOwn.Note);
+                Context.Events.Keep(
+                    park.Session, new SessionEvent { Kind = SessionEventKind.Note, Text = refusedOwn.Note, Parts = refusedOwn.Parts }, say: null);
+            }
+
             // 🔴 SAIDBACK1f (D137 §2.4): the words as the record holds them now, not as the look read them, so a word taken back
-            // since never goes to the new session; none left, nothing is sent.
+            // since never goes to the new session; none left, nothing is sent. A limit's intent carries the line on all the same.
             park = await GoOns.HandedOnRecordAsync(park, ct).ConfigureAwait(false);
-            if (!park.Parked && !park.Running && !park.WordsWaiting)
+            if (!park.Parked && !park.Running && !park.WordsWaiting && limitWord is null)
             {
                 await fresh.LetGoAsync().ConfigureAwait(false);
                 return DriverContinuations.TakenBackFirst(quest, park.Session);
@@ -2070,8 +2151,13 @@ public sealed class Driver(
                 return GoOns.CannotGoOn(quest, park, fellBack);
             }
 
-            // A taken quest is carried on, an open one started, handed the words, in the tree the session worked in.
-            start = start with { Resumes = park.Parked || park.Said is null ? park with { State = "completed" } : park };
+            // A taken quest is carried on, an open one started, handed the words, in the tree the session worked in. A limited line with
+            // none of the person's words left goes on as the carry-on planned for it (LIMITRESUME1b).
+            start = start with
+            {
+                Resumes = park.Parked || park.Said is null ? park with { State = "completed" } : park,
+                GoesOn = limitWord is not null && !park.WordsWaiting ? planned.GoesOn : start.GoesOn,
+            };
 
             // 🔴 OWNSPACE1a (D175 point 3): only the record that began in the tool's own home goes on there. Its words carried to a
             // new record are a new start, which takes the walk (D130 §16.2) and holds where the walk holds, before the record opens:
@@ -2850,13 +2936,20 @@ public sealed class Driver(
         if (conclusion.State != "failed" || turnFailed is not { Length: > 0 }) return (conclusion, false);
 
         (CoolingEntry Entry, LimitSeen Seen)? limited;
+        // The cool-offs that ended lately, read before this one replaces its account's (LIMITRESUME1b): a reset that did not lift it.
+        var now = Context.Harnesses.Clock();
+        IReadOnlyList<CoolingEntry> ended;
+        try { ended = AccountCooling.Offered(home, now); }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException) { ended = []; }
+
         try
         {
             limited = Context.Harnesses.Limited(adapter.Name, selection.Profile, turnFailed, sessionId, config.CoolOff);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            // The cool-off could not be written: the record still says the agent's words, and the strikes bound it.
+            // The limit could not be read for a disk that would not answer: the record still says the agent's words. A cool-off the
+            // file would not take is no such case: the roster holds it in memory, and the end is limited (LIMITRESUME1b).
             return (conclusion, false);
         }
 
@@ -2864,7 +2957,20 @@ public sealed class Driver(
 
         var (entry, seen) = read;
         service.AccountSaid(AccountLine.Limited(sessionId, adapter.Name, selection.Profile, seen, Context.Events.TurnsEnded(sessionId) + 1, used?.Used));
-        return (conclusion.Unsaid(turnFailed).Then(" ", CoolingWords.NoteOf(entry, Context.Harnesses.Zone)), true);
+        // LIMITRESUME1b (the design §3.1, round 3's Codex 10): kept in memory only, said once in the machine log for this entry.
+        if (AccountCooling.Unwritten(home, entry.Agent, entry.Account)) service.AccountSaid(AccountLine.CoolingUnkept(sessionId, adapter.Name, selection.Profile, seen));
+        var noted = conclusion.Unsaid(turnFailed).Then(" ", CoolingWords.NoteOf(entry, Context.Harnesses.Zone));
+
+        // 🔴 LIMITRESUME1b (the design §3.3's bound): an attempt refused with the same kind of limit within the margin after its account's
+        // cool-off ended met a reset that did not lift it (an admin's spend limit can outlast the window the sentence names). Said once,
+        // on this end, and in the machine log; it still waits for the next cool-off and never parks.
+        if (LimitResume.NotLifted(ended, entry, now) is { } notLifted)
+        {
+            noted = noted.Then(" ", notLifted);
+            service.AccountSaid(AccountLine.NotLifted(sessionId, adapter.Name, selection.Profile, seen));
+        }
+
+        return (noted, true);
     }
 
     /// <summary>
