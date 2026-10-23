@@ -49,6 +49,9 @@ Focused classes only, as the standing test rule for this repository says:
 - Web: the `work/head` tests and `actors.test.ts`, the typecheck, `i18n:check` and `names:check -- --strict` (no finding of this
   row's keys).
 - Censuses: `read-shares`, `optional-locks`, `live-logins`, `partials`, `one-word` and `home-census`.
+- Fast halves, as the ask names them (`Category!=Process`), the replay before last: service 2689, HTTP 329, modules 2333 and
+  driver 14163 pass; web 9202 of 9204 pass. Its two failures were `noteLines`' zh hand-over lines, which `main` fixed in
+  `e02a5f06d`. After the last replay the covering classes and the web head and `noteLines` tests pass again.
 
 ## What the installed window should show
 
