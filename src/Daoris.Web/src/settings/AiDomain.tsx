@@ -1,8 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useRegistry, useStatus } from '../data/queries';
 import {
-  helpModeOf, useActors, useDriver, useHarnesses, usePlugins, useSetActor, useSetHelper, useSetHelpGrant, useSetHelpMode, useSetIntake,
-  useStarts,
+  helpModeOf, useActors, useDriver, useHarnesses, usePlugins, useSetActor, useSetHelpGrant, useSetHelpMode, useStarts,
 } from '../bridge/shell';
 import type { HelpGrantChoice, HelpGrantId } from '../help/access/wired';
 import { doorLabel } from '../agents/tools';
@@ -13,6 +12,7 @@ import { useModeChoice } from '../help/access/HelpModePicker';
 import { fullAdds } from '../help/access/modes';
 import { AiJobs, type SearchTier } from './AiJobs';
 import { ActorsCard, type ActorChoice } from './ai/Actors';
+import { AskDaorisAbout, IntakeAbout } from './ai/ActorAbout';
 import { namer } from './accounts/namer';
 import type { StarterDoor } from '../help/starters';
 
@@ -40,8 +40,6 @@ function MachineAi({ search, notify, onGo }: { search?: SearchTier; notify: Noti
   const driver = useDriver();
   const roster = useHarnesses();
   const registry = useRegistry('machine');
-  const setIntake = useSetIntake();
-  const setHelper = useSetHelper();
   // The circles *What a start runs on* names, spelled the same way — so both cards read one answer.
   const workspaces = workspacesOf(registry.data ?? []);
   const answer = useStarts(workspaces);
@@ -109,42 +107,24 @@ function MachineAi({ search, notify, onGo }: { search?: SearchTier; notify: Noti
     });
   };
 
+  // The Intake and Ask Daoris cards folded into their actor rows (MODELROLE1d, D205 §7): each row's ⓘ, and what it does now, under
+  // its order; Intake's per circle, the driver's own resolution. Each order is set in its editor, over SET_ACTOR.
+  const first = (id: string) => actorRows.find((row) => row.id === id)?.choices[0]?.agent ?? null;
+  const about = {
+    intake: {
+      why: t('settings.ai.intake.why'),
+      below: <IntakeAbout agent={first('intake')} starts={starts.filter((start) => start.job === 'intake')} nameOf={namer(t, harnesses)} />,
+    },
+    'ask-daoris': {
+      why: t('settings.ai.helper.why'),
+      below: <AskDaorisAbout agent={first('ask-daoris')} full={driver.data?.helpMode !== undefined && helpMode === 'full'} />,
+    },
+  };
+
   return (
     <CardStack>
     <AiJobs
       search={search}
-      // An older shell has never heard of the intake: its STATE carries no field, and it gets no row.
-      // Off is "" rather than null, because the bridge leaves a null out — which read as older.
-      intake={driver.data && 'intakeAdapter' in driver.data
-        ? {
-          adapter: driver.data.intakeAdapter || null,
-          agents,
-          starts: starts.filter((start) => start.job === 'intake'),
-          nameOf: namer(t, harnesses),
-          busy: setIntake.isPending,
-          onChange: (adapter) => setIntake.mutate({ adapter }, {
-            onSuccess: () => notify(adapter
-              ? t('settings.ai.intake.named', { agent: adapter })
-              : t('settings.ai.intake.cleared')),
-            onError: failure(notify),
-          }),
-        }
-        : undefined}
-      // Ask Daoris's own agent (D89): absent on a shell older than it, "" off, as the intake's.
-      helper={driver.data && 'helperAdapter' in driver.data
-        ? {
-          adapter: driver.data.helperAdapter || null,
-          agents,
-          busy: setHelper.isPending,
-          onChange: (adapter) => setHelper.mutate({ adapter }, {
-            onSuccess: () => notify(adapter
-              ? t('settings.ai.helper.named', { agent: adapter })
-              : t('settings.ai.helper.cleared')),
-            onError: failure(notify),
-          }),
-          full: driver.data.helpMode !== undefined && helpMode === 'full',
-        }
-        : undefined}
       // Ask Daoris's access: absent on a shell older than the mode, which offers no choice.
       access={driver.data && 'helpMode' in driver.data
         ? {
@@ -181,7 +161,7 @@ function MachineAi({ search, notify, onGo }: { search?: SearchTier; notify: Noti
         : undefined}
     />
     {/* An older shell answers no actors, and gets no card. */}
-    {actorRows.length > 0 && <ActorsCard rows={actorRows} agents={agents} busy={setActor.isPending} onSave={saveActor} />}
+    {actorRows.length > 0 && <ActorsCard rows={actorRows} agents={agents} about={about} busy={setActor.isPending} onSave={saveActor} />}
     </CardStack>
   );
 }

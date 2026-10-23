@@ -233,13 +233,13 @@ public sealed class PipeCensus
             // LIMITRESUME1d: *Stop waiting*, the person's word that a conversation held by its limit goes on only when they write.
             "SESSION_STOP_WAITING",
             // Their set-up and their standing choices: what a review is set to, how work lands, what agents may reach.
-            "SETUP_PRESS", "SET_ACCESS", "SET_ACTOR", "SET_AGENT_SETTINGS", "SET_CAP", "SET_COMMITS", "SET_COOLOFF", "SET_DRIVABLE", "SET_HAND_OVER", "SET_HELPER", "SET_HELPERS", "SET_HELP_MODE",
+            "SETUP_PRESS", "SET_ACCESS", "SET_ACTOR", "SET_AGENT_SETTINGS", "SET_CAP", "SET_COMMITS", "SET_COOLOFF", "SET_DRIVABLE", "SET_HAND_OVER", "SET_HELPERS", "SET_HELP_MODE",
             // HELPMODE1c2b: what Ask Daoris's housekeeping may do, the person's grant alone.
             "SET_HELP_GRANT",
             // FABRIC-PIPELINE1a: the landed route and the gates it runs unasked, accepted by their blob (D156).
             "WORKFLOW_LANDED",
             // HEAVYRUN1b2b: the commands this machine runs for a repository's heavy gates, which the person writes.
-            "SET_HEAVY_GATES", "SET_HOLD", "SET_INTAKE", "SET_LANDING", "SET_LANGUAGE", "SET_LINE", "SET_NOTIFY", "SET_OPINION", "SET_READ_ACROSS",
+            "SET_HEAVY_GATES", "SET_HOLD", "SET_LANDING", "SET_LANGUAGE", "SET_LINE", "SET_NOTIFY", "SET_OPINION", "SET_READ_ACROSS",
             "SET_REVIEW", "SET_SESSION_OPTION",
             // FABRIC-PIPELINE1b: which checks a repository's sessions run, the person's standing choice; light lowers their part.
             "SET_SESSION_CHECKS", "SET_STANDING", "SET_STRIKES", "SET_TREES", "SET_WRITE_ACROSS", "TRUST_FOLDER",

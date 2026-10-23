@@ -186,8 +186,6 @@ public static class PipeWording
         Row("HARNESS_ACTION", W("harness", PipeRole.Agent));
         Row("ACCOUNT_USE", W("harness", PipeRole.Agent));
         Row("HARNESSES_REFRESH", W("agent", PipeRole.Agent));
-        Row("SET_HELPER", W("adapter", PipeRole.Agent));
-        Row("SET_INTAKE", W("adapter", PipeRole.Agent));
 
         // The rest say their act alone, every value listed under it.
         Act(

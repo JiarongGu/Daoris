@@ -839,10 +839,9 @@ public sealed partial class HelpCoverageTests
     /// </summary>
     private static readonly (string Domain, string Hook, string? Action, Answer Answer)[] Controls =
     [
-        ("ai", "useSetIntake", null, new Door("setting", "intake")),
-        // MODELROLE1c: Build's order on *Actors*, owed to MODELROLE1h's `actor_propose` (D205 §8.1).
+        // MODELROLE1c: Build's order on *Actors*, owed to MODELROLE1h's `actor_propose` (D205 §8.1); since MODELROLE1d, Intake's and Ask
+        // Daoris's rows too, the two cards folded into them (their `setting` doors write the same one-choice order until row h).
         ("ai", "useSetActor", null, new Owed(HelpRoomOwed.Actor)),
-        ("ai", "useSetHelper", null, new Door("setting", "helper")),
         // HELPMODE1b: Ask Daoris's access, pressed from Settings → AI features and from the panel's own chip.
         ("ai", "useSetHelpMode", null, new Exempt(
             "Ask Daoris's access mode is the person's choice alone, never made for them (D183 point 2): no proposal names it, so "

@@ -79,8 +79,6 @@ public static class ChoiceRoutes
     public static InstanceRoute Strikes { get; } = Person("SET_STRIKES");
     public static InstanceRoute CoolOff { get; } = Person("SET_COOLOFF");
     public static InstanceRoute Cap { get; } = Person("SET_CAP");
-    public static InstanceRoute Intake { get; } = Person("SET_INTAKE");
-    public static InstanceRoute Helper { get; } = Person("SET_HELPER");
     public static InstanceRoute Retry { get; } = Person("RETRY_QUEST");
     public static InstanceRoute Line { get; } = Person("SET_LINE");
     public static InstanceRoute Language { get; } = Person("SET_LANGUAGE");
@@ -106,8 +104,8 @@ public static class ChoiceRoutes
         ("driver strikes <n>", Strikes, "the window's strike limit"),
         ("driver cooloff <minutes>", CoolOff, "the window's cool-off"),
         ("driver cap <n>", Cap, "the window's session cap"),
-        ("driver intake <adapter>|off", Intake, "the window's intake agent"),
-        ("driver helper <adapter>|off", Helper, "Ask Daoris's agent"),
+        ("driver intake <adapter>|off", Actor, "Intake's order, one choice at account default or off (D205 §6.4)"),
+        ("driver helper <adapter>|off", Actor, "Ask Daoris's order, one choice at account default or off (D205 §6.4)"),
         ("driver retry <quest>", Retry, "the quest's *Try again*, which judges from the planner's verdict whether to mark or release it"),
         ("driver line", Line, "the repository's or the workspace's line"),
         ("driver language", Language, "the session language"),
@@ -553,14 +551,14 @@ public static class DriverChoicesCommand
                 var agent = args.Skip(1).FirstOrDefault(token => !token.StartsWith("--", StringComparison.Ordinal))
                     ?? throw new ChoiceWords("`driver helper` needs <adapter>|off — e.g. `daoris driver helper claude-code-acp`.");
                 var off = agent == "off";
-                return Change(ChoiceRoutes.Helper, new JsonObject { ["adapter"] = off ? null : agent }, config => config.WithHelper(off ? null : agent), () =>
+                // Ask Daoris's one-choice order at account default, or off, through SET_ACTOR (MODELROLE1d, D205 §6.4).
+                return ActorChange(verb, "ask-daoris", off ? [] : [new ActorChoice(agent)], before, world, said =>
                 {
                     Say(off
                         ? "daoris: Ask Daoris runs no agent here — it offers its starters, each a door to the screen that fixes it."
                         : $"daoris: Ask Daoris runs on `{agent}`. It reads, and proposes; every change is yours to apply (D89).");
                     if (!off && !Managed(agent)) Say("  Daoris manages no toolchain for that name — `daoris agent list` shows the ones it does.");
-                    Say($"  Written to {path}.");
-                    return 0;
+                    said();
                 });
             }
 
@@ -570,7 +568,8 @@ public static class DriverChoicesCommand
                     ?? throw new ChoiceWords("`driver intake` needs <adapter>|off — e.g. `daoris driver intake claude-code-acp`, or `off` "
                         + "to answer asks by declarations only.");
                 var off = named == "off";
-                return Change(ChoiceRoutes.Intake, new JsonObject { ["adapter"] = off ? null : named }, config => config.WithIntake(off ? null : named), () =>
+                // Intake's one-choice order at account default, or off, through SET_ACTOR (MODELROLE1d, D205 §6.4).
+                return ActorChange(verb, "intake", off ? [] : [new ActorChoice(named)], before, world, said =>
                 {
                     if (off)
                     {
@@ -585,8 +584,7 @@ public static class DriverChoicesCommand
                         if (!Managed(named)) Say("  Daoris manages no toolchain for that name — `daoris agent list` shows the ones it does.");
                     }
 
-                    Say($"  Written to {path} — the driver re-reads it every tick, so nothing restarts.");
-                    return 0;
+                    said();
                 });
             }
 

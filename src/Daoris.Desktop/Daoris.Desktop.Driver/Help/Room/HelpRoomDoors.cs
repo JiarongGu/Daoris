@@ -157,8 +157,9 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "(Ask Daoris never proposes it: it changes nothing of yours or on the platform, and the room already says what was "
             + "last answered)",
             "(no screen yet)", "`daoris-driver trees state <session|branch> [--repository <name>]`"),
-        ("choose the agent that answers asks", "Settings → AI features", "`daoris driver intake <agent>|off`"),
-        ("choose the agent Ask Daoris runs on", "Settings → AI features", "`daoris driver helper <agent>|off`"),
+        // MODELROLE1d (D205 §6.4): the Intake and Ask Daoris cards folded into their actor rows; each verb writes a one-choice order.
+        ("choose the agent that answers asks", "Settings → AI features → Actors, Intake", "`daoris driver intake <agent>|off`"),
+        ("choose the agent Ask Daoris runs on", "Settings → AI features → Actors, Ask Daoris", "`daoris driver helper <agent>|off`"),
         // HELP9: every `daoris driver` verb that changes something is a row, the two a terminal alone set among them.
         ("choose the agent driven sessions start on", "Settings → AI features → Actors, Build", "`daoris driver adapter <agent>`"),
         // MODELROLE1c (D205 §8.3): who does each kind of work, with which model, in order; its proposal door is owed (MODELROLE1h).

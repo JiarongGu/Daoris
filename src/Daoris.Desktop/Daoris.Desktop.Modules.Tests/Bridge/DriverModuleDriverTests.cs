@@ -196,30 +196,31 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
 
         Assert.Equal("", (await AnswerAsync(module, "STATE")).GetProperty("intakeAdapter").GetString());
 
-        var on = await AnswerAsync(module, "SET_INTAKE", new { adapter = "claude-code-acp" });
+        var on = await AnswerAsync(module, "SET_ACTOR", new { actor = "intake", choices = new[] { new { agent = "claude-code-acp" } } });
         Assert.Equal("claude-code-acp", on.GetProperty("intakeAdapter").GetString());
 
         await AnswerAsync(module, "SET_NOTIFY", new { notify = false });
         Assert.Equal("claude-code-acp", DriverConfig.Load(DriverConfigPath).IntakeAdapter);
 
-        var off = await AnswerAsync(module, "SET_INTAKE", new { adapter = (string?)null });
+        var off = await AnswerAsync(module, "SET_ACTOR", new { actor = "intake", choices = Array.Empty<object>() });
         Assert.Equal("", off.GetProperty("intakeAdapter").GetString());
         Assert.Null(DriverConfig.Load(DriverConfigPath).IntakeAdapter);
+        Assert.Empty(DriverConfig.Load(DriverConfigPath).Actors["intake"]);
     }
 
-    /// <summary>Ask Daoris's own agent (HELP1, D89): the screen's half of `daoris driver helper`, apart from the intake's.</summary>
+    /// <summary>Ask Daoris's own agent (HELP1, D89): the screen's half of `daoris driver helper`, apart from the intake's, both now an actor's one-choice order (MODELROLE1d).</summary>
     [Fact]
     public async Task Ask_daoris_runs_on_an_agent_of_its_own_off_until_named()
     {
         var module = Module();
         Assert.Equal("", (await AnswerAsync(module, "STATE")).GetProperty("helperAdapter").GetString());
 
-        await AnswerAsync(module, "SET_INTAKE", new { adapter = "claude-code-acp" });
-        var on = await AnswerAsync(module, "SET_HELPER", new { adapter = "codex-acp" });
+        await AnswerAsync(module, "SET_ACTOR", new { actor = "intake", choices = new[] { new { agent = "claude-code-acp" } } });
+        var on = await AnswerAsync(module, "SET_ACTOR", new { actor = "ask-daoris", choices = new[] { new { agent = "codex-acp" } } });
         Assert.Equal("codex-acp", on.GetProperty("helperAdapter").GetString());
         Assert.Equal("claude-code-acp", on.GetProperty("intakeAdapter").GetString());
 
-        var off = await AnswerAsync(module, "SET_HELPER", new { adapter = (string?)null });
+        var off = await AnswerAsync(module, "SET_ACTOR", new { actor = "ask-daoris", choices = Array.Empty<object>() });
         Assert.Equal("", off.GetProperty("helperAdapter").GetString());
         Assert.Null(DriverConfig.Load(DriverConfigPath).HelperAdapter);
     }
