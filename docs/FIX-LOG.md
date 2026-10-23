@@ -20,7 +20,7 @@ repository.
 - **Verify:** `AdapterTests`, 40 of 40, including the earlier trailer for Codex, Claude, an unreported model and an unknown maker,
   and nothing more within a maker or with nothing uncommitted. `MakerTrailTickTests` (new, Process) with `process.runsettings`,
   2 of 2: a real tick carries a failed `stub` line on to `acp-stub` in its tree, and its first prompt names `stub`'s trailer; a
-  carry-on on `stub` again says nothing more.
+  carry-on on `stub` again says nothing more. The driver's fast half, 14,242.
 
 ## 2026-10-24 - Sessions a squash landed together were told to rebase onto work already on the line (SQUASHSEEN1)
 
