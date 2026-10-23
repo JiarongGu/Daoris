@@ -30,7 +30,11 @@ which remain.
    (`ActorOverride.Reconciled`: an effort-only change keeps the model, a model change clears the effort), and a conversation going on
    re-applies it over its asked choice (`ActorAsked.Overlaid`), its record's asked left as its open set it. Continuations (a hand-over,
    a limit move, a briefed move) keep running on the agent they name, as before.
-3. **Intake's start takes its actor** (remaining): start 5 walking Intake's effective order with its carriers.
+3. **Intake's start takes its actor** (built). An intake walks Intake's effective order, read once for the start
+   (`DriverIntakes.WalkAsync`): an order of one is today's start asking its model; more are walked choice by choice on accounts not
+   kept for conversations, an agent this machine lacks passed `unavailable`; with none, the ask holds on *Intake waits: none of its
+   choices can run now.*, the soonest cool-off beside it. The target carries the entry's `Asked` and `Choice`, so both doors carry its
+   model and effort and the record keeps its choice; the opening note's actor line says a later choice.
 4. **§3.5(b)'s pending start** (remaining): `ChatPending` owning the attempt across replacements, the queued words moved, the go-on
    after an interruption, a pick never walked afresh, a refused continuation's brief recomposed.
 5. **§3.5(f)'s Intake re-ask** (remaining): `EndRefusedIntakeAsync` and the Intake's walk within its own start.
@@ -50,6 +54,9 @@ as before restricted and full, the wait's sentence, Chat's walk and a pick), `Ac
 entry's model and effort; its stand-in now keeps the effort it is set to), and beside it `ChatRunnerTests`, `HelpChatTests`,
 `ChatGoesOnProcessTests`, `LimitGoesOnProcessTests`, `HandOverProcessTests`, `CurveMoveProcessTests`, `ChatWordsRestartProcessTests`;
 modules `DriverModuleConversationTests`, `DriverModuleStartFromTests`, `DriverModuleHelpTests`, `DriverModuleActorTests`.
+
+Part 3: the changed Process class `IntakeTests` with `process.runsettings` (an intake walking past an agent this machine lacks, and
+waiting on the wait's sentence with none), its fast half, `InstallUpdateTests` and `ActorRunTests`.
 
 ## Readings
 

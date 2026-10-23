@@ -483,6 +483,29 @@ public sealed class IntakeTests : IDisposable
     }
 
     /// <summary>
+    /// MODELROLE1d (D205 §4.1): an intake walks Intake's effective order, an agent this machine lacks passed <c>unavailable</c> before any
+    /// account is asked, and opens on the next; with no choice that can run, the ask waits on the wait's sentence and nothing opens.
+    /// </summary>
+    [Fact]
+    public async Task An_intake_walks_its_order_past_an_agent_this_machine_lacks_and_waits_when_none_can_run()
+    {
+        await using var service = StandInService.Start(Circle, Ask());
+        var walked = ActorChoices.With(Config(), "intake", [new ActorChoice("gone"), new ActorChoice("stub")]);
+
+        await Driver(walked, service).RunOnceAsync();
+
+        Assert.Equal("stub", Assert.Single(service.Intakes)["adapter"]!.GetValue<string>());
+
+        await using var none = StandInService.Start(Circle, Ask());
+        var nothing = ActorChoices.With(Config(), "intake", [new ActorChoice("gone"), new ActorChoice("away")]);
+
+        var report = await Driver(nothing, none).RunOnceAsync();
+
+        Assert.Empty(none.Intakes);
+        Assert.Contains(report.Events, line => line.Contains("Intake waits: none of its choices can run now. choice 1, gone", StringComparison.Ordinal));
+    }
+
+    /// <summary>
     /// Where the declarations do not settle it, the intake ASKS: it publishes nothing and ends, its
     /// record parks for the person — and ends when the person answers the ask, which is how a
     /// question from a session with no process left is ever closed.
