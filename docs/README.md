@@ -199,6 +199,7 @@ These retain their original dates, versions and measurement limits.
 | `2026-10-14-duplication-survey.md` | Evidence: duplicated code across the .NET modules, by cluster, with its drift | D166's note of 2026-10-14; DEDUP rows in TASKS |
 | `2026-10-14-partial-types-survey.md` | Evidence: the types split by hand across files, by shape, and the gate that holds them | D166's partial-type note; PART rows in TASKS |
 | `2026-10-16-fabric-contract-audit.md` | Evidence: each collaboration concept's store, writer and fabric primitive; Claude Code's and Codex's native children measured against a server | D173's FABRIC-C0 note; FABRIC rows in TASKS |
+| `2026-10-23-model-effort-doors-evidence.md` | Evidence: what each door accepts for model and effort, its refusals and what a turn reports | D205's MODELROLE1a note; MODELROLE1's later rows |
 
 ## Records and generated indexes
 

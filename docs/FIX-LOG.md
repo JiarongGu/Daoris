@@ -30,6 +30,24 @@ repository.
   (88). The driver's fast half (14119) and the modules' (2331) pass. Censuses: home and live-logins are clean.
 - **Not covered:** Daoris has not measured a refusal on the native door, whose `result` frame it reads for no stop reason. A
   native run its provider refused is still concluded by its exit and its quest's state.
+## 2026-10-23 - Three model readers built on guessed shapes, found by measuring the doors (MODELROLE1a)
+
+- **Symptom:** none reported. Measuring what each door accepts for model and effort
+  (`docs/2026-10-23-model-effort-doors-evidence.md`) produced the first real frames for three shapes the code had guessed.
+  (1) `claude-agent-acp` refuses a `set_config_option` as `Internal error` and puts its sentence in `data.details`. A refused model
+  in the composer said only *Internal error*. (2) Both protocol agents nest each model's counts in `quota.model_usage[]` under
+  `token_count`, the cache read named `cachedInputTokens`. The split was read at the entry's top level, found nothing, and every
+  real turn lost it. (3) On the pipe door, a refused model or a limit is the tool's own message, model `<synthetic>`. That name
+  was kept as the model the turn ran.
+- **Root cause:** each reader was written from the evidence's words or the SDK's source before a real frame existed. The tests'
+  fakes spoke the same guess (`AcpTests`' quota test said so in its remarks).
+- **Fix:** `AcpRefusal.Of` reads `data.details` where the data has no `message`. `TurnModels.Read` reads an array entry's
+  `token_count` where it has one, and `Counts` knows `cachedInputTokens`. `StructuredOutput.Assistant` names no model for a
+  `<synthetic>` message.
+- **Verify:** the fakes now speak the measured frames. `AcpTests` covers the refusal's words, the measured quota split and the
+  options and answers of both agents. `ClaudeStreamJsonTests` covers the measured alias turn and model refusal. Not run red-first:
+  the old readers' results are read from the code above. Green: `AcpTests`, `ClaudeStreamJsonTests` and `UsageTurnsTests` (140).
+  The neighbouring ACP, native-stream, adapter and usage classes, Process excluded, also pass (245).
 
 ## 2026-10-23 - A repository set up from its page stayed not adopted (SETUPSTATE1)
 

@@ -10,6 +10,9 @@ with the version and date at release.
   went on. In Ask Daoris it stays one conversation, both before and after the move, rather than leaving your words in the history.
   A teammate's conversation, and one you ended, are unchanged.
 
+- A model Claude refuses in a conversation's model menu now says why, as Claude said it, not *Internal error* (MODELROLE1a).
+  Claude and Codex turns on the protocol door now record which models they spent their tokens on, the tool's own helper model
+  included, in the usage history.
 - What waits on you at the foot of a session's conversation takes less height and you can resize it (WAITPANEL1). Drag its top
   edge, or focus the edge and use the arrow keys, Home and End; a double-click puts it back. Your height is kept for next time, it
   starts at 240 px, and the conversation above always keeps room to read. *To the top* and *Back to bottom* now sit just above the
