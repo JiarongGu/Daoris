@@ -160,7 +160,9 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("choose the agent that answers asks", "Settings → AI features", "`daoris driver intake <agent>|off`"),
         ("choose the agent Ask Daoris runs on", "Settings → AI features", "`daoris driver helper <agent>|off`"),
         // HELP9: every `daoris driver` verb that changes something is a row, the two a terminal alone set among them.
-        ("choose the agent driven sessions start on", "(no screen yet)", "`daoris driver adapter <agent>`"),
+        ("choose the agent driven sessions start on", "Settings → AI features → Actors, Build", "`daoris driver adapter <agent>`"),
+        // MODELROLE1c (D205 §8.3): who does each kind of work, with which model, in order; its proposal door is owed (MODELROLE1h).
+        ("choose who does each kind of work, and with which model", "Settings → AI features → Actors", "`daoris driver actor <actor> …`"),
         ("park a quest after failed sessions", "Settings → Driver", "`daoris driver strikes <n>`"),
         // SESSUX1b: FRAME1d made the quest's drawer a page. A stop's release names its session, since the terminal cannot
         // see which hold a quest is under (D50); the page's Try again on a stopped quest is the web shell's to add.

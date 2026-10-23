@@ -1,16 +1,18 @@
 import { useTranslation } from 'react-i18next';
 import { useRegistry, useStatus } from '../data/queries';
 import {
-  helpModeOf, useDriver, useHarnesses, usePlugins, useSetHelper, useSetHelpGrant, useSetHelpMode, useSetIntake, useStarts,
+  helpModeOf, useActors, useDriver, useHarnesses, usePlugins, useSetActor, useSetHelper, useSetHelpGrant, useSetHelpMode, useSetIntake,
+  useStarts,
 } from '../bridge/shell';
 import type { HelpGrantChoice, HelpGrantId } from '../help/access/wired';
 import { doorLabel } from '../agents/tools';
-import { failure, type Notify } from '../design/ui';
+import { CardStack, failure, type Notify } from '../design/ui';
 import { sentence } from '../locales/format';
 import { workspacesOf } from '../data/workspaces';
 import { useModeChoice } from '../help/access/HelpModePicker';
 import { fullAdds } from '../help/access/modes';
 import { AiJobs, type SearchTier } from './AiJobs';
+import { ActorsCard, type ActorChoice } from './Actors';
 import { namer } from './accounts/namer';
 import type { StarterDoor } from '../help/starters';
 
@@ -85,8 +87,30 @@ function MachineAi({ search, notify, onGo }: { search?: SearchTier; notify: Noti
     .filter((door) => door.present)
     .map((door) => ({ value: door.harness, label: doorLabel(t, door) }));
   const starts = Array.isArray(answer.data?.starts) ? answer.data.starts : [];
+  // The actors (MODELROLE1c, D205 §7): each order as the driver reads it, Build's set here through SET_ACTOR, the person's press. A
+  // change of Build's agent keeps Chat and Brainstorm, still as before, on the agent they ran, written for them, and says so.
+  const actors = useActors();
+  const setActor = useSetActor();
+  const actorRows = actors.data ?? [];
+  const saveActor = (actor: string, choices: ActorChoice[] | null, answered: { done: () => void; refused: (sentence: string) => void }) => {
+    const build = actorRows.find((row) => row.id === 'build')?.choices[0]?.agent;
+    const followers = actorRows.filter((row) => (row.id === 'chat' || row.id === 'brainstorm') && row.state === 'before')
+      .map((row) => t(`settings.ai.actors.name.${row.id}`));
+    const named = t(`settings.ai.actors.name.${actor}`);
+    setActor.mutate({ actor, choices }, {
+      onSuccess: () => {
+        notify(t(choices === null ? 'settings.ai.actors.cleared' : 'settings.ai.actors.saved', { actor: named }));
+        if (actor === 'build' && build && choices?.[0] && choices[0].agent !== build && followers.length > 0) {
+          notify(t('settings.ai.actors.kept', { agent: build, actors: followers.join(t('settings.ai.actors.and')) }));
+        }
+        answered.done();
+      },
+      onError: (error) => answered.refused(sentence(error)),
+    });
+  };
 
   return (
+    <CardStack>
     <AiJobs
       search={search}
       // An older shell has never heard of the intake: its STATE carries no field, and it gets no row.
@@ -156,5 +180,8 @@ function MachineAi({ search, notify, onGo }: { search?: SearchTier; notify: Noti
         }
         : undefined}
     />
+    {/* An older shell answers no actors, and gets no card. */}
+    {actorRows.length > 0 && <ActorsCard rows={actorRows} agents={agents} busy={setActor.isPending} onSave={saveActor} />}
+    </CardStack>
   );
 }

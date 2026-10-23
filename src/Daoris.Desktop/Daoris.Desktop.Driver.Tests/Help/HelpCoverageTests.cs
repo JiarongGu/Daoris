@@ -817,6 +817,8 @@ public sealed partial class HelpCoverageTests
         ("keep", new Door("setting", "keep")),
         ("cap", new Door("setting", "cap")),
         ("adapter", new Door("setting", "adapter")),
+        // MODELROLE1c (D205 §9.4): an actor's order, owed to MODELROLE1h's `actor_propose`.
+        ("actor", new Owed(HelpRoomOwed.Actor)),
     ];
 
     /// <summary>
@@ -826,6 +828,8 @@ public sealed partial class HelpCoverageTests
     private static readonly (string Domain, string Hook, string? Action, Answer Answer)[] Controls =
     [
         ("ai", "useSetIntake", null, new Door("setting", "intake")),
+        // MODELROLE1c: Build's order on *Actors*, owed to MODELROLE1h's `actor_propose` (D205 §8.1).
+        ("ai", "useSetActor", null, new Owed(HelpRoomOwed.Actor)),
         ("ai", "useSetHelper", null, new Door("setting", "helper")),
         // HELPMODE1b: Ask Daoris's access, pressed from Settings → AI features and from the panel's own chip.
         ("ai", "useSetHelpMode", null, new Exempt(
