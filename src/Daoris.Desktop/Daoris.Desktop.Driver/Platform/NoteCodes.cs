@@ -450,6 +450,8 @@ public static class NoteCodes
     // The person's words a failed turn carried wait to go again (TURNFAIL1), or, failing twice, wait for the person.
     public static readonly NoteCode EndedWordsWait = new("ended.words-wait", []);
     public static readonly NoteCode EndedWordsWaitYou = new("ended.words-wait-you", []);
+    // LIMITRESUME1b (D206): the person's words a turn an account's limit refused carried wait for the limit to lift, never failed twice.
+    public static readonly NoteCode EndedLimitWordsWait = new("ended.limit-words-wait", []);
 
     // ACCESSSWAP1b (D183's note): Daoris ended a run at its turn's end because its repository's permission prompts changed (`from`, `to`,
     // each a permission prompts value), and the words it held go on in the same conversation under the new setup.
