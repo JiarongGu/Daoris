@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-24 - A line carried on to another maker credited the earlier maker's uncommitted work to the new one alone (MAKERTRAIL2)
+
+- **Symptom:** on LIMITRESUME1i's line Codex ran out of credits with 47 files changed and uncommitted in its tree. The install
+  carried the line on to Claude in the same tree (`session.moved ranOn=codex-acp adapter=claude-code-acp why=carry-on`), and
+  Claude committed all of it under its own Co-Authored-By alone, so Codex's part went unattributed.
+- **Root cause:** MAKERTRAIL1's `CommitTrailers.For` composed the attribution from the new start's adapter alone. A carry-on's brief
+  listed what the tree held uncommitted (D80's `InFlight`) and never said who wrote it, so the new maker had nothing to credit it with.
+- **Fix:** a carry-on's target carries the earlier part as its record ran (`SessionTarget.LeftBy`, an `EarlierMaker`): its harness,
+  that harness's maker, and the models its door reported (MODELROLE1b's `ran`). `TargetPrompt.ForStart` hands it to
+  `CommitTrailers.For` where the tree holds uncommitted work. A maker unlike the new one gets a second paragraph beside MAKERTRAIL1's
+  line, with its own `Co-Authored-By` line, its model as reported or *model unreported*. Makers compare by name where both are
+  known, otherwise by harness.
+- **Verify:** `AdapterTests`, 40 of 40, including the earlier trailer for Codex, Claude, an unreported model and an unknown maker,
+  and nothing more within a maker or with nothing uncommitted. `MakerTrailTickTests` (new, Process) with `process.runsettings`,
+  2 of 2: a real tick carries a failed `stub` line on to `acp-stub` in its tree, and its first prompt names `stub`'s trailer; a
+  carry-on on `stub` again says nothing more.
+
 ## 2026-10-24 - Sessions a squash landed together were told to rebase onto work already on the line (SQUASHSEEN1)
 
 - **Symptom:** the parent landed two sessions' work on `main` as one squashed commit, beside `trees land`, to correct a

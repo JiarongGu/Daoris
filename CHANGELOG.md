@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session that carries on work another maker's agent left uncommitted in its tree is now told that maker's Co-Authored-By
+  trailer too (MAKERTRAIL2). It names the model that agent reported, or *model unreported*, so a commit holding that work
+  credits both makers. A carry-on with the same maker is told nothing more.
 - Work landed on the line as a squash, together with another session's work, is now recognised as each session's own
   (SQUASHSEEN1). Those sessions are no longer told to rebase onto work the line already holds. Each one's page offers *Discard
   branch…* in place of *Accept…*, saying a squash carried its work, and its tree is tidied as a landed one is. A session with

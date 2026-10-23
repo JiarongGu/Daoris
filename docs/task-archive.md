@@ -20113,3 +20113,11 @@ Each row is the UI design's new `ChoiceRow`. *Clear choice* lets the words go al
 of answer. The row's proofs pass as focused tests, with the six-answer floor measured in Chromium and the stories in both
 languages and themes. The installed-window proof waits for the install to carry the build. Detail: D185's QUESTIONUI1a note and
 D208's.
+## MAKERTRAIL2 — a line carried on to another maker credits the earlier maker's uncommitted work (2026-10-24)
+
+> - [ ] **MAKERTRAIL2 — a line carried on to another maker credits the earlier maker's uncommitted work** (driver; found 2026-10-24 on LIMITRESUME1i). Codex ran out of credits with 47 files changed and uncommitted in its tree; the install carried the line on to Claude in the same tree (`session.moved ranOn=codex-acp adapter=claude-code-acp why=carry-on`), and Claude committed all of it under its own Co-Authored-By alone, so Codex's part is unattributed. A carry-on whose earlier part ran on another maker tells the new maker, in its brief beside MAKERTRAIL1's line, which maker left uncommitted work in the tree and that a commit holding it carries that maker's trailer too (the earlier part's harness and reported model, as MODELROLE1b records them). Proof: a carry-on across two stand-in makers whose brief names the first maker's trailer; one within a maker says nothing more.
+
+**Outcome** 2026-10-24: a carry-on whose tree holds uncommitted work left by another maker is told, after MAKERTRAIL1's line, the
+harness and maker of the part before it and that maker's `Co-Authored-By` line. That line names the model that part's door
+reported, or *model unreported* (`SessionTarget.LeftBy`, `CommitTrailers.For`). Within a maker, or with nothing uncommitted, it is
+told nothing more. `AdapterTests` and the new Process class `MakerTrailTickTests` prove it. Detail: FIX-LOG 2026-10-24.
