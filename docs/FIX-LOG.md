@@ -5,6 +5,32 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-23 - A turn its model's provider refused parked on the person (APIREFUSAL1)
+
+- **Symptom:** LIMITGOON1's first session on the install (session `cc63a27e`, 08:16 UTC) ended parked: *It stopped with its
+  quest still taken, to ask you:* followed by `API Error: Opus 5.5's safeguards flagged this message … Details:
+  [reasoning_extraction] … Request ID: req_…`. It sat in *What needs you*, and there was nothing the person could answer.
+- **Root cause:** the session's record shows the shape. The adapter said the provider's error as the agent's own message, then
+  answered the prompt with `stopReason: refusal`, and exited 0 once stdin closed. The driver logged the stop reason only on the
+  console (`— the turn ended: refusal`). The observation reads the exit, the quest's state and a failed call (ACPEND1), never
+  the stop reason, because the wire flattens most endings to `end_turn`. So the run read as a clean end with its quest taken,
+  the park (STANDDOWN2), and the error was quoted as the agent's question.
+- **Fix:** `AcpOutcome.Refusal` names the stop reason, and the run's `HarnessEnding.ProviderRefused` carries it to the
+  conclusion. `Observation.Conclude` reads it right after a failed call and before every park (a background cut, a helper wait,
+  the park itself). The run is `failed` under its own code, `ended.provider-refused`, followed by the provider's words, request
+  id included, as a program's words (`NoteBy.Program`). A failed run is a strike and is carried on as any failed run is.
+  `Observation.Resumed` does the same for a resumed run, including one whose quest had closed. A done or a new question to
+  another repository reached first still stands. The code is worded in en and zh (`note.json`, `noteLines.ts`).
+- **Verify:** red first: `ProviderRefusalTickTests.A_turn_its_provider_refused_is_a_failed_run_by_its_code_and_never_a_park`
+  (a real tick, a stand-in ACP agent that takes its quest, says the refusal and ends `refusal`) failed with `awaiting-person`.
+  Green: that class's two tests (the question case still parks with `ended.parked-asked`) and `AcpTurnFailureTickTests`, by
+  class with `process.runsettings`; `AnswerContinuesTickTests` (its stand-in now keeps `noteParts`); the fast
+  `ObservationTests` (with `A_turn_its_provider_refused_is_a_failed_run_by_its_own_code_never_a_park`), `NoteCodesTests`,
+  `NoteSitesTests`, `StructureTests`, `AttentionTests` and `AcpTests` (223); the web's `note.test.ts` and `noteLines.test.ts`
+  (88). The driver and modules fast halves' results are in the closing note.
+- **Not covered:** Daoris has not measured a refusal on the native door, whose `result` frame it reads for no stop reason. A
+  native run its provider refused is still concluded by its exit and its quest's state.
+
 ## 2026-10-23 - A repository set up from its page stayed not adopted (SETUPSTATE1)
 
 - **Symptom:** the owner pressed *Set it up* on a work repository's page. Its set-up session finished, its work landed on a
