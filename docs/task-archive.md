@@ -20121,3 +20121,18 @@ D208's.
 harness and maker of the part before it and that maker's `Co-Authored-By` line. That line names the model that part's door
 reported, or *model unreported* (`SessionTarget.LeftBy`, `CommitTrailers.For`). Within a maker, or with nothing uncommitted, it is
 told nothing more. `AdapterTests` and the new Process class `MakerTrailTickTests` prove it. Detail: FIX-LOG 2026-10-24.
+
+## CISCOPE1c — the census of every test unit, the failure reader and the signature, and recall's first figure (2026-10-24, D207)
+
+> **CISCOPE1c** (D207's row 3; `docs/2026-10-24-ci-scope-design.md` §8 row 3, with §3 and §3.5): `tools/test-map.mjs`, the
+> census of every test unit with its reach and subject for every suite, held honest by its check; the failure reader (trx,
+> vitest, `node --test`: the case, the exception type, the location as the frame's method and the text of its source line,
+> never its line number) and the signature, with their tool-tests; and the recall proof: the month's recorded failures replayed
+> through the census at each failure's introducing commit, a causal lower bound, each source's span, count and observation lag
+> said, the FIX-LOG's failures given apart. Nothing a merge or the CI waits for changes beyond adding the census check.
+
+**Outcome** 2026-10-24, in part: the census (1,754 units in 15 suites), its check as the `test-map` gate (in `BASELINE` and
+`BLOCKING`, about 20 s), the failure reader and the signature, and §3.5's search, with their tool-tests (`test-map.test.ts`,
+`test-recall.test.ts`, the merge tool's lists). The inventory matched three CI runs' trx files on their own trees. The recall
+proof ran structurally with no historical run: a lower bound of 0 of 145 (0 of the FIX-LOG's 67), all unsettled, so CISCOPE1e
+does not start on it. The historical runs and §2.2's replay are CISCOPE1c2 in the backlog. Detail: D207's CISCOPE1c note.

@@ -12,6 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// working files say something else. The look after the landing registers what the LINE declares, adopted and declared,
 /// for the checkout's root, through the registry door, and asks for the refresh once.
 /// </summary>
+// subject: src/Daoris.Desktop/Daoris.Desktop.Driver/Service — registration follows the line (CISCOPE1c's census, D207)
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class RegistrationLineProcessTests : IDisposable

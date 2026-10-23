@@ -240,6 +240,11 @@ jobs:
       - name: Orientation index gate
         run: node tools/orient-index.mjs --check
 
+      # The census of test units (CISCOPE1c, D207): every suite's units, their reach read from the sources, held to the
+      # lane table's fixture rows, the whole-suite files and the open rows a skip names. Reads files only; about 20 s.
+      - name: Test census gate
+        run: node tools/test-map.mjs --check
+
       # Everything that protects a consumer, in the order a consumer meets it — ending with the devkit's
       # five universal gates over THIS repository (DEVKIT3, SEN1). They ran here as a step of their own
       # as well, the same command twice (REV3 CLEAN1); `verify` is their one home, and the dogfood test

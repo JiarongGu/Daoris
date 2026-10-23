@@ -1,0 +1,33 @@
+{
+  "_why": "CISCOPE1c (D207, design docs/2026-10-24-ci-scope-design.md §3.4 check 5): the files that act on every unit of a suite without being named, which tools/test-map.mjs reads from the tree and holds to this list. Such a file runs its suite whole; the list makes that visible, and a new one fails the census's check until it is listed here with why.",
+  "wholeSuite": {
+    "src/Daoris.Service/Daoris.Service.Http.Tests/DaorisHost.cs": "the HTTP tests' assembly fixture: every class shares the host it starts",
+    "src/Daoris.Service/Daoris.Service.Http.Tests/GlobalUsings.cs": "a global using of the service's HTTP tests",
+    "src/Daoris.Service/Daoris.Service.Http.Tests/Daoris.Service.Http.Tests.csproj": "the service's HTTP tests' project file",
+    "src/Daoris.Service/Daoris.Service.Tests/GlobalUsings.cs": "a global using of the service's tests",
+    "src/Daoris.Service/Daoris.Service.Tests/Daoris.Service.Tests.csproj": "the service's tests' project file",
+    "src/Daoris.Devkit/Daoris.Devkit.Tests/GlobalUsings.cs": "a global using of the devkit's tests",
+    "src/Daoris.Devkit/Daoris.Devkit.Tests/Daoris.Devkit.Tests.csproj": "the devkit's tests' project file",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/GlobalUsings.cs": "a global using of the driver's tests, every half",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Daoris.Desktop.Driver.Tests.csproj": "the driver's tests' project file, every half",
+    "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/GlobalUsings.cs": "a global using of the modules' tests, both halves",
+    "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Parallelism.cs": "the modules' tests' assembly attribute: one class at a time",
+    "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Daoris.Desktop.Modules.Tests.csproj": "the modules' tests' project file, both halves",
+    "src/Daoris.Desktop/process.runsettings": "the Process halves' run settings (MOD8, PROCPAR1)",
+    "src/Daoris.Desktop/git.process.runsettings": "the driver's git half's run settings (PROC1c)",
+    "src/Daoris.Desktop/Directory.Build.props": "every desktop project builds with it",
+    "src/Daoris.Desktop/Directory.Packages.props": "every desktop project's package versions",
+    "src/Daoris.Devkit/Directory.Build.props": "every devkit project builds with it",
+    "src/Daoris.Devkit/Directory.Packages.props": "every devkit project's package versions",
+    "src/Daoris.Service/Directory.Build.props": "every service project builds with it",
+    "src/Daoris.Service/Directory.Packages.props": "every service project's package versions",
+    "src/Daoris.Cli/tsconfig.json": "the CLI's compiler settings, which its tests and the tool-tests run under",
+    "src/Daoris.Cli/package.json": "the CLI's scripts, which choose its tests' and the tool-tests' files",
+    "src/Daoris.Web/vite.config.ts": "the vitests' configuration: their environment, pool, include and timeout",
+    "src/Daoris.Web/src/test/setup.tsx": "vitest's setupFiles: run before every page test",
+    "src/Daoris.Web/tsconfig.json": "the page's compiler settings",
+    "src/Daoris.Web/package.json": "the page's scripts and dependencies",
+    "src/Daoris.Web/playwright.config.ts": "the end-to-end specs' configuration",
+    "src/Daoris.Web/playwright.measured.config.ts": "the measured-box specs' configuration"
+  }
+}
