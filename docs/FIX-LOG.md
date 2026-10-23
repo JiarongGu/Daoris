@@ -57,8 +57,8 @@ repository.
   or refused, parks the turn. It passed against the built code, so it was checked against a mutant that read the failure as "none
   asked", and both cases went red. `AttentionStateSliceTests`: the row by its session, with the refusal, none for a record that
   moved on, and the file's read. `attention.test.ts`, `AttentionRow.test.tsx`: the wording in en and zh, its group, place, order
-  and door. Green: the driver's helper classes (78), the modules' attention and notices classes (114), the web's attention and
-  locale files (282, 104), the Process classes `HelperWaitTickTests` (2) and `HelperProcessTests` (4) with `process.runsettings`,
+  and door. Green: the driver's helper classes (78), the modules' attention and notices classes (114), the driver's fast half
+  (13,881) and the modules' (2,320), the web's attention and locale files (282, 104), the Process classes `HelperWaitTickTests` (2) and `HelperProcessTests` (4) with `process.runsettings`,
   and `HelperCaptureProcessTests` (4) with `git.process.runsettings`.
 
 ## 2026-10-23 — A hand read back after its answer was lost told nothing on this machine (HELPERWAIT1b2)
