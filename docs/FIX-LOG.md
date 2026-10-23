@@ -18,8 +18,9 @@ repository.
 - **Verify:** red first, `SessionLocksTests` with `src/Daoris.Desktop/git.process.runsettings`: 13 tests, 8 failures (five terminal
   moves retained their lock; the old-place sweep missed its tree; forced removal failed at both places). The expanded class passes
   all 23 tests. The reached driver fast classes pass 199 tests; home, read-sharing, optional-lock, live-login, partial-type and
-  workspace-word censuses pass. Remaining tree Process classes and desktop-route checks are pending.
-- **Commit:** pending.
+  workspace-word censuses pass. Desktop discard's four ledger-protection cases failed before its forwarding was fixed; the
+  reached modules classes then passed 54 tests. Remaining tree Process classes are pending.
+- **Commit:** `d874f9d84` (driver implementation); desktop forwarding and final receipts follow.
 
 ## 2026-10-23 — Leaving Review left its git running, and a runner returned before its git had ended (GITAPP1a-iii)
 

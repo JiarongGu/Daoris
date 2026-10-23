@@ -446,7 +446,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         if (path is not null)
         {
             var owner = SessionBranchDoors.SessionOfTree(await SessionBranchDoors.RecordsOrNoneAsync(service, cancellationToken), path)?.Id;
-            var removed = await new SessionTrees(_loop.Home).RemoveAsync(path, force, cancellationToken);
+            var removed = await new SessionTrees(_loop.Home).RemoveAsync(path, force, cancellationToken, service);
             _loop.Nudge();
             return new { Session = owner, Done = removed.Removed, removed.Message, Said = TreesWords.Remove(removed).ToWire() };
         }
@@ -464,7 +464,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
 
         // The same home the loop derives for the chat runner and the watch: the directory holding
         // `driver.json`. Derived rather than stored twice, so one answer cannot drift from the other.
-        var removal = await new SessionTrees(_loop.Home).RemoveAsync(tree, force, cancellationToken);
+        var removal = await new SessionTrees(_loop.Home).RemoveAsync(tree, force, cancellationToken, service);
         _loop.Nudge();
         return new { Session = id, Done = removal.Removed, removal.Message, Said = TreesWords.Remove(removal).ToWire() };
     }

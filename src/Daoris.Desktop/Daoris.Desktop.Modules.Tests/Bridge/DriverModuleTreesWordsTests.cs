@@ -10,12 +10,14 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 public sealed class DriverModuleTreesWordsTests : DriverModuleBridge
 {
+    public DriverModuleTreesWordsTests() : base("tree-lock-route") { }
+
     /// <summary>A module whose driver is up, over a stand-in service holding no repository and no session.</summary>
-    private async Task<DriverModule> ComeUpAsync()
+    private async Task<DriverModule> ComeUpAsync(string? tree = null, string state = "working")
     {
         var loop = Loop();
         var module = new DriverModule(Bus, loop);
-        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandInService())));
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandInService(tree, state))));
         return module;
     }
 
@@ -43,6 +45,26 @@ public sealed class DriverModuleTreesWordsTests : DriverModuleBridge
         Assert.Empty(error);
         Assert.Equal(1, code);
         Assert.True(Directory.Exists(folder), "a refusal removes nothing");
+    }
+
+    [Theory]
+    [InlineData(false, "working")]
+    [InlineData(true, "working")]
+    [InlineData(false, "awaiting-person")]
+    [InlineData(true, "awaiting-person")]
+    public async Task A_forced_discard_by_path_or_session_keeps_a_tree_the_local_ledger_holds(bool byPath, string state)
+    {
+        var tree = DaorisHome.Entry(Home, HomeEntry.Trees, "aurora", "engine", "s-12345678");
+        Directory.CreateDirectory(tree);
+        var module = await ComeUpAsync(tree, state);
+        var answer = byPath
+            ? await AnswerAsync(module, "DISCARD_SESSION_TREE", new { path = tree, force = true })
+            : await AnswerAsync(module, "DISCARD_SESSION_TREE", new { id = "s1a2b3c4", force = true });
+
+        Assert.False(answer.GetProperty("done").GetBoolean());
+        Assert.Equal(SessionBranchDiscard.Held("engine", "daoris/s-12345678"), answer.GetProperty("message").GetString());
+        Assert.True(Directory.Exists(tree));
+        Assert.Equal(1, Said(answer).Code);
     }
 
     [Fact]
@@ -255,12 +277,14 @@ public sealed class DriverModuleTreesWordsTests : DriverModuleBridge
         Assert.Contains("no working tree", refusal);
     }
 
-    private sealed class StandInService : HttpMessageHandler
+    private sealed class StandInService(string? tree = null, string state = "working") : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>
             Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
             {
-                Content = new StringContent("[]", System.Text.Encoding.UTF8, "application/json"),
+                Content = new StringContent(tree is not null && request.RequestUri!.AbsolutePath == "/api/sessions"
+                    ? JsonSerializer.Serialize(new[] { new { id = "s1a2b3c4", repository = "engine", tree, state } }) : "[]",
+                    System.Text.Encoding.UTF8, "application/json"),
             });
     }
 }
