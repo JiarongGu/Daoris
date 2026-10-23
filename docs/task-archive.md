@@ -20121,3 +20121,18 @@ D208's.
 harness and maker of the part before it and that maker's `Co-Authored-By` line. That line names the model that part's door
 reported, or *model unreported* (`SessionTarget.LeftBy`, `CommitTrailers.For`). Within a maker, or with nothing uncommitted, it is
 told nothing more. `AdapterTests` and the new Process class `MakerTrailTickTests` prove it. Detail: FIX-LOG 2026-10-24.
+## MODELROLE1c2 — Build's choices refused per account, and said (2026-10-24, D205; what remains MODELROLE1c3)
+
+> - [ ] **MODELROLE1c2 — Build's choices refused per account, and said** (driver, service, web; the rest of D205 row c, after MODELROLE1c). Per-account offers and refusals: `agent-offers` in the three home twins with D195's row; `OpeningOptions`; §3.3's paths and §3.5 (a), (c) and (d) for driven starts and their continuations, with `choice-not-offered`, `Release` and its two halves, the resume's put-back, `account.refused-model` left out of the strikes, `SessionStarted.NotOffered`, no *Ended* notice for that end, and the walk's model parameter; the head's *choice n* / *your pick* chip, the opening note's actor line and the Agents fold's line. Today a refused model runs at account default, said as *not carried* (`docs/2026-10-24-modelrole1c-build.md`). Proof: design §13's per-account walk, stub and `Release` tests; on the install, a Build whose first choice names a model one account does not offer runs it on the other account, and with neither runs its second and says so on the head and in the note.
+
+(Quest `#0c52196a3b0f`.)
+
+**Outcome** 2026-10-24, in three parts. **Built:** `agent-offers` in the three twins and D195's inventory; the walk's model
+parameter with per-start passes; the refusal at a protocol open kept as the account's reading and re-asked, a same-account move
+set on the open session from `OpeningOptions`, anything else ended `choice-not-offered` before any prompt and its count given
+back by `Release`; such a record no strike, no last run, not running nor last started, and no *Ended*; `account.refused-model`
+among the account's own lines; a resume refused by its own account's reading carried to another, and put back when caught at
+the open; the opening note's actor line, the head's chip and the Agents fold's line. The proof runs on the protocol stand-in:
+the other account takes a first choice one account refuses, and with neither the second runs and says so. **Remaining, as
+MODELROLE1c3:** the pipe door's measured refusal, the quiet *Not started* row, the chip's stories, the installed-window proof.
+Detail: D205's MODELROLE1c2 note; `docs/2026-10-24-modelrole1c-build.md`.
