@@ -80,6 +80,28 @@ public sealed class ActorRunTests : IDisposable
         Assert.Contains("build", line);
     }
 
+    /// <summary>Row b reports alone: a service that refuses the provenance write costs the record it, never the start or the press.</summary>
+    [Fact]
+    public async Task A_refused_provenance_write_is_logged_and_never_thrown()
+    {
+        using var http = new HttpClient(new Refusing());
+        using var service = new ServiceClient("http://stand-in", key: null, http);
+        using (var log = new MachineLog(_home, "driver"))
+        {
+            Assert.False(await service.TryKeepActorAsync("s1", log, "before", ActorAsked.Before("claude-code")));
+            Assert.False(await service.TryKeepActorAsync("s1", null, changed: new Dictionary<string, string> { ["model"] = "sonnet" }));
+        }
+        var line = Directory.GetFiles(DaorisHome.Entry(_home, HomeEntry.Logs), "*.jsonl").SelectMany(File.ReadAllLines).Single();
+        Assert.Contains("actor.keep-failed", line);
+        await Assert.ThrowsAsync<DriverException>(() => service.KeepActorAsync("s1", "before"));
+    }
+
+    private sealed class Refusing : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>
+            Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.InternalServerError) { Content = new StringContent("{\"error\":\"refused\"}") });
+    }
+
     [Fact]
     public void The_thirteen_start_table_names_an_actor_and_the_two_spawn_seams_require_it()
     {

@@ -2188,8 +2188,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     }
 
     /// <summary>
-    /// One record as a run that goes on reads it (MSG1c): its state, its words waiting, the adapter, account, tree and
-    /// version it ran on, its note and its flags, and its kind. Null when no record of this machine has that id.
+    /// D205 §9.3: a record's provenance after its open, through the loopback-only later door, with no revision. A record this
+    /// machine no longer has is no failure; any other refusal throws.
     /// </summary>
     public async Task KeepActorAsync(string id, string? choice = null, ActorAsked? asked = null, ActorRan? ran = null,
         object? changed = null, CancellationToken ct = default)
@@ -2208,6 +2208,29 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         else if (status != 404) throw new DriverException($"the service refused actor provenance: {payload}");
     }
 
+    /// <summary>
+    /// <see cref="KeepActorAsync"/> where a start or a composer change keeps it: reporting never changes what runs (D205 row b),
+    /// so a refusal or an unreachable service is logged and the run goes on. A cancellation still cancels.
+    /// </summary>
+    public async Task<bool> TryKeepActorAsync(string id, MachineLog? log, string? choice = null, ActorAsked? asked = null,
+        object? changed = null, CancellationToken ct = default)
+    {
+        try
+        {
+            await KeepActorAsync(id, choice, asked, changed: changed, ct: ct).ConfigureAwait(false);
+            return true;
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            log?.Write("warn", "actor.keep-failed", [("session", id)]);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// One record as a run that goes on reads it (MSG1c): its state, its words waiting, the adapter, account, tree and
+    /// version it ran on, its note and its flags, and its kind. Null when no record of this machine has that id.
+    /// </summary>
     public async Task<PriorSession?> RecordAsync(string id, CancellationToken ct = default) =>
         ReadRecord(await GetAsync(SessionRecords.Door, ct).ConfigureAwait(false), id);
 

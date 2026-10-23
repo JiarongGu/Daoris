@@ -3322,11 +3322,18 @@ public sealed class Driver(
         // Kept beside the process, so who is driving Daoris's browser lasts exactly as long as it (BRW8).
         using var tracked = Context.Processes.Track(sessionId, process, refusesInput, drivesBrowser);
         using var reaper = new Disposer(() => SessionProcesses.EndIfRunning(process));
-        var prior = target.Brainstorm is null ? await service.RecordAsync(sessionId, ct).ConfigureAwait(false) : null;
+        // D205 row b: what this start's record already says, and what it asked, kept as reporting alone — a service that does not
+        // answer here costs the record its provenance, never the run.
+        PriorSession? prior = null;
+        if (target.Brainstorm is null)
+        {
+            try { prior = await service.RecordAsync(sessionId, ct).ConfigureAwait(false); }
+            catch (Exception error) when (error is not OperationCanceledException) { Log?.Write("warn", "actor.read-failed", [("session", sessionId)]); }
+        }
         actor = prior?.Actor ?? actor;
         var asked = ActorAsked.ForSpawn(adapter.Name, info, target.Asked ?? prior?.Asked);
         if (target.Brainstorm is null)
-            await service.KeepActorAsync(sessionId, prior?.Choice ?? "before", asked, ct: ct).ConfigureAwait(false);
+            await service.TryKeepActorAsync(sessionId, Log, prior?.Choice ?? "before", asked, ct: ct).ConfigureAwait(false);
         UsageTurns.ActorBound(home, Context.Events, sessionId, actor);
         await using var actorRun = new ActorRun(Context.Events, sessionId, actor, prior?.Ran,
             ran => target.Brainstorm is null ? service.KeepActorAsync(sessionId, ran: ran) : Task.CompletedTask, Log);

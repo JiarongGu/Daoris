@@ -1237,7 +1237,12 @@ public sealed class ChatRunner : IDisposable
                 });
             }
 
-            await _service.KeepActorAsync(sessionId, goOn?.Record.Choice ?? "before", ActorAsked.ForSpawn(resolved.Name, info, actorAsked), ct: ct).ConfigureAwait(false);
+            // D205 row b: reported alone, so a refusal here costs the record its provenance, never the conversation.
+            using (var startLog = new MachineLog(_home, "driver"))
+            {
+                await _service.TryKeepActorAsync(sessionId, startLog, goOn?.Record.Choice ?? "before", ActorAsked.ForSpawn(resolved.Name, info, actorAsked), ct: ct)
+                    .ConfigureAwait(false);
+            }
             // Through the start gate (PROCSTART2): a conversation's press may reach here before its first wait. Through the launcher
             // (TERMTRUST1a, D201 point 4): its harness born in this process's agents' job, the launcher read as the conversation's process.
             process = await AgentStarts.StartAsync(info, ContainedKind.Agent, StartClass.Person, _home, log: null, CancellationToken.None).ConfigureAwait(false)
@@ -1805,9 +1810,13 @@ public sealed class ChatRunner : IDisposable
         if (effort is not null) changed["effort"] = effort;
         if (changed.Count > 0)
         {
-            await _service.KeepActorAsync(sessionId, changed: changed, ct: ct).ConfigureAwait(false);
+            // The agent took the change already: a provenance write that fails is logged, never the press's failure.
+            using (var keepLog = new MachineLog(_home, "driver"))
+            {
+                await _service.TryKeepActorAsync(sessionId, keepLog, changed: changed, ct: ct).ConfigureAwait(false);
+            }
+            if (_context.ActorRuns.TryGetValue(sessionId, out var actorRun)) actorRun.Report([], new(DateTimeOffset.UtcNow, model, effort));
         }
-        if (_context.ActorRuns.TryGetValue(sessionId, out var actorRun)) actorRun.Report([], new(DateTimeOffset.UtcNow, model, effort));
         // Said as the agent names them, so a reader later knows what ran the turns after this one.
         var chosen = option.Choices.FirstOrDefault(choice => choice.Value == value)?.Name ?? value;
         // CONVNOTE2c: the option and its value are the agent's own names, facts the page words the sentence around.
