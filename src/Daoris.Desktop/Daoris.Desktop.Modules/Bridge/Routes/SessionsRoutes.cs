@@ -359,9 +359,9 @@ public sealed class SessionsRoutes(DriverContext context)
 
     // A parked session's question to the person (PARKVIEW1, the park's ask design §2), as its agent asked it through `question_ask`
     // and the driver kept it for the park its last turn ended in: its words, the answers it offers with what it does on each, the one
-    // it recommends and by when, each the agent's own; null where none is kept, and for a record that is not parked (Fable's read, Q7),
-    // whatever a file says. A read off the home's sessions folder, the files leaving the window's thread first (UIFREEZE1): it declares
-    // nothing, and the page asks it only of a park of this machine's.
+    // it recommends with why (QUESTIONUI1a) and by when, each the agent's own; null where none is kept, and for a record that is not
+    // parked (Fable's read, Q7), whatever a file says. A read off the home's sessions folder, the files leaving the window's thread
+    // first (UIFREEZE1): it declares nothing, and the page asks it only of a park of this machine's.
     [DriverRoute("SESSION_QUESTION")]
     private async Task<object?> SessionQuestionAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -379,6 +379,7 @@ public sealed class SessionsRoutes(DriverContext context)
                     Question = asked.Question,
                     Choices = asked.Choices.Select(choice => new { choice.Label, choice.Does }).ToArray(),
                     asked.Recommend,
+                    asked.Why,
                     asked.By,
                     At = Moments.Write(asked.At),
                 },

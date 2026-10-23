@@ -1150,7 +1150,7 @@ describe('a park\'s go-aheads', () => {
    */
   it('lists them with no press where the box below answers the park, and shows its question in place of its last message', () => {
     const question = {
-      id: 'q5t10n00', question: 'Which target should the tile show?', recommend: 1, by: null, at: '2026-09-21T11:20:00Z',
+      id: 'q5t10n00', question: 'Which target should the tile show?', recommend: 1, why: null, by: null, at: '2026-09-21T11:20:00Z',
       choices: [{ label: '1,200', does: 'Write 1,200.' }, { label: '1,350', does: 'Write 1,350.' }],
     };
     render(<SessionHead session={session(parked)} onResolve={vi.fn()} goAheads={ASKED} onGoAhead={vi.fn()} parkBox question={question} />);

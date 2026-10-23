@@ -32,6 +32,7 @@ const ASKED: ParkQuestion = {
     { label: 'Leave it for now', does: 'Ship the tile reading the configuration, and leave the value as it is.' },
   ],
   recommend: 1,
+  why: 'The ticket links the planning sheet, and development already holds that value.',
   by: 'before Friday\'s release window',
   at: '2026-10-22T09:05:00Z',
 };

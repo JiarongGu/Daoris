@@ -19,6 +19,7 @@ const QUESTION: ParkQuestion = {
     { label: '1,350', does: 'Write 1,350, the last stand-up note\'s value.' },
   ],
   recommend: 1,
+  why: 'The ticket links the planning sheet.',
   by: 'before Friday\'s release',
   at: '2026-10-22T09:05:00Z',
 };

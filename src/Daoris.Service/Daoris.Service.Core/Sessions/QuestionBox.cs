@@ -35,6 +35,9 @@ public sealed class QuestionBox(string? home)
     /// <summary>The longest "by when", in characters: a window or a moment, as the agent knows it.</summary>
     public const int MaxBy = 200;
 
+    /// <summary>The longest reason for the recommendation, in characters (QUESTIONUI1a): drawn under the recommended answer.</summary>
+    public const int MaxWhy = 300;
+
     public const string Suffix = ".question.json";
 
     private const string NoSession =
@@ -54,9 +57,10 @@ public sealed class QuestionBox(string? home)
     /// <param name="named">The session the connector names, said back when no record is held for it.</param>
     /// <param name="choices">The answers it offers, each its label and what it does on it, in its order; null or empty for none.</param>
     /// <param name="recommend">The answer it recommends, by its number from 1, or null.</param>
+    /// <param name="why">Why it recommends that answer (QUESTIONUI1a), or null: said only with a recommendation.</param>
     public (string? Id, string Message) Ask(
         Session? asker, string? named, string? question, IReadOnlyList<(string? Label, string? Does)>? choices, int? recommend, string? by,
-        DateTimeOffset at)
+        DateTimeOffset at, string? why = null)
     {
         if (string.IsNullOrWhiteSpace(named)) return (null, $"{NoSession} Nothing was asked.");
         if (asker is not { Origin: null }) return (null, $"No session `{named.Trim()}` of this machine's is held to ask in. Nothing was asked.");
@@ -96,6 +100,18 @@ public sealed class QuestionBox(string? home)
                 : $"Your recommendation `{pick}` names no answer: name one by its number, from 1 to {kept.Count}, or none. Nothing was asked.");
         }
 
+        var reason = why?.Trim() is { Length: > 0 } given ? given : null;
+        if (reason is not null && recommend is null)
+        {
+            return (null, "A reason goes with a recommendation: name the answer you recommend by its number, or leave the reason out. "
+                          + "Nothing was asked.");
+        }
+
+        if (reason is { Length: > MaxWhy })
+        {
+            return (null, $"Why you recommend it is at most {MaxWhy} characters, and this is {reason.Length}. Nothing was asked.");
+        }
+
         var when = by?.Trim() is { Length: > 0 } said ? said : null;
         if (when is { Length: > MaxBy }) return (null, $"By when is at most {MaxBy} characters, and this is {when.Length}. Nothing was asked.");
         if (Home is null) return (null, $"{Capital(DaorisHome.Sentence)} Nothing was asked.");
@@ -117,6 +133,7 @@ public sealed class QuestionBox(string? home)
 
             writer.WriteEndArray();
             if (recommend is { } chosen) writer.WriteNumber("recommend", chosen); else writer.WriteNull("recommend");
+            if (reason is null) writer.WriteNull("why"); else writer.WriteString("why", reason);
             if (when is null) writer.WriteNull("by"); else writer.WriteString("by", when);
             writer.WriteString("at", Moments.Write(at));
         });
@@ -183,7 +200,10 @@ public sealed class QuestionBox(string? home)
                 : [];
             int? recommend = root.TryGetProperty("recommend", out var number) && number.ValueKind == JsonValueKind.Number
                 && number.TryGetInt32(out var chosen) ? chosen : null;
-            return new QuestionKept(id, Text(root, "session") ?? session, question, choices, recommend, Text(root, "by"), Text(root, "at"));
+            return new QuestionKept(id, Text(root, "session") ?? session, question, choices, recommend, Text(root, "by"), Text(root, "at"))
+            {
+                Why = Text(root, "why"),
+            };
         }
         catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
         {
@@ -213,7 +233,11 @@ public sealed class QuestionBox(string? home)
 
 /// <summary>A session's question as <c>question_ask</c> wrote it: its id, the session, its words, its answers, and when.</summary>
 public sealed record QuestionKept(
-    string Id, string Session, string Question, IReadOnlyList<QuestionChoice> Choices, int? Recommend, string? By, string? At);
+    string Id, string Session, string Question, IReadOnlyList<QuestionChoice> Choices, int? Recommend, string? By, string? At)
+{
+    /// <summary>Why it recommends its answer (QUESTIONUI1a), or null where it gave no reason.</summary>
+    public string? Why { get; init; }
+}
 
 /// <summary>One answer a question offers: the words on its press, and what the agent does on it.</summary>
 public sealed record QuestionChoice(string Label, string Does);

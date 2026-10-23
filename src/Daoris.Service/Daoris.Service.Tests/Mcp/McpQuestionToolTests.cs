@@ -45,7 +45,8 @@ public sealed class McpQuestionToolTests : McpToolsFixture
         var (connector, driven, _) = await ConnectorAsync();
 
         var said = await connector(driven).AskAsync(
-            "Which quarterly target should the dashboard tile show?", TwoReadings, recommend: 1, by: "before Friday's release");
+            "Which quarterly target should the dashboard tile show?", TwoReadings, recommend: 1, by: "before Friday's release",
+            why: "  The ticket links the planning sheet.  ");
 
         var file = Sessions(driven + QuestionBox.Suffix);
         var text = File.ReadAllText(file);
@@ -59,6 +60,8 @@ public sealed class McpQuestionToolTests : McpToolsFixture
         Assert.Equal(
             [("1,200", "Write 1,200, the planning sheet's value, which the ticket links."), ("1,350", "Write 1,350, the last stand-up note's value.")],
             root.GetProperty("choices").EnumerateArray().Select(choice => (choice.GetProperty("label").GetString(), choice.GetProperty("does").GetString())));
+        Assert.Equal("The ticket links the planning sheet.", root.GetProperty("why").GetString());
+        Assert.Equal("The ticket links the planning sheet.", QuestionBox.Read(Home, driven)!.Why);
         Assert.Matches("^[0-9a-f]{8}$", root.GetProperty("id").GetString());
         Assert.True(DateTimeOffset.TryParse(root.GetProperty("at").GetString(), out _));
         Assert.Contains("press", said);
@@ -81,6 +84,7 @@ public sealed class McpQuestionToolTests : McpToolsFixture
         Assert.Empty(root.GetProperty("choices").EnumerateArray());
         Assert.Equal(JsonValueKind.Null, root.GetProperty("recommend").ValueKind);
         Assert.Equal(JsonValueKind.Null, root.GetProperty("by").ValueKind);
+        Assert.Equal(JsonValueKind.Null, root.GetProperty("why").ValueKind);
     }
 
     /// <summary>The latest is what it asks now: a second question replaces the first, under a new id.</summary>
@@ -103,7 +107,8 @@ public sealed class McpQuestionToolTests : McpToolsFixture
     /// 🔴 What the tool can judge itself is refused in a sentence and writes nothing: no session in its scope, a session nobody holds, a
     /// conversation (its person reads it as it comes), a helper, a reviewer, an intake, Ask Daoris's own conversation, a driven record
     /// on no quest, and every bound: the question blank or too long, too many answers, an answer with no label or no words for what it
-    /// does or either too long, a recommendation that names no answer, and a deadline too long.
+    /// does or either too long, a recommendation that names no answer, a deadline too long, and a reason with no recommendation or too
+    /// long (QUESTIONUI1a).
     /// </summary>
     [Fact]
     public async Task question_ask_refuses_what_it_can_judge_and_writes_nothing()
@@ -117,8 +122,10 @@ public sealed class McpQuestionToolTests : McpToolsFixture
         var questless = (await store.CreateAsync(null, "Owner", "claude-code", DateTimeOffset.UtcNow)).Id;
         var ended = (await store.CreateAsync("q2", "Owner", "claude-code", DateTimeOffset.UtcNow)).Id;
         await store.SetStateAsync(ended, SessionState.Completed, "done.", null, null, DateTimeOffset.UtcNow);
-        Task<string> Ask(string? id, string question = "Which one?", QuestionChoiceInput[]? choices = null, int? recommend = null, string? by = null) =>
-            connector(id).AskAsync(question, choices, recommend, by);
+        Task<string> Ask(
+            string? id, string question = "Which one?", QuestionChoiceInput[]? choices = null, int? recommend = null, string? by = null,
+            string? why = null) =>
+            connector(id).AskAsync(question, choices, recommend, by, why);
 
         Assert.Contains("speaks for no session", await Ask(null));
         Assert.Contains("No session `nobody12`", await Ask("nobody12"));
@@ -142,6 +149,9 @@ public sealed class McpQuestionToolTests : McpToolsFixture
         Assert.Contains("names no answer", await Ask(driven, choices: TwoReadings, recommend: 3));
         Assert.Contains("names no answer", await Ask(driven, recommend: 1));
         Assert.Contains($"at most {QuestionBox.MaxBy} characters", await Ask(driven, by: new string('x', QuestionBox.MaxBy + 1)));
+        Assert.Contains("A reason goes with a recommendation", await Ask(driven, choices: TwoReadings, why: "Because."));
+        Assert.Contains($"at most {QuestionBox.MaxWhy} characters",
+            await Ask(driven, choices: TwoReadings, recommend: 1, why: new string('x', QuestionBox.MaxWhy + 1)));
         Assert.Contains("the same answer twice", await Ask(driven, choices: [Choice("Yes", "Do it."), Choice("yes", "Do it again.")]));
         Assert.False(Directory.Exists(Sessions()) && Directory.GetFiles(Sessions(), "*" + QuestionBox.Suffix).Length > 0);
     }

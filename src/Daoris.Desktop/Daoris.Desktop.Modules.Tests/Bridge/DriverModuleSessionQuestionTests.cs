@@ -30,7 +30,7 @@ public sealed class DriverModuleSessionQuestionTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The question as its agent asked it: its words, each answer with what it does, the one recommended by number and by when, and
+    /// The question as its agent asked it: its words, each answer with what it does, the one recommended by number with why, by when, and
     /// when it asked; another session's, none.
     /// </summary>
     [Fact]
@@ -39,7 +39,7 @@ public sealed class DriverModuleSessionQuestionTests : DriverModuleBridge
         Asked("s1", """
             {"id":"a1b2c3d4","session":"s1","question":"Which quarterly target should the tile show?",
              "choices":[{"label":"1,200","does":"Write 1,200, the planning sheet's value."},{"label":"1,350","does":"Write 1,350."}],
-             "recommend":1,"by":"before Friday's release","at":"2026-10-22T09:05:00Z"}
+             "recommend":1,"why":"The ticket links the planning sheet.","by":"before Friday's release","at":"2026-10-22T09:05:00Z"}
             """);
         var module = await UpAsync(("s1", "awaiting-person"), ("s2", "awaiting-person"));
 
@@ -51,6 +51,7 @@ public sealed class DriverModuleSessionQuestionTests : DriverModuleBridge
                 question.GetProperty("by").GetString()));
         Assert.Equal([("1,200", "Write 1,200, the planning sheet's value."), ("1,350", "Write 1,350.")],
             question.GetProperty("choices").EnumerateArray().Select(choice => (choice.GetProperty("label").GetString(), choice.GetProperty("does").GetString())));
+        Assert.Equal("The ticket links the planning sheet.", question.GetProperty("why").GetString());
         Assert.Equal(DateTimeOffset.Parse("2026-10-22T09:05:00Z"), DateTimeOffset.Parse(question.GetProperty("at").GetString()!));
         Assert.True(!none.TryGetProperty("question", out var absent) || absent.ValueKind == JsonValueKind.Null);
     }

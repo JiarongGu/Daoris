@@ -27,17 +27,20 @@ public sealed class QuestionTools(IntakeScope? intake = null, SessionLedger? led
         string question,
         [Description("The answers you offer, at most six, each its label (the words on its press) and what you will do on it; none for an answer only in the person's words.")]
         QuestionChoiceInput[]? choices = null,
-        [Description("The answer you recommend, by its number from 1, where you have a reason; say the reason in that answer's words.")]
+        [Description("The answer you recommend, by its number from 1, where you have a reason; give the reason as `why`.")]
         int? recommend = null,
         [Description("By when the work needs the answer, where you know it (a release window, a meeting): at most 200 characters.")]
         string? by = null,
+        [Description("Why you recommend that answer, in a sentence, at most 300 characters: shown under it. Only with `recommend`.")]
+        string? why = null,
         CancellationToken ct = default)
     {
         var questions = box ?? QuestionBox.FromEnvironment();
         var session = intake?.Session;
         var record = ledger is not null && session is not null ? await ledger.FindAsync(session, ct).ConfigureAwait(false) : null;
         return questions.Ask(
-            record, session, question, choices?.Select(choice => (choice?.Label, choice?.Does)).ToList(), recommend, by, DateTimeOffset.UtcNow).Message;
+            record, session, question, choices?.Select(choice => (choice?.Label, choice?.Does)).ToList(), recommend, by, DateTimeOffset.UtcNow,
+            why).Message;
     }
 }
 
