@@ -33,6 +33,34 @@ repository.
   with nothing kept, sixteen reach the newest; red without the fix). Green: the driver's fast half (13,792), `HelperHostTests` (10),
   and the Process classes `HelperWaitTickTests` (2, with its cap-one assertion) and `HelperProcessTests` (4) by class with
   `process.runsettings`, and `HelperCaptureProcessTests` (4) with `git.process.runsettings`.
+## 2026-10-23 — A tree opened before the home's layout moved was refused as not a session tree (TREEPLACE1)
+
+- **Symptom:** after the install's layout move (`home.moved`, the start of 2026-10-23), 11 trees of this repository still sat
+  under the install's `data/trees/` while new ones opened under `work/trees/`. `trees land` refused such a tree as not a
+  session tree, so SESSWATCH1a and COAGENT1b part 7 were merged by hand. `trees remove` refused it too. The tidy kept it as
+  "checked out at …, which is not a session tree", so seven trees whose work was already on main stayed, and every look
+  walked them (TREELOOK1).
+- **Root cause:** D172 point 6 never moves a tree: git's worktree links and the agent's conversation name it by path. So the
+  move left the trees at the old place of `HomeEntry.Trees` (`trees/*/*/*` under the old home) and moved other entries. Once the new
+  place held anything, `DaorisHome.Entry(home, HomeEntry.Trees)` answered the new place. `TreeContext.Holds`, and the
+  hand-written prefix tests in `TreeLands.MergeAsync` and `TreeRemovals.RemoveAsync`, accepted only that one root. D172's
+  HOMELAYOUT3 note ("one root each, as found") assumed the old root would answer while it held any tree. It did not, once
+  anything was written at the new place.
+- **Fix:** one predicate, `TreeContext.RootOf`: the place of `HomeEntry.Trees` (`DaorisHome.Places`, new then old) holding the
+  path below it. `Holds` asks it, and so do the merge's and the removal's guards, which no longer test a prefix of their
+  own. `OwnerOf` and `LinkBelowTreesRoot` read the layout under the root that holds the tree. A layout lookup by branch
+  (`TreeContext.TreeAt`: the folder at either place where it is, else the new place) serves the gate's and landing's unit,
+  the set-aside's last look, `MovedOnTo`, the replays' trace and `SessionBranches.Lives`. The look's list and
+  `LearnTreesAsync` read both places. The other fix offered, moving each tree with `git worktree move`, was not taken.
+  D172 point 6 and its *Rejected* line keep a tree where it is, since a running or resumable conversation names its folder.
+  New trees still open at the new place, and the set-aside folder stays under it.
+- **Verification:** `TreePlacesGitTests` (real git, a scratch home whose two places differ). Each tree is opened, then moved
+  with `git worktree move` to the old place. A chain's later tree there lands on a branch rule, and the landing's tidy takes
+  the earlier one there with its branch. A tree there merges. One is removed by its path and one by its branch's door. A
+  tree moved outside both places is refused by land, merge, remove and the branch's door, even forced, and keeps its work.
+  With the driver change reverted, the three old-place cases fail and the outside one passes. `TreePlacesTests` holds the
+  predicate on paths: both places held, the workspace and repository read under each, and a lookalike `trees-old` refused.
+  Also green: the driver's fast half, and 18 tree Process classes by class with `git.process.runsettings`.
 
 ## 2026-10-23 — Opening Review could take the index lock in a tree its session was writing in (REVIEWLOCK1)
 

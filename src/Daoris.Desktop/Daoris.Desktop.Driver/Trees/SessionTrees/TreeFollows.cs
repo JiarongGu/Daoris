@@ -90,11 +90,12 @@ internal sealed class TreeFollows(TreeContext context)
     /// </summary>
     internal async Task LearnTreesAsync(string workspace, string repository, CancellationToken ct)
     {
-        var folder = Path.Combine(context.TreesRoot, workspace, repository);
-        if (!Directory.Exists(folder)) return;
+        // Both places of the trees (TREEPLACE1): a tree opened before the home's layout moved stays at the old.
+        var folders = context.TreesRoots.Select(root => Path.Combine(root, workspace, repository)).Where(Directory.Exists).ToList();
+        if (folders.Count == 0) return;
         try
         {
-            foreach (var tree in Directory.EnumerateDirectories(folder))
+            foreach (var tree in folders.SelectMany(Directory.EnumerateDirectories))
             {
                 // A linked tree's `.git` is a file; a folder with none is a leftover, which git would answer for the repository above.
                 if (!File.Exists(Path.Combine(tree, ".git"))) continue;
@@ -131,7 +132,7 @@ internal sealed class TreeFollows(TreeContext context)
     internal string? MovedOnTo(IReadOnlyList<WorktreeEntry> entries, string workspace, string repository, string branch)
     {
         if (!branch.StartsWith(SessionPrefix, StringComparison.Ordinal)) return null;
-        var folder = Path.Combine(context.TreesRoot, workspace, repository, branch[SessionPrefix.Length..]);
+        var folder = context.TreeAt(workspace, repository, branch[SessionPrefix.Length..]);
         return entries.FirstOrDefault(entry => SamePath(entry.Path, folder)) is { Branch: { } on } && !string.Equals(on, branch, StringComparison.Ordinal)
             ? on
             : null;

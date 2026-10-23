@@ -88,7 +88,7 @@ internal sealed class TreeWorktrees(TreeContext context)
     /// </summary>
     internal string? LinkBelowTreesRoot(string tree)
     {
-        var home = Path.TrimEndingDirectorySeparator(Path.GetFullPath(context.TreesRoot));
+        var home = Path.TrimEndingDirectorySeparator(Path.GetFullPath(context.RootOf(tree) ?? context.TreesRoot));
         var below = Path.GetRelativePath(home, Path.GetFullPath(tree));
         var at = home;
         foreach (var part in below.Split(Separators, StringSplitOptions.RemoveEmptyEntries))

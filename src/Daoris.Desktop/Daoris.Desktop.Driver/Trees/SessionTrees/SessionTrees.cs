@@ -517,12 +517,13 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null, Fu
     public async Task<IReadOnlyList<SessionTree>> ListAsync(Func<string, bool>? only, CancellationToken ct = default)
     {
         var found = new List<SessionTree>();
-        if (!Directory.Exists(TreesRoot)) return found;
         IEnumerable<string> Repositories(string workspace) =>
             Directory.EnumerateDirectories(workspace).Where(folder => only?.Invoke(Path.GetFileName(folder)) ?? true);
 
-        // The folders the look moved aside are no trees (AUTOTIDY1): git no longer knows them as such.
-        foreach (var workspace in Directory.EnumerateDirectories(TreesRoot).Where(folder => Path.GetFileName(folder) != TreeSetAside.SetAsideFolder))
+        // Both places of the trees (TREEPLACE1), each as found. The folders the look moved aside are no trees (AUTOTIDY1): git no
+        // longer knows them as such.
+        foreach (var root in _context.TreesRoots.Where(Directory.Exists))
+        foreach (var workspace in Directory.EnumerateDirectories(root).Where(folder => Path.GetFileName(folder) != TreeSetAside.SetAsideFolder))
         foreach (var repository in Repositories(workspace))
         foreach (var tree in Directory.EnumerateDirectories(repository))
         {

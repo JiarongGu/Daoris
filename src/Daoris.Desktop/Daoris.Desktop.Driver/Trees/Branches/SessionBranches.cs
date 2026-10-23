@@ -273,8 +273,9 @@ public sealed class SessionBranches(string home)
     private bool Lives(GrownBranch trace)
     {
         if (trace.Now is null || !trace.Branch.StartsWith(TreeFollows.SessionPrefix, StringComparison.Ordinal)) return false;
-        var tree = Path.Combine(DaorisHome.Entry(home, HomeEntry.Trees), trace.Workspace, trace.Repository, trace.Branch[TreeFollows.SessionPrefix.Length..]);
-        return File.Exists(Path.Combine(tree, ".git"));
+        // At either place of the trees (TREEPLACE1): one opened before the home's layout moved stays at the old.
+        return DaorisHome.Places(home, HomeEntry.Trees, trace.Workspace, trace.Repository, trace.Branch[TreeFollows.SessionPrefix.Length..])
+            .Any(tree => File.Exists(Path.Combine(tree, ".git")));
     }
 
     private static bool Same(GrownBranch entry, string repository, string branch) => SameBranch(entry.Repository, entry.Branch, repository, branch);
