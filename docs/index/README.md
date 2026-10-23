@@ -319,7 +319,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-23-git-app-design.md` | 162 | 1506 |
 | `docs/2026-10-23-git-app-proposals.md` | 93 | 1005 |
 | `docs/2026-10-23-git-app-reads.md` | 103 | 869 |
-| `docs/2026-10-23-limit-resume-design.md` | 57 | 559 |
+| `docs/2026-10-23-limit-resume-design.md` | 89 | 799 |
 | `docs/2026-10-23-limit-resume-reads.md` | 70 | 652 |
 | `docs/2026-10-23-session-watch-design.md` | 74 | 714 |
 | `docs/2026-10-23-terminal-trust-design.md` | 66 | 603 |
