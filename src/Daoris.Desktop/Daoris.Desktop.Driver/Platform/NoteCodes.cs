@@ -387,6 +387,7 @@ public static class NoteCodes
         new(ResumedWhy.Helper, [], "note.resumed.why.helper"),
         new(ResumedWhy.WordsAndHelper, [], "note.resumed.why.words-and-helper"),
         new(ResumedWhy.Daoris, [], "note.resumed.why.daoris"),
+        new(ResumedWhy.Supervisor, [], "note.resumed.why.supervisor"),
     ]);
 
     /// <summary>Why the person's words never reached the session (CONVNOTE2d1; <see cref="UnreachedWhy"/>): the page's <c>note.words.why.*</c>.</summary>
@@ -562,6 +563,9 @@ public static class NoteCodes
     public static readonly NoteCode StartedFellBack = new("started.fell-back", ["why"]) { Why = Continue };
     public static readonly NoteCode WorkingResumesAnswer = new("working.resumes-answer", []);
     public static readonly NoteCode WorkingGoesOn = new("working.goes-on", []);
+    // SUPERVISOR1a-i (D208; the supervisor design §6.1): a park going on with none of the owner's words, the authors that are there in a
+    // fixed order (`supervisor`, `helper`, `opinion`, `daoris`), never "your answer".
+    public static readonly NoteCode WorkingResumesOthers = new("working.resumes-others", ["authors"]);
 
     /// <summary>Why a conversation was handed to another agent (MIXAGENT1a-i, <see cref="HandOverWhy"/>): the page's <c>note.handed.why.*</c>.</summary>
     public static readonly NoteReasons Handed = new(
@@ -1270,6 +1274,9 @@ public static class ResumedWhy
 
     /// <summary>Daoris's own words alone (COWORK1b): a reopen told, a step's go-on.</summary>
     public const string Daoris = "daoris";
+
+    /// <summary>The supervisor's answer, on the owner's behalf, with none of the owner's words (SUPERVISOR1a-i, D208).</summary>
+    public const string Supervisor = "supervisor";
 }
 
 /// <summary>

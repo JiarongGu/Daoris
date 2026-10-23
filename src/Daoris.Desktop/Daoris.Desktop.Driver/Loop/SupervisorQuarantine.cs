@@ -34,7 +34,11 @@ internal static class SupervisorQuarantine
         }
 
         var held = records.Where(record => decisions.HeldUntil(record.Session) is not null).Select(record => record.Session);
-        return snapshot with { SupervisorHeld = new HashSet<string>(held, StringComparer.Ordinal) };
+        var chose = records
+            .SelectMany(record => decisions.LiveOf(record.Session).Where(each => each.State == SupervisorState.Released))
+            .DistinctBy(each => each.Session, StringComparer.Ordinal)
+            .ToDictionary(each => each.Session, each => each.Choice, StringComparer.Ordinal);
+        return snapshot with { SupervisorHeld = new HashSet<string>(held, StringComparer.Ordinal), SupervisorChose = chose };
     }
 
     /// <summary>The waiting words of <paramref name="record"/> that claim the supervisor and are not handable now.</summary>

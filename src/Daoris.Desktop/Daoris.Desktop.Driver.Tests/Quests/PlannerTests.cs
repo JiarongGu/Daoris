@@ -1740,6 +1740,46 @@ public sealed class PlannerTests
     }
 
     /// <summary>
+    /// SUPERVISOR1a-i (D208; the supervisor design §6.1): the go-on's sentence follows who answered. With none of the owner's words it
+    /// never says "you answered" nor "you wrote": the supervisor alone, with a helper, an opinion or Daoris, and a record no longer
+    /// parked each name their authors in the fixed order, the supervisor's choice by its label.
+    /// </summary>
+    [Fact]
+    public void The_go_on_sentence_names_who_answered_and_never_says_you_without_the_owners_words()
+    {
+        SaidWordView Word(string id) => new(id, "words", DateTimeOffset.UnixEpoch, [], false);
+        var supervisor = Word("w0") with { From = SupervisorHanded.From };
+        string Reason(string state, params SaidWordView[] said)
+        {
+            var record = new PriorSession("s1", "D:/trees/s1", state) { Said = said };
+            var snapshot = Ran([Quest(status: "Taken")], ("q1", record)) with
+            {
+                SupervisorChose = new Dictionary<string, string> { ["s1"] = "The monthly one" },
+            };
+            return Assert.Single(Planner.Plan(snapshot, Config()), considered => considered.GoesOn).Reason;
+        }
+
+        Assert.EndsWith("the supervisor answered session `s1` on your behalf (The monthly one)", Reason("awaiting-person", supervisor));
+        Assert.EndsWith(
+            "the supervisor answered session `s1` on your behalf (The monthly one), with a helper's answer",
+            Reason("awaiting-person", supervisor, Word("h") with { Helper = "h1" }));
+        Assert.EndsWith(
+            "on your behalf (The monthly one), with another agent's findings", Reason("awaiting-person", supervisor, Word("o") with { By = "op1" }));
+        Assert.EndsWith(
+            "on your behalf (The monthly one), with Daoris's words",
+            Reason("awaiting-person", supervisor, Word("d") with { From = DaorisWords.From }));
+        Assert.EndsWith("with the supervisor's answer", Reason("completed", supervisor));
+        Assert.EndsWith("session `s1` goes on with a helper's answer", Reason("awaiting-person", Word("h") with { Helper = "h1" }));
+        foreach (var reason in new[] { Reason("awaiting-person", supervisor), Reason("completed", supervisor) })
+        {
+            Assert.DoesNotContain("you answered", reason);
+            Assert.DoesNotContain("you wrote", reason);
+        }
+
+        Assert.Contains("you answered session `s1`", Reason("awaiting-person", Word("owner")));
+    }
+
+    /// <summary>
     /// What an answer would start, a carry-on or the answered park going on (D131), and a waiting quest's resume once its
     /// question is answered, each wait for Resume (design §2.1, §2.2).
     /// </summary>

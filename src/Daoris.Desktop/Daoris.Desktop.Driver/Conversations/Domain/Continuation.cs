@@ -244,6 +244,44 @@ public static class Continuations
     /// <summary><see cref="Working"/> with its code (LANG1a).</summary>
     public static Noted WorkingNoted => Noted.Of(NoteCodes.WorkingResumesAnswer, Working);
 
+    /// <summary>The authors a word can have but the owner, in the order every sentence names them (SUPERVISOR1a-i, the design §6.1).</summary>
+    public static readonly IReadOnlyList<(string Code, string Said)> Authors =
+    [
+        ("supervisor", "the supervisor's answer"), ("helper", "a helper's answer"), ("opinion", "another agent's findings"),
+        ("daoris", "Daoris's words"),
+    ];
+
+    /// <summary>
+    /// The authors among <paramref name="words"/> that are not the owner, by code in <see cref="Authors"/>' order: the supervisor's
+    /// answer (a word the look let through, so one its memory authored), a helper's, an opinion's findings, Daoris's.
+    /// </summary>
+    public static IReadOnlyList<string> AuthorsOf(IEnumerable<SaidWordView> words)
+    {
+        var listed = words.ToList();
+        return [.. Authors.Select(author => author.Code).Where(code => code switch
+        {
+            "supervisor" => listed.Any(word => word.Supervisors),
+            "helper" => listed.Any(word => word.Helper is not null),
+            "opinion" => listed.Any(word => word.By is not null),
+            _ => listed.Any(word => word.Daoris),
+        })];
+    }
+
+    /// <summary>The authors said in English, joined: "the supervisor's answer and a helper's answer".</summary>
+    public static string AuthorsSaid(IReadOnlyList<string> codes)
+    {
+        var said = codes.Select(code => Authors.First(author => author.Code == code).Said).ToList();
+        return said.Count <= 1 ? string.Concat(said) : string.Join(", ", said[..^1]) + " and " + said[^1];
+    }
+
+    /// <summary>
+    /// What a park's record says while its conversation resumes with none of the owner's words (SUPERVISOR1a-i, D208; the supervisor
+    /// design §6.1): the authors that are there, never "your answer", which they are not. A helper-only or Daoris-only park says so too.
+    /// </summary>
+    public static Noted WorkingWithOthersNoted(IReadOnlyList<string> authors) => Noted.Of(
+        NoteCodes.WorkingResumesOthers, $"resumes its own conversation with {AuthorsSaid(authors)}, in the tree it worked in.",
+        ("authors", authors));
+
     /// <summary>
     /// What an ended record's note gains as it goes on (MSG1b, D137 §2.3), after the service's own line saying when: the
     /// conclusion's note replaces the whole note, keeping what ended it only where the conclusion says so.
@@ -408,12 +446,17 @@ public static class Continuations
     /// Whether Daoris's own words are among them (COWORK1b): alone, said as Daoris's; beside anyone else's, the other's reason stands,
     /// as the ledger's line says them.
     /// </param>
+    /// <param name="supervisor">
+    /// Whether the supervisor's answer is among them (SUPERVISOR1a-i): with none of the owner's words or findings, said as the
+    /// supervisor's, never "your answer".
+    /// </param>
     public static Noted OpeningNoted(
         string adapter, string? now, string? then, bool answer = true, bool findings = false, bool persons = true, bool helper = false,
-        bool daoris = false)
+        bool daoris = false, bool supervisor = false)
     {
         var (said, why) = (findings, persons, helper) switch
         {
+            (false, false, _) when supervisor => ("the supervisor's answer is", ResumedWhy.Supervisor),
             (true, false, _) => ("another agent's findings are", ResumedWhy.Findings),
             (true, true, _) => answer
                 ? ("your answer and another agent's findings are", ResumedWhy.AnswerAndFindings)

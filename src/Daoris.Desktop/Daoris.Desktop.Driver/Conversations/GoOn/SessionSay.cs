@@ -243,8 +243,9 @@ public sealed class LoopWords(SessionProcesses processes, Func<ServiceClient?> s
     public static SessionEvent Shown(SaidWordView kept, string door) => new()
     {
         Kind = SessionEventKind.User,
-        Origin = kept.Daoris ? "target" : "person",
-        From = kept.Daoris ? DaorisWords.From : null,
+        Origin = kept.Persons ? "person" : "target",
+        // SUPERVISOR1a-i (the supervisor design §6.1): the supervisor's word as its, never the person's.
+        From = kept.Daoris ? DaorisWords.From : kept.Supervisors ? SupervisorHanded.From : null,
         Id = kept.Id,
         Text = kept.Text,
         Files = kept.Files.Count > 0 ? kept.Files : null,

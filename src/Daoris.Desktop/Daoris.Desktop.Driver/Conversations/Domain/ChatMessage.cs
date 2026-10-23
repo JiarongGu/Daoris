@@ -144,6 +144,13 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     public DaorisWord? Daoris { get; init; }
 
     /// <summary>
+    /// The supervisor's decision these words claim (SUPERVISOR1a-i, D208; the supervisor design §6.1): carried as the supervisor's
+    /// through every door, never dropped to no author, so the service refuses a say of them that is not the release's own. Null for
+    /// every other message.
+    /// </summary>
+    public string? Supervised { get; init; }
+
+    /// <summary>
     /// Whether the record already shows this message waiting, so the queue a page is told never lists it and a stop never hands
     /// it back to the person's composer: the words a conversation goes on with, and a helper's answer.
     /// </summary>
@@ -182,8 +189,11 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     {
         Kind = SessionEventKind.User,
         // COWORK1d: a helper's answer taken at a step of a turn is Daoris's words around that helper's claim too.
-        Origin = message.Channel is { Person: false } || message.Daoris is not null || message.Helped is not null ? "target" : "person",
-        From = message.Daoris is not null ? DaorisWords.From : null,
+        Origin = message.Channel is { Person: false } || message.Daoris is not null || message.Helped is not null || message.Supervised is not null
+            ? "target"
+            : "person",
+        // SUPERVISOR1a-i: the supervisor's, on the owner's behalf, never the person's.
+        From = message.Daoris is not null ? DaorisWords.From : message.Supervised is not null ? SupervisorHanded.From : null,
         // COWORK1e: a helper's answer by its mark (AnswersAlone): taken at a step, it is no go-on and counts nothing.
         Helper = message.Helped?.Helper,
         // SESSCTX1b: the channel's message these words carry, marked by its id, so a reader never tells it by Daoris's English.

@@ -394,6 +394,11 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
     public IReadOnlySet<string> HeldSessions() =>
         new HashSet<string>(_live.Values.Where(each => each.State == SupervisorState.Held).Select(each => each.Session), StringComparer.Ordinal);
 
+    /// <summary>The sessions a held or released decision answers for now (§4.2): their parks are not a wait on the owner.</summary>
+    public IReadOnlySet<string> Answering() => new HashSet<string>(
+        _live.Values.Where(each => each.State is SupervisorState.Held or SupervisorState.Released).Select(each => each.Session),
+        StringComparer.Ordinal);
+
     /// <summary>Whether <paramref name="session"/> has a decision that is not final, which the look settles, compares and releases.</summary>
     public bool Moving(string session) => _live.Values.Any(each => each.Session == session && !SupervisorStates.Final(each.State));
 

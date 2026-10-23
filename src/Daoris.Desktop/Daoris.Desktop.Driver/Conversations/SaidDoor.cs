@@ -31,7 +31,10 @@ public sealed class SaidDoor(ServiceClient service, string session) : ISaidDoor
     public Task<SayAnswer> KeepAsync(ChatMessage word, CancellationToken ct) =>
         service.SayAsync(
             session, word.Text, word.Files.Count > 0 ? [.. word.Files.Select(file => file.Name)] : null, ct,
-            from: word.Daoris is null ? null : DaorisWords.From, key: word.Key ?? word.Daoris?.Key,
+            // SUPERVISOR1a-i (the supervisor design §6.1): a supervisor's word is carried as its, which the service keeps only from the
+            // release's own say, never dropped to no author and kept as the person's.
+            from: word.Daoris is not null ? DaorisWords.From : word.Supervised is not null ? SupervisorHanded.From : null,
+            key: word.Key ?? word.Daoris?.Key,
             level: MessageLevels.Spelled(word.Level), running: true);
 
     public async Task<bool> TakeOffAsync(IReadOnlyList<string> ids, CancellationToken ct) =>

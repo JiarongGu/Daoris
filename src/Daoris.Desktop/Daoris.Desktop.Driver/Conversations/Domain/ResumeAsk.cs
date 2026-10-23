@@ -119,7 +119,8 @@ internal sealed class ResumeAsk(
             {
                 Kind = SessionEventKind.User,
                 Origin = word.Persons ? "person" : "target",
-                From = word.Daoris ? DaorisWords.From : null,
+                // SUPERVISOR1a-i: the supervisor's answer keeps its author where the session took it.
+                From = word.Daoris ? DaorisWords.From : word.Supervisors ? SupervisorHanded.From : null,
                 Opinion = word.By,
                 // COWORK1e: a helper's answer by its mark, which the answers-alone bound counts (AnswersAlone).
                 Helper = word.Helper,

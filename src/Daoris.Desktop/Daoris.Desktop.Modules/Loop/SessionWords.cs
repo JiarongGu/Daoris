@@ -1000,7 +1000,9 @@ public sealed class SessionWords : IDisposable
             _loop.Events.Keep(id, new SessionEvent
             {
                 Kind = SessionEventKind.User,
-                Origin = "person",
+                // SUPERVISOR1a-i (the supervisor design §6.1): shown as whose the record kept it, never the person's by default.
+                Origin = kept.Persons ? "person" : "target",
+                From = kept.Daoris ? DaorisWords.From : kept.Supervisors ? SupervisorHanded.From : kept.From,
                 Id = kept.Id,
                 Text = kept.Text,
                 Files = kept.Files.Count > 0 ? kept.Files : null,

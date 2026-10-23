@@ -293,6 +293,8 @@ public static class AttentionStateSlice
             Git = Written(GitWaits(loop.Home)),
             // SESSWATCH1a: each session the watcher brings to the person, from its memory.
             Quiet = Written(QuietWaits(SessionWatch.Of(loop.Events), loop.Processes)),
+            // SUPERVISOR1a-i: the parks a supervisor's held or released decision answers for, from the decisions' memory.
+            Supervised = loop.Supervisor.Answering(),
         };
     }
 

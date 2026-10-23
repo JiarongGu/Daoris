@@ -1009,6 +1009,9 @@ public sealed record Snapshot(
     /// </summary>
     public IReadOnlySet<string> SupervisorHeld { get; init; } = new HashSet<string>(StringComparer.Ordinal);
 
+    /// <summary>The label each session's released supervisor's decision chose, from memory, which the go-on's sentence names. Absent is none.</summary>
+    public IReadOnlyDictionary<string, string> SupervisorChose { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
+
     /// <summary>Whether a held supervisor's decision holds <paramref name="record"/>: one is held, and no word of the owner's waits.</summary>
     public bool SupervisorHolds(PriorSession record) =>
         SupervisorHeld.Contains(record.Session) && !record.Waiting.Any(word => word.Persons);
@@ -1513,9 +1516,22 @@ public static class Planner
 
             var waiting = written.Waiting;
             var said = waiting.Count == 1 ? waiting[0].Text : $"{waiting[0].Text} (and {waiting.Count - 1} more)";
+            // SUPERVISOR1a-i (the supervisor design §6.1): the sentence follows who answered; with none of the owner's words it never says
+            // "you", and names the authors that are there, the supervisor's choice by its label.
+            var others = waiting.Any(word => word.Persons) || written.Answer is not null ? [] : Continuations.AuthorsOf(waiting);
+            var chose = snapshot.SupervisorChose.GetValueOrDefault(written.Session);
+            var besides = Continuations.AuthorsSaid([.. others.Where(code => code != "supervisor")]);
+            var supervised = others.Contains("supervisor")
+                ? $"the supervisor answered session `{written.Session}` on your behalf{(chose is null ? "" : $" ({chose})")}"
+                  + (besides.Length > 0 ? $", with {besides}" : "")
+                : null;
             return considered with
             {
-                Reason = written.Parked
+                Reason = others.Count > 0
+                    ? written.Parked
+                        ? $"carrying on in `{quest.To}` — {supervised ?? $"session `{written.Session}` goes on with {besides}"}"
+                        : $"going on in `{quest.To}` with {Continuations.AuthorsSaid(others)}"
+                    : written.Parked
                     ? $"carrying on in `{quest.To}` — you answered session `{written.Session}`: {written.Answer ?? said}"
                     : $"going on in `{quest.To}` — you wrote to session `{written.Session}`: {said}",
                 Resumes = written,

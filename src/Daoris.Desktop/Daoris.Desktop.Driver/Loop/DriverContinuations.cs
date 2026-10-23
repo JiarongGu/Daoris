@@ -250,7 +250,11 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         // word taken back between the look and the move never goes (Continuations.HandedAfterMove). A park's note is replaced
         // while it works; an ended record's keeps what ended it and says it goes on (MSG1b), with another agent's findings where
         // those are all it goes on with (XAGENT1e), never "your words".
-        var workingNote = park.Parked ? Continuations.WorkingNoted
+        // SUPERVISOR1a-i (the supervisor design §6.1): a park's note follows who answered, never "your answer" where none of the owner's
+        // words wait.
+        var workingNote = park.Parked
+            ? persons || Continuations.AuthorsOf(park.Waiting) is not { Count: > 0 } others ? Continuations.WorkingNoted
+                : Continuations.WorkingWithOthersNoted(others)
             : findings && !persons ? Continuations.GoingOnWithFindingsNoted
             : helper && !persons ? Continuations.GoingOnWithHelperNoted
             : daoris && !persons ? Continuations.GoingOnWithDaorisNoted
@@ -371,7 +375,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 // HELPERWAIT1: a helper's answer handed beside the person's at this look is among the words, though not among the look's.
                 Continuations.OpeningNoted(
                     adapter.Name, selection.Version, park.HarnessVersion, answer: park.Parked, findings, persons,
-                    helper || words.Any(word => word.Helper is not null), daoris),
+                    helper || words.Any(word => word.Helper is not null), daoris, words.Any(word => word.Supervisors)),
                 // Where its go-aheads changed since it started (AUTONOMY1c), told after the rest, since its instruction is not handed again.
                 Continuations.AfterWords(
                     Continuations.AfterWords(inSync, after),

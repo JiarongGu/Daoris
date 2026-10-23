@@ -54,6 +54,24 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Is("""{"kind":"parked","id":"s1a2b3c4","since":"2026-09-21T10:00:00Z","workspace":"default","where":"engine","note":{"note":"two ways forward."}}""", Assert.Single(rows));
     }
 
+    /// <summary>
+    /// SUPERVISOR1a-i (D208; the supervisor design §4.2): a park a supervisor's held or released decision answers for is no wait on the
+    /// person, since its overrule is optional and said as a notice.
+    /// </summary>
+    [Fact]
+    public void Leaves_out_a_park_a_supervisors_decision_answers_for()
+    {
+        var rows = Rows(new()
+        {
+            Sessions = [Session("""{"state":"awaiting-person","quest":"7a82cc","note":"two ways forward."}""")],
+            Quests = [Quest("""{"status":"Taken"}""")],
+            Registry = [Registration("engine")],
+            Supervised = new HashSet<string>(StringComparer.Ordinal) { "s1a2b3c4" },
+        });
+
+        Assert.DoesNotContain(rows, row => row["kind"]?.GetValue<string>() == "parked");
+    }
+
     /// <summary>LANG1b: the record's note travels whole, its parts beside its English, for the row to word in the reader's language.</summary>
     [Fact]
     public void Hands_the_row_a_parked_session_s_note_with_its_parts_never_a_sentence_made_of_them()

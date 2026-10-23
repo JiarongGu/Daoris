@@ -31,6 +31,29 @@ public sealed class ContinuationTests : IDisposable
     /// SUPERVISOR1a-i (D208; the supervisor design §6.1, §6.3): every list of words a go-on hands keeps a supervisor's word only where it
     /// is the admission's ticket's; a forged one beside a helper's and the owner's words, and one arriving after planning, never go.
     /// </summary>
+    /// <summary>
+    /// SUPERVISOR1a-i (the supervisor design §6.1): the working note and the opening follow who answered, never "your answer" where none
+    /// of the owner's words wait, the authors in the fixed order.
+    /// </summary>
+    [Fact]
+    public void The_working_note_and_the_opening_name_the_supervisor_never_your_answer()
+    {
+        SaidWordView Word(string id) => new(id, "words", DateTimeOffset.UnixEpoch, [], false);
+        var authors = Continuations.AuthorsOf(
+            [Word("d") with { From = DaorisWords.From }, Word("h") with { Helper = "h1" }, Word("w0") with { From = SupervisorHanded.From }]);
+
+        Assert.Equal(["supervisor", "helper", "daoris"], authors);
+        var noted = Continuations.WorkingWithOthersNoted(authors);
+        Assert.Equal(
+            "resumes its own conversation with the supervisor's answer, a helper's answer and Daoris's words, in the tree it worked in.",
+            noted.Note);
+        Assert.DoesNotContain("your", Continuations.WorkingWithOthersNoted(["supervisor"]).Note);
+        Assert.StartsWith(
+            "— the supervisor's answer is the next turn",
+            Continuations.OpeningNoted("claude-code-acp", null, null, answer: true, persons: false, supervisor: true).Note);
+        Assert.StartsWith("— your answer is", Continuations.OpeningNoted("claude-code-acp", null, null, supervisor: true).Note);
+    }
+
     [Fact]
     public void A_go_on_hands_a_supervisors_word_only_where_it_is_the_tickets()
     {
