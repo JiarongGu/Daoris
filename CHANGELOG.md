@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- A quest's session cut off by an account's limit now goes on in its own conversation once that account is ready again, told by
+  Daoris that the limit lifted, instead of starting a new session with a summary (LIMITRESUME1b). Where another account is free
+  first, it goes on there at once with your waiting words. While every account waits, the session says when it goes on, and a
+  limit is never counted as a failure, even when its cool-off could not be saved.
+
 - A session cut off by an account's limit now reads *limited*, quietly, wherever its state is shown, not *failed* in red
   (LIMITRESUME1a). It no longer raises an *Ended* notice. Its quest's work says once in *Done and failed* that it waits for an
   account to be ready again, or that it went on in a new session.
