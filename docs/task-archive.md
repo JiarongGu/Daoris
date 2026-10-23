@@ -19805,3 +19805,11 @@ the grant is offered. Detail: D201's TERMTRUST1a part (ii) note. On Opus.
 **Outcome** 2026-10-23: the predicate, not the move. `TreeContext.RootOf` reads both places of `HomeEntry.Trees`, and every
 check asks it. The trees stay where they are, as D172 point 6 says. `TreePlacesGitTests` lands, merges, removes and tidies a
 tree moved to the old place, and refuses one outside both. Detail: FIX-LOG 2026-10-23 (TREEPLACE1), D172's TREEPLACE1 note. On Opus.
+## CONTAINCPU1 — a launched agent's job the driver reads and ends (2026-10-23, D200, D201)
+
+> - [ ] **CONTAINCPU1** (driver; filed on main, not in the tree that built it; worded here from the quest that asked for it). Since TERMTRUST1a part (i) starts every agent through the launcher, `SessionProcesses.Track` skips its own job for a launched process, so `JobOf` answers null for every agent: the session watcher loses its busy-over-a-CPU-window sign, and a stop no longer terminates the agent tree through the session job. Give the driver a job it can read and end for each launched agent without racing the launcher joining the agents' job.
+
+**Outcome** 2026-10-23: the launcher names its own job `Local\daoris-launched-<its pid>` (`PieceLauncher.OwnJobOf`). `SessionProcesses.JobOf`
+opens it by name on first ask (`ProcessJob.OpenHolding`), only where it holds the tracked launcher, and holds it until the tracking
+lets go. A stop ends that job after the tree kill. `LaunchedSessionJobProcessTests` proves busy read and the whole tree stopped.
+Detail: D201's and D200's CONTAINCPU1 notes, the fix log. On Opus.

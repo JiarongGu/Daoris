@@ -30,9 +30,12 @@ public sealed class AgentStartsProcessTests : IDisposable
     private static int StandInId() => 1_900_000_000 + Random.Shared.Next(100_000_000);
 
     /// <summary>A home in an install whose <c>app/bin/</c> holds the built launcher, as the install lays it out.</summary>
-    private string Installed()
+    private string Installed() => Installed(_root);
+
+    /// <summary>The same under <paramref name="under"/>: <see cref="LaunchedSessionJobProcessTests"/> lays it out too.</summary>
+    internal static string Installed(string under)
     {
-        var root = Path.Combine(_root, "install");
+        var root = Path.Combine(under, "install");
         var home = Path.Combine(root, "data");
         Directory.CreateDirectory(home);
         File.WriteAllText(Path.Combine(root, DaorisHome.InstallMarker), "# Daoris — installed desktop\n");

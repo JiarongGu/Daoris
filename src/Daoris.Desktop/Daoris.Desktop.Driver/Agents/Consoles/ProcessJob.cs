@@ -27,7 +27,8 @@ namespace Daoris.Driver;
 ///
 /// <para>An agent started through the launcher (TERMTRUST1a, D201 point 4) is held by none of these after its start: the launcher joins
 /// this process's agents' job (<see cref="AgentJobs"/>), then any piece's, then a job of its own that ends its harness's tree with it,
-/// all before the harness runs (<see cref="PieceLauncher"/>).</para>
+/// all before the harness runs (<see cref="PieceLauncher"/>). The driver opens that own job by its name afterwards (<see cref="OpenHolding"/>,
+/// CONTAINCPU1) and reads and ends the session through it.</para>
 /// </remarks>
 public sealed class ProcessJob : IDisposable
 {
@@ -134,6 +135,22 @@ public sealed class ProcessJob : IDisposable
         {
             CloseHandle(handle);
         }
+    }
+
+    /// <summary>
+    /// The job by that name, opened to read its accounting and to end it, where it holds <paramref name="process"/> (CONTAINCPU1: the
+    /// driver's hold on a launcher's own job, <see cref="PieceLauncher.OwnJobOf"/>): null off Windows, where no job answers to the name or
+    /// would not open, and where it does not hold that process, which makes it no job of that process's. Disposing it closes this handle
+    /// alone; while the job's maker holds its own, nothing in it ends.
+    /// </summary>
+    internal static ProcessJob? OpenHolding(string name, IntPtr process)
+    {
+        if (!OperatingSystem.IsWindows()) return null;
+        var handle = OpenJobObject(JobQuery | JobTerminate, false, name);
+        if (handle == IntPtr.Zero) return null;
+        if (IsProcessInJob(process, handle, out var held) && held) return new ProcessJob(handle);
+        CloseHandle(handle);
+        return null;
     }
 
     /// <summary>

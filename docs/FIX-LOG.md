@@ -61,6 +61,32 @@ repository.
   With the driver change reverted, the three old-place cases fail and the outside one passes. `TreePlacesTests` holds the
   predicate on paths: both places held, the workspace and repository read under each, and a lookalike `trees-old` refused.
   Also green: the driver's fast half, and 18 tree Process classes by class with `git.process.runsettings`.
+## 2026-10-23 — A session started through the launcher had no job the driver could read or end (CONTAINCPU1)
+
+- **Symptom:** found in review of TERMTRUST1a part (i), not seen on a machine. Since every agent starts through `daoris-piece-start`,
+  `SessionProcesses.JobOf` answered null for every agent. The watcher (SESSWATCH1a, D200 §1.2) read every session's busy as
+  unknown, so a silent session whose child computed was marked quiet as if it did nothing. State E's end of a run whose capture a
+  stray descendant held (`Driver.CaptureWithinAsync`, `JobOf(id)?.Terminate()`) ended nothing.
+- **Root cause:** `SessionProcesses.Track` holds a job of its own over a start (ORPHAN1's `ProcessJob.Hold`), and part (i) skipped it
+  for a launcher (`ThroughLauncher ? null : ProcessJob.Hold`). A launcher already in a fresh job cannot join the agents' job that
+  other agents hold. The launcher's own kill-on-close job, which contains the harness's tree, was unnamed, so the driver had no way
+  to it, and the entry's job stayed null.
+- **Fix:** the launcher names its own job by its process id, `Local\daoris-launched-<pid>` (`PieceLauncher.OwnJobOf`), unnamed only
+  where the name will not take. `JobOf` opens that job by name the first time it is asked (`ProcessJob.OpenHolding`, query and
+  terminate). It keeps the job only where `IsProcessInJob` says it holds the tracked launcher. It holds it until the tracking lets
+  go, as the job of a direct start is held. By then the launcher's joins are long over, so the open races nothing. Until the
+  launcher has made it, the answer is null and busy is unknown for that look. The person's stop now also ends the session's job
+  after its tree kill. That reaches a process whose parent had exited, and a launcher's job that the driver's handle keeps open.
+  The launcher reporting its handle back was not taken: its stdout is the harness's protocol, so a report would need a second
+  channel and a handle duplicated into the driver. A name derived from the session was not taken either: a run tried again on the
+  same session could meet the name still held.
+- **Verification:** `LaunchedSessionJobProcessTests` (Process, `Alone`) starts a stand-in through the built launcher laid out beside its
+  home. The stand-in is `cmd` leaving a computing child whose parent has exited, then waiting silently. `JobOf` opens the launcher's
+  job, which holds three processes. The watcher, reading through the driver's own `JobRead`, brings it as *busy, nothing heard* and
+  never marks it. `Stop` empties that job and the agents' job. With the open by name removed, the test fails at `JobOf`. Also green:
+  `PieceLauncherTests` (the name), `PieceLauncherProcessTests`, `AgentStartsProcessTests`, `ProcessJobTests`,
+  `SessionWatchProcessTests`, `CaptureBoundProcessTests`, the fast `SessionProcessesTests`, `SessionWatchTests`, `AgentStartsTests`
+  and `CategoryTests`, and the Process classes that stop a real session.
 
 ## 2026-10-23 — Opening Review could take the index lock in a tree its session was writing in (REVIEWLOCK1)
 

@@ -43,6 +43,12 @@ public sealed class SessionProcesses(string? markers = null)
         /// what holds its capture; the disposer <see cref="Track"/> returns still owns it and closes it.
         /// </summary>
         public ProcessJob? Job;
+
+        /// <summary>
+        /// Started through the launcher (TERMTRUST1a): its job is the launcher's own, opened by name the first time it is asked for
+        /// (CONTAINCPU1), never held over the start, which would race the launcher's joins.
+        /// </summary>
+        public bool Launched;
     }
 
     private readonly object _gate = new();
@@ -219,6 +225,9 @@ public sealed class SessionProcesses(string? markers = null)
             // flag still marks whose decision the end was.
         }
 
+        // Then its job (CONTAINCPU1): what the tree's walk cannot reach, a process whose parent had already exited, is still in it, and
+        // a launcher's own job no longer ends with the launcher once the driver holds it.
+        JobOf(sessionId)?.Terminate();
         return true;
     }
 
@@ -377,23 +386,50 @@ public sealed class SessionProcesses(string? markers = null)
     /// the harness has had time to start anything.
     /// <para>A start made through the launcher (TERMTRUST1a) is held by no job here: its harness was born in this process's agents' job
     /// and in the launcher's own, which ends its tree as the launcher ends; and a job taken over the launcher now could win the race with
-    /// its joins, and leave it unable to join the agents' job other agents hold (<see cref="PieceLauncher"/>).</para>
+    /// its joins, and leave it unable to join the agents' job other agents hold (<see cref="PieceLauncher"/>). Its job is the launcher's own,
+    /// opened by its name once the launcher has made it (<see cref="JobOf"/>, CONTAINCPU1), and held from then as the job above is.</para>
     /// </remarks>
     public IDisposable Track(string sessionId, Process process, string? refusesInput = null, bool drivesBrowser = false)
     {
-        var job = ThroughLauncher(process) ? null : ProcessJob.Hold(process);
-        lock (_gate) _running[sessionId] = new Entry { Process = process, RefusesInput = refusesInput, DrivesBrowser = drivesBrowser, Job = job };
+        var launched = ThroughLauncher(process);
+        var job = launched ? null : ProcessJob.Hold(process);
+        var entry = new Entry { Process = process, RefusesInput = refusesInput, DrivesBrowser = drivesBrowser, Job = job, Launched = launched };
+        lock (_gate) _running[sessionId] = entry;
         Mark(sessionId, process);
-        return new Untrack(this, sessionId, job);
+        return new Untrack(this, sessionId, entry);
     }
 
     /// <summary>
     /// The job a running session's process joined (SESSWATCH1a): what the watcher reads its CPU from, where its accounting holds
-    /// (<see cref="ProcessJob.Holds"/>). Null where the session runs no process here.
+    /// (<see cref="ProcessJob.Holds"/>), and what state E and a stop end. Null where the session runs no process here.
     /// </summary>
+    /// <remarks>
+    /// 🔴 A start through the launcher (CONTAINCPU1): its job is the launcher's own (<see cref="PieceLauncher.OwnJobOf"/>), opened here the
+    /// first time it is asked for and held, so the launcher's joins are long over and nothing races them. Until the launcher has made it
+    /// the answer is null, and the watcher reads busy as unknown for that look; once held, the job outlives the launcher until the tracking
+    /// lets go, as the job a direct start joins does (ORPHAN1).
+    /// </remarks>
     public ProcessJob? JobOf(string sessionId)
     {
-        lock (_gate) return _running.TryGetValue(sessionId, out var entry) ? entry.Job : null;
+        lock (_gate)
+        {
+            if (!_running.TryGetValue(sessionId, out var entry)) return null;
+            if (entry.Job is null && entry.Launched) entry.Job = LaunchedJob(entry.Process);
+            return entry.Job;
+        }
+    }
+
+    // The launcher's own job, where it holds the launcher: a name the launcher would not take leaves none to read.
+    private static ProcessJob? LaunchedJob(Process process)
+    {
+        try
+        {
+            return ProcessJob.OpenHolding(PieceLauncher.OwnJobOf(process.Id), process.Handle);
+        }
+        catch (Exception error) when (error is InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            return null;
+        }
     }
 
     /// <summary>
@@ -606,13 +642,23 @@ public sealed class SessionProcesses(string? markers = null)
         }
     }
 
-    private sealed class Untrack(SessionProcesses owner, string sessionId, ProcessJob? job) : IDisposable
+    private sealed class Untrack(SessionProcesses owner, string sessionId, Entry entry) : IDisposable
     {
         public void Dispose()
         {
-            lock (owner._gate) owner._running.Remove(sessionId);
+            ProcessJob? job;
+            lock (owner._gate)
+            {
+                owner._running.Remove(sessionId);
+                // Taken under the gate, so no JobOf opens a launcher's job again after this.
+                job = entry.Job;
+                entry.Job = null;
+                entry.Launched = false;
+            }
+
             owner.Unmark(sessionId);
-            // Last: whatever the session started and left running ends with it (ORPHAN1); through the launcher, its own job did as it ended.
+            // Last: whatever the session started and left running ends with it (ORPHAN1); through the launcher, as the launcher's own job
+            // closes with this handle, or as the launcher ended where the driver never opened it.
             job?.Dispose();
         }
     }

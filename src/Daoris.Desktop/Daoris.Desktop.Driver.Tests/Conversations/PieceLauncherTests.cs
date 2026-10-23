@@ -39,6 +39,21 @@ public sealed class PieceLauncherTests
         Assert.Equal(["-p", "--"], call.Value.Arguments);
     }
 
+    /// <summary>
+    /// CONTAINCPU1: the launcher's own job is named by its process id, under a prefix of its own, so it is never read as the agents' job or
+    /// a piece's, and a launcher could never be told to join one.
+    /// </summary>
+    [Fact]
+    public void The_launchers_own_job_is_named_by_its_process_id_and_is_neither_the_agents_nor_a_pieces()
+    {
+        var own = PieceLauncher.OwnJobOf(4242);
+
+        Assert.Equal("Local\\daoris-launched-4242", own);
+        Assert.False(PieceLauncher.IsAgentsJob(own));
+        Assert.False(PieceLauncher.IsPieceJob(own));
+        Assert.NotNull(PieceLauncher.Read(PieceLauncher.Arguments(own, "harness.exe", [])).Problem);
+    }
+
     [Fact]
     public void The_agents_job_alone_is_taken()
     {
