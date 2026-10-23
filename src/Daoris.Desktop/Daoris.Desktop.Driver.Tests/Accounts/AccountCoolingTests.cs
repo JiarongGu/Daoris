@@ -505,6 +505,49 @@ public sealed class AccountCoolingTests : IDisposable
         Assert.NotNull((await roster.SelectAsync("fake-acp", Config, null, null)).Cooling);
     }
 
+    /// <summary>
+    /// 🔴 LIMITRESUME1b (D206; the limit-resume design §3.1, round 3's Codex 10; D125 point 3 amended): a cool-off whose write fails is
+    /// still the limit read, kept in this process's memory, so the account is passed until its <c>until</c> as a written one is, and
+    /// each read tries the write again until it lands; <i>Try now</i> ends it as it ends a written one.
+    /// </summary>
+    [Fact]
+    public async Task A_cool_off_the_file_will_not_take_is_kept_in_memory_and_passes_the_account_until_its_reset()
+    {
+        var roster = Roster(new Adapter("fake", Present(limits: ClaudeLimits.Words)));
+        Directory.CreateDirectory(AccountCooling.PathOf(_home));
+
+        var limited = roster.Limited("fake", null, Refusal, "s1");
+
+        Assert.NotNull(limited);
+        Assert.Equal(Until, limited.Value.Entry.Until);
+        Assert.True(AccountCooling.Unwritten(_home, "fake", null));
+        Assert.Equal(Until, roster.CoolingOf("fake", null)!.Until);
+        Assert.NotNull((await roster.SelectAsync("fake", Config, null, null)).Cooling);
+
+        // Its reset passing lets it go.
+        _now = Until.AddMinutes(1);
+        Assert.Null(roster.CoolingOf("fake", null));
+        Assert.False(AccountCooling.Unwritten(_home, "fake", null));
+        _now = Seen;
+
+        // The file takes it once it can, at the next look's write, and the memory lets it go. (A refused rename is retried for a few
+        // seconds before it is refused, so this test refuses as few writes as it can.)
+        roster.Limited("fake", null, Refusal, "s2");
+        Directory.Delete(AccountCooling.PathOf(_home));
+        AccountCooling.WriteUnkept(_home, _now);
+        Assert.False(AccountCooling.Unwritten(_home, "fake", null));
+        Assert.Equal("2026-10-03T10:17:00Z", File()["fake"]![""]!["until"]!.GetValue<string>());
+
+        // Try now ends one held in memory as it ends a written one.
+        System.IO.File.Delete(AccountCooling.PathOf(_home));
+        Directory.CreateDirectory(AccountCooling.PathOf(_home));
+        roster.Limited("fake", null, Refusal, "s3");
+        Directory.Delete(AccountCooling.PathOf(_home));
+        Assert.True(roster.Ready("fake", null));
+        Assert.Null(roster.CoolingOf("fake", null));
+        Assert.False(AccountCooling.Unwritten(_home, "fake", null));
+    }
+
     [Fact]
     public void A_failure_no_table_recognises_cools_nothing()
     {

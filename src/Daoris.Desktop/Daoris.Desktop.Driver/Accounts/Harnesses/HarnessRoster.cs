@@ -263,7 +263,8 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         if (AccountLimits.Read(LimitsOf(resolved.Name), failure, now, Zone, coolOff ?? AccountLimits.DefaultCoolOff) is not { } seen) return null;
 
         var entry = new CoolingEntry(agent, profile, seen.Until, seen.Stated, seen.Window, now, session, seen.AssumedZone, seen.NotBelieved);
-        AccountCooling.Cool(Home, entry, now);
+        // LIMITRESUME1b (D206; D125 point 3 amended): a cool-off the file will not take is held in memory, never lost to a strike.
+        AccountCooling.Keep(Home, entry, now);
         // A limit's sentence is a set point: the account's maker is asked once it is ready again, its reading older (USAGEPROBE1).
         if (profile is not null) _limitSaid[AccountKey(agent, profile)] = now;
 
