@@ -167,8 +167,10 @@ internal sealed class ContentHolds(TreeContext context)
                 case null: unread ??= $"git could not compare the branch's files with `{form}`"; break;
             }
 
-            // SQUASHSEEN1: a squash carried it with other work, so merging it into the line adds nothing.
-            if (await SquashCarries.HeldAsync(cwd, tip, mergeBase.Trim(), formId, paths, ct).ConfigureAwait(false))
+            // SQUASHSEEN1: a squash carried it with other work, so merging it into the line adds nothing. A line with no commit
+            // since the branch left it carries nothing, so an ordinary landing asks git nothing more (LANDGIT1's counts).
+            if (logCode == 0 && !string.IsNullOrWhiteSpace(trees)
+                && await SquashCarries.HeldAsync(cwd, tip, mergeBase.Trim(), formId, paths, ct).ConfigureAwait(false))
             {
                 return ContentProof.Of(new ContentHold(form, Squash: false) { Carried = true }, formRef, formId);
             }
