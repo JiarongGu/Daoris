@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- An intake, a second opinion or a helper cut off by an account's limit now runs again by itself (LIMITRESUME1h). An ask whose
+  intake hit a limit is answered after the account is ready again, rather than left unanswered, and raises no *Ended* notice. A
+  second opinion is asked again after the reset, without waiting for your *Try again*. A helper that a session waits on is run again
+  on another account or after the reset, and its session keeps waiting rather than coming back to you. A helper the session no
+  longer waits on is not run again, and its timeline says when that account is ready.
+
 - A session cut off by an account's limit now reads *limited*, quietly, wherever its state is shown, not *failed* in red
   (LIMITRESUME1a). It no longer raises an *Ended* notice. Its quest's work says once in *Done and failed* that it waits for an
   account to be ready again, or that it went on in a new session.
