@@ -205,6 +205,10 @@ public sealed class HomeWatch : IAsyncDisposable
         watch.Topic(ChangeTopics.Words, Path.GetFileName(words), HomePart.File(words));
         // The landing gate's files (FABRIC-END7): what releases a second opinion's or a workflow's hold when another process writes it.
         watch.Topic(ChangeTopics.Gates, ChangeTopics.Gates, GateParts(home));
+        // LIMITRESUME1c: what a held conversation's wait is computed from, so an account freed early wakes the look's limits stage.
+        watch.Topic(
+            ChangeTopics.Accounts, ChangeTopics.Accounts,
+            HomePart.File(AccountCooling.PathOf(home)), HomePart.File(DaorisHome.Entry(home, HomeEntry.Harnesses)));
         return watch;
     }
 

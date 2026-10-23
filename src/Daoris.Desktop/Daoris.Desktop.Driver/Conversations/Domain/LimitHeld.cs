@@ -55,6 +55,28 @@ public sealed record LimitHeld(IReadOnlyList<SessionEvent> Words, int Before)
         return lastLimited == true ? new LimitHeld(held, heldFrom < 0 ? events.Count : heldFrom) : null;
     }
 
+    /// <summary>
+    /// The words held where the conversation still waits for its limit (LIMITRESUME1c, D206 §3.5): its last turn refused by its account's
+    /// limit, and nothing since let it go. The person's *Stop waiting* (<c>chat.limit-stopped-waiting</c>) and a refusal that waits for
+    /// them (a cannot line, which names its reason) each leave the wait: no look then tries it again by itself.
+    /// </summary>
+    public static LimitHeld? Waiting(IReadOnlyList<SessionEvent> events)
+    {
+        if (Of(events) is not { } held) return null;
+        for (var at = events.Count - 1; at >= 0; at--)
+        {
+            var e = events[at];
+            if (e.Kind == SessionEventKind.Turn) break;
+            if (e.Kind == SessionEventKind.Note
+                && (e.Why is not null || e.Parts?.Any(part => part.Code == NoteCodes.ChatLimitStoppedWaiting.Code) == true))
+            {
+                return null;
+            }
+        }
+
+        return held;
+    }
+
     /// <summary>A cooling line's code, whichever of its three shapes (<see cref="NoteCodes.AccountCooling"/> and its window's).</summary>
     private static bool Cooling(string code) =>
         code == NoteCodes.AccountCooling.Code || code == NoteCodes.AccountCoolingWindow.Code || code == NoteCodes.AccountCoolingNoWindow.Code;

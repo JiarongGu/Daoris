@@ -97,6 +97,9 @@ public sealed class ChatRunner : IDisposable
     // SESSCTX1c part B: a conversation, or a closed quest's session, going on in a new part handed Daoris's brief.
     private readonly BriefedMove _move;
 
+    // LIMITRESUME1c: the conversations that wait for an account to be ready, and the look's limits stage that wakes them.
+    private readonly LimitWaits _waits;
+
     // The requests *Start a conversation on its first words* has answered (NEW1a), made when the first carries an id.
     private StartRequests? _starts;
 
@@ -148,7 +151,46 @@ public sealed class ChatRunner : IDisposable
         _move = new BriefedMove(_context, this, _handOver, _help);
 
         // The go-on hears the record's events from its construction: the person's words to an ended chat (MSG1d, MSG1c).
-        _goOn = new ChatGoOn(_context, this, _handOver, _help, _words, _move);
+        _goOn = new ChatGoOn(_context, this, _handOver, _help, _words, _move, _limit);
+
+        // LIMITRESUME1c (D206 §3.4, §3.5): a conversation with no other account waits for its limit, and the look wakes it.
+        _waits = new LimitWaits(_context, _limit, _goOn);
+        _limit.Stays = _waits.Wait;
+        _goOn.Waits = _waits.Add;
+    }
+
+    /// <summary>
+    /// The look's <c>limits</c> stage (LIMITRESUME1c, D206 §3.4; <see cref="LimitWaits.LookAsync"/>): each conversation that waits for an
+    /// account whose wait has come goes on, its own account first, or moves; nothing is asked where no wait has come.
+    /// </summary>
+    /// <param name="onEnded">Told when a conversation it woke ends, as a start's is.</param>
+    public Task<IReadOnlyList<ChatStart>> WakeLimitsAsync(
+        DriverConfig config, Func<string, string, Task>? onEnded = null, CancellationToken ct = default) =>
+        _waits.LookAsync(config, onEnded, ct);
+
+    /// <summary>How many times the limits stage asked the service: a test holds that a look with no wait come asks nothing.</summary>
+    internal int LimitsAsked => _waits.Asked;
+
+    /// <summary>
+    /// *Stop waiting* (LIMITRESUME1c, D206 §3.7, N27): an ended conversation held by its limit waits no more. Its waiting words are marked
+    /// as words that cannot go on by themselves are, Daoris's limit word taken off by its id, and its conversation says so, which leaves
+    /// the limits stage's wait, so nothing goes on by itself; the person's next word goes on as any word to an ended conversation does.
+    /// A live one ends by the person's *Stop*, as any does.
+    /// </summary>
+    /// <returns>Null where it stopped waiting; else why not.</returns>
+    public async Task<string?> StopWaitingAsync(string sessionId, CancellationToken ct = default)
+    {
+        if (_context.Holds(sessionId)) return $"conversation `{sessionId}` runs here: stop it to end its wait.";
+        if (LimitHeld.Waiting(_context.Events.After(sessionId, 0).Events) is null)
+        {
+            return $"conversation `{sessionId}` does not wait for its account's limit.";
+        }
+
+        var record = await _goOn.LimitWordOffAsync(sessionId).ConfigureAwait(false);
+        if (record is not { Kind: "chat", Teammate: false }) return $"session `{sessionId}` is no conversation of this machine's.";
+        _context.Marks.Mark(sessionId, record.Waiting.Select(word => word.Id).OfType<string>(), GoOnMarks.StoppedWaiting, DateTimeOffset.UtcNow);
+        _context.Note(sessionId, LimitNotes.StoppedWaiting());
+        return null;
     }
 
     /// <summary>
@@ -1978,6 +2020,9 @@ public sealed class ChatRunner : IDisposable
     /// </summary>
     public const string NotKept = "Daoris kept no id for its conversation, so words written to it cannot go on in it.";
 
+    /// <summary>The English a conversation the person ended concludes with (<see cref="EndedNote"/>): what the limits stage leaves by.</summary>
+    internal const string EndedByPersonNote = "the person ended the conversation.";
+
     /// <summary>
     /// How a conversation that simply ended says so (the language design §4 rows 61–62), and <see cref="NotKept"/> after it
     /// where no id was kept (MSG1c; the code LANG1a added, its note under D142), each line with its code.
@@ -1986,7 +2031,7 @@ public sealed class ChatRunner : IDisposable
     internal static Noted EndedNote(bool stopped, bool notKept)
     {
         var ended = stopped
-            ? Noted.Of(NoteCodes.ChatEndedByPerson, "the person ended the conversation.")
+            ? Noted.Of(NoteCodes.ChatEndedByPerson, EndedByPersonNote)
             : Noted.Of(NoteCodes.ChatEnded, "the conversation ended; its commits are its record.");
         return notKept ? ended.Then(" ", Noted.Of(NoteCodes.ChatNotKept, NotKept)) : ended;
     }

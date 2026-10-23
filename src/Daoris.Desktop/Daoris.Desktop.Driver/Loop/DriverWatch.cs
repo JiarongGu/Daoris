@@ -117,6 +117,13 @@ public sealed class DriverWatch(
     /// </summary>
     public Func<string, ContinueReason, CancellationToken, Task<StartedFrom>>? GoesOnLost { get; init; }
 
+    /// <summary>
+    /// The look's <c>limits</c> stage (LIMITRESUME1c, D206 §3.4): the shell's chat runner's wake of the conversations that wait for an
+    /// account, run beside each look as the tidy is, one at a time, and never once the loop closes. It asks nothing where no wait has
+    /// come. Null in the headless host, which runs no conversation.
+    /// </summary>
+    public Func<DriverConfig, CancellationToken, Task>? Limits { get; init; }
+
     private LookStages? _stages;
 
     /// <summary>
@@ -389,6 +396,9 @@ public sealed class DriverWatch(
             Volume = SpaceVolumes.Read,
         };
         Task<IReadOnlyList<string>>? tidying = null;
+
+        // LIMITRESUME1c: the conversations that wait for an account, woken beside the looks (D206 §3.4), one pass at a time.
+        Task? limiting = null;
 
         // What woke each look, for its line in the machine log (FABRIC-EVENT2): the loop's start, its pace, a session's end, or a
         // nudge with what it said moved; and how many nudges the look took up at once.
@@ -742,6 +752,9 @@ public sealed class DriverWatch(
 
                     if (tidying is null && tidy.Due) tidying = TidyAsync(tidy, ct);
 
+                    if (limiting is { IsCompleted: true }) limiting = null;
+                    if (limiting is null && Limits is { } limits) limiting = LimitsAsync(limits, config, ct);
+
                     Looked(by, woke, part, nudges, began, failed: false);
                     await onReport(report, config).ConfigureAwait(false);
                 }
@@ -822,6 +835,7 @@ public sealed class DriverWatch(
             if (following is not null) await following.ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
             // The tidy's too: a removal half done when the loop closed is git's to finish, never left running unwatched.
             if (tidying is not null) await tidying.ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
+            if (limiting is not null) await limiting.ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
             await recovering.ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
         }
     }
@@ -947,6 +961,28 @@ public sealed class DriverWatch(
             ("nudges", nudges),
             ("failed", failed),
             ("stages", Stages.Take()));
+
+    /// <summary>
+    /// One pass of the <c>limits</c> stage (LIMITRESUME1c, D206 §3.4), started on the pool so the look beside it does not wait on a
+    /// conversation's start. A closing loop ends it with nothing said; a failure past its own catches is written to the log.
+    /// </summary>
+    private Task LimitsAsync(Func<DriverConfig, CancellationToken, Task> limits, DriverConfig config, CancellationToken ct) =>
+        Task.Run(async () =>
+        {
+            try
+            {
+                await Stages.TimeAsync("limits", () => limits(config, ct), beside: true).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                // The loop closed.
+            }
+            catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException
+                                              or IOException or UnauthorizedAccessException)
+            {
+                // The next look's pass asks again.
+            }
+        }, CancellationToken.None);
 
     /// <summary>
     /// One tidy pass (AUTOTIDY1), started on the pool so the look beside it does not wait on its git. A closing loop ends it

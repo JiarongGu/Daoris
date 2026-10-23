@@ -33,6 +33,13 @@ internal sealed class ResumeAsk(
 
     public string Conversation => conversation;
 
+    /// <summary>
+    /// The person's words of the turns its account's limit refused (LIMITRESUME1c, D206 §3.5; <see cref="LimitHeld"/>), handed again
+    /// first, each with its files: the record already shows them where they were said, so the opening never says them again, and no
+    /// id takes them off anything. Empty for every other resume.
+    /// </summary>
+    public IReadOnlyList<ChatMessage> Resent { get; init; } = [];
+
     /// <summary>The person's words, in the order said, each with the id its record's <c>said</c> gave it.</summary>
     public IReadOnlyList<SaidWordView> Words => words;
 
@@ -40,21 +47,23 @@ internal sealed class ResumeAsk(
     /// Every word's files in the order said (MSG1d3): the protocol door's links after the words' blocks, and what a run is
     /// handed a read of. Empty where none was said, or none is kept any more.
     /// </summary>
-    public IReadOnlyList<KeptFile> Files => [.. _files.SelectMany(each => each)];
+    public IReadOnlyList<KeptFile> Files => [.. Resent.SelectMany(word => word.Files), .. _files.SelectMany(each => each)];
 
     /// <summary>
     /// The person's words joined by a blank line, as the native door's one argument carries them: each with where its files
     /// are kept beneath it, as a conversation's message names them on that door (MSG1d3, <see cref="ChatFiles.PathLines"/>).
     /// </summary>
     /// <remarks>A word pressed as an answer of its park's question is handed as that answer chosen (<see cref="SaidWordView.Handed"/>, PARKVIEW1).</remarks>
-    public string Answer => string.Join("\n\n", words.Select((word, at) => word.Handed + ChatFiles.PathLines(_files[at])));
+    public string Answer => string.Join(
+        "\n\n",
+        [.. Resent.Select(word => word.Text + ChatFiles.PathLines(word.Files)), .. words.Select((word, at) => word.Handed + ChatFiles.PathLines(_files[at]))]);
 
     /// <summary>What the conversation is resumed with on the native door: the words, then the appendix after a blank line.</summary>
     public string Prompt => appendix is { Length: > 0 } more ? $"{Answer}\n\n{more}" : Answer;
 
     /// <summary>The same on the protocol door (D137 §2.2): each word its own text block in order, then the appendix as one more.</summary>
     public IReadOnlyList<string> Blocks =>
-        [.. words.Select(word => word.Handed), .. appendix is { Length: > 0 } more ? new[] { more } : []];
+        [.. Resent.Select(word => word.Text), .. words.Select(word => word.Handed), .. appendix is { Length: > 0 } more ? new[] { more } : []];
 
     /// <summary>The ids of the words its record keeps, for the service to take off once the session took them; none from before <c>said</c>.</summary>
     public IReadOnlyList<string> Ids => [.. words.Select(word => word.Id).OfType<string>()];

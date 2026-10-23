@@ -88,6 +88,12 @@ public static class ChangeTopics
     public const string Help = "help";
 
     /// <summary>
+    /// What a held conversation's wait is computed from (LIMITRESUME1c, D206 §3.4): the cooling store, which *Try now* and a sign-in end a
+    /// cool-off in, and the harness settings an added account changes. It wakes the look early, whose limits stage then reads its stamp.
+    /// </summary>
+    public const string Accounts = "accounts";
+
+    /// <summary>
     /// <c>notices.json</c>, written by any process on the home (NOTIFY2f, the notification design §2.5): read again by each process's
     /// <c>notices</c> slice, which needs no look, so the shell's watch alone listens for it.
     /// </summary>
