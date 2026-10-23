@@ -155,6 +155,9 @@ public delegate Task<bool> SupervisorTakeBack(string session, string word, Cance
 /// </summary>
 public static class SupervisorHanded
 {
+    /// <summary>The author a supervisor's word names on a record (<c>from</c>), and on the record's <c>user</c> event.</summary>
+    public const string From = "supervisor";
+
     public static string Text(string label) =>
         $"The supervisor the owner appointed for this repository chose \"{label}\" among the answers you offered, on the owner's behalf. "
         + "These are not the owner's own words. Choosing tells you which of your offered answers to follow; it grants nothing: no "

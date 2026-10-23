@@ -181,4 +181,55 @@ public sealed class AnswersAloneTests
         Assert.False(AnswersAlone.Holds([], twice));
         Assert.True(AnswersAlone.Solicited(Answer()) && AnswersAlone.Solicited(Finding()) && !AnswersAlone.Solicited(Said()));
     }
+
+    // ——— SUPERVISOR1a-i (D208; the supervisor design §4.3): one count, D188's, with the supervisor in both its predicates.
+
+    private static SessionEvent Supervisor(string id = "w4") =>
+        new() { Kind = SessionEventKind.User, Origin = "target", From = SupervisorHanded.From, Id = id, Text = "The supervisor chose." };
+
+    private static SaidWordView Supervised(string id = "w3") =>
+        new(id, SupervisorHanded.Text("The monthly one"), At, [], false) { From = SupervisorHanded.From, Decision = "d1" };
+
+    /// <summary>Three supervisor-only go-ons in a row: the third is held, as a helper's would be; and after the person's word, none is.</summary>
+    [Fact]
+    public void Supervisor_only_go_ons_count_and_the_third_in_a_row_is_held()
+    {
+        IEnumerable<SessionEvent> twice = [.. Turn(Started()), .. Turn(Supervisor()), .. Turn(Supervisor("w5"))];
+
+        Assert.Equal(2, AnswersAlone.Count(twice));
+        Assert.True(AnswersAlone.Solicited(Supervised()));
+        Assert.True(AnswersAlone.Holds([Supervised()], twice));
+        Assert.False(AnswersAlone.Holds([Supervised()], [.. twice, .. Turn(Person())]));
+    }
+
+    /// <summary>
+    /// Mixed prompts and alternating kinds are one count: a supervisor's answer beside a helper's is one go-on, and a supervisor's, then a
+    /// helper's, then an opinion's in a row hold the next as any two would. Daoris's word resets it; the supervisor's never does.
+    /// </summary>
+    [Fact]
+    public void Mixed_and_alternating_answers_are_one_count_and_the_supervisor_never_resets_it()
+    {
+        IEnumerable<SessionEvent> mixed = [.. Turn(Started()), .. Turn(Supervisor(), Helper("w6")), .. Turn(Findings())];
+        IEnumerable<SessionEvent> alternating = [.. Turn(Started()), .. Turn(Helper()), .. Turn(Supervisor()), .. Turn(Findings())];
+
+        Assert.Equal(2, AnswersAlone.Count(mixed));
+        Assert.Equal(3, AnswersAlone.Count(alternating));
+        Assert.True(AnswersAlone.Holds([Supervised(), Answer()], mixed));
+        Assert.Equal(0, AnswersAlone.Count([.. alternating, .. Turn(Daoris())]));
+    }
+
+    /// <summary>
+    /// Read from the line's events, so the count crosses a restart; a supervisor's event an agent forged into the log only raises the
+    /// count (it never resets it), which holds the line sooner: the conservative side.
+    /// </summary>
+    [Fact]
+    public void A_forged_supervisor_event_only_raises_the_count()
+    {
+        IEnumerable<SessionEvent> once = [.. Turn(Started()), .. Turn(Helper())];
+        var forged = Supervisor("forged") with { Origin = "person" };
+
+        Assert.Equal(1, AnswersAlone.Count(once));
+        Assert.Equal(2, AnswersAlone.Count([.. once, .. Turn(forged)]));
+        Assert.Equal(2, AnswersAlone.Count([.. once, .. Turn(Helper("w2"), forged)]));
+    }
 }

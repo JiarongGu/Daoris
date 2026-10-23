@@ -344,8 +344,10 @@ public sealed class LineEvents(string? home)
     /// Whose an entry is, by the marks the record keeps, never by its words. A word with no <c>origin</c>, from a record kept before
     /// it was written, is the person's, as the driver's brief reads it.
     /// </summary>
-    private static string Who(LineEntry entry) => entry.Kind switch
+    internal static string Who(LineEntry entry) => entry.Kind switch
     {
+        // SUPERVISOR1a-i (D208, the supervisor design §6.1): read from the event's own mark, never as the person's nor Daoris's.
+        "user" when entry.Mark == "supervisor" => "the supervisor, on the owner's behalf",
         "user" when entry.Origin is null or "person" => entry.Mark == "channel" ? "the person, on the ask's channel" : "the person",
         "user" => entry.Mark switch
         {
@@ -459,6 +461,7 @@ public sealed class LineEvents(string? home)
                     : Text(root, "channel") is not null ? "channel"
                     : Text(root, "opinion") is not null ? "opinion"
                     : Text(root, "from") == "daoris" ? "daoris"
+                    : Text(root, "from") == SaidFrom.Supervisor ? "supervisor"
                     : null,
                 Reaches = Text(root, "reaches"),
                 Files = Texts(root, "files"),
