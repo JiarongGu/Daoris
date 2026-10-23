@@ -672,6 +672,32 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 LIMITRESUME1b (D206, design §3.3; D137's TURNFAIL1 note amended): a turn an account's limit refused leaves the person's words
+    /// waiting, unmarked, however many limited ends run in a row, under a line of its own that neither bound reads as a first failure,
+    /// so one limited end and then one ordinary failure is no *failed twice*.
+    /// </summary>
+    [Fact]
+    public void Words_a_limited_turn_carried_always_wait_and_a_later_ordinary_failure_is_not_their_second()
+    {
+        var failed = Observation.Resumed(0, before: "completed", startedOn: "Taken", questStatus: "Taken", turnFailed: Dropped);
+        var ended = new PriorSession("s1", "D:/fam/Game", "failed", "its account's limit ended it.") { Limit = true };
+        var limitWait = FailedTurnWords.Line(WordsAfter.LimitWait)!;
+        Assert.Equal(["ended.limit-words-wait"], NoteAssert.Codes(limitWait.Parts));
+        Assert.Equal("Your words wait for the account's limit to lift.", limitWait.Note);
+
+        // Two limited full resumes running: the words still wait, never held for the person.
+        Assert.Equal(WordsAfter.LimitWait, FailedTurnWords.Judge(failed, Dropped, ended, limited: true));
+        var limitedTwice = ended with { NoteParts = failed.Then("\n\n", limitWait).Parts };
+        Assert.Equal(WordsAfter.LimitWait, FailedTurnWords.Judge(failed, Dropped, limitedTwice, limited: true));
+        var waitedOnce = ended with { NoteParts = failed.Then("\n\n", FailedTurnWords.Line(WordsAfter.Wait)!).Parts };
+        Assert.Equal(WordsAfter.LimitWait, FailedTurnWords.Judge(failed, Dropped, waitedOnce, limited: true));
+
+        // One limited end, then one ordinary failure: its first, so they wait to go again, unmarked.
+        Assert.Equal(WordsAfter.Wait, FailedTurnWords.Judge(failed, Dropped, limitedTwice));
+        Assert.Equal(WordsAfter.Wait, Continuations.Unstarted(limitedTwice, "the spawn failed").Words);
+    }
+
+    /// <summary>
     /// 🔴 Whether a resumed run's quest had closed is read from the quest as the look planned it, never as the run left it
     /// (the merge of 2026-10-03). An answered park's run that closes its own quest done is a completed record, as ANSWER1a
     /// concluded it: read after the run, the closed quest sent it down a closed quest's ending, which ended it as it was

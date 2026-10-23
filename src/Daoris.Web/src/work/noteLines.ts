@@ -60,6 +60,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'ended.went-on-failed': { values: [] },
   'ended.words-wait': { values: [] },
   'ended.words-wait-you': { values: [] },
+  'ended.limit-words-wait': { values: [] },
   // ACCESSSWAP1b: a run ended at its turn's end because its permission prompts changed, and its held words go on under the new setup.
   'ended.setup-changed': { values: ['from', 'to'] },
   'ended.words-setup': { values: [] },

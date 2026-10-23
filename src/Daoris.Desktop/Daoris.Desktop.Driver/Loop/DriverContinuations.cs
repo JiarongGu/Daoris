@@ -558,8 +558,10 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
 
         // 🔴 TURNFAIL1: words a failed turn carried were never answered. They stay waiting on the record, unmarked, as a cooling
         // account's do (D137 §2.2), and its note and conversation say why; failing a second time running, they wait for the
-        // person (FailedTurnWords). Every other run took them.
-        var words = stop is null && resume.Prompted && resume.Ids.Count > 0 ? FailedTurnWords.Judge(conclusion, turnFailed, ended, park) :WordsAfter.Taken;
+        // person (FailedTurnWords). Every other run took them. LIMITRESUME1b: a limited end's always wait (D137's note as D206 amends it).
+        var words = stop is null && resume.Prompted && resume.Ids.Count > 0
+            ? FailedTurnWords.Judge(conclusion, turnFailed, ended, park, limited)
+            : WordsAfter.Taken;
         if (FailedTurnWords.Line(words) is { } waits)
         {
             conclusion = conclusion.Then("\n\n", waits);
