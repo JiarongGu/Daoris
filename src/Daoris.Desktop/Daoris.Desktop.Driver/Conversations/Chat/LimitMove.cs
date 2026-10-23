@@ -84,11 +84,23 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
         var workspace = isHelp ? prior.Workspace : await WorkspaceOfAsync(prior.Repository, ct).ConfigureAwait(false);
         var selection = await context.Harnesses
             .SelectAsync(agent.Name, config, workspace, null, StartKind.Conversation, ct).ConfigureAwait(false);
+        Elsewhere? elsewhere = null;
         if (!selection.Allowed || string.Equals(selection.Profile ?? "", prior.Profile ?? "", StringComparison.OrdinalIgnoreCase))
         {
-            // LIMITRESUME1c: it waits for its limit, its words with it, and the look's stage wakes it (D206 §3.5).
-            if (!chat.Turns.Limited) Stays?.Invoke(sessionId, chat, ranOn);
-            return new StartedFrom(null, false, null, $"no other account of {agent.Name} has room, so `{sessionId}` waits on its own.");
+            // LIMITGOON2 (D205 §3.5(e)): no account of its agent has room, so its line goes on with its actor's next choice on another
+            // agent, where the person allowed one; else it waits, said why.
+            elsewhere = await ElsewhereAsync(prior, ranOn, isHelp, config, workspace, ct).ConfigureAwait(false);
+            if (elsewhere.Order is null)
+            {
+                // LIMITRESUME1c: it waits for its limit, its words with it, and the look's stage wakes it (D206 §3.5).
+                if (!chat.Turns.Limited)
+                {
+                    context.Note(sessionId, elsewhere.Stays!);
+                    Stays?.Invoke(sessionId, chat, ranOn);
+                }
+
+                return new StartedFrom(null, false, null, $"no other account of {agent.Name} has room, so `{sessionId}` waits on its own: {elsewhere.Why}");
+            }
         }
 
         var going = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -123,11 +135,13 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
             holding = false;
 
             var started = isHelp
-                ? await HelpStartAsync(prior, agent, config, onEnded, ct).ConfigureAwait(false)
-                // By the walk, as a carry-on's start is, so its opening and `account.rotated` name the cooling one passed and what it carries.
+                ? await HelpStartAsync(prior, agent, config, onEnded, ct, elsewhere?.Order).ConfigureAwait(false)
+                // By the walk, as a carry-on's start is, so its opening and `account.rotated` name the cooling one passed and what it carries;
+                // on another agent (LIMITGOON2), by its actor's walk over its other choices, told the earlier maker's trailer (MAKERTRAIL2).
                 : await runner.StartAsync(
                         prior.Repository!, agent.Name, config, onEnded, profile: null, ct: ct, tree: tree,
-                        from: new ContinuedFrom(sessionId, HandOverWhy.Limit, HandOverBy.Daoris))
+                        from: new ContinuedFrom(sessionId, HandOverWhy.Limit, HandOverBy.Daoris),
+                        order: elsewhere?.Order, leftBy: elsewhere is null ? null : LeftBy(prior, agent))
                     .ConfigureAwait(false);
             if (started.SessionId is not { } to)
             {
@@ -135,7 +149,10 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
                 return new StartedFrom(null, false, null, started.Message);
             }
 
-            var account = await ProfileOfAsync(to, ct).ConfigureAwait(false);
+            // The agent and account the new part opened on: the walk's, which is another agent where its own had no account left.
+            var opened = await context.Service.RecordAsync(to, ct).ConfigureAwait(false);
+            var account = opened?.Profile;
+            var onto = opened?.Adapter is { Length: > 0 } went ? went : agent.Name;
             var opening = HandOverNotes.MovedFrom(sessionId, ranOn, prior.Profile, HandOverWhy.Limit, high, brief.Text.Length);
             var words = held.Words;
             var files = words.SelectMany(word => ChatFiles.Kept(context.Home, sessionId, word.Files ?? [])).Concat(waited.SelectMany(word => word.Files)).ToList();
@@ -149,17 +166,19 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
             };
             var taken = await handOver.SayHandedOver(to, message).ConfigureAwait(false);
 
-            // Said once where the person wrote, and in the machine log, accounts by profile name (D125 point 7).
-            context.Note(sessionId, HandOverNotes.MovedOn(to, agent.Name, account, HandOverWhy.Limit, high, brief.Text.Length));
+            // Said once where the person wrote, naming the agent it moved to, and in the machine log, accounts by profile name (D125 point 7).
+            context.Note(sessionId, HandOverNotes.MovedOn(to, onto, account, HandOverWhy.Limit, high, brief.Text.Length));
             context.Service.AccountSaid(
-                Continuations.Moved(to, sessionId, ranOn, agent.Name, prior.Profile, account, HandOverWhy.Limit, briefed: true));
+                Continuations.Moved(to, sessionId, ranOn, onto, prior.Profile, account, HandOverWhy.Limit, briefed: true));
             if (!taken)
             {
                 context.Note(to, HandOverNotes.Unsaid());
                 return new StartedFrom(to, false, null, $"conversation `{to}` opened on the next account, but what Daoris kept of `{sessionId}` did not reach it.");
             }
 
-            return new StartedFrom(to, true, null, $"`{sessionId}` went on in conversation `{to}` on the next account, handed Daoris's brief and your words.");
+            return new StartedFrom(to, true, null, elsewhere is null
+                ? $"`{sessionId}` went on in conversation `{to}` on the next account, handed Daoris's brief and your words."
+                : $"`{sessionId}` went on in conversation `{to}` with {onto}, its actor's next choice, handed Daoris's brief and your words.");
         }
         finally
         {
@@ -367,15 +386,20 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
     /// Ask Daoris's new part, in its workspace's room (ASKSCOPE1b): placed as a press's is, the walk choosing its account and the log's
     /// <c>account.rotated</c> naming the part it carries; its room as the go-on finds it; its link kept in the room's history.
     /// </summary>
+    /// <param name="order">
+    /// Its actor's choices on other agents (LIMITGOON2, D205 §3.5(e)), walked as a new conversation's are, each judged by its access under
+    /// the mode standing now; null places it on <paramref name="agent"/>, as LIMITGOON1's move to its next account does.
+    /// </param>
     private async Task<ChatStart> HelpStartAsync(
-        PriorSession prior, ISessionAdapter agent, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct)
+        PriorSession prior, ISessionAdapter agent, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct,
+        IReadOnlyList<ActorEffective>? order = null)
     {
         if (await help.SetAsideHelpAsync(null, prior.Workspace, ct).ConfigureAwait(false) is { } answering)
         {
             return new ChatStart(null, $"{HeldWords.AnsweringWhy(answering)}.");
         }
 
-        var placed = await runner.PlaceHelpAsync(agent.Name, config, prior.Workspace, ct, carries: prior.Session).ConfigureAwait(false);
+        var placed = await runner.PlaceHelpAsync(agent.Name, config, prior.Workspace, ct, carries: prior.Session, order: order).ConfigureAwait(false);
         if (placed is not { SessionId: { } id, Adapter: { } resolved, Selection: { } selection }) return new ChatStart(null, placed.Message);
         try
         {
@@ -387,9 +411,51 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
         }
 
         var (room, reads) = await help.HelpRoomNowAsync(id, HelpRoom.GoesOnIn(context.Home, prior.Workspace, prior.Tree), ct).ConfigureAwait(false);
-        return await runner.RunAsync(prior.Actor ?? "ask-daoris", id, placed.Message, resolved, selection, config, runner.HelpPlace(room, reads, prior.Workspace), onEnded, ct)
+        return await runner.RunAsync(
+                prior.Actor ?? "ask-daoris", id, placed.Message, resolved, selection, config, runner.HelpPlace(room, reads, prior.Workspace), onEnded, ct,
+                chosen: placed.Chosen)
             .ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// Where a conversation whose agent has no account left goes on (LIMITGOON2, D205 §3.5(e)): its actor's effective order walked afresh
+    /// as at a start, without the out agent's entries, whose accounts are its. Nowhere for a conversation on the person's pick, which
+    /// never goes on with another agent (§3.5(d)), for an actor with no choice on another agent, <i>as before</i> among them, and where
+    /// none of those choices can run now: each said in its conversation as the reason it waits.
+    /// </summary>
+    private async Task<Elsewhere> ElsewhereAsync(
+        PriorSession prior, string ranOn, bool isHelp, DriverConfig config, string? workspace, CancellationToken ct)
+    {
+        if (prior.Choice == "pick") return new(null, LimitNotes.Picked(ranOn), $"`{ranOn}` is the agent you picked, so it never goes on with another.");
+
+        var actor = prior.Actor ?? (isHelp ? "ask-daoris" : "chat");
+        IReadOnlyList<ActorEffective> order;
+        try
+        {
+            order = ActorChoices.Effective(actor, config);
+        }
+        catch (ActorUnreadableException error)
+        {
+            return new(null, LimitNotes.NoOtherChoice(ranOn, error.Message), error.Message);
+        }
+
+        List<ActorEffective> others = [.. order.Where(entry => !string.Equals(entry.Agent, ranOn, StringComparison.OrdinalIgnoreCase))];
+        if (others.Count == 0)
+        {
+            var none = $"{ActorWords.Name(actor)} has no choice on another agent.";
+            return new(null, LimitNotes.NoOtherChoice(ranOn, none), none);
+        }
+
+        var walk = await runner.WalkAsync(actor, others, config, workspace, null, ct).ConfigureAwait(false);
+        return walk.Chosen is null ? new(null, LimitNotes.NoOtherChoice(ranOn, walk.Refusal!), walk.Refusal!) : new(others, null, "");
+    }
+
+    /// <summary>The part it moves from, as its record says it ran (MAKERTRAIL2): its harness, that harness's maker and its models.</summary>
+    private static EarlierMaker LeftBy(PriorSession prior, ISessionAdapter ran) =>
+        new(ran.Name, ran.Toolchain?.Maker, prior.Ran?.Models ?? []);
+
+    /// <summary>What <see cref="ElsewhereAsync"/> came to: the choices to walk, or the line its conversation waits under and why.</summary>
+    private sealed record Elsewhere(IReadOnlyList<ActorEffective>? Order, Noted? Stays, string Why);
 
     /// <summary>The workspace a repository's chat runs in, by the registry; null where the service does not name one.</summary>
     private async Task<string?> WorkspaceOfAsync(string? repository, CancellationToken ct)
@@ -426,6 +492,27 @@ public static class LimitNotes
             $"No account of `{first.Agent}` has room now; the first is ready again at {CoolingWords.When(first.Until, zone)}. "
             + "It waits, your words with it, and goes on by itself then.",
             ("owner", first.Agent), ("until", NoteCodes.Moment(first.Until)), ("why", CoolingWhy.Of(first)));
+
+    /// <summary>
+    /// Why a conversation whose agent has no account left does not go on with another (LIMITGOON2, D205 §3.5(e)): it runs on the agent
+    /// the person picked, which never moves (§3.5(d)). Said before its wait's line.
+    /// </summary>
+    public static Noted Picked(string agent) =>
+        Noted.Of(
+            NoteCodes.ChatLimitPicked,
+            $"You picked `{agent}` for it, so it does not go on with another agent: it waits for an account of `{agent}`.",
+            ("owner", agent));
+
+    /// <summary>
+    /// Why a conversation whose agent has no account left does not go on with another (LIMITGOON2, D205 §3.5(e)): no choice of its actor's
+    /// on another agent can run now, or it has none. The walk's own words follow in the English alone, as a program's.
+    /// </summary>
+    public static Noted NoOtherChoice(string agent, string why) =>
+        Noted.Of(
+                NoteCodes.ChatLimitNoOther,
+                $"None of its choices on another agent can run now, so it waits for an account of `{agent}`.",
+                ("owner", agent))
+            .Then(" ", Noted.Said(why, NoteBy.Program));
 
     /// <summary>The person's *Stop waiting* (LIMITRESUME1c, D206 §3.7): nothing goes on by itself, and their next word goes on as any does.</summary>
     public static Noted StoppedWaiting() =>

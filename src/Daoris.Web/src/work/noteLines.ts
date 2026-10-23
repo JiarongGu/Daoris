@@ -294,6 +294,9 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // A conversation its account's limit cut off with no account to go on on (LIMITRESUME1c): it waits, and the person's *Stop waiting*.
   'chat.limit-waits': { values: ['owner', 'until', 'why'], why: 'cooling' },
   'chat.limit-stopped-waiting': { values: [] },
+  // Why a conversation whose agent has no account left does not go on with another (LIMITGOON2): the person's pick, or no other choice.
+  'chat.limit-picked': { values: ['owner'] },
+  'chat.limit-no-other': { values: ['owner'] },
   // The limit's wake (LIMITRESUME1, D206 §3.7): its own conversation went on, or could not be resumed and went on briefed.
   'limit.resumed': { values: ['until'] },
   'limit.resume-refused': { values: ['why'], why: 'continue' },

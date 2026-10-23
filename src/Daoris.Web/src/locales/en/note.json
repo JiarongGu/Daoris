@@ -197,6 +197,8 @@
   "note.chat.moved": "Moved to `{{to}}` at the end of its turn: `{{from}}` had used {{used}} of its {{window}} limit, over its curve's {{curve}}; `{{to}}` has room.",
   "note.chat.limit-not-moved": "Its account reached its limit, and it could not go on on the next account: write to it again once one has room.",
   "note.chat.limit-waits": "No account of `{{owner}}` has room now; the first is ready again at {{until}} ({{why}}). It waits, your words with it, and goes on by itself then.",
+  "note.chat.limit-picked": "You picked `{{owner}}` for it, so it does not go on with another agent: it waits for an account of `{{owner}}`.",
+  "note.chat.limit-no-other": "None of its choices on another agent can run now, so it waits for an account of `{{owner}}`.",
   "note.chat.limit-stopped-waiting": "It no longer waits for its account's limit: your words stay with it, and it goes on when you write to it.",
   "note.limit.resumed": "Its account was ready again at {{until}}; it went on in its own conversation.",
   "note.limit.resume-refused": "Its own conversation could not be resumed ({{why}}), so it went on in a new session with Daoris's brief.",

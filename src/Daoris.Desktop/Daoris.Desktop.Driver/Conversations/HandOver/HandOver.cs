@@ -52,7 +52,9 @@ public sealed class HandOverBox(string home)
 /// <b>Conversations only here.</b> A quest's session is <see cref="QuestHandOver"/>'s (MIXAGENT1a-ii); asked of this judge it is
 /// refused <see cref="NotConversation"/>, saying where its door is. Ask Daoris's own
 /// conversations and intakes never go on elsewhere (D137 §2.2), and the conversation cannot be handed to the agent and account it
-/// runs on, nor while another hand-over waits, nor from a tree that is gone.
+/// runs on, nor while another hand-over waits, nor from a tree that is gone. The one path that moves Ask Daoris's conversation to
+/// another agent is no hand-over: its turn met a limit with no account of its agent left, and <see cref="LimitMove"/> goes on with its
+/// actor's next choice (LIMITGOON2, D205 §3.5(e)); the person's press and an agent's ask are still refused here.
 /// </remarks>
 public static class HandOver
 {
@@ -186,6 +188,7 @@ public static class HandOver
             case WordsNever.Teammate:
                 return Refused(WordsNever.Teammate, $"{id} ran on {id[..id.IndexOf('/')]}, where its conversation is; nothing said here reaches it.");
             case WordsNever.Help:
+                // LIMITGOON2 (D205 §3.5(e)): only a limit with no account of its agent left moves it to another agent (LimitMove), never this.
                 return Refused(WordsNever.Help,
                     $"{id} is Ask Daoris's own conversation, which stays on its own agent: Ask Daoris's history starts a new conversation from it.");
             case WordsNever.Intake:

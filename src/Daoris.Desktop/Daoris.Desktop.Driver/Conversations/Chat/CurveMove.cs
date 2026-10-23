@@ -68,6 +68,7 @@ internal sealed class CurveMove(ChatContext context, ChatHandOver handOver)
         }
 
         // Ask Daoris's own conversations and intakes never go on elsewhere (D137 §2.2), and one on the tool's own home has no account.
+        // The one exception is a limit with no account of its agent left (LIMITGOON2, D205 §3.5(e), LimitMove), never the curve.
         var prior = await _context.Service.RecordAsync(sessionId, ct).ConfigureAwait(false);
         if (prior is not { Kind: "chat", Teammate: false, Ask: null, Profile: { Length: > 0 } account, Adapter: { Length: > 0 } adapter }
             || string.Equals(prior.Repository, HelpRoom.Repository, StringComparison.Ordinal))
