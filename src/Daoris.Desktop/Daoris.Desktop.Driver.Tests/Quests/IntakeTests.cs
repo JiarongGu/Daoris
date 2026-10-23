@@ -660,6 +660,101 @@ public sealed class IntakeTests : IDisposable
         return script;
     }
 
+    /// <summary>
+    /// 🔴 MODELROLE1d (D205 §3.5(f), the row's test): an intake whose first account refuses Intake's model at the open, before any prompt,
+    /// ends <c>choice-not-offered</c> and lets its ask go in the same write, the reading kept; a driver started again, as after the app was
+    /// stopped between them, picks the ask as one never served, passes the refusing account by its reading and answers the ask once on
+    /// the second account. Both records name the ask.
+    /// </summary>
+    [Fact]
+    public async Task An_intake_its_first_account_refuses_answers_the_ask_once_on_the_second()
+    {
+        await using var service = StandInService.Start(Circle, Ask());
+        foreach (var account in new[] { "account-1", "account-2" }) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "stub", account));
+        new HarnessSettings().WithDefault("stub", "account-1").WithRotation("stub", ["account-1", "account-2"])
+            .Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
+        var config = ActorChoices.With(
+            Config() with { Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", RefusingAgent(), "account-1:opus"] } },
+            "intake", [new ActorChoice("acp-stub", "opus")]);
+        Daoris.Driver.Driver Started()
+        {
+            var adapters = AdapterSet.Built();
+            return new Daoris.Driver.Driver(
+                new ServiceClient(service.Url, null), config, adapters, _home,
+                harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+        }
+
+        var refusedLook = await Started().RunOnceAsync();
+
+        var refused = service.Session("i1");
+        Assert.Equal("failed", refused["state"]!.GetValue<string>());
+        Assert.Equal("account-1", service.Intakes[0]["profile"]!.GetValue<string>());
+        Assert.StartsWith("Not started: `acp-stub` did not offer `opus`", refused["note"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Equal(AgentOffers.RefusedCode, AgentOffers.Judge(AgentOffers.Read(_home), "acp-stub", null, "account-1", "opus", DateTimeOffset.UtcNow));
+        Assert.Null(service.AskOf("a1b2c3")["intake"]);
+        Assert.Empty(service.Published);
+        Assert.Empty(new AttentionWatch().Observe(refusedLook).Where(item => item.Kind == AttentionKind.Ended));
+
+        // The app stopped between them: a driver started again reads the kept reading and the unbound ask.
+        await Started().RunOnceAsync();
+
+        Assert.Equal(2, service.Intakes.Count);
+        var answered = service.Session("i2");
+        Assert.Equal("completed", answered["state"]!.GetValue<string>());
+        Assert.Equal("account-2", service.Intakes[1]["profile"]!.GetValue<string>());
+        Assert.Equal("i2", service.AskOf("a1b2c3")["intake"]!.GetValue<string>());
+        Assert.Single(service.Published);
+        Assert.All(service.Intakes, opened => Assert.Equal("a1b2c3", opened["ask"]!.GetValue<string>()));
+    }
+
+    /// <summary>
+    /// The protocol door's intake on the stub's accounts (MODELROLE1d): it lists Claude's three model values, refuses at the set the
+    /// models its argument names for its account, as Claude's door was measured to (MODELROLE1a), and publishes onto its ask when prompted.
+    /// </summary>
+    private string RefusingAgent()
+    {
+        var script = Path.Combine(_home, "refusing-intake.mjs");
+        File.WriteAllText(script, """
+            import { createInterface } from 'node:readline';
+            import { basename } from 'node:path';
+            const refuses = process.argv[2] ?? '';
+            const home = process.env.DAORIS_STUB_CONFIG_DIR ?? '';
+            const account = home ? basename(home) : '(own)';
+            const refused = new Set(refuses.split(',').filter((pair) => pair.startsWith(account + ':')).map((pair) => pair.split(':')[1]));
+            const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
+            let model = 'default';
+            const options = () => [{ id: 'model', name: 'Model', category: 'model', type: 'select', currentValue: model,
+              options: [{ value: 'default', name: 'Default' }, { value: 'opus', name: 'Opus' }, { value: 'sonnet', name: 'Sonnet' }] }];
+            for await (const line of createInterface({ input: process.stdin })) {
+              const frame = JSON.parse(line);
+              if (frame.method === 'initialize') {
+                send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, agentCapabilities: {} } });
+              } else if (frame.method === 'session/new') {
+                send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: 'acp-1', configOptions: options() } });
+              } else if (frame.method === 'session/set_config_option') {
+                const value = frame.params.value;
+                if (refused.has(value)) {
+                  send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: 'Internal error',
+                    data: { details: `Invalid value for config option model: ${value}` } } });
+                } else {
+                  model = value;
+                  send({ jsonrpc: '2.0', id: frame.id, result: { configOptions: options() } });
+                }
+              } else if (frame.method === 'session/prompt') {
+                await fetch(process.env.DAORIS_SERVICE_URL + '/api/asks/' + process.env.DAORIS_ASK_ID + '/publish', {
+                  method: 'POST', headers: { 'content-type': 'application/json' },
+                  body: JSON.stringify({ to: 'media-api', title: 'Read the field from the config', body: 'The ticket names it.', session: process.env.DAORIS_SESSION_ID }),
+                });
+                send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } });
+              } else if (frame.id !== undefined && frame.method) {
+                send({ jsonrpc: '2.0', id: frame.id, result: {} });
+              }
+            }
+            process.exit(0);
+            """);
+        return script;
+    }
+
     /// <summary>An intake is a session like any: it spends a slot of the machine's cap, and never more slots than there are.</summary>
     [Fact]
     public async Task Intakes_take_only_the_slots_the_cap_leaves()

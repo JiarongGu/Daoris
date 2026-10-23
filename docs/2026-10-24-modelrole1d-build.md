@@ -37,7 +37,13 @@ which remain.
    model and effort and the record keeps its choice; the opening note's actor line says a later choice.
 4. **§3.5(b)'s pending start** (remaining): `ChatPending` owning the attempt across replacements, the queued words moved, the go-on
    after an interruption, a pick never walked afresh, a refused continuation's brief recomposed.
-5. **§3.5(f)'s Intake re-ask** (remaining): `EndRefusedIntakeAsync` and the Intake's walk within its own start.
+5. **§3.5(f)'s Intake re-ask** (built). An intake's open is handed its offers (`OpenOffers`): what its open lists is kept as its
+   agent's reading, and a refusal of the entry's model at the open is kept refused on that account, then re-asked over the order its
+   start read (`DriverIntakes.ReaskAsync`, the walk with no count and the start's own left out): a later entry of the same agent on
+   the same account is set on the open session. Anything else ends the record `choice-not-offered` and lets its ask go in the same
+   write, only where the ask's binding names that session (`ServiceClient.EndRefusedIntakeAsync`, the ledger's advance with
+   `unbindAsk`), and gives the start's count back; the record stays, naming its ask. The next look picks the ask as one never served,
+   and its walk passes the refusing account by the reading kept.
 
 ## Checks run
 
@@ -58,6 +64,10 @@ modules `DriverModuleConversationTests`, `DriverModuleStartFromTests`, `DriverMo
 Part 3: the changed Process class `IntakeTests` with `process.runsettings` (an intake walking past an agent this machine lacks, and
 waiting on the wait's sentence with none), its fast half, `InstallUpdateTests` and `ActorRunTests`.
 
+Part 5: the changed Process class `IntakeTests` with `process.runsettings` (an intake its first account refuses at the open ends
+`choice-not-offered` with its ask let go and the reading kept, and a driver started again answers the ask once on the second
+account); `AttentionTests`, `StrikeTests`, `StructureTests` and `IntakeTests`' fast half.
+
 ## Readings
 
 - *Off* on Intake's and Ask Daoris's editors is a press beside *Save* (`settings.ai.actors.off`, *Off* / 关闭), not a value in the
@@ -69,3 +79,7 @@ waiting on the wait's sentence with none), its fast half, `InstallUpdateTests` a
   by the same-account move, and the override re-applied is the person's change, not the open's ask.
 - A route that names an agent (the new conversation's chip) is a pick even where it names Chat's own first agent: the person chose it,
   and §3.5(d) keeps a pick on its agent.
+- §3.5(f)'s refused intake is followed by the next look's open, not an open in the same call: the record's end, the ask's release and
+  the count's release happen in the run's conclusion, after its process stopped, and the next look's walk passes the refusing account
+  by the reading kept, so its answer is the one the same call would have reached. §3.5(f) also allows it (*Interrupted between the write
+  and the next open, the ask is unbound, so the next look picks it as any ask never served*), and an intake loses no context to it.

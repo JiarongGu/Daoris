@@ -2215,6 +2215,14 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     }
 
     /// <summary>
+    /// An intake refused its choice at the open (D205 §3.5(f), MODELROLE1d): one write ends its record <paramref name="conclusion"/>
+    /// (<c>failed</c>, <c>ended.choice-not-offered</c>) and lets its ask go, only where the ask's binding still names
+    /// <paramref name="session"/>; the record stays, naming its ask, so the ask's history keeps its line.
+    /// </summary>
+    public Task EndRefusedIntakeAsync(string session, SessionConclusion conclusion, CancellationToken ct = default) =>
+        AdvanceAsync(session, conclusion.State, note: conclusion.Note, ct: ct, parts: conclusion.Parts, unbindAsk: true);
+
+    /// <summary>
     /// <see cref="KeepActorAsync"/> where a start or a composer change keeps it: reporting never changes what runs (D205 row b),
     /// so a refusal or an unreachable service is logged and the run goes on. A cancellation still cancels.
     /// </summary>
