@@ -1192,7 +1192,7 @@ public sealed class HelpRoutes(DriverContext context)
         {
             // HELPMODE1a2: the mode it ran under, its record's, after whether it runs; ASKSCOPE1d: the workspace it started in after it.
             row.Session, row.Title, row.Name, row.Opening, row.About, row.Created, row.Last, row.Pinned, row.Live, row.Mode, row.Workspace,
-            row.Resumable, row.From, row.Handed, row.Found, row.FoundLine,
+            row.Resumable, row.From, row.Handed, row.Found, row.FoundLine, row.Parts,
         }).ToArray(),
         listing.Cut,
         listing.Total,

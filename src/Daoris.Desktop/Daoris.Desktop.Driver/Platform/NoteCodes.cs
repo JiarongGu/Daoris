@@ -669,6 +669,10 @@ public static class NoteCodes
     public static readonly NoteCode ChatMoved = new("chat.moved", ["to", "from", "window", "used", "curve"]);
     public static readonly NoteCode ChatMovedFrom = new("chat.moved-from", ["from", "window", "used", "curve"]);
 
+    // ——— A conversation whose turn its account's limit refused, whose move to the next account did not open (LIMITGOON1): it ended,
+    // and the words its refused turns held stay in it. The start's own words follow in the English alone.
+    public static readonly NoteCode ChatLimitNotMoved = new("chat.limit-not-moved", []);
+
     // ——— Where the person's words went, after the record's earlier parts.
     public static readonly NoteCode WentCannot = new("went.cannot", ["why"], Key: "work.say.cannot") { Why = Continue };
     public static readonly NoteCode WentNewSession = new("went.new-session", ["why"]) { Why = Continue };

@@ -31,6 +31,30 @@ repository.
 - **Installed window, after the republish:** on a repository whose set-up merges outside Daoris, its page drops *not adopted*
   and *Set up for agents* within a look of the pull. The machine log shows `registry.followed` with `registered` for it.
   That repository itself is registered by the next start's follow of every line, or by its row's *Refresh*.
+## 2026-10-23 — A conversation whose account met its limit stayed on it, and Ask Daoris reopened with nothing carried (LIMITGOON1)
+
+- **Symptom:** seen on the install at 07:28 UTC: an Ask Daoris conversation's account answered *You've hit your weekly limit* twice,
+  both turns failing with the person's words in them. The record then ended, and a new Ask Daoris session opened on the next account
+  with nothing carried (`account.rotated … carries=null why=cooling`). The person's lines stayed in the old chat, now under history.
+- **Root cause:** a conversation's refused turn was read for a limit (`ChatRunner.Limited`): its account cooled and the turn ended
+  `error`, but nothing moved the conversation. The usage curve's move (`CurveMove`) judges what an account said of its windows, never
+  a refusal, and passes Ask Daoris by. The brief's go-on (`BriefedMove`) moves only a proven loss, on the same account. So every
+  later word was refused the same way, and the next press opened a fresh conversation. The person's words were taken by the refused
+  turns, so nothing waited to go on with. Ask Daoris's history listed each record as its own conversation, so even a continued line
+  would have shown split.
+- **Fix:** `Chat/LimitMove.cs`: at a turn's end whose refusal was read for a limit, the conversation moves to a new part on the
+  account the walk offers next, the cooling one passed. That part is handed Daoris's brief of the line before the refused turns and
+  then the words those turns held (`Domain/LimitHeld.cs`), its record `from` the old by `limit`, by `daoris`. Ask Daoris's opens in
+  its room, its history naming the old. `account.rotated` names what it carries. Ask Daoris's history folds a part continued by the
+  brief into its line (`HelpConversations.List`, `Parts`), and the page shows the parts as one conversation and follows the newest
+  (`AskConversation.tsx`). Why the brief and not the agent's own resume: the limit-goes-on design, and D189's note of this date.
+- **Verification:** red first, `LimitGoesOnProcessTests` (Process, with `src/Daoris.Desktop/process.runsettings`): a stand-in ACP
+  agent that answers one exchange on `account-1`, then refuses with Claude Code's limit sentence. For a repository's chat and Ask
+  Daoris, the conversation goes on on `account-2` with the brief (carrying the answered exchange) and then the held words, each
+  part saying the move once. `LimitHeldTests`, `HelpConversationsTests` (a continued line listed once before search and paging,
+  its name, pin and opening kept), the modules' `DriverModuleHelpHistoryTests`, and `AskDaoris.test.tsx` (both parts' answers on
+  one page, one message box, the next words to the newest part). No real agent or sign-in ran. The window has not been seen.
+- **Commit:** `5a2cd2a1f`, `5abcb801f`.
 
 ## 2026-10-23 - Finished sessions kept their trees locked (TREELOCK2)
 

@@ -4,6 +4,8 @@
  * name and pin a file beside them.
  */
 export type HelpConversationRow = {
+  /** The conversation's records in order, including its newest; absent on older hosts. */
+  parts?: string[];
   session: string;
   /** What the list calls it: the person's name for it, else its first question. */
   title: string;

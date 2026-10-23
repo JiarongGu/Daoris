@@ -79,7 +79,7 @@ public static class HelpCommand
     public static IReadOnlyList<string> JsonFields { get; } =
     [
         "session", "title", "name", "opening", "about", "created", "last", "pinned", "live", "mode", "workspace", "resumable", "from",
-        "handed", "found", "foundLine",
+        "handed", "found", "foundLine", "parts",
     ];
 
     /// <summary>
@@ -437,6 +437,9 @@ public static class HelpCommand
                 Text(writer, "handed", row.Handed);
                 Text(writer, "found", row.Found);
                 Text(writer, "foundLine", row.FoundLine);
+                writer.WriteStartArray("parts");
+                foreach (var part in row.Parts) writer.WriteStringValue(part);
+                writer.WriteEndArray();
                 writer.WriteEndObject();
             }
 

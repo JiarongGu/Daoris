@@ -272,6 +272,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // each account by the name the person gave it, and how far over its curve the account it left was.
   'chat.moved': { values: ['to', 'from', 'window', 'used', 'curve'], accounts: ['to', 'from'] },
   'chat.moved-from': { values: ['from', 'window', 'used', 'curve'], accounts: ['from'] },
+  // A conversation whose account's limit refused its turn, whose move to the next account did not open (LIMITGOON1).
+  'chat.limit-not-moved': { values: [] },
   // A helper on another agent (MIXAGENT2a-ii): on the asker, asked, answered or refused, with the agent and why; on the helper,
   // whose session it helps.
   'helper.asked': { values: ['agent', 'session'] },

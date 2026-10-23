@@ -183,6 +183,7 @@
   "note.moved.on": "已在会话 {{session}} 中由 {{agent}}（账户 `{{account}}`）继续，因为{{why}}：当时它的上下文有 {{tokens}} 个 token，新会话收到了 Daoris 对它的简报，共 {{count}} 个字符。",
   "note.moved.from": "接续会话 {{session}}，它原先运行在 {{agent}}（账户 `{{account}}`）上，因为{{why}}：当时它的上下文有 {{tokens}} 个 token，这里收到了 Daoris 对它的简报，共 {{count}} 个字符。",
   "note.chat.moved": "在这一轮结束时转到账户 `{{to}}`：`{{from}}` 的{{window}}上限已用 {{used}}，超出其曲线此刻的 {{curve}}；`{{to}}` 还有余量。",
+  "note.chat.limit-not-moved": "它的账户已达上限，也无法在下一个账户上继续：等有账户有余量时再给它写一句。",
   "note.chat.moved-from": "接续自账户 `{{from}}`：它的{{window}}上限已用 {{used}}，超出其曲线此刻的 {{curve}}。",
   "note.helper.asked": "已请助手回答：{{agent}} 在会话 {{session}} 中阅读并回答这个问题。",
   "note.helper.answered": "助手 {{agent}}（会话 {{session}}）已回答；它的回答将作为这个会话的下一轮，并标明是助手的说法。",

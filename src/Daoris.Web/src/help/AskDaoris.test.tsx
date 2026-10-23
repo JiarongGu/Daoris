@@ -1220,6 +1220,32 @@ describe('Ask Daoris’s history', () => {
     window.localStorage.clear();
   });
 
+  it('keeps an account limit continuation and its earlier exchange in one conversation', async () => {
+    SESSIONS = [EARLIER, HELP];
+    withHistory([row({ session: HELP.id, live: true, from: EARLIER.id, handed: 'brief', parts: [EARLIER.id, HELP.id] })]);
+    const answered = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, body?: { payload?: { id?: string } }) => {
+      if (type === 'SESSION_HISTORY') {
+        const id = body?.payload?.id;
+        return { session: id, events: [
+          { seq: 1, kind: 'user', origin: 'person', text: id === EARLIER.id ? 'Original question' : 'Held words', at: HELP.created },
+          { seq: 2, kind: 'message', text: id === EARLIER.id ? 'Earlier answer' : 'Continued answer', at: HELP.created },
+          { seq: 3, kind: 'turn', stopReason: 'end_turn', at: HELP.created },
+        ], earlier: false, latest: 3 };
+      }
+      return answered(module, type, body);
+    });
+    show();
+    expect(await screen.findByText('Earlier answer')).toBeInTheDocument();
+    expect(await screen.findByText('Continued answer')).toBeInTheDocument();
+    expect(screen.getAllByLabelText('Message')).toHaveLength(1);
+    await userEvent.type(screen.getByLabelText('Message'), 'Next question');
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: { id: HELP.id, text: 'Next question' },
+    }));
+  });
+
   it('goes on in an earlier conversation the person chose from the history, with their words', async () => {
     withHistory([row({})]);
     show();

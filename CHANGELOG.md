@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- A conversation whose account reaches its limit now goes on in the same conversation on your next account (LIMITGOON1). The
+  words the refused turn held are passed on with Daoris's summary of the conversation so far, and the conversation says once where it
+  went on. In Ask Daoris it stays one conversation, both before and after the move, rather than leaving your words in the history.
+  A teammate's conversation, and one you ended, are unchanged.
+
 - What waits on you at the foot of a session's conversation takes less height and you can resize it (WAITPANEL1). Drag its top
   edge, or focus the edge and use the arrow keys, Home and End; a double-click puts it back. Your height is kept for next time, it
   starts at 240 px, and the conversation above always keeps room to read. *To the top* and *Back to bottom* now sit just above the

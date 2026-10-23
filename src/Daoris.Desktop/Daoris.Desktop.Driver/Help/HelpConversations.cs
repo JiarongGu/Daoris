@@ -18,6 +18,8 @@ public sealed record HelpKept(string? Name, DateTimeOffset? Pinned, string? From
 /// <param name="State">Its record's state, in the public spelling.</param>
 public sealed record HelpConversation(string Session, string State)
 {
+    /// <summary>The records of this conversation in order; a briefed continuation stays one history row (LIMITGOON1).</summary>
+    public IReadOnlyList<string> Parts { get; init; } = [];
     /// <summary>The name the person gave it, or null.</summary>
     public string? Name { get; init; }
 
@@ -228,9 +230,39 @@ public sealed class HelpConversations(string home)
             .ToList();
         var openings = events.Openings(help.Select(record => record.Id));
 
+        // Fold continuations before ordering, searching and paging. A fresh start handed a transcript remains independent.
+        // Only links within this machine's same workspace count; a damaged cycle is bounded by the ids already read.
+        var byId = help.ToDictionary(record => record.Id, StringComparer.Ordinal);
+        var keptById = help.ToDictionary(record => record.Id, record => Read(record.Id), StringComparer.Ordinal);
+        string? Previous(string id) => keptById[id] is { Handed: Brief, From: { } from }
+            && byId.TryGetValue(from, out var previous)
+            && string.Equals(previous.Workspace, byId[id].Workspace, StringComparison.OrdinalIgnoreCase) ? from : null;
+        var continued = help.Select(record => Previous(record.Id)).OfType<string>().ToHashSet(StringComparer.Ordinal);
+        var parts = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
+        foreach (var record in help)
+        {
+            var line = new List<string>();
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            for (string? id = record.Id; id is not null && seen.Add(id); id = Previous(id)) line.Add(id);
+            line.Reverse();
+            parts[record.Id] = line;
+        }
+
+        HelpKept KeptOf(string id)
+        {
+            var line = parts[id].Reverse().Select(part => keptById[part]).ToList();
+            return keptById[id] with
+            {
+                Name = line.FirstOrDefault(each => each.Name is not null)?.Name,
+                Pinned = line.FirstOrDefault(each => each.Pinned is not null)?.Pinned,
+            };
+        }
+
         // Every record by what orders it; one the person never spoke in nor named is no conversation.
         var ordered = help
-            .Select(record => (Record: record, Kept: Read(record.Id), Opening: openings.GetValueOrDefault(record.Id)))
+            .Where(record => !continued.Contains(record.Id))
+            .Select(record => (Record: record, Kept: KeptOf(record.Id), Opening: parts[record.Id]
+                .Select(id => openings.GetValueOrDefault(id)).FirstOrDefault(opening => opening is not null)))
             .Where(each => each.Opening is not null || each.Kept.Name is not null)
             .Select(each => (each.Record, each.Kept, each.Opening, Last: events.LastAt(each.Record.Id) ?? each.Record.Updated))
             .OrderByDescending(each => each.Kept.Pinned.HasValue)
@@ -254,7 +286,7 @@ public sealed class HelpConversations(string home)
             {
                 listed.Add((record, kept, opening, last, title, null));
             }
-            else if (events.FirstFound(record.Id, wanted) is { } found)
+            else if (parts[record.Id].Select(id => events.FirstFound(id, wanted)).FirstOrDefault(hit => hit is not null) is { } found)
             {
                 listed.Add((record, kept, opening, last, found.Hit.Snippet, LineAround(found.Passage, found.At, wanted.Length)));
             }
@@ -269,6 +301,7 @@ public sealed class HelpConversations(string home)
             var conversation = conversations.Read(each.Record.Id);
             return new HelpConversation(each.Record.Id, each.Record.State)
             {
+                Parts = parts[each.Record.Id],
                 Name = each.Kept.Name,
                 Opening = each.Opening,
                 About = FirstLine(answer),

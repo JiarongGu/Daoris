@@ -195,6 +195,12 @@ export function useAskConversation(
       : offerEvery ? { workspace: listIn, here, onEvery: setEveryWorkspace } : undefined;
   // Each a page at a time, every page read joined (ASKHIST1d2); asked once the window's workspace is known.
   const rows = useHelpConversations('', helper !== null && here !== undefined, listIn);
+  // Follow a chosen conversation when the driver continues it on another account. A fresh start has no shared parts.
+  useEffect(() => {
+    if (!chosen) return;
+    const continued = rows.data?.conversations.find((row) => row.session !== chosen && row.parts?.includes(chosen));
+    if (continued) setChosen(continued.session);
+  }, [chosen, rows.data]);
   const found = useHelpConversations(words, helper !== null && here !== undefined && historyOpen && searching, listIn);
   const listing = searching ? found : rows;
   // The last list answered, held while a newer one comes, so a search typed never blanks the rows (UX §4; ASKHIST1c).
@@ -829,8 +835,14 @@ export function useAskConversation(
     />
   ) : undefined;
 
-  const conversation = shown ? (
+  const earlierParts = (shownRow?.parts ?? []).filter((id) => id !== shown?.id);
+  const conversation = shown ? (<>
+    {earlierParts.map((id) => (
+      <SessionConversation key={id} session={id} adapter={helpSessions.find((part) => part.id === id)?.adapter ?? shown.adapter}
+        chat live={false} scroller={scroller} />
+    ))}
     <SessionConversation
+      key={shown.id}
       session={shown.id}
       adapter={shown.adapter}
       chat
@@ -841,7 +853,7 @@ export function useAskConversation(
       onTail={setTail}
       onGoOnBrief={live ? undefined : () => onGoOnBrief(shown.id)}
     />
-  ) : null;
+  </>) : null;
 
   // The words on their way shown with the conversation they were said to, or with none while the list has not listed it yet.
   const going = sent.filter((each) => each.session === shown?.id || !helpSessions.some((session) => session.id === each.session));

@@ -19911,3 +19911,14 @@ stands at another commit than it was last followed at (driver). A follow that se
 (modules). The page re-reads the registry on that scope and drops *not adopted* with no reload (web behavior test). The red-first
 proof, the reached classes and the installed-window check are in FIX-LOG's SETUPSTATE1 entry; the window is looked at after the
 republish.
+
+## LIMITGOON1 — a conversation that meets an account's limit goes on in the same conversation, on the next account (2026-10-23, D197, D189)
+
+> - [ ] **LIMITGOON1 — a conversation that meets an account's limit goes on in the same conversation, on the next account** (driver, modules, web; the owner's report, 2026-10-23; D197, D189 point 3, D163). Seen on the install at 07:28 UTC: an Ask Daoris conversation's account answered *You've hit your weekly limit* twice, both turns failed with the person's words in them, then the record ended and a new Ask Daoris session opened on the next account with nothing carried (`account.rotated … carries=null why=cooling`), so the person's lines stayed in the old chat, now under history, and the new one began without its context. A driven session already carries on (`carries=` its last part). Wanted: a limit mid-conversation moves the same conversation to the next account as a new part of its line, carrying its context (the agent's own resume where the transcript can move, else Daoris's brief) and the person's words the failed turns held, said once in the conversation; the conversation stays one thread on the page, never split into history. Proof: a stand-in agent answering a limit sentence mid-conversation on one account and going on on the next with the held words, for Ask Daoris and a repository's chat; the page showing one conversation.
+
+**Outcome** 2026-10-23: at the refused turn's end the conversation moves to a new part on the next account of its agent
+(`Chat/LimitMove.cs`). The new part is handed Daoris's brief, since the agent's own transcript lives in the cooling account's home,
+and then the words the refused turns held (`Domain/LimitHeld.cs`). Each part says it once in en and zh. Ask Daoris's history folds
+the parts into one row, and the page shows them as one conversation. Held by `LimitGoesOnProcessTests` with a stand-in agent,
+`LimitHeldTests`, `HelpConversationsTests`, `DriverModuleHelpHistoryTests` and `AskDaoris.test.tsx`; the installed window is not
+yet looked at. Detail: `docs/2026-10-23-limit-goes-on-design.md`, D189's and D197's LIMITGOON1 notes, FIX-LOG's entry.

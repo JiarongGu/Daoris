@@ -43,6 +43,28 @@ public sealed class HelpConversationsTests : IDisposable
     private static Func<string, bool> Resumes => adapter => adapter == "claude-code-acp";
 
     [Fact]
+    public void A_briefed_continuation_is_one_conversation_before_search_and_pagination()
+    {
+        Said("h1", "Original question about the port", "Earlier answer");
+        Said("h2", "Held words", "Next answer");
+        var history = new HelpConversations(_home);
+        history.StartedFrom("h2", "h1", HelpConversations.Brief);
+        history.Rename("h1", "My conversation");
+        history.Pin("h1", true, Monday);
+        var records = new[] { Help("h1"), Help("h2", "working") };
+        var listed = history.List(records, Events, Resumes, limit: 1);
+        var row = Assert.Single(listed.Conversations);
+        Assert.Equal(1, listed.Total);
+        Assert.Null(listed.Next);
+        Assert.Equal("h2", row.Session);
+        Assert.Equal("My conversation", row.Title);
+        Assert.Equal("Original question about the port", row.Opening);
+        Assert.Equal(Monday, row.Pinned);
+        Assert.True(row.Live);
+        Assert.Equal("h2", Assert.Single(history.List(records, Events, Resumes, search: "Earlier answer").Conversations).Session);
+    }
+
+    [Fact]
     public void A_conversation_is_listed_by_its_first_question_with_a_line_of_its_last_answer()
     {
         Said("h1", "how do I make engine land on a feature branch?\nand keep its tree?", "Repositories → engine → Setup.", "\nThen Line and landing.");
