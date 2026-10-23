@@ -40,6 +40,27 @@ repository.
 - **Not covered:** the agent's ask file is the connector's alone, and it always says `agent`. A terminal or window ask is a box,
   not an ask file, so the window's press of a quest's session is held by the shared note helper, not by a route test of its own.
   The installed window is not yet looked at.
+## 2026-10-24 - A second opinion judged its independence against the line's last maker only (LIMITRESUME1j)
+
+- **Symptom:** none seen yet, because no driven line moves across makers today. D206 §3.6 has a driven line at a limit go on
+  with its actor's next choice, which may be another maker's agent (row 1e). On such a line, a part on Codex cut off by its
+  limit and carried on by Claude Code, a rule listing Codex would have had Codex read the work as *another maker's agent*
+  (`another-maker`), though Codex wrote part of it.
+- **Root cause:** the look gathered the work's families from this machine's *last* run on each of the chain's quests and from
+  the candidate's own record (`Loop/OpinionGateLook.cs`, then `:363-365`), and the recheck from the working record alone
+  (`Loop/OpinionDeliverer.cs`, `RecheckAsync`). Each names only the line's newest part, so an earlier part's maker never reached
+  `ReviewerChoice`'s labels. D155 point 4 asks for every family that wrote the candidate, and its COAGENT1 note already named the
+  gap (`D155.md`, the 2026-10-22 note).
+- **Fix:** `OpinionWriters.Agents` (`Review/Domain/OpinionWriters.cs`) gathers the adapter of every part of the candidate's line
+  by its records' `from` links (`ContextBriefs.LineOf`), and of every record of this machine's on the chain's quests in the
+  repository with each one's line, so a part with no `from` link still counts. A stand-down, which is no run, is not counted.
+  The look and the recheck both use it, read from one read of the records, which replaces the look's single-record read.
+- **Verify:** red first: `OpinionRecheckTests.A_recheck_on_a_line_that_ran_on_two_makers_takes_neither_as_another_makers`
+  failed with `another-maker`. `OpinionLookTests.An_opinion_asked_on_a_line_that_ran_on_two_makers_refuses_a_reviewer_of_either`
+  (`Process`, real git) failed for both reviewers against the old look: `another-maker` for Codex, and only Anthropic as the
+  work's maker for Claude Code. Green: `OpinionWritersTests` (6, the walk refusing a reviewer of either as `not-independent`),
+  `OpinionRecheckTests`, `OpinionDeliveryTests`, `ReviewerChoiceTests`, `OpinionGateTests` and `StructureTests` in the fast half;
+  `OpinionLookTests` and `OpinionResumeTickTests` by class with `process.runsettings`.
 
 ## 2026-10-23 - A turn its model's provider refused parked on the person (APIREFUSAL1)
 
