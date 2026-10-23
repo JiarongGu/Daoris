@@ -36,6 +36,30 @@ repository.
   record, so they were not run here; GITAPP1i's window timings run under the owner's load. Two readings: the gate waits almost never
   (one read's starts are serial), so its time is the creation and the runs, about 0.2-0.4 s a start; and the Accept offer is the
   longer chain, 21 starts after the review's 13.
+## 2026-10-23 — A refused move back to the person was said to no one (HELPERWAIT1c)
+
+- **Symptom:** found by Codex's round-2 read of COWORKUX1 (#5, its second half), never seen on a machine. A lead waiting on its own
+  helper, whose helper ended with no answer and whose move back to the person the service refused, stayed `completed`. Its refusal
+  was said only as a `Wait` look line (`DriverHelpers.BackToPersonAsync`). That class promises a row of *What needs you*
+  (`LookSaid.cs`, `LookClass.Wait`), and no record carried one: the person was never shown the session, which kept its tree while it
+  waited. Beside it, the go-ahead read the service does not answer parked the turn, with no case proving it (design §5 point 1).
+- **Root cause:** HELPERWAIT1 kept the move's failure in the driver's memory alone (`_backFailed`), to say it once. *What needs you* is
+  judged from records (`NeedsAPerson`), and its park row reads `awaiting-person`, which the refused record never reached. Nothing
+  else on file said the record waited on the person.
+- **Fix:** the driver keeps a refused move as `<session>.back.json` beside the helper's asks (`HelperBack`, `HelperFiles.WriteBack`).
+  It holds the service's words and dates from the first refusal. An unreachable service writes none, and leaves a kept refusal as
+  it was. It goes once the move lands, or at the first look that no longer brings the session back. The attention slice reads it
+  (`AttentionStateSlice.BackWaits`), and the judge makes a `helper-ended` row in *Holding work*, unless the record in hand has
+  moved on. The page words it in en and zh, the refusal passed through as a value, and its door opens the session
+  (`attention.ts`, `AttentionRow.tsx`, `App.tsx`; the terminal's `NoticesRead.KindGroups`).
+- **Verification:** red first. `HelperLookTests`: the refused move is kept, an unreachable service keeps none and leaves a refusal
+  standing, and the move landing or the quest closing lets it go (failed before the fix: no record). The go-ahead read, unreachable
+  or refused, parks the turn. It passed against the built code, so it was checked against a mutant that read the failure as "none
+  asked", and both cases went red. `AttentionStateSliceTests`: the row by its session, with the refusal, none for a record that
+  moved on, and the file's read. `attention.test.ts`, `AttentionRow.test.tsx`: the wording in en and zh, its group, place, order
+  and door. Green: the driver's helper classes (78), the modules' attention and notices classes (114), the web's attention and
+  locale files (282, 104), the Process classes `HelperWaitTickTests` (2) and `HelperProcessTests` (4) with `process.runsettings`,
+  and `HelperCaptureProcessTests` (4) with `git.process.runsettings`.
 
 ## 2026-10-23 — A hand read back after its answer was lost told nothing on this machine (HELPERWAIT1b2)
 
