@@ -1,7 +1,8 @@
 # The desktop's start: what runs before the first page has its data (STARTFAST1, 2026-10-23)
 
 **Standing:** a reading and a proposal. STARTFAST1's first part built only the timing (`start.stages`, the machine-log design's
-row); nothing that starts was changed. The cut proposed in §4 is STARTFAST1b. Lines are read at the commit that added this note.
+row); nothing that starts was changed. The cut proposed in §5 is STARTFAST1b, built 2026-10-23 (D56's STARTFAST1b note: the
+splash named by its queries' roots rather than at each view's root). Lines are read at the commit that added this note.
 
 ## 1. The start that asked for it
 

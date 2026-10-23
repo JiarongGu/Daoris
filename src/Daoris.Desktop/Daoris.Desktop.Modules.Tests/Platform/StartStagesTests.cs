@@ -108,6 +108,27 @@ public sealed class StartStagesTests : IDisposable
     }
 
     /// <summary>
+    /// STARTFAST1b (the start-path design §5c): what waits for the first screen's data is let go by the page's word through the
+    /// splash's lift, at once where the word came before it was asked, and by its own bound where the word never comes.
+    /// </summary>
+    [Fact]
+    public async Task The_first_screen_s_wait_ends_at_the_page_s_word_or_its_bound()
+    {
+        var stages = new StartStages(before: 0);
+        var held = stages.FirstScreenAsync(Timeout.InfiniteTimeSpan);
+        Assert.False(held.IsCompleted);
+        stages.Mark(StartStages.Browser);
+        Assert.False(held.IsCompleted);
+
+        new SplashLift(stages).PageSaid();
+        await held.WaitAsync(Poll.Patience);
+        Assert.True(stages.FirstScreenAsync(Timeout.InfiniteTimeSpan).IsCompleted);
+
+        // A page that never says: the bound alone ends it, never faulting.
+        await new StartStages(before: 0).FirstScreenAsync(TimeSpan.FromMilliseconds(1)).WaitAsync(Poll.Patience);
+    }
+
+    /// <summary>
     /// Held on the application's own source, as the splash's route is, since the window has no test project: each stage is
     /// marked exactly once across the desktop's sources, the stop writes what came, and the timer begins at the top of Main.
     /// </summary>
@@ -131,6 +152,10 @@ public sealed class StartStagesTests : IDisposable
         Assert.True(main.IndexOf("StartStages.Begin()", StringComparison.Ordinal)
             < main.IndexOf("InstallHome.Establish(", StringComparison.Ordinal), "the timer begins after the home");
         Assert.Contains("stages.Write();", main);
+        // STARTFAST1b: the host begun before the kit's runner starts Chromium, by the launch holding the claim alone.
+        var begun = main.IndexOf("supervisor.Begin()", StringComparison.Ordinal);
+        Assert.True(begun > 0 && begun < main.IndexOf("app.Run()", StringComparison.Ordinal), "the host is begun after the runner");
+        Assert.Contains("if (hostClaim.Held) supervisor.Begin();", main);
         Assert.Contains("_stages?.Lifted(", File.ReadAllText(SourceFiles.Module("SplashLift.cs")));
     }
 }

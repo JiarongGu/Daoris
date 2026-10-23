@@ -596,6 +596,37 @@ public sealed class DriverLoop(
     /// <summary>The start's timer (STARTFAST1), told when the host answers and the pipe is served; none in a headless loop or a test.</summary>
     public StartStages? Stages { get; set; }
 
+    /// <summary>
+    /// The longest the work the first screen does not need waits for the page's word that the screen has its data (STARTFAST1b, the
+    /// start-path design §5c): the first look's line-following and tidy, and the machine's facts.
+    /// </summary>
+    public static TimeSpan FirstScreenBound { get; } = TimeSpan.FromSeconds(30);
+
+    private Task? _firstScreen;
+
+    /// <summary>
+    /// The first screen's data in, or <see cref="FirstScreenBound"/> from the first ask (STARTFAST1b): the work held until then runs
+    /// beside the looks, so nothing the page asks for waits on it. A loop with no start's timer (headless, a test) waits for nothing.
+    /// </summary>
+    private Task FirstScreenAsync(CancellationToken ct) =>
+        LazyInitializer.EnsureInitialized(ref _firstScreen, () => Stages?.FirstScreenAsync(FirstScreenBound) ?? Task.CompletedTask)
+            .WaitAsync(ct);
+
+    /// <summary>The machine's facts started once the first screen has its data (STARTFAST1b), or never where the loop stops first.</summary>
+    private async Task StartFactsAsync(CancellationToken ct)
+    {
+        try
+        {
+            await FirstScreenAsync(ct).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        Facts.Start(ct);
+    }
+
     /// <summary>How long a stop lets the presses the pipe runs answer before it goes on (the terminal RPC design §6.3).</summary>
     public TimeSpan PipeDrain { get; init; } = TimeSpan.FromSeconds(15);
 
@@ -628,7 +659,8 @@ public sealed class DriverLoop(
         string? trouble = null;
         try
         {
-            up = await supervisor.EnsureAsync(ct).ConfigureAwait(false);
+            // STARTFAST1b: the host the shell began before the window's engine, where it began one (the supervisor marks `host`).
+            up = await supervisor.UpAsync(ct).ConfigureAwait(false);
             trouble = supervisor.Trouble;
         }
         catch (Exception error) when (error is not OperationCanceledException)
@@ -637,7 +669,6 @@ public sealed class DriverLoop(
         }
         finally
         {
-            if (up) Stages?.Mark(StartStages.Host);
             _hostReady.TrySetResult(up);
         }
 
@@ -719,7 +750,9 @@ public sealed class DriverLoop(
 
         // PARALLEL1a (D181 point 2): the machine's facts judged from here, on their own tasks, the service answering; every loop on the
         // home keeps them, whoever holds its lease, since a person presses here either way. The watch below tells them its wakes.
-        Facts.Start(ct);
+        // STARTFAST1b: once the first screen has its data, since their sessions judge is a third look at the sessions beside the
+        // page's two, and Ask Daoris is not on the first screen; a wake before is kept for the start.
+        _ = StartFactsAsync(ct);
 
         // NOTIFY2j: the presses waiting at the service's door, told to the windows from one wait on the service, held by every loop
         // on the home whoever holds its lease, since the windows are this process's either way. It ends with the loop.
@@ -818,6 +851,9 @@ public sealed class DriverLoop(
             Noticed = () => Notices.Slice.Wake(),
             // Where a run's failure nothing else awaits is written with its place, not left to the finalizer (ANSWER2).
             Log = log,
+            // STARTFAST1b: the first look's line-following and tidy wait for the first screen's data, so the page's git-backed pulls
+            // and harness probes are not queued behind them for the background's places.
+            FirstScreen = FirstScreenAsync,
             // A set-up step's tab and its build kept served until the verdict (REVIEWENV1d), across every look.
             Reviews = Reviews,
             // PARALLEL1a: each move the sources hear wakes the facts it moves (a ref its repository's line, a ledger family the rest),

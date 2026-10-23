@@ -151,6 +151,16 @@ public sealed class DriverWatch(
     /// </summary>
     public BranchTidying? Tidying { get; init; }
 
+    /// <summary>
+    /// What the work beside the looks waits for before it starts (STARTFAST1b, the start-path design §5c): the line-following and the
+    /// tidy take the background's git places the first page's pulls ask for, so the shell holds them until the page's word that its
+    /// first screen has its data, or a bound. Its token is the loop's. Null waits for nothing, as in the headless host.
+    /// </summary>
+    public Func<CancellationToken, Task>? FirstScreen { get; init; }
+
+    /// <summary>The <see cref="FirstScreen"/> wait, where there is one; the loop's close ends it as a cancellation.</summary>
+    private Task FirstScreenAsync(CancellationToken ct) => FirstScreen?.Invoke(ct) ?? Task.CompletedTask;
+
     /// <summary>Look now rather than at the next poll — a control that just changed something should
     /// not leave the person watching a countdown. A plain nudge carries no topic, and means everything: the whole look, the remote
     /// sync first (FABRIC-EVENT3a).</summary>
@@ -949,6 +959,7 @@ public sealed class DriverWatch(
         {
             try
             {
+                await FirstScreenAsync(ct).ConfigureAwait(false);
                 // A review step in progress keeps the tree it shows from (REVIEWENV1d), as a session in use keeps its own.
                 return await Stages.TimeAsync(
                         "tidy", () => tidy.LookAsync(service, Log, ct, token => BranchTidying.ReviewingAsync(Reviews, service, token)), beside: true)
@@ -976,6 +987,7 @@ public sealed class DriverWatch(
         {
             try
             {
+                await FirstScreenAsync(ct).ConfigureAwait(false);
                 var report = await Stages.TimeAsync(
                         "follow", () => RegistrationFollow.FollowAsync(new RegistrationWorld(service, home, config), only: null, ct), beside: true)
                     .ConfigureAwait(false);
@@ -987,6 +999,11 @@ public sealed class DriverWatch(
                         ? [Lines.Retry("registry", $"registry  the index was not read again after registering: {refresh}")]
                         : Array.Empty<string>(),
                 ];
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                // A closing loop, its first-screen wait among what it ends (STARTFAST1b): nothing followed, nothing said.
+                return null;
             }
             catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
             {

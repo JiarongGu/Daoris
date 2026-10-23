@@ -118,6 +118,12 @@ internal static class Program
             Environment.GetEnvironmentVariable(Daoris.Driver.ServiceHostLocator.PathVariable),
             Daoris.Driver.DaorisHome.Resolve(),
             AppContext.BaseDirectory);
+        // The host begun now (STARTFAST1b, the start-path design §5a), so its cold start runs beside Chromium's, which the kit's runner
+        // starts before the loop: the loop takes this start rather than beginning its own after it. Only by the launch holding the
+        // claim, since the single-instance guard runs later, inside the runner; a later launch handed over begins nothing.
+        var supervisor = new HostSupervisor(serviceUrl) { Stages = stages };
+        using var hostClaim = HostStartClaim.Take(serviceUrl);
+        if (hostClaim.Held) supervisor.Begin();
         var bundle = new PlatformBundle(located is null ? null : DesktopPage.BundleOf(located));
         builder.Services.AddSingleton(bundle);
         builder.UseChromiumEngine(new Shenora.Chromium.ChromiumEngineOptions
@@ -149,7 +155,7 @@ internal static class Program
         builder.Services.AddMachineLog(log,
             typeof(SingleInstanceGuard).FullName!, typeof(Shenora.Chromium.ChromiumEngine).FullName!);
 
-        builder.Services.AddSingleton(new HostSupervisor(serviceUrl));
+        builder.Services.AddSingleton(supervisor);
         builder.Services.AddSingleton(sp => new DriverLoop(
             sp.GetRequiredService<Shenora.Core.Events.IEventBus>(),
             sp.GetRequiredService<HostSupervisor>(),

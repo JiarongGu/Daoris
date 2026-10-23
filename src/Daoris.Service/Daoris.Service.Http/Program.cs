@@ -281,8 +281,9 @@ app.Use(async (context, next) =>
     }
     finally
     {
-        // A change stream's wait is held by design (FABRIC-EVENT3b): its time is its wait, never slowness.
-        var held = UnhandledRequests.RouteOf(context) == ChangeStream.Route;
+        // A change stream's wait is held by design (FABRIC-EVENT3b), and the desktop's wait on what waits for the person (NOTIFY2j,
+        // STARTFAST1b): its time is its wait, never slowness. A failure of either is still written.
+        var held = UnhandledRequests.RouteOf(context) is ChangeStream.Route or PersonConfirmations.WaitingRoute;
         if (status >= 500 || (!held && clock.ElapsedMilliseconds > MachineLogProvider.SlowRequestMs))
         {
             log.Warn("request.failed",
@@ -927,7 +928,7 @@ if (mode == ServiceMode.Local)
     // NOTIFY2j (D196 point 4, the notification design §2.5): what waits after `since` (`<epoch>.<n>`), answered as soon as it
     // moves, one past its time at its time, or at `wait` seconds (30 at most) as it is; any other cursor at once. The desktop's
     // host holds one and tells every window, so no window polls. The host's stop answers a held wait at once.
-    app.MapGet("/api/confirmations/waiting", async (string? since, int? wait, CancellationToken ct) =>
+    app.MapGet(PersonConfirmations.WaitingRoute, async (string? since, int? wait, CancellationToken ct) =>
     {
         using var ends = CancellationTokenSource.CreateLinkedTokenSource(ct, app.Lifetime.ApplicationStopping);
         var (next, waiting) = await confirmations.WaitAsync(since, TimeSpan.FromSeconds(Math.Clamp(wait ?? 0, 0, 30)), ends.Token);

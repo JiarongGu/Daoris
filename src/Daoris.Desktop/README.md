@@ -463,6 +463,12 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
   `start.stages` line per start, each stage in ms from the process's start (the home, the driver, the pipe, the
   host, the window shown, the page's browser, the page's first data, the splash). It times only; what starts is
   unchanged. `docs/2026-10-23-start-path-design.md` reads the path to the first page.
+- **The start's cut** (STARTFAST1b, D56's note): `Program` begins the host (`HostSupervisor.Begin`) before the kit's
+  runner starts Chromium, by the launch holding `HostStartClaim` (a named mutex per service address, since the
+  single-instance guard runs inside the runner), and the loop takes that start (`UpAsync`); the supervisor marks
+  `host`. The first look's line-following and tidy (`DriverWatch.FirstScreen`) and the machine facts' start wait for
+  the page's word (`StartStages.FirstScreenAsync`), at most `DriverLoop.FirstScreenBound` (30 s). The page lifts the
+  splash on its first screen's queries (`isFirstScreen` in `splash.ts`), the global quiet its fallback.
 - **Each main window's taskbar button counts what waits on the person in its workspace** (NOTIFY1b, D126's note;
   NOTIFY2c, D196): each main window's page tells its own frame its *What needs you* count over `DAORIS.WINDOWS
   SET_BADGE`, another main window by its name, and that window wears it as its button's overlay (`TaskbarBadge`, a

@@ -91,8 +91,39 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
     /// </summary>
     public bool? Proved { get; private set; }
 
+    /// <summary>The start's timer (STARTFAST1), told when the host answers; none in a headless loop or a test.</summary>
+    public StartStages? Stages { get; set; }
+
+    private readonly object _beginning = new();
+    private Task<bool>? _begun;
+
+    /// <summary>
+    /// Bring the host up now, off the caller's thread, for <see cref="UpAsync"/> to take (STARTFAST1b, the start-path design §5a): the
+    /// shell begins it before the window's engine starts, so the host's cold start runs beside Chromium's rather than after it. The
+    /// same task however often it is asked. Not stopped by the loop's stop, which only stops waiting for it; its probes are bounded.
+    /// </summary>
+    public Task<bool> Begin()
+    {
+        lock (_beginning) return _begun ??= Task.Run(() => EnsureAsync(CancellationToken.None));
+    }
+
+    /// <summary>The loop's: the host <see cref="Begin"/> began, where it began one, else brought up now (<see cref="EnsureAsync"/>).</summary>
+    public Task<bool> UpAsync(CancellationToken ct)
+    {
+        Task<bool>? begun;
+        lock (_beginning) begun = _begun;
+        return begun is null ? EnsureAsync(ct) : begun.WaitAsync(ct);
+    }
+
     /// <summary>True when the host answers — found running, or started here and now answering.</summary>
     public async Task<bool> EnsureAsync(CancellationToken ct = default)
+    {
+        var up = await AnswersAsync(ct).ConfigureAwait(false);
+        if (up) Stages?.Mark(StartStages.Host);
+        return up;
+    }
+
+    private async Task<bool> AnswersAsync(CancellationToken ct)
     {
         Proved = null;
         var found = await ProbeAsync(null, ct).ConfigureAwait(false);
@@ -442,6 +473,61 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
     {
         Stop();
         _probe.Dispose();
+    }
+}
+
+/// <summary>
+/// Whether this process may begin the host before the window's single-instance guard has run (STARTFAST1b, the start-path design
+/// §5a): a named mutex of Daoris's own for the service's address, held for the process's life. The guard runs inside the kit's
+/// runner, after the point the host is begun, so a second launch would otherwise begin one too: a host racing the first one's for
+/// the port, which the first could adopt as its own and lose when the second launch exits. A launch that cannot claim it (another
+/// Daoris holds it, or the system refused it) begins nothing, and its loop brings the host up as before.
+/// </summary>
+public sealed class HostStartClaim : IDisposable
+{
+    private readonly Mutex? _mutex;
+
+    private HostStartClaim(Mutex? mutex) => _mutex = mutex;
+
+    /// <summary>Whether this process holds the claim.</summary>
+    public bool Held => _mutex is not null;
+
+    /// <summary>The mutex's name for <paramref name="serviceUrl"/>: in the session's namespace, the address's hash, never the address.</summary>
+    public static string NameOf(string serviceUrl) =>
+        @"Local\Daoris.HostStart." + Convert.ToHexString(
+            SHA256.HashData(Encoding.UTF8.GetBytes(serviceUrl.TrimEnd('/').ToLowerInvariant())))[..16];
+
+    /// <summary>Claim the early start for <paramref name="serviceUrl"/>; held only where no other process holds it.</summary>
+    public static HostStartClaim Take(string serviceUrl)
+    {
+        try
+        {
+            var mutex = new Mutex(initiallyOwned: true, NameOf(serviceUrl), out var created);
+            if (created) return new HostStartClaim(mutex);
+            mutex.Dispose();
+        }
+        catch (Exception error) when (error is UnauthorizedAccessException or IOException or WaitHandleCannotBeOpenedException)
+        {
+            // Another account's or an elevated process's of the same name: not ours to take.
+        }
+
+        return new HostStartClaim(null);
+    }
+
+    /// <summary>Let the claim go, on the thread that took it.</summary>
+    public void Dispose()
+    {
+        if (_mutex is null) return;
+        try
+        {
+            _mutex.ReleaseMutex();
+        }
+        catch (ApplicationException)
+        {
+            // Not this thread's to release: the handle's close below lets it go as the process's end would.
+        }
+
+        _mutex.Dispose();
     }
 }
 

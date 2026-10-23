@@ -411,6 +411,33 @@ public sealed class ConfirmationTests
     }
 
     /// <summary>
+    /// 🔴 STARTFAST1b (the start-path design §3.4): a wait on what waits held past the request log's two seconds is the wait it asked
+    /// for, never a failure. The desktop holds one from its start, and each start's log said <c>request.failed</c> of it at 20 s. The
+    /// wait is held on the host's clock, which never reaches its bound, while the machine's passes the log's threshold.
+    /// </summary>
+    [Fact]
+    public async Task A_wait_held_past_the_slow_threshold_is_not_written_as_failed()
+    {
+        var (host, clock) = Keyed();
+        using var _host = host;
+        var (since, _) = await WaitingAsync(WaitFromAsync(host, null));
+        var others = clock.Pending;
+        var held = WaitFromAsync(host, since, wait: 10);
+        await clock.PendingAsync(others + 1);
+
+        // The claim is the elapsed time itself: the request's own stopwatch must pass the threshold before it is answered.
+        await Task.Delay(TimeSpan.FromMilliseconds(Daoris.Knowledge.Hosting.MachineLogProvider.SlowRequestMs + 500));
+        clock.Move(TimeSpan.FromSeconds(10));
+        Assert.Equal((since, Array.Empty<string>()), await WaitingAsync(held));
+
+        Assert.DoesNotContain(host.LogLines(), line =>
+        {
+            using var parsed = JsonDocument.Parse(line);
+            return parsed.RootElement.GetProperty("event").GetString() == "request.failed";
+        });
+    }
+
+    /// <summary>
     /// At most five wait for the person (design §4.2): the sixth is refused <c>confirmations-full</c> with the design's
     /// sentence, and asks nothing. A confirmation the person answered waits no more, so its place is free again.
     /// </summary>

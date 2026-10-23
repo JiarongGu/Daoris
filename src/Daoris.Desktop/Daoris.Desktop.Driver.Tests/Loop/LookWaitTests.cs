@@ -150,8 +150,66 @@ public sealed class LookWaitTests : IDisposable
         Assert.Equal("#q1", Assert.Single(slow).GetProperty("subject").GetString());
     }
 
+    /// <summary>
+    /// 🔴 STARTFAST1b (the start-path design §5c): the first look's line-following and tidy wait for the first screen's data, so the
+    /// page's own pulls are not queued behind them for the background's git places. Held, the looks go on and neither begins; let
+    /// go, both run beside the next looks. Every span reads 100 ms on the stages' clock, so each that ended is on its look's line
+    /// whatever the machine's speed.
+    /// </summary>
+    [Fact]
+    public async Task The_first_look_s_follow_and_tidy_wait_for_the_first_screen()
+    {
+        var screen = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var waiting = 0;
+        long now = 0;
+        using (var log = new MachineLog(_home, "driver"))
+        {
+            var runs = new StandInRuns(_ledger.Client(), _ledger);
+            var watch = Watch(log, runs, runs.Runner, new LookStages(log, clock: () => Interlocked.Add(ref now, 100)), token =>
+            {
+                Interlocked.Increment(ref waiting);
+                return screen.Task.WaitAsync(token);
+            });
+
+            var reports = new List<TickReport>();
+            var watching = watch.RunAsync(Into(reports), onError: null, _closing.Token);
+            try
+            {
+                // Both are waiting on the screen (a sign the code gives, never a window of the test's), and the looks go on.
+                await Poll.Until(() => Volatile.Read(ref waiting) == 2, () => $"{Volatile.Read(ref waiting)} of the two wait on the screen", Bound);
+                await Poll.Until(() => Count(reports) >= 1, () => "no look reported", Bound);
+                watch.Nudge();
+                await Poll.Until(() => Count(reports) >= 2, () => "no second look", Bound);
+                Assert.DoesNotContain(Beside(), entry => entry is "~follow" or "~tidy");
+
+                screen.SetResult();
+                await Poll.Until(
+                    () =>
+                    {
+                        watch.Nudge();
+                        var beside = Beside();
+                        return beside.Contains("~follow") && beside.Contains("~tidy");
+                    },
+                    () => $"after the screen, the looks' lines name {string.Join(", ", Beside())}", Bound);
+            }
+            finally
+            {
+                screen.TrySetResult();
+                await _closing.CancelAsync();
+                await Settled(watching);
+            }
+        }
+
+        // The stages the looks' lines name, by their names alone.
+        List<string> Beside() => [.. Lines("watch.looked")
+            .Select(data => data.GetProperty("stages").GetString()).OfType<string>()
+            .SelectMany(line => line.Split(' '))
+            .Select(entry => entry.Split('=')[0])];
+    }
+
     private DriverWatch Watch(
-        MachineLog log, StandInRuns runs, Func<Consideration, Action, CancellationToken, Task<StartRun>> runner, LookStages? stages = null)
+        MachineLog log, StandInRuns runs, Func<Consideration, Action, CancellationToken, Task<StartRun>> runner, LookStages? stages = null,
+        Func<CancellationToken, Task>? firstScreen = null)
     {
         var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(config, """
@@ -165,6 +223,7 @@ public sealed class LookWaitTests : IDisposable
             Stops = runs.Stops,
             Log = log,
             Stages = stages ?? new LookStages(log),
+            FirstScreen = firstScreen,
         };
         runs.Keeping = watch.Running;
         return watch;

@@ -167,6 +167,12 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
     /// <summary>The most waits on what waits held at once; a ninth is answered at once.</summary>
     public const int MostWaits = 8;
 
+    /// <summary>
+    /// The door a wait on what waits is held at (NOTIFY2j): its time is its wait, as the change stream's is, so the request log never
+    /// writes it as slow (STARTFAST1b).
+    /// </summary>
+    public const string WaitingRoute = "/api/confirmations/waiting";
+
     /// <summary>The longest a wait on what waits is held.</summary>
     public static readonly TimeSpan LongestWait = TimeSpan.FromSeconds(30);
 

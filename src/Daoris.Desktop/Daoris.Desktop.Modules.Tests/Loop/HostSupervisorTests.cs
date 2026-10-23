@@ -37,6 +37,57 @@ public sealed class HostSupervisorNoHostTests
     }
 
     /// <summary>
+    /// STARTFAST1b (the start-path design §5a): the early start is claimed by one process for an address at a time, so a later launch,
+    /// which the kit's guard hands over after the host was begun, begins none; let go, it is claimed again. Another address is its own.
+    /// </summary>
+    [Fact]
+    public void The_early_start_is_claimed_once_per_address()
+    {
+        var url = $"http://localhost:{Random.Shared.Next(20_000, 60_000)}/startfast1b-{Guid.NewGuid():N}";
+        using (var first = HostStartClaim.Take(url))
+        {
+            Assert.True(first.Held);
+            using var second = HostStartClaim.Take(url);
+            Assert.False(second.Held);
+            using var other = HostStartClaim.Take(url + "-other");
+            Assert.True(other.Held);
+        }
+
+        using var again = HostStartClaim.Take(url);
+        Assert.True(again.Held);
+        Assert.DoesNotContain("localhost", HostStartClaim.NameOf(url), StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// STARTFAST1b: the host begun before the window's engine is the start the loop takes, the same task however often it is asked, and
+    /// nothing begun is the loop's own start. With no host answering and none to start, each says so at once.
+    /// </summary>
+    [Fact]
+    public async Task The_loop_takes_the_host_begun_before_the_window()
+    {
+        var located = 0;
+        var supervisor = new HostSupervisor("http://127.0.0.1:9", () =>
+        {
+            Interlocked.Increment(ref located);
+            return null;
+        });
+
+        var begun = supervisor.Begin();
+        Assert.Same(begun, supervisor.Begin());
+        Assert.False(await supervisor.UpAsync(CancellationToken.None).WaitAsync(Poll.Patience));
+        Assert.Equal(1, Volatile.Read(ref located));
+        Assert.Contains("no service host is running", supervisor.Trouble);
+
+        var alone = new HostSupervisor("http://127.0.0.1:9", () =>
+        {
+            Interlocked.Increment(ref located);
+            return null;
+        });
+        Assert.False(await alone.UpAsync(CancellationToken.None).WaitAsync(Poll.Patience));
+        Assert.Equal(2, Volatile.Read(ref located));
+    }
+
+    /// <summary>
     /// PROVED1: the proof the supervisor checks is the host's twin (<c>PersonKey.Prove</c>), held to the vectors
     /// <c>PersonKeyTests</c> holds, which were made outside .NET; a text that is no key proves nothing.
     /// </summary>
