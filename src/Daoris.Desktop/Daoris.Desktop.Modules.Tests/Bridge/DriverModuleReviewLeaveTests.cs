@@ -57,8 +57,12 @@ public sealed class DriverModuleReviewLeaveTests() : DriverModuleBridge("review-
         var answer = await asked.WaitAsync(Poll.Patience);
         Assert.False(answer.Success);
         Assert.Equal(IpcErrorCodes.OperationCancelled, answer.Error?.Code);
-        await git.WaitForExitAsync().WaitAsync(Poll.Patience);
-        Assert.Single(Starts);
+        // A read is a graph whose reads of refs start at once beside the first (GITAPP1a-ii), so it is several gits: every one has
+        // exited, and none starts after the leave.
+        await AllExitedAsync();
+        var started = Starts.Count;
+        await Task.Delay(TimeSpan.FromMilliseconds(500));
+        Assert.Equal(started, Starts.Count);
         Assert.Equal(0, module.Reads.Waiting);
     }
 
@@ -72,8 +76,8 @@ public sealed class DriverModuleReviewLeaveTests() : DriverModuleBridge("review-
         var git = await FirstStartAsync();
         var second = AskAsync(module, "SESSION_DIFF", new { id = Session, read = "r2" });
         await WaitingAsync(module, 2);
-        // Joined by session, the read ids kept out of the flight's key: one read, one git.
-        Assert.Single(Starts);
+        // Joined by session, the read ids kept out of the flight's key: one read, one graph, which asks the tree's top once.
+        Assert.Single(Commands, command => command.Contains("--show-toplevel", StringComparison.Ordinal));
 
         Assert.True((await AnswerAsync(module, "READ_LEAVE", new { read = "r1" })).GetProperty("left").GetBoolean());
         Assert.Equal(IpcErrorCodes.OperationCancelled, (await first.WaitAsync(Poll.Patience)).Error?.Code);
@@ -101,7 +105,7 @@ public sealed class DriverModuleReviewLeaveTests() : DriverModuleBridge("review-
         window.Dispose();
 
         Assert.Contains(IpcErrorCodes.OperationCancelled, await asked.WaitAsync(Poll.Patience));
-        await git.WaitForExitAsync().WaitAsync(Poll.Patience);
+        await AllExitedAsync();
         Assert.Equal(0, module.Reads.Waiting);
     }
 
@@ -177,6 +181,23 @@ public sealed class DriverModuleReviewLeaveTests() : DriverModuleBridge("review-
 
     private Task<Process> FirstStartAsync() => _first.Task.WaitAsync(Poll.Patience);
 
+    private readonly List<string> _commands = [];
+
+    /// <summary>Each start's git arguments, in the order the stand-in was asked.</summary>
+    private IReadOnlyList<string> Commands
+    {
+        get
+        {
+            lock (_watched) return [.. _commands];
+        }
+    }
+
+    /// <summary>Every git the flow started has exited: a cancelled read's owner waits for each before it is done (GITAPP1a-iii).</summary>
+    private async Task AllExitedAsync()
+    {
+        foreach (var started in Starts) await started.WaitForExitAsync().WaitAsync(Poll.Patience);
+    }
+
     private void Release() => File.WriteAllText(_released!, "go");
 
     /// <summary>Every git this flow starts made by the stand-in: a node that waits for the release, then runs git as asked.</summary>
@@ -207,7 +228,12 @@ public sealed class DriverModuleReviewLeaveTests() : DriverModuleBridge("review-
             foreach (var argument in info.ArgumentList) stand.ArgumentList.Add(argument);
             var process = Process.Start(stand)!;
             var watched = Process.GetProcessById(process.Id);
-            lock (_watched) _watched.Add(watched);
+            lock (_watched)
+            {
+                _watched.Add(watched);
+                _commands.Add(string.Join(' ', info.ArgumentList));
+            }
+
             _first.TrySetResult(watched);
             return process;
         });
