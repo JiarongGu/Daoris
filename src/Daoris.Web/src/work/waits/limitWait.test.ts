@@ -3,7 +3,7 @@ import i18n from '../../locales/i18n';
 import { moment } from '../../locales/format';
 import type { AccountsAnswer, AgentAccounts } from '../../settings/accounts/accounts';
 import { USE_DEFAULTS } from '../../settings/accounts/accounts';
-import { limitedLine, limitWaitOf, limitWaitSaid, notLiftedOf } from './limitWait';
+import { chatLimitHeldOf, limitedLine, limitWaitOf, limitWaitSaid, notLiftedOf } from './limitWait';
 
 // LIMITRESUME1d (D206 §3.7): what a line an account's limit cut off says while it waits, read from the accounts the page holds.
 
@@ -82,5 +82,33 @@ describe('a limited line\'s wait', () => {
   it('says a reset nobody said as a try again, never as a reset', () => {
     const wait = limitWaitOf({ session: session('a'), doors, answer: answer({ stated: false }), now: NOW })!;
     expect(limitWaitSaid(t, wait, label)[0]).toBe(`No reset was said: it tries again at ${moment(SOON)}.`);
+  });
+});
+
+// LIMITRESUME1d2 (D206 §3.5, §3.7): a conversation's wait is read from its events, never from the accounts alone.
+describe('a conversation\'s wait', () => {
+  const waits = (seq: number, why = 'stated') => ({
+    seq, at: NOW.toISOString(), kind: 'note',
+    parts: [{ code: 'chat.limit-waits', values: { owner: 'claude-code', until: SOON, why } }],
+  });
+  const turn = (seq: number) => ({ seq, at: NOW.toISOString(), kind: 'turn', stopReason: 'error' });
+  const note = (seq: number, code: string) => ({ seq, at: NOW.toISOString(), kind: 'note', parts: [{ code, values: {} }] });
+  const words = (seq: number) => ({ seq, at: NOW.toISOString(), kind: 'user', origin: 'person', text: 'and then?' });
+
+  it('waits after its line, the person\'s words said since included', () => {
+    expect(chatLimitHeldOf([turn(1), waits(2)] as never)).toMatchObject({ until: SOON, stated: true });
+    expect(chatLimitHeldOf([turn(1), waits(2), words(3)] as never)).toMatchObject({ until: SOON });
+    // A reset nobody said is Daoris's default standing in.
+    expect(chatLimitHeldOf([turn(1), waits(2, 'default')] as never)?.stated).toBe(false);
+  });
+
+  it('waits no more once it went on, moved, was told to stop waiting, or a refusal waits for the person', () => {
+    expect(chatLimitHeldOf([turn(1), waits(2), turn(3)] as never)).toBeNull();
+    for (const code of ['chat.limit-stopped-waiting', 'limit.resumed', 'limit.resume-refused', 'moved.on']) {
+      expect(chatLimitHeldOf([turn(1), waits(2), note(3, code)] as never)).toBeNull();
+    }
+    expect(chatLimitHeldOf([turn(1), waits(2), { seq: 3, at: NOW.toISOString(), kind: 'note', why: 'gone' }] as never)).toBeNull();
+    expect(chatLimitHeldOf([turn(1)] as never)).toBeNull();
+    expect(chatLimitHeldOf([])).toBeNull();
   });
 });

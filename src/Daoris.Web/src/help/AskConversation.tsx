@@ -10,7 +10,7 @@ import {
   type HelpSettled, NO_TURNS, helpModeOf, useCancelTurn, useChatTurns, useDeleteSession, useDriver, useEditQueued, useEndChat,
   useHarnesses, useHelpConversations, useHelpProposals, useHelpPublished, useHelpReadied, useHelpStartFrom, useHelpWired, usePinHelp, usePlugins,
   usePollUnlessTold, useRenameHelp, useSendMessage, useSessionEvents, useSetHelpMode, useSettleHelp, useStartHelp, useStopSession,
-  stoppedWaiting, useGoOnBrief,
+  stoppedWaiting, useGoOnBrief, useAccounts, useAccountUse, useStopWaiting,
 } from '../bridge/shell';
 import { goOnBriefRefusal } from '../work/say';
 import { useHeldHarnessRun } from '../agents/harnessRuns';
@@ -33,6 +33,10 @@ import { PublishedList } from './PublishedList';
 import type { StarterDoor } from './starters';
 import { type HelpWhere, prefaceOf } from './where';
 import { logEvent } from '../bridge/shell';
+import { accountNames } from '../work/accountNames';
+import { namer } from '../settings/accounts/namer';
+import { type ChatLimitHeld, chatLimitWaitSaid, limitWaitOf } from '../work/waits/limitWait';
+import { LimitWaitLine } from '../work/waits/LimitWaitLine';
 
 /** How often the list is asked again while words to an ended conversation wait for it to go on (ASKHIST1). */
 const GOING_ON_POLL = 1500;
@@ -126,7 +130,7 @@ export function useAskConversation(
   /** Where a go the person applied takes them (HELP6): the starters' own door, so nothing else changes. */
   onGo?: (door: StarterDoor) => void,
 ) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   // The workspace the panel's conversations are in (ASKSCOPE1d, D158's ASKSCOPE1 note, points 1 and 6): the window's; where it
   // shows every workspace, the one there is, or `default` where none is registered. Null where it shows several, so a start
   // asks which; undefined while this machine's workspaces are still being read. One unreadable is none registered.
@@ -273,6 +277,12 @@ export function useAskConversation(
   const cancelTurn = useCancelTurn();
   const editQueued = useEditQueued(shown?.id ?? null);
   const roster = useHarnesses();
+  // LIMITRESUME1d2: the accounts the limit's line words its wait from, its presses, and the wait its events hold.
+  const accounts = useAccounts();
+  const accountUse = useAccountUse();
+  const stopWaiting = useStopWaiting();
+  const [limitHeld, setLimitHeld] = useState<{ session: string; held: ChatLimitHeld } | null>(null);
+  const [limitRefusal, setLimitRefusal] = useState<{ session: string; sentence: string } | null>(null);
   const held = useChatTurns(shown && live ? [shown.id] : []);
   const turns = held[shown?.id ?? ''] ?? NO_TURNS;
   const structured = Array.isArray(roster.data?.harnesses)
@@ -852,6 +862,7 @@ export function useAskConversation(
       scroller={scroller}
       onTail={setTail}
       onGoOnBrief={live ? undefined : () => onGoOnBrief(shown.id)}
+      onLimitWait={(session, held) => setLimitHeld((was) => (held ? { session, held } : was?.session === session ? null : was))}
     />
   </>) : null;
 
@@ -979,6 +990,49 @@ export function useAskConversation(
     <Button variant="ghost" className="px-0 text-small text-accent" disabled={startFrom.isPending} onClick={onClick}>{t(key)}</Button>
   );
   const ended = shown !== null && !live;
+  // LIMITRESUME1d2 (D206 §3.7): the conversation shown waits for its account's limit, as its events say, above the box. Its way out
+  // now is Ask Daoris's own door (`ResumeWords.HelpDoor`): a new conversation from this one, never D163's hand-over, which refuses
+  // Ask Daoris; *Stop…* while it runs, *Stop waiting* once it ended, and the account's *Try now*.
+  const heldShown = shown && limitHeld?.session === shown.id ? limitHeld.held : null;
+  const harnessRows = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
+  const limitLines = shown && heldShown
+    ? chatLimitWaitSaid(t, {
+      held: heldShown,
+      wait: limitWaitOf({ session: shown, workspace: shownIn, doors: harnessRows, answer: accounts.data, now: new Date() }),
+      label: (account) => namer(t, harnessRows)(shown.adapter, account),
+      language: i18n.language,
+      names: accountNames(harnessRows),
+      now: new Date(),
+    })
+    : null;
+  const limitLine = shown && limitLines ? (
+    <LimitWaitLine
+      key={`limit:${shown.id}`}
+      lines={limitLines}
+      busy={startFrom.isPending || stop.isPending || stopWaiting.isPending || accountUse.isPending}
+      refusal={limitRefusal?.session === shown.id ? limitRefusal.sentence : null}
+      onGoOnNow={elsewhere ? undefined : () => beginFrom(shown.id)}
+      onStop={live ? () => stop.mutate(shown.id) : undefined}
+      onStopWaiting={live ? undefined : () => {
+        setLimitRefusal(null);
+        stopWaiting.mutate(shown.id, {
+          onSuccess: (answer) => {
+            if (!answer.stopped) setLimitRefusal({ session: shown.id, sentence: answer.message });
+          },
+          onError: (error) => setLimitRefusal({ session: shown.id, sentence: sentence(error) }),
+        });
+      }}
+      onTryNow={() => {
+        setLimitRefusal(null);
+        const account = limitWaitOf({ session: shown, workspace: shownIn, doors: harnessRows, answer: accounts.data, now: new Date() })
+          ?.account ?? shown.profile ?? null;
+        accountUse.mutate(
+          { harness: shown.adapter, action: 'ready', ...(account ? { profile: account } : {}) },
+          { onError: (error) => setLimitRefusal({ session: shown.id, sentence: sentence(error) }) },
+        );
+      }}
+    />
+  ) : null;
   const own: ReactNode = !shown ? undefined
     : startedFrom?.session === shown.id ? line('help.startedFrom', { title: startedFrom.title })
       : !ended ? undefined
@@ -1058,7 +1112,8 @@ export function useAskConversation(
 
   const slot: AskConversationSlot = {
     body: conversation, proposals: proposed, published, composer, ended,
-    note: end.isPending ? <p role="status" className="m-0 text-small text-ink-soft">{t('help.finishing')}</p> : note,
+    note: end.isPending ? <p role="status" className="m-0 text-small text-ink-soft">{t('help.finishing')}</p>
+      : limitLine ? <>{limitLine}{note}</> : note,
     onNew: shown ? onNew : undefined,
     newPending: end.isPending,
     tail: tail && !tail.atTail ? <BackToBottom onPress={tail.toTail} /> : undefined,

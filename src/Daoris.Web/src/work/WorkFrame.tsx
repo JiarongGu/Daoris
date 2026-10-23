@@ -15,7 +15,7 @@ import {
   useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun, useRules, useSessionEvents, stoppedWaiting, useUnderWay,
   useEntryLanding, useLandEntry, useSessionHelpers, useSessionPartners, useUnderWaySubject, useSessionProcess, useWorkState, usePushedCalls, withCall,
   useAnswerPermission, usePermissionWaits, useSessionHandOverAsk, useApproveHandOver, useDeclineHandOver, type HandOverWord,
-  useAnswerWaits, useAnswerAlone, useRunNodeWord, useSessionQuestion,
+  useAnswerWaits, useAnswerAlone, useRunNodeWord, useSessionQuestion, useStopWaiting,
 } from '../bridge/shell';
 import { handOverRefused, type HandOverAskWait } from './waits/HandOverAgentAsk';
 import { permissionSaid, type PermissionWaits } from './waits/PermissionAsks';
@@ -43,7 +43,8 @@ import { sayDiscard } from '../settings/Sweep';
 import { doorOf, toolOf } from '../agents/tools';
 import { agentOf, machineScope } from '../settings/accounts/accounts';
 import { namer } from '../settings/accounts/namer';
-import { limitedLine, limitWaitOf, limitWaitSaid } from './waits/limitWait';
+import { accountNames } from './accountNames';
+import { type ChatLimitHeld, chatLimitWaitSaid, limitedLine, limitWaitOf, limitWaitSaid } from './waits/limitWait';
 import { LimitWaitLine } from './waits/LimitWaitLine';
 import {
   boxOf, coolingFor, goOnBriefRefusal, levelsOf, NATIVE_WORDS_LIMIT, neverSentence, type NewSessionAnswer, startFromRefusal, takesWords, tooLong,
@@ -294,7 +295,7 @@ export function WorkFrame({
   /** Where each view stands, held by the application so the View menu's reset reaches it (DOCK1b). */
   placements?: Placements;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   // A refusal belongs to the session that gave it: attending another by any door (a notification, the
   // palette, a quest's record) must not show one session's "went nowhere" on another's composer (REV3).
   const [refusal, setRefusal] = useState<{ session: string; text: string } | null>(null);
@@ -360,6 +361,9 @@ export function WorkFrame({
   // LIMITRESUME1d: what *Try now* on a waiting line came to where it was refused, by the session it was pressed on.
   const [limitRefusal, setLimitRefusal] = useState<{ session: string; sentence: string } | null>(null);
   const accountUse = useAccountUse();
+  // LIMITRESUME1d2: a conversation's limit wait, as its events hold it, told by the conversation that reads them.
+  const [chatHeld, setChatHeld] = useState<{ session: string; held: ChatLimitHeld } | null>(null);
+  const stopWaiting = useStopWaiting();
   // The session whose pause asks under the header (PAUSE1e, D132 §2.6), with the work it pauses: of that session only.
   const [pauseAsking, setPauseAsking] = useState<{ session: string; target: WorkTarget } | null>(null);
   // *Answer…* from a row (D126 §3.1): the session it was pressed for, and a count, so the box at its foot takes the focus
@@ -1931,10 +1935,61 @@ export function WorkFrame({
   const limitWait = attended && here && limitedLine(attended, quest?.status, Boolean(grouping?.pausedBy))
     ? limitWaitOf({ session: attended, workspace: attendedWorkspace, doors: roster, answer: accounts.data, now: new Date() })
     : null;
+  // LIMITRESUME1d2 (D206 §3.5, §3.7): a conversation says its wait from its events alone (`chat.limit-waits`), worded by the walk
+  // where the page holds it, else by the driver's own line. Its ways out: *Go on now with…*, *Stop…* while it runs or *Stop waiting*
+  // once it ended, and *Try now*.
+  const conversationHeld = attended && here && attended.kind === 'chat' && chatHeld?.session === attended.id ? chatHeld.held : null;
+  const conversationWait = conversationHeld && attended
+    ? limitWaitOf({ session: attended, workspace: attendedWorkspace, doors: roster, answer: accounts.data, now: new Date() })
+    : null;
+  const conversationLines = conversationHeld && attended
+    ? chatLimitWaitSaid(t, {
+      held: conversationHeld,
+      wait: conversationWait,
+      label: (account) => nameOf(attended.adapter, account),
+      language: i18n.language,
+      names: accountNames(roster),
+      now: new Date(),
+    })
+    : null;
+  const waitLines = limitWait && attended
+    ? limitWaitSaid(t, limitWait, (account) => nameOf(attended.adapter, account))
+    : conversationLines;
+  const waitAccount = limitWait?.account ?? conversationWait?.account ?? attended?.profile ?? null;
+  // The line, the same at the head and the foot (D206 §3.7): one element, its presses the same presses.
+  const limitLine = (className: string) => (waitLines && attended ? (
+    <LimitWaitLine
+      // Keyed by the session and the place: a refusal said in one is never another's (RELSPAM1).
+      key={`limit:${attended.id}`}
+      className={className}
+      lines={waitLines}
+      busy={actions.handingOver || accountUse.isPending || stopWaiting.isPending}
+      refusal={limitRefusal?.session === attended.id ? limitRefusal.sentence : null}
+      onGoOnNow={headActs.includes('handOver') ? () => doors.handOver?.(attended.id) : undefined}
+      onPause={limitWait && attended.quest ? () => doors.pause?.(attended.id, { scope: 'quest', id: attended.quest! }) : undefined}
+      onStop={!limitWait && live && headActs.includes('stop') ? () => doors.stop?.(attended.id) : undefined}
+      onStopWaiting={!limitWait && !live ? () => {
+        setLimitRefusal(null);
+        stopWaiting.mutate(attended.id, {
+          onSuccess: (answer) => {
+            if (!answer.stopped) setLimitRefusal({ session: attended.id, sentence: answer.message });
+          },
+          onError: (error) => setLimitRefusal({ session: attended.id, sentence: sentence(error) }),
+        });
+      } : undefined}
+      onTryNow={() => {
+        setLimitRefusal(null);
+        accountUse.mutate(
+          { harness: attended.adapter, action: 'ready', ...(waitAccount ? { profile: waitAccount } : {}) },
+          { onError: (error) => setLimitRefusal({ session: attended.id, sentence: sentence(error) }) },
+        );
+      }}
+    />
+  ) : null);
   // Daoris's offer to hand over (MIXAGENT1b-ii, D163 point 3): on a conversation this page offers the press on, when its own
   // account is cut or near its limit by its scope's near (never the agent's pace warning alone, USAGEREAD3b) and another agent
   // has an account the walk would take. No driver read.
-  const offer = attended && headActs.includes('handOver') && !offerDismissed.has(attended.id) && !limitWait
+  const offer = attended && headActs.includes('handOver') && !offerDismissed.has(attended.id) && !waitLines
     ? handOverOffer({
       session: attended,
       workspace: attendedWorkspace,
@@ -2071,24 +2126,8 @@ export function WorkFrame({
           onPause={(answered) => actions.work.pause(pausing.target, answered)}
           onClose={() => setPauseAsking(null)}
         />
-      ) : limitWait && attended ? (
-        <LimitWaitLine
-          // Keyed by the session: a refusal said in one is never another's.
-          key={attended.id}
-          className="mt-2.5"
-          lines={limitWaitSaid(t, limitWait, (account) => nameOf(attended.adapter, account))}
-          busy={actions.handingOver || accountUse.isPending}
-          refusal={limitRefusal?.session === attended.id ? limitRefusal.sentence : null}
-          onGoOnNow={headActs.includes('handOver') ? () => doors.handOver?.(attended.id) : undefined}
-          onPause={attended.quest ? () => doors.pause?.(attended.id, { scope: 'quest', id: attended.quest! }) : undefined}
-          onTryNow={() => {
-            setLimitRefusal(null);
-            accountUse.mutate(
-              { harness: attended.adapter, action: 'ready', ...(limitWait.account ? { profile: limitWait.account } : {}) },
-              { onError: (error) => setLimitRefusal({ session: attended.id, sentence: sentence(error) }) },
-            );
-          }}
-        />
+      ) : waitLines && attended ? (
+        limitLine('mt-2.5')
       ) : offer && attended ? (
         <HandOverOfferLine
           // Keyed by the session: a refusal or a kept answer said in one is never another's.
@@ -2406,6 +2445,10 @@ export function WorkFrame({
                   onTail={setTail}
                   onUsage={onUsage}
                   onWaiting={onWaiting}
+                  // Its limit's wait, read from its events (LIMITRESUME1d2): the head and the foot say it.
+                  onLimitWait={(session, held) => setChatHeld((was) => (held
+                    ? { session, held }
+                    : was?.session === session ? null : was))}
                   // Each wait's raising event, and the way between them (WAITFOOT1c, D168 point 4).
                   waits={waits ? {
                     waits: standing, goAheads: waits.goAheads, opinion: opinionAsked(waits.landing)?.opinion ?? null,
@@ -2467,6 +2510,8 @@ export function WorkFrame({
               each wait with the head's own press. None on a teammate's record, which has no press here (D47 §4). Keyed by the
               session, so a fold is its own. 🔴 The strip, the settler and the composer each name their kind beside the id (RELSPAM1):
               keyed by the id alone, they took each other's fibers, and the one left over was never unmounted. */}
+          {/* A limit's wait (LIMITRESUME1d2, D206 §3.7): the head's line again where the reader is, aside while the head is on screen. */}
+          {waitsOnScreen === false && limitLine('mb-2')}
           {attended && here && waits && (
             <WaitStrip
               key={`strip:${attended.id}`}

@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../design/ui';
 import { Refused } from '../InlineConfirm';
+import { joinLines } from '../noteLines';
 
 /**
  * **A line an account's limit cut off, waiting** (LIMITRESUME1d, D206 §3.7): one line under the page header, and at its foot, saying
@@ -39,7 +40,7 @@ export function LimitWaitLine({ lines, busy = false, refusal = null, onGoOnNow, 
       aria-label={t('work.limit.label')}
       className={`flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 border-l-[3px] border-line-strong pl-2.5 text-small text-ink-soft ${className ?? ''}`}
     >
-      <p className="m-0 min-w-0 wrap-anywhere">{lines.join(' ')}</p>
+      <p className="m-0 min-w-0 wrap-anywhere">{joinLines(t, lines)}</p>
       {onGoOnNow && <Button variant="primary" disabled={busy} onClick={onGoOnNow}>{t('work.limit.goOnNow')}</Button>}
       {onTryNow && <Button variant="ghost" disabled={busy} onClick={onTryNow}>{t('harness.cooling.tryNow')}</Button>}
       {onPause && <Button variant="ghost" disabled={busy} onClick={onPause}>{t('work.act.pauseQuest')}</Button>}

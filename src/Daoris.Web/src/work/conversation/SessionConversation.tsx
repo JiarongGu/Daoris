@@ -13,6 +13,7 @@ import { type CallMark, type Cooling, ConversationView } from './ConversationVie
 import type { ReasonValues } from '../say';
 import { useFollowTail } from './followTail';
 import type { Wait } from '../waits/waits';
+import { type ChatLimitHeld, chatLimitHeldOf } from '../waits/limitWait';
 
 /** How many blocks a conversation holds before it is offered a way through (SESS1 S9). */
 const LONG = 20;
@@ -88,7 +89,7 @@ export function ToTheTop({ onPress, className }: { onPress: () => void; classNam
  */
 export function SessionConversation({
   session, adapter, chat = false, tree, live, turnRunning, scroller, onUsage, onWaiting, onSession, onStartFrom, reasons, cooling, onTail,
-  waits, onAnchors, onToWait, callMark, onSayAgain, onGoOnBrief,
+  waits, onAnchors, onToWait, callMark, onSayAgain, onGoOnBrief, onLimitWait,
 }: {
   /** *Go on with Daoris's brief* (SESSCTX1c part B), beside the fresh start where the words wait for the person — `ConversationView`'s. */
   onGoOnBrief?: () => void;
@@ -141,6 +142,11 @@ export function SessionConversation({
   onUsage?: (session: string, usage?: Usage) => void;
   /** Told when the turn its agent is on was asked, while the agent has answered nothing (WAITSHOWN1); undefined once it has. */
   onWaiting?: (session: string, since?: string, calling?: RunningCall) => void;
+  /**
+   * Told whether the conversation waits for its account's limit, read from its events (LIMITRESUME1d2, D206 §3.7), on a change only:
+   * the head and the foot say the wait from it, so the record has one reader.
+   */
+  onLimitWait?: (session: string, held: ChatLimitHeld | null) => void;
 }) {
   const { events, opening, firstFailure, earlier, loaded, loadEarlier } = useSessionEvents(session);
   // The door's own word on what an empty record means — undefined until the roster answers, which reads
@@ -173,6 +179,16 @@ export function SessionConversation({
   useEffect(() => {
     reportWait.current?.(session, waitingSince, callTitle && callSince ? { title: callTitle, since: callSince } : undefined);
   }, [session, waitingSince, callTitle, callSince]);
+
+  // Its limit's wait goes up the same way (LIMITRESUME1d2), told again only where the line it reads changes.
+  const held = useMemo(() => (chat ? chatLimitHeldOf(events) : null), [chat, events]);
+  const heldKey = held ? `${held.until}:${held.stated}` : '';
+  const reportHeld = useRef(onLimitWait);
+  reportHeld.current = onLimitWait;
+  const heldNow = useRef(held);
+  heldNow.current = held;
+  useEffect(() => { reportHeld.current?.(session, heldNow.current); }, [session, heldKey]);
+  useEffect(() => () => reportHeld.current?.(session, null), [session]);
 
   // What changes when the conversation grows: the last event, and its text as chunks join it.
   const last = events[events.length - 1];
