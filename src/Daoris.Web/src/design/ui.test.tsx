@@ -723,7 +723,7 @@ describe('the session tone map', () => {
   // The nine the wire carries, the one the page shows a live chat between turns (UX5 U17), the two words the
   // session list's reader derives from the session's quest (D126 §2.2), the park the person answered (ANSWER1c), a
   // record going on with their words (MSG1f), and a session waiting on its own helper (HELPERWAIT1).
-  const SHOWN = [...STATES, 'idle', 'parked', 'awaiting-reply', 'answered', 'going-on', 'awaiting-helper'];
+  const SHOWN = [...STATES, 'idle', 'parked', 'awaiting-reply', 'answered', 'going-on', 'awaiting-helper', 'limited'];
 
   it('tones every session state, and awaiting-person wears waiting, never an outcome', () => {
     for (const state of SHOWN) expect(SESSION_TONE[state as keyof typeof SESSION_TONE]).toBeTruthy();
@@ -818,6 +818,21 @@ describe('the session tone map', () => {
     expect(SESSION_TONE['going-on']).toBe('neutral');
     expect(SESSION_DOT['going-on']).toBe('idle');
     expect(shownKey('going-on')).toBe('work.shown.goingOn');
+  });
+
+  /**
+   * LIMITRESUME1a (D206 point 1; the limit-resume design §3.1): a `failed` record whose `limit` an account's limit set shows
+   * *limited*, quiet and ended, never the failure's red. The flag on any other state says nothing, and a record from a host
+   * before the flag is the failure it says.
+   */
+  it('shows a failure an account limit made as limited, quietly', () => {
+    expect(shownState({ kind: 'driven', state: 'failed', limit: true }, undefined)).toBe('limited');
+    expect(shownState({ kind: 'chat', state: 'failed', limit: true }, false)).toBe('limited');
+    expect(shownState({ kind: 'driven', state: 'failed' }, undefined)).toBe('failed');
+    expect(shownState({ kind: 'driven', state: 'stopped', limit: true }, undefined)).toBe('stopped');
+    expect(SESSION_TONE.limited).toBe('neutral');
+    expect(SESSION_DOT.limited).toBe('ended');
+    expect(shownKey('limited')).toBe('work.limit.word');
   });
 
   /**

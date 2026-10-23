@@ -4,7 +4,7 @@ import { figure, list, moment } from '../../locales/format';
 import { cn } from '../../lib/cn';
 import { ExternalLink } from '../../design/links';
 import type { AccountNamer } from '../../agents/tools';
-import { Icon, type IconName, Inline, Pill, QUEST_TONE, SESSION_TONE } from '../../design/ui';
+import { Icon, type IconName, Inline, Pill, QUEST_TONE, SESSION_TONE, type ShownState, shownKey } from '../../design/ui';
 import { HandedAccount } from '../conversation/HandedAccount';
 import { Note } from '../Note';
 import { ACCESS_AT } from '../noteLines';
@@ -392,13 +392,16 @@ function SessionStep({ session, doors, nameOf }: { session: TraceSessionLink; do
   const { t, i18n } = useTranslation();
   const at = (iso: string) => moment(iso, i18n.language);
   const state = session.state.state as keyof typeof SESSION_TONE;
+  const shown = shownOfTrace(session.state);
   return (
     <Step
       icon="frameWork"
       head={(
         <>
           <Door label={t('work.trace.session.head', { id: session.id })} onOpen={doors.session(session.id)} />
-          {session.state.state && <Pill tone={SESSION_TONE[state] ?? 'neutral'}>{t(`sessionState.${state}`, { defaultValue: state })}</Pill>}
+          {session.state.state && (shown
+            ? <Pill tone={SESSION_TONE[shown]}>{t(shownKey(shown))}</Pill>
+            : <Pill tone={SESSION_TONE[state] ?? 'neutral'}>{t(`sessionState.${state}`, { defaultValue: state })}</Pill>)}
         </>
       )}
       source={session.source}
@@ -656,6 +659,12 @@ const stateNote = (t: T, state: TraceState) =>
     : state.state === '' ? t('work.trace.session.stateUnknown')
     : null;
 
+/** The page's own word for a traced record where its flags make one (LIMITRESUME1a: a limit's failure is *limited*), else null. */
+const shownOfTrace = (state: TraceState): ShownState | null => (state.state === 'failed' && state.limit ? 'limited' : null);
+
 /** A record's state in words, with what its flags add. */
-const stateWords = (t: T, state: TraceState) =>
-  [t(`sessionState.${state.state}`, { defaultValue: state.state }), stateNote(t, state)].filter(Boolean).join(' · ');
+const stateWords = (t: T, state: TraceState) => {
+  const shown = shownOfTrace(state);
+  return [shown ? t(shownKey(shown)) : t(`sessionState.${state.state}`, { defaultValue: state.state }), stateNote(t, state)]
+    .filter(Boolean).join(' · ');
+};

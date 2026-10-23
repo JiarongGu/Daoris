@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../data/api';
 import { elapsed, sessionTool } from '../locales/format';
 import type { AccountNamer } from '../agents/tools';
-import { Pill, SectionTitle, SESSION_TONE } from '../design/ui';
+import { limitedOr, Pill, SectionTitle, SESSION_TONE, shownKey } from '../design/ui';
 import { QuestStatus } from '../quests/QuestStatus';
 import { cn } from '../lib/cn';
 import { questName } from '../work/identity';
@@ -168,7 +168,7 @@ function Step({ step, attended, onQuest, onSession, nameOf }: {
                   : null;
                 return (
                   <li key={session.id} className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
-                    <Pill tone={SESSION_TONE[session.state]}>{t(`sessionState.${session.state}`)}</Pill>
+                    <Pill tone={SESSION_TONE[limitedOr(session)]}>{t(shownKey(limitedOr(session)))}</Pill>
                     {onSession && !here
                       ? (
                         <button
