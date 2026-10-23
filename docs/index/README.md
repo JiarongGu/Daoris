@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (250)
+## Files over 40 KB (253)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -313,6 +313,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-23-coworker-design.md` | 94 | 837 |
 | `docs/2026-10-23-coworker-proposals.md` | 90 | 1099 |
 | `docs/2026-10-23-coworker-reads.md` | 60 | 542 |
+| `docs/2026-10-23-git-app-design.md` | 162 | 1506 |
+| `docs/2026-10-23-git-app-proposals.md` | 93 | 1005 |
+| `docs/2026-10-23-git-app-reads.md` | 103 | 869 |
 | `docs/2026-10-23-session-watch-design.md` | 74 | 714 |
 | `docs/2026-10-23-terminal-trust-design.md` | 66 | 603 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
