@@ -20023,3 +20023,14 @@ and D206's LIMITRESUME1h note.
 **Outcome** 2026-10-24: a limited line resumes its own conversation on its own account once ready, Daoris's word kept just before
 it goes on and taken off at every conclusion; a refusal goes on briefed in the same start. Open quests are carried on, words go
 with the walk, `held.limit-waits` says the wait, and no limit is a strike. Detail: D206's note; FIX-LOG 2026-10-24.
+## MODELROLE1b — each session says its actor and what ran (2026-10-24, D205)
+
+> | **MODELROLE1b — each session says its actor and what ran** (driver, service, web) | Every start names its actor (required parameter); the target's `Asked`, carried by the three native prepares; the record's five fields through their later doors; `ran` from the reported names before `TurnModels`; the brainstorm's pass records (§5); *Details*' rows and the parts fold's model; the usage history's `actor`; `actor.ran`. Behaviour unchanged: every choice `before` | The 13-start table; the loopback-only and no-sync tests; *ran* from each stub, *not reported* where a door says nothing; §13's record cases; a brainstorm pass and its restart naming actor and model; stories; on the install, a driven session's *Details* naming the model Claude reported |
+
+(The row of `docs/2026-10-23-actors-design.md` §14; the backlog held it inside MODELROLE1. Quest `#eb9269d33cff`.)
+
+**Outcome** 2026-10-24: every session record now carries its actor, choice, asked model and effort, and what its agent reported
+running, kept machine-local; *Details* and the parts fold show them in both languages. No start runs differently. The proofs
+named in the row pass as focused classes and the two Process classes run alone. What it fixes for later rows is in D205's
+MODELROLE1b note; the classes and what the installed window should show are in `docs/2026-10-24-modelrole1b-build.md`. The
+installed-window proof waits for the install to carry the build.
