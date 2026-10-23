@@ -40,8 +40,8 @@
  * verdicts in the main checkout's store, keyed by tree. `--stage --from-gated <commit>` builds that tree, never this
  * checkout: it refuses when no gate tree stands, when it holds another commit, or while a run holds it; holds the tree's
  * lock itself through its build, so no CI run moves it meanwhile (CI1); asks the gates of the gate tree's own tree, here
- * and again in the gate tree's own publish, which it runs there with the same arguments, a refusal naming `--ci <commit>`;
- * and once that stages, notes it in the tree's record (`local/gate-tree.json`), so the next merge's prune removes the tree.
+ * and again in the gate tree's own publish, which it runs there with the same arguments, a refusal naming
+ * `--ci --stage <commit>` (CIFAST1: the CI's run that pays the rehearsals a plain run owes); and once that stages, notes it in the tree's record (`local/gate-tree.json`), so the next merge's prune removes the tree.
  *
  * **Framework-dependent on purpose.** The shell requires a Windows desktop runtime; a self-contained
  * publish would add ~150 MB to carry a .NET that this machine has. It carries its own Chromium (D92,
@@ -952,14 +952,14 @@ export function gatedSource(repoRoot, commit, { alive = pidAlive, hold = false, 
   const tree = join(home, ...GATE_TREE.split('/'));
   const short = String(commit).slice(0, 7);
   if (!paths.some((path) => samePath(path, tree))) {
-    return { refusal: `desktop-publish: no gate tree at ${GATE_TREE}: node tools/merge-branch.mjs --ci ${short} makes one and gates it` };
+    return { refusal: `desktop-publish: no gate tree at ${GATE_TREE}: node tools/merge-branch.mjs --ci --stage ${short} makes one and gates it` };
   }
   const wanted = gitIn(home, ['rev-parse', '--verify', '--quiet', `${commit}^{commit}`]);
   if (wanted.status !== 0) return { refusal: `desktop-publish: no commit '${commit}' to stage from the gate tree` };
   const want = wanted.stdout.trim();
   const holds = () => {
     const head = gitIn(tree, ['rev-parse', 'HEAD']).stdout.trim();
-    return head === want ? null : `desktop-publish: the gate tree holds ${head.slice(0, 7) || 'no commit'}, not ${want.slice(0, 7)}: node tools/merge-branch.mjs --ci ${want.slice(0, 7)} gates that one there`;
+    return head === want ? null : `desktop-publish: the gate tree holds ${head.slice(0, 7) || 'no commit'}, not ${want.slice(0, 7)}: node tools/merge-branch.mjs --ci --stage ${want.slice(0, 7)} gates that one there`;
   };
   const other = holds();
   if (other) return { refusal: other };
@@ -1126,7 +1126,7 @@ async function main() {
     try {
       const asked = ungatedRefusal(to, source.tree, {
         force: flag('--force-ungated'),
-        remedy: { what: "what this commit's verdicts lack", where: 'in the gate tree', command: `node tools/merge-branch.mjs --ci ${sha}` },
+        remedy: { what: "what this commit's verdicts lack", where: 'in the gate tree', command: `node tools/merge-branch.mjs --ci --stage ${sha}` },
       });
       if (asked.refusal) {
         console.error(asked.refusal);

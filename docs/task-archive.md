@@ -20034,3 +20034,14 @@ running, kept machine-local; *Details* and the parts fold show them in both lang
 named in the row pass as focused classes and the two Process classes run alone. What it fixes for later rows is in D205's
 MODELROLE1b note; the classes and what the installed window should show are in `docs/2026-10-24-modelrole1b-build.md`. The
 installed-window proof waits for the install to carry the build.
+## CIFAST1 — the CI between releases runs the rehearsals only for a stage (2026-10-23, D180, D115)
+
+> **CIFAST1** (the owner report, 2026-10-24: CI is too slow): CI between releases runs the rehearsals only for a stage. Measured on 2026-10-23 and 24: a CI run (node tools/merge-branch.mjs --ci) takes 45 to 75 minutes of wall; three gates are nearly all of it: driver-process-git 24 to 44 minutes, rehearse-family 14 to 23, deployment 14 to 22; the two rehearsals run one after the other beside the git half, so a run waits about max(git half, family + deployment); and fix-forward means two or three runs per republish. Build in tools/merge-branch.mjs: (1) --ci gates main tip with every gate but the family and deployment rehearsals, recorded as owed for a stage rather than failed or passed; (2) the stage path (the stage-candidate CI that npm run publish:desktop --from-gated needs) runs those rehearsals on the commit being staged, so --from-gated still refuses a commit whose rehearsals did not pass on that tree (D115 point on the full set before a stage stands; only where they run changes); (3) measure the family and deployment rehearsals run side by side rather than one after the other (their ports, homes and memory need: REHEARSEPORT1, MEMGATE1, REHLANE2) and run them side by side where the measurement holds, else say why not. Record a D115 and a D180 note, update docs/development.md CI section, and the tool-tests. Proof: the tool-tests for the CI plan (rehearsals owed, not run, on a plain --ci; run and required on the stage path; side by side where chosen), and a timed --ci on a scratch commit before and after.
+
+**Outcome.** A plain `--ci` and the watch's runs owe `STAGE_REHEARSALS` (the family and deployment scripts) to a stage. The
+status, the record and the summary say so, and the run is green on the rest. `--ci --stage [<commit>]` runs both on the commit
+to stage. The stage's judgement is unchanged, and `--from-gated`'s refusals name `--ci --stage <commit>`. The two rehearsals
+are not paired: the deployment rehearsal's in-place packs write and remove the `dist/` the family's bin loads (REHPAIR1
+holds it). On a scratch commit with stand-ins at a real run's walls, a plain `--ci` took 70.6 s before and 43.5 s after,
+scaled one second a minute; the stage's path then took 57.2 s. Detail: D180's CIFAST1 note, D115's; proof: the CIFAST1 tests in
+`src/Daoris.Cli/tool-test/merge-branch.test.ts`.
