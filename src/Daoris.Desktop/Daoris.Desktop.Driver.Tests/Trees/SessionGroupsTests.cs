@@ -24,8 +24,10 @@ public sealed class SessionGroupsTests
         string id, string state, string? quest = null, string? tree = null, int at = 0, string repository = "engine",
         string kind = "driven", bool interrupted = false, string? ask = null, int? updated = null, string? answer = null,
         bool deletable = false, string[]? said = null, string? entry = null, string? from = null, string? fromWhy = null,
-        string? noteCode = null) => new()
+        string? noteCode = null, bool limit = false) => new()
         {
+            // An account's limit made its failure (LIMITRESUME1d): the ledger's flag, as the service answers it.
+            ["limit"] = limit,
             // Its note's first line by its code (LANG1a), where a case reads one (HELPERWAIT1).
             ["noteParts"] = noteCode is null ? null : new JsonArray(new JsonObject { ["code"] = noteCode, ["values"] = new JsonObject(), ["text"] = "a line." }),
             // SESSONE1b: the line of work the service answers, and the session a hand-over continues, and why (SESSCTX1b).
@@ -335,6 +337,12 @@ public sealed class SessionGroupsTests
         ["awaiting reply with work in its tree resumes later: the quest goes back into it"] =
             new(Look([Record("s1", "completed", "q1", Tree)], [Asking, Question], [Verdict(Asking, StartVerdict.Waiting)], [(Tree, new TreeWork(3, 0))]),
                 "s1", SessionGroup.Later, ShownState.AwaitingReply),
+        // LIMITRESUME1d (D206 §3.1, D50's parity): a failure an account's limit made is said limited, as the page says it; one without
+        // the flag stays failed.
+        ["a session a limit ended is limited"] =
+            new(Look([Record("s1", "failed", "q1", limit: true)], [Taken]), "s1", SessionGroup.Ended, ShownState.Limited),
+        ["a session that failed without a limit is failed"] =
+            new(Look([Record("s1", "failed", "q1")], [Taken]), "s1", SessionGroup.Ended, "failed"),
         ["an earlier session of a waiting quest is ended"] =
             new(Look([Record("s1", "failed", "q1"), Record("s2", "completed", "q1", at: 10)], [Asking, Question], [Verdict(Asking, StartVerdict.Waiting)]),
                 "s1", SessionGroup.Ended, "failed"),

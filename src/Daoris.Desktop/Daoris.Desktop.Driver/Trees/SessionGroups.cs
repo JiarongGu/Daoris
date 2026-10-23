@@ -117,6 +117,12 @@ public sealed record SessionRecord(string Id, string Repository, string State)
     public bool AwaitsHelper { get; init; }
 
     /// <summary>
+    /// Whether an account's limit made its failure (LIMITRESUME1d, D206 §3.1): the ledger's <c>limit</c> flag, which a row says as
+    /// <see cref="ShownState.Limited"/>. False from a host before the field.
+    /// </summary>
+    public bool Limit { get; init; }
+
+    /// <summary>
     /// The key it is grouped by: the service's, else the record its own line of work, as the service derives a record whose
     /// facts are gone (<c>session:&lt;id&gt;/&lt;repository&gt;</c>, SESSONE1b), so a host from before still lists every record.
     /// </summary>
@@ -185,6 +191,8 @@ public static class SessionRecords
                 Piece = Text(session, "serves") is { Length: > 0 } && Text(session, "piece") is { Length: > 0 } piece ? piece : null,
                 // HELPERWAIT1: a completed record's note read for its code alone, and only a completed one's.
                 AwaitsHelper = Text(session, "state") == "completed" && Carries(session, NoteCodes.EndedAwaitsHelper.Code),
+                // LIMITRESUME1d (D206 §3.1): an account's limit made its failure; absent from a host before the flag.
+                Limit = session.TryGetProperty("limit", out var limit) && limit.ValueKind == JsonValueKind.True,
             });
         }
 
@@ -385,6 +393,12 @@ public static class ShownState
     /// nothing about it waits on the person until the helper ends with no answer.
     /// </summary>
     public const string AwaitingHelper = "awaiting-helper";
+
+    /// <summary>
+    /// A <c>failed</c> record an account's limit ended (LIMITRESUME1d, D206 §3.1, D50's parity with the page's LIMITRESUME1a word): no
+    /// failure, since its line goes on by itself at the reset or on another account. The page's <c>limited</c>.
+    /// </summary>
+    public const string Limited = "limited";
 }
 
 /// <summary>
@@ -1081,7 +1095,8 @@ public static class SessionGroups
         private SessionGrouping PlaceInGroup(SessionRecord record)
         {
             var archived = _look.Archived.ContainsKey(record.Id);
-            var row = new SessionGrouping(record.Id, SessionGroup.Ended, record.State)
+            // LIMITRESUME1d (D206 §3.1): a failure an account's limit made is said limited, in whichever group it rests.
+            var row = new SessionGrouping(record.Id, SessionGroup.Ended, record.State == "failed" && record.Limit ? ShownState.Limited : record.State)
             {
                 Archived = archived,
                 Teammate = record.Teammate,
