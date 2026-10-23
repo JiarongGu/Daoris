@@ -183,6 +183,8 @@ public sealed class ClaudeStreamJsonTests
         var models = Assert.Single(events, e => e.Kind == SessionEventKind.Turn).Models!;
         Assert.Equal(("claude-sonnet-5-5", (bool?)false, TurnModels.FromModelUsage), (models.Model, models.Whole, models.From));
         Assert.Equal(["claude-haiku-5-5", "claude-sonnet-5-5"], models.Split!.Select(each => each.Model));
+        // D205: what ran, in the order the turn said it, the answer's model first; init's model is no report.
+        Assert.Equal(["claude-sonnet-5-5", "claude-haiku-5-5"], models.Reported);
     }
 
     /// <summary>

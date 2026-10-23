@@ -1378,6 +1378,33 @@ public sealed class AcpTests
     }
 
     /// <summary>
+    /// D205 row b: what ran is the door's own report. <c>codex-acp</c> names its model in the answer's quota alone (MODELROLE1a);
+    /// an answer that names none is <i>not reported</i>, whatever the session opened on.
+    /// </summary>
+    [Theory]
+    [InlineData("""{"stopReason":"end_turn","_meta":{"quota":{"model_usage":[{"model":"gpt-6-luna"}]}}}""", "gpt-6-luna")]
+    [InlineData("""{"stopReason":"end_turn"}""", null)]
+    public async Task A_turn_reports_what_ran_only_where_its_door_names_it(string answer, string? ran)
+    {
+        var events = new List<SessionEvent>();
+        var agent = new FakeAgent((frame, self) => frame.GetProperty("method").GetString() switch
+        {
+            "initialize" => Ok(frame, """{"protocolVersion":1}"""),
+            "session/new" => Ok(frame, """{"sessionId":"s-ran","configOptions":[{"id":"model","name":"Model","category":"model","type":"select","currentValue":"gpt-6.1-sol","options":[{"value":"gpt-6.1-sol","name":"gpt-6.1-sol"}]}]}"""),
+            "session/prompt" => Ok(frame, answer),
+            _ => frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null,
+        });
+
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: events.Add);
+        await session.OpenAsync("D:/fam/Game", CancellationToken.None);
+        await session.PromptAsync("go", CancellationToken.None);
+        session.Release();
+
+        var reported = Assert.Single(events, e => e.Kind == SessionEventKind.Turn).Models?.Reported ?? [];
+        if (ran is null) Assert.Empty(reported); else Assert.Equal([ran], reported);
+    }
+
+    /// <summary>
     /// USAGECAP1a2: a prompt an error answered ends no turn on this door, and the model its update named is not the next turn's:
     /// the next turn names its own, never <c>mixed</c> with one that never ended.
     /// </summary>
@@ -2554,10 +2581,7 @@ public sealed class AcpTests
          {"id":"fast","name":"Fast mode","category":"model_config","type":"select","currentValue":"off","options":[{"value":"on","name":"On"},{"value":"off","name":"Off"}]}]
         """;
 
-    /// <summary>
-    /// The list <c>claude-agent-acp</c> answered after a change, as measured: the model's value as the agent holds it (an
-    /// alias for a full id that has one), the effort while the model offers one, and no <c>fast</c> once it is not opus.
-    /// </summary>
+    /// <summary>D205: a setter that returns no list leaves the composer its projection, never an acknowledgement.</summary>
     [Fact]
     public async Task A_setter_with_no_returned_list_is_not_an_acknowledgement()
     {
@@ -2574,6 +2598,10 @@ public sealed class AcpTests
         session.Release();
     }
 
+    /// <summary>
+    /// The list <c>claude-agent-acp</c> answered after a change, as measured: the model's value as the agent holds it (an
+    /// alias for a full id that has one), the effort while the model offers one, and no <c>fast</c> once it is not opus.
+    /// </summary>
     private static string ClaudeAnswer(string mode, string model, string? effort) => $$"""
         {"configOptions":[{"id":"mode","name":"Mode","category":"mode","type":"select","currentValue":"{{mode}}","options":[{"value":"default","name":"Manual"},{"value":"acceptEdits","name":"Accept edits"},{"value":"auto","name":"Auto"}]},
          {"id":"model","name":"Model","category":"model","type":"select","currentValue":"{{model}}","options":[{"value":"default","name":"Default (recommended)"},{"value":"opus","name":"Opus"},{"value":"sonnet","name":"Sonnet"},{"value":"haiku","name":"Haiku"},{"value":"claude-opus-4-8","name":"Opus 4.8"}]}

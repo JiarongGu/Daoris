@@ -85,10 +85,8 @@ public sealed record TurnModels(string Model, IReadOnlyList<ModelTokens>? Split,
     }
 
     /// <summary>
-    /// A split from the wire: an object keyed by model (<c>modelUsage</c>) or an array of objects each naming its
-    /// <c>model</c> (<c>quota.model_usage</c>), each model's counts read by <see cref="Counts"/>, from the entry's own
-    /// <c>token_count</c> where it has one (both protocol agents' measured shape, MODELROLE1a). Null for any other shape, an
-    /// entry with no name, or a name twice.
+    /// D205: the names a split says, in its order, whether or not its counts can be read — what ran is provenance apart from
+    /// token attribution. Empty for any shape <see cref="Read"/> does not take.
     /// </summary>
     public static IEnumerable<string?> Names(JsonElement split) => split.ValueKind switch
     {
@@ -97,6 +95,12 @@ public sealed record TurnModels(string Model, IReadOnlyList<ModelTokens>? Split,
         _ => [],
     };
 
+    /// <summary>
+    /// A split from the wire: an object keyed by model (<c>modelUsage</c>) or an array of objects each naming its
+    /// <c>model</c> (<c>quota.model_usage</c>), each model's counts read by <see cref="Counts"/>, from the entry's own
+    /// <c>token_count</c> where it has one (both protocol agents' measured shape, MODELROLE1a). Null for any other shape, an
+    /// entry with no name, or a name twice.
+    /// </summary>
     public static IReadOnlyDictionary<string, TurnTokens>? Read(JsonElement split)
     {
         var read = new Dictionary<string, TurnTokens>(StringComparer.Ordinal);
