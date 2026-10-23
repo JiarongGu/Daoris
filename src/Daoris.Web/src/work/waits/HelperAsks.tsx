@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { Button } from '../../design/ui';
 import { cn } from '../../lib/cn';
+import { moment } from '../../locales/format';
 import { type Answered, Refused } from '../InlineConfirm';
 import { InConversation, SOUGHT } from './WaitAnchor';
 
@@ -19,12 +20,17 @@ export type HelperAskRow = {
   agent: string | null;
   askedBy: string;
   at: string;
-  /** `waiting`, `approved`, `started`, `answered` or `refused`; null before the driver's look read it. */
+  /**
+   * `waiting`, `approved`, `started`, `answered`, `refused` or `cooling` (LIMITRESUME1h: an account's limit cut its helper off and the
+   * session still waits on it); null before the driver's look read it.
+   */
   state: string | null;
   /** A refusal's code, or what a waiting ask waits on (`cap`, or the agent walk's); null where it waits on the person's yes. */
   code: string | null;
   helper: string | null;
   startedOn: string | null;
+  /** When a cooling ask's account is ready again (LIMITRESUME1h); none where no cool-off says so, or a driver from before. */
+  until?: string | null;
 };
 
 /**
@@ -79,13 +85,19 @@ const WHY = new Set([
   'capture-merge', 'capture-link', 'capture-submodule', 'capture-unreadable', 'capture-bound', 'capture-moved',
   // HELPERWAIT1: a hand whose outcome a restart lost.
   'hand-uncertain',
+  // LIMITRESUME1h: an account's limit cut it off, and the session no longer waits on it.
+  'limited',
 ]);
 
 /** Why a waiting ask waits where it is no yes of the person's, as the driver's look writes it; any other waits on an agent. */
 const WAITS: Record<string, string> = { cap: 'work.helper.state.cap', turn: 'work.helper.state.turn' };
 
-/** Where one ask stands, in a line: who asked, the agent it named until one started, and its state in the person's words. */
-export function helperLine(t: TFunction, row: HelperAskRow, nameOf: (agent: string) => string): string {
+/**
+ * Where one ask stands, in a line: who asked, the agent it named until one started, and its state in the person's words.
+ *
+ * @param language The reader's language, which a cooling ask's ready time is written in.
+ */
+export function helperLine(t: TFunction, row: HelperAskRow, nameOf: (agent: string) => string, language?: string): string {
   const by = t(row.askedBy === 'person' ? 'work.helper.by.person' : 'work.helper.by.agent');
   const named = row.agent && !row.startedOn ? t('work.helper.of', { agent: nameOf(row.agent) }) : null;
   const agent = row.startedOn ? nameOf(row.startedOn) : row.agent ? nameOf(row.agent) : t('work.helper.someAgent');
@@ -98,6 +110,10 @@ export function helperLine(t: TFunction, row: HelperAskRow, nameOf: (agent: stri
         return t('work.helper.state.refused', { why });
       }
       case 'approved': return [t('work.helper.state.approved'), t('work.helper.state.next')].join(' · ');
+      case 'cooling':
+        return row.until && !Number.isNaN(Date.parse(row.until))
+          ? t('work.helper.state.cooling', { agent, until: moment(row.until, language) })
+          : t('work.helper.state.coolingNoReset', { agent });
       case 'waiting':
         if (row.code === null) return t(row.askedBy === 'agent' ? 'work.helper.state.yours' : 'work.helper.state.next');
         return t(WAITS[row.code] ?? 'work.helper.state.agent');
@@ -157,7 +173,7 @@ function HelperAskLine({ row, nameOf, onApprove, onDecline, onOpen, busy, onConv
   onConversation?: () => void;
   marked: boolean;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [pending, setPending] = useState(false);
   const [refusal, setRefusal] = useState<string | null>(null);
   const alive = useRef(true);
@@ -196,7 +212,7 @@ function HelperAskLine({ row, nameOf, onApprove, onDecline, onOpen, busy, onConv
         <span className="min-w-0 whitespace-pre-wrap break-words text-body">{row.question}</span>
         {onConversation && <span className="ml-auto"><InConversation onPress={onConversation} /></span>}
       </p>
-      <p className="m-0 text-small text-ink-soft">{helperLine(t, row, nameOf)}</p>
+      <p className="m-0 text-small text-ink-soft">{helperLine(t, row, nameOf, i18n.language)}</p>
       {(yes || no || door) && (
         <div className="mt-1 flex flex-wrap items-center gap-2">
           {yes && (

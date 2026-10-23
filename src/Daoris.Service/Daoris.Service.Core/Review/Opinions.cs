@@ -254,6 +254,12 @@ public static class Opinions
     /// <summary>Its minutes ran out first.</summary>
     public const string OutOfTime = "out-of-time";
 
+    /// <summary>
+    /// An account's limit ended its session (LIMITRESUME1h, D206 design §3.8): its record's <c>limited</c> flag, which the driver's gate
+    /// reads as a cool-off and asks again after the account's reset.
+    /// </summary>
+    public const string Limited = "limited";
+
     /// <summary>The rule's fewest minutes for one pass, as its twins hold it (XAGENT1a).</summary>
     public const int FewestMinutes = 5;
 

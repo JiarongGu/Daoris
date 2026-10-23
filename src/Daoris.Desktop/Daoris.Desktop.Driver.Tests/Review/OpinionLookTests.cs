@@ -146,6 +146,55 @@ public sealed class OpinionLookTests : IDisposable
     }
 
     /// <summary>
+    /// LIMITRESUME1h (D206 design §3.8): a pass an account's limit ended is gated <c>Unavailable</c> / <c>Cooling</c> with its account's
+    /// reset read from the cool-off its session wrote, so the look asks nothing before it and asks the pass again by itself after it,
+    /// never waiting on the person's <i>Try again</i>.
+    /// </summary>
+    [Fact]
+    public async Task A_pass_a_limit_ended_is_asked_again_by_the_look_after_its_accounts_reset()
+    {
+        var (host, _, _) = await DoneAsync(required: true);
+        var passes = 0;
+        var driver = Driver(host, ask =>
+        {
+            var id = $"op{++passes}";
+            ask.Opened?.Invoke(id, "r-" + id);
+            if (passes == 1)
+            {
+                host.Opinion(id, "s1", state: "failed", why: OpinionViews.Limited, tip: ask.Tip, @base: ask.Base);
+                return new OpinionPassRun($"failed  second opinion {id}", true) { Opinion = id, Session = "r-" + id, State = "failed" };
+            }
+
+            host.Opinion(id, "s1", weights: [], tip: ask.Tip, @base: ask.Base);
+            return new OpinionPassRun($"completed  second opinion {id}", true) { Opinion = id, Session = "r-" + id, State = "completed" };
+        });
+        // The cool-off the limited pass's session wrote, on an agent no reviewer's walk reads, so only its reset is in play here.
+        // Whole seconds, as the file keeps a moment.
+        var seen = DateTimeOffset.FromUnixTimeSeconds(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+        var reset = seen.AddHours(1);
+        AccountCooling.Cool(_home, new CoolingEntry("elsewhere", null, reset, Stated: true, "weekly", seen, "r-op1"), seen);
+
+        await driver.OpinionsAsync(new Snapshot([], [], []), [], CancellationToken.None);
+        await driver.Running.SettledAsync();
+        var judged = new List<OpinionJudged>();
+        await driver.OpinionsAsync(new Snapshot([], [], []), [], CancellationToken.None, judged);
+        await driver.Running.SettledAsync();
+
+        Assert.Single(_passes);
+        var gate = Assert.Single(judged).Gate;
+        Assert.Equal((OpinionGateStates.Unavailable, ReviewerUnavailable.Cooling, reset), (gate.State, gate.Code, gate.Until));
+
+        // The reset passes: the next look asks the pass again by itself.
+        var passed = DateTimeOffset.UtcNow.AddMinutes(-1);
+        AccountCooling.Cool(_home, new CoolingEntry("elsewhere", null, passed, Stated: true, "weekly", seen, "r-op1"), passed.AddSeconds(-1));
+        await driver.OpinionsAsync(new Snapshot([], [], []), [], CancellationToken.None);
+        await driver.Running.SettledAsync();
+
+        Assert.Equal(2, _passes.Count);
+        Assert.Equal(["op1", "op2"], new OpinionGates(_home).Read("q1", "reports").Asks.Select(ask => ask.Opinion));
+    }
+
+    /// <summary>
     /// XAGENT1g3: commits made after the opinion read are kept as the route says them, the count and the sentence the same.
     /// </summary>
     [Fact]
@@ -269,7 +318,8 @@ public sealed class OpinionLookTests : IDisposable
     }
 
     /// <summary>The build's own agents by name, each present by a file look, as <c>OpinionRecheckTests</c> has them.</summary>
-    private Daoris.Driver.Driver Driver(OpinionStandIn host)
+    /// <param name="pass">What each pass does, opened by the stand-in; null opens <c>op1</c> and raises nothing.</param>
+    private Daoris.Driver.Driver Driver(OpinionStandIn host, Func<OpinionPassAsk, OpinionPassRun>? pass = null)
     {
         var adapters = new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase);
         foreach (var name in new[] { "claude-code", "claude-code-acp", "codex-acp" })
@@ -287,6 +337,7 @@ public sealed class OpinionLookTests : IDisposable
             Passes = (ask, choice, _) =>
             {
                 _passes.Add((ask, choice));
+                if (pass is not null) return Task.FromResult(pass(ask));
                 // The host opens the opinion, and the reviewer raises nothing in what it read.
                 ask.Opened?.Invoke("op1", "r-op1");
                 host.Opinion("op1", "s1", weights: [], tip: ask.Tip, @base: ask.Base);

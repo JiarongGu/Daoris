@@ -9,7 +9,14 @@ public static class HelperStates
     public const string Answered = "answered";
     public const string Refused = "refused";
 
-    public static readonly IReadOnlyList<string> All = [Waiting, Approved, Started, Answered, Refused];
+    /// <summary>
+    /// An account's limit ended its helper's turn with no answer, and the ask stays open, with its account's reset in
+    /// <see cref="HelperState.Until"/> (LIMITRESUME1h, D206 design §3.8): run again by the look while the session that asked waits on it,
+    /// on another account or at the reset, and refused <see cref="HelperWhy.Limited"/> once that session no longer does.
+    /// </summary>
+    public const string Cooling = "cooling";
+
+    public static readonly IReadOnlyList<string> All = [Waiting, Approved, Started, Answered, Refused, Cooling];
 }
 
 /// <summary>
@@ -60,6 +67,12 @@ public static class HelperWhy
     /// </summary>
     public const string HandUncertain = "hand-uncertain";
 
+    /// <summary>
+    /// An account's limit ended the helper's turn with no answer, and the session that asked no longer waits on it (LIMITRESUME1h, D206
+    /// design §3.8): it is not run again, since an answer after the reset lands in a turn that no longer wants it.
+    /// </summary>
+    public const string Limited = "limited";
+
     // COAGENT1a (D199 point 5; the co-agent design §2.5): the asker's work in progress could not be captured whole, so no helper
     // was handed part of it.
 
@@ -101,6 +114,7 @@ public static class HelperWhy
         Conversation => "that session is a conversation, which takes words only from the person",
         CannotTake => "that session cannot take the answer",
         HandUncertain => "its answer may or may not have reached the session, so it is not handed again; the helper's own conversation holds it",
+        Limited => "its account hit its limit before it answered, and the session no longer waits on it",
         _ => why,
     };
 }
@@ -147,6 +161,12 @@ public sealed record HelperState(string Id, string State, string? Code, string? 
 
     /// <summary>The helper's last words, kept here for the delivery where it never used its tool (<see cref="LastWords"/>); no answer file holds them.</summary>
     public string? Words { get; init; }
+
+    /// <summary>
+    /// When the account a limit ended the helper's turn on is ready again (LIMITRESUME1h): kept with <see cref="HelperStates.Cooling"/> and
+    /// a <see cref="HelperWhy.Limited"/> refusal, null where the limit named no cool-off this machine still holds.
+    /// </summary>
+    public DateTimeOffset? Until { get; init; }
 }
 
 /// <summary>A helper's answer as <c>&lt;askId&gt;.answer.json</c> keeps it, written by <c>helper_answer</c> once.</summary>

@@ -1677,10 +1677,15 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// The state the record must be in, which the ledger compares in its step (TERMTRUST1a, D201 point 2): a finish under the standing
     /// confirmation sends <c>awaiting-person</c>. A host older than the field ignores it, which the verb's own read guards first.
     /// </param>
+    /// <param name="unbindAsk">
+    /// That an intake's end lets its ask go for the next intake (LIMITRESUME1h, D206 design §3.8), in the same step, only where the ask
+    /// still names it; a move to <c>failed</c> alone. Sent only where true; a host older than the field ignores it, and the ask stays
+    /// served as before.
+    /// </param>
     public async Task<string> AdvanceAsync(
         string id, string state, string? note = null, string? evidence = null, string? transcript = null,
         CancellationToken ct = default, bool interrupted = false, bool limit = false, IReadOnlyList<NotePart>? parts = null,
-        string? expected = null)
+        string? expected = null, bool unbindAsk = false)
     {
         var body = WriteJson(writer =>
         {
@@ -1698,6 +1703,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             if (interrupted) writer.WriteBoolean("interrupted", true);
             if (limit) writer.WriteBoolean("limit", true);
             if (expected is not null) writer.WriteString("expected", expected);
+            if (unbindAsk) writer.WriteBoolean("unbindAsk", true);
             writer.WriteEndObject();
         });
 

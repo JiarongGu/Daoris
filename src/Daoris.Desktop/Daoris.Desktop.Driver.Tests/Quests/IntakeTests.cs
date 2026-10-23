@@ -553,6 +553,90 @@ public sealed class IntakeTests : IDisposable
         Assert.Equal(3, service.Intakes.Count);
     }
 
+    /// <summary>
+    /// LIMITRESUME1h (D206 design §3.8): an intake an account's limit cut off ends <c>failed</c> with the flag and lets its ask go in the
+    /// same step, raising no <i>Ended</i>. The look picks the ask again and its start is held by the cool-off, with no record and no
+    /// strike (an ask holds none); after the reset the next intake answers it.
+    /// </summary>
+    [Fact]
+    public async Task A_limited_intakes_ask_is_held_until_the_reset_and_picked_again_after_it()
+    {
+        var zone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kathmandu");
+        var now = new DateTimeOffset(2026, 10, 1, 14, 0, 0, TimeSpan.FromMinutes(345));
+        var until = new DateTimeOffset(2026, 10, 3, 16, 2, 0, TimeSpan.FromMinutes(345));
+        await using var service = StandInService.Start(Circle, Ask());
+        var adapters = AdapterSet.Built();
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => now, Zone = zone };
+        var config = (Config() with
+        {
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", LimitedAgent(zone)] },
+        }).WithIntake("acp-stub");
+        var driver = new Daoris.Driver.Driver(new ServiceClient(service.Url, null), config, adapters, _home, harnesses: roster);
+
+        var cut = await driver.RunOnceAsync();
+
+        var limited = service.Session("i1");
+        Assert.Equal("failed", limited["state"]!.GetValue<string>());
+        Assert.True(limited["limit"]!.GetValue<bool>());
+        Assert.Null(service.AskOf("a1b2c3")["intake"]);
+        Assert.Equal(until, roster.CoolingOf("acp-stub", null)!.Until);
+        Assert.True(Assert.Single(cut.Concluded).Limit);
+        Assert.Empty(new AttentionWatch().Observe(cut).Where(item => item.Kind == AttentionKind.Ended));
+
+        // Held meanwhile: the look picks the ask again, and its start is held by the cool-off before any record opens.
+        var held = await driver.RunOnceAsync();
+        Assert.Single(service.Intakes);
+        Assert.Contains(held.Events, line => line.StartsWith("held  intake for ask #a1b2c3 in work:", StringComparison.Ordinal));
+        Assert.Equal("Proposed", service.AskOf("a1b2c3")["state"]!.GetValue<string>());
+
+        // After the reset, the next intake answers it.
+        now = until.AddMinutes(1);
+        await driver.RunOnceAsync();
+        Assert.Equal(2, service.Intakes.Count);
+        Assert.Equal("completed", service.Session("i2")["state"]!.GetValue<string>());
+        Assert.Equal("i2", service.AskOf("a1b2c3")["intake"]!.GetValue<string>());
+        Assert.Single(service.Published);
+    }
+
+    /// <summary>
+    /// The protocol door's intake: its first prompt is refused by the recorded weekly-limit sentence, the zone the test's; the next
+    /// publishes onto its ask. Which prompt it is, is counted in a file beside it, since each is its own process.
+    /// </summary>
+    private string LimitedAgent(TimeZoneInfo zone)
+    {
+        var script = Path.Combine(_home, "limited-intake.mjs");
+        var counted = Path.Combine(_home, "prompted.txt").Replace('\\', '/');
+        File.WriteAllText(script, $$"""
+            import { createInterface } from 'node:readline';
+            import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+            const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
+            for await (const line of createInterface({ input: process.stdin })) {
+              const frame = JSON.parse(line);
+              if (frame.method === 'initialize') {
+                send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, agentCapabilities: {} } });
+              } else if (frame.method === 'session/new') {
+                send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: 'acp-1' } });
+              } else if (frame.method === 'session/prompt') {
+                const prompted = existsSync('{{counted}}') ? Number(readFileSync('{{counted}}', 'utf8')) : 0;
+                writeFileSync('{{counted}}', String(prompted + 1));
+                if (prompted === 0) {
+                  send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: "Internal error: You've hit your individual spend limit · your weekly limit resets Oct 3, 4pm ({{zone.Id}})" } });
+                } else {
+                  await fetch(process.env.DAORIS_SERVICE_URL + '/api/asks/' + process.env.DAORIS_ASK_ID + '/publish', {
+                    method: 'POST', headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({ to: 'media-api', title: 'Read the field from the config', body: 'The ticket names it.', session: process.env.DAORIS_SESSION_ID }),
+                  });
+                  send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } });
+                }
+              } else if (frame.id !== undefined && frame.method) {
+                send({ jsonrpc: '2.0', id: frame.id, result: {} });
+              }
+            }
+            process.exit(0);
+            """);
+        return script;
+    }
+
     /// <summary>An intake is a session like any: it spends a slot of the machine's cap, and never more slots than there are.</summary>
     [Fact]
     public async Task Intakes_take_only_the_slots_the_cap_leaves()
@@ -878,6 +962,11 @@ public sealed class IntakeTests : IDisposable
             lock (_sessions) return _sessions.Single(s => s["id"]!.GetValue<string>() == id);
         }
 
+        public JsonObject AskOf(string id)
+        {
+            lock (_asks) return _asks.Single(a => a["id"]!.GetValue<string>() == id);
+        }
+
         /// <summary>The person publishes the ask themselves.</summary>
         public void Answer(string ask, string quest)
         {
@@ -975,6 +1064,14 @@ public sealed class IntakeTests : IDisposable
                         var session = _sessions.Single(s => s["id"]!.GetValue<string>() == id);
                         session["state"] = body["state"]!.GetValue<string>();
                         if (body["note"] is { } note) session["note"] = note.GetValue<string>();
+                        if (body["limit"]?.GetValue<bool>() == true) session["limit"] = true;
+                        // LIMITRESUME1h: the ledger clears the ask's binding in the same step, only where it still names this session.
+                        if (body["unbindAsk"]?.GetValue<bool>() == true
+                            && _asks.FirstOrDefault(a => a["intake"]?.GetValue<string>() == id) is { } freed)
+                        {
+                            freed["intake"] = null;
+                        }
+
                         return (200, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "moved" }.ToJsonString());
                     }
 
