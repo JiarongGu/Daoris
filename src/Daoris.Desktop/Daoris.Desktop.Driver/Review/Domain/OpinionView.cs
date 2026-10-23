@@ -47,7 +47,7 @@ public sealed record OpinionView(
     /// <summary>The reviewer's declared maker; null where none is declared, which its label says.</summary>
     public string? Maker { get; init; }
 
-    /// <summary>A failed pass's code: <c>ended</c> or <c>out-of-time</c>. Null otherwise.</summary>
+    /// <summary>A failed pass's code: <c>ended</c>, <c>out-of-time</c> or <c>limited</c> (LIMITRESUME1h). Null otherwise.</summary>
     public string? Why { get; init; }
 
     /// <summary>The rule's bound of the pass, in minutes; null where the host said none.</summary>
@@ -106,6 +106,12 @@ public static class OpinionViews
 
     /// <summary>A pass that ended without an opinion, never an empty one (design §6.1).</summary>
     public const string Failed = "failed";
+
+    /// <summary>
+    /// A failed pass's code where an account's limit ended its session (LIMITRESUME1h, D206 design §3.8): the host's <c>Opinions.Limited</c>,
+    /// a twin by its spelling.
+    /// </summary>
+    public const string Limited = "limited";
 
     /// <summary>Wrong to land as it is.</summary>
     public const string Must = "must";

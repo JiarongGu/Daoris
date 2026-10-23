@@ -376,13 +376,15 @@ public sealed class OpinionDesk(OpinionStore opinions, SessionStore sessions, bo
 
     /// <summary>
     /// Where a pass stands, read from its reviewer's record and never kept (design §6.1): given once said; reading while its
-    /// session runs within its minutes; failed otherwise, out of time where the minutes ran out first, else ended.
+    /// session runs within its minutes; failed otherwise, limited where an account's limit ended it (LIMITRESUME1h), out of time where the
+    /// minutes ran out first, else ended.
     /// </summary>
     private async Task<OpinionStanding> StandingAsync(Opinion opinion, DateTimeOffset now, CancellationToken ct)
     {
         if (opinion.Given is not null) return new(opinion, Opinions.Given, null);
         var reviewer = await sessions.FindAsync(opinion.Session, ct).ConfigureAwait(false);
         if (reviewer is { Active: true }) return now > opinion.Due ? new(opinion, Opinions.Failed, Opinions.OutOfTime) : new(opinion, Opinions.Reading, null);
+        if (reviewer is { Limit: true }) return new(opinion, Opinions.Failed, Opinions.Limited);
         return new(opinion, Opinions.Failed, reviewer is not null && reviewer.Updated > opinion.Due ? Opinions.OutOfTime : Opinions.Ended);
     }
 

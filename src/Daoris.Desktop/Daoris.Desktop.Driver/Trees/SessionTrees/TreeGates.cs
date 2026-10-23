@@ -165,7 +165,11 @@ internal sealed class TreeGates(TreeContext context)
                 each => world.OpinionAsync(each, ct),
                 deliveries.Read,
                 commit => tip is null ? Task.FromResult<bool?>(null) : ReviewGit.HoldsAsync(tree, tip, commit, ct),
-                from => SinceAsync(tree, from, ct, at))).ConfigureAwait(false);
+                from => SinceAsync(tree, from, ct, at))
+            {
+                // LIMITRESUME1h: a limited pass's reset is its cool-off's, read by its session; none left names a ready account.
+                Ready = reviewer => AccountCooling.OfSession(context.Home, reviewer)?.Until ?? DateTimeOffset.UtcNow,
+            }).ConfigureAwait(false);
         }
         catch (Exception error) when (error is HttpRequestException or DriverException or JsonException or InvalidOperationException
                                           || (error is OperationCanceledException && !ct.IsCancellationRequested))
