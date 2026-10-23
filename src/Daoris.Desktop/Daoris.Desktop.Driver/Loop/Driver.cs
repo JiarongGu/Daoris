@@ -460,6 +460,23 @@ public sealed class Driver(
         return said.Kept && said.Word?.Id is { } word ? new SupervisorSaid(word, null) : new SupervisorSaid(null, said.Refusal ?? "unsaid");
     }
 
+    /// <summary>
+    /// A park whose own conversation cannot resume and that nothing carries on (<see cref="DriverContinuations.CannotGoOn"/>); a
+    /// supervisor's decision on it goes <c>stale</c> first, its word taken back, so the park is a wait on the owner again (SUPERVISOR1a-i,
+    /// the supervisor design §6.1).
+    /// </summary>
+    private async Task<StartRun> CannotGoOnAsync(QuestView quest, PriorSession park, ContinueReason why, CancellationToken ct)
+    {
+        if (Context.Supervisor.Moving(park.Session))
+        {
+            await Context.Supervisor.CannotGoOnAsync(
+                park.Session, async (session, word, token) => (await service.TakeBackAsync(session, word, ct: token).ConfigureAwait(false)).Done,
+                DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
+        }
+
+        return GoOns.CannotGoOn(quest, park, why);
+    }
+
     internal Task<Snapshot> HandOversAsync(Snapshot snapshot, List<string> events, CancellationToken ct) =>
         HandOvers.HandOversAsync(snapshot, events, ct);
 
@@ -2319,7 +2336,7 @@ public sealed class Driver(
                     return moved;
                 }
 
-                return GoOns.CannotGoOn(quest, park, fellBack);
+                return await CannotGoOnAsync(quest, park, fellBack, ct).ConfigureAwait(false);
             }
 
             // Another agent's findings go on only in their own session (XAGENT1e, design §6.7): where they are all that waits,
@@ -2329,7 +2346,7 @@ public sealed class Driver(
             if (park.Waiting.Any(word => !word.Persons) && !park.Waiting.Any(word => word.Persons))
             {
                 await fresh.LetGoAsync().ConfigureAwait(false);
-                return GoOns.CannotGoOn(quest, park, fellBack);
+                return await CannotGoOnAsync(quest, park, fellBack, ct).ConfigureAwait(false);
             }
 
             // A taken quest is carried on, an open one started, handed the words, in the tree the session worked in. A limited line with

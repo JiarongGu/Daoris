@@ -136,6 +136,49 @@ public sealed class QuestionFiles(string home)
     /// The session's question gone as a run of its record opens (Fable's read, Q2): the park it asked in is over, so a press another
     /// window still shows it with is refused as changed at once rather than taken for the run's own question.
     /// </summary>
+    /// <summary>
+    /// Write <paramref name="question"/> back as its session's question, with the same id (SUPERVISOR1a-i, D208; the supervisor design §6.3):
+    /// a park restored after its run's opening cleared the file gets its question again, from the decision's snapshot, so the owner's card
+    /// has its choices to press. False where the id is not a session's or the disk would not take it.
+    /// </summary>
+    public bool Restore(ParkQuestion question)
+    {
+        if (!SessionEventText.IsLocalId(question.Session)) return false;
+        using var stream = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
+        {
+            writer.WriteStartObject();
+            writer.WriteString("id", question.Id);
+            writer.WriteString("session", question.Session);
+            writer.WriteString("question", question.Question);
+            writer.WriteStartArray("choices");
+            foreach (var choice in question.Choices)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("label", choice.Label);
+                writer.WriteString("does", choice.Does);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+            if (question.Recommend is { } recommend) writer.WriteNumber("recommend", recommend);
+            if (question.By is not null) writer.WriteString("by", question.By);
+            if (question.Why is not null) writer.WriteString("why", question.Why);
+            writer.WriteString("at", Moments.Write(question.At));
+            writer.WriteEndObject();
+        }
+
+        try
+        {
+            AtomicFile.WriteText(PathOf(question.Session), Encoding.UTF8.GetString(stream.ToArray()).Replace("\r\n", "\n") + "\n");
+            return true;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
     public QuestionSettle Clear(string session)
     {
         if (!SessionEventText.IsLocalId(session)) return QuestionSettle.None;

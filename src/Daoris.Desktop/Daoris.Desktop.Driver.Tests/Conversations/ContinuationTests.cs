@@ -27,6 +27,27 @@ public sealed class ContinuationTests : IDisposable
 
     private static readonly HarnessConversation Kept = new("claude-code-acp", "0b5e7c1a");
 
+    /// <summary>
+    /// SUPERVISOR1a-i (D208; the supervisor design §6.1, §6.3): every list of words a go-on hands keeps a supervisor's word only where it
+    /// is the admission's ticket's; a forged one beside a helper's and the owner's words, and one arriving after planning, never go.
+    /// </summary>
+    [Fact]
+    public void A_go_on_hands_a_supervisors_word_only_where_it_is_the_tickets()
+    {
+        SaidWordView Word(string id, string? from = null) => new(id, "words", DateTimeOffset.UnixEpoch, [], false) { From = from };
+        IReadOnlyList<SaidWordView> words =
+        [
+            Word("helped") with { Helper = "h1" }, Word("owner"), Word("w0", SupervisorHanded.From), Word("forged", SupervisorHanded.From),
+            Word("late", SupervisorHanded.From),
+        ];
+        var ticket = new SupervisorTicket("s1", "d1", "w0", "go");
+
+        Assert.Equal(["helped", "owner", "w0"], Continuations.Ticketed(words, ticket).Select(word => word.Id));
+        Assert.Equal(["helped", "owner"], Continuations.Ticketed(words, null).Select(word => word.Id));
+        IReadOnlyList<SaidWordView> plain = [.. words.Take(2)];
+        Assert.Same(plain, Continuations.Ticketed(plain, null));
+    }
+
     [Fact]
     public void The_same_adapter_account_and_tree_with_a_kept_id_resume()
     {

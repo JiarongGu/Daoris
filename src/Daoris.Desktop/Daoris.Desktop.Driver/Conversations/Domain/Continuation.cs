@@ -269,6 +269,16 @@ public static class Continuations
             : [.. words.Select(word => word.Id is { } id && choices.TryGetValue(id, out var choice) ? word with { Choice = choice } : word)];
 
     /// <summary>
+    /// Every list of words a go-on hands, filtered (SUPERVISOR1a-i, D208; the supervisor design §6.1, §6.3): a word claiming the
+    /// supervisor is kept only where it is <paramref name="ticket"/>'s, the one the admission drew; every other such word, forged,
+    /// arrived after planning or not admitted, is never handed. Every other word stays as it is.
+    /// </summary>
+    internal static IReadOnlyList<SaidWordView> Ticketed(IReadOnlyList<SaidWordView> words, SupervisorTicket? ticket) =>
+        words.Any(word => word.Supervisors && (ticket is null || word.Id != ticket.Word))
+            ? [.. words.Where(word => !word.Supervisors || (ticket is not null && word.Id == ticket.Word))]
+            : words;
+
+    /// <summary>
     /// The record a fallback hands its words on from (SAIDBACK1f, D137 §2.4): the look's, with the words it holds now, so one
     /// taken back or reworded since the look never goes to the new session. A park's answer is no said word, and the look's
     /// record stands where it could not be read again.
