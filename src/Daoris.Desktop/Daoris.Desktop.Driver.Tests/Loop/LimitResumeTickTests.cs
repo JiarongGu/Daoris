@@ -66,7 +66,8 @@ public sealed class LimitResumeTickTests : IDisposable
             processes: processes, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
         using var stop = new CancellationTokenSource();
         var run = driver.RunOnceAsync(stop.Token);
-        await Poll.Until(() => Heard().Any(line => line["method"]!.GetValue<string>() == "session/prompt"));
+        // Cut once the turn has taken its quest, as Update now cuts a turn at work.
+        await Poll.Until(() => Heard().Any(line => line["method"]!.GetValue<string>() == "session/prompt") && service.Status("q1") == "Taken");
         stop.Cancel();
         await run.WaitAsync(Poll.Patience);
         Assert.Equal("stopped", service.State("s1"));
