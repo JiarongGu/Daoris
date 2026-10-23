@@ -1,4 +1,16 @@
-# Actors: Daoris chooses the model for each kind of work it starts, from the choices the person put in order (MODELROLE1, proposed, round 2, 2026-10-23)
+# Actors: Daoris chooses the model for each kind of work it starts, from the choices the person put in order (MODELROLE1, proposed, round 3, 2026-10-23)
+
+**Round 3** (2026-10-23) answers round 2's two reads (`docs/2026-10-23-actors-reads.md`: Codex's, 11 findings, 10 blocking;
+the Opus foundation read, R2-B1 to R2-B6 blocking and 13 not). Every finding was checked against the code at `af642e750` with
+the reads merged, and every blocking one held; §16.2 tables each. What moved: the reservation in the count's own terms, one
+count per start (§4.1); the paths after the open for every start that is not a driven first start, each named, and a
+conversation whose agent has no account left going on with its actor's next choice, by the owner's direction of 2026-10-23
+(§3.5, LIMITGOON2); a same-session retry that restores the opening's values (§3.3); `asked` as tagged values (§9.3); a model
+change clearing the effort override (§4.2); the confirmed copy **dropped** (§8.2); inheritance kept on every change of `adapter`
+(§4.0); row c carrying Chat's and Brainstorm's compatibility readers (§14); `no-posture` from each start's own access judge and a
+`no-connector` pass (§4.1); the update drain turning Intake *off* (§6.4); the acceptance words true for Brainstorm (§6.3).
+Round 3 settles R2-B1 with one addition beyond its named change, so by the Opus read's own condition the walk's contract wants
+another foundation read (§16.3). D205 stays proposed.
 
 **Round 2** (2026-10-23) answers round 1's two reads (`docs/2026-10-23-actors-reads.md`: Codex's, 15 findings, 12 blocking;
 the independent Opus reader's foundation read, B1-B8 blocking and 12 not). Every finding was checked against the code at
@@ -7,7 +19,7 @@ model for every actor (§4.0); the walk's per-start passes and its reservation (
 carriers on every run (§3.2); the tier-that-ran record (§5, §9.3); the person's press on every write path (§8.2); Brainstorm's
 choices as voices (§4.4); `handOver` untouched (§4.2). D205 stays proposed.
 
-**Standing:** proposed with D205, round 2 (round 1 below as written, amended in place where §16 says): the synthesis of the three independent proposals in
+**Standing:** proposed with D205, round 3 (round 1 below as written, amended in place where §16 says): the synthesis of the three independent proposals in
 `docs/2026-10-23-actors-proposals.md` (Claude's, Codex's, and an independent Opus reader's in Fable's place under D191's
 amendment of 2026-10-23), written from the brief `docs/2026-10-23-actors-brief.md`. Each difference is settled in §1 by
 choosing one answer, or composing two, and saying what the others lose. It changes a foundation (D24's and D98's rule, and
@@ -95,7 +107,8 @@ table gives each reason and the code it rests on.
 - **Requested, acknowledged and reported are three facts**, and a successful `set_config_option` is not proof the model ran
   (X §4). Taken into *Details* (§9.3).
 - **A stale card never overwrites a newer choice**: Ask Daoris's patch carries the revision it read (X §5). Taken (§8).
-- **Full access does not invent spending** (X §5). Taken, and the code already enforces it (§8.2).
+- **Full access does not invent spending** (X §5). Taken for every door of Daoris's own, each the person's press (§8.2); a raw
+  edit of `driver.json` by a full-access shell is D183's unenforced boundary (round 3, Opus N11).
 - **Rollback disclosed**: an older build reads only the old keys, and says so (X §3). Taken (§6.3).
 - **Never show missing as zero, never apportion an unsplit turn** (X §4). Taken (§10).
 - **The brainstorm's synthesis deserves its own choice** and **exact work its own actor** (X §1). Both right in aim, both
@@ -206,7 +219,8 @@ rules are judged in one place for every door (`ActorChoices.Judge`), so the scre
 the first prompt, the driver sends `session/set_config_option` for `model`, reads the answer (an effort's levels follow the
 model, `:516-517`), then sends it for `thought_level`. Only values that answer offered, only in `ThePersons`' two categories
 (`:82`). The driven `AcpSession` gains the asked choice (`Driver.cs:3775-3778` has no `onOptions` today), as the chat's already
-gains an options callback (`ChatRunner.cs:2189`). `SetConfigOptionAsync` (`Acp.cs:527-539`) is reused as it is.
+gains an options callback (`ChatRunner.cs:2189`). `SetConfigOptionAsync` (`Acp.cs:527-539`) is reused with the one change
+below (*What the agent acknowledged*).
 
 - *Why not C's settings file on the ACP door.* The file `_meta.claudeCode.options.settings` names is the settings tier
   (§0.2), which `ANTHROPIC_MODEL` and a session's own `/model` outrank, and it is Claude-only. `set_config_option` is the tool's
@@ -250,7 +264,10 @@ request. So the actor's open uses it with one change: it reports whether the lis
 list whose current value is the requested one is *acknowledged*; a returned list with another current value is a refusal of that
 choice on that account (§3.3); no list is *acknowledged: not reported*, and the work goes on, *ran* being the agent's word that
 settles it (§5). Holding on a silent answer would make an agent that never returns its list unusable; passing on a contradiction
-keeps a choice from being shown as taken when the agent said otherwise. The composer's own use is unchanged.
+keeps a choice from being shown as taken when the agent said otherwise. The composer's own use is unchanged. **Round 3 (Opus
+N5):** row a measures what an accepted change returns as the current value. Until it has, a returned value other than the one
+asked counts as a refusal only where it is another value the list offers, so an agent that answers a normalised id (`opus` asked,
+`claude-opus-5-5` returned) does not pass an account.
 
 **Why the session level, given D98's cascade.** The actor is the person's deployment choice for that kind of work, D98's own
 "for an agent a person runs, the deployment is the person". A model the person named for Build should hold for every Build,
@@ -278,17 +295,28 @@ refusal after the record is open takes one of two named paths.
   **its answer decides**:
   - the **same agent on the same account** (a later choice of that agent, where no other account of the refused choice remains):
     `set_config_option` again on the open session, no respawn; the record's `choice` and `asked` move through their later door
-    (§9.3), and the opening note says both;
-  - **anything else** (the same choice on another account of the agent, or another agent): the opened record **ends** with
-    `choice-not-offered` (no strike, the reading kept, its account's reservation released, §4.1), and the next look starts what
-    the walk now answers. A conversation keeps the person's words and says so; its press is not lost.
+    (§9.3), and the opening note says both. **Round 3 (Codex 2): the session is reused only where the later choice establishes
+    its whole configuration.** The refused attempt may have changed the session (a returned list naming another value is a
+    refusal that moved it). So each category the attempt touched and the later choice leaves at *account default* is first set
+    back to the value `session/new` returned for it (kept by `KeepOptions`, `Acp.cs:940-942`: the measured opening default);
+    a category the later choice names is set to that value. Where the agent does not return the value asked for, either way,
+    that account is passed for the later choice too and the next bullet applies. Test: `session/new` on `m0`, `m1` answered
+    with `m2`, the later choice at account default: the session is set back to `m0`, and an agent that refuses that ends the
+    record;
+  - **anything else** (the same choice on another account of the agent, or another agent): for a **driven first start**, the
+    opened record **ends** with `choice-not-offered` (no strike, the reading kept, the count released, §4.1), and the next look
+    starts what the walk now answers. Every other start after the open takes §3.5's path for its kind.
+  The readings are written before the refused record ends, so the next look judges them (round 3, Opus N4); a `refused`
+  reading is keyed by the model refused, and a door that rejects `set_config_option` as a method is a reading of the agent
+  and version, not of each account, so no account opens and ends a record once a day to learn it again.
   This is Opus's B1(a) and (b) with one narrowing: B1(a) moved the open session to the agent's next choice whenever one existed,
   which would take choice 2 on account-1 while choice 1 could still run on account-2, against B2's own rule and §4.1's order. The
   one rule, *the walk answers as if the refusal had been known before the spawn*, keeps both.
 - **The pipe door has no offer list, and its prompt is in the arguments** (`-p`, `Adapters.cs:2092`), so a refusal can only
   arrive after the prompt was handed. A model refusal there is recognised only by row a's measured words, on a turn with no
   output and no tool use; it is **the one named exception to §4.3**, kept as that account's `refused` reading (so the next start
-  passes the account without spawning), ending the part with no strike, the next look taking what the walk answers.
+  passes the account without spawning), ending the part with no strike, the next look taking what the walk answers. A
+  pipe chat's first turn and a pipe go-on run take §3.5's paths.
 - **An effort not offered** runs at account default effort, and *Details* says so (O). A model decides what runs and what it
   costs; an effort is a dial within it, and running without it is today's behaviour. X's *the option is unavailable* is
   rejected for effort alone.
@@ -305,6 +333,92 @@ refusal after the record is open takes one of two named paths.
 | `_meta.claudeCode.options.model` | Claude-only, precedence unmeasured; `set_config_option` does it for every protocol agent |
 | The tool's `--fallback-model` | Switches models inside a turn, where Daoris cannot say why; the turn reads `mixed` |
 | Writing `CODEX_HOME` or `DSH_HOME` | D98's boundary |
+
+### 3.5 After the open, for every start that is not a driven first start (round 3)
+
+Round 2's paths after the open (§3.3) were written for a driven first start, whose quest is still `Open` and whose next look
+plans it again. Five other kinds of open cannot take that path (Opus R2-B1; Codex 2-3): a resume lives in its own account's
+home, a conversation has no next look, a pipe chat's first words go on stdin, a go-on run's words are handed back as a failed
+turn's, and the curve move picks its account without the walk. Each is named here. **The one rule still holds for each:** the
+start goes on as if the refusal had been known before its spawn; only *where* it goes on differs.
+
+**(a) A continuation keeps its asked choice.** A resume, a go-on run, a carry-on, a briefed move, a hand-over to another account
+of the same agent, the curve move and LIMITGOON1's move of a conversation to its agent's next account each take the record's
+`asked` (then `override`, §4.2) and walk **only that choice's agent's accounts**, each judged by its reading for that model. A
+running line never moves to another choice by this path (D163); the one exception is (e).
+
+- **A resume** runs on its record's own account (`ResumeAsync`, `HarnessRoster.cs:918-990`, `ChooseAsync(chosen: named)` at
+  `:968`). `ResumeAccount.Judge` gains the reading: an own account whose reading refuses the asked model is an account that
+  cannot carry the words, so the resume goes through `ElsewhereAsync` (`:973-980`) as an own account signed out does today, its
+  words carried to a **new** record on another account of the same choice (D175 point 3), the walk's `passed` holding the own
+  account. **The old record is left as it was and never ended `choice-not-offered`**: it holds work and the person's words.
+  Caught at the open instead (the reading stale or absent), the resumed process stops before its prompt, no strike, the reading
+  kept, and the same start takes that `ElsewhereAsync` path. A conversation's resume (`walks: false`) is refused there in the
+  wait's sentence, its words waiting, as today.
+- **A pipe go-on run** whose silent turn carries row a's measured model refusal is TURNFAIL2's failed turn
+  (`DriverContinuations.cs:934-940`): its words are handed back, no strike, the account's `refused` reading kept, and the next
+  look's resume judges the reading before any spawn, taking the resume's path above.
+- **A carry-on** (`CarriedOnAsync`, `:991-995`) walks the asked choice's accounts with their readings; a new record it opened
+  that is refused at the open ends `choice-not-offered`, and (c) plans it again.
+- **The curve move** (`CurveMove.cs:62-127`) never takes an account that does not offer the chat's model:
+  `SwitchCandidates` (`HarnessRoster.cs:1974-1994`) judges each candidate's reading for the record's `asked` model (the
+  `override`'s where one is kept); a candidate whose reading lacks it is not ready. Test: one candidate not offering the model is
+  not moved to.
+- **No account of the asked choice left**: a driven line waits in the wait's sentence (§4.5), and D163's offer names the actor's
+  next choice, taken only by the person's press (§4.2). A conversation takes (e).
+
+**(b) A conversation's first open re-asks within the same press.** `StartAsync` (`ChatRunner.cs:390`, record opened at `:463`)
+and `PlaceHelpAsync` (`:588`, `:606-620`) own the start until it is dispatched or exhausted, carrying its effective order, its
+`passed` set and the person's queued first words (Codex 3's pending start). Refused at the open, they end the refused record
+`choice-not-offered`, re-ask the walk with the account passed, and open its answer **in the same call**: one press, the window
+following the new record, its note saying both. Nothing left: the press is refused in the wait's sentence (§4.5) and the first
+words wait on the refused record. A pipe chat's measured refusal on its silent first turn (`Adapters.cs:2181`) does the same,
+carrying the first message.
+
+- **Interrupted between the two records** (the app closed after the end, before the next open): the refused record has ended
+  with its words waiting. **Its go-on is a fresh start of its actor**, not a resume: `ChatGoOn` (`ChatGoOn.cs:337-372`) reads the
+  `choice-not-offered` end and starts the actor's walk with that record as `from` and its waiting words as the first message,
+  rather than resuming the record's adapter, since no conversation began there. Every other ended chat goes on as today.
+- Test: a Chat whose first entry is refused at the open: one press, one running conversation, two records; the same with the
+  app stopped between them, its *Go on* starting the walk's answer with the words.
+
+**(c) `choice-not-offered` is an end the planner reads.** It is `failed` with the end code `choice-not-offered`, so `Plans`
+(`Planner.cs:1377-1389`) plans a `Taken` quest whose last record ended so, and strikes leave it out. `LastRun` skips such a record,
+so `CarriedOnFrom` (`:1341-1343`) carries on from the record before it, never from the empty one. Its fresh tree is let go as a
+session that never ran (`Driver.cs:2113-2117`). `Facts` leaves it out of `Running` and `LastStarted` (§4.1). Test: a carry-on
+whose record ended `choice-not-offered` is planned again from the record before it.
+
+**(d) A pick or a handed agent whose account refuses the model** (Opus N2). A pick names its agent and account, never moved
+(`HarnessRoster.cs:1065`, `:1293`): its model is the actor's first entry for that agent, else account default; that entry
+refused on the picked account, the next entry for the same agent on the same account is taken, as (a)'s same-account move; with
+none, the pick is refused with the reason (*account-2 does not offer opus*), and nothing else runs in its place. A handed
+quest's named agent walks its own accounts as (a).
+
+**(e) A conversation whose agent has no account left goes on with its actor's next choice** (the owner's direction of
+2026-10-23, LIMITGOON2; beside LIMITGOON1). Where every account of a Chat's or Ask Daoris's conversation's agent is out for its
+asked choice (cooling, signed out, or refusing its model), and LIMITGOON1 therefore has no next account to move it to:
+
+- **Its line goes on, without a press, as a new part**: a new record in the same line (`from` the last), on the answer of the
+  actor's effective order walked **afresh, as at a start** (§4.1, choice-major), with every account of the out entry passed.
+  Since every earlier entry was passed when the line last started, that answer is its next choice; one that has freed since is
+  taken first, the order being a preference and not a ratchet (§4.2). An entry on the same agent with another model runs where
+  its accounts are not the out ones' reasons (a cool-off is the account's, so a cooling agent's other entries pass too).
+- **What it carries**: on another agent, Daoris's brief of the conversation (D163 point 1, never the transcript) and the words
+  the failed turns held; on the same agent, LIMITGOON1's carrying. It is said once in the conversation, naming the agent and
+  the choice it moved to (*Went on with Codex · account default, Chat's choice 2: Claude Code's accounts are all cooling until
+  14:05*), and the page shows one conversation.
+- **Never a maker the person did not allow**: only the actor's entries, each judged by the start's own access (`no-posture` by
+  `HelpAccess.For` for Ask Daoris, §4.1). A conversation on the person's **pick** does not go on elsewhere: it waits in the wait's
+  sentence, and D163's offer names the next choice for the person's press. An actor *as before* has one entry, so it waits.
+- **Nothing left**: the conversation waits in the wait's sentence with its words held, as LIMITGOON1's last account does.
+- **Why conversations and not driven lines.** The owner's direction is for conversations, where the person is present and the
+  line is the thread they are in. A driven line keeps round 2's rule: the offer, taken only by the person's press under every
+  `handOver` mode (Opus B8). That rule is not reopened here.
+- **What it changes**: D163's *Rejected: automatic hand-overs by default* gains a dated exception, a conversation at a limit
+  with no account left going on to its actor's next choice, the person's order being their prior consent (§12). It is a limit,
+  not a refusal after dispatch, so §4.3 holds.
+- Test: a stand-in agent with every account cooling, the conversation going on with a second stand-in agent and the held words,
+  said once; one with no other entry holding with its reason; a conversation on a pick waiting with the offer.
 
 ## 4. The walk, fallback and what is said
 
