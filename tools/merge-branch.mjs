@@ -1019,10 +1019,10 @@ export const REACH = Object.freeze([
   {
     paths: [
       'tools/merge-branch.mjs', 'tools/doc-duplicates.mjs', 'tools/process-reach.mjs', 'tools/test-map.mjs', 'tools/test-recall.mjs',
-      'src/Daoris.Cli/tool-test/**', 'src/Daoris.Cli/test/_fixture.ts',
+      'tools/merge-queue.mjs', 'src/Daoris.Cli/tool-test/**', 'src/Daoris.Cli/test/_fixture.ts',
     ],
     gates: ['tool-tests'],
-    why: "the merge tool's, the publisher's and the set-up kit's tests, which `tool-tests` runs and verify does not (GATESLIM1): the merge tool and what it imports (the Process census, PROCREACH1, among them), the census of every test unit with its failure reader and recall (CISCOPE1c), the tests, and the fixture they share",
+    why: "the merge tool's, the publisher's and the set-up kit's tests, which `tool-tests` runs and verify does not (GATESLIM1): the merge tool and what it imports (the Process census, PROCREACH1, among them), the census of every test unit with its failure reader and recall (CISCOPE1c), the merge queue and the admission record (CISCOPE1e), the tests, and the fixture they share",
   },
   {
     paths: ['tools/rehearsal-kit.mjs'],
@@ -1593,7 +1593,7 @@ function refreshKnowledgeServer(root) {
 }
 
 /** The first rule that places a path, or null: by glob, or by a lane whose paths own it. */
-function ruleFor(path, rules, lanes) {
+export function ruleFor(path, rules, lanes) {
   return rules.find((rule) => {
     if (rule.paths) return laneMatcher(rule.paths)(path);
     const lane = lanes.find((candidate) => candidate.id === rule.lane);
