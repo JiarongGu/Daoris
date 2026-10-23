@@ -740,3 +740,446 @@ An example would be a continuation taking the actor's next entry rather than hol
 record. Either option in R2-B2 is checkable without one.
 
 **6 blocking (R2-B1 to R2-B6); 13 not blocking.**
+
+## Codex, round 3
+
+Codex's read of round 3 at `539d7bfd2`, read-only. Round 4 answers it.
+
+### 1. Each round-2 finding
+
+Verdicts assess round 3’s design, not implementation. `Design` means `docs/2026-10-23-actors-design.md`; code abbreviations follow the design.
+
+| Finding | Verdict | Where | Why |
+|---|---|---|---|
+| Codex 1 — reservation ownership across reselection | **Open** | Design §4.1; `HarnessRoster.cs:1651`, `:1662`, `:1681` | Removing the second count is right, but ending a record does not immediately release its provisional or cached count; finding 5. |
+| Codex 2 — restoring account default on a reused ACP session | **Taken** | Design §3.3; `Acp.cs:501`, `:527` | Reuse now requires restoring the opening values or ending the attempt, rather than interpreting silence as a reset. |
+| Codex 3 — conversation fallback has no next look | **Open** | Design §3.5(b); `ChatRunner.cs:635`, `:1337`; `HelpRoutes.cs:85` | A pending start is named, but its ownership conflicts with the asynchronous start path; recovery also needs the distinctions in findings 1–3. |
+| Codex 4 — `"default"` collides with the sentinel | **Taken** | Design §9.3; `AgentSettings.cs:58` | Tagged values distinguish omission, the explicit alias and unsupported requested effort. |
+| Codex 5 — merging overrides resurrects old effort | **Taken** | Design §4.2; `Acp.cs:516`; `ChatRunner.cs:1699` | A model override clears the dependent effort, including the opening effort when overlaid on resume. |
+| Codex 6 — confirmed copy lacks an approval/commit contract | **Answered with a reason that holds** | Design §8.2; `DriverChoicesCommand.cs:292`; `HelpRoutes.cs:478` | Dropping the copy removes the two-file transaction; managed commands and cards retain their confirmation paths, while raw edits are explicitly unenforced. |
+| Codex 7 — clearing reopens shared-scalar inheritance | **Taken** | Design §4.0; `DriverConfig.cs:914`; `ConversationRoutes.cs:48` | Preservation now applies before every managed change of `adapter`, including after a clear, under the same write lock. |
+| Codex 8 — row c depends on later readers | **Taken** | Design row c; `ConversationRoutes.cs:48`, `:164`; `DriverBrainstorms.cs:348` | Compatibility readers and the adapter proposal writer move into row c, whose proof now exercises actual starts. |
+| Codex 9 — restricted Ask Daoris wrongly requires asking posture | **Taken** | Design §4.1; `HelpMode.cs:83` | The pre-pass now uses the start’s actual access judge, preserving the restricted branch’s existing behavior. |
+| Codex 10 — Brainstorm’s acceptance sentence promises fallback | **Taken** | Design §6.3, §7.1; `DriverBrainstorms.cs:348` | The sentence distinguishes simultaneous voices and counts the increase in both languages. |
+| Codex 11 — rollback loses more than the model | **Open, non-blocking** | Design §6.4, §7.1; `DriverBrainstorms.cs:348`; `ReviewerChoice.cs:211` | The losses are mostly disclosed, but “each actor’s first agent” still describes the older build incorrectly; finding 4. |
+| Opus R2-B1 — paths after the open cover only driven first starts | **Open** | Design §3.5; `ChatRunner.cs:588`, `:635`; `ChatGoOn.cs:338` | The continuation branches are substantially taken; conversation start ownership, pick recovery and brief recovery remain incomplete. |
+| Opus R2-B2 — confirmed copy misses four paths | **Answered with a reason that holds** | Design §8.2; `DriverChoicesCommand.cs:292`; `HelpRoutes.cs:471` | Option (ii) is adopted explicitly. The copy and its additional readers, writes and headless approval mechanism disappear. |
+| Opus R2-B3 — Intake escapes the update drain | **Taken** | Design §6.4; `InstallUpdate.cs:49`; `DriverWatch.cs:604`; `DriverIntakes.cs:58` | Setting the in-memory Intake actor off reaches the proposed reader; the named test covers an explicitly configured actor. |
+| Opus R2-B4 — reservation does not match existing accounting | **Open** | Design §4.1; `HarnessRoster.cs:1651`, `:1687` | Dropping Commit is correct; the transition between provisional and record accounting still needs an explicit release operation; finding 5. |
+| Opus R2-B5 — mixed doors can select one without a connector | **Taken** | Design §4.1; `Planner.cs:1729`; `Driver.cs:618`, `:1312` | Admission becomes “any usable entry,” with a per-entry connector pass before account selection. |
+| Opus R2-B6 — Brainstorm’s card retains the false sentence | **Taken** | Design §6.3, §7.1 | The revised acceptance text and combined Build/Brainstorm card test address the finding. |
+
+### 2. Findings introduced by round 3
+
+1. **Blocking — the pending conversation start is assigned to functions whose calls finish before negotiation.**  
+   `docs/2026-10-23-actors-design.md:370` makes `StartAsync` and `PlaceHelpAsync` own the attempt through dispatch or exhaustion. Today `PlaceHelpAsync` only opens the record and returns (`Driver/Conversations/Chat/ChatRunner.cs:588`). `START_HELP` then returns that id and launches `RunHelpAsync` off the request (`Modules/Bridge/Routes/HelpRoutes.cs:85`). Model negotiation happens later in `CaptureProtocolAsync` (`ChatRunner.cs:2209`). Ordinary `RunAsync` likewise returns while the protocol door is opening (`:1337`).
+
+   The caller, `HelpStarting` and its queued words already refer to the issued id. Retrying inside a later run does not update them: `RunPlacedAsync` still drains words to its captured original id (`HelpRoutes.cs:136`). Making placement await negotiation would undo the existing early-return contract.
+
+   **Smallest change:** make the pending start a coordinator spanning placement, asynchronous opening and replacement records. Specify how the issued id, queued words, window selection and completion events follow replacements. Keep Ask Daoris’s early response. Prove an Ask Daoris refusal after `START_HELP` has returned, with words arriving during replacement, reaches the replacement exactly once in the same workspace.
+
+2. **Blocking — recovery’s fresh actor walk can discard the person’s pick.**  
+   `docs/2026-10-23-actors-design.md:378` sends a `choice-not-offered` record through a fresh actor walk after interruption. It contains no exception for `choice: pick`, although §3.5(d) and §3.5(e) require a picked conversation to stay on its named agent and account.
+
+   A picked account can be refused only at the open, after its record exists. If that attempt ends with this code, the proposed recovery branch can choose another account or agent. Existing `ChatGoOn` recovery is also invoked automatically at come-up for ended chats with waiting words (`Driver/Conversations/Chat/ChatGoOn.cs:174`), so this is not necessarily another explicit start press.
+
+   **Smallest change:** retain the pick through every negotiation attempt and check it before fresh-walk recovery. A recovered pick may try the permitted alternatives on that same account, then waits. Add an interrupted picked-start case with another actor choice available and assert that it never runs.
+
+3. **Blocking — replacement recovery carries the waiting words but has no contract for reconstructing its brief.**  
+   `docs/2026-10-23-actors-design.md:406` correctly requires LIMITGOON2 to carry Daoris’s brief. But §3.5(b)’s recovery at `:379` starts afresh with the refused record’s waiting words because “no conversation began there.” That record can itself be a replacement for a conversation that already has substantial history.
+
+   Consider A reaching its limit, replacement B refusing its model before its first prompt, and the app closing before replacement C opens. The existing durable word door stores text and attachment names, not `ChatMessage.Brief` (`Driver/Conversations/SaidDoor.cs:34`). Briefing is a separate, explicit operation in `BriefedMove.cs:124`; merely setting `from` does not perform it.
+
+   **Smallest change:** distinguish a refused new conversation from a refused continuation. On recovery of the latter, recompose the brief from its line and deliver it before the waiting words, preserving attachment access and word receipts. Extend the LIMITGOON2 proof to check earlier context—not just the held words—for Chat and Ask Daoris, including a refused replacement and restart. The present proof can pass while reproducing the owner’s context-loss defect.
+
+4. **Non-blocking — the corrected rollback footnote still makes a false universal claim.**  
+   `docs/2026-10-23-actors-design.md:756`, `:809`, `:874` and D205’s round-3 table say an older build runs each actor’s first agent. An unnamed brainstorm instead runs `config.Adapter` (`Driver/Loop/DriverBrainstorms.cs:348`), even when its actor’s first voice names another agent. Reviewers and partners remain selected by their original rules and asks (`ReviewerChoice.cs:211`; `PartnerChoice.cs:21`).
+
+   **Smallest change:** say older builds use the legacy scalar agents and original rules, with Chat and unnamed Brainstorm using Build’s agent; actor choices, models and efforts are ignored. Keep the detailed loss list and make the older-build fixtures assert that projection.
+
+### 3. Remaining findings and proof gaps
+
+5. **Blocking — “after the open, release is the record’s end” still misses both accounting representations.**  
+   `docs/2026-10-23-actors-design.md:520` treats opening the record as the transition from `_chosen` to record accounting. The actual transition happens only in `HarnessRoster.Look`, which removes provisional entries covered by its mark (`Driver/Accounts/Harnesses/HarnessRoster.cs:1651`). Opening or ending a record does not remove `_chosen`.
+
+   With no intervening look, a conversation can end its refused record and immediately select its replacement while the original provisional count remains. With an intervening look, `_looked` can still contain the record as running until another look refreshes it. Filtering newly read `choice-not-offered` records does not repair that cached snapshot. `Busy` and `Facts` read these in-memory collections (`:729`, `:1681`).
+
+   **Smallest change:** bind the count’s identity to its opened record and define an idempotent finish operation that removes its provisional entry and reconciles any cached running entry before replacement selection. Keep the process protected until it stops. Test immediate replacement with **no look**, and replacement after a look captured the still-running record, checking both rotation facts and probe protection.
+
+6. **Blocking — Intake still has no usable path after its opened record refuses the choice.**  
+   `docs/2026-10-23-actors-design.md:312` sends non-Build cases to §3.5, but none of its branches handles an Intake’s initial open. Treating Intake as a driven first start and waiting for the next look also fails.
+
+   Intake opens its record before preparing the harness (`Driver/Loop/DriverIntakes.cs:173`). That open records the ask’s `Intake` binding (`Core/Sessions/SessionLedger.cs:361`). Subsequent opens reject an ask already served by an intake (`:319`), and the driver selects only asks whose `Intake` is null (`DriverIntakes.cs:78`). Ending the refused record therefore consumes the ask without trying its next account or choice.
+
+   Helpers have a related boundary: their `started` binding is published before negotiation (`Driver/Loop/DriverHelpers.cs:889`). The thirteen-start census establishes actor naming, not recovery from these bindings.
+
+   **Smallest change:** add an explicit post-open retry contract for Intake in row d, including an atomic replacement of the empty attempt’s ask binding while preserving its historical record. In row e, name how each one-turn owner handles a negotiation refusal before publishing an ordinary failed/no-answer outcome. Prove an Intake whose first account refuses and second succeeds actually answers the same ask once.
+
+**6 findings; 5 blocking.**
+
+**Verdict: another round.** Keep the owner’s conversation fallback direction, the confirmed-copy removal, tagged provenance, inheritance preservation and drain change. The remaining blockers concern who owns a pending start, how its count is released, what survives recovery, and how an already-bound Intake retries. Those contracts need to be settled together and reflected in the rows’ failure-case proofs before acceptance.
+
+## Opus (foundation), round 3
+
+The independent Opus reader's foundation read of round 3, read-only. Round 4 answers it.
+
+### Opus's foundation read of MODELROLE1's design (D205, round 3)
+
+*An independent Opus 5.5 reader, in Fable's place under D191's amendment of 2026-10-23. Read at `539d7bfd2`, the design's
+branch at round 3. Round 3's change against `33dfe000e` is documents (the design, D205's note and their records); the one code
+file in that range, `Driver.Host/TreesConsole.cs`, is main's trees-remove fix (`6ce6235b3`) merged in, which this design does
+not touch. Read whole: `docs/2026-10-23-actors-reads.md`, `docs/2026-10-23-actors-design.md`, `docs/decisions/D205.md` with its
+notes, `git diff 33dfe000e HEAD` of the last two, and TASKS.md's LIMITGOON1 and LIMITGOON2 rows. Also loaded:
+`.claude/knowledge/session-words.md` and `setting-doors.md`; D137 points 3-7 and its D158 amendment; D163 with its MIXAGENT1a-i
+and MIXAGENT1b-i notes; and the code at the lines below. Nothing was built, run or fetched. Paths use the design's abbreviations
+(`Driver/` = `src/Daoris.Desktop/Daoris.Desktop.Driver/`, `Modules/` = `src/Daoris.Desktop/Daoris.Desktop.Modules/`, `Web/` =
+`src/Daoris.Web/src/`). Design lines are cited as `design:N`.*
+
+Round 3 answers both round-2 reads, and it answers them well. Every round-2 blocking finding is taken, and each one I checked
+holds against the code, with one exception: the count's release after the open, where my own round-2 change was incomplete.
+The new continuation, §3.5(e), reads as a start's walk with one more passed set. Choice-major order holds through it, and so do
+one count per start, the per-account readings and the fences. So the walk itself survives a continuation that takes the actor's
+next choice.
+
+Three things are not yet right, and none of them is in the walk's shape:
+
+- **The count's release after the open.** It is not the record's end alone (R3-B1).
+- **Ask Daoris.** (e) moves Ask Daoris's conversation to another agent, which today's decisions and code say never happens, and
+  the design does not name that rule (R3-B2).
+- **The person's consent.** (e) rests on the person's order as their consent, but the words they press to set that order never
+  say that a running conversation moves (R3-B3).
+
+#### 1. Round 2's findings, checked
+
+##### 1.1 The round-2 foundation read's R2-B1 to R2-B6
+
+| # | Round 3 | Against the code | Standing |
+|---|---|---|---|
+| R2-B1 | Taken as named, (a) to (c), plus (d) for N2, with (e) added (design:337-421) | **(a)**: `ResumeAccount.Judge` → `ElsewhereAsync` fits as named (`HarnessRoster.cs:953-980`). So do `SwitchCandidates` for the curve move (`:1974-1994`, `CurveMove.cs:122-127`) and TURNFAIL2 for a pipe go-on (`DriverContinuations.cs:934-940`). **(b)**: the chat's walk at `ChatRunner.cs:424-427` comes before its open at `:463-468`, so the start can own its re-ask. **(c)**: `Plans` already plans a `failed` last run (`Planner.cs:1384`); the strikes and the last run are read at `Service/ServiceClient.cs:2024-2042` and the reader after it | Closed in shape. Open in three places: the release after the open (R3-B1); *no strike* on two paths (N4); and the end's other readers (N5). (e) is §2.3; the missing tests are N8 |
+| R2-B2 | Taken, option (ii): the copy dropped (design:908-930) | The writers of the four keys are the ones named: `DriverChoicesCommand.cs:528-575`, `HelpSettingProposals.cs:206`, `:262`, `Modules/Bridge/Routes/DriverRoutes.cs:310`, `:321`. No other writer exists in the driver, the modules or the CLI | Closed (§2.5) |
+| R2-B3 | Taken (design:758-762) | `InstallUpdate.cs:49-53`; the gate at `DriverIntakes.cs:58` | Closed |
+| R2-B4 | Taken (design:509-532) | `Facts` also returns `Chosen`, the newest `_chosen` number (`HarnessRoster.cs:1689-1693`), and that number ranks an account as the one just started (`AccountRotation.cs:572-575`). A record's end never removes it | **Open: R3-B1.** My round-2 change ("after the open, `Unchose` is usually a no-op") was incomplete |
+| R2-B5 | Taken: `no-connector` (design:544-551) | `Planner.cs:1744-1753`, `Driver.cs:618-628`, `:1312`. A pick and a handed agent are entries too, so they pass the same way; `HandOver.NoDoor` already refuses a pipe hand-over there | Closed. Its words: N9 |
+| R2-B6 | Taken (design:728-739, §7.1) | `DriverBrainstorms.cs:348` | Closed |
+
+The round-2 read's N1-N13 are each taken, or moot with the copy, as §16.2 says. I checked N1 (design:458-461), N2 (§3.5(d)), N3
+(:461-462), N4 (:309-311), N5 (:267-270), N6 (:980) and N9-N13. N11's stale sentences are gone.
+
+##### 1.2 Codex's round-2 findings 1-11
+
+| # | Round 3 | Standing |
+|---|---|---|
+| 1 | One count per start, owned across the re-ask. Its own load is taken out of the re-ask's facts, and the process stops before the release (design:509-532) | The ownership holds. `Busy` reads `_chosen` and the running records (`HarnessRoster.cs:729-740`), so stopping before releasing keeps a probe out. The release itself is R3-B1 |
+| 2 | Each touched category is set back to `session/new`'s value (design:298-305) | Holds as a rule. The values are not kept where it says (N6) |
+| 3 | §3.5(b): one press owns its start, and an interrupted one goes on as a fresh start | Holds. For Ask Daoris, the refusal arrives after the press has returned (N7). The in-call count is R3-B1 |
+| 4 | `asked` tagged (design:982-990) | Closed |
+| 5 | A model change clears the effort override (design:576-583) | Closed |
+| 6 | The copy dropped | Closed (§2.5) |
+| 7 | Inheritance kept on every change of `adapter` (design:464-477) | Closed. Traced: set Build, clear Chat, then change Build. The change of `adapter` writes Chat explicit first |
+| 8 | Row c carries Chat's and Brainstorm's readers (design:1118) | Closed |
+| 9 | `no-posture` from `HelpAccess.For` alone (design:535-543) | Closed. `HelpMode.cs:83-104` refuses only full access on an agent with no `FullPosture` |
+| 10 | The card scoped to every actor but Brainstorm | Closed |
+| 11 | The rollback projection disclosed | Closed |
+
+#### 2. The walk contract as round 3 states it
+
+##### 2.1 The count
+
+The design states the count in its own terms, and most of it holds:
+
+- **What a count is.** It is an entry in `_chosen` from `Pass` (`HarnessRoster.cs:1411-1416`, `Chose` at `:1662-1669`). It
+  lasts until a look whose mark covers it (`Look`, `:1651-1659`); after that look, the count is the record.
+- **Before the open.** The count is taken back by `Unchose` on every end. Today's holds at `Driver.cs:1775` and `:1796` keep it,
+  so this is the right change.
+- **The re-ask.** It takes its own load out of the facts and takes no count of its own. A same-account answer keeps the count.
+  For any other answer, the process stops before the release, which keeps `Busy` true for a probe in the meantime.
+- **A look during the negotiation.** It leaves one count, since the record is counted either way.
+
+The gap is the release after the open:
+
+- Only the driver's look calls `Look` (`Driver.cs:737`, `:763`), so a record's end leaves the number in `_chosen`.
+- Until the next look, `Facts` therefore counts the refusing account in `Running` and returns its number as `Chosen`. In the
+  least-recent step, that makes it the account just started.
+- In §3.5(b)'s same-call re-open, one start holds two counts.
+- A resume caught at the open is not ended at all, so the design names no release for it.
+
+This is R3-B1.
+
+##### 2.2 The paths after a record is open, (a) to (d)
+
+- **A resume judged before its spawn.** It goes through `ElsewhereAsync` to a new record, and the old record is untouched. This
+  is today's path for an own account that cannot carry the words, and it holds.
+- **A resume caught at the open.** Its record has already moved to `working` (`DriverContinuations.cs:193`). A run that fails
+  after its process started is concluded `failed`, which is a strike (`:394-411`). The design's *no strike* therefore needs the
+  put-back that PARALLEL1f uses (`PutBackAsync`, `:621-660`). Its words must also go on through the walk with the own account
+  passed: today the fall-back opens its new record on the resume's `selection`, which is the own account (`Driver.cs:2095-2111`).
+  See N4, and R3-B1 for its count.
+- **A pipe go-on run.** It is TURNFAIL2's failed turn. Its record concludes `failed` with `ended.words-wait`
+  (`Sessions/Domain/Observation.cs:450-475`), and `ReadStrikes` counts that conclusion. See N4.
+- **The other continuations.** A carry-on, LIMITGOON1's move (named in (a)), the curve move judging each candidate's reading, and
+  the driven wait with D163's offer when no account is left all hold.
+- **A conversation's resume (`walks: false`).** It is refused today with its words marked and the page's presses
+  (`ChatGoOn.cs:419-425`). "As today" holds; N2 asks how this fits (e).
+- **(b).** Holds. Ask Daoris's case is N7.
+- **(c).** Holds. The end's other readers are N5.
+- **(d).** Holds. A pick names its account (`HarnessRoster.cs:1293`). Its model is the agent's first entry; that entry is moved on
+  the same account, else the pick is refused with its reason, and nothing runs in its place.
+
+##### 2.3 A conversation going on with another agent, (e)
+
+**The walk.** The new part is a start of its actor, read as the actor stands now:
+
+- **Its order.** It walks choice-major, with every account of the out entry passed, so the person's order is honoured. A choice
+  that freed since is taken first, by the same rule as any start.
+- **Its count.** It takes one count, as any start does.
+- **Its fences.** Only the actor's entries are walked, each judged by the start's own access. A Chat has none to judge (its place
+  sets `Posture: null`, `ChatRunner.cs:523`), and Ask Daoris's is `HelpAccess.For`. A conversation on the person's pick waits,
+  and so does one *as before*, which has one entry.
+
+This is round 2's rule, *the walk answers as if the refusal had been known before the spawn*, applied to a new part. I find
+nothing in the walk that (e) breaks.
+
+**What carries its context.** The design says "Daoris's brief … and the words the failed turns held" (design:406-407). That is
+`BriefedMove`'s shape (D189 point 3: `ContextBriefs`, with the person's words after the brief). It is not the hand-over box's: a
+hand-over carries none of the person's words (`ChatHandOver.cs:231-236`). Today `BriefedMove` stays on the record's agent and
+account (`BriefedMove.cs:111`, `:130-138`). Which seam (e) uses is N3.
+
+**What the person sees.** One line in the conversation (§7.1 has its words), the head's chip, one conversation on the page, and
+nothing in Notifications. This holds. For Ask Daoris, "a new record in the same line (`from` the last)" cannot hold: the room's
+record takes no `from` (`BriefedMove.cs:26-28`). That is R3-B2.
+
+**Never a maker the actor does not list.** This holds for (e) itself. But an agent's own ask under `on` still goes to "the next
+agent in your order", and that order is the roster's, not the actor's (N1).
+
+**The trigger.** The design implies it rather than stating it (N2).
+
+**The decisions it moves.**
+
+- It amends D163's *Rejected: automatic hand-overs by default*, and says so.
+- It does not name D163's notes, which refuse a hand-over of Ask Daoris's conversation (`docs/decisions/D163.md:31-34`) and offer
+  none on it (`:110`). It also does not name the code's *never goes on elsewhere* (R3-B2).
+
+##### 2.4 The new failed end
+
+`choice-not-offered` is `failed` with its own code (design:385-389). The design names four readers:
+
+- `Plans`, which already plans a `failed` last run.
+- The strikes, which need the code left out.
+- `LastRun`, which skips it.
+- `Facts`, which leaves it out of `Running` and `LastStarted`.
+
+Two more readers are not named:
+
+- **`Facts` has nothing to read.** It reads `SessionStarted`, which holds only adapter, profile, created and running
+  (`Planner.cs:786`).
+- **The notifications.** Every session concluded without the person's asking raises an *Ended* notice (`Attention.cs:248-254`),
+  against §4.6's "Nothing goes to Notifications".
+
+Both are N5.
+
+##### 2.5 The confirmed copy dropped, and what guards the person's press now
+
+The guarded write paths are named, and each holds:
+
+- **`SET_ACTOR` through the pipe.** It is a `Person` route, so it waits for the window's card whoever calls.
+- **The screen's Save, and a card's *Apply*.** Both are the person's press.
+- **The person's terminal acting alone.** A session's terminal is refused on that path (`DriverChoicesCommand.cs:294-298`),
+  including where `DAORIS_DRIVER_CONFIG` makes the verb act alone with an instance running (`:320-321`).
+- **The no-Apply grants.** HELPMODE1c3's grants write other keys, and they keep `actors` once it joins
+  `driver-config-keeps.json`, which §6.4 says.
+
+**What is unguarded.** A raw edit of `driver.json` is unguarded, as it is for `cap` and an access rule's `unrestricted`, and the
+design and D205's note say so in D183's terms. Point 9 then holds for the doors named, and nothing claims more.
+
+**Why the drop is right.** The copy's guard could be undone by the same shell it guarded against. It would also have cost a
+second start-time truth on every reader.
+
+##### 2.6 The update drain and a set Intake actor
+
+`Drained` sets Intake *off*, and `DriverIntakes` reads Intake through `Effective` (design:758-762). This closes the escape. The
+drain still nulls `IntakeAdapter` as well, and nothing persists the in-memory config. It holds.
+
+##### 2.7 The per-choice `no-connector` pass
+
+Its parts hold:
+
+- **Judged before the walk.** Each entry is judged from the repository's adoption and the entry's wire.
+- **The planner's gate.** It asks whether any entry can drive the repository, and so does the set-up's `Door()`.
+- **Continuations.** They keep their asked agent, so a line admitted on the protocol door stays on it.
+
+#### 3. Blocking findings
+
+**R3-B1. The count's release after the open is not the record's end alone.**
+
+- *The design:*
+  - design:520-521: "After the open, the count is the record, and the release is the record's end."
+  - design:524-527: "ends the record, which releases the count; and the start that follows (the next look's, or §3.5(b)'s in the
+    same call) takes its own one count".
+  - design:530-532, the tests: "leave no count behind" and "a look during the negotiation leaves one count".
+  - design:355-356: a resume caught at the open, whose record is "left as it was".
+- *The code:*
+  - `Chose` adds the start to `_chosen` (`HarnessRoster.cs:1662-1669`, from `Pass` at `:1411-1416`).
+  - Only `Look` removes it (`:1651-1659`), and only the driver's look calls `Look` (`Driver.cs:737`, `:763`).
+  - Until then, the entry has three effects. `Facts` counts it in `Running`, and returns it as `Chosen` (`:1689-1693`), which the
+    least-recent step ranks as the start most recently chosen (`AccountRotation.cs:572-575`). It also keeps the account `Busy`
+    (`:729-740`).
+  - Ending a record changes none of these.
+- *Consequence:* the results differ by path.
+  - **In §3.5(b)** with no look between the walk and the refusal, which is the common case for a negotiation of seconds, one start
+    holds two counts: the refusing account's and the new one's.
+  - **For a driven first start**, until the next look the refusing account reads to every other start as loaded and just chosen.
+    This is the distortion R2-B4 meant to remove.
+  - **For a resume caught at the open**, the release names nothing: its count is a `_chosen` number plus a reopened record, and
+    the design never ends that record.
+- *Smallest change:* in §4.1's third bullet:
+  - **Every release.** It is `Unchose` of the start's number, made after the opened process has stopped. The selection carries the
+    number, and the call is a no-op once a look has covered it.
+  - **After the open.** The release is also the record leaving `Running`: by its end, or, for a resume caught at the open, by being
+    put back as it ended (`PutBackAsync`, `DriverContinuations.cs:621-660`, as PARALLEL1f does).
+  - **Test.** Keep §4.1's tests and add one: §3.5(b)'s re-open with no look in between leaves one count, on the new account, and
+    the refusing account is not the least-recent step's last.
+
+**R3-B2. Today Ask Daoris's conversation never goes on elsewhere; (e) moves it without naming that rule.**
+
+- *The design:*
+  - design:397-399: "Where every account of a Chat's or Ask Daoris's conversation's agent is out".
+  - design:401: "a new record in the same line (`from` the last)".
+  - §12 (design:1054-1055) amends D163's *Rejected* alone.
+- *The code and decisions:* five places say Ask Daoris's conversation stays where it is.
+  - **The hand-over's judge** refuses it by code `help`, saying it "stays on its own agent: Ask Daoris's history starts a new
+    conversation from it" (`Driver/Conversations/HandOver/HandOver.cs:52-55`, `:188-190`).
+  - **D163's MIXAGENT1a-i note** lists "Ask Daoris's" among the hand-over's refusals (`docs/decisions/D163.md:31-34`), and its
+    MIXAGENT1b-i note offers the press on no Ask Daoris conversation (`:110`).
+  - **The curve move** skips it: "Ask Daoris's own conversations and intakes never go on elsewhere (D137 §2.2)"
+    (`CurveMove.cs:70-74`).
+  - **An agent's ask** from it is refused (`HandOverAsks.cs:100-104`, `:118`).
+  - **`BriefedMove`**, the one path that starts a new part for it, places that part in its workspace's room on its own agent. It
+    keeps the link in the room's history "since the room's record takes no `from`" (`BriefedMove.cs:26-28`, `:111`, `:169-185`).
+- *Consequence:* two things follow.
+  - LIMITGOON2, built to this contract, meets a refusal the contract never named, or removes that refusal unrecorded.
+  - (e)'s "`from` the last" cannot be written for Ask Daoris.
+- *Smallest change:* either of two, each checkable at the lines named.
+  - **(i) Keep Ask Daoris in (e).** §3.5(e) and §12 name the exception to D163's MIXAGENT1a-i refusal, and the code's
+    never-goes-elsewhere at the three places above, which stand for the curve move and an agent's ask. They also say how its new
+    part opens:
+    - in its workspace's room, on the walk's agent;
+    - its link kept in the room's history rather than in `from`;
+    - under the mode standing then, judged by `HelpAccess.For`;
+    - with the room's running conversation set aside first (ASKSCOPE1a).
+
+    Add its test.
+  - **(ii) Narrow (e) to Chat.** Ask Daoris waits, as a pick does.
+
+  (i) is the case of the owner's LIMITGOON1 report, which was an Ask Daoris conversation.
+
+**R3-B3. (e)'s consent is the person's order, but the words they press to set it never say that a running conversation moves.**
+
+- *The design:*
+  - design:417-418 and §12 (design:1055): "the person's order being their prior consent".
+  - The editor's only sentence about later choices, design:826: "Choice 2 runs only when no account of choice 1 can: cooling,
+    signed out, or refusing its model."
+  - §6.3's card, design:728-730: "Work already running keeps its choices."
+  - §7.1 has no words for (e) at the editor.
+- *The code:* today a conversation reaches another maker in only two ways:
+  - by the person's press;
+  - by a repository's `on` rule for its own agent's ask (`HandOverRules.cs:7-10`).
+
+  A conversation's new part carries the person's words to its own agent alone (`BriefedMove.cs:111`, `:130-138`).
+- *Consequence:* the press that is (e)'s consent is made on words that describe a start, and the card says running work keeps its
+  choices. (e) then hands Daoris's brief of a live conversation, and the person's held words, to another maker with no press. This
+  is the standard B7 and R2-B6 applied: a press is a yes only to the sentence it was given on.
+- *Smallest change:* in §7 and §7.1, Chat's and Ask Daoris's editors carry one more sentence, in both languages:
+  - en: *A conversation whose agent has no account left goes on with your next choice, handed Daoris's brief of it and your waiting
+    words; one on your pick waits.*
+  - zh: *对话的智能体没有剩余账户时，会带着 Daoris 的简报和你待发的话改用你的下一个选择继续；你指定的对话则等待。*
+
+  §6.3's last clause gains *; a conversation at its agent's limit goes on with the next*. Alternatively, §6.3 states, and the
+  census holds, that the card never changes Chat or Ask Daoris. Test: the two editors' words in both languages.
+
+#### 4. Not blocking, in order of weight
+
+1. **Two orders are both called "your order".**
+   - **Today.** The page's hand-over offer and an agent's ask under `on` both take `HandOverOrder`: the roster's other tools, in
+     its order (`HandOverAsks.cs:139-160`, `DriverHandOvers.cs:299`). Its twin is `Web/work/start/handOverOffer.ts:55`, `:105`,
+     held to `fixtures/hand-over-order.json`. It is D191's settling of the mixed-agents design, and `on`'s words say "the next
+     agent in your order" (`HandOverRules.cs:200`).
+   - **After row e.** Daoris's offer names the actor's next choice (design:562-567), while an agent's ask under `on` still goes to
+     the roster's next tool, which may be a maker not in the actor's entries.
+   - **The change.** Say which order each path takes. The smallest answer: both take the actor's effective order's next entry on
+     another agent (with `handed`'s model), and the roster's order only where the actor is *as before*. Name the twin and the
+     fixture in row e.
+2. **State (e)'s trigger in words.** design:397-399 implies it ("LIMITGOON1 therefore has no next account"). Its list, "cooling,
+   signed out, or refusing its model", reads as if a turn's model refusal could trigger it, against §4.3 (design:592-595). Say
+   three things:
+   - (e) runs only where a turn met a limit and LIMITGOON1 finds no account of the asked choice.
+   - The other accounts may be out for any reason.
+   - A refusal after dispatch never triggers it.
+
+   Then decide one case, and make (a)'s conversation-resume sentence (design:356-357) agree with it: the person's words to an
+   ended conversation whose agent's accounts all cool. Today those words are held for the reset, with *Go on in a new session*
+   offered (`ChatGoOn.cs:419-423`, D137 point 7). The case can take (e) or wait, and LIMITGOON2's "where every account of the
+   conversation's agent is cooling" reads either way.
+3. **Name (e)'s seam.** Use `BriefedMove` with the walk's agent and account, or the hand-over box with the words added, and cite
+   D189 point 3 for the brief rather than D163 point 1 (§2.3). Also say in (e)'s line that a composer `override` does not follow
+   the conversation to another choice.
+4. **Two paths claim *no strike* and give no mechanism.**
+   - A pipe go-on run's refusal concludes `failed` with `ended.words-wait` (`Observation.cs:450-475`).
+   - A resume caught at the open concludes `failed` (`DriverContinuations.cs:394-411`).
+   - `ReadStrikes` counts every `failed` that is neither a limit nor an account's refusal (`ServiceClient.cs:2024-2042`).
+
+   Name the code each carries that `ReadStrikes` leaves out: an account's line, as ROSTER1b's is. Then say that the resume is put
+   back before its words go on through the walk with its own account passed (§2.2).
+5. **`choice-not-offered`'s other readers.**
+   - `SessionStarted` gains the end, or the snapshot filters on it (`Planner.cs:786`).
+   - `AttentionWatch` leaves the end out of *Ended* notices (`Attention.cs:248-254`).
+   - Name what the session list and a teammate's mirror show for it: a `failed` row for something that did not fail.
+6. **The opening values are not kept where §3.3 says.** "Kept by `KeepOptions`, `Acp.cs:940-942`" (design:300-301) does not hold:
+   `KeepOptions` keeps the latest list, and both of these overwrite it:
+   - every `set_config_option` (`Acp.cs:537`);
+   - every `config_option_update` (`:1752`).
+
+   Snapshot `session/new`'s list at `:940`, apart from `KeepOptions`, before the posture or any set.
+7. **Ask Daoris's first open re-asks after the press has returned.** The press waits on `PlaceHelpAsync`, but the spawn, and with
+   it the refusal, is in `RunHelpAsync` (`ChatRunner.cs:576-581`, `:635`). Under ASKSCOPE1a only one Ask Daoris runs per
+   workspace, so the refused record ends before the next is placed. Name `RunHelpAsync` as the owner in §3.5(b).
+8. **Tests the design names nowhere.**
+   - R2-B1's first test: a resume on an account that lost the model is carried to a new record, and the old record is untouched.
+   - A pipe go-on run refused on a silent turn.
+   - §3.5(d)'s pick refused with its reason.
+   - (e) for Ask Daoris (if R3-B2(i) is chosen).
+   - (e) never taking a maker outside the actor's entries.
+   - (e) taking a choice 1 that has freed.
+9. **Missing words.**
+   - `no-connector` is absent from §7.1's pass reasons (design:879-881).
+   - The `choice-not-offered` end has no sentence in either language.
+   - Neither has (e)'s "nothing left" line.
+10. **"The next start of the same line begins again from choice 1"** (design:588) reads against (a)'s "a continuation keeps its
+    asked choice" (design:345-348), since a carry-on is the next start of a driven line. Say what it means: a new quest, a new
+    conversation, or (e)'s new part. It never means a continuation of (a).
+11. **Chat's agent-only pick.** The new conversation's chip may name an agent without an account (`Web/work/start/NewConversation.tsx:225`,
+    `Modules/Bridge/Routes/ConversationRoutes.cs:48`). Say whether that is `pick`, and whether (e) leaves it waiting. (d) speaks
+    only of a pick that names both.
+12. **The walk takes the model too.** Readings are judged per model inside the walk, so `WalkAsync` and every caller
+    (`SelectHandedAsync`, `CarriedOnAsync`, `ResumeAsync`, `SwitchCandidates`) take the entry's model, or the record's `asked`. The
+    walk therefore gains three parameters: passed accounts, its own load, and the model. design:502 says two.
+13. **`handOver: off` beside (e).** The rule governs an agent's ask (`HandOverRules.cs:7-10`), so (e) is not under it, which is
+    consistent with B8. A person who set `off` on a repository may still expect its chats to stay on their agent. Say it once,
+    beside the rule's `off` words.
+
+#### 5. Verdict
+
+**Accept after the named changes R3-B1 to R3-B3.** Each is a change to the design's text at the lines named, with its test, and
+the steward can check each without another read. Either option in R3-B2 is checkable.
+
+The walk's contract needs no further foundation read. That includes (e) as a start's walk with the out entry's accounts passed:
+it keeps choice-major order, one count per start, per-account readings, the actor's entries as the only makers, and a pick or an
+*as before* actor waiting.
+
+Two kinds of change would want another read:
+
+- extending (e) beyond conversations, to driven lines;
+- changing (e)'s walk, for example a new part that takes only the actor's next entry rather than walking afresh from choice 1.
+
+The mechanism LIMITGOON1 and LIMITGOON2 choose (N3) is their rows' to design, so long as it keeps this contract.
+
+**3 blocking (R3-B1 to R3-B3); 13 not blocking.**
