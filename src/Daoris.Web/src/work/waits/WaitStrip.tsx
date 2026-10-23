@@ -114,7 +114,8 @@ export type WaitProps = {
  * frame's to read) the strip stands aside, hidden and not unmade, so a fold and words begun in it are kept. Never from under the
  * person: it stays while an ask is open in it, while a press led to its line, and while the focus is in it.
  *
- * Several fold to one line naming them; *To the top* takes the person to the head's waits. Nothing waits, nothing is drawn.
+ * Several fold to one line naming them; *To the top*, where a host hands `onTop`, takes the person to the head's waits (the
+ * session's frame draws it above the waiting panel instead, WAITPANEL1). Nothing waits, nothing is drawn.
  * A molecule: no hook beyond its own fold, focus and sought line.
  */
 export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, aside = false, ...props }: WaitProps & {
