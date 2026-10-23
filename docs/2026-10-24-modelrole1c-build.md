@@ -29,9 +29,15 @@ one branch, each committed green, as the quest allows. This record says which pa
    A value the agent offers no option for, refuses, or answers with another value it offers is kept as asked and not carried
    (`Carried`), so the record never says a choice was taken that was not. Until part 3, a refused model runs at account default,
    said in *Details*, rather than ending the record `choice-not-offered`.
-3. **Per-account offers and refusals** (§3.3, §3.5 (a), (c), (d)): `agent-offers` in the three home twins; `OpeningOptions`;
-   `choice-not-offered`; `Release`; the resume's put-back; `account.refused-model`; `SessionStarted.NotOffered`; no *Ended* notice.
-4. **The screen**: AI features' *Actors* with Build's editor; the note, the chip and the wait; the Agents fold's line.
+3. **Per-account offers and refusals** (remaining, filed as MODELROLE1c2) (§3.3, §3.5 (a), (c), (d)): `agent-offers` in the three
+   home twins; `OpeningOptions`; `choice-not-offered`; `Release`; the resume's put-back; `account.refused-model`;
+   `SessionStarted.NotOffered`; no *Ended* notice.
+4. **The screen.** 4a is built: AI features' *Actors* (`ActorsCard`), each order folded to one line, with Build's editor. It
+   holds one row each for agent, model and effort, *Move up*, *Move down*, *Remove*, *Add a choice* up to four, *Save* and
+   *Clear*. A refusal is said under *Save*. Saving a change of Build's agent says that Chat and Brainstorm keep theirs. The
+   wait's sentence is the driver's, said where a held quest is said. The room's doors name `daoris driver actor`, and its
+   proposal door is owed to MODELROLE1h. Remaining in MODELROLE1c2: the head's *choice n* chip, the opening note's actor line
+   and the Agents fold's line.
 
 ## Checks run
 
@@ -43,8 +49,11 @@ Part 1, focused classes only (the standing test rule): driver `ActorChoicesTests
 driven start (`AccountGoalTickTests`, `AccountLimitTickTests`, `AccountRotationTickTests`, `AcpTurnFailureTickTests`,
 `AskAndWaitTickTests`, `CapCountTickTests`, `HandOverQuestTickTests`, `LimitResumeTickTests`, `NativeResumeTests`,
 `RefusedByTheHarnessTests`, `SignedOutWaitTests`, `SignInRefusalTickTests`, `TrustHoldTickTests`, `StartGitCountTests`,
-`ProviderRefusalTickTests`, `ActorRunTests`, `GatedStartsTests`, `AccessSwapTickTests`, `DoneEndTickTests`); the CLI's `cli-usage.test.ts`; the web's `src/bridge` tests, the typecheck,
-`i18n:check` and `names-check.mjs --strict`.
+`ProviderRefusalTickTests`, `ActorRunTests`, `GatedStartsTests`, `AccessSwapTickTests`, `DoneEndTickTests`); part 4a:
+`HelpCoverageTests`, `HelpRoom*` (the goldens written again for the two door rows and the owed door), the web's `src/settings`
+tests (`AiDomain.test.tsx`'s Actors cases among them) and `src/design/stories.test.tsx`, `storyWidths.test.tsx`; the CLI's
+`cli-usage.test.ts`; the web's `src/bridge` tests, the typecheck, `i18n:check` and `names-check.mjs --strict`. No Process class
+was changed, so none was run.
 
 ## Readings
 
