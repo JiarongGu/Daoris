@@ -84,6 +84,32 @@ public sealed class HomeWatchTests : IDisposable
         await Poll.Until(() => _woken.Contains((ChangeTopics.Plugins, "plugins")), () => "the plugins were never heard");
     }
 
+    /// <summary>
+    /// LIMITRESUME1c (D206 §3.4): the cooling store and the harness settings wake the <c>accounts</c> topic within the debounce, so an
+    /// account freed early (<i>Try now</i>, a sign-in, an account added) wakes the look whose limits stage reads its stamp.
+    /// </summary>
+    [Fact]
+    public async Task The_cooling_store_and_the_harness_settings_wake_the_accounts_topic()
+    {
+        await using var watch = Watching(TimeSpan.FromHours(1));
+
+        var cooling = AccountCooling.PathOf(_home);
+        Directory.CreateDirectory(Path.GetDirectoryName(cooling)!);
+        File.WriteAllText(cooling, "{}");
+        Say(Path.GetDirectoryName(cooling)!, Path.GetFileName(cooling), ChangeKind.Renamed);
+        await Poll.Until(() => _woken.Contains((ChangeTopics.Accounts, ChangeTopics.Accounts)), () => "the cooling store was never heard");
+
+        while (_woken.TryDequeue(out _))
+        {
+        }
+
+        var settings = DaorisHome.Entry(_home, HomeEntry.Harnesses);
+        Directory.CreateDirectory(Path.GetDirectoryName(settings)!);
+        File.WriteAllText(settings, "{}");
+        Say(Path.GetDirectoryName(settings)!, Path.GetFileName(settings), ChangeKind.Renamed);
+        await Poll.Until(() => _woken.Contains((ChangeTopics.Accounts, ChangeTopics.Accounts)), () => "the harness settings were never heard");
+    }
+
     /// <summary>With every source silent, each topic's deadline finds what moved, by reading it afresh.</summary>
     [Fact]
     public async Task Each_file_is_found_by_its_deadline_when_its_source_is_silent()
