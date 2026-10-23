@@ -5,6 +5,29 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-24 - Sessions a squash landed together were told to rebase onto work already on the line (SQUASHSEEN1)
+
+- **Symptom:** the parent landed two sessions' work on `main` as one squashed commit, beside `trees land`, to correct a
+  commit's attribution (LIMITGOON1). Daoris told both sessions to rebase onto `main`; each ran again and found everything there.
+- **Root cause:** SQUASHTIDY1's content proof (`ContentHolds.HeldByContentAsync`) knew two forms. One is a squash whose tree is the
+  branch's, and the other is every changed file reading the same on the line. A squash of two sessions is neither. Its tree
+  holds the other session's work too. The files both sessions changed read otherwise on the line: the backlog, the records and
+  the generated index. So the landing found the work unlanded and replayed its commits. Where the two sessions had moved out
+  neighbouring backlog rows, the squash removed both in one hunk, the replay conflicted in `TASKS.md`, and the look and the
+  terminal told the session to rebase (`RebaseTelling`).
+- **Fix:** a third form of the same proof, `SquashCarries`. It asks whether merging the branch into the line as it stands (`git
+  merge-tree --write-tree`, the repository's merge attributes applied) adds nothing. Generated files
+  are left aside, and the declared backlog is read by rows (`RowsHeld`). The landing refuses such a tree as `carried` before
+  any replay, so no rebase is told. The head offers its discard, and the removals and the clean-up take it as landed, with
+  the clause *a squash carried it: merging it there adds nothing*.
+- **Verify:** `SquashSeenTests` with `git.process.runsettings`, 4 of 4. The landing test fails with the proof switched off, on
+  the owner's case: a `TASKS.md` conflict and the rebase words. The content and landing classes the proof reaches ran by
+  filter with the same file: `ContentHeldTests`, `ContentLandingTests`, `ContentOfferTests`, `ContentProofLossTests`,
+  `TerminalLandRebaseTests`, `AutoLandingRebaseTests`, `LandRebaseLandingTests`, `LandBacklogLandingTests`,
+  `LandingSquashTests` and `EndJudgementGitTests`, 70 of 70 with the new class. A first build that asked past commits of the
+  line failed `EndJudgementGitTests`' patch-only case, so the proof asks the line's tip alone. `ContentHoldWordsTests`, 15 of 15, and the driver's fast half, 14,183. Detail:
+  D102's SQUASHSEEN1 note.
+
 ## 2026-10-24 - Conversations an update closed never came back (LIMITRESUME1i)
 
 - **Symptom:** on the install, an update closed conversations mid-turn or with words waiting, and none came back after the

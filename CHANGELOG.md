@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- Work landed on the line as a squash, together with another session's work, is now recognised as each session's own
+  (SQUASHSEEN1). Those sessions are no longer told to rebase onto work the line already holds. Each one's page offers *Discard
+  branch…* in place of *Accept…*, saying a squash carried its work, and its tree is tidied as a landed one is. A session with
+  work the line truly lacks is still asked to rebase.
 - A quest's session that waits for an account's limit now says so under its header: when it goes on by itself, and on which account,
   whether it goes on in its own conversation or in a new session with Daoris's brief, and when a reset did not lift the limit
   (LIMITRESUME1d). Beside it, *Go on now with…* hands it to another agent or account now, *Pause quest…* holds it, and *Try now*

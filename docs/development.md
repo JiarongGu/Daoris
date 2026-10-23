@@ -196,9 +196,9 @@ place (learned 2026-10-23 and 24, LIMITGOON1 and LIMITRESUME1d):
 - **A stuck session is resumed in place,** never re-published as a new quest. Answer its park, resume it (`sessions say`,
   `help resume`), or let its quest go on. A new quest for the same work opens a second tree, and both must later rebase onto
   whichever lands first.
-- **Land through Daoris's own `trees land`.** A landing done beside it, such as a squash to correct a commit's attribution, is
-  not recognised as the sessions' work (SQUASHSEEN1). Daoris then reopens those sessions to rebase onto main, finding nothing
-  left to do.
+- **Land through Daoris's own `trees land`.** A squash done beside it, such as one to correct a commit's attribution, is read
+  as its sessions' work by content (SQUASHSEEN1, D102's note), so those sessions are not reopened to rebase. Only a squash
+  whose merge would conflict outside the backlog and the generated files is still unseen.
 - **Publish a quest that builds on another row only once that row's landing is committed.** A session's tree starts from
   main as it stands. A quest that names a row as landed while its merge is still being tested sends the builder to ask
   whether to merge the unreviewed branch.
