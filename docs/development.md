@@ -190,8 +190,8 @@ A run killed outright leaves its logs in the tree; the next run keeps them there
 
 ### Work the local install builds
 
-The install's driven sessions build rows of this repository in their own trees. Three practices keep one line of work in one
-place (learned 2026-10-23 and 24, LIMITGOON1 and LIMITRESUME1d):
+The install's driven sessions build rows of this repository in their own trees. Four practices keep one line of work in one
+place (learned 2026-10-23 and 24, LIMITGOON1, LIMITRESUME1d and REVIEWLANDED1):
 
 - **A stuck session is resumed in place,** never re-published as a new quest. Answer its park, resume it (`sessions say`,
   `help resume`), or let its quest go on. A new quest for the same work opens a second tree, and both must later rebase onto
@@ -202,6 +202,11 @@ place (learned 2026-10-23 and 24, LIMITGOON1 and LIMITRESUME1d):
 - **Publish a quest that builds on another row only once that row's landing is committed.** A session's tree starts from
   main as it stands. A quest that names a row as landed while its merge is still being tested sends the builder to ask
   whether to merge the unreviewed branch.
+- **A landing is done when Daoris says so.** After committing a session's landing, `daoris-driver trees land <session>
+  --plan` must answer that its branch holds nothing `main` does not. Where it lists commits, `main` lacks them: a session
+  told to rebase after its landing may have made new ones, and they are work to land, not a stale row. Where the work is on
+  `main` only as a replay or by a hand-resolved conflict, a no-content merge (`git merge -s ours <its branch>`) records it as
+  held, and a press of *Accept* then lands nothing and clears its review row (REVIEWLANDED1 is the fix in Daoris).
 
 ### The CI between releases
 
