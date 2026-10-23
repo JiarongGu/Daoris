@@ -82,6 +82,42 @@ describe('what needs a person, worded', () => {
     expect(words(quiet({}), names)).toMatchObject({ kind: 'quiet', title, session: 's1a2b3c4', quest: '7a82cc' });
   });
 
+  /**
+   * HELPERWAIT1c (the co-worker design §5 point 4, §12 row 11): a session whose helper ended unanswered and whose move back to the person
+   * the service refused is named as Sessions names it, says what happened in the reader's language with the service's refusal passed
+   * through as said, holds work as its park would, opens its session, and is offered nothing to press but its door.
+   */
+  it('words a refused move back to the person with the refusal as said, in each language, and holds work', async () => {
+    const refusal = 'Session `s1a2b3c4`’s tree is held by s-2.';
+    const pushed = row('helper-ended', 's1a2b3c4', '2026-10-23T09:30:00Z', {
+      workspace: 'default', where: 'engine', session: 's1a2b3c4', quest: '7a82cc', detail: refusal,
+    });
+    const names = { sessions: [session({ quest: '7a82cc', state: 'completed' })], quests: [quest({ status: 'Taken' })] };
+    const title = 'Expose a streaming budget on the chunk API';
+
+    expect(words(pushed, names)).toEqual({
+      id: 's1a2b3c4', kind: 'helper-ended', since: '2026-10-23T09:30:00Z', where: 'engine', title, session: 's1a2b3c4', quest: '7a82cc',
+      detail: `${title} waited on its helper, which ended without an answer. Daoris could not bring it back to you, because the service `
+        + `refused: ${refusal} It keeps its tree until you look at it.`,
+    });
+    expect(attentionActs(words(pushed, names))).toEqual([]);
+    expect(attentionGroup(pushed)).toBe('holding');
+    expect(ATTENTION_PLACE['helper-ended']).toBe('sessions');
+    expect(keyed([row('quiet', 'q', '2026-10-23T09:30:00Z'), pushed, row('parked', 'p', '2026-10-23T09:30:00Z')]))
+      .toEqual(['parked:p', 'helper-ended:s1a2b3c4', 'quiet:q']);
+    // A record not in hand is named by its id.
+    expect(words(row('helper-ended', 'g0n3', null, { session: 'g0n3', detail: 'refused' })).title).toBe('#g0n3');
+    await i18n.changeLanguage('zh');
+    try {
+      expect(words(pushed, names).detail).toBe(
+        `${title} 在等它的助手，助手没有答复就结束了。Daoris 没能把它交回给你，因为服务拒绝了：${refusal} 在你查看之前，它一直占着自己的工作树。`,
+      );
+      expect(i18n.t('work.attention.helper-ended')).toBe('助手未答复');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
   it('names a parked session by its derived identity, with the analysis it is waiting on', () => {
     const pushed = row('parked', 's1a2b3c4', '2026-09-21T10:00:00Z', { workspace: 'default', where: 'engine', note: { note: 'two ways forward.' } });
 
@@ -502,7 +538,7 @@ describe('the groups', () => {
   it('puts each kind in its group', () => {
     expect(ATTENTION_GROUP).toEqual({
       parked: 'holding', 'parked-quest': 'holding', 'go-ahead': 'holding', permission: 'holding', answer: 'holding',
-      confirmation: 'holding', trust: 'holding', quiet: 'holding',
+      confirmation: 'holding', trust: 'holding', quiet: 'holding', 'helper-ended': 'holding',
       'account-wait': 'holding', 'signed-out': 'holding',
       proposal: 'word', intake: 'word', departure: 'word', 'set-up': 'word', opinion: 'word', rule: 'word', helper: 'word',
       'hand-over': 'word', unanswerable: 'word', review: 'ready', work: 'word', space: 'word', 'git-held': 'word',
@@ -820,7 +856,7 @@ describe('the place each wait is counted at', () => {
   it('is the place its door opens, for every kind', () => {
     expect(ATTENTION_PLACE).toEqual({
       parked: 'sessions', review: 'sessions', opinion: 'sessions', helper: 'sessions', 'hand-over': 'sessions',
-      permission: 'sessions', answer: 'sessions', quiet: 'sessions',
+      permission: 'sessions', answer: 'sessions', quiet: 'sessions', 'helper-ended': 'sessions',
       proposal: 'quests', intake: 'quests', unanswerable: 'quests', 'parked-quest': 'quests', 'go-ahead': 'quests',
       departure: 'quests', 'set-up': 'quests', trust: 'quests',
       work: 'projects',

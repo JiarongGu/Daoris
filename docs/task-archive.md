@@ -19852,3 +19852,12 @@ nothing), `LookWaitTests` (follow and tidy not begun while held, both run once l
 (the host's start under `cef_initialize`, where before it came about 5 s after `driver`), `browser` following `shown` with
 little wait on the host, `page` about the first screen's data, `splash` within a few hundred ms of `page`, `by=page`, and no
 `request.failed` for `/api/confirmations/waiting`. Detail: D56's STARTFAST1b note. On Opus.
+## HELPERWAIT1c — a move back to the person the service refuses shows in *What needs you* (2026-10-23)
+
+> - [ ] **HELPERWAIT1c — a move back to the person the service refuses shows in *What needs you*** (driver, modules, web; found 2026-10-23 in COWORKUX1's round 3, Codex's round-2 #5; named HELPERWAIT1b until COWORKUX1's round 4, and a prerequisite of COWORKUX1a's landing and install proof since then, Codex's round-3 #6). A session waiting on its own helper whose helper ended unanswered, and whose move back to the person the service refused, stays `completed` and is said by a `Wait` look line (`DriverHelpers.cs:336`) whose class promises a row of *What needs you* (`LookSaid.cs:12`) that no record carries; and the go-ahead read the service does not answer parks the turn (`DriverHelpers.cs:179-194`) with no case proving it. Proof: a refused move puts the session in *What needs you* with the refusal, in en and zh, and an unreachable service does not; a go-ahead read that fails parks (design §11 row 11).
+
+**Outcome** 2026-10-23: the driver keeps a refused move back to the person as `<session>.back.json` beside the helper's asks, with
+the service's words, from its first refusal, and lets it go once the move lands or the session no longer waits; an unreachable
+service keeps none. *What needs you* reads it as a `helper-ended` row in *Holding work*, worded in en and zh with the refusal passed
+through, its door the session. The go-ahead read that fails is proved to park. COWORKUX1a's first showing no longer waits on it.
+Detail: FIX-LOG 2026-10-23 (HELPERWAIT1c), D203's HELPERWAIT1c note. On Opus.

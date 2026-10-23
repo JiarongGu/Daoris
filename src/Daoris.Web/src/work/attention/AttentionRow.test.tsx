@@ -456,6 +456,32 @@ describe('settling one where it stands', () => {
     expect(screen.getByRole('button', { name: /Open/ })).toBeInTheDocument();
   });
 
+  /**
+   * HELPERWAIT1c (the co-worker design §5 point 4): a refused move back to the person says what happened, the refusal as the service
+   * said it, and its one control, the door to its session, in each language.
+   */
+  it('says a refused move back to the person with its refusal, and opens its session, in each language', async () => {
+    const back: Attention = {
+      id: 's1a2b3c4', kind: 'helper-ended', title: 'Expose a streaming budget on the chunk API', where: 'engine', since: '2026-10-23T09:00:00Z',
+      session: 's1a2b3c4', detail: 'Expose a streaming budget on the chunk API waited on its helper, which ended without an answer.',
+    };
+    const open = vi.fn();
+    const { unmount } = render(<AttentionRow item={back} acts={everyAct()} onOpen={open} />);
+    expect(screen.getByText('its helper did not answer')).toBeInTheDocument();
+    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(['Open']);
+    await userEvent.click(screen.getByRole('button', { name: 'Open' }));
+    expect(open).toHaveBeenCalledWith(back);
+    unmount();
+    await i18n.changeLanguage('zh');
+    try {
+      render(<AttentionRow item={back} onOpen={vi.fn()} />);
+      expect(screen.getByText('助手未答复')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '打开' })).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
   it('says an agent’s ask to hand over and its presses in 中文', async () => {
     await i18n.changeLanguage('zh');
     try {

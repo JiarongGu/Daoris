@@ -354,14 +354,22 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     /// so waiting for it to move would hold the lead for good. A service that could not be reached is said as a retry; one that refused the
     /// move (a service from before it, a tree another holds) is said to the person as a wait, since the session is theirs until it moves.
     /// One post a look, for a record in this rare state alone.
+    /// <para><b>A refusal is kept on file</b> (HELPERWAIT1c; the co-worker design §5 point 4, §12 row 11): the record stays
+    /// <c>completed</c>, so no park row says it, and its <see cref="HelperBack"/> is what <i>What needs you</i> says it from, with the
+    /// service's words, from the first refusal. An unreachable service keeps none and leaves one kept as it was: nothing new was said. It
+    /// goes once the move lands, and at the first look the session is no longer brought back: its quest closed, an ask of its own open
+    /// again, words waiting on it, or no longer waiting at all.</para>
     /// </remarks>
     private async Task BackToPersonAsync(
         Snapshot snapshot, IReadOnlyList<HelperAsk> asks, HelperFiles files, List<string> events, CancellationToken ct)
     {
+        var refused = files.Backs().ToDictionary(back => back.Session, StringComparer.Ordinal);
+        var still = new HashSet<string>(StringComparer.Ordinal);
         foreach (var record in snapshot.LastRun.Values.Where(HelperWaits.Waits))
         {
             if (!snapshot.Quests.Any(quest => quest.Status == "Taken" && string.Equals(quest.Id, record.Quest, StringComparison.OrdinalIgnoreCase))) continue;
             if (HelperWaits.Open(record.Session, asks, files.ReadState).Count > 0) continue;
+            still.Add(record.Session);
 
             var transcript = DaorisHome.Entry(_context.Home, HomeEntry.Sessions, $"{record.Session}.log");
             var back = Observation.HelperGone(
@@ -370,6 +378,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
             {
                 await _context.Service.AdvanceAsync(record.Session, back.State, back.Note, ct: ct, parts: back.Parts).ConfigureAwait(false);
                 lock (_heldGate) _backFailed.Remove(record.Session);
+                still.Remove(record.Session);
                 events.Add(_context.Said.Wait(
                     "helper", $"helper  session {record.Session} waited on its own helper, which ended with no answer: it waits on the person again."));
             }
@@ -380,6 +389,12 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                 var line = error is DriverException
                     ? Helper(LookClass.Wait, $"helper  session {record.Session} waited on its own helper, which ended with no answer; the service refused bringing it back to the person, so it is yours to look at: {error.Message}")
                     : Helper(LookClass.Retry, $"helper  session {record.Session} waited on its own helper, which ended with no answer, and could not be brought back to the person yet; it is tried again at the next look: {error.Message}");
+                if (error is DriverException
+                    && (!refused.TryGetValue(record.Session, out var kept) || kept.Words != error.Message || kept.Quest != record.Quest))
+                {
+                    files.WriteBack(new HelperBack(record.Session, record.Quest, error.Message, kept?.At ?? DateTimeOffset.UtcNow));
+                }
+
                 lock (_heldGate)
                 {
                     if (_backFailed.TryGetValue(record.Session, out var said) && said == line.Text) continue;
@@ -389,6 +404,8 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                 events.Add(_context.Said.Say(line));
             }
         }
+
+        foreach (var gone in refused.Keys.Where(session => !still.Contains(session))) files.ClearBack(gone);
     }
 
     /// <summary>

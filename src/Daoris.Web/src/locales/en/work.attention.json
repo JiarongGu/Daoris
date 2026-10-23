@@ -77,6 +77,8 @@
   "work.attention.signedOut.refused": "Key refused: put a new API key into it on {{product}}'s page.",
   "work.attention.helper": "an agent asks for a helper",
   "work.attention.helperWhy": "{{session}} asked for another agent’s help. Nothing is asked until you let it.",
+  "work.attention.helper-ended": "its helper did not answer",
+  "work.attention.helperEndedWhy": "{{session}} waited on its helper, which ended without an answer. Daoris could not bring it back to you, because the service refused: {{words}} It keeps its tree until you look at it.",
   "work.attention.hand-over": "an agent asks to hand over",
   "work.attention.quiet": "quiet, nothing running",
   "work.attention.quietBusy": "busy, nothing heard",

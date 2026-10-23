@@ -88,6 +88,9 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   // A session the watcher brings to the person (SESSWATCH1a, D200, the session-watch design §5.2): it holds its slot and its tree, and
   // its work stands still until they press, or it is heard again.
   quiet: 'holding',
+  // A session whose helper ended unanswered and whose move back to the person the service refused (HELPERWAIT1c, the co-worker
+  // design §5 point 4): the park row it would have had, holding its tree until they look.
+  'helper-ended': 'holding',
   unanswerable: 'word',
   review: 'ready',
 };
@@ -132,6 +135,8 @@ export const ATTENTION_PLACE: Readonly<Record<AttentionKind, AttentionPlace | nu
   answer: 'sessions',
   // SESSWATCH1a: a quiet session's page holds its presses too.
   quiet: 'sessions',
+  // HELPERWAIT1c: a refused move back to the person opens its session, as its park would.
+  'helper-ended': 'sessions',
   // An ask's page or a quest's: publishing, an intake's question, a quest nobody can take, *Try again*, a go-ahead on its ask, a
   // departure's yes, a set-up's review, a folder's trust for what it holds.
   proposal: 'quests',
@@ -224,6 +229,8 @@ export function rowRun(item: Attention): { session?: string | null; quest?: stri
     // The work's session waits on the person's answer; the landing on their accept, in its review.
     case 'parked':
     case 'review': return { session: item.id };
+    // HELPERWAIT1c: the session that would have parked, its move back to the person refused.
+    case 'helper-ended': return { session: item.session ?? item.id };
     // The work's act waits on the person's go-ahead, asked by the session the row names.
     case 'go-ahead': return item.session ? { session: item.session } : null;
     // The look waits on the person: the set-up step's session, else the step's newest here.
@@ -565,13 +572,13 @@ export type AttentionPushed = {
 };
 
 /**
- * Each kind's place among the kinds of its group when two waited as long (design §6.2's order of kinds): the accounts', parks,
- * parked quests, go-aheads, held calls, held answers (COWORK1e), a terminal's presses (CONFIRMSEEN1) and folders; then asks,
+ * Each kind's place among the kinds of its group when two waited as long (design §6.2's order of kinds): the accounts', parks, a
+ * move back to the person refused (HELPERWAIT1c), parked quests, go-aheads, held calls, held answers (COWORK1e), a terminal's presses (CONFIRMSEEN1) and folders; then asks,
  * departures, set-ups, second opinions, widenings, helpers, hand-overs, a unit's blocked clean-up, a held attempt, a volume below its
  * floor, a held git remote (GITAUTH1a) and quests nobody can take; then review.
  */
 const KIND_ORDER: readonly AttentionKind[] = [
-  'account-wait', 'signed-out', 'parked', 'parked-quest', 'go-ahead', 'permission', 'answer', 'confirmation', 'trust',
+  'account-wait', 'signed-out', 'parked', 'helper-ended', 'parked-quest', 'go-ahead', 'permission', 'answer', 'confirmation', 'trust',
   'quiet', 'proposal', 'departure', 'set-up', 'opinion', 'rule', 'helper', 'hand-over', 'work', 'space', 'git-held', 'unanswerable',
   'review',
 ];
@@ -785,6 +792,16 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         ...(quiet ? { quiet } : {}),
       };
     }
+    // HELPERWAIT1c (the co-worker design §5 point 4): the session as Sessions names it, that its helper ended unanswered, and the
+    // service's refusal as it said it, a value passed through, never re-worded.
+    case 'helper-ended':
+      return {
+        ...base,
+        title: named(row.session ?? row.id),
+        detail: i18n.t('work.attention.helperEndedWhy', { session: named(row.session ?? row.id), words: row.detail ?? '' }),
+        session: row.session ?? row.id,
+        ...(row.quest ? { quest: row.quest } : {}),
+      };
     // NOTIFY2e: its note's first line as the agent wrote it, the session as Sessions names it, and the agent as the roster names it.
     case 'hand-over': {
       const agent = row.agent ? agentNamed(row.agent, names.tools) : null;

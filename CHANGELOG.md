@@ -10,6 +10,10 @@ with the version and date at release.
   `--time` it lists every git the read started: which read it was, whose (the review, its untracked files, a landing's review or
   the Accept offer), and how long it waited to start, took to start and ran. Each Review read now writes a `review.read` line to
   the machine log, with its time and its counts and no path. What Review shows is unchanged.
+- A session waiting on its own helper is no longer stuck out of sight when Daoris cannot bring it back to you (HELPERWAIT1c). Where
+  the helper ended with no answer and the service refused to move the session back to you, it is now a row in *What needs you*:
+  *its helper did not answer*, with the service's reason. *Open* takes you to the session, which keeps its tree until you look. A
+  service that could not be reached is still tried again at each look, and shows no row.
 - A session tree opened before the install's folders were rearranged is landed, removed and tidied again (TREEPLACE1). Such
   trees stay in the install's `data/trees/` while new ones open in `work/trees/`. *Accept*, `trees land` and `trees remove`
   refused them as not a session tree, and the tidy kept them after their work was on the line. Both places now hold Daoris's

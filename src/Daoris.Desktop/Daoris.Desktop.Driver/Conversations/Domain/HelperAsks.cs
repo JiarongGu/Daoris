@@ -151,3 +151,14 @@ public sealed record HelperState(string Id, string State, string? Code, string? 
 
 /// <summary>A helper's answer as <c>&lt;askId&gt;.answer.json</c> keeps it, written by <c>helper_answer</c> once.</summary>
 public sealed record HelperAnswer(string Id, string Helper, string Answer, DateTimeOffset At);
+
+/// <summary>
+/// A session that waited on its own helper, whose helper ended with no answer, and whose move back to the person the service refused
+/// (HELPERWAIT1c; the co-worker design §5 point 4, §12 row 11): <c>&lt;session&gt;.back.json</c>, the driver's alone, kept while the
+/// refusal stands so <i>What needs you</i> has a record to say it from. An unreachable service keeps none: that is a retry.
+/// </summary>
+/// <param name="Session">The session that waits, and the file's name.</param>
+/// <param name="Quest">The quest it holds.</param>
+/// <param name="Words">The service's refusal, as it said it: content, shown as written.</param>
+/// <param name="At">When the service first refused it, which the row's wait counts from.</param>
+public sealed record HelperBack(string Session, string? Quest, string Words, DateTimeOffset At);
