@@ -49,7 +49,7 @@ public sealed class DriverHostTests : IDisposable
 
         Assert.Equal(2, code);
         Assert.Contains("usage: daoris-driver", said);
-        Assert.Contains("drive [--once | --until-idle] [--share]", said);
+        Assert.Contains("drive [--once | --until-idle] [--quiet-end <minutes>] [--share]", said);
         Assert.Equal(0, service.Requests);
         Assert.False(File.Exists(LockFile));
     }
