@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import i18n from '../locales/i18n';
 import type { Session } from '../data/api';
-import { actorRows, ranLine } from './actors';
+import { actorRows, choiceChip, ranLine } from './actors';
 
 const record = {
   actor: 'build', choice: 'before',
@@ -26,6 +26,14 @@ describe('D205 actor provenance', () => {
   it('distinguishes an explicit default alias from account default', () => {
     const changed = { ...record, asked: { ...record.asked!, model: { source: 'account-default' as const, carried: false } } };
     expect(actorRows(i18n.t, changed).find((row) => row.label === 'Asked model · effort')?.value).toContain('account default');
+  });
+  it('wears the head chip only for a later choice or the person’s pick (MODELROLE1c2, D205 §4.6)', async () => {
+    expect(['1', 'before', 'rule-default', 'handed', null].map((choice) => choiceChip(i18n.t, { choice }))).toEqual([null, null, null, null, null]);
+    expect(choiceChip(i18n.t, { choice: '2' })).toBe('choice 2');
+    expect(choiceChip(i18n.t, { choice: 'pick' })).toBe('your pick');
+    await i18n.changeLanguage('zh');
+    expect(choiceChip(i18n.t, { choice: '3' })).toBe('选择 3');
+    expect(choiceChip(i18n.t, { choice: 'pick' })).toBe('你指定的');
   });
   it('translates the chrome while preserving the agent names', async () => {
     await i18n.changeLanguage('zh');

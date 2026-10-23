@@ -16,6 +16,7 @@ import { AwaitingPerson, type QuestClose, type Resolution } from '../waits/Await
 import type { ParkQuestion } from '../waits/parkQuestion';
 import { type DetailRow, DetailsFold } from './DetailsFold';
 import { AccessChip, accessRow, startedFull } from '../AccessFact';
+import { ChoiceChip } from './ChoiceChip';
 import type { WaitEvents } from '../waits/anchors';
 import type { Answered } from '../InlineConfirm';
 import type { LineBehind } from '../review/diff';
@@ -461,7 +462,9 @@ export function SessionHead({
             {sessionTitle(session, quest, opening)}
           </h2>
           <span className="shrink-0"><Pill tone={SESSION_TONE[shown]}>{t(shownKey(shown))}</Pill></span>
-          {/* With no header's facts line to wear it, the full-access chip follows the word (SESSACCESS1). */}
+          {/* With no header's facts line to wear them, the choice its actor ran (D205 §4.6) and the full-access chip follow the word
+              (SESSACCESS1). */}
+          <ChoiceChip session={session} />
           {startedFull(session) && <AccessChip />}
         </div>
       )}

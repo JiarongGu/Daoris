@@ -118,6 +118,7 @@
   "agents.rules.summary.mine_other": "你的 {{count}} 条规则",
   "agents.rules.summary.proposals": "{{count}} 条提议待处理",
   "agents.rules.summary.proposals_other": "{{count}} 条提议待处理",
+  "agents.settings.actors": "角色以账户默认运行此智能体时使用；角色指定的模型优先于它。",
   "agents.settings.summary.default": "工具自身的默认值",
   "agents.settings.summary.set": "{{count}} 个账户有自己的设置",
   "agents.settings.summary.set_other": "{{count}} 个账户有自己的设置",

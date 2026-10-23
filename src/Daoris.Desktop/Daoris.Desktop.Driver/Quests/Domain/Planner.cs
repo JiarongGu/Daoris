@@ -788,7 +788,17 @@ public sealed record SessionView(
 /// the account (null for the tool's own sign-in), when it was opened, and whether it runs now. Read on loopback alone,
 /// where the record names its account (D47 §4); a teammate's record is not this machine's.
 /// </summary>
-public sealed record SessionStarted(string Adapter, string? Profile, DateTimeOffset? Created, bool Running);
+public sealed record SessionStarted(string Adapter, string? Profile, DateTimeOffset? Created, bool Running)
+{
+    /// <summary>The record's id, which <see cref="HarnessRoster.Release"/> reads to make a refused open's record not running.</summary>
+    public string? Id { get; init; }
+
+    /// <summary>
+    /// Its record ended <c>choice-not-offered</c> (D205 §3.5(c), MODELROLE1c2): set from the end code where the look builds it, so the walk
+    /// counts it neither running nor last started, and the refusing account is not read as just used.
+    /// </summary>
+    public bool NotOffered { get; init; }
+}
 
 /// <summary>
 /// A start of this machine's loop that has not yet opened its record (PARALLEL1b, D181 point 3): reserved by the look that began it,

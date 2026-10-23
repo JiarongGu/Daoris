@@ -4,6 +4,8 @@ import type { Session } from '../../data/api';
 import { Button, Icon, Inline, Menu, Pill, SESSION_TONE, type ShownState, shownKey, Tip } from '../../design/ui';
 import { useWidth } from '../../design/useWidth';
 import { AccessChip, startedFull } from '../AccessFact';
+import { choiceChip } from '../actors';
+import { ChoiceChip } from './ChoiceChip';
 import { ACT_LOOK, actMenu, headerActs, type SessionActId } from '../acts';
 import { type Answered, InlineConfirm } from '../InlineConfirm';
 import { PageHead } from '../frame/ViewMain';
@@ -104,7 +106,15 @@ export function SessionPageHead({ session, title, shown, facts = [], factsTip, a
         factsTip={factsTip ?? undefined}
         // Started under full access, by its record's pauses (SESSACCESS1, D184 point 1): the warning chip, last on the line, so the
         // line is cut before it rather than cutting it. Any other start wears nothing.
-        fact={startedFull(session) ? <AccessChip /> : undefined}
+        // The choice its actor ran where it was not the first (D205 §4.6 item 2), before the access chip.
+        fact={choiceChip(t, session) !== null || startedFull(session)
+          ? (
+            <span className="inline-flex items-center gap-1.5">
+              <ChoiceChip session={session} />
+              {startedFull(session) && <AccessChip />}
+            </span>
+          )
+          : undefined}
         // One group names the buttons together, the ⋯ with them (its name is how the page's tests and readers find them), so
         // the ⋯ is inside `acts` rather than PageHead's `more` slot: the two sit in one flex row either way, and *Stop…* is
         // never PageHead's `fold`.

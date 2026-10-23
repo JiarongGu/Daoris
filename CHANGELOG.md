@@ -8,6 +8,12 @@ with the version and date at release.
 - A session that carries on work another maker's agent left uncommitted in its tree is now told that maker's Co-Authored-By
   trailer too (MAKERTRAIL2). It names the model that agent reported, or *model unreported*, so a commit holding that work
   credits both makers. A carry-on with the same maker is told nothing more.
+- A Build choice whose model one of the agent's accounts does not offer now runs on another account that does
+  (MODELROLE1c2). Where none of them does, the next choice runs. Daoris remembers the refusal for a day and does not try that
+  account with that model again until then. A session that never started because of it is not counted as a failure and sends no
+  notice. A session that ran a later choice wears a *choice 2* chip on its header, and *your pick* where you picked the agent.
+  Its conversation opens by saying which choices were passed and why. The Agents page's *Model and effort* now says that an
+  account's own model is used where an actor runs at the account default.
 - Work landed on the line as a squash, together with another session's work, is now recognised as each session's own
   (SQUASHSEEN1). Those sessions are no longer told to rebase onto work the line already holds. Each one's page offers *Discard
   branch…* in place of *Accept…*, saying a squash carried its work, and its tree is tidied as a landed one is. A session with

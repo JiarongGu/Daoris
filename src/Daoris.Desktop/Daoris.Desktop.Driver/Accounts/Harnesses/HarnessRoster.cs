@@ -892,10 +892,17 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// <param name="workspace">The repository's circle, for its pinned version (D49 §4); every workspace reads the one set.</param>
     /// <param name="chosen">The person's pick for this session, when they made one.</param>
     /// <param name="kind">Driven work or a conversation: driven work never starts on the scope's kept account (§4.6).</param>
+    /// <param name="model">
+    /// The model the start asks (D205 §4.1, MODELROLE1c2): each account's offer reading is judged for it (<see cref="AgentOffers"/>), and
+    /// one that does not offer it or refused it is passed for this start, never cooled; null for account default, which no reading passes.
+    /// </param>
+    /// <param name="passed">The accounts this start already passed for this model (§4.1's per-start set): never a cool-off, never stored.</param>
+    /// <param name="except">The start's own count (§4.1's re-ask), left out of the accounts' facts so its own load does not bias the order.</param>
     public Task<HarnessSelection> SelectAsync(
         string adapter, DriverConfig config, string? workspace, string? chosen,
-        StartKind kind = StartKind.Driven, CancellationToken ct = default) =>
-        ChooseAsync(adapter, config, workspace, chosen, kind, counts: true, ct);
+        StartKind kind = StartKind.Driven, CancellationToken ct = default, string? model = null,
+        IReadOnlyCollection<string>? passed = null, long except = 0, bool counts = true) =>
+        WalkAsync(adapter, config, workspace, chosen, kind, counts, ownHome: false, ct, new OfferAsk(model, passed, except));
 
     /// <summary>
     /// A handed quest's start (MIXAGENT1a-ii, D163 point 1): the account the hand-over named is asked for first, as a person's pick
@@ -904,16 +911,19 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// </summary>
     /// <param name="account">The account the hand-over named, or null for the walk alone.</param>
     /// <returns>The selection, and the account named that could not run it, or null where it did or none was named.</returns>
+    /// <param name="model">The model the start asks, its accounts judged by their readings for it (<see cref="SelectAsync"/>).</param>
+    /// <param name="passed">The accounts this start already passed for that model.</param>
     public async Task<(HarnessSelection Selection, string? Passed)> SelectHandedAsync(
-        string adapter, DriverConfig config, string? workspace, string? account, StartKind kind, CancellationToken ct = default)
+        string adapter, DriverConfig config, string? workspace, string? account, StartKind kind, CancellationToken ct = default,
+        string? model = null, IReadOnlyCollection<string>? passed = null, long except = 0, bool counts = true)
     {
         var named = string.IsNullOrWhiteSpace(account) ? null : account.Trim();
-        if (named is null) return (await SelectAsync(adapter, config, workspace, chosen: null, kind, ct).ConfigureAwait(false), null);
+        if (named is null) return (await SelectAsync(adapter, config, workspace, chosen: null, kind, ct, model, passed, except, counts).ConfigureAwait(false), null);
 
-        var asked = await SelectAsync(adapter, config, workspace, chosen: named, kind, ct).ConfigureAwait(false);
+        var asked = await SelectAsync(adapter, config, workspace, chosen: named, kind, ct, model, passed, except, counts).ConfigureAwait(false);
         if (asked.Allowed) return (asked, null);
 
-        return (await SelectAsync(adapter, config, workspace, chosen: null, kind, ct).ConfigureAwait(false), named);
+        return (await SelectAsync(adapter, config, workspace, chosen: null, kind, ct, model, passed, except, counts).ConfigureAwait(false), named);
     }
 
     /// <summary>
@@ -938,9 +948,13 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// asked first as the walk asks a just-reset account, a reading still out held as cooling; and, cooling, its words never wait for it
     /// (<see cref="ResumeChoice.Limited"/>), since they go where the line goes.
     /// </param>
+    /// <param name="model">
+    /// The record's asked model (D205 §3.5(a), MODELROLE1c2): an own account whose reading refuses it cannot carry the words, which go to
+    /// a new record on another account of the same choice, the own account passed, as an own account signed out does.
+    /// </param>
     public async Task<ResumeChoice> ResumeAsync(
         string adapter, DriverConfig config, string? workspace, string? account, StartKind kind, bool newSession = false,
-        bool walks = true, CancellationToken ct = default, bool limited = false)
+        bool walks = true, CancellationToken ct = default, bool limited = false, string? model = null)
     {
         var resolved = adapters.Resolve(adapter);
         if (resolved.Toolchain is not { } toolchain)
@@ -948,6 +962,12 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             // An adapter with no accounts has nothing to ask for: it spawns as it always did.
             return new ResumeChoice(await SelectAsync(adapter, config, workspace, chosen: null, kind, ct).ConfigureAwait(false), NextHold.Ready);
         }
+
+        // The own account's reading judged for the asked model before anything is asked of it (D205 §3.5(a)): one that refuses it is an
+        // account that cannot carry the words, never ended or cooled.
+        var unoffered = !string.IsNullOrWhiteSpace(account) && model is not null
+            && AgentOffers.Judge(AgentOffers.Read(Home), resolved.Name, (await ReportAsync(resolved.Name, config, refresh: false, ct).ConfigureAwait(false))?.Version,
+                account.Trim(), model, Clock()) is not null;
 
         var owner = toolchain.Owner(resolved.Name);
         var named = string.IsNullOrWhiteSpace(account) ? null : account.Trim();
@@ -989,6 +1009,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         }
 
         if (own != NextHold.Ready) return await ElsewhereAsync(own).ConfigureAwait(false);
+        if (unoffered) return await ElsewhereAsync(NextHold.Refused, notOffered: true).ConfigureAwait(false);
 
         // Ready before any probe: asked for by name, as a pick is; a record that began in the tool's own home goes on there, as a
         // harness keeps a conversation in the home it began in (D175 point 3), where every new start takes a Daoris account.
@@ -997,14 +1018,19 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             ? await ElsewhereAsync(NextHold.SignedOut).ConfigureAwait(false)
             : new ResumeChoice(asked, NextHold.Ready);
 
-        async Task<ResumeChoice> ElsewhereAsync(NextHold held) => new(
+        // Where the own account does not offer the model, the walk takes the same choice's other accounts with the own one passed (§3.5(a)).
+        async Task<ResumeChoice> ElsewhereAsync(NextHold held, bool notOffered = false) => new(
             walks
-                ? await SelectAsync(adapter, config, workspace, chosen: null, kind, ct).ConfigureAwait(false)
-                : new HarnessSelection(ResumeWords.Line(held, newSession)?.Note ?? "Its own account cannot carry it.") { Cooling = before.Cooling },
+                ? await SelectAsync(adapter, config, workspace, chosen: null, kind, ct, model, notOffered && named is not null ? [named] : null)
+                    .ConfigureAwait(false)
+                : new HarnessSelection(notOffered
+                    ? $"Its own account `{AccountNames.Said(names, named!)}` does not offer `{model}`."
+                    : ResumeWords.Line(held, newSession)?.Note ?? "Its own account cannot carry it.") { Cooling = before.Cooling },
             held)
         {
             NewSession = newSession && held == NextHold.Cooling,
             Limited = limited,
+            NotOffered = notOffered,
         };
     }
 
@@ -1017,9 +1043,11 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// <param name="account">The account a hand-over named, which the walk asks for first, or null.</param>
     /// <returns>The selection, and the account named that could not run it, as <see cref="SelectHandedAsync"/> answers.</returns>
     public async Task<(HarnessSelection Selection, string? Passed)> CarriedOnAsync(
-        ResumeChoice resume, string adapter, DriverConfig config, string? workspace, string? account, CancellationToken ct = default) =>
+        ResumeChoice resume, string adapter, DriverConfig config, string? workspace, string? account, CancellationToken ct = default,
+        string? model = null) =>
+        // The carry-on walks the asked choice's accounts, each judged by its reading for the record's model (D205 §3.5(a)).
         resume.Selection is { Allowed: true, Profile: null }
-            ? await SelectHandedAsync(adapter, config, workspace, account, StartKind.Driven, ct).ConfigureAwait(false)
+            ? await SelectHandedAsync(adapter, config, workspace, account, StartKind.Driven, ct, model).ConfigureAwait(false)
             : (resume.Selection, null);
 
     /// <summary>
@@ -1029,9 +1057,18 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// <param name="own">A resume of a record that began in the tool's own home, which goes on there (D175 point 3).</param>
     private Task<HarnessSelection> ChooseAsync(
         string adapter, DriverConfig config, string? workspace, string? chosen, StartKind kind, bool counts, CancellationToken ct,
-        bool own = false) =>
+        bool own = false, string? model = null) =>
         // No gate here (PARALLEL1c): the walk takes its own only to read again and count, never across a question.
-        WalkAsync(adapter, config, workspace, chosen, kind, counts, own, ct);
+        WalkAsync(adapter, config, workspace, chosen, kind, counts, own, ct, new OfferAsk(model, null, 0));
+
+    /// <summary>
+    /// What a walk judges each account's offer reading for (D205 §4.1, round 4, Opus N12; MODELROLE1c2): the model the start asks, the
+    /// accounts this start already passed for it, and its own count, left out of the facts so a re-ask ranks without its own load.
+    /// </summary>
+    private sealed record OfferAsk(string? Model, IReadOnlyCollection<string>? Passed, long Except)
+    {
+        public static OfferAsk None { get; } = new(null, null, 0);
+    }
 
     /// <summary>
     /// The scope a start walks (OWNSPACE1a, D175 points 1-2 and its OWNSPACE1a note): <paramref name="scope"/>, unless it names no
@@ -1074,8 +1111,9 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
 
     private async Task<HarnessSelection> WalkAsync(
         string adapter, DriverConfig config, string? workspace, string? chosen, StartKind kind, bool counts, bool ownHome,
-        CancellationToken ct)
+        CancellationToken ct, OfferAsk? offer = null)
     {
+        offer ??= OfferAsk.None;
         var resolved = adapters.Resolve(adapter);
 
         // An adapter that declares no toolchain has nothing to check: it spawns exactly as it did
@@ -1108,7 +1146,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
 
         // The first look, before any question: read again under the gate once the questions are asked (PARALLEL1c).
         var now = Clock();
-        var (order, _) = OrderOf(owner, scope, kind, picked, ownHome, now);
+        var (order, _) = OrderOf(owner, scope, kind, picked, ownHome, now, offer.Except);
 
         // What a hold says names each account by the person's name, read now, as it is said (ACCT2b); the selection's facts
         // and the record's opening line keep the ids.
@@ -1213,16 +1251,23 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         // owes an account, a wait for the chosen account's lock, and every other question are outside it: a question that does
         // not answer on one account holds no start on another.
         var walk = new WalkMemory();
+        // Each account's offer reading, judged for the model this start asks (D205 §3.3, MODELROLE1c2): an account passed already, or
+        // whose reading of this version, under a day old, lacks or refused it, is passed for this start, never cooled.
+        var readings = offer.Model is null ? [] : AgentOffers.Read(Home);
+        string? Offers(string account) =>
+            offer.Passed?.Contains(account, StringComparer.OrdinalIgnoreCase) == true
+                ? AgentOffers.NotOffered
+                : AgentOffers.Judge(readings, resolved.Name, report?.Version, account, offer.Model, Clock());
         WalkPass pass;
         while (true)
         {
             if (counts)
             {
-                lock (_walking) pass = Pass(owner, scope, kind, picked, ours, counts, names, walk);
+                lock (_walking) pass = Pass(owner, scope, kind, picked, ours, counts, names, walk, Offers, offer.Except);
             }
             else
             {
-                pass = Pass(owner, scope, kind, picked, ours, counts, names, walk);
+                pass = Pass(owner, scope, kind, picked, ours, counts, names, walk, Offers, offer.Except);
             }
 
             if (pass.Held is { } hold) return hold;
@@ -1279,7 +1324,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
                 ? new Dictionary<string, string> { [variable] = held }
                 : null;
 
-        var selection = new HarnessSelection(null, runs, home, report?.Version, managed, claude, key);
+        var selection = new HarnessSelection(null, runs, home, report?.Version, managed, claude, key) { Number = pass.Number };
         if (picked is not null || scope.List.Count == 0 || scope.Begins is not { } begins) return selection;
 
         // Said by whoever opens the record (TOOL4f, §3.6; TOOL6b, §16.4): its first line and `account.rotated`, with what each
@@ -1316,12 +1361,12 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// is read.
     /// </summary>
     private (List<string?> Order, IReadOnlyDictionary<string, AccountFacts> Facts) OrderOf(
-        string owner, RotationScope scope, StartKind kind, string? picked, bool ownHome, DateTimeOffset now)
+        string owner, RotationScope scope, StartKind kind, string? picked, bool ownHome, DateTimeOffset now, long except = 0)
     {
         if (picked is not null) return ([picked], NoFacts);
         if (ownHome || scope.List.Count == 0) return ([ownHome ? null : scope.Begins], NoFacts);
 
-        var facts = Facts(owner, scope.List, now);
+        var facts = Facts(owner, scope.List, now, except);
         return ([.. AccountRotation.Order(scope, kind, HarnessSettings.Profiles(Home, owner), facts, now)], facts);
     }
 
@@ -1357,6 +1402,24 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     }
 
     /// <summary>
+    /// The hold of a start whose every ready account's reading does not offer its model (D205 §3.3, MODELROLE1c2): one sentence naming
+    /// each account by the person's name, and the soonest cool-off of the rest beside it, so the actor's walk passes the choice
+    /// <c>not-offered</c> and a pick is refused with its reason (§3.5(d)).
+    /// </summary>
+    private static HarnessSelection NotOfferedHold(
+        string owner, IReadOnlyList<string> unoffered, IReadOnlyList<AccountState> states, IReadOnlyDictionary<string, string> names)
+    {
+        var said = string.Join(", ", unoffered.Select(account => $"`{AccountNames.Said(names, account)}`"));
+        var soonest = states.Select(state => state.Cooling).OfType<CoolingEntry>().OrderBy(cooling => cooling.Until).FirstOrDefault();
+        var verb = unoffered.Count == 1 ? "account {0} does" : "accounts {0} do";
+        return new HarnessSelection($"the `{owner}` {string.Format(System.Globalization.CultureInfo.InvariantCulture, verb, said)} not offer the model asked.")
+        {
+            NotOffered = [.. unoffered],
+            Cooling = soonest,
+        };
+    }
+
+    /// <summary>
     /// One pass of a start's walk (TOOL4f, D125 §3.3), asking nothing (PARALLEL1c): the order and each account's state read again,
     /// with what this walk's own questions answered and every other account's last reading (ROSTER1), and the first account still
     /// ready chosen, and counted where the start counts. A counted start's pass runs under the walk's gate, so it reads and counts
@@ -1370,10 +1433,10 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// </remarks>
     private WalkPass Pass(
         string owner, RotationScope scope, StartKind kind, string? picked, bool ours, bool counts,
-        IReadOnlyDictionary<string, string> names, WalkMemory walk)
+        IReadOnlyDictionary<string, string> names, WalkMemory walk, Func<string, string?>? offers = null, long except = 0)
     {
         var now = Clock();
-        var (order, facts) = OrderOf(owner, scope, kind, picked, ownHome: false, now);
+        var (order, facts) = OrderOf(owner, scope, kind, picked, ownHome: false, now, except);
         var states = order.Select(account => Before(owner, account, now, names)).ToList();
         // What the agent last said of each account (ROSTER1), as a report says it: an account not on this machine said nothing.
         var present = HarnessSettings.Profiles(Home, owner);
@@ -1381,10 +1444,19 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
 
         var at = -1;
         List<string> passed = [];
+        List<string> unoffered = [];
         for (var i = 0; i < states.Count && at < 0; i++)
         {
             if (!states[i].IsReady) continue;
             var account = states[i].Account!;
+            // D205 §3.3 (MODELROLE1c2): an account whose reading does not offer the model asked is passed for this start, before any
+            // question is asked of it: not a cool-off, never counted.
+            if (offers?.Invoke(account) is not null)
+            {
+                unoffered.Add(account);
+                continue;
+            }
+
             if (walk.Unknown.Contains(account))
             {
                 passed.Add(account);
@@ -1429,6 +1501,14 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         {
             // An account passed for its lock comes free by itself: the start is held for the next to try, never waiting for a time.
             if (passed.Count > 0) return new WalkPass(Held: Locked(owner, passed, names));
+
+            // Every account still ready refuses the model (D205 §3.3, §3.5(d)): the start holds with the reason, the soonest cool-off of
+            // the rest beside it, for the actor's walk to take its next choice.
+            if (unoffered.Count > 0 && !states.Any(state => state.IsReady && state.Readiness != AccountReadiness.SignedOut
+                    && !unoffered.Contains(state.Account!, StringComparer.OrdinalIgnoreCase)))
+            {
+                return new WalkPass(Held: NotOfferedHold(owner, unoffered, states, names));
+            }
 
             // Every Daoris account the person never named said signed out: none is signed in, so the same sentence (OWNSPACE1a).
             return new WalkPass(Held: ours && states.All(state => state.Readiness == AccountReadiness.SignedOut)
@@ -1703,18 +1783,44 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     }
 
     /// <summary>
+    /// A start's one count given back after its opened process has stopped and before any replacement is chosen (D205 §4.1, round 4,
+    /// R3-B1, MODELROLE1c2): idempotent, both halves under the count's lock. The start's number is taken back (nothing once a look has
+    /// covered it), and where <paramref name="session"/> is given, a look's reading of that record is made not running and out of the
+    /// last started, so the refusing account is neither busy nor the start just made.
+    /// </summary>
+    /// <param name="number">The start's count, as its selection carries it; 0 for none.</param>
+    /// <param name="session">The record it opened, or null where none opened.</param>
+    public void Release(long number, string? session = null)
+    {
+        lock (_load)
+        {
+            if (number > 0) _chosen.RemoveAll(start => start.Number == number);
+            if (session is null) return;
+            _looked =
+            [
+                .. _looked.Select(each => string.Equals(each.Session.Id, session, StringComparison.Ordinal)
+                    ? (each.Owner, each.Session with { Running = false, NotOffered = true })
+                    : each),
+            ];
+        }
+    }
+
+    /// <summary>
     /// What the walk knows of each account of a list (§16.4), and what its agent last said about its windows where a door
     /// carried it (TOOL6c, §5.2).
     /// </summary>
-    private Dictionary<string, AccountFacts> Facts(string owner, IReadOnlyList<string> list, DateTimeOffset now)
+    private Dictionary<string, AccountFacts> Facts(string owner, IReadOnlyList<string> list, DateTimeOffset now, long except = 0)
     {
         var facts = new Dictionary<string, AccountFacts>(StringComparer.OrdinalIgnoreCase);
         lock (_load)
         {
             foreach (var account in list)
             {
-                var sessions = _looked.Where(each => Same(each.Owner, owner) && Same(each.Session.Profile, account)).Select(each => each.Session).ToList();
-                var chosen = _chosen.Where(start => Same(start.Owner, owner) && Same(start.Account, account)).ToList();
+                // A record ended `choice-not-offered` ran nothing (D205 §3.5(c)): neither running nor the account's last start.
+                var sessions = _looked.Where(each => Same(each.Owner, owner) && Same(each.Session.Profile, account) && !each.Session.NotOffered)
+                    .Select(each => each.Session).ToList();
+                // A re-ask's own count left out (D205 §4.1): its account is ranked as if the start had not chosen it.
+                var chosen = _chosen.Where(start => start.Number != except && Same(start.Owner, owner) && Same(start.Account, account)).ToList();
                 facts[account] = new AccountFacts(
                     Running: sessions.Count(session => session.Running) + chosen.Count,
                     LastStarted: sessions.Select(session => session.Created).Where(created => created is not null).Max(),

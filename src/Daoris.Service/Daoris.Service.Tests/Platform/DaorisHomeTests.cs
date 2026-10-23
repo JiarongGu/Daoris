@@ -290,6 +290,14 @@ public sealed class DaorisHomeTests
             (HomeEntry.StandingConfirmation.Category, HomeEntry.StandingConfirmation.New));
     }
 
+    /// <summary>MODELROLE1c2 (D205 §9.2): what each agent last offered, a data file the service's table names as its twins do, and never reads.</summary>
+    [Fact]
+    public void The_agent_offers_are_a_data_file()
+    {
+        Assert.Same(HomeEntry.AgentOffers, HomeEntry.Named("agent-offers"));
+        Assert.Equal((HomeCategory.Data, "data/agent-offers.json"), (HomeEntry.AgentOffers.Category, HomeEntry.AgentOffers.New));
+    }
+
     /// <summary>HELPMODE1c2a (D183's note): Ask Daoris's configured access, a data file the service's table names as its twin does.</summary>
     [Fact]
     public void Ask_Daoris_configured_access_is_a_data_file()

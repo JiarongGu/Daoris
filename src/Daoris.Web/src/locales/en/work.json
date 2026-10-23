@@ -11,6 +11,8 @@
   "work.actor.accountDefault": "account default",
   "work.actor.notCarried": "not carried",
   "work.actor.before": "as before",
+  "work.actor.chip.choice": "choice {{n}}",
+  "work.actor.chip.pick": "your pick",
   "work.actor.more": "and {{n}} more",
   "work.actor.source.command": "your command",
   "work.actor.source.environment": "your environment",

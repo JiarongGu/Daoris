@@ -37,6 +37,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'ended.turn-failed-open': { values: [] },
   // APIREFUSAL1: its model's provider refused its turn; a failed run, never a park.
   'ended.provider-refused': { values: [] },
+  // MODELROLE1c2 (D205 §3.5(c)): its agent refused the choice at the open, before any prompt; no strike, planned again.
+  'ended.choice-not-offered': { values: ['agent', 'model'] },
   'ended.parked-asked': { values: [] },
   'ended.parked-transcript': { values: [] },
   'ended.parked-short': { values: [] },
@@ -88,6 +90,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'account.refused-own': { values: ['owner'] },
   'account.signed-out': { values: ['owner'] },
   'account.signed-out-own': { values: ['owner'] },
+  // MODELROLE1c2 (D205 §3.5(a)): the account refused the model its actor asked; the account's, never a strike.
+  'account.refused-model': { values: ['agent', 'model'] },
   // Why the account a resume asked for could not carry the words (MSG1g), after a line whose reason is `account`.
   'account.resume-signed-out': { values: [] },
   'account.resume-refused': { values: [] },
@@ -95,6 +99,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'account.resume-outside': { values: [] },
   'account.resume-kept': { values: [] },
   'account.resume-new-session': { values: [] },
+  'account.resume-not-offered': { values: [] },
   // While it starts and works.
   'started.tree': { values: ['branch', 'basedOn'] },
   'started.tree-unrecorded': { values: [] },
@@ -225,6 +230,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // A window's use projected from its reading and Daoris's own turns since, never near or over (USAGEPROBE1).
   'opening.said-projected': { values: ['projected', 'window'] },
   'opening.said-clear': { values: [] },
+  // MODELROLE1c2 (D205 §4.6 item 1): a later choice of an actor's ran, each choice passed said in the walk's own words.
+  'opening.actor': { values: ['actor', 'n', 'entry', 'passed'] },
   // A resumed conversation's first line (CONVNOTE2a): the adapter and whose words, a version that moved riding inside it.
   'resumed.opening': { values: ['adapter', 'why'], why: 'resumed' },
   'resumed.moved': { values: ['now', 'then'] },
@@ -594,7 +601,7 @@ export const NOTE_VALUES: Readonly<
   Record<
     string,
     | 'id' | 'ids' | 'names' | 'moment' | 'number' | 'count' | 'percent' | 'text' | 'why' | 'cooling' | 'window' | 'account' | 'accounts'
-    | 'bgstate' | 'setAt' | 'accessAt'
+    | 'bgstate' | 'setAt' | 'accessAt' | 'actor'
   >
 > = {
   // A commit rule's mode, its own word set as code by the sentence, and where it was set (PROCESS1d-ii).
@@ -634,6 +641,8 @@ export const NOTE_VALUES: Readonly<
   // `to` and `from` are a code's accounts where it says so (`NoteCode.accounts`: a move by the curve, SWITCH1c-i).
   named: 'text', to: 'text', from: 'text', commit: 'text', who: 'text',
   owner: 'text', branch: 'text', basedOn: 'text', plugin: 'text', agent: 'text', workspace: 'text',
+  // The model an actor's choice named, in the tool's own word, the actor by its name, and which of its choices ran (MODELROLE1c2).
+  model: 'text', actor: 'actor', n: 'number', entry: 'text', passed: 'text',
   // The dependency folders a tree's open copied from its checkout, each as code, and one it did not copy (TREEDEPS1).
   copied: 'names', modules: 'text',
   why: 'why',
@@ -663,6 +672,9 @@ export const ACCESS_AT: Readonly<Record<string, string>> = {
   workspace: 'settings.access.setupOf.workspace',
   machine: 'settings.access.setupOf.machine',
 };
+
+/** The actors' ids (D205 §2.2), each worded by its `work.actor.name.*` entry, as *Details* says it. */
+const ACTOR_IDS = new Set(['build', 'intake', 'opinion', 'helper', 'partner', 'brainstorm', 'ask-daoris', 'chat']);
 
 /**
  * One line of a note as the page shows it:
@@ -734,6 +746,11 @@ function said(
     case 'accessAt': {
       const level = text(value);
       return level && Object.hasOwn(ACCESS_AT, level) ? t(ACCESS_AT[level]) : null;
+    }
+    case 'actor': {
+      // An actor by its id, said by the name the screen gives it (D205 §2.2); one this page does not know as written.
+      const actor = text(value);
+      return actor === null ? null : ACTOR_IDS.has(actor) ? t(`work.actor.name.${actor}`) : actor;
     }
     case 'why': {
       const why = text(value);

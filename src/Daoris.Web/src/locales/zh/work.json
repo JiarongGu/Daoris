@@ -11,6 +11,8 @@
   "work.actor.accountDefault": "账户默认",
   "work.actor.notCarried": "未传递",
   "work.actor.before": "沿用原设置",
+  "work.actor.chip.choice": "选择 {{n}}",
+  "work.actor.chip.pick": "你指定的",
   "work.actor.more": "另有 {{n}} 个",
   "work.actor.source.command": "你的命令",
   "work.actor.source.environment": "你的环境",

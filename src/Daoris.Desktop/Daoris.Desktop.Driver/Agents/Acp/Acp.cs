@@ -149,6 +149,27 @@ public sealed record AcpOutcome(
 
     /// <summary>Whether its last turn ended on its provider's refusal (<see cref="Refusal"/>).</summary>
     public bool ProviderRefused => StopReason == Refusal;
+
+    /// <summary>The stop of a session its agent's refusal of the choice ended at the open, before any prompt (D205 §3.3).</summary>
+    public const string ChoiceNotOffered = "choice-not-offered";
+
+    /// <summary>The refusal that ended its open before any prompt (D205 §3.3, MODELROLE1c2), or null for every run that prompted.</summary>
+    public ModelRefusal? NotOffered { get; init; }
+}
+
+/// <summary>
+/// The agent's refusal of a choice at an open (D205 §3.3, MODELROLE1c2): the category and the value asked, and how,
+/// <see cref="AgentOffers.NotOffered"/> where the open's list lacks it, <see cref="AgentOffers.RefusedCode"/> where the set was refused
+/// or answered with another value the list offers.
+/// </summary>
+public sealed record ModelRefusal(string Category, string Value, string Code);
+
+/// <summary>A choice refused at the open with nothing else to set on the same session (D205 §3.3): the open ends before its prompt.</summary>
+public sealed class AcpChoiceNotOffered(ModelRefusal refusal)
+    : DriverException($"the agent did not offer the {refusal.Category} `{refusal.Value}` asked ({refusal.Code}): nothing was prompted.")
+{
+    /// <summary>What it refused.</summary>
+    public ModelRefusal Refusal { get; } = refusal;
 }
 
 /// <summary>
@@ -574,43 +595,141 @@ public sealed class AcpSession(
     public Action<ActorAsked>? Carried { get; init; }
 
     /// <summary>
+    /// Asked where the agent does not offer, or refuses, <see cref="Carry"/>'s model at the open, before any prompt (D205 §3.3,
+    /// MODELROLE1c2): the start's re-ask, which keeps the reading and answers what the walk now would. A later choice to set on this same
+    /// session (the same agent on the same account), or null, where the record ends <c>choice-not-offered</c> before any prompt
+    /// (<see cref="AcpChoiceNotOffered"/>). Null keeps MODELROLE1c's reading: the model runs at account default, said as not carried.
+    /// </summary>
+    public Func<ModelRefusal, Task<ActorAsked?>>? ModelRefused { get; init; }
+
+    /// <summary>
+    /// Told the options its open listed, as <c>session/new</c> (or the resume) answered them before the posture or any set: the reading
+    /// <c>data/agent-offers.json</c> keeps for its agent, version and account (D205 §9.2).
+    /// </summary>
+    public Action<IReadOnlyList<AcpConfigOption>>? OffersRead { get; init; }
+
+    /// <summary>
+    /// The options as the open listed them, before the posture or any set, never overwritten (D205 §3.3, round 4, Opus N6): what a refused
+    /// attempt's categories are set back to where the same-account move leaves them at account default. <see cref="ConfigOptions"/> keeps
+    /// only the latest list, which every set and every <c>config_option_update</c> replace.
+    /// </summary>
+    public IReadOnlyList<AcpConfigOption> OpeningOptions { get; private set; } = [];
+
+    /// <summary>The refusal that ended this session's open before any prompt (D205 §3.3), or null.</summary>
+    public ModelRefusal? NotOffered { get; private set; }
+
+    /// <summary>The opening's snapshot, kept once, and told as the agent's offer reading (D205 §9.2).</summary>
+    private void KeepOpening()
+    {
+        OpeningOptions = ConfigOptions;
+        try
+        {
+            OffersRead?.Invoke(OpeningOptions);
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            onLine($"[the session's offers could not be kept: {error.Message}]");
+        }
+    }
+
+    /// <summary>
     /// <see cref="Carry"/> set on the session (D205 §3.2): the model first, then the effort, whose levels follow the model, each found by
     /// its category (MODELROLE1a: Codex's effort id is <c>reasoning_effort</c>, Claude's <c>effort</c>). Whether anything was set, so the
     /// posture is set again after it: a model change can move the mode (MODELROLE1a's <c>haiku</c> moved <c>auto</c> to
     /// <c>acceptEdits</c>).
     /// </summary>
+    /// <remarks>
+    /// Where <see cref="ModelRefused"/> is given, a model the open's list does not offer, a set the agent refuses, or one answered with another
+    /// value it offers is a refusal of that choice on this account (§3.3): the re-ask answers a later choice to set on this session, each
+    /// category the refused attempt touched and the later choice leaves at account default first set back to its opening value; or the
+    /// open ends before its prompt. An effort not offered runs at account default effort, said as not carried, never a refusal.
+    /// </remarks>
+    /// <exception cref="AcpChoiceNotOffered">The choice was refused and nothing else may run on this session: no prompt was sent.</exception>
     private async Task<bool> CarryAsync(CancellationToken ct)
     {
-        if (Carry is not { } asked) return false;
+        var asked = Carry;
         var set = false;
-        var model = await OneAsync("model", asked.Model).ConfigureAwait(false);
-        var effort = await OneAsync("thought_level", asked.Effort).ConfigureAwait(false);
-        if (model != asked.Model || effort != asked.Effort) Carried?.Invoke(asked with { Model = model, Effort = effort });
-        return set;
-
-        async Task<ActorValue> OneAsync(string category, ActorValue value)
+        var touched = new HashSet<string>(StringComparer.Ordinal);
+        while (asked is not null)
         {
-            if (value is not { Source: "entry", Value: { } wanted, Carried: true }) return value;
-            if (ConfigOptions.FirstOrDefault(option => option.Category == category) is not { } option) return value with { Carried = false };
-            if (option.Current == wanted) return value;
-            try
+            ModelRefusal? refusal = null;
+            var model = await OneAsync("model", asked.Model, judged: ModelRefused is not null).ConfigureAwait(false);
+            if (refusal is { } refused)
             {
-                await SetConfigOptionAsync(option.Id, wanted, ct).ConfigureAwait(false);
-                set = true;
-            }
-            catch (DriverException refused)
-            {
-                onLine($"[{category} `{wanted}` was not set: {refused.Message}]");
-                return value with { Carried = false };
+                NotOffered = refused;
+                var later = await ModelRefused!(refused).ConfigureAwait(false);
+                if (later is null) throw new AcpChoiceNotOffered(refused);
+
+                // The same agent on the same account (§3.3's first path): what the refused attempt moved is set back where the later
+                // choice leaves it at account default, then the later choice is carried on this same session, no respawn.
+                foreach (var category in touched)
+                {
+                    var leaves = category == "model" ? later.Model : later.Effort;
+                    if (leaves.Source == "entry") continue;
+                    if (OpeningOptions.FirstOrDefault(option => option.Category == category) is not { Current: { } opening } option) continue;
+                    try
+                    {
+                        await SetConfigOptionAsync(option.Id, opening, ct).ConfigureAwait(false);
+                    }
+                    catch (DriverException back)
+                    {
+                        onLine($"[{category} could not be set back to `{opening}`: {back.Message}]");
+                        throw new AcpChoiceNotOffered(refused);
+                    }
+
+                    if (LastAcknowledgedOptions?.FirstOrDefault(each => each.Category == category) is { } now && now.Current != opening)
+                    {
+                        throw new AcpChoiceNotOffered(refused);
+                    }
+                }
+
+                NotOffered = null;
+                touched.Clear();
+                asked = later;
+                continue;
             }
 
-            // A returned value other than the one asked is a refusal only where it is another value the list offers: an asked id the agent
-            // answers with its own alias is taken (round 3, Opus N5; MODELROLE1a: `claude-sonnet-5-5` asked, `sonnet` returned).
-            var now = LastAcknowledgedOptions?.FirstOrDefault(each => each.Category == category);
-            return now is not null && now.Current != wanted && now.Choices.Any(choice => choice.Value == wanted)
-                ? value with { Carried = false }
-                : value;
+            var effort = await OneAsync("thought_level", asked.Effort, judged: false).ConfigureAwait(false);
+            if (model != asked.Model || effort != asked.Effort) Carried?.Invoke(asked with { Model = model, Effort = effort });
+            return set;
+
+            async Task<ActorValue> OneAsync(string category, ActorValue value, bool judged)
+            {
+                if (value is not { Source: "entry", Value: { } wanted, Carried: true }) return value;
+                if (ConfigOptions.FirstOrDefault(option => option.Category == category) is not { } option) return value with { Carried = false };
+                if (option.Current == wanted) return value;
+                // Always asked, never judged by the list alone (MODELROLE1a): Claude's door lists aliases and takes a full id it does not list,
+                // and refuses a model it does not offer at the set, before any prompt. A refusal of a value the list named is `refused`; of
+                // one it did not, `not-offered` (D205 §3.3).
+                var listed = option.Choices.Any(choice => choice.Value == wanted);
+                try
+                {
+                    await SetConfigOptionAsync(option.Id, wanted, ct).ConfigureAwait(false);
+                    // What the attempt moved, which a same-account move sets back where it leaves the category at account default.
+                    touched.Add(category);
+                    set = true;
+                }
+                catch (DriverException refused)
+                {
+                    onLine($"[{category} `{wanted}` was not set: {refused.Message}]");
+                    if (judged) refusal = new ModelRefusal(category, wanted, listed ? AgentOffers.RefusedCode : AgentOffers.NotOffered);
+                    return value with { Carried = false };
+                }
+
+                // A returned value other than the one asked is a refusal only where it is another value the list offers: an asked id the agent
+                // answers with its own alias is taken (round 3, Opus N5; MODELROLE1a: `claude-sonnet-5-5` asked, `sonnet` returned).
+                var now = LastAcknowledgedOptions?.FirstOrDefault(each => each.Category == category);
+                if (now is not null && now.Current != wanted && now.Choices.Any(choice => choice.Value == wanted))
+                {
+                    if (judged) refusal = new ModelRefusal(category, wanted, AgentOffers.RefusedCode);
+                    return value with { Carried = false };
+                }
+
+                return value;
+            }
         }
+
+        return set;
     }
 
     /// <summary>
@@ -669,8 +788,19 @@ public sealed class AcpSession(
         _inbox = inbox;
         try
         {
-            if (resume is null) await OpenAsync(cwd, ct, servers).ConfigureAwait(false);
-            else await ResumeAsync(cwd, resume, ct, servers).ConfigureAwait(false);
+            try
+            {
+                if (resume is null) await OpenAsync(cwd, ct, servers).ConfigureAwait(false);
+                else await ResumeAsync(cwd, resume, ct, servers).ConfigureAwait(false);
+            }
+            catch (AcpChoiceNotOffered refused)
+            {
+                // D205 §3.3 (MODELROLE1c2): the choice refused at the open, no prompt sent, so nothing of the person's was taken; the
+                // session closes here and its record ends as the start's re-ask said.
+                onLine($"[{refused.Message}]");
+                await CloseAsync(ct).ConfigureAwait(false);
+                lock (_measured) return new AcpOutcome(AcpOutcome.ChoiceNotOffered, _sessionId ?? "", _updates, _usage) { NotOffered = refused.Refusal };
+            }
 
             // Where the agent says it takes a prompt during its turn, each word goes the moment it is said and reaches it
             // at its next step (STEER1, D136); anywhere else it waits for the turn's end. Words flow only once the target
@@ -1015,6 +1145,8 @@ public sealed class AcpSession(
         KeepOptions(created.TryGetProperty("configOptions", out var offeredOptions)
             ? AcpConfigOption.Read(offeredOptions)
             : []);
+        // The opening's own snapshot and the agent's offer reading, before the posture or any set (D205 §3.3, §9.2).
+        KeepOpening();
 
         // What its actor asked, before the posture, which a model change can move, and before the first prompt (D205 §3.2).
         var carried = await CarryAsync(ct).ConfigureAwait(false);
@@ -2699,6 +2831,7 @@ public sealed class AcpSession(
         KeepOptions(resumed.ValueKind == JsonValueKind.Object && resumed.TryGetProperty("configOptions", out var options)
             ? AcpConfigOption.Read(options)
             : []);
+        KeepOpening();
         // A resume carries its record's asked choice again: a resumed conversation keeps no model of its own (D205 §4.2; MODELROLE1a).
         var carried = await CarryAsync(ct).ConfigureAwait(false);
         // 🔴 HELPMODE1a4 (D183 point 3): set on every answer, an object or not, so a required posture is never skipped here.

@@ -126,6 +126,74 @@ public sealed class BuildWalkTests : IDisposable
         Assert.Equal("piped", first!.Agent);
     }
 
+    /// <summary>`cool` given a second account, both in its list, so a reading can pass one and leave the other (D205 §3.3).</summary>
+    private void TwoAccounts()
+    {
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "cool", "account-2"));
+        HarnessSettings.Load(Settings).WithRotation("cool", ["account-1", "account-2"]).Save(Settings);
+    }
+
+    private void Refuses(string agent, string account, string model) =>
+        Assert.Null(AgentOffers.Refused(_home, agent, null, account, model, DateTimeOffset.UtcNow));
+
+    /// <summary>
+    /// MODELROLE1c2's proof (D205 §3.3, §13's per-account walk): a first choice naming a model one account refused is run on the other
+    /// account, the refusing account passed for this start and never cooled.
+    /// </summary>
+    [Fact]
+    public async Task A_first_choice_one_account_does_not_offer_runs_on_the_other_account()
+    {
+        TwoAccounts();
+        Refuses("cool", "account-1", "opus");
+        var driver = Driver(new("cool", "opus"), new("fine", "sonnet"));
+
+        var walked = await driver.WalkBuildPassesAsync(Start, [new RepoView("engine", true, null)], CancellationToken.None);
+
+        Assert.True(walked.Selection.Allowed, walked.Selection.Refusal);
+        Assert.Equal("1", walked.Chosen!.From);
+        Assert.Equal("account-2", walked.Selection.Profile);
+        Assert.Empty(walked.Passes);
+        Assert.DoesNotContain(AccountCooling.Read(_home, Now), entry => entry.Account == "account-1");
+    }
+
+    /// <summary>
+    /// MODELROLE1c2's proof (D205 §3.3, §4.1): with neither account offering the first choice's model, the start runs its second, the first
+    /// passed `not-offered`; another model of the same agent is judged apart.
+    /// </summary>
+    [Fact]
+    public async Task With_neither_account_offering_the_first_choice_the_second_runs_and_the_pass_says_not_offered()
+    {
+        TwoAccounts();
+        Refuses("cool", "account-1", "opus");
+        Refuses("cool", "account-2", "opus");
+        var driver = Driver(new("cool", "opus"), new("cool", "sonnet"));
+
+        var walked = await driver.WalkBuildPassesAsync(Start, [new RepoView("engine", true, null)], CancellationToken.None);
+
+        Assert.True(walked.Selection.Allowed, walked.Selection.Refusal);
+        Assert.Equal(new ActorEffective("cool", "sonnet", null, "2"), walked.Chosen);
+        var pass = Assert.Single(walked.Passes);
+        Assert.Equal(("1", AgentOffers.NotOffered), (pass.Entry.From, pass.Code));
+    }
+
+    /// <summary>
+    /// D205 §3.3's re-ask at the open, the refusal passed as if known before the spawn, taking no count: a later choice of the same agent
+    /// on the same account is set on the open session; any other answer (here another account of the refused choice) ends the record.
+    /// </summary>
+    [Fact]
+    public async Task The_re_ask_answers_a_same_account_move_only_where_the_walk_takes_the_same_agent_on_the_same_account()
+    {
+        var driver = Driver(new("cool", "opus"), new("cool", "sonnet"));
+        var first = new ActorEffective("cool", "opus", null, "1");
+        var onOne = new HarnessSelection(null, "account-1");
+
+        var moved = await driver.ReaskAsync(Start, [new RepoView("engine", true, null)], first, onOne, CancellationToken.None);
+        Assert.Equal(("2", "sonnet"), (moved!.Value.Choice, moved.Value.Asked.NamedModel));
+
+        TwoAccounts();
+        Assert.Null(await driver.ReaskAsync(Start, [new RepoView("engine", true, null)], first, onOne, CancellationToken.None));
+    }
+
     [Fact]
     public async Task An_order_of_one_is_today_s_walk_with_its_own_refusal()
     {

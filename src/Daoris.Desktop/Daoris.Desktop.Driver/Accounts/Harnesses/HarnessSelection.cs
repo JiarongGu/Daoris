@@ -685,6 +685,18 @@ public sealed record HarnessSelection(
     /// more said after it); the note then carries its words. A fact beside the sentence, so a reader judges no words.
     /// </summary>
     public Noted? RefusalNote { get; init; }
+
+    /// <summary>
+    /// The accounts a held start passed because their readings do not offer the model asked (D205 §3.3, MODELROLE1c2:
+    /// <c>not-offered</c> or <c>refused</c>, by account); null where it passed none, or ran. Not a cool-off and never counted.
+    /// </summary>
+    public IReadOnlyList<string>? NotOffered { get; init; }
+
+    /// <summary>
+    /// The start's count, as the walk numbered it when it chose the account (D205 §4.1, round 4): what <c>Release</c> takes back; 0 where
+    /// the start counted nothing.
+    /// </summary>
+    public long Number { get; init; }
 }
 
 /// <summary>Why an agent itself cannot run (XAGENT1b): what <see cref="HarnessSelection.Absent"/> says.</summary>

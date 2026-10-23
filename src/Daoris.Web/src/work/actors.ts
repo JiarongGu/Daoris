@@ -18,6 +18,16 @@ function askedValue(t: TFunction, value?: ActorValue | null): string {
   return value.source === 'entry' && !value.carried ? `${source} · ${t('work.actor.notCarried')}` : source;
 }
 
+/**
+ * The head's chip for the choice its actor ran (D205 §4.6 item 2, §7.1; MODELROLE1c2): *choice n* only where a later choice than the
+ * first ran, *your pick* where the person picked the agent; none for choice 1, *as before*, a rule's agent or a handed quest.
+ */
+export function choiceChip(t: TFunction, session: Pick<Session, 'choice'>): string | null {
+  const choice = session.choice;
+  if (choice === 'pick') return t('work.actor.chip.pick');
+  return choice && /^[2-4]$/.test(choice) ? t('work.actor.chip.choice', { n: Number(choice) }) : null;
+}
+
 /** Details compares no aliases: asked, acknowledged and ran are separate facts (D205). */
 export function actorRows(t: TFunction, session: Session): DetailRow[] {
   const last = session.ran?.entries.at(-1);

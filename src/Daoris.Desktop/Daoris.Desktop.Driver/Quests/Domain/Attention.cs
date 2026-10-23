@@ -244,11 +244,12 @@ public sealed class AttentionWatch
         }));
 
         // The last failure is said by its quest's park, which carries its note. An end an account's limit made is no failure: its line
-        // goes on by itself and says so as its own news (LIMITRESUME1a, D206 point 1).
+        // goes on by itself and says so as its own news (LIMITRESUME1a, D206 point 1). Nor is one its agent's refusal of the choice ended
+        // at the open: the next look starts what the walk answers, and a fallback asks nothing (D205 §3.5(c), §4.6).
         var saidByPark = parked.Select(park => park.Session).OfType<string>().ToHashSet(StringComparer.Ordinal);
         foreach (var ended in report.Concluded)
         {
-            if (ended.ByPerson || ended.Limit || saidByPark.Contains(ended.Session)) continue;
+            if (ended.ByPerson || ended.Limit || ended.NotOffered || saidByPark.Contains(ended.Session)) continue;
             events.Add(new AttentionEvent(
                 AttentionKind.Ended, ended.Session, ended.Repository, ended.State, ended.Note)
             {

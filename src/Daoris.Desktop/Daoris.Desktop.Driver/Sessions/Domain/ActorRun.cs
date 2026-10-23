@@ -8,6 +8,12 @@ public sealed record ActorAsked(string Agent, ActorValue Model, ActorValue Effor
 {
     public static ActorAsked Before(string agent) => new(agent, new("account-default", null, false), new("account-default", null, false));
 
+    /// <summary>
+    /// The model its choice named, which each account's offer reading is judged for (D205 §4.1, the walk's model parameter); null for
+    /// account default, the person's own command or environment, which no reading passes.
+    /// </summary>
+    public string? NamedModel => Model is { Source: "entry", Value: { } model } ? model : null;
+
     public static ActorAsked ForSpawn(string agent, System.Diagnostics.ProcessStartInfo info, ActorAsked? requested = null)
     {
         var asked = requested ?? Before(agent);
@@ -42,6 +48,13 @@ public sealed record ActorAsked(string Agent, ActorValue Model, ActorValue Effor
 
     private static bool Has(IEnumerable<string> command, string flag) => command.Any(word => word == flag || word.StartsWith(flag + "=", StringComparison.Ordinal));
 }
+
+/// <summary>
+/// What a protocol open keeps and asks about its agent's offers (D205 §3.3, §9.2, MODELROLE1c2): the version and account its reading is
+/// keyed by, and the start's re-ask where a choice is refused at the open, answering a later choice and its <c>choice</c> to set on the
+/// same session, or null where the record ends <c>choice-not-offered</c>. A null re-ask keeps MODELROLE1c's not-carried reading.
+/// </summary>
+public sealed record OpenOffers(string? Version, string? Account, Func<ModelRefusal, Task<(ActorAsked Asked, string Choice)?>>? Refused);
 
 public sealed record ActorEntry(DateTimeOffset At, string? Acknowledged = null, string? Effort = null);
 public sealed record ActorRan(IReadOnlyList<string> Models, int More, IReadOnlyList<ActorEntry> Entries, int EntriesMore);

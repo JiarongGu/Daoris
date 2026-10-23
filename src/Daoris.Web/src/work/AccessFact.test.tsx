@@ -100,3 +100,28 @@ describe('the access a session started under', () => {
     expect(screen.getByText('Full access')).toBeInTheDocument();
   });
 });
+
+// MODELROLE1c2 (D205 §4.6 item 2): the choice its actor ran is worn beside the access chip, only where it was not the first.
+describe('the choice its actor ran', () => {
+  it('wears choice n on the facts line before the access chip, and your pick for a pick', () => {
+    pageHead({ choice: '2', access: FULL });
+    const line = screen.getByText('engine · 12m').parentElement!;
+    const chip = within(line).getByText('choice 2');
+    expect(chip.closest('[data-choice="2"]')).not.toBeNull();
+    expect(chip.compareDocumentPosition(within(line).getByText('Full access')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    cleanup();
+    pageHead({ choice: 'pick' });
+    expect(screen.getByText('your pick')).toBeInTheDocument();
+  });
+
+  it('wears nothing for a first choice or a start as before, and says it in 中文 with no header', async () => {
+    for (const choice of ['1', 'before', null]) {
+      pageHead({ choice });
+      expect(document.querySelector('[data-choice]')).toBeNull();
+      cleanup();
+    }
+    await i18n.changeLanguage('zh');
+    render(<SessionHead session={session({ choice: '3' })} />);
+    expect(screen.getByText('选择 3')).toBeInTheDocument();
+  });
+});

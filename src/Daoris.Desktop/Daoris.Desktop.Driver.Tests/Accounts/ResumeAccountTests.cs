@@ -502,6 +502,31 @@ public sealed class ResumeAccountTests : IDisposable
     }
 
     /// <summary>
+    /// MODELROLE1c2 (D205 §3.5(a), D175 point 3's note): a resume whose own account refused its asked model cannot carry the words, which
+    /// go to a new record on another account of the same choice, the own account passed by its reading and never cooled; another model,
+    /// or account default, resumes on the own account as before.
+    /// </summary>
+    [Fact]
+    public async Task A_resume_whose_own_account_refused_its_model_carries_its_words_to_another_account()
+    {
+        Accounts("account-1", "account-2");
+        new HarnessSettings().WithRotation("fake", ["account-1", "account-2"]).Save(Settings);
+        var roster = Roster();
+        var version = (await roster.ReportAsync("fake", Config))?.Version;
+        Assert.Null(AgentOffers.Refused(_home, "fake", version, "account-1", "opus", DateTimeOffset.UtcNow));
+
+        var refused = await roster.ResumeAsync("fake", Config, null, "account-1", StartKind.Driven, model: "opus");
+        Assert.True(refused.NotOffered);
+        Assert.Equal("account-2", refused.Selection.Profile);
+        Assert.Equal("account.resume-not-offered", refused.Elsewhere!.Detail!.Parts.Single().Code);
+
+        var other = await roster.ResumeAsync("fake", Config, null, "account-1", StartKind.Driven, model: "sonnet");
+        Assert.Equal((false, "account-1"), (other.NotOffered, other.Selection.Profile));
+        var asBefore = await roster.ResumeAsync("fake", Config, null, "account-1", StartKind.Driven);
+        Assert.Equal("account-1", asBefore.Selection.Profile);
+    }
+
+    /// <summary>
     /// A conversation is never carried on by itself (D137 §2.2), so where its own account cannot run, nothing is walked and
     /// nothing counted: the answer says what holds it, and the chat runner says why it cannot go on.
     /// </summary>

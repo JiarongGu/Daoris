@@ -13,6 +13,28 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class StrikeTests
 {
+    /// <summary>
+    /// MODELROLE1c2 (D205 §3.5(a), (c), round 4 Opus N4): a record its agent's refusal of the choice ended at the open, and a failure
+    /// carrying the account's <c>account.refused-model</c> line, are the account's, never the quest's: no strike, read by the codes. A
+    /// <c>choice-not-offered</c> record ran nothing, so the quest's last run is the record before it.
+    /// </summary>
+    [Fact]
+    public void A_choice_its_agent_did_not_offer_is_no_strike_and_no_last_run()
+    {
+        const string records = """
+            [{"id":"s1","quest":"q1","state":"failed","created":"2026-10-24T09:00:00Z"},
+             {"id":"s2","quest":"q1","state":"failed","created":"2026-10-24T10:00:00Z",
+              "noteParts":[{"code":"ended.choice-not-offered","values":{"agent":"claude-code-acp","model":"opus"}}]},
+             {"id":"s3","quest":"q2","state":"failed","created":"2026-10-24T10:00:00Z",
+              "noteParts":[{"code":"ended.words-wait","values":{}},{"code":"account.refused-model","values":{"agent":"claude-code","model":"opus"}}]}]
+            """;
+
+        var strikes = ServiceClient.ReadStrikes(records);
+        Assert.Equal(1, strikes["q1"]);
+        Assert.False(strikes.ContainsKey("q2"));
+        Assert.Equal("s1", ServiceClient.ReadLastRun(records)["q1"].Session);
+    }
+
     [Fact]
     public void An_update_close_is_not_a_strike_but_a_person_s_close_still_is()
     {

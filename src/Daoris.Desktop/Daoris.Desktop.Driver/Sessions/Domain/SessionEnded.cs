@@ -20,4 +20,11 @@ public sealed record SessionEnded(
     /// the attention watch raises no <i>Ended</i> for it, as the ledger counts no strike.
     /// </summary>
     public bool Limit { get; init; }
+
+    /// <summary>
+    /// Its agent refused the choice its actor asked at the open, before any prompt (D205 §3.5(c), MODELROLE1c2): it ended
+    /// <c>choice-not-offered</c>, announced as any end, and the attention watch raises no <i>Ended</i> for it, since a fallback asks
+    /// nothing of the person (§4.6).
+    /// </summary>
+    public bool NotOffered { get; init; }
 }

@@ -118,6 +118,7 @@
   "agents.rules.summary.mine_other": "{{count}} rules of yours",
   "agents.rules.summary.proposals": "{{count}} proposal waiting",
   "agents.rules.summary.proposals_other": "{{count}} proposals waiting",
+  "agents.settings.actors": "Used where an actor runs this agent on its account default; a model an actor names outranks it.",
   "agents.settings.summary.default": "the tool's own defaults",
   "agents.settings.summary.set": "{{count}} account sets its own",
   "agents.settings.summary.set_other": "{{count}} accounts set their own",

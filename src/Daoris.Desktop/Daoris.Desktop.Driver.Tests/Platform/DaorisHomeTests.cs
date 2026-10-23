@@ -366,6 +366,21 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
+    /// MODELROLE1c2 (D205 §9.2): what each agent last offered, a data file of its own after the standing confirmation, as the three twins
+    /// hold it; new since the layout, so its old place is its new one.
+    /// </summary>
+    [Fact]
+    public void The_agent_offers_are_a_data_file_after_the_standing_confirmation()
+    {
+        Assert.Same(HomeEntry.AgentOffers, HomeEntry.Named("agent-offers"));
+        Assert.Equal(
+            (HomeCategory.Data, "data/agent-offers.json", "data/agent-offers.json"),
+            (HomeEntry.AgentOffers.Category, HomeEntry.AgentOffers.New, HomeEntry.AgentOffers.Old));
+        var table = HomeEntry.Table.ToList();
+        Assert.Equal(table.IndexOf(HomeEntry.StandingConfirmation) + 1, table.IndexOf(HomeEntry.AgentOffers));
+    }
+
+    /// <summary>
     /// HELPMODE1c2a (D183's note): Ask Daoris's configured access, a data file of the person's choices at the home's root, named
     /// with no <c>help-</c> prefix, since a workspace's room folder is matched by <c>help-*</c>.
     /// </summary>

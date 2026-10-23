@@ -1448,6 +1448,8 @@ describe('the Agents place', () => {
     place(notify);
 
     await unfold('Model and effort');
+    // What an account's own model means now actors choose models (D205 §6.4, MODELROLE1c2): their account default.
+    expect(screen.getByText('Used where an actor runs this agent on its account default; a model an actor names outranks it.')).toBeInTheDocument();
     const row = screen.getByText('model opus · effort high').closest('li')!;
     await userEvent.click(within(row).getByRole('button', { name: 'Model & effort' }));
     const form = within(row).getByRole('group', { name: 'work: model and effort' });

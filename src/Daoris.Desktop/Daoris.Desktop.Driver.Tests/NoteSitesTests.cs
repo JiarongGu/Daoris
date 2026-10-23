@@ -19,6 +19,17 @@ public sealed class NoteSitesTests
 
     // ——— A session's end (Observation): rows 1–17.
 
+    /// <summary>MODELROLE1c2 (D205 §3.5(c)): a choice its agent refused at the open ends `failed`, naming the agent and the model, no account.</summary>
+    [Fact]
+    public void A_choice_its_agent_did_not_offer_names_the_agent_and_the_model()
+    {
+        var ended = Observation.ChoiceNotOffered("claude-code-acp", new ModelRefusal("model", "opus", AgentOffers.NotOffered));
+        Wrote(ended, "failed",
+            "Not started: `claude-code-acp` did not offer `opus` on its account, so nothing ran; the next look chooses again by its actor's order.",
+            "ended.choice-not-offered");
+        Assert.Equal(("claude-code-acp", "opus"), (ended.Parts![0].Value("agent"), ended.Parts[0].Value("model")));
+    }
+
     [Fact]
     public void A_question_asked_of_another_repository_names_it_and_any_exit()
     {

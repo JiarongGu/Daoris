@@ -407,6 +407,13 @@ public static class NoteCodes
     /// strike, never a park, followed by the provider's words with their request id.
     /// </summary>
     public static readonly NoteCode EndedProviderRefused = new("ended.provider-refused", []);
+
+    /// <summary>
+    /// MODELROLE1c2 (D205 §3.3, §3.5(c)): its agent did not offer, or refused, the model its actor asked at the open, before any prompt:
+    /// <c>failed</c> with this end, no strike, its quest planned again, no <i>Ended</i> notice, and a quiet row. Naming no account, since
+    /// the note travels; the account is the record's own.
+    /// </summary>
+    public static readonly NoteCode EndedChoiceNotOffered = new("ended.choice-not-offered", ["agent", "model"]);
     public static readonly NoteCode EndedParkedAsked = new("ended.parked-asked", []);
     public static readonly NoteCode EndedParkedTranscript = new("ended.parked-transcript", []);
     public static readonly NoteCode EndedParkedShort = new("ended.parked-short", []);
@@ -495,12 +502,17 @@ public static class NoteCodes
     public static readonly NoteCode AccountSignedOut = new("account.signed-out", ["owner"]);
     public static readonly NoteCode AccountSignedOutOwn = new("account.signed-out-own", ["owner"]);
 
+    // MODELROLE1c2 (D205 §3.3, §3.5(a), round 4 Opus N4): the account a start ran on did not offer, or refused, the model its actor asked,
+    // before any prompt: the account's fault, never the quest's, naming no account, since the note travels.
+    public static readonly NoteCode AccountRefusedModel = new("account.refused-model", ["agent", "model"]);
+
     /// <summary>
-    /// The account's lines that say its agent or its provider refused the account a start ran on, its sign-in (ROSTER1b) or
-    /// its credential (AGT3b): the fault is the account's, never the quest's, so a failure carrying one is no strike
-    /// (<see cref="ServiceClient.ReadStrikes"/>), read by the code the driver wrote, never by the words.
+    /// The account's lines that say its agent or its provider refused the account a start ran on, its sign-in (ROSTER1b),
+    /// its credential (AGT3b) or the model asked (MODELROLE1c2): the fault is the account's, never the quest's, so a failure carrying
+    /// one is no strike (<see cref="ServiceClient.ReadStrikes"/>), read by the code the driver wrote, never by the words.
     /// </summary>
-    public static IReadOnlyList<NoteCode> AccountsOwn { get; } = [AccountRefused, AccountRefusedOwn, AccountSignedOut, AccountSignedOutOwn];
+    public static IReadOnlyList<NoteCode> AccountsOwn { get; } =
+        [AccountRefused, AccountRefusedOwn, AccountSignedOut, AccountSignedOutOwn, AccountRefusedModel];
 
     // ——— Why the account a resume asked for could not carry the person's words (MSG1g), after a line whose reason is
     // `account`: by TOOL6e's holds, naming no account, since the note travels.
@@ -510,6 +522,7 @@ public static class NoteCodes
     public static readonly NoteCode AccountResumeOutside = new("account.resume-outside", []);
     public static readonly NoteCode AccountResumeKept = new("account.resume-kept", []);
     public static readonly NoteCode AccountResumeNewSession = new("account.resume-new-session", []);
+    public static readonly NoteCode AccountResumeNotOffered = new("account.resume-not-offered", []);
 
     // ——— While it starts and works, replaced by its end (D51 rule 4).
     public static readonly NoteCode StartedTree = new("started.tree", ["branch", "basedOn"]);
@@ -818,6 +831,10 @@ public static class NoteCodes
     // (USAGEPROBE1): what decided the start asked nothing of it, never near or over, which a reading alone says.
     public static readonly NoteCode OpeningSaidProjected = new("opening.said-projected", ["projected", "window"]);
     public static readonly NoteCode OpeningSaidClear = new("opening.said-clear", []);
+
+    // MODELROLE1c2 (D205 §4.6 item 1): beside the opening line, the actor line where a later choice ran, in the local conversation's
+    // record only, never the record's note: the actor by its id, the choice's number, the entry that ran and each one passed.
+    public static readonly NoteCode OpeningActor = new("opening.actor", ["actor", "n", "entry", "passed"]);
 
     // ——— A resumed conversation's first line (CONVNOTE2a, Continuations.Opening): the adapter it resumed on is a fact, and
     // a version that moved is a part riding inside it. The conversation's record never leaves the machine (D76 §2).
