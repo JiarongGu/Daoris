@@ -57,7 +57,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
                 }
 
                 if (fact.Judged is { } kept) judged!.Add(kept);
-                if (fact.Act is { } act && Begin(act, snapshot, ct)) passes++;
+                if (fact.Act is { } act && Begin(act, ct)) passes++;
                 foreach (var (quest, why) in fact.Sits) sits[quest] = why;
             }
 
@@ -98,7 +98,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         foreach (var due in open)
         {
             var subject = Subject(due);
-            if (facts.TakeAct(subject) is { } act && Begin(act, snapshot, ct)) passes++;
+            if (facts.TakeAct(subject) is { } act && Begin(act, ct)) passes++;
             if (facts.Opinion(subject) is { } fact)
             {
                 foreach (var (quest, why) in fact.Sits) sits[quest] = why;
@@ -241,7 +241,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
     /// Begin the pass <paramref name="act"/> found owed, beside the look, under the chain's claim: false where a pass or a delivery of this
     /// loop's holds it. The person's ask is taken from the gate as it is begun, and one taken meanwhile leaves nothing to ask.
     /// </summary>
-    private bool Begin(OpinionAct act, Snapshot snapshot, CancellationToken ct)
+    private bool Begin(OpinionAct act, CancellationToken ct)
     {
         if (!_context.Runs.TryOpinion(act.Claim)) return false;
         OpinionRequest? request = null;
@@ -258,7 +258,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         }
 
         var occasion = request?.Occasion ?? act.Occasion;
-        OpinionBeside(act.Claim, token => AskPassAsync(act.Due, act.Key, act.Chain, occasion, request, snapshot, act.Process, token), ct);
+        OpinionBeside(act.Claim, token => AskPassAsync(act.Due, act.Key, act.Chain, occasion, request, act.Process, token), ct);
         return true;
     }
 
@@ -332,7 +332,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
     /// </summary>
     /// <param name="process">The run's process (WORKFLOW1f): a named workflow's opinion step names which declared reviewers read it.</param>
     private async Task<string> AskPassAsync(
-        OpinionDue due, string key, IReadOnlyList<QuestView> chain, string occasion, OpinionRequest? request, Snapshot snapshot,
+        OpinionDue due, string key, IReadOnlyList<QuestView> chain, string occasion, OpinionRequest? request,
         WorkflowProcess process, CancellationToken ct)
     {
         var gates = new OpinionGates(Home);
@@ -357,12 +357,13 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         var start = occasion == OpinionRules.Steps
             ? (await Service.SessionGroundAsync(due.Session, ct).ConfigureAwait(false)).BaseCommit
             : await _context.Trees.ForkPointAsync(due.Tree, ct).ConfigureAwait(false);
-        var record = await Service.RecordAsync(due.Session, ct).ConfigureAwait(false);
+        var records = OpinionWriters.ById(await Service.RecordsAsync(ct).ConfigureAwait(false));
+        var record = records.GetValueOrDefault(due.Session);
         var part = chain.Where(quest => Same(quest.To, due.Repository)).ToList();
 
-        // The families that wrote the work (§3.1): the agents of this machine's last run on each of the chain's quests here.
-        IReadOnlyCollection<string> wrote = [.. part.Select(quest => snapshot.LastRun.GetValueOrDefault(quest.Id)?.Adapter)
-            .Append(record?.Adapter).OfType<string>().Where(adapter => adapter.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase)];
+        // The families that wrote the work (§3.1): every agent the line ran on, each part of each of the chain's quests here, so a
+        // line carried on across makers at a limit counts both (LIMITRESUME1j, the limit-resume design §3.6).
+        var wrote = OpinionWriters.Agents(records, due.Session, part.Select(quest => quest.Id));
         IReadOnlyList<string> reviewers = request switch
         {
             { SameAgent: true } => [record?.Adapter ?? Config.Adapter],

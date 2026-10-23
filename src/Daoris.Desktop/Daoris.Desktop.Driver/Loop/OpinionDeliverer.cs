@@ -207,8 +207,9 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
     /// </summary>
     private async Task<OpinionPassRun> RecheckAsync(OpinionView first, OpinionReading reading, OpinionPassAsk asked, CancellationToken ct)
     {
-        var working = await Service.RecordAsync(first.Working, ct).ConfigureAwait(false);
-        IReadOnlyCollection<string> wrote = working?.Adapter is { Length: > 0 } adapter ? [adapter] : [];
+        // Judged against every agent the line ran on, as the first pass was (LIMITRESUME1j, the limit-resume design §3.6).
+        var records = OpinionWriters.ById(await Service.RecordsAsync(ct).ConfigureAwait(false));
+        var wrote = OpinionWriters.Agents(records, first.Working, asked.Quests.Select(quest => quest.Id));
         var choice = await ReviewerChoice.ChooseAsync(
                 _context.Harnesses, asked.Rule with { Reviewers = [first.Adapter] }, wrote, _context.Config, asked.Workspace, ct)
             .ConfigureAwait(false);

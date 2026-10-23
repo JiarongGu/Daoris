@@ -210,6 +210,7 @@
     "OpinionResumeTickTests.cs": "Review",
     "OpinionRulesTests.cs": "Review",
     "OpinionStandIn.cs": "Review",
+    "OpinionWritersTests.cs": "Review",
     "OrphanedSessionTests.cs": "Loop",
     "OutputTailTests.cs": "Agents",
     "ParkedQuestsTests.cs": "Quests",

@@ -176,6 +176,30 @@ public sealed class OpinionRecheckTests : IDisposable
         Assert.Empty(host.Said("s1"));
     }
 
+    /// <summary>
+    /// 🔴 LIMITRESUME1j (D206; the limit-resume design §3.6): the recheck judges its reviewer against every maker the line ran on.
+    /// s1 went on with Claude Code from s0, cut off by its limit on Codex, so Codex reading it again is the work's own family, never
+    /// another maker's.
+    /// </summary>
+    [Fact]
+    public async Task A_recheck_on_a_line_that_ran_on_two_makers_takes_neither_as_another_makers()
+    {
+        var (host, git, tip, fix, _) = Answered();
+        host.Session("s0", "failed", adapter: "codex-acp");
+        host.Set("s1", "from", "s0");
+        host.Set("s1", "fromWhy", HandOverWhy.Limit);
+        var driver = Driver(host, git);
+        await driver.DeliverAsync("op1", AskedAt(tip));
+        host.Take("s1");
+        host.Answer("op1", 1, "fixed", commit: fix);
+
+        await driver.DeliverAsync("op1", AskedAt(tip));
+
+        var (_, choice) = Assert.Single(_passes);
+        Assert.Equal(("codex-acp", ReviewerLabels.SameAgent, ReviewerUnavailable.NotIndependent), (choice.Reviewer, choice.Label, choice.Code));
+        Assert.Equal(["OpenAI", "Anthropic"], choice.Working.Select(family => family.Maker));
+    }
+
     /// <summary>Nothing fixed, nothing new to read: no recheck is asked, and why is kept, so no later look asks one either.</summary>
     [Fact]
     public async Task No_recheck_is_asked_where_nothing_was_fixed()

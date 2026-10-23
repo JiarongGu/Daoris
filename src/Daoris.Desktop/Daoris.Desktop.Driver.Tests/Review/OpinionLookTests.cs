@@ -62,6 +62,32 @@ public sealed class OpinionLookTests : IDisposable
         Assert.Single(_passes);
     }
 
+    /// <summary>
+    /// 🔴 LIMITRESUME1j (D206; the limit-resume design §3.6): an opinion asked on a line that ran on two makers refuses a reviewer of
+    /// either as another maker's. s1's work went on with Claude Code from s0, cut off by its limit on Codex; the look judges the work's
+    /// families from every part of the line, so a listed reviewer of either maker reads it only as the same agent, fresh, and says
+    /// that no other maker's agent could.
+    /// </summary>
+    [Theory]
+    [InlineData("codex-acp")]
+    [InlineData("claude-code")]
+    public async Task An_opinion_asked_on_a_line_that_ran_on_two_makers_refuses_a_reviewer_of_either(string reviewer)
+    {
+        var (host, _, _) = await DoneAsync(required: false, reviewers: [reviewer]);
+        host.Session("s0", "failed", adapter: "codex-acp");
+        host.Set("s1", "from", "s0");
+        host.Set("s1", "fromWhy", HandOverWhy.Limit);
+        var driver = Driver(host);
+
+        await driver.OpinionsAsync(new Snapshot([], [], []), [], CancellationToken.None);
+        await driver.Running.SettledAsync();
+
+        var (_, choice) = Assert.Single(_passes);
+        Assert.Equal((reviewer, ReviewerLabels.SameAgent, ReviewerUnavailable.NotIndependent), (choice.Reviewer, choice.Label, choice.Code));
+        Assert.Equal(["OpenAI", "Anthropic"], choice.Working.Select(family => family.Maker));
+        Assert.Equal(ReviewerLabels.SameAgent, Assert.Single(new OpinionGates(_home).Read("q1", "reports").Asks).Label);
+    }
+
     [Fact]
     public async Task The_presses_keep_the_persons_answer_and_ask_a_pass_among_the_rules_reviewers_for_the_next_look()
     {
@@ -275,14 +301,14 @@ public sealed class OpinionLookTests : IDisposable
     /// A session that worked in its own tree on `reports` and concluded on its quest's done, owed an opinion as the conclusion makes
     /// it, under a rule naming Codex: the host standing in, the tree, and where the work left the line.
     /// </summary>
-    private async Task<(OpinionStandIn Host, string Tree, string Line)> DoneAsync(bool required, string[]? on = null)
+    private async Task<(OpinionStandIn Host, string Tree, string Line)> DoneAsync(bool required, string[]? on = null, string[]? reviewers = null)
     {
         (DriverConfig.Empty with
         {
             Adapter = "claude-code-acp",
             Opinions = new Dictionary<string, OpinionRule>(StringComparer.OrdinalIgnoreCase)
             {
-                ["reports"] = new OpinionRule(["codex-acp"], on ?? [OpinionRules.Landing], required),
+                ["reports"] = new OpinionRule(reviewers ?? ["codex-acp"], on ?? [OpinionRules.Landing], required),
             },
         }).Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
 
