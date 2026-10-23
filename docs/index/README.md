@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (258)
+## Files over 40 KB (259)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -41,12 +41,12 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/app/App.tsx` | 89 | 1551 |
 | `src/Daoris.Web/src/app/pushedState.test.tsx` | 63 | 1325 |
 | `src/Daoris.Web/src/bridge/sessions/sessions.ts` | 50 | 960 |
-| `src/Daoris.Web/src/data/api.ts` | 54 | 887 |
+| `src/Daoris.Web/src/data/api.ts` | 54 | 892 |
 | `src/Daoris.Web/src/data/queries.ts` | 52 | 979 |
 | `src/Daoris.Web/src/design/Flow.tsx` | 45 | 890 |
 | `src/Daoris.Web/src/design/tokens.test.ts` | 48 | 856 |
-| `src/Daoris.Web/src/design/ui.test.tsx` | 62 | 1253 |
-| `src/Daoris.Web/src/design/ui.tsx` | 92 | 1931 |
+| `src/Daoris.Web/src/design/ui.test.tsx` | 63 | 1268 |
+| `src/Daoris.Web/src/design/ui.tsx` | 93 | 1948 |
 | `src/Daoris.Web/src/help/AskConversation.tsx` | 58 | 1074 |
 | `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 98 | 1959 |
 | `src/Daoris.Web/src/menus/commands.ts` | 43 | 824 |
@@ -73,6 +73,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/noteLines.test.ts` | 84 | 1237 |
 | `src/Daoris.Web/src/work/noteLines.ts` | 48 | 841 |
 | `src/Daoris.Web/src/work/rail/SessionRail.test.tsx` | 54 | 1061 |
+| `src/Daoris.Web/src/work/rail/SessionRow.test.tsx` | 40 | 756 |
 
 ### Web settings (`web-settings`)
 
@@ -152,8 +153,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/DrivenInbox.cs` | 50 | 1150 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpFacts.cs` | 55 | 930 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSettingProposals.cs` | 53 | 940 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 258 | 4075 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverContinuations.cs` | 71 | 1120 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 260 | 4103 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverContinuations.cs` | 72 | 1120 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverHelpers.cs` | 60 | 1014 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverWatch.cs` | 63 | 1058 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/DriverChoicesCommand.cs` | 119 | 2147 |
