@@ -82,7 +82,8 @@ public sealed record TurnModels(string Model, IReadOnlyList<ModelTokens>? Split,
 
     /// <summary>
     /// A split from the wire: an object keyed by model (<c>modelUsage</c>) or an array of objects each naming its
-    /// <c>model</c> (<c>quota.model_usage</c>), each model's counts read by <see cref="Counts"/>. Null for any other shape, an
+    /// <c>model</c> (<c>quota.model_usage</c>), each model's counts read by <see cref="Counts"/>, from the entry's own
+    /// <c>token_count</c> where it has one (both protocol agents' measured shape, MODELROLE1a). Null for any other shape, an
     /// entry with no name, or a name twice.
     /// </summary>
     public static IReadOnlyDictionary<string, TurnTokens>? Read(JsonElement split)
@@ -102,7 +103,8 @@ public sealed record TurnModels(string Model, IReadOnlyList<ModelTokens>? Split,
         foreach (var entry in split.EnumerateArray())
         {
             if (entry.ValueKind != JsonValueKind.Object || Json.Text(entry, "model") is not { Length: > 0 } model
-                || Counts(entry) is not { } counts || !read.TryAdd(model, counts))
+                || Counts(entry.TryGetProperty("token_count", out var inner) ? inner : entry) is not { } counts
+                || !read.TryAdd(model, counts))
             {
                 return null;
             }
@@ -113,7 +115,7 @@ public sealed record TurnModels(string Model, IReadOnlyList<ModelTokens>? Split,
 
     /// <summary>
     /// One model's four counts, each by the names a wire is known to use for it: the protocol door's <c>usage</c>
-    /// (<c>inputTokens</c>, <c>cachedReadTokens</c>), the SDK's <c>ModelUsage</c> (<c>cacheReadInputTokens</c>,
+    /// (<c>inputTokens</c>, <c>cachedReadTokens</c>), its quota's (<c>cachedInputTokens</c>), the SDK's <c>ModelUsage</c> (<c>cacheReadInputTokens</c>,
     /// <c>cacheCreationInputTokens</c>) and the Messages API's (<c>input_tokens</c>). Null where it names none. A zero stays
     /// zero here: it is one model's share, and the turn's total is what says whether anything was reported.
     /// </summary>
@@ -133,7 +135,7 @@ public sealed record TurnModels(string Model, IReadOnlyList<ModelTokens>? Split,
         var counts = new TurnTokens(
             Count("inputTokens", "input_tokens"),
             Count("outputTokens", "output_tokens"),
-            Count("cachedReadTokens", "cacheReadInputTokens", "cache_read_input_tokens"),
+            Count("cachedReadTokens", "cachedInputTokens", "cacheReadInputTokens", "cache_read_input_tokens"),
             Count("cachedWriteTokens", "cacheCreationInputTokens", "cache_creation_input_tokens"));
         return counts is { Input: null, Output: null, CacheRead: null, CacheWrite: null } ? null : counts;
     }

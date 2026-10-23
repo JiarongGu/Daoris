@@ -164,6 +164,49 @@ public sealed class ClaudeStreamJsonTests
         Assert.DoesNotContain("models", line, StringComparison.OrdinalIgnoreCase);
     }
 
+    // ——— MODELROLE1a (D205 §3.2, §3.3): what Claude Code 2.1.309 printed on the owner's install for `--model`
+    // (docs/2026-10-23-model-effort-doors-evidence.md), trimmed of fields this reader does not read.
+
+    /// <summary>
+    /// <c>--model sonnet</c>, a real turn: the alias resolved, and the answer and <c>modelUsage</c> name the id that ran, the
+    /// tool's own side model beside it.
+    /// </summary>
+    [Fact]
+    public void A_measured_turn_on_an_alias_names_the_id_that_ran()
+    {
+        const string init = """{"type":"system","subtype":"init","session_id":"c2","model":"claude-sonnet-5-5","permissionMode":"acceptEdits","claude_code_version":"2.1.309","per_turn_effort_active":true}""";
+        const string answer = """{"type":"assistant","message":{"model":"claude-sonnet-5-5","id":"msg_1","type":"message","role":"assistant","content":[{"type":"text","text":"OK"}],"usage":{"input_tokens":2,"cache_creation_input_tokens":9768,"cache_read_input_tokens":17246,"output_tokens":4}},"parent_tool_use_id":null,"session_id":"c2"}""";
+        const string result = """{"type":"result","subtype":"success","is_error":false,"api_error_status":null,"num_turns":1,"result":"OK","stop_reason":"end_turn","terminal_reason":"completed","usage":{"input_tokens":2,"cache_creation_input_tokens":9768,"cache_read_input_tokens":17246,"output_tokens":4},"modelUsage":{"claude-haiku-5-5":{"inputTokens":1179,"outputTokens":16,"cacheReadInputTokens":0,"cacheCreationInputTokens":0,"costUSD":0.0001259,"contextWindow":1000000,"canonicalModel":"claude-haiku-5-5"},"claude-sonnet-5-5":{"inputTokens":2,"outputTokens":4,"cacheReadInputTokens":17246,"cacheCreationInputTokens":9768,"costUSD":0.0408406,"contextWindow":1000000,"canonicalModel":"claude-sonnet-5-5"}},"session_id":"c2"}""";
+
+        var (_, events, _) = Map(init, answer, result);
+
+        var models = Assert.Single(events, e => e.Kind == SessionEventKind.Turn).Models!;
+        Assert.Equal(("claude-sonnet-5-5", (bool?)false, TurnModels.FromModelUsage), (models.Model, models.Whole, models.From));
+        Assert.Equal(["claude-haiku-5-5", "claude-sonnet-5-5"], models.Split!.Select(each => each.Model));
+    }
+
+    /// <summary>
+    /// 🔴 A model the account cannot run, as measured: <c>system/init</c> names the asked model unchecked, then the tool's own
+    /// message (<c>&lt;synthetic&gt;</c>, <c>error: "model_not_found"</c>, 404) and a failed result with no counts, after
+    /// the prompt was handed, with no output and no tool use. The words reach the transcript as the turn's failure, and
+    /// <c>&lt;synthetic&gt;</c> is no model that ran.
+    /// </summary>
+    [Fact]
+    public void A_measured_model_refusal_is_the_turn_s_failure_in_the_tool_s_words_and_names_no_model()
+    {
+        const string words = "There's an issue with the selected model (claude-nonexistent-9). It may not exist or you may not have access to it. Run --model to pick a different model.";
+        const string init = """{"type":"system","subtype":"init","session_id":"c3","model":"claude-nonexistent-9","permissionMode":"acceptEdits","claude_code_version":"2.1.309"}""";
+        const string refusal = $$"""{"type":"assistant","message":{"id":"3ef8f451","model":"<synthetic>","role":"assistant","stop_reason":"stop_sequence","type":"message","usage":{"input_tokens":0,"output_tokens":0,"cache_creation_input_tokens":0,"cache_read_input_tokens":0},"content":[{"type":"text","text":"{{words}}"}]},"parent_tool_use_id":null,"session_id":"c3","error":"model_not_found","is_api_error_message":true,"api_error_status":404}""";
+        const string result = $$"""{"type":"result","subtype":"success","is_error":true,"api_error_status":404,"num_turns":1,"stop_reason":"stop_sequence","terminal_reason":"api_error","usage":{"input_tokens":0,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":0},"modelUsage":{},"result":"{{words}}","session_id":"c3"}""";
+
+        var (lines, events, _) = Map(init, refusal, result);
+
+        Assert.Contains($"— the turn failed (success): {words}", lines);
+        Assert.DoesNotContain(events, e => e.Kind == SessionEventKind.Tool);
+        var models = Assert.Single(events, e => e.Kind == SessionEventKind.Turn).Models;
+        Assert.NotEqual("<synthetic>", models?.Model);
+    }
+
     /// <summary>
     /// USAGECAP1a2: a model switched mid-session splits by turn. The second turn's answers name the new model, and a
     /// <c>modelUsage</c> that ran on from the first turn is read as the second's own less the first's: the process's running

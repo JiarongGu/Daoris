@@ -207,7 +207,10 @@ public sealed class ClaudeStreamJson : IStreamMapper
         var streamed = Text(message, "id") is { } id && _streamed.Contains(id);
         Measure(message);
         // The model that answered the turn (USAGECAP1a2): a subagent's answer, on a line of its own beside the session, names none.
-        if (!frame.TryGetProperty("parent_tool_use_id", out var parent) || parent.ValueKind != JsonValueKind.String)
+        // 🔴 Nor does the tool's own message: a refused model or a limit is said as `<synthetic>` (MODELROLE1a's evidence), which
+        // no model ran.
+        if ((!frame.TryGetProperty("parent_tool_use_id", out var parent) || parent.ValueKind != JsonValueKind.String)
+            && Text(message, "model") != "<synthetic>")
         {
             _named.Add(Text(message, "model"));
         }

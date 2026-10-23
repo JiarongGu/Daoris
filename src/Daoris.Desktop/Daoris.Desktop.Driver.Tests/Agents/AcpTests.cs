@@ -1341,6 +1341,42 @@ public sealed class AcpTests
     }
 
     /// <summary>
+    /// MODELROLE1a: the frames <c>claude-agent-acp</c> 0.84.0 sent for a real turn on the owner's install, as sent. Each
+    /// model's counts sit under its own <c>token_count</c>, the cache read named <c>cachedInputTokens</c>; read at the entry's
+    /// top level, as the shape above was guessed, no split was found and the turn's helper went uncounted.
+    /// </summary>
+    [Fact]
+    public async Task A_measured_turn_s_quota_split_is_read_from_each_model_s_token_count()
+    {
+        var events = new List<SessionEvent>();
+        var agent = new FakeAgent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize": return Ok(frame, """{"protocolVersion":1}""");
+                case "session/new": return Ok(frame, """{"sessionId":"s-12"}""");
+                case "session/prompt":
+                    self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-12","update":{"sessionUpdate":"usage_update","used":27029,"size":1000000,"_meta":{"_claude/model":"claude-sonnet-5-5"}}}}""");
+                    return Ok(frame, """
+                        {"stopReason":"end_turn","usage":{"inputTokens":2,"outputTokens":4,"cachedReadTokens":16420,"cachedWriteTokens":10603,"totalTokens":27029},"_meta":{"quota":{"token_count":{"totalTokens":27029,"inputTokens":2,"cachedInputTokens":16420,"cachedWriteTokens":10603,"outputTokens":4,"reasoningOutputTokens":0},"model_usage":[{"model":"claude-haiku-4-5-20251001","token_count":{"totalTokens":913,"inputTokens":902,"cachedInputTokens":0,"cachedWriteTokens":0,"outputTokens":11,"reasoningOutputTokens":0}},{"model":"claude-sonnet-5-5","token_count":{"totalTokens":27029,"inputTokens":2,"cachedInputTokens":16420,"cachedWriteTokens":10603,"outputTokens":4,"reasoningOutputTokens":0}}]}}}
+                        """);
+                default: return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: events.Add);
+        await session.OpenAsync("D:/fam/Game", CancellationToken.None);
+        await session.PromptAsync("Reply with the single word OK and nothing else.", CancellationToken.None);
+        session.Release();
+
+        var turn = Assert.Single(events, e => e.Kind == SessionEventKind.Turn).Models!;
+        Assert.Equal(("claude-sonnet-5-5", (bool?)false, TurnModels.FromQuota), (turn.Model, turn.Whole, turn.From));
+        Assert.Equal(
+            [("claude-haiku-4-5-20251001", new TurnTokens(902, 11, 0, 0)), ("claude-sonnet-5-5", new TurnTokens(2, 4, 16420, 10603))],
+            turn.Split!.Select(each => (each.Model, each.Tokens)));
+    }
+
+    /// <summary>
     /// USAGECAP1a2: a prompt an error answered ends no turn on this door, and the model its update named is not the next turn's:
     /// the next turn names its own, never <c>mixed</c> with one that never ended.
     /// </summary>
@@ -2481,20 +2517,175 @@ public sealed class AcpTests
         session.Release();
     }
 
-    /// <summary>A change the agent refuses is its refusal, in its words, and what was kept stays as it was.</summary>
+    /// <summary>
+    /// A change the agent refuses is its refusal, in its words, and what was kept stays as it was. The words are where
+    /// <c>claude-agent-acp</c> 0.84.0 puts them, in <c>data.details</c> behind a bare <c>Internal error</c> (MODELROLE1a's
+    /// evidence): read from the message alone, the refusal said <c>Internal error</c> and nothing a person could act on.
+    /// </summary>
     [Fact]
     public async Task A_setting_the_agent_refuses_is_its_words_and_changes_nothing()
     {
         var agent = Offering((frame, self) => frame.GetProperty("method").GetString() == "session/set_config_option"
-            ? $$$"""{"jsonrpc":"2.0","id":{{{frame.GetProperty("id").GetRawText()}}},"error":{"code":-32603,"message":"Invalid value for config option model: nonsense"}}"""
+            ? $$$$"""{"jsonrpc":"2.0","id":{{{{frame.GetProperty("id").GetRawText()}}}},"error":{"code":-32603,"message":"Internal error","data":{"details":"Invalid value for config option model: nonsense"}}}"""
             : null);
         var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
         await session.OpenAsync("D:/fam/Game", CancellationToken.None);
 
         var refused = await Assert.ThrowsAsync<AcpRefusal>(() => session.SetConfigOptionAsync("model", "nonsense", CancellationToken.None));
 
-        Assert.Contains("Invalid value for config option model: nonsense", refused.Message);
+        Assert.Equal("Internal error: Invalid value for config option model: nonsense", refused.Words);
+        Assert.Equal(-32603, refused.Code);
         Assert.Equal("default", session.ConfigOptions.Single(option => option.Id == "model").Current);
+        session.Release();
+    }
+
+    // ——— MODELROLE1a (D205 §3.2, §3.3): the options and answers both protocol agents gave on the owner's install
+    // (docs/2026-10-23-model-effort-doors-evidence.md), as they gave them.
+
+    /// <summary>
+    /// <c>claude-agent-acp</c> 0.84.0's <c>session/new</c> list as measured: flat values, <c>default</c> a value of the model
+    /// and of the effort, the same on every account. Its full model list is shortened to the values the tests use.
+    /// </summary>
+    private const string ClaudeOffered = """
+        [{"id":"mode","name":"Mode","description":"Session permission mode","category":"mode","type":"select","currentValue":"default","options":[{"value":"default","name":"Manual"},{"value":"acceptEdits","name":"Accept edits"},{"value":"auto","name":"Auto"}]},
+         {"id":"model","name":"Model","description":"AI model to use","category":"model","type":"select","currentValue":"default","options":[{"value":"default","name":"Default (recommended)"},{"value":"opus","name":"Opus"},{"value":"sonnet","name":"Sonnet"},{"value":"haiku","name":"Haiku"},{"value":"claude-opus-4-8","name":"Opus 4.8"}]},
+         {"id":"effort","name":"Effort","category":"thought_level","type":"select","currentValue":"default","options":[{"value":"default","name":"Default"},{"value":"low","name":"Low"},{"value":"medium","name":"Medium"},{"value":"high","name":"High"},{"value":"xhigh","name":"Extra high"},{"value":"max","name":"Max"}]},
+         {"id":"fast","name":"Fast mode","category":"model_config","type":"select","currentValue":"off","options":[{"value":"on","name":"On"},{"value":"off","name":"Off"}]}]
+        """;
+
+    /// <summary>
+    /// The list <c>claude-agent-acp</c> answered after a change, as measured: the model's value as the agent holds it (an
+    /// alias for a full id that has one), the effort while the model offers one, and no <c>fast</c> once it is not opus.
+    /// </summary>
+    private static string ClaudeAnswer(string mode, string model, string? effort) => $$"""
+        {"configOptions":[{"id":"mode","name":"Mode","category":"mode","type":"select","currentValue":"{{mode}}","options":[{"value":"default","name":"Manual"},{"value":"acceptEdits","name":"Accept edits"},{"value":"auto","name":"Auto"}]},
+         {"id":"model","name":"Model","category":"model","type":"select","currentValue":"{{model}}","options":[{"value":"default","name":"Default (recommended)"},{"value":"opus","name":"Opus"},{"value":"sonnet","name":"Sonnet"},{"value":"haiku","name":"Haiku"},{"value":"claude-opus-4-8","name":"Opus 4.8"}]}
+         {{(effort is null ? "" : $$$""",{"id":"effort","name":"Effort","category":"thought_level","type":"select","currentValue":"{{{effort}}}","options":[{"value":"default","name":"Default"},{"value":"low","name":"Low"},{"value":"medium","name":"Medium"},{"value":"high","name":"High"},{"value":"xhigh","name":"Extra high"},{"value":"max","name":"Max"}]}""")}}]}
+        """;
+
+    /// <summary>
+    /// The driven shape the row measured: the model, then the effort, each answered with the whole list, its current value
+    /// the one asked, before any prompt; the agent's list is what is kept.
+    /// </summary>
+    [Fact]
+    public async Task Claude_s_measured_answers_set_the_model_then_the_effort_each_returning_the_whole_list()
+    {
+        var held = (Model: "default", Effort: "default");
+        var agent = new FakeAgent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize": return Ok(frame, """{"protocolVersion":1,"agentCapabilities":{}}""");
+                case "session/new": return Ok(frame, $$"""{"sessionId":"s-1","configOptions":{{ClaudeOffered}}}""");
+                case "session/set_config_option":
+                    var p = frame.GetProperty("params");
+                    if (p.GetProperty("configId").GetString() == "model") held.Model = p.GetProperty("value").GetString()!;
+                    else held.Effort = p.GetProperty("value").GetString()!;
+                    return Ok(frame, ClaudeAnswer("auto", held.Model, held.Effort));
+                default: return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+        await session.OpenAsync("D:/fam/Game", CancellationToken.None);
+
+        Assert.Equal(["default", "opus", "sonnet", "haiku", "claude-opus-4-8"], session.ConfigOptions.Single(o => o.Category == "model").Choices.Select(c => c.Value));
+        Assert.Equal("default", session.ConfigOptions.Single(o => o.Category == "thought_level").Current);
+        await session.SetConfigOptionAsync("model", "sonnet", CancellationToken.None);
+        var after = await session.SetConfigOptionAsync("effort", "low", CancellationToken.None);
+
+        var sets = agent.Sent.Select((_, i) => agent.Frame(i)).Where(f => f.TryGetProperty("method", out var m) && m.GetString() == "session/set_config_option")
+            .Select(f => f.GetProperty("params").GetProperty("configId").GetString()).ToList();
+        Assert.Equal(["model", "effort"], sets);
+        Assert.Equal(("sonnet", "low"), (after.Single(o => o.Category == "model").Current, after.Single(o => o.Category == "thought_level").Current));
+        session.Release();
+    }
+
+    /// <summary>
+    /// 🔴 Measured: a full id the list does not hold is accepted and answered with its alias (<c>claude-sonnet-5-5</c> asked,
+    /// <c>sonnet</c> returned). What is kept is the agent's word, never the request assumed, so a returned value that differs
+    /// from the one asked is not by itself a refusal (D205 §3.2, round 3).
+    /// </summary>
+    [Fact]
+    public async Task A_full_id_claude_answers_with_its_alias_is_kept_as_the_agent_said_it()
+    {
+        var agent = new FakeAgent((frame, self) => frame.GetProperty("method").GetString() switch
+        {
+            "initialize" => Ok(frame, """{"protocolVersion":1,"agentCapabilities":{}}"""),
+            "session/new" => Ok(frame, $$"""{"sessionId":"s-1","configOptions":{{ClaudeOffered}}}"""),
+            "session/set_config_option" => Ok(frame, ClaudeAnswer("auto", "sonnet", "default")),
+            _ => frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null,
+        });
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+        await session.OpenAsync("D:/fam/Game", CancellationToken.None);
+
+        var after = await session.SetConfigOptionAsync("model", "claude-sonnet-5-5", CancellationToken.None);
+
+        Assert.Equal("sonnet", after.Single(o => o.Category == "model").Current);
+        Assert.Equal("sonnet", session.ConfigOptions.Single(o => o.Category == "model").Current);
+        session.Release();
+    }
+
+    /// <summary>
+    /// 🔴 Measured: <c>haiku</c> offers no effort, so its answer drops the effort option, and the change moved the posture,
+    /// <c>auto</c> to <c>acceptEdits</c>, both in a <c>current_mode_update</c> and in the list. The list kept is the agent's,
+    /// so a reader sees no effort to set and the mode it is really in.
+    /// </summary>
+    [Fact]
+    public async Task Claude_s_haiku_answer_drops_the_effort_and_moves_the_posture()
+    {
+        var agent = new FakeAgent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize": return Ok(frame, """{"protocolVersion":1,"agentCapabilities":{}}""");
+                case "session/new": return Ok(frame, $$"""{"sessionId":"s-1","configOptions":{{ClaudeOffered}}}""");
+                case "session/set_config_option":
+                    self.Push(Update("s-1", """{"sessionUpdate":"current_mode_update","currentModeId":"acceptEdits"}"""));
+                    return Ok(frame, ClaudeAnswer("acceptEdits", "haiku", null));
+                default: return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+        await session.OpenAsync("D:/fam/Game", CancellationToken.None);
+
+        var after = await session.SetConfigOptionAsync("model", "haiku", CancellationToken.None);
+
+        Assert.DoesNotContain(after, o => o.Category == "thought_level");
+        Assert.Equal("acceptEdits", after.Single(o => o.Category == "mode").Current);
+        session.Release();
+    }
+
+    /// <summary>
+    /// <c>codex-acp</c> 2.1.1's list as measured: the effort's id is <c>reasoning_effort</c>, in the same
+    /// <c>thought_level</c> category, so a carrier finds it by category; no <c>default</c> value; and a value it does not
+    /// offer is a bare <c>Invalid params</c>, its code the only thing to read.
+    /// </summary>
+    [Fact]
+    public async Task Codex_s_measured_options_are_found_by_category_and_its_refusal_is_bare()
+    {
+        var agent = new FakeAgent((frame, self) => frame.GetProperty("method").GetString() switch
+        {
+            "initialize" => Ok(frame, """{"protocolVersion":1,"agentCapabilities":{}}"""),
+            "session/new" => Ok(frame, """
+                {"sessionId":"s-1","configOptions":[
+                 {"id":"mode","name":"Mode","category":"mode","type":"select","currentValue":"agent","options":[{"value":"read-only","name":"Read Only"},{"value":"agent","name":"Agent"}]},
+                 {"id":"model","name":"Model","category":"model","type":"select","currentValue":"gpt-6.1-sol","options":[{"value":"gpt-6.1-sol","name":"gpt-6.1-sol"},{"value":"gpt-6-luna","name":"gpt-6-luna"}]},
+                 {"id":"reasoning_effort","name":"Reasoning Effort","category":"thought_level","type":"select","currentValue":"medium","options":[{"value":"low","name":"Low"},{"value":"medium","name":"Medium"},{"value":"ultra","name":"Ultra"}]},
+                 {"id":"fast-mode","name":"Fast mode","category":"model_config","type":"select","currentValue":"off","options":[{"value":"off","name":"Off"},{"value":"on","name":"On"}]}],
+                 "models":{"currentModelId":"gpt-6.1-sol[medium]","availableModels":[{"modelId":"gpt-6.1-sol[medium]","name":"gpt-6.1-sol (medium)"}]}}
+                """),
+            "session/set_config_option" => $$$"""{"jsonrpc":"2.0","id":{{{frame.GetProperty("id").GetRawText()}}},"error":{"code":-32602,"message":"Invalid params"}}""",
+            _ => frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null,
+        });
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+        await session.OpenAsync("D:/fam/Game", CancellationToken.None);
+
+        var effort = session.ConfigOptions.Single(o => o.Category == "thought_level");
+        Assert.Equal(("reasoning_effort", "medium"), (effort.Id, effort.Current));
+        Assert.DoesNotContain(effort.Choices, c => c.Value == "default");
+        var refused = await Assert.ThrowsAsync<AcpRefusal>(() => session.SetConfigOptionAsync("model", "gpt-9", CancellationToken.None));
+        Assert.Equal((-32602, "Invalid params"), (refused.Code, refused.Words));
+        Assert.Equal("gpt-6.1-sol", session.ConfigOptions.Single(o => o.Category == "model").Current);
         session.Release();
     }
 

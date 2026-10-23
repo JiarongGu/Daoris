@@ -19931,3 +19931,14 @@ error as the agent's message. The observation never read the stop reason, so the
 conclusion (`HarnessEnding.ProviderRefused`), which reads it before every park. The run fails under `ended.provider-refused`, keeping
 the provider's words and request id. It is a strike, carried on as any failed run is (driver), and worded in en and zh (web). The
 red-first tick proof and the classes run are in FIX-LOG's APIREFUSAL1 entry.
+## MODELROLE1a — what each door accepts, measured (2026-10-23, D205)
+
+> | **MODELROLE1a — what each door accepts, measured** (tools, stubs) | On `claude-agent-acp`, `codex-acp` and dsh: `set_config_option` for `model` and `thought_level` at a driven-shaped open, before the first prompt, the values offered, combined or apart, and whether a turn reports its model; **round 2 (Opus N2):** whether the offers differ by account, whether `set_config_option` on `claude-agent-acp` writes the account's `settings.json` (which would break D98's boundary and move every *account default* on it), whether the answer returns the option list, and whether `claude-agent-acp` offers the SDK's aliases or ids; **round 3 (Opus N5):** whether an accepted change returns the requested id as the current value. On the pipe door: `claude -p --model <alias>`, `--effort` (with `max`) **against a conflicting saved per-model effort**, `CLAUDE_CODE_EFFORT_LEVEL`'s rank, whether `--model` holds on a `--resume` run, and when and in what words an unknown or unentitled model is refused (on a silent turn or not). No spawn-file effort is measured as a carrier (§3.2). An evidence document; the ACP and pipe stubs speak the measured shapes | The evidence on the owner's install; the stubs' tests |
+
+(The row of `docs/2026-10-23-actors-design.md` §14; the backlog held it inside MODELROLE1.)
+
+**Outcome** 2026-10-23: measured on the install, with the evidence in `docs/2026-10-23-model-effort-doors-evidence.md` and its
+findings in D205's MODELROLE1a note. `claude-agent-acp` and `codex-acp` were measured; dsh is not installed. No settings file
+changed, so nothing was restored. The ACP fakes in `AcpTests` and the pipe frames in `ClaudeStreamJsonTests` now speak the
+measured shapes. Three readers built on guessed shapes were corrected (FIX-LOG's MODELROLE1a entry). Not measured: a per-account
+difference in offers and an unentitled model on a real account, since none was found.

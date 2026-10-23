@@ -187,6 +187,18 @@ Each run copies the private files a gate reads under `local/` (the declared `sen
 checkout's `local/scratch/beside-<sha7>/` when it ends, pass, fail or error, so a prune loses none (GATEWT1b, GATEWT1c).
 A run killed outright leaves its logs in the tree; the next run keeps them there before it clears them.
 
+### Work the local install builds
+
+The install's driven sessions build rows of this repository in their own trees. Two practices keep one line of work in one
+place (learned 2026-10-23, LIMITGOON1):
+
+- **A stuck session is resumed in place,** never re-published as a new quest. Answer its park, resume it (`sessions say`,
+  `help resume`), or let its quest go on. A new quest for the same work opens a second tree, and both must later rebase onto
+  whichever lands first.
+- **Land through Daoris's own `trees land`.** A landing done beside it, such as a squash to correct a commit's attribution, is
+  not recognised as the sessions' work (SQUASHSEEN1). Daoris then reopens those sessions to rebase onto main, finding nothing
+  left to do.
+
 ### The CI between releases
 
 `--ci [<commit>]` is the local CI (CI1, D180's CI1 note). It gates main's tip, or the named commit, in the same

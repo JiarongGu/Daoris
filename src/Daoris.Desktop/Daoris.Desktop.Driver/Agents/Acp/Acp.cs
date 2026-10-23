@@ -172,7 +172,7 @@ public sealed class AcpRefusal(
     string message, string? said = null, string? errorKind = null, int? code = null, string? words = null, string? reason = null)
     : DriverException(message)
 {
-    /// <summary>What the error's <c>data.message</c> said, or null where it said nothing.</summary>
+    /// <summary>What the error's <c>data.message</c>, or else its <c>data.details</c>, said; null where it said nothing.</summary>
     public string? Said => said;
 
     /// <summary>
@@ -197,12 +197,16 @@ public sealed class AcpRefusal(
     /// The refusal a JSON-RPC <c>error</c> member says, read without trusting its shape (REV3): a message that is not
     /// text is the error as written, and a <c>data</c> that is not an object, or fields in it that are not text, add
     /// nothing. The data's message is said after the error's only where it adds words the error's did not already say.
+    /// <c>claude-agent-acp</c> puts its sentence in <c>data.details</c> instead (<c>Invalid value for config option model: …</c>,
+    /// MODELROLE1a's evidence), read where the data has no message.
     /// </summary>
     internal static AcpRefusal Of(JsonElement error)
     {
         var message = Json.Text(error, "message") ?? error.GetRawText();
         var data = error.ValueKind == JsonValueKind.Object && error.TryGetProperty("data", out var d) ? d : default;
-        var said = Json.Text(data, "message") is { } words && !string.IsNullOrWhiteSpace(words) ? words.Trim() : null;
+        var said = (Json.Text(data, "message") ?? Json.Text(data, "details")) is { } words && !string.IsNullOrWhiteSpace(words)
+            ? words.Trim()
+            : null;
         var sentence = said is null || message.Contains(said, StringComparison.Ordinal) ? message : $"{message}: {said}";
         var code = error.ValueKind == JsonValueKind.Object && error.TryGetProperty("code", out var c)
                    && c.ValueKind == JsonValueKind.Number && c.TryGetInt32(out var number)
