@@ -8,7 +8,7 @@ public sealed class ActorRunTests : IDisposable
 {
     private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "modelrole1b-" + Guid.NewGuid().ToString("N"));
     public ActorRunTests() => Directory.CreateDirectory(_home);
-    public void Dispose() { if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true); }
+    public void Dispose() => GitSeed.Discard(_home);
 
     [Fact]
     public void Reports_preserve_unsplit_mixed_order_a_fourth_and_a_ninth_model_and_bounded_effort_changes()
