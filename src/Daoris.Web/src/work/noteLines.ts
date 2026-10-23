@@ -276,6 +276,12 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'chat.moved-from': { values: ['from', 'window', 'used', 'curve'], accounts: ['from'] },
   // A conversation whose account's limit refused its turn, whose move to the next account did not open (LIMITGOON1).
   'chat.limit-not-moved': { values: [] },
+  // A conversation its account's limit cut off with no account to go on on (LIMITRESUME1c): it waits, and the person's *Stop waiting*.
+  'chat.limit-waits': { values: ['owner', 'until', 'why'], why: 'cooling' },
+  'chat.limit-stopped-waiting': { values: [] },
+  // The limit's wake (LIMITRESUME1, D206 §3.7): its own conversation went on, or could not be resumed and went on briefed.
+  'limit.resumed': { values: ['until'] },
+  'limit.resume-refused': { values: ['why'], why: 'continue' },
   // A helper on another agent (MIXAGENT2a-ii): on the asker, asked, answered or refused, with the agent and why; on the helper,
   // whose session it helps.
   'helper.asked': { values: ['agent', 'session'] },

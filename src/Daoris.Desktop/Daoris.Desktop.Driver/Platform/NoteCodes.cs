@@ -679,6 +679,17 @@ public static class NoteCodes
     // and the words its refused turns held stay in it. The start's own words follow in the English alone.
     public static readonly NoteCode ChatLimitNotMoved = new("chat.limit-not-moved", []);
 
+    // ——— A conversation its account's limit cut off with no other account to go on on (LIMITRESUME1c, D206 §3.5): it waits, its words
+    // with it, and goes on by itself when an account is ready; the person's *Stop waiting* ends the wait. Accounts by their ids, as
+    // `waits.account` names them: a conversation's record stays on this machine.
+    public static readonly NoteCode ChatLimitWaits = new("chat.limit-waits", ["owner", "until", "why"]) { Why = Cooling };
+    public static readonly NoteCode ChatLimitStoppedWaiting = new("chat.limit-stopped-waiting", []);
+
+    // ——— The limit's wake (LIMITRESUME1, D206 §3.3, §3.7): its own account ready again at the margin-added `until`, it went on in its
+    // own conversation; or its own conversation could not be resumed, by the refusal's code, and it went on briefed.
+    public static readonly NoteCode LimitResumed = new("limit.resumed", ["until"]);
+    public static readonly NoteCode LimitResumeRefused = new("limit.resume-refused", ["why"]) { Why = Continue };
+
     // ——— Where the person's words went, after the record's earlier parts.
     public static readonly NoteCode WentCannot = new("went.cannot", ["why"], Key: "work.say.cannot") { Why = Continue };
     public static readonly NoteCode WentNewSession = new("went.new-session", ["why"]) { Why = Continue };

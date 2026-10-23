@@ -86,7 +86,17 @@ internal sealed class ChatGoOn
 
     private readonly BriefedMove _move;
 
-    public ChatGoOn(ChatContext context, ChatRunner runner, ChatHandOver handOver, ChatHelp help, ChatHelperWords words, BriefedMove move)
+    // LIMITRESUME1c: a conversation held by its limit, proven lost at its wake, moves by the limit's own ended-record body (D206 §3.5).
+    private readonly LimitMove _limit;
+
+    /// <summary>
+    /// An ended chat whose words wait for its own cooling account, or one held by its limit (LIMITRESUME1c, D206 §3.5): told to the look's
+    /// <c>limits</c> stage, which wakes it on its own account at the reset.
+    /// </summary>
+    internal Action<string>? Waits { get; set; }
+
+    public ChatGoOn(
+        ChatContext context, ChatRunner runner, ChatHandOver handOver, ChatHelp help, ChatHelperWords words, BriefedMove move, LimitMove limit)
     {
         _context = context;
         _runner = runner;
@@ -94,6 +104,7 @@ internal sealed class ChatGoOn
         _help = help;
         _words = words;
         _move = move;
+        _limit = limit;
 
         // The person's words to an ended chat are kept on its record and shown in its conversation by whichever door they
         // were said at (MSG1d); hearing them there is what takes them up at once (MSG1c, D137 §2.2).
@@ -173,6 +184,10 @@ internal sealed class ChatGoOn
     /// <returns>What became of each chat it took up, in the records' order; none where the service did not answer.</returns>
     public async Task<IReadOnlyList<ChatStart>> TakeUpAsync(CancellationToken ct = default)
     {
+        // LIMITRESUME1c (D206 §3.5, Codex 8): a limit's move a shell before this one opened and never delivered is delivered first, from
+        // its box, so the new part's words wait on its record as the records are read below; one it never opened is left for the wake.
+        await _limit.TakeUpBoxesAsync(ct).ConfigureAwait(false);
+
         string json;
         IReadOnlyList<SessionRecord> records;
         try
@@ -207,6 +222,14 @@ internal sealed class ChatGoOn
             if (WordsNever.ContinuedIn(records, each.Id) is not null) continue;
 
             if (ServiceClient.ReadRecord(json, each.Id) is not { WordsWaiting: true } record) continue;
+
+            // LIMITRESUME1c: one held by its limit is the look's limits stage's, which wakes it, its own account first, with Daoris's word.
+            if (LimitHeld.Waiting(_context.Events.After(each.Id, 0).Events) is not null)
+            {
+                Waits?.Invoke(each.Id);
+                continue;
+            }
+
             // COWORK1c (the message-urgency design §6, trap 8): words a shell before this one wrote to its agent leave the record first,
             // never sent again, since this may run before the loop's first look settles them.
             if (await UncertainWords.SettleOneAsync(_context.Service, _context.Events, record, ct).ConfigureAwait(false) > 0
@@ -304,14 +327,20 @@ internal sealed class ChatGoOn
     /// <param name="config">The machine's choices; read from the home's <c>driver.json</c> where none is handed.</param>
     /// <param name="onEnded">Told when the conversation it goes on in ends, or when its agent would not resume it.</param>
     /// <returns>The session where it went on; else null and why.</returns>
+    /// <param name="woke">
+    /// The moment the limits stage found its own account ready again (LIMITRESUME1c, D206 §3.5): the run's first line says so. Null for
+    /// every other go-on.
+    /// </param>
     public async Task<ChatStart> GoOnAsync(
-        string sessionId, DriverConfig? config = null, Func<string, string, Task>? onEnded = null, CancellationToken ct = default)
+        string sessionId, DriverConfig? config = null, Func<string, string, Task>? onEnded = null, CancellationToken ct = default,
+        DateTimeOffset? woke = null)
     {
         if (_context.Closing) return new(null, "the application is closing, so no conversation goes on now.");
         if (_context.Talking.ContainsKey(sessionId)) return new(null, $"conversation `{sessionId}` runs here: its words reach it at its door.");
 
         var going = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         if (!_context.GoingOn.TryAdd(sessionId, going.Task)) return new(null, $"conversation `{sessionId}` is already going on.");
+        ChatStart? started = null;
         try
         {
             DriverConfig choices;
@@ -323,20 +352,86 @@ internal sealed class ChatGoOn
                                                    or UnauthorizedAccessException)
             {
                 // The words wait, said: the next word tries again, and a torn driver.json is the person's to mend.
-                return Held(sessionId, HeldWords.ConfigUnread(unreadable.Message));
+                return started = Held(sessionId, HeldWords.ConfigUnread(unreadable.Message));
             }
 
-            return await GoingOnAsync(sessionId, choices, onEnded, ct).ConfigureAwait(false);
+            return started = await GoingOnAsync(sessionId, choices, onEnded, woke, ct).ConfigureAwait(false);
         }
         finally
         {
+            // 🔴 LIMITRESUME1c (D206 §3.5, B9): nothing went on, whatever held or refused it, so Daoris's limit word leaves its record by its
+            // id, never left to be said alone; the next wake keeps one of its own. A run that started takes it with the words it went with.
+            if (started is not { SessionId: not null } && woke is not null)
+            {
+                await LimitWordOffAsync(sessionId).ConfigureAwait(false);
+            }
+
             _context.GoingOn.TryRemove(sessionId, out _);
             going.TrySetResult();
         }
     }
 
+    /// <summary>
+    /// The limits stage's wake of an ended chat on its own account (LIMITRESUME1c, D206 §3.5): where its limit held it, Daoris's word is
+    /// kept on its record through the say door first, under <see cref="DaorisKeys.LimitReset"/>, so it goes last after the person's
+    /// words; then it goes on as any ended chat does, its own conversation resumed with the refused turns' words handed again first. An
+    /// ended chat whose words waited for its account never met a limit, and goes on with its words alone.
+    /// </summary>
+    internal async Task<ChatStart> WakeAsync(
+        string sessionId, bool limited, DateTimeOffset until, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct)
+    {
+        if (limited)
+        {
+            try
+            {
+                var said = await _context.Service
+                    .SayAsync(sessionId, LimitResetWord.Text, ct: ct, from: DaorisWords.From, key: DaorisKeys.LimitReset(sessionId, until))
+                    .ConfigureAwait(false);
+                if (!said.Kept) return new(null, said.Message);
+            }
+            catch (Exception error) when (error is HttpRequestException or DriverException or System.Text.Json.JsonException)
+            {
+                return new(null, error.Message);
+            }
+        }
+
+        return await GoOnAsync(sessionId, config, onEnded ?? Announce, ct, limited ? until : null).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Daoris's limit word off an ended record by its id (LIMITRESUME1c, D206 §3.5, N24): the record's own session named as taking it, as
+    /// the say door's taken door has it. The record as it stands after, or as it was where it could not be read.
+    /// </summary>
+    internal async Task<PriorSession?> LimitWordOffAsync(string sessionId, PriorSession? record = null)
+    {
+        record ??= await _context.ReadAgainAsync(sessionId, CancellationToken.None).ConfigureAwait(false);
+        if (record is null) return null;
+        List<string> ids = [.. LimitWordsOf(record).Select(word => word.Id!)];
+        if (ids.Count == 0) return record;
+        try
+        {
+            await _context.Service.TakenAsync(sessionId, ids, by: sessionId).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is HttpRequestException or DriverException or OperationCanceledException or ObjectDisposedException)
+        {
+            // Left, it is uncertain at the next come-up or taken with the next wake's.
+        }
+
+        return WithoutLimitWords(record);
+    }
+
+    /// <summary>Daoris's limit words waiting on a record (<see cref="DaorisKeys.IsLimitReset"/>).</summary>
+    private static IEnumerable<SaidWordView> LimitWordsOf(PriorSession record) =>
+        record.Waiting.Where(word => word.Daoris && DaorisKeys.IsLimitReset(word.Key) && word.Id is not null);
+
+    /// <summary>The record as its words stand without Daoris's limit word: what a refusal marks, names and hands on.</summary>
+    private static PriorSession WithoutLimitWords(PriorSession record) =>
+        record.Said is { } said && LimitWordsOf(record).Any()
+            ? record with { Said = [.. said.Where(word => !(word.Daoris && DaorisKeys.IsLimitReset(word.Key)))] }
+            : record;
+
     private async Task<ChatStart> GoingOnAsync(
-        string sessionId, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct)
+        string sessionId, DriverConfig config, Func<string, string, Task>? onEnded, DateTimeOffset? woke, CancellationToken ct)
     {
         // Only an ended chat of this machine's with words waiting: a driven record goes on through the planner (MSG1b), and a
         // live one hears words at its door. Ask Daoris's conversation goes on too, in its room (ASKHIST1).
@@ -398,7 +493,7 @@ internal sealed class ChatGoOn
 
         if (string.Equals(record.Repository, HelpRoom.Repository, StringComparison.OrdinalIgnoreCase))
         {
-            return await HelpGoingOnAsync(record, adapter, kept, config, onEnded, ct).ConfigureAwait(false);
+            return await HelpGoingOnAsync(record, adapter, kept, config, onEnded, woke, ct).ConfigureAwait(false);
         }
 
         var registry = await _context.Service.RegistryAsync(ct).ConfigureAwait(false);
@@ -419,6 +514,8 @@ internal sealed class ChatGoOn
         if (resume.Waits)
         {
             _context.Note(sessionId, ResumeWords.NotYetOn(resume, ResumeWords.ChatDoorOf(sessionId)));
+            // LIMITRESUME1c (D206 §3.5, D137 point 7): the look's limits stage wakes it on its own account at the reset.
+            Waits?.Invoke(sessionId);
             return new(null, resume.Selection.Refusal);
         }
 
@@ -429,6 +526,9 @@ internal sealed class ChatGoOn
         {
             return CannotGoOn(record, account, adapter.Name);
         }
+
+        // LIMITRESUME1c (D206 §3.5): the words its account's limit refused, handed again first, before the words that waited.
+        var limited = LimitHeld.Waiting(_context.Events.After(sessionId, 0).Events);
 
         // A tree of its own is taken again: its repository's trees are held until the ledger holds this one once more (LEFT2),
         // so bringing the repository up to date does not rebase it under the conversation.
@@ -464,9 +564,12 @@ internal sealed class ChatGoOn
         // rules already read its own files folder (CONV4c). What its start did with its tree against the line after them (LANDSYNC2b).
         var ask = new ResumeAsk(
             kept.Conversation, words,
-            OpeningNote(words, adapter.Name, selection.Version, record.HarnessVersion),
+            woke is { } until ? LimitNotes.Resumed(until) : OpeningNote(words, adapter.Name, selection.Version, record.HarnessVersion),
             Continuations.AfterWords(inSync, after: null),
-            files: word => ChatFiles.Kept(_context.Home, sessionId, word.Files));
+            files: word => ChatFiles.Kept(_context.Home, sessionId, word.Files))
+        {
+            Resent = Resent(sessionId, limited),
+        };
         // SESSCTX1b: a part that continues another keeps reading its line's kept folders, whose files its brief named.
         var continued = record.From is { Length: > 0 } from ? await ContextBriefs.LineIdsAsync(_context.Service, from, ct).ConfigureAwait(false) : [];
 
@@ -490,7 +593,7 @@ internal sealed class ChatGoOn
     /// </summary>
     private async Task<ChatStart> HelpGoingOnAsync(
         PriorSession record, ISessionAdapter adapter, HarnessConversation kept, DriverConfig config,
-        Func<string, string, Task>? onEnded, CancellationToken ct)
+        Func<string, string, Task>? onEnded, DateTimeOffset? woke, CancellationToken ct)
     {
         var sessionId = record.Session;
 
@@ -501,6 +604,8 @@ internal sealed class ChatGoOn
         if (resume.Waits)
         {
             _context.Note(sessionId, ResumeWords.NotYetOn(resume, ResumeWords.HelpDoorOf()));
+            // LIMITRESUME1c (D206 §3.5, D137 point 7): the look's limits stage wakes it on its own account at the reset.
+            Waits?.Invoke(sessionId);
             return new(null, resume.Selection.Refusal ?? ResumeWords.HelpDoor);
         }
 
@@ -531,8 +636,14 @@ internal sealed class ChatGoOn
         if (words.Count == 0) return await TakenBackAsync(record, ct).ConfigureAwait(false);
         var ask = new ResumeAsk(
             kept.Conversation, words,
-            Continuations.OpeningNoted(adapter.Name, selection.Version, record.HarnessVersion, answer: false),
-            files: word => ChatFiles.Kept(_context.Home, sessionId, word.Files));
+            woke is { } until
+                ? LimitNotes.Resumed(until)
+                : Continuations.OpeningNoted(adapter.Name, selection.Version, record.HarnessVersion, answer: false),
+            files: word => ChatFiles.Kept(_context.Home, sessionId, word.Files))
+        {
+            // LIMITRESUME1c (D206 §3.5): the words its account's limit refused, handed again first.
+            Resent = Resent(sessionId, LimitHeld.Waiting(_context.Events.After(sessionId, 0).Events)),
+        };
 
         // ASKSCOPE1b: the room it ran in, its workspace's, or the machine's where it started there before each workspace had its own.
         var (room, reads) = await _help.HelpRoomNowAsync(sessionId, HelpRoom.GoesOnIn(_context.Home, record.Workspace, record.Tree), ct)
@@ -594,7 +705,20 @@ internal sealed class ChatGoOn
 
         _context.Service.AccountSaid(Continuations.Reopened(
             sessionId, adapter, goOn.Record.State, why: null, _context.Events.DoorOf(sessionId, ids), kind: "chat"));
+
+        // LIMITRESUME1c (D206 §3.5, Codex 8): a limit's move delivered again at the come-up is delivered now, so the words that waited
+        // leave the old record only here, and its box with them.
+        await _limit.DeliveredToAsync(sessionId).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// The person's words of the turns its account's limit refused (LIMITRESUME1c, <see cref="LimitHeld"/>), each with its kept files:
+    /// handed again first where its own conversation goes on. None where its limit holds it no more.
+    /// </summary>
+    private IReadOnlyList<ChatMessage> Resent(string sessionId, LimitHeld? held) =>
+        held is null
+            ? []
+            : [.. held.Words.Select(word => new ChatMessage(word.Text!, ChatFiles.Kept(_context.Home, sessionId, word.Files ?? [])))];
 
     /// <summary>
     /// The agent would not resume the conversation (MSG1c): nothing went, so the record goes back to how it ended, its flags
@@ -605,7 +729,8 @@ internal sealed class ChatGoOn
     public async Task WentBackAsync(
         string sessionId, GoingOn goOn, ContinueReason why, string adapter, Func<string, string, Task>? onEnded)
     {
-        var record = goOn.Record;
+        // 🔴 LIMITRESUME1c (D206 §3.5, B9): Daoris's limit word off first, so a refusal that waits for the person leaves none of it.
+        var record = await LimitWordOffAsync(sessionId, goOn.Record).ConfigureAwait(false) ?? goOn.Record;
         try
         {
             await _context.Service.AdvanceAsync(
@@ -640,6 +765,8 @@ internal sealed class ChatGoOn
     /// <param name="said">Whether the machine log's line is still to be written: false where <see cref="LostAsync"/> wrote it.</param>
     private ChatStart CannotGoOn(PriorSession record, ContinueReason why, string adapter, bool said = false)
     {
+        // LIMITRESUME1c (D206 §3.5, B9): never said over Daoris's limit word, which leaves the record as the go-on ends.
+        record = WithoutLimitWords(record);
         var words = record.Waiting.Select(word => word.Id).OfType<string>().ToList();
         _context.Marks.Mark(record.Session, words, why, DateTimeOffset.UtcNow);
         var note = Continuations.Cannot(words, why);
@@ -664,8 +791,29 @@ internal sealed class ChatGoOn
         PriorSession record, ContinueReason why, string adapter, DriverConfig choices, Func<string, string, Task>? onEnded, bool held,
         CancellationToken ct)
     {
+        // 🔴 LIMITRESUME1c (D206 §3.5, B9): Daoris's limit word off first, by its id; it is never handed on, nor the reason to say cannot.
+        record = await LimitWordOffAsync(record.Session, record).ConfigureAwait(false) ?? record;
         var words = record.Waiting.Select(word => word.Id).OfType<string>().ToList();
         _context.Service.AccountSaid(Reopened(record, why, adapter, words));
+
+        // A conversation its limit held keeps the refused turns' words in its events alone: it goes on by the limit's own ended-record
+        // move, its own account allowed since its conversation is lost, handed the brief, those words and the words that waited.
+        if (!_context.Closing && LimitHeld.Waiting(_context.Events.After(record.Session, 0).Events) is not null)
+        {
+            StartedFrom? moved;
+            try
+            {
+                moved = await _limit.MoveEndedAsync(record.Session, why, choices, onEnded, ct, holding: held).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is HttpRequestException or DriverException or IOException or System.Text.Json.JsonException
+                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
+            {
+                moved = new StartedFrom(null, false, null, error.Message);
+            }
+
+            if (moved is { SessionId: { } limitTo }) return new(limitTo, moved.Message);
+        }
+
         if (record.Waiting.Any(word => word.Persons) && !_context.Closing)
         {
             StartedFrom moved;

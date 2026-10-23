@@ -50,6 +50,12 @@ public sealed class GoOnMarks(string home)
     /// </summary>
     public const string NotNow = "not-now";
 
+    /// <summary>
+    /// The mark's code for words the person told no longer to wait for its account's limit (*Stop waiting*, LIMITRESUME1c, D206 §3.7): they
+    /// go on beside a word of the person's, never by themselves. No reason <see cref="ContinueWhy"/> names.
+    /// </summary>
+    public const string StoppedWaiting = "stopped-waiting";
+
     /// <summary><see cref="Mark(string, IEnumerable{string}, ContinueReason, DateTimeOffset)"/> by a code of its own.</summary>
     /// <param name="agent">The agent whose answer an answers-alone mark holds (COWORK1e); null for every other mark.</param>
     public void Mark(string session, IEnumerable<string> said, string code, DateTimeOffset at, string? agent = null)
