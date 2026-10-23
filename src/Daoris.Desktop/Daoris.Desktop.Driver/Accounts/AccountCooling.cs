@@ -346,6 +346,17 @@ public sealed record AccountLine(string Event, IReadOnlyList<(string Key, object
         ]);
 
     /// <summary>
+    /// An attempt refused with the same kind of limit just after its account's cool-off ended (LIMITRESUME1b, D206): that reset did not
+    /// lift it. Written once, beside its <c>account.limited</c>.
+    /// </summary>
+    public static AccountLine NotLifted(string session, string adapter, string? account, LimitSeen seen) =>
+        new("account.not-lifted",
+        [
+            ("session", session), ("adapter", adapter), ("account", Profile(account)), ("hit", Bounded(seen.Hit)),
+            ("window", Bounded(seen.Window)), ("until", AccountCooling.Stamp(seen.Until)),
+        ]);
+
+    /// <summary>
     /// Every account a start may use was cooling or not signed in: written once per wait. Where none cools, nothing comes
     /// ready by itself, and <paramref name="until"/> is null (TOOL6g).
     /// </summary>

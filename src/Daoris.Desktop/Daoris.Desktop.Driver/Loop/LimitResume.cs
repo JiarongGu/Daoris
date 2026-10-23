@@ -61,6 +61,23 @@ internal static class LimitResume
             : Noted.Of(NoteCodes.HeldLimitWaitsOwn, said, facts);
     }
 
+    /// <summary>
+    /// The line where a reset did not lift the limit (<c>limit.not-lifted</c>, the design §3.3's bound): the account's last cool-off
+    /// among <paramref name="ended"/>, read before <paramref name="now"/>'s replaced it, ended within the margin before now with the same
+    /// kind of limit as <paramref name="cooled"/>. Null for every other limit.
+    /// </summary>
+    public static Noted? NotLifted(IReadOnlyList<CoolingEntry> ended, CoolingEntry cooled, DateTimeOffset now)
+    {
+        var last = ended.FirstOrDefault(entry =>
+            string.Equals(entry.Agent, cooled.Agent, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(entry.Account ?? "", cooled.Account ?? "", StringComparison.OrdinalIgnoreCase));
+        if (last is null || last.Until > now || now - last.Until > AccountLimits.Margin) return null;
+        if (!string.Equals(last.Window ?? "", cooled.Window ?? "", StringComparison.OrdinalIgnoreCase)) return null;
+
+        var hit = AccountLine.Bounded(cooled.Window) ?? "limit";
+        return Noted.Of(NoteCodes.LimitNotLifted, $"Its last reset did not lift the limit: {hit}.", ("hit", hit));
+    }
+
     /// <summary>What the record says where its own conversation could not be resumed (<c>limit.resume-refused</c>), as a wake says it.</summary>
     public static Noted Refused(ContinueReason why) => LimitNotes.ResumeRefused(why);
 }

@@ -24,6 +24,7 @@
   "note.ended.words-wait": "Your words wait to go again at the next look.",
   "note.ended.words-wait-you": "Your words failed twice and wait for you: they go again with the next words you say.",
   "note.ended.limit-words-wait": "Your words wait for the account's limit to lift.",
+  "note.limit.not-lifted": "Its last reset did not lift the limit: {{hit}}.",
   "note.ended.setup-changed": "Its permission prompts changed while it worked, from `{{from}}` to `{{to}}`: Daoris ended it at its turn's end, never mid-turn, and it goes on in the same conversation under the new setup.",
   "note.ended.words-setup": "Your words go on at the next look, in the same conversation under the new setup.",
   "note.ended.timeout": "Timed out after {{minutes}} minutes and was killed.",
