@@ -78,7 +78,8 @@ internal sealed class LandedReviews(TreeContext context)
             if (held == 0)
             {
                 var (_, full, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"{recorded}^{{commit}}"], ct).ConfigureAwait(false);
-                if (full.Trim() is { Length: > 0 } commit) return commit;
+                // GITAPP1a-ii: the choice Review's graph makes too (LandedGraph).
+                if (ReviewChoices.LandedFrom(held, full) is { } commit) return commit;
             }
         }
 

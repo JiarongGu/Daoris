@@ -102,6 +102,9 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null, Fu
     /// <summary>What the parts share (PART10i): the home, the plugin wire, the seams.</summary>
     private readonly TreeContext _context = new(home, plugins ?? new LandingPlugins(home), variable);
 
+    /// <summary>The shared context, for Review's graph (GITAPP1a-ii), which reads what <see cref="ReviewRanges"/> and <see cref="LandedReviews"/> read.</summary>
+    internal TreeContext Context => _context;
+
     // The parts, each built once at first use (a field initializer cannot read `_context`), leaves first; a class takes the
     // others it reads in its constructor, and none takes this front.
     private TreeFollows? _follows;

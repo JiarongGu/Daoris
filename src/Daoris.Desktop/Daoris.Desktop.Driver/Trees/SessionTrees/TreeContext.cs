@@ -100,7 +100,15 @@ internal sealed class TreeContext
         CanonicalLine.ResolveAsync(root, repository, workspace, Config(), GuessAsync, ct);
 
     /// <summary>The test seam (UIFREEZE1): git's guess at a checkout's line, counted by a test. Production asks git.</summary>
-    internal Func<string, CancellationToken, Task<string?>> CheckoutLine { get; set; } = WorkingTree.DefaultBranchAsync;
+    internal Func<string, CancellationToken, Task<string?>> CheckoutLine { get; set; } = s_gitGuess;
+
+    private static readonly Func<string, CancellationToken, Task<string?>> s_gitGuess = WorkingTree.DefaultBranchAsync;
+
+    /// <summary>
+    /// Whether Review's graph may ask git's guess as its three questions together (GITAPP1a-ii): no look is open, which shares one
+    /// guess across its flow, and no test's seam stands in for git. Otherwise the graph asks through <see cref="LineAsync"/>, as today.
+    /// </summary>
+    internal bool GuessesApart => _look.Value is null && ReferenceEquals(CheckoutLine, s_gitGuess);
 
     // The look this flow is in, or null: an async local, so a look running beside it on the same context shares nothing.
     private readonly AsyncLocal<Dictionary<string, Task<string?>>?> _look = new();

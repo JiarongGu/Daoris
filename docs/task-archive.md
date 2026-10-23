@@ -19873,3 +19873,15 @@ await the exit within 5 s), an exit not seen being `ProcessUnendedException` and
 pipe reads hear their token. Proved by `GitRunnersEndTests`, `DriverModuleReviewLeaveTests` (the route boundary and two of the
 kit's bridges), `DriverModuleReadLeaveTests` and `trees.leave.test.ts`. The hidden-window case is not tested separately (D202's
 note says why). Detail: FIX-LOG 2026-10-23 (GITAPP1a-iii), D202's GITAPP1a-iii note. On Opus.
+
+## GITAPP1a-ii — Review as a graph of today's reads (2026-10-23, D202)
+
+> - [ ] **GITAPP1a-ii — Review as a graph of today's reads** (driver; after 1a-i; D202's round-4 point 1 and round-5 points 1-3; design P1.1-P1.4, P1.8 row 2). `ReviewGraph` and its executor: each of today's starts a node started when its inputs answer; the reads that can run a configured program (W, S, the untracked reads, M, D, the offer) one chain in today's order, never speculative, the rest parallel and speculative only where the command is today's; today's choices lifted into pure functions both share; the committed diff over `Against ?? From` with `Base = From` (REVIEWBASE3 kept); git's three line questions together; the untracked window bounded by the fold, at w = 1; the landed and gone subgraphs; nothing kept. Proof: design P1.7's comparison through the route of the graph's outcome with today's chain on every fixture and each of its eleven branches, answers and refusals, field by field and command by command (the REVIEWBASE3 chain step, a dangling origin `HEAD` among them); the order-sensitive textconv fixture; the generated census with held completions and the window's held cases; `ReviewBaseTests`, `TreeUpdateTests`, `ReviewLockTests` unchanged; the after-bench.
+
+**Outcome** 2026-10-23: `SESSION_DIFF` and `daoris-driver git review` read through `ReviewGraphReads` over `ReviewGraph`
+(`Trees/GitReads/`), with `LandedGraph` for the landed and gone reviews and `UntrackedWindow` at w = 1. Today's choices are in
+`ReviewChoices` and `UntrackedFold`, which the chain calls too; the chain stays as `SessionReviews.ChainReadAsync`, the oracle.
+`ReviewGraphTodayTests` (20, real git) holds the two outcomes and their commands equal on every branch. `ReviewGraphProgramsTests`
+(2) holds the textconv, clean filter and merge driver logs equal line for line. `ReviewGraphCensusTests` (189, fast half) runs every
+combination over held answers and found one defect, fixed before landing. Detail and the after-bench: FIX-LOG 2026-10-23
+(GITAPP1a-ii), D202's GITAPP1a-ii note. On Opus.

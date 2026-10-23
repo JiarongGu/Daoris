@@ -38,6 +38,38 @@ repository.
   `DriverModuleReviewTests` (335). Web: `trees.leave.test.ts` (4: the grace, the last waiter, a return within the grace, an
   answer within it) and the review's 22 files (319); the web typecheck. The censuses: home, optional locks, one word, read shares.
   The runner cases were written beside the fix and not first run red against the old runners.
+## 2026-10-23 — Review asked every git after the one before, whatever it needed (GITAPP1a-ii)
+
+- **Symptom:** Review is slow (the git-app brief §4). GITAPP1a-i's count showed today's read starting each git after the one
+  before: its depth was its starts (13 for the review, then 21 for the offer, on the before-bench).
+- **Root cause:** `SESSION_DIFF`'s chain awaited each read in turn, including reads that need nothing of the read before. These are
+  the line's refs, the record's base, git's guess at the line and the branch's name.
+- **Fix:** `ReviewGraph`, its executor, and `ReviewGraphReads`, the review as a graph (D202's GITAPP1a-ii note). Each read starts
+  once the reads it names have answered. The reads that can run a configured program stay one chain in today's order. Today's
+  choices moved into `ReviewChoices` and `UntrackedFold`, which the chain calls too. The census found one defect of the graph
+  before landing: the selection (I) began only after the uncommitted Π chain, so it waited on W, S and the untracked reads. Σ now
+  runs outside Π, and only M waits its Π turn.
+- **Verification:** `ReviewGraphTodayTests` (20, real git, `git.process.runsettings`) holds the graph's outcome equal to today's
+  chain's on every P1.7 branch: the answer as JSON (patches byte for byte), refusals and faults by their words, the Π commands in
+  order and the rest alike but for wasted speculative starts and the shared `--show-toplevel`. `ReviewGraphProgramsTests` (2)
+  covers the textconv, clean filter and merge driver logs. `ReviewGraphCensusTests` (189, fast half) covers every combination over
+  held answers: each node starts in the round its depth names, and Π never runs two at once. The window's held cases are covered at
+  w = 1 and w = 4. `ReviewBaseTests`, `TreeUpdateTests`, `ReviewLockTests`, `ReviewStartsTests` (now on the chain),
+  `LandedReviewTests`, `TreeDiffTests`, `TreeDiffSplitTests`, `WorkingTreeProvenanceTests`, `GitReviewCommandTests`,
+  `ContentProofLossTests` and `UnreadRecordGitTests` pass (103). So do `GitLaunchTests`, `GitBoundsTests`, `CanonicalLineTests`,
+  `StartTreeCloseTests` and `ReviewBaseChoiceTests` (74), and the driver's whole fast half (14,109). The census checks `optional-locks`, `read-shares`, `partials`
+  and `one-word` are clean.
+- **The after-bench** (design §10.3, reported, never failing): `git review 3372bd58 --time`, this row's own session tree (15 files
+  committed, nothing untracked), ten runs, the machine's other sessions running beside it.
+
+  | Case | Starts (review + offer + untracked) | Depth | Wasted | Median | p90 |
+  |---|---|---|---|---|---|
+  | 15 files committed, nothing untracked | 38 (17 + 21 + 0) | 5 | 4 | 3.4 s | 4.2 s |
+
+  It is not the before-bench's tree (29 files, 6.2 s median): the verb now reads only through the graph, and that session is
+  gone. The review's own part runs at depth 5 rather than 13. The offer's 21 starts are Π and still serial after D and H, so they
+  are most of what is left (D202's note: the offer is the longer chain). The 50-untracked case was not run: at w = 1 the
+  untracked tail is today's loop, which P1.3 says this row does not shorten.
 
 ## 2026-10-23 — Review's git was counted for one runner of three, and never timed (GITAPP1a-i)
 

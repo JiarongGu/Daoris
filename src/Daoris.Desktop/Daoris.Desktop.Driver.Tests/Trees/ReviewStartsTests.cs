@@ -27,8 +27,13 @@ public sealed class ReviewStartsTests : LandedFixture
         return (root, trees, tree, began);
     }
 
-    private static async Task<(SessionReview? Review, GitCount Starts)> ReadAsync(SessionTrees trees, TreeOpened tree, string began) =>
-        await SessionReviews.TimedAsync("aurora", tree.Path, began, trees, (_, _) => Task.FromResult<string?>(null), null, CancellationToken.None);
+    // Today's chain, the oracle GITAPP1a-ii's graph is held equal to (ReviewGraphTodayTests): its starts, in its order.
+    private static async Task<(SessionReview? Review, GitCount Starts)> ReadAsync(SessionTrees trees, TreeOpened tree, string began)
+    {
+        using var count = GitLaunch.Count();
+        var review = await SessionReviews.ChainReadAsync("aurora", tree.Path, began, trees, (_, _) => Task.FromResult<string?>(null), CancellationToken.None);
+        return (review, count);
+    }
 
     /// <summary>The review's own starts, untracked tail included, by node in the order the seam saw them.</summary>
     private static string[] Nodes(GitCount count) =>

@@ -84,11 +84,15 @@ public static class WorkingTree
     public static async Task<string?> BranchAsync(string root, CancellationToken ct = default)
     {
         // `-q` makes a detached HEAD exit 1 with nothing said, which is told apart from a real failure by its silence.
-        var (code, stdout, stderr) = await GitAsync(root, ["symbolic-ref", "--short", "-q", "HEAD"], ct).ConfigureAwait(false);
-        if (code == 0 && stdout.Trim() is { Length: > 0 } branch) return branch;
-        if (code == 1 && string.IsNullOrWhiteSpace(stderr)) return null;
-        throw new DriverException($"git could not name this checkout's branch: {stderr.Trim()}");
+        var (code, stdout, stderr) = await GitAsync(root, BranchAsk, ct).ConfigureAwait(false);
+        return ReviewChoices.Branch(code, stdout, stderr);
     }
+
+    /// <summary><see cref="BranchAsync"/>'s question: H, in Review's graph (GITAPP1a-ii).</summary>
+    internal static readonly string[] BranchAsk = ["symbolic-ref", "--short", "-q", "HEAD"];
+
+    /// <summary><see cref="DefaultBranchAsync"/>'s first question, origin's <c>HEAD</c>: G1, in Review's graph (GITAPP1a-ii).</summary>
+    internal static readonly string[] OriginHeadAsk = ["symbolic-ref", "--short", "refs/remotes/origin/HEAD"];
 
     /// <summary>
     /// Which line this repository treats as canonical, as far as this checkout knows (D48 §6).
@@ -104,20 +108,18 @@ public static class WorkingTree
     /// </remarks>
     public static async Task<string?> DefaultBranchAsync(string root, CancellationToken ct = default)
     {
-        var (code, stdout, _) = await GitAsync(
-            root, ["symbolic-ref", "--short", "refs/remotes/origin/HEAD"], ct).ConfigureAwait(false);
-        if (code == 0 && stdout.Trim() is { Length: > 0 } pointed)
-        {
-            var slash = pointed.IndexOf('/');
-            return slash < 0 ? pointed : pointed[(slash + 1)..];
-        }
+        var (code, stdout, _) = await GitAsync(root, OriginHeadAsk, ct).ConfigureAwait(false);
+        if (ReviewChoices.Guess(code, stdout, null, null) is { } pointed) return pointed;
 
-        foreach (var candidate in new[] { "main", "master" })
+        // GITAPP1a-ii: the order is ReviewChoices.Guess's, which Review's graph asks all three together and chooses by.
+        int? main = null, master = null;
+        foreach (var candidate in ReviewChoices.Conventional)
         {
             // Spelled as every read of a branch's commit is (LANDGIT1c), so one ref is one command wherever it is asked.
-            var (exists, _, _) = await GitAsync(
-                root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{candidate}^{{commit}}"], ct).ConfigureAwait(false);
-            if (exists == 0) return candidate;
+            var (exists, _, _) = await GitAsync(root, ReviewChoices.ConventionalAsk(candidate), ct).ConfigureAwait(false);
+            if (candidate == "main") main = exists;
+            else master = exists;
+            if (ReviewChoices.Guess(code, stdout, main, master) is { } guessed) return guessed;
         }
 
         return null;
@@ -301,7 +303,7 @@ public static class WorkingTree
 
         if (!await IsTopLevelAsync(root, git, ct).ConfigureAwait(false)) return null;
 
-        return await RangeAsync(root, before, $"{before}..HEAD", "`git diff` in the tree has all of it.", git, ct).ConfigureAwait(false);
+        return await RangeAsync(root, before, $"{before}..HEAD", CommittedRest, git, ct).ConfigureAwait(false);
     }
 
     /// <summary>The size above which an untracked file is listed with no patch (REVIEWDIRTY1-a): a read of one costs a git start and a page of text.</summary>
@@ -327,53 +329,44 @@ public static class WorkingTree
     {
         if (!await IsTopLevelAsync(root, git, ct).ConfigureAwait(false)) return null;
 
-        const string rest = "`git diff HEAD` in the tree has all of it.";
-        var tracked = await RangeAsync(root, "HEAD", "HEAD", rest, git, ct).ConfigureAwait(false);
+        var tracked = await RangeAsync(root, "HEAD", "HEAD", UncommittedRest, git, ct).ConfigureAwait(false);
         if (tracked is null) return null;
 
         var status = new StringBuilder();
-        var code = await git(
-            root, ["--no-optional-locks", "status", "--porcelain", "-z", "--untracked-files=all"], piece => { status.Append(piece.Span); return true; }, ct)
-            .ConfigureAwait(false);
+        var code = await git(root, UncommittedStatus, piece => { status.Append(piece.Span); return true; }, ct).ConfigureAwait(false);
         if (code != 0) return null;
 
-        var files = new List<DiffFile>(tracked.Files);
-        var spent = tracked.Files.Sum(file => file.Patch?.Length ?? 0);
-        var dropped = 0;
-        var entries = status.ToString().Split('\0');
-        for (var at = 0; at < entries.Length; at++)
+        // GITAPP1a-ii: the fold is the graph's too (ReviewChoices, UntrackedFold), so the two read the same files alike.
+        var fold = new UntrackedFold(tracked);
+        foreach (var path in ReviewChoices.UntrackedPaths(status.ToString()))
         {
-            var entry = entries[at];
-            if (entry.Length < 4) continue;
-            // A rename's or a copy's source follows its entry, and is no path of its own.
-            if (entry[0] is 'R' or 'C' || entry[1] is 'R' or 'C') at++;
-            if (!entry.StartsWith("?? ", StringComparison.Ordinal)) continue;
-
-            var path = entry[3..];
-            if (spent >= PatchBudget)
+            if (fold.Spent)
             {
-                dropped++;
-                files.Add(new DiffFile(path, "added", null, null, null));
+                fold.Drop(path);
                 continue;
             }
 
-            // GITAPP1a-i: a review's untracked reads are counted in a budget of their own, its tail (the git-app design P1.4).
-            string? patch;
-            int? added;
-            using (GitLaunch.Budget == GitBudget.Review ? GitLaunch.Within(GitBudget.Untracked) : null)
-            {
-                (patch, added) = await UntrackedPatchAsync(root, path, git, ct).ConfigureAwait(false);
-            }
-
-            spent += patch?.Length ?? 0;
-            // The word the committed list uses for an addition, so the page renders both alike.
-            files.Add(new DiffFile(path, "added", added, added is null ? null : 0, patch));
+            var (patch, added) = await UntrackedReadAsync(root, path, git, ct).ConfigureAwait(false);
+            fold.Take(path, patch, added);
         }
 
-        var truncated = tracked.Truncated ?? (dropped == 0
-            ? null
-            : $"{dropped} more untracked file{(dropped == 1 ? "" : "s")}; their patches are not shown here. {rest}");
-        return new TreeDiff(files, truncated, "HEAD");
+        return fold.End(UncommittedRest);
+    }
+
+    /// <summary>Where the rest of a tree's uncommitted work is, when the bound drops some.</summary>
+    internal const string UncommittedRest = "`git diff HEAD` in the tree has all of it.";
+
+    /// <summary>The status of a session's own tree, as the uncommitted read asks it (REVIEWLOCK1: no <c>index.lock</c> taken).</summary>
+    internal static readonly string[] UncommittedStatus = ["--no-optional-locks", "status", "--porcelain", "-z", "--untracked-files=all"];
+
+    /// <summary>One untracked file's read, counted in the review's untracked budget where the review asks it (GITAPP1a-i).</summary>
+    internal static async Task<(string? Patch, int? Added)> UntrackedReadAsync(string root, string path, GitRead git, CancellationToken ct)
+    {
+        // GITAPP1a-i: a review's untracked reads are counted in a budget of their own, its tail (the git-app design P1.4).
+        using (GitLaunch.Budget == GitBudget.Review ? GitLaunch.Within(GitBudget.Untracked) : null)
+        {
+            return await UntrackedPatchAsync(root, path, git, ct).ConfigureAwait(false);
+        }
     }
 
     /// <summary>An untracked file as the patch that adds it, with the lines it adds; none for a binary, an oversize or an unreadable one.</summary>
@@ -428,10 +421,14 @@ public static class WorkingTree
 
         if (!await IsTopLevelAsync(root, git, ct).ConfigureAwait(false)) return null;
 
-        return await RangeAsync(
-                root, from, $"{from}..{to}", $"`git diff {Short(from)} {Short(to)}` in the repository's checkout has all of it.", git, ct)
-            .ConfigureAwait(false);
+        return await RangeAsync(root, from, $"{from}..{to}", BetweenRest(from, to), git, ct).ConfigureAwait(false);
     }
+
+    /// <summary>Where the rest of a range of two commits is, when the bound drops some (Review's graph says it alike, GITAPP1a-ii).</summary>
+    internal static string BetweenRest(string from, string to) => $"`git diff {Short(from)} {Short(to)}` in the repository's checkout has all of it.";
+
+    /// <summary>Where the rest of a tree's committed range is, when the bound drops some.</summary>
+    internal const string CommittedRest = "`git diff` in the tree has all of it.";
 
     private static string Short(string commit) => TextBounds.ShortCommit(commit, 8);
 
@@ -980,7 +977,8 @@ public static class WorkingTree
     /// <summary>
     /// The test seam for git's run (PARALLEL1e): where set, it stands in for the runner, handed the arguments, the bound the call
     /// runs under and the caller's token, so a test sees the bound a kind is given and the token that reaches git, and answers a
-    /// run that never ended in it. Null in production, and an async local.
+    /// run that never ended in it. Null in production, and an async local. GITAPP1a-ii: <see cref="ReadGitAsync"/>'s run too, its
+    /// output handed to the reader whole, so Review's census holds every start of its graph.
     /// </summary>
     internal static readonly AsyncLocal<Func<IReadOnlyList<string>, TimeSpan, CancellationToken, Task<ChildRun>>?> Runs = new();
 
@@ -1257,6 +1255,14 @@ public static class WorkingTree
     private static async Task<int> ReadLaunchedAsync(
         string root, IReadOnlyList<string> arguments, Func<ReadOnlyMemory<char>, bool> take, CancellationToken ct)
     {
+        // GITAPP1a-ii: the run's test seam stands in for this runner too, so a census holds every answer of Review's graph.
+        if (Runs.Value is { } stand)
+        {
+            var run = await stand(arguments, GitBounds.Of(arguments), ct).ConfigureAwait(false);
+            if (!run.Started || run.TimedOut) return -1;
+            return take(run.Stdout.AsMemory()) ? run.ExitCode!.Value : 0;
+        }
+
         var (info, _) = GitStart(root, arguments, DaorisHome.Resolve());
         if (info is null) return -1;
 

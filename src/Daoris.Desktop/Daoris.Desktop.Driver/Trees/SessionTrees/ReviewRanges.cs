@@ -1,4 +1,3 @@
-using System.Globalization;
 using static Daoris.Driver.TreeRefs;
 
 namespace Daoris.Driver;
@@ -53,33 +52,25 @@ internal sealed class ReviewRanges(TreeContext context)
             foreach (var (reference, isOrigin) in new[] { ($"refs/heads/{line}", false), ($"refs/remotes/origin/{line}", true) })
             {
                 var (code, shared, _) = await WorkingTree.GitAsync(full, ["merge-base", "HEAD", reference], ct).ConfigureAwait(false);
-                if (code != 0 || shared.Trim().Length == 0) continue;
+                if (ReviewChoices.Shared(code, shared) is not { } found) continue;
                 known.Add(reference);
-                if (isOrigin) onOrigin = shared.Trim();
-                else here = shared.Trim();
+                if (isOrigin) onOrigin = found;
+                else here = found;
             }
         }
 
+        // GITAPP1a-ii: the selection is ReviewChoices.Choose, which Review's graph calls on the same answers.
         var candidates = ReviewBase.Candidates(here, onOrigin, record);
-        string from;
-        string? against = null;
-        if (candidates.Count < 2)
-        {
-            from = candidates.Count == 1 ? candidates[0] : recorded;
-        }
-        else
-        {
-            var maximal = await IndependentAsync(full, candidates, ct).ConfigureAwait(false);
-            from = ReviewBase.Newest(candidates, maximal) ?? record ?? recorded;
-            // REVIEWBASE3: one more git start, only where the line's base and the record's are incomparable.
-            if (ReviewBase.Incomparable(candidates, maximal, record) is var (lineBase, recordBase))
-            {
-                against = await MergedAsync(full, lineBase, recordBase, ct).ConfigureAwait(false);
-            }
-        }
+        var maximal = candidates.Count < 2 ? null : await IndependentAsync(full, candidates, ct).ConfigureAwait(false);
+        var (from, merge) = ReviewChoices.Choose(candidates, maximal, record, recorded);
+        // REVIEWBASE3: one more git start, only where the line's base and the record's are incomparable.
+        var against = merge is var (lineBase, recordBase) ? await MergedAsync(full, lineBase, recordBase, ct).ConfigureAwait(false) : null;
 
         return new(from, line is null ? null : await BehindAsync(full, line, known, ct).ConfigureAwait(false), against);
     }
+
+    /// <summary>The line's two refs, by their full names (AUTOTIDY1), in the order the candidates are read: here, then origin's.</summary>
+    internal static string[] LineRefs(string line) => [$"refs/heads/{line}", $"refs/remotes/origin/{line}"];
 
     /// <summary>
     /// The tree a merge of <paramref name="lineBase"/> and <paramref name="recordBase"/> would make (REVIEWBASE3), by
@@ -90,8 +81,7 @@ internal sealed class ReviewRanges(TreeContext context)
     private static async Task<string?> MergedAsync(string tree, string lineBase, string recordBase, CancellationToken ct)
     {
         var (code, output, _) = await WorkingTree.GitAsync(tree, ["merge-tree", "--write-tree", lineBase, recordBase], ct).ConfigureAwait(false);
-        var first = output.Split('\n', 2)[0].Trim();
-        return code == 0 && first.Length > 0 && first.All(char.IsAsciiHexDigit) ? first : null;
+        return ReviewChoices.Merged(code, output);
     }
 
     /// <summary>
@@ -100,19 +90,19 @@ internal sealed class ReviewRanges(TreeContext context)
     /// </summary>
     private async Task<string?> RecordedBaseAsync(string tree, string repository, string recorded, CancellationToken ct)
     {
-        static bool Id(string word) => word.Length > 0 && word.All(char.IsAsciiHexDigit);
-        if (Id(recorded) && await IsAncestorAsync(tree, recorded, "HEAD", ct).ConfigureAwait(false)) return recorded;
+        bool? held = ReviewChoices.Id(recorded) ? await IsAncestorAsync(tree, recorded, "HEAD", ct).ConfigureAwait(false) : null;
+        if (ReviewChoices.RecordedBase(recorded, held, null, null) is { } record) return record;
 
         var (_, branchOut, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
-        if (context.Grown.Of(repository, branchOut.Trim()) is not { } grown || !Id(grown.From)) return null;
-        return await IsAncestorAsync(tree, grown.From, "HEAD", ct).ConfigureAwait(false) ? grown.From : null;
+        if (ReviewChoices.Grown(context.Grown, repository, branchOut) is not { } grown) return null;
+        return ReviewChoices.RecordedBase(recorded, held, grown, await IsAncestorAsync(tree, grown, "HEAD", ct).ConfigureAwait(false));
     }
 
     /// <summary>Those of <paramref name="commits"/> no other of them reaches, as git names them (full ids); none where git cannot say.</summary>
     private static async Task<IReadOnlyList<string>> IndependentAsync(string tree, IReadOnlyList<string> commits, CancellationToken ct)
     {
         var (code, named, _) = await WorkingTree.GitAsync(tree, ["merge-base", "--independent", .. commits], ct).ConfigureAwait(false);
-        return code != 0 ? [] : named.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return ReviewChoices.Independent(code, named);
     }
 
     /// <summary>
@@ -124,10 +114,6 @@ internal sealed class ReviewRanges(TreeContext context)
         if (refs.Count == 0) return null;
         var (behindCode, behind, _) = await WorkingTree.GitAsync(tree, ["rev-list", "--count", .. refs, "--not", "HEAD"], ct).ConfigureAwait(false);
         var (aheadCode, ahead, _) = await WorkingTree.GitAsync(tree, ["rev-list", "--count", "HEAD", "--not", .. refs], ct).ConfigureAwait(false);
-        return behindCode == 0 && aheadCode == 0
-            && int.TryParse(behind.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var commits)
-            && int.TryParse(ahead.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var beyond)
-            ? new(line, commits, beyond)
-            : null;
+        return ReviewChoices.Behind(line, behindCode, behind, aheadCode, ahead);
     }
 }

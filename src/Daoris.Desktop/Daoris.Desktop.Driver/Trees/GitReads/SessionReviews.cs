@@ -42,28 +42,44 @@ public static class SessionReviews
         MachineLog? log, CancellationToken ct) =>
         (await TimedAsync(session, tree, baseCommit, trees, checkoutOf, log, ct).ConfigureAwait(false)).Review;
 
-    /// <summary>The same, with every git start it made (the terminal door's <c>--time</c>).</summary>
-    internal static async Task<(SessionReview? Review, GitCount Starts)> TimedAsync(
+    /// <summary>The same, with every git start it made and the graph that made them (the terminal door's <c>--time</c>).</summary>
+    internal static async Task<(SessionReview? Review, GitCount Starts, ReviewGraph Graph)> TimedAsync(
         string session, string? tree, string? baseCommit, SessionTrees trees, Func<string, CancellationToken, Task<string?>> checkoutOf,
         MachineLog? log, CancellationToken ct)
     {
         using var count = GitLaunch.Count();
         SessionReview? review;
+        var graph = new ReviewGraph();
         using (GitLaunch.Within(GitBudget.Review))
         {
-            review = await ChainAsync(session, tree, baseCommit, trees, checkoutOf, ct).ConfigureAwait(false);
+            // GITAPP1a-ii: today's reads as a graph, each started once what it needs has answered (ReviewGraphReads).
+            review = await ReviewGraphReads.ReadAsync(graph, session, tree, baseCommit, trees, checkoutOf, ct).ConfigureAwait(false);
         }
 
-        log?.Info("review.read", Line(session, review, count));
-        return (review, count);
+        log?.Info("review.read", Line(session, review, count, graph));
+        return (review, count, graph);
+    }
+
+    /// <summary>
+    /// Today's chain, kept as the oracle the graph is held equal to (the git-app design P1.7) until part two retires it: each read
+    /// asked one after another, as the route asked it before GITAPP1a-ii.
+    /// </summary>
+    internal static async Task<SessionReview?> ChainReadAsync(
+        string session, string? tree, string? baseCommit, SessionTrees trees, Func<string, CancellationToken, Task<string?>> checkoutOf,
+        CancellationToken ct)
+    {
+        using (GitLaunch.Within(GitBudget.Review))
+        {
+            return await ChainAsync(session, tree, baseCommit, trees, checkoutOf, ct).ConfigureAwait(false);
+        }
     }
 
     /// <summary>
     /// <c>review.read</c>'s fields (the git-app design P1.5, §10.3): the session, the whole read's time, its depth and starts, each budget's
-    /// starts, the wasted ones, the gate's wait and the creation summed, the files and the untracked files read; never a path. Today's chain asks
-    /// each start after the one before, so its depth is its starts and none is wasted.
+    /// starts, the wasted ones, the gate's wait and the creation summed, the files and the untracked files read; never a path. The depth and the
+    /// wasted starts are the graph's (GITAPP1a-ii); a read with no graph asked each start after the one before, its depth its starts.
     /// </summary>
-    internal static (string Key, object? Value)[] Line(string session, SessionReview? review, GitCount count)
+    internal static (string Key, object? Value)[] Line(string session, SessionReview? review, GitCount count, ReviewGraph? graph = null)
     {
         var starts = count.Starts;
         return
@@ -71,12 +87,13 @@ public static class SessionReviews
             ("session", session),
             ("answer", review is null ? "none" : review.FromBranch ? "branch" : "tree"),
             ("ms", (long)GitLaunched.Ms(count.ElapsedTicks)),
-            ("depth", starts.Count),
+            // The graph's longest chain of dependent starts; today's chain asked each after the one before.
+            ("depth", graph?.Depth ?? starts.Count),
             ("starts", starts.Count),
             ("review", count.In(GitBudget.Review)),
             ("landed", count.In(GitBudget.Landed)),
             ("offer", count.In(GitBudget.Offer)),
-            ("wasted", 0),
+            ("wasted", graph?.Wasted ?? 0),
             ("waitedMs", (long)GitLaunched.Ms(starts.Sum(start => start.WaitedTicks))),
             ("createdMs", (long)GitLaunched.Ms(starts.Sum(start => start.CreatedTicks))),
             ("files", review?.Diff?.Files.Count ?? 0),

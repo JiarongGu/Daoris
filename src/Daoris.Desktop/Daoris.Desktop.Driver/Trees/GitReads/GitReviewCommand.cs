@@ -88,17 +88,17 @@ public static class GitReviewCommand
         GitReviewAsk ask, GitReviewSources sources, MachineLog? log, TextWriter output, CancellationToken ct = default)
     {
         var (tree, baseCommit) = await sources.Ground(ask.Session, ct).ConfigureAwait(false);
-        var (review, starts) = await SessionReviews.TimedAsync(
+        var (review, starts, graph) = await SessionReviews.TimedAsync(
             ask.Session, tree, baseCommit, sources.Trees, sources.CheckoutOf, ask.Time ? log : null, ct).ConfigureAwait(false);
 
-        if (ask.Json) output.WriteLine(Json(ask.Session, review, ask.Time ? starts : null));
+        if (ask.Json) output.WriteLine(Json(ask.Session, review, ask.Time ? starts : null, graph));
         else
         {
             output.Write(Said(ask.Session, review));
-            if (ask.Time) output.Write(Times(starts));
+            if (ask.Time) output.Write(Times(starts, graph));
         }
 
-        if (ask.Time && !ask.Json) output.WriteLine(LineJson(SessionReviews.Line(ask.Session, review, starts)));
+        if (ask.Time && !ask.Json) output.WriteLine(LineJson(SessionReviews.Line(ask.Session, review, starts, graph)));
         return review is null ? 1 : 0;
     }
 
@@ -123,7 +123,8 @@ public static class GitReviewCommand
     }
 
     /// <summary>Each start, in the order the seam saw them, and the totals: what the bench reads (the git-app design §10.3).</summary>
-    internal static string Times(GitCount count)
+    /// <remarks>GITAPP1a-ii: with the read's graph, its depth is the graph's longest chain of dependent starts, and its unused speculative starts are said.</remarks>
+    internal static string Times(GitCount count, ReviewGraph? graph = null)
     {
         var starts = count.Starts;
         var text = new StringBuilder();
@@ -137,12 +138,12 @@ public static class GitReviewCommand
         }
 
         text.AppendLine(Invariant(
-            $"  {starts.Count} starts, depth {starts.Count} (one after another), {GitLaunched.Ms(count.ElapsedTicks):0} ms: waited {Ms(starts.Sum(start => start.WaitedTicks))}, created {Ms(starts.Sum(start => start.CreatedTicks))}, ran {Ms(starts.Sum(start => start.RanTicks))}"));
+            $"  {starts.Count} starts, {(graph is null ? $"depth {starts.Count} (one after another)" : $"depth {graph.Depth} (as a graph, {graph.Wasted} wasted)")}, {GitLaunched.Ms(count.ElapsedTicks):0} ms: waited {Ms(starts.Sum(start => start.WaitedTicks))}, created {Ms(starts.Sum(start => start.CreatedTicks))}, ran {Ms(starts.Sum(start => start.RanTicks))}"));
         return text.ToString();
     }
 
     /// <summary>The review as JSON: the files without their patches, and with <paramref name="starts"/> each start and the log line's fields.</summary>
-    internal static string Json(string session, SessionReview? review, GitCount? starts)
+    internal static string Json(string session, SessionReview? review, GitCount? starts, ReviewGraph? graph = null)
     {
         using var stream = new MemoryStream();
         using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }))
@@ -190,7 +191,7 @@ public static class GitReviewCommand
 
                 writer.WriteEndArray();
                 writer.WritePropertyName("read");
-                Fields(writer, SessionReviews.Line(session, review, starts));
+                Fields(writer, SessionReviews.Line(session, review, starts, graph));
             }
 
             writer.WriteEndObject();

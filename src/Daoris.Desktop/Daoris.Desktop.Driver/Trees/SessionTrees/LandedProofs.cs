@@ -91,7 +91,7 @@ internal static class LandedProofs
             if (there is null)
             {
                 var (code, sha, err) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"{reference}^{{commit}}"], ct).ConfigureAwait(false);
-                (there, at) = (code == 0, code == 0 ? sha.Trim() : null);
+                (there, at) = (code == 0, FormOf(name, reference, code, sha)?.At);
                 if (code is not (0 or 1)) unread ??= $"git could not look for `{name}`: {(string.IsNullOrWhiteSpace(err) ? "git said nothing" : FirstLine(err))}";
             }
 
@@ -100,6 +100,10 @@ internal static class LandedProofs
 
         return (forms, unread);
     }
+
+    /// <summary>The form a <c>rev-parse --verify --quiet</c> of its commit read (GITAPP1a-ii: Review's graph reads it too): none where git did not answer 0.</summary>
+    internal static LineForm? FormOf(string name, string reference, int code, string sha) =>
+        code == 0 ? new LineForm(name, reference) { At = sha.Trim() } : null;
 
     /// <summary>
     /// The proof by content (WSR5): the files the branch changed since it left the line — both paths of a
