@@ -1797,6 +1797,8 @@ export function WorkFrame({
     // Its card's answer (PARKANSWER1): through the box's say door where the box answers the park too, else the park's answer door.
     onAnswerSession: here ? (answering ? answerFromCard : onAnswerSession) : undefined,
     onAnswerChoice: here && answering && question ? choiceFromCard : undefined,
+    // QUESTIONUI1a (the design §8.4): the head's card's rows are the frame's selection too, so a row chosen there is chosen below.
+    answerPick: here && answering && question ? { selected: parkPicked, onSelect: onParkPick } : undefined,
     onAnswerAsk: here ? onAnswerAsk : undefined,
     // The go-aheads it asked, answerable only where this machine can answer the park (KNOWUSE1a2).
     goAheads,

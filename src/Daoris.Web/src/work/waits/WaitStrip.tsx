@@ -5,7 +5,7 @@ import { cn } from '../../lib/cn';
 import type { WaitEvents } from './anchors';
 import { type GoAheadAnswer, GoAheadList } from '../../asks/GoAheadList';
 import { Button } from '../../design/ui';
-import type { QuestClose, Resolution } from './AwaitingPerson';
+import type { AnswerPick, QuestClose, Resolution } from './AwaitingPerson';
 import type { LineBehind } from '../review/diff';
 import type { DiscardOffer, LandOffer } from '../groups';
 import { HelperAsks, type HelperWaits } from './HelperAsks';
@@ -36,6 +36,8 @@ export type WaitProps = {
   onAnswerSession?: (answer: string | null) => Promise<string | null> | void;
   /** A press of its question's answer from the card, with the card's words, through the box's door (PARKANSWER1). */
   onAnswerChoice?: (label: string, words: string) => Promise<string | null> | void;
+  /** The answer selected in its question, the frame's, shared by the box and the head's card (QUESTIONUI1a, the design §8.4). */
+  answerPick?: AnswerPick;
   onAnswerAsk?: (ask: string) => void;
   goAheads?: GoAhead[];
   onGoAhead?: GoAheadAnswer;

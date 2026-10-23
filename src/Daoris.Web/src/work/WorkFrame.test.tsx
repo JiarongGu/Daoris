@@ -1537,10 +1537,14 @@ describe('a park\'s question', () => {
 
     await userEvent.click(within(card).getByRole('button', { name: 'Answer and carry on…' }));
     await userEvent.click(within(card).getByRole('radio', { name: /^1,200/ }));
+    // The frame's one selection (the design §8.4, round 3): chosen in the head, chosen in the box below.
+    expect(within(screen.getByRole('region', { name: 'It asks you' })).getByRole('radio', { name: /^1,200/ })).toBeChecked();
     await userEvent.type(within(card).getByLabelText('your answer — the same session goes on with these words'), 'tile only');
     await userEvent.click(within(card).getByRole('button', { name: 'Carry on with this answer' }));
 
     await waitFor(() => expect(inputs()).toEqual([{ id: 'g0ah3ad0', text: '1,200\n\ntile only', question: 'q5t10n00' }]));
+    await waitFor(() => expect(within(screen.getByRole('region', { name: 'It asks you' })).getByRole('radio', { name: /^1,200/ }))
+      .not.toBeChecked());
   });
 
   it('sends the head card\'s words alone where no answer is selected, naming no question', async () => {
