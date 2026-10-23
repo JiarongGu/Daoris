@@ -55,7 +55,8 @@ public sealed class DriverLoopAddressTests : Bridge
         var source = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Loop", "DriverLoop.cs"));
         var run = source[source.IndexOf("private async Task RunAsync()", StringComparison.Ordinal)..];
 
-        var ensured = run.IndexOf("supervisor.EnsureAsync(ct)", StringComparison.Ordinal);
+        // The host the shell began early, or brought up here (STARTFAST1b): either way the supervisor's answer.
+        var ensured = run.IndexOf("supervisor.UpAsync(ct)", StringComparison.Ordinal);
         var down = run.IndexOf("if (!up)", StringComparison.Ordinal);
         var announced = run.IndexOf("Announce();", StringComparison.Ordinal);
         Assert.True(ensured > 0 && down > ensured && announced > down, $"ensured at {ensured}, down at {down}, announced at {announced}");

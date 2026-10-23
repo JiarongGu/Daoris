@@ -97,9 +97,20 @@ public sealed class StartStages
         }
     }
 
+    private readonly TaskCompletionSource _paged = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    /// <summary>
+    /// The page's word that its first screen has its data, or <paramref name="bound"/> from this call, whichever is first (STARTFAST1b,
+    /// the start-path design §5c): what the work the first screen does not need waits for, so the page's own pulls are not queued
+    /// behind it. Never faults; its bound is the window's own, since a page that never says holds nothing past it.
+    /// </summary>
+    public Task FirstScreenAsync(TimeSpan bound) =>
+        _paged.Task.IsCompleted ? Task.CompletedTask : Task.WhenAny(_paged.Task, Task.Delay(bound));
+
     /// <summary>Mark <paramref name="stage"/> now, from any thread; its first mark counts.</summary>
     public void Mark(string stage)
     {
+        if (stage == Page) _paged.TrySetResult();
         bool all;
         lock (_gate)
         {
