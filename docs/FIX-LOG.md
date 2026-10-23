@@ -5,6 +5,26 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-24 - Conversations an update closed never came back (LIMITRESUME1i)
+
+- **Symptom:** on the install, an update closed conversations mid-turn or with words waiting, and none came back after the
+  restart (design §3.9). A driven session that *Update now* stopped counted a strike and was carried on briefed. An update could
+  also apply while a conversation was still opening. Four Ask Daoris records the person resumed by `help resume` were told no id
+  was kept, though none had ever taken a turn (design §3.10).
+- **Root cause:** the updater closed as the person does (`MainForm.CloseForGood`). Neither `StopAll` nor the driver's close could
+  tell an update from a person's close. `TakeUpAsync` takes only ended chats with words waiting, and the close left none.
+  `DriverLoop.Work` counted only tracked processes whose turn ran. `ReadStrikes` read every interrupted stop as a strike. The
+  swallowed keep in `HarnessConversations` left no trace, and `chat.not-kept` was written only where no stop reason stood.
+- **Fix:** `ShellClose.Update(build)` is handed to the shell before the close. The close holds the turns and stops the process,
+  then keeps a restart word, unsent, on each ended record it cut. The come-up resumes that record by its kept id. An idle
+  conversation ends `chat.restarted`. `ChatRunner.InFlight` holds the drain for opening and going-on conversations. A driven
+  stop is coded `update.closed`, is passed by `ReadStrikes`, and is step 1's line. `conversation.unkept` is logged, and
+  `chat.not-kept` is said beside a stop. `help resume` says `never-spoken`.
+- **Verify:** `ChatGoesOnProcessTests` and `LimitResumeTickTests` with `process.runsettings`, 34 of 34. `ChatTurnsTests`,
+  `HarnessConversationsTests`, `HelpCommandTests`, `StrikeTests`, `ChatGoOnTests`, `NoteCodesTests` and `HelpCoverageTests`,
+  246 of 246. `DriverLoopChatTakenUpTests` and `InstallUpdaterTests`, 21 of 21. `noteLines.test.ts`, 75, and `i18n:check`.
+  The installed proof is 1g's. Detail: D206's LIMITRESUME1i note.
+
 ## 2026-10-24 - Every conversation was told its commit attribution ahead of the person's first words (MAKERTRAIL1b)
 
 - **Symptom:** after MAKERTRAIL1 landed, 7 of `ChatGoesOnProcessTests`' 13 and 6 of `ProtocolChatTests`' 15 failed on main: the

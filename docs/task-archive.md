@@ -20023,6 +20023,18 @@ and D206's LIMITRESUME1h note.
 **Outcome** 2026-10-24: a limited line resumes its own conversation on its own account once ready, Daoris's word kept just before
 it goes on and taken off at every conclusion; a refusal goes on briefed in the same start. Open quests are carried on, words go
 with the walk, `held.limit-waits` says the wait, and no limit is a strike. Detail: D206's note; FIX-LOG 2026-10-24.
+
+## LIMITRESUME1i — an update's close keeps a restart word, and the conversations it cut come back (2026-10-24, D206)
+
+> | LIMITRESUME1i | §3.9-§3.10: the close told it is an update and which build (`ShellClose`); the restart word kept on the ended record after the turns are held and the process stopped; an idle conversation's `chat.restarted`; opening counted in the drain; *Update now*'s driven stop coded `update.closed`, no strike, carried on by step 1's path; a never-spoken conversation given nothing and `help resume` saying `never-spoken`; `conversation.unkept` logged, `chat.not-kept` beside a stop | 1b, 1c | `ChatRunner` close tests: a turn running, a go-on pending and words held each keep one restart word, an idle one and a never-spoken one none; a turn finishing during the close's preparation starts no turn and leaves the word unsent; a door opening during it held, one word kept; a person's close keeps no word; `TakeUpAsync` resuming the first by its kept id; `InstallUpdate`/`DriverLoop.Work` counting `GoingOn`; `ReadStrikes` passing `update.closed`; the driven stand-in's update-closed take resumed in its own conversation; a failed keep writing the line |
+
+(The row of `docs/2026-10-23-limit-resume-design.md` §6; the backlog holds it inside LIMITRESUME1. Quest `#00611bb3c647`.)
+
+**Outcome** 2026-10-24: an update's close holds each conversation's turns, stops it, then keeps Daoris's restart word on the ended
+record. The word is never sent, and the come-up resumes the conversation by its kept id. An idle conversation ends
+`chat.restarted`, and a never-spoken one is given nothing. Starts and go-ons still opening hold the idle drain. A driven session
+an update stopped counts no strike and goes on in its own conversation. A lost keep is logged, and said beside the stop. The
+installed proof is 1g's. Detail: D206's LIMITRESUME1i note; FIX-LOG 2026-10-24.
 ## MODELROLE1b — each session says its actor and what ran (2026-10-24, D205)
 
 > | **MODELROLE1b — each session says its actor and what ran** (driver, service, web) | Every start names its actor (required parameter); the target's `Asked`, carried by the three native prepares; the record's five fields through their later doors; `ran` from the reported names before `TurnModels`; the brainstorm's pass records (§5); *Details*' rows and the parts fold's model; the usage history's `actor`; `actor.ran`. Behaviour unchanged: every choice `before` | The 13-start table; the loopback-only and no-sync tests; *ran* from each stub, *not reported* where a door says nothing; §13's record cases; a brainstorm pass and its restart naming actor and model; stories; on the install, a driven session's *Details* naming the model Claude reported |
