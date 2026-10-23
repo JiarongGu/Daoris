@@ -19958,3 +19958,14 @@ reading of the install's record are in FIX-LOG's PARKANSWER1 entry. The installe
 **Outcome.** Driven starts and repository conversations receive their selected adapter's attribution instruction, naming their
 maker and asking for the running model. Claude's harness adds its own trailer. The merge check accepts supported makers and
 names them on refusal. Per-adapter brief tests and a real git Codex stand-in cover it; verification and root cause: FIX-LOG 2026-10-24.
+
+## LIMITRESUME1c — a conversation at its limit waits, and the look wakes it (2026-10-24, D206)
+
+> **LIMITRESUME1c** (D206, design §6). §3.4-§3.5 for conversations: the look's `limits` stage keyed to the computed wait and its stamp; LIMITGOON1's stay written as a wait; one carrier per word; the wake's own-account resume or, within its agent, `LimitMove`'s body for an ended record, its own account allowed where the conversation is lost, through the move's durable box; every `ChatGoOn` refusal path taking Daoris's word off first; ended chats' waiting words woken on their own account only; *Stop waiting*. *After:* LIMITGOON1 merged (`2d2aedca0`); its native-door resume after 1f; the cross-agent part is 1e's. *Proof:* `ChatGoOnTests`/`LimitMove` tests: a chat and Ask Daoris all cooling, the stage waking each once at the reset, the same process's prompt holding the refused turns' words, the waiting words and Daoris's word, each once; an ended conversation with another account freeing first → moved by the walk with the brief and both kinds of words, none twice; a word said while waiting kept once; an ended chat's D137 words never moved; the stage asking nothing where no wait has come (held clock, `held-clocks.md`). *Round 3 (B9, Codex 5, 8):* own account ready and a protocol stand-in answering `resource_not_found` → a new part with the brief and the refused turns' words, never *cannot go on*; `exited` → waits for the person, no Daoris word left; with a wait cached for tomorrow, *Try now*, a sign-in and an added account each wake it at the next look; a shell ended after the replacement opens and before delivery → the come-up delivers the box to it, the old record's words still on it until then; a shell ended at the delivery → each word delivered once
+
+**Outcome.** A conversation with no account left now waits with its words, sending nothing. The look's `limits` stage wakes it,
+its own account first in its own conversation (the same process where it runs), with the refused turns' words, the words said
+while it waited and Daoris's word, each once. Otherwise it moves by the walk with the brief, through a durable box delivered
+once across a shell's end. A lost conversation goes on briefed, and every refusal takes Daoris's word off first. Ended chats'
+waiting words wake on their own account, and *Stop waiting* is the runner's act. The press is row 1d's. Detail: D206's
+LIMITRESUME1c note, FIX-LOG 2026-10-24; proof `LimitWaitsProcessTests`.

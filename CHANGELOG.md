@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- A conversation whose every account is at its limit now waits instead of failing each word you send (LIMITRESUME1c). It says
+  when the first account is ready again. What you say meanwhile waits with it. When an account is ready it goes on by itself:
+  in its own conversation if its own account reset first, with your waiting words. If another account frees first, it goes on
+  there with Daoris's summary and your words. An ended conversation whose words waited for its account's reset now goes on at
+  that reset. This holds for Ask Daoris and for a repository's conversations.
+
 - Driven sessions and repository conversations now receive commit attribution instructions for their own maker and running
   model (MAKERTRAIL1). Claude keeps its harness's automatic trailer. The merge check accepts supported makers' trailers and
   names the expected makers when attribution is missing or unrecognized.
