@@ -20080,3 +20080,16 @@ scaled one second a minute; the stage's path then took 57.2 s. Detail: D180's CI
 `LimitWaitLine`), with *Go on now with…*, *Pause quest…* and *Try now*; `SESSION_STOP_WAITING` carries *Stop waiting*; the terminal
 lists such a record *limited*; the glossary holds *limited*, *ready again* and *stop waiting*. The rest is LIMITRESUME1d2 in the
 backlog. Detail: D206's LIMITRESUME1d note.
+## QUESTIONUI1a — the question card (2026-10-24, D208, D185)
+
+> **QUESTIONUI1a — the question card** (service, web). Each choice a radio row that reads whole with the recommendation's why (`question_ask`'s `why`), its accessible name the label and *recommended*, nothing preselected, sent with the box's own field and *Send*, the selection the frame's and tied to the question's id, keyboard and screen reader, in the box and the head's card, stories of their own. Proof: §11.
+
+(The row of `docs/2026-10-24-supervisor-design.md` §11; Codex's round-2 findings 14 and 15 settled by the build's quest. Quest
+`#af6fbdba5d8e`.)
+
+**Outcome** 2026-10-24: a park's question is a card whose answers are chosen as radio rows and sent by the field beside them, in
+the box and in the head's card. `question_ask` takes the recommendation's `why`, read by the driver, the route and the page.
+Each row is the UI design's new `ChoiceRow`. *Clear choice* lets the words go alone, and the go-aheads' order holds for either kind
+of answer. The row's proofs pass as focused tests, with the six-answer floor measured in Chromium and the stories in both
+languages and themes. The installed-window proof waits for the install to carry the build. Detail: D185's QUESTIONUI1a note and
+D208's.

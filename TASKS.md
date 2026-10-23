@@ -251,12 +251,11 @@ a → b, c → d, e → f → g → h → i. Keep person and driver authorizatio
 
 Roles the owner appoints, and the question card. Contract: `docs/2026-10-24-supervisor-design.md` (D208, proposed, round 2: every
 finding of Codex's and the Opus foundation read of round 1 answered in §13; no row starts before D208 is accepted), §11 in this order.
-QUESTIONUI1a depends on nothing else here and may land first.
+QUESTIONUI1a, the question card, is built (the archive).
 
 - [ ] **SUPERVISOR1a-i — the word as the supervisor's on the record** (driver, service, modules, web; no pipe). The decision envelope, released as a word after a five-minute hold; every reader of a word's author given its case, a forged one unattributed; the note's line, the handed text, **Overrule**, the conversation's mark and the notice. Proof: §11 row 1a-i.
 - [ ] **SUPERVISOR1a-ii — the door** (modules, driver, web; after 1a-i). The appointment in D201's record on its own offered flag, the `Role` class judged by its own method, `SUPERVISOR_ANSWER` with one offered choice and sourced reasons, `sessions supervise` with its fenced print and no alone path, Setup's row, installed proof without Confirm. Proof: §11 row 1a-ii.
 - [ ] **SUPERVISOR1b — its bounds** (service, driver, web; before the role's flag is turned on). `question_ask`'s `owner` mark, `SUPERVISOR_DEFER` with the card's *left to you*, D188's one answers-alone count, the co-working skill's claims-not-instructions rule. Proof: §11 row b.
-- [ ] **QUESTIONUI1a — the question card** (service, web). Each choice a radio row that reads whole with the recommendation's why (`question_ask`'s `why`), its accessible name the label and *recommended*, nothing preselected, sent with the box's own field and *Send*, the selection the frame's and tied to the question's id, keyboard and screen reader, in the box and the head's card, stories of their own. Proof: §11.
 - [ ] **QUESTIONUI1b — the supervisor's pick on the card** (web; after 1a-i and QUESTIONUI1a). Its pick, reasons, `Remaining` and overrule on the card, from the envelope's snapshot. Proof: §11.
 - [ ] **SUPERVISOR1d — the supervisor measured** (tools; before 1c is offered). The question bench's supervisor tier on D135's 46 cases, the fixtures and adversarial cases: O and R answered wrong, sources checked, injection followed wrong, a nonempty right count, tokens per question. Proof: §11 row d.
 - [ ] **SUPERVISOR1c — the supervisor actor** (driver, service, web; after SUPERVISOR1d and D205's choices rows). The ninth actor holds the role, read-only, one attempt per question, its answer read from its own run. Proof: §11 row c.
