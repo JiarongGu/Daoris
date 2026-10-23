@@ -1103,6 +1103,12 @@ public static class WorkingTree
     private static (int Code, string Stdout, string Stderr) Answer(ChildRun run, TimeSpan bound)
     {
         if (!run.Started) return (-1, "", run.Error?.Message ?? "git did not start");
+        // GITAPP1a-iii: one that outlived its kill is not said to be stopped.
+        if (run.TimedOut && run.Error is ProcessUnendedException unended)
+        {
+            return (-1, "", $"git did not answer within {bound.TotalSeconds:0} seconds, and did not end when stopped: {unended.Reason}.");
+        }
+
         if (run.TimedOut) return (-1, "", $"git did not answer within {bound.TotalSeconds:0} seconds, and was stopped.");
         return (run.ExitCode!.Value, run.Stdout, run.Stderr);
     }
@@ -1147,13 +1153,13 @@ public static class WorkingTree
             var stream = process.StandardOutput.BaseStream;
             while (count < buffer.Length)
             {
-                var got = await stream.ReadAsync(buffer.AsMemory(count), within.Token).ConfigureAwait(false);
+                var got = await Heard(stream.ReadAsync(buffer.AsMemory(count), within.Token), within.Token).ConfigureAwait(false);
                 if (got == 0) break;
                 count += got;
             }
 
             // More than the bound is waiting: git would block on a full pipe, so it is stopped. What it wrote is whole.
-            var bounded = count == buffer.Length && await stream.ReadAsync(new byte[1], within.Token).ConfigureAwait(false) > 0;
+            var bounded = count == buffer.Length && await Heard(stream.ReadAsync(new byte[1], within.Token), within.Token).ConfigureAwait(false) > 0;
             if (bounded)
             {
                 ChildProcess.KillTree(process);
@@ -1167,12 +1173,14 @@ public static class WorkingTree
         }
         catch (OperationCanceledException) when (process is not null)
         {
-            await EndAsync(process, stderr).ConfigureAwait(false);
+            await EndAsync(process, stderr, ct).ConfigureAwait(false);
             ct.ThrowIfCancellationRequested();
             return null;
         }
         catch (Exception error) when (error is not OperationCanceledException)
         {
+            // GITAPP1a-iii: a read that failed under a running git ends it before the answer, as a cancelled one does.
+            if (process is not null) await EndAsync(process, stderr, CancellationToken.None).ConfigureAwait(false);
             return null;
         }
         finally
@@ -1180,6 +1188,13 @@ public static class WorkingTree
             process?.Dispose();
         }
     }
+
+    /// <summary>
+    /// A pipe read that ends when <paramref name="ct"/> is cancelled (GITAPP1a-iii): a read of git's redirected pipe does not hear its
+    /// token, and only git's end closes the pipe under it, so a git that outlived its kill would hold its runner in the read and
+    /// never be said. The read left behind writes into a buffer nobody reads again.
+    /// </summary>
+    private static Task<int> Heard(ValueTask<int> read, CancellationToken ct) => read.IsCompleted ? read.AsTask() : read.AsTask().WaitAsync(ct);
 
     /// <summary>
     /// A streamed git ended as its bound passes or its caller cancels (PARALLEL1e): a read of a pipe does not always hear its
@@ -1191,11 +1206,26 @@ public static class WorkingTree
     /// <summary>
     /// A streamed git past its bound or its caller's cancellation (PARALLEL1e): its tree ended, never left running unowned as
     /// a cancelled read once left it, and its error stream's read let finish unobserved, the answer already "none".
+    /// GITAPP1a-iii: its exit awaited after the kill (<see cref="ChildProcess.EndAsync"/>), so the runner never returns while
+    /// git runs on; one that outlived its kill is thrown as <paramref name="ct"/>'s cancellation where the caller cancelled,
+    /// and is otherwise already said by the seam, the answer "none" either way.
     /// </summary>
-    private static async Task EndAsync(Process process, Task<string>? stderr)
+    private static async Task EndAsync(Process process, Task<string>? stderr, CancellationToken ct)
     {
-        ChildProcess.KillTree(process);
-        if (stderr is not null) await stderr.ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
+        ProcessUnendedException? unended = null;
+        try
+        {
+            await ChildProcess.EndAsync(process, ct).ConfigureAwait(false);
+        }
+        catch (ProcessUnendedException said)
+        {
+            unended = said;
+        }
+
+        // A git that runs on holds its pipe open, so its error stream's read is only observed, never awaited.
+        var drained = stderr?.ContinueWith(_ => { }, TaskScheduler.Default);
+        if (unended is null && drained is not null) await drained.ConfigureAwait(false);
+        if (unended is not null && ct.IsCancellationRequested) throw unended;
     }
 
     /// <summary>
@@ -1244,7 +1274,7 @@ public static class WorkingTree
             var buffer = new char[16 * 1024];
             var stopped = false;
             int got;
-            while (!stopped && (got = await process.StandardOutput.ReadAsync(buffer.AsMemory(), within.Token).ConfigureAwait(false)) > 0)
+            while (!stopped && (got = await Heard(process.StandardOutput.ReadAsync(buffer.AsMemory(), within.Token), within.Token).ConfigureAwait(false)) > 0)
             {
                 stopped = !take(buffer.AsMemory(0, got));
             }
@@ -1262,12 +1292,14 @@ public static class WorkingTree
         }
         catch (OperationCanceledException) when (process is not null)
         {
-            await EndAsync(process, stderr).ConfigureAwait(false);
+            await EndAsync(process, stderr, ct).ConfigureAwait(false);
             ct.ThrowIfCancellationRequested();
             return -1;
         }
         catch (Exception error) when (error is not OperationCanceledException)
         {
+            // GITAPP1a-iii: a read that failed under a running git ends it before the answer, as a cancelled one does.
+            if (process is not null) await EndAsync(process, stderr, CancellationToken.None).ConfigureAwait(false);
             return -1;
         }
         finally
