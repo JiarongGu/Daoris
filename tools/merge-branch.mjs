@@ -922,17 +922,20 @@ export function readPlan(root) {
 
 /**
  * The gates every merge runs, whatever it changed: the universal gates scan every file, the code map
- * maps all the code, the orientation index reads every lane (ORIENT1a), and the CLI's `verify` holds the
- * records, the lanes, the canon and the tools' tests.
+ * maps all the code, the orientation index reads every lane (ORIENT1a), the census of test units reads every suite's
+ * sources (CISCOPE1c), and the CLI's `verify` holds the records, the lanes, the canon and the tools' tests.
  */
-export const BASELINE = Object.freeze(['universal', 'code-map', 'orient-index', 'cli']);
+export const BASELINE = Object.freeze(['universal', 'code-map', 'orient-index', 'test-map', 'cli']);
 
 /**
  * GATESLIM1: what a merge blocks on by default: the universal gates (which hold the sensitive-patterns scan, never to reach a
  * commit), the code map and the orientation index's check. Every other gate is listed and skipped, "in the CI beside"
  * (`--ci`, CI1); `--gated` runs what the merge's paths reach, `--full` every gate, `--rerun <gate>` a named one.
+ *
+ * CISCOPE1c (D207): and the census of test units' check (`tools/test-map.mjs check`, about 20 s), which reads every suite's
+ * sources and holds the hand rows of `REACH` below, the whole-suite files and the skips to them.
  */
-export const BLOCKING = Object.freeze(['universal', 'code-map', 'orient-index']);
+export const BLOCKING = Object.freeze(['universal', 'code-map', 'orient-index', 'test-map']);
 
 /**
  * MERGETSC1: the light checks a merge blocks on when one of its paths reaches what they read, beside `BLOCKING`. Two sides
@@ -988,6 +991,8 @@ const DRIVER_READERS = [...DESKTOP_SUITES, 'rehearse-family', 'deployment'];
  * imports and starts, and to every tracked file and lane. What a fast suite may read is given generously:
  * it costs minutes. The precision is in the Process halves and the rehearsals, which cost the hours.
  */
+// test-map: strings name paths as data — this table and the gates' commands name the paths they place, which the tool does not
+// read, so the census of test units (CISCOPE1c) follows this file's imports and not its strings.
 export const REACH = Object.freeze([
   {
     paths: [
@@ -1000,9 +1005,12 @@ export const REACH = Object.freeze([
   // GATESLIM1: the tests of the tools only the parent runs (the merge tool, the install's publisher, the family rehearsal's kit) are
   // the tool-tests gate, no longer part of verify. These rules come first and keep what each path reached before.
   {
-    paths: ['tools/merge-branch.mjs', 'tools/doc-duplicates.mjs', 'tools/process-reach.mjs', 'src/Daoris.Cli/tool-test/**', 'src/Daoris.Cli/test/_fixture.ts'],
+    paths: [
+      'tools/merge-branch.mjs', 'tools/doc-duplicates.mjs', 'tools/process-reach.mjs', 'tools/test-map.mjs', 'tools/test-failures.mjs', 'tools/test-recall.mjs',
+      'src/Daoris.Cli/tool-test/**', 'src/Daoris.Cli/test/_fixture.ts',
+    ],
     gates: ['tool-tests'],
-    why: "the merge tool's, the publisher's and the set-up kit's tests, which `tool-tests` runs and verify does not (GATESLIM1): the merge tool and what it imports (the Process census, PROCREACH1, among them), the tests, and the fixture they share",
+    why: "the merge tool's, the publisher's and the set-up kit's tests, which `tool-tests` runs and verify does not (GATESLIM1): the merge tool and what it imports (the Process census, PROCREACH1, among them), the census of every test unit with its failure reader and recall (CISCOPE1c), the tests, and the fixture they share",
   },
   {
     paths: ['tools/rehearsal-kit.mjs'],

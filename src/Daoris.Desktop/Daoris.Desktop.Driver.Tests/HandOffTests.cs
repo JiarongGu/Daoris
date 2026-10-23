@@ -12,6 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// 🔴 <b>Nothing here reaches a network.</b> The plugins are fakes, `origin` is a bare repository under the
 /// scratch folder, and the only push is the test's own, to it.
 /// </remarks>
+// subject: src/Daoris.Desktop/Daoris.Desktop.Driver/Trees — a landed branch handed to a landing plugin (CISCOPE1c's census, D207)
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class HandOffTests : LandedFixture

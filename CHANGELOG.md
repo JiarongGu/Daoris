@@ -9,6 +9,10 @@ with the version and date at release.
   changed since reaches any of them (CISCOPE1b). The half passes on those classes, and the run and its status say so. It still
   runs whole when its last run failed outside a test, when that run's results were missing, or when the classes the run found
   differ from the ones the census expects. The daily sweep and the stage's check are unchanged.
+- For contributors: every merge and every CI run now checks the census of test units, `node tools/test-map.mjs check`
+  (CISCOPE1c). It maps each test class, test file, spec and rehearsal to what it can see. It fails on a lane-table fixture row
+  that its readers contradict, a suite-wide file that is not listed, and a skip that names no open row.
+  `tools/test-failures.mjs` reads a failed run's report by test, exception and source line.
 - A session that carries on work another maker's agent left uncommitted in its tree is now told that maker's Co-Authored-By
   trailer too (MAKERTRAIL2). It names the model that agent reported, or *model unreported*, so a commit holding that work
   credits both makers. A carry-on with the same maker is told nothing more.
