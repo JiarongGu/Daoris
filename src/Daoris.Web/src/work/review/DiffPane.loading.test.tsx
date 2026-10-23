@@ -132,7 +132,7 @@ describe('the review while git reads (REVIEW4)', () => {
 
     // The page waits as long as git may take, where the bridge's own 30 seconds gave up first.
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DIFF', {
-      payload: { id: 's1a2b3c4' }, timeoutMs: 180_000,
+      payload: { id: 's1a2b3c4', read: expect.any(String) }, timeoutMs: 180_000,
     }));
 
     act(() => vi.advanceTimersByTime(2_000));
