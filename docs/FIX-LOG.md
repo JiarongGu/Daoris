@@ -5,6 +5,29 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-23 — A hand read back after its answer was lost told nothing on this machine (HELPERWAIT1b2)
+
+- **Symptom:** found by Codex's read of COWORKUX1's round 4 (its one blocking finding), not seen on a machine. A helper's answer whose
+  hand kept the word and then lost its answer (a 500, an unreadable success, a timeout) was marked handed at the next look and never
+  reached the asker's run. A conversation's runner was never told, so the word waited on its record until another word or a restart;
+  an urgent ask's running asker never had it held for its next step.
+- **Root cause:** HELPERWAIT1b's read-back (`DriverHelpers.HandedBefore`) found the word waiting and wrote `Handed`, but the hand's
+  local dispatch ran only on a hand that answered: the inbox's `HoldKept`, the asker's note and, for a conversation, the
+  `reaches: resume` event the shell's chat runner hears (`ChatGoOn.Heard`). The uncertain return skipped all three, and the read-back
+  did not make them up. The runner's come-up sweep (`TakeUpAsync`) runs once at the shell's start, so nothing else recovered it.
+- **Fix:** the read-back now returns the record holding the word and the word itself, and dispatches it before it marks the ask
+  handed: to that record, under the word's id, with no second hand. One `Dispatch` serves the hand and the read-back. It holds an
+  urgent word in a running asker's inbox where its door takes words at the next step, then keeps the note, then the conversation's
+  event. It is idempotent by the id: the inbox holds an id once, and a conversation already told of the word is not told again. The
+  hand now dispatches before the state's mark, so a mark that fails to write leaves a word the read-back completes. A word consumed
+  with no event still settles `hand-uncertain`.
+- **Verification:** red first, each timing out on the dispatch it lacked, then green. `HelperLookTests`: a lost hand to an ended
+  conversation, with the real `ChatRunner` over the driver's events, goes on once (`working`, `failed`, one end announced, one
+  `resume` event under the word's id) and a later look tells it nothing more. A lost urgent hand to a running asker reaches its inbox's
+  next step once, under the record's id at the urgent level. Green: `HelperLookTests` (65), the driver's fast half (13,859), and
+  the Process classes `HelperProcessTests` (4) and `HelperWaitTickTests` (2) with `process.runsettings`, and
+  `HelperCaptureProcessTests` (4) with `git.process.runsettings`.
+
 ## 2026-10-23 — The helper wait did not keep four guarantees its design claimed (HELPERWAIT1b)
 
 - **Symptom:** found by Codex's read of COWORKUX1's round 3, not seen on a machine. Round 3 claimed four guarantees of the built

@@ -19813,3 +19813,12 @@ tree moved to the old place, and refuses one outside both. Detail: FIX-LOG 2026-
 opens it by name on first ask (`ProcessJob.OpenHolding`), only where it holds the tracked launcher, and holds it until the tracking
 lets go. A stop ends that job after the tree kill. `LaunchedSessionJobProcessTests` proves busy read and the whole tree stopped.
 Detail: D201's and D200's CONTAINCPU1 notes, the fix log. On Opus.
+## HELPERWAIT1b2 — a hand read back after its answer was lost completes its local dispatch (2026-10-23)
+
+> - [ ] **HELPERWAIT1b2 — a recovered hand dispatches the waiting word to its conversation or inbox** (driver; found 2026-10-23 in Codex's read of COWORKUX1's round 4, its one blocking finding; filed by its quest, never a backlog row). When the read-back finds the waiting word, complete the idempotent local dispatch for that word's actual recipient and id before finalizing recovery (notify the chat runner with `reaches: resume`, or enqueue the urgent inbox hand-off), never posting another hand; keep the separate consumed-without-event uncertainty case. Proof: lost-response cases proving one actual chat turn and the urgent next-step delivery, once only, red first.
+
+**Outcome** 2026-10-23: `DriverHelpers.HandedBefore` returns the record holding a waiting word, and the read-back dispatches it there
+under its id before marking the ask handed; one `Dispatch`, idempotent by the id, serves the hand and the read-back, and the hand
+now dispatches before its state's mark. `HelperLookTests` proves an ended conversation going on once through the real `ChatRunner`,
+and an urgent word reaching a running asker's next step once. HELPERWAIT1c's row (Codex's round-4 finding 2) was already filed with
+its prerequisite by HELPERWAIT1b's landing. Detail: FIX-LOG 2026-10-23 (HELPERWAIT1b2), D203's HELPERWAIT1b2 note. On Opus.

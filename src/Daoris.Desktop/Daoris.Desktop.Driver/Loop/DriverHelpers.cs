@@ -255,23 +255,76 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     /// The word <paramref name="helper"/>'s answer was handed to the asker's line as already, or null (HELPERWAIT1; Codex's round-2 #2 and #7
     /// on COWORKUX1): along every record of the line, the commissioner's and each successor's, one waiting on its record, else the newest
     /// <c>user</c> event of its conversation that names the helper and took it as a turn. A conversation's notice to its runner that the
-    /// word waits (<c>reaches: resume</c>) is no taking. Read only where a hand is about to be made.
+    /// word waits (<c>reaches: resume</c>) is no taking. Read only where a hand is about to be made. 🔴 HELPERWAIT1b2: a word still waiting
+    /// comes back with the record that holds it, whose local dispatch may never have run.
     /// </summary>
-    private string? HandedBefore(IReadOnlyList<PriorSession> line, string helper)
+    private (string Id, PriorSession? On, SaidWordView? Waiting)? HandedBefore(IReadOnlyList<PriorSession> line, string helper)
     {
         foreach (var record in line)
         {
-            if (record.Said?.FirstOrDefault(word => string.Equals(word.Helper, helper, StringComparison.Ordinal)) is { } waiting) return waiting.Id;
+            if (record.Said?.FirstOrDefault(word => string.Equals(word.Helper, helper, StringComparison.Ordinal)) is { } waiting)
+            {
+                return (waiting.Id ?? "handed", record, waiting);
+            }
+
             if (_context.Events.After(record.Session, 0).Events
                     .LastOrDefault(each => each.Kind == SessionEventKind.User && each.Reaches is null
                                            && string.Equals(each.Helper, helper, StringComparison.Ordinal)) is { } taken)
             {
-                return taken.Id ?? "handed";
+                return (taken.Id ?? "handed", null, null);
             }
         }
 
         return null;
     }
+
+    /// <summary>
+    /// What a hand does on this machine once the word is kept on <paramref name="to"/> (design §3; COWORK1d; HELPERWAIT1b2): an urgent
+    /// word held in a running asker's inbox for its next step, under the record's id; the asker's note; and for a conversation, the event
+    /// its runner hears (D137 §3.1), kept after the note so the turn it makes reads beneath it. Idempotent by the word's id, so the look
+    /// that reads back a hand whose answer was lost completes it, never twice: the inbox holds an id once, and a conversation already told
+    /// of the word is not told again. True where the word reaches the run at its next step.
+    /// </summary>
+    private bool Dispatch(HelperState state, PriorSession to, string? word, string composed, DrivenInbox? inbox, SessionEvents events)
+    {
+        if (to.Kind == "chat" && word is not null
+            && events.After(to.Session, 0).Events.Any(each => each.Kind == SessionEventKind.User && each.Reaches == "resume"
+                                                              && string.Equals(each.Id, word, StringComparison.Ordinal)))
+        {
+            return false;
+        }
+
+        // Held where the run takes it at its next step; one the inbox no longer takes stays on the record, which goes on with it once.
+        var atNextStep = inbox is not null && word is not null && inbox.HoldKept(
+            new ChatMessage(composed, [])
+            {
+                Id = word, Level = MessageLevel.Urgent,
+                Helped = new SaidWordView(word, composed, DateTimeOffset.UtcNow, [], true) { Helper = state.Helper, Level = MessageLevel.Urgent },
+            },
+            new SaidDoor(_context.Service, to.Session));
+        var noted = HelperNotes.Answered(state.Agent ?? "another agent", state.Helper!, state.LastWords);
+        _context.Output?.Append(to.Session, $"— {noted.Note}");
+        events.Keep(to.Session, new SessionEvent { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts }, say: null);
+
+        // The shell's chat runner hears this event, as it hears the person's words to an ended conversation: the origin is Daoris's own
+        // (`target`), never the person's, and an open conversation says the word as its next turn.
+        if (to.Kind == "chat" && word is not null)
+        {
+            events.Keep(
+                to.Session,
+                new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Helper = state.Helper, Id = word, Text = composed, Reaches = "resume" },
+                say: null);
+        }
+
+        return atNextStep;
+    }
+
+    /// <summary>The asker's inbox an urgent ask's word reaches at its next step (COWORK1d), or null where it reaches the turn's end.</summary>
+    private DrivenInbox? NextStepInbox(HelperAsk ask, PriorSession to) =>
+        ask.Urgent && to.Kind != "chat" && to.Running && _context.Processes.InboxOf(to.Session) is { } inbox
+        && inbox.ReachAt(MessageLevel.Urgent) == DrivenReach.NextStep
+            ? inbox
+            : null;
 
     private void Forget(string ask)
     {
@@ -599,7 +652,6 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     private async Task<LookLine?> DeliverHelperAsync(HelperAsk ask, HelperState state, HelperFiles files, CancellationToken ct, string? seen = null)
     {
         var service = _context.Service;
-        var output = _context.Output;
         // HELPERWAIT1 (D189 point 6): the newest record of the asker's line, as the hand door resolves it, so a left conversation is never
         // reopened and the answer goes to the part that continues it.
         var (asker, record, line, beyond) = await LineAsync(ask.Asker, ct).ConfigureAwait(false);
@@ -635,10 +687,9 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         // A conversation open between turns is `working` and takes it (its runner says it as the next turn); one still starting waits.
         // 🔴 COWORK1d (the message-urgency design §5): an urgent ask's answer reaches a running asker this loop runs at its next step,
         // where its door takes words then, kept on its record for its run and held in its inbox under the record's id.
-        var conversation = record.Kind == "chat";
-        var open = conversation && string.Equals(record.State, "working", StringComparison.OrdinalIgnoreCase);
-        var inbox = ask.Urgent && !conversation && record.Running ? _context.Processes.InboxOf(to) : null;
-        var nextStep = inbox?.ReachAt(MessageLevel.Urgent) == DrivenReach.NextStep;
+        var open = record.Kind == "chat" && string.Equals(record.State, "working", StringComparison.OrdinalIgnoreCase);
+        var inbox = NextStepInbox(ask, record);
+        var nextStep = inbox is not null;
         if (!open && !nextStep && (record.Running || record is { Parked: true, AnsweredPark: false })) return Held(ask, record, seen);
 
         // 🔴 One hand per ask (HELPERWAIT1, D188 point 4; Codex's round-2 #2 on COWORKUX1): the state is marked handed only after the keep,
@@ -646,11 +697,19 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         // turn of one opened with it: marked handed, never handed twice. Nothing found proves nothing where a hand began (an event's write
         // may have failed, a relay moved the word): the attempt mark, written before the door, says one did, and such an ask is never handed
         // again by itself but settled as uncertain for the person, the answer kept in the helper's conversation.
+        // 🔴 HELPERWAIT1b2 (Codex's round-4 read of COWORKUX1): a word found waiting may be one whose hand lost its answer, so nothing on
+        // this machine was told of it, and nothing else would tell it while the shell runs (the chat runner's come-up is no recurring
+        // sweep): its dispatch is completed first, on the record that holds it and under its id, idempotently, then the ask marked handed.
         if (HandedBefore(line, state.Helper!) is { } kept)
         {
-            files.WriteState(state with { Handed = kept, Attempted = null });
+            if (kept is { On: { } holder, Waiting: { } waiting })
+            {
+                Dispatch(state, holder, kept.Id, waiting.Text, NextStepInbox(ask, holder), _context.Events);
+            }
+
+            files.WriteState(state with { Handed = kept.Id, Attempted = null });
             Forget(ask.Id);
-            return Helper(LookClass.Progress, $"helper  ask `{ask.Id}` was handed to session {to} already, as word `{kept}`: it is not handed again.");
+            return Helper(LookClass.Progress, $"helper  ask `{ask.Id}` was handed to session {kept.On?.Session ?? to} already, as word `{kept.Id}`: it is not handed again.");
         }
 
         if (state.Attempted is not null)
@@ -678,7 +737,8 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         }
 
         // 🔴 HELPERWAIT1b (Codex's round-3 #2 on COWORKUX1): an answer lost after the door may have kept the word, so the mark stays and the
-        // outcome is uncertain until the next look reads the line back: the word found there marks it handed (above), and nothing found
+        // outcome is uncertain until the next look reads the line back: the word found there is dispatched and marks it handed (above,
+        // HELPERWAIT1b2), and nothing found
         // settles it uncertain for the person. It is never handed again.
         if (handed == HelperHanded.Uncertain)
         {
@@ -687,30 +747,11 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                 $"helper  ask `{ask.Id}`'s hand to session {to} is uncertain: {message}. The next look reads session {to}'s line for it, and never hands it twice.");
         }
 
-        // Held where the run takes it at its next step; one the inbox no longer takes stays on the record, which goes on with it once.
-        var atNextStep = nextStep && word is not null && inbox!.HoldKept(
-            new ChatMessage(composed, [])
-            {
-                Id = word, Level = MessageLevel.Urgent,
-                Helped = new SaidWordView(word, composed, DateTimeOffset.UtcNow, [], true) { Helper = state.Helper, Level = MessageLevel.Urgent },
-            },
-            new SaidDoor(service, to));
+        // HELPERWAIT1b2: dispatched before the state's mark, so a mark that fails to write leaves a word the next look's read-back
+        // completes, idempotently, rather than one marked handed that nothing here was told of.
+        var atNextStep = Dispatch(state, record, word, composed, inbox, _context.Events);
         files.WriteState(state with { Handed = word ?? "handed", Attempted = null });
         Forget(ask.Id);
-        var noted = HelperNotes.Answered(agent, state.Helper!, state.LastWords);
-        output?.Append(to, $"— {noted.Note}");
-        _context.Events.Keep(to, new SessionEvent { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts }, say: null);
-
-        // The shell's chat runner hears this event, as it hears the person's words to an ended conversation (D137 §3.1), after the
-        // note above so the turn it makes reads beneath it: the origin is Daoris's own (`target`), never the person's, and an
-        // open conversation says the word as its next turn.
-        if (conversation && word is not null)
-        {
-            _context.Events.Keep(
-                to,
-                new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Helper = state.Helper, Id = word, Text = composed, Reaches = "resume" },
-                say: null);
-        }
 
         return Helper(LookClass.Progress, atNextStep
             ? $"helper  ask `{ask.Id}` answered by {agent}: its answer reaches session {to} at its next step, marked as the helper's."

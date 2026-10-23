@@ -109,7 +109,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/scoped.md` | 53 | 425 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/sparse.md` | 50 | 365 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/DriverCommandTests.cs` | 48 | 746 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/HelperLookTests.cs` | 56 | 1182 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/HelperLookTests.cs` | 61 | 1284 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/SessionMessagesTickTests.cs` | 77 | 1322 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/SessionsOutliveTheirLookTests.cs` | 43 | 957 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Platform/NoteCodesTests.cs` | 41 | 772 |
@@ -154,7 +154,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSettingProposals.cs` | 53 | 940 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 258 | 4067 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverContinuations.cs` | 71 | 1117 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverHelpers.cs` | 56 | 956 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverHelpers.cs` | 59 | 997 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverWatch.cs` | 62 | 1041 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/DriverChoicesCommand.cs` | 119 | 2147 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/DriverConfig.cs` | 94 | 1602 |

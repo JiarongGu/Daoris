@@ -1001,6 +1001,108 @@ public sealed class HelperLookTests : IDisposable
         else Assert.Equal(word, settled.Handed);
     }
 
+    /// <summary>A conversation's adapter on the protocol door that spawns nothing: its go-on is tried and fails at the start.</summary>
+    private sealed class Talk : ISessionAdapter
+    {
+        public string Name => "talk";
+
+        public SessionWire Wire => SessionWire.Acp;
+
+        public bool Interactive => true;
+
+        public System.Diagnostics.ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) =>
+            throw new InvalidOperationException("a judgement test spawns nothing");
+
+        public System.Diagnostics.ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) =>
+            throw new InvalidOperationException("a judgement test spawns nothing");
+    }
+
+    /// <summary>
+    /// 🔴 HELPERWAIT1b2 (Codex's round-4 read of COWORKUX1): a hand to an ended conversation whose answer was lost kept the word, and the
+    /// look that reads it back completes what the hand would have done before it marks the ask handed: the event the shell's chat runner
+    /// hears, on the record that holds the word, under its id. The real runner goes the conversation on with it once, and a later look
+    /// neither hands it nor tells the runner again; nothing else (the runner's come-up) would take it up while the shell runs.
+    /// </summary>
+    [Fact]
+    public async Task A_lost_hand_to_an_ended_conversation_is_read_back_and_its_runner_goes_on_once()
+    {
+        Ask("a1");
+        Answered();
+        var host = Host(kind: "chat");
+        host.HelperHandLost = "500";
+        var driver = Driver(host, pass: null);
+
+        Assert.Contains("uncertain", Assert.Single(await Look(driver)));
+        var word = host.Said("s1")[0]!["id"]!.GetValue<string>();
+
+        // The shell's runner over the same events the driver keeps, its ledger holding the conversation with the word waiting.
+        var root = Path.Combine(_home, "engine");
+        Directory.CreateDirectory(root);
+        var ledger = new ChatLedger().Register("engine", root);
+        ledger.Chat("s1", "completed", "talk", root).Helped(word, host.HelperHands[0].Text, helper: Helper);
+        new HarnessConversations(_home).Keep("s1", "talk", "conv-s1");
+        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = new Talk() });
+        using var runner = new ChatRunner(
+            ledger.Client(), adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: driver.Context.Events,
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+        var ended = new List<string>();
+        runner.TakenUpEnded += (session, _) => { lock (ended) ended.Add(session); };
+
+        host.HelperHandLost = null;
+        await Look(driver);
+        await Poll.Until(() => { lock (ended) return ended.Count > 0; }, () => $"moves [{string.Join(",", ledger.Moves("s1"))}]");
+        await Look(driver);
+        await Task.Delay(200);
+
+        Assert.Equal(["working", "failed"], ledger.Moves("s1"));
+        lock (ended) Assert.Equal(["s1"], ended);
+        Assert.Equal(1, host.HelperHandsAsked);
+        Assert.Equal(word, Files.ReadState("a1")!.Handed);
+        var told = Assert.Single(driver.Context.Events.After("s1", 0).Events, e => e.Kind == SessionEventKind.User);
+        Assert.Equal(("target", "resume", word, Helper), (told.Origin, told.Reaches, told.Id, told.Helper));
+    }
+
+    /// <summary>
+    /// 🔴 HELPERWAIT1b2: an urgent ask's hand to a running asker this loop runs, whose answer was lost, kept the word on the record for its
+    /// run; the look that reads it back holds it in the run's inbox under the record's id, as the hand would have, so it reaches the next
+    /// step, once, before the ask is marked handed. A later look holds nothing again.
+    /// </summary>
+    [Fact]
+    public async Task A_lost_urgent_hand_to_a_running_asker_is_read_back_and_reaches_its_next_step_once()
+    {
+        Ask("a1", urgent: true);
+        Answered();
+        var host = Host(state: "working");
+        host.HelperHandLost = "500";
+        var driver = Driver(host, pass: null);
+        var sent = new List<ChatMessage>();
+        var inbox = driver.Context.Processes.OpenInbox("s1");
+        inbox.Attach(interrupt: null, deliver: message =>
+        {
+            lock (sent) sent.Add(message);
+            return Task.FromResult("end_turn");
+        });
+        inbox.Flow();
+
+        Assert.Contains("uncertain", Assert.Single(await Look(driver)));
+        lock (sent) Assert.Empty(sent);
+        var word = host.Said("s1")[0]!["id"]!.GetValue<string>();
+
+        host.HelperHandLost = null;
+        await Look(driver);
+        await Poll.Until(() => { lock (sent) return sent.Count > 0; }, () => $"state {Files.ReadState("a1")}");
+        await Look(driver);
+        await Task.Delay(200);
+
+        ChatMessage answer;
+        lock (sent) answer = Assert.Single(sent);
+        Assert.Equal((word, MessageLevel.Urgent), (answer.Id, answer.Level));
+        Assert.Contains("The window is exclusive", answer.Text);
+        Assert.Equal("target", ChatMessage.Words(answer).Origin);
+        Assert.Equal(1, host.HelperHandsAsked);
+        Assert.Equal(word, Files.ReadState("a1")!.Handed);
+    }
+
     /// <summary>
     /// 🔴 HELPERWAIT1b (Codex's round-3 #4 on COWORKUX1): the line is followed sixteen links at most, and one longer is refused with its reason,
     /// never handed to the part where the bound stopped, which the line has left; the answer stays with the helper for the person. A line of
