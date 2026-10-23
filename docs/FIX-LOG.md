@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-24 - Every landing asked git for a squash the line could not hold (SQUASHSEEN1b)
+
+- **Symptom:** the CI on d879097 failed the git half: `LandGitCountTests`' three landings started more git programs than their
+  ceilings (the merge landing 45 against 39, LANDGIT1), and failed again alone.
+- **Root cause:** SQUASHSEEN1 added a third form of the content proof (`SquashCarries`: merging the branch into the line adds
+  nothing), asked before every replay. An ordinary landing, whose line has no commit since the branch left it, paid its `git
+  merge-tree` and backlog reads though nothing on the line could have carried the branch. SQUASHSEEN1's land test ran only its
+  own classes, so the counts were first run by the CI.
+- **Fix:** the squash form is asked only where the line has commits since the merge base; the loop already lists them (`git log
+  --format=%T`), so the condition costs no git start (`ContentHolds.cs`).
+- **Verify:** with `git.process.runsettings`, `LandGitCountTests`, `SquashSeenTests` and the content-hold classes 10 of 10, the
+  three landings back under their ceilings; the fast `SquashSeenTests` and `ContentHold*` cases 27 of 27; the driver's fast half,
+  14,245.
+
 ## 2026-10-24 - A line carried on to another maker credited the earlier maker's uncommitted work to the new one alone (MAKERTRAIL2)
 
 - **Symptom:** on LIMITRESUME1i's line Codex ran out of credits with 47 files changed and uncommitted in its tree. The install
