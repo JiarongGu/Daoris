@@ -31,6 +31,8 @@ interface Options {
   beside: boolean; besideCommit: string | null;
   /** CI1: the CI runner on this commit (main's tip when null), its watch, and the stop asked of the watch. */
   ci: boolean; ciCommit: string | null; watch: boolean; stop: boolean;
+  /** CIFAST1: the stage's path, which runs the rehearsals a plain run owes. */
+  ciStage: boolean;
 }
 /** GATEWT1: what the prune knows of the gate tree: git lists it, the commit it holds, its changes, its run's lock and its stage. */
 interface GateTreeFacts {
@@ -148,6 +150,10 @@ const tool = await import(
   isGitHalf: (gate: { name: string; run: string }) => boolean;
   BESIDE_GIT_HALF: readonly string[];
   runsBesideGitHalf: (gate: { name: string; run: string }) => boolean;
+  /** CIFAST1: the rehearsals a plain CI run owes a stage, and the stage's path that runs them. */
+  STAGE_REHEARSALS: readonly string[];
+  isStageRehearsal: (gate: { name: string; run: string }) => boolean;
+  stageCommand: (commit: string) => string;
   dotnetComponent: (run: string) => string | null;
   isHeavyGate: (gate: { name: string; run: string }) => boolean;
   laneSchedule: (gates: Gate[], options?: { scripts?: Record<string, string>; byMemory?: boolean }) => Schedule;
@@ -265,14 +271,14 @@ const tool = await import(
   CI_WATCH: string;
   CI_STOP: string;
   CI_IDLE: Readonly<{ busy: number; freeGb: number; width: number; sampleMs: number }>;
-  ciPlan: (facts: Omit<Judging, 'isRecord'> & { plan: string[]; verdicts: Verdict[]; now?: number; bound?: number }) => { run: string[]; kept: { name: string; verdict: Verdict; standing: Standing }[]; gates: Judged[] };
+  ciPlan: (facts: Omit<Judging, 'isRecord'> & { plan: string[]; verdicts: Verdict[]; owe?: string[]; now?: number; bound?: number }) => { run: string[]; kept: { name: string; verdict: Verdict; standing: Standing }[]; owed: string[]; gates: Judged[] };
   cpuBusy: (before: CpuTimes[], after: CpuTimes[]) => number | null;
   measureLoad: (options?: { cpus?: () => CpuTimes[]; sleep?: (ms: number) => Promise<void>; read?: () => Reading; ms?: number }) => Promise<Load>;
   ciWidth: (load: Load) => { width: number; idle: boolean; why: string };
   ciStatus: (facts: {
-    commit: string; tree: string; plan: Gate[]; chosen: { run: string[]; kept: { name: string; verdict: Verdict; standing: Standing }[] };
+    commit: string; tree: string; plan: Gate[]; chosen: { run: string[]; kept: { name: string; verdict: Verdict; standing: Standing }[]; owed?: string[] };
     since: { commit: string | null; at: string | null; paths: number | null }; light: { width: number; idle: boolean; why: string };
-    pid: number; at: string; logOf: (gate: string, commit: string | null) => string | null;
+    pid: number; at: string; logOf: (gate: string, commit: string | null) => string | null; stage?: boolean;
   }) => CiStatus;
   watchCi: (seams: {
     tip: () => string | null; gated: (commit: string) => boolean; holder: () => string | null; run: () => Promise<number>;
@@ -296,7 +302,7 @@ interface CpuTimes { times: { user: number; nice: number; sys: number; idle: num
 interface Load { busy: number | null; physical: number | null; commit: number | null }
 /** CI1: one gate in a CI run's status file. */
 interface CiGate {
-  name: string; kind: string; lane: 'light' | 'process'; state: 'kept' | 'waiting' | 'running' | 'done' | 'not run';
+  name: string; kind: string; lane: 'light' | 'process'; state: 'kept' | 'waiting' | 'running' | 'done' | 'not run' | 'owed';
   verdict: string | null; at: string | null; ms: number | null; log: string | null; note: string | null;
   kept: { commit: string | null; tree: string | null; standing: string } | null;
 }
@@ -304,7 +310,7 @@ interface CiGate {
 interface CiStatus {
   schema: number; commit: string; tree: string; state: string; pid: number; started: string; updated: string; ended: string | null;
   since: { commit: string | null; at: string | null; paths: number | null }; light: { width: number; idle: boolean; why: string };
-  gates: CiGate[]; error?: string;
+  stage: boolean; owed: string[]; gates: CiGate[]; error?: string;
 }
 
 // The stage's own question (GATE6b's proof): the publish asks the merge tool's `--passed` before it builds.
@@ -331,7 +337,7 @@ test('the arguments name one branch, or several after --batch, and the flags', (
   assert.deepEqual(tool.parseArgs(['mod9']), {
     branches: ['mod9'], keepGoing: false, commitCheck: true, resume: false, dropBatch: false, plan: false, prune: false, autoPrune: true,
     full: false, gated: false, rerun: [], passed: false, stale: false, oneAtATime: false, beside: false, besideCommit: null,
-    ci: false, ciCommit: null, watch: false, stop: false,
+    ci: false, ciCommit: null, watch: false, stop: false, ciStage: false,
   });
   assert.equal(tool.parseArgs(['a', '--gated']).gated, true);
   assert.equal(tool.parseArgs(['--continue', '--gated']).gated, true);
@@ -445,6 +451,13 @@ test("--ci gates a commit in the gate tree, main's tip unless named; --watch fol
   assert.deepEqual([watch.ci, watch.watch, watch.ciCommit], [true, true, null]);
   assert.equal(tool.parseArgs(['--watch', '--ci']).watch, true);
   assert.deepEqual([tool.parseArgs(['--ci', '--stop']).stop], [true]);
+  assert.equal(plain.ciStage, false, 'a plain run is no stage\'s');
+  // CIFAST1: the stage's path, its commit after --stage or after --ci.
+  for (const argv of [['--ci', '--stage', 'abc1234'], ['--ci', 'abc1234', '--stage'], ['--stage', '--ci', 'abc1234']]) {
+    const stage = tool.parseArgs(argv);
+    assert.deepEqual([stage.ci, stage.ciStage, stage.ciCommit, stage.branches], [true, true, 'abc1234', []], argv.join(' '));
+  }
+  assert.deepEqual([tool.parseArgs(['--ci', '--stage']).ciStage, tool.parseArgs(['--ci', '--stage']).ciCommit], [true, null]);
   const cases: [string[], RegExp][] = [
     [['--watch'], /--watch is the CI's: --ci --watch/],
     [['--stop'], /--stop is the CI watch's: --ci --stop/],
@@ -453,7 +466,12 @@ test("--ci gates a commit in the gate tree, main's tip unless named; --watch fol
     [['--ci', '--watch', 'abc1234'], /--ci --watch gates main's tip as it moves: it takes no commit/],
     [['--ci', '--stop', 'abc1234'], /--ci --stop takes nothing else/],
     [['--ci', '--stop', '--watch'], /--ci --stop takes nothing else/],
-    [['--ci', '--full'], /--ci takes only a commit, --watch, --stop, --keep-going and --one-at-a-time/],
+    [['--ci', '--full'], /--ci takes only a commit, --stage, --watch, --stop, --keep-going and --one-at-a-time/],
+    [['--stage'], /--stage is the CI's: --ci --stage \[<commit>\]/],
+    [['--ci', '--watch', '--stage'], /--ci --watch owes the stage's rehearsals/],
+    [['--ci', '--stop', '--stage'], /--ci --stop takes nothing else/],
+    [['--ci', '--stage', '--stage'], /--stage is given once/],
+    [['--ci', '--stage', 'abc1234', 'b'], /--ci takes no branch/],
     [['--ci', '--beside'], /--ci takes only/],
     [['--ci', '--no-prune'], /--ci takes only/],
     [['--ci', '--ci'], /--ci is given once/],
@@ -517,6 +535,37 @@ test("a CI run gates what this tree's verdicts lack: a gate with none, or whose 
   assert.deepEqual(tool.ciPlan({ ...facts, plan, verdicts: plan.map((gate) => verdict(gate, 'gone')) }).run, plan);
 });
 
+test('CIFAST1: a plain CI run owes the family and deployment rehearsals a stage, neither run nor failed; the stage\'s path runs them, and the stage still asks their pass', () => {
+  assert.deepEqual([...tool.STAGE_REHEARSALS], ['rehearse:family', 'rehearse:deploy']);
+  assert.equal(tool.isStageRehearsal({ name: 'renamed', run: 'npm run rehearse:family' }), true);
+  assert.equal(tool.isStageRehearsal({ name: 'renamed', run: 'npm run -s rehearse:deploy' }), true);
+  for (const run of ['npm run rehearse', 'npm run rehearse:family-x', 'npm run test:web:e2e', 'dotnet test src/X/X.Tests --settings src/Daoris.Desktop/git.process.runsettings']) {
+    assert.equal(tool.isStageRehearsal({ name: 'x', run }), false, run);
+  }
+  // The release rehearsal (1 to 4 minutes) stays in every run, and each read from this repository's declared gates.
+  const declared = tool.readPlan(repoRoot).filter(tool.isStageRehearsal).map((gate) => gate.name);
+  assert.deepEqual(declared, ['rehearse-family', 'deployment']);
+  assert.equal(tool.stageCommand('a'.repeat(40)), 'node tools/merge-branch.mjs --ci --stage aaaaaaa');
+
+  const plan = ['universal', 'rehearse', 'rehearse-family', 'deployment'];
+  const owe = ['rehearse-family', 'deployment'];
+  const verdict = (gate: string, tree: string, value = 'PASS'): Verdict => ({ gate, verdict: value, tree, at: '2026-10-24T10:00:00Z', commit: `${tree}-commit`, branch: null });
+  const facts = { tree: 't2', drift: (from: string) => (from === 't1' ? ['src/a.ts'] : null), reaching: (_gate: string, paths: string[]) => paths };
+  // No verdict: a plain run runs the rest and owes the two; the stage's path (owing none) runs every gate.
+  let chosen = tool.ciPlan({ ...facts, plan, owe, verdicts: [] });
+  assert.deepEqual([chosen.run, chosen.owed, chosen.kept], [['universal', 'rehearse'], owe, []]);
+  assert.deepEqual([tool.ciPlan({ ...facts, plan, verdicts: [] }).run, tool.ciPlan({ ...facts, plan, verdicts: [] }).owed], [plan, []]);
+  // A failed rehearsal is owed too, never run again by a plain run, and never read as passed.
+  chosen = tool.ciPlan({ ...facts, plan, owe, verdicts: plan.map((gate) => verdict(gate, 't2', gate === 'deployment' ? 'FAIL' : 'PASS')) });
+  assert.deepEqual([chosen.run, chosen.owed, chosen.kept.map((kept) => kept.name)], [[], ['deployment'], ['universal', 'rehearse', 'rehearse-family']]);
+  // A rehearsal pass that stands is kept, owed or not; one a change since reaches is owed again.
+  chosen = tool.ciPlan({ ...facts, plan, owe, verdicts: plan.map((gate) => verdict(gate, 't1')) });
+  assert.deepEqual([chosen.run, chosen.owed], [['universal', 'rehearse'], owe]);
+  // The stage's judgement is unchanged: it still lacks what a plain run owes.
+  const judged = tool.stageJudgement({ ...facts, plan, verdicts: plan.filter((gate) => !owe.includes(gate)).map((gate) => verdict(gate, 't2')), isRecord: () => false });
+  assert.deepEqual([judged.passed, judged.missing], [false, owe]);
+});
+
 test('a CI run measures the machine before its gates start, and runs the light lane wider only when it is idle', async () => {
   const gb = 2 ** 30;
   const idle = tool.ciWidth({ busy: 0.1, physical: 40 * gb, commit: 50 * gb });
@@ -561,7 +610,8 @@ test("a CI run's status names each gate of the plan: those it runs waiting, the 
     light: { width: 5, idle: true, why: 'idle' }, pid: 42, at: '2026-10-22T10:00:00Z',
     logOf: (gate, commit) => (commit === kept.commit ? `local/scratch/ci-ccccccc/${gate}.log` : null),
   });
-  assert.deepEqual(Object.keys(status), ['schema', '_why', 'commit', 'tree', 'state', 'pid', 'started', 'updated', 'ended', 'since', 'light', 'gates']);
+  assert.deepEqual(Object.keys(status), ['schema', '_why', 'commit', 'tree', 'state', 'pid', 'started', 'updated', 'ended', 'since', 'light', 'stage', 'owed', 'gates']);
+  assert.deepEqual([status.stage, status.owed], [false, []]);
   assert.deepEqual([status.schema, status.commit, status.tree, status.state, status.pid, status.started, status.updated, status.ended],
     [1, 'a'.repeat(40), 't2', 'running', 42, '2026-10-22T10:00:00Z', '2026-10-22T10:00:00Z', null]);
   assert.deepEqual(status.since, { commit: 'b'.repeat(40), at: '2026-10-22T08:00:00Z', paths: 3 });
@@ -574,6 +624,22 @@ test("a CI run's status names each gate of the plan: those it runs waiting, the 
     name: 'web', kind: plan[2]!.kind, lane: 'light', state: 'kept', verdict: 'PASS', at: '2026-10-22T09:00:00Z', ms: null,
     log: 'local/scratch/ci-ccccccc/web.log', note: null, kept: { commit: 'c'.repeat(40), tree: 't1', standing: 'unreached' },
   });
+
+  // CIFAST1: a gate a plain run owes a stage is `owed`, neither failed nor passed, naming the stage's path.
+  const owing = tool.ciStatus({
+    commit: 'a'.repeat(40), tree: 't2', plan: [...plan, { name: 'rehearse-family', run: 'npm run rehearse:family', kind: 'rehearsal' }],
+    chosen: { run: ['universal', 'driver-process'], kept: [], owed: ['web', 'rehearse-family'] },
+    since: { commit: null, at: null, paths: null }, light: { width: 3, idle: false, why: 'busy' }, pid: 42, at: '2026-10-24T10:00:00Z',
+    logOf: () => null,
+  });
+  assert.deepEqual([owing.stage, owing.owed], [false, ['web', 'rehearse-family']]);
+  assert.deepEqual(owing.gates[3], {
+    name: 'rehearse-family', kind: 'rehearsal', lane: 'process', state: 'owed', verdict: null, at: null, ms: null, log: null,
+    note: 'owed for a stage: node tools/merge-branch.mjs --ci --stage aaaaaaa runs it', kept: null,
+  });
+  assert.equal(owing.gates[2]!.state, 'owed');
+  assert.equal(tool.ciStatus({ commit: 'a'.repeat(40), tree: 't2', plan, chosen: { run: [], kept: [] }, since: { commit: null, at: null, paths: null },
+    light: { width: 3, idle: false, why: 'busy' }, pid: 42, at: '2026-10-24T10:00:00Z', logOf: () => null, stage: true }).stage, true);
 });
 
 test("the CI watch gates main's tip when it moves and the gate tree is idle: once each, the newest only, and it ends when asked", async () => {
@@ -6346,6 +6412,94 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.deepEqual(record().runs.map((run) => `${run.commit.slice(0, 7)} ${run.state}`),
       [first, second, second, third, fourth].map((sha, i) => `${sha.slice(0, 7)} ${i === 3 ? 'failed' : 'green'}`));
     repo.cleanup();
+  });
+
+  // CIFAST1's proof: a CI run took 45 to 75 minutes, the family and deployment rehearsals 14 to 23 and 14 to 22 of it.
+  test('--ci owes the family and deployment rehearsals a stage, running neither; --ci --stage runs them on the commit to stage, one after the other, and the stage asks their pass', async () => {
+    const repo = scratch('ci-stage', [
+      { name: 'universal', run: 'node ci-gate.mjs universal' },
+      { name: 'rehearse-family', run: 'npm run rehearse:family' },
+      { name: 'deployment', run: 'npm run rehearse:deploy' },
+    ], {
+      'ci-gate.mjs': CI_GATE,
+      // A rehearsal stand-in: it notes its start and its end, so two that overlapped would show it.
+      'rehearsal.mjs': [
+        "import { appendFileSync, mkdirSync } from 'node:fs';",
+        'const name = process.argv[2];',
+        "mkdirSync('local', { recursive: true });",
+        "appendFileSync('local/rehearsals.txt', `${name} start\\n`);",
+        'await new Promise((done) => setTimeout(done, 300));',
+        "appendFileSync('local/rehearsals.txt', `${name} end\\n`);",
+        'console.log(`${name} rehearsed`);',
+        "process.exit((process.env.CI_FAIL ?? '').split(',').includes(name) ? 1 : 0);",
+        '',
+      ].join('\n'),
+      'package.json': `${JSON.stringify({ name: 'scratch', private: true, scripts: { 'rehearse:family': 'node rehearsal.mjs rehearse-family', 'rehearse:deploy': 'node rehearsal.mjs deployment' } }, null, 2)}\n`,
+    });
+    const gateTree = join(repo.root, 'local', 'gate-tree');
+    const read = (file: string) => (existsSync(join(gateTree, 'local', file)) ? readFileSync(join(gateTree, 'local', file), 'utf8').split('\n').filter(Boolean) : []);
+    const clear = () => { for (const file of ['ran.txt', 'rehearsals.txt']) rmSync(join(gateTree, 'local', file), { force: true }); };
+    const statusOf = (sha: string) => JSON.parse(readFileSync(join(repo.root, 'local', 'scratch', `ci-${sha.slice(0, 7)}`, 'status.json'), 'utf8')) as CiStatus;
+    const states = (status: CiStatus) => status.gates.map((gate) => `${gate.name} ${gate.state} ${gate.verdict}`);
+    const record = () => JSON.parse(readFileSync(join(repo.root, 'local', 'ci.json'), 'utf8')) as { lastGreen: { commit: string } | null; runs: { commit: string; state: string; at: string; stage?: boolean; owed?: string[] }[] };
+    const tip = git(repo.root, 'rev-parse', 'HEAD');
+    const sha = tip.slice(0, 7);
+    try {
+      // A plain run: the rehearsals are owed, not run; it is green on the rest, and says what pays them.
+      let result = await repo.run(['--ci']);
+      assert.equal(result.status, 0, result.out);
+      assert.deepEqual([read('ran.txt'), read('rehearsals.txt')], [['universal'], []]);
+      assert.match(result.out, /1 of 3 gates to run, 0 verdicts kept, which still stand on this tree, rehearse-family and deployment owed for a stage/);
+      assert.match(result.out, new RegExp(`owed, not run \\(CIFAST1\\): rehearse-family, deployment, which node tools/merge-branch\\.mjs --ci --stage ${sha} runs before a stage`));
+      assert.match(result.out, new RegExp(`CI green on ${sha}: 1 gate run and passed, 0 verdicts kept; rehearse-family and deployment owed for a stage, neither failed nor passed`));
+      assert.doesNotMatch(result.out, /Stage it from the gate tree/);
+      let status = statusOf(tip);
+      assert.deepEqual([status.state, status.stage, status.owed], ['green', false, ['rehearse-family', 'deployment']]);
+      assert.deepEqual(states(status), ['universal done PASS', 'rehearse-family owed null', 'deployment owed null']);
+      assert.deepEqual(record().runs.at(-1), { commit: tip, state: 'green', at: record().runs.at(-1)!.at, status: `local/scratch/ci-${sha}/status.json`, owed: ['rehearse-family', 'deployment'] });
+      // The stage asks their pass, and a plain run gave none.
+      result = await repo.run(['--passed'], {}, gateTree);
+      assert.equal(result.status, 1, result.out);
+      assert.match(result.out, /rehearse-family\s+none/);
+
+      // The stage's path, failing: it runs both on this commit, one after the other, and the stage still refuses.
+      clear();
+      result = await repo.run(['--ci', '--stage'], { CI_FAIL: 'deployment' });
+      assert.equal(result.status, 1, result.out);
+      assert.match(result.out, new RegExp(`CI on ${sha} \\(CI1, for a stage: CIFAST1\\): 2 of 3 gates to run, 1 verdict kept`));
+      assert.deepEqual(read('rehearsals.txt'), ['rehearse-family start', 'rehearse-family end', 'deployment start', 'deployment end'], 'one after the other, never side by side');
+      assert.equal(read('ran.txt').length, 0, 'the light gate\'s pass stands');
+      assert.match(result.out, /CI did NOT pass .*: deployment failed/);
+      assert.equal((await repo.run(['--passed'], {}, gateTree)).status, 1);
+      // A plain run after it owes the failed one again, runs nothing, and never reads it as passed.
+      clear();
+      result = await repo.run(['--ci']);
+      assert.equal(result.status, 0, result.out);
+      assert.deepEqual(read('rehearsals.txt'), []);
+      assert.deepEqual(states(statusOf(tip)), ['universal kept PASS', 'rehearse-family kept PASS', 'deployment owed null']);
+      assert.equal((await repo.run(['--passed'], {}, gateTree)).status, 1, 'the stage still refuses it');
+
+      // The stage's path, passing: what it lacks runs, and the stage stands.
+      clear();
+      result = await repo.run(['--ci', '--stage', sha]);
+      assert.equal(result.status, 0, result.out);
+      assert.deepEqual(read('rehearsals.txt'), ['deployment start', 'deployment end']);
+      assert.match(result.out, new RegExp(`CI green on ${sha}: 1 gate run and passed, 2 verdicts kept; every gate's verdict stands on this tree`));
+      assert.match(result.out, new RegExp(`--stage --from-gated ${sha}`));
+      status = statusOf(tip);
+      assert.deepEqual([status.state, status.stage, status.owed], ['green', true, []]);
+      assert.deepEqual(record().runs.at(-1)!.stage, true);
+      result = await repo.run(['--passed'], {}, gateTree);
+      assert.equal(result.status, 0, result.out);
+      // Their passes stand for a plain run after: nothing is owed or run.
+      clear();
+      result = await repo.run(['--ci']);
+      assert.equal(result.status, 0, result.out);
+      assert.match(result.out, /nothing to run/);
+      assert.deepEqual(statusOf(tip).owed, []);
+    } finally {
+      repo.cleanup();
+    }
   });
 
   test('--ci runs a Process half by reach: the classes a change reaches, the rest kept and named; a file every class reads, every class; one read unnamed, the whole half; a sweep past its bound before a stage', async () => {

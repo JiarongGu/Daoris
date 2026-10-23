@@ -159,6 +159,13 @@
  * - **What it runs** (`ciPlan`): the gates the tree's verdicts lack. A gate runs when no verdict that stands on the tree
  *   (GATE6) passed it: none, a pass a path changed since reaches, or a failure, which stays owed whatever changes. The
  *   records are not forgiven, as the stage forgives them. The first run is the full set; a run with nothing owed runs nothing.
+ * - **What it owes a stage (CIFAST1)**: the family and deployment rehearsals (`STAGE_REHEARSALS`), a run's longest gates
+ *   after the git half, which it waited for one after the other beside that half. A plain `--ci`, and each run of the watch,
+ *   runs neither: one its verdicts lack is `owed` (`ciPlan`'s `owed`), neither failed nor passed, named in its status
+ *   (`owed`, each such gate's state `owed`) and record, and the run is green on the rest. `--ci --stage [<commit>]`, the
+ *   stage's path, owes none: it runs them on the commit to stage, with whatever else it lacks. The stage's judgement is
+ *   unchanged, so `--from-gated` still refuses a commit whose rehearsals have no pass that stands on its tree, naming
+ *   `--ci --stage <commit>`. They still run one after the other, never side by side: D180's CIFAST1 note says why.
  * - **How**: as a run beside does (CIPRIO1, its private files, its dependencies), keeping going past a failure, its light
  *   lane `CI_IDLE.width` wide when the machine is measured idle before its gates start (`measureLoad`, `ciWidth`), and
  *   scheduled by memory (`laneSchedule`'s `byMemory`): a Process half waits only for what builds its component, the heavy
@@ -365,6 +372,8 @@
  * is of `BESIDE_GIT_HALF`, last: it starts once the release rehearsal (which packs the same folder) and the family (which
  * runs the bin it would shadow) have ended, still beside the git half, and the modules' Process half waits for it. D180's
  * REHLANE2b note says why its window's checks share nothing with the git half but load, the walls, and what was rejected.
+ * CIFAST1 read it beside the family again and kept them apart: each of its three publishes packs the CLI in place, and a
+ * `dist/` half written or removed under one of the family's many runs of the bin is state, not load (D180's CIFAST1 note).
  *
  * ## The web gate's unit run beside service (WEBSPLIT1)
  *
@@ -390,7 +399,7 @@
  *   node tools/merge-branch.mjs --plan <branch> [--batch <branch>…] [--full]
  *   node tools/merge-branch.mjs --full [--keep-going] [--one-at-a-time]
  *   node tools/merge-branch.mjs --full --beside [<commit>] [--keep-going] [--one-at-a-time]
- *   node tools/merge-branch.mjs --ci [<commit>] [--one-at-a-time]
+ *   node tools/merge-branch.mjs --ci [--stage] [<commit>] [--one-at-a-time]
  *   node tools/merge-branch.mjs --ci --watch [--one-at-a-time]
  *   node tools/merge-branch.mjs --ci --stop
  *   node tools/merge-branch.mjs --passed
@@ -482,6 +491,19 @@ export const BESIDE_GIT_HALF = Object.freeze(['rehearse', 'rehearse:family', 're
 
 /** Whether a gate runs a rehearsal of `BESIDE_GIT_HALF` (REHLANE1), read from its command as the lanes are. */
 export const runsBesideGitHalf = (gate) => BESIDE_GIT_HALF.includes(scriptNamed(gate.run) ?? '');
+
+/**
+ * The rehearsals a CI run owes a stage rather than runs (CIFAST1), by the root script each runs: the family's and the
+ * deployment's, 14 to 23 and 14 to 22 minutes of a 45 to 75 minute run on 2026-10-23. A plain `--ci` leaves them owed,
+ * neither failed nor passed; `--ci --stage` runs them on the commit to stage, and the stage still asks their passes.
+ */
+export const STAGE_REHEARSALS = Object.freeze(['rehearse:family', 'rehearse:deploy']);
+
+/** Whether a gate runs a rehearsal of `STAGE_REHEARSALS` (CIFAST1), read from its command as the lanes are. */
+export const isStageRehearsal = (gate) => STAGE_REHEARSALS.includes(scriptNamed(gate.run) ?? '');
+
+/** The stage's path for a commit (CIFAST1): what an owed rehearsal and a refused stage name. `tools/desktop-publish.mjs` names it too. */
+export const stageCommand = (commit) => `node tools/merge-branch.mjs --ci --stage ${String(commit).slice(0, 7)}`;
 
 /**
  * The heavy light gates (GATEORDER1): the suites that load the CPU for minutes (the CLI's verify, the .NET test suites,
@@ -652,7 +674,7 @@ export const USAGE = [
   '       node tools/merge-branch.mjs --plan <branch> [--batch <branch>…] [--full]',
   '       node tools/merge-branch.mjs --full [--keep-going] [--one-at-a-time]',
   '       node tools/merge-branch.mjs --full --beside [<commit>] [--keep-going] [--one-at-a-time]',
-  '       node tools/merge-branch.mjs --ci [<commit>] [--one-at-a-time]',
+  '       node tools/merge-branch.mjs --ci [--stage] [<commit>] [--one-at-a-time]',
   '       node tools/merge-branch.mjs --ci --watch [--one-at-a-time]',
   '       node tools/merge-branch.mjs --ci --stop',
   '       node tools/merge-branch.mjs --passed',
@@ -678,7 +700,7 @@ export function parseArgs(argv) {
   const options = {
     branches: [], keepGoing: false, commitCheck: true, resume: false, dropBatch: false, plan: false, prune: false, autoPrune: true,
     full: false, gated: false, rerun: [], passed: false, stale: false, oneAtATime: false, beside: false, besideCommit: null,
-    ci: false, ciCommit: null, watch: false, stop: false,
+    ci: false, ciCommit: null, watch: false, stop: false, ciStage: false,
   };
   let batch = false;
   let rerun = false;
@@ -700,6 +722,10 @@ export function parseArgs(argv) {
       if (options.ci) throw usageError('--ci is given once, with the commit it gates after it');
       options.ci = true;
       ciNext = true;
+    } else if (arg === '--stage') {
+      // CIFAST1: the stage path, its commit right after it as after --ci.
+      options.ciStage = true;
+      ciNext = !options.ciCommit;
     } else if (arg === '--watch') options.watch = true;
     else if (arg === '--stop') options.stop = true;
     else if (arg === '--beside') {
@@ -737,14 +763,19 @@ export function parseArgs(argv) {
   }
   if (options.watch && !options.ci) throw usageError("--watch is the CI's: --ci --watch gates main's tip as it moves");
   if (options.stop && !options.ci) throw usageError("--stop is the CI watch's: --ci --stop ends a watch running here");
+  if (options.ciStage && !options.ci) throw usageError("--stage is the CI's: --ci --stage [<commit>] gates a commit to stage, its rehearsals with it");
   if (options.ci) {
-    // CI1: one run of the CI, its watch, or the stop asked of the watch; each a verb alone.
-    if (flags.some((flag) => !['--ci', '--watch', '--stop', '--keep-going', '--one-at-a-time'].includes(flag))) {
-      throw usageError('--ci takes only a commit, --watch, --stop, --keep-going and --one-at-a-time');
+    // CI1: one run of the CI, its watch, or the stop asked of the watch; each a verb alone. CIFAST1: a run for a stage.
+    if (flags.some((flag) => !['--ci', '--stage', '--watch', '--stop', '--keep-going', '--one-at-a-time'].includes(flag))) {
+      throw usageError('--ci takes only a commit, --stage, --watch, --stop, --keep-going and --one-at-a-time');
     }
+    if (flags.filter((flag) => flag === '--stage').length > 1) throw usageError('--stage is given once');
     const words = Boolean(options.ciCommit) || options.branches.length > 0;
     if (options.stop && (options.watch || words || flags.length > 2)) throw usageError('--ci --stop takes nothing else: it asks the watch running here to end');
     if (options.watch && words) throw usageError("--ci --watch gates main's tip as it moves: it takes no commit");
+    if (options.watch && options.ciStage) {
+      throw usageError("--ci --watch owes the stage's rehearsals: --ci --stage [<commit>] runs them once, on the commit to stage");
+    }
     if (options.branches.length) throw usageError("--ci takes no branch: it gates a commit, main's tip unless named, in the gate tree");
     return options;
   }
@@ -5072,12 +5103,15 @@ export const CI_IDLE = Object.freeze({ busy: 0.25, freeGb: 16, width: 5, sampleM
  * (`reaching`, the lane table), so the delta since a gate's last pass is what runs it again, and a gate a run failed stays
  * owed, whatever changes, until a run passes it (the pipeline design's §4.7). The stage forgives the records, which the
  * install carries none of; the CI runs what they reach (the universal gates, the CLI's verify), so a records commit is
- * checked too. Every other gate is kept, with the verdict that stands and how it stands.
+ * checked too. Every other gate is kept, with the verdict that stands and how it stands. CIFAST1: a gate `owe` names that
+ * lacks a pass is `owed` for a stage rather than run (a plain run hands it `STAGE_REHEARSALS`' gates, the stage's path none).
  */
-export function ciPlan({ plan, verdicts, tree, drift, reaching, now = Date.now(), bound = SWEEP_BOUND_MS }) {
+export function ciPlan({ plan, verdicts, tree, drift, reaching, owe = [], now = Date.now(), bound = SWEEP_BOUND_MS }) {
   const judged = stageJudgement({ plan, verdicts, tree, drift, reaching, isRecord: () => false, now, bound });
   const kept = judged.gates.filter((gate) => !judged.missing.includes(gate.name)).map((gate) => ({ name: gate.name, verdict: gate.verdict, standing: gate.standing }));
-  return { run: judged.missing, kept, gates: judged.gates };
+  // CIFAST1: of the gates `owe` names (a plain run's stage rehearsals), one without a pass that stands is owed, not run.
+  const owed = judged.missing.filter((name) => owe.includes(name));
+  return { run: judged.missing.filter((name) => !owed.includes(name)), kept, owed, gates: judged.gates };
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -5265,8 +5299,11 @@ export function ciWidth({ busy, physical, commit }) {
  * since the last green run, the light lane's width and why, and every gate of the plan in its order: `waiting` for one it runs,
  * then `running` and `done` with its verdict, time, log and note, or `not run`; `kept` for one whose verdict stands, with that
  * verdict, the commit and tree it was given on, how it stands (`exact`, `unreached`), and its log where a CI run kept one.
+ * CIFAST1: whether it is the stage's path (`stage`), the gates it owes a stage (`owed`), and each such gate `owed`, neither
+ * failed nor passed, its note naming the run that pays it.
  */
-export function ciStatus({ commit, tree, plan, chosen, since, light, pid, at, logOf }) {
+export function ciStatus({ commit, tree, plan, chosen, since, light, pid, at, logOf, stage = false }) {
+  const owed = chosen.owed ?? [];
   return {
     schema: 1,
     _why: 'Written by tools/merge-branch.mjs --ci (CI1): one CI run of this commit in the gate tree, each gate of the plan as it stands. The parent reads it.',
@@ -5279,8 +5316,13 @@ export function ciStatus({ commit, tree, plan, chosen, since, light, pid, at, lo
     ended: null,
     since,
     light,
+    stage,
+    owed,
     gates: plan.map((gate) => {
       const base = { name: gate.name, kind: gate.kind, lane: isProcessLane(gate) ? 'process' : 'light' };
+      if (owed.includes(gate.name)) {
+        return { ...base, state: 'owed', verdict: null, at: null, ms: null, log: null, note: `owed for a stage: ${stageCommand(commit)} runs it`, kept: null };
+      }
       const kept = chosen.kept.find((entry) => entry.name === gate.name);
       if (!kept || chosen.run.includes(gate.name)) return { ...base, state: 'waiting', verdict: null, at: null, ms: null, log: null, note: null, kept: null };
       const { verdict, standing } = kept;
@@ -5340,7 +5382,8 @@ const fromHome = (home, file) => relative(home, file).split('\\').join('/');
  * failure, a guest on the machine as a run beside is (CIPRIO1), its light lane as wide as the measured load allows
  * (`ciWidth`), scheduled by memory (`laneSchedule`'s `byMemory`). Each verdict goes to the main checkout's store as a merge's
  * does, the logs and the status to its `local/scratch/ci-<sha7>/`, the run to the CI's record. `stopAsked` (the watch's stop)
- * and a Ctrl+C end its gates' trees, its finished verdicts kept. 0 green, 1 failed or stopped.
+ * and a Ctrl+C end its gates' trees, its finished verdicts kept. 0 green, 1 failed or stopped. CIFAST1: a plain run owes the
+ * stage's rehearsals (`STAGE_REHEARSALS`) and is green on the rest; `options.ciStage`, the stage's path, runs them too.
  */
 async function gateCi(root, options, { stopAsked = () => false } = {}) {
   const home = verdictsHome(root);
@@ -5409,7 +5452,9 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
     const treeId = contentTree(tree);
     if (!treeId) throw new Refusal("git could not write the gate tree's tree, so which verdicts stand on it cannot be told");
     const standing = standingFor(tree, treeId);
-    const chosen = ciPlan({ ...standing, plan: plan.map((gate) => gate.name), verdicts: readVerdicts(home).verdicts });
+    // CIFAST1: a plain run owes the stage's rehearsals; the stage's path runs them.
+    const owe = options.ciStage ? [] : plan.filter(isStageRehearsal).map((gate) => gate.name);
+    const chosen = ciPlan({ ...standing, owe, plan: plan.map((gate) => gate.name), verdicts: readVerdicts(home).verdicts });
     const dir = join(home, SCRATCH, `ci-${sha}`);
     mkdirSync(dir, { recursive: true });
     for (const gate of plan.filter((each) => chosen.run.includes(each.name))) {
@@ -5432,7 +5477,7 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
       const file = at ? join(home, SCRATCH, `ci-${at.slice(0, 7)}`, `${gate}.log`) : null;
       return file && existsSync(file) ? fromHome(home, file) : null;
     };
-    status = ciStatus({ commit, tree: treeId, plan, chosen, since, light, pid: process.pid, at: started, logOf });
+    status = ciStatus({ commit, tree: treeId, plan, chosen, since, light, pid: process.pid, at: started, logOf, stage: options.ciStage });
     for (const [name, half] of reach) {
       const gate = status.gates.find((each) => each.name === name);
       if (gate) gate.classes = reachStatus(half);
@@ -5440,8 +5485,10 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
     writeStatus();
     writeGateRecord(home, { commit, started, ended: null, passed: null, staged: null, by: 'ci' });
 
-    const kept = chosen.gates.filter((gate) => !chosen.run.includes(gate.name));
-    console.log(`CI on ${sha} (CI1): ${gates.length} of ${plan.length} gates to run, ${count(kept.length, 'verdict')} kept, which still stand on this tree; it keeps going past a failure`);
+    const kept = chosen.gates.filter((gate) => !chosen.run.includes(gate.name) && !chosen.owed.includes(gate.name));
+    console.log(`CI on ${sha} (CI1${options.ciStage ? ', for a stage: CIFAST1' : ''}): ${gates.length} of ${plan.length} gates to run, ${count(kept.length, 'verdict')} kept, which still stand on this tree`
+      + `${chosen.owed.length ? `, ${chosen.owed.join(' and ')} owed for a stage` : ''}; it keeps going past a failure`);
+    if (chosen.owed.length) console.log(`  owed, not run (CIFAST1): ${chosen.owed.join(', ')}, which ${stageCommand(commit)} runs before a stage`);
     console.log(since.commit
       ? `  since the last green run (${since.commit.slice(0, 7)}, ${when(since.at)}): ${since.paths === null ? 'what changed could not be read' : `${count(since.paths, 'path')} changed`}`
       : '  no green CI run is recorded here: every gate without a verdict that stands on this tree runs');
@@ -5477,13 +5524,15 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
     }
     for (const gate of status.gates) if (gate.state === 'waiting' || gate.state === 'running') gate.state = 'not run';
 
-    const after = ciPlan({ ...standing, plan: plan.map((gate) => gate.name), verdicts: readVerdicts(home).verdicts });
+    const after = ciPlan({ ...standing, owe, plan: plan.map((gate) => gate.name), verdicts: readVerdicts(home).verdicts });
     const state = trees.ended ? 'stopped' : after.run.length === 0 ? 'green' : 'failed';
     const ended = nowIso();
     Object.assign(status, { state, ended });
     writeStatus();
     const ranNames = results.filter((result) => result.verdict !== 'ENDED').map((result) => result.gate.name);
-    noteCiRun(home, { commit, state, at: ended, status: fromHome(home, statusFile) }, state === 'green' ? { commit, tree: treeId, at: ended } : null);
+    // CIFAST1: the record says which run was the stage's path, and what a plain one left owed.
+    const noted = { commit, state, at: ended, status: fromHome(home, statusFile), ...(options.ciStage ? { stage: true } : {}), ...(after.owed.length ? { owed: after.owed } : {}) };
+    noteCiRun(home, noted, state === 'green' ? { commit, tree: treeId, at: ended } : null);
     writeGateRecord(home, { commit, started, ended, passed: state === 'green', staged: null, by: 'ci' });
 
     console.log('');
@@ -5494,8 +5543,14 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
     } else if (state === 'green') {
       const flakes = results.filter((result) => result.verdict === 'FLAKE');
       const ran = ranNames.length ? `${count(ranNames.length, 'gate')} run and passed` : 'no gate run';
-      console.log(`merge-branch: CI green on ${sha}: ${ran}, ${count(kept.length, 'verdict')} kept${flakeNote(flakes)}; every gate's verdict stands on this tree.`);
-      console.log(`  Stage it from the gate tree, which holds it: npm run publish:desktop -- --to <install> --service --stage --from-gated ${sha}`);
+      if (after.owed.length) {
+        // CIFAST1: green on every gate it runs; the stage still needs the rehearsals it owes.
+        console.log(`merge-branch: CI green on ${sha}: ${ran}, ${count(kept.length, 'verdict')} kept${flakeNote(flakes)}; ${after.owed.join(' and ')} owed for a stage, neither failed nor passed.`);
+        console.log(`  Before a stage, run them on it in the gate tree: ${stageCommand(commit)}`);
+      } else {
+        console.log(`merge-branch: CI green on ${sha}: ${ran}, ${count(kept.length, 'verdict')} kept${flakeNote(flakes)}; every gate's verdict stands on this tree.`);
+        console.log(`  Stage it from the gate tree, which holds it: npm run publish:desktop -- --to <install> --service --stage --from-gated ${sha}`);
+      }
     } else {
       const failed = results.filter((result) => result.verdict === 'FAIL');
       // A gate owed that did not fail here: one not run, or a pass recorded with no tree git could name.
@@ -5503,6 +5558,7 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
       console.log(`merge-branch: CI did NOT pass ${sha}: ${failed.length ? `${failed.map(gateNamed).join(', ')} failed` : 'no gate failed'}${lacking.length ? `; ${lacking.join(', ')} without a pass` : ''}. Fix it forward (D180 point 3): each runs again in the next run, whatever it changes.`);
       const memory = memoryLine(failed);
       if (memory) console.log(memory);
+      if (after.owed.length) console.log(`  owed for a stage, not run (CIFAST1): ${after.owed.join(', ')}`);
     }
     console.log(`  status: ${fromHome(home, statusFile)}`);
     return state === 'green' ? 0 : 1;

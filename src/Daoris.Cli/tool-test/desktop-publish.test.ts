@@ -284,7 +284,7 @@ test('a stage from the gate tree builds the commit it holds, refuses another or 
 
   let source = gatedSource(repo, gated);
   // CI1: the CI gates a commit in the gate tree, running there only what its verdicts lack.
-  assert.match(source.refusal!, new RegExp(`no gate tree at local/gate-tree: node tools/merge-branch\\.mjs --ci ${gated.slice(0, 7)} makes one and gates it`));
+  assert.match(source.refusal!, new RegExp(`no gate tree at local/gate-tree: node tools/merge-branch\\.mjs --ci --stage ${gated.slice(0, 7)} makes one and gates it`));
 
   const tree = join(repo, 'local', 'gate-tree');
   git('worktree', 'add', '--quiet', '--detach', tree, gated);
@@ -294,7 +294,7 @@ test('a stage from the gate tree builds the commit it holds, refuses another or 
   const moved = git('rev-parse', 'HEAD');
 
   source = gatedSource(repo, 'main');
-  assert.match(source.refusal!, new RegExp(`the gate tree holds ${gated.slice(0, 7)}, not ${moved.slice(0, 7)}: node tools/merge-branch\\.mjs --ci ${moved.slice(0, 7)} gates that one there`));
+  assert.match(source.refusal!, new RegExp(`the gate tree holds ${gated.slice(0, 7)}, not ${moved.slice(0, 7)}: node tools/merge-branch\\.mjs --ci --stage ${moved.slice(0, 7)} gates that one there`));
   source = gatedSource(repo, gated.slice(0, 7));
   assert.equal(source.refusal, null, source.refusal ?? '');
   assert.equal(source.commit, gated);
@@ -394,9 +394,9 @@ test('a stage from the gate tree holds its lock through the build, so no CI run 
   const missing = 'merge-branch: the full set has NOT passed this checkout (tree 1a2b3c4, HEAD abc1234): 2 of 3 gates.\n  web  stale  PASS\n';
   const refused = ungatedRefusal(join(fx.root, 'install'), join(repo, 'local', 'gate-tree'), {
     ask: () => ({ code: 1, out: `${missing}  Run the stale gate on it: node tools/merge-branch.mjs --stale\n` }),
-    remedy: { what: "what this commit's verdicts lack", where: 'in the gate tree', command: `node tools/merge-branch.mjs --ci ${short}` },
+    remedy: { what: "what this commit's verdicts lack", where: 'in the gate tree', command: `node tools/merge-branch.mjs --ci --stage ${short}` },
   });
-  assert.match(refused.refusal!, new RegExp(`run what this commit's verdicts lack in the gate tree: node tools/merge-branch\\.mjs --ci ${short}\\n`));
+  assert.match(refused.refusal!, new RegExp(`run what this commit's verdicts lack in the gate tree: node tools/merge-branch\\.mjs --ci --stage ${short}\\n`));
   assert.doesNotMatch(refused.refusal!, /--stale/);
   git('worktree', 'remove', join(repo, 'local', 'gate-tree'));
   fx.cleanup();
