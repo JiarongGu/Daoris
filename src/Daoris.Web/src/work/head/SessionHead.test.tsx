@@ -1161,8 +1161,9 @@ describe('a park\'s go-aheads', () => {
     expect(within(section).queryByLabelText('your words, if any')).toBeNull();
     expect(section).toHaveTextContent('Each is answered in the box below, with your words there.');
     expect(screen.getByText('Which target should the tile show?')).toBeInTheDocument();
-    expect(screen.getByText('Write 1,350.')).toBeInTheDocument();
+    expect(screen.getByText('If you choose this: Write 1,350.')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '1,200' })).toBeNull();
+    expect(screen.queryByRole('radio')).toBeNull();
     expect(screen.queryByText('I need the two go-aheads to finish.')).toBeNull();
     // The card's own moves stay its: finish and decline.
     expect(screen.getByRole('button', { name: 'Finish' })).toBeInTheDocument();

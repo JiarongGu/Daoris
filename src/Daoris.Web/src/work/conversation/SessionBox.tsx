@@ -19,7 +19,8 @@ import type { HeadLink } from '../head/SessionHead';
  *   another (COWORK1a). Where words wait for the turn's end on a door that can stop a turn keeping the session, the keeping
  *   stop stands beside them, its own press; never on the native door's run, which has no such stop.
  * - **The park's answer** (D126 §3.1): its box is the answer, as *Answer…* opens it; a second word joins the first. What the park
- *   asks stands above its words, each answer a press the words go with (PARKVIEW1, `ParkAnswer`).
+ *   asks stands above its words, each answer a row to select (PARKVIEW1, QUESTIONUI1a, `ParkAnswer`): its *Send* sends the selected
+ *   one with the words, or the words alone, the one draft and the one send.
  * - **A session that ended**: the same session goes on with the words. Nothing to attach: the resumed run is handed the
  *   words alone (MSG1d), so a file would be promised and never read.
  * - **Words waiting on the record** (SAIDBACK1b, D76): on a park or a session that ended, the words it will go on with wait
@@ -147,9 +148,13 @@ export function SessionBox({
         {...resting}
         // One box with its waiting words folded to a line (WAITFOOT2c).
         fold
-        // What it asks, its answers as presses the box's words go with (PARKVIEW1, the park's ask design §3).
+        // What it asks, each answer a row to select (PARKVIEW1, QUESTIONUI1a): the selected one goes with the box's words on its
+        // *Send*, or alone, and the field says so.
         answers={park ? <ParkAnswer {...park} /> : undefined}
-        placeholder={t(park ? 'work.park.placeholder' : 'work.awaiting.answerPlaceholder')}
+        ready={Boolean(park?.selected)}
+        placeholder={park?.selected
+          ? t('work.park.placeholderChosen', { label: park.selected })
+          : t(park ? 'work.park.placeholder' : 'work.awaiting.answerPlaceholder')}
         sendLabel={t('work.awaiting.answerConfirm')}
       />
     );

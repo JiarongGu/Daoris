@@ -556,6 +556,15 @@ export function WorkFrame({
   const levels = levelsOf(reach);
   const keepingStop = reach?.keepingStop === true;
   const answering = box.kind === 'say' && box.mode === 'answer';
+  // QUESTIONUI1a (the supervisor design §8.4): the answer selected in the park's question, the frame's beside the draft, in memory, so a
+  // reload starts with none and the words kept. Drawn selected only on the question it was selected on: a replaced question is drawn
+  // with none, so a kept label never answers a question the park no longer asks.
+  const [parkChoice, setParkChoice] = useState<{ session: string; question: string; label: string } | null>(null);
+  const parkPicked = attended && answering && question && parkChoice?.session === attended.id && parkChoice.question === question.id
+    && question.choices.some((choice) => choice.label === parkChoice.label) ? parkChoice.label : null;
+  const onParkPick = (label: string | null) => {
+    setParkChoice(label !== null && attended && question ? { session: attended.id, question: question.id, label } : null);
+  };
   // Words said as the attended session winds up, held for its record to end (D137 §2.1), shown above its box until then.
   const [ending, setEnding] = useState<{ session: string; words: string[] } | null>(null);
   useEffect(() => {
@@ -770,6 +779,9 @@ export function WorkFrame({
     if (why && attended) setRefusal({ session: attended.id, text: why });
     return why === null;
   };
+  // The box's judge (QUESTIONUI1a): its words with the answer selected, as they would go; refused alike for a choice and free words while
+  // the question's go-aheads are open, through Enter and *Send* (Codex's round-2 finding 14).
+  const boxAccepts = (text: string) => accepts(parkPicked ? choiceWords(parkPicked, text) : text);
 
   // The person's words through the box at the foot (MSG1f, D137 §5.1): a working driven session's running door (SESS3), a
   // park's answer, a session that ended, or one winding up. A send that did not arrive gives the words back to the box, as
@@ -780,7 +792,10 @@ export function WorkFrame({
   const ruleState = useRules();
   const ruleAnswer = useRuleAnswer({ notify });
   const onSay = (text: string, level?: Level) => {
-    if (!attended || !text || box.kind === 'none' || box.kind === 'line' || box.kind === 'chat') return;
+    if (!attended || box.kind === 'none' || box.kind === 'line' || box.kind === 'chat') return;
+    // QUESTIONUI1a: the box's *Send* with an answer selected sends it, then the words, naming its question.
+    if (parkPicked && question) { onChoice(parkPicked, question.id, text); return; }
+    if (!text) return;
     const session = attended.id;
     const kind = box.kind === 'steer' ? 'steer' : box.mode === 'answer' ? 'answer' : 'say';
     const winding = box.kind === 'say' && box.mode === 'ending';
@@ -1024,32 +1039,33 @@ export function WorkFrame({
       refused: (said) => setRefusal({ session, text: said }),
     });
   };
-  // One of the answers its question offered: its label, then the box's words, as the park's answer through the box's one door, naming
-  // the question so a label never answers one the park no longer asks (`question-changed`).
-  const onChoice = (label: string) => {
-    if (!attended || !question) return;
+  // One of the answers its question offered, selected (QUESTIONUI1a): its label, then the words the box's *Send* took, as the park's answer
+  // through the box's one door, naming the question so a label never answers one the park no longer asks (`question-changed`). The
+  // box has let its words go: a refusal gives them back with the selection kept; a question changed keeps the words and draws the new
+  // one with none selected, as its id is another.
+  const onChoice = (label: string, asked: string, words: string) => {
+    if (!attended) return;
     const session = attended.id;
-    const words = draft;
     const text = choiceWords(label, words);
+    const giveBack = () => { if (words) setDraft((was) => [words, was.trim()].filter(Boolean).join('\n\n')); };
     setRefusal(null);
     const n = sending.begin(session, { text, files: [] });
-    say.mutate({ id: session, text, question: question.id }, {
+    say.mutate({ id: session, text, question: asked }, {
       onSuccess: (result) => {
         sending.answered(n);
         if (!result.sent) {
+          giveBack();
           setRefusal({ session, text: result.why === 'question-changed' ? t('work.park.changed') : untaken(result, t('work.say.notTaken')) });
           return;
         }
-        setDraft((was) => afterPress(was, words));
+        setParkChoice(null);
         counted(session, 'answer', text, 0, result);
         notify(t('work.park.chose', { label }));
       },
       onError: (error: unknown) => {
-        // A send the page stopped waiting on may still land (SENDLOST1b): its words are shown on their way, so they leave the box.
-        if (stillTaking(n, error)) {
-          setDraft((was) => afterPress(was, words));
-          return;
-        }
+        // A send the page stopped waiting on may still land (SENDLOST1b): its words are shown on their way, so they stay out of the box.
+        if (stillTaking(n, error)) return;
+        giveBack();
         setRefusal({ session, text: sentence(error) });
       },
     });
@@ -2556,7 +2572,7 @@ export function WorkFrame({
               stopping={cancelTurn.isPending}
               // *Answer…* from its row, and *Send back…* from its review, put the focus here (D126 §3.1, D137 §5.1).
               focus={answerFocus?.session === attended.id ? answerFocus.at : 0}
-              accepts={accepts}
+              accepts={boxAccepts}
               onSend={onSay}
               levels={box.kind === 'steer' ? levels : undefined}
               onLevel={editQueued.level}
@@ -2577,7 +2593,8 @@ export function WorkFrame({
                 question,
                 goAheads: openGoAheads(goAheads),
                 busy: say.isPending || parkGoAhead.isPending,
-                onChoice: question ? onChoice : undefined,
+                selected: parkPicked,
+                onSelect: question ? onParkPick : undefined,
                 onGoAhead: parkAsk ? onBoxGoAhead : undefined,
                 seek: seekAt('box'),
                 toEvent,

@@ -94,11 +94,16 @@ export function Composer({
   live, sending = false, refusal, endings = true, draft, onDraft, carried, onCarry,
   queued = [], queuedLabel, taking = false, opening = false, stoppable = false, stopping = false, mentions, onMentioning, context, placeholder,
   attachments = true, sendLabel, stopTurnLabel, stopTurnTip, offered, optionsBusy = false, onOption, onSend, onFinish, onStop, onStopTurn,
-  levels, onLevel, onKeepingStop, focus = 0, accepts, onRemove, onEdit, going, fold = false, answers,
+  levels, onLevel, onKeepingStop, focus = 0, accepts, onRemove, onEdit, going, fold = false, answers, ready = false,
 }: {
   /**
-   * What a parked session asks, drawn above the field, its answers as presses (PARKVIEW1, the park's ask design §3): the box's
-   * words go with the press. Absent, nothing is drawn there.
+   * Something beside the words is ready to go with them (QUESTIONUI1a): an answer selected in a park's question, so *Send* and Enter
+   * send with the field empty too. The caller makes the message of it.
+   */
+  ready?: boolean;
+  /**
+   * What a parked session asks, drawn above the field, its answers rows to select (PARKVIEW1, QUESTIONUI1a): the box's words go
+   * with the one selected on *Send*. Absent, nothing is drawn there.
    */
   answers?: ReactNode;
   /**
@@ -369,7 +374,7 @@ export function Composer({
       }, said);
       return;
     }
-    if ((!message && files.length === 0) || !live || sending) return;
+    if ((!message && files.length === 0 && !ready) || !live || sending) return;
     // Words the door could not take stay in the box, unsent; the caller says why (MSG1f, D137 §2.4).
     if (accepts && !accepts(message)) return;
     onSend(message, files);
@@ -627,7 +632,7 @@ export function Composer({
         {live && (taking
           ? (
             <Tip content={t(!levels ? 'work.composer.queueTip' : levels.nextStep ? 'work.composer.sendNextStepTip' : 'work.composer.sendTurnEndTip')}>
-              <Button type="submit" variant="primary" disabled={(!text.trim() && files.length === 0) || sending}>
+              <Button type="submit" variant="primary" disabled={(!text.trim() && files.length === 0 && !ready) || sending}>
                 {t(levels ? 'work.composer.send' : 'work.composer.queue')}
               </Button>
             </Tip>
@@ -635,13 +640,13 @@ export function Composer({
           : textDoor
             ? (
               <Tip content={t('work.composer.levelNoTurns')}>
-                <Button type="submit" variant="primary" disabled={(!text.trim() && files.length === 0) || sending}>
+                <Button type="submit" variant="primary" disabled={(!text.trim() && files.length === 0 && !ready) || sending}>
                   {sendLabel ?? t('work.composer.send')}
                 </Button>
               </Tip>
             )
             : (
-              <Button type="submit" variant="primary" disabled={(!text.trim() && files.length === 0) || sending}>
+              <Button type="submit" variant="primary" disabled={(!text.trim() && files.length === 0 && !ready) || sending}>
                 {sendLabel ?? t('work.composer.send')}
               </Button>
             ))}
