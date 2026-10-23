@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- The CI between releases no longer runs a driver or modules `Process` half when every class in it already passed and nothing
+  changed since reaches any of them (CISCOPE1b). The half passes on those classes, and the run and its status say so. It still
+  runs whole when its last run failed outside a test, when that run's results were missing, or when the classes the run found
+  differ from the ones the census expects. The daily sweep and the stage's check are unchanged.
 - A session that carries on work another maker's agent left uncommitted in its tree is now told that maker's Co-Authored-By
   trailer too (MAKERTRAIL2). It names the model that agent reported, or *model unreported*, so a commit holding that work
   credits both makers. A carry-on with the same maker is told nothing more.

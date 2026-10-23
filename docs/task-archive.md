@@ -20136,3 +20136,14 @@ the open; the opening note's actor line, the head's chip and the Agents fold's l
 the other account takes a first choice one account refuses, and with neither the second runs and says so. **Remaining, as
 MODELROLE1c3:** the pipe door's measured refusal, the quiet *Not started* row, the chip's stories, the installed-window proof.
 Detail: D205's MODELROLE1c2 note; `docs/2026-10-24-modelrole1c-build.md`.
+## CISCOPE1b — a Process half whose classes all stand passes without running, only from a pass gone stale by reach (2026-10-24, D207)
+
+> CISCOPE1b (a half whose classes all stand passes without running, only when its last verdict was a pass gone stale by reach; the sweep kept)
+
+**Outcome** 2026-10-24: `classPlan`'s third whole rule is narrowed as D207's design §8 row 2 says. A half whose every class is
+kept passes by them without running only when its newest gate verdict is a pass gone stale by reach, its trx read and its
+classes the census's (`composeRefusal`, `lastVerdict` in `tools/merge-branch.mjs`); a half that failed outside a test, a pass
+with no trx and a discovery disagreement still run whole. The CI records the composed pass with no class run, and says so in
+its lines, summary and status. The sweep and `sweptOut` are unchanged. `f296996`'s case replayed on the real records: 0 of 86
+classes run, where that run spent 31.5 minutes. Detail: D207's CISCOPE1b note; proof: the CISCOPE1b tests and the CI-by-reach
+test in `src/Daoris.Cli/tool-test/merge-branch.test.ts`.

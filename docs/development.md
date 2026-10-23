@@ -226,15 +226,19 @@ Each run writes `local/scratch/ci-<sha7>/status.json` and its gates' logs beside
 - each gate of the plan with its `lane`, its `state` (`kept`, `waiting`, `running`, `done`, `not run`), its `verdict`,
   `ms`, `log` and `note`; a kept gate also names the commit and tree its verdict was given on and how it stands
   (`exact`, `unreached`);
-- for each `Process` half it runs, its `classes`: how many the census read, `whole` (why the whole half ran, or null), each
-  class it ran with why, and each it kept with its verdict's time, commit and standing.
+- for each `Process` half it runs, its `classes`: how many the census read, `whole` (why the whole half ran, or null),
+  `composed` (why it passed without running, or null), each class it ran with why, and each it kept with its verdict's time,
+  commit and standing.
 
 A `Process` half runs by reach (PROCREACH1, D180's PROCREACH1 note): only the classes a change reaches, the rest kept.
 `tools/process-reach.mjs` reads each class's reach from its sources: the driver's or the modules' folders that define what
 its files and the test helpers they use name, and the programs it starts. Each class's verdict is kept in
 `local/class-verdicts.json` with its tree, and a class whose newest verdict that stands passed is kept. A file read
 unnamed (a global using, a project file, `Directory.Build.props`, the run settings) or a path the census cannot place runs
-the whole half. So does a run whose oldest kept verdict is more than a day old: a sweep. A stage refuses a half whose pass
+the whole half. So does a run whose oldest kept verdict is more than a day old: a sweep. A half whose every class is kept
+passes without running, `done` and `PASS` with no class run, only when its last verdict was a pass that went stale by a path
+reaching none of its classes, its trx read and its classes the census's (CISCOPE1b, D207's note); otherwise, a half that
+failed outside a test among it, it runs whole for a verdict of its own. A stage refuses a half whose pass
 kept classes on verdicts past that day, and `--ci <commit>` sweeps it. `node tools/process-reach.mjs census` prints each
 half's classes and reach; `node tools/process-reach.mjs reach <from> <to>` names the classes a range of commits reaches.
 

@@ -199,6 +199,8 @@
  *   `SWEEP_BOUND_MS` (a day). The half's verdict carries `classes` (how many ran, how many were kept, the oldest kept verdict's
  *   time), and a pass that kept classes past the bound stands no more (`sweptOut`): the stage refuses it, and the next CI run
  *   sweeps it.
+ * - **Composed** (CISCOPE1b, D207): a half whose every class is kept passes without running only when its last verdict was a
+ *   pass gone stale by reach, its results read and its classes the census's (`composeRefusal`); else it runs whole.
  * - **The status** names, for each Process half, its census's count, whether it ran whole and why, each class it ran with why,
  *   and each it kept with its verdict's time, commit and standing.
  *
@@ -5128,10 +5130,15 @@ export function ciPlan({ plan, verdicts, tree, drift, reaching, owe = [], now = 
  *
  * The whole half runs (`whole` says why) when no class's pass stands; when its oldest kept verdict is older than `bound` (a
  * sweep: the census sees what a class's files name, not what the named code uses, and the sweep bounds how long a change it
- * misses goes unseen); or when every class is kept while the half is owed (it failed outside a test). `sweep` is the oldest
+ * misses goes unseen); or when every class is kept and something may be hidden (`composeRefusal`). `sweep` is the oldest
  * kept verdict's time, which the half's verdict carries for the stage (`sweptOut`).
+ *
+ * CISCOPE1b (D207, design §8 row 2): a half whose every class is kept passes without running (`composed` says why) only when
+ * `last`, the half's newest gate verdict with how it stands on this tree (`verdictStanding`), is a pass gone stale by reach
+ * whose results are complete and whose classes the census matched. Anything else, a half that failed outside a test among it,
+ * runs whole for a verdict of its own.
  */
-export function classPlan({ classes, verdicts, tree, drift, reached, now = Date.now(), bound = SWEEP_BOUND_MS }) {
+export function classPlan({ classes, verdicts, tree, drift, reached, last = null, now = Date.now(), bound = SWEEP_BOUND_MS }) {
   const judged = new Map();
   const judge = (from) => {
     if (!judged.has(from)) {
@@ -5178,8 +5185,55 @@ export function classPlan({ classes, verdicts, tree, drift, reached, now = Date.
   if (!(age <= bound)) {
     return whole(`its oldest kept class verdict (${oldest.name}, ${when(oldest.verdict.at)}) is older than ${hoursOf(bound)} hours: a sweep runs the whole half`);
   }
-  if (!run.length) return whole('every class is kept, but the half owes a verdict: it runs whole for one of its own');
+  if (!run.length) {
+    const hidden = composeRefusal({ classes, verdicts, last });
+    if (hidden) return whole(`every class is kept, but ${hidden}: it runs whole for a verdict of its own`);
+    const paths = last.standing.paths;
+    return {
+      whole: null,
+      run,
+      kept,
+      sweep: oldest.verdict.at,
+      composed: `its last verdict, a pass on ${when(last.verdict.at)}, went stale by reach alone (${paths[0]}${paths.length > 1 ? ` and ${paths.length - 1} more` : ''}), which reaches none of its classes`,
+    };
+  }
   return { whole: null, run, kept, sweep: oldest.verdict.at };
+}
+
+/**
+ * CISCOPE1b: why a half whose every class is kept may not pass by them, or null when nothing was hidden. `last` is the half's
+ * newest gate verdict and its standing: it must be a pass (a failure with every class passing failed outside a test), gone
+ * stale by paths that reach the gate (one that cannot be compared says nothing), with its classes' results read (a trx), and
+ * the census and the runner agreeing on that run's classes: none it ran that the census lacks and, when it ran whole, none of
+ * the census's that it did not run. A pass composed so ran nothing and adds no class verdicts, so its own classes stand.
+ */
+export function composeRefusal({ classes, verdicts, last }) {
+  const entry = last?.verdict;
+  if (!entry) return 'the half has no verdict of its own';
+  if (!passing(entry.verdict)) return `its last verdict (${entry.verdict} on ${when(entry.at)}) failed outside a test`;
+  if (last.standing?.standing !== 'stale' || !last.standing.paths?.length) return `its last pass (${when(entry.at)}) did not go stale by reach`;
+  const ran = entry.classes?.ran;
+  if (typeof ran !== 'number' || (ran === 0 && !(Number(entry.classes?.kept) > 0))) return `its last pass (${when(entry.at)}) has no results of its classes (no trx was read)`;
+  const fromIt = Object.entries(verdicts).filter(([, entries]) => entries.some((each) => each.at === entry.at && each.tree === entry.tree)).map(([name]) => name);
+  const known = new Set(classes);
+  const unknown = fromIt.filter((name) => !known.has(name));
+  if (unknown.length) return `its last run ran ${unknown[0]}${unknown.length > 1 ? ` and ${unknown.length - 1} more` : ''}, which the census lacks`;
+  if (!(Number(entry.classes?.kept) > 0)) {
+    const ranSet = new Set(fromIt);
+    const unrun = classes.filter((name) => !ranSet.has(name));
+    if (unrun.length) return `its last run, whole, did not run ${unrun[0]}${unrun.length > 1 ? ` and ${unrun.length - 1} more` : ''}, which the census holds`;
+  }
+  return null;
+}
+
+/**
+ * CISCOPE1b: a gate's newest verdict in the gate store and how it stands on `tree` (`verdictStanding`, by `drift`, `isRecord`
+ * and `reaching`, as `standingFor` gives them), or null when it has none.
+ */
+export function lastVerdict(gate, verdicts, { tree, drift, isRecord, reaching }) {
+  let newest = null;
+  for (const entry of verdicts) if (entry.gate === gate && (!newest || String(entry.at) >= String(newest.at))) newest = entry;
+  return newest ? { verdict: newest, standing: verdictStanding({ from: newest.tree, tree, gate, drift, isRecord, reaching }) } : null;
 }
 
 /**
@@ -5188,9 +5242,10 @@ export function classPlan({ classes, verdicts, tree, drift, reached, now = Date.
  * and the lane table's paths for the gate (`standing.reaching`). A half run by reach is handed run settings of its own, written
  * into the run's `dir` beside its log (`reachSettings`, named so the merge tool still reads it as the half it is), and its plan
  * as `reach`; a whole half keeps its command and is handed its plan too, so its verdict says it kept none. A census that cannot
- * be read, or a half whose command names no settings, runs whole and says why.
+ * be read, or a half whose command names no settings, runs whole and says why. CISCOPE1b: each half is judged with its newest
+ * gate verdict in `verdicts` (the gate store's) and how that stands, and a half its plan composes (`composed`) is not run.
  */
-function reachedHalves({ tree, treeId, gates, standing, home, dir, now = Date.now() }) {
+function reachedHalves({ tree, treeId, gates, standing, verdicts = [], home, dir, now = Date.now() }) {
   const plans = new Map();
   let read = null;
   const store = readClassVerdicts(home).gates;
@@ -5211,13 +5266,14 @@ function reachedHalves({ tree, treeId, gates, standing, home, dir, now = Date.no
         tree: treeId,
         drift: standing.drift,
         reached: (paths) => classesReached(standing.reaching(gate.name, paths), found),
+        last: lastVerdict(gate.name, verdicts, { tree: treeId, ...standing }),
         now,
       });
     } catch (error) {
       plan = { whole: `its classes could not be read (${error.message}), so it runs whole`, run: [], kept: [], sweep: null };
     }
     plans.set(gate.name, { ...plan, census });
-    if (plan.whole) return { ...gate, reach: plan };
+    if (plan.whole || plan.composed) return { ...gate, reach: plan };
     const file = join(dir, `${gate.name}.${basename(half.settings)}`);
     writeAtomic(file, reachSettings(readFileSync(join(tree, half.settings), 'utf8'), plan.kept.map((each) => each.name)));
     return { ...gate, run: withSettings(gate.run, file), reach: plan };
@@ -5233,6 +5289,7 @@ function reachStatus(plan) {
   return {
     census: plan.census ?? null,
     whole: plan.whole,
+    composed: plan.composed ?? null,
     sweep: plan.sweep,
     run: plan.run,
     kept: plan.kept.map((each) => ({ name: each.name, at: each.verdict.at ?? null, commit: each.verdict.commit ?? null, standing: each.standing })),
@@ -5244,6 +5301,9 @@ function reachLines(name, plan) {
   const names = (list) => list.map((each) => each.name.split('.').at(-1));
   if (plan.whole) return [`  ${name}: the whole half runs${plan.census ? ` (${classCount(plan.census)})` : ''}: ${plan.whole}`];
   const shownNames = (list) => `${names(list).slice(0, 8).join(', ')}${list.length > 8 ? `, and ${list.length - 8} more` : ''}`;
+  if (plan.composed) {
+    return [`  ${name}: passes without running (CISCOPE1b): all ${classCount(plan.kept.length)} kept, each with a pass that stands on this tree, the oldest from ${when(plan.sweep)}; ${plan.composed}`];
+  }
   return [
     `  ${name}: ${plan.run.length} of ${classCount(plan.census)} run by reach (${shownNames(plan.run)}); ${plan.kept.length} kept (${shownNames(plan.kept)}), each with a pass that stands on this tree, the oldest from ${when(plan.sweep)}`,
   ];
@@ -5454,14 +5514,19 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
     const standing = standingFor(tree, treeId);
     // CIFAST1: a plain run owes the stage's rehearsals; the stage's path runs them.
     const owe = options.ciStage ? [] : plan.filter(isStageRehearsal).map((gate) => gate.name);
-    const chosen = ciPlan({ ...standing, owe, plan: plan.map((gate) => gate.name), verdicts: readVerdicts(home).verdicts });
+    const gateVerdicts = readVerdicts(home).verdicts;
+    const chosen = ciPlan({ ...standing, owe, plan: plan.map((gate) => gate.name), verdicts: gateVerdicts });
     const dir = join(home, SCRATCH, `ci-${sha}`);
     mkdirSync(dir, { recursive: true });
     for (const gate of plan.filter((each) => chosen.run.includes(each.name))) {
       for (const suffix of ['.log', '.rerun.log', '.trx', '.partial']) rmSync(join(dir, `${gate.name}${suffix}`), { force: true });
     }
     // PROCREACH1: each Process half it owes runs the classes a change reaches, the rest kept, or whole, and says which.
-    const { gates, plans: reach } = reachedHalves({ tree, treeId, gates: plan.filter((gate) => chosen.run.includes(gate.name)), standing, home, dir });
+    const halves = reachedHalves({ tree, treeId, gates: plan.filter((gate) => chosen.run.includes(gate.name)), standing, verdicts: gateVerdicts, home, dir });
+    const reach = halves.plans;
+    // CISCOPE1b: a half whose every class stands, its last pass gone stale by reach alone, passes by them without running.
+    const composed = halves.gates.filter((gate) => gate.reach?.composed);
+    const gates = halves.gates.filter((gate) => !gate.reach?.composed);
     statusFile = join(dir, 'status.json');
     const record = readCiRecord(home);
     const since = { commit: record.lastGreen?.commit ?? null, at: record.lastGreen?.at ?? null, paths: null };
@@ -5498,6 +5563,13 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
     console.log(`  status: ${fromHome(home, statusFile)}`);
 
     const gateOf = (name) => status.gates.find((gate) => gate.name === name);
+    for (const gate of composed) {
+      const at = nowIso();
+      // Its verdict ran no class (`ran` 0), so it adds no class verdicts, and it carries the oldest it kept for `sweptOut`.
+      addVerdicts(home, [{ gate: gate.name, verdict: 'PASS', tree: treeId, at, commit, branch: null, classes: { ran: 0, kept: gate.reach.kept.length, sweep: gate.reach.sweep } }]);
+      Object.assign(gateOf(gate.name) ?? {}, { state: 'done', verdict: 'PASS', at, ms: 0, note: `passed without running (CISCOPE1b): ${gate.reach.composed}` });
+    }
+    if (composed.length) writeStatus();
     let results = [];
     if (gates.length) {
       console.log('a guest on the machine: below normal priority, the Process lane at normal (CIPRIO1, FAMILYFAIL1c); a Process half\'s failures are re-run alone once its lane is quiet (FLAKE1)');
@@ -5520,7 +5592,7 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
         },
       });
     } else {
-      console.log("  nothing to run: every gate's verdict stands on this tree");
+      console.log(`  nothing to run: every gate's verdict stands on this tree${composed.length ? `, or its classes' do (${composed.map((gate) => gate.name).join(', ')})` : ''}`);
     }
     for (const gate of status.gates) if (gate.state === 'waiting' || gate.state === 'running') gate.state = 'not run';
 
@@ -5542,7 +5614,7 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
       for (const line of endLines(`stopped: ${trees.ended}, so this run ended the gates it was running and started no more; it is not a pass`, ranNames, left, endedNames)) console.log(line);
     } else if (state === 'green') {
       const flakes = results.filter((result) => result.verdict === 'FLAKE');
-      const ran = ranNames.length ? `${count(ranNames.length, 'gate')} run and passed` : 'no gate run';
+      const ran = `${ranNames.length ? `${count(ranNames.length, 'gate')} run and passed` : 'no gate run'}${composed.length ? `, ${composed.length} passed by ${composed.length === 1 ? 'its' : 'their'} kept classes (${composed.map((gate) => gate.name).join(', ')})` : ''}`;
       if (after.owed.length) {
         // CIFAST1: green on every gate it runs; the stage still needs the rehearsals it owes.
         console.log(`merge-branch: CI green on ${sha}: ${ran}, ${count(kept.length, 'verdict')} kept${flakeNote(flakes)}; ${after.owed.join(' and ')} owed for a stage, neither failed nor passed.`);
