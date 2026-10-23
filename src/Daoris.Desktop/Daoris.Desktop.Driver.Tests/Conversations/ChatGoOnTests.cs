@@ -893,6 +893,14 @@ internal sealed class ChatLedger : HttpMessageHandler
                 }
 
                 // HELPMODE1a2: the mode an Ask Daoris conversation going on runs under, on its record.
+                case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/actor", StringComparison.Ordinal):
+                {
+                    var session = Find(IdOf(path, "/actor"));
+                    var provenance = JsonNode.Parse(body!)!;
+                    foreach (var key in new[] { "choice", "asked", "override", "ran" })
+                        if (provenance[key] is { } value) session[key] = value.DeepClone();
+                    return (HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "kept" }.ToJsonString());
+                }
                 case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/help-mode", StringComparison.Ordinal):
                 {
                     var id = IdOf(path, "/help-mode");

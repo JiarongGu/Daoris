@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Flow } from '../../design/Flow';
 import type { EntryAcceptPlan } from '../review/EntryAccept';
 import { partsFlow } from './partsLife';
+import { ranLine } from '../actors';
 import { PartsHeading, PartsList, type PartsProps } from './PartsStrip';
 
 /**
@@ -26,7 +27,7 @@ export function PartsFlow({ plan, ...props }: PartsProps & { plan?: EntryAcceptP
   const nodes = life.nodes.map((node) => {
     const at = entry.parts.findIndex((part) => part.session === node.id);
     if (at < 0) return node;
-    const own = life.lines[node.id] ?? [];
+    const own = [...(life.lines[node.id] ?? []), ranLine(t, rows[node.id]?.session)];
     return {
       ...node,
       open: () => onShow(node.id),

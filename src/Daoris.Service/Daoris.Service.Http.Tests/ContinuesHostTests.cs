@@ -9,6 +9,32 @@ namespace Daoris.Service.Http.Tests;
 /// </summary>
 public sealed class ContinuesHostTests(LocalHost host) : IClassFixture<LocalHost>
 {
+    [Fact]
+    public async Task Actor_provenance_is_kept_through_its_later_door_and_answered_only_on_loopback()
+    {
+        var opened = await host.PostAsync("/api/sessions/chat", new
+        {
+            repository = "Keeper", adapter = "stub", tree = host.RootOf("actor-chat"), actor = "chat",
+        });
+        Assert.Equal(200, opened.Status);
+        var id = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
+        var kept = await host.PostAsync($"/api/sessions/{id}/actor", new
+        {
+            choice = "before", asked = new { agent = "stub", model = new { source = "account-default", carried = false }, effort = new { source = "account-default", carried = false } },
+            @override = new { model = "alias" }, ran = new { models = new[] { "reported" }, more = 0, entries = Array.Empty<object>(), entriesMore = 0 },
+        });
+        Assert.Equal(200, kept.Status);
+        var local = (await ListedAsync(id))!.Value;
+        Assert.Equal("chat", Text(local, "actor"));
+        Assert.Equal("before", Text(local, "choice"));
+        Assert.Equal("stub", local.GetProperty("asked").GetProperty("agent").GetString());
+        Assert.Equal("alias", local.GetProperty("override").GetProperty("model").GetString());
+        Assert.Equal("reported", local.GetProperty("ran").GetProperty("models")[0].GetString());
+        var remote = (await ListedAsync(id, DaorisHost.OffMachine))!.Value;
+        foreach (var key in new[] { "actor", "choice", "asked", "override", "ran" })
+            Assert.True(!remote.TryGetProperty(key, out var value) || value.ValueKind == JsonValueKind.Null, key);
+    }
+
     private async Task<JsonElement?> ListedAsync(string id, System.Net.IPAddress? from = null) =>
         (await host.GetAsync("/api/sessions?includeClosed=true", from)).Json.EnumerateArray()
             .Cast<JsonElement?>().SingleOrDefault(row => row!.Value.GetProperty("id").GetString() == id);

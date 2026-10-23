@@ -227,6 +227,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         var across = AcrossRules.Reach(config, registry, quest.To, start.Workspace);
         var target = Driver.WithLanguage(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), config, start.Workspace) with
         {
+            Asked = park.Asked ?? ActorAsked.Before(adapter.Name),
             ReadsAcross = across.Reads,
             WritesAcross = across.Writes,
             Session = sessionId,
@@ -383,7 +384,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             using var live = new Disposer(() => _context.Runs.Live.TryRemove(quest.Id, out var _));
 
             var (run, refusedWhy) = await _driver.HoldAsync(
-                adapter, info, target, sessionId, transcript, workTree, Driver.JoinNotices(harnessNotice, browserNotice), rules, handed,
+                park.Actor ?? "build", adapter, info, target, sessionId, transcript, workTree, Driver.JoinNotices(harnessNotice, browserNotice), rules, handed,
                 refusesInput: Driver.TakesNoMessages(quest),
                 ct: ct,
                 preamble: browserNotice,

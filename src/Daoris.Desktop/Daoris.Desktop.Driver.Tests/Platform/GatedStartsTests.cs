@@ -114,7 +114,7 @@ public sealed class GatedStartsTests : IDisposable
 
         using var _ = Refusing();
         await Assert.ThrowsAsync<Win32Exception>(() => Calling(() => driver.HoldAsync(
-            adapter: null!, info: new ProcessStartInfo(Nowhere), target: null!, sessionId: "s1", transcript: Path.Combine(_home, "s1.log"),
+            actor: "build", adapter: null!, info: new ProcessStartInfo(Nowhere), target: null!, sessionId: "s1", transcript: Path.Combine(_home, "s1.log"),
             cwd: _home, harnessNotice: null, rules: (null, null, null), handed: null, refusesInput: null,
             conclude: (_, _, _, _) => Task.FromResult(0), ct: CancellationToken.None, spawned: () => spawned = true)));
 
@@ -138,6 +138,7 @@ public sealed class GatedStartsTests : IDisposable
 
         using var _ = Refusing();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Calling(() => driver.HoldAsync(
+            actor: "build",
             adapter: null!, info: new ProcessStartInfo(Nowhere), target: null!, sessionId: "s1", transcript: Path.Combine(_home, "s1.log"),
             cwd: _home, harnessNotice: null, rules: (null, null, null), handed: null, refusesInput: null,
             conclude: (_, _, _, _) => Task.FromResult(0), ct: closed.Token, spawned: () => spawned = true)));

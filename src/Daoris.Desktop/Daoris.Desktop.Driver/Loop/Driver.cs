@@ -2355,6 +2355,7 @@ public sealed class Driver(
             {
                 // The mode its repository's permission prompts name on its harness (AUTONOMY1b), on either door.
                 Access = permissions,
+                Asked = ActorAsked.Before(adapter.Name),
                 Browser = InAppBrowserServers.Told(browserDrivers),
                 ReadsAcross = across.Reads,
                 WritesAcross = across.Writes,
@@ -2474,7 +2475,7 @@ public sealed class Driver(
             using var live = new Disposer(() => Context.Runs.Live.TryRemove(quest.Id, out var _));
 
             return await HoldAsync(
-                adapter, info, target, sessionId, transcript, workTree, JoinNotices(harnessNotice, browserNotice), rules, handed,
+                "build", adapter, info, target, sessionId, transcript, workTree, JoinNotices(harnessNotice, browserNotice), rules, handed,
                 // 🔴 A driven session takes no person's line, on either door (INT4i) — INT4h's rule for
                 // an intake, for the same reason: it was handed its whole quest at once, the pipe door
                 // gives it no stdin, and the protocol door's stdin carries the driver's own frames.
@@ -3296,7 +3297,7 @@ public sealed class Driver(
     /// (TERMTRUST1a); null for every other run.
     /// </param>
     internal async Task<T> HoldAsync<T>(
-        ISessionAdapter adapter, ProcessStartInfo info, SessionTarget target, string sessionId, string transcript,
+        string actor, ISessionAdapter adapter, ProcessStartInfo info, SessionTarget target, string sessionId, string transcript,
         string cwd, string? harnessNotice, (string? File, object? Meta, HandedSection? Handed) rules, string? handed, string? refusesInput,
         Func<int?, AcpUsage?, string?, HarnessEnding, Task<T>> conclude, CancellationToken ct,
         IReadOnlyDictionary<string, string>? scope = null, string? preamble = null,
@@ -3321,6 +3322,21 @@ public sealed class Driver(
         // Kept beside the process, so who is driving Daoris's browser lasts exactly as long as it (BRW8).
         using var tracked = Context.Processes.Track(sessionId, process, refusesInput, drivesBrowser);
         using var reaper = new Disposer(() => SessionProcesses.EndIfRunning(process));
+        // D205 row b: what this start's record already says, and what it asked, kept as reporting alone — a service that does not
+        // answer here costs the record its provenance, never the run.
+        PriorSession? prior = null;
+        if (target.Brainstorm is null)
+        {
+            try { prior = await service.RecordAsync(sessionId, ct).ConfigureAwait(false); }
+            catch (Exception error) when (error is not OperationCanceledException) { Log?.Write("warn", "actor.read-failed", [("session", sessionId)]); }
+        }
+        actor = prior?.Actor ?? actor;
+        var asked = ActorAsked.ForSpawn(adapter.Name, info, target.Asked ?? prior?.Asked);
+        if (target.Brainstorm is null)
+            await service.TryKeepActorAsync(sessionId, Log, prior?.Choice ?? "before", asked, ct: ct).ConfigureAwait(false);
+        UsageTurns.ActorBound(home, Context.Events, sessionId, actor);
+        await using var actorRun = new ActorRun(Context.Events, sessionId, actor, prior?.Ran,
+            ran => target.Brainstorm is null ? service.KeepActorAsync(sessionId, ran: ran) : Task.CompletedTask, Log);
         // SESSWATCH1a (D200): a quest's session and an intake are watched while they run, never ended on time; a pass keeps minutes of
         // its own and is not watched (the session-watch design §2.4).
         using var watched = minutes is null && target.Opinion is null && target.Helper is null && target.Brainstorm is null && target.Piece is null

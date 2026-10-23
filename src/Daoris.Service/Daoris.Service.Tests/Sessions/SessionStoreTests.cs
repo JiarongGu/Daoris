@@ -1,4 +1,5 @@
 using Daoris.Knowledge;
+using System.Text.Json;
 using Microsoft.Data.Sqlite;
 
 namespace Daoris.Service.Tests;
@@ -20,6 +21,38 @@ public sealed class SessionStoreTests : IAsyncLifetime
 
     private Task<Session> Create(string quest = "abc123", string repository = "Owner", string adapter = "stub") =>
         _sessions.CreateAsync(quest, repository, adapter, Now);
+
+    [Fact]
+    public async Task Actor_fields_survive_later_writes_without_a_revision_and_never_enter_a_mirror()
+    {
+        var own = await _sessions.CreateAsync("q", "Owner", "stub", Now, actor: "build");
+        var through = (await _sessions.OwnChangedSinceAsync(0, Workspaces.Default)).Single().Revision;
+        var asked = JsonSerializer.SerializeToElement(new { agent = "stub", model = new { source = "entry", value = "default", carried = true } });
+        var ran = JsonSerializer.SerializeToElement(new { models = new[] { "z-model", "a-model" }, more = 0, entries = Array.Empty<object>(), entriesMore = 0 });
+        Assert.True(await _sessions.KeepActorAsync(own.Id, "before", asked, asked, ran));
+        Assert.Empty(await _sessions.OwnChangedSinceAsync(through, Workspaces.Default));
+        var read = (await _sessions.FindAsync(own.Id))!;
+        Assert.Equal("build", read.Actor);
+        Assert.Equal("before", read.Choice);
+        Assert.Equal(asked.GetRawText(), read.Asked!.Value.GetRawText());
+        Assert.Equal(asked.GetRawText(), read.Override!.Value.GetRawText());
+        Assert.Equal(ran.GetRawText(), read.Ran!.Value.GetRawText());
+        await _sessions.KeepActorAsync(own.Id, null, null, null, ran);
+        Assert.Equal("before", (await _sessions.FindAsync(own.Id))!.Choice);
+        await _sessions.MirrorAsync(read with { Id = "other/" + own.Id, Origin = "other" });
+        var mirror = (await _sessions.FindAsync("other/" + own.Id))!;
+        Assert.Null(mirror.Actor);
+        Assert.Null(mirror.Choice);
+        Assert.Null(mirror.Asked);
+        Assert.Null(mirror.Override);
+        Assert.Null(mirror.Ran);
+        Assert.False(await _sessions.KeepActorAsync(mirror.Id, "pick", asked, asked, ran));
+        foreach (var field in new[] { "Actor", "Choice", "Asked", "Override", "Ran" })
+            Assert.Null(typeof(FedSessionRecord).GetProperty(field));
+        var old = await Create();
+        Assert.Null(old.Actor);
+        Assert.Null((await _sessions.FindAsync(old.Id))!.Ran);
+    }
 
     /// <summary>
     /// A session RECORD lives in the service, beside the quest it serves; the PROCESS never does.
@@ -792,6 +825,11 @@ public sealed class SessionSchemaUpgradeTests : IAsyncLifetime
         Assert.Equal(((string?)null, (string?)null, (string?)null), (elder.From, elder.FromWhy, elder.FromBy));
         // …nor the access setup it started under (AUTONOMY1a): the old reading, a start before the setup, which ran as today's.
         Assert.Null(elder.Access);
+        Assert.Null(elder.Actor);
+        Assert.Null(elder.Choice);
+        Assert.Null(elder.Asked);
+        Assert.Null(elder.Override);
+        Assert.Null(elder.Ran);
 
         var chat = await sessions.CreateAsync(
             null, "Elder", "stub", Now, workspace: null, kind: SessionKind.Chat);

@@ -24,6 +24,8 @@ public sealed record SessionTarget(
     /// <summary>The selected adapter's commit attribution instruction, composed for this start.</summary>
     public string? CommitTrailer { get; init; }
 
+    /// <summary>D205 §3.2: what this start's actor asked for, carried by every native prepare.</summary>
+    public ActorAsked? Asked { get; init; }
     /// <summary>Addresses the quest carries (D65 §2), handed over as the asker gave them.</summary>
     public IReadOnlyList<string> Links { get; init; } = [];
 
@@ -1217,6 +1219,7 @@ public static class TargetPrompt
 /// </remarks>
 public sealed record ChatTarget(string Repository, string Root, string ServiceUrl)
 {
+    public ActorAsked? Asked { get; init; }
     /// <summary>
     /// The harness conversation an ended chat goes on in (MSG1c, D137 §4.2), by the id Daoris kept for its record; null for
     /// a new conversation. A native door hands it to its harness's own resume; a protocol door resumes on its wire.
@@ -2127,6 +2130,7 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
         var resolved = Resolve(command);
         var arguments = resolved.Skip(1)
             .Concat(["-p", TargetPrompt.Compose(target), "--permission-mode", DrivenMode(target)])
+            .Concat(target.Asked?.NativeArguments(resolved) ?? [])
             .Concat(StreamJsonOut);
 
         return Spawning.InRoot(target, resolved[0], arguments);
@@ -2162,6 +2166,7 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
         var resolved = Resolve(command);
         var arguments = resolved.Skip(1)
             .Concat(["-p", prompt, "--resume", conversation, "--permission-mode", DrivenMode(target)])
+            .Concat(target.Asked?.NativeArguments(resolved) ?? [])
             .Concat(StreamJsonOut);
 
         return Spawning.InRoot(target, resolved[0], arguments);
@@ -2217,6 +2222,7 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
             resolved.Skip(1)
                 .Concat(["-p", "--input-format", "stream-json", "--permission-mode", target.PermissionMode ?? "acceptEdits"])
                 .Concat(target.Resume is { Length: > 0 } conversation ? ["--resume", conversation] : [])
+                .Concat(target.Asked?.NativeArguments(resolved) ?? [])
                 .Concat(StreamJsonOut));
     }
 

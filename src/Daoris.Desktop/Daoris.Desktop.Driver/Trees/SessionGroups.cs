@@ -13,6 +13,11 @@ namespace Daoris.Driver;
 /// <param name="State">The record's state in its public spelling (<c>awaiting-person</c>, <c>stood-down</c>).</param>
 public sealed record SessionRecord(string Id, string Repository, string State)
 {
+    public string? Actor { get; init; }
+    public string? Choice { get; init; }
+    public ActorAsked? Asked { get; init; }
+    public JsonElement? Override { get; init; }
+    public ActorRan? Ran { get; init; }
     /// <summary>The quest it serves, or null for a conversation's or an intake's.</summary>
     public string? Quest { get; init; }
 
@@ -171,6 +176,10 @@ public static class SessionRecords
                 FromWhy = Text(session, "fromWhy") is { Length: > 0 } why ? why : null,
                 // HELPMODE1a2: an Ask Daoris record's mode, answered on loopback alone; absent from a host before it.
                 HelpMode = Text(session, "helpMode") is { Length: > 0 } mode ? mode : null,
+                Actor = Text(session, "actor"), Choice = Text(session, "choice"),
+                Asked = ServiceClient.ActorRead<ActorAsked>(session, "asked"),
+                Override = ServiceClient.ActorRead<JsonElement?>(session, "override"),
+                Ran = ServiceClient.ActorRead<ActorRan>(session, "ran"),
                 // COAGENT1b: a helper's or a partner's lead, and a partner's piece, kept only beside it, as the service keeps them.
                 Serves = Text(session, "serves") is { Length: > 0 } serves ? serves : null,
                 Piece = Text(session, "serves") is { Length: > 0 } && Text(session, "piece") is { Length: > 0 } piece ? piece : null,

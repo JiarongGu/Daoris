@@ -8,7 +8,7 @@ public sealed record ModelTokens(string Model, TurnTokens Tokens);
 
 /// <summary>
 /// Which models a turn's tokens were spent on, as its door said them (USAGECAP1a2, D179 point 2), for the usage history alone:
-/// carried in memory on the turn's event and never written to the session's record, which keeps no model's name (D24, TOOL3).
+/// carried in memory on the turn's event. D205 keeps reported names separately on the machine-local session record.
 /// </summary>
 /// <remarks>
 /// <para><b>A split is taken only where it agrees with the turn's total.</b> The total is the door's measured per-turn report
@@ -31,6 +31,8 @@ public sealed record ModelTokens(string Model, TurnTokens Tokens);
 /// </param>
 public sealed record TurnModels(string Model, IReadOnlyList<ModelTokens>? Split, bool? Whole, string? From)
 {
+    /// <summary>D205: names in report order, captured before token attribution sorts or collapses them.</summary>
+    public IReadOnlyList<string> Reported { get; init; } = [];
     /// <summary>The turn's total was spent on more than one model.</summary>
     public const string Mixed = "mixed";
 
@@ -64,21 +66,34 @@ public sealed record TurnModels(string Model, IReadOnlyList<ModelTokens>? Split,
     /// </summary>
     public static TurnModels Of(
         TurnTokens? total, IEnumerable<string?> named, string namedFrom, IReadOnlyDictionary<string, TurnTokens>? reported,
-        IReadOnlyDictionary<string, TurnTokens>? before, string reportedFrom)
+        IReadOnlyDictionary<string, TurnTokens>? before, string reportedFrom, IEnumerable<string?>? rawNames = null)
     {
-        var main = named.Select(Name).OfType<string>().Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
+        var names = named.Select(Name).OfType<string>().Distinct(StringComparer.Ordinal).ToList();
+        var reportedNames = names.Concat(rawNames ?? reported?.Keys ?? []).Select(Name).OfType<string>().Distinct(StringComparer.Ordinal).ToArray();
+        var main = names.Order(StringComparer.Ordinal).ToList();
         if (total is not null && reported is { Count: > 0 } && reported.Keys.All(key => Name(key) is not null))
         {
             if (before is { Count: > 0 } && Less(reported, before) is { } since && Agreeing(since, total, main) is { } grew)
             {
-                return Agreed(grew, since, reportedFrom + Since);
+                return Agreed(grew, since, reportedFrom + Since) with { Reported = reportedNames };
             }
 
-            if (Agreeing(reported, total, main) is { } own) return Agreed(own, reported, reportedFrom);
+            if (Agreeing(reported, total, main) is { } own) return Agreed(own, reported, reportedFrom) with { Reported = reportedNames };
         }
 
-        return new(main.Count switch { 0 => Unknown, 1 => main[0], _ => Mixed }, null, null, main.Count > 0 ? namedFrom : null);
+        return new(main.Count switch { 0 => Unknown, 1 => main[0], _ => Mixed }, null, null, main.Count > 0 ? namedFrom : null) { Reported = reportedNames };
     }
+
+    /// <summary>
+    /// D205: the names a split says, in its order, whether or not its counts can be read — what ran is provenance apart from
+    /// token attribution. Empty for any shape <see cref="Read"/> does not take.
+    /// </summary>
+    public static IEnumerable<string?> Names(JsonElement split) => split.ValueKind switch
+    {
+        JsonValueKind.Object => split.EnumerateObject().Select(each => (string?)each.Name).ToArray(),
+        JsonValueKind.Array => split.EnumerateArray().Select(each => each.ValueKind == JsonValueKind.Object ? Json.Text(each, "model") : null).ToArray(),
+        _ => [],
+    };
 
     /// <summary>
     /// A split from the wire: an object keyed by model (<c>modelUsage</c>) or an array of objects each naming its

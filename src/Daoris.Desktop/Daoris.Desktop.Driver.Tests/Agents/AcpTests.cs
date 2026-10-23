@@ -1371,9 +1371,37 @@ public sealed class AcpTests
 
         var turn = Assert.Single(events, e => e.Kind == SessionEventKind.Turn).Models!;
         Assert.Equal(("claude-sonnet-5-5", (bool?)false, TurnModels.FromQuota), (turn.Model, turn.Whole, turn.From));
+        Assert.Equal(["claude-sonnet-5-5", "claude-haiku-4-5-20251001"], turn.Reported);
         Assert.Equal(
             [("claude-haiku-4-5-20251001", new TurnTokens(902, 11, 0, 0)), ("claude-sonnet-5-5", new TurnTokens(2, 4, 16420, 10603))],
             turn.Split!.Select(each => (each.Model, each.Tokens)));
+    }
+
+    /// <summary>
+    /// D205 row b: what ran is the door's own report. <c>codex-acp</c> names its model in the answer's quota alone (MODELROLE1a);
+    /// an answer that names none is <i>not reported</i>, whatever the session opened on.
+    /// </summary>
+    [Theory]
+    [InlineData("""{"stopReason":"end_turn","_meta":{"quota":{"model_usage":[{"model":"gpt-6-luna"}]}}}""", "gpt-6-luna")]
+    [InlineData("""{"stopReason":"end_turn"}""", null)]
+    public async Task A_turn_reports_what_ran_only_where_its_door_names_it(string answer, string? ran)
+    {
+        var events = new List<SessionEvent>();
+        var agent = new FakeAgent((frame, self) => frame.GetProperty("method").GetString() switch
+        {
+            "initialize" => Ok(frame, """{"protocolVersion":1}"""),
+            "session/new" => Ok(frame, """{"sessionId":"s-ran","configOptions":[{"id":"model","name":"Model","category":"model","type":"select","currentValue":"gpt-6.1-sol","options":[{"value":"gpt-6.1-sol","name":"gpt-6.1-sol"}]}]}"""),
+            "session/prompt" => Ok(frame, answer),
+            _ => frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null,
+        });
+
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: events.Add);
+        await session.OpenAsync("D:/fam/Game", CancellationToken.None);
+        await session.PromptAsync("go", CancellationToken.None);
+        session.Release();
+
+        var reported = Assert.Single(events, e => e.Kind == SessionEventKind.Turn).Models?.Reported ?? [];
+        if (ran is null) Assert.Empty(reported); else Assert.Equal([ran], reported);
     }
 
     /// <summary>
@@ -2552,6 +2580,23 @@ public sealed class AcpTests
          {"id":"effort","name":"Effort","category":"thought_level","type":"select","currentValue":"default","options":[{"value":"default","name":"Default"},{"value":"low","name":"Low"},{"value":"medium","name":"Medium"},{"value":"high","name":"High"},{"value":"xhigh","name":"Extra high"},{"value":"max","name":"Max"}]},
          {"id":"fast","name":"Fast mode","category":"model_config","type":"select","currentValue":"off","options":[{"value":"on","name":"On"},{"value":"off","name":"Off"}]}]
         """;
+
+    /// <summary>D205: a setter that returns no list leaves the composer its projection, never an acknowledgement.</summary>
+    [Fact]
+    public async Task A_setter_with_no_returned_list_is_not_an_acknowledgement()
+    {
+        var agent = new FakeAgent((frame, _) => frame.GetProperty("method").GetString() switch
+        {
+            "initialize" => Ok(frame, """{"protocolVersion":1}"""),
+            "session/new" => Ok(frame, """{"sessionId":"s-ack"}"""),
+            _ => Ok(frame, "{}"),
+        });
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+        await session.OpenAsync("D:/fixture", CancellationToken.None);
+        await session.SetConfigOptionAsync("model", "sonnet", CancellationToken.None);
+        Assert.Null(session.LastAcknowledgedOptions);
+        session.Release();
+    }
 
     /// <summary>
     /// The list <c>claude-agent-acp</c> answered after a change, as measured: the model's value as the agent holds it (an

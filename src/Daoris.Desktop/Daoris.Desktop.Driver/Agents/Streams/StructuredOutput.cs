@@ -83,9 +83,8 @@ public interface IStreamsReader
 /// <para><b>Every field is optional and shape-checked</b> — the ACP2 lesson: a wire that is somebody
 /// else's grows, and a field of an unexpected shape is an absence here, never a throw.</para>
 ///
-/// <para><b>Leaves the model's name and the cost</b> on the wire (D24, TOOL3): both are there, and
-/// neither is Daoris's to record. The models a turn was spent on ride its event in memory to the usage history alone
-/// (USAGECAP1a2, D179 point 2: <see cref="SessionEvent.Models"/>), and never reach the record.</para>
+/// <para>The reported model names ride the turn event to D205's machine-local provenance record before token attribution.
+/// Token shares remain the usage history's (<see cref="SessionEvent.Models"/>); monetary cost is not kept.</para>
 ///
 /// <para><b>A denial is the call's refusal</b> (UNBLOCK5, D122 §3.10). Nobody answers a prompt on this
 /// door, so what the harness would have asked it denies, and reports as a <c>system</c>
@@ -333,7 +332,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
         // Which models they were spent on, for the usage history alone (USAGECAP1a2): `modelUsage` by model where it agrees with
         // the total, read as the turn's own or as the process's running total less the result before.
         var split = frame.TryGetProperty("modelUsage", out var byModel) ? TurnModels.Read(byModel) : null;
-        var models = TurnModels.Of(tokens, _named, TurnModels.FromMessages, split, _split, TurnModels.FromModelUsage);
+        var models = TurnModels.Of(tokens, _named, TurnModels.FromMessages, split, _split, TurnModels.FromModelUsage, TurnModels.Names(byModel));
         _named.Clear();
         if (split is { Count: > 0 }) _split = split;
         events.Add(new SessionEvent

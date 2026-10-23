@@ -65,6 +65,17 @@ function ancestorsUpTo(element: Element, last: Element): Element[] {
 }
 
 describe('the attended session\'s head', () => {
+  it('shows the actor and the reported model in Details without replacing an absent acknowledgement', () => {
+    render(<SessionHead session={session({ actor: 'build', choice: 'before',
+      asked: { agent: 'claude-code', model: { source: 'account-default', carried: false }, effort: { source: 'account-default', carried: false } },
+      ran: { models: ['reported-model'], more: 0, entries: [], entriesMore: 0 },
+    })} />);
+    details();
+    expect(screen.getByText('Build')).toBeInTheDocument();
+    expect(screen.getByText('as before')).toBeInTheDocument();
+    expect(screen.getByText('reported-model')).toBeInTheDocument();
+    expect(screen.getAllByText('not reported')).toHaveLength(2);
+  });
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(NOW);

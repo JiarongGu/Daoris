@@ -12,6 +12,10 @@ namespace Daoris.Driver;
 /// <c>stopped</c> by the person or <c>interrupted</c> by a driver that stopped.</param>
 public sealed record BrainstormPassRecord(BrainstormBy By, string Role, string State, IReadOnlyList<string> Codes, int Turns)
 {
+    public string? Actor { get; init; }
+    public string? Choice { get; init; }
+    public ActorAsked? Asked { get; init; }
+    public ActorRan? Ran { get; init; }
     public const string Generate = "generate";
     public const string Synthesize = "synthesize";
 
@@ -67,6 +71,13 @@ public sealed record BrainstormDocument(
 /// <summary>The document's assembly with provenance, its JSON and its Markdown (D176 points 4 and 8), with no model and no I/O.</summary>
 public static class BrainstormDocuments
 {
+    public static void Provenance(Utf8JsonWriter writer, BrainstormPassRecord pass)
+    {
+        if (pass.Actor is not null) writer.WriteString("actor", pass.Actor);
+        if (pass.Choice is not null) writer.WriteString("choice", pass.Choice);
+        if (pass.Asked is not null) { writer.WritePropertyName("asked"); JsonSerializer.Serialize(writer, pass.Asked, ActorRun.Json); }
+        if (pass.Ran is not null) { writer.WritePropertyName("ran"); JsonSerializer.Serialize(writer, pass.Ran, ActorRun.Json); }
+    }
     public const string NoSynthesis = "the synthesis did not finish";
 
     /// <summary>Why a document the person stopped is unranked (D176 point 6).</summary>
@@ -193,6 +204,7 @@ public static class BrainstormDocuments
                 writer.WriteStartObject();
                 By(writer, pass.By);
                 writer.WriteString("role", pass.Role);
+                Provenance(writer, pass);
                 writer.WriteString("state", pass.State);
                 writer.WriteNumber("turns", pass.Turns);
                 writer.WriteStartArray("codes");
@@ -230,6 +242,14 @@ public static class BrainstormDocuments
             text.Append("One maker answered: this is no cross-maker brainstorm.\n");
         }
 
+        foreach (var pass in document.Passes)
+        {
+            text.Append("\nPass `").Append(pass.By.Pass).Append("`: actor ").Append(pass.Actor ?? "not reported")
+                .Append(", choice ").Append(pass.Choice ?? "not reported").Append(", model ")
+                .Append(pass.Ran is { Models.Count: > 0 } ran ? string.Join(", ", ran.Models) : "not reported");
+            if (pass.Ran is { More: > 0 } more) text.Append(" and ").Append(more.More).Append(" more");
+            text.Append(".\n");
+        }
         // Partial coverage (BRAINSTORM1b, D176 point 6): which generators answered, and which did not and why, by code.
         var answered = document.Passes.Where(pass => pass is { Role: BrainstormPassRecord.Generate, State: BrainstormPassRecord.Answered }).ToList();
         if (answered.Count > 0 && document.Unanswered.Count > 0)

@@ -35,6 +35,7 @@ import { movedAt } from '../rail/rail';
 import { RunningIntake } from './RunningIntake';
 import { leftFor, type Seek, SOUGHT, useSought } from '../waits/WaitAnchor';
 import { rulesAsked } from '../waits/waits';
+import { actorRows } from '../actors';
 
 // The work's line is its own molecule, which the foot's strip draws too (WAITFOOT1b, D168); its shapes are read from here too.
 export type { HeadOpinion, HeadReview, LandingPlan, WorkAsk } from '../review/Lands';
@@ -522,6 +523,7 @@ export function SessionHead({
           accessRow(t, session),
           { label: t('work.head.quest'), value: session.quest ? `#${session.quest}` : null, mono: true },
           { label: t('work.head.tool'), value: sessionTool({ adapter: session.adapter, harnessVersion: session.harnessVersion }) },
+          ...actorRows(t, session),
           {
             label: t('work.head.account'),
             value: session.profile

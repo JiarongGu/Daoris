@@ -66,6 +66,9 @@ public sealed class AskAndWaitTickTests : IDisposable
 
         var resumed = service.Session("s2");
         Assert.Equal("completed", resumed["state"]!.GetValue<string>());
+        Assert.Equal("build", resumed["actor"]!.GetValue<string>());
+        Assert.Equal("before", resumed["choice"]!.GetValue<string>());
+        Assert.Null(resumed["ran"]);
         Assert.Equal(Path.GetFullPath(tree), Path.GetFullPath(resumed["tree"]!.GetValue<string>()), ignoreCase: true);
         Assert.Equal("Done", service.Status("q1"));
 
@@ -377,6 +380,15 @@ public sealed class AskAndWaitTickTests : IDisposable
                             .Where(s => all || s["state"]!.GetValue<string>() is "queued" or "starting" or "working" or "awaiting-person")
                             .Select(s => s.DeepClone())]).ToJsonString());
 
+                    case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/actor", StringComparison.Ordinal):
+                    {
+                        var id = path["/api/sessions/".Length..^"/actor".Length];
+                        var session = _sessions.Single(s => s["id"]!.GetValue<string>() == id);
+                        var provenance = Body();
+                        foreach (var key in new[] { "choice", "asked", "override", "ran" })
+                            if (provenance[key] is { } value) session[key] = value.DeepClone();
+                        return (200, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "kept" }.ToJsonString());
+                    }
                     case ("POST", "/api/sessions"):
                     {
                         var body = Body();

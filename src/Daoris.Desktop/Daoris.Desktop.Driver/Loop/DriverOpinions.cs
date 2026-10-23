@@ -192,7 +192,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
             var opening = OpinionPass.Opening(candidate, posture);
 
             return await _driver.HoldAsync(
-                adapter, info, target, sessionId, transcript, copy.Path, Driver.JoinNotices(harnessNotice, opening), handedRules, handed,
+                "opinion", adapter, info, target, sessionId, transcript, copy.Path, Driver.JoinNotices(harnessNotice, opening), handedRules, handed,
                 // 🔴 One turn, and no words (§5.6): nobody talks to a reviewer while it reads, on either door.
                 refusesInput: OpinionPass.TakesNoWords(opinion),
                 ct: ct,

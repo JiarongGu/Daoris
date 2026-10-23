@@ -533,7 +533,11 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
         string? account = null;
         (BrainstormPassRecord, T?) Ended(string state, IReadOnlyList<string> codes, int turns, T? valid = null)
         {
-            var record = new BrainstormPassRecord(new BrainstormBy(pass, maker, agent, account), role, state, codes, turns);
+            var prior = files.ReadPasses(id).FirstOrDefault(each => each.By.Pass == pass);
+            var record = new BrainstormPassRecord(new BrainstormBy(pass, maker, agent, account), role, state, codes, turns)
+            {
+                Actor = "brainstorm", Choice = "before", Asked = ActorAsked.Before(agent), Ran = prior?.Ran,
+            };
             files.WritePass(id, record);
             return (record, valid);
         }
@@ -671,9 +675,18 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
         }
 
         var files = new BrainstormFiles(_context.Home);
+        var passId = turn.Turn.EndsWith('r') ? turn.Turn[..^1] : turn.Turn;
+        var passBefore = files.ReadPasses(turn.Id).FirstOrDefault(pass => pass.By.Pass == passId);
+        await using var reports = new ActorRun(_context.Events, sessionId, "brainstorm", passBefore?.Ran, ran =>
+        {
+            var pass = files.ReadPasses(turn.Id).FirstOrDefault(each => each.By.Pass == passId);
+            if (pass is not null) files.WritePass(turn.Id, pass with { Actor = "brainstorm", Choice = "before", Asked = ActorAsked.Before(adapter.Name), Ran = ran });
+            return Task.CompletedTask;
+        });
         var target = new SessionTarget(QuestId: "", "Brainstorm", "", "Daoris", "", turn.Room, "")
         {
             Brainstorm = turn.Id,
+            Asked = ActorAsked.Before(adapter.Name),
             BrainstormTurn = turn.Turn,
             BrainstormAnswer = turn.Answer,
             Session = sessionId,
@@ -690,7 +703,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
         try
         {
             return await _driver.HoldAsync(
-                adapter, info, target, sessionId, transcript, turn.Room, notice, rules, handed: handed,
+                "brainstorm", adapter, info, target, sessionId, transcript, turn.Room, notice, rules, handed: handed,
                 refusesInput: "a brainstorm's pass is one turn, and takes no words",
                 conclude: (exitCode, used, turnFailed, _) =>
                 {

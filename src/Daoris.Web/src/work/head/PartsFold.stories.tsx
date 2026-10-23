@@ -10,7 +10,10 @@ import { PartsFold } from './PartsFold';
 // drawing at every width; these draw the fold at the main area's three (`storyWidths`) and the drawing opened from it.
 
 const APP = EVIDENCE_ENTRIES[0]!;
-const rows = Object.fromEntries(EVIDENCE_SESSIONS.map((session) => [session.id, { session, root: 'C:/work/app' }]));
+const rows = Object.fromEntries(EVIDENCE_SESSIONS.map((session, i) => [session.id, {
+  session: { ...session, actor: 'build', choice: 'before', ran: { models: [i ? 'gpt-reported' : 'claude-reported'], more: 0, entries: [], entriesMore: 0 } },
+  root: 'C:/work/app',
+}]));
 
 const meta = {
   title: 'Work/PartsFold',

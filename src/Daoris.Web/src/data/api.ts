@@ -422,6 +422,11 @@ export type SessionState =
  */
 export const SESSION_ACTIVE: ReadonlySet<SessionState> =
   new Set<SessionState>(['queued', 'starting', 'working', 'awaiting-person']);
+/** D205 §9.3: what a start asked for, tagged so an explicit `default` differs from an account default. */
+export type ActorValue = { source: 'entry' | 'account-default' | 'command' | 'environment'; value?: string | null; carried: boolean };
+export type ActorAsked = { agent: string; model: ActorValue; effort: ActorValue };
+export type ActorRan = { models: string[]; more: number; entries: { at: string; acknowledged?: string | null; effort?: string | null }[]; entriesMore: number };
+export type ActorOverride = { model?: string; effort?: string };
 /**
  * A session's RECORD (D46) — the process lives on the driving machine, never here.
  *
@@ -430,6 +435,12 @@ export const SESSION_ACTIVE: ReadonlySet<SessionState> =
  * `quest` is optional: a conversation may serve none.
  */
 export type Session = {
+  /** D205: machine-local provenance; absent on old records, mirrors and remote responses. */
+  actor?: string | null;
+  choice?: string | null;
+  asked?: ActorAsked | null;
+  override?: ActorOverride | null;
+  ran?: ActorRan | null;
   id: string; quest?: string | null; repository: string; adapter: string; state: SessionState;
   kind?: 'driven' | 'chat';
   note?: string; evidence?: string; created: string; updated: string; workspace?: string;

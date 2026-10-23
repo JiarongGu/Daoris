@@ -45,6 +45,17 @@ public sealed class UsageTurnsTests : IDisposable
 
     private SessionEvents Watched() => UsageTurns.Watched(_home, new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), () => Now);
 
+    [Fact]
+    public void The_usage_history_keeps_the_start_actor_and_old_turns_have_none()
+    {
+        UsageHistory.Turned(_home, Claude with { Actor = "build" }, Seen(seq: 1, tokens: Total), Now);
+        UsageHistory.Turned(_home, Claude, Seen(seq: 2, tokens: Total), Now);
+        var turns = UsageHistory.ReadTurns(_home).Turns;
+        Assert.Equal("build", turns[0].Actor);
+        Assert.Null(turns[1].Actor);
+        Assert.Contains("\"actor\":\"build\"", Lines()[0]);
+    }
+
     // ——— A turn.
 
     [Fact]
@@ -65,7 +76,7 @@ public sealed class UsageTurnsTests : IDisposable
         var first = JsonNode.Parse(lines[0])!.AsObject();
         Assert.Equal(
             [
-                "v", "kind", "id", "written", "agent", "account", "epoch", "door", "session", "seq", "started", "ended", "input", "output",
+                "v", "kind", "id", "written", "agent", "account", "epoch", "door", "actor", "session", "seq", "started", "ended", "input", "output",
                 "cacheRead", "cacheWrite", "model", "split", "attribution", "whole", "cancelled", "meaning", "reader",
             ],
             first.Select(pair => pair.Key));

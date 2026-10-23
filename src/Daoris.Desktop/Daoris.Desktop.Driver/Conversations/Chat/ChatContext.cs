@@ -55,6 +55,7 @@ internal sealed class ChatContext(
     /// and each question asked both in turn).
     /// </summary>
     public ConcurrentDictionary<string, ChatRunner.ITurnedChat> Turned { get; } = new(StringComparer.OrdinalIgnoreCase);
+    public ConcurrentDictionary<string, ActorRun> ActorRuns { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Each chat going on, started from another or being handed over, until its run is watched or it is said why not: one at a

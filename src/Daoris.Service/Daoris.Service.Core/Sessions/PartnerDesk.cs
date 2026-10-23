@@ -79,7 +79,7 @@ public sealed class PartnerDesk(SessionStore sessions, PartnerBox? box = null, b
             var partner = await sessions.CreateAsync(
                     quest: null, lead.Repository, open.Adapter.Trim(), now, lead.Workspace, SessionKind.Chat,
                     harnessVersion: open.HarnessVersion, profile: open.Account, tree: tree, baseCommit: open.BaseCommit?.ToLowerInvariant(),
-                    ct: inside, serves: lead.Id, ownEntry: true, piece: piece)
+                    ct: inside, serves: lead.Id, ownEntry: true, piece: piece, actor: "partner")
                 .ConfigureAwait(false);
             return new HelperOutcome(
                 HelperRefusal.None,

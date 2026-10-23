@@ -23,6 +23,9 @@ const SESSION: Session = {
   kind: 'driven',
   harnessVersion: '2.1.4',
   profile: 'owner',
+  actor: 'build', choice: 'before',
+  asked: { agent: 'claude-code', model: { source: 'account-default', carried: false }, effort: { source: 'account-default', carried: false } },
+  ran: { models: ['claude-sonnet-5-5'], more: 0, entries: [], entriesMore: 0 },
   tree: 'C:/somewhere/.daoris/trees/default/engine/streaming-budget',
   created: at(134),
   updated: at(4),
@@ -489,13 +492,13 @@ export const ParkedByCode: Story = {
  */
 export const FromAnotherMachine: Story = {
   args: {
-    session: { ...SESSION, id: 'person@machine-a/s1a2b3c4', tree: null, profile: null },
+    session: { ...SESSION, id: 'person@machine-a/s1a2b3c4', tree: null, profile: null, actor: null, choice: null, asked: null, ran: null },
   },
 };
 
 /** A record older than the toolchain: no version, no account, and still a complete record. */
 export const BeforeTheToolchain: Story = {
-  args: { session: { ...SESSION, harnessVersion: null, profile: null, tree: null } },
+  args: { session: { ...SESSION, harnessVersion: null, profile: null, tree: null, actor: null, choice: null, asked: null, ran: null } },
 };
 
 /** 中文 content beside English chrome — the i18n boundary, seen rather than described. */
@@ -550,3 +553,16 @@ export const Helping: Story = {
 };
 export const HelpingChinese: Story = { ...Helping, decorators: [chinese] };
 export const HelpingDark: Story = { ...Helping, decorators: [dark] };
+
+/** D205: asked, acknowledged and reported stay separate, in the agent's own names. */
+export const ActorReported: Story = {
+  args: { session: { ...SESSION, ran: { models: ['claude-sonnet-5-5', 'claude-haiku-4-5-20251001'], more: 1,
+    entries: [{ at: at(2), acknowledged: 'sonnet', effort: 'high' }], entriesMore: 0 } } },
+  play: openDetails,
+};
+export const ActorReportedHalf: Story = { ...ActorReported, decorators: [sessionWidths.half] };
+export const ActorReportedNarrow: Story = { ...ActorReported, decorators: [sessionWidths.narrow] };
+export const ActorReportedChinese: Story = { ...ActorReported, decorators: [chinese, sessionWidths.wide] };
+export const ActorReportedChineseHalf: Story = { ...ActorReported, decorators: [chinese, sessionWidths.half] };
+export const ActorReportedChineseNarrow: Story = { ...ActorReported, decorators: [chinese, sessionWidths.narrow] };
+export const ActorNotReported: Story = { args: { session: { ...SESSION, ran: null } }, play: openDetails };

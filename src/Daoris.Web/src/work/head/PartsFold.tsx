@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { EntryAcceptPlan } from '../review/EntryAccept';
 import { beganLine } from './partsLife';
+import { ranLine } from '../actors';
 import { PartsFlow } from './PartsFlow';
 import type { PartsProps } from './PartsStrip';
 
@@ -57,6 +58,7 @@ export function PartsFold({ plan, defaultOpen = false, ...props }: PartsProps & 
         {t('work.parts.of', { n: shown + 1, total: parts.length })}
         {' · '}
         {t('work.parts.newest', { began: beganLine(t, newest, parts, props.rows) })}
+        {' · '}{ranLine(t, props.rows[newest.session]?.session)}
       </span>
       <button type="button" onClick={() => setOpen(true)} className={PRESS}>
         {t('work.parts.showAll')}

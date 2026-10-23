@@ -383,7 +383,7 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
         }
 
         var (room, reads) = await help.HelpRoomNowAsync(id, HelpRoom.GoesOnIn(context.Home, prior.Workspace, prior.Tree), ct).ConfigureAwait(false);
-        return await runner.RunAsync(id, placed.Message, resolved, selection, config, runner.HelpPlace(room, reads, prior.Workspace), onEnded, ct)
+        return await runner.RunAsync(prior.Actor ?? "ask-daoris", id, placed.Message, resolved, selection, config, runner.HelpPlace(room, reads, prior.Workspace), onEnded, ct)
             .ConfigureAwait(false);
     }
 

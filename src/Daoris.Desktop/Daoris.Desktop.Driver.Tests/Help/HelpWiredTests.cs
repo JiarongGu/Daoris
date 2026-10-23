@@ -308,7 +308,7 @@ public sealed class HelpWiredTests : IDisposable
         using (ProcessStarts.Within(_ => null))
         {
             await runner.RunAsync(
-                "help0004", "and now?", adapters.Resolve("claude-code"), new HarnessSelection(Refusal: null, Profile: "work", Version: "2.1.300"),
+                "ask-daoris", "help0004", "and now?", adapters.Resolve("claude-code"), new HarnessSelection(Refusal: null, Profile: "work", Version: "2.1.300"),
                 config, runner.HelpPlace(HelpRoom.PathOf(_home), []), null, CancellationToken.None, goOn).WaitAsync(Within);
         }
         Assert.Equal([("help0004", 2)], seen);
@@ -354,7 +354,7 @@ public sealed class HelpWiredTests : IDisposable
                }))
         {
             await runner.RunAsync(
-                "help0008", "and now?", adapters.Resolve("claude-code"), new HarnessSelection(Refusal: null, Profile: "work", Version: "2.1.299"),
+                "ask-daoris", "help0008", "and now?", adapters.Resolve("claude-code"), new HarnessSelection(Refusal: null, Profile: "work", Version: "2.1.299"),
                 config, runner.HelpPlace(HelpRoom.PathOf(_home), []), null, CancellationToken.None, goOn).WaitAsync(Within);
         }
 

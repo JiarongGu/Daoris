@@ -23,6 +23,11 @@ with the version and date at release.
   in its own conversation if its own account reset first, with your waiting words. If another account frees first, it goes on
   there with Daoris's summary and your words. An ended conversation whose words waited for its account's reset now goes on at
   that reset. This holds for Ask Daoris and for a repository's conversations.
+- A session's *Details* now says which actor started it (Build, Chat, Ask Daoris, a second opinion…), what model and effort it
+  asked for, and the model its agent reported running, in the agent's own words (MODELROLE1b). Where the agent named none, it says
+  *not reported*. The parts fold's newest line names the same model, and a brainstorm's result names the models its voices
+  ran. Nothing about how a session starts has changed. Sessions from before this version, and from another machine, read
+  *not recorded*.
 
 - Driven sessions and repository conversations now receive commit attribution instructions for their own maker and running
   model (MAKERTRAIL1). Claude keeps its harness's automatic trailer. The merge check accepts supported makers' trailers and

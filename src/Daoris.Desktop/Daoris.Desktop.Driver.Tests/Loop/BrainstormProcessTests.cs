@@ -185,7 +185,7 @@ public sealed class BrainstormProcessTests : IDisposable
                 else work();
                 send({ jsonrpc: '2.0', method: 'session/update', params: { sessionId: frame.params.sessionId,
                   update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'answered through its tool' } } } });
-                send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } });
+                send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn', _meta: { quota: { model_usage: [{ model: 'brainstorm-reported' }] } } } });
               } else if (frame.id !== undefined && frame.method) {
                 send({ jsonrpc: '2.0', id: frame.id, result: {} });
               }
@@ -272,6 +272,11 @@ public sealed class BrainstormProcessTests : IDisposable
         Assert.StartsWith("{\n  \"brainstorm\": 1,", File.ReadAllText(files.AnswerPath(id, "g2")), StringComparison.Ordinal);
         var pass = JsonNode.Parse(File.ReadAllText(files.PathOf(id, "passes", "g2.json")))!;
         Assert.Equal(("answered", 1), (pass["state"]!.GetValue<string>(), pass["turns"]!.GetValue<int>()));
+        Assert.Equal("brainstorm", pass["actor"]!.GetValue<string>());
+        Assert.Equal("before", pass["choice"]!.GetValue<string>());
+        Assert.Equal("acp-stub", pass["asked"]!["agent"]!.GetValue<string>());
+        Assert.Equal("brainstorm-reported", pass["ran"]!["models"]![0]!.GetValue<string>());
+        Assert.Contains("brainstorm-reported", files.DocumentText(id)!, StringComparison.Ordinal);
 
         // The rooms went, and the asker's checkout is as it was: no commit, no branch, no change.
         Assert.False(Directory.Exists(files.Rooms(id)));

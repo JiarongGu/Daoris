@@ -635,7 +635,7 @@ internal sealed class StandInLedger : HttpMessageHandler
     /// </summary>
     internal static void Continues(JsonObject session, JsonObject open)
     {
-        foreach (var name in new[] { "from", "fromWhy", "fromBy" })
+        foreach (var name in new[] { "from", "fromWhy", "fromBy", "actor" })
         {
             if (open[name]?.GetValue<string>() is { } value) session[name] = value;
         }
@@ -889,6 +889,14 @@ internal sealed class StandInLedger : HttpMessageHandler
                     return Answer(HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "taken" });
                 }
 
+                case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/actor", StringComparison.Ordinal):
+                {
+                    var id = path["/api/sessions/".Length..^"/actor".Length];
+                    var session = _sessions.Single(s => s["id"]!.GetValue<string>() == id);
+                    foreach (var key in new[] { "choice", "asked", "override", "ran" })
+                        if (body![key] is { } value) session[key] = value.DeepClone();
+                    return Answer(HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "kept" });
+                }
                 // The resolved door (KEEP1b): the downloaded versions a start was handed, added to the record's, as the ledger keeps them.
                 case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/resolved", StringComparison.Ordinal):
                 {

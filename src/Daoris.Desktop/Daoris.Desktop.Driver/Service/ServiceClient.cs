@@ -71,6 +71,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
 
     /// <summary>A session record this client moved, raised once the ledger said yes (LOG1b).</summary>
     public event Action<SessionMoved>? Moved;
+    /// <summary>D205: local provenance changed without a state move or sync revision.</summary>
+    public event Action<string>? ActorKept;
 
     /// <summary>
     /// A repository's registration followed from its line (WSSETUP5, D124 §3.4), whatever it came to: every follow on this
@@ -628,6 +630,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         {
             writer.WriteStartObject();
             writer.WriteString("quest", questId);
+            writer.WriteString("actor", "build");
             writer.WriteString("adapter", adapter);
             // Observed by this side before the spawn (D49 §4) — the service has no binaries to look
             // at. Omitted when unknown rather than sent blank, as every optional field here is.
@@ -680,6 +683,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         {
             writer.WriteStartObject();
             writer.WriteString("repository", repository);
+            writer.WriteString("actor", "chat");
             writer.WriteString("adapter", adapter);
             if (harnessVersion is not null) writer.WriteString("harnessVersion", harnessVersion);
             if (profile is not null) writer.WriteString("profile", profile);
@@ -757,6 +761,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         {
             writer.WriteStartObject();
             writer.WriteString("ask", ask);
+            writer.WriteString("actor", "intake");
             writer.WriteString("adapter", adapter);
             writer.WriteString("room", room);
             if (harnessVersion is not null) writer.WriteString("harnessVersion", harnessVersion);
@@ -787,6 +792,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         {
             writer.WriteStartObject();
             writer.WriteString("adapter", adapter);
+            writer.WriteString("actor", "ask-daoris");
             writer.WriteString("room", room);
             if (harnessVersion is not null) writer.WriteString("harnessVersion", harnessVersion);
             if (profile is not null) writer.WriteString("profile", profile);
@@ -2182,6 +2188,46 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     }
 
     /// <summary>
+    /// D205 §9.3: a record's provenance after its open, through the loopback-only later door, with no revision. A record this
+    /// machine no longer has is no failure; any other refusal throws.
+    /// </summary>
+    public async Task KeepActorAsync(string id, string? choice = null, ActorAsked? asked = null, ActorRan? ran = null,
+        object? changed = null, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            if (choice is not null) writer.WriteString("choice", choice);
+            if (asked is not null) { writer.WritePropertyName("asked"); JsonSerializer.Serialize(writer, asked, ActorRun.Json); }
+            if (ran is not null) { writer.WritePropertyName("ran"); JsonSerializer.Serialize(writer, ran, ActorRun.Json); }
+            if (changed is not null) { writer.WritePropertyName("override"); JsonSerializer.Serialize(writer, changed, ActorRun.Json); }
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, _) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(id)}/actor", body, ct).ConfigureAwait(false);
+        if (ok) Raise(ActorKept, id);
+        else if (status != 404) throw new DriverException($"the service refused actor provenance: {payload}");
+    }
+
+    /// <summary>
+    /// <see cref="KeepActorAsync"/> where a start or a composer change keeps it: reporting never changes what runs (D205 row b),
+    /// so a refusal or an unreachable service is logged and the run goes on. A cancellation still cancels.
+    /// </summary>
+    public async Task<bool> TryKeepActorAsync(string id, MachineLog? log, string? choice = null, ActorAsked? asked = null,
+        object? changed = null, CancellationToken ct = default)
+    {
+        try
+        {
+            await KeepActorAsync(id, choice, asked, changed: changed, ct: ct).ConfigureAwait(false);
+            return true;
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            log?.Write("warn", "actor.keep-failed", [("session", id)]);
+            return false;
+        }
+    }
+
+    /// <summary>
     /// One record as a run that goes on reads it (MSG1c): its state, its words waiting, the adapter, account, tree and
     /// version it ran on, its note and its flags, and its kind. Null when no record of this machine has that id.
     /// </summary>
@@ -2257,6 +2303,11 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         {
             // Which account it ran on and whether a limit cut it off (TOOL4f): what a carry-on is compared with and told.
             Profile = Text(session, "profile"),
+            Actor = Text(session, "actor"),
+            Choice = Text(session, "choice"),
+            Asked = ActorRead<ActorAsked>(session, "asked"),
+            Override = ActorRead<JsonElement?>(session, "override"),
+            Ran = ActorRead<ActorRan>(session, "ran"),
             Limit = Limit(session),
             // What an answered park is compared with, and where its evidence counts from (ANSWER1a, D131).
             Adapter = Text(session, "adapter"),
@@ -2292,6 +2343,13 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             // prompts (AUTONOMY1b) and its go-aheads (AUTONOMY1c).
             Access = AccessOf(session),
         };
+
+    internal static T? ActorRead<T>(JsonElement session, string name)
+    {
+        if (!session.TryGetProperty(name, out var value) || value.ValueKind != JsonValueKind.Object) return default;
+        try { return JsonSerializer.Deserialize<T>(value.GetRawText(), ActorRun.Json); }
+        catch (JsonException) { return default; }
+    }
 
     /// <summary>
     /// A record's access setup as the service answers it on loopback (AUTONOMY1a): each pause that is a word, read as a stored shape;
