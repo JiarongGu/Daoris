@@ -1,4 +1,4 @@
-# SUPERVISOR1 and QUESTIONUI1: the reads of rounds 1 to 3 (D191)
+# SUPERVISOR1 and QUESTIONUI1: the reads of rounds 1 to 4 (D191)
 
 Codex's read and the independent Opus 5.5 reader's foundation read of `docs/2026-10-24-supervisor-design.md` and D208 at
 `fa3124699`, each verbatim but for its headings set one level down. The steward ran both from outside the install, read-only, on
@@ -10,7 +10,10 @@ foundation reader finds the foundation holds and would accept after three named 
 another round (15 findings, 10 blocking) and finds QUESTIONUI1a buildable once its findings 14 and 15 are settled. Round 3
 answers both. Round 3 was read at `91d236a85`: Codex asks another round (12 findings, 7 blocking); the Opus foundation reader's
 check would accept after named changes (8 findings, 3 blocking, each where a safeguard rests on a file or an environment an
-agent's ordinary reach already touches). Round 4 answers both.
+agent's ordinary reach already touches). Round 4 answers both. Round 4 was read at `739856c8b` by the Opus foundation reader
+alone, Codex's workspace being out of credits: accept after named changes (7 findings, 3 blocking, each on how the key reaches
+its holder: the clipboard, the holder's own harness, the pipe server's check). Round 5 makes those changes for the steward to
+check, and Codex's read of the final text is owed when its credits return.
 
 ## Codex
 
@@ -1184,3 +1187,305 @@ change is a stated rule with a named test:
 
 If the steward instead keeps the hash across restarts, that is a widening the owner should see, said in §2.2 and in the ask. F4 to F8
 should be taken before 1a-i and 1a-ii start, and none of them changes the foundation.
+
+## Opus (foundation), round 4
+
+The independent Opus 5.5 reader's read of round 4, at `739856c8b`, read whole since Codex's workspace was out of credits that day: 7 findings, 3 blocking; accept after named changes. Codex read rounds 1 to 3.
+
+### The foundation read of D208 (SUPERVISOR1, QUESTIONUI1), round 4
+
+Read at `739856c8b` (round 4, documents only; branch base `cdf6d5f55`). Main has moved since: QUESTIONUI1a is merged (`55186ed69`),
+and so is MAKERTRAIL2 (`03ccbdb31`). Paths are relative to the design's tree. **S** is `docs/2026-10-24-supervisor-design.md`, with
+round 4's line numbers. I changed nothing and ran nothing. Codex did not read this round, so this read covers the whole design, not
+only my own earlier findings.
+
+The foundation questions, in short:
+
+- **Does only the appointed holder answer as the supervisor?** Inside Daoris, yes. Round 4 holds:
+  - the key is stripped at every Daoris entry and in both `Hand`s;
+  - the key's hash lives in memory only;
+  - an appointment found at a start is dormant;
+  - the live decision is kept in memory.
+
+  Three new paths still put the key within an agent's ordinary reach, and each lies on the way the key travels to its holder:
+  - The key is handed over through the clipboard (F1).
+  - The dedicated holder's own harness starts this repository's programs (F2).
+  - The pipe-server check names the launcher, which serves no pipe. It also checks only an image path, and an agent can start a
+    process from that path with its own code loaded (F3).
+- **Does its answer stay out of what is the owner's, and never show as the owner's words?** Yes:
+  - The handed text grants nothing.
+  - The owner's words supersede through one ledger operation at every door. I checked the four `KeepSaidAsync` sites in the ledger.
+    The only other callers are the helper, partner and opinion desks.
+  - The sentences follow who answered.
+
+  One residue remains: §6.1 assigns `Authored` to readers that cannot read the driver's memory (F5).
+- **Is the overrule real?** Yes:
+  - the hold reads `goesOnAt` from memory;
+  - the press, the release, the admission and the revoke's sweep each take the decision's lock;
+  - the overrule stays offered until admission.
+- **Is the lifecycle one contract?** Yes, in its states and moves (§3.6). Its edges leave a few residues (F4):
+  - the keeping races a revoke;
+  - `went-on` is set at the spawn, and a word can be stranded after it;
+  - the question's file is cleared before the spawn;
+  - a record left working cannot have a word taken back.
+
+#### 1. Round 3's findings
+
+**The Opus foundation read, round 3**
+
+| # | Verdict | Where (S) | Why |
+|---|---|---|---|
+| F1 | taken as named; holds | §3.4 l.423-456, §3.6 l.523, §11 l.1058-1060, l.1072-1075 | Every live decision is held whole in memory, and every check reads memory. The files are never read back in the run, and a file that differs is `stale` (`tampered`). The three attacks are proof cases. One residue: the comparison must take the decision's lock (F4b). |
+| F2 | (a) taken as named; holds. (b) taken as named; does not hold | (a) §2.2 l.237-245, §2.3 l.304-305, l.332-338, §11 l.1113-1114. (b) §2.2 l.268-275 | (a) The hash is in memory only and never written, and a found appointment is dormant until *Appoint again*. Keeping it across restarts is said as a widening only the owner may choose. (b) `Daoris.exe` is the launcher, which exits; the pipe is the application's. A path check also passes the install's application started by an agent with its own code loaded (F3). |
+| F3 | taken as named; holds for Daoris's starts, not for the holder's | §2.2 l.247-266, §4.6 l.641-645, §11 l.1118-1120 | The key is removed at each entry and by both `Hand`s, and the dedicated session and the sentinel proofs are in place. But a harness started in a repository runs that repository's MCP server and hooks itself, as children holding the key (F2). And the key passes through the clipboard (F1). |
+| F4 | taken; holds | §2.3 l.317-321, §3.4 l.477-481, §5 l.691-699, §6.3 l.845-847 | The lock order is the decision's lock, then the judge's lock briefly through `IDecisionAdmission`, then the ledger's step. The revoke ends its mutation before it sweeps, and admission rechecks the generation. One residue: keeping a decision does not recheck the generation (F4a). |
+| F5 | taken; holds | §3.6 l.516-518, §6.3 l.853-873 | `admitted` carries a ticket, `went-on` comes at the start, and `not-handed` is a legal move. Two residues: on the protocol wire `spawned` comes before the prompt, and a run that fails after `went-on` strands the word (F4c). |
+| F6 | taken; holds | §6.1 l.713-728 | `Authored`, `Handable` and `Unattributed` are apart, and the recovery runs before the quarantine. One residue: service-side readers cannot read `Authored` (F5). |
+| F7 | taken; holds | §6.1 l.741-742, §6.3 l.838-851 | A move that carries a supervisor word sends `expected: awaiting-person`. A released decision on a record that is no longer parked becomes `stale`. *You wrote* and *Answered* are in the sweep's terms. |
+| F8 | taken; holds | §11 l.1109-1110, l.1133-1135; TASKS; §0.2 l.107 | All four changes are made. D208's Why is rewritten, but it now overclaims through F1-F3 (F7e). |
+
+**Codex's read, round 3 (the seven blocking findings)**
+
+| # | Verdict | Where (S) | Why |
+|---|---|---|---|
+| 1 Authoritative live decision | taken as named; holds | as Opus F1 | Memory is the authority, and the files are history only. |
+| 2 Release ownership | taken; holds | §3.4 l.464-491; §11 l.1075-1076 | The receipt lives only in memory and in the say's body. A lost response is recovered as `Again` under the same receipt. Another key claiming the decision gets `decision-taken`, and attribution goes by the recorded word id. A canonical word prepopulated by someone else and a lost response are proved apart. |
+| 3 Execution lifecycle | taken; holds | §3.6 l.512-521, §6.3 l.842-878 | `admitted` carries a single-use ticket through to the prompt. Each failure before the wire is `not-handed`, and a restart makes the decision `interrupted`. Two residues remain: F4c and F4d. |
+| 4 Queue-preserving recovery | taken as named; holds | §6.3 l.864-872; §11 l.1084-1085 | `RestoreParkAsync` keeps `said` less the one word, refused while a process runs, and a mixed queue with an owner's later word is a proof case. Two residues: the restored park has lost its question's file (F4d), and a record left working cannot be cleared by the take-back door (F4e). |
+| 5 Revocation ordering | taken; holds | as Opus F4 | One residue: the keeping step (F4a). |
+| 6 Every owner door | taken, wider; holds | §6.3 l.818-830 | `KeepOwnersWordAsync` covers `SayAsync` (`SessionLedger.cs:880`), `AnswerAsync` through `KeepAnswerAsync` (`:752`, `:778`), the reword (`:1046`) and the go-aheads' carry-on (`:1933`). I checked these, and they are every ledger site. One residue: the sweep test's scope (F7g). |
+| 7 Mixed-author attribution | taken; holds | §6.1 l.750-761 | The sentence is chosen by whether the owner took part, and the authors are named in a fixed order. Both readers are proved with each mixture, and today's helper-only and Daoris-only wording is corrected too. |
+
+#### 2. What round 4 introduced
+
+**Claims that are wrong**
+
+- **S l.273, l.282; D208 point 2.** These say the pipe's server must be "the install's own `Daoris.exe`, the launcher beside the
+  verb's own install". That launcher does not serve the pipe:
+  - `Daoris.exe` is `Daoris.Desktop.Launcher`. It starts `app/Daoris.Desktop.exe` and exits (`Launcher/Program.cs:8-12`, `:61`,
+    `:133-135`).
+  - The pipe is served by the application (`Daoris.Desktop.App/Program.cs:298`), whose executable is `app/Daoris.Desktop.exe`
+    (`Daoris.Desktop.App.csproj:13-17`).
+  - `RunningService.cs:42` is the command a person runs to start Daoris, not the image of the pipe's server.
+
+  Built as written, the verb never sends the key. 1a-ii's proof, which asserts only refusals, would still pass (F3).
+- **S l.254.** The list that `GitWiring.Hand` applies to every child is `Removed` (`GitWiring.cs:37-38`). `SessionTokens` (`:44`) is
+  applied only by `Untoken`, to a session's start (`:96-101`) (F7a).
+- **S l.856-858.** These equate "the run's start accepted the prompt" with `spawned`. On the protocol wire the prompt is sent after
+  the spawn (`DriverContinuations.cs:342-346`; `spawned` is set at `:405`) (F4c).
+- **S l.870-872 and §3.4 l.457-460.** These say a word "taken back by the first look that finds it on a record that does not run". The
+  take-back door refuses any word on a `working` record by its state, whether or not a process runs (`SessionLedger.cs:1017-1023`)
+  (F4e).
+- **S l.715-717.** This says `line_read` and the counts read `Authored`. `line_read`'s projection is the service's
+  (`Service.Core/Sessions/LineEvents.cs`), and §4.3's count reads events by `From` (F5).
+- **S l.38-39, l.916-919, l.1141; TASKS.** These say QUESTIONUI1a "is being built". It is on main, with three departures from §8 that
+  D208's built note on main names (F6).
+
+**New holes.** The three blocking findings share one cause: round 4 closed the paths by which Daoris itself hands the key on, but the
+key still travels to its holder through places within an agent's ordinary reach.
+
+- the clipboard and the shell's history, when the owner hands the key over (F1);
+- the holder harness's own project configuration (F2);
+- a pipe served from the install's own image by an agent's code (F3).
+
+**Rows**
+
+- **1a-i** can be built in its order. Its revoke races can only run against the injected `IDecisionAdmission`. The real judge's lock
+  arrives in 1a-ii, whose proof should race the real revoke against a release and an admission (F7h).
+- **1a-ii's** server check has only negative proofs, so a check that never sends the key passes. Add the positive case: the install's
+  application receives the form, or the proof, on a candidate build (F3).
+- **1a-iii's** look should start the holder's session as F1 and F2 settle it, and record how the key reached that session.
+- **QUESTIONUI1b, 1b, 1d, 1c, 1e and 1f** can be built in their order. QUESTIONUI1a is built (F6).
+
+**D208 against the design.** The rows, the order, the states and the amendments match §3.6, §10 and §11. Four gaps:
+
+- Point 2 repeats `Daoris.exe` (F3).
+- The Why holds only after F1-F3: "the key goes only to the install's own pipe", "Daoris strips the key from every environment it
+  gives" and "the session that holds it runs nothing but the role".
+- The Amends are silent on D201's rejection of "a grant held in memory only" (`D201.md:70`), which round 4 adopts for the role (F7b).
+- §12's weighed HMAC alternative is not in D208's Rejected list. That is acceptable, but F3 may bring it back.
+
+**What holds and is better than round 3**
+
+- the decision held whole in memory;
+- the receipt;
+- the ticket;
+- `RestoreParkAsync`;
+- the revoke's two steps;
+- `KeepOwnersWordAsync` at every door;
+- the sentences chosen by whether the owner took part;
+- the dormant appointment;
+- the key stripped at each entry;
+- the dedicated holder;
+- the oracle's author recorded;
+- one lifecycle table that states every move.
+
+#### 3. Findings
+
+1. **Blocking. The key reaches its holder through the clipboard and the shell's history, which are within an agent's ordinary
+   reach.**
+   - **Where.** S §2.2 l.234-238 (*Copy*), §5 l.688-689; and §4.6 l.637-640, which says an escaped agent "is refused `not-holder`".
+   - **The problem.**
+     - The agents' jobs set no UI limit. The only limit `ProcessJob.cs:285-291` sets is kill-on-close, so a contained agent reads the
+       clipboard with `Get-Clipboard`. An escaped agent does the same.
+     - The clipboard keeps the key until the owner's next copy, and Windows clipboard history and cloud sync keep it longer where they
+       are on.
+     - The line a person types to set the variable (`$env:DAORIS_SUPERVISOR_KEY = '…'`) lands in the shell's history file:
+       PSReadLine's `ConsoleHost_history.txt`, or Git Bash's `.bash_history`, unless the shell's own filter drops it.
+     - Round 4 makes this happen at every restart and every update.
+
+     An agent that polls the clipboard and then leaves its job by one command answers as the supervisor. That is the path the key was
+     drawn to close.
+   - **Smallest change.** Either of these:
+     - **(a)** *Appoint* (and *Appoint again*) starts the holder's terminal itself, with the key in that terminal's environment, never
+       shown and never copied. That start is a console of the owner's shell, outside every agent job, and the one start that does not
+       strip the key. It is not routed through a terminal server that keeps its own environment.
+     - **(b)** Keep the display. Then:
+       - *Copy* is the modules' clipboard write, with the formats that keep the key out of clipboard history and cloud sync, and it
+         is cleared at *Done* or after 60 s if unchanged;
+       - the ask gives a line that sets the variable without the key in the shell's history
+         (`$env:DAORIS_SUPERVISOR_KEY = Get-Clipboard; Set-Clipboard -Value $null`);
+       - §2.2, §4.6 and the ask say that until the key is pasted, every process of the account can read it, a contained agent
+         included.
+
+     Proof: 1a-ii's page test (no page clipboard write, or the clear), and 1a-iii's look records how the key reached the session.
+
+2. **Blocking. The dedicated holder's harness starts the repository's own programs with the key in their environment.**
+   - **Where.** S §2.2 l.260-266 ("runs no branch's code"), §4.6 l.643-644, §4.6's ask l.667-671.
+   - **The problem.** "Does only the role" is a rule about what the holder runs. But a harness started in a repository checkout
+     starts that repository's project configuration itself:
+     - this repository's `.mcp.json` starts `node tools/knowledge-server.mjs`, which is repository code that a merged branch changes
+       and not a Daoris entry that strips the key;
+     - `.claude/settings.json` names plugins, and it can name hooks;
+     - the user-level hooks, MCP servers and plugins the owner's harness loads start the same way.
+
+     Each of these is the holder's child, holds the key, is outside every agent job, and can call the pipe with the key. A hook or a
+     server changed in a session's branch reaches it once the steward merges, which is the round-3 F3 path that round 4 says is closed.
+     Separately, the holder reads the session's log and tree raw, unfenced (S l.401-402). A holder that is talked into printing its
+     environment puts the key in its own transcript, which is a file within ordinary reach.
+   - **Smallest change.**
+     - The dedicated session starts in a folder of its own, outside every repository.
+     - Its harness loads no project settings, hooks, MCP servers, plugins or instruction files, and no user-level ones beyond what the
+       role needs.
+     - Its permissions allow only read tools and `daoris-driver sessions supervise`.
+     - It reads repositories by path.
+     - §2.2, §4.6, the ask and the co-working rule say so, the rule adding *never print the environment*.
+     - 1a-iii's look starts the session this way.
+
+3. **Blocking. The pipe-server check names the launcher, and an image-path check passes the install's own application running an
+   agent's code.**
+   - **Where.** S §2.2 l.268-275, l.277-283; §4.6 l.646-648; §11 l.1121-1122; D208 point 2.
+   - **The problem.**
+     - **(a)** The image named is the launcher, which serves no pipe (§2 above).
+     - **(b)** Even with the right image (`app/Daoris.Desktop.exe`), the check binds a path, not the owner's instance. An agent that
+       has left its job can:
+       - start the install's own application with its own home, and with its own code loaded through the runtime's startup-hook
+         variable (`DOTNET_STARTUP_HOOKS`; nothing in the build turns hooks off) or the CLR profiler variables;
+       - name that process and its own pipe in the address file, which carries the pipe's name (`InstanceDoor.cs:121-129`);
+       - answer the hello with the home's id, which it reads from the home.
+
+       The verb then sends the key. This is the same work as the round-3 F2b attack, which also needed a program of the agent's own.
+       And the install's folder holds the home (`data/`, `Launcher/Program.cs:75`, `:174-185`), so the account can write the
+       application's own file.
+   - **Smallest change.** Either of these:
+     - **Preferred.** Take §12's weighed alternative, so the key never crosses the pipe:
+       - the hello carries a fresh nonce;
+       - `SUPERVISOR_ANSWER` and `SUPERVISOR_DEFER` carry `proof`: HMAC-SHA256, keyed by the key (or by the hash memory holds), over
+         the nonce and the form's canonical bytes;
+       - the judge verifies it against memory, and each nonce is used once.
+
+       Keep the image check as a first refusal, naming `app/Daoris.Desktop.exe` under the verb's install root. Proof:
+       - a relaying fake server obtains only a proof bound to its own nonce, which the instance refuses;
+       - the installed application accepts a true proof.
+     - **If the key keeps crossing.** Correct the image, and make §2.2's "What it closes", §4.6 and the ask say that a process
+       started from the install's application with its own code loaded receives the key.
+
+4. **Not blocking. The lifecycle's edges.**
+   - **(a) Keeping a decision versus a revoke.** The caller look and the key are judged under the judge's lock. The decision is kept
+     after that lock is let go, so a revoke's mutation and sweep can fall between the two. That leaves a `held` decision under a dead
+     generation, with its notice raised. Recheck the generation through `IDecisionAdmission` under the decision's lock at keeping
+     (§3.6's `held` row).
+   - **(b) The comparison's lock.** The look's comparison of files with memory (§3.4 l.431-433) must take each decision's lock.
+     Otherwise a state line being appended reads as `tampered`.
+   - **(c) `went-on` and a stranded word.** `went-on` is set at `spawned` (`DriverContinuations.cs:405`), which on the protocol wire
+     comes before the prompt (`:342-346`). A run that fails after it moves the record to `failed` with its words (`:463-470`; `clearSaid`
+     only for a park, `SessionLedger.cs:1469`). The `went-on` word then waits, authored but not handable:
+     - it makes `WordsWaiting` (`Planner.cs:355`);
+     - `expect` excludes it, so every look's move is refused `words-changed`;
+     - nothing takes it back before a restart.
+
+     Change: the look takes back a supervisor word whose decision is final and that waits on a record that does not run. Also say what
+     `went-on` marks on each wire.
+   - **(d) The question's file.** `not-handed` after `onOpened` restores a park without its question. `QuestionFiles.Clear` runs before
+     the spawn (`DriverContinuations.cs:380-384`), so a spawn failure leaves the owner a card with no choices to press. Either rewrite
+     the file from the decision's snapshot at the restore, or move the clear after `spawned`.
+   - **(e) A record left working.** A record left `working` (a failed restore, or a restart during `admitted`) has its word taken back
+     only after the orphan sweep ends it. Say so, and say that the start's sweep runs before the first look's carry-ons (LIMITRESUME1i's
+     restart words).
+   - **(f) An absent `expect`.** An absent `expect` reads as empty, so a mover that names none never carries a supervisor word.
+
+5. **Not blocking. `Authored` is assigned to readers that cannot read it.**
+   - **Where.** S §6.1 l.715-717.
+   - **The problem.** `line_read`'s projection is the service's, which holds no driver memory. §4.3's count reads the line's events by
+     `From = supervisor` and must cross a restart, which empties memory.
+   - **Change.** The driver's readers of the live record use `Authored`. Readers of the event log (`line_read`, the count, the
+     history) read the event's `From` and `decision`, with the event log's own trust: it is a home file (D156 point 7), and that read
+     is conservative for the count.
+
+6. **Not blocking. QUESTIONUI1a is on main and departs from §8.**
+   - **Where.** S l.38-39, §0.5, §8, §11 l.1048-1049, l.1141; TASKS.
+   - **The problem.** Main merged QUESTIONUI1a (`55186ed69`). D208's built note there names three departures from §8:
+     - a row's name includes what it does, where §8.2 gives the label and *recommended*;
+     - a refusal is said in the box's own line, where §8.2 gives the card's status line;
+     - the head's card keeps its own selection (`AwaitingPerson.tsx:105-107` on main), where §8.4 shares the frame's. `f17e2301d`,
+       which shares it, is on `s-baec4b33` and is not merged.
+
+     §0.5 still draws the card as it was before the build. Main's D208 also carries a stale second *What the checks do not cover*
+     (line 123), which says "nothing is built". The cited lines in `Adapters.cs` (+43 lines), `QuestionBox.cs`, `QuestionFiles.cs` and
+     `SessionsRoutes.cs` have moved on main. Merging round 4 will conflict on D208 and TASKS.
+   - **Change.** At the merge:
+     - §0.5, §8 and §11 read QUESTIONUI1a as built;
+     - §8 adopts each departure or files it, with the head's shared selection as a row if §8.4 stands;
+     - D208 keeps the built note and drops the stale paragraph;
+     - TASKS keeps main's line.
+
+7. **Not blocking. Smaller corrections.**
+   - **(a)** Name `GitWiring.Removed` (`:37-38`) as the list `Hand` applies, not `SessionTokens` (S l.254).
+   - **(b)** §10 and D208's Amends should say that D201's rejection of a memory-only grant (`D201.md:70`) stands for its presses, and
+     why an appointment admits by a secret and so differs.
+   - **(c)** *Appoint again* after a start opens the same ask, naming the scope found. An ordinary write can make a found-at-start
+     record, and a workspace's record in 1e would widen the scope, so a habituated single press must not activate it (S §2.3 l.336,
+     §5 l.690).
+   - **(d)** A restart costs more than one press: the new key must reach the dedicated session, which for an agent harness means
+     starting it again. Say this in the ask and in §2.3.
+   - **(e)** D208's Why follows F1-F3.
+   - **(f)** The verb's print fences the branch's commits too, since their messages are the asking agent's (§4.4 lists the fenced
+     parts without them).
+   - **(g)** The `KeepSaidAsync` sweep test searches all of `Service.Core`, not only the ledger, with the three desks exempt as
+     non-owner (`PartnerDesk.cs:147`, `HelperDesk.cs:189`, `OpinionDesk.cs:252`).
+   - **(h)** 1a-ii's proof races the real revoke against a release and an admission. 1a-i can only stub them.
+
+**7 findings; 3 blocking.**
+
+**Verdict: accept after named changes the steward can check without another read.** Round 4 makes Codex's seven contracts one
+consistent lifecycle:
+
+- a decision in memory;
+- a release that owns its word by a receipt;
+- admission by a ticket;
+- a restore that keeps the queue;
+- a revoke that sweeps after its step;
+- one ledger operation for the owner's words;
+- sentences chosen by whether the owner took part.
+
+It also takes both of my round-3 blocking findings about Daoris's own reach: the decision read back from files, and the key inherited
+from Daoris. Its answer stays inside the offered labels and grants nothing, it never reads as the owner's, and the overrule is real.
+What remains blocking is the handover of the key, not the lifecycle:
+
+- the clipboard and the shell's history (F1);
+- the holder harness's project configuration (F2);
+- the pipe check's image and its path-only test (F3).
+
+Each has a local change: the window starting the holder's terminal, or a stated limit with the clipboard cleared; a holder started
+outside every repository with no project configuration; the HMAC proof, or a stated limit. None of these changes touches the states or
+the rows' order. F4-F7 are edge cases and records the build's review can hold the design to.
