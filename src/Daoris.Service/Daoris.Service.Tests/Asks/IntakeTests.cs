@@ -114,6 +114,36 @@ public sealed class IntakeTests : IAsyncLifetime
         Assert.Null(again.Session);
     }
 
+    /// <summary>
+    /// LIMITRESUME1h (D206, design §3.8): an intake an account's limit ended leaves its ask unbound in the same step as its end, so the
+    /// next intake may serve it; its record stays, still naming the ask. The binding is cleared only where it names that session, and
+    /// only on a move to failed.
+    /// </summary>
+    [Fact]
+    public async Task An_intake_a_limit_ended_unbinds_its_ask_for_the_next_intake_and_keeps_its_record()
+    {
+        var ask = await Proposed();
+        var limited = (await _ledger.OpenIntakeAsync(ask.Id, "stub", Room(), Now)).Session!;
+        await _ledger.AdvanceAsync(limited.Id, "working", null, null, null, Now);
+
+        var stopped = await _ledger.AdvanceAsync(limited.Id, "stopped", null, null, null, Now, unbindAsk: true);
+        var ended = await _ledger.AdvanceAsync(limited.Id, "failed", "the account's limit", null, null, Now, limit: true, unbindAsk: true);
+
+        Assert.Equal(SessionAdvanceRefusal.InvalidMove, stopped.Refusal);
+        Assert.Equal(SessionAdvanceRefusal.None, ended.Refusal);
+        Assert.Null((await _asks.FindAsync(ask.Id))!.Intake);
+        Assert.Equal(ask.Id, (await _sessions.FindAsync(limited.Id))!.Ask);
+        var next = (await _ledger.OpenIntakeAsync(ask.Id, "stub", Room(), Now)).Session!;
+        Assert.Equal(next.Id, (await _asks.FindAsync(ask.Id))!.Intake);
+
+        // A later end of the first record names a binding that is no longer its own, and leaves it.
+        var other = await Proposed("another ask in this circle");
+        var first = (await _ledger.OpenIntakeAsync(other.Id, "stub", Room("other"), Now)).Session!;
+        await _asks.RecordIntakeAsync(other.Id, "someone-else", Now);
+        await _ledger.AdvanceAsync(first.Id, "failed", "the account's limit", null, null, Now, limit: true, unbindAsk: true);
+        Assert.Equal("someone-else", (await _asks.FindAsync(other.Id))!.Intake);
+    }
+
     /// <summary>The room is a circle's shared working directory, so it holds one intake at a time — whichever ask it serves.</summary>
     [Fact]
     public async Task One_intake_at_a_time_holds_a_circles_room()

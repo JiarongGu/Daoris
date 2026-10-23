@@ -520,6 +520,20 @@ public sealed class AskStore
     }, ct);
 
     /// <summary>
+    /// Clear the intake serving the ask, only where it is still <paramref name="session"/> (LIMITRESUME1h, D206; D205 §3.5(f)'s door): that
+    /// column alone, compared and cleared in one statement, so a binding a later intake made is never cleared by an earlier one's end.
+    /// </summary>
+    public Task UnbindIntakeAsync(string id, string session, DateTimeOffset now, CancellationToken ct = default) => _db.RunAsync(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = "UPDATE asks SET intake = NULL, updated = $updated WHERE id = $id AND intake = $intake";
+        command.Parameters.AddWithValue("$id", id.TrimStart('#'));
+        command.Parameters.AddWithValue("$intake", session);
+        command.Parameters.AddWithValue("$updated", Moments.Write(now));
+        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }, ct);
+
+    /// <summary>
     /// Keep a word the person gave on the ask (DRIFT1a): appended where the list is kept, in one statement,
     /// for the reason a published quest is (REV3) — the answer door and a driver's report arrive from two
     /// processes, and a whole-record save would drop the other's word.

@@ -272,8 +272,11 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
                     // An account's limit cools the account the intake ran as (TOOL4d), as a driven session's does.
                     (conclusion, var limited) = _driver.AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
 
+                    // LIMITRESUME1h (D206 design §3.8): a limit's end lets the ask go in the same step, so the look picks it again and its
+                    // start is held by the cool-off as any start's is, never a strike; its record stays, naming the ask.
                     await service.AdvanceAsync(
-                        sessionId, conclusion.State, note: conclusion.Note, ct: ct, limit: limited, parts: conclusion.Parts).ConfigureAwait(false);
+                        sessionId, conclusion.State, note: conclusion.Note, ct: ct, limit: limited, parts: conclusion.Parts,
+                        unbindAsk: limited).ConfigureAwait(false);
 
                     return new StartRun(
                         $"{conclusion.State}  intake {sessionId} ({named}): {conclusion.Note}",
@@ -282,7 +285,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
                             ? null
                             : new SessionEnded(
                                 sessionId, $"ask #{ask.Id}", conclusion.State, byPerson, conclusion.Note,
-                                Adapter: adapter.Name, Account: selection.Profile));
+                                Adapter: adapter.Name, Account: selection.Profile) { Limit = limited });
                 }).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
