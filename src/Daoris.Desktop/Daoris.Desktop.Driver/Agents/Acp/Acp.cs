@@ -561,6 +561,59 @@ public sealed class AcpSession(
     public IReadOnlyList<AcpConfigOption>? LastAcknowledgedOptions { get; private set; }
 
     /// <summary>
+    /// What this start's actor asked (D205 §3.2, MODELROLE1c): each value an entry names and carries is set on the open session by its
+    /// category, <c>model</c> and then <c>thought_level</c>, before the posture and the first prompt, on a new session and a resumed one
+    /// alike. Null, or account default, sets nothing: today's cascade decides.
+    /// </summary>
+    public ActorAsked? Carry { get; init; }
+
+    /// <summary>
+    /// Told what was carried where it differs from <see cref="Carry"/>: a value the agent offers no option for, refuses, or answers with
+    /// another value it offers, kept as asked and not carried (D205 §3.3, §5), so the record never says a choice was taken that was not.
+    /// </summary>
+    public Action<ActorAsked>? Carried { get; init; }
+
+    /// <summary>
+    /// <see cref="Carry"/> set on the session (D205 §3.2): the model first, then the effort, whose levels follow the model, each found by
+    /// its category (MODELROLE1a: Codex's effort id is <c>reasoning_effort</c>, Claude's <c>effort</c>). Whether anything was set, so the
+    /// posture is set again after it: a model change can move the mode (MODELROLE1a's <c>haiku</c> moved <c>auto</c> to
+    /// <c>acceptEdits</c>).
+    /// </summary>
+    private async Task<bool> CarryAsync(CancellationToken ct)
+    {
+        if (Carry is not { } asked) return false;
+        var set = false;
+        var model = await OneAsync("model", asked.Model).ConfigureAwait(false);
+        var effort = await OneAsync("thought_level", asked.Effort).ConfigureAwait(false);
+        if (model != asked.Model || effort != asked.Effort) Carried?.Invoke(asked with { Model = model, Effort = effort });
+        return set;
+
+        async Task<ActorValue> OneAsync(string category, ActorValue value)
+        {
+            if (value is not { Source: "entry", Value: { } wanted, Carried: true }) return value;
+            if (ConfigOptions.FirstOrDefault(option => option.Category == category) is not { } option) return value with { Carried = false };
+            if (option.Current == wanted) return value;
+            try
+            {
+                await SetConfigOptionAsync(option.Id, wanted, ct).ConfigureAwait(false);
+                set = true;
+            }
+            catch (DriverException refused)
+            {
+                onLine($"[{category} `{wanted}` was not set: {refused.Message}]");
+                return value with { Carried = false };
+            }
+
+            // A returned value other than the one asked is a refusal only where it is another value the list offers: an asked id the agent
+            // answers with its own alias is taken (round 3, Opus N5; MODELROLE1a: `claude-sonnet-5-5` asked, `sonnet` returned).
+            var now = LastAcknowledgedOptions?.FirstOrDefault(each => each.Category == category);
+            return now is not null && now.Current != wanted && now.Choices.Any(choice => choice.Value == wanted)
+                ? value with { Carried = false }
+                : value;
+        }
+    }
+
+    /// <summary>
     /// Run one turn end to end: handshake, a session on the tree, the target as a prompt, and every
     /// update rendered as it arrives — a driven session's whole life on this wire.
     /// </summary>
@@ -963,7 +1016,9 @@ public sealed class AcpSession(
             ? AcpConfigOption.Read(offeredOptions)
             : []);
 
-        await SetPostureAsync(created, ct).ConfigureAwait(false);
+        // What its actor asked, before the posture, which a model change can move, and before the first prompt (D205 §3.2).
+        var carried = await CarryAsync(ct).ConfigureAwait(false);
+        await SetPostureAsync(created, ct, again: carried).ConfigureAwait(false);
     }
 
     /// <summary>The reader started and the handshake answered: what every session asks before it is one. The agent's answer.</summary>
@@ -2132,7 +2187,8 @@ public sealed class AcpSession(
     /// person's two ways on (<see cref="Unoffered"/>'s words where a driven start gave them). Every other posture keeps the leniency
     /// above.</para>
     /// </remarks>
-    private async Task SetPostureAsync(JsonElement created, CancellationToken ct)
+    /// <param name="again">Whether a value was set on the session since it answered, which may have moved its mode: set it whatever it said.</param>
+    private async Task SetPostureAsync(JsonElement created, CancellationToken ct, bool again = false)
     {
         // An adapter that names no posture asks for none — dsh, whose wire carries no modes, and the
         // stub, whose permissions are its own business (ACP3).
@@ -2179,7 +2235,7 @@ public sealed class AcpSession(
 
         // Already there is nothing to ask for — and an agent that started in the posture is a fact
         // worth not overwriting with an identical call.
-        if (modes.TryGetProperty("currentModeId", out var current) && current.GetString() == chosen)
+        if (!again && modes.TryGetProperty("currentModeId", out var current) && current.GetString() == chosen)
         {
             return;
         }
@@ -2643,8 +2699,10 @@ public sealed class AcpSession(
         KeepOptions(resumed.ValueKind == JsonValueKind.Object && resumed.TryGetProperty("configOptions", out var options)
             ? AcpConfigOption.Read(options)
             : []);
+        // A resume carries its record's asked choice again: a resumed conversation keeps no model of its own (D205 §4.2; MODELROLE1a).
+        var carried = await CarryAsync(ct).ConfigureAwait(false);
         // 🔴 HELPMODE1a4 (D183 point 3): set on every answer, an object or not, so a required posture is never skipped here.
-        await SetPostureAsync(resumed, ct).ConfigureAwait(false);
+        await SetPostureAsync(resumed, ct, again: carried).ConfigureAwait(false);
     }
 
     /// <summary>

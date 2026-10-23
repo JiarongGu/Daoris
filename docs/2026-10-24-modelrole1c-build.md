@@ -16,10 +16,19 @@ one branch, each committed green, as the quest allows. This record says which pa
    twin and the README. The page has `useActors` and `useSetActor`. `daoris driver actor` reads and sets orders, and `driver adapter`
    now goes through `SET_ACTOR`. `setting_propose`'s `adapter` door writes through the same write, and its card names the actors it
    keeps.
-2. **Build's choice-major walk and the carriers on every run** (next): Build's first start walks its effective order, entry by entry,
-   each entry's accounts by the existing walk; `no-posture` and `no-connector` passes; the wait's sentence; the native carrier from
-   the entry (`--model`, `--effort`) and the protocol carrier (`set_config_option` for model then effort) on the first open, the
-   resume and the go-on.
+2. **Build's choice-major walk and the carriers on every run** (built). A new quest's first start walks Build's effective order
+   (`Driver.WalkBuildAsync`), entry by entry, each entry's accounts by the existing walk. It passes `unavailable`, `no-posture` (the
+   start's own `DrivenAccess`) and `no-connector` (the pipe door, for a repository that has not adopted Daoris) before asking any
+   account, and passes a choice whose walk holds with the walk's own reason. With nothing that can run, the start holds on
+   *Build waits: none of its choices can run now.*, each choice named, the soonest cool-off beside it. The machine log says
+   `actor.chose` and `actor.passed`. An order of one is today's walk exactly. `Door()` is the protocol door where any entry rides it.
+   A handed quest takes Build's entry for its agent (`handed`). A carry-on and a resume keep their record's asked choice. The target
+   carries `Asked` and `Choice`, and the record keeps the choice taken. The native carrier is row b's `NativeArguments`, now fed
+   from the entry. The protocol carrier (`AcpSession.Carry`) sets the model, then the effort, by category, after `session/new` or a
+   resume and before the posture and the first prompt. It sets the posture again after a change, since a model change can move it.
+   A value the agent offers no option for, refuses, or answers with another value it offers is kept as asked and not carried
+   (`Carried`), so the record never says a choice was taken that was not. Until part 3, a refused model runs at account default,
+   said in *Details*, rather than ending the record `choice-not-offered`.
 3. **Per-account offers and refusals** (§3.3, §3.5 (a), (c), (d)): `agent-offers` in the three home twins; `OpeningOptions`;
    `choice-not-offered`; `Release`; the resume's put-back; `account.refused-model`; `SessionStarted.NotOffered`; no *Ended* notice.
 4. **The screen**: AI features' *Actors* with Build's editor; the note, the chip and the wait; the Agents fold's line.
@@ -30,7 +39,11 @@ Part 1, focused classes only (the standing test rule): driver `ActorChoicesTests
 `DriverConfigKeepsTests`, `DriverChoicesTextTests`, `DriverChoicesCommandTests`, `HelpCoverageTests`, `HelpSettingProposalsTests`,
 `BrainstormLookTests`, `IntakeTests`, `HelpRoom*`; modules `DriverModuleActorTests`, `DriverModuleStartFromTests`,
 `DriverModuleConversationTests`, `PipeCensusTests`, `PipeWordingTests`, `StatePublisherTests`, `DriverModuleRoutesTests`,
-`VerbLeasesTests`, `DriverModuleDriverTests`; the CLI's `cli-usage.test.ts`; the web's `src/bridge` tests, the typecheck,
+`VerbLeasesTests`, `DriverModuleDriverTests`; part 2: `AcpTests`, `BuildWalkTests` and the non-process look classes covering a
+driven start (`AccountGoalTickTests`, `AccountLimitTickTests`, `AccountRotationTickTests`, `AcpTurnFailureTickTests`,
+`AskAndWaitTickTests`, `CapCountTickTests`, `HandOverQuestTickTests`, `LimitResumeTickTests`, `NativeResumeTests`,
+`RefusedByTheHarnessTests`, `SignedOutWaitTests`, `SignInRefusalTickTests`, `TrustHoldTickTests`, `StartGitCountTests`,
+`ProviderRefusalTickTests`, `ActorRunTests`, `GatedStartsTests`, `AccessSwapTickTests`, `DoneEndTickTests`); the CLI's `cli-usage.test.ts`; the web's `src/bridge` tests, the typecheck,
 `i18n:check` and `names-check.mjs --strict`.
 
 ## Readings

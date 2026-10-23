@@ -611,20 +611,107 @@ public sealed class Driver(
     }
 
     /// <summary>
-    /// The door this machine's starts ride — the configured adapter's wire, read against this tick's
-    /// adapters so a plugin's harness counts. An adapter nobody knows is the pipe: the stricter door
-    /// plans nothing more than it should, and the spawn names the unknown adapter itself.
+    /// The door this machine's starts ride — the protocol door where any entry of Build's order rides it, else the first entry's wire
+    /// (MODELROLE1c, D205 §4.1's <c>no-connector</c>: the planner asks whether any entry can drive a repository that has not adopted
+    /// Daoris, and the start passes each entry that cannot), read against this tick's adapters so a plugin's harness counts. An adapter
+    /// nobody knows is the pipe: the stricter door plans nothing more than it should, and the spawn names the unknown adapter itself.
     /// </summary>
     private SessionWire Door()
     {
+        IReadOnlyList<ActorEffective> order;
         try
         {
-            return Context.Adapters.Resolve(config.Adapter).Wire;
+            order = ActorChoices.Effective("build", config);
         }
         catch (DriverException)
         {
-            return SessionWire.Pipe;
+            order = [new ActorEffective(config.Adapter, null, null, "before")];
         }
+
+        SessionWire? first = null;
+        foreach (var entry in order)
+        {
+            try
+            {
+                var wire = Context.Adapters.Resolve(entry.Agent).Wire;
+                if (wire == SessionWire.Acp) return wire;
+                first ??= wire;
+            }
+            catch (DriverException)
+            {
+                first ??= SessionWire.Pipe;
+            }
+        }
+
+        return first ?? SessionWire.Pipe;
+    }
+
+    /// <summary>
+    /// A new start's walk over Build's effective order (MODELROLE1c, D205 §4.1): choice by choice, each choice's accounts by the existing
+    /// walk before the next. An entry that cannot run here at all is passed by its code before any account is asked: <c>unavailable</c>
+    /// (no such agent), <c>no-posture</c> (its harness has no mode for the repository's permission prompts, judged by the start's own
+    /// <see cref="DrivenAccess"/>) and <c>no-connector</c> (the pipe door, for a repository that has not adopted Daoris). The first entry
+    /// whose walk allows a start is taken; with none, the start holds on the wait's sentence, the soonest cool-off beside it. An order of
+    /// one entry is today's walk exactly, its own hold or refusal unchanged.
+    /// </summary>
+    internal async Task<(HarnessSelection Selection, ActorEffective? Chosen)> WalkBuildAsync(
+        Consideration start, IReadOnlyList<RepoView> registry, CancellationToken ct)
+    {
+        var quest = start.Quest;
+        var order = ActorChoices.Effective("build", config);
+        if (order.Count == 1)
+        {
+            var (only, _) = await Context.Harnesses.SelectHandedAsync(order[0].Agent, config, start.Workspace, null, StartKind.Driven, ct)
+                .ConfigureAwait(false);
+            return (only, order[0]);
+        }
+
+        var adopted = registry.FirstOrDefault(repo => string.Equals(repo.Repository, quest.To, StringComparison.OrdinalIgnoreCase))?.Adopted ?? true;
+        var access = AccessRules.Resolve(config, quest.To, start.Workspace);
+        var passes = new List<string>();
+        HarnessSelection? held = null;
+        CoolingEntry? soonest = null;
+        foreach (var entry in order)
+        {
+            string? code = null;
+            string? why = null;
+            if (!Context.Adapters.Names.Contains(entry.Agent, StringComparer.OrdinalIgnoreCase))
+            {
+                (code, why) = ("unavailable", $"`{entry.Agent}` is not an agent on this machine");
+            }
+            else
+            {
+                var adapter = Context.Adapters.Resolve(entry.Agent);
+                if (DrivenAccess.For(access, quest.To, adapter).Refusal is { } unposed) (code, why) = ("no-posture", unposed);
+                else if (!adopted && adapter.Wire != SessionWire.Acp)
+                {
+                    (code, why) = ("no-connector", $"`{entry.Agent}` cannot take a quest here: `{quest.To}` has not adopted Daoris");
+                }
+            }
+
+            if (code is null)
+            {
+                var (selection, _) = await Context.Harnesses.SelectHandedAsync(entry.Agent, config, start.Workspace, null, StartKind.Driven, ct)
+                    .ConfigureAwait(false);
+                if (selection.Allowed)
+                {
+                    Log?.Write("info", "actor.chose", [("actor", "build"), ("quest", quest.Id), ("choice", entry.From), ("agent", entry.Agent),
+                        ("model", entry.Model), ("passed", passes)]);
+                    return (selection, entry);
+                }
+
+                held ??= selection;
+                if (selection.Cooling is { } cooling && (soonest is null || cooling.Until < soonest.Until)) soonest = cooling;
+                (code, why) = (selection.Cooling is not null ? "cooling" : selection.SignedOut is not null ? "signed-out" : "held", selection.Refusal);
+            }
+
+            passes.Add($"choice {entry.From}, {entry.Agent} · {entry.Model ?? "account default"}: {why?.TrimEnd('.')}");
+            Log?.Write("info", "actor.passed", [("actor", "build"), ("quest", quest.Id), ("choice", entry.From), ("agent", entry.Agent), ("code", code)]);
+        }
+
+        // The wait's sentence (D205 §4.5): judged again at every look, the first choice that can run, in order, taken.
+        var wait = $"Build waits: none of its choices can run now. {string.Join("; ", passes)}.";
+        return ((held ?? new HarnessSelection(wait)) with { Refusal = wait, Cooling = soonest }, null);
     }
 
     /// <summary>
@@ -1719,6 +1806,9 @@ public sealed class Driver(
         var handedFrom = handedQuest is not null && start.Resumes is { } earlier
                          && string.Equals(earlier.Session, handedQuest.From, StringComparison.Ordinal);
         string? passedAccount = null;
+        // MODELROLE1c (D205 §4.0): the entry of Build's order this start runs, kept on its record as its choice and carried to its agent; null
+        // for a continuation, which keeps its record's asked choice (§3.5(a)).
+        ActorEffective? chosen = null;
 
         // 🔴 SESSCTX1c (D189's amendment): the person's words waiting on a record whose agent this machine no longer has wait for the
         // person, its conversation saying so with the hand-over's offer, since only they can choose the agent it goes on with. Asked
@@ -1793,13 +1883,22 @@ public sealed class Driver(
                 selection = own.Selection;
                 limitResume = true;
             }
+            else if (handedQuest is null && start.Resumes is null)
+            {
+                // A new quest's first start walks Build's order, choice by choice, each choice's accounts before the next (MODELROLE1c,
+                // D205 §4.1): its agent is the entry the walk took.
+                (selection, chosen) = await WalkBuildAsync(start, registry, ct).ConfigureAwait(false);
+                agent = chosen?.Agent ?? agent;
+            }
             else
             {
                 // A carry-on and a first start take the walk as any start does (D130 §16.2): no context stays with an account. A
-                // handed quest asks for the account its hand-over named first, and the walk goes on within the named agent's.
+                // handed quest asks for the account its hand-over named first, and the walk goes on within the named agent's, its model
+                // Build's entry for that agent (D205 §4.0, `handed`). A carry-on keeps its record's asked choice (§3.5(a)).
                 (selection, passedAccount) = await Context.Harnesses
                     .SelectHandedAsync(agent, config, start.Workspace, handedQuest?.Account, StartKind.Driven, ct)
                     .ConfigureAwait(false);
+                if (handedQuest is not null && start.Resumes is null) chosen = ActorChoices.Effective("build", config, handed: agent)[0];
             }
         }
         catch (DriverException error)
@@ -2355,7 +2454,9 @@ public sealed class Driver(
             {
                 // The mode its repository's permission prompts name on its harness (AUTONOMY1b), on either door.
                 Access = permissions,
-                Asked = ActorAsked.Before(adapter.Name),
+                // MODELROLE1c (D205 §3.2): what the entry the walk took names, carried on every run; a continuation keeps its record's.
+                Asked = chosen?.Asked ?? (start.Resumes is { } carried ? carried.Asked : ActorAsked.Before(adapter.Name)),
+                Choice = chosen?.From,
                 Browser = InAppBrowserServers.Told(browserDrivers),
                 ReadsAcross = across.Reads,
                 WritesAcross = across.Writes,
@@ -3334,8 +3435,10 @@ public sealed class Driver(
         }
         actor = prior?.Actor ?? actor;
         var asked = ActorAsked.ForSpawn(adapter.Name, info, target.Asked ?? prior?.Asked);
+        // MODELROLE1c: the entry a new start's walk took (D205 §4.0); a continuation keeps its record's own.
+        var choice = target.Choice ?? prior?.Choice ?? "before";
         if (target.Brainstorm is null)
-            await service.TryKeepActorAsync(sessionId, Log, prior?.Choice ?? "before", asked, ct: ct).ConfigureAwait(false);
+            await service.TryKeepActorAsync(sessionId, Log, choice, asked, ct: ct).ConfigureAwait(false);
         UsageTurns.ActorBound(home, Context.Events, sessionId, actor);
         await using var actorRun = new ActorRun(Context.Events, sessionId, actor, prior?.Ran,
             ran => target.Brainstorm is null ? service.KeepActorAsync(sessionId, ran: ran) : Task.CompletedTask, Log);
@@ -3423,7 +3526,11 @@ public sealed class Driver(
             ? CaptureAcpAsync(
                 process, transcript, sessionId, cwd, prompt, target.Access?.Posture ?? adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta,
                 handedServers ?? Context.Servers, target.PersonSaid, inbox, said, keepAs, resume, account, waitsOnBackground, noConnector, ending,
-                unoffered: target.Access is { } access ? access.Unoffered : null, setupChanged: setupChanged, handed: target.Handed)
+                unoffered: target.Access is { } access ? access.Unoffered : null, setupChanged: setupChanged, handed: target.Handed,
+                // D205 §3.2: what its actor asked, set on the session before the first prompt; what the agent would not take is kept as
+                // asked and not carried, so the record never says a choice was taken that was not.
+                asked: asked, carried: target.Brainstorm is not null ? null
+                    : notCarried => _ = service.TryKeepActorAsync(sessionId, Log, choice, notCarried, ct: CancellationToken.None))
             : null;
         // What the native door's harness says in its own words, apart from its agent's, for its ending (AGT3c).
         var own = new HarnessWords();
@@ -3861,7 +3968,8 @@ public sealed class Driver(
         IReadOnlyList<AcpMcpServer>? servers = null, string? personSaid = null, DrivenInbox? inbox = null,
         Action<JsonElement>? said = null, string? keepAs = null, ResumeAsk? resume = null, InstructionAccount? account = null,
         Func<CancellationToken, Task<bool>>? waitsOnBackground = null, string? noConnector = null, AcpEnding? ending = null,
-        Func<string, string, string>? unoffered = null, Func<bool>? setupChanged = null, IReadOnlyList<SaidWordView>? handed = null)
+        Func<string, string, string>? unoffered = null, Func<bool>? setupChanged = null, IReadOnlyList<SaidWordView>? handed = null,
+        ActorAsked? asked = null, Action<ActorAsked>? carried = null)
     {
         await using var file = TranscriptFile.Open(transcript, append: resume is not null);
 
@@ -3941,6 +4049,8 @@ public sealed class Driver(
                 Permissions = HeldPermissions.Of(Context.Events).For(sessionId), // AUTONOMY1b3a: held only under asking's mark
                 SetupChanged = setupChanged,
                 BackgroundLook = BackgroundLook, // DONEEND1: its quest read again while it waits on its own background work
+                Carry = asked, // MODELROLE1c (D205 §3.2): its actor's model and effort, set before the first prompt
+                Carried = carried,
             };
             ending?.Open(session);
             // SESSWATCH1a: whether it waits on its own background work, the watcher's state C.
