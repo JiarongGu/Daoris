@@ -8,6 +8,12 @@ with the version and date at release.
 - Groundwork for the supervisor, a role you will appoint to answer a session's question on your behalf (SUPERVISOR1a-i, D208).
   Nothing is offered yet and nothing you see changes: its answer can only be kept as the supervisor's, never as yours. Your own
   words to a parked session now take back any supervisor's answer waiting on it.
+- For contributors: the CI's watch now runs on a schedule (CISCOPE1d). Every night it runs every gate whole, the rehearsals
+  included, and it catches up a missed night at its next start. Each `Process` half is run whole at least once a day. Failures
+  it finds are kept as known red, by test, until a later commit passes them. The install's stage now also needs a finished
+  background run on that commit's exact tree, a clean checkout and no overdue daily run, and it names `--ci --stage <commit>`
+  where any is missing. `--ci --night` runs the night by hand. Each stage is recorded, and a stage says what it brings since
+  the last one.
 - The CI between releases no longer runs a driver or modules `Process` half when every class in it already passed and nothing
   changed since reaches any of them (CISCOPE1b). The half passes on those classes, and the run and its status say so. It still
   runs whole when its last run failed outside a test, when that run's results were missing, or when the classes the run found
