@@ -86,12 +86,56 @@ public sealed record StandingJudgement(bool Covered, string? Why, string? Press,
 /// <param name="Unwritten">That the last revoke could not write its record, so the next start may read it as on.</param>
 /// <param name="Used">How many presses it covered since this Daoris started.</param>
 /// <param name="Held">The repositories a covered hold held during this run, which a covered resume may release.</param>
+/// <param name="AppointmentsOffered">Whether this build offers the owner's appointments (SUPERVISOR1a-ii, D208 §2.3: its own flag, and D201's).</param>
+/// <param name="Appointments">The appointments the record holds, each as its row reads it, dormant where found at a start.</param>
 public sealed record StandingNow(
     bool Offered, bool On, IReadOnlyList<string> Presses, IReadOnlyList<string> Built, DateTimeOffset? Since, string? Unread,
-    bool Unwritten, int Used, IReadOnlyList<string> Held);
+    bool Unwritten, int Used, IReadOnlyList<string> Held, bool AppointmentsOffered = false, IReadOnlyList<AppointmentNow>? Appointments = null);
 
 /// <summary>A grant's or a revoke's answer: done, or refused as data with a code the page words.</summary>
 public sealed record StandingChange(bool Done, string? Why, string? Message);
+
+/// <summary>The roles the owner appoints (D208 point 1, the supervisor design §2), by the names the record keeps.</summary>
+public static class Roles
+{
+    /// <summary>The supervisor (主管), who answers a parked session's recorded question with one offered choice.</summary>
+    public const string Supervisor = "supervisor";
+
+    /// <summary>The roles this build knows. A role is never one of <see cref="StandingPresses.Built"/>'s presses.</summary>
+    public static IReadOnlyList<string> Known { get; } = [Supervisor];
+}
+
+/// <summary>Who holds a role (the supervisor design §2.2): a terminal the window started with the holder key, or Daoris's own actor.</summary>
+public static class RoleHolders
+{
+    public const string Terminal = "terminal";
+    public const string Actor = "actor";
+}
+
+/// <summary>
+/// One appointment as the record keeps it (the supervisor design §2.3): its role, the repository, the holder's kind, its generation (an
+/// opaque id drawn at each appointment, never reused) and when. Never the key nor its hash.
+/// </summary>
+public sealed record Appointment(string Role, string Repository, string Holder, string Generation, DateTimeOffset Since);
+
+/// <summary>
+/// An appointment as the window's row reads it (the supervisor design §6.4): never its generation, its key nor its hash.
+/// </summary>
+/// <param name="Dormant">Found as Daoris started (§2.3): no key is known for it, so it admits no holder until <i>Appoint again</i>.</param>
+/// <param name="Answers">How many acts its holder made under it since this Daoris started.</param>
+public sealed record AppointmentNow(string Role, string Repository, string Holder, DateTimeOffset Since, bool Dormant, int Answers);
+
+/// <summary>An appointment's change: its answer, and the generations it ended, which the caller sweeps after its step (§5).</summary>
+public sealed record AppointmentChange(StandingChange Answer, IReadOnlyList<string> Ended);
+
+/// <summary>
+/// The judge's role method's answer (the supervisor design §2.2, §3.1): covered, with the appointment it acted under; or refused with
+/// why, never asked.
+/// </summary>
+public sealed record RoleJudgement(bool Covered, string? Why, string? Role = null, string? Repository = null, string? Generation = null)
+{
+    internal static RoleJudgement Refused(string why) => new(false, why);
+}
 
 /// <summary>
 /// The person's standing confirmation (TERMTRUST1a part (ii), D201; the terminal-trust design): a grant made in the window, with the
@@ -116,8 +160,21 @@ public sealed record StandingChange(bool Done, string? Why, string? Message);
 /// <para><b>Until part (i) lands</b> every agent of this process is uncontained, so the caller's look (<see cref="StandingCaller"/>)
 /// answers <see cref="StandingWhy.Untold"/> and this covers nothing (D201's note on order). The grant is offered only where
 /// <see cref="Offered"/> says so.</para>
+///
+/// <para><b>The owner's appointments</b> (SUPERVISOR1a-ii, D208 points 2 and 3; the supervisor design §2.2, §2.3): the record carries
+/// <c>appointments</c> beside <c>presses</c>, each its role, repository, holder kind, generation and moment, never the key nor its hash.
+/// The holder key's SHA-256 is kept in this instance's memory alone, so an appointment read at a start is <b>dormant</b> until the
+/// owner presses <i>Appoint again</i>. A role's act is judged by its own method (<see cref="JudgeRole"/>) under the same lock and
+/// caller look, then by the holder's proof over the connection's nonce, independent of the presses; and the decisions' admission
+/// (<see cref="IDecisionAdmission"/>) answers the effective appointment's generation from the same memory.</para>
+///
+/// <para><b>One mutation step</b> (§2.3): every read-modify-write of the record, presses and appointments alike, and the memory it
+/// installs, runs whole under the lock: read the memory, build the whole record, write it atomically, install the memory. A grant, an
+/// appointment, a dismissal and a revoke never interleave; a revoke clears its part of the memory first, inside the step. The lock is
+/// never held across an await nor while a decision's lock is taken: a revoke's sweep of its decisions runs after its step
+/// (<see cref="AppointmentChange.Ended"/>).</para>
 /// </remarks>
-public sealed class StandingConfirmation
+public sealed class StandingConfirmation : IDecisionAdmission
 {
     /// <summary>The machine log's event for a grant, a revoke, and what a start found (§7.2).</summary>
     public const string LogEvent = "person.standing";
@@ -144,6 +201,22 @@ public sealed class StandingConfirmation
     /// <summary>A grant whose record could not be written, so nothing was turned on; or a revoke's, turned off for this run alone.</summary>
     public const string Unwritten = "unwritten";
 
+    /// <summary>
+    /// Whether this build offers the owner's appointments (SUPERVISOR1a-ii, D208 §2.3): false in every build until the activation proof
+    /// (SUPERVISOR1a-iii) has been looked at on a candidate build after SUPERVISOR1b, and never true while
+    /// <see cref="OfferedInThisBuild"/> is false. Until then <c>SET_APPOINTMENT</c> refuses <c>not-offered</c> and no role's act is covered.
+    /// </summary>
+    public const bool AppointmentsOffered = false;
+
+    /// <summary>An appointment naming a role this build does not know.</summary>
+    public const string UnknownRole = "unknown-role";
+
+    /// <summary>An appointment naming a repository Daoris does not drive here.</summary>
+    public const string UnknownRepository = "unknown-repository";
+
+    /// <summary>A terminal appointment whose holder's terminal could not be started: nothing was kept.</summary>
+    public const string Unstarted = "unstarted";
+
     private readonly string _home;
     private readonly MachineLog _log;
     private readonly TimeProvider _clock;
@@ -157,6 +230,11 @@ public sealed class StandingConfirmation
     private bool _newer;
     private int _used;
     private long _seq;
+    // SUPERVISOR1a-ii: the record's appointments as this run holds them, and each live one's key hash by its generation, in memory
+    // alone. An appointment with no hash here is dormant.
+    private IReadOnlyList<Appointment> _appointments = [];
+    private readonly Dictionary<string, byte[]> _hashes = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, int> _answers = new(StringComparer.Ordinal);
 
     /// <param name="home">The home whose record this is.</param>
     /// <param name="log">The machine log.</param>
@@ -164,9 +242,10 @@ public sealed class StandingConfirmation
     /// <param name="clock">The clock a grant's moment is read by.</param>
     /// <param name="offered">Whether the grant is offered (<see cref="OfferedInThisBuild"/> where none is named).</param>
     /// <param name="machine">This machine and account, as the record binds them (<see cref="ThisMachine"/> where none is named).</param>
+    /// <param name="appointments">Whether the owner's appointments are offered (<see cref="AppointmentsOffered"/> where none is named); never where the grant is not.</param>
     public StandingConfirmation(
         string home, MachineLog? log = null, IStandingCaller? caller = null, TimeProvider? clock = null, bool? offered = null,
-        string? machine = null)
+        string? machine = null, bool? appointments = null)
     {
         _home = home;
         _log = log ?? MachineLog.None;
@@ -174,10 +253,18 @@ public sealed class StandingConfirmation
         _clock = clock ?? TimeProvider.System;
         Offered = offered ?? OfferedInThisBuild;
         _machine = machine ?? ThisMachine();
+        // D208 §2.3: D201's own offering is a named prerequisite of the door's.
+        AppointsOffered = Offered && (appointments ?? AppointmentsOffered);
     }
 
     /// <summary>Whether this instance offers the grant (D201's note on order).</summary>
     public bool Offered { get; }
+
+    /// <summary>Whether this instance offers the owner's appointments (D208 §2.3).</summary>
+    public bool AppointsOffered { get; }
+
+    /// <summary>Whether a repository is one Daoris drives on this machine (the loop's registry, which the loop hands in); none is none.</summary>
+    public Func<string, bool> Drives { get; set; } = _ => false;
 
     /// <summary>Where a terminal's process stands.</summary>
     public IStandingCaller Caller { get; }
@@ -202,6 +289,7 @@ public sealed class StandingConfirmation
     {
         string state;
         IReadOnlyList<string> presses = [];
+        IReadOnlyList<Appointment> appointments = [];
         DateTimeOffset? since = null;
         var newer = false;
         string? text;
@@ -221,7 +309,7 @@ public sealed class StandingConfirmation
         }
         else
         {
-            (state, presses, since) = Parse(text, _machine);
+            (state, presses, since, appointments) = Read(text, _machine);
             newer = state == StandingRead.Newer;
         }
 
@@ -232,39 +320,67 @@ public sealed class StandingConfirmation
             _unread = state == StandingRead.Found ? null : state;
             _newer = newer;
             _held.Clear();
+            // SUPERVISOR1a-ii (§2.3): every appointment read at a start is dormant, since no key is known for it in this run.
+            _appointments = state == StandingRead.Found ? appointments : [];
+            _hashes.Clear();
+            _answers.Clear();
         }
 
-        _log.Info(LogEvent, ("state", state), ("presses", Names(state == StandingRead.Found ? presses : [])));
+        _log.Info(LogEvent, ("state", state), ("presses", Names(state == StandingRead.Found ? presses : [])),
+            ("appointments", (state == StandingRead.Found ? appointments.Count : 0).ToString(System.Globalization.CultureInfo.InvariantCulture)));
     }
 
     /// <summary>The record's text read as the instance reads it: its state, its presses in the build's order (unknown names kept out), and its moment.</summary>
     internal static (string State, IReadOnlyList<string> Presses, DateTimeOffset? Since) Parse(string text, string machine)
     {
+        var (state, presses, since, _) = Read(text, machine);
+        return (state, presses, since);
+    }
+
+    /// <summary>
+    /// The record whole, its appointments too (SUPERVISOR1a-ii): each well formed one kept as written, its role, repository, holder,
+    /// generation and moment, whatever else it carries (a key or a hash an agent wrote there is never read).
+    /// </summary>
+    public static (string State, IReadOnlyList<string> Presses, DateTimeOffset? Since, IReadOnlyList<Appointment> Appointments) Read(
+        string text, string machine)
+    {
         try
         {
             using var document = JsonDocument.Parse(text);
             var root = document.RootElement;
-            if (root.ValueKind != JsonValueKind.Object) return (StandingRead.Unread, [], null);
+            if (root.ValueKind != JsonValueKind.Object) return (StandingRead.Unread, [], null, []);
             if (!root.TryGetProperty("schemaVersion", out var version) || !version.TryGetInt32(out var number) || number < 1)
             {
-                return (StandingRead.Unread, [], null);
+                return (StandingRead.Unread, [], null, []);
             }
 
-            if (number > SchemaVersion) return (StandingRead.Newer, [], null);
+            if (number > SchemaVersion) return (StandingRead.Newer, [], null, []);
             if (Json.Text(root, "machine") is not { } bound || !string.Equals(bound, machine, StringComparison.OrdinalIgnoreCase))
             {
-                return (StandingRead.OtherMachine, [], null);
+                return (StandingRead.OtherMachine, [], null, []);
             }
 
-            if (!root.TryGetProperty("presses", out var named) || named.ValueKind != JsonValueKind.Array) return (StandingRead.Unread, [], null);
+            if (!root.TryGetProperty("presses", out var named) || named.ValueKind != JsonValueKind.Array) return (StandingRead.Unread, [], null, []);
             var names = named.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.String).Select(each => each.GetString()!).ToHashSet(StringComparer.Ordinal);
             var since = Moments.Read(Json.Text(root, "since"));
+            var appointments = new List<Appointment>();
+            foreach (var each in Json.Items(root, "appointments"))
+            {
+                if (Json.Text(each, "role") is { Length: > 0 } role && Json.Text(each, "repository") is { Length: > 0 } repository
+                    && Json.Text(each, "holder") is { Length: > 0 } holder && Json.Text(each, "generation") is { Length: > 0 } generation
+                    && Moments.Read(Json.Text(each, "since")) is { } at
+                    && !appointments.Any(kept => kept.Role == role && string.Equals(kept.Repository, repository, StringComparison.OrdinalIgnoreCase)))
+                {
+                    appointments.Add(new Appointment(role, repository, holder, generation, at));
+                }
+            }
+
             // A later build's press this build does not know is kept out: its table cannot judge it.
-            return (StandingRead.Found, [.. StandingPresses.Built.Where(names.Contains)], since);
+            return (StandingRead.Found, [.. StandingPresses.Built.Where(names.Contains)], since, appointments);
         }
         catch (JsonException)
         {
-            return (StandingRead.Unread, [], null);
+            return (StandingRead.Unread, [], null, []);
         }
     }
 
@@ -275,7 +391,10 @@ public sealed class StandingConfirmation
         {
             return new StandingNow(
                 Offered, IsOn, _presses, StandingPresses.Built, _since, _unread, _unwritten, _used,
-                [.. _held.Keys.Order(StringComparer.OrdinalIgnoreCase)]);
+                [.. _held.Keys.Order(StringComparer.OrdinalIgnoreCase)], AppointsOffered,
+                [.. _appointments.Select(each => new AppointmentNow(
+                    each.Role, each.Repository, each.Holder, each.Since, !_hashes.ContainsKey(each.Generation),
+                    _answers.GetValueOrDefault(each.Generation)))]);
         }
     }
 
@@ -302,27 +421,26 @@ public sealed class StandingConfirmation
             return new StandingChange(false, NotOffered, "This Daoris does not offer the standing confirmation yet.");
         }
 
+        // One mutation step (SUPERVISOR1a-ii, §2.3): the whole record built from memory, written and installed under the lock, so a
+        // grant never interleaves with an appointment's change or a revoke.
         lock (_gate)
         {
             if (_newer)
             {
                 return new StandingChange(false, StandingRead.Newer, "Its record is from a newer Daoris, which this one does not write over.");
             }
-        }
 
-        var since = _clock.GetUtcNow();
-        try
-        {
-            Write(granted, since);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            _log.Warn(LogEvent, ("state", Unwritten), ("presses", Names(granted)));
-            return new StandingChange(false, Unwritten, "Its record could not be written, so nothing was turned on.");
-        }
+            var since = _clock.GetUtcNow();
+            try
+            {
+                Write(granted, since, _appointments);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                _log.Warn(LogEvent, ("state", Unwritten), ("presses", Names(granted)));
+                return new StandingChange(false, Unwritten, "Its record could not be written, so nothing was turned on.");
+            }
 
-        lock (_gate)
-        {
             _presses = granted;
             _since = since;
             _unread = null;
@@ -335,29 +453,14 @@ public sealed class StandingConfirmation
 
     private StandingChange Revoke()
     {
-        bool left;
+        bool unwritten;
         lock (_gate)
         {
-            // At once, before the write (§4.3): a press judged after this asks.
+            // At once, before the write (§4.3): a press judged after this asks. The appointments stay: each is its own tick.
             _presses = [];
             _since = null;
             _held.Clear();
-            // A newer record, or another machine's, is left as it is (§4.2): it is off here already.
-            left = _newer || _unread == StandingRead.OtherMachine;
-        }
-
-        var unwritten = false;
-        try
-        {
-            if (!left && File.Exists(RecordPath)) Write([], null);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            unwritten = true;
-        }
-
-        lock (_gate)
-        {
+            unwritten = !TryWrite([], null, _appointments, onlyWhereFound: true);
             _unwritten = unwritten;
         }
 
@@ -367,7 +470,25 @@ public sealed class StandingConfirmation
             : new StandingChange(true, null, null);
     }
 
-    private void Write(IReadOnlyList<string> presses, DateTimeOffset? since) => JsonFile.Write(RecordPath, writer =>
+    /// <summary>
+    /// Under the lock: the record written as memory now holds it, false where the write failed. A newer record, or another machine's,
+    /// is left as it is (§4.2): it is off here already. <paramref name="onlyWhereFound"/> writes nothing where there is no record yet.
+    /// </summary>
+    private bool TryWrite(IReadOnlyList<string> presses, DateTimeOffset? since, IReadOnlyList<Appointment> appointments, bool onlyWhereFound)
+    {
+        if (_newer || _unread == StandingRead.OtherMachine) return true;
+        try
+        {
+            if (!onlyWhereFound || File.Exists(RecordPath)) Write(presses, since, appointments);
+            return true;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
+    private void Write(IReadOnlyList<string> presses, DateTimeOffset? since, IReadOnlyList<Appointment> appointments) => JsonFile.Write(RecordPath, writer =>
     {
         writer.WriteStartObject();
         writer.WriteNumber("schemaVersion", SchemaVersion);
@@ -376,8 +497,184 @@ public sealed class StandingConfirmation
         writer.WriteEndArray();
         if (since is { } at) writer.WriteString("since", Moments.Write(at));
         writer.WriteString("machine", _machine);
+        // SUPERVISOR1a-ii (§2.3): additive, schema 1; never the key nor its hash. Carried through every change of the presses.
+        if (appointments.Count > 0)
+        {
+            writer.WriteStartArray("appointments");
+            foreach (var each in appointments)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("role", each.Role);
+                writer.WriteString("repository", each.Repository);
+                writer.WriteString("holder", each.Holder);
+                writer.WriteString("generation", each.Generation);
+                writer.WriteString("since", Moments.Write(each.Since));
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+        }
+
         writer.WriteEndObject();
     });
+
+    // ——— The owner's appointments (SUPERVISOR1a-ii, D208; the supervisor design §2.2, §2.3, §5).
+
+    /// <summary>
+    /// The window's appointment (<c>SET_APPOINTMENT { role, repository, holder, on }</c>): with <paramref name="on"/>, a new generation and
+    /// a new key, the holder's terminal started with the key by <paramref name="start"/> before the mutation step installs its hash, and
+    /// nothing kept where it could not start (<see cref="Unstarted"/>); without, the appointment dismissed, its hash forgotten at once.
+    /// Either way the generations it ended are answered for the caller to sweep after this step (§5), never inside it.
+    /// </summary>
+    /// <param name="start">Starts the holder's terminal with the key in its environment; true where it started. Called outside the lock.</param>
+    public AppointmentChange Appoint(string role, string repository, string holder, bool on, Func<string, bool> start)
+    {
+        if (!on) return Dismiss(role, repository);
+        if (!AppointsOffered) return Refuse(StandingConfirmation.NotOffered, "This Daoris does not offer appointments yet.");
+        if (!Roles.Known.Contains(role, StringComparer.Ordinal)) return Refuse(UnknownRole, $"This Daoris has no role `{role}` to appoint.");
+        // The actor holds a role only once it is measured (SUPERVISOR1c, 1d): until then a terminal alone.
+        if (holder != RoleHolders.Terminal) return Refuse(StandingConfirmation.NotOffered, $"This Daoris does not offer the `{holder}` holder yet.");
+        if (!Drives(repository)) return Refuse(UnknownRepository, $"Daoris does not drive a repository `{repository}` here.");
+        lock (_gate)
+        {
+            if (_newer) return Refuse(StandingRead.Newer, "Its record is from a newer Daoris, which this one does not write over.");
+        }
+
+        // The key is drawn here, handed to the holder's terminal alone, and never kept: only its hash is (§2.2).
+        var key = HolderKey.Draw();
+        var hash = HolderKey.Hash(key)!;
+        bool started;
+        try
+        {
+            started = start(key);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidOperationException
+                                          or System.ComponentModel.Win32Exception)
+        {
+            started = false;
+        }
+
+        if (!started)
+        {
+            _log.Warn(LogEvent, ("state", Unstarted), ("role", role));
+            return Refuse(Unstarted, "The supervisor's terminal could not be started, so nothing was appointed.");
+        }
+
+        var appointed = new Appointment(role, repository, holder, Guid.NewGuid().ToString("N"), _clock.GetUtcNow());
+        IReadOnlyList<string> ended;
+        lock (_gate)
+        {
+            if (_newer) return Refuse(StandingRead.Newer, "Its record is from a newer Daoris, which this one does not write over.");
+            var replaced = _appointments.Where(each => Same(each, role, repository)).ToList();
+            var next = _appointments.Where(each => !Same(each, role, repository)).Append(appointed).ToList();
+            try
+            {
+                // As a grant does, written over a record this build does not honour but one a newer Daoris wrote.
+                Write(_presses, _since, next);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                _log.Warn(LogEvent, ("state", Unwritten), ("role", role));
+                return Refuse(Unwritten, "Its record could not be written, so nothing was appointed.");
+            }
+
+            _appointments = next;
+            foreach (var old in replaced) _hashes.Remove(old.Generation);
+            _hashes[appointed.Generation] = hash;
+            _unread = null;
+            ended = [.. replaced.Select(each => each.Generation)];
+        }
+
+        _log.Info(LogEvent, ("state", "appointed"), ("role", role), ("holder", holder));
+        return new AppointmentChange(new StandingChange(true, null, null), ended);
+    }
+
+    /// <summary>Turn an appointment off (§5): its hash forgotten and its record written in one step; taken whether or not appointments are offered.</summary>
+    private AppointmentChange Dismiss(string role, string repository)
+    {
+        IReadOnlyList<string> ended;
+        bool unwritten;
+        lock (_gate)
+        {
+            var gone = _appointments.Where(each => Same(each, role, repository)).ToList();
+            // At once, before the write: an act judged after this is refused.
+            foreach (var old in gone) _hashes.Remove(old.Generation);
+            _appointments = [.. _appointments.Where(each => !Same(each, role, repository))];
+            unwritten = gone.Count > 0 && !TryWrite(_presses, _since, _appointments, onlyWhereFound: true);
+            ended = [.. gone.Select(each => each.Generation)];
+        }
+
+        _log.Info(LogEvent, ("state", unwritten ? Unwritten : "dismissed"), ("role", role));
+        return new AppointmentChange(
+            unwritten
+                ? new StandingChange(true, Unwritten, "Turned off; its record could not be written, so the next start may read it as dormant.")
+                : new StandingChange(true, null, null),
+            ended);
+    }
+
+    private static AppointmentChange Refuse(string why, string message) => new(new StandingChange(false, why, message), []);
+
+    private static bool Same(Appointment each, string role, string repository) =>
+        each.Role == role && string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The decisions' admission (SUPERVISOR1a-ii; §2.3, §3.4): the effective supervisor's appointment for <paramref name="repository"/>,
+    /// its generation, read under the lock for this synchronous answer alone; refused <c>not-offered</c>, <c>not-appointed</c> or
+    /// <c>dormant</c>.
+    /// </summary>
+    public DecisionAdmitted Admit(string repository)
+    {
+        lock (_gate)
+        {
+            if (!AppointsOffered) return DecisionAdmitted.Refused(SupervisorWhy.NotOffered);
+            if (_appointments.FirstOrDefault(each => Same(each, Roles.Supervisor, repository)) is not { } appointed)
+            {
+                return DecisionAdmitted.Refused(SupervisorWhy.NotAppointed);
+            }
+
+            return _hashes.ContainsKey(appointed.Generation)
+                ? new DecisionAdmitted(appointed.Generation, null)
+                : DecisionAdmitted.Refused(SupervisorWhy.Dormant);
+        }
+    }
+
+    /// <summary>
+    /// The judge's role method (SUPERVISOR1a-ii; the supervisor design §2.2, §3.1, §4.6): a role's act from a terminal, judged under the
+    /// lock, independent of the presses and of whether any is granted. Appointments offered; then D201's caller look, the first denial,
+    /// so a contained agent is refused before its proof is read; the act's exact form; the appointment its generation names, live and not
+    /// dormant; and the holder's proof over this connection's unused <paramref name="nonce"/> and the form, against the key's hash in
+    /// memory. Anything uncovered is refused, never asked; a covered act is counted on its appointment.
+    /// </summary>
+    /// <param name="nonce">The connection's hello's nonce, taken for this act (each is used once), or null where it was used or expired.</param>
+    public RoleJudgement JudgeRole(string module, string route, JsonElement? payload, PipeClientProcess? client, string? nonce)
+    {
+        lock (_gate)
+        {
+            if (!AppointsOffered) return RoleJudgement.Refused(SupervisorWhy.NotOffered);
+            if (!string.Equals(module, DriverModuleName, StringComparison.OrdinalIgnoreCase) || route != SupervisorRoutes.Answer)
+            {
+                return RoleJudgement.Refused(StandingWhy.NotNamed);
+            }
+
+            var place = Caller.Place(client);
+            if (place == StandingPlace.InAgentJob) return RoleJudgement.Refused(StandingWhy.InAgentJob);
+            if (place != StandingPlace.Outside) return RoleJudgement.Refused(StandingWhy.Untold);
+            if (SupervisorForm.Read(payload) is not { } form) return RoleJudgement.Refused(SupervisorWhy.Form);
+            if (_appointments.FirstOrDefault(each => each.Role == Roles.Supervisor && each.Generation == form.Generation) is not { } appointed)
+            {
+                return RoleJudgement.Refused(SupervisorWhy.AppointmentChanged);
+            }
+
+            if (!_hashes.TryGetValue(appointed.Generation, out var hash)) return RoleJudgement.Refused(SupervisorWhy.Dormant);
+            if (nonce is null || !SupervisorProof.Verify(hash, nonce, form.Canonical, form.Proof))
+            {
+                return RoleJudgement.Refused(SupervisorWhy.NotHolder);
+            }
+
+            _answers[appointed.Generation] = _answers.GetValueOrDefault(appointed.Generation) + 1;
+            return new RoleJudgement(true, null, appointed.Role, appointed.Repository, appointed.Generation);
+        }
+    }
 
     /// <summary>
     /// Any change of a repository's hold but a covered one (the window's press, a confirmed press): the run forgets it held it, so a

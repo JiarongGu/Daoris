@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// The judge alone, its caller's look a stand-in (<see cref="Placed"/>): where the terminal's process stands is
 /// <c>StandingCallerTests</c>' and the pipe's end <c>PipeConfirmTests</c>'.
 /// </remarks>
-public sealed class StandingConfirmationTests : Bridge
+public sealed partial class StandingConfirmationTests : Bridge
 {
     private const string Driver = DriverModule.Name;
 

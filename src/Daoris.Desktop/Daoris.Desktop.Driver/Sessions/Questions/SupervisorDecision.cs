@@ -82,6 +82,9 @@ public static class SupervisorStates
 public static class SupervisorWhy
 {
     public const string NotOffered = "not-offered";
+    public const string NotAppointed = "not-appointed";
+    public const string NotHolder = "not-holder";
+    public const string Dormant = "dormant";
     public const string AppointmentChanged = "appointment-changed";
     public const string NotParked = "not-parked";
     public const string NoQuest = "no-quest";
