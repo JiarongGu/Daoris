@@ -243,11 +243,12 @@ public sealed class AttentionWatch
             Strikes = park.Strikes,
         }));
 
-        // The last failure is said by its quest's park, which carries its note.
+        // The last failure is said by its quest's park, which carries its note. An end an account's limit made is no failure: its line
+        // goes on by itself and says so as its own news (LIMITRESUME1a, D206 point 1).
         var saidByPark = parked.Select(park => park.Session).OfType<string>().ToHashSet(StringComparer.Ordinal);
         foreach (var ended in report.Concluded)
         {
-            if (ended.ByPerson || saidByPark.Contains(ended.Session)) continue;
+            if (ended.ByPerson || ended.Limit || saidByPark.Contains(ended.Session)) continue;
             events.Add(new AttentionEvent(
                 AttentionKind.Ended, ended.Session, ended.Repository, ended.State, ended.Note)
             {

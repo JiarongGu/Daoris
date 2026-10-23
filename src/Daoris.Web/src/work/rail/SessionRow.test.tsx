@@ -93,6 +93,28 @@ describe('a session row', () => {
   });
 
   /**
+   * LIMITRESUME1a (D206 point 1; the limit-resume design §3.1): a record an account's limit ended is `failed` on the wire with its
+   * `limit` flag, and the page says *limited*, quiet, never the failure's word or red: its line goes on by itself. In both languages.
+   */
+  it('says a session a limit ended is limited, quietly, in en and zh', async () => {
+    const limited = session({ state: 'failed', limit: true });
+    const { container, unmount } = render(<SessionRow session={limited} />);
+    expect(screen.getByText('limited')).toBeInTheDocument();
+    expect(screen.queryByText(i18n.t('sessionState.failed'))).toBeNull();
+    expect(container.innerHTML).not.toMatch(/danger|declined/);
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    try {
+      render(<SessionRow session={limited} />);
+      expect(screen.getByText('额度用尽')).toBeInTheDocument();
+      expect(screen.queryByText(i18n.t('sessionState.failed'))).toBeNull();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
+  /**
    * UX5 U17, decided by the reference console: a live chat whose turn has ended is idle, a quiet
    * mark and the word, and working only while a turn is in flight. It read *working* between turns.
    * Nothing known is the record's own word, never a guess.

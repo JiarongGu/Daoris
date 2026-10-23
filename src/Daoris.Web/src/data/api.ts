@@ -487,6 +487,11 @@ export type Session = {
    */
   answer?: string | null;
   /**
+   * An account's limit made its failure (TOOL4c): a `failed` record the page says is *limited*, quietly (LIMITRESUME1a, D206
+   * point 1). It names no account, so every caller is told; false or absent on any other record and from a host before it.
+   */
+  limit?: boolean;
+  /**
    * The access setup a driven session started under (AUTONOMY1a, D184 point 1): each pause by name with its value, as the driver
    * resolved it at the start. This machine's own, as the opinion is: null on any other kind, on a record from before the field, on
    * a teammate's record and in a browser.
