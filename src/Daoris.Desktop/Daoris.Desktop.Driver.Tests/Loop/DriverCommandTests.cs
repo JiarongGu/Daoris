@@ -654,7 +654,28 @@ public sealed class DriverCommandTests
         var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "GitConsole.cs"));
         Assert.Contains("GitBranchesCommand.Read(args, out var problem)", console);
         Assert.Contains("GitBranchesCommand.RunAsync(", console);
-        Assert.DoesNotContain("MachineLog", console);
+        // GITAPP1a-i: `git review --time` appends its one line; the log is never opened as the host opens it, which prunes.
+        Assert.DoesNotContain("MachineLog.Open", console);
+        Assert.DoesNotContain("Prune", console);
+    }
+
+    /// <summary>
+    /// GITAPP1a-i (D202 point 2, the git-app design P1.5): Review's read from a terminal is a <c>git</c> verb the usage names, routed
+    /// to the library's command through the route's own code, its log line appended without the open that prunes.
+    /// </summary>
+    [Fact]
+    public void The_usage_names_reviews_read_and_the_host_routes_it_to_the_library()
+    {
+        Assert.Contains("\n  git review <session> [--json] [--time]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
+        Assert.StartsWith("usage: daoris-driver git review <session> [--json] [--time]", GitReviewCommand.Usage);
+
+        var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "GitConsole.cs"));
+        Assert.Contains("GitReviewCommand.Read(args, out var wrong)", console);
+        Assert.Contains("GitReviewCommand.RunAsync(", console);
+        Assert.Contains("new MachineLog(home, \"driver\")", console);
+        Assert.True(
+            console.IndexOf("GitReviewCommand.Answers(args)", StringComparison.Ordinal) < console.IndexOf("GitBranchesCommand.Read(", StringComparison.Ordinal),
+            "the review is answered before the branch list reads the words as its own");
     }
 
     /// <summary>

@@ -357,7 +357,14 @@ public static class WorkingTree
                 continue;
             }
 
-            var (patch, added) = await UntrackedPatchAsync(root, path, git, ct).ConfigureAwait(false);
+            // GITAPP1a-i: a review's untracked reads are counted in a budget of their own, its tail (the git-app design P1.4).
+            string? patch;
+            int? added;
+            using (GitLaunch.Budget == GitBudget.Review ? GitLaunch.Within(GitBudget.Untracked) : null)
+            {
+                (patch, added) = await UntrackedPatchAsync(root, path, git, ct).ConfigureAwait(false);
+            }
+
             spent += patch?.Length ?? 0;
             // The word the committed list uses for an addition, so the page renders both alike.
             files.Add(new DiffFile(path, "added", added, added is null ? null : 0, patch));
@@ -957,7 +964,8 @@ public static class WorkingTree
     }
 
     /// <summary>
-    /// The test seam (PROC1d-i): called with the arguments of each git this flow starts through <see cref="GitAsync(string, IReadOnlyList{string}, CancellationToken)"/>,
+    /// The test seam (PROC1d-i): called with the arguments of each git this flow starts, through <see cref="GitAsync(string, IReadOnlyList{string}, CancellationToken)"/>,
+    /// <see cref="ReadGitAsync"/> or <see cref="GitBytesAsync"/> (GITAPP1a-i: raised by <see cref="GitLaunch"/>, beneath all three),
     /// so a test counts the product's starts. Null in production; an async local, so classes running in parallel never see
     /// each other's starts. A callback must be safe to call from several threads, as a flow's fetches run side by side.
     /// </summary>
@@ -1022,13 +1030,22 @@ public static class WorkingTree
             : run();
     }
 
-    private static async Task<(int Code, string Stdout, string Stderr)> RunGitAsync(
+    private static Task<(int Code, string Stdout, string Stderr)> RunGitAsync(
         string root, IReadOnlyList<string> arguments, IReadOnlyDictionary<string, string>? environment, TimeSpan? timeout,
         string? input, CancellationToken ct)
     {
         // LANDGIT1: a git that may move a ref drops what this flow was told, before it starts as well as after it ends.
         GitFacts.Ran(arguments);
-        Started.Value?.Invoke(arguments);
+        // GITAPP1a-i: counted, classified and timed at the one seam, which raises Started; the arguments go on as they came.
+        return GitLaunch.LaunchAsync(
+            GitLaunch.KindOf(arguments), arguments, GitLaunch.Budget, GitRunner.Whole,
+            () => RunLaunchedAsync(root, arguments, environment, timeout, input, ct));
+    }
+
+    private static async Task<(int Code, string Stdout, string Stderr)> RunLaunchedAsync(
+        string root, IReadOnlyList<string> arguments, IReadOnlyDictionary<string, string>? environment, TimeSpan? timeout,
+        string? input, CancellationToken ct)
+    {
         if (Answered.Value?.Invoke(arguments) is { } answered) return answered;
         // PARALLEL1e (D181 point 4): no git runs unbounded. The caller's bound where it passed one (a fetch, a replay), else
         // its kind's; past it git's tree is ended and the answer is a failure saying so, which every caller reads as a read
@@ -1101,7 +1118,13 @@ public static class WorkingTree
     /// PARALLEL1e: bounded in time too, by its kind (<see cref="GitBounds"/>); past it, or on the caller's cancellation, git's
     /// tree is ended, and the answer is null, or the cancellation thrown.
     /// </remarks>
-    internal static async Task<(byte[] Bytes, int Count)?> GitBytesAsync(
+    internal static Task<(byte[] Bytes, int Count)?> GitBytesAsync(
+        string root, IReadOnlyList<string> arguments, int limit, CancellationToken ct) =>
+        // GITAPP1a-i: through the one seam, which raises Started for this runner too (once RunGitAsync's alone).
+        GitLaunch.LaunchAsync(
+            GitLaunch.KindOf(arguments), arguments, GitLaunch.Budget, GitRunner.Bytes, () => BytesLaunchedAsync(root, arguments, limit, ct));
+
+    private static async Task<(byte[] Bytes, int Count)?> BytesLaunchedAsync(
         string root, IReadOnlyList<string> arguments, int limit, CancellationToken ct)
     {
         // The blob is read as bytes off the stream beneath; git's own words on the error stream are UTF-8.
@@ -1195,7 +1218,13 @@ public static class WorkingTree
     /// PARALLEL1e: bounded in time by its kind (<see cref="GitBounds"/>); past it git's tree is ended and the answer is -1, a
     /// read that failed, and on the caller's cancellation its tree is ended and the cancellation thrown.
     /// </remarks>
-    internal static async Task<int> ReadGitAsync(
+    internal static Task<int> ReadGitAsync(
+        string root, IReadOnlyList<string> arguments, Func<ReadOnlyMemory<char>, bool> take, CancellationToken ct) =>
+        // GITAPP1a-i: through the one seam, which raises Started for this runner too (once RunGitAsync's alone).
+        GitLaunch.LaunchAsync(
+            GitLaunch.KindOf(arguments), arguments, GitLaunch.Budget, GitRunner.Streamed, () => ReadLaunchedAsync(root, arguments, take, ct));
+
+    private static async Task<int> ReadLaunchedAsync(
         string root, IReadOnlyList<string> arguments, Func<ReadOnlyMemory<char>, bool> take, CancellationToken ct)
     {
         var (info, _) = GitStart(root, arguments, DaorisHome.Resolve());

@@ -424,6 +424,14 @@ public sealed partial class HelpCoverageTests
         + "exempt (D147 §3.3, D110 §4); the acts it will sit beside are owed to GIT1k's `git` kind.");
 
     /// <summary>
+    /// GITAPP1a-i's <c>daoris-driver git review</c> (D202 point 2), a verb of the headless host: exempt, since it reads a session's
+    /// review as its page does and changes nothing but one log line, as <c>git branches</c> is.
+    /// </summary>
+    private static readonly Exempt GitReviewDoor = new(
+        "it reads a session's review as Review reads it, and times its git, and changes nothing, so there is nothing to propose, as "
+        + "`git branches` is exempt (D202, D110 §4).");
+
+    /// <summary>
     /// PLUGHOOK1c's <c>daoris-driver trees state</c> (D148 point 2, design §2.5), a verb of the headless host: exempt, since it
     /// asks a landed branch's plugin about its pull request and keeps the answer, changing nothing of the person's and nothing on
     /// the platform (D110 §4). The room names it, so the helper can point the person at it.
@@ -1187,6 +1195,7 @@ public sealed partial class HelpCoverageTests
             .Append(WorkflowNodeDoor)
             .Append(CheckDoor)
             .Append(GitBranchesDoor)
+            .Append(GitReviewDoor)
             .Append(TreesStateDoor)
             .Append(OpinionAskDoor)
             .Append(OpinionJudgementDoor)
@@ -1669,6 +1678,19 @@ public sealed partial class HelpCoverageTests
         Assert.DoesNotContain("branches", HelpProposalKinds.Find("git")?.Doors ?? []);
         Assert.Contains("changes nothing", GitBranchesDoor.Reason);
         Assert.Contains("D147", GitBranchesDoor.Reason);
+    }
+
+    /// <summary>
+    /// GITAPP1a-i: the headless host's <c>git review</c> is exempt from Ask Daoris (D202, D110 §4) while its usage spells it: Review's
+    /// read, which changes nothing, and the bench's verb.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_git_review_is_exempt_since_it_changes_nothing()
+    {
+        Assert.Contains("git review <session> [--json] [--time]", DriverCommand.Usage);
+        Assert.DoesNotContain("review", HelpProposalKinds.Find("git")?.Doors ?? []);
+        Assert.Contains("changes nothing", GitReviewDoor.Reason);
+        Assert.Contains("D202", GitReviewDoor.Reason);
     }
 
     /// <summary>
