@@ -19968,3 +19968,13 @@ look refuses an ask by that reason before it waits on the person, so a closed qu
 row. The person's own ask of a quest's session names its asker (`handover.asked-terminal`, `handover.asked-window`), worded in en
 and zh (web). The install's ask was the agent's own (`askedBy: agent`, its `handover_propose` call), and the real reason there was
 not recorded. Detail and the red-first proof are in FIX-LOG's HANDOVERSAID1 entry.
+
+## LIMITRESUME1j — a second opinion judged against every maker the line ran on (2026-10-24, D206, D155)
+
+> | LIMITRESUME1j *(round 3, Codex 12)* | D155's maker passes judged against every maker the line ran on, so an opinion's independence holds on a line with two makers (§3.6) | MAKERTRAIL1 | an opinion asked on a line that ran on two makers refusing a reviewer of either |
+
+*(A row of D206's design table, `docs/2026-10-23-limit-resume-design.md` §6, under the backlog's LIMITRESUME1 entry.)*
+
+**Outcome** 2026-10-24: the look and the recheck judge the reviewer against every agent the line ran on (`OpinionWriters`), so a
+line carried across makers takes a reviewer of either as the same agent, `not-independent`. Proof red first in `OpinionLookTests`
+and `OpinionRecheckTests`; detail: FIX-LOG and D206, 2026-10-24.
