@@ -68,6 +68,45 @@ public sealed class AdapterTests
         Assert.Equal(composed.Text, spawn.Info.Environment["DAORIS_TARGET"]);
     }
 
+    /// <summary>
+    /// MAKERTRAIL2: a carry-on whose earlier part ran on another maker and left work uncommitted is told, beside its own attribution,
+    /// that maker's trailer from the harness and model that part's record reports, or model unreported; within a maker, or with
+    /// nothing left uncommitted, it is told nothing more.
+    /// </summary>
+    [Theory]
+    [InlineData("claude-code-acp", "codex-acp", "OpenAI", "gpt-5.5", "Co-Authored-By: Codex (OpenAI, gpt-5.5) <noreply@openai.com>")]
+    [InlineData("codex-acp", "claude-code-acp", "Anthropic", "claude-opus-5-5", "Co-Authored-By: Claude (Anthropic, claude-opus-5-5) <noreply@anthropic.com>")]
+    [InlineData("claude-code-acp", "codex-acp", "OpenAI", null, "Co-Authored-By: Codex (OpenAI, model unreported) <noreply@openai.com>")]
+    [InlineData("acp-stub", "stub", null, null, "Co-Authored-By: stub (maker unknown, model unreported) <its maker's attribution address>")]
+    public void A_carry_on_across_makers_names_the_earlier_makers_trailer_for_its_uncommitted_work(
+        string runs, string ran, string? maker, string? model, string trailer)
+    {
+        var adapter = AdapterSet.Built().Resolve(runs);
+        var left = new EarlierMaker(ran, maker, model is null ? [] : [model]);
+        var target = TargetPrompt.ForStart(Target() with { CutOff = "it ran out of credits.", InFlight = [" M src/app.cs"], LeftBy = left }, adapter);
+        var words = TargetPrompt.Compose(target);
+
+        Assert.Contains($"This start runs on `{runs}`", words);
+        Assert.Contains($"The part of this line before you ran on `{ran}`", words);
+        Assert.Contains("left work uncommitted in this tree. A commit holding any of that work carries its maker's trailer too, beside your own:", words);
+        Assert.Contains(trailer, words);
+    }
+
+    [Theory]
+    [InlineData("claude-code-acp", "claude-code", "Anthropic", true)]
+    [InlineData("stub", "stub", null, true)]
+    [InlineData("claude-code-acp", "codex-acp", "OpenAI", false)]
+    public void A_carry_on_within_a_maker_or_with_nothing_uncommitted_says_nothing_more(string runs, string ran, string? maker, bool uncommitted)
+    {
+        var adapter = AdapterSet.Built().Resolve(runs);
+        var left = new EarlierMaker(ran, maker, ["the-model"]);
+        var target = TargetPrompt.ForStart(
+            Target() with { CutOff = "it ended.", InFlight = uncommitted ? [" M src/app.cs"] : [], LeftBy = left }, adapter);
+
+        Assert.Equal(TargetPrompt.ForStart(Target() with { CutOff = "it ended." }, adapter).CommitTrailer, target.CommitTrailer);
+        Assert.DoesNotContain("The part of this line before you", TargetPrompt.Compose(target));
+    }
+
     [Fact]
     public void An_unknown_adapter_errors_naming_what_exists()
     {

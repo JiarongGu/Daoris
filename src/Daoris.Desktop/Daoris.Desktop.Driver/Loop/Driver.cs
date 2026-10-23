@@ -2477,6 +2477,9 @@ public sealed class Driver(
                 Retried = carryingOn && start.CarriesWork is > 0 ? start.Resumes!.Note ?? "it ended before closing the quest." : null,
                 // A further part gone into its session's tree is told what the part before it left uncommitted there (SESSONE1d).
                 InFlight = carryingOn || joinedIn is not null ? await WorkingTree.UncommittedAsync(workTree, ct: ct).ConfigureAwait(false) : [],
+                // MAKERTRAIL2: the harness the part before it ran on and the models its door reported, so a carry-on of another maker
+                // credits what that part left uncommitted.
+                LeftBy = carryingOn ? LeftBy(start.Resumes!) : null,
                 // What its start did against the line in the tree it goes on in (LANDSYNC2).
                 InSync = inSync?.Told,
                 // Its repository's remotes Daoris holds, so it does not try them (GITAUTH1a): read after its start's own fetch above. And,
@@ -4275,6 +4278,19 @@ public sealed class Driver(
     /// </summary>
     internal static SessionTarget WithAccess(SessionTarget target, ResolvedAccess access) =>
         target with { NoGoAheads = access.Value(AccessRules.GoAheads) == AccessRules.Never };
+
+    /// <summary>
+    /// The part a carry-on goes on from, as its record says it ran (MAKERTRAIL2): its harness, that harness's maker where this build
+    /// has it, and the models its door reported (MODELROLE1b). A record that names no harness is none.
+    /// </summary>
+    private EarlierMaker? LeftBy(PriorSession prior)
+    {
+        if (prior.Adapter is not { Length: > 0 } ran) return null;
+        string? maker;
+        try { maker = Context.Adapters.Resolve(ran).Toolchain?.Maker; }
+        catch (DriverException) { maker = null; }
+        return new EarlierMaker(ran, maker, prior.Ran?.Models ?? []);
+    }
 
     /// <summary>
     /// Whether a start runs on another account than the session it carries on ran on (TOOL4f): the record's account
