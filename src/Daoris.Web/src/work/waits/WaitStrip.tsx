@@ -29,8 +29,13 @@ export type WaitProps = {
   resolving?: boolean;
   /** A parked session's moves, the head's card's (D56): the strip reads it only to know the park is the person's here. */
   onResolve?: (state: Resolution, note: string | null, close?: QuestClose, answered?: Answered) => void;
-  /** And its answer's door where no box below takes it: the card's too. */
-  onAnswerSession?: (answer: string | null) => void;
+  /**
+   * And its answer's door, the card's: the box's own say door where the box below answers the park too, else the park's answer door
+   * (PARKANSWER1). Settles with a refusal's sentence, or nothing.
+   */
+  onAnswerSession?: (answer: string | null) => Promise<string | null> | void;
+  /** A press of its question's answer from the card, with the card's words, through the box's door (PARKANSWER1). */
+  onAnswerChoice?: (label: string, words: string) => Promise<string | null> | void;
   onAnswerAsk?: (ask: string) => void;
   goAheads?: GoAhead[];
   onGoAhead?: GoAheadAnswer;
