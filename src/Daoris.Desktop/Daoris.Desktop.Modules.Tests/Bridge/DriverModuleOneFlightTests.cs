@@ -76,11 +76,14 @@ public sealed class DriverModuleOneFlightTests : DriverModuleBridge
         Assert.True((await sweep.WaitAsync(Patience)).Success);
     }
 
-    /// <summary>The reads shared are the two the frozen window's stack repeated, and neither is a press: a press is two acts.</summary>
+    /// <summary>
+    /// The reads shared are the two the frozen window's stack repeated, and Review's, one per session however many windows ask it
+    /// (GITAPP1a-iii); none is a press: a press is two acts.
+    /// </summary>
     [Fact]
-    public void Only_the_lines_and_the_clean_ups_list_are_shared_and_neither_is_a_press()
+    public void Only_the_lines_the_clean_ups_list_and_the_review_are_shared_and_none_is_a_press()
     {
-        Assert.Equal(["LINES", "SWEEP_PLAN"], DriverModule.OneFlightRoutes.Order(StringComparer.Ordinal));
+        Assert.Equal(["LINES", "SESSION_DIFF", "SWEEP_PLAN"], DriverModule.OneFlightRoutes.Order(StringComparer.Ordinal));
         Assert.All(DriverModule.OneFlightRoutes, route =>
             Assert.Null(DriverModule.Declared(new Shenora.Core.Ipc.IpcRequest { Id = "x", Module = DriverModule.Name, Type = route })));
     }

@@ -108,6 +108,9 @@ public sealed class DriverModule : ModuleBase
     /// </summary>
     public IHelpDoors HelpDoors(ServiceClient? service) => HelpRoutes.Doors(_context, service);
 
+    /// <summary>The reads a page may stop (GITAPP1a-iii), and who waits on them: the tests' window on a shared read's callers.</summary>
+    public ReadLeaves Reads => _context.Reads;
+
     /// <summary>The module's name on the bridge, which the page's calls and <see cref="Declared"/> read.</summary>
     public const string Name = "DAORIS.DRIVER";
 
@@ -169,10 +172,7 @@ public sealed class DriverModule : ModuleBase
     {
         if (request.Type is not { } type || !Table.TryGetValue(type, out var route)) throw UnknownType(request);
         var handler = _handlers[route.Domain];
-        if (route.OneFlight)
-        {
-            return _flights.JoinAsync(FlightOf(type, request), token => route.Answer(handler, request, token), cancellationToken);
-        }
+        if (route.Shared is { } shared) return JoinAsync(route, shared, handler, type, request, cancellationToken);
 
         return route.Change is null ? route.Answer(handler, request, cancellationToken) : PressAsync(route, handler, request, cancellationToken);
     }
@@ -190,15 +190,46 @@ public sealed class DriverModule : ModuleBase
         }
     }
 
-    /// <summary>What makes two asks identical: the route and its payload as the page sent it.</summary>
-    private static string FlightOf(string type, IpcRequest request) =>
-        request.Payload is { ValueKind: not System.Text.Json.JsonValueKind.Undefined } payload ? $"{type}\n{payload.GetRawText()}" : type;
+    /// <summary>
+    /// A shared read joined (SWEEPFLIGHT1), its caller waiting under its <c>read</c> id where the page sent one (GITAPP1a-iii, the
+    /// git-app design P1.6): the id's source is linked to the route's own token, the asking window's bridge lifetime, so the page's
+    /// <c>READ_LEAVE</c> and the window's destruction each stop this caller alone, and the flight only where no other caller waits.
+    /// </summary>
+    private async Task<object?> JoinAsync(
+        Handler route, OneFlightAttribute shared, object handler, string type, IpcRequest request, CancellationToken cancellationToken)
+    {
+        using var read = _context.Reads.Open(ReadOf(request), cancellationToken);
+        // No ConfigureAwait: the kit's pipeline keeps the caller's context, as the publisher's says.
+        return await _flights.JoinAsync(
+            FlightOf(type, request, shared.By), token => route.Answer(handler, request, token), read.Token, read.Joined);
+    }
+
+    /// <summary>The payload's <c>read</c> id, where the page sent one (GITAPP1a-iii).</summary>
+    private static string? ReadOf(IpcRequest request) =>
+        request.Payload is { ValueKind: System.Text.Json.JsonValueKind.Object } payload
+        && payload.TryGetProperty("read", out var read) && read.ValueKind == System.Text.Json.JsonValueKind.String
+            ? read.GetString()
+            : null;
+
+    /// <summary>
+    /// What makes two asks identical: the route and its payload as the page sent it, or, for a read shared by one field
+    /// (<see cref="OneFlightAttribute.By"/>), the route and that field alone, so a <c>read</c> id each call makes its own never
+    /// keeps two windows on one review apart (GITAPP1a-iii).
+    /// </summary>
+    private static string FlightOf(string type, IpcRequest request, string? by)
+    {
+        if (request.Payload is not { ValueKind: not System.Text.Json.JsonValueKind.Undefined } payload) return type;
+        if (by is null) return $"{type}\n{payload.GetRawText()}";
+        return payload.ValueKind == System.Text.Json.JsonValueKind.Object && payload.TryGetProperty(by, out var field)
+            ? $"{type}\n{by}\n{field.GetRawText()}"
+            : $"{type}\n{by}";
+    }
 
     /// <summary>Every route this module answers, by name: what the page's bridge may call (MOD5).</summary>
     public static IReadOnlyCollection<string> Routes => Table.Keys;
 
     /// <summary>The reads whose identical asks share the one under way (SWEEPFLIGHT1), by name.</summary>
-    public static IReadOnlyCollection<string> OneFlightRoutes => [.. Table.Where(entry => entry.Value.OneFlight).Select(entry => entry.Key)];
+    public static IReadOnlyCollection<string> OneFlightRoutes => [.. Table.Where(entry => entry.Value.Shared is not null).Select(entry => entry.Key)];
 
     /// <summary>
     /// What a request's route declares a successful answer changed (STATEHUB1b, D169 point 2), read off the
@@ -238,7 +269,7 @@ public sealed class DriverModule : ModuleBase
         Domain.Of(context => new SystemRoutes(context)),
         Domain.Of(context => new ToolsRoutes(context)),
         Domain.Of(context => new TraceRoutes(context.Loop)),
-        Domain.Of(context => new TreesRoutes(context.Loop)),
+        Domain.Of(context => new TreesRoutes(context.Loop, context.Reads)),
         Domain.Of(context => new WorkRoutes(context)),
         Domain.Of(context => new WorkflowRoutes(context)),
     ];
@@ -253,7 +284,7 @@ public sealed class DriverModule : ModuleBase
         var table = new Dictionary<string, Handler>(StringComparer.Ordinal);
         for (var place = 0; place < Domains.Length; place++)
         {
-            foreach (var (route, answer, change, oneFlight) in Domains[place].Routes) table.Add(route, new Handler(place, answer, change, oneFlight));
+            foreach (var (route, answer, change, shared) in Domains[place].Routes) table.Add(route, new Handler(place, answer, change, shared));
         }
 
         return table.ToFrozenDictionary(StringComparer.Ordinal);
@@ -261,17 +292,17 @@ public sealed class DriverModule : ModuleBase
 
     /// <summary>
     /// A route's entry in the table: its domain's place in <see cref="Domains"/>, the handler over that domain's instance, what
-    /// it declares a successful answer changed (D169), null for a read, and whether its identical asks share one under way.
+    /// it declares a successful answer changed (D169), null for a read, and how its identical asks share one under way, null where they do not.
     /// </summary>
     private readonly record struct Handler(
-        int Domain, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change, bool OneFlight);
+        int Domain, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change, OneFlightAttribute? Shared);
 
     /// <summary>One line of <see cref="Domains"/>: how a domain's handler class is built over the context, and the routes that class marks.</summary>
     private sealed class Domain(
         Func<DriverContext, object> build,
-        IReadOnlyList<(string Route, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change, bool OneFlight)> routes)
+        IReadOnlyList<(string Route, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change, OneFlightAttribute? Shared)> routes)
     {
-        public IReadOnlyList<(string Route, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change, bool OneFlight)> Routes => routes;
+        public IReadOnlyList<(string Route, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change, OneFlightAttribute? Shared)> Routes => routes;
 
         public object Build(DriverContext context) => build(context);
 
@@ -283,21 +314,21 @@ public sealed class DriverModule : ModuleBase
         /// </summary>
         public static Domain Of<T>(Func<DriverContext, T> build) where T : class
         {
-            var routes = new List<(string, Func<object, IpcRequest, CancellationToken, Task<object?>>, StateChange?, bool)>();
+            var routes = new List<(string, Func<object, IpcRequest, CancellationToken, Task<object?>>, StateChange?, OneFlightAttribute?)>();
             foreach (var method in typeof(T).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic))
             {
                 var marks = method.GetCustomAttributes<DriverRouteAttribute>().ToList();
                 var publishes = method.GetCustomAttributes<PublishesAttribute>().ToDictionary(each => each.Route, StringComparer.Ordinal);
-                var shared = method.GetCustomAttributes<OneFlightAttribute>().Select(each => each.Route).ToHashSet(StringComparer.Ordinal);
+                var shared = method.GetCustomAttributes<OneFlightAttribute>().ToDictionary(each => each.Route, StringComparer.Ordinal);
                 // A declaration for a route this method does not mark is a typo that would publish nothing: refused here, at the
                 // module's first use, as a route marked twice is.
-                if (publishes.Keys.Concat(shared).FirstOrDefault(route => marks.All(mark => mark.Type != route)) is { } stray)
+                if (publishes.Keys.Concat(shared.Keys).FirstOrDefault(route => marks.All(mark => mark.Type != route)) is { } stray)
                 {
                     throw new InvalidOperationException($"{typeof(T).Name}.{method.Name} declares `{stray}`, and marks no such route.");
                 }
 
                 // Two presses are two acts, each the person's: only a read is ever shared (SWEEPFLIGHT1).
-                if (shared.FirstOrDefault(publishes.ContainsKey) is { } press)
+                if (shared.Keys.FirstOrDefault(publishes.ContainsKey) is { } press)
                 {
                     throw new InvalidOperationException($"{typeof(T).Name}.{method.Name} shares `{press}`, a press: only a read is shared.");
                 }
@@ -308,7 +339,7 @@ public sealed class DriverModule : ModuleBase
                         ? Now(method.CreateDelegate<Func<T, IpcRequest, object?>>())
                         : Later(method.CreateDelegate<Func<T, IpcRequest, CancellationToken, Task<object?>>>()),
                         publishes.TryGetValue(route.Type, out var declared) ? new StateChange(declared.Changes, declared.Session, declared.Subject) : null,
-                        shared.Contains(route.Type)));
+                        shared.GetValueOrDefault(route.Type)));
                 }
             }
 
@@ -375,4 +406,10 @@ internal sealed class PublishesAttribute(string route, StateScopes changes) : At
 internal sealed class OneFlightAttribute(string route) : Attribute
 {
     public string Route { get; } = route;
+
+    /// <summary>
+    /// The payload's field that alone makes two asks identical, where the rest of the payload is the caller's own (GITAPP1a-iii:
+    /// <c>SESSION_DIFF</c> by its <c>id</c>, its <c>read</c> id kept out); null shares by the whole payload.
+    /// </summary>
+    public string? By { get; set; }
 }

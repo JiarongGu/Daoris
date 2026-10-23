@@ -38,6 +38,12 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
     public AgentActions Actions { get; } = new(events, loop);
 
     /// <summary>
+    /// The reads a page may stop (GITAPP1a-iii, the git-app design P1.6): the module's router opens each shared read's <c>read</c> id
+    /// here, and the trees domain's <c>READ_LEAVE</c> cancels one.
+    /// </summary>
+    public ReadLeaves Reads { get; } = new();
+
+    /// <summary>
     /// The folder holding the install's offers — Daoris's own example plugins, none installed until a press (PLUG9 d, D103).
     /// Null finds them beside the running application, else beside the home; a test names its own, since every test's home
     /// shares one parent. Set by <see cref="DriverModule"/>'s initializer after the handlers are built (PART10e), so a domain

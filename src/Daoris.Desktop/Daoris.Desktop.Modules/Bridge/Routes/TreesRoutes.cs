@@ -9,9 +9,10 @@ namespace Daoris.Desktop;
 /// diff (SURF6), the files a composer offers (CONV4d), a file's preview (D111), discard (D51), landing
 /// (WSR1) and the hand-off (WSR5b).
 /// </summary>
-public sealed class TreesRoutes(DriverLoop loop)
+public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
 {
     private readonly DriverLoop _loop = loop;
+    private readonly ReadLeaves _reads = reads;
 
     /// <summary>
     /// What a landing changes (STATEHUB1b, D169): the session, every plan and gate (the line it merged into is what each
@@ -51,8 +52,14 @@ public sealed class TreesRoutes(DriverLoop loop)
     /// read from the landed branch in the repository's own checkout, from where its work grew from, and a
     /// branch gone since is said with whether its work reads on the line. Every read there is of refs and
     /// objects: the person's checkout is never touched.</para>
+    ///
+    /// <para><b>One read per session, stopped when nobody waits</b> (GITAPP1a-iii, D202, the git-app design P1.6). Shared by the
+    /// session alone (<see cref="OneFlightAttribute.By"/>), so two windows on one review start one read; each call's <c>read</c> id
+    /// waits under its window's bridge lifetime, and <c>READ_LEAVE</c> or the window's destruction stops that caller. The last to
+    /// leave stops the read under this token, and each git runner kills its process and awaits its exit before it returns.</para>
     /// </remarks>
     [DriverRoute("SESSION_DIFF")]
+    [OneFlight("SESSION_DIFF", By = "id")]
     private async Task<object?> DiffAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -60,6 +67,8 @@ public sealed class TreesRoutes(DriverLoop loop)
         var service = _loop.Service ?? throw NotReady();
 
         var (tree, baseCommit) = await service.SessionGroundAsync(id, cancellationToken);
+        // GITAPP1a-iii: a git of this read that outlived its kill is said in the machine log as `git.unended`.
+        using var unended = GitUnended.SaidTo(_loop.Log);
         // The reads, their order and their fallbacks are the driver's, so the terminal's `git review` reads through the same code
         // (GITAPP1a-i), each start counted and the read said as `review.read`.
         var review = await SessionReviews.ReadAsync(
@@ -72,6 +81,15 @@ public sealed class TreesRoutes(DriverLoop loop)
                 id, review.Diff, ReviewSource.Tree, review.Landed, treeGone: false, uncommitted: review.Uncommitted, behind: review.Behind,
                 treeBranch: review.TreeBranch, offer: review.Offer);
     }
+
+    /// <summary>
+    /// The page left a review it asked (GITAPP1a-iii, D202, the git-app design P1.6): <c>{ read }</c>, the id its
+    /// <c>SESSION_DIFF</c> carried. That call stops waiting, and its read stops only where no other window waits on it. Answers
+    /// <c>{ left }</c>: false for an id already answered, or never asked, which changes nothing. A read that changes no state.
+    /// </summary>
+    [DriverRoute("READ_LEAVE")]
+    private object? LeaveRead(IpcRequest request) =>
+        new { Left = _reads.Leave(PayloadHelper.GetRequiredValue<string>(request.Payload, "read")) };
 
     /// <summary>Whether <paramref name="tree"/> is one this home opened for a session, which ran in it alone (D49 §3); a person's checkout is not.</summary>
     private static bool OwnTree(SessionTrees trees, string? tree) => SessionReviews.OwnTree(trees, tree);
