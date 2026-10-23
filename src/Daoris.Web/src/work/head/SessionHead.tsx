@@ -12,7 +12,7 @@ import {
 import { cn } from '../../lib/cn';
 import { AnsweredPark } from '../waits/AnsweredPark';
 import { AwaitingIntake } from '../waits/AwaitingIntake';
-import { AwaitingPerson, type QuestClose, type Resolution } from '../waits/AwaitingPerson';
+import { type AnswerPick, AwaitingPerson, type QuestClose, type Resolution } from '../waits/AwaitingPerson';
 import type { ParkQuestion } from '../waits/parkQuestion';
 import { type DetailRow, DetailsFold } from './DetailsFold';
 import { AccessChip, accessRow, startedFull } from '../AccessFact';
@@ -104,7 +104,7 @@ export type { HeadOpinion, HeadReview, LandingPlan, WorkAsk } from '../review/La
  */
 export function SessionHead({
   session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
-  onAnswerSession, onAnswerChoice, branch, ownBranch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
+  onAnswerSession, onAnswerChoice, answerPick, branch, ownBranch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
   ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest,
   continues, helps, onOpenSession, heavy, process, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek, helpers, permissions, answers,
   question = null, parkBox = false, pieces,
@@ -299,6 +299,8 @@ export function SessionHead({
   onAnswerSession?: (answer: string | null) => Promise<string | null> | void;
   /** A press of the park's question's answer from its card, with the card's words (PARKANSWER1, PARKVIEW1). */
   onAnswerChoice?: (label: string, words: string) => Promise<string | null> | void;
+  /** The answer selected in its question, the frame's, shared with the box below (QUESTIONUI1a); absent, the card holds its own. */
+  answerPick?: AnswerPick;
 }) {
   const { t } = useTranslation();
   const running = SESSION_ACTIVE.has(session.state);
@@ -347,6 +349,7 @@ export function SessionHead({
             // is its composer's.
             onAnswer={session.kind !== 'chat' ? onAnswerSession : undefined}
             onChoice={session.kind !== 'chat' ? onAnswerChoice : undefined}
+            pick={answerPick}
             below={parkBox}
             onConversation={toEvent?.question}
           />

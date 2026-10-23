@@ -8,6 +8,12 @@ import type { ParkQuestion } from './parkQuestion';
 import { QuestionCard } from './QuestionCard';
 import { InConversation } from './WaitAnchor';
 
+/**
+ * The answer selected in a park's question (QUESTIONUI1a, the supervisor design §8.4): the frame's, one per session, so a row chosen in
+ * the head's card or the box below is chosen in both; null for none.
+ */
+export type AnswerPick = { selected: string | null; onSelect: (label: string | null) => void };
+
 /** What the ledger lets a person do from `awaiting-person` — and nothing this surface invented. */
 export type Resolution = 'completed' | 'declined' | 'stopped';
 
@@ -43,8 +49,9 @@ export type QuestClose = { as: 'done'; note: string | null };
  * report, 2026-10-23). Every park the frame can answer is answered here as well: its question's answers rows to select once
  * *Answer and carry on…* is open (PARKVIEW1, QUESTIONUI1a), else the words under its closing message, through the frame's same door,
  * and the hint names both places. Its one *Send* sends the selected answer with the card's words, naming the question, or the words
- * alone; the selection is the card's own, tied to the question's id. A refusal is said here, where it was pressed, the words and the
- * selection kept; the frame refuses an answer of either kind while the question's go-aheads are open.
+ * alone. The selection is the frame's, shared with the box below (the card's own where none is handed), tied to the question's id.
+ * A refusal is said here, where it was pressed, the words and the selection kept; the frame refuses an answer of either kind while
+ * the question's go-aheads are open.
  *
  * **Declining asks for its reason in place**, the same two-step a quest's page uses and for the
  * same reason: the note is the only part whoever reads the record later can act on, and a decline
@@ -59,7 +66,7 @@ export type QuestClose = { as: 'done'; note: string | null };
  * analysis and one with none are both reachable by passing them.
  */
 export function AwaitingPerson({
-  note, parts, question = null, quest = null, pending = false, below = false, onResolve, onAnswer, onChoice, onConversation,
+  note, parts, question = null, quest = null, pending = false, below = false, onResolve, onAnswer, onChoice, pick, onConversation,
 }: {
   /**
    * Its question as its agent asked it through the connector (PARKVIEW1, the park's ask design §3): shown in place of its whole last
@@ -90,6 +97,8 @@ export function AwaitingPerson({
   onAnswer?: (answer: string | null) => Promise<string | null> | void;
   /** Its question's answer selected, sent with the card's words (PARKANSWER1, QUESTIONUI1a): settled as `onAnswer` is. */
   onChoice?: (label: string, words: string) => Promise<string | null> | void;
+  /** The answer selected, the frame's and shared with the box below (QUESTIONUI1a); absent, the card holds its own. */
+  pick?: AnswerPick;
   /** The box at the foot answers it too (PARKANSWER1): the hint names both places. */
   below?: boolean;
 }) {
@@ -104,8 +113,13 @@ export function AwaitingPerson({
   const [refused, setRefused] = useState<string | null>(null);
   // The answer selected in its question (QUESTIONUI1a), on the question it was selected on: a replaced one is drawn with none.
   const [choice, setChoice] = useState<{ question: string; label: string } | null>(null);
-  const selected = question && choice?.question === question.id && question.choices.some((one) => one.label === choice.label)
+  const own = question && choice?.question === question.id && question.choices.some((one) => one.label === choice.label)
     ? choice.label : null;
+  const selected = pick ? pick.selected : own;
+  const select = (label: string | null) => {
+    if (pick) pick.onSelect(label);
+    else setChoice(label === null || !question ? null : { question: question.id, label });
+  };
   const send = async (settle: Promise<string | null> | void) => {
     setSending(true);
     setRefused(null);
@@ -116,7 +130,7 @@ export function AwaitingPerson({
         return;
       }
       setWords('');
-      setChoice(null);
+      select(null);
       setAnswering(false);
     } finally {
       setSending(false);
@@ -143,7 +157,7 @@ export function AwaitingPerson({
             <QuestionCard
               question={question}
               selected={selected}
-              onSelect={answering && onChoice ? (label) => setChoice(label === null ? null : { question: question.id, label }) : undefined}
+              onSelect={answering && onChoice ? select : undefined}
             />
           </div>
         )

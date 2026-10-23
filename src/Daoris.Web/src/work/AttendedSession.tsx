@@ -9,7 +9,7 @@ import { ChainLine } from '../map/ChainLine';
 import { ChainStrip } from '../map/ChainStrip';
 import type { SweepBranch } from '../settings/Sweep';
 import type { AccountNamer } from '../agents/tools';
-import type { QuestClose, Resolution } from './waits/AwaitingPerson';
+import type { AnswerPick, QuestClose, Resolution } from './waits/AwaitingPerson';
 import type { ParkQuestion } from './waits/parkQuestion';
 import { HowItCameToBe, type TraceDoor } from './head/HowItCameToBe';
 import type { WaitEvents } from './waits/anchors';
@@ -66,7 +66,7 @@ export const noteIsInTheHead = (session: Session, answerableHere: boolean) =>
   session.state === 'awaiting-person' && !answeredPark(session) && answerableHere;
 
 export function AttendedSession({
-  session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession, onAnswerChoice,
+  session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession, onAnswerChoice, answerPick,
   chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, ownBranch, onDiscardBranch, discardingBranch,
   headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind,
   opinion, continues, helps, heavy, process, parts, entryAccept, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek, helpers, permissions,
@@ -212,6 +212,8 @@ export function AttendedSession({
   onAnswerSession?: (answer: string | null) => Promise<string | null> | void;
   /** And a press of its park's question's answer from its card, with the card's words (PARKANSWER1). */
   onAnswerChoice?: (label: string, words: string) => Promise<string | null> | void;
+  /** And the answer selected in its question, the frame's, shared with the box (QUESTIONUI1a). */
+  answerPick?: AnswerPick;
   /**
    * The chain its quest belongs to (MAP1), the same strip a quest's page shows. Rendered only
    * when there is one, like there: a lone quest has nothing before or after it to show.
@@ -256,6 +258,7 @@ export function AttendedSession({
         onAnswerAsk={onAnswerAsk}
         onAnswerSession={onAnswerSession}
         onAnswerChoice={onAnswerChoice}
+        answerPick={answerPick}
         branch={branch}
         ownBranch={ownBranch}
         onReview={onReview}
