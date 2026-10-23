@@ -454,17 +454,30 @@ today's rules on the upgrade).
 So for Second opinion and Partner the actor is **a model for each agent a rule or an ask names**: their rows, editors and the
 suggestion's card say exactly that (*Models for the agents a rule or an ask names*), with no order and no *another maker first*
 decoration (Opus B6). A `pick` (D130 point 4) overrides agent and account for its start, the model being the actor's first entry
-for the picked agent, else account default; a handed quest's named agent is `from` **`handed`**, its model taken the same way.
+for the picked agent, else account default (refused on that account: §3.5(d)); a handed quest's named agent is `from`
+**`handed`**, its model taken the same way. **Helper's order is D155's maker passes** (round 3, Opus N1): `HelperChoice.ChooseAsync`
+walks its candidates through `ReviewerChoice`'s passes (`HelperChoice.cs:30-37`, `ReviewerChoice.cs:175-180`), so the actor's
+entries are the candidates and another maker than the asker's still comes first; the preview says *another maker than the
+asker's first*, the asker being known only at the ask. **The order a start walks is read once for that start** (Opus N3): a
+`SET_ACTOR` that lands between the walk and a re-ask at the open does not change the order the re-ask uses.
 
-**Inheritance, made explicit on the first write (Codex 7, Opus B4(a)).** Build, Chat and Brainstorm's last fallback read the one
-key `adapter` (`Driver.cs:1672`; `ConversationRoutes.cs:48`, `:164`, `SessionsVerbs.cs:33`; `DriverBrainstorms.cs:348`). The write
-that first sets any of them writes each of the others still *as before* as its explicit one-entry list of `adapter`'s agent at
-account default, in the same write under the keep lock, and the Save's sentence names them (*Chat and Brainstorm keep
-claude-code; written for them*). After that write `adapter` is a written-through compatibility key only: no actor reads it. Its
+**Inheritance, kept on every change of `adapter` (Codex 7, Opus B4(a); round 3, Codex 7).** Build, Chat and Brainstorm's last
+fallback read the one key `adapter` (`Driver.cs:1672`; `ConversationRoutes.cs:48`, `:164`, `SessionsVerbs.cs:33`;
+`DriverBrainstorms.cs:348`). **Every write that changes `adapter`** (setting or clearing Build, `driver adapter`, the proposal
+door) first writes each of Chat and Brainstorm still *as before* as its explicit one-entry list of `adapter`'s agent as it stood,
+at account default, in the same write under the keep lock, and the Save's sentence names them (*Chat and Brainstorm keep
+claude-code; written for them*). Round 2 did this on the first write only, so clearing Chat back to *as before* reopened its
+live reading of `adapter`, and a later change of Build moved it (Codex's set → clear Chat → change Build). Now a cleared Chat
+reads `adapter` until the next write that would change it, which freezes Chat where it stood. *As before* for Chat therefore
+means *Build's agent as it stands now, until Build next changes*, and the editor's *Clear* says so. Test: set Build, clear Chat,
+change Build: Chat stays on the agent it ran, written for it. So no actor follows `adapter` across a change of it. Its
 other readers, which want *this machine's Build agent* for a record with none (`BriefedMove.cs:111`, `ChatGoOn.cs:372`,
 `OpinionGateLook.cs:368`, `SessionGroups.cs:837`, `Driver.cs:622`, `SetupPress.cs:52`, `AgentsRoutes.cs:62`, `:287`,
 `HelpRoomMachineNow.cs:15`), keep reading it, and write-through keeps it Build's first agent. A test holds that setting Build leaves
-Chat's and Brainstorm's effective order unchanged unless the change names them.
+Chat's and Brainstorm's effective order unchanged unless the change names them. **Where Build runs on more than one agent**
+(round 3, Opus N12), the opinion wire's *same agent* display, which judges against `config.Adapter` alone
+(`LinesRoutes.cs:155`, `DriverRoutes.cs:620-622`, `HelpSettingProposals.cs:730`), judges against Build's agents in its effective
+order, so a reviewer on Build's second agent is labelled the same agent too.
 
 ### 4.1 At a start: choice by choice, each choice's accounts before the next
 
@@ -476,10 +489,11 @@ that order.
 passed = {}                                   # this start's (choice, account) passes: not a cool-off, not counted
 for each entry of the effective order (§4.0):
     pass it, coded, if it cannot run here at all:
-        unavailable (not installed) · no-posture (§4.1, B3) · not-admitted (a partner, D199) · not-listed (a fence)
+        unavailable (not installed) · no-posture (§4.1, B3) · no-connector (§4.1, round 3)
+        · not-admitted (a partner, D199) · not-listed (a fence)
     else that agent's account walk (D197's order, cool-offs, sign-ins, keep, curve, the cap), with `passed` excluding
         the accounts already passed for this entry, and each account's offer reading judged first (§3.3):
-        reserved → open on this entry, this account (the reservation committed at the first prompt)
+        counted → open on this entry, this account (the start's one count, §4.1)
         an account not-offered or refused → add (entry, account) to passed; the walk goes on within the entry
         held    → pass the entry with the walk's own reason
 no entry allowed → the wait (§4.5)
@@ -490,32 +504,62 @@ and these are its contract:
 
 - **A per-start `passed` set** of (entry, account), handed to `WalkAsync` (`HarnessRoster.cs:1047`), which today takes no
   exclusion. It is the start's alone: never a cool-off, never stored, gone when the start ends. An entry is passed only when every
-  account of it is.
-- **A reservation that is committed or released.** Today `SelectAsync` always counts (`:883-886`), and the walk counts the
-  account as it returns it (`Number = counts ? Chose(...) : 0`, `:1411-1415`), taken back only on a probe lock's failure
-  (`WaitedOutAsync`, `Unchose`, `:1424-1440`). The selection becomes a reservation counted as today, with `Release` (the same
-  `Unchose`) on a negotiation failure, a cancellation or a refusal before the first prompt, and `Commit` at the first prompt.
-  `counts: false` is not used for this: it also skips the start's usage refresh and reservation behaviour (`:1076-1079`,
-  `:1191-1197`). Tests: a refusal, a cancellation and three alternatives in a row leave no reservation behind, no distorted
-  rotation and no early reuse of the refused account.
+  account of it is. The readings are judged **inside the walk**, so every caller of `WalkAsync` takes them: `SelectHandedAsync`,
+  `CarriedOnAsync` and `ResumeAsync`'s own-account pass (`HarnessRoster.cs:895-905`, `:968`, `:991-995`; round 3, Opus §1.3).
+- **One count per start, owned across reselection (round 3, Codex 1, Opus R2-B4, agreed).** Round 2's *reservation committed at
+  the first prompt or released* named a mechanism the count does not have. The count, as it is: the walk counts the account as it
+  returns it (`Number = counts ? Chose(...) : 0`, `:1411-1415`), an entry in `_chosen` until the next look whose mark covers it;
+  from that look on, the count is the record itself (`Look`, `:1651-1659`), and a look begins only once the last look's starts have
+  opened their records (`Driver.cs:891-897`). `Facts` counts both (`Running`, `:1688-1693`), and the rotation ranks by it
+  (`AccountRotation.cs:541`) and by `LastStarted` (`:555-575`). So, in those terms:
+  - **A start owns one count**, from the walk's answer until its record ends or the start comes to nothing. *Commit* is dropped:
+    nothing exists for it to do.
+  - **Before the record opens, the count is taken back by `Unchose` whenever the start ends**: a hold or a refusal after the walk
+    included, which today keep it (`Driver.cs:1775`, the posture hold; `:1796`, the tree lock's), as well as a cancellation and a
+    probe lock's failure (`WaitedOutAsync`, `:1424-1440`, as today).
+  - **After the open, the count is the record, and the release is the record's end.** `Facts` leaves a record ended
+    `choice-not-offered` out of both `Running` and `LastStarted`, so the refusing account is not read as just used.
+  - **The re-ask at the open carries the start's own count in.** It judges the alternatives with the start's own load taken out of
+    its account's facts (its `_chosen` number, or its record where a look has read it), so the refused account's count does not
+    bias the goal order; and it takes no count of its own. **A same-account answer keeps the count.** **Any other answer** first
+    stops the opened process, which holds its account until then, so a concurrent probe still finds it busy (`:729`); then ends the
+    record, which releases the count; and the start that follows (the next look's, or §3.5(b)'s in the same call) takes its own
+    one count as any start does. A look that lands during the negotiation changes nothing: before the end, the record is counted
+    either way.
+  - `counts: false` is not used for this: it also skips the start's usage refresh (`:1076-1079`, `:1191-1197`).
+  - Tests: a refusal, a cancellation, a hold after the walk and three alternatives in a row leave no count behind; the re-ask
+    ranks a goal account without its own load; a probe during the negotiation finds the account busy; a look during the
+    negotiation leaves one count; a `choice-not-offered` record is neither running nor last started.
 - **Driven work never takes an account kept for conversations**, nor the person's own sign-in (D197 point 3).
 - **A missing model entitlement does not cool an account** (X): it is that account's `refused` reading (§3.3), for this entry.
 - **`no-posture` (round 2, Opus B3)** replaces `no-full-access`. A driven start on a repository whose permission prompts are
   `asking` or `unrestricted`, on an agent with no `AskingPosture` / `FullPosture`, is refused by `DrivenAccess.For`
   (`DrivenAccess.cs:106-112`) and held (`Driver.cs:1775`) after an account was counted, so a Build whose first entry is dsh or a
   plugin harness would hold at every look and never reach its second. `no-posture` is judged per entry **before** the walk, from
-  `DrivenAccess.For` for driven starts and from Ask Daoris's mode for its own (restricted needs the asking posture, D183 point 3;
-  full the full one; dsh has none, `Adapters.cs:1275`).
+  each start's own access judge and nothing else (round 3, Codex 9): `DrivenAccess.For(...).Refusal` for driven starts, and
+  `HelpAccess.For(mode, adapter).Refusal` for Ask Daoris (`Help/HelpMode.cs:83-104`). Round 2 said restricted Ask Daoris needs
+  the asking posture; it does not: `HelpAccess.For` lets a restricted start run on any adapter, asking `HelpRoom.Posture` where
+  offered, and refuses only a full-access start on an adapter with no `FullPosture` (dsh, `Adapters.cs:1275`). So no restricted
+  start that runs today stops. Test: an *as before* restricted Ask Daoris on a harness with no asking mapping starts as today.
+- **`no-connector` (round 3, Opus R2-B5)**, judged per entry before the walk as `no-posture` is. Only the protocol door hands a
+  session the connector it takes its quest with (`Driver.cs:3760-3771`; the pipe door gets the plugins' servers alone,
+  `SpawnServers.cs:55-67`), so the planner admits an unadopted repository only on that door (`Planner.cs:1729-1753`), judged
+  today from `adapter`'s one wire (`Door()`, `Driver.cs:618-628`). With entries on both doors, an entry on the pipe door for a
+  repository that has not adopted Daoris is passed `no-connector`; the planner's gate asks whether **any** entry of Build's order
+  can drive the repository, not `Door()` alone, and the workspace set-up's use of `Door()` (`Driver.cs:1312`) asks the same. Test:
+  an unadopted repository, Build's first entry cooling on the protocol door and its second on the pipe door, waits rather than
+  spawning on the pipe; the reverse is planned.
 - **Model-scoped cool-offs are row k** (O): `seven_day_opus` and `seven_day_sonnet` are recorded in the usage history
   (`ClaudeUsage.cs:106`) and unused by the walk (`:78`); row k makes the walk and `AccountCooling.Cool` read a limit naming a
   model's window as account plus model, so a later entry on the same account may run. Until then a cool-off is the account's.
 
 ### 4.2 Mid-session: nothing moves silently
 
-- **A running session never moves** to another choice (D163).
+- **A running session never moves** to another choice (D163). A conversation's line may, as a new part, by §3.5(e) alone.
 - **A part that ends on a limit** carries on as today, on another account of the same agent (`CarriedOnAsync`,
-  `HarnessRoster.cs:991-995`), with **the same choice re-applied** at the open.
-- **When every account of that agent is cooling**, D163's offer names the actor's next choice on another agent: *Hand over to
+  `HarnessRoster.cs:991-995`), with **the same choice re-applied** at the open, each account judged by its reading (§3.5(a)).
+- **When every account of a conversation's agent is out**, its line goes on with the actor's next choice (§3.5(e), LIMITGOON2).
+- **When every account of a driven line's agent is cooling**, D163's offer names the actor's next choice on another agent: *Hand over to
   Codex · account default, Build's choice 2?* **Round 2 (Opus B8): it is taken only by the person's press, whatever the
   repository's `handOver` mode.** `handOver` governs an *agent's* ask to hand its session over (`HandOverRules.cs:57-58`), and
   Daoris's own offer is "taken only by the person's press" (`handOverOffer.ts:24`); round 1's *`on` takes it* would have let a
@@ -528,13 +572,19 @@ and these are its contract:
 - **A composer change is kept as values, not read back from its note (round 2, Codex 12).** Today's change note keeps the
   option's and the value's display names (`ChatRunner.cs:1721-1728`), which need not be unique or reversible, and an effort-only
   change says nothing of the model. So each successful change also writes the record's machine-local `override`
-  `{ model?, effort? }` (§9.3) as the option's category and value id, merged (an effort-only change keeps the model), apart from
-  the opening's `asked`, which never changes after its later door. A resume and a briefed continuation apply `asked`, then
-  `override`. Tests: two values with one display name, an effort-only change, a restart, and an actor edit after the change (the
-  conversation keeps its override).
+  `{ model?, effort? }` (§9.3) as the option's category and value id, apart from the opening's `asked`, which never changes after
+  its later door. **Round 3 (Codex 5): reconciled from the returned configuration, never merged blindly.** An effort-only change
+  keeps the override's model. A model change can change both the effort menu and its current value (`Acp.cs:516-517`), so a
+  successful model change sets the override's model and **clears its effort**, leaving the effort to what the new model gives,
+  unless the same change named one; an earlier `{model: A, effort: high}` followed by a change to `B` is kept as `{model: B}`,
+  never `B/high`. A resume and a briefed continuation apply `asked` overlaid by `override`, where an override's model also drops
+  `asked`'s effort unless the override names one, so a resume sets what the person last left, in that order. Tests: two values
+  with one display name, an effort-only change, a model change whose answer resets the effort, a restart, and an actor edit after
+  the change (the conversation keeps its override).
 - **A continuation takes its record's asked choice, not the actor as it stands** (Opus N5): a carry-on, a retry, a second
   opinion's recheck (which walks `[first.Adapter]`, `OpinionDeliverer.cs:213`) and the brainstorm's synthesizer take the record's
-  (or the generator's) `asked`, and say so. Only the hand-over offer's *next choice* is read from the actor as it stands now.
+  (or the generator's) `asked`, and say so. Only the hand-over offer's *next choice*, and §3.5(e)'s next part, are read from the
+  actor as it stands now. Each path after the open is §3.5's.
 - **The next start of the same line** begins again from choice 1: the order is a preference, not a ratchet (C).
 
 ### 4.3 A refusal after dispatch is not a fallback (X)
@@ -570,8 +620,9 @@ model**, by §4.0's one function:
   are planned once and frozen for the brainstorm. **A voice that cannot run is dropped, never replaced** by another entry or
   agent: a substitute would hand the packet to a maker D176 point 2's disclosure did not name. A named or policy voice takes its
   model from the actor's entry for that agent, else account default. A voice keeps its own one bounded restart on its agent's
-  next account (`:603-609`). The row, the editor and the suggestion's card say so (*all at once*, §7.1), and the card counts
-  the voices it adds.
+  next account (`:603-609`), that account judged by its reading for the voice's model as the walk judges it (round 3, Opus N13).
+  The row, the editor and the suggestion's card say so (*all at once*, §7.1), and the card's Brainstorm line counts the voices
+  it adds (§6.3).
 
 **C's mirror is rejected.** The rules are scoped (a repository's, or the workspace's, brief §3.6), the actor machine-wide; one
 cannot mirror the other. And a partner list is a permission: an actor that wrote it would widen who may write.
@@ -581,7 +632,8 @@ cannot mirror the other. And a partner list is a permission: an actor that wrote
 - **Driven starts** hold on today's hold path; the quest's row line says: *Build waits: none of its choices can run now. Claude
   Code's accounts cool until 14:05; Codex is not signed in.* The wait is judged again at every look, and the first choice that
   can run **in order** is taken.
-- **Chat and Ask Daoris** refuse the press where it was made, in the same sentence (D185 R3).
+- **Chat and Ask Daoris** refuse the press where it was made, in the same sentence (D185 R3); a conversation already going
+  waits in it with its words held (§3.5(e)).
 - **No new kind in *What needs you*.** A cool-off asks nothing of the person (X's caution, `.claude/knowledge/person-waits.md`):
   a sign-in or a changed order is the person's act, reached from the sentence's doors (*Accounts*, *Edit*).
 
@@ -673,11 +725,18 @@ reference silently.
 The **person's press**, never anything else. On the owner's install, that press is D191 point 3's yes for the spending it
 changes. The card lists each actor that would change, before → after, with X's concrete words:
 
-> **en:** *Use these choices for new work on this machine. Daoris tries a later choice, and other Daoris accounts, only when an
-> earlier one cannot start. This changes which models your accounts spend on, and can spend more. Work already running keeps its
-> choices.* **[Use these]** **[Not now]**
+> **en:** *Use these choices for new work on this machine. For every actor but Brainstorm, Daoris tries a later choice, and other
+> Daoris accounts, only when an earlier one cannot start; Brainstorm runs all its choices at once, one voice each. This changes
+> which models your accounts spend on, and can spend more. Work already running keeps its choices.* **[Use these]** **[Not now]**
 >
-> **zh:** *在这台机器上的新工作使用这些选择。只有前面的选择无法启动时，Daoris 才会尝试后面的选择和其他 Daoris 账户。这会改变你的账户把用量花在哪些模型上，用量也可能更多。正在运行的工作保持原来的选择。* **［采用这些］** **［暂不］**
+> **zh:** *在这台机器上的新工作使用这些选择。除头脑风暴外，只有前面的选择无法启动时，Daoris 才会尝试后面的选择和其他 Daoris 账户；头脑风暴同时运行它的所有选择，每个一方。这会改变你的账户把用量花在哪些模型上，用量也可能更多。正在运行的工作保持原来的选择。* **［采用这些］** **［暂不］**
+
+**Round 3 (Codex 10, Opus R2-B6, agreed): the sentence is true for Brainstorm.** Round 2 made Brainstorm's entries voices that run
+together and kept a sentence saying every later choice runs only when an earlier one cannot start. The general clause is now
+scoped to every actor but Brainstorm, and the card's before → after list gives Brainstorm's line its own words where it adds
+voices: *Brainstorm: two voices at once, where one ran before; this spends more* / *头脑风暴：同时运行两方，原来是一方；用量更多*
+(`{{after}}` and `{{before}}` counted, §7.1). Test: a card changing Build and Brainstorm together shows both, the Brainstorm line
+counting its voices, in both languages.
 
 - *Use these* copies the suggestion into the person's own choices, unlinked: a later suggestion never follows into them.
 - *Not now* records the suggestion's date (`actorsSuggestion`); the card stays away until the table changes.
@@ -689,25 +748,40 @@ changes. The card lists each actor that would change, before → after, with X's
   means, set where they are today. The *Model and effort* fold gains one line: *Used where an actor runs this agent on its account
   default; a model an actor names outranks it.* / *角色以账户默认运行此智能体时使用；角色指定的模型优先于它。*
 - **`adapter`, `intakeAdapter`, `helperAdapter`** are read as §6.1. Once the person sets Build, Intake or Ask Daoris, the key is
-  **written through** (O): the first choice's agent, or the key absent while off; the first write of Build, Chat or Brainstorm
-  makes the others explicit (§4.0). An older build therefore starts the same agent at account default; a rollback loses only the
-  model, and the *Actors* section says so in its footnote (X).
+  **written through** (O): the first choice's agent, or the key absent while off; every write that changes `adapter` makes Chat
+  and Brainstorm explicit where they are *as before* (§4.0). **What an older build does (round 3, Codex 11, Opus N9).** It reads
+  the legacy keys and the original rules only: `adapter` for Build, for Chat and for the brainstorm's fallback
+  (`ConversationRoutes.cs:48`, `DriverBrainstorms.cs:348`), `intakeAdapter` and `helperAdapter`. So a rollback loses Chat's own
+  agent where it differs from Build's, every later choice, Brainstorm's added voices, and every model and effort; it starts each
+  actor's first agent at account default, Chat on Build's. The *Actors* footnote says that (*An older Daoris runs each actor's
+  first agent, Chat on Build's, with no models*), and the older-build fixtures demonstrate that projection.
+- **The update drain turns Intake off in what `Effective` reads** (round 3, Opus R2-B3). A draining look plans with
+  `InstallUpdate.Drained(config)` (`DriverWatch.cs:604`), which stops intakes by nulling `IntakeAdapter` (`InstallUpdate.cs:49-53`,
+  D139 point 2's *intakes too*; the gate is `DriverIntakes.cs:58`). An Intake actor that is *set* would escape it. So `Drained`
+  also sets the Intake actor *off* (`[]`) in the config it returns, and `DriverIntakes` reads Intake through `Effective`. Test: a
+  draining look with Intake *set* starts no intake.
 - **Every old door, and its fate (round 2, Opus B4(b)(c), Codex 7, 15).** Each writer of these keys goes through the person's
   press (§8.2), so none can change an actor unseen:
 
   | Old door | Today | Round 2 |
   |---|---|---|
-  | `daoris driver adapter <agent>` | writes `adapter` with **no route** (`Change(null, null, …)`, `DriverChoicesCommand.cs:528-532`) | Build's one-choice list at account default through `SET_ACTOR` (`Person`), saying what it replaced, §4.0's inheritance applied |
+  | `daoris driver adapter <agent>` | writes `adapter` with **no route** (`Change(null, null, …)`, `DriverChoicesCommand.cs:528-532`) | Build's one-choice list at account default through `SET_ACTOR` (`Person`), saying what it replaced, §4.0's inheritance applied; its sentence says Chat stays on its agent (round 3, Opus N9), where it once moved both |
   | `daoris driver intake\|helper <agent>\|off` | `SET_INTAKE`, `SET_HELPER` (`:540-575`) | Intake's or Ask Daoris's one-choice list, or *off*, through `SET_ACTOR`; `SET_INTAKE` and `SET_HELPER` leave `PipeCensus` |
-  | `setting_propose`'s `adapter`, `intake`, `helper` doors (`HelpSettingProposals.cs:37`) | a card per key | retired into `actor_propose`; the room's doors table (`HelpRoomDoors.cs:159-163`) points to it; `HelpCoverageTests` and the goldens follow |
+  | `setting_propose`'s `adapter`, `intake`, `helper` doors (`HelpSettingProposals.cs:37`) | a card per key | from row c, the `adapter` door writes through the same write as `SET_ACTOR` (§4.0's inheritance applied); row d does the same for `intake` and `helper`; row h retires all three into `actor_propose`; the room's doors table (`HelpRoomDoors.cs:159-163`) points to it; `HelpCoverageTests` and the goldens follow |
   | The *Intake* and *Ask Daoris* rows (`settings.ai.json:7-37`) | their own Save | folded into their actor rows, the same `SET_ACTOR` |
-  | A hand edit of `driver.json` | read at the next look | held until the person confirms it (§8.2) |
+  | A hand edit of `driver.json` | read at the next look | **unchanged, read at the next look** (round 3: the confirmed copy is dropped, §8.2) |
+
+  Their twins follow them in the same rows (round 3, Opus N10): the service's `HelpSettingProposalWriter.Doors`
+  (`HelpSettingProposals.cs:27`), `PipeWording`'s `SET_INTAKE` and `SET_HELPER` rows (`PipeWording.cs:188-189`), the web's
+  `useSetIntake` and `useSetHelper` (`Web/bridge/driver.ts:463`, `:486`), and the room's machine facts that read the three keys
+  (`HelpRoomMachineNow.cs:15-17`), which read the actors through `Effective` instead.
 
 - **`opinions.reviewers`, `helpers`, `partners` and the brainstorm policy's agents** are unchanged (§4.4); `setting_propose`'s
   `opinion` and `helpers` doors stay theirs (`HelpSettingProposals.cs:31-38`).
 - **The composer's picker** is unchanged; it opens showing what the actor set, since the agent answers with its current option.
 - **An old `driver.json`** reads as today. An older build reading a new file ignores `actors`, which `JsonKeeping` keeps on save
-  (`DriverConfig.cs:923`); `actors` joins `driver-config-keeps.json` and the CLI writer's keep table (Opus N7). A malformed
+  (`DriverConfig.cs:923`); `actors` joins `driver-config-keeps.json` (Opus N7; round 3, Opus N11: the CLI writer's keep table
+  left in PUSH1f2b, `jsonkeep.ts:8`, so there is no second table). A malformed
   `actors` entry holds the affected start with its error, never silently reverting (X).
 
 ## 7. Where it lives, and the UI kept simple
@@ -720,7 +794,8 @@ into their actor rows.
 ```
 Actors
 Each kind of work Daoris starts runs on the first of its choices that can run, in your
-order, and says so when it took a later one.                       [Use these…] ← only while a suggestion is unanswered
+order, and says so when it took a later one; Brainstorm runs all its choices at once.
+                                                                   [Use these…] ← only while a suggestion is unanswered
 
 Build            Claude Code · opus · high  +1                                     Edit
                  14 starts this week · 2.1M tokens · 2 on a later choice
@@ -731,12 +806,13 @@ Partner          models for the agent an ask names: as before                   
 Brainstorm       all at once: as before                                            Edit
 Ask Daoris       Claude Code · account default   as before                         Edit
 Chat             Claude Code · account default   as before                         Edit
-Also `daoris driver actor`. An older Daoris reads only each first agent.
+Also `daoris driver actor`. An older Daoris runs each actor's first agent, Chat on Build's, with no models.
 ```
 
-**Round 2 keeps the screen to this one short list**: eight rows, one line each and a use line where there is use, one editor
-open. Round 2's mechanisms add no row, fold or setting; what they add is said in rows already there (*Details* on the head, the
-opening note, the wait sentence) and in one card for a hand edit (§8.2). Second opinion's and Partner's editors list a model per
+**Rounds 2 and 3 keep the screen to this one short list**: eight rows, one line each and a use line where there is use, one
+editor open. Their mechanisms add no row, fold, card or setting; what they add is said in rows already there (*Details* on the
+head, the opening note, the wait sentence, a conversation's one line when it goes on with another choice). Round 3 drops round
+2's hand-edit card with the confirmed copy (§8.2). Second opinion's and Partner's editors list a model per
 agent rather than an order, and Brainstorm's says *voices*; Second opinion's row drops round 1's *another maker first*, which the
 actor never decided.
 
@@ -777,7 +853,7 @@ navigation place; account selectors inside a choice.
 | What | Kind | en | zh |
 |---|---|---|---|
 | Section | `section` 32/12 | Actors | 角色 |
-| Section body | sentence | Each kind of work Daoris starts runs on the first of its choices that can run, in your order, and says so when it took a later one. | Daoris 启动的每种工作，按你排的顺序，在第一个能运行的选择上运行；用了后面的选择时会说明。 |
+| Section body | sentence | Each kind of work Daoris starts runs on the first of its choices that can run, in your order, and says so when it took a later one; Brainstorm runs all its choices at once. | Daoris 启动的每种工作，按你排的顺序，在第一个能运行的选择上运行；用了后面的选择时会说明。头脑风暴同时运行它的所有选择。 |
 | Actor names | `field` | §2.2 | §2.2 |
 | account default | `choice` | account default | 账户默认 |
 | Off | `choice` | Off | 关闭 |
@@ -793,8 +869,9 @@ navigation place; account selectors inside a choice.
 | Brainstorm's editor | sentence | Brainstorm runs all its choices at once, each one voice; at most 4. | 头脑风暴同时运行它的所有选择，每个一方；最多 4 个。 |
 | Brainstorm's row | fragment | all at once | 同时运行 |
 | Fenced actors | sentence | Models for the agents a rule or an ask names. | 为规则或请求指定的智能体选模型。 |
-| Hand edit card | sentence | Actors were changed in driver.json outside Daoris. New work keeps the last confirmed choices until you apply them. | 角色在 Daoris 之外被改动（driver.json）。在你应用之前，新工作沿用上次确认的选择。 |
-| Hand edit buttons | `button` | Apply · Put back | 应用 · 恢复 |
+| The card's Brainstorm line (round 3) | sentence | Brainstorm: {{after}} voices at once, where {{before}} ran before; this spends more. | 头脑风暴：同时运行 {{after}} 方，原来是 {{before}} 方；用量更多。 |
+| A conversation gone on with another choice (round 3) | sentence | Went on with {{entry}}, {{actor}}'s choice {{n}}: {{why}} | 已改用 {{entry}} 继续，即{{actor}}的第 {{n}} 个选择：{{why}} |
+| The actors' footnote (round 3) | sentence | Also `daoris driver actor`. An older Daoris runs each actor's first agent, Chat on Build's, with no models. | 也可用 `daoris driver actor`。旧版 Daoris 只运行每个角色的第一个智能体，聊天用开发的智能体，且不带模型。 |
 | Buttons | `button` 20/8 | Edit · Add a choice · Use these · Not now | 编辑 · 添加选择 · 采用这些 · 暂不 |
 | The wait | sentence | {{actor}} waits: none of its choices can run now. {{soonest}} | {{actor}}在等待：它的选择现在都不能运行。{{soonest}} |
 | The use line | sentence | {{starts}} starts this week · {{tokens}} tokens · {{later}} on a later choice | 本周启动 {{starts}} 次 · {{tokens}} 个 token · {{later}} 次用了后面的选择 |
@@ -830,19 +907,27 @@ It does not propose a rule's agents (*who may*: `setting_propose`'s doors) or it
   spends accounts, and only the person's press moves that.
 - **Every write path, not the managed door alone (round 2, Codex 15, Opus B4).** Round 1's guarantee held only for requests
   entering the pipe (`InstancePipe.cs:557-562`). Full-access Ask Daoris has unrestricted file access and no tree guard
-  (`ChatRunner.cs:758-774`, D183 point 5), and `daoris driver adapter` wrote with no route at all. Round 2 closes both:
-  - **Daoris's own doors**: every one that writes `actors`, `adapter`, `intakeAdapter` or `helperAdapter` is `SET_ACTOR`
-    (`Person`) or the screen's own Save, which is the person's press (§6.4's table). No door writes them otherwise.
-  - **A hand edit**: starts read the **last confirmed** actors, not `driver.json`'s. The driver keeps them in
-    `data/actors-confirmed.json` (a home entry beside `agent-offers`, §9.2), written only where a `SET_ACTOR` or a Save is
-    applied, holding the confirmed `actors` and the three keys. When `driver.json`'s differ, new work keeps the confirmed ones and
-    the window shows one card (§7.1): *Apply* confirms the file's, *Put back* rewrites the file from the confirmed. The first run
-    after the upgrade seeds the file from `driver.json` with no card, so the upgrade asks nothing. A hand edit of `adapter`, which
-    today takes effect at the next look, now waits for that press; that is the change, and the CLI's `driver adapter` says so.
-  - **What it does not do**, said in D183's terms: an agent that rewrites both files, working to forge the confirmation, defeats
-    it, as full access's shell reaches anything (D183). The boundary stops an unconfirmed change from spending; it is not a
-    sandbox. Proof: the managed verb meets the window's card (`PipeConfirmations`), **and** a direct edit of `driver.json` is held
-    with the card while a start uses the confirmed choices.
+  (`ChatRunner.cs:758-774`, D183 point 5), and `daoris driver adapter` wrote with no route at all. Round 2 closed the second and
+  answered the first with a confirmed copy; **round 3 drops the copy** (Codex 6, Opus R2-B2: Opus's option (ii), Codex 15's first
+  option):
+  - **Daoris's own doors**: every one that writes `actors`, `adapter`, `intakeAdapter` or `helperAdapter` is the person's press,
+    and each is named: `SET_ACTOR` (`Person`) through the running instance's pipe, whoever calls; the screen's own Save; a
+    card's *Apply* (`actor_propose`'s, and until row h `setting_propose`'s three doors, §6.4); and the person's own terminal
+    acting alone where no instance runs or a headless loop holds the home (`DriverChoicesCommand.cs:292-321`, D194 point 5),
+    which refuses a session's terminal (`:294-298`). §6.4's table holds each to that, and its census proves no other writer.
+  - **A raw edit of `driver.json`** is what it is for every other key in that file, `cap`, the holds and an access rule's
+    `unrestricted` among them: read at the next look, and, from a full-access shell, D183's unenforced boundary, which D183 already
+    says in its own terms. Round 3 does not make one family of that file's keys the only one guarded.
+  - **Why dropped rather than given an exact contract.** The copy guarded only against an edit made with no intent to forge (one
+    that rewrote both files defeated it), and to be exact it needed: a snapshot bound to each card and revision, a stale *Apply*
+    and *Put back* refused, a Save confirming only its own patch over the confirmed state while `DriverConfig.Save` merges
+    whatever is on disk (`DriverConfig.cs:914-923`), a shared lock and recovery across two files, a terminal twin for a headless
+    loop that has no window to show the card, and one accessor that every one of the fifteen start-time readers Opus R2-B2(d)
+    lists must take. That is a second source of start-time truth for a boundary that is not one; its cost falls on every start,
+    its gain on none that a full-access shell cannot undo. Both reads name the drop as acceptable (Codex 15's first option; Opus
+    R2-B2(ii), *smaller*).
+  - Proof: the managed verb meets the window's card (`PipeConfirmations`); the census holds every writer of the four keys to the
+    doors named; a session's terminal is refused the alone path.
 - **Changing Ask Daoris's own actor** affects its next new conversation, never the running one (X).
 
 ### 8.3 What it reads
@@ -882,8 +967,7 @@ replaces a newer one. A reading, not a setting,
 so not `harnesses.json` (D197's account file). It is a new home entry in the three twins (`home.ts`, `Driver/` and `Core/`
 `DaorisHome.cs`, held equal by `home.test.ts:323-328`), with D195's cleanup inventory row (taken by a clear of the home, never
 synced). X's re-discovery at every open alone would leave the editor nothing to offer before a session. Round 2's
-`data/actors-confirmed.json` (§8.2) is a second entry the same way, in the three twins and D195's inventory, written by the driver
-alone at an applied `SET_ACTOR` or Save.
+`data/actors-confirmed.json` is withdrawn with the copy (round 3, §8.2); `agent-offers` is the one new home entry.
 
 ### 9.3 On the session record: five machine-local fields
 
@@ -891,9 +975,19 @@ alone at an applied `SET_ACTOR` or Save.
 |---|---|---|
 | `actor` | the actor's id | at the open |
 | `choice` | `1` to `4`; `rule-default`; `before`; `pick`; `handed` (§4.0) | at the open; again only by §3.3's same-account move |
-| `asked` | `{ agent, model, effort }`, each of model and effort a value, `default`, `command`, `environment` or `not-carried` | at the open; again only by §3.3's same-account move |
-| `override` | `{ model?, effort? }`: the composer's last change, category and value id (§4.2) | at each successful composer change |
-| `ran` | `{ models: [up to 8, first-use order], more: n, entries: [{ at, acknowledged?, effort? }] }`, or null for *not reported* | when a turn reports a new model, and when an acknowledgement or effort changes (§5) |
+| `asked` | `{ agent, model, effort }`, each of model and effort a tagged value `{ source, value?, carried }` (round 3, below) | at the open; again only by §3.3's same-account move |
+| `override` | `{ model?, effort? }`: the composer's last change, category and value id, reconciled from the returned configuration (§4.2) | at each successful composer change |
+| `ran` | `{ models: [up to 8, first-use order], more: n, entries: [the last 8, { at, acknowledged?, effort? }], entriesMore: n }`, or null for *not reported* | when a turn reports a new model, and when an acknowledgement or effort changes (§5) |
+
+**Round 3 (Codex 4): `asked` is tagged, never a sentinel.** `AgentSettings.Models` includes the tool's own alias `"default"`
+(`Accounts/AgentSettings.cs:58-59`), so round 2's string `default` for *account default* could not be told from an explicit request
+for that alias, and replacing a requested effort with `not-carried` lost the `high` that *asked high · not carried* shows. So
+each of `model` and `effort` is `{ source, value?, carried }`: `source` is `entry` (the choice named it; `value` is the tool's word,
+`"default"` included), `account-default` (the choice named none; no `value`; nothing passed), `command` or `environment` (the
+person's own command or environment named it; `value` where it can be read); `carried` says whether Daoris's carrier passed it
+(`false` with `source: entry` is *asked high · not carried*, the value kept). Tests: an explicit `"default"` and an absent model
+recorded and resumed apart, the first carried as `--model default` or its option and the second passing nothing; an unsupported
+effort kept as asked and not carried. **`ran.entries` is bounded** as `models` is, with a count (Opus N6).
 
 **Round 2 (Opus N3):** `choice`, `asked`, `override` and `ran` are set after the open, so each goes through
 `session-record-fields.md`'s later door, as `help_mode` and `resolved` have: a service door of its own, a `PersonDoors.Table` row
@@ -952,17 +1046,20 @@ Each a dated note appended to the decision, never rewritten into it.
 | Decision | The note |
 |---|---|
 | D98 | *"Daoris names no model and chooses none"* becomes: Daoris keeps no model list and names no model of its own; the person chooses per actor in the tool's own words; Daoris carries that choice to each start at the tool's session level (`set_config_option`; `--model`, `--effort`); its only choosing is to take the first choice that can run, saying so. The second level now opens every protocol start; the first is what *account default* means. Still: the tool's home never written, `ANTHROPIC_MODEL` rejected, `max` never a file default, a tool whose words Daoris has not read offered only *account default* and the free field. Its *Boundaries* line that Daoris never turns dsh's catalogue itself becomes: only to a choice the person made |
-| D24 | A note: the tier that ran includes the model the agent reported, shown on the session; every actor works at *account default* |
+| D24 | A note: the tier that ran includes the model the agent reported, shown on the session, beside the choice asked; an actor *as before* works at *account default* |
 | D57 | Narrow: one dated table from actor to alias, suggested and never applied, held to `docs/model-roles.md` by a census; no versions, capabilities or prices |
 | D179 / TOOL3 | The record keeps the agent's reported model, machine-local; the head and the actor's use line show it |
 | D174 point 4 | Realized: the product's suggestion reads the reference through a census |
 | D155 point 3 | Each named reviewer takes its model from *Second opinion*'s entries for that agent, else account default; reviewers stay named by the rule, and `false` stays off; point 4's label names the model |
-| D163 point 3 | The hand-over offer, when an agent's accounts are all out, names the actor's next choice on another agent; it is taken only by the person's press under every `handOver` mode |
+| D163 point 3 | The hand-over offer, when a driven line's agent's accounts are all out, names the actor's next choice on another agent; it is taken only by the person's press under every `handOver` mode |
+| D163 *Rejected* (round 3) | *Automatic hand-overs by default* gains one exception, by the owner's direction of 2026-10-23 (LIMITGOON2): a conversation whose agent has no account left goes on, as a new part carrying Daoris's brief and its held words, with its actor's next choice, the person's order being their consent; never on a pick, never to an agent outside the actor's entries (§3.5(e)) |
+| D175 point 3 | A resume whose own account refuses its asked model is an account that cannot carry its words: they go to a new record on another account of the same choice, the old record left as it was (§3.5(a)) |
 | D65 §1b, D89 | Intake's and Ask Daoris's agents become their actors; *absent means off* stands |
-| D183 | A choice with no posture for the start's access is passed (`no-posture`); `actor_propose` joins the proposal kinds and retires `setting_propose`'s `adapter`, `intake` and `helper` doors; no `settings_*` grant covers actors; a hand edit of the actors waits for the person's press, which full access's shell can forge and the note says so |
+| D183 | A choice with no posture for the start's access is passed (`no-posture`); `actor_propose` joins the proposal kinds and retires `setting_propose`'s `adapter`, `intake` and `helper` doors; no `settings_*` grant covers actors; every door of Daoris's own that writes the actors is the person's press, and a raw edit of `driver.json` stays the unenforced boundary it is for that file's other keys (round 3) |
 | D176 point 9 | A brainstorm with no named agents takes *Brainstorm*'s entries as its voices instead of the machine's agent; a voice that cannot run is dropped, never replaced; the synthesizer is unchanged |
 | D130 point 4 | The pick overrides agent and account; the model comes from the actor's choices for that agent |
-| D195 | `agent-offers` and `actors-confirmed` join the inventory |
+| D195 | `agent-offers` joins the inventory (round 3: `actors-confirmed` withdrawn) |
+| D139 point 2 | The drain's *intakes too* reaches a *set* Intake actor: `Drained` sets it *off* (§6.4) |
 | D116 | *actor*, *choice*, *account default*, *brainstorm*, and *Build* as an actor's name |
 
 **Stands unchanged:** D197 (the set, the order, the walk), D199 (admission, with its test), D201, D125, D47 §4, D203 (its
@@ -995,11 +1092,15 @@ fallback; the model as a travelling fact; folding the account's *Model and effor
   `override`. Pipe: `--model` and `--effort` exactly when an entry names them, none where the person's command or environment
   does; a go-on and a second try carry them; a measured model refusal on a silent turn kept as that account's reading.
 - **Invariants**: two choices, one partner digest; the record's five fields answered on loopback only and absent from the feed,
-  the mirror and a sync (the `profile` tests' twin); the opening note's actor line absent from a sync; a hand edit of `driver.json`
-  held with its card while starts use the confirmed actors, and the managed verb meeting the window's card.
+  the mirror and a sync (the `profile` tests' twin); the opening note's actor line absent from a sync; the managed verb meeting
+  the window's card, and a session's terminal refused the alone path.
 - **Records**: `ran` keeping an unsplit mixed turn's names, a fourth and a ninth model (`more`), and an effort change on one
-  model; the composer's override across duplicate display names, an effort-only change, a restart and a later actor edit; a
-  brainstorm pass record and its restart carrying the four shapes.
+  model, its entries bounded; the composer's override across duplicate display names, an effort-only change, a model change
+  that resets the effort, a restart and a later actor edit; `asked`'s explicit `"default"` and absent model apart, and an
+  effort not carried keeping its value; a brainstorm pass record and its restart carrying the four shapes.
+- **Round 3's paths and passes**: each test named in §3.3, §3.5 (a)-(e), §4.0 (set → clear Chat → change Build), §4.1 (the
+  count; restricted Ask Daoris as before; `no-connector`), §6.3 (Build and Brainstorm on one card) and §6.4 (the drain with
+  Intake *set*; the older-build projection).
 - **Words**: `i18n:check`, `names:check -- --strict`, the glossary's new terms; stories at the frame's three widths in both
   languages (D185 R6).
 - **Installed**, distinct from any story: the rows' own proofs below. Before a suggestion changes, the batch after the owner's
@@ -1012,10 +1113,10 @@ Each lands alone, behind the one before, with its words in both languages and it
 
 | Row | What lands | Proof |
 |---|---|---|
-| **MODELROLE1a — what each door accepts, measured** (tools, stubs) | On `claude-agent-acp`, `codex-acp` and dsh: `set_config_option` for `model` and `thought_level` at a driven-shaped open, before the first prompt, the values offered, combined or apart, and whether a turn reports its model; **round 2 (Opus N2):** whether the offers differ by account, whether `set_config_option` on `claude-agent-acp` writes the account's `settings.json` (which would break D98's boundary and move every *account default* on it), whether the answer returns the option list, and whether `claude-agent-acp` offers the SDK's aliases or ids. On the pipe door: `claude -p --model <alias>`, `--effort` (with `max`) **against a conflicting saved per-model effort**, `CLAUDE_CODE_EFFORT_LEVEL`'s rank, whether `--model` holds on a `--resume` run, and when and in what words an unknown or unentitled model is refused (on a silent turn or not). No spawn-file effort is measured as a carrier (§3.2). An evidence document; the ACP and pipe stubs speak the measured shapes | The evidence on the owner's install; the stubs' tests |
+| **MODELROLE1a — what each door accepts, measured** (tools, stubs) | On `claude-agent-acp`, `codex-acp` and dsh: `set_config_option` for `model` and `thought_level` at a driven-shaped open, before the first prompt, the values offered, combined or apart, and whether a turn reports its model; **round 2 (Opus N2):** whether the offers differ by account, whether `set_config_option` on `claude-agent-acp` writes the account's `settings.json` (which would break D98's boundary and move every *account default* on it), whether the answer returns the option list, and whether `claude-agent-acp` offers the SDK's aliases or ids; **round 3 (Opus N5):** whether an accepted change returns the requested id as the current value. On the pipe door: `claude -p --model <alias>`, `--effort` (with `max`) **against a conflicting saved per-model effort**, `CLAUDE_CODE_EFFORT_LEVEL`'s rank, whether `--model` holds on a `--resume` run, and when and in what words an unknown or unentitled model is refused (on a silent turn or not). No spawn-file effort is measured as a carrier (§3.2). An evidence document; the ACP and pipe stubs speak the measured shapes | The evidence on the owner's install; the stubs' tests |
 | **MODELROLE1b — each session says its actor and what ran** (driver, service, web) | Every start names its actor (required parameter); the target's `Asked`, carried by the three native prepares; the record's five fields through their later doors; `ran` from the reported names before `TurnModels`; the brainstorm's pass records (§5); *Details*' rows and the parts fold's model; the usage history's `actor`; `actor.ran`. Behaviour unchanged: every choice `before` | The 13-start table; the loopback-only and no-sync tests; *ran* from each stub, *not reported* where a door says nothing; §13's record cases; a brainstorm pass and its restart naming actor and model; stories; on the install, a driven session's *Details* naming the model Claude reported |
-| **MODELROLE1c — Build runs its choices** (driver, modules, web, terminal) | `actors` read and written through, the first write making Chat and Brainstorm explicit; `ActorChoices.Judge` and `Effective`; the choice-major walk with its per-start passes and its reservation; the carriers, on every run; per-account offers and refusals, §3.3's two paths after the open; `no-posture`; `agent-offers` and `actors-confirmed` in the twins; `ACTORS`, `SET_ACTOR`; `daoris driver actor`, and `driver adapter` through it; the hand-edit card; AI features' *Actors* with Build's editor; the note, chip and wait; the Agents fold's line | The unit, walk, stub, census and invariant tests above; on the install, a Build whose first choice names a model one account does not offer runs that choice on the other account, and with neither, runs its second and says so on the head and in the note |
-| **MODELROLE1d — Intake, Ask Daoris and Chat run their choices** | Starts 5, 10-13 take their actor; the two cards fold into rows; `driver intake\|helper` write a one-choice list through `SET_ACTOR`, `SET_INTAKE` and `SET_HELPER` leave the census; `setting_propose`'s `intake`, `helper` and `adapter` doors write one-choice lists through `Judge` until row h retires them; `no-posture` for Ask Daoris's mode; the pick overrides; the composer's `override` kept and re-applied | *Absent means off* kept; `no-posture`; the composer opening on the actor's model; the override cases of §13; `HelpRoomDoorsTests`; on the install, a chat on *Chat* · sonnet shows sonnet beside its composer and in *Details*, and keeps it across a restart |
+| **MODELROLE1c — Build runs its choices** (driver, modules, web, terminal) | `actors` read and written through, every change of `adapter` making Chat and Brainstorm explicit; `ActorChoices.Judge` and `Effective`; **round 3 (Codex 8): every compatibility reader and writer of the shared scalar in this row's boundary**, so Chat's agent (`ConversationRoutes.cs:48`, `:164`, `SessionsVerbs.cs:33`) and Brainstorm's fallback voice (`DriverBrainstorms.cs:348`) read `Effective`'s agent here, at account default, and `setting_propose`'s `adapter` door writes through the same write; rows d and e add their models and editors; the choice-major walk with its per-start passes and its one count per start; the carriers, on every run; per-account offers and refusals, §3.3's paths and §3.5 (a), (c) and (d) for driven starts and their continuations; `no-posture`, `no-connector`; the drain's Intake *off*; `agent-offers` in the twins; `ACTORS`, `SET_ACTOR`; `daoris driver actor`, and `driver adapter` through it; AI features' *Actors* with Build's editor; the note, chip and wait; the Agents fold's line | The unit, walk, stub, census and invariant tests above; actual Chat and Brainstorm starts, and the legacy proposal door, after changing Build, each keeping its agent (not `Effective`'s table alone); on the install, a Build whose first choice names a model one account does not offer runs that choice on the other account, and with neither, runs its second and says so on the head and in the note |
+| **MODELROLE1d — Intake, Ask Daoris and Chat run their choices** | Starts 5, 10-13 take their actor; the two cards fold into rows; `driver intake\|helper` write a one-choice list through `SET_ACTOR`, `SET_INTAKE` and `SET_HELPER` leave the census; `setting_propose`'s `intake`, `helper` and `adapter` doors write one-choice lists through `Judge` until row h retires them; `no-posture` from `HelpAccess.For`; the pick overrides; the composer's `override` kept, reconciled and re-applied; §3.5(b)'s re-ask within the press and its go-on after an interruption; the curve move judging each candidate's reading. §3.5(e) lands as LIMITGOON2, after LIMITGOON1 and row c | *Absent means off* kept; `no-posture`, restricted Ask Daoris as before; the composer opening on the actor's model; the override cases of §13; `HelpRoomDoorsTests`; on the install, a chat on *Chat* · sonnet shows sonnet beside its composer and in *Details*, and keeps it across a restart |
 | **MODELROLE1e — second opinions, helpers, partners and brainstorms take their models** | §4.0's fences and §4.4's composition; the label naming the model; the brainstorm's frozen voices; the hand-over offer naming the next choice | `ReviewerChoice` over entries (another maker first; the same agent on a stronger model labelled *fresh*; a reviewer with no entry at `rule-default`; `false` still off); two choices one digest; a brainstorm whose voice cannot run dropping it with no substitute; a cooling Build offering the hand-over and taking it only on the person's press under `ask` and `on` alike; on the install, a second opinion's *Details* naming Codex's reported model |
 | **MODELROLE1f — each actor's use shown** | The 7-day line from the usage history and `actor.chose`; absent stays absent | The sum's table; stories; the install's line against the usage history for a day (`tools/usage-report.mjs`) |
 | **MODELROLE1g — Daoris suggests choices** | `ActorSuggestion` and its census; the card; `actor suggested [--use]`; agents not set up left out | The census both ways; the card's tests and stories; on the install, **the owner's press**, D191 point 3's yes, with row f's week before it as the baseline |
@@ -1034,8 +1135,9 @@ Each lands alone, behind the one before, with its words in both languages and it
 
 Every door's acceptance (row a); whether `codex-acp` reports a turn's model; `--effort` on the installed Claude Code; the
 documented precedence of `--model` over `ANTHROPIC_MODEL`, read and not observed; `CLAUDE_CODE_EFFORT_LEVEL`'s rank; whether
-offers differ by account; when a pipe model refusal arrives. A full-access Ask Daoris editing `driver.json` with its shell no
-longer changes what runs without the person's press (§8.2); one forging both files still can, as D183 says of its shell.
+offers differ by account; when a pipe model refusal arrives; what an accepted `set_config_option` returns as the current value.
+A full-access Ask Daoris editing `driver.json` with its shell changes what the next look runs, as for every key of that file
+(§8.2, D183).
 
 ## 16. The reads
 
@@ -1091,8 +1193,64 @@ held; none was answered by disagreeing with its facts. *Taken* means the read's 
 | N12 | The use line's span | Taken | §10 |
 | §4 | The names | Taken: *choice*'s avoid list and match, *your pick* 你指定的, 第 {{n}} 个选择, *Build* as a name only, the *Off* words, the role note, the missing words | §2.1, §4.6, §7, §7.1 |
 
-### 16.2 What round 2 asks next
+Round 2 asked Codex to read it and an independent Opus reader to read §3.3 and §4.1 again as the walk's contract; both reads
+are in §16.2.
 
-Codex reads round 2, under D191. B1 was settled with one narrowing of its named change (above), so by the Opus reader's own
-condition an independent Opus reader reads §3.3 and §4.1 again as the walk's contract. D205 stays proposed until both have read and
-the steward accepts.
+### 16.2 Round 2's reads, answered in round 3
+
+Both reads are verbatim in `docs/2026-10-23-actors-reads.md` (*Codex, round 2*; *Opus (foundation), round 2*). Every finding
+was checked against the code at `af642e750`, and every blocking one held: the count's mechanism (`HarnessRoster.cs:1651-1693`,
+the holds at `Driver.cs:1775` and `:1796` keeping their count), the setter's assumed and returned lists (`Acp.cs:527-539`), the
+chat start opening its record before the walk could be re-asked (`ChatRunner.cs:424-463`), `ChatGoOn` resuming only its record's
+adapter (`ChatGoOn.cs:372`), the curve move's model-blind candidates (`HarnessRoster.cs:1974-1994`, `CurveMove.cs:62-127`), the
+`"default"` alias (`AgentSettings.cs:59`), the alone path (`DriverChoicesCommand.cs:292-321`), `HelpAccess.For`'s restricted
+branch (`HelpMode.cs:83-95`), the drain's null (`InstallUpdate.cs:49-53`) and the planner's one-door gate (`Planner.cs:1729-1753`).
+*Taken* is the read's named fix, or the one both reads agree on; *answered* says how round 3 differs.
+
+**Codex, round 2 (11 findings, 10 blocking; verdict another round).**
+
+| # | Finding | Verdict | Where |
+|---|---|---|---|
+| 1 | Reselection has no defined ownership of the reservation | Taken, agreed with Opus R2-B4: one count per start, owned across the re-ask, its own load out of the re-ask's facts, the old process stopped before the end releases it; `Unchose` on a hold or refusal before the open; the record's end after it; *Commit* dropped | §4.1 |
+| 2 | Reusing an ACP session does not restore account default | Taken, its first option: a touched category the later choice leaves at account default is set back to the value `session/new` returned; an agent that will not ends the record | §3.3 |
+| 3 | "The next look" is no conversation fallback | Taken, agreed with Opus R2-B1(b): the chat start owns the pending start in the same press; an interrupted one goes on as a fresh start of its actor, apart from ordinary go-on | §3.5(b) |
+| 4 | `asked` uses a real model name as its sentinel | Taken: tagged `{ source, value?, carried }`; `"default"` an entry's value; a not-carried effort keeps its value | §9.3 |
+| 5 | Merged overrides can resurrect an obsolete effort | Taken: a model change clears the effort override; an effort-only change keeps the model; resume overlays accordingly | §4.2 |
+| 6 | The confirmed copy lacks an approval and commit contract | Taken by **dropping the copy** (Codex 15's first option, Opus R2-B2(ii)): every Daoris door named as the person's press; a raw edit is D183's boundary, as for every key of `driver.json`. Why not the contract: §8.2 | §8.2, §6.4, §7, §7.1, §9.2, §12, §13, §14 |
+| 7 | Clearing an actor defeats first-write preservation | Taken, its first option: preservation on **every** change of `adapter`, a clear included | §4.0 |
+| 8 | Row c's guarantee depends on rows d and e | Taken: Chat's and Brainstorm's compatibility readers and the `adapter` proposal door move into row c; its proof starts them | §6.4, row c |
+| 9 | Restricted Ask Daoris is given a new refusal | Taken: `no-posture` from `HelpAccess.For(...).Refusal` and `DrivenAccess.For(...).Refusal` alone; an as-before restricted start tested | §4.1 |
+| 10 | The acceptance paragraph still calls a voice a fallback | Taken, agreed with Opus R2-B6: the sentence scoped to every actor but Brainstorm, Brainstorm's line counting its voices, both languages, the section body too | §6.3, §7, §7.1 |
+| 11 | Rollback loses more than the model (non-blocking) | Taken, agreed with Opus N9: the older build's projection disclosed and fixtured | §6.4, §7, §7.1 |
+
+**Opus foundation read, round 2 (R2-B1 to R2-B6 blocking, 13 not; verdict accept after the six).**
+
+| # | Finding | Verdict | Where |
+|---|---|---|---|
+| R2-B1 | The paths after the open cover a driven first start only | **Taken as named**, (a) to (c) and its four tests, **with one addition by the owner's direction**: (e), a conversation whose agent has no account left goes on with its actor's next choice (LIMITGOON2). (a)'s *never takes the actor's next entry* holds for every continuation but that one. By the read's own condition this wants another foundation read (§16.3) | §3.5, §4.2, §12 D163, D175 |
+| R2-B2 | The confirmed copy misses four paths | Taken, option (ii): the copy, its card and its home entry dropped; the four paths are each Daoris's own door, named | §8.2 |
+| R2-B3 | The update drain escapes a *set* Intake | Taken: `Drained` sets Intake *off*; tested | §6.4, §12 D139 |
+| R2-B4 | The reservation names a mechanism the count lacks | Taken, agreed with Codex 1 | §4.1 |
+| R2-B5 | A Build mixing doors can fall onto the pipe in an unadopted repository | Taken: `no-connector` per entry; the planner's gate and the set-up ask whether any entry can drive | §4.1 |
+| R2-B6 | Brainstorm's card keeps B7's sentence | Taken, agreed with Codex 10 | §6.3, §7.1 |
+| N1 | Helper's order is D155's maker passes | Taken | §4.0 |
+| N2 | A pick or handed agent refused the model | Taken: the same agent's next entry on that account, else a refused pick with its reason | §3.5(d) |
+| N3 | The order a start walks is read once | Taken | §4.0 |
+| N4 | The readings: keyed by model; a method rejection per agent and version; written before the end | Taken | §3.3 |
+| N5 | What an accepted change returns | Taken: measured in row a; meanwhile only another offered value is a refusal | §3.2, row a |
+| N6 | `ran.entries` unbounded | Taken: the last eight and a count | §9.3 |
+| N7 | If the copy stays | Moot: the copy is dropped | §8.2 |
+| N8 | The hand-edit card's place | Moot: the card is dropped | §7 |
+| N9 | Rollback and the old verb | Taken (with Codex 11): Chat may change agent on rollback; `driver adapter` says Chat stays | §6.4 |
+| N10 | The retired doors' twins | Taken: each named beside its door | §6.4 |
+| N11 | Stale sentences | Taken: *reused as it is*, *the code already enforces it*, the CLI keep table, D24's note | §1.1, §3.2, §6.4, §12 |
+| N12 | The opinion wire's same-agent display | Taken: judged against Build's agents | §4.0 |
+| N13 | A voice's restart judges its account's reading | Taken | §4.4 |
+
+### 16.3 What round 3 asks next
+
+Round 3 takes every blocking finding of both reads as named or as both agree, except one addition: §3.5(e), a conversation going
+on with its actor's next choice when its agent has no account left, by the owner's direction of 2026-10-23. That is exactly the
+case the Opus read names as the walk's contract again (*a continuation taking the actor's next entry*), so an independent Opus
+reader reads §3.3, §3.5 and §4.1 to §4.2 again as a foundation, and Codex reads round 3, under D191. D205 stays proposed until
+both have read and the steward accepts.

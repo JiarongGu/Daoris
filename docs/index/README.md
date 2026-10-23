@@ -310,7 +310,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-21-notification-design.md` | 114 | 972 |
 | `docs/2026-10-22-coagent-design.md` | 89 | 870 |
 | `docs/2026-10-22-git-auth-design.md` | 111 | 1133 |
-| `docs/2026-10-23-actors-design.md` | 96 | 984 |
+| `docs/2026-10-23-actors-design.md` | 127 | 1256 |
 | `docs/2026-10-23-actors-proposals.md` | 128 | 1779 |
 | `docs/2026-10-23-actors-reads.md` | 81 | 742 |
 | `docs/2026-10-23-coworker-design.md` | 94 | 837 |
