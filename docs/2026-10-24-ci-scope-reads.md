@@ -1,11 +1,13 @@
-# CISCOPE1: the reads of rounds 1 and 2 (D191)
+# CISCOPE1: the reads of rounds 1 to 3 (D191)
 
 Codex's read and the independent Opus 5.5 reader's foundation read of `docs/2026-10-24-ci-scope-design.md` and D207 at
 `8ec788f89`, each verbatim but for its headings set one level down. The steward ran both from outside the install, read-only, on
 the design's own tree, read as landing after CIFAST1. Both ask for another round: Codex with 17 findings, 14 blocking; Opus with
 21, 8 blocking. Round 2 answers each finding in the design's reads table. Round 2 was read the same way at `aceced648`: Codex
 asks another round (15 findings, 11 blocking); the Opus foundation reader finds the foundation holds and would accept after named
-changes the steward can check (17 findings, 6 blocking). Round 3 answers both.
+changes the steward can check (17 findings, 6 blocking). Round 3 answers both. Round 3 was read at `22427ff95`: Codex asks
+another round (12 findings, 6 blocking); the Opus foundation reader's check finds every round-2 blocking change taken as named
+and would accept after named changes (12 findings, 2 blocking). Round 4 answers both.
 
 ## Codex
 
@@ -651,3 +653,368 @@ Four claims are wrong:
 - where a candidate's commit, message and records come from (F6).
 
 Findings 7 to 17 are corrections and statements the steward can check line by line.
+
+## Codex, round 3
+
+Codex's read of round 3, at `22427ff95`: 12 findings, 6 blocking; another round.
+
+### 1. Each round-2 finding
+
+Here, **design** means `docs/2026-10-24-ci-scope-design.md`, and **merge** means `tools/merge-branch.mjs`. “Taken” judges the proposed contract, not completed implementation. Private run records were not inspected.
+
+| Finding | Verdict | Where | Why |
+|---|---|---|---|
+| Codex 1 — modules’ rehearsal reach | Taken | design:103; merge:974 | Modules reach deployment; the erroneous family-rehearsal claim is corrected. |
+| Codex 2 — omitted whole .NET suites | Taken | design:589 | The category table now includes the fast halves selected by `REACH`, with estimates explicitly unmeasured together. |
+| Codex 3 — incomplete bisection | Open | design:464,468 | Retained candidates are rejudged, but discovery/host failures and non-monotonic attribution still have findings 2–3 below. |
+| Codex 4 — promotion recovery and conflicts | Taken | design:441,448,498 | Ancestry-first recovery covers the promotion boundary; conflicts are consistently aborted and handed back. |
+| Codex 5 — unsupported two-run bound | Taken | design:485,491 | The bound becomes an estimate; the replay includes overflow, direct commits, union costs and recovery. |
+| Codex 6 — known-red eligibility and fingerprints | Taken | design:686,690,696 | One base-confirmation rule replaces the contradiction; fingerprints retain case identity and assertion location. Clearing still needs finding 9’s correction. |
+| Codex 7 — non-causal recall | Open | design:347,395 | Selection elsewhere in a range no longer counts, but the introducing-commit algorithm can still choose the wrong transition: finding 3. |
+| Codex 8 — unavailable replay inputs | Answered with a reason that holds | design:370,373 | A pinned selector reads historical trees; structural reach is separated from scheduling state that cannot be reconstructed. |
+| Codex 9 — disposable stage baseline | Answered with a reason that holds | design:738,742 | The waiver that needed the baseline is deleted; independent stage history now serves reporting only. |
+| Codex 10 — census-based stage waiver | Taken | design:724,728,738 | Every planned gate must pass; known red provides no stage exemption. |
+| Codex 11 — overdue-stage enforcement | Taken | design:729; merge:1908 | The stage explicitly consults the due record and ages standing whole passes, covering what `sweptOut` does not expire. |
+| Codex 12 — background provenance and stage consumers | Open | design:714,720 | Both ordinary entry points are covered, but the receipt must be explicitly bound to the content actually built: finding 8. |
+| Codex 13 — admission and background progress | Open | design:657,661,671 | Overlap is now an explicit choice, but its maximum and progress claims do not follow: findings 5 and 7. |
+| Codex 14 — CIFAST1 policy contradiction | Taken | design:627,762 | The matrix preserves ordinary owing and makes nightly execution an explicit amendment. |
+| Codex 15 — admission built too late | Open | design:665,900 | Admission moves into the correct row; reservation accounting and recovery remain incomplete: finding 6. |
+| Opus 1 — stage waiver | Taken | design:724,738 | The waiver is deleted rather than narrowed through the incomplete census. |
+| Opus 2 — unfiled base failure | Taken | design:459,686 | A matching base failure is immediately inherited and filed, without waiting for a background run. |
+| Opus 3 — miss credited to later selection | Open | design:347,392 | The counter reads the promoted candidate’s evidence, but causal introduction still rests on unsound halving: finding 3. |
+| Opus 4 — converse admission case | Open | design:659,665,671 | The chosen overlap policy is stated and moved earlier; findings 5–7 prevent its claimed bounds holding. |
+| Opus 5 — repeated whole runs while red | Taken | design:638 | Completed execution satisfies sweep/night obligations independently of whether its tests passed. |
+| Opus 6 — candidate commits, messages and records | Open | design:422,424,451 | The handoff is specified, but queued inputs are not explicitly frozen, and the records-only shortcut is too broad: findings 1 and 4. |
+| Opus 7 — isolated-test bisection | Taken | design:468,474,478 | It now runs the class/file, provides a wider-context fallback and writes no unit verdict from attribution attempts. |
+| Opus 8 — runner and conflicts | Taken | design:436,441 | A detached runner and one conflict policy are specified; the comparison with today’s watch is factually wrong: finding 10. |
+| Opus 9 — omitted halves and carry-over | Taken | design:589,597 | Whole fast halves, deferred work and re-forms are included in the stated cost model. |
+| Opus 10 — scoped gate-store writes | Taken | design:553,724 | Partial file runs cannot manufacture gate passes; eligible whole/composed evidence is distinguished from the background receipt. |
+| Opus 11 — expiry blocks merges | Answered with a reason that holds | design:703; D207:92 | Blocking after expiry is now a deliberate exception, with a concrete skip mechanism tied to an open row. |
+| Opus 12 — two incorrect claims | Taken | design:103,762 | Modules’ narrower readers and ordinary watch owing now agree with the code. |
+| Opus 13 — stale D207 body | Taken | D207:18,98 | The decision body and Changes paragraph now describe round 3. |
+| Opus 14 — public-release rule has no row | Answered with a reason that holds | design:633,755 | Retaining the workflow’s existing checks removes the unassigned local release mode; its exact-commit description needs finding 11’s correction. |
+| Opus 15 — composition replay premise | Answered with a reason that holds | design:874; merge:5181 | The supplied prior git-half PASS premise satisfies the narrowed rule; its private historical status is not independently verified here. |
+| Opus 16 — omitted tool tests and row wording | Taken | design:530,880 | Tool test files receive a disposition, and row c acknowledges adding a blocking check. |
+| Opus 17 — historical sources’ spans | Taken | design:378 | The proof reports each source’s span/count and separates FIX-LOG recall from the combined sample. |
+
+### 2. What round 3 introduced
+
+The install waiver’s deletion, ancestry-first promotion recovery, explicit message/records handoff, and separation of structural replay from historical scheduling are substantive corrections. The build order now places shared admission with the second runner.
+
+The remaining foundation problems concern the new exceptions and proofs: records-only re-forms bypass mandatory checks; build-only bisection cannot attribute discovery or host failures; halving does not establish the claimed causal introduction; admission understates existing overlap and mishandles reservation lifetime; and the new receipt predicate does not explicitly bind the ordinary stage’s actual content.
+
+Two new descriptions of existing code are also wrong: `--ci --watch` does not detach itself, and the release workflow does not run every gate on one exact committed tree.
+
+### 3. Findings
+
+1. **Blocking — the records-only re-form bypasses more than the declared service-suite deferral.**  
+   `docs/2026-10-24-ci-scope-design.md:451` permits only four record checks after a records-only base move. That omits `universal`, `code-map` and the census check, although `:521` makes the cheap tier mandatory. Its path list also includes `.claude/knowledge/adoption.md`, which explicitly reaches `driver` as well as `service` (`tools/merge-branch.mjs:1129`). Today’s `recordMatcher` deliberately uses a much narrower whitelist (`:1842`).
+
+   **Smallest change:** always rerun the mandatory cheap tier. Define a narrow records exception that respects earlier `REACH` rules; defer only explicitly named suite obligations, and record those deferrals. Prove the adoption-file and declaration-file cases.
+
+2. **Blocking — discovery and host failures cannot be bisected by successful builds.**  
+   `docs/2026-10-24-ci-scope-design.md:464` groups build, discovery and host failures together, then builds prefixes to find the failing member. A test adapter or test host can fail after compilation succeeded. Every prefix build may pass, leaving this procedure with no failing endpoint. The current code explicitly distinguishes missing test results from build success (`tools/merge-branch.mjs:2041`).
+
+   **Smallest change:** use prefix builds only for compilation failures. Reproduce discovery/host failures with the operation and execution context that failed, on the base and prefixes; otherwise retain an unresolved outcome. Add separate discovery and host-failure proofs to row e.
+
+3. **Blocking — halving finds a transition, not necessarily this regression’s introduction.**  
+   `docs/2026-10-24-ci-scope-design.md:347` uses halving to identify the introducing commit; `:470` expressly allows non-monotonic prefixes. Consider outcomes `PASS, FAIL, FAIL, PASS, FAIL`, with the same fingerprint reintroduced at the last commit. Halving can return the first transition, although that failure was subsequently fixed. The recall replay can then credit the earlier commit’s correct reach while missing the later introduction. Queue attribution can likewise hand back a member whose defect a later member already repaired.
+
+   **Smallest change:** distinguish an adjacent failing boundary from causal attribution. Match the particular failure throughout, verify the relevant transitions, and classify ambiguous histories as unsettled or interacting groups. For eight queue members, checking the remaining prefixes is bounded. Add fix-then-reintroduce and changing-fingerprint fixtures to rows c and e.
+
+4. **Non-blocking — the reviewed queue request is not explicitly immutable.**  
+   `docs/2026-10-24-ci-scope-design.md:422`, `:434` and `:495` retain branches and messages, but do not require capturing the reviewed source tip and message bytes at enqueue. Re-formation later merges “the same branches,” whose refs can have advanced. Today’s batch at least records branch tips (`tools/merge-branch.mjs:4452`).
+
+   **Smallest change:** store the source commit ID and message content with each request, use those immutable inputs for every re-form, and require requeueing to change them. Prove a branch and message file changing while queued.
+
+5. **Blocking — the one-background-gate overlap bound contradicts the retained scheduler.**  
+   `docs/2026-10-24-ci-scope-design.md:661` promises overlap with at most one already-running background gate. Today `laneSchedule` expressly allows a git half and a rehearsal simultaneously (`tools/merge-branch.mjs:628`); round 3 retains that pairing. Both can already be running when the scoped tier arrives. Row f can increase the number further. Row e’s proof at design `:913` tests only one running half.
+
+   **Smallest change:** either enforce one background Process-lane gate globally, or state the actual permitted simultaneous set and prove scoped execution beside that maximum. Keep the foreground independent of background completion.
+
+6. **Blocking — memory reservations use the wrong accounting unit and can outlive their holder.**  
+   `docs/2026-10-24-ci-scope-design.md:665` subtracts a holder’s working set from its reservation when accounting against free memory. MEMGATE1 checks both free physical memory and free commit (`tools/merge-branch.mjs:2284`); working set cannot represent both. A process can retain committed memory while pages leave its working set.
+
+   The same paragraph frees a reservation when its holder process disappears. This repository already records that descendants can survive a killed runner, requiring explicit orphan cleanup (`tools/merge-branch.mjs:4628`, D180’s CIPRIO1d/e notes). Releasing on holder death alone can admit another gate while the old gate still runs.
+
+   **Smallest change:** specify separate physical/commit accounting and track the full owned process group. Release only after its descendants have ended or their live usage remains charged. Test unequal working-set/commit usage and a killed holder with surviving children.
+
+7. **Non-blocking — “no wait” and guaranteed nightly progress overstate the admission policy.**  
+   `docs/2026-10-24-ci-scope-design.md:661` says the scoped run’s worst background wait is none, but `:670` retains its ten-minute memory wait. Background reservations can contribute to that wait. Conversely, the 60-minute exception at `:671` only relaxes Process-lane priority; it does not override the background’s indefinite memory wait. A night therefore does not necessarily finish under sustained foreground load.
+
+   **Smallest change:** distinguish Process-slot waiting from memory waiting, include the latter in latency, and make progress conditional on memory admission or define a fair memory-admission policy. Extend the sustained-load proof accordingly.
+
+8. **Blocking — the receipt must be bound to the actual tree being staged.**  
+   `docs/2026-10-24-ci-scope-design.md:723` requires a receipt on the exact commit, then standing gate passes. It does not explicitly require the receipt’s tree, that commit’s tree and the publisher’s current content tree to agree. This matters for plain `--stage`: today `--passed` deliberately judges uncommitted content through `contentTree`, rather than requiring a clean commit (`tools/merge-branch.mjs:4311,4326`; `tools/desktop-publish.mjs:1163`).
+
+   Merely finding a receipt for HEAD can therefore be combined with later scoped evidence for different checkout content.
+
+   **Smallest change:** require equality between the requested commit tree, receipt tree and actual build-source tree at every ordinary stage entry point. Refuse dirty content and preserve the source through the build. Add a dirty-checkout case with a valid HEAD receipt and otherwise passing scoped verdicts.
+
+9. **Non-blocking — clearing known red on “any run” loses causal ordering.**  
+   `docs/2026-10-24-ci-scope-design.md:702` lets any passing run clear a failure. An older background run finishing late, or a historical attribution run on a passing ancestor, can clear a newer failure on main. Rediscovery can then restart the expiry described at `:461`, undermining the deliberate 72-hour limit.
+
+   **Smallest change:** clear only with qualifying evidence on the affected main lineage that supersedes the recorded failing tree. Historical/bisection attempts must not clear current known red; repeated sightings must preserve its original first-seen time. Prove out-of-order completion.
+
+10. **Non-blocking — today’s watch does not detach itself.**  
+    `docs/2026-10-24-ci-scope-design.md:436` describes the detached runner “as `--ci --watch` is.” `ciWatchVerb` runs and awaits its loop in the invoking process; `main` dispatches directly to it (`tools/merge-branch.mjs:5650,5723`).
+
+    **Smallest change:** remove that analogy and specify the new runner’s detached launch, output destination and startup acknowledgement explicitly.
+
+11. **Non-blocking — the release workflow does not gate one exact committed tree.**  
+    `docs/2026-10-24-ci-scope-design.md:755` says every gate runs on the exact commit. The workflow’s devkit and desktop jobs check out the input revision, while the release job changes versions at `.github/workflows/release.yml:213`, resyncs doctrine at `:222`, then runs its gates before the eventual release commit.
+
+    **Smallest change:** describe the existing multi-job, stamped-worktree verification accurately. Keep that workflow unchanged as intended; do not present it as a single exact-commit receipt.
+
+12. **Non-blocking — row f’s proof requires concurrency its mechanism forbids.**  
+    `docs/2026-10-24-ci-scope-design.md:921` permits two rehearsal reservations simultaneously, while `:922` requires five runs with all three rehearsals side by side. Those cannot be the same execution policy.
+
+    **Smallest change:** choose the concurrency limit and make the proof, resource accounting and expected wall use it consistently. If the limit is two, prove that schedule with the third rehearsal waiting.
+
+**12 findings; 6 blocking.**
+
+**Verdict: another round.** Preserve the scoped-merge/background-install direction and the deleted stage waiver. Another read is needed after findings 1–3, 5–6 and 8 are resolved: they determine what must run, which member or commit actually introduced a failure, what load the two runners may create, and whether the staged content has the required background proof.
+
+## Opus (foundation), round 3
+
+The independent Opus 5.5 reader's check of round 3, at `22427ff95`: 12 findings, 2 blocking; accept after named changes the steward can check.
+
+## CISCOPE1, round 3: the independent Opus foundation read (D191)
+
+Read at `22427ff95` (round 3: `800ce9197` the design, `22427ff95` D207), against the code at `b0d68c641`. No tool, gate, lane or
+decision file the design cites changed since `b61325e6c` (`git diff --stat b61325e6c HEAD` over them is empty), so round 2's line
+numbers still hold. "design:N" is `docs/2026-10-24-ci-scope-design.md` line N, "mb:N" is `tools/merge-branch.mjs`, "dp:N" is
+`tools/desktop-publish.mjs`. I did not open `local/`, so the figures drawn from `status.json` and the verdict stores are taken as
+stated. Every code citation I checked holds.
+
+### 1. The Opus round-2 findings
+
+| # | Finding | Verdict | Where | Why |
+|---|---|---|---|---|
+| F1 | §5.3 point 4's waiver | Taken as named | design:723-728, 738-740, 950-951; D207:51-55, 87-88 | Deleted. Every gate of the plan must pass, as `stageJudgement` requires (mb:1926-1956). Known red waives only in the queue, on a base run. Holds. |
+| F2 | One rule for a failure on the base | Taken as named, for a failing test | design:459-463, 686-699 | Inherited whether known red or not, filed at once, never pinned to a member; known red only lets the base run be skipped. Holds for a test. A failure that names no test, and a base failure that is not inherited, still have no rule (findings 1, 2). |
+| F3 | A miss credited to a later scoped run | Taken as named | design:345-366, 392-406 | Each failure is judged by its introducing commit, found by running. The count is also fed from inherited failures. Direct commits are counted as *unscoped*, an unsettled range as missed (a lower bound), and before CISCOPE1e the count is structural, as it says. Holds (finding 11 is detail). |
+| F4 | Sharing the machine: the converse case | Taken as named (first option); its worst case is misstated | design:651-676, 900-919 | A scoped tier runs beside a background gate already running, and none starts while it runs or waits. Background progress is bounded at 60 minutes, and admission and memory reservation move to CISCOPE1e with a timed proof. But "worst wait none" and "never a second" are wrong (finding 3). |
+| F5 | A failed run satisfies no sweep or night | Taken as named | design:638-644, 886-894 | A sweep is satisfied by a run that gave every class a verdict, a night by a finished whole run. Only a run ended before its classes ran leaves either due, as `classPlan` behaves today (mb:5176-5180). |
+| F6 | Who commits; message and records | Taken as named | design:418-432, 451-457; §1 at design:80-84 | `--preview`, a `--message` file, and a records commit on the branch. The tool commits only what it is handed plus what it writes into every merge today (mb:69 and :4517 cited correctly). A records-only re-form runs only the record checks. Holds; see findings 5 and 8 for consequences. |
+| F7 | Bisecting tests alone | Taken as named | design:468-478 | The whole class or file runs on the base and each prefix, members one at a time as the fallback, and no unit verdict is written. Holds; finding 4 is about its unresolved branch. |
+| F8 | The runner and conflicts | Taken as named | design:436-444 | A detached runner, as `--ci --watch` is. One conflict rule: set aside and handed back, never left open in the scope tree. |
+| F9 | §4.4 omits fast halves and carry-over | Taken, incomplete | design:587-600 | Fast halves and re-forms are added. But `service` is priced at core's 1 m 38 s alone, and the records commit every member carries puts `service` in nearly every candidate (finding 8). The carry-over says "that reaches them", which disagrees with §4.2's basis (finding 2). |
+| F10 | Which verdicts a scoped run writes | Taken as named | design:553-561, 720-728 | A gate verdict only for a gate run whole, or a Process half with nothing deferred. Every verdict carries a run kind and the background counts them as standing. "Passed" means a receipt plus standing passes of either kind. |
+| F11 | The 72-hour expiry | Taken; its recorded scope is wrong | design:703-707; D207:92-94 | Recorded as a deliberate exception, with a skip that names its row. But under §4.2's basis a failing unit runs in every candidate, and a red candidate that pins no member has no outcome. So expiry stops the whole queue, not only the merges that reach the test (finding 2). §3.4 does not list the skip check (finding 12). |
+| F12 | Two wrong claims | Taken | design:103-107, 762-764 | Both corrected. `MODULES_READERS` (mb:974) holds no family rehearsal, and the watch owes the two rehearsals (mb:500, :5456). |
+| F13 | D207 still round 1 | Taken | D207:18-107 | Rewritten to round 3. It matches the design except for the slips in findings 2, 6, 10 and 12. |
+| F14 | The public release has no row | Taken (second option) | design:633-636, 755-756 | The release workflow's own run is the release's gate. Checked: `release.yml` runs every declared gate across its jobs. |
+| F15 | Row 2's replay | Answered; the answer holds | design:873-877 | `DriverHostTests` carries `[Trait(Category.Name, Category.Process)]`, so a `driver-process` failure fits. A git half whose pass went stale by reach is the case the narrowed rule composes. I did not read the `status.json` it rests on. |
+| F16 | Two gaps in what the rows run | Taken; overshoots | design:530-534, 878-882 | Checked: verify names 12 of the 16 files (`package.json:15`). "Every" `tools/*.test.mjs` adds four that no gate runs (finding 9). Row 3 now says it adds `check`. |
+| F17 | The proof's sources do not span its month | Taken as named | design:378-384 | Each source's span and count is stated, and recall over the FIX-LOG's failures is given apart. |
+
+### 2. Codex's round-2 blocking findings
+
+| # | Finding | Verdict | Where | Why |
+|---|---|---|---|---|
+| 3 | Bisection does not cover the scoped run's failures | Taken, incomplete | design:458-483 | Added: build failures handled apart, bisection by class or file, *pinned with*, independent failures side by side, *unresolved*, the retained candidate judged again, the three-step claim limited. Still open: building prefixes cannot reproduce a check, typecheck or host failure, and a base failing with another fingerprint breaks halving's premise (findings 1, 2, 4). |
+| 4 | Recovery across promotion; conflict ownership | Taken as named | design:448-450, 495-505 | `promoting` is written before the fast-forward, and a restart checks ancestry first, as `resume` does (mb:4505). `--ff-only` itself refuses a main that moved. One conflict rule. Holds. |
+| 6 | Known-red eligibility; fingerprint collisions | Taken as named | design:686-701, 892-896 | One rule. The fingerprint keeps the theory case and the assertion's location, which today's readers drop (mb:2023, :2119). Row 4 names the three proofs. |
+| 7 | Selection in a range used as coverage | Taken as named | design:345-366, 392-403 | Each failure is judged by its introducing commit. Only the promoted candidate's run is read, the six verdicts are counted apart, and one regression is counted once. |
+| 8 | The proof lacks scheduling inputs | Taken as named | design:370-387 | The selector is pinned and run on historical trees through `repository(root, commit)` (`process-reach.mjs:819`, checked). Only structure is replayed: the scheduling state is declared unknown and proven by fixtures, and the first results are kept. |
+| 9 | `staged.commit` is not a durable baseline | Taken; its use removed | design:742-747 | The stage history is a file of its own. With the waiver gone no judgement reads it, and unknown ranges are reported. |
+| 10 | The stage waiver trusts the census | Taken | design:728, 738-740 | The stage waives nothing. |
+| 11 | `sweptOut` does not enforce overdue | Taken as named | design:729-731 | The stage reads the due record and ages a whole pass that counts only by standing. Confirmed that a whole pass never expires today (mb:1909). |
+| 12 | Stage evidence and every consumer | Taken; one question open | design:714-728, 555 | A receipt, a run kind on every verdict, and the rules in `--passed`, which both `ungatedRefusal` call sites reach (dp:1127, :1163). Open: which kinds' receipts count, and a receipt from a run that ran nothing (finding 6). |
+| 13 | One-sided admission | Taken | design:651-676 | Symmetric admission with a progress bound; its worst case is misstated (finding 3). |
+| 15 | Memory admission after cross-run execution | Taken as named | design:665-674, 900-906 | Admission and the reservation land in CISCOPE1e; pairing stays in CISCOPE1f. |
+
+Codex's non-blocking 1, 2, 5 and 14 are taken. Number 2 carries finding 8's slips, and number 14 leaves a rejection unanswered (finding 10).
+
+### 3. What round 3 introduced
+
+**Claims checked against the code.** These hold: `BLOCKING` :933, `PATH_CHECKS` :947, the reader lists :969-976, `REACH` :989 with
+the records rules :1234 and :1249 and `docs/index/**` reaching no gate (:1244), `addVerdicts` :1758 (400 kept), `SWEEP_BOUND_MS` :1898,
+`sweptOut` :1908-1909, `stageJudgement` :1926-1956, :2023 and :2119, :2044, `MEMORY_NEEDS` :2208, `memoryGate` :2331 and :2365,
+`mergeInProgress` :2572, the prune :3106, :3559, :4069, `mergeNext` :4431 and :4454, `resume` :4505 and :4507, :4517, `ciPlan`
+:5109, `classPlan` :5134 and :5175-5181, `gateCi` :5388, :5456, :5486 and :5536. In the publisher, dp:871, :1002, :1020, :1137, :1154
+and :1163. Also `process-reach.mjs:819`. `b61325e6c` adds records beyond its second parent: `TASKS.md`, the reads file,
+`docs/README.md` and the decisions index.
+
+**Wrong claims.**
+- §5.1's "never a second" and "worst wait none" (design:661-664; finding 3).
+- §4.4's 1 m 38 s for `service` (design:589; finding 8).
+- "Every candidate that reaches it" (design:489, 597-598, 704-705; D207:93; finding 2).
+- "Every `tools/*.test.mjs`" (design:531; finding 9).
+- A verdict kind `release` that nothing local writes (design:555; finding 6).
+- D207's "8 to 20" (finding 12).
+
+**New holes.**
+- In the queue's attribution (§10 question 1):
+  - a failing gate that names no test (finding 1);
+  - a failure the base shares but does not inherit (finding 2);
+  - the unresolved path and a flake mid-halving (finding 4).
+- In promotion: it moves the parent's checkout, and nothing guarantees progress under a stream of direct commits (finding 5).
+- In the stage's receipt (finding 6).
+- In the gate store's cap once scoped runs write to it (finding 7).
+
+**D115, D180, CIFAST1.**
+- D115's full set before a stage holds, and GATESLIM1's line changes as §9 says.
+- D180 point 4 and its rejection of letting an install out without a green run (D180.md:52) hold, stricter.
+- Two items D180 rejected are reversed without being named: "every reached gate before every merge" (D180.md:49) and CIFAST1's "the rehearsals in a nightly or every Nth run" (D180.md:573). See finding 10.
+- No other contradiction.
+
+**The rows.**
+- The order holds: no backstop goes before its replacement, admission comes with the second runner, and the stage only tightens.
+- Row 4's proof item "an unfiled failure on the base filed at once" needs row 5's base run.
+- Row 5's proof lacks the cases of findings 1 and 2.
+- With those added, each proof proves its row's claim.
+
+**D207.** The body and the Changes paragraph match the design, except for:
+- the expiry's scope (D207:92-94);
+- which receipt counts (D207:51-52);
+- the low end of the page/CLI/tools wall (D207:40-41);
+- the two reversed rejections, which Changes does not name.
+
+**The §10 questions, briefly.**
+1. Not every failure is placed (findings 1, 2), and a flake can hand back an innocent member (finding 4).
+2. Yes, workable. Deferring `service` on a records-only re-form is acceptable, since the install waits for the background run. But each member's own records commit reaches `service` anyway (finding 8), and promotion moves the parent's checkout (finding 5).
+3. Yes. Running beside a background gate is right; short class groups are not available, since a half is one `dotnet test` invocation (mb:5193). Its true worst case still needs stating (finding 3).
+4. Yes, provided the stage's own `--ci --stage` run counts as a receipt and a sweep-only run does not, and the text says plainly that a run which ran nothing, because every verdict stood, is a receipt. The real guarantee is §4.2's writing rule: a scoped gate verdict exists only for a gate run whole, so every gate passing means nothing deferred is outstanding.
+5. Yes, once the text says where a range starts when no pass was recorded (finding 11).
+
+### 4. Findings
+
+1. **Blocking. A failing gate that names no test has no rule on the base, and building prefixes cannot reproduce it.**
+   - §4.1 point 4 has rules for two kinds of failure (design:458-478):
+     - a failing test: a base run compared by fingerprint, then bisection by class or file;
+     - a build, discovery or host failure: the base is built first, then the prefixes are built.
+   - The cheap tier's gates (design:521-525) fail with no test and no fingerprint, and fit neither rule. They are `universal`, `code-map`, the census check, `daoris check`, the documentation tools, `release-prep --check`, `web-types` and the CLI's typecheck.
+   - The likeliest case is on the base. The parent makes 10 to 94 direct commits a day, mostly records (design:256), and no gate runs on them. Two examples:
+     - a direct docs commit that breaks a documentation check (budgets, duplicates);
+     - a records commit that closes a row a skip still names, which fails the census check (design:706-707).
+
+     Either fails the cheap tier of every later candidate. Nothing re-runs that gate on the base, and halving's premise "the base passes it" (design:470) is false. A records-only re-form runs exactly these checks (design:453-455), so the candidate in flight turns red through no member's fault.
+   - A host failure (a run that "failed outside a test", mb:2044) and a discovery failure are not reproduced by building the prefixes either (design:466).
+   - **Smallest change:** one rule for any failing gate that names no failing test:
+     - run that gate, with the same selection, on the candidate's base first;
+     - if it fails there, the queue stops and says so, as for a base that does not build (design:465), and the failure is filed for the parent;
+     - if it passes there, bisect by running that gate's selection over the prefixes, not by building alone.
+
+     Add to row 5's proof: a direct docs commit that breaks a documentation check before a candidate forms, a member that breaks `code-map`, and a host failure on one prefix.
+
+2. **Blocking. A failure the base shares but does not inherit has no bisection and no queue outcome, and the expiry's recorded scope is wrong.**
+   - §4.2's basis runs every unit with no pass standing, and "a failure runs until it passes" (design:517-518).
+     - A fast half is "reached" in the sense today's CI uses, and today's CI runs any gate whose standing verdict is a failure (`ciPlan`, mb:5109-5114).
+     - So a known-red unit runs in every candidate, not only in "every candidate that reaches it" (design:489, 597-598, 704-705; D207:93).
+   - At expiry the test fails on every candidate's base with the same fingerprint and is no longer inherited, so every candidate is red. Two things stop the queue:
+     - halving needs the base to pass (design:470), so no member is pinned;
+     - "Nothing is handed back on a failure that cannot be placed" (design:476-477), so the head candidate is held and every later merge waits behind it.
+
+     The deliberate exception D207 records is therefore "every merge stops", not "every merge near it".
+   - The same broken premise applies to a changed fingerprint on a base that fails. It counts against the candidate (design:700-701), but pass/fail halving finds no transition when the base also fails.
+   - **Smallest change:**
+     - (a) Halve on "fails with the candidate's fingerprint" rather than on pass/fail. That pins a member for a changed fingerprint.
+     - (b) State the outcome for a red candidate whose failure the base shares without inheriting it. Either the queue stops until the test is fixed or skipped under its row (said by `--queue`, and recorded so in D207's exception), or the members whose paths reach the test's gate by `REACH` are handed back with the reason and the rest go on.
+     - (c) Make §4.2, §4.4, §5.2 and D207:93 agree on whether a candidate runs a known-red unit that none of its members reaches.
+     - (d) Add row-5 proofs: a candidate meeting an expired known red, and a changed fingerprint on a failing base.
+
+3. **Not blocking. §5.1 misstates the scoped run's worst case.**
+   - "Never a second, since none starts while it runs or waits" (design:661-664) does not hold. The background already runs a rehearsal beside its git half (`BESIDE_GIT_HALF`, mb:490), and a stage or a night runs the family and deployment rehearsals there. So a scoped tier can meet the git half and a rehearsal together: 8 + 10 GB (`MEMORY_NEEDS`, mb:2208).
+   - "Worst wait none" does not hold either. A scoped heavy gate still waits for memory up to MEMGATE1's bound of ten minutes (`MEMORY_WAIT_MS`, mb:2212, :2365), which design:669-670 keeps.
+   - The 14 GB of headroom covers one Process half and one fast half. The driver row runs a Process half beside two or three fast halves (design:592).
+   - The scope runner's priority is not stated; the background's is CIPRIO1's.
+   - **Smallest change:**
+     - state the worst case as the git half plus one rehearsal;
+     - state the wait as MEMGATE1's bound per heavy gate when headroom is short;
+     - size the headroom to the scoped run's peak, or say that it is not;
+     - name the scope runner's priority;
+     - time row 5's proof beside a stage's or a night's git half with a rehearsal beside it.
+
+4. **Not blocking. The unresolved path can retry a failure, and a flake mid-halving can hand back an innocent member.**
+   - A class that does not fail again on the whole candidate is "run once more as its gate's selection" (design:474-477). The text does not say what happens if that run passes. Promoting on it would be a retry of a fast .NET or Node failure, which §4.2 keeps out (design:550-551; mb:3559; D180).
+   - Each halving step runs a prefix once. A flaky class, or a FLAKE1 re-run beside a background half (design:659-660), can pin a member that did nothing.
+   - **Smallest change:**
+     - a pass on any of these re-runs never makes a candidate green; the candidate goes one member at a time, and the failure is recorded as a flake for its row;
+     - before a pinned member is handed back, run the two adjacent prefixes once more.
+
+5. **Not blocking. Promotion moves the parent's checkout, and direct commits can keep re-forming the candidate.**
+   - A detached process fast-forwards the main checkout at any moment (design:448-450).
+     - Git refuses only when the checkout's own changes overlap the candidate's. Otherwise files change under the parent's own runs and edits there.
+     - Every member carries a records commit (design:425-427), so an uncommitted `TASKS.md` in the checkout refuses most promotions, holding green candidates until `--continue`.
+   - Each direct code commit re-forms the candidate in flight (design:450-451). Nothing guarantees that the queue makes progress under a stream of them.
+   - **Smallest change:**
+     - say that promotion moves the parent's checkout, or promote only onto a clean checkout and otherwise hold the candidate for `--continue`;
+     - add a progress rule, or show in the 2026-10-21 replay that its 41 direct commits never starve a candidate.
+
+6. **Not blocking. The receipt does not say which runs count.**
+   - "A receipt of a run that finished on that exact commit" (design:723) does not name the run kinds whose receipt counts.
+     - If `--ci --stage <commit>` counts, any commit can be staged.
+     - If only ordinary and nightly runs count, only commits the coalescing watch happened to gate can be.
+     - A sweep-only run (design:630) ran a single half.
+   - `--full --beside`, which `docs/development.md` keeps as "the run of every gate", writes verdicts without a kind or a receipt. So do `--full`, `--rerun` and `--stale`, which are GATE6b's remedies.
+   - There are two vocabularies:
+     - verdict kinds: `scoped`, `background`, `stage`, `release` (design:555);
+     - run kinds in the matrix: ordinary, sweep, nightly, stage, release (design:627-633).
+
+     Nothing local writes `release` once `--ci --release` is dropped (design:635).
+   - `--passed` judges the checkout's content tree (mb:4326-4329), and every publish asks it, staged or not (dp:1163). A dirty checkout has no "exact commit".
+   - `local/ci.json` already keeps the newest 50 runs with their commit and state (mb:5062-5069, :5351).
+   - **Smallest change:**
+     - name the kinds whose receipt counts (ordinary, nightly, stage, `--full --beside`; not a sweep-only run) and the kind each verdict producer writes, and drop `release`;
+     - match a receipt by tree;
+     - say that a receipt may be of a run that ran nothing because every verdict stood;
+     - say whether `local/ci-runs.jsonl` replaces or extends `local/ci.json`.
+
+7. **Not blocking. The gate store's 400-verdict cap now takes every candidate's verdicts.**
+   - The store keeps 400 verdicts, dropping the oldest first (mb:1758-1761). That is about a day and a half today (design:224-226).
+   - Under §4.2, every candidate run, re-form and one-member candidate writes gate verdicts for the cheap tier and for each fast half it runs whole (design:556-557).
+   - At tens of runs a day this can evict a night's and a stage's passes (the rehearsals, `web`, a whole git half) within a day. That is never looser, but a later stage re-runs what it already had.
+   - **Smallest change:** keep gate verdicts per gate (the newest N each) or by age, and show in CISCOPE1e's replay that a night's verdicts survive a working day.
+
+8. **Not blocking. §4.4 under-prices `service` and leaves it out of most rows.**
+   - design:589 prices `service` at "about 1 m 38 s of tests". The gate runs `src/Daoris.Service` (`daoris.gates.json:8`), whose `Daoris.Service.slnx` includes the HTTP host's tests, 3 m 17 s more (design:211).
+   - Every member now carries a records commit: the archive, `TASKS.md`, a FIX-LOG entry (design:425-427). `TASKS.md` is in the records lane, which reaches `service` (mb:1234), and `docs/**` reaches it as well (mb:1249). So nearly every candidate runs `service` whole, and the page, CLI and driver rows omit it.
+   - **Smallest change:** add `service` to every row that carries a records commit, and reprice.
+
+9. **Not blocking. "Every `tools/*.test.mjs`" adds four files that no gate runs.**
+   - design:530-531 runs every `tools/*.test.mjs` file. Four are in no gate, and their headers say they are kept out of verify on purpose:
+     - `as-merged`, which builds and runs the devkit;
+     - `knowledge-bench`;
+     - `question-bench`;
+     - `ux-count`, which runs Playwright's chromium.
+   - A scoped failure in them has no background run to backstop or clear it, and `ux-count` brings a browser into the scoped run, which §4.2 point 6 keeps out.
+   - **Smallest change:** limit point 3 to the twelve files verify runs, or name the gate the four join.
+
+10. **Not blocking. D207 reverses two items D180 rejected without naming them.**
+    - CIFAST1's note rejects "the rehearsals in a nightly or every Nth run" (D180.md:573). §5.1's night runs them (design:631), and §9 (design:947-948) calls this an amendment without answering the rejection. An answer exists: the night runs in addition to the stage's payment, not instead of it, and the owner has now asked for a background schedule.
+    - D180 rejects "every reached gate before every merge" (D180.md:49). The scoped run comes close to it. The design answers it in effect, through the separate tree and the queue (design:412-416, 485-493), but never names the rejection.
+    - **Smallest change:** name both rejected items, with those answers, in §9 and in D207's Changes. The D180 notes written on acceptance then append to the record rather than silently reverse it.
+
+11. **Not blocking. Four details of the recall measure.**
+    - The introducing commit is searched for "between its last pass and its first failure" (design:347-349). For the month's FIX-LOG failures no last pass is recorded, and "no recorded pass" is not among the unsettled reasons (design:350-351).
+    - Running a class over historical commits means building old trees, and installing old lockfiles for the TypeScript suites. The proof's machine cost is not priced, unlike the coverage pass's (design:822-825).
+    - The running count reads "the scoped run of the candidate that reached main" (design:396-397). A re-formed candidate has several runs, and the later ones run only what the direct commit reached.
+    - Nothing says what recall figure would stop CISCOPE1e.
+    - **Smallest change:**
+      - state where a range starts without a recorded pass, and count it as unsettled otherwise;
+      - price the proof;
+      - read every run of a re-formed candidate;
+      - name the decision the lower bound feeds.
+
+12. **Not blocking. Small slips in the records.**
+    - `TASKS.md:503`: the CISCOPE1 row still says the scoped run is what "a merge and a republish wait on". That contradicts the steward's direction and §5.3.
+    - `TASKS.md:504`: the TESTVALUE1 row says "CISCOPE1f measures first" and "under 40 minutes". The design has CISCOPE1g measure, and a target of about 28 class-minutes set from its report (design:849-853, 924-929).
+    - D207:40-41 says "8 to 20" for the page, CLI or tools. §4.4's CLI row starts at 7 (design:591).
+    - §3.4's checks (design:319-337) do not include the skip check that §5.2 (design:706-707) and D207:24 assign to the census.
+    - Row 4's proof item "an unfiled failure on the base filed at once" (design:895-896) needs row 5's base run, so it belongs to row 5.
+    - **Smallest change:** correct each line.
+
+**12 findings, 2 blocking.**
+
+**Verdict: accept after named changes the steward can check without another read.** Round 3 takes all six of round 2's
+blocking changes as named, and I checked each against the text and the code. The foundation holds. A merge waits on a scoped run in
+a tree of its own, which is strictly more than today's wait on `BLOCKING` alone. The install waits for the background run with no
+waiver, through today's `stageJudgement`, `sweptOut`, the due record and CIFAST1's paid rehearsals. Admission arrives with the second
+runner. Recall is judged causally, as a stated lower bound. What remains are local rules in §4.1 point 4 and §5.2, with their D207
+sentence and their row-5 proof cases:
+- a failing gate that names no test is run on the base first, and stops the queue if it fails there (finding 1);
+- halving compares fingerprints, and the queue states its outcome when the base shares a failure it does not inherit, with the expiry's true scope recorded in D207 (finding 2).
+
+Findings 3 to 12 are statements and corrections the steward can check line by line. Codex's read of round 3 is a separate matter.
