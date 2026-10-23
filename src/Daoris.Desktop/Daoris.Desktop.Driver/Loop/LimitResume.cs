@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A driven line an account's limit cut off resumes its own conversation once that account is ready again (LIMITRESUME1b, D206; the
+/// A driven line a limit or update cut off resumes its own conversation once its account is ready (LIMITRESUME1b/1i, D206; the
 /// limit-resume design §3.3 step 1): decided inside the carry-on's own start, never beside the look, and carried by Daoris's word kept
 /// on the ended record through the say door just before the record goes on, so the conversation, whole, is told to go on.
 /// </summary>
@@ -20,15 +20,20 @@ internal static class LimitResume
 
     /// <summary>
     /// The limited record a start would resume in its own conversation: the last part of an open or taken quest that waits on nothing,
-    /// ended by an account's limit, and not the record its quest was handed over from (step 0: a hand-over names the agent it goes on
+    /// ended by an account's limit or an update, and not the record its quest was handed over from (step 0: a hand-over names the agent it goes on
     /// with). Null for every other start.
     /// </summary>
     public static PriorSession? Line(Consideration start, bool handedFrom) =>
         !handedFrom
         && start.Quest is { Status: "Open" or "Taken", Awaits: null or "" }
-        && start.Resumes is { Limit: true, State: "failed", Parked: false } limited
+        && start.Resumes is { Parked: false } limited
+        && (limited is { Limit: true, State: "failed" } || UpdateBuild(limited) is not null)
             ? limited
             : null;
+
+    public static string? UpdateBuild(PriorSession record) => record.State == "stopped" && record.Interrupted
+        ? record.NoteParts?.FirstOrDefault(part => part.Code == NoteCodes.UpdateClosed.Code)?.Value("build")?.ToString()
+        : null;
 
     /// <summary>The cool-off's <c>until</c> its record's limit line names, as the note keeps it; a fixed word where none is read.</summary>
     public static string Until(PriorSession record) =>
@@ -38,9 +43,9 @@ internal static class LimitResume
             ? until
             : "unsaid";
 
-    /// <summary>The ids of Daoris's limit words among <paramref name="words"/>.</summary>
+    /// <summary>The ids of Daoris's limit and restart words among <paramref name="words"/>.</summary>
     public static IReadOnlyList<string> WordIds(IEnumerable<SaidWordView> words) =>
-        [.. words.Where(word => word.Daoris && DaorisKeys.IsLimitReset(word.Key)).Select(word => word.Id).OfType<string>()];
+        [.. words.Where(word => word.Daoris && DaorisKeys.IsResume(word.Key)).Select(word => word.Id).OfType<string>()];
 
     /// <summary>
     /// The line's own hold where no account it may run on is ready (the design §3.3 step 3, <c>held.limit-waits</c>): the earliest

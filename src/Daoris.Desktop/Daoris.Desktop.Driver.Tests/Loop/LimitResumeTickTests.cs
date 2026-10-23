@@ -51,6 +51,39 @@ public sealed class LimitResumeTickTests : IDisposable
 
     private string Log => Path.Combine(_home, "agent.log");
 
+    [Fact]
+    public async Task An_update_closed_take_resumes_in_its_own_conversation_without_a_strike()
+    {
+        await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
+        var processes = new SessionProcesses { Close = ShellClose.Update("build-1") };
+        var adapters = AdapterSet.Built();
+        var config = DriverConfig.Empty with
+        {
+            Drivable = ["engine"], Trees = ["engine"], Adapter = "acp-stub", Strikes = 1,
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Log, "update"] },
+        };
+        var driver = new Daoris.Driver.Driver(new ServiceClient(service.Url, null), config, adapters, _home,
+            processes: processes, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+        using var stop = new CancellationTokenSource();
+        var run = driver.RunOnceAsync(stop.Token);
+        await Poll.Until(() => Heard().Any(line => line["method"]!.GetValue<string>() == "session/prompt"));
+        stop.Cancel();
+        await run.WaitAsync(Poll.Patience);
+        Assert.Equal("stopped", service.State("s1"));
+        Assert.Contains("update.closed", service.Record("s1"));
+        Assert.Empty(await new ServiceClient(service.Url, null).StrikesAsync());
+
+        var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.True((service.State("s1"), service.Status("q1")) == ("completed", "Done"),
+            $"look: {string.Join(" | ", look.Events)}; record: {service.Record("s1")}; heard: {string.Join(" | ", Heard().Select(line => line.ToJsonString()))}");
+        Assert.Equal(1, service.SessionCount);
+        Assert.Contains(Heard(), line => line["method"]!.GetValue<string>() == "session/resume"
+            && line["conversation"]!.GetValue<string>() == "conv-s1");
+        Assert.Contains(Heard(), line => line["blocks"]?.ToJsonString().Contains(ShellClose.Words, StringComparison.Ordinal) == true);
+        Assert.Equal(("s1", DaorisKeys.Restart("s1", "build-1")), Assert.Single(service.DaorisSaid));
+        Assert.Empty(service.Said("s1"));
+    }
+
     private JsonObject[] Heard() => [.. StubFile.Lines(Log).Select(line => JsonNode.Parse(line)!.AsObject())];
 
     private IReadOnlyList<SessionEvent> Events(string session) =>
@@ -391,7 +424,7 @@ public sealed class LimitResumeTickTests : IDisposable
                   send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } });
                 } else {
                   await respond({ action: 'take' });
-                  limit(frame.id);
+                  if (mode !== 'update') limit(frame.id);
                 }
               } else if (frame.id !== undefined && frame.method) {
                 send({ jsonrpc: '2.0', id: frame.id, result: {} });

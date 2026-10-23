@@ -74,8 +74,10 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         try
         {
             said = await _context.Service.SayAsync(
-                    limited.Session, LimitResume.Words, ct: ct, from: DaorisWords.From,
-                    key: DaorisKeys.LimitReset(limited.Session, LimitResume.Until(limited)))
+                    limited.Session, LimitResume.UpdateBuild(limited) is not null ? ShellClose.Words : LimitResume.Words,
+                    ct: ct, from: DaorisWords.From,
+                    key: LimitResume.UpdateBuild(limited) is { } build ? DaorisKeys.Restart(limited.Session, build)
+                        : DaorisKeys.LimitReset(limited.Session, LimitResume.Until(limited)))
                 .ConfigureAwait(false);
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
@@ -435,7 +437,9 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             try
             {
                 await service.AdvanceAsync(
-                    sessionId, closed.State, closed.AsNoted(), ct: CancellationToken.None, interrupted: interrupted).ConfigureAwait(false);
+                    sessionId, closed.State,
+                    stoppedFirst is null && _context.Processes.Close.Build is { } build ? ShellClose.Closed(build) : closed.AsNoted(),
+                    ct: CancellationToken.None, interrupted: interrupted).ConfigureAwait(false);
             }
             catch
             {

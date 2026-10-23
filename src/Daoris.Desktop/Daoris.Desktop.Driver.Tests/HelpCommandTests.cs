@@ -371,6 +371,15 @@ public sealed class HelpCommandTests : IDisposable
         Assert.Contains("h1 is Ask Daoris's conversation, which goes on in the window", said);
     }
 
+    [Fact]
+    public async Task Resuming_a_never_spoken_conversation_does_not_claim_its_id_was_lost()
+    {
+        var (exit, said) = await RunAsync(Ledger(), "resume", "h3", "my first question");
+        Assert.Equal(1, exit);
+        Assert.Contains("never-spoken — it never took a turn", said);
+        Assert.DoesNotContain("unkept", said);
+    }
+
     /// <summary>The host's usage names the verb, and its own usage spells each sub-verb.</summary>
     [Fact]
     public void The_usages_name_the_verb()

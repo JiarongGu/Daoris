@@ -2045,6 +2045,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             var state = Text(session, "state");
             var cutOff = (string.Equals(state, "failed", StringComparison.OrdinalIgnoreCase) && !Limit(session) && !AccountRefused(session))
                          || (string.Equals(state, "stopped", StringComparison.OrdinalIgnoreCase) && Interrupted(session));
+            if (NotePart.Read(session)?.Any(part => part.Code == NoteCodes.UpdateClosed.Code) == true) continue;
             if (!cutOff) continue;
             if (Text(session, "quest") is not { Length: > 0 } quest) continue;
 

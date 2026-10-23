@@ -751,6 +751,8 @@ public static class NoteCodes
     public static readonly NoteCode ChatEnded = new("chat.ended", []);
     public static readonly NoteCode ChatCancelled = new("chat.cancelled", []);
     public static readonly NoteCode ChatNotKept = new("chat.not-kept", []);
+    public static readonly NoteCode ChatRestarted = new("chat.restarted", []);
+    public static readonly NoteCode UpdateClosed = new("update.closed", ["build"]);
 
     // ——— Ask Daoris's start, where the machine's reading for its room did not answer within its bound (HELPSTUCK1): started on
     // the room as last written, said in its conversation; or, with no room written before, ended saying so.

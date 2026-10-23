@@ -81,6 +81,7 @@ internal sealed class ChatTurns(
     private bool _finishing;
     // Held for a hand-over's take (SWITCH1c-ii): no word starts a turn the take's end would cut.
     private bool _held;
+    private bool _closeHeld;
     // Waiting for its account's limit to reset (LIMITRESUME1c, D206 §3.5): a word is kept and waits, and starts no turn on a process
     // whose account would refuse it, until the wake hands them all over in one (WakeFromLimit) or a move takes them (HoldLimited).
     private bool _limited;
@@ -448,6 +449,20 @@ internal sealed class ChatTurns(
         }
     }
 
+    /// <summary>Hold even a running turn at the shell's closing boundary; nothing queued starts after it.</summary>
+    public bool HoldForClose()
+    {
+        lock (_gate)
+        {
+            var cut = _pumping || _holding is not null || _waiting.Count > 0;
+            _held = true;
+            _closeHeld = true;
+            return cut;
+        }
+    }
+
+    internal Func<bool>? Closing { get; set; }
+
     /// <summary>Take words again after <see cref="Hold"/>: the take did not end the conversation, or it has ended and nothing listens.</summary>
     public void Release()
     {
@@ -539,7 +554,7 @@ internal sealed class ChatTurns(
         Task drained;
         lock (_gate)
         {
-            if (!_held || _pumping || _holding is not null || _waiting.Count > 0 || _finishing || _gone) return null;
+            if (!_held || _closeHeld || Closing?.Invoke() == true || _pumping || _holding is not null || _waiting.Count > 0 || _finishing || _gone) return null;
             _waiting.Add(Stamped(message));
             _pumping = true;
             _drained = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -847,7 +862,7 @@ internal sealed class ChatTurns(
             lock (_gate)
             {
                 // LIMITRESUME1c: a conversation waiting for its account's limit starts no turn; the wake starts the next.
-                if (_waiting.Count == 0 || _gone || _limited)
+                if (_waiting.Count == 0 || _gone || _limited || _closeHeld || Closing?.Invoke() == true)
                 {
                     _pumping = false;
                     _drained.TrySetResult();
@@ -906,6 +921,13 @@ internal sealed class ChatTurns(
             lock (_gate)
             {
                 _opening = false;
+                if (_closeHeld || Closing?.Invoke() == true)
+                {
+                    _pumping = false;
+                    _drained.TrySetResult();
+                    Publish();
+                    return;
+                }
                 if (!open)
                 {
                     _gone = true;

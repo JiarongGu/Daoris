@@ -185,12 +185,14 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
     /// <returns>Where it went on; null where nothing was judged to move.</returns>
     public async Task<StartedFrom?> MoveEndedAsync(
         string sessionId, ContinueReason? lost, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct = default,
-        bool holding = false)
+        bool holding = false, bool restarted = false)
     {
         var boxes = new LimitBoxes(context.Home);
         if (context.Closing || context.Holds(sessionId) || boxes.Read(sessionId) is not null) return null;
         var events = context.Events.After(sessionId, 0).Events;
-        if (LimitHeld.Of(events) is not { } held) return null;
+        var held = LimitHeld.Of(events);
+        if (held is null && !restarted) return null;
+        var moveWhy = held is null ? HandOverWhy.Resume : HandOverWhy.Limit;
 
         var json = await context.Service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
         if (ServiceClient.ReadRecord(json, sessionId) is not { Kind: "chat", Teammate: false, Ask: null, Adapter: { Length: > 0 } ranOn } prior
@@ -226,14 +228,14 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
         {
             // The words said while it waited, the person's alone: Daoris's limit word never goes on, and was taken off before a refusal.
             List<string> said = [.. prior.Waiting.Where(word => word.Persons && word.Id is not null).Select(word => word.Id!)];
-            var box = new LimitMoveBox(lost?.Code ?? HandOverWhy.Limit, held.Before, events.Count, said);
+            var box = new LimitMoveBox(lost?.Code ?? HandOverWhy.Limit, held?.Before ?? events.Count, events.Count, said);
             boxes.Write(sessionId, box);
 
             var started = isHelp
                 ? await HelpStartAsync(prior, agent, config, onEnded, ct).ConfigureAwait(false)
                 : await runner.StartAsync(
                         prior.Repository!, agent.Name, config, onEnded, profile: null, ct: ct, tree: tree,
-                        from: new ContinuedFrom(sessionId, HandOverWhy.Limit, HandOverBy.Daoris))
+                        from: new ContinuedFrom(sessionId, moveWhy, HandOverBy.Daoris))
                     .ConfigureAwait(false);
             if (started.SessionId is not { } to)
             {
@@ -247,9 +249,9 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
             var message = await ComposeAsync(sessionId, box, prior, ct).ConfigureAwait(false);
             var account = await ProfileOfAsync(to, ct).ConfigureAwait(false);
             if (lost is not null) context.Note(sessionId, LimitNotes.ResumeRefused(lost));
-            context.Note(sessionId, HandOverNotes.MovedOn(to, agent.Name, account, HandOverWhy.Limit, null, message.Brief?.Text.Length ?? 0));
+            context.Note(sessionId, HandOverNotes.MovedOn(to, agent.Name, account, moveWhy, null, message.Brief?.Text.Length ?? 0));
             context.Service.AccountSaid(
-                Continuations.Moved(to, sessionId, ranOn, agent.Name, prior.Profile, account, HandOverWhy.Limit, briefed: true));
+                Continuations.Moved(to, sessionId, ranOn, agent.Name, prior.Profile, account, moveWhy, briefed: true));
             if (!await handOver.SayHandedOver(to, message with { Delivered = () => _ = DeliveredAsync(sessionId, box) }).ConfigureAwait(false))
             {
                 context.Note(to, HandOverNotes.Unsaid());
@@ -272,13 +274,15 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
     private async Task<ChatMessage> ComposeAsync(string sessionId, LimitMoveBox box, PriorSession prior, CancellationToken ct)
     {
         var events = context.Events.After(sessionId, 0).Events;
-        var refused = LimitHeld.Of([.. events.Take(box.Through)])?.Words ?? [];
+        var held = LimitHeld.Of([.. events.Take(box.Through)]);
+        var refused = held?.Words ?? [];
+        var moveWhy = held is null ? HandOverWhy.Resume : HandOverWhy.Limit;
         var waited = prior.Waiting.Where(word => word.Id is { } id && box.Said.Contains(id, StringComparer.Ordinal)).ToList();
         var brief = await ContextBriefs.ComposeAsync(
-                context.Service, context.Events, context.Home, sessionId, HandOverWhy.Limit, conversation: true, ct: ct, before: box.Before)
+                context.Service, context.Events, context.Home, sessionId, moveWhy, conversation: true, ct: ct, before: box.Before)
             .ConfigureAwait(false);
         var high = RotatedOpening.ContextOf(null, context.Events, sessionId);
-        var opening = HandOverNotes.MovedFrom(sessionId, prior.Adapter ?? "", prior.Profile, HandOverWhy.Limit, high, brief.Text.Length);
+        var opening = HandOverNotes.MovedFrom(sessionId, prior.Adapter ?? "", prior.Profile, moveWhy, high, brief.Text.Length);
         var files = refused.SelectMany(word => ChatFiles.Kept(context.Home, sessionId, word.Files ?? []))
             .Concat(waited.SelectMany(word => ChatFiles.Kept(context.Home, sessionId, word.Files)))
             .ToList();

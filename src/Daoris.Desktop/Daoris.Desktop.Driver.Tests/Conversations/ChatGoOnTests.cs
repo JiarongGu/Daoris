@@ -660,6 +660,7 @@ public sealed class ChatGoOnTests : IDisposable
 /// </summary>
 internal sealed class ChatLedger : HttpMessageHandler
 {
+    public Func<HttpRequestMessage, string?, Task>? BeforeRequest { get; set; }
     public const string Url = "http://chat-ledger.test";
 
     private readonly object _gate = new();
@@ -839,6 +840,7 @@ internal sealed class ChatLedger : HttpMessageHandler
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
     {
         var body = request.Content is null ? null : await request.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        if (BeforeRequest is { } before) await before(request, body).ConfigureAwait(false);
         var (status, answer) = Answer(request.Method.Method, request.RequestUri!, body);
         return new HttpResponseMessage(status) { Content = new StringContent(answer, Encoding.UTF8, "application/json") };
     }
@@ -954,6 +956,7 @@ internal sealed class ChatLedger : HttpMessageHandler
                     var moved = JsonNode.Parse(body!)!;
                     session["interrupted"] = moved["interrupted"]?.GetValue<bool>() ?? false;
                     session["limit"] = moved["limit"]?.GetValue<bool>() ?? false;
+                    session["noteParts"] = moved["noteParts"]?.DeepClone();
                     if (to == "working") WhenWorking?.Invoke(session);
                     if (JsonNode.Parse(body!)!["note"]?.GetValue<string>() is { } note)
                     {

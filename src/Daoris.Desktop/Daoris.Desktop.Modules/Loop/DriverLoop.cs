@@ -337,7 +337,7 @@ public sealed class DriverLoop(
     /// </summary>
     public UpdateWork Work() => new(
         _watch?.Running.Running ?? 0,
-        Chat is { } chat ? Processes.Running.Count(chat.Taking) : 0);
+        Chat?.InFlight ?? 0);
 
     /// <summary>
     /// A session's console lines, as the page's one event for them. The shape is the page's contract,

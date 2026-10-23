@@ -10,6 +10,42 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class ChatTurnsTests
 {
+    [Fact]
+    public async Task A_turn_finishing_while_close_prepares_starts_no_queued_turn()
+    {
+        var door = new Door();
+        var turns = door.Turns(steers: false);
+        turns.Say(new ChatMessage("first", []));
+        await Poll.Until(() => door.Took.Count == 1);
+        turns.Say(new ChatMessage("second", []));
+        turns.HoldForClose();
+        door.EndTurn(0);
+        await Poll.Until(() => !turns.Running);
+        Assert.Equal(["first"], door.Took);
+        Assert.Single(turns.State.Queued);
+        turns.Gone();
+    }
+
+    [Fact]
+    public async Task A_door_that_opens_after_the_close_boundary_sends_no_waiting_turn()
+    {
+        var opening = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var ready = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var attempted = false;
+        var took = false;
+        var turns = new ChatTurns(
+            ready: () => { opening.TrySetResult(); return ready.Task; },
+            take: (_, _) => { took = true; return Task.CompletedTask; },
+            interrupt: () => Task.CompletedTask, changed: _ => { });
+        turns.Say(new ChatMessage("held", []) { Attempting = () => { attempted = true; return Task.CompletedTask; } });
+        await opening.Task.WaitAsync(Poll.Patience);
+        turns.HoldForClose();
+        ready.TrySetResult(true);
+        await Poll.Until(() => !turns.Running);
+        Assert.False(attempted);
+        Assert.False(took);
+        turns.Gone();
+    }
     /// <summary>A door whose turns end when the test says, and which records what reached it.</summary>
     private sealed class Door
     {
