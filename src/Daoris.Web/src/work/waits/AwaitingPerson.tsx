@@ -38,6 +38,12 @@ export type QuestClose = { as: 'done'; note: string | null };
  * next look (D131); until then the head shows `AnsweredPark` in this card's place (ANSWER1c). Then the
  * composer hint would send the person nowhere, and it is not shown.
  *
+ * **🔴 And where the box below answers it too (PARKANSWER1).** The card once handed no answer of its own wherever the box at the
+ * foot was the park's, so a park whose box the person did not have before them offered only *Finish* and *Decline…* (the owner
+ * report, 2026-10-23). Every park the frame can answer is answered here as well: its question's answers presses where one was
+ * asked (PARKVIEW1), else the words under its closing message, through the frame's same door, and the hint names both places. A
+ * refusal is said here, where it was pressed, and the words stay.
+ *
  * **Declining asks for its reason in place**, the same two-step a quest's page uses and for the
  * same reason: the note is the only part whoever reads the record later can act on, and a decline
  * that slipped out on one click would routinely carry nothing.
@@ -50,7 +56,9 @@ export type QuestClose = { as: 'done'; note: string | null };
  * A molecule: it is handed the note and reports a move, so a parked session with a three-paragraph
  * analysis and one with none are both reachable by passing them.
  */
-export function AwaitingPerson({ note, parts, question = null, quest = null, pending = false, onResolve, onAnswer, onConversation }: {
+export function AwaitingPerson({
+  note, parts, question = null, quest = null, pending = false, below = false, onResolve, onAnswer, onChoice, onConversation,
+}: {
   /**
    * Its question as its agent asked it through the connector (PARKVIEW1, the park's ask design §3): shown in place of its whole last
    * message, which the conversation holds, its answers listed; their presses are the box's below, or this card's own answer.
@@ -73,8 +81,15 @@ export function AwaitingPerson({ note, parts, question = null, quest = null, pen
    * closes its quest says how (QUESTCLOSE1).
    */
   onResolve?: (state: Resolution, note: string | null, close?: QuestClose, answered?: Answered) => void;
-  /** The answer to a session with no process left — its quest carried on with the words (STANDDOWN2). */
-  onAnswer?: (answer: string | null) => void;
+  /**
+   * The answer to a session with no process left — its quest carried on with the words (STANDDOWN2). It may settle with the
+   * sentence it was refused in (PARKANSWER1), said here with the words kept; nothing, and the answer was taken.
+   */
+  onAnswer?: (answer: string | null) => Promise<string | null> | void;
+  /** A press of its question's answer, with the card's words (PARKANSWER1, PARKVIEW1): settled as `onAnswer` is. */
+  onChoice?: (label: string, words: string) => Promise<string | null> | void;
+  /** The box at the foot answers it too (PARKANSWER1): the hint names both places. */
+  below?: boolean;
 }) {
   const { t } = useTranslation();
   const [declining, setDeclining] = useState(false);
@@ -82,6 +97,24 @@ export function AwaitingPerson({ note, parts, question = null, quest = null, pen
   const [finishing, setFinishing] = useState(false);
   const [reason, setReason] = useState('');
   const [words, setWords] = useState('');
+  // The answer on its way, and the sentence one was refused in (PARKANSWER1).
+  const [sending, setSending] = useState(false);
+  const [refused, setRefused] = useState<string | null>(null);
+  const send = async (settle: Promise<string | null> | void) => {
+    setSending(true);
+    setRefused(null);
+    try {
+      const why = await settle;
+      if (why) {
+        setRefused(why);
+        return;
+      }
+      setWords('');
+      setAnswering(false);
+    } finally {
+      setSending(false);
+    }
+  };
   // What the finish does with its quest: left as it is unless the person chooses (QUESTCLOSE1).
   const [questTo, setQuestTo] = useState<'leave' | 'done'>('leave');
   const [questNote, setQuestNote] = useState('');
@@ -96,8 +129,17 @@ export function AwaitingPerson({ note, parts, question = null, quest = null, pen
   return (
     <WaitingCard title={t('work.head.waiting')}>
 
+      {/* Its answers are presses only once the person opens the card's answer, so its words go with them (PARKANSWER1). */}
       {question
-        ? <div className="mt-1.5"><QuestionAsked question={question} /></div>
+        ? (
+          <div className="mt-1.5">
+            <QuestionAsked
+              question={question}
+              busy={pending || sending}
+              onChoice={answering && onChoice ? (label) => { void send(onChoice(label, words)); } : undefined}
+            />
+          </div>
+        )
         : <Note note={note} parts={parts} className="mt-1.5 text-body leading-relaxed" />}
 
       <p className="m-0 mt-2 flex flex-wrap items-center gap-x-2 text-small text-ink-faint">
@@ -119,11 +161,12 @@ export function AwaitingPerson({ note, parts, question = null, quest = null, pen
                 className={field}
               />
             </label>
+            {refused && <p role="status" className="m-0 text-small text-ink-danger [overflow-wrap:anywhere]">{refused}</p>}
             <div className="flex flex-wrap gap-2">
-              <Button variant="primary" disabled={pending} onClick={() => onAnswer(words.trim() || null)}>
+              <Button variant="primary" disabled={pending || sending} onClick={() => { void send(onAnswer(words.trim() || null)); }}>
                 {t('work.awaiting.answerConfirm')}
               </Button>
-              <Button variant="ghost" onClick={() => setAnswering(false)}>{t('common.cancel')}</Button>
+              <Button variant="ghost" onClick={() => { setAnswering(false); setRefused(null); }}>{t('common.cancel')}</Button>
             </div>
           </div>
         )
@@ -220,7 +263,9 @@ export function AwaitingPerson({ note, parts, question = null, quest = null, pen
           </div>
         )}
 
-      {!onAnswer && <p className="m-0 mt-2 text-small text-ink-faint">{t('work.awaiting.answer')}</p>}
+      {(!onAnswer || below) && (
+        <p className="m-0 mt-2 text-small text-ink-faint">{t(onAnswer ? 'work.awaiting.answerHereOrBelow' : 'work.awaiting.answer')}</p>
+      )}
     </WaitingCard>
   );
 }

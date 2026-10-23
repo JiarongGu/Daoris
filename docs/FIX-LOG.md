@@ -48,6 +48,34 @@ repository.
   options and answers of both agents. `ClaudeStreamJsonTests` covers the measured alias turn and model refusal. Not run red-first:
   the old readers' results are read from the code above. Green: `AcpTests`, `ClaudeStreamJsonTests` and `UsageTurnsTests` (140).
   The neighbouring ACP, native-stream, adapter and usage classes, Process excluded, also pass (245).
+## 2026-10-23 - A parked driven session could be finished or declined, and not answered (PARKANSWER1)
+
+- **Symptom:** the owner report, urgent. A driven session of another workspace parked with its quest taken and no process
+  left. Its closing words asked a yes-or-no go-ahead ("Say yes or no here"). In the Chinese UI its waiting card offered only
+  *完成* (Finish) and *谢绝…* (Decline…): no answer box, no *Answer and carry on…*, and nothing the owner read as a way to answer.
+- **Root cause:** one owner for the answer (D56, the 2026-09-29 entry below) was carried as *the card hands no answer of its
+  own wherever the box at the foot answers the park*: the frame passed `onAnswerSession` only where the box did **not** answer
+  (`here && !answering`), and the card offered *Answer and carry on…* only where it was handed that. So the card's only way
+  to answer was a faint sentence pointing at the box below, and a park whose box the person did not have before them could
+  only be ended. The head also guarded the card's answer on `session.quest`, and a park nothing here can answer (a teammate's,
+  a browser's) showed its words with no press and no word why. The exact install state was not reproduced from source: a probe
+  of the frame with the install's record (`6639c1f2`, carried on after a hand-over, in the work workspace) under every
+  reach the driver gives drew either the box or the card's press. The card's dependence on the box was the defect either way.
+- **Fix:** the card answers every park the frame can answer (`AwaitingPerson`'s `onAnswer`, `onChoice`, `below`). Where the
+  box answers the park too, the card's words go through the box's own say door (`SESSION_INPUT`, `WorkFrame`'s `sayFromCard`),
+  with the same refusals (`unaccepted`: go-aheads first, too long), a question's answers as presses once the card's answer is
+  opened (PARKVIEW1, the question's id named), and words on their way shown as the box shows them. Elsewhere the card keeps
+  the park's answer door (STANDDOWN2). A refusal is said in the card with the words kept. Any driven park takes the card's
+  answer, quest or none; a parked chat's stays its composer's. The hint names both places. A park nothing here can answer says
+  where it is answered (`work.awaiting.cannot.teammate`, `.elsewhere`, en and zh).
+- **Verify:** red first, five failing: `WorkFrame.words.test.tsx` *answers a parked driven session with no process from its
+  card, under the question in its closing words* (the install's shape: another workspace, carried on, no process, a yes-or-no
+  in the note; sends `SESSION_INPUT`, not the answer door), *says in the card why its answer was not taken, keeping the words*,
+  *says on a teammate's parked record why it is not answered here*, the foot-box test's hint, and `WorkFrame.test.tsx` *answers
+  the question from the head's card…* (`question: 'q5t10n00'`). Green: the frame's eleven parts with `AttendedSession`,
+  `AwaitingPerson`, `SessionHead`, `WaitStrip` and `waits` (305 and 219 tests); `tsc --noEmit`; the i18n and names checks.
+- **The trap:** "one owner for the answer" was read as "one place to answer". The owner rule is about which surface owns the
+  moves; an answer the person cannot find is not owned by anyone.
 
 ## 2026-10-23 - A repository set up from its page stayed not adopted (SETUPSTATE1)
 

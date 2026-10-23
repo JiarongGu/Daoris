@@ -102,7 +102,7 @@ export type { HeadOpinion, HeadReview, LandingPlan, WorkAsk } from '../review/La
  */
 export function SessionHead({
   session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
-  onAnswerSession, branch, ownBranch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
+  onAnswerSession, onAnswerChoice, branch, ownBranch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
   ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest,
   continues, helps, onOpenSession, heavy, process, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek, helpers, permissions, answers,
   question = null, parkBox = false, pieces,
@@ -291,9 +291,12 @@ export function SessionHead({
   onAnswerAsk?: (ask: string) => void;
   /**
    * Answer a driven session that parked to ask the person (STANDDOWN2): the same session goes on with the
-   * words at the driver's next look (D131). Absent where nothing can reach this machine's host.
+   * words at the driver's next look (D131). Absent where nothing can reach this machine's host. Where the box below answers the
+   * park too, the card's answer goes through the box's own door (PARKANSWER1); either settles with a refusal's sentence, or nothing.
    */
-  onAnswerSession?: (answer: string | null) => void;
+  onAnswerSession?: (answer: string | null) => Promise<string | null> | void;
+  /** A press of the park's question's answer from its card, with the card's words (PARKANSWER1, PARKVIEW1). */
+  onAnswerChoice?: (label: string, words: string) => Promise<string | null> | void;
 }) {
   const { t } = useTranslation();
   const running = SESSION_ACTIVE.has(session.state);
@@ -337,17 +340,27 @@ export function SessionHead({
             quest={session.kind !== 'chat' && quest && quest.id === session.quest ? quest : null}
             pending={resolving}
             onResolve={onResolve}
-            // A driven session parked to ask the person has no process left to message (STANDDOWN2).
-            onAnswer={session.quest ? onAnswerSession : undefined}
+            // A driven session parked to ask the person has no process left to message (STANDDOWN2), and is answered from its card
+            // whether or not it holds a quest, and whether or not the box below answers it too (PARKANSWER1). A parked chat's answer
+            // is its composer's.
+            onAnswer={session.kind !== 'chat' ? onAnswerSession : undefined}
+            onChoice={session.kind !== 'chat' ? onAnswerChoice : undefined}
+            below={parkBox}
             onConversation={toEvent?.question}
           />
         </div>
       )}
       {/* Nothing here can act — a browser, or a mirrored record from another machine — so the
-          analysis is shown and the moves are not. Half a control is worse than none. */}
-      {waiting && !onResolve && !onAnswerSession && !(intake && onAnswerAsk) && noted && (
+          analysis is shown and the moves are not. Half a control is worse than none, and none with no word why is worse still
+          (PARKANSWER1): the card says where it is answered. */}
+      {waiting && !onResolve && !onAnswerSession && !(intake && onAnswerAsk) && (noted || !intake) && (
         <WaitingCard title={t('work.head.waiting')}>
           <Note note={session.note} parts={session.noteParts} className="mt-1.5 text-body leading-relaxed" />
+          {!intake && (
+            <p className="m-0 mt-2 text-small text-ink-faint">
+              {t(sessionOrigin(session) !== null ? 'work.awaiting.cannot.teammate' : 'work.awaiting.cannot.elsewhere')}
+            </p>
+          )}
         </WaitingCard>
       )}
       {parked && !intake && goAheads.length > 0 && (

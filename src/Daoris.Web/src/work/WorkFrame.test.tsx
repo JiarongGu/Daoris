@@ -1489,6 +1489,21 @@ describe('a park\'s question', () => {
     await waitFor(() => expect(screen.getByLabelText('Message')).toHaveValue(''));
   });
 
+  /** PARKANSWER1: the card answers the park too, its question's answers presses once its answer is opened, its own words going with them. */
+  it('answers the question from the head\'s card, a press sending its label with the card\'s words', async () => {
+    show('g0ah3ad0');
+    const card = (await screen.findByText('This one is waiting on you')).closest('section')!;
+    await within(card).findByText('Which quarterly target should the dashboard tile show?');
+
+    await userEvent.click(within(card).getByRole('button', { name: 'Answer and carry on…' }));
+    await userEvent.type(within(card).getByLabelText('your answer — the same session goes on with these words'), 'tile only');
+    await userEvent.click(within(card).getByRole('button', { name: '1,200' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: { id: 'g0ah3ad0', text: '1,200\n\ntile only', question: 'q5t10n00' },
+    }));
+  });
+
   it('says a question that changed under the page in the box, keeping the words, and sends nothing more', async () => {
     answered = { sent: false, why: 'question-changed' };
     const notify = vi.fn();

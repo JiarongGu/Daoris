@@ -752,16 +752,18 @@ export function WorkFrame({
 
   // A door that takes fewer characters at once than these says so before anything is sent, and the words stay in the box
   // (D137 §2.4): a driven session on the native door, whose resumed run takes them as one argument.
-  const accepts = (text: string) => {
+  // Why these words are not sent, or null: the box's refusal and the card's alike (PARKANSWER1).
+  const unaccepted = (text: string): string | null => {
     // PARKVIEW1 (the park's ask design §4): where its question waits beside go-aheads still open, the go-aheads come first, each
     // keeping the park for this answer, which then sends it on with them; the words stay in the box, said why.
-    if (attended && answering && question && openGoAheads(goAheads).length > 0) {
-      setRefusal({ session: attended.id, text: t('work.park.goAheadsFirst') });
-      return false;
-    }
-    if (!attended || !tooLong(text, { door: doorOf(attended.adapter, roster), kind: attended.kind })) return true;
-    setRefusal({ session: attended.id, text: t('work.say.tooLong', { count: NATIVE_WORDS_LIMIT }) });
-    return false;
+    if (attended && answering && question && openGoAheads(goAheads).length > 0) return t('work.park.goAheadsFirst');
+    if (!attended || !tooLong(text, { door: doorOf(attended.adapter, roster), kind: attended.kind })) return null;
+    return t('work.say.tooLong', { count: NATIVE_WORDS_LIMIT });
+  };
+  const accepts = (text: string) => {
+    const why = unaccepted(text);
+    if (why && attended) setRefusal({ session: attended.id, text: why });
+    return why === null;
   };
 
   // The person's words through the box at the foot (MSG1f, D137 §5.1): a working driven session's running door (SESS3), a
@@ -946,18 +948,46 @@ export function WorkFrame({
   // The answer to a driven session that parked to ask the person (STANDDOWN2): the record stays parked
   // with their words (ANSWER1b), and the same session goes on with them at the driver's next tick (D131).
   // The sessions are read again, so until then the frame shows it going on, not waiting (ANSWER1c).
-  const onAnswerSession = (words: string | null) => {
-    if (!attended) return;
+  // PARKANSWER1: answered from its card, which keeps the words until it is told they arrived, and says a refusal itself.
+  const onAnswerSession = (words: string | null) => new Promise<string | null>((settle) => {
+    if (!attended) { settle(null); return; }
     answer.mutate({ id: attended.id, answer: words }, {
-      onSuccess: () => notify(t('work.awaiting.answered')),
-      onError: (error) => {
-        // 🔴 The box at the foot let go of the words when it sent; an answer that did not arrive hands
-        // them back, as a message does (REV3).
-        if (words) setDraft((was) => [words, was.trim()].filter(Boolean).join('\n\n'));
-        failure(notify)(error);
+      onSuccess: () => {
+        notify(t('work.awaiting.answered'));
+        settle(null);
       },
+      onError: (error) => settle(sentence(error)),
     });
-  };
+  });
+
+  // PARKANSWER1 (the owner report, 2026-10-23): where the box below answers the park, its card answers it too, through the box's
+  // own say door (MSG1f) and as the box would (its refusals, a question changed under the page, words on their way): the card was
+  // handed no answer there, and a park whose box the person did not have before them could only be finished or declined. A choice
+  // names its question (PARKVIEW1). Settles with the sentence a refusal is said in, for the card to say beside its words.
+  const sayFromCard = (text: string, choice?: { label: string; question: string }) => new Promise<string | null>((settle) => {
+    if (!attended) { settle(null); return; }
+    const why = unaccepted(text);
+    if (why) { settle(why); return; }
+    const session = attended.id;
+    const n = sending.begin(session, { text, files: [] });
+    say.mutate({ id: session, text, ...(choice ? { question: choice.question } : {}) }, {
+      onSuccess: (result) => {
+        sending.answered(n);
+        if (!result.sent) {
+          settle(result.why === 'question-changed' ? t('work.park.changed') : untaken(result, t('work.say.notTaken')));
+          return;
+        }
+        counted(session, 'answer', text, 0, result);
+        notify(choice ? t('work.park.chose', { label: choice.label }) : t('work.awaiting.answered'));
+        settle(null);
+      },
+      // A send the page stopped waiting on may still land (SENDLOST1b): it is shown on its way, so it leaves the card.
+      onError: (error: unknown) => settle(stillTaking(n, error) ? null : sentence(error)),
+    });
+  });
+  const answerFromCard = (words: string | null) => (words ? sayFromCard(words) : onAnswerSession(null));
+  const choiceFromCard = (label: string, words: string) =>
+    (question ? sayFromCard(choiceWords(label, words), { label, question: question.id }) : Promise.resolve(null));
 
   // A go-ahead the park asked, answered on its page (KNOWUSE1a2, D135 §2): through one door, which sends the same session
   // on once none of the go-aheads it asked is open, as the ask's page does (GOAHEAD2b). The person's words are the
@@ -1739,7 +1769,9 @@ export function WorkFrame({
     session: attended,
     resolving: resolve.isPending || answer.isPending || parkGoAhead.isPending || personDone.isPending,
     onResolve: here ? onResolve : undefined,
-    onAnswerSession: here && !answering ? onAnswerSession : undefined,
+    // Its card's answer (PARKANSWER1): through the box's say door where the box answers the park too, else the park's answer door.
+    onAnswerSession: here ? (answering ? answerFromCard : onAnswerSession) : undefined,
+    onAnswerChoice: here && answering && question ? choiceFromCard : undefined,
     onAnswerAsk: here ? onAnswerAsk : undefined,
     // The go-aheads it asked, answerable only where this machine can answer the park (KNOWUSE1a2).
     goAheads,

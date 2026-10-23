@@ -66,7 +66,7 @@ export const noteIsInTheHead = (session: Session, answerableHere: boolean) =>
   session.state === 'awaiting-person' && !answeredPark(session) && answerableHere;
 
 export function AttendedSession({
-  session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession,
+  session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession, onAnswerChoice,
   chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, ownBranch, onDiscardBranch, discardingBranch,
   headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind,
   opinion, continues, helps, heavy, process, parts, entryAccept, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek, helpers, permissions,
@@ -209,7 +209,9 @@ export function AttendedSession({
   /** Passed straight through too: where an intake's answer is, its ask (INT4g). */
   onAnswerAsk?: (ask: string) => void;
   /** And the answer to a driven session that parked to ask the person (STANDDOWN2). */
-  onAnswerSession?: (answer: string | null) => void;
+  onAnswerSession?: (answer: string | null) => Promise<string | null> | void;
+  /** And a press of its park's question's answer from its card, with the card's words (PARKANSWER1). */
+  onAnswerChoice?: (label: string, words: string) => Promise<string | null> | void;
   /**
    * The chain its quest belongs to (MAP1), the same strip a quest's page shows. Rendered only
    * when there is one, like there: a lone quest has nothing before or after it to show.
@@ -253,6 +255,7 @@ export function AttendedSession({
         onResolve={onResolve}
         onAnswerAsk={onAnswerAsk}
         onAnswerSession={onAnswerSession}
+        onAnswerChoice={onAnswerChoice}
         branch={branch}
         ownBranch={ownBranch}
         onReview={onReview}

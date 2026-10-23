@@ -524,8 +524,7 @@ describe('clearing a parked session', () => {
     show('p4rk3d00');
 
     const box = await screen.findByLabelText('Message');
-    expect(screen.queryByRole('button', { name: 'Answer and carry on…' })).toBeNull();
-    expect(screen.getByText(/Answering it in the box below lets it carry on/)).toBeInTheDocument();
+    expect(screen.getByText(/or in the box below/)).toBeInTheDocument();
     // An answer is words: nothing to attach, and no ending of the box's own (the card holds those, and
     // since NAME1b the card's Finish and the box's are one name for one act, so the box is asked).
     expect(screen.queryByRole('button', { name: 'Attach files' })).toBeNull();
@@ -540,6 +539,72 @@ describe('clearing a parked session', () => {
       payload: { id: 'p4rk3d00', text: 'go ahead with the PUT' },
     }));
     expect(vi.mocked(fetch)).not.toHaveBeenCalledWith('/api/sessions/p4rk3d00/answer', expect.anything());
+  });
+
+  /**
+   * 🔴 PARKANSWER1 (the owner report, 2026-10-23): a driven session of another workspace, parked with its quest taken and no process
+   * left, asked a yes-or-no go-ahead in its closing words, and its card offered only *Finish* and *Decline…*. The card leant on the box
+   * below for the answer, and handed none of its own wherever that box was the park's. Every park this machine can answer is answered
+   * from its card as well, under its closing words, through the same say door the box uses.
+   */
+  it('answers a parked driven session with no process from its card, under the question in its closing words', async () => {
+    SESSIONS = [{
+      ...PARKED, workspace: 'elsewhere', from: 'f0rm3r00', fromWhy: 'carry-on', fromBy: 'daoris',
+      note: 'It stopped with its quest still taken, to ask you:\n\nI will write the dev config only with your go-ahead. Say yes or no here.',
+    }];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_QUEUE') return { session: 'p4rk3d00', queued: [], taking: false, reaches: 'resume' };
+      if (type === 'SESSION_INPUT') return { sent: true, reaches: 'resume' };
+      // Nothing runs it: the driver lists no process for it.
+      return { ...DRIVER_STATE, running: [] };
+    });
+    const notify = vi.fn();
+    show('p4rk3d00', notify);
+
+    const card = (await screen.findByText(/Say yes or no here/)).closest('section')!;
+    await userEvent.click(within(card).getByRole('button', { name: 'Answer and carry on…' }));
+    await userEvent.type(within(card).getByLabelText('your answer — the same session goes on with these words'), 'yes');
+    await userEvent.click(within(card).getByRole('button', { name: 'Carry on with this answer' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: { id: 'p4rk3d00', text: 'yes' },
+    }));
+    expect(vi.mocked(fetch)).not.toHaveBeenCalledWith('/api/sessions/p4rk3d00/answer', expect.anything());
+    await waitFor(() => expect(notify).toHaveBeenCalledWith("Answered — the same session goes on with your words at the driver's next look."));
+  });
+
+  /** PARKANSWER1: a refusal of the card's answer is said in the card, where it was pressed, and the words stay there. */
+  it('says in the card why its answer was not taken, keeping the words', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_QUEUE') return { session: 'p4rk3d00', queued: [], taking: false, reaches: 'resume' };
+      if (type === 'SESSION_INPUT') return { sent: false, why: 'stood-down' };
+      return DRIVER_STATE;
+    });
+    show('p4rk3d00');
+
+    const card = (await screen.findByText(/I recommend the second/)).closest('section')!;
+    await userEvent.click(within(card).getByRole('button', { name: 'Answer and carry on…' }));
+    const field = within(card).getByLabelText('your answer — the same session goes on with these words');
+    await userEvent.type(field, 'the second');
+    await userEvent.click(within(card).getByRole('button', { name: 'Carry on with this answer' }));
+
+    expect(await within(card).findByText('It stood down: #abc123 is someone else\'s, so it has nothing to go on with.')).toBeInTheDocument();
+    expect(field).toHaveValue('the second');
+  });
+
+  /**
+   * PARKANSWER1: a teammate's parked record is answered on their machine, and nothing here reaches it: its card says so, rather than
+   * showing the question with no way to answer and no word why.
+   */
+  it('says on a teammate\'s parked record why it is not answered here', async () => {
+    SESSIONS = [{ ...PARKED, id: 'person@machine-b/p4rk3d00', note: 'Say yes or no here.' }];
+    show('person@machine-b/p4rk3d00');
+
+    const card = (await screen.findByText('Say yes or no here.')).closest('section')!;
+    expect(within(card).getByText(
+      'It runs on another machine, so it is answered there: nothing this window sends reaches it.',
+    )).toBeInTheDocument();
+    expect(within(card).queryByRole('button', { name: 'Answer and carry on…' })).toBeNull();
   });
 
   /**

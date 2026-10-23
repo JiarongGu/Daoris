@@ -19942,3 +19942,11 @@ findings in D205's MODELROLE1a note. `claude-agent-acp` and `codex-acp` were mea
 changed, so nothing was restored. The ACP fakes in `AcpTests` and the pipe frames in `ClaudeStreamJsonTests` now speak the
 measured shapes. Three readers built on guessed shapes were corrected (FIX-LOG's MODELROLE1a entry). Not measured: a per-account
 difference in offers and an unentitled model on a real account, since none was found.
+## PARKANSWER1 — a parked driven session is answered from its card, wherever the frame can answer it (2026-10-23)
+
+> - [ ] **PARKANSWER1** (quest `#262fa263836e`; the owner report, 2026-10-23, urgent): a driven session waiting on the person can only be finished or declined; the person cannot answer it. Seen on the install: a driven session in another workspace, awaiting-person with its quest still taken, asked a yes-or-no go-ahead in its closing words; in the Chinese UI its waiting card offered only 完成 (Finish) and the decline press, with no answer box, no Answer and carry on press and no hint to answer in the composer. Fix it so every awaiting-person session the person can answer offers a way to answer: the answer box with the park question and its choices where one was asked (PARKVIEW1), else the box under the closing words, sending the words through the same say door; the case that refuses (a teammate) says why instead of offering nothing.
+
+**Outcome** 2026-10-23: the card no longer withholds its answer where the box at the foot answers the park. It answers through
+the box's say door there, its question's answers as presses once opened, and through the park's answer door elsewhere; a refusal
+is said in the card with the words kept. A teammate's or a browser's park says where it is answered. Red-first proof and the
+reading of the install's record are in FIX-LOG's PARKANSWER1 entry. The installed window is looked at after the republish.
