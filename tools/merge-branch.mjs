@@ -2661,9 +2661,19 @@ export function worktreeFor(porcelain, branch) {
  * What the commit check finds wrong: a commit of the branch's own without the trailer (a merge of main
  * into it carries none, and needs none), and work left uncommitted in its worktree.
  */
+export function commitAttributionProblems(commits) {
+  // Makers of this repository's built-in agents (Adapters.cs). Claude's harness has historically
+  // written its model name alone, so accept Claude and Codex names as well as explicit makers.
+  const maker = /\b(?:Anthropic|Claude|OpenAI|Codex|DeepSeek)\b/i;
+  const expected = 'expected its own maker and running model: Anthropic (Claude), OpenAI (Codex), or DeepSeek';
+  return commits.filter((commit) => !commit.merge && !commit.trailer.split('\n').some((line) => {
+    const name = /^\s*(.+?)\s+<[^<>\s]+@[^<>\s]+>\s*$/.exec(line)?.[1];
+    return name && maker.test(name);
+  })).map((commit) => `${commit.sha} ${commit.subject}: ${commit.trailer ? 'no allowed maker in its Co-Authored-By line' : 'no Co-Authored-By line'}; ${expected}`);
+}
+
 function commitProblems(root, branch, commits) {
-  const problems = commits.filter((commit) => !commit.merge && !commit.trailer)
-    .map((commit) => `${commit.sha} ${commit.subject}: no Co-Authored-By line`);
+  const problems = commitAttributionProblems(commits);
   const tree = worktreeFor(git(root, ['worktree', 'list', '--porcelain']).out, branch);
   if (tree && existsSync(tree)) {
     const left = lines(git(tree, ['status', '--porcelain']).out);

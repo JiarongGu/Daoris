@@ -488,10 +488,14 @@ public sealed class ChatRunner : IDisposable
         RotatedOpening.Say(
             _service, _events, sessionId, resolved.Name, selection, from is { Why: HandOverWhy.Limit } ? LimitCarried(from.Session) : null);
 
-        // A conversation in a tree it grew is told its repository's process with its first message (PROCESS1d-ii, D164's amendment
-        // point 4), as a driven session is in its instruction. Never the person's checkout, nor a tree handed over, whose new
-        // conversation is briefed with Daoris's record.
-        if (opened is not null) _toldProcess[sessionId] = await ProcessToldAsync(opened.Path, sessionId, config, known, opened.Dependencies, ct).ConfigureAwait(false);
+        // A conversation in a tree it grew is told its process with its first message. A handed-over conversation also needs
+        // its new maker's attribution: the record it continues may carry a different maker's instruction (MAKERTRAIL1).
+        if (opened is not null) _toldProcess[sessionId] = await ProcessToldAsync(opened.Path, sessionId, config, known, opened.Dependencies, resolved, ct).ConfigureAwait(false);
+        else
+        {
+            var commits = CommitRules.Resolve(config, known.Repository, known.Workspace);
+            _toldProcess[sessionId] = new ProcessBriefing(CommitTrailers.For(resolved), commits.Rule.Mode, commits.Source);
+        }
 
         // SESSCTX1b: a conversation that continues another reads the kept folders of its line's parts, whose files its brief names.
         var continued = from is null ? [] : await ContextBriefs.LineIdsAsync(_service, from.Session, ct).ConfigureAwait(false);
@@ -1584,10 +1588,13 @@ public sealed class ChatRunner : IDisposable
 
         // The browser it was handed is told once, ahead of the first message's words (BRWHINT1a).
         var briefing = held && _context.Browsers.TryRemove(sessionId, out var browserLine) ? browserLine : null;
-        // So is the repository's process, for a conversation in a tree it grew (PROCESS1d-ii).
-        var process = held && _toldProcess.TryRemove(sessionId, out var told) ? told : null;
-        return new ChatMessage(message, kept) { Preface = ChatMessage.Bound(preface), Briefing = briefing, Process = process };
+        var composed = new ChatMessage(message, kept) { Preface = ChatMessage.Bound(preface), Briefing = briefing };
+        return held ? WithProcess(sessionId, composed) : composed;
     }
+
+    /// <summary>The start's process and maker, consumed by the first ordinary or handed-over message.</summary>
+    internal ChatMessage WithProcess(string sessionId, ChatMessage message) =>
+        _toldProcess.TryRemove(sessionId, out var told) ? message with { Process = told } : message;
 
     /// <summary>
     /// A text-only door keeps the person's words where it keeps the agent's — the console. In the record they would be half a
@@ -1865,11 +1872,12 @@ public sealed class ChatRunner : IDisposable
     /// What a conversation in a tree of its own is told of its process (PROCESS1d-ii, D164's amendment point 4): the commit rule
     /// standing for its repository and its landing, in <see cref="ProcessWords.Conversation"/>'s words with the rule's facts.
     /// </summary>
-    internal static ProcessBriefing ProcessTold(ResolvedCommits commits, LandingPlan? plan, string? dependencies = null)
+    internal static ProcessBriefing ProcessTold(ResolvedCommits commits, LandingPlan? plan, string? dependencies = null, ISessionAdapter? adapter = null)
     {
         // A copy of the tree's dependencies is told with the process, so the agent does not run the install that would delete it
         // (TREEDEPS1b, D51's TREEDEPS1 note); no new note code, it rides the process's own.
         var words = ProcessWords.Conversation(commits, plan);
+        if (adapter is not null) words = $"{words}\n\n{CommitTrailers.For(adapter)}";
         if (!string.IsNullOrEmpty(dependencies)) words = $"{words}\n\n{dependencies}";
         return new(words, commits.Rule.Mode, commits.Source);
     }
@@ -1879,7 +1887,7 @@ public sealed class ChatRunner : IDisposable
     /// landing that cannot be read leaves its lead unsaid, never the start: the record is open, so the run that follows concludes
     /// it, cancelled or not, and the commit rule is said either way.
     /// </summary>
-    private async Task<ProcessBriefing> ProcessToldAsync(string tree, string sessionId, DriverConfig config, RepoView known, string? dependencies, CancellationToken ct)
+    private async Task<ProcessBriefing> ProcessToldAsync(string tree, string sessionId, DriverConfig config, RepoView known, string? dependencies, ISessionAdapter adapter, CancellationToken ct)
     {
         LandingPlan? plan;
         try
@@ -1891,7 +1899,7 @@ public sealed class ChatRunner : IDisposable
             plan = null;
         }
 
-        return ProcessTold(CommitRules.Resolve(config, known.Repository, known.Workspace), plan, dependencies);
+        return ProcessTold(CommitRules.Resolve(config, known.Repository, known.Workspace), plan, dependencies, adapter);
     }
 
     /// <summary>

@@ -21,6 +21,9 @@ public sealed record SessionTarget(
     string Root,
     string ServiceUrl)
 {
+    /// <summary>The selected adapter's commit attribution instruction, composed for this start.</summary>
+    public string? CommitTrailer { get; init; }
+
     /// <summary>Addresses the quest carries (D65 §2), handed over as the asker gave them.</summary>
     public IReadOnlyList<string> Links { get; init; } = [];
 
@@ -353,12 +356,45 @@ public sealed record SessionTarget(
 }
 
 /// <summary>
+/// Commit attribution from the selected harness's maker and its running model's identity.
+/// </summary>
+internal static class CommitTrailers
+{
+    // The adapter declares the maker; the harness knows the model actually selected for the turn.
+    // Account settings may be aliases or defaults, and a continued session may have changed maker.
+    internal static string For(ISessionAdapter adapter)
+    {
+        var maker = adapter.Toolchain?.Maker;
+        if (string.Equals(maker, "Anthropic", StringComparison.OrdinalIgnoreCase))
+            return $"This start runs on `{adapter.Name}`, made by Anthropic. Use the model actually running this session for commit attribution. "
+                + "Your Claude harness adds its Co-Authored-By trailer; let it do so and do not add a duplicate or another maker's trailer.";
+
+        var identity = maker switch
+        {
+            "OpenAI" => "Codex (OpenAI, MODEL) <noreply@openai.com>",
+            "DeepSeek" => "DeepSeek (MODEL) <noreply@deepseek.com>",
+            _ => "AGENT (MAKER, MODEL) <your maker's attribution address>",
+        };
+        var on = maker is { Length: > 0 } ? $", made by {maker}" : "";
+        return $"This start runs on `{adapter.Name}`{on}. End every commit message you write with a Co-Authored-By trailer naming your own maker and the model actually running this session:\n\n"
+            + $"Co-Authored-By: {identity}\n\n"
+            + "Replace MODEL with the model your harness reports for this run, not an account default or a model from an earlier session's brief. "
+            + "If no model identity is reported, say model unreported rather than invent one. "
+            + "Replace any other placeholders with your own identity. If your harness adds that trailer itself, do not add a duplicate.";
+    }
+}
+
+/// <summary>
 /// The claiming instruction (D46 §3), composed once and delivered per harness. Project-agnostic on
 /// purpose: it travels to repositories that know nothing of this one's decision numbering, so it
 /// speaks in the canon's names, never in D-numbers.
 /// </summary>
 public static class TargetPrompt
 {
+    /// <summary>Bind the maker of this start, including a start continuing another maker's work.</summary>
+    internal static SessionTarget ForStart(SessionTarget target, ISessionAdapter adapter) =>
+        target with { CommitTrailer = CommitTrailers.For(adapter) };
+
     /// <summary>
     /// The instruction a session is handed — an intake's own where the target carries one, so every
     /// door that delivers a target (the pipe's argument, the protocol's prompt, <c>DAORIS_TARGET</c>)
@@ -422,6 +458,7 @@ public static class TargetPrompt
         // page words it (REVIEWENV1c2).
         new(HandedSections.SetUp, SetUp(target)),
         new(HandedSections.Close, close),
+        new(HandedSections.Close, target.CommitTrailer is { } trailer ? $"\n\n{trailer}\n" : ""),
         new(HandedSections.Language, Language(target)),
         new(HandedSections.Close, "\n"),
         new(HandedSections.Map, Mapped(target)),

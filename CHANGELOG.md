@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- Driven sessions and repository conversations now receive commit attribution instructions for their own maker and running
+  model (MAKERTRAIL1). Claude keeps its harness's automatic trailer. The merge check accepts supported makers' trailers and
+  names the expected makers when attribution is missing or unrecognized.
+
 - A conversation whose account reaches its limit now goes on in the same conversation on your next account (LIMITGOON1). The
   words the refused turn held are passed on with Daoris's summary of the conversation so far, and the conversation says once where it
   went on. In Ask Daoris it stays one conversation, both before and after the move, rather than leaving your words in the history.

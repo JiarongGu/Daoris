@@ -291,6 +291,8 @@ message and what it did, the plan with its turn, the last check each part ran by
 output, under a 40,000 bound with a Han character weighing three, every cut said and accounted in its `brief-*` sections. A
 hand-over's new conversation keeps it as its first prompt (`origin: target`, its account, `continues`), never read as its
 opening; a driven carry-on carries it as part of its instruction, accounted within it. The new part reads its line's kept folders.
+Every start's instruction also says how its agent signs its commits (MAKERTRAIL1, `CommitTrailers.For`): an agent of another
+maker ends each commit with a `Co-Authored-By` naming its own maker and the model that ran, and a Claude harness adds its own.
 What the bound left out is one call away: the brief's notice names the connector's `line_read` (SESSCTX1f, D189's note), which
 pages the line's event files on this machine with the service's own reader, `LineEvents`; the file both read is held by a test on
 each side (`LineEventFilesTests` here). A working session is allowed it by default; a reviewer, a helper and a brainstorm pass are

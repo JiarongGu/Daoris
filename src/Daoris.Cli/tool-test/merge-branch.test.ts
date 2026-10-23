@@ -175,6 +175,7 @@ const tool = await import(
   ignoredVerdict: (probe: { status: number | null; err: string }, path: string) => boolean;
   startRefusal: (facts: { branch: string; merging: boolean; changed: { code: string; path: string }[]; ignored: boolean }) => string | null;
   parseCommits: (text: string) => { sha: string; merge: boolean; subject: string; trailer: string }[];
+  commitAttributionProblems: (commits: { sha: string; merge: boolean; subject: string; trailer: string }[]) => string[];
   worktreeFor: (porcelain: string, branch: string) => string | null;
   isProcessGate: (gate: { name: string; run: string }) => boolean;
   parseWorktrees: (porcelain: string) => Worktree[];
@@ -873,6 +874,24 @@ test("the commit log is read for each commit's trailer, and a merge of main into
     { sha: '9abcdef', merge: false, subject: 'bare', trailer: '' },
   ]);
   assert.deepEqual(tool.parseCommits(''), []);
+});
+
+test('MAKERTRAIL1 accepts each allowed maker, legacy harness trailers, and names expected makers on refusal', () => {
+  const commit = (trailer: string, merge = false) => ({ sha: 'abc1234', subject: 'work', merge, trailer });
+  for (const trailer of [
+    'Claude Opus 4.6 <noreply@anthropic.com>',
+    'Claude (Anthropic, sonnet) <fixture@example.test>',
+    'Codex (OpenAI, gpt-fixture) <noreply@openai.com>',
+    'OpenAI gpt-fixture <fixture@example.test>',
+    'DeepSeek (fixture-model) <noreply@deepseek.com>',
+    'Human <person@example.test>\nCodex gpt-fixture <fixture@example.test>',
+  ]) assert.deepEqual(tool.commitAttributionProblems([commit(trailer)]), [], trailer);
+  assert.deepEqual(tool.commitAttributionProblems([commit('', true)]), []);
+  for (const trailer of ['', 'Fixture <fixture@example.test>', 'OpenAI', 'Someone <OpenAI@example.test>']) {
+    const problems = tool.commitAttributionProblems([commit(trailer)]);
+    assert.equal(problems.length, 1, trailer);
+    assert.match(problems[0]!, /abc1234 work.*Co-Authored-By.*expected.*Anthropic.*OpenAI.*DeepSeek/);
+  }
 });
 
 test('the worktree a branch is checked out in is found in the porcelain list', () => {
@@ -4866,7 +4885,7 @@ function git(cwd: string, ...args: string[]): string {
   return result.stdout.trim();
 }
 
-const TRAILER = '\n\nCo-Authored-By: Fixture <fixture@example.test>';
+const TRAILER = '\n\nCo-Authored-By: Claude Fixture (Anthropic) <fixture@example.test>';
 
 /**
  * CLEANUP2b: a worktree as a finished agent's is, nothing in it or in its git folder written for `minutes`: every
@@ -5073,6 +5092,23 @@ const merging = (root: string) => spawnSync('git', ['rev-parse', '-q', '--verify
 // costs tens of milliseconds on Windows, and more under the rest of the suite's load, so what needs no
 // real git is tested above without it, and each start here is one a scenario needs.
 describe('the tool, end to end in a scratch repository', { concurrency: true }, () => {
+  test('MAKERTRAIL1 a Codex stand-in commit passes the real git trailer check', async () => {
+    const repo = scratch('codex-attribution', [{ name: 'first', run: 'node gate.mjs first' }]);
+    try {
+      branch(repo.root, 'codex-work', { 'codex.txt': 'built by the stand-in\n' });
+      git(repo.root, 'checkout', '--quiet', 'codex-work');
+      git(repo.root, 'commit', '--amend', '--quiet', '-m', 'fix: Codex stand-in\n\nCo-Authored-By: Codex (OpenAI, gpt-fixture) <noreply@openai.com>');
+      git(repo.root, 'checkout', '--quiet', 'main');
+      const result = await repo.run(['--plan', 'codex-work']);
+      assert.equal(result.status, 0, result.out);
+      assert.doesNotMatch(result.out, /no Co-Authored-By|no allowed maker/);
+      assert.deepEqual(repo.ran(), []);
+      assert.equal(merging(repo.root), false);
+    } finally {
+      repo.cleanup();
+    }
+  });
+
   test('it refuses before touching anything, and the commit check refuses what a hand-back left out', async () => {
     const repo = scratch('refusals', [{ name: 'first', run: 'node gate.mjs first' }]);
     // Merged into main, so the merge's prune removes it (GATE2); a refusal comes first and touches nothing.
