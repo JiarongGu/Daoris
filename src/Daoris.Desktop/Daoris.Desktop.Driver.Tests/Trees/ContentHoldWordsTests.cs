@@ -26,6 +26,43 @@ public sealed class ContentHoldWordsTests
             "its work is on `main` by content (a squash carried it: merging it there adds nothing)",
             new ContentHold("main", Squash: false) { Carried = true }.Said);
 
+    /// <summary>REVIEWLANDED1: a landing that replayed its commits onto the line says so, since none of its own commits is there.</summary>
+    [Fact]
+    public void A_landings_replay_says_each_commit_is_there() =>
+        Assert.Equal(
+            "its work is on `main` by content (a landing replayed each of its commits there)",
+            new ContentHold("main", Squash: false) { Replayed = true, OnLine = true }.Said);
+
+    /// <summary>
+    /// REVIEWLANDED1: a file that reads otherwise on the line is held only where the line's newest change to it holds one of the branch's
+    /// patches (git marks it <c>=</c>); a change after it, or none at all, is the line as it stands, which does not hold it (D148).
+    /// </summary>
+    [Theory]
+    [InlineData("\u001e=aaa\nf.txt\n\u001e+bbb\nf.txt\ng.txt\n", "f.txt", true)]
+    [InlineData("\u001e+ccc\nf.txt\n\u001e=aaa\nf.txt\n", "f.txt", false)]
+    [InlineData("\u001e=aaa\nf.txt\n", "g.txt", false)]
+    [InlineData("\u001e=aaa\nf.txt\n\u001e+bbb\ng.txt\n", "f.txt|g.txt", false)]
+    [InlineData("\u001e=aaa\nf.txt\n\u001e=bbb\ng.txt\n", "f.txt|g.txt", true)]
+    public void A_replayed_file_is_held_only_where_the_lines_newest_change_is_the_replay(string log, string differs, bool held) =>
+        Assert.Equal(held, ReplayHolds.LastChangedByPatch(log, differs.Split('|')));
+
+    /// <summary>
+    /// REVIEWLANDED1: a tree whose commits are on the line by content has landed, so it leaves the review where its discard would go; one
+    /// held on a person's branch, one that stays for what no commit holds, and one with uncommitted paths are still the person's.
+    /// </summary>
+    [Fact]
+    public void A_tree_landed_on_the_line_holds_nothing_to_review()
+    {
+        var line = new ContentHold("main", Squash: false) { Replayed = true, OnLine = true };
+        const string keeps = "refs/daoris/discarded/daoris/s-1a2b3c4d";
+
+        Assert.False(new TreeWork(2, 0) { Held = new HeldWork(line, keeps, null) }.Holds);
+        Assert.True(new TreeWork(2, 1) { Held = new HeldWork(line, keeps, null) }.Holds);
+        Assert.True(new TreeWork(2, 0) { Held = new HeldWork(line, null, "it holds 1 ignored path(s)") }.Holds);
+        Assert.True(new TreeWork(2, 0) { Held = new HeldWork(new ContentHold("feature/x", Squash: false), keeps, null) }.Holds);
+        Assert.True(new TreeWork(2, 0).Holds);
+    }
+
     /// <summary>
     /// SQUASHSEEN1: the backlog read by rows. Two sessions moved out neighbouring rows and the squash moved both; a row the branch moved
     /// that the line still has, or one it added that the line lacks, is not held; the line's own other rows are its own.

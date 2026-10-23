@@ -166,9 +166,10 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
                             + "The tree stays; say it again with --force to discard it.");
                     }
 
+                    // REVIEWLANDED1: where the line holds some of them under ids of their own, only those it lacks are named.
                     return new(false,
                         $"the tree at {path} holds commits `{canonical}` has not taken, and no other branch of yours holds "
-                        + $"them:\n{unmerged.Trim()}\nLand them from the review, or say it again with --force to discard them.");
+                        + $"them:\n{proof.Lacking(unmerged)}\nLand them from the review, or say it again with --force to discard them.");
                 }
 
                 // SQUASHTIDY1c: the proof compared files, so the commits themselves are kept on a ref of their own before anything goes.

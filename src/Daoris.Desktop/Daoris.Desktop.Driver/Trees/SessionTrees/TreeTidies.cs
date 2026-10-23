@@ -422,7 +422,7 @@ internal sealed class TreeTidies(
 
                 if (held is null)
                 {
-                    return new(false, $"`{branch}` holds commits no branch of yours holds:\n{unlanded.Trim()}\n"
+                    return new(false, $"`{branch}` holds commits no branch of yours holds:\n{proof.Lacking(unlanded)}\n"
                         + "If its work is not wanted — a failed or superseded attempt — say it again with --force to discard them.");
                 }
 
