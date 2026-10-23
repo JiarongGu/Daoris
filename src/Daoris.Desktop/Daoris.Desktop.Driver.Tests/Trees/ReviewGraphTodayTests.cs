@@ -131,7 +131,7 @@ public sealed class ReviewGraphTodayTests : LandedFixture
     public async Task A_folder_that_is_no_top_reads_alike()
     {
         var trees = new SessionTrees(Home);
-        var folder = Path.Combine(Home, "trees", "games", "engine", Session);
+        var folder = Path.Combine(DaorisHome.Entry(Home, HomeEntry.Trees), "games", "engine", Session);
         Directory.CreateDirectory(folder);
         await File.WriteAllTextAsync(Path.Combine(folder, "left.txt"), "a leftover\n");
 
