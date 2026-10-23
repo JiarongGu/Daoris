@@ -116,7 +116,7 @@ describe('SessionBox', () => {
       box: { kind: 'say', mode: 'answer' }, onSend,
       park: {
         quest: 'q8f2e1', since: '2026-10-22T09:00:00Z', goAheads: [], onChoice,
-        question: { id: 'q1', question: 'Which port?', choices: [{ label: '8080', does: 'Use 8080.' }], recommend: null, by: null, at: '' },
+        question: { id: 'q1', question: 'Which port?', choices: [{ label: '8080', does: 'Use 8080.' }], recommend: null, why: null, by: null, at: '' },
       },
     });
 

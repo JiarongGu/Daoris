@@ -29,7 +29,7 @@ public sealed class QuestionFiles(string home)
     public const string Suffix = ".question.json";
 
     /// <summary>The writer's bounds (<c>QuestionBox</c>), held on read too: the question, its answers, each label and each <c>does</c>, and by when.</summary>
-    public const int MaxQuestion = 1000, MaxChoices = 6, MaxLabel = 80, MaxDoes = 300, MaxBy = 200;
+    public const int MaxQuestion = 1000, MaxChoices = 6, MaxLabel = 80, MaxDoes = 300, MaxBy = 200, MaxWhy = 300;
 
     /// <summary>How many times a refused delete is tried, each a little later: about a second in all, as a busy rename is (AtomicFile).</summary>
     private const int DeleteTries = 20;
@@ -93,14 +93,16 @@ public sealed class QuestionFiles(string home)
         var by = Text(root, "by") is { Length: > 0 } said ? said : null;
         if (choices.Count > MaxChoices || choices.Any(choice => choice.Label.Length > MaxLabel || choice.Does.Length > MaxDoes)
             || choices.Select(choice => choice.Label).Distinct(StringComparer.OrdinalIgnoreCase).Count() < choices.Count
-            || by is { Length: > MaxBy })
+            || by is { Length: > MaxBy } || Text(root, "why") is { Length: > MaxWhy })
         {
             return null;
         }
 
         int? recommend = root.TryGetProperty("recommend", out var number) && number.ValueKind == JsonValueKind.Number
             && number.TryGetInt32(out var chosen) && chosen >= 1 && chosen <= choices.Count ? chosen : null;
-        return new ParkQuestion(id, session, question, choices, recommend, by, Moments.Read(root, "at") ?? written());
+        // Its reason explains the recommendation (QUESTIONUI1a): with none recommended, there is nothing for it to explain.
+        var why = recommend is not null && Text(root, "why") is { } reason && !string.IsNullOrWhiteSpace(reason) ? reason : null;
+        return new ParkQuestion(id, session, question, choices, recommend, by, Moments.Read(root, "at") ?? written(), why);
     }
 
     /// <summary>
@@ -199,10 +201,12 @@ public static class QuestionWords
 
 /// <summary>
 /// A session's question as <c>question_ask</c> wrote it: its id, the session, the agent's words, the answers it offers, the one it
-/// recommends by number from 1 (null for none, or one that names no answer), by when as it said, and when it asked.
+/// recommends by number from 1 (null for none, or one that names no answer), by when as it said, when it asked, and why it recommends
+/// that answer (QUESTIONUI1a; null with none recommended).
 /// </summary>
 public sealed record ParkQuestion(
-    string Id, string Session, string Question, IReadOnlyList<ParkQuestionChoice> Choices, int? Recommend, string? By, DateTimeOffset At);
+    string Id, string Session, string Question, IReadOnlyList<ParkQuestionChoice> Choices, int? Recommend, string? By, DateTimeOffset At,
+    string? Why = null);
 
 /// <summary>One answer a question offers: the words on its press, and what the agent does on it.</summary>
 public sealed record ParkQuestionChoice(string Label, string Does);

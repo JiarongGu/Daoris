@@ -36,7 +36,7 @@ describe('readQuestion', () => {
     const words = (value: unknown) => (typeof value === 'number' ? 'x'.repeat(value) : value);
     expect(read).toEqual({
       id: row.read.id, question: words(row.read.question), choices: row.read.choices, recommend: row.read.recommend,
-      by: row.read.by, at: row.file.at,
+      why: words(row.read.why), by: row.read.by, at: row.file.at,
     });
   });
 
