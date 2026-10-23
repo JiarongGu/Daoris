@@ -328,7 +328,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-23-terminal-trust-design.md` | 66 | 603 |
 | `docs/2026-10-24-ci-scope-design.md` | 106 | 1092 |
 | `docs/2026-10-24-ci-scope-reads.md` | 126 | 1020 |
-| `docs/2026-10-24-supervisor-design.md` | 87 | 832 |
-| `docs/2026-10-24-supervisor-reads.md` | 87 | 764 |
+| `docs/2026-10-24-supervisor-design.md` | 127 | 1105 |
+| `docs/2026-10-24-supervisor-reads.md` | 132 | 1186 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `src/Daoris.Desktop/README.md` | 159 | 785 |
