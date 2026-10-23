@@ -45,7 +45,7 @@ internal static class SessionLocks
         try
         {
             var locked = Path.Combine(git, "locked");
-            return File.Exists(locked) ? SessionOf(File.ReadAllText(locked).Trim()) : null;
+            return File.Exists(locked) ? SessionOf(File.ReadAllText(locked).Trim()) : null; // read-shares: git's own lock file, written by git.
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -78,32 +78,41 @@ internal static class SessionLocks
     /// </summary>
     internal static async Task<bool> LetGoAsync(string tree, string session, CancellationToken ct)
     {
-        if (!Directory.Exists(tree)) return false;
+        if (!Directory.Exists(tree) || HolderOf(tree) != session) return false;
         if (await EntryAsync(tree, ct).ConfigureAwait(false) is not { Locked: true } entry || entry.LockReason != Reason(session)) return false;
         var (code, _, _) = await WorkingTree.GitAsync(tree, ["worktree", "unlock", entry.Path], ct).ConfigureAwait(false);
         return code == 0;
     }
 
+    /// <summary>A terminal record lets go of its own lock (TREELOCK2); a park, helper wait or setup continuation still holds it.</summary>
+    internal static Task<bool> LetGoEndedAsync(PriorSession record)
+    {
+        if (record.Teammate || record.State is not ("completed" or "declined" or "failed" or "stopped" or "stood-down")
+            || HelperWaits.HoldsTree(record) || record.NoteParts?.Any(part => part.Code == NoteCodes.EndedSetupChanged.Code) == true
+            || record.Tree is not { Length: > 0 } tree) return Task.FromResult(false);
+        return LetGoAsync(tree, record.Session, CancellationToken.None);
+    }
+
     /// <summary>
-    /// The look's half: each of the repository's trees under <paramref name="trees"/> that a session lock holds while no session running
+    /// The look's half: each of the repository's trees in either home place that a session lock holds while no session running
     /// or waiting holds it, let go of. Judged again with the repository's trees held alone, so a start locking its tree meanwhile is
     /// seen holding it. The trees let go of; none where git could not list them, the service did not answer, or a start held them.
     /// </summary>
-    /// <param name="trees">The repository's folder under the trees home, which holds its session trees.</param>
     internal static async Task<IReadOnlyList<string>> LetGoUnheldAsync(
-        string home, string root, string trees, string workspace, string repository, Func<CancellationToken, Task<IReadOnlySet<string>>> inUse,
+        TreeContext context, string root, string workspace, string repository, Func<CancellationToken, Task<IReadOnlySet<string>>> inUse,
         CancellationToken ct)
     {
         // Asked before any git, so a repository with nothing under its trees costs nothing.
-        if (!Directory.Exists(trees) || !Directory.EnumerateDirectories(trees).Any()) return [];
-        if (await LockedAsync(root, trees, ct).ConfigureAwait(false) is not { Count: > 0 } first) return [];
+        if (!DaorisHome.Places(context.Home, HomeEntry.Trees, workspace, repository)
+                .Any(trees => Directory.Exists(trees) && Directory.EnumerateDirectories(trees).Any())) return [];
+        if (await LockedAsync(context, root, workspace, repository, ct).ConfigureAwait(false) is not { Count: > 0 } first) return [];
         if (await BusyAsync(inUse, ct).ConfigureAwait(false) is not { } before || first.All(entry => before.Contains(Normal(entry.Path)))) return [];
 
-        using var hold = TreeLock.TryReplaying(home, workspace, repository);
+        using var hold = TreeLock.TryReplaying(context.Home, workspace, repository);
         if (hold is null) return [];
         if (await BusyAsync(inUse, ct).ConfigureAwait(false) is not { } busy) return [];
         var let = new List<string>();
-        foreach (var entry in await LockedAsync(root, trees, ct).ConfigureAwait(false) ?? [])
+        foreach (var entry in await LockedAsync(context, root, workspace, repository, ct).ConfigureAwait(false) ?? [])
         {
             if (busy.Contains(Normal(entry.Path))) continue;
             var (code, _, _) = await WorkingTree.GitAsync(root, ["worktree", "unlock", entry.Path], CancellationToken.None).ConfigureAwait(false);
@@ -113,13 +122,15 @@ internal static class SessionLocks
         return let;
     }
 
-    /// <summary>The trees under <paramref name="trees"/> a session lock holds, as git lists them; null where git could not.</summary>
-    private static async Task<List<WorktreeEntry>?> LockedAsync(string root, string trees, CancellationToken ct)
+    /// <summary>This home's trees of the repository a session lock holds, as git lists them; null where git could not.</summary>
+    private static async Task<List<WorktreeEntry>?> LockedAsync(TreeContext context, string root, string workspace, string repository, CancellationToken ct)
     {
         if (await TreeWorktrees.EntriesAsync(root, ct).ConfigureAwait(false) is not { } entries) return null;
-        var under = Path.TrimEndingDirectorySeparator(Path.GetFullPath(trees)) + Path.DirectorySeparatorChar;
         return [.. entries.Where(entry => entry.Locked && SessionOf(entry.LockReason) is not null
-            && Path.GetFullPath(entry.Path).StartsWith(under, StringComparison.OrdinalIgnoreCase))];
+            && context.Holds(entry.Path)
+            && context.OwnerOf(entry.Path) is var owner
+            && string.Equals(owner.Workspace, workspace, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(owner.Repository, repository, StringComparison.OrdinalIgnoreCase))];
     }
 
     /// <summary>The tree's own entry in git's list, asked in the tree; null where git lists none there.</summary>

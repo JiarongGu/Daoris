@@ -36,7 +36,7 @@ public sealed class SessionBranchDiscard(SessionTrees trees)
         var root = await CheckoutAsync(service, repository, ct).ConfigureAwait(false);
         return root is null
             ? new(false, $"`{repository}` has no checkout here, so its branch `{branch}` cannot be removed from this machine.")
-            : await trees.RemoveBranchAsync(root, repository, branch, force, ct).ConfigureAwait(false);
+            : await trees.RemoveBranchAsync(root, repository, branch, force, ct, service).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -82,7 +82,7 @@ public sealed class SessionBranchDiscard(SessionTrees trees)
             // A tree outside the trees home is refused by the removal itself, before git is asked.
             return of is { } here && await HeldAsync(service, here.Repository, here.Branch, ct).ConfigureAwait(false)
                 ? new(false, Held(here.Repository, here.Branch))
-                : await trees.RemoveAsync(tree, force, ct).ConfigureAwait(false);
+                : await trees.RemoveAsync(tree, force, ct, service).ConfigureAwait(false);
         }
 
         return of is { } gone

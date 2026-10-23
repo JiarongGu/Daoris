@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- Finishing or declining a parked session now releases its tree's lock (TREELOCK2). The tidy also clears stale session locks
+  at both tree locations. `trees remove --force` can remove a tree locked by an ended session and keeps trees a running or
+  parked session still holds.
+
 - Leaving Review now stops the git it started (GITAPP1a-iii). Before, git read on to its end after you left, however long it took.
   Now a review nobody looks at runs on for ten seconds, so coming straight back still joins it. After that Daoris stops its git and
   waits for it to end. Two windows on one session's review now share one read, which stops once neither waits. Closing a window

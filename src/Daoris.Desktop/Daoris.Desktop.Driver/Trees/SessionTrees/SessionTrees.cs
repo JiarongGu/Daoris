@@ -570,7 +570,7 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null, Fu
         string root, string repository, string? workspace, Func<CancellationToken, Task<IReadOnlySet<string>>> inUse, CancellationToken ct = default)
     {
         var space = RemoteTarget.Workspace(workspace);
-        return SessionLocks.LetGoUnheldAsync(_context.Home, root, Path.Combine(TreesRoot, space, repository), space, repository, inUse, ct);
+        return SessionLocks.LetGoUnheldAsync(_context, root, space, repository, inUse, ct);
     }
 
     /// <inheritdoc cref="PassLeftovers.ClearCopies"/>
@@ -680,11 +680,12 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null, Fu
     public Task<TreeStanding> EnsureAsync(string root, string tree, CancellationToken ct = default) => Returns.EnsureAsync(root, tree, ct);
 
     /// <inheritdoc cref="TreeRemovals.RemoveAsync"/>
-    public Task<TreeRemoval> RemoveAsync(string path, bool force = false, CancellationToken ct = default) => Removals.RemoveAsync(path, force, ct);
+    public Task<TreeRemoval> RemoveAsync(string path, bool force = false, CancellationToken ct = default, ServiceClient? service = null) =>
+        Removals.RemoveAsync(path, force, ct, service);
 
     /// <inheritdoc cref="TreeTidies.RemoveBranchAsync"/>
-    public Task<TreeRemoval> RemoveBranchAsync(string root, string repository, string branch, bool force = false, CancellationToken ct = default) =>
-        Tidies.RemoveBranchAsync(root, repository, branch, force, ct);
+    public Task<TreeRemoval> RemoveBranchAsync(string root, string repository, string branch, bool force = false, CancellationToken ct = default,
+        ServiceClient? service = null) => Tidies.RemoveBranchAsync(root, repository, branch, force, ct, service);
 
     /// <inheritdoc cref="TreeSweeps.SweepPlanAsync"/>
     public Task<IReadOnlyList<SweepItem>> SweepPlanAsync(

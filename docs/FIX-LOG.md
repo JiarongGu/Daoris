@@ -5,6 +5,22 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-23 - Finished sessions kept their trees locked (TREELOCK2)
+
+- **Symptom:** trees whose sessions the person finished stayed locked as `daoris session <id>`. Even `trees remove --force`
+  failed with Git's "cannot remove a locked working tree", including trees at the home's old place.
+- **Root cause:** TREELOCK1 (`3f98e479a`) released locks in the run's `finally` only when that run did not retain its tree.
+  A parked run retained it, but a later terminal move had no release. Its fallback sweep accepted only `TreesRoot`, missing
+  the old place TREEPLACE1 accepts, and forced removal never checked whether a session lock's owner had ended.
+- **Fix:** successful terminal state responses release only that local record's own lock; helper waits and setup continuations
+  retain theirs. `SessionLocks` sweeps both places through `TreeContext.Holds`. The removal's local ledger check keeps running
+  and parked trees under the repository's start lock, and force releases a matching ended owner's lock before asking Git.
+- **Verify:** red first, `SessionLocksTests` with `src/Daoris.Desktop/git.process.runsettings`: 13 tests, 8 failures (five terminal
+  moves retained their lock; the old-place sweep missed its tree; forced removal failed at both places). The expanded class passes
+  all 23 tests. The reached driver fast classes pass 199 tests; home, read-sharing, optional-lock, live-login, partial-type and
+  workspace-word censuses pass. Remaining tree Process classes and desktop-route checks are pending.
+- **Commit:** pending.
+
 ## 2026-10-23 — Leaving Review left its git running, and a runner returned before its git had ended (GITAPP1a-iii)
 
 - **Symptom:** a person who left Review mid-read (another session, another tab, the window closed) left the host's git running to
