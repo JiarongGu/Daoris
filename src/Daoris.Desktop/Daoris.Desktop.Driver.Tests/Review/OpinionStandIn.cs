@@ -65,6 +65,9 @@ internal sealed class OpinionStandIn : HttpMessageHandler
     /// <summary>Where set, the state door fails every move (HELPERWAIT1): <c>unreachable</c> as a transport failure, <c>refused</c> as a refusal.</summary>
     public string? StateFailure { get; set; }
 
+    /// <summary>Where set, an ask's read fails (HELPERWAIT1c): <c>unreachable</c> as a transport failure, <c>refused</c> as a refusal.</summary>
+    public string? AskFailure { get; set; }
+
     /// <summary>Where set, every helper's hand is refused with this reason (HELPERWAIT1), as an older or a failing desk refuses one.</summary>
     public string? HelperHandRefusal { get; set; }
 
@@ -199,6 +202,11 @@ internal sealed class OpinionStandIn : HttpMessageHandler
 
                 case ("GET", "/api/quests"):
                     return Answer(HttpStatusCode.OK, new JsonArray([.. _quests.Select(quest => quest.DeepClone())]));
+
+                // HELPERWAIT1c: an ask's read the service does not answer, or refuses; with neither, the stand-in holds no ask.
+                case ("GET", _) when AskFailure is not null && path.StartsWith("/api/asks/", StringComparison.Ordinal):
+                    if (AskFailure == "unreachable") throw new HttpRequestException("the service did not answer");
+                    return Refuse(HttpStatusCode.InternalServerError, "the asks could not be read");
 
                 // HELPERWAIT1: the ledger's moves as far as a helper's asker reaches them: a live record moves as the ledger lets it, and a
                 // finished one only where it ended waiting on its own helper, back to the person; the note and its parts kept.

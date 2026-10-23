@@ -823,6 +823,73 @@ public sealed class HelperLookTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 HELPERWAIT1c (the co-worker design §5 point 4, §11 row 11; Codex's round-2 #5 and round-3 #6 on COWORKUX1): a move back to the
+    /// person the service refused is kept on file with its refusal, the record <i>What needs you</i> says it from, from its first refusal
+    /// on; an unreachable service keeps none, since the retry at each look stands, and leaves a refusal already kept as it was. The move
+    /// landing lets it go, and so does the session no longer waiting (its quest closed).
+    /// </summary>
+    [Theory]
+    [InlineData("moved")]
+    [InlineData("closed")]
+    public async Task A_refused_move_back_is_kept_for_the_person_and_an_unreachable_service_keeps_none(string end)
+    {
+        Ask("a1");
+        Files.WriteState(new HelperState("a1", HelperStates.Refused, HelperWhy.NoAnswer, Helper, At) { Agent = "codex-acp" });
+        var host = Host().Quest("q1", "Taken");
+        host.Set("s1", "noteParts", Parts("ended.awaits-helper"));
+        var driver = Driver(host, pass: null);
+        var waiting = new PriorSession("s1", "trees/default/reports/s-1", "completed")
+        {
+            Quest = "q1", NoteParts = [NoteCodes.EndedAwaitsHelper.Part("a line.", [])], Said = [], Updated = At,
+        };
+        Snapshot Looked(string status) => new([new QuestView("q1", "ask #a1", "reports", "The work", "", status)], [], [])
+        {
+            LastRun = new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase) { ["q1"] = waiting },
+        };
+
+        host.StateFailure = "unreachable";
+        await driver.HelpersAsync(Looked("Taken"), 0, [], CancellationToken.None);
+        Assert.Empty(Files.Backs());
+
+        host.StateFailure = "refused";
+        await driver.HelpersAsync(Looked("Taken"), 0, [], CancellationToken.None);
+        var back = Assert.Single(Files.Backs());
+        Assert.Equal(("s1", "q1"), (back.Session, back.Quest));
+        Assert.Contains("this service does not make that move", back.Words);
+        var first = back.At;
+
+        // Refused again, and then not reached: the one refusal stands, from when it was first said.
+        await driver.HelpersAsync(Looked("Taken"), 0, [], CancellationToken.None);
+        host.StateFailure = "unreachable";
+        await driver.HelpersAsync(Looked("Taken"), 0, [], CancellationToken.None);
+        Assert.Equal(first, Assert.Single(Files.Backs()).At);
+
+        host.StateFailure = null;
+        await driver.HelpersAsync(Looked(end == "moved" ? "Taken" : "Done"), 0, [], CancellationToken.None);
+        Assert.Empty(Files.Backs());
+        Assert.Equal(end == "moved" ? 1 : 0, host.Moves.Count);
+    }
+
+    /// <summary>
+    /// 🔴 HELPERWAIT1c (the co-worker design §5 point 1, §11 row 11; Codex's round-2 #3): a go-ahead read the service does not answer, or
+    /// refuses, is no proof that none was asked, so the turn parks for the person rather than wait on its helper.
+    /// </summary>
+    [Theory]
+    [InlineData("unreachable")]
+    [InlineData("refused")]
+    public async Task A_go_ahead_read_the_service_does_not_answer_parks_the_turn(string failure)
+    {
+        var host = Host(state: "working").Quest("q1", "Taken");
+        var driver = Driver(host, pass: null);
+        var quest = new QuestView("q1", "ask #a1", "reports", "The work", "", "Taken");
+        Ask("a4");
+        Assert.True(await driver.WaitsOnOwnHelperAsync("s1", quest, At, CancellationToken.None));
+
+        host.AskFailure = failure;
+        Assert.False(await driver.WaitsOnOwnHelperAsync("s1", quest, At, CancellationToken.None));
+    }
+
+    /// <summary>
     /// 🔴 Point 6, the cost: a hand held while its asker runs is said once, and while the look's own list shows the asker as it was when
     /// the hand was held nothing is read again for it; once the asker moves, the next look hands it.
     /// </summary>

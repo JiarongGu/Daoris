@@ -7,7 +7,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// The helpers' three files per ask under <c>&lt;home&gt;/helpers</c> (MIXAGENT2a-i, D163 point 2): read as the service writes
 /// them and written as the service reads them. The file is the contract; the service's <c>HelperBox</c> and this share no code,
-/// and each side's tests hold the same shapes. A fourth, <c>&lt;askId&gt;.capture.json</c> (COAGENT1a), is the driver's alone.
+/// and each side's tests hold the same shapes. A fourth, <c>&lt;askId&gt;.capture.json</c> (COAGENT1a), is the driver's alone, as is a waiting session's
+/// <c>&lt;session&gt;.back.json</c> (HELPERWAIT1c), its move back to the person refused.
 /// </summary>
 /// <remarks>The records are the Domain's (<see cref="HelperAsk"/>, <see cref="HelperState"/>, <see cref="HelperAnswer"/>; STRUCT3h).</remarks>
 public sealed class HelperFiles(string home)
@@ -198,6 +199,50 @@ public sealed class HelperFiles(string home)
             writer.WriteEndObject();
         });
         return id;
+    }
+
+    /// <summary>
+    /// Every refused move back to the person on file (HELPERWAIT1c, <see cref="HelperBack"/>), oldest first; one unreadable or of another
+    /// shape is none. The service reads none of them.
+    /// </summary>
+    public IReadOnlyList<HelperBack> Backs()
+    {
+        var folder = DaorisHome.Entry(home, HomeEntry.Helpers);
+        if (!Directory.Exists(folder)) return [];
+        var backs = new List<HelperBack>();
+        foreach (var path in Directory.EnumerateFiles(folder, "*.back.json"))
+        {
+            if (Parse(path) is not { } root) continue;
+            using (root)
+            {
+                var element = root.RootElement;
+                if (Text(element, "session") is not { Length: > 0 } session || Text(element, "words") is not { } words) continue;
+                backs.Add(new HelperBack(session, Text(element, "quest"), words, Moments.Read(element, "at") ?? File.GetLastWriteTimeUtc(path)));
+            }
+        }
+
+        return [.. backs.OrderBy(back => back.At).ThenBy(back => back.Session, StringComparer.Ordinal)];
+    }
+
+    /// <summary>Keep a refused move back to the person whole, atomically (HELPERWAIT1c): the driver is its only writer.</summary>
+    public void WriteBack(HelperBack back)
+    {
+        JsonFile.Write(PathOf(back.Session, "back"), writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("session", back.Session);
+            if (back.Quest is null) writer.WriteNull("quest");
+            else writer.WriteString("quest", back.Quest);
+            writer.WriteString("words", back.Words);
+            writer.WriteString("at", Moments.Write(back.At));
+            writer.WriteEndObject();
+        });
+    }
+
+    /// <summary>Let a refused move back go (HELPERWAIT1c): it moved, or the session waits on nothing of the person's any more.</summary>
+    public void ClearBack(string session)
+    {
+        try { File.Delete(PathOf(session, "back")); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
     private static JsonDocument? Parse(string path)
