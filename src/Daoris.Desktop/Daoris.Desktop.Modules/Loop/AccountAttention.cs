@@ -229,7 +229,7 @@ internal static class AccountAttention
             var own = tool is null ? null : OwnState(tool, use);
             var ownCooling = (use?["own"] as JsonObject)?["cooling"] as JsonObject ?? ticked;
             var state = own?.Name == "out" ? "out" : ownCooling is not null ? "cooling" : own?.Name == "in" ? "in" : "unknown";
-            return Named(null, null, state, own?.Read, Text(ownCooling, "until"));
+            return Named(null, null, state, own?.Read, Text(ownCooling, "until"), Unwritten(ownCooling));
         }
 
         var account = tool?.Accounts.FirstOrDefault(each => Text(each, "name") == id);
@@ -238,11 +238,22 @@ internal static class AccountAttention
         var signedOut = known == "unknown" && (passed || holds is "signedOut" or "refused");
         // A key the walk says its provider refused is refused, whatever the tool last said of it (ACCTUX1, AGT3b).
         var refused = known == "keyed" && holds == "refused";
-        return Named(id, tickedName, refused ? "refused" : signedOut ? "out" : known, Text(account, "read"), Text(cooling, "until"));
+        return Named(id, tickedName, refused ? "refused" : signedOut ? "out" : known, Text(account, "read"), Text(cooling, "until"), Unwritten(cooling));
     }
 
-    private static JsonObject Named(string? id, string? name, string state, string? read, string? until) =>
-        new() { ["id"] = id, ["name"] = name, ["state"] = state, ["read"] = read, ["until"] = until };
+    /// <param name="unwritten">
+    /// Its cool-off is held in memory only, the file not having taken it (LIMITRESUME1d2, D206 §3.1, <c>AccountCooling.Unwritten</c>):
+    /// the band says Daoris could not keep it, the machine's problem beside the account. Written only where true.
+    /// </param>
+    private static JsonObject Named(string? id, string? name, string state, string? read, string? until, bool unwritten = false)
+    {
+        var named = new JsonObject { ["id"] = id, ["name"] = name, ["state"] = state, ["read"] = read, ["until"] = until };
+        if (unwritten) named["unwritten"] = true;
+        return named;
+    }
+
+    /// <summary>Whether <c>ACCOUNTS</c> said the cool-off is held in memory only (LIMITRESUME1d2).</summary>
+    private static bool Unwritten(JsonObject? cooling) => cooling?["unwritten"] is JsonValue value && value.TryGetValue<bool>(out var unwritten) && unwritten;
 
     /// <summary>
     /// Since when it has waited: since what it holds was asked for (the oldest quest filed, the oldest ask asked), or since the limit

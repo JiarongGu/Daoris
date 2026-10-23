@@ -18,6 +18,8 @@ export type AccountCooling = {
   assumedZone: boolean;
   /** Whether the agent named a date more than 8 days off, so the default stood in. */
   notBelieved: boolean;
+  /** Held in memory only, the file not having taken it (LIMITRESUME1d2, D206 §3.1); absent where it was kept. */
+  unwritten?: boolean;
 };
 
 /** One window as an account's agent last said it (TOOL6c, D130 §5.2): a floor, as of when it was seen. */

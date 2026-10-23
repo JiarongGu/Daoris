@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import '../../locales/i18n';
+import i18n from '../../locales/i18n';
 import type { Quest } from '../../data/api';
 import { clockOf, moment } from '../../locales/format';
 import { byTool, type ToolDoor } from '../../agents/tools';
@@ -68,6 +68,22 @@ describe('a start waiting for accounts, worded', () => {
     expect(worded(waiting({ holding: { quests: ['q1'], asks: [] } })).title).toBe('#q1');
     expect(worded(waiting({ holding: { quests: ['q1', 'q2'], asks: ['a1', 'a2'] } })).title).toBe('2 quests and intake for 2 asks');
     expect(worded(waiting({ holding: { quests: ['q1', 'q2'], asks: [] } })).title).toBe('2 quests');
+  });
+
+  /** LIMITRESUME1d2 (D206 §3.1): a cool-off the file would not take is the machine's problem, said beside its account, in en and zh. */
+  it('says a cool-off Daoris could not keep beside its account', async () => {
+    const row = waiting({ account: facts({ named: [named('account-2', 'cooling', { name: 'home', unwritten: true }), named('account-1', 'out')] }) });
+    expect(worded(row).detail).toBe(
+      `home cools until ${moment(UNTIL)}; Daoris could not keep home's cool-off; account-1 read signed out at ${clockOf(READ, NOW)}.`,
+    );
+    await i18n.changeLanguage('zh');
+    try {
+      expect(worded(row).detail).toBe(
+        `home 冷却至 ${moment(UNTIL)}；Daoris 无法保存 home 的冷却状态；account-1 于 ${clockOf(READ, NOW)} 读取为已退出登录。`,
+      );
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 
   it('says accounts read signed out together, by when', () => {

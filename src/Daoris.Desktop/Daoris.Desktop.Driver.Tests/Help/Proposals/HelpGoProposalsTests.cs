@@ -218,6 +218,8 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
             new SessionRecord("s7a8b9c0", "ask #a2none00", "awaiting-person") { Ask = "a2none00" },
             new SessionRecord("s5e6f7a8", HelpRoom.Repository, "awaiting-person") { Kind = "chat" },
             new SessionRecord("laptop/s6f7a8b9", "engine", "awaiting-person"),
+            new SessionRecord("s8b9c0d1", "engine", "failed") { Quest = "q6limit0", Limit = true },
+            new SessionRecord("s9c0d1e2", "engine", "failed") { Quest = "q7fail00" },
         ],
     };
 
@@ -235,6 +237,9 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     // An answered park goes on at the driver's next look, so it waits on nobody (ANSWER1c), as the list says.
     [InlineData("s4d5e6f7", "s4d5e6f7", "Open Sessions → session `s4d5e6f7` in `engine`.")]
     [InlineData("s7a8b9c0", "s7a8b9c0", "Open Sessions → session `s7a8b9c0` answering ask `#a2none00`, waiting on you.")]
+    // LIMITRESUME1d2 (D206 §3.1): a failure an account's limit made is said limited, as the list and the terminal say it; any other failed.
+    [InlineData("s8b9c0d1", "s8b9c0d1", "Open Sessions → session `s8b9c0d1` in `engine`, limited.")]
+    [InlineData("s9c0d1e2", "s9c0d1e2", "Open Sessions → session `s9c0d1e2` in `engine`, failed.")]
     public void A_go_may_name_one_session_the_machine_holds(string item, string handed, string says)
     {
         var plan = HelpProposals.Plan(Go("sessions", item: item), DriverConfig.Empty, WithSessions);

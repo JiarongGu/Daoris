@@ -399,6 +399,12 @@ public static class ShownState
     /// failure, since its line goes on by itself at the reset or on another account. The page's <c>limited</c>.
     /// </summary>
     public const string Limited = "limited";
+
+    /// <summary>
+    /// A record's state as every reader says it (D206 §3.1): <see cref="Limited"/> for a <c>failed</c> one an account's limit ended,
+    /// else its ledger state. The list, the terminal's <c>sessions</c> and Ask Daoris's session tools read this one rule.
+    /// </summary>
+    public static string Of(SessionRecord record) => record.State == "failed" && record.Limit ? Limited : record.State;
 }
 
 /// <summary>
@@ -1096,7 +1102,7 @@ public static class SessionGroups
         {
             var archived = _look.Archived.ContainsKey(record.Id);
             // LIMITRESUME1d (D206 §3.1): a failure an account's limit made is said limited, in whichever group it rests.
-            var row = new SessionGrouping(record.Id, SessionGroup.Ended, record.State == "failed" && record.Limit ? ShownState.Limited : record.State)
+            var row = new SessionGrouping(record.Id, SessionGroup.Ended, ShownState.Of(record))
             {
                 Archived = archived,
                 Teammate = record.Teammate,

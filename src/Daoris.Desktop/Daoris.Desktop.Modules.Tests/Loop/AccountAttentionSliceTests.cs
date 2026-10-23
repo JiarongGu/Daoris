@@ -106,6 +106,23 @@ public sealed class AccountAttentionSliceTests
         Is($$"""{"id":"account-2","name":"home","state":"cooling","read":"2026-10-05T09:00:00Z","until":"{{Until}}"}""", row["account"]!["named"]![0]!.AsObject());
     }
 
+    /// <summary>
+    /// LIMITRESUME1d2 (D206 §3.1): a cool-off <c>ACCOUNTS</c> says is held in memory only, the file not having taken it, is carried on
+    /// its named account, so the band says Daoris could not keep it beside the account; one kept says nothing more.
+    /// </summary>
+    [Fact]
+    public void A_cool_off_held_in_memory_only_is_carried_on_its_named_account()
+    {
+        var use = Use();
+        use["agents"]![0]!["accounts"]![0]!["cooling"]!["unwritten"] = true;
+
+        var row = Assert.Single(Derive(use: use, waits: [Wait()]));
+
+        Is($$"""{"id":"account-2","name":"home","state":"cooling","read":"2026-10-05T09:00:00Z","until":"{{Until}}","unwritten":true}""",
+            row["account"]!["named"]![0]!.AsObject());
+        Assert.Null(Assert.Single(Derive(waits: [Wait()]))["account"]!["named"]![0]!["unwritten"]);
+    }
+
     [Fact]
     public void A_waiting_start_holding_one_quest_is_in_its_repository_since_the_quest_was_filed()
     {

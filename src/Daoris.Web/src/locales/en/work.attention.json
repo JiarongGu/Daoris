@@ -60,6 +60,7 @@
   "work.attention.account-wait": "waits for an account",
   "work.attention.signed-out": "signed out",
   "work.attention.accounts.cooling": "{{account}} cools until {{when}}",
+  "work.attention.accounts.unkept": "Daoris could not keep {{account}}'s cool-off",
   "work.attention.accounts.out": "{{accounts}} read signed out at {{when}}",
   "work.attention.accounts.outUnread": "{{accounts}} signed out",
   "work.attention.accounts.never": "{{accounts}} unknown, never read",

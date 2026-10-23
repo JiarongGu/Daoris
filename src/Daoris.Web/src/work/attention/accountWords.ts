@@ -26,6 +26,11 @@ export type NamedAccount = {
   read: string | null;
   /** Its cool-off's end, where it cools. */
   until: string | null;
+  /**
+   * Its cool-off is held in memory only, the file not having taken it (LIMITRESUME1d2, D206 §3.1, `AccountCooling.Unwritten`): the
+   * machine's problem, said beside the account. Absent where it was kept.
+   */
+  unwritten?: boolean;
 };
 
 /** Whose an account row is, so its acts and its door know the agent (UX6d). */
@@ -87,6 +92,7 @@ export function whyLine(named: readonly NamedAccount[], now: Date): string | nul
   const clauses: string[] = [];
   for (const account of named.filter((one) => one.state === 'cooling' && one.until)) {
     clauses.push(i18n.t('work.attention.accounts.cooling', { account: account.label, when: moment(account.until!) }));
+    if (account.unwritten) clauses.push(i18n.t('work.attention.accounts.unkept', { account: account.label }));
   }
   const byWhen = new Map<string, string[]>();
   const together = (key: string, label: string) => byWhen.set(key, [...(byWhen.get(key) ?? []), label]);
