@@ -62,6 +62,25 @@ repository.
   `OpinionRecheckTests`, `OpinionDeliveryTests`, `ReviewerChoiceTests`, `OpinionGateTests` and `StructureTests` in the fast half;
   `OpinionLookTests` and `OpinionResumeTickTests` by class with `process.runsettings`.
 
+## 2026-10-24 - Each part a limit cut off read as a failure, each with an *Ended* notice (LIMITRESUME1a)
+
+- **Symptom:** on the install (D206 design §1), a quest's line ran on three accounts, each part ending at a limit. The person saw
+  three *failed* sessions and three *Ended* notices, though each counted no strike and the line came back by itself at the reset.
+- **Root cause:** the ledger already kept the limit as a flag on a `failed` record (TOOL4c), and `ReadStrikes` read it. Nothing
+  else did. `SessionEnded` carried no flag, so `AttentionWatch` said every conclusion the person did not ask for as *Ended*. The
+  page drew the record's state word, *failed*, in the failure's red. Only the trace added *by an account's limit*. The pushed
+  sessions slice did not carry the flag to the page's lists at all.
+- **Fix:** `SessionEnded.Limit` is set from `AccountLimited` at both run ends, and `AttentionWatch` skips a limited end. The line's
+  own news is said once per limited part, as look news `limit-waits` or `limit-went-on`. The page's shown-state reader says
+  *limited* / *额度用尽*, neutral, for a `failed` record with `limit`, and the sessions slice pushes `limit`.
+- **Verify:** red first: `AttentionTests.A_limited_conclusion_raises_no_ended` failed with two *Ended* items. Green: `AttentionTests`
+  and `LookSaidTests` (50); `AccountLimitTickTests` and `AccountRotationTickTests` by class with `process.runsettings` (8);
+  `SessionsStateSliceTests` (11). The web's `ui.test.tsx`, `SessionRow.test.tsx` (en and zh) and `HowItCameToBe.test.tsx` were red
+  first, then green with `work/head`, `map`, `work/rail`, `notifications`, `QuestPage` and `locales` (799). `i18n:check`,
+  `names:check --strict` and `tsc` pass.
+- **Not covered:** the installed window was not looked at. An intake's limited end keeps its *Ended* until row 1h, and the
+  terminal's `sessions`, Ask Daoris's tools, Overview and the list's filters are row 1d's.
+
 ## 2026-10-23 - A turn its model's provider refused parked on the person (APIREFUSAL1)
 
 - **Symptom:** LIMITGOON1's first session on the install (session `cc63a27e`, 08:16 UTC) ended parked: *It stopped with its
