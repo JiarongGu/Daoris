@@ -162,8 +162,8 @@ while one runs, and a run of main's tip ends the gates it is running, each with 
 newer tip exists (CIPRIO1c), recorded as superseded and never as passed; a Ctrl+C ends its trees the same way. A stage requires that full verdict. The merge tool normally runs selected gates; a merge receipt alone does not
 prove the long gates ran. Read D115 and the tool's usage before changing queue/merge behavior.
 
-A merge runs the blocking checks alone by default: the universal gates (with the sensitive scan), the code map and the
-index check, and the web's typecheck (`web-types`, `npm run typecheck:web`, about a minute) when its paths reach the
+A merge runs the blocking checks alone by default: the universal gates (with the sensitive scan), the code map, the
+index check and the census of test units' check (`test-map`, below), and the web's typecheck (`web-types`, `npm run typecheck:web`, about a minute) when its paths reach the
 page's sources or its compiler's configuration: two sides that each typecheck may not together (MERGETSC1); and, where
 its paths reach the page's sources or its test configuration, the web's design and structure checks (`web-rules`, `npm
 run check:web-rules`: `design/tokens.test.ts` and `test/structure.test.ts` alone, a minute or two), which a story or a
@@ -241,6 +241,20 @@ reaching none of its classes, its trx read and its classes the census's (CISCOPE
 failed outside a test among it, it runs whole for a verdict of its own. A stage refuses a half whose pass
 kept classes on verdicts past that day, and `--ci <commit>` sweeps it. `node tools/process-reach.mjs census` prints each
 half's classes and reach; `node tools/process-reach.mjs reach <from> <to>` names the classes a range of commits reaches.
+
+`tools/test-map.mjs` is the census of every test unit (CISCOPE1c, D207): each .NET class of every `dotnet test` gate (its
+reach PROCREACH1's census, unchanged), each `node --test` file, vitest file and Playwright spec (its reach the closure of
+its imports and the tracked files, folders and globs its strings name), and each rehearsal, with the module it tests.
+`census` prints them, `reach <from> <to>` names the units a range reaches, and `check` (the `test-map` gate runs `--check`, about 20 s, a
+blocking check of every merge and a gate of every CI run) fails on a tracked file no module, lane or laneless group
+places, a fixture row of the lane table whose gates differ from the units the census finds reading it, a git-half class at
+its project's root with no `// subject:` line, a file that acts on a suite unnamed missing from `tools/test-map.json`, or
+a static skip whose reason names no open row. `check --commit <sha> --reports <dir>` also holds the census of that tree
+to the classes a run's trx files ran there. An edge no string names is declared in the test (`// reaches: <path> —
+<why>`); a file whose strings are a table of paths, not reads, says `// test-map: strings name paths as data`.
+`tools/test-failures.mjs` reads a trx, vitest's JSON or `node --test`'s TAP report, keeping each failure's case, exception
+type and location (the frame's method and its source line's text, never its number), and `tools/test-recall.mjs proof`
+replays the month's recorded failures for D207's recall.
 
 `--ci --watch` is the form to leave running. When main's tip moves and the gate tree is idle, it gates the newest tip. It
 never gates again a tip a run gave a verdict on (green, failed or an error); a stopped run's tip it gates again. A second

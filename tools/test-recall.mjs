@@ -218,12 +218,17 @@ export function fixLogFailures(text, since, until) {
     const date = head[1];
     if (date < since || date > until) continue;
     const title = head[0].replace(/^## /, '').trim();
-    const classes = [...new Set([...part.matchAll(/\b([A-Z]\w*Tests)\b/g)].map((m) => m[1]))];
-    const files = [...new Set([...part.matchAll(/([\w./-]+\.test\.tsx?)\b/g)].map((m) => m[1]))];
-    const failing = /\b(fail(?:s|ed|ing)?|red|broke|broken|regress\w*)\b/i.test(part) && (classes.length || files.length || /\bgate\b|\bcheck\b|\bcensus\b/i.test(part));
+    // The symptom says what was seen; a test the fix added is named in its fix and verification, not here.
+    const field = (name) => new RegExp(`\\*\\*${name}[.:]\\*\\*([\\s\\S]*?)(?=\\n(?:- )?\\*\\*[A-Z][\\w ]*[.:]\\*\\*|$)`).exec(part)?.[1] ?? '';
+    const symptom = field('Symptom');
+    const cause = field('Root cause');
+    const classes = [...new Set([...symptom.matchAll(/\b([A-Z]\w*Tests)\b/g)].map((m) => m[1]))];
+    const files = [...new Set([...symptom.matchAll(/([\w./-]+\.test\.tsx?)\b/g)].map((m) => m[1]))];
+    const gates = [...new Set([...symptom.matchAll(/`(driver-process-git|driver-process|modules-process|tool-tests|web-unit|web-types|web-rules|web-measured|code-map|orient-index|universal|deployment|rehearse-family|rehearse|devkit|service|modules|driver|cli|web)`/g)].map((m) => m[1]))];
+    const failing = /\b(fail(?:s|ed|ing|ure)?|red|broke|broken)\b/i.test(symptom) && (classes.length || files.length || gates.length);
     if (!failing) continue;
-    const commits = [...new Set([...part.matchAll(/`([0-9a-f]{7,40})`/g)].map((m) => m[1]))];
-    entries.push({ source: 'fix-log', date, title, classes, files, commits });
+    const commits = [...new Set([...`${symptom}\n${cause}`.matchAll(/`([0-9a-f]{7,40})`/g)].map((m) => m[1]))];
+    entries.push({ source: 'fix-log', date, title, classes, files, gates, commits });
   }
   return entries;
 }
@@ -325,7 +330,7 @@ async function proof(argv) {
   for (const entry of fixLog) {
     const named = entry.commits.map((sha) => commits.find((each) => each.sha.startsWith(sha))).find(Boolean) ?? null;
     const units = [...entry.classes, ...entry.files];
-    const structural = named && units.length ? judgeStructurally(root, named, units) : null;
+    const structural = named && units.length ? await judgeStructurally(root, named, units) : null;
     judged.push({
       source: 'fix-log', date: entry.date, title: entry.title, units, named: named?.sha?.slice(0, 9) ?? null,
       structural: structural?.verdict ?? null, reached: structural?.reached ?? null,

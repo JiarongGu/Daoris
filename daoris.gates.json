@@ -9,6 +9,7 @@
     { "name": "devkit", "run": "dotnet test src/Daoris.Devkit" },
     { "name": "code-map", "run": "dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- map --check" },
     { "name": "orient-index", "run": "node tools/orient-index.mjs --check" },
+    { "name": "test-map", "run": "node tools/test-map.mjs --check" },
     { "name": "web-types", "run": "npm run typecheck:web" },
     { "name": "web-rules", "run": "npm run check:web-rules" },
     { "name": "driver", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category!=Process" },

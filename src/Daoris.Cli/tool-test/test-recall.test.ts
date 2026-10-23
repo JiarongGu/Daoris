@@ -322,7 +322,17 @@ test('recall is a lower bound with unsettled counted as missed, and one regressi
 });
 
 test("the FIX-LOG's failing entries are read with the units and commits they name", () => {
-  const text = '# Fix log\n\n## 2026-10-21 — Three censuses broken\n\n`NoConsoleWindowTests` failed after `abc1234`.\n\n## 2026-10-22 — A wording fix\n\nNothing failed here but prose.\n\n## 2026-08-01 — Old\n\n`OldTests` failed.\n';
+  const text = [
+    '# Fix log', '',
+    '## 2026-10-21 - Three censuses broken', '',
+    '- **Symptom:** `NoConsoleWindowTests` failed on main.',
+    '- **Root cause:** `abc1234` moved a writer the census walks.',
+    '- **Fix:** `NewGuardTests` added; the commit `def5678`.', '',
+    '## 2026-10-22 - A wording fix', '',
+    '**Symptom.** A sentence read badly.', '**Fix.** `WordTests` holds it now.', '',
+    '## 2026-08-01 - Old', '',
+    '- **Symptom:** `OldTests` failed.', '',
+  ].join('\n');
   const read = recall.fixLogFailures(text, '2026-09-24', '2026-10-24');
   assert.equal(read.length, 1);
   assert.deepEqual(read[0]?.classes, ['NoConsoleWindowTests']);
