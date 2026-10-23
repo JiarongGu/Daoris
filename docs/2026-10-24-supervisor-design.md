@@ -1,27 +1,46 @@
 # The supervisor: the first role the owner appoints, answering a session's question on their behalf, and the question card it answers on (SUPERVISOR1, QUESTIONUI1, 2026-10-24)
 
-**Status: proposed (D208), round 3.** Written by Claude Opus from the code at `478e6010b`; revised at `fb34cf7db` after Codex's read
+**Status: proposed (D208), round 4.** Written by Claude Opus from the code at `478e6010b`; revised at `fb34cf7db` after Codex's read
 (D191 point 1; 18 findings, 14 blocking) and the independent Opus reader's foundation read (D191's amendment of 2026-10-23; 21 findings,
 11 blocking); revised again at `5a1d381c4` after both makers read round 2 at `607f12863` (Codex: 15 findings, 10 blocking, another
-round; the Opus foundation reader: 12 findings, 3 blocking, accept after three named changes). Every read is kept verbatim in
-`docs/2026-10-24-supervisor-reads.md`. Each finding was checked against the code on main and is taken, answered or deferred in §13. Both
-readers endorse the foundation, which round 3 keeps: a role appointed only in the window, recorded as itself, choice-only first, a decision
-record kept apart from the session's words, one answers-alone count shared with helpers and opinions, the actor's result taken from its own
-run, overrulable, off by default, on this machine alone, and no per-answer Confirm for the appointed holder.
+round; the Opus foundation reader: 12 findings, 3 blocking, accept after three named changes); and revised again at `cdf6d5f55` after
+both read round 3 at `91d236a85` (Codex: 12 findings, 7 blocking, another round; the Opus foundation reader: 8 findings, 3 blocking,
+accept after named changes). Every read is kept verbatim in `docs/2026-10-24-supervisor-reads.md`. Each finding was checked against the
+code on main and is taken, answered or deferred in §13. Both readers endorse the foundation, which round 4 keeps: a role appointed only in
+the window, recorded as itself, choice-only first, a decision record kept apart from the session's words, the holder key and the
+appointment's generation, the service composing the word, one answers-alone count shared with helpers and opinions, the actor's result
+taken from its own run, overrulable, off by default, on this machine alone, and no per-answer Confirm for the appointed holder.
 
-Round 3 takes the Opus read's three blocking findings as it names them (§3.4, §6.1, §4.5) and makes concrete what Codex's ten ask: the
-terminal holder admitted by a key the appointment issues, beside D201's caller look (§2.2); the appointment's generation on every act
-(§2.3, §3.1); the supervisor's word bound to its decision and composed from it, kept only by one conditional release at the service's
-lock, and a word Daoris cannot attribute quarantined, never handed (§3.4, §6.1); the move to working admitted only on the words it planned
-(§6.3); each decision kept whole by its id for the session's history (§3.4); every carrier and reader of a word's author found by search
-(§6.1); the bench's gate with no wrong answer of any class and a complete run (§11 1d); and the rows' order with the door landing dark and
-its activation proved on a candidate build (§11). **QUESTIONUI1a is being built beside this round** from §8, with Codex's findings 14 and
-15 settled in its quest's brief; §8.4 now says the same settlement. Nothing else is built.
+Round 4 takes the Opus read's three blocking findings as it names them: **every check reads the decision whole from memory**, and a file
+that differs moves it to `stale` (§3.4); **the holder key's hash is kept in memory only** (§2.2, §2.3); and **Daoris strips the key from
+itself and from every start it builds** (§2.2). It makes Codex's seven blocking contracts **one lifecycle** (§3.6): the live decision is
+the instance's memory (§3.4); the release owns its word by a receipt only it holds (§3.4); execution admission is a single-use ticket
+carried into the prompt, with its completion, pre-wire failure and restart outcomes (§6.3); a failed hand restores the park with its queue,
+less only the admitted word (§6.3); a revoke ends its mutation and then sweeps, admission revalidating the generation, in one lock order
+(§3.4, §5); every door that keeps the owner's words supersedes through one ledger operation (§6.3); and the sentences that describe a go-on
+follow who actually answered (§6.1). It takes the non-blocking findings of both reads.
 
-The steward settled two directions for this round (the quest that asked for it): a terminal holder answers **one offered choice with its
-reasons** in the first row, the session handed only the chosen label and the reasons shown to the owner, words deferred to a later row
-(the Opus read's finding 1); and the first row **splits in two**, the word as the supervisor's on the record first (provable with no
-pipe), then the door.
+The steward settled two directions for round 4 (the quest that asked for it):
+
+1. **The appointment lasts until Daoris restarts.** After a restart or an update the owner presses *Appoint again* once, and an
+   appointment found at a start stays **dormant** until then (§2.3). Keeping it across restarts is a widening only the owner may choose
+   later, and is said as such (§2.2, §12).
+2. **The role is held by a dedicated session that does only the role**: it answers questions and nothing else. It builds, tests, merges
+   and dispatches nothing, and runs no branch's code or hooks, so the steward's working session never holds the key; the verb checks that
+   the pipe's server is the install's own executable before the key crosses it (§2.2).
+
+Round 3, which round 4 builds on, took the Opus read's round-2 blocking findings as it named them (§3.4, §6.1, §4.5) and made concrete
+what Codex's ten asked: the terminal holder admitted by a key the appointment issues, beside D201's caller look (§2.2); the appointment's
+generation on every act (§2.3, §3.1); the supervisor's word composed from its decision, kept only by one conditional release at the
+service's lock, and a word Daoris cannot attribute quarantined, never handed (§3.4, §6.1); the move to working admitted only on the words
+it planned (§6.3); each decision kept by its id for the session's history (§3.4); every carrier and reader of a word's author found by
+search (§6.1); the bench's gate with no wrong answer of any class and a complete run (§11 1d); and the rows' order with the door landing
+dark and its activation proved on a candidate build (§11). **QUESTIONUI1a is being built on its own branch** from §8, with Codex's
+round-2 findings 14 and 15 settled in its quest's brief; it is not on main at `cdf6d5f55`. Nothing else is built.
+
+The steward's directions for earlier rounds stand: a terminal holder answers **one offered choice with its reasons** in the first row,
+the session handed only the chosen label and the reasons shown to the owner, words deferred to a later row; and the first row **splits**,
+the word as the supervisor's on the record first (provable with no pipe), then the door.
 
 This design serves three parts of D193's company. **The owner** (part 1): each wait on the owner should be one only they could
 answer, and today a session's every question waits for them, though most are choices the company's own records settle. **Management**
@@ -52,7 +71,7 @@ PARKANSWER1 (`docs/FIX-LOG.md`, the archive); D201 and `docs/2026-10-23-terminal
 | The page reads it through `SESSION_QUESTION`, none unless the record is parked; a read, `Open` in the pipe's census | `Modules/Bridge/Routes/SessionsRoutes.cs:365-387`; `Platform/PipeCensus.cs:192` |
 | A press answers it through `SESSION_INPUT { id, text, question }`, `text` the label then the person's words after a blank line; refused `question-changed` where the file's id is not `question`; kept on the record's `said` as the person's words, the event it is shown under marked with the `choice`. Nothing refuses a second answer beside one already waiting | `Bridge/Routes/ConversationRoutes.cs:116-139`; `Loop/SessionWords.cs:373-453`, `Word` at `:179` |
 | The resumed run is handed `chose: <label>`, then the words | `QuestionFiles.cs:179-198` (`QuestionWords`); `Quests/Domain/Planner.cs:650-660` |
-| A parked record with any word waiting, whoever's, is **eligible** to go on, subject to the look's other holds (its `GoOnMarks`, the answers-alone hold, a cooling account); the planner's `WordsOn` and `SessionGroups`' own copy each keep a local `Waits` | `Planner.cs:355` (`WordsWaiting`), `:1469-1471` (`Waits`); `Trees/SessionGroups.cs:1235-1251` (`WordsWait`, its own `WordsOn` and `Waits`) |
+| A parked record with any word waiting, whoever's, is **eligible** to go on, subject to the look's other holds (its `GoOnMarks`, the answers-alone hold, a cooling account); the planner's `WordsOn` and `SessionGroups`' own copy each keep a local `Waits` | `Planner.cs:355` (`WordsWaiting`), `:1469-1471` (`Waits`); `Trees/SessionGroups.cs:1241-1257` (`WordsWait`, its own `WordsOn` and `Waits`; moved six lines by SQUASHSEEN1) |
 | The say door keeps one word per producer key, and answers a later say with that key as a retry with the word already kept, never comparing what it carries | `SessionLedger.cs:866-873`; the key from the caller's body, `Program.cs:1488` |
 | The move to working names no words: the go-on reads the record's words again after the move, and falls back to the look's where that read fails | `DriverContinuations.cs:253-260`, `:321-322`; `Continuation.cs:258-259` (`HandedAfterMove`) |
 
@@ -85,7 +104,7 @@ both round-2 reads found missing; §6.1 builds the sweep test's set by search, n
 | The conversation's drawing | Labels a held word Daoris only where `from` is `daoris`; every other is *You* | `Web/work/conversation/ConversationView.tsx:501`; `conversation.ts:446`, `:451`, `:503` |
 | The park's note | `SayAsync` writes *Answered: …* on a parked record's note, its English with no author (the coded part keeps `NoteLine.Said(said, from ?? "person")`, which the page draws only as `data-by`, and `NoteBy` has no `supervisor`); the note travels; a take-back leaves the line | `SessionLedger.cs:878`, `:1153-1164`, `:793-794`, `:984-986`; `Web/work/Note.tsx:64-69`; `noteLines.ts:810`; `data/api.ts:523` |
 | The say door's own sentences | *Daoris's words* only where `from` is `daoris`; every other *your words* | `SessionLedger.cs:1124-1136` |
-| The ledger's note of what a record went on with | Four cases | `SessionLedger.cs:1625-1638` (`WentOnWith`) |
+| The ledger's note of what a record went on with | Four cases | `SessionLedger.cs:1635-1639` (`WentOnWith`) |
 | The owner's answer, and *What needs you* | `Answer` joins only `Persons` words, so a park answered by another stays a wait on the owner | `Sessions.cs:280-281`; `Modules/Loop/NeedsAPerson.cs:749-750` |
 | The answers-alone count (COWORK1e) | Two predicates: `Solicited` (a helper's or an opinion's waiting word) decides only whether the hold applies; `Count` reads the line's events through `Answers` (helper or opinion) and `Resets` (the person's or Daoris's word, or a passed note). A prompt all solicited is held at two; a word of another author neither counts nor resets | `Conversations/Domain/AnswersAlone.cs:21-31`, `:89-95`; `Conversations/GoOn/AnswersAloneHold.cs:56-58` |
 
@@ -127,8 +146,8 @@ hold* (that design §6.1).
   the recommended one `primary` with a `Chip` *recommended* beside it, outside the button, so a screen reader hears the label without
   it; `does` is soft text beside. No radio semantics, no field of its own: the words are the box's own field below, the `Composer`
   (`conversation/SessionBox.tsx:143-154`, no attachments in a box, `:117`), which sends on Enter (`Composer.tsx:347`); a press takes the
-  box's words with it (`WorkFrame.tsx:1029-1056`), and so does a go-ahead's (GOAHEAD2b, `:1017-1027`). The words are the frame's draft,
-  one per session and kept across a reload (`useDraft`, `WorkFrame.tsx:529-531`, CONV4b). Choices are disabled while go-aheads are open
+  box's words with it (`WorkFrame.tsx:1033-1060`), and so does a go-ahead's (GOAHEAD2b, `:1021-1031`). The words are the frame's draft,
+  one per session and kept across a reload (`useDraft`, `WorkFrame.tsx:533-535`, CONV4b). Choices are disabled while go-aheads are open
   (`ParkAnswer.tsx:107`). A press sends at once. `ParkAnswer` is a bounded part of the WAITPANEL1 panel, scrolled within
   (`data-wait-part`, `max-h-[var(--wait-part,40vh)]`), and the box's field is never in it, so words are typed in sight
   (`WaitPanel.tsx`; D185, `D185.md:355-364`).
@@ -173,13 +192,15 @@ session's recorded question with **one of the choices the session offered**, its
 **released** onto the session as the supervisor's word, never the owner's, and the park goes on. The session is handed the chosen label,
 framed as the supervisor's and bounded by what it never grants; the reasons are the owner's to read. It never answers what is the
 owner's (§4): such a question waits for the owner. What the holder reads is the asking agent's claims, never its instructions (§4.4).
-Until the supervisor actor runs, the **steward holds the role from a terminal**, through D201's judge and caller look: a route of its own,
-`SUPERVISOR_ANSWER`, in a census class `Role` the judge decides by its own method, covered only where the appointment names the session's
-repository, the caller is in no agent's job, and it presents the **holder key** the appointment issued to the terminal the owner chose,
-and never a card. Daoris composes the word the session is handed from the decision it kept, keeps it only through one conditional release,
-and attributes to the supervisor only that text from a decision this instance kept; anything else claiming the supervisor is quarantined,
-never handed. The **question card** is rebuilt so each choice reads whole as a selectable row, the
-recommended one with its reason, sent with the box's own words and *Send*.
+Until the supervisor actor runs, the **steward holds the role from a dedicated terminal session that does only the role**, through
+D201's judge and caller look: a route of its own, `SUPERVISOR_ANSWER`, in a census class `Role` the judge decides by its own method,
+covered only where the appointment names the session's repository, the caller is in no agent's job, and it presents the **holder key**
+the appointment issued, whose hash Daoris keeps in memory alone, and never a card. The appointment lasts until Daoris restarts. Daoris
+keeps each decision whole in its memory and reads every check from there; it composes the word the session is handed from that decision,
+keeps it only through one conditional release that owns its word by a receipt, admits it to a run by a single-use ticket, and attributes
+to the supervisor only the word its own release wrote; anything else claiming the supervisor is quarantined, never handed. The
+**question card** is rebuilt so each choice reads whole as a selectable row, the recommended one with its reason, sent with the box's
+own words and *Send*.
 
 ## 2. Roles: the appointment later roles reuse
 
@@ -207,26 +228,64 @@ A role's holder is **who decides its acts**, chosen at the appointment:
 
 | Holder | Who | Its acts reach Daoris by | What it may answer | Offered |
 |---|---|---|---|---|
-| `terminal` | The terminal the owner gave the appointment's holder key to (the steward today) | `SUPERVISOR_ANSWER` over the pipe, census class `Role`, judged by D201's judge and caller look **and** the holder key | One choice the session offered, with reasons (row 1a); words only after SUPERVISOR1f | Once D201's grant is offered and the role's own flag is (§2.3) |
+| `terminal` | The dedicated terminal session the owner gave the appointment's holder key to, which does only the role (the steward's, today) | `SUPERVISOR_ANSWER` over the pipe, census class `Role`, judged by D201's judge and caller look **and** the holder key | One choice the session offered, with reasons (row 1a); words only after SUPERVISOR1f | Once D201's grant is offered and the role's own flag is (§2.3) |
 | `actor` | Daoris's own actor for the role (D205), on the agent and model the owner chose | Daoris's own code, never the pipe and never a connector: the driver starts the actor's run and reads its answer-or-defer from that run's own last message, bound to the attempt (§3.5) | As the terminal holder | Once the actor is measured (§11, SUPERVISOR1d) |
 
 **The holder key** (Codex's round-2 finding 1). Appointing a `terminal` holder draws a key in the instance (32 random bytes, shown as
-text), shown **once** in the window's ask after *Appoint*, with *Copy* and the one line of where it goes: *set it as `DAORIS_SUPERVISOR_KEY`
-in the terminal that will answer as the supervisor; Daoris never shows it again*. The instance keeps only its hash (SHA-256) in the
-appointment's record (§2.3); the page holds the key only while the ask is open and keeps it in no store, draft or log. The verb reads it
-from that variable alone (never an argument, which another process's listing shows, and never a file Daoris writes), sends it in the
-route's form, and the judge's role method compares its hash in constant time after the caller look has placed the caller outside every
-agent's job. D201's look stays the first denial: a contained agent, a plugin's process or a partner is refused before its key is read. A
-caller with no key or another key is refused (`not-holder`), logged, never asked. A lost key is a new appointment (*Appoint again*), whose new
-generation (§2.3) refuses every act made under the old one.
+text), shown **once** in the window's ask after *Appoint*, with *Copy* and where it goes: *set it as `DAORIS_SUPERVISOR_KEY` in the
+session of the terminal that does only the supervisor's work, never in a user variable or a profile; every program that terminal starts
+gets it; Daoris never shows it again, and forgets it when it restarts*. **The instance keeps only its hash (SHA-256), in memory alone**
+(the Opus read's round-3 finding 2): never in the appointment's record nor any other file (§2.3). The page holds the key only while the
+ask is open and keeps it in no store, draft or log. The verb reads it from that variable alone (never an argument, which another
+process's listing shows, and never a file Daoris writes), sends it in the route's form, and the judge's role method compares its hash in
+constant time after the caller look has placed the caller outside every agent's job. D201's look stays the first denial: a contained
+agent, a plugin's process or a partner is refused before its key is read. A caller with no key or another key is refused (`not-holder`),
+logged, never asked. A lost key is a new appointment (*Appoint again*), whose new generation (§2.3) refuses every act made under the old
+one. **The appointment lasts until Daoris restarts** (the steward's direction for round 4): a restart or an update forgets the hash, the
+appointment found at the start is dormant (§2.3), and the owner presses *Appoint again* once, which shows a new key.
+
+**Daoris strips the key from itself and from every start it builds** (the Opus read's round-3 finding 3; Codex's round-3 finding 9).
+Daoris's environment is its launcher's (`tools/desktop.mjs:775-778` passes `process.env` whole; every `ProcessStartInfo` copies the
+process's environment, and only named variables are removed, `Adapters.cs:1516-1517`, `GitWiring.cs:44`, `:65-95`). So:
+
+- **At each Daoris executable's entry** (the window, the driver's host, the service's hosts, the git door), before anything else, the
+  process removes `DAORIS_SUPERVISOR_KEY` from its own environment, so no start it builds afterwards can copy it. The verb is the one
+  reader: `daoris-driver sessions supervise … --choice` reads the variable into memory first, then removes it the same way.
+- **At every start Daoris builds**, the name is in one list of stripped variables beside `GitWiring.SessionTokens` (`GitWiring.cs:44`),
+  applied by `Tools.Hand` (`Agents/Tools.cs:669-695`) and `GitWiring.Hand` (`:60-95`), so a start that sets its environment by hand still
+  drops it.
+- **Proved** with a parent environment holding a sentinel key: each entry found by search clears it first, each `Hand` drops it, and an
+  agent of a Daoris started with the variable set presents no key and is refused `not-holder` (§11 1a-ii).
+
+**The holder is a dedicated session that does only the role** (the steward's direction for round 4; the Opus read's round-3 finding 3,
+change 2). Every process a terminal starts inherits its environment, so the terminal that holds the key starts nothing that is not the
+role's: it reads the fenced print, reads the repository's files and the session's log with read-only file reads, and runs the verb. It
+builds, tests, merges and dispatches nothing, runs no git, build, test or hook in any tree (a tree's own git configuration can name a
+program git runs), and runs no branch's code: the branch's commits come in the verb's print, read by Daoris's own git with the key
+stripped (§3.2). The steward's working session, which merges, runs gates and dispatches workers, never holds the key; a session's branch is
+code that working session runs, so a hook or a test planted in a branch reaches no process that holds it.
+
+**The verb checks the pipe's server before the key crosses it** (the Opus read's round-3 finding 2b). The verb finds the instance through
+the home's address file (`InstanceDoor.cs:110-130`) and today checks only that the pipe's server is the process the file names (`:144`,
+`InstanceClient.cs:189-204`); the file is in an agent's ordinary reach, and the pipe's name is the account's to serve
+(`InstancePipe.cs:367-378`). Before it sends any form that carries the key, the verb reads the server's process id from the pipe
+(`GetNamedPipeServerProcessId`, which `InstanceClient` already reads) and that process's image path, and sends the key only where the
+image is the install's own `Daoris.exe`, the launcher beside the verb's own install (`RunningService.cs:42`, `StagedBuild.Launcher`). Any
+other server is refused before the key is sent (`not-install`, said by the verb, nothing sent). The listing and the print carry no key and
+keep today's check.
 
 What it closes: an agent Daoris runs that leaves its job by one command, Daoris's own git running a repository's hook, an older headless
-loop's agent, and any unrelated process of the account all start from an environment Daoris or Explorer gave them, which never holds the
-key, and none of Daoris's files holds it. What it does not close, said as the limit (§4.6): a process of the same account that reads
-another process's environment or memory, or the file the owner chose to keep the key in (D156 point 7 and PERSONDOOR2: the account's reach,
-which D156 distinguishes from an ordinary read of Daoris's files); and the owner's own choice of where to set it. Round 2 rejected a
-credential because the same account can read it (§12, now withdrawn): that conflated reading the home's files, which an escaped agent
-does with one command, with reading another process's memory, which it must attack for.
+loop's agent, a hook or test in a branch, and any unrelated process of the account all start from an environment that does not hold the
+key (Daoris's, stripped; Explorer's or the scheduler's; the steward's working session's, which never held it); none of Daoris's files
+holds the key or its hash; and a pipe served by any process but the install's Daoris never receives it. What it does not close, said as
+the limit (§4.6): a process of the same account that reads another process's environment or memory, or injects into the install's own
+`Daoris.exe` (D156 point 7 and PERSONDOOR2: the account's reach, which D156 distinguishes from an ordinary read of Daoris's files); a key
+the owner sets anywhere but the dedicated session, against the ask's words; and a holder session that runs something it should not.
+**Keeping the appointment across restarts** would mean persisting the hash, which an ordinary home write could then replace with an
+agent's own key's (the Opus read's round-3 finding 2a): it is a widening only the owner may choose later, and if chosen it is said in this
+paragraph's limits and in the ask (§12). Round 2 rejected a credential because the same account can read it (§12, withdrawn in round 3):
+that conflated reading the home's files, which an escaped agent does with one command, with reading another process's memory, which it
+must attack for.
 
 The holder is named on each decision: `terminal`, with *the terminal holding the key appointed on 22 Oct*, the appointment's generation and,
 as a hint only, the pipe client's parent process as the system names it (the pipe client itself is always `daoris-driver`, the verb's own
@@ -239,11 +298,11 @@ In D201's record, `data/standing-confirmation.json`, as an additive field beside
 
 ```json
 { "schemaVersion": 1, "presses": ["stop"], "since": "…", "machine": "…",
-  "appointments": [ { "role": "supervisor", "repository": "Daoris", "holder": "terminal", "generation": "…", "key": "sha256:…",
-                      "since": "…" } ] }
+  "appointments": [ { "role": "supervisor", "repository": "Daoris", "holder": "terminal", "generation": "…", "since": "…" } ] }
 ```
 
-One record, one judge, one lock, one machine binding, one log event family. **An appointment's `generation`** (Codex's round-2 finding 4)
+The record keeps the role, the repository, the holder kind, the generation and the time; **never the key nor its hash**, which live in the
+instance's memory alone (§2.2). One record, one judge, one lock, one machine binding, one log event family. **An appointment's `generation`** (Codex's round-2 finding 4)
 is an opaque id drawn at each appointment, never reused: a revoke and a new appointment of the same holder kind differ in it. The listing
 and the fenced print (§3.2) return the effective appointment's generation for each question; `SUPERVISOR_ANSWER` and `SUPERVISOR_DEFER`
 require it; the judge compares it with the **effective** appointment for the session's repository (§5) at admission, and the release
@@ -255,7 +314,11 @@ and the memory it installs, runs as one step under a writer lock the judge's rol
 record, write it atomically, install the memory, then release. A grant, an appointment, a dismissal and a revoke therefore never interleave,
 and a revoke never lands its write before a grant it raced. The revoke's *off at once* is kept: it clears its part of the memory first,
 inside the same step. This changes D201's `Set` and revoke (`:305-330`, `:339-352`), which today write outside the lock; tests race a press
-grant, an appointment change and a revoke.
+grant, an appointment change and a revoke. The lock is the judge's `System.Threading.Lock` (`StandingConfirmation.cs:151`): it is held
+only for this synchronous step and for a judgement, **never across an await**, and never while a decision's lock is taken (§3.4). A
+revoke or a replacing appointment **ends its mutation step first**, and only then sweeps the decisions made under the old generation,
+each under its own decision's lock (§5, §3.6), so the two locks are never taken in the reverse order (the Opus read's round-3 finding 4;
+Codex's round-3 finding 5).
 
 `schemaVersion` stays 1: an
 older build's `Parse` reads `presses` alone (`StandingConfirmation.cs:259-263`) and ignores the field, so it honours no appointment, which
@@ -266,9 +329,13 @@ census and refusing every door but the window's in its handler, as `SET_STANDING
 (`not-offered`, `unknown-role`, `unknown-repository`, `newer`, `unwritten`), `key` only on a terminal appointment's grant and only in
 that answer. Turning the standing confirmation's presses off keeps the appointments, and dismissing an appointment keeps the presses: each
 its own tick, and the role is never one of `Built`'s presses, nor accepted by `Set`. Read at the instance's start and kept in memory, under
-the judge's lock. An appointment read at a start is said as **found at start** (*Supervisor appointment found as Daoris started*), on
-Setup's row and in *Notifications*, since Daoris cannot tell whether it was granted in an earlier run or written while it was down
-(Codex's round-2 finding 9).
+the judge's lock. **An appointment read at a start is dormant** (the steward's direction for round 4; the Opus read's round-3 finding 2a):
+no hash is known for it, so it admits no holder, and the route answers `dormant` (*appointed before Daoris restarted: press Appoint
+again*) where it would otherwise judge the key. It is said as **found at start** (*Supervisor appointment found as Daoris started: press
+Appoint again to use it*), on Setup's row and in *Notifications*, since Daoris cannot tell whether it was granted in an earlier run or
+written while it was down (Codex's round-2 finding 9). *Appoint again* is the owner's press in the window, as the first appointment is: a
+new generation and a new key shown once. A dormant appointment still names its repository, so the row keeps the owner's choice in sight;
+it carries no authority.
 
 **Offered on its own flag.** `AppointmentsOffered`, false in every build until the activation proof (§11, 1a-ii) has been looked at on a
 candidate build after SUPERVISOR1b, and never true while D201's `OfferedInThisBuild` is false: D201's own offering is a named prerequisite of
@@ -297,13 +364,14 @@ why? }`, refused as data, keeping nothing, where:
 |---|---|---|
 | `not-offered`, `not-appointed`, `appointment-changed` | The role is not offered, the session's repository is not appointed with this holder, or `generation` is not the effective appointment's | 1a-ii |
 | `not-holder` | The caller presented no key, or one whose hash is not the effective appointment's | 1a-ii |
+| `dormant` | The effective appointment was found at a start, so no key is known for it until *Appoint again* (§2.3) | 1a-ii |
 | `not-parked`, `no-quest` | The session is not parked here, or holds no quest | 1a-i |
 | `question-changed` | The question on file is not `question` (as §0.1's press) | 1a-i |
 | `not-offered-choice` | `choice` is not one of its labels exactly | 1a-i |
 | `no-source` | A reason names no source (D135 point 4) | 1a-i |
 | `go-ahead-open`, `go-ahead-unread` | A go-ahead on the session's ask is open (go-aheads are the owner's, D135 point 2), or the ask's go-aheads cannot be read; a session with no ask is `no-quest` | 1a-i |
-| `answered` | A decision on this question is held, released, gone on, left or not handed; a retry of the same form while it is held answers `kept` with the same decision, so a retry is idempotent | 1a-i |
-| `overruled` | The owner overruled a decision on this question, or a decision on it went `stale`, `superseded` or `not-handed`: it is the owner's until a new question replaces it | 1a-i |
+| `answered` | A decision on this question is held, released, admitted, gone on or left; a retry of the same form while it is held answers `kept` with the same decision, so a retry is idempotent | 1a-i |
+| `overruled` | The owner overruled a decision on this question, or a decision on it went `stale`, `superseded`, `not-handed` or `interrupted`: it is the owner's until a new question replaces it | 1a-i |
 | `owner-answered` | The owner's own words wait on the record | 1a-i |
 | `owner-question` | The question carries the agent's `owner` mark (§4.1) | 1b |
 | `supervisor-bound` | The line's answers-alone count is at its bound (§4.3) | 1b |
@@ -322,15 +390,16 @@ The holder answers from the records, never a guess. Handed, in this order, each 
 3. **The go-aheads on its ask**, each with its act and its answer (open, approved, refused), so the holder never picks a choice that a
    refusal already answered.
 4. **The work order**: the quest's words, the owner's own words on its ask quoted verbatim and dated (`AskWords.ReadAsync`, as a session
-   is handed them by `Driver.WithAskWordsAsync`, `Loop/Driver.cs:4141-4144`), and the standing answers for the repository
+   is handed them by `Driver.WithAskWordsAsync`, `Loop/Driver.cs:4255`), and the standing answers for the repository
    (`StandingText.Beneath`, `Agents/RepositoryKnowledge/StandingAnswer.cs:25-48`, D135 point 3). The ask's words are bounded as a session
    is handed them, the newest kept where they run long (`AskWordsText`, `Quests/Domain/AskWords.cs:106-124`).
 5. **The records**: the repository's decisions, knowledge, archive and fix log, through its own index and `knowledge_search`, and the code.
 
 A terminal holder finds what waits through `daoris-driver sessions supervise` with no id (`SUPERVISOR_WAITING`), since no notice reaches a
-terminal, and reads one through `sessions supervise <id>`, which prints 1, 3 and 4 fenced, and the effective appointment's generation
-the answer must carry (`SESSION_QUESTION` and the ask's reads, `Open`);
-it reads 2 and 5 from the session's log under the home and the repository on disk. The actor (SUPERVISOR1c) is handed 1, 3 and 4 as its
+terminal, and reads one through `sessions supervise <id>`, which prints 1, 3 and 4 fenced, the branch and its commits since its base
+(read by Daoris's own git in the verb, the key stripped, §2.2), and the effective appointment's generation the answer must carry
+(`SESSION_QUESTION` and the ask's reads, `Open`); it reads the rest of 2, and 5, from the session's log under the home and the repository
+on disk with read-only file reads, running no git, build, test or hook in any tree (§2.2). The actor (SUPERVISOR1c) is handed 1, 3 and 4 as its
 prompt, fenced alike, and reads 2 and 5 with read-only tools in the session's tree, as a helper does (D163: one turn, writes nothing, asks
 nobody).
 
@@ -351,9 +420,19 @@ terminal holder leaves a question by not answering it.
 
 ### 3.4 The decision, kept before it is a word
 
-The judged handler keeps **each decision whole, by its id**, for as long as the session's own files are kept (Codex's round-2 finding 7):
-`<home>/sessions/<session>.decisions/<decision>.json`, machine-local beside the question's file, written once, atomically, and never
-changed:
+**The live decision is the instance's memory** (the Opus read's round-3 finding 1; Codex's round-3 finding 1). The judged handler keeps
+each decision **whole in memory**, in the driver's `QuestionSupervisorDecisions` (one per instance, shared by the modules' handler and the
+driver's look, since both run in the window's process): its question's snapshot, `choice`, reasons, holder, generation, `keptAt`,
+`goesOnAt`, its state, the release's receipt and the id of the word its release wrote (below), and an admission's ticket (§6.3). **Every
+check reads memory alone**: the release, the hold, the admission, the hand, the attribution and the overrule. Each session has one
+**decision lock** there, an async lock that may be held across a call to the service; every move of a decision's state is made under it.
+
+The files are written for the session's history, the card after a restart, and the start's sweep, **and never read back to decide
+anything in the run that wrote them**. At each look the driver compares every live decision's files with its memory, the whole JSON and
+every state line; **a file that differs moves the decision to `stale`** (`supervisor.stale`, `why: tampered`), its word taken back where
+one waits on a record that does not run, said on the card and in *Notifications*. Each decision is kept for as long as the session's own
+files are kept (Codex's round-2 finding 7): `<home>/sessions/<session>.decisions/<decision>.json`, machine-local beside the question's
+file, written once, atomically, and never changed:
 
 ```json
 { "decision": "…", "session": "…", "question": { "id": "…", "question": "…", "choices": [ … ], "recommend": 1, "by": "…" },
@@ -361,44 +440,55 @@ changed:
   "holder": { "kind": "terminal", "parent": "pwsh" }, "appointment": "<its generation>", "keptAt": "…", "goesOnAt": "…" }
 ```
 
-Its **states** are appended beside it, one line each with its time, in `<decision>.states` (`held`, then each move); the last line is the
-current state. The session's **current-question pointer**, `<home>/sessions/<session>.supervisor.json` `{ question, decision }`, names the
-decision on the question now on file, and is the only thing a new question replaces. The decisions and their states go with the session's
-own files when the record is removed, never before; a second park, a reload and a restart keep every earlier decision and its reasons.
+Its **states** are appended beside it, one line each with its time, in `<decision>.states` (`held`, then each move, with the word's id
+once released); the last line is the state the history shows. The session's **current-question pointer**,
+`<home>/sessions/<session>.supervisor.json` `{ question, decision }`, names the decision on the question now on file, and is the only thing
+a new question replaces. The decisions and their states go with the session's own files when the record is removed, never before; a
+second park, a reload and a restart keep every earlier decision and its reasons for the history. The receipt is never written.
 
 - **The question is a snapshot**, so the card and the conversation draw a decision after a run clears the question's file
-  (`QuestionFiles.Clear`). States move only forward: `held` → `released` → `went-on` (the run admitted with the word, §6.3, its time the
-  observed time), or from `held` or `released` to `overruled`, `superseded` (the owner's words came first), `stale` (the record, the
-  question, the appointment, the label or this instance's keeping failed a check) or `not-handed` (§6.3); `left` for a defer (1b).
-- **Only decisions this instance kept are honoured** (the Opus read's round-2 finding 1, change 4). The handler adds each decision id it
-  keeps to a set in memory, under the judge's lock; the release, the hand and the attribution (§6.1) honour a decision only where its id is
-  in that set. At the instance's start, every decision whose last state is `held` or `released` moves to `stale` (*Daoris restarted before
-  it went on*), its word taken back if one is on the record (SAIDBACK1a's door), said on the card and in *Notifications*. The files are in
-  the account's reach (D201's Why, `D201.md:62`; PERSONDOOR2): a decision file an agent writes is never in the set, so it is never released
-  nor handed, and the owner was never shown it, so there was nothing they could not overrule.
+  (`QuestionFiles.Clear`). Its states and their only moves are §3.6's: `held` → `released` → `admitted` → `went-on`; from `held` or
+  `released` to `overruled`, `superseded` or `stale`; from `admitted` to `not-handed` or `interrupted`; `left` for a defer (1b).
+- **Only decisions this instance holds in memory are honoured** (the Opus read's round-2 finding 1, change 4, and round-3 finding 1). A
+  decision file an agent writes is never in memory, so it is never released nor handed; a live decision whose file an agent rewrites is
+  `stale` at the next look, and was never read from the file in the meantime, so neither an earlier `goesOnAt`, another label nor an
+  appended `released` changes what the release, the hold or the hand reads. The files are in an agent's **ordinary** reach (D201's Why,
+  `D201.md:59-62`; §2.2), which is why nothing live is read from them.
+- **At the instance's start**, memory is empty: no decision is live and no word is handable. The start's sweep reads the files only to
+  close them: every decision whose last state is `held` or `released` moves to `stale` (*Daoris restarted before it went on*), and every
+  `admitted` one to `interrupted` (§3.6); and every waiting `from: supervisor` word on a record that does not run is taken back
+  (SAIDBACK1a's door), whatever the files say, said on the card and in *Notifications*.
 - **Nothing reaches the session while it is held.** The decision is not a word on the record during the window, so no reader of `said`,
   this build's or an older one's, can carry the park on with it: an older build started during the hold never sees it and the park waits
   for the owner as that build shows it (the safe side; Codex's round-1 finding 9).
 - **Released at `goesOnAt`, in one conditional step** (Codex's round-2 finding 5; the Opus read's finding 1, changes 2 and 3). At the
-  driver's look at or after `goesOnAt` (the loop nudged for it), the release takes the session's decision lock, then the judge's lock, and
-  checks there that the decision is in this instance's set and `held`, and that the effective appointment's generation (§2.3) is the
-  decision's. It then calls the service's say with `from: supervisor`, `decision`, `question`, `choice` and **no text**: the service composes
+  driver's look at or after the `goesOnAt` in memory (the loop nudged for it), the release takes the session's decision lock and checks
+  that the decision is live and `held` in memory, and that the effective appointment's generation (§2.3) is the decision's, asked through
+  `IDecisionAdmission`, which takes the judge's lock for that synchronous answer alone and holds no lock after it (the Opus read's round-3
+  finding 4). It draws a **receipt**, 32 random bytes kept in memory only, and calls the service's say with `from: supervisor`,
+  `decision`, `question`, `choice`, the receipt as the say's producer key, and **no text**: the service composes
   the word's text itself from `choice` (§4.5's paragraph, one function shared by the service and the driver), and inside its one exclusive
   step (`SessionLedger.SayAsync`'s `ExclusiveAsync`, `:844`) refuses, keeping nothing, where the record is not parked (`not-parked`), a word
   of the owner's waits (`owner-answered`), the question's file (`QuestionBox`, the service's own) is not `question` (`question-changed`),
   `choice` is not one of that file's labels exactly (`not-offered-choice`), a go-ahead on its ask is open or cannot be read (`go-ahead-open`,
-  `go-ahead-unread`), a session holds no ask (`no-quest`), or a host has no home (`no-home`: supervisor words are a desktop's alone). Any
-  refusal moves the decision to `stale` or `superseded`, said. Only after the say returns kept does the decision move to `released`; both
-  locks are then let go. The order is always the decision's lock, then the judge's, then the ledger's: a revoke takes the judge's lock, so it
-  waits for a release under way and then finds it `released` and takes it back (§5), and an owner's word that arrives after the ledger's
-  step is §6.3's supersession.
-- **A word the release did not write is refused** (the Opus read's finding 1, change 2; Codex's round-2 finding 2). The key retry is
-  changed for supervisor words: a say with `from: supervisor` whose `decision` already names a waiting word compares `from`, `decision`,
-  `question`, `choice` and the composed text, and answers `Again` only where all are equal; a mismatch is refused (`key-mismatch`). A word
-  under that key that the release finds and did not write (a crash leaves only its own, which matches) is taken back, logged
-  `supervisor.unattributed`, and the decision moves to `stale`. A crash between the say and the state line leaves a `held` decision past
-  its time with its own word on the record: the next look finds the matching word, completes the move, and keeps nothing twice, but only
-  in the run that kept the decision; after a restart it is `stale` as above.
+  `go-ahead-unread`), a session holds no ask (`no-quest`), a host has no home (`no-home`: supervisor words are a desktop's alone), or a
+  `from: supervisor` word naming this decision already waits under another key (`decision-taken`). Any refusal moves the decision to
+  `stale` or `superseded`, said. Only after the say returns kept, with the kept word (`SessionSayOutcome.Word`), does memory record that
+  word's id and the decision move to `released`; the decision's lock is then let go. **The lock order is the decision's lock, then the
+  judge's (briefly, inside `IDecisionAdmission`, never held across an await), then the ledger's exclusive step inside the service**; no
+  path takes them in another order. A revoke takes the judge's lock only for its mutation step, then sweeps under each decision's lock (§5,
+  §3.6), so a release under way either finishes first and is swept as `released`, or finds the generation gone and keeps nothing; an
+  owner's word that arrives after the ledger's step is §6.3's supersession.
+- **The release owns its word by its receipt** (Codex's round-3 finding 2; the Opus read's round-2 finding 1, change 2). The receipt is
+  drawn in memory and leaves it only in the say's own body, so no agent can post under it first: a word kept under it is the release's
+  own. A lost response (the say's call failed with no answer) leaves the decision `held` with its receipt pending; the next look, before
+  any quarantine of that session's words, repeats the say with the same receipt, and the service answers `Again` with the word it already
+  kept, whose id memory then records, so the decision moves to `released` and nothing is kept twice. The key retry still compares `from`,
+  `decision`, `question`, `choice` and the composed text, and refuses a mismatch (`key-mismatch`). A word claiming this decision under any
+  other key was never the release's: the release is refused `decision-taken`, that word is taken back and logged
+  `supervisor.unattributed`, and the decision moves to `stale` (`why: forged`). **Attribution compares ids, not text**: a word is the
+  supervisor's only where its id is the one memory recorded (§6.1), so an identical canonical word posted by another has a different id
+  and stays unattributed. A lost response followed by a restart is the start's sweep: `stale`, its word taken back.
 
 ### 3.5 The actor's result (SUPERVISOR1c's contract)
 
@@ -411,6 +501,36 @@ session, a late one after a revoke, a replaced appointment or a changed question
 **One attempt per question**: a timeout, a failure, a defer or a result it cannot read leaves the question to the owner with the reason
 said on the card, and no next look starts it again unless a new question replaces it. 1c's proof includes a forged connector naming the
 actor's session, refused, and attempts and tokens counted per question, failures included.
+
+### 3.6 One lifecycle
+
+Codex's round-3 read named seven contracts that interact: the authoritative live decision, release ownership, the execution lifecycle,
+queue-preserving recovery, revocation ordering, every door the owner answers through, and mixed-author attribution. They are one
+lifecycle, every move made under the session's decision lock on the decision in memory (§3.4), with one lock order (the decision's, then
+the judge's briefly, then the ledger's step), and the states below are the only ones and their moves the only moves:
+
+| State | Entered when, under the decision's lock | The record holds | The session is handed | Leaves for |
+|---|---|---|---|---|
+| `held` | The judged handler keeps the decision: caller look, key and generation (§2.2-§2.3), §3.1's checks | Nothing of it | Nothing | `released` (the release, §3.4); `overruled` (the press); `superseded` (an owner's word waits, any door, §6.3); `stale` (a revoke's or replacement's sweep, a file that differs, a release refused) |
+| `released` | The release's say kept the word under its receipt; memory records the word's id | That one word, `from: supervisor` | Nothing yet | `admitted` (the move to working, §6.3); `overruled` (the press takes the word back); `superseded` (the ledger's one owner-word operation took it back); `stale` (a revoke's sweep, a file that differs, the record no longer parked, `CannotGoOn`, each taking the word back) |
+| `admitted` | The move to working succeeded with `expect` naming the word, `expected: awaiting-person` and the generation still effective; memory holds a **single-use ticket** naming the decision, the word and this go-on | The word, on a working record | Being built: the ticket's word alone, as the composed paragraph | `went-on` (the run's start accepted the prompt); `not-handed` (any failure before that, §6.3); `interrupted` (a restart before either) |
+| `went-on` | The spawn accepted the prompt carrying the ticket's word; its time is that moment | The word, until the run takes it as any word | The paragraph | Final |
+| `not-handed` | A failure between admission and the wire; the park restored with its queue less the word (§6.3) | Its other words; the word taken back | Nothing of it | Final |
+| `interrupted` | A start finds the decision `admitted` | As the orphan sweep and the run left it; the word taken back where the record does not run | Not known: the conversation shows whether the run read it | Final |
+| `overruled`, `superseded`, `stale` | As above | Nothing of it | Nothing | Final |
+| `left` (1b) | The judged handler keeps a defer | Nothing | Nothing | Final |
+
+- **Authority comes from memory, never a file**, so the history a file shows can be forged and never moves a decision but to `stale`.
+- **Ownership is the receipt and the word's id**: a word is the supervisor's only where memory recorded its id from the release's own say.
+- **Permission to hand is the state**: only `released` (eligible to plan) and `admitted` under this go-on's ticket (handed); every other
+  state hands nothing, and a word that is not handable is excluded from every list of words a go-on hands (§6.1).
+- **Revocation** ends its mutation step, then sweeps (§5); admission rechecks the generation under the decision's lock, so between the
+  two a released word is refused admission rather than handed.
+- **The owner's words win** at every door through one ledger operation (§6.3), so `superseded` is reached from `held` and `released`
+  whichever door the owner used, and never after `admitted`, when the run has its words and the owner's correction is their own words.
+- **Restart** empties memory: `held` and `released` become `stale`, `admitted` becomes `interrupted`, and every waiting supervisor word
+  on a record that does not run is taken back.
+- **Who decided** stays readable after every final state: the history reads the retained files as history, granting nothing (§6.1).
 
 ## 4. Its bounds
 
@@ -445,8 +565,10 @@ all of them.
 | Nobody looked | As today | The park, as today | The park's notice, as today |
 | `held` | The supervisor's pick and reasons, *Goes on in 4 min* (`Remaining`), **Overrule** (QUESTIONUI1b; until then the conversation's mark, §6.2) | Not a wait: the park is left out while a decision is held (`NeedsAPerson` reads the current decision; `person-waits.md`: listed only with an act, and the overrule is optional) | *The supervisor answered a question in Daoris*, with **Overrule** |
 | `released` | *Released at 14:05; goes on at Daoris's next look*, still with **Overrule** (Codex's round-2 finding 9): the word waits on the record until the move to working admits it | Not a wait, as `held` | The notice, with **Overrule** |
-| `went-on` | *Went on at 14:06*, the time the run was admitted with it (§6.3), from the decision's snapshot after the question's file is gone | Gone, as any park that went on | The notice, read |
+| `admitted` | *Being handed to the session*, no **Overrule** (the record is working; the owner's correction is their own words) | Gone, as a park that goes on | The notice, read |
+| `went-on` | *Went on at 14:06*, the time the run's start accepted the prompt with it (§6.3), from the decision's snapshot after the question's file is gone | Gone, as any park that went on | The notice, read |
 | `overruled`, `superseded`, `stale`, `not-handed` | The question stands for the owner, the decision drawn under it struck through with its state's words (*You overruled it*, *Your words came first*, *It no longer applied* with the check that failed, *It was not handed*) | The park, as today | The notice says the state |
+| `interrupted` | *Daoris restarted while handing it: the conversation shows whether the session read it*, struck through | As the record then stands | The notice says the state |
 | `left` (1b) | *The supervisor left this to you*: the bound's words (*a sign-in is yours*) and its reasons with their sources, above the choices | The park, as today, its row saying *left to you* | The park's notice, as today |
 | Marked the owner's (1b) | *Asked of you alone: a sign-in*, the agent's mark | The park, as today | As today |
 
@@ -513,27 +635,40 @@ role's authority on the act's shape (Codex's round-2 finding 1: choosing among a
 supervisor's attribution). Admission is the appointment's: the caller look **and** the holder key (§2.2). Each hole, weighed again:
 
 - **An agent Daoris runs, out of its job by one command** (`explorer.exe <program>`, `wsl.exe`, a scheduled task, WMI, COM; the
-  terminal-trust design §3.4). It passes the caller look and is refused `not-holder`: its environment is Explorer's or the scheduler's,
-  never the holder's terminal's, and no file Daoris writes holds the key. Proved with a caller in no job and no key.
-- **Daoris's own git running a repository's hooks**, outside every job: its environment is Daoris's, which holds only the key's hash.
-  Refused `not-holder`; proved with a hook-shaped caller.
+  terminal-trust design §3.4). It passes the caller look and is refused `not-holder`: its environment is Explorer's, the scheduler's or
+  Daoris's stripped one (§2.2), never the holder session's, and no file Daoris writes holds the key or its hash. Proved with a caller in no
+  job and no key, and with an agent of a Daoris started from an environment holding a sentinel key (§11 1a-ii).
+- **Daoris's own git running a repository's hooks**, outside every job: its environment is Daoris's, from which the key was stripped at
+  Daoris's entry and at the start (§2.2). Refused `not-holder`; proved with a hook started from a sentinel-holding parent.
+- **A hook, test or build in a session's branch**, run by the steward's working session at a merge (the Opus read's round-3 finding 3):
+  that session never holds the key, since the role is held by a dedicated session that runs no branch's code (§2.2). Refused `not-holder`.
 - **An older headless loop's agents**, and any unrelated process of the account: refused alike.
-- **A process that reads the holder's environment or memory, or the file the owner chose to keep the key in.** The account's reach
-  (D156 point 7, PERSONDOOR2), which D156 holds apart from an ordinary read of Daoris's files: said as the limit, in the ask. An act made so
-  is still one offered choice, held five minutes, said in *Notifications* and overrulable.
-- **The records written outside Daoris** (the appointment, a decision file): the account's reach writes them as it can write presses. An
-  appointment read at a start is said as found at start (§2.3); a decision file not kept by this instance is never honoured (§3.4).
+- **An agent that names its own process in the address file and serves the pipe** (the Opus read's round-3 finding 2b): the verb sends
+  the key only to a server whose image is the install's own `Daoris.exe`, read from the pipe itself (§2.2). Proved with an address file
+  naming another process, refused before the key is sent.
+- **An agent that writes its own key's hash into the appointment's record** (the Opus read's round-3 finding 2a): the record holds no
+  hash, and an appointment read at a start is dormant (§2.3). Proved with a record found at a start carrying another key's hash, refused.
+- **A process that reads the holder session's environment or memory, or injects into the install's `Daoris.exe`.** The account's reach
+  (D156 point 7, PERSONDOOR2), which D156 holds apart from an ordinary read of Daoris's files: said as the limit, in the ask. An act made
+  so is still one offered choice, held five minutes, said in *Notifications* and overrulable.
+- **The records written outside Daoris** (the appointment, a decision file): an agent's ordinary reach writes them (D201's Why,
+  `D201.md:59-62`), as it can write presses. An appointment read at a start is dormant and said as found at start (§2.3); a decision file
+  is never read to decide anything in the run that wrote it, and one that differs from memory makes its decision `stale` (§3.4).
 - **The service's say door**, ungated until PERSONDOOR1g. A `from: supervisor` word is kept only through the conditional step of §3.4,
-  its text the service's own composition from an offered label, never the caller's; a word the driver cannot attribute (no decision this
-  instance kept and released under its key, or a label not the decision's) is quarantined, never handed, never a turn, and given no
-  supervisor's note (§6.1). What a forger can still do through the ungated door is put the canonical paragraph for an offered label on a
-  parked record, which then sits quarantined until the look takes it back: a word nobody reads, said in the log. Once PERSONDOOR1g gates
-  the service's doors, `from: supervisor` is admitted only from the driver's own credential, which that row names as a case.
+  its text the service's own composition from an offered label, never the caller's; a word whose id is not the one the release recorded
+  is quarantined, never handed, never a turn, and given no supervisor's note (§6.1). What a forger can still do through the ungated door
+  is put the canonical paragraph for an offered label on a parked record, which sits quarantined until the look takes it back, or claim a
+  held decision's id first, which makes that release refused `decision-taken` and the decision `stale`: a wait on the owner, never a
+  hand, said in the log. Once PERSONDOOR1g gates the service's doors, `from: supervisor` is admitted only from the driver's own
+  credential, which that row names as a case.
 - **No alone path.** `sessions supervise` has no alone path (no Daoris running answers `no-instance`), and the request folder takes no
   supervisor answer.
 
-The appointment's ask says it in plain words (§5): *Daoris admits as the supervisor only the terminal you give its key to, and keeps the
-agents it runs from answering as it. A program that can read that terminal's memory, or the place you keep the key, could answer as it.*
+The appointment's ask says it in plain words (§5): *Daoris admits as the supervisor only the terminal session you give its key to, and
+keeps the agents it runs from answering as it. Set the key in a terminal session that does only this work: every program that terminal
+starts gets the key, so never build, test, merge or run a branch's code there, and never set it as a user variable or in a profile. A
+program that can read that terminal's memory could answer as it. Daoris forgets the key when it restarts: after a restart or an update,
+press Appoint again.*
 Words (SUPERVISOR1f) widen what a holder can steer, and wait for their own read of this section.
 
 ## 5. Where it is on
@@ -548,52 +683,82 @@ Words (SUPERVISOR1f) widen what a holder can steer, and wait for their own read 
 - **Turned on** in the repository's Setup → Driving, beside its hold (where D201 shows a terminal's hold): a row *Supervisor* with
   *Appoint…*, which opens an inline ask (the UI design's `InlineConfirm`): what it answers (a session's recorded question, with one of the
   choices the session offered and sourced reasons), what it never answers (§4.1, in one line each), that its answers are recorded as the
-  supervisor's and held five minutes for the owner's overrule, and who holds it: *the terminal you give its key to (the steward, or an
-  agent you run by hand)*, the actor once offered, with the ask's plain sentences of §4.6 and *Each answer is said in Notifications, and you
-  can overrule it.* *Appoint* and *Cancel*. On *Appoint* for a terminal, the ask shows the key once, with *Copy* and where to set it
-  (§2.2), and *Done*, after which it is gone from the page.
-- **Turned off** at once from the same row (*Turn off*, no ask) and from its line in *Notifications* (§6.4), inside the mutation step
-  (§2.3) with its memory cleared first; every `held` decision under it moves to `stale`, and every `released` one not yet admitted is
-  taken back and moves to `stale`, said.
+  supervisor's and held five minutes for the owner's overrule, that it lasts until Daoris restarts, and who holds it: *a terminal session
+  you give its key to, which does only this work (the steward's, or an agent you run by hand)*, the actor once offered, with the ask's
+  plain sentences of §4.6 and *Each answer is said in Notifications, and you can overrule it.* *Appoint* and *Cancel*. On *Appoint* for a
+  terminal, the ask shows the key once, with *Copy* and where to set it (§2.2), and *Done*, after which it is gone from the page. After a
+  restart the row says the appointment is dormant and offers *Appoint again* (§2.3).
+- **Turned off** at once from the same row (*Turn off*, no ask) and from its line in *Notifications* (§6.4), in two steps that never take
+  the locks in reverse (the Opus read's round-3 finding 4; Codex's round-3 finding 5): **first** the mutation step (§2.3), under the
+  judge's lock alone, clears the appointment and its hash from memory and writes the record, so from that moment `IDecisionAdmission`
+  answers no generation for it and no act, release or admission under it can succeed; **then**, with the judge's lock let go, the sweep
+  takes each session's decision lock in turn and moves every live decision made under the old generation: `held` to `stale`, and
+  `released` to `stale` with its word taken back. A release or an admission already holding a decision's lock finishes first and is
+  swept after (a release swept as `released`; an admission already made is a taken-in act, which a revoke does not recall, as D201's does
+  not); one that comes after the mutation rechecks the generation under the decision's lock and is refused. A repository's appointment
+  replacing its workspace's (1e) sweeps the workspace's decisions for that repository the same way.
 - **Not offered** until both flags are (§2.3); until then the row says it is not offered yet and the route refuses `not-offered`.
 
 ## 6. Recorded as the supervisor's, said, and overruled
 
 ### 6.1 On the record
 
-- **The decision** is its file and its states (§3.4), the machine's source of who decided, on what and when, kept for the session's
-  history.
+- **The decision** is held in memory while it is live and written to its file and its states (§3.4), the machine's history of who
+  decided, on what and when, kept for the session's history.
 - **The word**, at release. `SaidFrom` gains `supervisor`; the service's say door keeps it only through §3.4's conditional step, with
-  `decision` (also the word's key), `question` and `choice`, its text composed by the service from `choice` (§4.5) and any caller's text
-  refused (`supervisor-text`); a `from: supervisor` without them is refused (`from`). Kept through the session's one dispatcher, as every
-  word is (`session-words.md`). `Persons` stays false, so every reader that holds the owner's words apart (the ask's words, DRIFT at
-  `Program.cs:1499`, `Answer`, the queue at `SessionWords.cs:1068-1070`) keeps it out.
-- **Attributed only where it is the decision's own text** (the Opus read's round-2 finding 1, change 1; Codex's round-2 finding 2). The
-  driver's view gains `SaidWordView.Supervisor`, true only where the word's key names a decision this instance kept (§3.4), whose state is
-  `released`, whose `choice` the word carries, and whose composed paragraph the word's text equals; the driver hands **the paragraph it
-  composes from the decision**, never the word's stored text. Authorship (who decided) is read from the retained decision, so it does not
-  expire at `went-on`; permission to hand is read from the state, so a word is handed only while its decision is `released` (Codex's
-  round-2 finding 7: origin apart from delivery).
-- **A word Daoris cannot attribute is quarantined, never handed** (Codex's round-2 finding 3). A `from: supervisor` word that fails that
-  test is `Unattributed`: it makes no record's `WordsWaiting` (`Planner.cs:355`, and `SessionGroups`' copy), so it wakes no park and starts
-  no turn; it carries a `GoOnMarks` code of its own, `supervisor-unattributed`, so no look takes it on beside other words; the next look
+  `decision`, `question`, `choice` and the release's receipt as its key, its text composed by the service from `choice` (§4.5) and any
+  caller's text refused (`supervisor-text`); a `from: supervisor` without them is refused (`from`). Kept through the session's one
+  dispatcher, as every word is (`session-words.md`). `Persons` stays false, so every reader that holds the owner's words apart (the ask's
+  words, DRIFT at `Program.cs:1499`, `Answer`, the queue at `SessionWords.cs:1068-1070`) keeps it out.
+- **Three predicates, apart** (the Opus read's round-3 finding 6; Codex's round-3 finding 8; origin apart from delivery, Codex's round-2
+  finding 7). The driver's view gains them, each read from memory for this run:
+  - **`Authored`**: the word's id is the one memory recorded from a live decision's own release (§3.4), from `released` on, through
+    `admitted` and `went-on`. Every reader of **who said it** uses this: the conversation's mark, the notes, `line_read`, the counts.
+    So a word that went on stays the supervisor's for its whole run (`Planner.cs:350-355`: a resumed run keeps its words until it
+    concludes).
+  - **`Handable`**: authored, and its decision `released` (eligible to plan) or `admitted` under this go-on's ticket (handed, §6.3). The
+    planner, the go-on and the admission use this; the driver hands **the paragraph it composes from the decision in memory**, never the
+    word's stored text.
+  - **`Unattributed`**: a `from: supervisor` word that is not authored. Quarantined, below.
+
+  **History after a restart** reads the retained files as history and grants nothing: an earlier run's decision is drawn with its
+  holder, reasons and last state, marked *kept in an earlier run of Daoris*, since a file could have been written since; its word, if
+  one still waits, was taken back by the start's sweep (§3.4), so no earlier decision is ever handable. QUESTIONUI1b's restart proof shows
+  an earlier `went-on` decision's holder and reasons after a restart. The release's recovery of a lost response (§3.4) runs before the
+  quarantine at each look, so the release's own word is recorded before anything judges it.
+- **A word Daoris cannot attribute is quarantined, never handed** (Codex's round-2 finding 3, round-3 finding 10). An `Unattributed` word
+  makes no record's `WordsWaiting` (`Planner.cs:355`, and `SessionGroups`' copy), so it wakes no park and starts no turn; the next look
   takes it back through SAIDBACK1a's door and logs `supervisor.unattributed`; the conversation draws it as *Not attributed: not handed*.
-  Round 2's prefix *Words Daoris cannot attribute* is withdrawn: it was a delivery path.
+  A `GoOnMarks` code alone does not keep it out beside other words (`GoOnMarks.Judged` holds a record only when every waiting word is
+  marked, `GoOnMarks.cs:131-134`; `HandedAfterMove` returns every waiting word, `Continuation.cs:258-259`), so the exclusion is explicit
+  and twofold: the move to working carries `expect`, the exact ids of the handable supervisor words, and the ledger refuses the move
+  (`words-changed`) while **any** other `from: supervisor` word waits, so a record with a quarantined word does not move until the look
+  has taken it back; and every list of words a go-on hands is filtered after the move, `HandedAfterMove` and `Marked` keeping a
+  supervisor word only where it is the ticket's (§6.3). A forged word beside a helper's or an owner's word, and one arriving after
+  planning, are each tested. Round 2's prefix *Words Daoris cannot attribute* is withdrawn: it was a delivery path.
 - **Every carrier and reader of a word's author gets the case**, held by one sweep test whose set is **found by search, not a hand list**
-  (the Opus read's round-2 finding 2; Codex's round-2 finding 8): the test's fixture names every source line in `src/` that reads
-  `Persons`, `.Daoris`, `From`, `Origin = "person"`, `Origin = "target"`, `SaidFrom.`, or says *your answer*, *you answered* or
-  *your words*, found by a search the test runs over the source tree, and fails when a line it finds is in neither the covered nor the
-  stated-exempt list, so a reader added later is a failing test until it is given its case. Each covered reader is handed a released
-  supervisor word, a forged one, and a forged one with a real decision's key. The readers known today:
+  (the Opus read's round-2 finding 2, round-3 finding 7; Codex's round-2 finding 8): the test's fixture names every source line in `src/`
+  that reads `Persons`, `.Daoris`, `From`, `Origin = "person"`, `Origin = "target"`, `SaidFrom.`, or says *your answer*, *you answered*,
+  *you wrote*, *your words* or *Answered*, found by a search the test runs over the source tree, and fails when a line it finds is in
+  neither the covered nor the stated-exempt list, so a reader added later is a failing test until it is given its case. Each covered
+  reader is handed a released supervisor word, a forged one, a forged one claiming a real decision, and an identical canonical word under
+  another key. The readers known today:
   - the same-session go-on (`SaidWordView.Handed`, `ResumeAsk.Answer`/`Prompt`/`Blocks`) hands the paragraph composed from the decision;
   - `HandedToResume` stays `Persons || Daoris`, so the D79 resume never carries it; the fallback for a park whose conversation cannot
     resume (`Driver.cs:2236-2251`) stands, and with only the supervisor's word waiting it goes to `CannotGoOn`, where the decision moves
     to `stale`, said, its word taken back, and the park is a wait on the owner again (the Opus read's round-2 finding 6);
-  - **the working note**: a fifth note, `Continuations.WorkingWithSupervisorNoted` with its own code, *resumes its own conversation with
-    the supervisor's answer, in the tree it worked in*, chosen at `DriverContinuations.cs:253` where the attributed supervisor's word is
-    the only answer waiting; with the owner's words beside it, the owner's are what go (§6.3) (the Opus read's round-2 finding 2);
-  - **the planner's go-on sentence** (`Planner.cs:1488`, `:1541`): *the supervisor answered session `s` on your behalf: <label>* where only
-    the supervisor's word waits; never *you answered* (the same finding);
+  - **the working note and the planner's go-on sentence follow who actually answered** (the Opus read's round-2 finding 2; Codex's
+    round-3 finding 7). Both are chosen by the owner's participation, not by whether the supervisor's word is alone: where any word of
+    the owner's waits, today's sentences stand (and a supervisor's word was already taken back by §6.3's supersession, so the two never
+    go together); where none does, **no sentence says *you* or *your***, and each names the authors that are there, in a fixed order:
+    the supervisor's answer, a helper's answer, an opinion's findings, Daoris's words. The working note, chosen at
+    `DriverContinuations.cs:244-257` (today `park.Parked ? WorkingNoted` whoever answered), gains `WorkingWithOthersNoted` with its own
+    code and the authors in its parts, *resumes its own conversation with the supervisor's answer and a helper's answer, in the tree it
+    worked in*; the planner's sentence (`Planner.cs:1483-1489`, `:1541`) says *carrying on in `r`: the supervisor answered session `s`
+    on your behalf (<label>), with a helper's answer* for a park, and *going on in `r` with the supervisor's answer* for a record that is
+    no longer parked, never *you answered* nor *you wrote*. This also corrects today's helper-only and Daoris-only parks, which the
+    working note words as *your answer*. Each reader is proved with supervisor and helper, supervisor and opinion, supervisor and
+    Daoris, and supervisor alone;
   - the dispatcher's carrier (`SaidDoor.cs:31-35`) carries `from: supervisor` and its `decision`, never dropping it to no author;
   - a step's word event (`ChatMessage.Words`, `:181-191`) and a kept word shown at once (`SessionSay.Shown`, `:243-250`) write origin
     `target` and `From = supervisor`, never `person`; the modules' `Show` (`SessionWords.cs:995-1011`) likewise; the release writes its
@@ -614,12 +779,14 @@ Words (SUPERVISOR1f) widen what a holder can steer, and wait for their own read 
   for a supervisor's word; `supervisor-text` and `key-mismatch` refused) and the `Note` test.
 - **Rollback** (the Opus read's round-2 finding 11; Codex's round-2 finding 8). An older build reading a released, not yet admitted
   `from: supervisor` word: its driver hands the word's stored text, which is the service's composed paragraph (since the service composes
-  it), so the session still reads it as the supervisor's; its page draws it as *You* (`ConversationView.tsx:501` today) for as long as the
-  word waits, which is one look. Said in the row's notes beside §2.3's rollback; it is not repaired by the text.
+  it), so the session still reads it as the supervisor's; its page draws it as *You* (`ConversationView.tsx:501` today) **until the word
+  is consumed or removed, potentially across several looks**, since an account's cooling, a mark or another hold can keep it waiting
+  (Codex's round-3 finding 12; §0.1). Said in the row's notes beside §2.3's rollback; it is not repaired by the text.
 - **The machine log**: `supervisor.answered` (`session`, `question`, `holder`, `reasons: n`), `supervisor.released`,
-  `supervisor.went-on`, `supervisor.overruled`, `supervisor.stale` (`why`), `supervisor.superseded`, `supervisor.not-handed`,
+  `supervisor.admitted`, `supervisor.went-on`, `supervisor.overruled`, `supervisor.stale` (`why`: among them `tampered`, `forged`,
+  `revoked`, `not-parked`, `restarted`), `supervisor.superseded`, `supervisor.not-handed` (`why`), `supervisor.interrupted`,
   `supervisor.deferred` (`bound`), `supervisor.refused` (`why`), `supervisor.unattributed` (a word claiming the supervisor that Daoris did
-  not attribute), and `person.appointment` (`state: granted|revoked|found-at-start|unread…`, `role`, never a repository name): codes only,
+  not attribute), and `person.appointment` (`state: granted|revoked|found-at-start|dormant|unread…`, `role`, never a repository name): codes only,
   never a value, as D201 §7.2.
 
 ### 6.2 Said
@@ -627,7 +794,8 @@ Words (SUPERVISOR1f) widen what a holder can steer, and wait for their own read 
 - **On the session.** The conversation draws the decision under its own mark, *From the supervisor, on your behalf* (主管代你答复),
   never the owner's bubble: the choice, the reasons with their sources, the holder (*held by the terminal you gave the key; started from
   pwsh*, the process a hint, §2.2), and while held *Goes on in 4 min* (`Remaining`) with **Overrule**. Once released, *Released at 14:05;
-  goes on at Daoris's next look*, still with **Overrule**; once admitted, *Went on at 14:06*. The box (`ParkAnswer`) and the head's card
+  goes on at Daoris's next look*, still with **Overrule**; once admitted, *Being handed to the session*; once the run took it, *Went on at
+  14:06*. The box (`ParkAnswer`) and the head's card
   show the same on the question (QUESTIONUI1b).
 - **In *Notifications*.** A notice per decision, *The supervisor answered a question in Daoris* with the chosen label, its first reason, the
   holder and **Overrule** while held or released, then read; kept by the notices' store as every notice is (`Notices.Keep`, `NoticesStateSlice.cs:189`).
@@ -641,47 +809,80 @@ Words (SUPERVISOR1f) widen what a holder can steer, and wait for their own read 
 
 - **The window.** A decision is held **five minutes** from its keeping (row 1's constant; SUPERVISOR1e lets the appointment set 1 to 60,
   never 0, §12). While a decision is `held` and no word of the owner's waits, **the record is held whatever else waits**: the planner's
-  local `Waits` in its `WordsOn` (`Planner.cs:1469-1471`), `SessionGroups`' own copy of both (`Trees/SessionGroups.cs:1245-1251`, which
+  local `Waits` in its `WordsOn` (`Planner.cs:1469-1471`), `SessionGroups`' own copy of both (`Trees/SessionGroups.cs:1251-1257`, which
   needs the skip in its own right), and `AnswersAloneHold`'s pick (`:56-58`) each skip it, so a helper's last words kept on the parked asker
   (`DriverHelpers.cs:304-311`) or Daoris's own cannot cut the window. The hold is the decision's `goesOnAt`, read by the look as it reads
   `GoOnMarks`, never a mark of `GoOnMarks`' (whose marks key on words and have no time, `GoOnMarks.cs:19-61`). After the window, a released
   word is **eligible** to go on, subject to the look's other holds, as any waiting word is (§0.1). A `PlannerTests` case has a helper's
   answer and Daoris's words arrive inside the window.
-- **The owner's words win, in the service's one step** (Codex's round-2 finding 5; the Opus read's round-2 finding 7). While held, a word
-  of the owner's waiting from any door moves the decision to `superseded` at the next look, and the record goes on with the owner's words
-  alone. After release, the service's say, inside its exclusive step (`SessionLedger.cs:844`), takes back every waiting `from: supervisor`
-  word on a parked record as it keeps a word of the owner's there, so no read ever sees both; the next look finds the decision `released`
-  with its word gone and moves it to `superseded`. `SESSION_INPUT` naming the decision's question also marks the decision at once
-  (`ConversationRoutes.cs:116-139`).
+- **The owner's words win at every door, in one ledger operation** (Codex's round-2 finding 5, round-3 finding 6; the Opus read's
+  round-2 finding 7). The ledger keeps the owner's words on a park through more than one door: `SayAsync` (`SessionLedger.cs:816-887`,
+  `/api/sessions/{id}/say`), `AnswerAsync` (`:727-760`, `/api/sessions/{id}/answer`, `Program.cs:1950-1954`, a blank answer kept as
+  *carry on.*), the reword of `TakeBackAsync` (`:989-1050`, whose new words are the person's whoever said the old), and the go-aheads'
+  carry-on (`GoOnWithGoAheadsAsync`, `:1929-1933`, which keeps *carry on.* only where nothing waits). Each calls
+  `sessions.KeepSaidAsync` itself (`:778`, `:880`, `:1046`). They gain **one operation**, `KeepOwnersWordAsync`, called inside each
+  door's own exclusive step in place of its direct `KeepSaidAsync`: on a parked record it takes back every waiting `from: supervisor`
+  word and keeps the owner's word, in the same step, so no read ever sees both and no door is left out. A sweep test finds every
+  `KeepSaidAsync` call in the ledger by search and fails on one keeping a person's word outside `KeepOwnersWordAsync`. While a decision is
+  held, a word of the owner's waiting from any door moves it to `superseded` at the next look, and the record goes on with the owner's
+  words alone; after release, the next look finds the decision `released` with its word gone and moves it to `superseded`.
+  `SESSION_INPUT` naming the decision's question also marks the decision at once (`ConversationRoutes.cs:116-139`). Tests race the
+  release with `/say`, with `/answer` and its blank *carry on*, and with a reword.
 - **The press.** **Overrule**, `SUPERVISOR_OVERRULE { id, decision }`, a `Person` route (a terminal's waits for the window's card, as every
   person's press does), taken under the session's decision lock. While `held`: the decision moves to `overruled`; nothing was on the record,
   so nothing is taken back. While `released` and not yet admitted: the word is taken back through the service's take-back door (SAIDBACK1a,
   `SessionLedger.TakeBackAsync`, `SessionLedger.cs:989-1030`) and the decision moves to `overruled`. Either way the question stands for the
   owner, its file still on disk since no run opened (`QuestionFiles.Clear` runs only at a run's opening), and the route refuses the
-  supervisor `overruled` for that question until a new one replaces it. The owner then answers as themselves.
-- **Admission to execution, conditional on the decision** (Codex's round-2 finding 6). The go-on's move to working
-  (`DriverContinuations.cs:253-260`) runs under the session's decision lock, so it never interleaves with an overrule or a release. Under it
-  the go-on reads the current decision: `held`, and nothing moves (a plan made before the decision was kept is refused here and the next
-  look plans again); `released`, and the move carries **the ids of the supervisor's words the plan will hand** (`expect`, an additive field
-  of the state move): the ledger refuses the move (`words-changed`) where the record's waiting `from: supervisor` words differ, so a plan
-  made before release, or before a take-back, never moves the record. The move succeeding is the admission: the decision moves to
-  `went-on` with that time (the time *Went on* shows), and Overrule answers `went-on` after it. Every other state hands no supervisor word.
-- **After admission, the session acts.** The ledger refuses a take-back on a record that runs (`SessionLedger.cs:1016-1023`); the
+  supervisor `overruled` for that question until a new one replaces it. The owner then answers as themselves. From `admitted` on, the
+  press answers `admitted` or `went-on` and changes nothing.
+- **A record no longer parked** (the Opus read's round-3 finding 7). A park the owner stops or that ends keeps its waiting words, and the
+  ledger moves a finished record with any word waiting to working (`SessionLedger.cs:1498-1513`, refused only at `Said.Count: 0`). So a
+  `released` decision whose record is no longer `awaiting-person` moves to `stale` (`why: not-parked`) at the next look, its word taken
+  back (a record that does not run takes its words back, `:1016-1023`), and the admission below requires the record still parked.
+- **Admission to execution: a single-use ticket** (Codex's round-2 finding 6, round-3 findings 3 and 5; the Opus read's round-3 findings
+  4c, 5 and 7). The go-on's move to working (`DriverContinuations.cs:258-262`, its `AdvanceAsync`) runs under the session's decision lock,
+  so it never interleaves with an overrule, a release or a revoke's sweep. Under it the go-on reads the decision in memory: `held`, and
+  nothing moves (a plan made before the decision was kept is refused here and the next look plans again); `released`, and it rechecks the
+  effective generation through `IDecisionAdmission` (refused, and the decision `stale`, where a revoke's mutation or a replacing
+  appointment came first), then moves the record carrying **`expect`**, the exact ids of the handable supervisor words (an additive field
+  of the state move, sent on every go-on's move once 1a-i lands), and, where `expect` names one, the advance's existing **`expected:
+  awaiting-person`** (`SessionLedger.cs:1366-1370`, `:1449-1455`). The ledger refuses the move (`words-changed`) where the record's waiting
+  `from: supervisor` words are not exactly `expect`, and (`invalid-move`) where the record is not parked, so a plan made before release,
+  before a take-back, beside a quarantined word or on a record the owner stopped never moves the record. The move succeeding makes the
+  decision **`admitted`**, and memory holds a **ticket**: the decision, its word's id and this go-on, single-use. The lock is let go.
+- **The ticket is carried into the prompt.** After the move the go-on reads the waiting words again (`DriverContinuations.cs:321`), and
+  `HandedAfterMove` and `Marked` keep a supervisor word only where it is the ticket's (§6.1); the prompt (`ResumeAsk`,
+  `Conversations/Domain/ResumeAsk.cs:57-66`) hands the paragraph composed from the decision in memory, consuming the ticket, so a second
+  build with it hands no supervisor word. **The decision moves to `went-on` only once the run's start has accepted that prompt** (the
+  spawn returned and the run is started, the point at which `spawned` is set today), under the decision's lock, with that time, which
+  *Went on* shows. Overrule answers `went-on` after it.
+- **Every failure between admission and the wire is `not-handed`, and keeps the queue** (Codex's round-3 findings 3 and 4; the Opus
+  read's round-2 finding 5). The failures: the re-read after the move fails (today it falls back to the look's snapshot,
+  `Continuation.cs:258-259`), the words after the move no longer include the ticket's word, the start's own preparation throws
+  (`ResumedAfterAsync`, the permissions' note, the prompt's build), the spawn fails (`Continuations.Unstarted`, the record ending failed
+  with its words), or the driver closes before the spawn (`PutBackAsync` with `ClosedFirst`, `:430`). In each, nothing is spawned with the
+  word, and the decision moves `admitted` → `not-handed` (*It was not handed*; Daoris knows it did not hand it). The record is not put back
+  through today's `PutBackAsync`: that moves a park to `awaiting-person`, whose move clears `said` (`DriverContinuations.cs:703-711`,
+  `Continuation.cs:316-318`, `SessionLedger.cs:1466-1469`, `Sessions.cs:877`), which would lose every helper's, opinion's, Daoris's or owner's
+  word beside it. A new ledger operation, **`RestoreParkAsync(id, takeBack: [word])`**, in one exclusive step, moves a working record that
+  the driver took up back to `awaiting-person` with its note as the look read it, **keeping `said`** less the one admitted supervisor word,
+  and is refused where the record runs a process. The words beside it, and any owner word that arrived after the admission, wait again,
+  and the next look plans them anew without it. Where the restore itself fails (the service unreachable), the record is left working with
+  no run for the orphan sweep, as today, and the word, no longer handable, is excluded from every list and taken back by the first look
+  that finds it on a record that does not run. Where the spawn failed and the record ended failed, the word is taken back the same way.
+  `answered` and `overruled` refuse the supervisor on that question; it is the owner's to answer.
+- **After `went-on`, the session acts.** The ledger refuses a take-back on a record that runs (`SessionLedger.cs:1016-1023`); the
   conversation offers the owner's words instead: a correction said to the session as the owner's, which it takes at its next step (D188
   urgent).
-- **The re-read after the move fails closed by aborting** (Codex's round-2 finding 6; the Opus read's round-2 finding 5). After the move,
-  the go-on reads the waiting words again (`DriverContinuations.cs:321-322`), and an unreadable read falls back to the look's snapshot
-  (`Continuation.cs:258-259`). Where the move admitted a supervisor's word and that read fails, nothing is spawned: the record is put back
-  with its words (`PutBackAsync`, as SAIDBACK1e's), the decision moves to `not-handed` (*It was not handed*; Daoris knows it did not hand
-  it), its word gains the `GoOnMarks` code `supervisor-not-handed` so no look takes it on, and it is taken back once the record reads. The
-  words beside it went nowhere, and the next look plans them anew without it. `answered` and `overruled` refuse the supervisor on that
-  question; it is the owner's to answer.
+- **A restart while `admitted`** makes the decision `interrupted` at the start (§3.4, §3.6): Daoris cannot tell whether the run read it,
+  and says so; the conversation shows what the run was handed.
 
 ### 6.4 What the appointment shows
 
 Setup → Driving's row: *Appointed since 22 Oct, held by the terminal you gave the key · 3 answers this run · Appoint again · Turn off*;
 a record not honoured (unread, newer, another machine's) says so under it, as D201's row does, and an appointment read at a start says
-*found as Daoris started* (§2.3), never how it was written. *Notifications*' line as §6.2.
+*Found as Daoris started: dormant until you press Appoint again* (§2.3), never how it was written, with *Appoint again* and *Turn off*.
+*Notifications*' line as §6.2, saying *dormant* likewise.
 
 ## 7. Where it sits in the co-work and the company
 
@@ -691,7 +892,7 @@ a record not honoured (unread, newer, another machine's) says so under it, as D2
 | **A helper** (D163) | Answers a lead's own question to the lead, as a claim | A different question: a helper's is the lead's, the supervisor's is the owner's. The supervisor asks no helper and is asked by none; their answers share one count (§4.3) |
 | **A partner** (D199) | Writes a piece of the lead's work | The supervisor writes nothing |
 | **Ask Daoris** (D110, D183) | The front desk: explains, proposes | May say what the supervisor answered and why, and where to appoint it; never appoints it, never answers as it, never overrules (D201 point 5's reach) |
-| **The steward** (D193 part 18) | Management: settles what is not the owner's | Holds the supervisor from a terminal until the actor runs; its answers are then on the record as the supervisor's, where today they are the owner's words or a waiting card |
+| **The steward** (D193 part 18) | Management: settles what is not the owner's | Holds the supervisor from a dedicated terminal session that does only the role, apart from its working session, until the actor runs; its answers are then on the record as the supervisor's, where today they are the owner's words or a waiting card |
 | **The owner** | Sets direction | Appoints, reads, overrules, and answers what is theirs |
 
 **Not a hierarchy** (D193's rejection, the co-worker design §3.4). The supervisor directs no department and starts no work: it
@@ -769,24 +970,24 @@ supervisor's pick held, released, gone on and overruled; each at the main area's
 
 ### 8.4 The one answer, and who owns the draft
 
-- **The words are the frame's draft**, as today: one per session, kept across a reload (`useDraft`, `WorkFrame.tsx:529-531`). The card
+- **The words are the frame's draft**, as today: one per session, kept across a reload (`useDraft`, `WorkFrame.tsx:533-535`). The card
   holds none.
 - **The selection is the frame's too**, beside the draft: `{ question, label }` per session, in memory (a reload starts with nothing
   selected, the words kept). It is drawn selected only while `question` is the drawn question's id: a replaced question is drawn with
   nothing selected, so a kept label never becomes a choice on a different question (Codex's finding 17); the words stay.
 - **The box's *Send*** (and Enter) sends, while a question is drawn: with a row selected, the label then the words through `SESSION_INPUT`
-  naming `question` (`choiceWords`, as `onChoice` does at `WorkFrame.tsx:1029-1056`); with none selected, the words alone as a free answer,
+  naming `question` (`choiceWords`, as `onChoice` does at `WorkFrame.tsx:1033-1060`); with none selected, the words alone as a free answer,
   as today. Its label reads *Send answer* with a row selected; the field's placeholder says the selected choice goes with the words.
   Disabled with neither a row nor words. While sending, nothing sends again.
 - **The go-aheads come first, for every answer** (Codex's round-2 finding 14). Today `WorkFrame.unaccepted` refuses any answer, a choice or
-  free words, while the drawn question has open go-aheads (`WorkFrame.tsx:761-770`); round 2's *free words send as today* was wrong and
+  free words, while the drawn question has open go-aheads (`WorkFrame.tsx:765-774`); round 2's *free words send as today* was wrong and
   would have weakened it. The guard stays as it is: a selected row or free words, through *Send* or Enter, are refused in place while
   go-aheads are open, said *Answer the go-aheads above first* in the card's status line, the words and the selection kept.
 - **The head's card** (the Opus read's round-2 finding 10; Codex's round-2 finding 15). Its rows are the same frame selection as the box's
   (one per session, so a row chosen in either is chosen in both), selectable only once *Answer and carry on…* is open (`AwaitingPerson.tsx:136-141`).
   Its *Send answer* sends `onChoice(label, words)` with a row selected and `onAnswer(words)` with none, its own text area's words; disabled
   with neither. It replaces the card's per-row presses. The head's card draws no go-aheads, but its sends already pass the same
-  `unaccepted` guard (`sayFromCard`, `WorkFrame.tsx:972-975`), which stays: with go-aheads open on the drawn question it refuses in place
+  `unaccepted` guard (`sayFromCard`, `WorkFrame.tsx:976-979`), which stays: with go-aheads open on the drawn question it refuses in place
   with the box's sentence, the words and the selection kept.
 - **A refusal keeps both**: the selection (same question) and the words; *question-changed* keeps the words and draws the new question
   unselected.
@@ -810,7 +1011,9 @@ supervisor's pick held, released, gone on and overruled; each at the main area's
 | left to you | 留给你 | A question the supervisor did not answer, with why |
 | not attributed | 来源不明 | A word whose author Daoris cannot establish; never *You*, never handed |
 | holder key | 持有人密钥 | The key an appointment issues to its terminal holder, shown once |
-| not handed | 未转交 | A released decision Daoris aborted before the session read it |
+| not handed | 未转交 | An admitted decision Daoris aborted before the session read it |
+| dormant | 待重新任命 | An appointment found as Daoris started: it admits no holder until the owner presses *Appoint again* |
+| interrupted | 已中断 | An admitted decision Daoris restarted while handing |
 | role | 职责 | The company's sense (an appointed scope); *actor* stays 角色 (D205), and a co-worker's *role* stays as the co-worker design has it |
 
 A quest is 委托, never 任务. The glossary gains *supervisor*, *appointment*, *overrule* in SUPERVISOR1a-i, with `names:check --strict`.
@@ -820,9 +1023,14 @@ A quest is 委托, never 任务. The glossary gains *supervisor*, *appointment*,
 **Amends, once accepted:** **D156** point 4 (a role's covered act from a terminal runs without a card; a role's act is never a card) and
 §3.2 (a session's recorded question may be answered by an appointed role as itself, with one offered choice; the owner's words, go-aheads
 and every other answer stay theirs); **D201** points 2, 5 and 6 (the record carries appointments; the judge judges a role's act by its own
-method, with the holder key beside its caller look; `SET_APPOINTMENT` is the window's; every write of the record one mutation step under
-its lock) and the census's classes (`Role` beside `Open`, `Person`, `Window`); **D137** §2.4 (SAIDBACK1d-e: the move to working carries the
-supervisor's word ids it admits, and the go-on aborts where its re-read fails with a supervisor's word admitted); **D135** point 6 and its
+method, with the holder key beside its caller look, its hash in memory alone; an appointment lasts until Daoris restarts and one read at a
+start is dormant; `SET_APPOINTMENT` is the window's; every write of the record one mutation step under its lock, a revoke's sweep after
+it) and the census's classes (`Role` beside `Open`, `Person`, `Window`); **D156** point 4's terminal verb (it sends the holder key only to
+a pipe served by the install's own executable); **Daoris's start environment** (every Daoris executable removes `DAORIS_SUPERVISOR_KEY`
+from itself at its entry, and every start it builds strips it, beside `GitWiring.SessionTokens`); **D137** §2.4 (SAIDBACK1d-e: the move
+to working carries the supervisor's word ids it admits and, with one, requires the record still parked; the admitted word is handed only
+under a single-use ticket, and a failure before the wire restores the park keeping its queue less that word, `not-handed`; the owner's
+words, through every door that keeps them, take a waiting supervisor's word back in the same step); **D135** point 6 and its
 rejection, said as it is: by the owner's direction, a model (the steward) answers parked questions **unmeasured** while it holds the role
 from a terminal, each answer recorded as the supervisor's, never the owner's, held for their overrule, and limited to a choice the session
 offered; Daoris's own actor answers only after the bench measures it (§11 row d); **D185** (the question card, its parts and its stories);
@@ -837,7 +1045,8 @@ D199 and the co-worker roles; D24 and D157 (no model judges a route); PARKVIEW1'
 
 ## 11. Proof, and the rows in build order
 
-Each row lands alone with its proof; each test by class, filtered. QUESTIONUI1a depends on nothing here and is being built beside round 3.
+Each row lands alone with its proof; each test by class, filtered. QUESTIONUI1a depends on nothing here and is being built on its own
+branch.
 **Nothing is usable by the owner until the door's activation** (1a-ii's last step, after 1b): 1a-i lands inert, and 1a-ii lands dark
 (Codex's round-2 finding 12; the Opus read's round-2 finding 9). D201's own offering (`OfferedInThisBuild`, after part (i)'s installed
 proof) is a named prerequisite of that activation.
@@ -846,47 +1055,71 @@ proof) is a named prerequisite of that activation.
 decision files, their states and the current-question pointer (§3.4), a home entry in the three twins (`home-census`); keeping a decision
 through the handler's own method behind an **admission interface**, `IDecisionAdmission` (whether a holder is admitted for a session's
 repository, and the effective appointment's generation), whose production implementation refuses every act (`not-offered`), so nothing in
-this row can keep a decision outside its tests, which inject one; this instance's set of kept decisions and the start's move to `stale`;
-the §3.1 refusals marked 1a-i; the release as one conditional step (§3.4), with the service composing the text, comparing a key's retry
-and refusing `supervisor-text` and `key-mismatch`; `SaidWordView.Supervisor` by the decision's own text, and `Unattributed` quarantined
-(§6.1); every carrier and reader found by the sweep's search (§6.1), the working note's fifth and the planner's sentence included; the
-handed text (§4.5); no answered line from the say door, the working note's `NoteBy` `supervisor`; `WentOnWith`'s fifth; the hold in both
-`Waits`es and `AnswersAloneHold`, and the nudge; the owner's words superseding in the service's step; `SUPERVISOR_OVERRULE` (`Person`) held
-and released; admission by `expect` and the abort on a failed re-read (§6.3); `CannotGoOn` making the decision `stale`; `NeedsAPerson`;
-both answers-alone predicates; the conversation's mark with reasons, `Remaining` and **Overrule**; the notice and the line in
-*Notifications*; the log lines; the glossary. **Proof:** `SupervisorDecisionTests` (each refusal; idempotent retry; `answered` and
-`overruled` sticking, `not-handed` and `stale` included; the release's checks, a label not on file among them; a word posted first under the
-decision's key with other text, and with the decision's own text; a forged `held` decision file and a forged `released` one with a
-matching word, each never handed; a crash between the say and the state line, in the same run and after a restart; a decision kept in an
-earlier run made `stale` at a start, its word taken back; a second park and a restart keeping the first decision's reasons), the sweep
-test (its search finding every reader; each handed a released, a forged and a key-forged word: `Persons` false, never *You*, never
-`HandedToResume`, a quarantined word never waking a park), the handed text's test (each act named; no clause grants or mentions the
-choice's `does`), `SessionLedgerTests` (`supervisor-text`, `key-mismatch`, no answered line, an owner's word taking a supervisor's word back
-in one step, `expect` refusing `words-changed`, a host with no home refused), the `Note` test, `PlannerTests` (held within the window
-whatever else waits; eligible after; the owner's words supersede; the go-on sentence naming the supervisor; a quarantined word waiting on
-nothing), `DriverModuleSessionQuestionTests` (overrule while held, while released, racing the release and racing the admission, and after
-admission `went-on`), `DriverContinuations`' cases (a decision kept after planning, overrule before admission, the re-read failing with a
-supervisor's word and with mixed words: nothing spawned, `not-handed`, the word marked and taken back; `CannotGoOn` making it `stale`),
-`AnswersAloneTests` (three supervisor-only go-ons in a row held, mixed prompts, alternating kinds, restart), and the page's tests for the
-conversation's mark, the released state, the notice and *Not attributed*.
+this row can keep a decision outside its tests, which inject one; `QuestionSupervisorDecisions`, each live decision whole in memory with
+the session's decision lock, every check reading memory, the files written and never read back in the run that wrote them, a file that
+differs moving its decision to `stale` (`tampered`), and the start's sweep (§3.4); §3.6's states and moves, and no other; the §3.1 refusals
+marked 1a-i; the release as one conditional step (§3.4), with its receipt, its recovery of a lost response, the service composing the text,
+comparing a key's retry and refusing `supervisor-text`, `key-mismatch` and `decision-taken`; the three predicates `Authored`, `Handable` and
+`Unattributed` by the word's id (§6.1), the quarantine and the filter of every handed list; every carrier and reader found by the sweep's
+search with its round-4 terms (§6.1), the working note and the planner's sentence chosen by the owner's participation; the handed text
+(§4.5); no answered line from the say door, the working note's `NoteBy` `supervisor`; `WentOnWith`'s fifth; the hold in both `Waits`es and
+`AnswersAloneHold`, and the nudge; `KeepOwnersWordAsync` in every door that keeps the owner's words (§6.3); `SUPERVISOR_OVERRULE`
+(`Person`) held and released; a released decision on a record no longer parked made `stale`; admission by `expect`, `expected:
+awaiting-person` and the generation rechecked, the ticket carried into the prompt, `went-on` once the start accepted it, every pre-wire
+failure `not-handed` through `RestoreParkAsync`, and `interrupted` at a start (§6.3); `CannotGoOn` making the decision `stale`;
+`NeedsAPerson`; both answers-alone predicates; the conversation's mark with reasons, `Remaining` and **Overrule**; the notice; the log
+lines; the glossary. **Proof:** `SupervisorDecisionTests` (each refusal; idempotent retry; `answered` and `overruled` sticking, `not-handed`,
+`interrupted` and `stale` included; the release's checks, a label not on file among them; **an admitted decision's files rewritten** with
+another label, with an earlier `goesOnAt`, and with a `released` line appended beside a matching posted word: none handed early, none
+handed as another label, each `stale` as `tampered`; a forged `held` decision file and a forged `released` one with a matching word, each
+never handed; **an identical canonical word posted first** under another key, refused `decision-taken`, and **a lost response** recovered
+under the receipt, proved apart; a crash after the say, in the same run and after a restart; a decision kept in an earlier run made
+`stale` at a start, its word taken back; a second park and a restart keeping the first decision's reasons, an earlier `went-on` decision's
+holder and reasons drawn after a restart and never handable; every transition not in §3.6 refused), the sweep test (its search finding
+every reader with *you wrote* and *Answered* among its terms; each handed a released, a forged, a decision-claiming and an identical
+canonical word: `Persons` false, never *You*, never `HandedToResume`, a quarantined word never waking a park; and every `KeepSaidAsync`
+of a person's word in the ledger found inside `KeepOwnersWordAsync`), the handed text's test (each act named; no clause grants or mentions
+the choice's `does`), `SessionLedgerTests` (`supervisor-text`, `key-mismatch`, `decision-taken`, no answered line; an owner's word taking a
+supervisor's word back in one step through `/say`, `/answer` with words and blank, a reword and the go-aheads' carry-on; `expect` refusing
+`words-changed`, beside a quarantined word too, and `expected` refusing a record no longer parked; `RestoreParkAsync` keeping a mixed
+queue less the one word, with an owner's word arriving after admission; a host with no home refused), the `Note` test, `PlannerTests`
+(held within the window whatever else waits; eligible after; the owner's words supersede; the go-on sentence for supervisor alone, with a
+helper, an opinion and Daoris, and for a record no longer parked, never *you*; a quarantined word waiting on nothing),
+`DriverModuleSessionQuestionTests` (overrule while held, while released, racing the release and racing the admission, and after admission
+`admitted` and `went-on`), `DriverContinuations`' cases (the complete admission-to-handoff path: a decision kept after planning, overrule
+before admission, a forged word beside a helper's and an owner's word and one arriving after planning, the ticket's word alone handed,
+`went-on` only after the start accepted; the re-read failing, the start's preparation throwing, the spawn failing and the driver closing
+before the spawn, each with supervisor-only and mixed words: nothing spawned with it, `not-handed`, the queue kept less the word; the
+working note for each mixture; `CannotGoOn` making it `stale`), the revoke's cases (a revoke and a repository's override **after release**,
+racing the release and racing the admission, with no deadlock and no word handed under a revoked generation), `AnswersAloneTests` (three
+supervisor-only go-ons in a row held, mixed prompts, alternating kinds, restart), and the page's tests for the conversation's mark, the
+released, admitted and interrupted states, the notice and *Not attributed*.
 
-**SUPERVISOR1a-ii — the door** (modules, driver, web; after 1a-i; **lands dark**). `appointments` in D201's record with `generation` and
-the key's hash; the one mutation protocol for every write of the record (§2.3); `SET_APPOINTMENT` (`Window`) answering the key once;
+**SUPERVISOR1a-ii — the door** (modules, driver, web; after 1a-i; **lands dark**). `appointments` in D201's record with `generation`, the
+key's hash in memory alone, an appointment read at a start dormant (`dormant`) until *Appoint again*; the one mutation protocol for every
+write of the record, the revoke's sweep after it (§2.3, §5); the key stripped at every Daoris entry and in `Tools.Hand` and
+`GitWiring.Hand` (§2.2); the verb's check of the pipe's server image before the key is sent (`not-install`); `SET_APPOINTMENT` (`Window`) answering the key once;
 `AppointmentsOffered` false; `PipeClass.Role`, with `Accept` gaining a `Role` branch before the open path that asks the judge's own role
 method (under the same lock and caller look, then the key's hash, independent of `_presses` and `IsOn`) and refuses anything uncovered,
 never a card; a role door flag the handler reads, never `PipeDoor.Standing`; the production `IDecisionAdmission` answering from the
 appointments; `SUPERVISOR_ANSWER`'s handler refusing every door but a covered terminal's; `SUPERVISOR_WAITING` with generations;
 `daoris-driver sessions supervise` (no id: the listing; `<id>`: the fenced print of §4.4 with the generation; `<id> --question <qid>
 --generation <g> --choice <label> --reason <says> --source <where>…`: the answer, the key read from `DAORIS_SUPERVISOR_KEY` alone, a `--key`
-argument refused; no alone path); Setup → Driving's row, its ask and the key shown once (§5); found-at-start said; turning off making held
-and released decisions `stale`. **Proof:** `StandingConfirmationTests` (an appointment read, written, revoked apart from the presses; presses
-granted and revoked keep the appointments; a press grant, an appointment change and a revoke raced, none lost; a record of an older shape;
-`supervise` never in `Built` nor taken by `Set`; covered only for its repository, holder and key; the key's plaintext in no file;
-`appointment-changed` on a revoke and re-appointment of the same holder and on a repository's appointment replacing its workspace's),
-`PipeStandingTests` (a `Role` route covered runs with no card; uncovered is refused, never asked; with no press granted still judged, never
-open; no key and a wrong key refused `not-holder`), the caller-look cases for a contained agent, a plugin's process and a partner, each
-refused, and a caller in no job with no key (a brokered start's and a hook's shape) refused `not-holder`, `SessionsCommandTests` for the
-verb, its fence (a planted fence line escaped), the key read from the variable only, and no alone path, `PipeCensusTests`,
+argument refused; no alone path); Setup → Driving's row, its ask with round 4's sentences and the key shown once (§5); found-at-start and
+dormant said; the *Notifications* line with its *Turn off* (§6.2; moved here from 1a-i, since its *Turn off* is `SET_APPOINTMENT`'s, the
+Opus read's round-3 finding 8); turning off making held and released decisions `stale`. **Proof:** `StandingConfirmationTests` (an
+appointment read, written, revoked apart from the presses; presses granted and revoked keep the appointments; a press grant, an appointment
+change and a revoke raced, none lost; a record of an older shape; `supervise` never in `Built` nor taken by `Set`; covered only for its
+repository, holder and key; neither the key nor its hash in any file; **a record found at a start carrying another key's hash refused**,
+`dormant` until *Appoint again*; `appointment-changed` on a revoke and re-appointment of the same holder and on a repository's appointment
+replacing its workspace's; the revoke's mutation and then its sweep, with no lock taken in reverse), `PipeStandingTests` (a `Role` route
+covered runs with no card; uncovered is refused, never asked; with no press granted still judged, never open; no key and a wrong key
+refused `not-holder`), the caller-look cases for a contained agent, a plugin's process and a partner, each refused, and a caller in no job
+with no key (a brokered start's and a hook's shape) refused `not-holder`; `HolderKeyStripTests` (each Daoris entry, found by searching for
+the hosts' entries, removing the variable first; `Tools.Hand` and `GitWiring.Hand` dropping a sentinel key from a start's environment; **an
+agent of a Daoris started with the variable set refused `not-holder`**); `SessionsCommandTests` for the verb, its fence (a planted fence
+line escaped), the key read from the variable only and removed from its own environment, **an address file naming another process, and a
+pipe served by an image that is not the install's `Daoris.exe`, refused before the key is sent**, and no alone path; `PipeCensusTests`,
 `HelpCoverageTests`, and the row's page test. It is not a usable door: `SET_APPOINTMENT` refuses `not-offered` in every build this row
 makes.
 
@@ -898,11 +1131,14 @@ predicate both), the card's stories.
 
 **SUPERVISOR1a-iii — activation** (modules; after 1b and D201's offering). A candidate build with `AppointmentsOffered` true, installed
 locally from its branch and looked at **before the change that turns the flag on lands**, as D201's own note on order offers its grant:
-the steward appoints itself for this repository in the installed window and sets the key in its terminal, answers a parked session's
-question from that terminal with no card, the session goes on after the hold handed the composed paragraph, an overrule on another is
-looked at, and a caller with no key is refused. The change that turns the flag on lands with that look recorded in the archive entry.
+the owner appoints the steward for this repository with their own press in the installed window (§2.1 point 1; the Opus read's round-3
+finding 8), and the steward sets the key in a dedicated terminal session that does only the role; that session answers a parked
+session's question with no card, the session goes on after the hold handed the composed paragraph, an overrule on another is looked at,
+a caller with no key is refused, an agent of a Daoris started from a terminal holding the variable shows it absent, and after a restart
+the appointment is dormant until the owner presses *Appoint again*. The change that turns the flag on lands with that look recorded in
+the archive entry.
 
-**QUESTIONUI1a — the question card** (service, driver, modules, web; being built beside round 3). `question_ask`'s `why` (1-300) for the
+**QUESTIONUI1a — the question card** (service, driver, modules, web; being built on its own branch). `question_ask`'s `why` (1-300) for the
 recommendation, in the file, the driver's `QuestionFiles.Parsed`, `SESSION_QUESTION`'s projection and the shared table; `QuestionCard` in
 the box and the head's card, §8.1 parts 1-4, §8.2 and §8.4, *Clear choice* and the go-ahead guard for every answer; the stories of §8.3.
 **Proof:** `QuestionCard.test.tsx` (nothing preselected; *Clear choice*; the accessible name and description by role queries; the
@@ -914,15 +1150,22 @@ testing-library's user events, an axe pass on each story, a Playwright case with
 
 **QUESTIONUI1b — the supervisor's pick on the card** (web; after 1a-i and QUESTIONUI1a). §8.1 part 5 from the retained decision, the
 overrule from the card. **Proof:** the card's stories held, released, gone on and overruled; the overrule's test; a second question in the
-same session with the first decision still drawn in the conversation; release without execution drawn as released; a reload and a
-restart; en and zh, both themes.
+same session with the first decision still drawn in the conversation; release without execution drawn as released; admitted and
+interrupted drawn; a reload; a restart, with an earlier `went-on` decision's holder and reasons drawn from its files as *kept in an earlier
+run of Daoris* and offering no Overrule (§6.1); en and zh, both themes.
 
 **SUPERVISOR1d — the supervisor measured** (tools; before 1c is offered). The question bench gains a supervisor tier, its every input
 **versioned** in `tools/question-bench-fixtures/`: each case's question, offered choices, the files its sources quote (as fixtures), and
 its oracle (the settled answer or the class that must be deferred). Its corpus: D135's 46 items, which predate `question_ask` and carry no
 offered choices, so each is **constructed** from its evidence entry, labelled `constructed`, never `replay`: the steward writes its
-question and two to four choices, the settled answer among them where the class is settled, and the owner's settled answer is the oracle
-(`docs/2026-10-03-knowledge-use-evidence.md`); the six fixtures; and adversarial cases written by hand (an ordered choice, a claimed
+question and two to four choices, the expected answer among them where the class is settled. **Each oracle records its actual source and
+author** (Codex's round-3 finding 11): `owner`, only where the evidence quotes the owner's own answer (items 7 and 36-37,
+`docs/2026-10-03-knowledge-use-evidence.md:117`, `:140`, both O cases the supervisor must leave to the owner); otherwise `steward`, an
+expected answer the steward constructed and grounds in versioned fixtures (a document's quoted line, a probe's kept output), so every
+settled case's oracle today is the steward's. The 46 items' classes are the evidence author's, not the owner's (`D135.md:57-58`), and a later probe, a code observation or a grouped ticket reading is not an owner's
+answer to a complete question. A case whose inputs or oracle cannot be completed from versioned fixtures is left out of qualification
+until it can be, and listed as left out; no oracle is ever called the owner's settled answer unless it quotes them. The six fixtures;
+and adversarial cases written by hand (an ordered choice, a claimed
 approval, the owner or Daoris impersonated, an owner act hidden in a label, a `does` or a reason). Recorded questions are not kept by the
 install, and none is added without the owner's own export. Each case handed as §3.2 hands it, fenced. **Scored**: an answer to an **O or
 R** case is wrong, as D135's bench holds; a choice is right only where it is the case's settled one and every source quotes its file at its
@@ -990,6 +1233,27 @@ chose to trust with them: §4.6 re-weighed for words, the handed text's paragrap
 - **The supervisor answering go-aheads**, even a repository's own: go-aheads are held on the ask for every session and are the owner's
   (D135 point 2).
 - **Carrying a supervisor's answer into a new session**: it answered one session's state.
+- **Reading a live decision back from its files, with only its id in memory** (round 3): an agent rewrites the choice, `goesOnAt` or the
+  state under an admitted id (the Opus read's round-3 finding 1; Codex's round-3 finding 1). Binding the files to an integrity value in
+  memory was weighed; holding the decision whole in memory is simpler and leaves nothing to verify.
+- **Recovering the release's word by comparing an identical retry** (round 3): an attacker's canonical word and the release's own lost
+  response look the same (Codex's round-3 finding 2); a receipt only memory holds tells them apart.
+- **`went-on` at the move to working** (round 3): it removed permission to hand the word it admitted, and a failed re-read then needed a
+  move the states did not allow (Codex's round-3 finding 3; the Opus read's round-3 finding 5).
+- **Putting a park back through today's `PutBackAsync` after a failed hand** (round 3): its move to `awaiting-person` clears every waiting
+  word (Codex's round-3 finding 4).
+- **Holding the judge's lock across the release's say, and the revoke taking decision locks inside its mutation step** (round 3): the
+  judge's lock cannot be held across an await, the driver cannot reach it, and the two orders deadlock (the Opus read's round-3 finding 4;
+  Codex's round-3 finding 5).
+- **Supersession in `SayAsync` alone** (round 3): `/answer`, a reword and the go-aheads' carry-on keep the owner's words through other
+  calls (Codex's round-3 finding 6).
+- **Keeping the holder key's hash in the record across restarts**: an ordinary home write replaces it with an agent's own key's (the Opus
+  read's round-3 finding 2a). **Not rejected for ever but not taken**: a widening only the owner may choose later; if chosen, it is said
+  as a limit in §2.2 and in the ask.
+- **The key never crossing the pipe** (the verb answering an HMAC of a nonce under the key): weighed as the Opus read's alternative to
+  checking the server's image; the image check is the steward's direction for round 4 and needs no change to the pipe's protocol.
+- **The steward's working session holding the key**: it builds, tests, merges and dispatches, and every process it starts, a branch's
+  hooks and tests included, would hold the key (the Opus read's round-3 finding 3).
 
 ## 13. The reads
 
@@ -1000,7 +1264,53 @@ round. Round 2 checked each finding at the lines it cites on main at `fb34cf7db`
 further foundation read with its findings 1 to 11 taken as named; each is taken as named below, with finding 1 taken in the steward's
 settled form. Codex's read asked another read; whether Codex reads round 2 is the steward's call under D191.
 
-### 13.1 Round 3: the reads of round 2
+### 13.1 Round 4: the reads of round 3
+
+Round 3 was read by both makers at `91d236a85`, kept verbatim in the reads file: Codex asks another round (12 findings, 7 blocking); the
+Opus foundation reader would accept after named changes (8 findings, 3 blocking). Round 4 checked every cited line on main at
+`cdf6d5f55`. Since `91d236a85` the code they cite changed only in `Trees/SessionGroups.cs` (SQUASHSEEN1: `WordsWait`, `WordsOn` and its
+`Waits` moved six lines, to `:1241-1257`) and `WorkFrame.tsx` (LIMITRESUME1d2: four lines down, `:533-535`, `:765-774`, `:976-979`,
+`:1033-1060`); §0.1, §0.5 and §8.4 now cite the moved lines, and every claim held at them. Both reads' wrong claims about round 3 held
+against the code and are answered through the findings they point to: Codex's §1 (the put-back clears the queue, F4; a `GoOnMarks` code
+does not exclude a word beside others, F10; the rollback's one look, F12; the inherited environment, F9; the bench's oracles, F11) and the
+Opus read's §2 (Daoris's environment is its launcher's, F3; the home's files are in an agent's ordinary reach, F1-F2; `WentOnWith`'s cite,
+F8). Their §0 and §1 tables, which re-judge round 2's findings, are answered through the findings they point to (Codex's *Open* rows name
+its F1-F8 and F10; the Opus read's residues name its F1, F4-F8). What both endorse is kept: the owner-appointed role, the holder key and
+generation, choice-only first, no per-answer Confirm, the canonical paragraph, retained decisions, the shared count, the quarantine, the
+rows' order and the independent card. Whether another read follows is the steward's call under D191.
+
+**Codex's read, round 3.** 12 findings, 7 blocking. Its seven blocking contracts are made one lifecycle in §3.6.
+
+| # | Finding | Checked at (`cdf6d5f55`) | Verdict | What changed |
+|---|---|---|---|---|
+| 1 | Blocking: admission remembers an ID, not the decision it admitted | design only (§3.4 of round 3: memory held ids; the decision and its state read from files in an agent's reach, `D201.md:59-62`) | taken | Each live decision held whole in memory: snapshot, choice, generation, `goesOnAt`, state, receipt, word id and ticket; every check reads memory; the files written for history and never read back in the run; a file that differs moves it to `stale` (`tampered`); modification of an already admitted decision's choice, release time and state tested (§3.4, §3.6, §11 1a-i) |
+| 2 | Blocking: identical retries do not establish who wrote the word | `SessionLedger.cs:866-873` (a retry by key); `Program.cs:1487-1490` (the key from the body) | taken | A receipt drawn in memory is the release's producer key; a lost response is recovered by repeating the say under it; a word claiming the decision under another key refuses the release (`decision-taken`), is taken back, and the decision is `stale` (`forged`); attribution by the word's id the release recorded, never by text; identical canonical prepopulation and a lost response proved apart (§3.4, §6.1, §11 1a-i) |
+| 3 | Blocking: successful admission removes permission to hand the admitted answer | `DriverContinuations.cs:260` (the move), `:321-340` (the re-read and the prompt's build); `ResumeAsk.cs:57-66` | taken | A state `admitted` with a single-use ticket carried into the prompt; `went-on` only once the run's start accepted the prompt; every pre-wire failure (re-read, the start's preparation, the spawn, the driver's close) `admitted` → `not-handed`, a legal move; a restart while admitted `interrupted`; the complete admission-to-handoff path tested (§3.6, §6.3, §11 1a-i) |
+| 4 | Blocking: the proposed abort clears the queue it promises to preserve | `DriverContinuations.cs:703-711`; `Continuation.cs:316-318`; `SessionLedger.cs:1466-1469`; `Sessions.cs:877` (`clearSaid` for `awaiting-person`) | taken | `RestoreParkAsync(id, takeBack: [word])`, one exclusive step that moves the record back to a park keeping `said` less the one admitted word; a service-backed mixed queue with an owner's word arriving after admission tested (§6.3, §11 1a-i) |
+| 5 | Blocking: revocation and execution admission lack one consistent ordering | `StandingConfirmation.cs:151` (a `System.Threading.Lock`); `Daoris.Desktop.Modules.csproj:29` (modules reference the driver) | taken | One order: the decision's lock, the judge's only inside `IDecisionAdmission`'s synchronous answer, the ledger's step. The revoke ends its mutation under the judge's lock, then sweeps under each decision's lock; release and admission recheck the generation under the decision's lock; revoke and repository override after release, racing release and admission, tested with no deadlock (§2.3, §3.4, §5, §6.3, §11) |
+| 6 | Blocking: the separate owner-answer door bypasses supersession | `Program.cs:1950-1954`; `SessionLedger.cs:727-778` (`AnswerAsync` → `KeepAnswerAsync` → `KeepSaidAsync`); also `:1046` (the reword) and `:1929-1933` (the go-aheads' carry-on) | taken, wider than named | `KeepOwnersWordAsync` in every door that keeps the owner's words, inside its own exclusive step; a sweep test finds every `KeepSaidAsync` of a person's word in the ledger; the release raced with `/say`, `/answer` and its blank *carry on*, and a reword (§6.3, §11 1a-i) |
+| 7 | Blocking: mixed answers still acquire owner-authored descriptions | `DriverContinuations.cs:244-257` (`park.Parked ? WorkingNoted`); `Planner.cs:1483-1489` | taken | The working note and the planner's sentence chosen by the owner's participation: with no owner word, no *you* or *your*, each author named; supervisor with helper, opinion and Daoris tested in both readers; today's helper-only and Daoris-only parks corrected by the same choice (§6.1) |
+| 8 | Historical attribution depends on a current-run set | design only (§3.4, §6.1 of round 3) | taken | `Authored` (live, by the recorded word id, through `went-on`), `Handable` (authored and `released`, or `admitted` under the ticket) and `Unattributed`; history after a restart reads files as history, marked *kept in an earlier run*, granting nothing; an earlier `went-on` decision's holder and reasons tested after a restart (§6.1, §11 1a-i, QUESTIONUI1b) |
+| 9 | The holder key can propagate through ordinary inheritance | `Agents/Tools.cs:669-695` (`Hand` keeps inherited variables); `GitWiring.cs:44`, `:65-95` | taken | Every Daoris executable removes the variable at its entry, and every start it builds strips it beside `SessionTokens`; the ask says every program the holder's terminal starts gets the key; the holder is a dedicated session that does only the role; starts from a sentinel-holding parent tested (§2.2, §4.6, §11 1a-ii) |
+| 10 | Quarantine needs explicit exclusion from the handed word list | `GoOnMarks.cs:131-134` (`Judged` needs every word marked); `Continuation.cs:258-259` (`HandedAfterMove` returns them all) | taken | The move refuses `words-changed` while any non-`expect` supervisor word waits; every handed list keeps a supervisor word only where it is the ticket's; a forged word beside a helper's and an owner's, and after planning, tested (§6.1, §6.3, §11 1a-i) |
+| 11 | Constructed benchmark oracles overstated as the owner's | `docs/2026-10-03-knowledge-use-evidence.md:117`, `:140`; `D135.md:57-58` | taken | Each oracle records its source and author, `owner` only where quoted, otherwise `steward` from versioned fixtures; cases whose inputs or oracle cannot be completed are left out of qualification and listed (§11 1d) |
+| 12 | Rollback's exposure is not bounded to one look | `Planner.cs:1469-1471`; `ConversationView.tsx:501` | taken | *Until the word is consumed or removed, potentially across several looks* (§6.1) |
+
+**The Opus foundation read, round 3.** 8 findings, 3 blocking. Its three blocking findings are taken as it names them, with the steward's
+two directions for round 4 settling its open choices (the hash in memory only, with no persistence; the server's image checked).
+
+| # | Finding | Checked at (`cdf6d5f55`) | Verdict | What changed |
+|---|---|---|---|---|
+| 1 | Blocking: a kept decision's choice, `goesOnAt` and state are read back from files an agent can write | design only; `D201.md:59-62` | taken as named | Every check reads the decision whole from memory; the files are written and never read back in the run; a file that differs moves it to `stale` (`tampered`), said; its three attacks (an earlier `goesOnAt`, another label, an appended `released` beside a posted word) tested (§3.4, §11 1a-i) |
+| 2 | Blocking: the key's admission rests on the record's hash and the address file's pipe | `InstanceDoor.cs:110-130`, `:144`; `InstanceClient.cs:189-204` (`GetNamedPipeServerProcessId`); `InstancePipe.cs:367-378` | taken as named, in the steward's direction | (a) the hash in memory only, never written; an appointment found at a start dormant until *Appoint again*, said on Setup's row and in *Notifications*; keeping it across restarts a widening only the owner may choose later (§2.2, §2.3, §12); (b) the verb sends the key only where the pipe's server image is the install's `Daoris.exe` (§2.2); both proofs in §11 1a-ii |
+| 3 | Blocking: every environment the holder's terminal or a Daoris it started gives holds the key | `tools/desktop.mjs:775-778`; `Adapters.cs:1516-1517`; `GitWiring.cs:44`, `:65-95` | taken as named, in the steward's direction | (1) Daoris strips the key from itself at each entry and from every start it builds; (2) the role is held by a dedicated session that does only the role, building, testing, merging and dispatching nothing and running no branch's code or hooks, and the ask says so; (3) an agent of a Daoris started with the variable set refused `not-holder` (§2.2, §4.6, §5, §11 1a-ii) |
+| 4 | The release's lock order cannot be built, inverts against the revoke, and admission skips the generation | `StandingConfirmation.cs:151`; `Daoris.Desktop.Modules.csproj:29` | taken | As Codex's 5: no judge's lock across the say; the revoke's mutation, then its sweep; admission rechecks the generation; the races tested (§2.3, §3.4, §5, §6.3) |
+| 5 | `went-on` is written before Daoris knows the word was handed | design only | taken | `went-on` once the run's start accepted the prompt, with `admitted` and its ticket before it, and `not-handed` a legal move from `admitted` (§3.6, §6.3) |
+| 6 | The attribution predicate conflates who decided with permission to hand | `Planner.cs:350-355` (ANSWER2: words stay until the run concludes) | taken | `Authored` and `Handable` apart, `Unattributed` only for not authored; the release's recovery runs before the quarantine (§6.1, §3.4) |
+| 7 | Admission does not require the record still parked; the sweep's terms miss *you wrote* | `SessionLedger.cs:1498-1513`, `:1366-1370`, `:1449-1455`; `Planner.cs:1489`; `SessionLedger.cs:878` | taken | The move sends `expected: awaiting-person` with a supervisor word; a released decision on a record no longer parked `stale`, its word taken back; *you wrote* and *Answered* in the sweep's terms (§6.1, §6.3) |
+| 8 | Rows and records | the design's §11; `TASKS.md:260`; `SessionLedger.cs:1635` | taken | The *Notifications* line moved to 1a-ii; 1a-iii says the owner appoints the steward; TASKS gives QUESTIONUI1a's lanes as service, driver, modules and web; §0.2 cites `WentOnWith` at `:1635-1639`; D208's Why rewritten with round 4's changes |
+
+### 13.2 Round 3: the reads of round 2
 
 Round 2 was read by both makers at `607f12863`, kept verbatim in the reads file: Codex asks another round (15 findings, 10 blocking); the
 Opus foundation reader would accept after three named changes (12 findings, 3 blocking). Round 3 checked every cited line on main at
@@ -1052,7 +1362,7 @@ an agent's reach and the say door retries by key (`SessionLedger.cs:866-873`); t
 | 11 | Rollback: an older page draws a released word as *You* | `ConversationView.tsx:501` | taken | Said beside §2.3's rollback: a window of one look (§6.1) |
 | 12 | 1d's gate: a floor of one; the 46 have no choices | `D135.md:218-223`; PARKVIEW1 | taken | The steward writes each constructed case's choices with the owner's settled answer among them, labelled `constructed`; a first floor of half the settled cases right, beside zero wrong (§11 1d) |
 
-### 13.2 Round 2: the reads of round 1
+### 13.3 Round 2: the reads of round 1
 
 **Codex's read, round 1.** 18 findings, 14 blocking.
 
