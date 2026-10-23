@@ -115,6 +115,9 @@ public sealed class HandOverProcessTests : IDisposable
             () => StubFile.Text(DaorisHome.Entry(_home, HomeEntry.Sessions,$"{next}.log")).Contains($"heard: You continue session `{old}`, which ran on acp-stub"),
             () => Seen(ledger, events, next));
         Assert.Contains("Make the port configurable.", StubFile.Text(DaorisHome.Entry(_home, HomeEntry.Sessions,$"{next}.log")));
+        // The new maker is told how it signs its commits; the conversation it continues was not (MAKERTRAIL1, MAKERTRAIL1b).
+        Assert.Contains("This start runs on `stub`", StubFile.Text(DaorisHome.Entry(_home, HomeEntry.Sessions,$"{next}.log")));
+        Assert.DoesNotContain("This start runs on", StubFile.Text(DaorisHome.Entry(_home, HomeEntry.Sessions,$"{old}.log")));
         Assert.Equal("chat.handed-over", events.After(old, 0).Events.Select(CodeOf).Last(code => code is not null));
         Assert.Equal(next, NewSessionOf(ledger, old));
         // The take clears the box last, after the old one's last line: poll, as CurveMoveProcessTests does.

@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-24 - Every conversation was told its commit attribution ahead of the person's first words (MAKERTRAIL1b)
+
+- **Symptom:** after MAKERTRAIL1 landed, 7 of `ChatGoesOnProcessTests`' 13 and 6 of `ProtocolChatTests`' 15 failed on main: the
+  stub agent heard *This start runs on …*, the commit-attribution brief, before the person's first words. MODELROLE1b's builder
+  found it on main and its land test showed it. The install's conversations in the person's checkout and Ask Daoris's were told
+  it too.
+- **Root cause:** MAKERTRAIL1 meant the brief for a conversation in a tree it grew, which is told its process, and for a handed-over
+  conversation, whose new maker may sign differently (its comment in `ChatRunner` says so). Its `else` gave the brief to every
+  conversation that opened no tree, against D164's amendment point 4 (the person's checkout is told nothing ahead of their
+  words). MAKERTRAIL1's land test ran only its changed classes (`AdapterTests`), so the chat stub tests that pin the first
+  prompt were not run until a later land test.
+- **Fix:** the brief goes to a conversation in a tree it grew, as before, and to one that continues another (`from` set: a hand-over
+  or a limit's move); any other conversation is told nothing ahead of the person's words (`ChatRunner.cs`).
+- **Verify:** `HandOverProcessTests`' first case now asserts the new conversation hears its maker's attribution and the one it
+  continues did not; `ChatGoesOnProcessTests` 13 of 13 and `ProtocolChatTests` 15 of 15, whose exact first prompts are the
+  negative case, with `process.runsettings` (33 with the hand-over class); the driver's fast half, 14,168.
+
 ## 2026-10-24 - An intake, an opinion and a helper a limit cut off never ran again by themselves (LIMITRESUME1h)
 
 - **Symptom:** none seen on the install yet; D206 design §3.8 read it from the code. An intake an account's limit ended used up its

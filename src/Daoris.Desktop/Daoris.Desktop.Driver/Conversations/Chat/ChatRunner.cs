@@ -531,9 +531,11 @@ public sealed class ChatRunner : IDisposable
             _service, _events, sessionId, resolved.Name, selection, from is { Why: HandOverWhy.Limit } ? LimitCarried(from.Session) : null);
 
         // A conversation in a tree it grew is told its process with its first message. A handed-over conversation also needs
-        // its new maker's attribution: the record it continues may carry a different maker's instruction (MAKERTRAIL1).
+        // its new maker's attribution: the record it continues may carry a different maker's instruction (MAKERTRAIL1). Any other
+        // conversation, in the person's checkout or Ask Daoris's, is told nothing ahead of the person's words (D164's amendment
+        // point 4; MAKERTRAIL1b).
         if (opened is not null) _toldProcess[sessionId] = await ProcessToldAsync(opened.Path, sessionId, config, known, opened.Dependencies, resolved, ct).ConfigureAwait(false);
-        else
+        else if (from is not null)
         {
             var commits = CommitRules.Resolve(config, known.Repository, known.Workspace);
             _toldProcess[sessionId] = new ProcessBriefing(CommitTrailers.For(resolved), commits.Rule.Mode, commits.Source);
