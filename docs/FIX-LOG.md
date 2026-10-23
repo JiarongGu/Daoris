@@ -22,8 +22,9 @@ repository.
   `chat.not-kept` is said beside a stop. `help resume` says `never-spoken`.
 - **Verify:** `ChatGoesOnProcessTests` and `LimitResumeTickTests` with `process.runsettings`, 34 of 34. `ChatTurnsTests`,
   `HarnessConversationsTests`, `HelpCommandTests`, `StrikeTests`, `ChatGoOnTests`, `NoteCodesTests` and `HelpCoverageTests`,
-  246 of 246. `DriverLoopChatTakenUpTests` and `InstallUpdaterTests`, 21 of 21. `noteLines.test.ts`, 75, and `i18n:check`.
-  The installed proof is 1g's. Detail: D206's LIMITRESUME1i note.
+  246 of 246. `SessionMessagesTickTests`, whose stand-in changed, 19 of 19. `DriverLoopChatTakenUpTests` and
+  `InstallUpdaterTests`, 21 of 21. The driver's fast half, 14,173. `noteLines.test.ts`, 75, and `i18n:check`. The installed
+  proof is 1g's. Detail: D206's LIMITRESUME1i note.
 
 ## 2026-10-24 - Every conversation was told its commit attribution ahead of the person's first words (MAKERTRAIL1b)
 
