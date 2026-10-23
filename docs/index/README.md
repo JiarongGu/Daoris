@@ -71,7 +71,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/frame/frame.tsx` | 44 | 932 |
 | `src/Daoris.Web/src/work/head/SessionHead.test.tsx` | 69 | 1311 |
 | `src/Daoris.Web/src/work/noteLines.test.ts` | 90 | 1320 |
-| `src/Daoris.Web/src/work/noteLines.ts` | 53 | 912 |
+| `src/Daoris.Web/src/work/noteLines.ts` | 53 | 915 |
 | `src/Daoris.Web/src/work/rail/SessionRail.test.tsx` | 54 | 1061 |
 | `src/Daoris.Web/src/work/rail/SessionRow.test.tsx` | 41 | 763 |
 
@@ -149,7 +149,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/AgentAccountsCommand.cs` | 48 | 907 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/AgentsCommand.cs` | 53 | 985 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatGoOn.cs` | 49 | 899 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.cs` | 176 | 3097 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.cs` | 176 | 3105 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatTurns.cs` | 50 | 1108 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Domain/ContextBrief.cs` | 44 | 861 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/DrivenInbox.cs` | 50 | 1150 |
@@ -162,7 +162,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverWatch.cs` | 66 | 1113 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/DriverChoicesCommand.cs` | 127 | 2284 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/DriverConfig.cs` | 96 | 1621 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/NoteCodes.cs` | 93 | 1409 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/NoteCodes.cs` | 93 | 1415 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/SpaceFree.cs` | 40 | 849 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/SystemWiring.cs` | 51 | 1072 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Hooks.cs` | 62 | 1216 |

@@ -20195,3 +20195,18 @@ and effort) and `IntakeTests` (a walk past a missing agent; a first account's re
 the room's goldens and the web's AI features tests. **Remaining, as MODELROLE1d2:** §3.5(b)'s pending conversation start and what
 follows it, and the curve move's reading; the installed-window proof. Detail: D205's MODELROLE1d note;
 `docs/2026-10-24-modelrole1d-build.md`.
+## LIMITGOON2 — a conversation whose agent has no account left goes on with another agent (2026-10-24, D205 §3.5(e), D163)
+
+> - [ ] **LIMITGOON2 — a conversation whose agent has no account left goes on with another agent** (driver, modules, web; after LIMITGOON1 and MODELROLE1's row c; the owner's direction, 2026-10-23). Where every account of the conversation's agent is cooling, the conversation goes on with its actor's next choice on another agent (D205's range) as a new part carrying Daoris's brief and the waiting words, said once with the agent it moved to; never a maker the person did not allow for that actor. Ask Daoris's conversation is included, as the named exception to its *never goes on elsewhere*, its new part in its workspace's room (D205's round-4 note, design §3.5(e)). Proof: a stand-in agent with every account cooling, the conversation going on with a second stand-in agent, and one with no other choice holding with its reason.
+
+(Quest `#1eae764e7516`.)
+
+**Outcome** 2026-10-24: at the refused turn's end, where no account of its agent has room, `LimitMove` walks the actor's effective
+order without that agent and opens the new part on the first choice that can run: a chat in its tree, continuing the old by the
+limit and told the earlier maker's trailer for work left uncommitted; Ask Daoris in its workspace's room, linked in its history.
+Each is handed Daoris's brief and the held words, and the old part says once which agent it went on with. A pick, or an order with
+no other choice that can run, waits, saying why (`chat.limit-picked`, `chat.limit-no-other`, en and zh). The five places that say Ask
+Daoris never goes on elsewhere name this exception. Held by `LimitGoesElsewhereProcessTests` (two stand-in agents: a chat, Ask
+Daoris with a person's hand-over still refused, a pick and an order of one each waiting), with `LimitGoesOnProcessTests` and
+`LimitWaitsProcessTests` unchanged. Not covered: an ended conversation's move at the wake, which stays on its agent, and the
+refused replacement and restart of §3.5(b), MODELROLE1d2's. Detail: D205's and D163's LIMITGOON2 notes.
