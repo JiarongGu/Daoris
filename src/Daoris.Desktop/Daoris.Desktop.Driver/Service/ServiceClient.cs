@@ -2423,6 +2423,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
                 // COWORK1c: its level, and when a dispatcher first wrote it to a harness; a host from before says neither.
                 Level = MessageLevels.Read(Text(word, "level")),
                 Attempt = Moment(word, "attempt"),
+                // SUPERVISOR1a-i: the decision a supervisor's word claims; a host from before says none.
+                Decision = Text(word, "decision") is { Length: > 0 } decision ? decision : null,
             }
             : null;
 

@@ -77,6 +77,12 @@ public enum SessionAdvanceRefusal
     /// holds for going on as for a start.
     /// </summary>
     Busy,
+
+    /// <summary>
+    /// A move to working whose waiting supervisor's words are not exactly the ones it names (SUPERVISOR1a-i, the supervisor design
+    /// §6.3): a plan made before a release, before a take-back or beside a word Daoris cannot attribute never moves the record.
+    /// </summary>
+    WordsChanged,
 }
 
 /// <summary>Why the person's words were not kept for a session to go on with (MSG1a, D137 §5.3) — or <see cref="None"/>.</summary>
@@ -130,6 +136,45 @@ public enum SessionSayRefusal
     /// point nobody asked for, so nothing is kept.
     /// </summary>
     Level,
+
+    /// <summary>
+    /// A supervisor's say named words of its own (SUPERVISOR1a-i, the supervisor design §6.1): its text is the service's, composed from
+    /// the choice alone (<see cref="SupervisorWord.Handed"/>), so a caller's text is refused and nothing kept.
+    /// </summary>
+    SupervisorText,
+
+    /// <summary>
+    /// A say under a key a word already waits with, carrying another author, decision, question, choice or text (SUPERVISOR1a-i,
+    /// §3.4): a retry is the same say, so a different one is refused, never answered with the word kept.
+    /// </summary>
+    KeyMismatch,
+
+    /// <summary>A word claiming this decision already waits under another key (SUPERVISOR1a-i, §3.4): it was never the release's.</summary>
+    DecisionTaken,
+
+    /// <summary>The supervisor's word is kept only on a park (SUPERVISOR1a-i, §3.1 <c>not-parked</c>).</summary>
+    NotParked,
+
+    /// <summary>The supervisor's record holds no quest, or its quest is on no ask whose go-aheads it could read (§3.1 <c>no-quest</c>).</summary>
+    NoQuest,
+
+    /// <summary>The question on file is not the one the decision answers (§3.1 <c>question-changed</c>).</summary>
+    QuestionChanged,
+
+    /// <summary>The choice is not one of the question's labels exactly (§3.1 <c>not-offered-choice</c>).</summary>
+    NotOfferedChoice,
+
+    /// <summary>A go-ahead on the session's ask is open: go-aheads are the owner's alone (D135 point 2; §3.1 <c>go-ahead-open</c>).</summary>
+    GoAheadOpen,
+
+    /// <summary>The ask's go-aheads cannot be read (§3.1 <c>go-ahead-unread</c>).</summary>
+    GoAheadUnread,
+
+    /// <summary>A word of the owner's waits on the record (§3.1 <c>owner-answered</c>): their words win.</summary>
+    OwnerAnswered,
+
+    /// <summary>This host keeps no home, so no question file to check: a supervisor's word is a desktop's alone (§3.4 <c>no-home</c>).</summary>
+    NoHome,
 }
 
 /// <summary>What marking words attempted did (COWORK1c): the record as it now stands, and the words named that no longer wait.</summary>
@@ -276,8 +321,12 @@ public sealed record SessionDeleteOutcome(SessionDeleteRefusal Refusal, string M
 /// sessions in one tree collide by construction rather than by string comparison, and what keeps
 /// behaviour identical for every caller that has not learned about trees yet.</para>
 /// </remarks>
+/// <param name="home">
+/// This machine's home, where a park's question is filed (<see cref="QuestionBox"/>), or null on a host with none: a supervisor's word is
+/// then refused <see cref="SessionSayRefusal.NoHome"/>, since its question cannot be checked (SUPERVISOR1a-i).
+/// </param>
 public sealed class SessionLedger(
-    QuestStore quests, SessionStore sessions, KnowledgeService? registry = null, AskStore? asks = null)
+    QuestStore quests, SessionStore sessions, KnowledgeService? registry = null, AskStore? asks = null, string? home = null)
 {
     /// <summary>The go-ahead family over the ledger's stores (PART6).</summary>
     private readonly SessionGoAheads goAheads = new(quests, sessions, asks);
@@ -775,7 +824,24 @@ public sealed class SessionLedger(
     {
         var word = new SaidWord(NewWordId(), said, now, []);
         var (note, parts) = AnsweredNote(parked, said);
-        return sessions.KeepSaidAsync(parked.Id, word, note, inside, noteParts: parts);
+        return KeepOwnersWordAsync(parked, word, note, parts, inside);
+    }
+
+    /// <summary>
+    /// Keep a word on a record inside its door's own step, the owner's words superseding (SUPERVISOR1a-i, the supervisor design §6.3):
+    /// where the person's word lands on a park, every waiting <see cref="SaidFrom.Supervisor"/> word is taken back in the same step, so no
+    /// read ever sees both and the park goes on with the owner's words alone. Every door that keeps a person's word keeps it here: the say,
+    /// the answer, a reword and the go-aheads' carry-on; a sweep test holds that no other keeps one.
+    /// </summary>
+    private async Task<Session?> KeepOwnersWordAsync(Session session, SaidWord word, string? note, string? parts, CancellationToken inside)
+    {
+        if (word.Persons && session.State == SessionState.AwaitingPerson
+            && session.Said.Where(each => each.Supervisors).Select(each => each.Id).ToList() is { Count: > 0 } superseded)
+        {
+            await sessions.TakeSaidAsync(session.Id, superseded, inside).ConfigureAwait(false);
+        }
+
+        return await sessions.KeepSaidAsync(session.Id, word, note, inside, noteParts: parts).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -813,10 +879,27 @@ public sealed class SessionLedger(
     /// which that driver's one dispatcher hands its run and takes off once on the wire. Without it a running record refuses as before,
     /// since only that driver hands a running session its words.
     /// </param>
+    /// <param name="decision">With <c>from: supervisor</c> only: the decision whose release this is (SUPERVISOR1a-i).</param>
+    /// <param name="question">With <c>from: supervisor</c> only: the recorded question it answers.</param>
+    /// <param name="choice">With <c>from: supervisor</c> only: the offered label it chose, from which the service composes the text.</param>
     public async Task<SessionSayOutcome> SayAsync(
         string id, string? text, IReadOnlyList<string>? files, DateTimeOffset now, CancellationToken ct = default, string? channel = null,
-        string? from = null, string? key = null, string? level = null, bool running = false)
+        string? from = null, string? key = null, string? level = null, bool running = false,
+        string? decision = null, string? question = null, string? choice = null)
     {
+        if (from == SaidFrom.Supervisor)
+        {
+            return await SuperviseAsync(id, text, files, now, channel, key, level, decision, question, choice, ct).ConfigureAwait(false);
+        }
+
+        if (decision is not null || question is not null || choice is not null)
+        {
+            return new(
+                SessionSayRefusal.From,
+                "A decision, a question and a choice are the supervisor's alone: words from any other author name none, so nothing was kept.",
+                Session: null);
+        }
+
         var words = text?.Trim() ?? "";
         if (words.Length == 0)
         {
@@ -876,14 +959,197 @@ public sealed class SessionLedger(
             var word = new SaidWord(
                 NewWordId(), words, now, Names(files), Reopens: !parked && !forRun, Channel: channel, From: from, Key: key, Level: level);
             var (note, parts) = parked ? AnsweredNote(session, words, from) : (null, null);
-            var kept = await sessions
-                .KeepSaidAsync(id, word, note, inside, noteParts: parts)
-                .ConfigureAwait(false);
+            var kept = await KeepOwnersWordAsync(session, word, note, parts, inside).ConfigureAwait(false);
             return new SessionSayOutcome(SessionSayRefusal.None, forRun ? ForRunMessage(id, from) : KeptMessage(session, from), kept, word)
             {
                 Answers = parked,
             };
         }, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Keep the supervisor's answer on a park, the release's one conditional step (SUPERVISOR1a-i, D208; the supervisor design §3.4):
+    /// its text composed here from <paramref name="choice"/> (<see cref="SupervisorWord.Handed"/>), its key the release's receipt, and
+    /// every check made inside the store's one exclusive step, so nothing is kept where any fails.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>A claim, never an authority.</b> Any caller can reach this door; what makes a word the supervisor's is the driver's
+    /// memory of the id its own release was answered with, never this word's fields. So nothing here grants: a word kept by another
+    /// caller is unattributed by the driver, quarantined and taken back. No answered line is written on the note, so a forged word
+    /// leaves nothing that asserts authority; the supervisor's line is the driver's, for an attributed word.</para>
+    ///
+    /// <para><b>The key's retry compares</b> its author, decision, question, choice and text, so a lost response is recovered with the
+    /// word already kept and a different say under the same key is refused (<see cref="SessionSayRefusal.KeyMismatch"/>). A word claiming
+    /// the decision under another key was never the release's (<see cref="SessionSayRefusal.DecisionTaken"/>).</para>
+    /// </remarks>
+    private async Task<SessionSayOutcome> SuperviseAsync(
+        string id, string? text, IReadOnlyList<string>? files, DateTimeOffset now, string? channel, string? key, string? level,
+        string? decision, string? question, string? choice, CancellationToken ct)
+    {
+        if (!string.IsNullOrWhiteSpace(text) || files is { Count: > 0 })
+        {
+            return new(
+                SessionSayRefusal.SupervisorText,
+                "The supervisor's answer is composed by this service from its choice alone: a say naming words or files of its own keeps nothing.",
+                Session: null);
+        }
+
+        if (string.IsNullOrWhiteSpace(decision) || string.IsNullOrWhiteSpace(question) || string.IsNullOrEmpty(choice)
+            || string.IsNullOrWhiteSpace(key) || channel is not null || level is not null)
+        {
+            return new(
+                SessionSayRefusal.From,
+                "Words from the supervisor are kept only with their decision, question, choice and key, and no channel or level: nothing was kept.",
+                Session: null);
+        }
+
+        if (home is null)
+        {
+            return new(
+                SessionSayRefusal.NoHome,
+                "This host keeps no home, so no park's question to check: the supervisor's answer is a desktop's alone, and nothing was kept.",
+                Session: null);
+        }
+
+        var handed = SupervisorWord.Handed(choice);
+        return await sessions.ExclusiveAsync(async inside =>
+        {
+            var session = await sessions.FindAsync(id, inside).ConfigureAwait(false);
+            if (session is null)
+            {
+                return new SessionSayOutcome(SessionSayRefusal.NotFound, $"No session `{id}`.", Session: null);
+            }
+
+            if (Never(session) is { } never) return never;
+
+            // The retry first: a lost response is answered with the word its receipt kept, whatever moved since.
+            if (session.Said.FirstOrDefault(each => string.Equals(each.Key, key, StringComparison.Ordinal)) is { } again)
+            {
+                return again is { From: SaidFrom.Supervisor } && again.Decision == decision && again.Question == question
+                       && again.Choice == choice && again.Text == handed
+                    ? new SessionSayOutcome(
+                        SessionSayRefusal.None,
+                        $"Already kept for session `{id}` under this key, as word `{again.Id}`: nothing more was kept.",
+                        session, again) { Again = true }
+                    : new SessionSayOutcome(
+                        SessionSayRefusal.KeyMismatch,
+                        $"A different word already waits on session `{id}` under this key: a retry is the same say, so nothing was kept.",
+                        Session: null);
+            }
+
+            if (session.Said.Any(each => each.Supervisors && each.Decision == decision))
+            {
+                return new SessionSayOutcome(
+                    SessionSayRefusal.DecisionTaken,
+                    $"A word claiming decision `{decision}` already waits on session `{id}` under another key: it was never this release's, "
+                    + "so nothing was kept.",
+                    Session: null);
+            }
+
+            var refused = await SupervisedParkAsync(session, question, choice, inside).ConfigureAwait(false);
+            if (refused is not null) return refused;
+
+            var word = new SaidWord(
+                NewWordId(), handed, now, [], From: SaidFrom.Supervisor, Key: key, Decision: decision, Question: question, Choice: choice);
+            // The release's own keep, never a person's word: no answered line, and nothing taken back (an owner's word refused it above).
+            var kept = await sessions.KeepSaidAsync(id, word, note: null, inside).ConfigureAwait(false);
+            return new SessionSayOutcome(
+                SessionSayRefusal.None,
+                $"Kept the supervisor's answer for session `{id}`: it carries on with `#{session.Quest}` at the driver's next look, "
+                + "unless the owner says otherwise first.",
+                kept, word);
+        }, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Put a park the driver took up back as it was, less the supervisor's word it admitted (SUPERVISOR1a-i, the supervisor design §6.3):
+    /// a failure between the admission and the wire hands nothing, so the record returns to <c>awaiting-person</c> with
+    /// <paramref name="note"/>, the note as the look read it, <b>keeping every other waiting word</b>: a helper's, an opinion's,
+    /// Daoris's, and any word of the owner's that arrived after the admission. One exclusive step. Unlike a move to
+    /// <c>awaiting-person</c>, which clears the words for a park that asks anew, nothing is lost.
+    /// </summary>
+    /// <param name="takeBack">The admitted supervisor's words to take off; a word of any other author named here is left.</param>
+    public async Task<SessionAdvanceOutcome> RestoreParkAsync(
+        string id, IReadOnlyCollection<string> takeBack, string? note, string? noteParts, DateTimeOffset now, CancellationToken ct = default) =>
+        await sessions.ExclusiveAsync(async inside =>
+        {
+            var session = await sessions.FindAsync(id, inside).ConfigureAwait(false);
+            if (session is not { Origin: null })
+            {
+                return new SessionAdvanceOutcome(SessionAdvanceRefusal.NotFound, $"No session `{id}` of this machine's.", Session: null);
+            }
+
+            // Only the record the driver took up and has not started: any other state is not this restore's to move.
+            if (session.State != SessionState.Working)
+            {
+                return new SessionAdvanceOutcome(
+                    SessionAdvanceRefusal.InvalidMove,
+                    $"Session `{id}` is {Spell(session.State)}, not the working record a go-on took up, so it was not restored.",
+                    Session: null);
+            }
+
+            var taken = session.Said
+                .Where(word => word.Supervisors && takeBack.Contains(word.Id, StringComparer.Ordinal))
+                .Select(word => word.Id)
+                .ToList();
+            if (taken.Count > 0) await sessions.TakeSaidAsync(id, taken, inside).ConfigureAwait(false);
+            var restored = await sessions
+                .SetStateAsync(id, SessionState.AwaitingPerson, note, evidence: null, transcript: null, now, inside, noteParts: noteParts)
+                .ConfigureAwait(false);
+            return new SessionAdvanceOutcome(
+                SessionAdvanceRefusal.None,
+                $"Session `{id}` waits on the owner again: the supervisor's answer was not handed, and {restored!.Said.Count} word(s) still wait.",
+                restored);
+        }, ct).ConfigureAwait(false);
+
+    /// <summary>
+    /// Why the supervisor's answer may not land on <paramref name="session"/> (SUPERVISOR1a-i, the supervisor design §3.1), or null:
+    /// read inside the say's step, the question from this service's own file and the go-aheads from the ask's record.
+    /// </summary>
+    private async Task<SessionSayOutcome?> SupervisedParkAsync(Session session, string question, string choice, CancellationToken inside)
+    {
+        var id = session.Id;
+        SessionSayOutcome Refused(SessionSayRefusal refusal, string message) => new(refusal, message, Session: null);
+
+        if (session.State != SessionState.AwaitingPerson)
+        {
+            return Refused(SessionSayRefusal.NotParked, $"Session `{id}` is {Spell(session.State)}, not parked: the supervisor answers only a park.");
+        }
+
+        if (session.Quest is null)
+        {
+            return Refused(SessionSayRefusal.NoQuest, $"Session `{id}` holds no quest, so no ask whose go-aheads the supervisor must leave open.");
+        }
+
+        if (session.Said.Any(each => each.Persons))
+        {
+            return Refused(SessionSayRefusal.OwnerAnswered, $"The owner's own words wait on session `{id}`: theirs win, so nothing was kept.");
+        }
+
+        if (QuestionBox.Read(home!, id) is not { } filed || !string.Equals(filed.Id, question, StringComparison.Ordinal))
+        {
+            return Refused(SessionSayRefusal.QuestionChanged, $"The question on file for session `{id}` is not `{question}`: nothing was kept.");
+        }
+
+        if (!filed.Choices.Any(offered => string.Equals(offered.Label, choice, StringComparison.Ordinal)))
+        {
+            return Refused(SessionSayRefusal.NotOfferedChoice, $"\"{choice}\" is not one of the answers session `{id}` offered, exactly.");
+        }
+
+        var quest = await quests.FindAsync(session.Quest, inside).ConfigureAwait(false);
+        if (AskDesk.AskOf(quest?.From) is not { } askId)
+        {
+            return Refused(SessionSayRefusal.NoQuest, $"Session `{id}`'s quest is on no ask, so no go-aheads the supervisor could leave to the owner.");
+        }
+
+        if (asks is null || await asks.FindAsync(askId, inside).ConfigureAwait(false) is not { } ask)
+        {
+            return Refused(SessionSayRefusal.GoAheadUnread, $"Ask `#{askId}`'s go-aheads cannot be read here, so nothing was kept.");
+        }
+
+        return ask.GoAheads.Any(held => held.Answer is null)
+            ? Refused(SessionSayRefusal.GoAheadOpen, $"A go-ahead on ask `#{askId}` is open: go-aheads are the owner's alone, so nothing was kept.")
+            : null;
     }
 
     /// <summary>
@@ -1043,7 +1309,7 @@ public sealed class SessionLedger(
 
             var reworded = new SaidWord(NewWordId(), words, now, old.Files, old.Reopens);
             var (note, parts) = parked ? AnsweredNote(session, words) : (null, null);
-            var kept = await sessions.KeepSaidAsync(id, reworded, note, inside, noteParts: parts).ConfigureAwait(false);
+            var kept = await KeepOwnersWordAsync(left!, reworded, note, parts, inside).ConfigureAwait(false);
             return new SessionSayOutcome(
                 SessionSayRefusal.None,
                 $"Reworded word `{named}` on session `{id}`: the new words wait last, as `{reworded.Id}`.",
@@ -1373,10 +1639,16 @@ public sealed class SessionLedger(
     /// same step, only where it still names this session, so the next look may give the ask to another intake. Only a move to <c>failed</c>
     /// may say so; the record stays, still naming its ask.
     /// </param>
+    /// <param name="expect">
+    /// The supervisor's words a move to working carries (SUPERVISOR1a-i, the supervisor design §6.3): the exact ids of the
+    /// <see cref="SaidFrom.Supervisor"/> words its go-on admitted. The move is refused <see cref="SessionAdvanceRefusal.WordsChanged"/>
+    /// where the record's waiting supervisor's words are not exactly these, and absent reads as none, so a mover that names none never
+    /// carries one. Naming any needs the record parked.
+    /// </param>
     public async Task<SessionAdvanceOutcome> AdvanceAsync(
         string id, string state, string? note, string? evidence, string? transcript,
         DateTimeOffset now, CancellationToken ct = default, bool interrupted = false, bool limit = false, string? noteParts = null,
-        string? expected = null, bool unbindAsk = false)
+        string? expected = null, bool unbindAsk = false, IReadOnlyCollection<string>? expect = null)
     {
         var target = Parse(state);
         if (target is null or SessionState.Queued)
@@ -1434,6 +1706,8 @@ public sealed class SessionLedger(
                 return new SessionAdvanceOutcome(SessionAdvanceRefusal.NotFound, $"No session `{id}`.", Session: null);
             }
 
+            if (target == SessionState.Working && Admits(session, expect) is { } changed) return changed;
+
             if (!session.Active)
             {
                 return target == SessionState.Working && from is null
@@ -1478,6 +1752,30 @@ public sealed class SessionLedger(
                 $"Session `{moved!.Id}` is now {Spell(moved.State)}.",
                 moved);
         }, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Why a move to working may not carry the record's supervisor's words (SUPERVISOR1a-i, §6.3), or null: those waiting must be
+    /// exactly <paramref name="expect"/>, and naming any needs a park.
+    /// </summary>
+    private static SessionAdvanceOutcome? Admits(Session session, IReadOnlyCollection<string>? expect)
+    {
+        var named = expect ?? [];
+        var waiting = session.Said.Where(word => word.Supervisors).Select(word => word.Id).ToHashSet(StringComparer.Ordinal);
+        if (!waiting.SetEquals(named))
+        {
+            return new SessionAdvanceOutcome(
+                SessionAdvanceRefusal.WordsChanged,
+                $"Session `{session.Id}`'s waiting supervisor's words are not the ones this move admits, so it was not moved.",
+                Session: null);
+        }
+
+        return named.Count > 0 && session.State != SessionState.AwaitingPerson
+            ? new SessionAdvanceOutcome(
+                SessionAdvanceRefusal.InvalidMove,
+                $"Session `{session.Id}` is {Spell(session.State)}, not parked: the supervisor's answer goes on only from a park, so it was not moved.",
+                Session: null)
+            : null;
     }
 
     /// <summary>
@@ -1533,11 +1831,12 @@ public sealed class SessionLedger(
 
         var with = WentOnWith(session) switch
         {
-            (Persons: false, Findings: true, _, _) => "another agent's findings",
-            (Persons: true, Findings: true, _, _) => "the person's words and another agent's findings",
-            (Persons: false, Findings: false, Helper: true, _) => "a helper's answer",
-            (Persons: true, Findings: false, Helper: true, _) => "the person's words and a helper's answer",
-            (Persons: false, Findings: false, Helper: false, Daoris: true) => "Daoris's words",
+            (Persons: false, Findings: true, _, _, _) => "another agent's findings",
+            (Persons: true, Findings: true, _, _, _) => "the person's words and another agent's findings",
+            (Persons: false, Findings: false, Helper: true, _, _) => "a helper's answer",
+            (Persons: true, Findings: false, Helper: true, _, _) => "the person's words and a helper's answer",
+            (Persons: false, Findings: false, Helper: false, Daoris: true, _) => "Daoris's words",
+            (Persons: false, Findings: false, Helper: false, Daoris: false, Supervisor: true) => "the supervisor's answer",
             _ => "the person's words",
         };
         return new SessionAdvanceOutcome(
@@ -1632,11 +1931,12 @@ public sealed class SessionLedger(
     /// person's words. Where findings and a helper's answer wait together the line says the findings, as it always did. Daoris's own
     /// words (COWORK1b, <see cref="SaidWord.From"/>) alone are a fourth, never "your words"; beside another's, the other's line stands.
     /// </remarks>
-    private static (bool Persons, bool Findings, bool Helper, bool Daoris) WentOnWith(Session session) =>
+    private static (bool Persons, bool Findings, bool Helper, bool Daoris, bool Supervisor) WentOnWith(Session session) =>
         (session.Said.Count == 0 || session.Said.Any(word => word.Persons),
          session.Said.Any(word => word.By is not null),
          session.Said.Any(word => word.Helper is not null),
-         session.Said.Any(word => word.From == SaidFrom.Daoris));
+         session.Said.Any(word => word.From == SaidFrom.Daoris),
+         session.Said.Any(word => word.Supervisors));
 
     /// <summary>
     /// The note an ended record goes on with (MSG1a, D137 §2.3): what ended it, when it went on, and the note the move passed,
@@ -1654,11 +1954,14 @@ public sealed class SessionLedger(
         var at = $"{now.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)} UTC";
         var (line, code) = WentOnWith(session) switch
         {
-            (Persons: false, Findings: true, _, _) => ($"Went on with another agent's findings at {at}.", LedgerNoteCodes.WentOnFindings),
-            (Persons: true, Findings: true, _, _) => ($"Went on with your words and another agent's findings at {at}.", LedgerNoteCodes.WentOnBoth),
-            (Persons: false, Findings: false, Helper: true, _) => ($"Went on with a helper's answer at {at}.", LedgerNoteCodes.WentOnHelper),
-            (Persons: true, Findings: false, Helper: true, _) => ($"Went on with your words and a helper's answer at {at}.", LedgerNoteCodes.WentOnHelperBoth),
-            (Persons: false, Findings: false, Helper: false, Daoris: true) => ($"Went on with Daoris's words at {at}.", LedgerNoteCodes.WentOnDaoris),
+            (Persons: false, Findings: true, _, _, _) => ($"Went on with another agent's findings at {at}.", LedgerNoteCodes.WentOnFindings),
+            (Persons: true, Findings: true, _, _, _) => ($"Went on with your words and another agent's findings at {at}.", LedgerNoteCodes.WentOnBoth),
+            (Persons: false, Findings: false, Helper: true, _, _) => ($"Went on with a helper's answer at {at}.", LedgerNoteCodes.WentOnHelper),
+            (Persons: true, Findings: false, Helper: true, _, _) => ($"Went on with your words and a helper's answer at {at}.", LedgerNoteCodes.WentOnHelperBoth),
+            (Persons: false, Findings: false, Helper: false, Daoris: true, _) => ($"Went on with Daoris's words at {at}.", LedgerNoteCodes.WentOnDaoris),
+            // SUPERVISOR1a-i: the supervisor's answer alone is never "your words".
+            (Persons: false, Findings: false, Helper: false, Daoris: false, Supervisor: true) =>
+                ($"Went on with the supervisor's answer at {at}.", LedgerNoteCodes.WentOnSupervisor),
             _ => ($"Went on with your words at {at}.", LedgerNoteCodes.WentOn),
         };
         var went = string.Join("\n\n", new[] { session.Note, line, note }.Where(part => !string.IsNullOrWhiteSpace(part)));

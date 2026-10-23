@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- Groundwork for the supervisor, a role you will appoint to answer a session's question on your behalf (SUPERVISOR1a-i, D208).
+  Nothing is offered yet and nothing you see changes: its answer can only be kept as the supervisor's, never as yours. Your own
+  words to a parked session now take back any supervisor's answer waiting on it.
 - The CI between releases no longer runs a driver or modules `Process` half when every class in it already passed and nothing
   changed since reaches any of them (CISCOPE1b). The half passes on those classes, and the run and its status say so. It still
   runs whole when its last run failed outside a test, when that run's results were missing, or when the classes the run found

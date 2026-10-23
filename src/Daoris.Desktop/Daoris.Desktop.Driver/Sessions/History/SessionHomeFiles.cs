@@ -26,7 +26,7 @@ public sealed record SessionFilesRemoved(
 /// </summary>
 /// <remarks>
 /// <para><b>What goes, by name</b>, in this order: its conversation, its transcript, its files (the whole
-/// <c>sessions/&lt;id&gt;/</c>, its native children's lineage among them, <see cref="ChildLineage"/>), its harness conversation id, a leftover process marker, its go-on mark, its reopen mark (<see cref="ReopenMarks"/>) and its park's question (<see cref="QuestionFiles"/>), each named <c>mark</c>, its choice of a new
+/// <c>sessions/&lt;id&gt;/</c>, its native children's lineage among them, <see cref="ChildLineage"/>), its harness conversation id, a leftover process marker, its go-on mark, its reopen mark (<see cref="ReopenMarks"/>), its park's question (<see cref="QuestionFiles"/>) and the supervisor's decisions on it (<see cref="QuestionSupervisorDecisions"/>), each named <c>mark</c>, its choice of a new
 /// session, the spawn files a crash left, Ask Daoris's name and pin for it (ASKHIST1), its receipts (HELPWIRED1) and what it published (ASKQUESTS1), its held words, its closed automatic
 /// landing and its archive mark. Until HIST1c the
 /// delete took the first five and the mark, and left the mark, the choice, the held words and the landing behind.</para>
@@ -106,6 +106,10 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         new(Mark, Place.Sessions, ReopenMarks.Suffix, false, Beside),
         // PARKVIEW1: the question its park asked (QuestionFiles), a mark of the park as the others are, which goes with its record.
         new(Mark, Place.Sessions, QuestionFiles.Suffix, false, Beside),
+        // SUPERVISOR1a-i: the supervisor's decisions on its questions and the current one's pointer (QuestionSupervisorDecisions),
+        // kept for its history as long as its record, and going with it, never before.
+        new(Mark, Place.Sessions, QuestionSupervisorDecisions.DecisionsSuffix, true, Beside),
+        new(Mark, Place.Sessions, QuestionSupervisorDecisions.PointerSuffix, false, Beside),
         new(Choice, Place.Sessions, NewSessionChoices.Suffix, false, Beside),
         new(HandOver, Place.Sessions, HandOverBox.Suffix, false, Beside),
         new(Spawn, Place.Spawn, ".mcp.json", false, Beside),

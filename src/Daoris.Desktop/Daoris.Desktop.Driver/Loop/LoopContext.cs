@@ -27,6 +27,13 @@ internal sealed class LoopContext(
     public GoOnMarks Marks { get; } = new(home);
 
     /// <summary>
+    /// The supervisor's decisions, live in memory (SUPERVISOR1a-i, D208): one per instance, which the shell hands the modules' handler
+    /// too. Inert until the door (1a-ii): its admission refuses every act, so no decision is kept and every supervisor's word is
+    /// quarantined. A test sets its own.
+    /// </summary>
+    public QuestionSupervisorDecisions Supervisor { get; set; } = new(home, NoDecisionAdmission.Instance);
+
+    /// <summary>
     /// What reached each part from its ask's channel (SESSONE2b), shared across the per-tick instances, so a message reaches a running
     /// part once whichever look reads it.
     /// </summary>

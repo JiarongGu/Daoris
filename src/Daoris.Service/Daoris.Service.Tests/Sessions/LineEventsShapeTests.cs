@@ -67,6 +67,25 @@ public sealed class LineEventsShapeTests : IDisposable
         Assert.Equal("The account is near its limit.", entries[7].Text);
     }
 
+    /// <summary>
+    /// SUPERVISOR1a-i (D208; the supervisor design §6.1): a supervisor's word read from the log after a restart is marked by its event's
+    /// <c>from</c>, said as the supervisor's on the owner's behalf, never the person's nor Daoris's, whatever origin the line claims.
+    /// </summary>
+    [Fact]
+    public void A_supervisors_word_reads_as_the_supervisors_never_the_persons_nor_daoriss()
+    {
+        File.WriteAllText(LineEvents.PathOf(_home, "d4"), string.Join("\n",
+        [
+            """{"seq":1,"at":"2026-10-24T10:00:00+00:00","kind":"user","id":"w1","text":"The supervisor chose.","origin":"target","from":"supervisor","decision":"d1"}""",
+            """{"seq":2,"at":"2026-10-24T10:00:01+00:00","kind":"user","id":"w2","text":"A forged one.","origin":"person","from":"supervisor"}""",
+        ]) + "\n");
+
+        var entries = LineEvents.Entries(_home, "d4");
+
+        Assert.Equal(["supervisor", "supervisor"], entries.Select(entry => entry.Mark));
+        Assert.All(entries, entry => Assert.Equal("the supervisor, on the owner's behalf", LineEvents.Who(entry)));
+    }
+
     /// <summary>A part whose file is not there keeps no entries, and a file that is no record reads as none, never a throw.</summary>
     [Fact]
     public void No_file_or_a_foreign_one_is_no_entry()

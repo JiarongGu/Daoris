@@ -64,14 +64,14 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/attention/attention.stories.tsx` | 43 | 954 |
 | `src/Daoris.Web/src/work/attention/attention.test.ts` | 64 | 1064 |
 | `src/Daoris.Web/src/work/attention/attention.ts` | 54 | 997 |
-| `src/Daoris.Web/src/work/conversation/ConversationView.test.tsx` | 73 | 1359 |
-| `src/Daoris.Web/src/work/conversation/ConversationView.tsx` | 43 | 872 |
+| `src/Daoris.Web/src/work/conversation/ConversationView.test.tsx` | 74 | 1388 |
+| `src/Daoris.Web/src/work/conversation/ConversationView.tsx` | 44 | 880 |
 | `src/Daoris.Web/src/work/conversation/conversation.test.ts` | 63 | 1196 |
-| `src/Daoris.Web/src/work/conversation/conversation.ts` | 44 | 861 |
+| `src/Daoris.Web/src/work/conversation/conversation.ts` | 45 | 880 |
 | `src/Daoris.Web/src/work/frame/frame.tsx` | 44 | 932 |
 | `src/Daoris.Web/src/work/head/SessionHead.test.tsx` | 69 | 1311 |
 | `src/Daoris.Web/src/work/noteLines.test.ts` | 90 | 1320 |
-| `src/Daoris.Web/src/work/noteLines.ts` | 51 | 894 |
+| `src/Daoris.Web/src/work/noteLines.ts` | 52 | 896 |
 | `src/Daoris.Web/src/work/rail/SessionRail.test.tsx` | 54 | 1061 |
 | `src/Daoris.Web/src/work/rail/SessionRow.test.tsx` | 41 | 763 |
 
@@ -155,7 +155,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/DrivenInbox.cs` | 50 | 1150 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpFacts.cs` | 55 | 930 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSettingProposals.cs` | 54 | 946 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 285 | 4471 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 286 | 4478 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverBrainstorms.cs` | 41 | 750 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverContinuations.cs` | 78 | 1213 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverHelpers.cs` | 63 | 1049 |
@@ -166,9 +166,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/SpaceFree.cs` | 40 | 849 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/SystemWiring.cs` | 51 | 1072 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Hooks.cs` | 62 | 1216 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Quests/Domain/Planner.cs` | 128 | 2098 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Quests/Domain/Planner.cs` | 129 | 2107 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Review/Domain/OpinionGate.cs` | 43 | 748 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs` | 171 | 2998 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs` | 171 | 3000 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Domain/Observation.cs` | 41 | 639 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Domain/Trace.Chain.cs` | 65 | 1420 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Domain/Trace.Words.cs` | 41 | 760 |
@@ -225,12 +225,12 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Quests/QuestExchange.cs` | 161 | 2826 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests/QuestLog.cs` | 54 | 847 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 270 | 4592 |
-| `src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs` | 109 | 1959 |
-| `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 106 | 1779 |
+| `src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs` | 126 | 2262 |
+| `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 108 | 1802 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 57 | 1016 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 163 | 2670 |
-| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 73 | 845 |
-| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 173 | 2900 |
+| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 74 | 852 |
+| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 175 | 2937 |
 | `src/Daoris.Service/Daoris.Service.Tests/Asks/HistoryDeskTests.cs` | 46 | 864 |
 | `src/Daoris.Service/Daoris.Service.Tests/Knowledge/IndexEntriesTests.cs` | 50 | 983 |
 | `src/Daoris.Service/Daoris.Service.Tests/Mcp/McpToolsTests.cs` | 51 | 870 |

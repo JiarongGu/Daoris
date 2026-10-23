@@ -9,6 +9,8 @@
   "work.conversation.claim": "另一个会话的说法，附 Daoris 的说明",
   "work.conversation.opinion": "另一个智能体的发现",
   "work.conversation.daoris": "Daoris 的话",
+  "work.conversation.supervisor": "主管代你答复",
+  "work.conversation.unattributed": "来源不明",
   "work.conversation.show": "展开",
   "work.conversation.hide": "收起",
   "work.conversation.thought": "思考",

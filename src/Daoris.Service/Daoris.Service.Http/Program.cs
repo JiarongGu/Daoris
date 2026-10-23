@@ -1487,7 +1487,12 @@ if (mode == ServiceMode.Local)
         var from = string.IsNullOrWhiteSpace(body.From) ? null : body.From.Trim();
         var key = string.IsNullOrWhiteSpace(body.Key) ? null : body.Key.Trim();
         var level = string.IsNullOrWhiteSpace(body.Level) ? null : body.Level.Trim();
-        var outcome = await s.Ledger.SayAsync(id, body.Text, body.Files, now, ct, channel, from, key, level, body.Running == true);
+        // SUPERVISOR1a-i (D208): the supervisor's release names its decision, question and choice; read as absent where blank.
+        var outcome = await s.Ledger.SayAsync(
+            id, body.Text, body.Files, now, ct, channel, from, key, level, body.Running == true,
+            string.IsNullOrWhiteSpace(body.Decision) ? null : body.Decision.Trim(),
+            string.IsNullOrWhiteSpace(body.Question) ? null : body.Question.Trim(),
+            string.IsNullOrEmpty(body.Choice) ? null : body.Choice);
         if (outcome.Refusal == SessionSayRefusal.None)
         {
             // Words to a park are its answer, kept on its ask at once as the answer door keeps one (DRIFT1a); words to an
@@ -1511,9 +1516,27 @@ if (mode == ServiceMode.Local)
         {
             SessionSayRefusal.NotFound => Results.NotFound(refused),
             // COWORK1b: an author this service does not know is the caller's mistake, as no words are.
-            SessionSayRefusal.Empty or SessionSayRefusal.From or SessionSayRefusal.Level => Results.BadRequest(refused),
+            SessionSayRefusal.Empty or SessionSayRefusal.From or SessionSayRefusal.Level or SessionSayRefusal.SupervisorText
+                or SessionSayRefusal.NoHome => Results.BadRequest(refused),
             // A teammate's, an intake, a stand-down, a running session: a conflict with the record as it stands.
             _ => Results.Conflict(refused),
+        };
+    });
+
+    // SUPERVISOR1a-i (D208; the supervisor design §6.3): a park the driver took up and could not hand put back, keeping every word but
+    // the supervisor's it admitted. LOCAL mode only, as the say door: a shared host runs no session.
+    app.MapPost("/api/sessions/{id}/restore", async (
+        ComposedService s, HttpContext http, string id, RestoreParkRequest body, CancellationToken ct) =>
+    {
+        var outcome = await s.Ledger.RestoreParkAsync(
+            id, (body.TakeBack ?? []).OfType<string>().ToList(), body.Note,
+            body.Note is null ? null : NoteParts.Normalize(body.NoteParts), DateTimeOffset.UtcNow, ct);
+        return outcome.Refusal switch
+        {
+            SessionAdvanceRefusal.None => Results.Ok(
+                new SessionActionResponse(await ToSessionAsync(s, outcome.Session!, MachineLocal(http)), outcome.Message)),
+            SessionAdvanceRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
+            _ => Results.Conflict(new ErrorResponse(outcome.Message)),
         };
     });
 
@@ -1928,7 +1951,7 @@ app.MapPost("/api/sessions/{id}/state", async (
         interrupted: body.Interrupted == true, limit: body.Limit == true,
         // The note's lines by code (LANG1a), kept only as what a part is; none with no note.
         noteParts: body.Note is null ? null : NoteParts.Normalize(body.NoteParts), expected: body.Expected,
-        unbindAsk: body.UnbindAsk == true);
+        unbindAsk: body.UnbindAsk == true, expect: body.Expect?.OfType<string>().ToList());
 
     return outcome.Refusal switch
     {
@@ -1938,7 +1961,8 @@ app.MapPost("/api/sessions/{id}/state", async (
         // Terminal and an illegal move are conflicts with the record's current state — 409 like the
         // quest door, and so is a tree another session holds when an ended record would go on (MSG1a).
         // Only an unknown state name is a bad request.
-        SessionAdvanceRefusal.Terminal or SessionAdvanceRefusal.InvalidMove or SessionAdvanceRefusal.Busy =>
+        SessionAdvanceRefusal.Terminal or SessionAdvanceRefusal.InvalidMove or SessionAdvanceRefusal.Busy
+            or SessionAdvanceRefusal.WordsChanged =>
             Results.Conflict(new ErrorResponse(outcome.Message)),
         _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
     };
@@ -2806,7 +2830,8 @@ static SessionResponse ToSession(Session s, bool loopback) => new(
 
 // A word with whose it is (XAGENT1c): `by` names the second opinion whose findings these are, and is absent for the person's.
 static SaidWordResponse ToSaid(SaidWord word) =>
-    new(word.Id, word.Text, word.At, word.Files, word.Reopens, word.By, word.Helper, word.From, word.Key, word.Level, word.Attempt);
+    new(word.Id, word.Text, word.At, word.Files, word.Reopens, word.By, word.Helper, word.From, word.Key, word.Level, word.Attempt,
+        word.Decision, word.Question, word.Choice);
 
 // An opinion as this machine's doors answer it (XAGENT1c), with where its pass stands, derived when read.
 static OpinionResponse ToOpinion(OpinionStanding standing)
@@ -2851,6 +2876,18 @@ static string SayRefusal(SessionSayRefusal refusal) => refusal switch
     SessionSayRefusal.Taken => "taken",
     SessionSayRefusal.From => "from",
     SessionSayRefusal.Level => "level",
+    // SUPERVISOR1a-i (D208; the supervisor design §3.1, §3.4): the release's refusals, in the route's own words.
+    SessionSayRefusal.SupervisorText => "supervisor-text",
+    SessionSayRefusal.KeyMismatch => "key-mismatch",
+    SessionSayRefusal.DecisionTaken => "decision-taken",
+    SessionSayRefusal.NotParked => "not-parked",
+    SessionSayRefusal.NoQuest => "no-quest",
+    SessionSayRefusal.QuestionChanged => "question-changed",
+    SessionSayRefusal.NotOfferedChoice => "not-offered-choice",
+    SessionSayRefusal.GoAheadOpen => "go-ahead-open",
+    SessionSayRefusal.GoAheadUnread => "go-ahead-unread",
+    SessionSayRefusal.OwnerAnswered => "owner-answered",
+    SessionSayRefusal.NoHome => "no-home",
     _ => "running",
 };
 

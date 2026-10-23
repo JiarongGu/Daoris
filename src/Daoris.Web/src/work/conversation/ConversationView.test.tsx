@@ -305,6 +305,35 @@ describe('ConversationView', () => {
   });
 
   /**
+   * SUPERVISOR1a-i (D208; the supervisor design §6.1, §6.2): the supervisor's answer is drawn under its own mark, *From the supervisor,
+   * on your behalf*, taken or held, never the person's bubble nor a composed target; an author the page does not know is *Not
+   * attributed*, never *You*, in either language.
+   */
+  it('names the supervisor’s answer as the supervisor’s and an unknown author as not attributed, never as you', async () => {
+    const text = 'The supervisor the owner appointed for this repository chose "The monthly one" among the answers you offered.';
+    const { unmount } = view([
+      ev({ kind: 'user', origin: 'target', from: 'supervisor', id: 'w1', text }),
+      ev({ kind: 'user', origin: 'target', from: 'supervisor', id: 'said-1', reaches: 'resume', text }),
+      ev({ kind: 'user', origin: 'target', from: 'someone', id: 'said-2', reaches: 'resume', text: 'Pick the first one.' }),
+    ]);
+
+    expect(screen.getAllByText('From the supervisor, on your behalf')).toHaveLength(2);
+    expect(screen.getByText('Not attributed')).toBeTruthy();
+    expect(screen.queryByText('you')).toBeNull();
+    expect(screen.queryByText('The target Daoris composed')).toBeNull();
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    view([
+      ev({ kind: 'user', origin: 'target', from: 'supervisor', id: 'w1', text }),
+      ev({ kind: 'user', origin: 'person', from: 'agent', id: 'w2', text: 'x' }),
+    ]);
+    expect(screen.getByText('主管代你答复')).toBeTruthy();
+    expect(screen.getByText('来源不明')).toBeTruthy();
+    await i18n.changeLanguage('en');
+  });
+
+  /**
    * COWORK1b (the design §4.3): Daoris's word held for a running session and dropped where it was to be delivered, its fact answered
    * by a later submission, is settled by the driver's coded note, worded in the reader's language, and waits no longer.
    */

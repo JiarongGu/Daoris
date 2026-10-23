@@ -207,6 +207,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'ledger.went-on-helper-both': { values: ['at'] },
   // Daoris's own words alone (COWORK1b): a reopen told, a step's go-on, never "your words".
   'ledger.went-on-daoris': { values: ['at'] },
+  // The supervisor's answer alone (SUPERVISOR1a-i, D208): on the owner's behalf, never "your words".
+  'ledger.went-on-supervisor': { values: ['at'] },
   // A quest's note (QUESTCLOSE1b1): the person marked it done, their words a part beneath it.
   'quest.person-done': { values: [] },
   // A conversation's first line (UX7d-1): the account it opened on and the step that chose it, then what each account said.

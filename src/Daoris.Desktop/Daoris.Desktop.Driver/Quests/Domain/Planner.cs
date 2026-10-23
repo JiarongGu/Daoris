@@ -659,8 +659,17 @@ public sealed record SaidWordView(string? Id, string Text, DateTimeOffset At, IR
     /// </summary>
     public string Handed => QuestionWords.Handed(Text, Choice);
 
+    /// <summary>
+    /// The supervisor's decision a <see cref="SupervisorHanded.From"/> word claims (SUPERVISOR1a-i, D208): a claim on the record, never
+    /// an authority. Whether it is the supervisor's is <see cref="QuestionSupervisorDecisions.Authored"/>'s, by its id.
+    /// </summary>
+    public string? Decision { get; init; }
+
     /// <summary>Whether these are Daoris's own words (COWORK1b): read from its mark, never its sentence.</summary>
     public bool Daoris => From == DaorisWords.From;
+
+    /// <summary>Whether these words claim the supervisor (SUPERVISOR1a-i): a claim only, which the look attributes or quarantines.</summary>
+    public bool Supervisors => From == SupervisorHanded.From;
 
     /// <summary>Whether these are the person's words: no second opinion's, no helper's and not Daoris's.</summary>
     public bool Persons => By is null && Helper is null && From is null;

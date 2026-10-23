@@ -396,5 +396,6 @@
   "note.ledger.went-on-helper": "Went on with a helper's answer at {{at}}.",
   "note.ledger.went-on-helper-both": "Went on with your words and a helper's answer at {{at}}.",
   "note.ledger.went-on-daoris": "Went on with Daoris's words at {{at}}.",
+  "note.ledger.went-on-supervisor": "Went on with the supervisor's answer at {{at}}.",
   "note.quest.person-done": "The person marked this done."
 }

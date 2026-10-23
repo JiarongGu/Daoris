@@ -20,8 +20,12 @@ internal static class AnswersAlone
     /// <summary>How many go-ons by answers alone a line takes in a row: a first value the owner may move (§2.3).</summary>
     public const int Bound = 2;
 
-    /// <summary>Whether a word is a solicited answer: a helper's, or a second opinion's findings.</summary>
-    public static bool Solicited(SaidWordView word) => word.Helper is not null || word.By is not null;
+    /// <summary>
+    /// Whether a word is an answer the line goes on by with nobody between: a helper's, a second opinion's findings, or the supervisor's
+    /// (SUPERVISOR1a-i, the supervisor design §4.3: one count, D188's, so a mixed prompt evades neither). The look hands only an
+    /// attributed supervisor's word, so one reaching here is one.
+    /// </summary>
+    public static bool Solicited(SaidWordView word) => word.Helper is not null || word.By is not null || word.Supervisors;
 
     /// <summary>
     /// Whether going on with <paramref name="words"/> now would take the line on by answers alone once past the bound: every word an
@@ -87,12 +91,18 @@ internal static class AnswersAlone
     /// person's press that let an answer go on (<see cref="NoteCodes.AnswersPassed"/>).
     /// </summary>
     private static bool Resets(SessionEvent e) =>
-        e.Kind == SessionEventKind.User && e.Reaches is null && (e.Origin is null or "person" || e.From == DaorisWords.From)
+        e.Kind == SessionEventKind.User && e.Reaches is null && e.From != SupervisorHanded.From
+            && (e.Origin is null or "person" || e.From == DaorisWords.From)
         || e.Kind == SessionEventKind.Note && e.Parts?.Any(part => part.Code == NoteCodes.AnswersPassed.Code) == true;
 
-    /// <summary>A solicited answer, taken: a helper's answer by its mark, or the turn a second opinion's findings were handed in.</summary>
+    /// <summary>
+    /// A solicited answer, taken: a helper's answer by its mark, the turn a second opinion's findings were handed in, or the supervisor's
+    /// answer by its event's <c>from</c> (SUPERVISOR1a-i). The log is a home file (D156 point 7), so a forged supervisor's event only adds
+    /// to the count, which holds the line sooner: the conservative side, read across a restart as every event is.
+    /// </summary>
     private static bool Answers(SessionEvent e) =>
-        e.Kind == SessionEventKind.User && e.Reaches is null && (e.Helper is not null || e.Opinion is not null);
+        e.Kind == SessionEventKind.User && e.Reaches is null
+        && (e.Helper is not null || e.Opinion is not null || e.From == SupervisorHanded.From);
 }
 
 /// <summary>

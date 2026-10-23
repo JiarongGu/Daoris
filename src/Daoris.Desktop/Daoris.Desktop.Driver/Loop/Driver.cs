@@ -881,6 +881,13 @@ public sealed class Driver(
         var snapshot = await Stages.TimeAsync("snapshot", () => service.SnapshotAsync(ct)).ConfigureAwait(false);
         // The quests of every paused work, read again at each look (PAUSE1b, design §2.3): the planner holds each.
         snapshot = await Stages.TimeAsync("paused", () => PausedWork.LookAsync(service, config, snapshot, ct)).ConfigureAwait(false);
+        // SUPERVISOR1a-i (D208; the supervisor design §6.1): a word claiming the supervisor that Daoris did not attribute is taken back
+        // before anything plans, and never planned from.
+        var unquarantined = snapshot;
+        snapshot = await Stages.TimeAsync("supervisor", () => SupervisorQuarantine.LookAsync(
+            unquarantined, Context.Supervisor,
+            async (session, word, token) => (await service.TakeBackAsync(session, word, ct: token).ConfigureAwait(false)).Done,
+            Log, ct)).ConfigureAwait(false);
         // 🔴 COWORK1e (D188 point 4; the message-urgency design §2.3): answers that would take their line on alone a third time in a row
         // with nobody between are marked for the person first, so the planner leaves them waiting. A record needs its line read only where
         // answers alone wait on it.
