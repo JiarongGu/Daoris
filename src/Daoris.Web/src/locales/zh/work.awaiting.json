@@ -17,7 +17,7 @@
   "work.awaiting.answer": "在下面的框里回答它，它就会继续——那是发消息，不在这三项之内。",
   "work.awaiting.answerHereOrBelow": "在这里或在下面的框里回答它，它就会继续——那是发消息，不在这三项之内。",
   "work.awaiting.cannot.teammate": "它在另一台机器上运行，所以要在那里回答：这个窗口发出的任何话都到不了它。",
-  "work.awaiting.cannot.elsewhere": "这里无法回答它：请在这台机器上运行它的会话的 Daoris 窗口里回答。",
+  "work.awaiting.cannot.elsewhere": "这里无法回答它：请在本机运行它的会话的 Daoris 窗口里回答。",
   "work.awaiting.carryOn": "回答并继续…",
   "work.awaiting.answerPlaceholder": "你的回答——同一个会话会带着这些话继续",
   "work.awaiting.answerConfirm": "以此回答继续",
