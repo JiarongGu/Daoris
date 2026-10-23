@@ -1,4 +1,4 @@
-# CISCOPE1: the reads of rounds 1 to 3 (D191)
+# CISCOPE1: the reads of rounds 1 to 4 (D191)
 
 Codex's read and the independent Opus 5.5 reader's foundation read of `docs/2026-10-24-ci-scope-design.md` and D207 at
 `8ec788f89`, each verbatim but for its headings set one level down. The steward ran both from outside the install, read-only, on
@@ -7,7 +7,9 @@ the design's own tree, read as landing after CIFAST1. Both ask for another round
 asks another round (15 findings, 11 blocking); the Opus foundation reader finds the foundation holds and would accept after named
 changes the steward can check (17 findings, 6 blocking). Round 3 answers both. Round 3 was read at `22427ff95`: Codex asks
 another round (12 findings, 6 blocking); the Opus foundation reader's check finds every round-2 blocking change taken as named
-and would accept after named changes (12 findings, 2 blocking). Round 4 answers both.
+and would accept after named changes (12 findings, 2 blocking). Round 4 answers both. Round 4 was read at `e89f00ca4`: Codex
+asks another round (8 findings, 3 blocking); the Opus foundation reader's check would accept after named changes (10 findings,
+3 blocking, each a local rule of the queue's base run). Round 5 answers both.
 
 ## Codex
 
@@ -1018,3 +1020,442 @@ sentence and their row-5 proof cases:
 - halving compares fingerprints, and the queue states its outcome when the base shares a failure it does not inherit, with the expiry's true scope recorded in D207 (finding 2).
 
 Findings 3 to 12 are statements and corrections the steward can check line by line. Codex's read of round 3 is a separate matter.
+
+## Codex, round 4
+
+Codex's read of round 4, at `e89f00ca4`: 8 findings, 3 blocking; another round.
+
+### 1. Each round-3 finding
+
+`design` means `docs/2026-10-24-ci-scope-design.md`; `merge` means `tools/merge-branch.mjs`. **Taken** judges the proposed contract against the existing code, not completed implementation. Private run records were not inspected.
+
+| Finding | Verdict | Where | One line of why |
+|---|---|---|---|
+| Codex 1 — records-only re-form bypasses mandatory checks | Taken | design:515–523, 1104–1106; merge:989, 1129 | The whole cheap tier returns, earlier reach rules win, and only `service` is explicitly deferred; finding 6 corrects the description of `recordMatcher`. |
+| Codex 2 — builds cannot bisect discovery/host failures | Taken | design:546–556, 1099–1101; merge:2041 | Attribution now repeats the failing operation and selection, with builds alone limited to compilation failures. |
+| Codex 3 — transition mistaken for introduction | Open | design:385–405, 568–580 | Every queue prefix fixes the bounded queue case, but unprobed historical stretches still permit false causal credit: finding 1. |
+| Codex 4 — mutable queue request | Taken | design:488–493, 1106–1107; merge:4452 | Source commit and message bytes are frozen and reused, with a mutation fixture specified. |
+| Codex 5 — understated background overlap | Taken | design:788–798, 1110–1126; merge:628 | The git half plus one rehearsal, later two, is explicitly admitted and tested beside scoped work. |
+| Codex 6 — reservation accounting and surviving children | Open | design:801–812; merge:4628; `tools/processes.mjs:169,189` | Separate physical/commit accounting is specified, but the cited cleanup cannot identify the complete surviving group: finding 3. |
+| Codex 7 — overstated no-wait/progress guarantee | Taken | design:795–798, 817–821; merge:2365 | Process-slot waiting is separated from memory waiting, and background completion is conditional on memory admission. |
+| Codex 8 — receipt not bound to staged source | Open | design:889–896, 1085–1087 | Initial dirtiness is rejected, but endpoint tree checks do not preserve the source throughout the build: finding 2. |
+| Codex 9 — clearing loses causal order | Taken | design:849–857, 1078–1081 | Clearing requires superseding main-line evidence; attribution runs cannot clear, and contradicted clearing preserves first sighting. |
+| Codex 10 — watch falsely described as detached | Taken | design:495–501; merge:5645, 5723 | The analogy is withdrawn and the new launch, log and acknowledgement are specified independently. |
+| Codex 11 — release does not verify one exact committed tree | Taken | design:927–933; `.github/workflows/release.yml:213,222` | The description now distinguishes input-revision jobs from the stamped release worktree. |
+| Codex 12 — pairing proof contradicts concurrency limit | Taken | design:970–980, 1123–1127 | Mechanism and proof both allow two rehearsals, with the third waiting. |
+| Opus 1 — no-test failure has no base rule | Taken | design:546–556, 1098–1101; merge:2041–2044 | The same gate operation runs on the base first; matching base failure stops the queue and is filed. |
+| Opus 2 — non-inherited base failure and expiry scope | Open | design:557–567, 629–632, 858–866 | Signature matching and the explicit queue stop are taken, but blanket known-red execution conflicts with deferred kinds: finding 4. |
+| Opus 3 — scoped worst case understated | Taken | design:788–821, 1110–1126 | Overlap, per-gate memory waits, normal priority and nominal foreground headroom are explicit. |
+| Opus 4 — attribution retries can green a candidate | Taken | design:581–595, 1101–1103 | Attribution passes confer no green verdict; adjacent prefixes repeat and unresolved batches fall back to individual candidates. |
+| Opus 5 — promotion changes checkout; direct commits can starve | Answered with a reason that holds | design:524–535 | Promotion requires a clean checkout; direct-commit starvation is admitted and reported rather than falsely bounded. |
+| Opus 6 — qualifying receipt kinds unspecified | Taken | design:669–683, 879–890 | Producers and qualifying receipts are named, sweep-only receipts excluded, and zero-work receipts explicitly rely on standing evidence. |
+| Opus 7 — scoped writes evict background evidence | Taken | design:673–677, 1080–1082; merge:1758 | Retention is per gate, with scoped/remedy entries separated from background/stage/full entries. |
+| Opus 8 — `service` cost and presence understated | Taken | design:709–724; `daoris.gates.json:8` | HTTP tests and records-induced service runs are included; the estimates remain explicitly unmeasured together. |
+| Opus 9 — four intentionally excluded tool tests added | Taken | design:644–650; `package.json:15` | Selection is restricted to verify’s twelve files, and the four exclusions are named. |
+| Opus 10 — reversed rejections unnamed | Taken | design:1142–1159; D207:130–136 | Both D180 rejections are named and answered without weakening the stage requirement. |
+| Opus 11 — recall range, price, evidence chain and threshold | Open | design:380–439, 448–449 | Range bootstrap, evidence chains and threshold are supplied; the lower-bound calculation and pre-admission proof order remain defective: findings 1 and 5. |
+| Opus 12 — slips in records and proof placement | Taken | design:366–368, 1088–1089; `TASKS.md:508–509`; D207:47 | Backlog wording, measurement row, estimates, skip check and base-run proof placement are corrected. |
+
+### 2. What round 4 introduced
+
+The queue’s bounded attribution procedure is substantially stronger: it uses signatures, repeats the actual failing operation, examines every prefix, confirms adjacent results, and rejudges retained members. Its explicit stops for broken base checks and expired inherited failures are understandable exceptions; neither makes a merge wait for background completion.
+
+The remaining blocking gaps are the historical recall claim, preservation of publish inputs, and identification of reservation owners after process death. The scoped-set rules also need consistent treatment of deferred failures and carried debt. The install retains the required background receipt and no known-red waiver, but that receipt still permits standing Process evidence; the absolute claim that dependency misses cannot reach the install is therefore too strong.
+
+The normal implementation order preserves the principal backstops. However, CISCOPE1c’s newly priced historical execution refers to admission that CISCOPE1e builds later, and the existing helper `recordMatcher` is assigned the wrong purpose.
+
+### 3. Findings
+
+1. **Blocking — the historical search still cannot establish its claimed lower bound.**
+
+   **Where:** `docs/2026-10-24-ci-scope-design.md:385–405`, `:436–439`, `:1066–1068`; `docs/decisions/D207.md:25–31`.
+
+   A long history can contain an earlier, correctly reached introduction, followed by a fix and an unreached reintroduction entirely between two probes. Every probe shows the fingerprint, so the search credits the earlier introduction as *selected*. Stating that residue does not make the result a lower bound: a real miss has entered its numerator. The 0.9 admission threshold can consequently pass on overstated evidence.
+
+   **Smallest change:** inspect every remaining commit after the proposed boundary, or count the unresolved suffix as *unsettled* unless every possible introducing change would receive the same classification. Add a fix/reintroduction fixture hidden wholly between probes. Reprice the search accordingly; checking stretches across a thousand commits also exceeds the provisional fourteen-runs-per-failure model.
+
+2. **Blocking — two matching source snapshots do not bind the artifact to that source.**
+
+   **Where:** `docs/2026-10-24-ci-scope-design.md:889–896`, `:1085–1087`; `tools/desktop-publish.mjs:1137`, `:1163`, `:1220`.
+
+   Plain `--stage` builds from the checkout, through several sequential build and pack operations. A source can change after the initial check, be consumed, then be restored before the final check. Both content trees equal the receipted tree, while the staged artifact contains different or mixed content. Promotion can also change a clean main checkout during that build. The dirty-at-entry fixture does not exercise either case.
+
+   **Smallest change:** build every ordinary stage from a dedicated worktree pinned to the receipted commit and held against movement through publication, as the existing gated-source path already does against CI movement. Add a controlled source-change-during-build case; the source must remain isolated or publication must refuse.
+
+3. **Blocking — the cited orphan heuristics cannot implement complete process-group ownership.**
+
+   **Where:** `docs/2026-10-24-ci-scope-design.md:807–812`, `:1114–1116`; `tools/merge-branch.mjs:4628–4634`; `tools/processes.mjs:169–204`.
+
+   `endOrphans` finds children of the recorded PID. `endStranded` finds orphan roots whose command lines contain the tree path. A grandchild surviving an ended intermediate shell, with a relative command line that names no tree, satisfies neither search. A failed process query can also produce an empty result. These are cleanup heuristics, not proof that every member has ended; using their empty result can release the reservation while work survives.
+
+   **Smallest change:** specify an owned process container whose membership survives intermediate-parent death, or another durable ownership mechanism that cannot lose those descendants. Unknown membership must retain its charge. Ensure scoped builds also use private build servers. Extend the proof to a vanished intermediate shell, a surviving descendant with no tree path, and an unreadable process query.
+
+4. **Non-blocking — “every known-red unit” contradicts unconditional browser and rehearsal deferral.**
+
+   **Where:** `docs/2026-10-24-ci-scope-design.md:629–632`, `:662–663`, `:858–866`; `docs/decisions/D207.md:37–38`.
+
+   A background browser failure can become known red, yet the new blanket rule runs its unit in every candidate while point 6 says no scoped run runs a browser spec. Likewise, known-red git classes need a precedence rule against the budget. These choices also determine which expiry can stop the queue.
+
+   **Smallest change:** define eligibility before applying known-red selection: browser specs and rehearsals remain deferred; state whether known-red git classes override or consume the budget. Apply the expiry language to that same eligible set and add one fixture for each deferred kind.
+
+5. **Non-blocking — the historical proof consumes admission before its implementation exists.**
+
+   **Where:** `docs/2026-10-24-ci-scope-design.md:430–435`, `:1058–1068`, `:1094–1096`, `:1128–1130`.
+
+   CISCOPE1c must complete historical builds “at the background’s admission,” but CISCOPE1e introduces that admission and cannot start until c’s recall proof qualifies. CISCOPE1g can also land before e while scheduling background coverage work.
+
+   **Smallest change:** give pre-e proof and coverage execution an explicit temporary rule using existing serialization and memory controls, or move the standalone admission prerequisite earlier. Do not require e to execute its own prerequisite proof.
+
+6. **Non-blocking — `recordMatcher` is described as a merge-resolution policy.**
+
+   **Where:** `docs/2026-10-24-ci-scope-design.md:522–523`; `tools/merge-branch.mjs:1842–1867`, `:1429`.
+
+   `recordMatcher` determines which record differences standing verdicts forgive. Backlog resolution uses `resolveBacklog`/`mergeByBase`; union handling uses the attributes and join repair. The new sentence assigns the helper a responsibility it does not have.
+
+   **Smallest change:** replace “decides what a merge may resolve” with “decides which record differences a standing verdict may forgive.”
+
+7. **Non-blocking — background receipt provenance does not eliminate dependency-map exposure at installation.**
+
+   **Where:** `docs/2026-10-24-ci-scope-design.md:699–702`, `:887–903`; `docs/decisions/D207.md:87–89`; `tools/merge-branch.mjs:1908–1912`, `:5109–5115`.
+
+   An ordinary background run may retain a composed Process-half pass. A dependency missing from the class census can leave an affected class’s old pass standing, within the sweep bound. A finished background receipt plus those standing passes therefore does not prove the regression was exercised before installation. D180’s PROCREACH1 note explicitly acknowledges this within-day exposure.
+
+   **Smallest change:** preserve the agreed receipt/standing contract but state its residual exposure accurately. If “no census miss reaches the install” is required, require a whole Process-half execution on the target tree before staging; the current receipt predicate does not establish it.
+
+8. **Non-blocking — carried git-half debt is understated for unrelated later candidates.**
+
+   **Where:** `docs/2026-10-24-ci-scope-design.md:605–609`, `:629–630`, `:725–728`; `tools/merge-branch.mjs:5134–5183`.
+
+   The basis is every unit without a standing pass. After candidate A invalidates a git class and defers it, an unrelated candidate B still lacks a standing pass for that class. The statements that it runs again only in later candidates “that reach it” omit this accumulated debt and can underprice queue replay.
+
+   **Smallest change:** describe carry-over by standing evidence, independently of B’s own changed paths. Require the replay to include a deferred driver candidate followed by unrelated records/page candidates before the background pays that debt.
+
+**8 findings; 3 blocking.**
+
+**Verdict: another round.** Preserve the scoped-merge/background-install direction, the deleted stage waiver, and the revised queue attribution. Another read is needed after the historical search produces a valid conservative measure, publication preserves its receipted source throughout the build, and reservation ownership survives intermediate-process death. The remaining five findings are local corrections the steward can check directly.
+
+## Opus (foundation), round 4
+
+The independent Opus 5.5 reader's check of round 4, at `e89f00ca4`: 10 findings, 3 blocking; accept after named changes.
+
+## CISCOPE1, round 4: the independent Opus foundation read (D191)
+
+Read at `e89f00ca4` (round 4: the design and D207), against the code at `a6991805f`. `git diff --stat` from `22427ff95` to
+`a6991805f`, and from `a6991805f` to `e89f00ca4`, is empty over `tools/`, `daoris.gates.json`, `daoris.lanes.json`,
+`package.json`, `.github/`, `docs/development.md`, D115 and D180. So round 3's line numbers hold, and round 4's claim that
+nothing it cites changed is true. "design:N" is `docs/2026-10-24-ci-scope-design.md` line N, "mb:N" `tools/merge-branch.mjs`,
+"dp:N" `tools/desktop-publish.mjs`, "D207:N" `docs/decisions/D207.md`. I did not open `local/`, so the figures drawn from the
+run records are taken as stated.
+
+### 1. Round 3's findings
+
+#### The Opus foundation read, round 3
+
+| # | Finding | Verdict | Where | Why |
+|---|---|---|---|---|
+| F1 | A failing gate that names no test has no rule on the base | Taken as named; holds, with one new hole in its stop | design:536-539, 545-556; row 5 design:1103-1106; D207:41-43 | The gate runs on the base first, with the same selection. The queue stops if it fails there; otherwise the gate's own selection runs over the prefixes. Prefix builds serve a compilation failure only. The three proofs are in row 5. A gate that died of memory now reaches this stop (finding 3). |
+| F2 | A failure the base shares but does not inherit; the expiry's scope | Taken as named, (a) to (d); holds, with two qualifications | design:557-566, 629-633, 724-726, 847-866; D207:39, 45, 108-114 | Prefixes are judged by the candidate's signature, so a changed fingerprint on a failing base pins a member. An expired known red stops the queue, said by `--queue`. The alternative is rejected with a reason that holds. §4.2, §4.4, §5.2 and D207 agree. But "every candidate" is broader than §4.2's own deferrals allow (finding 7). And matching by signature breaks for a failure whose message varies between runs (finding 1). |
+| F3 | §5.1 misstates the scoped run's worst case | Taken; holds for the Process lane | design:789-801, 812-815; row 5 design:1121-1122 | Stated: the git half and one rehearsal (8 + 10 GB), two rehearsals after CISCOPE1f; MEMGATE1's ten minutes per heavy gate; 26 GB of headroom; normal priority; a proof beside a stage's or a night's pair. Not stated: the background's light lane, which also runs beside a scoped tier. §4.4 also contradicts itself on the scoped run's own schedule (finding 4). Normal priority departs from D180's budget note, and that is not named (finding 5). |
+| F4 | The unresolved path can retry; a flake can hand back an innocent | Taken as named; incomplete for a candidate of one | design:578-586 | A pass on a re-run never makes a candidate green, and the adjacent prefixes run again before a hand-back. A candidate that already has one member has no outcome (finding 2). |
+| F5 | Promotion moves the parent's checkout; direct commits can starve | Taken as named; holds | design:524-534; row 5 design:1113, 1119-1120 | Promotion happens only onto a clean checkout: no tracked change and no merge in progress (`mergeInProgress`, mb:2572). Otherwise it is held and retried. Three re-forms are reported as *held*, and the replay reports re-forms. |
+| F6 | The receipt does not say which runs count | Taken as named; holds | design:670-673, 879-889 | Ordinary, nightly, plain `--ci`, `--ci --stage` and `--full --beside` count; a sweep-only run does not. `release` is dropped. A receipt is matched by tree, and a run that ran nothing counts. `ci-runs.jsonl` extends `ci.json` (mb:5069, :5351). |
+| F7 | The gate store's 400 cap | Taken as named; holds | design:673-677; row 4 design:1082-1083 | Kept per gate: 20 scoped-and-remedy verdicts apart from 20 of the other kinds (checked against mb:1758-1761). The working-day replay is in row 4. |
+| F8 | §4.4 under-prices and omits `service` | Taken as named; holds | design:710-720; D207:49-50 | The HTTP host's 3 m 17 s is in. `service` is in every row, and D207 follows. The driver row's "beside the Process tier" rests on a schedule that §4.4 names otherwise (finding 4). |
+| F9 | Four tool tests that no gate runs | Taken as named; holds | design:644-648; D207:37-38 | Checked: there are 16 `tools/*.test.mjs` files, and `package.json:15` names 12 of them. The four others are named and kept out. |
+| F10 | Two reversed D180 rejections unnamed | Taken as named; holds | design:1144-1148, 1158-1161; D207:130-135 | Both are named, with the answers the read gave. |
+| F11 | Four details of the recall measure | Taken; holds except the stretch search's recursion and price | design:381-393, 430-438, 449-450 | Done: the range start without a recorded pass (*no pass found*); the price, measured on the first ten; every run of a re-formed candidate read; the 0.9 decision. Not said: whether the stretch checks recurse. The price assumes short stretches (finding 9). |
+| F12 | Small slips in the records | Taken; holds | TASKS.md:508-509; D207:49-50; design:366-368; row 4 design:1088-1089; row 5 design:1108-1109 | Each line is corrected. |
+
+#### Codex, round 3: its six blocking findings
+
+| # | Finding | Verdict | Where | Why |
+|---|---|---|---|---|
+| 1 | The records-only re-form bypasses more than the service deferral | Taken; holds | design:515-523, 696-697; row 5 design:1109-1110 | The whole cheap tier runs, and only `service` is deferred, recorded. `adoption.md` (mb:1129) and the declaration files (mb:989-997) are excluded. `recordMatcher` (mb:1842) is kept apart as a different question. Both cases are proven. The definition also admits the rules that name no gate, which is harmless (finding 10). |
+| 2 | Discovery and host failures cannot be bisected by builds | Taken as named; holds | design:545-556; row 5 design:1104-1106 | A compilation failure is found by prefix builds. A discovery failure (mb:2043) or a host failure (mb:2044) is found by the gate's own selection, on the base and then over the prefixes. Each has its own proof. |
+| 3 | Halving finds a transition, not the introduction | Taken; holds for the queue, and for recall once the search is stated (finding 9) | design:385-393, 567-579; rows 3 and 5 | The queue runs every prefix (at most seven runs) and hands back the member at the last transition, naming earlier ones as interacting. Recall runs a short range at every commit and probes a long one, and states the residue. Both rest on signature equality, which a varying message breaks (finding 1). |
+| 5 | The one-background-gate bound contradicts the scheduler | Taken otherwise: the Process-lane set is stated; does not fully hold | design:789-794 | The git half and one rehearsal is today's Process-lane maximum (mb:490, :628-637), two rehearsals after CISCOPE1f. The background's light lane runs beside its git half, scheduled by memory (mb:623-647). It is not held while a scoped tier runs, and it is not in the stated set or in the proof. Finding 4, not blocking: that lane runs below normal priority and is admitted only above the headroom. |
+| 6 | Reservations use the wrong unit and outlive their holder | Taken; holds for the units | design:802-811; row 5 design:1117-1119 | Physical memory and commit are charged apart (`readMemory`, mb:2284). A reservation is held until no process of its group lives. Both are proven. The group is found per run, not per gate (finding 8). |
+| 8 | The receipt is not bound to the tree staged | Taken as named; holds | design:890-901; row 4 design:1085-1086 | The commit's, the receipt's and the build source's content trees must be one (`contentTree` mb:1819; `judgeCheckout` mb:4326-4329; `ungatedRefusal` dp:871, :1163). A dirty checkout is refused, and the source is read again after the build. Proven. |
+
+Codex's non-blocking 4, 7, 9, 10, 11 and 12 are taken and hold (design:487-493, 795-799 with 816-820, 850-857, 495-500,
+928-933, 970-977). On 10: the citation `:5723` is `main` itself; it dispatches the watch at mb:5743.
+
+### 2. What round 4 introduced
+
+**Claims checked against the code: these hold.**
+- In the merge tool: `BESIDE_GIT_HALF` mb:490, `STAGE_REHEARSALS` :500, `laneSchedule` :628-657 (its `byMemory` at :623-647),
+  `REACH`'s first rule :989-997, `adoption.md` :1129, the records lane :1234, `docs/index/**` :1244, `docs/**` :1249,
+  `pathsReaching` :1645-1653, `addVerdicts` :1758-1761, `contentTree` :1819, `recordMatcher` :1842, `flakeDecision`
+  :2041-2044, `MEMORY_NEEDS` :2208, `MEMORY_WAIT_MS` :2212, `readMemory` :2284, :2365, `judgeCheckout` :4326-4329, `state.tips`
+  :4452, CIPRIO1d/e :4628-4634, `CI_RUNS_KEPT` :5069, `noteCiRun` :5351, `ciWatchVerb` :5645.
+- In `tools/processes.mjs`: `endOrphans` :169 and `endStranded` :189.
+- Elsewhere: `release.yml:213` and `:222`; `package.json:15`; `daoris.gates.json:8`.
+
+**Wrong claims.**
+- "FLAKE1's own re-run alone of a Process half's failures is the only retry, as today" (design:583-584). There are two more
+  today. MEMGATE1 runs any gate that died of memory again once, whole (`againOfMemory`, mb:3744-3765; mb:270-276). LEFT1 runs a
+  rehearsal that died again (mb:3540-3557). Finding 3.
+- "The Process halves run one after another in the Process lane, as GATEORDER1 has them" (design:705-706). The driver row has
+  `service` "in the light lane beside the Process tier" (design:713, 719-720). GATEORDER1 holds a Process half until the heavy
+  light gates end (mb:290-291, :645-647); running them beside each other is CI1's `byMemory`. Finding 4.
+- "The scoped tier's worst case is its whole Process tier beside that set" (design:794), where that set is the background's
+  Process lane alone. Finding 4.
+- "about ten runs over a month's thousand-odd first-parent commits" (design:430). `git log --first-parent` from 2026-09-24 to
+  2026-10-24 at `a6991805f` counts 2,153; §2.7's own table counts 1,038 in ten days. Finding 9.
+- "`ruleFor`, `:1645-1653`" (design:516): `ruleFor` is mb:1574; :1645 is `pathsReaching`. Finding 10.
+- "23 to 30 minutes" for two rehearsals at once (design:976). By §2.1 and CIFAST1's 1 to 4 minutes for the release rehearsal,
+  the longer of the family rehearsal (14 to 23) and the release then the deployment rehearsal (15 to 26) is about 16 to 26.
+  Finding 10.
+
+**New holes.**
+- Signatures are matched for equality throughout (design:538-539). The fingerprint's message line is normalised only for
+  numbers and paths (design:839-842). So a failure whose message carries a run-specific token is never the same twice.
+  Finding 1.
+- An unresolved failure on a candidate of one has no outcome (design:580-586). Finding 2.
+- A death of memory meets the base-first stop (design:545-556 with design:796-797, 815). Finding 3.
+- A reservation's process group is found by the run's tree (design:807-811). Finding 8.
+
+**D115, D180, CIFAST1.**
+- D115: GATESLIM1's line changes as §9 says; the full set before a stage holds, stricter. No contradiction.
+- D180: point 4 and its rejection of letting an install out without a green run hold, stricter. The CI1 note's rejection of
+  forgiving the records (D180.md:475) is respected: the records-only re-form runs the whole cheap tier. Two departures that
+  round 4 makes explicit are not named:
+  - the scoped runner at normal priority against the budget note's point 2, "a CI run is a guest on the machine ... A CI run
+    beside a full slate of workers is not started" (D180.md:68-69, the harm at :60-62): finding 5;
+  - the queue's stop when a gate fails on the base, a second deliberate exception to the blocking D180 removed, recorded
+    nowhere as one: finding 6.
+- CIFAST1: unchanged but for the nightly run, which is named with its rejection's answer.
+
+**The rows.**
+- The order holds:
+  - no backstop goes before its replacement;
+  - admission arrives with the second runner;
+  - the stage only tightens;
+  - row 4's skip check extends row 3's tool, after it.
+- Row 5's proof names every round-4 rule but lacks four cases:
+  - a failure whose message varies between runs (finding 1);
+  - an unresolved failure on a candidate of one, and a prefix that does not build (finding 2);
+  - a death of memory on the candidate and its base (finding 3);
+  - the background's light lane beside a scoped tier (finding 4).
+- Row 6's proof matches the two-at-once limit.
+- With those cases added, each proof proves its row's claim.
+
+**D207.** Its body and Changes match the design, with these exceptions:
+- D207:47 says a re-form "whose paths reach no gate but `service`". By `pathsReaching` no path satisfies that: every path
+  reaches the baseline gates (mb:1648). The design means each path's own rule (finding 10).
+- D207:39 and :110 carry §4.2's over-broad "every candidate" (finding 7).
+- Changes omits the two D180 departures above (findings 5 and 6).
+
+**The §10 questions, briefly.**
+1. Not yet. Three failures are still placed wrongly or not at all:
+   - a reproducible failure whose message varies between runs (finding 1);
+   - an unresolved failure on a candidate of one (finding 2);
+   - a death of memory, which can stop the queue or pin a member (finding 3).
+
+   The rest are placed.
+2. Yes. Stopping the queue is the right exception. A known-red unit the scoped run runs, it runs in every candidate. Handing
+   back the members that reach it would hand back members that did nothing, and one direct commit ends the stop. It should be
+   recorded beside the base-failing gate's stop, as an exception of the same scope (finding 6).
+3. For memory, yes. It is reserved in both measures and released after the group ends, and the background is admitted only
+   above 26 GB. The stated maximum leaves out the background's light lane (finding 4), and the per-gate group is found per run
+   (finding 8).
+4. Yes. The three trees made one, the dirty checkout refused and the source read again after the build close the gap. The
+   named receipt kinds settle which runs count.
+5. Yes, with two changes:
+   - the search must say it probes recursively until every stretch is sixteen commits or fewer, and price that (finding 9);
+   - the fingerprint must survive a varying message (finding 1). Otherwise a reproducible failure reads as *does not
+     reproduce*, which is unsettled and counted as missed.
+
+### 3. Findings
+
+1. **Blocking. A failure whose message varies between runs is never matched. It is unresolved even when it reproduces, and
+   it is never inherited from the base.**
+   - Round 4 judges every run by signature equality: the base run, the run that checks the failure reproduces on the whole
+     candidate, each prefix, and the adjacent re-runs (design:538-539, 580-581).
+     - A test's fingerprint normalises only numbers and paths in its message line. A failure whose location cannot be read
+       keeps its whole message, unnormalised (design:839-842).
+     - A gate's signature takes the first error line, normalised the same way (design:537-538).
+   - Some messages carry a token that each run makes fresh, so they change every run. Examples: a GUID, a session or tree id
+     such as `s-a2762239`, a hash, a set printed in hash order. The first line of a vitest or chai assertion also carries the
+     actual value. Three cases go wrong:
+     - **A member breaks such a test reproducibly.** The reproduce run fails "without its signature", so the failure is
+       *unresolved*. Its candidate is split into one member at a time, and the guilty member is never pinned. With finding 2,
+       it is never placed at all.
+     - **Main is red with such a test.** The base fails with another fingerprint, so the failure is not inherited and counts
+       against every candidate. Every candidate goes unresolved, the queue promotes nothing, and the expiry never applies.
+     - **Recall.** The introducing-commit search finds no commit "with this fingerprint", so the failure *does not
+       reproduce*. It is unsettled and counted as missed (design:392-393, 403). That lowers, for a reason of method, the bound
+       that decides whether CISCOPE1e starts (design:436-438).
+   - **Smallest change:**
+     - Within one judgement (the base run, the reproduce run, the prefixes, the adjacent re-runs, the recall search), match a
+       failing test by its full name with its case, its exception type and its assertion's location. Use the message line only
+       where no location can be read.
+     - Normalise GUIDs, and hex runs of eight characters or more, as numbers are normalised. Do this both in a test's message
+       and in a gate signature's error line.
+     - Keep the full fingerprint as the record's identity.
+     - Add to rows 3 and 5: a reproducible failure whose message carries a fresh GUID each run is pinned, is inherited from a
+       base that fails it, and is found at its introducing commit.
+
+2. **Blocking. An unresolved failure on a candidate of one has no outcome, and a prefix that cannot run the selection has no
+   reading.**
+   - An unresolved failure runs the candidate's members "one at a time as candidates of one". It hands nothing back, and no
+     re-run makes the candidate green (design:580-586).
+   - Candidates of one are common: the quiet hours' usual case (design:596-597), every `--one-at-a-time` candidate, and every
+     member split out of an unresolved candidate. For a candidate that already has one member, the text allows only two
+     outcomes, and neither works:
+     - it stays where it is, with the queue behind it; or
+     - it is formed again as a candidate of one, without bound, and promoted on the first fresh run that passes. That is
+       retrying a fast .NET or Node failure, which design:582-583 and D180 keep out, here without a bound.
+   - A prefix that does not build can appear in a failing test's or a check's prefix sequence: a member breaks compilation and
+     a later member repairs it. Such a prefix is neither "the signature" nor a pass, and design:567-577 does not say which it
+     counts as.
+   - **Smallest change:**
+     - Say that a candidate of one with an unresolved failure is handed back as *unresolved*, with the flake filed for its
+       row, and the queue goes on. Or say that it is formed again once only, and handed back the same way if it fails again.
+     - Say that a prefix that cannot run the selection makes the failure unresolved.
+     - Add both cases to row 5.
+
+3. **Blocking. A gate that died of memory meets the base-first stop, and the design misstates today's retries.**
+   - design:583-584 says FLAKE1's re-run is "the only retry, as today". Today has two more:
+     - MEMGATE1 runs any gate that died of memory again once, whole, after its memory is free, and a pass reads FLAKE of memory
+       (`againOfMemory`, mb:3744-3765; mb:270-276);
+     - LEFT1 runs a rehearsal that died again (mb:3540-3557).
+   - §4.2's "Retries are today's" (design:665-666) names neither.
+   - Round 4 makes deaths of memory likely in the scoped run:
+     - its heavy gates run past MEMGATE1's bound (design:796-797, 815);
+     - they run beside the background's git half and a rehearsal, and beside five workers;
+     - MEMGATE1 was written after 2026-10-22, when the sensitive scan, `web-rules` and the rehearsals died of memory, "each
+       read as the change's failure" (mb:259-262).
+   - A death of memory names no test, so §4.1 point 4 runs that gate on the base first (design:545-556).
+     - Under the same pressure the base dies the same way, and the queue stops until main moves, though main is not broken.
+     - When the base survives, each prefix dies or passes according to the machine's load, and that can pin a member. The
+       adjacent re-run guards against this only in part.
+   - **Smallest change:**
+     - Say that the scoped run keeps MEMGATE1's run again, and correct design:583-584.
+     - A failure that `memoryDeath` reads (mb:2244) is the machine's:
+       - it is never judged on the base or over the prefixes;
+       - it never stops the queue and never hands a member back;
+       - a second death holds the candidate, said as memory, until the admission record shows its need free, and then it runs
+         again.
+     - Add to row 5: a death of memory on a candidate and on its base, the queue not stopped.
+
+4. **Not blocking. The load the two runners may make is understated in two places.**
+   - **The background's simultaneous set.** It is given for the background's Process lane alone (design:789-794). Its light
+     lane is scheduled by memory beside its git half (`byMemory`, mb:623-647). While a scoped tier runs or waits, admission
+     holds back only Process-lane gates and rehearsals (design:785-786).
+     - So the git half with up to three heavy light gates is a larger set: 8 + 3 × 6 = 26 GB by `MEMORY_NEEDS`, against 18 GB
+       for the git half and a rehearsal.
+     - It is not blocking because that lane runs below normal priority (CIPRIO1) and is admitted only above the 26 GB
+       headroom.
+   - **The scoped run's own schedule.** §4.4 says the Process halves run "as GATEORDER1 has them" (design:705-706), and
+     GATEORDER1 holds them until the heavy light gates end (mb:290-291). Its driver row then runs `service` beside the Process
+     tier (design:713, 719-720), which is CI1's `byMemory`.
+   - **Smallest change:**
+     - Say that the scoped run is scheduled by memory, as a CI run is, with GATEORDER1's wait dropped.
+     - Name the background's light lane in the set, with its priority and the headroom.
+     - Time row 5's proof with background heavy light gates running too.
+
+5. **Not blocking. The scoped runner at normal priority departs from D180's budget note, and the departure is not named.**
+   - D180's note of 2026-10-19, point 2 (D180.md:68-69): a CI run is a guest at background priority, and is not started beside
+     a full slate of workers. The note records the harm behind it: a git half under load slowed builders' git until the harness
+     refused dispatches (D180.md:60-62).
+   - Round 4 sets the scoped runner to normal priority for every gate (design:800-801). That includes its git half, eight
+     minutes four wide, beside five workers.
+   - §9's D180 item (design:1140-1148) and D207's Changes (D207:122-136) carry the budget note's thirty minutes, but not this.
+   - **Smallest change:**
+     - Name it as an amendment to the budget note's point 2.
+     - Give its bound: one scoped Process tier at a time, and the git half's eight-minute budget.
+     - Have CISCOPE1e's proof watch for dispatch refusals.
+
+6. **Not blocking. The stop for a gate that fails on the base is a second deliberate exception to the blocking D180 removed,
+   and it is recorded only as a rule.**
+   - While main fails any gate that names no test, every merge waits, at once and with no grace. Today a merge waits on
+     `BLOCKING` alone. Round 4's set is much wider:
+     - the documentation tools, `daoris check`, `release-prep --check` and the census check;
+     - `web-types` and the CLI's typecheck;
+     - a compilation, discovery or host failure of any fast half.
+   - A test that crashes its host on main (`Environment.FailFast`, a stack overflow) stops the queue at once. A test that fails
+     normally is inherited for 72 hours.
+   - D207 names only the expiry as an exception (D207:108-114).
+   - Nothing re-checks a stop but main moving (design:551-552). So a stop caused by a transient host failure needs a direct
+     commit to clear.
+   - **Smallest change:**
+     - Record this stop in D207's exception and in §9's D180 item, with its scope and that asymmetry.
+     - Add a way to run the stopping failure on the base again: `--queue --recheck`, or the runner trying again when the parent
+       asks.
+
+7. **Not blocking. "A known-red unit runs in every candidate, whatever it reaches" is broader than §4.2 allows, and a partial
+   fix is handed back.**
+   - Points 5 and 6 of §4.2 never run a browser spec or a rehearsal in a scoped run, and defer git-half classes past the budget
+     (design:654-663).
+     - A known red among those is never run by a candidate, so the expiry's stop never reaches it. The stage still refuses it.
+     - The claim is made at design:631-632 and 859-860, and at D207:39 and D207:110.
+   - A member that partly fixes a known red changes its fingerprint. It is then pinned and handed back (design:557-560, 848),
+     though it moved main toward green.
+   - **Smallest change:**
+     - In those four places, limit the claim to the units the scoped run may run.
+     - Say that a changed fingerprint is handed back even when it comes from a partial fix, and that the parent's way through
+       is a full fix or the skip.
+
+8. **Not blocking. A reservation's process group is found per run, not per gate, and an admission read ends processes.**
+   - The group is "the gate's process and every process started under it ... and the strays whose command line names the
+     run's tree" (design:807-811, citing mb:4628-4634). The strays rule (`endStranded`, `tools/processes.mjs:189-205`) matches
+     on a run's tree, and every gate of that run shares the tree. Two consequences follow:
+     - Each gate's group counts its siblings' stray processes too. That overstates its use and understates the unused part of
+       its reservation, so admission is too generous.
+     - "The next read ends that group": either runner's admission read can end processes that name a tree another run has
+       since taken over. `endStranded` spares only processes whose parent is still alive.
+   - **Smallest change:**
+     - A gate's group is the descendants of the gate's own process, by pid and creation time.
+     - A run's strays are charged to that run's reservations together.
+     - Ending processes is left to the run that takes over the tree's lock, as CIPRIO1d and CIPRIO1e do, and never to an
+       admission read.
+
+9. **Not blocking. The recall search's stretch probes are unbounded as written, and their price assumes short stretches.**
+   - The search runs "at the midpoint of every stretch longer than sixteen commits" (design:388-391), and states the residue
+     as a stretch "of sixteen or fewer". That residue holds only if the probing recurses until every stretch is sixteen commits
+     or fewer.
+     - The cost is then about the distance from halving's pair to the first failure, divided by sixteen.
+   - The price assumes about ten halving runs and fourteen runs in all (design:430-435), over "a month's thousand-odd
+     first-parent commits".
+     - The month holds 2,153 first-parent commits (`git log --first-parent`, 2026-09-24 to 2026-10-24, at `a6991805f`).
+     - A FIX-LOG failure with no recorded pass starts its range at the month's first commit, or where the unit was added
+       (design:381-383).
+   - **Smallest change:**
+     - Say that the probing recurses.
+     - Price each failure at about eleven halving runs, plus that distance over sixteen.
+     - Correct the count.
+
+10. **Not blocking. Small slips.**
+    - **What *records only* admits** (design:515-519). "Names no gate but `service`" also admits the rules that name no gate:
+      `src/Daoris.Cli/test/**` (mb:1189), the `tools` lane with `.github/**` (mb:1233), and `.mcp.json` (mb:1253). This is
+      harmless: nothing more is deferred, and the closure runs their files. List them, or define *records only* by the rules at
+      mb:1234, :1244 and :1249.
+    - **D207's wording.** D207:47 says "whose paths reach no gate but `service`". Make it "whose paths' own rules name".
+    - **A citation.** `ruleFor` is at mb:1574, not :1645-1653.
+    - **A figure.** §6.2's "23 to 30 minutes" (design:976) is about 16 to 26 by the figures it cites.
+    - **The frozen tip.** It is the branch's tip at enqueue, though design:489-490 says "as the parent previewed and queued
+      it". Either refuse a tip that differs from the branch's last `--preview`, or drop "previewed".
+    - **The expiry.** Say whether the 72 hours count per test, or per test and fingerprint (design:858). Counted per
+      fingerprint, a direct commit that moves the failing assertion renews the waiver.
+
+**10 findings, 3 blocking.**
+
+**Verdict: accept after named changes the steward can check without another read.** Round 4 takes both of the round-3 Opus
+read's blocking changes as named, and answers Codex's six blocking findings. Codex's load finding holds for the Process lane;
+the background's light lane remains (finding 4). I checked each answer against the text and the code.
+
+The foundation holds and is unchanged:
+- a merge waits on a scoped run in a tree of its own, which is strictly more than today's wait on `BLOCKING` alone;
+- the install waits for the background run, with no waiver;
+- the staged content is bound to its receipt's tree;
+- admission reserves memory in both measures;
+- recall is a causal lower bound.
+
+What remains is three local rules in §4.1 point 4. Each is a sentence, with its own row-5 proof case:
+- match a failure by test, case, exception type and location, not by its message line (finding 1);
+- give an unresolved failure on a candidate of one an outcome (finding 2);
+- keep a death of memory out of the base run, the prefixes and the queue's stop (finding 3).
+
+Findings 4 to 10 are statements and corrections the steward can check line by line. Codex's read of round 4 is a separate
+matter.
