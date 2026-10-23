@@ -19861,3 +19861,15 @@ the service's words, from its first refusal, and lets it go once the move lands 
 service keeps none. *What needs you* reads it as a `helper-ended` row in *Holding work*, worded in en and zh with the refusal passed
 through, its door the session. The go-ahead read that fails is proved to park. COWORKUX1a's first showing no longer waits on it.
 Detail: FIX-LOG 2026-10-23 (HELPERWAIT1c), D203's HELPERWAIT1c note. On Opus.
+
+## GITAPP1a-iii — leaving Review stops its git (2026-10-23, D202)
+
+> - [ ] **GITAPP1a-iii — leaving Review stops its git** (driver, modules, web; after 1a-i, apart from 1a-ii; D202's round-4 point 3 and round-5 points 4-5; design P1.6, P1.8 row 3). A `read` id on each `SESSION_DIFF`, linked to the asking window's bridge lifetime; the route joined by session through `RouteFlights`, the id kept out of the flight's key; `READ_LEAVE { read }` cancelling that id, the last waiter stopping the flight; the page's `readDiff` sending it when its last waiter has been gone 10 s (REVIEW4's return joins within it); a destroyed window leaving its reads with no script. In the driver, the three runners (`ChildProcess.cs:54-92`, `WorkingTree.cs:1104-1159,1198-1248`) killing and then awaiting each process's exit, a failed kill said as `git.unended`, and the executor owning every started node until its runner returns. Proof: through the real route boundary with a stand-in git that waits, the leave kills it and nothing is answered; a second window keeps the read; a leave for an answered id does nothing; two of the kit's bridges, one disposed mid-read; each runner's recorded pid exited when it returns, during creation and while running; a Vitest of the grace and the last waiter.
+
+**Outcome** 2026-10-23: built on today's chain, since 1a-ii's graph is not on main. `SESSION_DIFF` takes a `read` id, opened in
+`ReadLeaves` under the route's own token and joined by session through `RouteFlights` (`OneFlight` `By = "id"`); `READ_LEAVE`
+answers `left`; `readDiff` leaves after `READ_LEAVE_GRACE`. The three runners end through `ChildProcess.EndAsync` (kill, then
+await the exit within 5 s), an exit not seen being `ProcessUnendedException` and the log's `git.unended`; the streamed runners'
+pipe reads hear their token. Proved by `GitRunnersEndTests`, `DriverModuleReviewLeaveTests` (the route boundary and two of the
+kit's bridges), `DriverModuleReadLeaveTests` and `trees.leave.test.ts`. The hidden-window case is not tested separately (D202's
+note says why). Detail: FIX-LOG 2026-10-23 (GITAPP1a-iii), D202's GITAPP1a-iii note. On Opus.

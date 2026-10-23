@@ -5,6 +5,40 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-23 — Leaving Review left its git running, and a runner returned before its git had ended (GITAPP1a-iii)
+
+- **Symptom:** a person who left Review mid-read (another session, another tab, the window closed) left the host's git running to
+  its end: the page's wait was cancelled and nothing reached the host (`bridge/sessions/trees.ts`'s reader said so). Two windows on
+  one review each started their own read.
+- **Root cause:** three gaps (D202's round-4 point 3 and round-5 points 4-5, Codex R3-8, R4-4, R4-5). The bridge's call carries no
+  cancellation, and `SESSION_DIFF` had no id the page could name, so no door led from the page's leave to the route's token. The
+  route was not shared, so a second window was a second chain. And the three runners (`ChildProcess.RunAsync` beneath
+  `RunGitAsync`, `ReadGitAsync`, `GitBytesAsync`) killed git's tree on cancellation and returned without awaiting its exit, the
+  process disposed in `finally`; `KillTree` swallows a refused kill, so one that failed read as one that worked.
+- **Fix:** `SESSION_DIFF` carries a `read` id the page makes per call. The router opens it in `ReadLeaves`, a source linked to
+  the route's own token (the asking window's bridge lifetime), and joins the read through `RouteFlights` by the session alone
+  (`[OneFlight("SESSION_DIFF", By = "id")]`, the id kept out of the flight's key). `READ_LEAVE { read }` cancels that source and
+  answers `left`; the last waiter stops the flight. The page's `readDiff` counts its waiters and sends it once the last has been
+  gone `READ_LEAVE_GRACE` (10 s); a return within the grace joins the read. A window destroyed cancels its bridge's lifetime and so
+  its reads, with no script. In the driver, `ChildProcess.EndAsync` kills the tree and awaits the exit within `ExitBound` (5 s); the
+  three runners end through it and dispose the process only after. An exit not seen there is thrown as `ProcessUnendedException`
+  (the cancellation, with the pid and the reason) and said by the seam as `git.unended` (node, runner, kind, pid, reason, no
+  path) to the log the route opens (`GitUnended.SaidTo`). The streamed runners' pipe reads now hear their token (`Heard`), since a git
+  that outlived its kill would otherwise hold its runner in the read and never be said.
+- **Verification:** driver `GitRunnersEndTests` (Process, 9): each runner cancelled during creation and while running returns with
+  the stand-in's pid exited, watched through a handle of the test's own; with the kill refused by a stub, each throws
+  `ProcessUnendedException` after its bound and the log says `git.unended`. Beside it `ChildProcessTests`, `ChildProcessKillTests`,
+  `GitStreamEndsTests`, `GitLaunchTests` and `GitBoundsTests` (86 with it), and `HelpCoverageTests`, `ProcessStartsCensusTests` (108
+  with `GitLaunchTests`). Modules `DriverModuleReviewLeaveTests` (Process, 4) through the real route boundary with a stand-in git
+  that waits and then runs the real git: the page's leave kills it and the call is answered `OPERATION_CANCELLED`; a second window
+  waiting keeps the read until it leaves too; two of the kit's own `IpcHostBridge`s over the kit's `MessageDispatcher`, one disposed
+  mid-read (its git ended, no `READ_LEAVE` sent), and a read both wait on surviving the first's disposal and answering the second
+  its review. `DriverModuleReadLeaveTests` (2) holds a leave for an unknown or answered id as `left: false`. With them
+  `DriverModuleOneFlightTests`, `StatePublisherTests`, `PipeCensusTests`, `DriverModuleRoutesTests`, `DriverModuleTreesTests` and
+  `DriverModuleReviewTests` (335). Web: `trees.leave.test.ts` (4: the grace, the last waiter, a return within the grace, an
+  answer within it) and the review's 22 files (319); the web typecheck. The censuses: home, optional locks, one word, read shares.
+  The runner cases were written beside the fix and not first run red against the old runners.
+
 ## 2026-10-23 — Review's git was counted for one runner of three, and never timed (GITAPP1a-i)
 
 - **Symptom:** Review is slow (the git-app brief §4: 16.2 s and 44.1 s on this machine), and nothing in the driver could say where its
