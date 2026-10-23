@@ -12,6 +12,10 @@ with the version and date at release.
   waiting words, and says once which agent it went on with. It never moves to an agent you did not choose for it. A conversation on
   an agent you picked yourself, or with no other choice that can run, waits for its agent's accounts and says why. Ask Daoris's
   conversation goes on in the same workspace.
+- A session whose landing replayed its commits onto the line now leaves *To review* and *What needs you* once its work is on the
+  line (REVIEWLANDED1). That includes a landing on a branch you merged and deleted. Its tree is tidied without `--force`, and its
+  commits stay at a recovery ref. A session that made new commits after its landing shows only those as work to land, and
+  `trees remove` names them.
 - Groundwork for the supervisor, a role you will appoint to answer a session's question on your behalf (SUPERVISOR1a-i, D208). A
   session that goes on with no words of yours, a helper's answer or Daoris's alone, now says whose words they are, never *your answer*.
   Nothing is offered yet and nothing you see changes: its answer can only be kept as the supervisor's, never as yours. Your own
