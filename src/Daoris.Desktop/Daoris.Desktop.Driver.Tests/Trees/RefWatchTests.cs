@@ -158,6 +158,32 @@ public sealed class RefWatchTests : IDisposable
     /// Canary 3's other halves: a hint arriving while its repository is judged is judged after it, never beside it, and two
     /// repositories are judged at once.
     /// </summary>
+    /// <summary>
+    /// 🔴 SETUPSTATE1 (the owner's report, 2026-10-23): a set-up's pull request merged on the remote and the checkout pulled outside
+    /// Daoris moved its line with no Daoris landing to say so, and the registry never followed it. Heard, a line standing at another
+    /// commit than the one it was last followed at is the next look's to follow; one standing where it was is not.
+    /// </summary>
+    [Fact]
+    public async Task A_line_heard_moving_outside_daoris_is_due_for_the_registry()
+    {
+        await using var watch = await Watching(names: ["engine", "deck"]);
+        foreach (var name in new[] { "engine", "deck" })
+        {
+            RegistryFollowing.Remember(_home, new RegistrationFollowed(
+                name, RegistryOutcome.NotSetUp, $"{name} is not set up", "main", new string('a', 40)), _now.AddMinutes(-1));
+            Directory.CreateDirectory(Path.Combine(CommonDir(name), "refs", "heads"));
+        }
+
+        File.WriteAllText(Path.Combine(CommonDir("engine"), "refs", "heads", "main"), new string('b', 40) + "\n");
+        File.WriteAllText(Path.Combine(CommonDir("deck"), "refs", "heads", "main"), new string('a', 40) + "\n");
+        Commit("engine");
+        Commit("deck");
+        await Step(watch, ChangeWatch.Quiet);
+
+        Assert.Equal(["deck", "engine"], Kept().Order());
+        Assert.Equal(["engine"], RegistryFollowing.Due(_home));
+    }
+
     [Fact]
     public async Task A_hint_during_a_judgement_is_judged_after_it_and_never_beside_it()
     {

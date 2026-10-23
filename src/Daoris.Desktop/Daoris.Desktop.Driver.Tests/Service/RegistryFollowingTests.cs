@@ -59,6 +59,65 @@ public sealed class RegistryFollowingTests : IDisposable
         Assert.Equal(new FollowedEntry("engine", Noon, RegistryOutcome.NoLine, "engine has no line", null, null), read["ENGINE"]);
     }
 
+    private const string Followed0 = "0123456789abcdef0123456789abcdef01234567";
+    private const string Pulled = "89abcdef0123456789abcdef0123456789abcdef";
+
+    /// <summary>A checkout whose line `main` stands at <paramref name="commit"/>, as git's own files say it: a loose ref.</summary>
+    private string Checkout(string commit)
+    {
+        var root = Path.Combine(_home, "checkout");
+        var heads = Path.Combine(root, ".git", "refs", "heads");
+        Directory.CreateDirectory(heads);
+        File.WriteAllText(Path.Combine(heads, "main"), commit + "\n");
+        return root;
+    }
+
+    /// <summary>
+    /// 🔴 SETUPSTATE1 (the owner's report, 2026-10-23): a set-up landed on a branch for review, its pull request merged on the remote and
+    /// the checkout pulled outside Daoris, so its line moved with no Daoris landing to say so, and the follow never registered it: the
+    /// repository read not adopted until the next start. The ref watch now hears the line stand where it was not followed at.
+    /// </summary>
+    [Fact]
+    public void A_line_heard_at_another_commit_than_it_was_followed_at_is_due()
+    {
+        RegistryFollowing.Remember(_home, Followed("game", RegistryOutcome.NotSetUp), Noon);
+        var root = Checkout(Pulled);
+
+        Assert.True(RegistryFollowing.Heard(_home, new RefRepository("game", "default", root)));
+
+        Assert.Equal(["game"], RegistryFollowing.Due(_home));
+    }
+
+    [Fact]
+    public void A_line_heard_where_it_was_followed_is_not_due()
+    {
+        RegistryFollowing.Remember(_home, Followed("game", RegistryOutcome.NotSetUp), Noon);
+        var root = Checkout(Followed0);
+
+        Assert.False(RegistryFollowing.Heard(_home, new RefRepository("game", "default", root)));
+        // Never followed, so the start's follow of every line takes it; and a line git's files cannot say is asked nothing.
+        Assert.False(RegistryFollowing.Heard(_home, new RefRepository("engine", "default", root)));
+        RegistryFollowing.Remember(_home, new RegistrationFollowed("tools", RegistryOutcome.NoLine, "tools has no line"), Noon);
+        Assert.False(RegistryFollowing.Heard(_home, new RefRepository("tools", "default", root)));
+        Assert.False(RegistryFollowing.Heard(_home, new RefRepository("game", "default", Path.Combine(_home, "nowhere"))));
+
+        Assert.Empty(RegistryFollowing.Due(_home));
+    }
+
+    [Fact]
+    public void A_line_already_due_is_not_written_again()
+    {
+        RegistryFollowing.Remember(_home, Followed("game", RegistryOutcome.NotSetUp), Noon);
+        var root = Checkout(Pulled);
+        Assert.True(RegistryFollowing.Heard(_home, new RefRepository("game", "default", root)));
+        var written = File.GetLastWriteTimeUtc(DaorisHome.Entry(_home, HomeEntry.LinesMoved));
+
+        Assert.False(RegistryFollowing.Heard(_home, new RefRepository("game", "default", root)));
+
+        Assert.Equal(written, File.GetLastWriteTimeUtc(DaorisHome.Entry(_home, HomeEntry.LinesMoved)));
+        Assert.Equal(["game"], RegistryFollowing.Due(_home));
+    }
+
     [Fact]
     public void A_record_that_does_not_read_is_none_and_never_a_failure()
     {
