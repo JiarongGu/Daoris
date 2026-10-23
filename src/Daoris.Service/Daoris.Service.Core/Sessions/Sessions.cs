@@ -192,6 +192,17 @@ public sealed record Session(
     /// </remarks>
     public string? HelpMode { get; init; }
 
+    /// <summary>D205: the kind of work this start serves. Machine-local, absent on older and mirrored records.</summary>
+    public string? Actor { get; init; }
+    /// <summary>D205: the choice taken; row b records `before`.</summary>
+    public string? Choice { get; init; }
+    /// <summary>D205: the tagged model and effort the start asked for, machine-local.</summary>
+    public JsonElement? Asked { get; init; }
+    /// <summary>D205: the composer's last acknowledged change, machine-local.</summary>
+    public JsonElement? Override { get; init; }
+    /// <summary>D205: reported model names and dated acknowledgements, machine-local.</summary>
+    public JsonElement? Ran { get; init; }
+
     /// <summary>
     /// The access setup a driven session started under (AUTONOMY1a, D184 point 1): each pause with its value, as the driver resolved it
     /// at the start (<see cref="SessionAccess"/>). Written at the open and never again; null for a record told none, every other kind
@@ -590,6 +601,9 @@ public sealed class SessionStore
         // KEEP1b (D195 point 6): the downloaded versions the record's starts were handed, a JSON list. This machine's own, as `opinion`
         // is: no wire carries it, and a record from before says none, which keeps the downloads' start-time rule.
         await SchemaColumns.EnsureAsync(_db, "sessions", "resolved", "resolved TEXT NULL", ct).ConfigureAwait(false);
+        // An existing record says none, preserving its reading. Mirrors never name these columns.
+        foreach (var column in new[] { "actor", "choice", "asked", "actor_override", "ran" })
+            await SchemaColumns.EnsureAsync(_db, "sessions", column, $"{column} TEXT NULL", ct).ConfigureAwait(false);
 
         await using (var cursor = _db.Command())
         {
@@ -762,7 +776,7 @@ public sealed class SessionStore
         string? baseCommit = null, CancellationToken ct = default, string? ask = null, string? opinion = null,
         string? serves = null, string? from = null, string? fromWhy = null, string? fromBy = null,
         string? entryOrigin = null, string? entryPart = null, bool ownEntry = false, string? helpMode = null,
-        IReadOnlyDictionary<string, string>? access = null, string? piece = null) => _db.RunAsync<Session>(async () =>
+        IReadOnlyDictionary<string, string>? access = null, string? piece = null, string? actor = null) => _db.RunAsync<Session>(async () =>
     {
         // A why or an asker with no session continued is no link (MIXAGENT1a-iii): the three are kept together or not at all.
         var continues = Blank(from);
@@ -775,6 +789,7 @@ public sealed class SessionStore
             Blank(harnessVersion), Blank(profile), Trees.Normalize(tree), Blank(baseCommit))
         {
             Ask = Blank(ask),
+            Actor = Blank(actor),
             Opinion = Blank(opinion),
             Serves = Blank(serves),
             // A piece means nothing without the lead it serves (COAGENT1b): kept together or not at all.
@@ -793,10 +808,11 @@ public sealed class SessionStore
 
         await using var command = _db.Command();
         command.CommandText = $"""
-            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, base_commit, ask, opinion, serves, piece, from_session, from_why, from_by, entry, help_mode, access, revision)
-            VALUES ($id, $quest, $repository, $adapter, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind, $harnessVersion, $profile, $tree, $baseCommit, $ask, $opinion, $serves, $piece, $from, $fromWhy, $fromBy, $entry, $helpMode, $access, {NextRevision})
+            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, base_commit, ask, opinion, serves, piece, from_session, from_why, from_by, entry, help_mode, access, actor, revision)
+            VALUES ($id, $quest, $repository, $adapter, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind, $harnessVersion, $profile, $tree, $baseCommit, $ask, $opinion, $serves, $piece, $from, $fromWhy, $fromBy, $entry, $helpMode, $access, $actor, {NextRevision})
             """;
         command.Parameters.AddWithValue("$entry", (object?)session.Entry ?? DBNull.Value);
+        command.Parameters.AddWithValue("$actor", (object?)session.Actor ?? DBNull.Value);
         command.Parameters.AddWithValue("$access", (object?)SessionAccess.Written(session.Access) ?? DBNull.Value);
         // What it was told only: a record told none keeps none, and reads as one from before.
         command.Parameters.AddWithValue("$helpMode", (object?)Blank(helpMode) ?? DBNull.Value);
@@ -1361,9 +1377,35 @@ public sealed class SessionStore
             reader.IsDBNull(reader.GetOrdinal("help_mode")) ? null : reader.GetString(reader.GetOrdinal("help_mode"))),
         Access = SessionAccess.Read(reader.IsDBNull(reader.GetOrdinal("access")) ? null : reader.GetString(reader.GetOrdinal("access"))),
         Resolved = ResolvedRead(reader.IsDBNull(reader.GetOrdinal("resolved")) ? null : reader.GetString(reader.GetOrdinal("resolved"))),
+        Actor = reader.IsDBNull(reader.GetOrdinal("actor")) ? null : reader.GetString(reader.GetOrdinal("actor")),
+        Choice = reader.IsDBNull(reader.GetOrdinal("choice")) ? null : reader.GetString(reader.GetOrdinal("choice")),
+        Asked = ActorElement(reader, "asked"),
+        Override = ActorElement(reader, "actor_override"),
+        Ran = ActorElement(reader, "ran"),
     };
 
     /// <summary>A record's handed versions as kept (KEEP1b): the list, in order; null for none, or for a column that does not read as one.</summary>
+    private static JsonElement? ActorElement(SqliteDataReader reader, string column) =>
+        reader.IsDBNull(reader.GetOrdinal(column)) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(reader.GetOrdinal(column)));
+
+    /// <summary>D205's later door: this machine's record only, without a sync revision. Omitted members keep their value.</summary>
+    public Task<bool> KeepActorAsync(string id, string? choice, JsonElement? asked, JsonElement? changed, JsonElement? ran,
+        CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = """
+            UPDATE sessions SET choice = COALESCE($choice, choice), asked = COALESCE($asked, asked),
+              actor_override = COALESCE($override, actor_override), ran = COALESCE($ran, ran)
+            WHERE id = $id AND origin IS NULL
+            """;
+        command.Parameters.AddWithValue("$id", id);
+        command.Parameters.AddWithValue("$choice", (object?)choice ?? DBNull.Value);
+        command.Parameters.AddWithValue("$asked", (object?)asked?.GetRawText() ?? DBNull.Value);
+        command.Parameters.AddWithValue("$override", (object?)changed?.GetRawText() ?? DBNull.Value);
+        command.Parameters.AddWithValue("$ran", (object?)ran?.GetRawText() ?? DBNull.Value);
+        return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
+    }, ct);
+
     private static IReadOnlyList<string>? ResolvedRead(string? kept)
     {
         if (kept is null) return null;

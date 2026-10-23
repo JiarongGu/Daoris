@@ -204,6 +204,7 @@ public static class PersonDoors
         new("POST", "/api/sessions/{id}/access", DoorClass.Driver, "the access setup a resumed session goes on under"),
         // KEEP1b: the driver spawns it, so it is the half that knows the downloaded versions a start of a record was handed.
         new("POST", "/api/sessions/{id}/resolved", DoorClass.Driver, "the downloaded versions a session's start was handed"),
+        new("POST", "/api/sessions/{id}/actor", DoorClass.Driver, "the actor's choice and reported models"),
         // COWORK1d: an entry's acknowledgment of a channel message, written by the driver that hands it to a part of the entry.
         new("POST", "/api/asks/{id}/channel/ack", DoorClass.Driver, "an entry's acknowledgment of messages on an ask's channel"),
         new("POST", "/api/sync", DoorClass.Driver, "a sync pass"),

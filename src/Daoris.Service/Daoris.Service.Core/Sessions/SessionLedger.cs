@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 
 namespace Daoris.Knowledge;
 
@@ -303,7 +304,7 @@ public sealed class SessionLedger(
     /// </remarks>
     public async Task<SessionOpenOutcome> OpenIntakeAsync(
         string askId, string adapter, string room, DateTimeOffset now,
-        string? harnessVersion = null, string? profile = null, CancellationToken ct = default)
+        string? harnessVersion = null, string? profile = null, CancellationToken ct = default, string? actor = null)
     {
         var stored = asks is null ? null : await asks.FindAsync(askId, ct).ConfigureAwait(false);
         if (stored is null)
@@ -356,7 +357,7 @@ public sealed class SessionLedger(
                 .CreateAsync(
                     null, AskDesk.SenderOf(ask.Id), adapter, now, ask.Workspace, SessionKind.Chat,
                     harnessVersion, profile, holding, baseCommit: null, inside, ask: ask.Id,
-                    entryOrigin: SessionEntries.AskOrigin(ask.Id), entryPart: "intake")
+                    entryOrigin: SessionEntries.AskOrigin(ask.Id), entryPart: "intake", actor: actor)
                 .ConfigureAwait(false);
             await asks!.RecordIntakeAsync(ask.Id, session.Id, now, inside).ConfigureAwait(false);
 
@@ -446,6 +447,18 @@ public sealed class SessionLedger(
     /// <exception cref="ArgumentException">
     /// None named, more than <see cref="MostResolved"/>, or one that is no <c>&lt;agent|tool&gt;/&lt;name&gt;/&lt;version&gt;</c>: a path never is.
     /// </exception>
+    public async Task<Session?> KeepActorAsync(string id, string? choice, JsonElement? asked, JsonElement? changed, JsonElement? ran,
+        CancellationToken ct = default)
+    {
+        if (choice is not null && choice is not ("1" or "2" or "3" or "4" or "before" or "rule-default" or "pick" or "handed"))
+            throw new ArgumentException("unknown actor choice");
+        foreach (var value in new[] { asked, changed, ran })
+            if (value is { } element && (element.ValueKind != JsonValueKind.Object || element.GetRawText().Length > 16384))
+                throw new ArgumentException("actor provenance must be a bounded object");
+        return await sessions.KeepActorAsync(id, choice, asked, changed, ran, ct).ConfigureAwait(false)
+            ? await sessions.FindAsync(id, ct).ConfigureAwait(false) : null;
+    }
+
     public async Task<Session?> KeepResolvedAsync(string id, IReadOnlyList<string> versions, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(versions);
@@ -507,7 +520,7 @@ public sealed class SessionLedger(
     public async Task<SessionOpenOutcome> OpenHelpAsync(
         string adapter, string room, DateTimeOffset now,
         string? harnessVersion = null, string? profile = null, string? workspace = null, string? mode = null,
-        CancellationToken ct = default)
+        CancellationToken ct = default, string? actor = null)
     {
         var holding = Trees.Normalize(room)
             ?? throw new ArgumentException("Ask Daoris runs in a room — name it", nameof(room));
@@ -548,7 +561,7 @@ public sealed class SessionLedger(
             var session = await sessions
                 .CreateAsync(
                     null, HelpRepository, adapter, now, circle, SessionKind.Chat,
-                    harnessVersion, profile, holding, baseCommit: null, inside, ownEntry: true, helpMode: running)
+                    harnessVersion, profile, holding, baseCommit: null, inside, ownEntry: true, helpMode: running, actor: actor)
                 .ConfigureAwait(false);
 
             return new SessionOpenOutcome(
@@ -578,7 +591,7 @@ public sealed class SessionLedger(
         string repository, string adapter, DateTimeOffset now,
         string? harnessVersion = null, string? profile = null, string? tree = null,
         string? baseCommit = null, CancellationToken ct = default,
-        string? from = null, string? fromWhy = null, string? fromBy = null)
+        string? from = null, string? fromWhy = null, string? fromBy = null, string? actor = null)
     {
         var known = registry is null
             ? null
@@ -620,7 +633,7 @@ public sealed class SessionLedger(
                 .CreateAsync(
                     null, known.Repository, adapter, now, known.InWorkspace, SessionKind.Chat,
                     harnessVersion, profile, holding, baseCommit, inside, from: from, fromWhy: fromWhy, fromBy: fromBy,
-                    entryOrigin: continuedOrigin, ownEntry: continuedOrigin is null)
+                    entryOrigin: continuedOrigin, ownEntry: continuedOrigin is null, actor: actor)
                 .ConfigureAwait(false);
 
             return new SessionOpenOutcome(
@@ -1223,7 +1236,7 @@ public sealed class SessionLedger(
         string? harnessVersion = null, string? profile = null, string? tree = null,
         string? baseCommit = null, CancellationToken ct = default,
         string? from = null, string? fromWhy = null, string? fromBy = null,
-        IReadOnlyDictionary<string, string>? access = null)
+        IReadOnlyDictionary<string, string>? access = null, string? actor = null)
     {
         // The caller's mistake is said before anything is read or held.
         var setup = SessionAccess.Judged(access);
@@ -1315,7 +1328,7 @@ public sealed class SessionLedger(
                 .CreateAsync(
                     quest.Id, quest.To, adapter, now, quest.Workspace, SessionKind.Driven,
                     harnessVersion, profile, holding, baseCommit, inside, from: from, fromWhy: fromWhy, fromBy: fromBy,
-                    entryOrigin: origin, access: setup)
+                    entryOrigin: origin, access: setup, actor: actor)
                 .ConfigureAwait(false);
 
             return new SessionOpenOutcome(

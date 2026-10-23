@@ -1288,7 +1288,7 @@ if (mode == ServiceMode.Local)
             body.Ask,
             // The adapter is the harness, never a model (D24). Silence takes the supported one.
             string.IsNullOrWhiteSpace(body.Adapter) ? "claude-code" : body.Adapter,
-            body.Room, DateTimeOffset.UtcNow, body.HarnessVersion, body.Profile, ct);
+            body.Room, DateTimeOffset.UtcNow, body.HarnessVersion, body.Profile, ct, actor: body.Actor);
 
         return outcome.Refusal switch
         {
@@ -1320,7 +1320,7 @@ if (mode == ServiceMode.Local)
                 // The adapter is the harness, never a model (D24). Silence takes the supported one.
                 string.IsNullOrWhiteSpace(body.Adapter) ? "claude-code" : body.Adapter,
                 body.Room, DateTimeOffset.UtcNow, body.HarnessVersion, body.Profile, body.Workspace,
-                string.IsNullOrWhiteSpace(body.Mode) ? null : body.Mode, ct);
+                string.IsNullOrWhiteSpace(body.Mode) ? null : body.Mode, ct, actor: body.Actor);
         }
         catch (ArgumentException refused)
         {
@@ -1392,6 +1392,19 @@ if (mode == ServiceMode.Local)
 
     // The downloaded versions a start of a record was handed (KEEP1b, D195 point 6): the driver names them before each spawn, a go-on's
     // added to the first's, and the downloads' rule keeps each while the session runs. Local like the open; any record of this machine's.
+    app.MapPost("/api/sessions/{id}/actor", async (
+        ComposedService s, HttpContext http, string id, ActorKeepRequest body, CancellationToken ct) =>
+    {
+        if (!MachineLocal(http)) return Results.NotFound();
+        try
+        {
+            var kept = await s.Ledger.KeepActorAsync(id, body.Choice, body.Asked, body.Override, body.Ran, ct);
+            return kept is null ? Results.NotFound(new ErrorResponse("no session of this machine's"))
+                : Results.Ok(new SessionActionResponse(await ToSessionAsync(s, kept, true), "Actor provenance kept."));
+        }
+        catch (ArgumentException refused) { return Results.BadRequest(new ErrorResponse(refused.Message)); }
+    });
+
     app.MapPost("/api/sessions/{id}/resolved", async (
         ComposedService s, HttpContext http, string id, ResolvedKeepRequest body, CancellationToken ct) =>
     {
@@ -1857,7 +1870,7 @@ app.MapPost("/api/sessions", async (
     {
         outcome = await s.Ledger.OpenAsync(
             body.Quest, body.Adapter, DateTimeOffset.UtcNow, body.HarnessVersion, body.Profile, body.Tree,
-            body.BaseCommit, ct, body.From, body.FromWhy, body.FromBy, body.Access);
+            body.BaseCommit, ct, body.From, body.FromWhy, body.FromBy, body.Access, actor: body.Actor);
     }
     catch (ArgumentException refused)
     {
@@ -1894,7 +1907,7 @@ app.MapPost("/api/sessions/chat", async (
         string.IsNullOrWhiteSpace(body.Adapter) ? "claude-code" : body.Adapter,
         DateTimeOffset.UtcNow, body.HarnessVersion, body.Profile, body.Tree, body.BaseCommit, ct,
         // The conversation a hand-over goes on from (MIXAGENT1a-iii), as the driver says it.
-        body.From, body.FromWhy, body.FromBy);
+        body.From, body.FromWhy, body.FromBy, actor: body.Actor);
 
     return outcome.Refusal switch
     {
@@ -2787,7 +2800,9 @@ static SessionResponse ToSession(Session s, bool loopback) => new(
     // The downloaded versions its starts were handed (KEEP1b): this machine's, like the opinion, so answered to it only.
     Resolved: loopback ? s.Resolved : null,
     // The piece a partner's record writes (COAGENT1b): this machine's, like the opinion, so answered to it only.
-    Piece: loopback ? s.Piece : null);
+    Piece: loopback ? s.Piece : null,
+    Actor: loopback ? s.Actor : null, Choice: loopback ? s.Choice : null,
+    Asked: loopback ? s.Asked : null, Override: loopback ? s.Override : null, Ran: loopback ? s.Ran : null);
 
 // A word with whose it is (XAGENT1c): `by` names the second opinion whose findings these are, and is absent for the person's.
 static SaidWordResponse ToSaid(SaidWord word) =>

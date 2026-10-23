@@ -451,7 +451,9 @@ public sealed record SessionResponse(
     IReadOnlyList<string>? Resolved = null,
     // COAGENT1b (D199 point 1): the piece a partner's record writes, beside `serves` naming its lead; absent for every other record.
     // This machine's own, like the opinion: answered to it only.
-    string? Piece = null);
+    string? Piece = null,
+    // D205: this machine's actor provenance. Never on the feed or answered off loopback.
+    string? Actor = null, string? Choice = null, JsonElement? Asked = null, JsonElement? Override = null, JsonElement? Ran = null);
 // MSG1a: one word waiting on a record — its id, which the record's events say again where the session took it; the
 // words; when; its files' names, never where they are; and whether it was said after the record ended. XAGENT1c: `by`, the
 // second opinion whose findings these are, another agent's claims; absent, the person's words, as every word before it was.
@@ -595,20 +597,21 @@ public sealed record AnswerSessionRequest(string? Answer);
 public sealed record OpenSessionRequest(
     string Quest, string Adapter, string? HarnessVersion, string? Profile, string? Tree,
     string? BaseCommit = null, string? From = null, string? FromWhy = null, string? FromBy = null,
-    Dictionary<string, string>? Access = null);
+    Dictionary<string, string>? Access = null, string? Actor = null);
 public sealed record OpenChatRequest(
     string Repository, string? Adapter, string? HarnessVersion, string? Profile, string? Tree,
-    string? BaseCommit = null, string? From = null, string? FromWhy = null, string? FromBy = null);
+    string? BaseCommit = null, string? From = null, string? FromWhy = null, string? FromBy = null, string? Actor = null);
 // An intake (D65 §1b): the ask it answers and the room it runs in — the driver's, which is the half
 // that is about to run a process there. The circle comes from the ask, never from the caller.
 public sealed record OpenIntakeRequest(
-    string? Ask, string? Adapter, string? Room, string? HarnessVersion = null, string? Profile = null);
+    string? Ask, string? Adapter, string? Room, string? HarnessVersion = null, string? Profile = null, string? Actor = null);
 // Ask Daoris (HELP1a, D89): the room its conversation runs in, the driver's to name. `Workspace` (ASKSCOPE1a): the one its
 // window was on at the press, which the record keeps; none is `default`, as a driver from before sends it. `Mode` (HELPMODE1a2):
 // the access mode its start got, `restricted` or `full`, which the record keeps; none is `restricted`, as a driver from before sends it.
 public sealed record OpenHelpRequest(
     string? Adapter, string? Room, string? HarnessVersion = null, string? Profile = null, string? Workspace = null,
-    string? Mode = null);
+    string? Mode = null, string? Actor = null);
+public sealed record ActorKeepRequest(string? Choice = null, JsonElement? Asked = null, JsonElement? Override = null, JsonElement? Ran = null);
 // HELPMODE1a2 (D183 point 3): the access mode an Ask Daoris conversation going on runs under, as its driver resolved it.
 public sealed record HelpModeRequest(string? Mode);
 // AUTONOMY1b2 (D184 point 1): the access setup a resumed driven session now runs under, each pause with its value, as its driver resolved it.
@@ -791,6 +794,7 @@ public sealed record ChangesResponse(string Since, IReadOnlyList<string> Moved);
 [JsonSerializable(typeof(IEnumerable<RegistrationResponse>))]
 [JsonSerializable(typeof(IEnumerable<SessionResponse>))]
 [JsonSerializable(typeof(OpenSessionRequest))]
+[JsonSerializable(typeof(ActorKeepRequest))]
 [JsonSerializable(typeof(OpenChatRequest))]
 [JsonSerializable(typeof(OpenIntakeRequest))]
 [JsonSerializable(typeof(OpenHelpRequest))]
