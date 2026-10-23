@@ -25,6 +25,10 @@ repository.
 - **Test observation:** one intermediate lock run failed the old-place parked-holder case once; the quiet runner emitted no
   diagnostic. All four holder cases and then the full 23-test class passed unchanged on reruns. The cause is undetermined.
 - **Commit:** `d874f9d84`, `445a4118f`, `f12c716b0`, `3ad4e1454`.
+- **A regression the family rehearsal found, fixed the same day:** `trees remove` began requiring a service
+  (`ServiceClient.FromEnvironment()` in `TreesConsole.cs`), so a terminal with none, as the rehearsal runs it, was refused with
+  *no DAORIS_SERVICE_URL* where it had judged from the files. The verb now asks the service's ledger where it finds one, and goes
+  on from the files where it finds none (`TreesConsole.ServiceOrNone`).
 
 ## 2026-10-23 — Leaving Review left its git running, and a runner returned before its git had ended (GITAPP1a-iii)
 

@@ -25,6 +25,19 @@ internal static class TreesConsole
     /// <summary>A tree named by its path, as `remove` always took one, rather than a session or its branch (LAND3).</summary>
     internal static bool LooksLikePath(string named) => SessionBranchDoors.NamesAPath(named);
 
+    /// <summary>The service this terminal finds, or none where it finds none: a verb that can judge from the files alone goes on.</summary>
+    private static ServiceClient? ServiceOrNone()
+    {
+        try
+        {
+            return ServiceClient.FromEnvironment();
+        }
+        catch (DriverException)
+        {
+            return null;
+        }
+    }
+
     /// <summary>
     /// A session branch the person removes by its door (LAND3): named by the branch (<c>daoris/s-…</c> or <c>s-…</c>) or by the
     /// session, its tree with it while it is here. The driver's one discard, the call the screen's <c>DISCARD_SESSION_BRANCH</c>
@@ -123,7 +136,8 @@ internal static class TreesConsole
             case ["remove", var named, ..]:
             {
                 var force = args.Contains("--force");
-                using var service = ServiceClient.FromEnvironment();
+                // TREELOCK2: the ledger is asked where a service is there to ask; alone, the removal judges from the files, as before.
+                using var service = ServiceOrNone();
                 var removal = LooksLikePath(named)
                     ? await trees.RemoveAsync(named, force, service: service).ConfigureAwait(false)
                     : await RemoveSessionBranchAsync(trees, named, Option(args, "--repository"), force).ConfigureAwait(false);
